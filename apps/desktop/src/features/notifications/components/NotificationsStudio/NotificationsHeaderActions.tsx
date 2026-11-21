@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { CheckCheck } from '@goodboy/ui/icons';
 import { Button, HeaderActions, ICON_SIZE } from '@goodboy/ui';
 
@@ -13,12 +13,11 @@ import { runVerb } from '../../runVerb';
 
 type Props = {
   readonly facts: NotificationsFacts;
-  readonly filter: ReactNode;
 };
 
 const MARK_ALL_READ = 'notifications.markAllRead';
 
-export const NotificationsHeaderActions = ({ facts, filter }: Props) => {
+export const NotificationsHeaderActions = ({ facts }: Props) => {
   const [armed, setArmed] = useState<ArmedAction | null>(null);
   const target: NotificationsActionTarget = { kind: 'notifications', facts };
   const env = useActionEnv({ origin: 'button' });
@@ -27,7 +26,6 @@ export const NotificationsHeaderActions = ({ facts, filter }: Props) => {
 
   return (
     <HeaderActions
-      secondary={filter}
       button={
         markAllRead === null ? null : (
           <Button

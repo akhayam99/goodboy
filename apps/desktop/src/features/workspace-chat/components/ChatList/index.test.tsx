@@ -266,7 +266,7 @@ describe('ChatList', () => {
   it('filters by title and answer text', async () => {
     await renderList();
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Search chats' }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search chats' }), {
       target: { value: 'ledger' },
     });
     expect(screen.queryByRole('region', { name: 'Today' })).toBeNull();
@@ -469,7 +469,7 @@ describe('ChatList', () => {
       const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
       within(trail).getByText('Archived');
       fireEvent.click(within(trail).getByRole('button', { name: 'Chat' }));
-      screen.getByRole('textbox', { name: 'Search chats' });
+      screen.getByRole('searchbox', { name: 'Search chats' });
       expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
     });
 
@@ -536,7 +536,7 @@ describe('ChatList', () => {
       fireEvent.click(await screen.findByRole('button', { name: /Archived · 1/ }));
       expect(screen.queryByText('No answer yet')).toBeNull();
       expect(screen.getByText(/const retryLimit = 3;/)).toBeDefined();
-      fireEvent.change(screen.getByRole('textbox', { name: 'Search archived' }), {
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Search archived chats' }), {
         target: { value: 'retrylimit' },
       });
       expect(screen.getByText(/const retryLimit = 3;/)).toBeDefined();
@@ -546,7 +546,7 @@ describe('ChatList', () => {
       await renderList(ARCHIVED);
 
       fireEvent.click(await screen.findByRole('button', { name: /Archived · 2/ }));
-      fireEvent.change(screen.getByRole('textbox', { name: 'Search archived' }), {
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Search archived chats' }), {
         target: { value: 'webhook' },
       });
 
@@ -660,7 +660,7 @@ describe('ChatList initial read states', () => {
 
   it('clears a filter with no matches and restores the list', async () => {
     await renderList();
-    fireEvent.change(screen.getByRole('textbox', { name: 'Search chats' }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search chats' }), {
       target: { value: 'missing-harborline' },
     });
     screen.getByText('No chats match this filter.');

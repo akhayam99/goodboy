@@ -128,7 +128,7 @@ describe('ChangeTree on a big change', () => {
 });
 
 const openFilterMenu = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Filter and group files' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Filter and group files/ }));
   return within(screen.getByRole('menu', { name: 'Filter and group files' }));
 };
 
@@ -206,7 +206,7 @@ describe('ChangeTree', () => {
     renderTree();
 
     const first = screen.getByRole('navigation', { name: 'Changed files' }).querySelector('input');
-    expect(first?.getAttribute('aria-label')).toBe('Filter files');
+    expect(first?.getAttribute('aria-label')).toBe('Search files');
     expect(screen.queryByRole('button', { name: 'Next unviewed file' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Keyboard shortcuts' })).toBeNull();
   });
@@ -601,6 +601,16 @@ describe('ChangeTree', () => {
     expect(onGroup).toHaveBeenCalledWith('kind');
   });
 
+  it('names the active filter on the trigger and leaves the corner badge unannounced', () => {
+    renderTree();
+    expect(screen.queryByRole('button', { name: /active$/ })).toBeNull();
+    cleanup();
+
+    renderTree({ filter: { ...NO_FILTER, commentedOnly: true } });
+    const trigger = screen.getByRole('button', { name: 'Filter and group files, 1 active' });
+    expect(trigger.parentElement?.querySelector('[role="img"]')).toBeNull();
+  });
+
   it('reads the filter back from the two switches, unviewed first', () => {
     renderTree({ filter: { ...NO_FILTER, unviewedOnly: true } });
     expect(
@@ -622,7 +632,7 @@ describe('ChangeTree', () => {
     const onQuery = vi.fn();
     renderTree({ filter: { ...NO_FILTER, query: 'csv', onQuery } });
 
-    const input = screen.getByRole('searchbox', { name: 'Filter files' });
+    const input = screen.getByRole('searchbox', { name: 'Search files' });
     fireEvent.change(input, { target: { value: 'csvx' } });
     fireEvent.focus(input);
     fireEvent.keyDown(input, { key: 'Escape', code: 'Escape' });

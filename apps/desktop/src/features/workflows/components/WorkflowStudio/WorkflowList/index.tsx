@@ -22,7 +22,6 @@ type Props = {
   readonly isRestoring: boolean;
   readonly runs: ReadonlyArray<WorkflowRunHistoryRow> | null;
   readonly isHistoryFailed?: boolean;
-  readonly tabs: ReactNode;
   readonly renderImport: (params: ImportParams) => ReactNode;
   readonly onOpen: (workflow: Workflow) => void;
   readonly onShowRuns: (workflow: Workflow) => void;
@@ -49,7 +48,6 @@ export const WorkflowList = ({
   isRestoring,
   runs,
   isHistoryFailed = false,
-  tabs,
   renderImport,
   onOpen,
   onShowRuns,
@@ -65,8 +63,7 @@ export const WorkflowList = ({
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <div className="flex min-w-0 items-center gap-2">
-        <div className="flex min-w-0 flex-1 items-center">{tabs}</div>
+      <div className="flex min-w-0 items-center justify-end gap-2">
         <Button size="sm" onClick={onNew}>
           <Plus size={ICON_SIZE.row} aria-hidden />
           New workflow

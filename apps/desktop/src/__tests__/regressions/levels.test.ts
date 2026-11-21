@@ -105,10 +105,7 @@ describe('levels on the overview and the runs pages', () => {
     expect(source).toContain("'running', 'waiting', 'failed'");
   });
 
-  it('sets the runs lede at level 4 and the run facts at level 5', () => {
-    expect(featureSource({ path: 'session/components/SessionPageIntro.tsx' })).toContain(
-      'text-ui text-muted-foreground',
-    );
+  it('sets the run facts at level 5', () => {
     expect(
       featureSource({ path: 'session/components/OrchestratedRun/OrchestratedFacts.tsx' }),
     ).toContain('text-meta text-muted-foreground');

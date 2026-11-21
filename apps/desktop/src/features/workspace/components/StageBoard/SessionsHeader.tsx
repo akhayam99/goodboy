@@ -34,13 +34,11 @@ export const SessionsHeader = ({
           isOnColumn
           rhythm="section"
           title={NAMES.board}
-          actions={
+          toolbar={
             <>
-              <NeedsYouElsewhere count={needsYouElsewhere} onClear={onClearFilters} />
+              <SessionFilterPopover workspaceId={workspaceId} sessions={filterSessions} />
               <HiddenByFilters count={hiddenCount} onClear={onClearFilters} />
-              <span className="relative inline-flex">
-                <SessionFilterPopover workspaceId={workspaceId} sessions={filterSessions} />
-              </span>
+              <NeedsYouElsewhere count={needsYouElsewhere} onClear={onClearFilters} />
             </>
           }
         />

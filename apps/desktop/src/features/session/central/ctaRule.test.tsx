@@ -87,7 +87,8 @@ type ButtonParams = {
 };
 
 const isActionButton = ({ button }: ButtonParams): boolean =>
-  button.hasAttribute('data-variant') || button.closest('[data-action-card]') !== null;
+  button.closest('[data-search-field]') === null &&
+  (button.hasAttribute('data-variant') || button.closest('[data-action-card]') !== null);
 
 const buttonsOf = ({ root }: RootParams): ReadonlyArray<HTMLElement> =>
   [...root.querySelectorAll<HTMLElement>('button')].filter(

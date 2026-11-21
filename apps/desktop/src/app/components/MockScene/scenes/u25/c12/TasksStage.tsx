@@ -7,6 +7,7 @@ import { useAppStore } from '../../../../../../store';
 import { InboxFacetRail } from '../../../../../../features/inbox/components/InboxStudio/InboxFacetRail';
 import { InboxList } from '../../../../../../features/inbox/components/InboxStudio/InboxList';
 import { InboxListHeader } from '../../../../../../features/inbox/components/InboxStudio/InboxListHeader';
+import { TaskListMenu } from '../../../../../../features/actions/TaskListMenu';
 import { InboxStudioLayout } from '../../../../../../features/inbox/components/InboxStudio/InboxStudioLayout';
 import { TaskGroupRows } from '../../../../../../features/inbox/components/InboxStudio/TaskGroupRows';
 import { integrationLabel } from '../../../../../../shared/utils/integrationLabel';
@@ -167,6 +168,9 @@ export const TasksStage = ({
       scroll="body"
       title={NAMES.tasks}
       badge={<TasksCountChip records={inScope} newKeys={newKeys} />}
+      actions={
+        <TaskListMenu facts={{ isRefreshing: false, onRefresh: noop, onManageTools: noop }} />
+      }
       toolbar={
         <InboxListHeader
           query={query}
@@ -178,9 +182,6 @@ export const TasksStage = ({
           onScopeChange={noop}
           groupBy={groupBy}
           onGroupBy={noop}
-          isRefreshing={false}
-          onRefresh={noop}
-          onManageTools={noop}
           activeFilterCount={0}
           facets={facets}
         />

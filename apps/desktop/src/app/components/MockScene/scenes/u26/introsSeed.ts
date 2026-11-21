@@ -1,10 +1,9 @@
 import type { Agent, AgentId } from '@goodboy/types';
 import { useAppStore, type LensKind } from '../../../../../store';
-import type { SESSION_PAGE_INTRO } from '../../../../../features/session/sessionPageIntro';
 import { sceneClock } from '../../sceneClock';
 import { C09_SESSION_ID, seedC09 } from '../u25/c09OrchestratedSeed';
 
-export type IntroPage = keyof typeof SESSION_PAGE_INTRO;
+export type IntroPage = 'runs';
 
 const LENS_OF: Readonly<Record<IntroPage, LensKind>> = {
   runs: 'workflows',

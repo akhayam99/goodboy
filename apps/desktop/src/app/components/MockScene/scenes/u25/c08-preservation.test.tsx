@@ -203,14 +203,14 @@ const QUESTION: OpenQuestion = {
 };
 
 describe('run rows stay reachable from the preset run level', () => {
-  it('Runs list: a group carries a count only from two rows', async () => {
+  it('Runs list: a group carries its count, 1 included', async () => {
     await mount('c08-runs');
     const grid = within(screen.getByRole('list', { name: 'Runs' }));
     const countOf = (label: string) =>
       grid.getByRole('heading', { name: label }).nextElementSibling?.textContent;
-    expect(countOf('Running')).toBeUndefined();
-    expect(countOf('Idle')).toBeUndefined();
-    expect(countOf('Finished')).toBeUndefined();
+    expect(countOf('Running')).toBe('1');
+    expect(countOf('Idle')).toBe('1');
+    expect(countOf('Finished')).toBe('1');
     expect(screen.queryByRole('heading', { name: 'Archived' })).toBeNull();
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
   });

@@ -98,7 +98,7 @@ export const StatesRestScene = ({ kind }: Props) => {
       ) : null}
       {kind === 'impact-loading' ? (
         <OverviewPanel
-          frame={{ title: 'Impact', meta: null, actions: null, tabs: null }}
+          frame={{ title: 'Impact', meta: null, actions: null, toolbar: null, tabs: null }}
           requestNoun="pull requests"
           overview={{ data: null, error: null }}
           pullRequests={{ data: null, error: null }}

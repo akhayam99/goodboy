@@ -40,8 +40,8 @@ export const MonitoringDrawer = ({ onClose }: Props) => {
       toolbar={
         hasRows ? (
           <SearchField
-            ariaLabel="Filter ports"
-            placeholder="Port or folder"
+            ariaLabel={NAMES.searchPorts}
+            placeholder={NAMES.searchPorts}
             value={model.query}
             onChange={(query) => setMonitoringQuery({ workspaceId: model.workspaceId, query })}
           />

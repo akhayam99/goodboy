@@ -74,7 +74,7 @@ describe('the diff file actions scenes', () => {
     const Scene = U25_B_DIFF_FILE_ACTIONS_SCENES['filter-files-focused'];
     render(<Scene />);
 
-    const input = screen.getByRole('searchbox', { name: 'Filter files' });
+    const input = screen.getByRole('searchbox', { name: 'Search files' });
     expect(document.activeElement).toBe(input);
     expect(screen.getByRole('button', { name: 'Clear filter' })).toBeDefined();
   });

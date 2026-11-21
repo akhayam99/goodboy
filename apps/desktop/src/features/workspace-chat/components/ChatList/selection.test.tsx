@@ -232,7 +232,7 @@ describe('ChatList selection', () => {
     fireEvent.click(boxOf('consent'));
     fireEvent.click(boxOf('lunch'));
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Search chats' }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search chats' }), {
       target: { value: 'lunch' },
     });
 

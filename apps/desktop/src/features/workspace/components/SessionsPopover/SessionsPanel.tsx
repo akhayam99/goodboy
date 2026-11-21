@@ -134,8 +134,8 @@ export const SessionsPanel = ({ workspaceId, onClose }: Props) => {
         <SearchField
           autoFocus
           size="md"
-          ariaLabel="Find a session"
-          placeholder="Find a session"
+          ariaLabel={NAMES.searchSessions}
+          placeholder={NAMES.searchSessions}
           value={query}
           onChange={(next) => {
             setQuery(next);

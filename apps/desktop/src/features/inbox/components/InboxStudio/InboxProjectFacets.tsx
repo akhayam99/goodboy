@@ -2,6 +2,7 @@ import { FacetRow, FacetSection, FOCUS_RING, cn } from '@goodboy/ui';
 import { useState } from 'react';
 import type { Project } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
 import type { InboxFacetCounts, InboxFilters } from '../../kindFilter';
 
 type Props = {
@@ -12,6 +13,16 @@ type Props = {
   readonly onFiltersChange: (filters: InboxFilters) => void;
 };
 
+type FolderLabelParams = {
+  readonly project: Project;
+  readonly counts: InboxFacetCounts;
+};
+
+const plainFolderLabelOf = ({ project, counts }: FolderLabelParams): string => {
+  const count = counts.project(project.id);
+  return count > 0 ? `${project.name}, plain folder, ${count}` : `${project.name}, plain folder`;
+};
+
 export const InboxProjectFacets = ({ projects, filters, counts, note, onFiltersChange }: Props) => {
   const [isShowingEmpty, setIsShowingEmpty] = useState(false);
   const isVisible = (project: Project) =>
@@ -20,12 +31,13 @@ export const InboxProjectFacets = ({ projects, filters, counts, note, onFiltersC
   const shown = isShowingEmpty ? projects : projects.filter(isVisible);
 
   return (
-    <FacetSection label="Folder">
+    <FacetSection label={NAMES.projects}>
       {shown.map((project) => (
         <FacetRow
           key={project.id}
           icon={project.kind === 'repo' ? CONCEPT_ICONS.projectRepo : CONCEPT_ICONS.projectFolder}
           label={project.name}
+          ariaLabel={project.kind === 'repo' ? undefined : plainFolderLabelOf({ project, counts })}
           count={counts.project(project.id)}
           isSelected={filters.project === project.id}
           onClick={() =>

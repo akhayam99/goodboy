@@ -421,11 +421,11 @@ card keeps one signal and hands the rest of the summary to the hover card; the
 session header keeps its chips.
 
 **The Board header holds the one session filter.** **Filter sessions**
-(`StageBoard/SessionFilterPopover`) sits in the Board header, with a primary
-6px dot while a project filter is on (`displayStateOf` owns that count). Its
-popover is a labelled dialog: **Sort** on top (`DisplayValueRow`, a quiet
+(`StageBoard/SessionFilterPopover`, a `FilterButton`) sits in the tool row of
+the Board header, with the count of filters on (`displayStateOf` owns that
+count). Its popover is a labelled dialog: **Sort** on top (`DisplayValueRow`, a quiet
 `Listbox`: Needs you first [default], Alphabetical, Last activity and Created),
-then **Project**, real `Checkbox` rows (`FilterCheckRow`) named with their
+then **Projects**, real `Checkbox` rows (`FilterCheckRow`) named with their
 counts ("ledger-core, 2"), shown only when two or more projects have sessions,
 then **Mark all as read**, and **Reset** while the sort or a project is off its
 default. The lanes are the status and the Archived lane is the archive, so the

@@ -39,6 +39,7 @@ import { InboxDetail } from './InboxDetail';
 import { InboxFacetRail } from './InboxFacetRail';
 import { InboxList } from './InboxList';
 import { InboxListHeader } from './InboxListHeader';
+import { TaskListMenu } from '../../../actions/TaskListMenu';
 import { InboxLookupGroup } from './InboxLookupGroup';
 import { InboxStarredGroup } from './InboxStarredGroup';
 import { TaskFullPage } from './TaskFullPage';
@@ -484,12 +485,14 @@ export const InboxStudio = ({
     onToggleStar: toggleRecordStar,
   };
 
+  const menuFacts = { isRefreshing: isLoading, onRefresh: refetch, onManageTools: openSettings };
   const list = (
     <PaneShell
       page="inbox"
       scroll="body"
       title={NAMES.tasks}
       badge={<TasksCountChip records={inScope} newKeys={newKeys} />}
+      actions={<TaskListMenu facts={menuFacts} />}
       toolbar={
         <InboxListHeader
           query={query}
@@ -501,9 +504,6 @@ export const InboxStudio = ({
           onScopeChange={(scope) => changeView({ ...view, scope })}
           groupBy={view.groupBy}
           onGroupBy={(groupBy) => changeView({ ...view, groupBy })}
-          isRefreshing={isLoading}
-          onRefresh={refetch}
-          onManageTools={openSettings}
           activeFilterCount={activeFilterCount({ filters })}
           facets={facets}
         />

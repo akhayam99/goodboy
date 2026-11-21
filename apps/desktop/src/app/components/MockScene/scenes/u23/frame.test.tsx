@@ -74,8 +74,21 @@ const ONE_H1_SCENES: ReadonlyArray<string> = [
 
 type SceneId = string;
 
+const sceneOf = ({ id }: { id: SceneId }) =>
+  Object.entries(MOCK_SCENES).find(([key]) => key === id)?.[1];
+
+type ClosestParams = { from: HTMLElement; selector: string };
+
+const closestOf = ({ from, selector }: ClosestParams): HTMLElement => {
+  const found = from.closest<HTMLElement>(selector);
+  if (found === null) {
+    throw new Error(`no ${selector}`);
+  }
+  return found;
+};
+
 const renderScene = async (id: SceneId) => {
-  const Scene = MOCK_SCENES[id as keyof typeof MOCK_SCENES];
+  const Scene = sceneOf({ id });
   if (Scene === undefined) {
     throw new Error(`no scene ${id}`);
   }
@@ -99,7 +112,7 @@ describe('the u23 frame scenes', () => {
   it('registers exactly the scenes the plan names, in the scene list', () => {
     expect(Object.keys(U23_FRAME_SCENES).sort()).toEqual([...SCENE_IDS].sort());
     for (const id of SCENE_IDS) {
-      expect(MOCK_SCENES[id as keyof typeof MOCK_SCENES]).toBeDefined();
+      expect(sceneOf({ id })).toBeDefined();
     }
   });
 
@@ -163,12 +176,18 @@ describe('the u23 frame scenes', () => {
     expect(screen.getAllByRole('button', { name: 'New workflow' })).toHaveLength(1);
   });
 
-  it('keeps the Impact period selector in the title row of its bandless page', async () => {
+  it('puts the Impact period selector in the tool row under the title of its bandless page', async () => {
     const { container } = await renderScene('frame-studio-impact');
 
     const title = await screen.findByRole('heading', { level: 1, name: 'Impact' });
-    const row = title.closest('[data-slot="pane-title-row"]') as HTMLElement;
-    expect(within(row).getByRole('tablist', { name: 'Impact window' })).toBeDefined();
+    const row = closestOf({ from: title, selector: '[data-slot="pane-title-row"]' });
+    expect(within(row).queryByRole('tablist', { name: 'Impact window' })).toBeNull();
+    const header = title.closest('[data-slot="pane-header"]');
+    const tools = screen
+      .getByRole('tablist', { name: 'Impact window' })
+      .closest('[data-slot="pane-toolbar"]');
+    expect(tools).not.toBeNull();
+    expect(header?.contains(tools)).toBe(true);
     expect(container.querySelector('[data-studio-band]')).toBeNull();
   });
 
@@ -177,10 +196,10 @@ describe('the u23 frame scenes', () => {
 
     const title = await screen.findByRole('heading', { level: 1 });
     expect(screen.queryByRole('heading', { level: 1, name: 'Questions' })).toBeNull();
-    const column = title.closest('[data-page-column]') as HTMLElement;
+    const column = closestOf({ from: title, selector: '[data-page-column]' });
     expect(column.getAttribute('data-width')).toBe('column');
     const queue = await screen.findByRole('list', { name: 'Questions' });
-    const bodyColumn = queue.closest('[data-page-column]') as HTMLElement;
+    const bodyColumn = closestOf({ from: queue, selector: '[data-page-column]' });
     expect(bodyColumn.getAttribute('data-width')).toBe('column');
     expect(within(bodyColumn).getAllByRole('heading', { level: 2 }).length).toBeGreaterThan(0);
     expect(document.querySelectorAll('[data-page-column][data-width="measure"]')).toHaveLength(0);
@@ -190,9 +209,11 @@ describe('the u23 frame scenes', () => {
     await renderScene('frame-first-lap-notice');
 
     const notice = await screen.findByText('Not published yet');
-    const slot = notice.closest('[data-overview-notices]') as HTMLElement;
-    expect(slot).not.toBeNull();
-    const title = visibleH1s()[0] as HTMLElement;
+    const slot = closestOf({ from: notice, selector: '[data-overview-notices]' });
+    const [title] = visibleH1s();
+    if (title === undefined) {
+      throw new Error('no visible h1');
+    }
     expect(title.compareDocumentPosition(slot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getAllByText(/[Pp]ublished yet/)).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();

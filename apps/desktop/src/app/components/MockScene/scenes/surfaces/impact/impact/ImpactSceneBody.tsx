@@ -46,7 +46,8 @@ export const ImpactSceneBody = ({ mode }: Props) => {
       sessionCount: overview.sessionCount,
       spentUsd: rangeSpend.usd,
     }),
-    actions: (
+    actions: null,
+    toolbar: (
       <SegmentedTabs
         ariaLabel="Impact window"
         options={IMPACT_WINDOW_OPTIONS}

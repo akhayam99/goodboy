@@ -1,12 +1,12 @@
 import { useState, type ReactNode } from 'react';
-import { Download, Search } from '@goodboy/ui/icons';
+import { Download } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Button,
   FormActions,
   ICON_SIZE,
-  Input,
   PopoverPin,
+  SearchField,
   useDropdown,
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
@@ -104,20 +104,13 @@ export const ImportPopover = ({ workspaceId, takenNames, renderTrigger = importB
       trigger={renderTrigger({ isOpen: dropdown.open, onToggle: onToggleOpen })}
     >
       <PopoverPin edge="start" className="flex shrink-0 items-center gap-3 p-2">
-        <label className="relative flex min-w-0 flex-1 items-center">
-          <span className="sr-only">Search workflows</span>
-          <Search
-            size={ICON_SIZE.row}
-            aria-hidden
-            className="pointer-events-none absolute left-2 text-faint-foreground"
-          />
-          <Input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search workflows"
-            className="h-7 pl-7 text-meta"
-          />
-        </label>
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          placeholder="Search workflows"
+          ariaLabel="Search workflows"
+          className="min-w-0 flex-1"
+        />
         {total > 0 ? (
           <span className="shrink-0 text-meta tabular-nums text-muted-foreground">
             {catalogCount({ workflows: total, workspaces: readyWithWorkflows.length })}

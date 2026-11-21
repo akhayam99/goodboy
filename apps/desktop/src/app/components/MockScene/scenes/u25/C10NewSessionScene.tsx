@@ -201,7 +201,9 @@ export const C10NewSessionScene = ({ state }: Props) => {
         window.clearInterval(timer);
         return;
       }
-      const search = document.querySelector<HTMLInputElement>('input[aria-label="Search folders"]');
+      const search = document.querySelector<HTMLInputElement>(
+        'input[aria-label="Search projects"]',
+      );
       if (search === null) {
         return;
       }

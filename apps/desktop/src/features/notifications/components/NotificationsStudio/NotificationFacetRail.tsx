@@ -18,7 +18,6 @@ import {
   type NotificationView,
 } from '../../facets';
 import { NOTIFICATION_SEVERITY } from '../../severity';
-import { FacetCount } from './FacetCount';
 import {
   NOTIFICATION_SOURCES,
   NOTIFICATION_SOURCE_LABEL,
@@ -67,17 +66,9 @@ export const NotificationFacetRail = ({
     {
       value: 'workspace',
       label: workspaceName ?? 'This workspace',
-      ...(counts.workspace > 1 && {
-        badge: <span className="tabular-nums text-faint-foreground">{counts.workspace}</span>,
-      }),
+      badge: counts.workspace,
     },
-    {
-      value: 'all',
-      label: 'All',
-      ...(counts.all > 1 && {
-        badge: <span className="tabular-nums text-faint-foreground">{counts.all}</span>,
-      }),
-    },
+    { value: 'all', label: 'All', badge: counts.all },
   ];
 
   return (
@@ -89,7 +80,6 @@ export const NotificationFacetRail = ({
             icon={VIEW_PRESENTATION[view].icon}
             label={VIEW_PRESENTATION[view].label}
             count={counts.view[view]}
-            trailing={<FacetCount count={counts.view[view]} />}
             isSelected={filters.view === view}
             onClick={() => onFiltersChange({ ...filters, view })}
           />
@@ -103,7 +93,6 @@ export const NotificationFacetRail = ({
             tone={NOTIFICATION_SEVERITY[severity].tone}
             label={SEVERITY_LABEL[severity]}
             count={counts.severity[severity]}
-            trailing={<FacetCount count={counts.severity[severity]} />}
             isSelected={filters.severity === severity}
             onClick={() =>
               onFiltersChange({
@@ -121,7 +110,6 @@ export const NotificationFacetRail = ({
             icon={SOURCE_ICON[source]}
             label={NOTIFICATION_SOURCE_LABEL[source]}
             count={counts.source[source]}
-            trailing={<FacetCount count={counts.source[source]} />}
             isSelected={filters.source === source}
             onClick={() =>
               onFiltersChange({ ...filters, source: filters.source === source ? null : source })

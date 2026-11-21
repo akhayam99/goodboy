@@ -1,6 +1,7 @@
-import { HeaderActions, PaneShell, SearchField } from '@goodboy/ui';
+import { PaneShell, SearchField } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';
+import { NAMES } from '../../../../shared/utils/names';
 import { useMonitoringModel } from '../../hooks/useMonitoringModel';
 import { useMonitorPolling } from '../../../../shared/hooks/useMonitorPolling';
 import { isMonitoringEmpty } from './isMonitoringEmpty';
@@ -15,12 +16,13 @@ export const MonitoringPage = () => {
   const now = useNow(5_000);
   const isReady = model.status === 'ready';
   const isEmpty = isMonitoringEmpty({ model });
+  const hasRows = isReady && !isEmpty;
 
   return (
     <PaneShell
       page="monitoring"
       scroll="body"
-      title="Monitoring"
+      title={NAMES.monitoring}
       meta={monitoringMetaOf({
         isReady,
         isEmpty,
@@ -28,21 +30,17 @@ export const MonitoringPage = () => {
         takenAt: model.takenAt,
         now,
       })}
-      actions={
-        <HeaderActions
-          secondary={
-            isReady && !isEmpty ? (
-              <SearchField
-                ariaLabel="Filter ports"
-                placeholder="Port or folder"
-                value={model.query}
-                onChange={(query) => setMonitoringQuery({ workspaceId: model.workspaceId, query })}
-                className="w-56"
-              />
-            ) : null
-          }
-          button={isReady && !isEmpty ? <PinPortPopover /> : null}
-        />
+      actions={hasRows ? <PinPortPopover /> : null}
+      toolbar={
+        hasRows ? (
+          <SearchField
+            ariaLabel={NAMES.searchPorts}
+            placeholder={NAMES.searchPorts}
+            value={model.query}
+            onChange={(query) => setMonitoringQuery({ workspaceId: model.workspaceId, query })}
+            className="w-56"
+          />
+        ) : null
       }
     >
       <MonitoringSections model={model} memoryPrefix="monitoring" />

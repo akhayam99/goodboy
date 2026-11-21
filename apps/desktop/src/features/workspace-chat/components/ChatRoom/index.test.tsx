@@ -359,13 +359,13 @@ describe('ChatRoom', () => {
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     screen.getByRole('button', { name: 'Remove payments-api' });
 
-    fireEvent.click(screen.getByRole('combobox', { name: 'Folder' }));
-    fireEvent.change(screen.getByRole('combobox', { name: 'Search folders' }), {
+    fireEvent.click(screen.getByRole('combobox', { name: 'Projects' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Search projects' }), {
       target: { value: 'ledger' },
     });
     expect(screen.queryByRole('option', { name: /payments-api/ })).toBeNull();
     fireEvent.click(screen.getByRole('option', { name: /ledger-core/ }));
-    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Search folders' }), {
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Search projects' }), {
       key: 'Escape',
     });
     screen.getByRole('button', { name: 'Remove ledger-core' });
@@ -388,7 +388,7 @@ describe('ChatRoom', () => {
     fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
 
-    const trigger = screen.getByRole('combobox', { name: 'Folder' });
+    const trigger = screen.getByRole('combobox', { name: 'Projects' });
     expect(trigger.className).toContain('w-full');
     const field = trigger.closest('div.flex-col');
     expect(field?.parentElement?.className).toContain('flex-col');
@@ -405,7 +405,7 @@ describe('ChatRoom', () => {
     fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     fireEvent.click(screen.getByRole('button', { name: 'Remove payments-api' }));
-    expect(screen.getByRole('combobox', { name: 'Folder' }).textContent).toContain('No folder');
+    expect(screen.getByRole('combobox', { name: 'Projects' }).textContent).toContain('No project');
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
@@ -439,7 +439,7 @@ describe('ChatRoom', () => {
     fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     fireEvent.click(screen.getByRole('tab', { name: 'Add to a session' }));
-    expect(screen.queryByRole('combobox', { name: 'Folder' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Projects' })).toBeNull();
     const primary = screen.getByRole('button', { name: 'Add to session' });
     expect(primary.hasAttribute('disabled')).toBe(true);
 

@@ -1,5 +1,6 @@
 import { AnchoredPopover, Button, cn, useDropdown, type MenuEntry } from '@goodboy/ui';
 import { AppMenuList } from '../../../actions/AppMenuList';
+import { NAMES } from '../../../../shared/utils/names';
 import { TASK_GROUP_BYS, TASK_GROUP_BY_LABEL, type TaskGroupBy } from '../../taskGroups';
 
 type Props = {
@@ -13,7 +14,7 @@ export const TasksGroupByMenu = ({ groupBy, onGroupBy }: Props) => {
     {
       kind: 'radio',
       key: 'group-by',
-      label: 'Group by',
+      label: NAMES.groupBy,
       choices: TASK_GROUP_BYS.map((value) => ({
         id: value,
         label: TASK_GROUP_BY_LABEL[value],
@@ -40,7 +41,7 @@ export const TasksGroupByMenu = ({ groupBy, onGroupBy }: Props) => {
           onClick={dropdown.toggle}
           className={cn(dropdown.open && 'bg-selected')}
         >
-          {`Group: ${TASK_GROUP_BY_LABEL[groupBy]}`}
+          {`${NAMES.groupBy}: ${TASK_GROUP_BY_LABEL[groupBy]}`}
         </Button>
       }
     >

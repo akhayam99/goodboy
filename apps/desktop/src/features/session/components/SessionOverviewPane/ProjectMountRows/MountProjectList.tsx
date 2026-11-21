@@ -8,6 +8,7 @@ import {
   ICON_SIZE,
   PopoverPin,
   ROW_INTERACTIVE,
+  SearchField,
 } from '@goodboy/ui';
 import type { Project, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -17,6 +18,7 @@ import {
   rememberPickedBranch,
 } from '../../../../../store/slices/sessions/branchChoiceSeeds';
 import { projectGlyph } from '../../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../../shared/utils/names';
 import { shouldGroupStarred } from '../../../../../shared/utils/shouldGroupStarred';
 import { projectPickerGroups } from '../../../../../shared/components/ProjectPicker/projectPickerGroups';
 import { MountPreflightCard } from './MountPreflightCard';
@@ -69,7 +71,7 @@ export const MountProjectList = ({
     return [
       { key: 'starred', label: 'Starred', projects: starred },
       { key: 'recent', label: 'Recent', projects: recent },
-      { key: 'other', label: 'Other folders', projects: all },
+      { key: 'other', label: 'Other projects', projects: all },
     ].filter((group) => group.projects.length > 0);
   }, [filtered, recentIds, isQueryEmpty, projects.length]);
   const selectedProject = projectById(projects, selectedProjectId) ?? null;
@@ -152,22 +154,20 @@ export const MountProjectList = ({
   return (
     <div className="flex flex-col gap-1">
       {isSearchable ? (
-        <PopoverPin edge="start" className="flex flex-col">
-          <input
-            type="text"
+        <PopoverPin edge="start" className="flex flex-col p-2">
+          <SearchField
             value={query}
-            aria-label="Search folders"
-            placeholder="Search folders…"
+            ariaLabel={NAMES.searchProjects}
+            placeholder={NAMES.searchProjects}
             autoComplete="off"
-            onChange={(event) => setQuery(event.target.value)}
-            className="border-b border-border-soft bg-transparent px-3 py-2 text-body text-foreground outline-none placeholder:text-faint-foreground"
+            onChange={setQuery}
           />
         </PopoverPin>
       ) : null}
       {projects.length === 0 ? (
         <p className="px-3 py-2 text-meta text-muted-foreground">{emptyHint}</p>
       ) : filtered.length === 0 ? (
-        <EmptyLine className="px-3">No matching folders</EmptyLine>
+        <EmptyLine className="px-3">No projects match</EmptyLine>
       ) : (
         <div className="flex flex-col py-0.5">
           {groups.map((group) => (

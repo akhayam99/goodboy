@@ -1,4 +1,4 @@
-import { SegmentedTabs } from '@goodboy/ui';
+import { PageTabs } from '@goodboy/ui';
 import { IMPACT_TAB_OPTIONS, type ImpactTab } from '../../lib';
 
 type Props = {
@@ -7,13 +7,10 @@ type Props = {
 };
 
 export const ImpactTabs = ({ value, onChange }: Props) => (
-  <div className="flex min-w-0 items-center">
-    <SegmentedTabs
-      ariaLabel="Impact sections"
-      options={IMPACT_TAB_OPTIONS}
-      value={value}
-      onChange={onChange}
-      size="sm"
-    />
-  </div>
+  <PageTabs
+    ariaLabel="Impact sections"
+    options={IMPACT_TAB_OPTIONS}
+    value={value}
+    onChange={onChange}
+  />
 );

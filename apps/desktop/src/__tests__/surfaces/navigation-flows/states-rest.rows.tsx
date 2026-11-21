@@ -15,7 +15,7 @@ export const STATES_REST_ROWS: ReadonlyArray<Row> = [
       await act(async () => {
         useAppStore.getState().openStudio({ studio: { kind: 'chat', chatId: null } });
       });
-      await screen.findByRole('textbox', { name: 'Search chats' }, WAIT);
+      await screen.findByRole('searchbox', { name: 'Search chats' }, WAIT);
     },
     lands: async () => {
       expect(screen.getAllByRole('status', { name: 'Loading chats' })).toHaveLength(3);
@@ -42,7 +42,7 @@ export const STATES_REST_ROWS: ReadonlyArray<Row> = [
       };
       act(() => useAppStore.setState({ chatsByWorkspace: { [workspaceId]: [chat] } }));
       await screen.findByRole('button', { name: 'Harborline ledger export' }, WAIT);
-      fireEvent.change(screen.getByRole('textbox', { name: 'Search chats' }), {
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Search chats' }), {
         target: { value: 'missing' },
       });
       screen.getByText('No chats match this filter.');

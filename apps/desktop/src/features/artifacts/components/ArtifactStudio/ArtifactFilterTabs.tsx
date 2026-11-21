@@ -21,7 +21,7 @@ export const ArtifactFilterTabs = ({ value, counts, onChange }: Props) => (
     options={ARTIFACT_FILTERS.map((filter) => ({
       value: filter,
       label: ARTIFACT_FILTER_LABEL[filter],
-      ...(counts[filter] > 0 && { badge: counts[filter] }),
+      badge: counts[filter],
     }))}
   />
 );

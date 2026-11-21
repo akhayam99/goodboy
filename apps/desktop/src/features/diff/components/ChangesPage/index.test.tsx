@@ -213,7 +213,7 @@ const toolbarOf = (): HTMLElement => {
   return toolbar;
 };
 
-const filterField = (): HTMLElement => screen.getByRole('searchbox', { name: 'Filter files' });
+const filterField = (): HTMLElement => screen.getByRole('searchbox', { name: 'Search files' });
 
 let useAppStore: StoryStore;
 

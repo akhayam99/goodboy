@@ -1,7 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
 import { StudioWidget } from '@goodboy/ui';
-import { StudioDetailTabs } from '@goodboy/ui';
 
 beforeEach(() => {
   localStorage.clear();
@@ -10,40 +9,6 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   localStorage.clear();
-});
-
-describe('StudioDetailTabs', () => {
-  it('switches section on click', () => {
-    const onChange = vi.fn();
-    render(
-      <StudioDetailTabs
-        ariaLabel="Issue sections"
-        value="overview"
-        onChange={onChange}
-        options={[
-          { value: 'overview', label: 'Overview' },
-          { value: 'conversation', label: 'Conversation' },
-        ]}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
-
-    expect(onChange).toHaveBeenCalledWith('conversation');
-  });
-
-  it('renders nothing when there is a single section', () => {
-    render(
-      <StudioDetailTabs
-        ariaLabel="Issue sections"
-        value="overview"
-        onChange={vi.fn()}
-        options={[{ value: 'overview', label: 'Overview' }]}
-      />,
-    );
-
-    expect(screen.queryByRole('tablist')).toBeNull();
-  });
 });
 
 describe('StudioWidget', () => {

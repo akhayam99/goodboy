@@ -119,7 +119,6 @@ export { StateBadge } from './components/StateBadge';
 export type { StateTone } from './components/StateBadge';
 export { ValueToken } from './components/ValueToken';
 export type { ValueTokenProps } from './components/ValueToken';
-export { StudioDetailTabs } from './components/StudioDetailTabs';
 export {
   STUDIO_RAIL_MAX,
   STUDIO_RAIL_MIN,
@@ -171,6 +170,7 @@ export type { SelectionConfirmProps } from './components/SelectionBar/SelectionC
 export type { CheckboxProps } from './components/Checkbox';
 export { Chip, chipClasses } from './components/Chip';
 export { CountBadge } from './components/CountBadge';
+export { MutedCount } from './components/MutedCount';
 export type { CountBadgeTone } from './components/CountBadge';
 export { COUNT_BADGE_CORNER } from './countBadgeCorner';
 export { countTextOf } from './countTextOf';

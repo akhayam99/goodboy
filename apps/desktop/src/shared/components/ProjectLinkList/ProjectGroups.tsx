@@ -3,6 +3,7 @@ import type { Project, WorkspaceId } from '@goodboy/types';
 import { SectionHeader, cn } from '@goodboy/ui';
 import { useFrozenOrder } from '../../hooks/useFrozenOrder';
 import { useProjectGitStatuses } from '../../../features/workspace/hooks/useProjectGitStatuses';
+import { NAMES } from '../../utils/names';
 import { GroupCount } from './GroupCount';
 import { groupProjects } from './groupProjects';
 import { ProjectLinkCompactRow } from './ProjectLinkCompactRow';
@@ -103,12 +104,12 @@ export const ProjectGroups = ({
       ) : null}
       {groups.all.length > 0 ? (
         <section
-          aria-label={hasStarred ? 'Other folders' : 'Projects'}
+          aria-label={hasStarred ? 'Other projects' : NAMES.projects}
           className="col-span-full grid grid-cols-subgrid gap-y-1"
         >
           {hasStarred ? (
             <SectionHeader
-              label="Other folders"
+              label="Other projects"
               headingLevel={2}
               meta={<GroupCount count={groups.all.length} />}
               className="col-span-full px-2"

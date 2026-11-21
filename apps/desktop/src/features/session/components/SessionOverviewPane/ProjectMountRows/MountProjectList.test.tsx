@@ -285,7 +285,7 @@ describe('MountProjectList groups', () => {
     );
 
     expect(screen.getByText('Starred')).toBeDefined();
-    expect(screen.getByText('Other folders')).toBeDefined();
+    expect(screen.getByText('Other projects')).toBeDefined();
     expect(screen.getAllByRole('button', { name: /^Add / })).toHaveLength(6);
   });
 
@@ -307,7 +307,7 @@ describe('MountProjectList groups', () => {
 
     expect(groupNames({ label: 'Starred' })).toEqual(['Add ledger-core']);
     expect(groupNames({ label: 'Recent' })).toEqual(['Add runbooks', 'Add cascadia-web']);
-    expect(groupNames({ label: 'Other folders' })).toEqual([
+    expect(groupNames({ label: 'Other projects' })).toEqual([
       'Add acme-infra',
       'Add notify-relay',
       'Add payments-api',
@@ -340,6 +340,6 @@ describe('MountProjectList groups', () => {
         onDone={vi.fn()}
       />,
     );
-    expect(screen.queryByText('Other folders')).toBeNull();
+    expect(screen.queryByText('Other projects')).toBeNull();
   });
 });

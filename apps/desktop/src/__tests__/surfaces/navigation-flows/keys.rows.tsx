@@ -322,7 +322,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'workspace.switcher',
-    lands: () => visible('textbox', 'Find a workspace or folder'),
+    lands: () => visible('searchbox', 'Search workspaces'),
   }),
   keyRow({
     id: 'workspace.1',
@@ -334,7 +334,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       await press('workspace.switcher')();
     },
     lands: async () => {
-      await visible('textbox', 'Find a workspace or folder');
+      await visible('searchbox', 'Search workspaces');
       const wanted = ['Harborline Labs', 'Acme', 'Cascadia', 'Northwind'];
       for (const [index, name] of wanted.entries()) {
         const id = brandId<ShortcutId>({ value: requireValue({ value: DIGIT_IDS[index] }) });
@@ -1344,7 +1344,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       seedWorkspaces();
       spawnedWindows.length = 0;
       await press('workspace.switcher')();
-      const field = await screen.findByRole('textbox', { name: 'Find a workspace or folder' });
+      const field = await screen.findByRole('searchbox', { name: 'Search workspaces' });
       field.focus();
       await pressed('composer.submit', field);
     },
@@ -2179,7 +2179,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('diff.focusFilterAlias', document.body);
     },
     lands: async () => {
-      const field = await screen.findByRole('searchbox', { name: 'Filter files' });
+      const field = await screen.findByRole('searchbox', { name: 'Search files' });
       expect(document.activeElement).toBe(field);
       expect(field.hasAttribute('data-diff-filter')).toBe(true);
     },

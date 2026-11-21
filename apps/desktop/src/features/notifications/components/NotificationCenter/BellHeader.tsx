@@ -1,4 +1,4 @@
-import { Button, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { Button, CountBadge, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import type { PopoverView, ScopeValue } from './bellTypes';
 
 type Elsewhere = {
@@ -34,23 +34,17 @@ export const BellHeader = ({
     {
       value: 'all',
       label: 'All workspaces',
-      badge:
-        elsewhere.count > 0 ? (
-          <span
-            data-bell-elsewhere={elsewhere.tone ?? 'warning'}
-            className="tabular-nums text-warning"
-          >
-            {elsewhere.count}
-          </span>
-        ) : undefined,
+      badge: (
+        <CountBadge
+          count={elsewhere.count}
+          tone={elsewhere.tone ?? 'warning'}
+          label={`${elsewhere.count} in other workspaces`}
+        />
+      ),
     },
   ];
   const viewOptions: ReadonlyArray<SegmentedTabOption<PopoverView>> = [
-    {
-      value: 'unread',
-      label: 'Unread',
-      badge: <span className="tabular-nums text-muted-foreground">{unread}</span>,
-    },
+    { value: 'unread', label: 'Unread', badge: unread },
     { value: 'all', label: 'All' },
   ];
   return (

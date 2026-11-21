@@ -68,7 +68,7 @@ export const ArtifactShellDrawer = ({ sessionId, artifactId, tab, onClose }: Pro
       action={
         <SegmentedTabs
           ariaLabel="Artifact panel"
-          size="sm"
+          size="xs"
           options={TABS}
           value={tab}
           onChange={(next) =>

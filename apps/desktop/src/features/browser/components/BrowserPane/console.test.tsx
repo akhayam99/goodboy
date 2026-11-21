@@ -256,12 +256,12 @@ describe('the browser console', () => {
 
     fireEvent.click(within(region).getByRole('button', { name: 'Filter by level' }));
     fireEvent.click(await screen.findByRole('menuitemradio', { name: 'All levels' }));
-    fireEvent.change(within(region).getByRole('searchbox', { name: 'Search the log' }), {
+    fireEvent.change(within(region).getByRole('searchbox', { name: 'Search messages' }), {
       target: { value: 'ledger' },
     });
     expect(shownLevels()).toEqual(['log ledger-core: confirm step mounted']);
 
-    fireEvent.change(within(region).getByRole('searchbox', { name: 'Search the log' }), {
+    fireEvent.change(within(region).getByRole('searchbox', { name: 'Search messages' }), {
       target: { value: 'zzz' },
     });
     within(region).getByText('Nothing matches the filter');

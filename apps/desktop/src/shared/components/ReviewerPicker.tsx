@@ -3,15 +3,16 @@ import {
   AnchoredPopover,
   Avatar,
   EmptyState,
-  ICON_SIZE,
   IconButton,
   PopoverPin,
+  SearchField,
   SelectableRow,
   Skeleton,
   useDropdown,
 } from '@goodboy/ui';
-import { Plus, Search } from '@goodboy/ui/icons';
+import { Plus } from '@goodboy/ui/icons';
 import type { PullRequestPerson } from '@goodboy/types';
+import { NAMES } from '../utils/names';
 import { CONCEPT_ICONS } from './conceptIcons';
 
 type Props = {
@@ -82,14 +83,13 @@ export const ReviewerPicker = ({
         />
       }
     >
-      <PopoverPin edge="start" className="flex items-center gap-2 px-2 py-1">
-        <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
-        <input
+      <PopoverPin edge="start" className="flex">
+        <SearchField
           autoFocus
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="filter collaborators"
-          className="w-full bg-transparent text-meta text-foreground outline-none placeholder:text-faint-foreground"
+          onChange={setQuery}
+          placeholder={NAMES.searchReviewers}
+          ariaLabel={NAMES.searchReviewers}
         />
       </PopoverPin>
       {isLoading ? (

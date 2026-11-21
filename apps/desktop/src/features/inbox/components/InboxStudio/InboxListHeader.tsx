@@ -4,7 +4,6 @@ import { X } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE, KbdPill, SearchField, SegmentedTabs } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { TaskListMenu } from '../../../actions/TaskListMenu';
 import type { TaskGroupBy } from '../../taskGroups';
 import type { TaskScope } from '../../taskListViewStorage';
 import { FilterButton } from '../../../../shared/components/FilterButton';
@@ -20,9 +19,6 @@ type Props = {
   readonly onScopeChange: (scope: TaskScope) => void;
   readonly groupBy: TaskGroupBy;
   readonly onGroupBy: (groupBy: TaskGroupBy) => void;
-  readonly isRefreshing: boolean;
-  readonly onRefresh: () => void;
-  readonly onManageTools: () => void;
   readonly activeFilterCount: number;
   readonly facets: ReactNode;
 };
@@ -42,33 +38,10 @@ export const InboxListHeader = ({
   onScopeChange,
   groupBy,
   onGroupBy,
-  isRefreshing,
-  onRefresh,
-  onManageTools,
   activeFilterCount,
   facets,
 }: Props) => (
-  <div className="flex min-w-0 items-center gap-2">
-    {sessionLabel != null ? (
-      <Chip
-        kind="state"
-        as="button"
-        tone="primary"
-        emphasis="strong"
-        icon={<CONCEPT_ICONS.sessions size={ICON_SIZE.row} aria-hidden className="shrink-0" />}
-        label={<span className="max-w-48 truncate">{`Session: ${sessionLabel}`}</span>}
-        trailing={<X size={ICON_SIZE.row} aria-hidden className="shrink-0" />}
-        ariaLabel={`Clear the session filter: ${sessionLabel}`}
-        onClick={onClearSession}
-      />
-    ) : null}
-    <SegmentedTabs
-      size="xs"
-      ariaLabel="Whose tasks"
-      options={SCOPE_OPTIONS}
-      value={scope}
-      onChange={onScopeChange}
-    />
+  <>
     <div className="flex w-[220px] min-w-0">
       <SearchField
         inputRef={searchRef}
@@ -92,6 +65,26 @@ export const InboxListHeader = ({
         className="min-w-0 flex-1"
       />
     </div>
+    {sessionLabel != null ? (
+      <Chip
+        kind="state"
+        as="button"
+        tone="primary"
+        emphasis="strong"
+        icon={<CONCEPT_ICONS.sessions size={ICON_SIZE.row} aria-hidden className="shrink-0" />}
+        label={<span className="max-w-48 truncate">{`Session: ${sessionLabel}`}</span>}
+        trailing={<X size={ICON_SIZE.row} aria-hidden className="shrink-0" />}
+        ariaLabel={`Clear the session filter: ${sessionLabel}`}
+        onClick={onClearSession}
+      />
+    ) : null}
+    <SegmentedTabs
+      size="xs"
+      ariaLabel="Whose tasks"
+      options={SCOPE_OPTIONS}
+      value={scope}
+      onChange={onScopeChange}
+    />
     <FilterButton
       popoverLabel="Task filters"
       activeCount={activeFilterCount}
@@ -99,6 +92,5 @@ export const InboxListHeader = ({
       popoverHeight={520}
     />
     <TasksGroupByMenu groupBy={groupBy} onGroupBy={onGroupBy} />
-    <TaskListMenu facts={{ isRefreshing, onRefresh, onManageTools }} />
-  </div>
+  </>
 );

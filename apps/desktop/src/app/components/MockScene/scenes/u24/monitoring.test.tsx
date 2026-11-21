@@ -112,7 +112,7 @@ describe('the monitoring scenes', () => {
   it('narrows the rows by port and by project name', async () => {
     renderScene('monitoring-ports');
     await waitFor(() => expect(hasPortRow(5005)).toBe(true));
-    const filter = screen.getByRole('searchbox', { name: 'Filter ports' });
+    const filter = screen.getByRole('searchbox', { name: 'Search ports' });
 
     fireEvent.change(filter, { target: { value: '5002' } });
     fireEvent.click(screen.getByRole('button', { name: '1 free: :5002' }));
@@ -195,7 +195,7 @@ describe('the monitoring scenes', () => {
 
     expect(screen.getByText(/^Ports opened by agents, terminals and scripts/)).toBeDefined();
     expect(screen.getByText('Nothing tracked')).toBeDefined();
-    expect(screen.queryByRole('searchbox', { name: 'Filter ports' })).toBeNull();
+    expect(screen.queryByRole('searchbox', { name: 'Search ports' })).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Pin a port' })).toHaveLength(1);
 
     expect(screen.getByRole('button', { name: 'Pin a port' })).toBeDefined();

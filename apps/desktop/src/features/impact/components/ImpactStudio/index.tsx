@@ -95,7 +95,8 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
   const frame: PaneFrame = {
     title: 'Impact',
     meta,
-    actions: (
+    actions: null,
+    toolbar: (
       <SegmentedTabs
         ariaLabel="Impact window"
         options={IMPACT_WINDOW_OPTIONS}

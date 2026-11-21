@@ -10,7 +10,6 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { SESSION_PAGE_INTRO } from '../../../../../features/session/sessionPageIntro';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -57,14 +56,6 @@ const mount = async ({ name }: MountParams): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const headerOf = (): HTMLElement => {
-  const header = document.querySelector<HTMLElement>('[data-slot="pane-header"]');
-  if (header === null) {
-    throw new Error('no page header');
-  }
-  return header;
-};
-
 const currentPage = (): string | null =>
   document.querySelector('[role="tablist"][aria-label="Session pages"] [aria-selected="true"]')
     ?.textContent ?? null;
@@ -108,14 +99,14 @@ type IntroParams = {
   readonly title: string;
 };
 
-const expectIntro = ({ page, title }: IntroParams) => {
-  const header = headerOf();
-  expect(within(header).queryByRole('heading', { level: 1, name: title })).toBeNull();
-  const intro = header.querySelector<HTMLElement>('[data-slot="session-page-intro"]');
-  expect(intro?.dataset.page).toBe(page);
-  expect([...(intro?.querySelectorAll('p') ?? [])].map((line) => line.textContent)).toEqual([
-    ...SESSION_PAGE_INTRO[page],
-  ]);
+const expectNoIntro = ({ page, title }: IntroParams) => {
+  const header = document.querySelector<HTMLElement>('[data-slot="pane-header"]');
+  if (header !== null) {
+    expect(within(header).queryByRole('heading', { level: 1, name: title })).toBeNull();
+  }
+  expect(
+    document.querySelector(`[data-slot="session-page-intro"][data-page="${page}"]`),
+  ).toBeNull();
   expect(currentPage()).toContain(title);
 };
 
@@ -126,10 +117,10 @@ describe('the u26 session page intro scenes', () => {
     }
   });
 
-  it.each(CASES)('$content shows the $page intro in the header over its rows', async (entry) => {
+  it.each(CASES)('$content shows the $page rows with no intro line', async (entry) => {
     await mount({ name: entry.content });
 
-    expectIntro({ page: entry.page, title: entry.title });
+    expectNoIntro({ page: entry.page, title: entry.title });
     expect(screen.getAllByText(entry.row).length).toBeGreaterThan(0);
     for (const row of FOLDED_ROWS) {
       expect(screen.getAllByText(row).length, row).toBeGreaterThan(0);
@@ -137,11 +128,11 @@ describe('the u26 session page intro scenes', () => {
   });
 
   it.each(CASES)(
-    '$empty keeps the intro and the Start a run field as its empty state',
+    '$empty keeps the Start a run field as its empty state, with no intro line',
     async (entry) => {
       await mount({ name: entry.empty });
 
-      expectIntro({ page: entry.page, title: entry.title });
+      expectNoIntro({ page: entry.page, title: entry.title });
       expect(screen.getByRole('textbox', { name: entry.emptyTitle })).toBeDefined();
       if (entry.emptyAction !== null) {
         expect(screen.getByRole('button', { name: entry.emptyAction })).toBeDefined();

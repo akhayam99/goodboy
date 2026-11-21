@@ -288,7 +288,7 @@ describe('the empty page', () => {
       ),
     ).toBeDefined();
     expect(screen.getByText('Nothing tracked')).toBeDefined();
-    expect(screen.queryByRole('searchbox', { name: 'Filter ports' })).toBeNull();
+    expect(screen.queryByRole('searchbox', { name: 'Search ports' })).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Pin a port' })).toHaveLength(1);
   });
 });

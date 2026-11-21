@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { X } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE, Listbox } from '@goodboy/ui';
 import type { Project, ProjectId } from '@goodboy/types';
+import { NAMES } from '../../utils/names';
 
 import { projectPickerOptions } from './projectPickerOptions';
 import { ProjectStarHint } from './ProjectStarHint';
@@ -20,7 +21,7 @@ export const ProjectPicker = ({
   projects,
   value,
   isDisabled = false,
-  emptyValueLabel = 'No folder',
+  emptyValueLabel = 'No project',
   onChange,
 }: Props) => {
   const recentIds = useRecentProjectIds({ workspaceId: projects[0]?.workspaceId ?? null });
@@ -35,15 +36,15 @@ export const ProjectPicker = ({
     <div className="flex min-w-0 flex-col gap-2">
       <Listbox
         multiple
-        ariaLabel="Folder"
+        ariaLabel={NAMES.projects}
         size="sm"
         isBlock
         popupWidth="trigger"
         searchable
-        searchLabel="Search folders"
-        searchPlaceholder="Search folders"
-        emptyLabel="No folders in this workspace"
-        noMatchLabel="No folders match"
+        searchLabel={NAMES.searchProjects}
+        searchPlaceholder={NAMES.searchProjects}
+        emptyLabel="No projects in this workspace"
+        noMatchLabel="No projects match"
         options={options}
         value={value}
         disabled={isDisabled}

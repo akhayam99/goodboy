@@ -71,14 +71,6 @@ type SourceTrailingParams = {
   readonly error: string | null;
 };
 
-type ZeroParams = {
-  readonly count: number;
-};
-
-const ZERO_COUNT = <span aria-hidden />;
-
-const zeroTrailing = ({ count }: ZeroParams) => (count === 0 ? ZERO_COUNT : undefined);
-
 const sourceTrailing = ({ isLoading, error }: SourceTrailingParams) => {
   if (error != null) {
     return (
@@ -129,12 +121,10 @@ export const InboxFacetRail = ({
               glyph={<IntegrationGlyph provider={provider} size="xs" useBrandColor />}
               label={integrationLabel({ provider })}
               count={counts.source[provider]}
-              trailing={
-                sourceTrailing({
-                  isLoading: loading[provider],
-                  error: errors[provider],
-                }) ?? zeroTrailing({ count: counts.source[provider] })
-              }
+              trailing={sourceTrailing({
+                isLoading: loading[provider],
+                error: errors[provider],
+              })}
               isSelected={filters.source === provider}
               onClick={() =>
                 change({
@@ -153,7 +143,6 @@ export const InboxFacetRail = ({
             icon={VIEW_PRESENTATION[view].icon}
             label={VIEW_PRESENTATION[view].label}
             count={counts.view[view]}
-            trailing={zeroTrailing({ count: counts.view[view] })}
             isSelected={filters.view === view}
             onClick={() => change({ ...filters, view: filters.view === view ? 'all' : view })}
           />
@@ -167,7 +156,6 @@ export const InboxFacetRail = ({
               icon={TYPE_PRESENTATION[type].icon}
               label={TYPE_PRESENTATION[type].label}
               count={counts.kind[type]}
-              trailing={zeroTrailing({ count: counts.kind[type] })}
               isSelected={filters.kind === type}
               onClick={() => change({ ...filters, kind: filters.kind === type ? 'all' : type })}
             />

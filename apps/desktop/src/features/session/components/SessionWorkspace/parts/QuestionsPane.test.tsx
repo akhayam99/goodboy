@@ -236,7 +236,7 @@ describe('QuestionsPane', () => {
     screen.getByText("Agents bring you the choices they can't make.");
   });
 
-  it('lists Needs you then Answered on one grid, each counted from two', () => {
+  it('lists Needs you then Answered on one grid, each counted from one', () => {
     setup({ answered: [ANSWERED_A1] });
     const headings = screen.getAllByRole('heading', { level: 2 }).map((node) => node.textContent);
     expect(headings).toEqual(['Needs you', 'Answered']);
@@ -244,7 +244,7 @@ describe('QuestionsPane', () => {
       Array.from(document.querySelectorAll('[data-list-grid-count]')).map(
         (node) => node.textContent,
       ),
-    ).toEqual(['3']);
+    ).toEqual(['3', '1']);
     expect(document.querySelectorAll('[data-list-grid]')).toHaveLength(2);
     expect(within(group('Needs you')).getAllByRole('button')).toHaveLength(3);
     expect(within(group('Answered')).queryAllByRole('button')).toHaveLength(0);

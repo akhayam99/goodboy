@@ -10,7 +10,6 @@ vi.mock('@tauri-apps/api/event', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
-import { SESSION_PAGE_INTRO } from '../../../../../../features/session/sessionPageIntro';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -104,14 +103,11 @@ describe('the u31 pages scenes', () => {
     }
   });
 
-  it('u31-runs leads with one lede line under the title', async () => {
+  it('u31-runs draws no intro line under the tabs', async () => {
     const { container } = mount({ name: 'u31-runs' });
 
     await screen.findByRole('heading', { level: 2, name: 'Running' }, WAIT);
-    const intro = container.querySelector<HTMLElement>('[data-slot="session-page-intro"]');
-    expect([...(intro?.querySelectorAll('p') ?? [])].map((line) => line.textContent)).toEqual([
-      ...SESSION_PAGE_INTRO.runs,
-    ]);
+    expect(container.querySelector('[data-slot="session-page-intro"]')).toBeNull();
   });
 
   it('u31-runs-run names the Steps and lists every step under it', async () => {

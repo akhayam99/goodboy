@@ -617,7 +617,7 @@ only drop under zoom.
 
 - Workspace identity opens an anchored popover that switches and creates
   workspaces. ⌘O opens that same popover, never a second one, and the palette
-  lists workspaces as rows of its own. `Find a workspace or folder` filters by
+  lists workspaces as rows of its own. `Search workspaces` filters by
   workspace name and by folder path. The current workspace row carries its
   folder count (`folderCountLabel`, "3 projects"), **Add project** (the folder
   picker, a repository or a plain folder, then an undo toast) and **Manage

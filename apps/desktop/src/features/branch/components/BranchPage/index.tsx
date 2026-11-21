@@ -426,7 +426,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
             <div
               ref={setTabActionsSlot}
               data-slot="branch-tab-actions"
-              className="flex min-h-9 min-w-0 shrink-0 items-center justify-end gap-2 empty:hidden"
+              className="flex min-h-9 min-w-0 shrink-0 flex-wrap items-center gap-2 empty:hidden"
             />
           </div>
         }

@@ -7,6 +7,7 @@ import { projectPickerOptions } from '../../../../../shared/components/ProjectPi
 import { ProjectStarHint } from '../../../../../shared/components/ProjectPicker/ProjectStarHint';
 import { useProjectStarToggle } from '../../../../../shared/components/ProjectPicker/useProjectStarToggle';
 import { useRecentProjectIds } from '../../../../../shared/components/ProjectPicker/useRecentProjectIds';
+import { NAMES } from '../../../../../shared/utils/names';
 import { START_KIND_COPY } from '../../../startKind/startKindCopy';
 import { START_PICK_TRIGGER } from '../startPickTrigger';
 import { useDraftProjects } from './useDraftProjects';
@@ -61,10 +62,10 @@ export const WhereChip = ({ workspaceId, match, isDisabled }: Props) => {
       ariaLabel={START_KIND_COPY.where.label}
       size="sm"
       searchable
-      searchLabel="Search folders"
-      searchPlaceholder="Search folders"
-      emptyLabel="No folders in this workspace"
-      noMatchLabel="No folders match"
+      searchLabel={NAMES.searchProjects}
+      searchPlaceholder={NAMES.searchProjects}
+      emptyLabel="No projects in this workspace"
+      noMatchLabel="No projects match"
       options={options}
       value={projectIds}
       disabled={isDisabled}

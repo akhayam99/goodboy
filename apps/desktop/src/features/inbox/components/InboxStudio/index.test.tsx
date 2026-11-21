@@ -910,7 +910,7 @@ describe('InboxStudio at scale', () => {
 
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Group: Source' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Group by: Source' }));
     expect(screen.getByRole('menuitemradio', { name: 'Source' }).getAttribute('aria-checked')).toBe(
       'true',
     );

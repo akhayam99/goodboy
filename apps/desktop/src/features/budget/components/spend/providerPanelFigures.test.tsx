@@ -8,7 +8,7 @@ import { ProviderPanel } from './ProviderPanel';
 
 const OK: QueryResult<void> = { data: null, error: null };
 
-const FRAME = { title: 'Impact', meta: null, actions: null, tabs: null };
+const FRAME = { title: 'Impact', meta: null, actions: null, toolbar: null, tabs: null };
 
 type RenderParams = {
   readonly spentUsd: number;

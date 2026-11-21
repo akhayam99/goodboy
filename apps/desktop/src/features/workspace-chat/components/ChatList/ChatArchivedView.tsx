@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Search } from '@goodboy/ui/icons';
-import { Button, ICON_SIZE, ScrollFade, tintClasses } from '@goodboy/ui';
+import { Button, ScrollFade, SearchField, tintClasses } from '@goodboy/ui';
 import type { ChatId, ChatSummary } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioTrail } from '../../../../shared/components/StudioShell/StudioTrail';
@@ -55,17 +54,12 @@ export const ChatArchivedView = ({
         ]}
       />
       <h2 className="text-heading text-foreground">Archived</h2>
-      <label className="flex h-7 items-center gap-2 rounded-md border border-border-soft px-2 text-faint-foreground focus-within:border-border">
-        <Search size={ICON_SIZE.row} aria-hidden />
-        <input
-          type="text"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search archived"
-          aria-label="Search archived"
-          className="min-w-0 flex-1 bg-transparent text-meta text-foreground outline-none placeholder:text-faint-foreground"
-        />
-      </label>
+      <SearchField
+        value={query}
+        onChange={setQuery}
+        placeholder="Search archived chats"
+        ariaLabel="Search archived chats"
+      />
       <ScrollFade className="flex-1">
         <nav aria-label="Archived chats" className="flex flex-col gap-0.5 pb-3 pr-4">
           {shown.length === 0 ? (
