@@ -38,6 +38,7 @@ const rowOf = (phraseCommand: string): LiveWorkRow => ({
   quietMs: 0,
   tool: { name: 'Bash', command: phraseCommand, path: null },
   hasToolCall: true,
+  canSeeTools: true,
 });
 
 const flush = async () => {
@@ -136,5 +137,29 @@ describe('useWorkOf', () => {
     });
     expect(result.current.hasFailed).toBe(false);
     expect(result.current.work[0]?.phrase).toBe('Running pnpm lint');
+  });
+
+  it('keeps a newer failure visible when an older answer is still queued', async () => {
+    state.read = vi.fn(async () => [rowOf('pnpm test')]);
+    const { result } = renderHook(() => useWorkOf({ sessionId: 'session-1' }));
+    await flush();
+    state.read = vi.fn(async () => [rowOf('pnpm lint')]);
+    await act(async () => {
+      state.onChange?.({ change: { sessionId: 'session-1', mountId: null } });
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    state.read = vi.fn(async () => {
+      throw new Error('read failed');
+    });
+    await act(async () => {
+      state.onChange?.({ change: { sessionId: 'session-1', mountId: null } });
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.hasFailed).toBe(true);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(result.current.hasFailed).toBe(true);
+    expect(result.current.work[0]?.phrase).toBe('Running pnpm test');
   });
 });

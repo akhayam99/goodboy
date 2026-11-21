@@ -1,12 +1,4 @@
-use std::sync::Arc;
-
 use super::*;
-
-fn line(text: &str) -> TurnEventPayload {
-    TurnEventPayload::Line {
-        line: Arc::from(text),
-    }
-}
 
 fn turn(run_id: &str, pid: u32) -> LiveTurn {
     LiveTurn {
@@ -35,13 +27,17 @@ fn entry(pid: u32, session_id: &str, mount_id: Option<&str>, started_at: u64) ->
     }
 }
 
-fn sight_after(lines: &[&str]) -> ToolSight {
-    let backlog = TurnBacklog::default();
-    backlog.open("run-1");
+fn tracker_after(binary: &str, lines: &[&str]) -> ToolTracker {
+    let tracker = ToolTracker::default();
+    tracker.begin("run-1", can_see_tools_of(binary));
     for text in lines {
-        backlog.record("run-1", line(text));
+        tracker.feed("run-1", text);
     }
-    ToolTracker::default().sight(&backlog, "run-1")
+    tracker
+}
+
+fn sight_after(lines: &[&str]) -> ToolSight {
+    tracker_after("claude", lines).sight("run-1")
 }
 
 const CLAUDE_BASH: &str = r#"{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_1","name":"Bash","input":{"command":"pnpm test retry"}}]}}"#;
@@ -150,48 +146,157 @@ fn a_line_that_is_not_json_is_skipped() {
 }
 
 #[test]
-fn a_second_read_only_reads_the_new_lines() {
-    let backlog = TurnBacklog::default();
-    backlog.open("run-1");
-    backlog.record("run-1", line(CLAUDE_BASH));
-    let tracker = ToolTracker::default();
-    assert!(tracker.sight(&backlog, "run-1").tool.is_some());
+fn a_later_line_closes_the_call_an_earlier_read_saw_open() {
+    let tracker = tracker_after("claude", &[CLAUDE_BASH]);
+    assert!(tracker.sight("run-1").tool.is_some());
 
-    backlog.record("run-1", line(CLAUDE_BASH_DONE));
+    tracker.feed("run-1", CLAUDE_BASH_DONE);
 
-    assert_eq!(tracker.sight(&backlog, "run-1").tool, None);
-    assert_eq!(
-        lock_or_recover(&tracker.0)
-            .get("run-1")
-            .map(|state| state.after_seq),
-        Some(2)
-    );
-}
-
-#[test]
-fn a_backlog_with_a_gap_never_claims_no_tool_call() {
-    let backlog = TurnBacklog::default();
-    backlog.open("run-1");
-    let big = "x".repeat(crate::turn_backlog::MAX_RUN_BACKLOG_BYTES / 2 + 1);
-    backlog.record("run-1", line(&big));
-    backlog.record("run-1", line(&big));
-    backlog.record("run-1", line(CLAUDE_TEXT));
-
-    let sight = ToolTracker::default().sight(&backlog, "run-1");
-
-    assert!(sight.has_tool_call);
+    assert_eq!(tracker.sight("run-1").tool, None);
 }
 
 #[test]
 fn an_ended_run_is_forgotten_by_the_tracker() {
-    let backlog = TurnBacklog::default();
-    backlog.open("run-1");
-    let tracker = ToolTracker::default();
-    tracker.sight(&backlog, "run-1");
+    let tracker = tracker_after("claude", &[CLAUDE_BASH]);
 
     tracker.keep(&[turn("run-2", 20)]);
 
     assert!(lock_or_recover(&tracker.0).is_empty());
+}
+
+#[test]
+fn a_run_that_ended_is_dropped_on_its_own() {
+    let tracker = tracker_after("claude", &[CLAUDE_BASH]);
+
+    tracker.forget("run-1");
+
+    assert_eq!(tracker.sight("run-1"), ToolSight::default());
+}
+
+#[test]
+fn a_codex_patch_completion_counts_as_a_tool_call() {
+    let patch = r#"{"type":"item.completed","item":{"id":"item_3","type":"apply_patch","changes":[{"path":"src/ledger/export.ts","kind":"modify"}]}}"#;
+    let change = r#"{"type":"item.completed","item":{"id":"item_4","type":"file_change"}}"#;
+
+    assert!(
+        tracker_after("codex", &[patch])
+            .sight("run-1")
+            .has_tool_call
+    );
+    assert!(
+        tracker_after("codex", &[change])
+            .sight("run-1")
+            .has_tool_call
+    );
+}
+
+#[test]
+fn a_text_frame_that_only_mentions_a_tool_is_not_tool_work() {
+    let tracker = tracker_after("claude", &[]);
+    let nested = r#"{"type":"assistant","parent_tool_use_id":"toolu_1","message":{"content":[{"type":"text","text":"the tool is fine"}]}}"#;
+    let mention = r#"{"type":"assistant","message":{"content":[{"type":"text","text":"run the tool_use block"}]}}"#;
+
+    assert!(!tracker.feed("run-1", nested));
+    assert!(!tracker.feed("run-1", mention));
+    assert!(!tracker.feed("run-1", CLAUDE_TEXT));
+    assert!(tracker.feed("run-1", CLAUDE_BASH));
+    assert!(tracker.feed("run-1", CLAUDE_BASH_DONE));
+}
+
+#[test]
+fn a_tool_start_split_over_lines_is_assembled() {
+    let sight = sight_after(&[
+        r#"{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_7","name":"Bash","input":"#,
+        r#"{"command":"pnpm test retry"}}]}}"#,
+    ]);
+
+    assert_eq!(
+        sight.tool.and_then(|tool| tool.command),
+        Some("pnpm test retry".to_string())
+    );
+}
+
+#[test]
+fn a_raw_newline_inside_a_string_is_accepted() {
+    let sight = sight_after(&[
+        "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_8\",\"name\":\"Bash\",\"input\":{\"command\":\"cd ledger-core",
+        "pnpm test\"}}]}}",
+    ]);
+
+    assert_eq!(
+        sight.tool.and_then(|tool| tool.command),
+        Some("cd ledger-core\npnpm test".to_string())
+    );
+}
+
+#[test]
+fn a_split_result_closes_its_call() {
+    let sight = sight_after(&[
+        CLAUDE_BASH,
+        r#"{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"toolu_1","content":"a"#,
+        r#"b"}]}}"#,
+    ]);
+
+    assert_eq!(sight.tool, None);
+    assert!(sight.has_tool_call);
+}
+
+#[test]
+fn the_held_lines_are_bounded() {
+    let tracker = tracker_after("claude", &[]);
+
+    tracker.feed("run-1", r#"{"type":"assistant","message":{"content":["#);
+    for _ in 0..200 {
+        tracker.feed("run-1", "noise");
+    }
+
+    let held = lock_or_recover(&tracker.0)
+        .get("run-1")
+        .map(|state| state.assembler.held_lines());
+    assert_eq!(held, Some(0));
+    assert!(tracker.feed("run-1", CLAUDE_BASH));
+}
+
+#[test]
+fn a_cursor_call_opens_and_closes_by_its_call_id() {
+    let started = r#"{"type":"tool_call","subtype":"started","call_id":"call_1"}"#;
+    let completed = r#"{"type":"tool_call","subtype":"completed","call_id":"call_1"}"#;
+    let tracker = tracker_after("cursor-agent", &[started]);
+
+    let open = tracker.sight("run-1");
+    tracker.feed("run-1", completed);
+    let done = tracker.sight("run-1");
+
+    assert_eq!(
+        open.tool,
+        Some(WorkTool {
+            name: "tool".to_string(),
+            command: None,
+            path: None,
+        })
+    );
+    assert!(open.has_tool_call);
+    assert_eq!(done.tool, None);
+    assert!(done.has_tool_call);
+}
+
+#[test]
+fn only_providers_that_stream_tool_frames_can_be_seen() {
+    assert!(can_see_tools_of("claude"));
+    assert!(can_see_tools_of("/usr/local/bin/codex"));
+    assert!(can_see_tools_of("cursor-agent"));
+    assert!(can_see_tools_of("copilot"));
+    assert!(can_see_tools_of("opencode"));
+    assert!(!can_see_tools_of("agy"));
+    assert!(!can_see_tools_of("some-wrapper"));
+}
+
+#[test]
+fn a_run_of_an_unseen_provider_never_claims_no_tool_call() {
+    let sight = tracker_after("agy", &[CLAUDE_TEXT]).sight("run-1");
+
+    assert!(!sight.can_see_tools);
+    assert!(!sight.has_tool_call);
 }
 
 #[test]
@@ -208,13 +313,14 @@ fn one_row_per_live_run_with_session_agent_mount_and_last_tool() {
         quiet_ms: 4_000,
     }];
 
-    let rows = rows_of(&turns, &ledger, &quiet, |run_id| ToolSight {
+    let rows = rows_of(&turns, &ledger, &quiet, None, |run_id| ToolSight {
         tool: (run_id == "run-a").then(|| WorkTool {
             name: "Bash".to_string(),
             command: Some("pnpm test retry".to_string()),
             path: None,
         }),
         has_tool_call: run_id == "run-a",
+        can_see_tools: true,
     });
 
     assert_eq!(rows.len(), 2);
@@ -232,7 +338,7 @@ fn one_row_per_live_run_with_session_agent_mount_and_last_tool() {
 
 #[test]
 fn a_run_the_ledger_does_not_know_keeps_its_row_without_a_session() {
-    let rows = rows_of(&[turn("run-a", 10)], &HashMap::new(), &[], |_| {
+    let rows = rows_of(&[turn("run-a", 10)], &HashMap::new(), &[], None, |_| {
         ToolSight::default()
     });
 
@@ -249,6 +355,7 @@ fn the_row_wire_shape_is_camel_case() {
             .into_iter()
             .collect(),
         &[],
+        None,
         |_| ToolSight::default(),
     );
 
@@ -257,6 +364,7 @@ fn the_row_wire_shape_is_camel_case() {
     assert_eq!(wire["runId"], "run-a");
     assert_eq!(wire["sessionId"], "session-1");
     assert_eq!(wire["hasToolCall"], false);
+    assert_eq!(wire["canSeeTools"], false);
     assert!(wire["mountId"].is_null());
     assert!(wire["tool"].is_null());
 }
@@ -345,10 +453,59 @@ fn the_event_wire_shape_names_session_and_mount() {
 }
 
 #[test]
-fn only_tool_shaped_lines_wake_the_pulse() {
-    assert!(is_tool_line(CLAUDE_BASH));
-    assert!(is_tool_line(
-        r#"{"type":"item.started","item":{"type":"command_execution"}}"#
+fn a_session_read_builds_sight_only_for_its_own_rows() {
+    let turns = [turn("run-a", 10), turn("run-b", 20)];
+    let ledger: HashMap<u32, LedgerEntry> = [
+        (10, entry(10, "session-1", None, 100)),
+        (20, entry(20, "session-2", None, 200)),
+    ]
+    .into_iter()
+    .collect();
+    let looked = std::cell::RefCell::new(Vec::new());
+
+    let rows = rows_of(&turns, &ledger, &[], Some("session-2"), |run_id| {
+        looked.borrow_mut().push(run_id.to_string());
+        ToolSight::default()
+    });
+
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].run_id, "run-b");
+    assert_eq!(*looked.borrow(), vec!["run-b".to_string()]);
+}
+
+fn sample(at: Instant, run_ids: &[&str]) -> QuietSample {
+    QuietSample {
+        at,
+        covers: run_ids.iter().map(|id| id.to_string()).collect(),
+        rows: Vec::new(),
+    }
+}
+
+#[test]
+fn a_fresh_quiet_sample_is_shared_by_every_reader() {
+    let start = Instant::now();
+    let shared = sample(start, &["run-a", "run-b"]);
+
+    assert!(is_shared(
+        &shared,
+        &[turn("run-a", 10), turn("run-b", 20)],
+        start + Duration::from_millis(100)
     ));
-    assert!(!is_tool_line(CLAUDE_TEXT));
+}
+
+#[test]
+fn a_stale_or_short_quiet_sample_is_measured_again() {
+    let start = Instant::now();
+    let shared = sample(start, &["run-a"]);
+
+    assert!(!is_shared(
+        &shared,
+        &[turn("run-a", 10)],
+        start + QUIET_SHARED_FOR
+    ));
+    assert!(!is_shared(
+        &shared,
+        &[turn("run-a", 10), turn("run-b", 20)],
+        start + Duration::from_millis(100)
+    ));
 }

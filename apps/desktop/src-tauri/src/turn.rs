@@ -493,6 +493,7 @@ fn spawn_one<E: TurnEmitter>(
             session_id: session_id.to_string(),
             mount_id: args.mount_id.map(str::to_string),
         });
+    crate::live_work::begin_run(args.run_id, args.binary);
     crate::live_work::mark(scope.as_ref());
 
     let helper_root = crate::proc::provider_helpers::install_root(args.binary);
@@ -529,6 +530,7 @@ fn spawn_one<E: TurnEmitter>(
             });
             backlog_clone.finish(&run_id_owned);
         }
+        crate::live_work::end_run(&run_id_owned);
         drop(lease_guards);
         drop(turn_process);
     });
@@ -819,7 +821,7 @@ impl<E: TurnEmitter> EventSink for TurnSink<'_, E> {
             return;
         }
         let is_work_change = match &event {
-            TurnEventPayload::Line { line } => crate::live_work::is_tool_line(line),
+            TurnEventPayload::Line { line } => crate::live_work::track_line(self.run_id, line),
             _ => true,
         };
         let seq = self.backlog.record(self.run_id, event.clone());

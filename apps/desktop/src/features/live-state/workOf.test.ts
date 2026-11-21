@@ -13,6 +13,7 @@ const row = (patch: Partial<LiveWorkRow>): LiveWorkRow => ({
   quietMs: 4000,
   tool: { name: 'Bash', command: 'pnpm test retry --watch', path: null },
   hasToolCall: true,
+  canSeeTools: true,
   ...patch,
 });
 
@@ -52,6 +53,15 @@ describe('workOf', () => {
       sessionTitles: titles,
     });
     expect(work?.phrase).toBe('Writing the answer');
+  });
+
+  it('says only that it works for a provider whose tool calls cannot be seen', () => {
+    const [work] = workOf({
+      rows: [row({ tool: null, hasToolCall: false, canSeeTools: false })],
+      mountNames: names,
+      sessionTitles: titles,
+    });
+    expect(work?.phrase).toBe('Working');
   });
 
   it('returns no work for no rows', () => {

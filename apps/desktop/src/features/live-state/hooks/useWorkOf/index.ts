@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../../../store';
-import { createLatestOnly } from '../../../../store/runtime/state-writes/latestOnly';
+import {
+  createLatestOnly,
+  type LatestClaim,
+} from '../../../../store/runtime/state-writes/latestOnly';
 import { selectSessionById } from '../../../../store/slices/sessions/selectSessionById';
 import { usePoll } from '../../../../shared/lib/usePoll';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
@@ -16,14 +19,20 @@ type Params = {
   readonly sessionId: string;
 };
 
+type Queued = Readonly<{
+  rows: ReadonlyArray<LiveWorkRow>;
+  claim: LatestClaim;
+}>;
+
 type Pace = {
   at: number;
   timer: ReturnType<typeof setTimeout> | null;
-  next: ReadonlyArray<LiveWorkRow> | null;
+  next: Queued | null;
 };
 
 type ApplyParams = {
   readonly next: ReadonlyArray<LiveWorkRow>;
+  readonly claim: LatestClaim;
 };
 
 export type SessionWork = Readonly<{
@@ -43,9 +52,9 @@ export const useWorkOf = ({ sessionId }: Params): SessionWork => {
   const mounts = useAppStore((state) => state.sessionProjectMounts[sessionId]);
   const goal = useAppStore((state) => selectSessionById(state, sessionId)?.goal ?? null);
 
-  const apply = useCallback(({ next }: ApplyParams) => {
+  const apply = useCallback(({ next, claim }: ApplyParams) => {
     const current = pace.current;
-    current.next = next;
+    current.next = { rows: next, claim };
     if (current.timer !== null) {
       return;
     }
@@ -54,10 +63,10 @@ export const useWorkOf = ({ sessionId }: Params): SessionWork => {
       current.at = Date.now();
       const value = current.next;
       current.next = null;
-      if (value === null) {
+      if (value === null || !value.claim.isCurrent()) {
         return;
       }
-      setRows(value);
+      setRows(value.rows);
       setIsLoaded(true);
       setHasFailed(false);
     };
@@ -74,7 +83,7 @@ export const useWorkOf = ({ sessionId }: Params): SessionWork => {
     try {
       const next = await readLiveWork({ sessionId });
       if (claim.isCurrent()) {
-        apply({ next });
+        apply({ next, claim });
       }
     } catch {
       if (claim.isCurrent()) {

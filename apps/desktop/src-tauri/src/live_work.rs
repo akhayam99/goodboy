@@ -8,14 +8,19 @@ use serde_json::Value;
 use tauri::State;
 
 use crate::proc::ledger::LedgerEntry;
-use crate::turn::{TurnEmitter, TurnError, TurnEventPayload, TurnRegistry};
-use crate::turn_backlog::TurnBacklog;
+use crate::turn::{TurnEmitter, TurnError, TurnRegistry};
 use crate::turn_quiet::{LiveTurn, TurnQuiet};
 use crate::util::lock_or_recover;
+
+use self::assemble::LineAssembler;
+
+mod assemble;
 
 pub const EVENT_NAME: &str = "work-changed";
 pub const PULSE_EVERY: Duration = Duration::from_secs(1);
 const FLUSH_EVERY: Duration = Duration::from_millis(250);
+const QUIET_SHARED_FOR: Duration = Duration::from_millis(500);
+const SIGHTED_BINARIES: &[&str] = &["claude", "codex", "cursor-agent", "copilot", "opencode"];
 const PATH_KEYS: &[&str] = &[
     "file_path",
     "path",
@@ -45,6 +50,7 @@ pub struct WorkRow {
     pub quiet_ms: Option<u64>,
     pub tool: Option<WorkTool>,
     pub has_tool_call: bool,
+    pub can_see_tools: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -70,6 +76,7 @@ enum ToolFrame {
 struct ToolSight {
     tool: Option<WorkTool>,
     has_tool_call: bool,
+    can_see_tools: bool,
 }
 
 fn text_at<'a>(value: &'a Value, path: &[&str]) -> Option<&'a str> {
@@ -190,37 +197,49 @@ fn opencode_frames(part: &Value) -> Vec<ToolFrame> {
     frames
 }
 
-pub(crate) fn is_tool_line(line: &str) -> bool {
-    line.contains("tool") || line.contains("command_execution")
-}
-
-fn frames_of(line: &str) -> Vec<ToolFrame> {
-    if !is_tool_line(line) {
-        return Vec::new();
-    }
-    let Ok(value) = serde_json::from_str::<Value>(line.trim()) else {
+fn cursor_frames(value: &Value) -> Vec<ToolFrame> {
+    let Some(id) = text_at(value, &["call_id"]).map(str::to_string) else {
         return Vec::new();
     };
+    match text_at(value, &["subtype"]) {
+        Some("started") => vec![ToolFrame::Start {
+            id,
+            tool: tool_of("tool", None),
+        }],
+        Some("completed") => vec![ToolFrame::End { id }],
+        _ => Vec::new(),
+    }
+}
+
+fn frames_of(value: &Value) -> Vec<ToolFrame> {
     if let Some(part) = value.get("part") {
         return opencode_frames(part);
     }
-    let Some(kind) = text_at(&value, &["type"]) else {
+    let Some(kind) = text_at(value, &["type"]) else {
         return Vec::new();
     };
     match kind {
-        "assistant" | "user" => anthropic_frames(&value, kind),
-        "item.started" | "item.completed" => codex_frames(&value, kind),
-        "tool.execution_start" | "tool.execution_complete" => copilot_frames(&value, kind),
+        "assistant" | "user" => anthropic_frames(value, kind),
+        "item.started" | "item.completed" => codex_frames(value, kind),
+        "tool.execution_start" | "tool.execution_complete" => copilot_frames(value, kind),
+        "tool_call" => cursor_frames(value),
         _ => Vec::new(),
     }
+}
+
+fn can_see_tools_of(binary: &str) -> bool {
+    std::path::Path::new(binary)
+        .file_stem()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| SIGHTED_BINARIES.contains(&name))
 }
 
 #[derive(Default)]
 struct ToolState {
     open: Vec<(String, WorkTool)>,
     seen: HashSet<String>,
-    after_seq: u64,
-    has_gap: bool,
+    assembler: LineAssembler,
+    can_see_tools: bool,
 }
 
 impl ToolState {
@@ -241,7 +260,8 @@ impl ToolState {
     fn sight(&self) -> ToolSight {
         ToolSight {
             tool: self.open.last().map(|(_, tool)| tool.clone()),
-            has_tool_call: !self.seen.is_empty() || self.has_gap,
+            has_tool_call: !self.seen.is_empty(),
+            can_see_tools: self.can_see_tools,
         }
     }
 }
@@ -250,22 +270,43 @@ impl ToolState {
 struct ToolTracker(Mutex<HashMap<String, ToolState>>);
 
 impl ToolTracker {
-    fn sight(&self, backlog: &TurnBacklog, run_id: &str) -> ToolSight {
+    fn begin(&self, run_id: &str, can_see_tools: bool) {
+        lock_or_recover(&self.0).insert(
+            run_id.to_string(),
+            ToolState {
+                can_see_tools,
+                ..ToolState::default()
+            },
+        );
+    }
+
+    fn feed(&self, run_id: &str, line: &str) -> bool {
         let mut runs = lock_or_recover(&self.0);
-        let state = runs.entry(run_id.to_string()).or_default();
-        let Some(snapshot) = backlog.snapshot(run_id, state.after_seq) else {
-            return state.sight();
+        let Some(state) = runs.get_mut(run_id) else {
+            return false;
         };
-        state.has_gap = state.has_gap || snapshot.has_gap;
-        for event in snapshot.events {
-            state.after_seq = event.seq;
-            if let TurnEventPayload::Line { line } = &event.event {
-                for frame in frames_of(line) {
-                    state.take(frame);
-                }
-            }
+        let frames: Vec<ToolFrame> = state
+            .assembler
+            .push(line)
+            .iter()
+            .flat_map(frames_of)
+            .collect();
+        let has_frames = !frames.is_empty();
+        for frame in frames {
+            state.take(frame);
         }
-        state.sight()
+        has_frames
+    }
+
+    fn sight(&self, run_id: &str) -> ToolSight {
+        lock_or_recover(&self.0)
+            .get(run_id)
+            .map(ToolState::sight)
+            .unwrap_or_default()
+    }
+
+    fn forget(&self, run_id: &str) {
+        lock_or_recover(&self.0).remove(run_id);
     }
 
     fn keep(&self, turns: &[LiveTurn]) {
@@ -279,10 +320,23 @@ fn tracker() -> &'static ToolTracker {
     TRACKER.get_or_init(ToolTracker::default)
 }
 
+pub(crate) fn begin_run(run_id: &str, binary: &str) {
+    tracker().begin(run_id, can_see_tools_of(binary));
+}
+
+pub(crate) fn track_line(run_id: &str, line: &str) -> bool {
+    tracker().feed(run_id, line)
+}
+
+pub(crate) fn end_run(run_id: &str) {
+    tracker().forget(run_id);
+}
+
 fn rows_of(
     turns: &[LiveTurn],
     ledger: &HashMap<u32, LedgerEntry>,
     quiet: &[TurnQuiet],
+    wanted: Option<&str>,
     sight_of: impl Fn(&str) -> ToolSight,
 ) -> Vec<WorkRow> {
     let quiet_by_run: HashMap<&str, u64> = quiet
@@ -291,10 +345,14 @@ fn rows_of(
         .collect();
     let mut rows: Vec<WorkRow> = turns
         .iter()
-        .map(|turn| {
+        .filter_map(|turn| {
             let entry = ledger.get(&turn.pid);
+            let session_id = entry.and_then(|entry| entry.session_id.as_deref());
+            if wanted.is_some_and(|wanted| session_id != Some(wanted)) {
+                return None;
+            }
             let sight = sight_of(&turn.run_id);
-            WorkRow {
+            Some(WorkRow {
                 run_id: turn.run_id.clone(),
                 session_id: entry.and_then(|entry| entry.session_id.clone()),
                 agent_id: entry.and_then(|entry| entry.agent_id.clone()),
@@ -305,7 +363,8 @@ fn rows_of(
                 quiet_ms: quiet_by_run.get(turn.run_id.as_str()).copied(),
                 tool: sight.tool,
                 has_tool_call: sight.has_tool_call,
-            }
+                can_see_tools: sight.can_see_tools,
+            })
         })
         .collect();
     rows.sort_by(|a, b| {
@@ -393,26 +452,67 @@ pub(crate) fn start_pulse<E: TurnEmitter + Sync>(app: &E) {
     });
 }
 
+struct QuietSample {
+    at: Instant,
+    covers: HashSet<String>,
+    rows: Vec<TurnQuiet>,
+}
+
+fn quiet_sample() -> &'static tauri::async_runtime::Mutex<Option<QuietSample>> {
+    static SAMPLE: OnceLock<tauri::async_runtime::Mutex<Option<QuietSample>>> = OnceLock::new();
+    SAMPLE.get_or_init(|| tauri::async_runtime::Mutex::new(None))
+}
+
+fn is_shared(sample: &QuietSample, turns: &[LiveTurn], now: Instant) -> bool {
+    now.saturating_duration_since(sample.at) < QUIET_SHARED_FOR
+        && turns
+            .iter()
+            .all(|turn| sample.covers.contains(turn.run_id.as_str()))
+}
+
+async fn shared_quiet(
+    registry: &TurnRegistry,
+    turns: &[LiveTurn],
+) -> Result<Vec<TurnQuiet>, TurnError> {
+    let mut sample = quiet_sample().lock().await;
+    let now = Instant::now();
+    if let Some(shared) = sample
+        .as_ref()
+        .filter(|shared| is_shared(shared, turns, now))
+    {
+        return Ok(shared.rows.clone());
+    }
+    let rows = crate::turn::measure_quiet(registry, turns).await?;
+    *sample = Some(QuietSample {
+        at: Instant::now(),
+        covers: turns.iter().map(|turn| turn.run_id.clone()).collect(),
+        rows: rows.clone(),
+    });
+    Ok(rows)
+}
+
 #[tauri::command]
 pub async fn live_work(
     state: State<'_, TurnRegistry>,
+    db: State<'_, crate::db::Db>,
     session_id: Option<String>,
 ) -> Result<Vec<WorkRow>, TurnError> {
     let turns = crate::turn::running_turns(&state);
-    let quiet = crate::turn::measure_quiet(&state, &turns).await?;
-    let ledger = crate::proc::ledger::global().by_pid();
     tracker().keep(&turns);
-    let rows = rows_of(&turns, &ledger, &quiet, |run_id| {
-        tracker().sight(&state.1, run_id)
-    });
-    Ok(rows
-        .into_iter()
-        .filter(|row| {
-            session_id
-                .as_deref()
-                .is_none_or(|wanted| row.session_id.as_deref() == Some(wanted))
-        })
-        .collect())
+    let mounts = crate::proc::ledger::current_mount_places(&db);
+    let ledger = tauri::async_runtime::spawn_blocking(move || {
+        crate::proc::ledger::global().by_pid_at(&mounts)
+    })
+    .await
+    .map_err(|error| TurnError::Io(std::io::Error::other(error)))?;
+    let quiet = shared_quiet(&state, &turns).await?;
+    Ok(rows_of(
+        &turns,
+        &ledger,
+        &quiet,
+        session_id.as_deref(),
+        |run_id| tracker().sight(run_id),
+    ))
 }
 
 #[cfg(test)]

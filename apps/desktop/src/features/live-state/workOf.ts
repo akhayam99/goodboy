@@ -49,6 +49,7 @@ export const workOf = ({ rows, mountNames, sessionTitles }: Params): ReadonlyArr
         tool: row.tool,
         project: place.kind === 'project' ? place.name : null,
         hasToolCall: row.hasToolCall,
+        canSeeTools: row.canSeeTools,
       }),
       startedAt: row.startedAt,
       quietMs: row.quietMs,

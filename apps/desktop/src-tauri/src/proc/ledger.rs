@@ -139,8 +139,8 @@ impl ProcessLedger {
         self.list_with(mounts, placement_of)
     }
 
-    pub(crate) fn by_pid(&self) -> HashMap<u32, LedgerEntry> {
-        self.snapshot()
+    pub(crate) fn by_pid_at(&self, mounts: &MountPlaces) -> HashMap<u32, LedgerEntry> {
+        self.list_at(mounts)
             .into_iter()
             .map(|entry| (entry.pid, entry))
             .collect()
@@ -278,16 +278,19 @@ pub(crate) fn mount_id_in(
     mount_id_at(&conn, session_id, cwd)
 }
 
+pub(crate) fn current_mount_places(db: &crate::db::Db) -> MountPlaces {
+    let ids = global().mount_ids();
+    match db.0.lock() {
+        Ok(conn) => mount_places(&conn, &ids),
+        Err(_) => MountPlaces::new(),
+    }
+}
+
 #[tauri::command(async)]
 pub(crate) fn process_ledger_list(
     db: tauri::State<'_, crate::db::Db>,
 ) -> Result<Vec<LedgerEntry>, crate::util::MessageError> {
-    let ids = global().mount_ids();
-    let mounts = match db.0.lock() {
-        Ok(conn) => mount_places(&conn, &ids),
-        Err(_) => MountPlaces::new(),
-    };
-    Ok(global().list_at(&mounts))
+    Ok(global().list_at(&current_mount_places(&db)))
 }
 
 #[cfg(test)]
@@ -622,6 +625,33 @@ mod tests {
         assert_eq!(row.branch.as_deref(), Some("nw/credit-fix"));
         assert_eq!(row.branch_path, Some(after_text));
         assert_eq!(row.mount_path, Some(before_text));
+    }
+
+    #[test]
+    fn the_pid_map_carries_the_branch_a_rename_resolved() {
+        let base = test_support::scratch_dir("pid-map");
+        let main = git_repo_on(&base.join("payments-api"), "main");
+        let place = base.join("credit");
+        let place_text = place.to_string_lossy().into_owned();
+        git_at(
+            &main,
+            EPOCH_SECS,
+            &["worktree", "add", "-q", "-b", "nw/credit", &place_text],
+        );
+        let ledger = ledger_on(&place, Some("mount-credit"));
+        git_at(
+            &place,
+            STARTED + 20,
+            &["branch", "-m", "nw/credit", "nw/credit-fix"],
+        );
+        let places = MountPlaces::from([("mount-credit".to_string(), place_text)]);
+
+        let by_pid = ledger.by_pid_at(&places);
+
+        assert_eq!(
+            by_pid.values().next().and_then(|row| row.branch.as_deref()),
+            Some("nw/credit-fix")
+        );
     }
 
     #[test]

@@ -12,6 +12,7 @@ export type LiveWorkRow = Readonly<{
   quietMs: number | null;
   tool: LastTool | null;
   hasToolCall: boolean;
+  canSeeTools: boolean;
 }>;
 
 type Params = {
@@ -58,7 +59,8 @@ const liveWorkRowOf = ({ value }: ValueParams): LiveWorkRow | null => {
   }
   const runId = textAt({ value, key: 'runId' });
   const hasToolCall: unknown = Reflect.get(value, 'hasToolCall');
-  if (runId === null || typeof hasToolCall !== 'boolean') {
+  const canSeeTools: unknown = Reflect.get(value, 'canSeeTools');
+  if (runId === null || typeof hasToolCall !== 'boolean' || typeof canSeeTools !== 'boolean') {
     return null;
   }
   return {
@@ -72,6 +74,7 @@ const liveWorkRowOf = ({ value }: ValueParams): LiveWorkRow | null => {
     quietMs: numberFieldOf({ value, key: 'quietMs' }),
     tool: toolOf({ value: Reflect.get(value, 'tool') }),
     hasToolCall,
+    canSeeTools,
   };
 };
 
