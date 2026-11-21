@@ -5,6 +5,7 @@ import {
   MENU_MAX_WIDTH,
   MenuList,
   MenuTriggerButton,
+  menuShapeOf,
   type MenuEntry,
   useDropdown,
 } from '@goodboy/ui';
@@ -33,7 +34,6 @@ const HEADER_RUN: ReadonlySet<string> = new Set([
   'pullRequest.close',
   'pullRequest.convertToDraft',
 ]);
-const MIN_DRAWN_ENTRIES = 2;
 
 export const BranchOverflow = ({
   diffControls,
@@ -97,7 +97,7 @@ export const BranchOverflow = ({
     );
   }, [diffControls, env, isRebaseStopOpen, onPush, pullRequestControls, shownIds]);
 
-  if (entries.filter((entry) => entry.kind === 'item').length < MIN_DRAWN_ENTRIES) {
+  if (!menuShapeOf({ entries }).isWorthAMenu) {
     return null;
   }
 

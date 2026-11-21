@@ -4,6 +4,7 @@ export type ToastAction = {
   readonly label: string;
   readonly hint?: string;
   readonly onClick: () => void;
+  readonly undo?: () => Promise<boolean>;
 };
 
 export type ToastItem = {

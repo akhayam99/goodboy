@@ -128,19 +128,20 @@
   which is not bound. `overflowCutOf` (`features/actions/overflowCutOf.ts`)
   names the rows to drop only when a state would draw a sixth:
   `artifactHeaderOmitOf` for the artifact header (the buttoned verbs, then Show
-  in Finder, which the saved copy block offers), `RECORD_HEADER_CUTS` for the
+  in Finder, which the saved copy block offers), `recordHeaderOnlyOf` for the
   record header (Copy key, then Refresh) and `drawerMenuOmitOf` for the comment
-  drawer (Copy link, then Agent transcript). The agent, run, session and
-  branch menus cut by list (`AGENT_HEADER_MENU_IDS`, `runPageOmitOf`,
-  `sessionMenuOf`, `branchMenuRowsOf`). The hover row menus cut the same way
-  through the `cuts` prop: the rail branch row (`MOUNT_ROW_CUTS`, keeping Open
-  pull request, Open changes, Open in editor, Switch branch and Close branch,
-  or the state's own primary in place of the least needed), the commit row
-  (`HISTORY_ROW_CUTS`: Move up, Move down and Copy subject, since the drag
-  handle moves a commit), the stored worktree row (`WORKTREE_ROW_CUTS`) and the
-  port row (`portRowMenuOf`: a row with a stop control omits Stop and Force
-  stop, a nested row has none and keeps them). The right click of each lists
-  every row. `overflowRows.test.ts` and `overflowRows.drawer.test.tsx` in
+  drawer (Copy link, then Agent transcript). The agent, run,
+  session and branch menus list their rows (`AGENT_HEADER_MENU_IDS`,
+  `runPageOmitOf`, `sessionMenuOf`, `branchMenuRowsOf`). The hover row menus
+  list theirs per state too: the rail branch row through `onlyOf`
+  (`mountRowMenuOf`: open is Open pull request, Open, Switch branch, Copy and
+  Close branch; merged is Open pull request, Open, Copy and Delete local
+  branch; closed is Reopen, Copy and Remove from session), the commit row
+  (`HISTORY_ROW_MENU_IDS`, Move up, Move down and Copy subject stay on the
+  right click since the drag handle moves a commit), the stored worktree row
+  (`WORKTREE_ROW_MENU_IDS`) and the port row (`portRowMenuOf`: a row with a
+  stop control omits Stop and Force stop, a nested row shows Stop, or Force
+  stop once Stop did not end it). The right click of each lists every row. `overflowRows.test.ts` and `overflowRows.drawer.test.tsx` in
   `src/__tests__/actions` walk every state of these headers and row menus
   through the real menu code and fail on a sixth row.
 - **Reference beside the work opens in the right drawer, not a rail.** Popover

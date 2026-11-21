@@ -210,6 +210,7 @@ describe('a row that reports hover and focus', () => {
             kind: 'item',
             key: 'delete',
             label: 'Delete',
+            icon: Trash2,
             isDisabled: true,
             onSelect: select,
           },

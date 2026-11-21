@@ -181,7 +181,7 @@ describe('the session head', () => {
     expect(titleRowLabels()).toEqual(['New', 'More session actions']);
   });
 
-  it('lists Ask, Pin, Refresh, Archive and Delete in More session actions', () => {
+  it('lists Pin, Link work, Copy, Archive and Delete in More session actions', () => {
     go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID, lens: 'context' }) });
     renderWorkspace();
 
@@ -192,17 +192,19 @@ describe('the session head', () => {
       .map((row) => row.textContent?.replace(/\s+/g, ' ').trim() ?? '');
     expect(rows).toHaveLength(5);
     for (const [index, word] of [
-      'Ask about this session',
       'Pin session',
-      'Refresh session',
+      'Link work',
+      'Copy',
       'Archive',
       'Delete',
     ].entries()) {
       expect(rows[index]).toContain(word);
     }
+    expect(rows.some((row) => row.includes('Ask about this session'))).toBe(false);
+    expect(rows.some((row) => row.includes('Refresh session'))).toBe(false);
   });
 
-  it('opens Ask beside the dock from the menu and keeps it out of the Context tab', () => {
+  it('opens Ask beside the dock and keeps it out of the Context tab', () => {
     go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID, lens: 'context' }) });
     renderWorkspace();
     act(() =>
@@ -214,8 +216,7 @@ describe('the session head', () => {
     );
 
     expect(document.querySelector('[data-testid="context-ask"]')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'More session actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Ask about this session/ }));
+    act(() => useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID }));
 
     expect(selectDetailDrawer({ state: useAppStore.getState() })).toMatchObject({
       kind: 'ask',

@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type {
   Agent,
   ProviderRunId,
+  Session,
   SessionBudget,
   SessionId,
   TelemetryRecord,
@@ -20,6 +21,8 @@ type Store = {
   loadSessionBudget: ReturnType<typeof vi.fn>;
   setSessionBudget: ReturnType<typeof vi.fn>;
   clearSessionBudget: ReturnType<typeof vi.fn>;
+  setSessionAutoRun: ReturnType<typeof vi.fn>;
+  sessions: ReadonlyArray<Pick<Session, 'id' | 'autoRun'>>;
 };
 
 const { store } = vi.hoisted(() => ({
@@ -33,6 +36,8 @@ const { store } = vi.hoisted(() => ({
     loadSessionBudget: vi.fn(async () => undefined),
     setSessionBudget: vi.fn(async () => undefined),
     clearSessionBudget: vi.fn(async () => undefined),
+    setSessionAutoRun: vi.fn(async () => undefined),
+    sessions: [],
   } satisfies Store,
 }));
 

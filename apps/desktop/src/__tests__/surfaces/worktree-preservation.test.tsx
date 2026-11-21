@@ -146,7 +146,7 @@ describe('Branch page capabilities from the branch tree', () => {
 
     await mount(SESSION_ROWS_SCENE);
     const worktree = await worktreeMenu();
-    expect(worktree.some((label) => /Copy branch name/.test(label))).toBe(true);
+    expect(worktree.some((label) => /^Copy$/.test(label))).toBe(true);
   });
 
   it('a stopped rebase keeps Abort on the stop panel under the page header, its one home', async () => {
@@ -207,18 +207,12 @@ describe('Branch page capabilities from the branch tree', () => {
 });
 
 describe('branch actions from the branch row', () => {
-  it('the worktree menu holds Switch branch, Link work to this branch, copy and editor actions', async () => {
+  it('the worktree menu holds Switch branch, Link work to this branch, Copy and Open', async () => {
     await mount(SESSION_ROWS_SCENE);
 
     const labels = await worktreeMenu();
 
-    for (const word of [
-      /Switch branch/,
-      /Link work to this branch/,
-      /Copy branch name/,
-      /Copy path/,
-      /Open in/,
-    ]) {
+    for (const word of [/Switch branch/, /Link work to this branch/, /^Copy$/, /^Open$/]) {
       expect(
         labels.some((label) => word.test(label)),
         String(word),

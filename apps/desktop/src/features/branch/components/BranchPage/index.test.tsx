@@ -677,7 +677,11 @@ describe('Branch page Comments', () => {
     await mountAt({ width: 384, threadId: EXPANDED_THREAD_ID });
 
     screen.getByRole('navigation', { name: 'Comments' });
-    expect(screen.queryByRole('button', { name: /comments$/ })).toBeNull();
+    expect(
+      screen.queryByRole('button', {
+        name: (name) => name.endsWith('comments') && !name.startsWith('Stop fixing'),
+      }),
+    ).toBeNull();
     expect(document.querySelector(`[data-review-drawer="${EXPANDED_THREAD_ID}"]`)).not.toBeNull();
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
   });

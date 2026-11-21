@@ -72,7 +72,7 @@ describe('the rebase review scene', () => {
     screen.getByText('The result did not match your branch');
     expect(screen.queryByRole('button', { name: 'Review the change' })).toBeNull();
   });
-  it('puts Open in editor and Copy path in the menu of each file header', async () => {
+  it('puts Open in editor and Copy path in the right click menu of each file header', async () => {
     render(
       <ObjectMenuProvider>
         <ToastProvider>
@@ -85,7 +85,7 @@ describe('the rebase review scene', () => {
     if (header === null) {
       throw new Error('no file header');
     }
-    fireEvent.click(within(header).getByRole('button', { name: 'More for webhook.ts' }));
+    fireEvent.contextMenu(header);
     screen.getByRole('menuitem', { name: 'Open in editor' });
     screen.getByRole('menuitem', { name: 'Copy path' });
   });

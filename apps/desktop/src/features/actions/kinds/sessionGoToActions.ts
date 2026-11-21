@@ -1,30 +1,39 @@
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/utils/names';
 import { openFolderAction } from '../openFolderAction';
 import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
 import type { ActionDefinition } from '../types';
+import { withSubmenus } from '../withSubmenus';
 import type { SessionFacts } from './session';
 
 const NO_WORKTREE_REASON = 'This session has no worktree yet';
 
-const GO_TO_IDS: ReadonlySet<string> = new Set([
+const OPEN_IDS: ReadonlyArray<string> = [
   'session.open',
   'session.review',
   'session.diff',
   'session.changes',
+  'session.openLog',
   'session.editor',
+  'session.openWorktreeTerminal',
   'session.terminalApp',
-]);
+];
+
+const COPY_IDS: ReadonlyArray<string> = [
+  'session.copyTitle',
+  'session.copyBranch',
+  'session.copyWorktreePath',
+  'session.copyPr',
+];
 
 type DefinitionsParams = {
   readonly definitions: ReadonlyArray<ActionDefinition<SessionFacts>>;
 };
 
-export const withGoToSubmenu = ({
+export const withSessionSubmenus = ({
   definitions,
 }: DefinitionsParams): ReadonlyArray<ActionDefinition<SessionFacts>> =>
-  definitions.map((definition) =>
-    GO_TO_IDS.has(definition.id) ? { ...definition, submenu: 'goto' } : definition,
-  );
+  withSubmenus({ definitions, open: OPEN_IDS, copy: COPY_IDS });
 
 export const SESSION_EXTERNAL_OPEN_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   {
@@ -38,7 +47,7 @@ export const SESSION_EXTERNAL_OPEN_ACTIONS: ReadonlyArray<ActionDefinition<Sessi
   },
   {
     id: 'session.terminalApp',
-    label: 'Open in terminal app',
+    label: NAMES.openInExternalTerminal,
     icon: CONCEPT_ICONS.terminal,
     group: 'open',
     when: ({ facts }) => !facts.isArchived,

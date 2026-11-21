@@ -63,7 +63,7 @@ describe('the terminal tab kind, Send last output', () => {
   it('lists Send last output between Open session and Copy worktree path', () => {
     const facts: TerminalTabFacts = {
       ...BASE,
-      sendOutput: { label: 'Send last output', blockedReason: null, onSend: vi.fn() },
+      sendOutput: { label: 'Send last output to the agent', blockedReason: null, onSend: vi.fn() },
     };
 
     expect(
@@ -85,7 +85,7 @@ describe('the terminal tab kind, Send last output', () => {
     const onSend = vi.fn();
     const facts: TerminalTabFacts = {
       ...BASE,
-      sendOutput: { label: 'Send last output', blockedReason: null, onSend },
+      sendOutput: { label: 'Send last output to the agent', blockedReason: null, onSend },
     };
 
     await bound({ facts }).run({ actionId: 'terminalTab.sendLastOutput', env: env() });

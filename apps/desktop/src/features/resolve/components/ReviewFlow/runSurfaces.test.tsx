@@ -88,7 +88,9 @@ const counter = (): HTMLElement => {
 };
 
 describe('Fix run count', () => {
-  it('counts the run quietly in the toolbar, with its verbs in one menu and no status line', async () => {
+  it('counts the run quietly in the toolbar, opens the transcript from the line and keeps one stop button', async () => {
+    const openDrawer = vi.fn<StoreState['openDrawer']>();
+    stub({ openDrawer });
     await mount({ threadId: null });
 
     const count = within(counter());
@@ -96,9 +98,14 @@ describe('Fix run count', () => {
     expect(count.queryByRole('button', { name: /need you|working|ready to push/ })).toBeNull();
     expect(count.queryByText('Sonnet 5 · Medium')).toBeNull();
     expect(screen.queryByTestId('resolve-run-status')).toBeNull();
-    fireEvent.click(count.getByRole('button', { name: 'Fix actions' }));
-    expect(await screen.findByRole('menuitem', { name: 'Open transcript' })).toBeDefined();
-    expect(screen.getByRole('menuitem', { name: 'Stop all' })).toBeDefined();
+    expect(count.queryByRole('button', { name: 'Fix actions' })).toBeNull();
+    expect(count.getByRole('button', { name: 'Stop fixing 4 comments' })).toBeDefined();
+    fireEvent.click(count.getByRole('button', { name: /^Open transcript, / }));
+    expect(openDrawer).toHaveBeenCalledWith({
+      kind: 'transcript',
+      sessionId: SESSION.id,
+      payload: { agentId: 'mock-resolve-agent-idempotency' },
+    });
   });
 
   it('runs every comment of the launch on the model the status line names', async () => {
@@ -113,16 +120,20 @@ describe('Fix run count', () => {
     expect(models.size).toBe(1);
   });
 
-  it('stops the run from the counter menu, behind a confirm that names the comments', async () => {
+  it('stops the run from the counter, behind a confirm that names the comments', async () => {
     const forceCloseResolver = vi.fn<StoreState['forceCloseResolver']>(async () => undefined);
     stub({ forceCloseResolver });
     await mount({ threadId: null });
 
-    fireEvent.click(within(counter()).getByRole('button', { name: 'Fix actions' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Stop all' }));
+    fireEvent.click(within(counter()).getByRole('button', { name: 'Stop fixing 4 comments' }));
     expect(await screen.findByText('Stop the fix for 4 comments?')).toBeDefined();
     expect(forceCloseResolver).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Stop all' }));
+    const confirms = screen.getAllByRole('button', { name: 'Stop fixing 4 comments' });
+    const confirm = confirms.at(-1);
+    if (confirm === undefined) {
+      throw new Error('no confirm button');
+    }
+    fireEvent.click(confirm);
 
     await waitFor(() =>
       expect(forceCloseResolver).toHaveBeenCalledWith(SESSION.id, 'mock-resolve-agent-idempotency'),

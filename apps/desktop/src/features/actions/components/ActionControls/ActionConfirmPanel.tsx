@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ChoiceCards, ConfirmGoesStays, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 
+import { OBJECT_ROW_SELECTOR } from '../../objectRowSelector';
 import type { ActionControls } from '../../useActionControls';
 
 type Props = {
@@ -31,6 +32,7 @@ export const ActionConfirmPanel = ({ controls }: Props) => {
       confirmLabel={confirm?.confirmLabel ?? ''}
       onConfirm={() => controls.confirm({ choice: selected })}
       onCancel={controls.cancel}
+      returnFocusTo={{ rowSelector: OBJECT_ROW_SELECTOR }}
       isBusy={action !== null && controls.pendingId === action.id}
       note={
         notes.length === 0 ? undefined : (

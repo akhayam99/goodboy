@@ -22,4 +22,4 @@ export const relatedHitActions = ({ actions }: Params): ReadonlyArray<ResolvedAc
         left.index - right.index,
     )
     .slice(0, RELATED_LIMIT)
-    .map(({ action }) => action);
+    .map(({ action }) => ({ ...action, submenu: undefined, placement: undefined }));

@@ -98,6 +98,7 @@ export const WorktreeRow = ({
 
   return (
     <div
+      data-row={`mount-${row.mountId}`}
       data-task-drop={isDropTarget ? 'branch' : undefined}
       data-task-project={isDropTarget ? row.projectId : undefined}
       data-task-branch={isDropTarget ? row.branch : undefined}

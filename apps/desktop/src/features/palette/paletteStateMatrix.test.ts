@@ -40,6 +40,7 @@ const LIVE: SessionFacts = {
   mounts: [],
   worktreePaths: ['/worktrees/ledger-core'],
   prUrl: 'https://example.test/harborline/ledger-core/pull/318',
+  requestHost: 'github',
   runningAgentCount: 0,
   hasUnread: false,
   canMarkUnread: false,
@@ -153,11 +154,10 @@ describe('palette verbs follow the session state', () => {
     expect(sessionView({ facts: LIVE, query: '' })).toEqual([
       'Open comments',
       'Open changes',
+      'Open log',
       'Open in editor',
-      'Open in terminal app',
-      'Open the full log',
-      'Open limit',
       'Open ledger-core in terminal',
+      'Open in external terminal',
       'Rename',
       'Ask about this session',
       'Pin session',
@@ -165,10 +165,11 @@ describe('palette verbs follow the session state', () => {
       'Start next steps without asking',
       'Start a run',
       'Link work',
+      'Set limit…',
       'Copy title',
-      'Copy worktree path',
       'Copy branch name',
-      'Copy PR link',
+      'Copy worktree path',
+      'Copy pull request link',
     ]);
   });
 
@@ -184,8 +185,7 @@ describe('palette verbs follow the session state', () => {
 
     expect(sessionView({ facts, query: '' })).toEqual([
       'Open comments',
-      'Open the full log',
-      'Open limit',
+      'Open log',
       'Rename',
       'Ask about this session',
       'Pin session',
@@ -193,6 +193,7 @@ describe('palette verbs follow the session state', () => {
       'Start next steps without asking',
       'Start a run',
       'Link work',
+      'Set limit…',
       'Copy title',
     ]);
     expect(sessionView({ facts, query: 'changes' })).toEqual([
@@ -216,12 +217,12 @@ describe('palette verbs follow the session state', () => {
     const facts = { ...LIVE, isArchived: true };
 
     expect(sessionView({ facts, query: '' })).toEqual([
-      'Open the full log',
+      'Open log',
       'Restore',
       'Copy title',
-      'Copy worktree path',
       'Copy branch name',
-      'Copy PR link',
+      'Copy worktree path',
+      'Copy pull request link',
     ]);
     for (const query of ['archive', 'review', 'diff', 'terminal', 'editor', 'rename', 'start']) {
       expect(sessionView({ facts, query })).toEqual([]);
@@ -481,7 +482,7 @@ describe('the empty palette ranks the session verbs by state', () => {
 
   it('finished: the pull request link comes first', () => {
     expect(labelsOf(emptyScreen({ tier: 'finished' }), 'For this session').slice(0, 3)).toEqual([
-      'Copy PR link',
+      'Copy pull request link',
       'Open comments',
       'Open changes',
     ]);
@@ -495,7 +496,7 @@ describe('the empty palette ranks the session verbs by state', () => {
       'Copy title',
       'Copy worktree path',
       'Copy branch name',
-      'Copy PR link',
+      'Copy pull request link',
       'All actions for this session',
     ]);
   });

@@ -56,6 +56,7 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
           },
         ].slice(-50),
       }));
+      const runUndo = (): Promise<boolean> => get().undoLastOperation({ id });
       const toast: ShowToastParams = {
         dedupeKey: id,
         kind: 'info',
@@ -64,7 +65,8 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
         action: {
           label: 'Undo',
           ...(actionHint === undefined ? {} : { hint: actionHint }),
-          onClick: () => void get().undoLastOperation({ id }),
+          onClick: () => void runUndo(),
+          undo: runUndo,
         },
       };
       if (showToast !== undefined) {

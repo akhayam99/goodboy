@@ -94,6 +94,60 @@ describe('a menu row with a submenu', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  it('opens the choices of a child instead of running it without one', async () => {
+    const copyPath: Mock<Select> = vi.fn<Select>();
+    const onClose = vi.fn();
+    render(
+      <ContextMenu
+        label="Session actions"
+        point={{ x: 20, y: 20 }}
+        entries={[
+          {
+            kind: 'item',
+            key: 'copy',
+            label: 'Copy',
+            children: [
+              {
+                kind: 'item',
+                key: 'path',
+                label: 'Worktree path',
+                choices: [
+                  { id: 'ledger-core', label: 'ledger-core', isCurrent: false },
+                  { id: 'payments-api', label: 'payments-api', isCurrent: false },
+                  { id: 'all', label: 'Copy all paths', isCurrent: false },
+                ],
+                onSelect: copyPath,
+              },
+            ],
+            onSelect: () => undefined,
+          },
+        ]}
+        onClose={onClose}
+      />,
+    );
+    const parent = screen.getByRole('menuitem', { name: 'Copy' });
+    parent.focus();
+    fireEvent.keyDown(parent, { key: 'ArrowRight' });
+    const child = screen.getByRole('menuitem', { name: 'Worktree path' });
+    fireEvent.keyDown(child, { key: 'ArrowRight' });
+
+    expect(copyPath).not.toHaveBeenCalled();
+    screen.getByRole('menu', { name: 'Worktree path' });
+    expect(child.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+    expect(screen.queryByRole('menu', { name: 'Worktree path' })).toBeNull();
+    expect(document.activeElement).toBe(child);
+    expect(onClose).not.toHaveBeenCalled();
+
+    fireEvent.click(child);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitemradio', { name: 'Copy all paths' }));
+    });
+    expect(copyPath).toHaveBeenCalledWith('all');
+    expect(onClose).toHaveBeenCalled();
+  });
+
   it('keeps a blocked child listed with its reason and never runs it', () => {
     const { editor, onClose } = renderMenu();
     openGoTo();

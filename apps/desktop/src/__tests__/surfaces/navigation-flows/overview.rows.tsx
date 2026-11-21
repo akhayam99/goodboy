@@ -47,9 +47,9 @@ export const OVERVIEW_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'palette: Open the full log opens the log drawer beside the Overview',
-    covers: ['palette:Open the full log'],
-    open: () => openPalette(/^Open the full log/, 'full log'),
+    name: 'palette: Open log opens the log drawer beside the Overview',
+    covers: ['palette:Open log'],
+    open: () => openPalette(/^Open log/, 'open log'),
     lands: async () => {
       expect(await screen.findByRole('region', { name: 'Log entries' }, WAIT)).toBeDefined();
       expect(

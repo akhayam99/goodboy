@@ -29,7 +29,7 @@
   "review -> actions": 4,
   "scripts -> actions": 2,
   "search -> actions": 2,
-  "session -> actions": 17,
+  "session -> actions": 16,
   "session -> auto": 10,
   "session -> bootstrap": 1,
   "session -> file-versions": 6,

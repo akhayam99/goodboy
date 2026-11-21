@@ -24,9 +24,6 @@ import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 import { TimelineRunStreamRow } from './TimelineRunStreamRow';
 import { TimelineStreamRow } from './TimelineStreamRow';
 import { timelineBranchKey } from './timelineBranchKey';
-import { timelineEntrySegmentsOf } from './timelineEntrySegmentsOf';
-import { segmentsToText } from '../../../../timeline/sessionEventPresentation';
-import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 
 export type TimelineEntryRowHandlers = {
   readonly openTargetFor: (params: {
@@ -95,20 +92,6 @@ export const TimelineEntryRow = ({
     open: () => handlers.toggleExpanded(item.id),
   };
   const rowTarget = batchDetail !== null || decisionDetail !== null ? toggleTarget : target;
-  const menu = useObjectMenuTrigger({
-    target:
-      entry.kind === 'agent' || entry.kind === 'run'
-        ? null
-        : {
-            kind: 'item',
-            facts: {
-              name: segmentsToText({ segments: timelineEntrySegmentsOf({ entry }) }),
-              openLabel: rowTarget?.label ?? '',
-              onOpen: rowTarget?.open ?? null,
-            },
-          },
-    anchorKey: `timeline-row:${item.id}`,
-  });
   if (entry.kind === 'agent') {
     return (
       <TimelineAgentStreamRow
@@ -160,7 +143,6 @@ export const TimelineEntryRow = ({
         railWidth={railWidth}
         sessionId={sessionId}
         openTarget={toggleTarget}
-        contextMenu={menu}
         expansion={{ isExpanded, controlsId: batchId }}
         detailHeight={isExpanded ? batchDetail.height : 0}
         detail={
@@ -188,7 +170,6 @@ export const TimelineEntryRow = ({
       railWidth={railWidth}
       sessionId={sessionId}
       openTarget={rowTarget}
-      contextMenu={menu}
       expansion={decisionDetail === null ? null : { isExpanded, controlsId: detailId }}
       detailHeight={decisionDetail !== null && isExpanded ? decisionDetail.height : 0}
       detail={

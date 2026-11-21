@@ -227,8 +227,8 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'pins: pin from the session head menu, Move down from the card menu, and the order survives a reload',
-    covers: ['pin:head-menu', 'row menu: Move down'],
+    name: 'pins: pin from the session head menu, Move down from the palette, and the order survives a reload',
+    covers: ['pin:head-menu', 'palette:Move down'],
     open: async (ctx) => {
       otherId = otherSessionId(ctx.sessionId);
       await click(await screen.findByRole('button', { name: 'More session actions' }, WAIT));
@@ -238,7 +238,9 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
       await waitFor(() => expect(pinnedIds()).toEqual([ctx.sessionId, otherId]), WAIT);
       await onBoard();
       fireEvent.contextMenu(cardOf(ctx.sessionId));
-      await click(await screen.findByRole('menuitem', { name: 'Move down' }, WAIT));
+      expect(screen.queryByRole('menuitem', { name: 'Move down' })).toBeNull();
+      fireEvent.mouseDown(document.body);
+      await openPalette(/^Move down/, 'move down');
       await waitFor(() => expect(pinnedIds()).toEqual([otherId, ctx.sessionId]), WAIT);
       useAppStore.setState({ sessionPins: {} });
       await useAppStore

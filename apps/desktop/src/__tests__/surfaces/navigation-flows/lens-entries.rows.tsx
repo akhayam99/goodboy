@@ -26,7 +26,7 @@ const openObjectMenu = async (element: Element): Promise<void> => {
 
 const runMenuItem = async (label: RegExp): Promise<void> => {
   if (screen.queryByRole('menuitem', { name: label }) === null) {
-    await click(await screen.findByRole('menuitem', { name: 'Go to' }));
+    await click(await screen.findByRole('menuitem', { name: 'Open' }));
   }
   await click(await screen.findByRole('menuitem', { name: label }));
 };
@@ -59,12 +59,12 @@ export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [
     lands: both(lens(row.lens), row.lands),
   })),
   {
-    name: 'right click board card: Open',
+    name: 'right click board card: Open, Overview',
     covers: ['navigate', 'rightclick:session:Open'],
     open: async (ctx) => {
       await clickButton(/^Board/);
       await openObjectMenu(await sessionRow(ctx));
-      await runMenuItem(/^Open$/);
+      await runMenuItem(/^Overview$/);
     },
     lands: lens(null),
   },

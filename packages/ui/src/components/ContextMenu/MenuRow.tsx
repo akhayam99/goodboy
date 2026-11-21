@@ -12,13 +12,22 @@ const dangerTint = tintClasses('danger');
 type Props = {
   readonly entry: MenuItemEntry;
   readonly isExpanded: boolean;
+  readonly hasIcon?: boolean;
   readonly rowRef?: Ref<HTMLButtonElement>;
   readonly onActivate: () => void;
   readonly onHover: () => void;
   readonly onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
 };
 
-export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyDown }: Props) => {
+export const MenuRow = ({
+  entry,
+  isExpanded,
+  hasIcon = true,
+  rowRef,
+  onActivate,
+  onHover,
+  onKeyDown,
+}: Props) => {
   const Icon = entry.icon;
   const isBlocked = entry.blockedReason != null || entry.isDisabled === true;
   const hasChoices = hasSubmenu({ entry });
@@ -56,8 +65,8 @@ export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyD
           (isExpanded || entry.isActive === true) && 'bg-hover',
         )}
       >
-        <span className="flex size-4 shrink-0 items-center justify-center" aria-hidden>
-          {Icon === undefined ? null : (
+        {hasIcon && Icon !== undefined ? (
+          <span className="flex size-4 shrink-0 items-center justify-center" aria-hidden>
             <Icon
               size={ICON_SIZE.row}
               aria-hidden
@@ -69,8 +78,8 @@ export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyD
                     : (entry.iconClassName ?? 'text-faint-foreground'),
               )}
             />
-          )}
-        </span>
+          </span>
+        ) : null}
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate">{entry.label}</span>
           {detail === null ? null : (

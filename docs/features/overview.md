@@ -37,11 +37,11 @@ The Overview reads top to bottom:
 
 ### Refresh a session
 
-Pull requests opened outside Goodboy, by an agent or from a terminal, show up when a turn ends or when you come back to the window. **Refresh** in the session's `...` menu, or **⌘R**, re-reads projects, branches and pull requests right away.
+Pull requests opened outside Goodboy, by an agent or from a terminal, show up when a turn ends or when you come back to the window. **Refresh session** in ⌘K, or **⌘R**, re-reads projects, branches and pull requests right away.
 
 ### Full log
 
-Follow what happened in a session in one list. The **Log** is the last section of the Overview, always open, and scrolls with the page. **Open the full log** in the session's **⋯** menu, in the Board card's menu and in ⌘K opens the Overview on that section.
+Follow what happened in a session in one list. The **Log** is the last section of the Overview, always open, and scrolls with the page. **Open › Log** in the Board card's menu, or **Open log** in ⌘K, opens the Overview on that section.
 
 - One row per agent, workflow run or fix run shows its state, model, time and cost.
 - Plain facts get a row too, such as context changes, branch events and links.
@@ -143,7 +143,7 @@ This part is for contributors and agents who change the feature.
   - A long branch name is cut in the middle (`splitMiddleOf`, `BoardBranchName`) so its end stays readable.
   - A card with a branch verb and no branch (`cardRowIdOf`) never sits on the **Not on a branch** row. A rebase with one target belongs to that branch's row.
 - Project heads: `boardProjectNamesOf` counts the projects of the board. With more than one, `BoardGroup` splits each group with `projectSectionsOf` into `BoardProjectSection`s headed by `BoardProjectHead`; with one, `BranchBoard` draws that head once at the top.
-- Tile menu: `useMountRowMenu` (the `mount` target from `useMountMenuTarget` and `useObjectMenuTrigger`) and `MountRowMenuButton` (with `MOUNT_ROW_CUTS`) serve both `BoardTile` and the rail's `WorktreeRow`, so the two rows list the same verbs (`BranchBoard/rowMenu.test.tsx`).
+- Tile menu: `useMountRowMenu` (the `mount` target from `useMountMenuTarget` and `useObjectMenuTrigger`) and `MountRowMenuButton` serve both `BoardTile` and the rail's `WorktreeRow`, so the two rows list the same verbs (`BranchBoard/rowMenu.test.tsx`). The button lists its rows per state with `mountRowMenuOf`.
 - Branch tile: `BoardTile` is a link (`role="link"`) to `branchPlace` on `pr`; a tile with no branch opens Runs. `boardTileChipOf` picks the one chip from `stageWordOf`, `branchStoryOf`, `NAMES` and `STAGE_TONE`. The order: Merged or Closed (`row.isSettled`, with the merged tone or `BRANCH_STATE_TONE.closed`), an open question, a blocked state, the Needs you group, Running, then the story word.
 - Tile facts: `BoardTileFacts` leads with the request number (`requestShortOf`, PR or MR) and reads the lines from `useMountDiffStats`, the Changes tab owner. Runs come from `branchWorkCountsOf`, the Runs tab badge. Waiting questions are the row's `askIds`, the owner of the chip. The branch page header carries **Start a run on this branch**, **Open a terminal here** and **Open the browser here** (`BranchTools`), so a tile needs no doors.
 - Tile button: `cardsByRowId` gives each tile the cards of its branch; `cardRowIdOf` puts a question card with no branch on the tile that holds its ask. `boardTileActionOf` picks one: the answer card or, with none, **Answer** on the first open question (`questionPlace`), then the first card. A closed tile takes no button. A merged tile takes **Remove worktree** (`BoardRemoveButton` for its one mount). `BoardTileAction` draws it through `BoardRowAction`, with its confirm and its failure. `BoardLooseCards` lists cards that fit no tile. `BoardMergeInOrder` is the series merge verb. `useRemoveWorktrees` removes the merged worktrees one by one through `resolveMountCleanup`, keeps a failed one with its reason and offers a retry for what is left.

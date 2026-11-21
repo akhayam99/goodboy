@@ -31,7 +31,7 @@ describe('the diff file actions scenes', () => {
     }
   });
 
-  it('puts Comment on the header and the other file actions in its one menu', () => {
+  it('puts Comment on the header and the other file actions in its right click menu', () => {
     const Scene = U25_B_DIFF_FILE_ACTIONS_SCENES['file-actions-header'];
     render(
       <ObjectMenuProvider>
@@ -39,11 +39,12 @@ describe('the diff file actions scenes', () => {
       </ObjectMenuProvider>,
     );
 
-    const header = within(
-      document.querySelector<HTMLElement>('[data-slot="diff-file-header"]') ?? document.body,
-    );
+    const element =
+      document.querySelector<HTMLElement>('[data-slot="diff-file-header"]') ?? document.body;
+    const header = within(element);
     header.getByRole('button', { name: 'Comment' });
-    fireEvent.click(header.getByRole('button', { name: /^More for / }));
+    expect(header.queryByRole('button', { name: /^More for / })).toBeNull();
+    fireEvent.contextMenu(element);
     for (const name of ['Open in editor', 'Copy path', 'Show whole file']) {
       screen.getByRole('menuitem', { name });
     }

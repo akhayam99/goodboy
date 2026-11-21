@@ -238,7 +238,7 @@ describe('ProviderPolicyList', () => {
     render(<LimitsProvidersMenu workspaceId={WORKSPACE.id} chips={[]} nowMs={0} />);
     fireEvent.click(screen.getByRole('button', { name: 'Providers' }));
     fireEvent.click(
-      within(screen.getByRole('tablist', { name: 'Cursor policy' })).getByRole('tab', {
+      within(await screen.findByRole('tablist', { name: 'Cursor policy' })).getByRole('tab', {
         name: 'Off',
       }),
     );

@@ -877,11 +877,11 @@ const mountRowTarget = (status: WorktreeStatus | null): ObjectTarget => ({
 });
 
 const WT_TOOLS = [
-  'mount.openTerminal menu',
-  'mount.openInEditor menu',
-  'mount.openInTerminalApp menu',
   'mount.scripts menu',
   'mount.browseFiles menu',
+  'mount.openInEditor menu',
+  'mount.openTerminal menu',
+  'mount.openInTerminalApp menu',
 ];
 const WT_COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
 const WT_HISTORY = [
@@ -978,11 +978,11 @@ const MOUNT_STATES: ReadonlyArray<
     gitStatus({ changed: 3, rebase: true }),
     [
       ...WT_PR,
-      'mount.openTerminal notice',
-      'mount.openInEditor menu',
-      'mount.openInTerminalApp menu',
       'mount.scripts menu',
       'mount.browseFiles menu',
+      'mount.openInEditor menu',
+      'mount.openTerminal notice',
+      'mount.openInTerminalApp menu',
       'mount.abortRebase notice',
       'mount.rewriteHistory menu (Finish or abort the rebase first.)',
       'mount.putTaskOnBranch chip',

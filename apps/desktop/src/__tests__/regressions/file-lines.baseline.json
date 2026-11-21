@@ -67,7 +67,6 @@
   "packages/db/src/queries/session-workflow.ts": 630,
   "packages/db/src/queries/workflow.ts": 616,
   "packages/types/src/index.ts": 645,
-  "packages/ui/src/components/ContextMenu/MenuList.tsx": 253,
   "packages/ui/src/components/DrawerColumn.tsx": 252,
   "packages/ui/src/components/Listbox/index.tsx": 348,
   "packages/ui/src/components/Markdown/index.tsx": 675,

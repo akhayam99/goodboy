@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Button, FormActions, formatError } from '@goodboy/ui';
+import { Button, Checkbox, FormActions, formatError } from '@goodboy/ui';
 import type { SessionBudget, SessionBudgetOnExceed, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { NAMES } from '../../../../shared/utils/names';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { SpendLimitFields } from '../SpendLimitFields';
 import { parseSpendLimit } from '../../parseSpendLimit';
 
@@ -11,11 +13,23 @@ type Props = {
   readonly onDone: () => void;
 };
 
+type SavedLimit = {
+  readonly amount: number | null;
+  readonly behavior: SessionBudgetOnExceed;
+};
+
 export const SpendLimitEditor = ({ sessionId, limit, onDone }: Props) => {
   const setSessionBudget = useAppStore((state) => state.setSessionBudget);
   const clearSessionBudget = useAppStore((state) => state.clearSessionBudget);
+  const setSessionAutoRun = useAppStore((state) => state.setSessionAutoRun);
+  const wasAutoRun = useAppStore(
+    (state) => sessionById(state.sessions, sessionId)?.autoRun === true,
+  );
+  const [isAutoRunChosen, setIsAutoRunChosen] = useState<boolean | null>(null);
+  const isAutoRun = isAutoRunChosen ?? wasAutoRun;
   const [amount, setAmount] = useState(limit === null ? '' : String(limit.softCapUsd));
   const [behavior, setBehavior] = useState<SessionBudgetOnExceed>(limit?.onExceed ?? 'pause');
+  const [savedLimit, setSavedLimit] = useState<SavedLimit | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isBlank = amount.trim() === '';
@@ -39,11 +53,26 @@ export const SpendLimitEditor = ({ sessionId, limit, onDone }: Props) => {
     if (isInvalid) {
       return;
     }
-    if (parsed === null) {
-      void run(() => clearSessionBudget(sessionId));
-      return;
-    }
-    void run(() => setSessionBudget(sessionId, parsed, behavior));
+    void run(async () => {
+      const isLimitSaved = savedLimit?.amount === parsed && savedLimit.behavior === behavior;
+      if (!isLimitSaved) {
+        await (parsed === null
+          ? clearSessionBudget(sessionId)
+          : setSessionBudget(sessionId, parsed, behavior));
+        setSavedLimit({ amount: parsed, behavior });
+      }
+      if (isAutoRunChosen === null || isAutoRunChosen === wasAutoRun) {
+        return;
+      }
+      try {
+        await setSessionAutoRun(sessionId, isAutoRunChosen);
+      } catch (cause) {
+        throw new Error(
+          `Saved the limit, but couldn't change "${NAMES.startStepsWithoutAsking}". Save again to retry it. ${formatError(cause)}`,
+          { cause },
+        );
+      }
+    });
   };
 
   return (
@@ -61,6 +90,12 @@ export const SpendLimitEditor = ({ sessionId, limit, onDone }: Props) => {
           ? 'Enter an amount over zero, or clear it for no limit.'
           : 'Counts everything this session spends, context updates included.'}
       </p>
+      <Checkbox
+        checked={isAutoRun}
+        disabled={isSaving}
+        onChange={setIsAutoRunChosen}
+        label={NAMES.startStepsWithoutAsking}
+      />
       <FormActions
         error={error}
         leading={

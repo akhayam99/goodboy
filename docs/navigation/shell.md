@@ -80,20 +80,43 @@ never exists on one surface only.
   `Move to`: in the linked row's menu (Shift+F10), in the focused issue's
   `Linked to` row and in the palette.
 - **The Board session card.** Its right click (and Shift+F10) opens the
-  session kind's menu, the full set of session verbs: **Go to** (a submenu
-  with Open, Comments, Changes, Open in editor and Open in terminal app; a verb
-  that cannot run stays in it with its reason as a tooltip), Open the full log,
-  Limit, Rename, **Ask about this session** (`session.ask`, which opens the
-  session first when another one is open), Pin session or Unpin session, **Refresh session** (`session.refresh`, the
-  same `refreshSession` `⌘R` runs in a session, blocked while a refresh is in
-  flight), Start next steps without asking, Start a run, Link work, the copies, Archive and Delete,
-  whose confirm still asks first. The palette lists the same verbs. The row is
-  `select-none`, like every row that carries `ROW_HOVER` or `ROW_INTERACTIVE`
-  (`SelectableRow`, `InteractiveRow`, `ListGridRow`, the Board card): see
-  Where the webview menu stays.
+  session kind's menu: **Open** (a submenu with Overview, Comments, Changes,
+  Log, Editor, Terminal and External terminal; a verb that cannot run stays in
+  it with its reason as a tooltip), Rename, Pin session or Unpin session, Mark
+  as read, Start a run, Link work, **Set limit…**, **Copy** (Title, Branch
+  name, Worktree path and the pull request link, named by `requestNounLabel`),
+  then Stop all running agents, Archive and Delete, whose confirm still asks
+  first. `withSessionSubmenus` (`kinds/sessionGoToActions.ts`) tags the Open
+  and Copy rows, and `toMenuEntries` folds a group of two rows or more into its
+  submenu (one row stays flat with its full label). A child with choices, such
+  as Worktree path with several worktrees, opens its chooser beside the
+  submenu (`MenuList`). Ask about this session,
+  Refresh session, Write title and goal, Select, the run setting (Start next
+  steps without asking, which also sits in the Set limit form: the box follows
+  the live setting until you tick it, and a save whose limit landed but whose
+  run setting failed says so, and Save again sends only the run setting) and Move up or
+  down carry `placement: 'palette'`: ⌘K lists them, no menu draws them. The
+  header `⋯` (`sessionMenuOf`) holds Pin, Link work, Copy, Archive and Delete.
+  The row is `select-none`, like every row that carries `ROW_HOVER` or
+  `ROW_INTERACTIVE` (`SelectableRow`, `InteractiveRow`, `ListGridRow`, the
+  Board card): see Where the webview menu stays.
+- **Focus after a removal.** A menu verb that removes its row (archive,
+  delete, close) leaves the focus on the row next to it, across a group, or the
+  one before it on the last row. The right click and the `⋯` capture the
+  neighbour before the write (`keepRowFocus`, on `captureReturnFocus` in
+  `packages/ui`), rows carry `data-row` (`ListGridRow`, `InteractiveRow`, the
+  rail branch row, the Overview branch tile) or `data-select-id` (the Board
+  card), and a neighbour drawn anew is found again by that identity. The
+  search stays inside the row's landmark: the sole row of a list hands the
+  focus to its list, never to a row in another pane. Undo on the toast puts the
+  focus back on the restored row once the undo finished. A row that only
+  changes (pin, read) keeps the focus.
+  The shared confirm (`ActionConfirmPanel`) passes the same `returnFocusTo`.
 - **One order.** The registry and right click list Open, Act, Copy, then
-  lifecycle and destructive verbs, with a rule between groups. Menus and
-  visible controls use the same definitions and availability rules.
+  stop, archive and destructive verbs, with one rule before that last group.
+  `MenuList` draws rules only from five rows up and an icon on every row or on
+  none (`menuShapeOf` in `packages/ui`). Menus and visible controls use the
+  same definitions and availability rules.
 - **No verb that does nothing.** A surface tells the registry what it shows
   through `env.viewing` (`useActionEnv`, `ObjectOverflowMenu` and
   `useObjectMenuTrigger` take `viewing`): the artifact viewer its artifact,
@@ -110,8 +133,8 @@ never exists on one surface only.
   included, renders its rows through `AppMenuList` (radio entries for
   pickers, items for verbs), and only the menu primitives in `packages/ui`
   write those roles.
-- **What each object offers.** A session: Open, Comments, Changes, Open in terminal
-  (one choice per worktree), Open in
+- **What each object offers.** A session: Open, Comments, Changes, Open in Terminal
+  (one choice per worktree in ⌘K; the menu opens the first), Open in
   editor; Rename (inline, in the row that opened the menu), Start next steps
   without asking or Ask before starting each step (the session's Asks you: the
   default of a run started without its own setting and of agents outside a
@@ -554,7 +577,7 @@ covered.
   with its percentage and its reset, the free Codex resets as a row when Codex
   is out, and the update age in the footnote. A click on any chip, or
   on a provider under `+N`, opens the Providers menu anchored under the strip
-  (`LimitsProvidersMenu` and its `ProvidersMenuPanel`): the policy list, Connect for each CLI provider that is missing, and
+  (`LimitsProvidersMenu` and its `ProvidersMenuPanel`, loaded on first open): the policy list, Connect for each CLI provider that is missing, and
   Manage providers. Usage stays in the chip tooltip and in Settings >
   Providers. Without a workspace a chip still opens that usage page.
   The strip is a toolbar: arrow keys move between chips. With no provider

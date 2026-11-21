@@ -1,6 +1,7 @@
-import { Compass } from '@goodboy/ui/icons';
+import { Copy, SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { formatError, type MenuEntry, type MenuItemEntry } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../shared/keyboard/registry';
+import { NAMES } from '../../shared/utils/names';
 import type { ActionEnv, ActionPreviewParams, ActionSubmenu, ResolvedAction } from './types';
 
 type Params = {
@@ -11,6 +12,7 @@ type Params = {
     readonly choice?: string | null;
   }) => Promise<void>;
   readonly onPreview?: (params: ActionPreviewParams) => void;
+  readonly pool?: ReadonlyArray<ResolvedAction>;
 };
 
 type ItemParams = Params & {
@@ -18,8 +20,25 @@ type ItemParams = Params & {
 };
 
 const SUBMENUS = {
-  goto: { label: 'Go to', icon: Compass },
+  open: { label: NAMES.open, icon: SquareArrowOutUpRight },
+  copy: { label: NAMES.copy, icon: Copy },
 } as const satisfies Record<ActionSubmenu, Pick<MenuItemEntry, 'label' | 'icon'>>;
+
+const SUBMENU_VERB = /^(?:Open|Copy)(?: in| the)? /;
+
+type ActionParams = {
+  readonly action: ResolvedAction;
+};
+
+const childLabelOf = ({ action }: ActionParams): string => {
+  if (action.menuLabel !== undefined) {
+    return action.menuLabel;
+  }
+  const rest = action.label.replace(SUBMENU_VERB, '');
+  return `${rest.charAt(0).toUpperCase()}${rest.slice(1)}`;
+};
+
+const isInMenus = ({ action }: ActionParams): boolean => action.placement !== 'palette';
 
 const guarded = async ({
   env,
@@ -78,40 +97,49 @@ const itemOf = ({ action, actions, env, run, onPreview }: ItemParams): MenuItemE
 };
 
 export const toMenuEntries = ({
-  actions,
+  actions: resolved,
   env,
   run,
   onPreview,
+  pool = resolved,
 }: Params): ReadonlyArray<MenuEntry> => {
-  const shared = { actions, env, run, onPreview };
+  const actions = resolved.filter((action) => isInMenus({ action }));
+  const shared = { actions: pool, env, run, onPreview };
   return actions.flatMap((action, index): ReadonlyArray<MenuEntry> => {
     const previous = actions[index - 1];
-    if (action.submenu !== undefined && previous?.submenu === action.submenu) {
+    const submenu = action.submenu;
+    if (submenu !== undefined && previous?.submenu === submenu) {
       return [];
     }
     const separator: ReadonlyArray<MenuEntry> =
-      previous !== undefined && previous.group !== action.group
+      previous !== undefined && previous.group !== 'danger' && action.group === 'danger'
         ? [{ kind: 'separator', key: `separator-${action.id}` }]
         : [];
-    if (action.submenu === undefined) {
+    if (submenu === undefined) {
       return [...separator, itemOf({ ...shared, action })];
     }
     const members: Array<ResolvedAction> = [];
     for (const candidate of actions.slice(index)) {
-      if (candidate.submenu !== action.submenu) {
+      if (candidate.submenu !== submenu) {
         break;
       }
       members.push(candidate);
     }
-    const { label, icon } = SUBMENUS[action.submenu];
+    const [only] = members;
+    if (members.length === 1 && only !== undefined) {
+      return [...separator, itemOf({ ...shared, action: only })];
+    }
+    const { label, icon } = SUBMENUS[submenu];
     return [
       ...separator,
       {
         kind: 'item',
-        key: `submenu-${action.submenu}`,
+        key: `submenu-${submenu}`,
         label,
         icon,
-        children: members.map((member) => itemOf({ ...shared, action: member })),
+        children: members.map((member) =>
+          itemOf({ ...shared, action: { ...member, label: childLabelOf({ action: member }) } }),
+        ),
         onSelect: () => undefined,
       },
     ];

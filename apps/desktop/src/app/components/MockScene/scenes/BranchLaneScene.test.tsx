@@ -33,16 +33,16 @@ const renderLane = (variant: 'working' | 'chain') =>
   );
 
 describe('the branch lane scenes', () => {
-  it('keeps one quiet count of the fix in the bar, its actions in one menu', async () => {
+  it('keeps one quiet count of the fix in the bar, with one stop button', async () => {
     const { container } = renderLane('working');
 
-    await screen.findAllByRole('button', { name: 'Fix actions' });
+    await screen.findAllByRole('button', { name: /^Stop fixing / });
     const counts = container.querySelectorAll<HTMLElement>('[data-fix-run-count]');
 
     expect(counts).toHaveLength(1);
     expect(counts[0]?.textContent).toContain('1 of 3');
     expect(
-      within(counts[0] ?? container).getByRole('button', { name: 'Fix actions' }),
+      within(counts[0] ?? container).getByRole('button', { name: /^Stop fixing / }),
     ).toBeDefined();
   });
 

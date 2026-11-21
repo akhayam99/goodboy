@@ -3,10 +3,13 @@ type Params = {
 };
 
 const OPEN_MENU_IDS: ReadonlyArray<string> = [
-  'session.ask',
   'session.pin',
   'session.unpin',
-  'session.refresh',
+  'session.linkIssue',
+  'session.copyTitle',
+  'session.copyBranch',
+  'session.copyWorktreePath',
+  'session.copyPr',
   'session.archive',
   'session.delete',
 ];

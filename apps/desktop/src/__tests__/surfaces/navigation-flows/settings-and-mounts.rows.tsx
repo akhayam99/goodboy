@@ -101,7 +101,8 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     covers: ['openMountTerminal'],
     open: async () => {
       await openWorktreeMenu();
-      await click(await screen.findByRole('menuitem', { name: /^Open terminal/ }));
+      await click(await screen.findByRole('menuitem', { name: /^Open$/ }));
+      await click(await screen.findByRole('menuitem', { name: /^Terminal/ }));
     },
     lands: async () => {
       await screen.findByRole('button', { name: 'Open full page' }, WAIT);

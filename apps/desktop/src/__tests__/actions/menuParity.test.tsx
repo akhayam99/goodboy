@@ -165,7 +165,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(after).not.toContain('Pin session');
   });
 
-  it('session menu: Go to groups the navigation verbs and the submenu still lists each of them', async () => {
+  it('session menu: Open and Copy fold their rows, and the palette keeps the rest', async () => {
     seedActionState({
       useAppStore,
       seed: { mounts: [mountFixture()], branch: 'hl/payout-export' },
@@ -173,23 +173,30 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     withMenus(<StageBoardCard session={sessionFixture()} nav={NAV} />);
     fireEvent.contextMenu(screen.getByRole('article'));
     const topLevel = menuLabels();
-    const registry = (
+    const registry =
       bindTarget({
         state: useAppStore.getState(),
         target: { kind: 'session', sessionId: SESSION },
-      })?.resolve() ?? []
-    ).map((action) => action.label);
-    expect(topLevel[0]).toBe('Go to');
+      })?.resolve() ?? [];
+    expect(topLevel[0]).toBe('Open');
     expect(topLevel).not.toContain('Comments');
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Go to' }));
-    const goTo = within(screen.getByRole('menu', { name: 'Go to' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Open' }));
+    const open = within(screen.getByRole('menu', { name: 'Open' }))
       .getAllByRole('menuitem')
       .map((item) => item.getAttribute('data-menu-label') ?? '');
-    expect(goTo).toEqual(['Open', 'Comments', 'Changes', 'Open in editor', 'Open in terminal app']);
-    const surfaceOwned = new Set(['Go to', 'Select']);
-    expect([...topLevel.filter((label) => !surfaceOwned.has(label)), ...goTo].sort()).toEqual(
-      [...registry].sort(),
-    );
+    expect(open).toEqual([
+      'Overview',
+      'Comments',
+      'Changes',
+      'Log',
+      'Editor',
+      'Terminal',
+      'External terminal',
+    ]);
+    const folded = registry.filter((action) => action.submenu !== undefined).length;
+    const paletteOnly = registry.filter((action) => action.placement === 'palette').length;
+    expect(topLevel).toContain('Copy');
+    expect(topLevel.length).toBe(registry.length - folded - paletteOnly + 2);
   });
 
   it('diff file header', async () => {
@@ -599,7 +606,12 @@ describe('⌘K lists the same set as the registry, in the order of the state', (
       })?.resolve() ?? []
     )
       .filter((action) => action.blockedReason === null)
-      .map((action) => action.label.replace(/^Open /, '').toLowerCase());
+      .map((action) =>
+        action.label
+          .replace(/^Open /, '')
+          .replace(/…$/, '')
+          .toLowerCase(),
+      );
     render(
       <ToastProvider>
         <PaletteOverlay onClose={vi.fn()} />

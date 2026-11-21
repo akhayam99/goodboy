@@ -5,19 +5,16 @@ import {
   cn,
   FactCard,
   ICON_SIZE,
-  IconButton,
   Tooltip,
   FOCUS_RING,
   StatusDot,
 } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { splitPath } from '../../lib/fileStatus';
 import { FileStatusMark } from '../FileStatusMark';
 import { fileCardOf } from '../../lib/fileCardOf';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import { ObjectMenuOrVerb } from '../../../actions/ObjectMenuOrVerb';
 import type { DiffFileActionTarget } from '../../../actions/types';
 
 type Props = {
@@ -130,19 +127,6 @@ export const FileHeader = ({
             Comment
           </Button>
         </Tooltip>
-      )}
-      {isCompact ? null : (
-        <ObjectMenuOrVerb
-          target={target}
-          menu={
-            <IconButton
-              icon={CONCEPT_ICONS.more}
-              label={`More for ${name}`}
-              aria-haspopup="menu"
-              onClick={menu.onContextMenu}
-            />
-          }
-        />
       )}
     </div>
   );
