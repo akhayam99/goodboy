@@ -95,10 +95,12 @@ Know the moves that unblock the task, such as answering a question, fixing a fai
 - A question or an approval of your own is never put away this way.
 - **Analyze** starts the Debugger on a failing check. Its next moves (open the analysis, **Start fix**, **Push**) then sit on that run.
 - **Open a pull request** names the branch it opens. With several branches still without one, the row of the branch furthest ahead offers it.
-- Once a pull request merges, **Remove the payments-api worktree** is offered with the reason and its size (`#418 merged · 412 MB`), or with its age (`#418 merged 3d ago`) when Goodboy reads the merge before the cleanup is proposed.
+- Once a pull request merges, **Remove the payments-api worktree** is offered with the reason and its size (`#418 merged · 412 MB`).
+- When Goodboy reads the merge before the cleanup is proposed, the reason carries the age instead (`#418 merged 3d ago`).
 - When the last branch is merged or closed and a linked Linear or Jira item is not done, **Move HBL-412 to Done** is offered. The toast has **Undo**.
 - **Run the failing test** names the test a failed GitHub Actions check points at and writes the command in the terminal of that worktree. It waits for your Enter.
-- After a turn that changed a migration, a lockfile or a schema, the script that follows is offered with the file as its reason. **db:migrate** is written and waits for Enter. An install or a generate runs on the click.
+- After a turn that changed a migration, a lockfile or a schema, the script that follows is offered with the file as its reason.
+- **db:migrate** is written in the terminal and waits for Enter. An install or a generate runs on the click.
 - **Rerun integration-tests** shows when the job log says the check timed out. It reruns only the failed jobs. A check outside GitHub Actions shows **Open on** and the host instead of a log.
 - **Ask the Implementer what blocks it** shows when an agent has been quiet for 5 minutes. After 30 minutes the question moves to Needs you.
 - A stopped rebase comes first, above **Rerun**, and says how many files conflict.

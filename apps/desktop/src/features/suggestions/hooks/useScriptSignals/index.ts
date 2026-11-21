@@ -53,5 +53,5 @@ export const useScriptSignals = ({ sessionId, mounts, wantedMountIds }: Params):
       ),
     [runs],
   );
-  return { scripts, scriptRuns };
+  return useMemo(() => ({ scripts, scriptRuns }), [scriptRuns, scripts]);
 };

@@ -85,5 +85,5 @@ export const useCheckSignals = ({ session, mounts }: Params): CheckSignals => {
     () => readings.flatMap((reading) => (reading === null ? [] : [reading])),
     [readings],
   );
-  return { failedChecks, checkLogs };
+  return useMemo(() => ({ failedChecks, checkLogs }), [checkLogs, failedChecks]);
 };

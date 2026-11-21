@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { useSessionSuggestionsFrom } from '../../../../suggestions/useSessionSuggestions';
+import { useSessionMoves } from '../../../../suggestions/useSessionSuggestions';
+import type { SettledRow } from '../../../../suggestions/nextSettleState';
 import { useTranscriptMountProposals } from '../../../../suggestions/useTranscriptMountProposals';
 import { transcriptOwnedProjectIds } from '../../../../suggestions/transcriptMountProposals';
 import type { SessionWorkModel } from '../../useSessionWorkModel';
@@ -18,6 +19,7 @@ type Result = {
   readonly cards: ReadonlyArray<ActionCardModel>;
   readonly actionsFor: ActionCardActions['actionsFor'];
   readonly openFor: ActionCardActions['openFor'];
+  readonly settled: ReadonlyArray<SettledRow>;
 };
 
 export const useNextCards = ({ session, model, autoTargets }: Params): Result => {
@@ -27,7 +29,7 @@ export const useNextCards = ({ session, model, autoTargets }: Params): Result =>
     () => new Set(model.owners.flatMap((owner) => owner.questionIds)),
     [model.owners],
   );
-  const suggestions = useSessionSuggestionsFrom({
+  const { moves: suggestions, settled } = useSessionMoves({
     session,
     agents,
     shownQuestionIds: ownedQuestionIds,
@@ -56,5 +58,5 @@ export const useNextCards = ({ session, model, autoTargets }: Params): Result =>
     [autoTargets, isHidden, model.owners, suggestions, transcriptOwned],
   );
 
-  return { cards, actionsFor, openFor };
+  return { cards, actionsFor, openFor, settled };
 };

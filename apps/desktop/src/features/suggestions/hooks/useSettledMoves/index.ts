@@ -15,14 +15,26 @@ type Params = {
 
 const NO_ROWS: ReadonlyArray<SettledRow> = [];
 
+type RowsParams = {
+  readonly first: ReadonlyArray<SettledRow>;
+  readonly second: ReadonlyArray<SettledRow>;
+};
+
+const isSameRows = ({ first, second }: RowsParams): boolean =>
+  first.length === second.length &&
+  first.every((row, index) => row.id === second[index]?.id && row.until === second[index]?.until);
+
 export const useSettledMoves = ({ moves, signals }: Params): ReadonlyArray<SettledRow> => {
   const stateRef = useRef<SettleState>(EMPTY_SETTLE);
   const [rows, setRows] = useState<ReadonlyArray<SettledRow>>(NO_ROWS);
 
   useEffect(() => {
     const next = nextSettleState({ state: stateRef.current, moves, signals, now: Date.now() });
+    const isSame = isSameRows({ first: stateRef.current.rows, second: next.rows });
     stateRef.current = next;
-    setRows(next.rows.length === 0 ? NO_ROWS : next.rows);
+    if (!isSame) {
+      setRows(next.rows.length === 0 ? NO_ROWS : next.rows);
+    }
   }, [moves, signals]);
 
   useEffect(() => {

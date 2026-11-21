@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
   Agent,
+  MountId,
   PlanId,
   Session,
   SessionEvent,
@@ -22,6 +23,8 @@ import {
 } from '../../../shared/lib/gitStatus';
 import { branchPushStateOf } from '../../../shared/lib/branchPushState';
 import { useCheckChains } from '../hooks/useCheckChains';
+import { useSettledMoves } from '../hooks/useSettledMoves';
+import type { SettledRow } from '../nextSettleState';
 import { useCheckSignals } from '../hooks/useCheckSignals';
 import { useScriptSignals } from '../hooks/useScriptSignals';
 import { useTurnSignals } from '../hooks/useTurnSignals';
@@ -73,6 +76,12 @@ type FromParams = Params & {
 const NO_SHOWN_QUESTIONS: ReadonlySet<string> = new Set();
 
 const NO_TRACKER_MOVES: ReadonlyArray<TrackerMove> = [];
+
+type MergedFact = {
+  readonly mountId: MountId;
+  readonly prNumber: number | null;
+  readonly mergedAt: string | null;
+};
 
 type ProjectNameParams = {
   readonly mount: SessionProjectMount;
@@ -279,8 +288,8 @@ export const useNextStepSignalsFrom = ({
     [checkSignals.failedChecks, rebaseMounts, turnSignals.turnFiles],
   );
   const scriptSignals = useScriptSignals({ sessionId, mounts: rebaseMounts, wantedMountIds });
-  const mergedFacts = useAppStore(
-    useShallow((state) =>
+  const mergedFactsJson = useAppStore((state) =>
+    JSON.stringify(
       completedMountIds.flatMap((mountId) =>
         isMountRequestMerged({ state, mountId })
           ? [
@@ -293,6 +302,10 @@ export const useNextStepSignalsFrom = ({
           : [],
       ),
     ),
+  );
+  const mergedFacts = useMemo(
+    (): ReadonlyArray<MergedFact> => JSON.parse(mergedFactsJson),
+    [mergedFactsJson],
   );
 
   return useMemo((): NextStepSignals => {
@@ -557,6 +570,18 @@ export const useNextStepSignalsFrom = ({
     withRebase,
     worktreeStatuses,
   ]);
+};
+
+type SessionMoves = {
+  readonly moves: ReadonlyArray<NextMove>;
+  readonly settled: ReadonlyArray<SettledRow>;
+};
+
+export const useSessionMoves = ({ ...rest }: FromParams): SessionMoves => {
+  const signals = useNextStepSignalsFrom(rest);
+  const moves = useMemo(() => deriveNextSteps({ signals }), [signals]);
+  const settled = useSettledMoves({ moves, signals });
+  return { moves, settled };
 };
 
 export const useSessionSuggestionsFrom = ({ ...rest }: FromParams): ReadonlyArray<NextMove> => {

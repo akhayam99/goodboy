@@ -101,5 +101,5 @@ export const useTurnSignals = ({ sessionId, agents }: Params): TurnSignals => {
     return byAgent;
   }, [liveRuns, quietByRun]);
 
-  return { turnFiles, touches, quietByAgent };
+  return useMemo(() => ({ turnFiles, touches, quietByAgent }), [quietByAgent, touches, turnFiles]);
 };
