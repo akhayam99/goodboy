@@ -112,8 +112,10 @@
   button goes to the Overview and a reload reopens the page. The session `⋯`
   does not list it. The page (`ActivityPage`, `PAGE_MEASURE.activity`, the
   column of the Overview) draws the rows, rail, nodes and heights of the log,
-  plus a row per script run, terminal command and check rerun read from
-  `work_events`, never from `session_events`. One boxed `SegmentedTabs` filters
+  plus a row per script run read from `work_events`, never from
+  `session_events` (a terminal command or a check rerun gets the same row
+  once a writer records it there; `workOutcomeOf` names the result for the
+  row and the Scripts pane alike). One boxed `SegmentedTabs` filters
   by kind (All, Agents, Branches, Checks, Scripts, Context), the search box
   stays, and a `FilterButton` filters by project through each row's `mount_id`
   once the session has two projects. `Mark as read` sits in the same row and

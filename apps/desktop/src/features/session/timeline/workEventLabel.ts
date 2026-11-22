@@ -1,4 +1,5 @@
 import type { WorkEvent } from '@goodboy/db';
+import { workOutcomeOf } from '../../scripts/workOutcomeOf';
 import type { TimelineWorkEntry } from './timelineFactEntries';
 import type { TimelineLabelSegment } from './sessionEventPresentation';
 
@@ -39,25 +40,30 @@ const subjectOf = ({ work }: WorkParams): string => {
   }
 };
 
-const workOutcomeOf = ({ work }: WorkParams): string => {
-  if (work.endedAt === null) {
-    return work.kind === 'check-rerun' ? 'rerun started' : 'started';
-  }
+const outcomeWordOf = ({ work }: WorkParams): string => {
   const verb = work.kind === 'check-rerun' ? 'rerun ' : '';
-  if (work.exitCode === null) {
-    return `${verb}stopped`;
+  const outcome = workOutcomeOf({ endedAt: work.endedAt, exitCode: work.exitCode });
+  switch (outcome) {
+    case 'unfinished':
+      return `${verb}started`;
+    case 'cancelled':
+      return `${verb}stopped`;
+    case 'ok':
+      return `${verb}passed`;
+    case 'error':
+      return `${verb}failed (exit ${work.exitCode ?? ''})`;
+    default: {
+      const exhaustive: never = outcome;
+      return exhaustive;
+    }
   }
-  if (work.exitCode === 0) {
-    return `${verb}passed`;
-  }
-  return `${verb}failed (exit ${work.exitCode})`;
 };
 
 export const workEventLabel = ({ entry }: Params): ReadonlyArray<TimelineLabelSegment> => {
   const { work, mountName } = entry;
   const said: ReadonlyArray<TimelineLabelSegment> = [
     { kind: 'value', text: subjectOf({ work }), variant: 'path' },
-    { kind: 'text', text: ` ${workOutcomeOf({ work })}` },
+    { kind: 'text', text: ` ${outcomeWordOf({ work })}` },
   ];
   if (mountName === null) {
     return said;
