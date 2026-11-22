@@ -91,6 +91,9 @@ export const watchSessionDockGrid = ({
 
   const recall = ({ sessionId, isEntry }: RecallParams): void => {
     queueMicrotask(() => {
+      if (store.getState().currentSessionId !== sessionId) {
+        return;
+      }
       void store
         .getState()
         .recallDockGrid({ sessionId, isSavedThisRun: savedThisRun.has(sessionId) })

@@ -296,6 +296,17 @@ describe('the dock grid saved on the session', () => {
     expect(toolKinds()).toEqual([]);
   });
 
+  it('reads no grid for a session the window left before the read started', async () => {
+    saveRow({ sessionId: S1, grid: SAVED });
+    watch();
+
+    state().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    state().navigate({ to: BOARD_PLACE });
+    await settle();
+
+    expect(toolKinds()).toEqual([]);
+  });
+
   it('drops a grid that comes back after the user opened a tool', async () => {
     saveRow({ sessionId: S1, grid: SAVED });
     watch();

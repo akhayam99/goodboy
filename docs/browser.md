@@ -517,9 +517,11 @@ it; Esc inside the page goes to the page.
   screen. A list answer for a session the pane has left is dropped, and the
   host reads no address from a tab that is asleep.
 - **Coming back**: the Browser belongs to the session it was opened in, so
-  leaving the session parks it and its tab sleeps. A pane that mounts again
-  asks the host once about the shown tab (`useParkedTab`) and places nothing
-  until the answer. A tab the engine closed while the pane was away (ten
+  leaving the session parks it and its tab sleeps. The pane asks the host
+  about each live page it shows, on mount, on a tab pick and when a binding
+  arrives (`useParkedTab`), and places nothing until the answer for that
+  session and page; an answer for a page no longer shown is dropped. A page
+  this window just opened is shown without asking. A tab the engine closed while the pane was away (ten
   minutes hidden, or the live cap) is not reopened on its own: the pane shows
   `localhost:4010 · asleep`, "The page closed while you were away. It reloads
   at its address." and **Wake**. Wake shows the tab, which builds the webview

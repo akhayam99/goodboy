@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { browserHost } from '../../browserHost';
+import { browserPaneRequests } from '../../browserPaneRequests';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -13,51 +14,54 @@ type ParkedTab = {
   readonly wake: () => void;
 };
 
-type Check =
-  | { readonly at: 'checking'; readonly liveId: string }
-  | { readonly at: 'parked'; readonly liveId: string }
-  | { readonly at: 'awake' };
-
-const AWAKE: Check = { at: 'awake' };
+type Check = {
+  readonly sessionId: SessionId;
+  readonly liveId: string;
+  readonly at: 'checking' | 'parked' | 'awake';
+};
 
 export const useParkedTab = ({ sessionId, liveId }: Params): ParkedTab => {
-  const [check, setCheck] = useState<Check>(
-    liveId === undefined ? AWAKE : { at: 'checking', liveId },
-  );
-  const liveIdRef = useRef(liveId);
-  liveIdRef.current = liveId;
+  const [check, setCheck] = useState<Check | null>(null);
 
   useEffect(() => {
-    const asked = liveIdRef.current;
-    if (asked === undefined) {
-      setCheck(AWAKE);
+    if (liveId === undefined) {
+      return;
+    }
+    if (browserPaneRequests.opened.delete(`${sessionId}:${liveId}`)) {
+      setCheck({ sessionId, liveId, at: 'awake' });
       return;
     }
     let isCurrent = true;
-    setCheck({ at: 'checking', liveId: asked });
+    setCheck({ sessionId, liveId, at: 'checking' });
     void browserHost.list({ sessionId }).then(
       (facts) => {
         if (!isCurrent) {
           return;
         }
-        const fact = facts.find((candidate) => candidate.id === asked);
-        setCheck(fact?.state === 'closed' ? { at: 'parked', liveId: asked } : AWAKE);
+        const fact = facts.find((candidate) => candidate.id === liveId);
+        setCheck({ sessionId, liveId, at: fact?.state === 'closed' ? 'parked' : 'awake' });
       },
       () => {
         if (isCurrent) {
-          setCheck(AWAKE);
+          setCheck({ sessionId, liveId, at: 'awake' });
         }
       },
     );
     return () => {
       isCurrent = false;
     };
-  }, [sessionId]);
+  }, [sessionId, liveId]);
 
-  const isOnShown = check.at !== 'awake' && check.liveId === liveId;
+  const isOnShown = check !== null && check.sessionId === sessionId && check.liveId === liveId;
+  const isUnchecked =
+    liveId !== undefined && !isOnShown && !browserPaneRequests.opened.has(`${sessionId}:${liveId}`);
   return {
     isParked: isOnShown && check.at === 'parked',
-    isChecking: isOnShown && check.at === 'checking',
-    wake: () => setCheck(AWAKE),
+    isChecking: isUnchecked || (isOnShown && check.at === 'checking'),
+    wake: () => {
+      if (liveId !== undefined) {
+        setCheck({ sessionId, liveId, at: 'awake' });
+      }
+    },
   };
 };

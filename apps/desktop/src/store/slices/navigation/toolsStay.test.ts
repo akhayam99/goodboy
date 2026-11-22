@@ -6,6 +6,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../storyHarness';
 import type { TerminalTab, TerminalTabId } from '../../../shared/types/terminal';
@@ -25,6 +26,7 @@ vi.mock('../../../shared/lib/db', async () =>
 );
 
 const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
+const OTHER_WS = brandId<WorkspaceId>({ value: 'ws-northwind' });
 const S1 = brandId<SessionId>({ value: 'session-ledger-core' });
 const S2 = brandId<SessionId>({ value: 'session-notify-relay' });
 const AGENT = brandId<AgentId>({ value: 'agent-implementer' });
@@ -245,6 +247,25 @@ describe('a grid tool belongs to the session it was opened in', () => {
 
     state().closeStudio();
     expect(selectDrawerPanel(state())).toEqual(MONITOR);
+  });
+
+  it('leaves the Board tools of a workspace behind when the window switches workspace', async () => {
+    state().navigate({ to: BOARD_PLACE });
+    state().openDrawer(MONITOR);
+    state().navigate({ to: sessionPlace({ sessionId: S2 }) });
+    stubStoryInvoke({
+      budget_rule_list: [],
+      budget_alerts_list: [],
+      workflow_list: [],
+      step_def_list: [],
+    });
+
+    await state().setCurrentWorkspace({ id: OTHER_WS });
+    state().navigate({ to: BOARD_PLACE });
+
+    expect(state().currentWorkspaceId).toBe(OTHER_WS);
+    expect(selectDrawerPanel(state())).toBeNull();
+    expect(toolKinds()).toEqual([]);
   });
 
   it('opens Monitor of the session on the first press after the Board, closes it on the second', () => {

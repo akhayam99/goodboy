@@ -193,6 +193,34 @@ describe('a Browser that comes back after its page closed', () => {
     expect(screen.queryByRole('button', { name: 'Wake' })).toBeNull();
   });
 
+  it('checks a closed tab picked after the pane opened, and shows nothing until Wake', async () => {
+    store.setState({
+      browserSessionTabs: { [SESSION_ID]: [ROW, OTHER_ROW] },
+      browserActiveTab: { [SESSION_ID]: OTHER_ROW.id },
+    });
+    renderPane();
+    await act(async () => undefined);
+
+    act(() => {
+      store.setState({ browserActiveTab: { [SESSION_ID]: ROW.id } });
+    });
+
+    await screen.findByText('localhost:4010 · asleep');
+    expect(shows()).toBe(0);
+  });
+
+  it('checks a page bound after the pane opened before it is shown', async () => {
+    store.setState({ browserLiveTabs: { [SESSION_ID]: {} } });
+    renderPane();
+
+    act(() => {
+      store.setState({ browserLiveTabs: { [SESSION_ID]: { [ROW.id]: LIVE_ID } } });
+    });
+
+    await screen.findByText('localhost:4010 · asleep');
+    expect(shows()).toBe(0);
+  });
+
   it('shows the page when the engine cannot be asked', async () => {
     isListFailing = true;
     renderPane();
