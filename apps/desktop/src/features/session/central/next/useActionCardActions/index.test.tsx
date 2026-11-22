@@ -56,6 +56,7 @@ vi.mock('../../../../suggestions/useSuggestionActions', () => ({
     }),
 }));
 
+import { revertNextStepOutcome } from '../../../../suggestions/useNextStepOutcomes';
 import { useActionCardActions } from './index';
 
 const SESSION = aSession({ id: FIXTURE_SESSION });
@@ -125,6 +126,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   runs.clear();
+  vi.mocked(revertNextStepOutcome).mockClear();
   continueStoppedAgent.mockReset();
   continueStoppedAgent.mockResolvedValue(undefined);
   loadAutoTrees.mockReset();
@@ -354,6 +356,41 @@ describe('a late result for a card that is already gone', () => {
     });
 
     expect(result.current.isHidden({ card })).toBe(true);
+  });
+});
+
+describe('undo of a move put out of the way', () => {
+  it('brings the move back after the face that dismissed it unmounted', async () => {
+    const { result, unmount } = renderHook(() => useActionCardActions({ session: SESSION }), {
+      wrapper,
+    });
+    const card = suggestionCard();
+    await act(async () => {
+      result.current.actionsFor({ card }).menu?.target.onNotNow?.();
+    });
+    unmount();
+
+    const isUndone = await useAppStore.getState().undoLastOperation({ shouldAnnounce: false });
+
+    expect(isUndone).toBe(true);
+    expect(revertNextStepOutcome).toHaveBeenCalledWith({
+      sessionId: FIXTURE_SESSION,
+      id: 'event',
+    });
+  });
+
+  it('drops the undo once the session is gone', async () => {
+    const { result } = renderHook(() => useActionCardActions({ session: SESSION }), { wrapper });
+    const card = suggestionCard();
+    await act(async () => {
+      result.current.actionsFor({ card }).menu?.target.onNotNow?.();
+    });
+    useAppStore.setState({ sessions: [] });
+
+    const isUndone = await useAppStore.getState().undoLastOperation({ shouldAnnounce: false });
+
+    expect(isUndone).toBe(false);
+    expect(revertNextStepOutcome).not.toHaveBeenCalled();
   });
 });
 
