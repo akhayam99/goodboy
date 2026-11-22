@@ -520,6 +520,29 @@ describe('the face saved with the grid', () => {
     expect(db.rows.has(S2)).toBe(false);
   });
 
+  it('keeps the face on screen when its save fails, says so, and the next switch saves it', async () => {
+    watch();
+    await goTo({ sessionId: S1 });
+    db.failSaves = true;
+
+    state().setSessionFace({ sessionId: S1, face: 'desk' });
+    await settle();
+
+    expect(state().sessionFace[S1]).toBe('desk');
+    expect(db.rows.has(S1)).toBe(false);
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: S1, title: "Couldn't save the panels of this session" }),
+    );
+
+    db.failSaves = false;
+    state().setSessionFace({ sessionId: S1, face: 'overview' });
+    await settle();
+    state().setSessionFace({ sessionId: S1, face: 'desk' });
+    await settle();
+
+    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ face: 'desk' });
+  });
+
   it('reopens each session on the face it was left on', async () => {
     saveRow({ sessionId: S1, grid: SAVED });
     db.rows.set(S2, { grid: storedDockGridOf({ grid: SAVED, face: 'desk' }), savedAt: 1 });

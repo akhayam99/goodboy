@@ -1435,6 +1435,10 @@ u50-ask-live-doing-light
 u50-ask-live-left-dark
 u50-ask-live-left-light
 u50-ask-live-light
+u50-desk-face-dark
+u50-desk-face-light
+u50-desk-face-overview-dark
+u50-desk-face-overview-light
 u50-mount-fix-confirm-dark
 u50-mount-fix-confirm-light
 u50-mount-fix-dark
