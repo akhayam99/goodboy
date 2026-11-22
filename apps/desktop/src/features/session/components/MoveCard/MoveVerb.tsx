@@ -29,7 +29,7 @@ export const MoveVerb = ({ verb, cardId, cardTitle, variant, onOpen }: Props) =>
     verb.run();
   };
   const look = actionButtonLookOf({ verb: verb.label, variant });
-  const button = (
+  const plain = (
     <Button
       size="sm"
       variant={look.variant}
@@ -44,8 +44,16 @@ export const MoveVerb = ({ verb, cardId, cardTitle, variant, onOpen }: Props) =>
     </Button>
   );
   if (verb.blockedReason !== undefined) {
-    return <Tooltip content={verb.blockedReason}>{button}</Tooltip>;
+    return <Tooltip content={verb.blockedReason}>{plain}</Tooltip>;
   }
+  const button =
+    variant === 'primary' ? (
+      <Tooltip content={verb.ariaLabel ?? verb.label} shortcut="list.open">
+        {plain}
+      </Tooltip>
+    ) : (
+      plain
+    );
   if (verb.confirmRole === null) {
     return button;
   }

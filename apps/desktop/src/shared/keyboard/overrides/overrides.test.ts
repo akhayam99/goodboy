@@ -111,6 +111,7 @@ describe('which rows can be rebound', () => {
       'composer.submit',
       'overlay.close',
       'list.star',
+      'move.notNow',
       'workspace.1',
       'terminal.tab1',
       'app.undo',

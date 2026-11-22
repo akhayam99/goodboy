@@ -59,7 +59,12 @@ export const MoveCard = ({
     );
   if (density === 'row') {
     return (
-      <div data-move={card.id} data-move-density="row" className="flex min-w-0 flex-col gap-1">
+      <div
+        data-move={card.id}
+        data-move-density="row"
+        data-move-primary={isPrimary ? '' : undefined}
+        className="flex min-w-0 flex-col gap-1"
+      >
         <div className="flex min-h-8 min-w-0 items-center gap-3">
           <span className="flex min-w-0 flex-1 flex-col">
             <TruncatedText className="min-w-0 text-ui text-foreground">{card.title}</TruncatedText>
@@ -76,7 +81,12 @@ export const MoveCard = ({
     );
   }
   return (
-    <div data-move={card.id} data-move-density="focus" className="flex min-w-0 flex-col gap-2">
+    <div
+      data-move={card.id}
+      data-move-density="focus"
+      data-move-primary={isPrimary ? '' : undefined}
+      className="flex min-w-0 flex-col gap-2"
+    >
       {kicker === null || kicker === '' ? null : (
         <span className="min-w-0 truncate text-meta text-muted-foreground">{kicker}</span>
       )}

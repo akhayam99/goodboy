@@ -2003,6 +2003,21 @@ const openTwoTerminalTabs = async (): Promise<void> => {
   await waitFor(() => expect(terminalRows().length).toBe(2));
 };
 
+const movesPutAway: Array<string> = [];
+
+const moveRow = (id: string): Element | null =>
+  document.querySelector(`[data-central-column] [data-move="${id}"]`);
+
+const moveInFront = async (): Promise<string> => {
+  const move = await waitFor(() =>
+    requireValue({ value: document.querySelector('[data-central-column] [data-move-primary]') }),
+  );
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+  return requireValue({ value: move.getAttribute('data-move') });
+};
+
 export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'terminal.prevTab',
@@ -2385,6 +2400,77 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await waitFor(() => expect(screen.queryByText('Second alert')).toBeNull());
       screen.getByText('First alert');
     },
+  }),
+  keyRow({
+    id: 'move.notNow',
+    also: ['app.undo'],
+    note: 'puts the move in front out of the way, and the undo key brings it back',
+    open: async () => {
+      const id = await moveInFront();
+      movesPutAway.push(id);
+      await pressed('move.notNow', document.body);
+      await waitFor(() => expect(moveRow(id)).toBeNull());
+      await pressed('app.undo', document.body);
+    },
+    lands: async () =>
+      waitFor(() => expect(moveRow(requireValue({ value: movesPutAway.at(-1) }))).not.toBeNull()),
+  }),
+  keyRow({
+    id: 'list.open',
+    note: 'on the overview, with nothing focused, runs the verb of the move in front',
+    open: async () => {
+      const id = await moveInFront();
+      const verb = requireValue({ value: moveRow(id)?.querySelector('button') });
+      movesPutAway.push(verb.textContent ?? '');
+      verb.addEventListener('click', () => movesPutAway.push('clicked'), { once: true });
+      await pressed('list.open', document.body);
+    },
+    lands: async () => expect(movesPutAway.at(-1)).toBe('clicked'),
+  }),
+  keyRow({
+    id: 'move.notNow',
+    note: 'stays quiet with the keyboard in a terminal',
+    open: async () => {
+      const id = await moveInFront();
+      movesPutAway.push(id);
+      const terminal = document.createElement('div');
+      terminal.className = 'xterm';
+      const input = document.createElement('textarea');
+      terminal.append(input);
+      document.body.append(terminal);
+      input.focus();
+      await pressed('move.notNow', input);
+      terminal.remove();
+    },
+    lands: async () => expect(moveRow(requireValue({ value: movesPutAway.at(-1) }))).not.toBeNull(),
+  }),
+  keyRow({
+    id: 'session.desk',
+    note: 'switches the face with the keyboard in a terminal',
+    open: async (ctx) => {
+      await press('terminal.studio')();
+      const terminal = document.createElement('div');
+      terminal.className = 'xterm';
+      const input = document.createElement('textarea');
+      terminal.append(input);
+      document.body.append(terminal);
+      input.focus();
+      await pressed('session.desk', input);
+      terminal.remove();
+      expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
+    },
+    lands: async (ctx) =>
+      waitFor(() => expect(useAppStore.getState().sessionFace[ctx.sessionId]).toBe('desk')),
+  }),
+  keyRow({
+    id: 'nav.up',
+    note: 'on the Desk goes up to the board, as on the Overview',
+    open: async () => {
+      await press('session.desk')();
+      await screen.findByRole('complementary', { name: 'Desk' });
+      await press('nav.up')();
+    },
+    lands: () => heading('Board'),
   }),
   ...SELECTION_KEY_ROWS,
 ];
