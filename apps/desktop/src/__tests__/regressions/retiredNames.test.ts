@@ -76,7 +76,6 @@ describe('retired names match whatever the casing', () => {
   it.each([
     'Lead needs you',
     'Message Lead',
-    'Resolve with the Lead',
     'Auto',
     'Auto picks the model',
     'Auto in Models',

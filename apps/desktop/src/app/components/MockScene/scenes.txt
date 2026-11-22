@@ -1469,6 +1469,16 @@ u50-queue-clear-dark
 u50-queue-clear-light
 u50-queue-dark
 u50-queue-light
+u50-send-to-lead-none-dark
+u50-send-to-lead-none-light
+u50-send-to-lead-one-dark
+u50-send-to-lead-one-light
+u50-send-to-lead-pick-dark
+u50-send-to-lead-pick-light
+u50-send-to-lead-sent-dark
+u50-send-to-lead-sent-light
+u50-send-to-lead-stopped-dark
+u50-send-to-lead-stopped-light
 update-card
 update-card-long-version
 update-card-narrow

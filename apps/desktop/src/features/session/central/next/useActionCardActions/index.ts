@@ -330,7 +330,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
     switch (row.verb) {
       case 'resolve-auto':
         return {
-          label: 'Resolve with the Lead',
+          label: NAMES.startNewLead,
           isDisabled: autoBlockedReason !== null,
           run: runIt({ task: verbs.resolveWithAuto }),
         };

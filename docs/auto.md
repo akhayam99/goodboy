@@ -38,10 +38,7 @@ of work. One map, read it before a rename:
 | Lead asks you, permission rows      | `auto.permissions`, `auto_trees.permissions` (m243)                        |
 | Older run "Workflow · Orchestrated" | `session_workflows` with `execution_mode` (m091), kind `orchestrated`      |
 
-Some buttons still carry the old word: **Let Auto take it from here**, **Detach
-from Auto**, **Stopped by Auto**, **What Auto was told**, **Use as an Auto
-check** and **Resolve with Auto**. They are copy, not a second engine. New runs
-never start the orchestrator; an open orchestrated run finishes on it, and the
+New runs never start the orchestrator; an open orchestrated run finishes on it, and the
 orchestrator goes no earlier than two minor releases after 0.38.0
 ([features/workflows.md](features/workflows.md#older-runs)). No migration
 moves a row between the two engines.
@@ -140,7 +137,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
 
 ## Moving an agent to Auto
 
-**Let Auto take it from here** (once Move to Auto) hands an agent you started
+**Let the Lead take it from here** (once Move to Auto) hands an agent you started
 yourself to Auto. It shows on old rows only: an agent that **Start a run**
 started keeps a route in `runs.routes.<sessionId>` and never offers it. It is in the menu
 of an Implementer, Tester, Scout, Planner, Reviewer, Debugger or docs agent and
@@ -197,9 +194,8 @@ when the run is still the one that was asked, so an answer that lands after
 **Abort rebase** changes nothing. **Rebase all** (`store/slices/rebaseAll/rebaseAll.ts`)
 rebases each branch with git first and hands every conflicted branch to the
 same single Auto run; with **Also tidy commits with Auto** on, the goal also
-lists every rebased branch to tidy, locally, after its rebase. **Resolve with
-Auto** reads why when no provider can run Auto
-(`autoUnavailableReason`).
+lists every rebased branch to tidy, locally, after its rebase. **Start new Lead** on a stopped rebase
+reads why when no provider can run Auto (`autoUnavailableReason`).
 
 ## Talking to Auto
 
@@ -251,8 +247,6 @@ the ids existed have no `outboxId` and stay where they were written.
 A row reads one status word and nothing else: "Waits for this reply", "Waits for <task of the
 child>" or "Waits for 2 agents" while the tree waits for running agents (`pendingMessageLineOf`,
 `waitingForOf`), and "Not delivered" for a blocked or stopped tree, with the reason in its tooltip.
-With **Work** on, every row that is not blocked or stopped reads "Not read yet" and offers no
-Send now, because it goes at once (`useQueuedRows` passes `isAtOnce`).
 **Send now** (`runtime.sendNow`, through `registerSendNowPort` and the window bridge) delivers that
 one row at once as its own Auto turn, like a child's question, and leaves the children running. It
 runs in the tree's queue and claims the row with the tree's phase revision and the row's
@@ -271,6 +265,17 @@ failed read keeps the row. If the row was already claimed, nothing changes and t
 `delivered`: the message counts as delivered and arrives in the chat as any other, so words are
 never lost. A refused withdraw (another window runs the tree) shows its message under the list and
 keeps the row.
+
+**Send to Lead.** A Move, a comment or a check can go to an open Lead without
+opening its chat (`store/slices/send-to-lead`). The message is queued for the
+Lead's root agent with its own id, the queue drains at once, and the place it
+came from turns into one quiet row: "The Lead of X has it · Not read yet" with
+Edit and Undo, then "The Lead of X is on it" once the Lead read it. Undo removes
+the queued message or withdraws its outbox row through the same withdraw as
+Remove, and frees a comment it bound. A Lead that stopped before the send reads
+"Not delivered: the Lead stopped" with Start new Lead. Start new Lead starts a
+Lead run with the item as its ask and no form (`startRoutedRun`), and Undo while
+it starts stops that tree.
 
 **A message the tree cannot take.** A `user` row is never sent to a tree that cannot run a turn,
 and its row says "Not delivered". A tree blocked by the budget shows **Change limit** (raising it

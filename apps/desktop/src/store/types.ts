@@ -110,6 +110,7 @@ import type { DiffCommentsState } from './slices/diff-comments/state';
 import type { FileVersionsState } from './slices/file-versions/state';
 import type { TerminalState } from './slices/terminal/state';
 import type { EndedWorkState } from './slices/ended-work/state';
+import type { SendToLeadState } from './slices/send-to-lead/state';
 import type { ThreadReadsState } from './slices/thread-reads/state';
 import type { SessionViewState } from './slices/session-view/state';
 import type { SessionPinsState } from './slices/session-pins/state';
@@ -241,6 +242,7 @@ type AppSliceState = ArtifactsState &
   FileVersionsState &
   TerminalState &
   EndedWorkState &
+  SendToLeadState &
   ThreadReadsState &
   SessionViewState &
   SessionPinsState &

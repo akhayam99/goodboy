@@ -267,8 +267,8 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.resolveRebaseWithAuto',
-    label: 'Resolve rebase conflicts with the Lead',
-    shortLabel: () => 'Resolve with the Lead',
+    label: `${NAMES.startNewLead} for the rebase conflicts`,
+    shortLabel: () => NAMES.startNewLead,
     icon: CONCEPT_ICONS.auto,
     group: 'act',
     when: ({ facts }) => isOpen({ facts }) && isAsking({ facts }),

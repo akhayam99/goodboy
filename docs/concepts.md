@@ -247,6 +247,13 @@ step all count as live work. The top bar chip, the workspace switcher's "N
 running", the footer count, the update pill and the restart-when-idle check all
 read it, so a workspace with one agent waiting on a permission is never "idle".
 
+An "active Lead" is an open one: Working, Waits for you or Resting
+(`workRowsOf`, filter `open`). Finished and Stopped Leads are never offered as
+a target. **Send to Lead** offers only active Leads of the same workspace with a
+branch in the item's project, at most three, ranked by one rule table with no
+model call (`leadCandidatesOf`): the Lead that holds the item, then the same
+branch, the same session, the same project, then the most recent.
+
 A list never words that agent as running, though. `agentStateOf` in
 `features/workTreeModel/agentStateOf.ts` is the one table from an agent's status,
 its turn and its open questions to the phase, the word, the node and the dot,
@@ -787,7 +794,9 @@ turn** or **Sending now**, and each one can be edited, removed or sent now.
 The Lead shows the messages it has not read in the same list (see
 [auto.md](./auto.md) **One queue**).
 They are saved in the database (`agent_queued_messages`), so they survive a
-restart, and they go out one per turn in order. An agent you stopped keeps its
+restart, and they go out one per turn in order. A window saves each message by
+its id and deletes only the messages it removed, so two windows writing to one
+agent never erase each other's messages. An agent you stopped keeps its
 queue until you continue it or send one now. A message leaves the queue, and
 the saved copy, only once the provider has accepted it (the turn started, or
 the Resolve lane took it over). Until then it reads **Sending now**, and a send
@@ -833,7 +842,7 @@ pick it when you start the agent.
 - **History rewriter** is hidden: nobody picks it. Goodboy starts it only
   when a Rewrite history plan hits a conflict git cannot settle alone and
   you press **Rewrite with an agent**. A rebase on main never starts it: a
-  conflict there stops and asks, and **Resolve with the Lead** hands it over. It works in a throwaway
+  conflict there stops and asks, and **Start new Lead** hands it over. It works in a throwaway
   copy of the branch, never in a mount. Its turn carries a git config that
   points `origin` at a push URL that always fails, it has no GitHub token and
   no bridge mount. It reports with `<<history-step>>`, `<<history-done>>` or
@@ -1239,8 +1248,15 @@ those thread ids, a note (`note:<id>`) and a host thread alike. No new table:
 the link is the agent's `source_kind` and `source_thread_ids`. A plan start
 with comments is refused before it writes anything, and so is a branch that
 left the session. `commentRunOf` (`features/resolve/commentRunOf.ts`) is the
-one answer to which run works on a thread: the newest `comment_run` agent that
-lists it. A stopped or deleted run frees only its own threads, and a fix
+one answer to which run works on a thread: the newest live agent that lists it
+and can hold threads (`holdsCommentThreads`: a `comment_run` agent or the root
+of a Lead with no other source).
+
+A Lead can also take one message from a review comment, a failed check or a
+finding (**Send to Lead**). A comment sent this way joins the Lead's threads
+(`addAgentSourceThread`), so the comment reads In a run; the queued message
+carries the thread, and taking the message back before the Lead reads it frees
+the comment again. A stopped or deleted run frees only its own threads, and a fix
 or a re-check on the thread is never read as a run. It reads
 `sourceThreadIds`, which a light agent row leaves out (see the light rows trap
 in [traps.md](./traps.md)), so call it on a session whose agents are full.
@@ -1978,6 +1994,15 @@ session up again in Goodboy.
   | Mark as read      | Clear what is new           | Mark all seen, Mark read, Mark all read              |
   | Mark as unread    | Show it as new again        | Mark unread                                          |
   | Fix with an agent | Give work to an agent       | Hand it to an agent                                  |
+  | Send to Lead      | Message the active Lead     | Send to Implementer, Fix with the Implementer        |
+  | Start new Lead    | Start a Lead with the item  | Resolve with the Lead                                |
+
+  A **Send to X** verb always sends. A verb that only attaches to the composer
+  is **Add to message**. **Message the Implementer** and **Message both
+  Implementers** stay: they write to one named agent and hand no work over.
+  One obvious Lead is one click; **Send to Lead…** opens a short choice only
+  when several Leads fit and none holds the item; with none it is **Start new
+  Lead**, a Lead run with the item attached and no form.
 
   **Stop step** stays: it stops the step and **Continue** resumes it, so it is
   not a **Skip step**. **Keep working** stays on a step that was already

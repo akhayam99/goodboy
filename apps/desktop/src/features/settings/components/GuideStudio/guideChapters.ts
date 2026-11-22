@@ -491,7 +491,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'A rebase conflict asks',
-        desc: 'A conflict keeps the branch and asks: Resolve with the Lead, Resolve in terminal or Abort rebase, with Add a hint. A Lead resolves in the worktree and never pushes; Resolve in terminal starts the rebase there.',
+        desc: 'A conflict keeps the branch and asks: Start new Lead, Resolve in terminal or Abort rebase, with Add a hint. A Lead resolves in the worktree and never pushes; Resolve in terminal starts the rebase there.',
       },
       {
         term: 'Rebase all',

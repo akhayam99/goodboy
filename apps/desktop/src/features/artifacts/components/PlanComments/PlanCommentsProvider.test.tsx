@@ -146,7 +146,7 @@ describe('PlanCommentsProvider', () => {
       within(bar).getByText('1 comment not sent');
       within(bar).getByText('Implement can still read them.');
       within(bar).getByRole('button', { name: 'Copy' });
-      within(bar).getByRole('button', { name: 'Send to Implement' });
+      within(bar).getByRole('button', { name: 'Message the Implement' });
       expect(within(bar).queryByRole('button', { name: 'Send to planner' })).toBeNull();
     });
 
@@ -158,7 +158,7 @@ describe('PlanCommentsProvider', () => {
         planOverrides: RAN,
       });
 
-      fireEvent.click(screen.getByRole('button', { name: 'Send to Implement' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Message the Implement' }));
 
       await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
       expect(send).toHaveBeenCalledWith(
@@ -181,7 +181,7 @@ describe('PlanCommentsProvider', () => {
 
       const bar = screen.getByTestId('plan-comment-bar');
       await within(bar).findByText("Implement isn't running. Copy them instead.");
-      expect(within(bar).queryByRole('button', { name: 'Send to Implement' })).toBeNull();
+      expect(within(bar).queryByRole('button', { name: 'Message the Implement' })).toBeNull();
       expect(within(bar).getByRole('button', { name: 'Copy' }).getAttribute('data-variant')).toBe(
         'primary',
       );
@@ -215,10 +215,10 @@ describe('PlanCommentsProvider', () => {
         planOverrides: RAN,
       });
 
-      fireEvent.click(screen.getByRole('button', { name: 'Send to Implement' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Message the Implement' }));
 
       expect((await screen.findByRole('alert')).textContent).toBe('The agent did not answer');
-      screen.getByRole('button', { name: 'Send to Implement' });
+      screen.getByRole('button', { name: 'Message the Implement' });
     });
   });
 
@@ -308,7 +308,7 @@ describe('PlanCommentsProvider', () => {
       });
       const pending = pendingSave();
 
-      fireEvent.click(screen.getByRole('button', { name: 'Send to Implement' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Message the Implement' }));
       await act(async () => undefined);
       expect(send).not.toHaveBeenCalled();
       pending.settle('saved');

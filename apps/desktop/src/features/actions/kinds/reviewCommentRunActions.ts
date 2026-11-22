@@ -10,6 +10,7 @@ import type { ObjectKindDefinition, ReviewCommentActionTarget } from '../types';
 import type { ReviewCommentFacts } from './reviewComment';
 import { hasOverlay, isRunChanged, isRunFinished } from './reviewCommentRules';
 import { NAMES } from '../../../shared/utils/names';
+import { SEND_TO_LEAD_COPY } from '../../work/sendToLead/sendToLeadCopy';
 
 const JOINABLE: ReadonlySet<ReviewCommentState> = new Set(['new', 'needs', 'failed']);
 
@@ -111,9 +112,8 @@ export const REVIEW_COMMENT_RUN_ACTIONS: ObjectKindDefinition<
   },
   {
     id: 'reviewComment.addToRun',
-    label: COMMENT_RUN_COPY.addToRun,
-    ariaLabel: ({ facts }) =>
-      COMMENT_RUN_COPY.addToRunNamed({ title: facts.joinRuns[0]?.name ?? '' }),
+    label: NAMES.sendToLead,
+    ariaLabel: ({ facts }) => SEND_TO_LEAD_COPY.sendTo({ title: facts.joinRuns[0]?.name ?? '' }),
     description: ({ facts }) => facts.joinRuns[0]?.name ?? null,
     icon: CONCEPT_ICONS.auto,
     group: 'act',
@@ -131,7 +131,19 @@ export const REVIEW_COMMENT_RUN_ACTIONS: ObjectKindDefinition<
         threadId: facts.threadId,
         quote: facts.quote,
       });
-      env.showToast({ kind: 'success', message: COMMENT_RUN_COPY.added({ title: run.name }) });
+      env.showToast({
+        kind: 'info',
+        title: SEND_TO_LEAD_COPY.hasIt({ title: run.name }),
+        message: SEND_TO_LEAD_COPY.notReadYet,
+        dedupeKey: `follow:${run.agentId}`,
+        action: {
+          label: 'Follow',
+          onClick: () =>
+            env
+              .getState()
+              .navigate({ to: agentPlace({ sessionId: facts.sessionId, agentId: run.agentId }) }),
+        },
+      });
     },
   },
   {

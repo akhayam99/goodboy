@@ -14,6 +14,7 @@ import { runSuggestionOf } from '../../resolve/runSuggestionOf';
 import { selectedReviewEntryOf } from '../../../store/slices/review-source/activeReviewSource';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import type { AppStore } from '../../../store/store';
+import { commentPayloadOf } from '../../work/sendToLead/commentPayloadOf';
 import type { ReviewCommentActionTarget } from '../types';
 
 type JoinRun = {
@@ -76,6 +77,39 @@ const threadQuoteOf = ({ row, body }: QuoteParams): string => {
   });
 };
 
+type LeadQuoteParams = {
+  readonly state: AppStore;
+  readonly row: ResolveQueueRow;
+  readonly mountId: MountId | null;
+};
+
+const leadQuoteOf = ({ state, row, mountId }: LeadQuoteParams): string => {
+  const note = row.reviewerNote;
+  if (note === null) {
+    return '';
+  }
+  const github = mountId === null ? undefined : state.mountGithub[mountId];
+  const isNote = row.thread.originKind === 'diff_comment';
+  return commentPayloadOf({
+    payload: {
+      source: isNote
+        ? COMMENT_RUN_COPY.localNoteSource
+        : COMMENT_RUN_COPY.hostSource({ label: commentRunSourceLabelOf({ thread: row.thread }) }),
+      root: { author: note.author, body: note.body },
+      replies: (row.commentThread?.replies ?? []).map((reply) => ({
+        author: reply.author,
+        body: reply.body,
+      })),
+      path: note.path,
+      line: note.line,
+      branch: github?.branch ?? null,
+      prNumber: github?.pr?.number ?? null,
+      prUrl: github?.pr?.url ?? null,
+      note: '',
+    },
+  });
+};
+
 export const reviewCommentRunFactsOf = ({
   state,
   target: { sessionId, threadId },
@@ -109,6 +143,6 @@ export const reviewCommentRunFactsOf = ({
       threadId,
       mountId,
     }).map((agent) => ({ agentId: agent.id, name: agent.name })),
-    quote: row.reviewerNote === null ? '' : threadQuoteOf({ row, body: row.reviewerNote.body }),
+    quote: leadQuoteOf({ state, row, mountId }),
   };
 };

@@ -72,6 +72,8 @@ import { savedProjectModelsInitialState } from './slices/saved-project-models/st
 import { createAutoViewSlice } from './slices/auto-view';
 import { autoViewInitialState } from './slices/auto-view/state';
 import { createWorkSlice } from './slices/work';
+import { createSendToLeadSlice } from './slices/send-to-lead';
+import { sendToLeadInitialState } from './slices/send-to-lead/state';
 import { workInitialState } from './slices/work/state';
 import { createSessionPinsSlice } from './slices/session-pins';
 import { createRepoDivergenceSlice } from './slices/repo-divergence';
@@ -306,6 +308,7 @@ export type AppStore = AppState &
   ReturnType<typeof createRepoDivergenceSlice> &
   ReturnType<typeof createAutoViewSlice> &
   ReturnType<typeof createWorkSlice> &
+  ReturnType<typeof createSendToLeadSlice> &
   ReturnType<typeof createSessionsSlice> &
   ReturnType<typeof createTranscriptsSlice> &
   ReturnType<typeof createSummariesSlice> &
@@ -375,6 +378,7 @@ const initialState: AppState = {
   ...sessionPinsInitialState,
   ...autoViewInitialState,
   ...workInitialState,
+  ...sendToLeadInitialState,
   ...sessionFiltersInitialState,
   ...workspacesInitialState,
   ...projectsInitialState,
@@ -509,6 +513,7 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createRepoDivergenceSlice({ set, get }),
   ...createAutoViewSlice({ set, get }),
   ...createWorkSlice({ set, get }),
+  ...createSendToLeadSlice({ set, get }),
   ...createSessionFiltersSlice({ set, get }),
   ...createTerminalSlice({ set, get }),
   ...createEndedWorkSlice({ set, get }),

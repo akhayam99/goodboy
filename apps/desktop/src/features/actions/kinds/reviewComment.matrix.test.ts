@@ -584,7 +584,7 @@ const MATRIX: ReadonlyArray<Row> = [
       ...OPEN,
       ...GITHUB,
       'reviewComment.draft primary Fix',
-      'reviewComment.addToRun menu Add to the run',
+      'reviewComment.addToRun menu Send to Lead',
       ...DECIDE,
       ...COPY,
     ],

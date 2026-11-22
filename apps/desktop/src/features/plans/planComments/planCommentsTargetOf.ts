@@ -1,10 +1,12 @@
 import type { Agent, AgentId, PlanWithCount } from '@goodboy/types';
 import { resolvePlanConsumer } from '../../../shared/utils/planConsumer';
+import { isLeadRoot } from '../../work/sendToLead/isLeadRoot';
 
 export type PlanCommentsTarget = Readonly<{
   agentId: AgentId;
   name: string;
   canReceive: boolean;
+  isLead: boolean;
 }>;
 
 type Params = Readonly<{
@@ -30,5 +32,6 @@ export const planCommentsTargetOf = ({ plan, agents }: Params): PlanCommentsTarg
     name,
     canReceive:
       agent !== undefined && agent.deletedAt == null && !UNREACHABLE.includes(agent.status),
+    isLead: agent !== undefined && isLeadRoot({ agent }),
   };
 };

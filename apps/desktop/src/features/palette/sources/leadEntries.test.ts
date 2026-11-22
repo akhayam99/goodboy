@@ -14,6 +14,7 @@ const leadOf = ({ key }: { readonly key: string }): WorkLead => {
     sessionId: brandId<SessionId>({ value: `session-${key}` }),
     sessionGoal: `Goal ${key}`,
     projectId: null,
+    projectIds: [],
     branches: ['harborline/one', 'harborline/two'],
     view: {
       ...base,

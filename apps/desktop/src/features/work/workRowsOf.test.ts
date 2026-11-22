@@ -29,6 +29,7 @@ const leadOf = ({
     sessionId: brandId<SessionId>({ value: `session-${key}` }),
     sessionGoal: `goal ${key}`,
     projectId: null,
+    projectIds: [],
     branches,
     view: {
       ...base,

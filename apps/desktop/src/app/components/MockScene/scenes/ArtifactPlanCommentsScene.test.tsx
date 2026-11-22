@@ -114,7 +114,7 @@ describe('ArtifactPlanCommentsScene', () => {
     within(bar).getByText('2 comments not sent');
     within(bar).getByText('Implementer can still read them.');
     within(bar).getByRole('button', { name: 'Copy' });
-    fireEvent.click(within(bar).getByRole('button', { name: 'Send to Implementer' }));
+    fireEvent.click(within(bar).getByRole('button', { name: 'Message the Implementer' }));
     await screen.findByText('Sent to Implementer.');
     expect(screen.getAllByText('Sent')).toHaveLength(2);
   });

@@ -91,7 +91,7 @@ const shownThreadsOf = (id: AgentId) =>
 
 const queueOf = (id: AgentId) => useAppStore.getState().agentQueue[id] ?? [];
 
-describe('Add to the run', () => {
+describe('Send to Lead from a comment', () => {
   it('links the thread to the run and queues one message with the quote for the Lead', async () => {
     const lead = await seedLead({ id: 'lead-header', ordinal: 0, threadIds: [HEADER_NOTE] });
 

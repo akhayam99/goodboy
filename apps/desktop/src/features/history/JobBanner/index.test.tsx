@@ -696,7 +696,7 @@ describe('a stop saved before a restart', () => {
     const saved = screen.getByRole('alert');
     expect(saved.textContent).toBe(liveTitle);
     expect(verbsIn({ node: saved })).toEqual(liveVerbs);
-    expect(liveVerbs).toEqual(['Resolve with the Lead', 'Resolve in terminal', 'Abort rebase']);
+    expect(liveVerbs).toEqual(['Start new Lead', 'Resolve in terminal', 'Abort rebase']);
   });
 
   it('starts Auto from the saved stop and then says Auto has it', async () => {
@@ -707,7 +707,7 @@ describe('a stop saved before a restart', () => {
     useAppStore.setState({ providers: CONNECTED, spawnAgent });
     await showSaved({ at: PAST });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Resolve with the Lead' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start new Lead' }));
     await settle();
 
     expect(spawnAgent).toHaveBeenCalledTimes(1);
@@ -784,14 +784,12 @@ describe('the rebase stop panel', () => {
     within(panel()).getByText('src/settlement/ledger.ts');
     expect(fileStates()).toEqual(['conflict', 'conflict']);
     expect(verbsIn({ node: panel() })).toEqual([
-      'Resolve with the Lead',
+      'Start new Lead',
       'Resolve in terminal',
       'Abort rebase',
     ]);
     expect(
-      within(panel())
-        .getByRole('button', { name: 'Resolve with the Lead' })
-        .hasAttribute('disabled'),
+      within(panel()).getByRole('button', { name: 'Start new Lead' }).hasAttribute('disabled'),
     ).toBe(true);
   });
 
