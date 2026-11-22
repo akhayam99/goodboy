@@ -19,7 +19,12 @@ const LEDGER = brandId<MountId>({ value: 'mount-ledger-core' });
 const RELAY = brandId<MountId>({ value: 'mount-notify-relay' });
 const AT = brandId<IsoDateTime>({ value: '2026-11-20T10:00:00.000Z' });
 
-const mountOf = ({ mountId, name }: { readonly mountId: MountId; readonly name: string }) =>
+type MountParams = {
+  readonly mountId: MountId;
+  readonly name: string;
+};
+
+const mountOf = ({ mountId, name }: MountParams) =>
   ({
     mountId,
     sessionId: SESSION_ID,
@@ -91,13 +96,12 @@ const [scriptEntry] = workEntriesOf({
   mounts: MOUNTS,
 });
 
-const matches = ({
-  entry,
-  filter,
-}: {
+type MatchParams = {
   readonly entry: TimelineTopLevelEntry | undefined;
   readonly filter: ActivityFilter;
-}): boolean => {
+};
+
+const matches = ({ entry, filter }: MatchParams): boolean => {
   if (entry === undefined) {
     throw new Error('no entry');
   }

@@ -5,8 +5,6 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import type { SetFn } from '../../slice-types';
 
-const WORK_EVENTS_LIMIT = 200;
-
 const latest = createLatestOnly();
 
 type Deps = {
@@ -15,18 +13,15 @@ type Deps = {
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly limit: number;
 };
 
 export const loadWorkEvents =
   ({ set }: Deps) =>
-  async ({ sessionId }: Params): Promise<void> => {
+  async ({ sessionId, limit }: Params): Promise<void> => {
     const claim = latest.claim({ key: sessionId });
     try {
-      const events = await listWorkEvents({
-        db: tauriDatabase,
-        sessionId,
-        limit: WORK_EVENTS_LIMIT,
-      });
+      const events = await listWorkEvents({ db: tauriDatabase, sessionId, limit });
       if (!claim.isCurrent()) {
         return;
       }

@@ -16,7 +16,7 @@ import { TimelineSkeleton } from '../../components/SessionWorkspace/parts/Timeli
 import { NAMES } from '../../../../shared/utils/names';
 import type { TimelineTopLevelEntry } from '../../timeline/buildTimelineGroups';
 import type { ActivityKind } from './activityKindOf';
-import { activityEntryMatches } from './activityEntryMatches';
+import { activityEntriesOf } from './activityEntriesOf';
 import { ActivityProjectFilter } from './ActivityProjectFilter';
 import { LogRows } from './LogRows';
 import { useWorkEvents } from '../../hooks/useWorkEvents';
@@ -47,8 +47,8 @@ type Props = {
   readonly session: Session;
 };
 
-type KeepParams = {
-  readonly entry: TimelineTopLevelEntry;
+type NarrowParams = {
+  readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
 };
 
 type MountIdsParams = {
@@ -81,8 +81,8 @@ export const LogPane = ({ session }: Props) => {
     [kind, knownMountIds],
   );
   const isFiltered = filter.kind !== null || filter.mountIds.size > 0;
-  const keep = useCallback(
-    ({ entry }: KeepParams) => activityEntryMatches({ entry, filter, mounts }),
+  const narrow = useCallback(
+    ({ entries }: NarrowParams) => activityEntriesOf({ entries, filter, mounts }),
     [filter, mounts],
   );
   const clearFilters = useCallback(() => {
@@ -141,7 +141,9 @@ export const LogPane = ({ session }: Props) => {
           query={query}
           onClearSearch={() => setQuery('')}
           extraEntries={workEntries}
-          keep={keep}
+          narrow={narrow}
+          hasOlder={work.hasOlder}
+          onReachEnd={work.loadOlder}
           isFiltered={isFiltered}
           onClearFilters={clearFilters}
         />

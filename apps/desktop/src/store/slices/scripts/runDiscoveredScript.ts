@@ -70,6 +70,10 @@ export const runDiscoveredScript = (set: SetFn, get: GetFn) => {
         cols,
         rows,
       });
+      const launched = get().scriptRuns[sessionId]?.[scriptId];
+      if (launched !== undefined && launched.runId === runId && launched.status === 'pending') {
+        writeRun({ record: { ...launched, isLaunched: true } });
+      }
       return registered.result;
     } catch (caughtError) {
       registered?.dispose();

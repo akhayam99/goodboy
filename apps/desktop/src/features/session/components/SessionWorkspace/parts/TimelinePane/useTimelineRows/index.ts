@@ -43,8 +43,8 @@ type DayLabelParams = {
 
 const NO_EXPANDED_ROWS: ReadonlySet<string> = new Set();
 
-type KeepParams = {
-  readonly entry: TimelineTopLevelEntry;
+type NarrowParams = {
+  readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
 };
 
 type Params = {
@@ -53,7 +53,7 @@ type Params = {
   readonly query: string;
   readonly explode: ExplodeGroups;
   readonly extraEntries?: ReadonlyArray<TimelineTopLevelEntry>;
-  readonly keep?: (params: KeepParams) => boolean;
+  readonly narrow?: (params: NarrowParams) => ReadonlyArray<TimelineTopLevelEntry>;
 };
 
 const NO_EXTRA_ENTRIES: ReadonlyArray<TimelineTopLevelEntry> = [];
@@ -85,7 +85,7 @@ export const useTimelineRows = ({
   query,
   explode,
   extraEntries = NO_EXTRA_ENTRIES,
-  keep,
+  narrow,
 }: Params): TimelineRows => {
   const sessionId: SessionId = session.id;
   const work = useSessionWorkModel({ session });
@@ -160,9 +160,9 @@ export const useTimelineRows = ({
       liveAgentIds,
       settledStopIds,
     });
-    const kept = keep === undefined ? inView : inView.filter((entry) => keep({ entry }));
+    const kept = narrow === undefined ? inView : narrow({ entries: inView });
     return view !== 'activity' ? logEntriesMatching({ entries: kept, query }) : kept;
-  }, [events, extraEntries, keep, liveAgentIds, modelEntries, query, settledStopIds, view]);
+  }, [events, extraEntries, narrow, liveAgentIds, modelEntries, query, settledStopIds, view]);
 
   const stream = useMemo(
     () =>

@@ -108,12 +108,18 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const rowText = (pattern: RegExp) => (_content: string, element: Element | null) =>
-  element?.hasAttribute('data-log-row') === true && pattern.test(element.textContent ?? '');
+type RowParams = {
+  readonly pattern: RegExp;
+};
 
-const findRow = (pattern: RegExp) => screen.findByText(rowText(pattern));
+const rowText =
+  ({ pattern }: RowParams) =>
+  (_content: string, element: Element | null) =>
+    element?.hasAttribute('data-log-row') === true && pattern.test(element.textContent ?? '');
 
-const queryRow = (pattern: RegExp) => screen.queryByText(rowText(pattern));
+const findRow = ({ pattern }: RowParams) => screen.findByText(rowText({ pattern }));
+
+const queryRow = ({ pattern }: RowParams) => screen.queryByText(rowText({ pattern }));
 
 const renderActivity = () =>
   render(
@@ -130,14 +136,14 @@ describe('the Activity page', () => {
   it('keeps the timeline rows of the log and adds the script runs read from work_events', async () => {
     renderActivity();
 
-    expect(await findRow(SCRIPT_ROW)).toBeDefined();
-    expect(queryRow(RELAY_ROW)).not.toBeNull();
+    expect(await findRow({ pattern: SCRIPT_ROW })).toBeDefined();
+    expect(queryRow({ pattern: RELAY_ROW })).not.toBeNull();
     expect(runRowCount()).toBeGreaterThan(1);
   });
 
   it('shows only script runs under Scripts and gives the rest back under All', async () => {
     renderActivity();
-    await findRow(SCRIPT_ROW);
+    await findRow({ pattern: SCRIPT_ROW });
     const runs = runRowCount();
     const kinds = screen.getByRole('combobox', { name: 'Show activity of one kind' });
 
@@ -145,7 +151,7 @@ describe('the Activity page', () => {
     fireEvent.click(await screen.findByRole('option', { name: 'Scripts' }));
 
     await waitFor(() => expect(runRowCount()).toBe(0));
-    expect(queryRow(SCRIPT_ROW)).not.toBeNull();
+    expect(queryRow({ pattern: SCRIPT_ROW })).not.toBeNull();
 
     fireEvent.click(kinds);
     fireEvent.click(await screen.findByRole('option', { name: 'All' }));
@@ -155,13 +161,36 @@ describe('the Activity page', () => {
 
   it('filters by project through the mount id of each row', async () => {
     renderActivity();
-    await findRow(RELAY_ROW);
+    await findRow({ pattern: RELAY_ROW });
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter activity by project' }));
     fireEvent.click(await screen.findByRole('checkbox', { name: 'notify-relay' }));
 
-    await waitFor(() => expect(queryRow(SCRIPT_ROW)).toBeNull());
-    expect(queryRow(RELAY_ROW)).not.toBeNull();
+    await waitFor(() => expect(queryRow({ pattern: SCRIPT_ROW })).toBeNull());
+    expect(queryRow({ pattern: RELAY_ROW })).not.toBeNull();
+  });
+
+  it('reads older script runs from the database when the newest page hides the chosen project', async () => {
+    await storySqlite().execute(
+      `WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 200)
+       INSERT INTO work_events
+         (id, run_id, session_id, mount_id, agent_id, kind, started_at, ended_at, exit_code, payload_json, created_at, updated_at)
+       SELECT 'w-build-' || i, 'run-build-' || i, ?, ?, NULL, 'script', ? + i, ? + i, 0, '{"name":"build"}', ? + i, ? + i
+       FROM n`,
+      [
+        SESSION_ID,
+        PAYMENTS_MOUNT,
+        ...Array.from({ length: 4 }, () => Date.parse('2026-11-20T11:00:00.000Z')),
+      ],
+    );
+    renderActivity();
+    await screen.findAllByText(rowText({ pattern: /build passed in payments-api/ }));
+    expect(queryRow({ pattern: RELAY_ROW })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter activity by project' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'notify-relay' }));
+
+    expect(await findRow({ pattern: RELAY_ROW })).toBeDefined();
   });
 
   it('says when work_events cannot be read, keeps the log, and Retry reads it again', async () => {
@@ -169,12 +198,12 @@ describe('the Activity page', () => {
     renderActivity();
 
     expect(await screen.findByText("Couldn't load scripts and commands")).toBeDefined();
-    expect(queryRow(SCRIPT_ROW)).toBeNull();
+    expect(queryRow({ pattern: SCRIPT_ROW })).toBeNull();
     expect(runRowCount()).toBeGreaterThan(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
-    expect(await findRow(SCRIPT_ROW)).toBeDefined();
+    expect(await findRow({ pattern: SCRIPT_ROW })).toBeDefined();
     expect(screen.queryByText("Couldn't load scripts and commands")).toBeNull();
   });
 });

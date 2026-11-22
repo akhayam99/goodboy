@@ -20,6 +20,7 @@ export type ScriptRunRecord = {
   readonly output?: string;
   readonly mountId?: MountId;
   readonly completedAt?: number;
+  readonly isLaunched?: boolean;
 };
 
 export type ScriptSource =

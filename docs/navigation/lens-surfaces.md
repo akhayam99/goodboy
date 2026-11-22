@@ -118,8 +118,12 @@
   row and the Scripts pane alike). One boxed `SegmentedTabs` filters
   by kind (All, Agents, Branches, Checks, Scripts, Context), the search box
   stays, and a `FilterButton` filters by project through each row's `mount_id`
-  once the session has two projects. `Mark as read` sits in the same row and
-  shows only while an agent is unseen. A failed read of `work_events` keeps the
+  once the session has two projects. A project filter keeps a workflow or an
+  agent only for its rows in that project, and a fact whose workflow or agent
+  is filtered out shows as a row of its own. `Mark as read` sits in the same row
+  and shows only while an agent is unseen. The page reads the newest 200 runs
+  and the next 200 each time the log runs out of rows, so an older run still
+  shows under a filter or a search. A failed read of `work_events` keeps the
   log and shows `Couldn't load scripts and commands` with Retry.
 - **The focused issue page says where the issue lives.** The issue is an
   address (`external-task` target, `focusedExternalTask`): a card opens it

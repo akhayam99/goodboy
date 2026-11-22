@@ -1,4 +1,12 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import { Button, EmptyLine } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { NAMES } from '../../../../shared/utils/names';
@@ -22,8 +30,8 @@ const LOG_ROW_SELECTOR = '[data-log-row]';
 
 const LOG_ROW_BOX = '[content-visibility:auto] data-row-near:[content-visibility:visible]';
 
-type KeepParams = {
-  readonly entry: TimelineTopLevelEntry;
+type NarrowParams = {
+  readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
 };
 
 type Props = {
@@ -31,9 +39,11 @@ type Props = {
   readonly query: string;
   readonly onClearSearch: () => void;
   readonly extraEntries?: ReadonlyArray<TimelineTopLevelEntry>;
-  readonly keep?: (params: KeepParams) => boolean;
+  readonly narrow?: (params: NarrowParams) => ReadonlyArray<TimelineTopLevelEntry>;
   readonly isFiltered?: boolean;
   readonly onClearFilters?: () => void;
+  readonly hasOlder?: boolean;
+  readonly onReachEnd?: () => void;
 };
 
 export const LogRows = ({
@@ -41,9 +51,11 @@ export const LogRows = ({
   query,
   onClearSearch,
   extraEntries,
-  keep,
+  narrow,
   isFiltered = false,
   onClearFilters,
+  hasOlder = false,
+  onReachEnd,
 }: Props) => {
   const sessionId = session.id;
   const rootRef = useRef<HTMLDivElement>(null);
@@ -83,7 +95,7 @@ export const LogRows = ({
     query,
     explode,
     ...(extraEntries === undefined ? {} : { extraEntries }),
-    ...(keep === undefined ? {} : { keep }),
+    ...(narrow === undefined ? {} : { narrow }),
   });
   const { rowPropsFor } = useTimelineRowProps({ session, explode, rows });
   const { entries, viewEntries } = rows;
@@ -98,6 +110,14 @@ export const LogRows = ({
   useLayoutEffect(() => {
     shownRowIds.current = new Set(rows.laidOutItems.map((item) => item.id));
   }, [rows.laidOutItems]);
+
+  const shouldLoadOlder = hasOlder && rows.isLoaded && page.nextCount === 0;
+  useEffect(() => {
+    if (!shouldLoadOlder || onReachEnd === undefined) {
+      return;
+    }
+    onReachEnd();
+  }, [onReachEnd, shouldLoadOlder]);
 
   const isLoading = !rows.isLoaded && entries.length === 0;
   const isSearching = query.trim() !== '';

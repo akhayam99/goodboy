@@ -26,10 +26,15 @@ import {
 } from '../../storyHarness';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-ledger-core' });
+const LIMIT = 200;
 
 let useAppStore: StoryStore;
 
-const scriptRun = ({ id }: { readonly id: string }): WorkEvent => ({
+type ScriptRunParams = {
+  readonly id: string;
+};
+
+const scriptRun = ({ id }: ScriptRunParams): WorkEvent => ({
   id,
   runId: `run-${id}`,
   sessionId: SESSION_ID,
@@ -74,8 +79,8 @@ describe('loadWorkEvents', () => {
     listWorkEvents.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
     const { loadWorkEvents } = useAppStore.getState();
 
-    const older = loadWorkEvents({ sessionId: SESSION_ID });
-    const newer = loadWorkEvents({ sessionId: SESSION_ID });
+    const older = loadWorkEvents({ sessionId: SESSION_ID, limit: LIMIT });
+    const newer = loadWorkEvents({ sessionId: SESSION_ID, limit: LIMIT });
     second.resolve([scriptRun({ id: 'new' })]);
     await newer;
     first.resolve([scriptRun({ id: 'old' })]);
@@ -90,8 +95,8 @@ describe('loadWorkEvents', () => {
       .mockRejectedValueOnce(new Error('database is locked'));
     const { loadWorkEvents } = useAppStore.getState();
 
-    await loadWorkEvents({ sessionId: SESSION_ID });
-    await loadWorkEvents({ sessionId: SESSION_ID });
+    await loadWorkEvents({ sessionId: SESSION_ID, limit: LIMIT });
+    await loadWorkEvents({ sessionId: SESSION_ID, limit: LIMIT });
 
     expect(idsNow()).toEqual(['kept']);
     expect(useAppStore.getState().workEventsError[SESSION_ID]).toBe('database is locked');
