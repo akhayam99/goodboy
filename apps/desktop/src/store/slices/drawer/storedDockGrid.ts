@@ -2,6 +2,7 @@ import { brandId, type SessionId } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 import { DOCK_GRID_CAP } from '@goodboy/ui';
 import type { TerminalTabId } from '../../../shared/types/terminal';
+import type { SessionFace } from '../session-view/types';
 import type {
   DrawerContent,
   DrawerFocus,
@@ -18,6 +19,7 @@ const TOOL_KINDS: ReadonlyArray<WorkspaceToolKind> = ['terminal', 'browser', 'mo
 
 type GridParams = {
   readonly grid: DrawerGrid;
+  readonly face?: SessionFace;
 };
 
 type RawParams = {
@@ -152,7 +154,7 @@ const splitsOf = ({ value }: ValueParams): DrawerGridSplits => {
   );
 };
 
-export const storedDockGridOf = ({ grid }: GridParams): string =>
+export const storedDockGridOf = ({ grid, face = 'overview' }: GridParams): string =>
   JSON.stringify({
     version: STORED_DOCK_GRID_VERSION,
     columns: grid.columns,
@@ -160,6 +162,7 @@ export const storedDockGridOf = ({ grid }: GridParams): string =>
     focus: grid.focus,
     widths: grid.widths,
     ...(Object.keys(grid.splits).length === 0 ? {} : { splits: grid.splits }),
+    ...(face === 'desk' ? { face } : {}),
   });
 
 export const parseStoredDockGrid = ({ raw }: RawParams): DrawerGrid | null => {

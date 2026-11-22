@@ -479,7 +479,6 @@ export const SHORTCUTS = {
     group: 'session',
     scope: 'ask',
   },
-
   'lens.overview': {
     combo: 'cmd+alt+KeyO',
     offMacCombo: 'ctrl+shift+alt+KeyO',
@@ -487,6 +486,7 @@ export const SHORTCUTS = {
     plane: 'lens',
     group: 'views',
   },
+  'session.desk': { combo: 'cmd+KeyJ', label: NAMES.desk, plane: 'app', group: 'views' },
   'lens.context': {
     combo: 'cmd+alt+KeyC',
     offMacCombo: 'ctrl+shift+alt+KeyC',
@@ -947,10 +947,8 @@ const ID_BY_ENTRY = new Map<ShortcutEntry, string>(
 export const platformCombo = ({ entry }: EntryParams): string => {
   const id = ID_BY_ENTRY.get(entry);
   const override = id === undefined ? undefined : overrideState.overrides[id];
-  if (override !== undefined) {
-    return override;
-  }
-  return currentPlatform() === 'darwin' ? entry.combo : (entry.offMacCombo ?? entry.combo);
+  const native = currentPlatform() === 'darwin' ? entry.combo : (entry.offMacCombo ?? entry.combo);
+  return override ?? native;
 };
 
 export const shortcutGlyphs = (id: ShortcutId): string =>

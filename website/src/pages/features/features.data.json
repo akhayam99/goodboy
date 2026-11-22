@@ -500,6 +500,13 @@
           "shown": true
         },
         {
+          "title": "Overview and Desk",
+          "text": "A session has two faces: Overview to read it, Desk to work in it. ⌘J switches between them, and the Desk keeps the session's state, Needs you and Now in a column beside your tools.",
+          "group": "Workspaces and folders",
+          "also": "desk",
+          "shown": true
+        },
+        {
           "title": "Locate moved folders",
           "text": "If you moved your repos, pick the parent folder. Goodboy finds them again, fixes the paths and repairs the worktrees, with Undo move.",
           "group": "Workspaces and folders",

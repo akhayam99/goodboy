@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppStore } from '../../../../store/store';
+import type { SessionFace } from '../../../../store/slices/session-view/types';
 import {
   DOCK_GRID_MOVE_KEY,
   DOCK_GRID_RECALL_KEY,
@@ -17,26 +18,41 @@ type WatchedStore = {
   readonly subscribe: (listener: (state: AppStore) => void) => () => void;
 };
 
+type SessionParams = {
+  readonly sessionId: SessionId;
+};
+
 type Params = {
   readonly store: WatchedStore;
   readonly delayMs?: number;
   readonly now?: () => number;
+  readonly onEntered?: (params: SessionParams) => void;
 };
 
 type PendingSave = {
   readonly sessionId: SessionId;
   readonly grid: DrawerGrid;
+  readonly face: SessionFace;
   readonly at: number;
 };
 
-type SessionParams = {
-  readonly sessionId: SessionId;
+type RecallParams = SessionParams & {
+  readonly isEntry: boolean;
 };
+
+type FaceParams = {
+  readonly state: AppStore;
+  readonly sessionId: SessionId | null;
+};
+
+const faceOf = ({ state, sessionId }: FaceParams): SessionFace =>
+  sessionId === null ? 'overview' : (state.sessionFace[sessionId] ?? 'overview');
 
 export const watchSessionDockGrid = ({
   store,
   delayMs = DOCK_GRID_SAVE_DELAY_MS,
   now = Date.now,
+  onEntered,
 }: Params): (() => void) => {
   const known = new Map<SessionId, string>();
   const savedThisRun = new Set<SessionId>();
@@ -44,6 +60,7 @@ export const watchSessionDockGrid = ({
   let timer: ReturnType<typeof setTimeout> | null = null;
   let owner = store.getState().currentSessionId;
   let grid = store.getState().drawerGrid ?? EMPTY_DRAWER_GRID;
+  let face = faceOf({ state: store.getState(), sessionId: owner });
   dockGridOwner.take({ sessionId: owner });
 
   const flush = (): void => {
@@ -56,7 +73,7 @@ export const watchSessionDockGrid = ({
     if (job === null) {
       return;
     }
-    const stored = storedDockGridOf({ grid: job.grid });
+    const stored = storedDockGridOf({ grid: job.grid, face: job.face });
     if (known.get(job.sessionId) === stored) {
       return;
     }
@@ -71,7 +88,7 @@ export const watchSessionDockGrid = ({
       });
   };
 
-  const recall = ({ sessionId }: SessionParams): void => {
+  const recall = ({ sessionId, isEntry }: RecallParams): void => {
     queueMicrotask(() => {
       void store
         .getState()
@@ -80,12 +97,15 @@ export const watchSessionDockGrid = ({
           if (stored !== null) {
             known.set(sessionId, stored);
           }
+          if (isEntry && owner === sessionId) {
+            onEntered?.({ sessionId });
+          }
         });
     });
   };
 
   if (owner !== null) {
-    recall({ sessionId: owner });
+    recall({ sessionId: owner, isEntry: true });
   }
 
   const unsubscribe = store.subscribe((state) => {
@@ -96,21 +116,24 @@ export const watchSessionDockGrid = ({
       owner = state.currentSessionId;
       dockGridOwner.take({ sessionId: owner });
       grid = nextGrid;
+      face = faceOf({ state, sessionId: owner });
       if (owner === null) {
         dockGridRecalls.cancel({ key: DOCK_GRID_RECALL_KEY });
         return;
       }
-      recall({ sessionId: owner });
+      recall({ sessionId: owner, isEntry: true });
       return;
     }
-    if (nextGrid === grid) {
+    const nextFace = faceOf({ state, sessionId: owner });
+    if (nextGrid === grid && nextFace === face) {
       return;
     }
     grid = nextGrid;
+    face = nextFace;
     if (owner === null) {
       return;
     }
-    pending = { sessionId: owner, grid: nextGrid, at: now() };
+    pending = { sessionId: owner, grid: nextGrid, face: nextFace, at: now() };
     if (timer !== null) {
       clearTimeout(timer);
     }
@@ -122,7 +145,7 @@ export const watchSessionDockGrid = ({
       return;
     }
     flush();
-    recall({ sessionId: owner });
+    recall({ sessionId: owner, isEntry: false });
   };
   window.addEventListener('focus', rereadOnFocus);
 

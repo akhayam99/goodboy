@@ -4,6 +4,8 @@ export const createInitialSessionViewState = ({}: Params) => ({
   selectedAgentId: {},
   sessionViewPrefs: {},
   activeLens: {},
+  sessionFace: {},
+  deskToolStart: {},
   focusedArtifactId: {},
   artifactFilter: {},
   artifactConversationAgentId: {},

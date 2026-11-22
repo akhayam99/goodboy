@@ -18,6 +18,7 @@ import { foldedLensOf } from '../../../store/slices/navigation/foldedLensOf';
 import { branchTabOf } from '../../../store/slices/session-view/branchTabOf';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { toggleTerminalDock } from '../../../features/terminal/toggleTerminalDock';
+import { toggleCurrentFace } from '../../../features/session/components/SessionDesk/toggleCurrentFace';
 import { openLens } from '../../../features/session/openLens';
 import { clearRunsFilter } from '../../../features/session/clearRunsFilter';
 import { togglePane } from '../../../features/session/panes/togglePane';
@@ -263,6 +264,7 @@ export const useAppShortcuts = ({
   useShortcut('lens.scripts', () => toggleCurrentPane({ pane: 'scripts' }));
   useShortcut('session.spawned', () => openCurrentPlace({ pane: 'spawned' }));
   useShortcut('session.terminal', () => toggleTerminalDock({ isToggle: true }));
+  useShortcut('session.desk', toggleCurrentFace, true, { canDecline: true });
   useShortcut('lens.pr', () => goToLens({ kind: 'pr' }));
   useShortcut('lens.linear', () => goToLens({ kind: 'linear' }));
   useShortcut('lens.gitlab_issues', () => goToLens({ kind: 'gitlab_issues' }));

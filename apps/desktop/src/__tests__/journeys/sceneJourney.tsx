@@ -133,7 +133,9 @@ export const installSceneJourney = (): SceneJourney => {
   };
 
   const clickTab = async ({ name }: NameParams): Promise<void> => {
-    const tab = screen.getByRole('tab', { name });
+    const tab = within(screen.getByRole('tablist', { name: 'Session pages' })).getByRole('tab', {
+      name,
+    });
     await act(async () => {
       tab.click();
       await vi.advanceTimersByTimeAsync(400);

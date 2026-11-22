@@ -1,5 +1,6 @@
 import type { LatestClaim } from '../../runtime/state-writes/latestOnly';
 import type { SliceDeps } from '../../slice-types';
+import type { SessionFace } from '../session-view/types';
 import { gridWithout } from './gridWithout';
 import { slotWithGrid } from './slotWithGrid';
 import { EMPTY_DRAWER_GRID, type DrawerGrid } from './state';
@@ -8,6 +9,7 @@ import { UNSAVED_DRAWER_KINDS } from './unsavedDrawerKinds';
 
 type ApplyParams = SliceDeps & {
   readonly raw: string | null;
+  readonly face: SessionFace;
   readonly claim: LatestClaim;
   readonly before: DrawerGrid;
   readonly isSavedThisRun: boolean;
@@ -17,6 +19,7 @@ export const appliedDockGrid = ({
   set,
   get,
   raw,
+  face,
   claim,
   before,
   isSavedThisRun,
@@ -36,5 +39,5 @@ export const appliedDockGrid = ({
       knownSessionIds: new Set(state.sessions.map((session) => session.id)),
     }),
   );
-  return storedDockGridOf({ grid: get().drawerGrid ?? EMPTY_DRAWER_GRID });
+  return storedDockGridOf({ grid: get().drawerGrid ?? EMPTY_DRAWER_GRID, face });
 };

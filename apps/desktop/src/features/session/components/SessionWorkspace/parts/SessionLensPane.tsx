@@ -9,7 +9,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/co
 import { lazyNamed } from '../../../../../shared/lib/lazyNamed';
 import { openLens } from '../../../openLens';
 import type { LensSurface } from '../../../lens-surface';
-import { SessionOverviewPane } from '../../SessionOverviewPane';
+import { SessionFace } from '../../SessionDesk/SessionFace';
 import { LinkIssueAction } from '../../SessionOverviewPane/LinkIssueAction';
 import { ActivityPage } from '../../../central/log/ActivityPage';
 import { FilesPane } from './FilesPane';
@@ -77,7 +77,7 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
           />
         }
       >
-        <SessionOverviewPane session={session} />
+        <SessionFace session={session} />
       </SkeletonSwap>
     );
   }

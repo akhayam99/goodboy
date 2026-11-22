@@ -126,6 +126,7 @@ export const NAMES = {
     run: 'Run',
   },
   overview: 'Overview',
+  desk: 'Desk',
   branch: 'Branch',
   comments: 'Comments',
   conversation: 'Conversation',
