@@ -12,6 +12,7 @@ import { removeGoneMount } from './removeGoneMount';
 import { removeMountWorktree } from './removeMountWorktree';
 import { resolveMountBranchMismatch } from './resolveMountBranchMismatch';
 import { restoreGoneBranch } from './restoreGoneBranch';
+import { restoreMountRow } from './restoreMountRow';
 import { setSessionActiveMount } from './setSessionActiveMount';
 import { switchMount } from './switchMount';
 import { unmountMount } from './unmountMount';
@@ -31,6 +32,7 @@ export const createProjectMountsSlice = ({ set, get }: SliceDeps) => {
     checkMountBranchGone: checkMountBranchGone({ set, get }),
     removeGoneMount: removeGoneMount({ set, get }),
     restoreGoneBranch: restoreGoneBranch({ set, get }),
+    restoreMountRow: restoreMountRow({ set, get }),
     unmountMount: unmountMount(set, get),
     removeMountWorktree: removeMountWorktree({ set, get }),
     inspectMount: inspectMount(set, get),

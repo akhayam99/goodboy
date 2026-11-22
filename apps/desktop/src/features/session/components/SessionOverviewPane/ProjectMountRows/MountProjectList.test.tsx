@@ -27,8 +27,13 @@ const repoProject = {
   updatedAt: '2026-07-27T00:00:00.000Z',
 } as unknown as Project;
 
+const ALREADY_MOUNTED = { status: 'already-mounted' as const, mountIds: [] };
+
 const h = vi.hoisted(() => ({
-  ensureProjectMounted: vi.fn(async () => undefined),
+  ensureProjectMounted: vi.fn(async (_input: unknown): Promise<typeof ALREADY_MOUNTED> => ({
+    status: 'already-mounted',
+    mountIds: [],
+  })),
   emitNotification: vi.fn(),
   preflight: {
     status: 'ready' as 'ready' | 'checking',
@@ -48,18 +53,17 @@ const h = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../../store', () => ({
-  useAppStore: <T,>(
-    selector: (state: {
-      readonly ensureProjectMounted: typeof h.ensureProjectMounted;
-      readonly emitNotification: typeof h.emitNotification;
-    }) => T,
-  ) =>
-    selector({
-      ensureProjectMounted: h.ensureProjectMounted,
-      emitNotification: h.emitNotification,
+vi.mock('../../../../../store', () => {
+  const state = {
+    ensureProjectMounted: h.ensureProjectMounted,
+    emitNotification: h.emitNotification,
+  };
+  return {
+    useAppStore: Object.assign(<T,>(selector: (current: typeof state) => T) => selector(state), {
+      getState: () => state,
     }),
-}));
+  };
+});
 
 vi.mock('./useMountPreflight', () => ({ useMountPreflight: () => h.preflight }));
 
@@ -87,7 +91,7 @@ beforeEach(() => {
   forgetMaterializationSeed({ sessionId: SID });
   h.preflight.branchScanError = null;
   h.preflight.status = 'ready';
-  h.ensureProjectMounted.mockResolvedValue(undefined);
+  h.ensureProjectMounted.mockResolvedValue(ALREADY_MOUNTED);
 });
 
 afterEach(cleanup);
@@ -216,8 +220,8 @@ describe('MountProjectList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mount goodboy' }));
     const deferred: { resolve: () => void } = { resolve: () => undefined };
     h.ensureProjectMounted.mockReturnValueOnce(
-      new Promise<undefined>((resolve) => {
-        deferred.resolve = () => resolve(undefined);
+      new Promise<typeof ALREADY_MOUNTED>((resolve) => {
+        deferred.resolve = () => resolve(ALREADY_MOUNTED);
       }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Mount goodboy' }));

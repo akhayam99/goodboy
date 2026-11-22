@@ -18,7 +18,7 @@ The goal sits above the page when it says more than the title. The Overview then
 - **Now** lists the agents with a live turn: who, the project, what it does right now and for how long. It shows three rows and **N more**. The agents of a Lead sit under it. An agent that waits for a file another agent holds says so on a quiet line with a warm dot. A click on a row opens that agent.
 - **Next** holds up to three moves.
 - **Projects**: one block per project with its branches inside. The head carries the project name, one door and **Unmount**, the same verb as the project menu. The door is **Merge in order** for a series, or else **Delete local branches** for merged ones. It asks first: keep the files or remove the worktree. The toast offers Undo.
-- **Mount a folder** sits at the head of Projects. It lists the folders an agent asked for, then the workspace, then **Choose a folder…**, which adds a folder to the workspace and mounts it in one step. Agents of the session read and write a mounted folder. Undo takes the mount back. A plain folder session shows Mount a folder under its folder card.
+- **Mount a folder** sits at the head of Projects. It lists the folders an agent asked for, then the workspace, then **Choose a folder…**, which adds a folder to the workspace and mounts it in one step. Agents of the session read and write a mounted folder. Undo takes back what the mount added; a plain folder that was already there has nothing to undo. A plain folder session shows Mount a folder under its folder card.
 - **Activity** shows the last three rows of the log.
 - The **Ask** line stays at the foot of the page.
 - A session with no agent, no run and no branch shows the start form and nothing else.

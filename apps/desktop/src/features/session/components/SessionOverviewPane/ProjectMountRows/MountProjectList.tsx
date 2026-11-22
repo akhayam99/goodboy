@@ -12,6 +12,7 @@ import {
 } from '@goodboy/ui';
 import type { Project, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import { useShowToast } from '../../../../../shared/components/Toast/useShowToast';
 import {
   rememberExistingWorktree,
   rememberNewBranchChoice,
@@ -55,9 +56,7 @@ export const MountProjectList = ({
   emptyHint,
   onDone,
 }: Props) => {
-  const ensureProjectMounted = useAppStore((state) => state.ensureProjectMounted);
-  const detachProject = useAppStore((state) => state.detachProject);
-  const removeProject = useAppStore((state) => state.removeProject);
+  const showToast = useShowToast();
   const emitNotification = useAppStore((state) => state.emitNotification);
   const [query, setQuery] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState<Project['id'] | null>(null);
@@ -94,7 +93,8 @@ export const MountProjectList = ({
         sessionId,
         project,
         isAdded,
-        store: { ensureProjectMounted, detachProject, removeProject },
+        getState: useAppStore.getState,
+        showToast,
         options:
           preflight === null
             ? {}

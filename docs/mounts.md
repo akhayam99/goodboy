@@ -304,11 +304,26 @@ before projecting it as writable. Disk states:
   project again, on the kept folder when the files stayed, otherwise on the
   same branch in a new worktree. A failed Undo leaves the project unmounted and
   says "Couldn't undo the operation". With two or more mounts the toast has no
-  Undo, because one mount call cannot restore several. When another repository
-  of the session is still mounted, Undo starts a new branch instead of the old
-  one (`createProjectMount` reads the branch seed only for the first repository).
+  Undo, because one mount call cannot restore several. Undo passes the branch
+  and kept folder as `restore` to `ensureProjectMounted`, which
+  `createProjectMount` honors even when another repository of the session is
+  still mounted (the branch seed only applies to the first repository).
+- **Mount** from the picker (`mountWithUndo`) offers Undo only for what that
+  request changed: the mount it created and, for a folder added with Choose a
+  folder, the workspace entry. A plain folder that works in place, or a project
+  that was already mounted, gets a toast without Undo. Undo removes only the
+  created mount, after a fresh read shows it at the revision it was created
+  with; a dirty worktree or a failed removal keeps the mount and the Undo. The
+  stages it finished are remembered, so a retry after a failed workspace
+  removal only retries that step, and a folder another session uses by then
+  stays in the workspace.
 - **Forget** deletes the row of a mount that is already off disk or kept on
-  purpose; it never touches the directory.
+  purpose; it never touches the directory. Unmount on a closed or deleted
+  branch (`mount.forget`, `mount.removeGone`) offers Undo: `restoreMountRow`
+  puts the deleted row back as it was. A deleted branch whose kept folder was
+  removed comes back without it, and the toast says so.
+- **Unmount** on an idle folder (the next step) offers Undo, which attaches the
+  same mount again at the revision the unmount left (`attachMount`).
 
 Removal always goes through the checked Rust removal boundary: safe mode
 refuses dirty work, locks and open users, and local branches are preserved.

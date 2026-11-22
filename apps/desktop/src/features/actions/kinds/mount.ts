@@ -44,6 +44,7 @@ import { countNoun } from '../../../shared/utils/countNoun';
 import { abortRebase, rebaseMount, settleRequest } from './gitRuns';
 import { mountFacts, type MountFacts } from './mountFacts';
 import { pushAction } from './pushAction';
+import { offerMountRowUndo } from './offerMountRowUndo';
 import { mountRebaseConflictOf } from './mountRebaseConflictOf';
 import { selectRebaseStop } from '../../../store/slices/history/selectRebaseStop';
 import { autoUnavailableReason } from '../../auto/autoUnavailableReason';
@@ -444,7 +445,10 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
       role: 'alert',
     }),
     run: async ({ facts, env }) => {
-      await env.getState().forgetMount({ sessionId: facts.sessionId, mountId: facts.mountId });
+      const { removed } = await env
+        .getState()
+        .forgetMount({ sessionId: facts.sessionId, mountId: facts.mountId });
+      offerMountRowUndo({ env, removed, label: facts.label, isFolderRemoved: false });
     },
   },
   {
@@ -470,6 +474,12 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
       if (result.kind !== 'forgotten') {
         throw new Error(result.reason ?? `The folder for ${facts.label} stayed.`);
       }
+      offerMountRowUndo({
+        env,
+        removed: result.removed,
+        label: facts.label,
+        isFolderRemoved: result.isFolderRemoved,
+      });
     },
   },
   {

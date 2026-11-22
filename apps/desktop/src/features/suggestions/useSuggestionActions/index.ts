@@ -122,6 +122,8 @@ export const useSuggestionActions = ({
   const runDiscoveredScript = useAppStore((state) => state.runDiscoveredScript);
   const recordTerminalScriptRun = useAppStore((state) => state.recordTerminalScriptRun);
   const unmountMount = useAppStore((state) => state.unmountMount);
+  const attachMount = useAppStore((state) => state.attachMount);
+  const undoable = useAppStore((state) => state.undoable);
   const sendAgentMessage = useAppStore((state) => state.sendAgentMessage);
   const mergeSeriesInOrder = useAppStore((state) => state.mergeSeriesInOrder);
   const moveTrackerItem = useAppStore((state) => state.moveTrackerItem);
@@ -574,6 +576,8 @@ export const useSuggestionActions = ({
           mountId: suggestion.payload.mountId,
           projectName: suggestion.payload.projectName,
           unmountMount,
+          attachMount,
+          undoable,
         }),
         onDismiss: null,
       };

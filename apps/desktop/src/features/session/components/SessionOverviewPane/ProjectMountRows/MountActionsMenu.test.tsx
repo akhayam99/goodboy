@@ -14,7 +14,7 @@ const { state, showToast, worktreeDetachAssessment } = vi.hoisted(() => ({
   state: {
     detachProject: vi.fn(async () => [{ worktreePath: '/worktrees/api', kind: 'removed' }]),
     unmountMount: vi.fn(async () => ({ kept: false })),
-    forgetMount: vi.fn(async () => ({ keptPath: null as string | null })),
+    forgetMount: vi.fn(async () => ({ keptPath: null as string | null, removed: null })),
     reportError: vi.fn(async () => undefined),
     stopWorkflowRunNow: vi.fn(async () => undefined),
     projects: [{ id: 'project-1', kind: 'repo', baseBranch: 'develop' as string | null }],
@@ -171,7 +171,7 @@ beforeEach(() => {
     ],
   };
   state.detachProject.mockResolvedValue([{ worktreePath: '/worktrees/api', kind: 'removed' }]);
-  state.forgetMount.mockResolvedValue({ keptPath: null });
+  state.forgetMount.mockResolvedValue({ keptPath: null, removed: null });
   worktreeDetachAssessment.mockResolvedValue(
     assessed({ affectedFiles: 0, localOnlyCommits: 0, hasUpstream: true }),
   );

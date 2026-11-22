@@ -1,6 +1,7 @@
 import { updateSessionMountLifecycle } from '@goodboy/db';
+import type { SessionMount } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { forgetMount } from './forgetMount';
+import { forgetMount, type ForgetMountResult } from './forgetMount';
 import { withoutMountBranchGone } from './mountBranchGone';
 import { applyMountViews, loadMountViews, requireMountView } from './mountViews';
 import { requireMountContext } from './requireMountContext';
@@ -12,6 +13,8 @@ import type { MountKeyInput } from './types';
 export type RemoveGoneMountResult = {
   readonly kind: 'forgotten' | 'kept' | 'failed';
   readonly reason: string | null;
+  readonly removed: SessionMount | null;
+  readonly isFolderRemoved: boolean;
 };
 
 export const removeGoneMount = ({ set, get }: SliceDeps) => {
@@ -20,7 +23,8 @@ export const removeGoneMount = ({ set, get }: SliceDeps) => {
     const { project } = requireMountContext({ get, sessionId, projectId: view.projectId });
     const isOnDisk = view.diskState !== 'missing' && view.diskState !== 'removed';
     const folder = view.worktreePath ?? view.lastWorktreePath;
-    if (isOnDisk && folder !== null && view.worktreePath === null) {
+    const isFolderRemoved = isOnDisk && folder !== null && view.worktreePath === null;
+    if (isFolderRemoved) {
       const cleanup = await runMountRemoval({
         get,
         mode: 'safe',
@@ -65,15 +69,21 @@ export const removeGoneMount = ({ set, get }: SliceDeps) => {
         },
       });
       if (cleanup.decision.kind === 'kept' || cleanup.decision.kind === 'failed') {
-        return { kind: cleanup.decision.kind, reason: cleanup.decision.reason };
+        return {
+          kind: cleanup.decision.kind,
+          reason: cleanup.decision.reason,
+          removed: null,
+          isFolderRemoved: false,
+        };
       }
       applyMountViews({ set, sessionId, views: await loadMountViews({ get, sessionId }) });
     }
     const settled = (await loadMountViews({ get, sessionId })).find(
       (candidate) => candidate.id === mountId,
     );
+    let forgotten: ForgetMountResult;
     try {
-      await forgetMount(
+      forgotten = await forgetMount(
         set,
         get,
       )({
@@ -83,13 +93,18 @@ export const removeGoneMount = ({ set, get }: SliceDeps) => {
       });
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'revision-conflict') {
-        return { kind: 'kept', reason: 'the mount changed while waiting to remove it' };
+        return {
+          kind: 'kept',
+          reason: 'the mount changed while waiting to remove it',
+          removed: null,
+          isFolderRemoved,
+        };
       }
       throw error;
     }
     set((state) => ({
       mountBranchGone: withoutMountBranchGone({ gone: state.mountBranchGone, mountId }),
     }));
-    return { kind: 'forgotten', reason: null };
+    return { kind: 'forgotten', reason: null, removed: forgotten.removed, isFolderRemoved };
   };
 };

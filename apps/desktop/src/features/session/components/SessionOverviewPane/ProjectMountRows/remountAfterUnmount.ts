@@ -1,8 +1,4 @@
 import type { ProjectId, SessionId } from '@goodboy/types';
-import {
-  rememberExistingWorktree,
-  rememberPickedBranch,
-} from '../../../../../store/slices/sessions/branchChoiceSeeds';
 import type {
   EnsureProjectMountedInput,
   EnsureProjectMountedResult,
@@ -27,12 +23,13 @@ export const remountAfterUnmount = async ({
   keptPath,
   ensureProjectMounted,
 }: Params): Promise<boolean> => {
-  if (branch !== '' && keptPath !== null && keptPath !== '') {
-    rememberExistingWorktree({ sessionId, branch, worktreePath: keptPath });
-  }
-  if (branch !== '' && (keptPath === null || keptPath === '')) {
-    rememberPickedBranch({ sessionId, branch });
-  }
-  await ensureProjectMounted({ sessionId, projectId, reason: UNDO_REASON });
+  await ensureProjectMounted({
+    sessionId,
+    projectId,
+    reason: UNDO_REASON,
+    ...(branch === ''
+      ? {}
+      : { restore: { branch, worktreePath: keptPath === '' ? null : keptPath } }),
+  });
   return true;
 };

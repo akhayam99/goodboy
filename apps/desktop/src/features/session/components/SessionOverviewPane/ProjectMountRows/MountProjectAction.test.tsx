@@ -10,13 +10,15 @@ const { store } = vi.hoisted(() => ({
     bootstrapPhase: {},
     sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     sessions: [],
-    ensureProjectMounted: vi.fn(async () => undefined),
+    ensureProjectMounted: vi.fn(async () => ({ status: 'already-mounted', mountIds: [] })),
     emitNotification: vi.fn(),
   },
 }));
 
 vi.mock('../../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
+  useAppStore: Object.assign(<T,>(selector: (state: typeof store) => T) => selector(store), {
+    getState: () => store,
+  }),
 }));
 
 import { MountProjectAction } from './MountProjectAction';

@@ -1,5 +1,5 @@
-import { deleteSessionMount } from '@goodboy/db';
-import type { SessionMountView } from '@goodboy/types';
+import { deleteSessionMount, getSessionMount } from '@goodboy/db';
+import type { SessionMount, SessionMountView } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { MOUNT_CLEANUP_BLOCKER_REASON, mountCleanupBlockers } from '../mount-cleanup/cleanupPolicy';
 import { pinnedRunsOf } from '../workflows/runMount/pinnedRunsOf';
@@ -13,6 +13,7 @@ import type { GetFn, MountKeyInput, SetFn } from './types';
 
 export type ForgetMountResult = {
   readonly keptPath: string | null;
+  readonly removed: SessionMount | null;
 };
 
 type ForgetMountInput = MountKeyInput & {
@@ -59,7 +60,7 @@ export const forgetMount = (set: SetFn, get: GetFn) => {
       });
     }
     const isOnDisk = view.diskState !== 'missing' && view.diskState !== 'removed';
-    await withRepositoryAndMountLock({
+    const removed = await withRepositoryAndMountLock({
       repoRoot: view.repoRoot,
       mountKey: `${sessionId}:${mountId}`,
       run: async () => {
@@ -75,6 +76,7 @@ export const forgetMount = (set: SetFn, get: GetFn) => {
             });
           }
         }
+        const row = await getSessionMount({ db: tauriDatabase, sessionId, mountId });
         await settleMountCleanupProposals({
           set,
           sessionId,
@@ -94,6 +96,7 @@ export const forgetMount = (set: SetFn, get: GetFn) => {
               };
         });
         clearMountBranchObservation({ set, sessionId, mountId });
+        return row;
       },
     });
     const rows = get().sessionMounts[sessionId];
@@ -108,6 +111,6 @@ export const forgetMount = (set: SetFn, get: GetFn) => {
         .reconcileOrphanWorktrees()
         .catch(() => undefined);
     }
-    return { keptPath };
+    return { keptPath, removed };
   };
 };

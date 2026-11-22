@@ -13,6 +13,7 @@ import {
   connectedAnthropicState,
   importStore,
   openStorySqlite,
+  storySqlite,
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
   storySpies,
@@ -164,6 +165,41 @@ describe('Unmount from the project block', () => {
 
     await vi.waitFor(() => expect(projectMounts()).toHaveLength(1));
     expect(projectMounts()[0]?.branch).toBe('goodboy/ledger-export');
+  });
+
+  it('mounts the original branch again while another repository stays mounted', async () => {
+    const payments = buildStoryProject({
+      id: brandedId<ProjectId>({ value: 'project-payments-api' }),
+      workspaceId: WORKSPACE_ID,
+      name: 'payments-api',
+      rootPath: '/tmp/payments-api',
+    });
+    await insertProject({ db: storySqlite(), project: payments });
+    useAppStore.setState((state) => ({ projects: [...state.projects, payments] }));
+    storySpies.createWorktree.mockResolvedValueOnce({
+      worktreePath: '/tmp/payments-api/.goodboy/worktrees/payments-refund',
+      branchName: 'goodboy/payments-refund',
+      slug: 'payments-refund',
+      reused: false,
+    });
+    await useAppStore
+      .getState()
+      .ensureProjectMounted({ sessionId, projectId: payments.id, reason: 'refund flow' });
+    await unmount();
+    storySpies.createWorktree.mockClear();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+      await Promise.resolve();
+    });
+
+    await vi.waitFor(() => expect(projectMounts()).toHaveLength(1));
+    expect(storySpies.createWorktree).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repoPath: '/tmp/ledger-core',
+        existingBranch: 'goodboy/ledger-export',
+      }),
+    );
   });
 
   it('keeps the project unmounted and reports the error when Undo fails', async () => {

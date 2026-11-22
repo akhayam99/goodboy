@@ -65,6 +65,7 @@ export const ensureProjectMounted = (set: SetFn, get: GetFn) => {
     requestId,
     branch,
     dirName,
+    restore,
   }: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult> => {
     const trimmedReason = reason.trim();
     if (trimmedReason === '') {
@@ -162,6 +163,7 @@ export const ensureProjectMounted = (set: SetFn, get: GetFn) => {
           ...(taskIdentifiers === undefined ? {} : { taskIdentifiers }),
           ...(branch === undefined ? {} : { branch }),
           ...(dirName === undefined ? {} : { dirName }),
+          ...(restore === undefined ? {} : { restore }),
         });
       },
     });

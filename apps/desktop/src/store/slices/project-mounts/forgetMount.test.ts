@@ -21,6 +21,7 @@ const {
 
 vi.mock('@goodboy/db', async () =>
   (await import('../../../test/dbMock')).createDbMock({
+    getSessionMount: vi.fn(async () => null),
     deleteSessionMount,
     listSessionMounts,
     listMountOperations,
