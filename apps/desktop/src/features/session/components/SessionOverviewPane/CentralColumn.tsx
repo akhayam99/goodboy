@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Button, HeightMotion, PANE_GROUPS_GAP_REM, PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../shared/utils/names';
 import { autoRetryTargetsOf } from '../../../auto/autoRetryTargetsOf';
@@ -59,6 +59,19 @@ export const CentralColumn = ({ session }: Props) => {
       }),
     [cards, groups, isArchived],
   );
+  const openQuestions = useSessionOpenQuestions(sessionId);
+  const looseQuestions = useMemo(
+    () =>
+      isArchived
+        ? EMPTY_ARRAY
+        : openQuestions.filter((question) => !moves.shownAskIds.has(question.id)),
+    [isArchived, moves.shownAskIds, openQuestions],
+  );
+  const shownAskIds = useMemo(
+    () => new Set([...moves.shownAskIds, ...looseQuestions.map((question) => question.id)]),
+    [looseQuestions, moves.shownAskIds],
+  );
+  const hasNeedsYou = moves.needsYou.length > 0 || looseQuestions.length > 0;
   const { facts } = useBranchFacts({ sessionId, groups });
   const detailByMountId = useBranchDetails({ sessionId, facts });
   const branches = useMemo(
@@ -119,10 +132,11 @@ export const CentralColumn = ({ session }: Props) => {
       )}
       {isArchived ? null : <UnassignedNotes sessionId={sessionId} />}
       {isEmpty ? <EmptySessionStart session={session} /> : null}
-      <HeightMotion isOpen={moves.needsYou.length > 0} parentGapRem={PANE_GROUPS_GAP_REM}>
+      <HeightMotion isOpen={hasNeedsYou} parentGapRem={PANE_GROUPS_GAP_REM}>
         <NeedsYouSection
           sessionId={sessionId}
           cards={moves.needsYou}
+          questions={looseQuestions}
           actionsFor={actionsFor}
           openFor={openFor}
           kickerById={kickerById}
@@ -136,7 +150,7 @@ export const CentralColumn = ({ session }: Props) => {
         cards={moves.next}
         actionsFor={actionsFor}
         openFor={openFor}
-        hasFilledMove={moves.needsYou.length === 0}
+        hasFilledMove={!hasNeedsYou}
       />
       {isEmpty || board.board.rows.length === 0 ? null : (
         <ProjectBlocks
@@ -147,7 +161,7 @@ export const CentralColumn = ({ session }: Props) => {
           actionsFor={actionsFor}
           openFor={openFor}
           isDevShown={dev.isShown}
-          shownAskIds={moves.shownAskIds}
+          shownAskIds={shownAskIds}
           devToggle={
             <Button size="sm" variant="quiet" aria-pressed={dev.isShown} onClick={dev.toggle}>
               {dev.isShown ? NAMES.hideDevDetails : NAMES.showDevDetails}

@@ -268,7 +268,7 @@ describe('the project blocks on the Overview', () => {
     expect(board.textContent?.split('payments-api')).toHaveLength(2);
   });
 
-  it('carries one button at most: Answer before the Rebase that also waits', async () => {
+  it('puts the waiting question in Needs you with a filled Answer, never on its tile', async () => {
     seedCentralColumn({ kind: 'branches' });
     const navigate = vi.fn();
     act(() => {
@@ -276,12 +276,13 @@ describe('the project blocks on the Overview', () => {
     });
     await show();
 
-    const tenant = verbsOf({ tile: tileOf({ branch: TENANT }) });
-    expect(tenant.map((button) => button.textContent)).toEqual(['Answer']);
+    expect(verbsOf({ tile: tileOf({ branch: TENANT }) })).toHaveLength(0);
     expect(verbsOf({ tile: tileOf({ branch: LEDGER }) })).toHaveLength(0);
+    const needsYou = screen.getByRole('region', { name: 'Needs you' });
+    const answer = within(needsYou).getByRole('button', { name: 'Answer' });
+    expect(answer.getAttribute('data-variant')).toBe('primary');
 
-    const [answer] = tenant;
-    fireEvent.click(answer ?? document.body);
+    fireEvent.click(answer);
     const [call] = navigate.mock.calls;
     expect(call?.[0]).toMatchObject({ to: { view: { lens: 'questions' } } });
   });

@@ -1439,6 +1439,10 @@ u50-mount-fix-confirm-dark
 u50-mount-fix-confirm-light
 u50-mount-fix-dark
 u50-mount-fix-light
+u50-overview-dark
+u50-overview-light
+u50-overview-plain-dark
+u50-overview-plain-light
 update-card
 update-card-long-version
 update-card-narrow
