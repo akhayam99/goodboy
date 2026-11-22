@@ -989,16 +989,35 @@ saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
   `main`, before the change, as `-before-`; after the change, the same scene,
   same name, as `-after-`. A brand-new screen only ever gets `-after-`: there
   is nothing to be "before".
-- **Any shape is fine.** What's new shows a picture whole, at its own shape,
-  up to 480px tall, and a Before and After pair share one frame height, so a
-  wide card or a tall rail needs no padding to fit. The `release-image-shape`
-  probe in `scripts/validate-scenes.mjs` measures the `u32-release-images` scene.
+- **Frame the change, not the screen.** Crop to the changed element plus a
+  little context, landscape, at most about 800 CSS pixels tall (`[data-shot]`
+  on that element does it). A full-window shot is for a change that is the
+  whole window, such as a new frame or page. A picture whose changed part is
+  a small share of its area gets a tighter crop or no picture.
+- **Before and after differ only by the change.** Same scene, seed, state,
+  scroll position, window size and crop. The element the entry talks about
+  (selected row, open menu, highlight) is in both frames, so the Before frame
+  never loses it. The seed tells one coherent story: no visible bug, nothing
+  cut off, mock names only. A before and after that differ in size, or that
+  look the same, mean the shot is wrong.
+- **Check it in What's new.** Files are not enough: open each pair in the
+  What's new window on the release branch, in dark and light, and press
+  Before and After. The checklist is in
+  [release-command.md](release-command.md) → Release notes → Procedure.
+- **What's new shows it whole.** A picture keeps its own shape, shrunk to at
+  most 480px tall, and a Before and After pair share one frame height. A tall
+  rail is shrunk until it is unreadable, so crop landscape. The
+  `release-image-shape` probe in `scripts/validate-scenes.mjs` measures the
+  `u32-release-images` scene.
 - **Promotion at the version bump.** The `next` folder under `docs/changelog` holds
   work-in-progress pictures across PRs in the same release. The PR that bumps
   the version numbers renames the `next` folder to `docs/changelog/<version>/` and sets
   `image=<name>` on the entry. `changelogImageBudget.test.ts` then checks
   names, complete dark/light pairs (only the pinned theme for an entry with
-  `theme=`), that a `before` has a matching `after`,
+  `theme=`), that a `before` has a matching `after`, and, from 0.41.0 on, that
+  an `Improved` image has a `before`, that before and after (and dark and
+  light) have the same size, and that a picture is landscape and at most 1600
+  physical pixels tall,
   at most 12 images and 2 MB per release, and no orphan file.
 - **Retroactive from the release's own code.** A release that already
   shipped can gain pictures, but never capture today's app under an old

@@ -67,6 +67,22 @@ const DENYLIST_PATTERNS: ReadonlyArray<{ readonly pattern: RegExp; readonly labe
   { pattern: /\bwill\b/i, label: '"will"' },
   { pattern: /\[#/, label: 'a PR reference in the text' },
   { pattern: /\]\(/, label: 'a markdown link' },
+  { pattern: /\b[\w-]+\.(tsx?|rs|mjs|sql|toml|ya?ml)\b/i, label: 'a source file name' },
+  { pattern: /\b(apps|packages|scripts|src-tauri)[/]/, label: 'a repository path' },
+  {
+    pattern:
+      /\b(ratchet|refactor(ed|ing)|zustand|vitest|typecheck|store slice|race condition|mutex)\b/i,
+    label: 'internal tooling or code vocabulary',
+  },
+  {
+    pattern:
+      /generic copy|copy (tweaks?|improvements?)|various fixes|misc(ellaneous)? (fixes|changes)/i,
+    label: 'a filler line that names no change',
+  },
+  {
+    pattern: /\b(seamless(ly)?|supercharge[sd]?|blazing|leverag(e|es|ed|ing))\b/i,
+    label: 'a sales word',
+  },
 ];
 
 type ScanDenylistParams = {
@@ -296,9 +312,7 @@ export type LintReleaseParams = {
   readonly lines: ReadonlyArray<ChangelogLine>;
 };
 
-export const lintRelease = ({
-  lines,
-}: LintReleaseParams): ReadonlyArray<ChangelogLintViolation> => {
+const lintAllRules = ({ lines }: LintReleaseParams): ReadonlyArray<ChangelogLintViolation> => {
   const violations: ChangelogLintViolation[] = [];
   const heading = lines[0];
   if (heading === undefined) {
@@ -517,4 +531,22 @@ export const lintRelease = ({
   }
 
   return violations;
+};
+
+const SOURCE_FILE_LABEL = 'contains a source file name';
+const SOURCE_FILE_RULE_FROM_MINOR = 41;
+const VERSION_IN_HEADING = /^## Goodboy v(\d+)\.(\d+)\.\d+$/;
+
+export const lintRelease = ({
+  lines,
+}: LintReleaseParams): ReadonlyArray<ChangelogLintViolation> => {
+  const violations = lintAllRules({ lines });
+  const match = VERSION_IN_HEADING.exec(lines[0]?.text ?? '');
+  const major = Number(match?.[1] ?? 0);
+  const minor = Number(match?.[2] ?? 0);
+  const isCovered = major > 0 || minor >= SOURCE_FILE_RULE_FROM_MINOR;
+  if (isCovered) {
+    return violations;
+  }
+  return violations.filter((violation) => violation.message !== SOURCE_FILE_LABEL);
 };

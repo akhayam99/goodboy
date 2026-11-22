@@ -153,6 +153,64 @@ and never edited onto the release after the build.
 - BEFORE writing, read [tone-of-voice.md](tone-of-voice.md) and obey it, its
   "Release notes" section in particular. It is the law here, not a suggestion.
 
+### Procedure
+
+One pass, in this order. Do not write a line of the notes before steps 1 and 2.
+
+1. **Collect.** List the merged app-facing PRs and read each body, as above.
+2. **Sort every change into one of four bins.**
+   - **Entry** (`New` or `Improved`): a user can see or do something they
+     could not before, and would notice at a glance. One entry per capability.
+   - **Fixed line**: a bug a user hit. One line, what they saw before and what
+     they see now.
+   - **Grouped line**: several small visible changes on one screen (a label, a
+     spacing, a tooltip) become one `Fixed` bullet that names the screen,
+     such as `Settings labels read clearer: ...`. Never a title, never a picture.
+   - **Dropped**: everything a user cannot see. Refactors, tests, CI, docs,
+     tooling, store or file layout, performance work with no felt change,
+     internal renames, and anything the previous release already said.
+3. **Write.** Follow [tone-of-voice.md](tone-of-voice.md) → Release notes. Each
+   title names a capability a user can name. Each sentence starts with a verb
+   or with what the user sees, and says one concrete thing.
+4. **Decide pictures.** An entry gets a pair only when all of these hold:
+   - the change is visible in one frame, and a person who has never seen the
+     entry can tell the two frames apart in under two seconds;
+   - it is a `New` or `Improved` entry, not a `Fixed` line and not a grouped
+     line, and not a copy-only change;
+   - a `Fixed`-only patch release has no pictures at all.
+     An `Improved` entry with `image=` needs both `before` and `after` files in
+     both themes, because What's new offers a Before switch on every `Improved`
+     entry. A `New` entry gets `after` only.
+5. **Shoot.** Follow [mock-screenshots.md](mock-screenshots.md) → Pictures for
+   the changelog. Before and after share frame, crop, seed, scroll and the
+   highlighted element. Only the change differs.
+6. **Verify inside What's new.** Run the app on the release branch, open
+   Settings, Updates, What's new on the version, and for each picture check:
+   - the After frame shows the change, and the Before frame shows the same
+     frame without it;
+   - the selection, highlight or open row that the entry talks about is
+     present in both frames;
+   - Before and After are the same size and nothing is cut off at the edge of
+     the picture frame, in dark and in light;
+   - the Before switch stays visible after you press it.
+     A picture that fails any line is re-shot, or its pair is dropped.
+7. **Final read as a user.** Read the whole section once, as someone who has
+   never seen the code. For each line ask: can I see this in the app, does it
+   say one concrete thing, would I be fine with this line quoted. Cut any line
+   that fails. Delete the entry rather than pad it.
+
+Checklist before the section is committed:
+
+- [ ] Every entry is a capability a user can see. Nothing from the Dropped bin.
+- [ ] No file path, function, module, tool, CI or test name in any line.
+- [ ] No limit, "not yet", trade-off, follow-up, license detail, real site,
+      employer or personal data. Mock names only in examples.
+- [ ] Small visible changes are one grouped `Fixed` line, not several entries.
+- [ ] No picture for a copy-only or one-line change.
+- [ ] Every `Improved` picture has before and after in both themes, same size.
+- [ ] Opened every picture in What's new, in both themes.
+- [ ] Read it once more as a user.
+
 ### Format (v2, from v0.5.0 on)
 
 Goodboy reads `CHANGELOG.md` packaged into the app (from v0.5.0 on; older
@@ -216,9 +274,9 @@ theme=<light|dark> pr=<numbers> -->` (`area` required, the rest optional, no spa
   caps. The app fetches each file from `main` at
   `docs/changelog/<version>/<file>` first, then from the release tag
   `v<version>` when `main` fails, so a picture committed after the tag still
-  shows. The app renders it as a 16:10 frame with a
-  Before/After switch when both exist, and shows nothing when the picture is
-  missing, offline, or unreadable. `scripts/release-notes.mjs` expands it into
+  shows. The app renders it whole, at its own shape up to 480px tall,
+  with a Before/After switch on `Improved` entries, and shows nothing when the
+  picture is missing, offline, or unreadable. `scripts/release-notes.mjs` expands it into
   a `<picture>` under the entry when it builds the tagged release's GitHub
   body; the in-app parser ignores that block.
 - `theme=<light|dark>` goes with `image=` and pins the entry's pictures to one
