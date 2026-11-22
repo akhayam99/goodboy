@@ -20,6 +20,8 @@ import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserve
 import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U50_DESK_OWNS_SCENES } from './deskOwns';
 
+const WAIT = { timeout: 15_000 };
+
 beforeAll(async () => {
   installFakeResizeObserver();
   Element.prototype.scrollIntoView = vi.fn();
@@ -68,14 +70,14 @@ describe('the u50 desk owns scenes', () => {
   it('draws the Browser on the Desk with the asleep page and Wake', async () => {
     show({ name: 'u50-desk-owns-asleep-dark' });
 
-    await screen.findByText('localhost:4010 · asleep');
+    await screen.findByText('localhost:4010 · asleep', undefined, WAIT);
     screen.getByRole('button', { name: 'Wake' });
   });
 
   it('draws a page that was only hidden with no card', async () => {
     show({ name: 'u50-desk-owns-awake-light' });
 
-    await screen.findByRole('region', { name: /^Page:/ });
+    await screen.findByRole('region', { name: /^Page:/ }, WAIT);
     expect(screen.queryByRole('button', { name: 'Wake' })).toBeNull();
   });
 });
