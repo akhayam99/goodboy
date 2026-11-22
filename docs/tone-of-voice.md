@@ -208,6 +208,30 @@ Format; this section is about how the words in it should read.
   status, open gaps, trade-offs and work not done yet. No "Follow-up:" lines,
   no "known limits" sections, no "not yet", no caveat paragraphs.
 
+### What stays out
+
+A line earns its place by being something a user can see or do. Keep these out
+of every entry, title and fixed line:
+
+- Anything a user cannot see: refactors, tests, CI, tooling, docs, file or
+  store layout, renames, performance work nobody can feel, and things the
+  previous release already said.
+- File paths, function, module, setting-key and tool names, and any
+  "how it works" detail. Names a user reads in the app are fine.
+- Filler that says a change happened without saying which: "generic copy
+  improvements", "various fixes", "polish", "cleanup". Name the one thing the
+  user will notice, fold several small ones on one screen into a single
+  `Fixed` line that names the screen, or drop them.
+- A one-line wording tweak as an entry or a picture. It is a grouped line, or
+  nothing.
+- Sales words and tells of generated text: "seamless", "powerful",
+  "supercharge", "unlock", titles shaped like "Your X, made better", grand
+  absolutes ("always", "never", "everything"), and lists of three nouns joined
+  by middots or commas for rhythm.
+
+Write each sentence as a developer would say it to a teammate: verb first, one
+concrete thing, the screen or key by its name in the app.
+
 ### Grounded
 
 - **Don't oversell.** "Reads and comments on Linear issues" not "Full Linear

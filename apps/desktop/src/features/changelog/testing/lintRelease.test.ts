@@ -39,3 +39,52 @@ describe('lintRelease picture theme', () => {
     );
   });
 });
+
+const releaseWithText = ({ version, text }: { readonly version: string; readonly text: string }) =>
+  [
+    `## Goodboy v${version}`,
+    '',
+    'A lead sentence for this release.',
+    '',
+    '### Fixed',
+    '',
+    `- ${text} <!-- gb area=app -->`,
+  ].map((line, index) => ({ number: index + 1, text: line }));
+
+const denylistHits = ({ version, text }: { readonly version: string; readonly text: string }) =>
+  lintRelease({ lines: releaseWithText({ version, text }) }).filter(
+    (violation) => violation.rule === 'denylist',
+  );
+
+describe('lintRelease what stays out', () => {
+  it('flags a source file name from 0.41.0 on, not before', () => {
+    expect(
+      denylistHits({ version: '0.41.0', text: 'Settings no longer reloads useAgents.tsx.' }),
+    ).toHaveLength(1);
+    expect(
+      denylistHits({ version: '0.40.9', text: 'A conflict in Panel.tsx shows the file.' }),
+    ).toEqual([]);
+  });
+
+  it('flags a repository path', () => {
+    expect(
+      denylistHits({ version: '0.41.0', text: 'Reads from apps/desktop on launch.' }),
+    ).toHaveLength(1);
+  });
+
+  it('flags code vocabulary and filler', () => {
+    expect(denylistHits({ version: '0.41.0', text: 'A ratchet guards the Board.' })).toHaveLength(
+      1,
+    );
+    expect(denylistHits({ version: '0.41.0', text: 'Generic copy improvements.' })).toHaveLength(1);
+    expect(denylistHits({ version: '0.41.0', text: 'Seamlessly opens the Board.' })).toHaveLength(
+      1,
+    );
+  });
+
+  it('accepts plain screen language', () => {
+    expect(
+      denylistHits({ version: '0.41.0', text: 'The Board keeps its lane when a session moves.' }),
+    ).toEqual([]);
+  });
+});

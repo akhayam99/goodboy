@@ -13,6 +13,41 @@ const FILE_NAME_PATTERN = /^([a-z0-9]+(?:-[a-z0-9]+)*)-(before|after)-(dark|ligh
 const MAX_FILE_BYTES = 120 * 1024;
 const MAX_RELEASE_BYTES = 2 * 1024 * 1024;
 const MAX_IMAGES_PER_RELEASE = 12;
+const MAX_HEIGHT_PIXELS = 1600;
+const PAIR_RULES_FROM_MINOR = 41;
+
+type Size = { readonly width: number; readonly height: number };
+
+const readWebpSize = ({ path }: { readonly path: string }): Size | null => {
+  const data = readFileSync(path);
+  const kind = data.toString('ascii', 12, 16);
+  if (kind === 'VP8 ') {
+    return { width: data.readUInt16LE(26) & 0x3fff, height: data.readUInt16LE(28) & 0x3fff };
+  }
+  if (kind === 'VP8L') {
+    const bits = data.readUInt32LE(21);
+    return { width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 };
+  }
+  if (kind === 'VP8X') {
+    return { width: data.readUIntLE(24, 3) + 1, height: data.readUIntLE(27, 3) + 1 };
+  }
+  return null;
+};
+
+const hasVariant = ({
+  files,
+  image,
+  variant,
+}: {
+  readonly files: ReadonlyArray<ParsedFile>;
+  readonly image: string;
+  readonly variant: 'before' | 'after';
+}): boolean => files.some((file) => file.image === image && file.variant === variant);
+
+const isPairRuleVersion = ({ versionDir }: { readonly versionDir: string }): boolean => {
+  const [major, minor] = versionDir.split('.').map(Number);
+  return (major ?? 0) > 0 || (minor ?? 0) >= PAIR_RULES_FROM_MINOR;
+};
 
 type ParsedFile = {
   readonly fileName: string;
@@ -183,6 +218,45 @@ describe('docs/changelog image budget', () => {
         });
       });
 
+      if (isPairRuleVersion({ versionDir })) {
+        it('gives every Improved image a before, and every pair one size', () => {
+          const sizes = new Map<string, Size>();
+          parsed.forEach(({ fileName, parsed: file }) => {
+            if (file === null) {
+              return;
+            }
+            const size = readWebpSize({ path: join(CHANGELOG_IMAGES_DIR, versionDir, fileName) });
+            expect(size, `${fileName} is not a readable webp`).not.toBeNull();
+            if (size === null) {
+              return;
+            }
+            expect(size.width, `${fileName} is portrait`).toBeGreaterThanOrEqual(size.height);
+            expect(
+              size.height,
+              `${fileName} is taller than ${MAX_HEIGHT_PIXELS}px`,
+            ).toBeLessThanOrEqual(MAX_HEIGHT_PIXELS);
+            const first = sizes.get(file.image);
+            if (first === undefined) {
+              sizes.set(file.image, size);
+              return;
+            }
+            expect(
+              `${size.width}x${size.height}`,
+              `${fileName} differs in size from the other files of ${file.image}`,
+            ).toBe(`${first.width}x${first.height}`);
+          });
+          byImage.forEach((section, image) => {
+            const files = parsed.flatMap(({ parsed: file }) => (file === null ? [] : [file]));
+            if (section === 'improved' && files.some((file) => file.image === image)) {
+              expect(
+                hasVariant({ files, image, variant: 'before' }),
+                `${image} is Improved, so What's new offers Before: it needs before files`,
+              ).toBe(true);
+            }
+          });
+        });
+      }
+
       it('keeps every file at or under 120 KB and the release at or under 2 MB', () => {
         let releaseTotal = 0;
         fileNames.forEach((fileName) => {
@@ -199,5 +273,22 @@ describe('docs/changelog image budget', () => {
         ).toBeLessThanOrEqual(MAX_RELEASE_BYTES);
       });
     });
+  });
+});
+
+describe('hasVariant', () => {
+  const files: ReadonlyArray<ParsedFile> = [
+    { fileName: 'board-after-dark.webp', image: 'board', variant: 'after', theme: 'dark' },
+    {
+      fileName: 'board-before-menu-before-dark.webp',
+      image: 'board-before-menu',
+      variant: 'before',
+      theme: 'dark',
+    },
+  ];
+
+  it('never takes another image name for this image', () => {
+    expect(hasVariant({ files, image: 'board', variant: 'before' })).toBe(false);
+    expect(hasVariant({ files, image: 'board', variant: 'after' })).toBe(true);
   });
 });
