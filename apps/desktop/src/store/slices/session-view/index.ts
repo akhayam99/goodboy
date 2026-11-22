@@ -25,6 +25,8 @@ import {
   setFocusedWorkflowRun,
 } from './workSurface';
 import { setResolveQueueView } from './resolveSurface';
+import { recallSessionFace } from './recallSessionFace';
+import { setSessionFace } from './setSessionFace';
 import { setResolveItemDraft } from './resolveItemDrafts';
 import { setFocusedRunAgent } from './setFocusedRunAgent';
 import { beginSessionCreation, endSessionCreation } from './sessionCreation';
@@ -34,7 +36,7 @@ import type { SliceDeps } from '../../slice-types';
 export { isPrReviewSession } from './isPrReviewSession';
 export { EMPTY_RESOLVE_QUEUE_VIEW } from './types';
 export type { SessionViewSlice } from './types';
-export type { LensKind, DiffFocus, SessionCreationId } from './types';
+export type { LensKind, DiffFocus, SessionCreationId, SessionFace } from './types';
 
 export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlice => {
   return {
@@ -49,6 +51,8 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     setExploreMountPath: setExploreMountPath(set),
     setExploreChangedView: setExploreChangedView({ set }),
     setActiveLens: setActiveLens(set),
+    setSessionFace: setSessionFace({ set }),
+    recallSessionFace: recallSessionFace({ set, get }),
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),
     setFocusedArtifactId: setFocusedArtifactId(set),
     setArtifactFilter: setArtifactFilter(set),

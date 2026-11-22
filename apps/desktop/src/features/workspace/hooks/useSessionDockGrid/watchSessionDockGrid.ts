@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppStore } from '../../../../store/store';
+import type { SessionFace } from '../../../../store/slices/session-view/types';
 import {
   DOCK_GRID_MOVE_KEY,
   DOCK_GRID_RECALL_KEY,
@@ -26,12 +27,21 @@ type Params = {
 type PendingSave = {
   readonly sessionId: SessionId;
   readonly grid: DrawerGrid;
+  readonly face: SessionFace;
   readonly at: number;
 };
 
 type SessionParams = {
   readonly sessionId: SessionId;
 };
+
+type FaceParams = {
+  readonly state: AppStore;
+  readonly sessionId: SessionId | null;
+};
+
+const faceOf = ({ state, sessionId }: FaceParams): SessionFace =>
+  sessionId === null ? 'overview' : (state.sessionFace[sessionId] ?? 'overview');
 
 export const watchSessionDockGrid = ({
   store,
@@ -44,6 +54,7 @@ export const watchSessionDockGrid = ({
   let timer: ReturnType<typeof setTimeout> | null = null;
   let owner = store.getState().currentSessionId;
   let grid = store.getState().drawerGrid ?? EMPTY_DRAWER_GRID;
+  let face = faceOf({ state: store.getState(), sessionId: owner });
   dockGridOwner.take({ sessionId: owner });
 
   const flush = (): void => {
@@ -56,7 +67,7 @@ export const watchSessionDockGrid = ({
     if (job === null) {
       return;
     }
-    const stored = storedDockGridOf({ grid: job.grid });
+    const stored = storedDockGridOf({ grid: job.grid, face: job.face });
     if (known.get(job.sessionId) === stored) {
       return;
     }
@@ -96,6 +107,7 @@ export const watchSessionDockGrid = ({
       owner = state.currentSessionId;
       dockGridOwner.take({ sessionId: owner });
       grid = nextGrid;
+      face = faceOf({ state, sessionId: owner });
       if (owner === null) {
         dockGridRecalls.cancel({ key: DOCK_GRID_RECALL_KEY });
         return;
@@ -103,14 +115,16 @@ export const watchSessionDockGrid = ({
       recall({ sessionId: owner });
       return;
     }
-    if (nextGrid === grid) {
+    const nextFace = faceOf({ state, sessionId: owner });
+    if (nextGrid === grid && nextFace === face) {
       return;
     }
     grid = nextGrid;
+    face = nextFace;
     if (owner === null) {
       return;
     }
-    pending = { sessionId: owner, grid: nextGrid, at: now() };
+    pending = { sessionId: owner, grid: nextGrid, face: nextFace, at: now() };
     if (timer !== null) {
       clearTimeout(timer);
     }

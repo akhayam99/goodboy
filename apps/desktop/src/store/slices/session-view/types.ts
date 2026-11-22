@@ -171,6 +171,16 @@ export type SetFocusedRunAgentParams = Readonly<{
   agentId: AgentId | null;
 }>;
 
+export type SessionFace = 'overview' | 'desk';
+
+export type SessionFaceParams = {
+  readonly sessionId: SessionId;
+};
+
+export type SetSessionFaceParams = SessionFaceParams & {
+  readonly face: SessionFace;
+};
+
 export type SessionCreationKind = 'agent' | 'workflow' | 'branch';
 
 export type SessionCreationId = string;
@@ -213,6 +223,8 @@ type SessionViewSliceActions = {
   dismissCheckProposal(params: DismissCheckProposalParams): void;
   setSessionDismissedNextSteps(params: SetDismissedNextStepsParams): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
+  setSessionFace(params: SetSessionFaceParams): void;
+  recallSessionFace(params: SessionFaceParams): Promise<SessionFace | null>;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedArtifactId(sessionId: SessionId, artifactId: ArtifactId | null): void;
   setArtifactFilter(params: {

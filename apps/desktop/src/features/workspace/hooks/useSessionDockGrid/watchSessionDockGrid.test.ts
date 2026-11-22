@@ -507,3 +507,78 @@ describe('moving a panel and resetting the layout', () => {
     expect(state().drawerGrid).toBe(before);
   });
 });
+
+describe('the face saved with the grid', () => {
+  it('saves the Desk face of a session inside its grid row', async () => {
+    watch();
+    await goTo({ sessionId: S1 });
+
+    state().setSessionFace({ sessionId: S1, face: 'desk' });
+    await settle();
+
+    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ version: 1, face: 'desk' });
+    expect(db.rows.has(S2)).toBe(false);
+  });
+
+  it('reopens each session on the face it was left on', async () => {
+    saveRow({ sessionId: S1, grid: SAVED });
+    db.rows.set(S2, { grid: storedDockGridOf({ grid: SAVED, face: 'desk' }), savedAt: 1 });
+    watch();
+
+    await goTo({ sessionId: S2 });
+    expect(state().sessionFace[S2]).toBe('desk');
+    await goTo({ sessionId: S1 });
+    expect(state().sessionFace[S1]).toBe('overview');
+  });
+
+  it('reads the face of a session that is not open', async () => {
+    db.rows.set(S2, { grid: storedDockGridOf({ grid: SAVED, face: 'desk' }), savedAt: 1 });
+    watch();
+    await goTo({ sessionId: S1 });
+
+    expect(await state().recallSessionFace({ sessionId: S2 })).toBe('desk');
+    expect(state().sessionFace[S2]).toBe('desk');
+    expect(state().currentSessionId).toBe(S1);
+  });
+
+  it('reads a row saved without the face as the overview', async () => {
+    saveRow({ sessionId: S1, grid: SAVED });
+    watch();
+
+    await goTo({ sessionId: S1 });
+
+    expect(state().sessionFace[S1]).toBe('overview');
+    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).not.toHaveProperty('face');
+  });
+
+  it('keeps a face picked while the row was still loading', async () => {
+    saveRow({ sessionId: S1, grid: SAVED });
+    db.holdLoads = true;
+    watch();
+    await goTo({ sessionId: S1 });
+
+    state().setSessionFace({ sessionId: S1, face: 'desk' });
+    db.heldLoads.splice(0).forEach((release) => release());
+    await settle();
+
+    expect(state().sessionFace[S1]).toBe('desk');
+  });
+
+  it('keeps the face it had when the row cannot be read, and says so', async () => {
+    watch();
+    await goTo({ sessionId: S1 });
+    state().setSessionFace({ sessionId: S1, face: 'desk' });
+    db.holdLoads = false;
+    const { getSessionDockGrid } = await import('@goodboy/db');
+    vi.mocked(getSessionDockGrid).mockRejectedValueOnce(new Error('disk gone'));
+
+    expect(await state().recallSessionFace({ sessionId: S1 })).toBeNull();
+    expect(state().sessionFace[S1]).toBe('desk');
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: S1,
+        title: "Couldn't load the last view of this session",
+      }),
+    );
+  });
+});

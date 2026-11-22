@@ -743,6 +743,12 @@ window has; they save nothing.
   ([versioning.md](../versioning.md#retired-state)). No panel writes those
   keys any more: a detail keeps its width per kind, so a drag on Ask never
   changes where a Terminal starts.
+- The face of the session (Overview or Desk) rides in the same row as an
+  optional `face` field of version 1, written only for the Desk. A change of
+  face waits 300ms and saves the row like a change of grid. Entering a session
+  reads it back (`recallSessionFace`), a face picked while that read was out
+  wins, and a session that is not open reads its face the same way. A row
+  without the field reads as Overview, and an older build leaves it out.
 
 | Write or read   | What happens                                                                                                                                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
