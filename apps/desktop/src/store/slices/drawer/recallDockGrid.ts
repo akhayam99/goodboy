@@ -41,6 +41,7 @@ export const recallDockGrid = ({ set, get }: SliceDeps) => {
     const applied = appliedDockGrid({
       set,
       get,
+      sessionId,
       raw: result.value,
       face,
       claim,
