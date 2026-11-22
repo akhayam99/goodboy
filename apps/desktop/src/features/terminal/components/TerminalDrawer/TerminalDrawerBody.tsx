@@ -166,6 +166,7 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
             worktree={worktree}
             targets={targets}
             isBranchless={isBranchless}
+            hasTrackTabs={tracks.tabs.length > 1}
             busyPaths={busyPaths}
             onPickTarget={pickTarget}
             onPickSessionFolder={pickSessionFolder}
