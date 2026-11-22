@@ -25,6 +25,16 @@ const valuesIn = ({ node }: ValuesParams): ReadonlyArray<string> =>
     ? [node]
     : Object.values(node).flatMap((child) => valuesIn({ node: child }));
 
+type WalkParams = {
+  readonly dir: string;
+};
+
+const walk = ({ dir }: WalkParams): ReadonlyArray<string> =>
+  readdirSync(dir).flatMap((entry) => {
+    const path = join(dir, entry);
+    return statSync(path).isDirectory() ? walk({ dir: path }) : [path];
+  });
+
 describe('names', () => {
   it('feeds the lens, role, handoff, stage, Asks you and reply length labels', () => {
     expect(RUN_AUTONOMY_HEADER).toBe(NAMES.asksYou);
@@ -335,12 +345,7 @@ describe('names', () => {
     const root = join(__dirname, '..');
     const hand =
       /(['"`])(Run plan|Pin session|Unpin session|Publish reply|Retry push|Close branch)\1/;
-    const walk = (dir: string): ReadonlyArray<string> =>
-      readdirSync(dir).flatMap((entry) => {
-        const path = join(dir, entry);
-        return statSync(path).isDirectory() ? walk(path) : [path];
-      });
-    const offenders = walk(root)
+    const offenders = walk({ dir: root })
       .filter(
         (path) => /\.tsx?$/.test(path) && !/\.(test|rows)\.tsx?$|__tests__|MockScene/.test(path),
       )
@@ -353,13 +358,8 @@ describe('names', () => {
 
   it('keeps no key that nothing reads', () => {
     const root = join(__dirname, '..', '..');
-    const walk = (dir: string): ReadonlyArray<string> =>
-      readdirSync(dir).flatMap((entry) => {
-        const path = join(dir, entry);
-        return statSync(path).isDirectory() ? walk(path) : [path];
-      });
     const own = [join('shared', 'utils', 'names.ts'), join('shared', 'utils', 'names.test.ts')];
-    const sources = walk(root)
+    const sources = walk({ dir: root })
       .filter((path) => /\.tsx?$/.test(path))
       .filter((path) => !own.some((name) => path.endsWith(name)))
       .map((path) => readFileSync(path, 'utf8'))
