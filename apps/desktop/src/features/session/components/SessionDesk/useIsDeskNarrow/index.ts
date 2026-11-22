@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-
-const DESK_NARROW_PX = 880;
+import { isDeskColumnFolded } from '@goodboy/ui';
 
 type Params = {
   readonly element: HTMLElement | null;
@@ -15,7 +14,7 @@ export const useIsDeskNarrow = ({ element }: Params): boolean => {
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry !== undefined) {
-        setIsNarrow(entry.contentRect.width < DESK_NARROW_PX);
+        setIsNarrow(isDeskColumnFolded({ bodyWidth: entry.contentRect.width }));
       }
     });
     observer.observe(element);

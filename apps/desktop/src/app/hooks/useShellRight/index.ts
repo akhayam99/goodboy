@@ -16,6 +16,7 @@ import { drawerSizingOf } from '../../../store/slices/drawer/drawerSizingOf';
 import { selectDetailDrawer } from '../../../store/slices/drawer/selectDetailDrawer';
 import { selectDockDrawer } from '../../../store/slices/drawer/selectDockDrawer';
 import { ShellToolRail } from '../../components/ShellToolRail';
+import { RAIL_TOOLS } from '../../../features/session/components/SessionTools/sessionTools';
 import { STUDIO_META } from '../../components/StudioFrame/studioMeta';
 
 type Params = Record<never, never>;
@@ -70,6 +71,7 @@ export const useShellRight = ({}: Params): ShellRight => {
           key: panel.kind,
           sizing: DRAWER_KINDS[panel.kind].sizing,
           savedWidth: drawerGrid.widths[panel.kind],
+          label: RAIL_TOOLS.find((tool) => tool.pane === panel.kind)?.label ?? panel.kind,
         })),
       ),
       focus: panelFocusKeyOf({ panels }),
