@@ -193,12 +193,13 @@ A workspace keeps your folders together, and one session can work across several
 
 [More on workspaces and folders](docs/features/workspace.md)
 
-<a id="worktree-folders"></a><a id="branches"></a><a id="storage-scope"></a><a id="artifacts-from-deleted-sessions"></a><a id="goodboy-can-free-n-gb"></a><a id="other-tools"></a>
+<a id="worktrees-of-a-project"></a><a id="worktree-folders"></a><a id="branches"></a><a id="storage-scope"></a><a id="artifacts-from-deleted-sessions"></a><a id="goodboy-can-free-n-gb"></a><a id="other-tools"></a>
 
 ## Storage
 
 Free disk space and clean up branches, with what is safe to remove spelled out. Goodboy tells you why each folder or branch exists and what removing it costs, so you can clear space without guessing.
 
+- **Worktrees of a project**: Manage the worktrees of a project from its block on the session overview.
 - **Worktree folders**: Free disk space from the checkout folders of archived, deleted or gone sessions.
 - **Branches**: Delete old branches with confidence.
 - **Goodboy can free N GB**: Hear about reclaimable space once, when idle safe folders pass 10 GB or the disk runs low.
