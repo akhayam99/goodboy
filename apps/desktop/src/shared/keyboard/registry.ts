@@ -487,6 +487,7 @@ export const SHORTCUTS = {
     plane: 'lens',
     group: 'views',
   },
+  'session.desk': { combo: 'cmd+KeyJ', label: NAMES.desk, plane: 'app', group: 'views' },
   'lens.context': {
     combo: 'cmd+alt+KeyC',
     offMacCombo: 'ctrl+shift+alt+KeyC',

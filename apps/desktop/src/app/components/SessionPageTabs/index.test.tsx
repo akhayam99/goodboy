@@ -14,7 +14,7 @@ vi.mock('../../../shared/lib/db', async () =>
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -50,16 +50,20 @@ const openLens = ({ lens }: { readonly lens: LensKind | null }) => {
   });
 };
 
+const pageTabs = () => within(screen.getByRole('tablist', { name: 'Session pages' }));
+
 const selectedTab = (): string | null =>
-  screen.queryAllByRole('tab').find((tab) => tab.getAttribute('aria-selected') === 'true')
-    ?.textContent ?? null;
+  pageTabs()
+    .queryAllByRole('tab')
+    .find((tab) => tab.getAttribute('aria-selected') === 'true')?.textContent ?? null;
 
 describe('the session page tabs', () => {
   it('reads Overview, Runs, Artifacts, Questions and Context on every session', () => {
     render(<SessionPageTabs session={session} />);
 
-    screen.getByRole('tablist', { name: 'Session pages' });
-    const names = screen.getAllByRole('tab').map((tab) => tab.textContent?.replace(/\d+$/, ''));
+    const names = pageTabs()
+      .getAllByRole('tab')
+      .map((tab) => tab.textContent?.replace(/\d+$/, ''));
     expect(names).toEqual(['Overview', 'Runs', 'Artifacts', 'Questions', 'Context']);
   });
 
@@ -70,14 +74,14 @@ describe('the session page tabs', () => {
       store.setState({ sessionProjectMounts: { [session.id]: [ledger] } });
     });
     const view = render(<SessionPageTabs session={session} />);
-    expect(screen.getAllByRole('tab').at(-1)?.textContent).toBe('Changes');
+    expect(pageTabs().getAllByRole('tab').at(-1)?.textContent).toBe('Changes');
     view.unmount();
 
     act(() => {
       store.setState({ sessionProjectMounts: { [session.id]: [ledger, payments] } });
     });
     render(<SessionPageTabs session={session} />);
-    expect(screen.queryByRole('tab', { name: /Changes/ })).toBeNull();
+    expect(pageTabs().queryByRole('tab', { name: /Changes/ })).toBeNull();
   });
 
   it.each([
@@ -97,7 +101,7 @@ describe('the session page tabs', () => {
   it('opens the page of a tab that is pressed', () => {
     render(<SessionPageTabs session={session} />);
 
-    fireEvent.click(screen.getByRole('tab', { name: /Context/ }));
+    fireEvent.click(pageTabs().getByRole('tab', { name: /Context/ }));
 
     expect(store.getState().activeLens[session.id]).toBe('context');
   });

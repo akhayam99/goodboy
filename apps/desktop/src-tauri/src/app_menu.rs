@@ -102,6 +102,7 @@ const EDIT_ROWS: &[Row] = &[
 const VIEW_ROWS: &[Row] = &[
     command("sessions.toggle", "Show or Hide Sessions", Some("cmd+KeyB")),
     command("palette.open", "Search or Run", Some("cmd+KeyK")),
+    command("session.desk", "Desk", Some("cmd+KeyJ")),
     command("menu.resetPanels", "Reset Panel Layout", None),
     SEPARATOR,
     command("zoom.in", "Zoom In", Some("cmd+Equal")),
@@ -453,6 +454,15 @@ mod tests {
         );
         assert!(VIEW_ROWS.contains(&Row::Command(view)));
         assert!(VIEW_ROWS.contains(&Row::Command(app)));
+    }
+
+    #[test]
+    fn switches_the_face_of_the_session_from_the_view_menu_on_command_j() {
+        let desk = commands()
+            .find(|command| command.id == "session.desk")
+            .expect("session.desk row");
+        assert_eq!((desk.label, desk.combo), ("Desk", Some("cmd+KeyJ")));
+        assert!(VIEW_ROWS.contains(&Row::Command(desk)));
     }
 
     #[test]

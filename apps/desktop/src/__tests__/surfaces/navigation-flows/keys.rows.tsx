@@ -391,6 +391,13 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     lands: () => heading('Board'),
   }),
   pressRow({
+    id: 'session.desk',
+    lands: async () => {
+      await screen.findByRole('complementary', { name: 'Desk' });
+      expect(Object.values(useAppStore.getState().sessionFace)).toContain('desk');
+    },
+  }),
+  pressRow({
     id: 'terminal.studio',
     lands: async () => {
       await screen.findByRole('button', { name: 'Open full page' });
