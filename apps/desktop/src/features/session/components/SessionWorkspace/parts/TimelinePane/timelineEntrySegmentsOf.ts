@@ -6,6 +6,7 @@ import {
   type TimelineLabelSegment,
 } from '../../../../timeline/sessionEventPresentation';
 import type { TimelineStreamEntry } from '../../../../timeline/buildTimelineStream';
+import { workEventLabel } from '../../../../timeline/workEventLabel';
 
 type Params = {
   readonly entry: Exclude<TimelineStreamEntry, TimelineRunEntry>;
@@ -63,6 +64,9 @@ export const timelineEntrySegmentsOf = ({ entry }: Params): ReadonlyArray<Timeli
   }
   if (entry.kind === 'learning') {
     return [{ kind: 'text', text: 'Explained' }];
+  }
+  if (entry.kind === 'work') {
+    return workEventLabel({ entry });
   }
   const isOpen = entry.questions.every((question) => question.status === 'open');
   const count = entry.questions.length;

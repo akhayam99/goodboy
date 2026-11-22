@@ -1,5 +1,6 @@
 import type { TimelineTopLevelEntry } from './buildTimelineGroups';
 import { segmentsToText, sessionEventLabel } from './sessionEventPresentation';
+import { workEventLabel } from './workEventLabel';
 
 const textOf = ({ entry }: { readonly entry: TimelineTopLevelEntry }): string => {
   switch (entry.kind) {
@@ -17,6 +18,8 @@ const textOf = ({ entry }: { readonly entry: TimelineTopLevelEntry }): string =>
       return `${entry.task.identifier} ${entry.task.title}`;
     case 'branch':
       return entry.worktree.branch;
+    case 'work':
+      return segmentsToText({ segments: workEventLabel({ entry }) });
     case 'run':
       return entry.run.title ?? entry.workflow.name;
     case 'agent':

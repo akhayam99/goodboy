@@ -42,6 +42,7 @@ import { createStorageSlice } from './slices/storage';
 import { createDiffCommentsSlice } from './slices/diff-comments';
 import { createFileVersionsSlice } from './slices/file-versions';
 import { createSessionEventsSlice } from './slices/session-events';
+import { createWorkEventsSlice } from './slices/work-events';
 import { createDormantSpendSlice } from './slices/dormant-spend';
 import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
@@ -178,6 +179,7 @@ import { workspacesInitialState } from './slices/workspaces/state';
 import { projectsInitialState } from './slices/projects/state';
 import { sessionsInitialState } from './slices/sessions/state';
 import { sessionEventsInitialState } from './slices/session-events/state';
+import { workEventsInitialState } from './slices/work-events/state';
 import { dormantSpendInitialState } from './slices/dormant-spend/state';
 import { hostReachabilityInitialState } from './slices/host-reachability/state';
 import { checksLogInitialState } from './slices/checks-log/state';
@@ -308,6 +310,7 @@ export type AppStore = AppState &
   ReturnType<typeof createTranscriptsSlice> &
   ReturnType<typeof createSummariesSlice> &
   ReturnType<typeof createSessionEventsSlice> &
+  ReturnType<typeof createWorkEventsSlice> &
   ReturnType<typeof createDormantSpendSlice> &
   ReturnType<typeof createAttachmentsSlice> &
   ReturnType<typeof createWorktreesSlice> &
@@ -377,6 +380,7 @@ const initialState: AppState = {
   ...projectsInitialState,
   ...integrationsInitialState,
   ...sessionEventsInitialState,
+  ...workEventsInitialState,
   ...dormantSpendInitialState,
   ...presenceInitialState,
   ...hostReachabilityInitialState,
@@ -480,6 +484,7 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createDiffCommentsSlice({ set, get }),
   ...createFileVersionsSlice({ set, get }),
   ...createSessionEventsSlice({ set, get }),
+  ...createWorkEventsSlice({ set, get }),
   ...createDormantSpendSlice({ set, get }),
   ...createAttachmentsSlice({ set, get }),
   ...createGithubSlice({ set, get }),

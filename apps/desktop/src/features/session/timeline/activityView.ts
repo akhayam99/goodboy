@@ -76,6 +76,7 @@ const activityViewOf = ({
       return eventViewOf({ entry, events, liveAgentIds, settledStopIds });
     case 'issue':
     case 'branch':
+    case 'work':
       return 'log';
     default: {
       const exhaustive: never = entry;

@@ -22,6 +22,11 @@ import { childAgentsByParent } from '../../../shared/utils/childAgentsByParent';
 import { attachedQuestionsFor } from './attachedQuestions';
 import { earliestEvidence, resolveAgentCreation, type AgentCreation } from './agentCreation';
 import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
+import type {
+  TimelineBranchEntry,
+  TimelineIssueEntry,
+  TimelineWorkEntry,
+} from './timelineFactEntries';
 
 type TimelineChain = {
   readonly identity: RunIdentity;
@@ -65,20 +70,6 @@ export type TimelineArtifactEntry = {
   readonly artifact: ReportArtifact | WireframeArtifact;
   readonly lane?: TimelineArtifactLane;
   readonly launchEntryId?: string;
-};
-
-export type TimelineIssueEntry = {
-  readonly kind: 'issue';
-  readonly id: string;
-  readonly at: string;
-  readonly task: SessionExternalTask;
-};
-
-export type TimelineBranchEntry = {
-  readonly kind: 'branch';
-  readonly id: string;
-  readonly at: string;
-  readonly worktree: SessionWorktree;
 };
 
 type TimelineProjectRun = {
@@ -152,6 +143,7 @@ export type TimelineTopLevelEntry =
   | TimelineArtifactEntry
   | TimelineIssueEntry
   | TimelineBranchEntry
+  | TimelineWorkEntry
   | TimelineEventEntry
   | TimelineLearningEntry
   | TimelineRunEntry
