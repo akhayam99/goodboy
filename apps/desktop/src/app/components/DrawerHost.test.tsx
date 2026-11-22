@@ -146,6 +146,16 @@ const ENTRIES: ReadonlyArray<Entry> = [
     drawer: { kind: 'transcript', sessionId: SESSION, payload: { agentId: AGENT } },
   },
   {
+    kind: 'pull-request',
+    region: 'Pull request',
+    seed: seedSession,
+    drawer: {
+      kind: 'pull-request',
+      sessionId: SESSION,
+      payload: { mountId: MOUNT_ID, tab: 'checks' },
+    },
+  },
+  {
     kind: 'explore-file',
     region: 'README.md',
     seed: seedSession,

@@ -21,12 +21,17 @@ import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
+import { deskStackOf } from '../../store/slices/drawer/deskStackOf';
+import { DeskAgent } from '../../features/session/components/DeskAgent';
+import { DeskPr } from '../../features/session/components/DeskPr';
+import { DeskDetailStack } from './DeskDetailStack';
 import { PanelBoundary } from './PanelBoundary';
 import { renderRegisteredDrawer } from './renderRegisteredDrawer';
 
 type RenderParams = {
   readonly drawer: DrawerRequest;
   readonly isReading: boolean;
+  readonly isDesk: boolean;
   readonly closeDrawer: () => void;
   readonly closeQuestion: () => void;
   readonly openDrawer: (request: DrawerRequest) => void;
@@ -35,6 +40,7 @@ type RenderParams = {
 const renderDrawer = ({
   drawer,
   isReading,
+  isDesk,
   closeDrawer,
   closeQuestion,
   openDrawer,
@@ -130,7 +136,14 @@ const renderDrawer = ({
         />
       );
     case 'transcript':
-      return (
+      return isDesk ? (
+        <DeskAgent
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          agentId={drawer.payload.agentId}
+          onClose={closeDrawer}
+        />
+      ) : (
         <LazyFixRunTranscriptDrawer
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
@@ -147,6 +160,17 @@ const renderDrawer = ({
           focusThreadId={drawer.payload.focusThreadId ?? null}
           threadIds={drawer.payload.threadIds ?? null}
           fromThreadId={drawer.payload.fromThreadId ?? null}
+          onClose={closeDrawer}
+        />
+      );
+    case 'pull-request':
+      return (
+        <DeskPr
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          mountId={drawer.payload.mountId}
+          tab={drawer.payload.tab}
+          check={drawer.payload.check ?? null}
           onClose={closeDrawer}
         />
       );
@@ -198,6 +222,16 @@ export const DrawerHost = ({ slot = 'top' }: Props) => {
     }
   };
   const closeQuestion = isTop ? closeTopQuestion : closeDrawer;
+  const isDesk = useAppStore(
+    (s) =>
+      drawer !== null && drawer.sessionId !== null && s.sessionFace[drawer.sessionId] === 'desk',
+  );
+  const isDeskStack = useAppStore(
+    (s) =>
+      slot === 'detail' &&
+      tool === null &&
+      deskStackOf({ top: s.drawer ?? null, back: s.drawerBack ?? null }) !== null,
+  );
   const isReading = useAppStore((s) => {
     const open = hostedDrawerOf({ state: s, slot, tool });
     return (
@@ -210,6 +244,9 @@ export const DrawerHost = ({ slot = 'top' }: Props) => {
     );
   });
 
+  if (isDeskStack) {
+    return <DeskDetailStack />;
+  }
   if (drawer === null) {
     return null;
   }
@@ -217,7 +254,7 @@ export const DrawerHost = ({ slot = 'top' }: Props) => {
     <PanelBoundary key={drawerKey(drawer)} leaveLabel="Close drawer" onLeave={closeDrawer}>
       <DrawerBackChipContext.Provider value={backChip}>
         <div className="contents" data-browser-session={drawer.sessionId}>
-          {renderDrawer({ drawer, isReading, closeDrawer, closeQuestion, openDrawer })}
+          {renderDrawer({ drawer, isReading, isDesk, closeDrawer, closeQuestion, openDrawer })}
         </div>
       </DrawerBackChipContext.Provider>
     </PanelBoundary>
