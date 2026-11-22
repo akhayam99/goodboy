@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Button, Chip, cn, ROW_HOVER, StatusDot, Tooltip } from '@goodboy/ui';
-import { branchPlace, sessionPlace, useAppStore } from '../../../../store';
+import { sessionPlace, useAppStore } from '../../../../store';
+import { tabForFactOf } from '../../../branch/tabForFactOf';
 import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
 import { useMountRowMenu } from '../../hooks/useMountRowMenu';
 import { MountRowMenuButton } from '../MountRowMenuButton';
@@ -47,7 +48,11 @@ const BoardTileView = ({ rowId }: Props) => {
       to:
         entry === null
           ? sessionPlace({ sessionId: session.id, lens: 'workflows' })
-          : branchPlace({ sessionId: session.id, mountPath: entry.fact.mountPath, tab: 'pr' }),
+          : tabForFactOf({
+              sessionId: session.id,
+              mountId: entry.fact.mountId,
+              fact: entry.story.state,
+            }),
     });
   return (
     <div

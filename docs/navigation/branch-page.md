@@ -19,7 +19,12 @@ one pill. **One tab row per page.** Inside a session the session head sits above
 with the crumbs `Overview › {branch name}` in place of the session tabs (see
 [session-rail.md](session-rail.md#crumbs)), so the pull request page shows only its own row.
 Every door to the session's changes (the single-branch Changes shortcut, the board row's
-Changes door, the palette, the chord) opens this page on its Changes tab. A host with no
+Changes door, the palette, the chord) opens this page on its Changes tab. A branch row of the
+Overview's project blocks and the move on it open the tab the fact names, by one function
+(`tabForFactOf`, addressed by the mount id so a moved worktree still resolves): a failing or
+running check opens Checks, requested changes and open threads Comments, a diff to check Changes,
+a conflict, a rebase or commits not pushed Commits, and anything else Conversation. Search,
+Activity and Tasks open Conversation. A host with no
 session (a scene, a test) shows the page alone. The
 header and every section body sit on the 960px column of the
 detail; nothing moves from one section to the next. The header holds three things,

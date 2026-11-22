@@ -27,7 +27,7 @@ import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStatuses/cache';
 import userEvent from '@testing-library/user-event';
-import { branchPlace } from '../../../../store/slices/navigation/place';
+import { tabForFactOf } from '../../../branch/tabForFactOf';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import {
@@ -160,6 +160,16 @@ const tileOf = ({ branch }: TileParams): HTMLElement => {
 const TENANT = 'ak/eng-1190-tenant-limits';
 
 const LEDGER = 'ak/eng-1190-ledger-limits';
+
+const mountIdOf = ({ branch }: TileParams): string => {
+  const mount = (useAppStore.getState().sessionProjectMounts[COLUMN_SESSION_ID] ?? []).find(
+    (candidate) => candidate.branch === branch,
+  );
+  if (mount === undefined) {
+    throw new Error('The seed must mount the branch.');
+  }
+  return mount.mountId;
+};
 
 type ProposalsParams = {
   readonly sizeBytes: number | null;
@@ -305,7 +315,7 @@ describe('the project blocks on the Overview', () => {
     );
   });
 
-  it('opens the branch page on Conversation from the tile, and leaves the tools alone', async () => {
+  it('opens the tab the failing fact names, by its mount, and leaves the tools alone', async () => {
     seedCentralColumn({ kind: 'branches' });
     const navigate = vi.fn();
     act(() => {
@@ -313,20 +323,36 @@ describe('the project blocks on the Overview', () => {
     });
     await show();
     const before = useAppStore.getState().drawer;
-    const mount = (useAppStore.getState().sessionProjectMounts[COLUMN_SESSION_ID] ?? []).find(
-      (candidate) => candidate.branch === TENANT,
-    );
 
     fireEvent.click(screen.getByRole('link', { name: `Open ${TENANT}` }));
 
     expect(navigate).toHaveBeenCalledWith({
-      to: branchPlace({
+      to: tabForFactOf({
         sessionId: COLUMN_SESSION_ID,
-        mountPath: mount?.worktreePath ?? null,
-        tab: 'pr',
+        mountId: mountIdOf({ branch: TENANT }),
+        fact: 'checks-failing',
       }),
     });
     expect(useAppStore.getState().drawer).toBe(before);
+  });
+
+  it('opens Conversation from a row whose chip names no fact', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    const navigate = vi.fn();
+    act(() => {
+      useAppStore.setState({ navigate });
+    });
+    await show();
+
+    fireEvent.click(screen.getByRole('link', { name: `Open ${LEDGER}` }));
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: tabForFactOf({
+        sessionId: COLUMN_SESSION_ID,
+        mountId: mountIdOf({ branch: LEDGER }),
+        fact: null,
+      }),
+    });
   });
 
   it('reaches the tile and its button as two stops, and Enter on the tile opens it', async () => {
