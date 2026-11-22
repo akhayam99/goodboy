@@ -19,7 +19,12 @@ one pill. **One tab row per page.** Inside a session the session head sits above
 with the crumbs `Overview › {branch name}` in place of the session tabs (see
 [session-rail.md](session-rail.md#crumbs)), so the pull request page shows only its own row.
 Every door to the session's changes (the single-branch Changes shortcut, the board row's
-Changes door, the palette, the chord) opens this page on its Changes tab. A host with no
+Changes door, the palette, the chord) opens this page on its Changes tab. A branch row of the
+Overview's project blocks and the move on it open the tab the fact names, by one function
+(`tabForFactOf`, addressed by the mount id so a moved worktree still resolves): a failing or
+running check opens Checks, requested changes and open threads Comments, a diff to check Changes,
+a conflict, a rebase or commits not pushed Commits, and anything else Conversation. Search,
+Activity and Tasks open Conversation. A host with no
 session (a scene, a test) shows the page alone. The
 header and every section body sit on the 960px column of the
 detail; nothing moves from one section to the next. The header holds three things,
@@ -70,7 +75,10 @@ Every verb does the work where you stand and never just opens a tab: `Fix
 checks`, `Apply fix` and `Push fix` run the same chain as the Overview row (`checkChainActionOf`),
 and `Fix checks` starts one Debugger at the first press, its tooltip naming the model and effort.
 No line under the tabs says what runs. A comment fix works on its comment row (`CommentWorkLine`)
-and the Comments tab carries a live dot on every tab (`commentTabLiveOf`). A check agent works on its check row (`AnalyzedCheckWork`), its result stays there with one button (`Review fix`,
+and the Comments tab carries a live dot on every tab (`commentTabLiveOf`). Before any agent, a
+failing GitHub Actions row reads its log in place (`CheckLogInline` over the `readCheckLog` store
+action), the first failing check open on arrival, with Open on GitHub for the full log; a check of
+another service still opens on its host. A check agent works on its check row (`AnalyzedCheckWork`), its result stays there with one button (`Review fix`,
 `Push`, `Retry` or `Analyze again`, from `checkRowResultOf`), and the Checks tab carries a live dot on every tab
 (`checkTabLiveOf`). One agent works per branch: a check
 agent live on any check of the mount (`liveCheckWorkOf`, read from the agent rows, so a second window

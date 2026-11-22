@@ -1,6 +1,9 @@
 import { memo } from 'react';
+import { brandId, type MountId } from '@goodboy/types';
 import { Button, Chip, cn, ROW_HOVER, StatusDot, Tooltip } from '@goodboy/ui';
-import { branchPlace, sessionPlace, useAppStore } from '../../../../store';
+import { sessionPlace, useAppStore } from '../../../../store';
+import { failingChecksOf } from '../../../branch/checks/failingChecksOf';
+import { tabForFactOf } from '../../../branch/tabForFactOf';
 import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
 import { useMountRowMenu } from '../../hooks/useMountRowMenu';
 import { MountRowMenuButton } from '../MountRowMenuButton';
@@ -25,12 +28,28 @@ const BoardTileView = ({ rowId }: Props) => {
     mountId: entry === null ? null : entry.fact.mountId,
     anchorKey: `board-mount-${rowId}`,
   });
+  const failingName = useAppStore((state) =>
+    entry === null || entry.story.state !== 'checks-failing' || entry.fact.request === null
+      ? null
+      : (failingChecksOf({
+          state,
+          sessionId: session.id,
+          mountId: brandId<MountId>({ value: entry.fact.mountId }),
+          prNumber: entry.fact.request.number,
+        })?.checks[0]?.name ?? null),
+  );
   const row = rowById.get(rowId);
   if (row === undefined) {
     return null;
   }
   const runningCount = runningByRowId.get(rowId) ?? 0;
-  const chip = boardTileChipOf({ row, entry, runningCount });
+  const stateChip = boardTileChipOf({ row, entry, runningCount });
+  const isCheckNamed =
+    stateChip !== null && failingName !== null && entry?.story.word === stateChip.word;
+  const chip =
+    stateChip === null || failingName === null || !isCheckNamed
+      ? stateChip
+      : { ...stateChip, word: `${failingName} failed` };
   const title =
     row.branch === null
       ? boardRowCellsOf({
@@ -47,7 +66,11 @@ const BoardTileView = ({ rowId }: Props) => {
       to:
         entry === null
           ? sessionPlace({ sessionId: session.id, lens: 'workflows' })
-          : branchPlace({ sessionId: session.id, mountPath: entry.fact.mountPath, tab: 'pr' }),
+          : tabForFactOf({
+              sessionId: session.id,
+              mountId: entry.fact.mountId,
+              fact: entry.story.state,
+            }),
     });
   return (
     <div
@@ -86,13 +109,18 @@ const BoardTileView = ({ rowId }: Props) => {
       </span>
       <span className="pointer-events-none relative flex min-w-0 shrink-0 items-center gap-3 text-meta">
         {chip === null ? null : (
-          <span data-board-chip="" className="flex shrink-0">
+          <span
+            data-board-chip=""
+            className={cn('flex max-w-48 min-w-0', isCheckNamed && 'pointer-events-auto')}
+          >
             <Chip
               kind="state"
               tone={chip.tone}
               emphasis="subtle"
               bordered={false}
-              label={chip.word}
+              className="min-w-0 shrink"
+              {...(isCheckNamed && { title: chip.word })}
+              label={<span className="min-w-0 truncate">{chip.word}</span>}
             />
           </span>
         )}

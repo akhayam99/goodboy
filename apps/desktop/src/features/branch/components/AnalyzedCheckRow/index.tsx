@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
   MountId,
@@ -7,29 +7,31 @@ import type {
   PullRequestView,
   SessionId,
 } from '@goodboy/types';
-import { openLink } from '../../open/openLink';
-import { useAppStore } from '../../../store';
-import { captureStartHint } from '../../../store/slices/startHints/captureStartHint';
-import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
-import { usePendingAction } from '../../../shared/hooks/usePendingAction';
-import { modelLabel } from '../../chat/utils/chat-constants';
-import type { ItemWorkState } from '../../live-state/itemWork/itemWorkWords';
-import { analyzeFailingChecks } from '../checks/analyzeFailingChecks';
-import { causeSentenceOf } from '../checks/causeSentenceOf';
-import { checkAnalysisOf } from '../checks/checkAnalysisOf';
-import { checkItemWorkStateOf } from '../checks/checkItemWorkStateOf';
-import { checkOutcomeOf } from '../checks/checkOutcomeOf';
-import { checkRoutingOf } from '../checks/checkRoutingOf';
-import { checkRowResultOf } from '../checks/checkRowResultOf';
-import { startCheckFix } from '../checks/startCheckFix';
-import { useCheckChain } from '../hooks/useCheckChain';
-import { useCheckFixPush } from '../hooks/useCheckFixPush';
-import { useCheckWorkLock } from '../hooks/useCheckWorkLock';
-import { AnalyzedCheckWork } from './AnalyzedCheckWork';
-import { CheckAnalysisHint } from './CheckAnalysisHint';
-import type { StartParams } from './CheckAnalysisDrawer/ProposedFix';
-import { CheckProposalInline } from './CheckProposalInline';
-import { CheckResultAction } from './CheckResultAction';
+import { openLink } from '../../../open/openLink';
+import { useAppStore } from '../../../../store';
+import { captureStartHint } from '../../../../store/slices/startHints/captureStartHint';
+import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
+import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
+import { modelLabel } from '../../../chat/utils/chat-constants';
+import type { ItemWorkState } from '../../../live-state/itemWork/itemWorkWords';
+import { analyzeFailingChecks } from '../../checks/analyzeFailingChecks';
+import { causeSentenceOf } from '../../checks/causeSentenceOf';
+import { checkAnalysisOf } from '../../checks/checkAnalysisOf';
+import { checkItemWorkStateOf } from '../../checks/checkItemWorkStateOf';
+import { checkOutcomeOf } from '../../checks/checkOutcomeOf';
+import { checkRoutingOf } from '../../checks/checkRoutingOf';
+import { checkRowResultOf } from '../../checks/checkRowResultOf';
+import { startCheckFix } from '../../checks/startCheckFix';
+import { useCheckChain } from '../../hooks/useCheckChain';
+import { useCheckFixPush } from '../../hooks/useCheckFixPush';
+import { useCheckWorkLock } from '../../hooks/useCheckWorkLock';
+import { AnalyzedCheckWork } from '../AnalyzedCheckWork';
+import { CheckAnalysisHint } from '../CheckAnalysisHint';
+import type { StartParams } from '../CheckAnalysisDrawer/ProposedFix';
+import { CheckProposalInline } from '../CheckProposalInline';
+import { CheckResultAction } from '../CheckResultAction';
+import { CheckLogInline } from './CheckLogInline';
+import { useCheckLog } from './useCheckLog';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -46,6 +48,8 @@ type RowParts = {
   readonly isAgentWorking: boolean;
   readonly action: ReactNode;
   readonly hint: ReactNode;
+  readonly isExpanded?: boolean;
+  readonly controlsId?: string;
   readonly onOpen: () => void;
 };
 
@@ -78,6 +82,14 @@ export const AnalyzedCheckRow = ({
   );
   const checkFixPush = useCheckFixPush({ sessionId, mountId, fixAgentId: chain.fix?.id });
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const log = useCheckLog({
+    sessionId,
+    mountId,
+    prNumber: pullRequest.number,
+    check,
+    isUnanalyzed: chain.state === 'none',
+  });
+  const logId = useId();
   const pending = usePendingAction({ sessionId });
   const analyzeKey = `check.analyze:${mountId}:${url}`;
   const fixKey = `check.fix:${mountId}:${url}`;
@@ -157,41 +169,65 @@ export const AnalyzedCheckRow = ({
       isDismissed: chain.isDismissed,
     });
   const result = workState === null ? null : resultOf({ state: workState });
+  const isLogInline = log.isShown && workState === null;
   const proposal = analysis?.proposal ?? null;
   const isProposalShown =
     isReviewOpen && settled === 'causeFound' && proposal !== null && !isDrawerOpen;
+  const openRow = (): void => {
+    if (chain.state !== 'none') {
+      openAnalysis();
+      return;
+    }
+    if (!log.isReadable) {
+      openLink({ url, sessionId });
+      return;
+    }
+    log.toggle();
+  };
   return renderRow({
-    ...(chain.state === 'none' ? {} : { footnote: 'Click to open the Debugger' }),
-    onOpen: chain.state === 'none' ? () => openLink({ url, sessionId }) : openAnalysis,
-    work:
-      workState === null ? null : (
-        <div className="flex min-w-0 flex-col gap-2">
-          <AnalyzedCheckWork
+    ...(chain.state !== 'none'
+      ? { footnote: 'Click to open the Debugger' }
+      : log.isReadable
+        ? { footnote: log.isShown ? 'Click to hide the log' : 'Click to read the log' }
+        : {}),
+    ...(chain.state === 'none' && log.isReadable && { isExpanded: isLogInline }),
+    ...(isLogInline && { controlsId: logId }),
+    onOpen: openRow,
+    work: isLogInline ? (
+      <CheckLogInline
+        id={logId}
+        sessionId={sessionId}
+        url={check.detailsUrl ?? url}
+        reading={log.reading}
+      />
+    ) : workState === null ? null : (
+      <div className="flex min-w-0 flex-col gap-2">
+        <AnalyzedCheckWork
+          sessionId={sessionId}
+          chain={chain}
+          state={workState}
+          detail={result?.detail ?? null}
+        />
+        {!isProposalShown || analysis === null || proposal === null ? null : (
+          <CheckProposalInline
             sessionId={sessionId}
-            chain={chain}
-            state={workState}
-            detail={result?.detail ?? null}
+            hintScope={hintScope}
+            checkName={check.name}
+            finding={analysis.finding}
+            proposal={proposal}
+            options={analysis.options}
+            isStarting={isFixStarting}
+            onStart={startFix}
+            onDismiss={() => {
+              if (chain.debugger !== null) {
+                dismissCheckProposal({ sessionId, agentId: chain.debugger.id });
+              }
+              setIsReviewOpen(false);
+            }}
           />
-          {!isProposalShown || analysis === null || proposal === null ? null : (
-            <CheckProposalInline
-              sessionId={sessionId}
-              hintScope={hintScope}
-              checkName={check.name}
-              finding={analysis.finding}
-              proposal={proposal}
-              options={analysis.options}
-              isStarting={isFixStarting}
-              onStart={startFix}
-              onDismiss={() => {
-                if (chain.debugger !== null) {
-                  dismissCheckProposal({ sessionId, agentId: chain.debugger.id });
-                }
-                setIsReviewOpen(false);
-              }}
-            />
-          )}
-        </div>
-      ),
+        )}
+      </div>
+    ),
     isAgentWorking: workState === 'analyzing' || workState === 'fixing',
     action: isDrawerOpen ? null : (
       <CheckResultAction

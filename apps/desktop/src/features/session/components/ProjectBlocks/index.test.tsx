@@ -27,7 +27,7 @@ import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStatuses/cache';
 import userEvent from '@testing-library/user-event';
-import { branchPlace } from '../../../../store/slices/navigation/place';
+import { tabForFactOf } from '../../../branch/tabForFactOf';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import {
@@ -160,6 +160,16 @@ const tileOf = ({ branch }: TileParams): HTMLElement => {
 const TENANT = 'ak/eng-1190-tenant-limits';
 
 const LEDGER = 'ak/eng-1190-ledger-limits';
+
+const mountIdOf = ({ branch }: TileParams): string => {
+  const mount = (useAppStore.getState().sessionProjectMounts[COLUMN_SESSION_ID] ?? []).find(
+    (candidate) => candidate.branch === branch,
+  );
+  if (mount === undefined) {
+    throw new Error('The seed must mount the branch.');
+  }
+  return mount.mountId;
+};
 
 type ProposalsParams = {
   readonly sizeBytes: number | null;
@@ -301,11 +311,57 @@ describe('the project blocks on the Overview', () => {
     ).toContain('Rebase');
     expect(verbsOf({ tile: tileOf({ branch: TENANT }) })).toHaveLength(0);
     expect(tileOf({ branch: TENANT }).querySelector('[data-board-chip]')?.textContent).toBe(
-      'Checks failing',
+      'static-analysis failed',
     );
   });
 
-  it('opens the branch page on Conversation from the tile, and leaves the tools alone', async () => {
+  it('names the failing check as the one fact in tone, and keeps the request as text', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    act(() => {
+      useAppStore.setState({ sessionOpenQuestions: {} });
+    });
+    await show();
+    const tenant = tileOf({ branch: TENANT });
+
+    expect(tenant.querySelectorAll('[data-board-chip]')).toHaveLength(1);
+    expect(tenant.querySelector('[data-board-chip]')?.textContent).toBe('static-analysis failed');
+    expect(
+      [...tenant.querySelectorAll('[data-board-facts] button, [data-board-facts] a')].length,
+    ).toBe(0);
+  });
+
+  it('keeps the full check name in the tooltip of a chip that may cut it', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    act(() => {
+      useAppStore.setState({ sessionOpenQuestions: {} });
+    });
+    await show();
+    const chip = tileOf({ branch: TENANT }).querySelector('[data-board-chip]')?.firstElementChild;
+
+    if (!(chip instanceof HTMLElement)) {
+      throw new Error('The chip must be an element.');
+    }
+    fireEvent.mouseEnter(chip);
+    expect((await screen.findByRole('tooltip')).textContent).toBe('static-analysis failed');
+  });
+
+  it('holds one target and at most one verb per row, and one door per project head', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    await show();
+
+    for (const tile of projects().querySelectorAll<HTMLElement>('[data-board-row]')) {
+      expect(within(tile).getAllByRole('link')).toHaveLength(1);
+      expect(verbsOf({ tile }).length).toBeLessThanOrEqual(1);
+    }
+    for (const head of projects().querySelectorAll<HTMLElement>('[data-board-project-head]')) {
+      const doors = within(head)
+        .queryAllByRole('button')
+        .filter((button) => !/from session$/.test(button.getAttribute('aria-label') ?? ''));
+      expect(doors.length).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('opens the tab the failing fact names, by its mount, and leaves the tools alone', async () => {
     seedCentralColumn({ kind: 'branches' });
     const navigate = vi.fn();
     act(() => {
@@ -313,20 +369,36 @@ describe('the project blocks on the Overview', () => {
     });
     await show();
     const before = useAppStore.getState().drawer;
-    const mount = (useAppStore.getState().sessionProjectMounts[COLUMN_SESSION_ID] ?? []).find(
-      (candidate) => candidate.branch === TENANT,
-    );
 
     fireEvent.click(screen.getByRole('link', { name: `Open ${TENANT}` }));
 
     expect(navigate).toHaveBeenCalledWith({
-      to: branchPlace({
+      to: tabForFactOf({
         sessionId: COLUMN_SESSION_ID,
-        mountPath: mount?.worktreePath ?? null,
-        tab: 'pr',
+        mountId: mountIdOf({ branch: TENANT }),
+        fact: 'checks-failing',
       }),
     });
     expect(useAppStore.getState().drawer).toBe(before);
+  });
+
+  it('opens Conversation from a row whose chip names no fact', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    const navigate = vi.fn();
+    act(() => {
+      useAppStore.setState({ navigate });
+    });
+    await show();
+
+    fireEvent.click(screen.getByRole('link', { name: `Open ${LEDGER}` }));
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: tabForFactOf({
+        sessionId: COLUMN_SESSION_ID,
+        mountId: mountIdOf({ branch: LEDGER }),
+        fact: null,
+      }),
+    });
   });
 
   it('reaches the tile and its button as two stops, and Enter on the tile opens it', async () => {

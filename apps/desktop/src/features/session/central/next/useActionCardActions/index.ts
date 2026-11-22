@@ -6,7 +6,6 @@ import { NAMES } from '../../../../../shared/utils/names';
 import {
   EMPTY_ARRAY,
   agentPlace,
-  branchPlace,
   questionPlace,
   sessionPlace,
   useAppStore,
@@ -20,6 +19,7 @@ import type {
   SuggestionActionTarget,
 } from '../../../../actions/types';
 import { autoTreeOfAgent } from '../../../../auto/autoTreeOfAgent';
+import { tabForFactOf } from '../../../../branch/tabForFactOf';
 import { useAutoTreeActions } from '../../../../auto/chat/useAutoTreeActions';
 import { autoUnavailableReason } from '../../../../auto/autoUnavailableReason';
 import type { RebaseStopRow } from '../../../../history/rebaseStopRowOf';
@@ -482,14 +482,14 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
       suggestion.kind === 'fix-checks'
         ? verbOf({
             label: 'Open check',
-            run: () => {
-              const state = useAppStore.getState();
-              const mountPath =
-                (state.sessionProjectMounts[sessionId] ?? EMPTY_ARRAY).find(
-                  (mount) => mount.mountId === suggestion.payload.mountId,
-                )?.worktreePath ?? null;
-              navigate({ to: branchPlace({ sessionId, mountPath, tab: 'checks' }) });
-            },
+            run: () =>
+              navigate({
+                to: tabForFactOf({
+                  sessionId,
+                  mountId: suggestion.payload.mountId,
+                  fact: suggestion.kind,
+                }),
+              }),
           })
         : null;
     const target: SuggestionActionTarget = {
@@ -602,22 +602,15 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
     if (place === null) {
       return null;
     }
-    return () => {
-      const mountPath =
-        place.kind === 'branch'
-          ? ((useAppStore.getState().sessionProjectMounts[sessionId] ?? EMPTY_ARRAY).find(
-              (mount) => mount.mountId === place.mountId,
-            )?.worktreePath ?? null)
-          : null;
+    return () =>
       navigate({
         to:
           place.kind === 'questions'
             ? place.questionId === null
               ? sessionPlace({ sessionId, lens: 'questions' })
               : questionPlace({ sessionId, questionId: place.questionId })
-            : branchPlace({ sessionId, mountPath, tab: place.tab }),
+            : tabForFactOf({ sessionId, mountId: place.mountId, fact: source.suggestion.kind }),
       });
-    };
   };
 
   return { actionsFor, isHidden, openFor };

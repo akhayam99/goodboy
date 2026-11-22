@@ -4,6 +4,7 @@
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactScoutList.tsx": "path",
   "apps/desktop/src/features/artifacts/components/PlanEditor/index.tsx": "code",
   "apps/desktop/src/features/backup/components/BackupPage/LeftOutFindings.tsx": "identifier",
+  "apps/desktop/src/features/branch/components/AnalyzedCheckRow/CheckLogInline.tsx": "code",
   "apps/desktop/src/features/branch/components/PullRequestTab/LinkIssueToPrPopover.tsx": "identifier",
   "apps/desktop/src/features/branch/components/ThreadHunk/index.tsx": "code",
   "apps/desktop/src/features/branch/components/ThreadProperties.tsx": "sha",
