@@ -114,6 +114,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     onToggle: onSelectionKeyToggle,
     onSelectAll: selection.selectAll,
     onDelete: onSelectionKeyDelete,
+    isEnabled: page.layout === 'stages',
   });
   const focusFirstCard = useCallback(() => {
     boardRef.current?.querySelector<HTMLElement>('[data-select-id] button')?.focus();

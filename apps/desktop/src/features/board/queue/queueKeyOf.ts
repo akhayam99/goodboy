@@ -15,8 +15,11 @@ type Params = {
   readonly key: string;
   readonly band: QueueBand;
   readonly isTyping: boolean;
+  readonly isOnControl: boolean;
   readonly hasModifier: boolean;
 };
+
+const CONTROL_KEYS: ReadonlySet<string> = new Set(['Enter', ' ']);
 
 const STEP_BY_KEY: Readonly<Record<string, 1 | -1>> = {
   j: 1,
@@ -27,11 +30,17 @@ const STEP_BY_KEY: Readonly<Record<string, 1 | -1>> = {
 
 const CHOICE_KEY = /^[1-9]$/;
 
-export const queueKeyOf = ({ key, band, isTyping, hasModifier }: Params): QueueCommand | null => {
+export const queueKeyOf = ({
+  key,
+  band,
+  isTyping,
+  isOnControl,
+  hasModifier,
+}: Params): QueueCommand | null => {
   if (key === 'F6' && !hasModifier) {
     return { kind: 'next-band' };
   }
-  if (isTyping || hasModifier) {
+  if (isTyping || hasModifier || (isOnControl && CONTROL_KEYS.has(key))) {
     return null;
   }
   const delta = STEP_BY_KEY[key];

@@ -6,10 +6,17 @@ type KeyParams = {
   readonly key: string;
   readonly band: QueueBand;
   readonly isTyping?: boolean;
+  readonly isOnControl?: boolean;
+  readonly hasModifier?: boolean;
 };
 
-const commandOf = ({ key, band, isTyping = false }: KeyParams) =>
-  queueKeyOf({ key, band, isTyping, hasModifier: false })?.kind ?? null;
+const commandOf = ({
+  key,
+  band,
+  isTyping = false,
+  isOnControl = false,
+  hasModifier = false,
+}: KeyParams) => queueKeyOf({ key, band, isTyping, isOnControl, hasModifier });
 
 describe('the Queue keys, one band at a time', () => {
   it.each([
@@ -26,29 +33,29 @@ describe('the Queue keys, one band at a time', () => {
     ['ready', 'Enter', null],
     ['ready', '1', null],
   ] as const)('in %s, %j does %s', (band, key, kind) => {
-    expect(commandOf({ key, band })).toBe(kind);
+    expect(commandOf({ key, band })?.kind ?? null).toBe(kind);
   });
 
   it('moves inside the active band with j, k and the arrows', () => {
     for (const band of ['needs-you', 'running', 'ready'] as const) {
-      expect(queueKeyOf({ key: 'j', band, isTyping: false, hasModifier: false })).toEqual({
-        kind: 'step',
-        delta: 1,
-      });
-      expect(queueKeyOf({ key: 'ArrowUp', band, isTyping: false, hasModifier: false })).toEqual({
-        kind: 'step',
-        delta: -1,
-      });
+      expect(commandOf({ key: 'j', band })).toEqual({ kind: 'step', delta: 1 });
+      expect(commandOf({ key: 'ArrowUp', band })).toEqual({ kind: 'step', delta: -1 });
     }
   });
 
   it('passes to the next band with F6, even from a field', () => {
-    expect(commandOf({ key: 'F6', band: 'running', isTyping: true })).toBe('next-band');
+    expect(commandOf({ key: 'F6', band: 'running', isTyping: true })?.kind).toBe('next-band');
   });
 
   it('lets letters type in a field and leaves a modified key to the app', () => {
     expect(commandOf({ key: 's', band: 'needs-you', isTyping: true })).toBeNull();
     expect(commandOf({ key: 'Enter', band: 'needs-you', isTyping: true })).toBeNull();
-    expect(queueKeyOf({ key: 'j', band: 'ready', isTyping: false, hasModifier: true })).toBeNull();
+    expect(commandOf({ key: 'j', band: 'ready', hasModifier: true })).toBeNull();
+  });
+
+  it('leaves Enter and Space to the button that has the focus', () => {
+    expect(commandOf({ key: 'Enter', band: 'needs-you', isOnControl: true })).toBeNull();
+    expect(commandOf({ key: ' ', band: 'running', isOnControl: true })).toBeNull();
+    expect(commandOf({ key: 'j', band: 'needs-you', isOnControl: true })?.kind).toBe('step');
   });
 });

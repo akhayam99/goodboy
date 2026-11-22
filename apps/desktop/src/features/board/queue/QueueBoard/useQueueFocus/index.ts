@@ -64,6 +64,9 @@ const isTypingTarget = ({ target }: TargetParams): boolean => {
   );
 };
 
+const isControlTarget = ({ target }: TargetParams): boolean =>
+  target instanceof HTMLElement && target.closest('button, a, [role="tab"]') !== null;
+
 const steppedIndexOf = ({ index, delta, length }: StepParams): number =>
   length === 0 ? 0 : Math.min(length - 1, Math.max(0, index + delta));
 
@@ -135,6 +138,7 @@ export const useQueueFocus = ({
       key: event.key,
       band,
       isTyping: isTypingTarget({ target: event.target }),
+      isOnControl: isControlTarget({ target: event.target }),
       hasModifier: event.metaKey || event.ctrlKey || event.altKey,
     });
     if (command === null) {
