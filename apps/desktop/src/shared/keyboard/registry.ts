@@ -947,10 +947,8 @@ const ID_BY_ENTRY = new Map<ShortcutEntry, string>(
 export const platformCombo = ({ entry }: EntryParams): string => {
   const id = ID_BY_ENTRY.get(entry);
   const override = id === undefined ? undefined : overrideState.overrides[id];
-  if (override !== undefined) {
-    return override;
-  }
-  return currentPlatform() === 'darwin' ? entry.combo : (entry.offMacCombo ?? entry.combo);
+  const native = currentPlatform() === 'darwin' ? entry.combo : (entry.offMacCombo ?? entry.combo);
+  return override ?? native;
 };
 
 export const shortcutGlyphs = (id: ShortcutId): string =>
