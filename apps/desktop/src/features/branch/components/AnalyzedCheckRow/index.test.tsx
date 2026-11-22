@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { PrCheckRun } from '@goodboy/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
@@ -57,6 +57,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+const NEXT_RUN = 'https://github.com/harborline/payments-api/actions/runs/32';
+
 type UrlParams = {
   readonly detailsUrl: string;
 };
@@ -75,9 +77,12 @@ const show = () => {
   return { seed, row };
 };
 
-const moveCheckTo = ({ detailsUrl }: UrlParams) => {
+type ChecksParams = {
+  readonly checks: ReadonlyArray<PrCheckRun>;
+};
+
+const setChecks = ({ checks }: ChecksParams) => {
   const seed = checksAnalyzeSeed({ phase: 'failing' });
-  const moved: PrCheckRun = { ...seed.check, detailsUrl };
   store.setState((state) => {
     const mount = state.mountGithub[seed.repo.mountId];
     const session = state.sessionGithub[seed.sessionId];
@@ -87,15 +92,20 @@ const moveCheckTo = ({ detailsUrl }: UrlParams) => {
     return {
       mountGithub: {
         ...state.mountGithub,
-        [seed.repo.mountId]: { ...mount, detail: { ...mount.detail, checks: [moved] } },
+        [seed.repo.mountId]: { ...mount, detail: { ...mount.detail, checks: [...checks] } },
       },
       sessionGithub: {
         ...state.sessionGithub,
-        [seed.sessionId]: { ...session, detail: { ...session.detail, checks: [moved] } },
+        [seed.sessionId]: { ...session, detail: { ...session.detail, checks: [...checks] } },
       },
       checkLogs: {},
     };
   });
+};
+
+const moveCheckTo = ({ detailsUrl }: UrlParams) => {
+  const seed = checksAnalyzeSeed({ phase: 'failing' });
+  setChecks({ checks: [{ ...seed.check, detailsUrl }] });
   render(
     <ToastProvider>
       <BranchChecks sessionId={seed.sessionId} />
@@ -166,5 +176,52 @@ describe('the failing check row reads its log in place', () => {
     expect(row.querySelector('[data-check-log]')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open on GitHub' })).toBeNull();
     expect(storySpies.tauriInvoke.mock.calls.some(([command]) => command === 'gh_run')).toBe(false);
+    expect(rowButtonOf({ row }).hasAttribute('aria-expanded')).toBe(false);
+  });
+
+  it('tells a screen reader the row shows or hides the log it controls', async () => {
+    const { row } = show();
+    await waitFor(() => expect(row.querySelector('[data-check-log] pre')).not.toBeNull());
+    const button = rowButtonOf({ row });
+
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(button.getAttribute('aria-controls')).toBe(row.querySelector('[data-check-log]')?.id);
+
+    fireEvent.click(button);
+
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(button.hasAttribute('aria-controls')).toBe(false);
+  });
+
+  it('opens the log again on arrival when a new job fails after the old one was hidden', async () => {
+    const { seed, row } = show();
+    await waitFor(() => expect(row.querySelector('[data-check-log] pre')).not.toBeNull());
+    fireEvent.click(rowButtonOf({ row }));
+    expect(row.querySelector('[data-check-log]')).toBeNull();
+
+    act(() => {
+      setChecks({ checks: [{ ...seed.check, detailsUrl: `${NEXT_RUN}/job/43` }] });
+    });
+
+    await waitFor(() =>
+      expect(row.querySelector('[data-check-log] pre')?.textContent).toContain('Received credits'),
+    );
+  });
+
+  it('opens only the first failing job when two jobs share a name', async () => {
+    const seed = checksAnalyzeSeed({ phase: 'failing' });
+    setChecks({
+      checks: [seed.check, { ...seed.check, detailsUrl: `${NEXT_RUN}/job/43` }],
+    });
+    render(
+      <ToastProvider>
+        <BranchChecks sessionId={seed.sessionId} />
+      </ToastProvider>,
+    );
+
+    await waitFor(() => expect(document.querySelector('[data-check-log] pre')).not.toBeNull());
+    expect(document.querySelectorAll('[data-check-log]')).toHaveLength(1);
+    const ghCalls = storySpies.tauriInvoke.mock.calls.filter(([command]) => command === 'gh_run');
+    expect(ghCalls.length).toBe(1);
   });
 });

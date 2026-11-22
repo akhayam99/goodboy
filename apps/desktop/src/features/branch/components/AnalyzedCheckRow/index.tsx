@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
   MountId,
@@ -48,6 +48,8 @@ type RowParts = {
   readonly isAgentWorking: boolean;
   readonly action: ReactNode;
   readonly hint: ReactNode;
+  readonly isExpanded?: boolean;
+  readonly controlsId?: string;
   readonly onOpen: () => void;
 };
 
@@ -87,6 +89,7 @@ export const AnalyzedCheckRow = ({
     check,
     isUnanalyzed: chain.state === 'none',
   });
+  const logId = useId();
   const pending = usePendingAction({ sessionId });
   const analyzeKey = `check.analyze:${mountId}:${url}`;
   const fixKey = `check.fix:${mountId}:${url}`;
@@ -166,6 +169,7 @@ export const AnalyzedCheckRow = ({
       isDismissed: chain.isDismissed,
     });
   const result = workState === null ? null : resultOf({ state: workState });
+  const isLogInline = log.isShown && workState === null;
   const proposal = analysis?.proposal ?? null;
   const isProposalShown =
     isReviewOpen && settled === 'causeFound' && proposal !== null && !isDrawerOpen;
@@ -186,38 +190,44 @@ export const AnalyzedCheckRow = ({
       : log.isReadable
         ? { footnote: log.isShown ? 'Click to hide the log' : 'Click to read the log' }
         : {}),
+    ...(chain.state === 'none' && log.isReadable && { isExpanded: isLogInline }),
+    ...(isLogInline && { controlsId: logId }),
     onOpen: openRow,
-    work:
-      log.isShown && workState === null ? (
-        <CheckLogInline sessionId={sessionId} url={check.detailsUrl ?? url} reading={log.reading} />
-      ) : workState === null ? null : (
-        <div className="flex min-w-0 flex-col gap-2">
-          <AnalyzedCheckWork
+    work: isLogInline ? (
+      <CheckLogInline
+        id={logId}
+        sessionId={sessionId}
+        url={check.detailsUrl ?? url}
+        reading={log.reading}
+      />
+    ) : workState === null ? null : (
+      <div className="flex min-w-0 flex-col gap-2">
+        <AnalyzedCheckWork
+          sessionId={sessionId}
+          chain={chain}
+          state={workState}
+          detail={result?.detail ?? null}
+        />
+        {!isProposalShown || analysis === null || proposal === null ? null : (
+          <CheckProposalInline
             sessionId={sessionId}
-            chain={chain}
-            state={workState}
-            detail={result?.detail ?? null}
+            hintScope={hintScope}
+            checkName={check.name}
+            finding={analysis.finding}
+            proposal={proposal}
+            options={analysis.options}
+            isStarting={isFixStarting}
+            onStart={startFix}
+            onDismiss={() => {
+              if (chain.debugger !== null) {
+                dismissCheckProposal({ sessionId, agentId: chain.debugger.id });
+              }
+              setIsReviewOpen(false);
+            }}
           />
-          {!isProposalShown || analysis === null || proposal === null ? null : (
-            <CheckProposalInline
-              sessionId={sessionId}
-              hintScope={hintScope}
-              checkName={check.name}
-              finding={analysis.finding}
-              proposal={proposal}
-              options={analysis.options}
-              isStarting={isFixStarting}
-              onStart={startFix}
-              onDismiss={() => {
-                if (chain.debugger !== null) {
-                  dismissCheckProposal({ sessionId, agentId: chain.debugger.id });
-                }
-                setIsReviewOpen(false);
-              }}
-            />
-          )}
-        </div>
-      ),
+        )}
+      </div>
+    ),
     isAgentWorking: workState === 'analyzing' || workState === 'fixing',
     action: isDrawerOpen ? null : (
       <CheckResultAction

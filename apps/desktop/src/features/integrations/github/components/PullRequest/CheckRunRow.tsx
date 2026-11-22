@@ -12,6 +12,8 @@ export type CheckRunRowParts = {
   readonly isAgentWorking?: boolean;
   readonly action?: ReactNode;
   readonly hint?: ReactNode;
+  readonly isExpanded?: boolean;
+  readonly controlsId?: string;
   readonly onOpen: () => void;
 };
 
@@ -31,6 +33,8 @@ export const CheckRunRow = ({
   isAgentWorking = false,
   action,
   hint,
+  isExpanded,
+  controlsId,
   onOpen,
 }: Props) => {
   const menu = useObjectMenuTrigger({
@@ -52,6 +56,8 @@ export const CheckRunRow = ({
       >
         <button
           type="button"
+          aria-expanded={isExpanded}
+          aria-controls={controlsId}
           onClick={onOpen}
           className={cn(
             'grid w-full min-w-0 grid-cols-[16px_minmax(0,1fr)_56px] items-center gap-2 rounded-md px-2 py-1 text-left text-body transition-colors',

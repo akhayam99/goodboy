@@ -44,8 +44,10 @@ const BoardTileView = ({ rowId }: Props) => {
   }
   const runningCount = runningByRowId.get(rowId) ?? 0;
   const stateChip = boardTileChipOf({ row, entry, runningCount });
+  const isCheckNamed =
+    stateChip !== null && failingName !== null && entry?.story.word === stateChip.word;
   const chip =
-    stateChip === null || failingName === null || entry?.story.word !== stateChip.word
+    stateChip === null || failingName === null || !isCheckNamed
       ? stateChip
       : { ...stateChip, word: `${failingName} failed` };
   const title =
@@ -107,13 +109,18 @@ const BoardTileView = ({ rowId }: Props) => {
       </span>
       <span className="pointer-events-none relative flex min-w-0 shrink-0 items-center gap-3 text-meta">
         {chip === null ? null : (
-          <span data-board-chip="" className="flex shrink-0">
+          <span
+            data-board-chip=""
+            className={cn('flex max-w-48 min-w-0', isCheckNamed && 'pointer-events-auto')}
+          >
             <Chip
               kind="state"
               tone={chip.tone}
               emphasis="subtle"
               bordered={false}
-              label={chip.word}
+              className="min-w-0 shrink"
+              {...(isCheckNamed && { title: chip.word })}
+              label={<span className="min-w-0 truncate">{chip.word}</span>}
             />
           </span>
         )}

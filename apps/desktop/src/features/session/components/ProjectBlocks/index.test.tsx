@@ -330,6 +330,21 @@ describe('the project blocks on the Overview', () => {
     ).toBe(0);
   });
 
+  it('keeps the full check name in the tooltip of a chip that may cut it', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    act(() => {
+      useAppStore.setState({ sessionOpenQuestions: {} });
+    });
+    await show();
+    const chip = tileOf({ branch: TENANT }).querySelector('[data-board-chip]')?.firstElementChild;
+
+    if (!(chip instanceof HTMLElement)) {
+      throw new Error('The chip must be an element.');
+    }
+    fireEvent.mouseEnter(chip);
+    expect((await screen.findByRole('tooltip')).textContent).toBe('static-analysis failed');
+  });
+
   it('holds one target and at most one verb per row, and one door per project head', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();

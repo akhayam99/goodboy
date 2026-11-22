@@ -21,6 +21,11 @@ type CheckLog = {
   readonly toggle: () => void;
 };
 
+type Choice = {
+  readonly scope: string;
+  readonly isOpen: boolean;
+};
+
 export const useCheckLog = ({
   sessionId,
   mountId,
@@ -28,17 +33,20 @@ export const useCheckLog = ({
   check,
   isUnanalyzed,
 }: Params): CheckLog => {
-  const [isOpen, setIsOpen] = useState<boolean | null>(null);
+  const [choice, setChoice] = useState<Choice | null>(null);
+  const scope = [sessionId, mountId, prNumber, check.detailsUrl ?? check.name].join(' ');
   const isReadable = isUnanalyzed && actionsJobOf({ detailsUrl: check.detailsUrl }) !== null;
   const isFirstFailing = useAppStore(
     (state) =>
-      failingChecksOf({ state, sessionId, mountId, prNumber })?.checks[0]?.name === check.name,
+      check.detailsUrl !== null &&
+      failingChecksOf({ state, sessionId, mountId, prNumber })?.checks[0]?.detailsUrl ===
+        check.detailsUrl,
   );
   const reading = useAppStore((state) =>
     check.detailsUrl === null ? null : (state.checkLogs[check.detailsUrl] ?? null),
   );
   const readCheckLog = useAppStore((state) => state.readCheckLog);
-  const isShown = isReadable && (isOpen ?? isFirstFailing);
+  const isShown = isReadable && (choice?.scope === scope ? choice.isOpen : isFirstFailing);
   useEffect(() => {
     if (!isShown) {
       return;
@@ -53,5 +61,5 @@ export const useCheckLog = ({
     }
     void readCheckLog({ check, cwd: mount.worktreePath, workspaceId, projectId: mount.projectId });
   }, [check, isShown, mountId, readCheckLog, sessionId]);
-  return { isReadable, isShown, reading, toggle: () => setIsOpen(!isShown) };
+  return { isReadable, isShown, reading, toggle: () => setChoice({ scope, isOpen: !isShown }) };
 };

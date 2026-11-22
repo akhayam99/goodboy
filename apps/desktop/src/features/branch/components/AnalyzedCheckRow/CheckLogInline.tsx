@@ -5,6 +5,7 @@ import type { CheckLogReading } from '../../../../store/slices/checks-log/types'
 import { openLink } from '../../../open/openLink';
 
 type Props = {
+  readonly id: string;
   readonly sessionId: SessionId;
   readonly url: string;
   readonly reading: CheckLogReading | null;
@@ -14,10 +15,10 @@ const READING = 'Reading the log';
 
 const NO_LOG = 'GitHub gave no log for this check.';
 
-export const CheckLogInline = ({ sessionId, url, reading }: Props) => {
+export const CheckLogInline = ({ id, sessionId, url, reading }: Props) => {
   const lines = reading?.status === 'ready' ? reading.lines : [];
   return (
-    <div data-check-log="" className="flex min-w-0 flex-col items-start gap-2">
+    <div id={id} data-check-log="" className="flex min-w-0 flex-col items-start gap-2">
       {reading === null ? (
         <span className="text-meta text-muted-foreground">{READING}</span>
       ) : lines.length === 0 ? (
