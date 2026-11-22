@@ -124,10 +124,10 @@ describe('Overview capabilities from the session Overview', () => {
     header().getByRole('button', { name: 'New' });
   });
 
-  it('keeps the chat provenance line under the goal', async () => {
+  it('leaves the chat provenance to Context, so the page opens on its state', async () => {
     await mountScene({ name: 'overview-header-provenance' });
 
-    screen.getByRole('button', { name: /From chat: Payments retry design/ });
+    expect(screen.queryByRole('button', { name: /From chat: Payments retry design/ })).toBeNull();
   });
 
   it('keeps Write title and goal from linked work in the Context tab', async () => {
@@ -148,14 +148,13 @@ describe('Overview capabilities from the session Overview', () => {
     expect(action.querySelector('svg')).not.toBeNull();
   });
 
-  it('turns a mount cleanup proposal into Delete local branch on the merged row and one button on the group', async () => {
+  it('turns a mount cleanup proposal into Delete local branch on the merged row and one button on the project head', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
-    const merged = present({
-      value: document.querySelector<HTMLElement>('[data-board-group="merged"]'),
-      what: 'the Merged group',
-    });
+    const projects = screen.getByRole('region', { name: 'Projects' });
 
-    expect(within(merged).getAllByRole('button', { name: /^Delete local branch/ })).toHaveLength(2);
+    expect(within(projects).getAllByRole('button', { name: /^Delete local branch/ })).toHaveLength(
+      2,
+    );
   });
 
   it('keeps the branch drift decision in the notices slot', async () => {
@@ -280,7 +279,7 @@ describe('Overview capabilities from the session Overview', () => {
     ]);
   });
 
-  it('sums the seeded agents into the session tiles of a plan under way, with no Start', async () => {
+  it('sums the seeded spend into the facts row of a plan under way, with no tiles and no Start', async () => {
     render(
       <ToastProvider>
         <MountsScene />
@@ -297,15 +296,15 @@ describe('Overview capabilities from the session Overview', () => {
       (sum, record) => sum + record.estimatedCostUsd,
       0,
     );
-    const tiles = present({
-      value: document.querySelector<HTMLElement>('[data-slot="session-kpis"]'),
-      what: 'session tiles',
+    const facts = present({
+      value: document.querySelector<HTMLElement>('[data-overview-facts]'),
+      what: 'the facts row',
     });
 
     expect(agents.length).toBeGreaterThan(0);
-    expect(tiles.textContent).toContain(formatUsd(spend));
-    expect(tiles.textContent).toContain(`${agents.length} agents`);
-    expect(tiles.textContent).not.toMatch(/Time0m/);
+    expect(document.querySelector('[data-slot="session-kpis"]')).toBeNull();
+    expect(facts.textContent).toContain(formatUsd(spend));
+    expect(facts.textContent).toContain('agent time');
     expect(screen.queryByRole('button', { name: /^Start$/ })).toBeNull();
   });
 
@@ -322,26 +321,37 @@ describe('Overview capabilities from the session Overview', () => {
       });
     });
 
-    const board = screen.getByRole('region', { name: 'Branches' });
-    fireEvent.click(within(board).getByRole('button', { name: 'Answer' }));
+    const column = present({
+      value: document.querySelector<HTMLElement>('[data-central-column]'),
+      what: 'the column',
+    });
+    const [answer] = within(column).getAllByRole('button', { name: 'Answer' });
+    fireEvent.click(present({ value: answer, what: 'Answer' }));
     await advance();
 
     expect(places).toHaveLength(1);
     expect(places[0]).toMatchObject({ at: expect.stringMatching(/^(session|agent)$/) });
   });
 
-  it('keeps the full log with its search as the last section, the session spend moved to the rail foot', async () => {
+  it('keeps the full log with its search one press away under Activity, and the spend once in the facts row', async () => {
     await mountScene({ name: 'c05-overview-running' });
     const column = present({
       value: document.querySelector<HTMLElement>('[data-central-column]'),
       what: 'the cards',
     });
-    expect(within(column).queryByRole('button', { name: /^Spend / })).toBeNull();
+    const facts = present({
+      value: column.querySelector<HTMLElement>('[data-overview-facts]'),
+      what: 'the facts row',
+    });
+    expect(facts.querySelectorAll('[data-session-spend]')).toHaveLength(1);
 
     const log = present({
-      value: column.querySelector<HTMLElement>(':scope > [data-overview-log]:last-child'),
+      value: column.querySelector<HTMLElement>('[data-overview-log]'),
       what: 'the log section',
     });
+    expect(within(log).queryByRole('region', { name: 'Log entries' })).toBeNull();
+    fireEvent.click(within(log).getByRole('link', { name: 'Open activity' }));
+    await advance();
     within(within(log).getByRole('region', { name: 'Log entries' })).getByRole('searchbox', {
       name: 'Search entries',
     });

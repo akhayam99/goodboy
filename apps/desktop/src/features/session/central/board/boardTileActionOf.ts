@@ -5,6 +5,7 @@ import type { BoardRow } from './boardTypes';
 type Params = {
   readonly row: BoardRow;
   readonly cards: ReadonlyArray<Pick<ActionCardModel, 'kind'>>;
+  readonly shownAskIds: ReadonlySet<string>;
 };
 
 type BoardTileAction =
@@ -15,19 +16,22 @@ type BoardTileAction =
 
 const ANSWER_KINDS: ReadonlySet<string> = new Set(['question', 'answer-questions']);
 
-export const boardTileActionOf = ({ row, cards }: Params): BoardTileAction => {
+export const boardTileActionOf = ({ row, cards, shownAskIds }: Params): BoardTileAction => {
   if (row.isClosed) {
     return { kind: 'none' };
   }
   if (row.isMerged) {
     return row.mountId === null ? { kind: 'none' } : { kind: 'remove', mountId: row.mountId };
   }
-  const [askId] = row.askIds;
-  if (askId !== undefined) {
+  if (row.askIds.length > 0) {
     const answerIndex = cards.findIndex((card) => ANSWER_KINDS.has(card.kind));
-    return answerIndex >= 0
-      ? { kind: 'card', index: answerIndex }
-      : { kind: 'question', questionId: brandId<OpenQuestionId>({ value: askId }) };
+    if (answerIndex >= 0) {
+      return { kind: 'card', index: answerIndex };
+    }
+    const askId = row.askIds.find((id) => !shownAskIds.has(id));
+    if (askId !== undefined) {
+      return { kind: 'question', questionId: brandId<OpenQuestionId>({ value: askId }) };
+    }
   }
   return cards.length > 0 ? { kind: 'card', index: 0 } : { kind: 'none' };
 };

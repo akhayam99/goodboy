@@ -42,12 +42,15 @@ type CardParams = {
 
 const cardOf = ({ kind }: CardParams): Pick<ActionCardModel, 'kind'> => ({ kind });
 
+const NO_ASKS: ReadonlySet<string> = new Set();
+
 describe('boardTileActionOf', () => {
   it('takes the first card of the branch when nothing is asked', () => {
     expect(
       boardTileActionOf({
         row: rowOf({}),
         cards: [cardOf({ kind: 'rebase-project' }), cardOf({ kind: 'push-branch' })],
+        shownAskIds: NO_ASKS,
       }),
     ).toEqual({ kind: 'card', index: 0 });
   });
@@ -57,6 +60,7 @@ describe('boardTileActionOf', () => {
       boardTileActionOf({
         row: rowOf({ askIds: ['question-1'] }),
         cards: [cardOf({ kind: 'rebase-project' }), cardOf({ kind: 'question' })],
+        shownAskIds: NO_ASKS,
       }),
     ).toEqual({ kind: 'card', index: 1 });
   });
@@ -66,8 +70,29 @@ describe('boardTileActionOf', () => {
       boardTileActionOf({
         row: rowOf({ askIds: ['question-1', 'question-2'] }),
         cards: [cardOf({ kind: 'rebase-project' })],
+        shownAskIds: NO_ASKS,
       }),
     ).toEqual({ kind: 'question', questionId: 'question-1' });
+  });
+
+  it('carries no Answer for a question Needs you already shows and keeps the row Rebase', () => {
+    expect(
+      boardTileActionOf({
+        row: rowOf({ askIds: ['question-1'] }),
+        cards: [cardOf({ kind: 'rebase-project' })],
+        shownAskIds: new Set(['question-1']),
+      }),
+    ).toEqual({ kind: 'card', index: 0 });
+  });
+
+  it('offers nothing when Needs you shows every question and the row has no other card', () => {
+    expect(
+      boardTileActionOf({
+        row: rowOf({ askIds: ['question-1'] }),
+        cards: [],
+        shownAskIds: new Set(['question-1']),
+      }),
+    ).toEqual({ kind: 'none' });
   });
 
   it('offers Remove worktree on a merged branch, never its cards', () => {
@@ -75,6 +100,7 @@ describe('boardTileActionOf', () => {
       boardTileActionOf({
         row: rowOf({ isMerged: true }),
         cards: [cardOf({ kind: 'push-branch' })],
+        shownAskIds: NO_ASKS,
       }),
     ).toEqual({ kind: 'remove', mountId: 'ledger' });
   });
@@ -84,11 +110,14 @@ describe('boardTileActionOf', () => {
       boardTileActionOf({
         row: rowOf({ isClosed: true }),
         cards: [cardOf({ kind: 'push-branch' })],
+        shownAskIds: NO_ASKS,
       }),
     ).toEqual({ kind: 'none' });
   });
 
   it('offers nothing on a branch with nothing waiting', () => {
-    expect(boardTileActionOf({ row: rowOf({}), cards: [] })).toEqual({ kind: 'none' });
+    expect(boardTileActionOf({ row: rowOf({}), cards: [], shownAskIds: NO_ASKS })).toEqual({
+      kind: 'none',
+    });
   });
 });

@@ -4,6 +4,14 @@ const LEAD = 'Lead';
 
 export const NAMES = {
   needsYou: 'Needs you',
+  nowSection: 'Now',
+  nextSection: 'Next',
+  moreNextSteps: 'More next steps',
+  activitySection: 'Activity',
+  openActivity: 'Open activity',
+  showDevDetails: 'Show dev details',
+  hideDevDetails: 'Hide dev details',
+  summaryAge: 'Summary',
   running: 'Running',
   inReview: 'In review',
   building: 'Building',

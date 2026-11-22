@@ -82,7 +82,7 @@ describe('the central column scenes', () => {
 
     expect(screen.getAllByRole('region', { name: 'Log entries' })).toHaveLength(1);
     expect(screen.queryByRole('region', { name: 'Log' })).toBeNull();
-    screen.getByRole('region', { name: 'Branches' });
+    screen.getByRole('region', { name: 'Projects' });
   });
 
   it('lands on the Log section on the scene that follows the theme of the page', async () => {
@@ -91,7 +91,7 @@ describe('the central column scenes', () => {
       await show({ name: 'u26-central-log' });
 
       screen.getByRole('region', { name: 'Log entries' });
-      screen.getByRole('region', { name: 'Branches' });
+      screen.getByRole('region', { name: 'Projects' });
       expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     } finally {
       applyDocumentTheme({ theme: 'dark' });
@@ -108,8 +108,8 @@ describe('the central column scenes', () => {
   it('draws the tiles and the board on the mid scene', async () => {
     await show({ name: 'u26-central-mid-light' });
 
-    screen.getByRole('region', { name: 'Branches' });
-    expect(document.querySelector('[data-slot="session-kpis"]')?.children).toHaveLength(3);
+    screen.getByRole('region', { name: 'Projects' });
+    expect(document.querySelector('[data-slot="session-kpis"]')).toBeNull();
     expect(screen.queryByRole('region', { name: 'Now' })).toBeNull();
   });
 
@@ -157,7 +157,7 @@ describe('the central column scenes', () => {
       }
 
       expect(detailReads() - before).toBe(1);
-      expect(document.querySelector('[data-slot="branch-board"]')).not.toBeNull();
+      expect(document.querySelector('[data-slot="project-blocks"]')).not.toBeNull();
     } finally {
       vi.useRealTimers();
     }

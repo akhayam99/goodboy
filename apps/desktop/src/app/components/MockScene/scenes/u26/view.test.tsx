@@ -82,7 +82,6 @@ describe('the view switch scenes', () => {
 
     screen.getByRole('button', { name: 'New' });
     expect(screen.queryByRole('tablist', { name: 'Overview' })).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull();
     expect(document.querySelector('[data-central-column]')).not.toBeNull();
   });
 

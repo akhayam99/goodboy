@@ -30,6 +30,8 @@ export const aQuestionCard = ({ where }: QuestionParams): ActionCardModel => {
     mountId: null,
     source: { kind: 'owner', owner },
     folded: [],
+    reason: null,
+    evidence: [],
   };
 };
 
@@ -47,4 +49,6 @@ export const anAutoCard = ({ target }: AutoParams): ActionCardModel => ({
   mountId: null,
   source: { kind: 'auto', target },
   folded: [],
+  reason: null,
+  evidence: [],
 });

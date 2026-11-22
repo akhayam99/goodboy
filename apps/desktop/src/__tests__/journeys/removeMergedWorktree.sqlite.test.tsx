@@ -23,7 +23,7 @@ import { brandedId } from '../../features/history/testing/brandedId';
 import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
 import { actionRetryOf } from '../../store/slices/notifications/actionRetries';
 import { CentralColumn } from '../../features/session/components/SessionOverviewPane/CentralColumn';
-import { deleteMergedBranches } from '../../features/session/components/BranchBoard/deleteMergedBranches';
+import { deleteMergedBranches } from '../../features/session/components/ProjectBlocks/deleteMergedBranches';
 import { WorkTimeProvider } from '../../features/workTreeModel/WorkTimeProvider';
 import {
   buildStoryProject,
@@ -225,7 +225,7 @@ const showNext = (view: RenderResult): string => {
 };
 
 const nextCardOf = (view: RenderResult): HTMLElement | null =>
-  view.container.querySelector<HTMLElement>('[data-slot="branch-board-section"]');
+  view.container.querySelector<HTMLElement>('[data-central-column]');
 
 const nextCard = (view: RenderResult): HTMLElement => {
   const card = nextCardOf(view);

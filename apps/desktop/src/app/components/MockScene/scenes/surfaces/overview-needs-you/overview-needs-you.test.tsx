@@ -72,7 +72,7 @@ describe('the u33 overview needs you scene', () => {
   it('draws one board whose rows each hold at most one filled verb', async () => {
     const { container } = mount();
 
-    const board = await screen.findByRole('region', { name: 'Branches' }, WAIT);
+    const board = await screen.findByRole('region', { name: 'Projects' }, WAIT);
     expect(board.querySelectorAll('[data-board-row]').length).toBeGreaterThan(0);
     for (const row of board.querySelectorAll('[data-board-row]')) {
       expect(row.querySelectorAll('[data-variant="primary"]').length).toBeLessThanOrEqual(1);
@@ -83,7 +83,7 @@ describe('the u33 overview needs you scene', () => {
   it('has no accessibility violations', async () => {
     const { container } = mount();
 
-    await screen.findByRole('region', { name: 'Branches' }, WAIT);
+    await screen.findByRole('region', { name: 'Projects' }, WAIT);
     const { violations } = await runA11yCheck(container);
     expect(violations.map((violation) => violation.id)).toEqual([]);
   });

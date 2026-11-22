@@ -67,7 +67,7 @@ describe('the u47 overview rows scenes', () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
     expect(screen.queryByText('Something went wrong')).toBeNull();
-    const board = screen.getByRole('region', { name: 'Branches' });
+    const board = screen.getByRole('region', { name: 'Projects' });
 
     const projects = new Set(
       [...board.querySelectorAll('[data-board-project]')].map((section) =>

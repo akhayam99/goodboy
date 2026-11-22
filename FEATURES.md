@@ -53,7 +53,7 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 Open a session to see what it is for, what needs you and what happened so far.
 
 - **Session overview**: Read a session as one page: the goal, what needs you, what runs and where each branch stands.
-- **Cards**: See what needs you, what runs, where each branch stands and what finished, on one board.
+- **Cards**: See where each branch of each project stands, and what finished, under Projects.
 - **Full log**: Follow what happened in a session in one list.
 - **Next**: Know the moves that unblock the task, such as answering a question, fixing a failing check or opening a pull request.
 

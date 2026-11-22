@@ -77,8 +77,8 @@ describe('the Running list scenes', () => {
   it('draws the board with a Needs you group for the work that waits', async () => {
     await show({ name: KEYS[0] ?? '' });
 
-    screen.getByRole('region', { name: 'Branches' });
-    expect(document.querySelector('[data-slot="session-kpis"]')?.children).toHaveLength(3);
+    screen.getByRole('region', { name: 'Projects' });
+    expect(document.querySelector('[data-slot="session-kpis"]')).toBeNull();
   });
 
   it.each(KEYS)('%s has no accessibility violations', async (name) => {

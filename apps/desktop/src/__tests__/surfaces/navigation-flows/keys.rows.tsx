@@ -1696,6 +1696,9 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
       }
       useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) });
       await settle(4);
+      const openActivity = document.querySelector<HTMLElement>('[data-overview-log] [role="link"]');
+      openActivity?.click();
+      await settle(4);
       const lane = Array.from(
         document.querySelectorAll<HTMLElement>('button[aria-keyshortcuts="Shift+Enter"]'),
       ).find((button) => /Open run/.test(button.getAttribute('aria-description') ?? ''));

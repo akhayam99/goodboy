@@ -47,7 +47,7 @@ it.each(Object.entries(U34_LAYOUT_FLOW_SCENES))('mounts %s', async (id, Scene) =
   const title = await screen.findByRole('heading', { level: 1 });
   expect(title.textContent).toMatch(/limit check/);
   expect(title.textContent).not.toMatch(/webhooks/);
-  expect(container.querySelector('[data-slot="branch-board"]')).not.toBeNull();
+  expect(container.querySelector('[data-slot="project-blocks"]')).not.toBeNull();
   if (id !== 'u34-u29-narrow-running') {
     expect(container.querySelector('[data-shell-rail]')).not.toBeNull();
   }

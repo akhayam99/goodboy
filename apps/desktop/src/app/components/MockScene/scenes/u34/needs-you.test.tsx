@@ -63,7 +63,7 @@ const mount = async (name: SceneName): Promise<void> => {
 };
 
 const board = (): HTMLElement | null =>
-  document.querySelector<HTMLElement>('[data-slot="branch-board-section"]');
+  document.querySelector<HTMLElement>('[data-central-column]');
 
 describe('the u34 needs you scenes', () => {
   it('registers every scene for the capture', () => {
@@ -81,7 +81,7 @@ describe('the u34 needs you scenes', () => {
   it('u34-needs-you-run-question holds the waiting run and the question on one board', async () => {
     await mount('u34-needs-you-run-question');
 
-    expect(document.querySelectorAll('[data-slot="branch-board"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-slot="project-blocks"]')).toHaveLength(1);
     expect(board()?.querySelectorAll('button').length).toBeGreaterThan(1);
   });
 });

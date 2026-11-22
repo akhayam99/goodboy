@@ -29,6 +29,7 @@ export const STORAGE_PREFIXES = {
   sessionView: `${PREFIX}session-view:`,
   sessionFilters: `${PREFIX}session-filters:`,
   sessionGrouping: `${PREFIX}session-grouping:v1:`,
+  overviewDevDetails: `${PREFIX}overview-dev-details:v1:`,
   cursorMaxMode: `${PREFIX}cursor-max-mode:`,
   inboxKindFilter: `${PREFIX}inbox-kind-filter:`,
   taskListView: `${PREFIX}task-list-view:v1:`,

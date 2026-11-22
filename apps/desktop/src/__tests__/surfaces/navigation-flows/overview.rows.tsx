@@ -31,8 +31,11 @@ export const OVERVIEW_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async (ctx) => {
-      const board = await screen.findByRole('region', { name: 'Branches' }, WAIT);
-      expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull();
+      await screen.findByRole('region', { name: 'Projects' }, WAIT);
+      const board = document.querySelector<HTMLElement>('[data-central-column]');
+      if (board === null) {
+        throw new Error('the overview has no column');
+      }
       const answers = screen.getAllByRole('button', { name: 'Answer' });
       for (const answer of answers) {
         expect(board.contains(answer)).toBe(true);

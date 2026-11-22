@@ -74,15 +74,15 @@ describe('the c05 overview scenes', () => {
     );
   });
 
-  it('c05-overview-running draws the tiles above one row per branch, with no Open word', async () => {
+  it('c05-overview-running draws the facts line above one row per branch, with no Open word', async () => {
     await mount('c05-overview-running');
 
-    const board = screen.getByRole('region', { name: 'Branches' });
-    expect(document.querySelector('[data-slot="session-kpis"]')?.children).toHaveLength(3);
+    const board = screen.getByRole('region', { name: 'Projects' });
+    expect(document.querySelector('[data-slot="session-kpis"]')).toBeNull();
+    expect(document.querySelector('[data-overview-facts]')).not.toBeNull();
     expect(board.querySelectorAll('[data-board-row]').length).toBeGreaterThan(0);
     expect(within(board).queryByRole('button', { name: 'Open' })).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Projects' })).toBeNull();
+    expect(screen.getAllByRole('region', { name: 'Projects' })).toHaveLength(1);
   });
 
   it('c05-overview-running-loading draws nothing on Browser while its tab rows load', async () => {
@@ -113,11 +113,7 @@ describe('the c05 overview scenes', () => {
   it('c05-overview-merged-next keeps the merged branch as a row and offers its delete with the size', async () => {
     await mount('c05-overview-merged-next');
 
-    const merged = present({
-      value: document.querySelector<HTMLElement>('[data-board-group="merged"]'),
-      what: 'Merged group',
-    });
-    expect(merged.querySelector('[data-board-row] [data-board-chip]')).toBeNull();
+    const merged = screen.getByRole('region', { name: 'Projects' });
     const remove = within(merged).getByRole('button', { name: /^Delete local branch · / });
     expect(remove.textContent).toContain('412 MB');
     expect(screen.queryByRole('button', { name: 'Keep' })).toBeNull();
@@ -126,10 +122,7 @@ describe('the c05 overview scenes', () => {
   it('c05-overview-merged-group lists both merged branches and one button for their local branches', async () => {
     await mount('c05-overview-merged-group');
 
-    const merged = present({
-      value: document.querySelector<HTMLElement>('[data-board-group="merged"]'),
-      what: 'Merged group',
-    });
+    const merged = screen.getByRole('region', { name: 'Projects' });
     expect(merged.querySelectorAll('[data-board-row]').length).toBeGreaterThanOrEqual(2);
     expect(within(merged).getAllByRole('button', { name: /^Delete local branches/ })).toHaveLength(
       1,
@@ -143,7 +136,7 @@ describe('the c05 overview scenes', () => {
     within(notices).getByRole('button', { name: /^Restore branch for/ });
     within(notices).getByRole('button', { name: 'Use this branch here' });
     expect(screen.queryByPlaceholderText('What should it do?')).toBeNull();
-    expect(screen.getByRole('region', { name: 'Branches' }).contains(notices)).toBe(false);
+    expect(screen.getByRole('region', { name: 'Projects' }).contains(notices)).toBe(false);
   });
 
   it('c05-overview-blank starts inline, with New as the outline button and Start as the primary', async () => {

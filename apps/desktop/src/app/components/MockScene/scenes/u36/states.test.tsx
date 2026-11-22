@@ -77,7 +77,7 @@ describe('the u36 states scenes', () => {
       for (const theme of ['light', 'dark']) {
         await show({ name: `u36-states-overview-${state}-${theme}` });
 
-        expect(document.querySelector('[data-slot="branch-board"]')).not.toBeNull();
+        expect(document.querySelector('[data-slot="project-blocks"]')).not.toBeNull();
         for (const word of WORDS) {
           expect(document.body.textContent).not.toContain(word);
         }

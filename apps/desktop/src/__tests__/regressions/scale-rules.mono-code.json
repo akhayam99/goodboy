@@ -52,6 +52,7 @@
   "apps/desktop/src/features/scripts/components/ScriptsPanel/ScriptPackageSection.tsx": "command",
   "apps/desktop/src/features/session/components/ContextDrawer/BlockEditor.tsx": "code",
   "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.tsx": "command",
+  "apps/desktop/src/features/session/components/MoveCard/MoveEvidenceChips.tsx": "code",
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountPreflightCard.tsx": "command",
   "apps/desktop/src/features/session/components/SessionOverviewPane/UnassignedNote.tsx": "path",
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/IntegrationPane/GithubTaskDetail.tsx": "identifier",

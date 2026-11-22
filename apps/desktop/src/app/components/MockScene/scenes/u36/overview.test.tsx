@@ -75,7 +75,7 @@ describe('the u36 overview scenes', () => {
       await show({ name: `u36-p15-next-only-${theme}` });
 
       expect(glance()).toBeNull();
-      expect(document.querySelector('[data-slot="branch-board"]')).not.toBeNull();
+      expect(document.querySelector('[data-slot="project-blocks"]')).not.toBeNull();
     },
   );
 
@@ -85,8 +85,8 @@ describe('the u36 overview scenes', () => {
       await show({ name: `u36-p15-needs-you-${theme}` });
 
       expect(glance()).toBeNull();
-      expect(document.querySelector('[data-slot="session-kpis"]')?.children).toHaveLength(3);
-      expect(document.querySelector('[data-slot="branch-board"]')).not.toBeNull();
+      expect(document.querySelector('[data-slot="session-kpis"]')).toBeNull();
+      expect(document.querySelector('[data-slot="project-blocks"]')).not.toBeNull();
     },
   );
 });
