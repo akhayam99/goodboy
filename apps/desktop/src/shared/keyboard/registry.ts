@@ -479,7 +479,6 @@ export const SHORTCUTS = {
     group: 'session',
     scope: 'ask',
   },
-
   'lens.overview': {
     combo: 'cmd+alt+KeyO',
     offMacCombo: 'ctrl+shift+alt+KeyO',
