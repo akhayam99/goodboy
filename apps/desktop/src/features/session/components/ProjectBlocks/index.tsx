@@ -7,6 +7,7 @@ import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import type { ActionCardActions } from '../../central/next/useActionCardActions';
 import type { BoardCards } from '../../central/board/boardCardsOf';
 import { projectBlocksOf } from '../../central/board/projectBlocksOf';
+import { MountProjectAction } from '../SessionOverviewPane/ProjectMountRows/MountProjectAction';
 import { BoardProjectRemovals } from './BoardProjectRemovals';
 import { BoardContext, type BoardContextValue } from './BoardContext';
 import { ProjectBlock } from './ProjectBlock';
@@ -103,7 +104,16 @@ export const ProjectBlocks = ({
     >
       <div className="flex h-7 min-w-0 items-center justify-between gap-2">
         <SectionLabel label={NAMES.projects} headingLevel={2} />
-        {devToggle}
+        <div data-section-actions="" className="flex min-w-0 items-center gap-2">
+          {session.archivedAt == null ? (
+            <MountProjectAction
+              sessionId={sessionId}
+              workspaceId={session.workspaceId}
+              presentation="button"
+            />
+          ) : null}
+          {devToggle}
+        </div>
       </div>
       <BoardProjectRemovals sessionId={sessionId} />
       <BoardContext.Provider value={value}>

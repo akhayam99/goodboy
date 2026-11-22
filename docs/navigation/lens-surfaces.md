@@ -90,8 +90,8 @@
   `warning` `Notice` with `Use this branch here`, `Keep both branches` and
   `Not now`) and the first lap Publish. Needs you follows, then Next (up to
   three rows, the first one's verb the only filled button on the page), then
-  Activity. Projects, Linked work, Artifacts and Add project live on the
-  Context tab. Next and Unassigned comments open with `SectionHeader`
+  Activity. Projects, Linked work and Artifacts live on the Context tab;
+  Mount a folder sits on its Projects card and on the Overview Projects head. Next and Unassigned comments open with `SectionHeader`
   at level 2, and Needs you opens with the same eyebrow on the quiet notice
   surface (no tone bar). Needs you is the one home of a waiting ask on the page:
   its row reads the question with the run or agent in gray after it, no totals

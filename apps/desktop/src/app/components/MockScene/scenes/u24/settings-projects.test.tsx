@@ -101,7 +101,7 @@ describe('the settings projects scenes', () => {
     await screen.findByText('Starred', undefined, WAIT);
     screen.getByText('Other projects');
     const names = screen
-      .getAllByRole('button', { name: /^Add / })
+      .getAllByRole('button', { name: /^Mount / })
       .map((button) => button.textContent);
     expect(names.slice(0, 4)).toEqual([
       'cascadia-web',
@@ -109,6 +109,6 @@ describe('the settings projects scenes', () => {
       'notify-relay',
       'payments-api',
     ]);
-    fireEvent.click(screen.getByRole('button', { name: 'Add acme-infra' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mount acme-infra' }));
   });
 });

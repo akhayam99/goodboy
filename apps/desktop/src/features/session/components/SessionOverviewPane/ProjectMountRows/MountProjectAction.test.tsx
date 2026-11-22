@@ -36,7 +36,7 @@ const project = ({ id, name }: { readonly id: string; readonly name: string }) =
 });
 
 const openPicker = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Mount a folder' }));
 };
 
 describe('MountProjectAction', () => {
@@ -56,7 +56,7 @@ describe('MountProjectAction', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Mount a folder' })).toBeDefined();
   });
 
   it('tells the workspace has no projects and offers to connect one in the same picker', () => {
@@ -71,7 +71,7 @@ describe('MountProjectAction', () => {
     openPicker();
 
     expect(screen.getByText('This workspace has no folder yet.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Choose a folder…' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Add workspace project' })).toBeNull();
   });
 
@@ -90,8 +90,8 @@ describe('MountProjectAction', () => {
 
     openPicker();
     expect(screen.queryByRole('button', { name: 'Project actions' })).toBeNull();
-    expect(screen.getByText('Every workspace folder is already in this session.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
+    expect(screen.getByText('Every workspace folder is already mounted.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Choose a folder…' })).toBeDefined();
   });
 
   it('lists an unmounted project for mounting', () => {
@@ -105,7 +105,7 @@ describe('MountProjectAction', () => {
     );
     openPicker();
 
-    expect(screen.getByRole('button', { name: 'Add API' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Mount API' })).toBeDefined();
   });
 
   it('puts starred projects at the top of the picker', () => {
@@ -124,8 +124,8 @@ describe('MountProjectAction', () => {
 
     expect(
       screen
-        .getAllByRole('button', { name: /^Add (ledger-core|notify-relay)$/ })
+        .getAllByRole('button', { name: /^Mount (ledger-core|notify-relay)$/ })
         .map((button) => button.getAttribute('aria-label')),
-    ).toEqual(['Add ledger-core', 'Add notify-relay']);
+    ).toEqual(['Mount ledger-core', 'Mount notify-relay']);
   });
 });

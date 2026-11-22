@@ -720,7 +720,6 @@
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/mountActionFailure.ts": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountActionsMenu.tsx": 2,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/mountFailure.ts": 1,
-    "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/RebaseStoppedNotice.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/SessionCostChip.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/UnassignedNote.tsx": 1,

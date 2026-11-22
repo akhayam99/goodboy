@@ -78,7 +78,7 @@ export const MountPreflightCard = ({
   const activity = activityLabel({ project, status: state.status, isBusy });
 
   return (
-    <section aria-label={`Add ${project.name}`} className="flex flex-col gap-2 px-3 py-2">
+    <section aria-label={`Mount ${project.name}`} className="flex flex-col gap-2 px-3 py-2">
       <header className="flex min-w-0 items-center gap-2">
         <GlyphIcon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
         <span className="min-w-0 truncate text-body text-foreground">{project.name}</span>
@@ -156,7 +156,7 @@ export const MountPreflightCard = ({
           disabled={isBusy || isPending || preflight === null}
           isBusy={isBusy}
         >
-          {failure === null ? 'Add project' : 'Retry'}
+          {failure === null ? `Mount ${project.name}` : 'Retry'}
         </Button>
       </FormActions>
     </section>

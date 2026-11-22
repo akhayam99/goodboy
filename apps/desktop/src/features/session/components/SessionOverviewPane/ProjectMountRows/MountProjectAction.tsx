@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FolderPlus } from '@goodboy/ui/icons';
 import { AnchoredPopover, Button, ICON_SIZE, IconButton, useDropdown } from '@goodboy/ui';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { SessionEvent, SessionId, WorkspaceId } from '@goodboy/types';
+import { pendingMountProposals } from '../../../../../store/slices/project-mounts/materializationProposals';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../../store';
 import { MountProjectList } from './MountProjectList';
@@ -17,7 +18,9 @@ type Props = {
   readonly presentation?: 'icon' | 'button' | 'add';
 };
 
-const LABEL = NAMES.addProject;
+const LABEL = NAMES.mountAFolder;
+
+const NO_EVENTS: ReadonlyArray<SessionEvent> = [];
 
 export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'icon' }: Props) => {
   const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 320 });
@@ -34,6 +37,11 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
     }),
   );
   const recentIds = useRecentProjectIds({ workspaceId });
+  const events = useAppStore((state) => state.sessionEvents?.[sessionId] ?? NO_EVENTS);
+  const requestedIds = useMemo(
+    () => pendingMountProposals({ events }).map((proposal) => proposal.projectId),
+    [events],
+  );
   const hasWorkspaceProjects = useAppStore((state) =>
     state.projects.some((project) => project.workspaceId === workspaceId),
   );
@@ -66,7 +74,7 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
           />
         ) : (
           <Button
-            variant="ghost"
+            variant="quiet"
             size="sm"
             aria-label={LABEL}
             aria-haspopup="dialog"
@@ -85,9 +93,10 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
           workspaceId={workspaceId}
           projects={availableProjects}
           recentIds={recentIds}
+          requestedIds={requestedIds}
           emptyHint={
             hasWorkspaceProjects
-              ? 'Every workspace folder is already in this session.'
+              ? 'Every workspace folder is already mounted.'
               : 'This workspace has no folder yet.'
           }
           onDone={() => {

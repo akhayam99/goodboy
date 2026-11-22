@@ -20,6 +20,9 @@ export const SessionLevel = ({ session, isActive }: Props) => {
   const isBranchless = useAppStore((state) =>
     isBranchlessSession({ branch: state.sessionBranches[sessionId] }),
   );
+  const hasRepoMount = useAppStore((state) =>
+    (state.sessionProjectMounts[sessionId] ?? []).some((mount) => mount.branch !== ''),
+  );
 
   return (
     <div data-session-level="" className={cn('flex min-w-0 flex-col', PANE_RHYTHM.block)}>
@@ -32,11 +35,10 @@ export const SessionLevel = ({ session, isActive }: Props) => {
         <LevelSkeleton />
       ) : (
         <div data-level-cards="" className={cn('flex flex-col', PANE_RHYTHM.block)}>
-          {isBranchless ? (
-            <LevelFolder session={session} />
-          ) : (
+          {isBranchless ? <LevelFolder session={session} /> : null}
+          {!isBranchless || hasRepoMount ? (
             <LevelProjects session={session} isActive={isActive} />
-          )}
+          ) : null}
           <LevelLinked session={session} isActive={isActive} />
         </div>
       )}

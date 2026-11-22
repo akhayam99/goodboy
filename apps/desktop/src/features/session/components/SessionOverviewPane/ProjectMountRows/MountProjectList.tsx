@@ -19,24 +19,30 @@ import {
 } from '../../../../../store/slices/sessions/branchChoiceSeeds';
 import { projectGlyph } from '../../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../../shared/utils/names';
-import { shouldGroupStarred } from '../../../../../shared/utils/shouldGroupStarred';
-import { projectPickerGroups } from '../../../../../shared/components/ProjectPicker/projectPickerGroups';
 import { MountPreflightCard } from './MountPreflightCard';
+import { mountPickerGroups } from './mountPickerGroups';
 import { mountFailure, type MountFailure } from './mountFailure';
 import { useMountPreflight } from './useMountPreflight';
 import { projectById } from '../../../../../store/slices/projects/projectIndex';
 import { ConnectProjectRow } from './ConnectProjectRow';
+import { mountWithUndo } from './mountWithUndo';
 
-const MANUAL_REASON = 'added manually by the user';
 const SEARCH_THRESHOLD = 8;
+const NO_IDS: ReadonlyArray<ProjectId> = [];
 
 type Props = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
   readonly projects: ReadonlyArray<Project>;
   readonly recentIds: ReadonlyArray<ProjectId>;
+  readonly requestedIds?: ReadonlyArray<ProjectId>;
   readonly emptyHint: string;
   readonly onDone: () => void;
+};
+
+type MountParams = {
+  readonly project: Project;
+  readonly isAdded: boolean;
 };
 
 export const MountProjectList = ({
@@ -44,15 +50,19 @@ export const MountProjectList = ({
   workspaceId,
   projects,
   recentIds,
+  requestedIds = NO_IDS,
   emptyHint,
   onDone,
 }: Props) => {
   const ensureProjectMounted = useAppStore((state) => state.ensureProjectMounted);
+  const detachProject = useAppStore((state) => state.detachProject);
+  const removeProject = useAppStore((state) => state.removeProject);
   const emitNotification = useAppStore((state) => state.emitNotification);
   const [query, setQuery] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState<Project['id'] | null>(null);
   const [choice, setChoice] = useState<string | null>(null);
   const [isMounting, setIsMounting] = useState(false);
+  const [addedId, setAddedId] = useState<ProjectId | null>(null);
   const [failure, setFailure] = useState<MountFailure | null>(null);
   const isSearchable = projects.length > SEARCH_THRESHOLD;
   const filtered = useMemo(
@@ -60,46 +70,46 @@ export const MountProjectList = ({
     [projects, query],
   );
   const isQueryEmpty = query.trim() === '';
-  const groups = useMemo(() => {
-    const { starred, recent, all } = projectPickerGroups({ projects: filtered, recentIds });
-    const isGrouped =
-      isQueryEmpty &&
-      shouldGroupStarred({ starredCount: starred.length + recent.length, total: projects.length });
-    if (!isGrouped) {
-      return [{ key: 'all', label: null, projects: [...starred, ...recent, ...all] }];
-    }
-    return [
-      { key: 'starred', label: 'Starred', projects: starred },
-      { key: 'recent', label: 'Recent', projects: recent },
-      { key: 'other', label: 'Other projects', projects: all },
-    ].filter((group) => group.projects.length > 0);
-  }, [filtered, recentIds, isQueryEmpty, projects.length]);
+  const groups = useMemo(
+    () =>
+      mountPickerGroups({
+        filtered,
+        total: projects.length,
+        recentIds,
+        requestedIds,
+        isQueryEmpty,
+      }),
+    [filtered, recentIds, requestedIds, isQueryEmpty, projects.length],
+  );
   const selectedProject = projectById(projects, selectedProjectId) ?? null;
   const preflightState = useMountPreflight({ sessionId, project: selectedProject, choice });
 
-  const mountProject = async ({ project }: { readonly project: Project }) => {
-    const { preflight } = preflightState;
+  const mountProject = async ({ project, isAdded }: MountParams) => {
+    const preflight = isAdded ? null : preflightState.preflight;
     setIsMounting(true);
     setFailure(null);
     try {
-      await ensureProjectMounted({
+      await mountWithUndo({
         sessionId,
-        projectId: project.id,
-        reason: MANUAL_REASON,
-        ...(preflight === null
-          ? {}
-          : {
-              mountId: preflight.mountId,
-              dirName: preflight.targetPath.split('/').at(-1),
-              ...(preflight.branch === null || preflight.isExistingBranch
-                ? {}
-                : { branch: preflight.branch }),
-            }),
+        project,
+        isAdded,
+        store: { ensureProjectMounted, detachProject, removeProject },
+        options:
+          preflight === null
+            ? {}
+            : {
+                mountId: preflight.mountId,
+                dirName: preflight.targetPath.split('/').at(-1),
+                ...(preflight.branch === null || preflight.isExistingBranch
+                  ? {}
+                  : { branch: preflight.branch }),
+              },
       });
       setQuery('');
       setSelectedProjectId(null);
       onDone();
     } catch (error) {
+      setSelectedProjectId(project.id);
       setFailure(mountFailure({ error, project, preflight }));
       void emitNotification({
         kind: 'error',
@@ -121,7 +131,9 @@ export const MountProjectList = ({
         state={preflightState}
         isBusy={isMounting}
         failure={failure}
-        onConfirm={() => void mountProject({ project: selectedProject })}
+        onConfirm={() =>
+          void mountProject({ project: selectedProject, isAdded: selectedProject.id === addedId })
+        }
         onCancel={() => {
           setFailure(null);
           setSelectedProjectId(null);
@@ -141,7 +153,7 @@ export const MountProjectList = ({
             branch: preflight.branch,
             worktreePath: preflight.checkedOutAt,
           });
-          void mountProject({ project: selectedProject });
+          void mountProject({ project: selectedProject, isAdded: selectedProject.id === addedId });
         }}
         onNewBranch={() => {
           rememberNewBranchChoice({ sessionId });
@@ -185,7 +197,7 @@ export const MountProjectList = ({
                     <li key={project.id}>
                       <button
                         type="button"
-                        aria-label={`Add ${project.name}`}
+                        aria-label={`Mount ${project.name}`}
                         onClick={() => {
                           setFailure(null);
                           setSelectedProjectId(project.id);
@@ -222,8 +234,8 @@ export const MountProjectList = ({
         <ConnectProjectRow
           workspaceId={workspaceId}
           onConnected={(project) => {
-            setFailure(null);
-            setSelectedProjectId(project.id);
+            setAddedId(project.id);
+            void mountProject({ project, isAdded: true });
           }}
         />
       </PopoverPin>

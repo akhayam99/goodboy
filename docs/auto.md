@@ -2125,8 +2125,8 @@ of the workspace that is not added yet (`refusalMountNote`), and the project is 
 "To do this, add payments-api", one line ("A worktree on ak/feat-new-explore is created from
 main."), the primary **Add payments-api** (the button reads "Adding payments-api" while it
 runs, a failure keeps the card with the reason), then **Add project**, **Answer without a
-project** and **Decline**. The screens say "add", never "mount" (the `jargon-copy` guard
-bans it); the block, the port and the code keep `mount`. The click mounts on the named branch and
+project** and **Decline**. This card says "add"; the `jargon-copy` guard bans the noun
+"mount" on screen, and the block, the port and the code keep `mount`. The click mounts on the named branch and
 sends Auto "Added payments-api on ak/feat-new-explore. Go on with my request.", so nothing is
 retyped. A mount done at once (Never, or After the plan inside the allowance) draws one line,
 "Added payments-api on ak/feat-new-explore" (`mountedLineOf`), until Auto's next turn takes the row. Otherwise
