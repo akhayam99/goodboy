@@ -38,6 +38,7 @@
         "src/features/live-state/workOf.ts": ["files"],
         "src/features/plans/planPartsLeftOf.ts": ["files"],
         "src/features/session/ask/askAnswerOriginOf.ts": ["files"],
+        "src/features/session/ask/askLineReplyIdOf.ts": ["files"],
         "src/features/session/ask/askLineReplyOf.ts": ["files"],
         "src/features/session/ask/AskSessionAnswer.ts": ["files"],
         "src/features/session/ask/askStarterOf.ts": ["files"],
