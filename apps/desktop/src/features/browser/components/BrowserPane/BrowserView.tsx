@@ -8,6 +8,7 @@ import type { CoverReason } from '../../createOverlayWatch';
 import { devicePresetOf } from '../../devicePresets';
 import { BrowserCover } from './BrowserCover';
 import { BrowserDeviceFrame } from './BrowserDeviceFrame';
+import { BrowserParkedTab } from './BrowserParkedTab';
 import { BrowserViewStandIn } from './BrowserViewStandIn';
 
 type Props = {
@@ -18,6 +19,7 @@ type Props = {
   readonly cover: CoverReason | null;
   readonly devicePreset?: DevicePresetId;
   readonly onNew?: () => void;
+  readonly onWake?: () => void;
 };
 
 export const BrowserView = ({
@@ -28,10 +30,15 @@ export const BrowserView = ({
   cover,
   devicePreset = 'desktop',
   onNew,
+  onWake,
 }: Props) => {
   const width = devicePresetOf({ id: devicePreset }).width;
+  const parked =
+    shown !== null && onWake !== undefined ? (
+      <BrowserParkedTab tab={shown.tab} onWake={onWake} />
+    ) : null;
   const page =
-    shown === null ? null : (
+    shown === null || parked !== null ? null : (
       <div
         ref={view}
         data-browser-view={shown.tab.id}
@@ -48,7 +55,8 @@ export const BrowserView = ({
       ref={frame}
       className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border-soft bg-background"
     >
-      {page === null ? (
+      {parked}
+      {page === null && parked === null ? (
         <div className="flex min-h-0 flex-1 items-center justify-center p-6">
           <EmptyState
             icon={CONCEPT_ICONS.browser}

@@ -516,6 +516,16 @@ it; Esc inside the page goes to the page.
   hidden. A pane lists once when it opens and once when it comes back on
   screen. A list answer for a session the pane has left is dropped, and the
   host reads no address from a tab that is asleep.
+- **Coming back**: the Browser belongs to the session it was opened in, so
+  leaving the session parks it and its tab sleeps. A pane that mounts again
+  asks the host once about the shown tab (`useParkedTab`) and places nothing
+  until the answer. A tab the engine closed while the pane was away (ten
+  minutes hidden, or the live cap) is not reopened on its own: the pane shows
+  `localhost:4010 · asleep`, "The page closed while you were away. It reloads
+  at its address." and **Wake**. Wake shows the tab, which builds the webview
+  again at its stored address, so the page loads again. A tab that is only
+  asleep comes back as it was, with no card, and a failed ask shows the tab as
+  before. The promise is honest: the address comes back, the page may reload.
 - **Placement**: one loop (`createNativePlacement`) owns show, hide and
   `set_bounds`. Every frame, and whenever the view's frame changes size, it
   measures the placeholder (`viewBoundsOf`) and wants the shown tab at that
@@ -1177,7 +1187,10 @@ words (`features/browser/browserFailureText.ts`).
   through `browser_tab_open_local` with its path in the row, moves the shown
   tab with `browser_tab_navigate_local`, shows the words for a missing file,
   and places the view lower when the address error grows the chrome with no
-  frame running. `createOverlayWatch.test.ts` pins
+  frame running. `components/BrowserPane/parked.test.tsx` pins the pane that
+  comes back: the asleep card and nothing shown until Wake, a tab only asleep
+  shown with no card, and a failed ask that shows the tab.
+  `createOverlayWatch.test.ts` pins
   the cover check for a popover with no role, for tooltips and for a page view
   under an overlay dock, and the reason per overlay kind. The mock scene
   `browser-pane-cover` (light and dark) opens a menu over the page.
