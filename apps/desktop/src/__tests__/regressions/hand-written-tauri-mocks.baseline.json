@@ -38,6 +38,7 @@
   "apps/desktop/src/__tests__/surfaces/navigation-flows/overview.test.tsx": 1,
   "apps/desktop/src/__tests__/surfaces/navigation-flows/palette-destinations.test.tsx": 1,
   "apps/desktop/src/__tests__/surfaces/navigation-flows/pins.test.tsx": 1,
+  "apps/desktop/src/__tests__/surfaces/navigation-flows/queue.test.tsx": 1,
   "apps/desktop/src/__tests__/surfaces/navigation-flows/plan-drawer.test.tsx": 1,
   "apps/desktop/src/__tests__/surfaces/navigation-flows/plan-revising.test.tsx": 1,
   "apps/desktop/src/__tests__/surfaces/navigation-flows/plan-store.test.tsx": 1,

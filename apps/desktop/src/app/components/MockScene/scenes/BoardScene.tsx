@@ -25,6 +25,7 @@ import type {
 } from '@goodboy/types';
 import { StageBoard } from '../../../../features/workspace/components/StageBoard';
 import { useAppStore, useSessions } from '../../../../store';
+import { PLACE_ROWS } from '../../../../store/slices/navigation/placeRows';
 
 export const WORKSPACE_ID = 'mock-board-workspace-harborline' as WorkspaceId;
 const CORE_ID = 'mock-board-project-payments-api' as ProjectId;
@@ -575,6 +576,19 @@ const EXTERNAL_TASKS: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTa
 
 export const seedBoardScene = (): void => {
   useAppStore.setState({
+    navigation: {
+      [WORKSPACE_ID]: {
+        entries: [
+          {
+            workspaceId: WORKSPACE_ID,
+            place: { at: 'board' },
+            studio: null,
+            focus: { drawer: null, scroll: {}, returnRows: { [PLACE_ROWS.boardLayout]: 'stages' } },
+          },
+        ],
+        index: 0,
+      },
+    },
     workspaces: [WORKSPACE],
     currentWorkspaceId: WORKSPACE_ID,
     currentSessionId: null,

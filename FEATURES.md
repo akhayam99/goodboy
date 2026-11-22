@@ -59,12 +59,13 @@ Open a session to see what it is for, what needs you and what happened so far.
 
 [More on overview and activity](docs/features/overview.md)
 
-<a id="stage-board"></a><a id="session-card"></a><a id="list-view"></a><a id="done-and-archived-dock"></a><a id="done-and-archived-lanes"></a><a id="bulk-select"></a>
+<a id="queue"></a><a id="stage-board"></a><a id="session-card"></a><a id="list-view"></a><a id="done-and-archived-dock"></a><a id="done-and-archived-lanes"></a><a id="bulk-select"></a>
 
 ## The board
 
-The board shows every session of a workspace in lanes by stage, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes.
+The board shows every session of a workspace, as a queue of what waits on you or in lanes by stage, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes.
 
+- **Queue**: Act on what waits without opening each session.
 - **Stage board**: See where each task stands without moving cards around.
 - **Session card**: Read a task at a glance: its title on two lines, its project in gray, and one signal at the right.
 

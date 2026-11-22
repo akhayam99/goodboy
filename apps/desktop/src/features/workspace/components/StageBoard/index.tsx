@@ -36,6 +36,9 @@ import { SessionsHeader } from './SessionsHeader';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { useClearSessionFilters } from './useClearSessionFilters';
+import { BoardLayoutSwitch } from './BoardLayoutSwitch';
+import { QueueBoard } from '../../../board/queue/QueueBoard';
+import { useBoardPage } from '../../../board/queue/QueueBoard/useBoardPage';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -47,6 +50,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const needsYou = useNeedsYouElsewhere({ workspaceId, sessions });
   const clearFilters = useClearSessionFilters({ workspaceId });
   const nav = useBoardNavigation();
+  const page = useBoardPage();
   const hover = useHoverCardTarget();
   const archivedList = useAppStore((s) => s.archivedSessions[workspaceId]);
   const archived = archivedList ?? EMPTY_ARRAY;
@@ -161,6 +165,11 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           hiddenCount={pending || empty ? 0 : hiddenCount}
           needsYouElsewhere={pending || empty ? 0 : needsYou.elsewhere}
           onClearFilters={clearFilters}
+          layoutSwitch={
+            pending || empty ? null : (
+              <BoardLayoutSwitch layout={page.layout} onChange={page.setLayout} />
+            )
+          }
         >
           {!pending && hasProjects && empty && <SetupCard isMainWindow={isMainWindow} />}
 
@@ -187,7 +196,13 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             />
           )}
 
-          {!pending && !empty && (
+          {!pending && !empty && page.layout === 'queue' && (
+            <BoardFactsFrame workspaceId={workspaceId}>
+              <QueueBoard workspaceId={workspaceId} sessions={sessions} />
+            </BoardFactsFrame>
+          )}
+
+          {!pending && !empty && page.layout === 'stages' && (
             <BoardFactsFrame workspaceId={workspaceId}>
               <BoardLanes
                 layout={layout}

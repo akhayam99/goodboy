@@ -305,6 +305,12 @@ export const settle = async (rounds = 4): Promise<void> => {
   }
 };
 
+export const showStages = async (): Promise<void> => {
+  const tab = await screen.findByRole('tab', { name: 'Stages' }, { timeout: 5_000 });
+  fireEvent.click(tab);
+  await settle();
+};
+
 export const pressBoardKey = async (): Promise<void> => {
   const anchor = await screen.findByRole('button', { name: /^Search or run \(/ });
   anchor.focus();

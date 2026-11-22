@@ -1,5 +1,14 @@
 // @vitest-environment happy-dom
 
+vi.mock('../../../board/queue/QueueBoard/useBoardPage', () => ({
+  useBoardPage: () => ({
+    layout: 'stages',
+    focusedMoveId: null,
+    setLayout: () => undefined,
+    setFocusedMove: () => undefined,
+  }),
+}));
+
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
 );

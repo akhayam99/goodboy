@@ -1,6 +1,18 @@
 # The board
 
-The Board shows every session of a workspace, as a board in lanes by stage, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes. Sessions in the top bar lists the same sessions, so the page stays a board. Open a session and come back: the board is as you left it, with the same scroll and the same cards selected.
+The Board shows every session of a workspace in one of two layouts. **Queue** lists what waits on you, every agent at work and what is ready to merge. **Stages** puts the sessions in lanes by stage, so you see where each task stands. **Queue | Stages** sits in the Board head. The Board opens on Queue from the places rail and in a new window; Back returns the layout it had, and a reload keeps it. Sessions in the top bar lists the same sessions, so the page stays a board. Open a session and come back: the board is as you left it, with the same scroll and the same cards selected.
+
+### Queue
+
+Act on what waits without opening each session. Three bands sit on one screen.
+
+- **Needs you** is a pile of moves, the oldest wait first. The focused move is a card with the one filled button; the others are rows. Answer a question with a choice or a line of text on the spot. A permission or a plan opens its page. **Not now** puts a move off with Undo, and **Show 1 hidden** brings it back. With nothing left it says "Nothing waits on you."
+- **Running** has one row per agent of every session, under its session: the agent, what it is doing, the project and how long it has run. The phrase changes every few seconds, never every second. Click a row or press Space to peek: the two steps before the current one and a field to message the agent, without opening the session.
+- **Ready to merge** lists the pull requests approved with green checks, with no count beside the title. With none it says "Nothing to merge". An approved pull request with green checks waits here, not in Needs you.
+
+An answer or a message waits ten seconds before it goes out. The toast offers **Undo**, and **⌘Z** outside a field does the same, so the agent never sees an answer you took back. Meanwhile the agent's row says "Answer queued". If the question was answered elsewhere first, the toast says so and nothing is sent.
+
+The keyboard works one band at a time. **F6** passes to the next band. **J**, **K** and the arrows move inside it. In Needs you, **Enter** is the filled button, **1** and **2** pick a choice, **→** opens the session with the move on top and **S** is Not now. In Running, Space opens the peek, **Esc** closes it and **→** opens the agent. In Ready to merge, **→** opens the pull request. Letters type as usual in a field.
 
 ### Stage board
 
@@ -51,3 +63,8 @@ This part is for contributors and agents who change the feature.
 - Card signal: `boardSignalOf` reads `attentionWordsOf`, so a new reason needs no second table.
 - Card action in **Needs you**: `attentionPlace` is the place the top bar chip opens.
 - Waiting run: `waitingRunOf` names the run `attentionPlace` opens for the same reason, and `leadWaitWordsOf` gives a Lead its words and its button.
+- Layout: `useBoardPage` keeps the layout and the focused move in the history entry (`PLACE_ROWS.boardLayout`, `PLACE_ROWS.boardMove`), so Back and a reload find them and a new entry starts on Queue. It writes only while the entry is the Board. `BoardLayoutSwitch` draws the control; `StageBoard` swaps `QueueBoard` and `BoardLanes`.
+- Needs you count: `needsYouOf` counts the sessions with `attentionCountOf`, the count the places rail uses, and turns each loud reason into moves, one per open question. `pr-approved` stays out and lands in `readyToMergeOf`. Tested in `needsYouOf.test.ts`.
+- Answer and message: `useQueueActions` queues them in `useQueueSends` for `UNDO_WINDOW_MS` and registers an `undoable` operation, so the toast and ⌘Z cancel the timer. At the end the question is read again and an answered one is skipped. Leaving the window sends what waits (`pagehide`). Tested in `useQueueSends/index.test.ts` and `queue.rows.tsx`.
+- Running: `useFleetWork` reads `live_work` for every session at most every ten seconds (`FLEET_EVERY_MS`); `earlierStepsOf` keeps the two steps before the current one for the peek.
+- Keys: `queueKeyOf` maps a key and the active band to one command (`queueKeyOf.test.ts`). `queueLandingOf` sends a question, a permission or a plan to the session overview and the rest to `attentionPlace`.

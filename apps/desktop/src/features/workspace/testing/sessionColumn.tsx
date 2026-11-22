@@ -14,6 +14,7 @@ import type {
 } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import type { MountGithubState, SessionGithubState } from '../../../store/types';
+import { PLACE_ROWS } from '../../../store/slices/navigation/placeRows';
 import { stubStoryInvoke, type StoryStore } from '../../../store/storyHarness';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { StageBoard } from '../components/StageBoard';
@@ -239,6 +240,20 @@ const READY_STATUS: WorkspaceGitStatus = {
 
 export const renderBoard = ({ store }: BoardParams) => {
   store.setState((state) => ({
+    navigation: {
+      ...state.navigation,
+      [harborline.id]: {
+        entries: [
+          {
+            workspaceId: harborline.id,
+            place: { at: 'board' },
+            studio: null,
+            focus: { drawer: null, scroll: {}, returnRows: { [PLACE_ROWS.boardLayout]: 'stages' } },
+          },
+        ],
+        index: 0,
+      },
+    },
     boardReady: true,
     projects: state.projects.map((project) => ({
       ...project,
