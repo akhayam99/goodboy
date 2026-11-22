@@ -295,7 +295,7 @@ describe('SessionOverviewPane', () => {
     fireEvent.change(field, { target: { value: 'x'.repeat(121) } });
     fireEvent.keyDown(field, { key: 'Enter' });
 
-    expect((await screen.findByRole('alert')).textContent).toBe('name is too long');
+    expect((await screen.findByRole('alert')).textContent).toBe('Name is too long');
     expect(renameSession).not.toHaveBeenCalled();
     expect(useAppStore.getState().sessions[0]?.goal).toBe(SESSION.goal);
     expect(screen.getByRole('textbox', { name: 'Session title' })).toBeDefined();

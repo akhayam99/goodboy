@@ -32,7 +32,7 @@ Connect your trackers, code hosts and Slack once. Their work lands in one list c
 
 [More on tasks and your tools](docs/features/inbox.md)
 
-<a id="start-a-run"></a><a id="what-auto-chose-and-change"></a><a id="one-start-form"></a><a id="the-kind-chip"></a><a id="the-model-of-a-run"></a><a id="the-new-session-page"></a><a id="start-on-a-task"></a><a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a><a id="the-start-work-composer"></a><a id="permission-rows"></a>
+<a id="start-a-run"></a><a id="what-auto-chose-and-change"></a><a id="one-start-form"></a><a id="the-kind-chip"></a><a id="the-model-of-a-run"></a><a id="the-new-session-page"></a><a id="start-on-a-task"></a><a id="start-from-a-task"></a><a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a><a id="the-start-work-composer"></a><a id="permission-rows"></a>
 
 ## Start a task
 
@@ -40,7 +40,7 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 - **The New session page**: Start a session from your goal: write it or pick an issue, then choose the kind of run.
 - **Start a run**: Write what you want done and press Start.
-- **Start on a task**: Start a session from an issue in Tasks, with the issue linked and its goal written in.
+- **Start from a task**: Start a session from an issue in Tasks, with the issue linked and its goal written in.
 - **Permission rows**: A Lead's autonomy is nine rows you can read and change.
 - **Review a pull request**: A pull request waiting on you in Tasks shows Review pull request in place of Start.
 
@@ -83,7 +83,7 @@ Move between the tasks of a workspace without losing your place, and see from an
 
 [More on switching between tasks](docs/features/switching.md)
 
-<a id="resolve"></a><a id="hints-when-a-fix-starts"></a><a id="bulk-actions"></a><a id="review-sources"></a><a id="comment-states"></a><a id="run-from-a-comment"></a><a id="failed-drafts"></a><a id="see-what-a-resolve-did"></a><a id="fixes-already-on-the-branch"></a><a id="a-fix-that-went-missing"></a><a id="close-on-github"></a><a id="review-replies-in-your-voice"></a><a id="fixes-on-a-branch-that-moved"></a><a id="squash-and-fold-the-resolve-commits"></a><a id="notes-before-a-pull-request"></a><a id="github-pull-request-page"></a><a id="pull-request-diff-and-review-as-layers"></a><a id="write-it-for-me"></a><a id="write-it"></a><a id="pr-description-follows-the-push"></a><a id="diff"></a><a id="write-review"></a><a id="read-the-code"></a><a id="pull-request-on-the-branch-page"></a><a id="one-trail-to-the-branch-page"></a><a id="work-behind-a-branch"></a>
+<a id="resolve"></a><a id="hints-when-a-fix-starts"></a><a id="bulk-actions"></a><a id="review-sources"></a><a id="comment-states"></a><a id="run-from-a-comment"></a><a id="failed-drafts"></a><a id="see-what-a-resolve-did"></a><a id="fixes-already-on-the-branch"></a><a id="a-fix-that-went-missing"></a><a id="close-on-github"></a><a id="push-fixes-and-replies"></a><a id="review-replies-in-your-voice"></a><a id="replies-in-your-voice"></a><a id="fixes-on-a-branch-that-moved"></a><a id="squash-and-fold-the-resolve-commits"></a><a id="notes-before-a-pull-request"></a><a id="github-pull-request-page"></a><a id="pull-request-diff-and-review-as-layers"></a><a id="write-it-for-me"></a><a id="write-it"></a><a id="pr-description-follows-the-push"></a><a id="diff"></a><a id="write-review"></a><a id="read-the-code"></a><a id="pull-request-on-the-branch-page"></a><a id="one-trail-to-the-branch-page"></a><a id="work-behind-a-branch"></a>
 
 ## Review and resolve on the Branch page
 
@@ -92,7 +92,7 @@ The Branch page holds one branch: its pull request, review comments, changed fil
 - **Resolve**: Turn review comments into commits without writing the fixes yourself.
 - **Review sources**: Read pull request comments and your own notes in one list in the Comments section.
 - **Run from a comment**: A comment that asks for a rework starts a run instead of a quick fix.
-- **Close on GitHub**: Finish a review with Push N fixes in the Branch header.
+- **Push fixes and replies**: Finish a review with Push N commits in the Branch header.
 - **Read the code**: Read the branch against its base in Changes, unified or split.
 
 [More on review and resolve on the branch page](docs/features/review.md)
@@ -109,14 +109,14 @@ The Commits section of the Branch page lets you clean up a branch before it goes
 
 [More on commits and history](docs/features/branch-history.md)
 
-<a id="start-a-workflow"></a><a id="workflow-builder"></a><a id="orchestrated"></a><a id="older-runs"></a><a id="a-preset-as-the-plan-a-run-starts-from"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="runs-of-a-workflow"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="asks-you"></a><a id="pause-resume-and-skip"></a><a id="steps-that-cannot-finish"></a><a id="run-defaults"></a><a id="runs-in-settings"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
+<a id="start-a-workflow"></a><a id="run-a-preset"></a><a id="workflow-builder"></a><a id="orchestrated"></a><a id="older-runs"></a><a id="a-preset-as-the-plan-a-run-starts-from"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="runs-of-a-workflow"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="asks-you"></a><a id="pause-resume-and-skip"></a><a id="steps-that-cannot-finish"></a><a id="run-defaults"></a><a id="runs-in-settings"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
 
 ## Workflows
 
 A workflow runs several agents in one session, each step with its own role, model and effort. Use it to split a job into steps such as scout, plan, implement and review, and to steer the run while it goes. You choose how much it asks you and how much it may spend.
 
-- **Start a workflow**: To run a preset, open Start a run and pick Preset under How, or type ~ and its name.
-- **Older runs**: A run started before every run had a Lead stays as it was, on its own engine.
+- **Run a preset**: To run a preset, open Start a run and pick Preset under How, or type ~ and its name.
+- **Older runs**: A run started before every run had a Lead stays as it was.
 - **Runs in Settings**: Set what every new run starts with on the Runs page in Settings.
 - **Workflow run**: Follow a run step by step, with its sub-agents under their agent and one button that moves it on.
 - **Limit**: Cap what a run or a session can spend, and choose Pause workflows or Warn only.

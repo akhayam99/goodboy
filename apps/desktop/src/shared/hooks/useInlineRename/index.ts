@@ -45,7 +45,7 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
     }
     const next = draft.trim();
     if (next === '') {
-      setError('name cannot be empty');
+      setError("Name can't be empty");
       setCanRetry(false);
       return;
     }
@@ -54,7 +54,7 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
       return;
     }
     if (maxLength !== undefined && next.length > maxLength) {
-      setError('name is too long');
+      setError('Name is too long');
       setCanRetry(false);
       return;
     }

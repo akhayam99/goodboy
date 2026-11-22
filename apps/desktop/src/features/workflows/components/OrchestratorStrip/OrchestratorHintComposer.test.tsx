@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { OrchestratorHintDraft } from '../../../../store/slices/workflows/addWorkflowOrchestratorHint';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { OrchestratorHintComposer } from './OrchestratorHintComposer';
 
 afterEach(cleanup);
@@ -123,6 +124,16 @@ describe('OrchestratorHintComposer', () => {
       expect(screen.getByRole('tab', { name: 'Preview' })).toBeDefined();
       expect(screen.getByTestId('orchestrator-hint-queue')).toBeDefined();
       expect(screen.getByTestId('orchestrator-hint-now')).toBeDefined();
+    });
+
+    it('names the read now key on its button, so it stays reachable when the key row hides', () => {
+      mount();
+
+      fireEvent.focus(field());
+
+      expect(screen.getByTestId('orchestrator-hint-now').textContent).toContain(
+        shortcutGlyphs('composer.submit'),
+      );
     });
 
     it('closes again when focus leaves an empty field', () => {

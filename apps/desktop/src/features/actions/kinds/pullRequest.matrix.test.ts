@@ -218,3 +218,21 @@ describe('pull request, Scribe writing the text', () => {
     ).toEqual(['pullRequest.create primary (Scribe is still writing the text.)']);
   });
 });
+
+type LabelParams = {
+  readonly host: PullRequestFacts['host'];
+};
+
+describe('pull request, the create label', () => {
+  it('names the request the way its host does', () => {
+    const create = definitions.find((definition) => definition.id === 'pullRequest.create');
+    const labelOf = ({ host }: LabelParams) => {
+      const label = create?.label;
+      const state = facts({ host, phase: 'none', pr: null, number: null });
+      return typeof label === 'function' ? label({ facts: state }) : label;
+    };
+
+    expect(labelOf({ host: 'github' })).toBe('Create pull request');
+    expect(labelOf({ host: 'gitlab' })).toBe('Create merge request');
+  });
+});

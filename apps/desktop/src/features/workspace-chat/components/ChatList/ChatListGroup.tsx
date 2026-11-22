@@ -16,6 +16,11 @@ type GroupAction = {
   readonly onClick: () => void;
 };
 
+type PinParams = {
+  readonly chatId: ChatId;
+  readonly isPinned: boolean;
+};
+
 type Props = {
   readonly title: string;
   readonly rows: ReadonlyArray<ChatListGroupRow>;
@@ -23,7 +28,7 @@ type Props = {
   readonly checkedIds: ReadonlySet<ChatId>;
   readonly selection: ChatRowSelection;
   readonly onSelect: (chatId: ChatId) => void;
-  readonly onPin: (params: { readonly chatId: ChatId; readonly isPinned: boolean }) => void;
+  readonly onPin: (params: PinParams) => void;
   readonly onArchive: (chatId: ChatId) => void;
   readonly onDelete: (chatId: ChatId) => Promise<void>;
   readonly action?: GroupAction | null;

@@ -96,9 +96,9 @@ Goodboy checks origin before it pushes. A comment already fixed by a commit you 
 
 If a fix commit is no longer on the branch, for example after a squash done elsewhere, the comment reads **Fix went missing**. Goodboy asks git first, then can ask a read-only agent whether the fix is still needed. Nothing is closed or fixed without you.
 
-### Close on GitHub
+### Push fixes and replies
 
-Finish a review with **Push N fixes** in the Branch header. It covers the comments of the branch on screen, and the confirm names the repository (`Push 2 commits to hl/fix-duplicate-credit in payments-api?`) when the session has more than one. It always covers every ready comment. When nothing needs a decision it pushes on that click and says what went out in one line. Otherwise a preview counts the fixes, replies and threads to resolve and the one **Push** in it sends them to GitHub or GitLab. **Push only this one** in a comment's actions sends just that fix and hides while the preview is open. A reply with no code change goes out right away when no fix is waiting.
+Finish a review with **Push N commits** in the Branch header. It covers the comments of the branch on screen, and the confirm names the repository (`Push 2 commits to hl/fix-duplicate-credit in payments-api?`) when the session has more than one. It always covers every ready comment. When nothing needs a decision it pushes on that click and says what went out in one line. Otherwise a preview counts the fixes, replies and threads to resolve and the one **Push** in it sends them to GitHub or GitLab. **Push only this one** in a comment's actions sends just that fix and hides while the preview is open. A reply with no code change goes out right away when no fix is waiting.
 
 When a check of the repository stops the push, the failure card names the check and shows its first findings. **Fix with an agent** starts an agent on the same branch that fixes what the check reports without skipping it. The card follows that agent. It keeps following it when you leave the page and come back, or reload the window.
 
@@ -113,7 +113,7 @@ The page says so before you push if the worktree has no dependencies installed o
 
 <sub>Screenshot from Goodboy 0.40.1</sub>
 
-### Review replies in your voice
+### Replies in your voice
 
 Choose the tone of the replies the agent drafts: **Terse**, **Friendly**, **Formal** or **Like your replies**, which learns from your last 20 review replies on GitHub. **Learn from your replies** shows when at least one project of the workspace is on GitHub. Otherwise you write the style note yourself. You can always edit it.
 

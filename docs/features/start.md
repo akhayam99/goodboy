@@ -148,7 +148,7 @@ Under the task sits [one start form](#one-start-form).
 - A pin always wins. With a folder pinned, nothing else is mounted on start.
 - A Lead that has to write and finds no folder picks one the same way, inside the same allowance. It asks where it should work only when the task names no folder of the workspace or the allowance is spent.
 
-### Start on a task
+### Start from a task
 
 Start a session from an issue in Tasks, with the issue linked and its goal written in. **Start session** on an issue (or **Start from HBL-412** in its menu) opens the New session page. The issue sits above the goal field, and you can remove it with its ×. The goal is written in, and the kind is the one you started last.
 
@@ -226,7 +226,7 @@ Unlinking a task from a session acts at once, with a 10-second **Undo** toast, a
 
 ### Move an issue between the session and a branch
 
-Choose where an issue belongs with **Move to** in its chip menu: the session or one of the open branches of its project. You can also drag the chip onto a branch row, and hold Alt to copy it instead. Every move has one Undo.
+Choose where an issue belongs with **Move to** in its chip menu: the session or one of the open branches of its project. You can also drag the chip onto a branch row, and hold ⌥ to copy it instead. Every move has one Undo.
 
 A failed start keeps the goal and settings. Its cause appears above the form actions, and starting again retries. A missing provider offers Connect a provider; other failures offer Copy details.
 

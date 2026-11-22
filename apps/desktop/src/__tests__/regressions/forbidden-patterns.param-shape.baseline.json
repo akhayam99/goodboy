@@ -924,7 +924,6 @@
     "apps/desktop/src/features/workspace-chat/chatSessionEntries.ts": 1,
     "apps/desktop/src/features/workspace-chat/components/ChatComposer/ChatRoutingPicker.tsx": 1,
     "apps/desktop/src/features/workspace-chat/components/ChatList/ChatArchivedView.tsx": 2,
-    "apps/desktop/src/features/workspace-chat/components/ChatList/ChatListGroup.tsx": 1,
     "apps/desktop/src/features/workspace-chat/components/ChatList/ChatListRow.tsx": 5,
     "apps/desktop/src/features/workspace-chat/components/ChatList/index.tsx": 2,
     "apps/desktop/src/features/workspace-chat/components/ChatRoom/index.tsx": 2,

@@ -2,13 +2,13 @@
 
 A workflow runs several agents in one session, each step with its own role, model and effort. Use it to split a job into steps such as scout, plan, implement and review, and to steer the run while it goes. You choose how much it asks you and how much it may spend.
 
-### Start a workflow
+### Run a preset
 
 To run a preset, open **Start a run** and pick **Preset** under **How**, or type `~` and its name. The run gets a Lead with the preset as its plan, and its row reads "Lead · plan Fix a layout". A preset's steps, roles and models are edited in the Workflows studio.
 
 ### Older runs
 
-A run started before every run had a Lead stays as it was, on its own engine.
+A run started before every run had a Lead stays as it was.
 
 - On an orchestrated run a model picks each next step, with its role, model, effort and a reason. It keeps its row, its page and its line, "Workflow · Orchestrated" with a gray "older run". **Continue** and **Start** finish it on the orchestrator.
 - A preset run started before keeps its line, such as "Workflow · Preset Fix a layout", and its steps.

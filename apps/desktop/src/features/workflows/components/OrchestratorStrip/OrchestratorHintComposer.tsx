@@ -1,5 +1,6 @@
 import { useRef, useState, type FocusEvent, type ReactNode } from 'react';
 import { DeliveryActions } from '../../../../shared/components/DeliveryActions';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { PromptField, type PromptSubmitMode } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
@@ -151,6 +152,7 @@ export const OrchestratorHintComposer = ({
               isQueueSubmit
               queueHint={QUEUE_COPY}
               readNowHint={readNowCopy({ isDeciding, isStepRunning, isPaused })}
+              readNowKeys={shortcutGlyphs('composer.submit')}
               queueTestId="orchestrator-hint-queue"
               readNowTestId="orchestrator-hint-now"
               {...(readNowLabel !== undefined && { readNowLabel })}
