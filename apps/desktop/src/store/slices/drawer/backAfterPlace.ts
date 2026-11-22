@@ -7,7 +7,7 @@ import { slotKey } from './slotKey';
 import type { OpenDrawer } from './state';
 
 type Params = {
-  readonly state: Pick<AppState, 'drawer' | 'drawerBack'>;
+  readonly state: Pick<AppState, 'drawer' | 'drawerBack' | 'dockScope'>;
   readonly place: Place;
   readonly drawer: OpenDrawer | null;
 };
@@ -19,7 +19,7 @@ export const backAfterPlace = ({ state, place, drawer }: Params): OpenDrawer | n
   const candidates = [state.drawer ?? null, state.drawerBack ?? null];
   return (
     candidates
-      .map((candidate) => keptTool({ drawer: candidate, place }))
+      .map((candidate) => keptTool({ drawer: candidate, place, scope: state.dockScope }))
       .find(
         (kept) =>
           kept !== null &&

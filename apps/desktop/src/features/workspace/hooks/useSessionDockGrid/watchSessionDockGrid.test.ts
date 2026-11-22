@@ -175,15 +175,29 @@ describe('the dock grid saved on the session', () => {
     expect(db.rows.has(S2)).toBe(false);
   });
 
-  it('keeps the open tools on a session that saved no grid, and on the Board', async () => {
+  it('parks the tools of a session on a session that saved no grid, and on the Board', async () => {
     saveRow({ sessionId: S1, grid: SAVED });
     watch();
     await goTo({ sessionId: S1 });
 
     await goTo({ sessionId: S2 });
-    expect(toolKinds()).toEqual([['browser'], ['terminal']]);
+    expect(toolKinds()).toEqual([]);
     await goTo({ sessionId: null });
+    expect(toolKinds()).toEqual([]);
+    await goTo({ sessionId: S1 });
     expect(toolKinds()).toEqual([['browser'], ['terminal']]);
+  });
+
+  it('writes no grid when the window only passes through the sessions', async () => {
+    saveRow({ sessionId: S1, grid: SAVED });
+    watch();
+    await goTo({ sessionId: S1 });
+    await goTo({ sessionId: S2 });
+    await goTo({ sessionId: null });
+    await goTo({ sessionId: S1 });
+
+    expect(db.rows.get(S1)?.grid).toBe(storedDockGridOf({ grid: SAVED }));
+    expect(db.rows.has(S2)).toBe(false);
   });
 
   it('gives each session its own grid', async () => {
@@ -384,6 +398,8 @@ describe('moving a panel and resetting the layout', () => {
 
     expect(await moving).toBe(false);
     await settle();
+    expect(toolKinds()).toEqual([]);
+    await goTo({ sessionId: S1 });
     expect(toolKinds()).toEqual(before);
   });
 

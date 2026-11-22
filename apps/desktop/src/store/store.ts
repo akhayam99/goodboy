@@ -171,6 +171,7 @@ import { createNavigationSlice } from './slices/navigation';
 import { navigationInitialState } from './slices/navigation/state';
 import { askInitialState } from './slices/ask/state';
 import { drawerInitialState } from './slices/drawer/state';
+import { dockScopeInitialState } from './slices/drawer/dockScopeState';
 import { bugReportDraftInitialState } from './slices/bugReportDraft/state';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { AppState } from './types';
@@ -361,6 +362,7 @@ const initialState: AppState = {
   ...decisionsInitialState,
   ...askInitialState,
   ...drawerInitialState,
+  ...dockScopeInitialState,
   ...navigationInitialState,
   ...scriptsInitialState,
   ...projectRelocationInitialState,

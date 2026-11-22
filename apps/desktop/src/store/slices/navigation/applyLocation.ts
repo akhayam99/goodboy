@@ -2,6 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { AppStore } from '../../store';
 import { backAfterPlace } from '../drawer/backAfterPlace';
+import { dockAfterPlace } from '../drawer/dockAfterPlace';
 import { keptTool } from '../drawer/keptTool';
 import { foldedLensOf } from './foldedLensOf';
 import type { BranchTab, GetFn, Location, SessionView, SetFn } from './types';
@@ -86,10 +87,14 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
   }
   if (place.at === 'board' || place.at === 'session-draft') {
     void get().setCurrentSession(null);
-    const tool = keptTool({ drawer, place });
+    const tool = keptTool({ drawer, place, scope: get().dockScope });
     set((state) => ({
-      drawer: tool,
-      drawerBack: backAfterPlace({ state, place, drawer: tool }),
+      ...dockAfterPlace({
+        state,
+        place,
+        drawer: tool,
+        back: backAfterPlace({ state, place, drawer: tool }),
+      }),
       openSessionDraftWorkspaceId: place.at === 'board' ? null : get().currentWorkspaceId,
     }));
     return;
@@ -108,8 +113,12 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
   const resolved: SessionView = isAgentGone ? { ...folded, agentId: null } : folded;
   set((state) => ({
     ...surfaceChanges({ state, sessionId, view: resolved }),
-    drawer,
-    drawerBack: backAfterPlace({ state, place, drawer }),
+    ...dockAfterPlace({
+      state,
+      place,
+      drawer,
+      back: backAfterPlace({ state, place, drawer }),
+    }),
     openSessionDraftWorkspaceId: null,
   }));
   if (resolved.agentId !== null) {

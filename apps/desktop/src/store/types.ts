@@ -47,6 +47,7 @@ import type { SessionDraftState } from './slices/sessionDraft/state';
 import type { ContextDrawerSliceState } from './slices/contextDrawer/state';
 import type { DecisionsSliceState } from './slices/decisions/state';
 import type { DrawerSliceState } from './slices/drawer/state';
+import type { DockScopeState } from './slices/drawer/dockScopeState';
 import type { NavigationSliceState } from './slices/navigation/state';
 import type { ChangelogState } from './slices/changelog/state';
 import type { ReviewDraftsState } from './slices/review-drafts/state';
@@ -177,6 +178,7 @@ type AppSliceState = ArtifactsState &
   ContextDrawerSliceState &
   DecisionsSliceState &
   DrawerSliceState &
+  DockScopeState &
   NavigationSliceState &
   SessionFiltersState &
   WorkspacesState &

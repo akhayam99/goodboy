@@ -24,7 +24,11 @@ describe('backAfterPlace', () => {
   it('keeps another terminal out of the back slot of a terminal', () => {
     const restored = terminal({ sessionId: S1, tab: 'tab-ledger-dev' });
     const back = backAfterPlace({
-      state: { drawer: terminal({ sessionId: S2, tab: 'tab-notify-dev' }), drawerBack: null },
+      state: {
+        drawer: terminal({ sessionId: S2, tab: 'tab-notify-dev' }),
+        drawerBack: null,
+        dockScope: null,
+      },
       place: BOARD_PLACE,
       drawer: restored,
     });
@@ -34,7 +38,7 @@ describe('backAfterPlace', () => {
   it('keeps a browser behind a terminal', () => {
     const browser: OpenDrawer = { kind: 'browser', sessionId: S1, payload: null };
     const back = backAfterPlace({
-      state: { drawer: browser, drawerBack: null },
+      state: { drawer: browser, drawerBack: null, dockScope: null },
       place: BOARD_PLACE,
       drawer: terminal({ sessionId: S1, tab: 'tab-ledger-dev' }),
     });

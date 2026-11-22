@@ -8,6 +8,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../storyHarness';
+import type { TerminalTab, TerminalTabId } from '../../../shared/types/terminal';
 import type { DrawerRequest } from '../drawer/state';
 import { BOARD_PLACE, agentPlace, branchPlace, sessionPlace } from './place';
 import { selectDrawerPanel } from '../drawer/selectDrawerPanel';
@@ -40,7 +41,9 @@ beforeEach(async () => {
     currentWorkspaceId: WS,
     currentSessionId: S1,
     sessions: [aSession({ id: S1 }), aSession({ id: S2 })],
-    setCurrentSession: async () => undefined,
+    setCurrentSession: async (id: SessionId | null) => {
+      store.setState({ currentSessionId: id });
+    },
     selectAgent: async () => undefined,
   });
   store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
@@ -130,30 +133,96 @@ describe('a tool stays open through a move inside its session', () => {
   });
 });
 
+const TERMINAL_ID = brandId<TerminalTabId>({ value: 'tab-harborline-dev' });
+
 const TERMINAL: DrawerRequest = {
   kind: 'terminal',
   sessionId: null,
-  payload: { terminalId: brandId({ value: 'tab-harborline-dev' }) },
+  payload: { terminalId: TERMINAL_ID },
 };
 
 const BROWSER: DrawerRequest = { kind: 'browser', sessionId: S1, payload: null };
 
 const MONITOR: DrawerRequest = { kind: 'monitoring', sessionId: null, payload: null };
 
-describe('a workspace tool stays across every move inside the window', () => {
+const toolKinds = () =>
+  state()
+    .drawerGrid.columns.flat()
+    .map((panel) => panel.kind);
+
+describe('a grid tool belongs to the session it was opened in', () => {
   it.each([
     ['Terminal', TERMINAL],
     ['Browser', BROWSER],
     ['Monitor', MONITOR],
-  ] as const)('keeps %s on another session, on the Board and on Back', (_name, tool) => {
+  ] as const)('parks %s on another session and on the Board, and brings it back', (_name, tool) => {
     state().openDrawer(tool);
 
     state().navigate({ to: sessionPlace({ sessionId: S2 }) });
-    expect(selectDrawerPanel(state())).toEqual(tool);
+    expect(selectDrawerPanel(state())).toBeNull();
+    expect(toolKinds()).toEqual([]);
     state().navigate({ to: BOARD_PLACE });
-    expect(selectDrawerPanel(state())).toEqual(tool);
+    expect(selectDrawerPanel(state())).toBeNull();
+    expect(toolKinds()).toEqual([]);
+    state().back();
+    expect(selectDrawerPanel(state())).toBeNull();
     state().back();
     expect(selectDrawerPanel(state())).toEqual(tool);
+    expect(toolKinds()).toEqual([tool.kind]);
+  });
+
+  it('brings the grid back as it was left, sizes and order included', () => {
+    state().openDrawer(TERMINAL);
+    state().openDrawer(BROWSER);
+    state().resizeDockColumn({ kind: 'terminal', width: 420 });
+    const left = state().drawerGrid;
+
+    state().navigate({ to: sessionPlace({ sessionId: S2 }) });
+    state().navigate({ to: sessionPlace({ sessionId: S1 }) });
+
+    expect(state().drawerGrid.columns).toEqual(left.columns);
+    expect(state().drawerGrid.widths).toEqual(left.widths);
+  });
+
+  it('keeps a terminal running when the session is left', () => {
+    const tab = {
+      id: TERMINAL_ID,
+      owner: { kind: 'session', sessionId: S1 },
+      title: 'ledger-core dev',
+      cwd: '/work/ledger-core',
+      status: 'running',
+      createdAt: 1,
+    } satisfies TerminalTab;
+    store.setState({ terminalTabs: { [S1]: [tab] } });
+    state().openDrawer(TERMINAL);
+
+    state().navigate({ to: sessionPlace({ sessionId: S2 }) });
+    expect(state().terminalTabs[S1]).toEqual([tab]);
+    state().back();
+
+    expect(state().terminalTabs[S1]).toEqual([tab]);
+    expect(selectDrawerPanel(state())).toEqual(TERMINAL);
+  });
+
+  it('keeps the tools of the Board beside the Board, out of a session', () => {
+    state().navigate({ to: BOARD_PLACE });
+    state().openDrawer(MONITOR);
+
+    state().navigate({ to: sessionPlace({ sessionId: S2 }) });
+    expect(toolKinds()).toEqual([]);
+    state().back();
+
+    expect(selectDrawerPanel(state())).toEqual(MONITOR);
+  });
+
+  it('keeps every tool across a move inside the session', () => {
+    state().openDrawer(TERMINAL);
+    state().openDrawer(BROWSER);
+
+    state().navigate({ to: branchPlace({ sessionId: S1, tab: 'files' }) });
+    state().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
+
+    expect(toolKinds().sort()).toEqual(['browser', 'terminal']);
   });
 
   it('shows Terminal beside a page, and parks it under its own page', () => {
@@ -178,12 +247,14 @@ describe('a workspace tool stays across every move inside the window', () => {
     expect(selectDrawerPanel(state())).toEqual(MONITOR);
   });
 
-  it('closes Monitor on a second press from the rail, on the Board and in a session', () => {
+  it('opens Monitor of the session on the first press after the Board, closes it on the second', () => {
     state().navigate({ to: BOARD_PLACE });
     state().toggleDrawer(MONITOR);
     expect(state().drawer).toEqual(MONITOR);
 
     state().navigate({ to: sessionPlace({ sessionId: S2 }) });
+    state().toggleDrawer(MONITOR);
+    expect(state().drawer).toEqual(MONITOR);
     state().toggleDrawer(MONITOR);
     expect(state().drawer).toBeNull();
   });
@@ -201,13 +272,13 @@ describe('a workspace tool stays across every move inside the window', () => {
     expect(state().drawerBack).toEqual(TERMINAL);
   });
 
-  it('brings Terminal out of the chip when a session tool parks on the Board', () => {
+  it('parks Terminal and a session tool together on the Board, and Back brings both', () => {
     state().openDrawer(TERMINAL);
     state().openDrawer({ kind: 'scripts', sessionId: S1, payload: null });
 
     state().navigate({ to: BOARD_PLACE });
 
-    expect(state().drawer).toEqual(TERMINAL);
+    expect(state().drawer).toBeNull();
     expect(state().drawerBack).toBeNull();
     state().back();
     expect(state().drawer?.kind).toBe('scripts');
