@@ -25,6 +25,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { openQuestionFor, sessionOf } from '../../../../workspace/testing/sessionColumn';
+import { OpenQuestionDeliveryError } from '../../../../../store/slices/open-questions/openQuestionDeliveryError';
 import type { QueueMove } from '../../needsYouOf';
 import { useQueueSends } from '../useQueueSends';
 import { useQueueActions } from '.';
@@ -69,7 +70,7 @@ const wrapper = ({ children }: { readonly children: ReactNode }) => (
 beforeEach(async () => {
   await resetStoryStore();
   answers.mockClear();
-  useQueueSends.setState({ pending: {}, notNow: new Set(), drafts: {} });
+  useQueueSends.setState({ pending: {}, notNow: new Set(), drafts: {}, answerDrafts: {} });
   seedQuestion({ status: 'open' });
 });
 
@@ -134,6 +135,60 @@ describe('useQueueActions, a gesture the agent has not read yet has Undo', () =>
     expect(await undoLast()).toBe(true);
     await act(async () => useQueueSends.getState().flushAll());
     expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it('sends what waits when the window closes after the Queue is gone', async () => {
+    const { result, unmount } = renderHook(() => useQueueActions(), { wrapper });
+    act(() => result.current.answer({ move, text: 'Keep five minutes' }));
+    unmount();
+    await act(async () => {
+      window.dispatchEvent(new Event('pagehide'));
+    });
+    expect(answers).toHaveBeenCalledTimes(1);
+  });
+
+  it('says on the Queue when the answer was saved but did not reach the agent', async () => {
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({
+      reportError,
+      answerOpenQuestions: async () => {
+        throw new OpenQuestionDeliveryError('agent unreachable');
+      },
+    });
+    const asker = brandId<AgentId>({ value: 'planner-harborline' });
+    const asked: QueueMove = { ...move, question: { ...question, createdByAgentId: asker } };
+    const { result } = renderHook(() => useQueueActions(), { wrapper });
+    act(() => result.current.answer({ move: asked, text: 'Keep five minutes' }));
+    await act(async () => useQueueSends.getState().flushAll());
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Your answer was saved but didn't reach the agent",
+        recovery: { action: { kind: 'open-agent', sessionId, agentId: asker } },
+      }),
+    );
+  });
+
+  it('undo of a typed answer gives the text back to its question', async () => {
+    const typed: QueueMove = { ...move, question: { ...question, suggestedAnswers: [] } };
+    const { result } = renderHook(() => useQueueActions(), { wrapper });
+    act(() => result.current.answer({ move: typed, text: 'Keep it at five' }));
+    expect(await undoLast()).toBe(true);
+    expect(useQueueSends.getState().answerDrafts[question.id]).toBe('Keep it at five');
+  });
+
+  it('undo of a message gives the text back, never over a newer draft', async () => {
+    useAppStore.setState({ enqueueAgentMessage: vi.fn(async () => true) });
+    const agentId = brandId<AgentId>({ value: 'implementer-payments-api' });
+    const { result } = renderHook(() => useQueueActions(), { wrapper });
+    act(() => result.current.message({ sessionId, agentId, text: 'Use the ledger-core fixture' }));
+    expect(await undoLast()).toBe(true);
+    expect(useQueueSends.getState().drafts[agentId]).toBe('Use the ledger-core fixture');
+
+    useQueueSends.getState().setDraft({ agentId, text: '' });
+    act(() => result.current.message({ sessionId, agentId, text: 'Run notify-relay first' }));
+    useQueueSends.getState().setDraft({ agentId, text: 'A newer thought' });
+    expect(await undoLast()).toBe(true);
+    expect(useQueueSends.getState().drafts[agentId]).toBe('A newer thought');
   });
 
   it('undo of Not now brings the Move back once', async () => {

@@ -1,7 +1,8 @@
-import { useState } from 'react';
 import { Button, Input } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
+import { answerChoicesOf } from '../answerChoicesOf';
+import { useQueueSends } from './useQueueSends';
 
 type AnswerParams = {
   readonly text: string;
@@ -15,10 +16,11 @@ type Props = {
 const SEND = 'Send answer';
 
 export const MoveAnswer = ({ question, onAnswer }: Props) => {
-  const [draft, setDraft] = useState('');
-  const choices = question.suggestedAnswers;
+  const draft = useQueueSends((state) => state.answerDrafts[question.id] ?? '');
+  const setAnswerDraft = useQueueSends((state) => state.setAnswerDraft);
+  const choices = answerChoicesOf({ question });
   if (choices.length > 0) {
-    const preferred = question.recommendedAnswer ?? choices[0];
+    const [preferred] = choices;
     return (
       <div data-move-answer="choices" className="flex min-w-0 flex-wrap items-center gap-2">
         {choices.map((choice, index) => {
@@ -49,7 +51,7 @@ export const MoveAnswer = ({ question, onAnswer }: Props) => {
       return;
     }
     onAnswer({ text: draft });
-    setDraft('');
+    setAnswerDraft({ questionId: question.id, text: '' });
   };
   return (
     <div data-move-answer="text" className="flex min-w-0 items-center gap-2">
@@ -57,7 +59,7 @@ export const MoveAnswer = ({ question, onAnswer }: Props) => {
         aria-label={question.text}
         value={draft}
         placeholder="Answer"
-        onChange={(event) => setDraft(event.target.value)}
+        onChange={(event) => setAnswerDraft({ questionId: question.id, text: event.target.value })}
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();

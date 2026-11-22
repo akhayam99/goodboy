@@ -2,15 +2,6 @@
 
 const { renders } = vi.hoisted(() => ({ renders: [] as string[] }));
 
-vi.mock('../../../board/queue/QueueBoard/useBoardPage', () => ({
-  useBoardPage: () => ({
-    layout: 'stages',
-    focusedMoveId: null,
-    setLayout: () => undefined,
-    setFocusedMove: () => undefined,
-  }),
-}));
-
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
@@ -40,6 +31,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { bindTarget } from '../../../actions/registry';
@@ -50,6 +42,7 @@ import { inFlowBefore } from '../../../../test/flowLayout';
 import { brandedId } from '../../../history/testing/brandedId';
 import { sessionObjectKey } from '../../../actions/kinds/session';
 import { requestSelect } from '../../../actions/selectRequest';
+import { stagesNavigationOf } from '../../testing/stagesNavigationOf';
 import { StageBoard } from './index';
 
 const workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
@@ -79,6 +72,7 @@ const seed = (sessions: ReadonlyArray<Session>) => {
     archivedSessions: { [workspace.id]: [] },
     boardReady: true,
     currentWorkspaceId: workspace.id,
+    navigation: stagesNavigationOf({ state: useAppStore.getState(), workspaceId: workspace.id }),
   });
 };
 
@@ -133,6 +127,19 @@ describe('StageBoard selection bar', () => {
     expect(screen.getAllByRole('toolbar')).toHaveLength(1);
     expect(pressedOf(GOALS[0] ?? '')).toBe('true');
     expect(pressedOf(GOALS[1] ?? '')).toBe('false');
+  });
+
+  it('hides the bar on the Queue and keeps the selection for the way back to Stages', async () => {
+    stubStoryInvoke({ live_work: [] });
+    mountBoard(sessionsOf(GOALS));
+    tick(GOALS[0] ?? '');
+    expect(within(toolbar()).getByText('1 selected')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Queue' }));
+    await waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull());
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Stages' }));
+    expect(within(await screen.findByRole('toolbar')).getByText('1 selected')).toBeDefined();
   });
 
   it('lines each title up with its meta line at rest', () => {

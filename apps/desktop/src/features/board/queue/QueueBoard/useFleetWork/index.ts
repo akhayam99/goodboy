@@ -34,6 +34,11 @@ type Pace = {
   next: Queued | null;
 };
 
+type ReadPace = {
+  at: number;
+  timer: ReturnType<typeof setTimeout> | null;
+};
+
 type ApplyParams = {
   readonly next: ReadonlyArray<LiveWorkRow>;
   readonly claim: LatestClaim;
@@ -59,6 +64,9 @@ export const useFleetWork = ({ sessionTitles }: Params): FleetWork => {
   const [hasFailed, setHasFailed] = useState(false);
   const latest = useMemo(() => createLatestOnly(), []);
   const pace = useRef<Pace>({ at: 0, timer: null, next: null });
+  const reads = useRef<ReadPace>({ at: Number.NEGATIVE_INFINITY, timer: null });
+  const titles = useRef(sessionTitles);
+  titles.current = sessionTitles;
   const mountNames = useAppStore(
     useShallow((state) => {
       const picked: Record<string, string> = {};
@@ -111,6 +119,7 @@ export const useFleetWork = ({ sessionTitles }: Params): FleetWork => {
   }, []);
 
   const read = useCallback(async () => {
+    reads.current.at = Date.now();
     const claim = latest.claim({ key: READ_KEY });
     try {
       const next = await readLiveWork({ sessionId: null });
@@ -124,10 +133,34 @@ export const useFleetWork = ({ sessionTitles }: Params): FleetWork => {
     }
   }, [apply, latest]);
 
+  const requestRead = useCallback(() => {
+    const current = reads.current;
+    if (current.timer !== null) {
+      return;
+    }
+    const wait = current.at + FLEET_EVERY_MS - Date.now();
+    if (wait <= 0) {
+      void read();
+      return;
+    }
+    current.timer = setTimeout(() => {
+      current.timer = null;
+      if (current.at + FLEET_EVERY_MS > Date.now()) {
+        return;
+      }
+      void read();
+    }, wait);
+  }, [read]);
+
   useEffect(() => {
     const current = pace.current;
+    const reading = reads.current;
     return () => {
       latest.cancel({ key: READ_KEY });
+      if (reading.timer !== null) {
+        clearTimeout(reading.timer);
+      }
+      reading.timer = null;
       if (current.timer !== null) {
         clearTimeout(current.timer);
       }
@@ -139,7 +172,13 @@ export const useFleetWork = ({ sessionTitles }: Params): FleetWork => {
   useEffect(() => {
     let isActive = true;
     let unlisten: (() => void) | null = null;
-    void listenWorkChanged({ onChange: () => void read() }).then((stop) => {
+    void listenWorkChanged({
+      onChange: ({ change }) => {
+        if (titles.current.has(change.sessionId)) {
+          requestRead();
+        }
+      },
+    }).then((stop) => {
       if (!isActive) {
         stop();
         return;
@@ -150,7 +189,7 @@ export const useFleetWork = ({ sessionTitles }: Params): FleetWork => {
       isActive = false;
       unlisten?.();
     };
-  }, [read]);
+  }, [requestRead]);
 
   usePoll({ run: read, everyMs: FLEET_EVERY_MS, restartKey: READ_KEY });
 

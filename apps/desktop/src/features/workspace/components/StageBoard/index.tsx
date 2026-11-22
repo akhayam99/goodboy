@@ -236,17 +236,19 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         onClose={hover.close}
       />
 
-      <ObjectSelectionBar
-        controls={selectionControls}
-        verbIds={BOARD_SELECTION_BAR.verbIds}
-        count={selectedIds.length}
-        total={selection.total}
-        onClear={selection.clearAll}
-        onSelectAll={selection.selectAll}
-        onDone={selection.clearAll}
-        onFocusReturn={focusFirstCard}
-        hint={BOARD_SELECTION_BAR.hint}
-      />
+      {page.layout === 'stages' && (
+        <ObjectSelectionBar
+          controls={selectionControls}
+          verbIds={BOARD_SELECTION_BAR.verbIds}
+          count={selectedIds.length}
+          total={selection.total}
+          onClear={selection.clearAll}
+          onSelectAll={selection.selectAll}
+          onDone={selection.clearAll}
+          onFocusReturn={focusFirstCard}
+          hint={BOARD_SELECTION_BAR.hint}
+        />
+      )}
     </div>
   );
 };

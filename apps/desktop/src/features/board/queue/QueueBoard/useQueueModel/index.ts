@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { OpenQuestion, Session, WorkspaceId } from '@goodboy/types';
+import type { OpenQuestion, PullRequestChecks, Session, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useProjectFilteredSessions } from '../../../../../store';
 import { stageInfosOf } from '../../../../../store/slices/session-view/stageInfosOf';
 import { sessionTitle } from '../../../../../shared/utils/sessionTitle';
 import { needsYouOf, type NeedsYou } from '../../needsYouOf';
 import { readyToMergeOf, type ReadyRow } from '../../readyToMergeOf';
+import { requestChecksOf } from '../../requestChecksOf';
 import { useQueueSends, type PendingSend } from '../useQueueSends';
 
 type Params = {
@@ -48,6 +49,15 @@ export const useQueueModel = ({ workspaceId, sessions }: Params): QueueModel => 
       return picked;
     }),
   );
+  const checks = useAppStore(
+    useShallow((state) => {
+      const picked: Record<string, PullRequestChecks> = {};
+      for (const session of shown) {
+        picked[session.id] = requestChecksOf({ state, sessionId: session.id });
+      }
+      return picked;
+    }),
+  );
   const pendingById = useQueueSends((state) => state.pending);
   const notNow = useQueueSends((state) => state.notNow);
   const pending = useMemo(() => Object.values(pendingById), [pendingById]);
@@ -60,8 +70,8 @@ export const useQueueModel = ({ workspaceId, sessions }: Params): QueueModel => 
     [infos, notNow, openQuestions, queued, shown],
   );
   const ready = useMemo(
-    () => readyToMergeOf({ sessions: shown, infos, numbers }),
-    [infos, numbers, shown],
+    () => readyToMergeOf({ sessions: shown, infos, numbers, checks }),
+    [checks, infos, numbers, shown],
   );
   const sessionTitles = useMemo(
     () => new Map(shown.map((session) => [session.id, sessionTitle({ session })])),

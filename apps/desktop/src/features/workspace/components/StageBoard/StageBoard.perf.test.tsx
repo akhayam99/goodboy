@@ -1,14 +1,5 @@
 // @vitest-environment happy-dom
 
-vi.mock('../../../board/queue/QueueBoard/useBoardPage', () => ({
-  useBoardPage: () => ({
-    layout: 'stages',
-    focusedMoveId: null,
-    setLayout: () => undefined,
-    setFocusedMove: () => undefined,
-  }),
-}));
-
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
@@ -31,6 +22,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { stagesNavigationOf } from '../../testing/stagesNavigationOf';
 import { StageBoard } from './index';
 
 const MOUNT_BUDGET_MS = 8000;
@@ -96,6 +88,7 @@ describe('StageBoard with 1000 Done sessions, performance', () => {
       ),
       boardReady: true,
       currentWorkspaceId: workspace.id,
+      navigation: stagesNavigationOf({ state: useAppStore.getState(), workspaceId: workspace.id }),
       loadArchivedSessions: async () => undefined,
     });
 

@@ -47,7 +47,8 @@ export const NeedsYouBand = ({
       aria-label={NAMES.needsYou}
       data-queue-band="needs-you"
       data-band-active={isActive ? '' : undefined}
-      className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle p-3"
+      tabIndex={-1}
+      className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle p-3 outline-none"
     >
       <SectionLabel
         label={NAMES.needsYou}

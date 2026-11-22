@@ -26,6 +26,7 @@ export type NeedsYou = Readonly<{
   moveCount: number;
   moves: ReadonlyArray<QueueMove>;
   notNowCount: number;
+  notNowIds: ReadonlyArray<string>;
 }>;
 
 type Params = {
@@ -81,7 +82,7 @@ const questionMovesOf = ({ session, info, questions }: SessionParams): ReadonlyA
     id: `${session.id}:question:${question.id}`,
     sessionId: session.id,
     reason: 'open-question',
-    kind: 'answer',
+    kind: question.selectMode === 'many' ? 'page' : 'answer',
     title: question.text,
     question,
     since: askedAtOf({ question }),
@@ -147,10 +148,12 @@ export const needsYouOf = ({
     )
     .sort((left, right) => sinceOrder({ left, right }));
   const moves = all.filter((move) => !notNow.has(move.id) && !queued.has(move.id));
+  const notNowIds = all.filter((move) => notNow.has(move.id)).map((move) => move.id);
   return {
     sessionCount: countedIds.length,
     moveCount: moves.length,
     moves,
-    notNowCount: all.filter((move) => notNow.has(move.id)).length,
+    notNowCount: notNowIds.length,
+    notNowIds,
   };
 };

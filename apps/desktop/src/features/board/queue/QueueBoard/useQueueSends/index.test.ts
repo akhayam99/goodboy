@@ -15,7 +15,7 @@ const queueAnswer = ({ id, run }: SendParams): void =>
 
 beforeEach(() => {
   vi.useFakeTimers();
-  useQueueSends.setState({ pending: {}, notNow: new Set(), drafts: {} });
+  useQueueSends.setState({ pending: {}, notNow: new Set(), drafts: {}, answerDrafts: {} });
 });
 
 afterEach(() => {
@@ -24,14 +24,14 @@ afterEach(() => {
 });
 
 describe('an answer or a message waits ten seconds before it goes out', () => {
-  it('sends nothing inside the window and sends once when it closes', () => {
+  it('sends nothing inside the window and sends once when it closes', async () => {
     const run = vi.fn(async () => undefined);
     queueAnswer({ id: 'answer-1', run });
     vi.advanceTimersByTime(UNDO_WINDOW_MS - 1);
     expect(run).not.toHaveBeenCalled();
     expect(useQueueSends.getState().pending['answer-1']?.moveId).toBe('move-answer-1');
 
-    vi.advanceTimersByTime(1);
+    await vi.advanceTimersByTimeAsync(1);
     expect(run).toHaveBeenCalledTimes(1);
     expect(useQueueSends.getState().pending).toEqual({});
     expect(useQueueSends.getState().isWaiting({ id: 'answer-1' })).toBe(false);
@@ -64,6 +64,31 @@ describe('an answer or a message waits ten seconds before it goes out', () => {
     expect(second).toHaveBeenCalledTimes(1);
     vi.advanceTimersByTime(UNDO_WINDOW_MS);
     expect(first).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the Move aside until a slow send settles, with no Undo left', async () => {
+    let settle: () => void = () => undefined;
+    const run = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          settle = resolve;
+        }),
+    );
+    queueAnswer({ id: 'answer-6', run });
+    vi.advanceTimersByTime(UNDO_WINDOW_MS);
+    expect(useQueueSends.getState().isWaiting({ id: 'answer-6' })).toBe(false);
+    expect(useQueueSends.getState().pending['answer-6']?.moveId).toBe('move-answer-6');
+
+    settle();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useQueueSends.getState().pending).toEqual({});
+  });
+
+  it('shows only the hidden Moves it names, and leaves another workspace hidden', () => {
+    useQueueSends.getState().hide({ moveId: 'harborline-payouts:ci-failed' });
+    useQueueSends.getState().hide({ moveId: 'northwind-ledger:ci-failed' });
+    useQueueSends.getState().showAll({ moveIds: ['northwind-ledger:ci-failed'] });
+    expect([...useQueueSends.getState().notNow]).toEqual(['harborline-payouts:ci-failed']);
   });
 
   it('puts a Move off and brings it back once', () => {

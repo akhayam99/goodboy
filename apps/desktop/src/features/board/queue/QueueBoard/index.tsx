@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { ScrollFade } from '@goodboy/ui';
 import {
   brandId,
@@ -65,12 +65,6 @@ export const QueueBoard = ({ workspaceId, sessions }: Props) => {
     nav,
   });
 
-  useEffect(() => {
-    const flush = () => useQueueSends.getState().flushAll();
-    window.addEventListener('pagehide', flush);
-    return () => window.removeEventListener('pagehide', flush);
-  }, []);
-
   const kickerOf = useCallback(
     ({ move }: MoveParams) => {
       const title = model.sessionTitles.get(move.sessionId) ?? '';
@@ -86,6 +80,7 @@ export const QueueBoard = ({ workspaceId, sessions }: Props) => {
         data-queue=""
         data-active-band={focus.band}
         onKeyDown={(event) => focus.handleKey({ event })}
+        onFocus={(event) => focus.syncBand({ target: event.target })}
         className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
       >
         <div className="flex min-w-0 flex-col gap-6">
@@ -95,12 +90,15 @@ export const QueueBoard = ({ workspaceId, sessions }: Props) => {
             notNowCount={model.needsYou.notNowCount}
             isActive={focus.band === 'needs-you'}
             kickerOf={kickerOf}
-            onFocus={({ move }) => page.setFocusedMove({ moveId: move.id })}
+            onFocus={({ move }) => {
+              focus.activateBand({ band: 'needs-you' });
+              page.setFocusedMove({ moveId: move.id });
+            }}
             onAnswer={actions.answer}
             onOpenPage={nav.openPage}
             onOpenSession={nav.openLanding}
             onNotNow={actions.notNow}
-            onShowHidden={showAll}
+            onShowHidden={() => showAll({ moveIds: model.needsYou.notNowIds })}
           />
           <ReadyBand
             rows={model.ready}

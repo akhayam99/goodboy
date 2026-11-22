@@ -19,7 +19,8 @@ export const ReadyBand = ({ rows, sessionTitles, focusedId, isActive, onOpen }: 
     aria-label={NAMES.readyToMerge}
     data-queue-band="ready"
     data-band-active={isActive ? '' : undefined}
-    className="flex min-w-0 flex-col gap-2"
+    tabIndex={-1}
+    className="flex min-w-0 flex-col gap-2 outline-none"
   >
     <SectionLabel label={NAMES.readyToMerge} headingLevel={2} />
     {rows.length === 0 ? (

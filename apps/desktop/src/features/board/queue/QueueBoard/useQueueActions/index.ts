@@ -6,6 +6,7 @@ import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { OpenQuestionDeliveryError } from '../../../../../store/slices/open-questions/openQuestionDeliveryError';
 import { messageAgentFromAsk } from '../../../../session/ask/messageAgentFromAsk';
+import { answerChoicesOf } from '../../answerChoicesOf';
 import type { QueueMove } from '../../needsYouOf';
 import { useQueueSends } from '../useQueueSends';
 
@@ -61,6 +62,15 @@ export const useQueueActions = (): QueueActions => {
             );
           } catch (cause) {
             if (cause instanceof OpenQuestionDeliveryError) {
+              void state.reportError({
+                recovery:
+                  askerId === null
+                    ? CHECK_STATE
+                    : { action: { kind: 'open-agent', sessionId, agentId: askerId } },
+                title: "Your answer was saved but didn't reach the agent",
+                error: cause,
+                sessionId,
+              });
               return;
             }
             void state.reportError({
@@ -79,7 +89,16 @@ export const useQueueActions = (): QueueActions => {
         doneMessage: `Restored: ${move.title}`,
         isCurrent: () => useQueueSends.getState().isWaiting({ id }),
         showToast,
-        undo: async () => useQueueSends.getState().cancel({ id }),
+        undo: async () => {
+          const sends = useQueueSends.getState();
+          if (!sends.cancel({ id })) {
+            return false;
+          }
+          if (answerChoicesOf({ question }).length === 0) {
+            sends.restoreAnswerDraft({ questionId: question.id, text });
+          }
+          return true;
+        },
       });
     },
     [showToast, undoable],
@@ -118,7 +137,14 @@ export const useQueueActions = (): QueueActions => {
         conflictMessage: 'The message already went out.',
         isCurrent: () => useQueueSends.getState().isWaiting({ id }),
         showToast,
-        undo: async () => useQueueSends.getState().cancel({ id }),
+        undo: async () => {
+          const sends = useQueueSends.getState();
+          if (!sends.cancel({ id })) {
+            return false;
+          }
+          sends.restoreDraft({ agentId, text });
+          return true;
+        },
       });
     },
     [showToast, undoable],

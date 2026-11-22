@@ -22,6 +22,10 @@ type MoveParams = {
   readonly moveId: string;
 };
 
+type MovesParams = {
+  readonly moveIds: ReadonlyArray<string>;
+};
+
 type QueueSends = {
   readonly pending: Readonly<Record<string, PendingSend>>;
   readonly notNow: ReadonlySet<string>;
@@ -32,13 +36,22 @@ type QueueSends = {
   readonly isWaiting: (params: IdParams) => boolean;
   readonly hide: (params: MoveParams) => void;
   readonly show: (params: MoveParams) => boolean;
-  readonly showAll: () => void;
+  readonly showAll: (params: MovesParams) => void;
   readonly drafts: Readonly<Record<string, string>>;
   readonly setDraft: (params: DraftParams) => void;
+  readonly restoreDraft: (params: DraftParams) => void;
+  readonly answerDrafts: Readonly<Record<string, string>>;
+  readonly setAnswerDraft: (params: AnswerDraftParams) => void;
+  readonly restoreAnswerDraft: (params: AnswerDraftParams) => void;
 };
 
 type DraftParams = {
   readonly agentId: string;
+  readonly text: string;
+};
+
+type AnswerDraftParams = {
+  readonly questionId: string;
   readonly text: string;
 };
 
@@ -48,6 +61,16 @@ type Timer = {
 };
 
 const timers = new Map<string, Timer>();
+
+let isListeningForClose = false;
+
+const flushOnClose = (): void => {
+  if (isListeningForClose || typeof window === 'undefined') {
+    return;
+  }
+  isListeningForClose = true;
+  window.addEventListener('pagehide', () => useQueueSends.getState().flushAll());
+};
 
 type PendingParams = {
   readonly pending: Readonly<Record<string, PendingSend>>;
@@ -61,6 +84,7 @@ export const useQueueSends = create<QueueSends>((set, get) => ({
   pending: {},
   notNow: new Set(),
   queue: ({ send, run }) => {
+    flushOnClose();
     const handle = setTimeout(() => get().flush({ id: send.id }), UNDO_WINDOW_MS);
     timers.set(send.id, { handle, run });
     set((state) => ({ pending: { ...state.pending, [send.id]: send } }));
@@ -82,8 +106,14 @@ export const useQueueSends = create<QueueSends>((set, get) => ({
     }
     clearTimeout(timer.handle);
     timers.delete(id);
-    set((state) => ({ pending: withoutPending({ pending: state.pending, id }) }));
-    void timer.run();
+    const settle = async () => {
+      try {
+        await timer.run();
+      } finally {
+        set((state) => ({ pending: withoutPending({ pending: state.pending, id }) }));
+      }
+    };
+    void settle();
   },
   flushAll: () => {
     for (const id of [...timers.keys()]) {
@@ -99,8 +129,26 @@ export const useQueueSends = create<QueueSends>((set, get) => ({
     set((state) => ({ notNow: new Set([...state.notNow].filter((id) => id !== moveId)) }));
     return true;
   },
-  showAll: () => set({ notNow: new Set() }),
+  showAll: ({ moveIds }) => {
+    const shown = new Set(moveIds);
+    set((state) => ({ notNow: new Set([...state.notNow].filter((id) => !shown.has(id))) }));
+  },
   drafts: {},
   setDraft: ({ agentId, text }) =>
     set((state) => ({ drafts: { ...state.drafts, [agentId]: text } })),
+  restoreDraft: ({ agentId, text }) => {
+    if ((get().drafts[agentId] ?? '') !== '') {
+      return;
+    }
+    get().setDraft({ agentId, text });
+  },
+  answerDrafts: {},
+  setAnswerDraft: ({ questionId, text }) =>
+    set((state) => ({ answerDrafts: { ...state.answerDrafts, [questionId]: text } })),
+  restoreAnswerDraft: ({ questionId, text }) => {
+    if ((get().answerDrafts[questionId] ?? '') !== '') {
+      return;
+    }
+    get().setAnswerDraft({ questionId, text });
+  },
 }));

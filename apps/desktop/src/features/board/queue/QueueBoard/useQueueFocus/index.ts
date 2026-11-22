@@ -1,4 +1,5 @@
 import { useCallback, useState, type KeyboardEvent } from 'react';
+import { answerChoicesOf } from '../../answerChoicesOf';
 import type { QueueMove } from '../../needsYouOf';
 import { queueKeyOf, QUEUE_BANDS, type QueueBand, type QueueCommand } from '../../queueKeyOf';
 import type { ReadyRow } from '../../readyToMergeOf';
@@ -51,8 +52,30 @@ export type QueueFocus = Readonly<{
   peekRunId: string | null;
   togglePeek: (params: RowParams) => void;
   closePeek: () => void;
+  activateBand: (params: BandParams) => void;
+  syncBand: (params: TargetParams) => void;
   handleKey: (params: KeyParams) => void;
 }>;
+
+type BandParams = {
+  readonly band: QueueBand;
+};
+
+type FocusBandParams = BandParams & {
+  readonly root: HTMLElement;
+};
+
+const bandOf = ({ target }: TargetParams): QueueBand | null => {
+  if (!(target instanceof HTMLElement)) {
+    return null;
+  }
+  const value = target.closest('[data-queue-band]')?.getAttribute('data-queue-band');
+  return QUEUE_BANDS.find((candidate) => candidate === value) ?? null;
+};
+
+const focusBand = ({ root, band }: FocusBandParams): void => {
+  root.querySelector<HTMLElement>(`[data-queue-band="${band}"]`)?.focus();
+};
 
 const isTypingTarget = ({ target }: TargetParams): boolean => {
   if (!(target instanceof HTMLElement)) {
@@ -87,11 +110,25 @@ export const useQueueFocus = ({
   const focusedRow = runningRows[Math.min(runningIndex, runningRows.length - 1)] ?? null;
   const focusedReady = ready[Math.min(readyIndex, ready.length - 1)] ?? null;
 
-  const togglePeek = useCallback(({ row }: RowParams) => {
-    setBand('running');
-    setPeekRunId((current) => (current === row.runId ? null : row.runId));
-  }, []);
+  const togglePeek = useCallback(
+    ({ row }: RowParams) => {
+      setBand('running');
+      const index = runningRows.findIndex((candidate) => candidate.runId === row.runId);
+      if (index >= 0) {
+        setRunningIndex(index);
+      }
+      setPeekRunId((current) => (current === row.runId ? null : row.runId));
+    },
+    [runningRows],
+  );
   const closePeek = useCallback(() => setPeekRunId(null), []);
+  const activateBand = useCallback(({ band: next }: BandParams) => setBand(next), []);
+  const syncBand = ({ target }: TargetParams): void => {
+    const next = bandOf({ target });
+    if (next !== null && next !== band) {
+      setBand(next);
+    }
+  };
 
   const onMoveCommand = ({ command, move }: MoveCommandParams): void => {
     if (command.kind === 'step') {
@@ -113,8 +150,9 @@ export const useQueueFocus = ({
       return;
     }
     const question = move.kind === 'answer' ? move.question : null;
+    const choices = question === null ? [] : answerChoicesOf({ question });
     if (command.kind === 'choice') {
-      const choice = question?.suggestedAnswers[command.index];
+      const choice = choices[command.index];
       if (choice !== undefined) {
         actions.answer({ move, text: choice });
       }
@@ -127,7 +165,7 @@ export const useQueueFocus = ({
       nav.openPage({ move });
       return;
     }
-    const preferred = question.recommendedAnswer ?? question.suggestedAnswers[0];
+    const [preferred] = choices;
     if (preferred !== undefined) {
       actions.answer({ move, text: preferred });
     }
@@ -145,13 +183,19 @@ export const useQueueFocus = ({
       return;
     }
     event.preventDefault();
+    const root = event.currentTarget;
     if (command.kind === 'next-band') {
-      setBand(QUEUE_BANDS[(QUEUE_BANDS.indexOf(band) + 1) % QUEUE_BANDS.length] ?? 'needs-you');
+      const next = QUEUE_BANDS[(QUEUE_BANDS.indexOf(band) + 1) % QUEUE_BANDS.length] ?? 'needs-you';
+      setBand(next);
+      focusBand({ root, band: next });
       return;
     }
     if (band === 'needs-you') {
       if (focusedMove !== null) {
         onMoveCommand({ command, move: focusedMove });
+      }
+      if (command.kind === 'step') {
+        focusBand({ root, band });
       }
       return;
     }
@@ -184,6 +228,8 @@ export const useQueueFocus = ({
     peekRunId,
     togglePeek,
     closePeek,
+    activateBand,
+    syncBand,
     handleKey,
   };
 };

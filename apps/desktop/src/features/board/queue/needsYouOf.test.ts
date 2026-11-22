@@ -115,12 +115,31 @@ describe('needsYouOf, the one count of what waits on you', () => {
     ]);
   });
 
+  it('opens the page for a question that takes several choices', () => {
+    const many: OpenQuestion = {
+      ...questionOf({
+        id: 'q-many',
+        sessionId: HARBORLINE.id,
+        text: 'Which regions?',
+        createdAt: '1970-01-01T00:00:01.000Z',
+      }),
+      selectMode: 'many',
+    };
+    const { moves } = needsYouOf({
+      sessions: [HARBORLINE],
+      infos: INFOS,
+      openQuestions: { [HARBORLINE.id]: [many] },
+    });
+    expect(moves.map((move) => [move.title, move.kind])).toEqual([['Which regions?', 'page']]);
+  });
+
   it('says nothing waits when no session needs you', () => {
     expect(needsYouOf({ sessions: [ACME, CASCADIA], infos: INFOS, openQuestions: {} })).toEqual({
       sessionCount: 0,
       moveCount: 0,
       moves: [],
       notNowCount: 0,
+      notNowIds: [],
     });
   });
 
@@ -134,6 +153,7 @@ describe('needsYouOf, the one count of what waits on you', () => {
     });
     expect(needsYou.moveCount).toBe(2);
     expect(needsYou.notNowCount).toBe(1);
+    expect(needsYou.notNowIds).toEqual([`${NORTHWIND.id}:ci-failed`]);
     expect(needsYou.sessionCount).toBe(2);
   });
 });

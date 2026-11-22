@@ -60,7 +60,8 @@ export const RunningBand = ({
       aria-label={NAMES.running}
       data-queue-band="running"
       data-band-active={isActive ? '' : undefined}
-      className="flex min-w-0 flex-col gap-2"
+      tabIndex={-1}
+      className="flex min-w-0 flex-col gap-2 outline-none"
     >
       <SectionLabel label={NAMES.running} headingLevel={2} count={count > 1 ? count : undefined} />
       {hasFailed ? (
