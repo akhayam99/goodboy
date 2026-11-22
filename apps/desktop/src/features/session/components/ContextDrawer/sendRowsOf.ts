@@ -1,3 +1,4 @@
+import { AUTO_BRIEF_VERSION } from '@goodboy/core/auto';
 import {
   isSlotKey,
   PREAMBLE_SLOT_TOTAL_BUDGET,
@@ -8,6 +9,7 @@ import {
 } from '@goodboy/core/context';
 import type { AgentRole, ContextSlot } from '@goodboy/types';
 import { ROLE_SLOTS } from '../../../context/slotRouting';
+import { briefSlotsOf } from '../../../../store/slices/turn/briefSlotsOf';
 import { estimateTokens } from '../../../../shared/utils/estimate-tokens';
 import { NAMES } from '../../../../shared/utils/names';
 import { CONTEXT_SECTION_LABEL } from './contextSections';
@@ -29,6 +31,7 @@ export type SendRow = {
 
 export type SendModel = {
   readonly rows: ReadonlyArray<SendRow>;
+  readonly leadChild: SendRow;
   readonly budgetTokens: number;
 };
 
@@ -44,6 +47,13 @@ type SectionParams = {
 type PartParams = {
   readonly key: SlotKey;
   readonly slot: ContextSlot | undefined;
+};
+
+type RowParams = {
+  readonly key: string;
+  readonly label: string;
+  readonly keys: ReadonlyArray<SlotKey>;
+  readonly sent: ReadonlyArray<ContextSlot>;
 };
 
 type RoleGroup = {
@@ -62,6 +72,14 @@ const PART_LABEL: Readonly<Record<SlotKey, string>> = {
 const EMPTY_RENDERED = serializeSlotsBudgeted({ slots: [] });
 
 const BUDGET_TOKENS = estimateTokens(' '.repeat(PREAMBLE_SLOT_TOTAL_BUDGET));
+
+const LEAD_CHILD_KEYS: ReadonlyArray<SlotKey> =
+  briefSlotsOf({
+    input: { origin: 'delegation', briefVersion: AUTO_BRIEF_VERSION },
+    confinedRole: 'implementer',
+    childTurn: null,
+    slots: undefined,
+  }) ?? [];
 
 const sectionTextOf = ({ key, slot }: SectionParams): string => {
   const emptySection = `## ${SLOT_LABELS[key]}\n·`;
@@ -83,9 +101,20 @@ const sendPartOf = ({ key, slot }: PartParams): SendPart => {
   };
 };
 
+const sendRowOf = ({ key, label, keys, sent }: RowParams): SendRow => {
+  const byKey = new Map(sent.map((slot) => [slot.key, slot]));
+  const routed = sent.filter((slot) => isSlotKey(slot.key) && keys.includes(slot.key));
+  const rendered = routed.length > 0 ? serializeSlotsBudgeted({ slots: routed }) : '';
+  return {
+    key,
+    label,
+    parts: keys.map((part) => sendPartOf({ key: part, slot: byKey.get(part) })),
+    tokens: estimateTokens(rendered),
+  };
+};
+
 export const sendRowsOf = ({ slots }: Params): SendModel => {
   const sent = slots.filter((slot) => slot.enabled !== false && isSlotKey(slot.key));
-  const byKey = new Map(sent.map((slot) => [slot.key, slot]));
   const groups = new Map<string, RoleGroup>();
   for (const role of SHOWN_ROLES) {
     const keys = SLOT_KEYS.filter((key) => ROLE_SLOTS[role].includes(key));
@@ -94,15 +123,14 @@ export const sendRowsOf = ({ slots }: Params): SendModel => {
     group.roles.push(role);
     groups.set(id, group);
   }
-  const rows = [...groups.values()].map(({ keys, roles }): SendRow => {
-    const routed = sent.filter((slot) => isSlotKey(slot.key) && keys.includes(slot.key));
-    const rendered = routed.length > 0 ? serializeSlotsBudgeted({ slots: routed }) : '';
-    return {
-      key: roles.join('|'),
-      label: rolesLabelOf({ roles }),
-      parts: keys.map((key) => sendPartOf({ key, slot: byKey.get(key) })),
-      tokens: estimateTokens(rendered),
-    };
+  const rows = [...groups.values()].map(({ keys, roles }) =>
+    sendRowOf({ key: roles.join('|'), label: rolesLabelOf({ roles }), keys, sent }),
+  );
+  const leadChild = sendRowOf({
+    key: 'lead-child',
+    label: `${NAMES.lead} children`,
+    keys: LEAD_CHILD_KEYS,
+    sent,
   });
-  return { rows, budgetTokens: BUDGET_TOKENS };
+  return { rows, leadChild, budgetTokens: BUDGET_TOKENS };
 };

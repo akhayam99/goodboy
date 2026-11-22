@@ -1,7 +1,9 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { AUTO_BRIEF_VERSION } from '@goodboy/core/auto';
 import { SLOT_BUDGETS, SLOT_KEYS } from '@goodboy/core/context';
 import type { ContextSlot } from '@goodboy/types';
+import { briefSlotsOf } from '../../../../store/slices/turn/briefSlotsOf';
 import { buildContextPreamble } from '../../../../store/slices/turn/preamble';
 import { estimateTokens } from '../../../../shared/utils/estimate-tokens';
 import { ROLE_SLOTS } from '../../../context/slotRouting';
@@ -44,6 +46,24 @@ describe('sendRowsOf', () => {
         [...SLOT_KEYS],
       ],
     ]);
+  });
+
+  it('gives Lead children only the slots their brief keeps', () => {
+    const { rows, leadChild } = sendRowsOf({ slots: FULL_SLOTS });
+    const brief = briefSlotsOf({
+      input: { origin: 'delegation', briefVersion: AUTO_BRIEF_VERSION },
+      confinedRole: 'implementer',
+      childTurn: null,
+      slots: ROLE_SLOTS.implementer,
+    });
+    const implementer = rowOf({
+      rows,
+      label: [ROLE_LABEL.implementer, ROLE_LABEL.investigator, ROLE_LABEL.reviewer].join(', '),
+    });
+
+    expect(leadChild.parts.map((part) => part.key)).toEqual(brief);
+    expect(leadChild.tokens).toBeGreaterThan(0);
+    expect(leadChild.tokens).toBeLessThan(implementer.tokens);
   });
 
   it('weighs each role by the shared context its preamble carries', () => {

@@ -2,16 +2,17 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Band, Eyebrow, formatTokens } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore, useSessionSlots } from '../../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../../store';
 import { liveAgentsOf } from '../../../../../store/runtime/live-work/liveAgentsOf';
 import { NAMES } from '../../../../../shared/utils/names';
 import { agentDisplayName } from '../../../../../shared/utils/agentDisplayName';
-import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
+import { useSessionRunHistory } from '../../../../../shared/hooks/useSessionRunHistory';
 import { CONTEXT_CARD_BODY } from '../contextCardBody';
 import { ContextCardHead } from '../ContextCardHead';
 import { SendRoleRow } from '../SendRoleRow';
 import { SendAskRow } from '../SendAskRow';
 import { AgentFillRow } from '../AgentFillRow';
+import { activeUsageOf } from '../activeUsageOf';
 import { contextFillOf } from '../contextFillOf';
 import { sendRowsOf } from '../sendRowsOf';
 
@@ -22,7 +23,8 @@ type Props = {
 export const SendsSection = ({ sessionId }: Props) => {
   const slots = useSessionSlots(sessionId);
   const agents = useAppStore(useShallow((state) => liveAgentsOf({ state, sessionId })));
-  const metrics = useAgentMetrics({ sessionId });
+  const telemetry = useAppStore((state) => state.sessionTelemetry[sessionId] ?? EMPTY_ARRAY);
+  const runHistory = useSessionRunHistory({ sessionId });
   const model = useMemo(() => sendRowsOf({ slots }), [slots]);
 
   return (
@@ -42,9 +44,13 @@ export const SendsSection = ({ sessionId }: Props) => {
           }
         />
         <div className={CONTEXT_CARD_BODY.rows}>
+          <div className="px-2 py-1">
+            <Eyebrow label="Default for each role" />
+          </div>
           {model.rows.map((row) => (
             <SendRoleRow key={row.key} row={row} />
           ))}
+          <SendRoleRow row={model.leadChild} note="Agents the Lead starts read only their brief" />
           <SendAskRow />
           {agents.length === 0 ? null : (
             <>
@@ -56,7 +62,7 @@ export const SendsSection = ({ sessionId }: Props) => {
                   key={agent.id}
                   name={agentDisplayName({ name: agent.name, kind: agent.kind ?? '' })}
                   fill={contextFillOf({
-                    usage: metrics.providerUsageByAgentId.get(agent.id)?.[0] ?? null,
+                    usage: activeUsageOf({ agent, runIds: runHistory[agent.id], telemetry }),
                   })}
                 />
               ))}

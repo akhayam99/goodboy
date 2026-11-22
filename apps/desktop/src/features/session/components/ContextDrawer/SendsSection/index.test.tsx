@@ -2,7 +2,13 @@
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
-import type { TelemetryRecord } from '@goodboy/types';
+import {
+  brandId,
+  type IsoDateTime,
+  type ProviderId,
+  type TelemetryRecord,
+  type TelemetryRecordId,
+} from '@goodboy/types';
 import { importStore, resetStoryStore, type StoryStore } from '../../../../../store/storyHarness';
 import {
   SESSION_ID,
@@ -55,6 +61,23 @@ const reportContext = ({ contextTokens }: FillParams): TelemetryRecord => {
     },
   });
   return next;
+};
+
+type SwitchParams = {
+  readonly provider: ProviderId;
+};
+
+const switchProvider = ({ provider }: SwitchParams) => {
+  const runs = store.getState().sessionPhaseRuns[SESSION_ID] ?? [];
+  store.setState({
+    sessionPhaseRuns: {
+      [SESSION_ID]: runs.map((agent) =>
+        agent.name === LIVE_AGENT
+          ? { ...agent, providerOverride: provider, providerSessionProviderId: provider }
+          : agent,
+      ),
+    },
+  });
 };
 
 const mount = () => render(<SendsSection sessionId={SESSION_ID} />);
@@ -120,6 +143,65 @@ describe('What Goodboy sends', () => {
       throw new Error('No fill row');
     }
     within(row).getByText('Not reported yet');
+  });
+
+  it('marks the role rows as defaults and shows the Lead children reading only the goal', async () => {
+    mount();
+
+    const card = await screen.findByRole('region', { name: NAMES.whatGoodboySends });
+    within(card).getByText('Default for each role');
+    const child = card.querySelector<HTMLElement>('[data-send-row="lead-child"]');
+    if (child === null) {
+      throw new Error('No Lead children row');
+    }
+    within(child).getByText(`${NAMES.lead} children`);
+    within(child).getByText('Agents the Lead starts read only their brief');
+    const parts = [...child.querySelectorAll('[data-send-part]')].map((part) =>
+      part.getAttribute('data-send-part'),
+    );
+    expect(parts).toEqual(['goal']);
+  });
+
+  it('shows the active provider after a switch, not an older fuller one', async () => {
+    const current = reportContext({ contextTokens: 20_000 });
+    const window = contextWindowFor(current.model);
+    if (window === null) {
+      throw new Error(`No context window for ${current.model}`);
+    }
+    const records = store.getState().sessionTelemetry[SESSION_ID] ?? [];
+    store.setState({
+      sessionTelemetry: {
+        [SESSION_ID]: [
+          ...records,
+          {
+            ...current,
+            id: brandId<TelemetryRecordId>({ value: 'harborline-old-provider' }),
+            provider: 'anthropic',
+            contextTokens: 150_000,
+            recordedAt: brandId<IsoDateTime>({ value: '2026-01-01T00:00:00.000Z' }),
+          },
+        ],
+      },
+    });
+    switchProvider({ provider: 'cursor' });
+    mount();
+
+    const meter = await screen.findByRole('meter', { name: `${LIVE_AGENT} context window` });
+    expect(meter.getAttribute('aria-valuenow')).toBe(String(Math.round((20_000 / window) * 100)));
+  });
+
+  it('says not reported yet when the new provider has not reported usage', async () => {
+    reportContext({ contextTokens: 150_000 });
+    switchProvider({ provider: 'codex' });
+    mount();
+
+    const card = await screen.findByRole('region', { name: NAMES.whatGoodboySends });
+    const row = card.querySelector<HTMLElement>(`[data-agent-fill="${LIVE_AGENT}"]`);
+    if (row === null) {
+      throw new Error('No fill row');
+    }
+    within(row).getByText('Not reported yet');
+    expect(within(row).queryByRole('meter')).toBeNull();
   });
 
   it('drops the fill rows when no agent is running', async () => {
