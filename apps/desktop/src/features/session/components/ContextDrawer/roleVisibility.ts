@@ -59,11 +59,19 @@ const SINGLES: ReadonlyArray<AgentRole> = [
   ...ALL_ROLES.filter((role) => !SINGLE_ORDER.includes(role) && !GROUPED.includes(role)),
 ];
 
-const groupLabel = (): string => {
-  const shown = GROUPED.slice(0, GROUP_SHOWN).map((role) => ROLE_LABEL[role]);
-  const rest = GROUPED.length - shown.length;
+export const SHOWN_ROLES: ReadonlyArray<AgentRole> = [...SINGLES, ...GROUPED];
+
+type RolesParams = {
+  readonly roles: ReadonlyArray<AgentRole>;
+};
+
+export const rolesLabelOf = ({ roles }: RolesParams): string => {
+  const shown = roles.slice(0, GROUP_SHOWN).map((role) => ROLE_LABEL[role]);
+  const rest = roles.length - shown.length;
   return rest > 0 ? `${shown.join(', ')} +${rest}` : shown.join(', ');
 };
+
+const groupLabel = (): string => rolesLabelOf({ roles: GROUPED });
 
 const chipsFor = ({ slot }: { readonly slot: SlotKey | null }): ReadonlyArray<VisibilityChip> => [
   ...SINGLES.map((role) => ({

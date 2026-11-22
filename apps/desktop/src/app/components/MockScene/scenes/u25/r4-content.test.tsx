@@ -11,6 +11,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { brandId, type SessionId } from '@goodboy/types';
 import { requestRename } from '../../../../../shared/utils/renameRequest';
+import { NAMES } from '../../../../../shared/utils/names';
 import { sessionObjectKey } from '../../../../../features/actions/kinds/session';
 import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { ToastProvider } from '../../../../../shared/components/Toast';
@@ -78,10 +79,16 @@ describe('the r4 content scenes', () => {
     );
   });
 
-  it('r4-context-cards draws Goal, Decisions, Summary and Explanations as cards', async () => {
+  it('r4-context-cards draws Goal, Decisions, Summary, What Goodboy sends and Explanations as cards', async () => {
     await mount('r4-context-cards');
 
-    expect(contextCards()).toEqual(['Goal', 'Decision records', 'Summary', 'Explanations']);
+    expect(contextCards()).toEqual([
+      'Goal',
+      'Decision records',
+      'Summary',
+      NAMES.whatGoodboySends,
+      'Explanations',
+    ]);
     document.querySelectorAll<HTMLElement>('[data-context-card]').forEach((card) => {
       expect(card.querySelector('[data-band] h2')).not.toBeNull();
     });
