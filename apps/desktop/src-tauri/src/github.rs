@@ -18,8 +18,8 @@ const EXPIRED_MESSAGE: &str =
     "This personal API key has expired or was revoked. Create a new one on GitHub and paste it here.";
 const MISSING_SCOPE_MESSAGE: &str = "This personal API key is missing the access Goodboy needs. Recreate it with the repo scope, and authorize it for your org if SSO is on.";
 const NETWORK_MESSAGE: &str =
-    "Goodboy cannot reach github.com. Check your connection, then try again.";
-const CERTIFICATE_MESSAGE: &str = "Goodboy cannot verify the certificate github.com presented. Check your system clock and any proxy or VPN in the way, then try again.";
+    "Goodboy can't reach github.com. Check your connection, then try again.";
+const CERTIFICATE_MESSAGE: &str = "Goodboy can't verify the certificate github.com presented. Check your system clock and any proxy or VPN in the way, then try again.";
 const RATE_LIMIT_MESSAGE: &str =
     "GitHub is rate limiting this personal API key. Wait a few minutes, then try again.";
 const UNVERIFIED_MESSAGE: &str = "Goodboy could not verify this personal API key.";

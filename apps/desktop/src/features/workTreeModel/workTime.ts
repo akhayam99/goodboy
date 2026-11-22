@@ -3,6 +3,7 @@ import type { Fact } from '@goodboy/ui';
 import { formatDuration } from '../../shared/utils/time/formatDuration';
 import type { RowPhase } from './rowState';
 import { quietSentence } from './rowStateCopy';
+import { MACHINE_TIME_NOTE } from './machineTimeNote';
 
 export type WorkEstimate = {
   readonly lowMs: number;
@@ -26,7 +27,6 @@ export type WorkTime = {
 
 const MINUTE_MS = 60_000;
 const NARROW_BAND = 1.3;
-const MACHINE_TIME_NOTE = 'Waiting on you is not counted.';
 const LONGER_THAN_USUAL = 'Longer than usual';
 const MUCH_LONGER_FACTOR = 2;
 export const QUIET_TURN_AFTER_MS = 5 * MINUTE_MS;

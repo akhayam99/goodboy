@@ -641,7 +641,7 @@ describe('a dirty tree stop', () => {
     await showRun({ phase: 'stopped', stop: dirtyStop });
 
     expect(screen.getByRole('alert').textContent).toContain(
-      '11 files have changes that are not committed',
+      "11 files have changes that aren't committed",
     );
     expect(verbsIn({ node: screen.getByRole('region', { name: 'Rebase' }) })).toEqual([
       'Retry rebase',

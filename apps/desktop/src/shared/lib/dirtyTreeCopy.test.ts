@@ -5,13 +5,13 @@ import { dirtyTreeSentence } from './dirtyTreeCopy';
 describe('dirtyTreeSentence', () => {
   it('counts the files and tells what to do', () => {
     expect(dirtyTreeSentence({ count: 11 })).toBe(
-      '11 files have changes that are not committed. Commit or stash them first.',
+      "11 files have changes that aren't committed. Commit or stash them first.",
     );
   });
 
   it('keeps one file in the singular', () => {
     expect(dirtyTreeSentence({ count: 1 })).toBe(
-      '1 file has changes that are not committed. Commit or stash them first.',
+      "1 file has changes that aren't committed. Commit or stash them first.",
     );
   });
 });

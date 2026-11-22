@@ -113,9 +113,9 @@ type DirtyTitleOfParams = {
 
 const dirtyTitleOf = ({ count }: DirtyTitleOfParams): string => {
   if (count === null) {
-    return 'Some files have changes that are not committed';
+    return "Some files have changes that aren't committed";
   }
-  return `${count} ${count === 1 ? 'file has' : 'files have'} changes that are not committed`;
+  return `${count} ${count === 1 ? 'file has' : 'files have'} changes that aren't committed`;
 };
 
 type KeptFilesOfParams = {

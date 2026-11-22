@@ -30,6 +30,7 @@ import { useHoverCardTarget } from '../../../../features/workspace/components/Se
 import { NeedsYouSessionRow } from './NeedsYouSessionRow';
 import { NowGroup } from './NowGroup';
 import { attentionPlace } from '../../../../features/session/attentionPlace';
+import { stopScriptRun } from '../../../../features/scripts/stopScriptRun';
 
 type Props = {
   readonly onOpenScript: (run: RunningScript) => void;
@@ -65,7 +66,6 @@ export const NowChip = ({ onOpenScript }: Props) => {
   const { running, needsYou } = useNowSessions({});
   const scripts = useRunningScripts();
   const navigate = useAppStore((state) => state.navigate);
-  const cancelScript = useAppStore((state) => state.cancelScript);
   const openStudio = useAppStore((state) => state.openStudio);
   const dropdown = useDropdown({
     align: 'end',
@@ -128,7 +128,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
   };
 
   const stopScript = (run: RunningScript) => {
-    void cancelScript(run.sessionId, run.scriptId);
+    void stopScriptRun({ sessionId: run.sessionId, scriptKey: run.scriptId });
   };
 
   const label = chipLabel({ running: running.length, scripts: scripts.length });

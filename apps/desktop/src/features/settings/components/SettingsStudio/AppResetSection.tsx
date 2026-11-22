@@ -1,11 +1,12 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { RotateCcw, Trash2 } from '@goodboy/ui/icons';
-import { Band, Button, cn, ConfirmPopover, ICON_SIZE, tintClasses } from '@goodboy/ui';
+import { Band, Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 
 import { NAMES } from '../../../../shared/utils/names';
+import { actionIntentOf } from '../../../actions/actionIntentOf';
 import { DANGER_ZONE } from './dangerZone';
 import { SettingRow } from './SettingRow';
 
@@ -76,8 +77,8 @@ export const AppResetSection = () => {
               <Button
                 variant="ghost"
                 size="sm"
+                intent={actionIntentOf({ verb: NAMES.deleteAllData })}
                 onClick={() => setWipeState('confirm')}
-                className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
               >
                 {NAMES.deleteAllData}
               </Button>

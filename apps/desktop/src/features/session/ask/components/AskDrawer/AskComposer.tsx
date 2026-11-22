@@ -59,7 +59,7 @@ export const AskComposer = ({
   return (
     <MessageComposer
       label="Ask about this session"
-      placeholder="Ask about this session…"
+      placeholder="Ask about this session"
       text={text}
       onTextChange={setText}
       onRestoreText={restoreText}

@@ -27,6 +27,7 @@ import {
 } from '../../../../__tests__/helpers/actionFixtures';
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { ROW_MENU_TOOLTIP } from '../../rowMenuTooltip';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { ObjectTarget } from '../../types';
 import { ObjectOverflowMenu } from './index';
 
@@ -61,7 +62,7 @@ describe('ObjectOverflowMenu', () => {
 
     expect(
       tooltipTextOf({ element: screen.getByRole('button', { name: 'Actions for agent' }) }),
-    ).toBe('More actions. Right click or Shift+F10');
+    ).toBe(`More actions. Right click or ${shortcutGlyphs('menu.open')}`);
   });
 
   it('draws the ellipsis glyph by default, never the vertical dots', () => {

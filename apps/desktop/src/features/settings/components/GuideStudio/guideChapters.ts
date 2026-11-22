@@ -765,7 +765,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Right click',
-        desc: 'Any session, agent, run, artifact, pull request, worktree row, file or message opens a menu with every action it has. Shift+F10 opens it on the focused row.',
+        desc: `Any session, agent, run, artifact, pull request, worktree row, file or message opens a menu with every action it has. ${shortcutGlyphs('menu.open')} opens it on the focused row.`,
       },
       {
         term: 'Composer keys',

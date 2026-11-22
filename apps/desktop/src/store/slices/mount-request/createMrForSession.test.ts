@@ -199,7 +199,7 @@ describe('createMrForSession, a create whose outcome was uncertain', () => {
       number: 12,
       url: 'https://gitlab.com/acme/notify-relay/-/merge_requests/12',
     });
-    expect(warnings()).toEqual(['Opened !12, but Goodboy could not save the link']);
+    expect(warnings()).toEqual(["Opened !12, but Goodboy couldn't save the link"]);
     expect(invokes({ command: 'gitlab_create_mr' })).toHaveLength(1);
   });
 

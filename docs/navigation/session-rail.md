@@ -298,7 +298,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
 - **The row menu.** One menu per branch row, the mount registry for that
   worktree (`useMountRowMenu`, the same verbs as the Overview tile of the
   branch): the row's `⋯` (`MountRowMenuButton`, named `<project>
-· <branch> actions`), a right click on the row and Shift+F10 on it open the
+· <branch> actions`), a right click on the row and ⇧F10 on it open the
   same list, so no verb is reachable only one way. The `⋯` sits in a
   `row-actions` cell (`data-worktree-actions`): empty at rest on a row that is
   not current, shown on hover, on focus inside the row and while its menu is

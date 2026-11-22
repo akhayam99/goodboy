@@ -253,6 +253,31 @@ describe('NowChip', () => {
     expect(screen.queryByRole('dialog', { name: 'Now' })).toBeNull();
   });
 
+  it('keeps a script running and says so when its stop fails', async () => {
+    seed([RUNNING]);
+    withScript(RUNNING);
+    stubStoryInvoke({
+      workspace_script_cancel: () => {
+        throw new Error('process table locked');
+      },
+      db_execute: { rowsAffected: 1, lastInsertId: 0 },
+      db_select: [],
+    });
+    render(<NowChip onOpenScript={vi.fn()} />);
+
+    const panel = await open();
+    await act(async () => {
+      fireEvent.click(within(panel).getByRole('button', { name: 'Stop pnpm dev' }));
+    });
+
+    expect(useAppStore.getState().scriptRuns[RUNNING.id]?.[SCRIPT_ID]?.status).toBe('pending');
+    await vi.waitFor(() =>
+      expect(useAppStore.getState().notifications.map((notice) => notice.title)).toContain(
+        "Couldn't stop the script",
+      ),
+    );
+  });
+
   it('opens on the named popover layer, closes on escape with focus back, and on the backdrop', async () => {
     seed([RUNNING]);
     render(<NowChip onOpenScript={vi.fn()} />);

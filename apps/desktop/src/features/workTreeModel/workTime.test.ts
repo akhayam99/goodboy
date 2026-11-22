@@ -36,7 +36,7 @@ describe('workTime', () => {
     expect(early?.headline).toBe('2m · ~3-7m left');
     expect(early?.progress).toBeCloseTo(2 / 9);
     expect(early?.detail).toBe(
-      `Running 2m. Usually 5-9m. ${ESTIMATE.basis} Waiting on you is not counted.`,
+      `Running 2m. Usually 5-9m. ${ESTIMATE.basis} Waiting on you isn't counted.`,
     );
     expect(early?.note).toBeNull();
 
@@ -110,7 +110,7 @@ describe('workTime', () => {
     });
     expect(unknown).toMatchObject({ label: '5m', progress: null, note: null });
     expect(unknown?.detail).toBe(
-      'Running 5m. No estimate yet: 3 of 5 finished tester steps. Waiting on you is not counted.',
+      "Running 5m. No estimate yet: 3 of 5 finished tester steps. Waiting on you isn't counted.",
     );
   });
 

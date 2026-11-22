@@ -311,7 +311,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: `Opened #${number}, but Goodboy could not save the link`,
+        title: `Opened #${number}, but Goodboy couldn't save the link`,
         body: `Refresh to pick it up. ${formatError(unrecorded.error)}`,
         sessionId,
         workspaceId: workspace.id,
@@ -334,10 +334,10 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
             void get().emitNotification({
               kind: 'error',
               severity: 'warning',
-              title: 'PR opened without its issue links',
+              title: 'Pull request opened without its issue links',
               body: `${filledReferences
                 .map((reference) => reference.line)
-                .join(', ')} could not be appended to the description: ${formatError(error)}`,
+                .join(', ')} couldn't be added to the description: ${formatError(error)}`,
               sessionId,
               workspaceId: workspace.id,
             });

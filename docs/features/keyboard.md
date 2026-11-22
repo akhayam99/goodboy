@@ -109,7 +109,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - In a session, ⌘R refreshes the session: its projects, branches and pull requests.
 - On a page with nothing to reload, ⌘R does nothing.
 - **⌘⇧R** reloads Goodboy. The window comes back on the same page.
-- The header of that page says that a right click or **Shift+F10** on a list row opens its actions. These are the same words as the tooltip of a row's **⋯**.
+- The header of that page says that a right click or **⇧F10** on a list row opens its actions. These are the same words as the tooltip of a row's **⋯**.
 - The first time the pointer enters a list, every row shows its **⋯** until the pointer leaves, once.
 
 **Keys in a list**

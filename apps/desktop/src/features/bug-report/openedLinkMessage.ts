@@ -8,7 +8,7 @@ type Params = {
 
 export const openedLinkMessage = ({ opened }: Params): string => {
   const next = opened.overflows
-    ? 'The rest did not fit the link and is on your clipboard. Paste it into the issue, then submit.'
+    ? "The rest didn't fit the link and is on your clipboard. Paste it into the issue, then submit."
     : 'Submit the form in your browser to file the issue.';
   if (opened.sendFailure === null) {
     return next;

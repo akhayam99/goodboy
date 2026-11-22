@@ -176,6 +176,6 @@ describe('buildReportLink', () => {
 
     expect(link.overflows).toBe(true);
     expect(link.url.length).toBeLessThanOrEqual(4096);
-    expect(decodeURIComponent(link.url)).toContain('It is on your clipboard');
+    expect(decodeURIComponent(link.url)).toContain("It's on your clipboard");
   });
 });

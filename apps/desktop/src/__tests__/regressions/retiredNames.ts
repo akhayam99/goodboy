@@ -83,7 +83,7 @@ const SHARED: ReadonlyArray<RetiredName> = [
   },
   {
     id: 'waiting-on-you',
-    pattern: /\bWaiting on (?:you\b(?! is not counted)|your answer)/,
+    pattern: /\bWaiting on (?:you\b(?! isn't counted)|your answer)/,
     use: NAMES.needsYou,
   },
   {

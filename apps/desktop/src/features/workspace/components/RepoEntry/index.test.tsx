@@ -292,7 +292,7 @@ describe('the repositories entry in the top bar', () => {
     expect(within(row).queryByRole('button', { name: /^Pull/ })).toBeNull();
     expect(
       within(row).getByText(
-        '2 files have changes that are not committed. Commit or stash them first.',
+        "2 files have changes that aren't committed. Commit or stash them first.",
       ),
     ).toBeDefined();
   });

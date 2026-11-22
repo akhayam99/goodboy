@@ -9,7 +9,7 @@ import { stopWork } from '../../runtime/live-work/stopWork';
 import { slotAfterSessionGone } from '../drawer/slotAfterSessionGone';
 
 const STILL_RUNNING_MESSAGE =
-  'An agent did not stop, so the session stays where it was. Try Archive again.';
+  "An agent didn't stop, so the session stays where it was. Try Archive again.";
 
 export const archiveTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {

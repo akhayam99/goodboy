@@ -11,6 +11,7 @@ import type {
 } from '@goodboy/types';
 import { timeLeftLabel, usualRangeLabel } from '../../workTreeModel/workTime';
 import { familyActiveTime, type WorkTimeSource } from '../../workTreeModel/workTimeSource';
+import { MACHINE_TIME_NOTE } from '../../workTreeModel/machineTimeNote';
 import { stepWorkEstimate } from './stepWorkEstimate';
 
 export type RunTimeLeft = {
@@ -28,8 +29,6 @@ type Params = {
   readonly sessionEffort: EffortLevel | null;
   readonly scope?: AutoContext | null;
 };
-
-const MACHINE_TIME_NOTE = 'Waiting on you is not counted.';
 
 type Remaining = {
   readonly lowMs: number;

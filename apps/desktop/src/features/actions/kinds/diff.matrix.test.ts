@@ -54,7 +54,7 @@ const facts = (overrides: Partial<DiffFacts>): DiffFacts => ({
 
 const TOOLS = ['diff.openTerminal menu', 'diff.openInEditor menu'];
 const COPIES = ['diff.copyBranch menu', 'diff.copyPatch menu'];
-const DIRTY_2 = '2 files have changes that are not committed. Commit or stash them first.';
+const DIRTY_2 = "2 files have changes that aren't committed. Commit or stash them first.";
 
 const STATES: ReadonlyArray<{
   readonly name: string;
@@ -131,7 +131,7 @@ const STATES: ReadonlyArray<{
       'diff.openInEditor menu',
       'diff.abortRebase secondary',
       'diff.rewriteHistory secondary (Finish or abort the rebase first.)',
-      'diff.restoreBackup menu (3 files have changes that are not committed. Commit or stash them first.)',
+      "diff.restoreBackup menu (3 files have changes that aren't committed. Commit or stash them first.)",
       ...COPIES,
     ],
   },

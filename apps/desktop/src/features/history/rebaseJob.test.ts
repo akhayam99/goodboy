@@ -114,7 +114,7 @@ describe('a rebase job that stopped', () => {
     [
       'uncommitted files',
       { reason: 'dirty' },
-      '11 files have changes that are not committed',
+      "11 files have changes that aren't committed",
       'Commit or stash them, then retry the rebase.',
       'Stopped: uncommitted files',
     ],
@@ -225,13 +225,13 @@ describe('a rebase job that stopped', () => {
 
   it('does not invent a count when the status is unknown', () => {
     expect(job({ phase: 'stopped', stop: stop({ reason: 'dirty' }) }, null)?.title).toBe(
-      'Some files have changes that are not committed',
+      "Some files have changes that aren't committed",
     );
   });
 
   it('says 1 file in the singular', () => {
     expect(job({ phase: 'stopped', stop: stop({ reason: 'dirty' }) }, 1)?.title).toBe(
-      '1 file has changes that are not committed',
+      "1 file has changes that aren't committed",
     );
   });
 });
