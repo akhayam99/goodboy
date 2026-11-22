@@ -8,6 +8,7 @@ import { IntegrationGlyph } from '../../../../../../shared/components/Integratio
 import { rowStateNode, rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { sessionEventGlyph } from '../../../../timeline/sessionEventPresentation';
+import { workEventGlyph } from '../../../../timeline/workEventGlyph';
 import { activityRowConcept, type ActivityRowKind } from '../../../../timeline/activityRowConcept';
 
 type Props = {
@@ -96,6 +97,9 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
   if (entry.kind === 'event') {
     const eventGlyph = sessionEventGlyph({ kind: entry.event.kind });
     return conceptNode({ ...eventGlyph, isEmphasized: false });
+  }
+  if (entry.kind === 'work') {
+    return conceptNode({ ...workEventGlyph({ work: entry.work }), isEmphasized: false });
   }
   if (entry.kind === 'learning') {
     return conceptNode({

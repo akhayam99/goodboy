@@ -17,6 +17,7 @@ import {
   type ScriptSource,
 } from './scripts';
 import { projectById } from '../../store/slices/projects/projectIndex';
+import { workOutcomeOf } from './workOutcomeOf';
 
 export type RunnableScriptSource = 'saved' | ScriptSource;
 
@@ -61,8 +62,6 @@ export type SessionScriptGroup = {
   readonly suggested: ReadonlyArray<RunnableScript>;
   readonly available: ReadonlyArray<LedgerScript>;
 };
-
-const STOP_EXIT_CODES: ReadonlyArray<number> = [130, 137, 143];
 
 const SUGGESTED_CATEGORIES: ReadonlyArray<ScriptCategory> = [
   'dev',
@@ -207,15 +206,8 @@ type OutcomeParams = {
   readonly entry: ScriptLedgerEntry;
 };
 
-const lastOutcomeOf = ({ entry }: OutcomeParams): ScriptLastOutcome => {
-  if (entry.endedAt === null || entry.exitCode === null) {
-    return 'unfinished';
-  }
-  if (entry.exitCode === 0) {
-    return 'ok';
-  }
-  return STOP_EXIT_CODES.includes(entry.exitCode) ? 'cancelled' : 'error';
-};
+const lastOutcomeOf = ({ entry }: OutcomeParams): ScriptLastOutcome =>
+  workOutcomeOf({ endedAt: entry.endedAt, exitCode: entry.exitCode });
 
 type LastRunParams = {
   readonly ledger: ReadonlyArray<ScriptLedgerEntry> | undefined;

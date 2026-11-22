@@ -147,6 +147,8 @@ export const SESSION_EVICTION = [
   { key: 'agentQueue', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'sessionExternalTasks', keyedBy: 'session', evictOn: 'delete' },
   { key: 'sessionEvents', keyedBy: 'session', evictOn: 'delete' },
+  { key: 'workEvents', keyedBy: 'session', evictOn: 'delete' },
+  { key: 'workEventsError', keyedBy: 'session', evictOn: 'delete' },
   { key: 'startHints', keyedBy: 'session', evictOn: 'delete' },
   { key: 'rebaseAllRuns', keyedBy: 'session', evictOn: 'archive' },
   { key: 'settledRebaseStops', keyedBy: 'session', evictOn: 'archive' },

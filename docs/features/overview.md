@@ -47,13 +47,15 @@ Needs you and Now open and close with a height motion, so Next never jumps under
 
 Pull requests opened outside Goodboy, by an agent or from a terminal, show up when a turn ends or when you come back to the window. **Refresh session** in ⌘K, or **⌘R**, re-reads projects, branches and pull requests right away.
 
-### Full log
+### Activity
 
-Follow what happened in a session in one list. **Activity** on the Overview shows the last three rows, and **Open activity** opens the full log in place. **Open › Log** in the Board card's menu, or **Open log** in ⌘K, opens the Overview on the full log.
+Follow what happened in a session in one list. **Activity** on the Overview shows the last three rows, and **Open activity** opens the Activity page under the Overview, with the crumbs Overview › Activity. **Open › Activity** in the Board card's menu, or **Open activity** in ⌘K, opens it too. The page comes back after a reload.
 
 - One row per agent, workflow run or fix run shows its state, model, time and cost.
 - Plain facts get a row too, such as context changes, branch events and links.
+- A script you ran gets a row with its result, such as `test:integration failed (exit 2) in payments-api`.
 - Rows go newest first, with a search box.
+- Filter by kind (All, Agents, Branches, Checks, Scripts, Context) and, when the session has two projects or more, by project.
 - Rows hold no buttons. The next step for a row, such as **Push** or **Apply fix**, stays on its branch row above, so a step is offered once on the page.
 - The rail draws like the Agents column of a run: one thin line, the same nodes and elbows, the same step height. A day starts under a thin rule with its name.
 - A long log stays smooth. The search box shows at once and the rows fill in right after the page. The log shows the newest 50 rows, and **Show 50 older rows** adds the next 50. Rows far from the screen are skipped but keep their height. Rows a screen away are drawn before you reach them.
@@ -173,7 +175,9 @@ This part is for contributors and agents who change the feature.
 - `liveGroupsOf` orders the live groups that feed the board and Now.
 - Branch board model: `branchBoardOf` builds one row per branch in any state, plus a row without a branch. It sorts them into Needs you, In progress, Merged, Closed and Not on a branch. `branchFactsFor` feeds `deriveSessionStage` the facts of one branch only, its Leads included, read through the Lead stop model of `autoTreeWordOf` in `boardInputsOf`. `runningByRowIdOf` counts the running agents and Leads of each row. A question on one branch leaves the others alone. `boardRowCellsOf` names a tile with no branch by its next step. `sessionKpisOf` reads the board for the agent time of the facts line and counts Leads, agents and asks by id. Spend comes from `leadSpendByBranchOf`.
 - Empty session: `useIsEmptySession` is the one rule for the start form, and `CentralColumn` places `FolderCard` after the project blocks.
-- Log section: `OverviewLog` draws the Activity section, with `OverviewRecentRows` until **Open activity** swaps in `LogPane`. `session.openLog` calls `LOG_LANDING.request` and navigates to the Overview; the section takes the landing once, opens the full log and scrolls to its start. Each row sits in a `content-visibility: auto` box sized by its laid out height. `useRowPreload` on the page scroller (`scrollParentOf`) draws the rows one screen around the view. `TimelineRail` draws every lane with one stroke (`RAIL_STROKE`). Steps and queued rows use the `sm` `WorkNode` on the 28px step grade of `TIMELINE_RHYTHM`. `TimelineDayRule` draws its hairline.
+- Activity page: `OverviewLog` draws the Activity section with `OverviewRecentRows`. **Open activity** and `session.openLog` (`sessionActivity.ts`) open the `activity` lens. `SessionLensPane` draws it as `ActivityPage` around `LogPane`.
+- Activity filters: `activityKindOf` sorts a row by kind and `activityMountIdsOf` reads its project from `mount_id`. `activityEntriesOf` prunes a workflow or agent to its rows in the chosen project and detaches a fact whose lane or launch was filtered out (`activityEntriesOf.test.ts`). `useWorkEvents` reads `listWorkEvents` when a script run starts, launches (`isLaunched`) and ends, and keeps the latest answer. It asks for the next 200 when `LogRows` runs out of rows (`useWorkEvents/index.sqlite.test.tsx`). `workEntriesOf` makes each a `work` timeline entry. `ActivityPage.sqlite.test.tsx` covers the rows, both filters, an older run past the first page and Retry.
+- Log rows: each row sits in a `content-visibility: auto` box sized by its laid out height. `useRowPreload` on the page scroller (`scrollParentOf`) draws the rows one screen around the view. `TimelineRail` draws every lane with one stroke (`RAIL_STROKE`). Steps and queued rows use the `sm` `WorkNode` on the 28px step grade of `TIMELINE_RHYTHM`. `TimelineDayRule` draws its hairline.
 - Log paging: `LogPane` paints the search box and **Mark as read** at once. It mounts `LogRows` through `useDeferredValue`, keyed by the session. `LogRows` draws pages of `LOG_PAGE_ROWS` from `logPageOf`, each in a transition. `timelineFullGutterOf` sizes the gutter from one stream built with `shouldExpandEveryGroup`.
 - Notices: `overviewNoticesOf` counts them for `overviewCardsOf`. A closed notice is not counted.
 - `useOverviewNotices` holds the dismissals, keyed by `mismatchDismissalKeyOf` so a new mismatch shows again, and the stranded-branch check. A dismissal expires when its observation clears (`liveDismissalsOf`). Unchanged polls stay dismissed. `CentralColumn` draws the notices in one place under the state.

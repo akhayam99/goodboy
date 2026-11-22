@@ -13,6 +13,7 @@ export const LENS_LABEL: Record<LensKind, string> = {
   branch: NAMES.branch,
   files: NAMES.changes,
   context: NAMES.context,
+  activity: NAMES.activitySection,
   linear: 'Linear',
   gitlab_issues: 'GitLab',
   jira_issues: 'Jira',
@@ -30,6 +31,7 @@ export const LENS_ICON = {
   branch: CONCEPT_ICONS.branch,
   files: CONCEPT_ICONS.diff,
   context: CONCEPT_ICONS.context,
+  activity: CONCEPT_ICONS.timeline,
   linear: CONCEPT_ICONS.linear,
   gitlab_issues: CONCEPT_ICONS.gitlab,
   jira_issues: CONCEPT_ICONS.jira,
@@ -44,4 +46,5 @@ export const SIMPLE_LENSES = new Set<LensKind>([
   'plans',
   'files',
   'context',
+  'activity',
 ]);

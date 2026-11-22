@@ -1429,6 +1429,8 @@ u48-item-work-line-light
 u48-tool-rail-closed
 u48-tool-rail-detail-monitor
 u48-tool-rail-monitor
+u50-activity-dark
+u50-activity-light
 u50-ask-live-dark
 u50-ask-live-doing-dark
 u50-ask-live-doing-light

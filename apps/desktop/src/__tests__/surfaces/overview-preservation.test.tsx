@@ -18,7 +18,6 @@ import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/c
 import { clearSceneInvoke } from '../../test/sceneInvoke';
 import { MOCK_SCENES } from '../../app/components/MockScene';
 import { collectAskPackInput } from '../../features/session/ask/collectAskPackInput';
-import { LOG_LANDING } from '../../features/session/central/log/logLanding';
 import { ContextTab } from '../../features/session/components/ContextTab';
 import { seriesStripsOf } from '../../store/slices/pr-series/seriesStripsOf';
 import { MountsScene } from '../../app/components/MockScene/scenes/MountsScene';
@@ -350,32 +349,13 @@ describe('Overview capabilities from the session Overview', () => {
       what: 'the log section',
     });
     expect(within(log).queryByRole('region', { name: 'Log entries' })).toBeNull();
+    const navigate = vi.fn();
+    useAppStore.setState({ navigate });
     fireEvent.click(within(log).getByRole('link', { name: 'Open activity' }));
     await advance();
-    within(within(log).getByRole('region', { name: 'Log entries' })).getByRole('searchbox', {
-      name: 'Search entries',
+    expect(navigate).toHaveBeenCalledWith({
+      to: expect.objectContaining({ view: expect.objectContaining({ lens: 'activity' }) }),
     });
-  });
-
-  it('lands on the log section when the full log is asked for', async () => {
-    await mountScene({ name: 'c05-overview-running' });
-    const sessionId = useAppStore.getState().currentSessionId;
-    if (sessionId === null) {
-      throw new Error('the scene has no current session');
-    }
-    const log = present({
-      value: document.querySelector<HTMLElement>('[data-overview-log]'),
-      what: 'the log section',
-    });
-    const scrolled = vi.fn();
-    log.scrollIntoView = scrolled;
-
-    act(() => {
-      LOG_LANDING.request({ sessionId });
-    });
-
-    expect(scrolled).toHaveBeenCalledTimes(1);
-    expect(LOG_LANDING.take({ sessionId })).toBe(false);
   });
 
   it('keeps an archived session read only with Restore', async () => {

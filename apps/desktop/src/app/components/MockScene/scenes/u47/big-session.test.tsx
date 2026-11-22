@@ -56,7 +56,7 @@ afterEach(() => {
   clearSceneInvoke();
 });
 
-const mount = async ({ name }: MountParams): Promise<HTMLElement> => {
+const mount = async ({ name }: MountParams): Promise<void> => {
   const Scene = U47_BIG_SESSION_SCENES[name];
   render(
     <ToastProvider>
@@ -67,13 +67,10 @@ const mount = async ({ name }: MountParams): Promise<HTMLElement> => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
   });
   expect(screen.queryByText('Something went wrong')).toBeNull();
-  const openActivity = screen.queryByRole('link', { name: 'Open activity' });
-  if (openActivity !== null) {
-    await act(async () => {
-      fireEvent.click(openActivity);
-      await vi.advanceTimersByTimeAsync(SETTLE_MS);
-    });
-  }
+};
+
+const mountLog = async ({ name }: MountParams): Promise<HTMLElement> => {
+  await mount({ name });
   return screen.getByRole('region', { name: 'Log entries' });
 };
 
@@ -94,7 +91,7 @@ describe('the u47 big session scenes', () => {
   });
 
   it('draws one page of the log and offers the older rows', async () => {
-    const log = await mount({ name: 'u47-big-session-log' });
+    const log = await mountLog({ name: 'u47-big-session-log' });
 
     const older = within(log).getByRole('button', { name: `Show ${LOG_PAGE_ROWS} older rows` });
 
@@ -103,7 +100,7 @@ describe('the u47 big session scenes', () => {
   });
 
   it('draws the next page when the older rows are asked for', async () => {
-    const log = await mount({ name: 'u47-big-session-log' });
+    const log = await mountLog({ name: 'u47-big-session-log' });
 
     await act(async () => {
       fireEvent.click(

@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { brandId, type IsoDateTime, type SessionId } from '@goodboy/types';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
 import { type Row, WAIT, click, lens, openPalette, settle, useAppStore } from './harness';
@@ -50,14 +50,16 @@ export const OVERVIEW_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'palette: Open log opens the log drawer beside the Overview',
-    covers: ['palette:Open log'],
-    open: () => openPalette(/^Open log/, 'open log'),
+    name: 'palette: Open activity opens the Activity page under the Overview',
+    covers: ['palette:Open activity'],
+    open: () => openPalette(/^Open activity/, 'open activity'),
     lands: async () => {
       expect(await screen.findByRole('region', { name: 'Log entries' }, WAIT)).toBeDefined();
-      expect(
-        document.querySelector('[data-session-head] [aria-selected="true"]')?.textContent,
-      ).toBe('Overview');
+      await waitFor(
+        () =>
+          expect(document.querySelector('[data-crumb-current]')?.textContent).toContain('Activity'),
+        WAIT,
+      );
     },
   },
   {

@@ -154,7 +154,7 @@ describe('palette verbs follow the session state', () => {
     expect(sessionView({ facts: LIVE, query: '' })).toEqual([
       'Open comments',
       'Open changes',
-      'Open log',
+      'Open activity',
       'Open in editor',
       'Open in Terminal',
       'Open in external terminal',
@@ -185,7 +185,7 @@ describe('palette verbs follow the session state', () => {
 
     expect(sessionView({ facts, query: '' })).toEqual([
       'Open comments',
-      'Open log',
+      'Open activity',
       'Rename',
       'Ask about this session',
       'Pin session',
@@ -217,7 +217,7 @@ describe('palette verbs follow the session state', () => {
     const facts = { ...LIVE, isArchived: true };
 
     expect(sessionView({ facts, query: '' })).toEqual([
-      'Open log',
+      'Open activity',
       'Restore',
       'Copy title',
       'Copy branch name',

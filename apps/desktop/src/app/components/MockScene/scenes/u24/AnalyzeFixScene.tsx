@@ -4,7 +4,7 @@ import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
 import { BranchChecks } from '../../../../../features/branch/components/BranchChecks';
-import { LOG_LANDING } from '../../../../../features/session/central/log/logLanding';
+import { ActivityPage } from '../../../../../features/session/central/log/ActivityPage';
 import { DrawerHost } from '../../../DrawerHost';
 import { ScenePlacesRail } from '../ScenePlacesRail';
 import { SESSION, SESSION_ID } from '../activityRunSeed';
@@ -33,11 +33,8 @@ export const AnalyzeFixScene = ({
     if (isDetailUnloaded) {
       unloadedDetailSeed();
     }
-    if (isLogOpen) {
-      LOG_LANDING.request({ sessionId: SESSION_ID });
-    }
     setIsReady(true);
-  }, [phase, shouldOpenDrawer, isDetailUnloaded, isLogOpen]);
+  }, [phase, shouldOpenDrawer, isDetailUnloaded]);
   if (!isReady) {
     return null;
   }
@@ -46,6 +43,7 @@ export const AnalyzeFixScene = ({
       <ScrollFade className="min-h-0 flex-1">
         <div className="px-6 py-4">
           <SessionOverviewPane session={SESSION} />
+          {isLogOpen ? <ActivityPage session={SESSION} /> : null}
         </div>
       </ScrollFade>
     ) : (

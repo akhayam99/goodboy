@@ -77,6 +77,10 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/QuestionsPane.tsx'],
   },
+  ActivityPage: {
+    kind: 'shell',
+    files: ['features/session/central/log/ActivityPage.tsx'],
+  },
   WorkflowsPane: {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/WorkflowsPane.tsx'],

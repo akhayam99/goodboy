@@ -583,7 +583,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   | An address of the old Explore drawer or page                     | the Changes tab, `changes.mode` = `all`                                    |
   | A file opened from the old Explore tree                          | the Changes tab on that file, `changes.mode` = `all`                       |
   | A file opened from a link, a reading panel                       | unchanged                                                                  |
-  | The old Log panel                                                | the session Overview, its Log is the last section                          |
+  | The old Log panel                                                | the session Overview, with its last three rows and Open activity           |
   | An unknown lens                                                  | the session Overview                                                       |
 
   The previous release must open every place this build saves: it folds a

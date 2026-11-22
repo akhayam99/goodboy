@@ -94,7 +94,7 @@ describe('the right click list of a session', () => {
       'Overview',
       'Comments',
       'Changes',
-      'Log',
+      'Activity',
       'Editor',
       'Terminal',
       'External terminal',

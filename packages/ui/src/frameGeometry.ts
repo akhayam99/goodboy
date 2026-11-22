@@ -15,6 +15,7 @@ export const FRAME_PAGES = [
   'terminal',
   'browser',
   'overview',
+  'activity',
   'branch',
   'branchChanges',
   'runs',
@@ -53,6 +54,7 @@ export type FrameType = (typeof FRAME_TYPES)[number];
 
 export const PAGE_FRAME: Readonly<Record<FramePage, FrameType>> = {
   overview: 'column',
+  activity: 'column',
   runs: 'column',
   run: 'column',
   orchestrated: 'column',
@@ -125,6 +127,7 @@ type FramePageParams = {
 
 export const PAGE_MEASURE: Readonly<Record<FramePage, PageColumnWidth>> = {
   overview: 'column',
+  activity: 'column',
   runs: 'column',
   run: 'column',
   orchestrated: 'column',

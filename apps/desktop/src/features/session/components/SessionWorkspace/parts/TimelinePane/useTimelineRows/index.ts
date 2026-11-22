@@ -43,12 +43,20 @@ type DayLabelParams = {
 
 const NO_EXPANDED_ROWS: ReadonlySet<string> = new Set();
 
+type NarrowParams = {
+  readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
+};
+
 type Params = {
   readonly session: Session;
   readonly view: EntriesView;
   readonly query: string;
   readonly explode: ExplodeGroups;
+  readonly extraEntries?: ReadonlyArray<TimelineTopLevelEntry>;
+  readonly narrow?: (params: NarrowParams) => ReadonlyArray<TimelineTopLevelEntry>;
 };
+
+const NO_EXTRA_ENTRIES: ReadonlyArray<TimelineTopLevelEntry> = [];
 
 export type TimelineRows = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
@@ -71,7 +79,14 @@ export type TimelineRows = {
   readonly setDetailHeight: (params: DetailHeightParams) => void;
 };
 
-export const useTimelineRows = ({ session, view, query, explode }: Params): TimelineRows => {
+export const useTimelineRows = ({
+  session,
+  view,
+  query,
+  explode,
+  extraEntries = NO_EXTRA_ENTRIES,
+  narrow,
+}: Params): TimelineRows => {
   const sessionId: SessionId = session.id;
   const work = useSessionWorkModel({ session });
   const {
@@ -139,14 +154,15 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
 
   const viewEntries = useMemo(() => {
     const inView = entriesOfView({
-      entries: modelEntries,
+      entries: extraEntries.length === 0 ? modelEntries : [...modelEntries, ...extraEntries],
       events,
       view,
       liveAgentIds,
       settledStopIds,
     });
-    return view !== 'activity' ? logEntriesMatching({ entries: inView, query }) : inView;
-  }, [events, liveAgentIds, modelEntries, query, settledStopIds, view]);
+    const kept = narrow === undefined ? inView : narrow({ entries: inView });
+    return view !== 'activity' ? logEntriesMatching({ entries: kept, query }) : kept;
+  }, [events, extraEntries, narrow, liveAgentIds, modelEntries, query, settledStopIds, view]);
 
   const stream = useMemo(
     () =>

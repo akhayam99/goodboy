@@ -188,7 +188,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       'Overview',
       'Comments',
       'Changes',
-      'Log',
+      'Activity',
       'Editor',
       'Terminal',
       'External terminal',

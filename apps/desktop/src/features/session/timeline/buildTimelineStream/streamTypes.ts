@@ -2,14 +2,17 @@ import type { RowState } from '../../../workTreeModel/rowState';
 import type {
   TimelineAgentEntry,
   TimelineArtifactEntry,
-  TimelineBranchEntry,
   TimelineEventEntry,
-  TimelineIssueEntry,
   TimelineLearningEntry,
   TimelinePlanEntry,
   TimelineQuestionEntry,
   TimelineRunEntry,
 } from '../buildTimelineGroups';
+import type {
+  TimelineBranchEntry,
+  TimelineIssueEntry,
+  TimelineWorkEntry,
+} from '../timelineFactEntries';
 import type { RailGroupInput } from '../../../workTreeModel/railGeometry';
 import type { RunIdentity } from '../runIdentity';
 import type { CiFixStage } from '../../../branch/checks/ciFixStages';
@@ -23,6 +26,7 @@ export type TimelineStreamEntry =
   | TimelineArtifactEntry
   | TimelineIssueEntry
   | TimelineBranchEntry
+  | TimelineWorkEntry
   | TimelineEventEntry
   | TimelineLearningEntry
   | TimelineQuestionEntry;

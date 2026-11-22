@@ -340,7 +340,9 @@ reads it yet, so the app does not load it. Given those rows,
 `buildSessionScripts` gives every group `available`, each saved and
 discovered script with its last run (`ok`, `error`, `cancelled` for an exit
 of 130, 137 or 143, `unfinished` for a run whose end never landed, as after a
-quit), pinned or not.
+quit), pinned or not. `workOutcomeOf` is that one rule; the Activity page
+reads `listWorkEvents` through the `work-events` slice and words each row
+with it.
 
 Provider login and CLI update runs have no Rust ring. `invokeProviderLifecycleRun`
 starts `features/providers/lifecycleOutputBuffer.ts` before the run, which keeps
