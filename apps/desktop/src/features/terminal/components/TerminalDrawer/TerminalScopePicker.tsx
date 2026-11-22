@@ -63,6 +63,11 @@ export const TerminalScopePicker = ({
           <span className={label.isMono ? 'min-w-0 truncate font-mono' : 'min-w-0 truncate'}>
             {label.place}
           </span>
+          {label.folder === null ? null : (
+            <span className={`shrink-0 whitespace-pre font-mono ${TEXT_ROLE.secondary}`}>
+              {` · ${label.folder}`}
+            </span>
+          )}
         </span>
       }
       align="start"
