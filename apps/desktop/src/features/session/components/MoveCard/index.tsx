@@ -45,7 +45,7 @@ export const MoveCard = ({
       setEditNote(sent.note);
     }
   };
-  if (sent !== undefined && sent.phase !== 'failed') {
+  if (sent !== undefined && (sent.phase === 'sent' || sent.phase === 'stopped')) {
     return (
       <div data-move={card.id} data-move-density={density} className="flex min-w-0 flex-col">
         <SentToLeadRow entry={sent} onEdit={() => void onEdit()} />
@@ -53,7 +53,7 @@ export const MoveCard = ({
     );
   }
   const sentLine =
-    sent === undefined ? null : <SentToLeadRow entry={sent} onEdit={() => void onEdit()} />;
+    sent?.phase === 'failed' ? <SentToLeadRow entry={sent} onEdit={() => void onEdit()} /> : null;
   const verbs = (
     <span className="flex shrink-0 items-center gap-2">
       {leadSend === null || sent !== undefined ? null : (
