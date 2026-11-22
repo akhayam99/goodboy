@@ -197,6 +197,82 @@ describe('useFleetPhrase', () => {
     unmount();
   });
 
+  it('keeps a phrase five seconds from when it showed when reads answer late', async () => {
+    live.answer = () =>
+      new Promise((resolve) => {
+        setTimeout(() => resolve([rowOf({ sessionId: SESSION, command: 'pnpm test' })]), 4_900);
+      });
+    const { result, unmount } = renderHook(() => useFleetPhrase({ sessionId: SESSION }));
+    await advance({ ms: 4_900 });
+    expect(result.current).toBe('Running pnpm test');
+    live.answer = () =>
+      new Promise((resolve) => {
+        setTimeout(() => resolve([rowOf({ sessionId: SESSION, command: 'pnpm lint' })]), 100);
+      });
+
+    await emitChange({ sessionId: SESSION });
+    await advance({ ms: 200 });
+    expect(liveReads()).toBe(2);
+    expect(result.current).toBe('Running pnpm test');
+
+    await advance({ ms: FLEET_MIN_MS - 201 });
+    expect(result.current).toBe('Running pnpm test');
+    await advance({ ms: 1 });
+    expect(result.current).toBe('Running pnpm lint');
+    unmount();
+  });
+
+  it('holds the phrase when the project name arrives after the rows', async () => {
+    store.setState({ sessionProjectMounts: {} });
+    live.answer = async () => [rowOf({ sessionId: SESSION, command: 'pnpm test', mountId: MOUNT })];
+    const { result, unmount } = renderHook(() => useFleetPhrase({ sessionId: SESSION }));
+    await advance({ ms: 1_000 });
+    const before = result.current;
+    expect(before).not.toBeNull();
+
+    await act(async () => {
+      store.setState({
+        sessionProjectMounts: {
+          [SESSION]: [
+            mountFixture({ mountId: MOUNT, sessionId: SESSION, mountName: 'ledger-core' }),
+          ],
+        },
+      });
+    });
+    expect(result.current).toBe(before);
+    await advance({ ms: FLEET_MIN_MS - 1_001 });
+    expect(result.current).toBe(before);
+    await advance({ ms: 1 });
+    expect(result.current).toBe('Running pnpm test in ledger-core');
+    unmount();
+  });
+
+  it('reads nothing while the window is hidden and reads on return', async () => {
+    live.answer = async () => [rowOf({ sessionId: SESSION, command: 'pnpm test' })];
+    const { result, unmount } = renderHook(() => useFleetPhrase({ sessionId: SESSION }));
+    await advance({ ms: 0 });
+    live.answer = async () => [rowOf({ sessionId: SESSION, command: 'pnpm lint' })];
+    await emitChange({ sessionId: SESSION });
+    const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+
+    await advance({ ms: FLEET_MIN_MS });
+    expect(liveReads()).toBe(1);
+    await emitChange({ sessionId: SESSION });
+    await advance({ ms: FLEET_MIN_MS });
+    expect(liveReads()).toBe(1);
+    expect(result.current).toBe('Running pnpm test');
+
+    visibility.mockReturnValue('visible');
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(liveReads()).toBe(2);
+    expect(result.current).toBe('Running pnpm lint');
+    visibility.mockRestore();
+    unmount();
+  });
+
   it('picks up a change within fifteen seconds with no event', async () => {
     live.answer = async () => [rowOf({ sessionId: SESSION, command: 'pnpm test' })];
     const { result, unmount } = renderHook(() => useFleetPhrase({ sessionId: SESSION }));

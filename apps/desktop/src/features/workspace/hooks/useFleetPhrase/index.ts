@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { createLatestOnly } from '../../../../store/runtime/state-writes/latestOnly';
@@ -13,8 +13,20 @@ const READ_KEY = 'fleet';
 
 type Rows = ReadonlyArray<LiveWorkRow>;
 
+type Shown = {
+  readonly phrase: string | null;
+  readonly at: number;
+};
+
+type Waiting = {
+  readonly phrase: string | null;
+  readonly timer: ReturnType<typeof setTimeout>;
+};
+
 type Fleet = {
   bySession: ReadonlyMap<string, Rows>;
+  shown: Map<string, Shown>;
+  waiting: Map<string, Waiting>;
   listeners: Set<() => void>;
   readAt: number;
   readTimer: ReturnType<typeof setTimeout> | null;
@@ -33,6 +45,11 @@ type SessionParams = {
   readonly sessionId: string;
 };
 
+type PhraseParams = {
+  readonly sessionId: string;
+  readonly phrase: string | null;
+};
+
 type Params = {
   readonly sessionId: SessionId;
 };
@@ -41,10 +58,20 @@ const NO_ROWS: Rows = [];
 const latest = createLatestOnly();
 const fleet: Fleet = {
   bySession: new Map(),
+  shown: new Map(),
+  waiting: new Map(),
   listeners: new Set(),
   readAt: 0,
   readTimer: null,
   stop: null,
+};
+
+const isVisible = (): boolean => document.visibilityState === 'visible';
+
+const notifyFleet = (): void => {
+  for (const listener of fleet.listeners) {
+    listener();
+  }
 };
 
 const signatureOf = ({ rows }: RowsParams): string =>
@@ -89,13 +116,56 @@ const applyRows = ({ rows }: RowsParams): void => {
     return;
   }
   fleet.bySession = next;
-  for (const listener of fleet.listeners) {
-    listener();
+  notifyFleet();
+};
+
+const dropWaiting = ({ sessionId }: SessionParams): void => {
+  const waiting = fleet.waiting.get(sessionId);
+  if (waiting === undefined) {
+    return;
   }
+  clearTimeout(waiting.timer);
+  fleet.waiting.delete(sessionId);
+};
+
+const showPhrase = ({ sessionId, phrase }: PhraseParams): void => {
+  dropWaiting({ sessionId });
+  fleet.shown.set(sessionId, { phrase, at: Date.now() });
+  notifyFleet();
+};
+
+const showWaitingPhrase = ({ sessionId }: SessionParams): void => {
+  const waiting = fleet.waiting.get(sessionId);
+  if (waiting === undefined) {
+    return;
+  }
+  showPhrase({ sessionId, phrase: waiting.phrase });
+};
+
+const offerPhrase = ({ sessionId, phrase }: PhraseParams): void => {
+  if (fleet.stop === null) {
+    return;
+  }
+  const shown = fleet.shown.get(sessionId);
+  if ((shown?.phrase ?? null) === phrase) {
+    dropWaiting({ sessionId });
+    return;
+  }
+  const wait = shown === undefined ? 0 : shown.at + FLEET_MIN_MS - Date.now();
+  if (wait <= 0) {
+    showPhrase({ sessionId, phrase });
+    return;
+  }
+  const timer =
+    fleet.waiting.get(sessionId)?.timer ?? setTimeout(() => showWaitingPhrase({ sessionId }), wait);
+  fleet.waiting.set(sessionId, { phrase, timer });
 };
 
 const read = async (): Promise<void> => {
   fleet.readTimer = null;
+  if (!isVisible()) {
+    return;
+  }
   fleet.readAt = Date.now();
   const claim = latest.claim({ key: READ_KEY });
   try {
@@ -109,7 +179,7 @@ const read = async (): Promise<void> => {
 };
 
 const requestRead = (): void => {
-  if (fleet.readTimer !== null) {
+  if (fleet.readTimer !== null || !isVisible()) {
     return;
   }
   const wait = fleet.readAt + FLEET_MIN_MS - Date.now();
@@ -144,9 +214,13 @@ const startFleet = (): (() => void) => {
     if (fleet.readTimer !== null) {
       clearTimeout(fleet.readTimer);
     }
+    for (const sessionId of [...fleet.waiting.keys()]) {
+      dropWaiting({ sessionId });
+    }
     fleet.readTimer = null;
     fleet.readAt = 0;
     fleet.bySession = new Map();
+    fleet.shown = new Map();
   };
 };
 
@@ -169,12 +243,16 @@ const subscribeFleet = ({ listener }: ListenerParams): (() => void) => {
 const fleetRowsOf = ({ sessionId }: SessionParams): Rows =>
   fleet.bySession.get(sessionId) ?? NO_ROWS;
 
+const shownPhraseOf = ({ sessionId }: SessionParams): string | null =>
+  fleet.shown.get(sessionId)?.phrase ?? null;
+
 export const useFleetPhrase = ({ sessionId }: Params): string | null => {
   const subscribe = useCallback((listener: () => void) => subscribeFleet({ listener }), []);
-  const snapshot = useCallback(() => fleetRowsOf({ sessionId }), [sessionId]);
-  const rows = useSyncExternalStore(subscribe, snapshot, snapshot);
+  const rowsSnapshot = useCallback(() => fleetRowsOf({ sessionId }), [sessionId]);
+  const shownSnapshot = useCallback(() => shownPhraseOf({ sessionId }), [sessionId]);
+  const rows = useSyncExternalStore(subscribe, rowsSnapshot, rowsSnapshot);
   const mounts = useAppStore((state) => state.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
-  return useMemo(
+  const phrase = useMemo(
     () =>
       rows.length === 0
         ? null
@@ -184,4 +262,8 @@ export const useFleetPhrase = ({ sessionId }: Params): string | null => {
           }),
     [mounts, rows],
   );
+  useEffect(() => {
+    offerPhrase({ sessionId, phrase });
+  }, [sessionId, phrase]);
+  return useSyncExternalStore(subscribe, shownSnapshot, shownSnapshot);
 };
