@@ -14,6 +14,7 @@ import {
 } from '../../../../features/session/session-stage';
 import { attentionMarkOf } from '../../../../features/session/attentionMarkOf';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
+import { useFleetPhrase } from '../../../../features/workspace/hooks/useFleetPhrase';
 
 type SelectParams = {
   readonly sessionId: SessionId;
@@ -49,6 +50,7 @@ export const NeedsYouSessionRow = ({
   const mark: StatusMarkSpec =
     attention === null ? { kind: 'dot', tone } : attentionMarkOf({ reason: attention });
   const sessionId = session.id as SessionId;
+  const phrase = useFleetPhrase({ sessionId });
 
   return (
     <li>
@@ -72,7 +74,12 @@ export const NeedsYouSessionRow = ({
             text={sessionTitle({ session })}
             className="truncate text-control text-foreground"
           />
-          <span className="truncate text-meta text-muted-foreground">{words}</span>
+          <span
+            data-fleet-phrase={phrase === null ? undefined : ''}
+            className="truncate text-meta text-muted-foreground"
+          >
+            {phrase ?? words}
+          </span>
         </span>
       </button>
     </li>

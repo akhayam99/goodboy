@@ -528,7 +528,7 @@ Human-input reasons (`open-question`, `fix-needs-you`, `needs-approval`,
 `plan-approval`, `run-waits-for-go`, `run-paused-at-limit`, `auto-needs-you` and
 `slack-reply-waiting`) outrank running: the stage is needs you and, while an agent
 works, the row keeps the reason's mark, the Board card breathes as a running card, and the hover card
-adds a line, An agent is working. An agent error and a stopped run keep their place above running.
+adds a line with what the agent is doing, such as "Running pnpm test in payments-api". An agent error and a stopped run keep their place above running.
 Failing checks, changes requested, comments it couldn't fix, approved and unread
 rank below running, because an agent may be working on exactly that.
 
