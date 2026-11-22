@@ -63,9 +63,11 @@ const seedQuestion = ({ status }: QuestionParams): void =>
     answerOpenQuestions: answers,
   });
 
-const wrapper = ({ children }: { readonly children: ReactNode }) => (
-  <ToastProvider>{children}</ToastProvider>
-);
+type Props = {
+  readonly children: ReactNode;
+};
+
+const wrapper = ({ children }: Props) => <ToastProvider>{children}</ToastProvider>;
 
 beforeEach(async () => {
   await resetStoryStore();

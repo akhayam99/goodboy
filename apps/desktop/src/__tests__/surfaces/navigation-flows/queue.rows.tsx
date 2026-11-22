@@ -43,7 +43,11 @@ const seedQuestion = ({ sessionId }: Ctx): void => {
 const needsYou = (): Promise<HTMLElement> =>
   screen.findByRole('region', { name: 'Needs you' }, WAIT);
 
-const tab = (name: string): HTMLElement => screen.getByRole('tab', { name });
+type TabParams = {
+  readonly name: string;
+};
+
+const tab = ({ name }: TabParams): HTMLElement => screen.getByRole('tab', { name });
 
 export const QUEUE_ROWS: ReadonlyArray<Row> = [
   {
@@ -55,7 +59,7 @@ export const QUEUE_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await heading('Board');
-      expect(tab('Queue').getAttribute('aria-selected')).toBe('true');
+      expect(tab({ name: 'Queue' }).getAttribute('aria-selected')).toBe('true');
       const band = await needsYou();
       await click(await within(band).findByRole('button', { name: KEEP }, WAIT));
 
@@ -137,7 +141,10 @@ export const QUEUE_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await heading('Board');
-      await waitFor(() => expect(tab('Stages').getAttribute('aria-selected')).toBe('true'), WAIT);
+      await waitFor(
+        () => expect(tab({ name: 'Stages' }).getAttribute('aria-selected')).toBe('true'),
+        WAIT,
+      );
       expect(document.querySelector('[data-select-id]')).not.toBeNull();
     },
   },
