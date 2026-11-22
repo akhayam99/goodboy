@@ -38,6 +38,8 @@ import { MarkContextRead } from './MarkContextRead';
 import { ContextSection } from './ContextSection';
 import { slotVisibility, youOnlyVisibility } from './roleVisibility';
 import { ExplanationsSection } from './ExplanationsSection';
+import { SendsSection } from './SendsSection';
+import { useContextLoads } from './useContextLoads';
 import { revealContextSection } from './revealContextSection';
 import { useLearningList } from '../../../../shared/hooks/useLearningList';
 
@@ -72,15 +74,10 @@ export const ContextDrawer = ({
   const summarizer = useSummarizerStatus(sessionId);
   const baseline = useAppStore((state) => selectContextBaseline({ state, sessionId }));
   const openContextDrawer = useAppStore((state) => state.openContextDrawer);
-  const ensureSessionSlots = useAppStore((state) => state.ensureSessionSlots);
   const loadSessionSlots = useAppStore((state) => state.loadSessionSlots);
-  const loadSessionDecisions = useAppStore((state) => state.loadSessionDecisions);
-  const loadSessionOpenQuestions = useAppStore((state) => state.loadSessionOpenQuestions);
-  const loadSessionContextSeen = useAppStore((state) => state.loadSessionContextSeen);
   const writeSlot = useWriteContextSlot({ sessionId });
   const versionsSection: ContextSlotSection = section === 'explanations' ? 'summary' : section;
   const learnings = useAppStore((state) => state.sessionContextItems[sessionId] ?? EMPTY_ARRAY);
-  const loadSessionContextItems = useAppStore((state) => state.loadSessionContextItems);
   const learningList = useLearningList({ items: learnings });
   const goalHistory = useSlotHistoryCount(sessionId, CONTEXT_SECTION_SLOT.goal);
   const decisionsHistory = useSlotHistoryCount(sessionId, CONTEXT_SECTION_SLOT.decisions);
@@ -106,26 +103,7 @@ export const ContextDrawer = ({
   const hasFailed = !hasSlots && !isLoading && slotsLoad === 'failed';
   const isLocked = summarizer.status === 'running';
 
-  useEffect(() => {
-    void ensureSessionSlots(sessionId);
-    void loadSessionOpenQuestions(sessionId);
-    void loadSessionContextSeen(sessionId);
-    void loadSessionContextItems({ sessionId });
-  }, [
-    ensureSessionSlots,
-    loadSessionContextItems,
-    loadSessionContextSeen,
-    loadSessionOpenQuestions,
-    sessionId,
-  ]);
-
-  const hasLedger = ledger !== undefined;
-  useEffect(() => {
-    if (hasLedger) {
-      return;
-    }
-    void loadSessionDecisions(sessionId);
-  }, [hasLedger, loadSessionDecisions, sessionId]);
+  useContextLoads({ sessionId, hasLedger: ledger !== undefined });
 
   useEffect(() => {
     setRawSection(null);
@@ -226,6 +204,7 @@ export const ContextDrawer = ({
             onCloseRawEditor={() => setRawSection(null)}
           />
         </ContextSection>
+        {isLoading ? null : <SendsSection sessionId={sessionId} />}
         <ContextSection
           section="explanations"
           count={learningList.visible.length}
