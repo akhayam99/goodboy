@@ -53,13 +53,7 @@ Read back what agents explained about the topics you follow. List topics under *
 
 Keep prompts small as a session grows. Each part of the shared brief has its own size, and when decisions run over, the newest are kept.
 
-### Ask the session
-
-The Ask line answers two questions from the session itself. **What are you doing?** says what each running agent does right now and the step of each branch. **What is left?** lists the parts of the plan that are not done. These answers say **From the session · free** and cost nothing. Without a plan, the answer says **No plan on this session** and never guesses. Any other question is one turn to the model, marked **Asked the model · 1 turn** with its cost. **Message the Implementer** puts a message in that agent's queue without interrupting it, and a message that could not be saved stays in the field with **Retry**. **Open in Ask** continues in the Ask panel.
-
-### What Ask reads
-
-Ask a question the session cannot answer alone, and the model reads the live work, not only the summary. It sees the last ten tool calls of each running agent, every check with its result, the state of each worktree and each script run with the end of its output. That part stays under 4,000 tokens, and secrets in terminal and script output are hidden before it is sent.
+An Ask question reads the live work, not only the summary: the last ten tool calls of each running agent, every check with its result, the state of each worktree and each script run with the end of its output. That part stays under 4,000 tokens, and secrets in terminal and script output are hidden before it is sent.
 
 ### Plans handed to the next agent
 
