@@ -1,6 +1,8 @@
 import { memo } from 'react';
+import { brandId, type MountId } from '@goodboy/types';
 import { Button, Chip, cn, ROW_HOVER, StatusDot, Tooltip } from '@goodboy/ui';
 import { sessionPlace, useAppStore } from '../../../../store';
+import { failingChecksOf } from '../../../branch/checks/failingChecksOf';
 import { tabForFactOf } from '../../../branch/tabForFactOf';
 import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
 import { useMountRowMenu } from '../../hooks/useMountRowMenu';
@@ -26,12 +28,26 @@ const BoardTileView = ({ rowId }: Props) => {
     mountId: entry === null ? null : entry.fact.mountId,
     anchorKey: `board-mount-${rowId}`,
   });
+  const failingName = useAppStore((state) =>
+    entry === null || entry.story.state !== 'checks-failing' || entry.fact.request === null
+      ? null
+      : (failingChecksOf({
+          state,
+          sessionId: session.id,
+          mountId: brandId<MountId>({ value: entry.fact.mountId }),
+          prNumber: entry.fact.request.number,
+        })?.checks[0]?.name ?? null),
+  );
   const row = rowById.get(rowId);
   if (row === undefined) {
     return null;
   }
   const runningCount = runningByRowId.get(rowId) ?? 0;
-  const chip = boardTileChipOf({ row, entry, runningCount });
+  const stateChip = boardTileChipOf({ row, entry, runningCount });
+  const chip =
+    stateChip === null || failingName === null || entry?.story.word !== stateChip.word
+      ? stateChip
+      : { ...stateChip, word: `${failingName} failed` };
   const title =
     row.branch === null
       ? boardRowCellsOf({

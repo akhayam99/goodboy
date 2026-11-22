@@ -61,6 +61,7 @@ export const NAMES = {
   openInQuestions: 'Open in Questions',
   openInRuns: 'Open in Runs',
   openPullRequest: 'Open pull request',
+  openOnGitHub: 'Open on GitHub',
   dock: 'Dock',
   dockBesideThePage: 'Dock beside the page',
   close: 'Close',

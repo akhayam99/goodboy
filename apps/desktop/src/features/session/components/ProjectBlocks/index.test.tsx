@@ -311,8 +311,39 @@ describe('the project blocks on the Overview', () => {
     ).toContain('Rebase');
     expect(verbsOf({ tile: tileOf({ branch: TENANT }) })).toHaveLength(0);
     expect(tileOf({ branch: TENANT }).querySelector('[data-board-chip]')?.textContent).toBe(
-      'Checks failing',
+      'static-analysis failed',
     );
+  });
+
+  it('names the failing check as the one fact in tone, and keeps the request as text', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    act(() => {
+      useAppStore.setState({ sessionOpenQuestions: {} });
+    });
+    await show();
+    const tenant = tileOf({ branch: TENANT });
+
+    expect(tenant.querySelectorAll('[data-board-chip]')).toHaveLength(1);
+    expect(tenant.querySelector('[data-board-chip]')?.textContent).toBe('static-analysis failed');
+    expect(
+      [...tenant.querySelectorAll('[data-board-facts] button, [data-board-facts] a')].length,
+    ).toBe(0);
+  });
+
+  it('holds one target and at most one verb per row, and one door per project head', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    await show();
+
+    for (const tile of projects().querySelectorAll<HTMLElement>('[data-board-row]')) {
+      expect(within(tile).getAllByRole('link')).toHaveLength(1);
+      expect(verbsOf({ tile }).length).toBeLessThanOrEqual(1);
+    }
+    for (const head of projects().querySelectorAll<HTMLElement>('[data-board-project-head]')) {
+      const doors = within(head)
+        .queryAllByRole('button')
+        .filter((button) => !/from session$/.test(button.getAttribute('aria-label') ?? ''));
+      expect(doors.length).toBeLessThanOrEqual(1);
+    }
   });
 
   it('opens the tab the failing fact names, by its mount, and leaves the tools alone', async () => {

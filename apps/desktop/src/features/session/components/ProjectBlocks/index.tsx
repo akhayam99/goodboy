@@ -69,6 +69,7 @@ export const ProjectBlocks = ({
   const removeDoorId =
     blocks.find((block) => block.rowIds.some((rowId) => rowById.get(rowId)?.isMerged === true))
       ?.id ?? null;
+  const hasMergeDoor = mergeCard !== null && actionsFor({ card: mergeCard }).main !== null;
   const value: BoardContextValue = {
     session,
     now,
@@ -110,8 +111,8 @@ export const ProjectBlocks = ({
           <ProjectBlock
             key={block.id}
             block={block}
-            hasMergeDoor={index === 0}
-            hasRemoveDoor={block.id === removeDoorId}
+            hasMergeDoor={hasMergeDoor && index === 0}
+            hasRemoveDoor={block.id === removeDoorId && !(hasMergeDoor && index === 0)}
             onToggleFold={() => toggle({ id: block.id })}
           />
         ))}
