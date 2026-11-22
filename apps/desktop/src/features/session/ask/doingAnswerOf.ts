@@ -19,20 +19,11 @@ type Params = Readonly<{
   branches: ReadonlyArray<DoingBranch>;
 }>;
 
-const MAX_RUNS = 4;
-
 const runsTextOf = ({ runs }: Pick<Params, 'runs'>): string => {
   if (runs.length === 0) {
     return 'Nothing is running in this session.';
   }
-  const shown = runs.slice(0, MAX_RUNS).map((run) => `${run.agent}: ${run.phrase}.`);
-  const rest = runs.length - MAX_RUNS;
-  return rest > 0
-    ? [
-        ...shown,
-        `${countNoun({ count: rest, one: 'more agent', many: 'more agents' })} working.`,
-      ].join(' ')
-    : shown.join(' ');
+  return runs.map((run) => `${run.agent}: ${run.phrase}.`).join(' ');
 };
 
 export const doingAnswerOf = ({ runs, branches }: Params): AskSessionAnswer => {

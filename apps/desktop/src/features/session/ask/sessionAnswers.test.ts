@@ -37,6 +37,18 @@ describe('doingAnswerOf', () => {
     expect(answer.agentId).toBe(IMPLEMENTER);
   });
 
+  it('names every running agent, never a count in place of the fifth and later ones', () => {
+    const runs = Array.from({ length: 6 }, (_, index) => ({
+      agentId: null,
+      agent: `Implementer ${index + 1}`,
+      phrase: `Running pnpm test shard-${index + 1}`,
+    }));
+    const answer = doingAnswerOf({ runs, branches: [] });
+    expect(answer.text).toBe(runs.map((run) => `${run.agent}: ${run.phrase}.`).join(' '));
+    expect(answer.text).not.toContain('more agent');
+    expect(answer.sources).toEqual(['Live work, 6 agents']);
+  });
+
   it('says nothing runs when no agent has a live turn', () => {
     expect(doingAnswerOf({ runs: [], branches: [] }).text).toBe(
       'Nothing is running in this session.',

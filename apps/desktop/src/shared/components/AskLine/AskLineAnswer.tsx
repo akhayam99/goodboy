@@ -18,7 +18,7 @@ const AskIcon = CONCEPT_ICONS.ask;
 export const AskLineAnswer = ({ view, message, onClose, onOpenInAsk, onRetry }: Props) => (
   <section
     aria-label="Answer"
-    aria-busy={view.phase === 'thinking'}
+    aria-busy={view.phase === 'thinking' || view.phase === 'streaming'}
     data-testid="ask-line-answer"
     className="flex min-w-0 flex-col gap-2 rounded-md bg-subtle p-3"
   >
@@ -35,7 +35,7 @@ export const AskLineAnswer = ({ view, message, onClose, onOpenInAsk, onRetry }: 
         <Skeleton className="h-4 w-3/4" />
       </div>
     ) : null}
-    {view.phase === 'answered' ? (
+    {view.phase === 'answered' || view.phase === 'streaming' ? (
       <>
         <p className="text-prose text-foreground">{view.text}</p>
         {view.sources.length > 0 ? (

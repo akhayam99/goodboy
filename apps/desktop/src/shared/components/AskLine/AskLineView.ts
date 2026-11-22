@@ -1,4 +1,4 @@
-export type AskLinePhase = 'thinking' | 'answered' | 'failed';
+export type AskLinePhase = 'thinking' | 'streaming' | 'answered' | 'failed';
 
 export type AskLineAnswerView = Readonly<{
   question: string;

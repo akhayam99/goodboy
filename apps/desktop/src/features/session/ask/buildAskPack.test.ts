@@ -329,4 +329,24 @@ describe('buildAskPack', () => {
     expect(pack.text).not.toContain('ghp_abcdefghijklmnopqrstuvwxyz123456');
     expect(pack.text).not.toContain('sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789');
   });
+
+  it('redacts a private key whose header falls before the kept output tail', () => {
+    const body = Array.from({ length: 40 }, (_, index) => `keyline${index}`.padEnd(64, 'Q'));
+    const output = [
+      '-----BEGIN RSA PRIVATE KEY-----',
+      ...body,
+      '-----END RSA PRIVATE KEY-----',
+    ].join('\n');
+    const pack = buildAskPack(
+      input({
+        live: {
+          ...NO_LIVE,
+          scripts: [{ project: 'payments-api', name: 'deploy', outcome: 'failed', output }],
+        },
+      }),
+    );
+    expect(pack.text).toContain('- Script deploy in payments-api: failed');
+    expect(pack.text).not.toContain('keyline39');
+    expect(pack.text).not.toContain('QQQQ');
+  });
 });

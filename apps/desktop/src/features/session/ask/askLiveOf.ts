@@ -5,7 +5,9 @@ import {
   readWorktreeStatus,
   worktreeStatusKey,
 } from '../../../store/runtime/worktreeStatuses/cache';
+import { mountRequestOf } from '../../../store/slices/project-mounts/mountRowModel';
 import { changedCount, distanceAhead } from '../../../shared/lib/gitStatus';
+import { redactSecrets } from '../../../shared/utils/redactSecrets';
 import type { ScriptRunRecord } from '../../scripts/scripts';
 import type { AskLiveCalls, AskLiveCheck, AskLiveInput, AskLiveScript } from './askLiveSection';
 
@@ -54,7 +56,9 @@ const callDetailOf = ({ input }: InputParams): string => {
   const value = DETAIL_KEYS.map((key) => input[key]).find(
     (candidate): candidate is string => typeof candidate === 'string' && candidate.trim() !== '',
   );
-  return value === undefined ? '' : ` ${value.trim().slice(0, CALL_DETAIL_CHARS)}`;
+  return value === undefined
+    ? ''
+    : ` ${redactSecrets({ text: value }).trim().slice(0, CALL_DETAIL_CHARS)}`;
 };
 
 type EventsParams = {
@@ -96,24 +100,32 @@ const callsOf = ({ state, sessionId }: Params): ReadonlyArray<AskLiveCalls> =>
 
 const liveChecksOf = ({ state, sessionId }: Params): ReadonlyArray<AskLiveCheck> =>
   (state.sessionProjectMounts[sessionId] ?? EMPTY_MOUNTS).flatMap((mount) => {
-    const github = state.mountGithub[mount.mountId];
-    const pr = github?.pr ?? null;
-    if (pr === null) {
+    const request = mountRequestOf({ state, mountId: mount.mountId });
+    if (request === null) {
       return [];
     }
-    const detail = github?.detail ?? null;
-    if (detail !== null && detail.prNumber === pr.number && detail.checks.length > 0) {
+    const detail = state.mountGithub[mount.mountId]?.detail ?? null;
+    if (
+      request.provider === 'github' &&
+      detail !== null &&
+      detail.prNumber === request.number &&
+      detail.checks.length > 0
+    ) {
       return detail.checks.map((check) => ({
         project: mount.mountName,
         name: check.name,
         outcome: check.conclusion,
       }));
     }
-    if (pr.checks === null) {
+    if (request.checks === null) {
       return [];
     }
     return [
-      { project: mount.mountName, name: `on #${pr.number}`, outcome: CHECK_ROLLUP[pr.checks] },
+      {
+        project: mount.mountName,
+        name: `on ${request.label}`,
+        outcome: CHECK_ROLLUP[request.checks],
+      },
     ];
   });
 

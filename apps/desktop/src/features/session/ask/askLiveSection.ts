@@ -45,7 +45,7 @@ type TextParams = {
 const askLiveLineOf = ({ text }: TextParams): string => text.replace(/\s+/g, ' ').trim();
 
 const outputTailOf = ({ text }: TextParams): string =>
-  text
+  redactSecrets({ text })
     .trim()
     .slice(-OUTPUT_TAIL_CHARS)
     .split('\n')

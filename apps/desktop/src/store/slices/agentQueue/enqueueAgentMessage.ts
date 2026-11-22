@@ -47,6 +47,7 @@ export const enqueueAgentMessage = (set: SetFn, get: GetFn) => {
       agentId: turn.agentId,
       queue: latest.filter((item) => item.id !== turn.id),
     });
+    await persistAgentQueue({ get, agentId: turn.agentId });
     return false;
   };
 };

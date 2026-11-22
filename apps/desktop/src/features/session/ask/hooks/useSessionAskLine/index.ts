@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { AgentId, ChatMessage, IsoDateTime, SessionId } from '@goodboy/types';
-import { isoNow } from '@goodboy/types/helpers';
+import type { AgentId, ChatMessage, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { AppStore } from '../../../../../store/store';
 import { createLatestOnly } from '../../../../../store/runtime/state-writes/latestOnly';
@@ -16,6 +15,7 @@ import type {
 import { classifyAgent } from '../../../agent-kind';
 import { planPartsLeftOf } from '../../../../plans/planPartsLeftOf';
 import { askAnswerOriginOf } from '../../askAnswerOriginOf';
+import { askLineReplyIdOf, type AskLineReplyId } from '../../askLineReplyIdOf';
 import { askLineReplyOf } from '../../askLineReplyOf';
 import { askRightNow, askRightNowText } from '../../askRightNow';
 import type { AskSessionAnswer } from '../../AskSessionAnswer';
@@ -42,7 +42,7 @@ type Asked =
   | Readonly<{
       origin: 'model';
       question: string;
-      askedAt: IsoDateTime;
+      replyId: AskLineReplyId | null;
       error: string | null;
     }>;
 
@@ -121,28 +121,22 @@ type FreeParams = {
   readonly starter: AskStarter;
 };
 
-type ReplyParams = StateParams & {
-  readonly askedAt: IsoDateTime;
+type ReplyParams = {
+  readonly state: AppStore;
+  readonly replyId: AskLineReplyId;
 };
 
-const replyOf = ({ state, sessionId, askedAt }: ReplyParams): ChatMessage | null => {
-  const threadId = state.askThreadId[sessionId] ?? null;
-  const messages = threadId === null ? [] : (state.askMessages[threadId] ?? []);
-  const replies = messages.filter(
-    (message) => message.role === 'assistant' && message.createdAt >= askedAt,
-  );
-  return replies[replies.length - 1] ?? null;
-};
+const replyOf = ({ state, replyId }: ReplyParams): ChatMessage | null =>
+  (state.askMessages[replyId.threadId] ?? []).find((message) => message.id === replyId.messageId) ??
+  null;
 
 export const useSessionAskLine = ({ sessionId, branches }: Params): SessionAskLine => {
   const [asked, setAsked] = useState<Asked | null>(null);
   const latest = useMemo(() => createLatestOnly(), []);
   const messageIds = useRef(new Map<string, string>());
   const facts = useAskActionFacts({ sessionId });
-  const askedAt = asked?.origin === 'model' ? asked.askedAt : null;
-  const reply = useAppStore((state) =>
-    askedAt === null ? null : replyOf({ state, sessionId, askedAt }),
-  );
+  const replyId = asked?.origin === 'model' ? asked.replyId : null;
+  const reply = useAppStore((state) => (replyId === null ? null : replyOf({ state, replyId })));
   const handles = useAppStore((state) => (reply === null ? undefined : state.askHandles[reply.id]));
   const costUsd = useAppStore((state) =>
     reply === null ? null : (state.askReplyMeta[reply.id]?.costUsd ?? null),
@@ -179,23 +173,38 @@ export const useSessionAskLine = ({ sessionId, branches }: Params): SessionAskLi
         );
         return;
       }
-      const at = isoNow();
-      setAsked({ origin: 'model', question, askedAt: at, error: null });
+      setAsked({ origin: 'model', question, replyId: null, error: null });
       const fail = ({ error }: FailParams) => {
         if (claim.isCurrent()) {
-          setAsked({ origin: 'model', question, askedAt: at, error });
+          setAsked({ origin: 'model', question, replyId: null, error });
         }
       };
       void (async () => {
         const runs = await readDoingRuns({ sessionId, getState: useAppStore.getState }).catch(
           (): ReadonlyArray<DoingRun> => [],
         );
-        const state = useAppStore.getState();
-        const isSent = await state.sendAskQuestion({
-          sessionId,
-          question,
-          rightNow: rightNowOf({ state, sessionId, runs }),
+        if (!claim.isCurrent()) {
+          return;
+        }
+        let isBound = false;
+        const unsubscribe = useAppStore.subscribe((state) => {
+          const found = isBound ? null : askLineReplyIdOf({ state, sessionId, question });
+          if (found === null) {
+            return;
+          }
+          isBound = true;
+          if (claim.isCurrent()) {
+            setAsked({ origin: 'model', question, replyId: found, error: null });
+          }
         });
+        const state = useAppStore.getState();
+        const isSent = await state
+          .sendAskQuestion({
+            sessionId,
+            question,
+            rightNow: rightNowOf({ state, sessionId, runs }),
+          })
+          .finally(unsubscribe);
         if (!isSent) {
           fail({ error: NOT_SENT });
         }
@@ -243,12 +252,15 @@ export const useSessionAskLine = ({ sessionId, branches }: Params): SessionAskLi
     }
     const parsed =
       reply === null ? null : askLineReplyOf({ content: reply.content, handles: handles ?? [] });
+    const isStreaming = reply?.status === 'streaming';
     return {
       question: asked.question,
       phase:
-        parsed === null || (parsed.text === '' && reply?.status === 'streaming')
+        parsed === null || (parsed.text === '' && isStreaming)
           ? 'thinking'
-          : 'answered',
+          : isStreaming
+            ? 'streaming'
+            : 'answered',
       text: parsed?.text ?? '',
       sources: parsed?.sources ?? [],
       origin,

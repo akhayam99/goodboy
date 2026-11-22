@@ -20,11 +20,11 @@ const ASK_LABEL = 'Ask about this session';
 
 export const AskLine = ({ starters, answer, message, onAsk, onClose, onOpenInAsk }: Props) => {
   const [question, setQuestion] = useState('');
-  const isThinking = answer?.phase === 'thinking';
+  const isBusy = answer?.phase === 'thinking' || answer?.phase === 'streaming';
 
   const submit = () => {
     const asked = question.trim();
-    if (asked === '' || isThinking) {
+    if (asked === '' || isBusy) {
       return;
     }
     setQuestion('');
@@ -77,7 +77,7 @@ export const AskLine = ({ starters, answer, message, onAsk, onClose, onOpenInAsk
           label="Send question"
           type="submit"
           variant="ghost"
-          disabled={question.trim() === '' || isThinking}
+          disabled={question.trim() === '' || isBusy}
         />
       </form>
     </div>

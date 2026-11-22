@@ -23,6 +23,9 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../store/storyHarness';
+import type { MountBitbucketPrState } from '../../../store/slices/mount-request/state';
+import { aMountView } from '../testing/aMountView';
+import { aProjectMountOf } from '../testing/aProjectMountOf';
 import { collectAskPackInput } from './collectAskPackInput';
 
 const SESSION = 'session-harborline' as SessionId;
@@ -141,6 +144,107 @@ describe('collectAskPackInput', () => {
     ]);
     expect(input.live.scripts).toEqual([
       { project: null, name: 'test', outcome: 'failed with exit code 1', output: '2 failed' },
+    ]);
+  });
+
+  it('redacts a whole tool call before it is cut, so no secret fragment crosses the cut', () => {
+    const agentId = brandId<AgentId>({ value: 'agent-implementer' });
+    const runId = brandId<ProviderRunId>({ value: 'run-1' });
+    const at = brandId<IsoDateTime>({ value: '2026-10-06T14:56:25Z' });
+    const commands = [
+      `${'x'.repeat(150)} ghp_abcdefghijklmnopqrstuvwxyz123456`,
+      `${'x'.repeat(120)} https://deploy:harborlinedeploysecretvalue1@github.com/acme/ledger-core`,
+    ];
+    useAppStore.setState({
+      sessions: [aSession({ id: SESSION, goal: 'Opaque signup aliases' })],
+      sessionPhaseRuns: {
+        [SESSION]: [
+          anAgent({ id: agentId, sessionId: SESSION, name: 'Implementer', status: 'running' }),
+        ],
+      },
+      transcripts: {
+        [agentId]: commands.map((command, index) => ({
+          kind: 'tool_call_start',
+          runId,
+          toolUseId: `tool-${index}`,
+          toolName: 'Bash',
+          input: { command },
+          at,
+        })),
+      },
+    });
+
+    const calls = collectAskPackInput({
+      state: useAppStore.getState(),
+      sessionId: SESSION,
+      rightNow: [],
+    }).live.calls.flatMap((entry) => entry.calls);
+
+    expect(calls).toHaveLength(2);
+    expect(calls.join('\n')).not.toContain('ghp_');
+    expect(calls.join('\n')).not.toContain('harborlinedeploysecret');
+  });
+
+  it('reads the checks of a Bitbucket pull request from its mount request', () => {
+    const view = aMountView({
+      key: 'ledger',
+      sessionId: SESSION,
+      projectId: PROJECT,
+      projectName: 'ledger-core',
+      branch: 'ak/limits',
+    });
+    const bitbucket: MountBitbucketPrState = {
+      kind: 'bitbucket',
+      selected: null,
+      mountId: view.id,
+      projectId: PROJECT,
+      revision: 1,
+      host: 'bitbucket.org',
+      repo: null,
+      repository: 'acme/ledger-core',
+      branch: 'ak/limits',
+      prs: [],
+      links: [],
+      checks: 'failure',
+      reviewDecision: null,
+      pr: {
+        id: 21,
+        title: 'Per-tenant limits on payouts',
+        description: '',
+        state: 'OPEN',
+        createdOn: '2026-10-06T14:56:25Z',
+        updatedOn: '2026-10-06T14:56:25Z',
+        sourceBranch: 'ak/limits',
+        sourceCommit: null,
+        destinationBranch: 'main',
+        destinationCommit: null,
+        author: null,
+        reviewers: [],
+        participants: [],
+        closeSourceBranch: false,
+        mergeCommit: null,
+        commentCount: 0,
+        taskCount: 0,
+        webUrl: null,
+      },
+      fetchedAt: brandId<IsoDateTime>({ value: '2026-10-06T14:56:25Z' }),
+      loading: false,
+      error: null,
+    };
+    useAppStore.setState({
+      sessions: [aSession({ id: SESSION, goal: 'Opaque signup aliases' })],
+      sessionProjectMounts: { [SESSION]: [aProjectMountOf({ view })] },
+      mountRequests: { [view.id]: bitbucket },
+    });
+
+    const input = collectAskPackInput({
+      state: useAppStore.getState(),
+      sessionId: SESSION,
+      rightNow: [],
+    });
+
+    expect(input.live.checks).toEqual([
+      { project: 'ledger-core', name: 'on PR #21', outcome: 'failed' },
     ]);
   });
 });
