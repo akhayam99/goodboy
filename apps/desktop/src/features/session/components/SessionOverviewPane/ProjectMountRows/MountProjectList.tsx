@@ -43,6 +43,7 @@ type Props = {
 type MountParams = {
   readonly project: Project;
   readonly isAdded: boolean;
+  readonly isOneStep: boolean;
 };
 
 export const MountProjectList = ({
@@ -84,8 +85,8 @@ export const MountProjectList = ({
   const selectedProject = projectById(projects, selectedProjectId) ?? null;
   const preflightState = useMountPreflight({ sessionId, project: selectedProject, choice });
 
-  const mountProject = async ({ project, isAdded }: MountParams) => {
-    const preflight = isAdded ? null : preflightState.preflight;
+  const mountProject = async ({ project, isAdded, isOneStep }: MountParams) => {
+    const preflight = isOneStep ? null : preflightState.preflight;
     setIsMounting(true);
     setFailure(null);
     try {
@@ -125,15 +126,18 @@ export const MountProjectList = ({
   };
 
   if (selectedProject !== null) {
+    const confirmed = {
+      project: selectedProject,
+      isAdded: selectedProject.id === addedId,
+      isOneStep: false,
+    };
     return (
       <MountPreflightCard
         project={selectedProject}
         state={preflightState}
         isBusy={isMounting}
         failure={failure}
-        onConfirm={() =>
-          void mountProject({ project: selectedProject, isAdded: selectedProject.id === addedId })
-        }
+        onConfirm={() => void mountProject(confirmed)}
         onCancel={() => {
           setFailure(null);
           setSelectedProjectId(null);
@@ -153,7 +157,7 @@ export const MountProjectList = ({
             branch: preflight.branch,
             worktreePath: preflight.checkedOutAt,
           });
-          void mountProject({ project: selectedProject, isAdded: selectedProject.id === addedId });
+          void mountProject(confirmed);
         }}
         onNewBranch={() => {
           rememberNewBranchChoice({ sessionId });
@@ -235,7 +239,7 @@ export const MountProjectList = ({
           workspaceId={workspaceId}
           onConnected={(project) => {
             setAddedId(project.id);
-            void mountProject({ project, isAdded: true });
+            void mountProject({ project, isAdded: true, isOneStep: true });
           }}
         />
       </PopoverPin>
