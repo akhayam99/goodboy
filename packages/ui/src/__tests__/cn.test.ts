@@ -14,10 +14,12 @@ describe('cn', () => {
   it('reads a type role as a size, so a text colour never drops it', () => {
     expect(cn('text-row', 'text-muted-foreground')).toBe('text-row text-muted-foreground');
     expect(cn('text-eyebrow', 'text-faint-foreground')).toBe('text-eyebrow text-faint-foreground');
+    expect(cn('text-control', 'text-danger')).toBe('text-control text-danger');
   });
 
   it('lets a later role or size replace an earlier one', () => {
     expect(cn('text-meta', 'text-ui')).toBe('text-ui');
+    expect(cn('text-meta', 'text-control')).toBe('text-control');
     expect(cn('text-body', 'text-xs')).toBe('text-xs');
   });
 });

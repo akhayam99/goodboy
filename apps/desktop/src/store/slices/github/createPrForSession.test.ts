@@ -332,7 +332,10 @@ describe('createPrForSession, issue references', () => {
 
     const warning = state.emitNotification.mock.calls
       .map((call: ReadonlyArray<{ title: string; body?: string }>) => call[0])
-      .find((params?: { title: string }) => params?.title === 'PR opened without its issue links');
+      .find(
+        (params?: { title: string }) =>
+          params?.title === 'Pull request opened without its issue links',
+      );
     expect(warning?.body).toContain('Closes #41');
     expect(warning?.body).toContain('gh: pull request is locked');
   });
@@ -783,7 +786,7 @@ describe('createPrForSession, a create whose outcome was uncertain', () => {
     expect(state.emitNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         severity: 'warning',
-        title: 'Opened #7, but Goodboy could not save the link',
+        title: "Opened #7, but Goodboy couldn't save the link",
       }),
     );
     expect(state.refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, {

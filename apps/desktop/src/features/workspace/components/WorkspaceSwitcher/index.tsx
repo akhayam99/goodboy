@@ -21,7 +21,7 @@ import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 import { NAMES } from '../../../../shared/utils/names';
 import { openNewWorkspace } from '../../openNewWorkspace';
 
-const SEARCH_WORKSPACES = 'Search workspaces';
+const SEARCH_WORKSPACES = NAMES.searchWorkspaces;
 
 type Props = {
   readonly onClose: () => void;

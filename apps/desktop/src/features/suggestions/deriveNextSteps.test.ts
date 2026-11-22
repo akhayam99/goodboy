@@ -389,7 +389,7 @@ describe('deriveNextSteps', () => {
     ]);
   });
 
-  describe('a rebase on a tree with changes that are not committed', () => {
+  describe("a rebase on a tree with changes that aren't committed", () => {
     const behindProject = ({
       id,
       isClean,

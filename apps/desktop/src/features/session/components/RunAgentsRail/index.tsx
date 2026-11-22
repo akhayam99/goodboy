@@ -11,6 +11,7 @@ import { RunAgentsRailHead } from './RunAgentsRailHead';
 import { useKeepTreeFocus } from './useKeepTreeFocus';
 import type { LeadTreeRootState } from '../../../auto/tree/leadTreeRootState';
 import { useRunRailRoot } from './useRunRailRoot';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly host: HTMLElement | null;
@@ -72,7 +73,7 @@ export const RunAgentsRail = ({
       className="flex h-full min-h-0 border-r border-border-soft motion-safe:animate-fade-in"
     >
       <StudioRailLayout
-        railLabel="Agents"
+        railLabel={NAMES.agents}
         railWidth="wide"
         max={RAIL_MAX_PX}
         surface={RUN_AGENTS_RAIL_SURFACE}

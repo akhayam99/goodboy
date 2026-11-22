@@ -34,7 +34,7 @@ type StepParams = ToolParams & {
 const PANEL_NAMES: Readonly<Record<WorkspaceToolKind, string>> = {
   terminal: NAMES.terminal,
   browser: NAMES.browser,
-  monitoring: 'Monitor',
+  monitoring: NAMES.monitor,
 };
 
 const TOOL_KINDS: ReadonlyArray<WorkspaceToolKind> = ['terminal', 'browser', 'monitoring'];

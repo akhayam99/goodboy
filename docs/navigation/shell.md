@@ -73,13 +73,13 @@ never exists on one surface only.
   `⋯` holds copy and rare actions. A linked task is one row of the session
   level's Linked group (`LinkedTaskRow`): a click opens the task, a drag moves
   it, and Unlink, Move to and Remove from this branch sit in its right click
-  menu (Shift+F10), with no kebab and no hover control.
+  menu (⇧F10), with no kebab and no hover control.
   Putting work on a branch is `Link work to this branch` (`mount.putTaskOnBranch`), on the
   Overview branch row and in the Projects tree row menu. Link work is the single entry
   for linking work to a session or workspace. Moving a task is one verb,
-  `Move to`: in the linked row's menu (Shift+F10), in the focused issue's
+  `Move to`: in the linked row's menu (⇧F10), in the focused issue's
   `Linked to` row and in the palette.
-- **The Board session card.** Its right click (and Shift+F10) opens the
+- **The Board session card.** Its right click (and ⇧F10) opens the
   session kind's menu: **Open** (a submenu with Overview, Comments, Changes,
   Log, Editor, Terminal and External terminal; a verb that cannot run stays in
   it with its reason as a tooltip), Rename, Pin session or Unpin session, Mark
@@ -226,7 +226,7 @@ never exists on one surface only.
   (`isDisabled` of a menu entry, `aria-disabled`, the description kept). All three
   are optional, and no other surface sets them.
 - **Pointer and keys.** The menu opens at the pointer and flips to stay 8px
-  inside the window. Shift+F10 (`menu.open`) and the Menu key open it on the
+  inside the window. ⇧F10 (`menu.open`) and the Menu key open it on the
   focused row, and Control-click is a right click. The arrows, Home and End
   move, typing jumps to the first match, Enter runs, ArrowRight opens the one
   submenu level, Escape closes and gives focus back. The row the menu acts on
@@ -1030,7 +1030,7 @@ the list excepted). The Branch page's Select every fixable comment (⌘A,
 use ⌘A because the Branch page only answers it outside a text field. The selection keys (`selection.toggle`, `selection.all`, `selection.clear`, `selection.delete`) are the same kind: `useSelectionKeys` matches the first, second and fourth against the registry, and `SelectionBar` answers Esc through the escape stack; the registry test lets `selection.all` use ⌘A because the hook yields to a text field. They sit in the registry so the list and the tooltips name them. Up one level (⌘↑, `nav.up`) carries `yieldsToText`, so the registry test lets it use a combo a text field owns. Back one crumb in a session (Esc, `nav.crumbUp`) is the last rung of the one Esc ladder (`escapeLadder`), named in the registry so the Shortcuts page and the head back button's tooltip show it; the scoped Esc keys (`overlay.close`, `selection.clear`, `agent.stop`) answer first, which the registry test allows by name.
 The control that owns each one handles its own key event and never registers
 it with the dispatcher; the activity row matches through `eventMatches`, and so
-does Shift+F10 (`menu.open`), which opens the context menu of the focused row.
+does ⇧F10 (`menu.open`), which opens the context menu of the focused row.
 **A shortcut is taught where it
 is used.** A control that has one shows it: as a pill on hover in dense rows,
 and as a glyph in parentheses in tooltips. Where the row is too tight, the

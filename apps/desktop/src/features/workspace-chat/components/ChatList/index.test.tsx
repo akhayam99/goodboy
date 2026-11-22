@@ -350,7 +350,7 @@ describe('ChatList', () => {
       fireEvent.change(input, { target: { value: '   ' } });
       fireEvent.keyDown(input, { key: 'Enter' });
 
-      expect(screen.getByRole('alert').textContent).toBe('name cannot be empty');
+      expect(screen.getByRole('alert').textContent).toBe("Name can't be empty");
       expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
       expect(rename).not.toHaveBeenCalled();
     });

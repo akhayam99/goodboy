@@ -11,6 +11,7 @@ import type { BrowserConsoleKind, BrowserPaneModel } from '../../types';
 import { BrowserConsoleLevelMenu } from './BrowserConsoleLevelMenu';
 import { BrowserConsoleRow } from './BrowserConsoleRow';
 import { BrowserConsoleSendMenu } from './BrowserConsoleSendMenu';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly model: BrowserPaneModel;
@@ -33,8 +34,8 @@ type SendParams = {
 const FOLLOW_SLACK_PX = 24;
 
 const SEARCH_LABEL = {
-  console: 'Search messages',
-  network: 'Search requests',
+  console: NAMES.searchMessages,
+  network: NAMES.searchRequests,
 } as const satisfies Record<BrowserConsoleKind, string>;
 
 const FAILURE_TEXT = {

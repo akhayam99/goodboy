@@ -103,7 +103,7 @@ export const RunsGrid = ({ session, runs: sessionRuns }: Props) => {
 
   const clearFilter = (
     <Button variant="ghost" size="xs" onClick={filter.clear}>
-      Clear filter
+      {NAMES.clearFilter}
     </Button>
   );
 

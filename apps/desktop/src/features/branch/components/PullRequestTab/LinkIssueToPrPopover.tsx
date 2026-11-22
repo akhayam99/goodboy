@@ -65,9 +65,7 @@ export const LinkIssueToPrPopover = ({ sessionId, mountId, prNumber, body, candi
       }
     >
       <div className="flex flex-col gap-2">
-        <span className="text-meta font-medium text-foreground">
-          Link an issue to this pull request
-        </span>
+        <span className="text-control text-foreground">Link an issue to this pull request</span>
         {candidates.length === 0 ? (
           <p className="text-meta text-muted-foreground">
             Link the issue to the session first, from its tracker tab.

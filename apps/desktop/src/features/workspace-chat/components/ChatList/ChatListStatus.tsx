@@ -1,5 +1,6 @@
 import { Button, EmptyLine, Notice, SkeletonRow } from '@goodboy/ui';
 import type { loadStateOf } from '../../../../shared/lib/loadStateOf';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly loadState: ReturnType<typeof loadStateOf>;
@@ -50,7 +51,7 @@ export const ChatListStatus = ({
     <EmptyLine
       action={
         <Button size="sm" variant="ghost" onClick={onClearFilter}>
-          Clear filter
+          {NAMES.clearFilter}
         </Button>
       }
     >

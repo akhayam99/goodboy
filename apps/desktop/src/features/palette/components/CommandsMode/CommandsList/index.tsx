@@ -5,6 +5,7 @@ import type { CommandSection } from '../../../commandList';
 import type { PaletteEntry } from '../../../types';
 import { CommandRowView } from '../CommandRowView';
 import { PALETTE_LIST_PAD_PX, PALETTE_SECTION_PX } from '../paletteBodyLayout';
+import { NAMES } from '../../../../../shared/utils/names';
 
 const PALETTE_SKELETON_ROWS = [0, 1, 2];
 
@@ -43,7 +44,7 @@ export const CommandsList = ({
         ref={listRef}
         id={listboxId}
         role="listbox"
-        aria-label="Commands"
+        aria-label={NAMES.commands}
         aria-busy={!isLoaded}
         className="flex flex-col"
         style={{ padding: PALETTE_LIST_PAD_PX }}

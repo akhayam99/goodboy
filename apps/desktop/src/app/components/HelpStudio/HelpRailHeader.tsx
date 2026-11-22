@@ -1,6 +1,7 @@
 import { SegmentedTabs } from '@goodboy/ui';
 import { RailSearch, type RailSearchStep } from '../../../shared/components/RailSearch';
 import { HELP_TABS, type HelpTab } from './helpTabs';
+import { NAMES } from '../../../shared/utils/names';
 
 type Props = {
   readonly tab: HelpTab;
@@ -21,7 +22,7 @@ export const HelpRailHeader = ({
 }: Props) => (
   <div className="flex shrink-0 flex-col gap-2 px-3 pt-3">
     <SegmentedTabs
-      ariaLabel="Help"
+      ariaLabel={NAMES.help}
       size="xs"
       fill
       value={tab}

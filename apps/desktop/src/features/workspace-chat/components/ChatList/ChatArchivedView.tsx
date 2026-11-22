@@ -11,6 +11,7 @@ import { ChatArchivedRow } from './ChatArchivedRow';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { ChatPurgeConfirm } from './ChatPurgeConfirm';
 import type { RemovedChats } from '../../nextChatAfter';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly chats: ReadonlyArray<ChatSummary>;
@@ -65,8 +66,8 @@ export const ChatArchivedView = ({
         inputRef={searchRef}
         value={query}
         onChange={setQuery}
-        placeholder="Search archived chats"
-        ariaLabel="Search archived chats"
+        placeholder={NAMES.searchArchivedChats}
+        ariaLabel={NAMES.searchArchivedChats}
       />
       <ScrollFade className="flex-1">
         <nav aria-label="Archived chats" className="flex flex-col gap-0.5 pb-3 pr-4">

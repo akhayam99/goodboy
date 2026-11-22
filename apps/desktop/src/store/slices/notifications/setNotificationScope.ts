@@ -1,6 +1,7 @@
 import { CHECK_STATE } from './errorRecovery';
 import type { NotificationScope } from './state';
 import type { GetFn } from './types';
+import { NAMES } from '../../../shared/utils/names';
 
 export const setNotificationScope = (get: GetFn) => {
   return async (scope: NotificationScope) => {
@@ -12,7 +13,7 @@ export const setNotificationScope = (get: GetFn) => {
         await get().loadNotifications({ scope });
       } catch (error) {
         await get().reportError({
-          title: "Couldn't load notifications",
+          title: NAMES.couldntLoadNotifications,
           error,
           coalesceKey,
           recovery: {

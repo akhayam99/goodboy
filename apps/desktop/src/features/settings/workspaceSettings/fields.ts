@@ -144,7 +144,7 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
   }),
   erase({
     id: 'verbosity',
-    label: 'Reply length',
+    label: NAMES.replyLength,
     fallback: 'normal',
     parse: oneOf(VERBOSITY_LEVELS),
     stored: ({ overrides }) => overrides?.defaultVerbosity ?? null,

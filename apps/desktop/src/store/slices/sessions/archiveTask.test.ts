@@ -311,7 +311,7 @@ describe('archiveTask stops live work first', () => {
     live.add(runningRunId());
 
     await expect(useAppStore.getState().archiveTask(sessionId)).rejects.toThrow(
-      'An agent did not stop',
+      "An agent didn't stop",
     );
 
     expect(boardIds()).toEqual([sessionId]);

@@ -8,6 +8,7 @@ import { eventMatches } from '../../keyboard/dispatcher';
 import { isEscapeTakenAbove } from '../../keyboard/isEscapeTakenAbove';
 import { SHORTCUTS } from '../../keyboard/registry';
 import { CHAT_IMAGE_ACCEPT, isChatImage } from '../../utils/chatImageKinds';
+import { NAMES } from '../../utils/names';
 
 export type MessageComposerMessage = {
   readonly text: string;
@@ -130,7 +131,7 @@ export const MessageComposer = ({
               role="status"
               className="shrink-0 whitespace-nowrap text-meta text-muted-foreground"
             >
-              Esc again to stop
+              {NAMES.escAgainToStop}
             </span>
           ) : null}
         </>

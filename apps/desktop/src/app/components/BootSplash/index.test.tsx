@@ -250,7 +250,7 @@ describe('BootSplash issue report', () => {
     const url = String(vi.mocked(openUrl).mock.calls.at(-1)?.[0]);
     expect(url.length).toBeLessThanOrEqual(4096);
     expect(url).not.toContain('template=');
-    expect(decodeURIComponent(url)).toContain('It is on your clipboard');
+    expect(decodeURIComponent(url)).toContain("It's on your clipboard");
   });
 });
 

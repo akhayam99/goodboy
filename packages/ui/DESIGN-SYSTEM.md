@@ -460,6 +460,7 @@ stylesheet loads, and the exported report embeds the same file as a data URI.
 | `text-comment`  | 14/22                     | the body of a comment: `CommentBody` in the review pane, the diff and the pull request page |
 | `text-eyebrow`  | 12/16, 500, sentence case | a section label: `Eyebrow`, or direct in a sidebar group, `SettingChip`, `LevelCard`        |
 | `text-meta`     | 12/16                     | level 5: controls, a nested row, a status label, time, ordinal, cost, count, a second line  |
+| `text-control`  | 12/16, 500                | a control label: a field label, a tooltip, a small button, a name inside a level 5 row      |
 | `text-chip`     | 11/16, 500                | the label inside a chip, a badge, a key cap, a count pill                                   |
 | `text-rail`     | 9/12                      | the caption under every icon and over each group of the session tool rail                   |
 | `text-code`     | mono 12/18                | branch, path, command, inline code                                                          |
@@ -531,10 +532,10 @@ fails when a file that renders `ListGrid` reaches for `text-display`,
 `text-body` or `text-eyebrow`. Scene `u31-text-levels` shows the five levels
 on a title, a list with times, counts and costs, a chip and a meta line.
 
-A role with no weight inherits one: `text-meta font-medium` is a control label
-at 500, `text-chip` a chip. Weights are 400, 500 and 600, and
-600 belongs to display, title and heading. `text-row`, `text-lead`, `text-chip`
-and `text-eyebrow` carry 500 themselves, so a weight utility next to a role is redundant, and
+A role carries its weight: `text-control` is a control label at 500, the
+`text-meta` measure, and `text-chip` a chip. Weights are 400, 500 and 600, and
+600 belongs to display, title and heading. `text-row`, `text-lead`, `text-chip`,
+`text-control` and `text-eyebrow` carry 500 themselves, so a weight utility next to a role is redundant, and
 `forbidden-patterns.test.ts` counts it (`role-weight-override`). Tracking lives only inside
 the roles. A leading utility still composes with a role
 (`text-chip leading-none` for a one-line badge), because the role reads

@@ -21,7 +21,7 @@ export const ProjectPicker = ({
   projects,
   value,
   isDisabled = false,
-  emptyValueLabel = 'No project',
+  emptyValueLabel = NAMES.noProject,
   onChange,
 }: Props) => {
   const recentIds = useRecentProjectIds({ workspaceId: projects[0]?.workspaceId ?? null });

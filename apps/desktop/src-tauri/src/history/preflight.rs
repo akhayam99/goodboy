@@ -28,7 +28,7 @@ pub(super) fn blocking_reason(cwd: &Path, can_carry_dirty: bool) -> Option<Strin
                 return None;
             }
             Some(format!(
-                "{pending} {} here {} changes that are not committed. Commit or stash {} first: rewriting needs a clean worktree.",
+                "{pending} {} here {} changes that aren't committed. Commit or stash {} first: rewriting needs a clean worktree.",
                 match pending { 1 => "file", _ => "files" },
                 match pending { 1 => "has", _ => "have" },
                 match pending { 1 => "it", _ => "them" }

@@ -12,7 +12,7 @@ export const ShortcutsSection = () => {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-meta text-muted-foreground">
-        {`A key does what fits where you are: ${shortcutGlyphs('session.new')} starts a session, but on Chat, Terminal and Ask it starts a chat, a terminal or a reset. ${shortcutGlyphs('palette.open')} goes anywhere. On a list row, right click or Shift+F10 opens the actions of that row.`}
+        {`A key does what fits where you are: ${shortcutGlyphs('session.new')} starts a session, but on Chat, Terminal and Ask it starts a chat, a terminal or a reset. ${shortcutGlyphs('palette.open')} goes anywhere. On a list row, right click or ${shortcutGlyphs('menu.open')} opens the actions of that row.`}
       </p>
       <Band
         inset="content"

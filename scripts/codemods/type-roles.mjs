@@ -31,67 +31,73 @@ const RULES = [
     role: 'text-eyebrow',
     needs: ['text-2xs', 'font-semibold', 'uppercase', 'tracking-eyebrow'],
     drops: [],
-    when: (tokens) => leadingOf(tokens).length === 0,
+    when: ({ tokens }) => leadingOf(tokens).length === 0,
   },
   {
     role: 'text-display',
     needs: ['text-2xl', 'font-semibold'],
     drops: ['tracking-tight'],
-    when: (tokens) => leadingIsAbsentOr(tokens, ['leading-8']),
+    when: ({ tokens }) => leadingIsAbsentOr(tokens, ['leading-8']),
   },
   {
     role: 'text-title',
     needs: ['text-lg', 'font-semibold'],
     drops: ['tracking-tight'],
-    when: (tokens) => leadingIsAbsentOr(tokens, ['leading-6']),
+    when: ({ tokens }) => leadingIsAbsentOr(tokens, ['leading-6']),
   },
   {
     role: 'text-heading',
     needs: ['text-sm', 'font-semibold'],
     drops: [],
-    when: (tokens) => leadingIsAbsentOr(tokens, ['leading-5']),
+    when: ({ tokens }) => leadingIsAbsentOr(tokens, ['leading-5']),
   },
   {
     role: 'text-row',
     needs: ['text-sm', 'font-medium'],
     drops: [],
-    when: (tokens) => leadingIsAbsentOr(tokens, ['leading-5']),
+    when: ({ tokens }) => leadingIsAbsentOr(tokens, ['leading-5']),
   },
   {
     role: 'text-prose',
     needs: ['text-sm', 'leading-relaxed'],
     drops: [],
-    when: (tokens) => weightsOf(tokens).length === 0,
+    when: ({ tokens }) => weightsOf(tokens).length === 0,
   },
   {
     role: 'text-body',
     needs: ['text-sm'],
     drops: [],
-    when: (tokens) => weightsOf(tokens).length === 0 && leadingIsAbsentOr(tokens, ['leading-5']),
+    when: ({ tokens }) => weightsOf(tokens).length === 0 && leadingIsAbsentOr(tokens, ['leading-5']),
   },
   {
     role: 'text-code',
     needs: ['font-mono', 'text-xs'],
     drops: [],
-    when: (tokens) => leadingOf(tokens).length === 0 && weightsOf(tokens).length === 0,
+    when: ({ tokens }) => leadingOf(tokens).length === 0 && weightsOf(tokens).length === 0,
+  },
+  {
+    role: 'text-control',
+    needs: ['text-xs', 'font-medium'],
+    drops: [],
+    when: ({ tokens }) => leadingIsAbsentOr(tokens, ['leading-4']),
   },
   {
     role: 'text-meta',
     needs: ['text-xs'],
     drops: [],
-    when: (tokens) => leadingIsAbsentOr(tokens, ['leading-4']),
+    when: ({ tokens }) => leadingIsAbsentOr(tokens, ['leading-4']),
   },
   {
     role: 'text-meta',
     needs: ['text-2xs'],
     drops: [],
-    when: (tokens) => leadingIsAbsentOr(tokens, ['leading-4']),
+    when: ({ tokens }) => leadingIsAbsentOr(tokens, ['leading-4']),
   },
   {
     role: 'text-chip',
     needs: ['text-3xs'],
     drops: ['tabular-nums', 'tabular'],
-    when: (tokens) => leadingOf(tokens).length === 0,
+    when: ({ tokens }) => leadingOf(tokens).length === 0,
   },
 ];
 
@@ -103,11 +109,12 @@ const LEADING_BY_ROLE = {
   'text-prose': ['leading-relaxed'],
   'text-body': ['leading-5'],
   'text-meta': ['leading-4'],
+  'text-control': ['leading-4'],
 };
 
 const rewriteTokens = (tokens) => {
   for (const rule of RULES) {
-    if (!rule.needs.every((token) => tokens.includes(token)) || !rule.when(tokens)) {
+    if (!rule.needs.every((token) => tokens.includes(token)) || !rule.when({ tokens })) {
       continue;
     }
     const removed = new Set([...rule.needs, ...rule.drops, ...(LEADING_BY_ROLE[rule.role] ?? [])]);

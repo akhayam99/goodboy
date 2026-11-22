@@ -195,7 +195,7 @@ const DIRTY_TREE = {
   workingTree: { kind: 'known', staged: 4, unstaged: 5, untracked: 2, unmerged: 0, changed: 11 },
 };
 
-const DIRTY_SENTENCE = '11 files have changes that are not committed. Commit or stash them first.';
+const DIRTY_SENTENCE = "11 files have changes that aren't committed. Commit or stash them first.";
 
 beforeEach(() => {
   spawnConfig.provider = 'anthropic';
@@ -1075,7 +1075,7 @@ describe('apply a planned rewrite', () => {
     seedDraft({ harnessed });
     engine.runHistoryPlan.mockResolvedValue({
       kind: 'blocked',
-      reason: '2 files here have changes that are not committed.',
+      reason: "2 files here have changes that aren't committed.",
     });
 
     await expect(
@@ -1088,7 +1088,7 @@ describe('apply a planned rewrite', () => {
 
     expect(harnessed.read().historyRuns[MOUNT_ID]?.stop).toEqual({
       reason: 'blocked',
-      message: '2 files here have changes that are not committed.',
+      message: "2 files here have changes that aren't committed.",
       files: [],
       sha: null,
     });

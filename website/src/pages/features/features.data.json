@@ -109,7 +109,7 @@
           "main": true
         },
         {
-          "title": "Start on a task",
+          "title": "Start from a task",
           "text": "Start a session from an issue in Tasks, with the issue linked and its goal written in.",
           "group": "Start a task",
           "main": true
@@ -528,14 +528,14 @@
       ],
       "items": [
         {
-          "title": "Start a workflow",
+          "title": "Run a preset",
           "text": "To run a preset, open Start a run and pick Preset under How, or type ~ and its name.",
           "group": "Workflows",
           "main": true
         },
         {
           "title": "Older runs",
-          "text": "A run started before every run had a Lead stays as it was, on its own engine.",
+          "text": "A run started before every run had a Lead stays as it was.",
           "group": "Workflows",
           "main": true
         },
@@ -804,13 +804,13 @@
           "also": "missing fixes"
         },
         {
-          "title": "Close on GitHub",
-          "text": "Finish a review with Push N fixes in the Branch header.",
+          "title": "Push fixes and replies",
+          "text": "Finish a review with Push N commits in the Branch header.",
           "group": "Review and resolve on the Branch page",
           "main": true
         },
         {
-          "title": "Review replies in your voice",
+          "title": "Replies in your voice",
           "text": "Choose replies that sound like you: terse, friendly, formal, or learned from your last 20 replies. You can edit the style note.",
           "group": "Review and resolve on the Branch page",
           "also": "replies in your voice"

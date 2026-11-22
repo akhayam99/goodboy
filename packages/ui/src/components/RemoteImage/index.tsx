@@ -133,7 +133,7 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
         className="mt-0.5 shrink-0 text-muted-foreground"
       />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
-        {alt !== '' && <span className="text-meta font-medium text-foreground">{alt}</span>}
+        {alt !== '' && <span className="text-control text-foreground">{alt}</span>}
         <span className="text-meta text-muted-foreground">
           {isFailed ? "Couldn't load this image from " : 'Image from '}
           <Tooltip content={url}>

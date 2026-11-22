@@ -124,7 +124,7 @@ export const NewBranchMountAction = ({
     >
       <div className="flex flex-col gap-3 p-3">
         <div className="flex flex-col gap-1">
-          <span className="text-meta font-medium text-foreground">{label}</span>
+          <span className="text-control text-foreground">{label}</span>
           <span className="text-meta text-muted-foreground">
             It gets its own branch. The branches already here keep their pull requests.
           </span>

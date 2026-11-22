@@ -112,7 +112,11 @@ describe('type scale line boxes', () => {
     expect(roleBox({ role: 'chip' }).size).toBeLessThan(roleBox({ role: 'meta' }).size);
   });
 
-  it('weighs only display, title, heading, row, row-strong, chip and lead above regular', () => {
+  it('gives the control role the meta measure at 500', () => {
+    expect(roleBox({ role: 'control' })).toEqual(roleBox({ role: 'meta' }));
+  });
+
+  it('weighs only display, title, heading, row, row-strong, control, chip and lead above regular', () => {
     const weighted = [...css.matchAll(/--text-([a-z-]+)--font-weight:\s*(\d+);/g)].map((match) => [
       String(match[1]),
       Number(match[2]),
@@ -124,6 +128,7 @@ describe('type scale line boxes', () => {
       heading: 600,
       row: 500,
       'row-strong': 600,
+      control: 500,
       chip: 500,
       lead: 500,
     });

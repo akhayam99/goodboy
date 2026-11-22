@@ -10,6 +10,7 @@ describe('actionIntentOf', () => {
     ['Remove worktree', 'destructive'],
     ['worktree.remove', 'destructive'],
     ['Delete branch', 'destructive'],
+    ['Delete all data', 'destructive'],
     ['Push', 'primary'],
     ['Review', 'primary'],
     ['Run', 'primary'],

@@ -154,7 +154,7 @@ describe('GithubFormBody', () => {
         'GitHub rejected this personal API key. Check you pasted the whole value, then try again.',
         'This personal API key has expired or was revoked. Create a new one on GitHub and paste it here.',
         'This personal API key is missing the access Goodboy needs. Recreate it with the repo scope, and authorize it for your org if SSO is on.',
-        'Goodboy cannot reach github.com. Check your connection, then try again.',
+        "Goodboy can't reach github.com. Check your connection, then try again.",
       ];
       const shown: string[] = [];
       for (const cause of causes) {

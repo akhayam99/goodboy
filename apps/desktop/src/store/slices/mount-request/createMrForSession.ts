@@ -193,7 +193,7 @@ export const createMrForSession = (_set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: `Opened !${created.iid}, but Goodboy could not save the link`,
+        title: `Opened !${created.iid}, but Goodboy couldn't save the link`,
         body: `Refresh to pick it up. ${formatError(unrecorded.error)}`,
         sessionId,
         workspaceId: context.workspaceId,

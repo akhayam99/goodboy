@@ -9,6 +9,7 @@ import { agentPlace } from '../../../store/slices/navigation/place';
 import type { ObjectKindDefinition, ReviewCommentActionTarget } from '../types';
 import type { ReviewCommentFacts } from './reviewComment';
 import { hasOverlay, isRunChanged, isRunFinished } from './reviewCommentRules';
+import { NAMES } from '../../../shared/utils/names';
 
 const JOINABLE: ReadonlySet<ReviewCommentState> = new Set(['new', 'needs', 'failed']);
 
@@ -92,7 +93,7 @@ export const REVIEW_COMMENT_RUN_ACTIONS: ObjectKindDefinition<
   },
   {
     id: 'reviewComment.draft',
-    label: ({ facts }) => (isRunFirst({ facts }) ? COMMENT_RUN_COPY.fixAsOne : 'Fix'),
+    label: ({ facts }) => (isRunFirst({ facts }) ? COMMENT_RUN_COPY.fixAsOne : NAMES.fix),
     icon: CONCEPT_ICONS.agents,
     group: 'act',
     shortcut: 'review.fix',

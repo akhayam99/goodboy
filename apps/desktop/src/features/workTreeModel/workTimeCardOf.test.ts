@@ -29,7 +29,7 @@ describe('workTimeCardOf', () => {
     const card = workTimeCardOf({ time: time!, cost: null, note: null });
 
     expect(card.facts.map((fact) => fact.label)).toEqual(['Running', 'Usually']);
-    expect(card.footnote).toBe('Based on 12 similar steps. Waiting on you is not counted.');
+    expect(card.footnote).toBe("Based on 12 similar steps. Waiting on you isn't counted.");
     expect(JSON.stringify(card)).not.toContain(' · ');
   });
 

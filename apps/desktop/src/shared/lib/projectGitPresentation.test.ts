@@ -32,7 +32,7 @@ describe('projectUpdateBlockReasonOf', () => {
     });
 
     expect(projectUpdateBlockReasonOf({ status })).toBe(
-      '1 file has changes that are not committed. Commit or stash them first.',
+      "1 file has changes that aren't committed. Commit or stash them first.",
     );
   });
 

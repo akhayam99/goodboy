@@ -25,6 +25,16 @@ const valuesIn = ({ node }: ValuesParams): ReadonlyArray<string> =>
     ? [node]
     : Object.values(node).flatMap((child) => valuesIn({ node: child }));
 
+type WalkParams = {
+  readonly dir: string;
+};
+
+const walk = ({ dir }: WalkParams): ReadonlyArray<string> =>
+  readdirSync(dir).flatMap((entry) => {
+    const path = join(dir, entry);
+    return statSync(path).isDirectory() ? walk({ dir: path }) : [path];
+  });
+
 describe('names', () => {
   it('feeds the lens, role, handoff, stage, Asks you and reply length labels', () => {
     expect(RUN_AUTONOMY_HEADER).toBe(NAMES.asksYou);
@@ -116,8 +126,8 @@ describe('names', () => {
   });
 
   it('names a task link removal Unlink and finds it by the old labels', () => {
-    expect(NAMES.removeLinkFromSession).toBe('Unlink');
-    expect(formerNamesOf(NAMES.removeLinkFromSession)).toEqual([
+    expect(NAMES.unlink).toBe('Unlink');
+    expect(formerNamesOf(NAMES.unlink)).toEqual([
       'Remove link from this session',
       'Remove link to session',
       'Unlink from this session',
@@ -335,12 +345,7 @@ describe('names', () => {
     const root = join(__dirname, '..');
     const hand =
       /(['"`])(Run plan|Pin session|Unpin session|Publish reply|Retry push|Close branch)\1/;
-    const walk = (dir: string): ReadonlyArray<string> =>
-      readdirSync(dir).flatMap((entry) => {
-        const path = join(dir, entry);
-        return statSync(path).isDirectory() ? walk(path) : [path];
-      });
-    const offenders = walk(root)
+    const offenders = walk({ dir: root })
       .filter(
         (path) => /\.tsx?$/.test(path) && !/\.(test|rows)\.tsx?$|__tests__|MockScene/.test(path),
       )
@@ -349,5 +354,32 @@ describe('names', () => {
       .map((path) => relative(root, path));
 
     expect(offenders).toEqual([]);
+  });
+
+  it('keeps no key that nothing reads', () => {
+    const root = join(__dirname, '..', '..');
+    const own = [join('shared', 'utils', 'names.ts'), join('shared', 'utils', 'names.test.ts')];
+    const sources = walk({ dir: root })
+      .filter((path) => /\.tsx?$/.test(path))
+      .filter((path) => !own.some((name) => path.endsWith(name)))
+      .map((path) => readFileSync(path, 'utf8'))
+      .join('\n');
+    const unread = Object.keys(NAMES).filter(
+      (key) => !new RegExp(`\\bNAMES\\.${key}\\b`).test(sources),
+    );
+
+    expect(unread).toEqual([]);
+  });
+
+  it('names the project words, the search fields and the filter reset once', () => {
+    expect(NAMES).toMatchObject({
+      project: 'Project',
+      noProject: 'No project',
+      searchFiles: 'Search files',
+      clearFilter: 'Clear filter',
+      escAgainToStop: 'Esc again to stop',
+      monitor: 'Monitor',
+      unlink: 'Unlink',
+    });
   });
 });

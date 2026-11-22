@@ -1,6 +1,7 @@
 import type { TranscriptItem } from '../../../utils/transcript-items';
 import { turnSummary } from '../../../utils/turnSummary';
 import { countNoun } from '../../../../../shared/utils/countNoun';
+import { NAMES } from '../../../../../shared/utils/names';
 
 type AnyRow = {
   readonly kind: string;
@@ -11,7 +12,7 @@ type Params = {
   readonly rows: ReadonlyArray<AnyRow>;
 };
 
-const TURN_FINISHED = 'Reply finished';
+const TURN_FINISHED = NAMES.replyFinished;
 
 export const turnEndAnnouncement = ({ rows }: Params): string => {
   const lastSteps = rows.flatMap((row) =>

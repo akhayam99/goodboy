@@ -1,4 +1,7 @@
-import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
+import {
+  CHECK_STATE,
+  NOTHING_CHANGED,
+} from '../../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NAMES } from '../../../../../shared/utils/names';
 import { useAskFollow } from '../../hooks/useAskFollow';
@@ -121,7 +124,16 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
         isStopping={stream?.isStopping === true}
         isAutoFocused
         onSend={ask}
-        onStop={() => void stopAskReply({ sessionId })}
+        onStop={() => {
+          stopAskReply({ sessionId }).catch((error: unknown) => {
+            void reportError({
+              recovery: NOTHING_CHANGED,
+              title: "Couldn't stop the reply",
+              error,
+              workspaceId: session.workspaceId,
+            });
+          });
+        }}
       />
     ) : null;
 

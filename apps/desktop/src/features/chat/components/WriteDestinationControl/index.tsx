@@ -22,6 +22,7 @@ import {
 } from '../../../../store/slices/project-mounts/writeDestination';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useWriteDestination } from './useWriteDestination';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -36,7 +37,7 @@ export const WriteDestinationControl = ({
   sessionId,
   agentId,
   fallback,
-  verb = 'Starts in',
+  verb = NAMES.startsIn,
 }: Props) => {
   const { next, candidates, running, diverges, isAutomatic } = useWriteDestination({
     sessionId,
@@ -186,7 +187,7 @@ export const WriteDestinationControl = ({
         trigger={trigger}
       >
         <div className="flex flex-col gap-3 p-3">
-          <span className="text-heading text-foreground">Starts in</span>
+          <span className="text-heading text-foreground">{NAMES.startsIn}</span>
 
           {running !== null && diverges ? (
             <div className="flex flex-col gap-0.5 rounded-md bg-subtle px-2 py-1 text-chip">

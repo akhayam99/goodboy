@@ -1,5 +1,6 @@
 import { Copy, History, LogIn, RefreshCw, Unplug } from '@goodboy/ui/icons';
 import type { ObjectKindDefinition, ProviderActionTarget } from '../types';
+import { NAMES } from '../../../shared/utils/names';
 
 export type ProviderFacts = {
   readonly label: string;
@@ -73,7 +74,7 @@ export const PROVIDER_KIND: ObjectKindDefinition<ProviderActionTarget, ProviderF
     },
     {
       id: 'provider.disconnect',
-      label: 'Disconnect',
+      label: NAMES.disconnect,
       icon: Unplug,
       group: 'danger',
       pendingLabel: () => 'Disconnecting',
@@ -81,7 +82,7 @@ export const PROVIDER_KIND: ObjectKindDefinition<ProviderActionTarget, ProviderF
       confirm: ({ facts }) => ({
         title: `Disconnect ${facts.label}?`,
         description: 'Signs the CLI out on this machine. Connect again to sign back in.',
-        confirmLabel: 'Disconnect',
+        confirmLabel: NAMES.disconnect,
         role: 'alert',
       }),
       run: async ({ facts }) => {

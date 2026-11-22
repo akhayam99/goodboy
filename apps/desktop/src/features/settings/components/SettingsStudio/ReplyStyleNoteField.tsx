@@ -65,7 +65,7 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, save, onSa
 
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="text-meta font-medium text-foreground">
+      <label htmlFor={id} className="text-control text-foreground">
         Style note
       </label>
       {canLearn ? (

@@ -404,7 +404,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Task links',
-        desc: `A Linked row in the rail opens its task. Its right click menu holds Move to, Remove from this branch and ${NAMES.removeLinkFromSession}, each with Undo; the Log keeps Re-link.`,
+        desc: `A Linked row in the rail opens its task. Its right click menu holds Move to, Remove from this branch and ${NAMES.unlink}, each with Undo; the Log keeps Re-link.`,
       },
       {
         term: 'Integration pages',
@@ -765,7 +765,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Right click',
-        desc: 'Any session, agent, run, artifact, pull request, worktree row, file or message opens a menu with every action it has. Shift+F10 opens it on the focused row.',
+        desc: `Any session, agent, run, artifact, pull request, worktree row, file or message opens a menu with every action it has. ${shortcutGlyphs('menu.open')} opens it on the focused row.`,
       },
       {
         term: 'Composer keys',

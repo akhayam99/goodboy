@@ -104,7 +104,7 @@ describe('runTimeLeft', () => {
 
     expect(left).toEqual({
       label: '~14-20m left',
-      detail: 'Step 2 ~6-10m left, then step 3 usually 8-12m. Waiting on you is not counted.',
+      detail: "Step 2 ~6-10m left, then step 3 usually 8-12m. Waiting on you isn't counted.",
     });
   });
 
@@ -152,7 +152,7 @@ describe('runTimeLeft', () => {
 
     expect(left?.label).toBe('~20-40m left');
     expect(left?.detail).toBe(
-      'Usually 30-50m in total. Based on 5 past orchestrated runs in this workspace, last 90 days. Waiting on you is not counted.',
+      "Usually 30-50m in total. Based on 5 past orchestrated runs in this workspace, last 90 days. Waiting on you isn't counted.",
     );
   });
 });

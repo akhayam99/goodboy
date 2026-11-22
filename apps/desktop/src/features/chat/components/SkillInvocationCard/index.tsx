@@ -21,7 +21,7 @@ export const SkillInvocationCard = ({ item }: Props) => {
           eyebrow="skill"
           preview={
             <span className="flex min-w-0 flex-wrap items-center gap-2">
-              <span className="text-meta font-medium text-foreground">{item.skillName}</span>
+              <span className="text-control text-foreground">{item.skillName}</span>
               {item.args.map((arg, index) => (
                 <span
                   key={index}

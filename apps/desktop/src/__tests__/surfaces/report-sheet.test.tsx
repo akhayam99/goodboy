@@ -351,7 +351,7 @@ describe('report sheet on the real store', () => {
         'https://github.com/akhayam99/goodboy/issues/new?title=Board%20columns%20jump',
       ),
     ).toBe(true);
-    expect(decodeURIComponent(url)).toContain('It is on your clipboard');
+    expect(decodeURIComponent(url)).toContain("It's on your clipboard");
   });
 
   it('shows an error and does not open GitHub when the overflow cannot reach the clipboard', async () => {

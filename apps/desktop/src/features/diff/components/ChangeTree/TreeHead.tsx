@@ -2,6 +2,7 @@ import { useState, type RefObject } from 'react';
 import { SearchField, useEscapeLayer, FOCUS_RING, cn } from '@goodboy/ui';
 import type { TreeGroup } from '../../lib/changeTree';
 import { FilterMenu, type Show } from './FilterMenu';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly total: number;
@@ -65,9 +66,9 @@ export const TreeHead = ({
           onChange={onQuery}
           onFocus={() => setIsTyping(true)}
           onBlur={() => setIsTyping(false)}
-          placeholder="Search files"
-          ariaLabel="Search files"
-          clearLabel="Clear filter"
+          placeholder={NAMES.searchFiles}
+          ariaLabel={NAMES.searchFiles}
+          clearLabel={NAMES.clearFilter}
           data-diff-filter=""
           className="min-w-0 flex-1"
         />

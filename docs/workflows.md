@@ -765,7 +765,7 @@ what only that kind has. A step opens one way for every kind, as its page.
   the header carry, five rows at most (`RunPageActions`): while a run lives
   **Skip step N**, Rename, Step routing, Stop run, Archive run; once it ended
   Rename, Open in Changes, Save as preset, Archive run, Delete run. Everything else
-  stays on the right click of the title, which takes focus, so Shift+F10 opens
+  stays on the right click of the title, which takes focus, so ⇧F10 opens
   it from the keyboard (Open in Changes, Save as preset, Copy run
   summary, Delete run on a live run). An ended run, also one whose steps are all done
   but a helper failed, never offers Stop run. Asks you (a `choices` item) is left out of

@@ -358,7 +358,11 @@ export const startAutoRuntime = async ({
   const sweepPushes = createPushSweep({
     ctx: runtime.ctx,
     onError: ({ error }: PushSweepErrorParams) => {
-      void getState().reportError({ recovery: CHECK_STATE, title: 'Auto hit a problem', error });
+      void getState().reportError({
+        recovery: CHECK_STATE,
+        title: 'The Lead hit a problem',
+        error,
+      });
     },
   });
   const tick = async (): Promise<void> => {
@@ -375,7 +379,11 @@ export const startAutoRuntime = async ({
     isTicking = true;
     void tick()
       .catch((error: unknown) => {
-        void getState().reportError({ recovery: CHECK_STATE, title: 'Auto hit a problem', error });
+        void getState().reportError({
+          recovery: CHECK_STATE,
+          title: 'The Lead hit a problem',
+          error,
+        });
       })
       .finally(() => {
         isTicking = false;

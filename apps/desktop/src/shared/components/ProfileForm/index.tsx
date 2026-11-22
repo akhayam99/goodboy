@@ -55,7 +55,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <span className="text-meta font-medium text-muted-foreground">{NAMES.yourJob}</span>
+        <span className="text-control text-muted-foreground">{NAMES.yourJob}</span>
         <ChipsInput
           label={NAMES.yourJob}
           values={value.roles}
@@ -67,7 +67,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
         />
       </div>
       <div className="flex flex-col gap-2">
-        <label htmlFor={aboutWorkId} className="text-meta font-medium text-muted-foreground">
+        <label htmlFor={aboutWorkId} className="text-control text-muted-foreground">
           About your work{' '}
           <span className="font-normal text-faint-foreground">what you do and for whom</span>
         </label>
@@ -83,7 +83,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
         />
       </div>
       <div className="flex flex-col gap-2">
-        <label htmlFor={workingRulesId} className="text-meta font-medium text-muted-foreground">
+        <label htmlFor={workingRulesId} className="text-control text-muted-foreground">
           How agents should work with you
         </label>
         <Textarea
@@ -98,9 +98,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
         />
       </div>
       <div className="flex flex-col gap-2">
-        <span className="text-meta font-medium text-muted-foreground">
-          Explain more when it touches
-        </span>
+        <span className="text-control text-muted-foreground">Explain more when it touches</span>
         <ChipsInput
           label="Explain more when it touches"
           values={value.explainMore}

@@ -213,7 +213,7 @@ describe('Needs you for a stopped rebase', () => {
         mountId: A_REBASE_MOUNT_ID,
         branch: 'hl/fix-duplicate-credit',
         reason: 'dirty',
-        title: '11 files have changes that are not committed. Commit or stash them first.',
+        title: "11 files have changes that aren't committed. Commit or stash them first.",
       },
       createdAt: brandedId<IsoDateTime>({ value: '2026-10-10T09:10:00.000Z' }),
     };

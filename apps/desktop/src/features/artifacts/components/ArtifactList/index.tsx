@@ -25,6 +25,7 @@ import { ARTIFACTS_GRID_COLUMNS } from './artifactsGridColumns';
 import { ArtifactNewMenu } from './ArtifactNewMenu';
 import { useArtifactParts } from './useArtifactParts';
 import { useImportReadFailure } from './useImportReadFailure';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -186,7 +187,7 @@ export const ArtifactList = ({
             action={
               filter === 'all' ? undefined : (
                 <Button variant="ghost" size="xs" onClick={() => onFilterChange('all')}>
-                  Clear filter
+                  {NAMES.clearFilter}
                 </Button>
               )
             }

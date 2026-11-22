@@ -167,7 +167,7 @@ describe('StageBoard card rename', () => {
       fireEvent.keyDown(field(), { key: 'Enter' });
     });
 
-    expect(screen.getByRole('alert').textContent).toContain('name is too long');
+    expect(screen.getByRole('alert').textContent).toContain('Name is too long');
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
     expect(renameSession).not.toHaveBeenCalled();
   });

@@ -1,5 +1,4 @@
 {
-  "features/actions/kinds/artifact.ts": 2,
   "features/artifacts/artifactQuestionContract.ts": 1,
   "features/auto/delegationReasonTextOf.ts": 1,
   "features/auto/plan/approveAutoPlan.ts": 1,
@@ -10,7 +9,6 @@
   "features/companion/commandExecutor.ts": 11,
   "features/companion/mobileConfinement.ts": 1,
   "features/history/pushErrorLine.ts": 1,
-  "features/history/rebaseJob.ts": 2,
   "features/reports/buildReportContext.ts": 2,
   "features/reports/composeDiffScoutKickoff.ts": 2,
   "features/scripts/components/ScriptsPanel/index.tsx": 1,
@@ -19,13 +17,11 @@
   "features/session/hooks/useRebaseAgent/index.ts": 2,
   "features/session/mountQueryBridge/index.ts": 4,
   "features/session/projectMaterializeBridge.ts": 2,
-  "features/session/timeline/runTimeLeft.ts": 1,
   "features/wireframes/buildWireframeContext.ts": 1,
   "features/wireframes/collectDesignProfile.ts": 1,
   "features/wireframes/importWireframeJson.ts": 1,
   "features/wireframes/wireframeScoutReports.ts": 1,
   "features/wireframes/wireframeScoutRoles.ts": 1,
-  "features/workTreeModel/workTime.ts": 1,
   "features/workflows/composeChildRoutingPrompt.ts": 2,
   "features/workspace-chat/buildChatSystemPrompt.ts": 2
 }

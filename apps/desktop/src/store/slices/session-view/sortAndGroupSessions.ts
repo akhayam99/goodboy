@@ -14,6 +14,7 @@ import {
   type SessionProjectRef,
 } from './types';
 import { pullRequestGroupOf } from './pullRequestGroup';
+import { NAMES } from '../../../shared/utils/names';
 
 type Compare = (a: Session, b: Session) => number;
 
@@ -216,7 +217,7 @@ const bucketByProject = ({
     const bucket = buckets.get(key);
     if (bucket === undefined) {
       buckets.set(key, {
-        label: project === null ? 'No project' : project.name,
+        label: project === null ? NAMES.noProject : project.name,
         sessions: [session],
       });
       continue;

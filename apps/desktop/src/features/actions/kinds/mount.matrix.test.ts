@@ -55,7 +55,7 @@ const COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
 const ADD_TASK = 'mount.putTaskOnBranch chip';
 const HISTORY = ['mount.rewriteHistory menu', 'mount.switchBranch chip', ADD_TASK];
 const WITH_PR = ['mount.openPullRequest inline', 'mount.openDiff inline'];
-const DIRTY_2 = '2 files have changes that are not committed. Commit or stash them first.';
+const DIRTY_2 = "2 files have changes that aren't committed. Commit or stash them first.";
 
 const STATES: ReadonlyArray<{
   readonly name: string;

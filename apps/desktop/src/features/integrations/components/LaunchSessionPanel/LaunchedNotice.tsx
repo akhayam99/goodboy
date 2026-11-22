@@ -21,7 +21,7 @@ export const LaunchedNotice = ({ sessionId, isLinkedToIssue, onOpened }: Props) 
         <MessagesSquare size={ICON_SIZE.control} className="text-success" aria-hidden />
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-meta font-medium text-foreground">Session already started</span>
+        <span className="text-control text-foreground">Session already started</span>
         <span className="truncate text-meta text-muted-foreground">
           {isLinkedToIssue
             ? 'A session is linked to this issue.'

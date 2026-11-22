@@ -41,7 +41,7 @@ export const DockLiveLine = ({ live, stop, isStopArmed }: Props) => {
       <span className="flex-1" />
       {isStopArmed ? (
         <span role="status" className="shrink-0 whitespace-nowrap text-meta text-muted-foreground">
-          Esc again to stop
+          {NAMES.escAgainToStop}
         </span>
       ) : null}
       {stop.isButtonInHead === true ? null : <DockStopButton stop={stop} />}

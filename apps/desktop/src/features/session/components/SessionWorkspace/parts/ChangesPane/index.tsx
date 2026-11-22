@@ -29,6 +29,7 @@ import {
   type RestoreTarget,
 } from '../../../../../file-versions/useChangesRestore';
 import { useFolderChanges } from './useFolderChanges';
+import { NAMES } from '../../../../../../shared/utils/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -205,7 +206,7 @@ export const ChangesPane = ({ sessionId }: Props) => {
             onClick={() => run({ target: turnTarget, isForced: false })}
           >
             <CONCEPT_ICONS.versionRestore size={ICON_SIZE.row} aria-hidden />
-            Undo changes from this reply
+            {NAMES.undoReply}
           </Button>
         )
       }

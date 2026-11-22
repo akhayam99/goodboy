@@ -33,7 +33,7 @@ export const GuidePanel = ({ guide }: Props) => {
               {idx + 1}
             </span>
             <div className="flex min-w-0 flex-col gap-0.5">
-              <span className="text-meta font-medium text-foreground">{step.title}</span>
+              <span className="text-control text-foreground">{step.title}</span>
               <span className="text-meta text-muted-foreground">{step.body}</span>
             </div>
           </li>

@@ -90,7 +90,7 @@ const BANNER_TEXT: Readonly<Record<RebaseJobSceneState, ReadonlyArray<string>>> 
   'fixing-push': ['Rebased, fixing the push', 'An agent is fixing what stopped it.'],
   'no-provider': ['No provider is connected', 'History rewriter needs one to merge the conflict.'],
   dirty: [
-    '11 files have changes that are not committed',
+    "11 files have changes that aren't committed",
     'Commit or stash them, then retry the rebase.',
   ],
   'result-differs': ['The result did not match your branch', 'Nothing was changed.'],

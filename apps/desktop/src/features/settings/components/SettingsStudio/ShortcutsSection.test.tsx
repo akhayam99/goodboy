@@ -63,10 +63,10 @@ const press = (init: KeyboardEventInit): void => {
 };
 
 describe('the header of the Shortcuts page', () => {
-  it('teaches that a list row opens its actions on right click and Shift+F10', () => {
+  it('teaches that a list row opens its actions on right click and ⇧F10', () => {
     render(<ShortcutsSection />);
 
-    screen.getByText(/On a list row, right click or Shift\+F10 opens the actions of that row\./);
+    screen.getByText(/On a list row, right click or ⇧F10 opens the actions of that row\./);
   });
 });
 

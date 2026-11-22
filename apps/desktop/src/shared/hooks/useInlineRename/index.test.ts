@@ -54,7 +54,7 @@ describe('useInlineRename', () => {
       await result.current.commit();
     });
     expect(onCommit).not.toHaveBeenCalled();
-    expect(result.current.error).toBe('name is too long');
+    expect(result.current.error).toBe('Name is too long');
 
     act(() => {
       result.current.setDraft('x'.repeat(12));
@@ -80,7 +80,7 @@ describe('useInlineRename', () => {
     await act(async () => {
       await result.current.commit();
     });
-    expect(result.current.error).toBe('name is too long');
+    expect(result.current.error).toBe('Name is too long');
     expect(result.current.canRetry).toBe(false);
     expect(onCommit).not.toHaveBeenCalled();
 
@@ -90,7 +90,7 @@ describe('useInlineRename', () => {
     await act(async () => {
       await result.current.commit();
     });
-    expect(result.current.error).toBe('name cannot be empty');
+    expect(result.current.error).toBe("Name can't be empty");
     expect(result.current.canRetry).toBe(false);
 
     act(() => {

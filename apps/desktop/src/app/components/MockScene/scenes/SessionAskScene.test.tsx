@@ -17,6 +17,10 @@ import { useAppStore } from '../../../../store';
 import { registerShortcut } from '../../../../shared/keyboard/dispatcher';
 import { currentPlatform } from '../../../../shared/platform';
 import { requestAskReset } from '../../../../features/session/ask/requestAskReset';
+import {
+  activeAskBackend,
+  registerAskBackend,
+} from '../../../../features/session/ask/activeAskBackend';
 import { SESSION } from './activityRunSeed';
 import { SessionAskScene } from './SessionAskScene';
 import { factCardOf } from '../../../../__tests__/helpers/factCard';
@@ -52,7 +56,7 @@ describe('the session Ask scene', () => {
     const suggestions = within(screen.getByRole('region', { name: 'Try asking' }));
     expect(suggestions.getAllByRole('button').length).toBeGreaterThan(0);
     expect(screen.queryByTestId('ask-right-now')).toBeNull();
-    expect(screen.getByPlaceholderText('Ask about this session…')).toBeDefined();
+    expect(screen.getByPlaceholderText('Ask about this session')).toBeDefined();
     expect(within(askDrawer()).getByText('Read only')).toBeDefined();
   });
 
@@ -170,7 +174,7 @@ describe('the session Ask scene', () => {
     const plan = await screen.findByTestId('ask-plan');
     expect(screen.getByRole('button', { name: 'Back to answer' })).toBeDefined();
     expect(within(plan).queryByText('Back to answer')).toBeNull();
-    expect(screen.queryByPlaceholderText('Ask about this session…')).toBeNull();
+    expect(screen.queryByPlaceholderText('Ask about this session')).toBeNull();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(await screen.findByTestId('ask-answer')).toBeDefined();
   });
@@ -178,11 +182,11 @@ describe('the session Ask scene', () => {
   it('a palette reset inside a plan restores the composer', async () => {
     await renderState('plan');
     await screen.findByTestId('ask-plan');
-    expect(screen.queryByPlaceholderText('Ask about this session…')).toBeNull();
+    expect(screen.queryByPlaceholderText('Ask about this session')).toBeNull();
     act(() => {
       requestAskReset({ sessionId: SESSION.id });
     });
-    expect(await screen.findByPlaceholderText('Ask about this session…')).toBeDefined();
+    expect(await screen.findByPlaceholderText('Ask about this session')).toBeDefined();
     expect(screen.queryByTestId('ask-plan')).toBeNull();
   });
 
@@ -234,7 +238,7 @@ describe('the session Ask scene', () => {
     const isMac = currentPlatform() === 'darwin';
     const chord = { code: 'KeyN', metaKey: isMac, ctrlKey: !isMac };
 
-    const composer = screen.getByPlaceholderText('Ask about this session…');
+    const composer = screen.getByPlaceholderText('Ask about this session');
     act(() => {
       composer.blur();
       fireEvent.keyDown(document.body, chord);
@@ -260,7 +264,7 @@ describe('the session Ask scene', () => {
     const newSession = vi.fn();
     const stop = registerShortcut('session.new', newSession);
     const isMac = currentPlatform() === 'darwin';
-    const composer = screen.getByPlaceholderText('Ask about this session…');
+    const composer = screen.getByPlaceholderText('Ask about this session');
     const before = useAppStore.getState().askThreadId[SESSION.id];
 
     act(() => {
@@ -277,5 +281,28 @@ describe('the session Ask scene', () => {
     await renderState('streaming');
     expect(await screen.findByLabelText('Stop')).toBeDefined();
     expect(screen.queryByTestId('ask-footer')).toBeNull();
+  });
+
+  it('reports a Stop that failed and offers Stop again', async () => {
+    const failure = new Error('the provider did not answer the cancel');
+    const cancelTurn = activeAskBackend.cancelTurn;
+    registerAskBackend({
+      backend: { ...activeAskBackend, cancelTurn: () => Promise.reject(failure) },
+    });
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({ reportError });
+    try {
+      await renderState('streaming');
+      await act(async () => {
+        fireEvent.click(await screen.findByLabelText('Stop'));
+      });
+
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't stop the reply", error: failure }),
+      );
+      expect(await screen.findByLabelText('Stop')).toBeDefined();
+    } finally {
+      registerAskBackend({ backend: { ...activeAskBackend, cancelTurn } });
+    }
   });
 });

@@ -131,7 +131,7 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
         role="danger"
         icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
         title="Delete this comment?"
-        description="It is removed from the review."
+        description="It's removed from the review."
         confirmLabel="Delete comment"
         onConfirm={() => comments.onDelete?.(thread.id)}
         trigger={({ arm }) => deleteButton({ onClick: arm })}

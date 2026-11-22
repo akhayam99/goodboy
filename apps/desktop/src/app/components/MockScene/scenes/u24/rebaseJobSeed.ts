@@ -127,7 +127,7 @@ const PATCHES: Readonly<Record<RebaseJobSceneState, Patch>> = {
     phase: 'stopped',
     stop: stopOf({
       reason: 'dirty',
-      message: '11 files have changes that are not committed. Commit or stash them first.',
+      message: "11 files have changes that aren't committed. Commit or stash them first.",
     }),
   },
   'result-differs': {

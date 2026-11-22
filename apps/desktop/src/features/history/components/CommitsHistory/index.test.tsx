@@ -18,6 +18,7 @@ import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../../actions/kinds/
 import { historyBackupRef } from '../../testing/historyBackupRef';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 vi.useFakeTimers({ toFake: ['Date'] });
 vi.setSystemTime(new Date(2026, 8, 30, 12, 0, 0));
@@ -258,7 +259,9 @@ describe('CommitsHistory toolbar', () => {
       throw new Error('the commit rows draw no menu');
     }
 
-    expect(tooltipTextOf({ element: menu })).toBe('More actions. Right click or Shift+F10');
+    expect(tooltipTextOf({ element: menu })).toBe(
+      `More actions. Right click or ${shortcutGlyphs('menu.open')}`,
+    );
     slot.remove();
   });
 

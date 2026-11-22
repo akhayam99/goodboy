@@ -161,7 +161,7 @@ export const TASK_KIND: ObjectKindDefinition<TaskActionTarget, TaskFacts> = {
     {
       id: 'task.unlink',
       slot: ({ facts }) => (facts.branch === null ? 'hover' : 'menu'),
-      label: NAMES.removeLinkFromSession,
+      label: NAMES.unlink,
       icon: Unlink,
       group: 'danger',
       when: () => true,

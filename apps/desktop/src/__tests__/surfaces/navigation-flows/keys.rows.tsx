@@ -1198,7 +1198,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     note: 'inside the Ask panel, the new chord resets the chat, not a session',
     open: async (ctx) => {
       await press('ask.open')();
-      const composer = await screen.findByPlaceholderText('Ask about this session…', {});
+      const composer = await screen.findByPlaceholderText('Ask about this session', {});
       useAppStore.setState((state) => ({
         askThreadId: {
           ...state.askThreadId,
@@ -1218,7 +1218,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     note: 'in Ask a streaming reply arms the stop before the panel closes, then stops it',
     open: async (ctx) => {
       await press('ask.open')();
-      const composer = await screen.findByPlaceholderText('Ask about this session…', {});
+      const composer = await screen.findByPlaceholderText('Ask about this session', {});
       const threadId = brandedId<ChatId>({ value: 'keys-ask-stream' });
       askStops.length = 0;
       useAppStore.setState((state) => ({
@@ -1257,7 +1257,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     note: 'in Ask with no reply streaming, Esc closes the panel',
     open: async () => {
       await press('ask.open')();
-      const composer = await screen.findByPlaceholderText('Ask about this session…', {});
+      const composer = await screen.findByPlaceholderText('Ask about this session', {});
       composer.focus();
       pressShortcut({ id: 'agent.stop', target: composer });
       await settle();

@@ -77,7 +77,11 @@ export const makeAutoRuntime = ({
     sleep,
     ...(watchPolls === undefined ? {} : { watchPolls }),
     onError: (error) => {
-      void getState().reportError({ recovery: CHECK_STATE, title: 'Auto hit a problem', error });
+      void getState().reportError({
+        recovery: CHECK_STATE,
+        title: 'The Lead hit a problem',
+        error,
+      });
     },
   });
   return holder.runtime;

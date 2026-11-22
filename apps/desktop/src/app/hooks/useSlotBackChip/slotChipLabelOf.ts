@@ -1,6 +1,7 @@
 import type { ArtifactId, ArtifactKind, SessionArtifact } from '@goodboy/types';
 import type { NewDrawerForm, OpenDrawer } from '../../../store/slices/drawer/state';
 import { LEAD_LEVEL_COPY } from '../../../features/auto/permissions/leadLevelCopy';
+import { NAMES } from '../../../shared/utils/names';
 
 export type SlotChipLabel = {
   readonly kind: string;
@@ -95,7 +96,7 @@ export const slotChipLabelOf = ({ drawer, artifacts }: Params): SlotChipLabel =>
     case 'browser':
       return { kind: 'Browser', title: null };
     case 'monitoring':
-      return { kind: 'Monitor', title: null };
+      return { kind: NAMES.monitor, title: null };
     case 'lead-details':
       return { kind: LEAD_LEVEL_COPY.drawerTitle, title: null };
     default: {

@@ -624,8 +624,8 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
         title: `Delete "${facts.title}" for good?`,
         description:
           history === null
-            ? "It is removed from this device. This can't be undone."
-            : `It is removed from this device, with its run history (${history}). This can't be undone.`,
+            ? "It's removed from this device. This can't be undone."
+            : `It's removed from this device, with its run history (${history}). This can't be undone.`,
         confirmLabel: 'Delete permanently',
         role: 'danger',
       };

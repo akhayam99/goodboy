@@ -61,7 +61,7 @@ export const ReplyTemplateField = ({
       )}
     >
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <label htmlFor={id} className="text-meta font-medium text-foreground">
+        <label htmlFor={id} className="text-control text-foreground">
           {label}
         </label>
         {action}

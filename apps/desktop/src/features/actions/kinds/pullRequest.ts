@@ -414,7 +414,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
   },
   {
     id: 'pullRequest.create',
-    label: 'Create pull request',
+    label: ({ facts }) => `Create ${nounsOf({ facts }).long}`,
     icon: GitPullRequestCreate,
     group: 'act',
     when: ({ facts }) => facts.phase === 'none' && facts.host !== 'bitbucket',
