@@ -34,6 +34,16 @@ const readWebpSize = ({ path }: { readonly path: string }): Size | null => {
   return null;
 };
 
+const hasVariant = ({
+  files,
+  image,
+  variant,
+}: {
+  readonly files: ReadonlyArray<ParsedFile>;
+  readonly image: string;
+  readonly variant: 'before' | 'after';
+}): boolean => files.some((file) => file.image === image && file.variant === variant);
+
 const isPairRuleVersion = ({ versionDir }: { readonly versionDir: string }): boolean => {
   const [major, minor] = versionDir.split('.').map(Number);
   return (major ?? 0) > 0 || (minor ?? 0) >= PAIR_RULES_FROM_MINOR;
@@ -236,9 +246,10 @@ describe('docs/changelog image budget', () => {
             ).toBe(`${first.width}x${first.height}`);
           });
           byImage.forEach((section, image) => {
-            if (section === 'improved' && fileNames.some((name) => name.startsWith(`${image}-`))) {
+            const files = parsed.flatMap(({ parsed: file }) => (file === null ? [] : [file]));
+            if (section === 'improved' && files.some((file) => file.image === image)) {
               expect(
-                fileNames.some((name) => name.startsWith(`${image}-before-`)),
+                hasVariant({ files, image, variant: 'before' }),
                 `${image} is Improved, so What's new offers Before: it needs before files`,
               ).toBe(true);
             }
@@ -262,5 +273,22 @@ describe('docs/changelog image budget', () => {
         ).toBeLessThanOrEqual(MAX_RELEASE_BYTES);
       });
     });
+  });
+});
+
+describe('hasVariant', () => {
+  const files: ReadonlyArray<ParsedFile> = [
+    { fileName: 'board-after-dark.webp', image: 'board', variant: 'after', theme: 'dark' },
+    {
+      fileName: 'board-before-menu-before-dark.webp',
+      image: 'board-before-menu',
+      variant: 'before',
+      theme: 'dark',
+    },
+  ];
+
+  it('never takes another image name for this image', () => {
+    expect(hasVariant({ files, image: 'board', variant: 'before' })).toBe(false);
+    expect(hasVariant({ files, image: 'board', variant: 'after' })).toBe(true);
   });
 });

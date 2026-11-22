@@ -179,20 +179,20 @@ One pass, in this order. Do not write a line of the notes before steps 1 and 2.
      line, and not a copy-only change;
    - a `Fixed`-only patch release has no pictures at all.
      An `Improved` entry with `image=` needs both `before` and `after` files in
-     both themes, because What's new offers a Before switch on every `Improved`
+     the pinned theme (`theme=`), or in both themes when none is pinned, because What's new offers a Before switch on every `Improved`
      entry. A `New` entry gets `after` only.
 5. **Shoot.** Follow [mock-screenshots.md](mock-screenshots.md) → Pictures for
    the changelog. Before and after share frame, crop, seed, scroll and the
    highlighted element. Only the change differs.
 6. **Verify inside What's new.** Run the app on the release branch, open
    Settings, Updates, What's new on the version, and for each picture check:
-   - the After frame shows the change, and the Before frame shows the same
-     frame without it;
-   - the selection, highlight or open row that the entry talks about is
-     present in both frames;
-   - Before and After are the same size and nothing is cut off at the edge of
-     the picture frame, in dark and in light;
-   - the Before switch stays visible after you press it.
+   - the After frame shows the change; on an `Improved` entry the Before frame
+     shows the same frame without it (a `New` entry has After only);
+   - on an `Improved` entry, the selection, highlight or open row that the
+     entry talks about is present in both frames;
+   - on an `Improved` entry, Before and After are the same size and nothing is cut off at the edge of
+     the picture frame, in the pinned theme or in both;
+   - on an `Improved` entry, the Before switch stays visible after you press it.
      A picture that fails any line is re-shot, or its pair is dropped.
 7. **Final read as a user.** Read the whole section once, as someone who has
    never seen the code. For each line ask: can I see this in the app, does it
@@ -207,8 +207,9 @@ Checklist before the section is committed:
       employer or personal data. Mock names only in examples.
 - [ ] Small visible changes are one grouped `Fixed` line, not several entries.
 - [ ] No picture for a copy-only or one-line change.
-- [ ] Every `Improved` picture has before and after in both themes, same size.
-- [ ] Opened every picture in What's new, in both themes.
+- [ ] Every `Improved` picture has before and after in the pinned theme, or in both
+      themes when none is pinned, same size.
+- [ ] Opened every picture in What's new, in the pinned theme or in both.
 - [ ] Read it once more as a user.
 
 ### Format (v2, from v0.5.0 on)
