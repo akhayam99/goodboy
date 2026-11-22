@@ -1,4 +1,5 @@
 use std::collections::{BTreeSet, HashMap};
+use std::sync::{Mutex, OnceLock};
 
 use rusqlite::Connection;
 
@@ -25,10 +26,23 @@ fn port_of_slot(slot: u16) -> u16 {
     FIRST_PORT + slot * PORTS_PER_MOUNT
 }
 
-pub(crate) fn ports_of(mount_ids: &[String]) -> HashMap<String, u16> {
-    let mut taken = BTreeSet::new();
-    let mut out = HashMap::new();
+fn slot_of_port(port: u16) -> u16 {
+    (port - FIRST_PORT) / PORTS_PER_MOUNT
+}
+
+pub(crate) fn ports_after(
+    prior: &HashMap<String, u16>,
+    mount_ids: &[String],
+) -> HashMap<String, u16> {
+    let mut out: HashMap<String, u16> = mount_ids
+        .iter()
+        .filter_map(|mount_id| prior.get(mount_id).map(|port| (mount_id.clone(), *port)))
+        .collect();
+    let mut taken: BTreeSet<u16> = out.values().map(|port| slot_of_port(*port)).collect();
     for mount_id in mount_ids {
+        if out.contains_key(mount_id) {
+            continue;
+        }
         let home = home_slot(mount_id);
         let free = (0..SLOTS)
             .map(|step| (home + step) % SLOTS)
@@ -40,6 +54,20 @@ pub(crate) fn ports_of(mount_ids: &[String]) -> HashMap<String, u16> {
         out.insert(mount_id.clone(), port_of_slot(slot));
     }
     out
+}
+
+fn assigned() -> &'static Mutex<HashMap<String, u16>> {
+    static ASSIGNED: OnceLock<Mutex<HashMap<String, u16>>> = OnceLock::new();
+    ASSIGNED.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+pub(crate) fn ports_of(mount_ids: &[String]) -> HashMap<String, u16> {
+    let Ok(mut held) = assigned().lock() else {
+        return ports_after(&HashMap::new(), mount_ids);
+    };
+    let next = ports_after(&held, mount_ids);
+    held.clone_from(&next);
+    next
 }
 
 pub(crate) fn live_mount_ids(conn: &Connection) -> Vec<String> {
@@ -109,9 +137,33 @@ mod tests {
 
     #[test]
     fn a_mount_keeps_its_port_when_a_newer_one_arrives() {
-        let before = ports_of(&ids(&["m-ledger"]));
-        let after = ports_of(&ids(&["m-ledger", "m-ledger-2", "m-relay"]));
+        let before = ports_after(&HashMap::new(), &ids(&["m-ledger"]));
+        let after = ports_after(&before, &ids(&["m-ledger", "m-ledger-2", "m-relay"]));
         assert_eq!(before.get("m-ledger"), after.get("m-ledger"));
+    }
+
+    fn colliding(prefix: &str, home: u16) -> String {
+        (0..100_000)
+            .map(|index| format!("{prefix}-{index}"))
+            .find(|mount_id| home_slot(mount_id) == home)
+            .expect("a colliding mount id")
+    }
+
+    #[test]
+    fn a_mount_keeps_its_port_when_a_colliding_older_one_leaves() {
+        let first = "m-ledger".to_string();
+        let home = home_slot(&first);
+        let second = colliding("m-notify-relay", home);
+        let both = ports_after(&HashMap::new(), &[first.clone(), second.clone()]);
+        assert_eq!(both.get(&first), Some(&port_of_slot(home)));
+        let moved = both.get(&second).copied();
+        assert_ne!(moved, Some(port_of_slot(home)));
+        let survivor = ports_after(&both, std::slice::from_ref(&second));
+        assert_eq!(survivor.get(&second).copied(), moved);
+        let third = colliding("m-payments-api", home);
+        let after = ports_after(&survivor, &[second.clone(), third.clone()]);
+        assert_eq!(after.get(&second).copied(), moved);
+        assert_eq!(after.get(&third), Some(&port_of_slot(home)));
     }
 
     #[test]

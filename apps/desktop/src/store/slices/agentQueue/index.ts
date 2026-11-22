@@ -2,6 +2,7 @@ import { drainAgentQueue } from './drainAgentQueue';
 import { drainSessionQueues } from './drainSessionQueues';
 import { enqueueAgentMessage } from './enqueueAgentMessage';
 import { loadAgentQueues } from './loadAgentQueues';
+import { releaseQueuedHold } from './releaseQueuedHold';
 import { removeQueuedMessage } from './removeQueuedMessage';
 import { retryQueuedMessage } from './retryQueuedMessage';
 import { sendAgentMessage } from './sendAgentMessage';
@@ -15,6 +16,7 @@ export const createAgentQueueSlice = ({ set, get }: SliceDeps) => {
     loadAgentQueues: loadAgentQueues(set, get),
     enqueueAgentMessage: enqueueAgentMessage(set, get),
     removeQueuedMessage: removeQueuedMessage(set, get),
+    releaseQueuedHold: releaseQueuedHold({ set, get }),
     takeQueuedMessage: takeQueuedMessage(set, get),
     drainAgentQueue: drainAgentQueue(set, get),
     drainSessionQueues: drainSessionQueues({ get }),

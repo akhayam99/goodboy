@@ -1,12 +1,13 @@
 import type { IsoDateTime } from '@goodboy/types';
 import { persistAgentQueue, readAgentQueue, writeAgentQueue } from './queueStore';
-import type { AgentQueuedTurn, AgentQueuedTurnInput, GetFn, SetFn } from './types';
+import type { AgentQueueHold, AgentQueuedTurn, AgentQueuedTurnInput, GetFn, SetFn } from './types';
 
 type Params = Readonly<{
   turn: AgentQueuedTurnInput;
   placement?: 'last' | 'first';
   isDirect?: boolean;
   shouldDropUnsaved?: boolean;
+  hold?: AgentQueueHold;
 }>;
 
 export const enqueueAgentMessage = (set: SetFn, get: GetFn) => {
@@ -15,12 +16,14 @@ export const enqueueAgentMessage = (set: SetFn, get: GetFn) => {
     placement = 'last',
     isDirect = false,
     shouldDropUnsaved = false,
+    hold,
   }: Params): Promise<boolean> => {
     const queued: AgentQueuedTurn = {
       ...turn,
       status: isDirect ? 'sending' : 'queued',
       createdAt: new Date().toISOString() as IsoDateTime,
       ...(isDirect && { isDirect: true }),
+      ...(hold !== undefined && !isDirect && { hold }),
     };
     const current = readAgentQueue({ get, agentId: turn.agentId });
     if (current.some((item) => item.id === turn.id)) {

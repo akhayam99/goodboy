@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 
+type ReplaceArgs = Readonly<{ agentId: string; messages: ReadonlyArray<unknown> }>;
+
 const h = vi.hoisted(() => ({
-  replaceAgentQueuedMessages: vi.fn(async () => undefined),
+  replaceAgentQueuedMessages: vi.fn(async (_db: unknown, _args: ReplaceArgs) => undefined),
 }));
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -32,7 +34,13 @@ import {
 } from '../../../store/storyHarness';
 import type { AgentQueuedTurn } from '../../../store/slices/agentQueue/types';
 import { liveMounts } from '../liveMounts';
-import { NOT_SAVED, SEND_AFTER_MS } from '../messageBothImplementers';
+import {
+  NOT_SAVED,
+  NOT_WITHDRAWN,
+  RECIPIENT_GONE,
+  SEND_AFTER_MS,
+  STILL_QUEUED,
+} from '../messageBothImplementers';
 import { OverlapChip } from './index';
 
 let useAppStore: StoryStore;
@@ -251,5 +259,102 @@ describe('OverlapChip', () => {
 
     expect(queuedIds()).toEqual([1, 1]);
     expect(screen.queryByText(NOT_SAVED)).toBeNull();
+  });
+
+  it('a turn that finishes inside the Undo window does not deliver either note', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await openAndSend();
+
+    await act(async () => {
+      await useAppStore
+        .getState()
+        .drainAgentQueue({ sessionId: RETRY_SESSION, agentId: RETRY_AGENT });
+      await useAppStore
+        .getState()
+        .drainAgentQueue({ sessionId: BATCH_SESSION, agentId: BATCH_AGENT });
+    });
+
+    const heads = [RETRY_AGENT, BATCH_AGENT].map(
+      (agentId) => useAppStore.getState().agentQueue[agentId]?.[0],
+    );
+    expect(heads.map((turn) => turn?.status)).toEqual(['queued', 'queued']);
+    expect(heads.every((turn) => turn?.hold !== undefined)).toBe(true);
+  });
+
+  it('a withdrawal that cannot be saved makes Undo fail and keeps both notes', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({ reportError });
+    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await openAndSend();
+    h.replaceAgentQueuedMessages.mockRejectedValue(new Error('disk full'));
+
+    let isUndone = true;
+    await act(async () => {
+      isUndone = await useAppStore.getState().undoLastOperation({ shouldAnnounce: false });
+    });
+
+    expect(isUndone).toBe(false);
+    expect(queuedIds()).toEqual([1, 1]);
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ error: new Error(NOT_WITHDRAWN) }),
+    );
+  });
+
+  it('a rollback that cannot withdraw says so and Retry adds no duplicate', async () => {
+    h.replaceAgentQueuedMessages.mockImplementation(async (_db, { agentId, messages }) => {
+      if (agentId === BATCH_AGENT || messages.length === 0) {
+        throw new Error('disk full');
+      }
+    });
+    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+
+    await openAndSend();
+
+    screen.getByText(STILL_QUEUED);
+    expect(queuedIds()).toEqual([1, 0]);
+
+    h.replaceAgentQueuedMessages.mockReset();
+    h.replaceAgentQueuedMessages.mockResolvedValue(undefined);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    });
+
+    expect(queuedIds()).toEqual([1, 1]);
+  });
+
+  it('Retry keeps the failed recipients and says when one is gone', async () => {
+    h.replaceAgentQueuedMessages.mockRejectedValue(new Error('disk full'));
+    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await openAndSend();
+    screen.getByText(NOT_SAVED);
+
+    const replacement = brandId<AgentId>({ value: 'agent-batch-2' });
+    act(() => {
+      useAppStore.setState((state) => ({
+        sessionPhaseRuns: {
+          ...state.sessionPhaseRuns,
+          [BATCH_SESSION]: [
+            anAgent({
+              id: replacement,
+              sessionId: BATCH_SESSION,
+              kind: 'implementer',
+              mountId: BATCH_MOUNT,
+              status: 'running',
+            }),
+          ],
+        },
+      }));
+    });
+    h.replaceAgentQueuedMessages.mockResolvedValue(undefined);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    });
+
+    screen.getByText(RECIPIENT_GONE);
+    expect(useAppStore.getState().agentQueue[replacement]).toBeUndefined();
+    expect(queuedIds()).toEqual([0, 0]);
+    screen.getByRole('button', { name: 'Message both Implementers' });
   });
 });

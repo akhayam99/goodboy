@@ -6,7 +6,7 @@ import { NAMES } from '../../../shared/utils/names';
 import { actionIntentOf } from '../../actions/actionIntentOf';
 import { implementerNotesOf } from '../implementerNotesOf';
 import { implementerOf } from '../implementerOf';
-import { messageBothImplementers } from '../messageBothImplementers';
+import { messageBothImplementers, type QueuedNote } from '../messageBothImplementers';
 import type { Overlap } from '../overlapsOf';
 import { overlapWordsOf } from '../overlapWordsOf';
 
@@ -22,6 +22,7 @@ const NO_AGENTS: ReadonlyArray<never> = [];
 export const OverlapEntry = ({ overlap, sessionLabels, onSent }: Props) => {
   const [isSending, setIsSending] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState<ReadonlyArray<QueuedNote> | null>(null);
   const mountAgents = useAppStore(
     (state) => state.sessionPhaseRuns[overlap.mount.sessionId] ?? NO_AGENTS,
   );
@@ -36,17 +37,21 @@ export const OverlapEntry = ({ overlap, sessionLabels, onSent }: Props) => {
   });
 
   const send = async () => {
-    if (notes === null || isSending) {
+    const pending =
+      attempt ?? notes?.map((note) => ({ ...note, itemId: crypto.randomUUID() })) ?? null;
+    if (pending === null || isSending) {
       return;
     }
     setIsSending(true);
     setFailure(null);
-    const outcome = await messageBothImplementers({ notes });
+    const outcome = await messageBothImplementers({ notes: pending });
     setIsSending(false);
     if (!outcome.isSent) {
       setFailure(outcome.failure);
+      setAttempt(outcome.canRetry ? pending : null);
       return;
     }
+    setAttempt(null);
     onSent();
   };
 
@@ -56,7 +61,7 @@ export const OverlapEntry = ({ overlap, sessionLabels, onSent }: Props) => {
         {words.files} {words.order}
       </p>
       {failure === null ? null : <p className="text-meta text-danger">{failure}</p>}
-      {notes === null ? null : (
+      {notes === null && attempt === null ? null : (
         <div className="flex">
           <Button
             variant="secondary"
@@ -65,7 +70,7 @@ export const OverlapEntry = ({ overlap, sessionLabels, onSent }: Props) => {
             isBusy={isSending}
             onClick={() => void send()}
           >
-            {failure === null ? MESSAGE_BOTH : 'Retry'}
+            {attempt === null ? MESSAGE_BOTH : 'Retry'}
           </Button>
         </div>
       )}

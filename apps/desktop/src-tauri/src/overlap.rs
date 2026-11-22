@@ -65,43 +65,46 @@ fn nul_split(raw: &str) -> impl Iterator<Item = String> + '_ {
         .map(str::to_string)
 }
 
-pub(crate) fn changed_paths(root: &Path, base_branch: Option<&str>) -> Vec<String> {
-    let base = base_branch.map(str::trim).filter(|base| !base.is_empty());
-    let Some((_, merge_base)) = crate::worktree::resolve_base(root, base) else {
-        return Vec::new();
-    };
-    let mut paths = BTreeSet::new();
-    if let Ok(raw) = crate::worktree::git(root, &["diff", "--name-only", "-z", &merge_base]) {
-        paths.extend(nul_split(&raw));
-    }
-    if let Ok(raw) =
-        crate::worktree::git(root, &["ls-files", "--others", "--exclude-standard", "-z"])
-    {
-        paths.extend(nul_split(&raw));
-    }
-    paths.into_iter().take(MAX_PATHS).collect()
+fn git_text(root: &Path, args: &[&str]) -> Result<String, String> {
+    crate::worktree::git(root, args).map_err(|error| error.to_string())
 }
 
-fn read_mounts(rows: Vec<MountRow>) -> Vec<LiveMount> {
+pub(crate) fn changed_paths(root: &Path, base_branch: Option<&str>) -> Result<Vec<String>, String> {
+    git_text(root, &["rev-parse", "--git-dir"])?;
+    let base = base_branch.map(str::trim).filter(|base| !base.is_empty());
+    let Some((_, merge_base)) = crate::worktree::resolve_base(root, base) else {
+        return Ok(Vec::new());
+    };
+    let diff = git_text(
+        root,
+        &["diff", "--name-only", "--no-renames", "-z", &merge_base],
+    )?;
+    let untracked = git_text(root, &["ls-files", "--others", "--exclude-standard", "-z"])?;
+    let paths: BTreeSet<String> = nul_split(&diff).chain(nul_split(&untracked)).collect();
+    Ok(paths.into_iter().take(MAX_PATHS).collect())
+}
+
+fn read_mounts(rows: Vec<MountRow>) -> Result<Vec<LiveMount>, String> {
     let ids: Vec<String> = rows.iter().map(|row| row.mount_id.clone()).collect();
     let ports = crate::mount_port::ports_of(&ids);
     rows.into_iter()
         .map(|row| {
             let root = Path::new(&row.worktree_path);
             let is_on_disk = root.is_dir();
-            LiveMount {
+            let paths = match is_on_disk {
+                true => changed_paths(root, row.base_branch.as_deref())?,
+                false => Vec::new(),
+            };
+            Ok(LiveMount {
                 port: ports.get(&row.mount_id).copied(),
                 has_fixed_port: is_on_disk && crate::monitor::watched::has_fixed_port(root),
-                paths: match is_on_disk {
-                    true => changed_paths(root, row.base_branch.as_deref()),
-                    false => Vec::new(),
-                },
+                paths,
                 mount_id: row.mount_id,
                 session_id: row.session_id,
                 project_id: row.project_id,
                 branch: row.branch,
                 created_at: row.created_at,
-            }
+            })
         })
         .collect()
 }
@@ -116,7 +119,8 @@ pub(crate) async fn overlap_read(db: State<'_, Db>) -> Result<Vec<LiveMount>, Me
     };
     tauri::async_runtime::spawn_blocking(move || read_mounts(rows))
         .await
-        .map_err(|error| MessageError::Failed(error.to_string()))
+        .map_err(|error| MessageError::Failed(error.to_string()))?
+        .map_err(MessageError::Failed)
 }
 
 #[cfg(test)]
@@ -176,7 +180,7 @@ mod tests {
         write(root, "README.md", "ledger-core, edited\n");
         write(root, "src/retry/new.ts", "export const b = 1;\n");
         assert_eq!(
-            changed_paths(root, Some("main")),
+            changed_paths(root, Some("main")).expect("paths"),
             vec![
                 "README.md".to_string(),
                 "src/retry/new.ts".to_string(),
@@ -189,7 +193,44 @@ mod tests {
     fn a_branch_without_changes_has_no_paths() {
         let repo = repo("clean");
         run(&repo.0, &["checkout", "-q", "-b", "hl/clean"]);
-        assert!(changed_paths(&repo.0, Some("main")).is_empty());
+        assert!(changed_paths(&repo.0, Some("main"))
+            .expect("paths")
+            .is_empty());
+    }
+
+    #[test]
+    fn a_rename_lists_the_old_path_and_the_new_one() {
+        let repo = repo("rename");
+        let root = &repo.0;
+        run(root, &["checkout", "-q", "-b", "hl/move"]);
+        run(root, &["mv", "src/retry/state.ts", "src/retry/moved.ts"]);
+        run(root, &["commit", "-q", "-m", "move"]);
+        assert_eq!(
+            changed_paths(root, Some("main")).expect("paths"),
+            vec![
+                "src/retry/moved.ts".to_string(),
+                "src/retry/state.ts".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_folder_git_cannot_read_fails_the_whole_read() {
+        let plain = Repo(std::env::temp_dir().join(format!(
+            "goodboy-overlap-plain-{:016x}",
+            rand::random::<u64>()
+        )));
+        std::fs::create_dir_all(&plain.0).expect("root");
+        let row = MountRow {
+            mount_id: "m-plain".to_string(),
+            session_id: "s1".to_string(),
+            project_id: None,
+            branch: "hl/plain".to_string(),
+            worktree_path: plain.0.to_string_lossy().into_owned(),
+            base_branch: Some("main".to_string()),
+            created_at: 1,
+        };
+        assert!(read_mounts(vec![row]).is_err());
     }
 
     #[test]
@@ -209,7 +250,7 @@ mod tests {
                       ('m2', 's1', '/mock/harborline/gone', 'hl/gone', 'main', 2);"
         ))
         .expect("seed");
-        let mounts = read_mounts(mount_rows(&conn));
+        let mounts = read_mounts(mount_rows(&conn)).expect("mounts");
         assert_eq!(mounts.len(), 2);
         assert_eq!(mounts[0].paths, vec!["src/retry/state.ts".to_string()]);
         assert!(mounts[0].port.is_some());

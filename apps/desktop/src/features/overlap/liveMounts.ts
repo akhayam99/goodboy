@@ -1,7 +1,10 @@
 import { startPoll } from '../../shared/lib/usePoll/startPoll';
+import { useAppStore } from '../../store';
+import { READ_FAILED } from '../../store/slices/notifications/errorRecovery';
 import { readLiveMounts, type LiveMount } from './readLiveMounts';
 
 export const LIVE_MOUNTS_EVERY_MS = 30_000;
+export const OVERLAP_READ_FAILED = "Couldn't read which branches overlap";
 
 export type LiveMountsSnapshot = Readonly<{
   mounts: ReadonlyArray<LiveMount>;
@@ -35,11 +38,24 @@ const read = async (): Promise<void> => {
       return;
     }
     snapshot = { mounts, isLoaded: true, hasFailed: false };
-  } catch {
+  } catch (error) {
     if (mine !== ticket) {
       return;
     }
     snapshot = { ...snapshot, hasFailed: true };
+    emit();
+    void useAppStore.getState().reportError({
+      recovery: READ_FAILED,
+      title: OVERLAP_READ_FAILED,
+      error,
+      severity: 'warning',
+      coalesceKey: 'overlap-read',
+      retry: async () => {
+        await read();
+        return !snapshot.hasFailed;
+      },
+    });
+    return;
   }
   emit();
 };
