@@ -302,7 +302,7 @@ const mountOf = () => {
 const REMOVE_NOTE = 'Delete local branch · 1.0 KB';
 
 const nextCardOf = (view: RenderResult): HTMLElement | null =>
-  view.container.querySelector<HTMLElement>('[data-slot="branch-board-section"]');
+  view.container.querySelector<HTMLElement>('[data-central-column]');
 
 const nextCard = (view: RenderResult): HTMLElement => {
   const card = nextCardOf(view);

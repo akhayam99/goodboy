@@ -49,7 +49,13 @@ const show = ({ name }: Params) => {
   );
 };
 
-const needsYou = (): HTMLElement => screen.getByRole('region', { name: 'Branches' });
+const needsYou = (): HTMLElement => {
+  const column = document.querySelector<HTMLElement>('[data-central-column]');
+  if (column === null) {
+    throw new Error('no overview column');
+  }
+  return column;
+};
 
 describe('next follow-ups scenes', () => {
   it('offers Apply fix once, on the Fix row of Needs you, once the analyze run proposed a fix', () => {

@@ -85,7 +85,7 @@ describe('the u31 pages scenes', () => {
   it('u31-overview draws the board with each group as a level 2 heading', async () => {
     mount({ name: 'u31-overview' });
 
-    await screen.findByRole('region', { name: 'Branches' }, WAIT);
+    await screen.findByRole('region', { name: 'Projects' }, WAIT);
     expect(screen.getAllByRole('heading', { level: 2 }).length).toBeGreaterThan(0);
     expect(screen.queryByRole('heading', { level: 2, name: /^Waiting for you/ })).toBeNull();
   });

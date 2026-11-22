@@ -58,21 +58,10 @@ describe('the u23 overview scenes', () => {
     expect(names[2]).toBe('Not now');
   });
 
-  it('overview-header-provenance names one chat on one line and keeps the rest behind +2 more', async () => {
+  it('overview-header-provenance opens on the state and leaves the chats it came from to Context', async () => {
     renderScene('overview-header-provenance');
 
-    const line = await screen.findByRole(
-      'button',
-      { name: /From chat: Payments retry design/ },
-      WAIT,
-    );
-    expect(line.textContent).not.toContain('·');
-    const popover = await screen.findByRole('dialog', { name: 'Other chats' }, WAIT);
-    expect(
-      within(popover)
-        .getAllByRole('button')
-        .map((button) => button.textContent),
-    ).toEqual(['From chat: Ledger rounding', 'From chat: Relay backoff notes']);
-    fireEvent.keyDown(popover, { key: 'Escape' });
+    await screen.findByRole('region', { name: 'Projects' }, WAIT);
+    expect(screen.queryByRole('button', { name: /From chat: Payments retry design/ })).toBeNull();
   });
 });

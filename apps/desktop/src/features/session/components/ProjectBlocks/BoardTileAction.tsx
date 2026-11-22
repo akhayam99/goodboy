@@ -13,13 +13,13 @@ type Props = {
 const ANSWER = 'Answer';
 
 export const BoardTileAction = ({ rowId }: Props) => {
-  const { session, rowById, cardsByRowId, removal } = useBoardContext();
+  const { session, rowById, cardsByRowId, removal, shownAskIds } = useBoardContext();
   const navigate = useAppStore((state) => state.navigate);
   const row = rowById.get(rowId);
   if (row === undefined) {
     return null;
   }
-  const action = boardTileActionOf({ row, cards: cardsByRowId.get(rowId) ?? [] });
+  const action = boardTileActionOf({ row, cards: cardsByRowId.get(rowId) ?? [], shownAskIds });
   switch (action.kind) {
     case 'none':
       return null;
@@ -32,7 +32,7 @@ export const BoardTileAction = ({ rowId }: Props) => {
         </span>
       );
     case 'question': {
-      const look = actionButtonLookOf({ verb: ANSWER, variant: 'primary' });
+      const look = actionButtonLookOf({ verb: ANSWER, variant: 'secondary' });
       return (
         <Button
           size="sm"

@@ -390,8 +390,8 @@ list below it is that button and filters the list: `isPressed` fills it
 that counts something no row shows (spend, time) has no `onClick` and stays a
 plain tile. `unit` is the quiet word after the number ("of 4 merged"), and
 `valueTone` colors the number (`warning` for what waits, `danger` for what
-fails, `success` for done). The session Overview draws its three tiles
-(`BoardTiles`) as plain tiles: a count its tab already shows gets no tile.
+fails, `success` for done). A count its tab already shows gets no tile, and
+the session Overview draws none: its spend and time sit in one facts line.
 
 ### Counts, fact lines and durations
 
@@ -1336,7 +1336,10 @@ update only themselves.
   (a `WorkNode`'s ring). A session card carries its tone in a
   `ToneBar` instead, a bar inside the surface rather than a border around it,
   breathing through `soft-pulse` while running. A session row in the column has
-  no bar: its `WorkNode` is the sign.
+  no bar: its `WorkNode` is the sign. Needs you on the Overview, and every move
+  that waits on you, takes the same strip: a neutral fill, a warning `ToneBar`
+  and a warning dot before its label, never a tone fill. Its state dots read
+  `STAGE_TONE`; primary blue stays on the one filled button, links and focus.
 - `soft-pulse`: the only animation in the app for a lasting state. It breathes
   a state that holds and is alive: the centre dot of a running
   `WorkNode` that carries no step number, the head of a running `WorkNode`'s

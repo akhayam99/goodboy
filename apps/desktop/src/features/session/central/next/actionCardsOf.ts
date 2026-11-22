@@ -3,7 +3,12 @@ import type { AutoPlanFacts } from '../../../auto/autoRetryTargetsOf';
 import type { AutoStuckKind } from '../../../auto/autoStuckKindOf';
 import { autoStuckVerbOf } from '../../../auto/autoStuckVerbOf';
 import { delegationReasonTextOf } from '../../../auto/delegationReasonTextOf';
-import type { NextStepBand, SessionSuggestion } from '../../../suggestions/types';
+import type {
+  MoveEvidence,
+  MoveFacts,
+  NextStepBand,
+  SessionSuggestion,
+} from '../../../suggestions/types';
 import type { NeedsYouOwner, NeedsYouOwnerKind } from '../../timeline/needsYou';
 import { planSentenceOf } from './planSentenceOf';
 
@@ -39,11 +44,17 @@ export type ActionCardModel = {
   readonly mountId: string | null;
   readonly source: ActionCardSource;
   readonly folded: ReadonlyArray<ActionCardModel>;
+  readonly reason: string | null;
+  readonly evidence: ReadonlyArray<MoveEvidence>;
 };
+
+const NO_EVIDENCE: ReadonlyArray<MoveEvidence> = [];
+
+type CardSuggestion = SessionSuggestion & Partial<Pick<MoveFacts, 'reason' | 'evidence'>>;
 
 type Params = {
   readonly owners: ReadonlyArray<NeedsYouOwner>;
-  readonly suggestions: ReadonlyArray<SessionSuggestion>;
+  readonly suggestions: ReadonlyArray<CardSuggestion>;
   readonly autoTargets: ReadonlyArray<AutoActionTarget>;
 };
 
@@ -58,7 +69,7 @@ type OwnerParams = {
 };
 
 type SuggestionParams = {
-  readonly suggestion: SessionSuggestion;
+  readonly suggestion: CardSuggestion;
 };
 
 type AutoParams = {
@@ -149,6 +160,8 @@ const ownerCardOf = ({ owner }: OwnerParams): ActionCardModel => ({
   mountId: owner.mountId,
   source: { kind: 'owner', owner },
   folded: NO_CARDS,
+  reason: null,
+  evidence: NO_EVIDENCE,
 });
 
 const suggestionCardOf = ({ suggestion }: SuggestionParams): ActionCardModel => ({
@@ -161,6 +174,8 @@ const suggestionCardOf = ({ suggestion }: SuggestionParams): ActionCardModel => 
   mountId: suggestionMountIdOf({ suggestion }),
   source: { kind: 'suggestion', suggestion },
   folded: NO_CARDS,
+  reason: suggestion.reason ?? null,
+  evidence: suggestion.evidence ?? NO_EVIDENCE,
 });
 
 const autoCardOf = ({ target }: AutoParams): ActionCardModel => ({
@@ -173,6 +188,8 @@ const autoCardOf = ({ target }: AutoParams): ActionCardModel => ({
   mountId: target.mountId,
   source: { kind: 'auto', target },
   folded: NO_CARDS,
+  reason: null,
+  evidence: NO_EVIDENCE,
 });
 
 type CardsParams = {

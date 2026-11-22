@@ -19,7 +19,6 @@ import {
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../test/sceneInvoke';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
-import { LOG_PAGE_ROWS } from '../../central/log/logPageOf';
 import {
   BIG_SESSION_ID,
   seedBigSession,
@@ -50,6 +49,8 @@ beforeEach(async () => {
 });
 
 afterEach(cleanup);
+
+const RECENT_ROWS = 3;
 
 const settle = async () => {
   for (let round = 0; round < 3; round += 1) {
@@ -92,7 +93,7 @@ describe('the overview of a session with 171 agents', () => {
     const rows = document.querySelectorAll('[data-log-row]').length;
     expect(firstFrameRows).toBe(0);
     expect(commits).toBeLessThanOrEqual(OPEN_COMMIT_BUDGET);
-    expect(rows).toBe(LOG_PAGE_ROWS);
+    expect(rows).toBe(RECENT_ROWS);
     expect(storySpies.tauriInvoke.mock.calls.length).toBeLessThanOrEqual(OPEN_IPC_BUDGET);
   });
 });

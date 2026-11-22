@@ -175,7 +175,7 @@ const show = async () => {
       </ObjectMenuProvider>
     </ToastProvider>,
   );
-  await screen.findByRole('region', { name: 'Branches' });
+  await screen.findByRole('region', { name: 'Projects' });
 };
 
 const chooseFromProjectMenu = async () => {

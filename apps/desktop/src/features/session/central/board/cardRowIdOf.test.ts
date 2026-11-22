@@ -34,6 +34,8 @@ const cardOf = ({ kind, mountId }: CardParams): ActionCardModel => ({
   mountId,
   source: { kind: 'auto', target: TARGET },
   folded: [],
+  reason: null,
+  evidence: [],
 });
 
 const ROW_IDS = new Set(['mount-a', 'no-branch']);

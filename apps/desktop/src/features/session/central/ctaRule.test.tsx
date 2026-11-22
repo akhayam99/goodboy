@@ -89,6 +89,7 @@ type ButtonParams = {
 const isActionButton = ({ button }: ButtonParams): boolean =>
   button.closest('[data-search-field]') === null &&
   button.closest('[data-board-project-head]') === null &&
+  button.closest('[data-overview-ask]') === null &&
   (button.hasAttribute('data-variant') || button.closest('[data-action-card]') !== null);
 
 const buttonsOf = ({ root }: RootParams): ReadonlyArray<HTMLElement> =>
@@ -124,27 +125,22 @@ describe('the CTA rule of the central column', () => {
   });
 
   it.each(cases)(
-    '$name: at most one primary, in the first card or on the first run that waits',
+    '$name: at most one primary, on the Move of Needs you or on the first move of Next',
     (params) => {
       const { container } = show(params);
       const column = container.querySelector('[data-central-column]');
       const primaries = [...(column?.querySelectorAll('[data-variant="primary"]') ?? [])].filter(
-        (primary) => primary.closest('[data-slot="branch-board"]') === null,
+        (primary) => primary.closest('[data-overview-ask]') === null,
       );
-      const firstCard = column?.querySelector('[data-action-card]');
-      const waitingRun = column?.querySelector('[data-live-group][data-state="waiting"]');
-      const firstNextStep = column?.querySelector('[data-board-loose] > *');
+      const move = column?.querySelector('[data-overview-section="needs-you"] [data-move]');
+      const firstNext = column?.querySelector('[data-overview-section="next"] [data-move]');
 
       expect(primaries.length).toBeLessThanOrEqual(1);
       for (const primary of primaries) {
-        const isInCard = firstCard?.contains(primary) === true;
-        const isOnRun = waitingRun?.contains(primary) === true;
-        const isNextStep = firstNextStep?.contains(primary) === true;
-        expect(isInCard || isOnRun || isNextStep).toBe(true);
-        expect(
-          isOnRun &&
-            column?.querySelector('[data-overview-card="needs-you"] [data-action-card]') !== null,
-        ).toBe(false);
+        const isOnMove = move?.contains(primary) === true;
+        const isFirstNext = firstNext?.contains(primary) === true;
+        expect(isOnMove || isFirstNext).toBe(true);
+        expect(isFirstNext && move !== null && move !== undefined).toBe(false);
       }
     },
   );

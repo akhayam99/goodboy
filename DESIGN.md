@@ -223,7 +223,17 @@ model in [docs/navigation/model.md](./docs/navigation/model.md).
 - **One filled button per row and per header, and every verb has an intent.**
   Primary is the one next step. Rebase, force push and reset are caution;
   delete, discard and Stop are destructive and quiet; filled only inside a
-  confirm. Success is a state, never a button.
+  confirm. Success is a state, never a button. A page that lists moves keeps one
+  filled button for the whole page: the move that waits on you, else the first
+  next move (the session Overview: Needs you, else Next).
+- **One surface per section at most, and never a card inside a card.** A list
+  of rows sits bare on the page under its label (the Overview's Now, Next and
+  Activity). Only a section that holds a decision or an object you read as one
+  unit gets a fill (Needs you, a project block). Sections are told apart by type
+  roles: the state line in `text-prose`, labels by `SectionLabel`, rows in
+  `text-ui`, facts in `text-meta`.
+- **A reading page stays in the column level; the wide screen is for tools.**
+  The Overview reads at column width at 1920 too, because long lines read badly.
 - **Never a raw id or an internal word.** An artifact reads by its title, an
   agent by its role and task, a worktree by its branch or folder. Failed calls
   say it in plain words with a way to retry, never the exception text.

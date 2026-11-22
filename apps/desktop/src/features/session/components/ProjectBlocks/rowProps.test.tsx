@@ -15,9 +15,10 @@ vi.mock('./BoardTile', () => ({
 
 vi.mock('./BoardMergeInOrder', () => ({ BoardMergeInOrder: () => null }));
 vi.mock('./BoardRemoveButton', () => ({ BoardRemoveButton: () => null }));
+vi.mock('./BoardProjectHead', () => ({ BoardProjectHead: () => null }));
 
 import { BoardContext, type BoardContextValue } from './BoardContext';
-import { BoardGroup } from './BoardGroup';
+import { ProjectBlock } from './ProjectBlock';
 
 const DATE = brandId<IsoDateTime>({ value: '2026-08-04T00:00:00.000Z' });
 
@@ -63,23 +64,26 @@ const context: BoardContextValue = {
     sizeLabel: null,
     run: async () => undefined,
   },
-  isMultiProject: false,
+  isDevShown: true,
+  shownAskIds: new Set(),
 };
 
 describe('the props of a board tile', () => {
   it('are primitives, so a tile re-renders only when its own facts change', () => {
     render(
       <BoardContext.Provider value={context}>
-        <BoardGroup
-          group={{
-            id: 'needs-you',
-            label: 'Needs you',
+        <ProjectBlock
+          block={{
+            id: 'project-ledger',
+            projectId: null,
+            projectName: 'ledger-core',
             rowIds: ['a', 'b'],
             hiddenCount: 0,
             isFoldable: false,
           }}
-          isFirstOpenGroup
-          onShowMore={() => undefined}
+          hasMergeDoor
+          hasRemoveDoor={false}
+          onToggleFold={() => undefined}
         />
       </BoardContext.Provider>,
     );

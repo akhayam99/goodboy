@@ -22,7 +22,7 @@ type Params = {
   readonly entries: ReadonlyArray<BranchEntry>;
 };
 
-type Result = Readonly<{
+export type BranchBoardView = Readonly<{
   board: BranchBoard;
   kpis: SessionKpis;
   entryByRowId: ReadonlyMap<string, BranchEntry>;
@@ -42,7 +42,7 @@ const NO_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
 
 const CLOCK_MS = 30_000;
 
-export const useBranchBoard = ({ session, entries }: Params): Result => {
+export const useBranchBoard = ({ session, entries }: Params): BranchBoardView => {
   const sessionId = session.id;
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
   const allViews = useAppStore((state) => state.autoTreeViews[sessionId] ?? NO_VIEWS);

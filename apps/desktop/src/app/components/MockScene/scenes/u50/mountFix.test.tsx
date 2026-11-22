@@ -52,7 +52,7 @@ const show = async ({ name }: Params) => {
       <Scene />
     </ToastProvider>,
   );
-  await screen.findByRole('region', { name: 'Branches' });
+  await screen.findByRole('region', { name: 'Projects' });
 };
 
 describe('the mount fix scenes', () => {

@@ -64,7 +64,7 @@ describe('the u30 new since scene', () => {
     const { container } = await show();
 
     expect(container.querySelector('[data-overview-card="new-since"]')).toBeNull();
-    expect(container.querySelector('[data-slot="branch-board"]')).not.toBeNull();
+    expect(container.querySelector('[data-slot="project-blocks"]')).not.toBeNull();
   });
 
   it('has no accessibility violations', async () => {

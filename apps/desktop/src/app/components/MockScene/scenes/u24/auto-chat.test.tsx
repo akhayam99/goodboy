@@ -300,7 +300,7 @@ describe('the Auto chat scenes', () => {
   it('auto-overview-row draws the board and no Running card', async () => {
     mount({ id: 'auto-overview-row' });
 
-    const board = await screen.findByRole('region', { name: 'Branches' }, WAIT);
+    const board = await screen.findByRole('region', { name: 'Projects' }, WAIT);
     expect(board.querySelectorAll('[data-board-row]').length).toBeGreaterThan(0);
     expect(screen.queryByRole('region', { name: 'Running' })).toBeNull();
   });
@@ -330,7 +330,7 @@ describe('the Auto chat scenes', () => {
   it('u34-p27-auto-done leaves no approval, no Start and no Continue behind', async () => {
     mount({ id: 'u34-p27-auto-done' });
 
-    await screen.findByRole('region', { name: 'Branches' }, WAIT);
+    await screen.findByRole('region', { name: 'Projects' }, WAIT);
     expect(screen.queryByText(/Auto needs approval/)).toBeNull();
     expect(screen.queryByText('Ready to implement')).toBeNull();
     expect(screen.queryByText(/Stopped when Goodboy closed/)).toBeNull();

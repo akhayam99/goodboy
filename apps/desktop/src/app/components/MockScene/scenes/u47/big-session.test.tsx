@@ -67,6 +67,13 @@ const mount = async ({ name }: MountParams): Promise<HTMLElement> => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
   });
   expect(screen.queryByText('Something went wrong')).toBeNull();
+  const openActivity = screen.queryByRole('link', { name: 'Open activity' });
+  if (openActivity !== null) {
+    await act(async () => {
+      fireEvent.click(openActivity);
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+  }
   return screen.getByRole('region', { name: 'Log entries' });
 };
 

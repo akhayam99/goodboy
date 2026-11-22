@@ -11,7 +11,8 @@ type Props = {
 const SEPARATOR = ' · ';
 
 export const BoardTileFacts = ({ rowId }: Props) => {
-  const { session, rowById, entryByRowId, diffStatByPath } = useBoardContext();
+  const { session, rowById, entryByRowId, diffStatByPath, runningByRowId, isDevShown } =
+    useBoardContext();
   const entry = entryByRowId.get(rowId) ?? null;
   const mountPath = entry === null ? null : entry.fact.mountPath;
   const work = branchWorkTabRegistration.useWork({
@@ -20,7 +21,9 @@ export const BoardTileFacts = ({ rowId }: Props) => {
     mountPath,
   });
   const stat = mountPath === null ? undefined : diffStatByPath.get(mountPath);
-  const hasDiff = stat !== undefined && (stat.additions > 0 || stat.deletions > 0);
+  const isRunning = (runningByRowId.get(rowId) ?? 0) > 0;
+  const hasDiff =
+    isDevShown && !isRunning && stat !== undefined && (stat.additions > 0 || stat.deletions > 0);
   const request = entry === null ? null : entry.fact.request;
   const requestWord =
     request === null ? '' : `${requestShortOf({ request })} ${request.noun}${request.number}`;
@@ -28,7 +31,7 @@ export const BoardTileFacts = ({ rowId }: Props) => {
   const asked = rowById.get(rowId)?.askIds.length ?? 0;
   const words = joinFacts({
     facts: [
-      runs > 0 && countNoun({ count: runs, one: 'run' }),
+      isDevShown && runs > 0 && countNoun({ count: runs, one: 'run' }),
       asked > 0 &&
         `${countNoun({ count: asked, one: 'question' })} ${asked === 1 ? 'waits' : 'wait'}`,
     ],

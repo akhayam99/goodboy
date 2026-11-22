@@ -181,26 +181,31 @@ const proposalsOf = ({ sizeBytes }: ProposalsParams): ReadonlyArray<MountCleanup
   }));
 
 const groupDeleteButton = (): HTMLElement => {
-  const group = document.querySelector<HTMLElement>('[data-board-group="merged"]');
-  if (group === null) {
-    throw new Error('The merged group must show.');
-  }
-  const [first] = within(group).getAllByRole('button', { name: /^Delete local branch(?:es)?/ });
+  const heads = [...document.querySelectorAll<HTMLElement>('[data-board-project-head]')];
+  const [first] = heads.flatMap((head) =>
+    within(head).queryAllByRole('button', { name: /^Delete local branch(?:es)?/ }),
+  );
   if (first === undefined) {
-    throw new Error('The merged group must offer Delete local branches.');
+    throw new Error('A project head must offer Delete local branches.');
   }
   return first;
 };
 
-describe('the branch board on the Overview', () => {
-  it('draws three tiles above a board with one row per branch', async () => {
+const projects = (): HTMLElement => screen.getByRole('region', { name: 'Projects' });
+
+const nextSection = (): HTMLElement => screen.getByRole('region', { name: 'Next' });
+
+describe('the project blocks on the Overview', () => {
+  it('draws one block per project with one row per branch, and no tiles above', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
 
-    const tiles = document.querySelector('[data-slot="session-kpis"]');
-    expect(tiles?.children).toHaveLength(3);
+    expect(document.querySelector('[data-slot="session-kpis"]')).toBeNull();
     expect(rowButtons().length).toBeGreaterThan(1);
-    screen.getByRole('region', { name: 'Branches' });
+    const names = [...projects().querySelectorAll('[data-board-project]')].map((block) =>
+      block.getAttribute('data-board-project'),
+    );
+    expect([...names].sort()).toEqual(['ledger-core', 'payments-api']);
   });
 
   it('draws one tile per branch under its project: its name and one state chip', async () => {
@@ -226,27 +231,21 @@ describe('the branch board on the Overview', () => {
     expect(ledger.querySelector('[data-board-chip]')?.textContent).toBe('Running');
   });
 
-  it('groups the branches of two projects under one quiet head each, with its count', async () => {
+  it('heads each project block with its name and no count', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
-    const board = screen.getByRole('region', { name: 'Branches' });
 
-    const sections = [...board.querySelectorAll<HTMLElement>('[data-board-project]')];
-    const names = new Set(sections.map((section) => section.getAttribute('data-board-project')));
-    expect([...names].sort()).toEqual(['ledger-core', 'payments-api']);
+    const sections = [...projects().querySelectorAll<HTMLElement>('[data-board-project]')];
     for (const section of sections) {
       const head = section.querySelector('[data-board-project-head]');
-      const tiles = section.querySelectorAll('[data-board-row]');
-      expect(head?.textContent).toBe(
-        `${section.getAttribute('data-board-project')}${tiles.length}`,
-      );
-      for (const tile of tiles) {
+      expect(head?.textContent).toBe(section.getAttribute('data-board-project'));
+      for (const tile of section.querySelectorAll('[data-board-row]')) {
         expect(tile.textContent).not.toContain(section.getAttribute('data-board-project') ?? '');
       }
     }
   });
 
-  it('names the one project once above the board when every branch is from it', async () => {
+  it('names the one project once when every branch is from it', async () => {
     seedCentralColumn({ kind: 'branches' });
     const tenant = (useAppStore.getState().sessionProjectMounts[COLUMN_SESSION_ID] ?? []).find(
       (mount) => mount.branch === TENANT,
@@ -262,11 +261,10 @@ describe('the branch board on the Overview', () => {
       }));
     });
     await show();
-    const board = screen.getByRole('region', { name: 'Branches' });
+    const board = projects();
 
-    expect(board.querySelectorAll('[data-board-project]')).toHaveLength(0);
     const heads = [...board.querySelectorAll('[data-board-project-head]')];
-    expect(heads.map((head) => head.textContent)).toEqual(['payments-api']);
+    expect(heads.filter((head) => head.textContent === 'payments-api')).toHaveLength(1);
     expect(board.textContent?.split('payments-api')).toHaveLength(2);
   });
 
@@ -288,15 +286,19 @@ describe('the branch board on the Overview', () => {
     expect(call?.[0]).toMatchObject({ to: { view: { lens: 'questions' } } });
   });
 
-  it('carries the first verb of the branch when nothing is asked there', async () => {
+  it('shows the first move in Next and never repeats it on the row', async () => {
     seedCentralColumn({ kind: 'branches' });
     act(() => {
       useAppStore.setState({ sessionOpenQuestions: {} });
     });
     await show();
 
-    const tenant = verbsOf({ tile: tileOf({ branch: TENANT }) });
-    expect(tenant.map((button) => button.textContent)).toEqual(['Rebase']);
+    expect(
+      within(nextSection())
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toContain('Rebase');
+    expect(verbsOf({ tile: tileOf({ branch: TENANT }) })).toHaveLength(0);
     expect(tileOf({ branch: TENANT }).querySelector('[data-board-chip]')?.textContent).toBe(
       'Checks failing',
     );
@@ -355,7 +357,7 @@ describe('the branch board on the Overview', () => {
   it('shows no chevron, no open row and none of the lists or doors of the old row', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
-    const board = screen.getByRole('region', { name: 'Branches' });
+    const board = projects();
 
     expect(
       [...board.querySelectorAll('[aria-expanded]')].filter(
@@ -374,7 +376,7 @@ describe('the branch board on the Overview', () => {
     }
   });
 
-  it('moves a tile to Merged with no chip and no button until a cleanup is proposed', async () => {
+  it('keeps a merged branch in its block with no chip and no button until a cleanup is proposed', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
 
@@ -382,12 +384,14 @@ describe('the branch board on the Overview', () => {
     await settle();
 
     const tenant = tileOf({ branch: TENANT });
-    expect(tenant.closest('[data-board-group]')?.getAttribute('data-board-group')).toBe('merged');
+    expect(tenant.closest('[data-board-project]')?.getAttribute('data-board-project')).toBe(
+      'payments-api',
+    );
     expect(tenant.querySelector('[data-board-chip]')).toBeNull();
     expect(verbsOf({ tile: tenant })).toHaveLength(0);
   });
 
-  it('moves a tile to Closed with no chip, then back out when the request is reopened', async () => {
+  it('keeps a closed branch with no chip and no delete, and takes it back when reopened', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
 
@@ -395,10 +399,8 @@ describe('the branch board on the Overview', () => {
     await settle();
 
     const closed = tileOf({ branch: TENANT });
-    expect(closed.closest('[data-board-group]')?.getAttribute('data-board-group')).toBe('closed');
     expect(closed.querySelector('[data-board-chip]')).toBeNull();
     expect(verbsOf({ tile: closed })).toHaveLength(0);
-    expect(document.querySelector('[data-board-group="merged"]')).toBeNull();
     expect(screen.queryAllByRole('button', { name: /^Delete local branch(?:es)?/ })).toHaveLength(
       0,
     );
@@ -406,29 +408,20 @@ describe('the branch board on the Overview', () => {
     setRequestState({ state: 'open' });
     await settle();
 
-    const reopened = tileOf({ branch: TENANT });
-    expect(reopened.closest('[data-board-group]')?.getAttribute('data-board-group')).not.toBe(
-      'closed',
-    );
-    expect(document.querySelector('[data-board-group="closed"]')).toBeNull();
+    expect(tileOf({ branch: TENANT }).querySelector('[data-board-chip]')).not.toBeNull();
   });
 
-  it('shows Branches, Spend and Time tiles and leaves Questions and Artifacts to the tabs', async () => {
+  it('says spend and agent time once, in the facts row, with no tiles', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
-    const tiles = document.querySelector<HTMLElement>('[data-slot="session-kpis"]');
-    if (tiles === null) {
-      throw new Error('The tiles must show.');
-    }
-    const text = tiles.textContent ?? '';
 
-    for (const label of ['Branches', 'Spend', 'Time']) {
-      expect(text).toContain(label);
+    expect(document.querySelector('[data-slot="session-kpis"]')).toBeNull();
+    const facts = document.querySelector<HTMLElement>('[data-overview-facts]');
+    expect(facts).not.toBeNull();
+    expect(facts?.querySelectorAll('[data-session-spend]')).toHaveLength(1);
+    for (const label of ['Branches', 'Time', 'Questions']) {
+      expect(facts?.textContent).not.toContain(label);
     }
-    for (const label of ['Questions', 'Artifacts', 'Checks', 'Needs you', 'Agents working']) {
-      expect(text).not.toContain(label);
-    }
-    expect(within(tiles).queryAllByRole('button')).toHaveLength(0);
   });
 
   it('names each branch before Delete local branches acts, deletes each, and offers one Undo', async () => {

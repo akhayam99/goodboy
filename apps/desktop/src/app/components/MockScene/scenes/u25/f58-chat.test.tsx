@@ -89,9 +89,10 @@ describe('the f58 chat scenes', () => {
     },
   );
 
-  it('f58-chat-origin opens the session that names its chat', async () => {
+  it('f58-chat-origin opens the session on its state, with the chat it came from left to Context', async () => {
     await mount({ name: 'f58-chat-origin' });
 
-    expect(await screen.findByText(/From chat/, undefined, FIND)).toBeDefined();
+    expect(await screen.findByRole('region', { name: 'Projects' }, FIND)).toBeDefined();
+    expect(screen.queryByText(/From chat/)).toBeNull();
   });
 });

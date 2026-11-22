@@ -588,10 +588,10 @@ whether you clicked it on the board or in the session overview.
   row (`BoardRowAction`, from `cardsByRowId`): a suggestion is not activity, it is a pointer to what
   activity should happen next. The Decide and Fix groups come first, the Update and Ship groups after.
 - A Next suggestion shows as the verb of its row: the main verb, an optional second
-  verb and the **⋯** menu. Only the first row carries a filled primary; later rows
-  keep a `secondary` verb. The Next steps section above the board (`BoardLooseCards`)
-  follows the same rule: its first card is the lead (`isLead` on `BoardRowAction`), the
-  rest take the `secondary` look of their intent (`actionButtonLookOf`). A short visible verb (`shortLabel`: Start, Fix, Rebase) sits
+  verb and the **⋯** menu. The overview splits the moves once (`overviewMovesOf`):
+  Needs you, then the first three in Next (`MoveCard`), then the branch rows. Only the move on
+  top of Needs you, or the first move of Next when nothing waits, carries a filled primary; every
+  other verb takes the `secondary` look of its intent (`actionButtonLookOf`). A short visible verb (`shortLabel`: Start, Fix, Rebase) sits
   over the full `label`, which stays the accessible name ("Continue with Reviewer").
   **Not now** lives in the **⋯** menu.
 - When the primary starts an agent, its `agentKind` picks the glyph: the role icon in

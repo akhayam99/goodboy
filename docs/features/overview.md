@@ -10,23 +10,31 @@ Every page of a session shares one head. The title row holds the session name, w
 
 Under the title sit the tabs **Overview**, **Runs**, **Artifacts**, **Questions** and **Context**. Runs, Artifacts and Questions carry a count. No tab draws a title of its own, because the tab names the page. A session with exactly one branch adds a **Changes** shortcut that opens that branch's changes. With more branches there is no shortcut, since changes belong to a branch and its pull request.
 
-The Overview reads top to bottom:
+The goal sits above the page when it says more than the title. The Overview then reads top to bottom, always in this order:
 
-- The goal, when it says more than the title. A chat the session came from sits under it.
-- Notices come first when a branch needs a decision. Examples: a branch that moved, a branch off its pull request's commits, a project not yet published, a stopped rebase. A closed worktree shows a notice with **Reopen**.
-- Three tiles: **Branches**, **Spend** and **Time**. Questions and artifacts are counted on their tabs.
-- One board with a row per branch. The project name over its rows carries **Remove from session**, the same verb as the project menu. It asks first: keep the files or remove the worktree.
+- **The state.** One short sentence per project, from the step of its branches, such as "payments-api: checks failing. ledger-core: in review." One line of facts sits under it: the spend, which opens its limit, and the agent time. **Summary, 5m ago** ends the line and opens the written summary in Context.
+- Notices come next when a branch needs a decision. Examples: a branch that moved, a branch off its pull request's commits, a project not yet published, a stopped rebase. A closed worktree shows a notice with **Reopen**.
+- **Needs you**, with the move that waits on you on top: its project, its title, why, the proof you can open in place and its verb. A warning bar marks it, never a filled color. Only this move, or the first move of Next when nothing waits on you, has a filled button.
+- **Now** lists the agents with a live turn: who, the project, what it does right now and for how long. It shows three rows and **N more**. The agents of a Lead sit under it. An agent that waits for a file another agent holds says so on a quiet line with a warm dot. A click on a row opens that agent.
+- **Next** holds up to three moves.
+- **Projects**: one block per project with its branches inside. The head carries the project name, **Merge in order** for a series and **Remove from session**, the same verb as the project menu. It asks first: keep the files or remove the worktree.
+- **Activity** shows the last three rows of the log.
+- The **Ask** line stays at the foot of the page.
 - A session with no agent, no run and no branch shows the start form and nothing else.
+
+Needs you and Now open and close with a height motion, so Next never jumps under the pointer. The decisions and the summary live in the **Context** tab.
+
+**Show dev details** sits by the **Projects** label. It starts on and is kept per workspace. Off, the blocks drop the lines added and removed and the run counts, and speak of the task.
 
 **New** in the header starts an agent, a workflow or a write-up. **Ask about this session** in the **⋯**, or ⌘L, opens a panel beside the page. A branch, a pull request, an artifact or a run opens under the same head, and crumbs such as **Overview › Artifacts › Plan** replace the tabs. Each crumb is a link, and Esc goes one crumb up.
 
 **Reading the task without a diff.** A product manager understands where a task stands from the page alone, never from a raw diff or a file list.
 
 1. **The goal.** The page opens on what the task is for, in the words you gave it.
-2. **The state.** The **State** at the top of the **Context** tab says where the work stands, in the first sentence of the running summary.
-3. **What waits for you.** The **Needs you** group of the board comes first, and each row says why in words. A fix run reads **#318 · 2 fixes ready · 1 failed**, the words of its rows.
-4. **Where each branch stands.** Every row shows the six stages of its branch and the one step it stands at.
-5. **What it costs.** The **Spend** and **Time** tiles add up every branch. Spend names its Leads and agents, and leaves out Leads when there are none.
+2. **The state.** The first line says where each project stands, worked out from its branches, so it is never behind a merge.
+3. **What waits for you.** **Needs you** comes next, and its move says why in words.
+4. **Where each branch stands.** Every row in a project block names the step its branch stands at.
+5. **What it costs.** The facts line adds up the spend and the agent time of every branch.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-dark.webp">
@@ -41,7 +49,7 @@ Pull requests opened outside Goodboy, by an agent or from a terminal, show up wh
 
 ### Full log
 
-Follow what happened in a session in one list. The **Log** is the last section of the Overview, always open, and scrolls with the page. **Open › Log** in the Board card's menu, or **Open log** in ⌘K, opens the Overview on that section.
+Follow what happened in a session in one list. **Activity** on the Overview shows the last three rows, and **Open activity** opens the full log in place. **Open › Log** in the Board card's menu, or **Open log** in ⌘K, opens the Overview on the full log.
 
 - One row per agent, workflow run or fix run shows its state, model, time and cost.
 - Plain facts get a row too, such as context changes, branch events and links.
@@ -61,27 +69,25 @@ Follow what happened in a session in one list. The **Log** is the last section o
 
 ### Cards
 
-See what needs you, what runs, where each branch stands and what finished, on one board.
+See where each branch of each project stands, and what finished, under **Projects**.
 
-The board groups the branches in this order: **Needs you**, **In progress**, **Merged**, **Closed** and **Not on a branch**. A group with no row is not drawn. Each group names itself in bold with its count in gray.
-
-With branches from more than one project, each group splits them by project under a quiet head: the project mark, its name and its count. With one project, its name shows once at the top of the board.
+Each project is one block with its name in the head. Its branches sit inside by state: what needs you first, then what is in progress, then merged and closed. Work with no branch sits in a **Not on a branch** block. No head carries a count.
 
 Each branch is one tile, like a pull request in a list:
 
 - The first line names the branch. One chip on the right sums up where it stands: **Waits for you**, **Checks failing**, **Running**, **Not pushed**, **PR open**, **Merged** or **Closed**. A pull request closed without merging is never called merged. It sits in **Closed**, neutral like any settled row, with no button. The state has the same color everywhere in the app.
 - The second line holds a few quiet facts: the pull request, the lines added and removed, the runs and the questions that wait. A pull request shows its number, such as **PR #12**.
-- A tile with something to do carries one button. **Answer** comes first and opens the exact question, then the first waiting step, such as **Rebase**, **Push** or **Open a pull request**. A merged branch offers **Remove worktree** once its cleanup is proposed.
+- A tile with something to do carries one button. **Answer** comes first and opens the exact question, then the first waiting step, such as **Rebase**, **Push** or **Open a pull request**. A move already shown in Needs you or Next is not repeated on its tile. A merged branch offers **Remove worktree** once its cleanup is proposed.
 - A click on the tile opens the branch page on Conversation. Its tabs hold the changes, commits, checks and runs, with the questions and artifacts of each run. The tile and its button are two separate stops for Tab.
 - Every tile has the same **⋯** menu as the branch on the **Projects** card: open, terminal, editor, copy the name, push, close the branch and the rest. It shows on hover and on focus. A right click on the tile opens the full menu at the pointer, and ⇧F10 opens it from the keyboard. Closing a branch asks first, inside the menu, and says what happens to its folder and its uncommitted changes.
 - A Lead counts as work on its own branch: a working Lead shows that branch **Running**, and a Lead that waits for you or failed puts it under **Needs you**.
 - A long branch name is cut in the middle, so its end stays readable. A dot marks what is new since you last looked.
-- The **Not on a branch** tile holds work that has no branch. It names itself by its next step, such as the open question, and opens Runs. It shows only while that work runs or needs you. A finished run with no branch adds no tile; its spend and time still count in the tiles above.
-- With many tiles, **Merged** and **Closed** each show the first few and **Show 4 more** opens the rest of that group alone. A request that is reopened leaves **Closed** for the group of its state. **Merged** holds one button that removes every merged worktree. A failed removal keeps its reason and offers a retry for what is left.
+- The **Not on a branch** tile holds work that has no branch. It names itself by its next step, such as the open question, and opens Runs. It shows only while that work runs or needs you. A finished run with no branch adds no tile; its spend and time still count in the facts line.
+- With many tiles, merged and closed branches fold after the first few and **Show 4 more** opens the rest of that block. A request that is reopened moves back up with its state. The head of the first block with a merged branch holds one button that removes every merged worktree. A failed removal keeps its reason and offers a retry for what is left.
 
 **Merge in order**
 
-- Two or more branches that an agent declared a series show **Merge ledger-rounding in order** on the first open group.
+- Two or more branches that an agent declared a series show **Merge ledger-rounding in order** in the head of the first block.
 - It asks for confirmation. It merges the bottom part first and re-reads each part right before it merges.
 - It stops at the first part that cannot merge. The reason sits under the row: checks failing, conflicts, draft, changes requested, closed or a host error. Run it again after fixing it and it carries on from that part.
 - It shows only on hosts that can merge with a chosen method (GitHub, GitLab and Bitbucket today).
@@ -90,7 +96,7 @@ Each branch is one tile, like a pull request in a list:
 
 Know the moves that unblock the task, such as answering a question, fixing a failing check or opening a pull request.
 
-- Each branch row offers its first move as one short button such as **Start**, **Analyze** or **Push**.
+- **Next** shows the first three moves, each with its reason. The rest stay on their branch rows as one short button such as **Start**, **Analyze** or **Push**.
 - **Not now** puts a suggestion away until the situation changes. It says Dismissed with **Undo**, and ⌘Z brings the last one back.
 - A question or an approval of your own is never put away this way.
 - **Analyze** starts the Debugger on a failing check. Its next moves (open the analysis, **Start fix**, **Push**) then sit on that run.
@@ -148,24 +154,28 @@ See and undo what agents changed in a session without a branch.
 This part is for contributors and agents who change the feature.
 
 - Session head: `SessionHead` (`app/components/SessionHead`) is drawn once by `SessionWorkspace` through `SessionHeadContext`. It draws the tabs on a tab view (`isTabView`) and the crumbs from `crumbsOf` otherwise. Esc goes up through `parentPlace`. The `session.ask` verb in More session actions (`sessionMenuOf`) opens the Ask panel.
-- Overview board: `CentralColumn` spaces the notices, the start form and the board with `PANE_RHYTHM.groups`. `BranchBoard` draws the tiles (`BoardTiles`, on `StatCard`) and one tile per branch (`BoardGroup`, `BoardTile`). `useBranchBoard` gathers the inputs of `branchBoardOf` and `visibleGroupsOf` applies the fold of **Merged** and **Closed**, one group at a time.
-- Tiles: **Branches** (n of m merged), **Spend**, **Time**, all from `sessionKpisOf`, plain tiles with no click. Questions and artifacts are counted on their tabs, and an open question shows as the branch row's **Answer**. Checks belong to the pull request page.
+- Reading order: `CentralColumn` draws `OverviewStatus`, the notices, `NeedsYouSection`, `NowSection`, `NextSection`, `ProjectBlocks`, `OverviewLog` and `SessionAskLine`, spaced with `PANE_RHYTHM.groups`. `CentralColumn.readingOrder.test.tsx` pins the order.
+- State and facts: `overviewStatusOf` writes one sentence per project from the story word of its most urgent branch (`branchEntriesOf`). The facts line is `SessionCostChip` (the one spend number), the agent time from `sessionKpisOf`, and the summary age from `summarizerStatus`.
+- Moves: `overviewMovesOf` splits the cards once. Band 0 goes to Needs you, the next three to Next, and the rest to the branch rows. `shownAskIds` keeps an **Answer** off a row whose question Needs you already shows. `MoveCard` draws a move in two densities, `focus` for the top of Needs you and `row` elsewhere. It uses `MoveVerb` and `MoveEvidenceChips`, and reads the reason and evidence of the move (`actionCardsOf`). Tones come from `STAGE_TONE`.
+- Now: `useSessionWork` reads `live_work` through `readLiveWork` and `listenWorkChanged`, at most once a second. `nowRowsOf` places each live agent under its Lead from `liveGroupsOf`, caps the list at `NOW_LIMIT` and turns `agentWriterWait` into a warm wait line. `useNowModel` gathers the agent nouns and waits.
+- Dev details: `useDevDetails` keeps the choice per workspace in local storage; `BoardTileFacts` drops the line counts and run counts when it is off, and always while the branch runs.
+- Activity: `OverviewRecentRows` draws the newest three rows of `useTimelineRows`, deferred like `LogPane`.
   - A long branch name is cut in the middle (`splitMiddleOf`, `BoardBranchName`) so its end stays readable.
   - A card with a branch verb and no branch (`cardRowIdOf`) never sits on the **Not on a branch** row. A rebase with one target belongs to that branch's row.
-- Project heads: `boardProjectsOf` lists the board's projects by project ID, so two projects with one name stay apart. With more than one, `BoardGroup` splits each group with `projectSectionsOf` into `BoardProjectSection`s headed by `BoardProjectHead`. With one, `BranchBoard` draws that head once. A head only sends `PROJECT_DETACH_EVENT` for its `projectId`. `BoardProjectRemovals` mounts one `MountActionsMenu` per session project (`sessionProjectIdsOf`) outside the sections, so a folded project or one with all worktrees closed still hears it. The first block with a mount takes the request (`useProjectDetachRequest`). The test is `BranchBoard/projectRemoval.test.tsx`.
-- Tile menu: `useMountRowMenu` (the `mount` target from `useMountMenuTarget` and `useObjectMenuTrigger`) and `MountRowMenuButton` serve both `BoardTile` and the rail's `WorktreeRow`, so the two rows list the same verbs (`BranchBoard/rowMenu.test.tsx`). The button lists its rows per state with `mountRowMenuOf`.
+- Project blocks: `projectBlocksOf` groups the board rows by project ID and keeps the state order of `branchBoardOf` inside a block. It folds the merged and closed rows that `branchBoardOf` hides. `ProjectBlock` draws one block, headed by `BoardProjectHead`. A head only sends `PROJECT_DETACH_EVENT` for its `projectId`. `BoardProjectRemovals` mounts one `MountActionsMenu` per session project (`sessionProjectIdsOf`) outside the blocks, so a folded project or one with all worktrees closed still hears it. The first block with a mount takes the request (`useProjectDetachRequest`). The test is `ProjectBlocks/projectRemoval.test.tsx`.
+- Tile menu: `useMountRowMenu` (the `mount` target from `useMountMenuTarget` and `useObjectMenuTrigger`) and `MountRowMenuButton` serve both `BoardTile` and the rail's `WorktreeRow`, so the two rows list the same verbs (`ProjectBlocks/rowMenu.test.tsx`). The button lists its rows per state with `mountRowMenuOf`.
 - Branch tile: `BoardTile` is a link (`role="link"`) to `branchPlace` on `pr`; a tile with no branch opens Runs. `boardTileChipOf` picks the one chip from `stageWordOf`, `branchStoryOf`, `NAMES` and `STAGE_TONE`. The order: Merged or Closed (`row.isSettled`, with the merged tone or `BRANCH_STATE_TONE.closed`), an open question, a blocked state, the Needs you group, Running, then the story word.
 - Tile facts: `BoardTileFacts` leads with the request number (`requestShortOf`, PR or MR) and reads the lines from `useMountDiffStats`, the Changes tab owner. Runs come from `branchWorkCountsOf`, the Runs tab badge. Waiting questions are the row's `askIds`, the owner of the chip. The branch page header carries **Start a run on this branch**, **Open a terminal here** and **Open the browser here** (`BranchTools`), so a tile needs no doors.
-- Tile button: `cardsByRowId` gives each tile the cards of its branch; `cardRowIdOf` puts a question card with no branch on the tile that holds its ask. `boardTileActionOf` picks one: the answer card or, with none, **Answer** on the first open question (`questionPlace`), then the first card. A closed tile takes no button. A merged tile takes **Remove worktree** (`BoardRemoveButton` for its one mount). `BoardTileAction` draws it through `BoardRowAction`, with its confirm and its failure. `BoardLooseCards` lists cards that fit no tile. `BoardMergeInOrder` is the series merge verb. `useRemoveWorktrees` removes the merged worktrees one by one through `resolveMountCleanup`, keeps a failed one with its reason and offers a retry for what is left.
+- Tile button: `cardsByRowId` gives each tile the cards of its branch; `cardRowIdOf` puts a question card with no branch on the tile that holds its ask. `boardTileActionOf` picks one: the answer card or, with none, **Answer** on the first open question that Needs you does not show (`questionPlace`), then the first card. A closed tile takes no button. A merged tile takes **Remove worktree** (`BoardRemoveButton` for its one mount). `BoardTileAction` draws it through `BoardRowAction`, with its confirm and its failure. A card that fits no tile sits in Next. `BoardMergeInOrder` is the series merge verb. `useRemoveWorktrees` removes the merged worktrees one by one through `resolveMountCleanup`, keeps a failed one with its reason and offers a retry for what is left.
 - Archive: `ArchivePrimary` is the header button when `isArchivePrimaryOf` holds (every branch merged, no live agent, no open question). In every other case Archive stays in the session menu with the same guards.
 - Loading skeleton: `SessionOverviewSkeleton` draws its cards from `overviewCardsOf` and the same surface (`OVERVIEW_CARD_SURFACE`). `SessionWorkspace` shows it through `SkeletonSwap`: nothing for the first 120 ms, then at least 160 ms. The notices slot animates its height with `HeightMotion` and `PANE_GROUPS_GAP_REM`.
-- The overview draws the branch board only. `liveGroupsOf` orders the live groups that feed the board.
-- Branch board model: `branchBoardOf` builds one row per branch in any state, plus a row without a branch. It sorts them into Needs you, In progress, Merged, Closed and Not on a branch. `branchFactsFor` feeds `deriveSessionStage` the facts of one branch only, its Leads included, read through the Lead stop model of `autoTreeWordOf` in `boardInputsOf`. `runningByRowIdOf` counts the running agents and Leads of each row. A question on one branch leaves the others alone. `boardRowCellsOf` names a tile with no branch by its next step. `sessionKpisOf` reads the board for the Branches, Spend and Time tiles and counts Leads, agents and asks by id. Spend comes from `leadSpendByBranchOf`.
-- Empty session: `useIsEmptySession` is the one rule for the start form, and `CentralColumn` places `FolderCard` after the board.
-- Log section: `OverviewLog` is the last child of `CentralColumn` and wraps `LogPane`. `session.openLog` calls `LOG_LANDING.request` and navigates to the Overview; the section takes the landing once and scrolls to its start. Each row sits in a `content-visibility: auto` box sized by its laid out height. `useRowPreload` on the page scroller (`scrollParentOf`) draws the rows one screen around the view. `TimelineRail` draws every lane with one stroke (`RAIL_STROKE`). Steps and queued rows use the `sm` `WorkNode` on the 28px step grade of `TIMELINE_RHYTHM`. `TimelineDayRule` draws its hairline.
+- `liveGroupsOf` orders the live groups that feed the board and Now.
+- Branch board model: `branchBoardOf` builds one row per branch in any state, plus a row without a branch. It sorts them into Needs you, In progress, Merged, Closed and Not on a branch. `branchFactsFor` feeds `deriveSessionStage` the facts of one branch only, its Leads included, read through the Lead stop model of `autoTreeWordOf` in `boardInputsOf`. `runningByRowIdOf` counts the running agents and Leads of each row. A question on one branch leaves the others alone. `boardRowCellsOf` names a tile with no branch by its next step. `sessionKpisOf` reads the board for the agent time of the facts line and counts Leads, agents and asks by id. Spend comes from `leadSpendByBranchOf`.
+- Empty session: `useIsEmptySession` is the one rule for the start form, and `CentralColumn` places `FolderCard` after the project blocks.
+- Log section: `OverviewLog` draws the Activity section, with `OverviewRecentRows` until **Open activity** swaps in `LogPane`. `session.openLog` calls `LOG_LANDING.request` and navigates to the Overview; the section takes the landing once, opens the full log and scrolls to its start. Each row sits in a `content-visibility: auto` box sized by its laid out height. `useRowPreload` on the page scroller (`scrollParentOf`) draws the rows one screen around the view. `TimelineRail` draws every lane with one stroke (`RAIL_STROKE`). Steps and queued rows use the `sm` `WorkNode` on the 28px step grade of `TIMELINE_RHYTHM`. `TimelineDayRule` draws its hairline.
 - Log paging: `LogPane` paints the search box and **Mark as read** at once. It mounts `LogRows` through `useDeferredValue`, keyed by the session. `LogRows` draws pages of `LOG_PAGE_ROWS` from `logPageOf`, each in a transition. `timelineFullGutterOf` sizes the gutter from one stream built with `shouldExpandEveryGroup`.
 - Notices: `overviewNoticesOf` counts them for `overviewCardsOf`. A closed notice is not counted.
-- `useOverviewNotices` holds the dismissals, keyed by `mismatchDismissalKeyOf` so a new mismatch shows again, and the stranded-branch check. A dismissal expires when its observation clears (`liveDismissalsOf`). Unchanged polls stay dismissed. `CentralColumn` draws the notices in one place above the board.
+- `useOverviewNotices` holds the dismissals, keyed by `mismatchDismissalKeyOf` so a new mismatch shows again, and the stranded-branch check. A dismissal expires when its observation clears (`liveDismissalsOf`). Unchanged polls stay dismissed. `CentralColumn` draws the notices in one place under the state.
 - `overviewHasContentOf` decides when the start form leaves: a card is drawn, a branch has commits, a request or a run. A folder card, an unassigned note or a closed worktree notice also keeps it away.
 - Agent count: `runAgentCountOf` is the one agent count that the Runs grid and the subagent summaries share.
 - Branch rows: `RANK_OF_STATE` in `branchStoryOf` orders the rows, `mergeSeriesInOrder` merges a series and `useMountRowMenu` opens the branch menu.
