@@ -7,7 +7,7 @@ import { revealInFileManager } from '../../../../shared/lib/reveal';
 import { openGuideChapter } from '../../../settings/openGuideChapter';
 import type { WorktreeActionTarget } from '../../../actions/types';
 import type { WorktreeRemoveIntent } from '../../../actions/kinds/worktree';
-import type { RemoveIntent } from './FolderRemoveConfirm';
+import type { RemoveIntent } from './folderRemoveCopyOf';
 
 type Params = {
   readonly folder: StorageFolder;

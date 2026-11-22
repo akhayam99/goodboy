@@ -4,6 +4,7 @@ import { BoardMergeInOrder } from './BoardMergeInOrder';
 import { BoardProjectHead } from './BoardProjectHead';
 import { BoardRemoveButton } from './BoardRemoveButton';
 import { BoardTile } from './BoardTile';
+import { ProjectWorktreesDoor } from './ProjectWorktreesDoor';
 
 type Props = {
   readonly block: ProjectBlockModel;
@@ -26,6 +27,9 @@ export const ProjectBlock = ({ block, hasMergeDoor, hasRemoveDoor, onToggleFold 
         projectName={name}
         door={
           <>
+            {block.projectId === null ? null : (
+              <ProjectWorktreesDoor projectId={block.projectId} projectName={name} />
+            )}
             {hasRemoveDoor ? <BoardRemoveButton mountIds={null} variant="quiet" /> : null}
             {hasMergeDoor ? <BoardMergeInOrder /> : null}
           </>

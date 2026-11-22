@@ -39,7 +39,9 @@ export const BoardProjectHead = ({ projectId, projectName, door }: Props) => {
   return (
     <div data-board-project-head="" className="flex h-8 min-w-0 items-center gap-2 px-2">
       <ProjectIcon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
-      <span className="min-w-0 truncate text-ui text-foreground">{projectName}</span>
+      <span data-board-project-name="" className="min-w-0 truncate text-ui text-foreground">
+        {projectName}
+      </span>
       <span className="min-w-0 flex-1" />
       {door}
       {hasMounts ? (
