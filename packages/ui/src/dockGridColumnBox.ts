@@ -1,6 +1,7 @@
 export type DockGridPane = {
   readonly key: string;
   readonly weight: number;
+  readonly tabs?: ReadonlyArray<string>;
 };
 
 export type DockGridColumnBox = {

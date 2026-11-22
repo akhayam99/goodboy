@@ -8,6 +8,7 @@ import type { DockGridSpec } from '../dockGridSpec';
 import { DockDragContext, type DockDragSource } from '../dockDragContext';
 import type { CanDropParams } from '../dockDropZonesOf';
 import { useDockDrag } from '../useDockDrag';
+import { DockCellTabs } from './DockCellTabs';
 import { DockDropZones } from './DockDropZones';
 import { DockRowHandle } from './DockRowHandle';
 import { SplitHandle, type SplitHandleProps } from './SplitHandle';
@@ -83,18 +84,20 @@ export const DockGrid = ({
             </div>
           ) : null;
         const panes = column.panes.map((pane, row) => {
-          const isFocused = isFocusShown && spec.focus === pane.key;
+          const tabs = pane.tabs ?? [];
+          const shown = tabs.includes(spec.focus) ? spec.focus : pane.key;
+          const isFocused = isFocusShown && spec.focus === shown;
           const isAlone = column.panes.length === 1;
           return (
             <div
               key={pane.key}
               data-dock-pane={pane.key}
-              data-dock-focus={pane.key}
+              data-dock-focus={shown}
               data-panel-focused={isFocused ? '' : undefined}
               data-dock-lifted={drag.liftedKey === pane.key ? '' : undefined}
               tabIndex={-1}
-              onFocusCapture={() => spec.onFocus({ key: pane.key })}
-              onPointerDownCapture={() => spec.onFocus({ key: pane.key })}
+              onFocusCapture={() => spec.onFocus({ key: shown })}
+              onPointerDownCapture={() => spec.onFocus({ key: shown })}
               style={
                 isFramed
                   ? { gridColumn: index * 2 + 1, gridRow: isAlone ? '1 / -1' : row * 2 + 1 }
@@ -108,13 +111,14 @@ export const DockGrid = ({
                 drag.liftedKey === pane.key && 'opacity-50',
               )}
             >
+              {tabs.length > 1 ? <DockCellTabs spec={spec} tabs={tabs} shown={shown} /> : null}
               <DockPairTurnContext.Provider
                 value={
-                  turn === null ? null : { ...turn, onTurn: () => spec.onTurn({ key: pane.key }) }
+                  turn === null ? null : { ...turn, onTurn: () => spec.onTurn({ key: shown }) }
                 }
               >
                 <DockDragContext.Provider value={sources.get(pane.key) ?? null}>
-                  <DockCellContext.Provider value={pane.key}>{cell}</DockCellContext.Provider>
+                  <DockCellContext.Provider value={shown}>{cell}</DockCellContext.Provider>
                 </DockDragContext.Provider>
               </DockPairTurnContext.Provider>
             </div>

@@ -9,6 +9,7 @@ export type DockGridCell = {
   readonly key: string;
   readonly sizing: DrawerSizing;
   readonly savedWidth?: number;
+  readonly label?: string;
 };
 
 type KeyParams = {

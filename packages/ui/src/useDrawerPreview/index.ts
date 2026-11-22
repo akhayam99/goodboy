@@ -8,6 +8,7 @@ type LiveWidths = {
   readonly dock: number;
   readonly detail: number;
   readonly isDetailOver: boolean;
+  readonly isPinned: boolean;
 };
 
 type Params = {
@@ -29,9 +30,13 @@ export const useDrawerPreview = ({ asideRef, trackRef, groupRef }: Params): Draw
     dock: 0,
     detail: 0,
     isDetailOver: false,
+    isPinned: false,
   });
   const previewAside = useCallback(() => {
-    const { mode, rail, dock, detail } = live.current;
+    const { mode, rail, dock, detail, isPinned } = live.current;
+    if (isPinned) {
+      return;
+    }
     const track = `${panelAsideWidthOf({ dockWidth: dock, detailWidth: detail, railWidth: rail })}px`;
     asideRef.current?.style.setProperty('width', track);
     if (mode === 'overlay') {

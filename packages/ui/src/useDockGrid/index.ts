@@ -58,6 +58,7 @@ type Params = {
   readonly previewDock: Preview;
   readonly solve: (params: DockSolveParams) => SolvedDockFrame;
   readonly resizeLabel: string;
+  readonly isLane?: boolean;
 };
 
 type DockGridLayout = {
@@ -119,6 +120,7 @@ export const useDockGrid = ({
   previewDock,
   solve,
   resizeLabel,
+  isLane = false,
 }: Params): DockGridLayout => {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const savedWidthOf = ({ cell }: CellParams): number =>
@@ -155,7 +157,7 @@ export const useDockGrid = ({
     solved === null
       ? unmeasuredDockGridOf({ columns, savedWidthOf, detail: detailFallback, placement })
       : dockGridFrameOf({ solved, detailFallback });
-  const isGrid = cellCount > 1;
+  const isGrid = cellCount > 1 || (isLane && cellCount > 0);
   const turned = isGrid ? turnedDockColumnsOf({ columns }) : null;
   const canTurn =
     turned !== null &&
@@ -194,7 +196,7 @@ export const useDockGrid = ({
     ({ index }: Pick<ColumnPreviewParams, 'index'>): Preview =>
     (width) =>
       previewColumn({ index, width, from: boxes });
-  const handles = boxes.map((box, index) => {
+  const handles = (isLane ? [] : boxes).map((box, index) => {
     const keys = box.panes.map((pane) => pane.key);
     const sizing = leadOf({ keys });
     const routed = routedHandleOf({
