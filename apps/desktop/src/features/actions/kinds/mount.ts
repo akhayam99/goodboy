@@ -429,18 +429,18 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.forget',
-    label: NAMES.removeFromSession,
+    label: NAMES.unmount,
     icon: CONCEPT_ICONS.delete,
     group: 'danger',
     when: ({ facts }) => facts.isClosed,
     blockedReason: ({ facts }) => facts.blockers[0] ?? null,
     confirm: ({ facts }) => ({
-      title: `Remove ${facts.label} from this session?`,
+      title: `Unmount ${facts.label}?`,
       description:
         facts.keptPath === null
           ? 'The branch and any pull request stay.'
           : `The branch and any pull request stay, and its files stay on disk at ${facts.keptPath}.`,
-      confirmLabel: 'Remove',
+      confirmLabel: NAMES.unmount,
       role: 'alert',
     }),
     run: async ({ facts, env }) => {
@@ -449,18 +449,18 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.removeGone',
-    label: NAMES.removeFromSession,
+    label: NAMES.unmount,
     icon: CONCEPT_ICONS.delete,
     group: 'danger',
     when: ({ facts }) => facts.isBranchGone,
     blockedReason: ({ facts }) => facts.blockers[0] ?? null,
     confirm: ({ facts }) => ({
-      title: `Remove ${facts.label}?`,
+      title: `Unmount ${facts.label}?`,
       description:
         facts.keptPath === null
           ? 'The branch is already deleted. This only clears the row from the session.'
           : 'The branch is already deleted. Its kept folder is removed too, unless it holds uncommitted work.',
-      confirmLabel: 'Remove',
+      confirmLabel: NAMES.unmount,
       role: 'danger',
     }),
     run: async ({ facts, env }) => {

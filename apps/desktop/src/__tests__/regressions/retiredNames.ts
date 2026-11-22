@@ -126,7 +126,7 @@ const SHARED: ReadonlyArray<RetiredName> = [
   {
     id: 'detach-project',
     pattern: /\bDetach(?:ed)? (?:project|and|a project|details)\b/,
-    use: NAMES.removeFromSession,
+    use: NAMES.unmount,
   },
   {
     id: 'wipe-local-database',

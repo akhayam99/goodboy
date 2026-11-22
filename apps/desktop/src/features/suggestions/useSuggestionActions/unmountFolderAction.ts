@@ -20,10 +20,10 @@ export const unmountFolderAction = ({
   projectName,
   unmountMount,
 }: Params): SuggestionActions['primary'] => ({
-  label: NAMES.removeFromSession,
+  label: NAMES.unmount,
   isDisabled: false,
   requiresConfirm: true,
-  failureTitle: `Couldn't remove ${projectName} from the session`,
+  failureTitle: `Couldn't unmount ${projectName}`,
   run: async () => {
     await unmountMount({ sessionId, mountId });
   },

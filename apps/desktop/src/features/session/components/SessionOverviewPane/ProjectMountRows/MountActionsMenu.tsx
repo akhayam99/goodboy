@@ -15,6 +15,7 @@ import type { DetachDisposition } from '../../../../../store/slices/project-moun
 
 import { NAMES } from '../../../../../shared/utils/names';
 import { projectKeyOf } from '../../../../actions/kinds/project';
+import { announceUnmount } from './announceUnmount';
 import { usePinnedRuns } from '../../../hooks/usePinnedRuns';
 import { DetachConfirm } from './DetachConfirm';
 import { useProjectDetachRequest } from './useProjectDetachRequest';
@@ -22,7 +23,6 @@ import {
   REMOVAL_STAGE,
   buildDetachPlan,
   detachFailureMessage,
-  detachOutcomeMessage,
   summarizeDetachOutcomes,
   type MountAssessment,
 } from './detachPlan';
@@ -61,6 +61,7 @@ export const MountActionsMenu = ({
 }: Props) => {
   const projectKey = projectKeyOf({ sessionId, projectId });
   const detachProject = useAppStore((state) => state.detachProject);
+  const ensureProjectMounted = useAppStore((state) => state.ensureProjectMounted);
   const reportError = useAppStore((state) => state.reportError);
   const projectKind = useAppStore((state) => projectById(state.projects, projectId)?.kind ?? null);
   const isRepoProject = projectKind === 'repo';
@@ -178,31 +179,34 @@ export const MountActionsMenu = ({
   };
 
   const detach = async ({ disposition }: { readonly disposition: DetachDisposition }) => {
+    const branchOf = new Map(detachTargets.map((target) => [target.mountId, target.branch]));
     setIsBusy(true);
     setStage(disposition === 'keep-files' ? null : REMOVAL_STAGE);
     try {
       const outcomes = await detachProject({ sessionId, projectId, disposition });
       const summary = summarizeDetachOutcomes({ outcomes });
-      const summarized = outcomes.find((outcome) => outcome.kind === summary);
       if (summary === 'failed') {
         fail({
-          title: `Couldn't remove ${projectName} from the session`,
+          title: `Couldn't unmount ${projectName}`,
           error: detachFailureMessage({ outcomes }),
         });
         assess();
         return;
       }
-      showToast({
-        kind: 'info',
-        message: detachOutcomeMessage({
-          kind: summary,
-          projectName,
-          worktreePath: summarized?.worktreePath ?? worktreePath,
-        }),
+      announceUnmount({
+        sessionId,
+        projectId,
+        projectName,
+        worktreePath,
+        summary,
+        outcomes,
+        branchOf,
+        showToast,
+        ensureProjectMounted,
       });
       setIsConfirming(false);
     } catch (error) {
-      fail({ title: "Couldn't remove the folder from the session", error });
+      fail({ title: `Couldn't unmount ${projectName}`, error });
     } finally {
       setIsBusy(false);
       setStage(null);
@@ -237,8 +241,8 @@ export const MountActionsMenu = ({
             variant="ghost"
             icon={Unlink}
             iconSize={ICON_SIZE.row}
-            label={`Remove ${projectName} from session`}
-            tooltip={NAMES.removeFromSession}
+            label={`${NAMES.unmount} ${projectName}`}
+            tooltip={NAMES.unmount}
             aria-haspopup="dialog"
             onClick={() => {
               setIsConfirming(true);

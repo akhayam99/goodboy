@@ -73,7 +73,7 @@ describe('buildDetachPlan', () => {
     expect(plan({ assessments: null, isRepoProject: false })).toEqual({
       kind: 'keep',
       reason: 'folder',
-      lines: ['Remove api from this session; its folder at /worktrees/api will stay on disk.'],
+      lines: ['Unmount api; its folder at /worktrees/api will stay on disk.'],
       details: { totals: [], worktrees: [] },
     });
   });
@@ -568,7 +568,7 @@ describe('detach outcomes', () => {
   it('reports the returned disposition rather than the predicted one', () => {
     expect(
       detachOutcomeMessage({ kind: 'kept', projectName: 'api', worktreePath: '/worktrees/api' }),
-    ).toBe('Removed api from the session. Files remain at /worktrees/api.');
+    ).toBe('Unmounted api. Files remain at /worktrees/api.');
     expect(
       detachOutcomeMessage({ kind: 'failed', projectName: 'api', worktreePath: '/worktrees/api' }),
     ).toBe(

@@ -412,9 +412,7 @@ export const buildDetachPlan = ({
     return {
       kind: 'keep',
       reason: 'folder',
-      lines: [
-        `Remove ${projectName} from this session; its folder at ${worktreePath} will stay on disk.`,
-      ],
+      lines: [`Unmount ${projectName}; its folder at ${worktreePath} will stay on disk.`],
       details: NO_DETAILS,
     };
   }
@@ -507,13 +505,13 @@ export const detachActionFor = ({ plan }: { readonly plan: DetachPlan }): Detach
     case 'keep':
       return plan.reason === 'blocked'
         ? null
-        : { label: 'Remove and keep files', disposition: 'keep-files', role: 'primary' };
+        : { label: 'Unmount and keep files', disposition: 'keep-files', role: 'primary' };
     case 'missing':
-      return { label: 'Remove and delete worktree', disposition: 'remove-clean', role: 'primary' };
+      return { label: 'Unmount and remove worktree', disposition: 'remove-clean', role: 'primary' };
     case 'safe':
-      return { label: 'Remove and delete worktree', disposition: 'remove-clean', role: 'primary' };
+      return { label: 'Unmount and remove worktree', disposition: 'remove-clean', role: 'primary' };
     case 'risky':
-      return { label: 'Remove and delete files', disposition: 'delete-files', role: 'danger' };
+      return { label: 'Unmount and delete files', disposition: 'delete-files', role: 'danger' };
   }
 };
 
@@ -530,11 +528,11 @@ export const detachOutcomeMessage = ({
 }): string => {
   switch (kind) {
     case 'removed':
-      return `Removed ${projectName} from the session and deleted its worktree.`;
+      return `Unmounted ${projectName} and removed its worktree.`;
     case 'missing':
-      return `Removed ${projectName} from the session. Its directory was already absent.`;
+      return `Unmounted ${projectName}. Its directory was already absent.`;
     case 'kept':
-      return `Removed ${projectName} from the session. Files remain at ${worktreePath}.`;
+      return `Unmounted ${projectName}. Files remain at ${worktreePath}.`;
     case 'failed':
       return "Couldn't finish removing the worktree. It stays in the session. Check again before you retry.";
   }

@@ -46,7 +46,7 @@ two share the same look.
 ## Voice & copy
 
 - **Speak the domain language.** Agent, session, workspace, workflow, plan. No
-  synonyms, no aliases. Internal words (mount, spawn, cluster, lens, studio,
+  synonyms, no aliases. Internal words (a mount as a noun, spawn, cluster, lens, studio,
   handoff, materialize) never reach the screen: the table of what the screen
   says instead lives in [docs/concepts.md](./docs/concepts.md) → Vocabulary
   rules.

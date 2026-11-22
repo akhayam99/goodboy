@@ -250,7 +250,7 @@ describe('mount, labels by state', () => {
     expect(close?.confirm?.confirmLabel).toBe('Close, keep changes');
   });
 
-  it('blocks Remove from session while an agent still runs there', () => {
+  it('blocks Unmount while an agent still runs there', () => {
     const forget = resolveActions({
       definitions,
       facts: facts({

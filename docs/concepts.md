@@ -668,7 +668,7 @@ whether you clicked it on the board or in the session overview.
   acts and the mount it acts on), **completesWhen** (what ends it) and a
   **group**: moves that unblock the task come first (an answer, **Fix checks**,
   **Merge**, a stopped rebase, **Rerun**), then moves that carry on, then
-  upkeep (**Remove the worktree**, **Remove from session**, **Archive**). Upkeep shows one
+  upkeep (**Remove the worktree**, **Unmount**, **Archive**). Upkeep shows one
   move and only when nothing else is left (`keepOneUpkeep`).
 - A move built from a pull request read is never hidden for being old. It
   carries `read`: `fresh` within eight minutes of the read (longer than one
@@ -692,7 +692,7 @@ whether you clicked it on the board or in the session overview.
   the next script after a turn (`next-script`: a changed migration, lockfile or
   schema, `nextScriptRulesOf`), **Rerun** a check (`rerun-check`: the job log
   says it timed out; it runs `gh run rerun <run> --failed`, the one rerun shape in
-  `gh-allowlist.json`), **Remove from session** for a folder no turn touched for seven days
+  `gh-allowlist.json`), **Unmount** for a folder no turn touched for seven days
   (`unmount-folder`) and **Ask the Implementer what blocks it** (`ask-agent`:
   quiet from 5 to 30 minutes, then Needs you takes it). Two are extended:
   `mount-project` says an agent asked more than once (`asked 2 times`) and moves
@@ -2000,19 +2000,19 @@ session up again in Goodboy.
 - Internal words stay in code and technical docs. The screen says the word the
   user already knows from git, the file system or the rest of the app:
 
-  | Internal word                    | On screen                                         |
-  | -------------------------------- | ------------------------------------------------- |
-  | mount, branch mount              | branch (repo), plain folder                       |
-  | mount a project                  | Add project                                       |
-  | fork a mount                     | New branch                                        |
-  | unmount                          | Close branch, and Reopen for a closed row         |
-  | spawn                            | Start (an agent, a reviewer, an implementer)      |
-  | handoff                          | Suggested next: Implementer, the next brief       |
-  | cluster                          | part (in a plan), subagent (once it runs)         |
-  | lens                             | tab                                               |
-  | studio                           | the page name alone: Workflows, Impact, Providers |
-  | materialize                      | add to this session                               |
-  | column, lane, grid, tier, drawer | panel (Close the panel, Reset panel layout)       |
+  | Internal word                    | On screen                                               |
+  | -------------------------------- | ------------------------------------------------------- |
+  | mount, branch mount              | branch (repo), plain folder                             |
+  | mount a project                  | Mount a folder in a session, Add project in a workspace |
+  | fork a mount                     | New branch                                              |
+  | unmount                          | Unmount for a project, Close branch for one branch      |
+  | spawn                            | Start (an agent, a reviewer, an implementer)            |
+  | handoff                          | Suggested next: Implementer, the next brief             |
+  | cluster                          | part (in a plan), subagent (once it runs)               |
+  | lens                             | tab                                                     |
+  | studio                           | the page name alone: Workflows, Impact, Providers       |
+  | materialize                      | add to this session                                     |
+  | column, lane, grid, tier, drawer | panel (Close the panel, Reset panel layout)             |
 
   `jargon-copy.test.ts` fails when rendered copy under `features/`,
   `app/components/` or `shared/components/` uses one of the internal words,
@@ -2123,17 +2123,18 @@ session up again in Goodboy.
 - One verb per intention. A button or menu entry takes its verb from this
   table, and the old verb stays a ⌘K alias:
 
-  | Verb           | Means                                             | Retired                                |
-  | -------------- | ------------------------------------------------- | -------------------------------------- |
-  | **Delete**     | The object is gone (Undo where it can be)         | Wipe (now **Delete all data**)         |
-  | **Remove**     | Taken out of a list, it still exists elsewhere    | Detach (now **Remove from session**)   |
-  | **Unlink**     | Removes a task link, keeps the task in its tool   | Remove link on a task                  |
-  | **Archive**    | Hidden, restorable                                | Discard on a run (now **Archive run**) |
-  | **Disconnect** | Cuts the tie to an account, a tool or a workspace |                                        |
-  | **Stop**       | Ends what is running and keeps what it wrote      | Close workflow (now **Stop run**)      |
-  | **Dismiss**    | Hides a notification or a suggestion              |                                        |
-  | **Clear**      | Resets filters or a selection                     |                                        |
-  | **Retry**      | Runs a failed action again                        | Try again                              |
+  | Verb           | Means                                              | Retired                                |
+  | -------------- | -------------------------------------------------- | -------------------------------------- |
+  | **Delete**     | The object is gone (Undo where it can be)          | Wipe (now **Delete all data**)         |
+  | **Remove**     | Taken out of a list, it still exists elsewhere     | Detach                                 |
+  | **Unmount**    | A project leaves the session, Undo mounts it again | Remove from session                    |
+  | **Unlink**     | Removes a task link, keeps the task in its tool    | Remove link on a task                  |
+  | **Archive**    | Hidden, restorable                                 | Discard on a run (now **Archive run**) |
+  | **Disconnect** | Cuts the tie to an account, a tool or a workspace  |                                        |
+  | **Stop**       | Ends what is running and keeps what it wrote       | Close workflow (now **Stop run**)      |
+  | **Dismiss**    | Hides a notification or a suggestion               |                                        |
+  | **Clear**      | Resets filters or a selection                      |                                        |
+  | **Retry**      | Runs a failed action again                         | Try again                              |
 
   **Discard** stays for a draft you abandon. **Close** stays for a panel and
   for sending an agent away without deleting it. **Check again** only

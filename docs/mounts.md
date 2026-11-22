@@ -290,13 +290,23 @@ before projecting it as writable. Disk states:
 - **Switch** changes the branch of one mount in place, and a mount follows by itself when its worktree lands on another branch (a rename or a checkout), adopting it unless git is mid-operation or another mount holds that branch.
 - **Fork** creates another mount from an explicit base and leaves the source
   intact.
-- **Unmount** removes the worktree and keeps the row with no current path.
+- **Close branch** (`unmountMount`) removes the worktree of one branch and keeps
+  the row with no current path.
 - **Remove** removes the worktree of a mount whose work is complete, from its
   row or, for archived sessions, from storage settings, and keeps the row.
-- **Remove from session** takes a project out of the session: every mount of that project
-  is cleaned up per the chosen disposition and its row deleted. Each mount is
-  its own removal; one that fails is reported with its reason, the rest still
-  go, and the write destination is always handed over afterwards.
+- **Unmount** (`detachProject`) takes a project out of the session: every mount
+  of that project is cleaned up per the chosen disposition and its row deleted.
+  Each mount is its own removal; one that fails is reported with its reason, the
+  rest still go, and the write destination is always handed over afterwards.
+  The confirm offers Unmount and keep files, Unmount and remove worktree, or
+  Unmount and delete files for unsaved work. When the project had one mount, the
+  toast carries Undo (`announceUnmount`): `remountAfterUnmount` mounts the
+  project again, on the kept folder when the files stayed, otherwise on the
+  same branch in a new worktree. A failed Undo leaves the project unmounted and
+  says "Couldn't undo the operation". With two or more mounts the toast has no
+  Undo, because one mount call cannot restore several. When another repository
+  of the session is still mounted, Undo starts a new branch instead of the old
+  one (`createProjectMount` reads the branch seed only for the first repository).
 - **Forget** deletes the row of a mount that is already off disk or kept on
   purpose; it never touches the directory.
 
@@ -667,8 +677,9 @@ action the user can see, or allows one on a mount the user sees as gone.
 
 ## Worktree rows and the Overview notices
 
-The Overview has no Projects section. A worktree is a one line row of the
-Projects tree in the Context tab (`WorktreeRow`: state glyph, the pull request
+The Overview shows one block per project ([features/overview.md](features/overview.md)).
+In the Context tab a worktree is a one line row of the
+Projects tree (`WorktreeRow`: state glyph, the pull request
 title or the branch, at most one chip: failing, conflict or behind). A branch
 is one row with no rows under it; its pages (Pull request, Comments, Changes,
 Commits, Checks) are the tab strip of the Branch page. Its row menu (the `⋯`, a right click, Shift+F10) holds the
@@ -678,7 +689,7 @@ branch has Open pull request, Open (Editor, Terminal, External terminal),
 Switch branch…, Copy (Branch name, Path) and Close branch; a merged one has
 Open pull request, Open, Copy and Delete local branch…, whose confirm offers
 Close branch instead (`altActionId`), and Close branch is hidden on a merged
-branch (`placement`); a closed one has Reopen, Copy and Remove from session.
+branch (`placement`); a closed one has Reopen, Copy and Unmount.
 The navigation rules live in [navigation/session-rail.md](navigation/session-rail.md#session-rail).
 
 What a worktree asks the user to decide shows once, in the Overview notices

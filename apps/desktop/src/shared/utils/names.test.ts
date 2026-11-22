@@ -249,7 +249,9 @@ describe('names', () => {
       expect.arrayContaining(['Waiting for you', 'Waits on you', 'Waiting for your OK']),
     );
     expect(formerNamesOf(NAMES.gitRepository)).toEqual(['Dev project']);
-    expect(formerNamesOf(NAMES.removeFromSession)).toContain('Detach project');
+    expect(formerNamesOf(NAMES.unmount)).toEqual(
+      expect.arrayContaining(['Remove from session', 'Detach project']),
+    );
   });
 
   it('names when a run asks you Every step, After the plan or Never, and finds the old words', () => {

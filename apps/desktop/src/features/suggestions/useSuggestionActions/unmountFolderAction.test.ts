@@ -15,7 +15,7 @@ describe('unmountFolderAction', () => {
       projectName: 'notify-relay',
       unmountMount: unmount,
     });
-    expect(action?.label).toBe('Remove from session');
+    expect(action?.label).toBe('Unmount');
     expect(action?.requiresConfirm).toBe(true);
     await action?.run();
     expect(unmount).toHaveBeenCalledWith({ sessionId, mountId });
@@ -31,7 +31,7 @@ describe('unmountFolderAction', () => {
       projectName: 'notify-relay',
       unmountMount: unmount,
     });
-    expect(action?.failureTitle).toBe("Couldn't remove notify-relay from the session");
+    expect(action?.failureTitle).toBe("Couldn't unmount notify-relay");
     await expect(action?.run()).rejects.toThrow('a terminal is open in the folder');
     await expect(action?.run()).rejects.toThrow('a terminal is open in the folder');
     expect(unmount).toHaveBeenCalledTimes(2);

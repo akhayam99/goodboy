@@ -155,7 +155,7 @@
   list theirs per state too: the rail branch row through `onlyOf`
   (`mountRowMenuOf`: open is Open pull request, Open, Switch branch, Copy and
   Close branch; merged is Open pull request, Open, Copy and Delete local
-  branch; closed is Reopen, Copy and Remove from session), the commit row
+  branch; closed is Reopen, Copy and Unmount), the commit row
   (`HISTORY_ROW_MENU_IDS`, Move up, Move down and Copy subject stay on the
   right click since the drag handle moves a commit), the stored worktree row
   (`WORKTREE_ROW_MENU_IDS`) and the port row (`portRowMenuOf`: a row with a

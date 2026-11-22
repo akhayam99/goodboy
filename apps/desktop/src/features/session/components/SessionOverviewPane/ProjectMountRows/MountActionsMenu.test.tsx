@@ -123,13 +123,13 @@ const renderMenu = () =>
     />,
   );
 
-const TRIGGER = 'Remove api from session';
+const TRIGGER = 'Unmount api';
 
 const openConfirm = () => {
   fireEvent.click(screen.getByRole('button', { name: TRIGGER }));
 };
 
-const isConfirmOpen = (): boolean => screen.queryByText('Remove api from the session?') !== null;
+const isConfirmOpen = (): boolean => screen.queryByText('Unmount api?') !== null;
 
 const requestDetach = () => {
   window.dispatchEvent(
@@ -197,8 +197,8 @@ describe('MountActionsMenu', () => {
     openConfirm();
 
     screen.getByText('Checking files and commits');
-    expect(screen.queryByRole('button', { name: 'Remove and delete worktree' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Remove and delete files' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Unmount and remove worktree' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Unmount and delete files' })).toBeNull();
   });
 
   it('cancels an in-flight assessment without reopening the confirmation', async () => {
@@ -223,11 +223,13 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Unmount and remove worktree' })),
+    );
     screen.getByText(
       'Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat is merged into origin/main.',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Remove and delete worktree' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Unmount and remove worktree' }));
     await waitFor(() =>
       expect(state.detachProject).toHaveBeenCalledWith({
         sessionId: 'session-1',
@@ -237,7 +239,7 @@ describe('MountActionsMenu', () => {
     );
     expect(showToast).toHaveBeenCalledWith({
       kind: 'info',
-      message: 'Removed api from the session and deleted its worktree.',
+      message: 'Unmounted api and removed its worktree.',
     });
   });
 
@@ -248,7 +250,7 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete files' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Unmount and delete files' })));
     screen.getByText(
       'Remove the worktree at /worktrees/api for ak/feat, which has 2 unpushed commits.',
     );
@@ -342,7 +344,7 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete files' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Unmount and delete files' })));
     expect(worktreeDetachAssessment).toHaveBeenCalledTimes(2);
     expect(worktreeDetachAssessment).not.toHaveBeenCalledWith({ worktreePath: '/worktrees/web' });
     screen.getByText(
@@ -365,7 +367,7 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete files' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Unmount and delete files' })));
     screen.getByText('Remove the worktree at /worktrees/api for ak/feat, which has no upstream.');
     screen.getByText('No uncommitted files will be deleted.');
   });
@@ -377,13 +379,13 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete files' })));
-    expect(screen.queryByRole('button', { name: 'Remove and keep files' })).toBeNull();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Unmount and delete files' })));
+    expect(screen.queryByRole('button', { name: 'Unmount and keep files' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Removal details for api' }));
 
     screen.getByText('Files affected (3)');
     screen.getByText('Unpushed commits (0)');
-    fireEvent.click(screen.getByRole('button', { name: 'Remove and keep files' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Unmount and keep files' }));
     await waitFor(() =>
       expect(state.detachProject).toHaveBeenCalledWith({
         sessionId: 'session-1',
@@ -400,11 +402,9 @@ describe('MountActionsMenu', () => {
 
     expect(worktreeDetachAssessment).not.toHaveBeenCalled();
     expect(
-      screen.getByText(
-        'Remove api from this session; its folder at /worktrees/api will stay on disk.',
-      ),
+      screen.getByText('Unmount api; its folder at /worktrees/api will stay on disk.'),
     ).toBeDefined();
-    screen.getByRole('button', { name: 'Remove and keep files' });
+    screen.getByRole('button', { name: 'Unmount and keep files' });
   });
 
   it('never offers removal when the safety of the worktree is unknown', async () => {
@@ -412,7 +412,7 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and keep files' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Unmount and keep files' })));
     screen.getByText(
       "Couldn't check that ak/feat at /worktrees/api is safe to remove. Removing it keeps the directory.",
     );
@@ -469,15 +469,15 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and keep files' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Unmount and keep files' })));
     expect(
       screen.getByText(
         'Whether ak/feat is merged into its base branch is unknown; removing it will keep its files at /worktrees/api.',
       ),
     ).toBeDefined();
     screen.getByRole('button', { name: 'Check again' });
-    expect(screen.queryByRole('button', { name: 'Remove and delete worktree' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Remove and delete files' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Unmount and remove worktree' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Unmount and delete files' })).toBeNull();
   });
 
   it('says a clean branch has not reached its base instead of implying it landed', async () => {
@@ -492,7 +492,9 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Unmount and remove worktree' })),
+    );
     screen.getByText(
       "Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat isn't merged into origin/develop yet.",
     );
@@ -507,18 +509,20 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Unmount and remove worktree' })),
+    );
     expect(
       screen.getByText(
         "The directory at /worktrees/api is already absent; removing it will drop only the session's record of it.",
       ),
     ).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Remove and delete worktree' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Unmount and remove worktree' }));
 
     await waitFor(() =>
       expect(showToast).toHaveBeenCalledWith({
         kind: 'info',
-        message: 'Removed api from the session. Its directory was already absent.',
+        message: 'Unmounted api. Its directory was already absent.',
       }),
     );
   });
@@ -532,7 +536,7 @@ describe('MountActionsMenu', () => {
     expect(
       screen.getByText('Work is still running in api; stop it before removing this worktree.'),
     ).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Remove and keep files' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Unmount and keep files' })).toBeNull();
     screen.getByRole('button', { name: 'Cancel' });
   });
 
@@ -548,7 +552,7 @@ describe('MountActionsMenu', () => {
       screen.getByText('A terminal is open in api; close it before removing this worktree.'),
     ).toBeDefined();
     expect(screen.queryByText(/Work is still running/)).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Remove and keep files' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Unmount and keep files' })).toBeNull();
   });
 
   it('leaves a way out of a blocked confirmation instead of an empty popover', () => {
@@ -556,7 +560,7 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    screen.getByText('Remove api from the session?');
+    screen.getByText('Unmount api?');
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(isConfirmOpen()).toBe(false);
@@ -568,26 +572,30 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
-    fireEvent.click(screen.getByRole('button', { name: 'Remove and delete worktree' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Unmount and remove worktree' })),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Unmount and remove worktree' }));
 
     await waitFor(() =>
       expect(state.reportError).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: "Couldn't remove api from the session",
+          title: "Couldn't unmount api",
           error:
             "Couldn't remove /worktrees/api. It stays in the session. Check again before you retry.",
         }),
       ),
     );
-    screen.getByText('Remove api from the session?');
+    screen.getByText('Unmount api?');
   });
 
   it('closes the anchored confirm on cancel and leaves the project in the session', async () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Unmount and remove worktree' })),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(isConfirmOpen()).toBe(false);
@@ -601,7 +609,7 @@ describe('MountActionsMenu', () => {
 
     openConfirm();
 
-    screen.getByRole('dialog', { name: 'Remove api from the session?' });
+    screen.getByRole('dialog', { name: 'Unmount api?' });
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
@@ -620,7 +628,7 @@ describe('MountActionsMenu', () => {
       requestDetach();
     });
 
-    expect(screen.getAllByRole('dialog', { name: 'Remove api from the session?' })).toHaveLength(1);
+    expect(screen.getAllByRole('dialog', { name: 'Unmount api?' })).toHaveLength(1);
   });
 
   it('leaves the menu verb to another block when it has no mount to detach', () => {
@@ -673,7 +681,9 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Unmount and remove worktree' })),
+    );
     expect(screen.queryByRole('button', { name: 'Stop run first' })).toBeNull();
   });
 });

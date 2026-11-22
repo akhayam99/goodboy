@@ -7,7 +7,7 @@ import baseline from './jargon-copy.baseline.json';
 import { describeCopy, scanCopy } from './scanCopy';
 
 const JARGON =
-  /(?<![\w-])(clusters?|lens(?:es)?|(?:un)?mount(?:s|ed|ing)?|spawn(?:s|ed|ing)?|studios?|handoffs?|materiali[sz](?:e|es|ed|ing))(?![\w-])/i;
+  /(?<![\w-])(clusters?|lens(?:es)?|mounts|(?:a|the|this|each|every) mount|spawn(?:s|ed|ing)?|studios?|handoffs?|materiali[sz](?:e|es|ed|ing))(?![\w-])/i;
 
 type BaselineEntry = {
   readonly count: number;
@@ -56,6 +56,17 @@ describe('on-screen copy writes the product name with its capital', () => {
 });
 
 describe('on-screen copy says no internal word', () => {
+  it.each(['Mount a folder', 'Unmount ledger-core?', 'Unmounted ledger-core.'])(
+    'lets the session verb in %s through',
+    (text) => {
+      expect(JARGON.test(text)).toBe(false);
+    },
+  );
+
+  it.each(['Open the mount', 'Two mounts share a folder'])('flags the noun in %s', (text) => {
+    expect(JARGON.test(text)).toBe(true);
+  });
+
   it('keeps every named copy map free of internal words', () => {
     const offenders = Object.entries(NAMED_COPY).flatMap(([map, values]) =>
       values.filter((value) => JARGON.test(value)).map((value) => `${map}: ${value}`),

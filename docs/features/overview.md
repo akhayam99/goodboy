@@ -17,7 +17,7 @@ The goal sits above the page when it says more than the title. The Overview then
 - **Needs you**, with the move that waits on you on top: its project, its title, why, the proof you can open in place and its verb. An open question sits there too, with **Answer**. A warning bar marks the section, never a filled color. Only this move, or the first move of Next when nothing waits on you, has a filled button.
 - **Now** lists the agents with a live turn: who, the project, what it does right now and for how long. It shows three rows and **N more**. The agents of a Lead sit under it. An agent that waits for a file another agent holds says so on a quiet line with a warm dot. A click on a row opens that agent.
 - **Next** holds up to three moves.
-- **Projects**: one block per project with its branches inside. The head carries the project name, one door and **Remove from session**, the same verb as the project menu. The door is **Merge in order** for a series, or else **Delete local branches** for merged ones. It asks first: keep the files or remove the worktree.
+- **Projects**: one block per project with its branches inside. The head carries the project name, one door and **Unmount**, the same verb as the project menu. The door is **Merge in order** for a series, or else **Delete local branches** for merged ones. It asks first: keep the files or remove the worktree.
 - **Activity** shows the last three rows of the log.
 - The **Ask** line stays at the foot of the page.
 - A session with no agent, no run and no branch shows the start form and nothing else.
@@ -114,7 +114,7 @@ Know the moves that unblock the task, such as answering a question, fixing a fai
 - **Ask the Implementer what blocks it** shows when an agent has been quiet for 5 minutes. After 30 minutes the question moves to Needs you.
 - A stopped rebase sits in Fix, first, above **Rerun**, and says how many files conflict. A branch that is only behind stays in Update.
 - Moves that unblock come before moves that carry the task forward, and upkeep comes last.
-- A folder no turn touched for 7 days offers **Remove from session**. A clean worktree with nothing to push, no pull request and no change for 7 days offers **Remove the ledger-core worktree**. Only one such move shows, and only when nothing else is left.
+- A folder no turn touched for 7 days offers **Unmount**. A clean worktree with nothing to push, no pull request and no change for 7 days offers **Remove the ledger-core worktree**. Only one such move shows, and only when nothing else is left.
 - A move whose pull request read is old stays and says **Checked 12m ago** with **Recheck**. When a move is done, a quiet line such as "integration-tests passed on rerun" stays for 2 seconds.
 - **Archive this session** shows with the reason "All branches merged". It needs every branch merged or closed and nothing running, waiting or asking. The toast offers **Undo**.
 

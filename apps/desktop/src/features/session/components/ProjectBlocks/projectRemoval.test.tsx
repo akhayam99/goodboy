@@ -92,7 +92,7 @@ const WORKTREE = {
   reused: false,
 };
 
-const QUESTION = 'Remove ledger-core from the session?';
+const QUESTION = 'Unmount ledger-core?';
 
 let useAppStore: StoryStore;
 let sessionId: SessionId;
@@ -186,12 +186,12 @@ const chooseFromProjectMenu = async () => {
     throw new Error('the Context card must list the project');
   }
   fireEvent.contextMenu(row);
-  fireEvent.click(await screen.findByRole('menuitem', { name: /Remove from session/ }));
+  fireEvent.click(await screen.findByRole('menuitem', { name: /^Unmount\b/ }));
 };
 
 const confirmRemoval = async () => {
   const dialog = await screen.findByRole('dialog', { name: QUESTION });
-  const remove = await within(dialog).findByRole('button', { name: 'Remove and delete worktree' });
+  const remove = await within(dialog).findByRole('button', { name: 'Unmount and remove worktree' });
   await act(async () => {
     fireEvent.click(remove);
     await Promise.resolve();
@@ -225,7 +225,7 @@ describe('the project block on the Overview', () => {
     await vi.waitFor(() =>
       expect(useAppStore.getState().notifications).toContainEqual(
         expect.objectContaining({
-          title: "Couldn't remove ledger-core from the session",
+          title: "Couldn't unmount ledger-core",
           body: expect.stringContaining('git worktree remove failed'),
         }),
       ),

@@ -1119,7 +1119,7 @@ const FOLDER_KIND: Project['kind'] = 'folder';
 const ARCHIVED_AT = brandId<IsoDateTime>({ value: '2026-10-06T10:00:00.000Z' });
 
 describe('project actions, on the real store', () => {
-  it('offers New branch and Remove from session while a repo project has a mount', () => {
+  it('offers New branch and Unmount while a repo project has a mount', () => {
     seedMount({ pr: null });
     expect(
       slottedOf({ kind: 'project', sessionId: SESSION, projectId: LEDGER_MOUNT.projectId }),
