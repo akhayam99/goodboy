@@ -77,21 +77,20 @@ describe('the central column scenes', () => {
     expect(Object.keys(U26_CENTRAL_SCENES)).toEqual(KEYS);
   });
 
-  it('lands on the one Log section of the column, with no drawer', async () => {
+  it('lands on the Activity page alone, with no drawer and no Overview under it', async () => {
     await show({ name: 'u26-central-log-light' });
 
     expect(screen.getAllByRole('region', { name: 'Log entries' })).toHaveLength(1);
     expect(screen.queryByRole('region', { name: 'Log' })).toBeNull();
-    screen.getByRole('region', { name: 'Projects' });
+    expect(screen.queryByRole('region', { name: 'Projects' })).toBeNull();
   });
 
-  it('lands on the Log section on the scene that follows the theme of the page', async () => {
+  it('lands on the Activity page on the scene that follows the theme of the page', async () => {
     applyDocumentTheme({ theme: 'light' });
     try {
       await show({ name: 'u26-central-log' });
 
       screen.getByRole('region', { name: 'Log entries' });
-      screen.getByRole('region', { name: 'Projects' });
       expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     } finally {
       applyDocumentTheme({ theme: 'dark' });

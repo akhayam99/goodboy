@@ -12,6 +12,7 @@ const LENS_ADDRESS: Record<LensKind, string> = {
   branch: 'branch',
   files: 'diff',
   context: 'context',
+  activity: 'activity',
   linear: 'linear',
   gitlab_issues: 'gitlab',
   jira_issues: 'jira',

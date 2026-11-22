@@ -101,11 +101,24 @@
   no cost (it is in the duration tooltip and the spend popover), the model line
   holds the effort (`Sonnet 5.5 · Medium`), the day label has no rule and an
   empty Activity reads `Nothing ran yet`. A Next button carries its label only
-  and the menu column leaves when no row has a menu. The Activity header holds
-  no spend: the session spend lives in the top bar and the spend popover.
-  `Mark as read` is a ghost button in the Activity header and shows only
-  while an agent is unseen; a waiting question is answered from its Needs you row, never from a
-  second `Answer` on the timeline row.
+  and the menu column leaves when no row has a menu. The Activity section holds
+  the last three rows and `Open activity`, and no spend: the session spend lives
+  in the top bar and the spend popover. A waiting question is answered from its
+  Needs you row, never from a second `Answer` on the timeline row.
+- **Activity is a page under the Overview, not a sixth tab.** The tabs stay
+  Overview, Runs, Artifacts, Questions and Context. `Open activity` (the
+  Overview section, the `Open` submenu of the Board card, ⌘K) opens the
+  `activity` lens, so the crumbs read Overview › Activity, the head's back
+  button goes to the Overview and a reload reopens the page. The session `⋯`
+  does not list it. The page (`ActivityPage`, `PAGE_MEASURE.activity`, the
+  column of the Overview) draws the rows, rail, nodes and heights of the log,
+  plus a row per script run, terminal command and check rerun read from
+  `work_events`, never from `session_events`. One boxed `SegmentedTabs` filters
+  by kind (All, Agents, Branches, Checks, Scripts, Context), the search box
+  stays, and a `FilterButton` filters by project through each row's `mount_id`
+  once the session has two projects. `Mark as read` sits in the same row and
+  shows only while an agent is unseen. A failed read of `work_events` keeps the
+  log and shows `Couldn't load scripts and commands` with Retry.
 - **The focused issue page says where the issue lives.** The issue is an
   address (`external-task` target, `focusedExternalTask`): a card opens it
   through `openExternalTaskLens`, so the crumbs read `Overview › {provider}`.

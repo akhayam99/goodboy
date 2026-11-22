@@ -223,6 +223,15 @@ const withoutRemovedLens = ({ location }: Params): Location => {
   }
   const { view } = place;
   const lens = String(view.lens);
+  const isUnknownLens =
+    view.lens !== null &&
+    !REMOVED_LENSES.has(lens) &&
+    !RETIRED_RUNS_LENSES.has(lens) &&
+    !PREVIOUS_RELEASE_LENSES.has(lens) &&
+    lens !== 'orchestrated';
+  if (isUnknownLens) {
+    return { ...location, place: sessionPlace({ sessionId: place.sessionId }) };
+  }
   const isProviderList = isProviderListLens({ lens }) && view.target === null;
   const hasRemovedLens = REMOVED_LENSES.has(lens) || isProviderList;
   const nextLens = isProviderList ? null : lensStillThere({ lens: view.lens });

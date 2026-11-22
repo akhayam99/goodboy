@@ -11,6 +11,7 @@ import { openLens } from '../../../openLens';
 import type { LensSurface } from '../../../lens-surface';
 import { SessionOverviewPane } from '../../SessionOverviewPane';
 import { LinkIssueAction } from '../../SessionOverviewPane/LinkIssueAction';
+import { ActivityPage } from '../../../central/log/ActivityPage';
 import { FilesPane } from './FilesPane';
 import { IntegrationPane } from './IntegrationPane';
 import { GithubTaskDetail } from './IntegrationPane/GithubTaskDetail';
@@ -82,6 +83,9 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
   }
   if (target === 'questions') {
     return <QuestionsPane session={session} />;
+  }
+  if (target === 'activity') {
+    return <ActivityPage session={session} />;
   }
   if (target === 'plans') {
     return (

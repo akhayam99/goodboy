@@ -222,7 +222,7 @@
           "main": true
         },
         {
-          "title": "Full log",
+          "title": "Activity",
           "text": "Follow what happened in a session in one list.",
           "group": "Overview and activity",
           "main": true

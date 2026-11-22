@@ -7,7 +7,6 @@ import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
 import { selectDrawerPlacement } from '../../../../../store/slices/drawer/selectDrawerPlacement';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
-import { LOG_LANDING } from '../../../../../features/session/central/log/logLanding';
 import { DrawerHost } from '../../../DrawerHost';
 import { ScenePlacesRail } from '../ScenePlacesRail';
 import { CentralColumnPane } from './CentralColumnPane';
@@ -49,11 +48,8 @@ export const CentralColumnScene = ({
           : session,
       ),
     }));
-    if (isLogOpen) {
-      LOG_LANDING.request({ sessionId: COLUMN_SESSION_ID });
-    }
     setIsReady(true);
-  }, [theme, kind, isLogOpen, isArchived]);
+  }, [theme, kind, isArchived]);
   useEffect(() => {
     if (!isReady || search === undefined) {
       return;
@@ -78,7 +74,7 @@ export const CentralColumnScene = ({
       >
         <AppShell
           leftRail={<ScenePlacesRail />}
-          main={<CentralColumnPane />}
+          main={<CentralColumnPane isLogOpen={isLogOpen} />}
           drawer={isDrawerOpen ? <DrawerHost /> : null}
           drawerSizing={drawerSizing}
           drawerPlacement={drawerPlacement}

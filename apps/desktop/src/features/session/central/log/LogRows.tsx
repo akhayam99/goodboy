@@ -1,6 +1,8 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react';
-import { Button } from '@goodboy/ui';
+import { Button, EmptyLine } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
+import { NAMES } from '../../../../shared/utils/names';
+import type { TimelineTopLevelEntry } from '../../timeline/buildTimelineGroups';
 import { useRowPreload } from '../../../../shared/hooks/useRowPreload';
 import { countNoun } from '../../../../shared/utils/countNoun';
 import { scrollParentOf } from '../../../../shared/utils/scrollParentOf';
@@ -20,13 +22,29 @@ const LOG_ROW_SELECTOR = '[data-log-row]';
 
 const LOG_ROW_BOX = '[content-visibility:auto] data-row-near:[content-visibility:visible]';
 
+type KeepParams = {
+  readonly entry: TimelineTopLevelEntry;
+};
+
 type Props = {
   readonly session: Session;
   readonly query: string;
   readonly onClearSearch: () => void;
+  readonly extraEntries?: ReadonlyArray<TimelineTopLevelEntry>;
+  readonly keep?: (params: KeepParams) => boolean;
+  readonly isFiltered?: boolean;
+  readonly onClearFilters?: () => void;
 };
 
-export const LogRows = ({ session, query, onClearSearch }: Props) => {
+export const LogRows = ({
+  session,
+  query,
+  onClearSearch,
+  extraEntries,
+  keep,
+  isFiltered = false,
+  onClearFilters,
+}: Props) => {
   const sessionId = session.id;
   const rootRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLElement | null>(null);
@@ -59,7 +77,14 @@ export const LogRows = ({ session, query, onClearSearch }: Props) => {
     (): ExplodeGroups => ({ ...groups, set: setAnchored, showAll: showAllAnchored }),
     [groups, setAnchored, showAllAnchored],
   );
-  const rows = useTimelineRows({ session, view: 'all', query, explode });
+  const rows = useTimelineRows({
+    session,
+    view: 'all',
+    query,
+    explode,
+    ...(extraEntries === undefined ? {} : { extraEntries }),
+    ...(keep === undefined ? {} : { keep }),
+  });
   const { rowPropsFor } = useTimelineRowProps({ session, explode, rows });
   const { entries, viewEntries } = rows;
   const shownRowIds = useRef<ReadonlySet<string>>(new Set());
@@ -81,6 +106,22 @@ export const LogRows = ({ session, query, onClearSearch }: Props) => {
     return (
       <div ref={rootRef} className="flex flex-col">
         <TimelineSkeleton />
+      </div>
+    );
+  }
+  if (viewEntries.length === 0 && isFiltered && onClearFilters !== undefined) {
+    return (
+      <div ref={rootRef} className="flex flex-col">
+        <EmptyLine
+          className="px-3"
+          action={
+            <Button variant="ghost" size="xs" onClick={onClearFilters}>
+              {NAMES.clearFilters}
+            </Button>
+          }
+        >
+          {NAMES.noActivityMatches}
+        </EmptyLine>
       </div>
     );
   }

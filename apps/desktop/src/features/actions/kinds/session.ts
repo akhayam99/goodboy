@@ -27,7 +27,7 @@ import type {
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
-import { LOG_LANDING } from '../../session/central/log/logLanding';
+import { SESSION_OPEN_ACTIVITY } from './sessionActivity';
 import { branchPlace } from '../../../store/slices/navigation/place';
 import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
@@ -181,18 +181,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     run: ({ facts, env }) => openLens({ env, sessionId: facts.sessionId, lens: 'files' }),
   },
   ...SESSION_EXTERNAL_OPEN_ACTIONS,
-  {
-    id: 'session.openLog',
-    label: 'Open log',
-    icon: CONCEPT_ICONS.timeline,
-    group: 'open',
-    when: () => true,
-    run: ({ facts, env }) => {
-      const state = env.getState();
-      LOG_LANDING.request({ sessionId: facts.sessionId });
-      state.navigate({ to: lensPlace({ state, sessionId: facts.sessionId, lens: null }) });
-    },
-  },
+  SESSION_OPEN_ACTIVITY,
   {
     id: 'session.rename',
     label: 'Rename',
