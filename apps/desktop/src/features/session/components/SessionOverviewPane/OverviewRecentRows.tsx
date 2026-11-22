@@ -5,6 +5,7 @@ import { TimelineRow } from '../SessionWorkspace/parts/TimelinePane/TimelineRow'
 import { TimelineSkeleton } from '../SessionWorkspace/parts/TimelinePane/TimelineSkeleton';
 import { useTimelineRowProps } from '../SessionWorkspace/parts/TimelinePane/useTimelineRowProps';
 import { useTimelineRows } from '../SessionWorkspace/parts/TimelinePane/useTimelineRows';
+import { recentRowsOf } from './recentRowsOf';
 
 type Props = {
   readonly session: Session;
@@ -20,10 +21,10 @@ export const OverviewRecentRows = ({ session }: Props) => {
   if (drawnSessionId !== session.id || (!rows.isLoaded && rows.entries.length === 0)) {
     return <TimelineSkeleton />;
   }
-  const items = rows.laidOutItems.filter((item) => item.kind === 'row').slice(0, RECENT_ROWS);
+  const recent = recentRowsOf({ items: rows.laidOutItems, limit: RECENT_ROWS });
   return (
     <div data-overview-recent="" className="@container flex min-w-0 flex-col">
-      {items.map((item, index) => {
+      {recent.map(({ item, index }) => {
         const props = rowPropsFor({ item, index });
         return props === null ? null : (
           <div key={item.id} data-log-row="">

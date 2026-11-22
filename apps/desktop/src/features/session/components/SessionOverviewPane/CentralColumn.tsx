@@ -12,6 +12,7 @@ import { useBranchFacts } from '../../central/branches/useBranchFacts';
 import { cardsOutsideRunningOf } from '../../central/cards/cardsOutsideRunningOf';
 import { overviewMovesOf } from '../../central/next/overviewMovesOf';
 import { useNextCards } from '../../central/next/useNextCards';
+import { boardCardsOf } from '../../central/board/boardCardsOf';
 import { useLiveGroups } from '../../central/now/useLiveGroups';
 import { useNowModel } from '../../central/now/hooks/useNowModel';
 import { overviewHasContentOf } from '../../central/overviewHasContentOf';
@@ -24,6 +25,7 @@ import { useBranchBoard } from '../ProjectBlocks/useBranchBoard';
 import { EmptySessionStart } from './EmptySessionStart';
 import { FolderCard } from './FolderCard';
 import { NeedsYouSection } from './NeedsYouSection';
+import { NextOverflow } from './NextOverflow';
 import { NextSection } from './NextSection';
 import { NowSection } from './NowSection';
 import { OverviewLog } from './OverviewLog';
@@ -83,6 +85,10 @@ export const CentralColumn = ({ session }: Props) => {
     [branches.finished, branches.live],
   );
   const board = useBranchBoard({ session, entries });
+  const placed = useMemo(
+    () => boardCardsOf({ cards: moves.rest, rows: board.board.rows }),
+    [board.board.rows, moves.rest],
+  );
   const status = useMemo(() => overviewStatusOf({ branches }), [branches]);
   const now = useNowModel({ sessionId, groups });
   const dev = useDevDetails({ workspaceId: session.workspaceId });
@@ -152,12 +158,19 @@ export const CentralColumn = ({ session }: Props) => {
         openFor={openFor}
         hasFilledMove={!hasNeedsYou}
       />
+      <NextOverflow
+        sessionId={sessionId}
+        cards={placed.loose}
+        actionsFor={actionsFor}
+        openFor={openFor}
+      />
       {isEmpty || board.board.rows.length === 0 ? null : (
         <ProjectBlocks
           key={sessionId}
           session={session}
           view={board}
           cards={moves.rest}
+          cardsByRowId={placed.byRowId}
           actionsFor={actionsFor}
           openFor={openFor}
           isDevShown={dev.isShown}

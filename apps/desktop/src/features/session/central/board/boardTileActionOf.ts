@@ -29,9 +29,9 @@ export const boardTileActionOf = ({ row, cards, shownAskIds }: Params): BoardTil
       return { kind: 'card', index: answerIndex };
     }
     const askId = row.askIds.find((id) => !shownAskIds.has(id));
-    return askId === undefined
-      ? { kind: 'none' }
-      : { kind: 'question', questionId: brandId<OpenQuestionId>({ value: askId }) };
+    if (askId !== undefined) {
+      return { kind: 'question', questionId: brandId<OpenQuestionId>({ value: askId }) };
+    }
   }
   return cards.length > 0 ? { kind: 'card', index: 0 } : { kind: 'none' };
 };

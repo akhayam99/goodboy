@@ -5,7 +5,7 @@ import { useMountDiffStats } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
 import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import type { ActionCardActions } from '../../central/next/useActionCardActions';
-import { cardRowIdOf } from '../../central/board/cardRowIdOf';
+import type { BoardCards } from '../../central/board/boardCardsOf';
 import { projectBlocksOf } from '../../central/board/projectBlocksOf';
 import { BoardProjectRemovals } from './BoardProjectRemovals';
 import { BoardContext, type BoardContextValue } from './BoardContext';
@@ -17,6 +17,7 @@ type Props = {
   readonly session: Session;
   readonly view: BranchBoardView;
   readonly cards: ReadonlyArray<ActionCardModel>;
+  readonly cardsByRowId: BoardCards['byRowId'];
   readonly actionsFor: ActionCardActions['actionsFor'];
   readonly openFor: ActionCardActions['openFor'];
   readonly isDevShown: boolean;
@@ -30,16 +31,15 @@ type ToggleParams = {
 
 const NO_CARDS: ReadonlyArray<ActionCardModel> = [];
 
-const SESSION_LEVEL_KINDS: ReadonlyArray<string> = ['archive-session', 'close-worktree'];
+const NO_PLACED: BoardCards['byRowId'] = new Map();
 
 const MERGE_KIND = 'merge-series';
-
-const LOOSE_ROW_ID = 'loose';
 
 export const ProjectBlocks = ({
   session,
   view,
   cards: allCards,
+  cardsByRowId: placedByRowId,
   actionsFor,
   openFor,
   isDevShown,
@@ -60,25 +60,7 @@ export const ProjectBlocks = ({
   );
   const removal = useRemoveWorktrees({ sessionId, mergedMountIds });
   const rowById = useMemo(() => new Map(board.rows.map((row) => [row.id, row])), [board.rows]);
-  const rowIds = useMemo(() => new Set(rowById.keys()), [rowById]);
-  const rowIdByAskId = useMemo(
-    () => new Map(board.rows.flatMap((row) => row.askIds.map((askId) => [askId, row.id] as const))),
-    [board.rows],
-  );
-  const cardsByRowId = useMemo(() => {
-    const byRow = new Map<string, ReadonlyArray<ActionCardModel>>();
-    for (const card of cards) {
-      if (SESSION_LEVEL_KINDS.includes(card.kind) || card.kind === MERGE_KIND) {
-        continue;
-      }
-      const rowId = cardRowIdOf({ card, rowIds, looseRowId: LOOSE_ROW_ID, rowIdByAskId });
-      if (!rowIds.has(rowId)) {
-        continue;
-      }
-      byRow.set(rowId, [...(byRow.get(rowId) ?? []), card]);
-    }
-    return byRow;
-  }, [cards, rowIds, rowIdByAskId]);
+  const cardsByRowId = session.archivedAt == null ? placedByRowId : NO_PLACED;
   const mergeCard = useMemo(() => cards.find((card) => card.kind === MERGE_KIND) ?? null, [cards]);
   const blocks = useMemo(
     () => projectBlocksOf({ board, rowById, expandedIds }),

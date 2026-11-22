@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { brandId, type ProjectId } from '@goodboy/types';
 import { branchFactsOf } from './branchFactsOf';
 import { branchEntriesOf } from './branchStoryOf';
 import { overviewStatusOf } from './overviewStatusOf';
@@ -11,6 +12,7 @@ const FRESH = new Date(NOW - 60_000).toISOString();
 type RowSpec = {
   readonly key: string;
   readonly projectName: string;
+  readonly projectKey?: string;
   readonly checks?: 'failure' | 'success' | 'pending' | null;
   readonly state?: 'open' | 'merged';
 };
@@ -20,12 +22,15 @@ type BranchesParams = {
 };
 
 const branchesOf = ({ rows }: BranchesParams) => {
-  const mountRows = rows.map(({ key, projectName, checks = null, state = 'open' }) =>
-    aMountRow({
-      key,
-      projectName,
-      branch: `ak/hbl-412-${key}`,
-      request: aRequest({ provider: 'github', number: 418, checks, state }),
+  const mountRows = rows.map(
+    ({ key, projectName, projectKey = projectName, checks = null, state = 'open' }) => ({
+      ...aMountRow({
+        key,
+        projectName,
+        branch: `ak/hbl-412-${key}`,
+        request: aRequest({ provider: 'github', number: 418, checks, state }),
+      }),
+      projectId: brandId<ProjectId>({ value: `project-${projectKey}` }),
     }),
   );
   const facts = branchFactsOf({
@@ -60,6 +65,22 @@ describe('overviewStatusOf', () => {
     const status = overviewStatusOf({ branches });
     expect(status?.toLowerCase()).toBe(
       `payments-api: ${failing?.story.word.toLowerCase()}. ledger-core: ${merged?.story.word.toLowerCase()}.`,
+    );
+  });
+
+  it('keeps two projects that share a name apart by their id', () => {
+    const branches = branchesOf({
+      rows: [
+        { key: 'a', projectName: 'ledger-core', projectKey: 'ledger-one', checks: 'failure' },
+        { key: 'b', projectName: 'ledger-core', projectKey: 'ledger-two', state: 'merged' },
+      ],
+    });
+    const failing = branches.live.find((entry) => entry.fact.mountId === 'mount-a');
+    const merged = branches.finished[0];
+    expect(failing).toBeDefined();
+    expect(merged).toBeDefined();
+    expect(overviewStatusOf({ branches })?.toLowerCase()).toBe(
+      `ledger-core: ${failing?.story.word.toLowerCase()}. ledger-core: ${merged?.story.word.toLowerCase()}.`,
     );
   });
 

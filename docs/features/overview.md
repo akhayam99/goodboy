@@ -96,7 +96,7 @@ Each branch is one tile, like a pull request in a list:
 
 Know the moves that unblock the task, such as answering a question, fixing a failing check or opening a pull request.
 
-- **Next** shows the first three moves, each with its reason. The rest stay on their branch rows as one short button such as **Start**, **Analyze** or **Push**.
+- **Next** shows the first three moves, each with its reason. The rest stay on their branch rows as one short button such as **Start**, **Analyze** or **Push**. A move with no branch row waits under **Next**, in **More next steps**.
 - **Not now** puts a suggestion away until the situation changes. It says Dismissed with **Undo**, and ⌘Z brings the last one back.
 - A question or an approval of your own is never put away this way.
 - **Analyze** starts the Debugger on a failing check. Its next moves (open the analysis, **Start fix**, **Push**) then sit on that run.

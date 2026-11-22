@@ -75,11 +75,21 @@ describe('boardTileActionOf', () => {
     ).toEqual({ kind: 'question', questionId: 'question-1' });
   });
 
-  it('carries no Answer for a question Needs you already shows', () => {
+  it('carries no Answer for a question Needs you already shows and keeps the row Rebase', () => {
     expect(
       boardTileActionOf({
         row: rowOf({ askIds: ['question-1'] }),
         cards: [cardOf({ kind: 'rebase-project' })],
+        shownAskIds: new Set(['question-1']),
+      }),
+    ).toEqual({ kind: 'card', index: 0 });
+  });
+
+  it('offers nothing when Needs you shows every question and the row has no other card', () => {
+    expect(
+      boardTileActionOf({
+        row: rowOf({ askIds: ['question-1'] }),
+        cards: [],
         shownAskIds: new Set(['question-1']),
       }),
     ).toEqual({ kind: 'none' });
