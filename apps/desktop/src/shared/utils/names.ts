@@ -129,6 +129,7 @@ export const NAMES = {
   context: 'Context',
   goal: 'Goal',
   decisions: 'Decisions',
+  whatGoodboySends: 'What Goodboy sends',
   plan: 'Plan',
   changes: 'Changes',
   whatsNew: "What's new",

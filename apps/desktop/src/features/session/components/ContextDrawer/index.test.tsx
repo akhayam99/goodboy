@@ -18,6 +18,7 @@ import { currentStack } from '../../../../store/slices/navigation/currentStack';
 import { ContextDrawer } from '.';
 import { summarizerQueues } from '../../../../store/slices/turn/turnHelpers';
 import { contextUpdateHint } from './contextUpdateCopy';
+import { NAMES } from '../../../../shared/utils/names';
 
 type SaveParams = Parameters<(typeof import('@goodboy/db'))['saveSessionDecisions']>[0];
 
@@ -422,17 +423,17 @@ describe('Context drawer', () => {
 });
 
 describe('Context drawer sections', () => {
-  it('reads as one scroll of cards with no tabs: Goal, Decisions, Summary and Explanations', () => {
+  it('reads as one scroll of cards with no tabs: Goal, Decisions, Summary, What Goodboy sends and Explanations', () => {
     mount();
     expect(screen.queryByRole('tablist')).toBeNull();
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
-    ).toEqual(['Context', 'Goal', 'Decisions', 'Summary', 'Explanations']);
+    ).toEqual(['Context', 'Goal', 'Decisions', 'Summary', NAMES.whatGoodboySends, 'Explanations']);
     expect(
       Array.from(document.querySelectorAll('[data-context-card]')).map((card) =>
         card.getAttribute('data-context-section'),
       ),
-    ).toEqual(['goal', 'decisions', 'summary', 'explanations']);
+    ).toEqual(['goal', 'decisions', 'summary', 'sends', 'explanations']);
   });
 
   it('copies the brief from the header', () => {
