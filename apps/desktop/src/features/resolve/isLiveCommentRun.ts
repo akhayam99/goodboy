@@ -1,4 +1,5 @@
 import type { Agent } from '@goodboy/types';
+import { holdsCommentThreads } from './holdsCommentThreads';
 
 type Params = {
   readonly agent: Agent;
@@ -6,6 +7,6 @@ type Params = {
 
 export const isLiveCommentRun = ({ agent }: Params): boolean =>
   agent.deletedAt == null &&
-  agent.sourceKind === 'comment_run' &&
+  holdsCommentThreads({ agent }) &&
   agent.status !== 'stopped' &&
   agent.status !== 'failed';

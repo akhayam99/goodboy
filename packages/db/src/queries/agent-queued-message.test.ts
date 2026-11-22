@@ -5,6 +5,7 @@ import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   listAgentQueuedMessages,
   replaceAgentQueuedMessages,
+  saveAgentQueuedMessages,
   type AgentQueuedMessageRecord,
 } from './agent-queued-message';
 
@@ -105,6 +106,84 @@ describe('agent queued messages', () => {
     const [held] = await listAgentQueuedMessages(db, [AGENT]);
     expect(held?.override).toBeNull();
     expect(held?.holdReason).toBe('Over the limit');
+  });
+
+  it('saves by message id, so two windows writing one agent keep both messages', async () => {
+    const db = await seed();
+
+    await saveAgentQueuedMessages({
+      db,
+      agentId: AGENT,
+      messages: [message('a')],
+      removedIds: [],
+    });
+    await saveAgentQueuedMessages({
+      db,
+      agentId: AGENT,
+      messages: [message('b')],
+      removedIds: [],
+    });
+
+    expect((await listAgentQueuedMessages(db, [AGENT])).map((entry) => entry.id)).toEqual([
+      'a',
+      'b',
+    ]);
+  });
+
+  it('deletes only the ids the window removed and updates a message in place', async () => {
+    const db = await seed();
+    await saveAgentQueuedMessages({
+      db,
+      agentId: AGENT,
+      messages: [message('a'), message('b')],
+      removedIds: [],
+    });
+
+    await saveAgentQueuedMessages({
+      db,
+      agentId: AGENT,
+      messages: [message('b', { content: 'edited' })],
+      removedIds: ['a'],
+    });
+
+    const read = await listAgentQueuedMessages(db, [AGENT]);
+    expect(read.map((entry) => [entry.id, entry.content])).toEqual([['b', 'edited']]);
+  });
+
+  it('never moves a message of another agent that shares the id', async () => {
+    const db = await seed();
+    await saveAgentQueuedMessages({
+      db,
+      agentId: OTHER,
+      messages: [message('x', { agentId: OTHER })],
+      removedIds: [],
+    });
+
+    await saveAgentQueuedMessages({
+      db,
+      agentId: AGENT,
+      messages: [message('x', { content: 'stolen' })],
+      removedIds: ['x'],
+    });
+
+    const read = await listAgentQueuedMessages(db, [AGENT, OTHER]);
+    expect(read.map((entry) => [entry.agentId, entry.content])).toEqual([[OTHER, 'message x']]);
+  });
+
+  it('keeps the comment thread a message carries and reads it back', async () => {
+    const db = await seed();
+
+    await saveAgentQueuedMessages({
+      db,
+      agentId: AGENT,
+      messages: [message('sent', { sourceThreadId: 'thread-79' }), message('plain')],
+      removedIds: [],
+    });
+
+    const [sent, plain] = await listAgentQueuedMessages(db, [AGENT]);
+    expect(sent?.sourceThreadId).toBe('thread-79');
+    expect(sent?.override).toBeNull();
+    expect(plain?.sourceThreadId).toBeNull();
   });
 
   it('reads nothing for no agents', async () => {

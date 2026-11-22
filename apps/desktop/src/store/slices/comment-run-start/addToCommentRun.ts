@@ -30,8 +30,10 @@ export const addToCommentRun = ({ set, get }: SliceDeps) => {
     const isSaved = await queueCommentRunMessage({
       set,
       get,
+      sessionId,
       agentId,
       content: addedMessageOf({ quote }),
+      sourceThreadId: threadId,
     });
     if (!isSaved) {
       await removeAgentSourceThread({ db: tauriDatabase, id: agentId, threadId });

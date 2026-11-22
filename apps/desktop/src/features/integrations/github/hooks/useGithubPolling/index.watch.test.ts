@@ -6,18 +6,15 @@ vi.mock('@tauri-apps/api/core', async () =>
 vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
-const { replaceAgentQueuedMessages } = vi.hoisted(() => ({
-  replaceAgentQueuedMessages: vi.fn(
-    async (
-      _database: unknown,
-      _params: { readonly messages: ReadonlyArray<{ readonly id: string }> },
-    ) => undefined,
+const { saveAgentQueuedMessages } = vi.hoisted(() => ({
+  saveAgentQueuedMessages: vi.fn(
+    async (_params: { readonly messages: ReadonlyArray<{ readonly id: string }> }) => undefined,
   ),
 }));
 
 vi.mock('@goodboy/db', async () =>
   (await import('../../../../../store/storyHarness')).dbModuleMock({
-    replaceAgentQueuedMessages,
+    saveAgentQueuedMessages,
   }),
 );
 vi.mock('../../../../../shared/lib/db', async () =>
@@ -101,7 +98,7 @@ const sendTurn = vi.fn<SendTurn>(async (params) => {
 });
 
 const savedIds = (): ReadonlyArray<ReadonlyArray<string>> =>
-  replaceAgentQueuedMessages.mock.calls.map(([, params]) =>
+  saveAgentQueuedMessages.mock.calls.map(([params]) =>
     params.messages.map((message) => message.id),
   );
 const reportError = vi.fn(async (_params: unknown) => undefined);
@@ -141,10 +138,10 @@ beforeEach(async () => {
   vi.useFakeTimers();
   await resetStoryStore();
   rerunNotes.reset();
-  for (const spy of [sweep, sendTurn, reportError, push, replaceAgentQueuedMessages]) {
+  for (const spy of [sweep, sendTurn, reportError, push, saveAgentQueuedMessages]) {
     spy.mockClear();
   }
-  replaceAgentQueuedMessages.mockResolvedValue(undefined);
+  saveAgentQueuedMessages.mockResolvedValue(undefined);
   useAppStore.setState({
     sessions: [session],
     sessionBranches: { [session.id]: 'ak/payout-export' },
@@ -352,7 +349,7 @@ describe('waking the Implementer on a failed check', () => {
     await advance({ ms: 0 });
 
     expect(sendTurn).not.toHaveBeenCalled();
-    expect(replaceAgentQueuedMessages).not.toHaveBeenCalled();
+    expect(saveAgentQueuedMessages).not.toHaveBeenCalled();
   });
 
   it('does not wake on a failed commit when the watch saw a different commit running', async () => {
@@ -371,7 +368,7 @@ describe('waking the Implementer on a failed check', () => {
     await advance({ ms: 0 });
 
     expect(sendTurn).not.toHaveBeenCalled();
-    expect(replaceAgentQueuedMessages).not.toHaveBeenCalled();
+    expect(saveAgentQueuedMessages).not.toHaveBeenCalled();
   });
 
   it('stops after the allowed number of wakes on one request', async () => {
@@ -395,11 +392,11 @@ describe('waking the Implementer on a failed check', () => {
     await advance({ ms: 0 });
 
     expect(sendTurn).not.toHaveBeenCalled();
-    expect(replaceAgentQueuedMessages).not.toHaveBeenCalled();
+    expect(saveAgentQueuedMessages).not.toHaveBeenCalled();
   });
 
   it('says so, drops the unsaved message and does not count the wake when the save fails, then tries again on the next failure', async () => {
-    replaceAgentQueuedMessages.mockRejectedValueOnce(new Error('disk is full'));
+    saveAgentQueuedMessages.mockRejectedValueOnce(new Error('disk is full'));
     renderHook(() => useGithubPolling());
     setChecks({ checks: 'pending' });
     setChecks({ checks: 'failure' });

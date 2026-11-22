@@ -47,7 +47,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('../shared/lib/db', async () => (await import('./storyHarness')).dbLibModuleMock());
 vi.mock('@goodboy/db', async () =>
   (await import('./storyHarness')).dbModuleMock({
-    replaceAgentQueuedMessages: vi.fn(async () => undefined),
+    saveAgentQueuedMessages: vi.fn(async () => undefined),
     getAutoTree: vi.fn(async () => null),
   }),
 );

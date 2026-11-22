@@ -123,6 +123,31 @@ describe('commentRunOf names the run that works on a thread', () => {
     expect(commentRunOf({ agents: [fix, recheck], threadId: LAYOUT_THREAD })).toBeNull();
   });
 
+  it('reads a thread sent to an open Lead that did not start from comments', () => {
+    const lead = anAgent({
+      id: agentIdOf({ value: 'lead-ledger-batch' }),
+      sessionId: SESSION_ID,
+      ordinal: 2,
+      name: 'Batch the ledger export',
+      status: 'running',
+      kind: 'auto',
+      sourceThreadIds: [IMPORT_THREAD],
+    });
+    const child = anAgent({
+      id: agentIdOf({ value: 'child-ledger-batch' }),
+      sessionId: SESSION_ID,
+      ordinal: 3,
+      name: 'Implementer',
+      status: 'running',
+      kind: 'auto',
+      parentAgentId: lead.id,
+      sourceThreadIds: [LAYOUT_THREAD],
+    });
+
+    expect(commentRunOf({ agents: [lead, child], threadId: IMPORT_THREAD })).toBe(lead.id);
+    expect(commentRunOf({ agents: [lead, child], threadId: LAYOUT_THREAD })).toBeNull();
+  });
+
   it('drops a deleted run', () => {
     const deleted = runOf({
       id: 'run-ledger-header',

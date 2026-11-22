@@ -25,7 +25,7 @@ const {
   listAgentQueuedMessages,
   listAgentsForSessions,
   listTurnEventEntriesForAgent,
-  replaceAgentQueuedMessages,
+  saveAgentQueuedMessages,
 } = vi.hoisted(() => ({
   countUserTextEvents: vi.fn(async (_params: { readonly deliveryId?: string }) => 0),
   findUndecidedPermissionAsk: vi.fn(
@@ -42,11 +42,8 @@ const {
     async (): Promise<ReadonlyArray<{ readonly id: string; readonly event: unknown }>> => [],
   ),
   listAgentQueuedMessages: vi.fn(async (): Promise<ReadonlyArray<unknown>> => []),
-  replaceAgentQueuedMessages: vi.fn(
-    async (
-      _database: unknown,
-      _params: { readonly messages: ReadonlyArray<{ readonly id: string }> },
-    ) => undefined,
+  saveAgentQueuedMessages: vi.fn(
+    async (_params: { readonly messages: ReadonlyArray<{ readonly id: string }> }) => undefined,
   ),
 }));
 
@@ -57,7 +54,7 @@ vi.mock('@goodboy/db', async () =>
     listAgentQueuedMessages,
     listAgentsForSessions,
     listTurnEventEntriesForAgent,
-    replaceAgentQueuedMessages,
+    saveAgentQueuedMessages,
   }),
 );
 vi.mock('../../../shared/lib/db', async () =>
@@ -94,7 +91,7 @@ const sendTurn = vi.fn(async (params: SendParams) => {
 const reportError = vi.fn(async () => undefined);
 
 const savedIds = (): ReadonlyArray<ReadonlyArray<string>> =>
-  replaceAgentQueuedMessages.mock.calls.map(([, params]) =>
+  saveAgentQueuedMessages.mock.calls.map(([params]) =>
     params.messages.map((message) => message.id),
   );
 
@@ -116,7 +113,7 @@ beforeEach(async () => {
   countUserTextEvents.mockResolvedValue(0);
   listAgentQueuedMessages.mockReset();
   listAgentQueuedMessages.mockResolvedValue([]);
-  replaceAgentQueuedMessages.mockClear();
+  saveAgentQueuedMessages.mockClear();
   sendTurn.mockClear();
   reportError.mockClear();
   store.setState({

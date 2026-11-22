@@ -339,7 +339,10 @@ export const addAgentSourceThread = async ({
     `UPDATE agents
         SET source_thread_ids = json_insert(COALESCE(source_thread_ids, '[]'), '$[#]', ?)
       WHERE id = ?
-        AND source_kind = 'comment_run'
+        AND (
+          source_kind = 'comment_run'
+          OR (kind = 'auto' AND parent_agent_id IS NULL AND source_kind IS NULL)
+        )
         AND status != 'stopped'
         AND deleted_at IS NULL
         AND done_at IS NULL

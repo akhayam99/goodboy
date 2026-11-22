@@ -318,6 +318,7 @@ export { insertTurnFileSet, listTurnFileSets } from './queries/turn-file-set';
 export {
   listAgentQueuedMessages,
   replaceAgentQueuedMessages,
+  saveAgentQueuedMessages,
   type AgentQueuedMessageRecord,
 } from './queries/agent-queued-message';
 export {

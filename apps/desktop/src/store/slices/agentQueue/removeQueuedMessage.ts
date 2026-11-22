@@ -1,4 +1,6 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { persistAgentQueue, readAgentQueue, writeAgentQueue } from './queueStore';
+import { releaseSourceThread } from './releaseSourceThread';
 import type { AgentQueueItemInSessionParams, GetFn, SetFn } from './types';
 
 export const removeQueuedMessage = (set: SetFn, get: GetFn) => {
@@ -23,6 +25,22 @@ export const removeQueuedMessage = (set: SetFn, get: GetFn) => {
         queue: [...latest.slice(0, index), target, ...latest.slice(index)],
       });
       return false;
+    }
+    if (target.sourceThreadId !== undefined) {
+      await releaseSourceThread({
+        set,
+        get,
+        sessionId,
+        agentId,
+        threadId: target.sourceThreadId,
+      }).catch((error: unknown) =>
+        get().reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't free the comment",
+          error,
+          sessionId,
+        }),
+      );
     }
     void get().drainAgentQueue({ sessionId, agentId });
     return true;

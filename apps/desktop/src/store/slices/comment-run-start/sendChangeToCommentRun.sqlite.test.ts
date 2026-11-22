@@ -39,6 +39,7 @@ const QUOTE =
 let useAppStore: StoryStore;
 
 const settleResolveSourceChange = vi.fn(async () => undefined);
+const drainAgentQueue = vi.fn(async () => undefined);
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -47,7 +48,8 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   settleResolveSourceChange.mockClear();
-  useAppStore.setState({ settleResolveSourceChange });
+  drainAgentQueue.mockClear();
+  useAppStore.setState({ settleResolveSourceChange, drainAgentQueue });
   const db = await openStorySqlite();
   const now = Date.now();
   await db.execute(
@@ -109,6 +111,7 @@ describe('Send the new text to the run', () => {
     expect(queueOf(lead.id)).toHaveLength(1);
     expect(queueOf(lead.id)[0]?.content).toContain(COMMENT_RUN_COPY.changedMessage);
     expect(queueOf(lead.id)[0]?.content).toContain('> Keep the export button in the page.');
+    expect(drainAgentQueue).toHaveBeenCalledWith({ sessionId: SESSION, agentId: lead.id });
     expect(settleResolveSourceChange).toHaveBeenCalledTimes(1);
     expect(settleResolveSourceChange).toHaveBeenCalledWith({
       sessionId: SESSION,
