@@ -88,7 +88,7 @@ export type StorageRestoreTarget = {
   readonly path: string;
   readonly repoRoot: string;
   readonly branch: string;
-  readonly origin: 'archived' | 'ledger';
+  readonly origin: StorageFolderOrigin;
   readonly sessionId: SessionId | null;
   readonly mountId: MountId | null;
   readonly revision: number | null;
@@ -126,6 +126,11 @@ export type StorageRemovalSummary = {
 export type RemoveStorageFoldersParams = {
   readonly paths: ReadonlyArray<string>;
   readonly mode: WorktreeRemovalMode;
+};
+
+export type MeasureStorageSizesParams = {
+  readonly isForced?: boolean;
+  readonly paths?: ReadonlyArray<string>;
 };
 
 export type KeepStorageFolderParams = {

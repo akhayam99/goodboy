@@ -3,26 +3,51 @@ import type { IsoDateTime } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { worktreeDirectorySize } from '../../../features/worktree/worktree';
 import { STORAGE_DAY_MS } from './classifyStorageFolder';
-import type { GetFn, SetFn, StorageFolder } from './types';
+import type { GetFn, MeasureStorageSizesParams, SetFn, StorageFolder } from './types';
 
-type MeasureParams = {
-  readonly isForced?: boolean;
+type MeasureRequest = {
+  readonly isAll: boolean;
+  readonly isForced: boolean;
+  readonly paths: ReadonlySet<string>;
 };
 
 let isRunning = false;
-let isQueuedForced: boolean | null = null;
+let queued: MeasureRequest | null = null;
 
 type StaleParams = {
   readonly folder: StorageFolder;
   readonly now: number;
-  readonly isForced: boolean;
+  readonly request: MeasureRequest;
 };
 
-const needsMeasure = ({ folder, now, isForced }: StaleParams): boolean =>
-  isForced || folder.sizedAt === null || now - folder.sizedAt > STORAGE_DAY_MS;
+const needsMeasure = ({ folder, now, request }: StaleParams): boolean => {
+  if (request.paths.has(folder.path)) {
+    return true;
+  }
+  if (!request.isAll) {
+    return false;
+  }
+  return request.isForced || folder.sizedAt === null || now - folder.sizedAt > STORAGE_DAY_MS;
+};
 
 const inUseLast = (a: StorageFolder, b: StorageFolder): number =>
   Number(a.origin === 'in-use') - Number(b.origin === 'in-use');
+
+type MergeParams = {
+  readonly current: MeasureRequest | null;
+  readonly next: MeasureRequest;
+};
+
+const mergeRequests = ({ current, next }: MergeParams): MeasureRequest => {
+  if (current === null) {
+    return next;
+  }
+  return {
+    isAll: current.isAll || next.isAll,
+    isForced: (current.isAll && current.isForced) || (next.isAll && next.isForced),
+    paths: new Set<string>([...current.paths, ...next.paths]),
+  };
+};
 
 type RecordParams = {
   readonly set: SetFn;
@@ -52,13 +77,13 @@ const recordSize = async ({ set, folder, sizeBytes, sizedAt }: RecordParams): Pr
 type RunParams = {
   readonly set: SetFn;
   readonly get: GetFn;
-  readonly isForced: boolean;
+  readonly request: MeasureRequest;
 };
 
-const runMeasure = async ({ set, get, isForced }: RunParams): Promise<void> => {
+const runMeasure = async ({ set, get, request }: RunParams): Promise<void> => {
   const now = Date.now();
   const targets = get()
-    .storageFolders.filter((folder) => needsMeasure({ folder, now, isForced }))
+    .storageFolders.filter((folder) => needsMeasure({ folder, now, request }))
     .sort(inUseLast);
   for (const target of targets) {
     const current = get().storageFolders.find((folder) => folder.path === target.path);
@@ -77,23 +102,30 @@ const runMeasure = async ({ set, get, isForced }: RunParams): Promise<void> => {
     .catch(() => undefined);
 };
 
+type QueueParams = {
+  readonly request: MeasureRequest;
+};
+
 export const measureStorageSizes = (set: SetFn, get: GetFn) => {
-  const measure = async ({ isForced = false }: MeasureParams = {}): Promise<void> => {
+  const run = async ({ request }: QueueParams): Promise<void> => {
     if (isRunning) {
-      isQueuedForced = (isQueuedForced ?? false) || isForced;
+      queued = mergeRequests({ current: queued, next: request });
       return;
     }
     isRunning = true;
     try {
-      await runMeasure({ set, get, isForced });
+      await runMeasure({ set, get, request });
     } finally {
       isRunning = false;
     }
-    if (isQueuedForced !== null) {
-      const queued = isQueuedForced;
-      isQueuedForced = null;
-      await measure({ isForced: queued });
+    if (queued !== null) {
+      const next = queued;
+      queued = null;
+      await run({ request: next });
     }
   };
-  return measure;
+  return async ({ isForced = false, paths }: MeasureStorageSizesParams = {}): Promise<void> =>
+    run({
+      request: { isAll: paths === undefined, isForced, paths: new Set<string>(paths ?? []) },
+    });
 };

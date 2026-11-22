@@ -6,6 +6,7 @@ import { terminalsInFolder } from '../../../features/terminal/terminalsInFolder'
 import { removeWorktreeFolder } from '../../../features/worktree/worktree';
 import { MOUNT_CLEANUP_BLOCKER_REASON, processesInWorktree } from '../mount-cleanup/cleanupPolicy';
 import { runMountRemoval } from '../project-mounts/runMountRemoval';
+import { announceWorktreesChanged } from './announceWorktreesChanged';
 import type {
   GetFn,
   RemoveStorageFoldersParams,
@@ -27,7 +28,7 @@ type RestoreTargetParams = {
 };
 
 const restoreTargetOf = ({ folder }: RestoreTargetParams): StorageRestoreTarget | null => {
-  if (folder.branch === '' || folder.origin === 'in-use') {
+  if (folder.branch === '') {
     return null;
   }
   return {
@@ -105,6 +106,31 @@ const removeArchived = async ({
   }
 };
 
+const removeInUse = async ({ get, folder, mode }: FolderRemovalParams): Promise<StorageRemoval> => {
+  const { sessionId, mountId } = folder;
+  if (sessionId === null || mountId === null) {
+    return { kind: 'failed', path: folder.path, message: 'This folder has no session mount' };
+  }
+  const result = await get().removeMountWorktree({ sessionId, mountId, mode });
+  switch (result.kind) {
+    case 'removed':
+    case 'missing':
+      return removedOutcome({ folder });
+    case 'kept':
+      return { kind: 'kept', path: folder.path, reasons: [], message: result.reason };
+    case 'failed':
+      return {
+        kind: 'failed',
+        path: folder.path,
+        message: result.reason ?? "Couldn't remove this folder",
+      };
+    default: {
+      const exhaustive: never = result.kind;
+      return exhaustive;
+    }
+  }
+};
+
 const removeLedger = async ({ folder, mode }: FolderRemovalParams): Promise<StorageRemoval> => {
   const result = await removeWorktreeFolder({
     repoPath: folder.repoRoot,
@@ -161,7 +187,7 @@ const removeOne = async ({ get, folder, mode }: FolderRemovalParams): Promise<St
     if (folder.origin === 'ledger') {
       return await removeLedger({ get, folder, mode });
     }
-    return { kind: 'kept', path: folder.path, reasons: [], message: 'In use' };
+    return await removeInUse({ get, folder, mode });
   } catch (error) {
     return { kind: 'failed', path: folder.path, message: formatError(error) };
   }
@@ -170,6 +196,7 @@ const removeOne = async ({ get, folder, mode }: FolderRemovalParams): Promise<St
 export const removeStorageFolders = (set: SetFn, get: GetFn) => {
   return async ({ paths, mode }: RemoveStorageFoldersParams): Promise<StorageRemovalSummary> => {
     const outcomes: Array<StorageRemoval> = [];
+    const changedRoots: Array<string> = [];
     for (const path of paths) {
       const folder = get().storageFolders.find((candidate) => candidate.path === path);
       if (folder === undefined) {
@@ -178,6 +205,9 @@ export const removeStorageFolders = (set: SetFn, get: GetFn) => {
       set((state) => ({ storageRemovingPaths: { ...state.storageRemovingPaths, [path]: true } }));
       const outcome = await removeOne({ get, folder, mode });
       outcomes.push(outcome);
+      if (outcome.kind === 'removed') {
+        changedRoots.push(folder.repoRoot);
+      }
       set((state) => {
         const removing = Object.fromEntries(
           Object.entries(state.storageRemovingPaths).filter(([candidate]) => candidate !== path),
@@ -209,6 +239,7 @@ export const removeStorageFolders = (set: SetFn, get: GetFn) => {
     await get()
       .loadStorage()
       .catch(() => undefined);
+    await announceWorktreesChanged({ get, repoRoots: changedRoots });
     return summary;
   };
 };
