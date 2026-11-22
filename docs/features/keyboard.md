@@ -121,6 +121,15 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - In those lists the keys leave the page alone when the focus is on another part of it.
 - The letters type in a field and in a terminal, and wait while a dialog or a panel is open over the list. With two lists on screen, the first one takes the key.
 
+**Keys on a move**
+
+- On a session's Overview and on the Desk, **Enter** runs the verb of the move in front, the one with the filled button. Its tooltip shows the key.
+- **J** and **K** go from move to move. **Enter** then runs the verb that has the focus.
+- **S** puts the move with the focus, or the move in front, out of the way, as Not now does. **⌘Z** brings it back.
+- These keys type in a field and in a terminal, and do nothing while a page covers the session.
+- **⌘J** switches between Overview and Desk, even with the keyboard in a terminal. Search or run lists it as **Desk**, or **Overview** on the Desk.
+- On the Desk, **⌘↑** goes to the board, as on the Overview.
+
 **Change a shortcut**
 
 - In **Settings › Keyboard shortcuts**, each row with a **Change** button can take another chord. Press **Change**, then the new keys. **Esc** cancels.
@@ -274,4 +283,5 @@ This part is for contributors and agents who change the feature.
 - Context entry: `togglePane` and `openContextDrawer` default to Goal; `withoutRemovedPages` restores former Context addresses beside Overview.
 
 - Places rail: `apps/desktop/src/App.tsx` supplies `AppShell.leftRail` without a fold control; `apps/desktop/src/app/components/ShellLeft/index.tsx` keeps it visible beside the page.
+- Move keys: `useMoveKeys` runs on the Overview column and the Desk column. Enter is `list.open` and clicks the first button of `data-move-primary`. S is `move.notNow` and calls the `onNotNow` of the card's menu target, with its Undo. J and K reuse `useRowFocusKeys` on `data-move`. Both keys wait unless `isFaceShown`. The palette entry `goto:session-face` replays `session.desk`, as View › Desk does. The `list` scope entries live in `listShortcuts.ts`.
 - List keys: `useListKeys` follows a selected row (Tasks, Notifications, Scripts). `useRowFocusKeys` moves the focus between the rows of a list with no selected row (Chat, Runs, Artifacts, Workflows, Terminal, Monitoring). `useSearchKey` takes **/** alone for a field. The Board reads the same registry entries inside `useBoardArrowKeys`.

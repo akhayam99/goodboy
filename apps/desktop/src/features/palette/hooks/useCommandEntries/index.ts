@@ -3,7 +3,14 @@ import { destinationEntryOf } from '../../destinationEntryOf';
 import { destinationPaletteKeyOf } from '../../destinationPaletteKeyOf';
 import { footDestinationEntryOf } from '../../footDestinationEntryOf';
 import { useMemo } from 'react';
-import { CircleArrowUp, PanelLeft, Plus, RotateCcw, Smartphone } from '@goodboy/ui/icons';
+import {
+  CircleArrowUp,
+  LayoutGrid,
+  PanelLeft,
+  Plus,
+  RotateCcw,
+  Smartphone,
+} from '@goodboy/ui/icons';
 import { useCurrentInnerColumn } from '@goodboy/ui';
 import type { AgentId, ProjectScript, SessionId, Workflow } from '@goodboy/types';
 import {
@@ -25,6 +32,7 @@ import { switchTheme, type ThemePreference } from '../../../../shared/lib/theme'
 import { classifyAgent } from '../../../session/agent-kind';
 import { useLensDestinations } from '../../../session/hooks/useLensDestinations';
 import { requestNewSession } from '../../../session/requestNewSession';
+import { replayShortcut } from '../../../../shared/keyboard/replayShortcut';
 import { openNewSessionAs } from '../../../session/startKind/openNewSessionAs';
 import { openReportSheet } from '../../../bug-report/openReportSheet';
 import { dispatchWindowEvent } from '../../../../shared/lib/dispatchWindowEvent';
@@ -129,6 +137,13 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     sessionId === null ? false : isAskStreaming({ state: s, sessionId }),
   );
   const isInSession = useAppStore((s) => sessionId !== null && s.appStudio === null);
+  const isDeskFace = useAppStore(
+    (s) =>
+      sessionId !== null &&
+      s.appStudio === null &&
+      (s.activeLens[sessionId] ?? null) === null &&
+      s.sessionFace[sessionId] === 'desk',
+  );
   const destinations = useLensDestinations({ sessionId });
   const workspaceProjects = useMemo(
     () =>
@@ -223,6 +238,15 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       for (const destination of destinations) {
         out.push(destinationEntryOf({ sessionId, destination }));
       }
+      out.push({
+        key: 'goto:session-face',
+        label: isDeskFace ? NAMES.overview : NAMES.desk,
+        kind: 'goto',
+        group: null,
+        icon: LayoutGrid,
+        shortcut: 'session.desk',
+        run: () => replayShortcut({ id: 'session.desk' }),
+      });
     }
 
     out.push(...workspaceEntries({ workspaces, projects, open: openWorkspace }));
@@ -471,6 +495,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     isAskOpen,
     isAskReplying,
     isInSession,
+    isDeskFace,
     destinations,
     openWorkspace,
     navigate,
