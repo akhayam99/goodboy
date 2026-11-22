@@ -182,6 +182,12 @@ fn compose_ports(root: &Path) -> Vec<WatchedPort> {
         .collect()
 }
 
+pub(crate) fn has_fixed_port(root: &Path) -> bool {
+    !package_ports(root).is_empty()
+        || !vite_ports(root).is_empty()
+        || !compose_ports(root).is_empty()
+}
+
 pub(crate) fn scan(root: &Path) -> Vec<WatchedPort> {
     let mut seen = BTreeSet::new();
     let mut out = Vec::new();
@@ -329,6 +335,35 @@ mod tests {
                 (9090, "web", "compose"),
             ]
         );
+    }
+
+    #[test]
+    fn a_port_in_a_script_or_a_config_is_fixed_and_an_env_port_is_not() {
+        let env_only = TestDir::new();
+        env_only.write(".env", "PORT=3000\n");
+        env_only.write(
+            "package.json",
+            r#"{"scripts":{"dev":"next dev --port $PORT"}}"#,
+        );
+        assert!(!has_fixed_port(&env_only.0));
+
+        let script = TestDir::new();
+        script.write("package.json", r#"{"scripts":{"dev":"vite -p 5173"}}"#);
+        assert!(has_fixed_port(&script.0));
+
+        let vite = TestDir::new();
+        vite.write(
+            "vite.config.ts",
+            "export default { server: { port: 5199 } };",
+        );
+        assert!(has_fixed_port(&vite.0));
+
+        let compose = TestDir::new();
+        compose.write(
+            "compose.yaml",
+            "services:\n  web:\n    ports:\n      - 8081:80\n",
+        );
+        assert!(has_fixed_port(&compose.0));
     }
 
     #[test]

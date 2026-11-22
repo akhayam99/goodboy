@@ -207,6 +207,8 @@ export const NAMES = {
   openInAsk: 'Open in Ask',
   sendToTheAgent: 'Send to the agent',
   messageAnAgent: 'Message an agent',
+  messageBothImplementers: 'Message both Implementers',
+  overlaps: 'Overlaps',
   addToMessage: 'Add to message',
   letAutoTakeIt: 'Let the Lead take it from here',
   fix: 'Fix',

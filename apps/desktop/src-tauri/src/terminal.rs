@@ -223,6 +223,7 @@ pub async fn terminal_open(
     let mount_id = session_id
         .rsplit_once("::")
         .and_then(|(owner, _)| crate::proc::ledger::mount_id_in(&db, owner, cwd.as_deref()));
+    let port = crate::mount_port::port_in(&db, mount_id.as_deref());
     let request = TerminalSpawnRequest {
         scrollback_dir: scrollback_dir_of(&app),
         hook_dir: shell_hook_dir_of(&app),
@@ -231,6 +232,7 @@ pub async fn terminal_open(
         exited: Arc::clone(&registry.1),
         session_id,
         mount_id,
+        port,
         cwd,
         cols,
         rows,
@@ -268,6 +270,7 @@ struct TerminalSpawnRequest<R: Runtime> {
     exited: Arc<ExitedStore>,
     session_id: String,
     mount_id: Option<String>,
+    port: Option<u16>,
     cwd: Option<String>,
     cols: u16,
     rows: u16,
@@ -282,6 +285,7 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
         exited,
         session_id: session_id_clone,
         mount_id,
+        port,
         cwd,
         cols,
         rows,
@@ -319,6 +323,9 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
     cmd.env("SHELL", &shell);
+    for (key, value) in crate::mount_port::port_env(port) {
+        cmd.env(key, value);
+    }
     let hook_env = hook_dir.as_deref().and_then(|dir| {
         crate::terminal_shell_hook::hook_env(
             &shell,
@@ -805,6 +812,7 @@ mod tests {
             exited: Arc::clone(&registry.1),
             session_id: "session-7::t1".to_string(),
             mount_id: Some("mount-credit".to_string()),
+            port: None,
             cwd: Some(cwd.clone()),
             cols: 80,
             rows: 24,
@@ -844,6 +852,7 @@ mod tests {
             exited: Arc::clone(&registry.1),
             session_id: "session-9::t1".to_string(),
             mount_id: None,
+            port: None,
             cwd: Some(cwd),
             cols: 80,
             rows: 24,
@@ -869,6 +878,46 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn a_terminal_in_a_mount_reads_the_mount_port_from_port() {
+        let dir = crate::proc::ledger::test_support::scratch_dir("terminal-port");
+        let cwd = dir.to_string_lossy().into_owned();
+        let app = tauri::test::mock_app();
+        let registry = TerminalRegistry::new();
+        spawn_terminal(TerminalSpawnRequest {
+            scrollback_dir: None,
+            hook_dir: None,
+            app: app.handle().clone(),
+            registry: Arc::clone(&registry.0),
+            exited: Arc::clone(&registry.1),
+            session_id: "session-10::t1".to_string(),
+            mount_id: Some("mount-ledger".to_string()),
+            port: Some(41230),
+            cwd: Some(cwd),
+            cols: 80,
+            rows: 24,
+        })
+        .expect("open the terminal");
+        write_session(
+            &registry,
+            "session-10::t1",
+            b"echo port-is-$PORT\nexit 0\n".to_vec(),
+        )
+        .unwrap();
+        let mut snapshot = snapshot_session(&registry, "session-10::t1").unwrap();
+        for _ in 0..200 {
+            if snapshot.exit_code.is_some() {
+                break;
+            }
+            thread::sleep(std::time::Duration::from_millis(50));
+            snapshot = snapshot_session(&registry, "session-10::t1").unwrap();
+        }
+        let text = String::from_utf8_lossy(&STANDARD.decode(&snapshot.data).unwrap()).into_owned();
+        assert!(text.contains("port-is-41230"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn a_reopened_terminal_starts_with_its_saved_scrollback_and_the_file_is_taken() {
         let dir = crate::proc::ledger::test_support::scratch_dir("terminal-restore");
         let cwd = dir.to_string_lossy().into_owned();
@@ -885,6 +934,7 @@ mod tests {
             exited: Arc::clone(&registry.1),
             session_id: "session-11::t1".to_string(),
             mount_id: None,
+            port: None,
             cwd: Some(cwd),
             cols: 80,
             rows: 24,
@@ -913,6 +963,7 @@ mod tests {
             exited: Arc::clone(&registry.1),
             session_id: "session-12::t1".to_string(),
             mount_id: None,
+            port: None,
             cwd: Some("/mock/harborline/payments-api/gone".to_string()),
             cols: 80,
             rows: 24,
