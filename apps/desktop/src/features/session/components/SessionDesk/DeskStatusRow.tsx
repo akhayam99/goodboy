@@ -18,7 +18,7 @@ export const DeskStatusRow = ({ session, model }: Props) => {
   });
   const line = deskStatusLineOf({
     needsYou: model.moves.needsYou.length + model.looseQuestions.length,
-    now: model.now.rows.length,
+    now: model.nowCount,
     next: model.moves.next.length,
     status: model.status,
   });

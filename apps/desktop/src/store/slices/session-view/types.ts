@@ -181,6 +181,13 @@ export type SetSessionFaceParams = SessionFaceParams & {
   readonly face: SessionFace;
 };
 
+export type DeskToolStart =
+  { readonly phase: 'preparing' } | { readonly phase: 'failed'; readonly message: string };
+
+export type SetDeskToolStartParams = SessionFaceParams & {
+  readonly start: DeskToolStart | null;
+};
+
 export type SessionCreationKind = 'agent' | 'workflow' | 'branch';
 
 export type SessionCreationId = string;
@@ -225,6 +232,7 @@ type SessionViewSliceActions = {
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
   setSessionFace(params: SetSessionFaceParams): void;
   recallSessionFace(params: SessionFaceParams): Promise<SessionFace | null>;
+  setDeskToolStart(params: SetDeskToolStartParams): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedArtifactId(sessionId: SessionId, artifactId: ArtifactId | null): void;
   setArtifactFilter(params: {

@@ -102,7 +102,8 @@ export const useOverviewModel = ({ session }: Params) => {
     groups.length > 0 ||
     noticesView.notices.length > 0;
   const isEmpty = useIsEmptySession({ session, hasContent });
-  const isNowShown = now.rows.length > 0 || now.waits.length > 0;
+  const nowCount = now.rows.length + now.waits.length;
+  const isNowShown = nowCount > 0;
   return {
     isArchived,
     isEmpty,
@@ -117,6 +118,7 @@ export const useOverviewModel = ({ session }: Params) => {
     placed,
     status,
     now,
+    nowCount,
     isNowShown,
     noticesView,
   };

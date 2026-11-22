@@ -47,7 +47,7 @@ export const committedDockGrid = async ({
           await saveSessionDockGrid({
             db: tauriDatabase,
             sessionId,
-            grid: storedDockGridOf({ grid: next }),
+            grid: storedDockGridOf({ grid: next, face: get().sessionFace[sessionId] }),
             savedAt,
           });
           return { isWritten: true };

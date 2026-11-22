@@ -1,3 +1,4 @@
+import { faceSelections } from './faceSelections';
 import type { SetFn, SetSessionFaceParams } from './types';
 
 type FactoryParams = {
@@ -6,6 +7,7 @@ type FactoryParams = {
 
 export const setSessionFace = ({ set }: FactoryParams) => {
   return ({ sessionId, face }: SetSessionFaceParams): void => {
+    faceSelections.bump({ sessionId });
     set((state) =>
       (state.sessionFace[sessionId] ?? 'overview') === face
         ? state

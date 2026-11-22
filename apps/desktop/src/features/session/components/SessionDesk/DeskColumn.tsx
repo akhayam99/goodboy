@@ -1,5 +1,6 @@
 import { HeightMotion, PANE_GROUPS_GAP_REM, PANE_RHYTHM, ScrollFade, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
 import { SessionAskLine } from '../../ask/components/SessionAskLine';
 import { NeedsYouSection } from '../SessionOverviewPane/NeedsYouSection';
 import { NextSection } from '../SessionOverviewPane/NextSection';
@@ -18,7 +19,10 @@ const DESK_NEXT_CAP = 2;
 
 export const DeskColumn = ({ session, model, isInPopover }: Props) => {
   const sessionId = session.id;
-  const isAskShown = !model.isArchived && !model.isEmpty && !isInPopover;
+  const isAskPanelOpen = useAppStore(
+    (state) => state.drawer?.kind === 'ask' && state.drawer.sessionId === sessionId,
+  );
+  const isAskShown = !model.isArchived && !model.isEmpty && !isAskPanelOpen;
   return (
     <div
       data-desk-column=""

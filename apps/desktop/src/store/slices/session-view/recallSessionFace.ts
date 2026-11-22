@@ -4,6 +4,7 @@ import { commitAfterConfirm } from '../../runtime/state-writes/commitAfterConfir
 import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import type { SliceDeps } from '../../slice-types';
 import { dockGridWrites } from '../drawer/dockGridWrites';
+import { faceSelections } from './faceSelections';
 import { storedFaceOf } from './storedFaceOf';
 import type { SessionFace, SessionFaceParams } from './types';
 
@@ -12,7 +13,7 @@ const faceRecalls = createLatestOnly();
 export const recallSessionFace = ({ set, get }: SliceDeps) => {
   return async ({ sessionId }: SessionFaceParams): Promise<SessionFace | null> => {
     const claim = faceRecalls.claim({ key: sessionId });
-    const before = get().sessionFace[sessionId];
+    const selection = faceSelections.read({ sessionId });
     const result = await commitAfterConfirm({
       get,
       failureTitle: "Couldn't load the last view of this session",
@@ -24,7 +25,7 @@ export const recallSessionFace = ({ set, get }: SliceDeps) => {
         }),
       commit: () => undefined,
     });
-    if (!result.isOk || !claim.isCurrent() || get().sessionFace[sessionId] !== before) {
+    if (!result.isOk || !claim.isCurrent() || faceSelections.read({ sessionId }) !== selection) {
       return null;
     }
     const face = storedFaceOf({ raw: result.value });

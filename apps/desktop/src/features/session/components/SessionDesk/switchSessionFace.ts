@@ -1,8 +1,8 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore, type SessionFace } from '../../../../store';
-import { toggleTerminalDock } from '../../../terminal/toggleTerminalDock';
-import { openLens } from '../../openLens';
+import { lensPlace } from '../../../../store/slices/navigation/canonicalLocation';
 import { isFaceShown } from './isFaceShown';
+import { startDeskTool } from './startDeskTool';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -13,10 +13,10 @@ export const switchSessionFace = ({ sessionId, face }: Params): void => {
   const state = useAppStore.getState();
   state.setSessionFace({ sessionId, face });
   if (!isFaceShown({ state, sessionId })) {
-    openLens({ sessionId, lens: null });
+    state.navigate({ to: lensPlace({ state, sessionId, lens: null }), mode: 'replace' });
   }
-  if (face === 'overview' || useAppStore.getState().drawerGrid.columns.length > 0) {
+  if (face === 'overview') {
     return;
   }
-  toggleTerminalDock({ isToggle: false });
+  void startDeskTool({ sessionId });
 };

@@ -18,10 +18,15 @@ type WatchedStore = {
   readonly subscribe: (listener: (state: AppStore) => void) => () => void;
 };
 
+type SessionParams = {
+  readonly sessionId: SessionId;
+};
+
 type Params = {
   readonly store: WatchedStore;
   readonly delayMs?: number;
   readonly now?: () => number;
+  readonly onEntered?: (params: SessionParams) => void;
 };
 
 type PendingSave = {
@@ -31,8 +36,8 @@ type PendingSave = {
   readonly at: number;
 };
 
-type SessionParams = {
-  readonly sessionId: SessionId;
+type RecallParams = SessionParams & {
+  readonly isEntry: boolean;
 };
 
 type FaceParams = {
@@ -47,6 +52,7 @@ export const watchSessionDockGrid = ({
   store,
   delayMs = DOCK_GRID_SAVE_DELAY_MS,
   now = Date.now,
+  onEntered,
 }: Params): (() => void) => {
   const known = new Map<SessionId, string>();
   const savedThisRun = new Set<SessionId>();
@@ -82,7 +88,7 @@ export const watchSessionDockGrid = ({
       });
   };
 
-  const recall = ({ sessionId }: SessionParams): void => {
+  const recall = ({ sessionId, isEntry }: RecallParams): void => {
     queueMicrotask(() => {
       void store
         .getState()
@@ -91,12 +97,15 @@ export const watchSessionDockGrid = ({
           if (stored !== null) {
             known.set(sessionId, stored);
           }
+          if (isEntry && owner === sessionId) {
+            onEntered?.({ sessionId });
+          }
         });
     });
   };
 
   if (owner !== null) {
-    recall({ sessionId: owner });
+    recall({ sessionId: owner, isEntry: true });
   }
 
   const unsubscribe = store.subscribe((state) => {
@@ -112,7 +121,7 @@ export const watchSessionDockGrid = ({
         dockGridRecalls.cancel({ key: DOCK_GRID_RECALL_KEY });
         return;
       }
-      recall({ sessionId: owner });
+      recall({ sessionId: owner, isEntry: true });
       return;
     }
     const nextFace = faceOf({ state, sessionId: owner });
@@ -136,7 +145,7 @@ export const watchSessionDockGrid = ({
       return;
     }
     flush();
-    recall({ sessionId: owner });
+    recall({ sessionId: owner, isEntry: false });
   };
   window.addEventListener('focus', rereadOnFocus);
 

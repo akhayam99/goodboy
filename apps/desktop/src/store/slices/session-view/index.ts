@@ -27,6 +27,7 @@ import {
 import { setResolveQueueView } from './resolveSurface';
 import { recallSessionFace } from './recallSessionFace';
 import { setSessionFace } from './setSessionFace';
+import { setDeskToolStart } from './setDeskToolStart';
 import { setResolveItemDraft } from './resolveItemDrafts';
 import { setFocusedRunAgent } from './setFocusedRunAgent';
 import { beginSessionCreation, endSessionCreation } from './sessionCreation';
@@ -53,6 +54,7 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     setActiveLens: setActiveLens(set),
     setSessionFace: setSessionFace({ set }),
     recallSessionFace: recallSessionFace({ set, get }),
+    setDeskToolStart: setDeskToolStart({ set }),
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),
     setFocusedArtifactId: setFocusedArtifactId(set),
     setArtifactFilter: setArtifactFilter(set),

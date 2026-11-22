@@ -6,6 +6,7 @@ import type { SliceDeps } from '../../slice-types';
 import { DOCK_GRID_RECALL_KEY, dockGridRecalls, dockGridWrites } from './dockGridWrites';
 import { appliedDockGrid } from './appliedDockGrid';
 import { EMPTY_DRAWER_GRID } from './state';
+import { faceSelections } from '../session-view/faceSelections';
 import { storedFaceOf } from '../session-view/storedFaceOf';
 
 type RecallParams = {
@@ -17,7 +18,7 @@ export const recallDockGrid = ({ set, get }: SliceDeps) => {
   return async ({ sessionId, isSavedThisRun }: RecallParams): Promise<string | null> => {
     const claim = dockGridRecalls.claim({ key: DOCK_GRID_RECALL_KEY });
     const before = get().drawerGrid ?? EMPTY_DRAWER_GRID;
-    const faceBefore = get().sessionFace[sessionId];
+    const selection = faceSelections.read({ sessionId });
     const result = await commitAfterConfirm({
       get,
       failureTitle: "Couldn't load the panels of this session",
@@ -36,10 +37,19 @@ export const recallDockGrid = ({ set, get }: SliceDeps) => {
     if (!result.isOk) {
       return null;
     }
-    if (claim.isCurrent() && get().sessionFace[sessionId] === faceBefore) {
-      const face = storedFaceOf({ raw: result.value });
+    const face = storedFaceOf({ raw: result.value });
+    const applied = appliedDockGrid({
+      set,
+      get,
+      raw: result.value,
+      face,
+      claim,
+      before,
+      isSavedThisRun,
+    });
+    if (claim.isCurrent() && faceSelections.read({ sessionId }) === selection) {
       set((state) => ({ sessionFace: { ...state.sessionFace, [sessionId]: face } }));
     }
-    return appliedDockGrid({ set, get, raw: result.value, claim, before, isSavedThisRun });
+    return applied;
   };
 };

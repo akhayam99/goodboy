@@ -587,6 +587,63 @@ describe('the face saved with the grid', () => {
     expect(state().sessionFace[S1]).toBe('desk');
   });
 
+  it('keeps the Overview picked while a Desk row was loading, even with no face set before', async () => {
+    db.rows.set(S1, { grid: storedDockGridOf({ grid: SAVED, face: 'desk' }), savedAt: 1 });
+    db.holdLoads = true;
+    watch();
+    await goTo({ sessionId: S1 });
+
+    state().setSessionFace({ sessionId: S1, face: 'overview' });
+    db.heldLoads.splice(0).forEach((release) => release());
+    await settle();
+
+    expect(state().sessionFace[S1] ?? 'overview').toBe('overview');
+  });
+
+  it('keeps a face picked away and back while the row was loading', async () => {
+    db.rows.set(S2, { grid: storedDockGridOf({ grid: SAVED }), savedAt: 1 });
+    watch();
+    await goTo({ sessionId: S1 });
+    state().setSessionFace({ sessionId: S2, face: 'desk' });
+    db.holdLoads = true;
+
+    const read = state().recallSessionFace({ sessionId: S2 });
+    state().setSessionFace({ sessionId: S2, face: 'overview' });
+    state().setSessionFace({ sessionId: S2, face: 'desk' });
+    await settle();
+    db.heldLoads.splice(0).forEach((release) => release());
+
+    expect(await read).toBeNull();
+    expect(state().sessionFace[S2]).toBe('desk');
+  });
+
+  it('saves the Overview picked right after a Desk row came back', async () => {
+    db.rows.set(S1, { grid: storedDockGridOf({ grid: SAVED, face: 'desk' }), savedAt: 1 });
+    stop = watchSessionDockGrid({ store, delayMs: 300 });
+    await goTo({ sessionId: S1 });
+    expect(state().sessionFace[S1]).toBe('desk');
+
+    state().setSessionFace({ sessionId: S1, face: 'overview' });
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).not.toHaveProperty('face');
+  });
+
+  it('keeps the Desk face in the row a move or a reset writes', async () => {
+    watch();
+    await goTo({ sessionId: S1 });
+    state().openDrawer(TERMINAL);
+    state().openDrawer(BROWSER);
+    state().setSessionFace({ sessionId: S1, face: 'desk' });
+    await settle();
+
+    await state().moveDockPanel({ sessionId: S1, kind: 'browser', target: { at: 'page' } });
+    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ face: 'desk' });
+
+    await state().resetDockGrid({ sessionId: S1 });
+    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ face: 'desk' });
+  });
+
   it('keeps the face it had when the row cannot be read, and says so', async () => {
     watch();
     await goTo({ sessionId: S1 });
