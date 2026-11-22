@@ -12,7 +12,10 @@
       "ignoreBinaries": ["cwebp", "preview"]
     },
     "apps/desktop": {
-      "entry": ["src/__tests__/regressions/console-guard/*.fixture.ts"],
+      "entry": [
+        "src/__tests__/regressions/console-guard/*.fixture.ts",
+        "src/features/overlap/OverlapChip/index.tsx!"
+      ],
       "project": [
         "src/**/*.{ts,tsx}!",
         "!src/__tests__/**!",

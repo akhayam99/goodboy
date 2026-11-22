@@ -104,7 +104,7 @@ mod tests {
         assert_eq!(distinct.len(), 300);
         assert!(distinct
             .iter()
-            .all(|port| (*port - FIRST_PORT) % PORTS_PER_MOUNT == 0));
+            .all(|port| (*port - FIRST_PORT).is_multiple_of(PORTS_PER_MOUNT)));
     }
 
     #[test]
