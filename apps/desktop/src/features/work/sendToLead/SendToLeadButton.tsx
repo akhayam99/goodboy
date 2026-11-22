@@ -53,7 +53,7 @@ export const SendToLeadButton = ({ cardKey, send, variant, editNote }: Props) =>
   const [note, setNote] = useState(editNote ?? '');
   const [picked, setPicked] = useState<ReadonlyArray<LeadCandidate>>([]);
   const dropdown = useDropdown({
-    align: 'start',
+    align: 'end',
     width: POPOVER_WIDTH_CLASS.standard,
     expectedWidth: POPOVER_WIDTH_PX.standard,
   });
