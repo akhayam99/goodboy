@@ -36,7 +36,11 @@ export const useDeskLanding = ({ sessionId, next }: Params): void => {
         return;
       }
       const state = useAppStore.getState();
-      if (!isOnDesk({ state }) || deskToolsOf({ state }).length > 0) {
+      if (
+        !isOnDesk({ state }) ||
+        deskToolsOf({ state }).length > 0 ||
+        state.deskToolStart[sessionId] != null
+      ) {
         return;
       }
       state.setSessionFace({ sessionId, face: 'overview' });

@@ -8,6 +8,7 @@ import {
   type LandingMove,
 } from '../../../../store/slices/navigation/landingOf';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { deskToolsOf } from './deskToolsOf';
 import { deskLines } from './useDeskOwner/deskLines';
 
@@ -38,9 +39,10 @@ export const deskLandingOf = ({ state, sessionId, door, move, next }: Params): L
     nowAgentId: nowAgent?.id ?? null,
     firstMountId: firstMount?.mountId ?? null,
     hasWorkspaceFolder:
-      workspaceId !== null &&
-      (state.projects.some((project) => project.workspaceId === workspaceId) ||
-        (state.terminalFolderOverrides[workspaceId] ?? null) !== null),
+      isBranchlessSession({ branch: state.sessionBranches[sessionId] }) ||
+      (workspaceId !== null &&
+        (state.projects.some((project) => project.workspaceId === workspaceId) ||
+          (state.terminalFolderOverrides[workspaceId] ?? null) !== null)),
     canOpen: DESK_OPENS,
   });
 };
