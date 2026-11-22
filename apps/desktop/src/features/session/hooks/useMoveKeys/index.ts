@@ -18,6 +18,8 @@ const MOVE = '[data-move]';
 
 const MOVE_IN_FRONT = '[data-move-primary]';
 
+const MOVE_VERB = '[data-move-verb]';
+
 const HIDDEN = '[hidden], [inert], [aria-hidden="true"]';
 
 type ContainerParams = {
@@ -42,7 +44,7 @@ const moveInFrontOf = ({ container }: ContainerParams): Element | null => {
 
 export const useMoveKeys = ({ sessionId, containerRef, moves, actionsFor }: Params): void => {
   const isShown = useAppStore((state) => isFaceShown({ state, sessionId }));
-  useRowFocusKeys({ containerRef, rowSelector: MOVE });
+  useRowFocusKeys({ containerRef, rowSelector: MOVE_VERB });
 
   useShortcut(
     'list.open',
@@ -51,8 +53,8 @@ export const useMoveKeys = ({ sessionId, containerRef, moves, actionsFor }: Para
         return false;
       }
       const move = moveInFrontOf({ container: containerRef.current });
-      const verb = move?.querySelector<HTMLButtonElement>('button:not([disabled])') ?? null;
-      if (verb === null) {
+      const verb = move?.querySelector<HTMLButtonElement>(MOVE_VERB) ?? null;
+      if (verb === null || verb.disabled) {
         return false;
       }
       verb.click();

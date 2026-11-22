@@ -9,10 +9,11 @@ type Props = {
   readonly cardId: string;
   readonly cardTitle: string;
   readonly variant: 'primary' | 'secondary';
+  readonly isMain: boolean;
   readonly onOpen: (() => void) | null;
 };
 
-export const MoveVerb = ({ verb, cardId, cardTitle, variant, onOpen }: Props) => {
+export const MoveVerb = ({ verb, cardId, cardTitle, variant, isMain, onOpen }: Props) => {
   const [isConfirming, setIsConfirming] = useState(false);
   useEffect(() => {
     setIsConfirming(false);
@@ -35,6 +36,7 @@ export const MoveVerb = ({ verb, cardId, cardTitle, variant, onOpen }: Props) =>
       variant={look.variant}
       intent={look.intent}
       aria-label={verb.ariaLabel}
+      data-move-verb={isMain ? '' : undefined}
       disabled={verb.isDisabled}
       isBusy={verb.isBusy}
       className="pointer-events-auto shrink-0"

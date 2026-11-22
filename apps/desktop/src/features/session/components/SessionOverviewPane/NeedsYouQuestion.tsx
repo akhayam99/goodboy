@@ -19,6 +19,7 @@ export const NeedsYouQuestion = ({ sessionId, question, isPrimary }: Props) => {
       size="sm"
       variant={look.variant}
       intent={look.intent}
+      data-move-verb=""
       className="shrink-0"
       onClick={() => navigate({ to: questionPlace({ sessionId, questionId: question.id }) })}
     >

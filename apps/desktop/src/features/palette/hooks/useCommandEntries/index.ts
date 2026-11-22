@@ -31,6 +31,7 @@ import { NAMES, formerNamesOf } from '../../../../shared/utils/names';
 import { switchTheme, type ThemePreference } from '../../../../shared/lib/theme';
 import { classifyAgent } from '../../../session/agent-kind';
 import { useLensDestinations } from '../../../session/hooks/useLensDestinations';
+import { isFaceShown } from '../../../session/components/SessionDesk/isFaceShown';
 import { requestNewSession } from '../../../session/requestNewSession';
 import { replayShortcut } from '../../../../shared/keyboard/replayShortcut';
 import { openNewSessionAs } from '../../../session/startKind/openNewSessionAs';
@@ -140,8 +141,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const isDeskFace = useAppStore(
     (s) =>
       sessionId !== null &&
-      s.appStudio === null &&
-      (s.activeLens[sessionId] ?? null) === null &&
+      isFaceShown({ state: s, sessionId }) &&
       s.sessionFace[sessionId] === 'desk',
   );
   const destinations = useLensDestinations({ sessionId });

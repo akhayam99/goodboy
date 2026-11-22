@@ -134,6 +134,46 @@ describe('the keys of the move in front', () => {
     });
   });
 
+  it('runs the marked verb on Enter and J, never a control before it, and declines a disabled one', async () => {
+    seedCentralColumn({ kind: 'mid' });
+    await show();
+    const navigate = vi.fn();
+    useAppStore.setState({ navigate });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const move = moveOf(QUESTION);
+    const chipClick = vi.fn();
+    const chip = document.createElement('button');
+    chip.addEventListener('click', chipClick);
+    move?.prepend(chip);
+
+    await press({ id: 'list.next', target: document.body });
+    expect(document.activeElement?.hasAttribute('data-move-verb')).toBe(true);
+    expect(document.activeElement?.closest('[data-move]')).toBe(move);
+    act(() => {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement) {
+        active.blur();
+      }
+    });
+    const verb = move?.querySelector<HTMLButtonElement>('[data-move-verb]') ?? null;
+    expect(verb).not.toBeNull();
+    verb?.setAttribute('disabled', '');
+
+    const declined = await press({ id: 'list.open' });
+
+    expect(declined.defaultPrevented).toBe(false);
+    expect(navigate).not.toHaveBeenCalled();
+    verb?.removeAttribute('disabled');
+
+    await press({ id: 'list.open' });
+
+    expect(chipClick).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledTimes(1);
+    chip.remove();
+  });
+
   it('prints the Enter key on the button of the move in front', async () => {
     seedCentralColumn({ kind: 'finished' });
     await show();

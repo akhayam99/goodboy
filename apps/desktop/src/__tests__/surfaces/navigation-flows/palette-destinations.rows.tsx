@@ -534,4 +534,26 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: async (ctx) =>
       waitFor(() => expect(useAppStore.getState().sessionFace[ctx.sessionId]).toBe('overview')),
   },
+  {
+    name: 'palette: Desk on an agent of a desk session opens the Desk',
+    covers: ['palette:Desk'],
+    open: async (ctx) => {
+      switchSessionFace({ sessionId: ctx.sessionId, face: 'desk' });
+      await settle();
+      const agent = useAppStore.getState().sessionPhaseRuns[ctx.sessionId]?.[0];
+      expect(agent).toBeDefined();
+      useAppStore.setState((state) => ({
+        selectedAgentId: { ...state.selectedAgentId, [ctx.sessionId]: agent?.id ?? null },
+      }));
+      await settle();
+      await openPalette(/^Desk/, 'desk');
+    },
+    lands: async (ctx) => {
+      await waitFor(() =>
+        expect(useAppStore.getState().selectedAgentId[ctx.sessionId] ?? null).toBeNull(),
+      );
+      expect(useAppStore.getState().sessionFace[ctx.sessionId]).toBe('desk');
+      await visible('complementary', 'Desk');
+    },
+  },
 ];

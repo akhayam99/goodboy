@@ -36,6 +36,7 @@ export const MoveCard = ({
           cardId={card.id}
           cardTitle={card.title}
           variant={isPrimary ? 'primary' : 'secondary'}
+          isMain
           onOpen={onOpen}
         />
       )}
@@ -45,6 +46,7 @@ export const MoveCard = ({
           cardId={card.id}
           cardTitle={card.title}
           variant="secondary"
+          isMain={false}
           onOpen={onOpen}
         />
       )}
