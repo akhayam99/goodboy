@@ -128,6 +128,49 @@ describe('agent queue', () => {
     expect(queue().map((item) => item.content)).toEqual(['message a']);
   });
 
+  it('drops an unsaved message when asked to, and the retry queues it once', async () => {
+    const { slice, queue, reportError } = harness();
+    replaceAgentQueuedMessages.mockRejectedValueOnce(new Error('disk full'));
+
+    const isSaved = await slice.enqueueAgentMessage({ turn: input('a'), shouldDropUnsaved: true });
+
+    expect(isSaved).toBe(false);
+    expect(queue()).toEqual([]);
+    expect(reportError).toHaveBeenCalledTimes(1);
+
+    const isRetried = await slice.enqueueAgentMessage({
+      turn: input('a'),
+      shouldDropUnsaved: true,
+    });
+
+    expect(isRetried).toBe(true);
+    expect(queue().map((item) => item.id)).toEqual(['a']);
+  });
+
+  it('never leaves a dropped message saved when another message is queued during its save', async () => {
+    const { slice, queue } = harness();
+    let failSave: (error: Error) => void = () => undefined;
+    replaceAgentQueuedMessages.mockImplementationOnce(
+      () =>
+        new Promise<undefined>((_resolve, reject) => {
+          failSave = reject;
+        }),
+    );
+
+    const dropped = slice.enqueueAgentMessage({ turn: input('a'), shouldDropUnsaved: true });
+    const kept = slice.enqueueAgentMessage({ turn: input('b') });
+    await vi.waitFor(() => expect(replaceAgentQueuedMessages).toHaveBeenCalledTimes(1));
+    failSave(new Error('disk full'));
+
+    expect(await dropped).toBe(false);
+    expect(await kept).toBe(true);
+    expect(queue().map((item) => item.id)).toEqual(['b']);
+    expect(replaceAgentQueuedMessages).toHaveBeenLastCalledWith(
+      {},
+      expect.objectContaining({ messages: [expect.objectContaining({ id: 'b' })] }),
+    );
+  });
+
   it('does not drain while the turn runs', async () => {
     const { slice, sent } = harness();
     await slice.enqueueAgentMessage({ turn: input('a') });

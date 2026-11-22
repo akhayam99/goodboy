@@ -53,6 +53,8 @@ Read back what agents explained about the topics you follow. List topics under *
 
 Keep prompts small as a session grows. Each part of the shared brief has its own size, and when decisions run over, the newest are kept.
 
+An Ask question reads the live work, not only the summary: the last ten tool calls of each running agent, every check with its result, the state of each worktree and each script run with the end of its output. That part stays under 4,000 tokens, and secrets in terminal and script output are hidden before it is sent.
+
 ### Plans handed to the next agent
 
 Hand a plan straight to the implementer. The plan goes from **Ready to run** to **Ran** and shows which agent used it.
@@ -62,4 +64,6 @@ Hand a plan straight to the implementer. The plan goes from **Ready to run** to 
 - Decision marks: `DecisionsSection` renders one list and `markContextRead` clears marks after persistence.
 - Summary: `summaryStatusOf` reads State into the status box (`SummaryStatus`): a State line that says blocked, blocker, cannot or can't, or starts with waiting or stuck, is a blocker. `summaryStatusWordOf` counts blockers or Next steps and never names a run state. `summaryDisplayBlocks` leaves State out of the card, `SummaryBlock` folds a group past three, `shortPathOf` shortens a path, and `shareableContext` keeps the complete text.
 - Card controls: `SlotSourceActions` keeps the three menu entries together.
+- Ask line: `SessionAskLine` draws the shared `AskLine`. `askStarterOf` sends the two free questions to `doingAnswerOf` (live work from `readDoingRuns`, branch words from `branchEntriesOf`) and `leftAnswerOf` (plan parts from `planPartsLeftOf`); every other question goes to `sendAskQuestion`. `askLineReplyIdOf` binds the line to the reply of its own question. Send stays off until that reply ends. `askAnswerOriginOf` writes the origin chip. `messageAgentFromAsk` queues with `enqueueAgentMessage` and `shouldDropUnsaved`. A failed save drops the message and saves the queue again without it. `SessionAskLine/index.test.tsx`, `SessionAskLine/modelAnswer.test.tsx` and `sessionAnswers.test.ts` prove each case.
+- Ask pack: `askLiveOf` gathers the live work and reads checks through `mountRequestOf` on every host. It redacts each tool call before cutting it. `askLiveSection` redacts script output before keeping its tail. It keeps the section under `ASK_LIVE_BUDGET_TOKENS` and runs `redactSecrets` on every line. `buildAskPack` adds it as the Live work section.
 - Card head: `ContextCardHead` draws the head row of every Context card, Projects and Linked included, and `ContextExpander` every fold inside a card.

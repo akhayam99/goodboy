@@ -6,10 +6,16 @@ type Params = Readonly<{
   turn: AgentQueuedTurnInput;
   placement?: 'last' | 'first';
   isDirect?: boolean;
+  shouldDropUnsaved?: boolean;
 }>;
 
 export const enqueueAgentMessage = (set: SetFn, get: GetFn) => {
-  return async ({ turn, placement = 'last', isDirect = false }: Params): Promise<boolean> => {
+  return async ({
+    turn,
+    placement = 'last',
+    isDirect = false,
+    shouldDropUnsaved = false,
+  }: Params): Promise<boolean> => {
     const queued: AgentQueuedTurn = {
       ...turn,
       status: isDirect ? 'sending' : 'queued',
@@ -27,6 +33,21 @@ export const enqueueAgentMessage = (set: SetFn, get: GetFn) => {
       agentId: turn.agentId,
       queue: placement === 'first' ? [...sending, queued, ...waiting] : [...current, queued],
     });
-    return persistAgentQueue({ get, agentId: turn.agentId });
+    const isSaved = await persistAgentQueue({ get, agentId: turn.agentId });
+    if (isSaved || !shouldDropUnsaved) {
+      return isSaved;
+    }
+    const latest = readAgentQueue({ get, agentId: turn.agentId });
+    const written = latest.find((item) => item.id === turn.id);
+    if (written !== undefined && written.status === 'sending' && written.isDirect !== true) {
+      return true;
+    }
+    writeAgentQueue({
+      set,
+      agentId: turn.agentId,
+      queue: latest.filter((item) => item.id !== turn.id),
+    });
+    await persistAgentQueue({ get, agentId: turn.agentId });
+    return false;
   };
 };

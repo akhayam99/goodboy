@@ -18,6 +18,7 @@ import { isPushFailure } from '../../resolve/reviewCommentState';
 import { threadLocationOf } from '../../resolve/threadLocationOf';
 import type { AskPackAgent, AskPackComment, AskPackInput, AskPackRun } from './buildAskPack';
 import type { AskRightNowInput } from './askRightNow';
+import { askLiveOf } from './askLiveOf';
 
 type Params = {
   readonly state: AppStore;
@@ -203,6 +204,7 @@ export const collectAskPackInput = ({
   return {
     title: sessionTitle({ session: session ?? null }),
     rightNow,
+    live: askLiveOf({ state, sessionId }),
     goal: slotValue({ slots, key: 'goal' }),
     decisions: slotValue({ slots, key: 'decisions' }),
     summary: slotValue({ slots, key: 'last_output_summary' }),
