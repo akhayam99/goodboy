@@ -698,14 +698,18 @@ icon (`ShellRailItem`), and none goes to a page of the workspace. Report says
 half written. Before a workspace exists the rail is only this foot.
 
 The signature (`app/components/ShellLeft/RailSignature/index.tsx`) is a 24px `BrandTile`
-on the rail axis, below the last item: tile `#0b0b0d`, white dog, radius 0.28 of the
+on the rail axis, below the last item, centered in one rail tile (`SHELL_RAIL_TILE`)
+so the dog sits where an item's icon sits. The space under it is the rail's top
+space (`SHELL_RAIL_EDGE_PX`, the same at both ends), and the space above it is the
+gap between Settings and Report: tile `#0b0b0d`, white dog, radius 0.28 of the
 side, mark 0.76, with no ring, plate, border, glow or gradient, never inverted and
 the same in light and dark. It is passive, not a control: no button, no hover, no
 focus, no tooltip, `aria-hidden`. It is not a door to Help: the Guide and What's
 new open from Help in the menu bar and from Search or run, and no mark in the rail
 is lit while a Help tab is open. The rail shows no version line: it is in the Update
 card, in Settings and in What's new. At the 700px minimum window the foot fits with
-the Update mark above the signature.
+the Update mark above the signature: the wide rail needs 642px of the 664px under
+the top bar (`u50-logo-foot-*` scenes).
 
 `useRailFootEffects` (`app/components/ShellLeft/useRailFootEffects`) keeps what the
 logo used to carry: the restart when idle (`useRestartWhenIdle`), the anchor the
