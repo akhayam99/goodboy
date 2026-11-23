@@ -73,10 +73,6 @@ export const rememberSavedQueue = ({ agentId, ids }: SavedParams): void => {
   );
 };
 
-export const forgetSavedQueues = (): void => {
-  savedRows.clear();
-};
-
 type SaveParams = Readonly<{
   agentId: AgentId;
   messages: ReadonlyArray<AgentQueuedMessageRecord>;
