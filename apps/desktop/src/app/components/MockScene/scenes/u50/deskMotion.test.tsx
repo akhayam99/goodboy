@@ -10,23 +10,25 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { FACE_SWAP_ATTRIBUTE } from '@goodboy/ui';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { useAppStore } from '../../../../../store';
 import { deskToolsOf } from '../../../../../features/session/components/SessionDesk/deskToolsOf';
 import {
   importStore,
   resetStoryStore,
   storySpies,
   STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U50_DESK_MOTION_SCENES } from './deskMotion';
 
+let store: StoryStore;
+
 beforeAll(async () => {
   installFakeResizeObserver();
   Element.prototype.scrollIntoView = vi.fn();
-  await importStore();
+  store = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 beforeEach(async () => {
   window.localStorage.clear();
@@ -103,7 +105,7 @@ describe('the u50 desk motion scenes', () => {
     await screen.findByRole('complementary', { name: 'Desk' });
 
     act(() => {
-      const state = useAppStore.getState();
+      const state = store.getState();
       deskToolsOf({ state }).forEach((entry) => state.closeDrawerEntry({ entry }));
     });
 

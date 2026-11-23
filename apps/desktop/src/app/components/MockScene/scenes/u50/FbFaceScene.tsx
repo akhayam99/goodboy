@@ -3,6 +3,7 @@ import { AppShell } from '@goodboy/ui';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { toggleRailTool } from '../../../../../features/session/components/SessionTools/toggleRailTool';
 import type { RailToolId } from '../../../../../features/session/components/SessionTools/sessionTools';
+import { deskLines } from '../../../../../features/session/components/SessionDesk/useDeskOwner/deskLines';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../store';
 import { sessionPlace } from '../../../../../store/slices/navigation/place';
@@ -26,6 +27,7 @@ export const FbFaceScene = ({ theme, tool }: Props) => {
   const drawerPlacement = useAppStore(selectDrawerPlacement);
   useEffect(() => {
     applyDocumentTheme({ theme });
+    deskLines.reset();
     seedCentralColumn({ kind: 'branches' });
     const state = useAppStore.getState();
     state.navigate({ to: sessionPlace({ sessionId: COLUMN_SESSION_ID }) });

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
+import { deskLines } from '../../../../../features/session/components/SessionDesk/useDeskOwner/deskLines';
 import { toggleTerminalDock } from '../../../../../features/terminal/toggleTerminalDock';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore, type SessionFace } from '../../../../../store';
@@ -25,6 +26,7 @@ export const TerminalDeskScene = ({ theme, face }: Props) => {
   const drawerPlacement = useAppStore(selectDrawerPlacement);
   useEffect(() => {
     applyDocumentTheme({ theme });
+    deskLines.reset();
     seedCentralColumn({ kind: 'branches' });
     const state = useAppStore.getState();
     state.navigate({ to: sessionPlace({ sessionId: COLUMN_SESSION_ID }) });

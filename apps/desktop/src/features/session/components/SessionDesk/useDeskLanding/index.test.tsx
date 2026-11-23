@@ -127,7 +127,7 @@ describe('the head of the session', () => {
     renderFace();
 
     expect(screen.queryByRole('tablist', { name: 'Overview or Desk' })).toBeNull();
-    expect(screen.getByRole('tablist', { name: 'Session pages' })).not.toBeNull();
+    screen.getByRole('tablist', { name: 'Session pages' });
   });
 });
 
