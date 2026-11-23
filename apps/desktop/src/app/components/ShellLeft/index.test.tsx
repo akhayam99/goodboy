@@ -246,6 +246,15 @@ describe('the places rail', () => {
     expect(wordsOf()).not.toContain('Help');
   });
 
+  it('closes the rail with the signature, with as much space under it as above the first item', () => {
+    mount({});
+    const signature = rail().querySelector<HTMLElement>('[data-rail-signature]');
+
+    expect(rail().lastElementChild).toBe(signature);
+    expect(rail().style.paddingBottom).toBe(rail().style.paddingTop);
+    expect(signature?.tabIndex).toBe(-1);
+  });
+
   it('opens nothing from the signature', () => {
     const actions = mount({});
 
