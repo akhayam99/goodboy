@@ -21,7 +21,7 @@ import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
 import { shownDeskStackOf } from '../../store/slices/drawer/shownDeskStackOf';
-import { DeskAgent } from '../../features/session/components/DeskAgent';
+import { DeskAgentPanel } from './DeskAgentPanel';
 import { DeskDetailStack } from './DeskDetailStack';
 import { PanelBoundary } from './PanelBoundary';
 import { renderRegisteredDrawer } from './renderRegisteredDrawer';
@@ -127,7 +127,7 @@ const renderDrawer = ({
       );
     case 'transcript':
       return isDesk ? (
-        <DeskAgent
+        <DeskAgentPanel
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
           agentId={drawer.payload.agentId}

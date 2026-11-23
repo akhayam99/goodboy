@@ -4,8 +4,8 @@ import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core/review-source';
 import type { MountId, PrComment, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { selectedReviewEntryOf } from '../../../../../store/slices/review-source/activeReviewSource';
-import { checksViewOf, type ChecksHostKind } from '../../../../branch/checksViewOf';
-import { usePullRequestView } from '../../../../branch/hooks/usePullRequestView';
+import { checksViewOf, type ChecksHostKind } from '../../../checksViewOf';
+import { usePullRequestView } from '../../../hooks/usePullRequestView';
 
 type Params = {
   readonly sessionId: SessionId;

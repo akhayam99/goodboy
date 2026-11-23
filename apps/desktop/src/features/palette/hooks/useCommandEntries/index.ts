@@ -31,7 +31,7 @@ import { NAMES, formerNamesOf } from '../../../../shared/utils/names';
 import { switchTheme, type ThemePreference } from '../../../../shared/lib/theme';
 import { classifyAgent } from '../../../session/agent-kind';
 import { useLensDestinations } from '../../../session/hooks/useLensDestinations';
-import { isFaceShown } from '../../../session/components/SessionDesk/isFaceShown';
+import { isFaceShown } from '../../../session/desk/isFaceShown';
 import { requestNewSession } from '../../../session/requestNewSession';
 import { replayShortcut } from '../../../../shared/keyboard/replayShortcut';
 import { openNewSessionAs } from '../../../session/startKind/openNewSessionAs';

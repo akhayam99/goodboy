@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../../../../store';
-import { startDeskTool } from '../../../session/components/SessionDesk/startDeskTool';
+import { startDeskTool } from '../../../session/desk/startDeskTool';
 import { watchSessionDockGrid } from './watchSessionDockGrid';
 
 export const useSessionDockGrid = (): void => {

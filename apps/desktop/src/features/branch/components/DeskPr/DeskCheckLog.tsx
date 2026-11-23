@@ -1,7 +1,7 @@
 import { Button, ScrollFade, Skeleton } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { openLink } from '../../../open/openLink';
-import { cleanLogText } from '../../../branch/checks/cleanLogText';
+import { cleanLogText } from '../../checks/cleanLogText';
 import { DESK_PR_COPY } from './deskPrCopy';
 import { useCheckLog } from './useCheckLog';
 

@@ -16,7 +16,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { agentPlace, branchPlace, sessionPlace } from '../../../../store/slices/navigation/place';
-import { isFaceShown } from '../SessionDesk/isFaceShown';
+import { isFaceShown } from '../../../session/desk/isFaceShown';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-harborline' });
 const LEAD_ID = brandId<AgentId>({ value: 'agent-lead' });

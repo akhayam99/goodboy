@@ -1,9 +1,8 @@
 import type { ReviewSourceKind } from '@goodboy/core/review-source';
 import type { MountId, PrCheckRun, SessionId } from '@goodboy/types';
-import { openLink } from '../../../open/openLink';
 import { isFailingConclusion } from '../../../integrations/github/checksRollup';
-import { PrChecks } from '../../../integrations/github/components/PullRequest/PrChecks';
 import { DeskCheckLog } from './DeskCheckLog';
+import type { RenderPrChecks } from './types';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -13,6 +12,7 @@ type Props = {
   readonly prUrl: string;
   readonly host: ReviewSourceKind;
   readonly isLoading: boolean;
+  readonly renderChecks: RenderPrChecks;
 };
 
 export const DeskPrChecks = ({
@@ -23,6 +23,7 @@ export const DeskPrChecks = ({
   prUrl,
   host,
   isLoading,
+  renderChecks,
 }: Props) => {
   const failing = checks.filter((run) => isFailingConclusion({ conclusion: run.conclusion }));
   const focused = failing.find((run) => run.name === check) ?? failing[0] ?? null;
@@ -37,13 +38,7 @@ export const DeskPrChecks = ({
           url={focused.detailsUrl}
         />
       )}
-      <PrChecks
-        checks={checks}
-        fallbackUrl={prUrl}
-        host={host}
-        isLoading={isLoading}
-        onOpenUrl={(url) => openLink({ url, sessionId })}
-      />
+      {renderChecks({ sessionId, checks, fallbackUrl: prUrl, host, isLoading })}
     </div>
   );
 };

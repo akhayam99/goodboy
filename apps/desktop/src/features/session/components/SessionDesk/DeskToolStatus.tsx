@@ -3,7 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
-import { startDeskTool } from './startDeskTool';
+import { startDeskTool } from '../../desk/startDeskTool';
 
 type Props = {
   readonly sessionId: SessionId;

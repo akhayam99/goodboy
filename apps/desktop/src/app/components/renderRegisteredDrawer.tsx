@@ -14,7 +14,8 @@ import { monitoringDrawerRegistration } from '../../features/monitoring/monitori
 import { planPartDrawerRegistration } from '../../features/plans/planPartDrawerRegistration';
 import { terminalDrawerRegistration } from '../../features/terminal/terminalDrawerRegistration';
 import { scriptsDrawerRegistration } from '../../features/scripts/scriptsDrawerRegistration';
-import { deskPrDrawerRegistration } from '../../features/session/deskPrDrawerRegistration';
+import { DeskPr } from '../../features/branch/components/DeskPr';
+import { renderPrChecks } from './renderPrChecks';
 
 const IdentifierPeekDrawer = lazyNamed({
   load: () => import('../../features/diff/components/IdentifierPeekDrawer'),
@@ -91,7 +92,17 @@ export const renderRegisteredDrawer = ({
     case 'plan-part':
       return planPartDrawerRegistration.render({ drawer, closeDrawer, openDrawer });
     case 'pull-request':
-      return deskPrDrawerRegistration.render({ drawer, closeDrawer, openDrawer });
+      return (
+        <DeskPr
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          mountId={drawer.payload.mountId}
+          tab={drawer.payload.tab}
+          check={drawer.payload.check ?? null}
+          onClose={closeDrawer}
+          renderChecks={renderPrChecks}
+        />
+      );
     case 'scripts':
       return scriptsDrawerRegistration.render({ drawer, closeDrawer, openDrawer });
     case 'terminal':

@@ -44,7 +44,7 @@ import {
 import { storedDockGridOf } from '../../../../store/slices/drawer/dockGridMemory/storedDockGrid';
 import { watchSessionDockGrid } from '../../../workspace/hooks/useSessionDockGrid/watchSessionDockGrid';
 import { SessionFace } from './SessionFace';
-import { startDeskTool } from './startDeskTool';
+import { startDeskTool } from '../../desk/startDeskTool';
 import { toggleCurrentFace } from './toggleCurrentFace';
 
 const session = sessionOf({ goal: 'Reconcile the ledger export' });

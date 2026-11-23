@@ -44,7 +44,7 @@ import { closeCurrentLevel } from '../../../../../app/hooks/useAppShortcuts/clos
 import { applyDeskHold } from '../useDeskOwner/applyDeskHold';
 import { deskLines } from '../useDeskOwner/deskLines';
 import { deskToolsOf } from '../deskToolsOf';
-import { isFaceShown } from '../isFaceShown';
+import { isFaceShown } from '../../../desk/isFaceShown';
 import { SessionFace } from '../SessionFace';
 import { switchSessionFace } from '../switchSessionFace';
 import { toggleCurrentFace } from '../toggleCurrentFace';

@@ -2,7 +2,7 @@ import type { AppState } from '../../../../store/types';
 import { focusedShellPanelOf } from '../../../../store/slices/drawer/focusedShellPanelOf';
 import type { OpenDrawer } from '../../../../store/slices/drawer/state';
 import { deskToolsOf } from './deskToolsOf';
-import { isFaceShown } from './isFaceShown';
+import { isFaceShown } from '../../desk/isFaceShown';
 
 type Params = {
   readonly state: AppState;

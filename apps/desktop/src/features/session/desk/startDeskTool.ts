@@ -1,12 +1,12 @@
 import { formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import type { AppState } from '../../../../store/types';
-import { createLatestOnly } from '../../../../store/runtime/state-writes/latestOnly';
-import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
-import { openSessionTerminal } from '../../../terminal/openSessionTerminal';
-import { toggleSessionTerminal } from '../../../terminal/toggleSessionTerminal';
-import { scratchDirPrepare } from '../../../worktree/worktree';
+import { useAppStore } from '../../../store';
+import type { AppState } from '../../../store/types';
+import { createLatestOnly } from '../../../store/runtime/state-writes/latestOnly';
+import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import { openSessionTerminal } from '../../terminal/openSessionTerminal';
+import { toggleSessionTerminal } from '../../terminal/toggleSessionTerminal';
+import { scratchDirPrepare } from '../../worktree/worktree';
 import { isFaceShown } from './isFaceShown';
 
 type SessionParams = {

@@ -32,7 +32,6 @@
         "src/features/companion/mobileConfinement.ts": ["exports"],
         "src/features/history/historyEngine.ts": ["exports"],
         "src/features/integrations/hooks/useIssueLookup/index.ts": ["exports"],
-        "src/features/live-state/hooks/useWorkOf/index.ts": ["files"],
         "src/features/session/components/SessionOverviewPane/ChatOriginRow.tsx": ["files"],
         "src/features/session/components/SessionOverviewPane/MoreChatOrigins.tsx": ["files"],
         "src/shared/hooks/useChatOrigins/index.ts": ["files"],

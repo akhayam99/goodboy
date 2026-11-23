@@ -23,6 +23,7 @@ import { aMountGithub } from '../../../../store/slices/github/testing/aMountGith
 import { SESSION_ID } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { seedResolveGitlabScene } from '../../../../app/components/MockScene/scenes/resolveGitlabSeed';
 import type { PullRequestDrawerTab } from '../../../../store/slices/drawer/state';
+import { renderPrChecks } from '../../../../app/components/renderPrChecks';
 import { DeskPr } from '.';
 
 const MOUNT_ID = brandId<MountId>({ value: 'mount-payments-api' });
@@ -66,7 +67,14 @@ type ShowParams = {
 
 const show = ({ tab }: ShowParams) =>
   render(
-    <DeskPr sessionId={SESSION_ID} mountId={MOUNT_ID} tab={tab} check={null} onClose={() => {}} />,
+    <DeskPr
+      sessionId={SESSION_ID}
+      mountId={MOUNT_ID}
+      tab={tab}
+      check={null}
+      onClose={() => {}}
+      renderChecks={renderPrChecks}
+    />,
   );
 
 type GithubParams = {

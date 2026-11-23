@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { isFaceShown } from '../isFaceShown';
+import { isFaceShown } from '../../../desk/isFaceShown';
 
 type Params = {
   readonly sessionId: SessionId;

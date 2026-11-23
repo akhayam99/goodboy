@@ -3,7 +3,7 @@ import { useAppStore } from '../../../../store';
 import type { DeskTool, LandingMove } from '../../../../store/slices/navigation/landingOf';
 import { deskLandingOf } from './deskLandingOf';
 import { deskToolsOf } from './deskToolsOf';
-import { startDeskTool } from './startDeskTool';
+import { startDeskTool } from '../../desk/startDeskTool';
 import { deskLines } from './useDeskOwner/deskLines';
 
 type Params = {

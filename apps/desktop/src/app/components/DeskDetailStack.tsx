@@ -2,9 +2,10 @@ import { useAppStore } from '../../store';
 import { shownDeskStackOf } from '../../store/slices/drawer/shownDeskStackOf';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 import type { OpenDrawer } from '../../store/slices/drawer/state';
-import { DeskAgent } from '../../features/session/components/DeskAgent';
-import { DeskPr } from '../../features/session/components/DeskPr';
+import { DeskAgentPanel } from './DeskAgentPanel';
+import { DeskPr } from '../../features/branch/components/DeskPr';
 import { PanelBoundary } from './PanelBoundary';
+import { renderPrChecks } from './renderPrChecks';
 
 type CloseParams = {
   readonly entry: OpenDrawer;
@@ -26,7 +27,7 @@ export const DeskDetailStack = () => {
           leaveLabel="Close drawer"
           onLeave={() => close({ entry: agent })}
         >
-          <DeskAgent
+          <DeskAgentPanel
             sessionId={agent.sessionId}
             agentId={agent.payload.agentId}
             focus={agent.payload}
@@ -46,6 +47,7 @@ export const DeskDetailStack = () => {
             tab={pr.payload.tab}
             check={pr.payload.check ?? null}
             onClose={() => close({ entry: pr })}
+            renderChecks={renderPrChecks}
           />
         </PanelBoundary>
       </div>

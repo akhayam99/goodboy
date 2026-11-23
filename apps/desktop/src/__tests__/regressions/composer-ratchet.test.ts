@@ -35,7 +35,7 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/auto/adopt/MoveToAutoPanel.tsx': ['document'],
   'shared/components/StartHint.tsx': ['document'],
   'features/chat/components/AgentTranscriptDrawer/index.tsx': ['message'],
-  'features/session/components/DeskAgent/index.tsx': ['message'],
+  'features/chat/components/DeskAgent/index.tsx': ['message'],
   'features/permissions/components/PermissionRequestCard/index.tsx': ['document'],
   'features/integrations/components/LaunchSessionPanel/index.tsx': ['document'],
 };
