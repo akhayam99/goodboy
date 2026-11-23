@@ -310,7 +310,7 @@ describe('DrawerColumn with a detail panel and a tool dock', () => {
     expect(panel().style.getPropertyValue(DRAWER_PANEL_VARS.detail)).toBe(`${askWidth}px`);
   });
 
-  it('starts a kind with no width of its own from the width its size had before the upgrade', () => {
+  it('starts a kind with no width of its own at its tier default, not at the old shared key', () => {
     localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, '480');
     stubColumn({ column: 2400 });
     render(
@@ -327,7 +327,7 @@ describe('DrawerColumn with a detail panel and a tool dock', () => {
 
     expect(
       screen.getByRole('separator', { name: 'Resize detail panel' }).getAttribute('aria-valuenow'),
-    ).toBe('480');
+    ).toBe('400');
   });
 
   it('keeps the detail group at zero width and the dock untouched when no detail is open', () => {

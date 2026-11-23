@@ -229,13 +229,13 @@ describe('DrawerColumn dock grid widths saved on the session', () => {
     expect(grid()?.style.gridTemplateColumns).toBe('460px 12px 800px');
   });
 
-  it('starts a column with no saved width from the width key its size had before the upgrade', () => {
+  it('starts a column with no saved width at its tier default, not at the old shared key', () => {
     localStorage.setItem(BROWSER_DRAWER_STORAGE_KEY, '840');
     stubColumn({ column: 2600 });
     const { spec } = specOf({ columns: [[TERMINAL], [BROWSER]], focus: 'browser' });
     renderGrid({ spec });
 
-    expect(grid()?.style.gridTemplateColumns).toBe('400px 12px 840px');
+    expect(grid()?.style.gridTemplateColumns).toBe('400px 12px 720px');
   });
 
   it('never starts a tool column at the width a detail panel was dragged to', () => {

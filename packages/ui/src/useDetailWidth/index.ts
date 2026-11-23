@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { detailWidthKeyOf } from '../detailWidthKeyOf';
 import { DRAWER_TIERS, type DrawerSizing } from '../drawerGeometry';
-import { TIER_WIDTH_KEYS } from '../drawerWidthKeys';
 import { readStoredWidth, type ResizableHandleProps } from '../useResizableWidth';
 
 type Params = {
@@ -45,13 +44,7 @@ const writeWidth = ({ storageKey, width }: WriteParams): void => {
 
 const startWidthOf = ({ storageKey, sizing }: KeyParams): number => {
   const tier = DRAWER_TIERS[sizing];
-  const bounds = { min: tier.min, max: tier.max };
-  const seeded = readStoredWidth({
-    storageKey: TIER_WIDTH_KEYS[sizing],
-    fallback: tier.fallback,
-    ...bounds,
-  });
-  return readStoredWidth({ storageKey, fallback: seeded, ...bounds });
+  return readStoredWidth({ storageKey, fallback: tier.fallback, min: tier.min, max: tier.max });
 };
 
 export const useDetailWidth = ({ kind, sizing, onPreview }: Params): DetailWidth => {
