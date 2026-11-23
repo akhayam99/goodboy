@@ -47,6 +47,7 @@ vi.mock('@goodboy/db', async () =>
     upsertMountOperation,
     updateSessionWriteDestination,
     updateSessionActiveProject,
+    listMountPullRequestLinks: vi.fn(async () => []),
   }),
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
