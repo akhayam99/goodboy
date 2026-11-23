@@ -72,7 +72,10 @@ const unused = async (): Promise<never> => {
 
 const portOf = ({ number }: { readonly number: number }): PullRequestPort => ({
   nouns: { long: 'pull request', short: 'PR', numberPrefix: '#' },
-  read: async () => viewOf({ number }),
+  read: async () => ({
+    ...viewOf({ number }),
+    state: merged.includes(number) ? 'merged' : 'approved',
+  }),
   updateTitle: unused,
   updateBody: unused,
   searchReviewers: unused,

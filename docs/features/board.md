@@ -13,10 +13,11 @@ Act on what waits without opening each session. Three bands sit on one screen.
 **The merge train.** Merge several pull requests, across sessions and repositories, with one gesture.
 
 - Tick the rows to merge. **Merge 2 in order** merges them one at a time, in the order shown. Its tooltip names the method: squash and merge.
-- Before each merge Goodboy reads the pull request again. When an earlier one landed in the same repository, it first updates the next branch on main in its worktree and waits for its checks.
+- Before each merge Goodboy reads the pull request again. When an earlier one landed in the same repository, it updates the next branch on the base its pull request targets and waits for its checks to report.
+- A merge counts only once the pull request shows as merged. One the host put in its merge queue stops the train.
 - A strip takes the head of the band, one line: "Merging 1 of 2 · #76 notify-relay", then "Updating #305 on main · checks running", then "Merged 2 of 2".
 - **Stop after this one** lets the pull request in flight finish and stops there.
-- The train stops at the first pull request it cannot merge and says why. A conflict goes to the Lead, which resolves the rebase; the train never resolves it alone.
+- The train stops at the first pull request it cannot merge and says why. A missing approval, checks it cannot read and a base that just merged each stop it too. A conflict goes to the Lead, which resolves the rebase; the train never resolves it alone.
 - Nothing merges without your gesture: the train starts from the button or **M** and stops when you say so.
 
 **Merge when green**, in the branch page menu while checks run, hands the merge to GitHub: it merges the reviewed head once every check passes. **Cancel auto-merge** takes it back.
@@ -81,6 +82,6 @@ This part is for contributors and agents who change the feature.
 - Running: `useFleetWork` reads `live_work` for every session at most every ten seconds (`FLEET_EVERY_MS`). A `work-changed` event outside the view is ignored. A burst inside it waits for the interval. Retry reads at once and a late older read is dropped (`useFleetWork/index.test.tsx`). `earlierStepsOf` keeps the two steps before the current one for the peek.
 - Merge order: `mergeOrderOf` proposes the order and its reason from `readyCarsOf`. It reads the mount, the base branch and the file count of a cached view. `useMergeTrain` holds the ticked rows.
 - Merge train: `startMergeTrain` keeps one `mergeTrain` in the store, so the strip survives leaving the Queue. A second start while one runs answers `busy`. The train lives in the window that started it.
-- Train engine: `mergeInOrder` serves the train and `mergeSeriesInOrder`. It reads each pull request before it merges and rebases the next branch with `rebaseBranch` when its repository moved. It polls the checks every 20 seconds for at most 45 minutes (`MERGE_WAIT`). A conflict goes to `resolveRebaseWithAuto`. Each stop has a test in `mergeInOrder.test.ts`, and `trainLineOf` gives the strip its line.
+- Train engine: `mergeInOrder` serves the train and `mergeSeriesInOrder`. It reads each pull request before it updates or merges it. When its repository moved, `rebaseBranch` rebases the next branch onto the base of its pull request. After an update it waits for checks if the request had some. A read after `mergePr` confirms the merge landed. It polls the checks every 20 seconds for at most 45 minutes (`MERGE_WAIT`). A conflict goes to `resolveRebaseWithAuto`. Each stop has a test in `mergeInOrder.test.ts`, and `trainLineOf` gives the strip its line.
 - Merge when green: `pullRequest.mergeWhenGreen` calls the port's `mergeWhenGreen`, `gh pr merge --auto` with the method and `--match-head-commit`, gated by `canMergeWhenGreen` (GitHub only). Tested in `pullRequest.mergeWhenGreen.test.ts` and `prQueued.test.ts`.
 - Keys: `queueKeyOf` maps a key and the active band to one command (`queueKeyOf.test.ts`). `queueLandingOf` sends a question, a permission or a plan to the session overview and the rest to `attentionPlace`.

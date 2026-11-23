@@ -5,7 +5,14 @@ type Params = {
 };
 
 export type MergeBlockerKind =
-  'closed' | 'draft' | 'conflict' | 'changes-requested' | 'failing' | 'pending';
+  | 'closed'
+  | 'draft'
+  | 'conflict'
+  | 'changes-requested'
+  | 'review-required'
+  | 'unreadable-checks'
+  | 'failing'
+  | 'pending';
 
 export type MergeBlocker = Readonly<{
   kind: MergeBlockerKind;
@@ -31,6 +38,12 @@ export const mergeBlockerOf = ({ view }: Params): MergeBlocker | null => {
   }
   if (view.reviewDecision === 'changes_requested') {
     return { kind: 'changes-requested', text: 'has changes requested' };
+  }
+  if (view.reviewDecision === 'review_required') {
+    return { kind: 'review-required', text: 'still needs an approving review' };
+  }
+  if (view.checks.read === 'failed' || view.checks.read === 'denied') {
+    return { kind: 'unreadable-checks', text: "has checks Goodboy can't read" };
   }
   if (view.checks.runs.some((run) => FAILED.has(run.conclusion))) {
     return { kind: 'failing', text: 'has failing checks' };

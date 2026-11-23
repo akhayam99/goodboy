@@ -266,6 +266,18 @@ describe('gh allowlist parity', () => {
     const head = ['--match-head-commit', 'abcdef1234'];
     expect(isAllowed({ args: ['pr', 'merge', '12', '--auto', '--squash', ...head] })).toBe(true);
     expect(isAllowed({ args: ['pr', 'merge', '12', '--auto'] })).toBe(false);
+    expect(
+      isAllowed({
+        args: [
+          'pr',
+          'merge',
+          'https://github.com/acme/ledger-core/pull/12',
+          '--auto',
+          '--squash',
+          ...head,
+        ],
+      }),
+    ).toBe(false);
     expect(isAllowed({ args: ['pr', 'merge', '--auto', '--squash', ...head] })).toBe(false);
     expect(isAllowed({ args: ['pr', 'merge', '12', '--auto', '--disable-auto', ...head] })).toBe(
       false,

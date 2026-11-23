@@ -30,6 +30,13 @@ export type MergeTrainControls = Readonly<{
 
 const METHOD: PrMergeMethod = 'squash';
 
+type CarParams = {
+  readonly car: ReadyCar;
+};
+
+const carKeyOf = ({ car }: CarParams): string =>
+  `${car.sessionId}:${String(car.mountId)}:${car.number}`;
+
 export const useMergeTrain = ({ ready, sessionTitles }: Params): MergeTrainControls => {
   const signature = useAppStore((state) => JSON.stringify(readyCarsOf({ state, rows: ready })));
   const cars = useMemo((): ReadonlyArray<ReadyCar> => JSON.parse(signature), [signature]);
@@ -43,7 +50,7 @@ export const useMergeTrain = ({ ready, sessionTitles }: Params): MergeTrainContr
     () =>
       new Set(
         lines.flatMap((line) =>
-          line.car !== null && picked.has(line.sessionId) ? [line.sessionId] : [],
+          line.car !== null && picked.has(carKeyOf({ car: line.car })) ? [line.sessionId] : [],
         ),
       ),
     [lines, picked],
@@ -51,20 +58,22 @@ export const useMergeTrain = ({ ready, sessionTitles }: Params): MergeTrainContr
 
   const toggleMark = useCallback(
     ({ sessionId }: RowParams) => {
-      if (train !== null) {
+      const car = lines.find((line) => line.sessionId === sessionId)?.car ?? null;
+      if (train !== null || car === null) {
         return;
       }
+      const key = carKeyOf({ car });
       setPicked((current) => {
         const next = new Set(current);
-        if (next.has(sessionId)) {
-          next.delete(sessionId);
+        if (next.has(key)) {
+          next.delete(key);
           return next;
         }
-        next.add(sessionId);
+        next.add(key);
         return next;
       });
     },
-    [train],
+    [lines, train],
   );
 
   const start = useCallback(() => {

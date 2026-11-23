@@ -19,10 +19,13 @@ export const readyCarsOf = ({ state, rows }: Params): ReadonlyArray<ReadyCar> =>
     if (number === null) {
       return [];
     }
-    const mount = sessionMountViews({ state, sessionId }).find(
-      (view) => view.isAttached && mountRequestOf({ state, mountId: view.id })?.number === number,
-    );
-    if (mount === undefined) {
+    const url = state.sessionGithub[sessionId]?.pr?.url ?? null;
+    const matches = sessionMountViews({ state, sessionId }).filter((view) => {
+      const request = view.isAttached ? mountRequestOf({ state, mountId: view.id }) : null;
+      return request?.number === number && (url === null || request.url === url);
+    });
+    const [mount] = matches;
+    if (mount === undefined || matches.length > 1) {
       return [];
     }
     const project = selectProjectById(state, mount.projectId);

@@ -314,6 +314,82 @@ describe('the Queue', () => {
       expect(start.mock.calls[0]?.[0]).toMatchObject({ method: 'squash' });
     });
 
+    it('drops a mark when the row now points at another pull request', async () => {
+      const start = vi.fn(async (_params: StartMergeTrainParams) => ({
+        kind: 'done' as const,
+        merged: 1,
+      }));
+      const { two } = seedReady();
+      useAppStore.setState({ startMergeTrain: start });
+      renderQueue();
+      const band = readyBand();
+      await waitFor(() => expect(band.querySelectorAll('[data-ready-row]')).toHaveLength(2), WAIT);
+      fireEvent.click(within(band).getByRole('checkbox', { name: '#76' }));
+      expect(within(band).getByRole('checkbox', { name: '#76' }).getAttribute('aria-checked')).toBe(
+        'true',
+      );
+      const moved = two.github.pr === null ? null : { ...two.github.pr, number: 77 };
+      act(() => {
+        useAppStore.setState((state) => ({
+          mountGithub: { ...state.mountGithub, [two.mount.mountId]: { ...two.github, pr: moved } },
+          sessionGithub: {
+            ...state.sessionGithub,
+            [smaller.id]: { ...mergedGithub(), pr: moved },
+          },
+        }));
+      });
+      await waitFor(() => within(band).getByRole('checkbox', { name: '#77' }), WAIT);
+      expect(within(band).getByRole('checkbox', { name: '#77' }).getAttribute('aria-checked')).toBe(
+        'false',
+      );
+      expect(within(band).getByRole('button', { name: 'Merge in order' })).toHaveProperty(
+        'disabled',
+        true,
+      );
+      fireEvent.keyDown(queueRoot(), { key: 'F6' });
+      fireEvent.keyDown(queueRoot(), { key: 'F6' });
+      fireEvent.keyDown(queueRoot(), { key: 'M' });
+      expect(start).not.toHaveBeenCalled();
+    });
+
+    it('picks the mount whose pull request is the one the row shows when two share its number', async () => {
+      const start = vi.fn(async (_params: StartMergeTrainParams) => ({
+        kind: 'done' as const,
+        merged: 1,
+      }));
+      const { two } = seedReady();
+      const other = mountOf({ session: smaller, project: ledgerCore });
+      const otherBase = mountGithubOf({ mount: other, number: 76 });
+      useAppStore.setState((state) => ({
+        startMergeTrain: start,
+        sessionProjectMounts: { ...state.sessionProjectMounts, [smaller.id]: [other, two.mount] },
+        mountGithub: {
+          ...state.mountGithub,
+          [other.mountId]: {
+            ...otherBase,
+            pr:
+              otherBase.pr === null
+                ? null
+                : {
+                    ...otherBase.pr,
+                    reviewDecision: 'approved',
+                    url: 'https://github.com/acme/ledger-core/pull/76',
+                  },
+          },
+        },
+      }));
+      renderQueue();
+      const band = readyBand();
+      await waitFor(() => within(band).getByRole('checkbox', { name: '#76' }), WAIT);
+      fireEvent.click(within(band).getByRole('checkbox', { name: '#76' }));
+      fireEvent.keyDown(queueRoot(), { key: 'F6' });
+      fireEvent.keyDown(queueRoot(), { key: 'F6' });
+      fireEvent.keyDown(queueRoot(), { key: 'M' });
+      expect(start.mock.calls[0]?.[0].cars).toEqual([
+        expect.objectContaining({ prNumber: 76, mountId: two.mount.mountId }),
+      ]);
+    });
+
     it('stops after this one from the strip and shows each step as one line', async () => {
       seedReady();
       useAppStore.setState({

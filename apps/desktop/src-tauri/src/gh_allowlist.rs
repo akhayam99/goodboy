@@ -836,6 +836,15 @@ mod tests {
             argv(&[
                 "pr",
                 "merge",
+                "https://github.com/acme/ledger-core/pull/12",
+                "--auto",
+                "--squash",
+                "--match-head-commit",
+                "abcdef1234",
+            ]),
+            argv(&[
+                "pr",
+                "merge",
                 "12",
                 "--auto",
                 "--match-head-commit",

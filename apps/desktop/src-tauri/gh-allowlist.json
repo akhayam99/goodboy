@@ -77,7 +77,7 @@
     {
       "id": "pr-merge-auto",
       "verb": ["pr", "merge"],
-      "positional": ["{ref}"],
+      "positional": ["{number}"],
       "flags": [
         { "name": "--auto", "slot": null, "isRequired": true },
         { "name": "--squash", "slot": null },

@@ -1,6 +1,8 @@
 import { formatError } from '@goodboy/ui';
 import type { MountId, PrMergeMethod, ProjectId, PullRequestView, SessionId } from '@goodboy/types';
 import type { SliceDeps } from '../../slice-types';
+import { rebaseConflictOf } from '../../../features/history/rebaseConflictOf';
+import { selectRebaseStop } from '../history/selectRebaseStop';
 import { selectMountById } from '../project-mounts/selectors';
 import { pullRequestPortFor } from '../review-source/pullRequestPortFor';
 import { mergeBlockerOf, type MergeBlockerKind } from './mergeBlockerOf';
@@ -20,7 +22,14 @@ export type MergeStep = Readonly<{
 }>;
 
 export type MergeStopKind =
-  MergeBlockerKind | 'unreachable' | 'method' | 'refused' | 'update' | 'timeout';
+  | MergeBlockerKind
+  | 'unreachable'
+  | 'method'
+  | 'refused'
+  | 'update'
+  | 'timeout'
+  | 'stacked'
+  | 'queued';
 
 export type MergeInOrderResult =
   | Readonly<{ kind: 'done'; merged: number }>
@@ -47,8 +56,25 @@ export type MergeInOrderParams = Readonly<{
 export const MERGE_WAIT = {
   pollMs: 20_000,
   maxMs: 45 * 60_000,
-  quietReads: 3,
 } as const;
+
+const HELD: ReadonlySet<MergeBlockerKind> = new Set([
+  'closed',
+  'draft',
+  'changes-requested',
+  'review-required',
+]);
+
+type BranchKeyParams = {
+  readonly project: ProjectId;
+  readonly branch: string;
+};
+
+const branchKeyOf = ({ project, branch }: BranchKeyParams): string => `${project}:${branch}`;
+
+type UpdateParams = {
+  readonly onto: string;
+};
 
 type SleepParams = {
   readonly ms: number;
@@ -105,6 +131,16 @@ const projectOf = ({ get, entry }: ProjectParams): ProjectId | null =>
   selectMountById({ state: get(), sessionId: entry.sessionId, mountId: entry.mountId })
     ?.projectId ?? null;
 
+type LeadParams = {
+  readonly get: Deps['get'];
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+};
+
+const isLeadOn = ({ get, sessionId, mountId }: LeadParams): boolean =>
+  rebaseConflictOf({ run: selectRebaseStop({ state: get(), sessionId, mountId })?.run })
+    ?.autoAgentId != null;
+
 type UpdateFailureParams = {
   readonly get: Deps['get'];
   readonly mountId: MountId;
@@ -133,6 +169,7 @@ export const mergeInOrder =
     onStep = () => undefined,
   }: MergeInOrderParams): Promise<MergeInOrderResult> => {
     const touched = new Set<ProjectId>();
+    const landed = new Set<string>();
     let merged = 0;
     for (const [index, entry] of entries.entries()) {
       if (index > 0 && shouldStop()) {
@@ -156,17 +193,24 @@ export const mergeInOrder =
         if (!shouldHandConflicts) {
           return stopAt({ stop: 'conflict', reason: `${label} has conflicts` });
         }
-        try {
-          await get().resolveRebaseWithAuto({
+        const handoff = await get()
+          .resolveRebaseWithAuto({
             sessionId,
             mountIds: [mountId],
             tidyMountIds: [],
             hint: '',
-          });
-        } catch (error) {
+          })
+          .catch((error: unknown) => formatError(error));
+        if (typeof handoff === 'string') {
           return stopAt({
             stop: 'conflict',
-            reason: `${label} has conflicts and the Lead could not start: ${formatError(error)}`,
+            reason: `${label} has conflicts and the Lead could not start: ${handoff}`,
+          });
+        }
+        if (handoff.kind === 'nothing' && !isLeadOn({ get, sessionId, mountId })) {
+          return stopAt({
+            stop: 'conflict',
+            reason: `${label} has conflicts on its host and no local rebase for the Lead to take`,
           });
         }
         return stopAt({
@@ -175,10 +219,10 @@ export const mergeInOrder =
           isWithLead: true,
         });
       };
-      const update = async (): Promise<MergeInOrderResult | null> => {
+      const update = async ({ onto }: UpdateParams): Promise<MergeInOrderResult | null> => {
         onStep({ kind: 'updating', index });
         const outcome = await get()
-          .rebaseBranch({ sessionId, mountId })
+          .rebaseBranch({ sessionId, mountId, ontoBranch: onto })
           .catch((error: unknown) => formatError(error));
         if (outcome === 'rebased') {
           return null;
@@ -192,37 +236,39 @@ export const mergeInOrder =
         });
       };
       try {
-        let quietReads = 0;
-        if (shouldUpdate && project !== null && touched.has(project)) {
-          const failed = await update();
-          if (failed !== null) {
-            return failed;
-          }
-          quietReads = MERGE_WAIT.quietReads;
-        }
-        onStep({ kind: 'merging', index });
-        const startedAt = now();
         let view: PullRequestView = await port.read();
         let blocker = mergeBlockerOf({ view });
-        if (blocker?.kind === 'conflict' && shouldUpdate) {
-          const failed = await update();
+        if (blocker !== null && HELD.has(blocker.kind)) {
+          return stopAt({ stop: blocker.kind, reason: `${label} ${blocker.text}` });
+        }
+        if (project !== null && landed.has(branchKeyOf({ project, branch: view.baseBranch }))) {
+          return stopAt({
+            stop: 'stacked',
+            reason: `${label} still targets ${view.baseBranch}, which merged before it`,
+          });
+        }
+        const hasChecksBefore = view.checks.runs.length > 0;
+        const isBehind = shouldUpdate && project !== null && touched.has(project);
+        const isUpdated = isBehind || (blocker?.kind === 'conflict' && shouldUpdate);
+        if (isUpdated) {
+          const failed = await update({ onto: view.baseBranch });
           if (failed !== null) {
             return failed;
           }
-          quietReads = MERGE_WAIT.quietReads;
           view = await port.read();
           blocker = mergeBlockerOf({ view });
         }
+        onStep({ kind: 'merging', index });
+        const startedAt = now();
         const isAwaitingChecks = (): boolean =>
           blocker?.kind === 'pending' ||
-          (blocker === null && quietReads > 0 && view.checks.runs.length === 0);
+          (blocker === null && isUpdated && hasChecksBefore && view.checks.runs.length === 0);
         while (shouldWait && isAwaitingChecks()) {
           if (now() - startedAt >= MERGE_WAIT.maxMs) {
             return stopAt({ stop: 'timeout', reason: `${label} still has checks running` });
           }
           onStep({ kind: 'waiting', index });
           await sleep({ ms: MERGE_WAIT.pollMs });
-          quietReads = view.checks.runs.length === 0 ? quietReads - 1 : 0;
           view = await port.read();
           blocker = mergeBlockerOf({ view });
         }
@@ -243,6 +289,16 @@ export const mergeInOrder =
           mountId,
           expectedHeadSha: view.headSha,
         });
+        const after = await port.read();
+        if (after.state !== 'merged') {
+          return stopAt({
+            stop: 'queued',
+            reason: `${label} is queued to merge and has not landed yet`,
+          });
+        }
+        if (project !== null) {
+          landed.add(branchKeyOf({ project, branch: view.headBranch }));
+        }
       } catch (error) {
         return stopAt({ stop: 'refused', reason: formatError(error) });
       }

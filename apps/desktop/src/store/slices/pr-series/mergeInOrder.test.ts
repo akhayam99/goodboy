@@ -3,6 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PullRequestPort } from '@goodboy/core/review-source';
 import {
   brandId,
+  type AgentId,
   type MountId,
   type PrCheckRun,
   type ProjectId,
@@ -110,6 +111,7 @@ const viewOf = ({ number, overrides = {} }: ViewParams): PullRequestView => ({
 
 let store: StoryStore;
 let reads: Record<number, Array<PullRequestView>>;
+let landed: Set<number>;
 let order: Array<string>;
 let clock: number;
 
@@ -122,11 +124,11 @@ const portOf = ({ number }: { readonly number: number }): PullRequestPort => ({
   read: async () => {
     order.push(`read ${number}`);
     const queue = reads[number] ?? [];
-    const view = queue.length > 1 ? queue.shift() : queue[0];
+    const view = queue.length > 1 && !landed.has(number) ? queue.shift() : queue[0];
     if (view === undefined) {
       throw new Error('the pull request is gone');
     }
-    return view;
+    return landed.has(number) ? { ...view, state: 'merged' } : view;
   },
   updateTitle: unused,
   updateBody: unused,
@@ -171,6 +173,7 @@ const seed = () => {
     },
     mergePr: async (_sessionId, number, method, options) => {
       order.push(`merge ${number} ${method} ${options?.expectedHeadSha ?? ''}`);
+      landed.add(number ?? 0);
     },
     rebaseBranch: async ({ mountId }) => {
       order.push(`update ${String(mountId)}`);
@@ -178,7 +181,7 @@ const seed = () => {
     },
     resolveRebaseWithAuto: async ({ mountIds }) => {
       order.push(`lead ${mountIds.map(String).join(',')}`);
-      return { kind: 'nothing' };
+      return { kind: 'started', agentId: brandId<AgentId>({ value: 'lead-1' }) };
     },
   });
 };
@@ -216,6 +219,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   order = [];
+  landed = new Set();
   clock = 0;
   reads = {
     76: [viewOf({ number: 76 })],
@@ -236,13 +240,16 @@ describe('merge in order across sessions', () => {
     expect(order).toEqual([
       'read 76',
       'merge 76 squash sha-76',
+      'read 76',
       'read 418',
       'merge 418 squash sha-418',
+      'read 418',
     ]);
   });
 
   it('updates the next branch of the same repository on main and waits for its checks', async () => {
     reads[305] = [
+      viewOf({ number: 305 }),
       viewOf({
         number: 305,
         overrides: {
@@ -263,11 +270,14 @@ describe('merge in order across sessions', () => {
     expect(order).toEqual([
       'read 76',
       'merge 76 squash sha-76',
+      'read 76',
+      'read 305',
       'update mount-305',
       'read 305',
       'wait',
       'read 305',
       'merge 305 squash sha-305b',
+      'read 305',
     ]);
     expect(steps).toEqual(['merging 0', 'updating 1', 'merging 1', 'waiting 1']);
   });
@@ -277,19 +287,120 @@ describe('merge in order across sessions', () => {
     expect(order.some((line) => line.startsWith('update'))).toBe(false);
   });
 
-  it('waits for checks that have not started yet after an update', async () => {
-    reads[305] = [
-      viewOf({ number: 305, overrides: { checks: { read: 'ok', error: null, runs: [] } } }),
-      viewOf({ number: 305 }),
-    ];
+  it('waits for checks that have not started yet after an update, however long they take', async () => {
+    const empty = viewOf({
+      number: 305,
+      overrides: { checks: { read: 'ok', error: null, runs: [] } },
+    });
+    reads[305] = [viewOf({ number: 305 }), empty, empty, empty, empty, viewOf({ number: 305 })];
     await train({ entries: ENTRIES.slice(0, 2) });
-    expect(order.slice(2)).toEqual([
+    expect(order.slice(3)).toEqual([
+      'read 305',
       'update mount-305',
       'read 305',
       'wait',
       'read 305',
+      'wait',
+      'read 305',
+      'wait',
+      'read 305',
+      'wait',
+      'read 305',
       'merge 305 squash sha-305',
+      'read 305',
     ]);
+  });
+
+  it('merges without waiting after an update when the repository runs no checks', async () => {
+    reads[305] = [
+      viewOf({ number: 305, overrides: { checks: { read: 'ok', error: null, runs: [] } } }),
+    ];
+    expect(await train({ entries: ENTRIES.slice(0, 2) })).toEqual({ kind: 'done', merged: 2 });
+    expect(order).not.toContain('wait');
+  });
+
+  it('updates the next branch onto the base its pull request targets', async () => {
+    const ontos: Array<string> = [];
+    reads[305] = [viewOf({ number: 305, overrides: { baseBranch: 'release/2.4' } })];
+    store.setState({
+      rebaseBranch: async ({ ontoBranch }) => {
+        ontos.push(ontoBranch ?? 'saved base');
+        return 'rebased';
+      },
+    });
+    await train({ entries: ENTRIES.slice(0, 2) });
+    expect(ontos).toEqual(['release/2.4']);
+  });
+
+  it('stops at a stacked pull request that still targets the branch merged before it', async () => {
+    reads[305] = [viewOf({ number: 305, overrides: { baseBranch: 'acme/76' } })];
+    expect(await train({ entries: ENTRIES.slice(0, 2) })).toEqual({
+      kind: 'stopped',
+      merged: 1,
+      index: 1,
+      stop: 'stacked',
+      reason: '#305 still targets acme/76, which merged before it',
+      isWithLead: false,
+    });
+    expect(order.slice(3)).toEqual(['read 305']);
+  });
+
+  it('reads the next pull request first and never updates one closed meanwhile', async () => {
+    reads[305] = [viewOf({ number: 305, overrides: { state: 'closed' } })];
+    expect(await train({ entries: ENTRIES.slice(0, 2) })).toMatchObject({
+      kind: 'stopped',
+      merged: 1,
+      stop: 'closed',
+      reason: '#305 is closed',
+    });
+    expect(order.slice(3)).toEqual(['read 305']);
+  });
+
+  it('stops when the update dismissed the approval and merges nothing past it', async () => {
+    reads[305] = [
+      viewOf({ number: 305 }),
+      viewOf({ number: 305, overrides: { reviewDecision: 'review_required' } }),
+    ];
+    expect(await train({ entries: ENTRIES.slice(0, 2) })).toMatchObject({
+      kind: 'stopped',
+      merged: 1,
+      stop: 'review-required',
+      reason: '#305 still needs an approving review',
+    });
+    expect(order).not.toContain('merge 305 squash sha-305');
+  });
+
+  it('stops when the host queued the merge instead of landing it, before the next branch', async () => {
+    store.setState({
+      mergePr: async (_sessionId, number) => {
+        order.push(`merge ${number}`);
+      },
+    });
+    expect(await train({ entries: ENTRIES.slice(0, 2) })).toEqual({
+      kind: 'stopped',
+      merged: 0,
+      index: 0,
+      stop: 'queued',
+      reason: '#76 is queued to merge and has not landed yet',
+      isWithLead: false,
+    });
+    expect(order).toEqual(['read 76', 'merge 76', 'read 76']);
+  });
+
+  it('does not say the Lead has a conflict it found no local rebase for', async () => {
+    reads[76] = [viewOf({ number: 76, overrides: { mergeable: false } })];
+    store.setState({
+      rebaseBranch: async () => 'conflict',
+      resolveRebaseWithAuto: async () => ({ kind: 'nothing' }),
+    });
+    expect(await train()).toEqual({
+      kind: 'stopped',
+      merged: 0,
+      index: 0,
+      stop: 'conflict',
+      reason: '#76 has conflicts on its host and no local rebase for the Lead to take',
+      isWithLead: false,
+    });
   });
 
   it('stops at the first conflict and hands it to the Lead without merging past it', async () => {
@@ -313,6 +424,8 @@ describe('merge in order across sessions', () => {
     expect(order).toEqual([
       'read 76',
       'merge 76 squash sha-76',
+      'read 76',
+      'read 305',
       'update mount-305',
       'lead mount-305',
     ]);
@@ -354,6 +467,7 @@ describe('merge in order across sessions', () => {
     store.setState({
       mergePr: async (_sessionId, number) => {
         order.push(`merge ${number}`);
+        landed.add(number ?? 0);
         isStopRequested = true;
       },
     });
@@ -361,7 +475,7 @@ describe('merge in order across sessions', () => {
     const result = await train({ shouldStop: () => isStopRequested });
 
     expect(result).toEqual({ kind: 'halted', merged: 1 });
-    expect(order).toEqual(['read 76', 'merge 76']);
+    expect(order).toEqual(['read 76', 'merge 76', 'read 76']);
   });
 
   it('stops when checks are still running after the wait limit', async () => {
@@ -392,6 +506,16 @@ describe('merge in order across sessions', () => {
       'changes-requested',
       { reviewDecision: 'changes_requested' as const },
       '#76 has changes requested',
+    ],
+    [
+      'review-required',
+      { reviewDecision: 'review_required' as const },
+      '#76 still needs an approving review',
+    ],
+    [
+      'unreadable-checks',
+      { checks: { read: 'failed' as const, error: 'HTTP 502', runs: [] } },
+      "#76 has checks Goodboy can't read",
     ],
     [
       'failing',

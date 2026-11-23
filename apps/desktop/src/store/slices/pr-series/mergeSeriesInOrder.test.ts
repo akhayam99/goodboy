@@ -127,6 +127,10 @@ type MergePr = ReturnType<StoryStore['getState']>['mergePr'];
 
 const mergePr: MergePr = async (_sessionId, number, method, options) => {
   order.push(`merge ${number}`);
+  const view = views[number ?? 0];
+  if (view !== undefined) {
+    views[number ?? 0] = { ...view, state: 'merged' };
+  }
   merges.push({
     number,
     method,
@@ -207,7 +211,17 @@ describe('merge in order', () => {
     const result = await run();
 
     expect(result).toEqual({ kind: 'done', merged: 3 });
-    expect(order).toEqual(['read 1', 'merge 1', 'read 2', 'merge 2', 'read 3', 'merge 3']);
+    expect(order).toEqual([
+      'read 1',
+      'merge 1',
+      'read 1',
+      'read 2',
+      'merge 2',
+      'read 2',
+      'read 3',
+      'merge 3',
+      'read 3',
+    ]);
     expect(merges[0]).toEqual({
       number: 1,
       method: 'squash',
@@ -222,7 +236,7 @@ describe('merge in order', () => {
     const result = await run();
 
     expect(result).toEqual({ kind: 'done', merged: 2 });
-    expect(order).toEqual(['read 2', 'merge 2', 'read 3', 'merge 3']);
+    expect(order).toEqual(['read 2', 'merge 2', 'read 2', 'read 3', 'merge 3', 'read 3']);
   });
 
   it('stops at the first part that cannot merge and names the reason', async () => {
@@ -248,7 +262,7 @@ describe('merge in order', () => {
       partLabel: '2',
       reason: 'part 2 has failing checks',
     });
-    expect(order).toEqual(['read 1', 'merge 1', 'read 2']);
+    expect(order).toEqual(['read 1', 'merge 1', 'read 1', 'read 2']);
   });
 
   it.each([
