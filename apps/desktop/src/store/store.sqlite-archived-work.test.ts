@@ -31,6 +31,7 @@ import {
   type StoryStore,
 } from './storyHarness';
 import { buildMountRows } from './slices/project-mounts/mountRowModel';
+import { remountAfterUnmount } from '../features/session/components/SessionOverviewPane/ProjectMountRows/remountAfterUnmount';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>
@@ -262,6 +263,42 @@ describe('store on sqlite: an archived session keeps the work it did', () => {
     expect(titles).toContain(
       `Couldn't bring back ${BRANCH} in payments-api. Reopen it from the overview.`,
     );
+  });
+
+  it('undoes the unmount on the kept row, with no second mount', async () => {
+    await seedWork({ state: 'open' });
+    await useAppStore.getState().detachProject({ sessionId, projectId: PROJECT_ID });
+    storySpies.createWorktree.mockResolvedValue({
+      worktreePath: FOLDER,
+      branchName: BRANCH,
+      slug: 'fix-redirect',
+      reused: false,
+    });
+    storySpies.inspectWorktree.mockResolvedValueOnce({
+      kind: 'missing',
+      path: FOLDER,
+      isMain: false,
+      isLocked: false,
+      lockReason: null,
+    });
+
+    await remountAfterUnmount({
+      sessionId,
+      projectId: PROJECT_ID,
+      branch: BRANCH,
+      keptPath: null,
+      keptMountId: MOUNT_ID,
+      ensureProjectMounted: useAppStore.getState().ensureProjectMounted,
+      attachMount: useAppStore.getState().attachMount,
+    });
+
+    expect(await mountRow()).toEqual({ worktree_path: FOLDER, is_attached: 1, branch: BRANCH });
+    expect(
+      await rowsOf({
+        sql: 'SELECT id FROM session_worktrees WHERE session_id = ?',
+        params: [sessionId],
+      }),
+    ).toHaveLength(1);
   });
 
   it('leaves merged work closed on restore', async () => {

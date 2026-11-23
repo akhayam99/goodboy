@@ -62,6 +62,7 @@ export const MountActionsMenu = ({
   const projectKey = projectKeyOf({ sessionId, projectId });
   const detachProject = useAppStore((state) => state.detachProject);
   const ensureProjectMounted = useAppStore((state) => state.ensureProjectMounted);
+  const attachMount = useAppStore((state) => state.attachMount);
   const reportError = useAppStore((state) => state.reportError);
   const projectKind = useAppStore((state) => projectById(state.projects, projectId)?.kind ?? null);
   const isRepoProject = projectKind === 'repo';
@@ -193,6 +194,9 @@ export const MountActionsMenu = ({
         assess();
         return;
       }
+      const keptMountIds = new Set(
+        (useAppStore.getState().sessionMounts[sessionId] ?? []).map((view) => view.id),
+      );
       announceUnmount({
         sessionId,
         projectId,
@@ -201,8 +205,10 @@ export const MountActionsMenu = ({
         summary,
         outcomes,
         branchOf,
+        keptMountIds,
         showToast,
         ensureProjectMounted,
+        attachMount,
       });
       setIsConfirming(false);
     } catch (error) {

@@ -1,8 +1,9 @@
-import type { MountId, ProjectId, SessionId } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId, SessionMountView } from '@goodboy/types';
 import type { ShowToast } from '../../../../../shared/components/Toast/toastContext';
 import { undoable } from '../../../../../shared/utils/undoable';
 import type { DetachProjectOutcome } from '../../../../../store/slices/project-mounts/detachProject';
 import type {
+  AttachMountInput,
   EnsureProjectMountedInput,
   EnsureProjectMountedResult,
 } from '../../../../../store/slices/project-mounts/types';
@@ -17,10 +18,12 @@ type Params = {
   readonly summary: Exclude<DetachOutcomeKind, 'failed'>;
   readonly outcomes: ReadonlyArray<DetachProjectOutcome>;
   readonly branchOf: ReadonlyMap<MountId, string>;
+  readonly keptMountIds: ReadonlySet<MountId>;
   readonly showToast: ShowToast;
   readonly ensureProjectMounted: (
     input: EnsureProjectMountedInput,
   ) => Promise<EnsureProjectMountedResult>;
+  readonly attachMount: (input: AttachMountInput) => Promise<SessionMountView>;
 };
 
 export const announceUnmount = ({
@@ -31,8 +34,10 @@ export const announceUnmount = ({
   summary,
   outcomes,
   branchOf,
+  keptMountIds,
   showToast,
   ensureProjectMounted,
+  attachMount,
 }: Params): void => {
   const summarized = outcomes.find((outcome) => outcome.kind === summary);
   const message = detachOutcomeMessage({
@@ -56,7 +61,9 @@ export const announceUnmount = ({
         projectId,
         branch,
         keptPath: only.kind === 'kept' ? only.worktreePath : null,
+        keptMountId: keptMountIds.has(only.mountId) ? only.mountId : null,
         ensureProjectMounted,
+        attachMount,
       }),
   });
 };
