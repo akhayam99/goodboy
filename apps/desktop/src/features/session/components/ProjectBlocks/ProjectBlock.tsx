@@ -1,3 +1,4 @@
+import { NAMES } from '../../../../shared/utils/names';
 import { Button } from '@goodboy/ui';
 import type { ProjectBlock as ProjectBlockModel } from '../../central/board/projectBlocksOf';
 import { BoardMergeInOrder } from './BoardMergeInOrder';
@@ -14,7 +15,7 @@ type Props = {
 };
 
 export const ProjectBlock = ({ block, hasMergeDoor, hasRemoveDoor, onToggleFold }: Props) => {
-  const name = block.projectName ?? 'Not on a branch';
+  const name = block.projectName ?? NAMES.notOnABranch;
   return (
     <div
       role="group"

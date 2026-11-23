@@ -32,7 +32,7 @@ export const DeskProjects = ({ sessionId, board }: Props) => {
           entry,
           runningCount: board.runningByRowId.get(row.id) ?? 0,
         });
-        const name = row.projectName ?? row.branch ?? NAMES.projects;
+        const name = row.projectName ?? row.branch ?? NAMES.notOnABranch;
         return (
           <Button
             key={row.id}

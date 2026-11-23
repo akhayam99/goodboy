@@ -165,6 +165,7 @@ export const NAMES = {
   chooseAFolder: 'Choose a folder…',
   unmount: 'Unmount',
   unmountAnyway: 'Unmount anyway',
+  notOnABranch: 'Not on a branch',
   project: 'Project',
   projects: 'Projects',
   noProject: 'No project',
