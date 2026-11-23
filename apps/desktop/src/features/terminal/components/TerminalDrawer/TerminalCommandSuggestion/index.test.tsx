@@ -6,28 +6,28 @@ const suggested = vi.hoisted(() => {
 });
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 vi.mock('@goodboy/db', async () =>
-  (await import('../../../../store/storyHarness')).dbModuleMock({
+  (await import('../../../../../store/storyHarness')).dbModuleMock({
     listNudgeEvents: async () => [],
     listArtifactComments: async () => [],
     deleteNudgeEvent: async () => undefined,
   }),
 );
-vi.mock('../../../../shared/lib/db', async () =>
-  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+vi.mock('../../../../../shared/lib/db', async () =>
+  (await import('../../../../../store/storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../../../suggestions/useSessionSuggestions', () => ({
+vi.mock('../../../../suggestions/useSessionSuggestions', () => ({
   useSessionSuggestions: () => suggested.moves,
 }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { TerminalTab, TerminalTabId } from '../../../../shared/types/terminal';
+import type { TerminalTab, TerminalTabId } from '../../../../../shared/types/terminal';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -35,18 +35,18 @@ import {
   storySpies,
   stubStoryInvoke,
   type StoryStore,
-} from '../../../../store/storyHarness';
-import { worktreeStatusOf } from '../../../../test/worktreeStatusOf';
-import { ToastProvider } from '../../../../shared/components/Toast';
-import { brandedId } from '../../../history/testing/brandedId';
-import type { NextMove } from '../../../suggestions/types';
+} from '../../../../../store/storyHarness';
+import { worktreeStatusOf } from '../../../../../test/worktreeStatusOf';
+import { ToastProvider } from '../../../../../shared/components/Toast';
+import { brandedId } from '../../../../history/testing/brandedId';
+import type { NextMove } from '../../../../suggestions/types';
 import {
   harborline,
   mountOf,
   notifyRelay,
   sessionOf,
-} from '../../../workspace/testing/sessionColumn';
-import { TerminalCommandSuggestion } from './TerminalCommandSuggestion';
+} from '../../../../workspace/testing/sessionColumn';
+import { TerminalCommandSuggestion } from '.';
 
 const session = sessionOf({ goal: 'Retry the webhook' });
 
@@ -144,15 +144,15 @@ describe('the command strip of a terminal', () => {
   it('shows the whole command and its folder, and types it here to wait for Enter', async () => {
     renderStrip();
 
-    expect(screen.getByText(COMMAND)).toBeDefined();
-    expect(screen.getByText('Run the failing test')).toBeDefined();
+    screen.getByText(COMMAND);
+    screen.getByText('Run the failing test');
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Add to prompt' }));
     });
 
     expect(writes()).toEqual([{ sessionId: TAB.id, data: btoa(COMMAND) }]);
-    expect(screen.getByText('Press Enter to run')).toBeDefined();
+    screen.getByText('Press Enter to run');
     expect(screen.queryByRole('button', { name: 'Add to prompt' })).toBeNull();
   });
 
@@ -173,7 +173,7 @@ describe('the command strip of a terminal', () => {
 
     expect(writes()).toHaveLength(2);
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getByText('Press Enter to run')).toBeDefined();
+    screen.getByText('Press Enter to run');
   });
 
   it('puts the command off with Not now, and Undo brings it back', async () => {
@@ -189,6 +189,6 @@ describe('the command strip of a terminal', () => {
       fireEvent.click(await screen.findByRole('button', { name: /Undo/ }));
     });
 
-    await waitFor(() => expect(screen.getByText(COMMAND)).toBeDefined());
+    await waitFor(() => screen.getByText(COMMAND));
   });
 });

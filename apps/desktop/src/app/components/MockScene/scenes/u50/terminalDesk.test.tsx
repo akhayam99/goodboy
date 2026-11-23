@@ -74,7 +74,7 @@ describe('the u50 terminal desk scenes', () => {
         .getAllByRole('tab')
         .map((tab) => tab.textContent),
     ).toEqual(['payments-api', 'ledger-core']);
-    expect(screen.getByRole('button', { name: 'Open on desk' })).toBeDefined();
+    screen.getByRole('button', { name: 'Open on desk' });
   });
 
   it('draws the terminal on the Desk without Open on desk', async () => {

@@ -1,9 +1,9 @@
 import type { MountId, Session } from '@goodboy/types';
-import type { TerminalTab } from '../../../../shared/types/terminal';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { useSessionSuggestions } from '../../../suggestions/useSessionSuggestions';
-import { terminalCommandMoveOf } from '../../terminalCommandMoveOf';
-import { TerminalCommandRunner } from './TerminalCommandRunner';
+import type { TerminalTab } from '../../../../../shared/types/terminal';
+import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { useSessionSuggestions } from '../../../../suggestions';
+import { terminalCommandMoveOf } from '../../../terminalCommandMoveOf';
+import { TerminalCommandRunner } from '../TerminalCommandRunner';
 
 type Props = {
   readonly session: Session;

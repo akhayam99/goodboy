@@ -50,7 +50,7 @@ export const TerminalCommandStrip = ({
         </code>
         <PathLine path={command.cwd} />
         {failure === null ? null : (
-          <p role="alert" className="text-meta text-danger">
+          <p role="alert" className="text-meta text-foreground">
             {failure}
           </p>
         )}

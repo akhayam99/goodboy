@@ -46,6 +46,7 @@ import {
 } from '../../../workspace/testing/sessionColumn';
 import { brandedId } from '../../../history/testing/brandedId';
 import { toggleTerminalDock } from '../../toggleTerminalDock';
+import { toggleCurrentFace } from '../../../session/components/SessionDesk/toggleCurrentFace';
 import { TerminalDrawer } from '.';
 
 const session = sessionOf({ goal: 'Retry the webhook' });
@@ -147,8 +148,8 @@ describe('one tab per track', () => {
     expect(
       within(tracks).getByRole('tab', { name: 'payments-api' }).getAttribute('aria-selected'),
     ).toBe('true');
-    expect(screen.getByText(payments.branch)).toBeDefined();
-    expect(screen.getByText(`· ${session.id}`)).toBeDefined();
+    screen.getByText(payments.branch);
+    screen.getByText(`· ${session.id}`);
   });
 
   it('opens the shell of a track on its first focus and reuses it after', async () => {
@@ -176,6 +177,7 @@ describe('the terminal over the overview', () => {
       registerShortcut('terminal.studio', () =>
         toggleTerminalDock({ isToggle: true, shouldFocusFirst: true }),
       ),
+      registerShortcut('session.desk', toggleCurrentFace),
     );
 
     act(() => {
@@ -207,8 +209,8 @@ describe('a shell that ends with an error', () => {
     });
 
     expect(onClose).not.toHaveBeenCalled();
-    expect(screen.getByTestId('terminal-panel')).toBeDefined();
-    expect(screen.getByText('exited')).toBeDefined();
+    screen.getByTestId('terminal-panel');
+    screen.getByText('exited');
 
     fireEvent.click(screen.getByRole('button', { name: 'Restart payments-api' }));
 

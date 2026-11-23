@@ -1,9 +1,9 @@
 import { Button, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { replayShortcut } from '../../../../shared/keyboard/replayShortcut';
 import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
-import { switchSessionFace } from '../../../session/components/SessionDesk/switchSessionFace';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -18,11 +18,7 @@ export const OpenOnDeskButton = ({ sessionId }: Props) => {
   }
   return (
     <Tooltip content={shortcutGlyphs('session.desk')}>
-      <Button
-        variant="secondary"
-        size="xs"
-        onClick={() => switchSessionFace({ sessionId, face: 'desk' })}
-      >
+      <Button variant="secondary" size="xs" onClick={() => replayShortcut({ id: 'session.desk' })}>
         {NAMES.openOnDesk}
       </Button>
     </Tooltip>
