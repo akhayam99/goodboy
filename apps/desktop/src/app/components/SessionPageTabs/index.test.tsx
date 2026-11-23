@@ -67,21 +67,18 @@ describe('the session page tabs', () => {
     expect(names).toEqual(['Overview', 'Runs', 'Artifacts', 'Questions', 'Context']);
   });
 
-  it('adds the Changes shortcut last only while the session has exactly one branch', () => {
+  it('holds no Changes tab and no Overview or Desk switch, with one branch or more', () => {
     const ledger = mountOf({ session, project: ledgerCore });
     const payments = mountOf({ session, project: paymentsApi });
-    act(() => {
-      store.setState({ sessionProjectMounts: { [session.id]: [ledger] } });
-    });
-    const view = render(<SessionPageTabs session={session} />);
-    expect(pageTabs().getAllByRole('tab').at(-1)?.textContent).toBe('Changes');
-    view.unmount();
-
-    act(() => {
-      store.setState({ sessionProjectMounts: { [session.id]: [ledger, payments] } });
-    });
-    render(<SessionPageTabs session={session} />);
-    expect(pageTabs().queryByRole('tab', { name: /Changes/ })).toBeNull();
+    for (const mounts of [[ledger], [ledger, payments]]) {
+      act(() => {
+        store.setState({ sessionProjectMounts: { [session.id]: mounts } });
+      });
+      const view = render(<SessionPageTabs session={session} />);
+      expect(pageTabs().queryByRole('tab', { name: /Changes/ })).toBeNull();
+      expect(screen.queryByRole('tablist', { name: 'Overview or Desk' })).toBeNull();
+      view.unmount();
+    }
   });
 
   it.each([

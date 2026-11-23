@@ -5,7 +5,6 @@ import { openSessionPage } from '../../../features/session/openSessionPage';
 import { pageSlotOf } from '../../../features/session/pageSlot';
 import type { Page } from '../../../features/session/pageRegistry';
 import { currentSignOf } from './currentSign';
-import { FaceSwitch } from './FaceSwitch';
 import { useCardPages } from '../../../features/workspace/hooks/useCardPages';
 
 type Props = {
@@ -43,22 +42,19 @@ export const SessionPageTabs = ({ session }: Props) => {
   });
   const value = pages.find((page) => page.id === current)?.id ?? null;
   return (
-    <div className="flex min-w-0 items-center gap-3">
-      <div className="flex min-w-0 flex-1 flex-col">
-        <PageTabs
-          ariaLabel="Session pages"
-          options={options}
-          value={value}
-          onChange={(id) => {
-            const page = pages.find((entry) => entry.id === id);
-            if (page === undefined) {
-              return;
-            }
-            openSessionPage({ sessionId: session.id, page });
-          }}
-        />
-      </div>
-      <FaceSwitch sessionId={session.id} isFacePage={current === 'overview'} />
+    <div className="flex min-w-0 flex-col">
+      <PageTabs
+        ariaLabel="Session pages"
+        options={options}
+        value={value}
+        onChange={(id) => {
+          const page = pages.find((entry) => entry.id === id);
+          if (page === undefined) {
+            return;
+          }
+          openSessionPage({ sessionId: session.id, page });
+        }}
+      />
     </div>
   );
 };

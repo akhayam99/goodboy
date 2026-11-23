@@ -28,13 +28,11 @@ import {
 } from '../../../../../store/storyHarness';
 import { worktreeStatusOf } from '../../../../../test/worktreeStatusOf';
 import { sessionPlace } from '../../../../../store/slices/navigation/place';
-import { registerShortcut } from '../../../../../shared/keyboard/dispatcher';
-import { pressShortcut } from '../../../../../__tests__/helpers/pressKey';
 import { ledgerCore, mountOf, sessionOf } from '../../../../workspace/testing/sessionColumn';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { deskToolsOf } from '../deskToolsOf';
 import { SessionFace } from '../SessionFace';
-import { toggleCurrentFace } from '../toggleCurrentFace';
+import { toggleRailTool } from '../../SessionTools/toggleRailTool';
+import type { RailToolId } from '../../SessionTools/sessionTools';
 import { applyDeskHold } from './applyDeskHold';
 import { deskLines } from './deskLines';
 
@@ -94,7 +92,6 @@ beforeEach(async () => {
   await act(async () => {
     store.getState().navigate({ to: sessionPlace({ sessionId: session.id }) });
   });
-  stops.push(registerShortcut('session.desk', toggleCurrentFace, { canDecline: true }));
   Reflect.set(window, '__TAURI_INTERNALS__', { metadata: { currentWindow: { label: 'main' } } });
 });
 
@@ -124,9 +121,13 @@ const tick = async (): Promise<void> => {
   });
 };
 
-const pressDesk = async (): Promise<void> => {
+type ToolParams = {
+  readonly pane: RailToolId;
+};
+
+const openTool = async ({ pane }: ToolParams): Promise<void> => {
   act(() => {
-    pressShortcut({ id: 'session.desk' });
+    toggleRailTool({ pane, sessionId: session.id });
   });
   await tick();
 };
@@ -139,7 +140,7 @@ describe('one Desk per session, in one window', () => {
   it('holds the Desk in the window that opens it first', async () => {
     renderFace();
 
-    await pressDesk();
+    await openTool({ pane: 'terminal' });
 
     expect(face()).toBe('desk');
     expect(holder).toBe('main');
@@ -149,7 +150,7 @@ describe('one Desk per session, in one window', () => {
     otherWindowHolds();
     renderFace();
 
-    await pressDesk();
+    await openTool({ pane: 'terminal' });
 
     expect(face()).toBe('overview');
     screen.getByText('Desk open in another window');
@@ -157,24 +158,24 @@ describe('one Desk per session, in one window', () => {
     expect(screen.queryByRole('complementary', { name: 'Desk' })).toBeNull();
   });
 
-  it('opens no tool when this window already knows the other window holds the Desk', async () => {
+  it('keeps the page whole when this window already knows the other window holds the Desk', async () => {
     otherWindowHolds();
     deskLines.noteHolder({ sessionId: session.id, holder: 'win-2' });
     renderFace();
 
-    await pressDesk();
+    await openTool({ pane: 'terminal' });
 
     expect(face()).toBe('overview');
     screen.getByText('Desk open in another window');
-    expect(deskToolsOf({ state: store.getState() })).toEqual([]);
+    expect(screen.queryByRole('complementary', { name: 'Desk' })).toBeNull();
   });
 
-  it('answers the key with the same line instead of a second Desk', async () => {
+  it('answers a second tool with the same line instead of a second Desk', async () => {
     otherWindowHolds();
     renderFace();
-    await pressDesk();
+    await openTool({ pane: 'terminal' });
 
-    await pressDesk();
+    await openTool({ pane: 'scripts' });
 
     expect(face()).toBe('overview');
     expect(screen.getAllByText('Desk open in another window')).toHaveLength(1);
@@ -183,7 +184,7 @@ describe('one Desk per session, in one window', () => {
   it('Bring it here takes the Desk into this window', async () => {
     otherWindowHolds();
     renderFace();
-    await pressDesk();
+    await openTool({ pane: 'terminal' });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Bring it here' }));
@@ -197,7 +198,7 @@ describe('one Desk per session, in one window', () => {
 
   it('says Desk moved to another window in the page when the other window takes it, and Bring the Desk back returns it', async () => {
     renderFace();
-    await pressDesk();
+    await openTool({ pane: 'terminal' });
 
     await act(async () => {
       otherWindowHolds();
@@ -207,7 +208,7 @@ describe('one Desk per session, in one window', () => {
     expect(face()).toBe('overview');
     screen.getByText('Desk moved to another window');
 
-    await pressDesk();
+    await openTool({ pane: 'scripts' });
     expect(face()).toBe('overview');
 
     await act(async () => {
@@ -223,13 +224,13 @@ describe('one Desk per session, in one window', () => {
   it('frees the Desk when the other window closes or stops answering', async () => {
     otherWindowHolds();
     renderFace();
-    await pressDesk();
+    await openTool({ pane: 'terminal' });
 
     await act(async () => {
       holder = null;
       applyDeskHold({ hold: { sessionId: session.id, holder: null }, line: 'moved' });
     });
-    await pressDesk();
+    await openTool({ pane: 'scripts' });
 
     expect(screen.queryByText('Desk open in another window')).toBeNull();
     expect(face()).toBe('desk');
@@ -241,7 +242,7 @@ describe('one Desk per session, in one window', () => {
     isHoldBroken = true;
     renderFace();
 
-    await pressDesk();
+    await openTool({ pane: 'terminal' });
 
     expect(face()).toBe('overview');
     expect(holder).toBeNull();
@@ -265,7 +266,7 @@ describe('one Desk per session, in one window', () => {
     store.setState({ reportError });
     otherWindowHolds();
     renderFace();
-    await pressDesk();
+    await openTool({ pane: 'terminal' });
     isHoldBroken = true;
 
     await act(async () => {

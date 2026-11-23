@@ -25,7 +25,7 @@ export const switchSessionFace = ({ sessionId, face }: Params): void => {
     const line = deskLines.lineOf({ sessionId }) === 'moved' ? 'moved' : 'open-elsewhere';
     deskLines.show({ sessionId, line });
     showFace({ sessionId });
-    focusDeskControl({ target: 'line' });
+    focusDeskControl();
     return;
   }
   const landing = deskLandingOf({ state, sessionId, door: 'desk', move: null, next: [] });

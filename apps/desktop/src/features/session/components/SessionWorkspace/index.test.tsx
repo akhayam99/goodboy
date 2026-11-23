@@ -136,6 +136,7 @@ vi.mock('../../../../store', async () => ({
     (agent.lastViewedAt == null || agent.lastFinishedAt > agent.lastViewedAt),
   useAppStore: Object.assign(<T,>(selector: (state: Store) => T) => selector(store), {
     getState: () => store,
+    subscribe: () => () => undefined,
   }),
   useIsSessionCollectionLoaded: ({
     sessionId,

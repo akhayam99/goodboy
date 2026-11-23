@@ -22,7 +22,6 @@ import { TerminalPane } from '../TerminalStudio/TerminalPane';
 import { TerminalScriptsMenu } from '../TerminalStudio/TerminalScriptsMenu';
 import { TerminalStripActions } from '../TerminalStudio/TerminalStripActions';
 import { TerminalTabStrip } from '../TerminalStudio/TerminalTabStrip';
-import { OpenOnDeskButton } from './OpenOnDeskButton';
 import { TerminalCommandSuggestion } from './TerminalCommandSuggestion';
 import { TerminalScopePicker } from './TerminalScopePicker';
 import { TerminalWorktreeTabs } from './TerminalWorktreeTabs';
@@ -174,7 +173,6 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
           />
         </span>
       }
-      action={sessionId === null ? null : <OpenOnDeskButton sessionId={sessionId} />}
       menu={
         <TerminalStripActions
           worktree={worktree}

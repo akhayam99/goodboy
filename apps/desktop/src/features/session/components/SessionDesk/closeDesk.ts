@@ -13,5 +13,5 @@ export const closeDesk = ({ sessionId, tools }: Params): void => {
   deskLines.keep({ sessionId, tools });
   useAppStore.getState().setSessionFace({ sessionId, face: 'overview' });
   deskLines.show({ sessionId, line: 'closed' });
-  focusDeskControl({ target: 'tab' });
+  focusDeskControl();
 };

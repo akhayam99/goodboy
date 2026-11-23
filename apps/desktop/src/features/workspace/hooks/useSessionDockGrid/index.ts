@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../../../../store';
-import { startDeskTool } from '../../../session/desk/startDeskTool';
 import { watchSessionDockGrid } from './watchSessionDockGrid';
 
 export const useSessionDockGrid = (): void => {
@@ -10,9 +9,6 @@ export const useSessionDockGrid = (): void => {
     if (!isHydrated) {
       return;
     }
-    return watchSessionDockGrid({
-      store: useAppStore,
-      onEntered: ({ sessionId }) => void startDeskTool({ sessionId, mountId: null }),
-    });
+    return watchSessionDockGrid({ store: useAppStore });
   }, [isHydrated]);
 };

@@ -12,10 +12,8 @@ const toolsOnDesk = (): number => deskToolsOf({ state: useAppStore.getState() })
 const faceOf = (sessionId: SessionId): string =>
   useAppStore.getState().sessionFace[sessionId] ?? 'overview';
 
-const pressDesk = async (): Promise<void> => {
-  const anchor = await screen.findByRole('button', { name: ANCHOR });
-  anchor.focus();
-  pressShortcut({ id: 'session.desk' });
+const openTerminal = async (): Promise<void> => {
+  fireEvent.click(await screen.findByTestId('pane-toggle-terminal'));
   await settle();
 };
 
@@ -42,19 +40,20 @@ const pressNav = async (id: 'nav.back' | 'nav.forward'): Promise<void> => {
 
 export const DESK_NAV_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'desk: the key enters the Desk on a tool at once, never on an empty Desk',
-    covers: ['key:session.desk'],
-    open: pressDesk,
+    name: 'desk: a tool opened from the right rail splits the page, with no switch in the head',
+    covers: ['rail:terminal'],
+    open: openTerminal,
     lands: async (ctx) => {
       await deskIsOpen();
       expect(faceOf(ctx.sessionId)).toBe('desk');
+      expect(screen.queryByRole('tablist', { name: 'Overview or Desk' })).toBeNull();
     },
   },
   {
-    name: 'desk: closing the last tool returns to the overview with Desk closed and Reopen, focus on Desk',
-    covers: ['key:session.desk'],
+    name: 'desk: closing the last tool returns to the whole overview with Desk closed and Reopen',
+    covers: ['rail:terminal'],
     open: async () => {
-      await pressDesk();
+      await openTerminal();
       await deskIsOpen();
       await closeEveryTool();
     },
@@ -63,8 +62,7 @@ export const DESK_NAV_ROWS: ReadonlyArray<Row> = [
       expect(screen.queryByRole('complementary', { name: 'Desk' })).toBeNull();
       await screen.findByText('Desk closed');
       await waitFor(() => {
-        expect(document.activeElement?.getAttribute('role')).toBe('tab');
-        expect(document.activeElement?.textContent).toBe('Desk');
+        expect(document.activeElement?.textContent).toBe('Reopen');
       }, WAIT);
       fireEvent.click(screen.getByRole('button', { name: 'Reopen' }));
       await settle();
@@ -76,7 +74,7 @@ export const DESK_NAV_ROWS: ReadonlyArray<Row> = [
     name: 'desk: Back and Forward walk places, never faces, and open no tool by themselves',
     covers: ['key:nav.back', 'key:nav.forward'],
     open: async () => {
-      await pressDesk();
+      await openTerminal();
       await deskIsOpen();
       await pressBoardKey();
     },
@@ -93,9 +91,9 @@ export const DESK_NAV_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'desk: Esc on the last tool never leaves an empty Desk, it closes it with Reopen',
-    covers: ['key:session.desk'],
+    covers: ['rail:terminal'],
     open: async () => {
-      await pressDesk();
+      await openTerminal();
       await deskIsOpen();
       pressShortcut({ id: 'overlay.close' });
       await settle();

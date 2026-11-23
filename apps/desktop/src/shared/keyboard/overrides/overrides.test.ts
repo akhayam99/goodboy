@@ -106,7 +106,6 @@ describe('which rows can be rebound', () => {
   it('keeps the menu bar, the composer keys, plain keys and families out', () => {
     const fixed: ReadonlyArray<ShortcutId> = [
       'palette.open',
-      'session.desk',
       'composer.send',
       'composer.submit',
       'overlay.close',
@@ -144,13 +143,9 @@ describe('which rows can be rebound', () => {
     expect([...MENU_BOUND_IDS].sort()).toEqual([...inMenu].sort());
   });
 
-  it('binds the Desk key to the View menu, so a terminal or a Browser page still switches', () => {
-    expect(MENU_BOUND_IDS).toContain('session.desk');
-    expect(findComboConflict({ id: 'lens.plans', combo: 'cmd+KeyJ', overrides: {} })).toEqual({
-      kind: 'clash',
-      otherId: 'session.desk',
-      label: 'Desk',
-    });
+  it('leaves the J key free now that the Desk has no key', () => {
+    expect(MENU_BOUND_IDS).not.toContain('session.desk');
+    expect(findComboConflict({ id: 'lens.plans', combo: 'cmd+KeyJ', overrides: {} })).toBeNull();
   });
 });
 
@@ -161,6 +156,7 @@ describe('reading the saved overrides', () => {
       'composer.send': 'cmd+KeyJ',
       'palette.open': 'cmd+KeyJ',
       'no.such.id': 'cmd+KeyJ',
+      'session.desk': 'cmd+shift+KeyJ',
       'lens.scripts': 'not a chord',
       'lens.explore': 7,
     });

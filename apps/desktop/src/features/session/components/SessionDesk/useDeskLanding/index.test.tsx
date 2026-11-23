@@ -17,7 +17,7 @@ vi.mock('../../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -29,8 +29,6 @@ import {
 import { worktreeStatusOf } from '../../../../../test/worktreeStatusOf';
 import { sessionPlace } from '../../../../../store/slices/navigation/place';
 import { currentStack } from '../../../../../store/slices/navigation/currentStack';
-import { registerShortcut } from '../../../../../shared/keyboard/dispatcher';
-import { pressShortcut } from '../../../../../__tests__/helpers/pressKey';
 import {
   ledgerCore,
   mountOf,
@@ -39,20 +37,19 @@ import {
 } from '../../../../workspace/testing/sessionColumn';
 import { SessionPageTabs } from '../../../../../app/components/SessionPageTabs';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { toggleTerminalDock } from '../../../../terminal/toggleTerminalDock';
 import { closeCurrentLevel } from '../../../../../app/hooks/useAppShortcuts/closeCurrentLevel';
+import { toggleRailTool } from '../../SessionTools/toggleRailTool';
+import type { RailToolId } from '../../SessionTools/sessionTools';
 import { applyDeskHold } from '../useDeskOwner/applyDeskHold';
 import { deskLines } from '../useDeskOwner/deskLines';
 import { deskToolsOf } from '../deskToolsOf';
 import { isFaceShown } from '../../../desk/isFaceShown';
 import { SessionFace } from '../SessionFace';
 import { switchSessionFace } from '../switchSessionFace';
-import { toggleCurrentFace } from '../toggleCurrentFace';
 
 const session = sessionOf({ goal: 'Reconcile the ledger export' });
 
 let store: StoryStore;
-const stops: Array<() => void> = [];
 
 beforeAll(async () => {
   store = await importStore();
@@ -76,13 +73,9 @@ beforeEach(async () => {
   await act(async () => {
     store.getState().navigate({ to: sessionPlace({ sessionId: session.id }) });
   });
-  stops.push(registerShortcut('session.desk', toggleCurrentFace, { canDecline: true }));
 });
 
 afterEach(() => {
-  while (stops.length > 0) {
-    stops.pop()?.();
-  }
   cleanup();
   document.body.innerHTML = '';
 });
@@ -109,12 +102,18 @@ const tick = async (): Promise<void> => {
   });
 };
 
-const openDesk = async (): Promise<void> => {
+type ToolParams = {
+  readonly pane: RailToolId;
+};
+
+const clickRail = async ({ pane }: ToolParams): Promise<void> => {
   act(() => {
-    pressShortcut({ id: 'session.desk' });
+    toggleRailTool({ pane, sessionId: session.id });
   });
   await tick();
 };
+
+const openDesk = async (): Promise<void> => clickRail({ pane: 'terminal' });
 
 const closeEveryTool = async (): Promise<void> => {
   await act(async () => {
@@ -123,11 +122,70 @@ const closeEveryTool = async (): Promise<void> => {
   await tick();
 };
 
-describe('entering the Desk', () => {
-  it('opens a tool at once, the terminal of the first project when nothing was kept', async () => {
+describe('the head of the session', () => {
+  it('holds the page tabs only, with no Overview or Desk switch', () => {
     renderFace();
 
-    await openDesk();
+    expect(screen.queryByRole('tablist', { name: 'Overview or Desk' })).toBeNull();
+    expect(screen.getByRole('tablist', { name: 'Session pages' })).not.toBeNull();
+  });
+});
+
+describe('a tool from the right rail builds the Desk', () => {
+  const RAIL: ReadonlyArray<ToolParams> = [
+    { pane: 'terminal' },
+    { pane: 'browser' },
+    { pane: 'scripts' },
+    { pane: 'ask' },
+    { pane: 'monitoring' },
+  ];
+
+  it.each(RAIL)('$pane splits the page, with no history entry', async ({ pane }) => {
+    renderFace();
+    const before = entries();
+
+    await clickRail({ pane });
+
+    expect(face()).toBe('desk');
+    expect(tools().length).toBeGreaterThan(0);
+    expect(screen.queryByRole('complementary', { name: 'Desk' })).not.toBeNull();
+    expect(entries()).toBe(before);
+  });
+
+  it('brings back a Desk saved with no tool as the overview, with no line', async () => {
+    await act(async () => {
+      store.setState({ sessionFace: { [session.id]: 'desk' } });
+    });
+    renderFace();
+    await tick();
+
+    expect(face()).toBe('overview');
+    expect(screen.queryByText('Desk closed')).toBeNull();
+  });
+
+  it('opens the page split on a session whose tools are still open', async () => {
+    await act(async () => {
+      store.getState().openDrawer({ kind: 'scripts', sessionId: session.id, payload: null });
+    });
+    renderFace();
+    await tick();
+
+    expect(face()).toBe('desk');
+  });
+});
+
+describe('a door that brings the Desk with no tool kept', () => {
+  const bring = async (): Promise<void> => {
+    act(() => {
+      switchSessionFace({ sessionId: session.id, face: 'desk' });
+    });
+    await tick();
+  };
+
+  it('opens the terminal of the first project', async () => {
+    renderFace();
+
+    await bring();
 
     expect(face()).toBe('desk');
     expect(tools().map((entry) => entry.kind)).toEqual(['terminal']);
@@ -144,40 +202,27 @@ describe('entering the Desk', () => {
     });
     renderFace();
 
-    await openDesk();
+    await bring();
 
     expect(tools().map((entry) => entry.kind)).toEqual(['terminal']);
     expect(store.getState().terminalScopes[session.id]).toBe(ledger.worktreePath);
   });
 
-  it('brings back a Desk saved with no tool as the overview, with no line', async () => {
-    await act(async () => {
-      store.setState({ sessionFace: { [session.id]: 'desk' } });
-    });
-    renderFace();
-    await tick();
-
-    expect(face()).toBe('overview');
-    expect(screen.queryByText('Desk closed')).toBeNull();
-  });
-
-  it('stays off with the reason when there is nothing to open', async () => {
+  it('keeps the overview when there is nothing to open', async () => {
     await act(async () => {
       store.setState({ sessionProjectMounts: { [session.id]: [] }, projects: [] });
     });
     renderFace();
-    const control = screen.getByRole('tablist', { name: 'Overview or Desk' });
-    const desk = within(control).getByRole('tab', { name: 'Desk' });
 
-    expect(desk.hasAttribute('disabled')).toBe(true);
-    await openDesk();
+    await bring();
+
     expect(face()).toBe('overview');
     expect(tools()).toEqual([]);
   });
 });
 
 describe('closing the last tool', () => {
-  it('closes the Desk with Desk closed and Reopen, and no history entry', async () => {
+  it('returns the whole overview with Desk closed and Reopen, and no history entry', async () => {
     renderFace();
     await openDesk();
     const before = entries();
@@ -185,6 +230,7 @@ describe('closing the last tool', () => {
     await closeEveryTool();
 
     expect(face()).toBe('overview');
+    expect(screen.queryByRole('complementary', { name: 'Desk' })).toBeNull();
     screen.getByText('Desk closed');
     screen.getByRole('button', { name: 'Reopen' });
     expect(entries()).toBe(before);
@@ -204,6 +250,16 @@ describe('closing the last tool', () => {
     expect(face()).toBe('desk');
     expect(tools()).toEqual(kept);
     expect(screen.queryByText('Desk closed')).toBeNull();
+  });
+
+  it('closing Ask, the last tool, closes the Desk too', async () => {
+    renderFace();
+    await clickRail({ pane: 'ask' });
+
+    await clickRail({ pane: 'ask' });
+
+    expect(face()).toBe('overview');
+    screen.getByText('Desk closed');
   });
 
   it('cmd w closes one tool at a time and the last one closes the Desk, never the session', async () => {
@@ -244,7 +300,7 @@ describe('closing the last tool', () => {
     expect(face()).toBe('desk');
   });
 
-  it('the key finds the tools too, and the line goes', async () => {
+  it('a tool opened again splits the page again, and the line goes', async () => {
     renderFace();
     await openDesk();
     await closeEveryTool();
@@ -275,10 +331,10 @@ const randomOf = ({ seed }: SeedParams) => {
 };
 
 const STEPS: ReadonlyArray<Step> = [
-  { name: 'cmd j', run: () => void pressShortcut({ id: 'session.desk' }) },
+  { name: 'rail terminal', run: () => toggleRailTool({ pane: 'terminal', sessionId: session.id }) },
+  { name: 'rail ask', run: () => toggleRailTool({ pane: 'ask', sessionId: session.id }) },
+  { name: 'rail scripts', run: () => toggleRailTool({ pane: 'scripts', sessionId: session.id }) },
   { name: 'desk', run: () => switchSessionFace({ sessionId: session.id, face: 'desk' }) },
-  { name: 'overview', run: () => switchSessionFace({ sessionId: session.id, face: 'overview' }) },
-  { name: 'open terminal', run: () => toggleTerminalDock({ isToggle: false }) },
   {
     name: 'close one tool',
     run: () => {

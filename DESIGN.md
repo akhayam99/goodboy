@@ -170,9 +170,9 @@ model in [docs/navigation/model.md](./docs/navigation/model.md).
 - **One session head.** A session page draws one head: the title row (title on
   the left, its actions on the right) and under it the tab strip. No page draws
   a title of its own; the tab names the page. Overview and Desk are two faces
-  under that same head: the **Overview | Desk** control sits at the right end of
-  the tabs, in the same place on both faces, and nothing in the Desk column
-  repeats the title or a way back.
+  under that same head, with no switch: a tool opened from the right rail
+  splits the page into the Desk, closing the last one brings the Overview
+  back, and nothing in the Desk column repeats the title or a way back.
 - **A secondary page says so and shows the way out.** Below a tab (an artifact,
   a pull request, a run, an agent) the head keeps its title row, shows a back
   button before the title and swaps the tabs for crumbs. The back button, the

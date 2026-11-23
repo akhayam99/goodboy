@@ -807,11 +807,10 @@ describe('moving across every place keeps one frame', () => {
     expect(currentPage()).toBe('Overview');
     expectOneRail({ place: 'Overview', layers: overviewLayers(), rail: COLUMN_RAIL });
     await openContextDrawer(sessionId);
-    expectOneRail({
-      place: 'Overview with a drawer',
-      layers: overviewLayers(),
-      rail: COLUMN_RAIL,
-    });
+    expect(
+      screen.queryByRole('complementary', { name: 'Desk' }),
+      'a tool on the Overview splits the page into the Desk',
+    ).not.toBeNull();
     await escape();
 
     await openAgentTranscript(sessionId);

@@ -31,7 +31,6 @@ type Params = {
   readonly store: WatchedStore;
   readonly delayMs?: number;
   readonly now?: () => number;
-  readonly onEntered?: (params: SessionParams) => void;
 };
 
 type PendingSave = {
@@ -40,10 +39,6 @@ type PendingSave = {
   readonly face: SessionFace;
   readonly detail: ReadonlyArray<OpenDrawer>;
   readonly at: number;
-};
-
-type RecallParams = SessionParams & {
-  readonly isEntry: boolean;
 };
 
 type FaceParams = {
@@ -61,7 +56,6 @@ export const watchSessionDockGrid = ({
   store,
   delayMs = DOCK_GRID_SAVE_DELAY_MS,
   now = Date.now,
-  onEntered,
 }: Params): (() => void) => {
   const known = new Map<SessionId, string>();
   const savedThisRun = new Set<SessionId>();
@@ -99,7 +93,7 @@ export const watchSessionDockGrid = ({
       });
   };
 
-  const recall = ({ sessionId, isEntry }: RecallParams): void => {
+  const recall = ({ sessionId }: SessionParams): void => {
     queueMicrotask(() => {
       if (store.getState().currentSessionId !== sessionId) {
         return;
@@ -111,15 +105,12 @@ export const watchSessionDockGrid = ({
           if (stored !== null) {
             known.set(sessionId, stored);
           }
-          if (isEntry && owner === sessionId) {
-            onEntered?.({ sessionId });
-          }
         });
     });
   };
 
   if (owner !== null) {
-    recall({ sessionId: owner, isEntry: true });
+    recall({ sessionId: owner });
   }
 
   const unsubscribe = store.subscribe((state) => {
@@ -136,7 +127,7 @@ export const watchSessionDockGrid = ({
         dockGridRecalls.cancel({ key: DOCK_GRID_RECALL_KEY });
         return;
       }
-      recall({ sessionId: owner, isEntry: true });
+      recall({ sessionId: owner });
       return;
     }
     const nextFace = faceOf({ state, sessionId: owner });
@@ -165,7 +156,7 @@ export const watchSessionDockGrid = ({
       return;
     }
     flush();
-    recall({ sessionId: owner, isEntry: false });
+    recall({ sessionId: owner });
   };
   window.addEventListener('focus', rereadOnFocus);
 

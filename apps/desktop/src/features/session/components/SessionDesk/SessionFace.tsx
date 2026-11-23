@@ -2,6 +2,7 @@ import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { SessionOverviewPane } from '../SessionOverviewPane';
 import { DeskLineNotice } from './DeskLineNotice';
+import { useDeskFollowsTools } from './useDeskFollowsTools';
 import { useDeskOwner } from './useDeskOwner';
 import { SessionDesk } from '.';
 
@@ -12,6 +13,7 @@ type Props = {
 export const SessionFace = ({ session }: Props) => {
   const face = useAppStore((state) => state.sessionFace[session.id] ?? 'overview');
   const line = useDeskOwner({ sessionId: session.id, isDeskShown: face === 'desk' });
+  useDeskFollowsTools({ sessionId: session.id });
   if (face === 'desk') {
     return <SessionDesk session={session} />;
   }

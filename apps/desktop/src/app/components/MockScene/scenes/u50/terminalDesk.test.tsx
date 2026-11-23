@@ -66,7 +66,7 @@ describe('the u50 terminal desk scenes', () => {
     ]);
   });
 
-  it('draws the terminal over the overview with a tab per track and Open on desk', async () => {
+  it('splits the overview into the Desk when the terminal opens, a tab per track', async () => {
     const tracks = await show({ name: 'u50-terminal-desk-peek-dark' });
 
     expect(
@@ -74,10 +74,11 @@ describe('the u50 terminal desk scenes', () => {
         .getAllByRole('tab')
         .map((tab) => tab.textContent),
     ).toEqual(['payments-api', 'ledger-core']);
-    screen.getByRole('button', { name: 'Open on desk' });
+    await screen.findByRole('complementary', { name: 'Desk' });
+    expect(screen.queryByRole('button', { name: 'Open on desk' })).toBeNull();
   });
 
-  it('draws the terminal on the Desk without Open on desk', async () => {
+  it('draws the terminal on the Desk with no Open on desk', async () => {
     await show({ name: 'u50-terminal-desk-light' });
 
     expect(screen.queryByRole('button', { name: 'Open on desk' })).toBeNull();

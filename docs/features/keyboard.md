@@ -97,7 +97,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - **⌘⌥A**, listed as Runs › Running, opens Runs on what is running. A **Running** chip above the list shows the filter, and **Clear filter** removes it. With nothing running the page says **Nothing is running**.
 - **⌘⌥W** opens Runs with no filter, and clears one that is set.
 - **⌘1** to **⌘9** switch workspaces.
-- **⌘[** and **⌘]** walk your history: the last 50 places of this window, empty after a reload. Overview and Desk are two faces of one place, so Back and Forward never switch a face and never open a tool by themselves.
+- **⌘[** and **⌘]** walk your history: the last 50 places of this window, empty after a reload. Overview and Desk are two faces of one place, so Back and Forward never change a face and never open a tool by themselves.
 - **⌘↑** and **Esc** go one crumb up: to the parent of the page, and the same after a reload. The page of a top agent goes back to its session's Overview, or to the Runs tab of the pull request you opened it from. A session tab has no parent, so ⌘↑ goes to the board.
 - **⌥⌘↓** goes to the next session that needs you.
 - **⌘/** opens the full list.
@@ -127,14 +127,13 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - **J** and **K** go from move to move. **Enter** then runs the verb that has the focus.
 - **S** puts the move with the focus, or the move in front, out of the way, as Not now does. **⌘Z** brings it back.
 - These keys type in a field and in a terminal, and do nothing while a page covers the session.
-- **⌘J** switches between Overview and Desk, even with the keyboard in a terminal. Search or run lists it as **Desk**, or **Overview** on the Desk.
 - On the Desk, **⌘↑** goes to the board, as on the Overview.
 
 **The Desk**
 
-- **⌘J** opens the Desk on a tool at once, never on an empty Desk. It brings back the tools the session had, else the tools of the first move of Next. Else it opens the terminal of the first project, or of the workspace folder. With none of these, Desk stays off and its tooltip says why.
-- **⌘W** on the Desk closes one tool at a time, the focused one first. Closing the last one closes the Desk: the Overview comes back at full width with **Desk closed** and **Reopen**, and the focus goes to Desk. **Reopen** or ⌘J brings the tools back as they were.
-- One window holds the Desk of a session. In a second window ⌘J says **Desk open in another window** with **Bring it here**. The window that loses the Desk says **Desk moved to another window** with **Bring the Desk back**. When the window cannot check who holds it, the Overview stays with the error and **Retry**.
+- The Desk has no key. A tool opened on the Overview, by its key or from the right rail, splits the page into the Desk: **⌃`** for Terminal, **⌘L** for Ask.
+- **⌘W** on the Desk closes one tool at a time, the focused one first. Closing the last one closes the Desk: the Overview comes back at full width with **Desk closed** and **Reopen**, and the focus goes to Reopen. **Reopen** brings the tools back as they were.
+- One window holds the Desk of a session. In a second window a tool says **Desk open in another window** with **Bring it here**. The window that loses the Desk says **Desk moved to another window** with **Bring the Desk back**. When the window cannot check who holds it, the Overview stays with the error and **Retry**.
 
 **Change a shortcut**
 
@@ -269,7 +268,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 This part is for contributors and agents who change the feature.
 
 - Terminal dock: ``⌃` `` (`terminal.studio`) and ⌘⌥T (`session.terminal`) both run `toggleTerminalDock`. ``⌃` `` passes `shouldFocusFirst`: an open Terminal without the focus gets it, a focused one closes. Off a session page it opens `openWorkspaceTerminal`, a drawer with `sessionId: null`. `openTerminalOnPage` and `dockTerminalPage` move between dock and page, `dockEmptyTerminalPage` docks a terminal from the empty page, and [studios.md](../navigation/studios.md) owns the Terminal page.
-- The Desk: `landingOf` (`store/slices/navigation/`) is the one entry rule and `deskLandingOf` feeds it the session. `useDeskLanding` opens the tools after the saved grid is read and closes the Desk when its last tool goes (`closeDesk`). `closeCurrentLevel` (⌘W) closes a Desk tool through `deskToolToClose`. `useDeskOwner` holds the Desk through `desk_hold` in `window_heartbeat.rs`. `landingOf.test.ts`, `useDeskLanding/index.test.tsx`, `useDeskOwner/index.test.tsx` and `desk-nav.rows.tsx` cover each case.
+- The Desk: `useDeskFollowsTools` opens the Desk when a tool opens on the Overview. `landingOf` (`store/slices/navigation/`) is the one entry rule and `deskLandingOf` feeds it the session. `useDeskLanding` opens the tools after the saved grid is read and closes the Desk when its last tool goes (`closeDesk`). No shortcut id switches the face: `session.desk` is gone from the registry and the menu, and a saved override for it is dropped (`overrides.test.ts`). `closeCurrentLevel` (⌘W) closes a Desk tool through `deskToolToClose`. `useDeskOwner` holds the Desk through `desk_hold` in `window_heartbeat.rs`. `landingOf.test.ts`, `useDeskLanding/index.test.tsx`, `useDeskOwner/index.test.tsx` and `desk-nav.rows.tsx` cover each case.
 - Archived sessions group: `terminalGroups` and `CloseGroupButton` build the group and its **Close all**.
 - Process on a tab: `terminal_list_live` returns `foregroundCommand`, shaped by `foregroundLabelOf`. `terminalCommandOf` is the fallback.
 - Terminal size: one tab has one PTY size, so a tab never shows in two panes. `createTerminalDriver` sends sizes through `createResizeQueue`, one `terminal_resize` at a time. It skips a size the PTY already has. It drops a measure that a newer one replaced while a call ran.
@@ -290,5 +289,5 @@ This part is for contributors and agents who change the feature.
 - Context entry: `togglePane` and `openContextDrawer` default to Goal; `withoutRemovedPages` restores former Context addresses beside Overview.
 
 - Places rail: `apps/desktop/src/App.tsx` supplies `AppShell.leftRail` without a fold control; `apps/desktop/src/app/components/ShellLeft/index.tsx` keeps it visible beside the page.
-- Move keys: `useMoveKeys` runs on the Overview column and the Desk column. Enter is `list.open` and clicks the `data-move-verb` button of `data-move-primary`, and declines when it is disabled. S is `move.notNow` and calls the `onNotNow` of the card's menu target, with its Undo. J and K reuse `useRowFocusKeys` on `data-move-verb`. Both keys wait unless `isFaceShown`. The palette entry `goto:session-face` replays `session.desk`, as View › Desk does. The `list` scope entries live in `listShortcuts.ts`.
+- Move keys: `useMoveKeys` runs on the Overview column and the Desk column. Enter is `list.open` and clicks the `data-move-verb` button of `data-move-primary`, and declines when it is disabled. S is `move.notNow` and calls the `onNotNow` of the card's menu target, with its Undo. J and K reuse `useRowFocusKeys` on `data-move-verb`. Both keys wait unless `isFaceShown`. The `list` scope entries live in `listShortcuts.ts`.
 - List keys: `useListKeys` follows a selected row (Tasks, Notifications, Scripts). `useRowFocusKeys` moves the focus between the rows of a list with no selected row (Chat, Runs, Artifacts, Workflows, Terminal, Monitoring). `useSearchKey` takes **/** alone for a field. The Board reads the same registry entries inside `useBoardArrowKeys`.

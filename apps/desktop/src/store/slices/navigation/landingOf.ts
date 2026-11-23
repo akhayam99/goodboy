@@ -1,5 +1,4 @@
 import type { AgentId } from '@goodboy/types';
-import type { SessionFace } from '../session-view/types';
 import type { BranchTab } from './types';
 
 export type DeskTool =
@@ -18,14 +17,13 @@ export type LandingMove = {
 export type LandingDoor = 'place' | 'move' | 'desk';
 
 export type Landing =
-  | { readonly face: 'overview'; readonly reason: string | null }
+  | { readonly face: 'overview' }
   | { readonly face: 'desk'; readonly isKept: true }
   | { readonly face: 'desk'; readonly isKept: false; readonly tools: ReadonlyArray<DeskTool> };
 
 export type LandingParams = {
   readonly door: LandingDoor;
   readonly move: LandingMove | null;
-  readonly lastFace: SessionFace | null;
   readonly hasKept: boolean;
   readonly next: ReadonlyArray<LandingMove>;
   readonly nowAgentId: AgentId | null;
@@ -44,7 +42,9 @@ type TabParams = MoveParams & {
 
 type OpenParams = MoveParams & Pick<LandingParams, 'canOpen'>;
 
-export const DESK_OFF_REASON = 'Mount a project or pick a workspace folder to open the Desk';
+const OVERVIEW: Landing = { face: 'overview' };
+
+const KEPT: Landing = { face: 'desk', isKept: true };
 
 const agentToolOf = ({ move }: MoveParams): ReadonlyArray<DeskTool> =>
   move.agentId == null ? [] : [{ kind: 'agent', agentId: move.agentId }];
@@ -89,7 +89,7 @@ const deskChainOf = ({
   canOpen,
 }: LandingParams): Landing => {
   if (hasKept) {
-    return { face: 'desk', isKept: true };
+    return KEPT;
   }
   const fromNext = next
     .map((move) => toolsOfMove({ move, canOpen }))
@@ -101,7 +101,7 @@ const deskChainOf = ({
     return { face: 'desk', isKept: false, tools: [{ kind: 'agent', agentId: nowAgentId }] };
   }
   if (!canOpen.has('terminal')) {
-    return { face: 'overview', reason: DESK_OFF_REASON };
+    return OVERVIEW;
   }
   if (firstMountId !== null) {
     return { face: 'desk', isKept: false, tools: [{ kind: 'terminal', mountId: firstMountId }] };
@@ -109,20 +109,20 @@ const deskChainOf = ({
   if (hasWorkspaceFolder) {
     return { face: 'desk', isKept: false, tools: [{ kind: 'terminal', mountId: null }] };
   }
-  return { face: 'overview', reason: DESK_OFF_REASON };
+  return OVERVIEW;
 };
 
-export const landingOf = ({ door, move, lastFace, ...rest }: LandingParams): Landing => {
-  const params: LandingParams = { door, move, lastFace, ...rest };
+export const landingOf = ({ door, move, ...rest }: LandingParams): Landing => {
+  const params: LandingParams = { door, move, ...rest };
   if (door === 'move' && move !== null) {
     if (!isDeskMove({ move })) {
-      return { face: 'overview', reason: null };
+      return OVERVIEW;
     }
     const tools = toolsOfMove({ move, canOpen: rest.canOpen });
     return tools.length > 0 ? { face: 'desk', isKept: false, tools } : deskChainOf(params);
   }
-  if (door === 'place' && (lastFace ?? 'overview') === 'overview') {
-    return { face: 'overview', reason: null };
+  if (door === 'place') {
+    return rest.hasKept ? KEPT : OVERVIEW;
   }
   return deskChainOf(params);
 };

@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
@@ -53,13 +53,11 @@ const show = async ({ name }: Params) => {
       <Scene />
     </ToastProvider>,
   );
-  return screen.findByRole('tablist', { name: 'Overview or Desk' });
+  return screen.findByRole('tablist', { name: 'Session pages' });
 };
 
-const litFace = (control: HTMLElement): string | null =>
-  within(control)
-    .getAllByRole('tab')
-    .find((tab) => tab.getAttribute('aria-selected') === 'true')?.textContent ?? null;
+const switchOf = (): HTMLElement | null =>
+  screen.queryByRole('tablist', { name: 'Overview or Desk' });
 
 describe('the u50 desk face scenes', () => {
   it('registers every scene key', () => {
@@ -72,17 +70,17 @@ describe('the u50 desk face scenes', () => {
   });
 
   it('draws the Desk with its column under the one session head', async () => {
-    const control = await show({ name: 'u50-desk-face-dark' });
+    await show({ name: 'u50-desk-face-dark' });
 
-    expect(litFace(control)).toBe('Desk');
+    expect(switchOf()).toBeNull();
     await screen.findByRole('complementary', { name: 'Desk' });
     expect(document.querySelectorAll('[data-session-head]').length).toBe(1);
   });
 
-  it('draws the overview face with Overview lit in the same place', async () => {
-    const control = await show({ name: 'u50-desk-face-overview-light' });
+  it('draws the whole overview with no switch in the head', async () => {
+    await show({ name: 'u50-desk-face-overview-light' });
 
-    expect(litFace(control)).toBe('Overview');
+    expect(switchOf()).toBeNull();
     expect(screen.queryByRole('complementary', { name: 'Desk' })).toBeNull();
   });
 });
