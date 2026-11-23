@@ -13,7 +13,12 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { SessionAttentionReason, SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type OpenQuestionId,
+  type SessionAttentionReason,
+  type SessionId,
+} from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -22,7 +27,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { sessionPlace } from '../../../../store/slices/navigation/place';
+import { questionPlace, sessionPlace } from '../../../../store/slices/navigation/place';
 import { attentionPlace } from '../../../session/attentionPlace';
 import type { Session } from '@goodboy/types';
 import type { StartMergeTrainParams } from '../../../../store/slices/pr-series/startMergeTrain';
@@ -144,9 +149,36 @@ const moveOf = ({ reason }: MoveParams): QueueMove => ({
   id: `${asking.id}:${reason}`,
   sessionId: asking.id,
   reason,
+  questionId: null,
   title: reason,
   since: null,
 });
+
+const questionOf = ({ sessionId }: SessionParams) =>
+  openQuestionFor({ sessionId: brandId<SessionId>({ value: sessionId }) });
+
+const seedTwoQuestions = () => {
+  const first = questionOf({ sessionId: asking.id });
+  const later = {
+    ...first,
+    id: brandId<OpenQuestionId>({ value: 'question-later' }),
+    text: 'Should the retry cap be five?',
+  };
+  seedColumn({ store: useAppStore, sessions: [asking], questions: [asking] });
+  useAppStore.setState((state) => ({
+    sessionOpenQuestions: { ...state.sessionOpenQuestions, [asking.id]: [first, later] },
+  }));
+  return { first, later };
+};
+
+type RowButtonParams = {
+  readonly name: string;
+};
+
+const notNowOf = ({ name }: RowButtonParams): HTMLElement =>
+  within(screen.getByRole('region', { name: 'Needs you' })).getByRole('button', {
+    name: `Not now: ${name}`,
+  });
 
 describe('the Queue', () => {
   it('says nothing waits, nothing runs and nothing is ready, without a count', () => {
@@ -193,7 +225,44 @@ describe('the Queue', () => {
     renderQueue();
     fireEvent.click(moveButton({ moveId: moveIdOf({ sessionId: second.id }) }));
     expect(navigate).toHaveBeenCalledTimes(1);
-    expect(navigate).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: second.id }) });
+    expect(navigate).toHaveBeenCalledWith({
+      to: questionPlace({
+        sessionId: second.id,
+        questionId: questionOf({ sessionId: second.id }).id,
+      }),
+    });
+  });
+
+  it('opens the very question clicked when one session asks two', () => {
+    const navigate = vi.fn();
+    const { later } = seedTwoQuestions();
+    useAppStore.setState({ navigate });
+    renderQueue();
+    fireEvent.click(moveButton({ moveId: `${asking.id}:question:${later.id}` }));
+    expect(navigate).toHaveBeenCalledWith({
+      to: questionPlace({ sessionId: asking.id, questionId: later.id }),
+    });
+  });
+
+  it('acts on the row Tab reached: S puts it off and the arrow opens it', async () => {
+    const navigate = vi.fn();
+    const { first, later } = seedTwoQuestions();
+    useAppStore.setState({ navigate });
+    renderQueue();
+    const laterRow = moveButton({ moveId: `${asking.id}:question:${later.id}` });
+    fireEvent.focusIn(laterRow);
+    fireEvent.keyDown(laterRow, { key: 'ArrowRight' });
+    expect(navigate).toHaveBeenLastCalledWith({
+      to: questionPlace({ sessionId: asking.id, questionId: later.id }),
+    });
+    const laterNotNow = notNowOf({ name: later.text });
+    fireEvent.focusIn(laterNotNow);
+    fireEvent.keyDown(laterNotNow, { key: 's' });
+    const needsYou = screen.getByRole('region', { name: 'Needs you' });
+    await waitFor(() =>
+      expect(within(needsYou).queryByRole('button', { name: later.text })).toBeNull(),
+    );
+    within(needsYou).getByRole('button', { name: first.text });
   });
 
   it('opens the keyboard row with Enter and moves to the next one with J', () => {
@@ -203,7 +272,12 @@ describe('the Queue', () => {
     renderQueue();
     fireEvent.keyDown(queueRoot(), { key: 'j' });
     fireEvent.keyDown(queueRoot(), { key: 'Enter' });
-    expect(navigate).toHaveBeenLastCalledWith({ to: sessionPlace({ sessionId: second.id }) });
+    expect(navigate).toHaveBeenLastCalledWith({
+      to: questionPlace({
+        sessionId: second.id,
+        questionId: questionOf({ sessionId: second.id }).id,
+      }),
+    });
   });
 
   it('puts a Move off from its row with Not now, and Undo brings it back', async () => {

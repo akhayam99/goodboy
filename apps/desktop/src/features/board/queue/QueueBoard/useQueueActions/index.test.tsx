@@ -42,6 +42,7 @@ const move: QueueMove = {
   id: `${sessionId}:ci-failed`,
   sessionId,
   reason: 'ci-failed',
+  questionId: null,
   title: 'Checks failing',
   since: null,
 };

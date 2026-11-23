@@ -1,5 +1,6 @@
 import type {
   OpenQuestion,
+  OpenQuestionId,
   Session,
   SessionAttentionReason,
   SessionId,
@@ -13,6 +14,7 @@ export type QueueMove = Readonly<{
   id: string;
   sessionId: SessionId;
   reason: SessionAttentionReason;
+  questionId: OpenQuestionId | null;
   title: string;
   since: number | null;
 }>;
@@ -66,6 +68,7 @@ const questionMovesOf = ({ session, info, questions }: SessionParams): ReadonlyA
         id: `${session.id}:open-question`,
         sessionId: session.id,
         reason: 'open-question',
+        questionId: null,
         title: attentionWordsOf({ reason: 'open-question', counts: info }),
         since: info.attentionSince ?? null,
       },
@@ -75,6 +78,7 @@ const questionMovesOf = ({ session, info, questions }: SessionParams): ReadonlyA
     id: `${session.id}:question:${question.id}`,
     sessionId: session.id,
     reason: 'open-question',
+    questionId: question.id,
     title: question.text,
     since: askedAtOf({ question }),
   }));
@@ -91,6 +95,7 @@ const sessionMovesOf = ({ session, info, questions }: SessionParams): ReadonlyAr
               id: `${session.id}:${reason}`,
               sessionId: session.id,
               reason,
+              questionId: null,
               title: attentionWordsOf({ reason, counts: info }),
               since: info.attentionSince ?? null,
             },

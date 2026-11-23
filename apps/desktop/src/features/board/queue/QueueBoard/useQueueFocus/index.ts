@@ -80,6 +80,14 @@ const bandOf = ({ target }: TargetParams): QueueBand | null => {
   return QUEUE_BANDS.find((candidate) => candidate === value) ?? null;
 };
 
+const moveIdOf = ({ target }: TargetParams): string | null => {
+  if (!(target instanceof HTMLElement)) {
+    return null;
+  }
+  const row = target.closest('[data-row]')?.querySelector('[data-queue-move]');
+  return row?.getAttribute('data-queue-move') ?? null;
+};
+
 const focusBand = ({ root, band }: FocusBandParams): void => {
   root.querySelector<HTMLElement>(`[data-queue-band="${band}"]`)?.focus();
 };
@@ -135,6 +143,10 @@ export const useQueueFocus = ({
     const next = bandOf({ target });
     if (next !== null && next !== band) {
       setBand(next);
+    }
+    const moveId = moveIdOf({ target });
+    if (moveId !== null && moveId !== focusedMove?.id) {
+      onFocusMove({ moveId });
     }
   };
 
