@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
-use tauri::{AppHandle, Manager, State, Window};
+use tauri::{AppHandle, Emitter, Manager, State, Window};
 
 use crate::util::lock_or_recover;
 
@@ -12,6 +12,8 @@ const TICK: Duration = Duration::from_secs(2);
 const SUSPEND_GAP: Duration = Duration::from_secs(6);
 const WALL_DRIFT: Duration = Duration::from_secs(5);
 const MAX_LABEL: usize = 64;
+const MAX_SESSION_ID: usize = 128;
+pub(crate) const DESK_HOLDER_EVENT: &str = "desk-holder";
 
 #[derive(Debug, Clone, Copy)]
 struct Beat {
@@ -60,6 +62,12 @@ impl Heartbeats {
         HeartbeatReply { has_resumed }
     }
 
+    pub(crate) fn is_frozen(&self, label: &str) -> bool {
+        lock_or_recover(&self.0)
+            .get(label)
+            .is_some_and(|beat| beat.noted)
+    }
+
     pub(crate) fn rebase_all(&self, now: Instant) {
         for beat in lock_or_recover(&self.0).values_mut() {
             beat.last = now;
@@ -97,6 +105,78 @@ impl Heartbeats {
 
 pub(crate) fn was_suspended(monotonic_gap: Duration, wall_gap: Duration) -> bool {
     monotonic_gap >= SUSPEND_GAP || wall_gap > monotonic_gap + WALL_DRIFT
+}
+
+#[derive(Default, Clone)]
+pub struct DeskHolders(Arc<Mutex<HashMap<String, String>>>);
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DeskHold {
+    pub session_id: String,
+    pub holder: Option<String>,
+}
+
+fn hold_of(session_id: &str, holder: Option<&str>) -> DeskHold {
+    DeskHold {
+        session_id: session_id.to_string(),
+        holder: holder.map(str::to_string),
+    }
+}
+
+impl DeskHolders {
+    pub(crate) fn holder(&self, session_id: &str, is_live: impl Fn(&str) -> bool) -> DeskHold {
+        let mut holders = lock_or_recover(&self.0);
+        holders.retain(|_, label| is_live(label));
+        hold_of(session_id, holders.get(session_id).map(String::as_str))
+    }
+
+    pub(crate) fn hold(
+        &self,
+        session_id: &str,
+        label: &str,
+        is_taken: bool,
+        is_live: impl Fn(&str) -> bool,
+    ) -> (DeskHold, Vec<DeskHold>) {
+        let mut holders = lock_or_recover(&self.0);
+        holders.retain(|_, held_by| is_live(held_by));
+        if let Some(current) = holders.get(session_id) {
+            if current != label && !is_taken {
+                return (hold_of(session_id, Some(current)), Vec::new());
+            }
+        }
+        let mut changes: Vec<DeskHold> = holders
+            .iter()
+            .filter(|(session, held_by)| *held_by == label && session.as_str() != session_id)
+            .map(|(session, _)| hold_of(session, None))
+            .collect();
+        holders.retain(|session, held_by| held_by != label || session == session_id);
+        let previous = holders.insert(session_id.to_string(), label.to_string());
+        if previous.as_deref() != Some(label) {
+            changes.push(hold_of(session_id, Some(label)));
+        }
+        (hold_of(session_id, Some(label)), changes)
+    }
+
+    pub(crate) fn release(&self, session_id: &str, label: &str) -> Option<DeskHold> {
+        let mut holders = lock_or_recover(&self.0);
+        if holders.get(session_id).map(String::as_str) != Some(label) {
+            return None;
+        }
+        holders.remove(session_id);
+        Some(hold_of(session_id, None))
+    }
+}
+
+fn checked_session_id(session_id: &str) -> Result<&str, String> {
+    if session_id.is_empty() || session_id.len() > MAX_SESSION_ID {
+        return Err("the session id is not valid".to_string());
+    }
+    Ok(session_id)
+}
+
+fn is_live_window(app: &AppHandle, beats: &Heartbeats, label: &str) -> bool {
+    window_state(app, label) != WindowState::Gone && !beats.is_frozen(label)
 }
 
 fn window_state(app: &AppHandle, label: &str) -> WindowState {
@@ -140,6 +220,50 @@ pub async fn window_heartbeat(
     is_visible: bool,
 ) -> Result<HeartbeatReply, String> {
     Ok(state.beat(window.label(), is_visible, Instant::now()))
+}
+
+#[tauri::command]
+pub async fn desk_holder(
+    app: AppHandle,
+    beats: State<'_, Heartbeats>,
+    holders: State<'_, DeskHolders>,
+    session_id: String,
+) -> Result<DeskHold, String> {
+    let session_id = checked_session_id(&session_id)?;
+    Ok(holders.holder(session_id, |label| is_live_window(&app, &beats, label)))
+}
+
+#[tauri::command]
+pub async fn desk_hold(
+    app: AppHandle,
+    window: Window,
+    beats: State<'_, Heartbeats>,
+    holders: State<'_, DeskHolders>,
+    session_id: String,
+    is_taken: bool,
+) -> Result<DeskHold, String> {
+    let session_id = checked_session_id(&session_id)?;
+    let (hold, changes) = holders.hold(session_id, window.label(), is_taken, |label| {
+        is_live_window(&app, &beats, label)
+    });
+    for change in changes {
+        let _ = app.emit(DESK_HOLDER_EVENT, change);
+    }
+    Ok(hold)
+}
+
+#[tauri::command]
+pub async fn desk_release(
+    app: AppHandle,
+    window: Window,
+    holders: State<'_, DeskHolders>,
+    session_id: String,
+) -> Result<(), String> {
+    let session_id = checked_session_id(&session_id)?;
+    if let Some(change) = holders.release(session_id, window.label()) {
+        let _ = app.emit(DESK_HOLDER_EVENT, change);
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -266,6 +390,96 @@ mod tests {
 
         assert_eq!(frozen.len(), 1);
         assert_eq!(frozen[0].label, "main");
+    }
+
+    fn every_window_lives(_label: &str) -> bool {
+        true
+    }
+
+    #[test]
+    fn the_first_window_to_hold_a_desk_keeps_it() {
+        let holders = DeskHolders::default();
+
+        let (first, changes) = holders.hold("s1", "main", false, every_window_lives);
+        let (second, none) = holders.hold("s1", "win-2", false, every_window_lives);
+
+        assert_eq!(first, hold_of("s1", Some("main")));
+        assert_eq!(changes, vec![hold_of("s1", Some("main"))]);
+        assert_eq!(second, hold_of("s1", Some("main")));
+        assert!(none.is_empty());
+    }
+
+    #[test]
+    fn bring_it_here_takes_the_desk_and_says_so() {
+        let holders = DeskHolders::default();
+        holders.hold("s1", "main", false, every_window_lives);
+
+        let (taken, changes) = holders.hold("s1", "win-2", true, every_window_lives);
+
+        assert_eq!(taken, hold_of("s1", Some("win-2")));
+        assert_eq!(changes, vec![hold_of("s1", Some("win-2"))]);
+        assert_eq!(
+            holders.holder("s1", every_window_lives),
+            hold_of("s1", Some("win-2"))
+        );
+    }
+
+    #[test]
+    fn a_closed_or_frozen_window_frees_the_desk() {
+        let holders = DeskHolders::default();
+        holders.hold("s1", "main", false, every_window_lives);
+
+        let read = holders.holder("s1", |label| label != "main");
+        let (taken, _) = holders.hold("s1", "win-2", false, every_window_lives);
+
+        assert_eq!(read, hold_of("s1", None));
+        assert_eq!(taken, hold_of("s1", Some("win-2")));
+    }
+
+    #[test]
+    fn a_window_holds_one_desk_at_a_time() {
+        let holders = DeskHolders::default();
+        holders.hold("s1", "main", false, every_window_lives);
+
+        let (_, changes) = holders.hold("s2", "main", false, every_window_lives);
+
+        assert_eq!(
+            changes,
+            vec![hold_of("s1", None), hold_of("s2", Some("main"))]
+        );
+        assert_eq!(
+            holders.holder("s1", every_window_lives),
+            hold_of("s1", None)
+        );
+    }
+
+    #[test]
+    fn only_the_holder_releases_the_desk() {
+        let holders = DeskHolders::default();
+        holders.hold("s1", "main", false, every_window_lives);
+
+        assert_eq!(holders.release("s1", "win-2"), None);
+        assert_eq!(holders.release("s1", "main"), Some(hold_of("s1", None)));
+        assert_eq!(holders.release("s1", "main"), None);
+    }
+
+    #[test]
+    fn a_frozen_beat_reads_as_frozen() {
+        let beats = Heartbeats::default();
+        let start = Instant::now();
+        beats.beat("main", true, start);
+
+        assert!(!beats.is_frozen("main"));
+        beats.find_frozen(start + Duration::from_secs(31), showing);
+        assert!(beats.is_frozen("main"));
+        assert!(!beats.is_frozen("win-2"));
+    }
+
+    #[test]
+    fn a_session_id_out_of_bounds_is_refused() {
+        assert!(checked_session_id("").is_err());
+        assert!(checked_session_id(&"s".repeat(MAX_SESSION_ID + 1)).is_err());
+        assert_eq!(checked_session_id("s1"), Ok("s1"));
     }
 
     #[test]

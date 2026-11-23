@@ -1447,6 +1447,12 @@ u50-desk-grid
 u50-desk-grid-terminal
 u50-desk-kinds-dark
 u50-desk-kinds-light
+u50-desk-nav-closed-dark
+u50-desk-nav-closed-light
+u50-desk-nav-elsewhere-dark
+u50-desk-nav-elsewhere-light
+u50-desk-nav-moved-dark
+u50-desk-nav-moved-light
 u50-desk-owns-asleep-dark
 u50-desk-owns-asleep-light
 u50-desk-owns-awake-dark

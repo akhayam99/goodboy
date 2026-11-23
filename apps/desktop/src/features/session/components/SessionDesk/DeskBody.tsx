@@ -6,6 +6,7 @@ import { useOverviewModel } from '../SessionOverviewPane/useOverviewModel';
 import { DeskColumn } from './DeskColumn';
 import { DeskStatusRow } from './DeskStatusRow';
 import { DeskToolStatus } from './DeskToolStatus';
+import { useDeskLanding } from './useDeskLanding';
 import { useIsDeskNarrow } from './useIsDeskNarrow';
 import { useIsDeskShown } from './useIsDeskShown';
 
@@ -15,6 +16,7 @@ type Props = {
 
 export const DeskBody = ({ session }: Props) => {
   const model = useOverviewModel({ session });
+  useDeskLanding({ sessionId: session.id, next: model.moves.next });
   const [frame, setFrame] = useState<HTMLDivElement | null>(null);
   const isNarrow = useIsDeskNarrow({ element: frame });
   const isShown = useIsDeskShown({ sessionId: session.id });

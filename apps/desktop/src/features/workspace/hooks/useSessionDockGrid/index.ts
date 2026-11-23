@@ -12,7 +12,7 @@ export const useSessionDockGrid = (): void => {
     }
     return watchSessionDockGrid({
       store: useAppStore,
-      onEntered: ({ sessionId }) => void startDeskTool({ sessionId }),
+      onEntered: ({ sessionId }) => void startDeskTool({ sessionId, mountId: null }),
     });
   }, [isHydrated]);
 };

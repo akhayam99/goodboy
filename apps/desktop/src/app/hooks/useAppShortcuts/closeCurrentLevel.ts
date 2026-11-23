@@ -4,6 +4,7 @@ import { useAppStore } from '../../../store';
 import { selectDrawerPanel } from '../../../store/slices/drawer/selectDrawerPanel';
 import { captureLocation } from '../../../store/slices/navigation/captureLocation';
 import { parentPlace } from '../../../store/slices/navigation/parentPlace';
+import { deskToolToClose } from '../../../features/session/components/SessionDesk/deskToolToClose';
 
 type Params = Record<never, never>;
 
@@ -14,11 +15,16 @@ export const closeCurrentLevel = ({}: Params): void => {
   }
   const state = useAppStore.getState();
   const drawer = selectDrawerPanel(state);
+  if (drawer?.kind === 'question') {
+    state.closeQuestion();
+    return;
+  }
+  const tool = deskToolToClose({ state });
+  if (tool !== null) {
+    state.closeDrawerEntry({ entry: tool });
+    return;
+  }
   if (drawer !== null) {
-    if (drawer.kind === 'question') {
-      state.closeQuestion();
-      return;
-    }
     state.closeDrawer();
     return;
   }

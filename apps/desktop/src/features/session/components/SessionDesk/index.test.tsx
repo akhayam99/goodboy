@@ -54,6 +54,14 @@ const INVOKE = {
   worktree_remote_url: () => 'git@github.com:harborline/ledger-core.git',
 };
 
+type EnteredParams = {
+  readonly sessionId: SessionId;
+};
+
+const startDeskTerminal = ({ sessionId }: EnteredParams): void => {
+  void startDeskTool({ sessionId, mountId: null });
+};
+
 let store: StoryStore;
 let observers: FakeResizeObservers;
 const stops: Array<() => void> = [];
@@ -140,7 +148,7 @@ describe('the two faces of a session', () => {
     expect(entries()).toBe(before);
   });
 
-  it('changes face at once, before the tool it opens has answered', () => {
+  it('changes face at once, before the tool it opens has answered', async () => {
     renderFace();
 
     act(() => {
@@ -148,6 +156,9 @@ describe('the two faces of a session', () => {
     });
 
     expect(deskShown()).toBe(true);
+    await act(async () => {
+      await Promise.resolve();
+    });
     expect(
       store
         .getState()
@@ -311,7 +322,7 @@ describe('the tool the Desk opens', () => {
     });
     renderFace();
 
-    stops.push(watchSessionDockGrid({ store, delayMs: 0, onEntered: startDeskTool }));
+    stops.push(watchSessionDockGrid({ store, delayMs: 0, onEntered: startDeskTerminal }));
     await settle();
 
     expect(face()).toBe('desk');
@@ -324,7 +335,7 @@ describe('the tool the Desk opens', () => {
       face: 'desk',
     });
     renderFace();
-    stops.push(watchSessionDockGrid({ store, delayMs: 0, onEntered: startDeskTool }));
+    stops.push(watchSessionDockGrid({ store, delayMs: 0, onEntered: startDeskTerminal }));
     await act(async () => {
       store.getState().navigate({ to: sessionPlace({ sessionId: session.id, lens: 'context' }) });
     });
