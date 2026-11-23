@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, SectionLabel, SelectableRow, StatusDot, TruncatedText } from '@goodboy/ui';
 import { brandId, type AgentId, type SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../../store';
+import { deskAgentIdOf } from '../../../../../store/slices/drawer/deskAgentIdOf';
 import { useNow } from '../../../../../shared/hooks/useNow';
 import { joinFacts } from '../../../../../shared/utils/joinFacts';
 import { NAMES } from '../../../../../shared/utils/names';
@@ -18,6 +19,9 @@ const CLOCK_MS = 15_000;
 
 export const NowSection = ({ sessionId, model }: Props) => {
   const navigate = useAppStore((state) => state.navigate);
+  const openDrawer = useAppStore((state) => state.openDrawer);
+  const isDesk = useAppStore((state) => state.sessionFace[sessionId] === 'desk');
+  const shownAgentId = useAppStore((state) => deskAgentIdOf({ state, sessionId }));
   const [isAll, setIsAll] = useState(false);
   const now = useNow(CLOCK_MS, model.rows.length > 0 || model.waits.length > 0);
   if (model.rows.length === 0 && model.waits.length === 0) {
@@ -36,13 +40,16 @@ export const NowSection = ({ sessionId, model }: Props) => {
       {rows.map((row) => (
         <SelectableRow
           key={row.agentId}
-          selected={false}
+          selected={isDesk && shownAgentId === row.agentId}
           testId={`now-row-${row.agentId}`}
-          onClick={() =>
-            navigate({
-              to: agentPlace({ sessionId, agentId: brandId<AgentId>({ value: row.agentId }) }),
-            })
-          }
+          onClick={() => {
+            const agentId = brandId<AgentId>({ value: row.agentId });
+            if (isDesk) {
+              openDrawer({ kind: 'transcript', sessionId, payload: { agentId } });
+              return;
+            }
+            navigate({ to: agentPlace({ sessionId, agentId }) });
+          }}
           className="min-h-8 min-w-0 items-center gap-2 px-2"
         >
           {row.depth === 1 ? <span aria-hidden className="w-4 shrink-0" /> : null}

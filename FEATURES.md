@@ -125,7 +125,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 [More on workflows](docs/features/workflows.md)
 
-<a id="workspace-chat"></a><a id="ask-in-a-session"></a><a id="images-in-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="one-page-per-agent"></a><a id="what-the-agent-received"></a><a id="transcript"></a><a id="agent-transcript"></a><a id="one-dock"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="message-and-document-fields"></a><a id="stop-and-continue"></a><a id="quiet-agents"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="auto-agent"></a><a id="lead"></a><a id="work-section"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a><a id="agents-column"></a>
+<a id="workspace-chat"></a><a id="ask-in-a-session"></a><a id="images-in-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="one-page-per-agent"></a><a id="agent-and-pull-request-on-the-desk"></a><a id="what-the-agent-received"></a><a id="transcript"></a><a id="agent-transcript"></a><a id="one-dock"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="message-and-document-fields"></a><a id="stop-and-continue"></a><a id="quiet-agents"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="auto-agent"></a><a id="lead"></a><a id="work-section"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a><a id="agents-column"></a>
 
 ## Agents
 
@@ -194,12 +194,13 @@ A workspace keeps your folders together, and one session can work across several
 
 [More on workspaces and folders](docs/features/workspace.md)
 
-<a id="worktree-folders"></a><a id="branches"></a><a id="storage-scope"></a><a id="artifacts-from-deleted-sessions"></a><a id="goodboy-can-free-n-gb"></a><a id="other-tools"></a>
+<a id="worktrees-of-a-project"></a><a id="worktree-folders"></a><a id="branches"></a><a id="storage-scope"></a><a id="artifacts-from-deleted-sessions"></a><a id="goodboy-can-free-n-gb"></a><a id="other-tools"></a>
 
 ## Storage
 
 Free disk space and clean up branches, with what is safe to remove spelled out. Goodboy tells you why each folder or branch exists and what removing it costs, so you can clear space without guessing.
 
+- **Worktrees of a project**: Manage the worktrees of a project from its block on the session overview.
 - **Worktree folders**: Free disk space from the checkout folders of archived, deleted or gone sessions.
 - **Branches**: Delete old branches with confidence.
 - **Goodboy can free N GB**: Hear about reclaimable space once, when idle safe folders pass 10 GB or the disk runs low.

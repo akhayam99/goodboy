@@ -8,7 +8,12 @@ import {
   dockGridOwner,
   dockGridRecalls,
 } from '../../../../store/slices/drawer/dockGridWrites';
-import { EMPTY_DRAWER_GRID, type DrawerGrid } from '../../../../store/slices/drawer/state';
+import { deskDetailOf } from '../../../../store/slices/drawer/deskDetailOf';
+import {
+  EMPTY_DRAWER_GRID,
+  type DrawerGrid,
+  type OpenDrawer,
+} from '../../../../store/slices/drawer/state';
 import { storedDockGridOf } from '../../../../store/slices/drawer/storedDockGrid';
 
 export const DOCK_GRID_SAVE_DELAY_MS = 300;
@@ -33,6 +38,7 @@ type PendingSave = {
   readonly sessionId: SessionId;
   readonly grid: DrawerGrid;
   readonly face: SessionFace;
+  readonly detail: ReadonlyArray<OpenDrawer>;
   readonly at: number;
 };
 
@@ -48,6 +54,9 @@ type FaceParams = {
 const faceOf = ({ state, sessionId }: FaceParams): SessionFace =>
   sessionId === null ? 'overview' : (state.sessionFace[sessionId] ?? 'overview');
 
+const detailOf = ({ state, sessionId }: FaceParams): ReadonlyArray<OpenDrawer> =>
+  sessionId === null ? [] : deskDetailOf({ state, sessionId });
+
 export const watchSessionDockGrid = ({
   store,
   delayMs = DOCK_GRID_SAVE_DELAY_MS,
@@ -62,6 +71,7 @@ export const watchSessionDockGrid = ({
   let grid = store.getState().drawerGrid ?? EMPTY_DRAWER_GRID;
   let face = faceOf({ state: store.getState(), sessionId: owner });
   let scope = store.getState().dockScope;
+  let detailKey = JSON.stringify(detailOf({ state: store.getState(), sessionId: owner }));
   dockGridOwner.take({ sessionId: owner });
 
   const flush = (): void => {
@@ -74,7 +84,7 @@ export const watchSessionDockGrid = ({
     if (job === null) {
       return;
     }
-    const stored = storedDockGridOf({ grid: job.grid, face: job.face });
+    const stored = storedDockGridOf({ grid: job.grid, face: job.face, detail: job.detail });
     if (known.get(job.sessionId) === stored) {
       return;
     }
@@ -121,6 +131,7 @@ export const watchSessionDockGrid = ({
       dockGridOwner.take({ sessionId: owner });
       grid = nextGrid;
       face = faceOf({ state, sessionId: owner });
+      detailKey = JSON.stringify(detailOf({ state, sessionId: owner }));
       if (owner === null) {
         dockGridRecalls.cancel({ key: DOCK_GRID_RECALL_KEY });
         return;
@@ -131,15 +142,18 @@ export const watchSessionDockGrid = ({
     const nextFace = faceOf({ state, sessionId: owner });
     const isSwap = state.dockScope !== scope;
     scope = state.dockScope;
-    if (nextGrid === grid && nextFace === face) {
+    const detail = detailOf({ state, sessionId: owner });
+    const nextDetailKey = JSON.stringify(detail);
+    if (nextGrid === grid && nextFace === face && nextDetailKey === detailKey) {
       return;
     }
     grid = nextGrid;
     face = nextFace;
+    detailKey = nextDetailKey;
     if (owner === null || isSwap) {
       return;
     }
-    pending = { sessionId: owner, grid: nextGrid, face: nextFace, at: now() };
+    pending = { sessionId: owner, grid: nextGrid, face: nextFace, detail, at: now() };
     if (timer !== null) {
       clearTimeout(timer);
     }

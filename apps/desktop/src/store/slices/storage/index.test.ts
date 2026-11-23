@@ -147,6 +147,8 @@ type Harness = {
   };
   refreshMonitorSnapshot: ReturnType<typeof vi.fn>;
   loadStorage: ReturnType<typeof vi.fn>;
+  loadSessionMounts: ReturnType<typeof vi.fn>;
+  removeMountWorktree: ReturnType<typeof vi.fn>;
   reportError: ReturnType<typeof vi.fn>;
   saveSetting: ReturnType<typeof vi.fn>;
 };
@@ -170,6 +172,8 @@ const makeHarness = (folders: ReadonlyArray<StorageFolder>): Harness => {
     },
     refreshMonitorSnapshot: vi.fn(async () => undefined),
     loadStorage: vi.fn(async () => undefined),
+    loadSessionMounts: vi.fn(async () => []),
+    removeMountWorktree: vi.fn(async () => ({ kind: 'removed', reason: null })),
     reportError: vi.fn(),
     saveSetting: vi.fn(async () => undefined),
   };
@@ -194,6 +198,8 @@ const wire = (harness: Harness) => {
       sessions: [],
       terminalTabs: {},
       loadStorage: harness.loadStorage,
+      loadSessionMounts: harness.loadSessionMounts,
+      removeMountWorktree: harness.removeMountWorktree,
       reportError: harness.reportError,
       refreshMonitorSnapshot: harness.refreshMonitorSnapshot,
       saveSetting: harness.saveSetting,
@@ -431,10 +437,14 @@ describe('removeStorageFolders', () => {
     expect(summary.restorable).toEqual([]);
   });
 
-  it('reports a thrown removal as failed and never touches a folder in use', async () => {
+  it('reports a thrown removal as failed and keeps a folder in use its session refused', async () => {
     removeWorktreeFolder.mockRejectedValueOnce(new Error('git failed'));
     const inUse = folder({ path: '/repo/.goodboy/worktrees/live', origin: 'in-use' });
     const harness = makeHarness([orphan, inUse]);
+    harness.removeMountWorktree.mockResolvedValueOnce({
+      kind: 'kept',
+      reason: 'the mount changed while waiting to remove it',
+    });
     const { set, get } = wire(harness);
 
     const summary = await removeStorageFolders(
@@ -447,6 +457,36 @@ describe('removeStorageFolders', () => {
 
     expect(summary.kept.map((outcome) => outcome.kind)).toEqual(['failed', 'kept']);
     expect(removeWorktreeChecked).not.toHaveBeenCalled();
+  });
+
+  it('removes a worktree in use through its session mount and offers to put it back', async () => {
+    const inUse = folder({
+      path: '/repo/.goodboy/worktrees/live',
+      origin: 'in-use',
+      why: 'active-session',
+      branch: 'goodboy/live',
+      revision: 2,
+    });
+    const harness = makeHarness([inUse]);
+    const { set, get } = wire(harness);
+
+    const summary = await removeStorageFolders(set, get)({ paths: [inUse.path], mode: 'safe' });
+
+    expect(harness.removeMountWorktree).toHaveBeenCalledWith({
+      sessionId: ARCHIVED_SESSION,
+      mountId: 'wt-archived',
+      mode: 'safe',
+      expected: {
+        worktreePath: '/repo/.goodboy/worktrees/live',
+        branch: 'goodboy/live',
+        revision: 2,
+      },
+    });
+    expect(summary.removed).toBe(1);
+    expect(summary.restorable).toEqual([
+      expect.objectContaining({ origin: 'in-use', branch: 'goodboy/live', revision: 3 }),
+    ]);
+    expect(harness.state.storageFolders).toEqual([]);
   });
 });
 
@@ -479,6 +519,34 @@ describe('undoStorageRemoval', () => {
       isUndoing: false,
     });
     expect(harness.loadStorage).toHaveBeenCalled();
+  });
+
+  it('puts a removed worktree back in its live session and reloads that session', async () => {
+    const harness = makeHarness([]);
+    harness.state.storageOutcome = outcomeOf([{ ...ARCHIVED_RESTORE, origin: 'in-use' }]);
+    const { set, get } = wire(harness);
+
+    await undoStorageRemoval({ set, get })();
+
+    expect(updateSessionMountLifecycle).toHaveBeenCalledWith(
+      expect.objectContaining({ worktreePath: ARCHIVED_RESTORE.path, isAttached: true }),
+    );
+    expect(harness.loadSessionMounts).toHaveBeenCalledWith({ sessionId: ARCHIVED_SESSION });
+    expect(harness.state.storageOutcome?.undo).toEqual({ restored: 1, failed: [] });
+  });
+
+  it('reports a session that could not reload after its worktree came back', async () => {
+    const harness = makeHarness([]);
+    harness.loadSessionMounts.mockRejectedValueOnce(new Error('db locked'));
+    harness.state.storageOutcome = outcomeOf([{ ...ARCHIVED_RESTORE, origin: 'in-use' }]);
+    const { set, get } = wire(harness);
+
+    await undoStorageRemoval({ set, get })();
+
+    expect(harness.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: ARCHIVED_SESSION }),
+    );
+    expect(harness.state.storageOutcome?.undo).toEqual({ restored: 1, failed: [] });
   });
 
   it('brings a ledger folder back without touching any session row', async () => {

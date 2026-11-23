@@ -1445,6 +1445,8 @@ u50-desk-face-overview-dark
 u50-desk-face-overview-light
 u50-desk-grid
 u50-desk-grid-terminal
+u50-desk-kinds-dark
+u50-desk-kinds-light
 u50-desk-owns-asleep-dark
 u50-desk-owns-asleep-light
 u50-desk-owns-awake-dark
@@ -1463,6 +1465,8 @@ u50-mounts-picker-dark
 u50-mounts-picker-light
 u50-mounts-unmount-dark
 u50-mounts-unmount-light
+u50-nav-docs-dark
+u50-nav-docs-light
 u50-overlap-dark
 u50-overlap-light
 u50-overlap-open-dark
@@ -1489,6 +1493,10 @@ u50-send-to-lead-sent-dark
 u50-send-to-lead-sent-light
 u50-send-to-lead-stopped-dark
 u50-send-to-lead-stopped-light
+u50-worktrees-dark
+u50-worktrees-light
+u50-worktrees-sheet-dark
+u50-worktrees-sheet-light
 update-card
 update-card-long-version
 update-card-narrow

@@ -1,10 +1,13 @@
 import { Pin } from '@goodboy/ui/icons';
-import { ICON_SIZE, SelectableRow, StatusMark, Tooltip, cn } from '@goodboy/ui';
+import { CountBadge, ICON_SIZE, SelectableRow, StatusMark, Tooltip, cn } from '@goodboy/ui';
 import { brandId, type Session, type SessionId } from '@goodboy/types';
 import { NAMES } from '../../../../shared/utils/names';
+import { needsYouText } from '../../../../shared/utils/needsYouText';
 import { SessionRowTitle } from '../SessionRowTitle';
 import { useSessionRowFacts } from '../../hooks/useSessionRowFacts';
 import { useFleetPhrase } from '../../hooks/useFleetPhrase';
+import { useSessionMoveCount } from '../../hooks/useSessionMoveCount';
+import { useSavedSessionFace } from '../../hooks/useSavedSessionFace';
 
 type Props = {
   readonly session: Session;
@@ -25,8 +28,11 @@ export const SessionsRow = ({
   onOpen,
   onTogglePin,
 }: Props) => {
-  const { node, mark, keys, title } = useSessionRowFacts({ session });
-  const phrase = useFleetPhrase({ sessionId: brandId<SessionId>({ value: session.id }) });
+  const { summary, node, mark, keys, title } = useSessionRowFacts({ session });
+  const sessionId = brandId<SessionId>({ value: session.id });
+  const phrase = useFleetPhrase({ sessionId });
+  const moveCount = useSessionMoveCount({ session, info: summary.info });
+  const face = useSavedSessionFace({ sessionId });
   const pinLabel = isPinned ? NAMES.unpin : NAMES.pin;
   return (
     <SelectableRow
@@ -53,6 +59,17 @@ export const SessionsRow = ({
           {project}
         </span>
       )}
+      <CountBadge
+        count={moveCount}
+        tone="warning"
+        label={needsYouText({ count: moveCount, unit: 'items' })}
+        testId="sessions-needs-you"
+      />
+      {face === 'desk' ? (
+        <span data-sessions-face="desk" className="shrink-0 text-meta text-muted-foreground">
+          {NAMES.desk}
+        </span>
+      ) : null}
       <Tooltip content={pinLabel} side="right">
         <span
           aria-hidden

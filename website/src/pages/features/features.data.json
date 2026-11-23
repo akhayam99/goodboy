@@ -1411,6 +1411,12 @@
       ],
       "items": [
         {
+          "title": "Worktrees of a project",
+          "text": "Manage the worktrees of a project from its block on the session overview.",
+          "group": "Storage",
+          "main": true
+        },
+        {
           "title": "Worktree folders",
           "text": "Free disk space from the checkout folders of archived, deleted or gone sessions.",
           "group": "Storage",

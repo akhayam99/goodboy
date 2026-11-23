@@ -28,6 +28,7 @@ import { sceneInvoke, clearSceneInvoke } from '../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStatuses/cache';
 import userEvent from '@testing-library/user-event';
 import { tabForFactOf } from '../../../branch/tabForFactOf';
+import { NAMES } from '../../../../shared/utils/names';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import {
@@ -241,14 +242,17 @@ describe('the project blocks on the Overview', () => {
     expect(ledger.querySelector('[data-board-chip]')?.textContent).toBe('Running');
   });
 
-  it('heads each project block with its name and no count', async () => {
+  it('heads each project block with its name, no row count, and its worktrees door', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
 
     const sections = [...projects().querySelectorAll<HTMLElement>('[data-board-project]')];
     for (const section of sections) {
       const head = section.querySelector('[data-board-project-head]');
-      expect(head?.textContent).toBe(section.getAttribute('data-board-project'));
+      expect(head?.querySelector('[data-board-project-name]')?.textContent).toBe(
+        section.getAttribute('data-board-project'),
+      );
+      expect(head?.querySelector('[data-project-worktrees]')?.textContent).toBe('Worktrees');
       for (const tile of section.querySelectorAll('[data-board-row]')) {
         expect(tile.textContent).not.toContain(section.getAttribute('data-board-project') ?? '');
       }
@@ -274,7 +278,11 @@ describe('the project blocks on the Overview', () => {
     const board = projects();
 
     const heads = [...board.querySelectorAll('[data-board-project-head]')];
-    expect(heads.filter((head) => head.textContent === 'payments-api')).toHaveLength(1);
+    expect(
+      heads.filter(
+        (head) => head.querySelector('[data-board-project-name]')?.textContent === 'payments-api',
+      ),
+    ).toHaveLength(1);
     expect(board.textContent?.split('payments-api')).toHaveLength(2);
   });
 
@@ -356,7 +364,9 @@ describe('the project blocks on the Overview', () => {
     for (const head of projects().querySelectorAll<HTMLElement>('[data-board-project-head]')) {
       const doors = within(head)
         .queryAllByRole('button')
-        .filter((button) => !/from session$/.test(button.getAttribute('aria-label') ?? ''));
+        .filter(
+          (button) => !(button.getAttribute('aria-label') ?? '').startsWith(`${NAMES.unmount} `),
+        );
       expect(doors.length).toBeLessThanOrEqual(1);
     }
   });
@@ -436,7 +446,8 @@ describe('the project blocks on the Overview', () => {
       [...board.querySelectorAll('[aria-expanded]')].filter(
         (node) =>
           node.closest('[data-board-actions]') === null &&
-          node.closest('[data-section-actions]') === null,
+          node.closest('[data-section-actions]') === null &&
+          !node.hasAttribute('data-project-worktrees'),
       ),
     ).toHaveLength(0);
     expect(document.querySelector('[data-slot="branch-work"]')).toBeNull();

@@ -79,6 +79,9 @@ import { openSessionAnywhere } from '../../openSessionAnywhere';
 import type { PaletteEntry } from '../../types';
 import { useSessionsEverywhere } from '../useSessionsEverywhere';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
+import { useShallow } from 'zustand/react/shallow';
+import { openProjectWorktrees } from '../../../storage/openProjectWorktrees';
+import { worktreesPaletteEntries } from '../../../storage/worktreesPaletteEntries';
 
 const NEW_SESSION_WITH = {
   workflow: 'New workflow session',
@@ -153,6 +156,15 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     [projects, currentWorkspace],
   );
   const projectGitStatus = useAppStore((s) => s.projectGitStatus);
+  const sessionProjectIds = useAppStore(
+    useShallow((state) =>
+      sessionId === null
+        ? EMPTY_ARRAY
+        : (state.sessionMounts?.[sessionId] ?? state.sessionProjectMounts[sessionId] ?? []).map(
+            (mount) => mount.projectId,
+          ),
+    ),
+  );
   const scriptPins = useScriptPins({ projectIds: workspaceProjects.map((project) => project.id) });
   const reportError = useAppStore((s) => s.reportError);
   const markSessionsRead = useAppStore((s) => s.markSessionsRead);
@@ -217,6 +229,14 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
 
     out.push(...markAllReadEntries({ sessionIds: unreadSessionIds, markRead: markSessionsRead }));
     out.push(...dockPanelEntries({ grid: dockGrid, sessionId: dockSessionId }));
+    out.push(
+      ...worktreesPaletteEntries({
+        sessionId,
+        projects: workspaceProjects,
+        sessionProjectIds,
+        open: openProjectWorktrees,
+      }),
+    );
 
     if (sessionId !== null) {
       out.push(
@@ -490,6 +510,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     scripts,
     scriptPins,
     workspaceProjects,
+    sessionProjectIds,
     projectGitStatus,
     agentKindOverride,
     isAskOpen,

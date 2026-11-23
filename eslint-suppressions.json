@@ -9739,9 +9739,6 @@
   "apps/desktop/src/store/slices/storage/measureStorageSizes.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/store/slices/storage/removeStorageFolders.ts": {

@@ -5,7 +5,7 @@
 ## Skeleton
 
 The window is one strip of chrome (the top bar), the places rail on the left,
-one main slot and, inside a workspace, a right rail with a dock. Eight principles say where
+one main slot and, inside a workspace, a right rail with a dock. Nine principles say where
 each thing lives. A principle marked **holds** is true in the code today and is
 guarded by a test. A principle marked **target** is the direction of the
 skeleton: it is not true yet, no test fails on it, and the unit that makes it
@@ -15,8 +15,10 @@ unit that changes the skeleton edits this section first.
 1. **Left is where you go. Holds.** The places rail holds New and the six
    places, and no tool; an open session keeps the Board lit, since the session
    is a child of the Board (`ShellLeft/index.test.tsx`,
-   `regressions/places-rail.test.tsx`). Owned by The places rail and the
-   session page tabs.
+   `regressions/places-rail.test.tsx`). The Desk is a face of the session, not
+   a place: it adds no item and keeps the Board lit too. Sessions in the top bar
+   moves from one session to another without the Board. Owned by The places
+   rail and the session page tabs.
 2. **Right is what you hold. Holds.** The right rail sits at the sheet's right
    edge on every screen of a workspace: the session tools on a session page,
    Terminal and Browser at its foot everywhere. Terminal and Browser stay open
@@ -37,6 +39,12 @@ unit that changes the skeleton edits this section first.
    saved width: 64px with a word under each icon, 44px icons only under a
    1100px window, and an old folded choice changes nothing
    (`regressions/places-rail.test.tsx`). Owned by The places rail.
+9. **Inside a session, the right opens its Desk. Target.** On the Overview,
+   Browser, Monitor and Scripts on the right rail open the Desk with that tool,
+   and Terminal opens over the Overview; on the Desk they show and hide its
+   panels. Outside a session, the Board included, a tool opens beside the page
+   as principle 2 says. Today a tool on the Overview still opens the dock
+   beside it. Owned by The session tools.
 
 What holds today and is guarded:
 
@@ -323,7 +331,10 @@ plus main. There is no footer. **There is one app layout and every surface fills
 its slots.** The board, the session and the studios do not define their own
 frames. A surface that needs a different frame changes the shared one instead of
 forking a second (`app/shellArrangement`, which every shell mount, the app and
-the mock scenes alike, reads). **The places rail never changes; a session adds
+the mock scenes alike, reads). The Desk is one more frame of the same solver,
+not a fork: `DeskBody` draws a `DockLane` beside its column and `dockLayoutOf`
+lays the tools in it with `isDesk`, while the head, the tabs and the right rail
+stay those of the session. **The places rail never changes; a session adds
 one rail of its own.** The places rail is the workspace's navigation and looks
 the same on every screen. Inside a session the pages are page tabs (see Session page tabs)
 under the page title, inside the content sheet. No other surface
@@ -367,7 +378,9 @@ again. A drawer's own key (⌘⌥S) on a page leaves that page and every
 page stacked under it, and shows that drawer; it never closes a parked one,
 and an overlay drawer takes focus back. Esc in the session is one ladder: an open
 menu, popover or field takes it first, then the top of the slot closes, then
-the drawer from the chip, then the page goes up. ⌘⇧W (Ctrl+F4 off macOS,
+the drawer from the chip, then the page goes up. A face is not a step of the
+ladder: Esc never switches Overview and Desk (model.md, A face is not an
+entry). ⌘⇧W (Ctrl+F4 off macOS,
 File > Close the Drawer) closes the top of the slot from anywhere, a focused
 terminal or web page included; an open menu or dialog takes it first, and a
 parked drawer is never closed. The right rail stays at 44px
@@ -513,7 +526,10 @@ covered.
   (Pinned, then by state; the Needs you number is `attentionCountOf`), typing
   filters by title or project, the arrows and Enter open a row, and the pin
   calls `pinSession` or `unpinSession`, which leave the row in place when the
-  write fails.
+  write fails. Each row says the state of its session: the status mark, the
+  live line or the project, the count of what waits on you from the Queue's
+  `needsYouOf`, and **Desk** when the session opens again on its Desk. So you
+  move from one session to another without going through the Board.
   After an update from a build that had the sidebar list, a one-time card
   under the Sessions control (`SessionsCard`, 320px wide, the same placement
   rule) reads "Your sessions moved here" with **Show sessions**. It is not a
