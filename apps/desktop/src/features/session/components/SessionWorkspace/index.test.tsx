@@ -744,7 +744,7 @@ describe('SessionWorkspace github issue lens', () => {
 
     render(<SessionWorkspace session={session} />);
 
-    expect(screen.getByTestId('github-task-detail').textContent).toBe('99');
+    expect((await screen.findByTestId('github-task-detail')).textContent).toBe('99');
   });
 
   it('shows an empty state when no github issue is linked', async () => {
@@ -765,7 +765,7 @@ describe('SessionWorkspace github issue lens', () => {
     store.focusedGithubIssueNumber = { [SESSION_ID]: 12 };
 
     const { rerender, container } = render(<SessionWorkspace session={session} />);
-    const detail = screen.getByTestId('github-task-detail');
+    const detail = await screen.findByTestId('github-task-detail');
 
     store.activeLens = { [SESSION_ID]: null };
     rerender(<SessionWorkspace session={session} />);
@@ -804,7 +804,7 @@ describe('SessionWorkspace github issue lens', () => {
 
     render(<SessionWorkspace session={session} />);
 
-    expect(screen.getByTestId('github-task-detail').textContent).toBe('12');
+    expect((await screen.findByTestId('github-task-detail')).textContent).toBe('12');
     expect(screen.queryByText('No GitHub issue linked')).toBeNull();
   });
 });
