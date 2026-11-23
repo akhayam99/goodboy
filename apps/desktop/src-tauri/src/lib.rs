@@ -234,6 +234,13 @@ pub fn run() {
                 drain_child_processes(app, false);
             }
         })
+        .on_webview_event(|webview, event| {
+            use tauri::Manager;
+            webview
+                .app_handle()
+                .state::<dropped_paths::DroppedPaths>()
+                .record_webview_event(event);
+        })
         .register_asynchronous_uri_scheme_protocol(
             frame_protocol::FRAME_SCHEME,
             frame_protocol::handle,

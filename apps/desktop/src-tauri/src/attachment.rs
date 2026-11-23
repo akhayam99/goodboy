@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
-use std::fs;
-use std::io::Read;
+use std::fs::{self, File};
+use std::io::{self, Read};
 use std::path::Path;
 
 use base64::engine::general_purpose::STANDARD;
@@ -28,6 +28,10 @@ pub enum AttachmentError {
     InvalidPath,
     #[error("path was not dropped onto the window")]
     NotDropped,
+    #[error("the dropped file was moved or deleted before it was read")]
+    Gone,
+    #[error("no permission to read the dropped file")]
+    Denied,
     #[error("unsupported attachment type: {0}")]
     UnsupportedMime(String),
     #[error("sqlite error: {0}")]
@@ -44,6 +48,8 @@ impl AttachmentError {
             AttachmentError::TooLarge(_) => "too_large",
             AttachmentError::InvalidPath => "invalid_path",
             AttachmentError::NotDropped => "not_dropped",
+            AttachmentError::Gone => "gone",
+            AttachmentError::Denied => "denied",
             AttachmentError::UnsupportedMime(_) => "unsupported_mime",
             AttachmentError::Sqlite(_) => "sqlite",
             AttachmentError::Poisoned => "poisoned",
@@ -189,24 +195,39 @@ pub async fn attachment_read_dropped(
     drops: State<'_, DroppedPaths>,
     abs_path: String,
 ) -> Result<DroppedAttachment, AttachmentError> {
-    claim_dropped(&drops, &abs_path)?;
-    tauri::async_runtime::spawn_blocking(move || attachment_read_dropped_blocking(abs_path))
+    let file = claim_dropped(&drops, &abs_path)?;
+    tauri::async_runtime::spawn_blocking(move || attachment_read_dropped_blocking(abs_path, file))
         .await
         .map_err(|e| AttachmentError::Io(std::io::Error::other(e.to_string())))?
 }
 
-fn claim_dropped(drops: &DroppedPaths, abs_path: &str) -> Result<(), AttachmentError> {
-    if !drops.take(Path::new(abs_path)) {
-        return Err(AttachmentError::NotDropped);
+fn dropped_read_error(error: io::Error) -> AttachmentError {
+    match error.kind() {
+        io::ErrorKind::NotFound => AttachmentError::Gone,
+        io::ErrorKind::PermissionDenied => AttachmentError::Denied,
+        io::ErrorKind::InvalidInput => AttachmentError::InvalidPath,
+        _ => AttachmentError::Io(error),
     }
-    Ok(())
+}
+
+fn claim_dropped(drops: &DroppedPaths, abs_path: &str) -> Result<File, AttachmentError> {
+    let Some(held) = drops.take(Path::new(abs_path)) else {
+        return Err(AttachmentError::NotDropped);
+    };
+    held.map_err(dropped_read_error)
 }
 
 fn attachment_read_dropped_blocking(
     abs_path: String,
+    file: File,
 ) -> Result<DroppedAttachment, AttachmentError> {
     let path = Path::new(&abs_path);
-    let meta = fs::metadata(path)?;
+    let mime = mime_for(path);
+    if !is_allowed_mime(mime) {
+        return Err(AttachmentError::UnsupportedMime(mime.to_string()));
+    }
+
+    let meta = file.metadata().map_err(dropped_read_error)?;
     if !meta.is_file() {
         return Err(AttachmentError::InvalidPath);
     }
@@ -214,12 +235,10 @@ fn attachment_read_dropped_blocking(
         return Err(AttachmentError::TooLarge(MAX_BYTES));
     }
 
-    let mime = mime_for(path);
-    if !is_allowed_mime(mime) {
-        return Err(AttachmentError::UnsupportedMime(mime.to_string()));
-    }
-
-    let bytes = fs::read(path)?;
+    let mut bytes = Vec::new();
+    file.take(MAX_BYTES as u64 + 1)
+        .read_to_end(&mut bytes)
+        .map_err(dropped_read_error)?;
     if bytes.len() > MAX_BYTES {
         return Err(AttachmentError::TooLarge(MAX_BYTES));
     }
@@ -508,48 +527,133 @@ mod tests {
         assert!(matches!(err, Err(AttachmentError::InvalidPath)));
     }
 
+    fn drop_then_read(path: &Path) -> Result<DroppedAttachment, AttachmentError> {
+        let drops = DroppedPaths::default();
+        drops.record(&[path.to_path_buf()]);
+        read_claimed(&drops, path)
+    }
+
+    fn read_claimed(
+        drops: &DroppedPaths,
+        path: &Path,
+    ) -> Result<DroppedAttachment, AttachmentError> {
+        let abs_path = path.to_string_lossy().to_string();
+        let file = claim_dropped(drops, &abs_path)?;
+        attachment_read_dropped_blocking(abs_path, file)
+    }
+
     #[test]
     fn read_dropped_rejects_unsupported_type() {
-        let dir = std::env::temp_dir().join(format!("goodboy-drop-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
-        fs::create_dir_all(&dir).unwrap();
+        let dir = scoped_worktree("drop-bin");
         let blob = dir.join("payload.bin");
         fs::write(&blob, b"\x00\x01\x02").unwrap();
-        let err = attachment_read_dropped_blocking(blob.to_string_lossy().to_string());
+        let err = drop_then_read(&blob);
         assert!(matches!(err, Err(AttachmentError::UnsupportedMime(_))));
         let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]
     fn read_dropped_accepts_documents() {
-        let dir = std::env::temp_dir().join(format!("goodboy-drop-doc-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
-        fs::create_dir_all(&dir).unwrap();
+        let dir = scoped_worktree("drop-doc");
         let csv = dir.join("data.csv");
         fs::write(&csv, b"a,b\n1,2\n").unwrap();
-        let out = attachment_read_dropped_blocking(csv.to_string_lossy().to_string()).unwrap();
+        let out = drop_then_read(&csv).unwrap();
         assert_eq!(out.file_name, "data.csv");
         assert_eq!(out.mime_type, "text/csv");
 
         let pdf = dir.join("doc.pdf");
         fs::write(&pdf, b"%PDF-1.4\n").unwrap();
-        let out = attachment_read_dropped_blocking(pdf.to_string_lossy().to_string()).unwrap();
+        let out = drop_then_read(&pdf).unwrap();
         assert_eq!(out.mime_type, "application/pdf");
         let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]
     fn read_dropped_returns_image_bytes() {
-        let dir = std::env::temp_dir().join(format!("goodboy-drop-img-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
-        fs::create_dir_all(&dir).unwrap();
+        let dir = scoped_worktree("drop-img");
         let png = dir.join("shot.png");
         let png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
         fs::write(&png, STANDARD.decode(png_b64).unwrap()).unwrap();
-        let out = attachment_read_dropped_blocking(png.to_string_lossy().to_string()).unwrap();
+        let out = drop_then_read(&png).unwrap();
         assert_eq!(out.file_name, "shot.png");
         assert_eq!(out.mime_type, "image/png");
         assert_eq!(out.data_base64, png_b64);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn read_dropped_keeps_a_screenshot_the_tool_deleted_after_the_drop() {
+        let dir = scoped_worktree("drop-unlinked");
+        let png = dir.join("Screenshot northwind.png");
+        fs::write(&png, b"pixels").unwrap();
+        let drops = DroppedPaths::default();
+        drops.record(std::slice::from_ref(&png));
+        fs::remove_file(&png).unwrap();
+        let out = read_claimed(&drops, &png).unwrap();
+        assert_eq!(out.file_name, "Screenshot northwind.png");
+        assert_eq!(out.data_base64, STANDARD.encode(b"pixels"));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn read_dropped_reports_a_file_gone_before_the_drop_was_read() {
+        let dir = scoped_worktree("drop-gone");
+        let err = drop_then_read(&dir.join("gone.png"));
+        assert!(matches!(err, Err(AttachmentError::Gone)));
+        assert_eq!(AttachmentError::Gone.kind(), "gone");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn read_dropped_reads_a_file_that_arrived_after_the_drop() {
+        let dir = scoped_worktree("drop-late");
+        let png = dir.join("late.png");
+        let drops = DroppedPaths::default();
+        drops.record(std::slice::from_ref(&png));
+        fs::write(&png, b"late").unwrap();
+        let out = read_claimed(&drops, &png).unwrap();
+        assert_eq!(out.data_base64, STANDARD.encode(b"late"));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn read_dropped_reports_a_file_it_may_not_read() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = scoped_worktree("drop-denied");
+        let png = dir.join("locked.png");
+        fs::write(&png, b"pixels").unwrap();
+        fs::set_permissions(&png, fs::Permissions::from_mode(0o000)).unwrap();
+        if File::open(&png).is_ok() {
+            let _ = fs::remove_dir_all(&dir);
+            return;
+        }
+        let err = drop_then_read(&png);
+        assert!(matches!(err, Err(AttachmentError::Denied)));
+        assert_eq!(AttachmentError::Denied.kind(), "denied");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn read_dropped_refuses_a_folder() {
+        let dir = scoped_worktree("drop-folder");
+        let folder = dir.join("shots.png");
+        fs::create_dir_all(&folder).unwrap();
+        let err = drop_then_read(&folder);
+        assert!(matches!(err, Err(AttachmentError::InvalidPath)));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn read_dropped_refuses_a_file_over_the_limit() {
+        let dir = scoped_worktree("drop-large");
+        let png = dir.join("huge.png");
+        File::create(&png)
+            .unwrap()
+            .set_len(MAX_BYTES as u64 + 1)
+            .unwrap();
+        let err = drop_then_read(&png);
+        assert!(matches!(err, Err(AttachmentError::TooLarge(_))));
         let _ = fs::remove_dir_all(&dir);
     }
 
@@ -562,11 +666,15 @@ mod tests {
 
     #[test]
     fn claim_dropped_accepts_a_dropped_path_once() {
+        let dir = scoped_worktree("drop-once");
+        let pdf = dir.join("brief.pdf");
+        fs::write(&pdf, b"%PDF-1.4\n").unwrap();
         let drops = DroppedPaths::default();
-        drops.record(&[std::path::PathBuf::from("/tmp/harborline/brief.pdf")]);
-        assert!(claim_dropped(&drops, "/tmp/harborline/brief.pdf").is_ok());
-        let err = claim_dropped(&drops, "/tmp/harborline/brief.pdf");
+        drops.record(std::slice::from_ref(&pdf));
+        assert!(read_claimed(&drops, &pdf).is_ok());
+        let err = read_claimed(&drops, &pdf);
         assert!(matches!(err, Err(AttachmentError::NotDropped)));
+        let _ = fs::remove_dir_all(&dir);
     }
 
     fn scoped_worktree(name: &str) -> std::path::PathBuf {

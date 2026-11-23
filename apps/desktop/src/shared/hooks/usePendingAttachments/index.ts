@@ -22,6 +22,8 @@ import {
 } from '../../../features/attachments/pendingAttachment';
 import { countNoun } from '../../utils/countNoun';
 import { pastedFilesOf } from './pastedFilesOf';
+import { dropFailureCauseOf } from './dropFailureCauseOf';
+import { dropFailureNotice, type GroupedCause } from './dropFailureNotice';
 
 export type PersistArgs = {
   readonly id: string;
@@ -168,15 +170,14 @@ export const usePendingAttachments = ({
     const supported = paths.filter((path) =>
       isAccepted({ name: droppedFileName({ path }), type: '' }),
     );
-    const unsupported = paths.length - supported.length;
-    if (unsupported > 0) {
-      showToast({
-        kind: 'warning',
-        message: `Skipped ${countNoun({ count: unsupported, one: 'file' })} of an unsupported type.`,
-      });
-    }
+    const filtered = paths
+      .filter((path) => !supported.includes(path))
+      .map((path) => droppedFileName({ path }));
     const dropped: PendingAttachment[] = [];
-    const rejected: string[] = [];
+    const rejected = new Map<GroupedCause, string[]>();
+    if (filtered.length > 0) {
+      rejected.set('unsupported', filtered);
+    }
     for (const path of supported) {
       const name = droppedFileName({ path });
       try {
@@ -189,16 +190,20 @@ export const usePendingAttachments = ({
         const id = crypto.randomUUID();
         const relPath = await persist({ id, fileName: result.fileName, blob });
         dropped.push({ id, fileName: result.fileName, mimeType: result.mimeType, blob, relPath });
-      } catch {
-        rejected.push(name);
+      } catch (error: unknown) {
+        const cause = dropFailureCauseOf({ error });
+        if (cause === 'too-large') {
+          showToast({ kind: 'warning', message: tooLargeNotice({ fileName: name }) });
+          continue;
+        }
+        rejected.set(cause, [...(rejected.get(cause) ?? []), name]);
       }
     }
-    if (rejected.length > 0) {
-      const label =
-        rejected.length === 1
-          ? `Couldn't attach ${rejected[0]}. Drop it again or use Attach files.`
-          : `Couldn't read ${rejected.length} files.`;
-      showToast({ kind: 'warning', message: label });
+    if (rejected.size > 0) {
+      const message = Array.from(rejected, ([cause, names]) =>
+        dropFailureNotice({ cause, names }),
+      ).join(' ');
+      showToast({ kind: 'warning', message });
     }
     admit(dropped);
   };
