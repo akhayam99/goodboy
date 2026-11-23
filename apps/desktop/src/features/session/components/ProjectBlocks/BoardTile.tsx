@@ -9,6 +9,7 @@ import { useMountRowMenu } from '../../hooks/useMountRowMenu';
 import { MountRowMenuButton } from '../MountRowMenuButton';
 import { boardRowCellsOf } from '../../central/board/boardRowCellsOf';
 import { boardTileChipOf } from '../../central/board/boardTileChipOf';
+import { OverlapChip } from '../../../overlap/OverlapChip';
 import { BoardBranchName } from './BoardBranchName';
 import { BoardTileAction } from './BoardTileAction';
 import { BoardTileFacts } from './BoardTileFacts';
@@ -123,6 +124,12 @@ const BoardTileView = ({ rowId }: Props) => {
               label={<span className="min-w-0 truncate">{chip.word}</span>}
             />
           </span>
+        )}
+        {entry === null ? null : (
+          <OverlapChip
+            mountId={brandId<MountId>({ value: entry.fact.mountId })}
+            placement="session"
+          />
         )}
         <BoardTileAction rowId={rowId} />
         {entry === null ? null : (

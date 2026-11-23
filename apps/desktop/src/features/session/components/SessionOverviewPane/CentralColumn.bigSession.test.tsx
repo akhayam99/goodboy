@@ -28,7 +28,7 @@ let useAppStore: Awaited<ReturnType<typeof importStore>>;
 let CentralColumn: typeof import('./CentralColumn').CentralColumn;
 
 const OPEN_COMMIT_BUDGET = 6;
-const OPEN_IPC_BUDGET = 30;
+const OPEN_IPC_BUDGET = 31;
 
 beforeAll(async () => {
   installFakeResizeObserver();

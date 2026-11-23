@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { Button, InteractiveRow, SectionLabel, TruncatedText } from '@goodboy/ui';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../shared/utils/names';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
+import { overlapRunIdsOf } from '../overlapRunIdsOf';
 import { AgentPeek } from './AgentPeek';
 import { RunningAgentRow } from './RunningAgentRow';
 import type { RunningGroup, RunningRow } from '../runningGroupsOf';
@@ -54,6 +56,7 @@ export const RunningBand = ({
 }: Props) => {
   const now = useNow(CLOCK_MS, groups.length > 0);
   const count = groups.reduce((total, group) => total + group.rows.length, 0);
+  const overlapRunIds = useMemo(() => overlapRunIdsOf({ groups }), [groups]);
   const retry = actionButtonLookOf({ verb: RETRY, variant: 'secondary' });
   return (
     <section
@@ -95,6 +98,7 @@ export const RunningBand = ({
                 now={now}
                 isFocused={isActive && row.runId === focusedRunId}
                 isPeekOpen={row.runId === peekRunId}
+                hasOverlapChip={overlapRunIds.has(row.runId)}
                 onToggle={() => onToggle({ row })}
               />
               {row.runId === peekRunId && row.agentId !== null ? (

@@ -48,7 +48,7 @@ export const OverlapChip = ({ mountId, placement }: Props) => {
       role="dialog"
       ariaLabel="Overlap"
       className="gap-3 p-3"
-      anchorClassName="min-w-0 shrink"
+      anchorClassName="pointer-events-auto min-w-0 max-w-48 shrink"
       trigger={
         <Chip
           as="button"

@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { brandId, type IsoDateTime, type OpenQuestionId, type SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type IsoDateTime,
+  type MountId,
+  type OpenQuestionId,
+  type SessionId,
+  type SessionProjectMount,
+} from '@goodboy/types';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore, useSessions } from '../../../../../store';
 import { StageBoard } from '../../../../../features/workspace/components/StageBoard';
@@ -28,6 +35,11 @@ const TOOLS = [
   { name: 'Grep', command: null, path: null },
 ];
 
+const CHANGED_PATHS: ReadonlyArray<ReadonlyArray<string>> = [
+  ['src/retry/state.ts', 'src/checkout/retry.ts'],
+  ['src/retry/state.ts', 'src/payout/export.ts', 'src/payout/schedule.ts', 'src/payout/csv.ts'],
+];
+
 const liveRows = (): ReadonlyArray<Readonly<Record<string, unknown>>> => {
   const state = useAppStore.getState();
   return RUNNING.flatMap((sessionId, sessionIndex) =>
@@ -44,10 +56,60 @@ const liveRows = (): ReadonlyArray<Readonly<Record<string, unknown>>> => {
   );
 };
 
+const overlapRows = (): ReadonlyArray<Readonly<Record<string, unknown>>> => {
+  const state = useAppStore.getState();
+  return RUNNING.flatMap((sessionId, index) => {
+    const [mount] = state.sessionProjectMounts[sessionId] ?? [];
+    return mount === undefined
+      ? []
+      : [
+          {
+            mountId: mount.mountId,
+            sessionId,
+            projectId: mount.projectId,
+            branch: mount.branch,
+            createdAt: index + 1,
+            port: null,
+            hasFixedPort: false,
+            paths: CHANGED_PATHS[index] ?? [],
+          },
+        ];
+  });
+};
+
+type MountsParams = {
+  readonly mounts: Readonly<Record<string, ReadonlyArray<SessionProjectMount>>>;
+};
+
+const ownMountsOf = ({
+  mounts,
+}: MountsParams): Readonly<Record<string, ReadonlyArray<SessionProjectMount>>> =>
+  Object.fromEntries(
+    RUNNING.map((sessionId) => {
+      const [mount] = mounts[sessionId] ?? [];
+      return [
+        sessionId,
+        mount === undefined
+          ? []
+          : [
+              {
+                ...mount,
+                sessionId,
+                mountId: brandId<MountId>({ value: `mock-queue-mount-${sessionId}` }),
+              },
+            ],
+      ];
+    }),
+  );
+
 const seedQueue = ({ isClear }: Pick<Props, 'isClear'>): void => {
   seedBoardScene();
   useAppStore.setState((state) => ({
     navigation: {},
+    sessionProjectMounts: {
+      ...state.sessionProjectMounts,
+      ...ownMountsOf({ mounts: state.sessionProjectMounts }),
+    },
     sessions: isClear
       ? state.sessions.filter((session) => !WAITING.includes(session.id))
       : state.sessions,
@@ -71,8 +133,11 @@ const seedQueue = ({ isClear }: Pick<Props, 'isClear'>): void => {
           ],
         },
   }));
-  const rows = liveRows();
-  mockSceneIpc((command) => (command === 'live_work' ? rows : null));
+  const answers = new Map<string, unknown>([
+    ['live_work', liveRows()],
+    ['overlap_read', overlapRows()],
+  ]);
+  mockSceneIpc((command) => answers.get(command) ?? null);
 };
 
 export const QueueScene = ({ theme, isClear }: Props) => {
