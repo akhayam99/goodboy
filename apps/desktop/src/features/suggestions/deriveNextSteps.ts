@@ -169,6 +169,7 @@ export const deriveNextSteps = ({ signals }: Params): ReadonlyArray<NextMove> =>
     firstOpenQuestion = null,
     questionsRootAgentId = null,
     eligibleThreadCount,
+    reviewMountId = null,
     projects,
     mountEvents,
     agents = [],
@@ -399,7 +400,7 @@ export const deriveNextSteps = ({ signals }: Params): ReadonlyArray<NextMove> =>
       payload: { planId: activePlan.id },
     });
   }
-  if (eligibleThreadCount > 0 && !isSettledWork({ mountId: null })) {
+  if (eligibleThreadCount > 0 && !isSettledWork({ mountId: reviewMountId })) {
     suggestions.push({
       id: `resolve-threads:${sessionId}`,
       kind: 'resolve-threads',

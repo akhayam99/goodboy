@@ -65,6 +65,7 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
       return;
     }
     try {
+      await get().loadSessionWorkRecord({ sessionId });
       await reopenArchivedWork({ get, sessionId });
       const [storedRows, runs, attachedWorkflows] = await Promise.all([
         listWorktreesForSession(tauriDatabase, sessionId),

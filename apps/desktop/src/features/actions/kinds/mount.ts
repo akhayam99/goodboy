@@ -9,7 +9,8 @@ import {
   RotateCcw,
   Undo2,
 } from '@goodboy/ui/icons';
-import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
+import type { MountId, MountPullRequestProvider, SessionId, WorktreeStatus } from '@goodboy/types';
+import { recoveryAttachOptionsOf } from '../../../store/slices/project-mounts/workRecord/recoveryAttachOptionsOf';
 import type { AppStore } from '../../../store/store';
 import type { RemoteHostKind } from '../../../shared/utils/remoteHost';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
@@ -68,6 +69,19 @@ export const mountEventName = ({
 }): string => `${name}:${mountId}`;
 
 const isOpen = ({ facts }: FactsOnly): boolean => !facts.isClosed && facts.worktreePath !== null;
+
+const openRequestOf = ({
+  facts,
+}: FactsOnly): {
+  readonly provider: MountPullRequestProvider;
+  readonly prNumber: number;
+} | null => {
+  const isLive = facts.pr === 'open' || facts.pr === 'draft';
+  if (!isLive || facts.requestProvider === null || facts.requestNumber === null) {
+    return null;
+  }
+  return { provider: facts.requestProvider, prNumber: facts.requestNumber };
+};
 
 const isAsking = ({ facts }: FactsOnly): boolean =>
   facts.rebaseConflict !== null && !facts.rebaseConflict.isWithAuto;
@@ -360,11 +374,18 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     label: 'Reopen',
     icon: RotateCcw,
     group: 'act',
-    when: ({ facts }) => facts.isClosed && !facts.isBranchGone,
+    when: ({ facts }) =>
+      facts.isClosed &&
+      (!facts.isBranchGone || (!facts.canRestoreBranch && openRequestOf({ facts }) !== null)),
     slot: () => 'inline',
     pendingLabel: () => 'Reopening…',
     run: async ({ facts, env }) => {
-      await env.getState().attachMount({ sessionId: facts.sessionId, mountId: facts.mountId });
+      const request = openRequestOf({ facts });
+      await env.getState().attachMount({
+        sessionId: facts.sessionId,
+        mountId: facts.mountId,
+        ...(request === null ? {} : recoveryAttachOptionsOf(request)),
+      });
     },
   },
   {

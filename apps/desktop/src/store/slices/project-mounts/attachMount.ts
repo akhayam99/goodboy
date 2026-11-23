@@ -105,7 +105,8 @@ export const attachMount = (set: SetFn, get: GetFn) => {
           const branches = await listBranchNames({ repoPath: view.repoRoot }).catch(
             () => [] as ReadonlyArray<string>,
           );
-          if (!canFetchRemote && !branches.includes(view.branch)) {
+          const isBranchLocal = branches.includes(view.branch);
+          if (!canFetchRemote && !isBranchLocal) {
             await failMountOperation({ operation, errorCode: 'branch-missing' });
             throw mountError({
               code: 'branch-missing',
@@ -124,7 +125,7 @@ export const attachMount = (set: SetFn, get: GetFn) => {
                 retainedDirName({ path: retained }) ??
                 (await allocateMountDirName({ mountId, repoPath: view.repoRoot, parentDir })),
               existingBranch: view.branch,
-              ...(fallbackRef === undefined ? {} : { fallbackRef }),
+              ...(fallbackRef === undefined || isBranchLocal ? {} : { fallbackRef }),
             });
             return created.worktreePath;
           } catch (error) {

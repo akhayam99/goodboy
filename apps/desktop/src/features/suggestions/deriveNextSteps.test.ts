@@ -168,6 +168,21 @@ describe('deriveNextSteps', () => {
     ).toBe(false);
   });
 
+  it('drops the review conversations of a merged request while another branch stays open', () => {
+    const mergedMountId = 'mount-merged' as MountId;
+    const isOfferedFor = ({ reviewMountId }: { readonly reviewMountId: MountId }) =>
+      deriveFrom({
+        ...BASE_PARAMS,
+        eligibleThreadCount: 2,
+        reviewMountId,
+        settledMountIds: [mergedMountId],
+        settledBranches: { merged: 0, closed: 0 },
+      }).some((suggestion) => suggestion.kind === 'resolve-threads');
+
+    expect(isOfferedFor({ reviewMountId: mergedMountId })).toBe(false);
+    expect(isOfferedFor({ reviewMountId: 'mount-open' as MountId })).toBe(true);
+  });
+
   it('carries the proposal payload the timeline row acts on', () => {
     const suggestion = derive({
       mountEvents: [mountEvent({ id: 'event-1', kind: 'proposed' })],

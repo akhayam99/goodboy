@@ -3,23 +3,13 @@ import type { MountPullRequestLink, SessionMountView } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import { createLatestOnly } from '../../../runtime/state-writes/latestOnly';
 import { loadMountViews } from '../mountViews';
+import { canonicalPullRequestLinkOf } from './canonicalPullRequestLinkOf';
 import type { SliceDeps } from '../../../slice-types';
 import type { SessionKeyInput } from '../types';
 
 type WorkRecord = {
   readonly views: ReadonlyArray<SessionMountView>;
   readonly links: ReadonlyArray<MountPullRequestLink>;
-};
-
-type LinksParams = {
-  readonly links: ReadonlyArray<MountPullRequestLink>;
-};
-
-const latestLinkOf = ({ links }: LinksParams): ReadonlyArray<MountPullRequestLink> => {
-  const latest = [...links].sort((left, right) =>
-    right.lastObservedAt.localeCompare(left.lastObservedAt),
-  )[0];
-  return latest === undefined ? [] : [latest];
 };
 
 export const loadSessionWorkRecord = ({ set, get }: SliceDeps) => {
@@ -34,7 +24,13 @@ export const loadSessionWorkRecord = ({ set, get }: SliceDeps) => {
             listMountPullRequestLinks({ db: tauriDatabase, sessionId, mountId: view.id }),
           ),
         );
-        return { views, links: linkLists.flatMap((links) => latestLinkOf({ links })) };
+        return {
+          views,
+          links: linkLists.flatMap((links) => {
+            const canonical = canonicalPullRequestLinkOf({ links });
+            return canonical === null ? [] : [canonical];
+          }),
+        };
       },
       apply: ({ views, links }) => {
         set((state) => ({

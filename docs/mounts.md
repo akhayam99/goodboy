@@ -418,16 +418,21 @@ in use), cleanup records a `pending` proposal instead of deleting. Archiving a
 session never deletes either: it proposes cleanup for every mount still on
 disk. Archive evicts the mount views and host data from the store; opening the
 archived session reads them back (`loadSessionWorkRecord`): every mount row,
-detached ones included, and the latest stored pull request link of each, which
-the mount rows show when no live host data exists (`buildMountRows`; stage
-derivation keeps reading live host data only). Restore
-(`reopenArchivedWork`) attaches again each detached repository mount whose
-latest link is still open, with `canFetchRemote`: the worktree is created from
-the remote branch when the local one is gone, or from the pull request head
-(`pull/<n>/head` on GitHub, `merge-requests/<n>/head` on GitLab). A mount that
-cannot come back keeps its row, the failure is reported with its reason, and
-the closed worktree notice on the overview offers Reopen. Merged and closed work
-is not attached again. Deleting a directory is always a named user action (unmount, remove,
+detached ones included, and the latest stored pull request link of each
+(`canonicalPullRequestLinkOf`: last observed, then newest created), which
+the mount rows show when no live host data exists (`buildMountRows`). Next
+treats every retained mount whose request is merged or closed as settled work,
+attached or not (`settledMountIdsOf`), so unmounting a merged branch never
+brings Review the changes back. Restore (`unarchiveTask`) reads the work record
+first, then (`reopenArchivedWork`) attaches again each detached repository mount
+whose latest link is still open, with `canFetchRemote`: the worktree is created
+from the remote branch when the local one is gone, or from the pull request head
+(`pull/<n>/head` on GitHub, `merge-requests/<n>/head` on GitLab); a local
+branch that still exists is checked out as recorded. A mount that cannot come
+back keeps its row, the failure is reported with its reason, and the closed
+worktree notice on the overview offers Reopen, which takes the same recovery
+(`recoveryAttachOptionsOf`) and stays offered while an open pull request head
+remains. Merged and closed work is not attached again. Deleting a directory is always a named user action (unmount, remove,
 detach). The user resolves a proposal from the Overview Next slot
 (`cleanupSuggestionOf`): one row `Remove the <project> worktree` with the reason
 and the size (`#418 merged · 412 MB`, or `Session archived`), or one row

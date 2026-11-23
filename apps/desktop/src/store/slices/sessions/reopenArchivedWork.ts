@@ -3,16 +3,14 @@ import type { MountPullRequestLink, SessionId, SessionMountView } from '@goodboy
 import { tauriDatabase } from '../../../shared/lib/db';
 import { WORK_KEPT } from '../notifications/errorRecovery';
 import { loadMountViews } from '../project-mounts/mountViews';
+import { canonicalPullRequestLinkOf } from '../project-mounts/workRecord/canonicalPullRequestLinkOf';
+import { recoveryAttachOptionsOf } from '../project-mounts/workRecord/recoveryAttachOptionsOf';
 import { projectById } from '../projects/projectIndex';
 import type { GetFn } from './types';
 
 type Params = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
-};
-
-type LinkParams = {
-  readonly link: MountPullRequestLink;
 };
 
 type ReopenTarget = {
@@ -22,30 +20,13 @@ type ReopenTarget = {
 
 const SETTLED_STATES: ReadonlyArray<MountPullRequestLink['state']> = ['merged', 'closed'];
 
-const fallbackRefOf = ({ link }: LinkParams): string | undefined => {
-  switch (link.provider) {
-    case 'github':
-      return `pull/${link.prNumber}/head`;
-    case 'gitlab':
-      return `merge-requests/${link.prNumber}/head`;
-    case 'bitbucket':
-      return undefined;
-    default: {
-      const exhaustive: never = link.provider;
-      return exhaustive;
-    }
-  }
-};
-
 type LinksParams = {
   readonly links: ReadonlyArray<MountPullRequestLink>;
 };
 
 const latestOpenLinkOf = ({ links }: LinksParams): MountPullRequestLink | null => {
-  const latest = [...links].sort((left, right) =>
-    right.lastObservedAt.localeCompare(left.lastObservedAt),
-  )[0];
-  return latest === undefined || SETTLED_STATES.includes(latest.state) ? null : latest;
+  const latest = canonicalPullRequestLinkOf({ links });
+  return latest === null || SETTLED_STATES.includes(latest.state) ? null : latest;
 };
 
 const reopenTargetsOf = async ({
@@ -77,14 +58,12 @@ const reopenTargetsOf = async ({
 export const reopenArchivedWork = async ({ get, sessionId }: Params): Promise<void> => {
   const targets = await reopenTargetsOf({ get, sessionId });
   for (const { view, link } of targets) {
-    const fallbackRef = fallbackRefOf({ link });
     try {
       await get().attachMount({
         sessionId,
         mountId: view.id,
         expectedRevision: view.revision,
-        canFetchRemote: true,
-        ...(fallbackRef === undefined ? {} : { fallbackRef }),
+        ...recoveryAttachOptionsOf({ provider: link.provider, prNumber: link.prNumber }),
       });
     } catch (error) {
       const projectName = projectById(get().projects, view.projectId)?.name ?? view.mountName;

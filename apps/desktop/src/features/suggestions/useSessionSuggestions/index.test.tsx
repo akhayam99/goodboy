@@ -69,6 +69,10 @@ vi.mock('../../resolve/useReviewTally', () => ({
   useReviewTally: () => ({ fixable: tally.fixable }),
 }));
 
+vi.mock('../../resolve/hooks/useActiveReviewSource', () => ({
+  useActiveReviewSource: () => ({ entries: [], selected: null, source: null }),
+}));
+
 vi.mock('../../workflows/useAttachedWorkflowRuns', () => ({
   useAttachedWorkflowRuns: () => [],
 }));

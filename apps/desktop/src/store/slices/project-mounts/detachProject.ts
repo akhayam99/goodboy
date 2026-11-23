@@ -15,6 +15,7 @@ import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { MOUNT_CLEANUP_BLOCKER_REASON, mountCleanupBlockers } from '../mount-cleanup/cleanupPolicy';
 import { clearMountBranchObservation } from './mountBranchObservations';
+import { mountError } from './mountErrors';
 import { withRepositoryAndMountLock } from './mountLocks';
 import { mountRequestOf } from './mountRowModel';
 import { nowIso } from './nowIso';
@@ -255,11 +256,18 @@ const removeTarget = async ({
     const diskState: MountDiskState = isGone({ diskState: target.diskState })
       ? target.diskState
       : 'missing';
-    await withRepositoryAndMountLock({
+    const isWritten = await withRepositoryAndMountLock({
       repoRoot: target.repoRoot,
       mountKey: `${sessionId}:${target.mountId}`,
       run: () => finishRow({ kept: false, diskState }),
     });
+    if (!isWritten) {
+      throw mountError({
+        code: 'revision-conflict',
+        message: 'the mount changed while removing it',
+        mountId: target.mountId,
+      });
+    }
     return {
       outcome: {
         mountId: target.mountId,

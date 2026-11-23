@@ -51,7 +51,9 @@ import {
   type SuggestionRebaseRequest,
 } from '../deriveNextSteps';
 import { useReviewTally } from '../../resolve/useReviewTally';
+import { useActiveReviewSource } from '../../resolve/hooks/useActiveReviewSource';
 import { toMountEvents } from '../../../store/slices/project-mounts/materializationProposals';
+import { settledMountIdsOf } from '../../../store/slices/project-mounts/workRecord/settledMountIdsOf';
 import { pendingAgentSignal } from '../pendingAgentSignal';
 import { useNextStepOutcomes } from '../useNextStepOutcomes';
 import { shouldDemote } from '../nextStepGates';
@@ -165,6 +167,7 @@ export const useNextStepSignalsFrom = ({
   const github = useAppStore((state) => state.sessionGithub[sessionId] ?? null);
   const scribeWork = useAppStore((state) => state.scribeWork);
   const fixableCount = useReviewTally({ sessionId }).fixable;
+  const reviewMountId = useActiveReviewSource({ sessionId }).selected?.mountId ?? null;
   const mounts = useAppStore(
     (state) =>
       state.sessionProjectMounts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionProjectMount>),
@@ -214,6 +217,9 @@ export const useNextStepSignalsFrom = ({
         isMountCompleted({ state, mountId: mount.mountId }) ? [mount.mountId] : [],
       ),
     ),
+  );
+  const settledMountIds = useAppStore(
+    useShallow((state) => settledMountIdsOf({ state, sessionId })),
   );
   const rebaseMounts = useMemo(
     () => mounts.filter((mount) => !completedMountIds.includes(mount.mountId)),
@@ -391,6 +397,7 @@ export const useNextStepSignalsFrom = ({
       }),
       hasPullRequest: github?.pr != null,
       eligibleThreadCount: fixableCount,
+      reviewMountId,
       mountEvents: toMountEvents({ events }),
       projects: withRebase
         ? rebaseMounts.map((mount) => {
@@ -477,7 +484,7 @@ export const useNextStepSignalsFrom = ({
         : [],
       checkChains,
       settledBranches,
-      settledMountIds: completedMountIds,
+      settledMountIds,
       cleanupProposals: cleanupProposals.map((proposal) => ({
         requestId: proposal.requestId,
         mountId: proposal.mountId,
@@ -556,7 +563,7 @@ export const useNextStepSignalsFrom = ({
     trackerMoves,
     seriesStrips,
     settledBranches,
-    completedMountIds,
+    settledMountIds,
     demotedKinds,
     effectiveAgents,
     events,
@@ -573,6 +580,7 @@ export const useNextStepSignalsFrom = ({
     projects,
     rebaseMounts,
     fixableCount,
+    reviewMountId,
     isActivityShown,
     sessionId,
     shownQuestionIds,

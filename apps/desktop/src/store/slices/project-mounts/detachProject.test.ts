@@ -11,6 +11,8 @@ const {
   upsertMountOperation,
   updateSessionWriteDestination,
   updateSessionActiveProject,
+  listMountPullRequestLinks,
+  updateSessionMountLifecycle,
 } = vi.hoisted(() => ({
   removeWorktreeChecked: vi.fn(
     async ({ worktreePath }: { worktreePath: string }) =>
@@ -36,6 +38,8 @@ const {
   upsertMountOperation: vi.fn(async () => undefined),
   updateSessionWriteDestination: vi.fn(async () => true),
   updateSessionActiveProject: vi.fn(async () => undefined),
+  listMountPullRequestLinks: vi.fn(async () => [] as ReadonlyArray<Record<string, unknown>>),
+  updateSessionMountLifecycle: vi.fn(async () => true),
 }));
 
 vi.mock('@goodboy/db', async () =>
@@ -47,7 +51,8 @@ vi.mock('@goodboy/db', async () =>
     upsertMountOperation,
     updateSessionWriteDestination,
     updateSessionActiveProject,
-    listMountPullRequestLinks: vi.fn(async () => []),
+    listMountPullRequestLinks,
+    updateSessionMountLifecycle,
   }),
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -239,6 +244,8 @@ beforeEach(() => {
   listSessionMounts.mockImplementation(async () => VIEWS);
   listMountOperations.mockImplementation(async () => []);
   getMountOperation.mockImplementation(async () => null);
+  listMountPullRequestLinks.mockImplementation(async () => []);
+  updateSessionMountLifecycle.mockImplementation(async () => true);
   removeWorktreeChecked.mockImplementation(async ({ worktreePath }: { worktreePath: string }) => ({
     kind: 'removed',
     path: worktreePath,
@@ -365,6 +372,32 @@ describe('detachProject', () => {
       mountId: 'mount-api',
     });
     expect(store.sessionMounts['sess-1'].map((view) => view.id)).toEqual(['mount-web']);
+  });
+
+  it('fails a released mount whose kept record lost its revision to another window', async () => {
+    const store = makeStore();
+    listSessionMounts.mockImplementation(async () => [
+      makeView({
+        id: 'mount-api',
+        projectId: 'project-api',
+        mountName: 'api',
+        worktreePath: null,
+        lastWorktreePath: '/container/api',
+        branch: 'ak/feat',
+        isAttached: false,
+        diskState: 'removed',
+      }),
+      VIEW_WEB,
+    ]);
+    listMountPullRequestLinks.mockImplementation(async () => [{ id: 'link-1' }]);
+    updateSessionMountLifecycle.mockImplementation(async () => false);
+
+    const outcomes = await runDetach(store);
+
+    expect(outcomes).toEqual([expect.objectContaining({ mountId: 'mount-api', kind: 'failed' })]);
+    expect(store.recordSessionEvent).not.toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'project_detached' }),
+    );
   });
 
   it('removes a released directory that is still on disk', async () => {

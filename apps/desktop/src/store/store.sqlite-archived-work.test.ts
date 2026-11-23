@@ -31,6 +31,8 @@ import {
   type StoryStore,
 } from './storyHarness';
 import { buildMountRows } from './slices/project-mounts/mountRowModel';
+import { settledMountIdsOf } from './slices/project-mounts/workRecord/settledMountIdsOf';
+import { listBranchNames } from '../features/worktree/worktree';
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>
   (await import('./storyHarness')).tauriEventModuleMock(),
@@ -293,7 +295,7 @@ describe('store on sqlite: an archived session keeps the work it did', () => {
     ).toHaveLength(1);
   });
 
-  it('leaves merged work closed on restore', async () => {
+  it('leaves merged work closed on restore and still shows its branch and pull request', async () => {
     await seedWork({ state: 'merged' });
     await unmountAndArchive();
 
@@ -301,5 +303,76 @@ describe('store on sqlite: an archived session keeps the work it did', () => {
 
     expect(storySpies.createWorktree).not.toHaveBeenCalled();
     expect(await mountRow()).toEqual({ worktree_path: null, is_attached: 0, branch: BRANCH });
+    const [row] = shownRows();
+    expect(row?.branch).toBe(BRANCH);
+    expect(row?.request?.state).toBe('merged');
+  });
+
+  it('restores the newest pull request when two were observed in the same refresh', async () => {
+    await seedWork({ state: 'merged' });
+    await upsertMountPullRequestLink({
+      db: storySqlite(),
+      sessionId,
+      link: {
+        id: 'link-payments-redirect-next',
+        mountId: MOUNT_ID,
+        provider: 'github',
+        host: 'github.com',
+        repoSlug: 'harborline/payments-api',
+        prNumber: PR_NUMBER + 1,
+        headBranch: BRANCH,
+        baseBranch: 'main',
+        url: `https://github.com/harborline/payments-api/pull/${PR_NUMBER + 1}`,
+        state: 'open',
+        snapshot: null,
+        mergedHeadSha: null,
+        mergedAt: null,
+        lastObservedAt: TEST_NOW,
+        createdAt: '2026-11-23T12:00:00.000Z' as typeof TEST_NOW,
+        updatedAt: TEST_NOW,
+      },
+    });
+    await unmountAndArchive();
+    storySpies.createWorktree.mockResolvedValue({
+      worktreePath: FOLDER,
+      branchName: BRANCH,
+      slug: 'fix-redirect',
+      reused: false,
+    });
+
+    await restore();
+
+    expect(storySpies.createWorktree).toHaveBeenCalledWith(
+      expect.objectContaining({ fallbackRef: `pull/${PR_NUMBER + 1}/head` }),
+    );
+    expect(shownRows()[0]?.request?.label).toBe(`PR #${PR_NUMBER + 1}`);
+  });
+
+  it('keeps the recorded branch checked out when it still exists locally', async () => {
+    await seedWork({ state: 'open' });
+    await unmountAndArchive();
+    vi.mocked(listBranchNames).mockResolvedValueOnce([BRANCH]);
+    storySpies.createWorktree.mockResolvedValue({
+      worktreePath: FOLDER,
+      branchName: BRANCH,
+      slug: 'fix-redirect',
+      reused: false,
+    });
+
+    await restore();
+
+    expect(storySpies.createWorktree).toHaveBeenCalledWith(
+      expect.not.objectContaining({ fallbackRef: expect.anything() }),
+    );
+    expect(await mountRow()).toEqual({ worktree_path: FOLDER, is_attached: 1, branch: BRANCH });
+  });
+
+  it('stops offering a review of merged work after its branch is unmounted', async () => {
+    await seedWork({ state: 'merged' });
+    await useAppStore.getState().loadSessionWorkRecord({ sessionId });
+
+    await useAppStore.getState().detachProject({ sessionId, projectId: PROJECT_ID });
+
+    expect(settledMountIdsOf({ state: useAppStore.getState(), sessionId })).toEqual([MOUNT_ID]);
   });
 });

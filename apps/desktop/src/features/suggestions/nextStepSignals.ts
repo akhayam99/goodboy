@@ -86,6 +86,7 @@ export type NextStepSignals = {
   readonly questionsRootAgentId?: AgentId | null;
   readonly hasPullRequest: boolean;
   readonly eligibleThreadCount: number;
+  readonly reviewMountId?: MountId | null;
   readonly projects: ReadonlyArray<SuggestionProject>;
   readonly mountEvents: ReadonlyArray<SuggestionMountEvent>;
   readonly agents?: ReadonlyArray<SuggestionAgent>;
