@@ -218,16 +218,39 @@ afterEach(() => {
 });
 
 describe('the browser command field', () => {
-  it('opens under the row with this session visits and runs the first one on ↩', async () => {
+  it('lists no visited page on an empty focus and offers matches only while typing', async () => {
     await openFirstPage();
 
-    await openField();
-    await screen.findByRole('option', { name: 'Confirm order' });
+    const field = await openField();
+    await act(async () => {
+      fireEvent.focus(field);
+    });
 
+    expect(screen.queryByRole('listbox', { name: 'Suggestions' })).toBeNull();
+    expect(field.getAttribute('aria-expanded')).toBe('false');
+
+    typeText({ text: 'confirm' });
+    await screen.findByRole('option', { name: 'Confirm order' });
     expect(rawCallsOf({ command: 'browser_visits_list' }).at(-1)).toEqual({
       args: { sessionId: SESSION_ID },
     });
     expect(selectedLabel()).toBe('Confirm order');
+
+    typeText({ text: '' });
+    expect(screen.queryByRole('listbox', { name: 'Suggestions' })).toBeNull();
+  });
+
+  it('floats the suggestions over the page, anchored to the row, and runs the first one on ↩', async () => {
+    await openFirstPage();
+    await openField();
+
+    typeText({ text: 'confirm' });
+    const list = await screen.findByRole('listbox', { name: 'Suggestions' });
+    const pane = screen.getByRole('region', { name: 'Browser' });
+
+    expect(pane.contains(list)).toBe(false);
+    expect(list.closest('[data-anchored-layer]')).not.toBeNull();
+    expect(list.closest('[data-dropdown-portal]')).not.toBeNull();
     await submitField();
 
     expect(callsOf({ command: 'browser_tab_navigate' })).toEqual([
@@ -240,17 +263,21 @@ describe('the browser command field', () => {
   it('moves the highlight with the arrows and wraps at both ends', async () => {
     await openFirstPage();
     const field = await openField();
+    typeText({ text: 'localhost:5173/' });
     await screen.findByRole('option', { name: 'Tax rates' });
+    const labels = within(screen.getByRole('listbox', { name: 'Suggestions' }))
+      .getAllByRole('option')
+      .map((option) => option.getAttribute('aria-label'));
+    const last = labels.at(-1);
 
     fireEvent.keyDown(field, { key: 'ArrowDown' });
-    expect(selectedLabel()).toBe('Tax rates');
-    expect(field.getAttribute('aria-activedescendant')).toBe(
-      screen.getByRole('option', { name: 'Tax rates' }).id,
-    );
-    fireEvent.keyDown(field, { key: 'ArrowDown' });
-    expect(selectedLabel()).toBe('Confirm order');
+    expect(selectedLabel()).toBe(labels[1]);
+    expect(field.getAttribute('aria-activedescendant')).toBe(screen.getAllByRole('option')[1]?.id);
     fireEvent.keyDown(field, { key: 'ArrowUp' });
-    expect(selectedLabel()).toBe('Tax rates');
+    fireEvent.keyDown(field, { key: 'ArrowUp' });
+    expect(selectedLabel()).toBe(last);
+    fireEvent.keyDown(field, { key: 'ArrowDown' });
+    expect(selectedLabel()).toBe(labels[0]);
   });
 
   it('opens a typed address in your browser on ⌘↩ and loads nothing beside the session', async () => {
@@ -288,9 +315,9 @@ describe('the browser command field', () => {
   it('restores the title pill on Escape and keeps the address', async () => {
     await openFirstPage();
     const field = await openField();
-    await screen.findByRole('listbox', { name: 'Suggestions' });
 
     typeText({ text: 'tax' });
+    await screen.findByRole('listbox', { name: 'Suggestions' });
     fireEvent.keyDown(field, { key: 'Escape' });
 
     screen.getByRole('button', { name: /^Edit address/ });

@@ -27,9 +27,9 @@ type VisitParams = {
 };
 
 const TAB_LIMIT = 6;
-const VISIT_LIMIT = 20;
-const TYPED_VISIT_LIMIT = 6;
+const VISIT_LIMIT = 6;
 const WHITESPACE = /\s+/;
+const NOTHING_TYPED: CommandRows = { groups: [], hasNoMatch: false };
 
 const openRowsOf = ({ text }: Pick<Params, 'text'>): ReadonlyArray<CommandRow> => {
   const parsed = addressOf({ text });
@@ -57,7 +57,7 @@ const visitRowsOf = ({ words, visits, skipped }: VisitParams): ReadonlyArray<Com
       address: shortAddressOf({ url: visit.url }),
     }))
     .filter((row) => matchesWords({ words, fields: [row.title, row.address] }))
-    .slice(0, words.length === 0 ? VISIT_LIMIT : TYPED_VISIT_LIMIT);
+    .slice(0, VISIT_LIMIT);
 
 export const commandRowsOf = ({
   text,
@@ -67,8 +67,11 @@ export const commandRowsOf = ({
   titleOf,
 }: Params): CommandRows => {
   const trimmed = text.trim();
-  const words = trimmed === '' ? [] : trimmed.toLowerCase().split(WHITESPACE);
-  const open = trimmed === '' ? [] : openRowsOf({ text: trimmed });
+  if (trimmed === '') {
+    return NOTHING_TYPED;
+  }
+  const words = trimmed.toLowerCase().split(WHITESPACE);
+  const open = openRowsOf({ text: trimmed });
   const tabs = matchTabs({ words, groups, sessionId, titleOf, limit: TAB_LIMIT });
   const skipped = new Set(tabs.map((row) => row.tab.url));
   const visited = visitRowsOf({ words, visits, skipped });
@@ -78,5 +81,5 @@ export const commandRowsOf = ({
     { key: 'visited', label: 'Visited', rows: visited },
   ];
   const shown = listed.filter((group) => group.rows.length > 0);
-  return { groups: shown, hasNoMatch: trimmed !== '' && shown.length === 0 };
+  return { groups: shown, hasNoMatch: shown.length === 0 };
 };

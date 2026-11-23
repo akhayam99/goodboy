@@ -402,22 +402,25 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   command field with the whole URL selected; Esc (an escape layer) or leaving
   the field swaps it back and drops the draft, and a row that went through
   does too. A refused address keeps the field and the reason under the row.
-- **The command field** (`useCommandField`, `BrowserCommandPanel`) opens a
-  panel between the row and the page while the field has focus. It takes room
-  from the page instead of floating over it, so the native view shrinks and
-  never sits under the panel. Its groups, in order and only when they have
-  rows (`commandRowsOf`): Open (a typed address, Beside this session on ↩, In
-  your browser on ⌘↩), Tabs (every session of the workspace and the project
-  pins, this session first, pins tagged, another session named;
-  `matchTabs`), Visited (this session's last 20 addresses). Every typed word
-  must match a row's title, host or path. Nothing typed lists Visited only;
-  words that match nothing show one quiet line, "No tab or address matches".
+- **The command field** (`useCommandField`, `BrowserCommandPanel`) shows its
+  suggestions only while words are typed: focus alone opens nothing, and
+  visited pages are never the default list. The suggestions float in a
+  popover anchored under the address row and as wide as it
+  (`AnchoredLayer`, marked `data-dropdown-portal`). It lies over the tab
+  strip and the page and moves nothing: the native view keeps its rect and
+  hides under its cover while the popover crosses it (see Overlays). Its
+  groups, in order and only when they have rows (`commandRowsOf`): Open (a
+  typed address, Beside this session on ↩, In your browser on ⌘↩), Tabs
+  (every session of the workspace and the project pins, this session first,
+  pins tagged, another session named; `matchTabs`), Visited (at most six of
+  this session's addresses that match). Every typed word must match a row's
+  title, host or path; words that match nothing show one quiet line, "No tab
+  or address matches".
   The arrows move the highlight and wrap, ↩ runs it, ⌘↩ opens its address in
   your browser. A tab of another session shows in that session's browser.
 - **Find in page** (`useFindInPage`, `BrowserFindBar`) is a second 32px row
   under the address row, opened by ⌘F while the browser is on screen. It takes
-  room from the page like the command field, so the native view shrinks and
-  never sits under it. Each keystroke asks the host to search the shown tab
+  room from the page, so the native view shrinks and never sits under it. Each keystroke asks the host to search the shown tab
   (`browser_find`, which runs `window.find` in the page through
   `Webview::eval_with_callback` and answers `isFound`); the bar reads Found or
   Not found. There is no count, because `window.find` gives none. The match
@@ -1203,7 +1206,8 @@ words (`features/browser/browserFailureText.ts`).
   under an overlay dock, and the reason per overlay kind. The mock scene
   `browser-pane-cover` (light and dark) opens a menu over the page.
   `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane`, `browser-pane-tabs`,
-  `browser-pane-address` (the field open), `browser-pane-more` (the menu
+  `browser-pane-address` (the field open), `browser-pane-field` (the
+  suggestions floating over the page), `browser-pane-more` (the menu
   open) and `browser-pane-loading` (the load line, Stop, a fetched icon, Forward
   off), each in light and dark, draw a stand in where the native view goes.
   `BrowserPane/hostFacts.test.tsx` pins the load line from `started` to

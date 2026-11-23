@@ -197,11 +197,24 @@ describe('the browser pane scenes', () => {
     expect(within(pane).queryByRole('button', { name: /^Edit address/ })).toBeNull();
   });
 
-  it('opens the command field under the row with a typed word, its tabs and a visit', async () => {
+  it.each(['browser-pane-field', 'browser-pane-field-dark'])(
+    'floats the suggestions for a typed word over the page, anchored to the row (%s)',
+    async (id) => {
+      mount({ id });
+
+      const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+      const list = await screen.findByRole('listbox', { name: 'Suggestions' }, WAIT);
+      await within(list).findByRole('option', { name: 'Confirm order' }, WAIT);
+      expect(pane.contains(list)).toBe(false);
+      expect(list.closest('[data-anchored-layer]')).not.toBeNull();
+    },
+  );
+
+  it('lists the tabs and a visit for a typed word', async () => {
     mount({ id: 'browser-pane-field' });
 
     const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
-    const list = await within(pane).findByRole('listbox', { name: 'Suggestions' }, WAIT);
+    const list = await screen.findByRole('listbox', { name: 'Suggestions' }, WAIT);
     await within(list).findByRole('option', { name: 'Confirm order' }, WAIT);
     expect(within(pane).getByRole('combobox', { name: 'Address or search' })).toHaveProperty(
       'value',

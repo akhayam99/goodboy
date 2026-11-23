@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo } from 'react';
-import { Eyebrow, ScrollFade } from '@goodboy/ui';
+import { AnchoredLayer, Eyebrow, FLOATING_SURFACE, ScrollFade, cn } from '@goodboy/ui';
 import { isSubmitChord } from '../../../../../shared/keyboard/isSubmitChord';
 import { useAppStore } from '../../../../../store';
 import type { BrowserVisit } from '../../../../../store/slices/browser-visits/types';
@@ -102,44 +102,46 @@ export const BrowserCommandPanel = ({ model, field }: Props) => {
   }
 
   return (
-    <div className="shrink-0 px-2">
-      <div className="overflow-hidden rounded-lg border border-border-soft bg-elevated shadow-sm">
-        {hasNoMatch ? (
-          <p role="status" className="px-3 py-2 text-meta text-muted-foreground">
-            {NO_MATCH}
-          </p>
-        ) : (
-          <ScrollFade className="max-h-80" fadeFrom="elevated" isPageScroller={false}>
-            <ul
-              id={field.listId}
-              role="listbox"
-              aria-label="Suggestions"
-              className="flex flex-col gap-1 p-1"
-            >
-              {groups.map((group, groupIndex) => {
-                const start = starts[groupIndex] ?? 0;
-                return (
-                  <li key={group.key} role="presentation" className="flex flex-col gap-1">
-                    <Eyebrow label={group.label} className="px-2" />
-                    <ul role="group" aria-label={group.label} className="flex flex-col">
-                      {group.rows.map((row, index) => (
-                        <BrowserCommandRow
-                          key={row.key}
-                          row={row}
-                          id={optionId({ index: start + index })}
-                          isSelected={start + index === highlight}
-                          onHover={() => field.setHighlight({ index: start + index })}
-                          onRun={() => run({ row, isAlternate: false })}
-                        />
-                      ))}
-                    </ul>
-                  </li>
-                );
-              })}
-            </ul>
-          </ScrollFade>
-        )}
+    <AnchoredLayer side="bottom" isAnchorWidth>
+      <div data-dropdown-portal="" data-browser-suggestions="">
+        <div className={cn(FLOATING_SURFACE, 'overflow-hidden')}>
+          {hasNoMatch ? (
+            <p role="status" className="px-3 py-2 text-meta text-muted-foreground">
+              {NO_MATCH}
+            </p>
+          ) : (
+            <ScrollFade className="max-h-80" fadeFrom="floating" isPageScroller={false}>
+              <ul
+                id={field.listId}
+                role="listbox"
+                aria-label="Suggestions"
+                className="flex flex-col gap-1 p-1"
+              >
+                {groups.map((group, groupIndex) => {
+                  const start = starts[groupIndex] ?? 0;
+                  return (
+                    <li key={group.key} role="presentation" className="flex flex-col gap-1">
+                      <Eyebrow label={group.label} className="px-2" />
+                      <ul role="group" aria-label={group.label} className="flex flex-col">
+                        {group.rows.map((row, index) => (
+                          <BrowserCommandRow
+                            key={row.key}
+                            row={row}
+                            id={optionId({ index: start + index })}
+                            isSelected={start + index === highlight}
+                            onHover={() => field.setHighlight({ index: start + index })}
+                            onRun={() => run({ row, isAlternate: false })}
+                          />
+                        ))}
+                      </ul>
+                    </li>
+                  );
+                })}
+              </ul>
+            </ScrollFade>
+          )}
+        </div>
       </div>
-    </div>
+    </AnchoredLayer>
   );
 };

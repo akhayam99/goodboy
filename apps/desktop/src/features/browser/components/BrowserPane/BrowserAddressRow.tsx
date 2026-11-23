@@ -145,8 +145,8 @@ export const BrowserAddressRow = ({
           <IconButton icon={X} label="Close" tooltipSide="top" onClick={onClose} />
         )}
         {model.isLoading ? <BrowserLoadLine /> : null}
+        {field.isOpen ? <BrowserCommandPanel model={model} field={field} /> : null}
       </div>
-      {field.isOpen ? <BrowserCommandPanel model={model} field={field} /> : null}
       {find.isOpen ? <BrowserFindBar find={find} /> : null}
     </>
   );
