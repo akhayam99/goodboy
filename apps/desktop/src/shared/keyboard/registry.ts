@@ -3,6 +3,7 @@ import { currentPlatform } from '../platform';
 import { NAMES } from '../utils/names';
 import { BROWSER_SHORTCUTS } from './browserShortcuts';
 import { codeGlyph } from './codeGlyph';
+import { LIST_SHORTCUTS } from './listShortcuts';
 import { WINDOW_SHORTCUTS } from './windowShortcuts';
 import { overrideState } from './overrides/overrideState';
 
@@ -465,6 +466,13 @@ export const SHORTCUTS = {
     group: 'session',
     scope: 'overview',
   },
+  'move.notNow': {
+    combo: 'KeyS',
+    label: 'Not now, on the move in front',
+    plane: 'pane',
+    group: 'session',
+    scope: 'overview',
+  },
   'ask.open': {
     combo: 'cmd+KeyL',
     offMacCombo: 'ctrl+shift+KeyL',
@@ -595,44 +603,7 @@ export const SHORTCUTS = {
     scope: 'scripts',
   },
 
-  'list.next': { combo: 'KeyJ', label: 'Next row', plane: 'pane', group: 'lists', scope: 'list' },
-  'list.previous': {
-    combo: 'KeyK',
-    label: 'Previous row',
-    plane: 'pane',
-    group: 'lists',
-    scope: 'list',
-  },
-  'list.open': {
-    combo: 'Enter',
-    label: 'Open the row, or launch from it',
-    plane: 'pane',
-    group: 'lists',
-    scope: 'list',
-  },
-  'list.openInTool': {
-    combo: 'KeyO',
-    label: 'Open in the tool',
-    plane: 'pane',
-    group: 'lists',
-    scope: 'list',
-  },
-  'list.reply': { combo: 'KeyR', label: 'Reply', plane: 'pane', group: 'lists', scope: 'list' },
-  'list.star': {
-    combo: 'KeyS',
-    label: 'Star or unstar',
-    plane: 'pane',
-    group: 'lists',
-    scope: 'list',
-  },
-  'list.dismiss': { combo: 'KeyE', label: 'Dismiss', plane: 'pane', group: 'lists', scope: 'list' },
-  'list.search': {
-    combo: 'Slash',
-    label: 'Search the list',
-    plane: 'pane',
-    group: 'lists',
-    scope: 'list',
-  },
+  ...LIST_SHORTCUTS,
 
   'selection.toggle': {
     combo: 'KeyX',

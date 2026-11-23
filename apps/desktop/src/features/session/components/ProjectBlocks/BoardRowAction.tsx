@@ -39,6 +39,7 @@ export const BoardRowAction = ({ rowId, index = 0, text }: Props) => {
           cardId={card.id}
           cardTitle={card.title}
           variant="secondary"
+          isMain={false}
           onOpen={openFor({ card })}
         />
       )}
