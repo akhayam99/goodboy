@@ -748,7 +748,9 @@ window has; they save nothing.
   face waits 300ms and saves the row like a change of grid. Entering a session
   reads it back (`recallSessionFace`), a face picked while that read was out
   wins, even one picked away and back (`faceSelections` counts every pick),
-  and a session that is not open reads its face the same way. A move, a reset
+  and a session that is not open reads its face the same way. Sessions in the
+  top bar reads it for each row whose face the window does not know yet, so a
+  row says Desk only for a session that saved it (`useSavedSessionFace`). A move, a reset
   or an undo writes the face with the grid. A row without the field reads as
   Overview, and an older build leaves it out.
 

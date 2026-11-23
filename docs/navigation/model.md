@@ -541,6 +541,14 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   `Overview` (`Overview › Runs › {run}`,
   `Overview › Runs › {parent agent} › {agent}`, `Overview › Artifacts › {artifact}`,
   `Overview › {branch}`); a sub agent's parent is the agent that spawned it.
+- **A face is not an entry.** Overview and Desk are two faces of one place, the
+  session Overview, so the address never names a face. The face lives per
+  session in `sessionFace` and is saved with the dock grid (see
+  [home-and-drawer.md](./home-and-drawer.md), The grid saved on the session).
+  ⌘J and the **Overview | Desk** control switch it in place and push nothing
+  (`switchSessionFace`); from another page of the session they replace that
+  entry with the Overview. Back, Forward, the crumbs and Esc never switch a
+  face, and ⌘↑ from the Desk goes to the board, as from any tab.
 - **An Auto run keeps one frame.** The run page and the page of every agent
   under it draw the Agents rail in the frame's left slot (`LeadPage`,
   `RunAgentsRail`). The marked row is the agent in the address, so a reload,

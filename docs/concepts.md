@@ -329,6 +329,22 @@ requested change wins, then one approval, then reviewers who have not answered);
 a status it could not read keeps the last answer and never reads green. A session is done only when every request is merged
 or closed.
 
+### Desk, moves and the Board
+
+- **Overview** and **Desk** are the two faces of a session. The Overview is
+  the face you read; the Desk is the face you work in, its tools beside a
+  column that keeps the session in view. Both sit under one head, and a
+  session opens again on the face you left it on. The Desk is never a place
+  of its own: it always belongs to one session.
+- A **move** is one thing that takes a session forward, with its reason and
+  its verb: answer a question, fix a failing check, open a pull request.
+  **Needs you** holds the moves only you can make, **Next** the ones after.
+  `needsYouOf` counts the moves that wait on you, the same number in the Queue
+  and in Sessions.
+- The Board has two layouts. **Queue** lists the moves that wait on you, the
+  agents at work and what is ready to merge. **Stages** puts the sessions in
+  lanes by stage (building, running, needs you, in review, done).
+
 ### Session lifecycle
 
 What you did in a session stays counted after the session leaves the board.
