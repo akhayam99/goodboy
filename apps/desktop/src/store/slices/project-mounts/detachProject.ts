@@ -1,5 +1,4 @@
 import type {
-  IsoDateTime,
   MountCleanupDecision,
   MountDiskState,
   MountId,
@@ -18,6 +17,7 @@ import { MOUNT_CLEANUP_BLOCKER_REASON, mountCleanupBlockers } from '../mount-cle
 import { clearMountBranchObservation } from './mountBranchObservations';
 import { withRepositoryAndMountLock } from './mountLocks';
 import { mountRequestOf } from './mountRowModel';
+import { nowIso } from './nowIso';
 import { loadMountViews } from './mountViews';
 import { releaseMountSelection } from './releaseMountSelection';
 import { runMountRemoval } from './runMountRemoval';
@@ -244,7 +244,7 @@ const removeTarget = async ({
         isAttached: false,
         diskState,
         expectedRevision: target.revision,
-        updatedAt: new Date().toISOString() as IsoDateTime,
+        updatedAt: nowIso({}),
       });
     }
     await deleteSessionMount({ db: tauriDatabase, sessionId, mountId: target.mountId });

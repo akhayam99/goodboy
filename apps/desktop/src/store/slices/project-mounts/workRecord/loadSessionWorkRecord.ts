@@ -1,10 +1,10 @@
 import { listMountPullRequestLinks } from '@goodboy/db';
 import type { MountPullRequestLink, SessionMountView } from '@goodboy/types';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
-import { loadMountViews } from './mountViews';
-import type { SliceDeps } from '../../slice-types';
-import type { SessionKeyInput } from './types';
+import { tauriDatabase } from '../../../../shared/lib/db';
+import { createLatestOnly } from '../../../runtime/state-writes/latestOnly';
+import { loadMountViews } from '../mountViews';
+import type { SliceDeps } from '../../../slice-types';
+import type { SessionKeyInput } from '../types';
 
 type WorkRecord = {
   readonly views: ReadonlyArray<SessionMountView>;

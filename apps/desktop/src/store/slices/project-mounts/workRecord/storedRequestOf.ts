@@ -1,5 +1,5 @@
 import type { MountPullRequestLink } from '@goodboy/types';
-import type { MountRequestView } from './mountRowModel';
+import type { MountRequestView } from '../mountRowModel';
 
 type Params = {
   readonly link: MountPullRequestLink;

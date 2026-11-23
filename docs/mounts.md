@@ -419,7 +419,8 @@ session never deletes either: it proposes cleanup for every mount still on
 disk. Archive evicts the mount views and host data from the store; opening the
 archived session reads them back (`loadSessionWorkRecord`): every mount row,
 detached ones included, and the latest stored pull request link of each, which
-`mountRequestOf` shows when no live host data exists. Restore
+the mount rows show when no live host data exists (`buildMountRows`; stage
+derivation keeps reading live host data only). Restore
 (`reopenArchivedWork`) attaches again each detached repository mount whose
 latest link is still open, with `canFetchRemote`: the worktree is created from
 the remote branch when the local one is gone, or from the pull request head
