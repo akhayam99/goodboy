@@ -520,6 +520,11 @@ describe('Send writes the row, then delivers', () => {
        WHEN json_extract(NEW.override_json, '$.queueState.writtenTexts') > 0
        BEGIN SELECT RAISE(ABORT, 'disk is full'); END`,
     );
+    await storySqlite().execute(
+      `CREATE TRIGGER refuse_written_count_update BEFORE UPDATE ON agent_queued_messages
+       WHEN json_extract(NEW.override_json, '$.queueState.writtenTexts') > 0
+       BEGIN SELECT RAISE(ABORT, 'disk is full'); END`,
+    );
 
     const delivery = await send('send-20');
 
@@ -529,6 +534,7 @@ describe('Send writes the row, then delivers', () => {
     expect(await savedQueue()).toEqual(['send-20']);
     expect(rows()[0]?.reason).toBe(WRITTEN_COUNT_NOT_SAVED);
     await storySqlite().execute('DROP TRIGGER refuse_written_count');
+    await storySqlite().execute('DROP TRIGGER refuse_written_count_update');
   });
 
   const holdHeadWithRowBehind = async ({ head, behind }: HeldHeadParams) => {
