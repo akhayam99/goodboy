@@ -77,6 +77,27 @@ describe('queued pull request ports', () => {
     expect(calls).toEqual([['pr', 'merge', '318', '--disable-auto']]);
   });
 
+  it('turns on GitHub auto-merge with the method and the reviewed head', async () => {
+    const { runner, calls } = githubRunner();
+    const port = githubPullRequestPort({
+      runner,
+      repo: GITHUB_PR_REPO,
+      prNumber: 318,
+      prUrl: GITHUB_PR_URL,
+    });
+    await port.mergeWhenGreen?.({ method: 'rebase', expectedHeadSha: 'abcdef1234' });
+    expect(calls).toEqual([
+      ['pr', 'merge', '318', '--auto', '--rebase', '--match-head-commit', 'abcdef1234'],
+    ]);
+  });
+
+  it.each(['github', 'gitlab', 'bitbucket', 'local'] as const)(
+    'offers merge when green on %s only where the host runs it',
+    (host) => {
+      expect(REVIEW_SOURCE_CAPABILITIES[host].canMergeWhenGreen).toBe(host === 'github');
+    },
+  );
+
   it.each([
     ['opened', true, 'queued'],
     ['opened', false, 'open'],

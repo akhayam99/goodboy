@@ -67,6 +67,7 @@ import {
 } from './pullRequestFacts';
 import { writePullRequest } from './writePullRequest';
 import { VERBS } from '../../../shared/utils/verbs';
+import { NAMES } from '../../../shared/utils/names';
 
 type FactsOnly = { readonly facts: PullRequestFacts };
 
@@ -332,6 +333,57 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
         title: `Merged ${numberLabel({ facts })} into ${baseOf({ facts })}`,
         message: '',
       });
+    },
+  },
+  {
+    id: 'pullRequest.mergeWhenGreen',
+    label: NAMES.mergeWhenGreen,
+    icon: CONCEPT_ICONS.merge,
+    group: 'act',
+    when: ({ facts }) =>
+      facts.phase === 'open' &&
+      facts.checks === 'pending' &&
+      facts.pr?.isAutoMerge !== true &&
+      can({ facts, capability: 'canMergeWhenGreen' }),
+    blockedReason: ({ facts }) =>
+      (facts.pr?.headSha ?? null) === null
+        ? 'Refresh to read the head commit first.'
+        : (evaluatePrMergeReadiness({ facts: { ...facts, checks: 'green' } }).blockers[0] ?? null),
+    slot: () => 'secondary',
+    pendingLabel: () => 'Turning on auto-merge…',
+    doneLabel: ({ facts }) =>
+      `${numberLabel({ facts })} merges into ${baseOf({ facts })} when its checks pass.`,
+    confirm: ({ facts }) => ({
+      title: `Merge ${numberLabel({ facts })} when its checks pass?`,
+      description: `${hostLabel({ facts })} merges it once every check passes, not before. You can cancel auto-merge until then.`,
+      confirmLabel: NAMES.mergeWhenGreen,
+      role: 'primary',
+      choice: {
+        label: 'Merge method',
+        options: mergeOptions({ facts }),
+        defaultId: defaultMergeMethod({ facts }),
+      },
+    }),
+    run: async ({ facts, env, choice }) => {
+      const headSha = facts.pr?.headSha ?? null;
+      if (facts.number === null || headSha === null) {
+        return;
+      }
+      const mountId =
+        facts.mountId ?? selectActiveMountId({ state: env.getState(), sessionId: facts.sessionId });
+      const target = { sessionId: facts.sessionId, ...(mountId === null ? {} : { mountId }) };
+      const port = pullRequestPortFor({ get: env.getState, ...target, prNumber: facts.number });
+      if (port?.mergeWhenGreen === undefined) {
+        throw new Error(`${hostLabel({ facts })} can't merge this pull request when green`);
+      }
+      await port.mergeWhenGreen({
+        method: isMergeMethod(choice) ? choice : defaultMergeMethod({ facts }),
+        expectedHeadSha: headSha,
+      });
+      await Promise.all([
+        refreshActiveRequest({ get: env.getState, ...target }),
+        env.getState().loadPullRequestView({ ...target, force: true }),
+      ]);
     },
   },
   {

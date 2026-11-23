@@ -16,6 +16,7 @@ export type ReviewSourceCapabilities = Readonly<{
   canClose: boolean;
   canReopen: boolean;
   canCancelAutoMerge: boolean;
+  canMergeWhenGreen: boolean;
 }>;
 
 export type ReviewSourceThread = Readonly<{
@@ -68,6 +69,7 @@ const NO_PULL_REQUEST_WRITES = {
   canClose: false,
   canReopen: false,
   canCancelAutoMerge: false,
+  canMergeWhenGreen: false,
 } as const;
 
 export const REVIEW_SOURCE_CAPABILITIES = {
@@ -83,6 +85,7 @@ export const REVIEW_SOURCE_CAPABILITIES = {
     canClose: true,
     canReopen: true,
     canCancelAutoMerge: true,
+    canMergeWhenGreen: true,
   },
   gitlab: {
     canReply: true,
@@ -96,6 +99,7 @@ export const REVIEW_SOURCE_CAPABILITIES = {
     canClose: true,
     canReopen: true,
     canCancelAutoMerge: true,
+    canMergeWhenGreen: false,
   },
   bitbucket: {
     canReply: true,
@@ -109,6 +113,7 @@ export const REVIEW_SOURCE_CAPABILITIES = {
     canClose: true,
     canReopen: false,
     canCancelAutoMerge: false,
+    canMergeWhenGreen: false,
   },
   local: { canReply: false, canResolve: true, ...NO_PULL_REQUEST_WRITES },
 } as const satisfies Readonly<Record<ReviewSourceKind, ReviewSourceCapabilities>>;

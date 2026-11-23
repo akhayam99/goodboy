@@ -254,7 +254,7 @@ cancelled. Nothing changed.` in the outcome line. `Publish N replies` and `Retry
 reason. `⋯` holds the rare lifecycle (Edit title and description, Request
 review, Convert to draft, Close or Reopen, Open with the host logo, named Open on GitHub, Copy link) and the
 branch actions (Change base branch…, only before a pull request exists, Copy patch, and `Archive session`
-on a merged request); a queued request with auto-merge adds `Cancel auto-merge`. It lists the push
+on a merged request); a queued request with auto-merge adds `Cancel auto-merge`, and an open GitHub request with checks still running adds `Merge when green`, which asks for the method and hands the merge of the reviewed head to the host (`pullRequest.mergeWhenGreen`). It lists the push
 whenever the header does not draw one (`branchShownIdsOf`), and it never holds more than five rows
 (`branchMenuRowsOf`): the rows with another home drop first (Edit title and description, Copy link,
 Copy patch, and Rebase and Request review have their own place on Commits and Conversation).

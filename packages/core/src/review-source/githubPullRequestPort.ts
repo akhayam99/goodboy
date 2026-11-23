@@ -410,6 +410,20 @@ export const githubPullRequestPort = ({
       requirePullRequestCapability({ capabilities, capability: 'canCancelAutoMerge' });
       await write({ args: ['pr', 'merge', number, '--disable-auto'] });
     },
+    mergeWhenGreen: async ({ method, expectedHeadSha }) => {
+      requirePullRequestCapability({ capabilities, capability: 'canMergeWhenGreen' });
+      await write({
+        args: [
+          'pr',
+          'merge',
+          number,
+          '--auto',
+          MERGE_FLAG[method],
+          '--match-head-commit',
+          expectedHeadSha,
+        ],
+      });
+    },
     close: async () => {
       requirePullRequestCapability({ capabilities, capability: 'canClose' });
       await write({

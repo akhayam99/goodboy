@@ -7,6 +7,11 @@ import type {
 import { HOST_CAPABILITIES } from './hostCapabilities';
 import type { ReviewSourceCapabilities, ReviewSourceKind } from './types';
 
+export type MergeWhenGreenParams = Readonly<{
+  method: PrMergeMethod;
+  expectedHeadSha: string;
+}>;
+
 export type PullRequestPort = Readonly<{
   nouns: PullRequestNouns;
   read: () => Promise<PullRequestView>;
@@ -22,6 +27,7 @@ export type PullRequestPort = Readonly<{
     readonly expectedHeadSha: string | null;
   }) => Promise<void>;
   cancelAutoMerge?: () => Promise<void>;
+  mergeWhenGreen?: (params: MergeWhenGreenParams) => Promise<void>;
   close: () => Promise<void>;
   reopen: () => Promise<void>;
 }>;
@@ -102,4 +108,5 @@ export const PULL_REQUEST_CAPABILITY_METHODS = {
   canClose: 'close',
   canReopen: 'reopen',
   canCancelAutoMerge: 'cancelAutoMerge',
+  canMergeWhenGreen: 'mergeWhenGreen',
 } as const satisfies Readonly<Record<PullRequestCapability, keyof PullRequestPort>>;
