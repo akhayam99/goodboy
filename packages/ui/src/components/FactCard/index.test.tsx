@@ -364,6 +364,47 @@ describe('FactCard', () => {
     quiet.mockRestore();
   });
 
+  it('keeps a card with three models, three facts and the task under the six row cap', () => {
+    const reviewer: FactCardSpec = {
+      title: 'Reviewer',
+      task: 'Check the idempotency key survives a retry in ledger-core',
+      state: { tone: 'warning', words: 'Needs you', note: 'asked 3m ago' },
+      models: [
+        { key: 'sonnet', name: 'Sonnet 5.5', effort: { word: 'Medium', step: 2, steps: 5 } },
+        { key: 'opus', name: 'Opus 5.5', effort: { word: 'High', step: 3, steps: 5 } },
+        { key: 'sol', name: 'GPT-6.1 Sol', effort: { word: 'Very high', step: 4, steps: 5 } },
+      ],
+      facts: [
+        { label: 'Started', value: '23:44' },
+        { label: 'Tokens', value: '96k in, 8k out', note: '410k cached' },
+        { label: 'Cost', value: '$0.06' },
+      ],
+    };
+    hover({ element: renderCard({ card: reviewer }) });
+    advance(500);
+
+    const terms = Array.from(cardNode()?.querySelectorAll('dt') ?? []).map(
+      (term) => term.textContent,
+    );
+    expect(terms).toEqual(['Models', '+ 1 model', 'Started', 'Tokens', 'Cost']);
+    expect(cardNode()?.textContent).not.toContain('Opus 5.5');
+  });
+
+  it('refuses facts that would push the model lines past six rows', () => {
+    const crowded: FactCardSpec = {
+      title: 'notify-relay',
+      models: [
+        { key: 'sonnet', name: 'Sonnet 5.5' },
+        { key: 'sol', name: 'GPT-6.1 Sol' },
+      ],
+      facts: Array.from({ length: 5 }, (_, index) => ({ label: `Row ${index}`, value: 'x' })),
+    };
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    expect(() => renderCard({ card: crowded })).toThrow(/FactCard "notify-relay" sent 5 facts/);
+    quiet.mockRestore();
+  });
+
   it('shows the first six facts in a production build', () => {
     vi.stubEnv('PROD', true);
     const seven: FactCardSpec = {
@@ -401,6 +442,25 @@ describe('factCardSentence', () => {
 
     expect(cardNode()?.querySelector('dl')).toBeNull();
     expect(cardNode()?.textContent).toContain('1 repo, all current');
+  });
+
+  it('reads the task, the state and each model with its effort in order', () => {
+    expect(
+      factCardSentence({
+        card: {
+          title: 'Implementer',
+          sub: 'Step 4 of 7',
+          task: 'Post one credit per retry in postCredit',
+          state: { tone: 'info', words: 'Working', note: '12m' },
+          models: [
+            { key: 'sonnet', name: 'Sonnet 5.5', effort: { word: 'High', step: 3, steps: 5 } },
+          ],
+          facts: [{ label: 'Cost', value: '$0.31' }],
+        },
+      }),
+    ).toBe(
+      'Implementer Step 4 of 7. Post one credit per retry in postCredit. Working 12m. Model, Sonnet 5.5, Effort High, 3 of 5. Cost, $0.31.',
+    );
   });
 
   it('does not double a full stop that is already there', () => {
