@@ -1,4 +1,4 @@
-import { SPLIT_DRAG_ATTRIBUTE } from '@goodboy/ui';
+import { FACE_SWAP_ATTRIBUTE, SPLIT_DRAG_ATTRIBUTE } from '@goodboy/ui';
 import { OVERLAY_SELECTOR } from '../../shared/keyboard/overlaySelector';
 
 const PANEL_OVER_PAGE = '[data-panel-over-page], [data-rail-over-page]';
@@ -13,7 +13,7 @@ const COVER_SELECTOR = [
 
 const DIALOG_SELECTOR = '[role="dialog"], [role="alertdialog"]';
 
-export type CoverReason = 'menu' | 'dialog' | 'tooltip' | 'page' | 'drag';
+export type CoverReason = 'menu' | 'dialog' | 'tooltip' | 'page' | 'drag' | 'swap';
 
 type ReasonOfParams = {
   readonly overlay: Element;
@@ -79,6 +79,9 @@ export const createOverlayWatch = () => {
   });
 
   const coverOf = ({ view, rect }: CoversParams): CoverReason | null => {
+    if (document.body.hasAttribute(FACE_SWAP_ATTRIBUTE)) {
+      return 'swap';
+    }
     if (document.body.hasAttribute(SPLIT_DRAG_ATTRIBUTE)) {
       return 'drag';
     }

@@ -28,6 +28,7 @@ export const DeskColumn = ({ session, model, isInPopover }: Props) => {
   const columnRef = useRef<HTMLDivElement>(null);
   useMoveKeys({
     sessionId,
+    face: 'desk',
     containerRef: columnRef,
     moves: model.moves,
     actionsFor: model.actionsFor,

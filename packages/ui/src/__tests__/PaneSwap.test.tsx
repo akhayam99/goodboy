@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { PaneSwap } from '../components/PaneSwap';
-import { DURATION_QUICK_MS } from '../motionTimings';
+import { FACE_SWAP_ATTRIBUTE } from '../faceSwapAttribute';
+import { DELAY_STEP_MS, DURATION_QUICK_MS, DURATION_SLOW_MS } from '../motionTimings';
 
 const layOut = (width: number) => {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
@@ -183,5 +184,101 @@ describe('PaneSwap', () => {
 
     expect(layer('board')?.className).not.toContain('animate-pane-in');
     expect(layer('harborline')?.dataset.paneState).toBe('hidden');
+  });
+});
+
+describe('PaneSwap with the face motion', () => {
+  const overview = { key: 'overview', content: <h1>Overview</h1> };
+  const desk = { key: 'desk', content: <aside aria-label="Desk" /> };
+  const faceOf = (activeKey: string) => (
+    <PaneSwap activeKey={activeKey} layers={[overview, desk]} motion="face" />
+  );
+  const swapMs = DURATION_QUICK_MS + DURATION_SLOW_MS + DELAY_STEP_MS;
+
+  afterEach(() => {
+    document.body.removeAttribute(FACE_SWAP_ATTRIBUTE);
+  });
+
+  it('fades the old face on face-out and holds the new face on face-in, never pane-in', () => {
+    const { rerender } = render(faceOf('overview'));
+
+    rerender(faceOf('desk'));
+
+    expect(layer('overview')?.dataset.paneState).toBe('leaving');
+    expect(layer('overview')?.className).toContain('animate-face-out');
+    expect(layer('overview')?.className).not.toContain('animate-pane-out');
+    expect(layer('desk')?.dataset.paneState).toBe('active');
+    expect(layer('desk')?.hasAttribute('data-face-in')).toBe(true);
+    expect(layer('desk')?.className).not.toContain('animate-pane-in');
+  });
+
+  it('marks the window for the whole move, then clears the mark and the face-in', () => {
+    const { rerender } = render(faceOf('overview'));
+
+    rerender(faceOf('desk'));
+    expect(document.body.getAttribute(FACE_SWAP_ATTRIBUTE)).toBe('desk');
+
+    advance(DURATION_QUICK_MS);
+    expect(layer('overview')?.dataset.paneState).toBe('hidden');
+    expect(document.body.hasAttribute(FACE_SWAP_ATTRIBUTE)).toBe(true);
+
+    advance(swapMs - DURATION_QUICK_MS);
+    expect(document.body.hasAttribute(FACE_SWAP_ATTRIBUTE)).toBe(false);
+    expect(layer('desk')?.hasAttribute('data-face-in')).toBe(false);
+  });
+
+  it('marks the window before an arriving face runs its effects', () => {
+    const seen: Array<string | null> = [];
+    const Page = () => {
+      useEffect(() => {
+        seen.push(document.body.getAttribute(FACE_SWAP_ATTRIBUTE));
+      }, []);
+      return <aside aria-label="Desk" />;
+    };
+    const view = (activeKey: string) => (
+      <PaneSwap
+        activeKey={activeKey}
+        layers={[overview, { key: 'desk', content: <Page /> }]}
+        motion="face"
+      />
+    );
+    const { rerender } = render(view('overview'));
+
+    rerender(view('desk'));
+
+    expect(seen).toEqual(['desk']);
+  });
+
+  it('cuts in place under reduced motion, with no mark on the window', () => {
+    reduceMotion(true);
+    const { rerender } = render(faceOf('overview'));
+
+    rerender(faceOf('desk'));
+
+    expect(layer('overview')?.dataset.paneState).toBe('hidden');
+    expect(layer('desk')?.hasAttribute('data-face-in')).toBe(false);
+    expect(document.body.hasAttribute(FACE_SWAP_ATTRIBUTE)).toBe(false);
+  });
+
+  it('clears the mark when the swap unmounts mid move', () => {
+    const { rerender, unmount } = render(faceOf('overview'));
+    rerender(faceOf('desk'));
+
+    unmount();
+
+    expect(document.body.hasAttribute(FACE_SWAP_ATTRIBUTE)).toBe(false);
+  });
+
+  it('turns back mid move onto the face it left', () => {
+    const { rerender } = render(faceOf('overview'));
+    rerender(faceOf('desk'));
+    advance(DURATION_QUICK_MS);
+
+    rerender(faceOf('overview'));
+
+    expect(layer('overview')?.hasAttribute('data-face-in')).toBe(true);
+    expect(document.body.getAttribute(FACE_SWAP_ATTRIBUTE)).toBe('overview');
+    advance(swapMs);
+    expect(document.body.hasAttribute(FACE_SWAP_ATTRIBUTE)).toBe(false);
   });
 });

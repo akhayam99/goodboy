@@ -4,7 +4,7 @@ type Params = {
   readonly reason: CoverReason;
 };
 
-export const coverReasonText = ({ reason }: Params): string => {
+export const coverReasonText = ({ reason }: Params): string | null => {
   switch (reason) {
     case 'menu':
       return 'Hidden while a menu is open';
@@ -16,6 +16,8 @@ export const coverReasonText = ({ reason }: Params): string => {
       return 'Hidden while a page is open';
     case 'drag':
       return 'Hidden while you resize';
+    case 'swap':
+      return null;
     default: {
       const unreachable: never = reason;
       return unreachable;
