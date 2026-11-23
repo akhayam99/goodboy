@@ -1,7 +1,7 @@
 import type { TurnEvent } from '@goodboy/types';
 import { agentHeadingOf } from '../AgentDetailPane/agentHeadingOf';
 import { briefLineOf } from '../AgentDetailPane/briefLineOf';
-import { firstLineOf } from '../AgentDetailPane/firstLineOf';
+import { firstLineOf } from '../../../../shared/utils/firstLineOf';
 
 type Params = {
   readonly name: string;

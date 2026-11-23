@@ -41,7 +41,7 @@ import {
   installFakeResizeObserver,
   type FakeResizeObservers,
 } from '../../../../test/fakeResizeObserver';
-import { storedDockGridOf } from '../../../../store/slices/drawer/storedDockGrid';
+import { storedDockGridOf } from '../../../../store/slices/drawer/dockGridMemory/storedDockGrid';
 import { watchSessionDockGrid } from '../../../workspace/hooks/useSessionDockGrid/watchSessionDockGrid';
 import { SessionFace } from './SessionFace';
 import { startDeskTool } from './startDeskTool';

@@ -1,8 +1,8 @@
 import { brandId, type AgentId, type MountId, type SessionId } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 import { DOCK_GRID_CAP } from '@goodboy/ui';
-import type { TerminalTabId } from '../../../shared/types/terminal';
-import type { SessionFace } from '../session-view/types';
+import type { TerminalTabId } from '../../../../shared/types/terminal';
+import type { SessionFace } from '../../session-view/types';
 import type {
   DrawerContent,
   DrawerFocus,
@@ -12,7 +12,7 @@ import type {
   OpenDrawer,
   PullRequestDrawerTab,
   WorkspaceToolKind,
-} from './state';
+} from '../state';
 
 const STORED_DOCK_GRID_VERSION = 1;
 

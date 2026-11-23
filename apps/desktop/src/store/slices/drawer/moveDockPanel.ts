@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { dockColumnsAfterMove, type DockMoveTarget } from '@goodboy/ui';
 import type { SliceDeps } from '../../slice-types';
-import { committedDockGrid } from './committedDockGrid';
+import { committedDockGrid } from './dockGridMemory/committedDockGrid';
 import { EMPTY_DRAWER_GRID, type OpenDrawer, type WorkspaceToolKind } from './state';
 
 type MoveParams = {

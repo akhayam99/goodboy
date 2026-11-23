@@ -12,7 +12,7 @@ import { agentTaskLabelOf } from '../../../auto/agentTaskLabelOf';
 import { autoRunTitleOf } from '../../autoRunTitleOf';
 import { AgentBriefCrumb } from './AgentBriefCrumb';
 import { agentHeadingOf } from './agentHeadingOf';
-import { firstLineOf } from './firstLineOf';
+import { firstLineOf } from '../../../../shared/utils/firstLineOf';
 
 type Props = {
   readonly agent: Agent;

@@ -3,6 +3,7 @@ import { toolCommandOf } from '../../chat/utils/toolCommandOf';
 import { toolFilePath } from '../../chat/utils/toolFilePath';
 import { THINKING_PHRASE, WRITING_PHRASE } from '../../chat/utils/livePhraseOf';
 import { workingPhraseOf } from '../workingPhraseOf';
+import { firstLineOf } from '../../../shared/utils/firstLineOf';
 
 type Params = {
   readonly transcript: ReadonlyArray<TurnEvent>;
@@ -18,12 +19,6 @@ type TextBlockParams = {
 };
 
 const LIST_MARK = /^(?:[#>*+-]+|\d+[.)])\s+/;
-
-const firstLineOf = ({ text }: TextParams): string =>
-  text
-    .split('\n')
-    .map((line) => line.trim())
-    .find((line) => line !== '') ?? '';
 
 const stepLineOf = ({ text }: TextParams): string => {
   const lines = text
@@ -55,7 +50,7 @@ export const agentStepPhraseOf = ({ transcript }: Params): string => {
     if (event?.kind === 'tool_call_start' && !endedToolIds.has(event.toolUseId)) {
       const command = toolCommandOf({ input: event.input });
       if (command !== null) {
-        return `Running ${firstLineOf({ text: command })}`;
+        return `Running ${firstLineOf({ text: command }) ?? ''}`;
       }
       return workingPhraseOf({
         tool: { name: event.toolName, command: null, path: toolFilePath({ input: event.input }) },

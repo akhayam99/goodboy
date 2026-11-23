@@ -59,7 +59,7 @@ import {
 } from '../../../../store/storyHarness';
 import { BOARD_PLACE, sessionPlace } from '../../../../store/slices/navigation/place';
 import type { DrawerGrid, DrawerRequest } from '../../../../store/slices/drawer/state';
-import { storedDockGridOf } from '../../../../store/slices/drawer/storedDockGrid';
+import { storedDockGridOf } from '../../../../store/slices/drawer/dockGridMemory/storedDockGrid';
 import { panelFocusKeyOf } from '../../../../store/slices/drawer/panelFocusKeyOf';
 import { shellPanelsOf } from '../../../../store/slices/drawer/shellPanelsOf';
 import type { TerminalTabId } from '../../../../shared/types/terminal';

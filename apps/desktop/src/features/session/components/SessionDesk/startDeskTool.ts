@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { AppState } from '../../../../store/types';
@@ -24,10 +25,6 @@ type MountParams = Params & {
   readonly state: AppState;
 };
 
-type ErrorParams = {
-  readonly error: unknown;
-};
-
 const deskToolStarts = createLatestOnly();
 
 const isDeskWithoutTool = ({ state, sessionId }: StateParams): boolean =>
@@ -40,9 +37,6 @@ const mountPathOf = ({ state, sessionId, mountId }: MountParams): string | null 
   (state.sessionProjectMounts[sessionId] ?? []).find(
     (mount) => mount.mountId === mountId && mount.isAttached && mount.diskState === 'present',
   )?.worktreePath ?? null;
-
-const messageOf = ({ error }: ErrorParams): string =>
-  error instanceof Error ? error.message : String(error);
 
 export const startDeskTool = async ({ sessionId, mountId }: Params): Promise<void> => {
   const state = useAppStore.getState();
@@ -81,7 +75,7 @@ export const startDeskTool = async ({ sessionId, mountId }: Params): Promise<voi
     if (claim.isCurrent()) {
       useAppStore.getState().setDeskToolStart({
         sessionId,
-        start: { phase: 'failed', message: messageOf({ error }) },
+        start: { phase: 'failed', message: formatError(error) },
       });
     }
   }

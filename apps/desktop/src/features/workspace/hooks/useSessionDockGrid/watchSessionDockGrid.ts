@@ -14,7 +14,7 @@ import {
   type DrawerGrid,
   type OpenDrawer,
 } from '../../../../store/slices/drawer/state';
-import { storedDockGridOf } from '../../../../store/slices/drawer/storedDockGrid';
+import { storedDockGridOf } from '../../../../store/slices/drawer/dockGridMemory/storedDockGrid';
 
 export const DOCK_GRID_SAVE_DELAY_MS = 300;
 
@@ -54,7 +54,7 @@ type FaceParams = {
 const faceOf = ({ state, sessionId }: FaceParams): SessionFace =>
   sessionId === null ? 'overview' : (state.sessionFace[sessionId] ?? 'overview');
 
-const detailOf = ({ state, sessionId }: FaceParams): ReadonlyArray<OpenDrawer> =>
+const shownDetailOf = ({ state, sessionId }: FaceParams): ReadonlyArray<OpenDrawer> =>
   sessionId === null ? [] : deskDetailOf({ state, sessionId });
 
 export const watchSessionDockGrid = ({
@@ -71,7 +71,7 @@ export const watchSessionDockGrid = ({
   let grid = store.getState().drawerGrid ?? EMPTY_DRAWER_GRID;
   let face = faceOf({ state: store.getState(), sessionId: owner });
   let scope = store.getState().dockScope;
-  let detailKey = JSON.stringify(detailOf({ state: store.getState(), sessionId: owner }));
+  let detailKey = JSON.stringify(shownDetailOf({ state: store.getState(), sessionId: owner }));
   dockGridOwner.take({ sessionId: owner });
 
   const flush = (): void => {
@@ -131,7 +131,7 @@ export const watchSessionDockGrid = ({
       dockGridOwner.take({ sessionId: owner });
       grid = nextGrid;
       face = faceOf({ state, sessionId: owner });
-      detailKey = JSON.stringify(detailOf({ state, sessionId: owner }));
+      detailKey = JSON.stringify(shownDetailOf({ state, sessionId: owner }));
       if (owner === null) {
         dockGridRecalls.cancel({ key: DOCK_GRID_RECALL_KEY });
         return;
@@ -142,7 +142,7 @@ export const watchSessionDockGrid = ({
     const nextFace = faceOf({ state, sessionId: owner });
     const isSwap = state.dockScope !== scope;
     scope = state.dockScope;
-    const detail = detailOf({ state, sessionId: owner });
+    const detail = shownDetailOf({ state, sessionId: owner });
     const nextDetailKey = JSON.stringify(detail);
     if (nextGrid === grid && nextFace === face && nextDetailKey === detailKey) {
       return;

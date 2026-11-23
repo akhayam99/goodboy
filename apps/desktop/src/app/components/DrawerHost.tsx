@@ -6,7 +6,6 @@ import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 import { selectGridTool } from '../../store/slices/drawer/selectGridTool';
 import { useSlotBackChip } from '../hooks/useSlotBackChip';
 import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
-import { LazySessionScriptsDrawer } from '../../features/scripts/components/LazySessionScriptsDrawer';
 import { ArtifactShellDrawer } from '../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
 import { LazyArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer/LazyArtifactDocumentDrawer';
 import { LazyScriptRunDrawer } from '../../features/scripts/components/LazyScriptRunDrawer';
@@ -23,7 +22,6 @@ import { drawerKey } from '../../store/slices/drawer/drawerKey';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
 import { shownDeskStackOf } from '../../store/slices/drawer/shownDeskStackOf';
 import { DeskAgent } from '../../features/session/components/DeskAgent';
-import { DeskPr } from '../../features/session/components/DeskPr';
 import { DeskDetailStack } from './DeskDetailStack';
 import { PanelBoundary } from './PanelBoundary';
 import { renderRegisteredDrawer } from './renderRegisteredDrawer';
@@ -107,14 +105,6 @@ const renderDrawer = ({
           onClose={closeDrawer}
         />
       );
-    case 'scripts':
-      return (
-        <LazySessionScriptsDrawer
-          key={drawer.sessionId}
-          sessionId={drawer.sessionId}
-          onClose={closeDrawer}
-        />
-      );
     case 'question':
       return (
         <QuestionDrawer
@@ -164,17 +154,6 @@ const renderDrawer = ({
           onClose={closeDrawer}
         />
       );
-    case 'pull-request':
-      return (
-        <DeskPr
-          key={drawerKey(drawer)}
-          sessionId={drawer.sessionId}
-          mountId={drawer.payload.mountId}
-          tab={drawer.payload.tab}
-          check={drawer.payload.check ?? null}
-          onClose={closeDrawer}
-        />
-      );
     case 'conversation':
       return <ReviewCommentDrawerHost />;
     case 'ask':
@@ -186,6 +165,8 @@ const renderDrawer = ({
     case 'lead-details':
     case 'monitoring':
     case 'plan-part':
+    case 'pull-request':
+    case 'scripts':
     case 'terminal':
       return renderRegisteredDrawer({ drawer, closeDrawer, openDrawer });
     default: {

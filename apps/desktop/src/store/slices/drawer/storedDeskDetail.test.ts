@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type AgentId, type MountId, type SessionId } from '@goodboy/types';
 import type { DrawerGrid, OpenDrawer } from './state';
-import { parseStoredDeskDetail, parseStoredDockGrid, storedDockGridOf } from './storedDockGrid';
+import {
+  parseStoredDeskDetail,
+  parseStoredDockGrid,
+  storedDockGridOf,
+} from './dockGridMemory/storedDockGrid';
 
 const SESSION = brandId<SessionId>({ value: 'session-harborline' });
 
