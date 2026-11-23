@@ -2127,14 +2127,14 @@ folder fits and it didn't say which. The Lead is choosing again." A refusal abou
 (`mount_ambiguous`, `mount_missing`) is asked instead (`projectAskOf`, `AutoProjectAsk`). When
 the refusal comes from a `mount` block, or from a writer delegate whose `mount` names a project
 of the workspace that is not added yet (`refusalMountNote`), and the project is known, the ask is one inline step:
-"To do this, add payments-api", one line ("A worktree on ak/feat-new-explore is created from
-main."), the primary **Add payments-api** (the button reads "Adding payments-api" while it
+"To do this, mount payments-api", one line ("A worktree on ak/feat-new-explore is created from
+main."), the primary **Mount payments-api** (the button reads "Mounting payments-api" while it
 runs, a failure keeps the card with the reason), then **Add project**, **Answer without a
-project** and **Decline**. This card says "add"; the `jargon-copy` guard bans the noun
-"mount" on screen, and the block, the port and the code keep `mount`. The click mounts on the named branch and
-sends Auto "Added payments-api on ak/feat-new-explore. Go on with my request.", so nothing is
+project** and **Decline**. This card says the verb "mount"; the `jargon-copy` guard bans only the noun
+"mount" on screen. The click mounts on the named branch and
+sends Auto "Mounted payments-api on ak/feat-new-explore. Go on with my request.", so nothing is
 retyped. A mount done at once (Never, or After the plan inside the allowance) draws one line,
-"Added payments-api on ak/feat-new-explore" (`mountedLineOf`), until Auto's next turn takes the row. Otherwise
+"Mounted payments-api on ak/feat-new-explore" (`mountedLineOf`), until Auto's next turn takes the row. Otherwise
 "Where should the Implementer work?" lists the session's projects with their branch, **Add
 project** opens a filter over the workspace's other projects ("Not in this session. A worktree
 is created from main."), and the primary follows the choice (**Use this project** disabled, **Use

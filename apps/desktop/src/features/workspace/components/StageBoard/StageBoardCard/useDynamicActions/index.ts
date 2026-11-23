@@ -166,7 +166,7 @@ export const useDynamicActions = (
         key: `mount:${proposal.projectId}`,
         icon: SUGGESTION_ICONS['mount-project'],
         tone: 'warning',
-        label: `Add ${proposal.projectName}`,
+        label: `Mount ${proposal.projectName}`,
         onClick: () => {
           void ensureProjectMounted({
             sessionId: id,

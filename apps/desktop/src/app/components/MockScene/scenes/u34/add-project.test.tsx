@@ -106,7 +106,7 @@ describe('the u34 add a project scene', () => {
         .getAllByRole('checkbox')
         .map((box) => box.getAttribute('aria-label')),
     ).toEqual(['ledger-core', 'payments-api']);
-    within(block()).getByRole('button', { name: 'Add payments-api' });
+    within(block()).getByRole('button', { name: 'Mount payments-api' });
   });
 
   it('adds the project to this session, then starts the step on it', async () => {
@@ -123,7 +123,7 @@ describe('the u34 add a project scene', () => {
     await openPicker();
 
     await act(async () => {
-      fireEvent.click(within(block()).getByRole('button', { name: 'Add payments-api' }));
+      fireEvent.click(within(block()).getByRole('button', { name: 'Mount payments-api' }));
     });
 
     expect(ensureProjectMounted).toHaveBeenCalledWith(
@@ -156,7 +156,7 @@ describe('the u34 add a project scene', () => {
     await openPicker();
 
     await act(async () => {
-      fireEvent.click(within(block()).getByRole('button', { name: 'Add payments-api' }));
+      fireEvent.click(within(block()).getByRole('button', { name: 'Mount payments-api' }));
     });
 
     expect(within(block()).getByRole('alert').textContent).toContain(
@@ -166,7 +166,7 @@ describe('the u34 add a project scene', () => {
     expect(block().textContent).toContain('Step 3 is waiting for a branch');
 
     await act(async () => {
-      fireEvent.click(within(block()).getByRole('button', { name: 'Add payments-api' }));
+      fireEvent.click(within(block()).getByRole('button', { name: 'Mount payments-api' }));
     });
 
     expect(ensureProjectMounted).toHaveBeenCalledTimes(2);
@@ -191,7 +191,7 @@ describe('the u34 add a project scene', () => {
     await openPicker();
 
     await act(async () => {
-      fireEvent.click(within(block()).getByRole('button', { name: 'Add payments-api' }));
+      fireEvent.click(within(block()).getByRole('button', { name: 'Mount payments-api' }));
     });
 
     expect(within(block()).getByRole('alert').textContent).toContain(

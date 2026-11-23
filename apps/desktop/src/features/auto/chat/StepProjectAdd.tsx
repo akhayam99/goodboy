@@ -25,7 +25,7 @@ const addLabelOf = ({ names }: LabelParams): string => {
   if (only === undefined) {
     return RUN_STEP_PIN_COPY.addProject;
   }
-  return names.length === 1 ? `Add ${only}` : `Add ${names.length} projects`;
+  return names.length === 1 ? `Mount ${only}` : `Mount ${names.length} projects`;
 };
 
 export const StepProjectAdd = ({ sessionId, agentId }: Props) => {

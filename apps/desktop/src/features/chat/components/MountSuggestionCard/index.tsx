@@ -21,7 +21,7 @@ type SentenceParams = {
 };
 
 const consequenceSentence = ({ projectName, agentName, cause }: SentenceParams): string => {
-  const lead = `Add ${projectName} so ${agentName} can use it in this session`;
+  const lead = `Mount ${projectName} so ${agentName} can use it in this session`;
   switch (cause) {
     case 'batch':
       return `${lead}. This request has already added two folders.`;

@@ -199,7 +199,7 @@ export const deriveNextSteps = ({ signals }: Params): ReadonlyArray<NextMove> =>
       kind: 'mount-project',
       priority: isRepeated ? 4 : 5,
       band: 1,
-      title: `Add ${event.projectName}`,
+      title: `Mount ${event.projectName}`,
       detail: isRepeated ? `${event.reason} · asked ${askCount} times` : event.reason,
       sessionId,
       targetKey: `project:${event.projectId}`,
