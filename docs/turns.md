@@ -1609,7 +1609,10 @@ variant and `ChatInput` both draw from these; a variant is a prop (`drop`,
 
 Files ride on `usePendingAttachments` (`shared/hooks`): paste, drop and
 **Attach files**, up to 10 files of 10 MB each, refused with a note in the
-field. A staged file stays a `Blob` with an object url thumbnail freed when
+field. A drop that cannot be read gets one note per cause, never one blanket
+line: moved or deleted, no permission, a type that can't be attached, or the
+general "Drop it again" note, each ending on **Attach files**
+(`dropFailureCauseOf`, `dropFailureNotice`). A staged file stays a `Blob` with an object url thumbnail freed when
 its chip unmounts, and is read into base64 only when the message leaves. The
 agent queue keeps its stored data url format (`StoredAttachment`).
 

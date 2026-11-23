@@ -428,6 +428,11 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   then does nothing, while jsdom tests stay green. Turning `dragDropEnabled`
   off is not the fix, because the composer's file drop listens through
   `onDragDropEvent`. `history-drag-keeps-file-drop.test.ts` holds both.
+- A dropped file must be read through the handle `DroppedPaths` opened in the
+  drop handler, never by its path when the page asks. Screenshot tools drag a
+  temporary file and delete or move it as soon as the drag ends, which is
+  before the page's `attachment_read_dropped` call arrives; a read by path then
+  fails for every screenshot while a file from a folder still works.
 - The query socket sits in `~/.goodboy/query/`, not in `~/.goodboy`. Codex
   and Claude turns get the socket folder as a writable directory
   (`--add-dir`), so they can connect. Moving the socket back beside the

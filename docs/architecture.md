@@ -423,11 +423,17 @@ work). `local_image_read`, `attachment_read`, `attachment_write`,
 go through it; a new command that takes a path must too.
 
 `attachment_read_dropped` accepts only a path the window reported in a drag drop
-event. The Rust shell records the paths of each window `DragDrop` event
-(`dropped_paths.rs`, called from `on_window_event`: a webview window reports a
-drop as a window event, never as a webview event) and removes a path the first time it is read, so a path that
+event. The Rust shell records the paths of each `DragDrop` drop
+(`dropped_paths.rs`): `on_window_event` hears the window page, which reports a
+drop as a window event, and `on_webview_event` hears a child webview such as a
+browser tab. It opens each dropped regular file in that same handler and keeps
+the handle, at most 64, so a screenshot tool that deletes or moves its temporary
+file once the drag ends cannot take the bytes away before the page asks for
+them. The read goes through the held handle; a path that failed to open at the
+drop is opened once more at the read. The first read removes the path, so a path that
 was never dropped, or was dropped once and already read, is refused with
-`not_dropped`.
+`not_dropped`. A file gone at both moments is `gone`, one the user may not read
+is `denied`, and a folder is `invalid_path`.
 
 No `skill_*` command exists: the Skills feature and its script runner are
 deleted, and `check-tauri-commands.mjs` fails if one comes back.
