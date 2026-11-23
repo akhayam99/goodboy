@@ -2,6 +2,7 @@ import type { PrSeriesId, SessionId } from '@goodboy/types';
 import type { ShowToast } from '../../../shared/components/Toast';
 import type { AppStore } from '../../../store/store';
 import { countNoun } from '../../../shared/utils/countNoun';
+import { NAMES } from '../../../shared/utils/names';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -18,7 +19,7 @@ export const mergeSeriesAction = ({
   mergeSeriesInOrder,
   showToast,
 }: Params) => ({
-  label: 'Merge in order',
+  label: NAMES.mergeInOrder,
   isDisabled: false,
   requiresConfirm: true,
   failureTitle: `Couldn't merge ${name} in order`,
