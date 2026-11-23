@@ -579,7 +579,10 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   through its host port, stops at the first part that is closed, draft,
   conflicting, failing or waiting for changes, and merges through the same
   `mergePr` verb as a single request, so a refusal reaches the person with the
-  host's words and a second run resumes at the first part still open.
+  host's words and a second run resumes at the first part still open. It runs
+  on `mergeInOrder`, the engine of the Board's merge train
+  ([board.md](./features/board.md)), with no update, no wait and no Lead: a
+  series stops where the train would rebase or wait.
 - **Retry reuses the request id.** After a timeout the turn reads the
   operation back before acting again; recovery reconciles what the disk and
   the database reached.
