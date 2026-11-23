@@ -12,6 +12,16 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.41.1
+
+An archived session keeps its branch and pull request, and a merged pull request stops offering review moves.
+
+### Fixed
+
+- An archived session showed Not on a branch. Its overview now names the branch and its pull request, with the pull request state. <!-- gb area=sessions pr=2318 -->
+- Restore on an archived session brings back the worktree of each open pull request on the same branch, and says why when one cannot come back. <!-- gb area=sessions pr=2318 -->
+- Once a pull request is merged or closed, Next stops offering Review the changes, Fix review conversations or a retry for that work. <!-- gb area=review pr=2318 -->
+
 ## Goodboy v0.41.0
 
 A session overview that reads top to bottom, a Board that opens on what waits on you, and a Desk that puts your tools beside the session.

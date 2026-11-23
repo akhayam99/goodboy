@@ -226,7 +226,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Done and archived',
-        desc: 'Lanes of their own, after the others. Restore reopens an archived session. Delete removes the transcript and files for good; its cost still counts in Impact.',
+        desc: 'Lanes of their own, after the others. Restore reopens an archived session and brings back the worktree of each open pull request. Delete removes the transcript and files for good; its cost still counts in Impact.',
       },
       {
         term: 'Archive',
