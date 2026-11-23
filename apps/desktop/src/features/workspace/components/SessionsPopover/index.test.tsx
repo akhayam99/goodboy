@@ -322,7 +322,7 @@ describe('what each Sessions row says', () => {
     expect(within(rowOf({ session: ask })).queryByTestId('sessions-needs-you')).toBeNull();
   });
 
-  it('drops a queued move from its own row only, and counts it again after Undo', () => {
+  it('drops a move put off from its own row only, and counts it again when it is back', () => {
     mount({ questions: [ask, pinned] });
     toggle();
     const countOf = ({ session }: IdParams): string | null =>
@@ -337,10 +337,7 @@ describe('what each Sessions row says', () => {
     expect(before).toBe(String(askMoves.moveCount));
 
     act(() => {
-      useQueueSends.getState().queue({
-        send: { id: 'send-1', kind: 'answer', agentId: null, moveId: move.id },
-        run: async () => undefined,
-      });
+      useQueueSends.getState().hide({ moveId: move.id });
     });
 
     const left = askMoves.moveCount - 1;
@@ -348,7 +345,7 @@ describe('what each Sessions row says', () => {
     expect(countOf({ session: pinned })).toBe(pinnedCount);
 
     act(() => {
-      useQueueSends.getState().cancel({ id: 'send-1' });
+      useQueueSends.getState().show({ moveId: move.id });
     });
 
     expect(countOf({ session: ask })).toBe(before);
