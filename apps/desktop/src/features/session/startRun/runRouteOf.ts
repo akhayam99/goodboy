@@ -2,7 +2,6 @@ import type { RunRoute, Workflow } from '@goodboy/types';
 import type { AgentKind } from '../agent-kind';
 import { leadRouteOf, presetRouteOf, roleRouteOf } from './routeChoiceOf';
 import { routeWordsOf } from './routeWordsOf';
-import type { RunDefault } from './runDefaultSetting';
 import { RUN_ROUTE_COPY } from './runRouteCopy';
 
 type RunRouteRole = Readonly<{
@@ -15,7 +14,6 @@ export type RunRouteFacts = Readonly<{
   presets: ReadonlyArray<Workflow>;
   roles: ReadonlyArray<RunRouteRole>;
   lastPresetId: string | null;
-  defaultShape: RunDefault;
   hasTask: boolean;
   mountCount: number;
   pullRequest: Readonly<{ number: number; isFailing: boolean; hasComments: boolean }> | null;

@@ -71,7 +71,6 @@ const FACTS: RunRouteFacts = {
   presets: [LAYOUT],
   roles: [],
   lastPresetId: null,
-  defaultShape: 'auto',
   hasTask: false,
   mountCount: 1,
   pullRequest: null,

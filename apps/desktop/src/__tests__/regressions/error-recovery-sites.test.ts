@@ -15,10 +15,6 @@ const SITES: ReadonlyArray<Site> = [
     title: 'title: failureTitle',
   },
   {
-    file: 'features/session/components/StartRun/useStartRun/index.ts',
-    title: 'RUN_ROUTE_COPY.readFailed',
-  },
-  {
     file: 'features/settings/components/SettingsStudio/WorkspaceTerminalFolderRow.tsx',
     title: "Couldn't save the terminal folder",
   },
@@ -108,12 +104,12 @@ describe('the reported errors of the most used actions name their way out', () =
     }
   });
 
-  it('covers twenty call sites', () => {
+  it('covers nineteen call sites', () => {
     const total = SITES.reduce(
       (sum, { file, title }) =>
         sum + callsNaming({ text: sources.get(`${SRC}${file}`) ?? '', title }).length,
       0,
     );
-    expect(total).toBe(20);
+    expect(total).toBe(19);
   });
 });

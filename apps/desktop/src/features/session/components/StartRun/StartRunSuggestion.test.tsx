@@ -31,7 +31,6 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { runDefaultKey, type RunDefault } from '../../startRun/runDefaultSetting';
 import { runRoutesKey } from '../../startRun/runRoutesSetting';
 import { StartRun } from './StartRun';
 
@@ -68,8 +67,6 @@ const FIX_A_LAYOUT: Workflow = {
   createdAt: NOW,
   updatedAt: NOW,
 };
-const WORKSPACE_KEY = runDefaultKey({ scope: { kind: 'workspace', workspaceId: WORKSPACE.id } });
-const SESSION_KEY = runDefaultKey({ scope: { kind: 'session', sessionId: SESSION.id } });
 
 let useAppStore: StoryStore;
 
@@ -85,15 +82,6 @@ const isFollowPicked = (): boolean =>
   within(screen.getByRole('tablist', { name: 'Plan' }))
     .getByRole('tab', { name: 'Follow a workflow' })
     .getAttribute('aria-selected') === 'true';
-
-type StoredParams = {
-  readonly key: string;
-  readonly shape: RunDefault;
-};
-
-const store = async ({ key, shape }: StoredParams): Promise<void> => {
-  await setSetting(storySqlite(), key, shape);
-};
 
 const renderField = (): void => {
   render(
@@ -129,11 +117,10 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('StartRun workflow suggestion', () => {
-  it('boots from a stored auto default: suggests the workflow, then starts a Lead without it', async () => {
+  it('suggests the workflow, then starts a Lead without it', async () => {
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     const attachWorkflowToSession = vi.fn(async () => undefined);
     useAppStore.setState({ spawnAgent, attachWorkflowToSession });
-    await store({ key: WORKSPACE_KEY, shape: 'auto' });
     renderField();
 
     fireEvent.change(field(), { target: { value: LAYOUT_ASK } });
@@ -182,31 +169,16 @@ describe('StartRun workflow suggestion', () => {
     });
   });
 
-  it('boots from a stored lead default: no suggestion and a Lead with no workflow', async () => {
-    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
-    useAppStore.setState({ spawnAgent });
-    await store({ key: WORKSPACE_KEY, shape: 'lead' });
+  it('still suggests the workflow when an older build saved a lead or plan default', async () => {
+    await setSetting(storySqlite(), `runs.defaultShape.${WORKSPACE.id}`, 'lead');
+    await setSetting(storySqlite(), `runs.defaultShape.session.${SESSION.id}`, 'plan');
     renderField();
-    await waitFor(() => expect(useAppStore.getState().settings[WORKSPACE_KEY]).toBe('lead'));
 
     fireEvent.change(field(), { target: { value: LAYOUT_ASK } });
 
-    expect(suggestionLine()).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
-    expect(await storedRoute()).toMatchObject({ shape: 'lead', presetName: null });
-  });
-
-  it('lets a stored session plan default win over the workspace one, with no suggestion', async () => {
-    await store({ key: WORKSPACE_KEY, shape: 'auto' });
-    await store({ key: SESSION_KEY, shape: 'plan' });
-    renderField();
-    await waitFor(() => expect(useAppStore.getState().settings[SESSION_KEY]).toBe('plan'));
-
-    fireEvent.change(field(), { target: { value: LAYOUT_ASK } });
-
-    expect(suggestionLine()).toBeNull();
+    await waitFor(() =>
+      expect(suggestionLine()?.textContent).toBe('Looks like your workflow Fix a layout.Use it'),
+    );
   });
 
   it('suggests nothing for an ask that fits no workflow', () => {

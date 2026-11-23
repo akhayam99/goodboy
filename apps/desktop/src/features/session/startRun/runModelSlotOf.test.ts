@@ -15,7 +15,6 @@ const FACTS: RunRouteFacts = {
   presets: [],
   roles: [{ kind: 'scout', label: 'Scout' }],
   lastPresetId: null,
-  defaultShape: 'auto',
   hasTask: false,
   mountCount: 1,
   pullRequest: null,

@@ -62,7 +62,6 @@ const factsOf = (overrides: Partial<RunRouteFacts>): RunRouteFacts => ({
     { kind: 'implementer', label: 'Implementer' },
   ],
   lastPresetId: null,
-  defaultShape: 'auto',
   hasTask: false,
   mountCount: 1,
   pullRequest: null,
@@ -121,40 +120,25 @@ const suggestionOf = (overrides: Partial<RunRouteFacts>) => {
 };
 
 describe('runRouteOf, a workflow that matches the ask is suggested, never adopted', () => {
-  it.each(['auto', 'lead', 'plan'] as const)(
-    'starts a Lead with no workflow when the stored default is %s',
-    (defaultShape) => {
-      const result = routeOf({
-        text: 'Fix the layout of the Harborline billing page',
-        defaultShape,
-      });
+  it('starts a Lead with no workflow', () => {
+    const result = routeOf({ text: 'Fix the layout of the Harborline billing page' });
 
-      expect(result.route).toMatchObject({
-        shape: 'lead',
-        presetName: null,
-        closeness: null,
-        choice: 'Lead',
-      });
-      expect(result.route.row).not.toBe(2);
-      expect(result.preset).toBeNull();
-      expect(result.ask).toBe('Fix the layout of the Harborline billing page');
-    },
-  );
+    expect(result.route).toMatchObject({
+      shape: 'lead',
+      presetName: null,
+      closeness: null,
+      choice: 'Lead',
+    });
+    expect(result.route.row).not.toBe(2);
+    expect(result.preset).toBeNull();
+    expect(result.ask).toBe('Fix the layout of the Harborline billing page');
+  });
 
   it('suggests the workflow whose name the ask holds', () => {
     expect(suggestionOf({ text: 'Fix the layout of the Harborline billing page' })?.id).toBe(
       FIX_A_LAYOUT.id,
     );
   });
-
-  it.each(['lead', 'plan'] as const)(
-    'suggests nothing when the stored default is %s, as Start as said before',
-    (defaultShape) => {
-      expect(
-        suggestionOf({ text: 'Fix the layout of the Harborline billing page', defaultShape }),
-      ).toBeNull();
-    },
-  );
 
   it('suggests nothing once the ask names a workflow or a role', () => {
     expect(suggestionOf({ text: '~Fix a layout center the billing page' })).toBeNull();
@@ -323,7 +307,7 @@ describe('runRouteOf, one engine for new runs', () => {
     },
     { text: 'Which notify-relay handler fires twice?' },
     { text: 'make the settings feel calmer' },
-    { text: 'center every member page', defaultShape: 'plan' as const },
+    { text: 'center every member page' },
     { text: '@Implementer add the retry' },
   ])('never starts the plan engine for $text', (overrides) => {
     expect(routeOf(overrides).route.shape).toBe('lead');

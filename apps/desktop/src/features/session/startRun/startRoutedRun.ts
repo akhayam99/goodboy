@@ -21,7 +21,6 @@ import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
 import { commentRunOf } from '../../resolve/commentRunOf';
 import { uniqueNameOf } from '../../workflows/uniqueNameOf';
 import { leadPlanBriefOf } from './leadPlanBriefOf';
-import { planFirstLevelOf } from './planFirstLevelOf';
 import { presetSnapshotOf } from './presetSnapshotOf';
 import type { StartLimit } from '../../auto/startLimitOf';
 import type { AgentKindRouting } from '../agent-kind';
@@ -92,10 +91,7 @@ export const startRoutedRun = async ({
     if (attachments.length > 0) {
       await state.addGoalAttachments({ type: 'session', id: sessionId }, attachments);
     }
-    const startLevel =
-      role !== null
-        ? null
-        : (level ?? (await planFirstLevelOf({ sessionId, workspaceId: session.workspaceId })));
+    const startLevel = role !== null ? null : level;
     if (startLevel !== null) {
       await state.changeAutoLevel({
         workspaceId: session.workspaceId,
