@@ -11,6 +11,7 @@ import { DrawerHost } from '../../../DrawerHost';
 import { ScenePlacesRail } from '../ScenePlacesRail';
 import { COLUMN_SESSION_ID, seedCentralColumn } from '../u26/centralColumnSeed';
 import { DeskMotionPane } from './DeskMotionPane';
+import { seedParkedBrowser } from './seedParkedBrowser';
 
 type Props = {
   readonly theme: 'dark' | 'light';
@@ -24,8 +25,10 @@ export const DeskMotionScene = ({ theme }: Props) => {
   useEffect(() => {
     applyDocumentTheme({ theme });
     seedCentralColumn({ kind: 'branches' });
+    seedParkedBrowser({ sessionId: COLUMN_SESSION_ID, state: 'live' });
     const state = useAppStore.getState();
     state.navigate({ to: sessionPlace({ sessionId: COLUMN_SESSION_ID }) });
+    state.openDrawer({ kind: 'browser', sessionId: COLUMN_SESSION_ID, payload: null });
     state.setSessionFace({ sessionId: COLUMN_SESSION_ID, face: 'overview' });
     setIsReady(true);
     const frame = window.requestAnimationFrame(() => {

@@ -227,6 +227,28 @@ describe('PaneSwap with the face motion', () => {
     expect(layer('desk')?.hasAttribute('data-face-in')).toBe(false);
   });
 
+  it('marks the window before an arriving face runs its effects', () => {
+    const seen: Array<string | null> = [];
+    const Page = () => {
+      useEffect(() => {
+        seen.push(document.body.getAttribute(FACE_SWAP_ATTRIBUTE));
+      }, []);
+      return <aside aria-label="Desk" />;
+    };
+    const view = (activeKey: string) => (
+      <PaneSwap
+        activeKey={activeKey}
+        layers={[overview, { key: 'desk', content: <Page /> }]}
+        motion="face"
+      />
+    );
+    const { rerender } = render(view('overview'));
+
+    rerender(view('desk'));
+
+    expect(seen).toEqual(['desk']);
+  });
+
   it('cuts in place under reduced motion, with no mark on the window', () => {
     reduceMotion(true);
     const { rerender } = render(faceOf('overview'));

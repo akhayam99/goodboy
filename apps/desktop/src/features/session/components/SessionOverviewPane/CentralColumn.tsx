@@ -43,7 +43,7 @@ export const CentralColumn = ({ session }: Props) => {
     noticesView,
   } = useOverviewModel({ session });
   const columnRef = useRef<HTMLDivElement>(null);
-  useMoveKeys({ sessionId, containerRef: columnRef, moves, actionsFor });
+  useMoveKeys({ sessionId, face: 'overview', containerRef: columnRef, moves, actionsFor });
   const dev = useDevDetails({ workspaceId: session.workspaceId });
   const isAskPanelOpen = useAppStore(
     (state) => state.drawer?.kind === 'ask' && state.drawer.sessionId === sessionId,

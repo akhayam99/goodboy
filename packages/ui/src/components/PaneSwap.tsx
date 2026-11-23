@@ -88,7 +88,7 @@ export const PaneSwap = ({
     return () => window.clearTimeout(timer);
   }, [leavingKey]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (enteringKey === null) {
       return;
     }

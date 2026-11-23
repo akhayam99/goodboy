@@ -40,6 +40,8 @@ beforeEach(async () => {
 });
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
+  document.body.removeAttribute(FACE_SWAP_ATTRIBUTE);
 });
 
 type Params = { readonly name: string };
@@ -69,12 +71,29 @@ describe('the u50 desk motion scenes', () => {
   });
 
   it('opens on the overview and swaps to the Desk through one face swap', async () => {
+    expect(window.matchMedia('(prefers-reduced-motion: reduce)').matches).toBe(false);
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ x: 0, y: 0, width: 1024, height: 700 }),
+    );
     await show({ name: 'u50-desk-motion-dark' });
 
-    await screen.findByRole('complementary', { name: 'Desk' });
-    await waitFor(() => expect(stateOf('overview')).toBe('hidden'));
+    await waitFor(() => expect(stateOf('overview')).toBe('leaving'));
+    expect(document.querySelector('[data-pane-layer="overview"]')?.className).toContain(
+      'animate-face-out',
+    );
+    expect(document.querySelector('[data-pane-layer="desk"]')?.hasAttribute('data-face-in')).toBe(
+      true,
+    );
+    expect(document.body.getAttribute(FACE_SWAP_ATTRIBUTE)).toBe('desk');
+
+    await waitFor(() => expect(document.body.hasAttribute(FACE_SWAP_ATTRIBUTE)).toBe(false), {
+      timeout: 2000,
+    });
+    expect(stateOf('overview')).toBe('hidden');
     expect(stateOf('desk')).toBe('active');
-    expect(document.body.hasAttribute(FACE_SWAP_ATTRIBUTE)).toBe(false);
+    expect(document.querySelector('[data-pane-layer="desk"]')?.hasAttribute('data-face-in')).toBe(
+      false,
+    );
   });
 
   it('swaps back to the overview from the Overview control', async () => {
