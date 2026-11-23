@@ -318,6 +318,12 @@
           "also": "queue"
         },
         {
+          "title": "Merge train",
+          "text": "Merge several pull requests, across sessions and repositories, with one gesture.",
+          "group": "The board",
+          "also": "merge train"
+        },
+        {
           "title": "Stage board",
           "text": "See where each task stands without moving cards around.",
           "group": "The board",
