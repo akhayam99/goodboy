@@ -9,25 +9,32 @@ import {
 } from 'react';
 import { canAnimate } from '../canAnimate';
 import { cn } from '../cn';
-import { DURATION_QUICK_MS } from '../motionTimings';
+import { FACE_SWAP_ATTRIBUTE } from '../faceSwapAttribute';
+import { DELAY_STEP_MS, DURATION_QUICK_MS, DURATION_SLOW_MS } from '../motionTimings';
 
 export type PaneLayer = {
   readonly key: string;
   readonly content: ReactNode;
 };
 
+type PaneMotion = 'pane' | 'face';
+
 type Props = {
   readonly activeKey: string | null;
   readonly layers: ReadonlyArray<PaneLayer>;
   readonly className?: string;
   readonly shouldFocusTitle?: boolean;
+  readonly motion?: PaneMotion;
 };
 
 type SwapState = {
   readonly activeKey: string | null;
   readonly leavingKey: string | null;
+  readonly enteringKey: string | null;
   readonly isAnimated: boolean;
 };
+
+const FACE_SWAP_MS = DURATION_QUICK_MS + DURATION_SLOW_MS + DELAY_STEP_MS;
 
 type ScrollMark = {
   readonly top: number;
@@ -41,23 +48,33 @@ type RememberParams = {
   readonly event: UIEvent;
 };
 
-export const PaneSwap = ({ activeKey, layers, className, shouldFocusTitle = false }: Props) => {
+export const PaneSwap = ({
+  activeKey,
+  layers,
+  className,
+  shouldFocusTitle = false,
+  motion = 'pane',
+}: Props) => {
   const frameRef = useRef<HTMLDivElement | null>(null);
   const previousKeyRef = useRef<string | null>(activeKey);
   const scrollsRef = useRef<ScrollsByLayer>(new Map());
+  const isFace = motion === 'face';
   const [swap, setSwap] = useState<SwapState>({
     activeKey,
     leavingKey: null,
+    enteringKey: null,
     isAnimated: false,
   });
 
   let leavingKey = swap.leavingKey;
+  let enteringKey = swap.enteringKey;
   if (swap.activeKey !== activeKey) {
     const from = swap.activeKey;
     const isLeavable = from !== null && layers.some((layer) => layer.key === from);
     const isAnimated = canAnimate({ element: frameRef.current });
     leavingKey = isLeavable && isAnimated ? from : null;
-    setSwap({ activeKey, leavingKey, isAnimated });
+    enteringKey = isAnimated && isFace ? activeKey : null;
+    setSwap({ activeKey, leavingKey, enteringKey, isAnimated });
   }
 
   useEffect(() => {
@@ -70,6 +87,21 @@ export const PaneSwap = ({ activeKey, layers, className, shouldFocusTitle = fals
     );
     return () => window.clearTimeout(timer);
   }, [leavingKey]);
+
+  useEffect(() => {
+    if (enteringKey === null) {
+      return;
+    }
+    document.body.setAttribute(FACE_SWAP_ATTRIBUTE, enteringKey);
+    const timer = window.setTimeout(
+      () => setSwap((prev) => ({ ...prev, enteringKey: null })),
+      FACE_SWAP_MS,
+    );
+    return () => {
+      window.clearTimeout(timer);
+      document.body.removeAttribute(FACE_SWAP_ATTRIBUTE);
+    };
+  }, [enteringKey]);
 
   useLayoutEffect(() => {
     if (activeKey === null) {
@@ -123,13 +155,16 @@ export const PaneSwap = ({ activeKey, layers, className, shouldFocusTitle = fals
             <div
               data-pane-layer={layer.key}
               data-pane-state={isActive ? 'active' : isLeaving ? 'leaving' : 'hidden'}
+              data-face-in={isActive && layer.key === enteringKey ? '' : undefined}
               aria-hidden={isLeaving ? true : undefined}
               inert={isLeaving}
               onScrollCapture={(event) => rememberScroll({ layerKey: layer.key, event })}
               className={cn(
                 'absolute inset-0',
-                isActive && swap.isAnimated && 'motion-safe:animate-pane-in',
-                isLeaving && 'pointer-events-none motion-safe:animate-pane-out',
+                isActive && !isFace && swap.isAnimated && 'motion-safe:animate-pane-in',
+                isLeaving && 'pointer-events-none',
+                isLeaving && !isFace && 'motion-safe:animate-pane-out',
+                isLeaving && isFace && 'motion-safe:animate-face-out',
               )}
             >
               {layer.content}

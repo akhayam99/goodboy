@@ -16,6 +16,7 @@ export { ShellRailContext } from './shellRailContext';
 export { UnderHeadContext } from './underHeadContext';
 export { HEAD_INSET_VAR } from './headInsetVar';
 export { SPLIT_DRAG_ATTRIBUTE } from './splitDragAttribute';
+export { FACE_SWAP_ATTRIBUTE } from './faceSwapAttribute';
 export { DrawerEdgeContext } from './drawerEdgeContext';
 export { DrawerBackChipContext } from './drawerBackChipContext';
 export type { DrawerChip } from './drawerBackChipContext';
@@ -269,6 +270,7 @@ export type {
 export { SplitHandle } from './components/SplitHandle';
 export { Reveal } from './components/Reveal';
 export {
+  DELAY_STEP_MS,
   DURATION_BASE_MS,
   DURATION_QUICK_MS,
   DURATION_SLOW_MS,
