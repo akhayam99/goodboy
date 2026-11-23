@@ -28,6 +28,7 @@ const openLive = async ({ sessionId, tab, bounds }: Params): Promise<string | nu
     await closeOrphanTab({ sessionId, liveId: facts.id });
     return null;
   }
+  browserPaneRequests.opened.add(`${sessionId}:${facts.id}`);
   useAppStore.getState().bindBrowserLiveTab({ sessionId, tabId: tab.id, liveId: facts.id });
   return facts.id;
 };

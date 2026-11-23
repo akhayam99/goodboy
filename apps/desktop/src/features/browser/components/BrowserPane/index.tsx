@@ -10,6 +10,7 @@ import type { BrowserTabListMode } from '../../types';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useConsoleEntries } from '../../hooks/useConsoleEntries';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
+import { useParkedTab } from '../../hooks/useParkedTab';
 import { devicePresetOf } from '../../devicePresets';
 import { promoteBrowserTab } from '../../promoteBrowserTab';
 import { BrowserAddressRow } from './BrowserAddressRow';
@@ -50,6 +51,10 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
   const title = shownTab === null ? '' : model.titleOf({ tab: shownTab });
   const hasTabs = model.tabs.length > 0 || model.pins.length > 0;
   const isOnScreen = useAppStore((state) => selectDockDrawer({ state })?.kind === 'browser');
+  const boundLiveId = useAppStore((state) =>
+    shownTab === null ? undefined : state.browserLiveTabs[sessionId]?.[shownTab.id],
+  );
+  const parked = useParkedTab({ sessionId, liveId: boundLiveId });
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
   const consoleLog = useConsoleEntries({
     sessionId,
@@ -69,7 +74,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
     sessionId,
     frame,
     view,
-    tab: shownTab,
+    tab: parked.isParked || parked.isChecking ? null : shownTab,
     attempt: model.wakeAttempt,
     maxWidth: devicePresetOf({ id: model.devicePreset }).width,
     onError: model.showError,
@@ -117,6 +122,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
               cover={cover}
               devicePreset={model.devicePreset}
               onNew={model.startDraft}
+              onWake={parked.isParked ? parked.wake : undefined}
             />
             {isConsoleOpen && shownTab !== null ? (
               <BrowserConsole model={model} title={title} log={consoleLog} />

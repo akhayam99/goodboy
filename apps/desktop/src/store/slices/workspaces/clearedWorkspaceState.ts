@@ -1,3 +1,4 @@
+import { dockScopeInitialState } from '../drawer/dockScopeState';
 import { EMPTY_DRAWER_GRID } from '../drawer/state';
 
 export const clearedWorkspaceState = () => ({
@@ -6,6 +7,7 @@ export const clearedWorkspaceState = () => ({
   drawer: null,
   drawerBack: null,
   drawerGrid: EMPTY_DRAWER_GRID,
+  ...dockScopeInitialState,
   sessions: [],
   archivedSessions: {},
   sessionSummary: null,

@@ -8,6 +8,10 @@ type Params = {
   readonly place: Place;
 };
 
-export const keepToolDrawer = ({ state, place }: Params): OpenDrawer | null =>
-  keptTool({ drawer: state.drawer ?? null, place }) ??
-  keptTool({ drawer: state.drawerBack ?? null, place });
+export const keepToolDrawer = ({ state, place }: Params): OpenDrawer | null => {
+  const scope = state.dockScope;
+  return (
+    keptTool({ drawer: state.drawer ?? null, place, scope }) ??
+    keptTool({ drawer: state.drawerBack ?? null, place, scope })
+  );
+};

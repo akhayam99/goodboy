@@ -367,8 +367,11 @@ as an agent) arrives with it closed; Back and Forward bring it back as it was;
 Escape and its X close it in place. The exception is a tool (Ask, Context, Explore,
 Scripts, Agents): a forward move that stays in its session keeps it open
 (`keepToolDrawer` in `navigate`), so a chip in an answer changes the page beside
-it. Terminal and Browser stay open on every move, another session and the
-Board included, and on Back to an entry that had no drawer (`keptTool`). A
+it. Terminal, Browser and Monitor belong to the place they were opened in: a
+session keeps them on every move inside it and on Back to an entry that had no
+drawer (`keptTool`), and leaving it parks them with its grid until you come
+back; the Board and the draft keep their own (`dockAfterPlace` in
+`applyLocation`). A
 tool in the chip stays too: over a reader it comes back into the slot,
 under a tool it stays in the chip (`backAfterPlace` in `applyLocation`). Leaving
 the session empties both of its session tools, and Back brings the drawer back
@@ -719,15 +722,18 @@ Each session remembers its dock grid: the panels, the columns, the width of
 each tool's column, the height of two stacked panels and the focus. The
 heights sit in an optional `splits` field of version 1: a row without it
 reads, and an older build reads a row with it and leaves it out. It lives in `session_dock_grids` (m244), one
-row per session, deleted with it. The Board and the pages keep the grid the
-window has; they save nothing.
+row per session, deleted with it. The Board and the draft keep a grid of
+their own in the window; they save nothing.
 
 - `useSessionDockGrid` (started by `useWindowLayout`) runs
   `watchSessionDockGrid`. It keys on `currentSessionId`.
 - Entering a session reads its row (`recallDockGrid`). A row puts its grid in
   place of the open tools (`slotWithGrid`), and a tool of a session that no
-  longer exists drops out. No row keeps the open tools, so a session saved by
-  0.39 opens with the dock of its window layout. A Terminal whose tab is gone
+  longer exists drops out. Before the row answers, the session shows the grid
+  it was left with in this window (`parkedDockGrids`, dropped when the session
+  is archived), or no tool. That swap is not a change, so it writes nothing:
+  `watchSessionDockGrid` skips a grid that arrives with a new `dockScope`, and
+  a window that only passes through a session never writes its row. A Terminal whose tab is gone
   closes itself (`TerminalDrawer`), and the next save leaves it out.
 - A row this window has not saved since it loaded comes back without the
   `UNSAVED_DRAWER_KINDS` (`appliedDockGrid`), so Monitor stays closed after a

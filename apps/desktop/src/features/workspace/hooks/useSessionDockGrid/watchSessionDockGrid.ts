@@ -61,6 +61,7 @@ export const watchSessionDockGrid = ({
   let owner = store.getState().currentSessionId;
   let grid = store.getState().drawerGrid ?? EMPTY_DRAWER_GRID;
   let face = faceOf({ state: store.getState(), sessionId: owner });
+  let scope = store.getState().dockScope;
   dockGridOwner.take({ sessionId: owner });
 
   const flush = (): void => {
@@ -90,6 +91,9 @@ export const watchSessionDockGrid = ({
 
   const recall = ({ sessionId, isEntry }: RecallParams): void => {
     queueMicrotask(() => {
+      if (store.getState().currentSessionId !== sessionId) {
+        return;
+      }
       void store
         .getState()
         .recallDockGrid({ sessionId, isSavedThisRun: savedThisRun.has(sessionId) })
@@ -125,12 +129,14 @@ export const watchSessionDockGrid = ({
       return;
     }
     const nextFace = faceOf({ state, sessionId: owner });
+    const isSwap = state.dockScope !== scope;
+    scope = state.dockScope;
     if (nextGrid === grid && nextFace === face) {
       return;
     }
     grid = nextGrid;
     face = nextFace;
-    if (owner === null) {
+    if (owner === null || isSwap) {
       return;
     }
     pending = { sessionId: owner, grid: nextGrid, face: nextFace, at: now() };

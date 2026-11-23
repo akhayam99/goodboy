@@ -246,6 +246,8 @@ export const NAMES = {
   monitoring: 'Monitoring',
   monitor: 'Monitor',
   browser: 'Browser',
+  browserAsleep: 'asleep',
+  wake: 'Wake',
   session: 'Session',
   startSession: 'Start session',
   commands: 'Commands',

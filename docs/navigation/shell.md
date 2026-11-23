@@ -20,7 +20,8 @@ unit that changes the skeleton edits this section first.
 2. **Right is what you hold. Holds.** The right rail sits at the sheet's right
    edge on every screen of a workspace: the session tools on a session page,
    Terminal and Browser at its foot everywhere. Terminal and Browser stay open
-   across every move, and on Tasks, Chat and Workflows the page's own panel and
+   across every move inside the place they were opened in (a session, or the
+   Board), and on Tasks, Chat and Workflows the page's own panel and
    the dock stay open together, the panel left of the dock (`toolsStay.test.ts`,
    `StudioFrame/panelAndDock.test.tsx`, `p10-right-dock.test.tsx`). Owned by The session tools
    ([session-rail.md](./session-rail.md)).
@@ -344,9 +345,10 @@ back with the session. A parked drawer stays mounted, hidden and inert
 no exit and no width change, so a draft, a scroll position or a running
 terminal survives the trip. The session under the page widens while the drawer
 is parked and narrows again on return, so its transcript re-wraps. Terminal
-and Browser are workspace tools and follow no session: they stay docked across
-every move, on another session, on the Board and beside every page but their
-own (`keptTool`, `selectDrawerPanel`). Under their own page they stay in the
+and Browser belong to the session they were opened in, or to the Board: they
+stay docked across every move inside it and beside every page but their own,
+and leaving it parks them until you come back (`keptTool`, `dockAfterPlace`,
+`selectDrawerPanel`). Under their own page they stay in the
 store but are not mounted (`useShellRight`), so no shortcut answers twice. At
 a narrow width the dock floats over the page: the page slot lives in its own
 layer (`data-studio-host`, `isolate`), so the dock and its scrim always paint

@@ -173,7 +173,7 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 
 **Tools beside the page**
 
-A thin column of icons sits at the right of every screen, under the caption **Tools**. It holds **Terminal** (⌃\` or ⌘⌥T) and **Browser**. They open beside whatever you are doing and stay open as you move between sessions and pages. With a dock open, the column sits on the dock's left edge. See [Terminal](keyboard.md#terminal) and [Browser](keyboard.md#browser).
+A thin column of icons sits at the right of every screen, under the caption **Tools**. It holds **Terminal** (⌃\` or ⌘⌥T) and **Browser**. They open beside whatever you are doing and stay open as you move between pages. Each session keeps its own tools, and they come back when you return to it. With a dock open, the column sits on the dock's left edge. See [Terminal](keyboard.md#terminal) and [Browser](keyboard.md#browser).
 
 The other views of a session open from its head and from the keyboard:
 

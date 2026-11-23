@@ -1445,6 +1445,10 @@ u50-desk-face-overview-dark
 u50-desk-face-overview-light
 u50-desk-grid
 u50-desk-grid-terminal
+u50-desk-owns-asleep-dark
+u50-desk-owns-asleep-light
+u50-desk-owns-awake-dark
+u50-desk-owns-awake-light
 u50-fleet-rows-dark
 u50-fleet-rows-light
 u50-mount-fix-confirm-dark

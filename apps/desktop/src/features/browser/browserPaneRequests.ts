@@ -11,6 +11,7 @@ export const browserPaneRequests = {
   history: createLatestOnly(),
   favicons: createLatestOnly(),
   waking: new Map<string, Promise<string | null>>(),
+  opened: new Set<string>(),
   openKey: ({ sessionId }: SessionKeyParams) => `open:${sessionId}`,
   factsKey: ({ sessionId }: SessionKeyParams) => `facts:${sessionId}`,
 };

@@ -221,8 +221,9 @@
   in the one main slot, one at a time: a studio replaces the page in the sheet.
   Scope decides the pattern. Session-scoped editors layer over the session
   pane. Anything that became a lens stays a lens. A session drawer parks while
-  a studio is open and the sheet takes its width; Terminal and Browser, the
-  workspace tools, stay docked beside any page but their own (see
+  a studio is open and the sheet takes its width; Terminal and Browser stay
+  docked beside any page but their own, and belong to the session or the Board
+  they were opened in (see
   [shell.md](./shell.md), The dock follows the page).
 - **A door replaces, a link stacks.** A door is a control that names a studio:
   a column door (Tasks, Chat, Connections, Workflows, Impact, Monitoring, Settings), the Goodboy

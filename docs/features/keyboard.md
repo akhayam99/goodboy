@@ -9,7 +9,7 @@ Open a real login shell in the workspace folder or any linked worktree.
 **Open a terminal**
 
 - **Terminal** at the foot of the right rail, **⌃** with the backtick key, or **⌘⌥T** shows or hides the Terminal dock, on any page. In a session it opens on the session's worktree. Anywhere else it opens in the workspace folder.
-- The dock stays open as you move between sessions and pages. The rail button shows how many terminals run.
+- The dock stays open as you move between pages. Each session keeps its own: leave it and its terminals keep running, come back and they are where you left them. The rail button shows how many terminals run.
 - The worktree menu and ⌘K **Open <repo · branch> in terminal** open that worktree in the dock.
 - **File › New Terminal** and ⌘K **New terminal** add a fresh tab in the dock. In a session it uses the active worktree, or the workspace folder when the session has no branch. On the Terminal page the new tab opens on the page.
 - **⌘T** adds a tab in place. **⌘N** opens a picker on the page and in the drawer. Type to filter, use the arrows and Enter.
