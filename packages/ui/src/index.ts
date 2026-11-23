@@ -11,6 +11,7 @@ export { dockSplitKeyOf } from './dockSplitKeyOf';
 export { dockColumnsAfterMove } from './dockColumnsAfterMove';
 export type { DockMoveTarget } from './dockMoveTarget';
 export { dockFitProbe } from './dockFitProbe';
+export { useDockGrip } from './useDockGrip';
 export { turnedDockColumnsOf } from './turnedDockColumnsOf';
 export { ShellRailContext } from './shellRailContext';
 export { UnderHeadContext } from './underHeadContext';

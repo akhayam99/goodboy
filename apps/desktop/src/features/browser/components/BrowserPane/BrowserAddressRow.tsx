@@ -2,37 +2,37 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
+  CodeXml,
+  GripVertical,
   PanelLeft,
   Pin,
   RotateCw,
   Square,
-  CodeXml,
   X,
 } from '@goodboy/ui/icons';
-import { IconButton, PANE_RHYTHM, cn } from '@goodboy/ui';
+import { ICON_SIZE, IconButton, PANE_RHYTHM, cn, useDockGrip } from '@goodboy/ui';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
+import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useBrowserKeys } from '../../hooks/useBrowserKeys';
 import { useCommandField } from '../../hooks/useCommandField';
 import { useFindInPage } from '../../hooks/useFindInPage';
-import type { BrowserPaneModel } from '../../types';
+import type { BrowserConsoleToggle, BrowserPaneModel } from '../../types';
 import { BrowserAddressPill } from './BrowserAddressPill';
 import { BrowserCommandPanel } from './BrowserCommandPanel';
 import { BrowserFindBar } from './BrowserFindBar';
 import { BrowserLoadLine } from './BrowserLoadLine';
 import { BrowserMoreMenu } from './BrowserMoreMenu';
+import { foldedBrowserRowsOf } from './foldedBrowserRowsOf';
 import { NAMES } from '../../../../shared/utils/names';
 import { DockButton } from '../../../../shared/components/DockButton';
 
-type ConsoleToggle = {
-  readonly isOpen: boolean;
-  readonly onToggle: () => void;
-};
+const NARROW_ROW_PX = 520;
 
 type Props = {
   readonly model: BrowserPaneModel;
   readonly isAddressShortcutOn: boolean;
   readonly isListOpen?: boolean;
-  readonly consoleToggle?: ConsoleToggle;
+  readonly consoleToggle?: BrowserConsoleToggle;
   readonly onToggleList?: () => void;
   readonly onOpenAsPage?: () => void;
   readonly onDock?: () => void;
@@ -52,6 +52,10 @@ export const BrowserAddressRow = ({
   const canStep = model.shown !== null;
   const field = useCommandField({ model });
   const find = useFindInPage({ model });
+  const grip = useDockGrip();
+  const { ref: rowRef, width } = useElementWidth();
+  const isFolded = width !== null && width > 0 && width < NARROW_ROW_PX;
+  const folded = isFolded ? foldedBrowserRowsOf({ model, consoleToggle }) : [];
   useBrowserKeys({ model, isOn: isAddressShortcutOn, onFind: find.open });
   useShortcut(
     'browser.console',
@@ -68,9 +72,25 @@ export const BrowserAddressRow = ({
   return (
     <>
       <div
+        ref={rowRef}
         data-grid-row="1"
-        className={cn('relative flex shrink-0 items-center gap-1 px-2', PANE_RHYTHM.firstRow)}
+        data-dock-drag-source={grip.canDrag ? '' : undefined}
+        data-row-folded={isFolded ? '' : undefined}
+        onPointerDown={grip.canDrag ? (event) => grip.press({ event }) : undefined}
+        className={cn(
+          'relative flex shrink-0 items-center gap-1 px-2',
+          PANE_RHYTHM.firstRow,
+          grip.canDrag && 'cursor-grab',
+        )}
       >
+        {grip.canDrag ? (
+          <GripVertical
+            size={ICON_SIZE.row}
+            aria-hidden
+            data-dock-grip=""
+            className="shrink-0 text-faint-foreground"
+          />
+        ) : null}
         {onToggleList === undefined ? null : (
           <IconButton
             icon={PanelLeft}
@@ -106,7 +126,7 @@ export const BrowserAddressRow = ({
           />
         )}
         <BrowserAddressPill model={model} field={field} isAddressShortcutOn={isAddressShortcutOn} />
-        {model.shown === null || model.projectName === null ? null : (
+        {isFolded || model.shown === null || model.projectName === null ? null : (
           <IconButton
             icon={Pin}
             label={
@@ -118,7 +138,7 @@ export const BrowserAddressRow = ({
             onClick={model.togglePin}
           />
         )}
-        {consoleToggle === undefined ? null : (
+        {isFolded || consoleToggle === undefined ? null : (
           <IconButton
             icon={CodeXml}
             label="Console"
@@ -129,8 +149,8 @@ export const BrowserAddressRow = ({
             onClick={consoleToggle.onToggle}
           />
         )}
-        <BrowserMoreMenu model={model} onOpenAsPage={onOpenAsPage} />
-        {onOpenAsPage === undefined ? null : (
+        <BrowserMoreMenu model={model} folded={folded} onOpenAsPage={onOpenAsPage} />
+        {isFolded || onOpenAsPage === undefined ? null : (
           <IconButton
             icon={ArrowUpRight}
             label={NAMES.openFullPage}

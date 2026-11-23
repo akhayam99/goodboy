@@ -80,7 +80,7 @@ A session opens again with the tools it had open, split beside the Overview; the
 
 On the Overview, ⌃` opens the terminal like the rail does: the page splits.
 
-The terminal has one tab per worktree of the session, named after its project. A tab opens its shell the first time you pick it. The head shows the branch and the folder.
+The terminal has one tab per worktree of the session, named after its project. A tab opens its shell the first time you pick it. The head shows the branch and the folder, then `⋯` and Close; **Open full page** sits in `⋯`. On a narrow Desk every tool head keeps its title and Close, cuts the title short, and moves the other buttons into `⋯`. Drag a tool by its head, the Browser by its address row, to place it anywhere on the Desk.
 
 Above the prompt, the terminal suggests one command at a time, such as the failing test or a new migration. It shows the whole command and its folder, with **Run** or **Add to prompt**, and **Not now**. Only a script Goodboy found, with nothing added from outside, runs on the click. A test name read from a check log, or a script that migrates, seeds, deploys or cleans, is typed into the prompt and says **Press Enter to run**. It never runs on its own. A shell that ends with an error keeps its output and offers Restart.
 

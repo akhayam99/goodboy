@@ -369,11 +369,16 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   rewritten by a resize and comes back when the window grows. The page follows
   the pane because the placement loop measures the placeholder every frame.
 
-- **The address row** is one 36px row (`BrowserAddressRow`). It holds the tab
+- **The address row** is one 36px row (`BrowserAddressRow`). It holds a grip
+  mark when the pane sits in the desk grid (the row is the pane's head, so a
+  press on it, never on a control, moves the pane like any other:
+  `useDockGrip`, [home-and-drawer.md](navigation/home-and-drawer.md)), the tab
   list toggle, Back, Forward and Reload, the address pill, Pin to the session's
-  project (Unpin when a pin is shown), More, Console (see Console) and Close.
-  The pane remembers the
-  list toggle (`goodboy:browser-tab-list:v1`).
+  project (Unpin when a pin is shown), Console (see Console), More, Open full
+  page and Close. The pane remembers the list toggle
+  (`goodboy:browser-tab-list:v1`). Under 520px of row (`NARROW_ROW_PX`), Pin,
+  Console and Open full page leave the row and sit first in More
+  (`foldedBrowserRowsOf`), so the address keeps its room and nothing overlaps.
 - **Loading** shows on the row. From the host's `started` event of the shown tab
   to its `finished` event, a 2px `info` line breathes on the bottom edge of the
   row (`BrowserLoadLine`) and Reload becomes Stop (`browser_tab_stop`, which
@@ -953,8 +958,9 @@ The Console button in the address row, after the pin and before More, opens it
 with its own `CodeXml` icon, never the Terminal one (its log rows mark a plain
 log with `MessageSquareText`), and
 `browser.console` (⌘⇧J) toggles it while a tab is shown. It is a button, not
-a More row: More already holds eight rows against the five-row budget, and a
-toggle with a pressed state belongs beside the page it watches. Safari's
+a More row, while the row has room: More already holds eight rows against the
+five-row budget, and a toggle with a pressed state belongs beside the page it
+watches. A narrow row folds it into More as Show console or Hide console. Safari's
 ⌘⌥C is Context (`lens.context`), and the registry refuses a browser key
 that shadows it, so the chord follows Chrome's J.
 

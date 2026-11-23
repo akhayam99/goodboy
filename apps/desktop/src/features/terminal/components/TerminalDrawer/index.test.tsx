@@ -187,6 +187,23 @@ describe('the terminal of a session', () => {
 
     expect(screen.queryByRole('button', { name: 'Open on desk' })).toBeNull();
   });
+
+  it('keeps its head to the folder, More and Close, with Open full page inside More', async () => {
+    renderDrawer({ terminalId: TAB.id });
+
+    const head = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-drawer-header-row]');
+      if (found === null) {
+        throw new Error('The terminal draws no head.');
+      }
+      return found;
+    });
+    expect(within(head).queryByRole('button', { name: 'Open full page' })).toBeNull();
+    within(head).getByRole('button', { name: 'Close' });
+    fireEvent.click(within(head).getByRole('button', { name: 'More on payments-api' }));
+
+    within(screen.getByRole('menu')).getByRole('menuitem', { name: /Open full page/ });
+  });
 });
 
 describe('a shell that ends with an error', () => {

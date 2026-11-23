@@ -206,7 +206,12 @@ button with an arrow, the kind and the muted title, at most half the row, the
 title truncating first; it replaces the back row. A pane whose title is a control (the terminal scope picker) passes it as
 `titleContent`: it replaces the visible heading, the region keeps `title` as its name. A pane that is a page (Explore) passes `isHeaderless` and draws `PaneShell` as its body: the frame then keeps only the region, Esc and focus, and `title` stays its name. Close always reads `Close` and is a 28px target (`size-7`, 14px
 glyph); every utility in the header (copy, open on its page) is a 28px
-icon button in one tone. The `dock` is `px-4 py-3`, the same padding for the Ask
+icon button in one tone. The head holds at any pane width: the title has no
+minimum and truncates first, and under 360px of row (`NARROW_HEAD_PX`,
+`useIsNarrow`) the pair turn and Open full page fold into one `More on <title>`
+menu, or, when the pane brings its own `menu`, the turn leaves the row (the
+drag and ⌘K still move the pane) and the pane's menu holds the rest. The
+Terminal keeps only its folder, its More (Open full page included) and Close. The `dock` is `px-4 py-3`, the same padding for the Ask
 composer, a transcript reply field and a script run's status line. The first
 control takes focus when the drawer opens (the composer of the dock when it has
 one, `Close` otherwise); Esc blurs a non-empty text field first and closes on
