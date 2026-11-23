@@ -22,6 +22,7 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { storySpies, stubStoryInvoke } from '../../../store/storyHarness';
 import type { ShowToast } from '../../components/Toast';
 import { usePendingAttachments } from '.';
+import { usePromptFiles } from '../usePromptFiles';
 
 type Rejection = {
   readonly kind: string;
@@ -192,9 +193,52 @@ describe('a dropped file that cannot be read says why', () => {
     await waitFor(() => expect(result.current.attachments).toHaveLength(1));
     expect(result.current.attachments[0]?.fileName).toBe('fine.png');
     expect(messagesOf({ showToast })).toEqual([
-      '2 files were moved or deleted before they could be read. Drop the saved files or use Attach files.',
-      'Goodboy has no permission to read locked.png. Use Attach files to pick it.',
+      '2 files were moved or deleted before they could be read. Drop the saved files or use Attach files. Goodboy has no permission to read locked.png. Use Attach files to pick it.',
     ]);
+  });
+
+  it('points a file of a type the composer never reads to Attach files', async () => {
+    const showToast = vi.fn<ShowToast>();
+    await mountComposer({ showToast });
+    await drop({ paths: [`${DESKTOP}/ledger-core.zip`] });
+    await waitFor(() =>
+      expect(messagesOf({ showToast })).toEqual([
+        "ledger-core.zip can't be attached. Use Attach files to pick an image, PDF, CSV or text file.",
+      ]),
+    );
+    expect(storySpies.tauriInvoke).not.toHaveBeenCalled();
+  });
+
+  it('gives one unsupported note for files refused here and by the host', async () => {
+    outcomes.set(`${DESKTOP}/notify-relay.png`, UNSUPPORTED);
+    const showToast = vi.fn<ShowToast>();
+    await mountComposer({ showToast });
+    await drop({ paths: [`${DESKTOP}/ledger-core.zip`, `${DESKTOP}/notify-relay.png`] });
+    await waitFor(() =>
+      expect(messagesOf({ showToast })).toEqual([
+        "2 files can't be attached. Use Attach files to pick images, PDFs, CSV or text files.",
+      ]),
+    );
+  });
+
+  it('shows every cause in the New session notice', async () => {
+    outcomes.set(`${TEMPORARY}/one.png`, GONE);
+    outcomes.set(`${DESKTOP}/locked.png`, DENIED);
+    const { result } = renderHook(() => usePromptFiles({ note: 'Images and text files' }));
+    const element = document.createElement('div');
+    element.setAttribute('data-drop-composer', '');
+    document.body.appendChild(element);
+    Object.defineProperty(element, 'offsetParent', { value: document.body, configurable: true });
+    await act(async () => {
+      result.current.files.composerRef.current = element;
+    });
+    await waitFor(() => expect(dragHandlers.size).toBe(1));
+    await drop({ paths: [`${TEMPORARY}/one.png`, `${DESKTOP}/locked.png`] });
+    await waitFor(() =>
+      expect(result.current.notice).toBe(
+        'one.png was moved or deleted before it could be read. Drop the saved file or use Attach files. Goodboy has no permission to read locked.png. Use Attach files to pick it.',
+      ),
+    );
   });
 
   it('attaches the file when the user drops the saved copy after a failed drop', async () => {

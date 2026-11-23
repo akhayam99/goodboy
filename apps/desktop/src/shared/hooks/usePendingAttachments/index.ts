@@ -170,15 +170,14 @@ export const usePendingAttachments = ({
     const supported = paths.filter((path) =>
       isAccepted({ name: droppedFileName({ path }), type: '' }),
     );
-    const unsupported = paths.length - supported.length;
-    if (unsupported > 0) {
-      showToast({
-        kind: 'warning',
-        message: `Skipped ${countNoun({ count: unsupported, one: 'file' })} of an unsupported type.`,
-      });
-    }
+    const filtered = paths
+      .filter((path) => !supported.includes(path))
+      .map((path) => droppedFileName({ path }));
     const dropped: PendingAttachment[] = [];
     const rejected = new Map<GroupedCause, string[]>();
+    if (filtered.length > 0) {
+      rejected.set('unsupported', filtered);
+    }
     for (const path of supported) {
       const name = droppedFileName({ path });
       try {
@@ -200,8 +199,11 @@ export const usePendingAttachments = ({
         rejected.set(cause, [...(rejected.get(cause) ?? []), name]);
       }
     }
-    for (const [cause, names] of rejected) {
-      showToast({ kind: 'warning', message: dropFailureNotice({ cause, names }) });
+    if (rejected.size > 0) {
+      const message = Array.from(rejected, ([cause, names]) =>
+        dropFailureNotice({ cause, names }),
+      ).join(' ');
+      showToast({ kind: 'warning', message });
     }
     admit(dropped);
   };

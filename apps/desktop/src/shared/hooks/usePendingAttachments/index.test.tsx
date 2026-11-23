@@ -109,7 +109,8 @@ describe('usePendingAttachments drop target', () => {
     expect(result.current.attachments).toHaveLength(0);
     expect(showToast).toHaveBeenCalledWith({
       kind: 'warning',
-      message: expect.stringContaining('unsupported type'),
+      message:
+        "archive.zip can't be attached. Use Attach files to pick an image, PDF, CSV or text file.",
     });
   });
 
