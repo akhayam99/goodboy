@@ -210,15 +210,19 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'board',
     group: 'daily',
     title: 'Board',
-    lead: 'The Board of the places rail. Each session sits in a lane for what is happening in it, so you never move cards by hand.',
+    lead: 'The Board opens on Queue, what waits on you. Stages, in its head, sets each session in a lane.',
     points: [
       {
-        term: 'Session card',
-        desc: 'The title, the folder and one signal: an open question, a failed check, the pull request in its state color or the agents at work. Rest on it for age, issues and cost.',
+        term: 'Queue',
+        desc: 'Needs you lists what waits on you; Enter opens it and S puts it off. Running says what each agent does. Ready to merge proposes an order.',
       },
       {
-        term: 'Board and Sessions',
-        desc: 'Lanes on the Board. Sessions in the top bar lists the same sessions, and the funnel in the Board header sorts, groups and narrows them.',
+        term: 'Stages and Sessions',
+        desc: 'Lanes on Stages. Sessions in the top bar lists the same sessions; the funnel in the Board header sorts and narrows them.',
+      },
+      {
+        term: 'Session card',
+        desc: 'The title, the folder and one signal: an open question, a failed check, the pull request in its state color or what the agent is doing right now. Rest on it for age, issues and cost.',
       },
       {
         term: 'Done and archived',
@@ -235,10 +239,6 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       {
         term: 'Now chip',
         desc: 'Counts running sessions and scripts from any screen, and a click lists them. Sessions that need you put an amber number on Board in the rail.',
-      },
-      {
-        term: 'Top bar',
-        desc: "The Now chip, providers, today's spend, theme button and bell sit on the right; spend opens Impact on Spend.",
       },
     ],
     links: [{ label: 'Open board', target: { kind: 'board' } }],
@@ -264,11 +264,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session pages',
-        desc: 'Tabs under the title: Overview, Runs, Artifacts, Questions while one is open, and Context, plus Changes with exactly one branch. Runs holds every run and the agents you started. Context holds the Projects and Linked cards. Under a tab, Esc goes one up.',
+        desc: 'Tabs under the title: Overview, Runs, Artifacts, Questions while one is open, and Context. Runs holds every run and the agents you started. Context holds the Projects and Linked cards. Under a tab, Esc goes one up.',
       },
       {
-        term: 'Session actions and +',
-        desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to New, holds Pin, Link work, Copy, Archive and Delete.',
+        term: 'Session actions',
+        desc: 'Mount a folder, at the head of Projects, adds a folder, and Unmount in a project menu takes it out. More session actions, next to New, holds Pin, Link work, Copy, Archive and Delete.',
       },
       {
         term: 'Agents rail',
@@ -276,7 +276,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Tools rail',
-        desc: 'Terminal, Browser, Scripts, Ask and Monitor, at the right edge of every screen, each opening to its left. Up to four share two columns of two, saved per session. Open full page makes one a page.',
+        desc: 'Terminal, Browser, Scripts, Ask and Monitor, at the right edge of every screen. In a session, one builds the Desk: the overview as a column, the tools beside it. Open full page makes one a page.',
       },
     ],
     links: [],
@@ -309,7 +309,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Overview',
-        desc: 'Tiles, a board of each branch by state, grouped by project, with its next step, and the Log at the end, always open. Open › Log on a card scrolls to it.',
+        desc: 'Reads the state, Needs you, Now, Next, Projects and Activity, with the Ask line at the foot. Enter runs the move in front.',
       },
     ],
     links: [],
@@ -430,7 +430,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'Each branch on the Overview is one tile with its state and one next step. Click it, or the branch on the Projects card, and its page opens in place: Conversation, Changes, Commits, Checks, Runs and Comments. Its header opens a terminal, the browser or a new run there.',
+        desc: 'Each branch is a row on the Overview. Click it and its page opens in place, on the tab its state names: Conversation, Changes, Commits, Checks, Runs and Comments. Its header opens a terminal, the browser or a new run there.',
       },
       {
         term: 'Conversation',
@@ -626,7 +626,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Worktrees',
-        desc: 'The worktree folders of archived, deleted or gone sessions, with their size and whether each is safe to remove. Folders with changes or running agents are skipped, with the reason.',
+        desc: 'The worktree folders of archived, deleted or gone sessions, with their size and whether each is safe to remove. Folders with changes or running agents are skipped, with the reason. Worktrees on a project block lists one project across sessions.',
       },
       {
         term: 'Scope',
@@ -825,8 +825,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'Habits that pay off across sessions.',
     points: [
       {
-        term: 'Triage the board by lane',
-        desc: 'Start with needs you, then in review, and let the running ones run.',
+        term: 'Work down the Queue',
+        desc: 'Start with Needs you, then Ready to merge, and let the running ones run.',
       },
       {
         term: 'One short goal per session',

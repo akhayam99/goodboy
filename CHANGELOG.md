@@ -12,6 +12,137 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.41.0
+
+A session overview that reads top to bottom, a Board that opens on what waits on you, and a Desk that puts your tools beside the session.
+
+This version updates your data in one direction. To go back to 0.40, restore the backup Goodboy made before updating.
+
+### New
+
+#### The Board opens on a queue of what waits on you
+<!-- gb area=sessions image=queue pr=2297,2308 -->
+
+The Board opens on Queue, with Stages one click away in its head. Needs you lists every question, permission, plan and failed check across your sessions, oldest first. Click a row or press Enter to open the session where it waits, or put it off with Not now or the S key, with Undo.
+
+Running shows one row per agent with what it is doing right now. Space opens a peek with its last steps and a field to message it.
+
+#### Merge ready pull requests in order
+<!-- gb area=review pr=2302,2290,2305 -->
+
+Ready to merge on the Board lists approved pull requests with green checks and proposes an order: the smallest change first, and a branch before the one that builds on it. Tick rows and press Merge 2 in order. Goodboy merges them one at a time, updates the next branch when an earlier merge landed in its repository, and stops at the first one it cannot merge, saying why.
+
+When two sessions change the same file, an Overlaps chip on their rows names the file, proposes which to merge first and offers Message both Implementers. Merge when green in the branch menu hands a GitHub pull request to GitHub to merge once its checks pass.
+
+#### The Desk puts your tools beside the session
+<!-- gb area=sessions image=desk pr=2291,2299,2300,2301,2295,2307 -->
+
+Open Terminal, Browser, Scripts, Ask or Monitor from the right rail in a session and the page splits: the overview becomes a column on the left, and the tools fill the rest, up to two columns of two. An agent and its pull request open together, so you can read a failing check while you watch the agent that fixes it.
+
+Close the last tool and the whole overview comes back, with Reopen. Each session keeps its own tools. Leaving parks them, terminals keep running, and coming back brings them back as you left them.
+
+#### Ask the session what it is doing
+<!-- gb area=sessions pr=2282 -->
+
+The Ask line at the foot of the overview has two starters, What are you doing? and What is left?, which answer from the session itself at no cost. Any other question is one Ask turn with its cost, and Open in Ask continues it in the Ask panel. From an answer, Message the Implementer queues a message without interrupting it.
+
+#### Send a failed check to a Lead
+<!-- gb area=agents pr=2296 -->
+
+A failed check on the overview offers Send to Lead. When one open Lead fits it takes one click, with several you pick one, and with none it reads Start new Lead. The move then turns into a quiet row that says when the Lead has read it, with Edit and Undo. Review comments offer Send to Lead too, with the file, the lines and the replies attached.
+
+#### A terminal per worktree, each on its own port
+<!-- gb area=scripts pr=2298,2290,2267 -->
+
+The Terminal panel has one tab per worktree, named after its project. Above the prompt it suggests one command, such as the failing test of a check or the install a changed lockfile needs, with Run or Add to prompt. A command that migrates, deploys or deletes, or that comes from a log, is typed in and waits for you to press Enter.
+
+Terminals and scripts in a worktree get a port of their own, so two worktrees of one repository no longer start their dev servers on the same port. Scripts also finds Make targets, just recipes, Cargo aliases and Python project scripts.
+
+#### Manage a project's worktrees from its block
+<!-- gb area=storage image=worktrees pr=2293 -->
+
+Worktrees on a project block lists every worktree of that project, from every session, with its branch, size and state, such as Clean, 2 ahead or Unsaved changes. Remove one from its row with Undo, or press Remove 2 safe to clear only the folders Goodboy can remove safely. New branch adds a worktree to the session you pick.
+
+#### The Context tab shows what each agent receives
+<!-- gb area=agents pr=2285 -->
+
+A new card, What Goodboy sends, lists the parts of the shared brief each role gets, each with its size in tokens. Under Context window, each running agent shows how full its context is.
+
+### Improved
+
+#### The session overview reads top to bottom
+<!-- gb area=sessions image=overview pr=2284,2276,2292 -->
+
+The overview reads in one order: a short state sentence per project, Needs you, Now, Next, Projects and Activity. Needs you puts the move waiting on you on top with its reason. Now lists the agents at work and what each one does. Next holds up to three moves, and Projects shows one block per project with its branches inside. The tiles and group counts are gone.
+
+Next suggests more: run the failing test of a check, run a script a changed lockfile or migration needs, rerun a check that timed out, ask a quiet Implementer what blocks it, and remove a worktree once its pull request merged. Enter runs the move in front, J and K move between moves, and S puts one off.
+
+#### Failing checks show their log in place
+<!-- gb area=review pr=2286 -->
+
+A branch row opens the tab its state names: Checks when a check fails, Comments when changes are requested, Commits for a conflict. Its chip names the first failing check. On Checks, a failing GitHub Actions check shows the end of its log under its name, with Open on GitHub for the rest.
+
+#### Activity has its own page with filters
+<!-- gb area=sessions pr=2288,2267 -->
+
+Open activity on the overview opens the full log as a page of its own, and Back returns to the overview. Filter it by kind (Agents, Branches, Checks, Scripts, Context) or by project. Script runs show there with their result and project, and they stay after a restart.
+
+#### Board cards say what the agent is doing
+<!-- gb area=sessions pr=2287,2266,2304 -->
+
+A Board card, its hover card, the Now rows and Sessions say what the agent does right now, such as Running pnpm test in payments-api. Each row in Sessions also counts what waits on you in that session.
+
+#### Mount and unmount projects with Undo
+<!-- gb area=sessions pr=2289,2309 -->
+
+Mount a folder at the head of Projects adds a folder an agent asked for, a folder of the workspace, or a new one, with Undo. Unmount takes the place of Remove from session, asks whether to keep the files or remove the worktree, and offers Undo.
+
+#### Arrange panels by dragging them
+<!-- gb area=app pr=2270,2263 -->
+
+Drag a panel by its head to put it left, right, above or below another, or to swap the two. Move Terminal panel in Search or run does the same from the keyboard, and Reset panel layout puts everything back with Undo. A plan or diff panel shrinks to sit beside the page before it covers it, and the page stays clickable when it does.
+
+#### J, K, Enter and / work in every list
+<!-- gb area=app pr=2279 -->
+
+In Chat, Runs, Artifacts, Workflows, Terminal and Monitoring, J and K move between rows and Enter opens the one in focus. The slash key jumps to the search of the list, on any keyboard layout.
+
+#### Leads and their agents stop at your limits
+<!-- gb area=agents pr=2262 -->
+
+A Lead with a spend limit runs until it reaches that limit, not until a count of returns. An agent of a Lead has no 30 minute deadline: it waits on a question as long as you need, and reads Needs you after 30 minutes without output. Leads use the same state words as every other row: Running, Needs you, Idle, Stopped and Done.
+
+#### A failed check wakes its Implementer
+<!-- gb area=review pr=2281 -->
+
+While a check runs, Goodboy reads its pull request more often, so the result shows sooner. When a check fails, the Implementer working on that worktree gets one message asking for a fix, and nothing is pushed for you.
+
+#### Failed actions keep the row and offer Retry
+<!-- gb area=app pr=2261,2272,2273 -->
+
+A one-click action that fails leaves its row as it was and adds one line to the bell with Retry. Several failures of one action fold into one line with a count. A page that fails to load names what it could not load, with Retry and Details, and waiting shows skeleton rows instead of the word Loading.
+
+#### Stop acts at once and offers Continue
+<!-- gb area=agents pr=2271,2264 -->
+
+Stop all running agents, Stop run and Stop drafting no longer ask first, and their toast offers Continue for the agents that stopped. Archive run and Remove limit act at once with Undo. The session right click folds its rows into Open and Copy submenus.
+
+### Fixed
+
+- A screenshot dragged straight from a screenshot tool onto a message box attaches again. A file that still cannot be read says why. <!-- gb area=sessions pr=2310 -->
+- Write review used to go to the first pull request of the session. It now goes to the one of the branch on screen and names it under the form. <!-- gb area=review pr=2259 -->
+- Remove from session in a project menu often did nothing. Unmount now works from the menu and the project head. <!-- gb area=sessions pr=2269 -->
+- Mark all as read in the bell clears only the list you look at, and a failed switch of workspace scope keeps the list you had. <!-- gb area=inbox pr=2278,2254 -->
+- Impact shows a dash and not loaded for a figure that failed to load, instead of 0. <!-- gb area=app screen=impact pr=2254 -->
+- A right-click menu closes the session hover card, which used to cover its submenus. <!-- gb area=sessions pr=2254 -->
+- A long menu or popover scrolls inside the window instead of being cut off. <!-- gb area=app pr=2256 -->
+- A message sent before a chat finished loading no longer drops the earlier turns, and a failed stop, save or delete keeps your draft. <!-- gb area=sessions pr=2251 -->
+- Chat: archiving shows one toast with Undo, the chat below takes the place of the one you archived, and a first visit opens a new chat. <!-- gb area=sessions pr=2258 -->
+- Esc twice in the Chat or Ask box stops the reply, as it does in a session. <!-- gb area=sessions pr=2260 -->
+- List pages share one head: the title row holds one action, and search, filters and grouping sit in a row under it. <!-- gb area=app pr=2268 -->
+- The Goodboy mark at the foot of the rail is no longer a button. Help and What's new open from Help in the menu bar or from Search or run. <!-- gb area=app pr=2275,2306 -->
+- Settings no longer shows Typed requests under Models, a switch that changed nothing. <!-- gb area=settings pr=2257 -->
+
 ## Goodboy v0.40.2
 
 The live demo runs on the new frame and plays its chapters back to back, and every guide picture shows the app as it is today.

@@ -13,7 +13,6 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { selectSessionDraft } from '../../../../../store/slices/sessionDraft/selectSessionDraft';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { createLatestOnly } from '../../../../../store/runtime/state-writes/latestOnly';
-import { READ_FAILED } from '../../../../../store/slices/notifications/errorRecovery';
 import { agentKindPalette, visibleAgentKinds, type AgentKind } from '../../../agent-kind';
 import { useStartFromDraft } from '../../SessionKickoff/useStartFromDraft';
 import { roleRunOf } from '../../../startRun/roleRunOf';
@@ -25,8 +24,6 @@ import { toAttachmentInputs } from '../../../../attachments/pendingAttachment';
 import { applyStartEdits } from '../../../startRun/applyStartEdits';
 import { runAutonomyOf } from '../../../../workflows/runAutonomy';
 import { guidanceToSendOf } from '../../../startRun/guidanceToSendOf';
-import { runDefaultOf } from '../../../startRun/runDefaultOf';
-import { runDefaultKey } from '../../../startRun/runDefaultSetting';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
 import { suggestedWorkflowOf } from '../../../startRun/suggestedWorkflowOf';
 import { workspaceGuidanceOf } from '../../../startRun/workspaceGuidanceOf';
@@ -109,22 +106,18 @@ type AskedParams = {
 
 type FactsParams = {
   readonly text: string;
-  readonly workspaceId: WorkspaceId;
   readonly session: Session | null;
   readonly fileCount: number;
   readonly hasPickedTask: boolean;
   readonly presets: ReadonlyArray<Workflow>;
-  readonly settings: Readonly<Record<string, string | undefined>>;
 };
 
 const factsOf = ({
   text,
-  workspaceId,
   session,
   fileCount,
   hasPickedTask,
   presets,
-  settings,
 }: FactsParams): RunRouteFacts => {
   const state = useAppStore.getState();
   const sessionId = session?.id ?? null;
@@ -139,7 +132,6 @@ const factsOf = ({
       .filter((kind) => kind !== 'auto')
       .map((kind) => ({ kind, label: agentKindPalette({ kind }).label })),
     lastPresetId: lastPresetRun?.workflowId ?? null,
-    defaultShape: runDefaultOf({ settings, workspaceId, sessionId }),
     hasTask:
       hasPickedTask ||
       (sessionId !== null && (state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY).length > 0),
@@ -266,30 +258,6 @@ export const useStartRun = ({
   const clearFilesRef = useRef(promptFiles.clear);
   clearFilesRef.current = promptFiles.clear;
   const templates = useAppStore((state) => state.phaseTemplates[workspaceId]);
-  const workspaceDefaultKey = runDefaultKey({ scope: { kind: 'workspace', workspaceId } });
-  const sessionDefaultKey =
-    sessionId === null ? null : runDefaultKey({ scope: { kind: 'session', sessionId } });
-  const workspaceDefaultRaw = useAppStore((state) => state.settings[workspaceDefaultKey]);
-  const sessionDefaultRaw = useAppStore((state) =>
-    sessionDefaultKey === null ? undefined : state.settings[sessionDefaultKey],
-  );
-  const settings = useMemo(
-    () => ({
-      [workspaceDefaultKey]: workspaceDefaultRaw,
-      ...(sessionDefaultKey !== null && { [sessionDefaultKey]: sessionDefaultRaw }),
-    }),
-    [sessionDefaultKey, sessionDefaultRaw, workspaceDefaultKey, workspaceDefaultRaw],
-  );
-  const loadSetting = useAppStore((state) => state.loadSetting);
-  const reportError = useAppStore((state) => state.reportError);
-  useEffect(() => {
-    Promise.all([
-      loadSetting(workspaceDefaultKey),
-      ...(sessionDefaultKey === null ? [] : [loadSetting(sessionDefaultKey)]),
-    ]).catch((cause: unknown) => {
-      void reportError({ recovery: READ_FAILED, title: RUN_ROUTE_COPY.readFailed, error: cause });
-    });
-  }, [loadSetting, reportError, sessionDefaultKey, workspaceDefaultKey]);
   const sessionRow = useAppStore((state) =>
     sessionId === null ? null : (sessionById(state.sessions, sessionId) ?? null),
   );
@@ -307,16 +275,14 @@ export const useStartRun = ({
     }
     const facts = factsOf({
       text: asked,
-      workspaceId,
       session: sessionRow,
       fileCount: file === null ? 0 : 1,
       hasPickedTask: pickedCount > 0,
       presets,
-      settings,
     });
     const result = runAsRouteOf({ runAs, facts });
     return { route: result, suggestion: suggestedWorkflowOf({ facts, result }) };
-  }, [file, pickedCount, presets, role, runAs, sessionRow, settings, text, workspaceId]);
+  }, [file, pickedCount, presets, role, runAs, sessionRow, text]);
   const slot = useMemo(
     (): RunModelSlot => (role === null ? runModelSlotOf({ result: route }) : AUTO_AGENT_SLOT),
     [role, route],
@@ -388,14 +354,12 @@ export const useStartRun = ({
               runAs,
               facts: factsOf({
                 text: asked,
-                workspaceId,
                 session,
                 fileCount: file === null ? 0 : 1,
                 hasPickedTask: picked.length > 0,
                 presets: (state.phaseTemplates[workspaceId] ?? NO_WORKFLOWS).filter(
                   (workflow) => workflow.isPreset === true,
                 ),
-                settings: state.settings,
               }),
             })
           : roleRunOf({ text: asked, role });

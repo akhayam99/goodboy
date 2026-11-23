@@ -60,7 +60,6 @@ export const RUN_ROUTE_COPY = {
   inPlace: 'Changes this run before its first step.',
   withPreset: 'With the workflow',
   changeFailed: "Couldn't change the run",
-  readFailed: "Couldn't read how new runs start",
   findings: 'What an earlier run found:',
   why: {
     picked: 'you picked it',
