@@ -1,14 +1,16 @@
 import type { AppState } from '../../types';
-import { deskStackOf } from './deskStackOf';
 import { isPairedSlot } from './isPairedSlot';
 import { isWorkspaceTool } from './isWorkspaceTool';
 import { selectDrawerPanel } from './selectDrawerPanel';
 import { selectOpenDrawer } from './selectOpenDrawer';
 import { sharesSlot } from './sharesSlot';
+import { shownDeskStackOf } from './shownDeskStackOf';
 import type { OpenDrawer } from './state';
 
 type Params = {
-  readonly state: Parameters<typeof selectDrawerPanel>[0] & Pick<AppState, 'drawerBack'>;
+  readonly state: Parameters<typeof selectDrawerPanel>[0] &
+    Pick<AppState, 'drawerBack'> &
+    Partial<Pick<AppState, 'sessionFace'>>;
 };
 
 export const selectSlotBack = ({ state }: Params): OpenDrawer | null => {
@@ -18,7 +20,7 @@ export const selectSlotBack = ({ state }: Params): OpenDrawer | null => {
     top === null ||
     back === null ||
     isPairedSlot({ top: state.drawer ?? null, back }) ||
-    deskStackOf({ top: state.drawer ?? null, back }) !== null
+    shownDeskStackOf({ state }) !== null
   ) {
     return null;
   }

@@ -1,5 +1,5 @@
 import { useAppStore } from '../../store';
-import { deskStackOf } from '../../store/slices/drawer/deskStackOf';
+import { shownDeskStackOf } from '../../store/slices/drawer/shownDeskStackOf';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 import type { OpenDrawer } from '../../store/slices/drawer/state';
 import { DeskAgent } from '../../features/session/components/DeskAgent';
@@ -11,12 +11,8 @@ type CloseParams = {
 };
 
 export const DeskDetailStack = () => {
-  const agent = useAppStore(
-    (state) => deskStackOf({ top: state.drawer ?? null, back: state.drawerBack ?? null })?.agent,
-  );
-  const pr = useAppStore(
-    (state) => deskStackOf({ top: state.drawer ?? null, back: state.drawerBack ?? null })?.pr,
-  );
+  const agent = useAppStore((state) => shownDeskStackOf({ state })?.agent);
+  const pr = useAppStore((state) => shownDeskStackOf({ state })?.pr);
   const closeEntry = useAppStore((state) => state.closeDrawerEntry);
   if (agent === undefined || pr === undefined) {
     return null;
@@ -33,6 +29,7 @@ export const DeskDetailStack = () => {
           <DeskAgent
             sessionId={agent.sessionId}
             agentId={agent.payload.agentId}
+            focus={agent.payload}
             onClose={() => close({ entry: agent })}
           />
         </PanelBoundary>

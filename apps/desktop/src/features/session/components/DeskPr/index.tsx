@@ -1,13 +1,24 @@
-import { Button, DrawerFrame, HeaderActions, SegmentedTabs, cn, PANE_RHYTHM } from '@goodboy/ui';
-import type { MountId, PrCheckRun, PrComment, SessionId } from '@goodboy/types';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
+import {
+  Button,
+  DrawerFrame,
+  ErrorStrip,
+  HeaderActions,
+  SegmentedTabs,
+  cn,
+  PANE_RHYTHM,
+} from '@goodboy/ui';
+import type { MountId, PrCheckRun, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { PullRequestDrawerTab } from '../../../../store/slices/drawer/state';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { ChecksFailedNotice } from '../../../branch/components/ChecksFailedNotice';
 import { DeskPrChecks } from './DeskPrChecks';
 import { DeskPrConversation } from './DeskPrConversation';
 import { DESK_PR_COPY } from './deskPrCopy';
+import { useDeskPrSource } from './useDeskPrSource';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -28,8 +39,6 @@ type PageParams = {
 
 const NO_CHECKS: ReadonlyArray<PrCheckRun> = [];
 
-const NO_COMMENTS: ReadonlyArray<PrComment> = [];
-
 const TABS = [
   { value: 'checks', label: DESK_PR_COPY.checks },
   { value: 'conversation', label: DESK_PR_COPY.conversation },
@@ -39,13 +48,8 @@ const TABS = [
 }>;
 
 export const DeskPr = ({ sessionId, mountId, tab, check, onClose }: Props) => {
-  const pr = useAppStore((state) => state.mountGithub[mountId]?.pr ?? null);
-  const branch = useAppStore((state) => state.mountGithub[mountId]?.branch ?? null);
-  const checks = useAppStore((state) => state.mountGithub[mountId]?.detail?.checks ?? NO_CHECKS);
-  const comments = useAppStore(
-    (state) => state.mountGithub[mountId]?.detail?.comments ?? NO_COMMENTS,
-  );
-  const isLoading = useAppStore((state) => state.mountGithub[mountId]?.detailLoading === true);
+  const source = useDeskPrSource({ sessionId, mountId });
+  const pr = source.request;
   const mountPath = useAppStore(
     (state) =>
       (state.sessionProjectMounts[sessionId] ?? EMPTY_ARRAY).find(
@@ -62,6 +66,10 @@ export const DeskPr = ({ sessionId, mountId, tab, check, onClose }: Props) => {
     });
   const openPage = ({ tab: pageTab, threadId = null }: PageParams) =>
     navigate({ to: branchPlace({ sessionId, mountPath, tab: pageTab, threadId }) });
+  const hostLabel =
+    source.host === 'gitlab' || source.host === 'bitbucket'
+      ? REVIEW_SOURCE_LABEL[source.host]
+      : null;
   const action =
     pr === null ? undefined : (
       <HeaderActions
@@ -76,11 +84,74 @@ export const DeskPr = ({ sessionId, mountId, tab, check, onClose }: Props) => {
         }
       />
     );
+  const checksBody = () => {
+    const view = source.checks;
+    if (view.kind === 'failed' || view.kind === 'denied') {
+      return (
+        <ChecksFailedNotice
+          isChecking={source.isChecking}
+          error={view.error}
+          onRetry={source.retry}
+        />
+      );
+    }
+    if (view.kind === 'host') {
+      return (
+        <p className="text-body text-muted-foreground">
+          {DESK_PR_COPY.hostChecks({ host: hostLabel ?? '' })}
+        </p>
+      );
+    }
+    return (
+      <DeskPrChecks
+        sessionId={sessionId}
+        mountId={mountId}
+        checks={view.kind === 'ready' ? view.checks : NO_CHECKS}
+        check={check}
+        prUrl={pr?.url ?? ''}
+        host={hostLabel === null ? 'github' : source.host}
+        isLoading={view.kind === 'loading'}
+      />
+    );
+  };
+  const conversationBody = () => {
+    const comments = source.comments;
+    if (comments.kind === 'host') {
+      return (
+        <p className="text-body text-muted-foreground">
+          {DESK_PR_COPY.hostComments({ host: hostLabel ?? '' })}
+        </p>
+      );
+    }
+    if (comments.kind === 'failed') {
+      return (
+        <ErrorStrip
+          labels={['comments']}
+          error={new Error(comments.error ?? '')}
+          isBusy={source.isChecking}
+          onRetry={source.retry}
+        />
+      );
+    }
+    if (comments.kind === 'loading') {
+      return (
+        <p role="status" className="text-body text-muted-foreground">
+          {DESK_PR_COPY.readingComments}
+        </p>
+      );
+    }
+    return (
+      <DeskPrConversation
+        comments={comments.comments}
+        onOpen={(comment) => openPage({ tab: 'comments', threadId: comment.threadId ?? null })}
+      />
+    );
+  };
   return (
     <DrawerFrame
-      title={pr === null ? DESK_PR_COPY.title : `#${pr.number} ${pr.title}`}
+      title={pr === null || pr.title === '' ? DESK_PR_COPY.title : `#${pr.number} ${pr.title}`}
       icon={CONCEPT_ICONS.pr}
-      {...(branch === null ? {} : { meta: branch })}
+      {...(source.branch === null ? {} : { meta: source.branch })}
       action={action}
       toolbar={
         pr === null ? undefined : (
@@ -100,19 +171,9 @@ export const DeskPr = ({ sessionId, mountId, tab, check, onClose }: Props) => {
         {pr === null ? (
           <p className="text-body text-muted-foreground">{DESK_PR_COPY.noPullRequest}</p>
         ) : tab === 'checks' ? (
-          <DeskPrChecks
-            sessionId={sessionId}
-            mountId={mountId}
-            checks={checks}
-            check={check}
-            prUrl={pr.url}
-            isLoading={isLoading}
-          />
+          checksBody()
         ) : (
-          <DeskPrConversation
-            comments={comments}
-            onOpen={(comment) => openPage({ tab: 'comments', threadId: comment.threadId ?? null })}
-          />
+          conversationBody()
         )}
       </div>
     </DrawerFrame>

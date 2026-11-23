@@ -6,9 +6,12 @@ import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import type { TerminalTabId } from '../../../shared/types/terminal';
 import { importStore, resetStoryStore, type StoryStore } from '../../storyHarness';
+import { deskAgentIdOf } from './deskAgentIdOf';
+import { deskDetailOf } from './deskDetailOf';
 import { deskStackOf } from './deskStackOf';
 import { selectDetailDrawer } from './selectDetailDrawer';
 import { selectSlotBack } from './selectSlotBack';
+import { shownDeskStackOf } from './shownDeskStackOf';
 import type { DrawerRequest } from './state';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -73,7 +76,36 @@ describe('the detail place on the Desk', () => {
     store.setState({
       sessions: [aSession({ id: SESSION_ID }), aSession({ id: OTHER_SESSION_ID })],
       currentSessionId: SESSION_ID,
+      sessionFace: { [SESSION_ID]: 'desk' },
     });
+  });
+
+  it('keeps the Overview on one reader with a back chip, never the pair', () => {
+    store.setState({ sessionFace: { [SESSION_ID]: 'overview' } });
+    store.getState().openDrawer(agentOf({ id: 'implementer' }));
+    store.getState().openDrawer(PR);
+
+    expect(shownDeskStackOf({ state: store.getState() })).toBeNull();
+    expect(selectSlotBack({ state: store.getState() })?.kind).toBe('transcript');
+  });
+
+  it('selects and saves only the agent the detail shows, never one left in the back chip', () => {
+    store.getState().openDrawer(agentOf({ id: 'implementer' }));
+    store.getState().openDrawer(SCRIPTS);
+
+    expect(selectSlotBack({ state: store.getState() })?.kind).toBe('transcript');
+    expect(deskAgentIdOf({ state: store.getState(), sessionId: SESSION_ID })).toBeNull();
+    expect(deskDetailOf({ state: store.getState(), sessionId: SESSION_ID })).toEqual([]);
+  });
+
+  it('selects and saves both readers of the pair the Desk shows', () => {
+    store.getState().openDrawer(agentOf({ id: 'implementer' }));
+    store.getState().openDrawer(PR);
+
+    expect(deskAgentIdOf({ state: store.getState(), sessionId: SESSION_ID })).toBe('implementer');
+    expect(
+      deskDetailOf({ state: store.getState(), sessionId: SESSION_ID }).map((entry) => entry.kind),
+    ).toEqual(['transcript', 'pull-request']);
   });
 
   it('holds one tool plus the agent and the pull request together', () => {

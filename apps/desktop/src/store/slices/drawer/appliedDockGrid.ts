@@ -14,6 +14,7 @@ type ApplyParams = SliceDeps & {
   readonly sessionId: SessionId;
   readonly raw: string | null;
   readonly face: SessionFace;
+  readonly isDeskShown: boolean;
   readonly claim: LatestClaim;
   readonly before: DrawerGrid;
   readonly isSavedThisRun: boolean;
@@ -25,6 +26,7 @@ export const appliedDockGrid = ({
   sessionId,
   raw,
   face,
+  isDeskShown,
   claim,
   before,
   isSavedThisRun,
@@ -45,9 +47,7 @@ export const appliedDockGrid = ({
       entry !== null && !isWorkspaceTool({ content: entry }) && entry.sessionId === sessionId,
   );
   const detail =
-    raw === null || isDetailTaken || face !== 'desk'
-      ? []
-      : parseStoredDeskDetail({ raw, sessionId });
+    raw === null || isDetailTaken || !isDeskShown ? [] : parseStoredDeskDetail({ raw, sessionId });
   set(
     detail.reduce<DrawerSliceState>(
       (current, request) =>

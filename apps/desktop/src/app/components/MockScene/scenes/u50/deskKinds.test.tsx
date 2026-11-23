@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
@@ -119,6 +119,38 @@ describe('the u50 desk kinds scenes', () => {
     const pair = deskStackOf({ top: state.drawer, back: state.drawerBack });
     expect(pair?.pr.payload.tab).toBe('conversation');
     expect(pair?.agent.kind).toBe('transcript');
+  });
+
+  it('reveals the failed tool call when Failed here asks again for the open agent', async () => {
+    const stack = await show({ name: 'u50-desk-kinds-dark' });
+    const body = panelOf({ stack, kind: 'agent' }).querySelector('[data-desk-agent]');
+    if (body === null) {
+      throw new Error('The agent body is not drawn');
+    }
+    const toolUseId = 'toolu-harborline-failed';
+    const row = document.createElement('div');
+    row.setAttribute('data-tool-use-ids', toolUseId);
+    body.append(row);
+    const pair = deskStackOf({
+      top: useAppStore.getState().drawer,
+      back: useAppStore.getState().drawerBack,
+    });
+    if (pair === null) {
+      throw new Error('The desk pair should be open');
+    }
+    const scroll = vi.mocked(Element.prototype.scrollIntoView);
+    scroll.mockClear();
+
+    act(() => {
+      useAppStore.getState().openDrawer({
+        kind: 'transcript',
+        sessionId: pair.agent.sessionId,
+        payload: { agentId: pair.agent.payload.agentId, toolUseId },
+      });
+    });
+
+    await waitFor(() => expect(scroll.mock.contexts).toContain(row));
+    expect(document.querySelector('[data-desk-stack]')).not.toBeNull();
   });
 
   it('closes the pull request with its X and leaves the agent alone in the detail', async () => {

@@ -38,17 +38,20 @@ export const recallDockGrid = ({ set, get }: SliceDeps) => {
       return null;
     }
     const face = storedFaceOf({ raw: result.value });
+    const isFaceKept = faceSelections.read({ sessionId }) === selection;
+    const shownFace = isFaceKept ? face : (get().sessionFace[sessionId] ?? 'overview');
     const applied = appliedDockGrid({
       set,
       get,
       sessionId,
       raw: result.value,
       face,
+      isDeskShown: shownFace === 'desk',
       claim,
       before,
       isSavedThisRun,
     });
-    if (claim.isCurrent() && faceSelections.read({ sessionId }) === selection) {
+    if (claim.isCurrent() && isFaceKept) {
       set((state) => ({ sessionFace: { ...state.sessionFace, [sessionId]: face } }));
     }
     return applied;

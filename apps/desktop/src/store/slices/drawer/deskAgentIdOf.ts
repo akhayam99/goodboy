@@ -1,16 +1,9 @@
-import type { AgentId, SessionId } from '@goodboy/types';
-import type { DrawerSliceState } from './state';
+import type { AgentId } from '@goodboy/types';
+import { deskDetailOf } from './deskDetailOf';
 
-type Params = {
-  readonly state: Partial<Pick<DrawerSliceState, 'drawer' | 'drawerBack'>>;
-  readonly sessionId: SessionId;
-};
+type Params = Parameters<typeof deskDetailOf>[0];
 
 export const deskAgentIdOf = ({ state, sessionId }: Params): AgentId | null => {
-  for (const entry of [state.drawer ?? null, state.drawerBack ?? null]) {
-    if (entry !== null && entry.kind === 'transcript' && entry.sessionId === sessionId) {
-      return entry.payload.agentId;
-    }
-  }
-  return null;
+  const agent = deskDetailOf({ state, sessionId }).find((entry) => entry.kind === 'transcript');
+  return agent?.kind === 'transcript' ? agent.payload.agentId : null;
 };

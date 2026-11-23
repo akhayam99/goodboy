@@ -1,5 +1,14 @@
-import { Button, DrawerFrame, HeaderActions, cn, PANE_RHYTHM } from '@goodboy/ui';
+import { useEffect, useRef } from 'react';
+import {
+  Button,
+  DrawerFrame,
+  HeaderActions,
+  cn,
+  PANE_RHYTHM,
+  appScrollIntoView,
+} from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
+import type { DeskAgentEntry } from '../../../../store/slices/drawer/deskStackOf';
 import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -8,6 +17,7 @@ import { ChatView } from '../../../chat/components/ChatView';
 import { TranscriptReplyDock } from '../../../chat/components/AgentTranscriptDrawer/TranscriptReplyDock';
 import { TRANSCRIPT_DRAWER_COPY } from '../../../chat/components/AgentTranscriptDrawer/transcriptDrawerCopy';
 import { useTranscriptReply } from '../../../chat/components/AgentTranscriptDrawer/useTranscriptReply';
+import { useRevealToolCall } from '../../../chat/components/AgentTranscriptDrawer/useRevealToolCall';
 import { useWorkOf } from '../../../live-state/hooks/useWorkOf';
 import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
 import { DESK_AGENT_COPY } from './deskAgentCopy';
@@ -15,10 +25,24 @@ import { DESK_AGENT_COPY } from './deskAgentCopy';
 type Props = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
+  readonly focus: DeskAgentEntry['payload'];
   readonly onClose: () => void;
 };
 
-export const DeskAgent = ({ sessionId, agentId, onClose }: Props) => {
+export const DeskAgent = ({ sessionId, agentId, focus, onClose }: Props) => {
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const turn = focus.turn ?? null;
+  useRevealToolCall({ bodyRef, toolUseId: focus.toolUseId ?? null, request: focus });
+  useEffect(() => {
+    if (turn === null) {
+      return;
+    }
+    appScrollIntoView({
+      element: bodyRef.current?.querySelector(`[data-turn-heading="${turn}"]`),
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }, [turn, focus]);
   const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
   const agent = useAppStore(
     (state) =>
@@ -97,7 +121,7 @@ export const DeskAgent = ({ sessionId, agentId, onClose }: Props) => {
           {TRANSCRIPT_DRAWER_COPY.gone}
         </p>
       ) : (
-        <div data-desk-agent="" className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div ref={bodyRef} data-desk-agent="" className="flex min-h-0 min-w-0 flex-1 flex-col">
           <ChatView
             session={session}
             agentId={agentId}

@@ -192,6 +192,34 @@ describe('the agent and the pull request saved with the desk', () => {
     expect(state().drawer?.kind).toBe('scripts');
   });
 
+  it('opens no agent or pull request when the user picks the overview during the read', async () => {
+    db.rows.set(S1, {
+      grid: storedDockGridOf({ grid: GRID, face: 'desk', detail: [AGENT, PR] }),
+      savedAt: 1,
+    });
+    db.holdLoads = true;
+
+    await goTo({ sessionId: S1 });
+    state().setSessionFace({ sessionId: S1, face: 'overview' });
+    db.heldLoads.splice(0).forEach((release) => release());
+    await settle();
+
+    expect(state().sessionFace[S1] ?? 'overview').toBe('overview');
+    expect([state().drawer?.kind, state().drawerBack?.kind]).not.toContain('transcript');
+    expect([state().drawer?.kind, state().drawerBack?.kind]).not.toContain('pull-request');
+  });
+
+  it('saves no agent that only waits in the back chip', async () => {
+    await goTo({ sessionId: S1 });
+    state().setSessionFace({ sessionId: S1, face: 'desk' });
+    state().openDrawer(AGENT);
+    state().openDrawer({ kind: 'scripts', sessionId: S1, payload: null });
+    await settle();
+
+    expect(state().drawerBack?.kind).toBe('transcript');
+    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}').detail ?? []).toEqual([]);
+  });
+
   it('gives each session its own detail', async () => {
     db.rows.set(S1, {
       grid: storedDockGridOf({ grid: GRID, face: 'desk', detail: [AGENT, PR] }),

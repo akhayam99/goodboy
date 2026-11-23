@@ -21,7 +21,7 @@ import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
-import { deskStackOf } from '../../store/slices/drawer/deskStackOf';
+import { shownDeskStackOf } from '../../store/slices/drawer/shownDeskStackOf';
 import { DeskAgent } from '../../features/session/components/DeskAgent';
 import { DeskPr } from '../../features/session/components/DeskPr';
 import { DeskDetailStack } from './DeskDetailStack';
@@ -141,6 +141,7 @@ const renderDrawer = ({
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
           agentId={drawer.payload.agentId}
+          focus={drawer.payload}
           onClose={closeDrawer}
         />
       ) : (
@@ -227,10 +228,7 @@ export const DrawerHost = ({ slot = 'top' }: Props) => {
       drawer !== null && drawer.sessionId !== null && s.sessionFace[drawer.sessionId] === 'desk',
   );
   const isDeskStack = useAppStore(
-    (s) =>
-      slot === 'detail' &&
-      tool === null &&
-      deskStackOf({ top: s.drawer ?? null, back: s.drawerBack ?? null }) !== null,
+    (s) => slot === 'detail' && tool === null && shownDeskStackOf({ state: s }) !== null,
   );
   const isReading = useAppStore((s) => {
     const open = hostedDrawerOf({ state: s, slot, tool });
