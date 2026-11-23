@@ -22,6 +22,8 @@ import {
 } from '../../../features/attachments/pendingAttachment';
 import { countNoun } from '../../utils/countNoun';
 import { pastedFilesOf } from './pastedFilesOf';
+import { dropFailureCauseOf } from './dropFailureCauseOf';
+import { dropFailureNotice, type GroupedCause } from './dropFailureNotice';
 
 export type PersistArgs = {
   readonly id: string;
@@ -176,7 +178,7 @@ export const usePendingAttachments = ({
       });
     }
     const dropped: PendingAttachment[] = [];
-    const rejected: string[] = [];
+    const rejected = new Map<GroupedCause, string[]>();
     for (const path of supported) {
       const name = droppedFileName({ path });
       try {
@@ -189,16 +191,17 @@ export const usePendingAttachments = ({
         const id = crypto.randomUUID();
         const relPath = await persist({ id, fileName: result.fileName, blob });
         dropped.push({ id, fileName: result.fileName, mimeType: result.mimeType, blob, relPath });
-      } catch {
-        rejected.push(name);
+      } catch (error: unknown) {
+        const cause = dropFailureCauseOf({ error });
+        if (cause === 'too-large') {
+          showToast({ kind: 'warning', message: tooLargeNotice({ fileName: name }) });
+          continue;
+        }
+        rejected.set(cause, [...(rejected.get(cause) ?? []), name]);
       }
     }
-    if (rejected.length > 0) {
-      const label =
-        rejected.length === 1
-          ? `Couldn't attach ${rejected[0]}. Drop it again or use Attach files.`
-          : `Couldn't read ${rejected.length} files.`;
-      showToast({ kind: 'warning', message: label });
+    for (const [cause, names] of rejected) {
+      showToast({ kind: 'warning', message: dropFailureNotice({ cause, names }) });
     }
     admit(dropped);
   };
