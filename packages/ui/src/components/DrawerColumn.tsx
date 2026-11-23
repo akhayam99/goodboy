@@ -2,7 +2,7 @@ import { DrawerContentContext } from '../drawerContentContext';
 import { useDrawerColumnWidth } from '../useDrawerColumnWidth';
 import { useRef } from 'react';
 import { DockLaneContext } from '../dockLaneContext';
-import { dockSolverOf } from '../dockSolverOf';
+import { dockSolverOf } from '../dockLayout';
 import { useDockLaneBox } from '../useDockLaneBox';
 import { useDockFrame } from '../useDockFrame';
 import { pageFocusPropsOf } from '../pageFocusPropsOf';
