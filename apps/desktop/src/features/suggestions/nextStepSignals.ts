@@ -94,6 +94,7 @@ export type NextStepSignals = {
   readonly trackerMoves?: ReadonlyArray<TrackerMove>;
   readonly seriesStrips?: ReadonlyArray<SeriesStrip>;
   readonly settledBranches?: SettledBranches;
+  readonly settledMountIds?: ReadonlyArray<MountId>;
   readonly checkChains?: ReadonlyArray<SuggestionCheckChain>;
   readonly isActivityShown?: boolean;
   readonly hasGoal?: boolean;

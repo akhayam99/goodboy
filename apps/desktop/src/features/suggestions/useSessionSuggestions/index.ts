@@ -477,6 +477,7 @@ export const useNextStepSignalsFrom = ({
         : [],
       checkChains,
       settledBranches,
+      settledMountIds: completedMountIds,
       cleanupProposals: cleanupProposals.map((proposal) => ({
         requestId: proposal.requestId,
         mountId: proposal.mountId,
@@ -555,6 +556,7 @@ export const useNextStepSignalsFrom = ({
     trackerMoves,
     seriesStrips,
     settledBranches,
+    completedMountIds,
     demotedKinds,
     effectiveAgents,
     events,
