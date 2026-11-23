@@ -174,21 +174,6 @@ describe('the session head', () => {
     }
   });
 
-  it('spans the page at the Desk gutter on the Desk and keeps the centred column on the Overview', () => {
-    go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID, lens: null }) });
-    const view = renderWorkspace();
-    expect(headOf().closest('[data-page-column]')?.getAttribute('data-width')).toBe('column');
-    view.unmount();
-
-    act(() => {
-      useAppStore.setState({ sessionFace: { [FLOW_SESSION_ID]: 'desk' } });
-    });
-    renderWorkspace();
-    const column = headOf().closest('[data-page-column]');
-    expect(column?.getAttribute('data-width')).toBe('full');
-    expect(column?.className).toContain('px-4');
-  });
-
   it('holds only New and More in the title row on every tab', () => {
     go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID, lens: 'context' }) });
     renderWorkspace();

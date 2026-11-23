@@ -226,6 +226,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  (await import('./slices/agentQueue/queueStore')).forgetSavedQueues();
   stubStoryInvoke({ artifact_mirror_remove: true });
   const db = await openStorySqlite();
   await db.execute(
