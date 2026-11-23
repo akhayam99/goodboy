@@ -4,12 +4,10 @@ import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useAppStore, useSessions } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
-import { worktreesChannel } from '../../worktreesChannel';
 
 type Props = {
   readonly projectId: ProjectId;
   readonly projectName: string;
-  readonly repoRoot: string;
   readonly workspaceId: WorkspaceId;
   readonly hostSessionId: SessionId;
   readonly onClose: () => void;
@@ -20,7 +18,6 @@ const UNTITLED = 'Untitled session';
 export const NewBranchInSession = ({
   projectId,
   projectName,
-  repoRoot,
   workspaceId,
   hostSessionId,
   onClose,
@@ -42,6 +39,9 @@ export const NewBranchInSession = ({
   const pickedName = picked === undefined || picked.goal.trim() === '' ? UNTITLED : picked.goal;
 
   const create = async () => {
+    if (isBusy || picked === undefined) {
+      return;
+    }
     setIsBusy(true);
     try {
       const trimmed = branch.trim();
@@ -54,16 +54,6 @@ export const NewBranchInSession = ({
         title: `Couldn't create a new branch in ${projectName}`,
         error,
         sessionId,
-      });
-      return;
-    }
-    try {
-      await worktreesChannel.announce({ repoRoots: [repoRoot] });
-    } catch (error) {
-      await reportError({
-        recovery: CHECK_STATE,
-        title: "Couldn't tell the other windows about the worktrees",
-        error,
       });
     }
   };

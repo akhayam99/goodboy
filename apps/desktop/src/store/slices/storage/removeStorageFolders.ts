@@ -107,11 +107,16 @@ const removeArchived = async ({
 };
 
 const removeInUse = async ({ get, folder, mode }: FolderRemovalParams): Promise<StorageRemoval> => {
-  const { sessionId, mountId } = folder;
-  if (sessionId === null || mountId === null) {
+  const { sessionId, mountId, revision } = folder;
+  if (sessionId === null || mountId === null || revision === null) {
     return { kind: 'failed', path: folder.path, message: 'This folder has no session mount' };
   }
-  const result = await get().removeMountWorktree({ sessionId, mountId, mode });
+  const result = await get().removeMountWorktree({
+    sessionId,
+    mountId,
+    mode,
+    expected: { worktreePath: folder.path, branch: folder.branch, revision },
+  });
   switch (result.kind) {
     case 'removed':
     case 'missing':
@@ -205,7 +210,7 @@ export const removeStorageFolders = (set: SetFn, get: GetFn) => {
       set((state) => ({ storageRemovingPaths: { ...state.storageRemovingPaths, [path]: true } }));
       const outcome = await removeOne({ get, folder, mode });
       outcomes.push(outcome);
-      if (outcome.kind === 'removed') {
+      if (outcome.kind === 'removed' && folder.origin !== 'in-use') {
         changedRoots.push(folder.repoRoot);
       }
       set((state) => {

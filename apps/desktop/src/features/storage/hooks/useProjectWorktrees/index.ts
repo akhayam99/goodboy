@@ -10,6 +10,10 @@ type Params = {
   readonly isOpen: boolean;
 };
 
+type ReloadParams = {
+  readonly shouldMeasure: boolean;
+};
+
 export type ProjectWorktreesView = ProjectWorktrees &
   Readonly<{
     measuringPath: string | null;
@@ -28,31 +32,40 @@ export const useProjectWorktrees = ({ repoRoot, isOpen }: Params): ProjectWorktr
     [folders, repoRoot, terminals],
   );
 
-  const refresh = useCallback(async () => {
-    try {
-      await loadStorage();
-      const paths = useAppStore
-        .getState()
-        .storageFolders.filter((folder) => folder.repoRoot === repoRoot)
-        .map((folder) => folder.path);
-      await measureStorageSizes({ paths });
-    } catch (error) {
-      await reportError({ recovery: READ_FAILED, title: "Couldn't read the worktrees", error });
-    }
-  }, [loadStorage, measureStorageSizes, repoRoot, reportError]);
+  const reload = useCallback(
+    async ({ shouldMeasure }: ReloadParams) => {
+      try {
+        await loadStorage({ shouldMeasureAll: false });
+        if (!shouldMeasure) {
+          return;
+        }
+        const paths = useAppStore
+          .getState()
+          .storageFolders.filter((folder) => folder.repoRoot === repoRoot)
+          .map((folder) => folder.path);
+        await measureStorageSizes({ paths });
+      } catch (error) {
+        await reportError({ recovery: READ_FAILED, title: "Couldn't read the worktrees", error });
+      }
+    },
+    [loadStorage, measureStorageSizes, repoRoot, reportError],
+  );
 
   useEffect(() => {
     if (!isOpen) {
       return;
     }
-    void refresh();
+    void reload({ shouldMeasure: true });
+  }, [isOpen, reload]);
+
+  useEffect(() => {
     let isLive = true;
     let unlisten: (() => void) | null = null;
     worktreesChannel
       .listen({
         onChange: ({ repoRoots }) => {
           if (repoRoots.includes(repoRoot)) {
-            void refresh();
+            void reload({ shouldMeasure: isOpen });
           }
         },
       })
@@ -70,7 +83,7 @@ export const useProjectWorktrees = ({ repoRoot, isOpen }: Params): ProjectWorktr
       isLive = false;
       unlisten?.();
     };
-  }, [isOpen, refresh, repoRoot, reportError]);
+  }, [isOpen, reload, repoRoot, reportError]);
 
   return { ...worktrees, measuringPath };
 };

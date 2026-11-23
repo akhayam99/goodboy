@@ -282,6 +282,19 @@ describe('the worktrees of a project', () => {
     );
   });
 
+  it('measures only the project worktrees when the sheet opens, never every folder', async () => {
+    const original = useAppStore.getState().measureStorageSizes;
+    const measure = vi.fn(original);
+    useAppStore.setState({ measureStorageSizes: measure });
+    await show();
+
+    const sheet = await openSheet();
+
+    await within(sheet).findByText('300 MB');
+    expect(measure).toHaveBeenCalledWith({ paths: [EXPORT.worktreePath] });
+    expect(measure.mock.calls.every(([params]) => params?.paths !== undefined)).toBe(true);
+  });
+
   it('asks in the row before it removes one worktree', async () => {
     await show();
     const sheet = await openSheet();
@@ -314,6 +327,32 @@ describe('the worktrees of a project', () => {
         (useAppStore.getState().sessionMounts[sessionId] ?? []).map((mount) => mount.branch),
       ).toContain(ROUNDING.branchName),
     );
+  });
+
+  it('does not create a branch on Enter while no session can take it', async () => {
+    await show();
+    const sheet = await openSheet();
+    fireEvent.click(within(sheet).getByRole('button', { name: 'New branch' }));
+    const creates = storySpies.createWorktree.mock.calls.length;
+    act(() => {
+      useAppStore.setState({
+        sessions: useAppStore
+          .getState()
+          .sessions.map((entry) =>
+            entry.id === sessionId ? { ...entry, archivedAt: entry.createdAt } : entry,
+          ),
+      });
+    });
+    expect(within(sheet).queryByRole('option')).toBeNull();
+
+    await act(async () => {
+      fireEvent.keyDown(within(sheet).getByRole('textbox', { name: 'Branch name' }), {
+        key: 'Enter',
+      });
+      await Promise.resolve();
+    });
+
+    expect(storySpies.createWorktree.mock.calls.length).toBe(creates);
   });
 
   it('drops a late reading of the worktrees when a newer one already landed', async () => {
@@ -349,6 +388,22 @@ describe('the worktrees of a project', () => {
 
     within(sheet).getByText('Clean');
     expect(within(sheet).queryByText('Unsaved changes')).toBeNull();
+  });
+
+  it('keeps the closed block count current when a branch control adds a worktree', async () => {
+    const announce = vi.spyOn(worktreesChannel, 'announce');
+    await show();
+    await screen.findByRole('button', { name: /^Worktrees in ledger-core/ });
+    const sized = directorySize.mock.calls.length;
+
+    await act(async () => {
+      await addSecondWorktree();
+    });
+
+    expect(announce).toHaveBeenCalledWith({ repoRoots: [ROOT] });
+    await screen.findByRole('button', { name: /^Worktrees in ledger-core: 2 worktrees/ });
+    expect(directorySize.mock.calls.length).toBe(sized);
+    announce.mockRestore();
   });
 
   it('reads the worktrees again when another window changes them', async () => {

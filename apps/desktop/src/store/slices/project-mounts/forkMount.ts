@@ -3,6 +3,7 @@ import type { IsoDateTime, MountId, SessionMountView } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createWorktree, listBranchNames } from '../../../features/worktree/worktree';
+import { announceWorktreesChanged } from '../storage/announceWorktreesChanged';
 import { rememberWorktreeRoot } from '../storage/rememberWorktreeRoot';
 import { mountBranchOrigin } from './mountBranchOrigin';
 import { prepareNewWorktree } from './prepareNewWorktree';
@@ -248,6 +249,7 @@ export const forkMount = (set: SetFn, get: GetFn) => {
             });
             const nextViews = await loadMountViews({ get, sessionId });
             applyMountViews({ set, sessionId, views: nextViews });
+            await announceWorktreesChanged({ get, repoRoots: [project.rootPath] });
             return requireMountView({ views: nextViews, mountId });
           },
         }),

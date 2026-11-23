@@ -476,6 +476,11 @@ describe('removeStorageFolders', () => {
       sessionId: ARCHIVED_SESSION,
       mountId: 'wt-archived',
       mode: 'safe',
+      expected: {
+        worktreePath: '/repo/.goodboy/worktrees/live',
+        branch: 'goodboy/live',
+        revision: 2,
+      },
     });
     expect(summary.removed).toBe(1);
     expect(summary.restorable).toEqual([

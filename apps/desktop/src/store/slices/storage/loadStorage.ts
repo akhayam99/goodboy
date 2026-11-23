@@ -25,6 +25,7 @@ import type { GetFn, SetFn, StorageRoot } from './types';
 
 type LoadParams = {
   readonly isForced?: boolean;
+  readonly shouldMeasureAll?: boolean;
 };
 
 const EMPTY_APP_DATA: AppDataUsage = {
@@ -61,7 +62,7 @@ const readFreeBytes = async ({ folder }: FreeBytesParams): Promise<number | null
 let latestLoad = 0;
 
 export const loadStorage = (set: SetFn, get: GetFn) => {
-  return async ({ isForced = false }: LoadParams = {}): Promise<void> => {
+  return async ({ isForced = false, shouldMeasureAll = true }: LoadParams = {}): Promise<void> => {
     latestLoad += 1;
     const load = latestLoad;
     set({ storageStatsLoading: true });
@@ -132,9 +133,11 @@ export const loadStorage = (set: SetFn, get: GetFn) => {
         storageRoots: roots.map(toStorageRoot),
         storageStatsLoading: false,
       });
-      void get()
-        .measureStorageSizes({ isForced })
-        .catch(() => undefined);
+      if (shouldMeasureAll) {
+        void get()
+          .measureStorageSizes({ isForced })
+          .catch(() => undefined);
+      }
       void get()
         .loadStorageArtifacts()
         .catch(() => undefined);

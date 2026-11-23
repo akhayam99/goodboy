@@ -4,9 +4,11 @@ import type {
   MountCleanupDecision,
   MountId,
   SessionId,
+  SessionMountView,
   WorktreeRemovalMode,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { announceWorktreesChanged } from '../storage/announceWorktreesChanged';
 import { applyMountViews, loadMountViews, requireMountView } from './mountViews';
 import { requireMountContext } from './requireMountContext';
 import { runMountRemoval } from './runMountRemoval';
@@ -16,6 +18,13 @@ export type RemoveMountWorktreeInput = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
   readonly mode: WorktreeRemovalMode;
+  readonly expected?: MountRemovalSnapshot;
+};
+
+export type MountRemovalSnapshot = {
+  readonly worktreePath: string;
+  readonly branch: string;
+  readonly revision: number;
 };
 
 export type RemoveMountWorktreeResult = {
@@ -28,16 +37,33 @@ type Params = {
   readonly get: GetFn;
 };
 
+type MatchParams = {
+  readonly view: SessionMountView;
+  readonly expected: MountRemovalSnapshot | undefined;
+};
+
+const MOUNT_CHANGED_REASON = 'the mount changed after this list was read';
+
+const matchesExpected = ({ view, expected }: MatchParams): boolean =>
+  expected === undefined ||
+  (view.worktreePath === expected.worktreePath &&
+    view.branch === expected.branch &&
+    view.revision === expected.revision);
+
 export const removeMountWorktree = ({ set, get }: Params) => {
   return async ({
     sessionId,
     mountId,
     mode,
+    expected,
   }: RemoveMountWorktreeInput): Promise<RemoveMountWorktreeResult> => {
     const views = await loadMountViews({ get, sessionId });
     const view = requireMountView({ views, mountId });
     const { project } = requireMountContext({ get, sessionId, projectId: view.projectId });
     const worktreePath = view.worktreePath;
+    if (!matchesExpected({ view, expected })) {
+      return { kind: 'kept', reason: MOUNT_CHANGED_REASON };
+    }
     if (worktreePath === null) {
       return { kind: 'missing', reason: null };
     }
@@ -54,7 +80,8 @@ export const removeMountWorktree = ({ set, get }: Params) => {
         return (
           fresh !== undefined &&
           fresh.revision === view.revision &&
-          fresh.worktreePath === worktreePath
+          fresh.worktreePath === worktreePath &&
+          fresh.branch === view.branch
         );
       },
       target: {
@@ -98,6 +125,7 @@ export const removeMountWorktree = ({ set, get }: Params) => {
     }
     const nextViews = await loadMountViews({ get, sessionId });
     applyMountViews({ set, sessionId, views: nextViews });
+    await announceWorktreesChanged({ get, repoRoots: [view.repoRoot] });
     void get()
       .reconcileOrphanWorktrees()
       .catch(() => undefined);

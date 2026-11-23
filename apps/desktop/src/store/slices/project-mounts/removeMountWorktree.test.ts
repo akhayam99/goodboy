@@ -11,6 +11,7 @@ import type {
   SessionProjectMount,
 } from '@goodboy/types';
 import type { AppStore } from '../../store';
+import { worktreesChannel } from '../../../features/storage/worktreesChannel';
 import type { GetFn, SetFn } from './types';
 
 type CleanupParams = {
@@ -242,6 +243,44 @@ describe('removeMountWorktree', () => {
     expect([...h.operations.values()]).toEqual([
       expect.objectContaining({ kind: 'remove', status: 'uncertain' }),
     ]);
+  });
+
+  it('keeps the folder when the mount no longer matches the checkout the caller confirmed', async () => {
+    const state = stateWith({ views: [...h.rows.values()] });
+    const set: SetFn = (update) => {
+      Object.assign(state, typeof update === 'function' ? update(state) : update);
+    };
+
+    const result = await removeMountWorktree({ set, get: () => state })({
+      sessionId: SESSION_ID,
+      mountId: TARGET_ID,
+      mode: 'safe',
+      expected: { worktreePath: '/worktrees/older', branch: 'ak/older', revision: 1 },
+    });
+
+    expect(result).toEqual({ kind: 'kept', reason: 'the mount changed after this list was read' });
+    expect(h.cleanupMountDirectory).not.toHaveBeenCalled();
+    expect(h.updateSessionMountLifecycle).not.toHaveBeenCalled();
+  });
+
+  it('removes the confirmed checkout when the mount still matches it and tells every window', async () => {
+    const announce = vi.spyOn(worktreesChannel, 'announce');
+    const state = stateWith({ views: [...h.rows.values()] });
+    const set: SetFn = (update) => {
+      Object.assign(state, typeof update === 'function' ? update(state) : update);
+    };
+
+    const result = await removeMountWorktree({ set, get: () => state })({
+      sessionId: SESSION_ID,
+      mountId: TARGET_ID,
+      mode: 'safe',
+      expected: { worktreePath: '/worktrees/target', branch: 'ak/target', revision: 2 },
+    });
+
+    expect(result).toEqual({ kind: 'removed', reason: null });
+    expect(h.cleanupMountDirectory).toHaveBeenCalledTimes(1);
+    expect(announce).toHaveBeenCalledWith({ repoRoots: ['/repos/api'] });
+    announce.mockRestore();
   });
 
   it('aborts without touching the disk when the row changed while waiting for the lock', async () => {

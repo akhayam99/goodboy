@@ -53,7 +53,6 @@ export const ProjectWorktrees = ({
         worktrees={worktrees}
         projectId={projectId}
         projectName={projectName}
-        repoRoot={repoRoot}
         workspaceId={workspaceId}
         hostSessionId={hostSessionId}
         onClose={dropdown.close}

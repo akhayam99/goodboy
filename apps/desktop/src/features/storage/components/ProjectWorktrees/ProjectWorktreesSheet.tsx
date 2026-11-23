@@ -16,7 +16,6 @@ type Props = {
   readonly worktrees: ProjectWorktreesView;
   readonly projectId: ProjectId;
   readonly projectName: string;
-  readonly repoRoot: string;
   readonly workspaceId: WorkspaceId;
   readonly hostSessionId: SessionId;
   readonly onClose: () => void;
@@ -26,7 +25,6 @@ export const ProjectWorktreesSheet = ({
   worktrees,
   projectId,
   projectName,
-  repoRoot,
   workspaceId,
   hostSessionId,
   onClose,
@@ -72,7 +70,6 @@ export const ProjectWorktreesSheet = ({
           <NewBranchInSession
             projectId={projectId}
             projectName={projectName}
-            repoRoot={repoRoot}
             workspaceId={workspaceId}
             hostSessionId={hostSessionId}
             onClose={() => setIsCreating(false)}

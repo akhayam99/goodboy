@@ -44,9 +44,9 @@ See how much space the other coding tools keep, without risking their history. *
 This part is for contributors and agents who change the feature.
 
 - Folder verdict: `folder_verdict` in `apps/desktop/src-tauri/src/worktree/remove.rs`, sent as `verdict` by `worktree_folder_facts`. `loadStorage` asks it for every mount, the ones in use too.
-- Worktrees sheet: `features/storage/components/ProjectWorktrees/`, its rows and every count from `tracksOfWorkspace` in `features/track/`. A folder in use goes through `removeMountWorktree`, and its undo reloads the session with `loadSessionMounts`.
-- Sizes on open: `measureStorageSizes({ paths })` measures the sheet's folders first.
-- Second window: `worktreesChannel` emits `goodboy:worktrees-changed` after a removal, an undo or a new branch.
+- Worktrees sheet: `features/storage/components/ProjectWorktrees/`, its rows and every count from `tracksOfWorkspace` in `features/track/`. A folder in use goes through `removeMountWorktree` with the path, branch and revision Storage read, and is kept when the mount no longer matches them; its undo reloads the session with `loadSessionMounts`.
+- Sizes on open: `loadStorage({ shouldMeasureAll: false })`, then `measureStorageSizes({ paths })` measures only the sheet's folders.
+- Every window: `worktreesChannel` emits `goodboy:worktrees-changed` from `forkMount`, `removeMountWorktree` and a Storage removal or undo; a closed project block reads its count again without measuring.
 - Open terminals: `terminalsInFolder` is the test the removal uses.
 - Undo of a removal: `worktree_folder_restore`.
 - Branch verdict: `is_safe_to_delete` on each scanned branch.
