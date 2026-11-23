@@ -7,6 +7,7 @@ import { UsageStatsRow } from '../../../chat/components/TurnFooter/UsageStatsRow
 import type { TurnFooterData } from '../../../chat/components/TurnFooter/useTurnFooter';
 import type { AgentAggregate } from '../../agentAggregate';
 import type { ProviderContextUsage } from '../AgentTree/ContextWindowBar';
+import { contextShareOf } from '../../../../shared/utils/contextShareOf';
 
 type Props = {
   readonly aggregate: AgentAggregate | null;
@@ -43,10 +44,10 @@ export const AgentUsageFooter = ({ aggregate, contextUsage, turns }: Props) => {
   }
 
   const contextTokens = contextTokensForUsage({ contextTokens: data.contextTokens ?? undefined });
-  const contextPct =
-    contextTokens != null && contextWindow != null && contextWindow > 0
-      ? Math.min(1, contextTokens / contextWindow)
-      : null;
+  const contextPct = contextShareOf({
+    tokens: contextTokens ?? null,
+    window: contextWindow ?? null,
+  });
 
   return (
     <AnchoredPopover

@@ -1,5 +1,6 @@
 import { contextTokensForUsage } from '@goodboy/core/providers';
 import { contextWindowFor } from '../../contextWindowFor';
+import { contextShareOf } from '../../../../shared/utils/contextShareOf';
 import type { ProviderContextUsage } from '../AgentTree/ContextWindowBar';
 
 export type ContextFill = {
@@ -18,8 +19,9 @@ export const contextFillOf = ({ usage }: Params): ContextFill | null => {
   }
   const tokens = contextTokensForUsage({ contextTokens: usage.contextTokens });
   const window = contextWindowFor(usage.model);
-  if (tokens === null || window === null || window <= 0) {
+  const share = contextShareOf({ tokens, window });
+  if (tokens === null || window === null || share === null) {
     return null;
   }
-  return { tokens, window, percent: Math.min(100, Math.round((tokens / window) * 100)) };
+  return { tokens, window, percent: Math.round(share * 100) };
 };

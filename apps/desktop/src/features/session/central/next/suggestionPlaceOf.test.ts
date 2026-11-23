@@ -41,11 +41,10 @@ const REBASE: SessionSuggestion = {
 };
 
 describe('suggestionPlaceOf', () => {
-  it('opens review conversations on the branch comments and questions on the questions lens', () => {
+  it('opens review conversations on their branch and questions on the questions lens', () => {
     expect(suggestionPlaceOf({ suggestion: THREADS, mountId: ABOUT })).toEqual({
       kind: 'branch',
       mountId: ABOUT,
-      tab: 'comments',
     });
     expect(suggestionPlaceOf({ suggestion: QUESTIONS, mountId: null })).toEqual({
       kind: 'questions',
