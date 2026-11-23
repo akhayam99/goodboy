@@ -51,13 +51,10 @@ import { SessionContextCards } from '../SessionContextCards';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { runObjectAction } from '../../../features/actions/registry';
 
-beforeAll(async () => {
-  await import('../../../features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList');
-});
-
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
+  await import('../../../features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList');
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
@@ -790,9 +787,8 @@ describe('the folder cards of the session level', () => {
     const card = within(screen.getByRole('group', { name: 'Projects' }));
     fireEvent.click(card.getByRole('button', { name: 'Mount a folder' }));
     const picker = within(await screen.findByRole('dialog', { name: 'Mount a folder' }));
-    await picker.findByRole('button', { name: 'Choose a folder…' });
 
-    expect(picker.getByRole('button', { name: 'Mount notify-relay' })).toBeDefined();
+    expect(await picker.findByRole('button', { name: 'Mount notify-relay' })).toBeDefined();
     expect(picker.queryByRole('button', { name: 'Mount payments-api' })).toBeNull();
     expect(picker.getByRole('button', { name: 'Choose a folder…' })).toBeDefined();
     expect(picker.queryByRole('button', { name: /^New branch in/ })).toBeNull();
@@ -813,10 +809,8 @@ describe('the folder cards of the session level', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Mount a folder' }));
     const picker = within(await screen.findByRole('dialog', { name: 'Mount a folder' }));
-    await picker.findByRole('button', { name: 'Choose a folder…' });
-    await act(async () => {
-      fireEvent.click(picker.getByRole('button', { name: 'Choose a folder…' }));
-    });
+    const choose = await picker.findByRole('button', { name: 'Choose a folder…' });
+    await act(async () => fireEvent.click(choose));
     await settle();
 
     expect(picker.getByRole('alert').textContent).toContain('folder not found');
@@ -873,10 +867,8 @@ describe('the folder cards of the session level', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Mount a folder' }));
     const picker = within(await screen.findByRole('dialog', { name: 'Mount a folder' }));
-    await picker.findByRole('button', { name: 'Choose a folder…' });
-    await act(async () => {
-      fireEvent.click(picker.getByRole('button', { name: 'Choose a folder…' }));
-    });
+    const choose = await picker.findByRole('button', { name: 'Choose a folder…' });
+    await act(async () => fireEvent.click(choose));
     await settle();
 
     expect(picker.getByRole('alert').textContent).toContain("can't read that folder");
@@ -908,10 +900,8 @@ describe('the folder cards of the session level', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Mount a folder' }));
     const picker = within(await screen.findByRole('dialog', { name: 'Mount a folder' }));
-    await picker.findByRole('button', { name: 'Choose a folder…' });
-    await act(async () => {
-      fireEvent.click(picker.getByRole('button', { name: 'Choose a folder…' }));
-    });
+    const choose = await picker.findByRole('button', { name: 'Choose a folder…' });
+    await act(async () => fireEvent.click(choose));
     await settle();
 
     expect(picker.getByRole('alert').textContent).toContain('several repositories');
