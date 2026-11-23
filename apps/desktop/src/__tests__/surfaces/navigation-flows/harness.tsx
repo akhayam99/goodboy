@@ -747,19 +747,6 @@ export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Branch', lens: 'branch', lands: branchTab('pr') },
   { label: 'Runs', lens: 'workflows', lands: tabSelected('Runs') },
   { label: 'Artifacts', lens: 'plans', lands: tabSelected('Artifacts') },
-  {
-    label: 'Changes',
-    note: 'the shortcut of a session with one branch',
-    lens: 'branch',
-    beforeOpen: ({ sessionId }) =>
-      useAppStore.setState((state) => ({
-        sessionProjectMounts: {
-          ...state.sessionProjectMounts,
-          [sessionId]: (state.sessionProjectMounts[sessionId] ?? []).slice(0, 1),
-        },
-      })),
-    lands: changesTab,
-  },
   { label: 'Context', lens: 'context', lands: tabSelected('Context') },
   {
     label: 'Questions',

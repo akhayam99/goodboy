@@ -18,10 +18,10 @@ under its title (`BranchTabStrip`, built on `PageTabs`); the page computes its c
 one pill. **One tab row per page.** Inside a session the session head sits above the page
 with the crumbs `Overview › {branch name}` in place of the session tabs (see
 [session-rail.md](session-rail.md#crumbs)), so the pull request page shows only its own row.
-Every door to the session's changes (the single-branch Changes shortcut, the board row's
-Changes door, the palette, the chord) opens this page on its Changes tab. A branch row of the
-Overview's project blocks and the move on it open the tab the fact names, by one function
-(`tabForFactOf`, addressed by the mount id so a moved worktree still resolves): a failing or
+Every door to the session's changes (a branch row of the Overview's project blocks, the board
+row's Changes door, the palette, the chord) opens this page on its Changes tab, addressed by the
+mount id so a moved worktree still resolves (`branchTabPlaceOf`). A move on a branch opens the
+tab the fact names, by one function (`tabForFactOf`): a failing or
 running check opens Checks, requested changes and open threads Comments, a diff to check Changes,
 a conflict, a rebase or commits not pushed Commits, and anything else Conversation. Search,
 Activity and Tasks open Conversation. A host with no
@@ -429,7 +429,7 @@ draft is not there yet, so the Commits count is a number on the Comments section
 
 **Changes.** The branch against its base as one two-column page under the Branch header
 (`ChangesPage` in `features/diff/components`, mounted by `BranchFiles`, the one entry for the
-pull request page and the session's Changes shortcut). On Changes the header and the diff stay on
+pull request page and the pull request row of the session's Projects block). On Changes the header and the diff stay on
 the 960 column of every other section (`PAGE_MEASURE.branchChanges` is `column`), and the file
 list is its own full height column on the left of the page, the mirror of the Agents column of a
 run page: `BranchPaneRoot` reads the frame's left slot through `useBranchRailSlot`

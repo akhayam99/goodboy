@@ -3,7 +3,7 @@ import { brandId, type MountId } from '@goodboy/types';
 import { Button, Chip, cn, ROW_HOVER, StatusDot, Tooltip } from '@goodboy/ui';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { failingChecksOf } from '../../../branch/checks/failingChecksOf';
-import { tabForFactOf } from '../../../branch/tabForFactOf';
+import { branchTabPlaceOf } from '../../../branch/branchTabPlaceOf';
 import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
 import { useMountRowMenu } from '../../hooks/useMountRowMenu';
 import { MountRowMenuButton } from '../MountRowMenuButton';
@@ -67,11 +67,7 @@ const BoardTileView = ({ rowId }: Props) => {
       to:
         entry === null
           ? sessionPlace({ sessionId: session.id, lens: 'workflows' })
-          : tabForFactOf({
-              sessionId: session.id,
-              mountId: entry.fact.mountId,
-              fact: entry.story.state,
-            }),
+          : branchTabPlaceOf({ sessionId: session.id, mountId: entry.fact.mountId, tab: 'files' }),
     });
   return (
     <div
