@@ -15,6 +15,8 @@ import {
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
 } from '../../../../../store/storyHarness';
+import { useAppStore } from '../../../../../store';
+import { deskAgentIdOf } from '../../../../../store/slices/drawer/deskAgentIdOf';
 import type { NowModel, NowRow } from '../../../central/now/nowRowsOf';
 import { STAGE_TONE } from '../../../session-stage';
 
@@ -88,6 +90,23 @@ describe('Now on the Overview', () => {
     const wait = document.querySelector('[data-now-wait="hot"]');
     expect(wait?.textContent).toContain('Tester waits on src/retry/state.ts');
     expect(wait?.innerHTML).toContain(tintClasses(STAGE_TONE.attention).dot);
+  });
+
+  it('on the Desk, a row opens its agent panel and the row of the open panel is selected', () => {
+    useAppStore.getState().setSessionFace({ sessionId: SESSION_ID, face: 'desk' });
+    render(<NowSection sessionId={SESSION_ID} model={MODEL} />);
+
+    fireEvent.click(screen.getByTestId('now-row-impl'));
+
+    expect(deskAgentIdOf({ state: useAppStore.getState(), sessionId: SESSION_ID })).toBe('impl');
+    expect(screen.getByTestId('now-row-impl').getAttribute('data-selected')).toBe('true');
+    expect(screen.getByTestId('now-row-lead').getAttribute('data-selected')).toBe('false');
+
+    fireEvent.click(screen.getByTestId('now-row-lead'));
+
+    expect(deskAgentIdOf({ state: useAppStore.getState(), sessionId: SESSION_ID })).toBe('lead');
+    expect(screen.getByTestId('now-row-lead').getAttribute('data-selected')).toBe('true');
+    expect(screen.getByTestId('now-row-impl').getAttribute('data-selected')).toBe('false');
   });
 
   it('draws nothing when nothing runs', () => {

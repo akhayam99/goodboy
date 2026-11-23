@@ -1,4 +1,4 @@
-import { brandId, type SessionId } from '@goodboy/types';
+import { brandId, type AgentId, type MountId, type SessionId } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 import { DOCK_GRID_CAP } from '@goodboy/ui';
 import type { TerminalTabId } from '../../../shared/types/terminal';
@@ -10,6 +10,7 @@ import type {
   DrawerGridSplits,
   DrawerGridWidths,
   OpenDrawer,
+  PullRequestDrawerTab,
   WorkspaceToolKind,
 } from './state';
 
@@ -17,9 +18,38 @@ const STORED_DOCK_GRID_VERSION = 1;
 
 const TOOL_KINDS: ReadonlyArray<WorkspaceToolKind> = ['terminal', 'browser', 'monitoring'];
 
+const PR_TABS: ReadonlyArray<PullRequestDrawerTab> = ['checks', 'conversation'];
+
+const DESK_DETAIL_CAP = 2;
+
+export type DeskDetailEntry = Extract<OpenDrawer, { readonly kind: 'transcript' | 'pull-request' }>;
+
+type StoredDetail =
+  | { readonly kind: 'transcript'; readonly agentId: AgentId }
+  | {
+      readonly kind: 'pull-request';
+      readonly mountId: MountId;
+      readonly tab: PullRequestDrawerTab;
+    };
+
 type GridParams = {
   readonly grid: DrawerGrid;
   readonly face?: SessionFace;
+  readonly detail?: ReadonlyArray<OpenDrawer>;
+};
+
+type DetailParams = {
+  readonly detail: ReadonlyArray<OpenDrawer>;
+};
+
+type DetailValueParams = {
+  readonly value: unknown;
+  readonly sessionId: SessionId;
+};
+
+type DeskDetailParams = {
+  readonly raw: string;
+  readonly sessionId: SessionId;
 };
 
 type RawParams = {
@@ -154,8 +184,41 @@ const splitsOf = ({ value }: ValueParams): DrawerGridSplits => {
   );
 };
 
-export const storedDockGridOf = ({ grid, face = 'overview' }: GridParams): string =>
-  JSON.stringify({
+const storedDetailOf = ({ detail }: DetailParams): ReadonlyArray<StoredDetail> =>
+  detail.flatMap((entry): ReadonlyArray<StoredDetail> => {
+    if (entry.kind === 'transcript') {
+      return [{ kind: entry.kind, agentId: entry.payload.agentId }];
+    }
+    if (entry.kind === 'pull-request') {
+      return [{ kind: entry.kind, mountId: entry.payload.mountId, tab: entry.payload.tab }];
+    }
+    return [];
+  });
+
+const detailEntryOf = ({ value, sessionId }: DetailValueParams): DeskDetailEntry | null => {
+  if (!isRecord(value)) {
+    return null;
+  }
+  if (value.kind === 'transcript' && typeof value.agentId === 'string' && value.agentId !== '') {
+    const agentId = brandId<AgentId>({ value: value.agentId });
+    return { kind: 'transcript', sessionId, payload: { agentId } };
+  }
+  const tab = PR_TABS.find((known) => known === value.tab);
+  if (
+    value.kind === 'pull-request' &&
+    typeof value.mountId === 'string' &&
+    value.mountId !== '' &&
+    tab !== undefined
+  ) {
+    const mountId = brandId<MountId>({ value: value.mountId });
+    return { kind: 'pull-request', sessionId, payload: { mountId, tab } };
+  }
+  return null;
+};
+
+export const storedDockGridOf = ({ grid, face = 'overview', detail = [] }: GridParams): string => {
+  const stored = storedDetailOf({ detail });
+  return JSON.stringify({
     version: STORED_DOCK_GRID_VERSION,
     columns: grid.columns,
     used: grid.used,
@@ -163,7 +226,35 @@ export const storedDockGridOf = ({ grid, face = 'overview' }: GridParams): strin
     widths: grid.widths,
     ...(Object.keys(grid.splits).length === 0 ? {} : { splits: grid.splits }),
     ...(face === 'desk' ? { face } : {}),
+    ...(stored.length === 0 ? {} : { detail: stored }),
   });
+};
+
+export const parseStoredDeskDetail = ({
+  raw,
+  sessionId,
+}: DeskDetailParams): ReadonlyArray<DeskDetailEntry> => {
+  let value: unknown = null;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    value = null;
+  }
+  if (
+    !isRecord(value) ||
+    value.version !== STORED_DOCK_GRID_VERSION ||
+    !Array.isArray(value.detail)
+  ) {
+    return [];
+  }
+  const entries = value.detail
+    .slice(0, DESK_DETAIL_CAP)
+    .map((item) => detailEntryOf({ value: item, sessionId }))
+    .filter((entry): entry is DeskDetailEntry => entry !== null);
+  return entries.filter(
+    (entry, index) => entries.findIndex((other) => other.kind === entry.kind) === index,
+  );
+};
 
 export const parseStoredDockGrid = ({ raw }: RawParams): DrawerGrid | null => {
   let value: unknown = null;

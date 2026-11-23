@@ -20,6 +20,8 @@ export type ContextDrawerView = 'current' | 'versions';
 
 export type NewDrawerForm = 'report' | 'wireframe';
 
+export type PullRequestDrawerTab = 'checks' | 'conversation';
+
 export type NewDrawerPayload = {
   readonly form: NewDrawerForm;
   readonly note?: string;
@@ -89,6 +91,14 @@ export type DrawerContent =
         readonly agentId: AgentId;
         readonly turn?: number;
         readonly toolUseId?: string;
+      };
+    }
+  | {
+      readonly kind: 'pull-request';
+      readonly payload: {
+        readonly mountId: MountId;
+        readonly tab: PullRequestDrawerTab;
+        readonly check?: string;
       };
     }
   | {
