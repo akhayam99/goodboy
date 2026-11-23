@@ -26,6 +26,7 @@ import { openPrSuggestionOf } from './openPrSuggestionOf';
 import { readyAndMergeSuggestionsOf } from './readyAndMergeSuggestionsOf';
 import { isOfferedByActivity } from './isOfferedByActivity';
 import { isMountBusyOf } from './isMountBusyOf';
+import { isSettledWorkOf } from './isSettledWorkOf';
 import { pushSuggestionOf } from './pushSuggestionOf';
 import { rebaseSuggestionOf } from './rebaseSuggestionOf';
 import { keepOneUpkeep } from './keepOneUpkeep';
@@ -146,6 +147,10 @@ type MountParams = {
   readonly mountId: MountId;
 };
 
+type MountKeyParams = {
+  readonly mountId: MountId | null;
+};
+
 const NO_SETTLED_BRANCHES: SettledBranches = { merged: 0, closed: 0 };
 
 const LIVE_AGENT_STATUSES: ReadonlyArray<string> = ['running', 'pending', 'blocked'];
@@ -164,6 +169,7 @@ export const deriveNextSteps = ({ signals }: Params): ReadonlyArray<NextMove> =>
     firstOpenQuestion = null,
     questionsRootAgentId = null,
     eligibleThreadCount,
+    reviewMountId = null,
     projects,
     mountEvents,
     agents = [],
@@ -172,6 +178,7 @@ export const deriveNextSteps = ({ signals }: Params): ReadonlyArray<NextMove> =>
     trackerMoves = [],
     seriesStrips = [],
     settledBranches = NO_SETTLED_BRANCHES,
+    settledMountIds = [],
     checkChains = [],
     isActivityShown = true,
     hasGoal = false,
@@ -189,6 +196,9 @@ export const deriveNextSteps = ({ signals }: Params): ReadonlyArray<NextMove> =>
     idleMounts = [],
   } = signals;
   const suggestions: SessionSuggestion[] = [];
+  const settledMountIdSet = new Set<string>(settledMountIds);
+  const isSettledWork = ({ mountId }: MountKeyParams): boolean =>
+    isSettledWorkOf({ mountId, settledMountIds: settledMountIdSet, settledBranches });
   for (const event of pendingMountEvents({ mountEvents })) {
     const askCount = mountEvents.filter(
       (candidate) => candidate.kind === 'proposed' && candidate.projectId === event.projectId,
@@ -294,7 +304,10 @@ export const deriveNextSteps = ({ signals }: Params): ReadonlyArray<NextMove> =>
   const lastStandaloneAgent = [...agents]
     .filter((agent) => agent.workflowRunId === null)
     .sort((first, second) => second.ordinal - first.ordinal)[0];
-  if (lastStandaloneAgent?.status === 'failed') {
+  const isLastAgentSettled =
+    lastStandaloneAgent !== undefined &&
+    isSettledWork({ mountId: lastStandaloneAgent.mountId ?? null });
+  if (lastStandaloneAgent?.status === 'failed' && !isLastAgentSettled) {
     suggestions.push({
       id: `retry-agent:${lastStandaloneAgent.id}`,
       kind: 'retry-agent',
@@ -310,6 +323,7 @@ export const deriveNextSteps = ({ signals }: Params): ReadonlyArray<NextMove> =>
   }
   if (
     lastStandaloneAgent?.status === 'completed' &&
+    !isLastAgentSettled &&
     lastStandaloneAgent.roleKind === 'implementer' &&
     lastStandaloneAgent.sourceKind !== 'failed_check'
   ) {
@@ -328,6 +342,7 @@ export const deriveNextSteps = ({ signals }: Params): ReadonlyArray<NextMove> =>
   }
   if (
     lastStandaloneAgent?.status === 'completed' &&
+    !isLastAgentSettled &&
     (lastStandaloneAgent.roleKind === 'scout' || lastStandaloneAgent.roleKind === 'generic') &&
     hasGoal &&
     !hasEverAttachedWorkflow &&
@@ -385,7 +400,7 @@ export const deriveNextSteps = ({ signals }: Params): ReadonlyArray<NextMove> =>
       payload: { planId: activePlan.id },
     });
   }
-  if (eligibleThreadCount > 0) {
+  if (eligibleThreadCount > 0 && !isSettledWork({ mountId: reviewMountId })) {
     suggestions.push({
       id: `resolve-threads:${sessionId}`,
       kind: 'resolve-threads',

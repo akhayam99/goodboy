@@ -37,6 +37,8 @@ Needs you and Now open and close with a height motion, so Next never jumps under
 4. **Where each branch stands.** Every row in a project block names the step its branch stands at.
 5. **What it costs.** The facts line adds up the spend and the agent time of every branch.
 
+An archived session keeps the same overview, read only. Its branches and their pull requests stay on it, with the pull request state, even after their worktree folders were removed. **Restore** brings back the worktree of each branch whose pull request is still open, from the remote when the branch is gone on this Mac. When one cannot come back, a message says why and the closed worktree stays on the overview with **Reopen**.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-light.webp" alt="The overview of Stop retried webhooks posting a second credit: the goal, that payments-api credits a redelivered event once and ledger-core shows one posting per event id, then the Branches, Spend and Time tiles, In progress 2 with hl/fix-duplicate-credit in review in payments-api and hl/surface-retry-state with checks running in notify-relay, Merged 1, and one open question under Not on a branch with Answer">
@@ -107,6 +109,7 @@ Know the moves that unblock the task, such as answering a question, fixing a fai
 - **Analyze** starts the Debugger on a failing check. Its next moves (open the analysis, **Start fix**, **Push**) then sit on that run.
 - **Open a pull request** names the branch it opens. With several branches still without one, the row of the branch furthest ahead offers it.
 - Once a pull request merges, **Remove the payments-api worktree** is offered with the reason and its size (`#418 merged · 412 MB`).
+- Once a pull request merges or closes, its branch offers no review and no Lead option. Next keeps only the cleanup, or nothing.
 - When Goodboy reads the merge before the cleanup is proposed, the reason carries the age instead (`#418 merged 3d ago`).
 - When the last branch is merged or closed and a linked Linear or Jira item is not done, **Move HBL-412 to Done** is offered. The toast has **Undo**.
 - **Run the failing test** names the test a failed GitHub Actions check points at and writes the command in the terminal of that worktree. It waits for your Enter.
@@ -190,6 +193,8 @@ This part is for contributors and agents who change the feature.
 - Branch rows: `RANK_OF_STATE` in `branchStoryOf` orders the rows, `mergeSeriesInOrder` merges a series and `useMountRowMenu` opens the branch menu.
 - Tracker move suggestion: `trackerMoveSuggestionOf`.
 - Archive suggestion: `archiveSuggestionOf`.
+- Archived session: `useArchivedWorkRecord` calls `loadSessionWorkRecord`, which reads every mount row and its latest stored pull request link; `storedRequestOf` turns the link into the row's request. Restore runs `reopenArchivedWork`. Tests: `store.sqlite-archived-work.test.ts` and the `archived-work` scenes.
+- Settled work in Next: `deriveNextSteps` drops Review the changes, Fix review conversations and the agent retries when `isSettledWorkOf` finds the branch merged or closed, from `settledMountIds` on any host (`useSessionSuggestions/settledWork.test.tsx`).
 - Next rows: `nextGroupsOf` and `nextUnblockCountOf` order the moves a row offers, and `isStoppedRebaseOf` tells a stopped rebase from a branch that is only behind. `sortNextSteps` orders the moves by `moveGroupOf` first.
 - Next row copy: `planSentenceOf` writes the plan sentence and `rebaseStopRowOf` writes a stopped rebase.
 - Folded rows: `foldDivergedIntoStops` in `actionCardsOf` folds a diverged card into its stopped rebase, `historyStopDetailOf` and `foldedVerbOf` word the folded stops, and `MENU_MAX_WIDTH` caps that menu.

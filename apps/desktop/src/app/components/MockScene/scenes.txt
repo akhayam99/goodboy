@@ -31,6 +31,10 @@ agent-brief-question
 agent-finished-model
 agent-running-stop
 agentlead
+archived-work-merged-dark
+archived-work-merged-light
+archived-work-pr-dark
+archived-work-pr-light
 artifact-create-report
 artifact-create-wireframe
 artifact-generating

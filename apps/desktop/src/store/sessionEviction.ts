@@ -54,6 +54,7 @@ export const SESSION_EVICTION = [
   { key: 'lightAgentSessions', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionAgentsError', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountGithub', keyedBy: 'mount', evictOn: 'archive' },
+  { key: 'mountPrLinks', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'mountSelectedPr', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'mountDetailFailures', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'historyRuns', keyedBy: 'mount', evictOn: 'archive' },

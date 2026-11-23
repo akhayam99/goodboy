@@ -8437,11 +8437,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/store/slices/project-mounts/detachProject.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 22
-    }
-  },
   "apps/desktop/src/store/slices/project-mounts/detachProject.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 3

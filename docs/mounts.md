@@ -295,8 +295,12 @@ before projecting it as writable. Disk states:
 - **Remove** removes the worktree of a mount whose work is complete, from its
   row or, for archived sessions, from storage settings, and keeps the row.
 - **Unmount** (`detachProject`) takes a project out of the session: every mount
-  of that project is cleaned up per the chosen disposition and its row deleted.
-  Each mount is its own removal; one that fails is reported with its reason, the
+  of that project is cleaned up per the chosen disposition and its row deleted,
+  unless the mount has a pull request (a stored `mount_pr_links` row or live
+  host data). That row is the record of the work: it stays, detached, with its
+  last path, and only the folder goes, because deleting the row cascades to the
+  link. Undo then attaches that same mount (`attachMount`) instead of creating
+  a second one. Each mount is its own removal; one that fails is reported with its reason, the
   rest still go, and the write destination is always handed over afterwards.
   The confirm offers Unmount and keep files, Unmount and remove worktree, or
   Unmount and delete files for unsaved work. When the project had one mount, the
@@ -412,7 +416,24 @@ token, and lease the remote branch by its qualified name
 When a lifecycle step must continue but a directory cannot go (dirty, locked,
 in use), cleanup records a `pending` proposal instead of deleting. Archiving a
 session never deletes either: it proposes cleanup for every mount still on
-disk. Deleting a directory is always a named user action (unmount, remove,
+disk. Archive evicts the mount views and host data from the store; opening the
+archived session reads them back (`loadSessionWorkRecord`): every mount row,
+detached ones included, and the latest stored pull request link of each
+(`canonicalPullRequestLinkOf`: last observed, then newest created), which
+the mount rows show when no live host data exists (`buildMountRows`). Next
+treats every retained mount whose request is merged or closed as settled work,
+attached or not (`settledMountIdsOf`), so unmounting a merged branch never
+brings Review the changes back. Restore (`unarchiveTask`) reads the work record
+first, then (`reopenArchivedWork`) attaches again each detached repository mount
+whose latest link is still open, with `canFetchRemote`: the worktree is created
+from the remote branch when the local one is gone, or from the pull request head
+(`pull/<n>/head` on GitHub, `merge-requests/<n>/head` on GitLab); a local
+branch that still exists is checked out as recorded. A mount that cannot come
+back keeps its row, the failure is reported with its reason, and the closed
+worktree notice on the overview offers Reopen, which takes the same recovery
+(`recoveryAttachOptionsOf`). When the branch was deleted, Reopen stays offered
+only while the stored link is open on a host with a pull request head ref
+(GitHub or GitLab, `fetchableRequestOf`). Merged and closed work is not attached again. Deleting a directory is always a named user action (unmount, remove,
 detach). The user resolves a proposal from the Overview Next slot
 (`cleanupSuggestionOf`): one row `Remove the <project> worktree` with the reason
 and the size (`#418 merged · 412 MB`, or `Session archived`), or one row

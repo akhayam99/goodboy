@@ -19,6 +19,7 @@ import { mapMrToPullRequestState } from '../../../features/integrations/gitlab/m
 import type { AppState } from '../../types';
 import { bitbucketMountOf, gitlabMountOf } from '../mount-request/requestOf';
 import { projectById } from '../projects/projectIndex';
+import { storedRequestOf } from './workRecord/storedRequestOf';
 
 export type MountRequestState = Pick<AppState, 'mountGithub' | 'mountRequests'>;
 
@@ -26,7 +27,8 @@ export type MountRowState = MountRequestState &
   Pick<
     AppState,
     'projects' | 'sessionMounts' | 'sessionProjectMounts' | 'mountBranchObservations' | 'prSeries'
-  >;
+  > &
+  Partial<Pick<AppState, 'mountPrLinks'>>;
 
 export type MountRequestView = Readonly<{
   provider: MountPullRequestProvider;
@@ -353,7 +355,10 @@ export const buildMountRows = ({
   const grouped = new Map<ProjectId, Array<MountRowView>>();
   for (const view of views) {
     const project = projectById(state.projects, view.projectId);
-    const request = mountRequestOf({ state, mountId: view.id });
+    const storedLink = state.mountPrLinks?.[view.id];
+    const request =
+      mountRequestOf({ state, mountId: view.id }) ??
+      (storedLink === undefined ? null : storedRequestOf({ link: storedLink }));
     const isOnDisk = view.diskState !== 'missing' && view.diskState !== 'removed';
     const row: MountRowView = {
       mountId: view.id,
