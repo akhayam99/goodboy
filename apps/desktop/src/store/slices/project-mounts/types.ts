@@ -60,6 +60,8 @@ export type AttachMountInput = {
   readonly mountId: MountId;
   readonly requestId?: string;
   readonly expectedRevision?: number;
+  readonly canFetchRemote?: boolean;
+  readonly fallbackRef?: string;
 };
 
 export type UnmountMountInput = {

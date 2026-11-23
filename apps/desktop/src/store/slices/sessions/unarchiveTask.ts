@@ -12,6 +12,7 @@ import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMount
 import { hydrateWriteDestination } from '../project-mounts/hydrateWriteDestination';
 import { verifyAvailableWorktrees } from '../project-mounts/verifyAvailableWorktrees';
 import { touchArchivedCache } from '../summaries/archivedCacheVersion';
+import { reopenArchivedWork } from './reopenArchivedWork';
 import type { GetFn, SetFn } from './types';
 
 export const unarchiveTask = (set: SetFn, get: GetFn) => {
@@ -64,6 +65,7 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
       return;
     }
     try {
+      await reopenArchivedWork({ get, sessionId });
       const [storedRows, runs, attachedWorkflows] = await Promise.all([
         listWorktreesForSession(tauriDatabase, sessionId),
         invokeAgentList(sessionId),

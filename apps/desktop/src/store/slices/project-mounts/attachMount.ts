@@ -57,6 +57,8 @@ export const attachMount = (set: SetFn, get: GetFn) => {
     mountId,
     requestId,
     expectedRevision,
+    canFetchRemote = false,
+    fallbackRef,
   }: AttachMountInput): Promise<SessionMountView> => {
     const views = await loadMountViews({ get, sessionId });
     const view = requireMountView({ views, mountId });
@@ -103,7 +105,7 @@ export const attachMount = (set: SetFn, get: GetFn) => {
           const branches = await listBranchNames({ repoPath: view.repoRoot }).catch(
             () => [] as ReadonlyArray<string>,
           );
-          if (!branches.includes(view.branch)) {
+          if (!canFetchRemote && !branches.includes(view.branch)) {
             await failMountOperation({ operation, errorCode: 'branch-missing' });
             throw mountError({
               code: 'branch-missing',
@@ -122,6 +124,7 @@ export const attachMount = (set: SetFn, get: GetFn) => {
                 retainedDirName({ path: retained }) ??
                 (await allocateMountDirName({ mountId, repoPath: view.repoRoot, parentDir })),
               existingBranch: view.branch,
+              ...(fallbackRef === undefined ? {} : { fallbackRef }),
             });
             return created.worktreePath;
           } catch (error) {
