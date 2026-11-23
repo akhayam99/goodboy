@@ -1,5 +1,4 @@
 import type { Workflow } from '@goodboy/types';
-import { leadDefaultOf } from './runDefaultSetting';
 import { routeWordsOf } from './routeWordsOf';
 import type { RunRouteFacts, RunRouteResult } from './runRouteOf';
 
@@ -63,9 +62,6 @@ const scoreOf = ({ words, workflow }: ScoreParams): number => {
 
 export const suggestedWorkflowOf = ({ facts, result }: Params): Workflow | null => {
   if (result.preset !== null || result.role !== null) {
-    return null;
-  }
-  if (!leadDefaultOf({ shape: facts.defaultShape }).shouldSuggestWorkflow) {
     return null;
   }
   const words = routeWordsOf({ text: facts.text });

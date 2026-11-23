@@ -34,7 +34,6 @@ const factsOf = (text: string): RunRouteFacts => ({
   presets: [FIX_A_LAYOUT],
   roles: ROLES,
   lastPresetId: null,
-  defaultShape: 'auto',
   hasTask: false,
   mountCount: 0,
   pullRequest: null,

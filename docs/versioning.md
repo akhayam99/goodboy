@@ -61,11 +61,16 @@ stops reading the old one. `legacy-state-sunset.test.ts` fails when the
 running version reaches that release while the row is still listed: remove the
 read in the code, then delete the row.
 
-| State                                                                                  | Old shape                                          | New shape written since                                               | Old shape read until (excluded) |
-| -------------------------------------------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------- |
-| settings `runs.defaultShape.<workspaceId>` and `runs.defaultShape.session.<sessionId>` | Start as in Run defaults: `auto`, `lead` or `plan` | 0.39.1 writes nothing: the Plan row of the start form chooses per run | 0.41.0                          |
+| State | Old shape | New shape written since | Old shape read until (excluded) |
+| ----- | --------- | ----------------------- | ------------------------------- |
 
 Gone already:
+
+- The settings `runs.defaultShape.<workspaceId>` and
+  `runs.defaultShape.session.<sessionId>` (Start as in Run defaults, written
+  until 0.39.0) are not read since 0.41.0. A saved `lead` or `plan` no longer
+  hides the workflow suggestion or sets the session to After the plan; the
+  Plan row of the start form chooses per run. The rows stay in the database.
 
 - The local storage keys `goodboy:right-drawer-width:v1`,
   `goodboy:reader-drawer-width:v1` and `goodboy:browser-drawer-width:v1` no

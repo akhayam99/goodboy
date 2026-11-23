@@ -702,13 +702,8 @@ only parsed, for older runs). The router never adopts a workflow: a typed
 `~name` or the Plan row picks one, and `suggestedWorkflowOf` only names the
 best match for the "Looks like your workflow" line (`StartWorkflowSuggestion`).
 The settings keys `runs.defaultShape.session.<sessionId>` and
-`runs.defaultShape.<workspaceId>` (`runDefaultSetting.ts`), once written by
-**Start as**, are read only until 0.41.0 ([versioning.md](versioning.md),
-Retired state): `useStartRun` loads them, `runDefaultOf` lets the session key
-win, `lead` and `plan` hide the suggestion, and `plan` still makes the Lead
-ask before acting on its plan: when the session level is Never and the start
-picked no level, `startRoutedRun` sets the session to After the plan before
-the Lead starts, and a stricter level stays (`planFirstLevelOf`). Opening a preset run shows its page; the session rail stays
+`runs.defaultShape.<workspaceId>`, once written by **Start as**, are not read
+since 0.41.0 ([versioning.md](versioning.md), Retired state). Opening a preset run shows its page; the session rail stays
 on the session and the run's agents are in the Agents column.
 
 Orchestrated runs have no page of their own since ux27 one flow unit 1: they
