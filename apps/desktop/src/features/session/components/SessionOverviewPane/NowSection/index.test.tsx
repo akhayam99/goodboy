@@ -14,16 +14,17 @@ import {
   importStore,
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
-import { useAppStore } from '../../../../../store';
 import { deskAgentIdOf } from '../../../../../store/slices/drawer/deskAgentIdOf';
 import type { NowModel, NowRow } from '../../../central/now/nowRowsOf';
 import { STAGE_TONE } from '../../../session-stage';
 
 let NowSection: typeof import('.').NowSection;
+let store: StoryStore;
 
 beforeAll(async () => {
-  await importStore();
+  store = await importStore();
   ({ NowSection } = await import('.'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
@@ -93,18 +94,18 @@ describe('Now on the Overview', () => {
   });
 
   it('on the Desk, a row opens its agent panel and the row of the open panel is selected', () => {
-    useAppStore.getState().setSessionFace({ sessionId: SESSION_ID, face: 'desk' });
+    store.getState().setSessionFace({ sessionId: SESSION_ID, face: 'desk' });
     render(<NowSection sessionId={SESSION_ID} model={MODEL} />);
 
     fireEvent.click(screen.getByTestId('now-row-impl'));
 
-    expect(deskAgentIdOf({ state: useAppStore.getState(), sessionId: SESSION_ID })).toBe('impl');
+    expect(deskAgentIdOf({ state: store.getState(), sessionId: SESSION_ID })).toBe('impl');
     expect(screen.getByTestId('now-row-impl').getAttribute('data-selected')).toBe('true');
     expect(screen.getByTestId('now-row-lead').getAttribute('data-selected')).toBe('false');
 
     fireEvent.click(screen.getByTestId('now-row-lead'));
 
-    expect(deskAgentIdOf({ state: useAppStore.getState(), sessionId: SESSION_ID })).toBe('lead');
+    expect(deskAgentIdOf({ state: store.getState(), sessionId: SESSION_ID })).toBe('lead');
     expect(screen.getByTestId('now-row-lead').getAttribute('data-selected')).toBe('true');
     expect(screen.getByTestId('now-row-impl').getAttribute('data-selected')).toBe('false');
   });

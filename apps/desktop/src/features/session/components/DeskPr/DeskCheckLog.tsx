@@ -39,7 +39,7 @@ export const DeskCheckLog = ({ sessionId, mountId, name, url }: Props) => {
         <ScrollFade className="max-h-80 min-h-0" viewportClassName="min-h-0">
           <pre
             data-desk-check-log=""
-            className="whitespace-pre-wrap break-words font-mono text-meta text-muted-foreground"
+            className="whitespace-pre-wrap break-words text-code text-muted-foreground"
           >
             {text}
           </pre>
