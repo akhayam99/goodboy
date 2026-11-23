@@ -33,6 +33,10 @@ import {
 } from '../../../store/storyHarness';
 import { DrawerHost } from '../DrawerHost';
 
+beforeAll(async () => {
+  await import('../../../features/reports/components/ReportStudio');
+});
+
 type StoreState = ReturnType<StoryStore['getState']>;
 
 const SESSION_ID = 'session-harborline' as SessionId;
@@ -102,13 +106,13 @@ const open = (artifactId: ArtifactId): void =>
   });
 
 describe('a report or wireframe opened from its work', () => {
-  it('reads a report in the drawer, half the window', () => {
+  it('reads a report in the drawer, half the window', async () => {
     open(REPORT);
     render(<DrawerHost />);
 
     const drawer = screen.getByTestId('artifact-reading-drawer');
     expect(drawer.getAttribute('data-artifact-kind')).toBe('report');
-    expect(screen.getByText('Report body Rounding drift in ledger-core')).toBeDefined();
+    expect(await screen.findByText('Report body Rounding drift in ledger-core')).toBeDefined();
     expect(screen.getByRole('heading', { name: 'Rounding drift in ledger-core' })).toBeDefined();
   });
 

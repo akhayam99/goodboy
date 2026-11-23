@@ -1,12 +1,23 @@
 import { isApiProvider } from '@goodboy/core/providers';
-import { useEffect } from 'react';
-import { Button } from '@goodboy/ui';
+import { Suspense, useEffect } from 'react';
+import { Button, SkeletonRows } from '@goodboy/ui';
 import { type ProviderId } from '@goodboy/types';
+import { lazyNamed } from '../../../shared/lib/lazyNamed';
 import { useAppStore } from '../../../store';
 import { PROVIDER_LABEL } from '../providerLabel';
-import { ProviderConnect } from './ProviderConnect';
 import { isConnectRunning } from './ProviderConnect/isConnectRunning';
-import { ProviderCredentialsSection } from './ProviderStudio/ProviderCredentialsSection';
+
+const ProviderConnect = lazyNamed({
+  load: () => import('./ProviderConnect'),
+  pick: ({ ProviderConnect }) => ProviderConnect,
+});
+
+const ProviderCredentialsSection = lazyNamed({
+  load: () => import('./ProviderStudio/ProviderCredentialsSection'),
+  pick: ({ ProviderCredentialsSection }) => ProviderCredentialsSection,
+});
+
+const CONNECT_SKELETON = <SkeletonRows label="Loading connect steps" />;
 
 type Props = {
   readonly providerId: ProviderId;
@@ -35,7 +46,9 @@ export const ProviderInlineConnect = ({
         aria-label={`Connect ${PROVIDER_LABEL[providerId]}`}
         className="flex flex-col gap-3 p-3"
       >
-        <ProviderCredentialsSection providerId={providerId} />
+        <Suspense fallback={CONNECT_SKELETON}>
+          <ProviderCredentialsSection providerId={providerId} />
+        </Suspense>
         <div className="flex justify-end">
           <Button size="sm" variant="ghost" onClick={onDone}>
             Back
@@ -47,12 +60,14 @@ export const ProviderInlineConnect = ({
 
   return (
     <div className="p-3">
-      <ProviderConnect
-        providerId={providerId}
-        chrome="inline"
-        autoStart={autoStart}
-        onDone={onDone}
-      />
+      <Suspense fallback={CONNECT_SKELETON}>
+        <ProviderConnect
+          providerId={providerId}
+          chrome="inline"
+          autoStart={autoStart}
+          onDone={onDone}
+        />
+      </Suspense>
     </div>
   );
 };

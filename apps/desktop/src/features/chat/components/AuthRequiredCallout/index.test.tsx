@@ -20,6 +20,10 @@ import {
 } from '../../../../store/slices/providers/providerHealth';
 import { AuthRequiredCallout } from './index';
 
+beforeAll(async () => {
+  await import('../../../providers/components/ProviderConnect');
+});
+
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
@@ -46,13 +50,13 @@ const seedHealth = ({ providerId, health }: SeedParams) => {
 };
 
 describe('AuthRequiredCallout', () => {
-  it('names the provider that refused the run when it is signed out', () => {
+  it('names the provider that refused the run when it is signed out', async () => {
     seedHealth({ providerId: 'anthropic', health: { standing: 'signed_out' } });
     render(<AuthRequiredCallout providerId="anthropic" onRefresh={() => undefined} />);
     expect(screen.getByText('Claude refused this run')).toBeDefined();
   });
 
-  it('shows the last known identity when provided', () => {
+  it('shows the last known identity when provided', async () => {
     seedHealth({ providerId: 'cursor', health: { standing: 'signed_out' } });
     render(
       <AuthRequiredCallout providerId="cursor" identity="amin@x.io" onRefresh={() => undefined} />,
@@ -60,24 +64,24 @@ describe('AuthRequiredCallout', () => {
     expect(screen.getByText(/last known identity: amin@x\.io/i)).toBeDefined();
   });
 
-  it('opens the provider login step inline when Sign in again is clicked', () => {
+  it('opens the provider login step inline when Sign in again is clicked', async () => {
     const handler = vi.fn();
     window.addEventListener('goodboy:open-settings', handler);
     seedHealth({ providerId: 'codex', health: { standing: 'signed_out' } });
     render(<AuthRequiredCallout providerId="codex" onRefresh={() => undefined} />);
     fireEvent.click(screen.getByRole('button', { name: 'Sign in again' }));
     window.removeEventListener('goodboy:open-settings', handler);
-    expect(screen.getByText(/Connect codex/i)).toBeDefined();
+    expect(await screen.findByText(/Connect codex/i)).toBeDefined();
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it('has no Refresh status button any more', () => {
+  it('has no Refresh status button any more', async () => {
     seedHealth({ providerId: 'anthropic', health: { standing: 'signed_out' } });
     render(<AuthRequiredCallout providerId="anthropic" onRefresh={() => undefined} />);
     expect(screen.queryByRole('button', { name: /refresh status/i })).toBeNull();
   });
 
-  it('shows the card when the breaker is open though the probe says connected', () => {
+  it('shows the card when the breaker is open though the probe says connected', async () => {
     seedHealth({
       providerId: 'cursor',
       health: { standing: 'connected', isBreakerOpen: true, refusals: [1, 2, 3] },
@@ -87,7 +91,7 @@ describe('AuthRequiredCallout', () => {
     expect(screen.getByRole('button', { name: 'Sign in again' })).toBeDefined();
   });
 
-  it('keeps the card away from a provider that is connected with a closed breaker', () => {
+  it('keeps the card away from a provider that is connected with a closed breaker', async () => {
     seedHealth({ providerId: 'cursor', health: { standing: 'connected' } });
     render(<AuthRequiredCallout providerId="cursor" onRefresh={() => undefined} />);
     expect(screen.queryByRole('button', { name: 'Sign in again' })).toBeNull();
