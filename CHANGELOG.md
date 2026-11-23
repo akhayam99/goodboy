@@ -129,6 +129,7 @@ Stop all running agents, Stop run and Stop drafting no longer ask first, and the
 
 ### Fixed
 
+- A screenshot dragged straight from a screenshot tool onto a message box attaches again. A file that still cannot be read says why. <!-- gb area=sessions pr=2310 -->
 - Write review used to go to the first pull request of the session. It now goes to the one of the branch on screen and names it under the form. <!-- gb area=review pr=2259 -->
 - Remove from session in a project menu often did nothing. Unmount now works from the menu and the project head. <!-- gb area=sessions pr=2269 -->
 - Mark all as read in the bell clears only the list you look at, and a failed switch of workspace scope keeps the list you had. <!-- gb area=inbox pr=2278,2254 -->
