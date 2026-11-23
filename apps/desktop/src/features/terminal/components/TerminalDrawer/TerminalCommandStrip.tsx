@@ -8,6 +8,7 @@ type Props = {
   readonly label: string;
   readonly isPending: boolean;
   readonly isTyped: boolean;
+  readonly isDisabled: boolean;
   readonly failure: string | null;
   readonly onRun: () => void;
   readonly onNotNow: () => void;
@@ -18,6 +19,7 @@ export const TerminalCommandStrip = ({
   label,
   isPending,
   isTyped,
+  isDisabled,
   failure,
   onRun,
   onNotNow,
@@ -34,7 +36,13 @@ export const TerminalCommandStrip = ({
           {isTyped ? (
             <span className="text-meta text-muted-foreground">{NAMES.pressEnterToRun}</span>
           ) : (
-            <Button variant="secondary" size="sm" isBusy={isPending} onClick={onRun}>
+            <Button
+              variant="secondary"
+              size="sm"
+              isBusy={isPending}
+              disabled={isDisabled}
+              onClick={onRun}
+            >
               {label}
             </Button>
           )}

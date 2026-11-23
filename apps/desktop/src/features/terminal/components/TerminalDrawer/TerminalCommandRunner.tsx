@@ -71,7 +71,8 @@ export const TerminalCommandRunner = ({
   const { command } = move.payload;
   const typedKey = choiceKey({ suggestion: move, choiceId: TYPE_HERE });
   const isTyping = command.mode === 'type';
-  const canTypeHere = isTyping && tab.status !== 'exited' && !isTabBusy;
+  const canTypeHere = tab.status !== 'exited' && !isTabBusy;
+  const typedId = `${tab.id}:${move.id}:${move.fingerprint}`;
   const clear = ({ key }: KeyParams) => {
     failed.current.delete(key);
     setFailures((current) => {
@@ -84,7 +85,7 @@ export const TerminalCommandRunner = ({
     await invokeTerminalWrite(
       tab.id,
       stringToBase64({
-        value: promptTextOf({ text: command.text, cwd: command.cwd, shellCwd: tab.cwd }),
+        value: promptTextOf({ text: command.text, cwd: command.cwd }),
       }),
     );
     if (move.kind === 'next-script' && command.scriptId !== null) {
@@ -99,16 +100,21 @@ export const TerminalCommandRunner = ({
     }
   };
   const run = async () => {
-    const key = canTypeHere ? typedKey : move.id;
-    clear({ key });
-    await (canTypeHere
-      ? runner.trackChoiceFor({ suggestion: move, actions })({
-          actionId: TYPE_HERE,
-          task: typeHere,
-        })
-      : primary.run());
-    if (isTyping && !failed.current.has(key)) {
-      setTypedIds((current) => new Set(current).add(move.id));
+    if (!isTyping) {
+      clear({ key: move.id });
+      await primary.run();
+      return;
+    }
+    if (!canTypeHere) {
+      return;
+    }
+    clear({ key: typedKey });
+    await runner.trackChoiceFor({ suggestion: move, actions })({
+      actionId: TYPE_HERE,
+      task: typeHere,
+    });
+    if (!failed.current.has(typedKey)) {
+      setTypedIds((current) => new Set(current).add(typedId));
     }
   };
   return (
@@ -118,7 +124,8 @@ export const TerminalCommandRunner = ({
       isPending={
         runner.pending.pendingKeys.has(move.id) || runner.pending.pendingKeys.has(typedKey)
       }
-      isTyped={typedIds.has(move.id)}
+      isTyped={typedIds.has(typedId)}
+      isDisabled={isTyping && !canTypeHere}
       failure={failures.get(typedKey) ?? failures.get(move.id) ?? null}
       onRun={() => {
         void run();

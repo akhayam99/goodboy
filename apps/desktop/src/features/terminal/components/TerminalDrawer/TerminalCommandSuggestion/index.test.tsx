@@ -123,17 +123,32 @@ afterEach(() => {
   cleanup();
 });
 
-const renderStrip = () =>
-  render(
-    <ToastProvider>
-      <TerminalCommandSuggestion
-        session={session}
-        mountId={relay.mountId}
-        tab={TAB}
-        isTabBusy={false}
-      />
-    </ToastProvider>,
-  );
+const OTHER_TAB: TerminalTab = {
+  ...TAB,
+  id: brandedId<TerminalTabId>({ value: `${session.id}::t2` }),
+};
+
+const TYPED = `cd ${relay.worktreePath} && ${COMMAND}`;
+
+type StripParams = {
+  readonly tab: TerminalTab;
+  readonly isTabBusy: boolean;
+};
+
+const IDLE: StripParams = { tab: TAB, isTabBusy: false };
+
+const stripOf = ({ tab, isTabBusy }: StripParams) => (
+  <ToastProvider>
+    <TerminalCommandSuggestion
+      session={session}
+      mountId={relay.mountId}
+      tab={tab}
+      isTabBusy={isTabBusy}
+    />
+  </ToastProvider>
+);
+
+const renderStrip = ({ tab, isTabBusy }: StripParams = IDLE) => render(stripOf({ tab, isTabBusy }));
 
 const writes = () =>
   storySpies.tauriInvoke.mock.calls
@@ -151,9 +166,59 @@ describe('the command strip of a terminal', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Add to prompt' }));
     });
 
-    expect(writes()).toEqual([{ sessionId: TAB.id, data: btoa(COMMAND) }]);
+    expect(writes()).toEqual([{ sessionId: TAB.id, data: btoa(TYPED) }]);
     screen.getByText('Press Enter to run');
     expect(screen.queryByRole('button', { name: 'Add to prompt' })).toBeNull();
+  });
+
+  it('says Press Enter to run only on the shell it typed into', async () => {
+    const view = renderStrip();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Add to prompt' }));
+    });
+    screen.getByText('Press Enter to run');
+
+    view.rerender(stripOf({ tab: OTHER_TAB, isTabBusy: false }));
+
+    expect(screen.queryByText('Press Enter to run')).toBeNull();
+    screen.getByRole('button', { name: 'Add to prompt' });
+  });
+
+  it('offers Add to prompt again when the suggestion changes under the same id', async () => {
+    const view = renderStrip();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Add to prompt' }));
+    });
+
+    suggested.moves = [{ ...FAILING_TEST, fingerprint: 'run-failing-test:relay:e2e' }];
+    view.rerender(stripOf(IDLE));
+
+    screen.getByRole('button', { name: 'Add to prompt' });
+  });
+
+  it('turns Add to prompt off while the shell is busy and never opens another shell', async () => {
+    renderStrip({ tab: TAB, isTabBusy: true });
+
+    const add = screen.getByRole('button', { name: 'Add to prompt' });
+    expect(add.hasAttribute('disabled')).toBe(true);
+
+    await act(async () => {
+      fireEvent.click(add);
+    });
+
+    expect(writes()).toEqual([]);
+    expect(store.getState().terminalTabs[session.id]).toEqual([TAB]);
+    expect(screen.queryByText('Press Enter to run')).toBeNull();
+  });
+
+  it('turns Add to prompt off when the shell has exited', () => {
+    renderStrip({ tab: { ...TAB, status: 'exited' }, isTabBusy: false });
+
+    expect(screen.getByRole('button', { name: 'Add to prompt' }).hasAttribute('disabled')).toBe(
+      true,
+    );
   });
 
   it('keeps the strip and says why when the shell refuses, and Retry types it', async () => {
