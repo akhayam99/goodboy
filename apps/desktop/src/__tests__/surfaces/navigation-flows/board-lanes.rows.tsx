@@ -8,6 +8,7 @@ import {
   click,
   clickButton,
   heading,
+  showStages,
   openPalette,
   useAppStore,
   pressBoardKey,
@@ -51,6 +52,7 @@ export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       shelveOneSession(ctx);
       await pressBoardKey();
+      await showStages();
     },
     lands: async () => {
       await heading('Board');
@@ -74,6 +76,7 @@ export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
       await openPalette(/^New session/);
       await heading('New session');
       await pressBoardKey();
+      await showStages();
     },
     lands: async () => {
       await heading('Board');

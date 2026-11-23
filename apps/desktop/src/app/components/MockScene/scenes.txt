@@ -1459,6 +1459,10 @@ u50-pr-entry-blocks-dark
 u50-pr-entry-blocks-light
 u50-pr-entry-checks-dark
 u50-pr-entry-checks-light
+u50-queue-clear-dark
+u50-queue-clear-light
+u50-queue-dark
+u50-queue-light
 update-card
 update-card-long-version
 update-card-narrow

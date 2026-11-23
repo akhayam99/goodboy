@@ -312,6 +312,12 @@
           "also": "right click menus"
         },
         {
+          "title": "Queue",
+          "text": "Act on what waits without opening each session.",
+          "group": "The board",
+          "also": "queue"
+        },
+        {
           "title": "Stage board",
           "text": "See where each task stands without moving cards around.",
           "group": "The board",

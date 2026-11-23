@@ -12,6 +12,7 @@ import {
   click,
   clickButton,
   heading,
+  showStages,
   lens,
   openCrumb,
   openPalette,
@@ -63,6 +64,7 @@ export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [
     covers: ['navigate', 'rightclick:session:Open'],
     open: async (ctx) => {
       await clickButton(/^Board/);
+      await showStages();
       await openObjectMenu(await sessionRow(ctx));
       await runMenuItem(/^Overview$/);
     },

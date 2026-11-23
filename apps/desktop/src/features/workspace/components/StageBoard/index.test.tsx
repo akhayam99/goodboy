@@ -28,6 +28,15 @@ const { state, gitStatuses, groups } = vi.hoisted(() => ({
   groups: { current: [] as ReadonlyArray<{ key: string; sessions: ReadonlyArray<Session> }> },
 }));
 
+vi.mock('../../../board/queue/QueueBoard/useBoardPage', () => ({
+  useBoardPage: () => ({
+    layout: 'stages',
+    focusedMoveId: null,
+    setLayout: () => undefined,
+    setFocusedMove: () => undefined,
+  }),
+}));
+
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: (selector: (s: typeof state) => unknown) => selector(state),

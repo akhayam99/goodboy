@@ -36,6 +36,9 @@ import { SessionsHeader } from './SessionsHeader';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { useClearSessionFilters } from './useClearSessionFilters';
+import { BoardLayoutSwitch } from './BoardLayoutSwitch';
+import { QueueBoard } from '../../../board/queue/QueueBoard';
+import { useBoardPage } from '../../../board/queue/QueueBoard/useBoardPage';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -47,6 +50,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const needsYou = useNeedsYouElsewhere({ workspaceId, sessions });
   const clearFilters = useClearSessionFilters({ workspaceId });
   const nav = useBoardNavigation();
+  const page = useBoardPage();
   const hover = useHoverCardTarget();
   const archivedList = useAppStore((s) => s.archivedSessions[workspaceId]);
   const archived = archivedList ?? EMPTY_ARRAY;
@@ -110,6 +114,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     onToggle: onSelectionKeyToggle,
     onSelectAll: selection.selectAll,
     onDelete: onSelectionKeyDelete,
+    isEnabled: page.layout === 'stages',
   });
   const focusFirstCard = useCallback(() => {
     boardRef.current?.querySelector<HTMLElement>('[data-select-id] button')?.focus();
@@ -161,6 +166,11 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           hiddenCount={pending || empty ? 0 : hiddenCount}
           needsYouElsewhere={pending || empty ? 0 : needsYou.elsewhere}
           onClearFilters={clearFilters}
+          layoutSwitch={
+            pending || empty ? null : (
+              <BoardLayoutSwitch layout={page.layout} onChange={page.setLayout} />
+            )
+          }
         >
           {!pending && hasProjects && empty && <SetupCard isMainWindow={isMainWindow} />}
 
@@ -187,7 +197,13 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             />
           )}
 
-          {!pending && !empty && (
+          {!pending && !empty && page.layout === 'queue' && (
+            <BoardFactsFrame workspaceId={workspaceId}>
+              <QueueBoard workspaceId={workspaceId} sessions={sessions} />
+            </BoardFactsFrame>
+          )}
+
+          {!pending && !empty && page.layout === 'stages' && (
             <BoardFactsFrame workspaceId={workspaceId}>
               <BoardLanes
                 layout={layout}
@@ -220,17 +236,19 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         onClose={hover.close}
       />
 
-      <ObjectSelectionBar
-        controls={selectionControls}
-        verbIds={BOARD_SELECTION_BAR.verbIds}
-        count={selectedIds.length}
-        total={selection.total}
-        onClear={selection.clearAll}
-        onSelectAll={selection.selectAll}
-        onDone={selection.clearAll}
-        onFocusReturn={focusFirstCard}
-        hint={BOARD_SELECTION_BAR.hint}
-      />
+      {page.layout === 'stages' && (
+        <ObjectSelectionBar
+          controls={selectionControls}
+          verbIds={BOARD_SELECTION_BAR.verbIds}
+          count={selectedIds.length}
+          total={selection.total}
+          onClear={selection.clearAll}
+          onSelectAll={selection.selectAll}
+          onDone={selection.clearAll}
+          onFocusReturn={focusFirstCard}
+          hint={BOARD_SELECTION_BAR.hint}
+        />
+      )}
     </div>
   );
 };

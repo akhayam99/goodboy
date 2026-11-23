@@ -162,6 +162,7 @@ describe('journey: the board opens a session', () => {
     act(() => useAppStore.getState().navigate({ to: BOARD_PLACE }));
     await settle();
     expect(captureLocation({ state: useAppStore.getState() }).place.at).toBe('board');
+    await click(screen.getByRole('tab', { name: 'Stages' }));
 
     const row = screen.getAllByRole('button', { name: /^Fix the rounding drift/ }).at(-1);
     if (row === undefined) {

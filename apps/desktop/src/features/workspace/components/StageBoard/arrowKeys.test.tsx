@@ -23,6 +23,7 @@ import {
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { pressKey } from '../../../../__tests__/helpers/pressKey';
+import { stagesNavigationOf } from '../../testing/stagesNavigationOf';
 import { StageBoard } from './index';
 
 const workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
@@ -52,6 +53,7 @@ beforeEach(async () => {
     archivedSessions: { [workspace.id]: [] },
     boardReady: true,
     currentWorkspaceId: workspace.id,
+    navigation: stagesNavigationOf({ state: useAppStore.getState(), workspaceId: workspace.id }),
   });
   render(
     <ToastProvider>
