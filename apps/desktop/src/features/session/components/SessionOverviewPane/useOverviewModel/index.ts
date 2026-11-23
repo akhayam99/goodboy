@@ -18,6 +18,7 @@ import { useSessionWorkModel } from '../../../central/useSessionWorkModel';
 import { inPlaceFoldersOf } from '../../../../../store/slices/project-mounts/inPlaceFoldersOf';
 import { useBranchNotes } from '../../../../resolve/notes/useBranchNotes';
 import { useBranchBoard } from '../../ProjectBlocks/useBranchBoard';
+import { useArchivedWorkRecord } from '../useArchivedWorkRecord';
 import { useIsEmptySession } from '../useIsEmptySession';
 import { useOverviewNotices } from '../useOverviewNotices';
 
@@ -30,6 +31,7 @@ const AUTO_CLOCK_MS = 15_000;
 export const useOverviewModel = ({ session }: Params) => {
   const sessionId = session.id;
   const isArchived = session.archivedAt != null;
+  useArchivedWorkRecord({ session });
   const model = useSessionWorkModel({ session });
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const clock = useNow(AUTO_CLOCK_MS, model.autoTrees.length > 0);

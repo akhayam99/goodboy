@@ -19,8 +19,10 @@ import { mapMrToPullRequestState } from '../../../features/integrations/gitlab/m
 import type { AppState } from '../../types';
 import { bitbucketMountOf, gitlabMountOf } from '../mount-request/requestOf';
 import { projectById } from '../projects/projectIndex';
+import { storedRequestOf } from './storedRequestOf';
 
-export type MountRequestState = Pick<AppState, 'mountGithub' | 'mountRequests'>;
+export type MountRequestState = Pick<AppState, 'mountGithub' | 'mountRequests'> &
+  Partial<Pick<AppState, 'mountPrLinks'>>;
 
 export type MountRowState = MountRequestState &
   Pick<
@@ -191,7 +193,8 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
   const bitbucket = bitbucketMountOf({ state, mountId });
   const bitbucketPr = bitbucket?.pr ?? null;
   if (bitbucketPr === null || bitbucketPr === undefined) {
-    return null;
+    const link = state.mountPrLinks?.[mountId];
+    return link === undefined ? null : storedRequestOf({ link });
   }
   const bitbucketState = bitbucketPrStateKind({
     state: bitbucketPr.state,

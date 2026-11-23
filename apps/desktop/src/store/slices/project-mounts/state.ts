@@ -4,6 +4,7 @@ import type {
   AgentId,
   MountBranchObservation,
   MountId,
+  MountPullRequestLink,
   SessionMountView,
   SessionProjectMount,
   ProjectId,
@@ -13,6 +14,7 @@ import type { WriteDestination } from './writeDestination';
 
 export type ProjectMountsState = {
   readonly sessionMounts: Readonly<Record<string, ReadonlyArray<SessionMountView>>>;
+  readonly mountPrLinks: Readonly<Record<string, MountPullRequestLink>>;
   readonly mountBranchObservations: Readonly<Record<string, ReadonlyArray<MountBranchObservation>>>;
   readonly mountBranchGone: MountBranchGoneMap;
   readonly sessionActiveMount: Readonly<Record<string, MountId | null>>;
@@ -27,6 +29,7 @@ export type ProjectMountsState = {
 
 export const projectMountsInitialState: ProjectMountsState = {
   sessionMounts: {},
+  mountPrLinks: {},
   mountBranchObservations: {},
   mountBranchGone: {},
   sessionActiveMount: {},

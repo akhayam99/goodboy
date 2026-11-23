@@ -10,7 +10,7 @@ type Params = {
   readonly extraMountIds?: ReadonlyArray<string>;
 };
 
-type Result = Pick<AppStore, 'mountGithub' | 'mountRequests'>;
+type Result = Pick<AppStore, 'mountGithub' | 'mountRequests' | 'mountPrLinks'>;
 
 const NO_MOUNT_IDS: ReadonlyArray<string> = [];
 
@@ -36,5 +36,11 @@ export const useSessionMountHosts = ({
   const mountRequests = useAppStore(
     useShallow((state) => pickKeys({ source: state.mountRequests, keys: mountIds })),
   );
-  return useMemo(() => ({ mountGithub, mountRequests }), [mountGithub, mountRequests]);
+  const mountPrLinks = useAppStore(
+    useShallow((state) => pickKeys({ source: state.mountPrLinks, keys: mountIds })),
+  );
+  return useMemo(
+    () => ({ mountGithub, mountRequests, mountPrLinks }),
+    [mountGithub, mountPrLinks, mountRequests],
+  );
 };

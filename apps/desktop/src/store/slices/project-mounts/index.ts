@@ -6,6 +6,7 @@ import { forgetMount } from './forgetMount';
 import { forkMount } from './forkMount';
 import { inspectMount } from './inspectMount';
 import { loadSessionMounts } from './loadSessionMounts';
+import { loadSessionWorkRecord } from './loadSessionWorkRecord';
 import { moveMountToRemoteCommits } from './moveMountToRemoteCommits';
 import { openMountRequest } from './openMountRequest';
 import { removeGoneMount } from './removeGoneMount';
@@ -23,6 +24,7 @@ export const createProjectMountsSlice = ({ set, get }: SliceDeps) => {
     detachProject: detachProject(set, get),
     ensureProjectMounted: ensureProjectMounted(set, get),
     loadSessionMounts: loadSessionMounts(set, get),
+    loadSessionWorkRecord: loadSessionWorkRecord({ set, get }),
     openMountRequest: openMountRequest(set, get),
     forkMount: forkMount(set, get),
     forgetMount: forgetMount(set, get),

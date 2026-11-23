@@ -31,6 +31,7 @@ import {
   type StoryStore,
 } from '../../../store/storyHarness';
 import {
+  at,
   harborline,
   mergedGithub,
   mountOf,
@@ -112,7 +113,7 @@ const gitlabOf = ({ state }: StateParams): MountRequestState => {
     mrs: [mr],
     links: [],
     approvals: null,
-    fetchedAt: '2026-10-04T09:00:00.000Z',
+    fetchedAt: at('2026-10-04T09:00:00.000Z'),
     loading: false,
     error: null,
   };
@@ -160,7 +161,7 @@ const bitbucketOf = ({ state }: StateParams): MountRequestState => {
     checks: null,
     reviewDecision: null,
     selected: null,
-    fetchedAt: '2026-10-04T09:00:00.000Z',
+    fetchedAt: at('2026-10-04T09:00:00.000Z'),
     loading: false,
     error: null,
   };
