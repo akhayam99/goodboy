@@ -1,8 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { AppShell } from '@goodboy/ui';
+import { AppShell, READER_DRAWER_STORAGE_KEY } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
-import { detailWidthIdOf } from '../../../../../store/slices/drawer/detailWidthIdOf';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
 import { ScenePlacesRail } from '../ScenePlacesRail';
@@ -13,18 +12,13 @@ import { seedPlanDrawerScene } from '../u21/planDrawerSeed';
 const WIDTH_PX = 1920;
 const WIDE_DRAWER_PX = 1000;
 
-const readerWidthKey = (): string => {
-  const id = detailWidthIdOf({ drawer: useAppStore.getState().drawer }) ?? 'reader';
-  return `goodboy:detail-width:${id}:v1`;
-};
-
 const saveReaderWidth = (widthPx: number | null): void => {
   try {
     if (widthPx === null) {
-      localStorage.removeItem(readerWidthKey());
+      localStorage.removeItem(READER_DRAWER_STORAGE_KEY);
       return;
     }
-    localStorage.setItem(readerWidthKey(), String(widthPx));
+    localStorage.setItem(READER_DRAWER_STORAGE_KEY, String(widthPx));
   } catch {
     return;
   }
@@ -42,8 +36,8 @@ const ReaderDrawerStage = ({ savedWidthPx, prepare, main }: StageProps) => {
   const sizing = useAppStore(selectDrawerSizing);
 
   useEffect(() => {
-    prepare();
     saveReaderWidth(savedWidthPx);
+    prepare();
     setIsReady(true);
     return () => saveReaderWidth(null);
   }, [prepare, savedWidthPx]);
