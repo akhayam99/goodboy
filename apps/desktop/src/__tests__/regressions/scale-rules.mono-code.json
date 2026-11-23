@@ -71,6 +71,7 @@
   "apps/desktop/src/features/storage/components/BranchesSection/BranchRow.tsx": "branch",
   "apps/desktop/src/features/storage/components/StoragePage/OtherToolRow.tsx": "path",
   "apps/desktop/src/features/terminal/components/PathLine.tsx": "path",
+  "apps/desktop/src/features/terminal/components/TerminalDrawer/TerminalCommandStrip.tsx": "command",
   "apps/desktop/src/features/terminal/components/TerminalDrawer/TerminalScopePicker.tsx": "branch",
   "apps/desktop/src/features/terminal/components/TerminalStudio/TerminalWorktreeRow.tsx": "branch",
   "apps/desktop/src/features/wireframes/components/WireframeViewer/ChangeList.tsx": "glyph",

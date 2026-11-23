@@ -1503,6 +1503,10 @@ u50-worktrees-dark
 u50-worktrees-light
 u50-worktrees-sheet-dark
 u50-worktrees-sheet-light
+u50-terminal-desk-dark
+u50-terminal-desk-light
+u50-terminal-desk-peek-dark
+u50-terminal-desk-peek-light
 update-card
 update-card-long-version
 update-card-narrow

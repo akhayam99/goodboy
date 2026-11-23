@@ -8,18 +8,29 @@ type LabelParams = {
 export type ScopeLabel = {
   readonly project: string | null;
   readonly place: string;
+  readonly folder: string | null;
   readonly isMono: boolean;
 };
 
 export const scopeLabelOf = ({ worktree, isBranchless }: LabelParams): ScopeLabel => {
   if (worktree.kind === 'workspace') {
-    return { project: null, place: 'Workspace folder', isMono: false };
+    return { project: null, place: 'Workspace folder', folder: worktree.folder, isMono: false };
   }
   if (worktree.kind === 'mount' && worktree.branch !== null) {
-    return { project: worktree.projectName, place: worktree.branch, isMono: true };
+    return {
+      project: worktree.projectName,
+      place: worktree.branch,
+      folder: worktree.folder,
+      isMono: true,
+    };
   }
   if (isBranchless) {
-    return { project: null, place: 'Session folder', isMono: false };
+    return { project: null, place: 'Session folder', folder: worktree.folder, isMono: false };
   }
-  return { project: null, place: worktree.folder ?? worktree.projectName, isMono: false };
+  return {
+    project: null,
+    place: worktree.folder ?? worktree.projectName,
+    folder: null,
+    isMono: false,
+  };
 };

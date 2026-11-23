@@ -22,7 +22,11 @@ import { TerminalPane } from '../TerminalStudio/TerminalPane';
 import { TerminalScriptsMenu } from '../TerminalStudio/TerminalScriptsMenu';
 import { TerminalStripActions } from '../TerminalStudio/TerminalStripActions';
 import { TerminalTabStrip } from '../TerminalStudio/TerminalTabStrip';
+import { OpenOnDeskButton } from './OpenOnDeskButton';
+import { TerminalCommandSuggestion } from './TerminalCommandSuggestion';
 import { TerminalScopePicker } from './TerminalScopePicker';
+import { TerminalWorktreeTabs } from './TerminalWorktreeTabs';
+import { useWorktreeTabs } from './useWorktreeTabs';
 import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
@@ -48,6 +52,7 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
       sessionId !== null && isBranchlessSession({ branch: state.sessionBranches[sessionId] }),
   );
   const reportError = useAppStore((state) => state.reportError);
+  const tracks = useWorktreeTabs({ sessionId, isBranchless });
   const { worktree, selected, groups, busyIds, targets } = model;
   const busyPaths = useMemo(
     () =>
@@ -138,6 +143,9 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
     });
   };
 
+  const shownMountId = mountIdOfWorktreeKey({ key: worktree.key });
+  const selectedMountId = tracks.tabs.find((tab) => tab.mountId === shownMountId)?.mountId ?? null;
+
   const pickSessionFolder = () => {
     if (sessionId === null) {
       return;
@@ -158,6 +166,7 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
             worktree={worktree}
             targets={targets}
             isBranchless={isBranchless}
+            hasTrackTabs={tracks.tabs.length > 1}
             busyPaths={busyPaths}
             onPickTarget={pickTarget}
             onPickSessionFolder={pickSessionFolder}
@@ -165,6 +174,7 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
           />
         </span>
       }
+      action={sessionId === null ? null : <OpenOnDeskButton sessionId={sessionId} />}
       menu={
         <TerminalStripActions
           worktree={worktree}
@@ -184,6 +194,13 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
         onKeyDown={handleKeyDown}
         className="flex h-full min-h-0 flex-1 flex-col gap-2 pb-2 pt-1"
       >
+        {tracks.tabs.length < 2 ? null : (
+          <TerminalWorktreeTabs
+            tabs={tracks.tabs}
+            selectedMountId={selectedMountId}
+            onSelect={tracks.pick}
+          />
+        )}
         <TerminalTabStrip
           isUnderHead
           label={worktree.projectName}
@@ -208,7 +225,15 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
             )
           }
         />
-        <div className="flex min-h-0 flex-1 flex-col px-2">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 px-2">
+          {tracks.session === null || selectedMountId === null ? null : (
+            <TerminalCommandSuggestion
+              session={tracks.session}
+              mountId={selectedMountId}
+              tab={selected}
+              isTabBusy={busyIds.has(selected.id)}
+            />
+          )}
           <TerminalPane
             key={selected.id}
             tab={selected}
