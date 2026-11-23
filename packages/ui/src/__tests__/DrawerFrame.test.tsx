@@ -288,17 +288,20 @@ describe('DrawerFrame', () => {
 
 type WidthParams = { readonly width: number };
 
+type ObserverCallback = (
+  entries: ReadonlyArray<{ readonly target: Element; readonly contentRect: { width: number } }>,
+) => void;
+
 const stubHeadWidth = ({ width }: WidthParams) => {
   class FixedResizeObserver {
-    private readonly callback: ResizeObserverCallback;
+    private readonly callback: ObserverCallback;
 
-    constructor(callback: ResizeObserverCallback) {
+    constructor(callback: ObserverCallback) {
       this.callback = callback;
     }
 
     observe(target: Element) {
-      const entry = { target, contentRect: { width } } as unknown as ResizeObserverEntry;
-      this.callback([entry], this as unknown as ResizeObserver);
+      this.callback([{ target, contentRect: { width } }]);
     }
 
     unobserve() {
@@ -335,8 +338,8 @@ describe('DrawerFrame at a narrow width', () => {
     stubHeadWidth({ width: 520 });
     render(<PairFrame onTurn={vi.fn()} />);
 
-    expect(screen.getByRole('button', { name: 'Stack the panels' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open full page' })).toBeDefined();
+    screen.getByRole('button', { name: 'Stack the panels' });
+    screen.getByRole('button', { name: 'Open full page' });
     expect(document.querySelector('[data-head-folded]')).toBeNull();
   });
 
@@ -351,7 +354,7 @@ describe('DrawerFrame at a narrow width', () => {
     expect(screen.getByRole('heading', { name: 'Monitor for payments-api' }).className).toContain(
       'truncate',
     );
-    expect(screen.getByRole('button', { name: 'Close' })).toBeDefined();
+    screen.getByRole('button', { name: 'Close' });
     fireEvent.click(screen.getByRole('button', { name: 'More on Monitor for payments-api' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Stack the panels' }));
 
@@ -376,7 +379,7 @@ describe('DrawerFrame at a narrow width', () => {
 
     expect(screen.queryByRole('button', { name: 'Stack the panels' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^More on Terminal/ })).toBeNull();
-    expect(screen.getByRole('button', { name: 'More on ledger-core' })).toBeDefined();
+    screen.getByRole('button', { name: 'More on ledger-core' });
   });
 });
 

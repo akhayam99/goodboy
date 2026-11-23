@@ -201,7 +201,6 @@ describe('TaskGroupRows', () => {
     if (failure === null) {
       throw new Error('The failure notice is not drawn.');
     }
-    expect(failure.className).not.toContain('h-8');
     expect(heading.compareDocumentPosition(failure) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );

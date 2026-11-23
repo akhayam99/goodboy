@@ -951,6 +951,8 @@ tasks-cursor
 tasks-rail
 tasks-rail-folded
 tasks-rail-open
+tasks-source-failure
+tasks-source-failure-dark
 terminal-drawer-page
 terminal-drawer-session
 terminal-empty
@@ -963,6 +965,8 @@ timeline-cards
 toast-over-drawer
 toast-over-drawer-overlay
 toasts
+tool-heads-narrow
+tool-heads-narrow-dark
 tooltip-labels
 tooltip-shortcut
 tooltip-truncated
