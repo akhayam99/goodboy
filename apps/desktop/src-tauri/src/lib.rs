@@ -51,6 +51,8 @@ mod live_work;
 mod local_image;
 mod logging;
 mod monitor;
+mod mount_port;
+mod overlap;
 mod path_env;
 mod permissions;
 mod planner;
@@ -526,6 +528,7 @@ pub fn run() {
             turn::turn_launch_id,
             turn::turn_quiet,
             live_work::live_work,
+            overlap::overlap_read,
             window_close::window_close_claim,
             window_heartbeat::window_heartbeat,
             turn::turn_delivery_lookup,

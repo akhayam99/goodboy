@@ -278,6 +278,7 @@
     "open_url",
     "other_tools_cancel",
     "other_tools_scan",
+    "overlap_read",
     "patch_workspace_overrides",
     "permission_audit_insert",
     "permission_audit_list",

@@ -1453,6 +1453,10 @@ u50-mounts-picker-dark
 u50-mounts-picker-light
 u50-mounts-unmount-dark
 u50-mounts-unmount-light
+u50-overlap-dark
+u50-overlap-light
+u50-overlap-open-dark
+u50-overlap-open-light
 u50-overview-dark
 u50-overview-light
 u50-overview-plain-dark

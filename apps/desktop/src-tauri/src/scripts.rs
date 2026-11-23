@@ -177,6 +177,19 @@ fn build_script_command(body: &str, cwd: &str, login_env: &[(String, String)]) -
     cmd
 }
 
+fn script_command_in_mount(
+    body: &str,
+    cwd: &str,
+    login_env: &[(String, String)],
+    port: Option<u16>,
+) -> CommandBuilder {
+    let mut cmd = build_script_command(body, cwd, login_env);
+    for (key, value) in crate::mount_port::port_env(port) {
+        cmd.env(key, value);
+    }
+    cmd
+}
+
 struct ScriptSpawnRequest<R: Runtime> {
     app: AppHandle<R>,
     registry: Arc<Mutex<HashMap<String, ScriptSlot>>>,
@@ -187,6 +200,7 @@ struct ScriptSpawnRequest<R: Runtime> {
     run_id: String,
     session_id: String,
     mount_id: Option<String>,
+    port: Option<u16>,
     cwd: String,
     cols: u16,
     rows: u16,
@@ -247,8 +261,12 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
         })
         .map_err(|error| ScriptError::Io(error.to_string()))?;
 
-    let mut cmd =
-        build_script_command(&request.body, &request.cwd, crate::path_env::resolved_env());
+    let mut cmd = script_command_in_mount(
+        &request.body,
+        &request.cwd,
+        crate::path_env::resolved_env(),
+        request.port,
+    );
     let tag = crate::aux_spawn::tag_pty_spawn(&mut cmd, crate::aux_spawn::SpawnKind::Script);
     let child = pair
         .slave
@@ -431,6 +449,7 @@ pub async fn workspace_script_run(
         load_enabled_script(&conn, &script_id)?
     };
     let mount_id = crate::proc::ledger::mount_id_in(&state, &session_id, Some(&cwd));
+    let port = crate::mount_port::port_in(&state, mount_id.as_deref());
     spawn_script_blocking(ScriptSpawnRequest {
         app,
         registry: Arc::clone(&registry.0),
@@ -441,6 +460,7 @@ pub async fn workspace_script_run(
         run_id,
         session_id,
         mount_id,
+        port,
         cwd,
         cols,
         rows,
@@ -465,6 +485,7 @@ pub async fn workspace_script_run_adhoc(
 ) -> Result<String, ScriptError> {
     let run_id = run_id.unwrap_or_else(|| format!("adhoc-{:032x}", rand::random::<u128>()));
     let mount_id = crate::proc::ledger::mount_id_in(&state, &session_id, Some(&cwd));
+    let port = crate::mount_port::port_in(&state, mount_id.as_deref());
     spawn_script_blocking(ScriptSpawnRequest {
         app,
         registry: Arc::clone(&registry.0),
@@ -475,6 +496,7 @@ pub async fn workspace_script_run_adhoc(
         run_id: run_id.clone(),
         session_id,
         mount_id,
+        port,
         cwd,
         cols,
         rows,
@@ -643,6 +665,25 @@ mod tests {
     }
 
     #[test]
+    fn a_script_in_a_mount_gets_the_mount_port_over_the_login_one() {
+        let env = vec![("PORT".to_string(), "3000".to_string())];
+        let in_mount = script_command_in_mount("pnpm dev", "/tmp", &env, Some(41230));
+        assert_eq!(
+            in_mount
+                .get_env("PORT")
+                .map(|v| v.to_string_lossy().into_owned()),
+            Some("41230".to_string())
+        );
+        let outside = script_command_in_mount("pnpm dev", "/tmp", &env, None);
+        assert_eq!(
+            outside
+                .get_env("PORT")
+                .map(|v| v.to_string_lossy().into_owned()),
+            Some("3000".to_string())
+        );
+    }
+
+    #[test]
     fn registry_retains_and_lists_live_run_metadata() {
         let registry = ScriptRegistry::new();
         let metadata = LiveScriptRun {
@@ -781,6 +822,7 @@ mod tests {
             run_id: "run-exit".to_string(),
             session_id: "session-1".to_string(),
             mount_id: None,
+            port: None,
             cwd: dir.to_string_lossy().into_owned(),
             cols: 80,
             rows: 24,
@@ -816,6 +858,7 @@ mod tests {
             run_id: "run-snapshot".to_string(),
             session_id: "session-1".to_string(),
             mount_id: None,
+            port: None,
             cwd: dir.to_string_lossy().into_owned(),
             cols: 80,
             rows: 24,
@@ -890,6 +933,7 @@ mod tests {
             run_id: "run-ledger".to_string(),
             session_id: "session-3".to_string(),
             mount_id: Some("mount-credit".to_string()),
+            port: None,
             cwd: cwd.clone(),
             cols: 80,
             rows: 24,
@@ -929,6 +973,7 @@ mod tests {
             run_id: run_id.to_string(),
             session_id: "session-5".to_string(),
             mount_id: None,
+            port: None,
             cwd: cwd.to_string(),
             cols: 80,
             rows: 24,

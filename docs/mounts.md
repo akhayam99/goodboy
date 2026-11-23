@@ -834,6 +834,50 @@ The Now block closes with the branch facts, read by `useBranchFacts`
   Bitbucket branch shows its state in the list and has no Mark ready, Merge or
   Fix checks card yet.
 
+## One port per worktree
+
+Two worktrees of one repo used to start their dev servers on the same port. Now
+every live mount (attached, with a folder, in a session that is not deleted) owns
+a block of ten ports from 41000, and every new terminal and script opened in its
+folder gets the first one as `PORT`. A mount keeps its block while it lives: the
+block comes from a hash of the mount id, and an older mount claims first when two
+hash to the same block. Once given, a block stays with its mount until the app
+quits, even when the older mount that pushed it aside leaves. A terminal or script outside every mount keeps the app's
+environment (`mount_port.rs`, read by `terminal_open` and the two script runs).
+
+`PORT` is a promise only to a tool that reads it. A project that writes its port
+in code ignores it: a port in a `package.json` script (`vite -p 5173`), in
+`vite.config.*` (`server.port`) or in a compose file. Vite reads no `PORT` at
+all, so a Vite project needs `--port $PORT` in its dev script. A terminal opened
+before the mount was live keeps the environment it started with. The overlap
+read carries each mount's port and `hasFixedPort` (`watched::has_fixed_port`),
+so a surface can show the mount's own port and say when the code sets it.
+
+## Overlaps between mounts
+
+Two sessions on one repo never write over each other: each has its own
+worktree. They meet at the merge. The overlap read says it earlier. For every
+live mount it lists the files the branch changed since its merge base with the
+base branch, committed, edited or new. Two mounts of the same project that list
+the same file overlap. The source is git on disk, never a table, and nothing is
+stored (`overlap_read` in `overlap.rs`: `git diff --name-only --no-renames`
+against the merge base, so a rename lists the old path and the new one, plus
+untracked files, at most 2000 paths per mount). A mount with no base lists
+nothing; a git read that fails fails the whole read, and the chip keeps the last
+good answer while a warning offers Retry.
+
+The overlap chip warns and proposes an order; it never blocks a merge. It shows
+only when the two mounts share a file. Its popover names the shared file, says
+which branch to merge first (the one that changes fewer files; on a tie, the
+older mount) and offers Message both Implementers, which queues one message to
+the Implementer of each mount, with Undo while neither has read it. Both notes
+wait held in their queues for the ten seconds of Undo, so a finishing turn
+delivers neither; a note that can't be saved or withdrawn stays held, and Retry
+sends the same notes to the same Implementers. On the
+Queue the chip sits once, on the row that waits: the one the proposed order
+merges second. Inside a session every row of an overlapping mount carries its
+own.
+
 ## Confirmed mount folder
 
 A manual mount preview allocates its directory before enabling confirmation.
