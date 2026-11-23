@@ -689,8 +689,9 @@ as the left door. The signal dot and waiting ring anchor to the 16px glyph
 (`tool-glyph`, `TOOL_CORNER_SLOT`), at its top end and top start corners. The
 port count sits on the icon button's corner and never covers the label below.
 
-Terminal, Browser and Monitor open from the rail on every page, and inside a
-session they belong to that session. Monitor opens
+Terminal, Browser and Monitor open from the rail on every page. Inside a
+session, Terminal and Browser belong to that session; Monitor always shows the
+workspace. Monitor opens
 `MonitoringDrawer` with `sessionId: null` through `toggleRailTool`; its header
 has Open full page, and `UNSAVED_DRAWER_KINDS` keeps it out of the saved window
 layout. Terminal and Browser open with

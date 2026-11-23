@@ -140,7 +140,13 @@ describe('the pull request panel on the Desk', () => {
     });
   });
 
-  it('names the host of a check log it cannot read here', async () => {
+  it.each([
+    {
+      detailsUrl: 'https://buildkite.com/harborline/payments-api/builds/42',
+      label: 'Open on buildkite.com',
+    },
+    { detailsUrl: 'file:///checks/build.log', label: 'Open log' },
+  ])('labels the unreadable check log link $label', async ({ detailsUrl, label }) => {
     seedGithub({
       detailError: null,
       detailFetchedAt: brandId<IsoDateTime>({ value: '2026-10-07T08:00:00.000Z' }),
@@ -158,7 +164,7 @@ describe('the pull request panel on the Desk', () => {
         {
           name: 'integration-tests',
           conclusion: 'failure',
-          detailsUrl: 'https://buildkite.com/harborline/payments-api/builds/42',
+          detailsUrl,
           durationMs: null,
         },
       ],
@@ -169,7 +175,7 @@ describe('the pull request panel on the Desk', () => {
 
     const log = await screen.findByRole('region', { name: 'Log of integration-tests' });
     await within(log).findByText('Not readable here.');
-    within(log).getByRole('button', { name: 'Open on buildkite.com' });
+    within(log).getByRole('button', { name: label });
   });
 
   it('reads a GitLab merge request and its comments instead of saying there is none', () => {
