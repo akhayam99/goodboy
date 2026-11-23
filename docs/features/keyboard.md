@@ -38,7 +38,7 @@ The strip ends with the same controls on every scope.
 - The ports sit next to it.
 - **⋯** holds **Send last output**, **Copy worktree path** and **Open session**. In the dock it sits in the header, before **Open full page**, as in the Browser; on the page it comes before **Dock**. A folder with no session has a quiet **Copy folder path** instead.
 - **Send last output** attaches the end of the tab's scrollback to the session's composer. It is sent only when you send.
-- Selecting text in a terminal shows **Send to the agent**. It attaches just the selection the same way.
+- Selecting text in a terminal shows **Add to message**. It attaches just the selection the same way.
 - A port a terminal listens on shows as quiet text on a worktree row that is not selected. For the selected worktree it shows as a chip at the right edge of the tab strip, never on a tab. A click opens localhost on it in the session's browser, **⌘-click** in your own. A folder with no session opens your browser.
 - Port detection runs every 5 seconds and sees TCP only.
 
@@ -202,8 +202,8 @@ Pin the scripts you use and run them from the session.
 - Its port opens beside the session on a click, and in your own browser on **⌘-click**.
 - **Run** on a Service starts it in place and leaves the list as it is. The row's last line, uptime and port are the feedback. A click on the row, or Enter, opens its output.
 - A project with more than one Service has **Start all services** on its header. It starts the ones that are not running.
-- **Run** on a Command shows the Command's live output in place of the list, with **Run again**, **Copy output**, **Send to the agent** and **Back to scripts**.
-- **Send to the agent** attaches the log to the session's composer without sending it. The log is titled with the script, the exit code and the worktree. The same verb is in the row's right click menu.
+- **Run** on a Command shows the Command's live output in place of the list, with **Run again**, **Copy output**, **Add to message** and **Back to scripts**.
+- **Add to message** attaches the log to the session's composer without sending it. The log is titled with the script, the exit code and the worktree. The same verb is in the row's right click menu.
 - A line a program redraws (a progress bar, a spinner) shows as its last frame, one line.
 - A running script takes no input. Its pane says **Output only. Stop ends it.**
 - A running script puts a dot on **Scripts**. A run that failed puts a red one there until you open its output.
@@ -238,8 +238,8 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - In a window narrower than 1100 pixels the right rail keeps its icons only, with the names in the tooltips, so a narrow panel still opens beside the page. The Browser then lies over the page, left of the rail, behind a veil. A click on the veil or **⌘⇧W** closes it; **Esc** does too once you click outside the web page, since the page keeps Esc for itself.
 - The address bar shows the page, not its address: the icon, the title and the host. Click it, or press **⌘L**, to see the full address selected and type a new one. **Esc** puts the title back. The icon is the site's own when it has one, and a letter when it has none.
 - While a page loads, a thin line breathes under the address row and Reload becomes **Stop**. A page that never finishes says so after 30 seconds. **Back** and **Forward** turn off when there is nothing behind or ahead.
-- **More** holds **Send to the agent**, Open in your browser, **Open full page**, Copy address, Duplicate and Close tab. On macOS it also holds **Inspect in Safari**, which shows the tab in Safari's Develop menu.
-- **Send to the agent** puts the text you see on the page on the message box as a chip with the title, the site and the word count. It also sits in the right-click menu of a tab, and **⌘⇧S** does the same for the shown tab.
+- **More** holds **Add to message**, Open in your browser, **Open full page**, Copy address, Duplicate and Close tab. On macOS it also holds **Inspect in Safari**, which shows the tab in Safari's Develop menu.
+- **Add to message** puts the text you see on the page on the message box as a chip with the title, the site and the word count. It also sits in the right-click menu of a tab, and **⌘⇧S** does the same for the shown tab.
 - The page is read when you press it, never before. Nothing goes to the agent until you send the message, and the × on the chip takes it away.
 - A page over 60,000 characters is cut, and the text says so at the end. A key or a token in the text is hidden.
 - A page that moved to another site since you pressed is not read. A failure says why under the address row, with **Retry**.
@@ -283,7 +283,7 @@ This part is for contributors and agents who change the feature.
 - Service usage: `serviceUsageCardOf` builds the card with CPU and memory.
 - Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule. The page is the `browser` studio kind (`BrowserStudio`), and [browser.md](../browser.md#the-page) owns its groups, its route and the view owner rule. `promoteBrowserTab` and `demoteBrowserTab` move a tab between them ([browser.md](../browser.md#moves)).
 - Browser doors: [browser.md](../browser.md#doors) owns `openInBrowser`, the click rule, the peek and the `browser.address` scope beside `ask.open`.
-- Send to the agent: `sendPageToAgent` reads through `browser_page_text` and queues the file for the agent `useHandOutputToAgent` names; [browser.md](../browser.md#doors) owns the rule and `browser.sendToAgent` is the key.
+- Add to message: `sendPageToAgent` reads through `browser_page_text` and queues the file for the agent `useHandOutputToAgent` names; [browser.md](../browser.md#doors) owns the rule and `browser.sendToAgent` is the key.
 - Browser console: `useConsoleEntries` pulls `browser_console_read`, and `applyConsoleRead` keeps the latest cursor. `BrowserConsole` draws the region and `consoleAttachmentOf` the file. [browser.md](../browser.md#console) owns the hook, the read and the caps. `browser.console` is the key.
 - Files: the Changes page switches between **Changed** and **All files** (`useChangesMode`); the file chord opens it on All files.
 

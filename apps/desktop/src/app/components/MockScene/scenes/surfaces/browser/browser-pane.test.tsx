@@ -273,11 +273,11 @@ describe('the browser pane scenes', () => {
     expect(within(menu).getAllByRole('menuitem')).toHaveLength(7);
   });
 
-  it('opens the More menu on the Send to the agent row first', async () => {
+  it('opens the More menu on the Add to message row first', async () => {
     mount({ id: 'browser-handoff' });
 
     const menu = await screen.findByRole('menu', undefined, WAIT);
-    expect(within(menu).getAllByRole('menuitem')[0]?.textContent).toContain('Send to');
+    expect(within(menu).getAllByRole('menuitem')[0]?.textContent).toContain('Add to message');
   });
 
   it('peeks a localhost link in a decision with the title of its open tab', async () => {

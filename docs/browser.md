@@ -1005,7 +1005,7 @@ that shadows it, so the chord follows Chrome's J.
   instructions, then the Console and Failed requests sections (only requests
   with status 0 or 400 and up), each cut to its newest 30,000 characters with
   a note. `redactSecrets` hides keys and tokens, and the file goes through the
-  same queue as Send to the agent (`queueOutputHandoff`): a chip, a remove,
+  same queue as Add to message (`queueOutputHandoff`): a chip, a remove,
   nothing sent until you send.
 - **Trust**: a page can write any line to its own console, answer the event
   itself or replace a console method after the hook; the console then shows

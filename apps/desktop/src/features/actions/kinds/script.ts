@@ -65,7 +65,7 @@ export const SCRIPT_KIND: ObjectKindDefinition<ScriptActionTarget, ScriptFacts> 
     },
     {
       id: 'script.askAgent',
-      label: ({ facts }) => facts.ask?.label ?? NAMES.sendToTheAgent,
+      label: ({ facts }) => facts.ask?.label ?? NAMES.addToMessage,
       shortLabel: () => 'Ask',
       icon: CONCEPT_ICONS.agents,
       group: 'act',

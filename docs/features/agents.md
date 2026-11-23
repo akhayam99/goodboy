@@ -135,7 +135,7 @@ Do more from the message box. The **+**, named **Add to message**, opens **Attac
 
 ### Attach files
 
-Hand an agent images, PDFs, CSV and text files, up to 10 at a time and 10 MB each, by paste, drop or pick. The reply to an agent takes them too. **Send to the agent** on a script's output or a terminal adds the text the same way, as a file titled with where it came from, redacted and cut to its last 24,000 characters.
+Hand an agent images, PDFs, CSV and text files, up to 10 at a time and 10 MB each, by paste, drop or pick. The reply to an agent takes them too. **Add to message** on a script's output or a terminal adds the text the same way, as a file titled with where it came from, redacted and cut to its last 24,000 characters.
 
 ### Drift warning
 

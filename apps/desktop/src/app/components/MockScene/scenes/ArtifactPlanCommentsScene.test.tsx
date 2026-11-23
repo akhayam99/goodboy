@@ -107,7 +107,7 @@ describe('ArtifactPlanCommentsScene', () => {
     expect(run.getAttribute('data-variant')).toBe('primary');
   });
 
-  it('tells the story of a plan that ran: not sent, Copy, Send to the agent', async () => {
+  it('tells the story of a plan that ran: not sent, Copy, Add to message', async () => {
     render(<Scene hasRun />);
 
     const bar = await screen.findByTestId('plan-comment-bar');

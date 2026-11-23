@@ -265,12 +265,12 @@ describe('send the page to the agent', () => {
     expect(queued({ agentId: IMPLEMENTER })).toEqual([]);
   });
 
-  it('names the agent the composer would send to in the More menu and queues for it', async () => {
+  it('adds the page to the message of the agent the composer would send to', async () => {
     store.setState({ selectedAgentId: { [SESSION_ID]: REVIEWER } });
     await openCheckout();
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    const row = await screen.findByRole('menuitem', { name: /Send to Reviewer/ });
+    const row = await screen.findByRole('menuitem', { name: /Add to message/ });
     await act(async () => {
       fireEvent.click(row);
     });
@@ -286,7 +286,7 @@ describe('send the page to the agent', () => {
 
     const list = screen.getByRole('navigation', { name: 'Browser tabs' });
     fireEvent.contextMenu(within(list).getByText('localhost:5173'));
-    const row = await screen.findByRole('menuitem', { name: /Send to Implementer/ });
+    const row = await screen.findByRole('menuitem', { name: /Add to message/ });
     await act(async () => {
       fireEvent.click(row);
     });
@@ -362,7 +362,7 @@ describe('send the page to the agent', () => {
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
 
     expect(pageTextCalls()).toEqual([]);
-    const row = await screen.findByRole('menuitem', { name: /Send to/ });
+    const row = await screen.findByRole('menuitem', { name: /Add to message/ });
     expect(row.getAttribute('aria-disabled')).toBe('true');
   });
 });

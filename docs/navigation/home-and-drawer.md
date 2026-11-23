@@ -686,7 +686,7 @@ and the log, which follows the tail until you scroll up and then offers
 `Scroll to latest`. Error lines carry a danger bar and an `err` prefix, and a long token (a path, a
 hash) wraps at the edge instead of breaking every word. The status row under the log
 says `Following output` while it runs and the exit, time and Copy output after.
-`Send to the agent` sits next to it, while the run is live too, and
+`Add to message` sits next to it, while the run is live too, and
 hands the log to the session's agent: it queues a text attachment titled
 `Output of <script>, <exit>, <project> on <branch>` (`outputHandoffOf`), opens
 the session when it is not on screen, and the composer takes it as a chip,

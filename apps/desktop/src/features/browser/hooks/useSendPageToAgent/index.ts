@@ -89,7 +89,7 @@ export const useSendPageToAgent = ({
   }, [runKey, send, tabs]);
 
   return {
-    label: target.agentName === null ? NAMES.sendToTheAgent : `Send to ${target.agentName}`,
+    label: NAMES.addToMessage,
     canSend: shown !== null && canSendTab({ tab: shown }),
     canSendTab,
     isBusy,

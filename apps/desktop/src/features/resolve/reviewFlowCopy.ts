@@ -54,7 +54,7 @@ export const COMPOSE_COPY: Record<
 > = {
   edit: {
     label: 'What should change',
-    submit: 'Send to the agent',
+    submit: 'Send changes',
     placeholder: 'Tell the agent what to do differently',
   },
   redraft: {

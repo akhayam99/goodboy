@@ -136,7 +136,7 @@ describe('PlanCommentsProvider', () => {
     const sentToAgent = () =>
       vi.fn(async () => ({ kind: 'sentToAgent' as const, agentName: 'Implement' }));
 
-    it('reads not sent, with Copy and Send to the agent that can still read them', () => {
+    it('reads not sent, with Copy and Add to message that can still read them', () => {
       renderProvider({
         seed: { run: 'took', status: 'consumed', drafts: [aPlanDraft()] },
         planOverrides: RAN,
