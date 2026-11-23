@@ -94,13 +94,10 @@ export const QueueBoard = ({ workspaceId, sessions }: Props) => {
             notNowCount={model.needsYou.notNowCount}
             isActive={focus.band === 'needs-you'}
             kickerOf={kickerOf}
-            onFocus={({ move }) => {
-              focus.activateBand({ band: 'needs-you' });
+            onOpen={({ move }) => {
               page.setFocusedMove({ moveId: move.id });
+              nav.openLanding({ move });
             }}
-            onAnswer={actions.answer}
-            onOpenPage={nav.openPage}
-            onOpenSession={nav.openLanding}
             onNotNow={actions.notNow}
             onShowHidden={() => showAll({ moveIds: model.needsYou.notNowIds })}
           />

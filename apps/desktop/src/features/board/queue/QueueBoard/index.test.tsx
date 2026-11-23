@@ -52,7 +52,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   stubStoryInvoke({ live_work: [] });
-  useQueueSends.setState({ pending: {}, notNow: new Set(), drafts: {}, answerDrafts: {} });
+  useQueueSends.setState({ pending: {}, notNow: new Set(), drafts: {} });
 });
 
 afterEach(() => {
@@ -144,9 +144,7 @@ const moveOf = ({ reason }: MoveParams): QueueMove => ({
   id: `${asking.id}:${reason}`,
   sessionId: asking.id,
   reason,
-  kind: 'page',
   title: reason,
-  question: null,
   since: null,
 });
 
@@ -163,63 +161,93 @@ describe('the Queue', () => {
     within(screen.getByRole('region', { name: 'Running' })).getByText('Nothing is running');
   });
 
-  it('puts the question that waits on you in Needs you, as the focused Move', () => {
+  it('puts the question that waits on you in Needs you as one row, with no card and no Open in session', () => {
     seedColumn({ store: useAppStore, sessions: [quiet, asking], questions: [asking] });
     renderQueue();
     const needsYou = screen.getByRole('region', { name: 'Needs you' });
     const question = openQuestionFor({ sessionId: asking.id });
-    within(needsYou).getByText(question.text);
-    expect(needsYou.querySelector('[data-queue-move-focus]')).not.toBeNull();
+    within(needsYou).getByRole('button', { name: question.text });
+    expect(within(needsYou).queryByRole('button', { name: 'Open in session' })).toBeNull();
+    expect(within(needsYou).queryByRole('textbox')).toBeNull();
     expect(within(needsYou).queryByText('Nothing waits on you.')).toBeNull();
   });
 
-  it('shows the recommended answer as the filled choice and Enter sends that one', async () => {
-    const answers = vi.fn(async () => undefined);
-    seedColumn({ store: useAppStore, sessions: [asking] });
-    const question = {
-      ...openQuestionFor({ sessionId: asking.id }),
-      suggestedAnswers: ['Drop to one minute'],
-      recommendedAnswer: 'Keep five minutes',
-    };
-    useAppStore.setState({
-      sessionOpenQuestions: { [asking.id]: [question] },
-      answerOpenQuestions: answers,
-    });
+  it('draws every Move as the same row, the keyboard one on the selection surface', () => {
+    seedColumn({ store: useAppStore, sessions: [asking, second], questions: [asking, second] });
     renderQueue();
-    const preferred = document.querySelector<HTMLElement>('[data-answer-preferred]');
-    expect(preferred?.textContent).toBe('Keep five minutes');
-    fireEvent.keyDown(queueRoot(), { key: 'Enter' });
-    await act(async () => useQueueSends.getState().flushAll());
-    expect(answers).toHaveBeenCalledWith(
-      asking.id,
-      [{ id: question.id, text: question.text, answer: 'Keep five minutes' }],
-      null,
+    const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-queue] [data-row]'));
+    const shapes = rows.map((row) =>
+      Array.from(row.querySelectorAll('*'))
+        .map((node) => node.tagName)
+        .join(' '),
     );
+    expect(shapes).toHaveLength(2);
+    expect(new Set(shapes).size).toBe(1);
+    expect(rows.map((row) => row.getAttribute('data-selected'))).toEqual(['true', 'false']);
   });
 
-  it('keeps a typed answer when another Move takes the focus and comes back', () => {
+  it('opens the session where the Move waits when its row is clicked', () => {
+    const navigate = vi.fn();
     seedColumn({ store: useAppStore, sessions: [asking, second], questions: [asking, second] });
+    useAppStore.setState({ navigate });
     renderQueue();
-    const firstId = moveIdOf({ sessionId: asking.id });
-    const secondId = moveIdOf({ sessionId: second.id });
-    const input = screen.getByRole('textbox');
-    fireEvent.change(input, { target: { value: 'Keep five' } });
-    fireEvent.click(moveButton({ moveId: secondId }));
-    fireEvent.click(moveButton({ moveId: firstId }));
-    expect(screen.getByRole<HTMLInputElement>('textbox').value).toBe('Keep five');
+    fireEvent.click(moveButton({ moveId: moveIdOf({ sessionId: second.id }) }));
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: second.id }) });
   });
 
-  it('gives the keys back to Needs you when one of its Moves is clicked, and F6 moves the focus', () => {
+  it('opens the keyboard row with Enter and moves to the next one with J', () => {
+    const navigate = vi.fn();
+    seedColumn({ store: useAppStore, sessions: [asking, second], questions: [asking, second] });
+    useAppStore.setState({ navigate });
+    renderQueue();
+    fireEvent.keyDown(queueRoot(), { key: 'j' });
+    fireEvent.keyDown(queueRoot(), { key: 'Enter' });
+    expect(navigate).toHaveBeenLastCalledWith({ to: sessionPlace({ sessionId: second.id }) });
+  });
+
+  it('puts a Move off from its row with Not now, and Undo brings it back', async () => {
+    seedColumn({ store: useAppStore, sessions: [asking], questions: [asking] });
+    renderQueue();
+    const needsYou = screen.getByRole('region', { name: 'Needs you' });
+    const question = openQuestionFor({ sessionId: asking.id });
+    fireEvent.click(within(needsYou).getByRole('button', { name: `Not now: ${question.text}` }));
+    await waitFor(() =>
+      expect(within(needsYou).queryByRole('button', { name: question.text })).toBeNull(),
+    );
+    await act(async () => {
+      await useAppStore.getState().undoLastOperation();
+    });
+    await within(needsYou).findByRole('button', { name: question.text }, WAIT);
+  });
+
+  it('puts the keyboard Move off with S, and Undo brings it back', async () => {
+    seedColumn({ store: useAppStore, sessions: [asking], questions: [asking] });
+    renderQueue();
+    const needsYou = screen.getByRole('region', { name: 'Needs you' });
+    const question = openQuestionFor({ sessionId: asking.id });
+    fireEvent.keyDown(queueRoot(), { key: 's' });
+    await waitFor(() =>
+      expect(within(needsYou).queryByRole('button', { name: question.text })).toBeNull(),
+    );
+    within(needsYou).getByRole('button', { name: 'Show 1 hidden' });
+    await act(async () => {
+      await useAppStore.getState().undoLastOperation();
+    });
+    await within(needsYou).findByRole('button', { name: question.text }, WAIT);
+  });
+
+  it('passes the keys to the next band with F6', () => {
     seedColumn({ store: useAppStore, sessions: [asking, second], questions: [asking, second] });
     renderQueue();
-    const input = screen.getByRole('textbox');
-    input.focus();
-    fireEvent.keyDown(input, { key: 'F6' });
+    fireEvent.keyDown(queueRoot(), { key: 'F6' });
     expect(queueRoot().getAttribute('data-active-band')).toBe('running');
     expect(document.activeElement?.getAttribute('data-queue-band')).toBe('running');
-
-    fireEvent.click(moveButton({ moveId: moveIdOf({ sessionId: second.id }) }));
-    expect(queueRoot().getAttribute('data-active-band')).toBe('needs-you');
+    expect(
+      Array.from(document.querySelectorAll('[data-queue] [data-row]')).some(
+        (row) => row.getAttribute('data-selected') === 'true',
+      ),
+    ).toBe(false);
   });
 
   it('moves the Running focus to the agent whose peek was opened', async () => {

@@ -9,15 +9,11 @@ import { ATTENTION_REASON_META, attentionWordsOf } from '../../session/session-s
 import { attentionCountOf } from '../../../store/slices/session-view/attentionCountOf';
 import { attentionReasonsOf } from '../../../store/slices/session-view/attentionReasonsOf';
 
-export type QueueMoveKind = 'answer' | 'page';
-
 export type QueueMove = Readonly<{
   id: string;
   sessionId: SessionId;
   reason: SessionAttentionReason;
-  kind: QueueMoveKind;
   title: string;
-  question: OpenQuestion | null;
   since: number | null;
 }>;
 
@@ -34,7 +30,6 @@ type Params = {
   readonly infos: Readonly<Record<string, SessionStageInfo>>;
   readonly openQuestions: Readonly<Record<string, ReadonlyArray<OpenQuestion>>>;
   readonly notNow?: ReadonlySet<string>;
-  readonly queued?: ReadonlySet<string>;
 };
 
 const NOTHING: ReadonlySet<string> = new Set();
@@ -71,9 +66,7 @@ const questionMovesOf = ({ session, info, questions }: SessionParams): ReadonlyA
         id: `${session.id}:open-question`,
         sessionId: session.id,
         reason: 'open-question',
-        kind: 'page',
         title: attentionWordsOf({ reason: 'open-question', counts: info }),
-        question: null,
         since: info.attentionSince ?? null,
       },
     ];
@@ -82,9 +75,7 @@ const questionMovesOf = ({ session, info, questions }: SessionParams): ReadonlyA
     id: `${session.id}:question:${question.id}`,
     sessionId: session.id,
     reason: 'open-question',
-    kind: question.selectMode === 'many' ? 'page' : 'answer',
     title: question.text,
-    question,
     since: askedAtOf({ question }),
   }));
 };
@@ -100,9 +91,7 @@ const sessionMovesOf = ({ session, info, questions }: SessionParams): ReadonlyAr
               id: `${session.id}:${reason}`,
               sessionId: session.id,
               reason,
-              kind: 'page' as const,
               title: attentionWordsOf({ reason, counts: info }),
-              question: null,
               since: info.attentionSince ?? null,
             },
           ],
@@ -133,7 +122,6 @@ export const needsYouOf = ({
   infos,
   openQuestions,
   notNow = NOTHING,
-  queued = NOTHING,
 }: Params): NeedsYou => {
   const items = sessions.flatMap((session) => {
     const info = infos[session.id];
@@ -147,7 +135,7 @@ export const needsYouOf = ({
       sessionMovesOf({ session, info, questions: openQuestions[session.id] ?? NO_QUESTIONS }),
     )
     .sort((left, right) => sinceOrder({ left, right }));
-  const moves = all.filter((move) => !notNow.has(move.id) && !queued.has(move.id));
+  const moves = all.filter((move) => !notNow.has(move.id));
   const notNowIds = all.filter((move) => notNow.has(move.id)).map((move) => move.id);
   return {
     sessionCount: countedIds.length,

@@ -17,7 +17,7 @@ const rowOf = ({ runId, who, mountId }: RowParams): RunningRow => ({
   phrase: 'Running pnpm test',
   project: 'ledger-core',
   startedAt: 1,
-  queued: null,
+  isQueued: false,
 });
 
 type GroupParams = {

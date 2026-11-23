@@ -2,15 +2,10 @@ import { Button, SectionLabel } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import type { QueueMove } from '../needsYouOf';
-import { QueueMoveCard } from './QueueMoveCard';
 import { QueueMoveRow } from './QueueMoveRow';
 
 type MoveParams = {
   readonly move: QueueMove;
-};
-
-type AnswerParams = MoveParams & {
-  readonly text: string;
 };
 
 type Props = {
@@ -19,10 +14,7 @@ type Props = {
   readonly notNowCount: number;
   readonly isActive: boolean;
   readonly kickerOf: (params: MoveParams) => string;
-  readonly onFocus: (params: MoveParams) => void;
-  readonly onAnswer: (params: AnswerParams) => void;
-  readonly onOpenPage: (params: MoveParams) => void;
-  readonly onOpenSession: (params: MoveParams) => void;
+  readonly onOpen: (params: MoveParams) => void;
   readonly onNotNow: (params: MoveParams) => void;
   readonly onShowHidden: () => void;
 };
@@ -33,10 +25,7 @@ export const NeedsYouBand = ({
   notNowCount,
   isActive,
   kickerOf,
-  onFocus,
-  onAnswer,
-  onOpenPage,
-  onOpenSession,
+  onOpen,
   onNotNow,
   onShowHidden,
 }: Props) => {
@@ -57,26 +46,19 @@ export const NeedsYouBand = ({
       />
       {focused === undefined ? (
         <span className="text-ui text-muted-foreground">{NAMES.nothingWaitsOnYou}</span>
-      ) : null}
-      {moves.map((move) =>
-        move === focused ? (
-          <QueueMoveCard
-            key={move.id}
-            move={move}
-            kicker={kickerOf({ move })}
-            onAnswer={({ text }) => onAnswer({ move, text })}
-            onOpenPage={() => onOpenPage({ move })}
-            onOpenSession={() => onOpenSession({ move })}
-            onNotNow={() => onNotNow({ move })}
-          />
-        ) : (
-          <QueueMoveRow
-            key={move.id}
-            move={move}
-            kicker={kickerOf({ move })}
-            onFocus={() => onFocus({ move })}
-          />
-        ),
+      ) : (
+        <div className="flex min-w-0 flex-col gap-1">
+          {moves.map((move) => (
+            <QueueMoveRow
+              key={move.id}
+              move={move}
+              kicker={kickerOf({ move })}
+              isFocused={isActive && move === focused}
+              onOpen={() => onOpen({ move })}
+              onNotNow={() => onNotNow({ move })}
+            />
+          ))}
+        </div>
       )}
       {notNowCount > 0 ? (
         <Button

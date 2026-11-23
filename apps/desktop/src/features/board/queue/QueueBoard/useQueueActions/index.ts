@@ -4,16 +4,9 @@ import { useAppStore } from '../../../../../store';
 import { useShowToast } from '../../../../../shared/components/Toast/useShowToast';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
-import { OpenQuestionDeliveryError } from '../../../../../store/slices/open-questions/openQuestionDeliveryError';
 import { messageAgentFromAsk } from '../../../../session/ask/messageAgentFromAsk';
-import { answerChoicesOf } from '../../answerChoicesOf';
 import type { QueueMove } from '../../needsYouOf';
 import { useQueueSends } from '../useQueueSends';
-
-type AnswerParams = {
-  readonly move: QueueMove;
-  readonly text: string;
-};
 
 type MessageParams = {
   readonly sessionId: SessionId;
@@ -26,7 +19,6 @@ type MoveParams = {
 };
 
 export type QueueActions = Readonly<{
-  answer: (params: AnswerParams) => void;
   message: (params: MessageParams) => void;
   notNow: (params: MoveParams) => void;
 }>;
@@ -35,75 +27,6 @@ export const useQueueActions = (): QueueActions => {
   const undoable = useAppStore((state) => state.undoable);
   const showToast = useShowToast();
 
-  const answer = useCallback(
-    ({ move, text }: AnswerParams) => {
-      const { question, sessionId } = move;
-      if (question === null || text.trim() === '') {
-        return;
-      }
-      const id = crypto.randomUUID();
-      const askerId = question.createdByAgentId ?? null;
-      useQueueSends.getState().queue({
-        send: { id, kind: 'answer', agentId: askerId, moveId: move.id },
-        run: async () => {
-          const state = useAppStore.getState();
-          const current = (state.sessionOpenQuestions[sessionId] ?? []).find(
-            (candidate) => candidate.id === question.id,
-          );
-          if (current === undefined || current.status !== 'open') {
-            showToast({ kind: 'info', message: 'Already answered' });
-            return;
-          }
-          try {
-            await state.answerOpenQuestions(
-              sessionId,
-              [{ id: question.id, text: question.text, answer: text }],
-              askerId,
-            );
-          } catch (cause) {
-            if (cause instanceof OpenQuestionDeliveryError) {
-              void state.reportError({
-                recovery:
-                  askerId === null
-                    ? CHECK_STATE
-                    : { action: { kind: 'open-agent', sessionId, agentId: askerId } },
-                title: "Your answer was saved but didn't reach the agent",
-                error: cause,
-                sessionId,
-              });
-              return;
-            }
-            void state.reportError({
-              recovery: CHECK_STATE,
-              title: "Couldn't send your answer",
-              error: cause,
-              sessionId,
-            });
-          }
-        },
-      });
-      undoable({
-        message: 'Answer queued',
-        actionHint: shortcutGlyphs('app.undo'),
-        conflictMessage: 'The answer already went out.',
-        doneMessage: `Restored: ${move.title}`,
-        isCurrent: () => useQueueSends.getState().isWaiting({ id }),
-        showToast,
-        undo: async () => {
-          const sends = useQueueSends.getState();
-          if (!sends.cancel({ id })) {
-            return false;
-          }
-          if (answerChoicesOf({ question }).length === 0) {
-            sends.restoreAnswerDraft({ questionId: question.id, text });
-          }
-          return true;
-        },
-      });
-    },
-    [showToast, undoable],
-  );
-
   const message = useCallback(
     ({ sessionId, agentId, text }: MessageParams) => {
       if (text.trim() === '') {
@@ -111,7 +34,7 @@ export const useQueueActions = (): QueueActions => {
       }
       const id = crypto.randomUUID();
       useQueueSends.getState().queue({
-        send: { id, kind: 'message', agentId, moveId: null },
+        send: { id, agentId },
         run: async () => {
           const isQueued = await messageAgentFromAsk({
             sessionId,
@@ -166,5 +89,5 @@ export const useQueueActions = (): QueueActions => {
     [showToast, undoable],
   );
 
-  return { answer, message, notNow };
+  return { message, notNow };
 };

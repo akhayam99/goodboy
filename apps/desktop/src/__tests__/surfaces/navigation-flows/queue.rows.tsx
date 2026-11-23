@@ -51,48 +51,39 @@ const tab = ({ name }: TabParams): HTMLElement => screen.getByRole('tab', { name
 
 export const QUEUE_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'Board: opens on the Queue and an answer in place waits for Undo',
-    covers: ['navigate', 'queue:answer-undo'],
-    open: async (ctx) => {
-      seedQuestion(ctx);
-      await pressBoardKey();
-    },
-    lands: async () => {
-      await heading('Board');
-      expect(tab({ name: 'Queue' }).getAttribute('aria-selected')).toBe('true');
-      const band = await needsYou();
-      await click(await within(band).findByRole('button', { name: KEEP }, WAIT));
-
-      expect(await screen.findByText('Answer queued', undefined, WAIT)).toBeDefined();
-      await waitFor(() => expect(within(band).queryByText(QUESTION_TEXT)).toBeNull(), WAIT);
-      expect(answers).not.toHaveBeenCalled();
-
-      await act(async () => {
-        await useAppStore.getState().undoLastOperation();
-      });
-      expect(await within(band).findByText(QUESTION_TEXT, undefined, WAIT)).toBeDefined();
-      expect(answers).not.toHaveBeenCalled();
-    },
-  },
-  {
-    name: 'Board: the answer goes out once its window closes, to the question it named',
-    covers: ['navigate', 'queue:answer-sends'],
+    name: 'Board: opens on the Queue and one click on a Needs you row opens its session',
+    covers: ['navigate', 'queue:row-opens'],
     open: async (ctx) => {
       seedQuestion(ctx);
       await pressBoardKey();
     },
     lands: async ({ sessionId }) => {
+      await heading('Board');
+      expect(tab({ name: 'Queue' }).getAttribute('aria-selected')).toBe('true');
       const band = await needsYou();
-      await click(await within(band).findByRole('button', { name: KEEP }, WAIT));
-      await act(async () => {
-        useQueueSends.getState().flushAll();
-      });
-      await waitFor(() => expect(answers).toHaveBeenCalledTimes(1), WAIT);
-      expect(answers).toHaveBeenCalledWith(
-        sessionId,
-        [{ id: QUESTION_ID, text: QUESTION_TEXT, answer: KEEP }],
-        null,
+      expect(within(band).queryByRole('button', { name: 'Open in session' })).toBeNull();
+      await click(await within(band).findByRole('button', { name: QUESTION_TEXT }, WAIT));
+      await waitFor(() => expect(useAppStore.getState().currentSessionId).toBe(sessionId), WAIT);
+      expect(answers).not.toHaveBeenCalled();
+    },
+  },
+  {
+    name: 'Board: Not now on a Needs you row puts it off, and Undo brings it back',
+    covers: ['navigate', 'queue:row-not-now'],
+    open: async (ctx) => {
+      seedQuestion(ctx);
+      await pressBoardKey();
+    },
+    lands: async () => {
+      const band = await needsYou();
+      await click(
+        await within(band).findByRole('button', { name: `Not now: ${QUESTION_TEXT}` }, WAIT),
       );
+      await waitFor(() => expect(within(band).queryByText(QUESTION_TEXT)).toBeNull(), WAIT);
+      await act(async () => {
+        await useAppStore.getState().undoLastOperation();
+      });
+      await within(band).findByText(QUESTION_TEXT, undefined, WAIT);
     },
   },
   {

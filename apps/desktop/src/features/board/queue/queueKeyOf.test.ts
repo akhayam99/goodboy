@@ -20,9 +20,9 @@ const commandOf = ({
 
 describe('the Queue keys, one band at a time', () => {
   it.each([
-    ['needs-you', 'Enter', 'primary'],
+    ['needs-you', 'Enter', 'open'],
     ['needs-you', 's', 'not-now'],
-    ['needs-you', '2', 'choice'],
+    ['needs-you', '2', null],
     ['needs-you', 'ArrowRight', 'open'],
     ['needs-you', ' ', null],
     ['running', ' ', 'peek'],

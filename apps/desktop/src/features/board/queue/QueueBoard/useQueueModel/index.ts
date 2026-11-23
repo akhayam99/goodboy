@@ -61,13 +61,9 @@ export const useQueueModel = ({ workspaceId, sessions }: Params): QueueModel => 
   const pendingById = useQueueSends((state) => state.pending);
   const notNow = useQueueSends((state) => state.notNow);
   const pending = useMemo(() => Object.values(pendingById), [pendingById]);
-  const queued = useMemo(
-    () => new Set(pending.flatMap((send) => (send.moveId === null ? [] : [send.moveId]))),
-    [pending],
-  );
   const needsYou = useMemo(
-    () => needsYouOf({ sessions: shown, infos, openQuestions, notNow, queued }),
-    [infos, notNow, openQuestions, queued, shown],
+    () => needsYouOf({ sessions: shown, infos, openQuestions, notNow }),
+    [infos, notNow, openQuestions, shown],
   );
   const ready = useMemo(
     () => readyToMergeOf({ sessions: shown, infos, numbers, checks }),
