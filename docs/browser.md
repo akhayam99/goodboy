@@ -495,7 +495,7 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   engine put to sleep or closed (`browser://tab-state`, read by
   `useTabStates`, corrected by every event and every list answer, and keyed by
   the engine's tab id so the Browser page marks tabs of every session) shows its favicon faint and
-  a moon mark, "Asleep, may reload when opened" (an asleep webview comes back
+  a moon mark, "Asleep, opens at its address and may reload" (an asleep webview comes back
   as it was, a closed one loads again). The list has three widths in
   `browserTabListPref`: `list` (192px), `rail` (36px of favicons, titles in
   tooltips) and `hidden`; the fold button cycles `list` and `rail`, and a pane

@@ -11,8 +11,14 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { brandId, type IsoDateTime, type MountId, type PullRequestState } from '@goodboy/types';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  brandId,
+  type IsoDateTime,
+  type MountId,
+  type PrDetail,
+  type PullRequestState,
+} from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -132,6 +138,38 @@ describe('the pull request panel on the Desk', () => {
       force: true,
       mountId: MOUNT_ID,
     });
+  });
+
+  it('names the host of a check log it cannot read here', async () => {
+    seedGithub({
+      detailError: null,
+      detailFetchedAt: brandId<IsoDateTime>({ value: '2026-10-07T08:00:00.000Z' }),
+    });
+    const mount = store.getState().mountGithub[MOUNT_ID];
+    if (mount === undefined) {
+      throw new Error('The mount must be seeded.');
+    }
+    const detail: PrDetail = {
+      prNumber: PR.number,
+      comments: [],
+      reviews: [],
+      reviewRequests: [],
+      checks: [
+        {
+          name: 'integration-tests',
+          conclusion: 'failure',
+          detailsUrl: 'https://buildkite.com/harborline/payments-api/builds/42',
+          durationMs: null,
+        },
+      ],
+    };
+    store.setState({ mountGithub: { [MOUNT_ID]: { ...mount, detail } } });
+
+    show({ tab: 'checks' });
+
+    const log = await screen.findByRole('region', { name: 'Log of integration-tests' });
+    await within(log).findByText('Not readable here.');
+    within(log).getByRole('button', { name: 'Open on buildkite.com' });
   });
 
   it('reads a GitLab merge request and its comments instead of saying there is none', () => {

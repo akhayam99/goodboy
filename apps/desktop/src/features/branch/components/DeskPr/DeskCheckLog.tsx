@@ -1,6 +1,7 @@
 import { Button, ScrollFade, Skeleton } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { openLink } from '../../../open/openLink';
+import { remoteHostNameOf } from '../../../../shared/lib/remoteHostNameOf';
 import { cleanLogText } from '../../checks/cleanLogText';
 import { DESK_PR_COPY } from './deskPrCopy';
 import { useCheckLog } from './useCheckLog';
@@ -10,6 +11,15 @@ type Props = {
   readonly mountId: MountId;
   readonly name: string;
   readonly url: string | null;
+};
+
+type UrlParams = {
+  readonly url: string;
+};
+
+const openLabelOf = ({ url }: UrlParams): string => {
+  const host = remoteHostNameOf({ url });
+  return host === null ? DESK_PR_COPY.openLog : DESK_PR_COPY.openOn({ host });
 };
 
 export const DeskCheckLog = ({ sessionId, mountId, name, url }: Props) => {
@@ -31,7 +41,7 @@ export const DeskCheckLog = ({ sessionId, mountId, name, url }: Props) => {
           <p className="text-body text-muted-foreground">{DESK_PR_COPY.unreadable}</p>
           {url === null ? null : (
             <Button variant="ghost" size="sm" onClick={() => openLink({ url, sessionId })}>
-              {DESK_PR_COPY.openLog}
+              {openLabelOf({ url })}
             </Button>
           )}
         </div>
