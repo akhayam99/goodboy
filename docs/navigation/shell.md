@@ -407,7 +407,7 @@ from the live windows only: a closed window, or one whose heartbeat stopped,
 frees it. Another window on the same session stays on the Overview with
 **Desk open in another window** and **Bring it here**, and ⌘J or Desk there
 says the same instead of doing nothing. The window that loses it goes back to
-the Overview with **Desk moved to another window** and **Bring it back**,
+the Overview with **Desk moved to another window** and **Bring the Desk back**,
 written in the page and not in a toast, its shells still running. A holder
 change goes to every window as `desk-holder`, and a window that shows one of
 these lines asks again every 5 seconds.

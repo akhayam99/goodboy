@@ -84,6 +84,6 @@ describe('the u50 desk nav scenes', () => {
 
     await show({ name: 'u50-desk-nav-moved-dark' });
     screen.getByText('Desk moved to another window');
-    screen.getByRole('button', { name: 'Bring it back' });
+    screen.getByRole('button', { name: 'Bring the Desk back' });
   });
 });

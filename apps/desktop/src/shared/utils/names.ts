@@ -132,7 +132,7 @@ export const NAMES = {
   deskOpenElsewhere: 'Desk open in another window',
   bringDeskHere: 'Bring it here',
   deskMovedAway: 'Desk moved to another window',
-  bringDeskBack: 'Bring it back',
+  bringDeskBack: 'Bring the Desk back',
   branch: 'Branch',
   comments: 'Comments',
   conversation: 'Conversation',

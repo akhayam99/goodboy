@@ -447,7 +447,10 @@ mod tests {
             changes,
             vec![hold_of("s1", None), hold_of("s2", Some("main"))]
         );
-        assert_eq!(holders.holder("s1", every_window_lives), hold_of("s1", None));
+        assert_eq!(
+            holders.holder("s1", every_window_lives),
+            hold_of("s1", None)
+        );
     }
 
     #[test]

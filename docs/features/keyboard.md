@@ -134,7 +134,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 
 - **⌘J** opens the Desk on a tool at once, never on an empty Desk. It brings back the tools the session had, else the tools of the first move of Next. Else it opens the terminal of the first project, or of the workspace folder. With none of these, Desk stays off and its tooltip says why.
 - **⌘W** on the Desk closes one tool at a time, the focused one first. Closing the last one closes the Desk: the Overview comes back at full width with **Desk closed** and **Reopen**, and the focus goes to Desk. **Reopen** or ⌘J brings the tools back as they were.
-- One window holds the Desk of a session. In a second window ⌘J says **Desk open in another window** with **Bring it here**. The window that loses the Desk says **Desk moved to another window** with **Bring it back**. When the window cannot check who holds it, the Overview stays with the error and **Retry**.
+- One window holds the Desk of a session. In a second window ⌘J says **Desk open in another window** with **Bring it here**. The window that loses the Desk says **Desk moved to another window** with **Bring the Desk back**. When the window cannot check who holds it, the Overview stays with the error and **Retry**.
 
 **Change a shortcut**
 

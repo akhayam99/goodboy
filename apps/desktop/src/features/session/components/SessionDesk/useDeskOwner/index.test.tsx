@@ -195,7 +195,7 @@ describe('one Desk per session, in one window', () => {
     expect(screen.queryByText('Desk open in another window')).toBeNull();
   });
 
-  it('says Desk moved to another window in the page when the other window takes it, and Bring it back returns it', async () => {
+  it('says Desk moved to another window in the page when the other window takes it, and Bring the Desk back returns it', async () => {
     renderFace();
     await pressDesk();
 
@@ -211,7 +211,7 @@ describe('one Desk per session, in one window', () => {
     expect(face()).toBe('overview');
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Bring it back' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Bring the Desk back' }));
     });
     await tick();
 
