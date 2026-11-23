@@ -1,8 +1,8 @@
 import { Button, ICON_SIZE } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import type { PlanCommentGuard } from '../../../plans/planComments/planCommentGuard';
-import { PLANNER_QUESTION_REASON } from '../../../plans/plannerQuestions';
-import { NAMES } from '../../../../shared/utils/names';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import type { PlanCommentGuard } from '../../../../plans/planComments/planCommentGuard';
+import { PLANNER_QUESTION_REASON } from '../../../../plans/plannerQuestions';
+import { NAMES } from '../../../../../shared/utils/names';
 
 export type PlanCommentBarRan = Readonly<{
   agentName: string | null;

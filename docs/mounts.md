@@ -877,9 +877,10 @@ the Implementer of each mount, with Undo while neither has read it. Both notes
 wait held in their queues for the ten seconds of Undo, so a finishing turn
 delivers neither; a note that can't be saved or withdrawn stays held, and Retry
 sends the same notes to the same Implementers. On the
-Queue the chip sits once, on the row that waits: the one the proposed order
-merges second. Inside a session every row of an overlapping mount carries its
-own.
+Queue the chip sits once, on the Running row of the mount that waits (the one
+the proposed order merges second): its Implementer's row, or its first agent
+when no Implementer runs (`overlapRunIdsOf`). Inside a session every branch row
+of the Overview with an overlapping mount carries its own (`BoardTile`).
 
 ## Confirmed mount folder
 

@@ -1,12 +1,12 @@
 import { useCallback, useMemo } from 'react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { useRootTurns } from '../../../../shared/hooks/useRootTurns';
-import { usePoll } from '../../../../shared/lib/usePoll';
-import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
-import type { WorkLead } from '../../../../store/slices/work/state';
-import { workRowsOf } from '../../workRowsOf';
-import { leadCandidatesOf, type LeadChoice, type LeadItem } from '../leadCandidatesOf';
+import { useAppStore } from '../../../../../store';
+import { useRootTurns } from '../../../../../shared/hooks/useRootTurns';
+import { usePoll } from '../../../../../shared/lib/usePoll';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
+import type { WorkLead } from '../../../../../store/slices/work/state';
+import { workRowsOf } from '../../../workRowsOf';
+import { leadCandidatesOf, type LeadChoice, type LeadItem } from '../../leadCandidatesOf';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -29,7 +29,7 @@ type ChoiceParams = {
   readonly isLoaded: boolean;
 };
 
-const choiceOf = ({ leads, rootTurns, item, isLoaded }: ChoiceParams): LeadChoice =>
+const leadChoiceOf = ({ leads, rootTurns, item, isLoaded }: ChoiceParams): LeadChoice =>
   isLoaded
     ? leadCandidatesOf({ rows: workRowsOf({ leads, rootTurns, filter: 'open' }).rows, item })
     : NONE;
@@ -53,7 +53,7 @@ export const useLeadChoice = ({ sessionId, item }: Params): LeadChoiceHandle => 
     restartKey: workspaceId ?? '',
   });
   const choice = useMemo(
-    () => choiceOf({ leads, rootTurns, item, isLoaded }),
+    () => leadChoiceOf({ leads, rootTurns, item, isLoaded }),
     [leads, rootTurns, item, isLoaded],
   );
   const reload = useCallback(async (): Promise<LeadChoice> => {
@@ -62,7 +62,7 @@ export const useLeadChoice = ({ sessionId, item }: Params): LeadChoiceHandle => 
     }
     await useAppStore.getState().loadWorkLeads({ workspaceId });
     const latest = useAppStore.getState();
-    return choiceOf({
+    return leadChoiceOf({
       leads: latest.workLeads,
       rootTurns,
       item,

@@ -4,6 +4,8 @@ import { SHELL_GUTTER_PX } from './frameGeometry';
 import type { ShellRailForm } from './components/ShellRail/shellRailFormContext';
 import { shellRailFormOf } from './components/ShellRail/shellRailFormOf';
 import { SHELL_RAIL_WIDTH_PX, TOOL_RAIL_WIDTH_PX } from './components/ShellRail/shellRailGeometry';
+import type { SolvedDockFrame } from './dockGridFrameOf';
+import type { DockSolveParams } from './useDockGrid';
 
 const DOCK_MAX_COLUMNS = DOCK_GRID_CAP.columns;
 const DOCK_MAX_ROWS = DOCK_GRID_CAP.rows;
@@ -96,7 +98,7 @@ type LeadParams = {
   readonly panes: ReadonlyArray<LanePane>;
 };
 
-const leadOf = ({ panes }: LeadParams): LanePane | null =>
+const leadPaneOf = ({ panes }: LeadParams): LanePane | null =>
   panes.reduce<LanePane | null>(
     (best, pane) =>
       best === null || SIZING_RANK[pane.sizing] > SIZING_RANK[best.sizing] ? pane : best,
@@ -111,7 +113,7 @@ type LaneParams = {
 
 const laneOf = ({ panes, savedWidth, split }: LaneParams): Lane | null => {
   const rows = panes.slice(0, DOCK_MAX_ROWS);
-  const lead = leadOf({ panes: rows });
+  const lead = leadPaneOf({ panes: rows });
   if (lead === null) {
     return null;
   }
@@ -368,7 +370,7 @@ const overLayoutOf = ({ frame, detail, lanes, isStacked }: OverParams): FrameLay
 
 const tabbedOf = ({ lanes }: FoldParams): ReadonlyArray<Lane> | null => {
   const [first, second, ...rest] = lanes.flatMap((lane) => lane.panes);
-  const held = second === undefined ? null : leadOf({ panes: [second, ...rest] });
+  const held = second === undefined ? null : leadPaneOf({ panes: [second, ...rest] });
   if (first === undefined || second === undefined || held === null || rest.length === 0) {
     return null;
   }
@@ -536,3 +538,44 @@ export const dockLayoutOf = ({
     rail,
   };
 };
+
+type DockSolverParams = {
+  readonly isLane: boolean;
+};
+
+const ROW_WEIGHT_FRAME = 1000;
+
+const solveDesk = ({ columnWidth, detail, columns }: DockSolveParams): SolvedDockFrame =>
+  dockLayoutOf({
+    windowWidth: columnWidth,
+    windowHeight: ROW_WEIGHT_FRAME,
+    top: 0,
+    leftRailWidth: 0,
+    toolRailWidth: 0,
+    isDesk: true,
+    detail,
+    columns,
+  });
+
+const solveDock = ({
+  columnWidth,
+  railWidth,
+  canPush,
+  detail,
+  columns,
+}: DockSolveParams): SolvedDockFrame =>
+  dockLayoutOf({
+    windowWidth: columnWidth,
+    windowHeight: ROW_WEIGHT_FRAME,
+    top: 0,
+    leftRailWidth: 0,
+    toolRailWidth: railWidth,
+    canPush,
+    detail,
+    columns,
+  });
+
+export const dockSolverOf = ({
+  isLane,
+}: DockSolverParams): ((params: DockSolveParams) => SolvedDockFrame) =>
+  isLane ? solveDesk : solveDock;

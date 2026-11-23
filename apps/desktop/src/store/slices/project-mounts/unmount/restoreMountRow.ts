@@ -1,9 +1,9 @@
 import { getSessionMount, insertSessionMount, UniqueViolationError } from '@goodboy/db';
 import type { SessionMount } from '@goodboy/types';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { applyMountViews, loadMountViews } from './mountViews';
-import { sessionById } from '../sessions/sessionIndex';
-import type { SliceDeps } from '../../slice-types';
+import { tauriDatabase } from '../../../../shared/lib/db';
+import { applyMountViews, loadMountViews } from '../mountViews';
+import { sessionById } from '../../sessions/sessionIndex';
+import type { SliceDeps } from '../../../slice-types';
 
 type RestoreMountRowInput = {
   readonly mount: SessionMount;

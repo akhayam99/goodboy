@@ -1458,7 +1458,7 @@
     "apps/desktop/src/store/slices/project-mounts/starredProjectLines.ts": 1,
     "apps/desktop/src/store/slices/project-mounts/switchMount.ts": 1,
     "apps/desktop/src/store/slices/project-mounts/taskFolderCandidates.ts": 1,
-    "apps/desktop/src/store/slices/project-mounts/unmountMount.ts": 1,
+    "apps/desktop/src/store/slices/project-mounts/unmount/unmountMount.ts": 1,
     "apps/desktop/src/store/slices/project-mounts/useMountDiffStats.ts": 2,
     "apps/desktop/src/store/slices/project-mounts/useMountDiffTick/index.ts": 1,
     "apps/desktop/src/store/slices/project-mounts/writeDestination.ts": 4,

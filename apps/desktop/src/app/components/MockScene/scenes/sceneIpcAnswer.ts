@@ -18,6 +18,7 @@ const EMPTY_ANSWERS: Readonly<Record<string, () => unknown>> = {
   browser_workspace_tab_rows_list: () => [],
   browser_visits_list: () => [],
   worktree_carry_candidates: () => [],
+  overlap_read: () => [],
   worktree_setup_proposal: () => null,
   worktree_deps_check: () => ({
     state: 'not-applicable',

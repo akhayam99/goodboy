@@ -12,10 +12,10 @@ import { removeGoneMount } from './removeGoneMount';
 import { removeMountWorktree } from './removeMountWorktree';
 import { resolveMountBranchMismatch } from './resolveMountBranchMismatch';
 import { restoreGoneBranch } from './restoreGoneBranch';
-import { restoreMountRow } from './restoreMountRow';
+import { restoreMountRow } from './unmount/restoreMountRow';
 import { setSessionActiveMount } from './setSessionActiveMount';
 import { switchMount } from './switchMount';
-import { unmountMount } from './unmountMount';
+import { unmountMount } from './unmount/unmountMount';
 import type { SliceDeps } from '../../slice-types';
 
 export const createProjectMountsSlice = ({ set, get }: SliceDeps) => {

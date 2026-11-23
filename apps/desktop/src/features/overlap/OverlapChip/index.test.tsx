@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
-type ReplaceArgs = Readonly<{ agentId: string; messages: ReadonlyArray<unknown> }>;
+type SaveArgs = Readonly<{ agentId: string; messages: ReadonlyArray<unknown> }>;
 
 const h = vi.hoisted(() => ({
-  replaceAgentQueuedMessages: vi.fn(async (_db: unknown, _args: ReplaceArgs) => undefined),
+  saveAgentQueuedMessages: vi.fn(async (_args: SaveArgs) => undefined),
 }));
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -14,7 +14,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 vi.mock('@goodboy/db', async () =>
   (await import('../../../store/storyHarness')).dbModuleMock({
-    replaceAgentQueuedMessages: h.replaceAgentQueuedMessages,
+    saveAgentQueuedMessages: h.saveAgentQueuedMessages,
   }),
 );
 vi.mock('../../../shared/lib/db', async () =>
@@ -121,8 +121,8 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   liveMounts.reset();
-  h.replaceAgentQueuedMessages.mockReset();
-  h.replaceAgentQueuedMessages.mockResolvedValue(undefined);
+  h.saveAgentQueuedMessages.mockReset();
+  h.saveAgentQueuedMessages.mockResolvedValue(undefined);
   stubStoryInvoke({ overlap_read: SHARED });
   useAppStore.setState({
     sessions: [
@@ -244,7 +244,7 @@ describe('OverlapChip', () => {
   });
 
   it('a failed save sends nothing, says why and Retry sends both', async () => {
-    h.replaceAgentQueuedMessages.mockRejectedValue(new Error('disk full'));
+    h.saveAgentQueuedMessages.mockRejectedValue(new Error('disk full'));
     await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
 
     await openAndSend();
@@ -252,7 +252,7 @@ describe('OverlapChip', () => {
     screen.getByText(NOT_SAVED);
     expect(queuedIds()).toEqual([0, 0]);
 
-    h.replaceAgentQueuedMessages.mockResolvedValue(undefined);
+    h.saveAgentQueuedMessages.mockResolvedValue(undefined);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     });
@@ -288,7 +288,7 @@ describe('OverlapChip', () => {
     useAppStore.setState({ reportError });
     await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
     await openAndSend();
-    h.replaceAgentQueuedMessages.mockRejectedValue(new Error('disk full'));
+    h.saveAgentQueuedMessages.mockRejectedValue(new Error('disk full'));
 
     let isUndone = true;
     await act(async () => {
@@ -303,7 +303,7 @@ describe('OverlapChip', () => {
   });
 
   it('a rollback that cannot withdraw says so and Retry adds no duplicate', async () => {
-    h.replaceAgentQueuedMessages.mockImplementation(async (_db, { agentId, messages }) => {
+    h.saveAgentQueuedMessages.mockImplementation(async ({ agentId, messages }) => {
       if (agentId === BATCH_AGENT || messages.length === 0) {
         throw new Error('disk full');
       }
@@ -315,8 +315,8 @@ describe('OverlapChip', () => {
     screen.getByText(STILL_QUEUED);
     expect(queuedIds()).toEqual([1, 0]);
 
-    h.replaceAgentQueuedMessages.mockReset();
-    h.replaceAgentQueuedMessages.mockResolvedValue(undefined);
+    h.saveAgentQueuedMessages.mockReset();
+    h.saveAgentQueuedMessages.mockResolvedValue(undefined);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     });
@@ -325,7 +325,7 @@ describe('OverlapChip', () => {
   });
 
   it('Retry keeps the failed recipients and says when one is gone', async () => {
-    h.replaceAgentQueuedMessages.mockRejectedValue(new Error('disk full'));
+    h.saveAgentQueuedMessages.mockRejectedValue(new Error('disk full'));
     await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
     await openAndSend();
     screen.getByText(NOT_SAVED);
@@ -347,7 +347,7 @@ describe('OverlapChip', () => {
         },
       }));
     });
-    h.replaceAgentQueuedMessages.mockResolvedValue(undefined);
+    h.saveAgentQueuedMessages.mockResolvedValue(undefined);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     });

@@ -205,6 +205,7 @@ const storyInvokeHandlers = {
   terminal_snapshot: { data: '', offset: 0, exitCode: null },
   turn_list_live: [],
   live_work: [],
+  overlap_read: [],
   turn_launch_id: 'launch-story',
   worktree_list_registered: ({ worktreePaths }: ListRegisteredArgs) =>
     worktreePaths.map((path) => ({

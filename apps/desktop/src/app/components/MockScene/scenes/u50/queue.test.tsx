@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
@@ -17,6 +17,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { liveMounts } from '../../../../../features/overlap/liveMounts';
 import { U50_QUEUE_SCENES } from './queue';
 
 beforeAll(async () => {
@@ -37,6 +38,7 @@ beforeEach(async () => {
 });
 afterEach(() => {
   cleanup();
+  liveMounts.reset();
 });
 
 type Params = { readonly name: string };
@@ -70,6 +72,19 @@ describe('the u50 queue scenes', () => {
     within(needsYou).getByRole('button', { name: 'Keep five minutes' });
     screen.getByRole('region', { name: 'Running' });
     screen.getByRole('region', { name: 'Ready to merge' });
+  });
+
+  it('marks the running session that waits on an overlap, once', async () => {
+    await show({ name: 'u50-queue-dark' });
+    const running = screen.getByRole('region', { name: 'Running' });
+
+    const chip = await within(running).findByRole('button', { name: /^Overlaps/ });
+
+    expect(within(running).getAllByRole('button', { name: /^Overlaps/ })).toHaveLength(1);
+    fireEvent.click(chip);
+    within(screen.getByRole('dialog', { name: 'Overlap' })).getByRole('button', {
+      name: 'Message both Implementers',
+    });
   });
 
   it('says nothing waits on you when the pile is clear', async () => {

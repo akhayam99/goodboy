@@ -41,6 +41,7 @@ import type { QueueMove } from '../needsYouOf';
 import { QueueBoard } from '.';
 import { queueLandingOf } from '../queueLandingOf';
 import { useQueueSends } from './useQueueSends';
+import { liveMounts } from '../../../overlap/liveMounts';
 
 let useAppStore: StoryStore;
 
@@ -57,6 +58,7 @@ beforeEach(async () => {
 afterEach(() => {
   useQueueSends.getState().flushAll();
   cleanup();
+  liveMounts.reset();
 });
 
 const quiet = sessionOf({ goal: 'Backfill ledger balances' });
@@ -108,6 +110,23 @@ const liveRowOf = ({ runId, sessionId }: LiveRowParams) => ({
   tool: { name: 'Bash', command: 'pnpm test', path: null },
   hasToolCall: true,
   canSeeTools: true,
+});
+
+type OverlapMountParams = {
+  readonly mountId: string;
+  readonly sessionId: string;
+  readonly paths: ReadonlyArray<string>;
+};
+
+const overlapMountOf = ({ mountId, sessionId, paths }: OverlapMountParams) => ({
+  mountId,
+  sessionId,
+  projectId: 'project-ledger',
+  branch: `hl/${mountId}`,
+  createdAt: 1,
+  port: null,
+  hasFixedPort: false,
+  paths,
 });
 
 const renderQueue = () =>
@@ -229,6 +248,36 @@ describe('the Queue', () => {
     expect(
       document.querySelector('[data-running-row="run-1"]')?.getAttribute('aria-current'),
     ).toBeNull();
+  });
+
+  it('puts one overlap chip on the running row of the session that waits', async () => {
+    seedColumn({ store: useAppStore, sessions: [asking, second] });
+    stubStoryInvoke({
+      live_work: [
+        { ...liveRowOf({ runId: 'run-1', sessionId: asking.id }), mountId: 'mount-small' },
+        { ...liveRowOf({ runId: 'run-2', sessionId: second.id }), mountId: 'mount-large' },
+        { ...liveRowOf({ runId: 'run-3', sessionId: second.id }), mountId: 'mount-large' },
+      ],
+      overlap_read: [
+        overlapMountOf({
+          mountId: 'mount-small',
+          sessionId: asking.id,
+          paths: ['src/retry/state.ts'],
+        }),
+        overlapMountOf({
+          mountId: 'mount-large',
+          sessionId: second.id,
+          paths: ['src/retry/state.ts', 'src/batch/a.ts', 'src/batch/b.ts'],
+        }),
+      ],
+    });
+    renderQueue();
+
+    const chip = await screen.findByRole('button', { name: /^Overlaps/ }, WAIT);
+
+    expect(screen.getAllByRole('button', { name: /^Overlaps/ })).toHaveLength(1);
+    const row = chip.closest('[data-row]')?.querySelector('[data-running-row]');
+    expect(row?.getAttribute('data-running-row')).toBe('run-2');
   });
 
   describe('Ready to merge', () => {

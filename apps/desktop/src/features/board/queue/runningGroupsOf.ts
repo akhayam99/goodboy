@@ -5,6 +5,7 @@ export type RunningRow = Readonly<{
   runId: string;
   agentId: string | null;
   sessionId: string;
+  mountId: string | null;
   who: string;
   phrase: string;
   project: string | null;
@@ -49,6 +50,7 @@ export const runningGroupsOf = ({
       runId: item.runId,
       agentId: item.agentId,
       sessionId: item.sessionId,
+      mountId: item.mountId,
       who: (item.agentId === null ? undefined : nounById.get(item.agentId)) ?? 'Agent',
       phrase: queued === null ? item.phrase : QUEUED_PHRASE[queued],
       project: item.place.kind === 'project' ? item.place.name : null,

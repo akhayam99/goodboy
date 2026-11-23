@@ -86,7 +86,7 @@ describe('the ux50 desk grid scenes', () => {
   it('lays the terminal in the lane beside the desk column', async () => {
     await mount('u50-desk-grid-terminal');
 
-    expect(screen.getByRole('complementary', { name: 'Desk' })).toBeTruthy();
+    screen.getByRole('complementary', { name: 'Desk' });
     expect(document.querySelector('[data-dock-lane]')).not.toBeNull();
     expect(lanePanel()).not.toBeNull();
     expect(cellKeys()).toEqual(['terminal']);

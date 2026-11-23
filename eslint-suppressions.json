@@ -8666,7 +8666,7 @@
       "count": 4
     }
   },
-  "apps/desktop/src/store/slices/project-mounts/unmountMount.ts": {
+  "apps/desktop/src/store/slices/project-mounts/unmount/unmountMount.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     },

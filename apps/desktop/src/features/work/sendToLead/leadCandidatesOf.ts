@@ -42,7 +42,7 @@ type RowParams = {
   readonly item: LeadItem;
 };
 
-const isOpen = ({ row }: Pick<RowParams, 'row'>): boolean =>
+const isOpenRow = ({ row }: Pick<RowParams, 'row'>): boolean =>
   row.lead.stop !== 'finished' && row.lead.stop !== 'stopped';
 
 const isInProject = ({ row, item }: RowParams): boolean =>
@@ -115,7 +115,7 @@ const candidateOf = ({ row, rule, item }: CandidateParams): LeadCandidate => ({
 
 export const leadCandidatesOf = ({ rows, item }: Params): LeadChoice => {
   const ranked = rows
-    .filter((row) => isOpen({ row }) && isInProject({ row, item }))
+    .filter((row) => isOpenRow({ row }) && isInProject({ row, item }))
     .map((row): Ranked => ({ row, rule: ruleOf({ row, item }) }))
     .sort((left, right) => {
       const byRule = LEAD_RULES.indexOf(left.rule) - LEAD_RULES.indexOf(right.rule);

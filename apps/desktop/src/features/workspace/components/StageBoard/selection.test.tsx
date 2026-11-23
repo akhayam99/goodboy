@@ -123,7 +123,7 @@ describe('StageBoard selection bar', () => {
 
     tick(GOALS[0] ?? '');
 
-    expect(within(toolbar()).getByText('1 selected')).toBeDefined();
+    within(toolbar()).getByText('1 selected');
     expect(screen.getAllByRole('toolbar')).toHaveLength(1);
     expect(pressedOf(GOALS[0] ?? '')).toBe('true');
     expect(pressedOf(GOALS[1] ?? '')).toBe('false');
@@ -133,13 +133,13 @@ describe('StageBoard selection bar', () => {
     stubStoryInvoke({ live_work: [] });
     mountBoard(sessionsOf(GOALS));
     tick(GOALS[0] ?? '');
-    expect(within(toolbar()).getByText('1 selected')).toBeDefined();
+    within(toolbar()).getByText('1 selected');
 
     fireEvent.click(screen.getByRole('tab', { name: 'Queue' }));
     await waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull());
 
     fireEvent.click(screen.getByRole('tab', { name: 'Stages' }));
-    expect(within(await screen.findByRole('toolbar')).getByText('1 selected')).toBeDefined();
+    within(await screen.findByRole('toolbar')).getByText('1 selected');
   });
 
   it('lines each title up with its meta line at rest', () => {
@@ -220,7 +220,7 @@ describe('StageBoard selection bar', () => {
     fireEvent.keyDown(first, { key: 'Enter', altKey: true });
     expect(pressedOf(GOALS[0] ?? '')).toBe('true');
     fireEvent.keyDown(titleOf(GOALS[2] ?? ''), { key: 'Enter', shiftKey: true });
-    expect(within(toolbar()).getByText(/\d selected/)).toBeDefined();
+    within(toolbar()).getByText(/\d selected/);
   });
 
   it('selects the card a Select menu item names', () => {
@@ -248,7 +248,7 @@ describe('StageBoard selection bar', () => {
     fireEvent.keyDown(title, { key: 'x', code: 'KeyX' });
 
     expect(pressedOf(GOALS[2] ?? '')).toBe('true');
-    expect(within(toolbar()).getByText('1 selected')).toBeDefined();
+    within(toolbar()).getByText('1 selected');
     expect(document.activeElement).toBe(title);
   });
 
@@ -258,7 +258,7 @@ describe('StageBoard selection bar', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Select all 4' }));
 
-    expect(within(toolbar()).getByText('4 selected')).toBeDefined();
+    within(toolbar()).getByText('4 selected');
     expect(screen.queryByRole('button', { name: /^Select all/ })).toBeNull();
   });
 
@@ -268,7 +268,7 @@ describe('StageBoard selection bar', () => {
 
     tick(GOALS[2] ?? '', { altKey: false, shiftKey: true });
 
-    expect(within(toolbar()).getByText(/\d selected/)).toBeDefined();
+    within(toolbar()).getByText(/\d selected/);
   });
 
   it('selects the card under the pointer with X, selects all with the select all key, clears with Escape', () => {
@@ -277,10 +277,10 @@ describe('StageBoard selection bar', () => {
     fireEvent.mouseOver(screen.getByText(GOALS[1] ?? ''));
     fireEvent.keyDown(window, { key: 'x', code: 'KeyX' });
     expect(pressedOf(GOALS[1] ?? '')).toBe('true');
-    expect(within(toolbar()).getByText('1 selected')).toBeDefined();
+    within(toolbar()).getByText('1 selected');
 
     fireEvent.keyDown(window, { key: 'a', code: 'KeyA', ctrlKey: true });
-    expect(within(toolbar()).getByText('4 selected')).toBeDefined();
+    within(toolbar()).getByText('4 selected');
 
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
     expect(screen.queryByRole('toolbar')).toBeNull();
@@ -369,7 +369,7 @@ describe('StageBoard selection bar', () => {
       expect(screen.queryByRole('group', { name: 'Stop 1 agent and archive?' })).toBeNull(),
     );
     expect(bulkArchiveTask).not.toHaveBeenCalled();
-    expect(within(toolbar()).getByText('2 selected')).toBeDefined();
+    within(toolbar()).getByText('2 selected');
   });
 
   it('archives every selected idle session with no confirm, and Undo restores them all', async () => {
@@ -432,7 +432,7 @@ describe('StageBoard selection bar', () => {
     expect(note.textContent).toContain(
       `Couldn't archive ${GOALS[1] ?? ''}. The other one is archived.`,
     );
-    expect(within(toolbar()).getByText('2 selected')).toBeDefined();
+    within(toolbar()).getByText('2 selected');
     expect(await screen.findByRole('button', { name: 'Undo' })).toBeDefined();
 
     await act(async () => {
@@ -476,8 +476,8 @@ describe('StageBoard selection bar', () => {
     );
     expect(confirm.textContent).toContain('Goes');
     expect(confirm.textContent).toContain('Stays');
-    expect(within(confirm).getByText(GOALS[0] ?? '')).toBeDefined();
-    expect(within(confirm).getByRole('button', { name: 'Archive instead' })).toBeDefined();
+    within(confirm).getByText(GOALS[0] ?? '');
+    within(confirm).getByRole('button', { name: 'Archive instead' });
     expect(document.activeElement).toBe(within(confirm).getByRole('button', { name: 'Cancel' }));
   });
 
@@ -494,7 +494,7 @@ describe('StageBoard selection bar', () => {
     await waitFor(() =>
       expect(screen.queryByRole('group', { name: 'Delete 1 session?' })).toBeNull(),
     );
-    expect(within(toolbar()).getByText('1 selected')).toBeDefined();
+    within(toolbar()).getByText('1 selected');
     const board = document.querySelector('[data-select-id]');
     expect(board?.contains(document.activeElement)).toBe(true);
   });
@@ -530,7 +530,7 @@ describe('StageBoard selection cost', () => {
     tick('Reconcile batch 7');
 
     expect(renders.length).toBeLessThanOrEqual(2);
-    expect(within(toolbar()).getByText('1 selected')).toBeDefined();
+    within(toolbar()).getByText('1 selected');
   });
 
   it('redraws at most two cards when the selection moves from one card to another', () => {

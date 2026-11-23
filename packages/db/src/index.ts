@@ -19,7 +19,6 @@ export {
 export { runDatabaseHygiene, type DatabaseHygieneResult } from './maintenance/runDatabaseHygiene';
 export {
   purgeExcludedSearchDocs,
-  readSearchBackfillProgress,
   rebuildSearchIndex,
   runSearchBackfillStep,
   type SearchBackfillProgress,

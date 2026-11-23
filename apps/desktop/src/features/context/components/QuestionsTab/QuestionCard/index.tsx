@@ -7,7 +7,7 @@ import { AnswerSubmitButton } from '../AnswerSubmitButton';
 import { DelegateAnswerRow } from '../DelegateAnswerRow';
 import { DelegateWaitingRow } from '../DelegateWaitingRow';
 import { deriveSuggestions } from '../deriveSuggestions';
-import { orderSuggestions } from '../orderSuggestions';
+import { orderSuggestions } from '../../../orderSuggestions';
 import { questionParts } from '../questionParts';
 import { isDraftReady, type QuestionDraft } from '../useOpenQuestions';
 import { QuestionAnswerDone } from './QuestionAnswerDone';
