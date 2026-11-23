@@ -183,6 +183,37 @@ describe('TaskGroupRows', () => {
     expect(onAction).toHaveBeenCalledOnce();
   });
 
+  it('puts the notice of a source that did not load under its group title, in the flow of the rows', () => {
+    render(
+      group({
+        lines: [
+          {
+            key: 'sentry',
+            failure: sourceFailureOf({ name: 'Sentry', message: 'The token was refused (401).' }),
+            onAction: vi.fn(),
+          },
+        ],
+      }),
+    );
+
+    const heading = screen.getByRole('heading', { name: 'GitHub' });
+    const failure = document.querySelector('[data-task-failure="sentry"]');
+    if (failure === null) {
+      throw new Error('The failure notice is not drawn.');
+    }
+    expect(failure.className).not.toContain('h-8');
+    expect(heading.compareDocumentPosition(failure) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    const firstRow = screen.getAllByRole('option')[0];
+    if (firstRow === undefined) {
+      throw new Error('The group draws no row.');
+    }
+    expect(failure.compareDocumentPosition(firstRow) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
   it('re-renders only the rows that gain or lose the selection', () => {
     const view = render(group({ selectedKey: 'github:issue:0' }));
     rowRenders.current = 0;
