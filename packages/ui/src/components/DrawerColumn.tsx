@@ -241,6 +241,7 @@ export const DrawerColumn = ({
                 resizeLabel={detailResizeLabel}
                 isOpen={isDetailOpen}
                 isParked={isDetailParked}
+                canResize={!isLane}
                 isOverlay={isOverlay || isDetailOverPage}
                 isFloating={isDetailFloating}
                 isOverPage={isDetailOverPage}

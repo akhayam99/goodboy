@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
@@ -109,6 +109,34 @@ const renderDesk = ({ spec, detail, isDesk = true }: RenderParams) =>
     />,
   );
 
+type TabbedProps = {
+  readonly onMove?: DockGridSpec['onMove'];
+};
+
+const TabbedDesk = ({ onMove }: TabbedProps) => {
+  const [focus, setFocus] = useState('browser');
+  const spec: DockGridSpec = {
+    columns: [[BROWSER], [TERMINAL, MONITOR]],
+    focus,
+    onFocus: ({ key }) => setFocus(key),
+    onTurn: () => undefined,
+    ...(onMove === undefined ? {} : { onMove }),
+  };
+  return (
+    <DrawerColumn
+      main={pageOf({ isDesk: true })}
+      drawer={<GridCell />}
+      dockGrid={spec}
+      detail={<p>Implementer</p>}
+      frame="sheet"
+      ariaLabel="Side panel"
+      resizeLabel="Resize side panel"
+    />
+  );
+};
+
+const panelTabs = () => screen.getByRole('tablist', { name: 'Panels' });
+
 const aside = () => screen.getByRole('complementary', { name: 'Side panel' });
 
 const grid = () => document.querySelector<HTMLElement>('[data-dock-grid]');
@@ -179,6 +207,51 @@ describe('the dock on the desk', () => {
     fireEvent.click(within(tabs).getByRole('tab', { name: 'Monitor' }));
 
     expect(onFocus).toHaveBeenCalledWith({ key: 'monitoring' });
+  });
+
+  it('keeps the picked tab when focus moves to the detail or the other cell', () => {
+    stubLane({ width: 880 });
+    render(<TabbedDesk />);
+
+    fireEvent.click(within(panelTabs()).getByRole('tab', { name: 'Monitor' }));
+    expect(screen.getByText('monitoring body')).toBeTruthy();
+
+    fireEvent.pointerDown(screen.getByText('Implementer'));
+    expect(screen.getByText('monitoring body')).toBeTruthy();
+
+    fireEvent.pointerDown(screen.getByText('browser body'));
+    expect(screen.getByText('monitoring body')).toBeTruthy();
+    expect(screen.queryByText('terminal body')).toBeNull();
+  });
+
+  it('switches the tabbed cell with the arrow keys', () => {
+    stubLane({ width: 880 });
+    render(<TabbedDesk />);
+
+    const terminalTab = within(panelTabs()).getByRole('tab', { name: 'Terminal' });
+    terminalTab.focus();
+    fireEvent.keyDown(terminalTab, { key: 'ArrowRight' });
+
+    expect(screen.getByText('monitoring body')).toBeTruthy();
+    expect(screen.queryByText('terminal body')).toBeNull();
+  });
+
+  it('gives a tabbed cell no title drag, so the shown tool never moves another', () => {
+    stubLane({ width: 880 });
+    render(<TabbedDesk onMove={vi.fn()} />);
+
+    const tabbed = document.querySelector<HTMLElement>('[data-dock-pane="terminal"]');
+    const browser = document.querySelector<HTMLElement>('[data-dock-pane="browser"]');
+    expect(tabbed?.querySelector('[data-dock-drag-source]')).toBeNull();
+    expect(browser?.querySelector('[data-dock-drag-source]')).not.toBeNull();
+  });
+
+  it('offers no detail resize handle while the grid fills the lane', () => {
+    stubLane({ width: LANE.width });
+    const { spec } = specOf({ columns: [[BROWSER], [TERMINAL]], focus: 'browser' });
+    renderDesk({ spec, detail: 'Implementer' });
+
+    expect(screen.queryByRole('separator', { name: 'Resize detail panel' })).toBeNull();
   });
 
   it('lays nothing over the lane while no panel is open', () => {
