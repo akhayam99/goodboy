@@ -182,6 +182,7 @@ fi
 step typecheck pnpm turbo run typecheck
 step website-deps pnpm install --ignore-workspace --dir website --frozen-lockfile
 step lint-ts pnpm run lint:ts
+step lint-ts-strict pnpm run lint:ts:strict
 step website-drift check_website_drift
 step tauri-commands pnpm run check:tauri-commands
 step doc-refs pnpm run check:doc-refs
