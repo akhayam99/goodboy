@@ -18,6 +18,10 @@ import {
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U23_SUMMARIZER_FAILED_SCENES } from './summarizer-failed';
 
+beforeAll(async () => {
+  await import('../../../../../features/notifications/components/NotificationCenter/BellRows');
+});
+
 const SETTLE_MS = 2_000;
 
 beforeAll(async () => {

@@ -226,7 +226,6 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  (await import('./slices/agentQueue/queueStore')).forgetSavedQueues();
   stubStoryInvoke({ artifact_mirror_remove: true });
   const db = await openStorySqlite();
   await db.execute(
@@ -629,14 +628,17 @@ describe('store on sqlite: plan comments', () => {
   });
 
   describe('sending to the agent that ran the plan', () => {
-    const IMPLEMENTER_ID = brandId<AgentId>({ value: 'agent-implementer' });
+    let implementerCount = 0;
+    let implementerId = brandId<AgentId>({ value: 'agent-implementer' });
 
     const CONSUMED: PlanWithCount['status'] = 'consumed';
 
     beforeEach(async () => {
+      implementerCount += 1;
+      implementerId = brandId<AgentId>({ value: `agent-implementer-${implementerCount}` });
       await storySqlite().execute(
         "INSERT INTO agents (id, session_id, ordinal, name, status) VALUES (?, ?, 1, 'Implement', 'completed')",
-        [IMPLEMENTER_ID, SESSION_ID],
+        [implementerId, SESSION_ID],
       );
     });
 
@@ -644,7 +646,7 @@ describe('store on sqlite: plan comments', () => {
       ...planOf(),
       status: CONSUMED,
       consumptionCount: 1,
-      lastConsumer: { agentId: IMPLEMENTER_ID, name: 'Implement' },
+      lastConsumer: { agentId: implementerId, name: 'Implement' },
     });
 
     const withImplementer = ({ status }: { readonly status: Agent['status'] }) =>
@@ -653,7 +655,7 @@ describe('store on sqlite: plan comments', () => {
           [SESSION_ID]: [
             planner(),
             buildStoryAgent({
-              id: IMPLEMENTER_ID,
+              id: implementerId,
               sessionId: SESSION_ID,
               name: 'Implement',
               ordinal: 1,
@@ -675,7 +677,7 @@ describe('store on sqlite: plan comments', () => {
       expect(result).toEqual({ kind: 'sentToAgent', agentName: 'Implement' });
       expect(sendTurn).toHaveBeenCalledTimes(1);
       const input = sendTurn.mock.calls[0]?.[0];
-      expect(input).toMatchObject({ sessionId: SESSION_ID, agentId: IMPLEMENTER_ID });
+      expect(input).toMatchObject({ sessionId: SESSION_ID, agentId: implementerId });
       expect(input?.content.startsWith('The owner left these comments')).toBe(true);
       expect(input?.content).toContain('Why after BEGIN?');
       expect(input?.content).not.toContain('Write the full updated plan');
@@ -693,7 +695,7 @@ describe('store on sqlite: plan comments', () => {
 
       expect(result).toEqual({ kind: 'sentToAgent', agentName: 'Implement' });
       expect(sendTurn).not.toHaveBeenCalled();
-      const queued = useAppStore.getState().agentQueue[IMPLEMENTER_ID] ?? [];
+      const queued = useAppStore.getState().agentQueue[implementerId] ?? [];
       expect(queued).toHaveLength(1);
       expect(queued[0]?.content).toContain('Why after BEGIN?');
       expect(statuses()).toEqual(['Why after BEGIN?:sent']);
@@ -796,7 +798,7 @@ describe('store on sqlite: plan comments', () => {
         reason: "The message couldn't be queued. Try again.",
       });
       expect(statuses()).toEqual(['Why after BEGIN?:draft']);
-      expect(useAppStore.getState().agentQueue[IMPLEMENTER_ID] ?? []).toHaveLength(0);
+      expect(useAppStore.getState().agentQueue[implementerId] ?? []).toHaveLength(0);
 
       await storySqlite().execute(
         'ALTER TABLE agent_queued_messages_off RENAME TO agent_queued_messages',
@@ -806,7 +808,7 @@ describe('store on sqlite: plan comments', () => {
         .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
 
       expect(retried).toMatchObject({ kind: 'sentToAgent' });
-      expect(useAppStore.getState().agentQueue[IMPLEMENTER_ID] ?? []).toHaveLength(1);
+      expect(useAppStore.getState().agentQueue[implementerId] ?? []).toHaveLength(1);
       expect(sendTurn).not.toHaveBeenCalled();
       expect(statuses()).toEqual(['Why after BEGIN?:sent']);
     });
@@ -843,7 +845,7 @@ describe('store on sqlite: plan comments', () => {
           .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
 
         expect(second).toEqual({ kind: 'sentToAgent', agentName: 'Implement' });
-        const queued = useAppStore.getState().agentQueue[IMPLEMENTER_ID] ?? [];
+        const queued = useAppStore.getState().agentQueue[implementerId] ?? [];
         expect(queued).toHaveLength(1);
         expect(queued[0]?.content).toContain('Limit the backfill');
         expect(queued[0]?.content).not.toContain('Why after BEGIN?');

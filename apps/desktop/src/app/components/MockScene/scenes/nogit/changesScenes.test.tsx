@@ -17,6 +17,10 @@ import {
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { NOGIT_CHANGES_SCENES } from './changesScenes';
 
+beforeAll(async () => {
+  await import('../../../../../features/session/components/SessionWorkspace/parts/FilesPane');
+});
+
 const SETTLE_MS = 3_000;
 
 type SceneName = keyof typeof NOGIT_CHANGES_SCENES;

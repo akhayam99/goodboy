@@ -118,17 +118,17 @@ Branch protection is a repository setting the repo cannot read, so this table is
 
 `scripts/gate.sh` runs the CI steps on your machine. `pnpm gate` is the full gate and prints `gate ok` or `gate failed at <step>: <log>`, with the logs under `.gate-logs/`. `pnpm gate:quick` is the two-minute version for the changed files: run it before each commit, and run the full gate before you push. `GATE_BASE` (default `origin/main`) sets the base, `GATE_WORKERS` (default 2) the vitest workers, and `CARGO_TARGET_DIR` from the environment is honored; without it, every Cargo step builds in the Tauri target folder of the main checkout (`shared_target_dir`), so a worktree never builds a second target. `scripts/gate.test.mjs` fails when a command of the `checks`, `commits` or `rust` jobs is missing from the full gate.
 
-| Local step (`scripts/gate.sh`)                                         | CI job and step                                                |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `commits`: commitlint on `origin/main..HEAD`                           | `commits`: commit messages, pull request title                 |
-| `prettier`: prettier `--check` on files changed against the base       | `checks`: formatting of changed files                          |
-| `rules`, `baselines`: `check:rules`, `check:baselines`                 | `checks`: forbidden patterns, baselines only fall              |
-| `typecheck`, `lint-ts`, `website-drift`, `tauri-commands`, `doc-refs`  | `checks`: typecheck, typed lint, and the step of the same name |
-| `test-scripts`, `knip`, `knip-production`, `test-shards`, `vite-build` | `checks`: script tests, knip, knip production, shards, build   |
-| `packages-tests`, `a11y`                                               | `test-packages`                                                |
-| `desktop-unit` (one run, not six shards)                               | `test-desktop`                                                 |
-| `cargo-fmt`, `clippy`, `cargo-test` when Rust changed                  | `rust`: fmt, clippy, test                                      |
-| not run locally (`pnpm --dir website build` by hand)                   | `website`                                                      |
+| Local step (`scripts/gate.sh`)                                                          | CI job and step                                                                 |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `commits`: commitlint on `origin/main..HEAD`                                            | `commits`: commit messages, pull request title                                  |
+| `prettier`: prettier `--check` on files changed against the base                        | `checks`: formatting of changed files                                           |
+| `rules`, `baselines`: `check:rules`, `check:baselines`                                  | `checks`: forbidden patterns, baselines only fall                               |
+| `typecheck`, `lint-ts`, `lint-ts-strict`, `website-drift`, `tauri-commands`, `doc-refs` | `checks`: typecheck, typed lint, its strict pass, and the step of the same name |
+| `test-scripts`, `knip`, `knip-production`, `test-shards`, `vite-build`                  | `checks`: script tests, knip, knip production, shards, build                    |
+| `packages-tests`, `a11y`                                                                | `test-packages`                                                                 |
+| `desktop-unit` (one run, not six shards)                                                | `test-desktop`                                                                  |
+| `cargo-fmt`, `clippy`, `cargo-test` when Rust changed                                   | `rust`: fmt, clippy, test                                                       |
+| not run locally (`pnpm --dir website build` by hand)                                    | `website`                                                                       |
 
 `pnpm gate:quick` runs `check:rules`, prettier on changed files, the typecheck of the packages that own changed files, the typed lint and its strict pass on changed files (the whole tree when a lint config or the lockfile changed; a changed suppressions file keeps the changed files and adds `--pass-on-unpruned-suppressions`, CI prunes), the related tests, and `cargo fmt --check` plus `cargo check` when Rust changed. The related tests follow the quick plan (`quickPlanOf` in `scripts/ci-changes.mjs`, `node scripts/ci-changes.mjs --quick <base>`), read on the files changed since the merge base with `origin/main`, untracked ones included:
 
@@ -157,7 +157,7 @@ The second pass runs `@typescript-eslint/strict-boolean-expressions` with no bar
 
 The syntax-tree counters (`if-without-braces`, `param-shape`, `boolean-name`, `unused-import`) are not ESLint rules: they live in `scripts/rules/ast/`, run in `check:rules` (so in the pre-commit hook, about a second) and keep a baseline each ([docs/ratchets.md](./docs/ratchets.md)).
 
-The lint needs a 6 GB heap on the whole tree and takes about a minute per pass; the scripts set it.
+`scripts/lint-ts.mjs` runs each pass as two ESLint processes with a 7 GB heap each, `apps/desktop/src` first, then `packages` and `website/src`: one process over the whole tree holds every TypeScript program at once and runs out of memory. A pass takes about four minutes in CI.
 
 ## Naming conventions
 

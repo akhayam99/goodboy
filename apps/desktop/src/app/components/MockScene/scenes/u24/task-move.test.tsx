@@ -21,6 +21,13 @@ import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { U24_TASK_MOVE_SCENES } from './task-move';
 
+beforeAll(async () => {
+  await Promise.all([
+    import('../../../../../features/session/components/SessionWorkspace/parts/IntegrationPane'),
+    import('../../../../../features/session/components/SessionWorkspace/parts/IntegrationPane/GithubTaskDetail'),
+  ]);
+});
+
 const SETTLE_MS = 2_000;
 
 beforeAll(async () => {

@@ -20,6 +20,13 @@ import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { U24_P_NAV_SCENES } from './p-nav';
 
+beforeAll(async () => {
+  await Promise.all([
+    import('../../../../../features/session/components/SessionWorkspace/parts/IntegrationPane'),
+    import('../../../../../features/session/components/SessionWorkspace/parts/IntegrationPane/GithubTaskDetail'),
+  ]);
+});
+
 const mainPane = (): HTMLElement => {
   const main = document.querySelector<HTMLElement>('[data-drawer-main]');
   if (main === null) {

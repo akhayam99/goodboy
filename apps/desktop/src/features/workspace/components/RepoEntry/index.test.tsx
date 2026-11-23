@@ -28,6 +28,10 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 import { RepoEntry } from './index';
 
+beforeAll(async () => {
+  await import('./RepoEntryPanel');
+});
+
 let useAppStore: StoryStore;
 
 const WORKSPACE = brandId<WorkspaceId>({ value: 'ws-harborline' });
@@ -136,9 +140,13 @@ const mount = async ({ projects, answers, status, extra = {} }: MountParams): Pr
 
 const entry = (): HTMLElement => screen.getByRole('button', { name: /^Repositories/ });
 
-const open = (): HTMLElement => {
+const open = async (): Promise<HTMLElement> => {
   fireEvent.click(entry());
-  return screen.getByRole('dialog', { name: 'Repositories' });
+  const dialog = screen.getByRole('dialog', { name: 'Repositories' });
+  await waitFor(() =>
+    expect(within(dialog).queryByRole('status', { name: 'Loading repositories' })).toBeNull(),
+  );
+  return dialog;
 };
 
 const rowOf = ({ name }: { readonly name: string }): HTMLElement => {
@@ -181,7 +189,7 @@ describe('the repositories entry in the top bar', () => {
 
     expect(entry().textContent).toBe('3 behind');
     expect(entry().getAttribute('data-repo-entry')).toBe('info');
-    const dialog = open();
+    const dialog = await open();
     expect(within(rowOf({ name: 'payments-api' })).getByText('3 behind')).toBeDefined();
     expect(document.querySelector('[data-repo-row="ledger-core"]')).toBeNull();
     expect(unfoldQuiet().textContent).toBe('1 up to date');
@@ -211,7 +219,7 @@ describe('the repositories entry in the top bar', () => {
 
     expect(entry().textContent).toBe('2 repos behind · Diverged');
     expect(entry().getAttribute('data-repo-entry')).toBe('warning');
-    const dialog = open();
+    const dialog = await open();
     expect(within(rowOf({ name: 'ledger-core' })).getByText('Diverged ↑1 ↓2')).toBeDefined();
     expect(
       within(rowOf({ name: 'ledger-core' })).getByText(/merge or rebase it yourself/),
@@ -239,7 +247,7 @@ describe('the repositories entry in the top bar', () => {
       },
     });
 
-    const dialog = open();
+    const dialog = await open();
     expect(within(dialog).queryByRole('button', { name: 'Pull all' })).toBeNull();
     expect(
       within(rowOf({ name: 'payments-api' })).getByRole('button', {
@@ -267,7 +275,7 @@ describe('the repositories entry in the top bar', () => {
       },
     });
 
-    const dialog = open();
+    const dialog = await open();
     const names = (): ReadonlyArray<string | null> =>
       Array.from(dialog.querySelectorAll('[data-repo-row]')).map((row) =>
         row.getAttribute('data-repo-row'),
@@ -287,7 +295,7 @@ describe('the repositories entry in the top bar', () => {
       answers: { [PAYMENTS.rootPath]: reportOf({ state: 'behind', behind: 3, uncommitted: 2 }) },
     });
 
-    open();
+    await open();
     const row = rowOf({ name: 'payments-api' });
     expect(within(row).queryByRole('button', { name: /^Pull/ })).toBeNull();
     expect(
@@ -303,7 +311,7 @@ describe('the repositories entry in the top bar', () => {
       answers: { [PAYMENTS.rootPath]: reportOf({ state: 'behind', behind: 3, uncommitted: 2 }) },
     });
 
-    open();
+    await open();
     const row = rowOf({ name: 'payments-api' });
     const slot = row.querySelector('[data-pull-slot]');
     expect(slot?.getAttribute('aria-hidden')).toBe('true');
@@ -323,7 +331,7 @@ describe('the repositories entry in the top bar', () => {
       },
     });
 
-    open();
+    await open();
     const row = rowOf({ name: 'payments-api' });
     expect(within(row).getByRole('button', { name: 'Pull main in payments-api' })).toBeDefined();
     expect(
@@ -344,7 +352,7 @@ describe('the repositories entry in the top bar', () => {
       },
     });
 
-    const dialog = open();
+    const dialog = await open();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Pull main in payments-api' }));
 
     await waitFor(() =>
@@ -369,7 +377,7 @@ describe('the repositories entry in the top bar', () => {
     });
 
     expect(entry().textContent).toBe('Check failed');
-    open();
+    await open();
     const row = rowOf({ name: 'payments-api' });
     expect(within(row).getByText('Could not resolve host: github.com')).toBeDefined();
 
@@ -388,7 +396,7 @@ describe('the repositories entry in the top bar', () => {
   it('shows the title, the check time and the refresh on one header row', async () => {
     await mount({ projects: [PAYMENTS, LEDGER], answers: {} });
 
-    const dialog = open();
+    const dialog = await open();
     const header = dialog.querySelector<HTMLElement>('[data-repo-header]');
     expect(header?.textContent).toMatch(/^RepositoriesChecked /);
     expect(
@@ -403,7 +411,7 @@ describe('the repositories entry in the top bar', () => {
       extra: { reveal_in_file_manager: null, open_in_editor: null },
     });
 
-    open();
+    await open();
     const row = rowOf({ name: 'payments-api' });
     fireEvent.click(
       within(row).getByRole('button', { name: revealLabelOf({ target: 'payments-api' }) }),
@@ -458,7 +466,7 @@ describe('the repository detail inside the entry', () => {
       await useAppStore.getState().loadProjectGitStatus({ projectId: PAYMENTS.id });
     });
 
-    open();
+    await open();
     unfoldQuiet();
     fireEvent.click(screen.getByRole('button', { name: 'payments-api' }));
     expect(await screen.findByText('This folder has no git repository yet')).toBeDefined();
@@ -479,7 +487,7 @@ describe('the repository detail inside the entry', () => {
       },
     });
 
-    open();
+    await open();
     unfoldQuiet();
     fireEvent.click(screen.getByRole('button', { name: 'payments-api' }));
     fireEvent.click(
@@ -502,7 +510,7 @@ describe('the repository detail inside the entry', () => {
       },
     });
 
-    open();
+    await open();
     unfoldQuiet();
     fireEvent.click(screen.getByRole('button', { name: 'payments-api' }));
     fireEvent.click(screen.getByRole('button', { name: 'Open in editor' }));

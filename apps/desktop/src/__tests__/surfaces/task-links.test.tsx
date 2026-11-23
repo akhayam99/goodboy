@@ -48,6 +48,10 @@ import { useInboxLinkedSessions } from '../../features/inbox/useInboxLinkedSessi
 import { LinkIssueAction } from '../../features/session/components/SessionOverviewPane/LinkIssueAction';
 import { LevelLinked } from '../../app/components/SessionRail/SessionLevel/LevelLinked';
 
+beforeAll(async () => {
+  await import('../../features/session/components/SessionOverviewPane/LinkWorkPanel');
+});
+
 const ROOT_PATH = '/mock/cascade/core-api';
 const NOW = brandId<IsoDateTime>({ value: '2026-09-20T09:00:00.000Z' });
 
@@ -587,7 +591,7 @@ describe('tasks and sessions on the real store', () => {
       await mount(surfaces(session, entry));
       fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
       const dialog = await screen.findByRole('dialog', { name: 'Link work' });
-      const picker = within(dialog).getByRole('combobox');
+      const picker = await within(dialog).findByRole('combobox');
       fireEvent.focus(picker);
       fireEvent.click(picker);
       if (entry.pick.kind === 'paste') {
@@ -676,7 +680,7 @@ describe('tasks and sessions on the real store', () => {
       await mount(surfaces(session, entry));
       fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
       const dialog = await screen.findByRole('dialog', { name: 'Link work' });
-      const picker = within(dialog).getByRole('combobox');
+      const picker = await within(dialog).findByRole('combobox');
       fireEvent.focus(picker);
       fireEvent.change(picker, { target: { value } });
       fireEvent.click(await screen.findByRole('option', { name: option }));

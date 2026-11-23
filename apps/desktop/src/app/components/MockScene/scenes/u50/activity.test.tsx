@@ -20,6 +20,10 @@ import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U50_ACTIVITY_SCENES } from './activity';
 
 beforeAll(async () => {
+  await import('../../../../../features/session/central/log/ActivityPage');
+});
+
+beforeAll(async () => {
   installFakeResizeObserver();
   await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
@@ -50,7 +54,11 @@ describe('the u50 Activity scenes', () => {
     await waitFor(() =>
       expect(document.querySelector('[data-crumb-current]')?.textContent).toContain('Activity'),
     );
-    expect(document.body.textContent).toContain('test:integration failed (exit 1) in payments-api');
+    await waitFor(() =>
+      expect(document.body.textContent).toContain(
+        'test:integration failed (exit 1) in payments-api',
+      ),
+    );
   });
 
   it('lists every scene in light and dark', () => {

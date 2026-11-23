@@ -49,10 +49,16 @@ export const useRowsOnScreen = ({ rootRef, isActive, keys }: Params): OnScreen =
       },
       { root, threshold: MOSTLY_VISIBLE },
     );
-    for (const row of root.querySelectorAll(ROW_SELECTOR)) {
-      observer.observe(row);
-    }
+    const observeRows = () => {
+      for (const row of root.querySelectorAll(ROW_SELECTOR)) {
+        observer.observe(row);
+      }
+    };
+    observeRows();
+    const insertions = new MutationObserver(observeRows);
+    insertions.observe(root, { childList: true, subtree: true });
     return () => {
+      insertions.disconnect();
       observer.disconnect();
     };
   }, [rootRef, isActive, keysKey]);

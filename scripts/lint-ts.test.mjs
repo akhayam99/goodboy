@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { LINT_ROOT_GROUPS, lintRunsOf } from './lint-ts.mjs';
 
 const REPO_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 const ESLINT_BIN = join(REPO_ROOT, 'node_modules', 'eslint', 'bin', 'eslint.js');
@@ -143,6 +144,20 @@ describe('lint:ts second pass', () => {
     const flagged = runLint({ dir });
     assert.equal(flagged.status, 1, flagged.stdout + flagged.stderr);
     assert.match(flagged.stdout, /eqeqeq/);
+  });
+
+  it('runs each root group in its own process, so one heap never holds every program', () => {
+    const runs = lintRunsOf({ argv: ['--strict', '--prune-suppressions'] });
+    assert.deepEqual(
+      runs.flatMap((run, index) => run.slice(-LINT_ROOT_GROUPS[index].length)),
+      ['apps/desktop/src', 'packages', 'website/src'],
+    );
+    runs.forEach((run) => {
+      assert.ok(run.includes('eslint-suppressions-strict.json'));
+      assert.ok(run.includes('--prune-suppressions'));
+      assert.equal(run.includes('--strict'), false);
+    });
+    assert.equal(lintRunsOf({ argv: [] })[0].includes('eslint.strict.config.mjs'), false);
   });
 
   it('keeps its own suppressions file, so the first pass file is untouched', () => {

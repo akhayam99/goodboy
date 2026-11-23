@@ -21,6 +21,10 @@ import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U50_MOUNTS_SCENES } from './mounts';
 
 beforeAll(async () => {
+  await import('../../../../../features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList');
+});
+
+beforeAll(async () => {
   installFakeResizeObserver();
   Element.prototype.scrollIntoView = vi.fn();
   await importStore();
@@ -71,7 +75,7 @@ describe('the mounts scenes', () => {
     const picker = within(
       await screen.findByRole('dialog', { name: 'Mount a folder' }, { timeout: 2000 }),
     );
-    picker.getByRole('button', { name: 'Choose a folder…' });
+    await picker.findByRole('button', { name: 'Choose a folder…' });
   });
 
   it('asks before it unmounts, and never says Remove from session', async () => {

@@ -10,7 +10,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { brandId } from '@goodboy/types';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type {
   ArtifactId,
@@ -48,6 +48,10 @@ import {
 } from './harness';
 
 installNavigationHooks();
+
+beforeAll(async () => {
+  await import('../../../features/session/components/SessionWorkspace/parts/FilesPane');
+});
 
 const door = (id: string): HTMLElement => {
   const found = document.querySelector<HTMLElement>(

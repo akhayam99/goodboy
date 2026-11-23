@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { TriangleAlert, GitBranch } from '@goodboy/ui/icons';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -7,6 +8,7 @@ import {
   FactCard,
   ICON_SIZE,
   StatusDot,
+  SkeletonRows,
   useDropdown,
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
@@ -14,9 +16,14 @@ import { useAppStore } from '../../../../store';
 import { workspaceReposOf } from '../../../../store/slices/repo-divergence/workspaceReposOf';
 
 import { useRepoDivergenceCheck } from '../../hooks/useRepoDivergenceCheck';
-import { RepoEntryPanel } from './RepoEntryPanel';
 import { repoEntryCardOf } from './repoEntryCardOf';
 import { repoEntryFactsOf } from './repoEntryFactsOf';
+import { lazyNamed } from '../../../../shared/lib/lazyNamed';
+
+const RepoEntryPanel = lazyNamed({
+  load: () => import('./RepoEntryPanel'),
+  pick: ({ RepoEntryPanel }) => RepoEntryPanel,
+});
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -78,7 +85,9 @@ export const RepoEntry = ({ workspaceId }: Props) => {
         </FactCard>
       }
     >
-      <RepoEntryPanel workspaceId={workspaceId} entries={entries} />
+      <Suspense fallback={<SkeletonRows label="Loading repositories" />}>
+        <RepoEntryPanel workspaceId={workspaceId} entries={entries} />
+      </Suspense>
     </AnchoredPopover>
   );
 };

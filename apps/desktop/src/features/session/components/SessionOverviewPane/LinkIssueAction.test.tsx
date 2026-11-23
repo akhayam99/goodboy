@@ -1,9 +1,13 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session, SessionExternalTaskProvider, SessionId } from '@goodboy/types';
 import type { LinkWorkItem } from './linkWorkRows';
+
+beforeAll(async () => {
+  await import('./LinkWorkPanel');
+});
 
 const { store, work } = vi.hoisted(() => ({
   store: {
@@ -102,6 +106,8 @@ const trigger = () => screen.getByRole('button', { name: 'Link work' });
 
 const search = () => screen.getByRole('combobox', { name: 'Search work to link' });
 
+const panelReady = () => screen.findByRole('combobox', { name: 'Search work to link' });
+
 const optionNames = () =>
   screen.queryAllByRole('option').map((option) => option.getAttribute('aria-label'));
 
@@ -118,14 +124,14 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('LinkIssueAction', () => {
-  it('names the action on the chip and keeps its L shortcut in the tooltip', () => {
+  it('names the action on the chip and keeps its L shortcut in the tooltip', async () => {
     render(<LinkIssueAction session={session} />);
 
     expect(trigger().textContent).toBe('Link work');
     expect(tooltipTextOf({ element: trigger() })).toContain('L');
   });
 
-  it('opens on L, never while typing in a field', () => {
+  it('opens on L, never while typing in a field', async () => {
     render(
       <>
         <input aria-label="Composer" />
@@ -140,10 +146,10 @@ describe('LinkIssueAction', () => {
     expect(screen.queryByRole('combobox', { name: 'Search work to link' })).toBeNull();
 
     fireEvent.keyDown(document.body, { code: 'KeyL', key: 'l' });
-    expect(search()).toBeDefined();
+    expect(await panelReady()).toBeDefined();
   });
 
-  it('opens on the source a palette entry names, and on all after a plain click', () => {
+  it('opens on the source a palette entry names, and on all after a plain click', async () => {
     render(<LinkIssueAction session={session} />);
 
     act(() => {
@@ -153,17 +159,20 @@ describe('LinkIssueAction', () => {
         }),
       );
     });
+    await panelReady();
     expect(optionNames()).toEqual(['Timeout in ledger sync job (LEDGER-2M)']);
     expect(screen.getByRole('tab', { name: 'Sentry' }).getAttribute('aria-selected')).toBe('true');
 
     fireEvent.keyDown(search(), { key: 'Escape' });
     fireEvent.click(trigger());
+    await panelReady();
     expect(optionNames()).toHaveLength(4);
   });
 
-  it('puts the recent inbox items on top, the rest under results', () => {
+  it('puts the recent inbox items on top, the rest under results', async () => {
     render(<LinkIssueAction session={session} />);
     fireEvent.click(trigger());
+    await panelReady();
 
     expect(screen.getByText('From Tasks')).toBeDefined();
     expect(screen.getByText('Results')).toBeDefined();
@@ -175,9 +184,10 @@ describe('LinkIssueAction', () => {
     ]);
   });
 
-  it('searches every tracker at once and narrows by source', () => {
+  it('searches every tracker at once and narrows by source', async () => {
     render(<LinkIssueAction session={session} />);
     fireEvent.click(trigger());
+    await panelReady();
 
     fireEvent.change(search(), { target: { value: 'checkout' } });
     expect(optionNames()).toEqual(['Checkout totals round the wrong way (HAR-219)']);
@@ -190,6 +200,7 @@ describe('LinkIssueAction', () => {
   it('links the picked item with the same call as the inbox and closes', async () => {
     render(<LinkIssueAction session={session} />);
     fireEvent.click(trigger());
+    await panelReady();
 
     fireEvent.keyDown(search(), { key: 'ArrowDown' });
     await act(async () => {
@@ -203,10 +214,11 @@ describe('LinkIssueAction', () => {
     expect(screen.queryByRole('combobox', { name: 'Search work to link' })).toBeNull();
   });
 
-  it('invites a link or a search while the query is empty, and says nothing matched once it is not', () => {
+  it('invites a link or a search while the query is empty, and says nothing matched once it is not', async () => {
     work.items = [];
     render(<LinkIssueAction session={session} />);
     fireEvent.click(trigger());
+    await panelReady();
 
     screen.getByText('Paste a link or search');
     expect(screen.queryByText(/matches\./)).toBeNull();
@@ -216,10 +228,11 @@ describe('LinkIssueAction', () => {
     expect(screen.queryByText('Paste a link or search')).toBeNull();
   });
 
-  it('keeps a task linked to the session in the list and says so', () => {
+  it('keeps a task linked to the session in the list and says so', async () => {
     work.linkedKeys = new Set(['sentry:LEDGER-2M']);
     render(<LinkIssueAction session={session} />);
     fireEvent.click(trigger());
+    await panelReady();
 
     expect(optionNames()).toContain('Timeout in ledger sync job (LEDGER-2M)');
     expect(
@@ -232,6 +245,7 @@ describe('LinkIssueAction', () => {
     work.sources = [];
     render(<LinkIssueAction session={session} />);
     fireEvent.click(trigger());
+    await panelReady();
 
     expect(search().getAttribute('placeholder')).toBe('Paste a link to an issue');
     fireEvent.change(search(), {
@@ -248,9 +262,10 @@ describe('LinkIssueAction', () => {
     );
   });
 
-  it('says which links it knows when the host is unknown', () => {
+  it('says which links it knows when the host is unknown', async () => {
     render(<LinkIssueAction session={session} />);
     fireEvent.click(trigger());
+    await panelReady();
 
     fireEvent.change(search(), { target: { value: 'https://example.test/some/page' } });
 
@@ -258,7 +273,7 @@ describe('LinkIssueAction', () => {
     expect(optionNames()).toEqual([]);
   });
 
-  it('opens under the chip with its right edges aligned', () => {
+  it('opens under the chip with its right edges aligned', async () => {
     const rectOf = (element: Element): DOMRect => {
       const selector = 'button[aria-label="Link work"]';
       const isTrigger = element.matches(selector) || element.querySelector(selector) !== null;
@@ -284,6 +299,7 @@ describe('LinkIssueAction', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 });
     render(<LinkIssueAction session={session} />);
     fireEvent.click(trigger());
+    await panelReady();
 
     const panel = screen.getByRole('dialog', { name: 'Link work' });
     expect(panel.style.left).toBe('540px');

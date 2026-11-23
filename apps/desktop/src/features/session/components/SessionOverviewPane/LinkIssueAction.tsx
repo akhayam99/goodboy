@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Plus } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
@@ -7,15 +7,21 @@ import {
   POPOVER_WIDTH_CLASS,
   POPOVER_WIDTH_PX,
   Tooltip,
+  SkeletonRows,
   useDropdown,
 } from '@goodboy/ui';
 import type { Session, SessionExternalTaskProvider } from '@goodboy/types';
 import { linkIssueEventName } from '../../../actions/kinds/session';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
+import { lazyNamed } from '../../../../shared/lib/lazyNamed';
 
 import { LevelAddTrigger } from '../../../../shared/components/LevelAddTrigger';
-import { LinkWorkPanel } from './LinkWorkPanel';
 import { linkDetailOf } from './linkDetailOf';
+
+const LinkWorkPanel = lazyNamed({
+  load: () => import('./LinkWorkPanel'),
+  pick: ({ LinkWorkPanel }) => LinkWorkPanel,
+});
 
 type Props = {
   readonly session: Session;
@@ -109,14 +115,16 @@ export const LinkIssueAction = ({
       }
     >
       {isOpen ? (
-        <LinkWorkPanel
-          key={`${eventSource ?? ''}:${initialQuery}`}
-          initialQuery={initialQuery}
-          {...(shownSource !== undefined ? { initialSource: shownSource } : {})}
-          session={session}
-          onLinked={dropdown.close}
-          onClose={dropdown.close}
-        />
+        <Suspense fallback={<SkeletonRows label="Loading search" />}>
+          <LinkWorkPanel
+            key={`${eventSource ?? ''}:${initialQuery}`}
+            initialQuery={initialQuery}
+            {...(shownSource !== undefined ? { initialSource: shownSource } : {})}
+            session={session}
+            onLinked={dropdown.close}
+            onClose={dropdown.close}
+          />
+        </Suspense>
       ) : null}
     </AnchoredPopover>
   );

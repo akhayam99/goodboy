@@ -21,6 +21,10 @@ import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { U25_C08_PRESET_RUN_SCENES } from './c08-preset-run';
 
+beforeAll(async () => {
+  await import('../../../../../features/workflows/components/WorkflowAddStep/RunStepDraft');
+});
+
 const SETTLE_MS = 2_000;
 
 type SceneName = keyof typeof U25_C08_PRESET_RUN_SCENES;

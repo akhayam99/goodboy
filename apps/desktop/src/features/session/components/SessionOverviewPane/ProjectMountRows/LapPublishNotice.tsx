@@ -1,11 +1,16 @@
-import { useState } from 'react';
-import { Button, Notice } from '@goodboy/ui';
+import { Suspense, useState } from 'react';
+import { Button, Notice, SkeletonRows } from '@goodboy/ui';
 import type { Project, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { sessionPlace } from '../../../../../store/slices/navigation/place';
 import { changedCount } from '../../../../../shared/lib/gitStatus';
-import { PublishPanel } from '../../../../bootstrap/PublishPanel';
+import { lazyNamed } from '../../../../../shared/lib/lazyNamed';
 import { MountActionsMenu } from './MountActionsMenu';
+
+const PublishPanel = lazyNamed({
+  load: () => import('../../../../bootstrap/PublishPanel'),
+  pick: ({ PublishPanel }) => PublishPanel,
+});
 
 type Props = {
   readonly sessionId: SessionId;
@@ -82,26 +87,28 @@ export const LapPublishNotice = ({ sessionId, project, stage }: Props) => {
         }
       >
         {isPublishing ? (
-          <PublishPanel
-            project={project}
-            primaryLabel={changed !== null && changed > 0 ? 'Publish and move work' : 'Publish'}
-            onPublished={(result) => {
-              setIsPublishing(false);
-              if (result.kind !== 'published') {
-                return;
-              }
-              void moveToBootstrap({ projectId: project.id }).then((moved) => {
-                if (moved.kind === 'moved') {
-                  navigate({ to: sessionPlace({ sessionId: moved.session.id }) });
+          <Suspense fallback={<SkeletonRows label="Loading publish form" />}>
+            <PublishPanel
+              project={project}
+              primaryLabel={changed !== null && changed > 0 ? 'Publish and move work' : 'Publish'}
+              onPublished={(result) => {
+                setIsPublishing(false);
+                if (result.kind !== 'published') {
                   return;
                 }
-                if (moved.kind === 'refused') {
-                  setNotice(moved.message);
-                }
-              });
-            }}
-            onCancel={() => setIsPublishing(false)}
-          />
+                void moveToBootstrap({ projectId: project.id }).then((moved) => {
+                  if (moved.kind === 'moved') {
+                    navigate({ to: sessionPlace({ sessionId: moved.session.id }) });
+                    return;
+                  }
+                  if (moved.kind === 'refused') {
+                    setNotice(moved.message);
+                  }
+                });
+              }}
+              onCancel={() => setIsPublishing(false)}
+            />
+          </Suspense>
         ) : null}
       </Notice>
       {notice === null ? null : (

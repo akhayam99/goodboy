@@ -18,6 +18,10 @@ import { stripTab } from '../../test/branchTabStrip';
 import { BRANCH_TAB_REGISTRY } from '../../features/branch/branchTabs';
 import { U25_C04_WORKTREE_SCENES } from '../../app/components/MockScene/scenes/u25/c04-worktree';
 
+beforeAll(async () => {
+  await import('../../features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList');
+});
+
 const SETTLE_MS = 2_000;
 
 type SceneName = keyof typeof U25_C04_WORKTREE_SCENES;

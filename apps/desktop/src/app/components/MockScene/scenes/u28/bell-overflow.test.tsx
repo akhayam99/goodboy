@@ -22,6 +22,10 @@ import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
 import { MOCK_SCENES } from '../..';
 import { U28_BELL_OVERFLOW_SCENES } from './bell-overflow';
 
+beforeAll(async () => {
+  await import('../../../../../features/notifications/components/NotificationCenter/BellRows');
+});
+
 const SETTLE_MS = 2_000;
 const SCENE = 'u28-bell-overflow';
 

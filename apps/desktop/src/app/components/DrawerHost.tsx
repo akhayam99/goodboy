@@ -1,12 +1,11 @@
-import { useContext, type ReactNode } from 'react';
-import { DockCellContext, DrawerBackChipContext } from '@goodboy/ui';
+import { Suspense, useContext, type ReactNode } from 'react';
+import { DockCellContext, DrawerBackChipContext, DrawerFrame, SkeletonRows } from '@goodboy/ui';
 import { useAppStore } from '../../store';
 import { selectSlotDrawer, type DrawerSlot } from '../../store/slices/drawer/selectSlotDrawer';
 import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 import { selectGridTool } from '../../store/slices/drawer/selectGridTool';
 import { useSlotBackChip } from '../hooks/useSlotBackChip';
 import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
-import { ArtifactShellDrawer } from '../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
 import { LazyArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer/LazyArtifactDocumentDrawer';
 import { LazyScriptRunDrawer } from '../../features/scripts/components/LazyScriptRunDrawer';
 import { QuestionDrawer } from '../../features/session/components/QuestionDrawer';
@@ -25,6 +24,13 @@ import { DeskAgentPanel } from './DeskAgentPanel';
 import { DeskDetailStack } from './DeskDetailStack';
 import { PanelBoundary } from './PanelBoundary';
 import { renderRegisteredDrawer } from './renderRegisteredDrawer';
+import { lazyNamed } from '../../shared/lib/lazyNamed';
+import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
+
+const ArtifactShellDrawer = lazyNamed({
+  load: () => import('../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer'),
+  pick: ({ ArtifactShellDrawer }) => ArtifactShellDrawer,
+});
 
 type RenderParams = {
   readonly drawer: DrawerRequest;
@@ -64,12 +70,20 @@ const renderDrawer = ({
       );
     case 'artifact':
       return (
-        <ArtifactShellDrawer
-          sessionId={drawer.sessionId}
-          artifactId={drawer.payload.artifactId}
-          tab={drawer.payload.tab}
-          onClose={closeDrawer}
-        />
+        <Suspense
+          fallback={
+            <DrawerFrame title="Artifact" icon={CONCEPT_ICONS.plans} onClose={closeDrawer}>
+              <SkeletonRows label="Opening the artifact" />
+            </DrawerFrame>
+          }
+        >
+          <ArtifactShellDrawer
+            sessionId={drawer.sessionId}
+            artifactId={drawer.payload.artifactId}
+            tab={drawer.payload.tab}
+            onClose={closeDrawer}
+          />
+        </Suspense>
       );
     case 'artifact-document':
       return isReading ? (

@@ -1,10 +1,16 @@
-import { AnchoredPopover, Button, useDropdown } from '@goodboy/ui';
+import { Suspense } from 'react';
+import { AnchoredPopover, Button, SkeletonRows, useDropdown } from '@goodboy/ui';
 import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import { lazyNamed } from '../../../../shared/lib/lazyNamed';
 import { NAMES } from '../../../../shared/utils/names';
 import { useProjectWorktrees } from '../../hooks/useProjectWorktrees';
 import { projectWorktreesEventOf } from '../../projectWorktreesEventOf';
-import { ProjectWorktreesSheet } from './ProjectWorktreesSheet';
 import { worktreesSummaryOf } from './worktreesSummaryOf';
+
+const ProjectWorktreesSheet = lazyNamed({
+  load: () => import('./ProjectWorktreesSheet'),
+  pick: ({ ProjectWorktreesSheet }) => ProjectWorktreesSheet,
+});
 
 type Props = {
   readonly projectId: ProjectId;
@@ -49,14 +55,16 @@ export const ProjectWorktrees = ({
         </Button>
       }
     >
-      <ProjectWorktreesSheet
-        worktrees={worktrees}
-        projectId={projectId}
-        projectName={projectName}
-        workspaceId={workspaceId}
-        hostSessionId={hostSessionId}
-        onClose={dropdown.close}
-      />
+      <Suspense fallback={<SkeletonRows label="Loading worktrees" />}>
+        <ProjectWorktreesSheet
+          worktrees={worktrees}
+          projectId={projectId}
+          projectName={projectName}
+          workspaceId={workspaceId}
+          hostSessionId={hostSessionId}
+          onClose={dropdown.close}
+        />
+      </Suspense>
     </AnchoredPopover>
   );
 };

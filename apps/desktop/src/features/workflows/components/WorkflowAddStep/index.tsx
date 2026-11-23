@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Plus } from '@goodboy/ui/icons';
-import { GhostActionButton } from '@goodboy/ui';
+import { GhostActionButton, SkeletonRows } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
+import { lazyNamed } from '../../../../shared/lib/lazyNamed';
 import { useAppStore } from '../../../../store';
-import { RunStepDraft } from './RunStepDraft';
+
+const RunStepDraft = lazyNamed({
+  load: () => import('./RunStepDraft'),
+  pick: ({ RunStepDraft }) => RunStepDraft,
+});
 
 type Props = {
   readonly sessionId: SessionId;
@@ -20,14 +25,16 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
 
   if (isOpen) {
     return (
-      <RunStepDraft
-        sessionId={sessionId}
-        workspaceId={workspaceId}
-        workflowRunId={workflowRunId}
-        stepCount={stepCount}
-        isOrchestrating={isOrchestrating}
-        onClose={() => setIsOpen(false)}
-      />
+      <Suspense fallback={<SkeletonRows label="Loading step form" />}>
+        <RunStepDraft
+          sessionId={sessionId}
+          workspaceId={workspaceId}
+          workflowRunId={workflowRunId}
+          stepCount={stepCount}
+          isOrchestrating={isOrchestrating}
+          onClose={() => setIsOpen(false)}
+        />
+      </Suspense>
     );
   }
 

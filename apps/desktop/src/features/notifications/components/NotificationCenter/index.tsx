@@ -1,5 +1,5 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { ChevronRight } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
@@ -9,6 +9,7 @@ import {
   POPOVER_WIDTH_PX,
   PopoverPin,
   SelectableRow,
+  SkeletonRows,
   useDropdown,
 } from '@goodboy/ui';
 import type { Notification } from '@goodboy/db';
@@ -18,10 +19,15 @@ import { notificationGroupKey, sortNotificationGroupsNewestFirst } from '../../g
 import { isNotificationDebt } from '../../actionClass';
 import { BellButton } from './BellButton';
 import { BellHeader } from './BellHeader';
-import { BellRows } from './BellRows';
 import type { PopoverView, ScopeValue } from './bellTypes';
 import { useRowsOnScreen } from './useRowsOnScreen';
 import { useSeenNotifications } from './useSeenNotifications';
+import { lazyNamed } from '../../../../shared/lib/lazyNamed';
+
+const BellRows = lazyNamed({
+  load: () => import('./BellRows'),
+  pick: ({ BellRows }) => BellRows,
+});
 
 const OPEN_EVENT = 'goodboy:open-notifications';
 
@@ -207,16 +213,18 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
           />
           <Divider />
         </PopoverPin>
-        <BellRows
-          isLoading={notificationsLoading && notifications.length === 0}
-          hasNotifications={notifications.length > 0}
-          groups={shownGroups}
-          close={close}
-          onOpenStudio={() => openNotificationsStudio({ isDoor: false })}
-          onDismiss={(ids) => {
-            void dismissNotificationGroup({ ids });
-          }}
-        />
+        <Suspense fallback={<SkeletonRows label="Loading notifications" />}>
+          <BellRows
+            isLoading={notificationsLoading && notifications.length === 0}
+            hasNotifications={notifications.length > 0}
+            groups={shownGroups}
+            close={close}
+            onOpenStudio={() => openNotificationsStudio({ isDoor: false })}
+            onDismiss={(ids) => {
+              void dismissNotificationGroup({ ids });
+            }}
+          />
+        </Suspense>
         <PopoverPin edge="end">
           {unreadBelow > 0 ? (
             <p
