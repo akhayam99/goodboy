@@ -6535,9 +6535,6 @@
   "apps/desktop/src/features/workspace/components/SessionHoverCard/SessionHoverCardBody.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/workspace/components/SessionRowTitle.test.tsx": {

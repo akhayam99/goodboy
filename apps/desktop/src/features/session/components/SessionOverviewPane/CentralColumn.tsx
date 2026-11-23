@@ -1,8 +1,10 @@
+import { useRef } from 'react';
 import { Button, HeightMotion, PANE_GROUPS_GAP_REM, PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
 import { SessionAskLine } from '../../ask/components/SessionAskLine';
+import { useMoveKeys } from '../../hooks/useMoveKeys';
 import { ProjectBlocks } from '../ProjectBlocks';
 import { EmptySessionStart } from './EmptySessionStart';
 import { FolderCard } from './FolderCard';
@@ -40,12 +42,14 @@ export const CentralColumn = ({ session }: Props) => {
     isNowShown,
     noticesView,
   } = useOverviewModel({ session });
+  const columnRef = useRef<HTMLDivElement>(null);
+  useMoveKeys({ sessionId, containerRef: columnRef, moves, actionsFor });
   const dev = useDevDetails({ workspaceId: session.workspaceId });
   const isAskPanelOpen = useAppStore(
     (state) => state.drawer?.kind === 'ask' && state.drawer.sessionId === sessionId,
   );
   return (
-    <div data-central-column className={PANE_RHYTHM.groups}>
+    <div ref={columnRef} data-central-column className={PANE_RHYTHM.groups}>
       {isEmpty ? null : (
         <OverviewStatus sessionId={sessionId} status={status} elapsedMs={board.kpis.elapsedMs} />
       )}

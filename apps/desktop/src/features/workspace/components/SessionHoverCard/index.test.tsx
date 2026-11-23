@@ -20,6 +20,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   type StoryStore,
 } from '../../../../store/storyHarness';
 import {
@@ -31,6 +32,11 @@ import {
   seedColumn,
   sessionOf,
 } from '../../testing/sessionColumn';
+import { FLEET_EVERY_MS } from '../../hooks/useFleetPhrase';
+
+type LiveParams = {
+  readonly command: string;
+};
 
 let useAppStore: StoryStore;
 
@@ -303,20 +309,64 @@ describe('what the hover card says', () => {
     );
   });
 
-  it('says an agent is working when a reason keeps a running session in needs you', () => {
+  const liveWorkFor = ({ command }: LiveParams) => {
+    const base = storySpies.tauriInvoke.getMockImplementation();
+    storySpies.tauriInvoke.mockImplementation(async (name, args) =>
+      name === 'live_work'
+        ? [
+            {
+              runId: 'run-webhook',
+              sessionId: webhook.id,
+              agentId: 'agent-webhook',
+              mountId:
+                useAppStore.getState().sessionProjectMounts[webhook.id]?.[0]?.mountId ?? null,
+              startedAt: 1,
+              tool: { name: 'Bash', command, path: null },
+              hasToolCall: true,
+              canSeeTools: true,
+            },
+          ]
+        : base?.(name, args),
+    );
+  };
+
+  const settle = async () => {
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FLEET_EVERY_MS);
+    });
+  };
+
+  it('says what the agent is doing when a reason keeps a running session in needs you', async () => {
     mount();
+    liveWorkFor({ command: 'pnpm test retry' });
     useAppStore.setState({
       sessionOpenQuestions: {
         ...useAppStore.getState().sessionOpenQuestions,
         [webhook.id]: [openQuestionFor({ sessionId: brandId<SessionId>({ value: webhook.id }) })],
       },
     });
+    await settle();
     fireEvent.mouseEnter(rowOf('Fix webhook retries'));
     rest(500);
     const view = within(screen.getByTestId('session-hover-card'));
 
     view.getByText('1 question for you');
-    view.getByText('An agent is working');
+    view.getByText('Running pnpm test retry in payments-api');
+    expect(view.queryByText('An agent is working')).toBeNull();
+  });
+
+  it('draws the phrase still, with no pulse and no motion', async () => {
+    mount();
+    liveWorkFor({ command: 'pnpm lint' });
+    await settle();
+    fireEvent.mouseEnter(rowOf('Fix webhook retries'));
+    rest(500);
+    const phrase = within(screen.getByTestId('session-hover-card')).getByText(
+      'Running pnpm lint in payments-api',
+    );
+    const line = phrase.closest('div');
+
+    expect(line?.innerHTML ?? '').not.toMatch(/animate-|pulsing|motion-safe:animate/);
   });
 
   it('lists what is wrong behind a running session without turning it into needs you', () => {

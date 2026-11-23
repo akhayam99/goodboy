@@ -1,9 +1,10 @@
 import { Pin } from '@goodboy/ui/icons';
 import { ICON_SIZE, SelectableRow, StatusMark, Tooltip, cn } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
+import { brandId, type Session, type SessionId } from '@goodboy/types';
 import { NAMES } from '../../../../shared/utils/names';
 import { SessionRowTitle } from '../SessionRowTitle';
 import { useSessionRowFacts } from '../../hooks/useSessionRowFacts';
+import { useFleetPhrase } from '../../hooks/useFleetPhrase';
 
 type Props = {
   readonly session: Session;
@@ -25,6 +26,7 @@ export const SessionsRow = ({
   onTogglePin,
 }: Props) => {
   const { node, mark, keys, title } = useSessionRowFacts({ session });
+  const phrase = useFleetPhrase({ sessionId: brandId<SessionId>({ value: session.id }) });
   const pinLabel = isPinned ? NAMES.unpin : NAMES.pin;
   return (
     <SelectableRow
@@ -38,7 +40,15 @@ export const SessionsRow = ({
     >
       <StatusMark mark={mark} {...(mark.kind !== 'empty' && { label: node.label })} />
       <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
-      {project === '' ? null : (
+      {phrase === null ? null : (
+        <span
+          data-fleet-phrase=""
+          className="max-w-48 shrink-0 truncate text-meta text-muted-foreground"
+        >
+          {phrase}
+        </span>
+      )}
+      {phrase !== null || project === '' ? null : (
         <span className="max-w-32 shrink-0 truncate text-meta text-faint-foreground">
           {project}
         </span>

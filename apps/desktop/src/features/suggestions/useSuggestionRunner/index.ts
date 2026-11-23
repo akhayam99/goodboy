@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { Agent, Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { usePendingAction, type PendingAction } from '../../../shared/hooks/usePendingAction';
@@ -65,15 +65,7 @@ export const useSuggestionRunner = ({
   const [notNowIds, setNotNowIds] = useState<ReadonlySet<string>>(new Set());
   const showToast = useShowToast();
   const undoable = useAppStore((state) => state.undoable);
-  const isMountedRef = useRef(false);
   const inFlightRef = useRef(new Set<string>());
-
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
 
   const guarded = useCallback(
     ({ key, task }: TaskParams): (() => Promise<void>) => {
@@ -114,7 +106,7 @@ export const useSuggestionRunner = ({
       message: 'Dismissed',
       actionHint: shortcutGlyphs('app.undo'),
       conflictMessage: 'The suggestion is already back.',
-      isCurrent: () => isMountedRef.current,
+      isCurrent: () => useAppStore.getState().sessions.some(({ id }) => id === sessionId),
       showToast,
       undo: async () => {
         const eventId = await recorded;

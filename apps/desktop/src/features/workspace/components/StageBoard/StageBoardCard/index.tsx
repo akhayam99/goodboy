@@ -21,6 +21,7 @@ import { CardRenameField } from './CardRenameField';
 import { CardSignal } from './CardSignal';
 import { signalActionOf } from './signalActionOf';
 import { projectLineOf } from '../projectLineOf';
+import { useFleetPhrase } from '../../../hooks/useFleetPhrase';
 
 type CardSelectionEvent = {
   readonly shiftKey: boolean;
@@ -76,6 +77,8 @@ export const StageBoardCard = memo(function StageBoardCard({
   const track = stageTrackOf({ stage, isArchived });
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[id] ?? EMPTY_ARRAY);
   const projectLine = projectLineOf({ mounts });
+  const phrase = useFleetPhrase({ sessionId: id });
+  const livePhrase = isArchived ? null : phrase;
   const dynamicActions = useDynamicActions(session, nav, stage);
 
   const [visibleAction = attentionAction ?? undefined] = waitingRun === null ? dynamicActions : [];
@@ -226,6 +229,14 @@ export const StageBoardCard = memo(function StageBoardCard({
 
       <div className="col-span-full row-start-2 flex min-h-5 min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
         {waitingRun === null ? null : <WaitingRunLine run={waitingRun} />}
+        {livePhrase === null ? null : (
+          <span
+            data-fleet-phrase=""
+            className="min-w-0 basis-full truncate text-meta text-muted-foreground"
+          >
+            {livePhrase}
+          </span>
+        )}
         <span
           data-slot="card-project"
           className="min-w-0 break-words text-meta text-muted-foreground"

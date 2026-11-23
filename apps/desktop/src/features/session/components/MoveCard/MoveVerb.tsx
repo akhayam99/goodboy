@@ -9,10 +9,11 @@ type Props = {
   readonly cardId: string;
   readonly cardTitle: string;
   readonly variant: 'primary' | 'secondary';
+  readonly isMain: boolean;
   readonly onOpen: (() => void) | null;
 };
 
-export const MoveVerb = ({ verb, cardId, cardTitle, variant, onOpen }: Props) => {
+export const MoveVerb = ({ verb, cardId, cardTitle, variant, isMain, onOpen }: Props) => {
   const [isConfirming, setIsConfirming] = useState(false);
   useEffect(() => {
     setIsConfirming(false);
@@ -29,12 +30,13 @@ export const MoveVerb = ({ verb, cardId, cardTitle, variant, onOpen }: Props) =>
     verb.run();
   };
   const look = actionButtonLookOf({ verb: verb.label, variant });
-  const button = (
+  const plain = (
     <Button
       size="sm"
       variant={look.variant}
       intent={look.intent}
       aria-label={verb.ariaLabel}
+      data-move-verb={isMain ? '' : undefined}
       disabled={verb.isDisabled}
       isBusy={verb.isBusy}
       className="pointer-events-auto shrink-0"
@@ -44,8 +46,16 @@ export const MoveVerb = ({ verb, cardId, cardTitle, variant, onOpen }: Props) =>
     </Button>
   );
   if (verb.blockedReason !== undefined) {
-    return <Tooltip content={verb.blockedReason}>{button}</Tooltip>;
+    return <Tooltip content={verb.blockedReason}>{plain}</Tooltip>;
   }
+  const button =
+    variant === 'primary' ? (
+      <Tooltip content={verb.ariaLabel ?? verb.label} shortcut="list.open">
+        {plain}
+      </Tooltip>
+    ) : (
+      plain
+    );
   if (verb.confirmRole === null) {
     return button;
   }
