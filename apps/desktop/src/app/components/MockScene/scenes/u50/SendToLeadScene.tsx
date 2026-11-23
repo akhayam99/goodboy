@@ -43,6 +43,7 @@ const leadOf = ({ key, goal, sessionId, projectId, branches, updatedAt }: LeadPa
     projectId,
     branches,
     projectIds: [projectId],
+    places: branches.map((branch) => ({ projectId, branch })),
     view: {
       ...base,
       tree: {
@@ -115,7 +116,7 @@ const PHASE: Readonly<Partial<Record<SendToLeadSceneState, SentToLeadPhase>>> = 
 const markSent = ({ state, mount }: SeedParams): boolean => {
   const phase = PHASE[state];
   const card = document.querySelector<HTMLElement>('[data-move^="suggestion:fix-checks"]');
-  const key = card?.dataset.move ?? null;
+  const key = card?.dataset.sentKey ?? null;
   if (phase === undefined || key === null) {
     return phase === undefined;
   }
@@ -149,6 +150,7 @@ const markSent = ({ state, mount }: SeedParams): boolean => {
           title: 'HBL-417',
         },
         isNew: false,
+        isCancelled: false,
         messageId,
         text,
         note: '',

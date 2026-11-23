@@ -87,6 +87,7 @@ const seedLead = async ({ phase = 'answering' }: LeadParams = {}): Promise<void>
         projectId: 'project-ledger-core',
         branches: ['hl/ledger-batch'],
         projectIds: ['project-ledger-core'],
+        places: [{ projectId: 'project-ledger-core', branch: 'hl/ledger-batch' }],
         view: aView({ phase }),
       },
     ],
@@ -177,12 +178,16 @@ describe('Send to Lead', () => {
     await useAppStore.getState().sendToLead({ ...ITEM, candidate: CANDIDATE });
     const withdraw = vi.fn(async () => ({ kind: 'withdrawn' as const }));
     registerWithdrawPort({ port: withdraw });
+    const row = { createdAt: 1, text: ITEM.text, images: [] };
     useAppStore.setState((state) => ({
       agentQueue: {},
       workLeads: state.workLeads.map((lead) => ({
         ...lead,
         view: aView({
-          pendingMessages: [{ rowId: '41', createdAt: 1, text: ITEM.text, images: [] }],
+          pendingMessages: [
+            { ...row, rowId: '40', joinKey: 'user:queue:another-send' },
+            { ...row, rowId: '41', joinKey: `user:queue:${entry()?.messageId ?? ''}` },
+          ],
         }),
       })),
     }));
@@ -258,7 +263,7 @@ describe('Send to Lead', () => {
     expect(statusNow()).toBe('notRead');
   });
 
-  it('drops a late answer for a send the user already replaced', async () => {
+  it('sends once when a second click lands while the first send is in flight', async () => {
     await seedLead();
     const first = useAppStore.getState().sendToLead({ ...ITEM, candidate: CANDIDATE });
     const second = useAppStore
@@ -266,7 +271,63 @@ describe('Send to Lead', () => {
       .sendToLead({ ...ITEM, note: 'second', candidate: CANDIDATE });
     await Promise.all([first, second]);
 
-    expect(entry()?.note).toBe('second');
+    expect(entry()?.note).toBe('');
     expect(entry()?.phase).toBe('sent');
+    expect(queue()).toHaveLength(1);
+    expect(drain).toHaveBeenCalledTimes(1);
+  });
+
+  it('queues nothing and frees the comment when the send was dismissed while it bound', async () => {
+    await seedLead();
+    const sending = useAppStore.getState().sendToLead({ ...ITEM, candidate: CANDIDATE });
+    useAppStore.getState().dismissSentToLead({ key: KEY });
+    await sending;
+
+    expect(entry()).toBeUndefined();
+    expect(queue()).toHaveLength(0);
+    expect(await storedThreads()).toEqual([]);
+  });
+
+  it('loads the agents of a Lead found in another session before it queues', async () => {
+    await seedLead();
+    useAppStore.setState({ sessionPhaseRuns: {} });
+
+    await useAppStore.getState().sendToLead({ ...ITEM, candidate: CANDIDATE });
+
+    expect(entry()?.phase).toBe('sent');
+    expect(queue()).toHaveLength(1);
+    expect(
+      useAppStore.getState().sessionPhaseRuns[FIXTURE_SESSION]?.map((agent) => agent.id),
+    ).toEqual([FIXTURE_ROOT]);
+  });
+
+  it('refuses to send when the Lead has no agent row, with Retry', async () => {
+    await seedLead();
+    await storySqlite().execute('DELETE FROM agents WHERE id = ?', [FIXTURE_ROOT]);
+    useAppStore.setState({ sessionPhaseRuns: {} });
+
+    await useAppStore.getState().sendToLead({ ...ITEM, candidate: CANDIDATE });
+
+    expect(entry()).toMatchObject({ phase: 'failed', failure: SEND_TO_LEAD_COPY.leadNotFound });
+    expect(queue()).toHaveLength(0);
+  });
+
+  it('keeps the row with why Undo failed when the queue cannot be saved, and Retry takes it back', async () => {
+    await seedLead();
+    await useAppStore.getState().sendToLead({ ...ITEM, candidate: CANDIDATE });
+    injectDbFault({ match: /agent_queued_messages/ });
+
+    await useAppStore.getState().undoSendToLead({ key: KEY });
+
+    expect(entry()).toMatchObject({ phase: 'sent', failure: SEND_TO_LEAD_COPY.notTakenBack });
+    expect(statusNow()).toBe('undoFailed');
+    expect(queue()).toHaveLength(1);
+    expect(await storedThreads()).toEqual([THREAD]);
+
+    await useAppStore.getState().undoSendToLead({ key: KEY });
+
+    expect(entry()).toBeUndefined();
+    expect(queue()).toHaveLength(0);
+    expect(await storedThreads()).toEqual([]);
   });
 });

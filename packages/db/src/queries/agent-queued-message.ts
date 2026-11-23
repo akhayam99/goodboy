@@ -159,32 +159,76 @@ type SaveParams = Readonly<{
   agentId: AgentId;
   messages: ReadonlyArray<AgentQueuedMessageRecord>;
   removedIds: ReadonlyArray<string>;
+  savedIds: ReadonlyArray<string>;
+  unchangedIds: ReadonlyArray<string>;
 }>;
+
+type MessageStatementParams = StatementParams &
+  Readonly<{
+    isSaved: boolean;
+  }>;
+
+type Statement = Readonly<{
+  sql: string;
+  params: ReadonlyArray<unknown>;
+}>;
+
+const messageStatementOf = ({
+  agentId,
+  message,
+  position,
+  isSaved,
+}: MessageStatementParams): Statement => {
+  if (isSaved) {
+    return {
+      sql: `UPDATE agent_queued_messages
+               SET position = ?, content = ?, attachments_json = ?, override_json = ?
+             WHERE id = ? AND agent_id = ?`,
+      params: [
+        position,
+        message.content,
+        JSON.stringify(message.attachments),
+        overrideColumnOf({ message }),
+        message.id,
+        agentId,
+      ],
+    };
+  }
+  return {
+    sql: `INSERT INTO agent_queued_messages
+            (id, agent_id, position, content, attachments_json, override_json, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            position = excluded.position,
+            content = excluded.content,
+            attachments_json = excluded.attachments_json,
+            override_json = excluded.override_json
+          WHERE agent_queued_messages.agent_id = excluded.agent_id`,
+    params: messageParamsOf({ agentId, message, position }),
+  };
+};
 
 export const saveAgentQueuedMessages = async ({
   db,
   agentId,
   messages,
   removedIds,
+  savedIds,
+  unchangedIds,
 }: SaveParams): Promise<void> => {
+  const saved = new Set(savedIds);
+  const unchanged = new Set(unchangedIds);
   await db.transaction({
     statements: [
       ...removedIds.map((id) => ({
         sql: 'DELETE FROM agent_queued_messages WHERE agent_id = ? AND id = ?',
         params: [agentId, id],
       })),
-      ...messages.map((message, position) => ({
-        sql: `INSERT INTO agent_queued_messages
-                (id, agent_id, position, content, attachments_json, override_json, created_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?)
-              ON CONFLICT(id) DO UPDATE SET
-                position = excluded.position,
-                content = excluded.content,
-                attachments_json = excluded.attachments_json,
-                override_json = excluded.override_json
-              WHERE agent_queued_messages.agent_id = excluded.agent_id`,
-        params: messageParamsOf({ agentId, message, position }),
-      })),
+      ...messages.flatMap((message, position) =>
+        unchanged.has(message.id)
+          ? []
+          : [messageStatementOf({ agentId, message, position, isSaved: saved.has(message.id) })],
+      ),
     ],
   });
 };

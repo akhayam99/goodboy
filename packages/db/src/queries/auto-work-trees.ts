@@ -8,6 +8,12 @@ export type AutoWorkTree = Readonly<{
   projectId: string | null;
   branches: ReadonlyArray<string>;
   projectIds: ReadonlyArray<string>;
+  places: ReadonlyArray<AutoWorkPlace>;
+}>;
+
+type AutoWorkPlace = Readonly<{
+  projectId: string | null;
+  branch: string;
 }>;
 
 type TreeRow = {
@@ -73,6 +79,7 @@ export const listAutoWorkTreesOfWorkspace = async ({
           own.flatMap((branch) => (branch.project_id === null ? [] : [branch.project_id])),
         ),
       ],
+      places: own.map((branch) => ({ projectId: branch.project_id, branch: branch.branch })),
     };
   });
 };

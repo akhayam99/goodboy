@@ -28,6 +28,7 @@ export const checkLeadItemOf = ({
   const logTail = reading?.status === 'ready' ? reading.lines.slice(-LOG_LINES).join('\n') : null;
   const pr = github.pr;
   return {
+    identity: [github.branch, pr?.number ?? '', failed.name, failed.detailsUrl ?? ''].join('|'),
     lead: {
       sessionId,
       projectId: github.projectId,

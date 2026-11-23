@@ -15,6 +15,7 @@ type RowParams = {
   readonly projectId?: string | null;
   readonly projectIds?: ReadonlyArray<string>;
   readonly branches?: ReadonlyArray<string>;
+  readonly places?: WorkRow['places'];
   readonly stop?: LeadStop;
   readonly updatedAt?: number;
 };
@@ -25,6 +26,7 @@ const rowOf = ({
   projectId = LEDGER,
   projectIds = [LEDGER],
   branches = [],
+  places = branches.map((branch) => ({ projectId: LEDGER, branch })),
   stop = 'working',
   updatedAt = 1,
 }: RowParams): WorkRow => ({
@@ -36,6 +38,7 @@ const rowOf = ({
   title: `Goal ${id}`,
   branches,
   projectIds,
+  places,
   lead: { stop, reason: null },
   askCount: 0,
   agentsRunning: 0,
@@ -151,5 +154,20 @@ describe('leadCandidatesOf', () => {
       kind: 'one',
       candidate: { rootAgentId: delegated.rootAgentId },
     });
+  });
+
+  it('ranks by branch only when the branch is in the item project', () => {
+    const shared = rowOf({
+      id: 'shared',
+      projectIds: [NOTIFY, LEDGER],
+      places: [
+        { projectId: NOTIFY, branch: 'main' },
+        { projectId: LEDGER, branch: 'hl/digest' },
+      ],
+    });
+
+    const choice = leadCandidatesOf({ rows: [shared], item: item({ branch: 'main' }) });
+
+    expect(choice).toMatchObject({ kind: 'one', candidate: { rule: 'session' } });
   });
 });

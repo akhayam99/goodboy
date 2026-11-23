@@ -19,11 +19,13 @@ export const removeQueuedMessage = (set: SetFn, get: GetFn) => {
     const isSaved = await persistAgentQueue({ get, agentId });
     if (!isSaved) {
       const latest = readAgentQueue({ get, agentId });
-      writeAgentQueue({
-        set,
-        agentId,
-        queue: [...latest.slice(0, index), target, ...latest.slice(index)],
-      });
+      if (!latest.some((item) => item.id === itemId)) {
+        writeAgentQueue({
+          set,
+          agentId,
+          queue: [...latest.slice(0, index), target, ...latest.slice(index)],
+        });
+      }
       return false;
     }
     if (target.sourceThreadId !== undefined) {

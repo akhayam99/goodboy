@@ -40,6 +40,8 @@ const sentenceOf = ({ entry, status }: SentenceParams): string => {
       return SEND_TO_LEAD_COPY.notDelivered;
     case 'failed':
       return status.failure === '' ? SEND_TO_LEAD_COPY.notSaved : status.failure;
+    case 'undoFailed':
+      return status.failure;
     default: {
       const exhaustive: never = status;
       return exhaustive;
@@ -87,7 +89,8 @@ export const SentToLeadRow = ({ entry, onEdit }: Props) => {
             .getState()
             .navigate({ to: agentPlace({ sessionId: leadSessionId, agentId: rootAgentId }) });
   const canTakeBack = status.kind === 'notRead' || status.kind === 'starting';
-  const isProblem = status.kind === 'failed' || status.kind === 'stopped';
+  const isProblem =
+    status.kind === 'failed' || status.kind === 'stopped' || status.kind === 'undoFailed';
   return (
     <div data-sent-to-lead={status.kind} className="flex min-h-8 min-w-0 items-center gap-2">
       {isProblem ? (
@@ -122,6 +125,13 @@ export const SentToLeadRow = ({ entry, onEdit }: Props) => {
                 ? void startNewLead({ item })
                 : void useAppStore.getState().retrySendToLead({ key: entry.key })
             }
+          />
+        ) : null}
+        {status.kind === 'undoFailed' ? (
+          <SentRowVerb
+            label={NAMES.retry}
+            variant="secondary"
+            onClick={() => void useAppStore.getState().undoSendToLead({ key: entry.key })}
           />
         ) : null}
         {status.kind === 'stopped' ? (

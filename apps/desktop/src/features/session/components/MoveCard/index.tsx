@@ -9,6 +9,7 @@ import { SendToLeadButton } from '../../../work/sendToLead/SendToLeadButton';
 import { MoveEvidenceChips } from './MoveEvidenceChips';
 import { MoveVerb } from './MoveVerb';
 import { SentToLeadRow } from './SentToLeadRow';
+import { sentViewOf } from './sentViewOf';
 import { useMoveLeadSend } from './useMoveLeadSend';
 
 type Props = {
@@ -33,19 +34,21 @@ export const MoveCard = ({
   const { main, second, failure } = actionsFor({ card });
   const onOpen = openFor({ card });
   const why = card.reason ?? card.detail;
-  const sent = useAppStore((state) => state.sentToLead[card.id]);
   const leadSend = useMoveLeadSend({ sessionId, card });
+  const sentKey = leadSend === null ? card.id : `${card.id}|${leadSend.identity}`;
+  const sent = useAppStore((state) => state.sentToLead[sentKey]);
   const [editNote, setEditNote] = useState<string | null>(null);
   const onEdit = async () => {
     if (sent === undefined) {
       return;
     }
-    await useAppStore.getState().undoSendToLead({ key: card.id });
-    if (useAppStore.getState().sentToLead[card.id] === undefined) {
+    await useAppStore.getState().undoSendToLead({ key: sentKey });
+    if (useAppStore.getState().sentToLead[sentKey] === undefined) {
       setEditNote(sent.note);
     }
   };
-  if (sent !== undefined && (sent.phase === 'sent' || sent.phase === 'stopped')) {
+  const sentView = sentViewOf({ entry: sent });
+  if (sent !== undefined && sentView === 'quiet') {
     return (
       <div data-move={card.id} data-move-density={density} className="flex min-w-0 flex-col">
         <SentToLeadRow entry={sent} onEdit={() => void onEdit()} />
@@ -53,12 +56,14 @@ export const MoveCard = ({
     );
   }
   const sentLine =
-    sent?.phase === 'failed' ? <SentToLeadRow entry={sent} onEdit={() => void onEdit()} /> : null;
+    sent !== undefined && sentView === 'line' ? (
+      <SentToLeadRow entry={sent} onEdit={() => void onEdit()} />
+    ) : null;
   const verbs = (
     <span className="flex shrink-0 items-center gap-2">
       {leadSend === null || sent !== undefined ? null : (
         <SendToLeadButton
-          cardKey={card.id}
+          cardKey={sentKey}
           send={leadSend}
           variant="secondary"
           editNote={editNote}
@@ -97,6 +102,7 @@ export const MoveCard = ({
     return (
       <div
         data-move={card.id}
+        data-sent-key={sentKey}
         data-move-density="row"
         data-move-primary={isPrimary ? '' : undefined}
         className="flex min-w-0 flex-col gap-1"
@@ -113,12 +119,14 @@ export const MoveCard = ({
           {verbs}
         </div>
         {failureLine}
+        {sentLine}
       </div>
     );
   }
   return (
     <div
       data-move={card.id}
+      data-sent-key={sentKey}
       data-move-density="focus"
       data-move-primary={isPrimary ? '' : undefined}
       className="flex min-w-0 flex-col gap-2"

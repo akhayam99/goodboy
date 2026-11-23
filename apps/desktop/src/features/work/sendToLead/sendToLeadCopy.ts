@@ -26,6 +26,8 @@ export const SEND_TO_LEAD_COPY = {
   newLead: 'New Lead',
   notDelivered: 'Not delivered: the Lead stopped',
   notSaved: "The message couldn't be saved, so it was not sent.",
+  leadNotFound: "The Lead couldn't be found, so the message was not sent.",
+  notTakenBack: "The message couldn't be taken back. It is still with the Lead.",
   pickNote: 'Add a note for the Lead',
   pickTitle: 'Send to which Lead?',
   notReadYet: 'Not read yet',

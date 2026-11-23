@@ -12,6 +12,7 @@ export type WorkLead = Readonly<{
   projectId: string | null;
   branches: ReadonlyArray<string>;
   projectIds: ReadonlyArray<string>;
+  places: ReadonlyArray<Readonly<{ projectId: string | null; branch: string }>>;
   view: AutoTreeView;
 }>;
 

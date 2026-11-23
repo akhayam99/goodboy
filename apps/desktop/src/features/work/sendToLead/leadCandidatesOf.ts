@@ -54,7 +54,14 @@ const ruleOf = ({ row, item }: RowParams): LeadRule => {
   if (item.holderAgentId !== null && row.rootAgentId === item.holderAgentId) {
     return 'holds';
   }
-  if (item.branch !== null && row.branches.includes(item.branch)) {
+  if (
+    item.branch !== null &&
+    row.places.some(
+      (place) =>
+        place.branch === item.branch &&
+        (item.projectId === null || place.projectId === item.projectId),
+    )
+  ) {
     return 'branch';
   }
   if (row.sessionId === item.sessionId) {

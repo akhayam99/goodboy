@@ -59,7 +59,7 @@ const toRecord = (turn: AgentQueuedTurn): AgentQueuedMessageRecord => ({
 
 const persistQueue = createKeyedQueue();
 
-const savedIds = new Map<AgentId, ReadonlySet<string>>();
+const savedRows = new Map<AgentId, ReadonlyMap<string, string | null>>();
 
 type SavedParams = Readonly<{
   agentId: AgentId;
@@ -67,7 +67,10 @@ type SavedParams = Readonly<{
 }>;
 
 export const rememberSavedQueue = ({ agentId, ids }: SavedParams): void => {
-  savedIds.set(agentId, new Set([...(savedIds.get(agentId) ?? []), ...ids]));
+  savedRows.set(
+    agentId,
+    new Map([...(savedRows.get(agentId) ?? []), ...ids.map((id): [string, null] => [id, null])]),
+  );
 };
 
 type SaveParams = Readonly<{
@@ -76,10 +79,22 @@ type SaveParams = Readonly<{
 }>;
 
 const saveQueue = async ({ agentId, messages }: SaveParams): Promise<void> => {
-  const ids = new Set(messages.map((message) => message.id));
-  const removedIds = [...(savedIds.get(agentId) ?? [])].filter((id) => !ids.has(id));
-  await saveAgentQueuedMessages({ db: tauriDatabase, agentId, messages, removedIds });
-  savedIds.set(agentId, ids);
+  const saved = savedRows.get(agentId) ?? new Map<string, string | null>();
+  const rows = new Map(
+    messages.map((message, position) => [message.id, JSON.stringify({ message, position })]),
+  );
+  const removedIds = [...saved.keys()].filter((id) => !rows.has(id));
+  const savedIds = [...rows.keys()].filter((id) => saved.has(id));
+  const unchangedIds = savedIds.filter((id) => saved.get(id) === rows.get(id));
+  await saveAgentQueuedMessages({
+    db: tauriDatabase,
+    agentId,
+    messages,
+    removedIds,
+    savedIds,
+    unchangedIds,
+  });
+  savedRows.set(agentId, rows);
 };
 
 const sessionOfAgent = ({ get, agentId }: AgentParams): SessionId | undefined => {

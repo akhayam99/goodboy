@@ -9,7 +9,8 @@ export type SentToLeadStatus =
   | Readonly<{ kind: 'notRead' }>
   | Readonly<{ kind: 'onIt' }>
   | Readonly<{ kind: 'stopped' }>
-  | Readonly<{ kind: 'failed'; failure: string }>;
+  | Readonly<{ kind: 'failed'; failure: string }>
+  | Readonly<{ kind: 'undoFailed'; failure: string }>;
 
 type Params = {
   readonly entry: SentToLead;
@@ -29,17 +30,27 @@ export const sentToLeadStatusOf = ({ entry, queue, views }: Params): SentToLeadS
   if (entry.phase === 'stopped') {
     return { kind: 'stopped' };
   }
+  if (entry.failure !== null) {
+    return { kind: 'undoFailed', failure: entry.failure };
+  }
   const { rootAgentId } = entry.target;
   if (rootAgentId === null) {
     return { kind: 'starting' };
   }
   const view = views.find((candidate) => candidate.tree.rootAgentId === rootAgentId) ?? null;
   if (entry.isNew) {
-    return view === null || view.tree.turnsUsed === 0 ? { kind: 'starting' } : { kind: 'onIt' };
+    if (view === null) {
+      return { kind: 'starting' };
+    }
+    if (view.tree.turnsUsed > 0) {
+      return { kind: 'onIt' };
+    }
+    return ENDED_PHASES.has(view.tree.phase) ? { kind: 'stopped' } : { kind: 'starting' };
   }
   const queued = queue.find((item) => item.id === entry.messageId);
   const isPending =
-    queued !== undefined || pendingLeadRowOf({ views, rootAgentId, text: entry.text }) !== null;
+    queued !== undefined ||
+    pendingLeadRowOf({ views, rootAgentId, messageId: entry.messageId }) !== null;
   if (!isPending) {
     return { kind: 'onIt' };
   }

@@ -110,6 +110,10 @@ describe('listAutoWorkTreesOfWorkspace', () => {
 
     expect(trees[0]?.projectIds).toEqual(['project-ledger-core', 'project-notify-relay']);
     expect(trees[1]?.projectIds).toEqual([]);
+    expect(trees[0]?.places).toEqual([
+      { projectId: 'project-ledger-core', branch: 'hl/idempotency' },
+      { projectId: 'project-notify-relay', branch: 'hl/retries' },
+    ]);
   });
 
   it('leaves out a deleted or archived session', async () => {

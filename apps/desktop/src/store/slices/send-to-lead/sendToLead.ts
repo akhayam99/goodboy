@@ -16,6 +16,7 @@ export const sendToLead = ({ set, get }: SliceDeps) => {
           title: candidate.title,
         },
         isNew: false,
+        isCancelled: false,
         messageId: crypto.randomUUID(),
         phase: 'sending',
         failure: null,

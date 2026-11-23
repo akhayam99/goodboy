@@ -30,6 +30,7 @@ const leadOf = ({
     sessionGoal: `goal ${key}`,
     projectId: null,
     projectIds: [],
+    places: [],
     branches,
     view: {
       ...base,

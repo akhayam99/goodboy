@@ -14,6 +14,7 @@ export type SentToLead = Readonly<{
   sessionId: SessionId;
   target: SentToLeadTarget;
   isNew: boolean;
+  isCancelled: boolean;
   messageId: string;
   text: string;
   note: string;

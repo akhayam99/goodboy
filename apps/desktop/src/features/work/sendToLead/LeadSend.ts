@@ -6,6 +6,7 @@ type NoteParams = {
 };
 
 export type LeadSend = Readonly<{
+  identity: string;
   lead: LeadItem;
   send: Omit<SendToLeadItem, 'key' | 'note' | 'text'>;
   textOf: (params: NoteParams) => string;
