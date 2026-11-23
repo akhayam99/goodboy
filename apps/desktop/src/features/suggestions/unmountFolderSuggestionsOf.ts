@@ -27,7 +27,7 @@ export const unmountFolderSuggestionsOf = ({
         kind: 'unmount-folder',
         priority: 53,
         band: 3,
-        title: `Remove ${mount.projectName} from this session`,
+        title: `Unmount ${mount.projectName}`,
         detail: `No turn touched it for ${idleDays} days`,
         sessionId,
         targetKey: `worktree:${mount.mountId}`,

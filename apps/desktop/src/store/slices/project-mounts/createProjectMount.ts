@@ -19,7 +19,7 @@ import { allocateMountDirName } from './allocateMountDirName';
 import { existingWorktreeFor } from './existingWorktree/existingWorktreeFor';
 import { mountViewPatch } from './mountViewPatch';
 import { withRepositoryAndMountLock } from './mountLocks';
-import type { GetFn, SetFn } from './types';
+import type { GetFn, MountRestoreTarget, SetFn } from './types';
 
 type StampRepoSlugParams = {
   readonly sessionId: SessionId;
@@ -82,6 +82,7 @@ type Params = {
   readonly taskIdentifiers?: ReadonlyArray<string>;
   readonly branch?: string;
   readonly dirName?: string;
+  readonly restore?: MountRestoreTarget;
 };
 
 const FOLDER_IN_PLACE_REFUSAL =
@@ -99,6 +100,7 @@ export const createProjectMount = async ({
   taskIdentifiers,
   branch: plannedBranch,
   dirName: plannedDirName,
+  restore,
 }: Params): Promise<SessionProjectMount> =>
   withRepositoryAndMountLock({
     repoRoot: project.rootPath,
@@ -130,12 +132,16 @@ export const createProjectMount = async ({
       const hasRepoMount = (get().sessionProjectMounts[sessionId] ?? []).some(
         (mount) => mount.branch !== '',
       );
-      const adoptedBranch = hasRepoMount
+      const seededBranch = hasRepoMount
         ? undefined
         : (seed?.existingBranch ?? plan.adoptedBranch ?? undefined);
-      const adoptedFallbackRef = adoptedBranch === undefined ? undefined : seed?.fallbackRef;
-      const existingWorktreePath =
+      const adoptedBranch = restore?.branch ?? seededBranch;
+      const adoptedFallbackRef =
+        restore !== undefined || adoptedBranch === undefined ? undefined : seed?.fallbackRef;
+      const seededWorktreePath =
         adoptedBranch === undefined ? undefined : seed?.existingWorktreePath;
+      const existingWorktreePath =
+        restore === undefined ? seededWorktreePath : (restore.worktreePath ?? undefined);
       const parentDir = `${project.rootPath}/.goodboy/worktrees`;
       let created;
       await rememberWorktreeRoot({ repoRoot: project.rootPath, addedBy: 'mount' });

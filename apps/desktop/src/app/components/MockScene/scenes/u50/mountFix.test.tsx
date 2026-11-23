@@ -65,20 +65,16 @@ describe('the mount fix scenes', () => {
     ]);
   });
 
-  it('puts Remove from session on the project head of the board', async () => {
+  it('puts Unmount on the project head of the board', async () => {
     await show({ name: 'u50-mount-fix-light' });
 
-    screen.getByRole('button', { name: 'Remove payments-api from session' });
+    screen.getByRole('button', { name: 'Unmount payments-api' });
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('opens the removal question from the project menu verb', async () => {
     await show({ name: 'u50-mount-fix-confirm-dark' });
 
-    await screen.findByRole(
-      'dialog',
-      { name: 'Remove payments-api from the session?' },
-      { timeout: 2000 },
-    );
+    await screen.findByRole('dialog', { name: 'Unmount payments-api?' }, { timeout: 2000 });
   });
 });

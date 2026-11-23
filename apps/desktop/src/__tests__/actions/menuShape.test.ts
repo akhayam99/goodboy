@@ -103,7 +103,7 @@ type RecordParams = {
 const REPAIR_VERB = /^(?:Refresh|Resync|Reload)\b/;
 const OPEN_VERB = /^(?:Open|Go to|Show)\b/;
 const COPY_VERB = /^Copy\b/;
-const END_VERB = /^(?:Stop(?! keeping)|Archive|Delete|Remove|Discard|Close|Drop)\b/;
+const END_VERB = /^(?:Stop(?! keeping)|Archive|Delete|Remove|Discard|Close|Drop|Unmount)\b/;
 
 const rankOf = ({ label }: LabelParams): number => {
   if (OPEN_VERB.test(label)) {

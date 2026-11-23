@@ -273,7 +273,7 @@ never exists on one surface only.
   and no card confirm exists any more (`inline-confirm-placement.baseline.json`
   is empty). A verb that loses work confirms in a `ConfirmPopover` on its button
   (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
-  Delete script, Close branch, Remove from session, Abort rebase, Restore a
+  Delete script, Close branch, Unmount, Abort rebase, Restore a
   backup). The Branch header's Merge asks "Merge #318 into main?" and Close
   asks "Close #318 without merging?" beside their buttons. Deleting a diff note
   acts at once with Undo, which posts the same note again; a pull request

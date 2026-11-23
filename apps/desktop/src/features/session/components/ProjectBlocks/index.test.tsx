@@ -434,7 +434,9 @@ describe('the project blocks on the Overview', () => {
 
     expect(
       [...board.querySelectorAll('[aria-expanded]')].filter(
-        (node) => node.closest('[data-board-actions]') === null,
+        (node) =>
+          node.closest('[data-board-actions]') === null &&
+          node.closest('[data-section-actions]') === null,
       ),
     ).toHaveLength(0);
     expect(document.querySelector('[data-slot="branch-work"]')).toBeNull();

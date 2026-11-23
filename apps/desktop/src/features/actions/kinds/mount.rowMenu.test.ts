@@ -95,12 +95,12 @@ describe('the branch row ⋯ is an explicit list per state', () => {
     ]);
   });
 
-  it('closed: Reopen, Copy and Remove from session', () => {
+  it('closed: Reopen, Copy and Unmount', () => {
     expect(
       labelsOf({
         entries: overflowOf({ facts: factsOf({ state: 'Worktree closed, files kept' }) }),
       }),
-    ).toEqual(['Reopen', 'Copy', 'Remove from session']);
+    ).toEqual(['Reopen', 'Copy', 'Unmount']);
   });
 
   it('never shows Close branch beside Delete local branch on a merged branch, even on right click', () => {

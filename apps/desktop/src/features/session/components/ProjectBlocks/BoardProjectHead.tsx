@@ -48,8 +48,8 @@ export const BoardProjectHead = ({ projectId, projectName, door }: Props) => {
           variant="ghost"
           icon={Unlink}
           iconSize={ICON_SIZE.row}
-          label={`Remove ${projectName} from session`}
-          tooltip={NAMES.removeFromSession}
+          label={`${NAMES.unmount} ${projectName}`}
+          tooltip={NAMES.unmount}
           aria-haspopup="dialog"
           onClick={requestDetach}
         />

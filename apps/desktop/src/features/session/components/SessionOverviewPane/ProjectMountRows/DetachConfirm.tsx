@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ConfirmPopover, ICON_SIZE, Skeleton, type ConfirmPopoverTriggerParams } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../../shared/utils/names';
 import { PINNED_RUN_COPY } from '../../../../workflows/pinnedRunCopy';
 import type { PinnedRunsView } from '../../../hooks/usePinnedRuns';
 import { DetachDetails } from './DetachDetails';
@@ -36,7 +37,7 @@ export const DetachConfirm = ({
   onRecheck,
   onCancel,
 }: Props) => {
-  const title = `Remove ${projectName} from the session?`;
+  const title = `${NAMES.unmount} ${projectName}?`;
 
   if (plan.kind === 'checking') {
     return (
@@ -47,7 +48,7 @@ export const DetachConfirm = ({
         role="primary"
         icon={<WorktreeIcon size={ICON_SIZE.row} />}
         title={title}
-        confirmLabel="Remove"
+        confirmLabel={NAMES.unmount}
         isConfirmDisabled
         onConfirm={() => undefined}
         onCancel={onCancel}
@@ -71,7 +72,7 @@ export const DetachConfirm = ({
         role="alert"
         icon={<AlertIcon size={ICON_SIZE.row} />}
         title={title}
-        confirmLabel="Remove"
+        confirmLabel={NAMES.unmount}
         isConfirmDisabled
         onConfirm={() => undefined}
         onCancel={onCancel}

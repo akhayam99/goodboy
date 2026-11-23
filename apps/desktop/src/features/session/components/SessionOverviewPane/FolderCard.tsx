@@ -10,6 +10,7 @@ import { useAppStore } from '../../../../store';
 import { inPlaceFoldersOf } from '../../../../store/slices/project-mounts/inPlaceFoldersOf';
 import { openLens } from '../../openLens';
 import { folderCardCopyOf } from './folderCardCopyOf';
+import { MountProjectAction } from './ProjectMountRows/MountProjectAction';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -27,6 +28,10 @@ export const FolderCard = ({ sessionId }: Props) => {
   const loadSessionFolderTurns = useAppStore((state) => state.loadSessionFolderTurns);
   const [home, setHome] = useState<string | null>(null);
   const hasFolders = folders.length > 0;
+  const hasRepoMount = useAppStore((state) =>
+    (state.sessionProjectMounts[sessionId] ?? []).some((mount) => mount.branch !== ''),
+  );
+  const workspaceId = hasRepoMount ? null : (folders[0]?.workspaceId ?? null);
 
   useEffect(() => {
     if (!hasFolders) {
@@ -104,6 +109,15 @@ export const FolderCard = ({ sessionId }: Props) => {
           </section>
         );
       })}
+      {workspaceId === null ? null : (
+        <div className="flex">
+          <MountProjectAction
+            sessionId={sessionId}
+            workspaceId={workspaceId}
+            presentation="button"
+          />
+        </div>
+      )}
     </div>
   );
 };

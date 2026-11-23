@@ -2,6 +2,7 @@ import { FolderPlus } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE, ROW_INTERACTIVE } from '@goodboy/ui';
 import type { Project, WorkspaceId } from '@goodboy/types';
 
+import { NAMES } from '../../../../../shared/utils/names';
 import { openWorkspaceProjects } from './openWorkspaceProjects';
 import { useConnectProject, type ConnectFailure } from './useConnectProject';
 
@@ -10,7 +11,7 @@ type Props = {
   readonly onConnected: (project: Project) => void;
 };
 
-const CONNECT_LABEL = 'Connect a repo or folder';
+const CONNECT_LABEL = NAMES.chooseAFolder;
 
 type FailureTextParams = {
   readonly failure: ConnectFailure;

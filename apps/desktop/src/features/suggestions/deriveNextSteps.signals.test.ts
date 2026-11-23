@@ -322,7 +322,7 @@ describe('unmount-folder and close-worktree', () => {
 
   it('offers Unmount for a plain folder no turn touched for seven days', () => {
     const move = moveOfKind({ signals: { ...BASE, idleMounts: [idle()] }, kind: 'unmount-folder' });
-    expect(move?.title).toBe('Remove notify-relay from this session');
+    expect(move?.title).toBe('Unmount notify-relay');
     expect(move?.reason).toBe('No turn touched it for 9 days');
     expect(move?.completesWhen).toEqual({ kind: 'folder-unmounted', mountId: NOTIFY_MOUNT });
   });

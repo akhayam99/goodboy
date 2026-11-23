@@ -52,7 +52,7 @@ export const DetachDetails = ({ projectName, details, isBusy, onKeepFiles }: Pro
               className="w-fit"
               onClick={onKeepFiles}
             >
-              Remove and keep files
+              Unmount and keep files
             </Button>
           )}
         </div>

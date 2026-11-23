@@ -5,6 +5,7 @@ import { cn, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { inPlaceFoldersOf } from '../../../../store/slices/project-mounts/inPlaceFoldersOf';
+import { MountProjectAction } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
 import { LevelCard } from './LevelCard';
 import { folderFaceLineOf } from './folderFaceLineOf';
 import { CARD_ROW_INSET } from './railInset';
@@ -43,6 +44,15 @@ export const LevelFolder = ({ session }: Props) => {
       label={folders.length === 1 ? 'Folder' : 'Folders'}
       isOpen={fold.isOpen}
       onToggle={fold.toggle}
+      {...(session.archivedAt == null && {
+        action: (
+          <MountProjectAction
+            sessionId={sessionId}
+            workspaceId={session.workspaceId}
+            presentation="add"
+          />
+        ),
+      })}
     >
       <ul className="flex min-w-0 flex-col">
         {folders.map((folder, index) => (

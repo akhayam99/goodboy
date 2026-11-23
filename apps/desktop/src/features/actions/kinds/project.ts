@@ -74,7 +74,7 @@ export const PROJECT_KIND: ObjectKindDefinition<ProjectActionTarget, ProjectFact
     },
     {
       id: 'project.detach',
-      label: NAMES.removeFromSession,
+      label: NAMES.unmount,
       icon: Unlink,
       group: 'danger',
       hasCustomConfirm: true,

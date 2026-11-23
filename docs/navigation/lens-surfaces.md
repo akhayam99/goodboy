@@ -90,8 +90,8 @@
   `warning` `Notice` with `Use this branch here`, `Keep both branches` and
   `Not now`) and the first lap Publish. Needs you follows, then Next (up to
   three rows, the first one's verb the only filled button on the page), then
-  Activity. Projects, Linked work, Artifacts and Add project live on the
-  Context tab. Next and Unassigned comments open with `SectionHeader`
+  Activity. Projects, Linked work and Artifacts live on the Context tab;
+  Mount a folder sits on its Projects card and on the Overview Projects head. Next and Unassigned comments open with `SectionHeader`
   at level 2, and Needs you opens with the same eyebrow on the quiet notice
   surface (no tone bar). Needs you is the one home of a waiting ask on the page:
   its row reads the question with the run or agent in gray after it, no totals
@@ -155,7 +155,7 @@
   list theirs per state too: the rail branch row through `onlyOf`
   (`mountRowMenuOf`: open is Open pull request, Open, Switch branch, Copy and
   Close branch; merged is Open pull request, Open, Copy and Delete local
-  branch; closed is Reopen, Copy and Remove from session), the commit row
+  branch; closed is Reopen, Copy and Unmount), the commit row
   (`HISTORY_ROW_MENU_IDS`, Move up, Move down and Copy subject stay on the
   right click since the drag handle moves a commit), the stored worktree row
   (`WORKTREE_ROW_MENU_IDS`) and the port row (`portRowMenuOf`: a row with a

@@ -18,6 +18,12 @@ export type EnsureProjectMountedInput = {
   readonly requestId?: string;
   readonly branch?: string;
   readonly dirName?: string;
+  readonly restore?: MountRestoreTarget;
+};
+
+export type MountRestoreTarget = {
+  readonly branch: string;
+  readonly worktreePath: string | null;
 };
 
 export type EnsureProjectMountedResult =

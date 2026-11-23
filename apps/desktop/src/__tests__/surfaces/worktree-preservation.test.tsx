@@ -230,13 +230,13 @@ describe('branch actions from the branch row', () => {
     expect(screen.getByRole('dialog', { name: 'Switch branch' })).toBeDefined();
   });
 
-  it('Add folder on the card and New branch on each repo row stay one click away', async () => {
+  it('Mount a folder on the card and New branch on each repo row stay one click away', async () => {
     await mount('c04-session-worktrees');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mount a folder' }));
     await advance();
-    const picker = within(screen.getByRole('dialog', { name: 'Add project' }));
-    expect(picker.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
+    const picker = within(screen.getByRole('dialog', { name: 'Mount a folder' }));
+    expect(picker.getByRole('button', { name: 'Choose a folder…' })).toBeDefined();
     fireEvent.keyDown(window, { key: 'Escape' });
     await advance();
 

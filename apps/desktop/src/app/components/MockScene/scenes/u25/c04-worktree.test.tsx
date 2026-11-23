@@ -90,7 +90,7 @@ describe('the c04 worktree level scenes', () => {
     expect(ledger.getByRole('button', { name: /#77/ }).textContent).toContain('Checks failing');
     const notify = document.querySelector<HTMLElement>('[data-card-project="notify-relay"]');
     expect(notify?.querySelector('[data-finished-fold]')?.textContent).toBe('1 finished');
-    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Mount a folder' })).toBeDefined();
   });
 
   it('c04-worktree-pr-behind shows the branch tabs, the property block, no status line', async () => {

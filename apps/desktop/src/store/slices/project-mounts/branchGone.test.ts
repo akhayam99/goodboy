@@ -28,6 +28,7 @@ const h: Holder = vi.hoisted(() => ({
 
 vi.mock('@goodboy/db', async () =>
   (await import('../../../test/dbMock')).createDbMock({
+    getSessionMount: vi.fn(async () => null),
     deleteSessionMount: h.deleteSessionMount,
     updateSessionMountLifecycle: h.updateSessionMountLifecycle,
     listSessionMounts: vi.fn(async () => {
@@ -238,7 +239,12 @@ describe('removeGoneMount', () => {
 
     const result = await removeGoneMount({ set, get })(KEY);
 
-    expect(result).toEqual({ kind: 'forgotten', reason: null });
+    expect(result).toEqual({
+      kind: 'forgotten',
+      reason: null,
+      removed: null,
+      isFolderRemoved: true,
+    });
     expect(h.removeWorktreeChecked).toHaveBeenCalledWith({
       repoPath: '/repos/payments-api',
       worktreePath: '/kept/payments-api',
@@ -262,7 +268,12 @@ describe('removeGoneMount', () => {
 
     const result = await removeGoneMount({ set, get })(KEY);
 
-    expect(result).toEqual({ kind: 'kept', reason: '3 uncommitted changes' });
+    expect(result).toEqual({
+      kind: 'kept',
+      reason: '3 uncommitted changes',
+      removed: null,
+      isFolderRemoved: false,
+    });
     expect(h.deleteSessionMount).not.toHaveBeenCalled();
   });
 
@@ -300,6 +311,8 @@ describe('removeGoneMount', () => {
     expect(result).toEqual({
       kind: 'kept',
       reason: 'the mount changed while waiting to remove it',
+      removed: null,
+      isFolderRemoved: true,
     });
     expect(h.deleteSessionMount).not.toHaveBeenCalled();
   });
