@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import type { SliceDeps } from '../../slice-types';
 import { deliverQueuedTurn } from './deliverQueuedTurn';
-import { readAgentQueue, writeAgentQueue } from './queueStore';
+import { readAgentQueue } from './queueStore';
 import type { AgentQueuedTurnInput, QueuedTurnDelivery } from './types';
 
 type Params = Readonly<{
@@ -21,13 +21,12 @@ const NOT_SAVED: QueuedTurnDelivery = {
 export const sendAgentMessage = ({ set, get }: SliceDeps) => {
   return async ({ sessionId, turn, isForced = false }: Params): Promise<QueuedTurnDelivery> => {
     const { agentId } = turn;
-    const isSaved = await get().enqueueAgentMessage({ turn, isDirect: true });
+    const isSaved = await get().enqueueAgentMessage({
+      turn,
+      isDirect: true,
+      shouldDropUnsaved: true,
+    });
     if (!isSaved) {
-      writeAgentQueue({
-        set,
-        agentId,
-        queue: readAgentQueue({ get, agentId }).filter((item) => item.id !== turn.id),
-      });
       return NOT_SAVED;
     }
     const written = readAgentQueue({ get, agentId }).find((item) => item.id === turn.id);
