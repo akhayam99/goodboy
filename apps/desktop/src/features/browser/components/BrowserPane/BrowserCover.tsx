@@ -10,19 +10,24 @@ type Props = {
   readonly reason: CoverReason;
 };
 
-export const BrowserCover = ({ tab, title, reason }: Props) => (
-  <div
-    data-browser-cover={reason}
-    role="status"
-    className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-subtle p-6 text-center"
-  >
-    <BrowserFavicon url={tab.url} />
-    <span className="max-w-full truncate text-row text-foreground">
-      {title === '' ? hostOf({ url: tab.url }) : title}
-    </span>
-    <span className="max-w-full truncate text-meta text-muted-foreground">
-      {hostOf({ url: tab.url })}
-    </span>
-    <span className="text-meta text-faint-foreground">{coverReasonText({ reason })}</span>
-  </div>
-);
+export const BrowserCover = ({ tab, title, reason }: Props) => {
+  const reasonText = coverReasonText({ reason });
+  return (
+    <div
+      data-browser-cover={reason}
+      role="status"
+      className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-subtle p-6 text-center"
+    >
+      <BrowserFavicon url={tab.url} />
+      <span className="max-w-full truncate text-row text-foreground">
+        {title === '' ? hostOf({ url: tab.url }) : title}
+      </span>
+      <span className="max-w-full truncate text-meta text-muted-foreground">
+        {hostOf({ url: tab.url })}
+      </span>
+      {reasonText === null ? null : (
+        <span className="text-meta text-faint-foreground">{reasonText}</span>
+      )}
+    </div>
+  );
+};

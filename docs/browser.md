@@ -580,7 +580,11 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   hidden under an overlay the placeholder shows a cover (`BrowserCover`) on the
   subtle surface: favicon, title, host and the reason in one line
   (`coverReasonText.ts`, from `createOverlayWatch().coverOf`: menu, dialog,
-  tooltip, page or drag). While a `SplitHandle` or a panel head drags
+  tooltip, page or drag). While the session moves between Overview and Desk,
+  `PaneSwap` marks the body with `FACE_SWAP_ATTRIBUTE` and every view hides
+  under a swap cover with no reason line, so the page is placed once when the
+  move ends, never per frame of the slide (`faceSwapCover.test.tsx`). While a
+  `SplitHandle` or a panel head drags
   (`useDockDrag`, value `move`), the body carries
   `SPLIT_DRAG_ATTRIBUTE` and every view in the window hides under a drag
   cover, so the page is placed once at the release instead of once per frame
