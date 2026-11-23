@@ -10,7 +10,11 @@ type SolvedBox = {
 type SolvedColumn = {
   readonly box: SolvedBox;
   readonly dragMax: number;
-  readonly panes: ReadonlyArray<{ readonly id: string; readonly box: SolvedBox }>;
+  readonly panes: ReadonlyArray<{
+    readonly id: string;
+    readonly box: SolvedBox;
+    readonly tabs?: ReadonlyArray<string>;
+  }>;
 };
 
 export type SolvedDockFrame = {
@@ -35,7 +39,11 @@ export const dockGridFrameOf = ({ solved, detailFallback }: SolvedParams): DockG
   const columns = solved.columns.map((column) => ({
     width: column.box.width,
     dragMax: column.dragMax,
-    panes: column.panes.map((pane) => ({ key: pane.id, weight: Math.max(1, pane.box.height) })),
+    panes: column.panes.map((pane) => ({
+      key: pane.id,
+      weight: Math.max(1, pane.box.height),
+      tabs: pane.tabs ?? [],
+    })),
   }));
   return {
     pair: {

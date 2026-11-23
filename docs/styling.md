@@ -268,7 +268,13 @@ narrow tool rail is what lets its narrow panel push at 1024
 page while the tools push floats alone, left of the dock, and the tools stay
 beside the page.
 `DrawerColumnGrid.test.tsx` pins the order, the widths, the stack, the focus
-border and the turn key.
+border and the turn key. The session Desk is a frame of its own (`isDesk`): the
+page draws a `DockLane` beside its 300px column, `DrawerColumn` lays the aside
+over that lane and keeps the rail on the page, and the solver has no page
+minimum there: the detail and the grid fill the lane at their saved
+proportions, shrink in the same order, stack, then turn the tools after the
+second into tabs of one cell, and never lie over anything
+(`dockLayoutDesk.test.ts`, `DrawerColumnDesk.test.tsx`).
 
 **The places rail never folds.** `AppShell` takes it as `leftRail` and gives
 it an `auto` grid column, so the rail's own width (64px, 44px under a 1100px

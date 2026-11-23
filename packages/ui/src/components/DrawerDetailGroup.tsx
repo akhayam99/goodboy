@@ -24,6 +24,7 @@ type Props = {
   readonly resizeLabel: string;
   readonly isOpen: boolean;
   readonly isParked: boolean;
+  readonly canResize?: boolean;
   readonly isOverlay: boolean;
   readonly isFloating: boolean;
   readonly isOverPage?: boolean;
@@ -47,6 +48,7 @@ export const DrawerDetailGroup = ({
   resizeLabel,
   isOpen,
   isParked,
+  canResize = true,
   isOverlay,
   isFloating,
   isOverPage = false,
@@ -70,7 +72,7 @@ export const DrawerDetailGroup = ({
     )}
   >
     <div className={cn('flex w-3 shrink-0 justify-center', isOverlay && 'pointer-events-auto')}>
-      {isOpen && !isParked ? (
+      {isOpen && !isParked && canResize ? (
         <SplitHandle
           {...handleProps}
           max={dragMax}
