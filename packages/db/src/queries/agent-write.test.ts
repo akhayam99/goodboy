@@ -664,6 +664,30 @@ describe('agent writes', () => {
       expect(await threadsOf(stopped)).toEqual([LAYOUT_NOTE]);
     });
 
+    it('binds a thread to any open Lead, not only to a Lead started from comments', async () => {
+      const lead = await insertAgent(db, {
+        id: brandId<AgentId>({ value: 'lead-plain' }),
+        sessionId,
+        ordinal: 1,
+        name: 'Batch the ledger export',
+        status: 'running',
+        kind: 'auto',
+      });
+      const child = await insertAgent(db, {
+        id: brandId<AgentId>({ value: 'lead-child' }),
+        sessionId,
+        ordinal: 2,
+        name: 'Nested auto',
+        status: 'running',
+        kind: 'auto',
+        parentAgentId: lead.id,
+      });
+
+      expect(await addAgentSourceThread({ db, id: lead.id, threadId: IMPORT_THREAD })).toBe(true);
+      expect(await addAgentSourceThread({ db, id: child.id, threadId: IMPORT_THREAD })).toBe(false);
+      expect(await threadsOf(lead.id)).toEqual([IMPORT_THREAD]);
+    });
+
     it('removes only the thread it names', async () => {
       const id = await seedCommentRun('lead-1', 'running');
       await addAgentSourceThread({ db, id, threadId: FILTERS_NOTE });

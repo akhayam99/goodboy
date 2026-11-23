@@ -51,6 +51,7 @@ export const PlanCommentsProvider = ({ sessionId, plan, onSent, children }: Prop
     return {
       agentName: target === null ? null : target.name,
       canSend: target !== null && target.canReceive,
+      isLead: target !== null && target.isLead,
       isSending: isSendingToAgent,
       onSend: async () => {
         setIsSendingToAgent(true);

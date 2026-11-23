@@ -11,6 +11,8 @@ export type WorkLead = Readonly<{
   sessionGoal: string;
   projectId: string | null;
   branches: ReadonlyArray<string>;
+  projectIds: ReadonlyArray<string>;
+  places: ReadonlyArray<Readonly<{ projectId: string | null; branch: string }>>;
   view: AutoTreeView;
 }>;
 

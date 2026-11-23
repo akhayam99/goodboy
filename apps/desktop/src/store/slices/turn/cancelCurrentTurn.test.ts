@@ -8,20 +8,20 @@ const {
   invokeAgentUpdateStatus,
   applyAgentTurnState,
   updateSessionState,
-  replaceAgentQueuedMessages,
+  saveAgentQueuedMessages,
 } = vi.hoisted(() => ({
   cancelTurn: vi.fn(async (_runId: string): Promise<void> => undefined),
   listLiveRunIds: vi.fn(async (): Promise<ReadonlySet<string>> => new Set<string>()),
   invokeAgentUpdateStatus: vi.fn(),
   applyAgentTurnState: vi.fn(() => 'idle'),
   updateSessionState: vi.fn(async () => undefined),
-  replaceAgentQueuedMessages: vi.fn(async () => undefined),
+  saveAgentQueuedMessages: vi.fn(async () => undefined),
 }));
 
 vi.mock('@goodboy/db', async () =>
   (await import('../../../test/dbMock')).createDbMock({
     updateSessionState,
-    replaceAgentQueuedMessages,
+    saveAgentQueuedMessages,
   }),
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -151,7 +151,7 @@ describe('cancelCurrentTurn', () => {
       expect(state.agentQueue).toEqual({
         [AGENT_ID]: [expect.objectContaining({ id: 'queued-by-you' })],
       });
-      expect(replaceAgentQueuedMessages).toHaveBeenCalledOnce();
+      expect(saveAgentQueuedMessages).toHaveBeenCalledOnce();
     },
   );
 
@@ -166,7 +166,7 @@ describe('cancelCurrentTurn', () => {
         expect.objectContaining({ id: 'queued-by-you' }),
       ],
     });
-    expect(replaceAgentQueuedMessages).not.toHaveBeenCalled();
+    expect(saveAgentQueuedMessages).not.toHaveBeenCalled();
   });
 
   it('logs a stop the process refused', async () => {

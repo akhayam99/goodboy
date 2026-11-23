@@ -12,6 +12,8 @@ export type WorkRow = Readonly<{
   projectId: string | null;
   title: string;
   branches: ReadonlyArray<string>;
+  projectIds: ReadonlyArray<string>;
+  places: WorkLead['places'];
   lead: LeadStopState;
   askCount: number;
   agentsRunning: number;
@@ -51,6 +53,8 @@ const workRowOf = ({ lead, rootTurns }: RowParams): WorkRow => {
     projectId: lead.projectId,
     title: rootAsk.length > 0 ? rootAsk : lead.sessionGoal,
     branches: lead.branches,
+    projectIds: lead.projectIds,
+    places: lead.places,
     lead: word.lead,
     askCount: leadAsksOf({ view }).length,
     agentsRunning: view.delegations.filter(

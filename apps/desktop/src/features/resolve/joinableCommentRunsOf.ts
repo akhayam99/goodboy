@@ -1,4 +1,5 @@
 import type { Agent, MountId } from '@goodboy/types';
+import { canHoldThreads } from '../work/sendToLead/canHoldThreads';
 import { commentRunOf } from './commentRunOf';
 
 type Params = {
@@ -19,7 +20,7 @@ export const joinableCommentRunsOf = ({
     .filter(
       (agent) =>
         agent.deletedAt == null &&
-        agent.sourceKind === 'comment_run' &&
+        canHoldThreads({ agent }) &&
         agent.status !== 'stopped' &&
         agent.doneAt == null &&
         agent.mountId === mountId,

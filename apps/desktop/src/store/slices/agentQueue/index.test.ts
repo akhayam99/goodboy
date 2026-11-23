@@ -2,20 +2,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, SessionId } from '@goodboy/types';
 
-const { listAgentQueuedMessages, replaceAgentQueuedMessages } = vi.hoisted(() => ({
+const { listAgentQueuedMessages, saveAgentQueuedMessages } = vi.hoisted(() => ({
   listAgentQueuedMessages: vi.fn(async () => [] as ReadonlyArray<unknown>),
-  replaceAgentQueuedMessages: vi.fn(
-    async (
-      _database: unknown,
-      _params: { readonly messages: ReadonlyArray<{ readonly id: string }> },
-    ) => undefined,
+  saveAgentQueuedMessages: vi.fn(
+    async (_params: { readonly messages: ReadonlyArray<{ readonly id: string }> }) => undefined,
   ),
 }));
 
 vi.mock('@goodboy/db', async () =>
   (await import('../../../test/dbMock')).createDbMock({
     listAgentQueuedMessages,
-    replaceAgentQueuedMessages,
+    saveAgentQueuedMessages,
   }),
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -107,12 +104,30 @@ describe('agent queue', () => {
       ['a', 'queued'],
       ['b', 'queued'],
     ]);
-    expect(replaceAgentQueuedMessages).toHaveBeenLastCalledWith(
-      {},
+    expect(saveAgentQueuedMessages).toHaveBeenLastCalledWith(
       expect.objectContaining({
         agentId: AGENT_ID,
         messages: [expect.objectContaining({ id: 'a' }), expect.objectContaining({ id: 'b' })],
       }),
+    );
+  });
+
+  it('saves by message id and deletes only the message this window removed', async () => {
+    const { slice } = harness();
+    await slice.enqueueAgentMessage({ turn: input('a') });
+    await slice.enqueueAgentMessage({ turn: input('b') });
+
+    await slice.removeQueuedMessage({ sessionId: SESSION_ID, agentId: AGENT_ID, itemId: 'a' });
+
+    expect(saveAgentQueuedMessages).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        agentId: AGENT_ID,
+        messages: [expect.objectContaining({ id: 'b' })],
+        removedIds: ['a'],
+      }),
+    );
+    expect(saveAgentQueuedMessages).not.toHaveBeenCalledWith(
+      expect.objectContaining({ removedIds: expect.arrayContaining(['b']) }),
     );
   });
 
@@ -130,7 +145,7 @@ describe('agent queue', () => {
 
   it('drops an unsaved message when asked to, and the retry queues it once', async () => {
     const { slice, queue, reportError } = harness();
-    replaceAgentQueuedMessages.mockRejectedValueOnce(new Error('disk full'));
+    saveAgentQueuedMessages.mockRejectedValueOnce(new Error('disk full'));
 
     const isSaved = await slice.enqueueAgentMessage({ turn: input('a'), shouldDropUnsaved: true });
 
@@ -150,7 +165,7 @@ describe('agent queue', () => {
   it('never leaves a dropped message saved when another message is queued during its save', async () => {
     const { slice, queue } = harness();
     let failSave: (error: Error) => void = () => undefined;
-    replaceAgentQueuedMessages.mockImplementationOnce(
+    saveAgentQueuedMessages.mockImplementationOnce(
       () =>
         new Promise<undefined>((_resolve, reject) => {
           failSave = reject;
@@ -159,14 +174,13 @@ describe('agent queue', () => {
 
     const dropped = slice.enqueueAgentMessage({ turn: input('a'), shouldDropUnsaved: true });
     const kept = slice.enqueueAgentMessage({ turn: input('b') });
-    await vi.waitFor(() => expect(replaceAgentQueuedMessages).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(saveAgentQueuedMessages).toHaveBeenCalledTimes(1));
     failSave(new Error('disk full'));
 
     expect(await dropped).toBe(false);
     expect(await kept).toBe(true);
     expect(queue().map((item) => item.id)).toEqual(['b']);
-    expect(replaceAgentQueuedMessages).toHaveBeenLastCalledWith(
-      {},
+    expect(saveAgentQueuedMessages).toHaveBeenLastCalledWith(
       expect.objectContaining({ messages: [expect.objectContaining({ id: 'b' })] }),
     );
   });
@@ -230,8 +244,7 @@ describe('agent queue', () => {
       ['b', 'queued'],
       ['a', 'queued'],
     ]);
-    expect(replaceAgentQueuedMessages).toHaveBeenLastCalledWith(
-      {},
+    expect(saveAgentQueuedMessages).toHaveBeenLastCalledWith(
       expect.objectContaining({
         messages: [expect.objectContaining({ id: 'b' }), expect.objectContaining({ id: 'a' })],
       }),
@@ -369,7 +382,7 @@ describe('agent queue', () => {
 
   describe('delivery acceptance', () => {
     const savedIds = (): ReadonlyArray<ReadonlyArray<string>> =>
-      replaceAgentQueuedMessages.mock.calls.map(([, params]) =>
+      saveAgentQueuedMessages.mock.calls.map(([params]) =>
         params.messages.map((message) => message.id),
       );
 
@@ -378,7 +391,7 @@ describe('agent queue', () => {
       await slice.enqueueAgentMessage({ turn: input('a') });
       await slice.enqueueAgentMessage({ turn: input('b') });
       state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
-      replaceAgentQueuedMessages.mockClear();
+      saveAgentQueuedMessages.mockClear();
       let release: () => void = () => undefined;
       const gate = new Promise<void>((resolve) => {
         release = resolve;
@@ -429,7 +442,7 @@ describe('agent queue', () => {
       state.sendTurn = vi.fn(async () => {
         throw new Error('spawn failed');
       });
-      replaceAgentQueuedMessages.mockClear();
+      saveAgentQueuedMessages.mockClear();
 
       await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
@@ -445,7 +458,7 @@ describe('agent queue', () => {
       await slice.enqueueAgentMessage({ turn: input('a') });
       state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
       state.sendTurn = vi.fn(async () => ({ blockedOverBudget: false }));
-      replaceAgentQueuedMessages.mockClear();
+      saveAgentQueuedMessages.mockClear();
 
       await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
@@ -458,7 +471,7 @@ describe('agent queue', () => {
       await slice.enqueueAgentMessage({ turn: input('a') });
       state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
       state.sendTurn = vi.fn(async () => ({ blockedOverBudget: false, isLaneQueued: true }));
-      replaceAgentQueuedMessages.mockClear();
+      saveAgentQueuedMessages.mockClear();
 
       await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
@@ -470,7 +483,7 @@ describe('agent queue', () => {
       const { state, slice, queue } = harness();
       await slice.enqueueAgentMessage({ turn: input('a') });
       state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
-      replaceAgentQueuedMessages.mockClear();
+      saveAgentQueuedMessages.mockClear();
 
       await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
@@ -495,7 +508,7 @@ describe('agent queue', () => {
 
     it('shows the error and keeps the message when saving the queue fails', async () => {
       const { slice, queue, reportError } = harness();
-      replaceAgentQueuedMessages.mockRejectedValueOnce(new Error('disk full'));
+      saveAgentQueuedMessages.mockRejectedValueOnce(new Error('disk full'));
 
       await slice.enqueueAgentMessage({ turn: input('a') });
 
@@ -513,7 +526,7 @@ describe('agent queue', () => {
       await slice.enqueueAgentMessage({ turn: input('a') });
       await slice.enqueueAgentMessage({ turn: input('b') });
       state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
-      replaceAgentQueuedMessages.mockRejectedValueOnce(new Error('disk full'));
+      saveAgentQueuedMessages.mockRejectedValueOnce(new Error('disk full'));
 
       await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
       await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });

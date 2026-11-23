@@ -2,10 +2,12 @@ import { Button, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { PlanCommentGuard } from '../../../plans/planComments/planCommentGuard';
 import { PLANNER_QUESTION_REASON } from '../../../plans/plannerQuestions';
+import { NAMES } from '../../../../shared/utils/names';
 
 export type PlanCommentBarRan = Readonly<{
   agentName: string | null;
   canSend: boolean;
+  isLead: boolean;
   isSending: boolean;
   onSend: () => Promise<unknown>;
   onCopy: () => void;
@@ -113,7 +115,7 @@ export const PlanCommentBar = ({
                   data-testid="plan-bar-send-agent"
                   data-filled="true"
                 >
-                  {`Send to ${ran.agentName}`}
+                  {ran.isLead ? NAMES.sendToLead : `Message the ${ran.agentName}`}
                 </Button>
               ) : null}
             </>

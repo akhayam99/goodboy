@@ -11,6 +11,7 @@ export type AgentQueuedMessageRecord = Readonly<{
   createdAt: IsoDateTime;
   holdReason?: string | null;
   writtenTexts?: number;
+  sourceThreadId?: string | null;
 }>;
 
 type Row = {
@@ -25,6 +26,7 @@ type Row = {
 type QueueState = Readonly<{
   holdReason: string | null;
   writtenTexts: number;
+  sourceThreadId: string | null;
 }>;
 
 type SplitOverride = Readonly<{
@@ -46,7 +48,7 @@ type MessageParams = Readonly<{
 
 const QUEUE_STATE_KEY = 'queueState';
 
-const NO_STATE: QueueState = { holdReason: null, writtenTexts: 0 };
+const NO_STATE: QueueState = { holdReason: null, writtenTexts: 0, sourceThreadId: null };
 
 const isOverride = (value: unknown): value is Readonly<Record<string, unknown>> | null =>
   value === null || isJsonRecord(value);
@@ -55,13 +57,14 @@ const queueStateOf = ({ value }: ValueParams): QueueState => {
   if (!isJsonRecord(value)) {
     return NO_STATE;
   }
-  const { holdReason, writtenTexts } = value;
+  const { holdReason, writtenTexts, sourceThreadId } = value;
   return {
     holdReason: typeof holdReason === 'string' ? holdReason : null,
     writtenTexts:
       typeof writtenTexts === 'number' && Number.isInteger(writtenTexts) && writtenTexts > 0
         ? writtenTexts
         : 0,
+    sourceThreadId: typeof sourceThreadId === 'string' ? sourceThreadId : null,
   };
 };
 
@@ -80,12 +83,17 @@ const splitOverride = ({ value }: ColumnParams): SplitOverride => {
 const overrideColumnOf = ({ message }: MessageParams): string | null => {
   const holdReason = message.holdReason ?? null;
   const writtenTexts = message.writtenTexts ?? 0;
-  if (holdReason === null && writtenTexts === 0) {
+  const sourceThreadId = message.sourceThreadId ?? null;
+  if (holdReason === null && writtenTexts === 0 && sourceThreadId === null) {
     return message.override === null ? null : JSON.stringify(message.override);
   }
   return JSON.stringify({
     ...message.override,
-    [QUEUE_STATE_KEY]: { holdReason, writtenTexts },
+    [QUEUE_STATE_KEY]: {
+      holdReason,
+      writtenTexts,
+      ...(sourceThreadId !== null && { sourceThreadId }),
+    },
   });
 };
 
@@ -104,6 +112,7 @@ const toRecord = (row: Row): AgentQueuedMessageRecord => {
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     holdReason: state.holdReason,
     writtenTexts: state.writtenTexts,
+    sourceThreadId: state.sourceThreadId,
   };
 };
 
@@ -119,10 +128,109 @@ export const listAgentQueuedMessages = async (
     `SELECT id, agent_id, content, attachments_json, override_json, created_at
        FROM agent_queued_messages
       WHERE agent_id IN (${placeholders})
-      ORDER BY agent_id, position`,
+      ORDER BY agent_id, position, created_at`,
     agentIds,
   );
   return rows.map(toRecord);
+};
+
+type StatementParams = Readonly<{
+  agentId: AgentId;
+  message: AgentQueuedMessageRecord;
+  position: number;
+}>;
+
+const messageParamsOf = ({
+  agentId,
+  message,
+  position,
+}: StatementParams): ReadonlyArray<unknown> => [
+  message.id,
+  agentId,
+  position,
+  message.content,
+  JSON.stringify(message.attachments),
+  overrideColumnOf({ message }),
+  Date.parse(message.createdAt),
+];
+
+type SaveParams = Readonly<{
+  db: Database;
+  agentId: AgentId;
+  messages: ReadonlyArray<AgentQueuedMessageRecord>;
+  removedIds: ReadonlyArray<string>;
+  savedIds: ReadonlyArray<string>;
+  unchangedIds: ReadonlyArray<string>;
+}>;
+
+type MessageStatementParams = StatementParams &
+  Readonly<{
+    isSaved: boolean;
+  }>;
+
+type Statement = Readonly<{
+  sql: string;
+  params: ReadonlyArray<unknown>;
+}>;
+
+const messageStatementOf = ({
+  agentId,
+  message,
+  position,
+  isSaved,
+}: MessageStatementParams): Statement => {
+  if (isSaved) {
+    return {
+      sql: `UPDATE agent_queued_messages
+               SET position = ?, content = ?, attachments_json = ?, override_json = ?
+             WHERE id = ? AND agent_id = ?`,
+      params: [
+        position,
+        message.content,
+        JSON.stringify(message.attachments),
+        overrideColumnOf({ message }),
+        message.id,
+        agentId,
+      ],
+    };
+  }
+  return {
+    sql: `INSERT INTO agent_queued_messages
+            (id, agent_id, position, content, attachments_json, override_json, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            position = excluded.position,
+            content = excluded.content,
+            attachments_json = excluded.attachments_json,
+            override_json = excluded.override_json
+          WHERE agent_queued_messages.agent_id = excluded.agent_id`,
+    params: messageParamsOf({ agentId, message, position }),
+  };
+};
+
+export const saveAgentQueuedMessages = async ({
+  db,
+  agentId,
+  messages,
+  removedIds,
+  savedIds,
+  unchangedIds,
+}: SaveParams): Promise<void> => {
+  const saved = new Set(savedIds);
+  const unchanged = new Set(unchangedIds);
+  await db.transaction({
+    statements: [
+      ...removedIds.map((id) => ({
+        sql: 'DELETE FROM agent_queued_messages WHERE agent_id = ? AND id = ?',
+        params: [agentId, id],
+      })),
+      ...messages.flatMap((message, position) =>
+        unchanged.has(message.id)
+          ? []
+          : [messageStatementOf({ agentId, message, position, isSaved: saved.has(message.id) })],
+      ),
+    ],
+  });
 };
 
 type ReplaceParams = Readonly<{
@@ -141,15 +249,7 @@ export const replaceAgentQueuedMessages = async (
         sql: `INSERT INTO agent_queued_messages
                 (id, agent_id, position, content, attachments_json, override_json, created_at)
               VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        params: [
-          message.id,
-          agentId,
-          position,
-          message.content,
-          JSON.stringify(message.attachments),
-          overrideColumnOf({ message }),
-          Date.parse(message.createdAt),
-        ],
+        params: messageParamsOf({ agentId, message, position }),
       })),
     ],
   });

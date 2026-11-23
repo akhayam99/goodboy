@@ -85,6 +85,7 @@ const pendingMessagesOf = ({
       createdAt: row.createdAt,
       text: isUserPayload(row.payload) ? row.payload.text : '',
       images: userImagesOf({ rows: [row] }),
+      joinKey: row.joinKey,
     }));
 
 const droppedMessageIdsOf = ({ tree, pending }: PendingRefusalParams): ReadonlyArray<string> =>

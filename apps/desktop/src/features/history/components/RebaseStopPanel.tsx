@@ -111,7 +111,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
         return [
           {
             key: 'resolve-auto',
-            label: 'Resolve with the Lead',
+            label: NAMES.startNewLead,
             variant: 'primary',
             run: actions.resolveWithAuto,
             blockedReason: autoBlocked,

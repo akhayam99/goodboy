@@ -7,6 +7,13 @@ export type AutoWorkTree = Readonly<{
   sessionGoal: string;
   projectId: string | null;
   branches: ReadonlyArray<string>;
+  projectIds: ReadonlyArray<string>;
+  places: ReadonlyArray<AutoWorkPlace>;
+}>;
+
+type AutoWorkPlace = Readonly<{
+  projectId: string | null;
+  branch: string;
 }>;
 
 type TreeRow = {
@@ -19,6 +26,7 @@ type TreeRow = {
 type BranchRow = {
   readonly tree_id: string;
   readonly branch: string;
+  readonly project_id: string | null;
 };
 
 type Params = {
@@ -42,13 +50,13 @@ export const listAutoWorkTreesOfWorkspace = async ({
       [workspaceId],
     ),
     db.select<BranchRow>(
-      `SELECT t.id AS tree_id, w.branch AS branch
+      `SELECT t.id AS tree_id, w.branch AS branch, w.project_id AS project_id
          FROM auto_trees t
          JOIN sessions s ON s.id = t.session_id
          JOIN session_worktrees w ON w.id = t.primary_mount_id
          WHERE ${OPEN_SESSION_SQL}
        UNION
-       SELECT t.id AS tree_id, w.branch AS branch
+       SELECT t.id AS tree_id, w.branch AS branch, w.project_id AS project_id
          FROM auto_trees t
          JOIN sessions s ON s.id = t.session_id
          JOIN auto_delegations d ON d.tree_id = t.id AND d.generation = t.generation
@@ -58,11 +66,20 @@ export const listAutoWorkTreesOfWorkspace = async ({
       [workspaceId, workspaceId],
     ),
   ]);
-  return trees.map((row) => ({
-    treeId: brandId<AutoTreeId>({ value: row.tree_id }),
-    sessionId: brandId<SessionId>({ value: row.session_id }),
-    sessionGoal: row.goal,
-    projectId: row.project_id,
-    branches: branchRows.filter((branch) => branch.tree_id === row.tree_id).map((b) => b.branch),
-  }));
+  return trees.map((row) => {
+    const own = branchRows.filter((branch) => branch.tree_id === row.tree_id);
+    return {
+      treeId: brandId<AutoTreeId>({ value: row.tree_id }),
+      sessionId: brandId<SessionId>({ value: row.session_id }),
+      sessionGoal: row.goal,
+      projectId: row.project_id,
+      branches: [...new Set(own.map((branch) => branch.branch))],
+      projectIds: [
+        ...new Set(
+          own.flatMap((branch) => (branch.project_id === null ? [] : [branch.project_id])),
+        ),
+      ],
+      places: own.map((branch) => ({ projectId: branch.project_id, branch: branch.branch })),
+    };
+  });
 };

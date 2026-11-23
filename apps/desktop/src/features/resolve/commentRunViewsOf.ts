@@ -3,6 +3,7 @@ import type { DotState } from '@goodboy/ui';
 import { agentThreadIds } from '../session/agentThreadIds';
 import type { SessionRun } from '../session/sessionRunsOf';
 import { commentRunOf } from './commentRunOf';
+import { holdsCommentThreads } from './holdsCommentThreads';
 
 export type CommentRunEnd = 'working' | 'finished' | 'stopped';
 
@@ -54,7 +55,7 @@ export const commentRunViewsOf = ({
   const views = new Map<string, CommentRunView>();
   const stopped = new Map<string, CommentRunView>();
   const linked = agents
-    .filter((agent) => agent.deletedAt == null && agent.sourceKind === 'comment_run')
+    .filter((agent) => agent.deletedAt == null && holdsCommentThreads({ agent }))
     .sort((left, right) => left.ordinal - right.ordinal);
   for (const agent of linked) {
     const run = runs.find(

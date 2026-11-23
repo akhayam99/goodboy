@@ -21,6 +21,7 @@ export const sendChangeToCommentRun = ({ set, get }: SliceDeps) => {
     const isSaved = await queueCommentRunMessage({
       set,
       get,
+      sessionId,
       agentId,
       content: [COMMENT_RUN_COPY.changedMessage, quote]
         .filter((part) => part.trim() !== '')

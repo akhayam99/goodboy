@@ -66,9 +66,6 @@ export const COMMENT_RUN_COPY = {
   resolvedOn: ({ label }: HostParams): string =>
     label === null ? 'Resolved' : `Resolved on ${label}`,
   unavailable: "This comment isn't loaded here. Open the branch to see it.",
-  addToRun: 'Add to the run',
-  addToRunNamed: ({ title }: TitleParams): string => `Add to the run ${title}`,
-  added: ({ title }: TitleParams): string => `Added to the run ${title}`,
   addedMessage: 'One more comment for this run. Work it into the plan, without starting over.',
   runEnded: "The run ended, so the comment wasn't added.",
   notSaved: "The message to the run couldn't be saved, so the comment wasn't added.",

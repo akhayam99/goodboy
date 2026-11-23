@@ -105,9 +105,9 @@ On a conflict or a commit hook, the panel does three things.
 
 - It reads **Rebase on main stopped: 2 files conflict** and **Your branch is as it was**.
 - It lists every file with **Open** (your editor).
-- It offers **Resolve with the Lead**, **Resolve in terminal** and **Abort rebase**, with **Add a hint** for the Lead.
+- It offers **Start new Lead**, **Resolve in terminal** and **Abort rebase**, with **Add a hint** for the Lead.
 
-**Resolve with the Lead**
+**Start new Lead**
 
 - It starts one Lead run. The run picks the agent and the model, rebases the branch in its worktree and resolves the conflict.
 - It asks you in the session only when a conflict is ambiguous. It never pushes.
@@ -134,7 +134,7 @@ On a conflict or a commit hook, the panel does three things.
 
 **The verbs of a stopped rebase**
 
-- The verbs are one set. The banner, the panel and the Next row run the same ones. A hint typed under **Resolve with the Lead** or **Fix with an agent** therefore applies from whichever place you press the verb.
+- The verbs are one set. The banner, the panel and the Next row run the same ones. A hint typed under **Start new Lead** or **Fix with an agent** therefore applies from whichever place you press the verb.
 - A failed push keeps **Fix with an agent**, **Open in Terminal** and **Retry push**.
 - While that agent works, the same panel reads **Fixing** with its step and time, with **Stop** and **Open transcript**. **Retry push** waits until it ends.
 - It reads **Stopped: hook stopped the push** only when its error names `pre-push`. A remote `pre-receive hook declined` reads **Stopped: push failed**. The Local checks cell uses the same test.
@@ -152,7 +152,7 @@ On a conflict or a commit hook, the panel does three things.
 - **Abort rebase** closes the panel, leaves the branch where it was and records it. The stop leaves Next in every window, and Activity reads **Kept hl/fix-duplicate-credit as it was**. A later rebase that stops again brings a new row.
 - A stop also leaves Next once its pull request merged or closed or its branch left the session. A newer stop on the same branch replaces it, so the older History rewriter stops asking under Needs you.
 - Search or run has the same verb as **Resolve rebase conflicts with the Lead**.
-- The panel does not depend on the window that ran the rebase. After a restart, a reload or in a second window, it comes back from the saved stop with the same verbs. **Resolve with the Lead** reads the rebase plan again before it starts.
+- The panel does not depend on the window that ran the rebase. After a restart, a reload or in a second window, it comes back from the saved stop with the same verbs. **Start new Lead** reads the rebase plan again before it starts.
 - In Next the stop is one row titled by the branch, with the panel's main verb (see Overview).
 - **Open rebase** on the stop's row in Activity, a click on its title in Next, and **Open rebase** on the transcript of a finished History rewriter all do the same. They open the branch the rebase stopped on, with this panel in view, by its mount, never the branch on screen.
 

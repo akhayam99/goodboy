@@ -1,7 +1,7 @@
 import { CHECK_STATE } from '../notifications/errorRecovery';
 import {
   listAgentQueuedMessages,
-  replaceAgentQueuedMessages,
+  saveAgentQueuedMessages,
   type AgentQueuedMessageRecord,
 } from '@goodboy/db';
 import {
@@ -54,9 +54,48 @@ const toRecord = (turn: AgentQueuedTurn): AgentQueuedMessageRecord => ({
   createdAt: turn.createdAt,
   holdReason: turn.hold?.reason ?? null,
   writtenTexts: turn.writtenTexts ?? 0,
+  sourceThreadId: turn.sourceThreadId ?? null,
 });
 
 const persistQueue = createKeyedQueue();
+
+const savedRows = new Map<AgentId, ReadonlyMap<string, string | null>>();
+
+type SavedParams = Readonly<{
+  agentId: AgentId;
+  ids: ReadonlyArray<string>;
+}>;
+
+export const rememberSavedQueue = ({ agentId, ids }: SavedParams): void => {
+  savedRows.set(
+    agentId,
+    new Map([...(savedRows.get(agentId) ?? []), ...ids.map((id): [string, null] => [id, null])]),
+  );
+};
+
+type SaveParams = Readonly<{
+  agentId: AgentId;
+  messages: ReadonlyArray<AgentQueuedMessageRecord>;
+}>;
+
+const saveQueue = async ({ agentId, messages }: SaveParams): Promise<void> => {
+  const saved = savedRows.get(agentId) ?? new Map<string, string | null>();
+  const rows = new Map(
+    messages.map((message, position) => [message.id, JSON.stringify({ message, position })]),
+  );
+  const removedIds = [...saved.keys()].filter((id) => !rows.has(id));
+  const savedIds = [...rows.keys()].filter((id) => saved.has(id));
+  const unchangedIds = savedIds.filter((id) => saved.get(id) === rows.get(id));
+  await saveAgentQueuedMessages({
+    db: tauriDatabase,
+    agentId,
+    messages,
+    removedIds,
+    savedIds,
+    unchangedIds,
+  });
+  savedRows.set(agentId, rows);
+};
 
 const sessionOfAgent = ({ get, agentId }: AgentParams): SessionId | undefined => {
   for (const runs of Object.values(get().sessionPhaseRuns)) {
@@ -72,11 +111,7 @@ export const persistAgentQueue = async ({ get, agentId }: AgentParams): Promise<
   try {
     await persistQueue.run({
       key: agentId,
-      task: () =>
-        replaceAgentQueuedMessages(tauriDatabase, {
-          agentId,
-          messages: readAgentQueue({ get, agentId }).map(toRecord),
-        }),
+      task: () => saveQueue({ agentId, messages: readAgentQueue({ get, agentId }).map(toRecord) }),
     });
     return true;
   } catch (error) {
@@ -130,6 +165,7 @@ const fromQueuedRecord = (record: AgentQueuedMessageRecord): AgentQueuedTurn => 
   createdAt: record.createdAt,
   ...(record.holdReason != null && { hold: { reason: record.holdReason } }),
   ...((record.writtenTexts ?? 0) > 0 && { writtenTexts: record.writtenTexts }),
+  ...(record.sourceThreadId != null && { sourceThreadId: record.sourceThreadId }),
 });
 
 export const readPersistedQueues = async (

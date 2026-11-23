@@ -61,6 +61,7 @@ export type AutoPendingMessage = Readonly<{
   createdAt: number;
   text: string;
   images: ReadonlyArray<MessageAttachment>;
+  joinKey?: string;
 }>;
 
 export type AutoSentChange = Readonly<{

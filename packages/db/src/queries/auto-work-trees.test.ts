@@ -86,6 +86,36 @@ describe('listAutoWorkTreesOfWorkspace', () => {
     expect(trees[1]?.branches).toEqual(['main']);
   });
 
+  it('lists the projects of the primary branch and of every live delegation', async () => {
+    const db = await world();
+    for (const [id, name] of [
+      ['project-ledger-core', 'ledger-core'],
+      ['project-notify-relay', 'notify-relay'],
+    ]) {
+      await db.execute(
+        'INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, 1)',
+        [id, WORK_SEED_WORKSPACE, name, `/repos/${name}`, 'repo'],
+      );
+    }
+    await db.execute('UPDATE session_worktrees SET project_id = ? WHERE id = ?', [
+      'project-ledger-core',
+      'mount-a',
+    ]);
+    await db.execute('UPDATE session_worktrees SET project_id = ? WHERE id = ?', [
+      'project-notify-relay',
+      'mount-b',
+    ]);
+
+    const trees = await listAutoWorkTreesOfWorkspace({ db, workspaceId: workspace });
+
+    expect(trees[0]?.projectIds).toEqual(['project-ledger-core', 'project-notify-relay']);
+    expect(trees[1]?.projectIds).toEqual([]);
+    expect(trees[0]?.places).toEqual([
+      { projectId: 'project-ledger-core', branch: 'hl/idempotency' },
+      { projectId: 'project-notify-relay', branch: 'hl/retries' },
+    ]);
+  });
+
   it('leaves out a deleted or archived session', async () => {
     const db = await world();
     await db.execute("UPDATE sessions SET deleted_at = 1 WHERE id = 'session-payments-api'");

@@ -104,7 +104,7 @@ describe('the u26 rebase scenes', () => {
       throw new Error('no conflict prompt');
     }
     const inPrompt = within(prompt);
-    expect(inPrompt.getByRole('button', { name: 'Resolve with the Lead' })).toBeDefined();
+    expect(inPrompt.getByRole('button', { name: 'Start new Lead' })).toBeDefined();
     expect(inPrompt.getByRole('button', { name: 'Resolve in terminal' })).toBeDefined();
     expect(inPrompt.getByRole('button', { name: 'Abort rebase' })).toBeDefined();
     expect(inPrompt.getByRole('button', { name: /Add a hint/ })).toBeDefined();
@@ -136,7 +136,7 @@ describe('the u26 rebase scenes', () => {
     if (prompt === undefined) {
       throw new Error('no conflict prompt');
     }
-    fireEvent.click(within(prompt).getByRole('button', { name: 'Resolve with the Lead' }));
+    fireEvent.click(within(prompt).getByRole('button', { name: 'Start new Lead' }));
     await settle();
 
     expect(resolveRebaseWithAuto).toHaveBeenCalledWith(

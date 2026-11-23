@@ -13,6 +13,7 @@ export type AgentQueuedTurnInput = Readonly<{
   content: string;
   attachments: ReadonlyArray<QueuedAttachment>;
   override: TurnProviderOverride | undefined;
+  sourceThreadId?: string;
 }>;
 
 export type AgentQueueHold = Readonly<{

@@ -39,6 +39,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  useAppStore.setState({ drainAgentQueue: vi.fn(async () => undefined) });
   const db = await openStorySqlite();
   const now = Date.now();
   await db.execute(
@@ -90,7 +91,7 @@ const shownThreadsOf = (id: AgentId) =>
 
 const queueOf = (id: AgentId) => useAppStore.getState().agentQueue[id] ?? [];
 
-describe('Add to the run', () => {
+describe('Send to Lead from a comment', () => {
   it('links the thread to the run and queues one message with the quote for the Lead', async () => {
     const lead = await seedLead({ id: 'lead-header', ordinal: 0, threadIds: [HEADER_NOTE] });
 
@@ -159,6 +160,43 @@ describe('Add to the run', () => {
     expect(await storedThreadsOf(lead.id)).toEqual([HEADER_NOTE]);
     expect(shownThreadsOf(lead.id)).toEqual([HEADER_NOTE]);
     expect(queueOf(lead.id)).toHaveLength(0);
+  });
+
+  it('drains the queue after the add, so an idle Lead reads the comment now', async () => {
+    const drain = vi.fn(async () => undefined);
+    useAppStore.setState({ drainAgentQueue: drain });
+    const lead = await seedLead({ id: 'lead-header', ordinal: 0, threadIds: [HEADER_NOTE] });
+
+    await useAppStore.getState().addToCommentRun({
+      sessionId: SESSION,
+      agentId: lead.id,
+      threadId: FILTERS_NOTE,
+      quote: QUOTE,
+    });
+
+    expect(drain).toHaveBeenCalledWith({ sessionId: SESSION, agentId: lead.id });
+  });
+
+  it('frees the comment when its message is removed before the Lead reads it', async () => {
+    const lead = await seedLead({ id: 'lead-header', ordinal: 0, threadIds: [HEADER_NOTE] });
+    await useAppStore.getState().addToCommentRun({
+      sessionId: SESSION,
+      agentId: lead.id,
+      threadId: FILTERS_NOTE,
+      quote: QUOTE,
+    });
+    const [queued] = queueOf(lead.id);
+    expect(queued?.sourceThreadId).toBe(FILTERS_NOTE);
+
+    await useAppStore.getState().removeQueuedMessage({
+      sessionId: SESSION,
+      agentId: lead.id,
+      itemId: queued?.id ?? '',
+    });
+
+    expect(queueOf(lead.id)).toHaveLength(0);
+    expect(await storedThreadsOf(lead.id)).toEqual([HEADER_NOTE]);
+    expect(shownThreadsOf(lead.id)).toEqual([HEADER_NOTE]);
   });
 
   it('can be tried again after a failure, and adds the thread once', async () => {
