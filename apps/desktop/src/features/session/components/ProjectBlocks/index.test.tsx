@@ -28,6 +28,7 @@ import { sceneInvoke, clearSceneInvoke } from '../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStatuses/cache';
 import userEvent from '@testing-library/user-event';
 import { tabForFactOf } from '../../../branch/tabForFactOf';
+import { NAMES } from '../../../../shared/utils/names';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import {
@@ -363,7 +364,9 @@ describe('the project blocks on the Overview', () => {
     for (const head of projects().querySelectorAll<HTMLElement>('[data-board-project-head]')) {
       const doors = within(head)
         .queryAllByRole('button')
-        .filter((button) => !/from session$/.test(button.getAttribute('aria-label') ?? ''));
+        .filter(
+          (button) => !(button.getAttribute('aria-label') ?? '').startsWith(`${NAMES.unmount} `),
+        );
       expect(doors.length).toBeLessThanOrEqual(1);
     }
   });
