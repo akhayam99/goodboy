@@ -431,8 +431,9 @@ from the remote branch when the local one is gone, or from the pull request head
 branch that still exists is checked out as recorded. A mount that cannot come
 back keeps its row, the failure is reported with its reason, and the closed
 worktree notice on the overview offers Reopen, which takes the same recovery
-(`recoveryAttachOptionsOf`) and stays offered while an open pull request head
-remains. Merged and closed work is not attached again. Deleting a directory is always a named user action (unmount, remove,
+(`recoveryAttachOptionsOf`). When the branch was deleted, Reopen stays offered
+only while the stored link is open on a host with a pull request head ref
+(GitHub or GitLab, `fetchableRequestOf`). Merged and closed work is not attached again. Deleting a directory is always a named user action (unmount, remove,
 detach). The user resolves a proposal from the Overview Next slot
 (`cleanupSuggestionOf`): one row `Remove the <project> worktree` with the reason
 and the size (`#418 merged · 412 MB`, or `Session archived`), or one row

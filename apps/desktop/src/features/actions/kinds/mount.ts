@@ -11,6 +11,7 @@ import {
 } from '@goodboy/ui/icons';
 import type { MountId, MountPullRequestProvider, SessionId, WorktreeStatus } from '@goodboy/types';
 import { recoveryAttachOptionsOf } from '../../../store/slices/project-mounts/workRecord/recoveryAttachOptionsOf';
+import { fetchableRequestOf } from '../../../store/slices/project-mounts/workRecord/fetchableRequestOf';
 import type { AppStore } from '../../../store/store';
 import type { RemoteHostKind } from '../../../shared/utils/remoteHost';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
@@ -376,11 +377,12 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     group: 'act',
     when: ({ facts }) =>
       facts.isClosed &&
-      (!facts.isBranchGone || (!facts.canRestoreBranch && openRequestOf({ facts }) !== null)),
+      (!facts.isBranchGone ||
+        (!facts.canRestoreBranch && (facts.fetchableRequest ?? null) !== null)),
     slot: () => 'inline',
     pendingLabel: () => 'Reopening…',
     run: async ({ facts, env }) => {
-      const request = openRequestOf({ facts });
+      const request = openRequestOf({ facts }) ?? facts.fetchableRequest ?? null;
       await env.getState().attachMount({
         sessionId: facts.sessionId,
         mountId: facts.mountId,
@@ -564,6 +566,7 @@ export const mountFactsFor = ({
     isBranchGone: state.mountBranchGone[mountId] !== undefined,
     canRestoreBranch: (state.mountBranchGone[mountId]?.restorableBranchId ?? null) !== null,
     request,
+    fetchableRequest: fetchableRequestOf({ link: state.mountPrLinks[mountId] ?? null }),
     status,
     remoteKind,
     comments:

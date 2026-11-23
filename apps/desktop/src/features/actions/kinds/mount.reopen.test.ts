@@ -122,8 +122,36 @@ describe('mount.reopen', () => {
     expect(attachMount).toHaveBeenCalledWith({ sessionId: SESSION_ID, mountId: MOUNT_ID });
   });
 
-  it('stays offered when the local branch is gone but the open pull request head remains', () => {
-    expect(reopenOf({ overrides: { isBranchGone: true } })).toBeDefined();
+  it('stays offered when the local branch is gone but the stored open pull request head can be fetched', () => {
+    expect(
+      reopenOf({
+        overrides: { isBranchGone: true, fetchableRequest: { provider: 'github', prNumber: 318 } },
+      }),
+    ).toBeDefined();
+  });
+
+  it('is not offered for a gone branch when no stored open pull request can be fetched', () => {
+    expect(reopenOf({ overrides: { isBranchGone: true } })).toBeUndefined();
+    expect(reopenOf({ overrides: { isBranchGone: true, fetchableRequest: null } })).toBeUndefined();
+  });
+
+  it('fetches the stored pull request head when the gone branch has no live request', async () => {
+    const attachMount = await runReopen({
+      overrides: {
+        isBranchGone: true,
+        pr: null,
+        requestNumber: null,
+        requestProvider: null,
+        fetchableRequest: { provider: 'gitlab', prNumber: 41 },
+      },
+    });
+
+    expect(attachMount).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      canFetchRemote: true,
+      fallbackRef: 'merge-requests/41/head',
+    });
   });
 
   it('is not offered for a gone branch of a merged pull request', () => {

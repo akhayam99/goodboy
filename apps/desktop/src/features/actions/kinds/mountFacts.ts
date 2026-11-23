@@ -37,6 +37,7 @@ export type MountFacts = {
   readonly mergedHeadSha?: string | null;
   readonly requestNumber: number | null;
   readonly requestProvider: MountPullRequestProvider | null;
+  readonly fetchableRequest?: FetchableRequest | null;
   readonly createProvider: MountPullRequestProvider | null;
   readonly ahead: number;
   readonly unpushed: number;
@@ -59,6 +60,11 @@ export type MountFacts = {
 export type MountRebaseConflict = {
   readonly isWithAuto: boolean;
   readonly count: number;
+};
+
+type FetchableRequest = {
+  readonly provider: MountPullRequestProvider;
+  readonly prNumber: number;
 };
 
 type MountEditor = {
@@ -105,6 +111,7 @@ type Params = {
     readonly provider: MountPullRequestProvider;
     readonly mergedHeadSha?: string | null;
   } | null;
+  readonly fetchableRequest?: FetchableRequest | null;
   readonly status: WorktreeStatus | null;
   readonly remoteKind: RemoteHostKind | null;
   readonly comments: number;
@@ -134,6 +141,7 @@ export const mountFacts = ({
   isBranchGone,
   canRestoreBranch,
   request,
+  fetchableRequest = null,
   status,
   remoteKind,
   comments,
@@ -171,6 +179,7 @@ export const mountFacts = ({
     mergedHeadSha: request?.mergedHeadSha ?? null,
     requestNumber: request?.number ?? null,
     requestProvider: request?.provider ?? null,
+    fetchableRequest,
     createProvider: remoteKind === null ? null : (CREATABLE[remoteKind] ?? null),
     ahead,
     unpushed: push.toPush,

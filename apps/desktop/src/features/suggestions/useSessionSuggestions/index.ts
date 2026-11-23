@@ -11,11 +11,7 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions, useSessionPlans } from '../../../store';
 import { isStoppedByRestart } from '../../../store/slices/turn/isStoppedByRestart';
-import {
-  isMountCompleted,
-  isMountRequestMerged,
-  mountRequestOf,
-} from '../../../store/slices/project-mounts/mountRowModel';
+import { mountRequestOf } from '../../../store/slices/project-mounts/mountRowModel';
 import {
   changedCount,
   distanceAhead,
@@ -25,6 +21,8 @@ import {
 import { branchPushStateOf } from '../../../shared/lib/branchPushState';
 import { useCheckChains } from '../hooks/useCheckChains';
 import { useSettledMoves } from '../hooks/useSettledMoves';
+import { useSettledMounts } from '../hooks/useSettledMounts';
+import { useReviewMountId } from '../hooks/useReviewMountId';
 import type { SettledRow } from '../nextSettleState';
 import { useCheckSignals } from '../hooks/useCheckSignals';
 import { useScriptSignals } from '../hooks/useScriptSignals';
@@ -51,9 +49,7 @@ import {
   type SuggestionRebaseRequest,
 } from '../deriveNextSteps';
 import { useReviewTally } from '../../resolve/useReviewTally';
-import { useActiveReviewSource } from '../../resolve/hooks/useActiveReviewSource';
 import { toMountEvents } from '../../../store/slices/project-mounts/materializationProposals';
-import { settledMountIdsOf } from '../../../store/slices/project-mounts/workRecord/settledMountIdsOf';
 import { pendingAgentSignal } from '../pendingAgentSignal';
 import { useNextStepOutcomes } from '../useNextStepOutcomes';
 import { shouldDemote } from '../nextStepGates';
@@ -167,7 +163,7 @@ export const useNextStepSignalsFrom = ({
   const github = useAppStore((state) => state.sessionGithub[sessionId] ?? null);
   const scribeWork = useAppStore((state) => state.scribeWork);
   const fixableCount = useReviewTally({ sessionId }).fixable;
-  const reviewMountId = useActiveReviewSource({ sessionId }).selected?.mountId ?? null;
+  const reviewMountId = useReviewMountId({ sessionId });
   const mounts = useAppStore(
     (state) =>
       state.sessionProjectMounts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionProjectMount>),
@@ -211,31 +207,10 @@ export const useNextStepSignalsFrom = ({
   const trackerMoves = useAppStore((state) => state.trackerMoves[sessionId] ?? NO_TRACKER_MOVES);
   useTrackerMoveCheck({ sessionId });
   const seriesStrips = useSeriesStrips({ sessionId });
-  const completedMountIds = useAppStore(
-    useShallow((state) =>
-      mounts.flatMap((mount) =>
-        isMountCompleted({ state, mountId: mount.mountId }) ? [mount.mountId] : [],
-      ),
-    ),
-  );
-  const settledMountIds = useAppStore(
-    useShallow((state) => settledMountIdsOf({ state, sessionId })),
-  );
-  const rebaseMounts = useMemo(
-    () => mounts.filter((mount) => !completedMountIds.includes(mount.mountId)),
-    [completedMountIds, mounts],
-  );
-  const mergedMountCount = useAppStore(
-    (state) =>
-      completedMountIds.filter((mountId) => isMountRequestMerged({ state, mountId })).length,
-  );
-  const settledBranches = useMemo(
-    () =>
-      rebaseMounts.length > 0
-        ? { merged: 0, closed: 0 }
-        : { merged: mergedMountCount, closed: completedMountIds.length - mergedMountCount },
-    [completedMountIds.length, mergedMountCount, rebaseMounts.length],
-  );
+  const { completedMountIds, rebaseMounts, settledBranches, settledMountIds } = useSettledMounts({
+    sessionId,
+    mounts,
+  });
   const checkChains = useCheckChains({ sessionId, rebaseMounts });
   const projects = useAppStore(
     useShallow((state) =>
