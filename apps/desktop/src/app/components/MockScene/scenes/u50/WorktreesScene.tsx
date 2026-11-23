@@ -34,7 +34,7 @@ type FolderSpec = {
 const SPECS: ReadonlyArray<FolderSpec> = [
   {
     slug: 'tenant-limits',
-    branch: 'ak/eng-1190-tenant-limits',
+    branch: 'hl/tenant-limits',
     goal: 'Per-tenant limits on payouts',
     origin: 'in-use',
     why: 'active-session',

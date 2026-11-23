@@ -1,3 +1,4 @@
+import { NAMES } from '../../../shared/utils/names';
 import {
   CHECK_STATE,
   NOTHING_CHANGED,
@@ -170,7 +171,7 @@ export const WorktreeSetupOffer = ({
               Retry
             </Button>
             <Button variant="ghost" size="xs" onClick={dismiss}>
-              Not now
+              {NAMES.notNow}
             </Button>
           </>
         }
@@ -202,7 +203,7 @@ export const WorktreeSetupOffer = ({
             </Button>
           )}
           <Button variant="ghost" size="xs" onClick={dismiss}>
-            {command === null ? 'Dismiss' : 'Not now'}
+            {command === null ? 'Dismiss' : NAMES.notNow}
           </Button>
         </>
       }

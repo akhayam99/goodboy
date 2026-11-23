@@ -17,7 +17,7 @@ const factOf = ({ checks, isStale = false, state = 'open' }: FactParams): Branch
   const row = aMountRow({
     key: 'api',
     projectName: 'payments-api',
-    branch: 'ak/eng-1190-tenant-limits',
+    branch: 'hl/tenant-limits',
     request: aRequest({ provider: 'github', number: 309, checks, state }),
   });
   const [fact] = branchFactsOf({

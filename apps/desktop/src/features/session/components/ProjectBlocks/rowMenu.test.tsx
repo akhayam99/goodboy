@@ -38,7 +38,7 @@ let useAppStore: Awaited<ReturnType<typeof importStore>>;
 let SessionOverviewPane: typeof import('../SessionOverviewPane').SessionOverviewPane;
 let SessionContextCards: typeof import('../../../../app/components/SessionContextCards').SessionContextCards;
 
-const TENANT = 'ak/eng-1190-tenant-limits';
+const TENANT = 'hl/tenant-limits';
 
 const ACTIONS = `payments-api · ${TENANT} actions`;
 

@@ -1,3 +1,4 @@
+import { NAMES } from '../../../../../shared/utils/names';
 import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import { Button, Notice } from '@goodboy/ui';
@@ -138,7 +139,7 @@ export const MountBranchDecision = ({
             </Button>
           )}
           <Button variant="secondary" size="sm" disabled={isBusy} onClick={onDismiss}>
-            Not now
+            {NAMES.notNow}
           </Button>
         </>
       }

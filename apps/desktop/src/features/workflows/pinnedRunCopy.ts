@@ -1,3 +1,5 @@
+import { NAMES } from '../../shared/utils/names';
+
 type WarningParams = Readonly<{
   label: string;
   count: number;
@@ -13,7 +15,7 @@ const warning = ({ label, count }: WarningParams): string => {
 
 export const PINNED_RUN_COPY = {
   warning,
-  unmountAnyway: 'Unmount anyway',
+  unmountAnyway: NAMES.unmountAnyway,
   stopRunFirst: 'Stop run first',
   stopRun: 'Stop run',
 } as const;

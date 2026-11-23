@@ -64,8 +64,8 @@ type SeedParams = {
 const MINUTE_MS = 60_000;
 const TWELVE_MINUTES_AGO = NOW_CLOCK - 12 * MINUTE_MS;
 
-const API_BRANCH = 'ak/eng-1190-tenant-limits';
-const LEDGER_BRANCH = 'ak/eng-1190-ledger-limits';
+const API_BRANCH = 'hl/tenant-limits';
+const LEDGER_BRANCH = 'hl/ledger-limits';
 const BUILD_STEPS = ['Scope', 'Tests', 'Implement', 'Review', 'Docs', 'Ship'];
 
 type SourceParams = {

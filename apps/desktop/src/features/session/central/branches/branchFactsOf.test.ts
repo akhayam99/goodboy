@@ -16,7 +16,7 @@ const iso = ({ minutesAgo }: AgoParams): string =>
 const api = aMountRow({
   key: 'api',
   projectName: 'payments-api',
-  branch: 'ak/eng-1190-tenant-limits',
+  branch: 'hl/tenant-limits',
   request: aRequest({
     provider: 'github',
     number: 309,
@@ -29,7 +29,7 @@ const api = aMountRow({
 const ledger = aMountRow({
   key: 'ledger',
   projectName: 'ledger-core',
-  branch: 'ak/eng-1190-ledger-limits',
+  branch: 'hl/ledger-limits',
   request: aRequest({ provider: 'gitlab', number: 42, checks: 'success' }),
 });
 
