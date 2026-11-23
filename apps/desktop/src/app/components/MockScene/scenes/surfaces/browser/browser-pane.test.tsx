@@ -149,8 +149,10 @@ describe('the browser pane scenes', () => {
       if (chip === null) {
         throw new Error('The shown tab sits in no chip.');
       }
-      expect(chip.className).toContain('bg-selected');
-      expect(chip.querySelectorAll('[data-selected="true"], .bg-selected')).toHaveLength(0);
+      expect(
+        within(strip).getByRole('button', { name: 'Checkout' }).getAttribute('aria-current'),
+      ).toBe('page');
+      expect(chip.querySelectorAll('[data-selected="true"]')).toHaveLength(0);
     },
   );
 

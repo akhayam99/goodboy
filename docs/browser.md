@@ -499,8 +499,8 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
 - **Tabs**: the strip shows the session's tabs, then the project pins with
   their title and a pin mark, then New tab. The shown tab has one selected
   state, the tool tab chip of `toolTabClassName` that Terminal tabs use; the
-  label inside it is a bare button with no highlight of its own
-  (`BrowserTabChip`). The list shows `Pinned · <project>`
+  label inside it is an unselected `SelectableRow` with no fill of its own,
+  on hover too (`BrowserTabChip`). The list shows `Pinned · <project>`
   first, then This session, then New tab; the note that tabs close when the
   session is archived is the tooltip of the This session label. A tab the
   engine put to sleep or closed (`browser://tab-state`, read by
