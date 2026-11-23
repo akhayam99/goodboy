@@ -105,7 +105,7 @@ export const DetachConfirm = ({
       role={action.role === 'danger' ? 'danger' : 'primary'}
       icon={isRisky ? <AlertIcon size={ICON_SIZE.row} /> : <WorktreeIcon size={ICON_SIZE.row} />}
       title={title}
-      confirmLabel={isPinned ? PINNED_RUN_COPY.detachAnyway : action.label}
+      confirmLabel={isPinned ? PINNED_RUN_COPY.unmountAnyway : action.label}
       isBusy={isBusy}
       onConfirm={() => onConfirm({ disposition: action.disposition })}
       onCancel={onCancel}

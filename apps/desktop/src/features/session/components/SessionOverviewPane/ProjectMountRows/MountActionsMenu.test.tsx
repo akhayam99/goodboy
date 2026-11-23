@@ -651,7 +651,7 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach anyway' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Unmount anyway' })));
     screen.getByText(/The run "Speed up the ledger export" still writes to this branch/);
     fireEvent.click(screen.getByRole('button', { name: 'Stop run first' }));
     await waitFor(() =>
@@ -665,8 +665,8 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach anyway' })));
-    fireEvent.click(screen.getByRole('button', { name: 'Detach anyway' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Unmount anyway' })));
+    fireEvent.click(screen.getByRole('button', { name: 'Unmount anyway' }));
 
     await waitFor(() =>
       expect(state.detachProject).toHaveBeenCalledWith({

@@ -3,6 +3,7 @@ import { ChevronRight } from '@goodboy/ui/icons';
 import { Button, cn, Eyebrow, ICON_SIZE, IconButton, tintClasses } from '@goodboy/ui';
 import type { MaterializationDeferralCause } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly projectName: string;
@@ -89,11 +90,11 @@ export const MountSuggestionCard = ({
           variant="secondary"
           size="sm"
           isBusy={isMounting}
-          busyLabel="Adding"
+          busyLabel="Mounting"
           onClick={() => void handleMount()}
           data-testid="mount-suggestion-mount"
         >
-          Add project
+          {NAMES.mount}
         </Button>
         <IconButton
           icon={ChevronRight}

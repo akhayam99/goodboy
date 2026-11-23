@@ -159,6 +159,7 @@ export const NAMES = {
   models: 'Models',
   addPlainFolder: 'Add a plain folder',
   addProject: 'Add project',
+  mount: 'Mount',
   mountAFolder: 'Mount a folder',
   chooseAFolder: 'Choose a folder…',
   unmount: 'Unmount',
