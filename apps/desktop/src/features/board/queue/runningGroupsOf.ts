@@ -10,7 +10,7 @@ export type RunningRow = Readonly<{
   phrase: string;
   project: string | null;
   startedAt: number | null;
-  queued: PendingSend['kind'] | null;
+  isQueued: boolean;
 }>;
 
 export type RunningGroup = Readonly<{
@@ -26,10 +26,7 @@ type Params = {
   readonly pending: ReadonlyArray<PendingSend>;
 };
 
-const QUEUED_PHRASE: Record<PendingSend['kind'], string> = {
-  answer: 'Answer queued',
-  message: 'Message queued',
-};
+const QUEUED_PHRASE = 'Message queued';
 
 export const runningGroupsOf = ({
   work,
@@ -37,25 +34,23 @@ export const runningGroupsOf = ({
   nounById,
   pending,
 }: Params): ReadonlyArray<RunningGroup> => {
-  const queuedByAgent = new Map(
-    pending.flatMap((send) => (send.agentId === null ? [] : [[send.agentId, send.kind] as const])),
-  );
+  const queuedAgents = new Set(pending.map((send) => send.agentId));
   const groups = new Map<string, RunningRow[]>();
   for (const item of work) {
     if (item.sessionId === null) {
       continue;
     }
-    const queued = item.agentId === null ? null : (queuedByAgent.get(item.agentId) ?? null);
+    const isQueued = item.agentId !== null && queuedAgents.has(item.agentId);
     const row: RunningRow = {
       runId: item.runId,
       agentId: item.agentId,
       sessionId: item.sessionId,
       mountId: item.mountId,
       who: (item.agentId === null ? undefined : nounById.get(item.agentId)) ?? 'Agent',
-      phrase: queued === null ? item.phrase : QUEUED_PHRASE[queued],
+      phrase: isQueued ? QUEUED_PHRASE : item.phrase,
       project: item.place.kind === 'project' ? item.place.name : null,
       startedAt: item.startedAt,
-      queued,
+      isQueued,
     };
     groups.set(item.sessionId, [...(groups.get(item.sessionId) ?? []), row]);
   }

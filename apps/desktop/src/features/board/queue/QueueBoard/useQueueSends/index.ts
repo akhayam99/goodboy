@@ -4,9 +4,7 @@ export const UNDO_WINDOW_MS = 10_000;
 
 export type PendingSend = Readonly<{
   id: string;
-  kind: 'answer' | 'message';
-  agentId: string | null;
-  moveId: string | null;
+  agentId: string;
 }>;
 
 type QueueParams = {
@@ -40,18 +38,10 @@ type QueueSends = {
   readonly drafts: Readonly<Record<string, string>>;
   readonly setDraft: (params: DraftParams) => void;
   readonly restoreDraft: (params: DraftParams) => void;
-  readonly answerDrafts: Readonly<Record<string, string>>;
-  readonly setAnswerDraft: (params: AnswerDraftParams) => void;
-  readonly restoreAnswerDraft: (params: AnswerDraftParams) => void;
 };
 
 type DraftParams = {
   readonly agentId: string;
-  readonly text: string;
-};
-
-type AnswerDraftParams = {
-  readonly questionId: string;
   readonly text: string;
 };
 
@@ -141,14 +131,5 @@ export const useQueueSends = create<QueueSends>((set, get) => ({
       return;
     }
     get().setDraft({ agentId, text });
-  },
-  answerDrafts: {},
-  setAnswerDraft: ({ questionId, text }) =>
-    set((state) => ({ answerDrafts: { ...state.answerDrafts, [questionId]: text } })),
-  restoreAnswerDraft: ({ questionId, text }) => {
-    if ((get().answerDrafts[questionId] ?? '') !== '') {
-      return;
-    }
-    get().setAnswerDraft({ questionId, text });
   },
 }));

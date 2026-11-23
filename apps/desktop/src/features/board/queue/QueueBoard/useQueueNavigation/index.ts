@@ -19,7 +19,6 @@ type SessionParams = {
 };
 
 export type QueueNavigation = Readonly<{
-  openPage: (params: MoveParams) => void;
   openLanding: (params: MoveParams) => void;
   openAgent: (params: RowParams) => void;
   openSession: (params: SessionParams) => void;
@@ -30,14 +29,6 @@ export const useQueueNavigation = (): QueueNavigation => {
   const navigate = useAppStore((state) => state.navigate);
   return useMemo(
     () => ({
-      openPage: ({ move }) =>
-        navigate({
-          to: attentionPlace({
-            state: useAppStore.getState(),
-            sessionId: move.sessionId,
-            reason: move.reason,
-          }),
-        }),
       openLanding: ({ move }) =>
         navigate({ to: queueLandingOf({ state: useAppStore.getState(), move }) }),
       openAgent: ({ row }) => {

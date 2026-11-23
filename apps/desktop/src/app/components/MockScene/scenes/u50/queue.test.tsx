@@ -66,10 +66,15 @@ describe('the u50 queue scenes', () => {
     ]);
   });
 
-  it('opens the Board on the Queue with the question to answer in place', async () => {
+  it('opens the Board on the Queue with every Move on one row that opens its session', async () => {
     const needsYou = await show({ name: 'u50-queue-light' });
     expect(screen.getByRole('tab', { name: 'Queue' }).getAttribute('aria-selected')).toBe('true');
-    within(needsYou).getByRole('button', { name: 'Keep five minutes' });
+    within(needsYou).getByRole('button', {
+      name: 'Keep the notify-relay backoff at five minutes for Acme?',
+    });
+    expect(within(needsYou).queryByRole('button', { name: 'Keep five minutes' })).toBeNull();
+    expect(within(needsYou).queryByRole('button', { name: 'Open in session' })).toBeNull();
+    expect(needsYou.querySelectorAll('[data-row]').length).toBeGreaterThan(1);
     screen.getByRole('region', { name: 'Running' });
     screen.getByRole('region', { name: 'Ready to merge' });
   });

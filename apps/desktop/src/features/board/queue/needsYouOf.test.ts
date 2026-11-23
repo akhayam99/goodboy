@@ -93,13 +93,13 @@ describe('needsYouOf, the one count of what waits on you', () => {
     expect(needsYou.moveCount).toBe(4);
   });
 
-  it('puts the oldest wait first and answers a question in place', () => {
+  it('puts the oldest wait first, one move per open question', () => {
     const { moves } = needsYouOf({ sessions: SESSIONS, infos: INFOS, openQuestions: QUESTIONS });
-    expect(moves.map((move) => [move.title, move.kind])).toEqual([
-      ['Checks failing', 'page'],
-      ['Needs approval', 'page'],
-      ['Raise the payout limit?', 'answer'],
-      ['Keep the webhook retry?', 'answer'],
+    expect(moves.map((move) => [move.title, move.reason])).toEqual([
+      ['Checks failing', 'ci-failed'],
+      ['Needs approval', 'plan-approval'],
+      ['Raise the payout limit?', 'open-question'],
+      ['Keep the webhook retry?', 'open-question'],
     ]);
   });
 
@@ -108,29 +108,14 @@ describe('needsYouOf, the one count of what waits on you', () => {
     expect(moves.some((move) => move.sessionId === ACME.id)).toBe(false);
   });
 
-  it('keeps one move that opens the page when the questions are not read yet', () => {
+  it('keeps one move for the session when the questions are not read yet', () => {
     const { moves } = needsYouOf({ sessions: [HARBORLINE], infos: INFOS, openQuestions: {} });
     expect(moves).toEqual([
-      expect.objectContaining({ kind: 'page', title: '2 questions for you', question: null }),
-    ]);
-  });
-
-  it('opens the page for a question that takes several choices', () => {
-    const many: OpenQuestion = {
-      ...questionOf({
-        id: 'q-many',
-        sessionId: HARBORLINE.id,
-        text: 'Which regions?',
-        createdAt: '1970-01-01T00:00:01.000Z',
+      expect.objectContaining({
+        id: `${HARBORLINE.id}:open-question`,
+        title: '2 questions for you',
       }),
-      selectMode: 'many',
-    };
-    const { moves } = needsYouOf({
-      sessions: [HARBORLINE],
-      infos: INFOS,
-      openQuestions: { [HARBORLINE.id]: [many] },
-    });
-    expect(moves.map((move) => [move.title, move.kind])).toEqual([['Which regions?', 'page']]);
+    ]);
   });
 
   it('says nothing waits when no session needs you', () => {
@@ -143,15 +128,14 @@ describe('needsYouOf, the one count of what waits on you', () => {
     });
   });
 
-  it('sets aside a queued answer and a move put off, and counts only the one put off', () => {
+  it('sets aside a move put off and counts it apart', () => {
     const needsYou = needsYouOf({
       sessions: SESSIONS,
       infos: INFOS,
       openQuestions: QUESTIONS,
       notNow: new Set([`${NORTHWIND.id}:ci-failed`]),
-      queued: new Set([`${HARBORLINE.id}:question:q-retry`]),
     });
-    expect(needsYou.moveCount).toBe(2);
+    expect(needsYou.moveCount).toBe(3);
     expect(needsYou.notNowCount).toBe(1);
     expect(needsYou.notNowIds).toEqual([`${NORTHWIND.id}:ci-failed`]);
     expect(needsYou.sessionCount).toBe(2);

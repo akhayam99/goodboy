@@ -5,13 +5,11 @@ export const QUEUE_BANDS: ReadonlyArray<QueueBand> = ['needs-you', 'running', 'r
 export type QueueCommand =
   | Readonly<{ kind: 'next-band' }>
   | Readonly<{ kind: 'step'; delta: 1 | -1 }>
-  | Readonly<{ kind: 'primary' }>
   | Readonly<{ kind: 'open' }>
   | Readonly<{ kind: 'not-now' }>
   | Readonly<{ kind: 'peek' }>
   | Readonly<{ kind: 'mark' }>
-  | Readonly<{ kind: 'merge-train' }>
-  | Readonly<{ kind: 'choice'; index: number }>;
+  | Readonly<{ kind: 'merge-train' }>;
 
 type Params = {
   readonly key: string;
@@ -29,8 +27,6 @@ const STEP_BY_KEY: Readonly<Record<string, 1 | -1>> = {
   k: -1,
   ArrowUp: -1,
 };
-
-const CHOICE_KEY = /^[1-9]$/;
 
 export const queueKeyOf = ({
   key,
@@ -54,13 +50,10 @@ export const queueKeyOf = ({
   }
   if (band === 'needs-you') {
     if (key === 'Enter') {
-      return { kind: 'primary' };
+      return { kind: 'open' };
     }
     if (key === 's' || key === 'S') {
       return { kind: 'not-now' };
-    }
-    if (CHOICE_KEY.test(key)) {
-      return { kind: 'choice', index: Number(key) - 1 };
     }
     return null;
   }

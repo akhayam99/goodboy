@@ -1,5 +1,4 @@
 import { useCallback, useState, type KeyboardEvent } from 'react';
-import { answerChoicesOf } from '../../answerChoicesOf';
 import type { QueueMove } from '../../needsYouOf';
 import { queueKeyOf, QUEUE_BANDS, type QueueBand, type QueueCommand } from '../../queueKeyOf';
 import type { RunningRow } from '../../runningGroupsOf';
@@ -61,7 +60,6 @@ export type QueueFocus = Readonly<{
   peekRunId: string | null;
   togglePeek: (params: RowParams) => void;
   closePeek: () => void;
-  activateBand: (params: BandParams) => void;
   syncBand: (params: TargetParams) => void;
   handleKey: (params: KeyParams) => void;
 }>;
@@ -80,6 +78,14 @@ const bandOf = ({ target }: TargetParams): QueueBand | null => {
   }
   const value = target.closest('[data-queue-band]')?.getAttribute('data-queue-band');
   return QUEUE_BANDS.find((candidate) => candidate === value) ?? null;
+};
+
+const moveIdOf = ({ target }: TargetParams): string | null => {
+  if (!(target instanceof HTMLElement)) {
+    return null;
+  }
+  const row = target.closest('[data-row]')?.querySelector('[data-queue-move]');
+  return row?.getAttribute('data-queue-move') ?? null;
 };
 
 const focusBand = ({ root, band }: FocusBandParams): void => {
@@ -133,11 +139,14 @@ export const useQueueFocus = ({
     [runningRows],
   );
   const closePeek = useCallback(() => setPeekRunId(null), []);
-  const activateBand = useCallback(({ band: next }: BandParams) => setBand(next), []);
   const syncBand = ({ target }: TargetParams): void => {
     const next = bandOf({ target });
     if (next !== null && next !== band) {
       setBand(next);
+    }
+    const moveId = moveIdOf({ target });
+    if (moveId !== null && moveId !== focusedMove?.id) {
+      onFocusMove({ moveId });
     }
   };
 
@@ -158,27 +167,6 @@ export const useQueueFocus = ({
     }
     if (command.kind === 'not-now') {
       actions.notNow({ move });
-      return;
-    }
-    const question = move.kind === 'answer' ? move.question : null;
-    const choices = question === null ? [] : answerChoicesOf({ question });
-    if (command.kind === 'choice') {
-      const choice = choices[command.index];
-      if (choice !== undefined) {
-        actions.answer({ move, text: choice });
-      }
-      return;
-    }
-    if (command.kind !== 'primary') {
-      return;
-    }
-    if (question === null) {
-      nav.openPage({ move });
-      return;
-    }
-    const [preferred] = choices;
-    if (preferred !== undefined) {
-      actions.answer({ move, text: preferred });
     }
   };
 
@@ -253,7 +241,6 @@ export const useQueueFocus = ({
     peekRunId,
     togglePeek,
     closePeek,
-    activateBand,
     syncBand,
     handleKey,
   };

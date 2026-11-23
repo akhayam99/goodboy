@@ -16,7 +16,7 @@ vi.mock('../../../../../shared/lib/db', async () =>
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { brandId, type AgentId, type OpenQuestion, type SessionId } from '@goodboy/types';
+import { brandId, type AgentId, type SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -24,8 +24,7 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { openQuestionFor, sessionOf } from '../../../../workspace/testing/sessionColumn';
-import { OpenQuestionDeliveryError } from '../../../../../store/slices/open-questions/openQuestionDeliveryError';
+import { sessionOf } from '../../../../workspace/testing/sessionColumn';
 import type { QueueMove } from '../../needsYouOf';
 import { useQueueSends } from '../useQueueSends';
 import { useQueueActions } from '.';
@@ -36,32 +35,17 @@ beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
-const answers = vi.fn(async () => undefined);
-const asking = sessionOf({ goal: 'Fix webhook retries' });
-const sessionId = brandId<SessionId>({ value: asking.id });
-const question: OpenQuestion = {
-  ...openQuestionFor({ sessionId }),
-  suggestedAnswers: ['Keep five minutes', 'Drop to one minute'],
-};
+const failing = sessionOf({ goal: 'Fix webhook retries' });
+const sessionId = brandId<SessionId>({ value: failing.id });
+const agentId = brandId<AgentId>({ value: 'implementer-payments-api' });
 const move: QueueMove = {
-  id: `${sessionId}:question:${question.id}`,
+  id: `${sessionId}:ci-failed`,
   sessionId,
-  reason: 'open-question',
-  kind: 'answer',
-  title: question.text,
-  question,
+  reason: 'ci-failed',
+  questionId: null,
+  title: 'Checks failing',
   since: null,
 };
-
-type QuestionParams = {
-  readonly status: OpenQuestion['status'];
-};
-
-const seedQuestion = ({ status }: QuestionParams): void =>
-  useAppStore.setState({
-    sessionOpenQuestions: { [sessionId]: [{ ...question, status }] },
-    answerOpenQuestions: answers,
-  });
 
 type Props = {
   readonly children: ReactNode;
@@ -71,9 +55,7 @@ const wrapper = ({ children }: Props) => <ToastProvider>{children}</ToastProvide
 
 beforeEach(async () => {
   await resetStoryStore();
-  answers.mockClear();
-  useQueueSends.setState({ pending: {}, notNow: new Set(), drafts: {}, answerDrafts: {} });
-  seedQuestion({ status: 'open' });
+  useQueueSends.setState({ pending: {}, notNow: new Set(), drafts: {} });
 });
 
 afterEach(() => {
@@ -90,97 +72,33 @@ const undoLast = async (): Promise<boolean> => {
 };
 
 describe('useQueueActions, a gesture the agent has not read yet has Undo', () => {
-  it('undo of an answer, as from ⌘Z, stops it before the agent sees it', async () => {
-    const { result } = renderHook(() => useQueueActions(), { wrapper });
-    act(() => result.current.answer({ move, text: 'Keep five minutes' }));
-    expect(Object.values(useQueueSends.getState().pending)).toEqual([
-      expect.objectContaining({ kind: 'answer', moveId: move.id }),
-    ]);
-
-    expect(await undoLast()).toBe(true);
-    expect(useQueueSends.getState().pending).toEqual({});
-    await act(async () => useQueueSends.getState().flushAll());
-    expect(answers).not.toHaveBeenCalled();
-  });
-
-  it('sends the answer to the question it named once the window closes', async () => {
-    const { result } = renderHook(() => useQueueActions(), { wrapper });
-    act(() => result.current.answer({ move, text: 'Keep five minutes' }));
-    await act(async () => useQueueSends.getState().flushAll());
-    expect(answers).toHaveBeenCalledWith(
-      sessionId,
-      [{ id: question.id, text: question.text, answer: 'Keep five minutes' }],
-      null,
-    );
-    expect(await undoLast()).toBe(false);
-  });
-
-  it('sends nothing when the same Move was answered in another window first', async () => {
-    const { result } = renderHook(() => useQueueActions(), { wrapper });
-    act(() => result.current.answer({ move, text: 'Keep five minutes' }));
-    seedQuestion({ status: 'answered' });
-    await act(async () => useQueueSends.getState().flushAll());
-    expect(answers).not.toHaveBeenCalled();
-  });
-
   it('undo of a message to an agent keeps it out of the agent queue', async () => {
     const enqueue = vi.fn(async () => true);
     useAppStore.setState({ enqueueAgentMessage: enqueue });
     const { result } = renderHook(() => useQueueActions(), { wrapper });
-    act(() =>
-      result.current.message({
-        sessionId,
-        agentId: brandId<AgentId>({ value: 'implementer-payments-api' }),
-        text: 'Use the ledger-core fixture',
-      }),
-    );
+    act(() => result.current.message({ sessionId, agentId, text: 'Use the ledger-core fixture' }));
+    expect(Object.values(useQueueSends.getState().pending)).toEqual([
+      expect.objectContaining({ agentId }),
+    ]);
     expect(await undoLast()).toBe(true);
     await act(async () => useQueueSends.getState().flushAll());
     expect(enqueue).not.toHaveBeenCalled();
   });
 
   it('sends what waits when the window closes after the Queue is gone', async () => {
+    const enqueue = vi.fn(async () => true);
+    useAppStore.setState({ enqueueAgentMessage: enqueue });
     const { result, unmount } = renderHook(() => useQueueActions(), { wrapper });
-    act(() => result.current.answer({ move, text: 'Keep five minutes' }));
+    act(() => result.current.message({ sessionId, agentId, text: 'Use the ledger-core fixture' }));
     unmount();
     await act(async () => {
       window.dispatchEvent(new Event('pagehide'));
     });
-    expect(answers).toHaveBeenCalledTimes(1);
-  });
-
-  it('says on the Queue when the answer was saved but did not reach the agent', async () => {
-    const reportError = vi.fn(async () => undefined);
-    useAppStore.setState({
-      reportError,
-      answerOpenQuestions: async () => {
-        throw new OpenQuestionDeliveryError('agent unreachable');
-      },
-    });
-    const asker = brandId<AgentId>({ value: 'planner-harborline' });
-    const asked: QueueMove = { ...move, question: { ...question, createdByAgentId: asker } };
-    const { result } = renderHook(() => useQueueActions(), { wrapper });
-    act(() => result.current.answer({ move: asked, text: 'Keep five minutes' }));
-    await act(async () => useQueueSends.getState().flushAll());
-    expect(reportError).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Your answer was saved but didn't reach the agent",
-        recovery: { action: { kind: 'open-agent', sessionId, agentId: asker } },
-      }),
-    );
-  });
-
-  it('undo of a typed answer gives the text back to its question', async () => {
-    const typed: QueueMove = { ...move, question: { ...question, suggestedAnswers: [] } };
-    const { result } = renderHook(() => useQueueActions(), { wrapper });
-    act(() => result.current.answer({ move: typed, text: 'Keep it at five' }));
-    expect(await undoLast()).toBe(true);
-    expect(useQueueSends.getState().answerDrafts[question.id]).toBe('Keep it at five');
+    await vi.waitFor(() => expect(enqueue).toHaveBeenCalledTimes(1));
   });
 
   it('undo of a message gives the text back, never over a newer draft', async () => {
     useAppStore.setState({ enqueueAgentMessage: vi.fn(async () => true) });
-    const agentId = brandId<AgentId>({ value: 'implementer-payments-api' });
     const { result } = renderHook(() => useQueueActions(), { wrapper });
     act(() => result.current.message({ sessionId, agentId, text: 'Use the ledger-core fixture' }));
     expect(await undoLast()).toBe(true);
@@ -199,5 +117,6 @@ describe('useQueueActions, a gesture the agent has not read yet has Undo', () =>
     expect(useQueueSends.getState().notNow.has(move.id)).toBe(true);
     expect(await undoLast()).toBe(true);
     expect(useQueueSends.getState().notNow.has(move.id)).toBe(false);
+    expect(await undoLast()).toBe(false);
   });
 });
