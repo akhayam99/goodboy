@@ -19,7 +19,9 @@ type UrlParams = {
 
 const openLabelOf = ({ url }: UrlParams): string => {
   const host = remoteHostNameOf({ url });
-  return host === null ? DESK_PR_COPY.openLog : DESK_PR_COPY.openOn({ host });
+  return host === null
+    ? DESK_PR_COPY.openLog
+    : DESK_PR_COPY.openOn({ host: host.replace(/^www\./, '') });
 };
 
 export const DeskCheckLog = ({ sessionId, mountId, name, url }: Props) => {
