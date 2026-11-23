@@ -270,10 +270,10 @@ describe('the shell chapter', () => {
     [NAMES.projects, 'Linked'].forEach((word) => expect(rail).toContain(word));
   });
 
-  it('puts both adds on the rows they act on and Archive and Delete in the session menu', () => {
-    const actions = pointOf('shell', 'Session actions and +');
-    expect(actions).toContain('+ on the Projects card');
-    expect(actions).toContain('+ on a folder row starts a new branch');
+  it('names Mount a folder and Unmount and puts Archive and Delete in the session menu', () => {
+    const actions = pointOf('shell', 'Session actions');
+    expect(actions).toContain('Mount a folder');
+    expect(actions).toContain(NAMES.unmount);
     expect(actions).toContain('More session actions');
     expect(actions).toContain('Archive and Delete');
   });
@@ -286,11 +286,12 @@ describe('the shell chapter', () => {
     expect(agents).not.toContain('Agents panel');
   });
 
-  it('opens a branch in place from its Overview tile and the Projects card', () => {
+  it('opens a branch in place from its Overview row on the tab its state names', () => {
     const branchPage = pointOf('review', 'Branch page');
     [
-      'one tile',
+      'a row on the Overview',
       'in place',
+      'the tab its state names',
       'terminal',
       'browser',
       'Conversation',
@@ -305,9 +306,16 @@ describe('the shell chapter', () => {
 
   it('names the five tools of the rail at the right edge of every screen', () => {
     const tools = pointOf('shell', 'Tools rail');
-    ['Terminal', 'Browser', 'Scripts', 'Ask', 'Monitor', 'right edge', 'Open full page'].forEach(
-      (tool) => expect(tools).toContain(tool),
-    );
+    [
+      'Terminal',
+      'Browser',
+      'Scripts',
+      'Ask',
+      'Monitor',
+      'right edge',
+      'Desk',
+      'Open full page',
+    ].forEach((tool) => expect(tools).toContain(tool));
     ['Explore', 'Dock'].forEach((gone) => expect(tools).not.toContain(gone));
   });
 });
@@ -350,12 +358,14 @@ describe('the start, agent and workflow chapters', () => {
     expect(all).toContain('Also tidy commits with the Lead');
   });
 
-  it('names the Overview tiles and ends the page with the Log', () => {
+  it('names the Overview sections in their reading order', () => {
     const overview = pointOf('agents', 'Overview');
-    ['Tiles', 'branch by state', 'the Log at the end', 'Open › Log'].forEach((entry) =>
+    ['the state, Needs you, Now, Next, Projects and Activity', 'Ask line'].forEach((entry) =>
       expect(overview).toContain(entry),
     );
-    ['Classic', 'drawer', 'Running row'].forEach((gone) => expect(overview).not.toContain(gone));
+    ['Classic', 'drawer', 'Running row', 'Tiles', 'the Log'].forEach((gone) =>
+      expect(overview).not.toContain(gone),
+    );
   });
 
   it('names the Lead of each new run and its fine-tune, with no Work switch', () => {

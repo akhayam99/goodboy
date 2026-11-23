@@ -513,7 +513,7 @@
         },
         {
           "title": "Overview and Desk",
-          "text": "A session has two faces: Overview to read it, Desk to work in it. ⌘J switches between them, and the Desk keeps the session's state, Needs you and Now in a column beside your tools.",
+          "text": "A session has two faces: Overview to read it, Desk to work in it. Open a tool from the right rail and the page splits, with the session's state, Needs you and Now in a column beside your tools.",
           "group": "Workspaces and folders",
           "also": "desk",
           "shown": true
