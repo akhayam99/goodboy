@@ -33,6 +33,7 @@ import {
 import { buildMountRows } from './slices/project-mounts/mountRowModel';
 import { settledMountIdsOf } from './slices/project-mounts/workRecord/settledMountIdsOf';
 import { listBranchNames } from '../features/worktree/worktree';
+import { nowIso } from './slices/project-mounts/nowIso';
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>
   (await import('./storyHarness')).tauriEventModuleMock(),
@@ -328,7 +329,7 @@ describe('store on sqlite: an archived session keeps the work it did', () => {
         mergedHeadSha: null,
         mergedAt: null,
         lastObservedAt: TEST_NOW,
-        createdAt: '2026-11-23T12:00:00.000Z' as typeof TEST_NOW,
+        createdAt: nowIso({ at: new Date('2026-11-23T12:00:00.000Z') }),
         updatedAt: TEST_NOW,
       },
     });

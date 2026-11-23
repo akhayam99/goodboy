@@ -15,12 +15,14 @@ const {
   updateSessionMountLifecycle,
 } = vi.hoisted(() => ({
   removeWorktreeChecked: vi.fn(
-    async ({ worktreePath }: { worktreePath: string }) =>
-      ({ kind: 'removed', path: worktreePath }) as {
-        kind: string;
-        path: string;
-        reasons?: ReadonlyArray<string>;
-      },
+    async ({
+      worktreePath,
+    }: {
+      worktreePath: string;
+    }): Promise<{ kind: string; path: string; reasons?: ReadonlyArray<string> }> => ({
+      kind: 'removed',
+      path: worktreePath,
+    }),
   ),
   worktreeWriterStatus: vi.fn(async ({ path }: { path: string }) => ({
     path,
@@ -32,13 +34,13 @@ const {
     waiting: [],
   })),
   deleteSessionMount: vi.fn(async (_args: { mountId: string }) => true),
-  listSessionMounts: vi.fn(async () => [] as ReadonlyArray<Record<string, unknown>>),
-  listMountOperations: vi.fn(async () => [] as ReadonlyArray<Record<string, unknown>>),
-  getMountOperation: vi.fn(async () => null as Record<string, unknown> | null),
+  listSessionMounts: vi.fn(async (): Promise<ReadonlyArray<Record<string, unknown>>> => []),
+  listMountOperations: vi.fn(async (): Promise<ReadonlyArray<Record<string, unknown>>> => []),
+  getMountOperation: vi.fn(async (): Promise<Record<string, unknown> | null> => null),
   upsertMountOperation: vi.fn(async () => undefined),
   updateSessionWriteDestination: vi.fn(async () => true),
   updateSessionActiveProject: vi.fn(async () => undefined),
-  listMountPullRequestLinks: vi.fn(async () => [] as ReadonlyArray<Record<string, unknown>>),
+  listMountPullRequestLinks: vi.fn(async (): Promise<ReadonlyArray<Record<string, unknown>>> => []),
   updateSessionMountLifecycle: vi.fn(async () => true),
 }));
 
@@ -62,11 +64,33 @@ vi.mock('../../../features/worktree/worktree', () => ({
   removeSessionDirectory: vi.fn(async () => undefined),
 }));
 
+import type { ProjectId, SessionId } from '@goodboy/types';
 import { detachProject } from './detachProject';
+import type { DetachDisposition } from './detachProject';
+import type { GetFn, SetFn } from './types';
 import { withRepositoryAndMountLock } from './mountLocks';
 
-const SESSION_ID = 'sess-1' as never;
-const PROJECT_ID = 'project-api' as never;
+type IdParams = { readonly value: string };
+
+const isSessionId = (value: string): value is SessionId => value.length > 0;
+const isProjectId = (value: string): value is ProjectId => value.length > 0;
+
+const sessionIdOf = ({ value }: IdParams): SessionId => {
+  if (!isSessionId(value)) {
+    throw new Error('session id is empty');
+  }
+  return value;
+};
+
+const projectIdOf = ({ value }: IdParams): ProjectId => {
+  if (!isProjectId(value)) {
+    throw new Error('project id is empty');
+  }
+  return value;
+};
+
+const SESSION_ID = sessionIdOf({ value: 'sess-1' });
+const PROJECT_ID = projectIdOf({ value: 'project-api' });
 
 type View = {
   readonly id: string;
@@ -134,7 +158,61 @@ const PENDING_PROPOSAL = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
-const makeStore = () => ({
+type StoreSession = {
+  readonly id: string;
+  readonly workspaceId: string;
+  readonly activeProjectId: string;
+  activeMountId?: string;
+  state: { readonly kind: string };
+};
+
+type Store = {
+  sessionMounts: Record<'sess-1', ReadonlyArray<View & { readonly repoRoot: string }>>;
+  sessionProjectMounts: Record<
+    'sess-1',
+    ReadonlyArray<{
+      readonly mountId: string;
+      readonly revision?: number;
+      readonly projectId: string;
+      readonly mountName: string;
+      readonly worktreePath: string;
+      readonly repoRoot: string;
+      readonly branch: string;
+    }>
+  >;
+  sessionWorktrees: Record<'sess-1', ReadonlyArray<string>>;
+  sessionWorktreeRecords: Record<string, ReadonlyArray<unknown>> | undefined;
+  mountCleanupProposals: Record<string, ReadonlyArray<{ readonly requestId: string }>>;
+  mountBranchObservations: Record<
+    string,
+    ReadonlyArray<{ readonly mountId: string; readonly state?: string }>
+  >;
+  sessionActiveProject: Record<string, string>;
+  sessionActiveMount: Record<string, string | null>;
+  sessionBranches: Record<string, string>;
+  sessions: Array<StoreSession>;
+  terminalTabs: Record<
+    string,
+    ReadonlyArray<{ readonly id: string; readonly sessionId: string; readonly cwd: string }>
+  >;
+  sessionPhaseRuns: Record<string, ReadonlyArray<{ readonly id: string; readonly status: string }>>;
+  agentTurnDestination: Record<string, { readonly kind: string; readonly mountId?: string }>;
+  sessionResolveAttempts: Record<
+    string,
+    ReadonlyArray<{ readonly phase: string; readonly mountTarget: { mountId: string } | null }>
+  >;
+  projects: ReadonlyArray<{
+    readonly id: string;
+    readonly workspaceId: string;
+    readonly rootPath: string;
+    readonly kind: string;
+    readonly name: string;
+  }>;
+  recordSessionEvent: ReturnType<typeof vi.fn>;
+  reconcileOrphanWorktrees: ReturnType<typeof vi.fn>;
+};
+
+const makeStore = (): Store => ({
   sessionMounts: {
     'sess-1': [
       { ...VIEW_API, repoRoot: '/repos/api' },
@@ -175,37 +253,31 @@ const makeStore = () => ({
   sessionWorktrees: {
     'sess-1': ['/container', '/container/api', '/container/api-2', '/container/web'],
   },
-  sessionWorktreeRecords: undefined as Record<string, ReadonlyArray<unknown>> | undefined,
-  mountCleanupProposals: {} as Record<string, ReadonlyArray<{ readonly requestId: string }>>,
+  sessionWorktreeRecords: undefined,
+  mountCleanupProposals: {},
   mountBranchObservations: {
     'sess-1': [
       { mountId: 'mount-api', state: 'mismatch' },
       { mountId: 'mount-api-2', state: 'detached' },
       { mountId: 'mount-web', state: 'mismatch' },
     ],
-  } as Record<string, ReadonlyArray<{ readonly mountId: string; readonly state?: string }>>,
-  sessionActiveProject: { 'sess-1': 'project-api' } as Record<string, string>,
-  sessionActiveMount: { 'sess-1': 'mount-api' } as Record<string, string | null>,
-  sessionBranches: { 'sess-1': 'ak/feat' } as Record<string, string>,
+  },
+  sessionActiveProject: { 'sess-1': 'project-api' },
+  sessionActiveMount: { 'sess-1': 'mount-api' },
+  sessionBranches: { 'sess-1': 'ak/feat' },
   sessions: [
     {
       id: 'sess-1',
       workspaceId: 'ws-1',
       activeProjectId: 'project-api',
-      activeMountId: 'mount-api' as string | undefined,
-      state: { kind: 'idle' } as { readonly kind: string },
+      activeMountId: 'mount-api',
+      state: { kind: 'idle' },
     },
   ],
   terminalTabs: {},
-  sessionPhaseRuns: {} as Record<
-    string,
-    ReadonlyArray<{ readonly id: string; readonly status: string }>
-  >,
-  agentTurnDestination: {} as Record<string, { readonly kind: string; readonly mountId?: string }>,
-  sessionResolveAttempts: {} as Record<
-    string,
-    ReadonlyArray<{ readonly phase: string; readonly mountTarget: { mountId: string } | null }>
-  >,
+  sessionPhaseRuns: {},
+  agentTurnDestination: {},
+  sessionResolveAttempts: {},
   projects: [
     { id: 'project-api', workspaceId: 'ws-1', rootPath: '/repos/api', kind: 'repo', name: 'api' },
     { id: 'project-web', workspaceId: 'ws-1', rootPath: '/repos/web', kind: 'repo', name: 'web' },
@@ -214,27 +286,34 @@ const makeStore = () => ({
   reconcileOrphanWorktrees: vi.fn(async () => undefined),
 });
 
-type Store = ReturnType<typeof makeStore>;
-
 const flush = async (): Promise<void> => {
   for (let index = 0; index < 5; index += 1) {
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
 };
 
-const runDetach = async (store: Store, disposition?: string) => {
+type Updater = (current: Store) => object;
+
+const isUpdater = (value: unknown): value is Updater => typeof value === 'function';
+const isSetFn = (value: unknown): value is SetFn => typeof value === 'function';
+const isGetFn = (value: unknown): value is GetFn => typeof value === 'function';
+
+const runDetach = async (store: Store, disposition?: DetachDisposition) => {
   const set = vi.fn((updater: unknown) => {
-    const patch =
-      typeof updater === 'function' ? (updater as (s: Store) => object)(store) : updater;
+    const patch = isUpdater(updater) ? updater(store) : updater;
     Object.assign(store, patch);
   });
+  const get = () => store;
+  if (!isSetFn(set) || !isGetFn(get)) {
+    throw new Error('store doubles are not callable');
+  }
   return detachProject(
-    set as never,
-    (() => store) as never,
+    set,
+    get,
   )({
     sessionId: SESSION_ID,
     projectId: PROJECT_ID,
-    ...(disposition === undefined ? {} : { disposition: disposition as never }),
+    ...(disposition === undefined ? {} : { disposition }),
   });
 };
 
@@ -567,7 +646,7 @@ describe('detachProject', () => {
     const store = makeStore();
     store.terminalTabs = {
       'sess-1': [{ id: 'tab-1', sessionId: 'sess-1', cwd: '/container/api' }],
-    } as never;
+    };
 
     const outcomes = await runDetach(store);
 
