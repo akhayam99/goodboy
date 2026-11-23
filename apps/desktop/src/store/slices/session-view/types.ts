@@ -184,7 +184,8 @@ export type SetSessionFaceParams = SessionFaceParams & {
 };
 
 export type DeskToolStart =
-  { readonly phase: 'preparing' } | { readonly phase: 'failed'; readonly message: string };
+  | { readonly phase: 'preparing'; readonly failure: string | null }
+  | { readonly phase: 'failed'; readonly message: string };
 
 export type SetDeskToolStartParams = SessionFaceParams & {
   readonly start: DeskToolStart | null;

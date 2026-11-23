@@ -118,7 +118,9 @@ const toolKinds = () =>
 
 const settle = async () => {
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    for (let step = 0; step < 10; step += 1) {
+      await Promise.resolve();
+    }
   });
 };
 
@@ -295,7 +297,8 @@ describe('the Desk column', () => {
     expect(row).not.toBeNull();
     fireEvent.click(within(row ?? document.body).getByRole('button'));
 
-    expect(screen.getByRole('dialog').querySelector('[data-desk-ask]')).not.toBeNull();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.querySelector('[data-desk-ask]')).not.toBeNull();
   });
 
   it('counts a wait in the Now of the narrow status line', () => {
@@ -344,7 +347,7 @@ describe('the tool the Desk opens', () => {
     expect(toolKinds()).toEqual([]);
   });
 
-  it('shows the terminal loading on a session with no branch, then an error with Retry that opens it', async () => {
+  it('shows the terminal loading on a session with no branch, then an error whose Retry waits busy and opens it', async () => {
     const answers: Array<{
       readonly resolve: (cwd: string) => void;
       readonly reject: (error: Error) => void;
@@ -363,7 +366,7 @@ describe('the tool the Desk opens', () => {
       pressShortcut({ id: 'session.desk' });
     });
     await settle();
-    expect(screen.getByRole('status', { name: 'Opening the terminal' })).not.toBeNull();
+    screen.getByRole('status', { name: 'Opening the terminal' });
     expect(toolKinds()).toEqual([]);
 
     answers.shift()?.reject(new Error('disk full'));
@@ -374,7 +377,8 @@ describe('the tool the Desk opens', () => {
 
     fireEvent.click(within(alert).getByRole('button', { name: 'Retry' }));
     await settle();
-    expect(screen.getByRole('status', { name: 'Opening the terminal' })).not.toBeNull();
+    const retry = within(screen.getByRole('alert')).getByRole('button', { name: 'Retry' });
+    expect(retry.getAttribute('aria-busy')).toBe('true');
 
     answers.shift()?.resolve('/scratch/ledger-core');
     await settle();

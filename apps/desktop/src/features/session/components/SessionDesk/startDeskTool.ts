@@ -62,7 +62,11 @@ export const startDeskTool = async ({ sessionId, mountId }: Params): Promise<voi
     return;
   }
   const claim = deskToolStarts.claim({ key: sessionId });
-  state.setDeskToolStart({ sessionId, start: { phase: 'preparing' } });
+  const before = state.deskToolStart[sessionId];
+  state.setDeskToolStart({
+    sessionId,
+    start: { phase: 'preparing', failure: before?.phase === 'failed' ? before.message : null },
+  });
   try {
     const cwd = await scratchDirPrepare({ sessionId });
     if (!claim.isCurrent()) {

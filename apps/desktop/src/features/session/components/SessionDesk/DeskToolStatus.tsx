@@ -1,5 +1,4 @@
-import { Button, EmptyState, Skeleton } from '@goodboy/ui';
-import { SquareTerminal } from '@goodboy/ui/icons';
+import { Button, Notice, Skeleton, splitErrorMessage } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
@@ -18,7 +17,7 @@ export const DeskToolStatus = ({ sessionId }: Props) => {
   if (start === undefined || hasTool) {
     return null;
   }
-  if (start.phase === 'preparing') {
+  if (start.phase === 'preparing' && start.failure === null) {
     return (
       <div
         role="status"
@@ -30,17 +29,25 @@ export const DeskToolStatus = ({ sessionId }: Props) => {
       </div>
     );
   }
+  const isRetrying = start.phase === 'preparing';
+  const { summary, detail } = splitErrorMessage({
+    message: start.phase === 'failed' ? start.message : (start.failure ?? ''),
+  });
   return (
-    <div role="alert" className="flex min-w-0 flex-1 flex-col">
-      <EmptyState
-        icon={SquareTerminal}
+    <div className="flex min-w-0 flex-1 flex-col">
+      <Notice
+        tone="danger"
+        placement="inline"
+        role="alert"
         title="Couldn't open the terminal"
-        description={start.message}
-        action={
+        body={summary}
+        detail={detail}
+        actions={
           <Button
             size="sm"
             variant={RETRY_LOOK.variant}
             intent={RETRY_LOOK.intent}
+            isBusy={isRetrying}
             onClick={() => void startDeskTool({ sessionId, mountId: null })}
           >
             {NAMES.retry}
