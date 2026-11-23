@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { orderSuggestions } from '.';
+import { orderSuggestions } from './orderSuggestions';
 
 describe('orderSuggestions', () => {
   it('lifts the recommended answer to the front when it arrived later', () => {

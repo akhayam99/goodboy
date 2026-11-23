@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react';
+import { useCallback, useLayoutEffect, useState, type MutableRefObject } from 'react';
 
 export type DockLaneBox = {
   readonly x: number;
@@ -8,7 +8,7 @@ export type DockLaneBox = {
 };
 
 type Params = {
-  readonly root: HTMLElement | null;
+  readonly columnRef: MutableRefObject<HTMLDivElement | null>;
 };
 
 type SameParams = {
@@ -23,7 +23,15 @@ const isSameBox = ({ was, next }: SameParams): boolean =>
   was.width === next.width &&
   was.height === next.height;
 
-export const useDockLaneBox = ({ root }: Params) => {
+export const useDockLaneBox = ({ columnRef }: Params) => {
+  const [root, setRoot] = useState<HTMLDivElement | null>(null);
+  const setColumn = useCallback(
+    (node: HTMLDivElement | null) => {
+      columnRef.current = node;
+      setRoot(node);
+    },
+    [columnRef],
+  );
   const [lane, setLane] = useState<HTMLElement | null>(null);
   const [box, setBox] = useState<DockLaneBox | null>(null);
   useLayoutEffect(() => {
@@ -55,5 +63,5 @@ export const useDockLaneBox = ({ root }: Params) => {
     observer.observe(root);
     return () => observer.disconnect();
   }, [lane, root]);
-  return { setLane, box };
+  return { setColumn, setLane, box };
 };

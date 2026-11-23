@@ -25,7 +25,7 @@ type QuoteParams = {
 
 const CONTEXT_LINES = 10;
 
-const quoteOf = ({ comment }: QuoteParams): string =>
+const quotedCommentOf = ({ comment }: QuoteParams): string =>
   [
     `${comment.author}:`,
     ...comment.body
@@ -34,7 +34,7 @@ const quoteOf = ({ comment }: QuoteParams): string =>
       .map((line) => (line === '' ? '>' : `> ${line}`)),
   ].join('\n');
 
-const placeOf = ({ payload }: Params): string => {
+const readFirstLineOf = ({ payload }: Params): string => {
   if (payload.path === null || payload.path === '') {
     return 'It is about the whole change.';
   }
@@ -46,7 +46,7 @@ const placeOf = ({ payload }: Params): string => {
   return `It is about ${payload.path}:${payload.line}. Read lines ${from} to ${to} of that file in your worktree first.`;
 };
 
-const whereOf = ({ payload }: Params): string | null => {
+const whereLineOf = ({ payload }: Params): string | null => {
   const parts = [
     payload.branch === null ? null : `branch ${payload.branch}`,
     payload.prNumber === null ? null : `PR #${payload.prNumber}`,
@@ -58,10 +58,10 @@ const whereOf = ({ payload }: Params): string | null => {
 export const commentPayloadOf = ({ payload }: Params): string =>
   [
     `A review comment for you to work on. ${payload.source}, word for word, with its replies:`,
-    quoteOf({ comment: payload.root }),
-    ...payload.replies.map((comment) => quoteOf({ comment })),
-    placeOf({ payload }),
-    whereOf({ payload }),
+    quotedCommentOf({ comment: payload.root }),
+    ...payload.replies.map((comment) => quotedCommentOf({ comment })),
+    readFirstLineOf({ payload }),
+    whereLineOf({ payload }),
     payload.note.trim() === '' ? null : `A note from me: ${payload.note.trim()}`,
   ]
     .filter((part): part is string => part !== null)

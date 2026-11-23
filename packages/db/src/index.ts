@@ -265,7 +265,6 @@ export {
   findActiveWorkflowRunTitle,
   readBuiltinSeedState,
   listRemovedSeededWorkflowIds,
-  takenNameKey,
   type BuiltinSeedState,
   type SaveWorkflowInput,
   type WorkflowStepInput,

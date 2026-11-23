@@ -1,5 +1,5 @@
 import { CircleAlert } from '@goodboy/ui/icons';
-import { ICON_SIZE, StatusDot, TruncatedText } from '@goodboy/ui';
+import { ICON_SIZE, SelectableRow, StatusDot, TruncatedText } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { agentPlace, EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { usePoll } from '../../../../shared/lib/usePoll';
@@ -26,7 +26,7 @@ type SentenceParams = {
   readonly status: SentToLeadStatus;
 };
 
-const sentenceOf = ({ entry, status }: SentenceParams): string => {
+const sentLineOf = ({ entry, status }: SentenceParams): string => {
   const title = entry.target.title;
   switch (status.kind) {
     case 'sending':
@@ -91,6 +91,14 @@ export const SentToLeadRow = ({ entry, onEdit }: Props) => {
   const canTakeBack = status.kind === 'notRead' || status.kind === 'starting';
   const isProblem =
     status.kind === 'failed' || status.kind === 'stopped' || status.kind === 'undoFailed';
+  const line = (
+    <TruncatedText
+      role={isProblem ? 'alert' : undefined}
+      className="min-w-0 text-ui text-foreground"
+    >
+      {sentLineOf({ entry, status })}
+    </TruncatedText>
+  );
   return (
     <div data-sent-to-lead={status.kind} className="flex min-h-8 min-w-0 items-center gap-2">
       {isProblem ? (
@@ -102,19 +110,13 @@ export const SentToLeadRow = ({ entry, onEdit }: Props) => {
           pulsing={status.kind === 'onIt'}
         />
       )}
-      <button
-        type="button"
-        disabled={onOpen === null}
-        onClick={onOpen ?? undefined}
-        className="min-w-0 flex-1 text-left"
-      >
-        <TruncatedText
-          role={isProblem ? 'alert' : undefined}
-          className="min-w-0 text-ui text-foreground"
-        >
-          {sentenceOf({ entry, status })}
-        </TruncatedText>
-      </button>
+      {onOpen === null ? (
+        <span className="flex min-w-0 flex-1">{line}</span>
+      ) : (
+        <SelectableRow selected={false} onClick={onOpen} className="min-w-0 flex-1 text-left">
+          {line}
+        </SelectableRow>
+      )}
       <span className="flex shrink-0 items-center gap-2">
         {status.kind === 'failed' ? (
           <SentRowVerb

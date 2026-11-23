@@ -1,11 +1,9 @@
 import { DrawerContentContext } from '../drawerContentContext';
 import { useDrawerColumnWidth } from '../useDrawerColumnWidth';
-import { useCallback, useRef, useState } from 'react';
-import { dockLayoutOf } from '../dockLayout';
+import { useRef } from 'react';
 import { DockLaneContext } from '../dockLaneContext';
+import { dockSolverOf } from '../dockSolverOf';
 import { useDockLaneBox } from '../useDockLaneBox';
-import type { SolvedDockFrame } from '../dockGridFrameOf';
-import type { DockSolveParams } from '../useDockGrid';
 import { useDockFrame } from '../useDockFrame';
 import { pageFocusPropsOf } from '../pageFocusPropsOf';
 import { DrawerDockNode } from './DrawerDockNode';
@@ -24,38 +22,6 @@ import { useDrawerPreview } from '../useDrawerPreview';
 import { useEdgeHost } from '../useEdgeHost';
 import { useSnapAfterFloat } from '../useSnapAfterFloat';
 import { DRAWER_GUTTER, panelAsideWidthOf, type DrawerMode } from '../drawerGeometry';
-
-const ROW_WEIGHT_FRAME = 1000;
-
-const solveDesk = ({ columnWidth, detail, columns }: DockSolveParams): SolvedDockFrame =>
-  dockLayoutOf({
-    windowWidth: columnWidth,
-    windowHeight: ROW_WEIGHT_FRAME,
-    top: 0,
-    leftRailWidth: 0,
-    toolRailWidth: 0,
-    isDesk: true,
-    detail,
-    columns,
-  });
-
-const solveDock = ({
-  columnWidth,
-  railWidth,
-  canPush,
-  detail,
-  columns,
-}: DockSolveParams): SolvedDockFrame =>
-  dockLayoutOf({
-    windowWidth: columnWidth,
-    windowHeight: ROW_WEIGHT_FRAME,
-    top: 0,
-    leftRailWidth: 0,
-    toolRailWidth: railWidth,
-    canPush,
-    detail,
-    columns,
-  });
 
 export const DrawerColumn = ({
   main,
@@ -79,16 +45,7 @@ export const DrawerColumn = ({
   className,
 }: DrawerColumnProps) => {
   const column = useDrawerColumnWidth();
-  const [root, setRoot] = useState<HTMLDivElement | null>(null);
-  const columnRef = column.ref;
-  const setColumn = useCallback(
-    (node: HTMLDivElement | null) => {
-      columnRef.current = node;
-      setRoot(node);
-    },
-    [columnRef],
-  );
-  const lane = useDockLaneBox({ root });
+  const lane = useDockLaneBox({ columnRef: column.ref });
   const edge = useEdgeHost();
   const { asideRef, setAside } = useAsideRef({ drawerRef });
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -112,7 +69,7 @@ export const DrawerColumn = ({
     detailKind,
     previewDock: preview.previewDock,
     previewDetail: preview.previewDetail,
-    solve: isLane ? solveDesk : solveDock,
+    solve: dockSolverOf({ isLane }),
     resizeLabel,
     isLane,
   });
@@ -179,7 +136,7 @@ export const DrawerColumn = ({
       value={{ columnWidth: column.width, savedWidth: dock.savedWidth, mode }}
     >
       <div
-        ref={setColumn}
+        ref={lane.setColumn}
         className={cn(
           'relative flex min-h-0 min-w-0 flex-1 overflow-hidden',
           isSheet && isBesideRail && 'pb-3',

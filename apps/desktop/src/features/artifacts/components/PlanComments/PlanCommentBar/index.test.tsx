@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { PlanCommentBar, type PlanCommentBarRan } from './PlanCommentBar';
+import { PlanCommentBar, type PlanCommentBarRan } from '.';
 
 afterEach(() => {
   cleanup();
@@ -36,13 +36,13 @@ describe('PlanCommentBar after the plan ran', () => {
   it('sends to the Lead that ran the plan with Send to Lead', () => {
     show({ isLead: true });
 
-    expect(screen.getByRole('button', { name: 'Send to Lead' })).toBeDefined();
+    screen.getByRole('button', { name: 'Send to Lead' });
   });
 
   it('writes to another agent by its name, never with a Send to word', () => {
     show({ isLead: false });
 
-    expect(screen.getByRole('button', { name: 'Message the Implementer' })).toBeDefined();
+    screen.getByRole('button', { name: 'Message the Implementer' });
     expect(screen.queryByRole('button', { name: /^Send to/ })).toBeNull();
   });
 });

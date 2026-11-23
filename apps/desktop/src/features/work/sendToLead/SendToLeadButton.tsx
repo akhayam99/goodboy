@@ -16,7 +16,7 @@ import type { LeadCandidate, LeadChoice } from './leadCandidatesOf';
 import type { LeadSend } from './LeadSend';
 import { SEND_TO_LEAD_COPY } from './sendToLeadCopy';
 import { startNewLead } from './startNewLead';
-import { useLeadChoice } from './useLeadChoice';
+import { useLeadChoice } from './hooks/useLeadChoice';
 
 type Props = {
   readonly cardKey: string;
@@ -33,7 +33,7 @@ type LabelParams = {
   readonly choice: LeadChoice;
 };
 
-const labelOf = ({ choice }: LabelParams): string => {
+const triggerLabelOf = ({ choice }: LabelParams): string => {
   switch (choice.kind) {
     case 'one':
       return NAMES.sendToLead;
@@ -52,8 +52,8 @@ export const SendToLeadButton = ({ cardKey, send, variant, editNote }: Props) =>
   const { choice, reload } = useLeadChoice({ sessionId: send.lead.sessionId, item: send.lead });
   const [note, setNote] = useState(editNote ?? '');
   const [picked, setPicked] = useState<ReadonlyArray<LeadCandidate>>([]);
+  const [isReading, setIsReading] = useState(false);
   const dropdown = useDropdown({
-    align: 'end',
     width: POPOVER_WIDTH_CLASS.standard,
     expectedWidth: POPOVER_WIDTH_PX.standard,
   });
@@ -91,7 +91,8 @@ export const SendToLeadButton = ({ cardKey, send, variant, editNote }: Props) =>
       close();
       return;
     }
-    const latest = await reload();
+    setIsReading(true);
+    const latest = await reload().finally(() => setIsReading(false));
     if (latest.kind === 'none') {
       startNew();
       return;
@@ -104,13 +105,14 @@ export const SendToLeadButton = ({ cardKey, send, variant, editNote }: Props) =>
     openPicker();
   };
 
-  const label = labelOf({ choice });
+  const label = triggerLabelOf({ choice });
   const look = actionButtonLookOf({ verb: label, variant });
   const button = (
     <Button
       size="sm"
       variant={look.variant}
       intent={look.intent}
+      isBusy={isReading}
       aria-expanded={choice.kind === 'pick' ? isOpen : undefined}
       className="pointer-events-auto shrink-0"
       onClick={() => void onClick()}

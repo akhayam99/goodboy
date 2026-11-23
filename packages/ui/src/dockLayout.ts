@@ -96,7 +96,7 @@ type LeadParams = {
   readonly panes: ReadonlyArray<LanePane>;
 };
 
-const leadOf = ({ panes }: LeadParams): LanePane | null =>
+const leadPaneOf = ({ panes }: LeadParams): LanePane | null =>
   panes.reduce<LanePane | null>(
     (best, pane) =>
       best === null || SIZING_RANK[pane.sizing] > SIZING_RANK[best.sizing] ? pane : best,
@@ -111,7 +111,7 @@ type LaneParams = {
 
 const laneOf = ({ panes, savedWidth, split }: LaneParams): Lane | null => {
   const rows = panes.slice(0, DOCK_MAX_ROWS);
-  const lead = leadOf({ panes: rows });
+  const lead = leadPaneOf({ panes: rows });
   if (lead === null) {
     return null;
   }
@@ -368,7 +368,7 @@ const overLayoutOf = ({ frame, detail, lanes, isStacked }: OverParams): FrameLay
 
 const tabbedOf = ({ lanes }: FoldParams): ReadonlyArray<Lane> | null => {
   const [first, second, ...rest] = lanes.flatMap((lane) => lane.panes);
-  const held = second === undefined ? null : leadOf({ panes: [second, ...rest] });
+  const held = second === undefined ? null : leadPaneOf({ panes: [second, ...rest] });
   if (first === undefined || second === undefined || held === null || rest.length === 0) {
     return null;
   }
