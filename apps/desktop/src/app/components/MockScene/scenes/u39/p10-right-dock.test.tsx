@@ -146,7 +146,7 @@ describe('the ux39 right dock scenes', () => {
 
       expect(useAppStore.getState().drawer).toMatchObject({ kind: 'terminal', sessionId: null });
       vi.useRealTimers();
-      await screen.findByRole('button', { name: 'Open full page' }, { timeout: 5_000 });
+      await screen.findByRole('region', { name: 'Terminal' }, { timeout: 5_000 });
       expect(screen.queryByText("Couldn't open this terminal")).toBeNull();
       expect(within(rail()).getByTestId('pane-toggle-terminal').getAttribute('aria-pressed')).toBe(
         'true',
