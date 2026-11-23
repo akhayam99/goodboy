@@ -105,7 +105,7 @@ beforeEach(async () => {
     workspaces: [WORKSPACE],
     sessions: [HARBORLINE, NORTHWIND],
     mergePr: async (_sessionId, number) => {
-      merged.push(number);
+      merged.push(number ?? 0);
     },
   });
 });
@@ -131,7 +131,7 @@ describe('the merge train', () => {
     let release: (() => void) | undefined;
     store.setState({
       mergePr: async (_sessionId, number) => {
-        merged.push(number);
+        merged.push(number ?? 0);
         await new Promise<void>((resolve) => {
           release = resolve;
         });
@@ -146,7 +146,7 @@ describe('the merge train', () => {
 
     store.setState({
       mergePr: async (_sessionId, number) => {
-        merged.push(number);
+        merged.push(number ?? 0);
       },
     });
     release?.();
@@ -157,7 +157,7 @@ describe('the merge train', () => {
     let release: (() => void) | undefined;
     store.setState({
       mergePr: async (_sessionId, number) => {
-        merged.push(number);
+        merged.push(number ?? 0);
         await new Promise<void>((resolve) => {
           release = resolve;
         });

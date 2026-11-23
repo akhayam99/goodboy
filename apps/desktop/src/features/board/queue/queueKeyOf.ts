@@ -9,6 +9,8 @@ export type QueueCommand =
   | Readonly<{ kind: 'open' }>
   | Readonly<{ kind: 'not-now' }>
   | Readonly<{ kind: 'peek' }>
+  | Readonly<{ kind: 'mark' }>
+  | Readonly<{ kind: 'merge-train' }>
   | Readonly<{ kind: 'choice'; index: number }>;
 
 type Params = {
@@ -64,6 +66,12 @@ export const queueKeyOf = ({
   }
   if (band === 'running' && key === ' ') {
     return { kind: 'peek' };
+  }
+  if (band === 'ready' && key === ' ') {
+    return { kind: 'mark' };
+  }
+  if (band === 'ready' && (key === 'm' || key === 'M')) {
+    return { kind: 'merge-train' };
   }
   return null;
 };

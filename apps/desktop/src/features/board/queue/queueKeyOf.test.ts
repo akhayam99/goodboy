@@ -32,6 +32,11 @@ describe('the Queue keys, one band at a time', () => {
     ['ready', 'ArrowRight', 'open'],
     ['ready', 'Enter', null],
     ['ready', '1', null],
+    ['ready', ' ', 'mark'],
+    ['ready', 'm', 'merge-train'],
+    ['ready', 'M', 'merge-train'],
+    ['needs-you', 'm', null],
+    ['running', 'm', null],
   ] as const)('in %s, %j does %s', (band, key, kind) => {
     expect(commandOf({ key, band })?.kind ?? null).toBe(kind);
   });

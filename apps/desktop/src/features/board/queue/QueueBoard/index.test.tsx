@@ -24,9 +24,15 @@ import {
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { attentionPlace } from '../../../session/attentionPlace';
+import type { Session } from '@goodboy/types';
+import type { StartMergeTrainParams } from '../../../../store/slices/pr-series/startMergeTrain';
 import {
   harborline,
   ledgerCore,
+  mergedGithub,
+  mountGithubOf,
+  mountOf,
+  notifyRelay,
   openQuestionFor,
   seedColumn,
   sessionOf,
@@ -223,6 +229,131 @@ describe('the Queue', () => {
     expect(
       document.querySelector('[data-running-row="run-1"]')?.getAttribute('aria-current'),
     ).toBeNull();
+  });
+
+  describe('Ready to merge', () => {
+    const smaller = sessionOf({ goal: 'Retry budget for webhooks' });
+    const larger = sessionOf({ goal: 'Ledger rounding' });
+
+    const seedReady = () => {
+      seedColumn({
+        store: useAppStore,
+        sessions: [larger, smaller],
+        mounts: [
+          [larger, ledgerCore],
+          [smaller, notifyRelay],
+        ],
+      });
+      const approved = { reviewDecision: 'approved' as const };
+      const githubOf = ({
+        session,
+        number,
+      }: {
+        readonly session: Session;
+        readonly number: number;
+      }) => {
+        const mount = mountOf({ session, project: session === larger ? ledgerCore : notifyRelay });
+        const base = mountGithubOf({ mount, number });
+        return {
+          mount,
+          github: { ...base, pr: base.pr === null ? null : { ...base.pr, ...approved } },
+        };
+      };
+      const one = githubOf({ session: larger, number: 418 });
+      const two = githubOf({ session: smaller, number: 76 });
+      useAppStore.setState({
+        mountGithub: { [one.mount.mountId]: one.github, [two.mount.mountId]: two.github },
+        sessionGithub: {
+          [larger.id]: { ...mergedGithub(), pr: one.github.pr },
+          [smaller.id]: { ...mergedGithub(), pr: two.github.pr },
+        },
+      });
+      return { one, two };
+    };
+
+    const readyBand = () => screen.getByRole('region', { name: 'Ready to merge' });
+
+    it('merges nothing until you mark rows and press the button', async () => {
+      const merges = vi.fn(async () => undefined);
+      seedReady();
+      useAppStore.setState({ mergePr: merges });
+      renderQueue();
+      const band = readyBand();
+      await waitFor(() => expect(band.querySelectorAll('[data-ready-row]')).toHaveLength(2), WAIT);
+      const button = within(band).getByRole('button', { name: 'Merge in order' });
+      expect(button).toHaveProperty('disabled', true);
+      fireEvent.keyDown(queueRoot(), { key: 'F6' });
+      fireEvent.keyDown(queueRoot(), { key: 'F6' });
+      fireEvent.keyDown(queueRoot(), { key: 'm' });
+      expect(useAppStore.getState().mergeTrain).toBeNull();
+      expect(merges).not.toHaveBeenCalled();
+    });
+
+    it('marks with Space, names the method and starts the train with M', async () => {
+      const start = vi.fn(async (_params: StartMergeTrainParams) => ({
+        kind: 'done' as const,
+        merged: 2,
+      }));
+      seedReady();
+      useAppStore.setState({ startMergeTrain: start });
+      renderQueue();
+      const band = readyBand();
+      await waitFor(() => expect(band.querySelectorAll('[data-ready-row]')).toHaveLength(2), WAIT);
+      expect(
+        Array.from(band.querySelectorAll('[data-ready-reason]')).map((node) => node.textContent),
+      ).toEqual(['First: waiting longest']);
+      fireEvent.keyDown(queueRoot(), { key: 'F6' });
+      fireEvent.keyDown(queueRoot(), { key: 'F6' });
+      expect(queueRoot().getAttribute('data-active-band')).toBe('ready');
+      fireEvent.keyDown(queueRoot(), { key: ' ' });
+      fireEvent.keyDown(queueRoot(), { key: 'j' });
+      fireEvent.keyDown(queueRoot(), { key: ' ' });
+      within(band).getByRole('button', { name: 'Merge 2 in order' });
+      fireEvent.keyDown(queueRoot(), { key: 'M' });
+      expect(start).toHaveBeenCalledOnce();
+      expect(start.mock.calls[0]?.[0]).toMatchObject({ method: 'squash' });
+    });
+
+    it('stops after this one from the strip and shows each step as one line', async () => {
+      seedReady();
+      useAppStore.setState({
+        mergeTrain: {
+          id: 'train-1',
+          cars: [
+            {
+              sessionId: smaller.id,
+              mountId: mountOf({ session: smaller, project: notifyRelay }).mountId,
+              prNumber: 76,
+              repo: 'notify-relay',
+              base: 'main',
+            },
+            {
+              sessionId: larger.id,
+              mountId: mountOf({ session: larger, project: ledgerCore }).mountId,
+              prNumber: 418,
+              repo: 'ledger-core',
+              base: 'main',
+            },
+          ],
+          method: 'squash',
+          index: 0,
+          step: 'merging',
+          hasUpdated: false,
+          merged: 0,
+          isStopRequested: false,
+          outcome: null,
+        },
+      });
+      renderQueue();
+      const band = readyBand();
+      within(band).getByText('Merging 1 of 2 · #76 notify-relay');
+      fireEvent.click(within(band).getByRole('button', { name: 'Stop after this one' }));
+      expect(useAppStore.getState().mergeTrain?.isStopRequested).toBe(true);
+      expect(within(band).getByRole('button', { name: 'Stop after this one' })).toHaveProperty(
+        'disabled',
+        true,
+      );
+    });
   });
 
   it.each(['open-question', 'needs-approval', 'plan-approval'] as const)(

@@ -17,6 +17,7 @@ import { RunningBand } from './RunningBand';
 import { useAgentNouns } from './useAgentNouns';
 import { useBoardPage } from './useBoardPage';
 import { useFleetWork } from './useFleetWork';
+import { useMergeTrain } from './useMergeTrain';
 import { useQueueActions } from './useQueueActions';
 import { useQueueFocus } from './useQueueFocus';
 import { useQueueModel } from './useQueueModel';
@@ -55,12 +56,15 @@ export const QueueBoard = ({ workspaceId, sessions }: Props) => {
   );
   const runningRows = useMemo(() => groups.flatMap((group) => group.rows), [groups]);
   const { moves } = model.needsYou;
+  const train = useMergeTrain({ ready: model.ready, sessionTitles: model.sessionTitles });
   const focus = useQueueFocus({
     moves,
     focusedMoveId: page.focusedMoveId,
     runningRows,
-    ready: model.ready,
+    ready: train.lines,
     onFocusMove: page.setFocusedMove,
+    onMark: train.toggleMark,
+    onMergeTrain: train.start,
     actions,
     nav,
   });
@@ -101,11 +105,17 @@ export const QueueBoard = ({ workspaceId, sessions }: Props) => {
             onShowHidden={() => showAll({ moveIds: model.needsYou.notNowIds })}
           />
           <ReadyBand
-            rows={model.ready}
-            sessionTitles={model.sessionTitles}
+            lines={train.lines}
             focusedId={focus.focusedReady?.sessionId ?? null}
             isActive={focus.band === 'ready'}
-            onOpen={({ row }) => nav.openReady({ sessionId: row.sessionId })}
+            marked={train.marked}
+            train={train.train}
+            method={train.method}
+            onOpen={nav.openReady}
+            onToggleMark={train.toggleMark}
+            onStart={train.start}
+            onStop={train.stop}
+            onDismiss={train.dismiss}
           />
         </div>
         <RunningBand
