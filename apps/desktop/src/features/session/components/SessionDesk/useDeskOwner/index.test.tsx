@@ -235,6 +235,31 @@ describe('one Desk per session, in one window', () => {
     expect(face()).toBe('desk');
   });
 
+  it('goes back to the overview with Retry when the first hold check fails, and the retry opens the Desk', async () => {
+    const reportError = vi.fn();
+    store.setState({ reportError });
+    isHoldBroken = true;
+    renderFace();
+
+    await pressDesk();
+
+    expect(face()).toBe('overview');
+    expect(holder).toBeNull();
+    expect(reportError).toHaveBeenCalledTimes(1);
+    const [report] = reportError.mock.calls[0] ?? [];
+
+    isHoldBroken = false;
+    let isRetried = false;
+    await act(async () => {
+      isRetried = await report.retry();
+    });
+    await tick();
+
+    expect(isRetried).toBe(true);
+    expect(face()).toBe('desk');
+    expect(holder).toBe('main');
+  });
+
   it('keeps the line and offers Retry when Bring it here fails, and the retry takes the Desk', async () => {
     const reportError = vi.fn();
     store.setState({ reportError });

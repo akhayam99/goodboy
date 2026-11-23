@@ -54,6 +54,14 @@ const INVOKE = {
   worktree_remote_url: () => 'git@github.com:harborline/ledger-core.git',
 };
 
+type EnteredParams = {
+  readonly sessionId: SessionId;
+};
+
+const startDeskTerminal = ({ sessionId }: EnteredParams): void => {
+  void startDeskTool({ sessionId, mountId: null });
+};
+
 let store: StoryStore;
 let observers: FakeResizeObservers;
 const stops: Array<() => void> = [];
@@ -314,7 +322,7 @@ describe('the tool the Desk opens', () => {
     });
     renderFace();
 
-    stops.push(watchSessionDockGrid({ store, delayMs: 0, onEntered: startDeskTool }));
+    stops.push(watchSessionDockGrid({ store, delayMs: 0, onEntered: startDeskTerminal }));
     await settle();
 
     expect(face()).toBe('desk');
@@ -327,7 +335,7 @@ describe('the tool the Desk opens', () => {
       face: 'desk',
     });
     renderFace();
-    stops.push(watchSessionDockGrid({ store, delayMs: 0, onEntered: startDeskTool }));
+    stops.push(watchSessionDockGrid({ store, delayMs: 0, onEntered: startDeskTerminal }));
     await act(async () => {
       store.getState().navigate({ to: sessionPlace({ sessionId: session.id, lens: 'context' }) });
     });

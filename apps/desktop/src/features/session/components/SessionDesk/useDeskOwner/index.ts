@@ -1,8 +1,10 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { WORK_KEPT } from '../../../../../store/slices/notifications/errorRecovery';
+import type { ActionRetry } from '../../../../../store/slices/notifications/actionRetries';
+import { NOTHING_CHANGED } from '../../../../../store/slices/notifications/errorRecovery';
 import { usePoll } from '../../../../../shared/lib/usePoll';
+import { switchSessionFace } from '../switchSessionFace';
 import { applyDeskHold } from './applyDeskHold';
 import { deskHolder, type OnHoldParams } from './deskHolder';
 import { deskLines, type DeskLine } from './deskLines';
@@ -15,6 +17,13 @@ type Params = {
 const HOLDER_POLL_MS = 5_000;
 
 const onHoldChange = ({ hold }: OnHoldParams): void => applyDeskHold({ hold, line: 'moved' });
+
+const retryDesk =
+  ({ sessionId }: Pick<Params, 'sessionId'>): ActionRetry =>
+  async () => {
+    switchSessionFace({ sessionId, face: 'desk' });
+    return useAppStore.getState().sessionFace[sessionId] === 'desk';
+  };
 
 export const useDeskOwner = ({ sessionId, isDeskShown }: Params): DeskLine | null => {
   const line = useSyncExternalStore(
@@ -50,12 +59,19 @@ export const useDeskOwner = ({ sessionId, isDeskShown }: Params): DeskLine | nul
         }
       },
       (error: unknown) => {
-        void useAppStore.getState().reportError({
+        if (!isActive) {
+          return;
+        }
+        const state = useAppStore.getState();
+        if (state.sessionFace[sessionId] === 'desk') {
+          state.setSessionFace({ sessionId, face: 'overview' });
+        }
+        void state.reportError({
           title: "Couldn't check which window holds the Desk",
           error,
           sessionId,
-          severity: 'warning',
-          recovery: WORK_KEPT,
+          recovery: NOTHING_CHANGED,
+          retry: retryDesk({ sessionId }),
         });
       },
     );

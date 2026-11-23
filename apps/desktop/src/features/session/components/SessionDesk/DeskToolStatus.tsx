@@ -41,7 +41,7 @@ export const DeskToolStatus = ({ sessionId }: Props) => {
             size="sm"
             variant={RETRY_LOOK.variant}
             intent={RETRY_LOOK.intent}
-            onClick={() => void startDeskTool({ sessionId })}
+            onClick={() => void startDeskTool({ sessionId, mountId: null })}
           >
             {NAMES.retry}
           </Button>

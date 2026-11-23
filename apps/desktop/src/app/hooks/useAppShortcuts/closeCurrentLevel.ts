@@ -15,17 +15,17 @@ export const closeCurrentLevel = ({}: Params): void => {
   }
   const state = useAppStore.getState();
   const drawer = selectDrawerPanel(state);
-  if (drawer !== null) {
-    if (drawer.kind === 'question') {
-      state.closeQuestion();
-      return;
-    }
-    state.closeDrawer();
+  if (drawer?.kind === 'question') {
+    state.closeQuestion();
     return;
   }
   const tool = deskToolToClose({ state });
   if (tool !== null) {
     state.closeDrawerEntry({ entry: tool });
+    return;
+  }
+  if (drawer !== null) {
+    state.closeDrawer();
     return;
   }
   const live = captureLocation({ state });

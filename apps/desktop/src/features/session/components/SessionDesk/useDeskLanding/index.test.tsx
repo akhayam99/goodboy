@@ -31,7 +31,12 @@ import { sessionPlace } from '../../../../../store/slices/navigation/place';
 import { currentStack } from '../../../../../store/slices/navigation/currentStack';
 import { registerShortcut } from '../../../../../shared/keyboard/dispatcher';
 import { pressShortcut } from '../../../../../__tests__/helpers/pressKey';
-import { ledgerCore, mountOf, sessionOf } from '../../../../workspace/testing/sessionColumn';
+import {
+  ledgerCore,
+  mountOf,
+  notifyRelay,
+  sessionOf,
+} from '../../../../workspace/testing/sessionColumn';
 import { SessionPageTabs } from '../../../../../app/components/SessionPageTabs';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { toggleTerminalDock } from '../../../../terminal/toggleTerminalDock';
@@ -128,6 +133,23 @@ describe('entering the Desk', () => {
     expect(tools().map((entry) => entry.kind)).toEqual(['terminal']);
   });
 
+  it('opens the terminal in the project the landing names, not the one used last', async () => {
+    const ledger = mountOf({ session, project: ledgerCore });
+    const relay = mountOf({ session, project: notifyRelay });
+    await act(async () => {
+      store.setState({
+        sessionProjectMounts: { [session.id]: [ledger, relay] },
+        terminalScopes: { [session.id]: relay.worktreePath },
+      });
+    });
+    renderFace();
+
+    await openDesk();
+
+    expect(tools().map((entry) => entry.kind)).toEqual(['terminal']);
+    expect(store.getState().terminalScopes[session.id]).toBe(ledger.worktreePath);
+  });
+
   it('brings back a Desk saved with no tool as the overview, with no line', async () => {
     await act(async () => {
       store.setState({ sessionFace: { [session.id]: 'desk' } });
@@ -198,6 +220,28 @@ describe('closing the last tool', () => {
     screen.getByText('Desk closed');
     expect(entries()).toBe(before);
     expect(store.getState().currentSessionId).toBe(session.id);
+  });
+
+  it('cmd w closes the focused tool, not the last opened one', async () => {
+    renderFace();
+    await openDesk();
+    const [terminal] = tools();
+    await act(async () => {
+      store.getState().openDrawer({ kind: 'scripts', sessionId: session.id, payload: null });
+    });
+    await act(async () => {
+      if (terminal !== undefined) {
+        store.getState().focusDrawerPanel({ target: { at: 'panel', entry: terminal } });
+      }
+    });
+
+    await act(async () => {
+      closeCurrentLevel({});
+    });
+    await tick();
+
+    expect(tools().map((entry) => entry.kind)).toEqual(['scripts']);
+    expect(face()).toBe('desk');
   });
 
   it('the key finds the tools too, and the line goes', async () => {

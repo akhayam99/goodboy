@@ -20,7 +20,7 @@ const openDeskTool = ({ sessionId, tool }: ToolParams): void => {
   if (tool.kind !== 'terminal') {
     return;
   }
-  void startDeskTool({ sessionId });
+  void startDeskTool({ sessionId, mountId: tool.mountId });
 };
 
 const hasTools = (): boolean => deskToolsOf({ state: useAppStore.getState() }).length > 0;

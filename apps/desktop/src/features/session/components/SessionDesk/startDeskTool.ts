@@ -4,15 +4,23 @@ import type { AppState } from '../../../../store/types';
 import { createLatestOnly } from '../../../../store/runtime/state-writes/latestOnly';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { openSessionTerminal } from '../../../terminal/openSessionTerminal';
-import { toggleTerminalDock } from '../../../terminal/toggleTerminalDock';
+import { toggleSessionTerminal } from '../../../terminal/toggleSessionTerminal';
 import { scratchDirPrepare } from '../../../worktree/worktree';
 import { isFaceShown } from './isFaceShown';
 
-type Params = {
+type SessionParams = {
   readonly sessionId: SessionId;
 };
 
-type StateParams = Params & {
+type Params = SessionParams & {
+  readonly mountId: string | null;
+};
+
+type StateParams = SessionParams & {
+  readonly state: AppState;
+};
+
+type MountParams = Params & {
   readonly state: AppState;
 };
 
@@ -28,10 +36,15 @@ const isDeskWithoutTool = ({ state, sessionId }: StateParams): boolean =>
   isFaceShown({ state, sessionId }) &&
   state.drawerGrid.columns.length === 0;
 
+const mountPathOf = ({ state, sessionId, mountId }: MountParams): string | null =>
+  (state.sessionProjectMounts[sessionId] ?? []).find(
+    (mount) => mount.mountId === mountId && mount.isAttached && mount.diskState === 'present',
+  )?.worktreePath ?? null;
+
 const messageOf = ({ error }: ErrorParams): string =>
   error instanceof Error ? error.message : String(error);
 
-export const startDeskTool = async ({ sessionId }: Params): Promise<void> => {
+export const startDeskTool = async ({ sessionId, mountId }: Params): Promise<void> => {
   const state = useAppStore.getState();
   if (
     !isDeskWithoutTool({ state, sessionId }) ||
@@ -40,7 +53,12 @@ export const startDeskTool = async ({ sessionId }: Params): Promise<void> => {
     return;
   }
   if (!isBranchlessSession({ branch: state.sessionBranches[sessionId] })) {
-    toggleTerminalDock({ isToggle: false });
+    const cwd = mountPathOf({ state, sessionId, mountId });
+    if (cwd === null) {
+      toggleSessionTerminal({ sessionId });
+      return;
+    }
+    openSessionTerminal({ state, sessionId, cwd });
     return;
   }
   const claim = deskToolStarts.claim({ key: sessionId });
