@@ -979,8 +979,15 @@ that shadows it, so the chord follows Chrome's J.
   drops the oldest entry of the same kind first, so a busy page cannot push
   its console lines out. Rust drops what the app's own injected scripts say
   in the page (`console::is_app_noise`: a source of `user-script:`, the Tauri
-  "IPC custom protocol failed" fallback and a `not allowed on window`
-  rejection), so only the page's own lines reach the region. A message is cut at 2,000 characters and names its `file:line` when
+  "IPC custom protocol failed" fallback and a `not allowed on window` or
+  `not allowed by ACL` rejection), so only the page's own lines reach the
+  region. The notification plugin injects a `Notification` shim into every
+  webview, a tab included, and the shim asks
+  `plugin:notification|is_permission_granted` as the page loads. No capability
+  grants a `browse-` tab (see Capabilities), so the host refuses it, and the
+  hook handles that refusal itself: it calls `preventDefault` on the
+  `unhandledrejection` and records nothing (`isHostRefusal`,
+  `consoleHookScript.test.ts`). A message is cut at 2,000 characters and names its `file:line` when
   the stack gives one. A request keeps its method, status and path: no query,
   no fragment, no body, no header, no cookie, and the host only when it is
   another origin. The script assigns nothing on `window` but the wrapped

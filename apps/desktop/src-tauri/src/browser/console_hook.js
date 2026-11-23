@@ -12,6 +12,8 @@
   const MAX_KEYS = 20;
   const MAX_STACK_LINE = 500;
   const HOOK_FRAME = 'goodboyConsoleHook';
+  const ACL_REFUSAL = ' not allowed by ACL';
+  const WINDOW_REFUSAL = ' not allowed on window';
   const LEVELS = [
     ['log', 'log'],
     ['info', 'info'],
@@ -30,6 +32,10 @@
   let isBusy = false;
 
   const clip = (text, max) => (text.length > max ? text.slice(0, max) : text);
+
+  const isHostRefusal = (reason) =>
+    typeof reason === 'string' &&
+    (reason.indexOf(ACL_REFUSAL) !== -1 || reason.indexOf(WINDOW_REFUSAL) !== -1);
 
   const quietly = (work) => {
     try {
@@ -304,6 +310,10 @@
 
   window.addEventListener('unhandledrejection', (event) => {
     const reason = event.reason;
+    if (isHostRefusal(reason)) {
+      quietly(() => event.preventDefault());
+      return;
+    }
     recordConsole(
       'error',
       () => 'Unhandled rejection: ' + describe(reason, 0),
