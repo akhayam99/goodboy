@@ -32,7 +32,7 @@ export const RunningAgentRow = ({
     className="flex min-h-8 min-w-0 items-center gap-3 px-3"
   >
     <span className="shrink-0 text-ui text-foreground">{row.who}</span>
-    <TruncatedText className="min-w-0 flex-1 text-ui text-muted-foreground">
+    <TruncatedText className="min-w-0 flex-1 basis-24 text-ui text-muted-foreground">
       {row.phrase}
     </TruncatedText>
     {hasOverlapChip && row.mountId !== null ? (

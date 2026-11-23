@@ -81,6 +81,13 @@ type MountsParams = {
   readonly mounts: Readonly<Record<string, ReadonlyArray<SessionProjectMount>>>;
 };
 
+type SessionParams = {
+  readonly sessionId: SessionId;
+};
+
+const queueMountIdOf = ({ sessionId }: SessionParams): MountId =>
+  brandId<MountId>({ value: `mock-queue-mount-${sessionId}` });
+
 const ownMountsOf = ({
   mounts,
 }: MountsParams): Readonly<Record<string, ReadonlyArray<SessionProjectMount>>> =>
@@ -95,7 +102,7 @@ const ownMountsOf = ({
               {
                 ...mount,
                 sessionId,
-                mountId: brandId<MountId>({ value: `mock-queue-mount-${sessionId}` }),
+                mountId: queueMountIdOf({ sessionId }),
               },
             ],
       ];
@@ -109,6 +116,18 @@ const seedQueue = ({ isClear }: Pick<Props, 'isClear'>): void => {
     sessionProjectMounts: {
       ...state.sessionProjectMounts,
       ...ownMountsOf({ mounts: state.sessionProjectMounts }),
+    },
+    sessionPhaseRuns: {
+      ...state.sessionPhaseRuns,
+      ...Object.fromEntries(
+        RUNNING.map((sessionId) => [
+          sessionId,
+          (state.sessionPhaseRuns[sessionId] ?? []).map((agent) => ({
+            ...agent,
+            mountId: queueMountIdOf({ sessionId }),
+          })),
+        ]),
+      ),
     },
     sessions: isClear
       ? state.sessions.filter((session) => !WAITING.includes(session.id))

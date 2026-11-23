@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
@@ -78,9 +78,13 @@ describe('the u50 queue scenes', () => {
     await show({ name: 'u50-queue-dark' });
     const running = screen.getByRole('region', { name: 'Running' });
 
-    await within(running).findByRole('button', { name: /^Overlaps/ });
+    const chip = await within(running).findByRole('button', { name: /^Overlaps/ });
 
     expect(within(running).getAllByRole('button', { name: /^Overlaps/ })).toHaveLength(1);
+    fireEvent.click(chip);
+    within(screen.getByRole('dialog', { name: 'Overlap' })).getByRole('button', {
+      name: 'Message both Implementers',
+    });
   });
 
   it('says nothing waits on you when the pile is clear', async () => {

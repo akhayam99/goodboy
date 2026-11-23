@@ -48,18 +48,18 @@ export const OverlapChip = ({ mountId, placement }: Props) => {
       role="dialog"
       ariaLabel="Overlap"
       className="gap-3 p-3"
-      anchorClassName="pointer-events-auto min-w-0 max-w-48 shrink"
+      anchorClassName="pointer-events-auto flex min-w-0 max-w-48 shrink"
       trigger={
         <Chip
           as="button"
           tone="warning"
           kind="reference"
-          label={label}
-          title={first.paths.join('\n')}
+          label={<span className="min-w-0 truncate">{label}</span>}
+          ariaLabel={label}
           hasPopup="dialog"
           expanded={dropdown.open}
           onClick={dropdown.toggle}
-          className="min-w-0 truncate"
+          className="min-w-0 max-w-full"
         />
       }
     >
