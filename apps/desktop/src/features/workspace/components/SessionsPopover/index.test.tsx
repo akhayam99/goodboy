@@ -11,6 +11,7 @@ vi.mock('@goodboy/db', async () =>
     listLiveSessionIds: vi.fn(async () => []),
     getSetting: vi.fn(async () => null),
     setSetting: vi.fn(async () => undefined),
+    getSessionDockGrid: vi.fn(async (): Promise<string | null> => null),
   }),
 );
 vi.mock('../../../../shared/lib/db', async () =>
@@ -19,7 +20,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { getSetting, listLiveSessionIds, setSetting } from '@goodboy/db';
+import { getSessionDockGrid, getSetting, listLiveSessionIds, setSetting } from '@goodboy/db';
 import { brandId, type Session, type SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -29,6 +30,9 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
+import { stageInfosOf } from '../../../../store/slices/session-view/stageInfosOf';
+import { needsYouOf } from '../../../board/queue/needsYouOf';
+import { useQueueSends } from '../../../board/queue/QueueBoard/useQueueSends';
 import {
   harborline,
   ledgerCore,
@@ -253,6 +257,110 @@ describe('the Sessions popover in the bar', () => {
     expect(
       (useAppStore.getState().sessionPins[harborline.id] ?? []).map((pinEntry) => pinEntry.id),
     ).not.toContain(idOf({ session: quiet }));
+  });
+});
+
+describe('what each Sessions row says', () => {
+  const DESK_ROW = JSON.stringify({ version: 1, face: 'desk' });
+
+  beforeEach(() => {
+    vi.mocked(getSessionDockGrid).mockReset();
+    vi.mocked(getSessionDockGrid).mockResolvedValue(null);
+    useQueueSends.setState({ notNow: new Set(), pending: {} });
+  });
+
+  const rowOf = ({ session }: IdParams): HTMLElement => {
+    const row = within(dialog())
+      .getAllByRole('option')
+      .find((option) => option.textContent?.includes(session.goal) === true);
+    if (row === undefined) {
+      throw new Error(`no row for ${session.goal}`);
+    }
+    return row;
+  };
+
+  const queueMovesOf = ({ session }: IdParams) => {
+    const state = useAppStore.getState();
+    return needsYouOf({
+      sessions: [session],
+      infos: stageInfosOf({ state, sessions: [session] }),
+      openQuestions: { [session.id]: state.sessionOpenQuestions[idOf({ session })] ?? [] },
+      notNow: useQueueSends.getState().notNow,
+    });
+  };
+
+  it('counts what waits on you with the number the Queue shows', () => {
+    mount();
+    toggle();
+    const { moveCount } = queueMovesOf({ session: ask });
+
+    expect(moveCount).toBeGreaterThan(0);
+    expect(within(rowOf({ session: ask })).getByTestId('sessions-needs-you').textContent).toBe(
+      String(moveCount),
+    );
+    expect(
+      within(rowOf({ session: ask })).queryByRole('img', {
+        name: `${moveCount} ${moveCount === 1 ? 'item needs' : 'items need'} you`,
+      }),
+    ).not.toBeNull();
+    expect(within(rowOf({ session: quiet })).queryByTestId('sessions-needs-you')).toBeNull();
+  });
+
+  it('drops a move put off with Not now, as the Queue does', () => {
+    mount();
+    toggle();
+    const { moves } = queueMovesOf({ session: ask });
+
+    act(() => {
+      moves.forEach((move) => useQueueSends.getState().hide({ moveId: move.id }));
+    });
+
+    expect(within(rowOf({ session: ask })).queryByTestId('sessions-needs-you')).toBeNull();
+  });
+
+  it('says Desk for a session saved on the Desk and nothing for the others', async () => {
+    vi.mocked(getSessionDockGrid).mockImplementation(async ({ sessionId }) =>
+      sessionId === idOf({ session: pinned }) ? DESK_ROW : null,
+    );
+    mount();
+    toggle();
+
+    await waitFor(() =>
+      expect(within(rowOf({ session: pinned })).queryByText('Desk')).not.toBeNull(),
+    );
+    expect(rowOf({ session: quiet }).querySelector('[data-sessions-face]')).toBeNull();
+    expect(useAppStore.getState().sessionFace[idOf({ session: quiet })]).toBe('overview');
+  });
+
+  it('reads no row for a session whose face this window already knows', async () => {
+    useAppStore.setState({ sessionFace: { [idOf({ session: running })]: 'desk' } });
+    mount();
+    toggle();
+
+    expect(within(rowOf({ session: running })).queryByText('Desk')).not.toBeNull();
+    await waitFor(() => expect(getSessionDockGrid).toHaveBeenCalled());
+    expect(
+      vi.mocked(getSessionDockGrid).mock.calls.map(([params]) => params.sessionId),
+    ).not.toContain(idOf({ session: running }));
+  });
+
+  it('shows no face when the read fails, and reads again the next time Sessions opens', async () => {
+    vi.mocked(getSessionDockGrid).mockRejectedValue(new Error('database is locked'));
+    mount();
+    toggle();
+    await waitFor(() => expect(getSessionDockGrid).toHaveBeenCalled());
+    expect(rowOf({ session: pinned }).querySelector('[data-sessions-face]')).toBeNull();
+    toggle();
+
+    vi.mocked(getSessionDockGrid).mockReset();
+    vi.mocked(getSessionDockGrid).mockImplementation(async ({ sessionId }) =>
+      sessionId === idOf({ session: pinned }) ? DESK_ROW : null,
+    );
+    toggle();
+
+    await waitFor(() =>
+      expect(within(rowOf({ session: pinned })).queryByText('Desk')).not.toBeNull(),
+    );
   });
 });
 

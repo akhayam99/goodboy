@@ -1455,6 +1455,8 @@ u50-mounts-picker-dark
 u50-mounts-picker-light
 u50-mounts-unmount-dark
 u50-mounts-unmount-light
+u50-nav-docs-dark
+u50-nav-docs-light
 u50-overlap-dark
 u50-overlap-light
 u50-overlap-open-dark
