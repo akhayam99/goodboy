@@ -105,18 +105,18 @@ describe('the terminal panel selection action', () => {
         terminalId="ledger-core::t1"
         driver={driver}
         isActive
-        selectionAction={{ label: 'Send to the agent', onAct }}
+        selectionAction={{ label: 'Add to message', onAct }}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Send to the agent' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add to message' })).toBeNull();
 
     select('FAIL postings/rounding.test.ts');
-    fireEvent.click(screen.getByRole('button', { name: 'Send to the agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add to message' }));
 
     expect(onAct).toHaveBeenCalledWith({ text: 'FAIL postings/rounding.test.ts' });
 
     select('');
-    expect(screen.queryByRole('button', { name: 'Send to the agent' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add to message' })).toBeNull();
   });
 
   it('does not offer the action without one', () => {

@@ -1,7 +1,7 @@
 import { AnchoredPopover, Button, useDropdown } from '@goodboy/ui';
 import type { AgentTaskLabel } from '../../../auto/agentTaskLabelOf';
 import { MiddleText } from '../../../../shared/components/MiddleText';
-import { firstLineOf } from './firstLineOf';
+import { firstLineOf } from '../../../../shared/utils/firstLineOf';
 
 type Props = {
   readonly brief: string;

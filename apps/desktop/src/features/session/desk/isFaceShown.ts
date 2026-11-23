@@ -1,9 +1,9 @@
 import type { SessionId } from '@goodboy/types';
-import type { AppState } from '../../../../store/types';
-import { captureLocation } from '../../../../store/slices/navigation/captureLocation';
-import { foldedLensOf } from '../../../../store/slices/navigation/foldedLensOf';
-import { isTabView } from '../../../../store/slices/navigation/isTabView';
-import { resolveLensSurface } from '../../lens-surface';
+import type { AppState } from '../../../store/types';
+import { captureLocation } from '../../../store/slices/navigation/captureLocation';
+import { foldedLensOf } from '../../../store/slices/navigation/foldedLensOf';
+import { isTabView } from '../../../store/slices/navigation/isTabView';
+import { resolveLensSurface } from '../lens-surface';
 
 type Params = {
   readonly state: AppState;

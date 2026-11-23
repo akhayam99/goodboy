@@ -1,5 +1,5 @@
 import { useAppStore } from '../../../../store';
-import { isFaceShown } from './isFaceShown';
+import { isFaceShown } from '../../desk/isFaceShown';
 import { switchSessionFace } from './switchSessionFace';
 
 export const toggleCurrentFace = (): boolean => {

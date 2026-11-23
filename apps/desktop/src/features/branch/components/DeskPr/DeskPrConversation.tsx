@@ -1,5 +1,6 @@
 import { SelectableRow } from '@goodboy/ui';
 import type { PrComment } from '@goodboy/types';
+import { firstLineOf } from '../../../../shared/utils/firstLineOf';
 import { DESK_PR_COPY } from './deskPrCopy';
 
 type Props = {
@@ -8,9 +9,6 @@ type Props = {
 };
 
 const SHOWN_CAP = 6;
-
-const firstLineOf = ({ body }: Pick<PrComment, 'body'>): string =>
-  body.split('\n').find((line) => line.trim() !== '') ?? '';
 
 export const DeskPrConversation = ({ comments, onOpen }: Props) => {
   const roots = comments.filter((comment) => comment.inReplyToId === undefined);
@@ -36,7 +34,7 @@ export const DeskPrConversation = ({ comments, onOpen }: Props) => {
                 )}
               </span>
               <span className="truncate text-meta text-muted-foreground">
-                {firstLineOf({ body: comment.body })}
+                {firstLineOf({ text: comment.body }) ?? ''}
               </span>
             </span>
           </SelectableRow>

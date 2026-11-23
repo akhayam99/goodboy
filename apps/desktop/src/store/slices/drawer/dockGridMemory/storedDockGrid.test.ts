@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type SessionId } from '@goodboy/types';
-import type { TerminalTabId } from '../../../shared/types/terminal';
-import { EMPTY_DRAWER_GRID, type DrawerGrid } from './state';
+import type { TerminalTabId } from '../../../../shared/types/terminal';
+import { EMPTY_DRAWER_GRID, type DrawerGrid } from '../state';
 import { parseStoredDockGrid, storedDockGridOf } from './storedDockGrid';
-import { storedFaceOf } from '../session-view/storedFaceOf';
+import { storedFaceOf } from '../../session-view/storedFaceOf';
 
 const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
 

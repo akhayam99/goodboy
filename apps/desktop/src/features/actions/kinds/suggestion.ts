@@ -1,3 +1,4 @@
+import { NAMES } from '../../../shared/utils/names';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { startTalkItThrough } from '../../auto/startTalkItThrough';
@@ -203,7 +204,7 @@ export const SUGGESTION_KIND: ObjectKindDefinition<SuggestionActionTarget, Sugge
     },
     {
       id: NOT_NOW_ACTION_ID,
-      label: 'Not now',
+      label: NAMES.notNow,
       icon: CONCEPT_ICONS.archive,
       group: 'act',
       when: ({ facts }) => facts.onNotNow !== null,

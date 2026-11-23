@@ -19,6 +19,7 @@ export const DESK_PR_COPY = {
   readingLog: 'Reading the log',
   unreadable: 'Not readable here.',
   openLog: 'Open log',
+  openOn: ({ host }: HostParams) => `Open on ${host}`,
   noComments: 'No comments yet.',
   readingComments: 'Reading the comments',
   hostChecks: ({ host }: HostParams) => `Goodboy doesn't read ${host} checks yet.`,

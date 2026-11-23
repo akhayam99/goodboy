@@ -1,13 +1,13 @@
 import type { SessionId } from '@goodboy/types';
 import { getSessionDockGrid } from '@goodboy/db';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { commitAfterConfirm } from '../../runtime/state-writes/commitAfterConfirm';
-import type { SliceDeps } from '../../slice-types';
-import { DOCK_GRID_RECALL_KEY, dockGridRecalls, dockGridWrites } from './dockGridWrites';
+import { tauriDatabase } from '../../../../shared/lib/db';
+import { commitAfterConfirm } from '../../../runtime/state-writes/commitAfterConfirm';
+import type { SliceDeps } from '../../../slice-types';
+import { DOCK_GRID_RECALL_KEY, dockGridRecalls, dockGridWrites } from '../dockGridWrites';
 import { appliedDockGrid } from './appliedDockGrid';
-import { EMPTY_DRAWER_GRID } from './state';
-import { faceSelections } from '../session-view/faceSelections';
-import { storedFaceOf } from '../session-view/storedFaceOf';
+import { EMPTY_DRAWER_GRID } from '../state';
+import { faceSelections } from '../../session-view/faceSelections';
+import { storedFaceOf } from '../../session-view/storedFaceOf';
 
 type RecallParams = {
   readonly sessionId: SessionId;

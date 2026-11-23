@@ -61,12 +61,18 @@ stops reading the old one. `legacy-state-sunset.test.ts` fails when the
 running version reaches that release while the row is still listed: remove the
 read in the code, then delete the row.
 
-| State                                                                                                                                               | Old shape                                                    | New shape written since                                                                  | Old shape read until (excluded) |
-| --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------- | ------------------------------- |
-| settings `runs.defaultShape.<workspaceId>` and `runs.defaultShape.session.<sessionId>`                                                              | Start as in Run defaults: `auto`, `lead` or `plan`           | 0.39.1 writes nothing: the Plan row of the start form chooses per run                    | 0.41.0                          |
-| local storage `goodboy:right-drawer-width:v1`, `goodboy:reader-drawer-width:v1` and `goodboy:browser-drawer-width:v1` as the width of a dock column | One width per panel size, shared by every panel of that size | 0.40.0 writes the width of each tool's column on the session grid (`session_dock_grids`) | 0.42.0                          |
+| State                                                                                  | Old shape                                          | New shape written since                                               | Old shape read until (excluded) |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------- |
+| settings `runs.defaultShape.<workspaceId>` and `runs.defaultShape.session.<sessionId>` | Start as in Run defaults: `auto`, `lead` or `plan` | 0.39.1 writes nothing: the Plan row of the start form chooses per run | 0.41.0                          |
 
 Gone already:
+
+- The local storage keys `goodboy:right-drawer-width:v1`,
+  `goodboy:reader-drawer-width:v1` and `goodboy:browser-drawer-width:v1` no
+  longer start a dock column or a detail panel since 0.42.0. A column with no
+  width saved on the session grid (`session_dock_grids`, written since 0.40.0)
+  and a detail kind with no width of its own start at their tier default. The
+  keys stay the width of the one dock a page without a session grid shows.
 
 - The sidebar is gone in 0.40.0. The local storage keys
   `goodboy:left-sidebar-width:v3` and `goodboy:sessions-sidebar-collapsed`

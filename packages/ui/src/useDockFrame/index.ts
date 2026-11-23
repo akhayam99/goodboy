@@ -1,7 +1,12 @@
 import { useCallback, useRef } from 'react';
 import type { SolvedDockFrame } from '../dockGridFrameOf';
 import { DOCK_FOCUS_DETAIL, type DockGridCell, type DockGridSpec } from '../dockGridSpec';
-import type { DrawerPlacement, DrawerSizing, PanelPairLayout } from '../drawerGeometry';
+import {
+  DRAWER_TIERS,
+  type DrawerPlacement,
+  type DrawerSizing,
+  type PanelPairLayout,
+} from '../drawerGeometry';
 import type { SplitHandleProps } from '../components/SplitHandle';
 import { useDetailWidth } from '../useDetailWidth';
 import { useDockGrid, type DockSolveParams } from '../useDockGrid';
@@ -110,7 +115,10 @@ export const useDockFrame = ({
   return {
     cells,
     isOpen,
-    savedWidth: single?.savedWidth ?? tiers[single?.sizing ?? sizing].width,
+    savedWidth:
+      single === null
+        ? tiers[sizing].width
+        : (single.savedWidth ?? DRAWER_TIERS[single.sizing].fallback),
     detailWidths,
     layout,
     grid,

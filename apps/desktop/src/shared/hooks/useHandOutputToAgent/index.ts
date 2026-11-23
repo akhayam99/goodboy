@@ -35,7 +35,7 @@ export type HandOutputToAgent = {
   readonly queue: (params: QueueParams) => boolean;
 };
 
-const ASK_AGENT_LABEL = NAMES.sendToTheAgent;
+const ASK_AGENT_LABEL = NAMES.addToMessage;
 
 export const NO_OUTPUT_REASON = 'No output yet';
 
@@ -66,7 +66,7 @@ export const useHandOutputToAgent = ({
   const askLabel =
     isOnScreen || session === undefined
       ? ASK_AGENT_LABEL
-      : `${NAMES.sendToTheAgent} in ${sessionTitle({ session })}`;
+      : `${NAMES.addToMessage} in ${sessionTitle({ session })}`;
 
   const agentName = phaseRuns.find((run) => run.id === agentId)?.name ?? null;
 

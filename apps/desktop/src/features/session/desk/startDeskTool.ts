@@ -1,11 +1,12 @@
+import { formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import type { AppState } from '../../../../store/types';
-import { createLatestOnly } from '../../../../store/runtime/state-writes/latestOnly';
-import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
-import { openSessionTerminal } from '../../../terminal/openSessionTerminal';
-import { toggleSessionTerminal } from '../../../terminal/toggleSessionTerminal';
-import { scratchDirPrepare } from '../../../worktree/worktree';
+import { useAppStore } from '../../../store';
+import type { AppState } from '../../../store/types';
+import { createLatestOnly } from '../../../store/runtime/state-writes/latestOnly';
+import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import { openSessionTerminal } from '../../terminal/openSessionTerminal';
+import { toggleSessionTerminal } from '../../terminal/toggleSessionTerminal';
+import { scratchDirPrepare } from '../../worktree/worktree';
 import { isFaceShown } from './isFaceShown';
 
 type SessionParams = {
@@ -24,10 +25,6 @@ type MountParams = Params & {
   readonly state: AppState;
 };
 
-type ErrorParams = {
-  readonly error: unknown;
-};
-
 const deskToolStarts = createLatestOnly();
 
 const isDeskWithoutTool = ({ state, sessionId }: StateParams): boolean =>
@@ -40,9 +37,6 @@ const mountPathOf = ({ state, sessionId, mountId }: MountParams): string | null 
   (state.sessionProjectMounts[sessionId] ?? []).find(
     (mount) => mount.mountId === mountId && mount.isAttached && mount.diskState === 'present',
   )?.worktreePath ?? null;
-
-const messageOf = ({ error }: ErrorParams): string =>
-  error instanceof Error ? error.message : String(error);
 
 export const startDeskTool = async ({ sessionId, mountId }: Params): Promise<void> => {
   const state = useAppStore.getState();
@@ -62,7 +56,11 @@ export const startDeskTool = async ({ sessionId, mountId }: Params): Promise<voi
     return;
   }
   const claim = deskToolStarts.claim({ key: sessionId });
-  state.setDeskToolStart({ sessionId, start: { phase: 'preparing' } });
+  const before = state.deskToolStart[sessionId];
+  state.setDeskToolStart({
+    sessionId,
+    start: { phase: 'preparing', failure: before?.phase === 'failed' ? before.message : null },
+  });
   try {
     const cwd = await scratchDirPrepare({ sessionId });
     if (!claim.isCurrent()) {
@@ -77,7 +75,7 @@ export const startDeskTool = async ({ sessionId, mountId }: Params): Promise<voi
     if (claim.isCurrent()) {
       useAppStore.getState().setDeskToolStart({
         sessionId,
-        start: { phase: 'failed', message: messageOf({ error }) },
+        start: { phase: 'failed', message: formatError(error) },
       });
     }
   }

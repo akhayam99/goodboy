@@ -13,7 +13,7 @@ type Props = {
   readonly onClose?: () => void;
 };
 
-const ASLEEP_TITLE = 'Asleep, may reload when opened';
+const ASLEEP_TITLE = 'Asleep, opens at its address and may reload';
 
 type TitleParams = {
   readonly label: string;

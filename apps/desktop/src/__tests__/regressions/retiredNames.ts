@@ -231,7 +231,7 @@ const SHARED: ReadonlyArray<RetiredName> = [
   {
     id: 'ask-the-agent-about-this',
     pattern: /\bAsk the agent about this\b/,
-    use: NAMES.sendToTheAgent,
+    use: NAMES.addToMessage,
   },
   {
     id: 'turn-into-work',

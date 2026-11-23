@@ -124,7 +124,7 @@ export const useDockGrid = ({
 }: Params): DockGridLayout => {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const savedWidthOf = ({ cell }: CellParams): number =>
-    cell.savedWidth ?? tiers[cell.sizing].width;
+    cell.savedWidth ?? DRAWER_TIERS[cell.sizing].fallback;
   const sizingOf = new Map(columns.flat().map((cell) => [cell.key, cell.sizing] as const));
   const leadOf = ({ keys }: KeysParams): DrawerSizing =>
     dockLeadSizingOf({ sizings: keys.map((key) => sizingOf.get(key) ?? 'side') });

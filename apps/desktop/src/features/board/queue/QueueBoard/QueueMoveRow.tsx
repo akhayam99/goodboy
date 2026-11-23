@@ -1,3 +1,4 @@
+import { NAMES } from '../../../../shared/utils/names';
 import { Button, InteractiveRow, TruncatedText } from '@goodboy/ui';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import type { QueueMove } from '../needsYouOf';
@@ -10,7 +11,7 @@ type Props = {
   readonly onNotNow: () => void;
 };
 
-const NOT_NOW = 'Not now';
+const NOT_NOW = NAMES.notNow;
 
 export const QueueMoveRow = ({ move, kicker, isFocused, onOpen, onNotNow }: Props) => {
   const quiet = actionButtonLookOf({ verb: NOT_NOW, variant: 'ghost' });

@@ -158,9 +158,9 @@ const tileOf = ({ branch }: TileParams): HTMLElement => {
   return tile;
 };
 
-const TENANT = 'ak/eng-1190-tenant-limits';
+const TENANT = 'hl/tenant-limits';
 
-const LEDGER = 'ak/eng-1190-ledger-limits';
+const LEDGER = 'hl/ledger-limits';
 
 const mountIdOf = ({ branch }: TileParams): string => {
   const mount = (useAppStore.getState().sessionProjectMounts[COLUMN_SESSION_ID] ?? []).find(

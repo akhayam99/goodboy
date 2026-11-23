@@ -1,14 +1,14 @@
 import type { SessionId } from '@goodboy/types';
-import type { LatestClaim } from '../../runtime/state-writes/latestOnly';
-import type { SliceDeps } from '../../slice-types';
-import type { SessionFace } from '../session-view/types';
-import { gridWithout } from './gridWithout';
-import { isWorkspaceTool } from './isWorkspaceTool';
-import { slotAfterOpen } from './slotAfterOpen';
-import { slotWithGrid } from './slotWithGrid';
-import { EMPTY_DRAWER_GRID, type DrawerGrid, type DrawerSliceState } from './state';
+import type { LatestClaim } from '../../../runtime/state-writes/latestOnly';
+import type { SliceDeps } from '../../../slice-types';
+import type { SessionFace } from '../../session-view/types';
+import { gridWithout } from '../gridWithout';
+import { isWorkspaceTool } from '../isWorkspaceTool';
+import { slotAfterOpen } from '../slotAfterOpen';
+import { slotWithGrid } from '../slotWithGrid';
+import { EMPTY_DRAWER_GRID, type DrawerGrid, type DrawerSliceState } from '../state';
 import { parseStoredDeskDetail, parseStoredDockGrid, storedDockGridOf } from './storedDockGrid';
-import { UNSAVED_DRAWER_KINDS } from './unsavedDrawerKinds';
+import { UNSAVED_DRAWER_KINDS } from '../unsavedDrawerKinds';
 
 type ApplyParams = SliceDeps & {
   readonly sessionId: SessionId;

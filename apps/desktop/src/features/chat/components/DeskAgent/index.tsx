@@ -13,13 +13,12 @@ import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { PromptField } from '../../../../shared/components/PromptField';
-import { ChatView } from '../../../chat/components/ChatView';
-import { TranscriptReplyDock } from '../../../chat/components/AgentTranscriptDrawer/TranscriptReplyDock';
-import { TRANSCRIPT_DRAWER_COPY } from '../../../chat/components/AgentTranscriptDrawer/transcriptDrawerCopy';
-import { useTranscriptReply } from '../../../chat/components/AgentTranscriptDrawer/useTranscriptReply';
-import { useRevealToolCall } from '../../../chat/components/AgentTranscriptDrawer/useRevealToolCall';
-import { useWorkOf } from '../../../live-state/hooks/useWorkOf';
-import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
+import { ChatView } from '../ChatView';
+import { TranscriptReplyDock } from '../AgentTranscriptDrawer/TranscriptReplyDock';
+import { TRANSCRIPT_DRAWER_COPY } from '../AgentTranscriptDrawer/transcriptDrawerCopy';
+import { useTranscriptReply } from '../AgentTranscriptDrawer/useTranscriptReply';
+import { useRevealToolCall } from '../AgentTranscriptDrawer/useRevealToolCall';
+import { AGENT_KIND_META, classifyAgent } from '../../../session/agent-kind';
 import { DESK_AGENT_COPY } from './deskAgentCopy';
 
 type Props = {
@@ -27,9 +26,10 @@ type Props = {
   readonly agentId: AgentId;
   readonly focus: DeskAgentEntry['payload'];
   readonly onClose: () => void;
+  readonly phrase: string | null;
 };
 
-export const DeskAgent = ({ sessionId, agentId, focus, onClose }: Props) => {
+export const DeskAgent = ({ sessionId, agentId, focus, onClose, phrase }: Props) => {
   const bodyRef = useRef<HTMLDivElement>(null);
   const turn = focus.turn ?? null;
   useRevealToolCall({ bodyRef, toolUseId: focus.toolUseId ?? null, request: focus });
@@ -56,8 +56,6 @@ export const DeskAgent = ({ sessionId, agentId, focus, onClose }: Props) => {
         null) === 'ended',
   );
   const navigate = useAppStore((state) => state.navigate);
-  const { work } = useWorkOf({ sessionId });
-  const phrase = work.find((row) => row.agentId === agentId)?.phrase ?? null;
   const { draft, setDraft, isSending, send, files, notice } = useTranscriptReply({
     sessionId,
     agentId,

@@ -36,10 +36,10 @@ describe('MountSuggestionCard', () => {
 
     expect(
       screen.getByText(
-        'Add storefront-web so Scout can use it in this session. It adds a third folder to this session.',
+        'Mount storefront-web so Scout can use it in this session. It adds a third folder to this session.',
       ),
     ).toBeTruthy();
-    expect(screen.getByTestId('mount-suggestion-mount').textContent).toBe('Add project');
+    expect(screen.getByTestId('mount-suggestion-mount').textContent).toBe('Mount');
     expect(screen.queryByTestId('mount-suggestion-dismiss')).toBeNull();
   });
 
@@ -48,7 +48,7 @@ describe('MountSuggestionCard', () => {
 
     expect(
       screen.getByText(
-        'Add storefront-web so Scout can use it in this session. This request has already added two folders.',
+        'Mount storefront-web so Scout can use it in this session. This request has already added two folders.',
       ),
     ).toBeTruthy();
   });

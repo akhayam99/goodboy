@@ -1,5 +1,5 @@
 import type { TurnEvent } from '@goodboy/types';
-import { firstLineOf } from './firstLineOf';
+import { firstLineOf } from '../../../../shared/utils/firstLineOf';
 
 type Params = {
   readonly events: ReadonlyArray<TurnEvent>;

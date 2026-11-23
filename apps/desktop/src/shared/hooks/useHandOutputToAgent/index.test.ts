@@ -92,7 +92,7 @@ describe('useHandOutputToAgent', () => {
     const { result } = renderHook(() => useHandOutputToAgent({ sessionId: SESSION_ID }));
 
     expect(result.current.canHandOff).toBe(true);
-    expect(result.current.askLabel).toBe('Send to the agent');
+    expect(result.current.askLabel).toBe('Add to message');
     result.current.handOff(OUTPUT);
 
     const queued = useAppStore.getState().outputHandoffs[REVIEWER];
@@ -159,7 +159,7 @@ describe('useHandOutputToAgent', () => {
     useAppStore.setState({ navigate });
     const { result } = renderHook(() => useHandOutputToAgent({ sessionId: OTHER_SESSION_ID }));
 
-    expect(result.current.askLabel).toBe('Send to the agent in Refund webhook');
+    expect(result.current.askLabel).toBe('Add to message in Refund webhook');
     result.current.handOff(OUTPUT);
 
     expect(navigate).toHaveBeenCalledTimes(1);

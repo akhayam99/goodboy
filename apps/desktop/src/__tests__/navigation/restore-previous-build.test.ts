@@ -356,13 +356,15 @@ describe('the dock grid on a database the previous build left', () => {
     expect(selectGridTool({ state, kind: 'terminal' })).not.toBeNull();
   });
 
-  it('names the release that stops reading the width keys a dock column starts from', () => {
-    const row = readFileSync(join(SRC, '..', '..', '..', 'docs', 'versioning.md'), 'utf8')
-      .split('\n')
-      .find((line) => line.startsWith('|') && line.includes(RIGHT_DRAWER_STORAGE_KEY));
+  it('lists the width keys a dock column started from as gone, with no retired row left', () => {
+    const lines = readFileSync(join(SRC, '..', '..', '..', 'docs', 'versioning.md'), 'utf8').split(
+      '\n',
+    );
 
-    expect(row).toContain(READER_DRAWER_STORAGE_KEY);
-    expect(row?.split('|').map((cell) => cell.trim())[4]).toBe('0.42.0');
+    expect(
+      lines.some((line) => line.startsWith('|') && line.includes(RIGHT_DRAWER_STORAGE_KEY)),
+    ).toBe(false);
+    expect(lines.some((line) => line.includes(`\`${READER_DRAWER_STORAGE_KEY}\``))).toBe(true);
   });
 });
 

@@ -1,10 +1,15 @@
 import type { SessionId } from '@goodboy/types';
 import { saveSessionDockGrid } from '@goodboy/db';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { commitAfterConfirm } from '../../runtime/state-writes/commitAfterConfirm';
-import type { SliceDeps } from '../../slice-types';
-import { DOCK_GRID_MOVE_KEY, dockGridMoves, dockGridOwner, dockGridWrites } from './dockGridWrites';
-import { EMPTY_DRAWER_GRID, type DrawerGrid } from './state';
+import { tauriDatabase } from '../../../../shared/lib/db';
+import { commitAfterConfirm } from '../../../runtime/state-writes/commitAfterConfirm';
+import type { SliceDeps } from '../../../slice-types';
+import {
+  DOCK_GRID_MOVE_KEY,
+  dockGridMoves,
+  dockGridOwner,
+  dockGridWrites,
+} from '../dockGridWrites';
+import { EMPTY_DRAWER_GRID, type DrawerGrid } from '../state';
 import { storedDockGridOf } from './storedDockGrid';
 
 type Params = SliceDeps & {

@@ -34,7 +34,7 @@ const GROUP_LABEL: Record<BoardGroupId, string> = {
   'in-progress': 'In progress',
   merged: 'Merged',
   closed: 'Closed',
-  'not-on-branch': 'Not on a branch',
+  'not-on-branch': NAMES.notOnABranch,
 };
 
 type Params = {

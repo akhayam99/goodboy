@@ -59,7 +59,7 @@ import {
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { deskStackOf } from '../../../../store/slices/drawer/deskStackOf';
 import type { DrawerGrid, OpenDrawer } from '../../../../store/slices/drawer/state';
-import { storedDockGridOf } from '../../../../store/slices/drawer/storedDockGrid';
+import { storedDockGridOf } from '../../../../store/slices/drawer/dockGridMemory/storedDockGrid';
 import { watchSessionDockGrid } from './watchSessionDockGrid';
 
 const WS = brandId<WorkspaceId>({ value: 'ws-acme' });

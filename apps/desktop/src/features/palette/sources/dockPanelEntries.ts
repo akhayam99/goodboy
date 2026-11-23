@@ -5,7 +5,7 @@ import { useAppStore } from '../../../store';
 import { dockMovesOf } from '../../../store/slices/drawer/dockMovesOf';
 import { gridAtRest } from '../../../store/slices/drawer/gridAtRest';
 import type { DrawerGrid, WorkspaceToolKind } from '../../../store/slices/drawer/state';
-import { storedDockGridOf } from '../../../store/slices/drawer/storedDockGrid';
+import { storedDockGridOf } from '../../../store/slices/drawer/dockGridMemory/storedDockGrid';
 import { NAMES } from '../../../shared/utils/names';
 import type { PaletteEntry, PaletteStep } from '../types';
 

@@ -14,18 +14,20 @@ import {
   resetStoryStore,
   storySpies,
   STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
-import { useAppStore } from '../../../../../store';
 import { deskStackOf } from '../../../../../store/slices/drawer/deskStackOf';
 import { U50_DESK_KINDS_SCENES } from './deskKinds';
+
+let store: StoryStore;
 
 beforeAll(async () => {
   installFakeResizeObserver();
   Element.prototype.scrollIntoView = vi.fn();
-  await importStore();
+  store = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 beforeEach(async () => {
   window.localStorage.clear();
@@ -91,17 +93,15 @@ describe('the u50 desk kinds scenes', () => {
 
     expect(first?.getAttribute('data-desk-stack-panel')).toBe('agent');
     expect(second?.getAttribute('data-desk-stack-panel')).toBe('pr');
-    expect(within(panelOf({ stack, kind: 'agent' })).getByText('Open run')).toBeTruthy();
-    expect(
-      within(panelOf({ stack, kind: 'pr' })).getByRole('tablist', { name: 'Pull request views' }),
-    ).toBeTruthy();
+    within(panelOf({ stack, kind: 'agent' })).getByText('Open run');
+    within(panelOf({ stack, kind: 'pr' })).getByRole('tablist', { name: 'Pull request views' });
   });
 
   it('gives the pull request panel one action and no rerun, send or more menu', async () => {
     const stack = await show({ name: 'u50-desk-kinds-light' });
     const pr = panelOf({ stack, kind: 'pr' });
 
-    expect(within(pr).getByRole('button', { name: 'Open pull request' })).toBeTruthy();
+    within(pr).getByRole('button', { name: 'Open pull request' });
     expect(within(pr).queryByRole('button', { name: /rerun/i })).toBeNull();
     expect(within(pr).queryByRole('button', { name: /^send/i })).toBeNull();
     expect(within(pr).queryByRole('button', { name: /more/i })).toBeNull();
@@ -115,7 +115,7 @@ describe('the u50 desk kinds scenes', () => {
       within(panelOf({ stack, kind: 'pr' })).getByRole('tab', { name: 'Conversation' }),
     );
 
-    const state = useAppStore.getState();
+    const state = store.getState();
     const pair = deskStackOf({ top: state.drawer, back: state.drawerBack });
     expect(pair?.pr.payload.tab).toBe('conversation');
     expect(pair?.agent.kind).toBe('transcript');
@@ -132,8 +132,8 @@ describe('the u50 desk kinds scenes', () => {
     row.setAttribute('data-tool-use-ids', toolUseId);
     body.append(row);
     const pair = deskStackOf({
-      top: useAppStore.getState().drawer,
-      back: useAppStore.getState().drawerBack,
+      top: store.getState().drawer,
+      back: store.getState().drawerBack,
     });
     if (pair === null) {
       throw new Error('The desk pair should be open');
@@ -142,7 +142,7 @@ describe('the u50 desk kinds scenes', () => {
     scroll.mockClear();
 
     act(() => {
-      useAppStore.getState().openDrawer({
+      store.getState().openDrawer({
         kind: 'transcript',
         sessionId: pair.agent.sessionId,
         payload: { agentId: pair.agent.payload.agentId, toolUseId },
@@ -159,7 +159,7 @@ describe('the u50 desk kinds scenes', () => {
     fireEvent.click(within(panelOf({ stack, kind: 'pr' })).getByRole('button', { name: /close/i }));
 
     expect(document.querySelector('[data-desk-stack]')).toBeNull();
-    expect(await screen.findByText('Open run')).toBeTruthy();
+    await screen.findByText('Open run');
     expect(screen.queryByText('Open pull request')).toBeNull();
   });
 });

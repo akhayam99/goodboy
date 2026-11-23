@@ -3,6 +3,7 @@ import { ChevronRight } from '@goodboy/ui/icons';
 import { Button, cn, Eyebrow, ICON_SIZE, IconButton, tintClasses } from '@goodboy/ui';
 import type { MaterializationDeferralCause } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly projectName: string;
@@ -20,7 +21,7 @@ type SentenceParams = {
 };
 
 const consequenceSentence = ({ projectName, agentName, cause }: SentenceParams): string => {
-  const lead = `Add ${projectName} so ${agentName} can use it in this session`;
+  const lead = `Mount ${projectName} so ${agentName} can use it in this session`;
   switch (cause) {
     case 'batch':
       return `${lead}. This request has already added two folders.`;
@@ -89,11 +90,11 @@ export const MountSuggestionCard = ({
           variant="secondary"
           size="sm"
           isBusy={isMounting}
-          busyLabel="Adding"
+          busyLabel="Mounting"
           onClick={() => void handleMount()}
           data-testid="mount-suggestion-mount"
         >
-          Add project
+          {NAMES.mount}
         </Button>
         <IconButton
           icon={ChevronRight}

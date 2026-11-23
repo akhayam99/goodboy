@@ -1,3 +1,4 @@
+import { NAMES } from '../../../../shared/utils/names';
 import {
   Button,
   Chip,
@@ -118,7 +119,7 @@ export const GoalTeaser = ({ session }: Props) => {
               Write title and goal
             </Button>
             <Button variant="ghost" size="sm" onClick={hint.dismiss}>
-              Not now
+              {NAMES.notNow}
             </Button>
           </>
         }

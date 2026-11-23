@@ -3,7 +3,7 @@ import { useAppStore, type SessionFace } from '../../../../store';
 import { lensPlace } from '../../../../store/slices/navigation/canonicalLocation';
 import { deskLandingOf } from './deskLandingOf';
 import { focusDeskControl } from './focusDeskControl';
-import { isFaceShown } from './isFaceShown';
+import { isFaceShown } from '../../desk/isFaceShown';
 import { deskLines } from './useDeskOwner/deskLines';
 import { isDeskElsewhere } from './useDeskOwner/isDeskElsewhere';
 

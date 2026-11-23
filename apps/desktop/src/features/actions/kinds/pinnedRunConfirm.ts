@@ -18,7 +18,7 @@ export const pinnedRunConfirm = ({ facts }: Params): ActionConfirm => {
   return {
     title: `Detach ${facts.label}?`,
     description: facts.dirty > 0 ? `${warning} The ${kept} stay on disk.` : warning,
-    confirmLabel: PINNED_RUN_COPY.detachAnyway,
+    confirmLabel: PINNED_RUN_COPY.unmountAnyway,
     role: 'alert',
     altActionId: 'mount.stopPinnedRun',
     altLabel: PINNED_RUN_COPY.stopRunFirst,

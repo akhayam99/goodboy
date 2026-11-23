@@ -29,7 +29,7 @@ import {
 let useAppStore: Awaited<ReturnType<typeof importStore>>;
 let SessionOverviewPane: typeof import('../SessionOverviewPane').SessionOverviewPane;
 
-const TENANT = 'ak/eng-1190-tenant-limits';
+const TENANT = 'hl/tenant-limits';
 const SHARED_PATH = 'src/limits/tenant.ts';
 
 type OverlapParams = {

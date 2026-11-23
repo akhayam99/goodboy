@@ -80,7 +80,7 @@ const NINE: ReadonlyArray<StorySpec> = [
   {
     key: 'tenant-limits',
     repo: 'payments-api',
-    branch: 'ak/eng-1190-tenant-limits',
+    branch: 'hl/tenant-limits',
     request: { number: 309, isDraft: true, checks: 'success' },
     push: { kind: 'in-sync' },
     ahead: 5,

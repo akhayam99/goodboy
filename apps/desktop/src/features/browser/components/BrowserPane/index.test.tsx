@@ -31,7 +31,7 @@ vi.mock('../../../../shared/lib/db', async () =>
   (await import('../../../../store/storyHarness')).sqliteDbLibModuleMock(),
 );
 
-const sendRow = (): string => `Send to the agent${shortcutGlyphs('browser.sendToAgent')}`;
+const sendRow = (): string => `Add to message${shortcutGlyphs('browser.sendToAgent')}`;
 
 const WORKSPACE_ID = nextWorkspaceId();
 const SESSION_ID = nextSessionId();

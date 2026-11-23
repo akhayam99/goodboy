@@ -47,7 +47,7 @@ export const TerminalCommandStrip = ({
             </Button>
           )}
           <Button variant="ghost" size="sm" onClick={onNotNow}>
-            Not now
+            {NAMES.notNow}
           </Button>
         </div>
       }

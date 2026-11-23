@@ -14,11 +14,12 @@ import type { PullRequestDrawerTab } from '../../../../store/slices/drawer/state
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { ChecksFailedNotice } from '../../../branch/components/ChecksFailedNotice';
+import { ChecksFailedNotice } from '../ChecksFailedNotice';
 import { DeskPrChecks } from './DeskPrChecks';
 import { DeskPrConversation } from './DeskPrConversation';
 import { DESK_PR_COPY } from './deskPrCopy';
 import { useDeskPrSource } from './useDeskPrSource';
+import type { RenderPrChecks } from './types';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -26,6 +27,7 @@ type Props = {
   readonly tab: PullRequestDrawerTab;
   readonly check: string | null;
   readonly onClose: () => void;
+  readonly renderChecks: RenderPrChecks;
 };
 
 type TabParams = {
@@ -47,7 +49,7 @@ const TABS = [
   readonly label: string;
 }>;
 
-export const DeskPr = ({ sessionId, mountId, tab, check, onClose }: Props) => {
+export const DeskPr = ({ sessionId, mountId, tab, check, onClose, renderChecks }: Props) => {
   const source = useDeskPrSource({ sessionId, mountId });
   const pr = source.request;
   const mountPath = useAppStore(
@@ -111,6 +113,7 @@ export const DeskPr = ({ sessionId, mountId, tab, check, onClose }: Props) => {
         prUrl={pr?.url ?? ''}
         host={hostLabel === null ? 'github' : source.host}
         isLoading={view.kind === 'loading'}
+        renderChecks={renderChecks}
       />
     );
   };

@@ -1,6 +1,7 @@
 import { formatTokens, formatUsd } from '@goodboy/ui';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 import { NAMES } from '../../../../shared/utils/names';
+import { contextShareOf } from '../../../../shared/utils/contextShareOf';
 import type { UsageFigures } from '../../utils/usageFigures';
 import type { TurnFooterData } from './useTurnFooter';
 
@@ -94,7 +95,7 @@ export const usageDetailRows = ({
         ? missing({ label: NAMES.contextWindow, reason: 'context size not reported yet' })
         : present({
             label: NAMES.contextWindow,
-            value: `${formatTokens(data.contextTokens)} of ${formatTokens(contextWindow)} · ${Math.round((data.contextTokens / contextWindow) * 100)}%`,
+            value: `${formatTokens(data.contextTokens)} of ${formatTokens(contextWindow)} · ${Math.round((contextShareOf({ tokens: data.contextTokens, window: contextWindow }) ?? 0) * 100)}%`,
           }),
     );
   }

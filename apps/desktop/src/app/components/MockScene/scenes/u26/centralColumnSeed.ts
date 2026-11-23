@@ -76,8 +76,8 @@ const SUMMARY_TEXT = [
   '## Next',
   '- Review the retry fix.',
 ].join('\n');
-const API_BRANCH = 'ak/eng-1190-tenant-limits';
-const LEDGER_BRANCH = 'ak/eng-1190-ledger-limits';
+const API_BRANCH = 'hl/tenant-limits';
+const LEDGER_BRANCH = 'hl/ledger-limits';
 
 const API_PROJECT_ID = brandId<ProjectId>({ value: 'mock-central-project-payments-api' });
 const LEDGER_PROJECT_ID = brandId<ProjectId>({ value: 'mock-central-project-ledger-core' });

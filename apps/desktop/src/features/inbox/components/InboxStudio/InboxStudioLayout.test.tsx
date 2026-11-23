@@ -74,13 +74,13 @@ describe('InboxStudioLayout', () => {
     expect(localStorage.getItem(RIGHT_DRAWER_STORAGE_KEY)).toBeNull();
   });
 
-  it('starts the task pane from the old reader width, and keeps its own once resized', () => {
+  it('starts the task pane at the reader default, not at the old reader key, and keeps its own once resized', () => {
     localStorage.setItem(READER_DRAWER_STORAGE_KEY, '600');
     stubColumnWidth(1600);
     const view = render(shell({ drawer: 'record' }));
     const separator = () => screen.getByRole('separator', { name: 'Resize the task pane' });
 
-    expect(separator().getAttribute('aria-valuenow')).toBe('600');
+    expect(separator().getAttribute('aria-valuenow')).toBe('720');
     fireEvent.keyDown(separator(), { key: 'ArrowLeft' });
     const saved = localStorage.getItem('goodboy:detail-width:studio-inbox:v1');
     view.unmount();

@@ -266,7 +266,7 @@ export const seedRunningList = (): void => {
     payload: {
       agentId: agentIdOf({ key: 'rewriter' }),
       origin: 'rebase',
-      branch: 'ak/eng-1190-tenant-limits',
+      branch: 'hl/tenant-limits',
       mountId,
       reason: 'origin-moved',
     },

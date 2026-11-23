@@ -5,7 +5,7 @@ import { useRowFocusKeys } from '../../../../shared/hooks/useRowFocusKeys';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import type { OverviewMoves } from '../../central/next/overviewMovesOf';
 import type { ActionCardActions } from '../../central/next/useActionCardActions';
-import { isFaceShown } from '../../components/SessionDesk/isFaceShown';
+import { isFaceShown } from '../../desk/isFaceShown';
 
 type Params = {
   readonly sessionId: SessionId;

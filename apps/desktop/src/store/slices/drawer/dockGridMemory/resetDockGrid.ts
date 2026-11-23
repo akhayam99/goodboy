@@ -1,8 +1,8 @@
 import type { SessionId } from '@goodboy/types';
-import type { SliceDeps } from '../../slice-types';
+import type { SliceDeps } from '../../../slice-types';
 import { committedDockGrid } from './committedDockGrid';
-import { gridAtRest } from './gridAtRest';
-import { EMPTY_DRAWER_GRID } from './state';
+import { gridAtRest } from '../gridAtRest';
+import { EMPTY_DRAWER_GRID } from '../state';
 import { storedDockGridOf } from './storedDockGrid';
 
 type ResetParams = {

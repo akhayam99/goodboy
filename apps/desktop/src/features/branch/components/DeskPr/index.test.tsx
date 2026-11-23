@@ -11,8 +11,14 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { brandId, type IsoDateTime, type MountId, type PullRequestState } from '@goodboy/types';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  brandId,
+  type IsoDateTime,
+  type MountId,
+  type PrDetail,
+  type PullRequestState,
+} from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -23,6 +29,7 @@ import { aMountGithub } from '../../../../store/slices/github/testing/aMountGith
 import { SESSION_ID } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { seedResolveGitlabScene } from '../../../../app/components/MockScene/scenes/resolveGitlabSeed';
 import type { PullRequestDrawerTab } from '../../../../store/slices/drawer/state';
+import { renderPrChecks } from '../../../../app/components/renderPrChecks';
 import { DeskPr } from '.';
 
 const MOUNT_ID = brandId<MountId>({ value: 'mount-payments-api' });
@@ -66,7 +73,14 @@ type ShowParams = {
 
 const show = ({ tab }: ShowParams) =>
   render(
-    <DeskPr sessionId={SESSION_ID} mountId={MOUNT_ID} tab={tab} check={null} onClose={() => {}} />,
+    <DeskPr
+      sessionId={SESSION_ID}
+      mountId={MOUNT_ID}
+      tab={tab}
+      check={null}
+      onClose={() => {}}
+      renderChecks={renderPrChecks}
+    />,
   );
 
 type GithubParams = {
@@ -124,6 +138,44 @@ describe('the pull request panel on the Desk', () => {
       force: true,
       mountId: MOUNT_ID,
     });
+  });
+
+  it.each([
+    {
+      detailsUrl: 'https://buildkite.com/harborline/payments-api/builds/42',
+      label: 'Open on buildkite.com',
+    },
+    { detailsUrl: 'file:///checks/build.log', label: 'Open log' },
+  ])('labels the unreadable check log link $label', async ({ detailsUrl, label }) => {
+    seedGithub({
+      detailError: null,
+      detailFetchedAt: brandId<IsoDateTime>({ value: '2026-10-07T08:00:00.000Z' }),
+    });
+    const mount = store.getState().mountGithub[MOUNT_ID];
+    if (mount === undefined) {
+      throw new Error('The mount must be seeded.');
+    }
+    const detail: PrDetail = {
+      prNumber: PR.number,
+      comments: [],
+      reviews: [],
+      reviewRequests: [],
+      checks: [
+        {
+          name: 'integration-tests',
+          conclusion: 'failure',
+          detailsUrl,
+          durationMs: null,
+        },
+      ],
+    };
+    store.setState({ mountGithub: { [MOUNT_ID]: { ...mount, detail } } });
+
+    show({ tab: 'checks' });
+
+    const log = await screen.findByRole('region', { name: 'Log of integration-tests' });
+    await within(log).findByText('Not readable here.');
+    within(log).getByRole('button', { name: label });
   });
 
   it('reads a GitLab merge request and its comments instead of saying there is none', () => {

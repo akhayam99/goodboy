@@ -1,9 +1,9 @@
 import type { SessionId } from '@goodboy/types';
 import { saveSessionDockGrid } from '@goodboy/db';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { commitAfterConfirm } from '../../runtime/state-writes/commitAfterConfirm';
-import type { SliceDeps } from '../../slice-types';
-import { dockGridWrites } from './dockGridWrites';
+import { tauriDatabase } from '../../../../shared/lib/db';
+import { commitAfterConfirm } from '../../../runtime/state-writes/commitAfterConfirm';
+import type { SliceDeps } from '../../../slice-types';
+import { dockGridWrites } from '../dockGridWrites';
 
 type RememberParams = {
   readonly sessionId: SessionId;

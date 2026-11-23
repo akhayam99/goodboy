@@ -2012,6 +2012,7 @@ session up again in Goodboy.
   | Fix with an agent | Give work to an agent       | Hand it to an agent                                  |
   | Send to Lead      | Message the active Lead     | Send to Implementer, Fix with the Implementer        |
   | Start new Lead    | Start a Lead with the item  | Resolve with the Lead                                |
+  | Add to message    | Attach to the composer      | Send to the agent                                    |
 
   A **Send to X** verb always sends. A verb that only attaches to the composer
   is **Add to message**. **Message the Implementer** and **Message both

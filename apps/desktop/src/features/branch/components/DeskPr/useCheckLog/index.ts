@@ -3,7 +3,7 @@ import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
-import { fetchFailedCheckLog } from '../../../../branch/checks/fetchFailedCheckLog';
+import { fetchFailedCheckLog } from '../../../checks/fetchFailedCheckLog';
 
 type Params = {
   readonly sessionId: SessionId;

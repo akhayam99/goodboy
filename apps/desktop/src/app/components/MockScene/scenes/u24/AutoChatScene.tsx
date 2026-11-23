@@ -141,7 +141,7 @@ export const AutoChatScene = ({
         buttons
           .find((button) => {
             const label = button.textContent ?? '';
-            return label.startsWith('Add ') && label !== 'Add project';
+            return label.startsWith('Mount ');
           })
           ?.click();
       }, MOUNT_CLICK_DELAY_MS);

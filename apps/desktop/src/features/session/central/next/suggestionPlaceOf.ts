@@ -1,21 +1,13 @@
 import type { OpenQuestionId } from '@goodboy/types';
-import type { BranchTab } from '../../../../store/slices/navigation/types';
 import type { SessionSuggestion } from '../../../suggestions/types';
 
 export type SuggestionPlace =
   | Readonly<{ kind: 'questions'; questionId: OpenQuestionId | null }>
-  | Readonly<{ kind: 'branch'; mountId: string; tab: BranchTab }>;
+  | Readonly<{ kind: 'branch'; mountId: string }>;
 
 type Params = {
   readonly suggestion: SessionSuggestion;
   readonly mountId: string | null;
-};
-
-const TAB: Partial<Record<SessionSuggestion['kind'], BranchTab>> = {
-  'fix-checks': 'checks',
-  'resolve-threads': 'comments',
-  'mark-ready': 'pr',
-  'merge-pr': 'pr',
 };
 
 export const suggestionPlaceOf = ({ suggestion, mountId }: Params): SuggestionPlace | null => {
@@ -25,5 +17,5 @@ export const suggestionPlaceOf = ({ suggestion, mountId }: Params): SuggestionPl
   if (mountId === null || suggestion.kind === 'rebase-project') {
     return null;
   }
-  return { kind: 'branch', mountId, tab: TAB[suggestion.kind] ?? 'commits' };
+  return { kind: 'branch', mountId };
 };

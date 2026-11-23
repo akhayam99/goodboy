@@ -38,7 +38,7 @@ let useAppStore: Awaited<ReturnType<typeof importStore>>;
 let SessionOverviewPane: typeof import('../SessionOverviewPane').SessionOverviewPane;
 let SessionContextCards: typeof import('../../../../app/components/SessionContextCards').SessionContextCards;
 
-const TENANT = 'ak/eng-1190-tenant-limits';
+const TENANT = 'hl/tenant-limits';
 
 const ACTIONS = `payments-api · ${TENANT} actions`;
 
@@ -225,7 +225,7 @@ describe('the branch menu on an Overview tile', () => {
     }
     expect(menu.textContent).toContain('The 2 uncommitted changes stay on disk.');
     expect(screen.queryByRole('dialog')).toBeNull();
-    const confirm = within(menu).getByRole('button', { name: 'Detach anyway' });
+    const confirm = within(menu).getByRole('button', { name: 'Unmount anyway' });
     await act(async () => {
       fireEvent.click(confirm);
       await Promise.resolve();
@@ -290,7 +290,7 @@ describe('the branch menu on an Overview tile', () => {
       });
       fireEvent.click(dots);
       fireEvent.click(await screen.findByRole('menuitem', { name: /Close branch/ }));
-      const confirm = await screen.findByRole('button', { name: 'Detach anyway' });
+      const confirm = await screen.findByRole('button', { name: 'Unmount anyway' });
       await act(async () => {
         fireEvent.click(confirm);
         await Promise.resolve();

@@ -19,12 +19,6 @@ type TextBlockParams = {
 
 const LIST_MARK = /^(?:[#>*+-]+|\d+[.)])\s+/;
 
-const firstLineOf = ({ text }: TextParams): string =>
-  text
-    .split('\n')
-    .map((line) => line.trim())
-    .find((line) => line !== '') ?? '';
-
 const stepLineOf = ({ text }: TextParams): string => {
   const lines = text
     .split('\n')
@@ -53,12 +47,12 @@ export const agentStepPhraseOf = ({ transcript }: Params): string => {
   for (let index = transcript.length - 1; index >= 0; index -= 1) {
     const event = transcript[index];
     if (event?.kind === 'tool_call_start' && !endedToolIds.has(event.toolUseId)) {
-      const command = toolCommandOf({ input: event.input });
-      if (command !== null) {
-        return `Running ${firstLineOf({ text: command })}`;
-      }
       return workingPhraseOf({
-        tool: { name: event.toolName, command: null, path: toolFilePath({ input: event.input }) },
+        tool: {
+          name: event.toolName,
+          command: toolCommandOf({ input: event.input }),
+          path: toolFilePath({ input: event.input }),
+        },
         project: null,
       });
     }

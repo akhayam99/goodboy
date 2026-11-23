@@ -313,10 +313,10 @@ export const useSuggestionActions = ({
     if (suggestion.kind === 'mount-project') {
       return {
         primary: {
-          label: 'Add project',
-          shortLabel: 'Add',
+          label: NAMES.mount,
+          shortLabel: NAMES.mount,
           isDisabled: false,
-          failureTitle: "Couldn't add the folder",
+          failureTitle: "Couldn't mount the project",
           run: () => proposalActions.mount(proposalTarget({ suggestion })),
         },
         onDismiss: async () => proposalActions.dismiss(proposalTarget({ suggestion })),

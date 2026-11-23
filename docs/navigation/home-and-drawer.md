@@ -181,9 +181,7 @@ an artifact document keep one width per artifact, `<kind>:<artifactId>`
 (`detailWidthIdOf`), so widening one report never widens another. While a
 detail closes it keeps the width it showed, so it never jumps on its way out.
 A kind with no
-width of its own starts from the tier key its size had before 0.41.0
-(`TIER_WIDTH_KEYS`), so nothing jumps after the update; no panel writes those
-keys any more. Each width is clamped on read and written once when a drag ends;
+width of its own starts at its tier default. Each width is clamped on read and written once when a drag ends;
 a double click on the handle resets that kind to the tier default (400 or 720).
 No drawer expands over the whole column. `drawerSizingOf` reads the tier from
 the kind table. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
@@ -686,7 +684,7 @@ and the log, which follows the tail until you scroll up and then offers
 `Scroll to latest`. Error lines carry a danger bar and an `err` prefix, and a long token (a path, a
 hash) wraps at the edge instead of breaking every word. The status row under the log
 says `Following output` while it runs and the exit, time and Copy output after.
-`Send to the agent` sits next to it, while the run is live too, and
+`Add to message` sits next to it, while the run is live too, and
 hands the log to the session's agent: it queues a text attachment titled
 `Output of <script>, <exit>, <project> on <branch>` (`outputHandoffOf`), opens
 the session when it is not on screen, and the composer takes it as a chip,
@@ -744,11 +742,10 @@ their own in the window; they save nothing.
   the waiting change at once, still on that session.
 - A column handle writes the width on the grid (`resizeDockColumn`), not in
   the shared `goodboy:*-drawer-width:v1` keys. A double click writes the tier
-  default. A column with no saved width starts from its tier's key: the keys
-  are read that way until 0.42.0, then retired
-  ([versioning.md](../versioning.md#retired-state)). No panel writes those
-  keys any more: a detail keeps its width per kind, so a drag on Ask never
-  changes where a Terminal starts.
+  default. A column with no saved width starts at its tier default; the old
+  shared keys stopped seeding it in 0.42.0
+  ([versioning.md](../versioning.md#retired-state)). A detail keeps its width
+  per kind, so a drag on Ask never changes where a Terminal starts.
 - The face of the session (Overview or Desk) rides in the same row as an
   optional `face` field of version 1, written only for the Desk. A change of
   face waits 300ms and saves the row like a change of grid. Entering a session

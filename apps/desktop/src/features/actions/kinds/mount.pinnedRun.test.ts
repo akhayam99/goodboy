@@ -105,11 +105,11 @@ const closeOf = ({ overrides }: { readonly overrides: Partial<MountFacts> }) =>
   );
 
 describe('detaching a branch an unfinished run still writes to', () => {
-  it('names the run and offers Stop run first or Detach anyway', () => {
+  it('names the run and offers Stop run first or Unmount anyway', () => {
     const confirm = closeOf({ overrides: PINNED })?.confirm;
 
     expect(confirm?.description).toContain(`The run "${RUN_TITLE}" still writes to this branch.`);
-    expect(confirm?.confirmLabel).toBe('Detach anyway');
+    expect(confirm?.confirmLabel).toBe('Unmount anyway');
     expect(confirm?.altActionId).toBe('mount.stopPinnedRun');
     expect(confirm?.altLabel).toBe('Stop run first');
   });

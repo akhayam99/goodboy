@@ -63,6 +63,17 @@ const renderScene = ({ name }: RenderSceneParams) => {
   );
 };
 
+type DrawerParams = {
+  readonly drawer: HTMLElement;
+};
+
+const shellTabsIn = ({ drawer }: DrawerParams): ReadonlyArray<HTMLElement> => {
+  const worktrees = within(drawer).queryByRole('tablist', { name: 'Worktrees' });
+  return within(drawer)
+    .getAllByRole('tab')
+    .filter((tab) => worktrees === null || !worktrees.contains(tab));
+};
+
 describe('the terminal drawer scenes', () => {
   it('registers both scenes', () => {
     for (const [id, scene] of Object.entries(U25_B_TERMINAL_DRAWER_SCENES)) {
@@ -85,7 +96,7 @@ describe('the terminal drawer scenes', () => {
     expect(after.map((tab) => tab.id)).toEqual(before.map((tab) => tab.id));
     expect(drawer?.kind === 'terminal' ? drawer.payload.terminalId : null).toMatch(/::t2$/);
     expect(screen.getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
-      'notify-relay · hl/surface-retry-state',
+      'hl/surface-retry-state· gb-2p6w0z',
     );
   });
 
@@ -96,28 +107,27 @@ describe('the terminal drawer scenes', () => {
     const drawer = screen.getByRole('region', { name: 'Terminal' });
     expect(within(drawer).queryByTestId('worktree-chip')).toBeNull();
     expect(within(drawer).getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
-      'payments-api · hl/fix-webhook-idempotency',
+      'hl/fix-webhook-idempotency· gb-7k2q9x',
     );
     expect(within(drawer).queryByRole('heading', { name: 'Terminal' })).toBeNull();
     expect(within(drawer).queryByRole('combobox', { name: 'New terminal in' })).toBeNull();
     expect(within(drawer).getByRole('button', { name: 'Open full page' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Close' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'New tab on payments-api' })).toBeDefined();
-    const tabs = within(drawer).getAllByRole('tab');
+    const tabs = shellTabsIn({ drawer });
     expect(tabs.map((tab) => tab.textContent)).toEqual(['shell', 'dev server']);
     expect(within(drawer).getByTestId('terminal-panel').getAttribute('data-terminal')).toMatch(
       /::t1$/,
     );
   });
 
-  it('names the scope in the header, never the worktree folder hash', async () => {
+  it('names the branch and the worktree folder in the header', async () => {
     renderScene({ name: 'terminal-drawer-session' });
     await settle();
 
     const drawer = screen.getByRole('region', { name: 'Terminal' });
     const picker = within(drawer).getByRole('combobox', { name: 'Terminal folder' });
-    expect(picker.textContent).toBe('payments-api · hl/fix-webhook-idempotency');
-    expect(picker.textContent).not.toContain('gb-7k2q9x');
+    expect(picker.textContent).toBe('hl/fix-webhook-idempotency· gb-7k2q9x');
     const header = drawer.querySelector('[data-drawer-header-row]');
     expect(header?.contains(within(drawer).getByRole('button', { name: 'Open full page' }))).toBe(
       true,
@@ -152,7 +162,7 @@ describe('the terminal drawer scenes', () => {
     expect(tabs.at(-1)?.cwd).toBe('~/code/harborline/payments-api/.goodboy/worktrees/gb-7k2q9x');
     expect(tabs.at(-1)?.title).toBe('shell 2');
     const drawer = screen.getByRole('region', { name: 'Terminal' });
-    expect(within(drawer).getAllByRole('tab')).toHaveLength(3);
+    expect(shellTabsIn({ drawer })).toHaveLength(3);
   });
 
   it('keeps the drawer open while another tab of the worktree remains', async () => {
@@ -164,7 +174,7 @@ describe('the terminal drawer scenes', () => {
     await settle();
 
     expect(store.getState().drawer?.kind).toBe('terminal');
-    expect(within(drawer).getAllByRole('tab')).toHaveLength(1);
+    expect(shellTabsIn({ drawer })).toHaveLength(1);
   });
 
   it('keeps the tab in the list when the drawer closes', async () => {
