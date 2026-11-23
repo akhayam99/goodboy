@@ -707,9 +707,11 @@ between Settings and Report. It is passive, not a control: no button, no hover, 
 focus, no tooltip, `aria-hidden`. It is not a door to Help: the Guide and What's
 new open from Help in the menu bar and from Search or run, and no mark in the rail
 is lit while a Help tab is open. The rail shows no version line: it is in the Update
-card, in Settings and in What's new. At the 700px minimum window the foot fits with
-the Update mark above the signature: the wide rail needs 642px of the 664px under
-the top bar (`u50-logo-foot-*` scenes).
+card, in Settings and in What's new. At the 700px minimum window, with no host
+reachability line under the top bar, the foot fits with the Update mark above the
+signature: the wide rail needs 642px of the 664px under the 36px top bar
+(`u50-logo-foot-*` scenes). A GitLab or Bitbucket reachability line
+(`HostReachabilityLine`) sits under the top bar and takes its height from the rail.
 
 `useRailFootEffects` (`app/components/ShellLeft/useRailFootEffects`) keeps what the
 logo used to carry: the restart when idle (`useRestartWhenIdle`), the anchor the
