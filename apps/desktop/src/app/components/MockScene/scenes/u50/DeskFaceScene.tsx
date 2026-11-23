@@ -8,6 +8,7 @@ import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDraw
 import { selectDrawerPlacement } from '../../../../../store/slices/drawer/selectDrawerPlacement';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
+import { deskLines } from '../../../../../features/session/components/SessionDesk/useDeskOwner/deskLines';
 import { ScenePlacesRail } from '../ScenePlacesRail';
 import { COLUMN_SESSION_ID, seedCentralColumn } from '../u26/centralColumnSeed';
 import { DeskFacePane } from './DeskFacePane';
@@ -28,6 +29,9 @@ export const DeskFaceScene = ({ theme, face }: Props) => {
     const state = useAppStore.getState();
     state.navigate({ to: sessionPlace({ sessionId: COLUMN_SESSION_ID }) });
     state.setSessionFace({ sessionId: COLUMN_SESSION_ID, face });
+    if (face === 'desk') {
+      deskLines.requestLanding({ sessionId: COLUMN_SESSION_ID });
+    }
     setIsReady(true);
   }, [theme, face]);
   if (!isReady) {

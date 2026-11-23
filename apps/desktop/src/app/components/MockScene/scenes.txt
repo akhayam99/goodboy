@@ -1451,6 +1451,12 @@ u50-desk-owns-asleep-dark
 u50-desk-owns-asleep-light
 u50-desk-owns-awake-dark
 u50-desk-owns-awake-light
+u50-desk-nav-closed-dark
+u50-desk-nav-closed-light
+u50-desk-nav-elsewhere-dark
+u50-desk-nav-elsewhere-light
+u50-desk-nav-moved-dark
+u50-desk-nav-moved-light
 u50-fleet-rows-dark
 u50-fleet-rows-light
 u50-merge-train-ready-dark
