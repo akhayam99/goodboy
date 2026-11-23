@@ -140,7 +140,7 @@ describe('the two faces of a session', () => {
     expect(entries()).toBe(before);
   });
 
-  it('changes face at once, before the tool it opens has answered', () => {
+  it('changes face at once, before the tool it opens has answered', async () => {
     renderFace();
 
     act(() => {
@@ -148,6 +148,9 @@ describe('the two faces of a session', () => {
     });
 
     expect(deskShown()).toBe(true);
+    await act(async () => {
+      await Promise.resolve();
+    });
     expect(
       store
         .getState()

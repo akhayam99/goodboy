@@ -356,7 +356,9 @@ says there are no tabs yet, with no Open full page, since that page would be
 empty too. It stays open across every move, beside any page
 but the Browser page, and closes when the session it shows is archived or
 deleted (`slotAfterSessionGone`). Pressing the tool again, the X or Esc on the pane closes
-it; Esc inside the page goes to the page.
+it; Esc inside the page goes to the page. On the Desk the Browser is a tool like
+the others: ⌘W closes it, and when it was the last tool the Desk closes with
+**Desk closed** and **Reopen**, which brings it back on its address.
 
 - **The width**: the pane opens at 720 and its edge drags from 480 to the room
   the session column leaves (it keeps 560 and the gutters), so on a wide window
