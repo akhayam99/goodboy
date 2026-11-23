@@ -186,6 +186,17 @@ describe('the hover card never sticks', () => {
     expect(card()).toBeNull();
   });
 
+  it('closes when the board opens the session draft', () => {
+    mount();
+    openOn('Fix webhook retries');
+
+    act(() => {
+      useAppStore.setState({ openSessionDraftWorkspaceId: harborline.id });
+    });
+
+    expect(card()).toBeNull();
+  });
+
   it('closes on Escape', () => {
     mount();
     openOn('Fix webhook retries');
