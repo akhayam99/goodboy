@@ -64,7 +64,7 @@ describe('agentStepPhraseOf', () => {
     expect(agentStepPhraseOf({ transcript })).toBe('Editing config.ts');
   });
 
-  it('reads an open Bash as the first line of its command', () => {
+  it('reads an open Bash as the words of its command, as the live phrase does', () => {
     const transcript = [
       toolStart({ id: 't1', name: 'Bash', input: { command: 'pnpm test retryPolicy\necho done' } }),
     ];
