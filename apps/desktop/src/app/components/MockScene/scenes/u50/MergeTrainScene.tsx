@@ -2,13 +2,13 @@ import { useEffect } from 'react';
 import {
   brandId,
   type IsoDateTime,
-  type MountGithubState,
   type MountId,
   type PullRequestState,
   type SessionId,
   type SessionProjectMount,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import type { MountGithubState } from '../../../../../store/types';
 import type { MergeTrain } from '../../../../../store/slices/pr-series/mergeTrain';
 import { QueueScene } from './QueueScene';
 
@@ -41,6 +41,8 @@ const CARS: ReadonlyArray<Car> = [
     branch: 'hl/tenant-backoff',
   },
 ];
+
+const NOTIFY_SESSION = brandId<SessionId>({ value: 'mock-board-session-notify-backoff' });
 
 type CarParams = {
   readonly car: Car;
@@ -88,14 +90,14 @@ const RUNNING_TRAIN: Omit<MergeTrain, 'cars'> = {
 
 const seedTrain = ({ isRunning }: Pick<Props, 'isRunning'>): void => {
   const state = useAppStore.getState();
-  const project = state.projects.find((candidate) => candidate.name === 'notify-relay');
-  if (project === undefined) {
+  const projectId = state.sessionProjectMounts[NOTIFY_SESSION]?.[0]?.projectId;
+  if (projectId === undefined) {
     return;
   }
-  const mounts = CARS.map((car): SessionProjectMount => ({
+  const mountOf = ({ car }: CarParams): SessionProjectMount => ({
     mountId: car.mountId,
     sessionId: car.sessionId,
-    projectId: project.id,
+    projectId,
     mountName: 'notify-relay',
     worktreePath: `/work/notify-relay/${car.number}`,
     lastWorktreePath: null,
@@ -106,11 +108,11 @@ const seedTrain = ({ isRunning }: Pick<Props, 'isRunning'>): void => {
     isAttached: true,
     diskState: 'present',
     revision: 1,
-  }));
+  });
   const githubOf = ({ car }: CarParams): MountGithubState => ({
     ...GITHUB_REST,
     mountId: car.mountId,
-    projectId: project.id,
+    projectId,
     revision: 1,
     repository: null,
     host: null,
@@ -122,7 +124,7 @@ const seedTrain = ({ isRunning }: Pick<Props, 'isRunning'>): void => {
   useAppStore.setState((current) => ({
     sessionProjectMounts: {
       ...current.sessionProjectMounts,
-      ...Object.fromEntries(CARS.map((car, index) => [car.sessionId, [mounts[index]]])),
+      ...Object.fromEntries(CARS.map((car) => [car.sessionId, [mountOf({ car })]])),
     },
     mountGithub: {
       ...current.mountGithub,

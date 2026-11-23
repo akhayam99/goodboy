@@ -38,7 +38,7 @@ type CarParams = {
   readonly car: ReadyCar;
 };
 
-const sizeOf = ({ car }: CarParams): number => car.fileCount ?? Number.MAX_SAFE_INTEGER;
+const carSizeOf = ({ car }: CarParams): number => car.fileCount ?? Number.MAX_SAFE_INTEGER;
 
 const isSmallest = ({ car, cars }: ParentParams): boolean => {
   const size = car.fileCount;
@@ -68,7 +68,9 @@ export const mergeOrderOf = ({ cars }: Params): ReadonlyArray<OrderedCar> => {
       return parent === null || !remaining.includes(parent);
     });
     const pool = free.length > 0 ? free : remaining;
-    const next = pool.reduce((best, car) => (sizeOf({ car }) < sizeOf({ car: best }) ? car : best));
+    const next = pool.reduce((best, car) =>
+      carSizeOf({ car }) < carSizeOf({ car: best }) ? car : best,
+    );
     ordered.push(next);
     remaining.splice(remaining.indexOf(next), 1);
   }

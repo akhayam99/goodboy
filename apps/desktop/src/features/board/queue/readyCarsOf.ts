@@ -2,6 +2,7 @@ import {
   mountRequestOf,
   sessionMountViews,
 } from '../../../store/slices/project-mounts/mountRowModel';
+import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
 import { pullRequestViewOf } from '../../../store/slices/pull-request-view/pullRequestViewOf';
 import type { AppState } from '../../../store/types';
 import type { ReadyCar } from './mergeOrderOf';
@@ -24,7 +25,7 @@ export const readyCarsOf = ({ state, rows }: Params): ReadonlyArray<ReadyCar> =>
     if (mount === undefined) {
       return [];
     }
-    const project = state.projects.find((candidate) => candidate.id === mount.projectId);
+    const project = selectProjectById(state, mount.projectId);
     const view = pullRequestViewOf({ state, sessionId, mountId: mount.id, prNumber: number })?.view;
     return [
       {

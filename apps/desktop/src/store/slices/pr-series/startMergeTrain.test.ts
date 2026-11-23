@@ -175,6 +175,24 @@ describe('the merge train', () => {
     expect(store.getState().mergeTrain).toMatchObject({ merged: 1, outcome: { kind: 'halted' } });
   });
 
+  it('starts again after a stop, so a retry needs no dismiss first', async () => {
+    store.setState({
+      mergePr: async () => {
+        throw new Error('405 Method Not Allowed');
+      },
+    });
+    await start();
+    expect(store.getState().mergeTrain?.outcome?.kind).toBe('stopped');
+    store.setState({
+      mergePr: async (_sessionId, number) => {
+        merged.push(number ?? 0);
+      },
+    });
+
+    expect(await start()).toEqual({ kind: 'done', merged: 2 });
+    expect(merged).toEqual([76, 418]);
+  });
+
   it('keeps the stop reason on the strip when a car cannot merge', async () => {
     store.setState({
       mergePr: async () => {

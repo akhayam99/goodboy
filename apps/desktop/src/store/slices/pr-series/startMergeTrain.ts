@@ -2,7 +2,9 @@ import type { PrMergeMethod } from '@goodboy/types';
 import type { SliceDeps } from '../../slice-types';
 import { pullRequestPortFor } from '../review-source/pullRequestPortFor';
 import { mergeInOrder, type MergeInOrderResult, type MergeStep } from './mergeInOrder';
-import type { MergeTrain, MergeTrainCar, MergeTrainOutcome } from './mergeTrain';
+import type { MergeTrainCar, MergeTrainOutcome } from './mergeTrain';
+import { openMergeTrain } from './openMergeTrain';
+import { patchMergeTrain } from './patchMergeTrain';
 
 export type StartMergeTrainParams = Readonly<{
   cars: ReadonlyArray<MergeTrainCar>;
@@ -17,16 +19,11 @@ type Deps = SliceDeps & {
   readonly sleep?: Parameters<typeof mergeInOrder>[0]['sleep'];
 };
 
-type PatchParams = {
-  readonly id: string;
-  readonly patch: Partial<MergeTrain>;
-};
-
 type OutcomeParams = {
   readonly result: MergeInOrderResult;
 };
 
-const outcomeOf = ({ result }: OutcomeParams): MergeTrainOutcome => {
+const trainOutcomeOf = ({ result }: OutcomeParams): MergeTrainOutcome => {
   if (result.kind === 'stopped') {
     return { kind: 'stopped', reason: result.reason, isWithLead: result.isWithLead };
   }
@@ -44,34 +41,14 @@ export const startMergeTrain =
       return { kind: 'empty' };
     }
     const id = crypto.randomUUID();
-    const patchTrain = ({ id: trainId, patch }: PatchParams): void => {
-      set((state) => {
-        const train = state.mergeTrain;
-        if (train === null || train.id !== trainId) {
-          return {};
-        }
-        return { mergeTrain: { ...train, ...patch } };
-      });
-    };
-    set({
-      mergeTrain: {
-        id,
-        cars,
-        method,
-        index: 0,
-        step: 'merging',
-        hasUpdated: false,
-        merged: 0,
-        isStopRequested: false,
-        outcome: null,
-      },
-    });
+    openMergeTrain({ set, id, cars, method });
     let updatedIndex = -1;
     const onStep = ({ kind, index }: MergeStep): void => {
       if (kind === 'updating') {
         updatedIndex = index;
       }
-      patchTrain({
+      patchMergeTrain({
+        set,
         id,
         patch: { step: kind, index, merged: index, hasUpdated: updatedIndex === index },
       });
@@ -97,9 +74,10 @@ export const startMergeTrain =
       },
       onStep,
     });
-    patchTrain({
+    patchMergeTrain({
+      set,
       id,
-      patch: { merged: result.merged, outcome: outcomeOf({ result }) },
+      patch: { merged: result.merged, outcome: trainOutcomeOf({ result }) },
     });
     return result;
   };

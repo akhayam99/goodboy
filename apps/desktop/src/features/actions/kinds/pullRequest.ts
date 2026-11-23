@@ -28,9 +28,7 @@ import {
   sessionPullRequestOf,
 } from '../../../store/slices/review-source/sessionPullRequestOf';
 import { sessionMountViews } from '../../../store/slices/project-mounts/mountRowModel';
-import { pullRequestPortFor } from '../../../store/slices/review-source/pullRequestPortFor';
 import { selectActiveMountId } from '../../../store/slices/project-mounts/selectors';
-import { refreshActiveRequest } from '../../../store/slices/review-source/refreshActiveRequest';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
 import { isScribeWriting } from '../../../store/slices/scribe/isScribeWriting';
 import { SCRIBE_WRITING_REASON } from '../../../store/slices/scribe/scribeWritingReason';
@@ -65,6 +63,7 @@ import {
   pullRequestViewerOf,
   type PullRequestFacts,
 } from './pullRequestFacts';
+import { writeAutoMerge } from './writeAutoMerge';
 import { writePullRequest } from './writePullRequest';
 import { VERBS } from '../../../shared/utils/verbs';
 import { NAMES } from '../../../shared/utils/names';
@@ -344,18 +343,16 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       facts.phase === 'open' &&
       facts.checks === 'pending' &&
       facts.pr?.isAutoMerge !== true &&
+      (facts.pr?.headSha ?? null) !== null &&
       can({ facts, capability: 'canMergeWhenGreen' }),
     blockedReason: ({ facts }) =>
-      (facts.pr?.headSha ?? null) === null
-        ? 'Refresh to read the head commit first.'
-        : (evaluatePrMergeReadiness({ facts: { ...facts, checks: 'green' } }).blockers[0] ?? null),
+      evaluatePrMergeReadiness({ facts: { ...facts, checks: 'green' } }).blockers[0] ?? null,
     slot: () => 'secondary',
     pendingLabel: () => 'Turning on auto-merge…',
-    doneLabel: ({ facts }) =>
-      `${numberLabel({ facts })} merges into ${baseOf({ facts })} when its checks pass.`,
+    doneLabel: ({ facts }) => `${numberLabel({ facts })} merges when its checks pass.`,
     confirm: ({ facts }) => ({
       title: `Merge ${numberLabel({ facts })} when its checks pass?`,
-      description: `${hostLabel({ facts })} merges it once every check passes, not before. You can cancel auto-merge until then.`,
+      description: 'Merges once every check passes. Cancel auto-merge stops it.',
       confirmLabel: NAMES.mergeWhenGreen,
       role: 'primary',
       choice: {
@@ -364,27 +361,17 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
         defaultId: defaultMergeMethod({ facts }),
       },
     }),
-    run: async ({ facts, env, choice }) => {
-      const headSha = facts.pr?.headSha ?? null;
-      if (facts.number === null || headSha === null) {
-        return;
-      }
-      const mountId =
-        facts.mountId ?? selectActiveMountId({ state: env.getState(), sessionId: facts.sessionId });
-      const target = { sessionId: facts.sessionId, ...(mountId === null ? {} : { mountId }) };
-      const port = pullRequestPortFor({ get: env.getState, ...target, prNumber: facts.number });
-      if (port?.mergeWhenGreen === undefined) {
-        throw new Error(`${hostLabel({ facts })} can't merge this pull request when green`);
-      }
-      await port.mergeWhenGreen({
-        method: isMergeMethod(choice) ? choice : defaultMergeMethod({ facts }),
-        expectedHeadSha: headSha,
-      });
-      await Promise.all([
-        refreshActiveRequest({ get: env.getState, ...target }),
-        env.getState().loadPullRequestView({ ...target, force: true }),
-      ]);
-    },
+    run: ({ facts, env, choice }) =>
+      writeAutoMerge({
+        facts,
+        env,
+        unsupported: "This pull request can't merge when green",
+        write: ({ port }) =>
+          port.mergeWhenGreen?.({
+            method: isMergeMethod(choice) ? choice : defaultMergeMethod({ facts }),
+            expectedHeadSha: facts.pr?.headSha ?? '',
+          }) ?? null,
+      }),
   },
   {
     id: 'pullRequest.writeReview',
@@ -526,23 +513,13 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     slot: () => 'menu',
     pendingLabel: () => 'Cancelling auto-merge…',
     doneLabel: ({ facts }) => `Cancelled auto-merge on ${numberLabel({ facts })}.`,
-    run: async ({ facts, env }) => {
-      if (facts.number === null) {
-        return;
-      }
-      const mountId =
-        facts.mountId ?? selectActiveMountId({ state: env.getState(), sessionId: facts.sessionId });
-      const target = { sessionId: facts.sessionId, ...(mountId === null ? {} : { mountId }) };
-      const port = pullRequestPortFor({ get: env.getState, ...target, prNumber: facts.number });
-      if (port?.cancelAutoMerge === undefined) {
-        throw new Error("Auto-merge can't be cancelled for this pull request");
-      }
-      await port.cancelAutoMerge();
-      await Promise.all([
-        refreshActiveRequest({ get: env.getState, ...target }),
-        env.getState().loadPullRequestView({ ...target, force: true }),
-      ]);
-    },
+    run: ({ facts, env }) =>
+      writeAutoMerge({
+        facts,
+        env,
+        unsupported: "Auto-merge can't be cancelled for this pull request",
+        write: ({ port }) => port.cancelAutoMerge?.() ?? null,
+      }),
   },
 ];
 

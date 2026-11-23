@@ -1445,6 +1445,10 @@ u50-desk-face-overview-dark
 u50-desk-face-overview-light
 u50-fleet-rows-dark
 u50-fleet-rows-light
+u50-merge-train-ready-dark
+u50-merge-train-ready-light
+u50-merge-train-running-dark
+u50-merge-train-running-light
 u50-mount-fix-confirm-dark
 u50-mount-fix-confirm-light
 u50-mount-fix-dark

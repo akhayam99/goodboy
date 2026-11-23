@@ -15,7 +15,7 @@ type ToneParams = {
   readonly train: MergeTrain;
 };
 
-const toneOf = ({ train }: ToneParams): Tone => {
+const trainToneOf = ({ train }: ToneParams): Tone => {
   if (train.outcome === null) {
     return 'info';
   }
@@ -45,7 +45,7 @@ export const TrainStrip = ({ train, onStop, onDismiss }: Props) => {
       role="status"
       className="flex min-h-8 min-w-0 items-center gap-2"
     >
-      <StatusDot tone={toneOf({ train })} size="sm" pulsing={isLive} />
+      <StatusDot tone={trainToneOf({ train })} size="sm" pulsing={isLive} />
       <TruncatedText className="min-w-0 flex-1 text-ui text-foreground">
         {trainLineOf({ train })}
       </TruncatedText>
