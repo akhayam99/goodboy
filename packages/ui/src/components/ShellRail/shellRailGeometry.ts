@@ -1,4 +1,9 @@
+import { ICON_BUTTON_SIZE_CLASSES } from '../IconButton';
 import type { ShellRailForm } from './shellRailFormContext';
+
+export const SHELL_RAIL_EDGE_PX = 4;
+
+export const SHELL_RAIL_TILE = ICON_BUTTON_SIZE_CLASSES.md;
 
 export const SHELL_RAIL_WIDTH_PX = {
   wide: 64,

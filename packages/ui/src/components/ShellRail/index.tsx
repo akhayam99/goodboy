@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '../../cn';
 import { moveShellRailFocus } from './moveShellRailFocus';
 import { ShellRailFormContext, type ShellRailForm } from './shellRailFormContext';
-import { SHELL_RAIL_WIDTH_PX } from './shellRailGeometry';
+import { SHELL_RAIL_EDGE_PX, SHELL_RAIL_WIDTH_PX } from './shellRailGeometry';
 import { useShellRailForm } from './useShellRailForm';
 
 type Props = {
@@ -21,11 +21,15 @@ export const ShellRail = ({ label, form, className, children }: Props) => {
         aria-label={label}
         data-shell-rail={shown}
         className={cn(
-          'flex h-full min-h-0 shrink-0 flex-col items-center pb-0.5 pt-1',
+          'flex h-full min-h-0 shrink-0 flex-col items-center',
           shown === 'wide' ? 'gap-2' : 'gap-1',
           className,
         )}
-        style={{ width: SHELL_RAIL_WIDTH_PX[shown] }}
+        style={{
+          width: SHELL_RAIL_WIDTH_PX[shown],
+          paddingTop: SHELL_RAIL_EDGE_PX,
+          paddingBottom: SHELL_RAIL_EDGE_PX,
+        }}
         onKeyDown={(event) => moveShellRailFocus({ event })}
       >
         {children}

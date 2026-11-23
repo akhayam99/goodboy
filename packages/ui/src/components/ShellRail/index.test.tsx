@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Inbox, Mail, RefreshCw } from '../../icons';
 import type { ShellRailForm } from './shellRailFormContext';
+import { SHELL_RAIL_EDGE_PX, SHELL_RAIL_TILE } from './shellRailGeometry';
 import { ShellRailItem } from './ShellRailItem';
 import { ShellRail } from '.';
 
@@ -155,6 +156,22 @@ describe('ShellRail', () => {
     within(railOf()).getByText('Board');
     within(railOf()).getByText('3');
     expect(railOf().style.width).toBe('64px');
+  });
+
+  it.each<ShellRailForm>(['wide', 'narrow'])(
+    'leaves as much space under the last item as above the first, %s',
+    (form) => {
+      renderRail({ form });
+      expect(railOf().style.paddingTop).toBe(`${SHELL_RAIL_EDGE_PX}px`);
+      expect(railOf().style.paddingBottom).toBe(railOf().style.paddingTop);
+    },
+  );
+
+  it('sizes every item button as one rail tile, the slot a passive mark sits in', () => {
+    renderRail({ form: 'wide' });
+    within(railOf())
+      .getAllByRole('button')
+      .forEach((button) => expect(button.className.split(' ')).toContain(SHELL_RAIL_TILE));
   });
 
   it('keeps a wide item without a shortcut free of a tooltip, since the word says it', () => {

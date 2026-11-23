@@ -211,6 +211,7 @@ export { ShellRailItem } from './components/ShellRail/ShellRailItem';
 export type { ShellRailMark } from './components/ShellRail/shellRailMark';
 export { SHELL_RAIL_POPOVER } from './components/ShellRail/shellRailPopover';
 export { TOOL_RAIL_WIDTH_PX } from './components/ShellRail/shellRailGeometry';
+export { SHELL_RAIL_TILE } from './components/ShellRail/shellRailGeometry';
 export { useShellRailForm } from './components/ShellRail/useShellRailForm';
 export type { GhostActionButtonProps } from './components/GhostActionButton';
 export { IconButton } from './components/IconButton';

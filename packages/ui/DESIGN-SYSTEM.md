@@ -598,7 +598,10 @@ and `r4-column-light` scenes, and with an old folded choice.
 The foot of the rail is Settings, Report (with its word) and the signature. The
 signature (`RailSignature`) is a 24px `BrandTile`: passive, `aria-hidden`, with no
 hover, focus or tooltip, and no ring, plate, border, glow or gradient. It is the
-same in both themes and never inverted. An update adds one more `ShellRailItem`
+same in both themes and never inverted. It sits centered in one rail tile
+(`SHELL_RAIL_TILE`), so the dog lines up with the icons above; the rail pads its
+foot as much as its top (`SHELL_RAIL_EDGE_PX`), and the rail's `gap` spaces it
+from Report. An update adds one more `ShellRailItem`
 above the signature and never replaces it: `tint="primary"` paints the tile
 `primary-subtle` with `primary` text and word (`danger` on `danger-subtle` when it
 failed), `isEdged` adds a `primary-edge` ring once the update is ready, and the
