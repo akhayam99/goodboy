@@ -1272,8 +1272,8 @@ one answer to which run works on a thread: the newest live agent that lists it
 and can hold threads (`holdsCommentThreads`: a `comment_run` agent or the root
 of a Lead with no other source).
 
-A Lead can also take one message from a review comment, a failed check or a
-finding (**Send to Lead**). A comment sent this way joins the Lead's threads
+A Lead can also take one message from a review comment or a failed check
+(**Send to Lead**). A comment sent this way joins the Lead's threads
 (`addAgentSourceThread`), so the comment reads In a run; the queued message
 carries the thread, and taking the message back before the Lead reads it frees
 the comment again. A stopped or deleted run frees only its own threads, and a fix
