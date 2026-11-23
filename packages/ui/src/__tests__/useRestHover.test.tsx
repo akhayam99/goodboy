@@ -1,12 +1,14 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, renderHook } from '@testing-library/react';
+import { Activity } from 'react';
+import { act, cleanup, render, renderHook } from '@testing-library/react';
 import {
   REST_HOVER_LEAVE_MS,
   REST_HOVER_REST_MS,
   holdRestHovers,
   useRestHover,
+  type RestHover,
 } from '../useRestHover';
 
 beforeEach(() => {
@@ -105,5 +107,34 @@ describe('useRestHover', () => {
     enter('payments-api');
 
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('comes back shut after an Activity hid it while it was open', () => {
+    const hover: { current: RestHover<string> | null } = { current: null };
+    const Probe = () => {
+      hover.current = useRestHover<string>({});
+      return null;
+    };
+    const { rerender } = render(
+      <Activity mode="visible">
+        <Probe />
+      </Activity>,
+    );
+    act(() => {
+      hover.current?.openNow('ledger-core');
+    });
+
+    rerender(
+      <Activity mode="hidden">
+        <Probe />
+      </Activity>,
+    );
+    rerender(
+      <Activity mode="visible">
+        <Probe />
+      </Activity>,
+    );
+
+    expect(hover.current?.target ?? null).toBeNull();
   });
 });

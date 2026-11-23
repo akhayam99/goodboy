@@ -28,6 +28,8 @@ export { useEscapeLayer } from './useEscapeLayer';
 export { DrawerParkedContext } from './drawerParkedContext';
 export { useIsDrawerParked } from './useIsDrawerParked';
 export { useHoverSurface } from './useHoverSurface';
+export { useCloseOnOutsidePointer } from './useCloseOnOutsidePointer';
+export { isKeyboardFocus } from './isKeyboardFocus';
 export { copyToClipboard } from './copyToClipboard';
 export { useCopyLink } from './useCopyLink';
 export { useDropdown } from './useDropdown';

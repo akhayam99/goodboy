@@ -16,7 +16,7 @@ import { isKeyboardFocus } from '../../isKeyboardFocus';
 import { placeFloating, type FloatingCoords, type FloatingSide } from '../../placeFloating';
 import { useHoverSurface } from '../../useHoverSurface';
 import { useRestHover } from '../../useRestHover';
-import { useCloseOnOutsidePointer } from './useCloseOnOutsidePointer';
+import { useCloseOnOutsidePointer } from '../../useCloseOnOutsidePointer';
 import { FactCardBody } from './FactCardBody';
 import { factCardSentence } from './factCardSentence';
 import type { FactCardSpec } from './types';

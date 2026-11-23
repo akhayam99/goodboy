@@ -4,12 +4,14 @@ import {
   FLOATING_SURFACE,
   POPOVER_WIDTH_PX,
   cn,
+  useCloseOnOutsidePointer,
   useEscapeLayer,
   useFloatingPlace,
   useHoverSurface,
 } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { SessionHoverCardBody } from './SessionHoverCardBody';
+import { useCloseOnRouteChange } from './useCloseOnRouteChange';
 
 const CARD_WIDTH = POPOVER_WIDTH_PX.standard;
 const GAP = 8;
@@ -34,10 +36,12 @@ export const SessionHoverCard = ({
   onLeave,
   onClose,
 }: Props) => {
-  const isShown = session !== null && anchor !== null;
+  const isShown = session !== null && anchor !== null && anchor.isConnected;
   const cardRef = useRef<HTMLDivElement | null>(null);
   useEscapeLayer(onClose, isShown);
   useHoverSurface({ isActive: isShown });
+  useCloseOnOutsidePointer({ isActive: isShown, anchorRef: cardRef, close: onClose });
+  useCloseOnRouteChange({ close: onClose });
   const place = useFloatingPlace({
     anchor,
     clearOf: boundary,

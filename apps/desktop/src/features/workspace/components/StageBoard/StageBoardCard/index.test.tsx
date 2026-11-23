@@ -618,12 +618,12 @@ describe('StageBoardCard actions', () => {
         onHoverLeave={onHoverLeave}
       />,
     );
-    fireEvent.focus(cardTitle());
+    act(() => cardTitle().focus());
     expect(onHoverEnter).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       anchor: screen.getByRole('article'),
     });
-    fireEvent.blur(cardTitle());
+    act(() => cardTitle().blur());
     expect(onHoverLeave).toHaveBeenCalled();
   });
 });
