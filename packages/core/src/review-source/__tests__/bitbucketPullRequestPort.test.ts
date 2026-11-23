@@ -209,6 +209,7 @@ describe('bitbucketPullRequestPort writes', () => {
         canClose: true,
         canReopen: false,
         canCancelAutoMerge: false,
+        canMergeWhenGreen: false,
       },
     });
     expect((await port.read()).checks).toEqual({ read: 'unsupported', error: null, runs: [] });

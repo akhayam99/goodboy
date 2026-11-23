@@ -206,6 +206,7 @@ export const SESSION_EVICTION = [
 
 export const NON_SESSION_STATE_KEYS = [
   'selectedProjectIds',
+  'mergeTrain',
   'workspaces',
   'disconnectedWorkspaces',
   'projects',

@@ -1,9 +1,8 @@
-import { formatError } from '@goodboy/ui';
 import type { PrSeriesId, SessionId } from '@goodboy/types';
-import { seriesStripsOf, type SeriesPart } from './seriesStripsOf';
+import { seriesStripsOf } from './seriesStripsOf';
 import type { SliceDeps } from '../../slice-types';
 import { pullRequestPortFor } from '../review-source/pullRequestPortFor';
-import { mergeBlockerOf } from './mergeBlockerOf';
+import { mergeInOrder, type MergeEntry } from './mergeInOrder';
 
 export type MergeSeriesParams = Readonly<{
   sessionId: SessionId;
@@ -20,19 +19,6 @@ export type MergeSeriesResult =
       reason: string;
     }>;
 
-type StopParams = {
-  readonly merged: number;
-  readonly part: SeriesPart;
-  readonly reason: string;
-};
-
-const stopped = ({ merged, part, reason }: StopParams): MergeSeriesResult => ({
-  kind: 'stopped',
-  merged,
-  partLabel: part.label,
-  reason,
-});
-
 type Deps = Pick<SliceDeps, 'get'> & {
   readonly portFor?: typeof pullRequestPortFor;
 };
@@ -46,33 +32,31 @@ export const mergeSeriesInOrder =
     if (strip === undefined) {
       return { kind: 'gone' };
     }
-    const queue = strip.parts.filter(
-      (part) => part.state === 'open' && part.mountId !== null && part.number !== null,
+    const parts = strip.parts.flatMap((part) =>
+      part.state === 'open' && part.mountId !== null && part.number !== null
+        ? [{ part, mountId: part.mountId, prNumber: part.number }]
+        : [],
     );
-    let merged = 0;
-    for (const part of queue) {
-      const { mountId, number } = part;
-      if (mountId === null || number === null) {
-        continue;
-      }
-      const port = portFor({ get, sessionId, mountId, prNumber: number });
-      if (port === null) {
-        return stopped({ merged, part, reason: "Goodboy can't reach its host from here" });
-      }
-      try {
-        const view = await port.read();
-        const blocker = mergeBlockerOf({ view });
-        if (blocker !== null) {
-          return stopped({ merged, part, reason: `part ${part.label} ${blocker}` });
-        }
-        await get().mergePr(sessionId, view.number, view.mergeMethods[0] ?? 'squash', {
-          mountId,
-          expectedHeadSha: view.headSha,
-        });
-      } catch (error) {
-        return stopped({ merged, part, reason: formatError(error) });
-      }
-      merged += 1;
+    const entries = parts.map(({ part, mountId, prNumber }): MergeEntry => ({
+      sessionId,
+      mountId,
+      prNumber,
+      label: `part ${part.label}`,
+    }));
+    const result = await mergeInOrder({ get, portFor })({
+      entries,
+      method: null,
+      shouldUpdate: false,
+      shouldWait: false,
+      shouldHandConflicts: false,
+    });
+    if (result.kind !== 'stopped') {
+      return { kind: 'done', merged: result.merged };
     }
-    return { kind: 'done', merged };
+    return {
+      kind: 'stopped',
+      merged: result.merged,
+      partLabel: parts[result.index]?.part.label ?? '',
+      reason: result.reason,
+    };
   };

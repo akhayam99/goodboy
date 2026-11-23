@@ -766,6 +766,98 @@ mod tests {
     }
 
     #[test]
+    fn merge_when_green_passes_only_with_a_ref_and_the_reviewed_head() {
+        assert!(check_args(&argv(&[
+            "pr",
+            "merge",
+            "12",
+            "--auto",
+            "--squash",
+            "--match-head-commit",
+            "abcdef1234"
+        ]))
+        .is_ok());
+        for args in [
+            argv(&["pr", "merge", "--auto"]),
+            argv(&["pr", "merge", "12", "--auto"]),
+            argv(&["pr", "merge", "12", "--auto", "--squash"]),
+            argv(&[
+                "pr",
+                "merge",
+                "--auto",
+                "--squash",
+                "--match-head-commit",
+                "abcdef1234",
+            ]),
+            argv(&[
+                "pr",
+                "merge",
+                "12",
+                "--auto",
+                "--auto",
+                "--match-head-commit",
+                "abcdef1234",
+            ]),
+            argv(&[
+                "pr",
+                "merge",
+                "12",
+                "--auto",
+                "--disable-auto",
+                "--match-head-commit",
+                "abcdef1234",
+            ]),
+            argv(&[
+                "pr",
+                "merge",
+                "12",
+                "--auto",
+                "--admin",
+                "--match-head-commit",
+                "abcdef1234",
+            ]),
+            argv(&[
+                "pr",
+                "merge",
+                "12",
+                "--auto",
+                "--delete-branch",
+                "--match-head-commit",
+                "abcdef1234",
+            ]),
+            argv(&[
+                "pr",
+                "merge",
+                "12",
+                "--auto",
+                "--match-head-commit",
+                "not-a-sha",
+            ]),
+            argv(&[
+                "pr",
+                "merge",
+                "https://github.com/acme/ledger-core/pull/12",
+                "--auto",
+                "--squash",
+                "--match-head-commit",
+                "abcdef1234",
+            ]),
+            argv(&[
+                "pr",
+                "merge",
+                "12",
+                "--auto",
+                "--match-head-commit",
+                "abcdef1234",
+                "--repo",
+                "acme/ledger-core",
+            ]),
+        ] {
+            assert!(check_args(&args).is_err(), "{args:?}");
+        }
+    }
+
+    #[test]
     fn a_repeated_single_flag_is_refused() {
         assert!(check_args(&argv(&[
             "pr",

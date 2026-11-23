@@ -431,6 +431,7 @@ export const branchActionsOf = ({ ...facts }: Params): BranchActions => {
 
 export const BRANCH_MENU_PULL_REQUEST: ReadonlyArray<string> = [
   'pullRequest.merge',
+  'pullRequest.mergeWhenGreen',
   'pullRequest.markReady',
   'pullRequest.reopen',
   'pullRequest.editDetails',
@@ -454,6 +455,7 @@ const BRANCH_MENU_MAX_ROWS = 5;
 
 const BRANCH_MENU_PRIORITY: ReadonlyArray<string> = [
   'pullRequest.merge',
+  'pullRequest.mergeWhenGreen',
   'pullRequest.markReady',
   'pullRequest.reopen',
   'pullRequest.cancelAutoMerge',

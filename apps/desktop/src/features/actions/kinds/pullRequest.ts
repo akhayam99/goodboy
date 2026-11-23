@@ -28,9 +28,7 @@ import {
   sessionPullRequestOf,
 } from '../../../store/slices/review-source/sessionPullRequestOf';
 import { sessionMountViews } from '../../../store/slices/project-mounts/mountRowModel';
-import { pullRequestPortFor } from '../../../store/slices/review-source/pullRequestPortFor';
 import { selectActiveMountId } from '../../../store/slices/project-mounts/selectors';
-import { refreshActiveRequest } from '../../../store/slices/review-source/refreshActiveRequest';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
 import { isScribeWriting } from '../../../store/slices/scribe/isScribeWriting';
 import { SCRIBE_WRITING_REASON } from '../../../store/slices/scribe/scribeWritingReason';
@@ -65,8 +63,10 @@ import {
   pullRequestViewerOf,
   type PullRequestFacts,
 } from './pullRequestFacts';
+import { writeAutoMerge } from './writeAutoMerge';
 import { writePullRequest } from './writePullRequest';
 import { VERBS } from '../../../shared/utils/verbs';
+import { NAMES } from '../../../shared/utils/names';
 
 type FactsOnly = { readonly facts: PullRequestFacts };
 
@@ -335,6 +335,45 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     },
   },
   {
+    id: 'pullRequest.mergeWhenGreen',
+    label: NAMES.mergeWhenGreen,
+    icon: CONCEPT_ICONS.merge,
+    group: 'act',
+    when: ({ facts }) =>
+      facts.phase === 'open' &&
+      facts.checks === 'pending' &&
+      facts.pr?.isAutoMerge !== true &&
+      (facts.pr?.headSha ?? null) !== null &&
+      can({ facts, capability: 'canMergeWhenGreen' }),
+    blockedReason: ({ facts }) =>
+      evaluatePrMergeReadiness({ facts: { ...facts, checks: 'green' } }).blockers[0] ?? null,
+    slot: () => 'secondary',
+    pendingLabel: () => 'Turning on auto-merge…',
+    doneLabel: ({ facts }) => `${numberLabel({ facts })} merges when its checks pass.`,
+    confirm: ({ facts }) => ({
+      title: `Merge ${numberLabel({ facts })} when its checks pass?`,
+      description: 'Merges once every check passes. Cancel auto-merge stops it.',
+      confirmLabel: NAMES.mergeWhenGreen,
+      role: 'primary',
+      choice: {
+        label: 'Merge method',
+        options: mergeOptions({ facts }),
+        defaultId: defaultMergeMethod({ facts }),
+      },
+    }),
+    run: ({ facts, env, choice }) =>
+      writeAutoMerge({
+        facts,
+        env,
+        unsupported: "This pull request can't merge when green",
+        write: ({ port }) =>
+          port.mergeWhenGreen?.({
+            method: isMergeMethod(choice) ? choice : defaultMergeMethod({ facts }),
+            expectedHeadSha: facts.pr?.headSha ?? '',
+          }) ?? null,
+      }),
+  },
+  {
     id: 'pullRequest.writeReview',
     label: 'Write review',
     icon: PencilLine,
@@ -474,23 +513,13 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     slot: () => 'menu',
     pendingLabel: () => 'Cancelling auto-merge…',
     doneLabel: ({ facts }) => `Cancelled auto-merge on ${numberLabel({ facts })}.`,
-    run: async ({ facts, env }) => {
-      if (facts.number === null) {
-        return;
-      }
-      const mountId =
-        facts.mountId ?? selectActiveMountId({ state: env.getState(), sessionId: facts.sessionId });
-      const target = { sessionId: facts.sessionId, ...(mountId === null ? {} : { mountId }) };
-      const port = pullRequestPortFor({ get: env.getState, ...target, prNumber: facts.number });
-      if (port?.cancelAutoMerge === undefined) {
-        throw new Error("Auto-merge can't be cancelled for this pull request");
-      }
-      await port.cancelAutoMerge();
-      await Promise.all([
-        refreshActiveRequest({ get: env.getState, ...target }),
-        env.getState().loadPullRequestView({ ...target, force: true }),
-      ]);
-    },
+    run: ({ facts, env }) =>
+      writeAutoMerge({
+        facts,
+        env,
+        unsupported: "Auto-merge can't be cancelled for this pull request",
+        write: ({ port }) => port.cancelAutoMerge?.() ?? null,
+      }),
   },
 ];
 

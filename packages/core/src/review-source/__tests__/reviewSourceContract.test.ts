@@ -368,6 +368,9 @@ describe.each(SOURCES)('review source contract on %s', (name, build) => {
         canReopen: () => port.reopen(),
         canCancelAutoMerge: () =>
           port.cancelAutoMerge?.() ?? Promise.reject(new Error('No cancellation port')),
+        canMergeWhenGreen: () =>
+          port.mergeWhenGreen?.({ method: 'squash', expectedHeadSha: 'abcdef1234' }) ??
+          Promise.reject(new Error('No merge when green port')),
       };
       await expect(calls[flag]()).resolves.not.toThrow();
       expect(typeof port[PULL_REQUEST_CAPABILITY_METHODS[flag]]).toBe('function');

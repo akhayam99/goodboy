@@ -75,6 +75,18 @@
       ]
     },
     {
+      "id": "pr-merge-auto",
+      "verb": ["pr", "merge"],
+      "positional": ["{number}"],
+      "flags": [
+        { "name": "--auto", "slot": null, "isRequired": true },
+        { "name": "--squash", "slot": null },
+        { "name": "--merge", "slot": null },
+        { "name": "--rebase", "slot": null },
+        { "name": "--match-head-commit", "slot": "sha", "isRequired": true }
+      ]
+    },
+    {
       "id": "pr-close",
       "verb": ["pr", "close"],
       "positional": ["{ref}"],

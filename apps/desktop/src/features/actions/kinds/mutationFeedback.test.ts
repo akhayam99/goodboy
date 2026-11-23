@@ -16,6 +16,7 @@ const MUTATING: ReadonlyArray<string> = [
   'pullRequest.convertToDraft',
   'pullRequest.close',
   'pullRequest.cancelAutoMerge',
+  'pullRequest.mergeWhenGreen',
 ];
 
 const OPENS_A_FORM: ReadonlyArray<string> = ['diff.createPullRequest'];

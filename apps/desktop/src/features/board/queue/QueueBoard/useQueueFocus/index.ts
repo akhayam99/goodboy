@@ -2,7 +2,6 @@ import { useCallback, useState, type KeyboardEvent } from 'react';
 import { answerChoicesOf } from '../../answerChoicesOf';
 import type { QueueMove } from '../../needsYouOf';
 import { queueKeyOf, QUEUE_BANDS, type QueueBand, type QueueCommand } from '../../queueKeyOf';
-import type { ReadyRow } from '../../readyToMergeOf';
 import type { RunningRow } from '../../runningGroupsOf';
 import type { QueueActions } from '../useQueueActions';
 import type { QueueNavigation } from '../useQueueNavigation';
@@ -11,10 +10,20 @@ type Params = {
   readonly moves: ReadonlyArray<QueueMove>;
   readonly focusedMoveId: string | null;
   readonly runningRows: ReadonlyArray<RunningRow>;
-  readonly ready: ReadonlyArray<ReadyRow>;
+  readonly ready: ReadonlyArray<ReadyFocusRow>;
   readonly onFocusMove: (params: MoveIdParams) => void;
+  readonly onMark: (params: ReadyIdParams) => void;
+  readonly onMergeTrain: () => void;
   readonly actions: QueueActions;
   readonly nav: QueueNavigation;
+};
+
+type ReadyFocusRow = Readonly<{
+  sessionId: string;
+}>;
+
+type ReadyIdParams = {
+  readonly sessionId: string;
 };
 
 type MoveIdParams = {
@@ -48,7 +57,7 @@ export type QueueFocus = Readonly<{
   band: QueueBand;
   focusedMove: QueueMove | null;
   focusedRow: RunningRow | null;
-  focusedReady: ReadyRow | null;
+  focusedReady: ReadyFocusRow | null;
   peekRunId: string | null;
   togglePeek: (params: RowParams) => void;
   closePeek: () => void;
@@ -99,6 +108,8 @@ export const useQueueFocus = ({
   runningRows,
   ready,
   onFocusMove,
+  onMark,
+  onMergeTrain,
   actions,
   nav,
 }: Params): QueueFocus => {
@@ -215,7 +226,21 @@ export const useQueueFocus = ({
       }
       return;
     }
-    if (band === 'ready' && command.kind === 'open' && focusedReady !== null) {
+    if (band !== 'ready') {
+      return;
+    }
+    if (command.kind === 'merge-train') {
+      onMergeTrain();
+      return;
+    }
+    if (focusedReady === null) {
+      return;
+    }
+    if (command.kind === 'mark') {
+      onMark({ sessionId: focusedReady.sessionId });
+      return;
+    }
+    if (command.kind === 'open') {
       nav.openReady({ sessionId: focusedReady.sessionId });
     }
   };
