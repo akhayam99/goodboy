@@ -95,11 +95,15 @@ type IdParams = {
 
 const idOf = ({ session }: IdParams): SessionId => brandId<SessionId>({ value: session.id });
 
-const mount = () => {
+type MountParams = {
+  readonly questions?: ReadonlyArray<Session>;
+};
+
+const mount = ({ questions = [ask] }: MountParams = {}) => {
   seedColumn({
     store: useAppStore,
     sessions: [ask, running, pinned, quiet],
-    questions: [ask],
+    questions,
     mounts: [
       [ask, notifyRelay],
       [running, ledgerCore],
@@ -318,6 +322,39 @@ describe('what each Sessions row says', () => {
     expect(within(rowOf({ session: ask })).queryByTestId('sessions-needs-you')).toBeNull();
   });
 
+  it('drops a queued move from its own row only, and counts it again after Undo', () => {
+    mount({ questions: [ask, pinned] });
+    toggle();
+    const countOf = ({ session }: IdParams): string | null =>
+      within(rowOf({ session })).queryByTestId('sessions-needs-you')?.textContent ?? null;
+    const askMoves = queueMovesOf({ session: ask });
+    const pinnedCount = countOf({ session: pinned });
+    const before = countOf({ session: ask });
+    const [move] = askMoves.moves;
+    if (move === undefined || pinnedCount === null) {
+      throw new Error('both sessions need a move');
+    }
+    expect(before).toBe(String(askMoves.moveCount));
+
+    act(() => {
+      useQueueSends.getState().queue({
+        send: { id: 'send-1', kind: 'answer', agentId: null, moveId: move.id },
+        run: async () => undefined,
+      });
+    });
+
+    const left = askMoves.moveCount - 1;
+    expect(countOf({ session: ask })).toBe(left === 0 ? null : String(left));
+    expect(countOf({ session: pinned })).toBe(pinnedCount);
+
+    act(() => {
+      useQueueSends.getState().cancel({ id: 'send-1' });
+    });
+
+    expect(countOf({ session: ask })).toBe(before);
+    expect(countOf({ session: pinned })).toBe(pinnedCount);
+  });
+
   it('says Desk for a session saved on the Desk and nothing for the others', async () => {
     vi.mocked(getSessionDockGrid).mockImplementation(async ({ sessionId }) =>
       sessionId === idOf({ session: pinned }) ? DESK_ROW : null,
@@ -361,6 +398,58 @@ describe('what each Sessions row says', () => {
     await waitFor(() =>
       expect(within(rowOf({ session: pinned })).queryByText('Desk')).not.toBeNull(),
     );
+  });
+
+  it('reads an inactive row again after focus, so a face saved in another window shows', async () => {
+    vi.mocked(getSessionDockGrid).mockImplementation(async ({ sessionId }) =>
+      sessionId === idOf({ session: pinned }) ? DESK_ROW : null,
+    );
+    mount();
+    toggle();
+    await waitFor(() =>
+      expect(within(rowOf({ session: pinned })).queryByText('Desk')).not.toBeNull(),
+    );
+
+    vi.mocked(getSessionDockGrid).mockResolvedValue(null);
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
+    await waitFor(() =>
+      expect(rowOf({ session: pinned }).querySelector('[data-sessions-face]')).toBeNull(),
+    );
+
+    toggle();
+    vi.mocked(getSessionDockGrid).mockImplementation(async ({ sessionId }) =>
+      sessionId === idOf({ session: pinned }) ? DESK_ROW : null,
+    );
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
+    toggle();
+    await waitFor(() =>
+      expect(within(rowOf({ session: pinned })).queryByText('Desk')).not.toBeNull(),
+    );
+  });
+
+  it('keeps the face of the open session on focus, so an unsaved switch is not undone', async () => {
+    mount();
+    useAppStore.setState({
+      currentSessionId: idOf({ session: quiet }),
+      sessionFace: { [idOf({ session: quiet })]: 'desk' },
+    });
+    toggle();
+    await waitFor(() => expect(getSessionDockGrid).toHaveBeenCalled());
+    vi.mocked(getSessionDockGrid).mockClear();
+
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
+
+    await waitFor(() => expect(getSessionDockGrid).toHaveBeenCalled());
+    expect(
+      vi.mocked(getSessionDockGrid).mock.calls.map(([params]) => params.sessionId),
+    ).not.toContain(idOf({ session: quiet }));
+    expect(useAppStore.getState().sessionFace[idOf({ session: quiet })]).toBe('desk');
   });
 });
 
