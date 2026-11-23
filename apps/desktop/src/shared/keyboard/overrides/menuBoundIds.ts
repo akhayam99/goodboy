@@ -8,7 +8,6 @@ export const MENU_BOUND_IDS: ReadonlyArray<string> = [
   'search.open',
   'sessions.toggle',
   'palette.open',
-  'session.desk',
   'zoom.in',
   'zoom.out',
   'zoom.reset',

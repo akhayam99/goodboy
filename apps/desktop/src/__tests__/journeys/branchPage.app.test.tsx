@@ -173,14 +173,7 @@ describe('journey: the board opens a session', () => {
     const { place } = captureLocation({ state: useAppStore.getState() });
     expect(place.at).toBe('session');
     expect(place.at === 'session' && place.sessionId !== sessionId).toBe(true);
-    expect(sessionTabNames()).toEqual([
-      'Overview',
-      'Runs',
-      'Artifacts',
-      'Questions',
-      'Context',
-      'Changes',
-    ]);
+    expect(sessionTabNames()).toEqual(['Overview', 'Runs', 'Artifacts', 'Questions', 'Context']);
 
     await clickBackArrow();
     expect(captureLocation({ state: useAppStore.getState() }).place.at).toBe('board');

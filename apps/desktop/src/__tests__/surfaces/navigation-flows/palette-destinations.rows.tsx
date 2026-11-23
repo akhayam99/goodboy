@@ -1,8 +1,6 @@
 import { expect, vi } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
-import { switchSessionFace } from '../../../features/session/components/SessionDesk/switchSessionFace';
-import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import {
   type Row,
   WAIT,
@@ -506,54 +504,17 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('dialog', 'Link work'),
   },
   {
-    name: 'palette: Desk carries its key and switches the face of the session',
+    name: 'palette: no Desk row, since a tool from the right rail opens the Desk',
     covers: ['palette:Desk'],
     open: async () => {
       await clickButton(/^Search or run \(/);
       const input = await screen.findByRole('combobox', { name: /search/i });
       fireEvent.change(input, { target: { value: 'desk' } });
       await settle();
-      const option = await screen.findByRole('option', { name: /^Desk/ });
-      expect(option.textContent).toContain(shortcutGlyphs('session.desk'));
-      fireEvent.mouseDown(option);
-      await settle();
     },
     lands: async (ctx) => {
-      await waitFor(() => expect(useAppStore.getState().sessionFace[ctx.sessionId]).toBe('desk'));
-      await visible('complementary', 'Desk');
-    },
-  },
-  {
-    name: 'palette: Overview on the Desk switches the face back',
-    covers: ['palette:Overview'],
-    open: async (ctx) => {
-      switchSessionFace({ sessionId: ctx.sessionId, face: 'desk' });
-      await settle();
-      await openPalette(/^Overview/, 'overview');
-    },
-    lands: async (ctx) =>
-      waitFor(() => expect(useAppStore.getState().sessionFace[ctx.sessionId]).toBe('overview')),
-  },
-  {
-    name: 'palette: Desk on an agent of a desk session opens the Desk',
-    covers: ['palette:Desk'],
-    open: async (ctx) => {
-      switchSessionFace({ sessionId: ctx.sessionId, face: 'desk' });
-      await settle();
-      const agent = useAppStore.getState().sessionPhaseRuns[ctx.sessionId]?.[0];
-      expect(agent).toBeDefined();
-      useAppStore.setState((state) => ({
-        selectedAgentId: { ...state.selectedAgentId, [ctx.sessionId]: agent?.id ?? null },
-      }));
-      await settle();
-      await openPalette(/^Desk/, 'desk');
-    },
-    lands: async (ctx) => {
-      await waitFor(() =>
-        expect(useAppStore.getState().selectedAgentId[ctx.sessionId] ?? null).toBeNull(),
-      );
-      expect(useAppStore.getState().sessionFace[ctx.sessionId]).toBe('desk');
-      await visible('complementary', 'Desk');
+      expect(screen.queryByRole('option', { name: /^Desk/ })).toBeNull();
+      expect(useAppStore.getState().sessionFace[ctx.sessionId] ?? 'overview').toBe('overview');
     },
   },
   ...(['payments-api', 'ledger-core'] as const).map((project): Row => ({

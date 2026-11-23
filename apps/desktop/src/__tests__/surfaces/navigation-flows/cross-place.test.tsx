@@ -781,9 +781,15 @@ describe('moving across every place keeps one frame', () => {
       'max-w-[var(--column-frame)]',
     );
     expect(new Set(atRest).size, 'the trail column keeps one shape without a drawer').toBe(1);
-    const withDrawer = await walk(true);
-    expect(new Set(withDrawer).size, 'the trail column keeps one shape with a drawer').toBe(1);
-    expect(withDrawer, 'a drawer slides the column, it does not reshape it').toEqual(atRest);
+    const [deskTrail, ...pageTrails] = await walk(true);
+    expect(
+      deskTrail,
+      'a tool on the Overview builds the Desk, its head spans the desk',
+    ).not.toContain('max-w-[var(--column-frame)]');
+    expect(new Set(pageTrails).size, 'the trail column keeps one shape with a drawer').toBe(1);
+    expect(pageTrails, 'a drawer slides the column, it does not reshape it').toEqual(
+      atRest.slice(1),
+    );
 
     door('settings').focus();
     await click(door('settings'));
@@ -807,11 +813,10 @@ describe('moving across every place keeps one frame', () => {
     expect(currentPage()).toBe('Overview');
     expectOneRail({ place: 'Overview', layers: overviewLayers(), rail: COLUMN_RAIL });
     await openContextDrawer(sessionId);
-    expectOneRail({
-      place: 'Overview with a drawer',
-      layers: overviewLayers(),
-      rail: COLUMN_RAIL,
-    });
+    expect(
+      screen.queryByRole('complementary', { name: 'Desk' }),
+      'a tool on the Overview splits the page into the Desk',
+    ).not.toBeNull();
     await escape();
 
     await openAgentTranscript(sessionId);

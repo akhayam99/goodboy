@@ -221,12 +221,10 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
     expect(drift.map(({ id }) => id)).toEqual([]);
   });
 
-  it('puts Desk in the View menu with the key of the registry', () => {
-    const block = /const VIEW_ROWS: &\[Row\] = &\[([\s\S]*?)\n\];/.exec(source)?.[1] ?? '';
-    const desk = menuCommands.find(({ id }) => id === 'session.desk');
-    expect(block).toContain('"session.desk"');
-    expect(desk).toEqual({ id: 'session.desk', label: 'Desk', combo: 'cmd+KeyJ' });
-    expect(SHORTCUTS['session.desk'].combo).toBe('cmd+KeyJ');
+  it('holds no Desk row and leaves the J key free, in the menu and in the registry', () => {
+    expect(menuCommands.find(({ id }) => id === 'session.desk')).toBeUndefined();
+    expect(menuCommands.map(({ combo }) => combo)).not.toContain('cmd+KeyJ');
+    expect(Object.values(SHORTCUTS).map(({ combo }) => combo)).not.toContain('cmd+KeyJ');
   });
 
   it('leaves Undo and Redo to the predefined items', () => {

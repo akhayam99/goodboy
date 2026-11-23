@@ -33,7 +33,6 @@ export const deskLandingOf = ({ state, sessionId, door, move, next }: Params): L
   return landingOf({
     door,
     move,
-    lastFace: state.sessionFace[sessionId] ?? null,
     hasKept: deskToolsOf({ state }).length > 0 || deskLines.keptOf({ sessionId }).length > 0,
     next,
     nowAgentId: nowAgent?.id ?? null,

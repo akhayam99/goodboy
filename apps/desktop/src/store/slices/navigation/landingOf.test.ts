@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type AgentId } from '@goodboy/types';
-import { DESK_OFF_REASON, landingOf, type DeskToolKind, type LandingParams } from './landingOf';
+import { landingOf, type DeskToolKind, type LandingParams } from './landingOf';
 
 const implementer = brandId<AgentId>({ value: 'agent-implementer' });
 
@@ -9,7 +9,6 @@ const EVERY_TOOL: ReadonlySet<DeskToolKind> = new Set<DeskToolKind>(['agent', 'p
 const base: LandingParams = {
   door: 'desk',
   move: null,
-  lastFace: null,
   hasKept: false,
   next: [],
   nowAgentId: null,
@@ -55,7 +54,7 @@ describe('landingOf, the one entry rule', () => {
     });
   });
 
-  it('then the terminal of the workspace folder, else the Desk stays off with the reason', () => {
+  it('then the terminal of the workspace folder, else the overview stays', () => {
     expect(landingOf({ ...base, firstMountId: null })).toEqual({
       face: 'desk',
       isKept: false,
@@ -63,7 +62,6 @@ describe('landingOf, the one entry rule', () => {
     });
     expect(landingOf({ ...base, firstMountId: null, hasWorkspaceFolder: false })).toEqual({
       face: 'overview',
-      reason: DESK_OFF_REASON,
     });
   });
 
@@ -81,9 +79,9 @@ describe('landingOf, the one entry rule', () => {
 
   it('a door that names a question, a permission or a plan lands on the overview', () => {
     for (const kind of ['answer-questions', 'approve-tool', 'plan-ready']) {
-      expect(
-        landingOf({ ...base, door: 'move', move: { kind, mountId: null }, lastFace: 'desk' }),
-      ).toEqual({ face: 'overview', reason: null });
+      expect(landingOf({ ...base, door: 'move', move: { kind, mountId: null } })).toEqual({
+        face: 'overview',
+      });
     }
   });
 
@@ -110,21 +108,22 @@ describe('landingOf, the one entry rule', () => {
     });
   });
 
-  it('a door that names no move lands on the last face, the overview the first time', () => {
-    expect(landingOf({ ...base, door: 'place' })).toEqual({ face: 'overview', reason: null });
-    expect(landingOf({ ...base, door: 'place', lastFace: 'overview' })).toEqual({
-      face: 'overview',
-      reason: null,
-    });
-    expect(landingOf({ ...base, door: 'place', lastFace: 'desk', hasKept: true })).toEqual({
+  it('a door that names no move reopens the tools the session had, else the overview', () => {
+    expect(landingOf({ ...base, door: 'place', hasKept: true })).toEqual({
       face: 'desk',
       isKept: true,
     });
   });
 
+  it('a door that names no move never opens a tool the session did not have', () => {
+    expect(
+      landingOf({ ...base, door: 'place', nowAgentId: implementer, next: [failedCheck] }),
+    ).toEqual({ face: 'overview' });
+  });
+
   it('never dispatches on a key outside the table', () => {
     expect(
       landingOf({ ...base, door: 'move', move: { kind: 'constructor', mountId: 'mount-x' } }),
-    ).toEqual({ face: 'overview', reason: null });
+    ).toEqual({ face: 'overview' });
   });
 });

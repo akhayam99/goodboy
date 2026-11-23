@@ -134,7 +134,6 @@ export const NAMES = {
   bringDeskHere: 'Bring it here',
   deskMovedAway: 'Desk moved to another window',
   bringDeskBack: 'Bring the Desk back',
-  openOnDesk: 'Open on desk',
   branch: 'Branch',
   comments: 'Comments',
   conversation: 'Conversation',

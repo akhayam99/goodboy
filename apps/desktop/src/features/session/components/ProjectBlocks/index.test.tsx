@@ -27,7 +27,7 @@ import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStatuses/cache';
 import userEvent from '@testing-library/user-event';
-import { tabForFactOf } from '../../../branch/tabForFactOf';
+import { branchTabPlaceOf } from '../../../branch/branchTabPlaceOf';
 import { NAMES } from '../../../../shared/utils/names';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
@@ -371,7 +371,7 @@ describe('the project blocks on the Overview', () => {
     }
   });
 
-  it('opens the tab the failing fact names, by its mount, and leaves the tools alone', async () => {
+  it('opens the changes of the pull request from its row, by its mount, and leaves the tools alone', async () => {
     seedCentralColumn({ kind: 'branches' });
     const navigate = vi.fn();
     act(() => {
@@ -383,16 +383,16 @@ describe('the project blocks on the Overview', () => {
     fireEvent.click(screen.getByRole('link', { name: `Open ${TENANT}` }));
 
     expect(navigate).toHaveBeenCalledWith({
-      to: tabForFactOf({
+      to: branchTabPlaceOf({
         sessionId: COLUMN_SESSION_ID,
         mountId: mountIdOf({ branch: TENANT }),
-        fact: 'checks-failing',
+        tab: 'files',
       }),
     });
     expect(useAppStore.getState().drawer).toBe(before);
   });
 
-  it('opens Conversation from a row whose chip names no fact', async () => {
+  it('opens the changes from a row whose chip names no fact too', async () => {
     seedCentralColumn({ kind: 'branches' });
     const navigate = vi.fn();
     act(() => {
@@ -403,10 +403,10 @@ describe('the project blocks on the Overview', () => {
     fireEvent.click(screen.getByRole('link', { name: `Open ${LEDGER}` }));
 
     expect(navigate).toHaveBeenCalledWith({
-      to: tabForFactOf({
+      to: branchTabPlaceOf({
         sessionId: COLUMN_SESSION_ID,
         mountId: mountIdOf({ branch: LEDGER }),
-        fact: null,
+        tab: 'files',
       }),
     });
   });

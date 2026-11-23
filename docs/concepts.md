@@ -340,9 +340,13 @@ or closed.
 
 - **Overview** and **Desk** are the two faces of a session. The Overview is
   the face you read; the Desk is the face you work in, its tools beside a
-  column that keeps the session in view. Both sit under one head, and a
-  session opens again on the face you left it on. The Desk is never a place
-  of its own: it always belongs to one session.
+  column that keeps the session in view. Both sit under one head, with no
+  switch between them: opening a tool from the right rail makes the Desk, and
+  closing the last tool brings back the Overview. A session opens again with
+  the tools it had. The Desk is never a place of its own: it always belongs to
+  one session.
+- **Changes** is not a tab of the session. The changes of a pull request open
+  from its row in the Projects block of the Overview.
 - A **move** is one thing that takes a session forward, with its reason and
   its verb: answer a question, fix a failing check, open a pull request.
   **Needs you** holds the moves only you can make, **Next** the ones after.

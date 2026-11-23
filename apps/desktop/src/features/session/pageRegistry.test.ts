@@ -9,9 +9,11 @@ describe('the session level pages', () => {
     expect(columnPagesOf().map((page) => page.label)).toEqual(['Overview', 'Runs', 'Artifacts']);
   });
 
-  it('add the Changes shortcut last only on a session with one branch', () => {
-    expect(pagesOf({ hasOpenQuestions: true }).map((page) => page.id)).not.toContain('files');
-    expect(pagesOf({ hasOpenQuestions: true, hasOneBranch: true }).at(-1)?.id).toBe('files');
+  it('hold no Changes tab, since the changes open from the pull request row', () => {
+    for (const hasOpenQuestions of [false, true]) {
+      const labels = pagesOf({ hasOpenQuestions }).map((page) => page.label);
+      expect(labels).not.toContain('Changes');
+    }
   });
 
   it('fold Orchestrated into the one Runs entry', () => {
@@ -43,7 +45,7 @@ describe('the session level pages', () => {
 });
 
 describe('the page registry', () => {
-  const every = pagesOf({ hasOpenQuestions: true, hasOneBranch: true });
+  const every = pagesOf({ hasOpenQuestions: true });
 
   it('names every page after its shortcut', () => {
     for (const page of every) {
@@ -70,7 +72,6 @@ describe('the page registry', () => {
       'runs',
       'artifacts',
       'questions',
-      'files',
     ]);
   });
 });

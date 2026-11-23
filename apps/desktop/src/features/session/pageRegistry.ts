@@ -6,7 +6,7 @@ import { NAMES } from '../../shared/utils/names';
 import { LENS_ICON, LENS_LABEL } from './lens-labels';
 import type { CountedPageId } from './pageCountWord';
 
-type PageId = 'overview' | 'files' | 'runs' | 'artifacts' | 'questions' | 'context';
+type PageId = 'overview' | 'runs' | 'artifacts' | 'questions' | 'context';
 
 export type Page = {
   readonly id: PageId;
@@ -48,13 +48,6 @@ const OVERVIEW_PAGE: Page = {
   currentLenses: [null],
 };
 
-const CHANGES_PAGE = lensPage({
-  id: 'files',
-  lens: 'files',
-  shortcut: 'lens.files',
-  count: 'files',
-});
-
 const RUNS_PAGE: Page = {
   ...lensPage({ id: 'runs', lens: 'workflows', shortcut: 'lens.workflows', count: 'runs' }),
   currentLenses: ['workflows', 'orchestrated'],
@@ -85,15 +78,10 @@ export const columnPagesOf = (): ReadonlyArray<Page> => [OVERVIEW_PAGE, RUNS_PAG
 
 type PagesParams = {
   readonly hasOpenQuestions: boolean;
-  readonly hasOneBranch?: boolean;
 };
 
-export const pagesOf = ({
-  hasOpenQuestions,
-  hasOneBranch = false,
-}: PagesParams): ReadonlyArray<Page> => [
+export const pagesOf = ({ hasOpenQuestions }: PagesParams): ReadonlyArray<Page> => [
   ...columnPagesOf(),
   ...(hasOpenQuestions ? [QUESTIONS_PAGE] : []),
   CONTEXT_PAGE,
-  ...(hasOneBranch ? [CHANGES_PAGE] : []),
 ];

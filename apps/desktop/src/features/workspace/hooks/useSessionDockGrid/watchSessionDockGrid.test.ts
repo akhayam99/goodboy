@@ -49,6 +49,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderHook } from '@testing-library/react';
 import { brandId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import {
@@ -63,6 +64,7 @@ import { storedDockGridOf } from '../../../../store/slices/drawer/dockGridMemory
 import { panelFocusKeyOf } from '../../../../store/slices/drawer/panelFocusKeyOf';
 import { shellPanelsOf } from '../../../../store/slices/drawer/shellPanelsOf';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
+import { useDeskFollowsTools } from '../../../session/components/SessionDesk/useDeskFollowsTools';
 import { watchSessionDockGrid } from './watchSessionDockGrid';
 
 const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
@@ -599,6 +601,18 @@ describe('the face saved with the grid', () => {
 
     expect(state().sessionFace[S1]).toBe('overview');
     expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).not.toHaveProperty('face');
+  });
+
+  it('opens the Desk when an Overview row comes back with its tools', async () => {
+    saveRow({ sessionId: S1, grid: SAVED });
+    watch();
+    const follower = renderHook(() => useDeskFollowsTools({ sessionId: S1 }));
+
+    await goTo({ sessionId: S1 });
+
+    expect(toolKinds()).toEqual([['browser'], ['terminal']]);
+    expect(state().sessionFace[S1]).toBe('desk');
+    follower.unmount();
   });
 
   it('keeps a face picked while the row was still loading', async () => {

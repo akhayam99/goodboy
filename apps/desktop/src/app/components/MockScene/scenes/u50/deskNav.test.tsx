@@ -53,7 +53,7 @@ const show = async ({ name }: Params) => {
       <Scene />
     </ToastProvider>,
   );
-  await screen.findByRole('tablist', { name: 'Overview or Desk' });
+  await screen.findByRole('tablist', { name: 'Session pages' });
 };
 
 describe('the u50 desk nav scenes', () => {

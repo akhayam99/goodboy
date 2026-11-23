@@ -51,7 +51,7 @@ export const recallDockGrid = ({ set, get }: SliceDeps) => {
       before,
       isSavedThisRun,
     });
-    if (claim.isCurrent() && isFaceKept) {
+    if (claim.isCurrent() && faceSelections.read({ sessionId }) === selection) {
       set((state) => ({ sessionFace: { ...state.sessionFace, [sessionId]: face } }));
     }
     return applied;

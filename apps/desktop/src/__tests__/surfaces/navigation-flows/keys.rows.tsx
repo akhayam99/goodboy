@@ -392,13 +392,6 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     lands: () => heading('Board'),
   }),
   pressRow({
-    id: 'session.desk',
-    lands: async () => {
-      await screen.findByRole('complementary', { name: 'Desk' });
-      expect(Object.values(useAppStore.getState().sessionFace)).toContain('desk');
-    },
-  }),
-  pressRow({
     id: 'terminal.studio',
     lands: async () => {
       await screen.findByRole('button', { name: 'Open full page' });
@@ -2447,28 +2440,21 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     lands: async () => expect(moveRow(requireValue({ value: movesPutAway.at(-1) }))).not.toBeNull(),
   }),
   keyRow({
-    id: 'session.desk',
-    note: 'switches the face with the keyboard in a terminal',
-    open: async (ctx) => {
+    id: 'terminal.studio',
+    note: 'on the Overview splits the page into the Desk',
+    open: async () => {
       await press('terminal.studio')();
-      const terminal = document.createElement('div');
-      terminal.className = 'xterm';
-      const input = document.createElement('textarea');
-      terminal.append(input);
-      document.body.append(terminal);
-      input.focus();
-      await pressed('session.desk', input);
-      terminal.remove();
-      expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
     },
-    lands: async (ctx) =>
-      waitFor(() => expect(useAppStore.getState().sessionFace[ctx.sessionId]).toBe('desk')),
+    lands: async (ctx) => {
+      await screen.findByRole('complementary', { name: 'Desk' });
+      expect(useAppStore.getState().sessionFace[ctx.sessionId]).toBe('desk');
+    },
   }),
   keyRow({
     id: 'nav.up',
     note: 'on the Desk goes up to the board, as on the Overview',
     open: async () => {
-      await press('session.desk')();
+      await press('terminal.studio')();
       await screen.findByRole('complementary', { name: 'Desk' });
       await press('nav.up')();
     },

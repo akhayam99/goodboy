@@ -546,10 +546,10 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   session Overview, so the address never names a face. The face lives per
   session in `sessionFace` and is saved with the dock grid (see
   [home-and-drawer.md](./home-and-drawer.md), The grid saved on the session).
-  ⌘J and the **Overview | Desk** control switch it in place and push nothing
-  (`switchSessionFace`); from another page of the session they replace that
-  entry with the Overview. Back, Forward, the crumbs and Esc never switch a
-  face, and ⌘↑ from the Desk goes to the board, as from any tab.
+  A tool opened on the Overview turns it to the Desk in place, and closing the
+  last tool turns it back; neither pushes an entry (`switchSessionFace`). Back,
+  Forward, the crumbs and Esc never change a face, and ⌘↑ from the Desk goes
+  to the board, as from any tab.
 - **An Auto run keeps one frame.** The run page and the page of every agent
   under it draw the Agents rail in the frame's left slot (`LeadPage`,
   `RunAgentsRail`). The marked row is the agent in the address, so a reload,
@@ -572,8 +572,8 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 - **Changes is a place of a branch.** On a session with a branch,
   `canonicalLocation` turns a `files` place into the Branch page Changes tab
   (`branchPlace` with `tab: 'files'`), on the place's mount or else the branch you
-  looked at last (`doorMountPath`), keeping its file focus; the single-branch
-  Changes shortcut, the board door, the palette and the chord all land there. A
+  looked at last (`doorMountPath`), keeping its file focus; the pull request row
+  of the Projects block, the board door, the palette and the chord all land there. A
   folder session keeps `FilesPane` on its `files` place. A stored `diff` target
   with `page: 'history'` still opens the pull request's Commits.
 - **Stored places.** One fold, `withoutRemovedPages`, maps every place an older

@@ -26,5 +26,5 @@ export const applyDeskHold = ({ hold, line }: Params): void => {
   }
   state.setSessionFace({ sessionId, face: 'overview' });
   deskLines.show({ sessionId, line: shown === 'moved' ? shown : line });
-  focusDeskControl({ target: line === 'moved' ? 'tab' : 'line' });
+  focusDeskControl();
 };

@@ -46,7 +46,6 @@ import {
 } from '../../../workspace/testing/sessionColumn';
 import { brandedId } from '../../../history/testing/brandedId';
 import { toggleTerminalDock } from '../../toggleTerminalDock';
-import { toggleCurrentFace } from '../../../session/components/SessionDesk/toggleCurrentFace';
 import { TerminalDrawer } from '.';
 
 const session = sessionOf({ goal: 'Retry the webhook' });
@@ -133,8 +132,6 @@ const shownTerminal = (): TerminalTab | null => {
   );
 };
 
-const face = () => store.getState().sessionFace[session.id] ?? 'overview';
-
 describe('one tab per track', () => {
   it('names each mounted project, with the branch and the folder in the head', async () => {
     renderDrawer({ terminalId: TAB.id });
@@ -171,30 +168,23 @@ describe('one tab per track', () => {
   });
 });
 
-describe('the terminal over the overview', () => {
-  it('opens on the key without changing face, and Open on desk takes it to the Desk', async () => {
+describe('the terminal of a session', () => {
+  it('opens on the key with no Open on desk in its head, since the page splits by itself', async () => {
     stops.push(
       registerShortcut('terminal.studio', () =>
         toggleTerminalDock({ isToggle: true, shouldFocusFirst: true }),
       ),
-      registerShortcut('session.desk', toggleCurrentFace),
     );
 
     act(() => {
       pressShortcut({ id: 'terminal.studio' });
     });
 
-    expect(face()).toBe('overview');
     const shown = shownTerminal();
     expect(shown).not.toBeNull();
 
     renderDrawer({ terminalId: shown?.id ?? TAB.id });
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Open on desk' }));
-    });
 
-    expect(face()).toBe('desk');
-    expect(shownTerminal()?.id).toBe(shown?.id);
     expect(screen.queryByRole('button', { name: 'Open on desk' })).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
-import { brandId, type MountId, type SessionId } from '@goodboy/types';
-import { sessionPlace } from '../../store/slices/navigation/place';
+import type { SessionId } from '@goodboy/types';
 import type { BranchTab, Place } from '../../store/slices/navigation/types';
+import { branchTabPlaceOf } from './branchTabPlaceOf';
 import type { BranchState } from '../session/central/branches/branchStateTone';
 import type { SessionSuggestion } from '../suggestions/types';
 
@@ -27,15 +27,8 @@ const FACT_TAB: Partial<Readonly<Record<BranchFact, BranchTab>>> = {
 };
 
 export const tabForFactOf = ({ sessionId, mountId, fact }: Params): Place =>
-  sessionPlace({
+  branchTabPlaceOf({
     sessionId,
-    lens: 'branch',
-    target: {
-      kind: 'branch',
-      mountId: brandId<MountId>({ value: mountId }),
-      mountPath: null,
-      tab: fact === null ? 'pr' : (FACT_TAB[fact] ?? 'pr'),
-      threadId: null,
-      focus: null,
-    },
+    mountId,
+    tab: fact === null ? 'pr' : (FACT_TAB[fact] ?? 'pr'),
   });

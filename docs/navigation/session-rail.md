@@ -9,9 +9,10 @@ with Board current while a session is open. Sessions in the top bar (⌘B) opens
 the searchable list, Pinned first, then grouped by state. A row opens its session on Overview. The session's
 pages are page tabs directly under the session title (`SessionPageTabs`, built on `PageTabs`):
 Overview, Runs, Artifacts, Questions and Context, on every session, with or without a
-branch. A session with exactly one branch adds a **Changes** shortcut last: it opens that
-branch's Changes tab on the Branch page; with no branch or more than one it is absent, since
-changes belong to a branch and its pull request. Counts sit on Runs, Artifacts and Questions
+branch. There is no Changes tab: changes belong to a branch and its pull request, so the
+pull request row of the Projects block opens that branch's Changes tab on the Branch page.
+The tab row holds no Overview or Desk switch either: a tool from the right rail splits the
+page into the Desk. Counts sit on Runs, Artifacts and Questions
 (`pageSlotOf`). The pages come from one list (`pagesOf`
 in `features/session/pageRegistry.ts`).
 
@@ -133,9 +134,10 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   to another place. Only one level shows, so a session never carries a nested
   card in the workspace list.
 - **The pages** come from one registry (`features/session/pageRegistry.ts`):
-  Overview, Runs, Artifacts, Questions and Context, and the Changes shortcut of a
-  single-branch session (its `Changed` and `All files` modes hold the files of the branch,
-  see the Changes section of branch-page.md). Questions is always there like Artifacts: its slot
+  Overview, Runs, Artifacts, Questions and Context. The changes of a branch open from its
+  pull request row in the Projects block (`BoardTile`, `branchTabPlaceOf`), on the Changes
+  tab of the Branch page with its `Changed` and `All files` modes (see the Changes section of
+  branch-page.md). Questions is always there like Artifacts: its slot
   is the open count with the warning dot while a question waits on you.
   **Runs is the one entry for work** (ux27 one flow, unit 1): it folds the
   former Orchestrated, Agents and Auto agents entries. Its page lists every

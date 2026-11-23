@@ -7,24 +7,28 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { FACE_SWAP_ATTRIBUTE } from '@goodboy/ui';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { deskToolsOf } from '../../../../../features/session/components/SessionDesk/deskToolsOf';
 import {
   importStore,
   resetStoryStore,
   storySpies,
   STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U50_DESK_MOTION_SCENES } from './deskMotion';
 
+let store: StoryStore;
+
 beforeAll(async () => {
   installFakeResizeObserver();
   Element.prototype.scrollIntoView = vi.fn();
-  await importStore();
+  store = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 beforeEach(async () => {
   window.localStorage.clear();
@@ -56,7 +60,7 @@ const show = async ({ name }: Params) => {
       <Scene />
     </ToastProvider>,
   );
-  return screen.findByRole('tablist', { name: 'Overview or Desk' });
+  return screen.findByRole('tablist', { name: 'Session pages' });
 };
 
 const stateOf = (key: string): string | null =>
@@ -96,11 +100,14 @@ describe('the u50 desk motion scenes', () => {
     );
   });
 
-  it('swaps back to the overview from the Overview control', async () => {
-    const control = await show({ name: 'u50-desk-motion-light' });
+  it('swaps back to the whole overview when the last tool closes', async () => {
+    await show({ name: 'u50-desk-motion-light' });
     await screen.findByRole('complementary', { name: 'Desk' });
 
-    fireEvent.click(within(control).getByRole('tab', { name: /Overview/ }));
+    act(() => {
+      const state = store.getState();
+      deskToolsOf({ state }).forEach((entry) => state.closeDrawerEntry({ entry }));
+    });
 
     await waitFor(() => expect(stateOf('overview')).toBe('active'));
     expect(stateOf('desk')).toBe('hidden');

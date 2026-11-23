@@ -39,12 +39,13 @@ unit that changes the skeleton edits this section first.
    saved width: 64px with a word under each icon, 44px icons only under a
    1100px window, and an old folded choice changes nothing
    (`regressions/places-rail.test.tsx`). Owned by The places rail.
-9. **Inside a session, the right opens its Desk. Target.** On the Overview,
-   Browser, Monitor and Scripts on the right rail open the Desk with that tool,
-   and Terminal opens over the Overview; on the Desk they show and hide its
-   panels. Outside a session, the Board included, a tool opens beside the page
-   as principle 2 says. Today a tool on the Overview still opens the dock
-   beside it. Owned by The session tools.
+9. **Inside a session, the right opens its Desk. Holds.** On the Overview,
+   Terminal, Browser, Scripts, Ask and Monitor on the right rail open the Desk
+   with that tool; on the Desk they show and hide its panels, and closing the
+   last one brings the whole Overview back. The session head has no switch
+   between the two (`useDeskLanding/index.test.tsx`). Outside a session, the
+   Board included, a tool opens beside the page as principle 2 says. Owned by
+   The session tools.
 
 What holds today and is guarded:
 
@@ -379,7 +380,7 @@ page stacked under it, and shows that drawer; it never closes a parked one,
 and an overlay drawer takes focus back. Esc in the session is one ladder: an open
 menu, popover or field takes it first, then the top of the slot closes, then
 the drawer from the chip, then the page goes up. A face is not a step of the
-ladder: Esc never switches Overview and Desk (model.md, A face is not an
+ladder: Esc never changes Overview and Desk (model.md, A face is not an
 entry). ⌘⇧W (Ctrl+F4 off macOS,
 File > Close the Drawer) closes the top of the slot from anywhere, a focused
 terminal or web page included; an open menu or dialog takes it first, and a
@@ -389,24 +390,27 @@ wears a small ring and is named waiting, and a signal dot sits with either (see
 [session-rail.md](./session-rail.md), The session tools). The rules, the store and the navigation cases are in
 [home-and-drawer.md](./home-and-drawer.md) (One drawer at a time).
 
-**The Desk is never empty, and one window holds it.** A tool is what the Desk
-draws with content: a cell of the grid, or a detail of the tool kind (Scripts);
-Ask and the readers do not count (`deskToolsOf`). Entering the Desk opens a
-tool at once, in one order (`landingOf`, the one entry rule every door to a
-session asks): the tools the session had, the tools of the first move of Next,
-the agent of Now, the terminal of the first project, the terminal of the
-workspace folder. The rule only picks a tool the Desk can draw (`DESK_OPENS`),
-today the terminal, so the agent and the pull request steps wait for their
-panels. With none of these, Desk stays off with the reason in its tooltip. The rule runs after the saved grid is read, and a Desk saved with no
-tool comes back as the Overview with no line (`useDeskLanding`). Closing the
-last tool, by its X, ⌘⇧W or ⌘W, closes the Desk: the Overview comes back with
-**Desk closed** and **Reopen** in the page, the focus on Desk, and the history
-unchanged. Closing hides: Reopen or ⌘J brings the tools back as they were. One
-window holds the Desk of a session (`desk_hold`, `window_heartbeat.rs`), read
-from the live windows only: a closed window, or one whose heartbeat stopped,
-frees it. Another window on the same session stays on the Overview with
-**Desk open in another window** and **Bring it here**, and ⌘J or Desk there
-says the same instead of doing nothing. The window that loses it goes back to
+**The tools build the Desk, and one window holds it.** A tool is what the Desk
+draws with content: a cell of the grid, a detail of the tool kind (Scripts),
+or the Ask of the session; the readers do not count (`deskToolsOf`). The Desk
+has no switch and no key: a tool opened on the Overview, from the right rail
+or by its key, splits the page (`useDeskFollowsTools`). A session entered
+again reopens the tools it had (`landingOf`, the one entry rule every door to a
+session asks); with none, it opens on the whole Overview. A door that brings
+the Desk with nothing kept, such as Bring it here, opens a tool at once, in one
+order: the tools of the first move of Next, the agent of Now, the terminal of
+the first project, the terminal of the workspace folder. The rule only picks a
+tool the Desk can draw (`DESK_OPENS`), today the terminal. The rule runs after
+the saved grid is read, and a Desk saved with no tool comes back as the
+Overview with no line (`useDeskLanding`). Closing the last tool, by its X, ⌘⇧W
+or ⌘W, closes the Desk: the Overview comes back with **Desk closed** and
+**Reopen** in the page, the focus on Reopen, and the history unchanged.
+Closing hides: Reopen brings the tools back as they were. One window holds the
+Desk of a session (`desk_hold`, `window_heartbeat.rs`), read from the live
+windows only: a closed window, or one whose heartbeat stopped, frees it.
+Another window on the same session stays on the Overview with **Desk open in
+another window** and **Bring it here**, and a tool opened there says the same
+instead of splitting the page. The window that loses it goes back to
 the Overview with **Desk moved to another window** and **Bring the Desk back**,
 written in the page and not in a toast, its shells still running. A holder
 change goes to every window as `desk-holder`, and a window that shows one of
