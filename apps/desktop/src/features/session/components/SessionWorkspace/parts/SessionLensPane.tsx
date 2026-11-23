@@ -11,12 +11,7 @@ import { openLens } from '../../../openLens';
 import type { LensSurface } from '../../../lens-surface';
 import { SessionFace } from '../../SessionDesk/SessionFace';
 import { LinkIssueAction } from '../../SessionOverviewPane/LinkIssueAction';
-import { ActivityPage } from '../../../central/log/ActivityPage';
-import { FilesPane } from './FilesPane';
-import { IntegrationPane } from './IntegrationPane';
-import { GithubTaskDetail } from './IntegrationPane/GithubTaskDetail';
 import { LensSkeleton } from './LensSkeleton';
-import { QuestionsPane } from './QuestionsPane';
 import { SessionOverviewLoading } from './SessionOverviewLoading';
 import { WorkflowsPane } from './WorkflowsPane';
 
@@ -28,6 +23,31 @@ const BranchPage = lazyNamed({
 const ArtifactStudio = lazyNamed({
   load: () => import('../../../../artifacts/components/ArtifactStudio'),
   pick: ({ ArtifactStudio }) => ArtifactStudio,
+});
+
+const ActivityPage = lazyNamed({
+  load: () => import('../../../central/log/ActivityPage'),
+  pick: ({ ActivityPage }) => ActivityPage,
+});
+
+const IntegrationPane = lazyNamed({
+  load: () => import('./IntegrationPane'),
+  pick: ({ IntegrationPane }) => IntegrationPane,
+});
+
+const GithubTaskDetail = lazyNamed({
+  load: () => import('./IntegrationPane/GithubTaskDetail'),
+  pick: ({ GithubTaskDetail }) => GithubTaskDetail,
+});
+
+const FilesPane = lazyNamed({
+  load: () => import('./FilesPane'),
+  pick: ({ FilesPane }) => FilesPane,
+});
+
+const QuestionsPane = lazyNamed({
+  load: () => import('./QuestionsPane'),
+  pick: ({ QuestionsPane }) => QuestionsPane,
 });
 
 const ContextTab = lazyNamed({
@@ -82,10 +102,18 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
     );
   }
   if (target === 'questions') {
-    return <QuestionsPane session={session} />;
+    return (
+      <Suspense fallback={<LensSkeleton page="questions" label="Loading questions" />}>
+        <QuestionsPane session={session} />
+      </Suspense>
+    );
   }
   if (target === 'activity') {
-    return <ActivityPage session={session} />;
+    return (
+      <Suspense fallback={<LensSkeleton page="activity" label="Loading activity" />}>
+        <ActivityPage session={session} />
+      </Suspense>
+    );
   }
   if (target === 'plans') {
     return (
@@ -105,26 +133,44 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
     );
   }
   if (target === 'linear') {
-    return <IntegrationPane sessionId={sessionId} workspaceId={workspaceId} provider="linear" />;
+    return (
+      <Suspense fallback={<LensSkeleton page="overview" label="Loading issues" />}>
+        <IntegrationPane sessionId={sessionId} workspaceId={workspaceId} provider="linear" />
+      </Suspense>
+    );
   }
   if (target === 'gitlab_issues') {
-    return <IntegrationPane sessionId={sessionId} workspaceId={workspaceId} provider="gitlab" />;
+    return (
+      <Suspense fallback={<LensSkeleton page="overview" label="Loading issues" />}>
+        <IntegrationPane sessionId={sessionId} workspaceId={workspaceId} provider="gitlab" />
+      </Suspense>
+    );
   }
   if (target === 'jira_issues') {
-    return <IntegrationPane sessionId={sessionId} workspaceId={workspaceId} provider="jira" />;
+    return (
+      <Suspense fallback={<LensSkeleton page="overview" label="Loading issues" />}>
+        <IntegrationPane sessionId={sessionId} workspaceId={workspaceId} provider="jira" />
+      </Suspense>
+    );
   }
   if (target === 'slack_threads') {
-    return <IntegrationPane sessionId={sessionId} workspaceId={workspaceId} provider="slack" />;
+    return (
+      <Suspense fallback={<LensSkeleton page="overview" label="Loading issues" />}>
+        <IntegrationPane sessionId={sessionId} workspaceId={workspaceId} provider="slack" />
+      </Suspense>
+    );
   }
   if (target === 'github_issue') {
     if (githubIssueNumber != null) {
       return (
-        <GithubTaskDetail
-          workspaceId={workspaceId}
-          rootPath={sessionRepo?.worktreePath ?? null}
-          {...(githubTask != null && { task: githubTask })}
-          issueNumber={githubIssueNumber}
-        />
+        <Suspense fallback={<LensSkeleton page="overview" label="Loading the issue" />}>
+          <GithubTaskDetail
+            workspaceId={workspaceId}
+            rootPath={sessionRepo?.worktreePath ?? null}
+            {...(githubTask != null && { task: githubTask })}
+            issueNumber={githubIssueNumber}
+          />
+        </Suspense>
       );
     }
     return (
@@ -149,11 +195,13 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
   }
   if (target === 'files') {
     return (
-      <FilesPane
-        sessionId={sessionId}
-        sessionDir={workingDir}
-        onClose={() => openLens({ sessionId, lens: null })}
-      />
+      <Suspense fallback={<LensSkeleton page="branchChanges" label="Loading files" />}>
+        <FilesPane
+          sessionId={sessionId}
+          sessionDir={workingDir}
+          onClose={() => openLens({ sessionId, lens: null })}
+        />
+      </Suspense>
     );
   }
   return null;

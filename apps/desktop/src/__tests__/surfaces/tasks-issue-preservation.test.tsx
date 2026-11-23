@@ -14,6 +14,13 @@ import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../sto
 import { clearSceneInvoke } from '../../test/sceneInvoke';
 import { MOCK_SCENES } from '../../app/components/MockScene';
 
+beforeAll(async () => {
+  await Promise.all([
+    import('../../features/session/components/SessionWorkspace/parts/IntegrationPane'),
+    import('../../features/session/components/SessionWorkspace/parts/IntegrationPane/GithubTaskDetail'),
+  ]);
+});
+
 const SETTLE_MS = 2_000;
 
 beforeAll(async () => {
