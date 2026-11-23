@@ -1489,6 +1489,10 @@ u50-send-to-lead-sent-dark
 u50-send-to-lead-sent-light
 u50-send-to-lead-stopped-dark
 u50-send-to-lead-stopped-light
+u50-worktrees-dark
+u50-worktrees-light
+u50-worktrees-sheet-dark
+u50-worktrees-sheet-light
 update-card
 update-card-long-version
 update-card-narrow

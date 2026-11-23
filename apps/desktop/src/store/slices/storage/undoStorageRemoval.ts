@@ -8,6 +8,7 @@ import {
   type WorktreeRestoreRefusal,
 } from '../../../features/worktree/worktree';
 import type { SliceDeps } from '../../slice-types';
+import { announceWorktreesChanged } from './announceWorktreesChanged';
 import type { StorageRestoreTarget } from './types';
 
 const REFUSAL_COPY = {
@@ -31,7 +32,7 @@ const restoreOne = async ({ target }: RestoreParams): Promise<string | null> => 
     return REFUSAL_COPY[result.reason];
   }
   const { sessionId, mountId, revision } = target;
-  if (target.origin !== 'archived' || sessionId === null || mountId === null || revision === null) {
+  if (target.origin === 'ledger' || sessionId === null || mountId === null || revision === null) {
     return null;
   }
   const isWritten = await updateSessionMountLifecycle({
@@ -71,6 +72,25 @@ export const undoStorageRemoval = ({ set, get }: SliceDeps) => {
       }
       failed.push({ path: target.path, message: problem });
     }
+    const reattached = new Set(
+      targets.flatMap((target) =>
+        target.origin === 'in-use' && target.sessionId !== null && restored.has(target.path)
+          ? [target.sessionId]
+          : [],
+      ),
+    );
+    for (const sessionId of reattached) {
+      try {
+        await get().loadSessionMounts({ sessionId });
+      } catch (error) {
+        await get().reportError({
+          recovery: READ_FAILED,
+          title: "Couldn't refresh the session's worktrees",
+          error,
+          sessionId,
+        });
+      }
+    }
     set((state) => {
       if (state.storageOutcome === null || state.storageOutcome.restorable !== targets) {
         return {};
@@ -89,5 +109,9 @@ export const undoStorageRemoval = ({ set, get }: SliceDeps) => {
     } catch (error) {
       await get().reportError({ recovery: READ_FAILED, title: "Couldn't refresh Storage", error });
     }
+    await announceWorktreesChanged({
+      get,
+      repoRoots: targets.flatMap((target) => (restored.has(target.path) ? [target.repoRoot] : [])),
+    });
   };
 };

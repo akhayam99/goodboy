@@ -556,4 +556,11 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       await visible('complementary', 'Desk');
     },
   },
+  ...(['payments-api', 'ledger-core'] as const).map((project): Row => ({
+    name: `palette verb: Worktrees in ${project} opens that project's worktrees`,
+    covers: [`palette:Worktrees in ${project}`],
+    open: () => openPalette(new RegExp(`^Worktrees in ${project}`), `worktrees in ${project}`),
+    lands: async () =>
+      expect(await screen.findByText(`Worktrees in ${project}`, {}, WAIT)).toBeDefined(),
+  })),
 ];
