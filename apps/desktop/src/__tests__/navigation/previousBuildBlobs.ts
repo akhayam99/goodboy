@@ -87,7 +87,6 @@ const DRAWERS: Readonly<Record<string, unknown>> = {
   },
   conversation: { threadId: 'thread-1' },
   transcript: { agentId: 'agent-1' },
-  'pull-request': { mountId: 'mount-1', tab: 'checks' },
   'session-log': { focusEntryId: null },
   'history-versions': { mountId: 'mount-1', worktreePath: WORKTREE },
   'file-diff': { source: { kind: 'worktree', worktreePath: WORKTREE }, path: 'src/index.ts' },
