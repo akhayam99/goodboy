@@ -492,7 +492,10 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   instead, and every other scheme gets no Open row. The pane never sends text
   to a search engine.
 - **Tabs**: the strip shows the session's tabs, then the project pins with
-  their title and a pin mark, then New tab. The list shows `Pinned · <project>`
+  their title and a pin mark, then New tab. The shown tab has one selected
+  state, the tool tab chip of `toolTabClassName` that Terminal tabs use; the
+  label inside it is a bare button with no highlight of its own
+  (`BrowserTabChip`). The list shows `Pinned · <project>`
   first, then This session, then New tab; the note that tabs close when the
   session is archived is the tooltip of the This session label. A tab the
   engine put to sleep or closed (`browser://tab-state`, read by
@@ -946,7 +949,9 @@ workspace profile stays signed out.
 ## Console
 
 The console is a region under the page, in the pane and on the Browser page.
-The Console button in the address row, after the pin and before More, opens it, and
+The Console button in the address row, after the pin and before More, opens it
+with its own `CodeXml` icon, never the Terminal one (its log rows mark a plain
+log with `MessageSquareText`), and
 `browser.console` (⌘⇧J) toggles it while a tab is shown. It is a button, not
 a More row: More already holds eight rows against the five-row budget, and a
 toggle with a pressed state belongs beside the page it watches. Safari's

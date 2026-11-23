@@ -6,7 +6,7 @@ import {
   Pin,
   RotateCw,
   Square,
-  Terminal,
+  CodeXml,
   X,
 } from '@goodboy/ui/icons';
 import { IconButton, PANE_RHYTHM, cn } from '@goodboy/ui';
@@ -120,7 +120,7 @@ export const BrowserAddressRow = ({
         )}
         {consoleToggle === undefined ? null : (
           <IconButton
-            icon={Terminal}
+            icon={CodeXml}
             label="Console"
             aria-pressed={consoleToggle.isOpen}
             shortcut="browser.console"
