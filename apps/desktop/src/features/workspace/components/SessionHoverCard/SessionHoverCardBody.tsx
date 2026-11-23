@@ -14,6 +14,7 @@ import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
 import { useReviewDraftCount } from './useReviewDraftCount';
+import { useFleetPhrase } from '../../hooks/useFleetPhrase';
 import { SessionProgress } from '../SessionProgress';
 import { useSessionRowFacts } from '../../hooks/useSessionRowFacts';
 import { getLinkedRequest } from '../StageBoard/StageBoardCard/getLinkedRequest';
@@ -42,6 +43,7 @@ export const SessionHoverCardBody = ({ session, isArchived }: Props) => {
     (state) => state.goodboyNamedSessionId === sessionId && session.titleUserEdited !== true,
   );
   const draftCount = useReviewDraftCount({ sessionId });
+  const phrase = useFleetPhrase({ sessionId });
   const projectMounts = mounts.filter(
     (mount, index) => mounts.findIndex((other) => other.projectId === mount.projectId) === index,
   );
@@ -65,8 +67,7 @@ export const SessionHoverCardBody = ({ session, isArchived }: Props) => {
       [stageWord({ stage: summary.stage }), summary.addsFact ? summary.reason : null]
         .filter((part): part is string => part !== null && part !== '')
         .join(' · '));
-  const needsYou = summary.stage === 'attention' && summary.attention !== null;
-  const isWorking = !isArchived && summary.isRunning && needsYou;
+  const livePhrase = isArchived ? null : phrase;
   const otherLines = isArchived ? [] : summary.otherLines;
 
   return (
@@ -82,12 +83,12 @@ export const SessionHoverCardBody = ({ session, isArchived }: Props) => {
       />
       <div className="flex flex-col gap-1">
         <FactCardState glyph={<StatusMark mark={mark} />} words={stateText} />
-        {isWorking ? (
+        {livePhrase === null ? null : (
           <FactCardState
-            glyph={<StatusDot tone="info" size="sm" pulsing />}
-            words="An agent is working"
+            glyph={<StatusDot tone="info" size="sm" />}
+            words={<span data-fleet-phrase="">{livePhrase}</span>}
           />
-        ) : null}
+        )}
         {otherLines.map((line) => (
           <FactCardState
             key={line.reason}
