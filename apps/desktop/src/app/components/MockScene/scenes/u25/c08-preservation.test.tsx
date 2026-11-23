@@ -30,6 +30,10 @@ import { mockSceneIpc } from '../mockSceneIpc';
 import { U25_C08_PRESET_RUN_SCENES } from './c08-preset-run';
 import { C08_IMPLEMENTER_ID, C08_RUN_ID, C08_SESSION_ID } from './c08RunSeed';
 
+beforeAll(async () => {
+  await import('../../../../../features/workflows/components/WorkflowAddStep/RunStepDraft');
+});
+
 const SETTLE_MS = 2_000;
 
 type SceneName = keyof typeof U25_C08_PRESET_RUN_SCENES;

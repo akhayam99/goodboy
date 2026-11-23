@@ -36,6 +36,10 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 
+beforeAll(async () => {
+  await import('../SessionOverviewPane/LinkWorkPanel');
+});
+
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
 );

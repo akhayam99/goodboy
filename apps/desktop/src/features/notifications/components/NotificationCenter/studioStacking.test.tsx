@@ -2,11 +2,15 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Notification } from '@goodboy/db';
 import { AppShell } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+
+beforeAll(async () => {
+  await import('./BellRows');
+});
 
 const defaults = vi.hoisted(() => {
   const scope: 'workspace' | 'all' = 'workspace';
@@ -91,7 +95,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('transient popover stacking above a full-page studio', () => {
-  it('orders the named z-scale above the studio floor', () => {
+  it('orders the named z-scale above the studio floor', async () => {
     const studio = readZIndexToken('studio');
     const popoverBackdrop = readZIndexToken('popover-backdrop');
     const onboarding = readZIndexToken('onboarding');
@@ -112,7 +116,7 @@ describe('transient popover stacking above a full-page studio', () => {
     expect(lightbox).toBeGreaterThan(toast);
   });
 
-  it('keeps the z-index tokens inside the @theme block so tailwind actually generates their utilities', () => {
+  it('keeps the z-index tokens inside the @theme block so tailwind actually generates their utilities', async () => {
     const css = readFileSync(stylesCssPath, 'utf8');
     const tokenPattern = /--z-index-[a-z-]+:\s*[0-9]+;/g;
     const allTokens = css.match(tokenPattern) ?? [];
@@ -144,7 +148,7 @@ describe('transient popover stacking above a full-page studio', () => {
       fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
     });
 
-    expect(screen.getByText(/no notifications/i)).toBeDefined();
+    expect(await screen.findByText(/no notifications/i)).toBeDefined();
 
     const backdrop = document.body.querySelector('.z-popover-backdrop');
     const popoverPanel = document.body.querySelector('.z-popover');

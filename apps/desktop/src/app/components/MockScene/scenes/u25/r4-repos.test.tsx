@@ -20,6 +20,10 @@ import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { U25_R4_REPOS_SCENES } from './r4-repos';
 
+beforeAll(async () => {
+  await import('../../../../../features/workspace/components/RepoEntry/RepoEntryPanel');
+});
+
 const SETTLE_MS = 2_000;
 
 const NAMES = [

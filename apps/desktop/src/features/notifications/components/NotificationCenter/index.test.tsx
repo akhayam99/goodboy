@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { Notification, NotificationAction } from '@goodboy/db';
 import { brandId, type AgentId, type IsoDateTime, type SessionId } from '@goodboy/types';
 import { isoDateTimeOf } from '../../../../__tests__/helpers/brandedIds';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerEscapeLayer } from '@goodboy/ui';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
@@ -12,6 +12,10 @@ import {
   installFakeIntersectionObserver,
   type FakeIntersectionObserver,
 } from '../../../../__tests__/helpers/fakeIntersectionObserver';
+
+beforeAll(async () => {
+  await import('./BellRows');
+});
 
 type Defaults = {
   readonly scope: 'workspace' | 'all';
@@ -119,6 +123,7 @@ const buildNotification = ({
 const openCenter = async () => {
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
+    await import('./BellRows');
   });
 };
 

@@ -1,8 +1,12 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
+
+beforeAll(async () => {
+  await import('./MountProjectList');
+});
 
 const { store } = vi.hoisted(() => ({
   store: {
@@ -37,8 +41,9 @@ const project = ({ id, name }: { readonly id: string; readonly name: string }) =
   rootPath: `/repo/${id}`,
 });
 
-const openPicker = () => {
+const openPicker = async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Mount a folder' }));
+  await screen.findByRole('button', { name: 'Choose a folder…' });
 };
 
 describe('MountProjectAction', () => {
@@ -49,7 +54,7 @@ describe('MountProjectAction', () => {
   });
   afterEach(cleanup);
 
-  it('renders a single labelled action regardless of mount state', () => {
+  it('renders a single labelled action regardless of mount state', async () => {
     render(
       <MountProjectAction
         sessionId={SESSION_ID}
@@ -61,7 +66,7 @@ describe('MountProjectAction', () => {
     expect(screen.getByRole('button', { name: 'Mount a folder' })).toBeDefined();
   });
 
-  it('tells the workspace has no projects and offers to connect one in the same picker', () => {
+  it('tells the workspace has no projects and offers to connect one in the same picker', async () => {
     store.projects = [];
     render(
       <MountProjectAction
@@ -70,14 +75,14 @@ describe('MountProjectAction', () => {
         presentation="button"
       />,
     );
-    openPicker();
+    await openPicker();
 
     expect(screen.getByText('This workspace has no folder yet.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Choose a folder…' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Add workspace project' })).toBeNull();
   });
 
-  it('says every project is already in and still offers to connect a new one', () => {
+  it('says every project is already in and still offers to connect a new one', async () => {
     store.projects = [project({ id: 'api', name: 'API' })];
     store.sessionProjectMounts = {
       'session-1': [{ mountId: 'mount-1', projectId: 'api' }],
@@ -90,13 +95,13 @@ describe('MountProjectAction', () => {
       />,
     );
 
-    openPicker();
+    await openPicker();
     expect(screen.queryByRole('button', { name: 'Project actions' })).toBeNull();
     expect(screen.getByText('Every workspace folder is already mounted.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Choose a folder…' })).toBeDefined();
   });
 
-  it('lists an unmounted project for mounting', () => {
+  it('lists an unmounted project for mounting', async () => {
     store.projects = [project({ id: 'api', name: 'API' })];
     render(
       <MountProjectAction
@@ -105,12 +110,12 @@ describe('MountProjectAction', () => {
         presentation="button"
       />,
     );
-    openPicker();
+    await openPicker();
 
     expect(screen.getByRole('button', { name: 'Mount API' })).toBeDefined();
   });
 
-  it('puts starred projects at the top of the picker', () => {
+  it('puts starred projects at the top of the picker', async () => {
     store.projects = [
       project({ id: 'relay', name: 'notify-relay' }),
       { ...project({ id: 'ledger', name: 'ledger-core' }), starredAt: '2026-09-25T09:00:00.000Z' },
@@ -122,7 +127,7 @@ describe('MountProjectAction', () => {
         presentation="button"
       />,
     );
-    openPicker();
+    await openPicker();
 
     expect(
       screen

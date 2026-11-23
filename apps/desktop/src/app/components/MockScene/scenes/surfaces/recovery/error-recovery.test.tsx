@@ -23,6 +23,10 @@ import { runA11yCheck } from '../../../../../../__tests__/a11y/utils';
 import { MOCK_SCENES } from '../../..';
 import { U23P24_ERROR_RECOVERY_SCENES } from './error-recovery';
 
+beforeAll(async () => {
+  await import('../../../../../../features/notifications/components/NotificationCenter/BellRows');
+});
+
 const SETTLE_MS = 2_000;
 const SCENE = 'u23p24-error-recovery';
 

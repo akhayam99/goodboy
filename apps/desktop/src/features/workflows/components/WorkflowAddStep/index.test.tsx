@@ -35,6 +35,10 @@ import {
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { WorkflowAddStep } from './index';
 
+beforeAll(async () => {
+  await import('./RunStepDraft');
+});
+
 const SESSION_ID = 'session-harborline' as SessionId;
 const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
 const RUN_ID = 'run-retry' as WorkflowRunId;
@@ -90,7 +94,10 @@ const renderAddStep = () =>
     </ToastProvider>,
   );
 
-const openDraft = () => fireEvent.click(screen.getByRole('button', { name: /add step/i }));
+const openDraft = async () => {
+  fireEvent.click(screen.getByRole('button', { name: /add step/i }));
+  await screen.findByPlaceholderText('Step name');
+};
 
 const nameStep = (name: string) =>
   fireEvent.change(screen.getByPlaceholderText('Step name'), { target: { value: name } });
@@ -112,7 +119,7 @@ describe('WorkflowAddStep', () => {
     seed();
     renderAddStep();
 
-    openDraft();
+    await openDraft();
     screen.getByRole('group', { name: 'Edit step 3' });
     nameStep('Review the retry changes');
     fireEvent.click(screen.getByRole('button', { name: 'Add step' }));
@@ -133,7 +140,7 @@ describe('WorkflowAddStep', () => {
     seed();
     renderAddStep();
 
-    openDraft();
+    await openDraft();
     nameStep('Review the retry changes');
     fireEvent.click(screen.getByRole('tab', { name: 'Pin a model' }));
     const routing = within(screen.getByRole('group', { name: 'Routing for step 3' }));
@@ -162,16 +169,16 @@ describe('WorkflowAddStep', () => {
     );
   });
 
-  it('follows the provider the session override will spawn, not the first connected one', () => {
+  it('follows the provider the session override will spawn, not the first connected one', async () => {
     seed({ providerOverride: 'codex' });
     renderAddStep();
 
-    openDraft();
+    await openDraft();
 
     expect(screen.getByTestId('step-follows-role').textContent).toMatch(/gpt/i);
   });
 
-  it('follows the workspace role model ahead of the session provider', () => {
+  it('follows the workspace role model ahead of the session provider', async () => {
     seed();
     useAppStore.setState({
       workspaceOverrides: {
@@ -183,12 +190,12 @@ describe('WorkflowAddStep', () => {
     });
     renderAddStep();
 
-    openDraft();
+    await openDraft();
 
     expect(screen.getByTestId('step-follows-role').textContent).toMatch(/gpt/i);
   });
 
-  it('will not open a draft while the orchestrator is choosing the next step', () => {
+  it('will not open a draft while the orchestrator is choosing the next step', async () => {
     seed();
     useAppStore.setState({ orchestratingWorkflowRuns: { [RUN_ID]: true } });
     renderAddStep();
@@ -207,7 +214,7 @@ describe('WorkflowAddStep', () => {
     });
     renderAddStep();
 
-    openDraft();
+    await openDraft();
     nameStep('Review the retry changes');
     fireEvent.click(screen.getByRole('button', { name: 'Add step' }));
     await waitFor(() =>

@@ -21,6 +21,10 @@ import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U50_WORKTREES_SCENES } from './worktrees';
 
 beforeAll(async () => {
+  await import('../../../../../features/storage/components/ProjectWorktrees/ProjectWorktreesSheet');
+});
+
+beforeAll(async () => {
   installFakeResizeObserver();
   Element.prototype.scrollIntoView = vi.fn();
   await importStore();
@@ -82,7 +86,7 @@ describe('the worktrees scenes', () => {
       { name: 'Worktrees in payments-api' },
       { timeout: 2000 },
     );
-    expect(within(sheet).getAllByRole('listitem')).toHaveLength(3);
+    expect(await within(sheet).findAllByRole('listitem')).toHaveLength(3);
     within(sheet).getByText('Unsaved changes');
     within(sheet).getByText('2 ahead');
     within(sheet).getByRole('button', { name: 'Remove 2 safe · 528 MB' });

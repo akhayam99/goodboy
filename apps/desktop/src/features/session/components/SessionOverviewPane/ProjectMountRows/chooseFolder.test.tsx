@@ -20,6 +20,10 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 
+beforeAll(async () => {
+  await import('./MountProjectList');
+});
+
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
@@ -133,7 +137,7 @@ const chooseFolder = async () => {
   );
   fireEvent.click(screen.getByRole('button', { name: 'Mount a folder' }));
   const picker = within(await screen.findByRole('dialog', { name: 'Mount a folder' }));
-  picker.getByRole('button', { name: 'Mount ledger-core' });
+  await picker.findByRole('button', { name: 'Mount ledger-core' });
   await act(async () => {
     fireEvent.click(picker.getByRole('button', { name: 'Choose a folder…' }));
   });

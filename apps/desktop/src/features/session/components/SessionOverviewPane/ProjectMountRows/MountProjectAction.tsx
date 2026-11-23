@@ -1,16 +1,28 @@
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { FolderPlus } from '@goodboy/ui/icons';
-import { AnchoredPopover, Button, ICON_SIZE, IconButton, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  ICON_SIZE,
+  IconButton,
+  useDropdown,
+  SkeletonRows,
+} from '@goodboy/ui';
 import type { SessionEvent, SessionId, WorkspaceId } from '@goodboy/types';
 import { pendingMountProposals } from '../../../../../store/slices/project-mounts/materializationProposals';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../../store';
-import { MountProjectList } from './MountProjectList';
 import { useRecentProjectIds } from '../../../../../shared/components/ProjectPicker/useRecentProjectIds';
 
 import { NAMES } from '../../../../../shared/utils/names';
+import { lazyNamed } from '../../../../../shared/lib/lazyNamed';
 import { LevelAddTrigger } from '../../../../../shared/components/LevelAddTrigger';
 import { isProjectInFirstLap } from '../../../../../store/slices/bootstrap/firstLap';
+
+const MountProjectList = lazyNamed({
+  load: () => import('./MountProjectList'),
+  pick: ({ MountProjectList }) => MountProjectList,
+});
 
 type Props = {
   readonly sessionId: SessionId;
@@ -88,22 +100,24 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
       }
     >
       {isComplete ? null : (
-        <MountProjectList
-          sessionId={sessionId}
-          workspaceId={workspaceId}
-          projects={availableProjects}
-          recentIds={recentIds}
-          requestedIds={requestedIds}
-          emptyHint={
-            hasWorkspaceProjects
-              ? 'Every workspace folder is already mounted.'
-              : 'This workspace has no folder yet.'
-          }
-          onDone={() => {
-            setIsComplete(true);
-            dropdown.close();
-          }}
-        />
+        <Suspense fallback={<SkeletonRows label="Loading folders" />}>
+          <MountProjectList
+            sessionId={sessionId}
+            workspaceId={workspaceId}
+            projects={availableProjects}
+            recentIds={recentIds}
+            requestedIds={requestedIds}
+            emptyHint={
+              hasWorkspaceProjects
+                ? 'Every workspace folder is already mounted.'
+                : 'This workspace has no folder yet.'
+            }
+            onDone={() => {
+              setIsComplete(true);
+              dropdown.close();
+            }}
+          />
+        </Suspense>
       )}
     </AnchoredPopover>
   );
