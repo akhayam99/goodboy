@@ -53,6 +53,7 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
   const {
     assistantText,
     lastError,
+    failureReason,
     turnWasCancelled,
     shouldAutoAdvanceWorkflow,
     filesTouchedThisTurn,
@@ -270,6 +271,7 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
     runId,
     assistantText,
     hasFailed: lastError !== null,
+    ...(lastError !== null && failureReason !== null && { failureReason }),
     wasCancelled: turnWasCancelled,
     filesTouched: Array.from(filesTouchedThisTurn),
   });

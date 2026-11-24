@@ -11,6 +11,7 @@ import { SETTING_HIDDEN_MODELS } from '../../../features/settings/settings';
 import type { AppStore } from '../../store';
 import { projectById } from '../../slices/projects/projectIndex';
 import { sessionById } from '../../slices/sessions/sessionIndex';
+import { withUnavailableModels } from './withUnavailableModels';
 
 export type ModelState = Pick<
   AppStore,
@@ -18,6 +19,7 @@ export type ModelState = Pick<
   | 'providerLimits'
   | 'settings'
   | 'cliRequirements'
+  | 'unavailableModels'
   | 'workspaceOverrides'
   | 'sessionOverrides'
   | 'projects'
@@ -71,7 +73,11 @@ export const selectModelContext = ({
         DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
       connected: autoRoutableProviders({ providers }),
       atLimit: providersAtLimit({ limits: state.providerLimits ?? {}, nowMs }),
-      hidden: parseHiddenModels(hiddenRaw),
+      hidden: withUnavailableModels({
+        hidden: parseHiddenModels(hiddenRaw),
+        unavailable: state.unavailableModels ?? [],
+        providers,
+      }),
       cliVersions,
       learned: state.cliRequirements ?? [],
     },

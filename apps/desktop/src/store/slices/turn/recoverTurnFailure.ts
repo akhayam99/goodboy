@@ -19,7 +19,10 @@ import {
   withProviderCooldown,
 } from '../../../features/providers/taskModelRouting';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
-import { createTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
+import {
+  createTranscriptOwnedTurnError,
+  isTranscriptOwnedTurnError,
+} from '../../../features/chat/turn-errors';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { KIND_TO_ROLE } from '../../../features/session/agent-kind';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
@@ -28,6 +31,8 @@ import { captureMaterializeRequestsFromTurn } from './turnHelpers';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { feedAuthRefusal } from '../providers/feedAuthRefusal';
 import { learnFromCliRefusal } from './learnFromCliRefusal';
+import { turnFailureReasonOf } from './turnFailure/turnFailureReasonOf';
+import { withUnavailableModels } from '../../runtime/models/withUnavailableModels';
 import { fallbackNoticeMessage } from './fallbackNoticeMessage';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordTurnSpan } from './recordTurnSpan';
@@ -121,7 +126,10 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
           : advisorySelection.selection.key,
     });
   }
-  learnFromCliRefusal({ get, providerId: provider, model: spawnModel, message: rawMessage });
+  const isShownInStream = isTranscriptOwnedTurnError({ error: err });
+  if (!isShownInStream) {
+    learnFromCliRefusal({ get, providerId: provider, model: spawnModel, message: rawMessage });
+  }
   const cancelledBeforeFailure = cancelledRunIds.delete(runId);
   await recordTurnSpan({
     get,
@@ -134,7 +142,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
   });
   void recordTurnFiles();
   const failure = classifyProviderError({ message: rawMessage });
-  if (!cancelledBeforeFailure) {
+  if (!cancelledBeforeFailure && !isShownInStream) {
     feedAuthRefusal({ set, get, providerId: provider, runId, message: rawMessage });
   }
   const usageLimitResetAtMs = failure.kind === 'usage_limit' ? (failure.resetAtMs ?? null) : null;
@@ -177,7 +185,11 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
             cooldowns: get().providerCooldowns,
             nowMs: Date.now(),
           }),
-          hidden: selectHiddenModels({ state: get() }),
+          hidden: withUnavailableModels({
+            hidden: selectHiddenModels({ state: get() }),
+            unavailable: get().unavailableModels,
+            providers: get().providers,
+          }),
           ...(preferredFallback != null && {
             preferred: {
               provider: preferredFallback.provider,
@@ -213,7 +225,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
       failure.kind === 'usage_limit' ||
       failure.kind === 'unreachable' ||
       failure.kind === 'other';
-    if (!isGenericPassthroughFailure) {
+    if (!isGenericPassthroughFailure && !isShownInStream) {
       get().appendTurnEvent(activeAgentId, sessionId, {
         kind: 'error',
         runId,
@@ -342,13 +354,15 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     error: rawMessage,
   });
   const isRetriedFromItsRow = onWritingUserText !== undefined && !progress.hasSpawned;
-  get().appendTurnEvent(activeAgentId, sessionId, {
-    kind: 'error',
-    runId,
-    message,
-    retryable: !isAlreadySent && !isRetriedFromItsRow,
-    at: now(),
-  });
+  if (!isShownInStream) {
+    get().appendTurnEvent(activeAgentId, sessionId, {
+      kind: 'error',
+      runId,
+      message,
+      retryable: !isAlreadySent && !isRetriedFromItsRow,
+      at: now(),
+    });
+  }
   if (resolvedAgentId) {
     const isStoppedByUser =
       cancelledBeforeFailure &&
@@ -369,6 +383,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     void get().refreshUnreadWorkspaces();
   }
   progress.lastError = createTranscriptOwnedTurnError({ message: rawMessage, cause: err });
+  progress.failureReason = turnFailureReasonOf({ message: rawMessage });
   if (!cancelledBeforeFailure && assistantText.length > 0) {
     try {
       await captureMaterializeRequestsFromTurn({

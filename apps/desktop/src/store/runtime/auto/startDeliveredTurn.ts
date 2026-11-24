@@ -67,6 +67,7 @@ export type StartDeliveredTurnParams = Readonly<{
 type Captured = Readonly<{
   assistantText: string;
   exit: TurnExit;
+  failure: string | null;
   filesTouched: ReadonlyArray<string>;
 }>;
 
@@ -118,7 +119,8 @@ export const startDeliveredTurn = async ({
     }
     isEndReported = true;
     const costUsd = runId === undefined ? null : await costOf({ deps, runId });
-    const failure = captured === null ? (sendFailure ?? held.refusal?.message ?? null) : null;
+    const failure =
+      captured === null ? (sendFailure ?? held.refusal?.message ?? null) : captured.failure;
     onEnded({
       assistantText: captured?.assistantText ?? '',
       exit: captured?.exit ?? (failure === null ? 'ok' : 'error'),
@@ -137,6 +139,7 @@ export const startDeliveredTurn = async ({
         captured = {
           assistantText: settled.assistantText,
           exit: exitOf({ hasFailed: settled.hasFailed, wasCancelled: settled.wasCancelled }),
+          failure: settled.failureReason ?? null,
           filesTouched: settled.filesTouched,
         };
         void reportEnd();

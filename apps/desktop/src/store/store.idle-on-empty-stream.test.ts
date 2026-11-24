@@ -421,7 +421,9 @@ describe('sendTurn, terminal state guarantees', () => {
     );
     setupSession(useAppStore);
 
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' }),
+    ).rejects.toThrow();
 
     const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
     const errorEvent = transcript.find((e) => e.kind === 'error');
@@ -459,7 +461,9 @@ describe('sendTurn, terminal state guarantees', () => {
     useAppStore.setState({ providerHealth: INITIAL_HEALTH_MAP });
     setupSession(useAppStore);
 
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' }),
+    ).rejects.toThrow();
 
     const health = useAppStore.getState().providerHealth.anthropic;
     expect(health.refusals).toHaveLength(1);
@@ -488,7 +492,9 @@ describe('sendTurn, terminal state guarantees', () => {
     setupSession(useAppStore);
 
     for (let turn = 0; turn < 3; turn += 1) {
-      await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: `hello ${turn}` });
+      await expect(
+        useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: `hello ${turn}` }),
+      ).rejects.toThrow();
     }
 
     const claude = useAppStore.getState().providers.find((p) => p.id === 'anthropic');
@@ -503,7 +509,9 @@ describe('sendTurn, terminal state guarantees', () => {
       runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) =>
         authErrorEventStream(args.runId),
       );
-      await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: `hello ${turn}` });
+      await expect(
+        useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: `hello ${turn}` }),
+      ).rejects.toThrow();
     }
     runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => answerStream(args.runId));
 

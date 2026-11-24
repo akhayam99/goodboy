@@ -29,10 +29,13 @@ export type AutoChildRefusal = 'auto_child_unread' | 'auto_child_off_route' | 'a
 
 export type TurnRefusal = 'provider_limit' | 'folder_busy' | 'turn_running' | AutoChildRefusal;
 
+export type TurnFailureReason = 'model_not_available' | 'authentication';
+
 type TurnSettledInfo = Readonly<{
   runId: ProviderRunId;
   assistantText: string;
   hasFailed: boolean;
+  failureReason?: TurnFailureReason;
   wasCancelled: boolean;
   filesTouched: ReadonlyArray<string>;
 }>;
@@ -95,6 +98,8 @@ export type TurnProgress = {
   receivedProviderError: boolean;
   receivedStreamError: boolean;
   lastError: unknown;
+  streamFailure: string | null;
+  failureReason: TurnFailureReason | null;
   turnWasCancelled: boolean;
   shouldAutoAdvanceWorkflow: boolean;
   readonly filesTouchedThisTurn: Set<string>;

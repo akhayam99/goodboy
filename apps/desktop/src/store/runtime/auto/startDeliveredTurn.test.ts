@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { brandId, type SessionId } from '@goodboy/types';
+import { brandId, type ProviderRunId, type SessionId } from '@goodboy/types';
 import { startDeliveredTurn } from './startDeliveredTurn';
 
 type WaitParams = {
@@ -31,6 +31,44 @@ const waitedMs = async ({ acceptTimeoutMs }: WaitParams): Promise<ReadonlyArray<
   });
   return sleeps;
 };
+
+describe('a started turn that the provider refused', () => {
+  it('ends with an error that names the cause', async () => {
+    const onEnded = vi.fn();
+    const runId = brandId<ProviderRunId>({ value: 'run-northwind' });
+    const outcome = await startDeliveredTurn({
+      deps: {
+        sendTurn: async (input) => {
+          input.onSettled?.({
+            runId,
+            assistantText: '',
+            hasFailed: true,
+            failureReason: 'model_not_available',
+            wasCancelled: false,
+            filesTouched: [],
+          });
+          return { blockedOverBudget: false };
+        },
+        lookupDeliveryRun: vi.fn(async () => ({ runId, isLive: true })),
+        readRunCostUsd: vi.fn(async () => null),
+        sleep: async () => undefined,
+        nowMs: () => 0,
+      },
+      input: { sessionId: brandId<SessionId>({ value: 'session-northwind' }), content: 'Go' },
+      runId,
+      deliveryId: 'delivery-northwind',
+      acceptTimeoutMs: 1_000,
+      onEnded,
+    });
+
+    expect(outcome).toEqual({ kind: 'started', runId });
+    await vi.waitFor(() =>
+      expect(onEnded).toHaveBeenCalledWith(
+        expect.objectContaining({ exit: 'error', failure: 'model_not_available' }),
+      ),
+    );
+  });
+});
 
 describe('how often the registry is asked whether a turn started', () => {
   it('asks quickly at first, so a normal start is seen at once', async () => {

@@ -1,4 +1,7 @@
 import { cancelProviderConnect } from './cancelProviderConnect';
+import { clearModelUnavailable } from './clearModelUnavailable';
+import { hydrateUnavailableModels } from './hydrateUnavailableModels';
+import { learnModelUnavailable } from './learnModelUnavailable';
 import { connectProvider } from './connectProvider';
 import { dismissProviderConnect } from './dismissProviderConnect';
 import { hydrateCliRequirements } from './hydrateCliRequirements';
@@ -24,5 +27,8 @@ export const createProvidersSlice = ({ set, get }: SliceDeps) => {
     updateProviderCli: updateProviderCli(set, get),
     hydrateCliRequirements: hydrateCliRequirements(set, get),
     learnCliRequirement: learnCliRequirement(set, get),
+    hydrateUnavailableModels: hydrateUnavailableModels({ set, get }),
+    learnModelUnavailable: learnModelUnavailable({ set, get }),
+    clearModelUnavailable: clearModelUnavailable({ set, get }),
   };
 };

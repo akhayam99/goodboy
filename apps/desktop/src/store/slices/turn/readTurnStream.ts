@@ -11,6 +11,8 @@ import { toRelPath } from './turnHelpers';
 import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { learnFromCliRefusal } from './learnFromCliRefusal';
+import { turnFailureReasonOf } from './turnFailure/turnFailureReasonOf';
+import { createTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
 import { classifyToolCallFailure, toolCallFailureMessage } from './classifyToolCallFailure';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { agentLiveKey } from '../../../features/chat/reveal/agentLiveKey';
@@ -165,6 +167,12 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
         model: spawnModel,
         message: rawEvent.message,
       });
+      if (
+        progress.streamFailure === null &&
+        turnFailureReasonOf({ message: rawEvent.message }) !== null
+      ) {
+        progress.streamFailure = rawEvent.message;
+      }
       feedAuthRefusal({
         set,
         get,
@@ -252,5 +260,8 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
         await updateSessionState(tauriDatabase, sessionId, derived, now());
       }
     }
+  }
+  if (progress.streamFailure !== null) {
+    throw createTranscriptOwnedTurnError({ message: progress.streamFailure, cause: null });
   }
 };

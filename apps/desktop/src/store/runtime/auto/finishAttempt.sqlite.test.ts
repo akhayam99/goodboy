@@ -155,6 +155,27 @@ describe('closing the work of one child', () => {
     expect((await delegationOf(world)).outcome).toBe('completed');
   });
 
+  it('records why a helper failed when its provider refused the model', async () => {
+    const world = await startWith(IMPLEMENTER);
+    const turn = world.state.ports.childTurns[0];
+    if (turn === undefined) {
+      throw new Error('a child was expected');
+    }
+
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: '',
+      overrides: { exit: 'error', failure: 'model_not_available' },
+    });
+
+    expect(await delegationOf(world)).toMatchObject({
+      outcome: 'failed',
+      reason: 'model_not_available',
+    });
+    expect(world.state.ports.autoTurns[1]?.text).toContain('failed, model_not_available');
+  });
+
   it('fails a scout that owes a report and wrote none', async () => {
     const world = await startWith(SCOUT);
     const turn = world.state.ports.childTurns[0];

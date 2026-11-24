@@ -122,6 +122,7 @@ const readBootSettings = async ({
       .hydrateChangelogSeen()
       .then(() => get().hydrateSessionsCard()),
     get().hydrateCliRequirements(),
+    get().hydrateUnavailableModels(),
   ]);
   set((state) => {
     const next = { ...state.settings };

@@ -120,6 +120,8 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     receivedProviderError: false,
     receivedStreamError: false,
     lastError: null,
+    streamFailure: null,
+    failureReason: null,
     turnWasCancelled: false,
     shouldAutoAdvanceWorkflow: false,
     filesTouchedThisTurn: new Set<string>(),

@@ -21,6 +21,7 @@ import { rebriefCountOf, type RebriefLink } from './returns/rebriefCountOf';
 import { returnCountOf } from './returns/returnCountOf';
 import { targetRefusalOf } from './returns/targetRefusalOf';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
+import { isTurnFailureReason } from '../../slices/turn/turnFailure/isTurnFailureReason';
 import type { AgentVerbContext } from './verbContext';
 
 export type RecoveredRevise = Readonly<{
@@ -202,15 +203,16 @@ export const prepareRetry = async ({
     }
     revises = { artifactId, expectedRevision: live.revision };
   }
+  const routing = isTurnFailureReason({ reason: original.reason }) ? {} : original.routing;
   const synthetic: DelegateChildSpec = {
     role: revises === null ? role : null,
     title: textFieldOf({ source: original.request, key: 'title' }),
     task: textFieldOf({ source: original.request, key: 'task' }) ?? '',
     reason: child.reason,
     roleReason: null,
-    provider: child.provider ?? textFieldOf({ source: original.routing, key: 'provider' }),
-    model: child.model ?? textFieldOf({ source: original.routing, key: 'model' }),
-    effort: child.effort ?? textFieldOf({ source: original.routing, key: 'effort' }),
+    provider: child.provider ?? textFieldOf({ source: routing, key: 'provider' }),
+    model: child.model ?? textFieldOf({ source: routing, key: 'model' }),
+    effort: child.effort ?? textFieldOf({ source: routing, key: 'effort' }),
     modelReason: child.modelReason,
     taskType: null,
     difficulty: null,
