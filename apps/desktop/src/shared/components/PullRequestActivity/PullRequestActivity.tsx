@@ -1,4 +1,10 @@
-import { ClampedProse, SegmentedTabs, SelectableRow } from '@goodboy/ui';
+import {
+  ActivityMeta,
+  ClampedProse,
+  SegmentedTabs,
+  SelectableRow,
+  type ActivityMetaColumn,
+} from '@goodboy/ui';
 import type { PullRequestNouns } from '@goodboy/types';
 import { useNow } from '../../hooks/useNow';
 import { formatAge } from '../../utils/time/formatAge';
@@ -18,6 +24,8 @@ type Props = {
   readonly onChoose: (filter: ActivityFilter) => void;
   readonly isHeadingShown?: boolean;
 };
+
+const TIME_COLUMN: ReadonlyArray<ActivityMetaColumn> = ['time'];
 
 const ROW = 'grid min-w-0 grid-cols-[1.5rem_minmax(0,1fr)_auto] items-start gap-x-2 gap-y-2';
 
@@ -60,7 +68,7 @@ export const PullRequestActivity = ({
         <span
           aria-hidden
           data-slot="activity-spine"
-          className="absolute inset-y-1 left-[11px] w-0.5 bg-border-soft"
+          className="absolute inset-y-1 left-3 w-px -translate-x-1/2 bg-border-soft"
         />
         {items.map((item) => {
           const row = activityRowOf({ item, nouns, baseBranch, onOpenComments, onOpenChecks });
@@ -73,11 +81,11 @@ export const PullRequestActivity = ({
                 {row.open === null ? null : (
                   <span className="text-meta text-faint-foreground">{row.open.label}</span>
                 )}
-                {age === '' ? null : (
-                  <time dateTime={item.at} className="text-meta tabular-nums text-faint-foreground">
-                    {age}
-                  </time>
-                )}
+                <ActivityMeta
+                  density="rail"
+                  columns={TIME_COLUMN}
+                  time={age === '' ? null : <time dateTime={item.at}>{age}</time>}
+                />
               </span>
             </>
           );

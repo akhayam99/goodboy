@@ -41,6 +41,7 @@ const ITEMS: ReadonlyArray<ActivityItem> = [
     text: 'Checks 2 passed',
     isRunning: false,
     isFailing: false,
+    isSkipped: false,
   },
 ];
 

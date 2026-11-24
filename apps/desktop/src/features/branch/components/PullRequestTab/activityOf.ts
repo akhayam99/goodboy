@@ -204,6 +204,7 @@ const checksOf = ({
       text: `Checks ${word}`,
       isRunning: counts.running > 0 && counts.failing === 0,
       isFailing: counts.failing > 0,
+      isSkipped: counts.failing === 0 && counts.running === 0 && counts.passed === 0,
     },
   ];
 };

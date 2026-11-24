@@ -9,7 +9,6 @@ const css = readFileSync(join(__dirname, '..', '..', 'styles.css'), 'utf8');
 const NUMBER_CARRIERS: ReadonlyArray<string> = [
   'apps/desktop/src/shared/components/RelativeTime/index.tsx',
   'packages/ui/src/components/MutedCount.tsx',
-  'apps/desktop/src/features/notifications/components/NotificationRow/index.tsx',
   'apps/desktop/src/features/notifications/components/NotificationRow/NotificationRowDetail.tsx',
   'apps/desktop/src/features/storage/components/StoragePage/ArtifactRow.tsx',
   'apps/desktop/src/features/storage/components/StoragePage/WorktreeRow.tsx',
@@ -17,6 +16,7 @@ const NUMBER_CARRIERS: ReadonlyArray<string> = [
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/SlotHistoryPanel.tsx',
   'packages/ui/src/components/ListGrid/ListGridRow.tsx',
   'packages/ui/src/components/WorkTree/workMetaSpec.ts',
+  'packages/ui/src/components/ActivityRow/activityRowSpec.ts',
 ];
 
 const COUNT_FACT_FILES: ReadonlyArray<string> = [

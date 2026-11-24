@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Trash2 } from '@goodboy/ui/icons';
 import type { Notification } from '@goodboy/db';
 import {
+  ActivityMeta,
   Button,
   cn,
   CountBadge,
@@ -10,13 +11,13 @@ import {
   IconButton,
   tintClasses,
   Tooltip,
+  type ActivityMetaColumn,
 } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { mapNotificationAction, notificationContext } from '../NotificationToastBridge';
-import { NOTIFICATION_SEVERITY } from '../../severity';
 import { notificationActionIcon } from '../../actionIcon';
 import { isNotificationDebt } from '../../actionClass';
 import { markPointersActed } from '../../markPointersActed';
@@ -24,6 +25,7 @@ import { ObjectMenuArea } from '../../../actions/ObjectMenuArea';
 import type { NotificationActionTarget } from '../../../actions/types';
 import { NotificationRowActions } from './NotificationRowActions';
 import { NotificationRowDetail } from './NotificationRowDetail';
+import { NotificationSeverityNode } from './NotificationSeverityNode';
 import { NotificationUnreadDot } from './NotificationUnreadDot';
 import { useNow } from '../../../../shared/hooks/useNow';
 
@@ -38,6 +40,8 @@ type Props = {
   readonly onDismiss: () => void;
   readonly onActed?: () => void;
 };
+
+const TIME_COLUMN: ReadonlyArray<ActivityMetaColumn> = ['time'];
 
 const ICON_BUTTON = 'flex size-6 items-center justify-center rounded-sm text-muted-foreground';
 
@@ -58,8 +62,6 @@ export const NotificationRow = ({
   if (latest == null) {
     return null;
   }
-  const severity = NOTIFICATION_SEVERITY[latest.severity];
-  const SeverityIcon = severity.icon;
   const isUnread = notifications.some((notification) => !notification.read);
   const hasUnreadDebt = notifications.some(
     (notification) => !notification.read && isNotificationDebt({ notification }),
@@ -84,15 +86,21 @@ export const NotificationRow = ({
       Opened
     </span>
   ) : null;
+  const ageText = formatAge({ from: latest.ts, now });
   const age = (
-    <Tooltip content={formatDateTime({ at: latest.ts, hasYear: true })}>
-      <time
-        dateTime={latest.ts}
-        className="pointer-events-none relative text-right text-meta tabular-nums text-faint-foreground"
-      >
-        {formatAge({ from: latest.ts, now })}
-      </time>
-    </Tooltip>
+    <span className="pointer-events-none relative flex justify-end">
+      <ActivityMeta
+        density="rail"
+        columns={TIME_COLUMN}
+        time={
+          ageText === '' ? null : (
+            <Tooltip content={formatDateTime({ at: latest.ts, hasYear: true })}>
+              <time dateTime={latest.ts}>{ageText}</time>
+            </Tooltip>
+          )
+        }
+      />
+    </span>
   );
   const count =
     notifications.length > 1 ? (
@@ -132,11 +140,7 @@ export const NotificationRow = ({
         className="group relative grid grid-cols-[0.875rem_minmax(0,1fr)_auto_3rem] items-center gap-2 rounded-md px-3 py-2 motion-safe:transition-colors hover:bg-hover"
       >
         {overlay}
-        <SeverityIcon
-          size={ICON_SIZE.control}
-          className={cn('pointer-events-none relative shrink-0', tintClasses(severity.tone).icon)}
-          aria-label={severity.label}
-        />
+        <NotificationSeverityNode severity={latest.severity} />
         <span className="pointer-events-none relative flex min-w-0 items-center gap-2">
           {isUnread ? <NotificationUnreadDot isDebt={hasUnreadDebt} /> : null}
           <span
@@ -188,11 +192,7 @@ export const NotificationRow = ({
       <ObjectMenuArea target={target} anchorKey={anchorKey}>
         <div className="relative grid grid-cols-[1rem_minmax(0,1fr)_4rem_3.5rem] items-start gap-x-3 px-3 py-2">
           {overlay}
-          <SeverityIcon
-            size={ICON_SIZE.control}
-            className={cn('pointer-events-none relative mt-px', tintClasses(severity.tone).icon)}
-            aria-label={severity.label}
-          />
+          <NotificationSeverityNode severity={latest.severity} />
           <div className="pointer-events-none relative flex min-w-0 flex-col gap-0.5">
             <div className="flex min-w-0 items-center gap-2">
               <h3
@@ -225,7 +225,7 @@ export const NotificationRow = ({
               </span>
             )}
           </div>
-          <div className="relative flex h-4 items-center justify-end">{age}</div>
+          <div className="relative flex h-5 items-center justify-end">{age}</div>
           <NotificationRowActions target={target} anchorKey={anchorKey} />
         </div>
         {isSelected && action != null ? (
