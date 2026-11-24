@@ -13,13 +13,17 @@ activity-check-fixed-local
 activity-ci-fix-unloaded
 activity-empty
 activity-groups
+activity-groups-light
 activity-jobs
 activity-kinds-dark
 activity-kinds-light
+activity-light
 activity-log
+activity-log-light
 activity-mark-seen
 activity-one-signal
 activity-question
+activity-question-light
 activity-resolves
 activity-row-kit
 activity-row-kit-light
