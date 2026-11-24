@@ -25,6 +25,7 @@ export type RoleCardParams = {
   readonly position: string;
   readonly task: string;
   readonly phase: RowPhase;
+  readonly isStopped: boolean;
   readonly time: WorkTime | null | undefined;
   readonly askedAt: string | null;
   readonly nowMs: number;
@@ -41,7 +42,7 @@ type EffortParams = {
   readonly isEffortObserved: boolean;
 };
 
-type StateParams = Pick<RoleCardParams, 'phase' | 'time' | 'askedAt' | 'nowMs'>;
+type StateParams = Pick<RoleCardParams, 'phase' | 'isStopped' | 'time' | 'askedAt' | 'nowMs'>;
 
 type AskedParams = Pick<RoleCardParams, 'askedAt' | 'nowMs'>;
 
@@ -68,7 +69,7 @@ const askedNote = ({ askedAt, nowMs }: AskedParams): string | undefined => {
   return age === '' ? undefined : `asked ${age}`;
 };
 
-const stateOf = ({ phase, time, askedAt, nowMs }: StateParams): FactState => {
+const stateOf = ({ phase, isStopped, time, askedAt, nowMs }: StateParams): FactState => {
   const headline = time?.headline;
   switch (phase) {
     case 'queued':
@@ -81,6 +82,9 @@ const stateOf = ({ phase, time, askedAt, nowMs }: StateParams): FactState => {
         ...(headline === undefined ? {} : { note: headline }),
       };
     case 'waiting': {
+      if (isStopped) {
+        return { tone: 'neutral', words: NAMES.stopped };
+      }
       const note = askedNote({ askedAt, nowMs });
       return { tone: 'warning', words: NAMES.needsYou, ...(note === undefined ? {} : { note }) };
     }
@@ -115,6 +119,7 @@ export const roleCardSpec = ({
   position,
   task,
   phase,
+  isStopped,
   time,
   askedAt,
   nowMs,
@@ -144,7 +149,7 @@ export const roleCardSpec = ({
     title: kindWord,
     sub: position,
     task,
-    state: stateOf({ phase, time, askedAt, nowMs }),
+    state: stateOf({ phase, isStopped, time, askedAt, nowMs }),
     stateGlyph,
     models: models.models.map((model) => {
       const effort = effortOf({ model, isEffortObserved });

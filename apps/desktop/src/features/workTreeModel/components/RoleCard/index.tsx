@@ -59,7 +59,14 @@ export const RoleCard = ({
   const position = useRowPosition({ entry, ordinal });
   const nowMs = useNow(MINUTE_MS, phase === 'waiting');
   const runIds = agent.runId == null ? history : [...history, agent.runId];
-  const node = rowStateNode({ state: { phase, reason: null, ask: null } });
+  const isStopped = phase === 'waiting' && agent.status === 'stopped';
+  const node = rowStateNode({
+    state: {
+      phase,
+      reason: isStopped ? { kind: 'agentStopped', by: agent.stoppedBy ?? 'you' } : null,
+      ask: null,
+    },
+  });
   const askedAt = entry.openQuestions.reduce<string | null>(
     (latest, question) =>
       latest === null || question.createdAt > latest ? question.createdAt : latest,
@@ -78,6 +85,7 @@ export const RoleCard = ({
         position,
         task: agentDisplayName({ name: agent.name, kind: entry.agentKind }),
         phase,
+        isStopped,
         time,
         askedAt,
         nowMs,

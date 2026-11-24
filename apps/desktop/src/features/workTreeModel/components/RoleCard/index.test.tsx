@@ -350,6 +350,16 @@ describe('RoleCard', () => {
     expect(shownCard().getByText('asked 3m ago')).toBeDefined();
   });
 
+  it('says Stopped, not Needs you, for an agent you stopped', () => {
+    renderCard({
+      phase: 'waiting',
+      entry: entryOf({ agent: { ...STEP_FOUR, status: 'stopped', stoppedBy: 'you' } }),
+    });
+
+    expect(shownCard().getByText('Stopped')).toBeDefined();
+    expect(shownCard().queryByText('Needs you')).toBeNull();
+  });
+
   it('drops Finished and Active, which the state line already carries', () => {
     renderCard();
 
