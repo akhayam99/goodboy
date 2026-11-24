@@ -932,7 +932,6 @@
     "apps/desktop/src/features/workspace/color.ts": 2,
     "apps/desktop/src/features/workspace/components/LocateMovedProjects/LocateMovedProjectRow.tsx": 2,
     "apps/desktop/src/features/workspace/components/SessionSwitcher/useSessionSwitcher/index.ts": 3,
-    "apps/desktop/src/features/workspace/components/StageBoard/BoardLanes.tsx": 1,
     "apps/desktop/src/features/workspace/components/StageBoard/boardLanesOf.ts": 1,
     "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/index.tsx": 2,
     "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/useDynamicActions/index.ts": 1,

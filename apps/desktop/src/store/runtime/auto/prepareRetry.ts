@@ -16,6 +16,7 @@ import {
 } from '@goodboy/db';
 import { brandId, type ArtifactId, type AutoDelegationId } from '@goodboy/types';
 import type { AutoContinue, AutoContinueSource } from '../../../features/auto/delegationContinueOf';
+import { isStartFailure } from './childRouting/isStartFailure';
 import type { ChildRefusal } from './resolveDelegateChild';
 import { rebriefCountOf, type RebriefLink } from './returns/rebriefCountOf';
 import { returnCountOf } from './returns/returnCountOf';
@@ -103,6 +104,32 @@ const committedVersionOf = async ({
     }
   }
   return null;
+};
+
+type RetryRouteParams = {
+  readonly ctx: AgentVerbContext;
+  readonly original: AutoDelegation;
+  readonly child: DelegateChildSpec;
+};
+
+type RetryRoute = Pick<DelegateChildSpec, 'provider' | 'model' | 'effort'>;
+
+const NO_ROUTE: RetryRoute = { provider: null, model: null, effort: null };
+
+const retryRouteOf = async ({ ctx, original, child }: RetryRouteParams): Promise<RetryRoute> => {
+  const routing = isTurnFailureReason({ reason: original.reason }) ? {} : original.routing;
+  const asked: RetryRoute = {
+    provider: child.provider ?? textFieldOf({ source: routing, key: 'provider' }),
+    model: child.model ?? textFieldOf({ source: routing, key: 'model' }),
+    effort: child.effort ?? textFieldOf({ source: routing, key: 'effort' }),
+  };
+  const attempts = await listAutoAttemptsOfDelegation({ db: ctx.db, delegationId: original.id });
+  const latest = attempts[attempts.length - 1];
+  if (latest === undefined || !isStartFailure({ endReason: latest.endReason })) {
+    return asked;
+  }
+  const failed = textFieldOf({ source: original.routing, key: 'provider' });
+  return asked.provider === failed ? NO_ROUTE : asked;
 };
 
 export const prepareRetry = async ({
@@ -203,16 +230,13 @@ export const prepareRetry = async ({
     }
     revises = { artifactId, expectedRevision: live.revision };
   }
-  const routing = isTurnFailureReason({ reason: original.reason }) ? {} : original.routing;
   const synthetic: DelegateChildSpec = {
     role: revises === null ? role : null,
     title: textFieldOf({ source: original.request, key: 'title' }),
     task: textFieldOf({ source: original.request, key: 'task' }) ?? '',
     reason: child.reason,
     roleReason: null,
-    provider: child.provider ?? textFieldOf({ source: routing, key: 'provider' }),
-    model: child.model ?? textFieldOf({ source: routing, key: 'model' }),
-    effort: child.effort ?? textFieldOf({ source: routing, key: 'effort' }),
+    ...(await retryRouteOf({ ctx, original, child })),
     modelReason: child.modelReason,
     taskType: null,
     difficulty: null,

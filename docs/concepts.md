@@ -350,11 +350,11 @@ or closed.
 - A **move** is one thing that takes a session forward, with its reason and
   its verb: answer a question, fix a failing check, open a pull request.
   **Needs you** holds the moves only you can make, **Next** the ones after.
-  `needsYouOf` counts the moves that wait on you, the same number in the Queue
+  `needsYouOf` counts the moves that wait on you, the same number on the Board
   and in Sessions.
-- The Board has two layouts. **Queue** lists the moves that wait on you, the
-  agents at work and what is ready to merge. **Stages** puts the sessions in
-  lanes by stage (building, running, needs you, in review, done).
+- The Board puts the sessions in lanes by stage (building, running, in review,
+  done, archived), with one card per session that needs you in a row above
+  them.
 
 ### Session lifecycle
 

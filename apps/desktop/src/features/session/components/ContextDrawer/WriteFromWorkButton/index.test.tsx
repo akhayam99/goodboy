@@ -2,7 +2,7 @@
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { brandId, type IsoDateTime } from '@goodboy/types';
+import { brandId, type IsoDateTime, type OpenQuestionId } from '@goodboy/types';
 import { aSession, nextSessionId } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -54,7 +54,11 @@ afterEach(cleanup);
 describe('WriteFromWorkButton', () => {
   it('empties the slot with its chip when the goal is written on the page', () => {
     store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
-    store.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({
+      kind: 'question',
+      sessionId: SESSION_ID,
+      payload: { questionId: brandId<OpenQuestionId>({ value: 'question-open' }) },
+    });
     render(<WriteFromWorkButton sessionId={SESSION_ID} isLocked={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Write title and goal from linked work' }));

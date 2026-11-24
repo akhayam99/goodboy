@@ -386,6 +386,7 @@ export const resolveChildRouting = async ({
       size: stepSizeOf({ difficulty: difficultyOf({ parsed }) }),
       scope: 'helper',
       writerFamily: request.writerFamily ?? null,
+      failedStarts: request.failedStarts ?? null,
     },
   });
   const outcome = resolvePicked({ request, list, parsed, scope });

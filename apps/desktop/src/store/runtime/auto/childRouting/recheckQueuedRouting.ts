@@ -9,6 +9,7 @@ import { isRecord } from '@goodboy/types/helpers';
 import { textFieldOf } from '../../../../shared/utils/textFieldOf';
 import type { AgentVerbContext } from '../verbContext';
 import { routingPickOf } from './routingPickOf';
+import { failedStartsOf } from './failedStartsOf';
 import { writerFamilyOf } from './writerFamilyOf';
 
 const PROVIDER_CAUSES: ReadonlyArray<CandidateCause> = [
@@ -19,6 +20,7 @@ const PROVIDER_CAUSES: ReadonlyArray<CandidateCause> = [
   'breaker',
   'budget',
   'outside-run',
+  'failed-start',
 ];
 
 type InputRefsParams = {
@@ -36,6 +38,10 @@ const inputRefsOf = ({ delegation }: InputRefsParams) => {
   );
 };
 
+export type RecheckedRouting =
+  | Readonly<{ kind: 'ready'; delegation: AutoDelegation }>
+  | Readonly<{ kind: 'blocked'; code: string; message: string }>;
+
 type Params = {
   readonly ctx: AgentVerbContext;
   readonly tree: AutoTree;
@@ -48,8 +54,10 @@ export const recheckQueuedRouting = async ({
   tree,
   delegation,
   role,
-}: Params): Promise<AutoDelegation> => {
+}: Params): Promise<RecheckedRouting> => {
   const { routing } = delegation;
+  const unchanged: RecheckedRouting = { kind: 'ready', delegation };
+  const failedStarts = await failedStartsOf({ ctx, tree, role });
   const writerFamily = await writerFamilyOf({
     ctx,
     tree,
@@ -68,14 +76,23 @@ export const recheckQueuedRouting = async ({
     },
     promptText: textFieldOf({ source: delegation.request, key: 'task' }) ?? '',
     writerFamily,
+    failedStarts,
   });
+  const stored = textFieldOf({ source: routing, key: 'provider' });
+  if (
+    outcome.kind === 'blocked' &&
+    stored !== null &&
+    failedStarts.some((provider) => provider === stored)
+  ) {
+    return { kind: 'blocked', code: outcome.code, message: outcome.message };
+  }
   if (
     outcome.kind !== 'ready' ||
     outcome.proposal !== 'replaced' ||
     outcome.cause == null ||
     !PROVIDER_CAUSES.includes(outcome.cause)
   ) {
-    return delegation;
+    return unchanged;
   }
   const next = { ...routing, ...routingPickOf({ outcome }) };
   const patch = patchQueuedAutoDelegationRoutingStatement({
@@ -84,5 +101,7 @@ export const recheckQueuedRouting = async ({
     routing: next,
   });
   const written = await ctx.db.execute(patch.sql, patch.params);
-  return written.rowsAffected > 0 ? { ...delegation, routing: next } : delegation;
+  return written.rowsAffected > 0
+    ? { kind: 'ready', delegation: { ...delegation, routing: next } }
+    : unchanged;
 };

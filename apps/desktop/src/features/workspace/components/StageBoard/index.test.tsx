@@ -28,13 +28,16 @@ const { state, gitStatuses, groups } = vi.hoisted(() => ({
   groups: { current: [] as ReadonlyArray<{ key: string; sessions: ReadonlyArray<Session> }> },
 }));
 
-vi.mock('../../../board/queue/QueueBoard/useBoardPage', () => ({
-  useBoardPage: () => ({
-    layout: 'stages',
-    focusedMoveId: null,
-    setLayout: () => undefined,
-    setFocusedMove: () => undefined,
-  }),
+vi.mock('./useBoardByStage', () => ({
+  useBoardByStage: ({
+    groups: grouped,
+  }: {
+    readonly groups: ReadonlyArray<{ key: string; sessions: ReadonlyArray<Session> }>;
+  }) => ({ byStage: new Map(grouped.map((group) => [group.key, group.sessions])), infos: {} }),
+}));
+
+vi.mock('./NeedsYouStrip/useNeedsYou', () => ({
+  useNeedsYou: () => ({ sessionCount: 0, moveCount: 0, moves: [], cards: [] }),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -88,6 +91,10 @@ vi.mock('../../../onboarding/SetupCard', () => ({
 
 vi.mock('./SessionFilterPopover', () => ({
   SessionFilterPopover: () => <span data-testid="session-filter" />,
+}));
+
+vi.mock('./NeedsYouStrip', () => ({
+  NeedsYouStrip: () => null,
 }));
 
 vi.mock('./useBoardNavigation', () => ({
@@ -550,18 +557,11 @@ describe('StageBoard lanes', () => {
   const columnNames = () =>
     screen.getAllByTestId('stage-column').map((column) => column.id.replace('board-column-', ''));
 
-  it('renders all six lanes in pipeline order with Done and Archived holding nothing', () => {
+  it('renders the lanes in pipeline order with no Needs you lane and Done and Archived holding nothing', () => {
     groups.current = [{ key: 'building', sessions: [session] }];
     const { container } = render(<StageBoard workspaceId={wsId} sessions={[session]} />);
 
-    expect(columnNames()).toEqual([
-      'building',
-      'running',
-      'attention',
-      'review',
-      'done',
-      'archived',
-    ]);
+    expect(columnNames()).toEqual(['building', 'running', 'review', 'done', 'archived']);
     expect(container.querySelector('[data-board-dock]')).toBeNull();
   });
 

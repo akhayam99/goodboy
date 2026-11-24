@@ -32,7 +32,7 @@ afterEach(() => {
 
 const SCENE_IDS = ['board-empty-lanes', 'board-stacked', 'board-wide'] as const;
 
-const LANES = ['building', 'running', 'needs you', 'in review', 'done', 'archived'];
+const LANES = ['building', 'running', 'in review', 'done', 'archived'];
 
 const renderScene = (id: (typeof SCENE_IDS)[number]) => {
   const Scene = U21_BOARD_SCENES[id];
@@ -71,18 +71,18 @@ describe('the u21 board scenes', () => {
     expect(Object.keys(U21_BOARD_SCENES).sort()).toEqual([...SCENE_IDS].sort());
   });
 
-  it('shows empty Needs you, Done and Archived lanes with their own empty line', () => {
+  it('shows empty Done and Archived lanes with their own empty line and no Needs you lane', () => {
     renderScene('board-empty-lanes');
 
-    expect(within(lane('needs you')).getByText('Nothing needs you')).toBeDefined();
+    expect(screen.queryByRole('group', { name: 'needs you' })).toBeNull();
     expect(within(lane('done')).getByText('Nothing done yet')).toBeDefined();
     expect(within(lane('archived')).getByText('Nothing archived')).toBeDefined();
     expect(within(lane('building')).queryByText('Nothing in progress')).toBeNull();
     expect(within(lane('running')).queryByText('Nothing running')).toBeNull();
   });
 
-  it('stacks Done over Archived at a board width of 1200, both holding cards', () => {
-    const observers = measure({ width: 1200 });
+  it('stacks Done over Archived at a board width of 960, both holding cards', () => {
+    const observers = measure({ width: 960 });
     renderScene('board-stacked');
     act(() => observers.resizeAll());
 
@@ -92,10 +92,10 @@ describe('the u21 board scenes', () => {
     expect(Array.from(done.parentElement?.children ?? [])).toEqual([done, archived]);
     expect(within(done).getAllByRole('button', { pressed: false }).length).toBeGreaterThan(2);
     expect(within(archived).getAllByRole('button', { pressed: false }).length).toBeGreaterThan(2);
-    expect(screen.getByTestId('board-scene-frame').style.width).toBe('1200px');
+    expect(screen.getByTestId('board-scene-frame').style.width).toBe('960px');
   });
 
-  it('gives each of the six lanes its own column on the 2560 wide board', () => {
+  it('gives each of the five lanes its own column on the 2560 wide board', () => {
     const observers = measure({ width: 2560 });
     renderScene('board-wide');
     act(() => observers.resizeAll());

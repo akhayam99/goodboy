@@ -10,6 +10,7 @@ import {
 import { scrollLaneRemOf } from './scrollLaneRemOf';
 
 const ROOT_PX = 15;
+const STACK_AT = 768.75;
 
 type WidthParams = {
   readonly width: number;
@@ -18,17 +19,17 @@ type WidthParams = {
 const firstWholeLaneAt = ({ width }: WidthParams): number => {
   const lanePx = scrollLaneRemOf({ width, remPx: ROOT_PX }) * ROOT_PX;
   const gapPx = BOARD_LANE_GAP_REM * ROOT_PX;
-  return width - (4 * lanePx + 3 * gapPx);
+  return width - (3 * lanePx + 2 * gapPx);
 };
 
 describe('scrollLaneRemOf', () => {
-  it('keeps the full 12.25rem lanes while four of them and the edge fade fit', () => {
-    expect(scrollLaneRemOf({ width: 963, remPx: ROOT_PX })).toBe(BOARD_LANE_MIN_REM);
-    expect(scrollLaneRemOf({ width: 804, remPx: ROOT_PX })).toBe(BOARD_LANE_MIN_REM);
+  it('keeps the full 12.25rem lanes while three of them and the edge fade fit', () => {
+    expect(scrollLaneRemOf({ width: 768, remPx: ROOT_PX })).toBe(BOARD_LANE_MIN_REM);
+    expect(scrollLaneRemOf({ width: 606, remPx: ROOT_PX })).toBe(BOARD_LANE_MIN_REM);
   });
 
-  it('narrows the lanes at a 1100px window with the right rail, so Running opens whole', () => {
-    const width = 760;
+  it('narrows the lanes on a narrow board, so Running opens whole', () => {
+    const width = 560;
     const rem = scrollLaneRemOf({ width, remPx: ROOT_PX });
 
     expect(rem).toBeLessThan(BOARD_LANE_MIN_REM);
@@ -37,13 +38,13 @@ describe('scrollLaneRemOf', () => {
   });
 
   it('opens every board between the floor and the stack threshold with Running clear of the fade', () => {
-    const floor = (4 * BOARD_LANE_SCROLL_MIN_REM + 3 * BOARD_LANE_GAP_REM) * ROOT_PX;
-    for (let width = Math.ceil(floor + BOARD_LANE_FADE_PX); width < 964; width += 1) {
+    const floor = (3 * BOARD_LANE_SCROLL_MIN_REM + 2 * BOARD_LANE_GAP_REM) * ROOT_PX;
+    for (let width = Math.ceil(floor + BOARD_LANE_FADE_PX); width < STACK_AT; width += 1) {
       expect(firstWholeLaneAt({ width })).toBeGreaterThanOrEqual(BOARD_LANE_FADE_PX - 0.001);
     }
   });
 
   it('stops at the 11rem floor on a very narrow board', () => {
-    expect(scrollLaneRemOf({ width: 500, remPx: ROOT_PX })).toBe(BOARD_LANE_SCROLL_MIN_REM);
+    expect(scrollLaneRemOf({ width: 400, remPx: ROOT_PX })).toBe(BOARD_LANE_SCROLL_MIN_REM);
   });
 });

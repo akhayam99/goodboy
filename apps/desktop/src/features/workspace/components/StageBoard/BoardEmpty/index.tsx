@@ -3,9 +3,21 @@ import { Button, cn, EmptyState, Eyebrow, ICON_SIZE, PANE_RHYTHM, ScrollFade } f
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { dispatchWindowEvent } from '../../../../../shared/lib/dispatchWindowEvent';
 import { sentenceCase } from '../../../../../shared/utils/sentenceCase';
-import { describeStageBucket } from '../../../../session/session-stage';
-import { BOARD_STAGES } from '../boardStages';
+import { ARCHIVED_LANE, describeStageBucket } from '../../../../session/session-stage';
+import { BOARD_LANE_SPECS, type BoardLaneSpec } from '../boardLaneSpecs';
 import { promiseOf } from './promiseOf';
+
+type LabelParams = {
+  readonly spec: BoardLaneSpec;
+};
+
+const emptyLaneLabelOf = ({ spec }: LabelParams): string =>
+  sentenceCase({
+    text:
+      spec.kind === 'archived'
+        ? ARCHIVED_LANE.label
+        : describeStageBucket({ stage: spec.stage }).label,
+  });
 
 export const BoardEmpty = () => (
   <div data-slot="board-empty" className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -18,18 +30,18 @@ export const BoardEmpty = () => (
     />
     <ScrollFade orientation="horizontal" fadeSize="w-8" className="min-h-0 flex-1">
       <div className={cn('grid', PANE_RHYTHM.board.laneGap, PANE_RHYTHM.board.lanesFive)}>
-        {BOARD_STAGES.map((stage, index) => (
+        {BOARD_LANE_SPECS.map((spec, index) => (
           <div
-            key={stage}
+            key={spec.kind === 'archived' ? 'archived' : spec.stage}
             role="group"
-            aria-label={sentenceCase({ text: describeStageBucket({ stage }).label })}
+            aria-label={emptyLaneLabelOf({ spec })}
             className={cn(
               'flex min-w-0 flex-col items-start rounded-lg bg-subtle p-3',
               PANE_RHYTHM.board.laneStack,
             )}
           >
-            <Eyebrow label={sentenceCase({ text: describeStageBucket({ stage }).label })} muted />
-            <p className="text-meta text-faint-foreground">{promiseOf({ stage })}</p>
+            <Eyebrow label={emptyLaneLabelOf({ spec })} muted />
+            <p className="text-meta text-faint-foreground">{promiseOf({ spec })}</p>
             {index === 0 ? (
               <Button
                 size="md"

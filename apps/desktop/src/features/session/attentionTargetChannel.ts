@@ -3,6 +3,7 @@ import {
   brandId,
   type AgentId,
   type MountId,
+  type OpenQuestionId,
   type SessionAttentionReason,
   type SessionId,
   type WorkspaceId,
@@ -77,12 +78,14 @@ const storedTargetOf = ({ value }: ValueParams): AttentionTarget | null => {
   const workspaceId = 'workspaceId' in value ? filledTextOf({ value: value.workspaceId }) : null;
   const agentId = 'agentId' in value ? filledTextOf({ value: value.agentId }) : null;
   const place = 'place' in value ? storedPlaceOf({ value: value.place }) : null;
+  const questionId = 'questionId' in value ? filledTextOf({ value: value.questionId }) : null;
   return {
     workspaceId: workspaceId === null ? null : brandId<WorkspaceId>({ value: workspaceId }),
     sessionId: brandId<SessionId>({ value: sessionId }),
     reason: 'reason' in value ? attentionReasonOf({ value: value.reason }) : null,
     agentId: agentId === null ? null : brandId<AgentId>({ value: agentId }),
     ...(place === null ? {} : { place }),
+    ...(questionId === null ? {} : { questionId: brandId<OpenQuestionId>({ value: questionId }) }),
   };
 };
 

@@ -6,7 +6,11 @@ vi.mock('@tauri-apps/api/core', async () =>
 vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../store/storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('@goodboy/db', async () => (await import('../../../store/storyHarness')).dbModuleMock());
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../store/storyHarness')).dbModuleMock({
+    listAskThreads: async () => [],
+  }),
+);
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../../store/storyHarness')).dbLibModuleMock(),
 );
@@ -204,7 +208,7 @@ describe('the session head', () => {
     expect(rows.some((row) => row.includes('Refresh session'))).toBe(false);
   });
 
-  it('opens Ask beside the dock and keeps it out of the Context tab', () => {
+  it('opens the Ask pane beside the page, leaves the dock as it was and keeps Ask out of the Context tab', () => {
     go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID, lens: 'context' }) });
     renderWorkspace();
     act(() =>
@@ -218,10 +222,8 @@ describe('the session head', () => {
     expect(document.querySelector('[data-testid="context-ask"]')).toBeNull();
     act(() => useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID }));
 
-    expect(selectDetailDrawer({ state: useAppStore.getState() })).toMatchObject({
-      kind: 'ask',
-      sessionId: FLOW_SESSION_ID,
-    });
+    expect(useAppStore.getState().askPaneOpen[FLOW_SESSION_ID]).toBe(true);
+    expect(selectDetailDrawer({ state: useAppStore.getState() })).toBeNull();
     expect(selectDockDrawer({ state: useAppStore.getState() })?.kind).toBe('terminal');
   });
 

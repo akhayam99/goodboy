@@ -124,20 +124,33 @@ describe('SessionTools', () => {
     expect(drawerKind()).toBeNull();
   });
 
-  it.each(['scripts', 'ask'] as const)(
-    'opens the %s panel for its session and closes it on a second press',
-    (name) => {
-      render(<SessionTools sessionId={SESSION_ID} />);
+  it('opens the scripts panel for its session and closes it on a second press', () => {
+    render(<SessionTools sessionId={SESSION_ID} />);
 
-      fireEvent.click(toggle(name));
-      expect(useAppStore.getState().drawer).toMatchObject({ kind: name, sessionId: SESSION_ID });
-      expect(stateOf(name)).toBe('pressed');
+    fireEvent.click(toggle('scripts'));
+    expect(useAppStore.getState().drawer).toMatchObject({
+      kind: 'scripts',
+      sessionId: SESSION_ID,
+    });
+    expect(stateOf('scripts')).toBe('pressed');
 
-      fireEvent.click(toggle(name));
-      expect(drawerKind()).toBeNull();
-      expect(stateOf(name)).toBe('rest');
-    },
-  );
+    fireEvent.click(toggle('scripts'));
+    expect(drawerKind()).toBeNull();
+    expect(stateOf('scripts')).toBe('rest');
+  });
+
+  it('opens the Ask pane of its session, lights the door, and closes it on a second press', () => {
+    render(<SessionTools sessionId={SESSION_ID} />);
+
+    fireEvent.click(toggle('ask'));
+    expect(useAppStore.getState().askPaneOpen[SESSION_ID]).toBe(true);
+    expect(drawerKind()).toBeNull();
+    expect(stateOf('ask')).toBe('pressed');
+
+    fireEvent.click(toggle('ask'));
+    expect(useAppStore.getState().askPaneOpen[SESSION_ID]).toBe(false);
+    expect(stateOf('ask')).toBe('rest');
+  });
 
   it('opens Monitor as a window panel, beside the session and outside it, and closes it', () => {
     render(<SessionTools sessionId={null} />);

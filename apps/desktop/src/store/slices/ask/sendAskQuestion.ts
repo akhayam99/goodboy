@@ -93,7 +93,10 @@ const ensureThread = async ({
       ...latest.askThreads,
       [sessionId]: [thread, ...(latest.askThreads[sessionId] ?? [])],
     },
-    askThreadId: { ...latest.askThreadId, [sessionId]: thread.id },
+    askThreadId:
+      (latest.askThreadId[sessionId] ?? null) === currentId
+        ? { ...latest.askThreadId, [sessionId]: thread.id }
+        : latest.askThreadId,
     askMessages: { ...latest.askMessages, [thread.id]: [] },
   }));
   return thread;

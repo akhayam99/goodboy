@@ -29,7 +29,8 @@ import {
   sessionOf,
 } from '../features/workspace/testing/sessionColumn';
 import { useDoorSignals } from '../app/components/ShellLeft/useDoorSignals';
-import { useNeedsYouElsewhere } from '../features/workspace/components/StageBoard/useNeedsYouElsewhere';
+import { useNeedsYou } from '../features/workspace/components/StageBoard/NeedsYouStrip/useNeedsYou';
+import { stageInfosOf } from '../store/slices/session-view/stageInfosOf';
 import { useNowSessions } from '../shared/hooks/useNowSessions';
 import { useSessionOrder } from '../store/slices/session-view/selectors';
 
@@ -91,23 +92,24 @@ const useOrder = () =>
 const useSurfaces = () => {
   const sessions = useAppStore((state) => state.sessions);
   const door = useDoorSignals({});
-  const lane = useNeedsYouElsewhere({ workspaceId: harborline.id, sessions });
+  const infos = useAppStore((state) => stageInfosOf({ state, sessions }));
+  const strip = useNeedsYou({ sessions, infos });
   const order = useOrder();
   const now = useNowSessions({});
   return {
     rail: door.board?.count ?? 0,
-    lane: lane.count,
+    strip: strip.cards.length,
     popover: order.groups.find((group) => group.key === 'attention')?.count ?? 0,
     nowChip: now.needsYou.length,
   };
 };
 
 describe('one needs you number for the whole workspace', () => {
-  it('reads the same on the rail, the lane, the popover and the Now chip, filter on', () => {
+  it('reads the same on the rail, the strip, the popover and the Now chip, filter on', () => {
     seed();
     const { result } = renderHook(useSurfaces);
 
-    expect(result.current).toEqual({ rail: 3, lane: 3, popover: 3, nowChip: 3 });
+    expect(result.current).toEqual({ rail: 3, strip: 3, popover: 3, nowChip: 3 });
   });
 
   it('moves on every surface at once when a question is answered', () => {
@@ -123,7 +125,7 @@ describe('one needs you number for the whole workspace', () => {
       });
     });
 
-    expect(result.current).toEqual({ rail: 2, lane: 2, popover: 2, nowChip: 2 });
+    expect(result.current).toEqual({ rail: 2, strip: 2, popover: 2, nowChip: 2 });
   });
 
   it('lists a quiet reason under Needs you without counting it', () => {

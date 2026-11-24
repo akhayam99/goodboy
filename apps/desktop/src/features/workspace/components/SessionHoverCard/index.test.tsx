@@ -25,7 +25,6 @@ import {
 } from '../../../../store/storyHarness';
 import {
   ledgerCore,
-  openQuestionFor,
   paymentsApi,
   renderBoard,
   runningState,
@@ -94,12 +93,36 @@ const task: SessionExternalTask = {
   createdAt: brandId<IsoDateTime>({ value: '2026-10-01T09:00:00.000Z' }),
 };
 
+const approvedPr = (): PullRequestState => ({
+  ...draftPr(),
+  number: 90,
+  state: 'approved',
+  isDraft: false,
+  reviewDecision: 'approved',
+});
+
+type GithubParams = {
+  readonly pr: PullRequestState;
+};
+
+const githubOf = ({ pr }: GithubParams) => ({
+  pr,
+  linkedIssues: [],
+  fetchedAt: null,
+  failedAt: null,
+  loading: false,
+  error: null,
+  detail: null,
+  detailFetchedAt: null,
+  detailLoading: false,
+  detailError: null,
+});
+
 const mount = () => {
   seedColumn({
     store: useAppStore,
     sessions: [retry, webhook],
     archived: [archivedOne],
-    questions: [retry],
     mounts: [
       [webhook, paymentsApi],
       [retry, ledgerCore],
@@ -107,18 +130,8 @@ const mount = () => {
   });
   useAppStore.setState({
     sessionGithub: {
-      [webhook.id]: {
-        pr: draftPr(),
-        linkedIssues: [],
-        fetchedAt: null,
-        failedAt: null,
-        loading: false,
-        error: null,
-        detail: null,
-        detailFetchedAt: null,
-        detailLoading: false,
-        detailError: null,
-      },
+      [webhook.id]: githubOf({ pr: draftPr() }),
+      [retry.id]: githubOf({ pr: approvedPr() }),
     },
     sessionExternalTasks: { [webhook.id]: [task] },
     sessionPhaseRuns: {
@@ -247,16 +260,16 @@ describe('what the hover card says', () => {
 
   it('says what waits on you in the words of the reason table', () => {
     const view = openCard('Retry policy for 429s');
-    view.getByText('1 question for you');
+    view.getByText('Approved, ready to merge');
   });
 
   it('agrees with what the board card tells a screen reader', () => {
     mount();
     const described = buttonOf('Retry policy for 429s').getAttribute('aria-describedby') ?? '';
-    expect(document.getElementById(described)?.textContent ?? '').toBe('1 question for you');
+    expect(document.getElementById(described)?.textContent ?? '').toBe('Approved, ready to merge');
     fireEvent.mouseEnter(rowOf('Retry policy for 429s'));
     rest(500);
-    within(screen.getByTestId('session-hover-card')).getByText('1 question for you');
+    within(screen.getByTestId('session-hover-card')).getByText('Approved, ready to merge');
   });
 
   it('shows the pull request, its checks, the linked task and the project', () => {
@@ -297,12 +310,12 @@ describe('what the hover card says', () => {
 
   it('lists the facts behind the winner, each on its own line', () => {
     mount();
-    seedGithubFor({ session: retry, pr: failingApproved() });
-    fireEvent.mouseEnter(rowOf('Retry policy for 429s'));
+    seedGithubFor({ session: webhook, pr: failingApproved() });
+    fireEvent.mouseEnter(rowOf('Fix webhook retries'));
     rest(500);
     const view = within(screen.getByTestId('session-hover-card'));
 
-    view.getByText('1 question for you');
+    view.getByText('Running');
     expect(view.getByText('Checks failing').getAttribute('data-attention-line')).toBe('ci-failed');
     expect(view.getByText('Approved, ready to merge').getAttribute('data-attention-line')).toBe(
       'pr-approved',
@@ -336,21 +349,16 @@ describe('what the hover card says', () => {
     });
   };
 
-  it('says what the agent is doing when a reason keeps a running session in needs you', async () => {
+  it('says what the agent is doing next to the reason of a running session', async () => {
     mount();
     liveWorkFor({ command: 'pnpm test retry' });
-    useAppStore.setState({
-      sessionOpenQuestions: {
-        ...useAppStore.getState().sessionOpenQuestions,
-        [webhook.id]: [openQuestionFor({ sessionId: brandId<SessionId>({ value: webhook.id }) })],
-      },
-    });
+    seedGithubFor({ session: webhook, pr: approvedPr() });
     await settle();
     fireEvent.mouseEnter(rowOf('Fix webhook retries'));
     rest(500);
     const view = within(screen.getByTestId('session-hover-card'));
 
-    view.getByText('1 question for you');
+    view.getByText('Approved, ready to merge');
     view.getByText('Running pnpm test retry in payments-api');
     expect(view.queryByText('An agent is working')).toBeNull();
   });

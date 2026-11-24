@@ -57,9 +57,9 @@ describe('detailWidthIdOf', () => {
   });
 
   it('keeps one width per kind for every other detail, and none when no detail is open', () => {
-    expect(detailWidthIdOf({ drawer: { kind: 'ask', sessionId: SESSION_ID, payload: null } })).toBe(
-      'ask',
-    );
+    expect(
+      detailWidthIdOf({ drawer: { kind: 'monitoring', sessionId: SESSION_ID, payload: null } }),
+    ).toBe('monitoring');
     expect(detailWidthIdOf({ drawer: null })).toBeNull();
   });
 });

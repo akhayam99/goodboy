@@ -312,10 +312,10 @@
           "also": "right click menus"
         },
         {
-          "title": "Queue",
-          "text": "Act on what waits without opening each session.",
+          "title": "Needs you",
+          "text": "See what waits on you at the top of the Board.",
           "group": "The board",
-          "also": "queue"
+          "also": "needs you"
         },
         {
           "title": "Merge train",

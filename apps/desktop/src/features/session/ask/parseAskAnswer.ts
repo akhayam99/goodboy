@@ -5,7 +5,7 @@ export type AskInline =
   | { readonly kind: 'chip'; readonly handle: AskHandle };
 
 export type AskBlock = {
-  readonly kind: 'paragraph' | 'item';
+  readonly kind: 'paragraph' | 'item' | 'number';
   readonly inlines: ReadonlyArray<AskInline>;
 };
 
@@ -29,6 +29,7 @@ const SUGGEST = /<<suggest target="([A-Za-z0-9:_-]{1,120})">>([\s\S]*?)<<\/sugge
 const SUGGEST_START = '<<suggest';
 const CHIP = /\[\[([^\]\n]{1,200})\]\]/g;
 const LIST_ITEM = /^\s*(?:[-*]|\d+[.)])\s+/;
+const NUMBERED_ITEM = /^\s*\d+[.)]\s+/;
 
 const withoutOpenMarkers = (text: string): string => {
   const suggestAt = text.indexOf(SUGGEST_START);
@@ -134,8 +135,9 @@ export const parseAskAnswer = ({ text, handles }: Params): ParsedAskAnswer => {
     }
     const isItem = LIST_ITEM.test(line);
     const content = isItem ? line.replace(LIST_ITEM, '') : line.trim();
+    const listKind = NUMBERED_ITEM.test(line) ? 'number' : 'item';
     blocks.push({
-      kind: isItem ? 'item' : 'paragraph',
+      kind: isItem ? listKind : 'paragraph',
       inlines: inlinesOf({ line: content, byKey, cited }),
     });
   }

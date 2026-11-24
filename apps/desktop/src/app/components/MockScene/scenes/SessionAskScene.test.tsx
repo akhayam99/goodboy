@@ -16,7 +16,6 @@ import {
 import { useAppStore } from '../../../../store';
 import { registerShortcut } from '../../../../shared/keyboard/dispatcher';
 import { currentPlatform } from '../../../../shared/platform';
-import { requestAskReset } from '../../../../features/session/ask/requestAskReset';
 import {
   activeAskBackend,
   registerAskBackend,
@@ -48,33 +47,52 @@ const renderState = async (state: string) => {
   return screen.findByRole('region', { name: 'Ask' });
 };
 
-const askDrawer = () => screen.getByRole('region', { name: 'Ask' });
+const askPane = () => screen.getByRole('region', { name: 'Ask' });
+
+const composerField = () => screen.getByRole('textbox', { name: 'Ask about this session' });
+
+const HINT = 'Ask about this session. Read only, it starts nothing.';
 
 describe('the session Ask scene', () => {
-  it('opens as a panel with questions to try and no Right now strip', async () => {
+  it('opens as a pane with chips to try, one quiet hint and no Right now strip', async () => {
     await renderState('rightnow');
-    const suggestions = within(screen.getByRole('region', { name: 'Try asking' }));
+    const suggestions = within(screen.getByRole('group', { name: 'Try asking' }));
     expect(suggestions.getAllByRole('button').length).toBeGreaterThan(0);
     expect(screen.queryByTestId('ask-right-now')).toBeNull();
-    expect(screen.getByPlaceholderText('Ask about this session')).toBeDefined();
-    expect(within(askDrawer()).getByText('Read only')).toBeDefined();
+    expect(screen.getByPlaceholderText(HINT)).toBeDefined();
+    expect(within(askPane()).queryByText('Read only')).toBeNull();
   });
 
   it('opens with no scope chip', async () => {
     await renderState('rightnow');
-    expect(within(askDrawer()).queryByTestId('ask-scope')).toBeNull();
+    expect(within(askPane()).queryByTestId('ask-scope')).toBeNull();
   });
 
-  it('says what Ask is above the questions to try, and drops it once a turn exists', async () => {
+  it('draws no explainer, and the hint turns into a follow up once a turn exists', async () => {
     await renderState('rightnow');
-    await within(askDrawer()).findByRole('heading', { name: 'Ask this session' });
-    within(askDrawer()).getByText(/^What it did, what it found, what waits on you\./);
+    expect(within(askPane()).queryByRole('heading', { name: 'Ask this session' })).toBeNull();
+    expect(within(askPane()).queryByText(/What it did, what it found/)).toBeNull();
     cleanup();
     await renderState('answer');
-    expect(within(askDrawer()).queryByRole('heading', { name: 'Ask this session' })).toBeNull();
+    screen.getByPlaceholderText('Ask a follow up');
   });
 
-  it('stays on the Overview until Ask is opened, then opens it as a panel beside the Overview', async () => {
+  it('lists the earlier questions of the session in the Earlier menu and opens one', async () => {
+    const showAskThread = vi.fn(async () => undefined);
+    await renderState('answer');
+    act(() => {
+      useAppStore.setState({ showAskThread });
+    });
+    fireEvent.click(within(askPane()).getByRole('combobox', { name: 'Earlier questions' }));
+    fireEvent.click(
+      await screen.findByRole('option', { name: /Why did the first credit post twice\?/ }),
+    );
+    expect(showAskThread).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: SESSION.id, threadId: 'mock-ask-thread-earlier' }),
+    );
+  });
+
+  it('stays on the Overview until Ask is opened, then opens it as a pane beside the Overview', async () => {
     window.history.replaceState(null, '', '/?scene=session-ask&state=closed');
     render(
       <ToastProvider>
@@ -86,16 +104,17 @@ describe('the session Ask scene', () => {
     act(() => useAppStore.getState().openAsk({ sessionId: SESSION.id }));
     expect(await screen.findByRole('region', { name: 'Ask' })).toBeDefined();
     expect(useAppStore.getState().activeLens[SESSION.id] ?? null).toBeNull();
-    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION.id });
+    expect(useAppStore.getState().drawer).toBeNull();
+    screen.getByTestId('overview-title');
   });
 
-  it('asks a suggested question', async () => {
+  it('asks a suggested question at once', async () => {
     const sendAskQuestion = vi.fn(async () => true);
     await renderState('rightnow');
     act(() => {
       useAppStore.setState({ sendAskQuestion });
     });
-    const suggestion = within(screen.getByRole('region', { name: 'Try asking' })).getAllByRole(
+    const suggestion = within(screen.getByRole('group', { name: 'Try asking' })).getAllByRole(
       'button',
     )[0];
     if (suggestion === undefined) {
@@ -123,7 +142,7 @@ describe('the session Ask scene', () => {
     expect(within(screen.getByTestId('ask-actions')).getByText(/^Answer: /)).toBeDefined();
   });
 
-  it('moves the page beside it when a chip is clicked, and the question keeps Back to Ask', async () => {
+  it('opens the question a chip names beside the pane, and the answer stays', async () => {
     await renderState('answer');
     const answer = await screen.findByTestId('ask-answer');
     const questionChip = answer.querySelector<HTMLElement>('[data-ask-kind="question"] button');
@@ -137,10 +156,12 @@ describe('the session Ask scene', () => {
       kind: 'question',
       sessionId: SESSION.id,
     });
+    expect(useAppStore.getState().askPaneOpen[SESSION.id]).toBe(true);
     act(() => {
       useAppStore.getState().closeQuestion();
     });
-    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION.id });
+    expect(useAppStore.getState().askPaneOpen[SESSION.id]).toBe(true);
+    screen.getByTestId('ask-answer');
   });
 
   it('prefills the answer field from the Answer button and never sends it', async () => {
@@ -169,47 +190,40 @@ describe('the session Ask scene', () => {
     });
   });
 
-  it('opens a plan inside Ask under Back to answer, and Esc goes back', async () => {
+  it('opens a plan from its chip in the plan panel, and the answer stays in the pane', async () => {
     await renderState('plan');
-    const plan = await screen.findByTestId('ask-plan');
-    expect(screen.getByRole('button', { name: 'Back to answer' })).toBeDefined();
-    expect(within(plan).queryByText('Back to answer')).toBeNull();
-    expect(screen.queryByPlaceholderText('Ask about this session')).toBeNull();
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(await screen.findByTestId('ask-answer')).toBeDefined();
-  });
-
-  it('a palette reset inside a plan restores the composer', async () => {
-    await renderState('plan');
-    await screen.findByTestId('ask-plan');
-    expect(screen.queryByPlaceholderText('Ask about this session')).toBeNull();
-    act(() => {
-      requestAskReset({ sessionId: SESSION.id });
-    });
-    expect(await screen.findByPlaceholderText('Ask about this session')).toBeDefined();
+    await screen.findByTestId('ask-answer');
+    await vi.waitFor(() =>
+      expect(useAppStore.getState().drawer).toMatchObject({ kind: 'artifact-document' }),
+    );
     expect(screen.queryByTestId('ask-plan')).toBeNull();
+    screen.getByTestId('ask-answer');
+    composerField();
   });
 
-  it('shows a follow-up as a second turn in the same thread and hides the questions to try', async () => {
+  it('folds the first question of a follow up to one line, opens it on Show answer, and hides the chips', async () => {
     await renderState('followup');
     await screen.findAllByTestId('ask-answer');
+    expect(screen.getAllByTestId('ask-turn')).toHaveLength(1);
+    expect(screen.getAllByTestId('ask-folded-turn')).toHaveLength(1);
+    expect(screen.queryByRole('group', { name: 'Try asking' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show the answer to What needs me?' }));
     expect(screen.getAllByTestId('ask-turn')).toHaveLength(2);
-    expect(screen.queryByRole('region', { name: 'Try asking' })).toBeNull();
   });
 
   it('disables New question while a reply streams and enables it once idle', async () => {
     await renderState('streaming');
-    const resetButton = within(askDrawer()).getByRole('button', { name: 'New question' });
+    const resetButton = within(askPane()).getByRole('button', { name: 'New question' });
     expect((resetButton as HTMLButtonElement).disabled).toBe(true);
     cleanup();
     await renderState('answer');
-    const idleButton = within(askDrawer()).getByRole('button', { name: 'New question' });
+    const idleButton = within(askPane()).getByRole('button', { name: 'New question' });
     expect((idleButton as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('has no New button left in the header', async () => {
     await renderState('answer');
-    expect(within(askDrawer()).queryByRole('button', { name: /^New$/ })).toBeNull();
+    expect(within(askPane()).queryByRole('button', { name: /^New$/ })).toBeNull();
   });
 
   it('New question empties the transcript and keeps the old chat under Earlier', async () => {
@@ -219,18 +233,18 @@ describe('the session Ask scene', () => {
     expect(before).not.toBeNull();
 
     act(() => {
-      fireEvent.click(within(askDrawer()).getByRole('button', { name: 'New question' }));
+      fireEvent.click(within(askPane()).getByRole('button', { name: 'New question' }));
     });
 
     expect(useAppStore.getState().askThreadId[SESSION.id]).toBeNull();
     expect(screen.queryAllByTestId('ask-turn')).toHaveLength(0);
-    expect(screen.getByRole('region', { name: 'Try asking' })).toBeDefined();
+    screen.getByRole('group', { name: 'Try asking' });
     expect(
       useAppStore.getState().askThreads[SESSION.id]?.some((thread) => thread.id === before),
     ).toBe(true);
   });
 
-  it('New question answers the chord from inside the panel, and only there', async () => {
+  it('New question answers the chord from inside the pane, and only there', async () => {
     await renderState('followup');
     await screen.findAllByTestId('ask-turn');
     const newSession = vi.fn();
@@ -238,7 +252,7 @@ describe('the session Ask scene', () => {
     const isMac = currentPlatform() === 'darwin';
     const chord = { code: 'KeyN', metaKey: isMac, ctrlKey: !isMac };
 
-    const composer = screen.getByPlaceholderText('Ask about this session');
+    const composer = composerField();
     act(() => {
       composer.blur();
       fireEvent.keyDown(document.body, chord);
@@ -252,7 +266,7 @@ describe('the session Ask scene', () => {
     stop();
 
     expect(callsOutside).toBe(0);
-    expect(turnsOutside).toBe(2);
+    expect(turnsOutside).toBe(1);
 
     expect(newSession).toHaveBeenCalledTimes(0);
     expect(useAppStore.getState().askThreadId[SESSION.id]).toBeNull();
@@ -264,7 +278,7 @@ describe('the session Ask scene', () => {
     const newSession = vi.fn();
     const stop = registerShortcut('session.new', newSession);
     const isMac = currentPlatform() === 'darwin';
-    const composer = screen.getByPlaceholderText('Ask about this session');
+    const composer = composerField();
     const before = useAppStore.getState().askThreadId[SESSION.id];
 
     act(() => {

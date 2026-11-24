@@ -1,6 +1,7 @@
 import type {
   AgentId,
   MountId,
+  OpenQuestionId,
   SessionAttentionReason,
   SessionId,
   WorkspaceId,
@@ -19,4 +20,5 @@ export type AttentionTarget = Readonly<{
   reason: SessionAttentionReason | null;
   agentId: AgentId | null;
   place?: AttentionExactPlace;
+  questionId?: OpenQuestionId;
 }>;

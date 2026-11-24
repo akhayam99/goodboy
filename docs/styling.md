@@ -482,7 +482,7 @@ a plan keeps the reading measure. The `full` tier
 is the only exception to centring and ignores the slide below: its right edge
 follows the drawer exactly as before.
 
-**The drawer slide.** When a right drawer opens (Context, Ask, a transcript, an
+**The drawer slide.** When a right drawer opens (Context, a transcript, an
 artifact document, a plan) the main area gives up the drawer's track and the
 centred column re-centres in the space left of the drawer, keeping its full
 width while that space is wide enough. It shrinks only below its frame, down to
@@ -524,7 +524,7 @@ tools rail, so a line holds about 115 characters of the 15/24 message text (`tex
 The chat room keeps the centred 720 `measure`.
 Tables and code scroll inside the column. A user or injected card keeps a fixed
 48px start gap (`PANE_RHYTHM.message.user`) in the agent transcript, Chat, the
-Ask panel and the fix run drawer. The rhythm is set by the parent's gap
+Ask pane and the fix run drawer. The rhythm is set by the parent's gap
 (`PANE_RHYTHM.transcript`): 32px between turns, 16px between the blocks of a
 turn, 12px between paragraphs of a message. The last line sits 32px above the composer,
 the turn gap (`TRANSCRIPT_FLOOR_PX`, 24, plus the composer's 8px top), and a sent message 40px
@@ -639,7 +639,7 @@ do), or through `appScrollIntoView({ element, block, behavior })` and
 `appScrollTo({ viewport, top, behavior })`, which hold every reveal region
 around what they scroll, so code that sits above its own shell (a studio, a
 drawer, a find bar) holds the right one. Follow and autoscroll (the agent
-conversation, Chat, a script log, the Ask panel), scroll anchoring and keyboard
+conversation, Chat, a script log, the Ask pane), scroll anchoring and keyboard
 moves always go through one of them, so new messages never hide or show the
 header. The slide is not a layout move: `useScrollAnchor` reads its tracked top
 without it (`revealSlideOf`), so the transcript never scrolls the reader back; a jump a click makes reads as the app's even without one, since no

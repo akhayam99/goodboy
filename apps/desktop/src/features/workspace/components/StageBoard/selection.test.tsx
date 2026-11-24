@@ -26,12 +26,11 @@ vi.mock('../../hooks/useSessionSummary', async (importOriginal) => {
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { aProject, aSession, aWorkspace, anAgent } from '@goodboy/types/testing';
-import type { AgentId, OpenQuestion, OpenQuestionId, Session, SessionId } from '@goodboy/types';
+import type { Session, SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
-  stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { bindTarget } from '../../../actions/registry';
@@ -129,52 +128,14 @@ describe('StageBoard selection bar', () => {
     expect(pressedOf(GOALS[1] ?? '')).toBe('false');
   });
 
-  it('hides the bar on the Queue and keeps the selection for the way back to Stages', async () => {
-    stubStoryInvoke({ live_work: [] });
-    mountBoard(sessionsOf(GOALS));
-    tick(GOALS[0] ?? '');
-    within(toolbar()).getByText('1 selected');
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Queue' }));
-    await waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull());
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Stages' }));
-    within(await screen.findByRole('toolbar')).getByText('1 selected');
-  });
-
   it('lines each title up with its meta line at rest', () => {
-    const sessions = sessionsOf(GOALS);
-    useAppStore.setState({
-      sessionOpenQuestions: Object.fromEntries(
-        sessions.map((session) => [
-          session.id,
-          [
-            {
-              id: `question-${session.id}` as OpenQuestionId,
-              sessionId: session.id,
-              createdByAgentId: 'agent-1' as AgentId,
-              text: 'Which implementation should I use?',
-              suggestedAnswers: [],
-              isBlocking: false,
-              userAnswer: null,
-              status: 'open',
-              createdAt: session.createdAt,
-            } satisfies OpenQuestion,
-          ],
-        ]),
-      ),
-    });
-    mountBoard(sessions);
+    mountBoard(sessionsOf(GOALS));
 
     for (const goal of GOALS) {
       const title = titleOf(goal);
       const card = title.closest('article');
       expect(card?.contains(title)).toBe(true);
       expect(inFlowBefore(title)).toEqual([]);
-      const signal = card?.querySelector<HTMLElement>('[data-slot="card-signal"]') ?? null;
-      expect(
-        signal === null ? null : within(signal).getByRole('img').getAttribute('aria-label'),
-      ).toBe('1 question for you');
     }
   });
 

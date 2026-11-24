@@ -31,8 +31,7 @@ import {
 } from '../../../../store/storyHarness';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
 import { stageInfosOf } from '../../../../store/slices/session-view/stageInfosOf';
-import { needsYouOf } from '../../../board/queue/needsYouOf';
-import { useQueueSends } from '../../../board/queue/QueueBoard/useQueueSends';
+import { needsYouOf } from '../../../board/needsYou/needsYouOf';
 import {
   harborline,
   ledgerCore,
@@ -270,7 +269,6 @@ describe('what each Sessions row says', () => {
   beforeEach(() => {
     vi.mocked(getSessionDockGrid).mockReset();
     vi.mocked(getSessionDockGrid).mockResolvedValue(null);
-    useQueueSends.setState({ notNow: new Set(), pending: {} });
   });
 
   const rowOf = ({ session }: IdParams): HTMLElement => {
@@ -283,20 +281,19 @@ describe('what each Sessions row says', () => {
     return row;
   };
 
-  const queueMovesOf = ({ session }: IdParams) => {
+  const needsYouMovesOf = ({ session }: IdParams) => {
     const state = useAppStore.getState();
     return needsYouOf({
       sessions: [session],
       infos: stageInfosOf({ state, sessions: [session] }),
       openQuestions: { [session.id]: state.sessionOpenQuestions[idOf({ session })] ?? [] },
-      notNow: useQueueSends.getState().notNow,
     });
   };
 
-  it('counts what waits on you with the number the Queue shows', () => {
+  it('counts what waits on you with the number of moves its session holds', () => {
     mount();
     toggle();
-    const { moveCount } = queueMovesOf({ session: ask });
+    const { moveCount } = needsYouMovesOf({ session: ask });
 
     expect(moveCount).toBeGreaterThan(0);
     expect(within(rowOf({ session: ask })).getByTestId('sessions-needs-you').textContent).toBe(
@@ -308,48 +305,6 @@ describe('what each Sessions row says', () => {
       }),
     ).not.toBeNull();
     expect(within(rowOf({ session: quiet })).queryByTestId('sessions-needs-you')).toBeNull();
-  });
-
-  it('drops a move put off with Not now, as the Queue does', () => {
-    mount();
-    toggle();
-    const { moves } = queueMovesOf({ session: ask });
-
-    act(() => {
-      moves.forEach((move) => useQueueSends.getState().hide({ moveId: move.id }));
-    });
-
-    expect(within(rowOf({ session: ask })).queryByTestId('sessions-needs-you')).toBeNull();
-  });
-
-  it('drops a move put off from its own row only, and counts it again when it is back', () => {
-    mount({ questions: [ask, pinned] });
-    toggle();
-    const countOf = ({ session }: IdParams): string | null =>
-      within(rowOf({ session })).queryByTestId('sessions-needs-you')?.textContent ?? null;
-    const askMoves = queueMovesOf({ session: ask });
-    const pinnedCount = countOf({ session: pinned });
-    const before = countOf({ session: ask });
-    const [move] = askMoves.moves;
-    if (move === undefined || pinnedCount === null) {
-      throw new Error('both sessions need a move');
-    }
-    expect(before).toBe(String(askMoves.moveCount));
-
-    act(() => {
-      useQueueSends.getState().hide({ moveId: move.id });
-    });
-
-    const left = askMoves.moveCount - 1;
-    expect(countOf({ session: ask })).toBe(left === 0 ? null : String(left));
-    expect(countOf({ session: pinned })).toBe(pinnedCount);
-
-    act(() => {
-      useQueueSends.getState().show({ moveId: move.id });
-    });
-
-    expect(countOf({ session: ask })).toBe(before);
-    expect(countOf({ session: pinned })).toBe(pinnedCount);
   });
 
   it('says Desk for a session saved on the Desk and nothing for the others', async () => {

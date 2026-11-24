@@ -31,7 +31,7 @@ const SCENE_NAMES = Object.keys(U37_COMPOSER_SCENES).filter(
 
 beforeAll(async () => {
   await importStore();
-  await import('../../../../../features/session/ask/components/AskDrawer');
+  await import('../../../../../features/session/ask/components/AskPane');
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {

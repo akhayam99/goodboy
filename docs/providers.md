@@ -1319,7 +1319,8 @@ When a provider ships or retires a model, update these together:
   is the Claude family and Cursor Auto has none). A guard strikes a row with a cause
   (`CANDIDATE_CAUSES`): not connected, Off, Backup idle, out of room, cooling down, an
   open breaker, a budget alert, outside the run's providers, a provider the Lead never
-  starts helpers on, a writer off `AUTO_WRITER_CHILD_PROVIDERS`, hidden, CLI too old,
+  starts helpers on, a writer off `AUTO_WRITER_CHILD_PROVIDERS`, a provider where a
+  helper of the same role did not start in this work (`failedStarts`), hidden, CLI too old,
   outside a role pin, or the writer's family for a review (kept, and said, when no
   other family is left). A Backup provider stays idle only while an On provider has a
   model that can run for the need. A role pin lists only its pinned models while one of

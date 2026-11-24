@@ -35,6 +35,7 @@ export type AskState = {
   readonly askStreams: Readonly<Record<ChatId, AskStream>>;
   readonly askRouting: Readonly<Record<SessionId, AskRouting>>;
   readonly askDrafts: Readonly<Record<string, string>>;
+  readonly askPaneOpen: Readonly<Record<SessionId, boolean>>;
 };
 
 export const askInitialState: AskState = {
@@ -46,4 +47,5 @@ export const askInitialState: AskState = {
   askStreams: {},
   askRouting: {},
   askDrafts: {},
+  askPaneOpen: {},
 };

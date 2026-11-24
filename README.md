@@ -28,7 +28,7 @@ Goodboy runs coding agents side by side on your own repositories, one session fo
 
 ## The board
 
-Every task is a session, and the board shows where each one stands. It opens on **Queue**: what waits on you across sessions, what each agent is doing, and the pull requests ready to merge in order. **Stages** sets the sessions in six lanes, **Building**, **Running**, **Needs you**, **In review**, **Done** and **Archived**. A session moves to the lane that matches what is happening in it.
+Every task is a session, and the board shows where each one stands. What waits on you sits on top, one card per session, and a click opens it where it waits. Below, five lanes, **Building**, **Running**, **In review**, **Done** and **Archived**, hold the rest, and a session moves to the lane that matches what is happening in it. **In review** merges the pull requests that are ready, in order.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-dark.webp">

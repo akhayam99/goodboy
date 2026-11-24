@@ -81,13 +81,14 @@ const paneToggles = (): ReadonlyArray<Element> =>
 const drawerKind = (): string | null => useAppStore.getState().drawer?.kind ?? null;
 
 describe('session tools rows stay reachable', () => {
-  it('Ask is a detail panel: ask.open opens it beside the page and the tools hold no Ask button', async () => {
+  it('Ask is a side pane: ask.open opens it beside the page and the tools hold no Ask button', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
     act(() => useAppStore.getState().openAsk({ sessionId }));
     await settle();
-    expect(drawerKind()).toBe('ask');
+    expect(drawerKind()).toBeNull();
+    expect(useAppStore.getState().askPaneOpen[sessionId]).toBe(true);
     expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId })).toBe(false);
 
     act(() => {

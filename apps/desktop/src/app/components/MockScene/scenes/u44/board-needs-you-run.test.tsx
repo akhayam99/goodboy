@@ -63,11 +63,13 @@ const mount = async (name: SceneName): Promise<HTMLElement> => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
   });
   expect(screen.queryByText('Something went wrong')).toBeNull();
-  const line = document.querySelector<HTMLElement>('[data-slot="card-run"]');
-  if (line === null) {
-    throw new Error('no waiting run line');
+  const card = document.querySelector<HTMLElement>(
+    '[data-needs-you-card="mock-board-session-notify-backoff"]',
+  );
+  if (card === null) {
+    throw new Error('no needs you card for the waiting run');
   }
-  return line;
+  return card;
 };
 
 describe('the Board needs you run scenes', () => {
@@ -78,32 +80,34 @@ describe('the Board needs you run scenes', () => {
     }
   });
 
-  it('names the waiting run and its state on the card', async () => {
-    const line = await mount('board-needs-you-run');
+  it('names the waiting session and its oldest wait on its Needs you card', async () => {
+    const card = await mount('board-needs-you-run');
 
-    expect(line.textContent).toBe('Run Hold payouts behind a merchant notice');
-    const card = line.closest('article');
-    expect(card?.querySelector('[data-board-signal]')?.textContent).toBe('Needs approval');
+    expect(card.getAttribute('aria-label')).toBe(
+      'Open Warn merchants before a payout hold, Should the warning go out by email, in the dashboard, or both?',
+    );
   });
 
-  it('counts a second waiting run with +1', async () => {
-    const line = await mount('board-needs-you-runs');
+  it('keeps one card for a session with a second waiting run', async () => {
+    await mount('board-needs-you-runs');
 
-    expect(line.textContent).toBe('Run Hold payouts behind a merchant notice +1');
+    expect(
+      document.querySelectorAll('[data-needs-you-card="mock-board-session-notify-backoff"]'),
+    ).toHaveLength(1);
   });
 
-  it('opens the named run in its session from Review plan', async () => {
-    await mount('board-needs-you-run');
+  it('opens the question the card names, the oldest wait of the session', async () => {
+    const card = await mount('board-needs-you-run');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Review plan' }));
+    await act(async () => {
+      fireEvent.click(card);
+      await vi.advanceTimersByTimeAsync(0);
+    });
 
     expect(captureWindowLocation({ state: useAppStore.getState() }).place).toMatchObject({
       at: 'session',
       sessionId: 'mock-board-session-notify-backoff',
-      view: {
-        lens: 'workflows',
-        target: { kind: 'run', runId: 'mock-board-run-notify-backoff-0' },
-      },
+      view: { lens: 'questions', target: { kind: 'question' } },
     });
   });
 });
