@@ -36,9 +36,9 @@ import { SessionsHeader } from './SessionsHeader';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { useClearSessionFilters } from './useClearSessionFilters';
-import { BoardLayoutSwitch } from './BoardLayoutSwitch';
-import { QueueBoard } from '../../../board/queue/QueueBoard';
-import { useBoardPage } from '../../../board/queue/QueueBoard/useBoardPage';
+import { NeedsYouStrip } from './NeedsYouStrip';
+import { boardByStageOf } from './boardByStageOf';
+import { stageInfosOf } from '../../../../store/slices/session-view/stageInfosOf';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -50,7 +50,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const needsYou = useNeedsYouElsewhere({ workspaceId, sessions });
   const clearFilters = useClearSessionFilters({ workspaceId });
   const nav = useBoardNavigation();
-  const page = useBoardPage();
   const hover = useHoverCardTarget();
   const archivedList = useAppStore((s) => s.archivedSessions[workspaceId]);
   const archived = archivedList ?? EMPTY_ARRAY;
@@ -75,13 +74,8 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   );
   useArchivedSessionsLoad({ workspaceId, isReady: boardReady });
 
-  const byStage = useMemo(() => {
-    const map = new Map<string, ReadonlyArray<Session>>();
-    for (const group of groups) {
-      map.set(group.key, group.sessions);
-    }
-    return map;
-  }, [groups]);
+  const infos = useAppStore((s) => stageInfosOf({ state: s, sessions }));
+  const byStage = useMemo(() => boardByStageOf({ groups, infos }), [groups, infos]);
 
   const boardSessions = useMemo(
     () => [
@@ -93,7 +87,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const selection = useBoardSelection({ sessions: boardSessions });
   const { selectedIds } = selection;
   const boardRef = useRef<HTMLDivElement | null>(null);
-  const { ref: frameRef, layout, scrollLaneRem } = useBoardLayout();
+  const { ref: frameRef, layout, laneRem } = useBoardLayout();
   const selectionTarget = useMemo<ObjectTarget | null>(
     () => (selectedIds.length === 0 ? null : { kind: 'sessions', sessionIds: selectedIds }),
     [selectedIds],
@@ -114,7 +108,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     onToggle: onSelectionKeyToggle,
     onSelectAll: selection.selectAll,
     onDelete: onSelectionKeyDelete,
-    isEnabled: page.layout === 'stages',
   });
   const focusFirstCard = useCallback(() => {
     boardRef.current?.querySelector<HTMLElement>('[data-select-id] button')?.focus();
@@ -166,15 +159,10 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           hiddenCount={pending || empty ? 0 : hiddenCount}
           needsYouElsewhere={pending || empty ? 0 : needsYou.elsewhere}
           onClearFilters={clearFilters}
-          layoutSwitch={
-            pending || empty ? null : (
-              <BoardLayoutSwitch layout={page.layout} onChange={page.setLayout} />
-            )
-          }
         >
           {!pending && hasProjects && empty && <SetupCard isMainWindow={isMainWindow} />}
 
-          {pending && <BoardSkeleton lanes={layout.lanes} />}
+          {pending && <BoardSkeleton layout={layout} laneRem={laneRem} />}
 
           {!pending && empty && !hasProjects && workspace !== null && (
             <ScrollFade
@@ -197,28 +185,24 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             />
           )}
 
-          {!pending && !empty && page.layout === 'queue' && (
+          {!pending && !empty && (
             <BoardFactsFrame workspaceId={workspaceId}>
-              <QueueBoard workspaceId={workspaceId} sessions={sessions} />
-            </BoardFactsFrame>
-          )}
-
-          {!pending && !empty && page.layout === 'stages' && (
-            <BoardFactsFrame workspaceId={workspaceId}>
-              <BoardLanes
-                layout={layout}
-                scrollLaneRem={scrollLaneRem}
-                byStage={byStage}
-                needsYouCount={needsYou.count}
-                archived={projectArchived}
-                isArchivedLoading={archivedList === undefined}
-                nav={nav}
-                selection={selection}
-                onRestore={onRestore}
-                motionResetKey={motionResetKey}
-                onCardEnter={hover.enter}
-                onCardLeave={hover.leave}
-              />
+              <div className="flex min-h-0 flex-1 flex-col gap-3">
+                <NeedsYouStrip workspaceId={workspaceId} sessions={sessions} laneRem={laneRem} />
+                <BoardLanes
+                  layout={layout}
+                  laneRem={laneRem}
+                  byStage={byStage}
+                  archived={projectArchived}
+                  isArchivedLoading={archivedList === undefined}
+                  nav={nav}
+                  selection={selection}
+                  onRestore={onRestore}
+                  motionResetKey={motionResetKey}
+                  onCardEnter={hover.enter}
+                  onCardLeave={hover.leave}
+                />
+              </div>
             </BoardFactsFrame>
           )}
         </SessionsHeader>
@@ -236,19 +220,17 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         onClose={hover.close}
       />
 
-      {page.layout === 'stages' && (
-        <ObjectSelectionBar
-          controls={selectionControls}
-          verbIds={BOARD_SELECTION_BAR.verbIds}
-          count={selectedIds.length}
-          total={selection.total}
-          onClear={selection.clearAll}
-          onSelectAll={selection.selectAll}
-          onDone={selection.clearAll}
-          onFocusReturn={focusFirstCard}
-          hint={BOARD_SELECTION_BAR.hint}
-        />
-      )}
+      <ObjectSelectionBar
+        controls={selectionControls}
+        verbIds={BOARD_SELECTION_BAR.verbIds}
+        count={selectedIds.length}
+        total={selection.total}
+        onClear={selection.clearAll}
+        onSelectAll={selection.selectAll}
+        onDone={selection.clearAll}
+        onFocusReturn={focusFirstCard}
+        hint={BOARD_SELECTION_BAR.hint}
+      />
     </div>
   );
 };

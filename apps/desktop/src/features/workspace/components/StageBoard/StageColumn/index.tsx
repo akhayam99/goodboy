@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   Button,
   cn,
@@ -67,7 +67,7 @@ type ModifierEvent = {
 type StageColumnProps = {
   readonly spec: ColumnSpec;
   readonly sessions: ReadonlyArray<Session>;
-  readonly count?: number;
+  readonly action?: ReactNode;
   readonly nav: BoardNavigation;
   readonly selection: ColumnSelection;
   readonly onClearSelection: () => void;
@@ -83,7 +83,7 @@ type StageColumnProps = {
 export const StageColumn = ({
   spec,
   sessions,
-  count = sessions.length,
+  action,
   nav,
   selection,
   onClearSelection,
@@ -120,18 +120,18 @@ export const StageColumn = ({
         isHalf && (isEmpty ? 'flex-none' : 'flex-initial'),
       )}
     >
-      <div className="flex h-6 shrink-0 items-center justify-between">
-        <Tooltip
-          content={stateDescription({ presentation: view.presentation })}
-          {...(view.key === 'attention' && { shortcut: 'session.nextNeedsYou' })}
-        >
-          <span className="flex items-center gap-2">
+      <div className="flex h-6 shrink-0 items-center justify-between gap-2">
+        <Tooltip content={stateDescription({ presentation: view.presentation })}>
+          <span className="flex shrink-0 items-center gap-2">
             <Eyebrow label={sentenceCase({ text: view.presentation.label })} muted={isEmpty} />
-            {count > 0 && (
-              <span className="text-meta tabular-nums text-faint-foreground">{count}</span>
+            {!isEmpty && (
+              <span className="text-meta tabular-nums text-faint-foreground">
+                {sessions.length}
+              </span>
             )}
           </span>
         </Tooltip>
+        {action === undefined ? null : <div className="flex min-w-0 justify-end">{action}</div>}
         {view.key === 'done' && !isEmpty && !isLoading && <DoneLaneMenu sessions={sessions} />}
       </div>
 

@@ -10,7 +10,7 @@ import {
 import { useAppStore } from '../../../../../store';
 import type { MountGithubState } from '../../../../../store/types';
 import type { MergeTrain } from '../../../../../store/slices/pr-series/mergeTrain';
-import { QueueScene } from './QueueScene';
+import { BoardScene } from '../u52/BoardScene';
 
 type Props = {
   readonly theme: 'dark' | 'light';
@@ -155,5 +155,5 @@ export const MergeTrainScene = ({ theme, isRunning }: Props) => {
   useEffect(() => {
     seedTrain({ isRunning });
   }, [isRunning]);
-  return <QueueScene theme={theme} isClear={false} />;
+  return <BoardScene theme={theme} cards={3} />;
 };

@@ -555,7 +555,7 @@ covered.
   filters by title or project, the arrows and Enter open a row, and the pin
   calls `pinSession` or `unpinSession`, which leave the row in place when the
   write fails. Each row says the state of its session: the status mark, the
-  live line or the project, the count of what waits on you from the Queue's
+  live line or the project, the count of what waits on you from the Board's
   `needsYouOf`, and **Desk** when the session opens again on its Desk. So you
   move from one session to another without going through the Board.
   After an update from a build that had the sidebar list, a one-time card

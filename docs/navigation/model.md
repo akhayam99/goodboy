@@ -28,19 +28,19 @@
   no row sits under it. Header and lanes share one frame centred in the pane, so the
   title's left edge is the first lane's left edge and the actions' right edge is
   the last lane's right edge.
-  There are six lanes in pipeline order (building, running, needs you, in
-  review, done, archived), each from 12.25rem to 20rem wide with 0.75rem gaps, and
-  the frame stops at six lanes of 20rem, so a wide or zoomed-out window never
-  stretches the board. `boardLanesOf` decides by the frame's width in those rem
-  values times the root font size (`BOARD_LANE_MIN_REM` and `BOARD_LANE_GAP_REM`
-  in `paneRhythm.ts`, the same numbers the lane classes use; 15px root): six
-  lanes from 1159px; from 964px five lanes with Done above Archived in the
-  fifth, each half with its own header, count, empty line and scroll; below
-  that the five lanes scroll sideways, the title row stays, and the scroller
-  opens at its end so Done and Archived are on screen. While scrolling, the
-  lanes narrow down to 11rem (`scrollLaneRemOf`, `BOARD_LANE_SCROLL_MIN_REM`) so
-  the last four lanes and the 32px edge fade (`BOARD_LANE_FADE_PX`) fit, and
-  Running opens whole beside the right rail at a 1100px window. Every lane always renders
+  There are five lanes in pipeline order (building, running, in review, done,
+  archived), each from 12.25rem to 20rem wide (`BOARD_LANE_MAX_REM`) with
+  0.75rem gaps, so a wide or zoomed-out window never stretches a lane.
+  `boardLanesOf` decides by the frame's width in those rem values times the
+  root font size (`BOARD_LANE_MIN_REM` and `BOARD_LANE_GAP_REM` in
+  `paneRhythm.ts`; 15px root): five lanes from 964px; from 769px four lanes
+  with Done above Archived in the fourth, each half with its own header, count,
+  empty line and scroll; below that the four lanes scroll sideways, the title
+  row stays, and the scroller opens at its end so Done and Archived are on
+  screen. While scrolling, the lanes narrow down to 11rem (`scrollLaneRemOf`,
+  `BOARD_LANE_SCROLL_MIN_REM`) so the last three lanes and the 32px edge fade
+  (`BOARD_LANE_FADE_PX`) fit. `laneWidthOf` is the one lane width; the Needs
+  you cards above the lanes read it too, so a card is always one lane wide. Every lane always renders
   its header and, when empty, one line naming what is missing; Archived shows
   Loading until its list answers, and it is the list the sidebar shows under
   Show archived. There is no dock and no collapse: Done and Archived are never
@@ -143,7 +143,7 @@
   scopes. The one place they stay is the saved window layout: it stores a Connections page as
   the Settings provider or tools page 0.36 opens (`storedStudioOf`), and restore folds it back.
   There is no Work door and no `work` studio: the Board is the one list across sessions, and a
-  card in Needs you names the run that waits (`waitingRunOf`). A stored Work place, whatever the
+  Needs you card opens the run that waits (`attentionPlace`). A stored Work place, whatever the
   old Work switch row says, opens the Board with no drawer (`withoutRemovedPages`), in each window
   on its own. ⌘K lists one "Lead: title" row per open Lead (`leadEntries`).
   Monitoring has no place on the rail; its page has no band and no Close, and

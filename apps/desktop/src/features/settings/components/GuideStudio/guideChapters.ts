@@ -210,15 +210,19 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'board',
     group: 'daily',
     title: 'Board',
-    lead: 'The Board opens on Queue, what waits on you. Stages, in its head, sets each session in a lane.',
+    lead: 'The Board sets each session in a lane, with what waits on you as cards above.',
     points: [
       {
-        term: 'Queue',
-        desc: 'Needs you lists what waits on you; Enter opens it and S puts it off. Running says what each agent does. Ready to merge proposes an order.',
+        term: 'Needs you',
+        desc: 'One card per session that waits on you, the oldest first. A click opens the session where it waits.',
       },
       {
-        term: 'Stages and Sessions',
-        desc: 'Lanes on Stages. Sessions in the top bar lists the same sessions; the funnel in the Board header sorts and narrows them.',
+        term: 'Lanes and Sessions',
+        desc: 'Building, Running, In review, Done and Archived. Sessions in the top bar lists the same sessions; the funnel in the Board header sorts and narrows them.',
+      },
+      {
+        term: 'Merge in order',
+        desc: 'The In review lane head merges the approved pull requests with green checks, one at a time.',
       },
       {
         term: 'Session card',
@@ -825,8 +829,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'Habits that pay off across sessions.',
     points: [
       {
-        term: 'Work down the Queue',
-        desc: 'Start with Needs you, then Ready to merge, and let the running ones run.',
+        term: 'Work down Needs you',
+        desc: 'Start with the Needs you cards, then merge what is ready, and let the running ones run.',
       },
       {
         term: 'One short goal per session',

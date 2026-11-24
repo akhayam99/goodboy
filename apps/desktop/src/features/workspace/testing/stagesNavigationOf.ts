@@ -1,5 +1,4 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { PLACE_ROWS } from '../../../store/slices/navigation/placeRows';
 import type { AppState } from '../../../store/types';
 
 type Params = {
@@ -15,7 +14,7 @@ export const stagesNavigationOf = ({ state, workspaceId }: Params): AppState['na
         workspaceId,
         place: { at: 'board' },
         studio: null,
-        focus: { drawer: null, scroll: {}, returnRows: { [PLACE_ROWS.boardLayout]: 'stages' } },
+        focus: { drawer: null, scroll: {} },
       },
     ],
     index: 0,

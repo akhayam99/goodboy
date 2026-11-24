@@ -3,7 +3,7 @@ import { BOARD_LANE_GAP_REM, BOARD_LANE_MIN_REM } from '@goodboy/ui';
 const DEFAULT_REM_PX = 15;
 
 export type BoardLanes = {
-  readonly lanes: 5 | 6;
+  readonly lanes: 4 | 5;
   readonly stacked: boolean;
   readonly scrolls: boolean;
 };
@@ -25,11 +25,11 @@ const lanesWidth = ({ count, remPx }: { readonly count: number; readonly remPx: 
   (count * BOARD_LANE_MIN_REM + (count - 1) * BOARD_LANE_GAP_REM) * remPx;
 
 export const boardLanesOf = ({ width, remPx = DEFAULT_REM_PX }: Params): BoardLanes => {
-  if (width >= lanesWidth({ count: 6, remPx })) {
-    return { lanes: 6, stacked: false, scrolls: false };
-  }
   if (width >= lanesWidth({ count: 5, remPx })) {
-    return { lanes: 5, stacked: true, scrolls: false };
+    return { lanes: 5, stacked: false, scrolls: false };
   }
-  return { lanes: 5, stacked: true, scrolls: true };
+  if (width >= lanesWidth({ count: 4, remPx })) {
+    return { lanes: 4, stacked: true, scrolls: false };
+  }
+  return { lanes: 4, stacked: true, scrolls: true };
 };

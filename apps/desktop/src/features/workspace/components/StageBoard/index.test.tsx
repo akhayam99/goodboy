@@ -28,13 +28,8 @@ const { state, gitStatuses, groups } = vi.hoisted(() => ({
   groups: { current: [] as ReadonlyArray<{ key: string; sessions: ReadonlyArray<Session> }> },
 }));
 
-vi.mock('../../../board/queue/QueueBoard/useBoardPage', () => ({
-  useBoardPage: () => ({
-    layout: 'stages',
-    focusedMoveId: null,
-    setLayout: () => undefined,
-    setFocusedMove: () => undefined,
-  }),
+vi.mock('../../../../store/slices/session-view/stageInfosOf', () => ({
+  stageInfosOf: () => ({}),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -88,6 +83,10 @@ vi.mock('../../../onboarding/SetupCard', () => ({
 
 vi.mock('./SessionFilterPopover', () => ({
   SessionFilterPopover: () => <span data-testid="session-filter" />,
+}));
+
+vi.mock('./NeedsYouStrip', () => ({
+  NeedsYouStrip: () => null,
 }));
 
 vi.mock('./useBoardNavigation', () => ({
@@ -550,18 +549,11 @@ describe('StageBoard lanes', () => {
   const columnNames = () =>
     screen.getAllByTestId('stage-column').map((column) => column.id.replace('board-column-', ''));
 
-  it('renders all six lanes in pipeline order with Done and Archived holding nothing', () => {
+  it('renders the lanes in pipeline order with no Needs you lane and Done and Archived holding nothing', () => {
     groups.current = [{ key: 'building', sessions: [session] }];
     const { container } = render(<StageBoard workspaceId={wsId} sessions={[session]} />);
 
-    expect(columnNames()).toEqual([
-      'building',
-      'running',
-      'attention',
-      'review',
-      'done',
-      'archived',
-    ]);
+    expect(columnNames()).toEqual(['building', 'running', 'review', 'done', 'archived']);
     expect(container.querySelector('[data-board-dock]')).toBeNull();
   });
 

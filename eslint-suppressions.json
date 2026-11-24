@@ -6623,7 +6623,7 @@
   },
   "apps/desktop/src/features/workspace/components/StageBoard/selection.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 2
     }
   },
   "apps/desktop/src/features/workspace/components/StageBoard/useBoardNavigation/index.ts": {

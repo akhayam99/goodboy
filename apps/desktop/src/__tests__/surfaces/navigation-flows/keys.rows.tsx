@@ -48,7 +48,6 @@ import {
   changesTab,
   clickButton,
   heading,
-  showStages,
   lens,
   pane,
   openCrumb,
@@ -1908,7 +1907,7 @@ let terminalTabCount = 0;
 const openBoardCard = async (): Promise<HTMLElement> => {
   await press('session.board')();
   await heading('Board');
-  await showStages();
+  await settle();
   const card = await waitFor(() => {
     const found = document.querySelector<HTMLElement>('[data-select-id]');
     expect(found).not.toBeNull();
