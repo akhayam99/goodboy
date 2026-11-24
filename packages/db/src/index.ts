@@ -222,9 +222,11 @@ export {
   hasOtherSessionTurnSince,
   insertAgentTurnSpan,
   listAgentTurnSpanRoutes,
+  listProviderAgentTurns,
   listSessionTurnSpans,
   listTurnSpans,
   listWorkspaceTurnSpans,
+  type ProviderAgentTurns,
 } from './queries/agent-turn-span';
 export { listProviderLimits, upsertProviderLimits } from './queries/provider-limits';
 export { getAgentHandoff, insertAgentHandoff } from './queries/agent-handoff';

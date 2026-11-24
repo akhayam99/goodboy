@@ -1391,6 +1391,11 @@ project,local --no-session-persistence` in an empty scratch directory,
   10, and a rate limit in the last hour puts it at 85% or more. An estimate stops
   at 95%, so a guess never marks a provider full; only a cooldown or a measured
   limit removes one. It is a fact for routing, never a guard
+- **Load**: `providerLoad` counts agents, not turns, per provider in a window:
+  the ones running now plus the ones that closed a turn in it, each once.
+  `listProviderAgentTurns` reads the closed ones from `agent_turn_spans`, one
+  row per provider and agent with its clean turns and last end. The windows are
+  `ROOM_RECENT_WINDOW_MS` (1 hour) and `ROOM_TURNS_WINDOW_MS` (5 hours)
 
 ### Source map
 
