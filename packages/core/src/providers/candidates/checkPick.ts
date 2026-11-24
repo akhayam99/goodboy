@@ -39,8 +39,7 @@ const matchPick = ({ list, pick }: MatchParams): Match => {
     (row) => row.provider === provider && modelKeyOf({ provider, model: row.model }) === key,
   );
   const valid = matches.filter((row) => row.cause === null);
-  const chosen =
-    valid.find((row) => pick.effort == null || row.effort === pick.effort) ?? valid[0] ?? null;
+  const chosen = valid.find((row) => pick.effort == null || row.effort === pick.effort) ?? null;
   if (chosen !== null) {
     return { kind: 'found', candidate: chosen };
   }

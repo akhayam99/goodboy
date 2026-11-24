@@ -8,6 +8,7 @@ import { providerStepPick, type StepPick } from '../autoRouting/modelForStep';
 import { providerCandidates, providerStanding } from '../autoRouting/providerCandidates';
 import { lowestRungOf, rungForStep } from '../autoRouting/slotRungs';
 import { catalogModelForId } from '../catalogModelForId';
+import { cliGate } from '../cliGate';
 import { getProviderModelPrice } from '../model-price';
 import { resolveRoleChoice, roleModelChoices } from '../role-models';
 import type { CandidateCause } from './candidateCauses';
@@ -77,30 +78,42 @@ type CausesParams = {
   readonly need: CandidateNeed;
 };
 
-const providerCauses = ({
-  universe,
-  inputs,
-  need,
-}: CausesParams): ReadonlyMap<ProviderId, CandidateCause | null> => {
-  const causes = new Map<ProviderId, CandidateCause | null>(
+type CauseMap = ReadonlyMap<ProviderId, CandidateCause | null>;
+
+const providerCauses = ({ universe, inputs, need }: CausesParams): CauseMap =>
+  new Map<ProviderId, CandidateCause | null>(
     PROVIDER_IDS.map((provider) => [
       provider,
       universe.includes(provider) ? standingCause({ provider, inputs, need }) : 'off',
     ]),
   );
+
+type BackupParams = {
+  readonly universe: ReadonlyArray<ProviderId>;
+  readonly inputs: CandidateInputs;
+  readonly causes: CauseMap;
+  readonly isRunnable: (params: Pick<ProviderParams, 'provider'>) => boolean;
+};
+
+const withBackupIdle = ({ universe, inputs, causes, isRunnable }: BackupParams): CauseMap => {
   const canOnWork = (inputs.policy ?? []).some(
-    (entry) => entry.state === 'on' && causes.get(entry.id) === null,
+    (entry) =>
+      entry.state === 'on' && causes.get(entry.id) === null && isRunnable({ provider: entry.id }),
   );
-  for (const provider of universe) {
-    if (
-      causes.get(provider) === null &&
-      providerStanding({ provider, context: inputs }) === 'backup' &&
-      canOnWork
-    ) {
-      causes.set(provider, 'backup-idle');
-    }
+  if (!canOnWork) {
+    return causes;
   }
-  return causes;
+  const idle: CandidateCause = 'backup-idle';
+  return new Map(
+    [...causes.entries()].map(([provider, cause]) => [
+      provider,
+      cause === null &&
+      universe.includes(provider) &&
+      providerStanding({ provider, context: inputs }) === 'backup'
+        ? idle
+        : cause,
+    ]),
+  );
 };
 
 type PickParams = {
@@ -151,7 +164,7 @@ type RowParams = {
   readonly cause: CandidateCause | null;
 };
 
-const rowOf = ({
+const candidateRowOf = ({
   provider,
   model,
   effort,
@@ -215,7 +228,7 @@ const providerRows = ({
   );
   return {
     rows: picks.map((pick) =>
-      rowOf({
+      candidateRowOf({
         provider,
         model: pick.model,
         effort: pick.effort,
@@ -233,8 +246,28 @@ const providerRows = ({
 type PinParams = {
   readonly preference: RoleModelPreference;
   readonly universe: ReadonlyArray<ProviderId>;
-  readonly causes: ReadonlyMap<ProviderId, CandidateCause | null>;
+  readonly causes: CauseMap;
   readonly inputs: CandidateInputs;
+};
+
+type PinCauseParams = {
+  readonly provider: ProviderId;
+  readonly model: string;
+  readonly inputs: CandidateInputs;
+};
+
+const pinCliCause = ({ provider, model, inputs }: PinCauseParams): CandidateCause | null => {
+  const key = catalogModelForId({ provider, modelId: model })?.key ?? null;
+  if (key === null) {
+    return null;
+  }
+  const gate = cliGate({
+    provider,
+    modelKey: key,
+    installedVersion: inputs.cliVersions?.[provider] ?? null,
+    learned: inputs.learned ?? [],
+  });
+  return gate === null ? null : 'cli-too-old';
 };
 
 const pinnedRows = ({
@@ -250,7 +283,7 @@ const pinnedRows = ({
     }
     const at = universe.indexOf(resolved.provider);
     return [
-      rowOf({
+      candidateRowOf({
         provider: resolved.provider,
         model: resolved.model,
         effort: resolved.effort,
@@ -258,7 +291,9 @@ const pinnedRows = ({
         isLighter: false,
         order: at === -1 ? universe.length + 1 : at + 1,
         inputs,
-        cause: causes.get(resolved.provider) ?? null,
+        cause:
+          causes.get(resolved.provider) ??
+          pinCliCause({ provider: resolved.provider, model: resolved.model, inputs }),
       }),
     ];
   });
@@ -296,16 +331,28 @@ type Params = {
 
 export const buildCandidates = ({ inputs, need }: Params): CandidateList => {
   const universe = universeOf({ inputs });
-  const causes = providerCauses({ universe, inputs, need });
+  const standing = providerCauses({ universe, inputs, need });
   const preference = inputs.rolePins?.[normalizeAgentRole({ role: need.role })] ?? null;
+  const standingPins =
+    preference === null ? [] : pinnedRows({ preference, universe, causes: standing, inputs });
+  const rung = rungForStep({ slot: need.role, size: need.size });
+  const causes = withBackupIdle({
+    universe,
+    inputs,
+    causes: standing,
+    isRunnable: ({ provider }) =>
+      standingPins.some((row) => row.provider === provider && row.cause === null) ||
+      pickAt({ provider, need, rung, context: inputs }) !== null,
+  });
   const pinned = preference === null ? [] : pinnedRows({ preference, universe, causes, inputs });
-  if (pinned.some((row) => row.cause === null)) {
+  const pinnedFamily = withFamilyGuard({ rows: pinned, writerFamily: need.writerFamily });
+  if (pinnedFamily.rows.some((row) => row.cause === null)) {
     return {
       rule: inputs.rule,
-      rows: pinned,
+      rows: pinnedFamily.rows,
       excluded: [],
       isPinned: true,
-      isSameFamilyKept: false,
+      isSameFamilyKept: pinnedFamily.isSameFamilyKept,
     };
   }
   const built = universe.map((provider, index) =>

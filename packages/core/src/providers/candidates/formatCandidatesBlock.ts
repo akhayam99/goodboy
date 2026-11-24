@@ -322,7 +322,11 @@ export const formatCandidatesBlock = ({
   budget = CANDIDATES_BLOCK_BUDGET,
 }: Params): string | null => {
   const table = tableOf({ inputs, roles, scope });
-  if (table.lines.length < 2) {
+  const providers = new Set([
+    ...table.lines.map((line) => line.provider),
+    ...table.pins.flatMap((pin) => pin.rows.map((row) => row.provider)),
+  ]);
+  if (providers.size < 2) {
     return null;
   }
   const base = { inputs, roles, scope, table, runBudgetLeftUsd };
@@ -339,5 +343,6 @@ export const formatCandidatesBlock = ({
       return text;
     }
   }
-  return render({ ...base, detail: 'identity', shownCount: 1 });
+  const last = render({ ...base, detail: 'identity', shownCount: 1 });
+  return last.length <= budget ? last : null;
 };

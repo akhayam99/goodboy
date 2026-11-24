@@ -71,6 +71,25 @@ describe('checkPick', () => {
     expect(checked).toMatchObject({ kind: 'moved', cause: 'not-listed' });
   });
 
+  it('moves a pick whose effort is not on the list instead of changing the effort', () => {
+    const checked = check({ pick: { provider: 'anthropic', model: 'sonnet-5.5', effort: 'max' } });
+    expect(checked).toMatchObject({ kind: 'moved', cause: 'not-listed' });
+  });
+
+  it('moves a pinned model asked at another effort than the pin', () => {
+    const checked = check({
+      inputs: candidateInputsOf({
+        rolePins: { implementer: { providerId: 'codex', model: 'gpt-6.1-sol', effort: 'high' } },
+      }),
+      pick: { provider: 'codex', model: 'gpt-6.1-sol', effort: 'low' },
+    });
+    expect(checked).toMatchObject({
+      kind: 'moved',
+      cause: 'off-pin',
+      candidate: { provider: 'codex', model: 'gpt-6.1-sol', effort: 'high' },
+    });
+  });
+
   it('moves a pick outside the pinned models of the role', () => {
     const checked = check({
       inputs: candidateInputsOf({

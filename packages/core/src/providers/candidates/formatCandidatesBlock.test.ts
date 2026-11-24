@@ -33,6 +33,24 @@ const block = ({
     ...(budget !== undefined && { budget }),
   });
 
+type SmallestParams = {
+  readonly inputs: CandidateInputs;
+};
+
+const smallestBudget = ({ inputs }: SmallestParams): number => {
+  let low = 0;
+  let high = CANDIDATES_BLOCK_BUDGET;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (block({ inputs, budget: middle }) === null) {
+      low = middle + 1;
+      continue;
+    }
+    high = middle;
+  }
+  return low;
+};
+
 describe('formatCandidatesBlock', () => {
   it('fits the budget with three providers and lists each one in the user order', () => {
     const text = block({
@@ -71,15 +89,43 @@ describe('formatCandidatesBlock', () => {
     }
   });
 
-  it('drops the rates, then the facts, then the last providers, and never throws', () => {
+  it('drops the rates, then the facts, then the last providers, and never goes over', () => {
     const inputs = candidateInputsOf({ on: ['anthropic', 'cursor', 'codex', 'gemini', 'copilot'] });
     const full = block({ inputs }) ?? '';
     const tight = block({ inputs, budget: full.length - 1 }) ?? '';
-    const tiny = block({ inputs, budget: 10 }) ?? '';
+    const tiny = block({ inputs, budget: smallestBudget({ inputs }) }) ?? '';
     expect(full).toContain('$');
     expect(tight).not.toContain('Rates are published');
     expect(tiny).toContain('more providers not shown.');
     expect(tiny).toMatch(/^1\. anthropic: /m);
+  });
+
+  it('is left out when even one provider does not fit the budget', () => {
+    const inputs = candidateInputsOf({ on: ['anthropic', 'cursor', 'codex', 'gemini', 'copilot'] });
+    expect(block({ inputs, budget: 10 })).toBeNull();
+    expect(block({ inputs, budget: smallestBudget({ inputs }) - 1 })).toBeNull();
+  });
+
+  it('renders the pinned models of a role when the pins alone span two providers', () => {
+    const text = block({
+      inputs: candidateInputsOf({
+        rolePins: {
+          reviewer: {
+            providerId: 'anthropic',
+            model: 'opus-5.5',
+            effort: 'high',
+            models: [
+              { providerId: 'anthropic', model: 'opus-5.5', effort: 'high' },
+              { providerId: 'codex', model: 'gpt-6.1-sol', effort: 'medium' },
+            ],
+          },
+        },
+      }),
+      roles: ['reviewer'],
+    });
+    expect(text).toContain(
+      'Pinned roles take only these models: reviewer anthropic/opus-5.5 high, codex/gpt-6.1-sol medium.',
+    );
   });
 
   it('is left out when only one provider can take new agents', () => {

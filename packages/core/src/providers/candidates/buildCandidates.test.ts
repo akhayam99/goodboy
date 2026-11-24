@@ -88,6 +88,17 @@ describe('buildCandidates', () => {
     expect(causesOf({ list, provider: 'codex' }).every((cause) => cause === null)).toBe(true);
   });
 
+  it('opens a Backup provider when every fitting model on the On provider is hidden', () => {
+    const list = build({
+      inputs: candidateInputsOf({
+        on: ['codex'],
+        backup: ['anthropic'],
+        hidden: { codex: CODEX_CATALOG.map((model) => model.key) },
+      }),
+    });
+    expect(causesOf({ list, provider: 'anthropic' }).every((cause) => cause === null)).toBe(true);
+  });
+
   it('strikes a provider out of room', () => {
     const list = build({ inputs: candidateInputsOf({ atLimit: ['anthropic'] }) });
     expect(new Set(causesOf({ list, provider: 'anthropic' }))).toEqual(new Set(['at-limit']));
@@ -201,6 +212,56 @@ describe('buildCandidates', () => {
     });
     expect(list.isPinned).toBe(false);
     expect(list.rows.some((row) => row.provider === 'anthropic')).toBe(true);
+  });
+
+  it('strikes a pinned model the installed CLI is too old for', () => {
+    const list = build({
+      inputs: candidateInputsOf({
+        cliVersions: { codex: '0.0.1' },
+        learned: CODEX_CATALOG.map((model): CliRequirement => ({
+          providerId: 'codex',
+          modelKey: model.key,
+          requiredVersion: '99.0.0',
+        })),
+        rolePins: {
+          scout: {
+            providerId: 'codex',
+            model: 'gpt-6.1-sol',
+            effort: 'medium',
+            models: [
+              { providerId: 'codex', model: 'gpt-6.1-sol', effort: 'medium' },
+              { providerId: 'anthropic', model: 'opus-5.5', effort: 'high' },
+            ],
+          },
+        },
+      }),
+    });
+    expect(list.isPinned).toBe(true);
+    expect(causesOf({ list, provider: 'codex' })).toEqual(['cli-too-old']);
+    expect(causesOf({ list, provider: 'anthropic' })).toEqual([null]);
+  });
+
+  it('strikes the writer family among the pinned models of a reviewer', () => {
+    const list = build({
+      inputs: candidateInputsOf({
+        rolePins: {
+          reviewer: {
+            providerId: 'anthropic',
+            model: 'opus-5.5',
+            effort: 'high',
+            models: [
+              { providerId: 'anthropic', model: 'opus-5.5', effort: 'high' },
+              { providerId: 'codex', model: 'gpt-6.1-sol', effort: 'medium' },
+            ],
+          },
+        },
+      }),
+      need: { role: 'reviewer', size: 'medium', scope: 'helper', writerFamily: 'claude' },
+    });
+    expect(list.isPinned).toBe(true);
+    expect(causesOf({ list, provider: 'anthropic' })).toEqual(['same-family']);
+    expect(causesOf({ list, provider: 'codex' })).toEqual([null]);
+    expect(list.isSameFamilyKept).toBe(false);
   });
 
   it('strikes the model family of the writer when the agent reviews a change', () => {
