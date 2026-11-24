@@ -13,6 +13,7 @@ import {
 } from '@goodboy/ui';
 import type { Session, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { NAMES } from '../../../../../shared/utils/names';
 import { sessionTitle } from '../../../../../shared/utils/sessionTitle';
 import { formatSpan } from '../../../../../shared/utils/time/formatSpan';
@@ -98,7 +99,11 @@ export const NeedsYouStrip = ({ workspaceId, sessions, laneRem }: Props) => {
         reason: card.move.reason,
         agentId: null,
       },
-    });
+    }).catch((error: unknown) =>
+      useAppStore
+        .getState()
+        .reportError({ recovery: CHECK_STATE, title: "Couldn't open this session", error }),
+    );
   };
 
   return (

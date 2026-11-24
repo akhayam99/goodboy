@@ -424,6 +424,28 @@ describe('NeedsYouStrip', () => {
     );
   });
 
+  it('says why when a card of another workspace cannot open', async () => {
+    const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
+    seed({
+      sessions: [asking],
+      questions: [
+        questionOf({ session: asking, text: 'Keep the retry window at five minutes?', minute: 1 }),
+      ],
+    });
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({ currentWorkspaceId: northwind.id, reportError });
+    vi.spyOn(attentionTargetChannel, 'send').mockRejectedValue(new Error('channel closed'));
+    mountBoard([asking]);
+
+    fireEvent.click(cardAt({ index: 0 }));
+
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't open this session" }),
+      ),
+    );
+  });
+
   it('never shows the retired routing words', () => {
     const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
     seed({
