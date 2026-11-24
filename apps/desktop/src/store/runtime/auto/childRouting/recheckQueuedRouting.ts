@@ -7,6 +7,7 @@ import {
 } from '@goodboy/db';
 import { textFieldOf } from '../../../../shared/utils/textFieldOf';
 import type { AgentVerbContext } from '../verbContext';
+import { routingPickOf } from './routingPickOf';
 
 const PROVIDER_CAUSES: ReadonlyArray<CandidateCause> = [
   'off',
@@ -52,14 +53,7 @@ export const recheckQueuedRouting = async ({
   ) {
     return delegation;
   }
-  const next = {
-    ...routing,
-    provider: outcome.provider,
-    model: outcome.model,
-    effort: outcome.effort,
-    reason: outcome.reason,
-    proposal: outcome.proposal,
-  };
+  const next = { ...routing, ...routingPickOf({ outcome }) };
   const patch = patchQueuedAutoDelegationRoutingStatement({
     delegationId: delegation.id,
     generation: tree.generation,

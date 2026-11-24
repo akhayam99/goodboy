@@ -25,6 +25,7 @@ import {
   type MountNote,
   type PickableMount,
 } from '@goodboy/core/auto';
+import { modelFamily, type ModelFamily } from '@goodboy/core/providers';
 import {
   getAutoArtifact,
   getAutoDelegation,
@@ -43,6 +44,7 @@ import {
   type AutoAttemptId,
   type AutoDelegationId,
   type AutoOutboxId,
+  type AutoRouting,
 } from '@goodboy/types';
 import type { AutoContinue } from '../../../features/auto/delegationContinueOf';
 import type { AdmitChildInput } from './admit';
@@ -53,6 +55,7 @@ import { leadRunFactsOf } from '../runLocks/leadRunFactsOf';
 import { pickChildMount } from './pickChildMount';
 import type { AgentGrant } from './ports';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
+import { routingPickOf } from './childRouting/routingPickOf';
 import { storedPickOf } from './childRouting/storedPickOf';
 import type { AgentVerbContext } from './verbContext';
 
@@ -314,6 +317,51 @@ const briefVersionOf = ({ retry }: BriefVersionParams): number | null => {
   return typeof stored === 'number' ? stored : null;
 };
 
+type WriterFamilyParams = {
+  readonly ctx: AgentVerbContext;
+  readonly tree: AutoTree;
+  readonly role: AutoDelegationRole;
+  readonly artifactIds: ReadonlyArray<string>;
+};
+
+const writerFamilyOf = async ({
+  ctx,
+  tree,
+  role,
+  artifactIds,
+}: WriterFamilyParams): Promise<ModelFamily | null> => {
+  if (role !== 'reviewer') {
+    return null;
+  }
+  for (const artifactId of artifactIds) {
+    const registered = await getAutoArtifact({
+      db: ctx.db,
+      artifactId: brandId<ArtifactId>({ value: artifactId }),
+    });
+    const ownerRole =
+      registered === null ? null : parseAutoDelegationRole({ role: registered.ownerRole });
+    if (
+      registered === null ||
+      registered.treeId !== tree.id ||
+      ownerRole === null ||
+      !isAutoWriterRole({ role: ownerRole })
+    ) {
+      continue;
+    }
+    const producer = await getAutoDelegation({
+      db: ctx.db,
+      delegationId: registered.ownerDelegationId,
+    });
+    const pick = producer === null ? null : storedPickOf({ routing: producer.routing });
+    const family =
+      pick === null ? null : modelFamily({ provider: pick.provider, model: pick.model });
+    if (family !== null) {
+      return family;
+    }
+  }
+  return null;
+};
+
 const isResolved = (value: ReviseTarget | ResolvedDelegateChild): value is ResolvedDelegateChild =>
   'kind' in value;
 
@@ -499,6 +547,7 @@ export const resolveDelegateChild = async ({
   const words = revise === null ? null : await userWordsOf({ ctx, tree, rowIds: child.changeFrom });
   const producerRouting = revise?.producerRouting ?? {};
   const lead = await leadRunFactsOf({ db: ctx.db, grant, tree, role });
+  const writerFamily = await writerFamilyOf({ ctx, tree, role, artifactIds: child.artifactIds });
   const routing = await ctx.ports.resolveRouting({
     sessionId: grant.sessionId,
     role,
@@ -509,15 +558,22 @@ export const resolveDelegateChild = async ({
       effort: child.effort ?? textFieldOf({ source: producerRouting, key: 'effort' }) ?? undefined,
       taskType: child.taskType ?? undefined,
       difficulty: child.difficulty ?? undefined,
+      modelReason: child.modelReason ?? undefined,
     },
     promptText: revise === null ? child.task : [child.task, ...(words?.words ?? [])].join('\n'),
     stepLock: lead.stepLock,
     agentLock:
       retry === null || continueWith === null ? null : storedPickOf({ routing: retry.routing }),
+    writerFamily,
   });
   if (routing.kind === 'blocked') {
     return refuse({ slot, code: routing.code, message: routing.message });
   }
+  const modelReason =
+    child.modelReason ??
+    (retry === null || continueWith === null
+      ? null
+      : textFieldOf({ source: retry.routing, key: 'modelReason' }));
   const mount = picked.mount;
   const childAgentId =
     revise === null
@@ -598,17 +654,14 @@ export const resolveDelegateChild = async ({
         workspaceId: grant.workspaceId,
       },
       routing: {
-        provider: routing.provider,
-        model: routing.model,
-        effort: routing.effort,
-        reason: routing.reason,
-        proposal: routing.proposal,
+        ...routingPickOf({ outcome: routing }),
         requested: {
           provider: child.provider,
           model: child.model,
           effort: child.effort,
         },
-      },
+        ...(modelReason !== null && { modelReason }),
+      } satisfies AutoRouting,
       reviseOf:
         revise === null
           ? null

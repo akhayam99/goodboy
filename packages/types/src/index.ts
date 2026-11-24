@@ -279,6 +279,13 @@ export type {
   WorkflowTaskProfile,
   WorkflowTaskType,
 } from './workflow-routing';
+export type {
+  AutoRouting,
+  AutoRoutingCandidate,
+  AutoRoutingPick,
+  AutoRoutingProposalFate,
+  AutoRoutingSource,
+} from './auto-routing';
 export { brandId } from './brandId';
 export { EFFORT_LEVELS, isEffortLevel, PROVIDER_IDS } from './provider-registry';
 export type { OpenCodeRouting, ProviderKind } from './provider-catalog';
