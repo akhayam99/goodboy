@@ -83,9 +83,9 @@ describe('the session Ask scene', () => {
     act(() => {
       useAppStore.setState({ showAskThread });
     });
-    fireEvent.click(within(askPane()).getByRole('button', { name: 'Earlier questions' }));
+    fireEvent.click(within(askPane()).getByRole('combobox', { name: 'Earlier questions' }));
     fireEvent.click(
-      await screen.findByRole('menuitem', { name: /Why did the first credit post twice\?/ }),
+      await screen.findByRole('option', { name: /Why did the first credit post twice\?/ }),
     );
     expect(showAskThread).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: SESSION.id, threadId: 'mock-ask-thread-earlier' }),

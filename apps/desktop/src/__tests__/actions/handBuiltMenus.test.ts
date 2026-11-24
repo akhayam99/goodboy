@@ -25,8 +25,6 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'artifact files from deleted sessions: storage keep and delete',
   'features/session/components/TaskPlacement/PutOnBranchPopover.tsx':
     'task picker: chooses a linked task for a branch, a value picker',
-  'features/session/ask/components/AskPane/AskEarlierMenu.tsx':
-    'ask history picker: reopens an earlier question thread, a value picker',
 };
 
 const isSource = (path: string): boolean =>
