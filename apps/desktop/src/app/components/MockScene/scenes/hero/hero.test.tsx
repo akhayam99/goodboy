@@ -69,7 +69,12 @@ describe('the hero scene', () => {
 
   it('opens the diff of the file #318 shares with HBL-415 on the right', async () => {
     await show();
+    const drawer = await screen.findByRole('region', { name: 'postCredit.ts' });
 
-    expect(await screen.findAllByText('postCredit.ts')).not.toHaveLength(0);
+    expect(await within(drawer).findByText('event.processorEventId')).toBeInstanceOf(HTMLElement);
+    expect(storySpies.tauriInvoke).toHaveBeenCalledWith('worktree_diff', {
+      worktreePath: '/w/harborline/payments-api',
+      baseBranch: 'main',
+    });
   });
 });
