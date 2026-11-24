@@ -40,7 +40,7 @@ const project = aProject({ workspaceId: workspace.id, name: 'ledger-core', kind:
 
 const NOW = '2026-10-07T09:00:00.000Z' as IsoDateTime;
 
-const LANES = ['building', 'running', 'needs you', 'in review', 'done', 'archived'] as const;
+const LANES = ['building', 'running', 'in review', 'done', 'archived'] as const;
 
 let useAppStore: StoryStore;
 
@@ -160,7 +160,7 @@ const openQuestionOf = (session: Session): OpenQuestion => ({
 });
 
 describe('StageBoard lanes', () => {
-  it('always renders the six lanes in pipeline order, Done and Archived included, with no dock', () => {
+  it('always renders the five lanes in pipeline order, Done and Archived included, with no dock', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     seed({ active: [building] });
     const { container } = mountBoard([building]);
@@ -179,7 +179,6 @@ describe('StageBoard lanes', () => {
     expect(within(lane('done')).getByText('Nothing done yet')).toBeDefined();
     expect(within(lane('archived')).getByText('Nothing archived')).toBeDefined();
     expect(within(lane('running')).getByText('Nothing running')).toBeDefined();
-    expect(within(lane('needs you')).getByText('Nothing needs you')).toBeDefined();
     expect(within(lane('in review')).getByText('Nothing in review')).toBeDefined();
     expect(within(lane('building')).queryByText('Nothing in progress')).toBeNull();
   });
@@ -237,7 +236,7 @@ describe('StageBoard lanes', () => {
     expect(within(lane('archived')).getByText('Nothing archived')).toBeDefined();
   });
 
-  it('files a running session with an open question under Needs you, not Running', () => {
+  it('shows a running session with an open question as a Needs you card, in no lane', () => {
     const asking = sessionOf('Fix the rounding drift in the settlement export', {
       state: { kind: 'running', runId: 'run-1' as ProviderRunId, startedAt: NOW },
     });
@@ -248,15 +247,21 @@ describe('StageBoard lanes', () => {
     useAppStore.setState({ sessionOpenQuestions: { [asking.id]: [openQuestionOf(asking)] } });
     mountBoard([asking, working]);
 
-    expect(within(lane('needs you')).getByRole('button', { name: asking.goal })).toBeDefined();
+    const strip = screen.getByRole('region', { name: 'Needs you' });
+    expect(
+      within(strip).getByRole('button', {
+        name: `Open ${asking.goal}, Which export format should the settlement file use?`,
+      }),
+    ).toBeDefined();
     expect(within(lane('running')).queryByRole('button', { name: asking.goal })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'needs you' })).toBeNull();
     expect(within(lane('running')).getByRole('button', { name: working.goal })).toBeDefined();
   });
 
-  it('puts Done above Archived in one lane when six do not fit, each half with its own empty line', () => {
+  it('puts Done above Archived in one lane when five do not fit, each half with its own empty line', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     seed({ active: [building] });
-    const observers = measureBoard({ width: 1200 });
+    const observers = measureBoard({ width: 900 });
     mountBoard([building]);
     act(() => observers.resizeAll());
 
@@ -269,10 +274,10 @@ describe('StageBoard lanes', () => {
     expect(within(archived).getByText('Nothing archived')).toBeDefined();
   });
 
-  it('gives Done and Archived a lane each once six lanes fit, and keeps the order below that', () => {
+  it('gives Done and Archived a lane each once five lanes fit, and keeps the order below that', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     seed({ active: [building] });
-    const observers = measureBoard({ width: 1440 });
+    const observers = measureBoard({ width: 1200 });
     mountBoard([building]);
     act(() => observers.resizeAll());
 
@@ -281,7 +286,7 @@ describe('StageBoard lanes', () => {
     expect(lanesInOrder()).toEqual([...LANES]);
   });
 
-  it('centres a very wide board the same way: six lanes, Done and Archived beside the rest', () => {
+  it('centres a very wide board the same way: five lanes, Done and Archived beside the rest', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     seed({ active: [building] });
     const observers = measureBoard({ width: 2560 });
@@ -292,10 +297,10 @@ describe('StageBoard lanes', () => {
     expect(lanesInOrder()).toEqual([...LANES]);
   });
 
-  it('keeps every lane when the window shrinks below five lanes and the board scrolls', () => {
+  it('keeps every lane when the window shrinks below four lanes and the board scrolls', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     seed({ active: [building] });
-    const observers = measureBoard({ width: 900 });
+    const observers = measureBoard({ width: 700 });
     mountBoard([building]);
     act(() => observers.resizeAll());
 
@@ -341,7 +346,7 @@ describe('StageBoard sideways scroll', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     seed({ active: [building] });
     stubExtent({ scrollWidth: 1100, clientWidth: 700 });
-    const observers = measureBoard({ width: 900 });
+    const observers = measureBoard({ width: 700 });
     mountBoard([building]);
     act(() => observers.resizeAll());
 
@@ -362,10 +367,10 @@ describe('StageBoard sideways scroll', () => {
 
       const lanes = lane('running').parentElement;
       const laneRem = Number.parseFloat(
-        (lanes?.style.gridTemplateColumns ?? '').replace('repeat(5,', ''),
+        (lanes?.style.gridTemplateColumns ?? '').replace('repeat(4,', ''),
       );
-      const runningAt = boardWidth - (4 * laneRem + 3 * BOARD_LANE_GAP_REM) * 15;
-      expect(laneRem).toBeLessThan(BOARD_LANE_MIN_REM);
+      const runningAt = boardWidth - (3 * laneRem + 2 * BOARD_LANE_GAP_REM) * 15;
+      expect(laneRem).toBeLessThanOrEqual(BOARD_LANE_MIN_REM);
       expect(runningAt).toBeGreaterThanOrEqual(BOARD_LANE_FADE_PX - 0.001);
       expect(viewportOf().scrollLeft).toBe(200);
       document.documentElement.removeAttribute('data-theme');
@@ -490,7 +495,7 @@ describe('StageBoard selection over every lane', () => {
       archivedOf('Fix a flaky export test'),
     ];
     seed({ done, archived: shelved });
-    const observers = measureBoard({ width: 1200 });
+    const observers = measureBoard({ width: 900 });
     mountBoard(done);
     act(() => observers.resizeAll());
 

@@ -1,5 +1,6 @@
 import type { SliceDeps } from '../../slice-types';
 import { clearAskDraft } from './clearAskDraft';
+import { closeAsk } from './closeAsk';
 import { loadAskThreads } from './loadAskThreads';
 import { newAskThread } from './newAskThread';
 import { openAsk } from './openAsk';
@@ -21,5 +22,6 @@ export const createAskSlice = ({ set, get }: SliceDeps): AskSlice => ({
   setAskRouting: setAskRouting(set, get),
   setAskDraft: setAskDraft(set),
   clearAskDraft: clearAskDraft(set),
-  openAsk: openAsk(get),
+  openAsk: openAsk(set),
+  closeAsk: closeAsk({ set }),
 });

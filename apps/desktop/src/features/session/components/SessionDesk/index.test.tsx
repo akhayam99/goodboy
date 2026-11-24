@@ -136,33 +136,16 @@ describe('the Desk column', () => {
     });
   };
 
-  const askLine = () => document.querySelector('[data-desk-ask]');
-
-  it('keeps the Ask line until the Ask panel of this session opens', () => {
+  it('stays on the Overview when Ask opens, because Ask is not a Desk tool', () => {
     seedWaitingAgent();
     renderFace();
-    openDesk();
-    expect(askLine()).not.toBeNull();
 
     act(() => {
-      store.getState().openDrawer({ kind: 'ask', sessionId: session.id, payload: null });
+      store.getState().openAsk({ sessionId: session.id });
     });
 
-    expect(askLine()).toBeNull();
-  });
-
-  it('keeps the Ask line in the popover of a narrow Desk', () => {
-    seedWaitingAgent();
-    renderFace();
-    openDesk();
-    narrow();
-
-    const row = document.querySelector<HTMLElement>('[data-desk-status-row]');
-    expect(row).not.toBeNull();
-    fireEvent.click(within(row ?? document.body).getByRole('button'));
-
-    const dialog = screen.getByRole('dialog');
-    expect(dialog.querySelector('[data-desk-ask]')).not.toBeNull();
+    expect(store.getState().sessionFace[session.id] ?? 'overview').toBe('overview');
+    expect(document.querySelector('[data-session-desk]')).toBeNull();
   });
 
   it('counts a wait in the Now of the narrow status line', () => {

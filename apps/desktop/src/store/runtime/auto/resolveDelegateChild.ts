@@ -55,6 +55,8 @@ import type { AgentGrant } from './ports';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
 import { storedPickOf } from './childRouting/storedPickOf';
 import { storedRoutingOf } from './childRouting/storedRoutingOf';
+import { failedStartsOf } from './childRouting/failedStartsOf';
+import { isStartFailure } from './childRouting/isStartFailure';
 import { writerFamilyOf } from './childRouting/writerFamilyOf';
 import type { AgentVerbContext } from './verbContext';
 
@@ -502,6 +504,9 @@ export const resolveDelegateChild = async ({
   const producerRouting = revise?.producerRouting ?? {};
   const lead = await leadRunFactsOf({ db: ctx.db, grant, tree, role });
   const writerFamily = await writerFamilyOf({ ctx, tree, role, inputs: inputs.refs });
+  const failedStarts = await failedStartsOf({ ctx, tree, role });
+  const retryPick =
+    retry === null || continueWith === null ? null : storedPickOf({ routing: retry.routing });
   const routing = await ctx.ports.resolveRouting({
     sessionId: grant.sessionId,
     role,
@@ -517,8 +522,9 @@ export const resolveDelegateChild = async ({
     promptText: revise === null ? child.task : [child.task, ...(words?.words ?? [])].join('\n'),
     stepLock: lead.stepLock,
     agentLock:
-      retry === null || continueWith === null ? null : storedPickOf({ routing: retry.routing }),
+      retryPick === null || isStartFailure({ endReason: retry?.reason ?? null }) ? null : retryPick,
     writerFamily,
+    failedStarts,
   });
   if (routing.kind === 'blocked') {
     return refuse({ slot, code: routing.code, message: routing.message });

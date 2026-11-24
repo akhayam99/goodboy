@@ -1,8 +1,6 @@
 import { useRef } from 'react';
 import { HeightMotion, PANE_GROUPS_GAP_REM, PANE_RHYTHM, ScrollFade, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { SessionAskLine } from '../../ask/components/SessionAskLine';
 import { useMoveKeys } from '../../hooks/useMoveKeys';
 import { NeedsYouSection } from '../SessionOverviewPane/NeedsYouSection';
 import { NextSection } from '../SessionOverviewPane/NextSection';
@@ -21,10 +19,6 @@ const DESK_NEXT_CAP = 2;
 
 export const DeskColumn = ({ session, model, isInPopover }: Props) => {
   const sessionId = session.id;
-  const isAskPanelOpen = useAppStore(
-    (state) => state.drawer?.kind === 'ask' && state.drawer.sessionId === sessionId,
-  );
-  const isAskShown = !model.isArchived && !model.isEmpty && !isAskPanelOpen;
   const columnRef = useRef<HTMLDivElement>(null);
   useMoveKeys({
     sessionId,
@@ -68,11 +62,6 @@ export const DeskColumn = ({ session, model, isInPopover }: Props) => {
         />
         <DeskProjects sessionId={sessionId} board={model.board} />
       </ScrollFade>
-      {isAskShown ? (
-        <div data-desk-ask="" className="shrink-0 bg-background">
-          <SessionAskLine sessionId={sessionId} />
-        </div>
-      ) : null}
     </div>
   );
 };

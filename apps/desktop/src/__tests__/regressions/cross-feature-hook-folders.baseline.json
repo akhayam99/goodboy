@@ -35,7 +35,6 @@
   "session -> file-versions": 6,
   "session -> history": 2,
   "session -> inbox": 3,
-  "session -> plans": 1,
   "session -> suggestions": 3,
   "session -> workflows": 14,
   "session -> worktree": 2,

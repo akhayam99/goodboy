@@ -9,7 +9,7 @@ const SKIPPED: ReadonlySet<string> = new Set(['node_modules', 'dist', 'target', 
 const BOUNDED_ROW = 'grid-rows-[minmax(0,1fr)]';
 const QUOTED = /(['"`])((?:(?!\1)[^\\\n]|\\.)*)\1/g;
 const LANE_COLUMNS_SOURCE = 'packages/ui/src/paneRhythm.ts';
-const LANE_COLUMNS_REFERENCE = /PANE_RHYTHM\.board\.lanes(Six|Five|Scroll)/;
+const LANE_COLUMNS_REFERENCE = /PANE_RHYTHM\.board\.lanes(Five|Four|Scroll)|laneColumnsOf/;
 const BOUNDED_LANE_TRACKS =
   /^(w-max )?grid-cols-\[repeat\(\d+,(minmax\(\d+(\.\d+)?rem,\d+(\.\d+)?rem\)|\d+(\.\d+)?rem)\)\]$/;
 
@@ -28,7 +28,7 @@ type Use = { readonly path: string; readonly classes: string; readonly source: s
 
 const laneColumns = (): ReadonlyArray<string> => {
   const source = readFileSync(join(REPO_ROOT, LANE_COLUMNS_SOURCE), 'utf8');
-  return [...source.matchAll(/lanes(?:Six|Five|Scroll): '([^']+)'/g)].map((match) =>
+  return [...source.matchAll(/lanes(?:Five|Four|Scroll): '([^']+)'/g)].map((match) =>
     String(match[1]),
   );
 };

@@ -124,6 +124,7 @@ const STUDIO_BLOBS: ReadonlyArray<StudioBlob> = [
 ];
 
 const FOLDED_DRAWER_LENSES: ReadonlyMap<string, string | null> = new Map<string, string | null>([
+  ['ask', null],
   ['context', 'context'],
   ['explore', 'files'],
   ['spawned', 'workflows'],

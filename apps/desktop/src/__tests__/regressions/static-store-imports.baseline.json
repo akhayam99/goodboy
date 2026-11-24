@@ -84,7 +84,6 @@
   "apps/desktop/src/features/search/findInView/FindInViewController.test.tsx": 1,
   "apps/desktop/src/features/search/openSearchHit.test.ts": 1,
   "apps/desktop/src/features/session/agentDoors.test.tsx": 1,
-  "apps/desktop/src/features/session/ask/components/AskDrawer/AskPlanView.test.tsx": 1,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineRunStreamRow.test.tsx": 1,
   "apps/desktop/src/features/session/hooks/useSessionFocusRecheck/index.test.ts": 1,
   "apps/desktop/src/features/session/hooks/useSessionProjectScope/index.test.ts": 1,

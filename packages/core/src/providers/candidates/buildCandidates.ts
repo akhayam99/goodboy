@@ -65,6 +65,9 @@ const standingCause = ({ provider, inputs, need }: ProviderParams): CandidateCau
   if (inputs.runProviders != null && !inputs.runProviders.includes(provider)) {
     return 'outside-run';
   }
+  if (isIn({ list: need.failedStarts, provider })) {
+    return 'failed-start';
+  }
   if (need.scope === 'helper' && !isAutoOwnProvider({ provider })) {
     return 'not-for-helpers';
   }

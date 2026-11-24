@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { brandId, type AgentId } from '@goodboy/types';
+import { brandId, type AgentId, type OpenQuestionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -98,7 +98,11 @@ describe('the step verbs on the page of a subagent', () => {
 
   it('empties the slot with its chip when View transcript moves to the page', async () => {
     useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION, payload: null });
-    useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION, payload: null });
+    useAppStore.getState().openDrawer({
+      kind: 'question',
+      sessionId: SESSION,
+      payload: { questionId: brandId<OpenQuestionId>({ value: 'question-open' }) },
+    });
 
     await runObjectAction({
       target: helperPage,

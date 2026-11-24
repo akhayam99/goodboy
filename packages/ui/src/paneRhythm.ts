@@ -1,5 +1,7 @@
 export const BOARD_LANE_MIN_REM = 12.25;
 
+export const BOARD_LANE_MAX_REM = 20;
+
 export const BOARD_LANE_SCROLL_MIN_REM = 11;
 
 export const BOARD_LANE_GAP_REM = 0.75;
@@ -84,10 +86,10 @@ export const PANE_RHYTHM = {
   board: {
     pad: 'px-6 pb-5',
     laneGap: 'gap-3',
-    maxWidth: 'max-w-[123.75rem]',
-    lanesSix: 'grid-cols-[repeat(6,minmax(12.25rem,20rem))]',
+    maxWidth: 'max-w-[103rem]',
     lanesFive: 'grid-cols-[repeat(5,minmax(12.25rem,20rem))]',
-    lanesScroll: 'w-max grid-cols-[repeat(5,12.25rem)]',
+    lanesFour: 'grid-cols-[repeat(4,minmax(12.25rem,20rem))]',
+    lanesScroll: 'w-max grid-cols-[repeat(4,12.25rem)]',
     laneStack: 'gap-3',
     halves: 'gap-4',
     cardGap: 'gap-3',

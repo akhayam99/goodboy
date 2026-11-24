@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { pressShortcut } from '../../helpers/pressKey';
@@ -24,26 +24,28 @@ const openScriptsDrawer = async ({ sessionId }: Ctx): Promise<void> => {
   await waitFor(() => expect(openedKind()).toBe('scripts'), WAIT);
 };
 
-const openAskOverScripts = async (ctx: Ctx): Promise<void> => {
+const openReportOverScripts = async (ctx: Ctx): Promise<void> => {
   await openScriptsDrawer(ctx);
-  useAppStore.getState().openDrawer({ kind: 'ask', sessionId: ctx.sessionId, payload: null });
+  useAppStore
+    .getState()
+    .openDrawer({ kind: 'new', sessionId: ctx.sessionId, payload: { form: 'report' } });
   await settle();
-  await waitFor(() => expect(openedKind()).toBe('ask'), WAIT);
+  await waitFor(() => expect(openedKind()).toBe('new'), WAIT);
 };
 
 export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'slot: the drawer it replaced waits in a back chip, the chip swaps, Esc walks back',
     covers: ['openDrawer', 'closeDrawer'],
-    open: openAskOverScripts,
+    open: openReportOverScripts,
     lands: async () => {
       await userEvent.setup().click(await screen.findByRole('button', { name: 'Back to Scripts' }));
       await settle();
       await waitFor(() => expect(openedKind()).toBe('scripts'), WAIT);
-      expect(await screen.findByRole('button', { name: 'Back to Ask' })).toBeDefined();
+      expect(await screen.findByRole('button', { name: 'Back to New · Report' })).toBeDefined();
 
       await pressEscape();
-      await waitFor(() => expect(openedKind()).toBe('ask'), WAIT);
+      await waitFor(() => expect(openedKind()).toBe('new'), WAIT);
       expect(screen.queryByRole('button', { name: /^Back to / })).toBeNull();
 
       await pressEscape();
@@ -53,7 +55,7 @@ export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'slot: ⌘⇧W closes the top of the slot, then the drawer from the chip',
     covers: ['key:slot.close', 'closeDrawer'],
-    open: openAskOverScripts,
+    open: openReportOverScripts,
     lands: async () => {
       pressShortcut({ id: 'slot.close' });
       await settle();
@@ -65,8 +67,8 @@ export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'ask draft: type, leave the tab, ⌘L brings the draft back and the composer has focus',
-    covers: ['key:ask.open', 'openAsk'],
+    name: 'ask draft: type, change tab, the pane stays; close it, ⌘L brings the draft back',
+    covers: ['key:ask.open', 'openAsk', 'closeAsk'],
     open: async () => {
       pressShortcut({ id: 'ask.open' });
       await settle();
@@ -77,9 +79,18 @@ export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
       expect(field.value).toBe(DRAFT);
     },
     lands: async (ctx) => {
-      openLens({ sessionId: ctx.sessionId, lens: null });
+      openLens({ sessionId: ctx.sessionId, lens: 'workflows' });
       await settle();
       expect(openedKind()).toBeNull();
+      expect((await composer()).value).toBe(DRAFT);
+
+      await userEvent.setup().click(
+        within(screen.getByRole('region', { name: 'Ask' })).getByRole('button', {
+          name: 'Close',
+        }),
+      );
+      await settle();
+      expect(screen.queryByRole('textbox', { name: 'Ask about this session' })).toBeNull();
 
       pressShortcut({ id: 'ask.open' });
       await settle();

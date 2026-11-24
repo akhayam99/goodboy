@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ReactNode } from 'react';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import type { Session, SessionId } from '@goodboy/types';
 import type { BoardNavigation } from '../useBoardNavigation';
@@ -55,7 +55,7 @@ type RenderParams = {
   readonly spec?: StageColumnProps['spec'];
   readonly placement?: StageColumnProps['placement'];
   readonly isLoading?: boolean;
-  readonly count?: number;
+  readonly action?: ReactNode;
 };
 
 const renderColumn = ({
@@ -64,14 +64,14 @@ const renderColumn = ({
   spec = { kind: 'stage', stage: 'building' },
   placement,
   isLoading,
-  count,
+  action,
 }: RenderParams = {}) =>
   render(
     <ToastProvider>
       <StageColumn
         spec={spec}
         sessions={sessions}
-        {...(count !== undefined && { count })}
+        action={action}
         nav={nav}
         selection={selection}
         onClearSelection={noop}
@@ -199,28 +199,16 @@ describe('StageColumn', () => {
     screen.getByRole('group', { name: 'running' });
   });
 
-  it('reads the workspace needs you count, not the cards the filter leaves', () => {
+  it('puts the lane action in its header beside the count', () => {
     renderColumn({
       sessions: [makeSession('s-1', 'one')],
-      spec: { kind: 'stage', stage: 'attention' },
-      count: 3,
+      spec: { kind: 'stage', stage: 'review' },
+      action: <button type="button">Merge 2 in order</button>,
     });
-    const lane = screen.getByRole('group', { name: 'needs you' });
+    const lane = screen.getByRole('group', { name: 'in review' });
 
-    within(lane).getByText('3');
-    expect(within(lane).queryByText('1')).toBeNull();
-  });
-
-  it('draws no number over cards that only ask for a look', () => {
-    renderColumn({
-      sessions: [makeSession('s-1', 'one')],
-      spec: { kind: 'stage', stage: 'attention' },
-      count: 0,
-    });
-    const lane = screen.getByRole('group', { name: 'needs you' });
-
-    expect(within(lane).queryByText('0')).toBeNull();
-    expect(within(lane).queryByText('1')).toBeNull();
+    within(lane).getByText('1');
+    within(lane).getByRole('button', { name: 'Merge 2 in order' });
   });
 
   it('shows a muted Loading line instead of the empty line while its list is unknown', () => {
@@ -287,24 +275,7 @@ describe('StageColumn', () => {
     expect(onItemClick).toHaveBeenCalledWith('s-1', expect.anything());
   });
 
-  it('teaches the key to the next session that needs you in the tooltip of the Needs you lane', () => {
-    vi.useFakeTimers();
-    renderColumn({
-      spec: { kind: 'stage', stage: 'attention' },
-      sessions: [makeSession('s1', 'Pick the retry window')],
-    });
-
-    fireEvent.mouseEnter(screen.getByText('Needs you'));
-    act(() => {
-      vi.advanceTimersByTime(500);
-    });
-
-    expect(screen.getByRole('tooltip').querySelector('kbd')?.textContent).toBe(
-      shortcutGlyphs('session.nextNeedsYou'),
-    );
-  });
-
-  it('gives the other lanes no key in their tooltip', () => {
+  it('gives a lane no key in its tooltip', () => {
     vi.useFakeTimers();
     renderColumn({
       spec: { kind: 'stage', stage: 'building' },

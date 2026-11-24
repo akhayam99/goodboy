@@ -497,9 +497,10 @@ and Close; the second row holds the state chip, `vN`, the parts, **Edit** and
 Escape closes it. While the planner
 revises the plan the body is dimmed and Run plan waits.
 
-The `ask` kind carries no payload: the thread on screen lives in the `ask`
-slice (`askThreadId` per session, `null` for a fresh thread). `AskDrawer`
-(`features/session/ask/components/AskDrawer/`) puts the thread in the frame's
+Ask is no drawer kind: it is the Ask pane of the session
+([session-rail.md](session-rail.md)). The thread on screen lives in the `ask`
+slice (`askThreadId` per session, `null` for a fresh thread). `AskPaneBody`
+(`features/session/ask/components/AskPane/`) puts the thread in the frame's
 `ScrollFade` and the composer in its `dock`. The question bubble
 (`UserMessageBubble`) and the Start work button
 (`StartWorkFromChatButton`, **Start work from this** in Ask) are the Chat ones, drawn from `shared/components`;

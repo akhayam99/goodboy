@@ -36,7 +36,6 @@ import {
   clickButton,
   consoleErrors,
   heading,
-  showStages,
   installNavigationHooks,
   openCrumb,
   openPalette,
@@ -897,7 +896,7 @@ describe('moving across every place keeps one frame', () => {
       expectPlace({ session: null, lens: 'board', studio: null, doors: ['board'] });
       expectRail();
 
-      await showStages();
+      await settle();
       await click(boardCard(sessionId));
       expectPlace({ session: sessionId, lens: null, studio: null, doors: ['board'] });
       expect(currentPage()).toBe('Overview');
@@ -924,11 +923,13 @@ describe('moving across every place keeps one frame', () => {
 
       act(() => seedSessionAsk({ state: 'answer', session: currentSession(sessionId) }));
       await settle();
-      expect(openDrawerKind()).toBe('ask');
+      expect(useAppStore.getState().askPaneOpen[sessionId]).toBe(true);
+      expect(openDrawerKind()).toBeNull();
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: ['board'] });
       const chip = await askChipAwayFrom({ lens: 'branch' });
       await click(chip.button);
       expect(lensOf()).toBe(chip.lens);
+      expect(useAppStore.getState().askPaneOpen[sessionId]).toBe(true);
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: ['board'] });
       await escape();

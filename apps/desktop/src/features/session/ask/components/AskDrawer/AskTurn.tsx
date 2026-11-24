@@ -67,6 +67,7 @@ const AskTurnView = ({ sessionId, question, reply, facts, onOpen, onStartWork }:
           {isWriting && !hasText ? <SkeletonText lines={2} label="Reading the session" /> : null}
           {hasText ? (
             <AskAnswer
+              sessionId={sessionId}
               blocks={shown.blocks}
               isStreaming={isWriting}
               fresh={reveal.fresh}

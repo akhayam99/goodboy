@@ -59,6 +59,7 @@ const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
 const AGENT = brandId<AgentId>({ value: 'agent-1' });
 const SRC = join(__dirname, '..', '..');
 const RETIRED_DRAWER_KINDS: ReadonlyArray<string> = [
+  'ask',
   'context',
   'explore',
   'session-log',

@@ -140,7 +140,7 @@ export const OverlapScene = ({ theme, view }: Props) => {
             {row.title}
           </span>
           <span className="shrink-0 text-code text-faint-foreground">{row.branch}</span>
-          <OverlapChip mountId={row.mountId} placement="session" />
+          <OverlapChip mountId={row.mountId} />
         </div>
       ))}
     </div>

@@ -1,8 +1,6 @@
 import { useRef } from 'react';
 import { HeightMotion, PANE_GROUPS_GAP_REM, PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { SessionAskLine } from '../../ask/components/SessionAskLine';
 import { useMoveKeys } from '../../hooks/useMoveKeys';
 import { ProjectBlocks } from '../ProjectBlocks';
 import { EmptySessionStart } from './EmptySessionStart';
@@ -41,9 +39,6 @@ export const CentralColumn = ({ session }: Props) => {
   } = useOverviewModel({ session });
   const columnRef = useRef<HTMLDivElement>(null);
   useMoveKeys({ sessionId, face: 'overview', containerRef: columnRef, moves, actionsFor });
-  const isAskPanelOpen = useAppStore(
-    (state) => state.drawer?.kind === 'ask' && state.drawer.sessionId === sessionId,
-  );
   return (
     <div ref={columnRef} data-central-column className={PANE_RHYTHM.groups}>
       {isEmpty ? null : <OverviewFacts sessionId={sessionId} elapsedMs={board.kpis.elapsedMs} />}
@@ -97,11 +92,6 @@ export const CentralColumn = ({ session }: Props) => {
       )}
       {isArchived || isEmpty ? null : <FolderCard sessionId={sessionId} />}
       {isEmpty ? null : <OverviewLog session={session} />}
-      {isArchived || isEmpty || isAskPanelOpen ? null : (
-        <div data-overview-ask="" className="sticky bottom-0 bg-background">
-          <SessionAskLine sessionId={sessionId} />
-        </div>
-      )}
     </div>
   );
 };

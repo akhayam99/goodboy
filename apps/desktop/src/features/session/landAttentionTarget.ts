@@ -29,7 +29,7 @@ const landOf = async ({
   isLatest,
 }: LandParams): Promise<AttentionLanding> => {
   const state = useAppStore.getState();
-  const { sessionId, reason, agentId, place } = target;
+  const { sessionId, reason, agentId, place, questionId = null } = target;
   if (selectSessionById(state, sessionId) === null) {
     return 'handled';
   }
@@ -51,7 +51,7 @@ const landOf = async ({
     return 'landed';
   }
   if (isFreshOpen) {
-    state.navigate({ to: attentionPlace({ state, sessionId, reason }) });
+    state.navigate({ to: attentionPlace({ state, sessionId, reason, questionId }) });
     return 'landed';
   }
   const info = stageInfoOf(state, session);
@@ -60,7 +60,7 @@ const landOf = async ({
     state.navigate({ to: restingPlace });
     return 'handled';
   }
-  state.navigate({ to: attentionPlace({ state, sessionId, reason }) });
+  state.navigate({ to: attentionPlace({ state, sessionId, reason, questionId }) });
   return 'landed';
 };
 
