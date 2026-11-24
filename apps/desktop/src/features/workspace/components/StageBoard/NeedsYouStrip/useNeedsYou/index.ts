@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { OpenQuestion, Session } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { stageInfosOf } from '../../../../store/slices/session-view/stageInfosOf';
-import { needsYouOf, type NeedsYou } from '../needsYouOf';
+import { useAppStore } from '../../../../../../store';
+import { stageInfosOf } from '../../../../../../store/slices/session-view/stageInfosOf';
+import { needsYouOf, type NeedsYou } from '../../../../../board/needsYou/needsYouOf';
 
 type Params = {
   readonly sessions: ReadonlyArray<Session>;

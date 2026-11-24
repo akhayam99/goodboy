@@ -17,7 +17,7 @@ import { NAMES } from '../../../../../shared/utils/names';
 import { sessionTitle } from '../../../../../shared/utils/sessionTitle';
 import { formatSpan } from '../../../../../shared/utils/time/formatSpan';
 import { useNow } from '../../../../../shared/hooks/useNow';
-import { useNeedsYou } from '../../../../board/needsYou/useNeedsYou';
+import { useNeedsYou } from './useNeedsYou';
 import type { NeedsYouCard as Card } from '../../../../board/needsYou/needsYouOf';
 import { ATTENTION_REASON_META } from '../../../../session/session-stage';
 import { openAttentionTarget } from '../../../../session/openAttentionTarget';
@@ -54,7 +54,7 @@ const metaOf = ({ card, now }: MetaParams): string => {
   return [age, questions].filter((part) => part !== '').join(' · ');
 };
 
-const moveFocus = ({ event }: KeyParams): void => {
+const moveCardFocus = ({ event }: KeyParams): void => {
   if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
     return;
   }
@@ -137,7 +137,7 @@ export const NeedsYouStrip = ({ workspaceId, sessions, laneRem }: Props) => {
       >
         <div
           role="list"
-          onKeyDown={(event) => moveFocus({ event })}
+          onKeyDown={(event) => moveCardFocus({ event })}
           onFocus={(event) =>
             event.target.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
           }
@@ -146,7 +146,12 @@ export const NeedsYouStrip = ({ workspaceId, sessions, laneRem }: Props) => {
           {cards.map((card, index) => {
             const title = titles.get(card.sessionId) ?? '';
             return (
-              <div key={card.sessionId} role="listitem" className="flex">
+              <div
+                key={card.sessionId}
+                role="listitem"
+                style={{ width: `${laneRem}rem` }}
+                className="flex shrink-0"
+              >
                 <NeedsYouCard
                   sessionId={card.sessionId}
                   title={title}
@@ -154,7 +159,6 @@ export const NeedsYouStrip = ({ workspaceId, sessions, laneRem }: Props) => {
                   reason={card.move.title}
                   meta={metaOf({ card, now })}
                   tone={ATTENTION_REASON_META[card.move.reason].tone}
-                  laneRem={laneRem}
                   onOpen={() => open({ card })}
                 />
               </div>

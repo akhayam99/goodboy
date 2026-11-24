@@ -210,19 +210,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'board',
     group: 'daily',
     title: 'Board',
-    lead: 'The Board sets each session in a lane, with what waits on you as cards above.',
+    lead: 'The Board sets each session in a lane, and what waits on you comes first.',
     points: [
       {
         term: 'Needs you',
-        desc: 'One card per session that waits on you, the oldest first. A click opens the session where it waits.',
+        desc: 'One card per session that waits on you; a click opens it where it waits.',
       },
       {
         term: 'Lanes and Sessions',
-        desc: 'Building, Running, In review, Done and Archived. Sessions in the top bar lists the same sessions; the funnel in the Board header sorts and narrows them.',
-      },
-      {
-        term: 'Merge in order',
-        desc: 'The In review lane head merges the approved pull requests with green checks, one at a time.',
+        desc: 'In review merges what is ready, in order. Sessions in the top bar lists the same sessions; the funnel in the Board header sorts and narrows them.',
       },
       {
         term: 'Session card',

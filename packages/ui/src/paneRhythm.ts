@@ -88,6 +88,8 @@ export const PANE_RHYTHM = {
     laneGap: 'gap-3',
     maxWidth: 'max-w-[123.75rem]',
     lanesFive: 'grid-cols-[repeat(5,minmax(12.25rem,20rem))]',
+    lanesFour: 'grid-cols-[repeat(4,minmax(12.25rem,20rem))]',
+    lanesScroll: 'w-max grid-cols-[repeat(4,12.25rem)]',
     laneStack: 'gap-3',
     halves: 'gap-4',
     cardGap: 'gap-3',

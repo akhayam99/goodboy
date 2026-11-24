@@ -5,6 +5,7 @@ import { EMPTY_ARRAY } from '../../../../store';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { MergeInOrder } from '../../../board/mergeTrain/MergeInOrder';
 import type { BoardLanes as BoardLanesLayout } from './boardLanesOf';
+import { laneColumnsOf } from './laneColumnsOf';
 import { BOARD_STAGES } from './boardStages';
 import { StageColumn } from './StageColumn';
 import type { BoardNavigation } from './useBoardNavigation';
@@ -65,6 +66,7 @@ export const BoardLanes = ({
   const onArrowKeyDown = useBoardArrowKeys({ selection });
   const lasso = useDragLasso<SessionId>({ containerRef: columnsRef, onSelect: onLassoSelect });
   const placement = layout.stacked ? 'half' : 'lane';
+  const columns = laneColumnsOf({ layout, laneRem });
   const travelerIds = useLaneTravel({
     byStage,
     resetKey: motionResetKey,
@@ -114,15 +116,11 @@ export const BoardLanes = ({
         onPointerDown={lasso.onPointerDown}
         onKeyDown={onArrowKeyDown}
         data-selecting={selectedIds.length > 0}
-        style={{
-          gridTemplateColumns: isScrolling
-            ? `repeat(${layout.lanes},${laneRem}rem)`
-            : `repeat(${layout.lanes},minmax(0,${laneRem}rem))`,
-        }}
+        style={columns.style}
         className={cn(
           'group/select-list relative grid h-full min-h-0 grid-rows-[minmax(0,1fr)]',
           PANE_RHYTHM.board.laneGap,
-          isScrolling && 'w-max',
+          columns.className,
         )}
       >
         {LANE_STAGES.map((stage) => (

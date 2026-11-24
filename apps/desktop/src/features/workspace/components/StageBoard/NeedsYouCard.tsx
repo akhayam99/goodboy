@@ -1,6 +1,5 @@
 import { ArrowRight } from '@goodboy/ui/icons';
-import { cn, ICON_SIZE, ToneBar, TruncatedText, type Tone } from '@goodboy/ui';
-import { sessionCardShell } from '../../../session/components/sessionCardShell';
+import { ICON_SIZE, InteractiveRow, ToneBar, TruncatedText, type Tone } from '@goodboy/ui';
 
 type Props = {
   readonly sessionId: string;
@@ -9,30 +8,18 @@ type Props = {
   readonly reason: string;
   readonly meta: string;
   readonly tone: Tone;
-  readonly laneRem: number;
   readonly onOpen: () => void;
 };
 
-export const NeedsYouCard = ({
-  sessionId,
-  title,
-  project,
-  reason,
-  meta,
-  tone,
-  laneRem,
-  onOpen,
-}: Props) => (
-  <button
-    type="button"
-    data-needs-you-card={sessionId}
-    aria-label={`Open ${title}, ${reason}`}
-    style={{ width: `${laneRem}rem` }}
-    onClick={onOpen}
-    className={cn(
-      'flex shrink-0 cursor-pointer flex-col gap-1 p-3 pl-5 text-left select-none',
-      sessionCardShell({}),
-    )}
+export const NeedsYouCard = ({ sessionId, title, project, reason, meta, tone, onOpen }: Props) => (
+  <InteractiveRow
+    label={`Open ${title}, ${reason}`}
+    isSelected={false}
+    onOpen={onOpen}
+    radius="lg"
+    dataAttributes={{ 'data-needs-you-card': sessionId }}
+    frameClassName="w-full border border-border-soft bg-elevated text-foreground"
+    className="flex flex-col gap-1 p-3 pl-4 text-left select-none"
   >
     <ToneBar tone={tone} density="card" />
     <TruncatedText className="text-meta text-muted-foreground">{project}</TruncatedText>
@@ -44,5 +31,5 @@ export const NeedsYouCard = ({
       <TruncatedText className="min-w-0 flex-1">{meta}</TruncatedText>
       <ArrowRight size={ICON_SIZE.row} aria-hidden className="shrink-0" />
     </span>
-  </button>
+  </InteractiveRow>
 );

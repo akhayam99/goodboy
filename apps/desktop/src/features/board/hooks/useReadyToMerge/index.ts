@@ -4,8 +4,8 @@ import type { PullRequestChecks, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { stageInfosOf } from '../../../../store/slices/session-view/stageInfosOf';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
-import { readyToMergeOf, type ReadyRow } from '../readyToMergeOf';
-import { requestChecksOf } from '../requestChecksOf';
+import { readyToMergeOf, type ReadyRow } from '../../mergeTrain/readyToMergeOf';
+import { requestChecksOf } from '../../mergeTrain/requestChecksOf';
 
 type Params = {
   readonly sessions: ReadonlyArray<Session>;

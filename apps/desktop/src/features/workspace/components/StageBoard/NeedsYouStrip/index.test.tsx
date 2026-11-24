@@ -29,11 +29,14 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
-import { useWorkspaceAttention } from '../../../../../store';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { useNowSessions } from '../../../../../shared/hooks/useNowSessions';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { attentionTargetChannel } from '../../../../session/attentionTargetChannel';
 import { stagesNavigationOf } from '../../../testing/stagesNavigationOf';
+import { boardLanesOf, rootRemPx } from '../boardLanesOf';
+import { laneColumnsOf } from '../laneColumnsOf';
+import { laneWidthOf } from '../laneWidthOf';
 import { StageBoard } from '../index';
 
 const workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
@@ -118,12 +121,8 @@ const seed = ({ sessions, questions = [] }: SeedParams): void => {
 
 const railCounts: Array<number> = [];
 
-type ProbeProps = {
-  readonly sessions: ReadonlyArray<Session>;
-};
-
-const RailBadgeProbe = ({ sessions }: ProbeProps) => {
-  const attention = useWorkspaceAttention({ workspaceId: workspace.id, sessions });
+const RailBadgeProbe = () => {
+  const { attention } = useNowSessions({});
   railCounts.push(attention.count);
   return null;
 };
@@ -131,7 +130,7 @@ const RailBadgeProbe = ({ sessions }: ProbeProps) => {
 const mountBoard = (sessions: ReadonlyArray<Session>) =>
   render(
     <ToastProvider>
-      <RailBadgeProbe sessions={sessions} />
+      <RailBadgeProbe />
       <StageBoard workspaceId={workspace.id} sessions={sessions} />
     </ToastProvider>,
   );
@@ -151,6 +150,14 @@ const cardAt = ({ index }: CardParams): HTMLElement => {
     throw new Error(`the strip has no card ${index}`);
   }
   return card;
+};
+
+const itemAt = ({ index }: CardParams): HTMLElement => {
+  const item = cardAt({ index }).closest<HTMLElement>('[role="listitem"]');
+  if (item === null) {
+    throw new Error(`card ${index} sits in no list item`);
+  }
+  return item;
 };
 
 const stripViewport = (): HTMLElement => {
@@ -211,7 +218,7 @@ describe('NeedsYouStrip', () => {
 
     expect(cards()).toHaveLength(2);
     expect(railCounts.at(-1)).toBe(2);
-    expect(within(strip()).getByText('2')).toBeDefined();
+    within(strip()).getByText('2');
   });
 
   it('gives a session with two open questions one card that says 2 questions', () => {
@@ -229,7 +236,7 @@ describe('NeedsYouStrip', () => {
     expect(cards()[0]?.getAttribute('aria-label')).toBe(
       `Open ${asking.goal}, Keep the retry window at five minutes?`,
     );
-    expect(within(cardAt({ index: 0 })).getByText(/2 questions/)).toBeDefined();
+    within(itemAt({ index: 0 })).getByText(/2 questions/);
   });
 
   it('draws no strip and no empty line when nothing needs you', () => {
@@ -279,10 +286,12 @@ describe('NeedsYouStrip', () => {
       mountBoard([asking]);
       act(() => observers.resizeAll());
 
+      const remPx = rootRemPx();
+      const laneRem = laneWidthOf({ width, remPx });
+      const columns = laneColumnsOf({ layout: boardLanesOf({ width, remPx }), laneRem });
       const lanes = screen.getByRole('group', { name: 'building' }).parentElement;
-      const laneRem = remOf(lanes?.style.gridTemplateColumns ?? '');
-      expect(laneRem).toBeGreaterThan(0);
-      expect(remOf(cards()[0]?.style.width ?? '')).toBe(laneRem);
+      expect(lanes?.style.gridTemplateColumns).toBe(columns.style?.gridTemplateColumns ?? '');
+      expect(remOf(itemAt({ index: 0 }).style.width)).toBe(laneRem);
     },
   );
 

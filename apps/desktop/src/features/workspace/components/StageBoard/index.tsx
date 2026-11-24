@@ -37,8 +37,7 @@ import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { useClearSessionFilters } from './useClearSessionFilters';
 import { NeedsYouStrip } from './NeedsYouStrip';
-import { boardByStageOf } from './boardByStageOf';
-import { stageInfosOf } from '../../../../store/slices/session-view/stageInfosOf';
+import { useBoardByStage } from './useBoardByStage';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -74,8 +73,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   );
   useArchivedSessionsLoad({ workspaceId, isReady: boardReady });
 
-  const infos = useAppStore((s) => stageInfosOf({ state: s, sessions }));
-  const byStage = useMemo(() => boardByStageOf({ groups, infos }), [groups, infos]);
+  const byStage = useBoardByStage({ groups, sessions });
 
   const boardSessions = useMemo(
     () => [

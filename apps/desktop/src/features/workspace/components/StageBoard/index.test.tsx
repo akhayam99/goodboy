@@ -28,8 +28,12 @@ const { state, gitStatuses, groups } = vi.hoisted(() => ({
   groups: { current: [] as ReadonlyArray<{ key: string; sessions: ReadonlyArray<Session> }> },
 }));
 
-vi.mock('../../../../store/slices/session-view/stageInfosOf', () => ({
-  stageInfosOf: () => ({}),
+vi.mock('./useBoardByStage', () => ({
+  useBoardByStage: ({
+    groups: grouped,
+  }: {
+    readonly groups: ReadonlyArray<{ key: string; sessions: ReadonlyArray<Session> }>;
+  }) => new Map(grouped.map((group) => [group.key, group.sessions])),
 }));
 
 vi.mock('../../../../store', () => ({

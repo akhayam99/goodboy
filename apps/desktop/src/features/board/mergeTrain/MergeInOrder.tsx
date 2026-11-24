@@ -4,8 +4,8 @@ import { actionButtonLookOf } from '../../actions/actionButtonLookOf';
 import { mergeHintOf } from './mergeHintOf';
 import { mergeLabelOf } from './mergeLabelOf';
 import { TrainStrip } from './TrainStrip';
-import { useMergeTrain } from './useMergeTrain';
-import { useReadyToMerge } from './useReadyToMerge';
+import { useMergeTrain } from '../hooks/useMergeTrain';
+import { useReadyToMerge } from '../hooks/useReadyToMerge';
 
 type Props = {
   readonly sessions: ReadonlyArray<Session>;

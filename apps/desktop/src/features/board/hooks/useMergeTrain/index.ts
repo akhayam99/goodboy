@@ -3,10 +3,10 @@ import type { PrMergeMethod } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { MergeTrain } from '../../../../store/slices/pr-series/mergeTrain';
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
-import type { ReadyCar } from '../mergeOrderOf';
-import { readyCarsOf } from '../readyCarsOf';
-import { readyLinesOf } from '../readyLinesOf';
-import type { ReadyRow } from '../readyToMergeOf';
+import type { ReadyCar } from '../../mergeTrain/mergeOrderOf';
+import { readyCarsOf } from '../../mergeTrain/readyCarsOf';
+import { readyLinesOf } from '../../mergeTrain/readyLinesOf';
+import type { ReadyRow } from '../../mergeTrain/readyToMergeOf';
 
 type Params = {
   readonly ready: ReadonlyArray<ReadyRow>;
