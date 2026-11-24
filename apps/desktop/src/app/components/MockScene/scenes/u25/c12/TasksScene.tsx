@@ -12,6 +12,7 @@ import { LEDGER_ISSUE, LEDGER_RECORD, WORKSPACE_TASKS } from './tasksSeed';
 type TasksSceneState =
   | 'forme'
   | 'all'
+  | 'status'
   | 'expanded'
   | 'lookup'
   | 'ratelimited'
@@ -162,6 +163,17 @@ export const TasksScene = ({ state }: Props) => {
           scope="all"
           groupBy="source"
           starredKeys={starredKeys}
+          onSeed={seed}
+        />
+      );
+    case 'status':
+      return (
+        <TasksStage
+          records={WORKSPACE_TASKS}
+          scope="all"
+          groupBy="status"
+          starredKeys={starredKeys}
+          cursorKey={LEDGER_RECORD.key}
           onSeed={seed}
         />
       );

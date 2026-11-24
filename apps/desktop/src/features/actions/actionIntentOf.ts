@@ -61,6 +61,7 @@ const PRIMARY_VERBS: ReadonlySet<string> = new Set([
   'pullRequest.merge',
   'session.review',
   'session.startRun',
+  'record.launch',
   'workflowRun.continue',
   'diff.continueRebase',
   'push',

@@ -71,12 +71,22 @@ describe('taskGroupsOf', () => {
     ]);
   });
 
-  it('groups by source and status word, the urgent state first', () => {
-    expect(summary('status').map(([label]) => label)).toEqual([
-      'Sentry · Unresolved',
-      'Linear · In progress',
-      'GitHub · Open',
-      'Linear · Todo',
+  it('groups by source and status word, the urgent state first, the source as the mark', () => {
+    const groups = taskGroupsOf({ records: RECORDS, groupBy: 'status', projectNames: NAMES });
+    expect(groups.map(({ label, name, provider }) => [label, name, provider])).toEqual([
+      ['Unresolved', 'Sentry, Unresolved', 'sentry'],
+      ['In progress', 'Linear, In progress', 'linear'],
+      ['Open', 'GitHub, Open', 'github'],
+      ['Todo', 'Linear, Todo', 'linear'],
+    ]);
+  });
+
+  it('names a source group once, with no mark beside the word', () => {
+    const groups = taskGroupsOf({ records: RECORDS, groupBy: 'source', projectNames: NAMES });
+    expect(groups.map(({ label, name, provider }) => [label, name, provider])).toEqual([
+      ['Linear', 'Linear', null],
+      ['GitHub', 'GitHub', null],
+      ['Sentry', 'Sentry', null],
     ]);
   });
 

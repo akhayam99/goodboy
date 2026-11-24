@@ -375,6 +375,21 @@ describe('ListGrid', () => {
     ).toBe(marks[0]);
   });
 
+  it('names its list by the given name when the heading is short, else by the heading', () => {
+    render(
+      <ListGrid label="Tasks" columns={COLUMNS} isGrouped>
+        <ListGridGroup label="In progress" ariaLabel="Linear, In progress" count={1} isListbox>
+          <ListGridRow cells={['', 'HBL-412', 'Ledger export times out', '2h']} />
+        </ListGridGroup>
+        <ListGridGroup label="Todo" count={1} isListbox>
+          <ListGridRow cells={['', 'HBL-398', 'Settlement dates', '5d']} />
+        </ListGridGroup>
+      </ListGrid>,
+    );
+    expect(screen.getByRole('listbox', { name: 'Linear, In progress' })).toBeTruthy();
+    expect(screen.getByRole('listbox', { name: 'Todo' })).toBeTruthy();
+  });
+
   it('draws a group with no name as rows alone, with no heading and no count', () => {
     const { container } = render(
       <ListGrid label="Sessions" columns={COLUMNS} isGrouped>

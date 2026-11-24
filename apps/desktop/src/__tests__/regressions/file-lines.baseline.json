@@ -19,7 +19,7 @@
   "apps/desktop/src/features/history/components/CommitsHistory/HistoryCommitRow.tsx": 276,
   "apps/desktop/src/features/history/components/CommitsHistory/index.tsx": 271,
   "apps/desktop/src/features/history/components/RebaseStopPanel.tsx": 389,
-  "apps/desktop/src/features/inbox/components/InboxStudio/index.tsx": 629,
+  "apps/desktop/src/features/inbox/components/InboxStudio/index.tsx": 627,
   "apps/desktop/src/features/integrations/components/CreateReviewForm/CreateReviewForm.tsx": 456,
   "apps/desktop/src/features/integrations/gitlab/client.ts": 689,
   "apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx": 346,

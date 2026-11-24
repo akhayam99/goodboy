@@ -12,6 +12,7 @@ export type ListGridGroupProps = {
   readonly label?: string;
   readonly mark?: ReactNode;
   readonly count?: number;
+  readonly ariaLabel?: string;
   readonly fold?: ListGridGroupFold;
   readonly action?: ReactNode;
   readonly isListbox?: boolean;
@@ -31,6 +32,7 @@ export const ListGridGroup = ({
   label,
   mark,
   count,
+  ariaLabel,
   fold,
   action,
   isListbox = false,
@@ -101,7 +103,8 @@ export const ListGridGroup = ({
       {lead === undefined || lead === null ? null : <ul className={SUBGRID}>{lead}</ul>}
       <ul
         role={isListbox ? 'listbox' : undefined}
-        aria-labelledby={label === undefined ? undefined : headingId}
+        aria-label={ariaLabel}
+        aria-labelledby={label === undefined || ariaLabel !== undefined ? undefined : headingId}
         aria-activedescendant={isListbox ? activeDescendant : undefined}
         tabIndex={isListbox && activeDescendant !== undefined ? 0 : undefined}
         className={cn(SUBGRID, isListbox && cn('rounded-md', FOCUS_RING))}
