@@ -276,7 +276,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Tools rail',
-        desc: 'Terminal, Browser, Scripts, Ask and Monitor, at the right edge of every screen. In a session, one builds the Desk: the overview as a column, the tools beside it. Open full page makes one a page.',
+        desc: 'Terminal, Browser, Scripts, Ask and Monitor, at the right edge of every screen. In a session, Ask opens beside the page and the others build the Desk: the overview as a column, the tools beside it. Open full page makes one a page.',
       },
     ],
     links: [],
@@ -301,7 +301,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'The Lead',
-        desc: 'Leads each new run: it plans first, answers what it can and starts the agents it needs, each of the narrowest role that fits, under a limit. Fine-tune this run sets one row per decision.',
+        desc: 'Leads each new run: plans, answers what it can and starts the agents it needs, the narrowest role that fits, on a model it picks, under a limit. Fine-tune this run sets one row per decision.',
       },
       {
         term: NAMES.letAutoTakeIt,
@@ -309,7 +309,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Overview',
-        desc: 'Reads the state, Needs you, Now, Next, Projects and Activity, with the Ask line at the foot. Enter runs the move in front.',
+        desc: 'Reads the state, Needs you, Now, Next, Projects and Activity. Ask opens in a pane beside it. Enter runs the move in front.',
       },
     ],
     links: [],
@@ -334,7 +334,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Stops for your OK and pause',
-        desc: 'Every step, After the plan or Never sets how often workflows and the Lead stop for you, one row in Runs in Settings.',
+        desc: 'Every step, After the plan or Never sets how often workflows and the Lead stop for you, in Every run on Workflows.',
       },
       {
         term: 'Runs in Settings',
@@ -557,7 +557,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Overview',
-        desc: 'Sessions, pull requests merged, reviews resolved and runs by workflows, then the sessions that shipped the most.',
+        desc: 'Sessions, merged pull requests, resolved reviews and runs by workflows, then the top sessions.',
       },
       {
         term: 'Shipped',
@@ -565,11 +565,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Flow',
-        desc: 'How long agents take, how long work waits on you or on a question, and where the flow blocks.',
+        desc: 'How long agents take, how long work waits on you, and where it blocks.',
       },
       {
         term: 'Spend',
-        desc: "What each provider, model and session cost, deleted sessions included. A provider's Monthly limit has Save limit and Remove limit for that provider only.",
+        desc: "What each provider, model and session cost, deleted sessions included, with each provider's Monthly limit. Agents shows which roles did the work, on which models and effort, and the share you pinned.",
       },
       {
         term: 'How cost is counted',
