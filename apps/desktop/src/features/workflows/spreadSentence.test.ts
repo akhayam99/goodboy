@@ -1,34 +1,39 @@
 import { describe, expect, it } from 'vitest';
 import { spreadSentence } from './spreadSentence';
 
-const SWITCH_LABEL = 'Send new steps to the provider with the most room';
-
 describe('spreadSentence', () => {
-  it('says what changes when spread is on with no provider passed, not the switch label', () => {
+  it('says when a provider is skipped and which providers report limits', () => {
     const sentence = spreadSentence({
       canSpread: true,
       spread: true,
       pick: { name: 'Claude', reason: { kind: 'most-room' } },
     });
 
-    expect(sentence).toBe('Steps of one run can land on different providers.');
-    expect(sentence.toLowerCase()).not.toContain('the provider with the most room');
-    expect(SWITCH_LABEL.toLowerCase()).not.toContain(sentence.toLowerCase().replace(/\.$/, ''));
+    expect(sentence).toBe(
+      'Past 80% of a limit, new agents start on the next provider. Only Claude and Codex report limits.',
+    );
+    expect(sentence.toLowerCase()).not.toContain('most room');
   });
 
-  it('names the passed provider and where new steps go', () => {
+  it('names the passed provider and where new agents start', () => {
     expect(
       spreadSentence({
         canSpread: true,
         spread: true,
         pick: { name: 'Codex', reason: { kind: 'passed-tight', passed: 'Claude', used: 0.92 } },
       }),
-    ).toBe('Claude is at 92%, so new steps go to Codex first.');
+    ).toBe('Claude is at 92%, so new agents start on Codex.');
   });
 
-  it('keeps the provider order when spread is off', () => {
+  it('keeps the provider order when the switch is off', () => {
     expect(spreadSentence({ canSpread: true, spread: false, pick: null })).toBe(
-      'New steps follow the provider order.',
+      'New agents follow the provider order. Only Claude and Codex report limits.',
+    );
+  });
+
+  it('says only Claude and Codex report limits when no On provider does', () => {
+    expect(spreadSentence({ canSpread: false, spread: false, pick: null })).toBe(
+      'Only Claude and Codex report limits. Turn one on to use this.',
     );
   });
 });

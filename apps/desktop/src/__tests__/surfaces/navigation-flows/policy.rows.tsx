@@ -14,7 +14,7 @@ import {
   useAppStore,
 } from './harness';
 
-const SPREAD_LABEL = 'Send new steps to the provider with the most room';
+const SPREAD_LABEL = 'Skip a provider near its limit';
 
 const currentWorkspaceId = (): WorkspaceId => {
   const id = useAppStore.getState().currentWorkspaceId;

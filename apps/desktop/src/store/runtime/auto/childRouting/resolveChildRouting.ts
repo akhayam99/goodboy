@@ -1,6 +1,12 @@
 import { isAutoChildProvider } from '@goodboy/core/auto';
 import { orchestratorModelPool, type WorkflowRoutingResolution } from '@goodboy/core/orchestrator';
-import { PROVIDER_IDS, type ProviderId } from '@goodboy/types';
+import { readHeadroom, type HeadroomMap } from '@goodboy/core/providers';
+import {
+  DEFAULT_WORKFLOW_RULES,
+  PROVIDER_IDS,
+  type ProviderId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import { autoChildPool } from '../../../../features/auto/autoChildPool';
 import { autoRoutableProviders } from '../../../../features/providers/autoRoutableProviders';
 import { workflowAvailabilitySnapshot } from '../../../../features/workflows/workflowAvailabilitySnapshot';
@@ -36,6 +42,26 @@ type FateParams = {
   readonly decision: Extract<WorkflowRoutingResolution, { kind: 'ready' }>['decision'];
 };
 
+type HeadroomParams = {
+  readonly state: AppStore;
+  readonly workspaceId: WorkspaceId;
+  readonly nowMs: number;
+};
+
+const leadHeadroom = ({ state, workspaceId, nowMs }: HeadroomParams): HeadroomMap | null => {
+  const overrides = state.workspaceOverrides?.[workspaceId];
+  const isSpreadOn =
+    overrides?.workflowRules?.spreadByHeadroom ?? DEFAULT_WORKFLOW_RULES.spreadByHeadroom;
+  if (!isSpreadOn) {
+    return null;
+  }
+  return readHeadroom({
+    limits: state.providerLimits ?? {},
+    policy: overrides?.providerPool ?? null,
+    nowMs,
+  }).headroom;
+};
+
 const fateOf = ({ decision }: FateParams): RoutingProposalFate => {
   if (decision.proposal === null) {
     return 'none';
@@ -63,6 +89,7 @@ export const resolveChildRouting = ({
     policy: workspacePolicy.policy,
     role: request.role,
   });
+  const headroom = leadHeadroom({ state, workspaceId: session.workspaceId, nowMs });
   const availability = workflowAvailabilitySnapshot({
     providers: state.providers ?? [],
     cooldowns: state.providerCooldowns ?? {},
@@ -73,6 +100,7 @@ export const resolveChildRouting = ({
     nowMs,
     ...workspacePolicy,
     providerPool: pool,
+    headroom,
   });
   const defaultProvider = providerOf({
     value: session.providerOverride ?? session.providerPreference.defaultProvider,
@@ -96,6 +124,7 @@ export const resolveChildRouting = ({
         !availability.budgetBlockedProviders.includes(provider),
     ),
     availability,
+    headroom,
     stepLock: request.stepLock ?? null,
   });
   if (resolution.kind === 'blocked') {
