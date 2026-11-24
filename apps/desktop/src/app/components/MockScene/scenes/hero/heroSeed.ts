@@ -28,10 +28,7 @@ import { CTX_STATUS } from '../brand/contextBranch';
 import { seedBrandLimits } from '../brand/limitsSeed';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { seedShellChrome } from '../shellChrome';
-import { seedHeroAsk } from './heroAskSeed';
 import { HERO_DIFF_PATCH, HERO_SHARED_PATH } from './heroDiffPatch';
-
-export type HeroPane = 'ask' | 'diff' | 'agents';
 
 export const HERO_SESSION_ID = SESSION_ID;
 
@@ -47,14 +44,6 @@ const ms = ({ time }: AtParams): number => clock.ms({ at: `2026-11-05T${time}:00
 
 const GOAL_LINE =
   'Key every credit on the processor event id so a retried webhook never posts twice, even when Northwind resends the same event with a new payload. Show support a stuck delivery in notify-relay with its last three attempts. Keep ledger-core read only: the fix changes how credits are keyed, never the ledger itself.';
-
-const PANE_WIDTH = 560;
-
-const PANE_WIDTH_KEYS: Readonly<Record<HeroPane, string | null>> = {
-  ask: 'goodboy:detail-width:ask:v1',
-  agents: 'goodboy:detail-width:side:v1',
-  diff: null,
-};
 
 const API_PROJECT_ID = brandId<ProjectId>({ value: 'mock-hero-project-payments-api' });
 const RELAY_PROJECT_ID = brandId<ProjectId>({ value: 'mock-hero-project-notify-relay' });
@@ -174,7 +163,7 @@ const agentIdOf = ({ key }: KeyParams): AgentId =>
 const runIdOf = ({ key }: KeyParams): ProviderRunId =>
   brandId<ProviderRunId>({ value: `mock-hero-run-${key}` });
 
-export type HeroAgentSpec = Readonly<{
+type HeroAgentSpec = Readonly<{
   key: string;
   name: string;
   kind: Extract<AgentRole, AgentKind>;
@@ -187,10 +176,9 @@ export type HeroAgentSpec = Readonly<{
   startedAt: string;
   completedAt: string | null;
   costUsd: number;
-  why: string;
 }>;
 
-export const HERO_AGENTS: ReadonlyArray<HeroAgentSpec> = [
+const HERO_AGENTS: ReadonlyArray<HeroAgentSpec> = [
   {
     key: 'planner',
     name: 'Plan the dedupe on the processor event id',
@@ -204,7 +192,6 @@ export const HERO_AGENTS: ReadonlyArray<HeroAgentSpec> = [
     startedAt: '14:52',
     completedAt: '15:04',
     costUsd: 0.61,
-    why: 'Money moves in two repos, so the plan gets the strongest model.',
   },
   {
     key: 'dedupe',
@@ -219,7 +206,6 @@ export const HERO_AGENTS: ReadonlyArray<HeroAgentSpec> = [
     startedAt: '15:04',
     completedAt: '15:31',
     costUsd: 0.84,
-    why: 'The plan names every file and the tests exist, so a fast coder.',
   },
   {
     key: 'banner',
@@ -234,7 +220,6 @@ export const HERO_AGENTS: ReadonlyArray<HeroAgentSpec> = [
     startedAt: '15:08',
     completedAt: '15:46',
     costUsd: 0.38,
-    why: 'One screen and no money in it, so the quick and cheap one.',
   },
   {
     key: 'review',
@@ -249,7 +234,6 @@ export const HERO_AGENTS: ReadonlyArray<HeroAgentSpec> = [
     startedAt: '15:31',
     completedAt: '15:49',
     costUsd: 0.29,
-    why: 'Codex wrote the dedupe, so a reader on another provider.',
   },
   {
     key: 'replay',
@@ -264,7 +248,6 @@ export const HERO_AGENTS: ReadonlyArray<HeroAgentSpec> = [
     startedAt: '15:49',
     completedAt: null,
     costUsd: 0.22,
-    why: 'A load test on its own branch, so it never blocks #318.',
   },
   {
     key: 'note',
@@ -279,7 +262,6 @@ export const HERO_AGENTS: ReadonlyArray<HeroAgentSpec> = [
     startedAt: '15:52',
     completedAt: null,
     costUsd: 0,
-    why: 'Plain words for support, after the load test passes.',
   },
 ];
 
@@ -470,22 +452,6 @@ const HERO_SESSION: Session = {
   state: { kind: 'running', runId: runIdOf({ key: 'replay' }), startedAt: at({ time: '15:49' }) },
 };
 
-type WidthParams = {
-  readonly pane: HeroPane;
-};
-
-const holdPaneWidth = ({ pane }: WidthParams): void => {
-  const key = PANE_WIDTH_KEYS[pane];
-  if (key === null) {
-    return;
-  }
-  try {
-    localStorage.setItem(key, String(PANE_WIDTH));
-  } catch {
-    return;
-  }
-};
-
 const CLAUDE_USED = [0.38, 0.52];
 
 const calmClaudeLimits = (): void => {
@@ -511,12 +477,7 @@ const calmClaudeLimits = (): void => {
   });
 };
 
-type SeedParams = {
-  readonly pane: HeroPane;
-};
-
-export const seedHero = ({ pane }: SeedParams): void => {
-  holdPaneWidth({ pane });
+export const seedHero = (): void => {
   seedActivityRunScene();
   const template = useAppStore.getState().projects[0];
   if (template === undefined) {
@@ -611,14 +572,9 @@ export const seedHero = ({ pane }: SeedParams): void => {
   });
   seedBrandLimits();
   calmClaudeLimits();
-  if (pane === 'ask') {
-    seedHeroAsk({ sessionId: SESSION_ID, workspaceId: SESSION.workspaceId });
-  }
-  if (pane === 'diff') {
-    useAppStore.getState().openDrawer({
-      kind: 'file-diff',
-      sessionId: SESSION_ID,
-      payload: { source: { kind: 'worktree', worktreePath: API_PATH }, path: HERO_SHARED_PATH },
-    });
-  }
+  useAppStore.getState().openDrawer({
+    kind: 'file-diff',
+    sessionId: SESSION_ID,
+    payload: { source: { kind: 'worktree', worktreePath: API_PATH }, path: HERO_SHARED_PATH },
+  });
 };

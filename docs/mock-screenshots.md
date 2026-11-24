@@ -865,17 +865,19 @@ feature-area guide ones in the public
 and light `.webp` pairs. The website's hero picture is the one capture on the
 site; every other product view there is a React mock. `pnpm readme:hero` shoots
 two scenes from the desktop mock dev server (`http://localhost:5230`, or the URL
-passed as its first argument), in both themes. The `readme-hero` scene (the
+passed as its first argument), in both themes. The README picture is the
+`readme-hero` scene: the
 Harborline session on its Context tab, with its decisions already read and the page
-held at the top so the state, Projects and Linked show above the goal) is shot twice
-from the same scene. The README picture is the
+held at the top so the state, Projects and Linked show above the goal. It is the
 whole app window, 1680x1118 css px at scale 2, so the places rail, the session head and
 the tools rail all show and the columns keep their widths; both themes come from one frozen clock so their times
 match, and it writes `docs/readme/readme-hero-{dark,light}.webp`. The site picture
+is the `hero-diff` scene in `scenes/hero/`: the same Harborline session on its
+Overview, with the diff of the file #318 shares with HBL-415 open on the right. It
 is shot at 1920x1200 and scale 4 and writes
 `website/public/hero/hero-{dark,light}-{1208,2416,3624}.webp`, 1, 2 and 3 times
 the width the site draws it at, cropped to the top 840 px of the window and
-resampled once from the same capture. The `hero-ask`, `hero-diff` and `hero-agents` scenes in `scenes/hero/` are candidates for the next site picture: the same Harborline session on its Overview, with Ask, the diff of the file #318 shares with HBL-415, or the Lead's agents open on the right. Shoot them with the site settings above. To crop a short surface, use a `--window-size` height shorter than 900. The layout keeps its own proportions and the footer stays pinned.
+resampled once from the same capture. To crop a short surface, use a `--window-size` height shorter than 900. The layout keeps its own proportions and the footer stays pinned.
 
 The scenes listed in `FRAME_SCENES` (`scripts/validateScenesFrame.mjs`) are also measured by the scene job at three window widths, so changing their layout can fail the frame probe: [testing.md](./testing.md) → Frame probe.
 

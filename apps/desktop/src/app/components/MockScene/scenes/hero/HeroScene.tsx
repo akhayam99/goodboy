@@ -3,22 +3,17 @@ import { SessionWorkspace } from '../../../../../features/session/components/Ses
 import { useAppStore } from '../../../../../store';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { ShellFrame } from '../shellChrome';
-import { HeroAgentsPane } from './HeroAgentsPane';
-import { HERO_SESSION_ID, seedHero, type HeroPane } from './heroSeed';
+import { HERO_SESSION_ID, seedHero } from './heroSeed';
 
 const FACE_HOLD_MS = 300;
 
-type Props = {
-  readonly pane: HeroPane;
-};
-
-export const HeroScene = ({ pane }: Props) => {
+export const HeroScene = () => {
   const [isReady, setIsReady] = useState(false);
   const session = useAppStore((state) => sessionById(state.sessions, HERO_SESSION_ID) ?? null);
   useEffect(() => {
-    seedHero({ pane });
+    seedHero();
     setIsReady(true);
-  }, [pane]);
+  }, []);
   useEffect(() => {
     if (!isReady) {
       return;
@@ -37,7 +32,6 @@ export const HeroScene = ({ pane }: Props) => {
     <ShellFrame
       session={session}
       hasOwnTrail
-      {...(pane === 'agents' ? { detail: <HeroAgentsPane /> } : {})}
       main={
         <div className="relative h-full w-full">
           <SessionWorkspace session={session} />

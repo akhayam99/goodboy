@@ -101,10 +101,9 @@ type ShellFrameProps = {
   readonly session: Session;
   readonly main: ReactNode;
   readonly hasOwnTrail?: boolean;
-  readonly detail?: ReactNode;
 };
 
-export const ShellFrame = ({ session, main, hasOwnTrail = false, detail }: ShellFrameProps) => {
+export const ShellFrame = ({ session, main, hasOwnTrail = false }: ShellFrameProps) => {
   const shellRight = useShellRight({});
   const arrangement = shellArrangement({ hasWorkspace: true });
   const shell = useSceneShell({});
@@ -117,9 +116,8 @@ export const ShellFrame = ({ session, main, hasOwnTrail = false, detail }: Shell
         drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
         drawerSizing={shellRight.dockSizing}
         dockGrid={shellRight.dockGrid}
-        detail={detail ?? (shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null)}
+        detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
         {...shellRight.detailFrame}
-        {...(detail === undefined ? {} : { detailSizing: 'side' as const })}
         isDrawerParked={shellRight.isDrawerParked}
         isDetailParked={shellRight.isDetailParked}
         isDockInStudio={shellRight.isDockInStudio}

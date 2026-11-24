@@ -41,10 +41,8 @@ afterEach(() => {
   cleanup();
 });
 
-type Params = { readonly name: string };
-
-const show = async ({ name }: Params) => {
-  const Scene = HERO_SCENES[name];
+const show = async () => {
+  const Scene = HERO_SCENES['hero-diff'];
   if (Scene === undefined) {
     throw new Error('Unknown hero scene');
   }
@@ -56,32 +54,22 @@ const show = async ({ name }: Params) => {
   return screen.findByRole('region', { name: 'Projects' });
 };
 
-describe('the hero scenes', () => {
-  it('registers one scene per right pane', () => {
-    expect(Object.keys(HERO_SCENES)).toEqual(['hero-ask', 'hero-diff', 'hero-agents']);
+describe('the hero scene', () => {
+  it('registers only the diff hero', () => {
+    expect(Object.keys(HERO_SCENES)).toEqual(['hero-diff']);
   });
 
-  it.each(['hero-ask', 'hero-diff', 'hero-agents'])(
-    'opens %s on the Overview with three branches in two projects',
-    async (name) => {
-      const projects = await show({ name });
+  it('opens the Overview with three branches in two projects', async () => {
+    const projects = await show();
 
-      expect(within(projects).getByText('hl/fix-duplicate-credit')).toBeInstanceOf(HTMLElement);
-      expect(within(projects).getByText('hl/dedupe-load-test')).toBeInstanceOf(HTMLElement);
-      expect(within(projects).getByText('hl/surface-retry-state')).toBeInstanceOf(HTMLElement);
-    },
-  );
-
-  it('keeps the Ask exchange about merging #318 on the right', async () => {
-    await show({ name: 'hero-ask' });
-
-    expect(await screen.findByText('Can I merge #318 now?')).toBeInstanceOf(HTMLElement);
+    expect(within(projects).getByText('hl/fix-duplicate-credit')).toBeInstanceOf(HTMLElement);
+    expect(within(projects).getByText('hl/dedupe-load-test')).toBeInstanceOf(HTMLElement);
+    expect(within(projects).getByText('hl/surface-retry-state')).toBeInstanceOf(HTMLElement);
   });
 
-  it('lists every agent the Lead picked with its model', async () => {
-    await show({ name: 'hero-agents' });
+  it('opens the diff of the file #318 shares with HBL-415 on the right', async () => {
+    await show();
 
-    const list = screen.getByRole('list', { name: 'Agents in this run' });
-    expect(within(list).getAllByRole('listitem')).toHaveLength(6);
+    expect(await screen.findAllByText('postCredit.ts')).not.toHaveLength(0);
   });
 });

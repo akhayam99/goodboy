@@ -551,8 +551,6 @@ header-branch-push-confirm
 header-overview-overflow
 header-run
 header-scripts
-hero-agents
-hero-ask
 hero-diff
 image-lightbox
 impact
