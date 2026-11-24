@@ -20,6 +20,7 @@ import {
 import { isLearningsOn } from '../../../features/context/contextSwitches';
 import { isChatImagesOn } from '../chats/isChatImagesOn';
 import { SETTING_CHANGELOG_SEEN } from '../changelog/state';
+import { SETTING_UNAVAILABLE_MODELS } from '../providers/unavailableModelsSetting';
 import { NewerDatabaseError } from '../../../shared/lib/newerDatabase';
 import type {
   Agent,
@@ -484,6 +485,7 @@ describe('store contract', () => {
         SETTING_HIDDEN_MODELS,
         SETTING_CONTEXT_LEARNINGS,
         SETTING_CHAT_IMAGES,
+        SETTING_UNAVAILABLE_MODELS,
       ];
       storySpies.getSettings.mockClear();
 

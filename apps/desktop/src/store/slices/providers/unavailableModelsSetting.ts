@@ -1,6 +1,7 @@
 import { catalogModelForId } from '@goodboy/core/providers';
 import type { ModelKey, ProviderId } from '@goodboy/types';
 import { isProviderId } from '@goodboy/types/helpers';
+import { parseJsonOrNull } from '../../../shared/utils/parseJsonOrNull';
 
 export const SETTING_UNAVAILABLE_MODELS = 'provider.unavailableModels';
 
@@ -33,23 +34,11 @@ type ParseParams = {
   readonly raw: string | null;
 };
 
-type JsonParams = {
-  readonly raw: string;
-};
-
-const parseJson = ({ raw }: JsonParams): unknown => {
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-};
-
 export const parseUnavailableModels = ({ raw }: ParseParams): ReadonlyArray<UnavailableModel> => {
   if (raw === null || raw === '') {
     return [];
   }
-  const parsed = parseJson({ raw });
+  const parsed = parseJsonOrNull({ raw });
   return Array.isArray(parsed)
     ? parsed.filter((value: unknown): value is UnavailableModel => isUnavailableModel({ value }))
     : [];
