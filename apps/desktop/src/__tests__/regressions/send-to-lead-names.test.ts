@@ -23,7 +23,7 @@ describe('the words that hand work to a Lead', () => {
     'Send to Lead…',
     'Start new Lead',
     'Message the Implementer',
-    'Message both Implementers',
+    'Message the Implementers',
     'Add to message',
   ])('keeps %s', (text) => {
     expect(retiredIdsIn({ text })).toEqual([]);

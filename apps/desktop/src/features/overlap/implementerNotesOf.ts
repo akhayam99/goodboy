@@ -1,41 +1,47 @@
 import type { Agent } from '@goodboy/types';
-import { mergeOrderOf } from './mergeOrderOf';
-import type { ImplementerNote } from './messageBothImplementers';
-import type { Overlap } from './overlapsOf';
-import type { LiveMount } from './readLiveMounts';
+import type { ImplementerNote } from './messageImplementers';
+import type { MergeStep, OverlapGroup } from './overlapGroupOf';
 
 const LISTED_PATHS = 10;
 
 type Params = {
-  readonly overlap: Overlap;
-  readonly mountAgent: Agent | null;
-  readonly otherAgent: Agent | null;
+  readonly group: OverlapGroup;
+  readonly implementers: ReadonlyArray<Agent | null>;
+};
+
+type ListParams = {
+  readonly words: ReadonlyArray<string>;
 };
 
 type NoteParams = {
+  readonly step: MergeStep;
   readonly agent: Agent;
-  readonly other: LiveMount;
+};
+
+const branchListOf = ({ words }: ListParams): string => {
+  const last = words.at(-1) ?? '';
+  return words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${last}` : last;
 };
 
 export const implementerNotesOf = ({
-  overlap,
-  mountAgent,
-  otherAgent,
-}: Params): ReadonlyArray<ImplementerNote> | null => {
-  if (mountAgent === null || otherAgent === null) {
-    return null;
-  }
-  const order = mergeOrderOf({ overlap });
-  const listed = overlap.paths.slice(0, LISTED_PATHS).join(', ');
-  const more = overlap.paths.length - LISTED_PATHS;
-  const files = more > 0 ? `${listed} and ${more} more` : listed;
-  const noteOf = ({ agent, other }: NoteParams): ImplementerNote => ({
-    sessionId: agent.sessionId,
-    agentId: agent.id,
-    content: `Another session changes the same files on branch ${other.branch}: ${files}. Proposed merge order: ${order.first.branch}, then ${order.then.branch}.`,
+  group,
+  implementers,
+}: Params): ReadonlyArray<ImplementerNote> => {
+  const order = group.steps.map((step) => step.mount.branch).join(', then ');
+  const noteOf = ({ step, agent }: NoteParams): ImplementerNote => {
+    const partners = group.steps.filter((other) => (step.isOwn ? !other.isOwn : other.isOwn));
+    const listed = step.sharedPaths.slice(0, LISTED_PATHS).join(', ');
+    const more = step.sharedPaths.length - LISTED_PATHS;
+    const files = more > 0 ? `${listed} and ${more} more` : listed;
+    const branches = branchListOf({ words: partners.map((other) => other.mount.branch) });
+    return {
+      sessionId: agent.sessionId,
+      agentId: agent.id,
+      content: `Your branch ${step.mount.branch} changes the same files as ${branches}: ${files}. Proposed merge order: ${order}.`,
+    };
+  };
+  return group.steps.flatMap((step, index) => {
+    const agent = implementers[index] ?? null;
+    return agent === null ? [] : [noteOf({ step, agent })];
   });
-  return [
-    noteOf({ agent: mountAgent, other: overlap.other }),
-    noteOf({ agent: otherAgent, other: overlap.mount }),
-  ];
 };
