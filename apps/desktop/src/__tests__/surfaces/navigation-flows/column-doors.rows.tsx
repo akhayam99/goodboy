@@ -182,7 +182,9 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: () => click(railTool('terminal')),
     lands: both(
-      () => terminalDocked(),
+      async () => {
+        await terminalDocked();
+      },
       async () => expect(railTool('terminal').getAttribute('aria-pressed')).toBe('true'),
       async () => expect(useAppStore.getState().appStudio).toBeNull(),
     ),
