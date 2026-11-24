@@ -11,7 +11,7 @@ import { DefaultsGroup } from '../../../providers/components/ProviderStudio/Defa
 import { RoleRow } from '../../../providers/components/ProviderStudio/DefaultsPanel/RoleRow';
 import { RunsSection } from '../../../providers/components/ProviderStudio/DefaultsPanel/RunsSection';
 import { useDefaultsPersistence } from '../../../providers/components/ProviderStudio/DefaultsPanel/useDefaultsPersistence';
-import { useHasPlanRuns } from '../../hooks/useHasPlanRuns';
+import { useHasPlanRuns } from '../../../providers/hooks/useHasPlanRuns';
 import { OlderPlanRunsBand } from './OlderPlanRunsBand';
 
 type Props = {
