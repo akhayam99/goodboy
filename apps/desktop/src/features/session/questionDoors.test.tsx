@@ -294,7 +294,8 @@ describe('every door to a question', () => {
       state().closeQuestion();
     });
 
-    expect(state().drawer?.kind).toBe('ask');
+    expect(state().drawer).toBeNull();
+    expect(state().askPaneOpen[SESSION]).toBe(true);
   });
 
   it('reopens the question a saved window addressed, by its id', async () => {

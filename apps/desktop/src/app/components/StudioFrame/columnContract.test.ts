@@ -80,6 +80,13 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'bare',
     files: ['features/session/components/SessionWorkspace/parts/SessionOverviewLoading.tsx'],
   },
+  AskPane: {
+    kind: 'bare',
+    files: [
+      'features/session/ask/components/AskPane/index.tsx',
+      'features/session/ask/components/AskPane/AskPaneBody.tsx',
+    ],
+  },
   QuestionsPane: {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/QuestionsPane.tsx'],
