@@ -365,7 +365,7 @@ const listedPathsOf = ({ text, pattern, origin }) =>
       .map((url) => internalPath({ href: url.slice(origin.length) })),
   );
 
-const listChecks = ({ llms, feed, sitemapPaths, origin }) => {
+const listChecks = ({ pages, llms, feed, sitemapPaths, origin }) => {
   const listed = listedPathsOf({ text: llms, pattern: /\]\(([^)\s]+)\)/g, origin });
   const fed = new Set(
     [...listedPathsOf({ text: feed, pattern: /<id>([^<]*)<\/id>/g, origin })].filter((path) =>
@@ -395,16 +395,18 @@ const listChecks = ({ llms, feed, sitemapPaths, origin }) => {
         }),
       );
     });
-  const releases = [...sitemapPaths].filter((path) => RELEASE_PATH.test(path));
+  const releases = new Set(
+    pages.map((page) => pathOfFile({ file: page.file })).filter((path) => RELEASE_PATH.test(path)),
+  );
   [
-    ...releases.filter((path) => !fed.has(path)),
-    ...[...fed].filter((path) => !sitemapPaths.has(path)),
+    ...[...releases].filter((path) => !fed.has(path)),
+    ...[...fed].filter((path) => !releases.has(path)),
   ].forEach((path) => {
     found.push(
       issue({
         rule: 'feed-mismatch',
         file: 'changelog.xml',
-        message: `${path} is not in both the feed and the sitemap`,
+        message: `${path} is not in both the feed and the built release pages`,
       }),
     );
   });
@@ -658,10 +660,9 @@ export const checkSeo = ({
     ...duplicateChecks({ pages, field: 'title', rule: 'title-duplicate' }),
     ...duplicateChecks({ pages, field: 'description', rule: 'description-duplicate' }),
     ...sitemapChecks({ pages, sitemapPaths }),
-    ...listChecks({ llms, feed, sitemapPaths, origin }),
+    ...listChecks({ pages, llms, feed, sitemapPaths, origin }),
     ...redirectChecks({ redirects, distFiles }),
     ...publishedChecks({ published, redirects, distFiles }),
     ...cssChecks({ cssFiles }),
   ];
 };
-

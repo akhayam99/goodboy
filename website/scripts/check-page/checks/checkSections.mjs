@@ -1,4 +1,8 @@
-const PAGE_EYEBROWS = ['Free desktop ADE, built in public', 'Install', 'All features'];
+const PAGE_EYEBROWS = [
+  'Free agentic development environment, built in public',
+  'Install',
+  'All features',
+];
 const MAX_ALSO_LINES = 2;
 
 export const checkSections = ({ fail, probe, rules, viewport, groups }) => {

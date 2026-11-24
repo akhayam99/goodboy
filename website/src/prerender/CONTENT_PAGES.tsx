@@ -12,6 +12,7 @@ import { clipText } from './clipText';
 import { docDescription } from './docDescription';
 import { docTitle } from './docTitle';
 import { FEATURE_DOCS } from './FEATURE_DOCS';
+import { isPatchRelease } from './isPatchRelease';
 import type { PageMeta } from './PageMeta';
 import { RELEASES } from './RELEASES';
 import { releaseDescription } from './releaseDescription';
@@ -79,7 +80,7 @@ const releasePages = (): readonly ContentPageEntry[] =>
         kind: 'release',
         crumbs,
         lastmod: release.date,
-        isIndexed: true,
+        isIndexed: !isPatchRelease({ version: release.version }),
       },
       nav: 'changelog',
       element: (

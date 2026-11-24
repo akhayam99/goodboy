@@ -203,6 +203,37 @@ describe('checkSeo', () => {
     );
   });
 
+  it('keeps a noindex release in the feed and out of the sitemap and llms.txt', () => {
+    const pages = {
+      'index.html': page(),
+      'changelog/1.0.0.html': page({
+        path: '/changelog/1.0.0',
+        title: TITLE + ' one',
+        description: DESCRIPTION + ' One.',
+        ld: graph({ extra: [{ '@type': 'WebPage', '@id': 'z', datePublished: '2026-11-05' }] }),
+      }),
+      'changelog/1.0.1.html': page({
+        path: '/changelog/1.0.1',
+        title: TITLE + ' patch',
+        description: DESCRIPTION + ' Patch.',
+        robots: 'noindex',
+        ld: graph({ extra: [{ '@type': 'WebPage', '@id': 'y', datePublished: '2026-11-06' }] }),
+      }),
+    };
+    const sitemapPaths = ['/', '/changelog/1.0.0'];
+    const feedPaths = ['/changelog/1.0.0', '/changelog/1.0.1'];
+    assert.deepEqual(rulesOf(run({ htmlFiles: pages, sitemapPaths, feedPaths })), []);
+    assert.deepEqual(
+      rulesOf(run({ htmlFiles: pages, sitemapPaths, feedPaths: ['/changelog/1.0.0'] })),
+      ['feed-mismatch'],
+    );
+    const listed = [...sitemapPaths, '/changelog/1.0.1'];
+    assert.deepEqual(rulesOf(run({ htmlFiles: pages, sitemapPaths: listed, feedPaths })), [
+      'noindex-in-sitemap',
+      'sitemap-unknown-page',
+    ]);
+  });
+
   it('fails an image with no alt, an empty alt or no size', () => {
     const body = (img) => `<h1>A</h1>${img}`;
     const alt = run({
@@ -440,7 +471,12 @@ describe('checkSeo', () => {
   });
 
   it('skips the length rules on a noindex page', () => {
-    const noindex = page({ title: 'Acme', description: 'Short one.', robots: 'noindex', path: '/404' });
+    const noindex = page({
+      title: 'Acme',
+      description: 'Short one.',
+      robots: 'noindex',
+      path: '/404',
+    });
     const issues = run({ htmlFiles: { 'index.html': page(), '404.html': noindex } });
     assert.deepEqual(rulesOf(issues), []);
   });

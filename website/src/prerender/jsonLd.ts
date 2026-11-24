@@ -121,8 +121,8 @@ export const jsonLd = ({ page }: Params) => {
     organization(),
     website(),
     software(),
-    ...(page.isIndexed ? [webPage({ page })] : []),
-    ...(page.isIndexed && page.crumbs.length > 1 ? [breadcrumbList({ page })] : []),
+    ...(page.kind === 'not-found' ? [] : [webPage({ page })]),
+    ...(page.kind !== 'not-found' && page.crumbs.length > 1 ? [breadcrumbList({ page })] : []),
   ];
   const json = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph });
   return `<script type="application/ld+json">${json.replace(/</g, '\\u003c')}</script>`;
