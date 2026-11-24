@@ -69,11 +69,11 @@ describe('the mounts scenes', () => {
     ]);
   });
 
-  it('opens Mount a folder from the head of Projects, with Choose a folder at the end', async () => {
+  it('opens Mount a project from the head of Projects, with Choose a folder at the end', async () => {
     await show({ name: 'u50-mounts-picker-dark' });
 
     const picker = within(
-      await screen.findByRole('dialog', { name: 'Mount a folder' }, { timeout: 2000 }),
+      await screen.findByRole('dialog', { name: 'Mount a project' }, { timeout: 2000 }),
     );
     await picker.findByRole('button', { name: 'Choose a folder…' });
   });

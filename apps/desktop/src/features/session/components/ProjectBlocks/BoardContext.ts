@@ -21,7 +21,6 @@ export type BoardContextValue = Readonly<{
   actionsFor: ActionCardActions['actionsFor'];
   openFor: ActionCardActions['openFor'];
   removal: RemoveWorktrees;
-  isDevShown: boolean;
   shownAskIds: ReadonlySet<string>;
 }>;
 

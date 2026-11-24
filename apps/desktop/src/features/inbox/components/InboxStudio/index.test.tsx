@@ -811,6 +811,22 @@ describe('InboxStudio', () => {
     expect(facet('Show', /^In progress/).getAttribute('aria-current')).toBe('true');
   });
 
+  it('orders the toolbar: whose tasks, search, then filters and grouping at the end', () => {
+    renderStudio();
+
+    const toolbar = document.querySelector<HTMLElement>('[data-slot="pane-toolbar"]');
+    const children = Array.from(toolbar?.children ?? []);
+    expect(children[0]?.contains(screen.getByRole('tablist', { name: 'Whose tasks' }))).toBe(true);
+    expect(children[1]?.hasAttribute('data-task-search')).toBe(true);
+    const end = children.at(-1);
+    expect(end?.hasAttribute('data-task-view-controls')).toBe(true);
+    expect(
+      Array.from(end?.querySelectorAll('button') ?? []).map(
+        (button) => button.getAttribute('aria-label') ?? button.textContent,
+      ),
+    ).toEqual(['Filters', 'Group by: None']);
+  });
+
   it('filters from one Filter menu in the header and counts the active filters on it', () => {
     renderStudio();
 
@@ -920,7 +936,8 @@ describe('InboxStudio at scale', () => {
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Status' }));
     expect(screen.queryByRole('menu', { name: 'Group tasks by' })).toBeNull();
 
-    expect(groupNames()).toContain('Linear · Open');
+    expect(groupNames()).toContain('Open');
+    screen.getByRole('listbox', { name: 'Linear, Open' });
     expect(JSON.parse(localStorage.getItem(VIEW_KEY) ?? '')).toMatchObject({ groupBy: 'status' });
   });
 

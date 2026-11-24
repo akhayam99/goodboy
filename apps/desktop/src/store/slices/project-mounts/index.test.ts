@@ -647,6 +647,36 @@ describe('project mount lifecycle', () => {
     });
   });
 
+  it('leaves the branch attached and throws the reason when a refused removal keeps the folder', async () => {
+    const { slice } = makeSlice();
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });
+    const before = h.rows.get('mount-1');
+    h.removeWorktreeChecked.mockResolvedValue({
+      kind: 'kept',
+      path: `${REPO_ROOT}/wt/first`,
+      reasons: ['unpushed-commits'],
+    });
+
+    await expect(
+      slice.unmountMount({ sessionId: SESSION_ID, mountId: MOUNT_ONE, onKeptFolder: 'refuse' }),
+    ).rejects.toThrow('The folder stayed: unpushed-commits');
+
+    expect(h.rows.get('mount-1')).toEqual(before);
+  });
+
+  it('detaches and removes the folder when a refused removal goes through', async () => {
+    const { slice } = makeSlice();
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });
+
+    await slice.unmountMount({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ONE,
+      onKeptFolder: 'refuse',
+    });
+
+    expect(h.rows.get('mount-1')).toMatchObject({ worktreePath: null, isAttached: false });
+  });
+
   it('clears the path of a removed mount and drops it from the writable set', async () => {
     const { slice, state } = makeSlice();
     seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });

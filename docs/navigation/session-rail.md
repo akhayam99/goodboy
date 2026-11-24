@@ -261,7 +261,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   (`branchRowChipOf`) owns every chip text and tone. A late
   answer for a batch that is gone is dropped by run id; Abort lets the branch in
   flight finish and skips the queued ones. The card header carries one `+`
-  (`LevelAddTrigger`, a ghost `xs` icon button named Mount a folder: no border,
+  (`LevelAddTrigger`, a ghost `xs` icon button named Mount a project: no border,
   no fill at rest, so the rail stays light) that opens the project picker
   straight away (`MountProjectAction`, no menu first): the folders an agent
   asked for (`pendingMountProposals`), then the workspace projects not yet in

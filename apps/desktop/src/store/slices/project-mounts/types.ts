@@ -70,6 +70,7 @@ export type UnmountMountInput = {
   readonly keepDirectory?: boolean;
   readonly requestId?: string;
   readonly isRemovalRequired?: boolean;
+  readonly onKeptFolder?: 'detach' | 'refuse';
 };
 
 export type MountKeyInput = {

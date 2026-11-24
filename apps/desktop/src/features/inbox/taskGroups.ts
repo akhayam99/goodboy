@@ -1,6 +1,6 @@
 import { integrationLabel } from '../../shared/utils/integrationLabel';
 import { orderInboxRecords } from './orderInboxRecords';
-import type { InboxRecord, InboxState } from './types';
+import type { InboxProvider, InboxRecord, InboxState } from './types';
 import { NAMES } from '../../shared/utils/names';
 
 export type TaskGroupBy = 'source' | 'status' | 'project' | 'none';
@@ -17,6 +17,8 @@ export const TASK_GROUP_BY_LABEL = {
 export type TaskGroup = {
   readonly key: string;
   readonly label: string;
+  readonly name: string;
+  readonly provider: InboxProvider | null;
   readonly records: ReadonlyArray<InboxRecord>;
 };
 
@@ -29,6 +31,8 @@ type Params = {
 type Bucket = {
   readonly key: string;
   readonly label: string;
+  readonly name: string;
+  readonly provider: InboxProvider | null;
   readonly rank: number;
 };
 
@@ -41,6 +45,20 @@ const STATE_RANK = {
 
 const NO_PROJECT_KEY = 'project:none';
 
+type PlainParams = {
+  readonly key: string;
+  readonly label: string;
+  readonly rank: number;
+};
+
+const plainBucket = ({ key, label, rank }: PlainParams): Bucket => ({
+  key,
+  label,
+  name: label,
+  provider: null,
+  rank,
+});
+
 type BucketParams = {
   readonly record: InboxRecord;
   readonly groupBy: TaskGroupBy;
@@ -50,26 +68,32 @@ type BucketParams = {
 const bucketOf = ({ record, groupBy, projectNames }: BucketParams): Bucket => {
   switch (groupBy) {
     case 'source':
-      return {
+      return plainBucket({
         key: `source:${record.provider}`,
         label: integrationLabel({ provider: record.provider }),
         rank: 0,
-      };
+      });
     case 'status':
       return {
         key: `status:${record.provider}:${record.stateLabel}`,
-        label: `${integrationLabel({ provider: record.provider })} · ${record.stateLabel}`,
+        label: record.stateLabel,
+        name: `${integrationLabel({ provider: record.provider })}, ${record.stateLabel}`,
+        provider: record.provider,
         rank: STATE_RANK[record.state],
       };
     case 'project': {
       const projectId = (record.projectIds ?? []).find((id) => projectNames[id] !== undefined);
       if (projectId === undefined) {
-        return { key: NO_PROJECT_KEY, label: NAMES.noProject, rank: 1 };
+        return plainBucket({ key: NO_PROJECT_KEY, label: NAMES.noProject, rank: 1 });
       }
-      return { key: `project:${projectId}`, label: projectNames[projectId] ?? '', rank: 0 };
+      return plainBucket({
+        key: `project:${projectId}`,
+        label: projectNames[projectId] ?? '',
+        rank: 0,
+      });
     }
     case 'none':
-      return { key: 'none', label: 'All tasks', rank: 0 };
+      return plainBucket({ key: 'none', label: 'All tasks', rank: 0 });
     default: {
       const exhaustive: never = groupBy;
       return exhaustive;
@@ -97,11 +121,13 @@ export const taskGroupsOf = ({
       (left, right) =>
         left.bucket.rank - right.bucket.rank ||
         right.records.length - left.records.length ||
-        left.bucket.label.localeCompare(right.bucket.label),
+        left.bucket.name.localeCompare(right.bucket.name),
     )
     .map((entry) => ({
       key: entry.bucket.key,
       label: entry.bucket.label,
+      name: entry.bucket.name,
+      provider: entry.bucket.provider,
       records: orderInboxRecords({ records: entry.records }),
     }));
 };

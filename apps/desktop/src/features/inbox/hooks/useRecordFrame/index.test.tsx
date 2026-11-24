@@ -260,6 +260,7 @@ describe('useRecordFrame', () => {
     const primary = screen.getByRole('button', { name: 'Start session' });
     const identityLine = primary.closest('[data-slot="record-header"]')?.firstElementChild;
     expect(identityLine?.contains(primary)).toBe(true);
+    expect(primary.getAttribute('data-intent')).toBe('primary');
     expect(screen.queryByRole('dialog', { name: 'Start a session' })).toBeNull();
 
     fireEvent.click(primary);

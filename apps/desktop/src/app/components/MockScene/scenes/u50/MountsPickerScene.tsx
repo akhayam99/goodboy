@@ -13,7 +13,7 @@ export const MountsPickerScene = ({ theme }: Props) => {
     let timer = 0;
     const open = () => {
       const trigger = document.querySelector<HTMLButtonElement>(
-        `[data-section-actions] button[aria-label="${NAMES.mountAFolder}"]`,
+        `[data-section-actions] button[aria-label="${NAMES.mountAProject}"]`,
       );
       if (trigger === null) {
         timer = window.setTimeout(open, OPEN_DELAY_MS);

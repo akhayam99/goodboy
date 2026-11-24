@@ -268,7 +268,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session actions',
-        desc: 'Mount a folder, at the head of Projects, adds a folder, and Unmount in a project menu takes it out. More session actions, next to New, holds Pin, Link work, Copy, Archive and Delete.',
+        desc: 'Mount a project, at the head of Projects, adds a project, and Unmount in a project menu takes it out. More session actions, next to New, holds Pin, Link work, Copy, Archive and Delete.',
       },
       {
         term: 'Agents rail',

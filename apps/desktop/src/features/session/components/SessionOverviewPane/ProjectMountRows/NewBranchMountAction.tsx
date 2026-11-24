@@ -101,6 +101,7 @@ export const NewBranchMountAction = ({
           >
             <button
               type="button"
+              data-project-new-branch=""
               aria-label={label}
               aria-haspopup="dialog"
               aria-expanded={dropdown.open}

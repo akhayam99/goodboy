@@ -140,6 +140,28 @@ describe('ListGrid', () => {
     expect(document.activeElement).toBe(first);
   });
 
+  it('leaves a cursor row of a listbox to its owner when an arrow key leaves a foot row', () => {
+    render(
+      <ListGrid label="Tasks" columns={COLUMNS}>
+        <ListGridGroup label="Linear" isListbox activeDescendant="task-a">
+          <ListGridRow
+            isOption
+            optionId="task-a"
+            cells={['', 'Task', 'Speed up the ledger export', '']}
+            onSelect={() => undefined}
+          />
+          <ListGridRow cells={['', '', 'Show all', '']} onSelect={() => undefined} />
+        </ListGridGroup>
+      </ListGrid>,
+    );
+    const foot = screen.getByRole('button', { name: /Show all/ });
+    foot.focus();
+    const event = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true });
+    foot.dispatchEvent(event);
+    expect(document.activeElement).toBe(foot);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
   it('renders a row without an action as plain content, never a button', () => {
     render(
       <ListGrid label="Checks" columns={COLUMNS}>
@@ -373,6 +395,21 @@ describe('ListGrid', () => {
     expect(
       screen.getByRole('img', { name: 'Running' }).closest('[data-list-grid-group-mark]'),
     ).toBe(marks[0]);
+  });
+
+  it('names its list by the given name when the heading is short, else by the heading', () => {
+    render(
+      <ListGrid label="Tasks" columns={COLUMNS} isGrouped>
+        <ListGridGroup label="In progress" ariaLabel="Linear, In progress" count={1} isListbox>
+          <ListGridRow cells={['', 'HBL-412', 'Ledger export times out', '2h']} />
+        </ListGridGroup>
+        <ListGridGroup label="Todo" count={1} isListbox>
+          <ListGridRow cells={['', 'HBL-398', 'Settlement dates', '5d']} />
+        </ListGridGroup>
+      </ListGrid>,
+    );
+    expect(screen.getByRole('listbox', { name: 'Linear, In progress' })).toBeTruthy();
+    expect(screen.getByRole('listbox', { name: 'Todo' })).toBeTruthy();
   });
 
   it('draws a group with no name as rows alone, with no heading and no count', () => {

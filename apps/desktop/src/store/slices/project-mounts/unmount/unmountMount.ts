@@ -26,6 +26,7 @@ export const unmountMount = (set: SetFn, get: GetFn) => {
     keepDirectory = false,
     requestId,
     isRemovalRequired = false,
+    onKeptFolder = 'detach',
   }: UnmountMountInput): Promise<UnmountMountResult> => {
     const views = await loadMountViews({ get, sessionId });
     const view = requireMountView({ views, mountId });
@@ -64,6 +65,14 @@ export const unmountMount = (set: SetFn, get: GetFn) => {
         if (isRemovalRequired && decision !== null && decision.kind === 'failed') {
           await failMountOperation({ operation, errorCode: 'cleanup-failed' });
           throw new Error(decision.reason);
+        }
+        if (
+          onKeptFolder === 'refuse' &&
+          decision !== null &&
+          (decision.kind === 'kept' || decision.kind === 'failed')
+        ) {
+          await failMountOperation({ operation, errorCode: 'cleanup-failed' });
+          throw new Error(`The folder stayed: ${decision.reason}`);
         }
         let isRetained = false;
         let removalReason: string | null = null;

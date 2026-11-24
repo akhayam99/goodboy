@@ -1850,9 +1850,13 @@ visit began with (`arrivedKeysOf`), the first visit marks nothing, and the sideb
 door reads `taskNewKeys`, filled by every `useInboxRecords` caller, so nothing is
 fetched for it. Records are grouped
 (`taskGroupsOf`) by source, by source and status word, by project or not at
-all, largest group first and newest first inside a group. A group shows five
-rows and Show all; an expanded group of 60 rows or more draws only a window
-(`useVirtualRows`, 32px rows) and names the cursor position. One Filter menu in
+all, largest group first and newest first inside a group. A status group heads
+with the tool's mark and the status word, and its list is named by both
+(`TaskGroup.name`). A group shows five rows and a Show all row
+(`TaskGroupFoot`); an expanded group of 60 rows or more draws only a window
+(`useVirtualRows`, 32px rows) and names the cursor position. A row's name is
+its key, title, status and priority (`taskRowLabelOf`), and its status and
+priority marks say what they mean in a tooltip. One Filter menu in
 the header holds the facets: source, show (assigned, starred, in progress, has a
 session, closed), type and project, one pick per section, with counts; only the
 types a connected tool can produce show. A tool that did not load says so in its
@@ -2053,19 +2057,19 @@ session up again in Goodboy.
 - Internal words stay in code and technical docs. The screen says the word the
   user already knows from git, the file system or the rest of the app:
 
-  | Internal word                    | On screen                                               |
-  | -------------------------------- | ------------------------------------------------------- |
-  | mount, branch mount              | branch (repo), plain folder                             |
-  | mount a project                  | Mount a folder in a session, Add project in a workspace |
-  | fork a mount                     | New branch                                              |
-  | unmount                          | Unmount for a project, Close branch for one branch      |
-  | spawn                            | Start (an agent, a reviewer, an implementer)            |
-  | handoff                          | Suggested next: Implementer, the next brief             |
-  | cluster                          | part (in a plan), subagent (once it runs)               |
-  | lens                             | tab                                                     |
-  | studio                           | the page name alone: Workflows, Impact, Providers       |
-  | materialize                      | add to this session                                     |
-  | column, lane, grid, tier, drawer | panel (Close the panel, Reset panel layout)             |
+  | Internal word                    | On screen                                                |
+  | -------------------------------- | -------------------------------------------------------- |
+  | mount, branch mount              | branch (repo), plain folder                              |
+  | mount a project                  | Mount a project in a session, Add project in a workspace |
+  | fork a mount                     | New branch                                               |
+  | unmount                          | Unmount for a project, Close branch for one branch       |
+  | spawn                            | Start (an agent, a reviewer, an implementer)             |
+  | handoff                          | Suggested next: Implementer, the next brief              |
+  | cluster                          | part (in a plan), subagent (once it runs)                |
+  | lens                             | tab                                                      |
+  | studio                           | the page name alone: Workflows, Impact, Providers        |
+  | materialize                      | add to this session                                      |
+  | column, lane, grid, tier, drawer | panel (Close the panel, Reset panel layout)              |
 
   `jargon-copy.test.ts` fails when rendered copy under `features/`,
   `app/components/` or `shared/components/` uses one of the internal words,
