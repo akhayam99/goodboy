@@ -411,6 +411,37 @@ describe('delegationCardOf', () => {
     expect(kept.routingNote).toBeNull();
   });
 
+  it("carries the Lead's pick with its why and the step size, and nothing new for an older row", () => {
+    const delegation = aDelegation({ key: 'x', role: 'implementer', state: 'running' });
+    const picked = delegationCardOf({
+      delegation: {
+        ...delegation,
+        request: { ...delegation.request, difficulty: 'standard' },
+        routing: {
+          provider: 'codex',
+          model: 'gpt-6.1-sol',
+          effort: 'medium',
+          reason: 'Sol fits a standard step.',
+          proposal: 'kept',
+          source: 'lead',
+          modelReason: 'Sol fits a standard step.',
+          requested: { provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' },
+        },
+      },
+      childAgent: null,
+    });
+    const older = delegationCardOf({ delegation, childAgent: null });
+
+    expect(picked.stepWord).toBe('Standard step');
+    expect(picked.routingWhy).toMatchObject({
+      providerLabel: 'Codex',
+      whyLabel: 'Why the Lead chose Codex: ',
+      why: 'Sol fits a standard step.',
+    });
+    expect(older.routingWhy).toBeNull();
+    expect(older.stepWord).toBeNull();
+  });
+
   it('titles a revision on the same producer, open and ready', () => {
     const open = delegationCardOf({
       delegation: aDelegation({

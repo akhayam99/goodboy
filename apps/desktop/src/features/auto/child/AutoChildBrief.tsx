@@ -1,11 +1,15 @@
 import type { MessageAttachment } from '@goodboy/types';
+import { isProviderId } from '@goodboy/types/helpers';
 import { Chip } from '@goodboy/ui';
 import { RoutingLabel } from '../../../shared/components/RoutingLabel';
 import { NAMES } from '../../../shared/utils/names';
+import { modelLineOf } from '../../providers/modelLine/modelLineOf';
+import { PROVIDER_LABEL } from '../../providers/providerLabel';
 import type { DelegationCardModel } from '../chat/delegationCardOf';
 import type { LaunchSnapshotItem } from '../chat/launchSnapshotOf';
 import type { ShownRouting } from '../executedRoutingOf';
 import { AutoChildWentIn } from './AutoChildWentIn';
+import { RoutingWhy } from './RoutingWhy';
 
 type Props = {
   readonly card: DelegationCardModel;
@@ -29,6 +33,20 @@ export const AutoChildBrief = ({
   attemptsNote,
 }: Props) => {
   const shownImages = wentIn === null ? images : [];
+  const providerName =
+    routing.provider !== null && isProviderId(routing.provider)
+      ? PROVIDER_LABEL[routing.provider]
+      : undefined;
+  const shownLine = modelLineOf({
+    provider: routing.provider,
+    model: routing.model,
+    effort: null,
+  });
+  const isStoredPickShown =
+    routing.provider === card.provider &&
+    shownLine?.name === card.modelLine?.name &&
+    shownLine?.rawId === card.modelLine?.rawId;
+  const shownWhy = isStoredPickShown ? card.routingWhy : null;
   return (
     <section
       aria-label={`Why ${THE_LEAD} started it`}
@@ -62,14 +80,19 @@ export const AutoChildBrief = ({
             provider={routing.provider}
             model={routing.model}
             effort={routing.effort}
+            prefix={providerName}
             muted
           />
+          {card.stepWord === null ? null : (
+            <span data-auto-child-step="">{`· ${card.stepWord}`}</span>
+          )}
           {attempts > 1 ? <span data-auto-child-attempt="">{`· Attempt ${attempts}`}</span> : null}
         </p>
         {attempts > 1 && attemptsNote !== null ? (
           <p className="text-faint-foreground">{`Last attempt: ${attemptsNote}`}</p>
         ) : null}
-        {card.routingNote === null ? null : (
+        {shownWhy === null ? null : <RoutingWhy why={shownWhy} />}
+        {shownWhy !== null || card.routingNote === null ? null : (
           <p className="text-faint-foreground">{card.routingNote}</p>
         )}
         {shownImages.length === 0 ? null : (

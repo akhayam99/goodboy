@@ -1555,6 +1555,9 @@ u52-workflows-every-run-dark
 u52-workflows-every-run-light
 u52-workflows-every-run-plan-dark
 u52-workflows-every-run-plan-light
+u53-agent-lead-pick
+u53-agent-lead-pick-light
+u53-agent-moved-pick
 update-card
 update-card-long-version
 update-card-narrow
