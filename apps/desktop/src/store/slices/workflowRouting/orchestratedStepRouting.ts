@@ -1,8 +1,9 @@
 import type {
   WorkflowRoutingProposalParseOutcome,
   WorkflowRoutingResolution,
+  WorkflowRoutingWireFields,
 } from '@goodboy/core/orchestrator';
-import type { WorkflowRun } from '@goodboy/types';
+import type { AgentRole, WorkflowRun } from '@goodboy/types';
 import {
   resolveProposedRouting,
   type ResolveProposedRoutingParams,
@@ -12,10 +13,14 @@ import { earlierPicksOf } from './earlierPicksOf';
 import { resolveOrchestratedStepRouting } from './resolveOrchestratedStepRouting';
 import { stepCandidateInputs } from './stepCandidateInputs';
 
-type Params = Omit<ResolveProposedRoutingParams, 'state' | 'isModelPickEnabled' | 'providerPool'> &
+type Params = Omit<
+  ResolveProposedRoutingParams,
+  'state' | 'isModelPickEnabled' | 'providerPool' | 'role' | 'fields' | 'promptText'
+> &
   Readonly<{
     get: GetFn;
     run: WorkflowRun;
+    step: WorkflowRoutingWireFields & Readonly<{ role: AgentRole; promptPrefix: string }>;
     isCandidatesBlockSent: boolean;
   }>;
 
@@ -27,9 +32,11 @@ type OrchestratedRouting = Readonly<{
 export const orchestratedStepRouting = async ({
   get,
   run,
+  step,
   isCandidatesBlockSent,
-  ...request
+  ...rest
 }: Params): Promise<OrchestratedRouting> => {
+  const request = { ...rest, role: step.role, fields: step, promptText: step.promptPrefix };
   const isModelPickEnabled = run.rulesSnapshot?.canOrchestratorPickModel === true;
   const isOnCandidates =
     (request.stepLock ?? null) === null &&
