@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { leadPermissionsOf } from '@goodboy/core/auto';
 import { useAppStore } from '../../../../../store';
-import { SettingsFrame } from '../audit/SettingsFrame';
+import { EveryRunFrame } from '../audit/EveryRunFrame';
 
 const OPEN_DETAILS_AFTER_MS = 600;
 
@@ -31,7 +31,7 @@ const TunedRuns = () => {
     return () => clearTimeout(timer);
   }, []);
   return (
-    <SettingsFrame focus={{ scope: 'workspace', section: 'general' }} seed={seedTunedDetails} />
+    <EveryRunFrame seed={seedTunedDetails} />
   );
 };
 

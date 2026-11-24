@@ -206,7 +206,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
             size="sm"
             onClick={() => {
               close();
-              openPermissionSettings();
+              openPermissionSettings({ part: 'rules' });
             }}
           >
             Rules

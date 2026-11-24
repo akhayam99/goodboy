@@ -3,6 +3,7 @@ import { NAMES } from '../../../../shared/utils/names';
 import { PERMISSIONS_SECTION_ID } from '../../../permissions/openPermissionSettings';
 import { REVIEW_REPLIES_SECTION_ID } from '../../../resolve/replySettingsCopy';
 import { MODELS_PAGE_SECTION, isModelsPage } from '../../isModelsPage';
+import { RUN_DEFAULTS_SECTION } from '../../openRunDefaults';
 
 export type WorkspacePage =
   | 'projects'
@@ -39,9 +40,8 @@ const ALL_WORKSPACE_PAGES = [
   },
   {
     id: 'general',
-    label: NAMES.runs,
+    label: NAMES.everyRun,
     concept: 'terminal',
-    searchAliases: ['Start as'],
   },
   {
     id: MODELS_PAGE_SECTION,
@@ -65,7 +65,16 @@ const ALL_WORKSPACE_PAGES = [
   },
 ] as const satisfies ReadonlyArray<WorkspacePageEntry>;
 
-export const WORKSPACE_PAGES: ReadonlyArray<WorkspacePageEntry> = ALL_WORKSPACE_PAGES;
+export const RUN_DEFAULTS_SEARCH_ALIASES: ReadonlyArray<string> = [
+  NAMES.runs,
+  NAMES.everyRun,
+  'Run defaults',
+  'Start as',
+];
+
+export const WORKSPACE_PAGES: ReadonlyArray<WorkspacePageEntry> = ALL_WORKSPACE_PAGES.filter(
+  (entry) => entry.id !== RUN_DEFAULTS_SECTION,
+);
 
 type SectionParams = {
   readonly section?: string;
@@ -94,12 +103,12 @@ export const workspacePageOf = ({ section }: SectionParams): WorkspacePage => {
   if (isModelsPage({ section })) {
     return MODELS_PAGE_SECTION;
   }
-  const page = WORKSPACE_PAGES.find((entry) => entry.id === section);
+  const page = ALL_WORKSPACE_PAGES.find((entry) => entry.id === section);
   return page?.id ?? SECTION_ALIASES.get(section) ?? DEFAULT_WORKSPACE_PAGE;
 };
 
 export const workspacePageEntry = ({ page }: { readonly page: WorkspacePage }) =>
-  WORKSPACE_PAGES.find((entry) => entry.id === page) ?? ALL_WORKSPACE_PAGES[0];
+  ALL_WORKSPACE_PAGES.find((entry) => entry.id === page) ?? ALL_WORKSPACE_PAGES[0];
 
 export type PlanPage = Exclude<WorkspacePage, typeof MODELS_PAGE_SECTION>;
 

@@ -29,7 +29,6 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { buildProviderList, type ProviderStatus } from '../../../providers/providers';
-import { WorkspaceDefaultsGrid } from '../../../settings/components/SettingsStudio/WorkspaceDefaultsGrid';
 import { StartAsksSetting } from '../../../session/components/SessionKickoff/StartAsksSetting';
 import { EveryRun } from './index';
 
@@ -117,14 +116,14 @@ const renderBoth = () =>
       <section aria-label="Every run tab">
         <EveryRun workspaceId={HARBORLINE.id} />
       </section>
-      <section aria-label="Settings Runs page">
-        <WorkspaceDefaultsGrid workspaceId={HARBORLINE.id} />
+      <section aria-label="Every run in another window">
+        <EveryRun workspaceId={HARBORLINE.id} />
       </section>
     </>,
   );
 
 type PageParams = {
-  readonly name: 'Every run tab' | 'Settings Runs page';
+  readonly name: 'Every run tab' | 'Every run in another window';
 };
 
 const page = ({ name }: PageParams) => within(screen.getByRole('region', { name }));
@@ -184,7 +183,7 @@ describe('Every run', () => {
     screen.getByText('Reply length');
   });
 
-  it('saves Stops for your OK once and Settings, Runs shows the same level', async () => {
+  it('saves Stops for your OK once and another window shows the same level', async () => {
     seed({ rules: { autonomy: 'step' } });
     storeLeadLevel({ level: 'step' });
     renderBoth();
@@ -192,24 +191,24 @@ describe('Every run', () => {
     fireEvent.click(stopsTab({ name: 'Every run tab', tab: /After the plan/ }));
 
     await waitFor(() =>
-      expect(selectedStops({ name: 'Settings Runs page' })).toEqual(['After the plan']),
+      expect(selectedStops({ name: 'Every run in another window' })).toEqual(['After the plan']),
     );
     expect(selectedStops({ name: 'Every run tab' })).toEqual(['After the plan']);
     expect(writeCount()).toBe(1);
     expect(savedOverrides()?.workflowRules?.autonomy).toBe('plan');
   });
 
-  it('shows a level picked on Settings, Runs on Every run', async () => {
+  it('shows a level picked in another window on Every run', async () => {
     seed({ rules: { autonomy: 'step' } });
     storeLeadLevel({ level: 'step' });
     renderBoth();
 
-    fireEvent.click(stopsTab({ name: 'Settings Runs page', tab: /^Never/ }));
+    fireEvent.click(stopsTab({ name: 'Every run in another window', tab: /^Never/ }));
 
     await waitFor(() => expect(selectedStops({ name: 'Every run tab' })).toEqual(['Never']));
   });
 
-  it('saves the limit from Every run and Settings, Runs reads the same amount', async () => {
+  it('saves the limit from Every run and another window reads the same amount', async () => {
     renderBoth();
 
     const input = limitInput({ name: 'Every run tab' });
@@ -219,7 +218,7 @@ describe('Every run', () => {
       page({ name: 'Every run tab' }).getByRole('form', { name: 'Limit for new runs' }),
     );
 
-    await waitFor(() => expect(limitInput({ name: 'Settings Runs page' }).value).toBe('20'));
+    await waitFor(() => expect(limitInput({ name: 'Every run in another window' }).value).toBe('20'));
     expect(savedOverrides()?.workflowRules?.spendLimitUsd).toBe(20);
   });
 
@@ -245,7 +244,7 @@ describe('Every run', () => {
     expect(container.textContent).not.toContain('this run');
   });
 
-  it('removes a role model on Every run and writes the same key Settings reads', async () => {
+  it('removes a role model on Every run and writes the role key once', async () => {
     seed({
       overrides: {
         roleModels: {

@@ -1,7 +1,6 @@
 import { Band } from '@goodboy/ui';
 import { ContrastPreferenceField } from './ContrastPreferenceField';
 import { ThemePreferenceField } from './ThemePreferenceField';
-import { OpenWithBand } from './OpenWithBand';
 import { AwayAlertsBand } from './AwayAlertsBand';
 import { UpdatesSection } from './UpdatesSection';
 
@@ -19,8 +18,6 @@ export const AppGeneralSection = ({ isUpdatesFocused = false }: Props) => (
     </Band>
 
     <AwayAlertsBand />
-
-    <OpenWithBand />
 
     <UpdatesSection isFocused={isUpdatesFocused} />
   </div>

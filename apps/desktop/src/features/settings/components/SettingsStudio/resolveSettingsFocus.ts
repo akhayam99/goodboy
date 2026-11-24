@@ -91,6 +91,8 @@ export const resolveSettingsFocus = ({ focus, last, groups }: ResolveParams): Se
     scope: page.scope === 'home' ? 'app' : page.scope,
     section: page.section,
   });
-  const exists = groups.some((group) => group.pages.some((entry) => entry.key === key));
+  const exists = groups.some((group) =>
+    group.pages.some((entry) => entry.key === key && entry.isLink !== true),
+  );
   return exists ? page : GENERAL;
 };

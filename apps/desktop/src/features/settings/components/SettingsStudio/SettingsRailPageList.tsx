@@ -11,7 +11,7 @@ type Props = {
 export const SettingsRailPageList = ({ group, pageKey, onSelect }: Props) => (
   <ul aria-label={`${group.label} settings`} className="flex flex-col gap-0.5">
     {group.pages
-      .filter((page) => page.isHidden !== true || page.key === pageKey)
+      .filter((page) => page.isLink !== true && (page.isHidden !== true || page.key === pageKey))
       .map((page) => (
         <li key={page.key} data-settings-page={page.key}>
           <SettingsNavRow

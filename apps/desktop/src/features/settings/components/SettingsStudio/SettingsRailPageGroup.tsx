@@ -1,6 +1,7 @@
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
 import type { SettingsGroup } from './settingsDirectory';
 import { SettingsRailHeading } from './SettingsRailHeading';
+import { SettingsRailLink } from './SettingsRailLink';
 import { SettingsRailPageList } from './SettingsRailPageList';
 
 type Props = {
@@ -18,5 +19,10 @@ export const SettingsRailPageGroup = ({ group, pageKey, onSelect }: Props) => (
   <div data-settings-group={group.scope} className="flex flex-col gap-1">
     <SettingsRailHeading label={group.label} caption={SCOPE_CAPTION[group.scope]} />
     <SettingsRailPageList group={group} pageKey={pageKey} onSelect={onSelect} />
+    {group.pages
+      .filter((page) => page.isLink === true)
+      .map((page) => (
+        <SettingsRailLink key={page.key} label={page.label} onClick={() => onSelect(page.target)} />
+      ))}
   </div>
 );

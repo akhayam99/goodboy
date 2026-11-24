@@ -165,28 +165,30 @@ flag plus the run's copy of the rules, and can change later from the run's
 
 ## Workflow rules
 
-Rules are the workspace defaults every new run starts from. They live in the
-**Runs** page of the workspace settings (Settings > This workspace > Runs, section
-id `general`) and on the **Every run** tab of the Workflows studio
-(`EveryRun`, `studioHomeView` `every`, opened by `setWorkflowStudioView('every')`).
-Both mount `WorkflowRulesPanel` with `ReplyLengthBand`; Every run adds the Lead
-(`RunsSection`), the roles (`RoleRow`) and, gated by `useHasPlanRuns`, the
-**Older plan runs** band (`OlderPlanRunsBand`). Its old names (Run
-defaults, Rules, Workflow rules, Start as) find it in Search settings and in
-`⌘K` (`FORMER_NAMES`, `searchAliases` in `workspacePages.ts`). The all-pages
-Restore defaults and Copy from in the workspace settings menu still carry them
-and list them as Runs in the preview.
+Rules are the workspace defaults every new run starts from. They live on the
+**Every run** tab of the Workflows studio (`EveryRun`, `studioHomeView`
+`every`, opened by `setWorkflowStudioView('every')`). Settings has no Runs page:
+its workspace rail ends on the link row **Run defaults are in Workflows**, and
+every old door (`openRunDefaults`, a search hit on a run row, the section id
+`general` or `workflow_orchestrator`) passes `isRunDefaultsFocus` in
+`settingRows.ts`, so the Settings studio switches to Every run in its place.
+The old names (Runs, Run defaults, Rules, Workflow rules, Start as) find the
+link in Search settings and in `⌘K` (`FORMER_NAMES`,
+`RUN_DEFAULTS_SEARCH_ALIASES` in `workspacePages.ts`). The all-pages Restore
+defaults and Copy from in the workspace settings menu still carry the run
+defaults and list them as Every run in the preview.
 
-The page asks one question per band, one row per setting (`FieldRow`).
-`WorkspaceDefaultsGrid` draws it: `WorkflowRulesPanel` owns **When a run stops
-for you**, **Spending** and **Guidance**, takes the **Agents** band (**Reply
-length**) as children and the closed **Advanced** disclosure (**Parallel
-agents**, `RunsAdvancedBand`) as `advanced`, last. Advanced says **Parallel
-agents on** beside its title while the switch is on, and a search hit on the row
-opens it. The page has no Models row: Models is the next page of the rail. A
-change reaches new runs only, since every run keeps its own copy of the rules
-(`attachWorkflowToSession` copies them at start). A failed save keeps the old
-value and shows the error under its row.
+The tab asks one question per band, one row per setting (`FieldRow`).
+`EveryRun` draws it: `WorkflowRulesPanel` owns **When a run stops for you**,
+**Spending** and **Guidance**; it takes **Edits** (the edit mode new sessions
+start in, `DefaultModeCards`), the **Agents** band (**Reply length**), the Lead
+(`RunsSection`), the roles (`RoleRow`) and, gated by `useHasPlanRuns`, the
+**Older plan runs** band (`OlderPlanRunsBand`) as children, and the closed
+**Advanced** disclosure (**Parallel agents**, `RunsAdvancedBand`) as
+`advanced`, last. Advanced says **Parallel agents on** beside its title while
+the switch is on. A change reaches new runs only, since every run keeps its own
+copy of the rules (`attachWorkflowToSession` copies them at start). A failed
+save keeps the old value and shows the error under its row.
 
 - **Stops for your OK** (`DefaultAsksSetting`, `useStopsLevel`): Every step,
   After the plan or Never, one level for workflows and the Lead. A pick runs

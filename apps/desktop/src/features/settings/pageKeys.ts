@@ -36,7 +36,7 @@ export const FIELD_PAGE: Readonly<Record<WorkspaceSettingField, PlanPage>> = {
   resolveOnGithub: 'review-replies',
   editPostedReply: 'review-replies',
   resolveCommitStyle: 'review-replies',
-  permissionMode: 'permissions',
+  permissionMode: 'general',
   roles: 'profile',
   aboutWork: 'profile',
   workingRules: 'profile',

@@ -9,7 +9,7 @@ import { seedFlowSession } from '../flow-audit/seeds';
 import { sceneParam, sceneParamList } from './sceneParams';
 import { useSceneClicks } from './useSceneClicks';
 import { RULES_PROVIDERS, rulesProviderLimits } from './workflowRulesSeed';
-import { SettingsFrame } from './SettingsFrame';
+import { EveryRunFrame } from './EveryRunFrame';
 import { SETTINGS_WORKSPACE_ID } from './settingsSeed';
 
 const noop = () => undefined;
@@ -138,7 +138,7 @@ export const WorkflowStudioScene = () => {
   }
 
   if (IS_RULES) {
-    return <SettingsFrame focus={{ scope: 'workspace', section: 'general' }} seed={seedRules} />;
+    return <EveryRunFrame seed={seedRules} />;
   }
 
   return <WorkflowStudio workspaceId={WORKSPACE_ID} onClose={noop} />;
