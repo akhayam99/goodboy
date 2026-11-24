@@ -21,6 +21,8 @@ activity-mark-seen
 activity-one-signal
 activity-question
 activity-resolves
+activity-row-kit
+activity-row-kit-light
 activity-run
 activity-run-finished
 activity-run-hover
@@ -951,6 +953,8 @@ tasks-cursor
 tasks-rail
 tasks-rail-folded
 tasks-rail-open
+tasks-source-failure
+tasks-source-failure-dark
 terminal-drawer-page
 terminal-drawer-session
 terminal-empty
@@ -960,9 +964,12 @@ terminal-studio-empty
 terminal-studio-newmenu
 terminal-studio-restored
 timeline-cards
+timeline-cards-light
 toast-over-drawer
 toast-over-drawer-overlay
 toasts
+tool-heads-narrow
+tool-heads-narrow-dark
 tooltip-labels
 tooltip-shortcut
 tooltip-truncated
@@ -1471,6 +1478,8 @@ u50-fleet-rows-dark
 u50-fleet-rows-light
 u50-logo-foot-dark
 u50-logo-foot-light
+u50-logo-foot-unread-dark
+u50-logo-foot-unread-light
 u50-logo-foot-update-dark
 u50-logo-foot-update-light
 u50-merge-train-ready-dark

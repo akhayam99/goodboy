@@ -20,12 +20,15 @@ import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly model: BrowserPaneModel;
+  readonly folded?: ReadonlyArray<MenuItemEntry>;
   readonly onOpenAsPage?: () => void;
 };
 
 const MENU_LABEL = 'More';
 
-export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
+const NOTHING_FOLDED: ReadonlyArray<MenuItemEntry> = [];
+
+export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }: Props) => {
   const dropdown = useDropdown({
     width: 'min-w-[200px]',
     maxWidth: MENU_MAX_WIDTH,
@@ -65,6 +68,7 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
       : []),
   ];
   const entries: ReadonlyArray<MenuEntry> = [
+    ...folded,
     {
       kind: 'item',
       key: 'sendToAgent',

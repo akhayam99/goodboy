@@ -116,6 +116,11 @@ export type FindParams = TextParams & {
   readonly isBackwards: boolean;
 };
 
+export type BrowserConsoleToggle = {
+  readonly isOpen: boolean;
+  readonly onToggle: () => void;
+};
+
 export type BrowserPaneModel = {
   readonly sessionId: SessionId;
   readonly tabs: ReadonlyArray<BrowserTab>;

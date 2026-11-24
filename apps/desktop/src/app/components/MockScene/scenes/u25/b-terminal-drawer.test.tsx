@@ -111,7 +111,8 @@ describe('the terminal drawer scenes', () => {
     );
     expect(within(drawer).queryByRole('heading', { name: 'Terminal' })).toBeNull();
     expect(within(drawer).queryByRole('combobox', { name: 'New terminal in' })).toBeNull();
-    expect(within(drawer).getByRole('button', { name: 'Open full page' })).toBeDefined();
+    expect(within(drawer).queryByRole('button', { name: 'Open full page' })).toBeNull();
+    within(drawer).getByRole('button', { name: /^More on / });
     expect(within(drawer).getByRole('button', { name: 'Close' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'New tab on payments-api' })).toBeDefined();
     const tabs = shellTabsIn({ drawer });
@@ -129,9 +130,7 @@ describe('the terminal drawer scenes', () => {
     const picker = within(drawer).getByRole('combobox', { name: 'Terminal folder' });
     expect(picker.textContent).toBe('hl/fix-webhook-idempotency· gb-7k2q9x');
     const header = drawer.querySelector('[data-drawer-header-row]');
-    expect(header?.contains(within(drawer).getByRole('button', { name: 'Open full page' }))).toBe(
-      true,
-    );
+    expect(header?.contains(within(drawer).getByRole('button', { name: /^More on / }))).toBe(true);
     expect(within(drawer).queryByText('Open full page')).toBeNull();
   });
 
@@ -224,7 +223,8 @@ describe('the terminal drawer scenes', () => {
     fireEvent.click(within(drawer).getByRole('tab', { name: 'dev server' }));
     await settle();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
+    fireEvent.click(within(drawer).getByRole('button', { name: /^More on / }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Open full page/ }));
 
     expect(store.getState().drawer?.kind).toBe('terminal');
     const studio = store.getState().appStudio;

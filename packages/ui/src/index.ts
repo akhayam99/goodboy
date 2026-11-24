@@ -11,6 +11,7 @@ export { dockSplitKeyOf } from './dockSplitKeyOf';
 export { dockColumnsAfterMove } from './dockColumnsAfterMove';
 export type { DockMoveTarget } from './dockMoveTarget';
 export { dockFitProbe } from './dockFitProbe';
+export { useDockGrip } from './useDockGrip';
 export { turnedDockColumnsOf } from './turnedDockColumnsOf';
 export { ShellRailContext } from './shellRailContext';
 export { UnderHeadContext } from './underHeadContext';
@@ -430,7 +431,22 @@ export {
   WORK_NODE_SIZE,
   WORK_NODE_SIZE_SM,
 } from './components/WorkTree/workNodeSpec';
-export type { WorkNodeMark, WorkNodeSize, WorkNodeState } from './components/WorkTree/workNodeSpec';
+export type {
+  WorkNodeLook,
+  WorkNodeMark,
+  WorkNodeSize,
+  WorkNodeState,
+} from './components/WorkTree/workNodeSpec';
+export { ActivityRow } from './components/ActivityRow/ActivityRow';
+export { ActivityMeta } from './components/ActivityRow/ActivityMeta';
+export { ActivityMessage } from './components/ActivityRow/ActivityMessage';
+export type {
+  ActivityMetaColumn,
+  ActivityRowDensity,
+  ActivityRowOrdinalSlot,
+  ActivityRowTextSize,
+  ActivityRowTone,
+} from './components/ActivityRow/activityRowSpec';
 export { Kbd } from './components/Kbd';
 export type { KbdLook, KbdProps } from './components/Kbd';
 export { ROW_HOVER, ROW_INTERACTIVE } from './rowInteractive';

@@ -13,7 +13,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ALL_ROWS, STUDIO_KINDS } from './allRows';
 
 const STUDIO_TOKEN = /^studio:(\w+)$/;
-const PALETTE_DOOR_KINDS: ReadonlyArray<string> = ['guide', 'changelog'];
+const PALETTE_DOOR_KINDS: ReadonlyArray<string> = ['guide'];
 
 describe('every studio has a door you can see', () => {
   it('lists the studio kinds of the navigation slice', () => {
@@ -42,7 +42,16 @@ describe('every studio has a door you can see', () => {
     expect(withoutVisibleDoor).toEqual([]);
   });
 
-  it('leaves the Guide and the What is new tab to the palette, not to a mark in the rail', () => {
+  it('opens What is new from the rail mark and the palette', () => {
+    const changelogDoors = ALL_ROWS.filter((row) => row.covers.includes('studio:changelog')).map(
+      (row) => row.door,
+    );
+
+    expect(changelogDoors).toContain('visible');
+    expect(changelogDoors).toContain('palette');
+  });
+
+  it('leaves the Guide to the palette, not to a mark in the rail', () => {
     const rows = ALL_ROWS;
     const rowsOf = (kind: string) => rows.filter((row) => row.covers.includes(`studio:${kind}`));
 

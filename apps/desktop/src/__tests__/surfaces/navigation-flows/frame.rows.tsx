@@ -16,6 +16,7 @@ import {
   openPalette,
   settle,
   pressBoardKey,
+  openTerminalPage,
 } from './harness';
 
 const QUESTIONS_ROW = CRUMB_ROWS.find((row) => row.label === 'Questions');
@@ -232,7 +233,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: async () => {
       await click(screen.getByTestId('pane-toggle-terminal'));
-      await clickButton(/^Open full page$/);
+      await openTerminalPage();
     },
     lands: async () => {
       await studio('Terminal');

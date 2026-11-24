@@ -16,13 +16,13 @@ live here.
 
 This file is the registry: the tokens and scales that tests and primitives read. The pages below hold the rules for one family of surfaces each.
 
-| Page                                                | Holds                                                                                                                                                                                                           |
-| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Controls](design/controls.md)                      | Primitives, Control scale, Listbox, Menus, Key hints                                                                                                                                                            |
-| [Feedback and empty states](design/feedback.md)     | Notices, Action feedback, Empty states, Question card                                                                                                                                                           |
-| [Layout and action grammar](design/layout.md)       | The left column, Pane anatomy, Action zones, Section rhythm, Prose disclosure, Card action grammar and creation grammar, One way to ask, Comment composer and replies, Form actions                             |
-| [Surfaces](design/surfaces.md)                      | Report sheet, Pull request page, Workspace chat                                                                                                                                                                 |
-| [Rail and work vocabulary](design/rail-and-work.md) | Needs you and the two views, Rail vocabulary, History graph, Work nodes and row states, Row hover and focus, Session row hover card and switcher, Rail, Shell rail, Work meta, The plan in the workflow builder |
+| Page                                                | Holds                                                                                                                                                                                                                                      |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Controls](design/controls.md)                      | Primitives, Control scale, Listbox, Menus, Key hints                                                                                                                                                                                       |
+| [Feedback and empty states](design/feedback.md)     | Notices, Action feedback, Empty states, Question card                                                                                                                                                                                      |
+| [Layout and action grammar](design/layout.md)       | The left column, Pane anatomy, Action zones, Section rhythm, Prose disclosure, Card action grammar and creation grammar, One way to ask, Comment composer and replies, Form actions                                                        |
+| [Surfaces](design/surfaces.md)                      | Report sheet, Pull request page, Workspace chat                                                                                                                                                                                            |
+| [Rail and work vocabulary](design/rail-and-work.md) | Needs you and the two views, Rail vocabulary, History graph, Work nodes and row states, Quiet nodes, Activity row, Row hover and focus, Session row hover card and switcher, Rail, Shell rail, Work meta, The plan in the workflow builder |
 
 ## Text hierarchy
 
@@ -596,11 +596,13 @@ the six places and Settings share one axis at either width.
 and `r4-column-light` scenes, and with an old folded choice.
 
 The foot of the rail is Settings, Report (with its word) and the signature. The
-signature (`RailSignature`) is a 24px `BrandTile`: passive, `aria-hidden`, with no
-hover, focus or tooltip, and no ring, plate, border, glow or gradient. It is the
-same in both themes and never inverted. It sits centered in one rail tile
-(`SHELL_RAIL_TILE`), so the dog lines up with the icons above; the rail pads its
-foot as much as its top (`SHELL_RAIL_EDGE_PX`), and the rail's `gap` spaces it
+signature (`RailSignature`) is a 24px `BrandTile` in a `quiet` `Button` that opens
+What's new, with the tooltip "What's new" and no word, and no ring, plate, border,
+glow or gradient. It is the same in both themes and never inverted. An unread
+release adds the `unread` `StatusDot` on its corner. It sits centered in one rail
+tile (`SHELL_RAIL_TILE`), so the dog lines up with the icons above; the rail pads
+its foot by `SHELL_RAIL_FOOT_PX` (`SHELL_GUTTER_PX`, the inset under the content
+sheet), so the tile ends on the sheet's bottom edge, and the rail's `gap` spaces it
 from Report. An update adds one more `ShellRailItem`
 above the signature and never replaces it: `tint="primary"` paints the tile
 `primary-subtle` with `primary` text and word (`danger` on `danger-subtle` when it
@@ -893,6 +895,10 @@ A session row picks one mark (`sessionMarkOf`): what asks you or failed, then
 running, then the unread dot, then the settled glyph, then empty. A place on
 the rail picks one (`railMarkOf`): Board's needs-you count, Tasks' unread dot,
 else nothing.
+
+A row of an activity log does not take a `StatusMark`: its state is the
+`WorkNode` on the rail, drawn with the quiet look, and the row is an
+`ActivityRow` ([rail-and-work.md](design/rail-and-work.md#quiet-nodes)).
 
 One glyph has one import spelling, the one `conceptIcons.ts` uses
 (`TriangleAlert`, `CircleAlert`, `CircleX`, `CircleCheck`,

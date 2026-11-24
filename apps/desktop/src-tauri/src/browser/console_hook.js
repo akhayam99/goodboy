@@ -12,6 +12,9 @@
   const MAX_KEYS = 20;
   const MAX_STACK_LINE = 500;
   const HOOK_FRAME = 'goodboyConsoleHook';
+  const ACL_HEAD = 'Command ';
+  const ACL_TAIL = ' not allowed by ACL';
+  const WINDOW_MARK = ' not allowed on window "';
   const LEVELS = [
     ['log', 'log'],
     ['info', 'info'],
@@ -30,6 +33,23 @@
   let isBusy = false;
 
   const clip = (text, max) => (text.length > max ? text.slice(0, max) : text);
+
+  const isCommandName = (text) => text !== '' && text.indexOf(' ') === -1;
+
+  const isAclRefusal = (reason) =>
+    reason.length > ACL_HEAD.length + ACL_TAIL.length &&
+    reason.slice(0, ACL_HEAD.length) === ACL_HEAD &&
+    reason.slice(-ACL_TAIL.length) === ACL_TAIL &&
+    isCommandName(reason.slice(ACL_HEAD.length, -ACL_TAIL.length));
+
+  const isWindowRefusal = (reason) => {
+    const at = reason.indexOf(WINDOW_MARK);
+    const name = at > 0 ? reason.slice(0, at) : '';
+    return isCommandName(name) && name.indexOf('.') !== -1;
+  };
+
+  const isHostRefusal = (reason) =>
+    typeof reason === 'string' && (isAclRefusal(reason) || isWindowRefusal(reason));
 
   const quietly = (work) => {
     try {
@@ -304,6 +324,10 @@
 
   window.addEventListener('unhandledrejection', (event) => {
     const reason = event.reason;
+    if (isHostRefusal(reason)) {
+      quietly(() => event.preventDefault());
+      return;
+    }
     recordConsole(
       'error',
       () => 'Unhandled rejection: ' + describe(reason, 0),

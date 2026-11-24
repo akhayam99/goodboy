@@ -5,6 +5,7 @@ import type { IconGlyph } from '../icons';
 import { X } from '../icons';
 import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
+import { useIsNarrow } from '../useIsNarrow';
 import { lastFocusedElement } from '../useLastFocused';
 import { DrawerBackChip } from './DrawerBackChip';
 import { DrawerBackLink } from './DrawerBackLink';
@@ -49,6 +50,8 @@ export type DrawerFrameProps = {
 };
 
 const HEADER_INSET_PX = 16;
+
+const NARROW_HEAD_PX = 360;
 
 const META_INSET_WITH_ICON_PX = HEADER_INSET_PX + ICON_SIZE.control + 8;
 
@@ -99,6 +102,7 @@ export const DrawerFrame = ({
   children,
 }: DrawerFrameProps) => {
   const [trigger] = useState(focusableTrigger);
+  const head = useIsNarrow({ below: NARROW_HEAD_PX });
   const sectionRef = useRef<HTMLElement | null>(null);
   const dockRef = useRef<HTMLDivElement | null>(null);
   const hasToolbar = toolbar != null;
@@ -150,13 +154,13 @@ export const DrawerFrame = ({
           </span>
         )}
         {titleContent != null ? (
-          <div className="flex h-5 min-w-24 items-center text-heading text-foreground">
+          <div className="flex h-5 min-w-0 items-center text-heading text-foreground">
             {titleContent}
           </div>
         ) : (
           <h2
             className={cn(
-              'min-w-24 text-heading text-foreground',
+              'min-w-0 text-heading text-foreground',
               hasToolbar ? 'line-clamp-2' : 'truncate',
             )}
           >
@@ -172,7 +176,7 @@ export const DrawerFrame = ({
       <div className={cn('flex shrink-0 items-center gap-1', hasToolbar && 'h-5')}>
         {action}
         {menu}
-        <DrawerHeadKeys page={page} />
+        <DrawerHeadKeys page={page} title={title} isFolded={head.isNarrow} hasMenu={menu != null} />
         <IconButton icon={X} label="Close" variant="ghost" onClick={onClose} />
       </div>
     </>
@@ -200,7 +204,9 @@ export const DrawerFrame = ({
       className={cn('flex shrink-0 flex-col', PANE_RHYTHM.headerInset, !hasStepAside && 'pb-2')}
     >
       <div
+        ref={head.ref}
         data-drawer-header-row=""
+        data-head-folded={head.isNarrow ? '' : undefined}
         className={cn(
           'flex min-w-0 gap-2 pl-4 pr-2',
           hasToolbar ? 'min-h-8' : PANE_RHYTHM.headerRow,

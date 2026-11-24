@@ -11,8 +11,11 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import { useEffect, useState } from 'react';
 import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
-import { RowIdentityCard } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/RowIdentityCard';
+import { applyDocumentTheme } from '../../../../../shared/lib/theme';
+import { RoleCardSamples } from './RoleCardSamples';
+import { AgentRoleCard } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/AgentRoleCard';
 import { RowModelsCard } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/RowModelsCard';
 import { RunIdentityCard } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/RunIdentityCard';
 import { TimelineModelCell } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/TimelineModelCell';
@@ -189,59 +192,83 @@ const SOURCE: WorkTimeSource = {
 const TRIGGER_CLASSES =
   'inline-flex h-7 items-center justify-center gap-2 rounded-md border border-border-soft px-2 text-meta text-muted-foreground';
 
-export const TimelineCardsStage = () => (
-  <WorkTimeContext.Provider value={SOURCE}>
-    <div
-      data-testid="timeline-cards-stage"
-      className="grid w-264 grid-cols-3 items-start gap-6 rounded-lg border border-border-soft bg-subtle p-6 pb-72"
-    >
-      <RowIdentityCard
-        entry={AGENT_ENTRY}
-        ordinal="4"
-        kindWord="Implementer"
-        models={MODELS}
-        work={{
-          routing: {
-            provider: 'anthropic',
-            model: 'claude-sonnet-5-5',
-            effort: 'high',
-            isEffortObserved: true,
-            planned: { provider: 'anthropic', model: 'claude-haiku-4-5', effort: 'low' },
-            isPlanned: false,
-          },
-          time: {
-            label: '15m 59s',
-            detail: '',
-            facts: [],
-            footnote: null,
-            progress: null,
-            headline: '15m 59s',
-            note: null,
-            isMuchLonger: false,
-          },
-        }}
-        phase="done"
-        costUsd={0.62}
-        isOpen
+type Props = {
+  readonly theme?: 'dark' | 'light';
+};
+
+export const TimelineCardsStage = ({ theme }: Props) => {
+  const [isReady, setIsReady] = useState(theme === undefined);
+  useEffect(() => {
+    if (theme === undefined) {
+      return;
+    }
+    applyDocumentTheme({ theme });
+    setIsReady(true);
+  }, [theme]);
+  if (!isReady) {
+    return null;
+  }
+  return (
+    <WorkTimeContext.Provider value={SOURCE}>
+      <div
+        data-testid="timeline-cards-stage"
+        className="grid w-264 grid-cols-3 items-start gap-x-6 gap-y-72 rounded-lg border border-border-soft bg-subtle p-6 pb-72"
       >
-        <span className={TRIGGER_CLASSES}>
-          <AgentKindChip kind="implementer" density="glyph" isDecorative />
-          Role glyph
-        </span>
-      </RowIdentityCard>
-      <RowModelsCard entry={AGENT_ENTRY} ordinal="4" kindWord="Implementer" models={MODELS} isOpen>
-        <span className={TRIGGER_CLASSES}>
-          <TimelineModelCell
-            summary={{ name: 'Sonnet 5.5', detail: 'High', providers: ['anthropic'] }}
-          />
-        </span>
-      </RowModelsCard>
-      <RunIdentityCard entry={RUN_ENTRY} isOpen>
-        <span className={TRIGGER_CLASSES}>
-          <TimelineRunGlyph kind="preset" />
-          Run glyph
-        </span>
-      </RunIdentityCard>
-    </div>
-  </WorkTimeContext.Provider>
-);
+        <AgentRoleCard
+          entry={AGENT_ENTRY}
+          ordinal="4"
+          kindWord="Implementer"
+          models={MODELS}
+          work={{
+            routing: {
+              provider: 'anthropic',
+              model: 'claude-sonnet-5-5',
+              effort: 'high',
+              isEffortObserved: true,
+              planned: { provider: 'anthropic', model: 'claude-haiku-4-5', effort: 'low' },
+              isPlanned: false,
+            },
+            time: {
+              label: '15m 59s',
+              detail: '',
+              facts: [],
+              footnote: null,
+              progress: null,
+              headline: '15m 59s',
+              note: null,
+              isMuchLonger: false,
+            },
+          }}
+          rowState={{ phase: 'done', reason: null, ask: null }}
+          costUsd={0.62}
+          isOpen
+        >
+          <span className={TRIGGER_CLASSES}>
+            <AgentKindChip kind="implementer" density="glyph" isDecorative />
+            Role glyph
+          </span>
+        </AgentRoleCard>
+        <RowModelsCard
+          entry={AGENT_ENTRY}
+          ordinal="4"
+          kindWord="Implementer"
+          models={MODELS}
+          isOpen
+        >
+          <span className={TRIGGER_CLASSES}>
+            <TimelineModelCell
+              summary={{ name: 'Sonnet 5.5', detail: 'High', providers: ['anthropic'] }}
+            />
+          </span>
+        </RowModelsCard>
+        <RunIdentityCard entry={RUN_ENTRY} isOpen>
+          <span className={TRIGGER_CLASSES}>
+            <TimelineRunGlyph kind="preset" />
+            Run glyph
+          </span>
+        </RunIdentityCard>
+        <RoleCardSamples />
+      </div>
+    </WorkTimeContext.Provider>
+  );
+};

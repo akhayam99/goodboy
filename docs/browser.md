@@ -369,11 +369,16 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   rewritten by a resize and comes back when the window grows. The page follows
   the pane because the placement loop measures the placeholder every frame.
 
-- **The address row** is one 36px row (`BrowserAddressRow`). It holds the tab
+- **The address row** is one 36px row (`BrowserAddressRow`). It holds a grip
+  mark when the pane sits in the desk grid (the row is the pane's head, so a
+  press on it, never on a control, moves the pane like any other:
+  `useDockGrip`, [home-and-drawer.md](navigation/home-and-drawer.md)), the tab
   list toggle, Back, Forward and Reload, the address pill, Pin to the session's
-  project (Unpin when a pin is shown), More, Console (see Console) and Close.
-  The pane remembers the
-  list toggle (`goodboy:browser-tab-list:v1`).
+  project (Unpin when a pin is shown), Console (see Console), More, Open full
+  page and Close. The pane remembers the list toggle
+  (`goodboy:browser-tab-list:v1`). Under 520px of row (`NARROW_ROW_PX`), Pin,
+  Console and Open full page leave the row and sit first in More
+  (`foldedBrowserRowsOf`), so the address keeps its room and nothing overlaps.
 - **Loading** shows on the row. From the host's `started` event of the shown tab
   to its `finished` event, a 2px `info` line breathes on the bottom edge of the
   row (`BrowserLoadLine`) and Reload becomes Stop (`browser_tab_stop`, which
@@ -402,22 +407,25 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   command field with the whole URL selected; Esc (an escape layer) or leaving
   the field swaps it back and drops the draft, and a row that went through
   does too. A refused address keeps the field and the reason under the row.
-- **The command field** (`useCommandField`, `BrowserCommandPanel`) opens a
-  panel between the row and the page while the field has focus. It takes room
-  from the page instead of floating over it, so the native view shrinks and
-  never sits under the panel. Its groups, in order and only when they have
-  rows (`commandRowsOf`): Open (a typed address, Beside this session on ↩, In
-  your browser on ⌘↩), Tabs (every session of the workspace and the project
-  pins, this session first, pins tagged, another session named;
-  `matchTabs`), Visited (this session's last 20 addresses). Every typed word
-  must match a row's title, host or path. Nothing typed lists Visited only;
-  words that match nothing show one quiet line, "No tab or address matches".
+- **The command field** (`useCommandField`, `BrowserCommandPanel`) shows its
+  suggestions only while words are typed: focus alone opens nothing, and
+  visited pages are never the default list. The suggestions float in a
+  popover anchored under the address row and as wide as it
+  (`AnchoredLayer`, marked `data-dropdown-portal`). It lies over the tab
+  strip and the page and moves nothing: the native view keeps its rect and
+  hides under its cover while the popover crosses it (see Overlays). Its
+  groups, in order and only when they have rows (`commandRowsOf`): Open (a
+  typed address, Beside this session on ↩, In your browser on ⌘↩), Tabs
+  (every session of the workspace and the project pins, this session first,
+  pins tagged, another session named; `matchTabs`), Visited (at most six of
+  this session's addresses that match). Every typed word must match a row's
+  title, host or path; words that match nothing show one quiet line, "No tab
+  or address matches".
   The arrows move the highlight and wrap, ↩ runs it, ⌘↩ opens its address in
   your browser. A tab of another session shows in that session's browser.
 - **Find in page** (`useFindInPage`, `BrowserFindBar`) is a second 32px row
   under the address row, opened by ⌘F while the browser is on screen. It takes
-  room from the page like the command field, so the native view shrinks and
-  never sits under it. Each keystroke asks the host to search the shown tab
+  room from the page, so the native view shrinks and never sits under it. Each keystroke asks the host to search the shown tab
   (`browser_find`, which runs `window.find` in the page through
   `Webview::eval_with_callback` and answers `isFound`); the bar reads Found or
   Not found. There is no count, because `window.find` gives none. The match
@@ -489,7 +497,10 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   instead, and every other scheme gets no Open row. The pane never sends text
   to a search engine.
 - **Tabs**: the strip shows the session's tabs, then the project pins with
-  their title and a pin mark, then New tab. The list shows `Pinned · <project>`
+  their title and a pin mark, then New tab. The shown tab has one selected
+  state, the tool tab chip of `toolTabClassName` that Terminal tabs use; the
+  label inside it is an unselected `SelectableRow` with no fill of its own,
+  on hover too (`BrowserTabChip`). The list shows `Pinned · <project>`
   first, then This session, then New tab; the note that tabs close when the
   session is archived is the tooltip of the This session label. A tab the
   engine put to sleep or closed (`browser://tab-state`, read by
@@ -943,10 +954,13 @@ workspace profile stays signed out.
 ## Console
 
 The console is a region under the page, in the pane and on the Browser page.
-The Console button in the address row, after the pin and before More, opens it, and
+The Console button in the address row, after the pin and before More, opens it
+with its own `CodeXml` icon, never the Terminal one (its log rows mark a plain
+log with `MessageSquareText`), and
 `browser.console` (⌘⇧J) toggles it while a tab is shown. It is a button, not
-a More row: More already holds eight rows against the five-row budget, and a
-toggle with a pressed state belongs beside the page it watches. Safari's
+a More row, while the row has room: More already holds eight rows against the
+five-row budget, and a toggle with a pressed state belongs beside the page it
+watches. A narrow row folds it into More as Show console or Hide console. Safari's
 ⌘⌥C is Context (`lens.context`), and the registry refuses a browser key
 that shadows it, so the chord follows Chrome's J.
 
@@ -965,8 +979,17 @@ that shadows it, so the chord follows Chrome's J.
   drops the oldest entry of the same kind first, so a busy page cannot push
   its console lines out. Rust drops what the app's own injected scripts say
   in the page (`console::is_app_noise`: a source of `user-script:`, the Tauri
-  "IPC custom protocol failed" fallback and a `not allowed on window`
-  rejection), so only the page's own lines reach the region. A message is cut at 2,000 characters and names its `file:line` when
+  "IPC custom protocol failed" fallback and a rejection in the exact Tauri
+  refusal shape, `Command <name> not allowed by ACL` or
+  `<plugin>.<command> not allowed on window "`; a page's own rejection that
+  only contains those words is kept), so only the page's own lines reach the
+  region. The notification plugin injects a `Notification` shim into every
+  webview, a tab included, and the shim asks
+  `plugin:notification|is_permission_granted` as the page loads. No capability
+  grants a `browse-` tab (see Capabilities), so the host refuses it, and the
+  hook handles that refusal itself: it calls `preventDefault` on the
+  `unhandledrejection` and records nothing (`isHostRefusal`,
+  `consoleHookScript.test.ts`). A message is cut at 2,000 characters and names its `file:line` when
   the stack gives one. A request keeps its method, status and path: no query,
   no fragment, no body, no header, no cookie, and the host only when it is
   another origin. The script assigns nothing on `window` but the wrapped
@@ -1203,7 +1226,8 @@ words (`features/browser/browserFailureText.ts`).
   under an overlay dock, and the reason per overlay kind. The mock scene
   `browser-pane-cover` (light and dark) opens a menu over the page.
   `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane`, `browser-pane-tabs`,
-  `browser-pane-address` (the field open), `browser-pane-more` (the menu
+  `browser-pane-address` (the field open), `browser-pane-field` (the
+  suggestions floating over the page), `browser-pane-more` (the menu
   open) and `browser-pane-loading` (the load line, Stop, a fetched icon, Forward
   off), each in light and dark, draw a stand in where the native view goes.
   `BrowserPane/hostFacts.test.tsx` pins the load line from `started` to

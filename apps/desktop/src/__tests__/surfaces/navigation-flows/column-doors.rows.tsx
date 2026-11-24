@@ -17,6 +17,8 @@ import {
   settle,
   useAppStore,
   visible,
+  openTerminalPage,
+  terminalDocked,
 } from './harness';
 
 let clipboardWrites: Array<string> = [];
@@ -180,7 +182,9 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: () => click(railTool('terminal')),
     lands: both(
-      () => visible('button', 'Open full page'),
+      async () => {
+        await terminalDocked();
+      },
       async () => expect(railTool('terminal').getAttribute('aria-pressed')).toBe('true'),
       async () => expect(useAppStore.getState().appStudio).toBeNull(),
     ),
@@ -191,7 +195,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: async () => {
       await click(railTool('terminal'));
-      await clickButton(/^Open full page$/);
+      await openTerminalPage();
     },
     lands: both(
       () => studio('Terminal'),
@@ -375,6 +379,22 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
             ),
           WAIT,
         ),
+    ),
+  },
+  {
+    name: "rail: the Goodboy mark at the foot opens What's new",
+    covers: ['openChangelog', 'studio:changelog'],
+    door: 'visible',
+    open: async () => {
+      const mark = document.querySelector<HTMLElement>('[data-shell-rail] [data-rail-signature]');
+      if (mark === null) {
+        throw new Error('The rail has no Goodboy mark');
+      }
+      await click(mark);
+    },
+    lands: both(
+      () => studio("What's new"),
+      () => heading(/^Goodboy \d/),
     ),
   },
   {

@@ -173,6 +173,11 @@ release the update brings, open in What's new, carries the same verbs.
 The changelog opens on the focused or installed release. Releases newer than
 the installed one sit on top, marked "In the update", and "What's new" from
 the update lands on the update's own release instead of the catch-up.
+The Goodboy mark at the foot of the places rail is the visible door to What's
+new. It carries a dot, and "new release notes" in its name, while the installed
+version differs from the last release read (`changelog.lastSeenVersion`, read by
+`useHasUnseenRelease`). Opening What's new or dismissing the update notice marks
+the release read; a fresh install marks it read at once, so it never shows a dot.
 
 The changelog bundled in a build (`CHANGELOG.md?raw` in
 `features/changelog/changelogSource.ts`) stops at that build's own version, so

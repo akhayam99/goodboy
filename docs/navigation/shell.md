@@ -705,16 +705,21 @@ The signature (`app/components/ShellLeft/RailSignature/index.tsx`) is a 24px `Br
 on the rail axis, below the last item: tile `#0b0b0d`, white dog, radius 0.28 of the
 side, mark 0.76, with no ring, plate, border, glow or gradient, never inverted and
 the same in light and dark. It is centered in one rail tile (`SHELL_RAIL_TILE`), so
-the dog sits where an item's icon sits. The space under it is the rail's top space
-(`SHELL_RAIL_EDGE_PX`, the same at both ends), and the space above it is the gap
-between Settings and Report. It is passive, not a control: no button, no hover, no
-focus, no tooltip, `aria-hidden`. It is not a door to Help: the Guide and What's
-new open from Help in the menu bar and from Search or run, and no mark in the rail
-is lit while a Help tab is open. The rail shows no version line: it is in the Update
-card, in Settings and in What's new. At the 700px minimum window, with no host
-reachability line under the top bar, the foot fits with the Update mark above the
-signature: the wide rail needs 642px of the 664px under the 36px top bar
-(`u50-logo-foot-*` scenes). A GitLab or Bitbucket reachability line
+the dog sits where an item's icon sits. Its bottom edge sits on the bottom edge of
+the content sheet beside the rail: the rail pads its foot by `SHELL_RAIL_FOOT_PX`,
+the 12px `SHELL_GUTTER_PX` that `DrawerColumn` keeps under the sheet, while its top
+keeps `SHELL_RAIL_EDGE_PX`. The space above it is the rail's `gap`, as between
+Settings and Report. It is the door to What's new: a quiet button named "What's
+new", with that tooltip on the right and no word under it, that calls
+`openChangelog`, and the last stop of the rail's arrow keys
+(`data-shell-rail-item="signature"`). While the installed release has notes you have not read, a small
+unread dot sits on its corner and the name becomes "What's new, new release notes"
+(`useHasUnseenRelease`, see [release.md](../release.md)). The Guide opens from Help
+in the menu bar and from Search or run, and no mark in the rail is lit while a Help
+tab is open. The rail shows no version line: it is in the Update card, in Settings
+and in What's new. At the 700px minimum window, with no host reachability line under
+the top bar, the foot fits with the Update mark above the signature: the wide rail
+needs 650px of the 664px under the 36px top bar (`u50-logo-foot-*` scenes). A GitLab or Bitbucket reachability line
 (`HostReachabilityLine`) sits under the top bar and takes its height from the rail.
 
 `useRailFootEffects` (`app/components/ShellLeft/useRailFootEffects`) keeps what the
@@ -724,8 +729,8 @@ focus.
 
 With an update, the Update mark
 (`features/updater/components/UpdateRailMark.tsx`) is one more item above the
-signature, and never takes its place: one place and one shape, so no dot, no pill
-and no version line beside it. It is a rail item with the word
+signature, and never takes its place: one place and one shape, so no pill and no
+version line beside it. It is a rail item with the word
 **Update**, in `primary` on `primary-subtle`. `updateMarkOf`
 (`features/updater/updateMark.ts`) gives it by state:
 
