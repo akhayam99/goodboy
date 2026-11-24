@@ -235,7 +235,7 @@ describe('the branch menu on an Overview tile', () => {
       expect(unmountMount).toHaveBeenCalledWith({
         sessionId: COLUMN_SESSION_ID,
         mountId: mount.mountId,
-        keepDirectory: true,
+        onKeptFolder: 'detach',
       }),
     );
     expect(removeMountWorktree).not.toHaveBeenCalled();
