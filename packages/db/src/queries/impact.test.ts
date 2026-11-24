@@ -384,6 +384,54 @@ describe('pull request outcomes', () => {
     expect(all.merged).toBe(1);
   });
 
+  it('places a merge queued in Goodboy in the window of the merge on the host', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 's1', createdAt: OLD } });
+    await addImpactMount({ db, seed: { id: 'wt', sessionId: 's1', branch: 'q', at: OLD } });
+    await addImpactLink({
+      db,
+      seed: {
+        id: 'l',
+        mountId: 'wt',
+        number: 6,
+        state: 'merged',
+        at: SINCE + 3_600_000,
+        mergedAt: SINCE + 3_600_000,
+      },
+    });
+    await addImpactEvent({
+      db,
+      seed: {
+        id: 'e-queued',
+        sessionId: 's1',
+        kind: 'pr_merged',
+        payload: { host: 'github.com', repository: 'acme/ledger-core', number: 6 },
+        at: SINCE - 3_600_000,
+      },
+    });
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+
+    expect(result).toMatchObject({ merged: 1, previousMerged: 0 });
+  });
+
+  it('lists every pull request of the window so per-session counts see them all', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 's1', createdAt: RECENT } });
+    await addImpactMount({ db, seed: { id: 'wt', sessionId: 's1', branch: 'm', at: RECENT } });
+    for (let number = 1; number <= 55; number += 1) {
+      await addImpactLink({
+        db,
+        seed: { id: `l-${number}`, mountId: 'wt', number, state: 'merged', at: RECENT },
+      });
+    }
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+
+    expect(result.merged).toBe(55);
+    expect(result.entries.filter((entry) => entry.state === 'merged')).toHaveLength(55);
+  });
+
   it('compares merged pull requests with the window before', async () => {
     const db = await seedDb();
     await addSession({ db, seed: { id: 's1', createdAt: OLD } });

@@ -343,6 +343,7 @@ describe('ImpactStudio on the real database', () => {
 
   it('shows a dash and not loaded when the pull requests fail to load, never a 0', async () => {
     injectDbFault({ match: /'link' AS source/, message: 'database is locked' });
+    injectDbFault({ match: /'link' AS source/, message: 'database is locked' });
     renderStudio();
 
     await waitFor(async () => expect(await tile('Merged pull requests')).toContain('not loaded'));
@@ -360,23 +361,24 @@ describe('ImpactStudio refreshes pull requests of sessions no longer on the boar
     stubStoryInvoke({
       gh_run: ({ args }: { readonly args: ReadonlyArray<string> }) => {
         calls.push(args);
+        const node = {
+          number: 412,
+          title: 'Reconcile the ledger export',
+          url: 'https://github.com/acme/ledger-core/pull/412',
+          state: 'MERGED',
+          isDraft: false,
+          mergeable: 'UNKNOWN',
+          baseRefName: 'main',
+          headRefName: 'mq/ledger-export',
+          reviewDecision: null,
+          updatedAt: iso(TODAY),
+          body: null,
+          autoMergeRequest: null,
+          mergedAt: iso(TODAY),
+          commits: null,
+        };
         return {
-          stdout: JSON.stringify({
-            number: 412,
-            title: 'Reconcile the ledger export',
-            url: 'https://github.com/acme/ledger-core/pull/412',
-            state: 'MERGED',
-            isDraft: false,
-            mergeable: 'UNKNOWN',
-            baseRefName: 'main',
-            headRefName: 'mq/ledger-export',
-            reviewDecision: null,
-            statusCheckRollup: null,
-            updatedAt: iso(TODAY),
-            body: null,
-            autoMergeRequest: null,
-            mergedAt: iso(TODAY),
-          }),
+          stdout: JSON.stringify({ data: { repository: { b0: { nodes: [node] } } } }),
           stderr: '',
           exitCode: 0,
         };

@@ -17,6 +17,7 @@ import type { ReachabilityHost } from '../host-reachability/types';
 import type { AppStore } from '../../store';
 import type { GetFn, SetFn } from '../../slice-types';
 import {
+  mountRequestsInFlight,
   mountRevision,
   observeMountRequestTransition,
   requestIdentityEquals,
@@ -208,7 +209,11 @@ export const refreshMountRequest = async <TEntry extends LoadingEntry, TContext>
   if (isHeldBack) {
     return;
   }
-  const answer = await loadMountRequest({ set, get, sessionId, mount, opts, adapter });
+  const load = loadMountRequest({ set, get, sessionId, mount, opts, adapter });
+  mountRequestsInFlight.add(load);
+  const answer = await load.finally(() => {
+    mountRequestsInFlight.delete(load);
+  });
   if (host !== undefined && answer !== null) {
     get().noteHostAnswer({ host, answer, askedAt });
   }

@@ -564,6 +564,12 @@ fails silently at runtime.
   that has none yet (`backfillMergedPullRequestEvents`). A merge done in
   Goodboy carries host and repository in its payload (`mountPrEventPayload`),
   so it and the observed transition dedupe to one event.
+- Impact settles a live attached mount only through `sweepRequests`, never by
+  writing its link. `refreshDormantPullRequests` writes links straight to the
+  database, and the sweep compares against the stored link, so a link it
+  settled first would skip the merge cleanup proposal of a live worktree.
+  `listDormantOpenPullRequests` therefore keeps to archived or deleted
+  sessions and detached mounts.
 
 ## Traps in the store
 
