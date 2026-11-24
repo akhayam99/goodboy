@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
-import { Check, MessageSquare, Pencil, CircleX } from '@goodboy/ui/icons';
-import { ICON_SIZE, cn, tintClasses } from '@goodboy/ui';
+import { MessageSquare, Pencil, CircleX } from '@goodboy/ui/icons';
+import { ICON_SIZE, cn, tintClasses, type WorkNodeMark, type WorkNodeState } from '@goodboy/ui';
 import type { PullRequestNouns } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../conceptIcons';
 import { countNoun } from '../../utils/countNoun';
 import type { ActivityItem } from './activityItem';
 import { ActivityWho as Who } from './ActivityWho';
@@ -19,7 +18,12 @@ export type ActivityLead =
       readonly avatarUrl: string | null;
       readonly isBot: boolean;
     }
-  | { readonly kind: 'glyph'; readonly glyph: ReactNode };
+  | {
+      readonly kind: 'node';
+      readonly state: WorkNodeState;
+      readonly label: string;
+      readonly mark: WorkNodeMark;
+    };
 
 export type ActivityRow = {
   readonly lead: ActivityLead;
@@ -38,6 +42,43 @@ type Params = {
 };
 
 const GLYPH_SIZE = ICON_SIZE.row;
+
+const DOT: WorkNodeMark = { kind: 'dot' };
+
+type GlyphLeadParams = {
+  readonly label: string;
+  readonly glyph: ReactNode;
+};
+
+const glyphLeadOf = ({ label, glyph }: GlyphLeadParams): ActivityLead => ({
+  kind: 'node',
+  state: 'marker',
+  label,
+  mark: { kind: 'glyph', glyph },
+});
+
+type CommentsLeadParams = {
+  readonly item: Extract<ActivityItem, { kind: 'comments' }>;
+};
+
+const commentsLeadOf = ({ item }: CommentsLeadParams): ActivityLead =>
+  item.needYou > 0
+    ? { kind: 'node', state: 'alert', label: 'Needs you', mark: DOT }
+    : glyphLeadOf({ label: 'Comments', glyph: <MessageSquare size={GLYPH_SIZE} aria-hidden /> });
+
+type ChecksLeadParams = {
+  readonly item: Extract<ActivityItem, { kind: 'checks' }>;
+};
+
+const checksLeadOf = ({ item }: ChecksLeadParams): ActivityLead => {
+  if (item.isFailing) {
+    return { kind: 'node', state: 'failed', label: 'Checks failing', mark: DOT };
+  }
+  if (item.isRunning) {
+    return { kind: 'node', state: 'running', label: 'Checks running', mark: DOT };
+  }
+  return { kind: 'node', state: 'done', label: 'Checks passed', mark: DOT };
+};
 
 type CommentsWordParams = {
   readonly item: Extract<ActivityItem, { kind: 'comments' }>;
@@ -139,30 +180,21 @@ export const activityRowOf = ({
       };
     case 'comments':
       return {
-        lead: { kind: 'glyph', glyph: <MessageSquare size={GLYPH_SIZE} aria-hidden /> },
+        lead: commentsLeadOf({ item }),
         line: commentsLine({ item }),
         comments: [],
         open: { label: 'Open comments', run: onOpenComments },
       };
     case 'checks':
       return {
-        lead: {
-          kind: 'glyph',
-          glyph: item.isFailing ? (
-            <CircleX size={GLYPH_SIZE} aria-hidden className="text-danger" />
-          ) : item.isRunning ? (
-            <CONCEPT_ICONS.checks size={GLYPH_SIZE} aria-hidden className="text-info" />
-          ) : (
-            <Check size={GLYPH_SIZE} aria-hidden className="text-success" />
-          ),
-        },
+        lead: checksLeadOf({ item }),
         line: <>{item.text}</>,
         comments: [],
         open: { label: 'Open checks', run: onOpenChecks },
       };
     case 'edit':
       return {
-        lead: { kind: 'glyph', glyph: <Pencil size={GLYPH_SIZE} aria-hidden /> },
+        lead: glyphLeadOf({ label: 'Edit', glyph: <Pencil size={GLYPH_SIZE} aria-hidden /> }),
         line: (
           <>
             <Who login="You" /> edited the {item.what}
@@ -185,7 +217,7 @@ export const activityRowOf = ({
       };
     case 'closed':
       return {
-        lead: { kind: 'glyph', glyph: <CircleX size={GLYPH_SIZE} aria-hidden /> },
+        lead: glyphLeadOf({ label: 'Closed', glyph: <CircleX size={GLYPH_SIZE} aria-hidden /> }),
         line: <>This {nouns.long} was closed</>,
         comments: [],
         open: null,

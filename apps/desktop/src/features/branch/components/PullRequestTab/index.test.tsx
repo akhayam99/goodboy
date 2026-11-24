@@ -574,6 +574,36 @@ describe('the Overview grid', () => {
     expect(activity.querySelectorAll('[data-activity]').length).toBeGreaterThan(3);
   });
 
+  it.each([
+    { variant: 'github', state: 'failed', label: 'Checks failing' },
+    { variant: 'merge-methods', state: 'done', label: 'Checks passed' },
+  ] as const)(
+    'draws the $variant checks row on the quiet node, with a 1px spine and the age in the time column',
+    async ({ variant, state, label }) => {
+      await show({ variant });
+
+      const activity = screen.getByRole('region', { name: 'Activity' });
+      const spine = activity.querySelector('[data-slot="activity-spine"]');
+      expect(spine?.classList.contains('w-px')).toBe(true);
+      expect(spine?.classList.contains('w-0.5')).toBe(false);
+      const checks = await waitFor(() => {
+        const row = activity.querySelector<HTMLElement>('[data-activity="checks"]');
+        if (row === null) {
+          throw new Error('the activity has no checks row yet');
+        }
+        return row;
+      });
+      const node = within(checks).getByRole('img', { name: label });
+      expect(node.getAttribute('data-node-look')).toBe('quiet');
+      expect(node.getAttribute('data-node-state')).toBe(state);
+      const ages = [...activity.querySelectorAll('[data-activity] time')];
+      expect(ages.length).toBeGreaterThan(0);
+      for (const age of ages) {
+        expect(age.closest('[data-meta-column="time"]')).not.toBeNull();
+      }
+    },
+  );
+
   it('keeps the activity filter of a pull request across a visit to Comments', async () => {
     await show();
 
