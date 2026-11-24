@@ -271,8 +271,8 @@ describe('what assistive tech reads for a hint', () => {
 describe('the step a hint was read at', () => {
   it('is plain text while the step has no row, and a link once the step exists', async () => {
     const view = mount({ hints: [hintOf({ id: 'h1', step: 3 })], agentCount: 2 });
-    await screen.findByText('Read at step 3');
-    expect(screen.queryByRole('button', { name: 'Read at step 3' })).toBeNull();
+    await screen.findByText('read at step 3');
+    expect(screen.queryByRole('button', { name: 'read at step 3' })).toBeNull();
 
     act(() =>
       useAppStore.setState({
@@ -285,14 +285,14 @@ describe('the step a hint was read at', () => {
       }),
     );
 
-    await screen.findByRole('button', { name: 'Read at step 3' });
+    await screen.findByRole('button', { name: 'read at step 3' });
   });
 
   it('puts two hints read by one step before that step, each with a link to its row', async () => {
     const view = mount({
       hints: [hintOf({ id: 'h1', step: 2 }), hintOf({ id: 'h2', text: 'Second hint', step: 2 })],
     });
-    const links = await screen.findAllByRole('button', { name: 'Read at step 2' });
+    const links = await screen.findAllByRole('button', { name: 'read at step 2' });
     expect(links).toHaveLength(2);
     const stepRow = screen.getByTestId(`run-tree-row-${view.seeded.agents[1]?.id}`);
 
@@ -310,7 +310,7 @@ describe('the step a hint was read at', () => {
     const navigate = vi.fn();
     useAppStore.setState({ navigate });
     const view = mount({ hints: [hintOf({ id: 'h1', step: 2 })] });
-    const link = await screen.findByRole('button', { name: 'Read at step 2' });
+    const link = await screen.findByRole('button', { name: 'read at step 2' });
     const query = Element.prototype.querySelector;
     vi.spyOn(Element.prototype, 'querySelector').mockImplementation(function (
       this: Element,
@@ -337,7 +337,50 @@ describe('the step a hint was read at', () => {
 
     await screen.findByText(SHORT);
     expect(readRow()).not.toBeNull();
-    expect(screen.queryByText(/Read at step/)).toBeNull();
+    expect(screen.queryByText(/read at step/)).toBeNull();
+  });
+});
+
+describe('a hint reads as your message, not as a step', () => {
+  const queuedRow = (): HTMLElement => {
+    const row = document.querySelector<HTMLElement>('[data-hint-chip="queued"]');
+    if (row === null) {
+      throw new Error('The queued hint row is missing.');
+    }
+    return row;
+  };
+
+  it('draws a read hint as a filled bubble with You and the step that read it', async () => {
+    mount({ hints: [hintOf({ id: 'h1', text: SHORT, step: 2 })] });
+    await screen.findByText(SHORT);
+
+    const message = within(readRow()).getByTestId('activity-message');
+    expect(message.dataset.messagePending).toBe('false');
+    expect(within(message).getByTestId('activity-message-bubble').textContent).toBe(SHORT);
+    expect(readRow().querySelector('[data-hint-byline]')?.textContent).toBe('You·read at step 2');
+  });
+
+  it('draws a queued hint as an outlined bubble that says it is not read yet', async () => {
+    mount({ hints: [hintOf({ id: 'h1', text: SHORT })] });
+    await screen.findByText(SHORT);
+
+    const message = within(queuedRow()).getByTestId('activity-message');
+    expect(message.dataset.messagePending).toBe('true');
+    expect(queuedRow().querySelector('[data-hint-byline]')?.textContent).toBe('You·not read yet');
+    within(queuedRow()).getByRole('button', { name: 'Remove' });
+  });
+
+  it('marks the hint with the quiet message node, never the ring a step draws', async () => {
+    mount({
+      hints: [hintOf({ id: 'h1', text: SHORT, step: 2 }), hintOf({ id: 'h2', text: SHORT })],
+    });
+    await screen.findAllByText(SHORT);
+
+    for (const row of [readRow(), queuedRow()]) {
+      const node = row.querySelector<HTMLElement>('[data-node-look]');
+      expect(node?.dataset.nodeLook).toBe('quiet');
+      expect(node?.dataset.nodeState).toBe('marker');
+    }
   });
 });
 
