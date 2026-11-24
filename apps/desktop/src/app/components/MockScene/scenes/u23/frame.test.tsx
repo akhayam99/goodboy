@@ -171,7 +171,7 @@ describe('the u23 frame scenes', () => {
     await renderScene('frame-studio-workflows');
 
     const title = await screen.findByRole('heading', { level: 1, name: 'Workflows' });
-    const tabs = screen.getByRole('tablist', { name: 'Workflows and saved steps' });
+    const tabs = screen.getByRole('tablist', { name: 'Workflows, every run and saved steps' });
     expect(title.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'New workflow' })).toHaveLength(1);
   });
