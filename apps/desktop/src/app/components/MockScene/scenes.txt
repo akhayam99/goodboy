@@ -21,6 +21,8 @@ activity-mark-seen
 activity-one-signal
 activity-question
 activity-resolves
+activity-row-kit
+activity-row-kit-light
 activity-run
 activity-run-finished
 activity-run-hover
