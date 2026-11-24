@@ -4,6 +4,7 @@ import type { Agent, AgentId } from '@goodboy/types';
 import { modelLineOf, type ModelLine } from '../../providers/modelLine/modelLineOf';
 import { AGENT_KIND_META, kindForRole, type AgentKind } from '../../session/agent-kind';
 import { autoChildWordOf } from '../autoChildWordOf';
+import { routingWhyOf, type RoutingWhyModel } from '../child/routingWhyOf';
 import { autoSettledStateOf } from '../autoSettledStateOf';
 import { delegationResultOf, type DelegationResultView } from './delegationResultOf';
 import { recordField, textField } from './readJson';
@@ -30,6 +31,8 @@ export type DelegationCardModel = Readonly<{
   doneWhen: string | null;
   modelReason: string | null;
   routingNote: string | null;
+  routingWhy: RoutingWhyModel | null;
+  stepWord: string | null;
   status: DelegationStatus;
   isRevision: boolean;
   reviseVersion: number | null;
@@ -133,6 +136,19 @@ const routingNoteOf = ({ routing, modelLine }: NoteParams): string | null => {
   return why === null ? `${asked}, ${used}.` : `${asked}, ${used}: ${why}`;
 };
 
+const STEP_WORDS: ReadonlyMap<string, string> = new Map([
+  ['light', 'Light step'],
+  ['standard', 'Standard step'],
+  ['heavy', 'Heavy step'],
+]);
+
+type StepParams = {
+  readonly request: unknown;
+};
+
+const stepWordOf = ({ request }: StepParams): string | null =>
+  STEP_WORDS.get(textField({ source: request, key: 'difficulty' }) ?? '') ?? null;
+
 type RoleKeptParams = {
   readonly request: unknown;
 };
@@ -180,6 +196,8 @@ export const delegationCardOf = ({
     doneWhen: textField({ source: delegation.request, key: 'doneWhen' }),
     modelReason: textField({ source: delegation.routing, key: 'reason' }),
     routingNote: routingNoteOf({ routing: delegation.routing, modelLine }),
+    routingWhy: routingWhyOf({ routing: delegation.routing }),
+    stepWord: stepWordOf({ request: delegation.request }),
     status,
     isRevision: delegation.reviseOf !== null,
     reviseVersion: delegation.baseRevision === null ? null : delegation.baseRevision + 1,
