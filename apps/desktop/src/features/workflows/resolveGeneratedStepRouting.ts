@@ -12,11 +12,15 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 
-export type GeneratedStepRouting = {
+export type GeneratedStepPick = {
   readonly providerOverride: ProviderId;
   readonly modelOverride: string;
   readonly effort: AgentEffort | null;
   readonly routingDecision: WorkflowRoutingDecision;
+};
+
+export type GeneratedStepRouting = {
+  readonly pick: GeneratedStepPick | null;
   readonly taskProfile: WorkflowTaskProfile | null;
 };
 
@@ -43,15 +47,16 @@ export const resolveGeneratedStepRouting = ({
   promptPrefix,
   emittingProvider,
   availability,
-}: Params): GeneratedStepRouting | null => {
+}: Params): GeneratedStepRouting => {
   const outcome = hintedRoutingOutcome({
     outcome: parseWorkflowRoutingProposal({ fields: routing ?? {}, emittingProvider }),
     promptText: promptPrefix,
   });
-  if (outcome.kind === 'missing') {
-    return null;
-  }
   const profile = outcome.kind === 'valid' ? outcome.proposal.profile : outcome.profile;
+  const taskProfile = storedProfile({ profile });
+  if (outcome.kind === 'missing') {
+    return { pick: null, taskProfile };
+  }
   const resolution = resolveWorkflowRouting({
     agentLock: null,
     stepLock: null,
@@ -64,13 +69,15 @@ export const resolveGeneratedStepRouting = ({
     missingProposal: 'deterministic_pick',
   });
   if (resolution.kind !== 'ready') {
-    return null;
+    return { pick: null, taskProfile };
   }
   return {
-    providerOverride: resolution.decision.selected.provider,
-    modelOverride: resolution.decision.selected.model,
-    effort: resolution.decision.selected.effort,
-    routingDecision: resolution.decision,
-    taskProfile: storedProfile({ profile }),
+    pick: {
+      providerOverride: resolution.decision.selected.provider,
+      modelOverride: resolution.decision.selected.model,
+      effort: resolution.decision.selected.effort,
+      routingDecision: resolution.decision,
+    },
+    taskProfile,
   };
 };

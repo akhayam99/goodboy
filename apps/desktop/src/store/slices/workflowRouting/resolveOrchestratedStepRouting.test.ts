@@ -86,6 +86,18 @@ describe('resolveOrchestratedStepRouting', () => {
     );
   });
 
+  it('keeps a known model whose effort is unknown and drops only the effort', () => {
+    expect(
+      route({
+        fields: { provider: 'codex', model: 'gpt-6.1-sol', effort: 'turbo' },
+        isModelPickEnabled: true,
+      }),
+    ).toMatchObject({
+      selected: { provider: 'codex', model: 'gpt-6.1-sol' },
+      adjustment: 'unsupported_effort',
+    });
+  });
+
   it('starts a reviewer on another model family than the step that wrote the change', () => {
     expect(
       route({

@@ -747,6 +747,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         const { routingProposal, resolution } = await orchestratedStepRouting({
           get,
           run,
+          isCandidatesBlockSent: decideInput.candidatesBlock != null,
           stepLock: pinned.routingLock,
           sessionId,
           session,

@@ -7,10 +7,7 @@ type Params = {
 
 export const referenceStepOf = ({ step, agent }: Params): Step | null => {
   const decision = agent?.routingDecision ?? null;
-  if (step === null || decision === null) {
-    return step;
-  }
-  if (step.routingLock != null || step.routingDecision != null) {
+  if (step === null || decision === null || step.routingLock != null) {
     return step;
   }
   return { ...step, routingDecision: decision };

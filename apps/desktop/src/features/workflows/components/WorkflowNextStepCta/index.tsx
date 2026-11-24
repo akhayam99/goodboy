@@ -14,6 +14,7 @@ import type {
 import { classifyStep } from '../../../../features/session/agent-kind';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { resolveStepRouting } from '../../resolveStepRouting';
+import { referenceStepOf } from '../../../../store/slices/workflowRouting/referenceStepOf';
 import { useRoutingScope } from '../../../../shared/hooks/useRoutingScope';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import type { WorkflowBlockReason } from '../../advanceGate';
@@ -63,7 +64,7 @@ export const WorkflowNextStepCta = ({
       ? undefined
       : runs.find((agent) => agent.stepId === next.id && agent.status === 'pending');
   const routing = resolveStepRouting({
-    step: next,
+    step: referenceStepOf({ step: next, agent: pendingAgent ?? null }),
     kind,
     roleModels,
     agentModel: agentModel ?? pendingAgent?.modelOverride ?? null,

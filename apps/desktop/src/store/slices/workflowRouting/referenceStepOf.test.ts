@@ -46,12 +46,24 @@ describe('referenceStepOf', () => {
     expect(referenceStepOf({ step: STEP, agent: AGENT })?.routingDecision).toEqual(DECISION);
   });
 
-  it('keeps a decision the step itself carries', () => {
+  it('prefers the agent pick over an unlocked step decision, as the turn does', () => {
     const stepDecision = { ...DECISION, reason: 'Claude: first in your order' };
     expect(
       referenceStepOf({ step: { ...STEP, routingDecision: stepDecision }, agent: AGENT })
         ?.routingDecision,
-    ).toEqual(stepDecision);
+    ).toEqual(DECISION);
+  });
+
+  it('keeps a step that carries a lock', () => {
+    const locked: Step = {
+      ...STEP,
+      routingLock: {
+        version: 1,
+        pick: { provider: 'anthropic', model: 'fable-5', effort: 'high' },
+        origin: 'user',
+      },
+    };
+    expect(referenceStepOf({ step: locked, agent: AGENT })).toBe(locked);
   });
 
   it('leaves an agent with no step alone', () => {

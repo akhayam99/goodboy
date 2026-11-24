@@ -1,4 +1,4 @@
-import { buildCandidates, type CandidateInputs } from '@goodboy/core/providers';
+import { buildCandidates, stepSizeOf, type CandidateInputs } from '@goodboy/core/providers';
 import type { AgentRole, ProviderId, Step } from '@goodboy/types';
 import { candidateDecision } from './candidateDecision';
 import { writerFamilyOf, type RoutedPick } from './writerFamilyOf';
@@ -26,7 +26,7 @@ export const candidateRoutedStep = ({ step, role, inputs, earlier, batch }: Para
     inputs,
     need: {
       role,
-      size: step.size ?? null,
+      size: step.size ?? stepSizeOf({ difficulty: step.taskProfile?.difficulty }),
       scope: 'step',
       writerFamily: writerFamilyOf({ role, earlier }),
     },

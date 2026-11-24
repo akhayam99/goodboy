@@ -71,6 +71,18 @@ export const recheckPendingStepRouting = async ({
     runProviders: run.providerPool,
     rules: run.rulesSnapshot,
   });
+  const current = (get().sessionPhaseRuns[sessionId] ?? []).find(
+    (candidate) => candidate.id === agent.id,
+  );
+  if (
+    current === undefined ||
+    current.status !== 'pending' ||
+    current.routingLock != null ||
+    current.routingDecision !== decision ||
+    !isStoredPickKept({ get, agent: current })
+  ) {
+    return;
+  }
   const kind = classifyAgent({ agent, override: get().agentKindOverride[agent.id] ?? null });
   const role = step?.role ?? KIND_TO_ROLE[kind];
   const earlier = earlierPicksOf({

@@ -41,13 +41,16 @@ export const resolveOrchestratedStepRouting = ({
   emittingProvider,
   earlier,
 }: Params): OrchestratedStepRouting => {
+  const wire = wireFieldsOf({ fields, isModelPickEnabled });
   const routingProposal = hintedRoutingOutcome({
-    outcome: parseWorkflowRoutingProposal({
-      fields: wireFieldsOf({ fields, isModelPickEnabled }),
-      emittingProvider,
-    }),
+    outcome: parseWorkflowRoutingProposal({ fields: wire, emittingProvider }),
     promptText,
   });
+  const effortless =
+    routingProposal.kind === 'invalid' && routingProposal.requested.effort !== null
+      ? parseWorkflowRoutingProposal({ fields: { ...wire, effort: undefined }, emittingProvider })
+      : null;
+  const pickWithoutEffort = effortless?.kind === 'valid' ? effortless.proposal : null;
   const profile =
     routingProposal.kind === 'valid' ? routingProposal.proposal.profile : routingProposal.profile;
   const list = buildCandidates({
@@ -61,7 +64,7 @@ export const resolveOrchestratedStepRouting = ({
   });
   const routed = candidateDecision({
     list,
-    proposal: routingProposal.kind === 'valid' ? routingProposal.proposal : null,
+    proposal: routingProposal.kind === 'valid' ? routingProposal.proposal : pickWithoutEffort,
   });
   if (routed.kind === 'none') {
     return { routingProposal, decision: null };
@@ -69,13 +72,23 @@ export const resolveOrchestratedStepRouting = ({
   if (routingProposal.kind !== 'invalid') {
     return { routingProposal, decision: routed.decision };
   }
+  if (pickWithoutEffort !== null) {
+    const { decision } = routed;
+    return {
+      routingProposal,
+      decision:
+        decision.adjustment === 'none'
+          ? { ...decision, adjustment: 'unsupported_effort' }
+          : decision,
+    };
+  }
   const { requested } = routingProposal;
   return {
     routingProposal,
     decision: movedDecision({
       list,
       candidate: routed.candidate,
-      cause: 'unknown-model',
+      cause: requested.model === null ? 'not-listed' : 'unknown-model',
       asked:
         requested.provider == null && requested.model == null
           ? null

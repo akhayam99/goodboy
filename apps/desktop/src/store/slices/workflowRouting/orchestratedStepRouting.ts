@@ -16,6 +16,7 @@ type Params = Omit<ResolveProposedRoutingParams, 'state' | 'isModelPickEnabled' 
   Readonly<{
     get: GetFn;
     run: WorkflowRun;
+    isCandidatesBlockSent: boolean;
   }>;
 
 type OrchestratedRouting = Readonly<{
@@ -26,11 +27,14 @@ type OrchestratedRouting = Readonly<{
 export const orchestratedStepRouting = async ({
   get,
   run,
+  isCandidatesBlockSent,
   ...request
 }: Params): Promise<OrchestratedRouting> => {
   const isModelPickEnabled = run.rulesSnapshot?.canOrchestratorPickModel === true;
   const isOnCandidates =
-    (request.stepLock ?? null) === null && request.availability.isSessionBudgetBlocked !== true;
+    (request.stepLock ?? null) === null &&
+    request.availability.isSessionBudgetBlocked !== true &&
+    (!isModelPickEnabled || isCandidatesBlockSent);
   const onCandidates = isOnCandidates
     ? resolveOrchestratedStepRouting({
         inputs: await stepCandidateInputs({
