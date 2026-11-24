@@ -420,8 +420,11 @@ per project, the agent count, the spend and the age. The card holds facts only:
 the board card's signal opens what needs you (`attentionPlace`), and so does its
 **unread reply** button (`openUnreadReply`): the latest agent with an unread
 reply, never the first agent. Moving to another card swaps the hover card at
-once, with no second wait. Esc closes it, and the pointer may move onto the
-card. The Sessions row, the hover card and the board card all read
+once, with no second wait. Esc, a click outside it, leaving the row and
+opening another page close it, and the pointer may move onto the card. Focus
+opens it only when the keyboard moved it, so a focus put back after a click or
+a page change never opens it, and the board never brings back a card that was
+open when it was hidden. The Sessions row, the hover card and the board card all read
 `useSessionSummary`, so they say the same things in the same words. The board
 card keeps one signal and hands the rest of the summary to the hover card; the
 session header keeps its chips.

@@ -1,5 +1,5 @@
 import { memo, useEffect, useId, useRef } from 'react';
-import { cn, Tooltip, InlineMarkdown, ToneBar } from '@goodboy/ui';
+import { cn, isKeyboardFocus, Tooltip, InlineMarkdown, ToneBar } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { RestoreCardAction } from './RestoreCardAction';
@@ -175,11 +175,14 @@ export const StageBoardCard = memo(function StageBoardCard({
             aria-pressed={selected === true}
             aria-describedby={stateWordId}
             aria-keyshortcuts="Alt+Enter Shift+Enter Shift+F10"
-            onFocus={(event) =>
+            onFocus={(event) => {
+              if (!isKeyboardFocus({ target: event.currentTarget })) {
+                return;
+              }
               enterCard({
                 anchor: event.currentTarget.closest('article') ?? event.currentTarget,
-              })
-            }
+              });
+            }}
             onBlur={leaveCard}
             onKeyDown={(event) => {
               menu.onKeyDown(event);

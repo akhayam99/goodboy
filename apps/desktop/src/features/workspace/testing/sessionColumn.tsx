@@ -238,7 +238,7 @@ const READY_STATUS: WorkspaceGitStatus = {
   inProgress: null,
 };
 
-export const renderBoard = ({ store }: BoardParams) => {
+export const prepareBoard = ({ store }: BoardParams): void => {
   store.setState((state) => ({
     navigation: {
       ...state.navigation,
@@ -264,6 +264,10 @@ export const renderBoard = ({ store }: BoardParams) => {
     ),
   }));
   stubStoryInvoke({ project_git_status: READY_STATUS });
+};
+
+export const renderBoard = ({ store }: BoardParams) => {
+  prepareBoard({ store });
   return render(
     <ToastProvider>
       <StoreBoard />

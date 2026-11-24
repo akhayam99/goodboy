@@ -127,6 +127,8 @@ export const useRestHover = <T>({
     return () => {
       isMountedRef.current = false;
       clearTimers();
+      isOpenRef.current = false;
+      setTarget(null);
     };
   }, [clearTimers]);
 

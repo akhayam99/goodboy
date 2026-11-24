@@ -1,6 +1,7 @@
 import {
   cn,
   InlineMarkdown,
+  isKeyboardFocus,
   ROW_INTERACTIVE,
   StatusMark,
   type StatusMarkSpec,
@@ -59,7 +60,12 @@ export const NeedsYouSessionRow = ({
         onClick={() => onSelect({ sessionId, reason: attention })}
         onMouseEnter={(event) => onHoverEnter({ sessionId, anchor: event.currentTarget })}
         onMouseLeave={onHoverLeave}
-        onFocus={(event) => onHoverEnter({ sessionId, anchor: event.currentTarget })}
+        onFocus={(event) => {
+          if (!isKeyboardFocus({ target: event.currentTarget })) {
+            return;
+          }
+          onHoverEnter({ sessionId, anchor: event.currentTarget });
+        }}
         onBlur={onHoverLeave}
         className={cn(
           'flex w-full items-start gap-2 px-3 py-3 text-left transition-colors',
