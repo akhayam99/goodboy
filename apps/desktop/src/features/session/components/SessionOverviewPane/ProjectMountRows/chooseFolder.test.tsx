@@ -135,8 +135,8 @@ const chooseFolder = async () => {
       <MountProjectAction sessionId={sessionId} workspaceId={WORKSPACE_ID} presentation="button" />
     </ToastProvider>,
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Mount a folder' }));
-  const picker = within(await screen.findByRole('dialog', { name: 'Mount a folder' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Mount a project' }));
+  const picker = within(await screen.findByRole('dialog', { name: 'Mount a project' }));
   await picker.findByRole('button', { name: 'Mount ledger-core' });
   await act(async () => {
     fireEvent.click(picker.getByRole('button', { name: 'Choose a folder…' }));
@@ -145,7 +145,7 @@ const chooseFolder = async () => {
   await vi.waitFor(() => expect(mountsOf({ projectId: acmeDocs()?.id })).toHaveLength(1));
 };
 
-describe('Mount a folder', () => {
+describe('Mount a project', () => {
   it('adds a chosen folder to the workspace and mounts it in one step, and Undo takes back both', async () => {
     await chooseFolder();
     expect(acmeDocs()?.workspaceId).toBe(WORKSPACE_ID);

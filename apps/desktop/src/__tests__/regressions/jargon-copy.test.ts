@@ -56,7 +56,7 @@ describe('on-screen copy writes the product name with its capital', () => {
 });
 
 describe('on-screen copy says no internal word', () => {
-  it.each(['Mount a folder', 'Unmount ledger-core?', 'Unmounted ledger-core.'])(
+  it.each(['Mount a project', 'Unmount ledger-core?', 'Unmounted ledger-core.'])(
     'lets the session verb in %s through',
     (text) => {
       expect(JARGON.test(text)).toBe(false);

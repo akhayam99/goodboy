@@ -52,6 +52,7 @@ const TOOLS = [
   'mount.openInTerminalApp menu',
 ];
 const COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
+const CLOSE = ['mount.close menu', 'mount.closeKeepFolder menu'];
 const ADD_TASK = 'mount.putTaskOnBranch chip';
 const HISTORY = ['mount.rewriteHistory menu', 'mount.switchBranch chip', ADD_TASK];
 const WITH_PR = ['mount.openPullRequest inline', 'mount.openDiff inline'];
@@ -65,14 +66,7 @@ const STATES: ReadonlyArray<{
   {
     name: 'PR open, 3 to resolve',
     facts: facts({ comments: 3 }),
-    expected: [
-      ...WITH_PR,
-      'mount.openReview inline',
-      ...TOOLS,
-      ...HISTORY,
-      ...COPIES,
-      'mount.close menu',
-    ],
+    expected: [...WITH_PR, 'mount.openReview inline', ...TOOLS, ...HISTORY, ...COPIES, ...CLOSE],
   },
   {
     name: 'No PR, not pushed',
@@ -91,7 +85,7 @@ const STATES: ReadonlyArray<{
       'mount.createPullRequest inline',
       ...HISTORY,
       ...COPIES,
-      'mount.close menu',
+      ...CLOSE,
     ],
   },
   {
@@ -109,37 +103,23 @@ const STATES: ReadonlyArray<{
       'mount.createPullRequest inline',
       ...HISTORY,
       ...COPIES,
-      'mount.close menu',
+      ...CLOSE,
     ],
   },
   {
     name: 'Draft PR',
     facts: facts({ pr: 'draft', ahead: 4 }),
-    expected: [...WITH_PR, ...TOOLS, ...HISTORY, ...COPIES, 'mount.close menu'],
+    expected: [...WITH_PR, ...TOOLS, ...HISTORY, ...COPIES, ...CLOSE],
   },
   {
     name: 'PR open, 2 not pushed',
     facts: facts({ ahead: 6, unpushed: 2 }),
-    expected: [
-      ...WITH_PR,
-      ...TOOLS,
-      'mount.push inline',
-      ...HISTORY,
-      ...COPIES,
-      'mount.close menu',
-    ],
+    expected: [...WITH_PR, ...TOOLS, 'mount.push inline', ...HISTORY, ...COPIES, ...CLOSE],
   },
   {
     name: 'Behind main by 4',
     facts: facts({ behind: 4 }),
-    expected: [
-      ...WITH_PR,
-      ...TOOLS,
-      'mount.rebase inline',
-      ...HISTORY,
-      ...COPIES,
-      'mount.close menu',
-    ],
+    expected: [...WITH_PR, ...TOOLS, 'mount.rebase inline', ...HISTORY, ...COPIES, ...CLOSE],
   },
   {
     name: 'Behind, 2 uncommitted',
@@ -152,13 +132,13 @@ const STATES: ReadonlyArray<{
       'mount.switchBranch chip (The 2 uncommitted changes would follow you. Commit or discard them first.)',
       ADD_TASK,
       ...COPIES,
-      'mount.close menu',
+      ...CLOSE,
     ],
   },
   {
     name: 'Diverged from origin',
     facts: facts({ unpushed: 1, isDiverged: true }),
-    expected: [...WITH_PR, ...TOOLS, 'mount.push menu', ...HISTORY, ...COPIES, 'mount.close menu'],
+    expected: [...WITH_PR, ...TOOLS, 'mount.push menu', ...HISTORY, ...COPIES, ...CLOSE],
   },
   {
     name: 'Rebase stopped',
@@ -186,13 +166,13 @@ const STATES: ReadonlyArray<{
       ADD_TASK,
       ...COPIES,
       'mount.cleanUp inline',
-      'mount.close menu',
+      ...CLOSE,
     ],
   },
   {
     name: 'PR closed',
     facts: facts({ pr: 'closed' }),
-    expected: [...WITH_PR, ...TOOLS, ...HISTORY, ...COPIES, 'mount.close menu'],
+    expected: [...WITH_PR, ...TOOLS, ...HISTORY, ...COPIES, ...CLOSE],
   },
   {
     name: 'New branch, no changes',
@@ -210,7 +190,7 @@ const STATES: ReadonlyArray<{
       ADD_TASK,
       'mount.startTurnsHere menu',
       ...COPIES,
-      'mount.close menu',
+      ...CLOSE,
     ],
   },
   {
@@ -243,11 +223,12 @@ describe('mount, labels by state', () => {
     expect(open.find((action) => action.id === 'mount.close')?.label).toBe('Close branch');
   });
 
-  it('says a close with uncommitted changes keeps them', () => {
+  it('says a close with uncommitted changes keeps the folder and offers nothing else', () => {
     const close = resolveActions({ definitions, facts: facts({ dirty: 2 }) }).find(
       (action) => action.id === 'mount.close',
     );
-    expect(close?.confirm?.confirmLabel).toBe('Close, keep changes');
+    expect(close?.confirm?.confirmLabel).toBe('Keep the folder');
+    expect(close?.confirm?.altActionId).toBeUndefined();
   });
 
   it('blocks Unmount while an agent still runs there', () => {

@@ -6,7 +6,7 @@ Free disk space and clean up branches, with what is safe to remove spelled out. 
 
 Manage the worktrees of a project from its block on the session overview. **3 worktrees · 1.1 GB** on the block opens a sheet with one row per worktree, from every session. Each row shows the branch, the session, the size, the last change and the state: **Clean**, **2 ahead** or **Unsaved changes**. The row opens its session, and **Open in Terminal** and **Remove** sit at its end. **Remove** asks in the row first, and the branch stays.
 
-**Remove 2 safe · 1.2 GB** at the foot lists only the folders Goodboy can remove safely, names each one with its size before it removes them, and offers **Undo**. **New branch** adds a worktree to the session you pick. **Clean up in Storage** opens this page. The sizes are measured each time the sheet opens, and a second window reads the sheet again after a change. ⌘K finds the sheet as **Worktrees in ledger-core**.
+**Remove 2 safe · 1.2 GB** at the foot lists only the folders Goodboy can remove safely, names each one with its size before it removes them, and offers **Undo**. **Clean up in Storage** opens this page. **New branch** sits on the block head, next to the worktrees. The sizes are measured each time the sheet opens, and a second window reads the sheet again after a change. ⌘K finds the sheet as **Worktrees in ledger-core**.
 
 ### Worktree folders
 

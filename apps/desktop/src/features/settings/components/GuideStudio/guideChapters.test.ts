@@ -270,9 +270,9 @@ describe('the shell chapter', () => {
     [NAMES.projects, 'Linked'].forEach((word) => expect(rail).toContain(word));
   });
 
-  it('names Mount a folder and Unmount and puts Archive and Delete in the session menu', () => {
+  it('names Mount a project and Unmount and puts Archive and Delete in the session menu', () => {
     const actions = pointOf('shell', 'Session actions');
-    expect(actions).toContain('Mount a folder');
+    expect(actions).toContain('Mount a project');
     expect(actions).toContain(NAMES.unmount);
     expect(actions).toContain('More session actions');
     expect(actions).toContain('Archive and Delete');

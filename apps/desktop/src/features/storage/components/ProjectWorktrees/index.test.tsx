@@ -311,48 +311,12 @@ describe('the worktrees of a project', () => {
     expect(storySpies.removeWorktreeChecked).not.toHaveBeenCalled();
   });
 
-  it('names the session a new branch goes into', async () => {
+  it('keeps only the list and the cleanup in the sheet, with New branch on the project head', async () => {
     await show();
     const sheet = await openSheet();
 
-    fireEvent.click(within(sheet).getByRole('button', { name: 'New branch' }));
-    within(sheet).getByRole('option', { name: GOAL, selected: true });
-    await act(async () => {
-      fireEvent.click(within(sheet).getByRole('button', { name: `New branch in ${GOAL}` }));
-      await Promise.resolve();
-    });
-
-    await vi.waitFor(() =>
-      expect(
-        (useAppStore.getState().sessionMounts[sessionId] ?? []).map((mount) => mount.branch),
-      ).toContain(ROUNDING.branchName),
-    );
-  });
-
-  it('does not create a branch on Enter while no session can take it', async () => {
-    await show();
-    const sheet = await openSheet();
-    fireEvent.click(within(sheet).getByRole('button', { name: 'New branch' }));
-    const creates = storySpies.createWorktree.mock.calls.length;
-    act(() => {
-      useAppStore.setState({
-        sessions: useAppStore
-          .getState()
-          .sessions.map((entry) =>
-            entry.id === sessionId ? { ...entry, archivedAt: entry.createdAt } : entry,
-          ),
-      });
-    });
-    expect(within(sheet).queryByRole('option')).toBeNull();
-
-    await act(async () => {
-      fireEvent.keyDown(within(sheet).getByRole('textbox', { name: 'Branch name' }), {
-        key: 'Enter',
-      });
-      await Promise.resolve();
-    });
-
-    expect(storySpies.createWorktree.mock.calls.length).toBe(creates);
+    expect(within(sheet).queryByRole('button', { name: /^New branch/ })).toBeNull();
+    within(sheet).getByRole('button', { name: 'Clean up in Storage' });
   });
 
   it('drops a late reading of the worktrees when a newer one already landed', async () => {

@@ -2,36 +2,47 @@ import { countNoun } from '../../../shared/utils/countNoun';
 import { NAMES } from '../../../shared/utils/names';
 import type { ActionConfirm } from '../types';
 import type { MountFacts } from './mountFacts';
+import { hasWorkOnlyInFolderOf } from './hasWorkOnlyInFolderOf';
 import { pinnedRunConfirm } from './pinnedRunConfirm';
 
 type Params = {
   readonly facts: MountFacts;
 };
 
+const STAYS_NOTE = 'The branch and any pull request stay.';
+
+const workWordsOf = ({ facts }: Params): string =>
+  [
+    facts.dirty > 0 &&
+      countNoun({ count: facts.dirty, one: 'uncommitted change', many: 'uncommitted changes' }),
+    facts.unpushed > 0 &&
+      `${countNoun({ count: facts.unpushed, one: 'commit', many: 'commits' })} not pushed`,
+  ]
+    .filter((words) => words !== false)
+    .join(' and ');
+
 export const mountCloseConfirm = ({ facts }: Params): ActionConfirm => {
   if (facts.pinnedRunIds.length > 0) {
     return pinnedRunConfirm({ facts });
   }
-  if (facts.pr === 'merged') {
+  const title = `Close the branch for ${facts.label}?`;
+  if (hasWorkOnlyInFolderOf({ facts })) {
+    const work = workWordsOf({ facts });
     return {
-      title: `Close the branch for ${facts.label}?`,
-      description: 'Its folder goes. The local branch and its commits stay.',
-      confirmLabel: NAMES.closeBranch,
+      title,
+      description: `It has ${work}. Its folder stays on disk.`,
+      notes: [STAYS_NOTE],
+      confirmLabel: NAMES.keepTheFolder,
       role: 'danger',
     };
   }
-  const changes = countNoun({
-    count: facts.dirty,
-    one: 'uncommitted change',
-    many: 'uncommitted changes',
-  });
   return {
-    title: `Close the branch for ${facts.label}?`,
-    description:
-      facts.dirty > 0
-        ? `The branch and any pull request stay, and the ${changes} stay on disk.`
-        : 'Its folder is removed. The branch and any pull request stay.',
-    confirmLabel: facts.dirty > 0 ? 'Close, keep changes' : NAMES.closeBranch,
-    role: 'alert',
+    title,
+    description: 'Remove its folder or keep it on disk.',
+    notes: [STAYS_NOTE],
+    confirmLabel: NAMES.removeTheFolder,
+    role: 'danger',
+    altActionId: 'mount.closeKeepFolder',
+    altLabel: NAMES.keepTheFolder,
   };
 };

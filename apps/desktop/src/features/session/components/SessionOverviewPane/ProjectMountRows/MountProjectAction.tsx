@@ -30,7 +30,7 @@ type Props = {
   readonly presentation?: 'icon' | 'button' | 'add';
 };
 
-const LABEL = NAMES.mountAFolder;
+const LABEL = NAMES.mountAProject;
 
 const NO_EVENTS: ReadonlyArray<SessionEvent> = [];
 

@@ -64,7 +64,6 @@ const context: BoardContextValue = {
     sizeLabel: null,
     run: async () => undefined,
   },
-  isDevShown: true,
   shownAskIds: new Set(),
 };
 
