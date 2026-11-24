@@ -5,7 +5,9 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { DrawerColumn } from '../components/DrawerColumn';
 import { DrawerFrame } from '../components/DrawerFrame';
+import { DockPairTurnContext } from '../dockPairTurnContext';
 import { dismissTopEscapeLayer } from '../escape';
+import { RotateCw } from '../icons';
 import { PANE_RHYTHM } from '../paneRhythm';
 
 afterEach(cleanup);
@@ -55,8 +57,8 @@ describe('DrawerFrame', () => {
 
     expect(container.querySelector('[role="separator"], hr')).toBeNull();
     expect(screen.getByText('src/exports · 4 KB').hasAttribute('data-drawer-meta')).toBe(true);
-    expect(screen.getByRole('heading', { name: 'ledger-export.ts' }).className).toContain(
-      'min-w-24',
+    expect(screen.getByRole('heading', { name: 'ledger-export.ts' }).className.split(' ')).toEqual(
+      expect.arrayContaining(['min-w-0', 'truncate']),
     );
     const verb = screen.getByRole('button', { name: 'Open in editor' });
     const menu = screen.getByRole('button', { name: 'More' });
@@ -281,6 +283,103 @@ describe('DrawerFrame', () => {
       </div>,
     );
     expect(document.activeElement).toBe(anchor);
+  });
+});
+
+type WidthParams = { readonly width: number };
+
+type ObserverCallback = (
+  entries: ReadonlyArray<{ readonly target: Element; readonly contentRect: { width: number } }>,
+) => void;
+
+const stubHeadWidth = ({ width }: WidthParams) => {
+  class FixedResizeObserver {
+    private readonly callback: ObserverCallback;
+
+    constructor(callback: ObserverCallback) {
+      this.callback = callback;
+    }
+
+    observe(target: Element) {
+      this.callback([{ target, contentRect: { width } }]);
+    }
+
+    unobserve() {
+      return undefined;
+    }
+
+    disconnect() {
+      return undefined;
+    }
+  }
+  vi.stubGlobal('ResizeObserver', FixedResizeObserver);
+};
+
+type PairParams = { readonly onTurn: () => void };
+
+const PairFrame = ({ onTurn }: PairParams) => (
+  <DockPairTurnContext.Provider value={{ label: 'Stack the panels', icon: RotateCw, onTurn }}>
+    <DrawerFrame
+      title="Monitor for payments-api"
+      page={{ label: 'Open full page', onOpen: vi.fn() }}
+      onClose={vi.fn()}
+    >
+      <p>body</p>
+    </DrawerFrame>
+  </DockPairTurnContext.Provider>
+);
+
+describe('DrawerFrame at a narrow width', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps the turn and full page keys in the head while it is wide', () => {
+    stubHeadWidth({ width: 520 });
+    render(<PairFrame onTurn={vi.fn()} />);
+
+    screen.getByRole('button', { name: 'Stack the panels' });
+    screen.getByRole('button', { name: 'Open full page' });
+    expect(document.querySelector('[data-head-folded]')).toBeNull();
+  });
+
+  it('folds the secondary keys into one more menu and keeps the title and Close', () => {
+    const onTurn = vi.fn();
+    stubHeadWidth({ width: 280 });
+    render(<PairFrame onTurn={onTurn} />);
+
+    expect(document.querySelector('[data-head-folded]')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stack the panels' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open full page' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Monitor for payments-api' }).className).toContain(
+      'truncate',
+    );
+    screen.getByRole('button', { name: 'Close' });
+    fireEvent.click(screen.getByRole('button', { name: 'More on Monitor for payments-api' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Stack the panels' }));
+
+    expect(onTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves the pane menu as the only more menu and drops the turn key there', () => {
+    stubHeadWidth({ width: 280 });
+    render(
+      <DockPairTurnContext.Provider
+        value={{ label: 'Stack the panels', icon: RotateCw, onTurn: vi.fn() }}
+      >
+        <DrawerFrame
+          title="Terminal"
+          menu={<button type="button">More on ledger-core</button>}
+          onClose={vi.fn()}
+        >
+          <p>body</p>
+        </DrawerFrame>
+      </DockPairTurnContext.Provider>,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Stack the panels' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^More on Terminal/ })).toBeNull();
+    screen.getByRole('button', { name: 'More on ledger-core' });
   });
 });
 

@@ -10,6 +10,9 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { CodeXml, Terminal } from '@goodboy/ui/icons';
+import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { installFakeResizeObserver } from '../../../../../../test/fakeResizeObserver';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../../test/sceneInvoke';
@@ -24,9 +27,17 @@ import { BROWSER_PANE_SCENES } from './browser-pane';
 
 const WAIT = { timeout: 15_000 };
 
+const PATH_DATA = / d="[^"]+"/g;
+
 type MountParams = {
   readonly id: string;
 };
+
+type MarkupParams = {
+  readonly markup: string;
+};
+
+const pathsOf = ({ markup }: MarkupParams): string => (markup.match(PATH_DATA) ?? []).join('');
 
 beforeAll(async () => {
   await importStore();
@@ -125,6 +136,40 @@ describe('the browser pane scenes', () => {
     );
   });
 
+  it.each(['browser-pane', 'browser-pane-dark'])(
+    'draws one selected surface on the shown tab, never a pill inside it (%s)',
+    async (id) => {
+      mount({ id });
+
+      const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+      const strip = within(pane).getByRole('navigation', { name: 'Browser tabs' });
+      const chip = within(strip)
+        .getByRole('button', { name: 'Checkout' })
+        .closest('[data-browser-tab]');
+      if (chip === null) {
+        throw new Error('The shown tab sits in no chip.');
+      }
+      expect(
+        within(strip).getByRole('button', { name: 'Checkout' }).getAttribute('aria-current'),
+      ).toBe('page');
+      expect(chip.querySelectorAll('[data-selected="true"]')).toHaveLength(0);
+    },
+  );
+
+  it.each(['browser-console', 'browser-console-dark'])(
+    'gives the console toggle its own icon, not the terminal one (%s)',
+    async (id) => {
+      mount({ id });
+
+      await screen.findByRole('region', { name: 'Console' }, WAIT);
+      const toggle = screen.getByRole('button', { name: 'Console' }).querySelector('svg');
+      const drawn = pathsOf({ markup: toggle?.outerHTML ?? '' });
+      expect(drawn).toBe(pathsOf({ markup: renderToStaticMarkup(<CodeXml />) }));
+      expect(drawn).not.toBe(pathsOf({ markup: renderToStaticMarkup(<Terminal />) }));
+      expect(drawn).not.toBe(pathsOf({ markup: renderToStaticMarkup(<CONCEPT_ICONS.terminal />) }));
+    },
+  );
+
   it('opens the console under the page with a row per level and the failed request', async () => {
     mount({ id: 'browser-console' });
 
@@ -197,11 +242,24 @@ describe('the browser pane scenes', () => {
     expect(within(pane).queryByRole('button', { name: /^Edit address/ })).toBeNull();
   });
 
-  it('opens the command field under the row with a typed word, its tabs and a visit', async () => {
+  it.each(['browser-pane-field', 'browser-pane-field-dark'])(
+    'floats the suggestions for a typed word over the page, anchored to the row (%s)',
+    async (id) => {
+      mount({ id });
+
+      const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+      const list = await screen.findByRole('listbox', { name: 'Suggestions' }, WAIT);
+      await within(list).findByRole('option', { name: 'Confirm order' }, WAIT);
+      expect(pane.contains(list)).toBe(false);
+      expect(list.closest('[data-anchored-layer]')).not.toBeNull();
+    },
+  );
+
+  it('lists the tabs and a visit for a typed word', async () => {
     mount({ id: 'browser-pane-field' });
 
     const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
-    const list = await within(pane).findByRole('listbox', { name: 'Suggestions' }, WAIT);
+    const list = await screen.findByRole('listbox', { name: 'Suggestions' }, WAIT);
     await within(list).findByRole('option', { name: 'Confirm order' }, WAIT);
     expect(within(pane).getByRole('combobox', { name: 'Address or search' })).toHaveProperty(
       'value',

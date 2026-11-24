@@ -112,21 +112,27 @@ export const TaskGroupRows = ({
         lines.length === 0
           ? null
           : lines.map((line) => (
-              <ListGridLine key={line.key}>
-                <Notice
-                  tone="warning"
-                  placement="inline"
-                  role="status"
-                  title={line.failure.title}
-                  body={line.failure.body}
-                  detail={line.failure.detail}
-                  actions={
-                    <Button variant="secondary" size="xs" onClick={line.onAction}>
-                      {line.failure.isRefused ? 'Reconnect' : 'Retry'}
-                    </Button>
-                  }
-                />
-              </ListGridLine>
+              <li
+                key={line.key}
+                data-task-failure={line.key}
+                className="col-span-full grid grid-cols-subgrid"
+              >
+                <div className="col-start-2 col-end-[-2] min-w-0">
+                  <Notice
+                    tone="warning"
+                    placement="inline"
+                    role="status"
+                    title={line.failure.title}
+                    body={line.failure.body}
+                    detail={line.failure.detail}
+                    actions={
+                      <Button variant="secondary" size="xs" onClick={line.onAction}>
+                        {line.failure.isRefused ? 'Reconnect' : 'Retry'}
+                      </Button>
+                    }
+                  />
+                </div>
+              </li>
             ))
       }
       foot={foot}

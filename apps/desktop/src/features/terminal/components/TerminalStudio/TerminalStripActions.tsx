@@ -14,6 +14,7 @@ type Props = {
   readonly tab: TerminalTab;
   readonly handoffSessionId: SessionId | null;
   readonly canOpenSession?: boolean;
+  readonly onOpenPage?: () => void;
 };
 
 export const TerminalStripActions = ({
@@ -21,6 +22,7 @@ export const TerminalStripActions = ({
   tab,
   handoffSessionId,
   canOpenSession = true,
+  onOpenPage,
 }: Props) => {
   const openSession = useOpenSession();
   const handoff = useTerminalOutputHandoff({
@@ -31,7 +33,7 @@ export const TerminalStripActions = ({
   });
   const { path } = worktree;
   const sessionId = canOpenSession ? worktree.sessionId : null;
-  if (path === null && sessionId === null && !handoff.canHandOff) {
+  if (path === null && sessionId === null && !handoff.canHandOff && onOpenPage === undefined) {
     return null;
   }
   const facts: TerminalTabFacts = {
@@ -50,17 +52,17 @@ export const TerminalStripActions = ({
         onSend: handoff.sendLastOutput,
       },
     }),
+    ...(onOpenPage !== undefined && { onOpenPage }),
   };
-  return (
-    <ObjectMenuOrVerb
-      target={{ kind: 'terminalTab', facts }}
-      menu={
-        <TerminalTabMenu
-          label={`More on ${worktree.projectName}`}
-          trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
-          facts={facts}
-        />
-      }
+  const menu = (
+    <TerminalTabMenu
+      label={`More on ${worktree.projectName}`}
+      trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
+      facts={facts}
     />
   );
+  if (onOpenPage !== undefined) {
+    return menu;
+  }
+  return <ObjectMenuOrVerb target={{ kind: 'terminalTab', facts }} menu={menu} />;
 };

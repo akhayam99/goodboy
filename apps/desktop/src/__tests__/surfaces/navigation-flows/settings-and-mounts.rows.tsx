@@ -19,6 +19,7 @@ import {
   studio,
   useAppStore,
   visible,
+  terminalDocked,
 } from './harness';
 
 const openSettingsRail = async (label: RegExp): Promise<void> => {
@@ -105,7 +106,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
       await click(await screen.findByRole('menuitem', { name: /^Terminal/ }));
     },
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open full page' }, WAIT);
+      await terminalDocked();
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
     },
   },
