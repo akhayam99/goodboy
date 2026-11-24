@@ -54,16 +54,15 @@ export const TerminalStripActions = ({
     }),
     ...(onOpenPage !== undefined && { onOpenPage }),
   };
-  return (
-    <ObjectMenuOrVerb
-      target={{ kind: 'terminalTab', facts }}
-      menu={
-        <TerminalTabMenu
-          label={`More on ${worktree.projectName}`}
-          trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
-          facts={facts}
-        />
-      }
+  const menu = (
+    <TerminalTabMenu
+      label={`More on ${worktree.projectName}`}
+      trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
+      facts={facts}
     />
   );
+  if (onOpenPage !== undefined) {
+    return menu;
+  }
+  return <ObjectMenuOrVerb target={{ kind: 'terminalTab', facts }} menu={menu} />;
 };

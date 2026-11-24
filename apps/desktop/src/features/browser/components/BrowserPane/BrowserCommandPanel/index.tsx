@@ -102,15 +102,19 @@ export const BrowserCommandPanel = ({ model, field }: Props) => {
   }
 
   return (
-    <AnchoredLayer side="bottom" isAnchorWidth>
-      <div data-dropdown-portal="" data-browser-suggestions="">
-        <div className={cn(FLOATING_SURFACE, 'overflow-hidden')}>
+    <AnchoredLayer side="bottom" isAnchorWidth className="flex flex-col">
+      <div data-dropdown-portal="" data-browser-suggestions="" className="flex min-h-0 flex-col">
+        <div className={cn(FLOATING_SURFACE, 'flex min-h-0 flex-col overflow-hidden')}>
           {hasNoMatch ? (
             <p role="status" className="px-3 py-2 text-meta text-muted-foreground">
               {NO_MATCH}
             </p>
           ) : (
-            <ScrollFade className="max-h-80" fadeFrom="floating" isPageScroller={false}>
+            <ScrollFade
+              className="flex max-h-80 min-h-0 flex-col"
+              fadeFrom="floating"
+              isPageScroller={false}
+            >
               <ul
                 id={field.listId}
                 role="listbox"

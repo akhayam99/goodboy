@@ -45,6 +45,10 @@ import {
   sessionOf,
 } from '../../../workspace/testing/sessionColumn';
 import { brandedId } from '../../../history/testing/brandedId';
+import {
+  terminalOwnerKey,
+  workspaceTerminalOwner,
+} from '../../../../store/slices/terminal/terminalOwner';
 import { toggleTerminalDock } from '../../toggleTerminalDock';
 import { TerminalDrawer } from '.';
 
@@ -201,6 +205,36 @@ describe('the terminal of a session', () => {
     expect(within(head).queryByRole('button', { name: 'Open full page' })).toBeNull();
     within(head).getByRole('button', { name: 'Close' });
     fireEvent.click(within(head).getByRole('button', { name: 'More on payments-api' }));
+
+    within(screen.getByRole('menu')).getByRole('menuitem', { name: /Open full page/ });
+  });
+
+  it('keeps More with Open full page on a workspace terminal with no folder', async () => {
+    const owner = workspaceTerminalOwner({ workspaceId: harborline.id });
+    const shell: TerminalTab = {
+      id: brandedId<TerminalTabId>({ value: `${harborline.id}::w1` }),
+      owner,
+      title: 'zsh',
+      cwd: null,
+      status: 'running',
+      createdAt: 0,
+    };
+    store.setState({ terminalTabs: { [terminalOwnerKey({ owner })]: [shell] } });
+    render(
+      <ToastProvider>
+        <TerminalDrawer sessionId={null} terminalId={shell.id} onClose={onClose} />
+      </ToastProvider>,
+    );
+
+    const head = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-drawer-header-row]');
+      if (found === null) {
+        throw new Error('The terminal draws no head.');
+      }
+      return found;
+    });
+    expect(within(head).queryByRole('button', { name: 'Open full page' })).toBeNull();
+    fireEvent.click(within(head).getByRole('button', { name: /^More on/ }));
 
     within(screen.getByRole('menu')).getByRole('menuitem', { name: /Open full page/ });
   });

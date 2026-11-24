@@ -979,8 +979,10 @@ that shadows it, so the chord follows Chrome's J.
   drops the oldest entry of the same kind first, so a busy page cannot push
   its console lines out. Rust drops what the app's own injected scripts say
   in the page (`console::is_app_noise`: a source of `user-script:`, the Tauri
-  "IPC custom protocol failed" fallback and a `not allowed on window` or
-  `not allowed by ACL` rejection), so only the page's own lines reach the
+  "IPC custom protocol failed" fallback and a rejection in the exact Tauri
+  refusal shape, `Command <name> not allowed by ACL` or
+  `<plugin>.<command> not allowed on window "`; a page's own rejection that
+  only contains those words is kept), so only the page's own lines reach the
   region. The notification plugin injects a `Notification` shim into every
   webview, a tab included, and the shim asks
   `plugin:notification|is_permission_granted` as the page loads. No capability

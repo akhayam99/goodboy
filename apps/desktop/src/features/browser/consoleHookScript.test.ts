@@ -283,11 +283,24 @@ describe('the console hook', () => {
       type: 'unhandledrejection',
       event: { reason: 'payment declined', preventDefault: declined },
     });
+    tab.fire({
+      type: 'unhandledrejection',
+      event: { reason: 'Acme document update not allowed by ACL', preventDefault: declined },
+    });
+    tab.fire({
+      type: 'unhandledrejection',
+      event: {
+        reason: 'Harborline seat not allowed on window "checkout"',
+        preventDefault: declined,
+      },
+    });
 
     expect(refused).toHaveBeenCalledTimes(2);
     expect(declined).not.toHaveBeenCalled();
     expect(tab.read()?.entries.map((entry) => entry.text)).toEqual([
       'Unhandled rejection: payment declined',
+      'Unhandled rejection: Acme document update not allowed by ACL',
+      'Unhandled rejection: Harborline seat not allowed on window "checkout"',
     ]);
   });
 
