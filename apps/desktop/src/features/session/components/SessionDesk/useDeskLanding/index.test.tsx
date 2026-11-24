@@ -75,7 +75,14 @@ beforeEach(async () => {
   });
 });
 
-afterEach(() => {
+const ASK_FOCUS_SETTLE_MS = 80;
+
+afterEach(async () => {
+  await act(async () => {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, ASK_FOCUS_SETTLE_MS);
+    });
+  });
   cleanup();
   document.body.innerHTML = '';
 });
