@@ -163,7 +163,7 @@ describe('withoutRemovedPages', () => {
 
   it('keeps a live drawer open on its page', () => {
     const drawer: Location['focus']['drawer'] = {
-      kind: 'ask',
+      kind: 'scripts',
       sessionId: SESSION_ID,
       payload: null,
     };

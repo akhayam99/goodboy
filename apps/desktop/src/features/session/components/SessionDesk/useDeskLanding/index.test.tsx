@@ -136,7 +136,6 @@ describe('a tool from the right rail builds the Desk', () => {
     { pane: 'terminal' },
     { pane: 'browser' },
     { pane: 'scripts' },
-    { pane: 'ask' },
     { pane: 'monitoring' },
   ];
 
@@ -264,14 +263,21 @@ describe('closing the last tool', () => {
     expect(screen.queryByText('Desk closed')).toBeNull();
   });
 
-  it('closing Ask, the last tool, closes the Desk too', async () => {
+  it('opens Ask beside the Overview and never builds the Desk', async () => {
     renderFace();
-    await clickRail({ pane: 'ask' });
+    const before = entries();
 
     await clickRail({ pane: 'ask' });
 
     expect(face()).toBe('overview');
-    screen.getByText('Desk closed');
+    expect(tools()).toEqual([]);
+    expect(store.getState().askPaneOpen[session.id]).toBe(true);
+    expect(entries()).toBe(before);
+
+    await clickRail({ pane: 'ask' });
+
+    expect(store.getState().askPaneOpen[session.id]).toBe(false);
+    expect(screen.queryByText('Desk closed')).toBeNull();
   });
 
   it('cmd w closes one tool at a time and the last one closes the Desk, never the session', async () => {

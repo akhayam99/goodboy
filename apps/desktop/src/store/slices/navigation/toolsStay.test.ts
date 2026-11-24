@@ -1,6 +1,12 @@
 // @vitest-environment happy-dom
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { brandId, type AgentId, type SessionId, type WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type OpenQuestionId,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -119,7 +125,11 @@ describe('a tool stays open through a move inside its session', () => {
 
   it('empties the slot and the chip on another session', () => {
     state().openDrawer({ kind: 'scripts', sessionId: S1, payload: null });
-    state().openDrawer({ kind: 'ask', sessionId: S1, payload: null });
+    state().openDrawer({
+      kind: 'question',
+      sessionId: S1,
+      payload: { questionId: brandId<OpenQuestionId>({ value: 'question-open' }) },
+    });
 
     state().navigate({ to: sessionPlace({ sessionId: S2 }) });
 
