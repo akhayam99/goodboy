@@ -128,6 +128,7 @@ import { ToastsScene } from '../scenes/audit/ToastsScene';
 import { UpdateConfirmScene } from '../scenes/audit/UpdateConfirmScene';
 import { UpdateWhatsNewScene } from '../scenes/audit/UpdateWhatsNewScene';
 import { NotificationsScene } from '../scenes/audit/NotificationsScene';
+import { ThemedScene } from '../scenes/u37/ThemedScene';
 import { ChangelogScene } from '../scenes/audit/ChangelogScene';
 import { GuideScene } from '../scenes/audit/GuideScene';
 import { ArtifactStatesScene } from '../scenes/audit/ArtifactStatesScene';
@@ -356,6 +357,11 @@ export const BASE_SCENES = {
   'branch-comments': BranchCommentsScene,
   'branch-pr-media': BranchPrMediaScene,
   'branch-threads-new': () => createElement(BranchThreadsNewScene, { tab: 'pr' }),
+  'branch-threads-new-light': () =>
+    createElement(ThemedScene, {
+      theme: 'light',
+      children: createElement(BranchThreadsNewScene, { tab: 'pr' }),
+    }),
   'branch-threads-new-comments': () => createElement(BranchThreadsNewScene, { tab: 'comments' }),
   'branch-commits': BrandHistoryScene,
   'branch-files': BrandDiffScene,
@@ -443,6 +449,8 @@ export const BASE_SCENES = {
   'update-confirm': UpdateConfirmScene,
   'update-whats-new': UpdateWhatsNewScene,
   notifications: NotificationsScene,
+  'notifications-light': () =>
+    createElement(ThemedScene, { theme: 'light', children: createElement(NotificationsScene) }),
   changelog: ChangelogScene,
   guide: GuideScene,
   'artifact-states': ArtifactStatesScene,

@@ -10,6 +10,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { SETTING_REPO_CHECK_MINUTES } from '../../../../../../features/settings/settings';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
+import { getAppliedTheme } from '../../../../../../shared/lib/theme';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -100,6 +101,25 @@ describe('the secondary Notifications scenes', () => {
     for (const age of ages) {
       expect(age.closest('[data-meta-column="time"]')).not.toBeNull();
     }
+  });
+
+  it('notifications-light draws the rows on the quiet node in the light theme', async () => {
+    const Scene = MOCK_SCENES['notifications-light'];
+    if (Scene === undefined) {
+      throw new Error('notifications-light is not registered');
+    }
+    render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+
+    const [title] = await screen.findAllByText('Handoff degraded', undefined, WAIT);
+    const node = title?.closest('[data-notification-key]')?.querySelector('[data-node-look]');
+
+    expect(getAppliedTheme()).toBe('light');
+    expect(node?.getAttribute('data-node-look')).toBe('quiet');
+    expect(node?.getAttribute('data-node-state')).toBe('failed');
   });
 
   it('u26s-notifications-header-menu offers Mark all as read and Delete all', async () => {
