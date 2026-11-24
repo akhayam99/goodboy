@@ -1,6 +1,7 @@
 export { formatWorkflowModelMenu } from './formatWorkflowModelMenu';
 export { parseOrchestratorDecision } from './parser';
 export {
+  cappedRoutingReason,
   parseWorkflowRoutingProposal,
   type WorkflowRoutingProposalParseOutcome,
   type WorkflowRoutingRequestedIdentity,

@@ -596,7 +596,7 @@ describe('fan-out child routing precedence', () => {
 
     expect(batch.kind).toBe('blocked');
   });
-  it('gives a legacy child with no proposal a pick read off its own text', () => {
+  it('gives a legacy child with no proposal the best candidate at the size its text reads', () => {
     const { get } = buildHarness();
 
     const { resolution, taskProfile } = resolveWorkflowChildRouting({
@@ -614,7 +614,8 @@ describe('fan-out child routing precedence', () => {
       return;
     }
     expect(resolution.decision.source).toBe('kind_default');
-    expect(resolution.decision.reason).toContain('heuristic estimate');
+    expect(resolution.decision.reason).toBe('Claude: first in your order');
+    expect(resolution.decision.adjustment).toBe('none');
     expect(taskProfile?.difficulty).toBe('heavy');
     expect(taskProfile?.basis).toBe('heuristic');
   });

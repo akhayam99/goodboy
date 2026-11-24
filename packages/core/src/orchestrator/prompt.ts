@@ -66,9 +66,9 @@ const READ_FILES_RESPONSE =
   'Read the files the hints name first. Then respond with exactly one marked JSON object';
 
 const DIFFICULTY_ROUTING_RULE =
-  'Routing: you do not pick models. For every next step name taskType, one of exploration, planning, implementation, debugging, review, testing, writing, general, and difficulty, one of light, standard, heavy: how hard the work of this step is, judged from the goal, what the run found so far and how much the step has to change. The app turns the step role and your difficulty into the model and effort on the provider the operator prefers, a lighter model for light work and a stronger one for heavy work, so never name provider, model or effort. Put one clause on why the step has that difficulty in modelReason.';
+  'Routing: you do not pick models. For every next step name taskType, one of exploration, planning, implementation, debugging, review, testing, writing, general, and difficulty, one of light, standard, heavy: how hard the work of this step is, judged from the goal, what the run found so far and how much the step has to change. The app turns the step role and your difficulty into the model and effort by the provider priority the operator set, a lighter model for light work and a stronger one for heavy work, so never name provider, model or effort. Put one clause on why the step has that difficulty in modelReason.';
 
-const MODEL_ROUTING_RULE = `Routing: pick the model for every next step yourself. You know what the step has to do, so name provider, model and effort on the step, and say in one clause why that work needs that model. Every identity in the available models list is runnable right now, across every provider the operator connected, so a model outside the role defaults is a normal choice rather than a deviation you have to justify against configuration. Use provider and model exactly as listed, as a pair: the same model id can belong to two providers and they are not interchangeable. Set effort only to one of the levels listed for the model you picked, or omit it to take that model's own default. The role defaults are the fallback for a step you decline to route, not a ceiling on the ones you do. Add taskType, one of exploration, planning, implementation, debugging, review, testing, writing, general, and difficulty, one of light, standard, heavy, so the operator can see what the pick was made for, and put the routing sentence in modelReason.
+const MODEL_ROUTING_RULE = `Routing: pick the model for every next step yourself. You know what the step has to do, so name provider, model and effort on the step, and say in one clause why that work needs that model. Every identity in the models list of the request is runnable right now, across every provider the operator connected, so a model the app would not pick itself is a normal choice rather than a deviation you have to justify against configuration. Use provider and model exactly as listed, as a pair: the same model id can belong to two providers and they are not interchangeable. Set effort only to one of the levels listed for the model you picked, or omit it to take that model's own default. The app's own pick for the role is the fallback for a step you decline to route, not a ceiling on the ones you do. Add taskType, one of exploration, planning, implementation, debugging, review, testing, writing, general, and difficulty, one of light, standard, heavy, so the operator can see what the pick was made for, and put the routing sentence in modelReason.
 
 The list names identities and the efforts each one accepts. It says nothing about how good a model is at anything: that judgement is yours, from what you know about these models, and you never claim a capability the list did not give you.`;
 
@@ -206,20 +206,32 @@ const skippedPinLines = ({ roleDefaults }: SkippedPinLinesParams): ReadonlyArray
 
 const DIFFICULTY_ROUTING_LINES: ReadonlyArray<string> = [
   '',
-  'Models: the app picks the model and effort of every step from its role and the difficulty you name, on the provider the operator prefers. Name taskType and difficulty for the work itself and leave provider, model and effort out.',
+  'Models: the app picks the model and effort of every step from its role and the difficulty you name, by the provider priority the operator set. Name taskType and difficulty for the work itself and leave provider, model and effort out.',
 ];
+
+const PROFILE_LINE =
+  'Name taskType and difficulty for the work itself, not for the model you want. modelReason justifies the routing pick in one clause and never replaces reason, which stays about the work the step does.';
 
 type ModelPickLinesParams = Pick<
   OrchestratorInput,
-  'modelMenu' | 'roleDefaults' | 'providerId' | 'isModelMetadataEnabled'
+  'modelMenu' | 'roleDefaults' | 'providerId' | 'isModelMetadataEnabled' | 'candidatesBlock'
 >;
+
+type RunningOnParams = Pick<OrchestratorInput, 'providerId'>;
+
+const runningOnLine = ({ providerId }: RunningOnParams): string =>
+  `You are running on ${providerId}. That says nothing about which provider a step should run on.`;
 
 const modelPickLines = ({
   modelMenu,
   roleDefaults,
   providerId,
   isModelMetadataEnabled,
+  candidatesBlock,
 }: ModelPickLinesParams): ReadonlyArray<string> => {
+  if (candidatesBlock != null) {
+    return ['', candidatesBlock, '', PROFILE_LINE, '', runningOnLine({ providerId })];
+  }
   const lines = [
     '',
     'Available models, provider and model id and the efforts that model accepts. Automatic steps can use your connected providers:',
@@ -227,11 +239,7 @@ const modelPickLines = ({
   if (modelMenu.length === 0) {
     lines.push('(none, omit provider, model and effort)');
   } else if (isModelMetadataEnabled === true) {
-    lines.push(
-      formatWorkflowModelMenu({ options: modelMenu }),
-      '',
-      'Name taskType and difficulty for the work itself, not for the model you want. modelReason justifies the routing pick in one clause and never replaces reason, which stays about the work the step does.',
-    );
+    lines.push(formatWorkflowModelMenu({ options: modelMenu }), '', PROFILE_LINE);
   } else {
     modelMenu.forEach((option) => {
       const efforts = option.efforts.length === 0 ? 'no effort control' : option.efforts.join(', ');
@@ -240,7 +248,7 @@ const modelPickLines = ({
   }
   lines.push(
     '',
-    `You are running on ${providerId}. That says nothing about which provider a step should run on.`,
+    runningOnLine({ providerId }),
     '',
     'Role defaults (the fallback for a step you leave unrouted):',
     roleDefaults.length === 0
@@ -355,6 +363,7 @@ export const buildOrchestratorUserPrompt = ({
   providerId,
   modelMenu,
   roleDefaults,
+  candidatesBlock,
   stepsUsed,
   isModelMetadataEnabled,
   isModelPickEnabled,
@@ -382,7 +391,13 @@ export const buildOrchestratorUserPrompt = ({
   }
   lines.push(
     ...(isModelPickEnabled === true
-      ? modelPickLines({ modelMenu, roleDefaults, providerId, isModelMetadataEnabled })
+      ? modelPickLines({
+          modelMenu,
+          roleDefaults,
+          providerId,
+          isModelMetadataEnabled,
+          candidatesBlock,
+        })
       : DIFFICULTY_ROUTING_LINES),
     '',
     'Completed steps (their summaries are written in English by contract, which says nothing about the language you answer in):',

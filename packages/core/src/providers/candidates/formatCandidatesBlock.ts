@@ -270,8 +270,11 @@ const budgetLine = ({ runBudgetLeftUsd }: MoneyParams): ReadonlyArray<string> =>
 const RATE_LEGEND =
   'Rates are published dollars per million tokens, input/output; no rate means this build has none.';
 
-const ANSWER_LINE =
-  'For each child, copy "provider", "model" and "effort" from one row, at the rung for its role and size or one lighter, and set "modelReason" to the fact that decided it, under 15 words.';
+const ANSWER_LINES: Readonly<Record<CandidateScope, string>> = {
+  helper:
+    'For each child, copy "provider", "model" and "effort" from one row, at the rung for its role and size or one lighter, and set "modelReason" to the fact that decided it, under 15 words.',
+  step: 'For the next step, copy "provider", "model" and "effort" from one row, at the rung for its role and size or one lighter, and set "modelReason" to the fact that decided it, under 15 words.',
+};
 
 type RenderParams = TableParams &
   MoneyParams & {
@@ -305,7 +308,7 @@ const render = ({
     ...resumeLine(guards),
     ...budgetLine({ runBudgetLeftUsd }),
     ...(detail === 'full' ? [RATE_LEGEND] : []),
-    ANSWER_LINE,
+    ANSWER_LINES[scope],
   ].join('\n');
 };
 

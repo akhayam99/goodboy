@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { brandId } from '@goodboy/types';
 import type {
   Agent,
   AgentId,
@@ -69,6 +70,27 @@ describe('WorkflowNextStepCta', () => {
       step: { id: 's1' },
       isConfirmed: false,
     });
+  });
+
+  it('starts the next step on the model its waiting agent was given', async () => {
+    const onAdvance = vi.fn();
+    const waiting: Agent = {
+      ...run(brandId<StepId>({ value: 's1' }), 'pending', 0),
+      providerOverride: 'codex',
+      modelOverride: 'gpt-6.1-sol',
+      effort: 'medium',
+    };
+    render(
+      <WorkflowNextStepCta
+        workflow={wf()}
+        runs={[waiting]}
+        onAdvance={onAdvance}
+        sessionProvider="anthropic"
+      />,
+    );
+    fireEvent.click(screen.getByTestId('workflow-next-step-cta'));
+    await Promise.resolve();
+    expect(onAdvance.mock.calls[0]?.[0]).toMatchObject({ model: 'gpt-6.1-sol' });
   });
 
   it('names what blocks it and asks for confirmation when questions are open', () => {

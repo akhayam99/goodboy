@@ -4,6 +4,7 @@ import type {
   SessionId,
   WorkflowRoutingLock,
   WorkflowRoutingProposal,
+  WorkflowRules,
   WorkflowRunId,
   WorkflowTaskProfile,
 } from '@goodboy/types';
@@ -14,13 +15,21 @@ import {
   type WorkflowRoutingProposalParseOutcome,
   type WorkflowRoutingResolution,
 } from '@goodboy/core/orchestrator';
+import {
+  bestCandidate,
+  buildCandidates,
+  stepSizeOf,
+  type CandidateInputs,
+} from '@goodboy/core/providers';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { runProviderPool } from '../../../features/workflows/runProviderPool';
 import type { AppStore } from '../../store';
-
+import { selectCandidateInputs } from '../../runtime/models/selectCandidateInputs';
+import { candidateDecision } from './candidateDecision';
+import { movedDecision } from './movedDecision';
+import { providerCauseOf } from './providerCauseOf';
 import { rolePicks } from './rolePicks';
-import { readHeadroom, type HeadroomMap } from '@goodboy/core/providers';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
@@ -61,21 +70,50 @@ type Params = {
   readonly promptText: string;
   readonly missingProposal: WorkflowMissingProposalPolicy;
   readonly workflowRunId?: WorkflowRunId | null;
+  readonly batch?: ReadonlyArray<ProviderId>;
 };
 
-type HeadroomParams = Pick<Params, 'state' | 'sessionId' | 'workflowRunId'>;
+type CandidateParams = Pick<Params, 'state' | 'sessionId' | 'role'> & {
+  readonly outcome: WorkflowRoutingProposalParseOutcome;
+  readonly profile: WorkflowTaskProfile;
+  readonly providerPool: ReadonlyArray<ProviderId> | null;
+  readonly batch: ReadonlyArray<ProviderId>;
+  readonly rules: WorkflowRules | null;
+};
 
-const childHeadroom = ({ state, sessionId, workflowRunId }: HeadroomParams): HeadroomMap | null => {
-  const session = (state.sessions ?? []).find((candidate) => candidate.id === sessionId);
-  const run = session?.workflowRuns?.find((candidate) => candidate.id === workflowRunId);
-  if (session === undefined || run?.rulesSnapshot?.spreadByHeadroom !== true) {
+const candidateResolution = ({
+  state,
+  sessionId,
+  role,
+  outcome,
+  profile,
+  providerPool,
+  batch,
+  rules,
+}: CandidateParams): WorkflowRoutingResolution | null => {
+  const inputs: CandidateInputs = {
+    ...selectCandidateInputs({ state, sessionId, nowMs: Date.now(), turns: [] }),
+    rule: rules?.spreadByHeadroom === true ? 'load' : 'order',
+    runProviders: providerPool,
+  };
+  const list = buildCandidates({
+    inputs,
+    need: { role, size: stepSizeOf({ difficulty: profile.difficulty }), scope: 'step' },
+  });
+  if (outcome.kind !== 'valid') {
+    const routed = candidateDecision({ list, proposal: null, batch });
+    return routed.kind === 'ready' ? { kind: 'ready', decision: routed.decision } : null;
+  }
+  const { proposal } = outcome;
+  const cause = providerCauseOf({ list, provider: proposal.pick.provider });
+  const best = cause === null ? null : bestCandidate({ list, batch });
+  if (cause === null || best === null) {
     return null;
   }
-  return readHeadroom({
-    limits: state.providerLimits ?? {},
-    policy: state.workspaceOverrides?.[session.workspaceId]?.providerPool ?? null,
-    nowMs: Date.now(),
-  }).headroom;
+  return {
+    kind: 'ready',
+    decision: movedDecision({ list, candidate: best, cause, asked: proposal.pick, proposal }),
+  };
 };
 
 export const resolveWorkflowChildRouting = ({
@@ -87,33 +125,59 @@ export const resolveWorkflowChildRouting = ({
   promptText,
   missingProposal,
   workflowRunId = null,
+  batch = [],
 }: Params): WorkflowChildRouting => {
   const session = (state.sessions ?? []).find((candidate) => candidate.id === sessionId);
   const outcome = childProposalOutcome({ proposal, promptText });
   const profile = outcome.kind === 'valid' ? outcome.proposal.profile : outcome.profile;
+  const taskProfile = profile.basis === 'unknown' ? null : profile;
   const defaultProvider =
     session === undefined
       ? null
       : ((session.providerOverride ??
           session.providerPreference?.defaultProvider ??
           null) as ProviderId | null);
-  const headroom = childHeadroom({ state, sessionId, workflowRunId });
   const providerPool = runProviderPool({
     sessions: state.sessions ?? [],
     sessionId,
     workflowRunId,
   });
-  const picks = rolePicks({ state, sessionId, role, profile, providerPool, headroom });
+  const availability = workflowAvailabilitySnapshot({
+    providers: state.providers ?? [],
+    cooldowns: state.providerCooldowns ?? {},
+    alerts: state.budgetAlerts ?? [],
+    hidden: selectHiddenModels({ state: state }),
+    sessionId,
+    isRunBudgetBlocked: false,
+    nowMs: Date.now(),
+    ...workspacePolicyAvailability({ state, sessionId }),
+    providerPool,
+  });
+  const onCandidates =
+    childLock === null && availability.isSessionBudgetBlocked !== true
+      ? candidateResolution({
+          state,
+          sessionId,
+          role,
+          outcome,
+          profile,
+          providerPool,
+          batch,
+          rules:
+            session?.workflowRuns?.find((run) => run.id === workflowRunId)?.rulesSnapshot ?? null,
+        })
+      : null;
+  if (onCandidates !== null) {
+    return { resolution: onCandidates, taskProfile };
+  }
+  const picks = rolePicks({ state, sessionId, role, profile, providerPool });
   const resolution = resolveWorkflowRouting({
     agentLock: childLock,
     stepLock: null,
     proposal: outcome,
     roleDefault: picks.roleDefault,
     sessionDefault:
-      session === undefined ||
-      session.modelOverride == null ||
-      defaultProvider === null ||
-      headroom !== null
+      session === undefined || session.modelOverride == null || defaultProvider === null
         ? null
         : {
             provider: defaultProvider,
@@ -122,19 +186,8 @@ export const resolveWorkflowChildRouting = ({
           },
     kindDefault: picks.kindDefault,
     missingProposal,
-    availability: workflowAvailabilitySnapshot({
-      providers: state.providers ?? [],
-      cooldowns: state.providerCooldowns ?? {},
-      alerts: state.budgetAlerts ?? [],
-      hidden: selectHiddenModels({ state: state }),
-      sessionId,
-      isRunBudgetBlocked: false,
-      nowMs: Date.now(),
-      ...workspacePolicyAvailability({ state, sessionId }),
-      providerPool,
-      headroom,
-    }),
+    availability,
     contextEstimate: null,
   });
-  return { resolution, taskProfile: profile.basis === 'unknown' ? null : profile };
+  return { resolution, taskProfile };
 };

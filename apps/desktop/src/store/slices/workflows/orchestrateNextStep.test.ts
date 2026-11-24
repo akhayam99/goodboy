@@ -91,6 +91,7 @@ vi.mock('@goodboy/db', async () =>
   (await import('../../../test/dbMock')).createDbMock({
     repointWorkflowRunTemplate: repointWorkflowRunTemplateSpy,
     listOpenQuestionsForSession: listOpenQuestionsSpy,
+    listProviderAgentTurns: vi.fn(async () => []),
     updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
     updateWorkflowRunOrchestrationStop: updateStopSpy,
     updateWorkflowRunOrchestratorSummary: updateSummarySpy,
@@ -719,8 +720,9 @@ describe('orchestrateNextStep', () => {
         name: 'Implement',
         role: 'implementer',
         promptPrefix: 'Implement the change.',
-        model: 'opus-5',
+        model: 'sonnet-5.5',
         effort: 'max',
+        difficulty: 'standard',
       },
     });
     const state = modelPickState();
@@ -730,7 +732,7 @@ describe('orchestrateNextStep', () => {
 
     expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        modelOverride: 'opus-5',
+        modelOverride: 'sonnet-5.5',
         effort: 'max',
       }),
     );
@@ -765,7 +767,7 @@ describe('orchestrateNextStep', () => {
             role: 'implementer',
             promptPrefix: 'Rewrite the resolver.',
             provider: 'codex',
-            model: 'gpt-5.6-sol',
+            model: 'gpt-6.1-sol',
             effort: 'high',
             taskType: 'implementation',
             difficulty: 'heavy',
@@ -784,37 +786,21 @@ describe('orchestrateNextStep', () => {
     expect(request['toolsDisabled']).toBe(true);
     const prompt = request['userMessage'] as string;
 
+    expect(prompt).toContain('Models for new agents, by provider in your order:');
+    expect(prompt).toContain('Provider priority: by order.');
+    expect(prompt).toMatch(/^1\. anthropic, .*standard sonnet-5\.5 medium/m);
+    expect(prompt).toMatch(/^\d\. codex, .*hard gpt-6\.1-sol high/m);
     expect(prompt).toContain(
-      'Codes: exp=exploration, pln=planning, imp=implementation, dbg=debugging, rev=review, tst=testing, wrt=writing, gen=general; lt=light, st=standard, hv=heavy, uk=unknown.',
+      'For the next step, copy "provider", "model" and "effort" from one row',
     );
-    expect(prompt).toContain(
-      'anthropic/opus-5.5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $4/$20',
-    );
-    expect(prompt).toContain(
-      'anthropic/opus-5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25',
-    );
-    expect(prompt).toContain(
-      'codex/gpt-5.6-sol efforts low,medium,high,xhigh,max unassessed ctx 272k $4/$20',
-    );
-    expect(prompt).toContain(
-      'anthropic/haiku-4.5 efforts no effort control unassessed ctx 200k $1/$5',
-    );
-    expect(prompt).not.toContain('gemini/');
-
-    const menuLines = prompt
-      .split('\n')
-      .filter((line) => line.startsWith('anthropic/') || line.startsWith('codex/'));
-    expect(menuLines).toHaveLength(17);
-    expect(menuLines.some((line) => line.startsWith('anthropic/sonnet-4.5 '))).toBe(false);
-    for (const line of menuLines) {
-      expect(line).toContain('unassessed');
-      expect(line).toMatch(/ ctx \d+k \$[\d.]+\/\$[\d.]+$/);
-    }
+    expect(prompt).not.toContain('Available models');
+    expect(prompt).not.toContain('Role defaults');
+    expect(prompt).not.toContain('gemini');
 
     expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         providerOverride: 'codex',
-        modelOverride: 'gpt-5.6-sol',
+        modelOverride: 'gpt-6.1-sol',
         effort: 'high',
       }),
     );
@@ -879,15 +865,17 @@ describe('orchestrateNextStep', () => {
     );
   });
 
-  it('runs an available pick no role default reaches, without a rejection notice', async () => {
+  it('runs a listed pick no role default reaches, without a rejection notice', async () => {
     decideNext({
       reason: 'This one is hard.',
       step: {
         name: 'Implement',
         role: 'implementer',
         promptPrefix: 'Implement the change.',
-        model: 'fable-5',
-        effort: 'max',
+        provider: 'codex',
+        model: 'gpt-6.1-sol',
+        effort: 'medium',
+        difficulty: 'standard',
         modelReason: 'The refactor spans the whole router.',
       },
     });
@@ -898,13 +886,13 @@ describe('orchestrateNextStep', () => {
 
     expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        providerOverride: 'anthropic',
-        modelOverride: 'fable-5',
-        effort: 'max',
+        providerOverride: 'codex',
+        modelOverride: 'gpt-6.1-sol',
+        effort: 'medium',
       }),
     );
     expect(savedStep().routingDecision).toMatchObject({
-      selected: { provider: 'anthropic', model: 'fable-5', effort: 'max' },
+      selected: { provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' },
       source: 'agent',
       adjustment: 'none',
     });
@@ -918,8 +906,8 @@ describe('orchestrateNextStep', () => {
         name: 'Implement',
         role: 'implementer',
         promptPrefix: 'Implement the change.',
-        model: 'fable-5',
-        effort: 'max',
+        model: 'sonnet-5.5',
+        effort: 'high',
         taskType: 'implementation',
         difficulty: 'heavy',
         modelReason: 'The refactor spans the whole router.',
@@ -975,8 +963,9 @@ describe('orchestrateNextStep', () => {
         role: 'implementer',
         promptPrefix: 'Implement the change.',
         provider: 'codex',
-        model: 'gpt-5.6-sol',
+        model: 'gpt-6.1-sol',
         effort: 'high',
+        difficulty: 'standard',
       },
     });
     const state = modelPickState();
@@ -987,7 +976,7 @@ describe('orchestrateNextStep', () => {
     expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         providerOverride: 'codex',
-        modelOverride: 'gpt-5.6-sol',
+        modelOverride: 'gpt-6.1-sol',
         effort: 'high',
       }),
     );
@@ -1011,15 +1000,14 @@ describe('orchestrateNextStep', () => {
     const decision = savedStep().routingDecision as {
       source: string;
       adjustment: string;
+      reason: string;
       selected: { provider: string; model: string };
     };
 
     expect(decision.source).toBe('kind_default');
     expect(decision.adjustment).toBe('unknown_model');
-    expect(decision.selected).toMatchObject({
-      provider: 'anthropic',
-      model: AUTO_DEFAULTS.anthropic.implementer[0]?.key,
-    });
+    expect(decision.selected).toMatchObject({ provider: 'anthropic' });
+    expect(decision.reason).toContain('gpt-9-imaginary: not a model this build knows.');
   });
 
   it('ignores the model a step names while the model pick rule is off and sizes it by difficulty', async () => {
@@ -1040,13 +1028,15 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(decideSpy).toHaveBeenCalledWith(expect.objectContaining({ isModelPickEnabled: false }));
+    expect(decideSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ isModelPickEnabled: false, candidatesBlock: null }),
+    );
     expect(savedStep().routingDecision).toMatchObject({ proposal: null });
     expect(savedStep().routingDecision).not.toMatchObject({ source: 'agent' });
     expect(savedStep().routingDecision).not.toMatchObject({ selected: { model: 'opus-5' } });
   });
 
-  it('passes the opt-in rule to the decision', async () => {
+  it('passes the opt-in rule and the candidates block to the decision', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,
       decision: { action: 'done', reason: 'all set' },
@@ -1055,7 +1045,12 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(decideSpy).toHaveBeenCalledWith(expect.objectContaining({ isModelPickEnabled: true }));
+    expect(decideSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        isModelPickEnabled: true,
+        candidatesBlock: expect.stringMatching(/Provider priority: by order\.[\s\S]*\d\. codex, /),
+      }),
+    );
   });
 
   it('keeps the step reason about the work, not about routing', async () => {
@@ -1085,8 +1080,9 @@ describe('orchestrateNextStep', () => {
         role: 'implementer',
         promptPrefix: 'Implement the change.',
         provider: 'codex',
-        model: 'gpt-5.6-sol',
+        model: 'gpt-6.1-sol',
         effort: 'minimal',
+        difficulty: 'standard',
       },
     });
     const state = modelPickState();

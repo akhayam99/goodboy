@@ -294,7 +294,7 @@ describe('resolveStepRouting', () => {
   });
 });
 
-describe('resolveStepRouting spread by headroom', () => {
+describe('resolveStepRouting with two providers', () => {
   const scope = {
     defaultProvider: 'anthropic' as const,
     connected: ['anthropic', 'codex'] as const,
@@ -305,16 +305,27 @@ describe('resolveStepRouting spread by headroom', () => {
   };
   const implementer = step({ role: 'implementer' });
 
-  it('sends a step with no pin past the tight session provider to the one with room', () => {
+  it('plans a step on the candidate stored when the run started', () => {
     const routing = resolveStepRouting({
-      step: implementer,
+      step: {
+        ...implementer,
+        routingDecision: {
+          version: 1,
+          proposal: null,
+          selected: { provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' },
+          source: 'kind_default',
+          reason: 'Codex: most room left',
+          adjustment: 'none',
+          executed: null,
+        },
+      },
       kind: 'implementer',
       roleModels: null,
       sessionProvider: 'anthropic',
       scope: { ...scope, headroom: { anthropic: 'tight', codex: 'ok' } },
     });
 
-    expect(routing.provider).toBe('codex');
+    expect(routing).toEqual({ provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' });
   });
 
   it('keeps the session provider first with the switch off', () => {

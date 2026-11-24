@@ -85,6 +85,53 @@ describe('buildOrchestratorUserPrompt without the model pick rule', () => {
     expect(prompt).toContain('Steps used: 0');
     expect(prompt).toContain('Completed steps');
   });
+
+  it('sends no candidates block even when one is built', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({ isModelPickEnabled: false, candidatesBlock: 'Models for new agents, by provider' }),
+    );
+
+    expect(prompt).not.toContain('Models for new agents');
+    expect(prompt).toContain('by the provider priority the operator set');
+  });
+});
+
+describe('buildOrchestratorUserPrompt with a candidates block', () => {
+  const BLOCK = [
+    'Models for new agents, by provider in your order:',
+    '1. anthropic, 40% used, 1 agent in the last hour: standard sonnet-5.5 medium',
+    '2. codex, 10% used, 0 agents in the last hour: standard gpt-6.1-sol medium',
+  ].join('\n');
+
+  it('replaces the flat menu and the role defaults with the block', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({
+        candidatesBlock: BLOCK,
+        modelMenu: [option({ provider: 'cursor', model: 'composer-2', label: 'Composer 2' })],
+        roleDefaults: [
+          { role: 'implementer', provider: 'anthropic', model: 'sonnet-5.5', effort: 'medium' },
+        ],
+      }),
+    );
+
+    expect(prompt).toContain(BLOCK);
+    expect(prompt).not.toContain('Available models');
+    expect(prompt).not.toContain('composer-2');
+    expect(prompt).not.toContain('Role defaults');
+    expect(prompt).toContain('You are running on anthropic.');
+  });
+
+  it('keeps the flat menu when no block was built', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({
+        candidatesBlock: null,
+        modelMenu: [option({ provider: 'cursor', model: 'composer-2', label: 'Composer 2' })],
+      }),
+    );
+
+    expect(prompt).toContain('Available models');
+    expect(prompt).toContain('composer-2');
+  });
 });
 
 describe('buildOrchestratorUserPrompt', () => {
@@ -367,12 +414,12 @@ describe('ORCHESTRATOR_SYSTEM_PROMPT', () => {
     expect(ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT).toContain('"provider":"...","model":"..."');
   });
 
-  it('treats a model outside the role defaults as a normal choice once the rule is on', () => {
+  it('treats a model the app would not pick as a normal choice once the rule is on', () => {
     expect(ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT).toContain(
-      'a model outside the role defaults is a normal choice',
+      'a model the app would not pick itself is a normal choice',
     );
     expect(ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT).toContain(
-      'The role defaults are the fallback for a step you decline to route',
+      "The app's own pick for the role is the fallback for a step you decline to route",
     );
   });
 

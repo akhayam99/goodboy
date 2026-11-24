@@ -10,12 +10,18 @@ import type {
   VerbosityLevel,
   WorkflowRunId,
 } from '@goodboy/types';
-import { resolveModelIdForProvider, type AutoContext } from '@goodboy/core/providers';
+import {
+  resolveModelIdForProvider,
+  type AutoContext,
+  type CandidateInputs,
+} from '@goodboy/core/providers';
 import { type WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core/orchestrator';
-import { classifyStep } from '../../../features/session/agent-kind';
+import { KIND_TO_ROLE, classifyStep } from '../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
 import { revalidateStepRouting } from '../../../features/workflows/revalidateStepRouting';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
+import { candidateRoutedStep } from '../workflowRouting/candidateRoutedStep';
+import type { RoutedPick } from '../workflowRouting/writerFamilyOf';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -29,6 +35,8 @@ type Params = {
   readonly defaultVerbosity?: VerbosityLevel;
   readonly availability?: WorkflowRoutingAvailabilitySnapshot;
   readonly scope?: AutoContext | null;
+  readonly candidates?: CandidateInputs | null;
+  readonly earlier?: ReadonlyArray<RoutedPick>;
   readonly mountId: MountId | null;
 };
 
@@ -59,6 +67,8 @@ export const preSpawnWorkflowAgents = async ({
   defaultVerbosity,
   availability,
   scope = null,
+  candidates = null,
+  earlier = [],
   mountId,
 }: Params): Promise<PreSpawnWorkflowAgentsResult> => {
   const agents: Agent[] = [];
@@ -67,6 +77,8 @@ export const preSpawnWorkflowAgents = async ({
   const providerOverrides: Record<string, ProviderId> = {};
   const effortOverrides: Record<string, EffortLevel> = {};
   const blocked: Array<BlockedWorkflowStep> = [];
+  const picks: Array<RoutedPick> = [...earlier];
+  const batch: Array<ProviderId> = [];
   const sortedSteps = [...steps].sort((left, right) => left.ordinal - right.ordinal);
 
   for (const step of sortedSteps) {
@@ -82,7 +94,14 @@ export const preSpawnWorkflowAgents = async ({
       blocked.push({ stepId: step.id, stepName: step.name, reason: revalidated.reason });
       continue;
     }
-    const effectiveStep = revalidated.kind === 'replace' ? revalidated.step : step;
+    const role = step.role ?? KIND_TO_ROLE[kind];
+    const effectiveStep = candidateRoutedStep({
+      step: revalidated.kind === 'replace' ? revalidated.step : step,
+      role,
+      inputs: candidates,
+      earlier: picks,
+      batch,
+    });
     const routing = resolveStepRouting({
       step: effectiveStep,
       kind,
@@ -111,6 +130,8 @@ export const preSpawnWorkflowAgents = async ({
       taskProfile: effectiveStep.taskProfile ?? null,
       ...(mountId !== null && { mountId }),
     });
+    picks.push({ role, provider, model });
+    batch.push(provider);
     providerOverrides[agent.id] = provider;
     modelOverrides[agent.id] = model;
     kindOverrides[agent.id] = kind;

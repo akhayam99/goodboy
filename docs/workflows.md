@@ -241,29 +241,43 @@ the guidance box says only where it goes, and the Runs page keeps the
 line about the profile field. The names there come from `PROFILE_ACCESS`: the
 roles that never read the working rules.
 
-### Spread by what I have left
+### Provider priority for steps
 
-`providerHeadroom` in `packages/core` reads the limit snapshots the app already
-has, with the thresholds of the limit chips: _ok_, _tight_ (80% used or more),
-_out_, _unknown_. A snapshot older than 30 minutes, twice the re-read time, is
-_unknown_; a workflow decision that finds one asks for one re-read
-(`probeProviderLimits`) and then decides, so a decision reads the headroom once
-and no new poll exists. Limits that arrive with a turn count as fresh. A
-provider marked **Keep using after the limit** counts as tight, not out.
+Workflow steps and orchestrated steps start on the same candidates as the
+Lead's helpers: `buildCandidates` in `packages/core/src/providers/candidates/`,
+with scope `step` (no writer guard). The run's copy of `spreadByHeadroom` picks
+the rule. Off is **By order**: your provider order wins when several fit, and a
+provider at 80% of a limit or more is skipped. On is **By load**: the provider
+with the most room left wins. A run with no copy is By order.
 
-With the rule on (the run's copy, `spreadByHeadroom`):
+- A fixed workflow picks every step when the run is attached
+  (`candidateRoutedStep` in `preSpawnWorkflowAgents`). It counts the steps it
+  already placed, so By load spreads one run over the providers. A step that
+  names its own provider, model or effort, or carries a lock or a decision,
+  keeps it.
+- A Reviewer step runs on another model family than the last step of the run
+  that wrote code, unless no other family is left (`writerFamilyOf`).
+- The pick is stored on the agent as its `routing_decision`, with words an older
+  build reads (`kind_default`, or `role_default` for a pinned role, and an
+  existing `adjustment`), and a short why line such as "Codex: most room left".
+- When a waiting step starts, `recheckPendingStepRouting` looks again. If its
+  provider went Off, into cooldown, past its budget or out of the run's
+  providers, the step moves to the best candidate and the why line names the
+  cause, for example "Claude Opus 5.5: cooling down after a limit. Codex: first
+  in your order that fits." A pick you changed by hand is left alone.
+- Fan-out children (`childRoutingBatch`) with no pick take the best candidate and
+  count their siblings. A planner's pick is kept while its provider passes the
+  guards. A session over its budget keeps the older refusal.
+- By load with a limit reading older than 30 minutes asks for one re-read
+  (`probeProviderLimits`) before it decides. Providers without a reading use the
+  estimate in [providers.md](./providers.md). With fewer than two connected
+  providers nothing is read: the one provider's rung wins.
+- The session's composer model does not steer steps. A role pin does.
 
-- the orchestrator menu drops the _out_ providers and puts the _tight_ ones last
-  (`workflowAvailabilitySnapshot` with `headroom`)
-- static steps and fan-out children pick through Auto with the headroom, and the
-  role's Auto wins over the session provider (`resolveStepRouting`,
-  `resolveWorkflowChildRouting`); a provider pinned on the step still wins
-- if dropping the _out_ providers empties the menu, the menu of today comes back
-
-With the rule off nothing changes. Workspaces that existed before 0.16.0 start
-with it off (m217), and so does a workspace with no saved rules. The rule is
-**Provider priority** in Settings > This workspace > Models, **By order** (off)
-or **By load** (on); see [providers.md](./providers.md#defaults-and-task-models).
+Workspaces that existed before 0.16.0 start with it off (m217), and so does a
+workspace with no saved rules. The rule is **Provider priority** in Settings >
+This workspace > Models, **By order** (off) or **By load** (on); see
+[providers.md](./providers.md#defaults-and-task-models).
 The Lead's helpers read the workspace rule, not a run copy (see
 [auto.md](./auto.md#providers)). The Runs page shows nothing of it.
 
@@ -1498,21 +1512,23 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   started. Steps take their role models from the resolved settings. A run has
   no per-role model overrides of its own.
 - **Who picks a step's model.** The orchestrator states how hard a step is
-  (`difficulty`: light, standard or heavy, which `stepSizeForDifficulty` reads as
-  small, medium or large) and the code picks the model: `modelForStep`
-  (`providers/autoRouting/modelForStep.ts`) turns the step's role and size into a
-  rung on the preferred provider's ladder. The prompt tells the orchestrator not
-  to name a provider, model or effort, and `resolveProposedRouting` drops those
-  fields when it still sends them. The opt-in workflow rule
-  `canOrchestratorPickModel` (`WorkflowRules`, saved in the run's `rulesSnapshot`)
-  gives the old behavior back: the orchestrator sees the model menu and its own
-  pick wins when it can run (`ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT`). When the
-  pick it named cannot run, or a generated step has none, the step takes the pick
-  Auto sized for it (`kind_default` in the decision, "Auto sized the step by its
-  difficulty") unless a role model set pins the role; only then the older
-  heuristic (`recommendWorkflowModel`, aimed at the tier of the failed pick) runs.
-  Pins still come first: a step lock, a role model set and a session model
-  override beat the sized pick
+  (`difficulty`: light, standard or heavy, which `stepSizeOf` reads as small,
+  medium or large) and the code takes the best candidate for the step's role and
+  size by the run's provider priority (`resolveOrchestratedStepRouting`, see
+  [Provider priority for steps](#provider-priority-for-steps)). The prompt tells
+  the orchestrator not to name a provider, model or effort, and those fields are
+  dropped when it still sends them; no candidates block is sent. The opt-in
+  workflow rule `canOrchestratorPickModel` (`WorkflowRules`, saved in the run's
+  `rulesSnapshot`) lets the orchestrator pick: its request carries the candidates
+  block in place of the flat model menu and the role defaults
+  (`orchestratorCandidatesBlock`, `ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT`). A pick
+  from a row runs, with its effort clamped to what the model accepts. A pick that
+  is not a row moves to the best candidate, and the why line says so: "Claude
+  Fable 5: not a candidate for this step. Claude: first in your order." With
+  fewer than two connected providers there is no block and the flat menu stays.
+  A step lock from a pinned preset step, or a session over its budget, takes the
+  older path (`resolveProposedRouting`). A generated step with no pick carries no
+  routing and takes the candidates when its run starts
 - **Its provider pool.** `provider_pool` on `session_workflows` (m170) holds
   the providers picked in **Can use**, as a JSON list. Empty means every
   connected provider. `workflowAvailabilitySnapshot` drops the providers
