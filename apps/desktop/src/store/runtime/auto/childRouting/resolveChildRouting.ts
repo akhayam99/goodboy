@@ -330,7 +330,7 @@ const resolvePicked = ({ request, list, parsed, scope }: PickedParams): RoutingO
         why: { kind: 'lead', candidate: checked.candidate, leadReason: reason },
       }),
       proposal: isEffortDropped ? 'adjusted' : 'kept',
-      source: 'lead',
+      source: list.isPinned ? 'pin' : 'lead',
       cause: null,
     });
   }
@@ -345,7 +345,7 @@ const resolvePicked = ({ request, list, parsed, scope }: PickedParams): RoutingO
       why: { kind: 'fallback', candidate: checked.candidate, list, cause: checked.cause, asked },
     }),
     proposal: 'replaced',
-    source: 'fallback',
+    source: list.isPinned ? 'pin' : 'fallback',
     cause: checked.cause,
   });
 };

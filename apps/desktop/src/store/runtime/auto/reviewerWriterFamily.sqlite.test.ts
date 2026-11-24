@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { insertArtifact, listAutoArtifacts } from '@goodboy/db';
+import { getAutoTree, insertArtifact, listAutoArtifacts, listAutoDelegations } from '@goodboy/db';
 import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type AgentId, type ArtifactId } from '@goodboy/types';
+import { recheckQueuedRouting } from './childRouting/recheckQueuedRouting';
 import { READY_ROUTING } from './testing/fakePorts';
 import {
   autoDelegates,
@@ -107,5 +108,42 @@ describe('the model family a reviewer is routed against', () => {
     expect(requests.find((request) => request.role === 'reviewer')?.writerFamily).toBe('gpt');
     expect(requests.find((request) => request.role === 'tester')?.writerFamily).toBeNull();
     expect(requests.find((request) => request.role === 'implementer')?.writerFamily).toBeNull();
+  });
+
+  it('stays the writer family when a queued reviewer is rechecked at its turn', async () => {
+    const world = await startedOnCodex();
+    const reportId = await writtenReport({ world });
+    world.state.ports.setRouting(READY_ROUTING);
+    await autoDelegates({
+      world,
+      requestId: 'request-review',
+      spec: {
+        children: [
+          {
+            role: 'reviewer',
+            task: 'review the retry cap change',
+            reason: 'a second look',
+            artifacts: [reportId],
+          },
+        ],
+      },
+    });
+    const db = world.state.world.db;
+    const tree = await getAutoTree({ db, treeId: world.treeId });
+    const reviewer = (await listAutoDelegations({ db, treeId: world.treeId })).find(
+      (row) => row.role === 'reviewer',
+    );
+    if (tree === null || reviewer === undefined) {
+      throw new Error('the reviewer delegation was expected');
+    }
+
+    await recheckQueuedRouting({
+      ctx: world.runtime.ctx,
+      tree,
+      delegation: reviewer,
+      role: 'reviewer',
+    });
+
+    expect(world.state.ports.routingRequests.at(-1)?.writerFamily).toBe('gpt');
   });
 });

@@ -501,7 +501,7 @@ export const resolveDelegateChild = async ({
   const words = revise === null ? null : await userWordsOf({ ctx, tree, rowIds: child.changeFrom });
   const producerRouting = revise?.producerRouting ?? {};
   const lead = await leadRunFactsOf({ db: ctx.db, grant, tree, role });
-  const writerFamily = await writerFamilyOf({ ctx, tree, role, artifactIds: child.artifactIds });
+  const writerFamily = await writerFamilyOf({ ctx, tree, role, inputs: inputs.refs });
   const routing = await ctx.ports.resolveRouting({
     sessionId: grant.sessionId,
     role,
