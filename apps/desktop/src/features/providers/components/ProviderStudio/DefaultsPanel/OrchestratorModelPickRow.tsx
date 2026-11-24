@@ -17,7 +17,7 @@ export const OrchestratorModelPickRow = ({ workspaceId }: Props) => {
   const { isOn, setIsOn } = useOrchestratorModelPick({ workspaceId });
   return (
     <SettingRow
-      label="Models in workflows"
+      label="Models in older plan runs"
       rowKey="models-in-workflows"
       help={isOn ? HELP_ON : HELP_OFF}
     >

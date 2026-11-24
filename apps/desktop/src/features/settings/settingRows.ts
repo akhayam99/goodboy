@@ -369,9 +369,10 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
   }),
   row({
     key: 'models-in-workflows',
-    label: 'Models in workflows',
-    help: 'Let the workflow orchestrator choose models.',
+    label: 'Models in older plan runs',
+    help: 'Let the orchestrator of an older plan run choose models.',
     page: MODELS,
     band: 'Choosing models',
+    formerNames: ['Models in workflows'],
   }),
 ];

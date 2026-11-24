@@ -37,7 +37,7 @@ import type { ProviderDisplayInfo } from './providers';
 
 const WORKSPACE = aWorkspace({ id: 'workspace-harborline' as WorkspaceId, name: 'Harborline' });
 
-const SPREAD_LABEL = 'Send new steps to the provider with the most room';
+const SPREAD_LABEL = 'Skip a provider near its limit';
 
 const providerInfo = ({ id }: { readonly id: ProviderId }): ProviderDisplayInfo => ({
   id,
@@ -139,7 +139,38 @@ describe('the provider policy has one home', () => {
     const toggle = popover.getByRole('switch', { name: SPREAD_LABEL });
     expect(toggle.hasAttribute('disabled')).toBe(true);
     expect(toggle.getAttribute('aria-checked')).toBe('false');
-    expect(popover.getByText('Needs a provider that reports limits')).toBeDefined();
+    expect(
+      popover.getByText('Only Claude and Codex report limits. Turn one on to use this.'),
+    ).toBeDefined();
+  });
+
+  it('says the switch skips a provider past 80% and only Claude and Codex report limits', () => {
+    seed({ policy: POLICY, rules: { spreadByHeadroom: true } });
+    const popover = openPopover();
+
+    expect(popover.getByTestId('spread-sentence').textContent).toBe(
+      'Past 80% of a limit, new agents start on the next provider. Only Claude and Codex report limits.',
+    );
+  });
+
+  it('says the first On provider does all the work and the rest is the fallback order', () => {
+    seed({ policy: POLICY });
+    render(<ProvidersInOrder workspaceId={WORKSPACE.id} />);
+
+    expect(
+      screen.getByText(
+        'Every new agent starts on Claude while Claude can work. Codex and Cursor take over only when it cannot.',
+      ),
+    ).toBeDefined();
+  });
+
+  it('says no other provider takes over when only one is on', () => {
+    seed({ policy: CURSOR_ONLY });
+    render(<ProvidersInOrder workspaceId={WORKSPACE.id} />);
+
+    expect(
+      screen.getByText('Every new agent starts on Cursor. No other provider is on to take over.'),
+    ).toBeDefined();
   });
 
   it('leaves the policy to Models: Runs has no switch, summary or link for it', () => {

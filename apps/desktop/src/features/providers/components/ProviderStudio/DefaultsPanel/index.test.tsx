@@ -3,8 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ROLE_REGISTRY } from '@goodboy/core/roles';
 import { DEFAULT_GROUPS, TASKS } from '@goodboy/core/settings';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { OverrideSettings, Project, TaskModelPreference, WorkspaceId } from '@goodboy/types';
-import { aProject } from '@goodboy/types/testing';
+import {
+  brandId,
+  type IsoDateTime,
+  type OverrideSettings,
+  type Project,
+  type Session,
+  type TaskModelPreference,
+  type WorkspaceId,
+} from '@goodboy/types';
+import { aProject, aSession, aWorkflowRun } from '@goodboy/types/testing';
 import {
   mergeWorkspaceOverrides,
   type WorkspaceOverridesPatch,
@@ -23,6 +31,7 @@ const { state } = vi.hoisted(() => ({
       { id: 'cursor', connection: 'connected' },
     ],
     projects: [] as ReadonlyArray<Project>,
+    sessions: new Array<Session>(),
     settings: {} as Record<string, string>,
     providerLimits: {},
     loadSetting: vi.fn(async (_key: string) => null as string | null),
@@ -165,6 +174,7 @@ beforeEach(() => {
     );
   state.workspaceOverrides = { 'ws-1': EMPTY_OVERRIDES };
   state.projects = [];
+  state.sessions = [];
   state.savedProjectModels = {};
   state.settings = {};
   state.loadSetting.mockClear();
@@ -198,18 +208,29 @@ const TASK_LABELS = [
   'Plan drafting',
   'Prose polish',
   'Agent naming',
-  'Orchestrator',
+  'Older plan runs',
   'History rewriter',
 ];
 
 const SONNET_TASK_LABELS: ReadonlySet<string> = new Set([
   'Plan drafting',
-  'Orchestrator',
+  'Older plan runs',
   'History rewriter',
 ]);
 
+type RunsParams = {
+  readonly runs: Session['workflowRuns'];
+};
+
+const withRuns = ({ runs }: RunsParams) => {
+  state.sessions = [aSession({ workspaceId: WORKSPACE_ID, workflowRuns: runs })];
+};
+
+const withPlanRun = () => withRuns({ runs: [aWorkflowRun({ executionMode: 'dynamic' })] });
+
 describe('DefaultsPanel', () => {
-  it('opens with a Runs section that holds the Lead and the Orchestrator', () => {
+  it('opens with a Runs section that holds the Lead and Older plan runs while a plan run exists', () => {
+    withPlanRun();
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
     const sections = screen
@@ -219,8 +240,41 @@ describe('DefaultsPanel', () => {
     expect(sections.indexOf('Runs')).toBeLessThan(sections.indexOf('Providers'));
     const runs = screen.getByRole('region', { name: 'Runs' });
     within(runs).getByText('Lead');
-    within(runs).getByText('Orchestrator');
-    expect(runs.querySelector('[aria-label="Orchestrator routing model"]')).not.toBeNull();
+    within(runs).getByText('Older plan runs');
+    expect(runs.querySelector('[aria-label="Older plan runs routing model"]')).not.toBeNull();
+    const choosing = screen.getByRole('region', { name: 'Choosing models' });
+    within(choosing).getByText('Models in older plan runs');
+  });
+
+  it('hides Older plan runs and Models in older plan runs while the workspace has no plan run', () => {
+    withRuns({
+      runs: [
+        aWorkflowRun({ executionMode: 'static' }),
+        aWorkflowRun({
+          executionMode: 'dynamic',
+          discardedAt: brandId<IsoDateTime>({ value: '2026-11-20T10:00:00.000Z' }),
+        }),
+      ],
+    });
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    const runs = screen.getByRole('region', { name: 'Runs' });
+    within(runs).getByText('Lead');
+    expect(within(runs).queryByText('Older plan runs')).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Choosing models' })).toBeNull();
+    expect(screen.queryByText('Models in older plan runs')).toBeNull();
+  });
+
+  it('ignores a plan run of another workspace', () => {
+    state.sessions = [
+      aSession({
+        workspaceId: brandId<WorkspaceId>({ value: 'ws-2' }),
+        workflowRuns: [aWorkflowRun({ executionMode: 'dynamic' })],
+      }),
+    ];
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.queryByText('Older plan runs')).toBeNull();
   });
 
   it('reads the Lead pin from roleModels.auto and marks it Pinned', () => {
@@ -236,12 +290,13 @@ describe('DefaultsPanel', () => {
     expect(roleRow('Lead').textContent).toContain('Opus 5.5');
   });
 
-  it('keeps the stored keys: the Orchestrator row writes taskModels', () => {
+  it('keeps the stored keys: the Older plan runs row writes taskModels', () => {
+    withPlanRun();
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
     const runs = within(screen.getByRole('region', { name: 'Runs' }));
 
-    fireEvent.click(runs.getByRole('button', { name: 'Orchestrator routing model' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Orchestrator routing high effort' }));
+    fireEvent.click(runs.getByRole('button', { name: 'Older plan runs routing model' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Older plan runs routing high effort' }));
 
     expect(state.writeRow).toHaveBeenLastCalledWith(
       'ws-1',
@@ -268,7 +323,9 @@ describe('DefaultsPanel', () => {
     const trigger = screen.getByRole('button', { name: /Cursor · Claude as backup/ });
     expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
     expect(
-      screen.getByText('New work starts on Cursor. Backup only if no On provider can work.'),
+      screen.getByText(
+        'Every new agent starts on Cursor while Cursor can work. Claude takes over only when it cannot.',
+      ),
     ).toBeDefined();
   });
 
@@ -279,6 +336,7 @@ describe('DefaultsPanel', () => {
   });
 
   it('renders every task model row', () => {
+    withPlanRun();
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     for (const label of TASK_LABELS) {
@@ -287,6 +345,7 @@ describe('DefaultsPanel', () => {
   });
 
   it('shows the resolved model with an auto status for automatic task preferences', () => {
+    withPlanRun();
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     for (const label of TASK_LABELS) {
@@ -329,10 +388,11 @@ describe('DefaultsPanel', () => {
   });
 
   it('persists an effort for a task model', () => {
+    withPlanRun();
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Orchestrator routing model' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Orchestrator routing high effort' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Older plan runs routing model' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Older plan runs routing high effort' }));
 
     expect(state.writeRow).toHaveBeenLastCalledWith(
       'ws-1',
@@ -689,6 +749,7 @@ describe('DefaultsPanel', () => {
   });
 
   it('lays every run, chat, agent and background task row on the one model grid', () => {
+    withPlanRun();
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
     const gridRows = document.querySelectorAll('[data-role-grid]');
@@ -714,13 +775,14 @@ describe('DefaultsPanel', () => {
   });
 
   it('renders 11 roles and 10 tasks inside their groups, and the two run models apart', () => {
+    withPlanRun();
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     const agents = screen.getByRole('region', { name: 'Agents' });
     const tasks = screen.getByRole('region', { name: 'Background tasks' });
     expect(within(agents).getAllByRole('button', { expanded: false })).toHaveLength(11);
     expect(tasks.querySelectorAll('[aria-label$=" routing model"]')).toHaveLength(10);
-    expect(within(tasks).queryByText('Orchestrator')).toBeNull();
+    expect(within(tasks).queryByText('Older plan runs')).toBeNull();
     expect(within(agents).queryByText('Auto agent')).toBeNull();
     for (const group of DEFAULT_GROUPS.tasks) {
       const node = screen.getByRole('group', { name: group.label });

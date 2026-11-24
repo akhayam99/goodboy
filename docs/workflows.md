@@ -262,12 +262,14 @@ With the rule on (the run's copy, `spreadByHeadroom`):
 
 With the rule off nothing changes. Workspaces that existed before 0.16.0 start
 with it off (m217); new workspaces start with it on. The switch is the
-**Send new steps to the provider with the most room** option of the policy popover in
+**Skip a provider near its limit** option of the policy popover in
 Settings > This workspace > Models, with one sentence under it: with it off, "New
-steps follow the provider order."; with it on and a provider passed, where the
-next step goes and how full the passed one is, and otherwise that steps of one
-run can land on different providers (`nextStepPick`, `spreadSentence`).
-The Runs page shows nothing of it.
+agents follow the provider order." and that only Claude and Codex report limits;
+with it on and a provider passed, where new agents start and how full the passed
+one is, and otherwise "Past 80% of a limit, new agents start on the next
+provider. Only Claude and Codex report limits." (`nextStepPick`, `spreadSentence`).
+The Lead's helpers read the workspace rule, not a run copy (see
+[auto.md](./auto.md#providers)). The Runs page shows nothing of it.
 
 The builder opens filled from the rules and shows them in one **From your
 rules** line with **Edit**. A launch control that leaves the rules shows a dot
@@ -308,7 +310,8 @@ blocked.
 - It ends the run when the goal is met, or stops and asks you when a decision needs you
 
 The model of the orchestrator has three homes. The workspace default is the
-**Orchestrator** row of **Settings › Models › Runs**. A run takes it from the
+**Older plan runs** row of **Settings › Models › Runs**, shown only while the
+workspace has a plan run that is not discarded (`useHasPlanRuns`). A run takes it from the
 **Model** chip of Start a run, and the run page shows it as the **Orchestrator**
 chip in the settings line, the composer row beside the hint box changes the same
 value. The chips write `orchestratorRouting` of the run (`useOrchestratorModel`

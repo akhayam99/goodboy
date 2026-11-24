@@ -2190,7 +2190,13 @@ is outside it, and `turn_spawn` refuses it again (`ensure_auto_child`). Routing 
 default only over the providers of that list that are connected, not cooling down and not over
 budget, so a Claude usage limit moves a reading child to Cursor instead of blocking it. When nothing
 is left, `childRoutingRefusal` names each connected provider with its reason (usage limit until a
-time, budget reached, no visible model, reading roles only) and points to Settings › Models. The pool of a tree is the run
+time, budget reached, no visible model, reading roles only) and points to Settings › Models.
+With **Skip a provider near its limit** on for the workspace (`spreadByHeadroom` in the
+workspace `workflowRules`, on by default), `resolveChildRouting` reads the headroom
+(`readHeadroom`) and passes it to the availability and the role pick, the same reading the
+workflow paths use: a Claude past 80% of a limit goes behind Codex, so a writing helper starts on
+Codex, and a session model on that Claude is skipped. Only Claude and Codex report limits. The
+pool of a tree is the run
 pool when there is one, else the workspace pool (the providers the workspace
 policy on the Models page does not turn off), else every allowed provider
 (`autoChildPool`, `runProviderPool`).

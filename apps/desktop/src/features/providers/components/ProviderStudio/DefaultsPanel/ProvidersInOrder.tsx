@@ -12,6 +12,7 @@ import {
 
 import { ProviderGlyph } from '../../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { useProviderPolicy } from '../../../hooks/useProviderPolicy';
+import type { PolicySummary } from '../../../policy/policySummary';
 import { PROVIDER_LABEL } from '../../../providerLabel';
 import { ProviderPolicyList } from '../../ProviderPolicyList';
 import { SettingRow } from '../../../../settings/settingRow';
@@ -23,6 +24,26 @@ type Props = {
 
 const PANEL_HEIGHT = 430;
 
+const LIST_FORMAT = new Intl.ListFormat('en', { type: 'conjunction' });
+
+type HelpParams = {
+  readonly summary: PolicySummary;
+};
+
+const orderHelpOf = ({ summary }: HelpParams): string => {
+  const [first, ...otherOn] = summary.on;
+  if (first === undefined) {
+    return 'No provider is on. Turn one on to start new work.';
+  }
+  const name = PROVIDER_LABEL[first];
+  const rest = [...otherOn, ...summary.backup].map((id) => PROVIDER_LABEL[id]);
+  if (rest.length === 0) {
+    return `Every new agent starts on ${name}. No other provider is on to take over.`;
+  }
+  const verb = rest.length === 1 ? 'takes' : 'take';
+  return `Every new agent starts on ${name} while ${name} can work. ${LIST_FORMAT.format(rest)} ${verb} over only when it cannot.`;
+};
+
 export const ProvidersInOrder = ({ workspaceId }: Props) => {
   const { summary } = useProviderPolicy({ workspaceId });
   const dropdown = useDropdown({
@@ -30,11 +51,7 @@ export const ProvidersInOrder = ({ workspaceId }: Props) => {
     expectedWidth: POPOVER_WIDTH_PX.studio,
     expectedHeight: PANEL_HEIGHT,
   });
-  const firstOn = summary.on[0] ?? null;
-  const help =
-    firstOn === null
-      ? 'No provider is on. Turn one on to start new work.'
-      : `New work starts on ${PROVIDER_LABEL[firstOn]}. Backup only if no On provider can work.`;
+  const help = orderHelpOf({ summary });
 
   return (
     <SettingRow label="When a provider is out" rowKey="provider-order" help={help}>

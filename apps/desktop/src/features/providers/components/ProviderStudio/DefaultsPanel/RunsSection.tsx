@@ -36,6 +36,7 @@ type Props = {
   readonly overrides: OverrideSettings;
   readonly connectedProviderIds: ReadonlyArray<ProviderId>;
   readonly isDisabled: boolean;
+  readonly hasPlanRuns: boolean;
   readonly onRoleChange: (params: RoleChangeParams) => void;
   readonly onTaskChange: (params: TaskChangeParams) => void;
 };
@@ -45,6 +46,7 @@ export const RunsSection = ({
   overrides,
   connectedProviderIds,
   isDisabled,
+  hasPlanRuns,
   onRoleChange,
   onTaskChange,
 }: Props) => (
@@ -69,7 +71,7 @@ export const RunsSection = ({
     ))}
     {DEFAULT_GROUPS.runs.tasks.map((taskId) => {
       const task = TASK_BY_ID.get(taskId);
-      if (task == null) {
+      if (task == null || !hasPlanRuns) {
         return null;
       }
       return (
