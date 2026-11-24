@@ -9,6 +9,7 @@ export const SITE = {
   releaseDownloads: `${REPO}/releases/download`,
   latestApi: 'https://api.github.com/repos/akhayam99/goodboy/releases/latest',
   features: '/features',
+  ade: '/agentic-development-environment',
   demo: 'https://demo.goodboy-ai.dev',
   howItWorks: '/#tour',
   issues: `${REPO}/issues`,

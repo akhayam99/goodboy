@@ -17,6 +17,7 @@ Find a file by what you want to change.
 | the hero or any landing section           | `src/pages/home/sections/` (`Hero.tsx`, `Tour.tsx`, `Install.tsx`), assembled by `src/pages/home/HomePage.tsx` |
 | a product mock shown on the page          | `src/mocks/` (`kit/` is the shared app look)                                                                   |
 | the features page or its copy             | `src/pages/features/`, copy in `features.data.json`                                                            |
+| the ADE guide page and its copy           | `src/pages/content/AdePage.tsx`, copy in `adeGuide.ts`                                                         |
 | docs, changelog, release or 404 pages     | `src/pages/content/`                                                                                           |
 | titles, JSON-LD, sitemap, feed, markdown  | `src/prerender/`                                                                                               |
 | a release snapshot                        | `src/data/releases/` (written by the release flow)                                                             |
@@ -91,13 +92,14 @@ characters; a description takes 70 to 165 (`website/scripts/lib/seoCheck.mjs`).
   A doc page is a TechArticle, a release page a WebPage with the `datePublished`
   of its snapshot, the two index pages are CollectionPages, and every other page
   a WebPage. Mark up only what the page shows: no rating, no `license` and no FAQ
-  that isn't on the page. The check fails on a type outside that list.
+  that isn't on the page. The ADE guide page adds a FAQPage built from the same
+  `adeGuide.ts` questions the page prints. The check fails on a type outside that list.
 - `website/src/prerender/PAGE_REGISTRY.ts` is the one list of pages: the home page,
   features, every content page and the 404, each with its `PageMeta`. The build writes `dist/sitemap.xml` and `dist/llms.txt` from it, so they cannot
   disagree, and `/changelog.xml` from the release snapshots; a new release or doc shows up in all three on its own. A patch release (`x.y.z` with `z` not 0, decided by `isPatchRelease`) is `noindex`: its page still renders and the changelog index and the feed still link it, but the sitemap and `llms.txt` leave it out. A page has a `lastmod`
   only when its date is true: a release page has its snapshot date, the changelog index the newest release date, and the home page,
-  features and docs have none. `llms.txt` is a plain index for agents that
-  reach the site: the home description, then Product, Docs, the newest ten releases and Download, one line per
+  features, the ADE guide and docs have none. `llms.txt` is a plain index for agents that
+  reach the site: the home description, then Product (home, features, the ADE guide), Docs, the newest ten releases and Download, one line per
   page. No sitemap or `llms.txt` lives in `website/public/`, so there is none to edit by hand, and the SEO check fails
   when the sitemap, `llms.txt`, the feed and the built pages list different URLs
   (the feed lists every built release page, the sitemap and `llms.txt` only the indexed ones).
@@ -149,6 +151,16 @@ characters; a description takes 70 to 165 (`website/scripts/lib/seoCheck.mjs`).
   from `features.data.json` in that folder. Vite builds both pages as inputs,
   `vercel.json` serves them without `.html`, and the dev and preview servers
   rewrite `/features` the same way.
+- `/agentic-development-environment`, the guide that answers the search "agentic
+  development environment": a definition, an ADE, IDE and terminal agent
+  comparison table, the six jobs of an ADE with how Goodboy does each and a FAQ.
+  Its copy is `website/src/pages/content/adeGuide.ts`, rendered by `AdePage.tsx`
+  on the content template (build only, like the docs), and its meta is in
+  `website/src/prerender/STATIC_PAGES.ts`. Each job links to the `/docs/<area>`
+  page and heading that holds its feature. The closing Download button points at
+  `/#install`, because a prerendered content page cannot pick a platform build.
+  The footer line under the logo links to it on every page, and sits in place of a
+  sixth Product link, which would push the home page past its height budget.
 - `/changelog`, every release newest first, and `/changelog/<version>`, one
   page per release, titled `Goodboy <version>: <summary theme>` in 70 characters or fewer and described by its summary, plus the first note entries when the summary is short: its date and summary from the snapshot in
   `website/src/data/releases/`, and its New, Improved and Fixed notes from the
@@ -363,7 +375,7 @@ the tap holds casks and has no Linux formula. A phone has no download buttons.
 `pnpm check:page [url...]` drives headless Chrome over a running page (default
 `http://localhost:1499/`) at 1440, 1024, 768, 660 and 390 pixels wide, in
 both themes, at twice the pixel density. With no url it checks `/`,
-`/features` and one page of each content kind; every route passes it. Tag
+`/features`, the ADE guide and one page of each content kind; every route passes it. Tag
 Manager is blocked during the run.
 
 `/` and `/features` are the marketing pages. On the changelog, docs and 404

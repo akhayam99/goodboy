@@ -1,6 +1,7 @@
 import PROVIDER_SOURCES from '../components/brandIcons.source.json';
 import { BUILD_ASSET_URLS } from '../lib/downloads';
 import { SITE } from '../lib/site';
+import { ADE_GUIDE } from '../pages/content/adeGuide';
 import type { PageKind, PageMeta } from './PageMeta';
 import { RELEASES } from './RELEASES';
 import { STATIC_PAGES } from './STATIC_PAGES';
@@ -19,6 +20,7 @@ const AUTHOR = { '@type': 'Person', name: 'Amin Khayam', url: 'https://github.co
 const SCHEMA_TYPE = {
   home: 'WebPage',
   features: 'WebPage',
+  guide: 'WebPage',
   'docs-index': 'CollectionPage',
   doc: 'TechArticle',
   'changelog-index': 'CollectionPage',
@@ -94,6 +96,17 @@ const breadcrumbList = ({ page }: Params) => ({
   })),
 });
 
+const faqPage = ({ page }: Params) => ({
+  '@type': 'FAQPage',
+  '@id': `${SITE.origin}${page.path}#faq`,
+  isPartOf: { '@id': `${SITE.origin}${page.path}#webpage` },
+  mainEntity: ADE_GUIDE.faq.items.map((item) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: { '@type': 'Answer', text: item.answer },
+  })),
+});
+
 const webPage = ({ page }: Params) => {
   const url = `${SITE.origin}${page.path}`;
   const isRelease = page.kind === 'release';
@@ -123,6 +136,7 @@ export const jsonLd = ({ page }: Params) => {
     software(),
     ...(page.kind === 'not-found' ? [] : [webPage({ page })]),
     ...(page.kind !== 'not-found' && page.crumbs.length > 1 ? [breadcrumbList({ page })] : []),
+    ...(page.isIndexed && page.kind === 'guide' ? [faqPage({ page })] : []),
   ];
   const json = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph });
   return `<script type="application/ld+json">${json.replace(/</g, '\\u003c')}</script>`;

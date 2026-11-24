@@ -44,7 +44,10 @@ export const llmsTxt = ({ pages }: Params) => {
     '',
     `> ${home.description}`,
     '',
-    ...section({ title: 'Product', pages: ofKinds({ pages, kinds: ['home', 'features'] }) }),
+    ...section({
+      title: 'Product',
+      pages: ofKinds({ pages, kinds: ['home', 'features', 'guide'] }),
+    }),
     ...section({ title: 'Docs', pages: ofKinds({ pages, kinds: ['docs-index', 'doc'] }) }),
     ...section({
       title: 'Changelog',

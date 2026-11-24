@@ -278,6 +278,22 @@ describe('checkSeo', () => {
     assert.deepEqual(rulesOf(ref), ['jsonld-ref']);
   });
 
+  it('allows a FAQPage with its questions and answers', () => {
+    const faq = {
+      '@type': 'FAQPage',
+      '@id': `${ORIGIN}/#faq`,
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'Is it free?',
+          acceptedAnswer: { '@type': 'Answer', text: 'Yes.' },
+        },
+      ],
+    };
+    const found = run({ htmlFiles: { 'index.html': page({ ld: graph({ extra: [faq] }) }) } });
+    assert.deepEqual(found, []);
+  });
+
   it('wants a TechArticle on a doc and a datePublished on a release', () => {
     const doc = (ld) =>
       run({
