@@ -487,6 +487,20 @@ That comes from the attribute itself. `icon-only-controls-carry-a-tooltip`
 enforces the rule for `<button>`, `<a>` and `<Button>` controls, and sees icons
 written as member expressions such as `<CONCEPT_ICONS.agents />`.
 
+**Role card.** A role chip opens the one role card, a `FactCard` that also
+takes a `task`, a `stateGlyph` and `models`. Under the header the task reads
+in full in `text-ui`, four lines at most (`FactCardTask`), with the state line
+under it: the caller's node, the word in its tone (muted when quiet) and the
+time in faint. The facts start with one line per model (`FactCardModels`): the
+provider mark, the name, then an `EffortMeter` and the effort word in faint on
+the right. The meter is one 6 by 4px segment per level the model offers,
+filled in `muted-foreground` to the level used, `faint-foreground` while the
+effort is only planned, `border` for the rest; it never takes a tone, and a
+model with no axis draws none. The model lines count toward the six rows:
+three models or more show the first and the last, the last labelled
+"+ N models" (`cappedModels`). The sentence a screen reader hears reads the
+task, the state and "Effort High, 3 of 5" for each model.
+
 **One creation grammar.** Bare sections stacked in one column, never a bordered
 box around the whole thing. Secondary controls go in `SectionHeader`'s
 `action` slot. Related options sit in one container, not one card each. One

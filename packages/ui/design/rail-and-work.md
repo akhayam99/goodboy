@@ -649,7 +649,7 @@ Open plan. A label never passes nine characters and the row title
 names the object. A row has no menu slot.
 
 The role glyph before the title and the model cell are the only two hover
-targets that open a card (`RowIdentityCard`, `RowModelsCard`, `RunIdentityCard`).
+targets that open a card (`RoleCard`, `RowModelsCard`, `RunIdentityCard`).
 Each one wraps its trigger in a `FactCard` and sends data only (header, facts,
 a footnote, six rows at most: a model list or a run with many steps keeps five
 and a footnote says how many more), so the cards sit on the floating surface
