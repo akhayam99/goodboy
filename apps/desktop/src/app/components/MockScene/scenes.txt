@@ -1534,6 +1534,10 @@ u50-worktrees-dark
 u50-worktrees-light
 u50-worktrees-sheet-dark
 u50-worktrees-sheet-light
+u52-impact-agents-dark
+u52-impact-agents-light
+u52-impact-agents-open-dark
+u52-impact-agents-open-light
 update-card
 update-card-long-version
 update-card-narrow
