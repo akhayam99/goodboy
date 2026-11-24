@@ -7,5 +7,10 @@ export const openAsk =
   (set: SetFn) =>
   ({ sessionId }: AskSessionParams): void => {
     set((state) => ({ askPaneOpen: { ...state.askPaneOpen, [sessionId]: true } }));
-    setTimeout(() => window.dispatchEvent(new Event(ASK_FOCUS_EVENT)), SETTLE_MS);
+    setTimeout(() => {
+      if (typeof window === 'undefined') {
+        return;
+      }
+      window.dispatchEvent(new Event(ASK_FOCUS_EVENT));
+    }, SETTLE_MS);
   };

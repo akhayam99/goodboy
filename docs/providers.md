@@ -522,6 +522,10 @@ pays for every turn.
   message: retry it once the update is done, or run it on the newest model your
   CLI supports. Goodboy never guesses: a CLI whose version it can't read is never
   flagged. Update waits while a turn on the same provider is running
+- **A model your account can't use**: some plans don't include every model. When a
+  provider says so, the turn fails with that reason instead of ending empty, and
+  Goodboy stops picking that model for this account. It picks it again once the
+  provider answers on it, for example after you pick it yourself on a plan that has it
 
 ## Moving a conversation to another model
 
@@ -785,6 +789,31 @@ one detected after it (`cliUpdateResultOf`):
   `provider-cli-updated` logs the new version. `provider-cli-outdated` is logged
   the first time a requirement is learned, with an action that opens the provider
   and starts the update
+
+### Models an account cannot use
+
+- A stream `error` event that `classifyProviderError` reads as `model_not_available`
+  or `authentication` fails the turn even when the CLI exits 0. `readTurnStream`
+  keeps the first such message out of the transcript and throws it as a
+  transcript-owned error after the stream ends, so `recoverTurnFailure` runs the
+  usual path (provider run `failed`, fallback plan, strike) and writes the one error
+  row with its Retry. `settleTurn` hands the reason
+  to `onSettled` as `failureReason`, and an Auto helper ends `failed` with that
+  reason instead of `no_closing_envelope`
+- `learnFromCliRefusal` learns a `model_not_available` refusal (the ChatGPT account
+  and Codex account texts, not Cursor Max Mode) per provider, account and model key
+  in the `provider.unavailableModels` setting. The account is the provider's
+  `identity` when the run starts (`TurnProgress.accountId`), and learning and
+  clearing write the setting one at a time (`unavailableModelsWriter`). Boot reads
+  it with the other boot settings
+- `selectModelContext` adds the learned keys of the signed-in account to `hidden`,
+  so candidates, `checkPick` and the turn fallback skip them. An explicit pin still
+  runs the model
+- An accepted run on the model clears its entry in `finalizeTurnStream`. Entries for
+  a model key the catalog no longer has are dropped when the setting is read
+- A Lead retry of a helper that ended `model_not_available` or `authentication`
+  drops the earlier provider, model and effort (`prepareRetry`), so the retry is
+  routed again
 
 Docs from each CLI: [Claude Code](https://docs.anthropic.com/en/docs/claude-code/getting-started),
 [Cursor CLI](https://docs.cursor.com/en/cli/installation),

@@ -51,6 +51,10 @@ const MODEL_NOT_AVAILABLE_PATTERNS = [
     pattern: /The '([^']+)' model is not supported when using Codex with a ChatGPT account/i,
     action: 'choose_supported_model',
   },
+  {
+    pattern: /\bmodel ["']?([^\s"']+)["']? is not available with this Codex account/i,
+    action: 'choose_supported_model',
+  },
 ] satisfies ReadonlyArray<ModelUnavailablePattern>;
 
 const CLI_TOO_OLD_PATTERN =

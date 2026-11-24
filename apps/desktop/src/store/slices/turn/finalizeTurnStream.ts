@@ -89,6 +89,13 @@ export const finalizeTurnStream = async ({ set, get, ctx }: Params) => {
   void recordTurnFiles();
   if (receivedProviderError === false && wasCancelled === false && assistantText.length > 0) {
     recordProviderRun({ set, get, providerId: provider, runId, outcome: 'accepted' });
+    void get()
+      .clearModelUnavailable({
+        providerId: provider,
+        accountId: progress.accountId,
+        modelKey: modelSelection.key,
+      })
+      .catch((error: unknown) => console.warn('forgetting an unavailable model failed', error));
   }
   if (
     provider === 'cursor' &&

@@ -268,6 +268,7 @@ export const NON_SESSION_STATE_KEYS = [
   'providerLifecycle',
   'providerConnect',
   'cliRequirements',
+  'unavailableModels',
   'providerCredentials',
   'providerCooldowns',
   'helperProviderFailures',

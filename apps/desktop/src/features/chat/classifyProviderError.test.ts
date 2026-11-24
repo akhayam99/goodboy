@@ -21,6 +21,16 @@ describe('classifyProviderError', () => {
       'gpt-5.6',
       'choose_supported_model',
     ],
+    [
+      'model gpt-6.1-sol is not available with this Codex account',
+      'gpt-6.1-sol',
+      'choose_supported_model',
+    ],
+    [
+      'The model "gpt-6" is not available with this Codex account. Choose a model supported by your account.',
+      'gpt-6',
+      'choose_supported_model',
+    ],
   ])('classifies model availability failures', (message, model, action) => {
     expect(classifyProviderError({ message })).toEqual({
       kind: 'model_not_available',

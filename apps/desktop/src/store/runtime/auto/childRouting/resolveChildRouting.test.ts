@@ -231,6 +231,60 @@ describe('the model an Auto child runs on', () => {
   });
 });
 
+describe('a helper on a model the account cannot use', () => {
+  const ACCOUNT = 'dev@northwind.test';
+
+  const codexPick = async () => {
+    const offered = ready({ outcome: await resolve({ difficulty: 'standard' }) });
+    const codex = offered.candidates?.find((row) => row.provider === 'codex' && row.cause === null);
+    if (codex === undefined) {
+      throw new Error('expected a Codex candidate for the implementer');
+    }
+    return {
+      difficulty: 'standard',
+      provider: codex.provider,
+      model: codex.model,
+      effort: codex.effort ?? undefined,
+    };
+  };
+
+  beforeEach(() => {
+    useAppStore.setState({
+      providers: [
+        providerInfo({ id: 'anthropic' }),
+        { ...providerInfo({ id: 'codex' }), identity: ACCOUNT },
+        providerInfo({ id: 'cursor' }),
+      ],
+    });
+  });
+
+  it('moves the Lead pick off a model this account was refused', async () => {
+    const pick = await codexPick();
+    useAppStore.setState({
+      unavailableModels: [{ providerId: 'codex', accountId: ACCOUNT, modelKey: pick.model }],
+    });
+
+    const outcome = ready({ outcome: await resolve(pick) });
+
+    expect(outcome.model).not.toBe(pick.model);
+    expect(outcome.source).toBe('fallback');
+    expect(outcome.candidates?.some((row) => row.model === pick.model)).toBe(false);
+  });
+
+  it('keeps the model for another account on the same provider', async () => {
+    const pick = await codexPick();
+    useAppStore.setState({
+      unavailableModels: [
+        { providerId: 'codex', accountId: 'ops@acme.test', modelKey: pick.model },
+      ],
+    });
+
+    const outcome = ready({ outcome: await resolve(pick) });
+
+    expect(outcome).toMatchObject({ provider: 'codex', model: pick.model, source: 'lead' });
+  });
+});
+
 describe('the Lead picks each helper from the candidates', () => {
   it('starts the helper on the provider and model the Lead picked, with its reason', async () => {
     const offered = ready({ outcome: await resolve({ difficulty: 'standard' }) });

@@ -10,6 +10,7 @@ import { INITIAL_LIFECYCLE_MAP, INITIAL_CONNECT_MAP } from './types';
 import type { ProviderId } from '@goodboy/types';
 import type { CliRequirement } from '@goodboy/core/providers';
 import type { ProviderCooldowns } from '../../../features/providers/routing';
+import type { UnavailableModel } from './unavailableModelsSetting';
 
 export type ProvidersState = {
   readonly providerStatus: ProviderStatus | null;
@@ -24,6 +25,7 @@ export type ProvidersState = {
   readonly providerLifecycle: ProviderLifecycleMap;
   readonly providerConnect: ProviderConnectMap;
   readonly cliRequirements: ReadonlyArray<CliRequirement>;
+  readonly unavailableModels: ReadonlyArray<UnavailableModel>;
   readonly providerCooldowns: ProviderCooldowns;
   readonly helperProviderFailures: ProviderCooldowns;
 };
@@ -50,6 +52,7 @@ export const providersInitialState: ProvidersState = {
   providerLifecycle: INITIAL_LIFECYCLE_MAP,
   providerConnect: INITIAL_CONNECT_MAP,
   cliRequirements: [],
+  unavailableModels: [],
   providerCooldowns: {},
   helperProviderFailures: {},
 };

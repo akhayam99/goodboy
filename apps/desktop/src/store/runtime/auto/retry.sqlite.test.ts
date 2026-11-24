@@ -206,6 +206,53 @@ describe('retrying a delegation that ended without a result', () => {
   });
 });
 
+describe('retrying a helper whose provider refused its model', () => {
+  type RefusedParams = {
+    readonly failure: string;
+  };
+
+  const preparedAfter = async ({ failure }: RefusedParams) => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    await userSays({ world, id: 'outbox-user-1', text: 'add the ledger export' });
+    await autoDelegates({ world, spec: { children: [IMPLEMENTER] } });
+    await autoTurnEnds({ world });
+    await childTurnEnds({ world, index: 0, text: '', overrides: { exit: 'error', failure } });
+    const tree = await getAutoTree({ db: world.state.world.db, treeId: world.treeId });
+    if (tree === null) {
+      throw new Error('a tree was expected');
+    }
+    return prepareRetry({
+      ctx: world.state.ctx,
+      tree,
+      child: bareRetry((await firstDelegation(world)).id),
+      slot: 0,
+      batchRetries: new Set(),
+      batchRebriefs: [],
+      isConfirmGated: false,
+    });
+  };
+
+  it('asks for a model again instead of the one that was refused', async () => {
+    for (const failure of ['model_not_available', 'authentication']) {
+      const outcome = await preparedAfter({ failure });
+
+      expect(outcome).toMatchObject({
+        kind: 'resolve',
+        child: { provider: null, model: null, effort: null },
+      });
+    }
+  });
+
+  it('keeps the earlier model after any other failure', async () => {
+    const outcome = await preparedAfter({ failure: 'process_error' });
+
+    expect(outcome).toMatchObject({
+      kind: 'resolve',
+      child: { provider: 'anthropic', model: 'sonnet' },
+    });
+  });
+});
+
 describe('refusing a retry that cannot repeat the work', () => {
   it('refuses a delegation of another conversation and a retry without a reason', async () => {
     const world = await failedChild();

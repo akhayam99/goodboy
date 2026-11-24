@@ -6,6 +6,8 @@ const REASON_TEXT: ReadonlyMap<string, string> = new Map([
   ['stopped', 'It was stopped.'],
   ['declined', 'You declined this step.'],
   ['process_error', 'The agent ended with an error.'],
+  ['model_not_available', "Its model isn't available on this account."],
+  ['authentication', 'Its provider needs you to sign in again.'],
   ['no_closing_envelope', 'It ended without saying whether the work was done.'],
   ['artifact_persistence_failed', "Couldn't save its result."],
   ['report_missing', 'It ended without writing its report.'],

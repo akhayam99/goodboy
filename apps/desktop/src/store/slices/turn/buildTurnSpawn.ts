@@ -29,6 +29,7 @@ import { composeAgentHandoff } from './composeAgentHandoff';
 import { snapshotMountChanges } from './snapshotMountChanges';
 import type { GetFn, SetFn, TurnLease, TurnProgress, WithInput } from './types';
 import { projectById } from '../projects/projectIndex';
+import { accountIdOf } from '../providers/accountIdOf';
 import type { PreparedTurn } from './prepareTurn';
 import type { RoutedTurn } from './routeTurn';
 import type { LeasedTurn } from './leaseTurnWriter';
@@ -120,6 +121,9 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     receivedProviderError: false,
     receivedStreamError: false,
     lastError: null,
+    accountId: accountIdOf({ providers: get().providers, providerId: provider }),
+    streamFailure: null,
+    failureReason: null,
     turnWasCancelled: false,
     shouldAutoAdvanceWorkflow: false,
     filesTouchedThisTurn: new Set<string>(),

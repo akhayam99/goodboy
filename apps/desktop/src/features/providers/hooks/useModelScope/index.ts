@@ -16,6 +16,7 @@ export const useModelScope = ({ sessionId, workspaceId }: ScopeProps): ModelScop
   const providerLimits = useAppStore((state) => state.providerLimits);
   const settings = useAppStore((state) => state.settings);
   const cliRequirements = useAppStore((state) => state.cliRequirements);
+  const unavailableModels = useAppStore((state) => state.unavailableModels);
   const workspaceOverrides = useAppStore((state) => state.workspaceOverrides);
   const sessionOverrides = useAppStore((state) => state.sessionOverrides);
   const projects = useAppStore((state) => state.projects);
@@ -29,6 +30,7 @@ export const useModelScope = ({ sessionId, workspaceId }: ScopeProps): ModelScop
           providerLimits,
           settings,
           cliRequirements,
+          unavailableModels,
           workspaceOverrides,
           sessionOverrides,
           projects,
@@ -43,6 +45,7 @@ export const useModelScope = ({ sessionId, workspaceId }: ScopeProps): ModelScop
       providerLimits,
       settings,
       cliRequirements,
+      unavailableModels,
       workspaceOverrides,
       sessionOverrides,
       projects,

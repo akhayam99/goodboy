@@ -22,6 +22,7 @@ import { rebriefCountOf, type RebriefLink } from './returns/rebriefCountOf';
 import { returnCountOf } from './returns/returnCountOf';
 import { targetRefusalOf } from './returns/targetRefusalOf';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
+import { isTurnFailureReason } from '../../slices/turn/turnFailure/isTurnFailureReason';
 import type { AgentVerbContext } from './verbContext';
 
 export type RecoveredRevise = Readonly<{
@@ -116,10 +117,11 @@ type RetryRoute = Pick<DelegateChildSpec, 'provider' | 'model' | 'effort'>;
 const NO_ROUTE: RetryRoute = { provider: null, model: null, effort: null };
 
 const retryRouteOf = async ({ ctx, original, child }: RetryRouteParams): Promise<RetryRoute> => {
+  const routing = isTurnFailureReason({ reason: original.reason }) ? {} : original.routing;
   const asked: RetryRoute = {
-    provider: child.provider ?? textFieldOf({ source: original.routing, key: 'provider' }),
-    model: child.model ?? textFieldOf({ source: original.routing, key: 'model' }),
-    effort: child.effort ?? textFieldOf({ source: original.routing, key: 'effort' }),
+    provider: child.provider ?? textFieldOf({ source: routing, key: 'provider' }),
+    model: child.model ?? textFieldOf({ source: routing, key: 'model' }),
+    effort: child.effort ?? textFieldOf({ source: routing, key: 'effort' }),
   };
   const attempts = await listAutoAttemptsOfDelegation({ db: ctx.db, delegationId: original.id });
   const latest = attempts[attempts.length - 1];

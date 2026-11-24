@@ -37,6 +37,7 @@ export const useRunModelDefault = ({ workspaceId, sessionId, slot }: Params): Ru
   const providerLimits = useAppStore((state) => state.providerLimits);
   const hiddenRaw = useAppStore((state) => state.settings?.[SETTING_HIDDEN_MODELS]);
   const cliRequirements = useAppStore((state) => state.cliRequirements);
+  const unavailableModels = useAppStore((state) => state.unavailableModels);
   const workspaceOverride = useAppStore((state) => state.workspaceOverrides?.[workspaceId]);
   const sessionOverride = useAppStore((state) =>
     sessionId === null ? undefined : state.sessionOverrides?.[sessionId],
@@ -56,6 +57,7 @@ export const useRunModelDefault = ({ workspaceId, sessionId, slot }: Params): Ru
             providerLimits,
             settings: hiddenRaw === undefined ? {} : { [SETTING_HIDDEN_MODELS]: hiddenRaw },
             cliRequirements,
+            unavailableModels,
             workspaceOverrides:
               workspaceOverride === undefined ? {} : { [workspaceId]: workspaceOverride },
             sessionOverrides:
@@ -84,6 +86,7 @@ export const useRunModelDefault = ({ workspaceId, sessionId, slot }: Params): Ru
       sessionId,
       sessionOverride,
       sessions,
+      unavailableModels,
       workspaceId,
       workspaceOverride,
     ],
