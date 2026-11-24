@@ -77,9 +77,11 @@ An agent that cannot finish a step says so. Goodboy also decides it for an agent
 
 With **Every step** the step stops as blocked and **Skip step** sits on its row. The field on the step page, whose button reads **Continue**, is the only place to type. Two steps in a row that do not finish stop the run at any level, and it asks. The reason shows only on the agent's own page, never on the run page or in a notification.
 
-### Runs in Settings
+### Every run
 
-Set what every new run starts with on the **Runs** page in Settings. **When a run stops for you** holds **Stops for your OK**, one level for workflows and the Lead. **Spending** holds the **Limit** with **Pause** or **Warn only**. **Agents** holds **Reply length**. **Guidance** is one field for the agents that write code, with **Polish**. **Advanced** stays closed and holds **Parallel agents**; it says so while they are on. A change reaches new runs only. Searching Run defaults or Start as finds the page.
+Set what every new run starts with on the **Every run** tab of Workflows, between **Workflows** and **Saved steps**. It shows the same rows as the **Runs** page in Settings, which still opens until Settings is regrouped; a change on one shows on the other. Under **Agents** come the models: **Runs** holds the Lead, **Roles** holds each role. While the workspace has a plan run that is not discarded, **Older plan runs** holds the Orchestrator and **Models in older plan runs**. Providers and their priority stay on the **Models** page.
+
+The **Runs** page in Settings holds the same rows. **When a run stops for you** holds **Stops for your OK**, one level for workflows and the Lead. **Spending** holds the **Limit** with **Pause** or **Warn only**. **Agents** holds **Reply length**. **Guidance** is one field for the agents that write code, with **Polish**. **Advanced** stays closed and holds **Parallel agents**; it says so while they are on. A change reaches new runs only. Searching Run defaults or Start as finds the page.
 
 The limit here applies to a run started from a chat prefix or a suggestion, and the run page names it **default**. Every kind starts from this one limit; a limit saved earlier as the Auto limit is folded into it. A new run starts from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives on the **Models** page.
 
