@@ -55,7 +55,16 @@ export { mergeProviderLimits } from './limits/mergeProviderLimits';
 
 export { sortLimitWindows } from './limits/sortLimitWindows';
 
-export { LIMITS_STALE_MS, LIMITS_WARNING_FRACTION } from './limits/constants';
+export {
+  LIMITS_STALE_MS,
+  LIMITS_WARNING_FRACTION,
+  ROOM_RECENT_WINDOW_MS,
+  ROOM_TURNS_WINDOW_MS,
+} from './limits/constants';
+
+export { providerLoad } from './limits/providerLoad';
+
+export { providerRoom, type ProviderRoom } from './limits/providerRoom';
 
 export {
   PROVIDERS_REPORTING_LIMITS,

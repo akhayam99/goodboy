@@ -1383,6 +1383,14 @@ project,local --no-session-persistence` in an empty scratch directory,
   `providerLimits` store slice. A write never replaces a newer observation.
   Thresholds are in `packages/core/src/providers/limits/constants.ts`: warning from
   80%, old data after 30 minutes
+- **Room**: `providerRoom` gives each provider a used share and says whether it
+  is measured or estimated. A fresh reading is measured; a budget with a cap is
+  measured too. Every other provider, or one whose reading is older than 30
+  minutes, gets an estimate: it starts at 50%, each clean turn in the last 5
+  hours takes off 2 points down to 30%, each agent on it in the last hour adds
+  10, and a rate limit in the last hour puts it at 85% or more. An estimate stops
+  at 95%, so a guess never marks a provider full; only a cooldown or a measured
+  limit removes one. It is a fact for routing, never a guard
 
 ### Source map
 
