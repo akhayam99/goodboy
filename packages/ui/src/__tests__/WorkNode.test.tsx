@@ -12,6 +12,8 @@ const GLYPH_SVG = 'svg[viewBox="0 0 256 256"]';
 
 const nodeOf = (label: string): HTMLElement => screen.getByRole('img', { name: label });
 
+type DiscParams = { label: string };
+
 describe('WorkNode', () => {
   it('masks the rail behind it, and draws no disc on a selected row', () => {
     render(
@@ -426,16 +428,16 @@ describe('WorkNode', () => {
       </>,
     );
 
-    const disc = (label: string) => nodeOf(label).querySelector('circle');
-    expect(disc('Needs you')?.getAttribute('class')).toContain('fill-warning-solid');
-    expect(disc('Needs you')?.getAttribute('class')).toContain('stroke-none');
+    const disc = ({ label }: DiscParams) => nodeOf(label).querySelector('circle');
+    expect(disc({ label: 'Needs you' })?.getAttribute('class')).toContain('fill-warning-solid');
+    expect(disc({ label: 'Needs you' })?.getAttribute('class')).toContain('stroke-none');
     expect(nodeOf('Needs you').textContent).toBe('?');
     expect(nodeOf('Needs you').innerHTML).toContain('text-on-warning');
-    expect(disc('Failed')?.getAttribute('class')).toContain('fill-danger-solid');
-    expect(disc('Failed')?.getAttribute('r')).toBe('7');
+    expect(disc({ label: 'Failed' })?.getAttribute('class')).toContain('fill-danger-solid');
+    expect(disc({ label: 'Failed' })?.getAttribute('r')).toBe('7');
     expect(nodeOf('Failed').textContent).toBe('!');
     expect(nodeOf('Failed').innerHTML).toContain('text-on-danger');
-    expect(disc('Approve')?.getAttribute('class')).toContain('fill-warning-solid');
+    expect(disc({ label: 'Approve' })?.getAttribute('class')).toContain('fill-warning-solid');
   });
 
   it('draws a quiet queued node as a small dashed ring with nothing inside', () => {
