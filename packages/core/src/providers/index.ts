@@ -169,6 +169,32 @@ export {
   type ProviderStanding,
 } from './autoRouting/providerCandidates';
 
+export { buildCandidates } from './candidates/buildCandidates';
+
+export { bestCandidate } from './candidates/bestCandidate';
+
+export { checkPick, type CheckedPick } from './candidates/checkPick';
+
+export { CANDIDATES_BLOCK_BUDGET, formatCandidatesBlock } from './candidates/formatCandidatesBlock';
+
+export { CANDIDATE_CAUSES, type CandidateCause } from './candidates/candidateCauses';
+
+export { modelFamily, type ModelFamily } from './candidates/modelFamily';
+
+export { stepSizeOf } from './candidates/stepSizeOf';
+
+export type {
+  Candidate,
+  CandidateExclusion,
+  CandidateInputs,
+  CandidateList,
+  CandidateNeed,
+  CandidatePick,
+  CandidateRoom,
+  CandidateScope,
+  ProviderRule,
+} from './candidates/types';
+
 export {
   PROVIDER_HEADROOM_STALE_MS,
   providerHeadroom,
