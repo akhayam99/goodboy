@@ -64,6 +64,9 @@ const previewOf = ({ item }: PreviewParams): string => {
   return countNoun({ count: item.imageCount, one: 'attachment' });
 };
 
+const isCountBesideText = ({ item }: PreviewParams): boolean =>
+  item.content.trim().length > 0 && item.imageCount > item.images.length;
+
 type ActParams = {
   readonly id: string;
   readonly action: PendingMessageAction;
@@ -146,6 +149,14 @@ export const QueuedMessages = ({
                   effort={item.override.selection?.effort}
                   className="max-w-40 shrink-0"
                 />
+              )}
+              {isCountBesideText({ item }) && (
+                <span
+                  data-testid="queued-message-attachments"
+                  className="shrink-0 text-muted-foreground"
+                >
+                  {countNoun({ count: item.imageCount, one: 'attachment' })}
+                </span>
               )}
               {item.images.length > 0 && (
                 <div data-testid="queued-message-images" className="shrink-0">
