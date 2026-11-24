@@ -16,13 +16,31 @@ import {
 import { AUTO_DELEGATION_ROLES, AUTO_ROLE_WHEN, isAutoWriterRole } from './roles';
 
 describe('the delegate rules and the model', () => {
-  it('asks for a difficulty per child and never for a model or an effort', () => {
+  it('asks for a difficulty and a model picked from the models list per child', () => {
     const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true });
 
     expect(prompt).toContain('a difficulty and a done-when line');
     expect(prompt).toContain('light, standard or heavy');
-    expect(prompt).toContain('never name a model or an effort');
-    expect(prompt).not.toContain('a mount, a model, an effort');
+    expect(prompt).toContain("Pick each child's model from the models list");
+    expect(prompt).toContain('"modelReason"');
+    expect(prompt).toContain('Goodboy checks every pick');
+    expect(prompt).not.toContain('never name a model or an effort');
+  });
+
+  it('shows the picked model on the delegate example', () => {
+    const delegate = parseAutoBlock({ text: AUTO_DELEGATE_EXAMPLE });
+    if (delegate.kind !== 'block' || delegate.block.action !== 'delegate') {
+      throw new Error('expected a delegate block');
+    }
+    const spec = parseDelegateSpec({ text: delegate.block.spec });
+
+    expect(spec.kind).toBe('ok');
+    if (spec.kind === 'ok') {
+      expect(spec.children[0]).toMatchObject({ difficulty: 'light' });
+      expect(spec.children[0]?.provider).not.toBeNull();
+      expect(spec.children[0]?.model).not.toBeNull();
+    }
+    expect(AUTO_DELEGATE_EXAMPLE).toContain('"modelReason":');
   });
 });
 

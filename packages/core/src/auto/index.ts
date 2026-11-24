@@ -396,6 +396,7 @@ export {
   AUTO_ROLE_ARTIFACT,
   AUTO_ROLE_WHEN,
   AUTO_WRITER_ROLES,
+  isAutoRoleStartable,
   isAutoWriterRole,
   parseAutoDelegationRole,
   type AutoArtifactKind as AutoRoleArtifactKind,
