@@ -55,11 +55,16 @@ describe('composeBranchFacts', () => {
     expect(text).toContain('ci: success');
   });
 
-  it('names the head commit the host holds and the checks on it, so a scout answers a pull request state question', () => {
+  it('names the head commit the host holds and the checks it reports, so a scout answers a pull request state question', () => {
     const text = composeBranchFacts({ facts: [FULL] }) ?? '';
     expect(text).toContain(
-      'Head commit on the host: a41c9e2b7d3f05e6c8b1a2d4e6f8091b2c3d4e5f\nChecks on that head: 2 running',
+      'Head commit on the host: a41c9e2b7d3f05e6c8b1a2d4e6f8091b2c3d4e5f\nChecks the host reports, not matched to that commit: 2 running',
     );
+  });
+
+  it('never claims the checks ran on the head commit, since the host may report an older pipeline', () => {
+    const text = composeBranchFacts({ facts: [FULL] }) ?? '';
+    expect(text).not.toContain('Checks on that head');
   });
 
   it('says what it could not learn about the head instead of leaving it out', () => {
@@ -77,7 +82,7 @@ describe('composeBranchFacts', () => {
         ],
       }) ?? '';
     expect(text).toContain('Head commit on the host: not reported by the host');
-    expect(text).toContain('Checks on that head: not read');
+    expect(text).toContain('Checks the host reports, not matched to that commit: not read');
   });
 
   it('names a merge request on gitlab', () => {

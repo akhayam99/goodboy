@@ -1768,9 +1768,11 @@ checked against the request number). A mount with no request reads "none is open
 request or detail could not be read, or was never read, reads "Facts not available: reason", never
 "none".
 The request line is followed by the head commit the host holds (`headSha` of the live
-`PullRequestView`) and the checks on that head in the words of the Branch page (`checksWordOf`, for
+`PullRequestView`) and the checks the host reports in the words of the Branch page (`checksWordOf`, for
 example "2 failing", "1 running" or "none reported"; "not read" when the host did not answer for the
-checks), so a question about the state of a pull request is answered by a scout, never by a writer.
+checks). The checks line says it is not matched to that commit: a check run carries no commit, GitLab
+may report an older pipeline and GitHub reads the head and the checks apart, so a push between the
+reads can mix commits. A question about the state of a pull request is answered by a scout, never by a writer. about the state of a pull request is answered by a scout, never by a writer.
 `composeBranchFacts` in core renders them as a `**Facts**` section of the brief, capped by
 `AUTO_FACTS_CHARS` (6,000, split across the mounts) with per-list caps in `limits.ts`. A part the
 host could not read becomes "Facts not available: reason" and the scout still starts; a read slower

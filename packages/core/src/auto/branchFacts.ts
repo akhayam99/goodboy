@@ -91,7 +91,7 @@ const requestLines = (request: BranchFactsRequest | null): ReadonlyArray<string>
   return [
     `${NOUN_OF[request.host]}: ${request.number} "${oneLine({ text: request.title, max: 120 })}" (${request.state}${draft}, ${request.headBranch} into ${request.baseBranch}) ${request.url}`,
     `Head commit on the host: ${request.headSha ?? 'not reported by the host'}`,
-    `Checks on that head: ${request.checksWord ?? 'not read'}`,
+    `Checks the host reports, not matched to that commit: ${request.checksWord ?? 'not read'}`,
   ];
 };
 
