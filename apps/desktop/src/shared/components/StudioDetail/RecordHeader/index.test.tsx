@@ -113,6 +113,8 @@ describe('RecordHeader', () => {
     const heading = screen.getByRole('heading', { level: 1, name: title });
     expect(heading.querySelector('[data-record-title]')?.textContent).toBe(title);
     expect(heading.querySelector('[data-truncated-text]')).toBeNull();
+    expect(heading.className).not.toContain('truncate');
+    expect(heading.closest('[data-slot="pane-title-row"]')?.className).toContain('min-h-8');
   });
 
   it('orders the overflow from the registry: tool verbs, session, the link, then destructive', () => {

@@ -128,13 +128,7 @@ export const RecordHeader = ({
         ) : null}
       </div>
       <div onContextMenu={menu.onContextMenu} className="min-w-0">
-        <PaneTitleRow
-          title={
-            <span data-record-title="" className="whitespace-normal break-words">
-              {title}
-            </span>
-          }
-        />
+        <PaneTitleRow isWrapping title={<span data-record-title="">{title}</span>} />
       </div>
       {byline == null ? null : (
         <div className="truncate text-ui text-faint-foreground">{byline}</div>

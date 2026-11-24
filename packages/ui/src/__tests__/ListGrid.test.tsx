@@ -140,6 +140,28 @@ describe('ListGrid', () => {
     expect(document.activeElement).toBe(first);
   });
 
+  it('leaves a cursor row of a listbox to its owner when an arrow key leaves a foot row', () => {
+    render(
+      <ListGrid label="Tasks" columns={COLUMNS}>
+        <ListGridGroup label="Linear" isListbox activeDescendant="task-a">
+          <ListGridRow
+            isOption
+            optionId="task-a"
+            cells={['', 'Task', 'Speed up the ledger export', '']}
+            onSelect={() => undefined}
+          />
+          <ListGridRow cells={['', '', 'Show all', '']} onSelect={() => undefined} />
+        </ListGridGroup>
+      </ListGrid>,
+    );
+    const foot = screen.getByRole('button', { name: /Show all/ });
+    foot.focus();
+    const event = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true });
+    foot.dispatchEvent(event);
+    expect(document.activeElement).toBe(foot);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
   it('renders a row without an action as plain content, never a button', () => {
     render(
       <ListGrid label="Checks" columns={COLUMNS}>
