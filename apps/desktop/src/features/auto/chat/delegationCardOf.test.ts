@@ -100,6 +100,8 @@ describe('delegationCardOf', () => {
       provider: 'anthropic',
       name: 'Sonnet 5.5',
       effort: 'High',
+      effortLevel: 'high',
+      effortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
       isUnknown: false,
       rawId: null,
     });

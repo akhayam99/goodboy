@@ -118,6 +118,38 @@ describe('agentRanModels', () => {
     expect(models[0]?.effort).toBe('Very high');
   });
 
+  it('keeps the level and the axis of each model it ran on, for the effort meter', () => {
+    const { models } = agentRanModels({
+      spans: [
+        spanOf({ ...SONNET, startedAtMs: 1_000, effort: 'medium', endReason: 'failed' }),
+        spanOf({ provider: 'codex', model: 'gpt-6.1-sol', startedAtMs: 3_000, effort: 'xhigh' }),
+      ],
+      agentId: AGENT,
+      routing: null,
+      isRoutingPlanned: false,
+      isLive: false,
+    });
+
+    expect(models.map((model) => [model.name, model.effortLevel])).toEqual([
+      ['Sonnet 5.5', 'medium'],
+      ['GPT-6.1 Sol', 'xhigh'],
+    ]);
+    expect(models[1]?.effortLevels).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
+  });
+
+  it('gives a model with no effort setting no level and an empty axis', () => {
+    const { models } = agentRanModels({
+      spans: [spanOf({ provider: 'anthropic', model: 'claude-haiku-4-5', startedAtMs: 1_000 })],
+      agentId: AGENT,
+      routing: null,
+      isRoutingPlanned: false,
+      isLive: false,
+    });
+
+    expect(models[0]?.effortLevel).toBeNull();
+    expect(models[0]?.effortLevels).toEqual([]);
+  });
+
   it('falls back to the routing of an agent that has no turn yet and says it is planned', () => {
     const planned = agentRanModels({
       spans: [],
