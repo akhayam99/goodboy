@@ -82,6 +82,8 @@ type BatchParams = {
   readonly batch: DormantBatch;
 };
 
+const UNLISTED: ReadonlyMap<string, ReadonlyArray<PullRequestState>> = new Map();
+
 type FindParams = BatchParams & {
   readonly byBranch: ReadonlyMap<string, ReadonlyArray<PullRequestState>>;
   readonly dormant: DormantPullRequestLink;
@@ -109,15 +111,13 @@ const findPullRequest = async ({
 
 const settleBatch = async ({ workspaceId, batch }: BatchParams): Promise<number> => {
   const { repository, projectId, members } = batch;
-  const byBranch = await listPrsForBranches({
+  const listed = await listPrsForBranches({
     runner: tauriGhRunner,
     repo: repository,
     branches: members.map((member) => member.link.headBranch),
     opts: { workspaceId, ...(projectId === null ? {} : { projectId }) },
-  }).catch(() => null);
-  if (byBranch === null) {
-    return 0;
-  }
+  }).catch(() => UNLISTED);
+  const byBranch = listed ?? UNLISTED;
   let settled = 0;
   for (const dormant of members) {
     const pr = await findPullRequest({ workspaceId, batch, byBranch, dormant });

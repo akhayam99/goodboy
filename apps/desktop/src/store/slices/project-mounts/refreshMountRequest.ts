@@ -17,11 +17,11 @@ import type { ReachabilityHost } from '../host-reachability/types';
 import type { AppStore } from '../../store';
 import type { GetFn, SetFn } from '../../slice-types';
 import {
+  mountRequestsInFlight,
   mountRevision,
   observeMountRequestTransition,
   requestIdentityEquals,
 } from './mountRequests';
-import { mountRequestsInFlight } from './mountRequestsInFlight';
 
 type RefreshRequestOptions = {
   readonly force?: boolean;

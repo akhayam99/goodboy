@@ -3,7 +3,7 @@ import { runWithLimit } from '../../../shared/utils/runWithLimit';
 import type { SliceDeps } from '../../slice-types';
 import type { SweepRequestsParams } from './types';
 import { listSessionPrFetches } from '../github/resolveSessionPrFetch';
-import { mountRequestsInFlight } from '../project-mounts/mountRequestsInFlight';
+import { mountRequestsInFlight } from '../project-mounts/mountRequests';
 import { waitForIdle } from '../search-index/scheduleIdle';
 import { mountFetchFactsOf } from './mountFetchFactsOf';
 import { prefetchGithubBranches, type GithubSweepTarget } from './prefetchGithubBranches';

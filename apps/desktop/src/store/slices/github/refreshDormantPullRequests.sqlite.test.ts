@@ -200,4 +200,24 @@ describe('Impact settles pull requests no live mount watches', () => {
     });
     expect(outcomes).toMatchObject({ open: 0, merged: 1 });
   });
+
+  it('asks for each pull request by number when the branch page fails', async () => {
+    await seedWork({ key: 'buried', number: 13, isAttached: false, isArchived: false });
+    stubStoryInvoke({
+      gh_run: (input: GhRunArgs) =>
+        input.args.includes('view')
+          ? answerView()
+          : { stdout: '', stderr: 'graphql: rate limited', exitCode: 1 },
+    });
+
+    const settled = await useAppStore.getState().refreshDormantPullRequests(WORKSPACE_ID);
+
+    expect(settled).toBe(1);
+    const outcomes = await getPullRequestOutcomes({
+      db: storySqlite(),
+      workspaceId: WORKSPACE_ID,
+      sinceMs: null,
+    });
+    expect(outcomes).toMatchObject({ open: 0, merged: 1 });
+  });
 });
