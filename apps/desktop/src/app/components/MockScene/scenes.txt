@@ -843,6 +843,7 @@ run-page-agent-light
 run-page-done
 run-page-done-light
 run-page-lead-agent
+run-page-lead-agent-light
 run-page-lead-next
 run-page-lead-next-light
 run-page-lead-working
