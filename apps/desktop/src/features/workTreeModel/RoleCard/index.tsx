@@ -74,7 +74,13 @@ export const RoleCard = ({
       card={roleCardSpec({
         glyph: <AgentKindChip kind={entry.agentKind} density="glyph" isDecorative />,
         stateGlyph: (
-          <WorkNode state={node.state} label={node.label} mark={{ kind: 'dot' }} size="sm" />
+          <WorkNode
+            look="quiet"
+            state={node.state}
+            label={node.label}
+            mark={{ kind: 'dot' }}
+            size="sm"
+          />
         ),
         markOf,
         kindWord,
