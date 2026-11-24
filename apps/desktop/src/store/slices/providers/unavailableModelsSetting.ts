@@ -33,11 +33,23 @@ type ParseParams = {
   readonly raw: string | null;
 };
 
+type JsonParams = {
+  readonly raw: string;
+};
+
+const parseJson = ({ raw }: JsonParams): unknown => {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
 export const parseUnavailableModels = ({ raw }: ParseParams): ReadonlyArray<UnavailableModel> => {
   if (raw === null || raw === '') {
     return [];
   }
-  const parsed: unknown = JSON.parse(raw);
+  const parsed = parseJson({ raw });
   return Array.isArray(parsed)
     ? parsed.filter((value: unknown): value is UnavailableModel => isUnavailableModel({ value }))
     : [];

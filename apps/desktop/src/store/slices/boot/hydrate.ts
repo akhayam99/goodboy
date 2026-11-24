@@ -38,6 +38,10 @@ import { countPerf } from '../../../shared/lib/countPerf';
 import { PERF_COUNT_NAMES } from '../../../shared/lib/perfCountNames';
 import type { GetFn, SetFn } from './types';
 import type { BootPhase } from './state';
+import {
+  parseUnavailableModels,
+  SETTING_UNAVAILABLE_MODELS,
+} from '../providers/unavailableModelsSetting';
 
 const INTEGRATION_KEY_ADOPTION_COALESCE_KEY = 'boot:integration-key-adoption';
 
@@ -51,6 +55,7 @@ const BOOT_SETTING_KEYS = [
   SETTING_HIDDEN_MODELS,
   SETTING_CONTEXT_LEARNINGS,
   SETTING_CHAT_IMAGES,
+  SETTING_UNAVAILABLE_MODELS,
 ] as const;
 
 const LAUNCH_READ_PHASES = [
@@ -122,14 +127,18 @@ const readBootSettings = async ({
       .hydrateChangelogSeen()
       .then(() => get().hydrateSessionsCard()),
     get().hydrateCliRequirements(),
-    get().hydrateUnavailableModels(),
   ]);
   set((state) => {
     const next = { ...state.settings };
     for (const [key, value] of stored) {
       next[key] = value;
     }
-    return { settings: next };
+    return {
+      settings: next,
+      unavailableModels: parseUnavailableModels({
+        raw: stored.get(SETTING_UNAVAILABLE_MODELS) ?? null,
+      }),
+    };
   });
   return stored;
 };

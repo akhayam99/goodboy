@@ -178,6 +178,7 @@ describe('a provider that refuses the model in its stream and then exits cleanly
       (event) => event.kind === 'error',
     );
     expect(errors).toHaveLength(storySpies.runTurn.mock.calls.length);
+    expect(errors.at(-1)).toMatchObject({ kind: 'error', retryable: true });
   });
 
   it('fails the turn on a sign-in refusal with the cause named', async () => {

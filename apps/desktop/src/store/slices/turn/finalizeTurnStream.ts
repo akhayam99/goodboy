@@ -13,7 +13,6 @@ import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { worktreeChangedFiles } from '../../../features/worktree/worktree';
 import { recordProviderRun } from '../providers/recordProviderRun';
-import { accountIdOf } from '../providers/accountIdOf';
 import { routeQuestions } from '../../runtime/auto/routeQuestions';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { applyAgentTurnState, cancelledRunIds } from '../sessions/sessionMutators';
@@ -93,7 +92,7 @@ export const finalizeTurnStream = async ({ set, get, ctx }: Params) => {
     void get()
       .clearModelUnavailable({
         providerId: provider,
-        accountId: accountIdOf({ providers: get().providers, providerId: provider }),
+        accountId: progress.accountId,
         modelKey: modelSelection.key,
       })
       .catch((error: unknown) => console.warn('forgetting an unavailable model failed', error));

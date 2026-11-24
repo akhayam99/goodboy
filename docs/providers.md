@@ -794,15 +794,18 @@ one detected after it (`cliUpdateResultOf`):
 
 - A stream `error` event that `classifyProviderError` reads as `model_not_available`
   or `authentication` fails the turn even when the CLI exits 0. `readTurnStream`
-  keeps the first such message and throws it as a transcript-owned error after the
-  stream ends, so `recoverTurnFailure` runs the usual path (provider run `failed`,
-  fallback plan, strike) without a second error row. `settleTurn` hands the reason
+  keeps the first such message out of the transcript and throws it as a
+  transcript-owned error after the stream ends, so `recoverTurnFailure` runs the
+  usual path (provider run `failed`, fallback plan, strike) and writes the one error
+  row with its Retry. `settleTurn` hands the reason
   to `onSettled` as `failureReason`, and an Auto helper ends `failed` with that
   reason instead of `no_closing_envelope`
 - `learnFromCliRefusal` learns a `model_not_available` refusal (the ChatGPT account
   and Codex account texts, not Cursor Max Mode) per provider, account and model key
   in the `provider.unavailableModels` setting. The account is the provider's
-  `identity`
+  `identity` when the run starts (`TurnProgress.accountId`), and learning and
+  clearing write the setting one at a time (`unavailableModelsWriter`). Boot reads
+  it with the other boot settings
 - `selectModelContext` adds the learned keys of the signed-in account to `hidden`,
   so candidates, `checkPick` and the turn fallback skip them. An explicit pin still
   runs the model

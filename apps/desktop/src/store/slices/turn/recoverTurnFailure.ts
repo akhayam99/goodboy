@@ -128,7 +128,13 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
   }
   const isShownInStream = isTranscriptOwnedTurnError({ error: err });
   if (!isShownInStream) {
-    learnFromCliRefusal({ get, providerId: provider, model: spawnModel, message: rawMessage });
+    learnFromCliRefusal({
+      get,
+      providerId: provider,
+      accountId: progress.accountId,
+      model: spawnModel,
+      message: rawMessage,
+    });
   }
   const cancelledBeforeFailure = cancelledRunIds.delete(runId);
   await recordTurnSpan({
@@ -225,7 +231,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
       failure.kind === 'usage_limit' ||
       failure.kind === 'unreachable' ||
       failure.kind === 'other';
-    if (!isGenericPassthroughFailure && !isShownInStream) {
+    if (!isGenericPassthroughFailure) {
       get().appendTurnEvent(activeAgentId, sessionId, {
         kind: 'error',
         runId,
@@ -354,15 +360,13 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     error: rawMessage,
   });
   const isRetriedFromItsRow = onWritingUserText !== undefined && !progress.hasSpawned;
-  if (!isShownInStream) {
-    get().appendTurnEvent(activeAgentId, sessionId, {
-      kind: 'error',
-      runId,
-      message,
-      retryable: !isAlreadySent && !isRetriedFromItsRow,
-      at: now(),
-    });
-  }
+  get().appendTurnEvent(activeAgentId, sessionId, {
+    kind: 'error',
+    runId,
+    message,
+    retryable: !isAlreadySent && !isRetriedFromItsRow,
+    at: now(),
+  });
   if (resolvedAgentId) {
     const isStoppedByUser =
       cancelledBeforeFailure &&

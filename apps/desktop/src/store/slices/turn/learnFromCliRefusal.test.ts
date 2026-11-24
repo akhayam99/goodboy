@@ -58,6 +58,7 @@ describe('a provider that refuses a model for this account', () => {
     learnFromCliRefusal({
       get: useAppStore.getState,
       providerId: 'codex',
+      accountId: ACCOUNT,
       model: 'gpt-6.1-sol',
       message,
     });
@@ -74,10 +75,35 @@ describe('a provider that refuses a model for this account', () => {
     );
   });
 
+  it('keeps every refusal and clearing on disk when they land together', async () => {
+    useAppStore.setState({
+      unavailableModels: [{ providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6-astra' }],
+    });
+    const { learnModelUnavailable, clearModelUnavailable } = useAppStore.getState();
+
+    await Promise.all([
+      learnModelUnavailable({ providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6.1-sol' }),
+      learnModelUnavailable({ providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6.1-luna' }),
+      clearModelUnavailable({ providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6-astra' }),
+    ]);
+
+    const saved = [
+      { providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6.1-sol' },
+      { providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6.1-luna' },
+    ];
+    expect(useAppStore.getState().unavailableModels).toEqual(saved);
+    expect(storySpies.setSetting).toHaveBeenLastCalledWith(
+      expect.anything(),
+      'provider.unavailableModels',
+      JSON.stringify(saved),
+    );
+  });
+
   it('learns nothing from a refusal that is not about the model', async () => {
     learnFromCliRefusal({
       get: useAppStore.getState,
       providerId: 'codex',
+      accountId: ACCOUNT,
       model: 'gpt-6.1-sol',
       message: 'connection reset by peer',
     });

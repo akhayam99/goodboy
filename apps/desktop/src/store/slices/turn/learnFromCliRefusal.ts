@@ -1,17 +1,23 @@
 import { catalogModelForId } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
-import { accountIdOf } from '../providers/accountIdOf';
 import type { GetFn } from './types';
 
 type Params = {
   readonly get: GetFn;
   readonly providerId: ProviderId;
+  readonly accountId: string;
   readonly model: string;
   readonly message: string;
 };
 
-export const learnFromCliRefusal = ({ get, providerId, model, message }: Params): void => {
+export const learnFromCliRefusal = ({
+  get,
+  providerId,
+  accountId,
+  model,
+  message,
+}: Params): void => {
   const failure = classifyProviderError({ message });
   const isUnavailable =
     failure.kind === 'model_not_available' && failure.action === 'choose_supported_model';
@@ -24,11 +30,7 @@ export const learnFromCliRefusal = ({ get, providerId, model, message }: Params)
   }
   if (failure.kind !== 'cli_too_old') {
     void get()
-      .learnModelUnavailable({
-        providerId,
-        accountId: accountIdOf({ providers: get().providers, providerId }),
-        modelKey,
-      })
+      .learnModelUnavailable({ providerId, accountId, modelKey })
       .catch((error: unknown) => console.warn('remembering an unavailable model failed', error));
     return;
   }

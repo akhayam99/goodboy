@@ -1,7 +1,7 @@
 import { cancelProviderConnect } from './cancelProviderConnect';
 import { clearModelUnavailable } from './clearModelUnavailable';
-import { hydrateUnavailableModels } from './hydrateUnavailableModels';
 import { learnModelUnavailable } from './learnModelUnavailable';
+import { unavailableModelsWriter } from './unavailableModelsWriter';
 import { connectProvider } from './connectProvider';
 import { dismissProviderConnect } from './dismissProviderConnect';
 import { hydrateCliRequirements } from './hydrateCliRequirements';
@@ -16,6 +16,7 @@ import type { SliceDeps } from '../../slice-types';
 export type { ProviderConnectPhase, ProviderConnectStep } from './types';
 
 export const createProvidersSlice = ({ set, get }: SliceDeps) => {
+  const writeUnavailableModels = unavailableModelsWriter({ set, get });
   return {
     testProviderConnection: testProviderConnection({ set, get }),
     refreshProviders: refreshProviders({ set, get }),
@@ -27,8 +28,7 @@ export const createProvidersSlice = ({ set, get }: SliceDeps) => {
     updateProviderCli: updateProviderCli(set, get),
     hydrateCliRequirements: hydrateCliRequirements(set, get),
     learnCliRequirement: learnCliRequirement(set, get),
-    hydrateUnavailableModels: hydrateUnavailableModels({ set, get }),
-    learnModelUnavailable: learnModelUnavailable({ set, get }),
-    clearModelUnavailable: clearModelUnavailable({ set, get }),
+    learnModelUnavailable: learnModelUnavailable({ write: writeUnavailableModels }),
+    clearModelUnavailable: clearModelUnavailable({ write: writeUnavailableModels }),
   };
 };

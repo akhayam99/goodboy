@@ -160,17 +160,19 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
                   }),
           }
         : rawEvent;
+    const isTerminalStreamFailure =
+      rawEvent.kind === 'error' &&
+      progress.streamFailure === null &&
+      turnFailureReasonOf({ message: rawEvent.message }) !== null;
     if (rawEvent.kind === 'error') {
       learnFromCliRefusal({
         get,
         providerId: provider,
+        accountId: progress.accountId,
         model: spawnModel,
         message: rawEvent.message,
       });
-      if (
-        progress.streamFailure === null &&
-        turnFailureReasonOf({ message: rawEvent.message }) !== null
-      ) {
+      if (isTerminalStreamFailure) {
         progress.streamFailure = rawEvent.message;
       }
       feedAuthRefusal({
@@ -197,7 +199,9 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
       liveTextRegistry.mark({ runId });
       liveTextRegistry.mark({ runId: agentLiveKey({ agentId: activeAgentId }) });
     }
-    get().appendTurnEvent(activeAgentId, sessionId, event);
+    if (!isTerminalStreamFailure) {
+      get().appendTurnEvent(activeAgentId, sessionId, event);
+    }
     if (event.kind === 'provider_session_init') {
       progress.providerThreadId = event.providerSessionId;
     }
