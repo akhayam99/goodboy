@@ -17,6 +17,14 @@ export const MOUNT_CLOSE_ACTION: ActionDefinition<MountFacts> = {
   pendingLabel: () => NAMES.closing,
   confirm: mountCloseConfirm,
   run: async ({ facts, env }) => {
+    if (facts.pinnedRunIds.length > 0) {
+      await env.getState().unmountMount({
+        sessionId: facts.sessionId,
+        mountId: facts.mountId,
+        onKeptFolder: 'detach',
+      });
+      return;
+    }
     if (hasWorkOnlyInFolderOf({ facts })) {
       await closeMountKeepingFolder({ facts, env });
       return;
@@ -35,7 +43,7 @@ export const MOUNT_CLOSE_ACTION: ActionDefinition<MountFacts> = {
     await env.getState().unmountMount({
       sessionId: facts.sessionId,
       mountId: facts.mountId,
-      onKeptFolder: facts.pinnedRunIds.length > 0 ? 'detach' : 'refuse',
+      onKeptFolder: 'refuse',
     });
   },
 };

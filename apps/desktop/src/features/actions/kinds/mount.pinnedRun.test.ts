@@ -146,6 +146,24 @@ describe('detaching a branch an unfinished run still writes to', () => {
     expect(confirm?.description).toContain(`"${RUN_TITLE}" and 1 more still write to this branch.`);
   });
 
+  it('detaches through the pinned run path even when the branch has unsaved work', async () => {
+    const unmountMount = vi.fn<ReturnType<StoryStore['getState']>['unmountMount']>();
+    useAppStore.setState({ unmountMount });
+    const close = MOUNT_KIND.actions.find((action) => action.id === 'mount.close');
+
+    await close?.run({
+      facts: facts({ ...PINNED, dirty: 2, unpushed: 1 }),
+      env,
+      choice: null,
+    });
+
+    expect(unmountMount).toHaveBeenCalledWith({
+      sessionId: SESSION,
+      mountId: MOUNT_ID,
+      onKeptFolder: 'detach',
+    });
+  });
+
   it('stops every run that uses the branch when Stop run first is pressed', async () => {
     const stopWorkflowRunNow = vi.fn(async () => 'stopped' as const);
     useAppStore.setState({ stopWorkflowRunNow });
