@@ -69,6 +69,13 @@ const rowOf = ({ title }: RowParams): HTMLButtonElement => {
   return row;
 };
 
+type ToneParams = {
+  readonly row: Element | undefined;
+};
+
+const toneOf = ({ row }: ToneParams): string | null | undefined =>
+  row?.querySelector('[data-testid="activity-row"]')?.getAttribute('data-activity-tone');
+
 const stepRows = (): ReadonlyArray<HTMLElement> =>
   Array.from(railOf().querySelectorAll<HTMLElement>('ol[aria-label="Steps in this group"] li'));
 
@@ -378,6 +385,58 @@ describe('demo rail', () => {
     expect(next.hasAttribute('disabled')).toBe(true);
     fireEvent.click(within(compact).getByRole('button', { name: 'Previous group' }));
     expect(window.location.hash).toBe('#direction');
+  });
+
+  it('draws every rail node in the quiet look of the activity log', () => {
+    render(<DemoPlayground />);
+    const nodes = Array.from(railOf().querySelectorAll('[data-node-look]'));
+    expect(nodes).toHaveLength(groupRows().length + chapterOf({ id: 'bring' }).hints.length);
+    expect(nodes.every((node) => node.getAttribute('data-node-look') === 'quiet')).toBe(true);
+  });
+
+  it('draws each group and step as an activity row: the live step live, the rest pending', () => {
+    render(<DemoPlayground />);
+    expect(stepRows().map((row) => toneOf({ row }))).toEqual(
+      chapterOf({ id: 'bring' }).hints.map((_, index) => (index === 0 ? 'live' : 'pending')),
+    );
+    expect(toneOf({ row: rowOf({ title: 'Bring your repositories' }) })).toBe('quiet');
+    expect(toneOf({ row: rowOf({ title: 'Guide the work' }) })).toBe('pending');
+    expect(
+      railOf().querySelectorAll('[data-activity-tone="attention"], [data-activity-tone="failed"]'),
+    ).toHaveLength(0);
+  });
+
+  it('keeps the group number in the ordinal column while a locked node stays an empty ring', () => {
+    render(<DemoPlayground />);
+    const locked = rowOf({ title: 'Guide the work' });
+    expect(locked.querySelector('[data-node-state="queued"]')?.textContent).toBe('');
+    expect(
+      within(locked).getByTestId('activity-row').querySelector('.tabular-nums')?.textContent,
+    ).toBe('3');
+  });
+
+  it('turns a finished step into a bare check that keeps its task readable', () => {
+    render(<DemoPlayground />);
+    tried({ hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
+    const done = stepRows()[0];
+    expect(done?.querySelector('[data-node-state="done"]')?.getAttribute('data-node-look')).toBe(
+      'quiet',
+    );
+    expect(done?.querySelector('[data-testid="activity-row-text"]')?.className).toContain(
+      'text-foreground',
+    );
+  });
+
+  it('recaps the finished groups on Get Goodboy with quiet checks', () => {
+    seedDone({ ids: DEMO_CHAPTERS.map((chapter) => chapter.id) });
+    window.history.replaceState(null, '', '/?scene=demo#get');
+    render(<DemoPlayground />);
+    const recap = within(screen.getByTestId('demo-closing')).getByRole('list', {
+      name: 'What you did',
+    });
+    const checks = Array.from(recap.querySelectorAll('[data-node-state="done"]'));
+    expect(checks).toHaveLength(DEMO_CHAPTERS.length);
+    expect(checks.every((node) => node.getAttribute('data-node-look') === 'quiet')).toBe(true);
   });
 
   it('has no timeline bar at the bottom of the stage', () => {
