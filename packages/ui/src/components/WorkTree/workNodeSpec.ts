@@ -27,6 +27,8 @@ export type WorkNodeMark =
 
 export type WorkNodeSize = 'md' | 'sm';
 
+export type WorkNodeLook = 'ring' | 'quiet';
+
 export const WORK_NODE_SIZE = 20;
 
 export const WORK_NODE_SIZE_SM = 14;
@@ -173,6 +175,38 @@ export const WORK_NODE_RING: Record<Exclude<WorkNodeState, 'marker' | 'mixed'>, 
     dashArray: null,
   },
 };
+
+type QuietSpec =
+  | { readonly drawing: 'bare' }
+  | { readonly drawing: 'solid'; readonly fillClassName: string }
+  | { readonly drawing: 'small-ring' };
+
+export const WORK_NODE_QUIET: Partial<Record<WorkNodeState, QuietSpec>> = {
+  done: { drawing: 'bare' },
+  closed: { drawing: 'bare' },
+  stopped: { drawing: 'bare' },
+  skipped: { drawing: 'bare' },
+  question: { drawing: 'solid', fillClassName: 'fill-warning-solid' },
+  budget: { drawing: 'solid', fillClassName: 'fill-warning-solid' },
+  approval: { drawing: 'solid', fillClassName: 'fill-warning-solid' },
+  alert: { drawing: 'solid', fillClassName: 'fill-warning-solid' },
+  failed: { drawing: 'solid', fillClassName: 'fill-danger-solid' },
+  queued: { drawing: 'small-ring' },
+};
+
+export const WORK_NODE_QUIET_SOLID_RADIUS: Record<WorkNodeSize, number> = {
+  md: 8,
+  sm: 7,
+};
+
+export const WORK_NODE_QUIET_RING = {
+  radius: 5.5,
+  strokeWidth: 1.5,
+  strokeClassName: 'stroke-faint-foreground',
+  dashArray: QUEUED_DASH,
+} as const satisfies Record<string, number | string>;
+
+export const WORK_NODE_QUIET_PAD_CLASS = 'bg-fill';
 
 export type WorkNodeMixedPart = {
   readonly tone: Tone;

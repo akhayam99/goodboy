@@ -764,8 +764,7 @@ a result is a swap. Hovering, focusing or pressing an open group row preloads
 that group's opening frame instead. Once the first step of a group is
 credited, the next group's first frame takes the one preload slot (after the
 next beat of the same group), so it has the whole group to boot before Next.
-In the demo the rail signature is a passive tile that opens nothing, and the
-setup checklist stays closed (`isDirectedScene`).
+In the demo the setup checklist stays closed (`isDirectedScene`).
 In a directed frame `answerOpenQuestions` is simulated too: it marks the
 answer, keeps the unsent draft and streams a short acknowledgment.
 

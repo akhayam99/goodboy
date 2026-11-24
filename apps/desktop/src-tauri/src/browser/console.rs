@@ -18,8 +18,10 @@ const MAX_DOC_CHARS: usize = 32;
 const HOOK: &str = include_str!("console_hook.js");
 const APP_SCRIPT_SOURCE: &str = "user-script:";
 const IPC_FALLBACK_TEXT: &str = "IPC custom protocol failed";
-const REJECTION_TEXT: &str = "Unhandled rejection";
-const WINDOW_REFUSAL_TEXT: &str = "not allowed on window";
+const REJECTION_TEXT: &str = "Unhandled rejection: ";
+const WINDOW_REFUSAL_MARK: &str = " not allowed on window \"";
+const ACL_REFUSAL_HEAD: &str = "Command ";
+const ACL_REFUSAL_TAIL: &str = " not allowed by ACL";
 const READ_NAME_SLOT: &str = "__GOODBOY_CONSOLE_READ__";
 const READ_TIMEOUT: Duration = Duration::from_secs(1);
 
@@ -111,6 +113,21 @@ fn method_of(raw: Option<String>) -> Option<String> {
         .filter(|method| !method.is_empty() && method.chars().all(|c| c.is_ascii_uppercase()))
 }
 
+fn is_command_name(text: &str) -> bool {
+    !text.is_empty() && !text.contains(' ')
+}
+
+fn is_host_refusal(reason: &str) -> bool {
+    let is_acl = reason
+        .strip_prefix(ACL_REFUSAL_HEAD)
+        .and_then(|rest| rest.strip_suffix(ACL_REFUSAL_TAIL))
+        .is_some_and(is_command_name);
+    let is_window = reason
+        .split_once(WINDOW_REFUSAL_MARK)
+        .is_some_and(|(name, _)| is_command_name(name) && name.contains('.'));
+    is_acl || is_window
+}
+
 fn is_app_noise(raw: &RawEntry) -> bool {
     if raw.kind != EntryKind::Console {
         return false;
@@ -119,7 +136,10 @@ fn is_app_noise(raw: &RawEntry) -> bool {
         .as_deref()
         .is_some_and(|source| source.starts_with(APP_SCRIPT_SOURCE))
         || raw.text.starts_with(IPC_FALLBACK_TEXT)
-        || (raw.text.starts_with(REJECTION_TEXT) && raw.text.contains(WINDOW_REFUSAL_TEXT))
+        || raw
+            .text
+            .strip_prefix(REJECTION_TEXT)
+            .is_some_and(is_host_refusal)
 }
 
 fn entry_of(value: serde_json::Value) -> Option<ConsoleEntry> {
@@ -418,11 +438,25 @@ mod tests {
                     "method": "GET",
                     "status": null,
                 },
+                {
+                    "seq": 5,
+                    "kind": "console",
+                    "level": "error",
+                    "text": "Unhandled rejection: Command plugin:notification|is_permission_granted not allowed by ACL",
+                    "source": null,
+                },
+                {
+                    "seq": 6,
+                    "kind": "console",
+                    "level": "error",
+                    "text": "Unhandled rejection: Acme document update not allowed by ACL",
+                    "source": null,
+                },
             ],
         })
         .to_string();
         let read = answer_of(&answer, &Cursor::of(None, 0)).expect("reads");
-        assert_eq!(seqs_of(&read), vec![3, 4]);
+        assert_eq!(seqs_of(&read), vec![3, 4, 6]);
         assert_eq!(read.entries[1].status, None);
         assert_eq!(read.entries[1].level, EntryLevel::Info);
     }

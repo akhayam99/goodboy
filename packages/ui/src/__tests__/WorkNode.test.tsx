@@ -12,6 +12,8 @@ const GLYPH_SVG = 'svg[viewBox="0 0 256 256"]';
 
 const nodeOf = (label: string): HTMLElement => screen.getByRole('img', { name: label });
 
+type DiscParams = { label: string };
+
 describe('WorkNode', () => {
   it('masks the rail behind it, and draws no disc on a selected row', () => {
     render(
@@ -389,6 +391,112 @@ describe('WorkNode', () => {
     expect(lengths[2]).toBeCloseTo(unit * 2, 1);
     expect(nodeOf('10 resolves').textContent).toBe('10');
     expect(nodeOf('10 resolves').getAttribute('data-node-state')).toBe('mixed');
+  });
+
+  it('keeps the ringed look unless the caller opts into the quiet one', () => {
+    render(<WorkNode state="done" mark={{ kind: 'dot' }} label="Done" />);
+
+    const node = nodeOf('Done');
+    expect(node.getAttribute('data-node-look')).toBe('ring');
+    expect(node.querySelector('circle')?.getAttribute('class')).toContain('fill-success/18');
+  });
+
+  it('draws a quiet done, closed, stopped and skipped node with no ring at all', () => {
+    const states: ReadonlyArray<WorkNodeState> = ['done', 'closed', 'stopped', 'skipped'];
+    render(
+      <>
+        {states.map((state) => (
+          <WorkNode key={state} look="quiet" state={state} mark={{ kind: 'dot' }} label={state} />
+        ))}
+      </>,
+    );
+
+    for (const state of states) {
+      expect(nodeOf(state).getAttribute('data-node-look')).toBe('quiet');
+      expect(nodeOf(state).querySelector('circle')).toBeNull();
+    }
+    const check = findGlyph({ root: nodeOf('done'), icon: Check });
+    expect(check?.getAttribute('class')).toContain('text-success');
+  });
+
+  it('fills a quiet node solid only when it asks you something or broke, the sign in the on-tone ink', () => {
+    render(
+      <>
+        <WorkNode look="quiet" state="question" mark={{ kind: 'dot' }} label="Needs you" />
+        <WorkNode look="quiet" state="failed" mark={{ kind: 'dot' }} label="Failed" size="sm" />
+        <WorkNode look="quiet" state="approval" mark={{ kind: 'dot' }} label="Approve" />
+      </>,
+    );
+
+    const disc = ({ label }: DiscParams) => nodeOf(label).querySelector('circle');
+    expect(disc({ label: 'Needs you' })?.getAttribute('class')).toContain('fill-warning-solid');
+    expect(disc({ label: 'Needs you' })?.getAttribute('class')).toContain('stroke-none');
+    expect(nodeOf('Needs you').textContent).toBe('?');
+    expect(nodeOf('Needs you').innerHTML).toContain('text-on-warning');
+    expect(disc({ label: 'Failed' })?.getAttribute('class')).toContain('fill-danger-solid');
+    expect(disc({ label: 'Failed' })?.getAttribute('r')).toBe('7');
+    expect(nodeOf('Failed').textContent).toBe('!');
+    expect(nodeOf('Failed').innerHTML).toContain('text-on-danger');
+    expect(disc({ label: 'Approve' })?.getAttribute('class')).toContain('fill-warning-solid');
+  });
+
+  it('draws a quiet queued node as a small dashed ring with nothing inside', () => {
+    render(
+      <WorkNode look="quiet" state="queued" mark={{ kind: 'index', value: '5' }} label="Queued" />,
+    );
+
+    const ring = nodeOf('Queued').querySelector('circle');
+    expect(ring?.getAttribute('r')).toBe('5.5');
+    expect(ring?.getAttribute('stroke-dasharray')).not.toBeNull();
+    expect(nodeOf('Queued').textContent).toBe('');
+  });
+
+  it('keeps the running ring alive in the quiet look', () => {
+    render(<WorkNode look="quiet" state="running" mark={{ kind: 'dot' }} label="Working" />);
+
+    const node = nodeOf('Working');
+    expect(node.className).toContain('spin-border spin-border-info');
+    expect(node.innerHTML).toContain('motion-safe:animate-soft-pulse');
+  });
+
+  it('drops the frozen arc from a quiet question, the solid disc says it waits', () => {
+    render(
+      <WorkNode
+        look="quiet"
+        state="question"
+        mark={{ kind: 'dot' }}
+        label="Waiting"
+        progress={0.5}
+      />,
+    );
+
+    expect(nodeOf('Waiting').querySelector('[data-node-arc]')).toBeNull();
+    expect(nodeOf('Waiting').textContent).toBe('?');
+  });
+
+  it('sets a quiet neutral marker on a soft pad and keeps the ring of a toned one', () => {
+    render(
+      <>
+        <WorkNode
+          look="quiet"
+          state="marker"
+          mark={{ kind: 'glyph', glyph: <span>M</span> }}
+          label="Your message"
+        />
+        <WorkNode
+          look="quiet"
+          state="marker"
+          tone="warning"
+          mark={{ kind: 'glyph', glyph: <span>P</span> }}
+          label="Plan"
+        />
+      </>,
+    );
+
+    expect(nodeOf('Your message').className).not.toContain('ring-1');
+    expect(nodeOf('Your message').innerHTML).toContain('bg-fill');
+    expect(nodeOf('Your message').className).toContain('bg-background');
+    expect(nodeOf('Plan').className).toContain('ring-warning-edge');
   });
 
   it('draws a single part as one unbroken ring', () => {

@@ -19,6 +19,7 @@ import {
   useAppStore,
   visible,
   getSection,
+  terminalDocked,
 } from './harness';
 
 let pushed = vi.fn(async () => ({ ok: true }));
@@ -137,7 +138,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Terminal$/),
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open full page' }, WAIT);
+      await terminalDocked();
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },
@@ -158,7 +159,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^New terminal in this session$/),
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open full page' }, WAIT);
+      await terminalDocked();
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },
@@ -178,7 +179,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open full page' }, WAIT);
+      await terminalDocked();
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },

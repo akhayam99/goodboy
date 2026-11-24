@@ -51,9 +51,12 @@ const seedDock = ({ context, view, held, hasDetail }: SeedParams): void => {
     seedBrowserTab({ sessionId });
   }
   if (held === 'terminal' && workspaceId !== null) {
-    mockSceneIpc((command) =>
-      command === 'terminal_snapshot' ? terminalSnapshotAnswer({ lines: devServerLines }) : null,
-    );
+    mockSceneIpc((command) => {
+      if (command === 'terminal_snapshot') {
+        return terminalSnapshotAnswer({ lines: devServerLines });
+      }
+      return command === 'browser_tab_list' ? [] : null;
+    });
     const owner = workspaceTerminalOwner({ workspaceId });
     const key = terminalOwnerKey({ owner });
     useAppStore.setState({

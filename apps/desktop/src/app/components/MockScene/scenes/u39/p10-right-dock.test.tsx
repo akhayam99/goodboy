@@ -146,7 +146,7 @@ describe('the ux39 right dock scenes', () => {
 
       expect(useAppStore.getState().drawer).toMatchObject({ kind: 'terminal', sessionId: null });
       vi.useRealTimers();
-      await screen.findByRole('button', { name: 'Open full page' }, { timeout: 5_000 });
+      await screen.findByRole('region', { name: 'Terminal' }, { timeout: 5_000 });
       expect(screen.queryByText("Couldn't open this terminal")).toBeNull();
       expect(within(rail()).getByTestId('pane-toggle-terminal').getAttribute('aria-pressed')).toBe(
         'true',
@@ -184,7 +184,7 @@ describe('the ux39 right dock scenes', () => {
     );
   });
 
-  it('ux39-p4-column-folded shows the workspace, New, the six places, Settings and Report, no tool, on the places rail', async () => {
+  it('ux39-p4-column-folded shows the workspace, New, the six places, Settings, Report and the mark, no tool, on the places rail', async () => {
     await mount('ux39-p4-column-folded');
 
     const places = Array.from(
@@ -201,6 +201,7 @@ describe('the ux39 right dock scenes', () => {
       'impact',
       'settings',
       'report',
+      'signature',
     ]);
   });
 });

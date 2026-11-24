@@ -26,7 +26,6 @@ import { TerminalCommandSuggestion } from './TerminalCommandSuggestion';
 import { TerminalScopePicker } from './TerminalScopePicker';
 import { TerminalWorktreeTabs } from './TerminalWorktreeTabs';
 import { useWorktreeTabs } from './useWorktreeTabs';
-import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -179,12 +178,9 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
           tab={selected}
           handoffSessionId={sessionId}
           canOpenSession={false}
+          onOpenPage={() => openTerminalOnPage({ terminalId: selected.id, sessionId })}
         />
       }
-      page={{
-        label: NAMES.openFullPage,
-        onOpen: () => openTerminalOnPage({ terminalId: selected.id, sessionId }),
-      }}
       onClose={onClose}
       scroll="self"
     >

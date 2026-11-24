@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '../../cn';
 import { moveShellRailFocus } from './moveShellRailFocus';
 import { ShellRailFormContext, type ShellRailForm } from './shellRailFormContext';
-import { SHELL_RAIL_EDGE_PX, SHELL_RAIL_WIDTH_PX } from './shellRailGeometry';
+import { SHELL_RAIL_EDGE_PX, SHELL_RAIL_FOOT_PX, SHELL_RAIL_WIDTH_PX } from './shellRailGeometry';
 import { useShellRailForm } from './useShellRailForm';
 
 type Props = {
@@ -28,7 +28,7 @@ export const ShellRail = ({ label, form, className, children }: Props) => {
         style={{
           width: SHELL_RAIL_WIDTH_PX[shown],
           paddingTop: SHELL_RAIL_EDGE_PX,
-          paddingBottom: SHELL_RAIL_EDGE_PX,
+          paddingBottom: SHELL_RAIL_FOOT_PX,
         }}
         onKeyDown={(event) => moveShellRailFocus({ event })}
       >

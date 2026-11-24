@@ -59,6 +59,7 @@ import {
   visible,
   findSection,
   WAIT,
+  terminalDocked,
 } from './harness';
 
 const LATEST_ACTIVITY = sceneClock({ anchor: '2099-01-01T00:00:00.000Z' }).iso({
@@ -394,7 +395,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'terminal.studio',
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open full page' });
+      await terminalDocked();
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },
@@ -612,7 +613,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'lens.scripts',
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open full page' });
+      await terminalDocked();
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
     },
   }),
@@ -649,7 +650,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'session.terminal',
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open full page' });
+      await terminalDocked();
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
     },
   }),

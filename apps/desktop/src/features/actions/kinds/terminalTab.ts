@@ -1,5 +1,7 @@
 import type { SessionId } from '@goodboy/types';
+import { ArrowUpRight } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/utils/names';
 import type { ObjectKindDefinition, TerminalTabActionTarget } from '../types';
 import { VERBS } from '../../../shared/utils/verbs';
 
@@ -15,6 +17,7 @@ export type TerminalTabFacts = {
   readonly sessionId: SessionId | null;
   readonly onOpenSession: () => void;
   readonly sendOutput?: TerminalSendOutputFacts;
+  readonly onOpenPage?: () => void;
 };
 
 export const TERMINAL_TAB_KIND: ObjectKindDefinition<TerminalTabActionTarget, TerminalTabFacts> = {
@@ -28,6 +31,14 @@ export const TERMINAL_TAB_KIND: ObjectKindDefinition<TerminalTabActionTarget, Te
       group: 'open',
       when: ({ facts }) => facts.sessionId !== null,
       run: ({ facts }) => facts.onOpenSession(),
+    },
+    {
+      id: 'terminalTab.openFullPage',
+      label: NAMES.openFullPage,
+      icon: ArrowUpRight,
+      group: 'open',
+      when: ({ facts }) => facts.onOpenPage !== undefined,
+      run: ({ facts }) => facts.onOpenPage?.(),
     },
     {
       id: 'terminalTab.sendLastOutput',

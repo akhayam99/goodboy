@@ -859,19 +859,29 @@ ends with the model that ran, then its duration with what it has spent under
 it. The model is on the row, in a model cell of about 176px: the provider glyph,
 the model and its effort ("Opus 5.5 · High"), and when a step moved to another model (a fallback, a retry, a
 routing change) every model in the order it ran ("Kimi K3 → Sonnet 5.5", "3
-models" past two). Why a model took over, planned against picked,
-tokens and the start and finish times are in the card that opens when the
-pointer rests on the role glyph or on the model cell, and in the Brief. A step
+models" past two). The card that opens when the pointer rests on the role
+glyph is the role card: the role and its place, the task in full (four lines
+at most), the state line with its node and time ("Running 12m", "Needs you,
+asked 3m ago", "Done in 6m 12s"), then one line per model in the order it
+ran, each with its provider mark, its name and its effort, then the start,
+the tokens and the cost above zero. Three models or more show the first and
+the last, with "+ 1 model" between. Why a model took over and planned against
+picked are in the model cell's card, the role card's footnote and the Brief. A step
 that has not started shows its planned model and its meta in faint. In the run tree and
 a Brief's Subagents, every row keeps the model: before a step starts, the meta
 shows the routing it is planned to run on, in faint. Once it runs, the meta
-shows what actually ran, and the identity card names the plan when routing
+shows what actually ran, and the role card names the plan when routing
 picked something else. The
 effort works the same way: once a run has started, the column shows the effort
 the CLI was started with, in the row tone ("Planned High, ran Medium" in the
 card when it left the plan). A run with no recorded
 effort, like one from before turn spans existed or a CLI with no effort flag,
-keeps the planned effort in faint and never shows a made-up value. The agent
+keeps the planned effort in faint and never shows a made-up value. In the
+role card the effort is a meter beside its word: one neutral segment per
+level the model offers, filled to the level that ran ("High" on Sonnet 5.5
+fills three of five). A model with no effort setting shows no meter, an
+effort the CLI has not confirmed yet draws in faint ink, and the meter never
+takes a colour. The rows keep the word only. The agent
 header reads the same way. The
 run row in the feed shows the models of its steps ("Sonnet 5.5 + 1" on two, "4 models" on more) and what
 the whole run has spent; the step it has reached ("Step 4 of 7", or "Step 4"
