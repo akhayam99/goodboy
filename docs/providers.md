@@ -1238,6 +1238,29 @@ When a provider ships or retires a model, update these together:
   why, and a provider's Usage notice says where Auto sends new agents. No
   Cursor default needs Max Mode, and `defaults.test.ts` validates every cell against
   the catalogs and checks that each line cell starts on the newest model of its line
+- **Candidates** (`packages/core/src/providers/candidates/`) list every model a new
+  agent could start on, for one role and step size, across every On and Backup
+  provider, not only the first. `buildCandidates` walks `providerCandidates` and, per
+  provider, the same pick chain as the Auto ladder (`providerStepPick`): the rung for
+  the role and size plus one lighter rung, never below the role's lowest. Each row
+  carries the order, the room, the agents started in the last hour, the published rate
+  and the model family (`modelFamily`, from the catalog group, so Sonnet through Cursor
+  is the Claude family and Cursor Auto has none). A guard strikes a row with a cause
+  (`CANDIDATE_CAUSES`): not connected, Off, Backup idle, out of room, cooling down, an
+  open breaker, a budget alert, outside the run's providers, a provider the Lead never
+  starts helpers on, a writer off `AUTO_WRITER_CHILD_PROVIDERS`, hidden, CLI too old,
+  outside a role pin, or the writer's family for a review (kept, and said, when no
+  other family is left). A role pin lists only its pinned models while one of them can
+  run. `bestCandidate` takes the best valid row by Provider priority: by order (not
+  near its limit, then the order, then the rung before the lighter one) or by load (room
+  band, then load plus picks already made in the same batch, then the order); a pin
+  wins over either. `checkPick` looks a pick up in the same list and keeps it, moves it
+  to the best row with its cause, or refuses it only when no row is valid. Every cause
+  maps to an `adjustment` word an older build reads, so a stored decision stays a patch.
+  `formatCandidatesBlock` writes one table for every role, one line per provider in
+  the order, with the role guards, the run budget and which providers keep a session
+  after a question; it drops the rates, then the facts, then the last providers to stay
+  under 2,400 characters, never throws, and is left out when one provider is left
 - **Provider policy.** `workspaces.provider_pool` holds the policy, either the 0.15.4
   list of names (`["anthropic","codex"]`: those On in that order, the rest Off, the
   saved default moved first) or the list of entries
