@@ -58,7 +58,7 @@ run, top down. Both draw their structure with the same four ingredients.
 
 | ingredient | value                                                                              | meaning                                     |
 | ---------- | ---------------------------------------------------------------------------------- | ------------------------------------------- |
-| spine      | 1px, `--color-border`, solid, unbroken on every row, column 0                      | the session's own thread                    |
+| spine      | 1px, `--color-border-soft`, solid, unbroken on every row, column 0                 | the session's own thread                    |
 | lane       | 2px in the run's identity hue, one 16px column per run, a child lane one column in | a launch's members, each at its own time    |
 | pattern    | solid or dashed                                                                    | solid happened, dashed has not happened yet |
 | count row  | hollow 10px node on the lane, muted text on the label column, 24px high            | a finished branch, folded                   |
@@ -344,6 +344,54 @@ Needs you, Ready, Couldn't fix, Done) or the quiet sub-word of a Done comment
 counts them in comments ("3 ready · 1 needs you"), never as agents. A comment
 that needs you, has a ready fix or could not be fixed sets the `reviewComment`
 ask, so Needs you carries it and the row itself is not tinted.
+
+## Quiet nodes
+
+An activity log draws its nodes with `look="quiet"`; every other caller keeps
+the ringed look of Work nodes and row states, the default. A log of finished
+work reads as calm good news, and only what needs you stands out.
+`WORK_NODE_QUIET` in `workNodeSpec.ts` is the table:
+
+| node                                      | quiet drawing                                          |
+| ----------------------------------------- | ------------------------------------------------------ |
+| `done`                                    | a bare `success` check, no ring, no fill               |
+| `closed`, `stopped`, `skipped`            | their centre alone, no ring                            |
+| `question`, `budget`, `approval`, `alert` | a solid `warning-solid` disc, the sign in `on-warning` |
+| `failed`                                  | a solid `danger-solid` disc, `!` in `on-danger`        |
+| `queued`                                  | an 11px dashed `faint-foreground` ring, empty          |
+| `marker`, neutral tone                    | the glyph on a `fill` pad, no ring                     |
+| every other state                         | as in the ringed look                                  |
+
+Needs you and Failed are the only solid nodes, so they outweigh a column of
+checks. A solid disc never draws the frozen progress arc; the running ring
+keeps its spin and its arc. The disc fills the `sm` node (14px) and is 16px in
+the `md` one. The feed marker (`TimelineRowMarker`) draws every node quiet, so
+the overview, the Activity page and the run page take it at once.
+
+## Activity row
+
+`ActivityRow`, `ActivityMeta` and `ActivityMessage` in
+`packages/ui/src/components/ActivityRow/` are the one row grammar of a log. A
+surface keeps its own rail, order, folding and heights; the row draws what sits
+right of the rail.
+
+- `ActivityRow` lays out the marker, the ordinal (`narrow` for `4.2`, `wide`
+  for `Step 4`), the role glyph, the task and the meta. `density="rail"` wraps
+  the task to two lines with every slot on the first line (the Agents list);
+  `density="feed"` keeps one line, centred in the height the surface gives it.
+- `tone` is `quiet`, `live`, `attention`, `failed` or `pending`. Attention
+  carries a warning `ToneBar`, failed a danger one, the rest none, and no row is
+  ever filled. Pending mutes the task.
+- `ActivityMeta` takes the columns a surface declares once (state, model,
+  time, cost, in that order). In a feed every declared cell keeps its width,
+  empty or not, so rows line up; in a rail an empty cell is dropped. A cost of
+  zero or unknown shows nothing.
+- `ActivityMessage` draws your words as a bubble on the rail with a byline
+  ("You · read at turn 6") and the actions of a note not read yet. A note not
+  read yet is an outline, a read one a `fill` bubble.
+
+The scenes `activity-row-kit` and `activity-row-kit-light` show the three on
+the Agents list, the feed and the run steps.
 
 ## Row hover and focus
 
@@ -649,7 +697,7 @@ Open plan. A label never passes nine characters and the row title
 names the object. A row has no menu slot.
 
 The role glyph before the title and the model cell are the only two hover
-targets that open a card (`RowIdentityCard`, `RowModelsCard`, `RunIdentityCard`).
+targets that open a card (`RoleCard`, `RowModelsCard`, `RunIdentityCard`).
 Each one wraps its trigger in a `FactCard` and sends data only (header, facts,
 a footnote, six rows at most: a model list or a run with many steps keeps five
 and a footnote says how many more), so the cards sit on the floating surface

@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { ChevronRight, CircleAlert, Info, Terminal, TriangleAlert } from '@goodboy/ui/icons';
+import {
+  ChevronRight,
+  CircleAlert,
+  Info,
+  MessageSquareText,
+  TriangleAlert,
+} from '@goodboy/ui/icons';
 import { ICON_SIZE, SelectableRow, TruncatedText, cn } from '@goodboy/ui';
 import { isFailedRequest, networkStatusWordOf } from '../../networkStatusWordOf';
 import type { BrowserConsoleEntry, BrowserConsoleLevel } from '../../types';
@@ -12,7 +18,7 @@ const LEVEL_ICON = {
   error: CircleAlert,
   warn: TriangleAlert,
   info: Info,
-  log: Terminal,
+  log: MessageSquareText,
 } as const satisfies Record<BrowserConsoleLevel, typeof Info>;
 
 const LEVEL_TEXT = {

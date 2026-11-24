@@ -136,6 +136,37 @@ describe('TimelineRowMarker', () => {
     expect(nodeOf({ label: 'Needs you' }).textContent).toBe('?');
   });
 
+  it('draws a finished agent as a bare check on the quiet node, with no ring around it', () => {
+    render(<TimelineRowMarker item={itemOf({ entry: agentEntry({ stepLabel: '2' }) })} />);
+
+    const node = nodeOf({ label: 'Done' });
+    expect(node.getAttribute('data-node-look')).toBe('quiet');
+    expect(node.querySelector('circle')).toBeNull();
+    expect(node.querySelector('svg')).not.toBeNull();
+  });
+
+  it('fills the node of a failed agent, so it outweighs every finished one', () => {
+    render(
+      <TimelineRowMarker
+        item={{
+          ...itemOf({ entry: agentEntry({ stepLabel: '6' }) }),
+          rowState: { phase: 'failed', reason: null, ask: null },
+        }}
+      />,
+    );
+
+    const node = nodeOf({ label: 'Failed' });
+    expect(node.getAttribute('data-node-look')).toBe('quiet');
+    expect(node.textContent).toBe('!');
+    expect(node.querySelector('circle')?.getAttribute('stroke-width')).toBeNull();
+  });
+
+  it('draws fact rows on the quiet look too', () => {
+    render(<TimelineRowMarker item={itemOf({ entry: branchEntry() })} />);
+
+    expect(nodeOf({ label: 'Branch' }).getAttribute('data-node-look')).toBe('quiet');
+  });
+
   it('spins a deciding run in its own identity colour', () => {
     render(
       <TimelineRowMarker

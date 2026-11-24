@@ -11,9 +11,11 @@ are owned by [docs/navigation/shell.md](../../../docs/navigation/shell.md) → S
 
 `ShellRail` reads `useShellRailForm` and `shellRailGeometry`: 64px with words,
 or 44px with icons and tooltips in a window under 1100px. The rail pads its
-top and its foot the same (`SHELL_RAIL_EDGE_PX`), and a passive mark at the
-foot sits in one rail tile (`SHELL_RAIL_TILE`, the size of an item's button),
-so its glyph lines up with the icons above it. `ShellRailItem`
+top by `SHELL_RAIL_EDGE_PX` and its foot by `SHELL_RAIL_FOOT_PX`, the shell
+gutter `DrawerColumn` keeps under the content sheet, so the last tile ends on
+the sheet's bottom edge. The brand mark at the foot sits in one rail tile
+(`SHELL_RAIL_TILE`, the size of an item's button), so its glyph lines up with
+the icons above it. `ShellRailItem`
 keeps the full accessible name when a shorter word is shown. The rail never
 folds, never resizes and saves no width. `App.tsx` supplies neither a top bar
 fold toggle nor a peek overlay.
@@ -206,7 +208,12 @@ button with an arrow, the kind and the muted title, at most half the row, the
 title truncating first; it replaces the back row. A pane whose title is a control (the terminal scope picker) passes it as
 `titleContent`: it replaces the visible heading, the region keeps `title` as its name. A pane that is a page (Explore) passes `isHeaderless` and draws `PaneShell` as its body: the frame then keeps only the region, Esc and focus, and `title` stays its name. Close always reads `Close` and is a 28px target (`size-7`, 14px
 glyph); every utility in the header (copy, open on its page) is a 28px
-icon button in one tone. The `dock` is `px-4 py-3`, the same padding for the Ask
+icon button in one tone. The head holds at any pane width: the title has no
+minimum and truncates first, and under 360px of row (`NARROW_HEAD_PX`,
+`useIsNarrow`) the pair turn and Open full page fold into one `More on <title>`
+menu, or, when the pane brings its own `menu`, the turn leaves the row (the
+drag and ⌘K still move the pane) and the pane's menu holds the rest. The
+Terminal keeps only its folder, its More (Open full page included) and Close. The `dock` is `px-4 py-3`, the same padding for the Ask
 composer, a transcript reply field and a script run's status line. The first
 control takes focus when the drawer opens (the composer of the dock when it has
 one, `Close` otherwise); Esc blurs a non-empty text field first and closes on
@@ -486,6 +493,20 @@ itself.
 That comes from the attribute itself. `icon-only-controls-carry-a-tooltip`
 enforces the rule for `<button>`, `<a>` and `<Button>` controls, and sees icons
 written as member expressions such as `<CONCEPT_ICONS.agents />`.
+
+**Role card.** A role chip opens the one role card, a `FactCard` that also
+takes a `task`, a `stateGlyph` and `models`. Under the header the task reads
+in full in `text-ui`, four lines at most (`FactCardTask`), with the state line
+under it: the caller's node, the word in its tone (muted when quiet) and the
+time in faint. The facts start with one line per model (`FactCardModels`): the
+provider mark, the name, then an `EffortMeter` and the effort word in faint on
+the right. The meter is one 6 by 4px segment per level the model offers,
+filled in `muted-foreground` to the level used, `faint-foreground` while the
+effort is only planned, `border` for the rest; it never takes a tone, and a
+model with no axis draws none. The model lines count toward the six rows:
+three models or more show the first and the last, the last labelled
+"+ N models" (`cappedModels`). The sentence a screen reader hears reads the
+task, the state and "Effort High, 3 of 5" for each model.
 
 **One creation grammar.** Bare sections stacked in one column, never a bordered
 box around the whole thing. Secondary controls go in `SectionHeader`'s

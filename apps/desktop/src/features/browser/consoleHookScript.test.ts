@@ -260,6 +260,50 @@ describe('the console hook', () => {
     ]);
   });
 
+  it('handles the host refusal of the notification shim in a tab and records nothing for it', () => {
+    const tab = page();
+    const refused = vi.fn();
+    const declined = vi.fn();
+
+    tab.fire({
+      type: 'unhandledrejection',
+      event: {
+        reason: 'Command plugin:notification|is_permission_granted not allowed by ACL',
+        preventDefault: refused,
+      },
+    });
+    tab.fire({
+      type: 'unhandledrejection',
+      event: {
+        reason: 'notification.is_permission_granted not allowed on window "browse-0f1e"',
+        preventDefault: refused,
+      },
+    });
+    tab.fire({
+      type: 'unhandledrejection',
+      event: { reason: 'payment declined', preventDefault: declined },
+    });
+    tab.fire({
+      type: 'unhandledrejection',
+      event: { reason: 'Acme document update not allowed by ACL', preventDefault: declined },
+    });
+    tab.fire({
+      type: 'unhandledrejection',
+      event: {
+        reason: 'Harborline seat not allowed on window "checkout"',
+        preventDefault: declined,
+      },
+    });
+
+    expect(refused).toHaveBeenCalledTimes(2);
+    expect(declined).not.toHaveBeenCalled();
+    expect(tab.read()?.entries.map((entry) => entry.text)).toEqual([
+      'Unhandled rejection: payment declined',
+      'Unhandled rejection: Acme document update not allowed by ACL',
+      'Unhandled rejection: Harborline seat not allowed on window "checkout"',
+    ]);
+  });
+
   it('does not record a log written while it describes another one', () => {
     const tab = page();
     const noisy = {

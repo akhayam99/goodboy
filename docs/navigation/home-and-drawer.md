@@ -782,9 +782,12 @@ and changes nothing once the panels moved again. On the Board, with no
 session, the grid changes and nothing is saved.
 
 With two panels or more, a panel's head title is a drag source
-(`DockDragContext` from `DockGrid` into `DrawerFrame`, `useDockDrag`). A press
-becomes a drag after 4px, so a click stays a click, and a press on a control
-inside the head never starts one; Esc cancels through the escape stack and the
+(`DockDragContext` from `DockGrid`, read by `useDockGrip` in `DrawerTitleGrip`,
+`useDockDrag`). The Browser has no frame head, so its address row is the drag
+source, with a grip mark first (`BrowserAddressRow`, `rowLayout.test.tsx`). A
+press becomes a drag after 4px, so a click stays a click, and a press on a
+control inside the head, or inside a layer the head portals out (a menu, the
+address suggestions), never starts one; Esc cancels through the escape stack and the
 pointer up drops. While it drags, `DockDropZones` draws the zones over every
 other panel (left, right, above, swap, below) and a strip on the page's edge
 (beside the page); a zone that would leave the page worse than now, by the

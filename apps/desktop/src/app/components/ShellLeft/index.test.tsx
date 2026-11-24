@@ -14,6 +14,8 @@ vi.mock('../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { brandId, type SessionId } from '@goodboy/types';
+import { SHELL_GUTTER_PX } from '@goodboy/ui';
+import { APP_VERSION } from '../../../shared/lib/appVersion';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -232,40 +234,78 @@ describe('the places rail', () => {
     expect(foot).toEqual(['settings', 'report', 'signature']);
   });
 
-  it('draws the signature as a 24px passive tile: no control, no tab stop, no name, no tooltip', () => {
+  it("draws the signature as a 24px brand tile in a button named What's new, with no word", () => {
     mount({});
-    const signature = rail().querySelector<HTMLElement>('[data-rail-signature]');
-    const tile = signature?.querySelector<HTMLElement>('[data-brand-tile]');
+    const signature = within(rail()).getByRole('button', { name: "What's new" });
+    const tile = signature.querySelector<HTMLElement>('[data-brand-tile]');
 
-    expect(signature?.getAttribute('aria-hidden')).toBe('true');
+    expect(signature.hasAttribute('data-rail-signature')).toBe(true);
     expect(tile?.style.width).toBe('24px');
     expect(tile?.style.height).toBe('24px');
-    expect(signature?.querySelector('button, a, [tabindex], [role]')).toBeNull();
-    expect(signature?.textContent).toBe('');
-    expect(within(rail()).queryByRole('button', { name: /goodboy/i })).toBeNull();
-    expect(wordsOf()).not.toContain('Help');
+    expect(signature.textContent).toBe('');
+    expect(wordsOf()).not.toContain("What's new");
+    expect(signature.querySelector('[data-unseen-release]')).toBeNull();
   });
 
-  it('closes the rail with the signature, with as much space under it as above the first item', () => {
+  it('closes the rail with the signature, its foot one shell gutter above the window edge', () => {
     mount({});
     const signature = rail().querySelector<HTMLElement>('[data-rail-signature]');
 
     expect(rail().lastElementChild).toBe(signature);
-    expect(rail().style.paddingBottom).toBe(rail().style.paddingTop);
-    expect(signature?.tabIndex).toBe(-1);
+    expect(rail().style.paddingBottom).toBe(`${SHELL_GUTTER_PX}px`);
   });
 
-  it('opens nothing from the signature', () => {
+  it('reaches the signature with the arrow keys, after the last foot item', () => {
+    mount({});
+    const report = within(rail()).getByRole('button', { name: 'Report a bug' });
+    report.focus();
+
+    fireEvent.keyDown(report, { key: 'ArrowDown' });
+
+    expect(document.activeElement).toBe(rail().querySelector('[data-rail-signature]'));
+  });
+
+  it("opens What's new from the signature and nothing else", () => {
     const actions = mount({});
 
-    const signature = rail().querySelector('[data-rail-signature]');
-    expect(signature).not.toBeNull();
-    if (signature !== null) {
-      fireEvent.click(signature);
-    }
+    fireEvent.click(within(rail()).getByRole('button', { name: "What's new" }));
 
-    Object.values(actions).forEach((action) => expect(action).not.toHaveBeenCalled());
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(actions.openChangelog).toHaveBeenCalledOnce();
+    Object.entries(actions)
+      .filter(([key]) => key !== 'openChangelog')
+      .forEach(([, action]) => expect(action).not.toHaveBeenCalled());
+  });
+
+  it('puts a dot on the signature while the installed release has unread notes, and drops it once read', () => {
+    mount({});
+    act(() => {
+      useAppStore.setState({ changelogSeenHydrated: true, changelogSeenVersion: '0.0.1' });
+    });
+
+    const signature = within(rail()).getByRole('button', {
+      name: "What's new, new release notes",
+    });
+    expect(signature.querySelector('[data-unseen-release]')).not.toBeNull();
+
+    act(() => {
+      useAppStore.setState({ changelogSeenVersion: APP_VERSION });
+    });
+
+    expect(within(rail()).getByRole('button', { name: "What's new" })).toBe(signature);
+    expect(signature.querySelector('[data-unseen-release]')).toBeNull();
+  });
+
+  it('shows no dot before the seen release is read, or on a fresh install', () => {
+    mount({});
+    act(() => {
+      useAppStore.setState({ changelogSeenHydrated: false, changelogSeenVersion: '0.0.1' });
+    });
+    expect(rail().querySelector('[data-unseen-release]')).toBeNull();
+
+    act(() => {
+      useAppStore.setState({ changelogSeenHydrated: true, changelogSeenVersion: null });
+    });
+    expect(rail().querySelector('[data-unseen-release]')).toBeNull();
   });
 
   it('opens the report sheet from Report, which names its draft once one is saved', () => {
