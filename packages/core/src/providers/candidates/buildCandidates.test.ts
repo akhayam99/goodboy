@@ -274,6 +274,15 @@ describe('buildCandidates', () => {
     expect(list.isSameFamilyKept).toBe(false);
   });
 
+  it('strikes a provider where an agent for the role did not start in this work', () => {
+    const list = build({
+      inputs: candidateInputsOf({ on: ['cursor', 'anthropic', 'codex'] }),
+      need: { role: 'planner', size: 'medium', scope: 'helper', failedStarts: ['cursor'] },
+    });
+    expect(new Set(causesOf({ list, provider: 'cursor' }))).toEqual(new Set(['failed-start']));
+    expect(list.rows.find((row) => row.cause === null)?.provider).toBe('anthropic');
+  });
+
   it('keeps the writer family and says so when no other family is left', () => {
     const list = build({
       inputs: candidateInputsOf({ on: ['codex'] }),

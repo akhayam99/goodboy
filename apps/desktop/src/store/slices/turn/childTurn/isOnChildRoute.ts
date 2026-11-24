@@ -1,6 +1,6 @@
 import { isAutoChildProvider } from '@goodboy/core/auto';
+import { catalogModelForId } from '@goodboy/core/providers';
 import type { TurnProviderOverride } from '@goodboy/types';
-import { pickedTurnExecution } from '../pickedTurnExecution';
 import type { ChildTurn } from './resolveChildTurn';
 
 type Params = Readonly<{
@@ -16,9 +16,11 @@ export const isOnChildRoute = ({ route, role, override }: Params): boolean => {
   ) {
     return false;
   }
-  const routed = pickedTurnExecution({
-    override: { providerId: route.provider, model: route.model },
-  });
-  const asked = pickedTurnExecution({ override });
-  return routed.kind !== 'unspecified' && asked.kind !== 'unspecified' && routed.id === asked.id;
+  const asked = override.selection?.key ?? override.model;
+  if (asked == null) {
+    return false;
+  }
+  const routed = catalogModelForId({ provider: route.provider, modelId: route.model });
+  const picked = catalogModelForId({ provider: override.providerId, modelId: asked });
+  return routed !== null && picked !== null && routed.key === picked.key;
 };

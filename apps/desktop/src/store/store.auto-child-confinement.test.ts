@@ -103,6 +103,7 @@ type DelegationParams = Readonly<{
   childAgentId: AgentId;
   role: string;
   provider?: ProviderId;
+  model?: string;
   isAdopted?: boolean;
 }>;
 
@@ -110,6 +111,7 @@ const delegationOf = ({
   childAgentId,
   role,
   provider = 'anthropic',
+  model = ROUTED_MODEL,
   isAdopted = false,
 }: DelegationParams): AutoDelegation => ({
   id: brandId<AutoDelegationId>({ value: 'delegation-ledger-core' }),
@@ -124,7 +126,7 @@ const delegationOf = ({
   role,
   request: { task: 'find where the rounding drifts in ledger-core' },
   target: {},
-  routing: { provider, model: ROUTED_MODEL },
+  routing: { provider, model },
   state: 'running',
   outcome: null,
   reason: null,
@@ -547,6 +549,32 @@ describe('every turn on an Auto child runs confined, from the stored delegation'
 
     expect(spawns()).toEqual([]);
     expect(result.autoChildRefusal).toBe('auto_child_off_route');
+  });
+
+  it('starts a Cursor child on its route when its effort is not the default', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({
+      childAgentId: agentId,
+      role: 'scout',
+      provider: 'cursor',
+      model: 'sonnet-5.5',
+    });
+    await routerAnswers({ provider: 'cursor', model: 'sonnet-5.5' });
+    useAppStore.setState((state) => ({
+      agentEffortOverride: { ...state.agentEffortOverride, [agentId]: 'xhigh' },
+    }));
+
+    const result = await useAppStore.getState().sendTurn({
+      sessionId,
+      agentId,
+      content: 'Plan the ledger export.',
+      origin: 'delegation',
+      confinedRole: 'scout',
+      override: { providerId: 'cursor', model: 'sonnet-5.5', explicit: true },
+    });
+
+    expect(result.autoChildRefusal).toBeUndefined();
+    expect(lastSpawn()).toMatchObject({ provider: 'cursor', model: 'claude-sonnet-5-5-xhigh' });
   });
 
   it('refuses a child routed to a provider whose confinement is not proven', async () => {

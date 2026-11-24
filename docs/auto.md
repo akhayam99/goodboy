@@ -655,7 +655,9 @@ writing to it reopens it to **Deciding**.
   that loads the workspace or launches in between leaves the claimed agent
   running and an adoption or detach is still refused as a running turn
   ([turns.md](turns.md#turn-admission)). The turn
-  runs only on the routed provider and model, and only on a provider
+  runs only on the routed provider and model (`isOnChildRoute` compares the catalog model
+  key, so a Cursor slug that carries the effort, `claude-sonnet-5-5-xhigh` for the route
+  `sonnet-5.5`, is on route), and only on a provider
   `autoChildProviders` allows for its role: a model picked in the child's composer or a retry
   aimed elsewhere is refused, agent pins are ignored, a provider fallback that
   leaves the route is dropped so the failure reaches Auto, and a cooldown or
@@ -2206,7 +2208,8 @@ inputs come from one selector, `selectCandidateInputs` (the turns of the last 5 
 `resolveChildRouting` builds the candidates for the child's role and difficulty
 (`buildCandidates`, scope `helper`) and checks the pick (`checkPick`): a pick that passes runs as
 sent and keeps the Lead's line; a pick a guard removes (Off, not connected, out of room, cooling
-down, a writer on Cursor, the writer's family for a review, off a role pin) moves to the best
+down, a writer on Cursor, the writer's family for a review, off a role pin, a provider where a
+helper of the same role did not start in this tree) moves to the best
 candidate by the rule and the reason says so, for example "The Lead asked for Cursor Sonnet 5.5:
 agents that write code do not run here yet. Claude: first in your order." A child with no pick
 takes the best by the rule ("Claude: first in your order", "Codex: most room left", "Haiku 5.5:
@@ -2214,7 +2217,16 @@ lighter, fits the step"). A role pin always wins; a preset step lock (`stepLock`
 The session composer's model steers the Lead only, never a helper. A reviewer is routed against
 the family of the writer of the revision it reads (`writerFamilyOf`, from the stored pick of the
 delegation that wrote that revision, else the owner's); with no writer artifact there is no family
-guard. The routing a helper keeps
+guard. A start that failed before the spawn (an attempt that ended `kickoff_failed`) is the trace
+the next pick reads: `failedStartsOf` lists the providers of such attempts for the role in the
+tree's current generation, and `resolveDelegateChild` and `recheckQueuedRouting` pass them as
+`failedStarts`, so the next helper of that role starts elsewhere (cause `failed-start`). A retry
+of a helper that did not start drops the failed route: `prepareRetry` copies neither the stored
+pick nor the Lead's pick when it names the same provider into `requested`, and no `agentLock`
+holds it there; continuing a helper that ran keeps its lock even when a sibling of its role did
+not start. A queued helper whose stored provider did not start and that has no other provider
+left settles `blocked` with the refusal (`recheckQueuedRouting` returns it to `launchChildren`)
+instead of starting there. The routing a helper keeps
 (`routing_json`, typed `AutoRouting`, built by `storedRoutingOf`) holds the pick, the reason,
 `source` (lead, pin, rule, fallback, lock), the cause of a moved pick, the Lead's own words in
 `modelReason` and up to 18 candidates it weighed, without rates, the struck rows last. A role pin
