@@ -89,6 +89,15 @@ describe('formatCandidatesBlock', () => {
     }
   });
 
+  it('asks a workflow orchestrator for the next step, not for each child', () => {
+    const inputs = candidateInputsOf({ on: ['anthropic', 'codex'] });
+    const step = formatCandidatesBlock({ inputs, roles: STEP_ROLES, scope: 'step' });
+    const helper = block({ inputs });
+    expect(step).toContain('For the next step, copy "provider", "model" and "effort"');
+    expect(step).not.toContain('For each child');
+    expect(helper).toContain('For each child, copy');
+  });
+
   it('drops the rates, then the facts, then the last providers, and never goes over', () => {
     const inputs = candidateInputsOf({ on: ['anthropic', 'cursor', 'codex', 'gemini', 'copilot'] });
     const full = block({ inputs }) ?? '';

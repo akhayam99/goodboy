@@ -6,6 +6,7 @@ import {
   resolveModelArgs,
   resolveModelForProvider,
   resolveStoredModelSelection,
+  type ProviderRule,
 } from '@goodboy/core/providers';
 import type { WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core/orchestrator';
 import { brandId } from '@goodboy/types';
@@ -611,5 +612,105 @@ describe('preSpawnWorkflowAgents keeps the combo a step pinned', () => {
         effort: persisted.effort,
       }),
     ).toContain('composer-2.5');
+  });
+});
+
+type CandidateSpawnParams = {
+  readonly steps: ReadonlyArray<Step>;
+  readonly rule: ProviderRule;
+};
+
+const spawnOnCandidates = ({ steps, rule }: CandidateSpawnParams) =>
+  preSpawnWorkflowAgents({
+    sessionId: SESSION_ID,
+    workflowRunId: RUN_ID,
+    steps,
+    baseOrdinal: 0,
+    defaultProvider: 'anthropic',
+    roleModels: null,
+    candidates: {
+      defaultProvider: 'anthropic',
+      connected: ['anthropic', 'codex'],
+      policy: [
+        { id: 'anthropic', state: 'on' },
+        { id: 'codex', state: 'on' },
+      ],
+      rule,
+    },
+    mountId: null,
+  });
+
+type InsertedParams = {
+  readonly providers: ReadonlyArray<ProviderId>;
+};
+
+const expectInsertedOn = ({ providers }: InsertedParams): void => {
+  expect(invokeAgentInsertSpy).toHaveBeenCalledTimes(providers.length);
+  providers.forEach((provider, index) => {
+    expect(invokeAgentInsertSpy).toHaveBeenNthCalledWith(
+      index + 1,
+      expect.objectContaining({ providerOverride: provider }),
+    );
+  });
+};
+
+describe('preSpawnWorkflowAgents on the candidates', () => {
+  it('starts every step on the first provider in your order and says why', async () => {
+    await spawnOnCandidates({
+      steps: [
+        step({ id: brandId<StepId>({ value: 'step-1' }) }),
+        step({ id: brandId<StepId>({ value: 'step-2' }), ordinal: 1 }),
+      ],
+      rule: 'order',
+    });
+
+    expectInsertedOn({ providers: ['anthropic', 'anthropic'] });
+    expect(invokeAgentInsertSpy.mock.calls[0]?.[0]).toMatchObject({
+      routingDecision: {
+        source: 'kind_default',
+        reason: 'Claude: first in your order',
+        adjustment: 'none',
+      },
+    });
+  });
+
+  it('spreads the steps of one run by load', async () => {
+    await spawnOnCandidates({
+      steps: [0, 1, 2].map((ordinal) =>
+        step({ id: brandId<StepId>({ value: `step-${ordinal}` }), ordinal }),
+      ),
+      rule: 'load',
+    });
+
+    expectInsertedOn({ providers: ['anthropic', 'codex', 'anthropic'] });
+  });
+
+  it('starts a reviewer on another model family than the step that wrote the change', async () => {
+    await spawnOnCandidates({
+      steps: [
+        step({ id: brandId<StepId>({ value: 'step-write' }), role: 'implementer' }),
+        step({
+          id: brandId<StepId>({ value: 'step-review' }),
+          ordinal: 1,
+          role: 'reviewer',
+          name: 'Review',
+        }),
+      ],
+      rule: 'order',
+    });
+
+    expectInsertedOn({ providers: ['anthropic', 'codex'] });
+  });
+
+  it('leaves a step that names its own provider on that provider', async () => {
+    await spawnOnCandidates({
+      steps: [step({ providerOverride: 'codex', modelOverride: 'gpt-6.1-sol' })],
+      rule: 'order',
+    });
+
+    expect(invokeAgentInsertSpy.mock.calls[0]?.[0]).toMatchObject({
+      providerOverride: 'codex',
+      routingDecision: null,
+    });
   });
 });

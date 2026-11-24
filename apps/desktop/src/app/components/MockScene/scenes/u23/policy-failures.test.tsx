@@ -100,15 +100,15 @@ describe('the policy and failure scenes', () => {
     ]);
   });
 
-  it('settings-providers-scope names the workspace in the header and opens the policy with the spread option', async () => {
+  it('settings-providers-scope names the workspace in the header, opens the order and shows Provider priority beside it', async () => {
     await mount('settings-providers-scope');
 
     const heading = screen.getByRole('heading', { level: 1, name: 'Models' });
     expect(heading.parentElement?.parentElement?.textContent).toContain('Harborline');
-    const popover = within(screen.getByRole('dialog', { name: 'When a provider is out' }));
-    const toggle = popover.getByRole('switch', { name: 'Skip a provider near its limit' });
-    expect(toggle.hasAttribute('disabled')).toBe(false);
-    expect(popover.getAllByRole('switch')).toHaveLength(1);
+    const popover = within(screen.getByRole('dialog', { name: 'Provider order' }));
+    expect(popover.queryAllByRole('switch')).toHaveLength(0);
+    const rule = within(screen.getByRole('tablist', { name: 'Provider priority' }));
+    expect(rule.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['By order', 'By load']);
   });
 
   it('wireframe-failed explains the failure in a notice and keeps the raw message behind Details', async () => {

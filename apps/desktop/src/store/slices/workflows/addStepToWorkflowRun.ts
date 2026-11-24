@@ -30,8 +30,8 @@ import { isWorkflowRunClosedByUser } from '../../../features/workflows/isWorkflo
 import { patchWorkflowRun } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
-import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
-import { withHeadroom } from './withHeadroom';
+import { stepCandidateInputs } from '../workflowRouting/stepCandidateInputs';
+import { earlierPicksOf } from '../workflowRouting/earlierPicksOf';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 export type AddStepToWorkflowRunParams = {
@@ -250,9 +250,16 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
     if (savedStep == null) {
       return rollback('the step could not be saved');
     }
-    const headroom = await resolveWorkflowHeadroom({ get, sessionId, rules: run.rulesSnapshot });
+    const candidates = await stepCandidateInputs({
+      get,
+      sessionId,
+      runProviders: run.providerPool,
+      rules: run.rulesSnapshot,
+    });
     const spawned = await preSpawnWorkflowAgents({
-      scope: withHeadroom({ scope: selectRoutingScope({ state: get(), sessionId }), headroom }),
+      scope: selectRoutingScope({ state: get(), sessionId }),
+      candidates,
+      earlier: earlierPicksOf({ state: get(), sessionId, workflowRunId }),
       sessionId,
       workflowRunId,
       mountId: selectRunStepMountId({ state: get(), sessionId, workflowRunId }),
@@ -273,7 +280,6 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
         nowMs: Date.now(),
         ...workspacePolicyAvailability({ state: get(), sessionId }),
         providerPool: run.providerPool ?? null,
-        headroom,
       }),
     });
 

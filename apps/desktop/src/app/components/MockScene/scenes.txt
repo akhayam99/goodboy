@@ -551,6 +551,7 @@ header-branch-push-confirm
 header-overview-overflow
 header-run
 header-scripts
+hero-diff
 image-lightbox
 impact
 impact-deleted

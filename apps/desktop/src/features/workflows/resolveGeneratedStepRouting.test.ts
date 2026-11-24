@@ -31,28 +31,42 @@ describe('resolveGeneratedStepRouting', () => {
       availability: snapshot(),
     });
 
-    expect(routing?.providerOverride).toBe('anthropic');
-    expect(routing?.modelOverride).toBe('opus-5');
-    expect(routing?.effort).toBe('high');
-    expect(routing?.routingDecision.source).toBe('agent');
-    expect(routing?.taskProfile).toEqual({
+    expect(routing.pick?.providerOverride).toBe('anthropic');
+    expect(routing.pick?.modelOverride).toBe('opus-5');
+    expect(routing.pick?.effort).toBe('high');
+    expect(routing.pick?.routingDecision.source).toBe('agent');
+    expect(routing.taskProfile).toEqual({
       taskType: 'planning',
       difficulty: 'heavy',
       basis: 'agent',
     });
   });
 
-  it('recommends a model for a step that emitted no pick at all', () => {
+  it('leaves a step that emitted no pick to the candidates at run start', () => {
     const routing = resolveGeneratedStepRouting({
       routing: undefined,
       promptPrefix: 'Review it.',
       emittingProvider: 'anthropic',
-      availability: snapshot(),
+      availability: snapshot({ connectedProviders: ['anthropic', 'codex'] }),
     });
 
-    expect(routing).not.toBeNull();
-    expect(routing?.routingDecision.source).toBe('heuristic');
-    expect(routing?.providerOverride).toBe('anthropic');
+    expect(routing.pick).toBeNull();
+  });
+
+  it('keeps the stated difficulty of a step that emitted no pick', () => {
+    const routing = resolveGeneratedStepRouting({
+      routing: { taskType: 'implementation', difficulty: 'heavy' },
+      promptPrefix: 'Build it.',
+      emittingProvider: 'anthropic',
+      availability: snapshot({ connectedProviders: ['anthropic', 'codex'] }),
+    });
+
+    expect(routing.pick).toBeNull();
+    expect(routing.taskProfile).toEqual({
+      taskType: 'implementation',
+      difficulty: 'heavy',
+      basis: 'agent',
+    });
   });
 
   it('recovers from a pick no catalog can serve instead of dropping routing', () => {
@@ -63,9 +77,9 @@ describe('resolveGeneratedStepRouting', () => {
       availability: snapshot(),
     });
 
-    expect(routing?.routingDecision.source).toBe('heuristic');
-    expect(routing?.routingDecision.adjustment).toBe('unknown_model');
-    expect(routing?.modelOverride).not.toBe('ghost-9');
+    expect(routing.pick?.routingDecision.source).toBe('heuristic');
+    expect(routing.pick?.routingDecision.adjustment).toBe('unknown_model');
+    expect(routing.pick?.modelOverride).not.toBe('ghost-9');
   });
 
   it('routes nothing when no provider is connected', () => {
@@ -75,18 +89,19 @@ describe('resolveGeneratedStepRouting', () => {
         promptPrefix: 'Build it.',
         emittingProvider: 'anthropic',
         availability: snapshot({ connectedProviders: [] }),
-      }),
+      }).pick,
     ).toBeNull();
   });
 
-  it('stores no profile when neither the agent nor the text says anything', () => {
+  it('stores no profile when the agent states none and the text says nothing', () => {
     const routing = resolveGeneratedStepRouting({
-      routing: undefined,
+      routing: { provider: 'anthropic', model: 'opus-5' },
       promptPrefix: '',
       emittingProvider: 'anthropic',
       availability: snapshot(),
     });
 
-    expect(routing?.taskProfile).toBeNull();
+    expect(routing.pick?.modelOverride).toBe('opus-5');
+    expect(routing.taskProfile).toBeNull();
   });
 });

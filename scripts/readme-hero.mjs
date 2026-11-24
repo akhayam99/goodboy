@@ -21,7 +21,8 @@ const SETTLE_MS = 12000;
 const SITE_WIDTH = 1208;
 const SITE_CROP_HEIGHT = 840;
 const SITE_DENSITIES = [1, 2, 3];
-const SCENE = 'readme-hero&brand=1';
+const README_SCENE = 'readme-hero&brand=1';
+const SITE_SCENE = 'hero-diff&brand=1';
 const APP = process.argv[2]?.startsWith('http') === true ? process.argv[2] : DEFAULT_SHOT_URL;
 const VERSION_ARGUMENT = process.argv.indexOf('--version');
 
@@ -143,7 +144,7 @@ const shoot = async ({ theme, workDirectory }) => {
   const readmePng = await capture({
     theme,
     workDirectory,
-    scene: SCENE,
+    scene: README_SCENE,
     width: README_WIDTH,
     height: README_HEIGHT,
     scale: README_SCALE,
@@ -155,7 +156,7 @@ const shoot = async ({ theme, workDirectory }) => {
   const pngPath = await capture({
     theme,
     workDirectory,
-    scene: SCENE,
+    scene: SITE_SCENE,
     width: WIDTH,
     height: HEIGHT,
     scale: SCALE,

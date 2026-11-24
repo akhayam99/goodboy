@@ -18,10 +18,12 @@ import {
   type OverrideSettings,
   type ProviderConnectionState,
   type ProviderId,
+  type ProviderLimits,
   type ProviderPolicy,
   type WorkflowRules,
   type WorkspaceId,
 } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import { aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -37,7 +39,9 @@ import type { ProviderDisplayInfo } from './providers';
 
 const WORKSPACE = aWorkspace({ id: 'workspace-harborline' as WorkspaceId, name: 'Harborline' });
 
-const SPREAD_LABEL = 'Skip a provider near its limit';
+const RULE_LABEL = 'Provider priority';
+
+const ORDER_LABEL = 'Provider order';
 
 const providerInfo = ({ id }: { readonly id: ProviderId }): ProviderDisplayInfo => ({
   id,
@@ -90,10 +94,21 @@ const writtenRules = (): ReadonlyArray<WorkflowRules | null | undefined> =>
     .filter(([name]) => name === 'patch_workspace_overrides')
     .map(([, args]) => (args as { readonly patch: Partial<OverrideSettings> }).patch.workflowRules);
 
-const openPopover = () => {
-  render(<ProvidersInOrder workspaceId={WORKSPACE.id} />);
-  fireEvent.click(screen.getByRole('button', { expanded: false, name: /Claude|Cursor/ }));
-  return within(screen.getByRole('dialog', { name: 'When a provider is out' }));
+type TabParams = {
+  readonly name: 'By order' | 'By load';
+};
+
+const ruleTab = ({ name }: TabParams) =>
+  within(screen.getByRole('tablist', { name: RULE_LABEL })).getByRole('tab', { name });
+
+const renderRows = () => render(<ProvidersInOrder workspaceId={WORKSPACE.id} />);
+
+const CLAUDE_AT_62: ProviderLimits = {
+  providerId: 'anthropic',
+  plan: null,
+  status: 'ok',
+  windows: [{ kind: 'fiveHour', model: null, status: 'ok', usedFraction: 0.62, resetsAt: null }],
+  observedAt: isoNow(),
 };
 
 beforeEach(async () => {
@@ -105,87 +120,143 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('the provider policy has one home', () => {
-  it('writes spreadByHeadroom on the workflow rules from the Providers popover', async () => {
+  it('writes spreadByHeadroom true when Provider priority moves to By load', async () => {
     seed({ policy: POLICY, rules: { spreadByHeadroom: false } });
-    const popover = openPopover();
+    renderRows();
 
-    const toggle = popover.getByRole('switch', { name: SPREAD_LABEL });
-    expect(toggle.getAttribute('aria-checked')).toBe('false');
-    fireEvent.click(toggle);
+    expect(ruleTab({ name: 'By order' }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(ruleTab({ name: 'By load' }));
 
     await waitFor(() => expect(writtenRules().at(-1)?.spreadByHeadroom).toBe(true));
     expect(useAppStore.getState().workspaceOverrides[WORKSPACE.id]?.workflowRules).toMatchObject({
       spreadByHeadroom: true,
       autonomy: DEFAULT_WORKFLOW_RULES.autonomy,
     });
-    expect(popover.getByRole('switch', { name: SPREAD_LABEL }).getAttribute('aria-checked')).toBe(
-      'true',
-    );
+    expect(ruleTab({ name: 'By load' }).getAttribute('aria-selected')).toBe('true');
   });
 
-  it('turns the rule off again through the same switch', async () => {
+  it('writes spreadByHeadroom false when Provider priority moves back to By order', async () => {
     seed({ policy: POLICY, rules: { spreadByHeadroom: true } });
-    const popover = openPopover();
+    renderRows();
 
-    fireEvent.click(popover.getByRole('switch', { name: SPREAD_LABEL }));
+    fireEvent.click(ruleTab({ name: 'By order' }));
 
     await waitFor(() => expect(writtenRules().at(-1)?.spreadByHeadroom).toBe(false));
   });
 
-  it('disables the option and says why when no On provider reports limits', () => {
-    seed({ policy: CURSOR_ONLY, rules: { spreadByHeadroom: true } });
-    const popover = openPopover();
+  it('keeps By order and reports the error when the write fails', async () => {
+    seed({ policy: POLICY, rules: { spreadByHeadroom: false } });
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({ reportError });
+    stubStoryInvoke({
+      patch_workspace_overrides: () => {
+        throw new Error('settings file is locked');
+      },
+    });
+    renderRows();
 
-    const toggle = popover.getByRole('switch', { name: SPREAD_LABEL });
-    expect(toggle.hasAttribute('disabled')).toBe(true);
-    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(ruleTab({ name: 'By load' }));
+
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't save the provider priority" }),
+      ),
+    );
     expect(
-      popover.getByText('Only Claude and Codex report limits. Turn one on to use this.'),
-    ).toBeDefined();
+      useAppStore.getState().workspaceOverrides[WORKSPACE.id]?.workflowRules?.spreadByHeadroom,
+    ).toBe(false);
+    expect(ruleTab({ name: 'By order' }).getAttribute('aria-selected')).toBe('true');
   });
 
-  it('says the switch skips a provider past 80% and only Claude and Codex report limits', () => {
-    seed({ policy: POLICY, rules: { spreadByHeadroom: true } });
-    const popover = openPopover();
+  it('starts a workspace with no saved rules on By order', () => {
+    seed({ policy: POLICY });
+    renderRows();
 
-    expect(popover.getByTestId('spread-sentence').textContent).toBe(
-      'Past 80% of a limit, new agents start on the next provider. Only Claude and Codex report limits.',
+    expect(ruleTab({ name: 'By order' }).getAttribute('aria-selected')).toBe('true');
+    screen.getByText(
+      'Your provider order wins when several providers fit, but one at 80% of its limit goes after the rest. Applies from the next agent. A run started from a workflow keeps its rule.',
     );
   });
 
-  it('says the first On provider does all the work and the rest is the fallback order', () => {
+  it('says By load ranks usage bands, then recent agents, then your order', () => {
+    seed({ policy: POLICY, rules: { spreadByHeadroom: true } });
+    renderRows();
+
+    screen.getByText(
+      'The provider in the lowest usage band wins (under 50%, under 80%, under 100%), then the one with fewer recent agents, then your order. Applies from the next agent. A run started from a workflow keeps its rule.',
+    );
+  });
+
+  it('says the Lead reads the order and Backup waits, without claiming the first takes every agent', () => {
     seed({ policy: POLICY });
-    render(<ProvidersInOrder workspaceId={WORKSPACE.id} />);
+    renderRows();
 
-    expect(
-      screen.getByText(
-        "Every new agent starts on Claude while Claude can work. Codex and Cursor take over only when it can't.",
-      ),
-    ).toBeDefined();
+    screen.getByText(
+      'The Lead reads this order when it picks a provider for a new agent. Backup runs only when no On provider can work.',
+    );
+    expect(screen.queryByText(/Every new agent starts on Claude while/)).toBeNull();
   });
 
-  it('says no other provider takes over when only one is on', () => {
+  it('says every new agent starts on the one provider that is on', () => {
     seed({ policy: CURSOR_ONLY });
-    render(<ProvidersInOrder workspaceId={WORKSPACE.id} />);
+    renderRows();
 
-    expect(
-      screen.getByText('Every new agent starts on Cursor. No other provider is on to take over.'),
-    ).toBeDefined();
+    screen.getByText('Only Cursor is on, so every new agent starts there.');
   });
 
-  it('leaves the policy to Models: Runs has no switch, summary or link for it', () => {
+  it('shows the room of each provider and says which ones are estimated', async () => {
+    seed({ policy: POLICY });
+    useAppStore.setState({ providerLimits: { anthropic: CLAUDE_AT_62 } });
+    renderRows();
+
+    const room = within(await screen.findByRole('list', { name: 'Room right now' }));
+    const rows = room.getAllByRole('listitem').map((item) => item.textContent);
+    expect(rows).toEqual([
+      '1Claude62% used',
+      '2Codexabout 50% used, estimated',
+      '3Cursorabout 50% used, estimated',
+    ]);
+    screen.getByText(
+      'The Lead sees these numbers when it picks a provider. Codex and Cursor have no usage reading, so Goodboy estimates it from recent turns and rate limits.',
+    );
+  });
+
+  it('counts the agents of the last 5 hours per provider in your order', async () => {
+    seed({ policy: POLICY });
+    renderRows();
+
+    expect((await screen.findByTestId('last-hours')).textContent).toBe(
+      'Claude 0 · Codex 0 · Cursor 0',
+    );
+  });
+
+  it('lists what a pick can never land on, writers on Cursor included', () => {
+    seed({ policy: POLICY });
+    renderRows();
+
+    const guards = within(screen.getByRole('list', { name: 'Never picked' }));
+    expect(guards.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      'A provider that is Off, not connected or cooling down',
+      'A provider at its limit, unless it keeps going after the limit',
+      'A provider past its budget',
+      'An agent that writes code on Cursor',
+      "A model outside a role's pinned models, while one of them can run",
+    ]);
+  });
+
+  it('leaves the policy to Models: Runs has no rule, summary or link for it', () => {
     seed({ policy: POLICY, rules: { spreadByHeadroom: true } });
     render(<WorkflowRulesPanel workspaceId={WORKSPACE.id} />);
 
-    expect(screen.queryAllByRole('switch')).toEqual([]);
+    expect(screen.queryByRole('tablist', { name: RULE_LABEL })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open Models' })).toBeNull();
     expect(screen.queryByText('Claude, Codex · Cursor as backup')).toBeNull();
   });
 
-  it('keeps the two screens in step after the policy changes in Providers', async () => {
+  it('keeps the two screens in step after the rule changes in Providers', async () => {
     seed({ policy: POLICY, rules: { spreadByHeadroom: false } });
-    const popover = openPopover();
-    fireEvent.click(popover.getByRole('switch', { name: SPREAD_LABEL }));
+    renderRows();
+    fireEvent.click(ruleTab({ name: 'By load' }));
     await waitFor(() =>
       expect(useAppStore.getState().workspaceOverrides[WORKSPACE.id]?.workflowRules).toMatchObject({
         spreadByHeadroom: true,
@@ -195,11 +266,18 @@ describe('the provider policy has one home', () => {
 
     render(<WorkflowRulesPanel workspaceId={WORKSPACE.id} />);
 
-    expect(screen.queryAllByRole('switch', { name: SPREAD_LABEL })).toEqual([]);
+    expect(screen.queryByRole('tablist', { name: RULE_LABEL })).toBeNull();
     cleanup();
-    const reopened = openPopover();
-    expect(reopened.getByRole('switch', { name: SPREAD_LABEL }).getAttribute('aria-checked')).toBe(
-      'true',
-    );
+    renderRows();
+    expect(ruleTab({ name: 'By load' }).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('keeps the policy list in the popover named Provider order', () => {
+    seed({ policy: POLICY });
+    renderRows();
+    fireEvent.click(screen.getByRole('button', { expanded: false, name: /Claude/ }));
+
+    screen.getByRole('dialog', { name: ORDER_LABEL });
+    expect(screen.queryByRole('switch')).toBeNull();
   });
 });

@@ -1,5 +1,6 @@
 import type { Agent, AgentRole, SessionId } from '@goodboy/types';
 import { applyWorkflowNodeRouting } from '../workflowRouting/applyWorkflowNodeRouting';
+import { storedProposalOf } from '../workflowRouting/storedProposalOf';
 import { resolveOneChildRouting } from './childRoutingBatch';
 import type { GetFn, SetFn } from './types';
 
@@ -33,7 +34,7 @@ export const revalidateChildRouting = async ({
     sessionId,
     role,
     request: {
-      proposal: decision?.proposal ?? null,
+      proposal: storedProposalOf({ decision, profile: child.taskProfile ?? null }),
       promptText,
       childLock: lock,
     },

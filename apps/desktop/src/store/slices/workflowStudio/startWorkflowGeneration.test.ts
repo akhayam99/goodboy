@@ -308,8 +308,8 @@ describe('startWorkflowGeneration', () => {
       source: 'agent',
       selected: { provider: 'anthropic', model: 'opus-5', effort: 'high' },
     });
-    expect(args.steps[1]?.['routingDecision']).toMatchObject({ source: 'heuristic' });
-    expect(args.steps[1]?.['modelOverride']).toBeDefined();
+    expect(args.steps[1]?.['routingDecision']).toBeUndefined();
+    expect(args.steps[1]?.['modelOverride']).toBeUndefined();
     expect(formatWorkflowFromNLMock.mock.calls.at(-1)?.[0].input.modelMenu.length).toBeGreaterThan(
       0,
     );

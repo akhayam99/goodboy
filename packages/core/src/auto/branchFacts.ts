@@ -21,6 +21,8 @@ export type BranchFactsRequest = Readonly<{
   isDraft: boolean;
   baseBranch: string;
   headBranch: string;
+  headSha: string | null;
+  checksWord: string | null;
 }>;
 
 export type BranchFactsThread = Readonly<{
@@ -88,6 +90,8 @@ const requestLines = (request: BranchFactsRequest | null): ReadonlyArray<string>
   const draft = request.isDraft ? ', draft' : '';
   return [
     `${NOUN_OF[request.host]}: ${request.number} "${oneLine({ text: request.title, max: 120 })}" (${request.state}${draft}, ${request.headBranch} into ${request.baseBranch}) ${request.url}`,
+    `Head commit on the host: ${request.headSha ?? 'not reported by the host'}`,
+    `Checks the host reports, not matched to that commit: ${request.checksWord ?? 'not read'}`,
   ];
 };
 

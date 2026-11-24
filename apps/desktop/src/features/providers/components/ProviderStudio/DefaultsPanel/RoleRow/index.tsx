@@ -17,6 +17,7 @@ import { Collapsible, cn, TruncatedText } from '@goodboy/ui';
 import { useHiddenModels } from '../../../../hooks/useHiddenModels';
 import { useResolution } from '../../../../hooks/useResolution';
 import { hiddenModelNote } from '../hiddenModelNote';
+import { RoleCandidates } from './RoleCandidates';
 import { RoleHowItRuns } from './RoleHowItRuns';
 import { RoleModelSet } from './RoleModelSet';
 import { RoleModelCells } from './RoleModelCells';
@@ -120,6 +121,9 @@ export const RoleRow = ({
       {isOpen ? (
         <div className="flex flex-col gap-3 pt-1">
           <RoleHowItRuns label={label} facts={facts} />
+          {role === 'auto' ? null : (
+            <RoleCandidates workspaceId={workspaceId} role={role} label={label} />
+          )}
           <RoleModelSet
             label={label}
             title={`Models for ${roleSetNoun(role)}`}

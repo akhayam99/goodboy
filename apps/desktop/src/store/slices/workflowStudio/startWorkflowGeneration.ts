@@ -69,22 +69,22 @@ const generatedStepArgs = ({
     promptPrefix: step.promptPrefix,
     expectedOutput: step.expectedOutput,
   };
-  const routing = resolveGeneratedStepRouting({
+  const { pick, taskProfile } = resolveGeneratedStepRouting({
     routing: step.routing,
     promptPrefix: step.promptPrefix,
     emittingProvider,
     availability,
   });
-  if (routing === null) {
-    return base;
+  if (pick === null) {
+    return taskProfile === null ? base : { ...base, taskProfile };
   }
   return {
     ...base,
-    providerOverride: routing.providerOverride,
-    modelOverride: routing.modelOverride,
-    ...(routing.effort !== null && { effort: routing.effort }),
-    routingDecision: routing.routingDecision,
-    taskProfile: routing.taskProfile,
+    providerOverride: pick.providerOverride,
+    modelOverride: pick.modelOverride,
+    ...(pick.effort !== null && { effort: pick.effort }),
+    routingDecision: pick.routingDecision,
+    taskProfile,
   };
 };
 

@@ -22,6 +22,7 @@ import type { PickedRoute } from '../../../../../shared/components/RoutingPicker
 import { agentPinApplies } from '../../../../../store/slices/turn/agentPinApplies';
 import { agentReferenceRouting } from '../../../../../store/slices/turn/agentReferenceRouting';
 import { stepConfigForAgent } from '../../../../../store/slices/turn/stepConfigForAgent';
+import { referenceStepOf } from '../../../../../store/slices/workflowRouting/referenceStepOf';
 import { asEffortLevel, asProvider } from '../lib';
 import { useRoutingScope } from '../../../../../shared/hooks/useRoutingScope';
 import { resolveSessionSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
@@ -143,7 +144,7 @@ export const useTurnRouting = ({ session, agentId }: Params) => {
     () =>
       agentReferenceRouting({
         agent: selectedAgent,
-        stepConfig,
+        stepConfig: referenceStepOf({ step: stepConfig, agent: selectedAgent }),
         roleModels,
         session,
         kindOverride: selectedAgentKindOverride,

@@ -37,6 +37,7 @@ type ResolveOneParams = {
   readonly role: AgentRole;
   readonly request: ChildRoutingRequest;
   readonly workflowRunId?: WorkflowRunId | null;
+  readonly batch?: ReadonlyArray<ProviderId>;
 };
 
 type ChildRoutingOutcome =
@@ -49,6 +50,7 @@ export const resolveOneChildRouting = ({
   role,
   request,
   workflowRunId = null,
+  batch = [],
 }: ResolveOneParams): ChildRoutingOutcome => {
   const { resolution, taskProfile } = resolveWorkflowChildRouting({
     state,
@@ -59,6 +61,7 @@ export const resolveOneChildRouting = ({
     promptText: request.promptText,
     missingProposal: 'deterministic_pick',
     workflowRunId,
+    batch,
   });
   if (resolution.kind === 'blocked') {
     return { kind: 'blocked', reason: resolution.reason };
@@ -100,6 +103,9 @@ export const childRoutingBatch = ({
       role,
       request,
       workflowRunId,
+      batch: entries.flatMap((entry) =>
+        entry.providerOverride === null ? [] : [entry.providerOverride],
+      ),
     });
     if (outcome.kind === 'blocked') {
       return { kind: 'blocked', reason: outcome.reason };

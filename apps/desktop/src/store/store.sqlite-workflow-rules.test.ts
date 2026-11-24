@@ -3,8 +3,10 @@ import {
   getSessionById,
   insertAgent,
   insertWorkspace,
+  isWorkflowRoutingDecision,
   listAgentsForSessions,
   recordAgentStatus,
+  updateWorkflowNodeRouting,
 } from '@goodboy/db';
 import {
   DEFAULT_WORKFLOW_RULES,
@@ -717,8 +719,8 @@ describe('store on sqlite: spread by what I have left', () => {
     expect(rows.map((row) => row.provider_override)).toEqual(['codex', 'codex', 'codex']);
   });
 
-  it('keeps the session provider with the switch off', async () => {
-    seedTwoProviders({ claude: claudeLimits({ used: 0.85 }) });
+  it('keeps every step on the first provider in your order while it has room', async () => {
+    seedTwoProviders({ claude: claudeLimits({ used: 0.4 }) });
 
     const rows = await attachedProviders({ spread: false });
 
@@ -727,6 +729,82 @@ describe('store on sqlite: spread by what I have left', () => {
       'anthropic',
       'anthropic',
     ]);
+  });
+
+  it('skips the first provider in your order once it is near its limit', async () => {
+    seedTwoProviders({ claude: claudeLimits({ used: 0.85 }) });
+
+    const rows = await attachedProviders({ spread: false });
+
+    expect(rows.map((row) => row.provider_override)).toEqual(['codex', 'codex', 'codex']);
+  });
+
+  it('spreads the steps of one run by load when the providers have the same room', async () => {
+    seedTwoProviders({ claude: claudeLimits({ used: 0.55 }) });
+
+    const rows = await attachedProviders({ spread: true });
+
+    expect(rows.map((row) => row.provider_override)).toEqual(['anthropic', 'codex', 'anthropic']);
+  });
+
+  it('moves a waiting step off a provider that went into cooldown before it starts', async () => {
+    const { invokeWorkflowNodeRoutingUpdate } = await import('../features/workflows/workflows');
+    vi.mocked(invokeWorkflowNodeRoutingUpdate).mockImplementationOnce((update) =>
+      updateWorkflowNodeRouting(storySqlite(), update),
+    );
+    seedTwoProviders({ claude: claudeLimits({ used: 0.4 }) });
+    await attachedProviders({ spread: false });
+    useAppStore.setState({ providerCooldowns: { anthropic: Date.now() + 30 * MINUTE } });
+
+    await startStep('Plan');
+
+    const plan = (useAppStore.getState().sessionPhaseRuns[sessionId] ?? []).find(
+      (agent) => agent.name === 'Plan',
+    );
+    expect(plan?.providerOverride).toBe('codex');
+    expect(plan?.routingDecision).toMatchObject({
+      selected: { provider: 'codex' },
+      adjustment: 'cooldown',
+    });
+    expect(plan?.routingDecision?.reason).toContain(': cooling down after a limit. Codex:');
+    expect(
+      await rowsOf<{ provider_override: string }>({
+        sql: "SELECT provider_override FROM agents WHERE session_id = ? AND name = 'Plan'",
+        params: [sessionId],
+      }),
+    ).toEqual([{ provider_override: 'codex' }]);
+  });
+
+  it('keeps the stored pick of a waiting step while its provider still works', async () => {
+    const { invokeWorkflowNodeRoutingUpdate } = await import('../features/workflows/workflows');
+    vi.mocked(invokeWorkflowNodeRoutingUpdate).mockClear();
+    seedTwoProviders({ claude: claudeLimits({ used: 0.4 }) });
+    await attachedProviders({ spread: false });
+
+    await startStep('Plan');
+
+    expect(invokeWorkflowNodeRoutingUpdate).not.toHaveBeenCalled();
+    expect(
+      (useAppStore.getState().sessionPhaseRuns[sessionId] ?? []).find(
+        (agent) => agent.name === 'Plan',
+      )?.routingDecision,
+    ).toMatchObject({ adjustment: 'none', reason: 'Claude: first in your order' });
+  });
+
+  it('stores why each step got its provider in words an older build reads', async () => {
+    seedTwoProviders({ claude: claudeLimits({ used: 0.4 }) });
+
+    await attachedProviders({ spread: false });
+
+    const rows = await rowsOf<{ routing_decision: string }>({
+      sql: 'SELECT routing_decision FROM agents WHERE session_id = ? AND step_id IS NOT NULL ORDER BY ordinal',
+      params: [sessionId],
+    });
+    for (const row of rows) {
+      const decision: unknown = JSON.parse(row.routing_decision);
+      expect(isWorkflowRoutingDecision(decision)).toBe(true);
+      expect(decision).toMatchObject({ reason: 'Claude: first in your order', adjustment: 'none' });
+    }
   });
 
   it('re-reads limits older than 30 minutes once before it decides', async () => {

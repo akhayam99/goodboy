@@ -14,7 +14,7 @@ import {
   useAppStore,
 } from './harness';
 
-const SPREAD_LABEL = 'Skip a provider near its limit';
+const RULE_LABEL = 'Provider priority';
 
 const currentWorkspaceId = (): WorkspaceId => {
   const id = useAppStore.getState().currentWorkspaceId;
@@ -27,7 +27,7 @@ const currentWorkspaceId = (): WorkspaceId => {
 const spreadRule = (): boolean | undefined =>
   useAppStore.getState().workspaceOverrides[currentWorkspaceId()]?.workflowRules?.spreadByHeadroom;
 
-const openProvidersPolicy = async (): Promise<void> => {
+const openModelsPolicy = async (): Promise<void> => {
   const workspaceId = currentWorkspaceId();
   seedPolicyScene({ workspaceId });
   const seeded = useAppStore.getState().workspaceOverrides[workspaceId];
@@ -45,15 +45,13 @@ const openProvidersPolicy = async (): Promise<void> => {
   });
   await openPalette(/^Workspace settings: Models/, 'Models');
   await heading('Models');
-  await click(await screen.findByRole('button', { name: /^Claude, Codex/, expanded: false }));
 };
 
-const flipSpreadInProviders = async (): Promise<void> => {
-  await openProvidersPolicy();
-  const dialog = await screen.findByRole('dialog', { name: 'When a provider is out' });
-  const toggle = within(dialog).getByRole('switch', { name: SPREAD_LABEL });
-  expect(toggle.getAttribute('aria-checked')).toBe('false');
-  await click(toggle);
+const flipRuleInProviders = async (): Promise<void> => {
+  await openModelsPolicy();
+  const rule = within(await screen.findByRole('tablist', { name: RULE_LABEL }));
+  expect(rule.getByRole('tab', { name: 'By order' }).getAttribute('aria-selected')).toBe('true');
+  await click(rule.getByRole('tab', { name: 'By load' }));
   await waitFor(() => expect(spreadRule()).toBe(true), WAIT);
 };
 
@@ -61,7 +59,7 @@ const runsLeavesThePolicyToModels = async (): Promise<void> => {
   await heading(/^Runs$/);
   await screen.findByRole('region', { name: 'When a run stops for you' });
   expect(screen.queryByRole('button', { name: 'Open Models' })).toBeNull();
-  expect(screen.queryByRole('switch', { name: SPREAD_LABEL })).toBeNull();
+  expect(screen.queryByRole('tablist', { name: RULE_LABEL })).toBeNull();
 };
 
 const startFirstLap = ({ sessionId }: Ctx): ProjectId => {
@@ -100,11 +98,11 @@ const INSTALL_COMMAND = 'brew install gh';
 
 export const POLICY_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'policy: the spread option set in Models has no second switch or link in Runs',
+    name: 'policy: Provider priority set in Models has no second control or link in Runs',
     covers: ['openSettings', 'studio:workflow', 'palette:Runs', 'settings:models'],
     door: 'palette',
     open: async () => {
-      await flipSpreadInProviders();
+      await flipRuleInProviders();
       await openPalette(/^Workspace settings: Runs/, 'run defaults');
     },
     lands: runsLeavesThePolicyToModels,

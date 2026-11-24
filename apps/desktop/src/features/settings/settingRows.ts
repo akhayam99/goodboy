@@ -353,11 +353,19 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
   }),
   row({
     key: 'provider-order',
-    label: 'When a provider is out',
-    help: 'The order Goodboy tries providers in, and the backups.',
+    label: 'Provider order',
+    help: 'The order the Lead reads when it picks a provider, and the backups.',
     page: MODELS,
     band: 'Providers',
-    formerNames: ['Fallback', 'Provider order'],
+    formerNames: ['Fallback', 'When a provider is out'],
+  }),
+  row({
+    key: 'provider-priority',
+    label: 'Provider priority',
+    help: 'By order or By load: which provider wins when several fit.',
+    page: MODELS,
+    band: 'Providers',
+    formerNames: ['Skip a provider near its limit'],
   }),
   row({
     key: 'models-in-workflows',

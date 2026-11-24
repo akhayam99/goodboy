@@ -104,12 +104,10 @@ export const resolveStepRouting = ({
       ...(auto !== undefined && { auto }),
     });
   const preferredProvider = preference.isOverride ? preference.provider : null;
-  const spreadProvider = auto?.headroom == null ? null : preference.provider;
   const provider =
     step?.providerOverride ??
     agentProvider ??
     preferredProvider ??
-    spreadProvider ??
     offered({ provider: sessionProvider, auto }) ??
     roleRouting?.provider ??
     fallback.provider;
