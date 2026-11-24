@@ -92,7 +92,10 @@ const tableOf = ({ inputs, roles, scope }: TableParams): Table => {
         const rung = row.rung;
         entries.set(key, {
           row,
-          rungs: rung === null || rungs.includes(rung) ? rungs : [...rungs, rung],
+          rungs:
+            rung === null || rungs.includes(rung)
+              ? rungs
+              : [...rungs, rung].sort((left, right) => RUNGS.indexOf(left) - RUNGS.indexOf(right)),
         });
       }
     }
