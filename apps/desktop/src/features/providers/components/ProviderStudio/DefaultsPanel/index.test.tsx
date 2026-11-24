@@ -324,7 +324,7 @@ describe('DefaultsPanel', () => {
     expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
     expect(
       screen.getByText(
-        'Every new agent starts on Cursor while Cursor can work. Claude takes over only when it cannot.',
+        "Every new agent starts on Cursor while Cursor can work. Claude takes over only when it can't.",
       ),
     ).toBeDefined();
   });

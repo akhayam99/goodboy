@@ -192,7 +192,7 @@ Background tasks.
   provider connected later shows last as **New** and is unused until turned on.
   **Reset** goes back to every connected provider On. The row's help says the
   order is a priority, not a pool: "Every new agent starts on Claude while Claude
-  can work. Codex and Cursor take over only when it cannot." (the first On
+  can work. Codex and Cursor take over only when it can't." (the first On
   provider, then the other On and Backup providers in order). Under the list the same
   popover holds **Skip a provider near its limit**, the
   `spreadByHeadroom` rule of the workflow rules (`useSpreadByHeadroom`, written

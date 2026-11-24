@@ -32,7 +32,7 @@ import { useDefaultsPersistence } from './useDefaultsPersistence';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { useModelScope } from '../../../hooks/useModelScope';
-import { useHasPlanRuns } from '../../../../workflows/hooks/useHasPlanRuns';
+import { useHasPlanRuns } from '../../../hooks/useHasPlanRuns';
 import { resolutionOf } from '../../../../../store/runtime/models/selectResolution';
 import { isPinUnrunnable } from './resolutionNote';
 import { actionButtonLookOf } from '../../../../actions/actionButtonLookOf';

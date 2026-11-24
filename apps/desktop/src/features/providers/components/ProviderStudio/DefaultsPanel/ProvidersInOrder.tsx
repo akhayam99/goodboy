@@ -41,7 +41,7 @@ const orderHelpOf = ({ summary }: HelpParams): string => {
     return `Every new agent starts on ${name}. No other provider is on to take over.`;
   }
   const verb = rest.length === 1 ? 'takes' : 'take';
-  return `Every new agent starts on ${name} while ${name} can work. ${LIST_FORMAT.format(rest)} ${verb} over only when it cannot.`;
+  return `Every new agent starts on ${name} while ${name} can work. ${LIST_FORMAT.format(rest)} ${verb} over only when it can't.`;
 };
 
 export const ProvidersInOrder = ({ workspaceId }: Props) => {

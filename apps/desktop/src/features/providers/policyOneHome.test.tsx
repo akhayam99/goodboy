@@ -159,7 +159,7 @@ describe('the provider policy has one home', () => {
 
     expect(
       screen.getByText(
-        'Every new agent starts on Claude while Claude can work. Codex and Cursor take over only when it cannot.',
+        "Every new agent starts on Claude while Claude can work. Codex and Cursor take over only when it can't.",
       ),
     ).toBeDefined();
   });
