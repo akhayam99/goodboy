@@ -1,9 +1,11 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
-}));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
@@ -12,8 +14,10 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
+  type StoryStore,
 } from '../../../../../../store/storyHarness';
-import { useAppStore } from '../../../../../../store';
+import { clearSceneInvoke, sceneInvoke } from '../../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../../../registry';
 import { SESSION } from '../../activityRunSeed';
 import { ASK_PANE_SCENES } from './ask-pane';
@@ -24,17 +28,26 @@ const SCENE_NAMES = Object.keys(ASK_PANE_SCENES).filter(
   (name): name is SceneName => name in ASK_PANE_SCENES,
 );
 
+let useAppStore: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
   await resetStoryStore();
+  clearSceneInvoke();
+  storySpies.tauriInvoke.mockImplementation((command, args) => {
+    if (typeof command !== 'string') {
+      throw new Error('The scene command must be a string.');
+    }
+    return sceneInvoke({ command, args });
+  });
 });
 
 afterEach(() => {
   cleanup();
-  document.documentElement.classList.remove('dark', 'light');
+  clearSceneInvoke();
 });
 
 const mount = async (name: SceneName): Promise<HTMLElement> => {
@@ -61,7 +74,7 @@ describe('the ask pane scenes', () => {
     expect(screen.queryByText('Something went wrong')).toBeNull();
   });
 
-  it('shows the chips and the hint when empty, in both themes', async () => {
+  it('shows the chips and the hint when empty', async () => {
     const pane = await mount('ask-pane-empty-light');
     within(pane).getByRole('group', { name: 'Try asking' });
     within(pane).getByPlaceholderText('Ask about this session. Read only, it starts nothing.');

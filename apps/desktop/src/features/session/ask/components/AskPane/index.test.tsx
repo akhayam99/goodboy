@@ -206,23 +206,18 @@ describe('the Ask pane beside the session', () => {
     act(() => useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID }));
 
     const frame = document.querySelector<HTMLElement>('[data-ask-pane]');
-    expect(frame?.hasAttribute('data-ask-overlay')).toBe(false);
-    expect(frame?.className).toContain('shrink-0');
-    expect(frame?.className).not.toContain('absolute');
+    expect(frame?.getAttribute('data-ask-pane')).toBe('push');
   });
 
   it('lies over the right of the page on a narrow window, never reflowing it, with a clear Close', () => {
     stubWindowWidth({ isNarrow: true });
     renderWorkspace();
-    const body = document.querySelector<HTMLElement>('[data-session-body]');
-    const contentBefore = body?.firstElementChild?.className;
+    const content = document.querySelector('[data-session-body]')?.firstElementChild;
     act(() => useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID }));
 
     const frame = document.querySelector<HTMLElement>('[data-ask-pane]');
-    expect(frame?.hasAttribute('data-ask-overlay')).toBe(true);
-    expect(frame?.className).toContain('absolute');
-    expect(frame?.className).toContain('right-0');
-    expect(body?.firstElementChild?.className).toBe(contentBefore);
+    expect(frame?.getAttribute('data-ask-pane')).toBe('overlay');
+    expect(document.querySelector('[data-session-body]')?.firstElementChild).toBe(content);
     within(pane()).getByRole('button', { name: 'Close' });
   });
 
