@@ -2211,7 +2211,8 @@ time, budget reached, no visible model, reading roles only) and points to Settin
 
 A child queued behind running ones is checked again when its slot frees (`recheckQueuedRouting`
 in `launchChildren`): when its provider went Off, out of room, into cooldown or over budget in the
-meantime, it starts on the best candidate instead and its stored routing and reason say so. It
+meantime, it starts on the best candidate instead and its stored routing and reason say so. The
+recheck sizes the step from the task type and difficulty the delegation request keeps. It
 never ran, so this is not a swap. A continue (a retry with a task, or a message from the person)
 keeps the agent's provider and model: `resolveDelegateChild` hands the stored pick as `agentLock`,
 and a provider that cools down refuses the continue with "Codex is cooling down until 16:10. This
