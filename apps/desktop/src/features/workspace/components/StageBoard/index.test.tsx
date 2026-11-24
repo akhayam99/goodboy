@@ -33,7 +33,11 @@ vi.mock('./useBoardByStage', () => ({
     groups: grouped,
   }: {
     readonly groups: ReadonlyArray<{ key: string; sessions: ReadonlyArray<Session> }>;
-  }) => new Map(grouped.map((group) => [group.key, group.sessions])),
+  }) => ({ byStage: new Map(grouped.map((group) => [group.key, group.sessions])), infos: {} }),
+}));
+
+vi.mock('./NeedsYouStrip/useNeedsYou', () => ({
+  useNeedsYou: () => ({ sessionCount: 0, moveCount: 0, moves: [], cards: [] }),
 }));
 
 vi.mock('../../../../store', () => ({

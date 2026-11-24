@@ -9,7 +9,7 @@ import {
   Tooltip,
   useListMotion,
 } from '@goodboy/ui';
-import type { Session, SessionId, SessionStage } from '@goodboy/types';
+import type { Session, SessionId } from '@goodboy/types';
 import { ARCHIVED_LANE, describeStageBucket } from '../../../../session/session-stage';
 import {
   stateDescription,
@@ -20,13 +20,11 @@ import { StageBoardCard } from '../StageBoardCard';
 import { ColumnSkeleton } from './ColumnSkeleton';
 import { DoneLaneMenu } from './DoneLaneMenu';
 import type { BoardNavigation } from '../useBoardNavigation';
+import type { BoardLaneSpec } from '../boardLaneSpecs';
 import { EMPTY_COPY, type ColumnKey } from './emptyCopy';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
 const LANE_WINDOW = 50;
-
-type ColumnSpec =
-  { readonly kind: 'stage'; readonly stage: SessionStage } | { readonly kind: 'archived' };
 
 type ColumnView = {
   readonly key: ColumnKey;
@@ -34,7 +32,7 @@ type ColumnView = {
   readonly archived: boolean;
 };
 
-const viewFor = (spec: ColumnSpec): ColumnView => {
+const viewFor = (spec: BoardLaneSpec): ColumnView => {
   if (spec.kind === 'archived') {
     return { key: 'archived', presentation: ARCHIVED_LANE, archived: true };
   }
@@ -65,7 +63,7 @@ type ModifierEvent = {
 };
 
 type StageColumnProps = {
-  readonly spec: ColumnSpec;
+  readonly spec: BoardLaneSpec;
   readonly sessions: ReadonlyArray<Session>;
   readonly action?: ReactNode;
   readonly nav: BoardNavigation;

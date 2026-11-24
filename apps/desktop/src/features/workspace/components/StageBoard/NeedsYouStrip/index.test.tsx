@@ -33,7 +33,9 @@ import { ToastProvider } from '../../../../../shared/components/Toast';
 import { useNowSessions } from '../../../../../shared/hooks/useNowSessions';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { attentionTargetChannel } from '../../../../session/attentionTargetChannel';
+import { useOpenQuestions } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { stagesNavigationOf } from '../../../testing/stagesNavigationOf';
+import { mountOf } from '../../../testing/sessionColumn';
 import { boardLanesOf, rootRemPx } from '../boardLanesOf';
 import { laneColumnsOf } from '../laneColumnsOf';
 import { laneWidthOf } from '../laneWidthOf';
@@ -58,6 +60,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup();
+  useOpenQuestions.setState({ staged: [] });
   vi.restoreAllMocks();
   Reflect.deleteProperty(HTMLElement.prototype, 'scrollWidth');
   Reflect.deleteProperty(HTMLElement.prototype, 'clientWidth');
@@ -376,6 +379,105 @@ describe('NeedsYouStrip', () => {
         view: { lens: 'questions', target: { kind: 'question', questionId: question.id } },
       }),
     );
+  });
+
+  it('opens the question the card shows when the newer question is stored first', async () => {
+    const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
+    const older = questionOf({ session: asking, text: 'Round half up or half even?', minute: 1 });
+    const newer = questionOf({
+      session: asking,
+      text: 'Keep the retry window at five minutes?',
+      minute: 2,
+    });
+    seed({ sessions: [asking], questions: [newer, older] });
+    mountBoard([asking]);
+
+    expect(cardAt({ index: 0 }).getAttribute('aria-label')).toBe(
+      `Open ${asking.goal}, ${older.text}`,
+    );
+    fireEvent.click(cardAt({ index: 0 }));
+
+    await waitFor(() =>
+      expect(currentPlace()).toMatchObject({
+        view: { lens: 'questions', target: { kind: 'question', questionId: older.id } },
+      }),
+    );
+  });
+
+  it('shows and opens the next waiting question when the older one is staged', async () => {
+    const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
+    const older = questionOf({ session: asking, text: 'Round half up or half even?', minute: 1 });
+    const newer = questionOf({
+      session: asking,
+      text: 'Keep the retry window at five minutes?',
+      minute: 2,
+    });
+    seed({ sessions: [asking], questions: [older, newer] });
+    useOpenQuestions.setState({ staged: [older.id] });
+    mountBoard([asking]);
+
+    expect(cardAt({ index: 0 }).getAttribute('aria-label')).toBe(
+      `Open ${asking.goal}, ${newer.text}`,
+    );
+    fireEvent.click(cardAt({ index: 0 }));
+
+    await waitFor(() =>
+      expect(currentPlace()).toMatchObject({
+        view: { lens: 'questions', target: { kind: 'question', questionId: newer.id } },
+      }),
+    );
+  });
+
+  it('carries the shown question through the attention channel to the other window', async () => {
+    const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
+    const older = questionOf({ session: asking, text: 'Round half up or half even?', minute: 1 });
+    const newer = questionOf({
+      session: asking,
+      text: 'Keep the retry window at five minutes?',
+      minute: 2,
+    });
+    seed({ sessions: [asking], questions: [newer, older] });
+    useAppStore.setState({
+      currentWorkspaceId: northwind.id,
+      openWorkspace: vi.fn(async () => ({ kind: 'opened' as const })),
+    });
+    mountBoard([asking]);
+
+    fireEvent.click(cardAt({ index: 0 }));
+
+    await waitFor(() =>
+      expect(
+        attentionTargetChannel.take({ workspaceId: workspace.id, now: Date.now() }),
+      ).toMatchObject({ sessionId: asking.id, questionId: older.id }),
+    );
+  });
+
+  it('counts a strip card of a filtered out project as shown, not hidden', () => {
+    const relay = aProject({ workspaceId: workspace.id, name: 'notify-relay', kind: 'folder' });
+    const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
+    const quiet = sessionOf({ goal: 'Add idempotency keys to the refund endpoint' });
+    seed({
+      sessions: [asking, quiet],
+      questions: [
+        questionOf({ session: asking, text: 'Keep the retry window at five minutes?', minute: 1 }),
+      ],
+    });
+    useAppStore.setState({
+      projects: [project, relay],
+      sessionProjectMounts: {
+        [asking.id]: [mountOf({ session: asking, project })],
+        [quiet.id]: [mountOf({ session: quiet, project: relay })],
+      },
+    });
+    useAppStore.getState().setSelectedProjectIds({
+      workspaceId: workspace.id,
+      selectedProjectIds: [relay.id],
+    });
+    mountBoard([asking, quiet]);
+
+    expect(cards()).toHaveLength(1);
+    expect(screen.queryByText(/hidden$/)).toBeNull();
+    expect(screen.queryByText(/in other projects$/)).toBeNull();
   });
 
   it('opens a failed card at the agent that failed', async () => {

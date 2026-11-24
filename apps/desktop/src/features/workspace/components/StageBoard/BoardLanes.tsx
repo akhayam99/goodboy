@@ -6,14 +6,16 @@ import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { MergeInOrder } from '../../../board/mergeTrain/MergeInOrder';
 import type { BoardLanes as BoardLanesLayout } from './boardLanesOf';
 import { laneColumnsOf } from './laneColumnsOf';
-import { BOARD_STAGES } from './boardStages';
+import { BOARD_LANE_SPECS } from './boardLaneSpecs';
 import { StageColumn } from './StageColumn';
 import type { BoardNavigation } from './useBoardNavigation';
 import type { BoardSelection } from './useBoardSelection';
 import { useBoardArrowKeys } from './useBoardArrowKeys';
 import { useLaneTravel } from './useLaneTravel';
 
-const LANE_STAGES = BOARD_STAGES.filter((stage) => stage !== 'done' && stage !== 'attention');
+const LANE_STAGES = BOARD_LANE_SPECS.flatMap((spec) =>
+  spec.kind === 'stage' && spec.stage !== 'done' ? [spec.stage] : [],
+);
 
 type Props = {
   readonly layout: BoardLanesLayout;

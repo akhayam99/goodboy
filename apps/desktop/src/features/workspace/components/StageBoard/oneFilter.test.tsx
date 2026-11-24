@@ -48,7 +48,6 @@ const mountHeader = () =>
         workspaceId={harborline.id}
         filterSessions={[]}
         hiddenCount={0}
-        needsYouElsewhere={0}
         onClearFilters={() => undefined}
       >
         {null}

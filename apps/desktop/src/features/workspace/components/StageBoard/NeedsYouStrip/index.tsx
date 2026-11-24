@@ -18,7 +18,6 @@ import { NAMES } from '../../../../../shared/utils/names';
 import { sessionTitle } from '../../../../../shared/utils/sessionTitle';
 import { formatSpan } from '../../../../../shared/utils/time/formatSpan';
 import { useNow } from '../../../../../shared/hooks/useNow';
-import { useNeedsYou } from './useNeedsYou';
 import type { NeedsYouCard as Card } from '../../../../board/needsYou/needsYouOf';
 import { ATTENTION_REASON_META } from '../../../../session/session-stage';
 import { openAttentionTarget } from '../../../../session/openAttentionTarget';
@@ -30,6 +29,7 @@ import { useStripScroll } from './useStripScroll';
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly sessions: ReadonlyArray<Session>;
+  readonly cards: ReadonlyArray<Card>;
   readonly laneRem: number;
 };
 
@@ -69,8 +69,7 @@ const moveCardFocus = ({ event }: KeyParams): void => {
   next.focus();
 };
 
-export const NeedsYouStrip = ({ workspaceId, sessions, laneRem }: Props) => {
-  const { cards } = useNeedsYou({ sessions });
+export const NeedsYouStrip = ({ workspaceId, sessions, cards, laneRem }: Props) => {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const now = useNow(AGE_MS);
   const stepPx = useMemo(() => (laneRem + BOARD_LANE_GAP_REM) * rootRemPx(), [laneRem]);
@@ -98,6 +97,7 @@ export const NeedsYouStrip = ({ workspaceId, sessions, laneRem }: Props) => {
         sessionId: card.sessionId,
         reason: card.move.reason,
         agentId: null,
+        ...(card.move.questionId === null ? {} : { questionId: card.move.questionId }),
       },
     }).catch((error: unknown) =>
       useAppStore

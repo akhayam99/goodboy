@@ -31,12 +31,12 @@ import { useArchivedSessionsLoad } from './useArchivedSessionsLoad';
 import { useBoardMotionKey } from './useBoardMotionKey';
 import { useMarkBoardShown } from './useMarkBoardShown';
 import { useBoardSelection } from './useBoardSelection';
-import { useNeedsYouElsewhere } from './useNeedsYouElsewhere';
 import { SessionsHeader } from './SessionsHeader';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { useClearSessionFilters } from './useClearSessionFilters';
 import { NeedsYouStrip } from './NeedsYouStrip';
+import { useNeedsYou } from './NeedsYouStrip/useNeedsYou';
 import { useBoardByStage } from './useBoardByStage';
 
 type Props = {
@@ -46,7 +46,6 @@ type Props = {
 
 export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
-  const needsYou = useNeedsYouElsewhere({ workspaceId, sessions });
   const clearFilters = useClearSessionFilters({ workspaceId });
   const nav = useBoardNavigation();
   const hover = useHoverCardTarget();
@@ -73,7 +72,12 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   );
   useArchivedSessionsLoad({ workspaceId, isReady: boardReady });
 
-  const byStage = useBoardByStage({ groups, sessions });
+  const { byStage, infos } = useBoardByStage({ workspaceId, groups, sessions });
+  const { cards: needsYouCards } = useNeedsYou({ sessions, infos });
+  const stripIds = useMemo(
+    () => new Set<string>(needsYouCards.map((card) => card.sessionId)),
+    [needsYouCards],
+  );
 
   const boardSessions = useMemo(
     () => [
@@ -138,8 +142,12 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     : hasUnbornRepo
       ? 'Sessions branch from the latest commit, and this repository has none yet.'
       : 'Sessions branch from the latest commit. Add another folder in workspace settings, or track this one with git there.';
-  const boardShown = groups.reduce((count, group) => count + group.sessions.length, 0);
-  const hiddenCount = sessions.length - boardShown;
+  const boardShownIds = new Set<string>(
+    groups.flatMap((group) => group.sessions.map((session) => session.id)),
+  );
+  const hiddenCount = sessions.filter(
+    (session) => !boardShownIds.has(session.id) && !stripIds.has(session.id),
+  ).length;
   const hoveredId = hover.target?.sessionId ?? null;
   const hoveredSession =
     hoveredId === null ? null : (boardSessions.find((session) => session.id === hoveredId) ?? null);
@@ -155,7 +163,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           workspaceId={workspaceId}
           filterSessions={filterSessions}
           hiddenCount={pending || empty ? 0 : hiddenCount}
-          needsYouElsewhere={pending || empty ? 0 : needsYou.elsewhere}
           onClearFilters={clearFilters}
         >
           {!pending && hasProjects && empty && <SetupCard isMainWindow={isMainWindow} />}
@@ -186,7 +193,12 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           {!pending && !empty && (
             <BoardFactsFrame workspaceId={workspaceId}>
               <div className="flex min-h-0 flex-1 flex-col gap-3">
-                <NeedsYouStrip workspaceId={workspaceId} sessions={sessions} laneRem={laneRem} />
+                <NeedsYouStrip
+                  workspaceId={workspaceId}
+                  sessions={sessions}
+                  cards={needsYouCards}
+                  laneRem={laneRem}
+                />
                 <BoardLanes
                   layout={layout}
                   laneRem={laneRem}
