@@ -27,8 +27,8 @@ const SITES: ReadonlyArray<Site> = [
     title: "Couldn't save what agents know about you",
   },
   {
-    file: 'features/providers/hooks/useSpreadByHeadroom/index.ts',
-    title: "Couldn't save the run defaults",
+    file: 'features/providers/hooks/useProviderRule/index.ts',
+    title: "Couldn't save the provider priority",
   },
   {
     file: 'features/providers/hooks/useOrchestratorModelPick/index.ts',

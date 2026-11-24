@@ -162,6 +162,7 @@ branch-reply-posted
 branch-split-mounted
 branch-threads-new
 branch-threads-new-comments
+branch-threads-new-light
 brand-codex
 brand-compare
 brand-context
@@ -602,6 +603,7 @@ new-drawer-write-wireframe
 notifications
 notifications-delete-all
 notifications-empty
+notifications-light
 notifications-rail
 notifications-rail-folded
 onboarding
@@ -1538,6 +1540,10 @@ u50-worktrees-dark
 u50-worktrees-light
 u50-worktrees-sheet-dark
 u50-worktrees-sheet-light
+u52-impact-agents-dark
+u52-impact-agents-light
+u52-impact-agents-open-dark
+u52-impact-agents-open-light
 update-card
 update-card-long-version
 update-card-narrow

@@ -191,6 +191,7 @@ const childSpecOf = ({ delegation, text, from }: ChildSpecParams): DelegateChild
   provider: null,
   model: null,
   effort: null,
+  modelReason: null,
   taskType: null,
   difficulty: null,
   doneWhen: null,

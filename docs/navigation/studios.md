@@ -185,9 +185,12 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   popover or the window visibility goes: a hidden document restarts every second
   when it is visible again), so a row beyond the eight shown stays unread, and the header's
   ghost `Mark all as read` (only while something is unread) is the explicit way to
-  clear the rest. Both lead with the severity glyph alone: unread is
+  clear the rest. Both lead with the severity on the quiet node alone
+  (`NotificationSeverityNode`, `WorkNode look="quiet"`: an error on the solid
+  danger node, a warning on the solid amber one, a success a bare check, an
+  info a neutral node with its glyph): unread is
   the title weight (500 in foreground), read rows recede, and no second leading
-  dot. In the studio the time owns the third column and a fixed fourth column
+  dot. The age is the `ActivityMeta` time column in both. In the studio the time owns the third column and a fixed fourth column
   holds the hover controls (`NotificationRowActions`): the registry's hover
   action (Mark as read, one click) and the `⋯` menu of the `notification` kind
   (Open, Mark as read or unread, Report this error, Copy text, Delete), also opened by

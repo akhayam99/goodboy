@@ -2204,21 +2204,30 @@ candidate by the rule and the reason says so, for example "The Lead asked for Cu
 agents that write code do not run here yet. Claude: first in your order." A child with no pick
 takes the best by the rule ("Claude: first in your order", "Codex: most room left", "Haiku 5.5:
 lighter, fits the step"). A role pin always wins; a preset step lock (`stepLock`) wins over all.
-The session composer's model steers the Lead only, never a helper. The outcome carries `source`
-(lead, pin, rule, fallback, lock), the cause and the candidates it weighed. When no candidate
-passes, `childRoutingRefusal` names each connected provider with its reason (usage limit until a
+The session composer's model steers the Lead only, never a helper. A reviewer is routed against
+the family of the writer of the revision it reads (`writerFamilyOf`, from the stored pick of the
+delegation that wrote that revision, else the owner's); with no writer artifact there is no family
+guard. The routing a helper keeps
+(`routing_json`, typed `AutoRouting`, built by `storedRoutingOf`) holds the pick, the reason,
+`source` (lead, pin, rule, fallback, lock), the cause of a moved pick, the Lead's own words in
+`modelReason` and up to 18 candidates it weighed, without rates, the struck rows last. A role pin
+reads `source` pin whether the Lead's pick matched it or moved to it. Tell a pin from a Lead pick
+by `source`, never by `requested`, which holds what the Lead asked for. An older
+row has none of these keys and reads as before, and the receipt the Lead gets keeps its keys.
+When no candidate passes, `childRoutingRefusal` names each connected provider with its reason (usage limit until a
 time, budget reached, no visible model, reading roles only) and points to Settings › Models.
 
 A child queued behind running ones is checked again when its slot frees (`recheckQueuedRouting`
 in `launchChildren`): when its provider went Off, out of room, into cooldown or over budget in the
-meantime, it starts on the best candidate instead and its stored routing and reason say so. The
-recheck sizes the step from the task type and difficulty the delegation request keeps. It
+meantime, it starts on the best candidate instead and its stored routing says so (source fallback,
+or pin for a pinned role, the cause and the new candidates; the Lead's `modelReason` stays). The
+recheck keeps the reviewer's writer family guard and sizes the step from the task type and difficulty the delegation request keeps. It
 never ran, so this is not a swap. A continue (a retry with a task, or a message from the person)
-keeps the agent's provider and model: `resolveDelegateChild` hands the stored pick as `agentLock`,
-and a provider that cools down refuses the continue with "Codex is cooling down until 16:10. This
+keeps the agent's provider, model and `modelReason`: `resolveDelegateChild` hands the stored pick
+as `agentLock`, and a provider that cools down refuses the continue with "Codex is cooling down until 16:10. This
 agent keeps its model, so send it again then." (`agentLockWait`). A plain retry with no task picks
 again: the stored pick is offered as the Lead's pick and moves only when a guard removes it. With
-**Skip a provider near its limit** on (`spreadByHeadroom`), `resolveChildRouting` also passes the
+**Provider priority** on **By load** (`spreadByHeadroom`), `resolveChildRouting` also passes the
 headroom (`readHeadroom`) to the availability, so a Claude past 80% of a limit goes behind Codex
 and a writing helper starts on Codex. Only Claude and Codex report limits. The pool of a tree is the run
 pool when there is one, else the workspace pool (the providers the workspace

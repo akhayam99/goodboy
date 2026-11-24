@@ -54,6 +54,8 @@ import { pickChildMount } from './pickChildMount';
 import type { AgentGrant } from './ports';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
 import { storedPickOf } from './childRouting/storedPickOf';
+import { storedRoutingOf } from './childRouting/storedRoutingOf';
+import { writerFamilyOf } from './childRouting/writerFamilyOf';
 import type { AgentVerbContext } from './verbContext';
 
 export type ChildRefusal = Readonly<{
@@ -499,6 +501,7 @@ export const resolveDelegateChild = async ({
   const words = revise === null ? null : await userWordsOf({ ctx, tree, rowIds: child.changeFrom });
   const producerRouting = revise?.producerRouting ?? {};
   const lead = await leadRunFactsOf({ db: ctx.db, grant, tree, role });
+  const writerFamily = await writerFamilyOf({ ctx, tree, role, inputs: inputs.refs });
   const routing = await ctx.ports.resolveRouting({
     sessionId: grant.sessionId,
     role,
@@ -509,11 +512,13 @@ export const resolveDelegateChild = async ({
       effort: child.effort ?? textFieldOf({ source: producerRouting, key: 'effort' }) ?? undefined,
       taskType: child.taskType ?? undefined,
       difficulty: child.difficulty ?? undefined,
+      modelReason: child.modelReason ?? undefined,
     },
     promptText: revise === null ? child.task : [child.task, ...(words?.words ?? [])].join('\n'),
     stepLock: lead.stepLock,
     agentLock:
       retry === null || continueWith === null ? null : storedPickOf({ routing: retry.routing }),
+    writerFamily,
   });
   if (routing.kind === 'blocked') {
     return refuse({ slot, code: routing.code, message: routing.message });
@@ -597,18 +602,7 @@ export const resolveDelegateChild = async ({
         sessionId: grant.sessionId,
         workspaceId: grant.workspaceId,
       },
-      routing: {
-        provider: routing.provider,
-        model: routing.model,
-        effort: routing.effort,
-        reason: routing.reason,
-        proposal: routing.proposal,
-        requested: {
-          provider: child.provider,
-          model: child.model,
-          effort: child.effort,
-        },
-      },
+      routing: storedRoutingOf({ outcome: routing, child, retry, continueWith }),
       reviseOf:
         revise === null
           ? null

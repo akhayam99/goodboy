@@ -138,8 +138,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Each provider shows its mark and one bar, the tighter of the 5-hour window and the week, with a percent past 70%. Rest on it for the reset time.',
       },
       {
-        term: 'When a provider is out',
-        desc: 'Models lists the providers of the workspace in order, each On, Backup only or Off, and new work starts on the first On provider. Drag a row, or press Alt and an arrow, to move it.',
+        term: 'Provider order',
+        desc: 'Models lists the providers in order, each On, Backup only or Off. Drag a row, or press Alt and an arrow, to move it. Provider priority, By order or By load, decides when several fit.',
       },
       {
         term: 'Auto in Models',
