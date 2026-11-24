@@ -55,6 +55,7 @@ export type RoutingRequest = Readonly<{
   stepLock?: WorkflowRoutingLock | null;
   agentLock?: WorkflowModelPick | null;
   writerFamily?: ModelFamily | null;
+  failedStarts?: ReadonlyArray<ProviderId>;
 }>;
 
 export type RoutingProposalFate = 'kept' | 'adjusted' | 'replaced' | 'none';

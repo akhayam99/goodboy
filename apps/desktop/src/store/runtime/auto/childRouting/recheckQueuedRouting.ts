@@ -9,6 +9,7 @@ import { isRecord } from '@goodboy/types/helpers';
 import { textFieldOf } from '../../../../shared/utils/textFieldOf';
 import type { AgentVerbContext } from '../verbContext';
 import { routingPickOf } from './routingPickOf';
+import { failedStartsOf } from './failedStartsOf';
 import { writerFamilyOf } from './writerFamilyOf';
 
 const PROVIDER_CAUSES: ReadonlyArray<CandidateCause> = [
@@ -19,6 +20,7 @@ const PROVIDER_CAUSES: ReadonlyArray<CandidateCause> = [
   'breaker',
   'budget',
   'outside-run',
+  'failed-start',
 ];
 
 type InputRefsParams = {
@@ -68,6 +70,7 @@ export const recheckQueuedRouting = async ({
     },
     promptText: textFieldOf({ source: delegation.request, key: 'task' }) ?? '',
     writerFamily,
+    failedStarts: await failedStartsOf({ ctx, tree, role }),
   });
   if (
     outcome.kind !== 'ready' ||
