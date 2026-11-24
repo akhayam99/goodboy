@@ -36,6 +36,8 @@ const requestOf = ({
     isDraft: false,
     baseBranch: 'main',
     headBranch,
+    headSha: null,
+    checksWord: null,
   },
 });
 

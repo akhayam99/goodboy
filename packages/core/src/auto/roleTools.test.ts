@@ -22,7 +22,7 @@ describe('canAutoRoleRunCommands', () => {
     const withShell = AUTO_DELEGATION_ROLES.filter((role) => canAutoRoleRunCommands({ role }));
     expect(withShell).toEqual([...AUTO_WRITER_ROLES]);
     expect(AUTO_COMMAND_ROLES).toEqual(
-      AUTO_WRITER_ROLES.filter((role) => isAutoRoleStartable({ role })),
+      AUTO_WRITER_ROLES.filter((role) => isAutoRoleStartable({ role }) && role !== 'scribe'),
     );
     expect(canAutoRoleRunCommands({ role: 'investigator' })).toBe(false);
     expect(canAutoRoleRunCommands({ role: 'scout' })).toBe(false);
@@ -119,6 +119,13 @@ describe('roleCannotRunCommandsMessage', () => {
       expect(rerouteHintOf({ role: 'scout' })).not.toContain(closed);
       expect(rerouteHintOf({ role: 'scout', need: 'writer' })).not.toContain(closed);
     }
+  });
+
+  it('never offers the scribe for a command, since its brief forbids gh and Goodboy opens the pull request', () => {
+    expect(AUTO_COMMAND_ROLES).not.toContain('scribe');
+    expect(roleCannotRunCommandsMessage({ role: 'scout' })).not.toContain('scribe');
+    expect(rerouteHintOf({ role: 'scout' })).not.toContain('scribe');
+    expect(rerouteHintOf({ role: 'scout', need: 'writer' })).not.toContain('scribe');
   });
 
   it('is unchanged when no phrase matched', () => {

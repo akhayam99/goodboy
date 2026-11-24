@@ -26,6 +26,8 @@ const requestOf = ({ host, url }: (typeof HOSTS)[number]): BranchFactsRequest =>
   isDraft: false,
   baseBranch: 'main',
   headBranch: 'ak/ledger-export',
+  headSha: null,
+  checksWord: null,
 });
 
 const readersOf = (entry: (typeof HOSTS)[number]): BranchFactsReaders => ({

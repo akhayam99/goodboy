@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { roleFitOf, roleNarrowerMessage } from './roleFit';
-import { AUTO_COMMAND_ROLES } from './roleTools';
-import { AUTO_CLOSED_ROLES, type AutoDelegationRole } from './roles';
+import { AUTO_CLOSED_ROLES, isAutoRoleStartable, type AutoDelegationRole } from './roles';
 
 type FitCase = Readonly<{
   title: string | null;
@@ -135,7 +134,7 @@ describe('roleNarrowerMessage', () => {
       if (fit === null || fit === 'implementer') {
         continue;
       }
-      expect(AUTO_COMMAND_ROLES).toContain(fit);
+      expect(isAutoRoleStartable({ role: fit })).toBe(true);
     }
   });
 });

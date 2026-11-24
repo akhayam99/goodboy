@@ -115,6 +115,8 @@ export const CLEAN_FACTS: BranchFactsParts = {
       isDraft: false,
       baseBranch: 'main',
       headBranch: 'ak/ledger-export',
+      headSha: 'abc123def',
+      checksWord: '1 passed',
     },
   },
   threads: {
