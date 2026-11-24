@@ -8,6 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
+import { SHELL_GUTTER_PX } from '@goodboy/ui';
 import {
   importStore,
   resetStoryStore,
@@ -60,15 +61,67 @@ const footOf = async ({ name }: SceneParams): Promise<ReadonlyArray<string>> => 
   ).slice(-4);
 };
 
+const signatureOf = async ({ name }: SceneParams): Promise<HTMLElement> => {
+  await footOf({ name });
+  const rail = screen.getByRole('navigation', { name: 'Places' });
+  const signature = rail.querySelector<HTMLElement>('[data-rail-signature]');
+  if (signature === null) {
+    throw new Error(`No signature in ${name}`);
+  }
+  return signature;
+};
+
 describe('the u50 logo foot scenes', () => {
-  it('lists the rail foot at rest and with an update, in light and dark', () => {
+  it('lists the rail foot at rest, with an update and with unread notes, in light and dark', () => {
     expect(Object.keys(U50_LOGO_FOOT_SCENES)).toEqual([
       'u50-logo-foot-light',
       'u50-logo-foot-dark',
       'u50-logo-foot-update-light',
       'u50-logo-foot-update-dark',
+      'u50-logo-foot-unread-light',
+      'u50-logo-foot-unread-dark',
     ]);
   });
+
+  it.each(['u50-logo-foot-light', 'u50-logo-foot-dark'])(
+    "%s sits the signature on the content sheet bottom and names it What's new",
+    async (name) => {
+      const signature = await signatureOf({ name });
+      const rail = screen.getByRole('navigation', { name: 'Places' });
+
+      expect(rail.lastElementChild).toBe(signature);
+      expect(rail.style.paddingBottom).toBe(`${SHELL_GUTTER_PX}px`);
+      expect(signature.getAttribute('aria-label')).toBe("What's new");
+      expect(signature.className.split(' ')).toContain('items-end');
+      expect(signature.querySelector('[data-unseen-release]')).toBeNull();
+    },
+  );
+
+  it('drops the unread dot when a read scene follows an unread one', async () => {
+    await signatureOf({ name: 'u50-logo-foot-unread-light' });
+    cleanup();
+    const signature = await signatureOf({ name: 'u50-logo-foot-light' });
+
+    expect(signature.querySelector('[data-unseen-release]')).toBeNull();
+  });
+
+  it('draws the same signature in light and dark', async () => {
+    const light = (await signatureOf({ name: 'u50-logo-foot-light' })).outerHTML;
+    cleanup();
+    const dark = (await signatureOf({ name: 'u50-logo-foot-dark' })).outerHTML;
+
+    expect(light).toBe(dark);
+  });
+
+  it.each(['u50-logo-foot-unread-light', 'u50-logo-foot-unread-dark'])(
+    '%s puts the unread dot on the signature',
+    async (name) => {
+      const signature = await signatureOf({ name });
+
+      expect(signature.getAttribute('aria-label')).toBe("What's new, new release notes");
+      expect(signature.querySelector('[data-unseen-release]')).not.toBeNull();
+    },
+  );
 
   it.each(['u50-logo-foot-light', 'u50-logo-foot-dark'])(
     '%s closes the rail with Settings, Report and the signature',

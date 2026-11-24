@@ -45,8 +45,7 @@ tile, then the word `Goodboy`. It has no tagline, no registered mark and no
 second line.
 
 In the working chrome the mark is the same black tile, small and still: the
-rail signature below. It is a signature, not a control, and it never turns into
-a bare glyph.
+rail signature below. It opens What's new and never turns into a bare glyph.
 
 The app shows the mark in four places: the rail signature (24px, at the foot of
 the places rail, under Report), the boot splash (84px, the same black tile,
@@ -98,9 +97,9 @@ rail on the rail axis. It has no ring, plate, border, glow or gradient, it is
 never inverted and it is identical in the dark and the light theme. On the dark
 theme the black tile sits close to the charcoal rail (1.09:1) and the white dog
 carries the mark, on purpose: no lighter variant, no outline to rescue it. It is
-passive: not a button, no hover, no focus ring, no tooltip, `aria-hidden`. Help
-and What's new are not behind it; they live in the Help menu and in Search or
-run. The mark does not use the teal accent. The top bar and the sidebar draw no
+a quiet button with the tooltip "What's new" that opens the changelog, and a
+small unread dot on its corner while a release has notes you have not read. The
+Guide is not behind it; it lives in the Help menu and in Search or run. The mark does not use the teal accent. The top bar and the sidebar draw no
 mark. The setup header and Home are not working chrome: they sit alone on the
 background, where the tile reads as the app icon, and they keep the same tile.
 On the site, the favicon and the dock the tile stands alone and does its job.
