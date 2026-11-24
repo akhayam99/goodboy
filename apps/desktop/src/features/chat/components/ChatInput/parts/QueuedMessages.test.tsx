@@ -235,7 +235,7 @@ describe('QueuedMessages', () => {
 
     const counts = screen.getAllByTestId('queued-message-attachments');
     expect(counts.map((count) => count.textContent)).toEqual(['1 attachment']);
-    expect(screen.getByText('read the ledger spec')).not.toBeNull();
+    screen.getByText('read the ledger spec');
     expect(screen.queryByTestId('strip')).toBeNull();
   });
 
