@@ -1,5 +1,5 @@
 import type { ProviderName, SessionId } from '@goodboy/types';
-import type { SegmentedTabOption } from '@goodboy/ui';
+import type { PageTabOption, SegmentedTabOption } from '@goodboy/ui';
 
 export type ImpactWindowId = 'last7' | 'last30' | 'all';
 export type ImpactTab = 'overview' | 'shipped' | 'flow' | 'spend' | 'agents';
@@ -23,7 +23,7 @@ export const IMPACT_WINDOW_OPTIONS: ReadonlyArray<SegmentedTabOption<ImpactWindo
   { value: 'all', label: 'All time' },
 ];
 
-export const IMPACT_TAB_OPTIONS: ReadonlyArray<SegmentedTabOption<ImpactTab>> = [
+export const IMPACT_TAB_OPTIONS: ReadonlyArray<PageTabOption<ImpactTab>> = [
   { value: 'overview', label: 'Overview' },
   { value: 'shipped', label: 'Shipped' },
   { value: 'flow', label: 'Flow' },
@@ -51,13 +51,13 @@ export const impactWindowStart = ({ windowId, nowMs }: WindowStartParams): numbe
   return windowMs === null ? null : nowMs - windowMs;
 };
 
-type PinnedShareParams = {
-  readonly knownTurns: number;
-  readonly pinnedTurns: number;
+type TurnShareParams = {
+  readonly part: number;
+  readonly whole: number;
 };
 
-export const pinnedShareOf = ({ knownTurns, pinnedTurns }: PinnedShareParams): string | null =>
-  knownTurns === 0 ? null : `${Math.round((pinnedTurns / knownTurns) * 100)}%`;
+export const turnShareOf = ({ part, whole }: TurnShareParams): string | null =>
+  whole === 0 ? null : `${Math.round((part / whole) * 100)}%`;
 
 export const impactTabOf = ({ scope }: ScopeParams): ImpactTab =>
   scope.kind === 'provider' || scope.kind === 'session' ? 'spend' : scope.kind;

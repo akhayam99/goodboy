@@ -104,9 +104,15 @@ type DelegationParams = {
   readonly id: string;
   readonly childAgentId: string;
   readonly routing: Readonly<Record<string, unknown>>;
+  readonly nowMs?: number;
 };
 
-const delegation = ({ id, childAgentId, routing }: DelegationParams): NewAutoDelegation => ({
+const delegation = ({
+  id,
+  childAgentId,
+  routing,
+  nowMs = NOW,
+}: DelegationParams): NewAutoDelegation => ({
   id: brandId<AutoDelegationId>({ value: id }),
   treeId: brandId<AutoTreeId>({ value: 'tree-1' }),
   generation: 1,
@@ -125,9 +131,11 @@ const delegation = ({ id, childAgentId, routing }: DelegationParams): NewAutoDel
   reviseOf: null,
   baseRevision: null,
   isAdopted: false,
-  deadlineAt: NOW + 1_800_000,
-  nowMs: NOW,
+  deadlineAt: nowMs + 1_800_000,
+  nowMs,
 });
+
+const HELPER_ENDED_AT = NOW + 120_000;
 
 const U5_ROUTING = {
   provider: 'codex',
@@ -228,6 +236,9 @@ describe('getTurnRoleInsight', () => {
     );
     expect(insight.roles[1]?.efforts).toEqual([{ effort: null, turns: 1 }]);
     expect(insight.efforts[0]).toEqual({ effort: 'medium', turns: 2 });
+    expect(insight.roles[1]).toMatchObject({ pricedTurns: 0, costUsd: null, costPerTurnUsd: null });
+    expect(insight.pricedTurns).toBe(3);
+    expect(insight.costPerTurnUsd).toBeCloseTo(0.75);
   });
 
   it('counts only turns that ended inside the window and only in this workspace', async () => {
@@ -262,7 +273,21 @@ describe('getTurnRoleInsight', () => {
     const db = await world();
     await addSpan({
       db,
-      span: { id: 'pinned', agentId: 'agent-step-pinned', role: 'planner', model: 'opus' },
+      span: {
+        id: 'pinned',
+        agentId: 'agent-step-pinned',
+        role: 'planner',
+        model: 'claude-opus-5-5',
+      },
+    });
+    await addSpan({
+      db,
+      span: {
+        id: 'override',
+        agentId: 'agent-step-pinned',
+        role: 'planner',
+        model: 'claude-sonnet-5-5',
+      },
     });
     await addSpan({
       db,
@@ -277,9 +302,9 @@ describe('getTurnRoleInsight', () => {
     const insight = await getTurnRoleInsight({ db, workspaceId: WORKSPACE, sinceMs: null });
     const planner = insight.roles.find((role) => role.role === 'planner');
 
-    expect(planner).toMatchObject({ turns: 3, knownTurns: 2, pinnedTurns: 1, leadPickTurns: 0 });
+    expect(planner).toMatchObject({ turns: 4, knownTurns: 3, pinnedTurns: 1, leadPickTurns: 0 });
     expect(insight.roles.find((role) => role.role === 'auto')?.knownTurns).toBe(0);
-    expect(insight).toMatchObject({ turns: 4, knownTurns: 2, pinnedTurns: 1 });
+    expect(insight).toMatchObject({ turns: 5, knownTurns: 3, pinnedTurns: 1 });
   });
 
   it("counts a helper with the Lead's routing once and as the Lead's pick", async () => {
@@ -287,7 +312,13 @@ describe('getTurnRoleInsight', () => {
     await delegateTwice({ db });
     await addSpan({
       db,
-      span: { id: 'helper-1', agentId: 'agent-helper', role: 'implementer', model: 'sol' },
+      span: {
+        id: 'helper-1',
+        agentId: 'agent-helper',
+        role: 'implementer',
+        model: 'sol',
+        endedAt: HELPER_ENDED_AT,
+      },
     });
     await addSpan({
       db,
@@ -296,6 +327,7 @@ describe('getTurnRoleInsight', () => {
         agentId: 'agent-helper-plain',
         role: 'implementer',
         model: 'claude-sonnet-5-5',
+        endedAt: HELPER_ENDED_AT,
       },
     });
 
@@ -308,5 +340,56 @@ describe('getTurnRoleInsight', () => {
       leadPickTurns: 1,
       pinnedTurns: 0,
     });
+  });
+
+  it('keeps an earlier turn on the routing it ran with when a later retry asks for a model', async () => {
+    const db = await world();
+    await delegateTwice({ db });
+    await addSpan({
+      db,
+      span: {
+        id: 'plain-1',
+        agentId: 'agent-helper-plain',
+        role: 'implementer',
+        model: 'claude-sonnet-5-5',
+        endedAt: HELPER_ENDED_AT,
+      },
+    });
+    await db.transaction({
+      statements: [
+        settleAutoDelegationStatement({
+          delegationId: brandId<AutoDelegationId>({ value: 'plain' }),
+          generation: 1,
+          outcome: 'failed',
+          reason: 'retry',
+          result: null,
+          nowMs: HELPER_ENDED_AT,
+          abortCode: 'settle',
+        }),
+        insertAutoDelegationStatement({
+          delegation: delegation({
+            id: 'plain-retry',
+            childAgentId: 'agent-helper-plain',
+            routing: U5_ROUTING,
+            nowMs: HELPER_ENDED_AT + 60_000,
+          }),
+        }),
+      ],
+    });
+    await addSpan({
+      db,
+      span: {
+        id: 'plain-2',
+        agentId: 'agent-helper-plain',
+        role: 'implementer',
+        provider: 'codex',
+        model: 'sol',
+        endedAt: HELPER_ENDED_AT + 180_000,
+      },
+    });
+
+    const insight = await getTurnRoleInsight({ db, workspaceId: WORKSPACE, sinceMs: null });
+
+    expect(insight.roles[0]).toMatchObject({ turns: 2, knownTurns: 2, leadPickTurns: 1 });
   });
 });

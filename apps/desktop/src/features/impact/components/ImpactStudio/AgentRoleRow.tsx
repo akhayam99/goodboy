@@ -1,11 +1,12 @@
 import type { TurnEffortCount, TurnRoleEntry } from '@goodboy/db';
 import { ChevronRight } from '@goodboy/ui/icons';
-import { FOCUS_RING, ICON_SIZE, cn, formatUsd } from '@goodboy/ui';
+import { Button, ICON_SIZE, cn, formatUsd } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
+import { UNKNOWN_VALUE } from '../../../../shared/utils/unknownValue';
 import { EFFORT_LABEL } from '../../../chat/utils/chat-constants';
 import { ROLE_LABEL, kindForRole } from '../../../session/agent-kind';
-import { pinnedShareOf } from '../../lib';
+import { turnShareOf } from '../../lib';
 
 type Props = {
   readonly entry: TurnRoleEntry;
@@ -17,9 +18,8 @@ type EffortParams = {
   readonly efforts: ReadonlyArray<TurnEffortCount>;
 };
 
-type ShareParams = {
-  readonly part: number;
-  readonly whole: number;
+type UsdParams = {
+  readonly value: number | null;
 };
 
 const COLUMN_COUNT = 7;
@@ -30,21 +30,20 @@ const CELL = 'px-3 py-2';
 
 const NUMBER_CELL = 'px-3 py-2 text-right tabular-nums';
 
-const shareOf = ({ part, whole }: ShareParams): number =>
-  whole > 0 ? Math.round((part / whole) * 100) : 0;
-
 const EFFORT_NAMES: ReadonlyMap<string, string> = new Map(Object.entries(EFFORT_LABEL));
 
 const effortText = ({ efforts }: EffortParams): string => {
-  const set = efforts.filter((entry) => entry.effort !== null);
-  const top = set[0];
+  const top = efforts.find((entry) => entry.effort !== null);
   if (top === undefined || top.effort === null) {
     return 'Not set';
   }
   const label = EFFORT_NAMES.get(top.effort) ?? top.effort;
-  const whole = set.reduce((sum, entry) => sum + entry.turns, 0);
-  return `${label} ${shareOf({ part: top.turns, whole })}%`;
+  const whole = efforts.reduce((sum, entry) => sum + entry.turns, 0);
+  return `${label} ${turnShareOf({ part: top.turns, whole }) ?? UNKNOWN_VALUE}`;
 };
+
+const usdText = ({ value }: UsdParams): string =>
+  value === null ? UNKNOWN_VALUE : formatUsd(value);
 
 export const AgentRoleRow = ({ entry, isOpen, onToggle }: Props) => {
   const name = ROLE_NAMES.get(entry.role) ?? entry.role;
@@ -55,12 +54,13 @@ export const AgentRoleRow = ({ entry, isOpen, onToggle }: Props) => {
     <>
       <tr data-role={entry.role} className="hover:[&>*]:bg-hover">
         <td className={CELL}>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="xs"
             aria-expanded={isOpen}
             aria-label={`${name} models`}
             onClick={onToggle}
-            className={cn('flex min-w-0 items-center gap-2 rounded-sm', FOCUS_RING)}
+            className="min-w-0 max-w-full justify-start gap-2"
           >
             <ChevronRight
               size={ICON_SIZE.row}
@@ -78,7 +78,7 @@ export const AgentRoleRow = ({ entry, isOpen, onToggle }: Props) => {
               />
             ) : null}
             <span className="min-w-0 truncate text-row text-foreground">{name}</span>
-          </button>
+          </Button>
         </td>
         <td className={cn(NUMBER_CELL, 'text-foreground')}>{entry.turns}</td>
         <td className={CELL}>
@@ -92,13 +92,12 @@ export const AgentRoleRow = ({ entry, isOpen, onToggle }: Props) => {
         <td className={cn(CELL, 'text-muted-foreground')}>
           {effortText({ efforts: entry.efforts })}
         </td>
-        <td className={cn(NUMBER_CELL, 'text-foreground')}>{formatUsd(entry.costUsd)}</td>
+        <td className={cn(NUMBER_CELL, 'text-foreground')}>{usdText({ value: entry.costUsd })}</td>
         <td className={cn(NUMBER_CELL, 'text-muted-foreground')}>
-          {formatUsd(entry.costPerTurnUsd)}
+          {usdText({ value: entry.costPerTurnUsd })}
         </td>
         <td className={cn(NUMBER_CELL, 'text-muted-foreground')}>
-          {pinnedShareOf({ knownTurns: entry.knownTurns, pinnedTurns: entry.pinnedTurns }) ??
-            'Not known'}
+          {turnShareOf({ part: entry.pinnedTurns, whole: entry.knownTurns }) ?? 'Not known'}
         </td>
       </tr>
       {isOpen ? (
@@ -126,7 +125,7 @@ export const AgentRoleRow = ({ entry, isOpen, onToggle }: Props) => {
                         {effortText({ efforts: model.efforts })}
                       </td>
                       <td className={cn(NUMBER_CELL, 'text-foreground')}>
-                        {formatUsd(model.costUsd)}
+                        {usdText({ value: model.costUsd })}
                       </td>
                       <td
                         className={cn(
@@ -146,6 +145,11 @@ export const AgentRoleRow = ({ entry, isOpen, onToggle }: Props) => {
                 <p className="px-3 text-meta text-muted-foreground">
                   Pinned by you: {entry.pinnedTurns} turns. Lead&apos;s pick: {entry.leadPickTurns}{' '}
                   turns. Known for {entry.knownTurns} of {entry.turns} turns.
+                </p>
+              ) : null}
+              {entry.pricedTurns < entry.turns ? (
+                <p className="px-3 text-meta text-muted-foreground">
+                  Cost is known for {entry.pricedTurns} of {entry.turns} turns.
                 </p>
               ) : null}
             </div>

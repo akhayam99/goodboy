@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getTurnRoleInsight, type TurnRoleInsight } from '@goodboy/db';
+import type { TurnRoleInsight } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
-import { tauriDatabase } from '../../../../shared/lib/db';
 import type { QueryResult } from '../../../../shared/types/queryResult';
+import { useAppStore } from '../../../../store';
 import { toError } from '../../../../shared/utils/toError';
 import { impactWindowStart, type ImpactWindowId } from '../../lib';
 
@@ -30,6 +30,7 @@ export const useImpactRouting = ({ workspaceId, windowId, isOpen }: Params): Imp
   const cache = useRef(new Map<string, TurnRoleInsight>());
   const [attempt, setAttempt] = useState(0);
   const [answer, setAnswer] = useState<Answer | null>(null);
+  const readTurnRoleInsight = useAppStore((state) => state.readTurnRoleInsight);
 
   useEffect(() => {
     if (!isOpen) {
@@ -42,8 +43,7 @@ export const useImpactRouting = ({ workspaceId, windowId, isOpen }: Params): Imp
     }
     let isCurrent = true;
     const isStale = () => !isCurrent;
-    getTurnRoleInsight({
-      db: tauriDatabase,
+    readTurnRoleInsight({
       workspaceId,
       sinceMs: impactWindowStart({ windowId, nowMs: Date.now() }),
     }).then(
@@ -64,7 +64,7 @@ export const useImpactRouting = ({ workspaceId, windowId, isOpen }: Params): Imp
     return () => {
       isCurrent = false;
     };
-  }, [attempt, isOpen, key, windowId, workspaceId]);
+  }, [attempt, isOpen, key, readTurnRoleInsight, windowId, workspaceId]);
 
   const retry = useCallback(() => {
     cache.current.delete(key);

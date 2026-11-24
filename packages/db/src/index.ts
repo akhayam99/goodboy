@@ -479,10 +479,8 @@ export { type PullRequestOutcomes, type PullRequestEntry } from './queries/impac
 export {
   getTurnRoleInsight,
   type TurnEffortCount,
-  type TurnPickCounts,
   type TurnRoleEntry,
   type TurnRoleInsight,
-  type TurnRoleModel,
 } from './queries/turn-role-insight';
 export {
   insertArtifact,
@@ -645,13 +643,7 @@ export {
   listResolvePublicationThreads,
 } from './queries/resolve-publication';
 export * from './queries/project-sentry-link';
-export {
-  listStarredIssues,
-  starIssue,
-  unstarIssue,
-  unstarClosedIssues,
-  updateStarredIssueSnapshots,
-} from './queries/starred-issue';
+export * from './queries/starred-issue';
 export {
   deleteChats,
   finishChatMessage,

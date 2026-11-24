@@ -35,7 +35,7 @@ vi.mock('../../../../shared/lib/repo', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { insertWorkspace, type Database } from '@goodboy/db';
 import { brandId, type WorkspaceId } from '@goodboy/types';
 import {
@@ -207,7 +207,7 @@ describe('Impact, Agents tab', () => {
     );
     expect(tileText('Roles used')).toContain('2');
     expect(tileText('Cost on agent turns')).toContain('$2.25');
-    expect(tileText('Pinned by you')).toContain('known for 0 of 3 turns');
+    expect(tileText('Pinned by you')).toContain('Known for 0 of 3 turns');
 
     const toggle = screen.getByRole('button', { name: 'Implementer models' });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
@@ -224,12 +224,16 @@ describe('Impact, Agents tab', () => {
     const db = storySqlite();
     const select = db.select.bind(db);
     const held: Array<() => void> = [];
+    const settled: Array<number> = [];
     vi.spyOn(db, 'select').mockImplementation(async (sql, params) => {
       const sinceMs = Number(params?.[1] ?? 0);
-      if (INSIGHT_SQL.test(sql) && sinceMs < NOW - 8 * DAY_MS) {
-        await new Promise<void>((resolve) => held.push(resolve));
+      if (!INSIGHT_SQL.test(sql) || sinceMs >= NOW - 8 * DAY_MS) {
+        return select(sql, params);
       }
-      return select(sql, params);
+      await new Promise<void>((resolve) => held.push(resolve));
+      const rows = await select(sql, params);
+      settled.push(sinceMs);
+      return rows;
     });
     renderStudio();
 
@@ -239,7 +243,8 @@ describe('Impact, Agents tab', () => {
     await waitFor(() => expect(tileText('Agent turns')).toContain('2'));
 
     held.forEach((release) => release());
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await waitFor(() => expect(settled).toHaveLength(1));
+    await act(async () => undefined);
 
     expect(tileText('Agent turns')).toContain('2');
     expect(screen.queryByRole('button', { name: 'Scout models' })).toBeNull();

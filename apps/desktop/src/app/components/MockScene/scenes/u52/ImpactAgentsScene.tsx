@@ -32,24 +32,35 @@ const GROUPS: ReadonlyArray<GroupRow> = [
   ['docs', 'anthropic', 'claude-haiku-5-5', 'low', 50, 1.5, 0],
 ];
 
-const PICKS = [
-  { step_role: 'implementer', known_turns: 330, pinned_turns: 46, lead_turns: 250 },
-  { step_role: 'scout', known_turns: 160, pinned_turns: 12, lead_turns: 140 },
-  { step_role: 'reviewer', known_turns: 120, pinned_turns: 34, lead_turns: 70 },
-  { step_role: 'tester', known_turns: 90, pinned_turns: 6, lead_turns: 80 },
-  { step_role: 'planner', known_turns: 60, pinned_turns: 30, lead_turns: 20 },
-  { step_role: 'docs', known_turns: 0, pinned_turns: 0, lead_turns: 0 },
-];
+const PICKS: ReadonlyMap<string, readonly [number, number, number]> = new Map([
+  ['implementer', [330, 46, 250]],
+  ['scout', [160, 12, 140]],
+  ['reviewer', [120, 34, 70]],
+  ['tester', [90, 6, 80]],
+  ['planner', [60, 30, 20]],
+]);
 
-const GROUP_ROWS = GROUPS.map(([role, provider, model, effort, turns, costUsd, failedTurns]) => ({
-  step_role: role,
-  provider,
-  model,
-  effort,
-  turns,
-  cost_usd: costUsd,
-  failed_turns: failedTurns,
-}));
+const NO_PICKS = [0, 0, 0] as const;
+
+const GROUP_ROWS = GROUPS.map(
+  ([role, provider, model, effort, turns, costUsd, failedTurns], index) => {
+    const isFirstOfRole = GROUPS.findIndex((group) => group[0] === role) === index;
+    const [known, pinned, lead] = isFirstOfRole ? (PICKS.get(role) ?? NO_PICKS) : NO_PICKS;
+    return {
+      step_role: role,
+      provider,
+      model,
+      effort,
+      turns,
+      priced_turns: turns,
+      cost_usd: costUsd,
+      failed_turns: failedTurns,
+      known_turns: known,
+      pinned_turns: pinned,
+      lead_turns: lead,
+    };
+  },
+);
 
 type AnswerParams = {
   readonly command: string;
@@ -61,9 +72,6 @@ const answerOf = ({ command, payload }: AnswerParams): unknown => {
     return null;
   }
   const sql = payloadString({ payload, key: 'sql' }) ?? '';
-  if (sql.includes('WITH turn_picks')) {
-    return PICKS;
-  }
   if (sql.includes('GROUP BY step_role, provider, model, effort')) {
     return GROUP_ROWS;
   }

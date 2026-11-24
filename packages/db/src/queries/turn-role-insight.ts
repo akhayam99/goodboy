@@ -10,7 +10,8 @@ export type TurnRoleModel = Readonly<{
   provider: ProviderName;
   model: string;
   turns: number;
-  costUsd: number;
+  pricedTurns: number;
+  costUsd: number | null;
   failedTurns: number;
   efforts: ReadonlyArray<TurnEffortCount>;
 }>;
@@ -25,8 +26,9 @@ export type TurnRoleEntry = TurnPickCounts &
   Readonly<{
     role: AgentRole;
     turns: number;
-    costUsd: number;
-    costPerTurnUsd: number;
+    pricedTurns: number;
+    costUsd: number | null;
+    costPerTurnUsd: number | null;
     failedTurns: number;
     models: ReadonlyArray<TurnRoleModel>;
     efforts: ReadonlyArray<TurnEffortCount>;
@@ -35,8 +37,9 @@ export type TurnRoleEntry = TurnPickCounts &
 export type TurnRoleInsight = TurnPickCounts &
   Readonly<{
     turns: number;
-    costUsd: number;
-    costPerTurnUsd: number;
+    pricedTurns: number;
+    costUsd: number | null;
+    costPerTurnUsd: number | null;
     roles: ReadonlyArray<TurnRoleEntry>;
     models: ReadonlyArray<TurnRoleModel>;
     efforts: ReadonlyArray<TurnEffortCount>;
@@ -54,12 +57,9 @@ type GroupRow = {
   readonly model: string;
   readonly effort: string | null;
   readonly turns: number;
+  readonly priced_turns: number;
   readonly cost_usd: number;
   readonly failed_turns: number;
-};
-
-type PickRow = {
-  readonly step_role: AgentRole;
   readonly known_turns: number;
   readonly pinned_turns: number;
   readonly lead_turns: number;
@@ -67,50 +67,51 @@ type PickRow = {
 
 const PINNED_SOURCES = "('step_lock', 'run_role_lock', 'role_default')";
 
+const RAN_THE_LOCK = `COALESCE(json_extract(a.routing_lock, '$.pick.provider'), s.provider) = s.provider
+        AND COALESCE(json_extract(a.routing_lock, '$.pick.model'), s.model) = s.model`;
+
+const RAN_THE_DECISION = `COALESCE(json_extract(a.routing_decision, '$.selected.provider'), s.provider) = s.provider
+        AND COALESCE(json_extract(a.routing_decision, '$.selected.model'), s.model) = s.model`;
+
 const PICK_OF_TURN = `CASE
-      WHEN a.routing_lock IS NOT NULL THEN 'pinned'
-      WHEN json_extract(a.routing_decision, '$.source') IN ${PINNED_SOURCES} THEN 'pinned'
+      WHEN a.routing_lock IS NOT NULL AND ${RAN_THE_LOCK} THEN 'pinned'
+      WHEN json_extract(a.routing_decision, '$.source') IN ${PINNED_SOURCES}
+        AND ${RAN_THE_DECISION} THEN 'pinned'
       WHEN d.routing_json IS NOT NULL
         AND COALESCE(json_extract(d.routing_json, '$.proposal'), '') <> 'replaced'
         AND (json_extract(d.routing_json, '$.pick.model') IS NOT NULL
           OR json_extract(d.routing_json, '$.pick.provider') IS NOT NULL
           OR json_extract(d.routing_json, '$.requested.model') IS NOT NULL
           OR json_extract(d.routing_json, '$.requested.provider') IS NOT NULL) THEN 'lead'
-      WHEN d.routing_json IS NOT NULL OR a.routing_decision IS NOT NULL THEN 'picked'
+      WHEN d.routing_json IS NOT NULL OR a.routing_decision IS NOT NULL
+        OR a.routing_lock IS NOT NULL THEN 'picked'
     END`;
 
 const selectGroups = ({ db, workspaceId, sinceMs }: TurnRoleInsightParams) =>
   db.select<GroupRow>(
-    `SELECT step_role, provider, model, effort,
-            COUNT(*) AS turns,
-            COALESCE(SUM(cost_usd), 0) AS cost_usd,
-            SUM(CASE WHEN end_reason = 'failed' THEN 1 ELSE 0 END) AS failed_turns
-       FROM agent_turn_spans
-      WHERE workspace_id = ? AND ended_at >= ?
-      GROUP BY step_role, provider, model, effort`,
-    [workspaceId, sinceMs ?? 0],
-  );
-
-const selectPicks = ({ db, workspaceId, sinceMs }: TurnRoleInsightParams) =>
-  db.select<PickRow>(
     `WITH turn_picks AS (
-       SELECT s.step_role, ${PICK_OF_TURN} AS pick
+       SELECT s.step_role, s.provider, s.model, s.effort, s.cost_usd, s.end_reason,
+              ${PICK_OF_TURN} AS pick
          FROM agent_turn_spans s
          LEFT JOIN agents a ON a.id = s.agent_id
          LEFT JOIN auto_delegations d ON d.rowid = (
            SELECT latest.rowid FROM auto_delegations latest
-            WHERE latest.child_agent_id = s.agent_id
+            WHERE latest.child_agent_id = s.agent_id AND latest.created_at <= s.started_at
             ORDER BY latest.created_at DESC, latest.rowid DESC
             LIMIT 1
          )
         WHERE s.workspace_id = ? AND s.ended_at >= ?
      )
-     SELECT step_role,
+     SELECT step_role, provider, model, effort,
+            COUNT(*) AS turns,
+            COUNT(cost_usd) AS priced_turns,
+            COALESCE(SUM(cost_usd), 0) AS cost_usd,
+            SUM(CASE WHEN end_reason = 'failed' THEN 1 ELSE 0 END) AS failed_turns,
             SUM(CASE WHEN pick IS NOT NULL THEN 1 ELSE 0 END) AS known_turns,
             SUM(CASE WHEN pick = 'pinned' THEN 1 ELSE 0 END) AS pinned_turns,
             SUM(CASE WHEN pick = 'lead' THEN 1 ELSE 0 END) AS lead_turns
        FROM turn_picks
-      GROUP BY step_role`,
+      GROUP BY step_role, provider, model, effort`,
     [workspaceId, sinceMs ?? 0],
   );
 
@@ -128,12 +129,16 @@ const effortsOf = ({ rows }: EffortsParams): ReadonlyArray<TurnEffortCount> => {
     .sort((left, right) => right.turns - left.turns);
 };
 
-type PerTurnParams = {
+type CostParams = {
   readonly costUsd: number;
-  readonly turns: number;
+  readonly pricedTurns: number;
 };
 
-const perTurn = ({ costUsd, turns }: PerTurnParams): number => (turns > 0 ? costUsd / turns : 0);
+const pricedCostOf = ({ costUsd, pricedTurns }: CostParams): number | null =>
+  pricedTurns > 0 ? costUsd : null;
+
+const perTurn = ({ costUsd, pricedTurns }: CostParams): number | null =>
+  pricedTurns > 0 ? costUsd / pricedTurns : null;
 
 type SumParams = {
   readonly values: ReadonlyArray<number>;
@@ -165,14 +170,19 @@ const modelsOf = ({ rows }: EffortsParams): ReadonlyArray<TurnRoleModel> => {
     byModel.set(key, group);
   }
   return [...byModel.values()]
-    .map((group) => ({
-      provider: group.provider,
-      model: group.model,
-      turns: sumOf({ values: group.rows.map((row) => row.turns) }),
-      costUsd: sumOf({ values: group.rows.map((row) => row.cost_usd) }),
-      failedTurns: sumOf({ values: group.rows.map((row) => row.failed_turns) }),
-      efforts: effortsOf({ rows: group.rows }),
-    }))
+    .map((group) => {
+      const pricedTurns = sumOf({ values: group.rows.map((row) => row.priced_turns) });
+      const costUsd = sumOf({ values: group.rows.map((row) => row.cost_usd) });
+      return {
+        provider: group.provider,
+        model: group.model,
+        turns: sumOf({ values: group.rows.map((row) => row.turns) }),
+        pricedTurns,
+        costUsd: pricedCostOf({ costUsd, pricedTurns }),
+        failedTurns: sumOf({ values: group.rows.map((row) => row.failed_turns) }),
+        efforts: effortsOf({ rows: group.rows }),
+      };
+    })
     .sort((left, right) =>
       byTurnsThen({
         left: left.turns,
@@ -182,44 +192,36 @@ const modelsOf = ({ rows }: EffortsParams): ReadonlyArray<TurnRoleModel> => {
     );
 };
 
-const NO_PICKS: TurnPickCounts = { knownTurns: 0, pinnedTurns: 0, leadPickTurns: 0 };
+const picksOf = ({ rows }: EffortsParams): TurnPickCounts => ({
+  knownTurns: sumOf({ values: rows.map((row) => row.known_turns) }),
+  pinnedTurns: sumOf({ values: rows.map((row) => row.pinned_turns) }),
+  leadPickTurns: sumOf({ values: rows.map((row) => row.lead_turns) }),
+});
 
 export const getTurnRoleInsight = async ({
   db,
   workspaceId,
   sinceMs,
 }: TurnRoleInsightParams): Promise<TurnRoleInsight> => {
-  const [groups, picks] = await Promise.all([
-    selectGroups({ db, workspaceId, sinceMs }),
-    selectPicks({ db, workspaceId, sinceMs }),
-  ]);
-  const picksByRole = new Map<AgentRole, TurnPickCounts>(
-    picks.map((row) => [
-      row.step_role,
-      {
-        knownTurns: row.known_turns,
-        pinnedTurns: row.pinned_turns,
-        leadPickTurns: row.lead_turns,
-      },
-    ]),
-  );
+  const groups = await selectGroups({ db, workspaceId, sinceMs });
   const rowsByRole = new Map<AgentRole, Array<GroupRow>>();
   for (const row of groups) {
     rowsByRole.set(row.step_role, [...(rowsByRole.get(row.step_role) ?? []), row]);
   }
   const roles = [...rowsByRole.entries()]
     .map(([role, rows]): TurnRoleEntry => {
-      const turns = sumOf({ values: rows.map((row) => row.turns) });
+      const pricedTurns = sumOf({ values: rows.map((row) => row.priced_turns) });
       const costUsd = sumOf({ values: rows.map((row) => row.cost_usd) });
       return {
         role,
-        turns,
-        costUsd,
-        costPerTurnUsd: perTurn({ costUsd, turns }),
+        turns: sumOf({ values: rows.map((row) => row.turns) }),
+        pricedTurns,
+        costUsd: pricedCostOf({ costUsd, pricedTurns }),
+        costPerTurnUsd: perTurn({ costUsd, pricedTurns }),
         failedTurns: sumOf({ values: rows.map((row) => row.failed_turns) }),
         models: modelsOf({ rows }),
         efforts: effortsOf({ rows }),
-        ...(picksByRole.get(role) ?? NO_PICKS),
+        ...picksOf({ rows }),
       };
     })
     .sort((left, right) =>
@@ -229,15 +231,14 @@ export const getTurnRoleInsight = async ({
         tie: left.role.localeCompare(right.role),
       }),
     );
-  const turns = sumOf({ values: roles.map((role) => role.turns) });
-  const costUsd = sumOf({ values: roles.map((role) => role.costUsd) });
+  const pricedTurns = sumOf({ values: groups.map((row) => row.priced_turns) });
+  const costUsd = sumOf({ values: groups.map((row) => row.cost_usd) });
   return {
-    turns,
-    costUsd,
-    costPerTurnUsd: perTurn({ costUsd, turns }),
-    knownTurns: sumOf({ values: roles.map((role) => role.knownTurns) }),
-    pinnedTurns: sumOf({ values: roles.map((role) => role.pinnedTurns) }),
-    leadPickTurns: sumOf({ values: roles.map((role) => role.leadPickTurns) }),
+    turns: sumOf({ values: groups.map((row) => row.turns) }),
+    pricedTurns,
+    costUsd: pricedCostOf({ costUsd, pricedTurns }),
+    costPerTurnUsd: perTurn({ costUsd, pricedTurns }),
+    ...picksOf({ rows: groups }),
     roles,
     models: modelsOf({ rows: groups }),
     efforts: effortsOf({ rows: groups }),

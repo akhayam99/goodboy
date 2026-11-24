@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
-import { settingsOverlayFromEvent } from './eventDetail';
+import { IMPACT_STUDIO_EVENT, openImpactStudio } from '../../../features/impact/openImpactStudio';
+import { impactOverlayFromEvent, settingsOverlayFromEvent } from './eventDetail';
 
 type EventParams = {
   readonly detail: unknown;
@@ -25,5 +26,19 @@ describe('settingsOverlayFromEvent', () => {
     const studio = settingsOverlayFromEvent(settingsEvent({ detail: { scope: 'workspace' } }));
 
     expect(studio.kind === 'settings' && 'row' in studio.focus).toBe(false);
+  });
+});
+
+describe('impactOverlayFromEvent', () => {
+  it('opens the agents tab the public helper asks for', () => {
+    const seen: Array<Event> = [];
+    const listen = (event: Event) => seen.push(event);
+    window.addEventListener(IMPACT_STUDIO_EVENT, listen);
+    openImpactStudio({ scope: { kind: 'agents' } });
+    window.removeEventListener(IMPACT_STUDIO_EVENT, listen);
+
+    expect(seen.map((event) => impactOverlayFromEvent(event))).toEqual([
+      { kind: 'impact', scope: { kind: 'agents' } },
+    ]);
   });
 });

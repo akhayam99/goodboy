@@ -55,7 +55,13 @@ const readImpactScope = (value: unknown): ImpactScope | null => {
     return null;
   }
   const kind: unknown = Reflect.get(value, 'kind');
-  if (kind === 'overview' || kind === 'shipped' || kind === 'flow' || kind === 'spend') {
+  if (
+    kind === 'overview' ||
+    kind === 'shipped' ||
+    kind === 'flow' ||
+    kind === 'spend' ||
+    kind === 'agents'
+  ) {
     return { kind };
   }
   if (kind === 'efficiency') {

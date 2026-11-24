@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { TurnRoleInsight } from '@goodboy/db';
 import {
   EmptyState,
   ErrorStrip,
@@ -12,8 +13,22 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import type { PaneFrame } from '../../../../shared/types/paneFrame';
 import { NOT_LOADED_HINT, UNKNOWN_VALUE } from '../../../../shared/utils/unknownValue';
 import type { ImpactRouting } from '../../hooks/useImpactRouting';
-import { pinnedShareOf } from '../../lib';
+import { turnShareOf } from '../../lib';
 import { AgentRoleRow } from './AgentRoleRow';
+
+type CostHintParams = {
+  readonly insight: TurnRoleInsight;
+};
+
+const costHintOf = ({ insight }: CostHintParams): string => {
+  if (insight.costPerTurnUsd === null) {
+    return 'No cost recorded';
+  }
+  const perTurn = `${formatUsd(insight.costPerTurnUsd)} per turn`;
+  return insight.pricedTurns < insight.turns
+    ? `${perTurn}, known for ${insight.pricedTurns} of ${insight.turns} turns`
+    : perTurn;
+};
 
 const AGENT_TILE_LABELS = [
   'Agent turns',
@@ -54,17 +69,15 @@ export const AgentsPanel = ({ frame, routing }: Props) => {
             <StatCard
               label="Pinned by you"
               value={
-                pinnedShareOf({
-                  knownTurns: insight.knownTurns,
-                  pinnedTurns: insight.pinnedTurns,
-                }) ?? UNKNOWN_VALUE
+                turnShareOf({ part: insight.pinnedTurns, whole: insight.knownTurns }) ??
+                UNKNOWN_VALUE
               }
-              hint={`known for ${insight.knownTurns} of ${insight.turns} turns`}
+              hint={`Known for ${insight.knownTurns} of ${insight.turns} turns`}
             />
             <StatCard
               label="Cost on agent turns"
-              value={formatUsd(insight.costUsd)}
-              hint={`${formatUsd(insight.costPerTurnUsd)} per turn`}
+              value={insight.costUsd === null ? UNKNOWN_VALUE : formatUsd(insight.costUsd)}
+              hint={costHintOf({ insight })}
             />
           </>
         )}
