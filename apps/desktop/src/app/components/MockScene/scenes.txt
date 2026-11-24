@@ -966,6 +966,7 @@ terminal-studio-empty
 terminal-studio-newmenu
 terminal-studio-restored
 timeline-cards
+timeline-cards-light
 toast-over-drawer
 toast-over-drawer-overlay
 toasts
@@ -1479,6 +1480,8 @@ u50-fleet-rows-dark
 u50-fleet-rows-light
 u50-logo-foot-dark
 u50-logo-foot-light
+u50-logo-foot-unread-dark
+u50-logo-foot-unread-light
 u50-logo-foot-update-dark
 u50-logo-foot-update-light
 u50-merge-train-ready-dark
