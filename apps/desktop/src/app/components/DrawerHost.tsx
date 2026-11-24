@@ -5,7 +5,7 @@ import { selectSlotDrawer, type DrawerSlot } from '../../store/slices/drawer/sel
 import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 import { selectGridTool } from '../../store/slices/drawer/selectGridTool';
 import { useSlotBackChip } from '../hooks/useSlotBackChip';
-import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
+import { LazyExploreFileDrawer } from '../../features/explore/components/LazyExploreFileDrawer';
 import { LazyArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer/LazyArtifactDocumentDrawer';
 import { LazyScriptRunDrawer } from '../../features/scripts/components/LazyScriptRunDrawer';
 import { QuestionDrawer } from '../../features/session/components/QuestionDrawer';
@@ -52,7 +52,7 @@ const renderDrawer = ({
   switch (drawer.kind) {
     case 'explore-file':
       return (
-        <ExploreFileDrawer
+        <LazyExploreFileDrawer
           key={`${drawer.sessionId}:${drawer.payload.entry.relPath}`}
           sessionId={drawer.sessionId}
           sessionDir={drawer.payload.sessionDir}

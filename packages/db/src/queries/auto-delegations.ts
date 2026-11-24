@@ -179,6 +179,22 @@ export type NewAutoDelegation = Readonly<{
   nowMs: number;
 }>;
 
+type PatchRoutingStatementParams = {
+  readonly delegationId: AutoDelegationId;
+  readonly generation: number;
+  readonly routing: AutoJsonObject;
+};
+
+export const patchQueuedAutoDelegationRoutingStatement = ({
+  delegationId,
+  generation,
+  routing,
+}: PatchRoutingStatementParams): PlainStatement => ({
+  sql: `UPDATE auto_delegations SET routing_json = ?
+    WHERE id = ? AND generation = ? AND state = 'accepted'`,
+  params: [JSON.stringify(routing), delegationId, generation],
+});
+
 type InsertDelegationStatementParams = {
   readonly delegation: NewAutoDelegation;
 };

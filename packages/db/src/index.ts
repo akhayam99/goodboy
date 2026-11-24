@@ -218,14 +218,7 @@ export {
   type ProviderTelemetrySummary,
 } from './queries/telemetry';
 export { listDormantSessionTelemetry, type DormantTelemetry } from './queries/dormant-telemetry';
-export {
-  hasOtherSessionTurnSince,
-  insertAgentTurnSpan,
-  listAgentTurnSpanRoutes,
-  listSessionTurnSpans,
-  listTurnSpans,
-  listWorkspaceTurnSpans,
-} from './queries/agent-turn-span';
+export * from './queries/agent-turn-span';
 export { listProviderLimits, upsertProviderLimits } from './queries/provider-limits';
 export { getAgentHandoff, insertAgentHandoff } from './queries/agent-handoff';
 export {
@@ -719,6 +712,7 @@ export {
   listOpenAutoDelegations,
   patchAutoDelegationChecksStatement,
   patchAutoDelegationPublishStatement,
+  patchQueuedAutoDelegationRoutingStatement,
   settleAutoDelegationStatement,
   type AutoDelegation,
   type AutoDelegationState,

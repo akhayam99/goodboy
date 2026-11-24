@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import type { ReactNode } from 'react';
+import { SkeletonRows } from '@goodboy/ui';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
 import { lazyNamed } from '../../shared/lib/lazyNamed';
 import { askDrawerRegistration } from '../../features/session/ask/askDrawerRegistration';
@@ -7,7 +8,6 @@ import { browserDrawerRegistration } from '../../features/browser/browserDrawerR
 import { checkAnalysisDrawerRegistration } from '../../features/branch/checkAnalysisDrawerRegistration';
 import { fileDiffDrawerRegistration } from '../../features/diff/fileDiffDrawerRegistration';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
-import { IdentifierPeekSource } from './IdentifierPeekSource';
 import { historyVersionsDrawerRegistration } from '../../features/history/historyVersionsDrawerRegistration';
 import { leadDetailsDrawerRegistration } from '../../features/auto/permissions/leadDetailsDrawerRegistration';
 import { monitoringDrawerRegistration } from '../../features/monitoring/monitoringDrawerRegistration';
@@ -16,6 +16,11 @@ import { terminalDrawerRegistration } from '../../features/terminal/terminalDraw
 import { scriptsDrawerRegistration } from '../../features/scripts/scriptsDrawerRegistration';
 import { DeskPr } from '../../features/branch/components/DeskPr';
 import { renderPrChecks } from './renderPrChecks';
+
+const IdentifierPeekSource = lazyNamed({
+  load: () => import('./IdentifierPeekSource'),
+  pick: ({ IdentifierPeekSource }) => IdentifierPeekSource,
+});
 
 const IdentifierPeekDrawer = lazyNamed({
   load: () => import('../../features/diff/components/IdentifierPeekDrawer'),
@@ -79,7 +84,9 @@ export const renderRegisteredDrawer = ({
             word={drawer.payload.word}
             selected={drawer.payload.selected}
             renderSource={({ worktreePath, path, line }) => (
-              <IdentifierPeekSource worktreePath={worktreePath} path={path} line={line} />
+              <Suspense fallback={<SkeletonRows label="Opening the file" />}>
+                <IdentifierPeekSource worktreePath={worktreePath} path={path} line={line} />
+              </Suspense>
             )}
             onClose={closeDrawer}
           />

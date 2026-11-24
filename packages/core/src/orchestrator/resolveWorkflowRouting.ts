@@ -40,6 +40,7 @@ type Params = {
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
   readonly contextEstimate: number | null;
   readonly missingProposal: WorkflowMissingProposalPolicy;
+  readonly lockKind?: WorkflowLockKind;
 };
 
 type PickParams = {
@@ -149,28 +150,51 @@ const readyDecision = ({
   },
 });
 
+export type WorkflowLockKind = 'agent' | 'node';
+
+type LockCopy = Readonly<{
+  label: string;
+  holds: string;
+  ready: string;
+  advice: string;
+}>;
+
+const LOCK_COPY: Readonly<Record<WorkflowLockKind, LockCopy>> = {
+  agent: {
+    label: 'This agent',
+    holds: 'runs on',
+    ready: 'keeps',
+    advice: 'It keeps its model, so send it again once that provider is back.',
+  },
+  node: {
+    label: 'This node lock',
+    holds: 'holds',
+    ready: 'selected',
+    advice: 'Reset the lock or pick another model.',
+  },
+};
+
 type LockParams = {
   readonly pick: WorkflowModelPick;
-  readonly source: 'step_lock';
-  readonly label: string;
+  readonly kind: WorkflowLockKind;
   readonly proposal: WorkflowRoutingProposal | null;
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
 };
 
 const resolveLock = ({
   pick,
-  source,
-  label,
+  kind,
   proposal,
   availability,
 }: LockParams): WorkflowRoutingResolution => {
+  const { label, holds, ready, advice } = LOCK_COPY[kind];
   const status = workflowRoutingAvailability({ pick, snapshot: availability, isExplicit: true });
   if (status.kind === 'unavailable') {
     return {
       kind: 'blocked',
       cause: 'unavailable_lock',
       reason: cappedRoutingReason(
-        `${label} holds ${pick.provider}/${pick.model}, which is unavailable (${status.cause}). Reset the lock or pick another model.`,
+        `${label} ${holds} ${pick.provider}/${pick.model}, which is unavailable (${status.cause}). ${advice}`,
       ),
     };
   }
@@ -186,8 +210,8 @@ const resolveLock = ({
   }
   return readyDecision({
     pick: { ...pick, effort },
-    source,
-    reason: `${label} selected ${pick.provider}/${pick.model}.`,
+    source: 'step_lock',
+    reason: `${label} ${ready} ${pick.provider}/${pick.model}.`,
     proposal,
     adjustment: 'none',
   });
@@ -404,18 +428,13 @@ export const resolveWorkflowRouting = ({
   availability,
   contextEstimate,
   missingProposal,
+  lockKind = 'node',
 }: Params): WorkflowRoutingResolution => {
   const emitted = proposal.kind === 'valid' ? proposal.proposal : null;
   const profile = proposal.kind === 'valid' ? proposal.proposal.profile : proposal.profile;
   const lock = agentLock ?? stepLock;
   if (lock !== null) {
-    return resolveLock({
-      pick: lock.pick,
-      source: 'step_lock',
-      label: 'This node lock',
-      proposal: emitted,
-      availability,
-    });
+    return resolveLock({ pick: lock.pick, kind: lockKind, proposal: emitted, availability });
   }
   if (proposal.kind === 'valid') {
     const pick = proposal.proposal.pick;

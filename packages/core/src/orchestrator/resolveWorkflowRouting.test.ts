@@ -176,6 +176,30 @@ describe('resolveWorkflowRouting locks and availability', () => {
     expect(result.reason).toContain('anthropic/opus-5');
   });
 
+  it('keeps an agent on its model when its provider cools down, and says to send it again', () => {
+    const result = blocked(
+      resolve({
+        agentLock: lock(pick('codex', 'gpt-5.6-sol')),
+        proposal: emitted(pick('anthropic', 'opus-5')),
+        availability: snapshot({ coolingDownProviders: ['codex'] }),
+        lockKind: 'agent',
+      }),
+    );
+
+    expect(result.cause).toBe('unavailable_lock');
+    expect(result.reason).toBe(
+      'This agent runs on codex/gpt-5.6-sol, which is unavailable (cooldown). It keeps its model, so send it again once that provider is back.',
+    );
+  });
+
+  it('says an agent keeps its model when it goes on', () => {
+    const decision = ready(
+      resolve({ agentLock: lock(pick('codex', 'gpt-5.6-sol')), lockKind: 'agent' }),
+    );
+
+    expect(decision.reason).toBe('This agent keeps codex/gpt-5.6-sol.');
+  });
+
   it('blocks a lock naming a model this build does not know', () => {
     const result = blocked(resolve({ agentLock: lock(pick('anthropic', 'not-a-model')) }));
 

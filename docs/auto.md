@@ -2186,17 +2186,41 @@ same read-only confinement (Cursor `--mode plan` included). A writing child runs
 Codex (`AUTO_WRITER_CHILD_PROVIDERS`): a Cursor writer turn passes `--force` and has no flag that
 denies `git push` or `--no-verify`, and the launch guard runs only on Claude and Codex.
 `autoChildProviders` gives the list per role; `routeTurn` refuses a child turn whose final provider
-is outside it, and `turn_spawn` refuses it again (`ensure_auto_child`). Routing resolves the role
-default only over the providers of that list that are connected, not cooling down and not over
-budget, so a Claude usage limit moves a reading child to Cursor instead of blocking it. When nothing
-is left, `childRoutingRefusal` names each connected provider with its reason (usage limit until a
+is outside it, and `turn_spawn` refuses it again (`ensure_auto_child`).
+
+The Lead picks each helper's provider and model. Every Lead turn ends its message with the models
+list (`leadCandidatesBlock`, appended in the auto branch of `buildTurnSpawn`, so the first turn and
+every turn after a user message carry it too, never the system prompt): one line per provider in
+your order with its room, its load and the models for each rung, the Provider priority rule (By
+order or By load, read from `spreadByHeadroom`), the writer, reviewer family and pin lines. Its
+inputs come from one selector, `selectCandidateInputs` (the turns of the last 5 hours read once by
+`readProviderAgentTurns`). With fewer than two providers left the list is left out. The Lead copies
+`provider`, `model` and `effort` from a row and says why in `modelReason`.
+`resolveChildRouting` builds the candidates for the child's role and difficulty
+(`buildCandidates`, scope `helper`) and checks the pick (`checkPick`): a pick that passes runs as
+sent and keeps the Lead's line; a pick a guard removes (Off, not connected, out of room, cooling
+down, a writer on Cursor, the writer's family for a review, off a role pin) moves to the best
+candidate by the rule and the reason says so, for example "The Lead asked for Cursor Sonnet 5.5:
+agents that write code do not run here yet. Claude: first in your order." A child with no pick
+takes the best by the rule ("Claude: first in your order", "Codex: most room left", "Haiku 5.5:
+lighter, fits the step"). A role pin always wins; a preset step lock (`stepLock`) wins over all.
+The session composer's model steers the Lead only, never a helper. The outcome carries `source`
+(lead, pin, rule, fallback, lock), the cause and the candidates it weighed. When no candidate
+passes, `childRoutingRefusal` names each connected provider with its reason (usage limit until a
 time, budget reached, no visible model, reading roles only) and points to Settings › Models.
-With **Skip a provider near its limit** on for the workspace (`spreadByHeadroom` in the
-workspace `workflowRules`, on by default), `resolveChildRouting` reads the headroom
-(`readHeadroom`) and passes it to the availability and the role pick, the same reading the
-workflow paths use: a Claude past 80% of a limit goes behind Codex, so a writing helper starts on
-Codex, and a session model on that Claude is skipped. Only Claude and Codex report limits. The
-pool of a tree is the run
+
+A child queued behind running ones is checked again when its slot frees (`recheckQueuedRouting`
+in `launchChildren`): when its provider went Off, out of room, into cooldown or over budget in the
+meantime, it starts on the best candidate instead and its stored routing and reason say so. The
+recheck sizes the step from the task type and difficulty the delegation request keeps. It
+never ran, so this is not a swap. A continue (a retry with a task, or a message from the person)
+keeps the agent's provider and model: `resolveDelegateChild` hands the stored pick as `agentLock`,
+and a provider that cools down refuses the continue with "Codex is cooling down until 16:10. This
+agent keeps its model, so send it again then." (`agentLockWait`). A plain retry with no task picks
+again: the stored pick is offered as the Lead's pick and moves only when a guard removes it. With
+**Skip a provider near its limit** on (`spreadByHeadroom`), `resolveChildRouting` also passes the
+headroom (`readHeadroom`) to the availability, so a Claude past 80% of a limit goes behind Codex
+and a writing helper starts on Codex. Only Claude and Codex report limits. The pool of a tree is the run
 pool when there is one, else the workspace pool (the providers the workspace
 policy on the Models page does not turn off), else every allowed provider
 (`autoChildPool`, `runProviderPool`).
