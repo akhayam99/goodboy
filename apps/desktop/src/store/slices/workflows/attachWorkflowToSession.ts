@@ -28,8 +28,7 @@ import { generateWorkflowRunTitle } from './generateWorkflowRunTitle';
 import { sessionPlace } from '../navigation/place';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
-import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
-import { withHeadroom } from './withHeadroom';
+import { stepCandidateInputs } from '../workflowRouting/stepCandidateInputs';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { workspaceRulesFor } from './runLimit/workspaceRulesFor';
 import { rulesWithLimit, runLimitOf, type WorkflowLimitSource } from './runLimit/runLimitOf';
@@ -112,10 +111,15 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     const sessionDefaultProvider = (session.providerOverride ??
       session.providerPreference.defaultProvider) as ProviderId;
     const roleModels = selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null;
-    const headroom =
+    const candidates =
       executionMode === 'dynamic'
         ? null
-        : await resolveWorkflowHeadroom({ get, sessionId, rules: rulesSnapshot });
+        : await stepCandidateInputs({
+            get,
+            sessionId,
+            runProviders: providerPool,
+            rules: rulesSnapshot,
+          });
     const spawned = await (
       executionMode === 'dynamic'
         ? Promise.resolve({
@@ -127,10 +131,8 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
             blocked: [],
           })
         : preSpawnWorkflowAgents({
-            scope: withHeadroom({
-              scope: selectRoutingScope({ state: get(), sessionId }),
-              headroom,
-            }),
+            scope: selectRoutingScope({ state: get(), sessionId }),
+            candidates,
             sessionId,
             workflowRunId,
             mountId: null,
@@ -149,7 +151,6 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
               isRunBudgetBlocked: false,
               nowMs: Date.now(),
               ...workspacePolicyAvailability({ state: get(), sessionId }),
-              headroom,
             }),
           })
     ).catch(async (error: unknown) => {

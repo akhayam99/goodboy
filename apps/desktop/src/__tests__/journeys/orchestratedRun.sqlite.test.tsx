@@ -268,7 +268,7 @@ describe('journey: an orchestrated run to completion', () => {
       const routing = await import('../../features/providers/routing');
       vi.mocked(routing.resolveProviderForTurn).mockResolvedValue({
         selectedProvider: 'copilot',
-        selectedModel: 'gpt-6.1-sol',
+        selectedModel: 'gpt-5.3-codex',
         reason: 'preferred',
         fallbackUsed: false,
       });
@@ -289,8 +289,9 @@ describe('journey: an orchestrated run to completion', () => {
           role: 'implementer',
           promptPrefix: 'Implement the approved settlement plan in ledger-core.',
           provider: 'copilot',
-          model: 'gpt-6.1-sol',
+          model: 'gpt-5.3-codex',
           effort: 'high',
+          difficulty: 'heavy',
           modelReason: 'Use the connected model for the implementation.',
         },
       });
@@ -330,7 +331,7 @@ describe('journey: an orchestrated run to completion', () => {
         status: 'running',
         providerOverride: 'copilot',
         routingDecision: {
-          selected: { provider: 'copilot', model: 'gpt-6.1-sol', effort: 'high' },
+          selected: { provider: 'copilot', model: 'gpt-5.3-codex', effort: 'high' },
           source: 'agent',
         },
       });

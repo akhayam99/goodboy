@@ -1,7 +1,6 @@
 import {
   hintedRoutingOutcome,
   parseWorkflowRoutingProposal,
-  recommendWorkflowRoutingDecision,
   resolveWorkflowRouting,
   type WorkflowRoutingAvailabilitySnapshot,
   type WorkflowRoutingWireFields,
@@ -49,44 +48,29 @@ export const resolveGeneratedStepRouting = ({
     outcome: parseWorkflowRoutingProposal({ fields: routing ?? {}, emittingProvider }),
     promptText: promptPrefix,
   });
-  const profile = outcome.kind === 'valid' ? outcome.proposal.profile : outcome.profile;
-  if (outcome.kind !== 'missing') {
-    const resolution = resolveWorkflowRouting({
-      agentLock: null,
-      stepLock: null,
-      proposal: outcome,
-      roleDefault: null,
-      sessionDefault: null,
-      kindDefault: null,
-      availability,
-      contextEstimate: null,
-      missingProposal: 'deterministic_pick',
-    });
-    if (resolution.kind === 'ready') {
-      return {
-        providerOverride: resolution.decision.selected.provider,
-        modelOverride: resolution.decision.selected.model,
-        effort: resolution.decision.selected.effort,
-        routingDecision: resolution.decision,
-        taskProfile: storedProfile({ profile }),
-      };
-    }
+  if (outcome.kind === 'missing') {
     return null;
   }
-  const decision = recommendWorkflowRoutingDecision({
+  const profile = outcome.kind === 'valid' ? outcome.proposal.profile : outcome.profile;
+  const resolution = resolveWorkflowRouting({
+    agentLock: null,
+    stepLock: null,
+    proposal: outcome,
+    roleDefault: null,
+    sessionDefault: null,
+    kindDefault: null,
     availability,
-    profile,
-    proposal: null,
     contextEstimate: null,
+    missingProposal: 'deterministic_pick',
   });
-  if (decision === null) {
+  if (resolution.kind !== 'ready') {
     return null;
   }
   return {
-    providerOverride: decision.selected.provider,
-    modelOverride: decision.selected.model,
-    effort: decision.selected.effort,
-    routingDecision: decision,
+    providerOverride: resolution.decision.selected.provider,
+    modelOverride: resolution.decision.selected.model,
+    effort: resolution.decision.selected.effort,
+    routingDecision: resolution.decision,
     taskProfile: storedProfile({ profile }),
   };
 };

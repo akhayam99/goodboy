@@ -1305,8 +1305,9 @@ When a provider ships or retires a model, update these together:
   workspace too. `one-routing-calculation.test.ts` fails on a bare `kindRouting(`
   anywhere else, with no exception. Step routing (`resolveStepRouting`) takes the
   same scope from `selectRoutingScope`, or `useRoutingScope` in a component: the
-  next step button, agent rows, the reference a turn starts from, pre-spawned step
-  agents, the step estimate and the run time left. A provider set to Off is never
+  next step button, agent rows, the reference a turn starts from, the step
+  estimate and the run time left. Pre-spawned step agents take the candidates
+  instead ([workflows.md](./workflows.md#provider-priority-for-steps)). A provider set to Off is never
   offered or estimated there, even when it is the session default; the test also
   fails on a step routing call without its scope. Resolve, its next-step card,
   and Start work from chat now follow the workspace default provider

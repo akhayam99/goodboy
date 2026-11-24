@@ -44,7 +44,6 @@ import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { uniqueNameOf } from '../../../features/workflows/uniqueNameOf';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { roleDefaultsFor } from './roleDefaultsFor';
-import { resolveProposedRouting } from './resolveProposedRouting';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { spentUsdForRun } from './budgetBlock';
@@ -74,7 +73,8 @@ import type { GetFn, SetFn } from './types';
 import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { sessionById } from '../sessions/sessionIndex';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
-import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
+import { orchestratedStepRouting } from '../workflowRouting/orchestratedStepRouting';
+import { orchestratorCandidatesBlock } from '../workflowRouting/orchestratorCandidatesBlock';
 import { orchestratorProcessText } from './standingGuidance';
 import { pinnedStepOf } from './pinnedStepOf';
 import { planChangeVerdictOf } from './planChangeVerdictOf';
@@ -536,7 +536,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         workspaceId: session.workspaceId,
         hints: readHints,
       });
-      const headroom = await resolveWorkflowHeadroom({ get, sessionId, rules: run.rulesSnapshot });
       const availability = workflowAvailabilitySnapshot({
         providers: get().providers ?? [],
         cooldowns: get().providerCooldowns ?? {},
@@ -547,7 +546,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         nowMs: Date.now(),
         ...workspacePolicyAvailability({ state: get(), sessionId }),
         providerPool: run.providerPool ?? null,
-        headroom,
       });
       const modelMenu = orchestratorModelPool({
         availability,
@@ -570,6 +568,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         providerId: defaultProvider,
         modelMenu,
         roleDefaults,
+        candidatesBlock: await orchestratorCandidatesBlock({ get, sessionId, run }),
         stepsUsed: workflow.steps.length,
         isModelMetadataEnabled: true,
         isModelPickEnabled: run.rulesSnapshot?.canOrchestratorPickModel === true,
@@ -745,20 +744,19 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       if (decision.action === 'next') {
         const pinned = pinnedStepOf({ step: decision.step, preset: run.rulesSnapshot?.preset });
         const proposed = pinned.step;
-        const { routingProposal, resolution } = resolveProposedRouting({
+        const { routingProposal, resolution } = await orchestratedStepRouting({
+          get,
+          run,
           stepLock: pinned.routingLock,
-          state: get(),
           sessionId,
           session,
           role: proposed.role,
           fields: proposed,
-          isModelPickEnabled: run.rulesSnapshot?.canOrchestratorPickModel === true,
           promptText: proposed.promptPrefix,
           emittingProvider: routing.providerId,
           defaultProvider,
           modelMenu,
           roleModels: workspaceRoleModels,
-          providerPool: run.providerPool ?? null,
           availability,
         });
         if (resolution.kind === 'blocked') {

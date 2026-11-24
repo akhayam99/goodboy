@@ -21,7 +21,10 @@ const { attachInDbSpy, invokeAgentInsertSpy, persistStopSpy } = vi.hoisted(() =>
 }));
 
 vi.mock('@goodboy/db', async () =>
-  (await import('../../../test/dbMock')).createDbMock({ attachWorkflowToSession: attachInDbSpy }),
+  (await import('../../../test/dbMock')).createDbMock({
+    attachWorkflowToSession: attachInDbSpy,
+    listProviderAgentTurns: vi.fn(async () => []),
+  }),
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workflows/workflows', () => ({

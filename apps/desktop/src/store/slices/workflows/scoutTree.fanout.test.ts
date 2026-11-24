@@ -867,8 +867,9 @@ describe('scout child routing lifecycle', () => {
     expect(hoisted.insertArgs).toHaveLength(2);
     for (const args of hoisted.insertArgs) {
       const decision = args.routingDecision as WorkflowRoutingDecision;
-      expect(decision.source).toBe('heuristic');
+      expect(decision.source).toBe('kind_default');
       expect(decision.adjustment).toBe('cooldown');
+      expect(decision.reason).toContain('cooling down after a limit.');
       expect(args.providerOverride).toBe('codex');
     }
     expect(executions).toHaveLength(2);

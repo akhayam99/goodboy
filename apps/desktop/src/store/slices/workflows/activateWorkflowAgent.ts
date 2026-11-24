@@ -32,6 +32,7 @@ import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { admitWorkflowRun, heldAdmissionBlock } from './workflowPlanApproval';
 import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
+import { recheckPendingStepRouting } from '../workflowRouting/recheckPendingStepRouting';
 
 export type ActivateWorkflowAgentParams = {
   readonly sessionId: SessionId;
@@ -115,6 +116,8 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     const step = template?.steps.find((s) => s.id === agent.stepId);
     const promptPrefix = step?.promptPrefix ?? '';
     const goalSection = buildGoalKickoffSection(run?.goal ?? template?.goal);
+    await recheckPendingStepRouting({ set, get, sessionId, agent, step: step ?? null });
+    throwWhenPaused({ get, sessionId, agent });
 
     set((s) => ({
       agentTurnState: {

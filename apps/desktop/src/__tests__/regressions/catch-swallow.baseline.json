@@ -185,7 +185,6 @@
   "apps/desktop/src/store/slices/workflows/detachWorkflowFromSession.ts": 2,
   "apps/desktop/src/store/slices/workflows/discardWorkflow.ts": 2,
   "apps/desktop/src/store/slices/workflows/holdForUserQuestion.ts": 1,
-  "apps/desktop/src/store/slices/workflows/resolveWorkflowHeadroom.ts": 1,
   "apps/desktop/src/store/slices/workflows/scoutTree.ts": 1,
   "apps/desktop/src/store/slices/workflows/summarizeAgentOutput.ts": 1,
   "apps/desktop/src/store/slices/workspaces/addWorkspace.ts": 2,

@@ -42,17 +42,15 @@ describe('resolveGeneratedStepRouting', () => {
     });
   });
 
-  it('recommends a model for a step that emitted no pick at all', () => {
+  it('leaves a step that emitted no pick to the candidates at run start', () => {
     const routing = resolveGeneratedStepRouting({
       routing: undefined,
       promptPrefix: 'Review it.',
       emittingProvider: 'anthropic',
-      availability: snapshot(),
+      availability: snapshot({ connectedProviders: ['anthropic', 'codex'] }),
     });
 
-    expect(routing).not.toBeNull();
-    expect(routing?.routingDecision.source).toBe('heuristic');
-    expect(routing?.providerOverride).toBe('anthropic');
+    expect(routing).toBeNull();
   });
 
   it('recovers from a pick no catalog can serve instead of dropping routing', () => {
@@ -79,14 +77,15 @@ describe('resolveGeneratedStepRouting', () => {
     ).toBeNull();
   });
 
-  it('stores no profile when neither the agent nor the text says anything', () => {
+  it('stores no profile when the agent states none and the text says nothing', () => {
     const routing = resolveGeneratedStepRouting({
-      routing: undefined,
+      routing: { provider: 'anthropic', model: 'opus-5' },
       promptPrefix: '',
       emittingProvider: 'anthropic',
       availability: snapshot(),
     });
 
+    expect(routing?.modelOverride).toBe('opus-5');
     expect(routing?.taskProfile).toBeNull();
   });
 });
