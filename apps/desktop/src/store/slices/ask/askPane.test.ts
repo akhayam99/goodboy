@@ -5,12 +5,15 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
-const { gates } = vi.hoisted(() => ({
-  gates: {
-    beforeThread: null as null | (() => Promise<void>),
-    listMessages: null as null | ((threadId: string) => Promise<void>),
-  },
-}));
+type Gates = {
+  beforeThread: (() => Promise<void>) | null;
+  listMessages: ((threadId: string) => Promise<void>) | null;
+};
+
+const { gates } = vi.hoisted(() => {
+  const open: Gates = { beforeThread: null, listMessages: null };
+  return { gates: open };
+});
 
 vi.mock('../../../features/session/ask/activeAskBackend', async () => {
   const { createMemoryAskBackend } = await import('../../../test/createMemoryAskBackend');
@@ -36,7 +39,13 @@ vi.mock('../../../features/session/ask/activeAskBackend', async () => {
 });
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AskThread, ChatId, IsoDateTime, SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type AskThread,
+  type ChatId,
+  type IsoDateTime,
+  type SessionId,
+} from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -47,11 +56,11 @@ import {
 import { askInitialState } from './state';
 import { selectIsAskOpen } from './selectIsAskOpen';
 
-const SESSION = 'session-harborline-credit' as SessionId;
-const OTHER = 'session-northwind-relay' as SessionId;
-const EARLIER = 'thread-earlier-credit' as ChatId;
-const OLDER = 'thread-older-relay' as ChatId;
-const AT = '2026-11-23T09:00:00.000Z' as IsoDateTime;
+const SESSION = brandId<SessionId>({ value: 'session-harborline-credit' });
+const OTHER = brandId<SessionId>({ value: 'session-northwind-relay' });
+const EARLIER = brandId<ChatId>({ value: 'thread-earlier-credit' });
+const OLDER = brandId<ChatId>({ value: 'thread-older-relay' });
+const AT = brandId<IsoDateTime>({ value: '2026-11-23T09:00:00.000Z' });
 
 type ThreadParams = {
   readonly id: ChatId;

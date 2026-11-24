@@ -17,12 +17,13 @@ vi.mock('../../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type {
-  ChatId,
-  ChatMessage,
-  ChatMessageId,
-  IsoDateTime,
-  ProviderRunId,
+import {
+  brandId,
+  type ChatId,
+  type ChatMessage,
+  type ChatMessageId,
+  type IsoDateTime,
+  type ProviderRunId,
 } from '@goodboy/types';
 import type { LensKind } from '../../../../../store';
 import { ToastProvider } from '../../../../../shared/components/Toast';
@@ -49,7 +50,9 @@ import { SessionHeadContext } from '../../../sessionHeadContext';
 
 const NARROW_QUERY = /max-width: 1099/;
 
-const THREAD_ID = 'thread-pane-credit' as ChatId;
+const THREAD_ID = brandId<ChatId>({ value: 'thread-pane-credit' });
+
+const ANSWER_ID = brandId<ChatMessageId>({ value: 'pane-a1' });
 
 let useAppStore: StoryStore;
 
@@ -136,7 +139,7 @@ type MessageParams = {
 };
 
 const messageOf = ({ id, role, content, status }: MessageParams): ChatMessage => ({
-  id: id as ChatMessageId,
+  id: brandId<ChatMessageId>({ value: id }),
   chatId: THREAD_ID,
   role,
   content,
@@ -147,8 +150,8 @@ const messageOf = ({ id, role, content, status }: MessageParams): ChatMessage =>
   provider: role === 'assistant' ? 'anthropic' : null,
   model: role === 'assistant' ? 'claude-sonnet-5-5' : null,
   effort: role === 'assistant' ? 'low' : null,
-  createdAt: '2026-11-23T09:00:00.000Z' as IsoDateTime,
-  updatedAt: '2026-11-23T09:00:06.000Z' as IsoDateTime,
+  createdAt: brandId<IsoDateTime>({ value: '2026-11-23T09:00:00.000Z' }),
+  updatedAt: brandId<IsoDateTime>({ value: '2026-11-23T09:00:06.000Z' }),
 });
 
 describe('the Ask pane beside the session', () => {
@@ -172,7 +175,8 @@ describe('the Ask pane beside the session', () => {
     const before = pane();
     fireEvent.change(field(), { target: { value: 'Who changed applyCredit?' } });
 
-    for (const lens of ['workflows', 'plans', 'context', null] as const) {
+    const lenses: ReadonlyArray<LensKind | null> = ['workflows', 'plans', 'context', null];
+    for (const lens of lenses) {
       goTo({ lens });
       await waitFor(() =>
         expect(useAppStore.getState().activeLens[FLOW_SESSION_ID] ?? null).toBe(lens),
@@ -241,8 +245,8 @@ describe('the Ask pane beside the session', () => {
         },
         askStreams: {
           [THREAD_ID]: {
-            runId: 'run-pane' as ProviderRunId,
-            messageId: 'pane-a1' as ChatMessageId,
+            runId: brandId<ProviderRunId>({ value: 'run-pane' }),
+            messageId: ANSWER_ID,
             isStopping: false,
           },
         },

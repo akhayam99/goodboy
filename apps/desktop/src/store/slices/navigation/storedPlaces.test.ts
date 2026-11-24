@@ -72,9 +72,9 @@ const STORED_PLACES: ReadonlyArray<Row> = [
     },
   ],
   [
-    'the Ask panel',
+    'the old Ask drawer',
     panel({ kind: 'ask', payload: null }),
-    { lens: 'workflows', drawer: { kind: 'ask', sessionId: S1, payload: null } },
+    { lens: 'workflows', drawer: null },
   ],
   [
     'the Agents panel',

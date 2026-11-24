@@ -1,11 +1,12 @@
-import type {
-  AskThread,
-  ChatId,
-  ChatMessage,
-  ChatMessageId,
-  IsoDateTime,
-  ProviderRunId,
-  Session,
+import {
+  brandId,
+  type AskThread,
+  type ChatId,
+  type ChatMessage,
+  type ChatMessageId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type Session,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { AskHandle } from '../../../../features/session/ask/askHandles';
@@ -83,7 +84,7 @@ const threadOf = (session: Session): AskThread => ({
   messageCount: 1,
 });
 
-const EARLIER_THREAD_ID = 'mock-ask-thread-earlier' as ChatId;
+const EARLIER_THREAD_ID = brandId<ChatId>({ value: 'mock-ask-thread-earlier' });
 
 type EarlierParams = {
   readonly session: Session;
