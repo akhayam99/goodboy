@@ -27,8 +27,11 @@ type TextParams = {
 
 export const canAutoRoleRunCommands = ({ role }: RoleParams): boolean => isAutoWriterRole({ role });
 
+const AUTO_TEXT_ONLY_ROLES = ['scribe'] as const satisfies ReadonlyArray<AutoDelegationRole>;
+
 export const AUTO_COMMAND_ROLES: ReadonlyArray<AutoDelegationRole> = AUTO_WRITER_ROLES.filter(
-  (role) => isAutoRoleStartable({ role }),
+  (role) =>
+    isAutoRoleStartable({ role }) && !AUTO_TEXT_ONLY_ROLES.some((textOnly) => textOnly === role),
 );
 
 const NEGATION_WORDS: ReadonlySet<string> = new Set([
@@ -162,7 +165,7 @@ export const roleCannotRunCommandsMessage = ({
   role,
   match = null,
 }: CommandMessageParams): string =>
-  `${role} has no shell, so it cannot run commands such as git or tests. A task that runs commands goes to a role that can: ${AUTO_COMMAND_ROLES.join(', ')}. Say in the task that the check is read only. A task that only reads files can stay with ${role}: write it without command lines. Commits, pull request, review thread and check facts of a branch are not commands: a scout with "facts" naming the mounts gets them read by Goodboy.${matchSentenceOf({ match })}`;
+  `${role} has no shell, so it cannot run commands such as git or tests. A task that runs commands goes to a role that can: ${AUTO_COMMAND_ROLES.join(', ')}. Say in the task that the check is read only. A task that only reads files can stay with ${role}: write it without command lines. Commits, pull request, head commit, review thread and check facts of a branch are not commands: a scout with "facts" naming the mounts gets them read by Goodboy.${matchSentenceOf({ match })}`;
 
 type RerouteParams = RoleParams & {
   readonly need?: 'shell' | 'writer';
@@ -173,5 +176,5 @@ export const rerouteHintOf = ({ role, need = 'shell' }: RerouteParams): string =
   if (need === 'writer') {
     return `  it reads only and the task needs files changed. This is not the answer for the user: hand the same task once to a role that changes files (${roles}), with its report as input.`;
   }
-  return `  it had no shell tool, so the work did not run. This is not the answer for the user: hand the same task once to a role that can run commands (${roles}), and say the check is read only. Pull request and branch facts go to a scout whose "facts" names the mounts, not to a writer.`;
+  return `  it had no shell tool, so the work did not run. This is not the answer for the user: hand the same task once to a role that can run commands (${roles}), and say the check is read only. Pull request, head commit, check and branch facts go to a scout whose "facts" names the mounts, not to a writer.`;
 };

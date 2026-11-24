@@ -82,6 +82,8 @@ const requestOf = (host: BranchFactsRequest['host']): BranchFactsRequest => ({
   isDraft: false,
   baseBranch: 'main',
   headBranch: 'ak/ledger-export',
+  headSha: null,
+  checksWord: null,
 });
 
 describe('the commits of a branch since its base', () => {

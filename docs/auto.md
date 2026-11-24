@@ -1736,7 +1736,8 @@ whose task or done-when line names a command (`git log`, `git ls-remote`, `pnpm 
 tests", a commit range such as `a1b2c3d4e..HEAD`, or an output only git gives: the files of each
 commit, a trailer, whether the remote branch exists) is refused with
 `role_lacks_shell`, the message lists the roles Auto can start that run commands
-(`AUTO_COMMAND_ROLES`, never a closed role) and quotes the phrase that
+(`AUTO_COMMAND_ROLES`, never a closed role and never the scribe, whose brief forbids gh and git
+push because Goodboy opens the pull request) and quotes the phrase that
 matched (`commandMentionOf`), and nothing is written, so Auto chooses again in its next turn. A
 command inside a prohibition does not count: no, never, not, don't, without, skip or avoid (and
 `non`, `senza`, `mai`) within six words before it, in the same clause, make "No yarn install" or
@@ -1766,6 +1767,12 @@ GitHub threads come from the detail of that mount (`refreshSessionPrDetail` with
 checked against the request number). A mount with no request reads "none is open"; a mount whose
 request or detail could not be read, or was never read, reads "Facts not available: reason", never
 "none".
+The request line is followed by the head commit the host holds (`headSha` of the live
+`PullRequestView`) and the checks the host reports in the words of the Branch page (`checksWordOf`, for
+example "2 failing", "1 running" or "none reported"; "not read" when the host did not answer for the
+checks). The checks line says it is not matched to that commit: a check run carries no commit, GitLab
+may report an older pipeline and GitHub reads the head and the checks apart, so a push between the
+reads can mix commits. A question about the state of a pull request is answered by a scout, never by a writer. about the state of a pull request is answered by a scout, never by a writer.
 `composeBranchFacts` in core renders them as a `**Facts**` section of the brief, capped by
 `AUTO_FACTS_CHARS` (6,000, split across the mounts) with per-list caps in `limits.ts`. A part the
 host could not read becomes "Facts not available: reason" and the scout still starts; a read slower
@@ -1774,7 +1781,7 @@ is not in the conversation refuses with `mount_missing` and starts nothing; `fac
 a scout refuses with `spec_invalid`. The ids are stored in `request_json.facts` (no migration), so a
 retry of the scout reads the facts again. The scout argv does not change. The facts are the state
 at that moment, never a live view. The `role_lacks_shell` message and the reroute hint say that
-branch and pull request facts go to a scout, not to a writer.
+branch, pull request, head commit and check facts go to a scout, not to a writer.
 
 **A child reads its brief, not the session.** A new delegation carries `briefVersion: 2`
 (`AUTO_BRIEF_VERSION`) in `request_json`; `launchChildren` hands it to the child turn and
