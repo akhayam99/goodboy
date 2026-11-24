@@ -80,22 +80,23 @@ describe('the hint node scene', () => {
     expect(frames[0]?.children).toHaveLength(1);
   });
 
-  it('shows a queued hint as a dashed node with its text and a Remove control', async () => {
+  it('shows a queued hint as an outlined message with its text and a Remove control', async () => {
     render(<Scene />);
     await screen.findByText('Queued, read at the next decision', undefined, WAIT);
     const row = queuedRow();
     row.getByText('Also cover the refund webhook.');
     row.getByRole('button', { name: 'Remove' });
+    expect(row.getByTestId('activity-message').dataset.messagePending).toBe('true');
     expect(
-      row.getByRole('img', { name: 'Hint', hidden: true }).getAttribute('data-node-state'),
-    ).toBe('queued');
-    expect(row.queryByRole('button', { name: /Read at step/ })).toBeNull();
+      row.getByRole('img', { name: 'Hint', hidden: true }).getAttribute('data-node-look'),
+    ).toBe('quiet');
+    expect(row.queryByRole('button', { name: /read at step/ })).toBeNull();
   });
 
   it('shows a read hint on the line with its step link and moves focus to that step by click', async () => {
     const user = userEvent.setup();
     render(<Scene />);
-    const link = await screen.findByRole('button', { name: 'Read at step 3' }, WAIT);
+    const link = await screen.findByRole('button', { name: 'read at step 3' }, WAIT);
     const row = readRow();
     expect(
       row.getByRole('img', { name: 'Hint', hidden: true }).getAttribute('data-node-state'),
@@ -109,7 +110,7 @@ describe('the hint node scene', () => {
   it('keeps the track line through the read hint down to the next step', async () => {
     vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(120);
     render(<Scene />);
-    await screen.findByRole('button', { name: 'Read at step 3' }, WAIT);
+    await screen.findByRole('button', { name: 'read at step 3' }, WAIT);
     const rail = document.querySelector('[data-hint-chip="read"] [data-hint-rail]');
     const lines = rail?.querySelectorAll('[data-testid="timeline-rail-segment"]') ?? [];
     expect(lines).toHaveLength(1);
@@ -120,7 +121,7 @@ describe('the hint node scene', () => {
   it('moves focus to that step from the keyboard', async () => {
     const user = userEvent.setup();
     render(<Scene />);
-    const link = await screen.findByRole('button', { name: 'Read at step 3' }, WAIT);
+    const link = await screen.findByRole('button', { name: 'read at step 3' }, WAIT);
     link.focus();
     await user.keyboard('{Enter}');
     const stepRow = screen.getByTestId(`run-tree-row-${HINT_NODE_SEED.thirdAgentId}`);
@@ -134,7 +135,7 @@ describe('the hint node scene', () => {
   it('expands a long hint and collapses it again with the keyboard, and keeps focus on the control', async () => {
     const user = userEvent.setup();
     render(<Scene />);
-    await screen.findByRole('button', { name: 'Read at step 3' }, WAIT);
+    await screen.findByRole('button', { name: 'read at step 3' }, WAIT);
     const row = readRow();
     const toggle = row.getByRole('button', { name: /^Show more of hint: / });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');

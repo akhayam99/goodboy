@@ -33,6 +33,7 @@ export const ActivityMessage = ({
   const bubble = (
     <span
       data-testid="activity-message-bubble"
+      data-activity-message-bubble=""
       className={cn(
         'min-w-0 rounded-lg px-2 py-0.5 text-ui',
         isPending ? ACTIVITY_MESSAGE_BUBBLE.pending : ACTIVITY_MESSAGE_BUBBLE.read,

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { applyDocumentTheme, getAppliedTheme } from '../../../../../shared/lib/theme';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { SceneRunsSurface } from '../SceneRunsSurface';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
@@ -52,11 +53,19 @@ const seedFor = ({ session }: { readonly session: typeof FLOW_SESSION }) => {
   return session === FINISHED_SESSION ? seedWorkflowRunFinished : seedLiveRun;
 };
 
-export const WorkflowRunScene = () => {
+type Props = {
+  readonly theme?: 'light' | 'dark';
+};
+
+export const WorkflowRunScene = ({ theme }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const [session] = useState(sessionFor);
 
   useEffect(() => {
+    const previous = getAppliedTheme();
+    if (theme !== undefined) {
+      applyDocumentTheme({ theme });
+    }
     mockSceneIpc((cmd, payload) => traceImageOf({ cmd, payload }));
     seedFor({ session })();
     seedShellChrome({
@@ -67,7 +76,8 @@ export const WorkflowRunScene = () => {
       lens: 'workflows',
     });
     setIsReady(true);
-  }, [session]);
+    return () => applyDocumentTheme({ theme: previous });
+  }, [session, theme]);
 
   if (!isReady) {
     return null;

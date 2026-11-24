@@ -364,12 +364,14 @@ read top to bottom at the conversation measure:
   more worktrees can be written.
 - **Plan and progress** (`OrchestratedChecklist`). One checklist: the decided
   steps in execution order on the run step tree (`RunTree` with density
-  `checklist`: state glyph on the tracks, "Step 3", role glyph and word, title,
-  duration). The glyph slot is fixed at two levels (`RUN_TREE_SLOT_WIDTH`), so
+  `checklist`: quiet node on the tracks, then one `ActivityRow` with "Step 3",
+  the role glyph, title, state word and duration). The glyph slot is fixed at
+  two levels (`RUN_TREE_SLOT_WIDTH`), so
   sub agents keep their role and title at their step's x and nesting shows only
-  on the tracks and in the "3.1" label; one round hint node per read hint
-  (`OrchestratedHintRow`: text on one line, **Show more** when the line is cut
-  or the hint has a second line, image thumbnails, and "Read at step 4", a
+  on the tracks and in the "3.1" label; one message per read hint
+  (`OrchestratedHintRow` on `ActivityMessage`: text in a bubble on one line,
+  **Show more** when the line is cut or the hint has a second line, image
+  thumbnails, and "You · read at step 4", where "read at step 4" is a
   link that focuses that step, or opens it in the drawer when its row is not on
   screen) before the step whose decision read it; while that step has no row
   yet, or the hint has no recorded step, the hint sits after the steps and the
@@ -471,11 +473,11 @@ read top to bottom at the conversation measure:
   When another window reopened the run first, the hint is only queued and the
   orchestrator reads it with its next decision.
 - **Composer** (`OrchestratedComposer`), docked while the run lives: "Hint the
-  orchestrator". A queued hint is a dashed node with its first line, and
-  **Show more** when that line is cut or the hint has a second line.
-  Waiting hints sit on the run's line under the steps, under one heading,
-  **Queued, read at the next decision**, each row with **Remove**;
-  a row being read says **Reading now** with **Remove** disabled. While the
+  orchestrator". A queued hint is an outlined bubble with its first line and
+  "You · not read yet", and **Show more** when that line is cut or the hint
+  has a second line. Waiting hints sit on the run's line under the steps, under
+  one heading, **Queued, read at the next decision**, each row with **Remove**;
+  a row being read says "You · reading now" with **Remove** disabled. While the
   queue is out of view (`useIsQueueOutOfView`) one line, **3 hints queued** with
   **View**, floats over the input without moving it, and it counts from
   `hintQueueOf`, a hint being read left out. Enter queues,

@@ -1570,7 +1570,9 @@ work-permissions-custom
 workflow
 workflow-run
 workflow-run-finished-sets
+workflow-run-light
 workflow-run-nested
+workflow-run-nested-light
 workflow-run-plan-question
 workflow-run-plan-review
 workflow-run-scrolled

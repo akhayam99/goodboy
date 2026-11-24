@@ -96,13 +96,16 @@ const featureSource = ({ path }: SourceParams): string =>
   readFileSync(join(FEATURES, path), 'utf8');
 
 describe('levels on the overview and the runs pages', () => {
-  it('weighs only the live step of a run at 600 and sets the others at 400', () => {
-    const source = featureSource({
-      path: 'workflows/components/RunTree/RunTreeChecklistCells.tsx',
-    });
-    expect(source).toContain('text-row-strong text-foreground');
-    expect(source).not.toMatch(/(?<![\w-])text-row(?![\w-])/);
-    expect(source).toContain("'running', 'waiting', 'failed'");
+  it('sets every step of a run at 400 and lets the node and the state word carry the live one', () => {
+    for (const path of [
+      'workflows/components/RunTree/RunTreeChecklistCells.tsx',
+      'workflows/components/RunTree/RunTreeRow.tsx',
+    ]) {
+      expect(featureSource({ path })).not.toMatch(/(?<![\w-])text-row(?:-strong)?(?![\w-])/);
+    }
+    expect(featureSource({ path: 'workflows/components/RunTree/RunTreeStepState.tsx' })).toContain(
+      'NAMES.running',
+    );
   });
 
   it('sets the run facts at level 5', () => {

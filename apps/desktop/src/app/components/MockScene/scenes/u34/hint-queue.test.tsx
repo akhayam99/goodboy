@@ -138,7 +138,9 @@ describe('the queued hints on the run line', () => {
     render(<Scene />);
     await screen.findByText(HEADING_TEN, undefined, WAIT);
     const texts = Array.from(
-      document.querySelectorAll('[data-hint-chip="queued"] [data-hint-text]'),
+      document.querySelectorAll(
+        '[data-hint-chip="queued"] [data-testid="activity-message-bubble"]',
+      ),
     ).map((node) => node.textContent);
     expect(texts[0]).toBe('Also cover the refund webhook.');
     expect(texts[9]).toBe('Write the release note last.');
@@ -209,7 +211,7 @@ describe('the queued hints on the run line', () => {
       throw new Error('The reading hint row is missing.');
     }
     const row = within(reading);
-    row.getByText('Reading now');
+    row.getByText('reading now');
     expect(row.getByRole('button', { name: 'Remove' }).hasAttribute('disabled')).toBe(true);
   });
 
