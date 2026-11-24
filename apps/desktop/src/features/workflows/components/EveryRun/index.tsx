@@ -1,7 +1,7 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { WorkflowRulesPanel } from '../WorkflowRulesPanel';
 import { ReplyLengthBand } from '../WorkflowRulesPanel/ReplyLengthBand';
-import { RunsAdvancedBand } from '../../../settings/components/SettingsStudio/RunsAdvancedBand';
+import { RunsAdvancedBand } from '../../../settings/workspaceFieldSurfaces';
 import { EveryRunModels } from './EveryRunModels';
 
 type Props = {

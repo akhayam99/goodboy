@@ -1,10 +1,12 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { Band } from '@goodboy/ui';
-import { VerbositySelect } from '../../../session/components/VerbositySelect';
+import { VerbositySelect } from '../../../session/verbositySelect';
 import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
-import { useWorkspaceOverrideSave } from '../../../settings/hooks/useWorkspaceOverrideSave';
-import { WorkspaceFieldRow } from '../../../settings/components/SettingsStudio/WorkspaceFieldRow';
+import {
+  useWorkspaceOverrideSave,
+  WorkspaceFieldRow,
+} from '../../../settings/workspaceFieldSurfaces';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

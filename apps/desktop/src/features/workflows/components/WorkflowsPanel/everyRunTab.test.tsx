@@ -77,22 +77,22 @@ describe('the Every run tab', () => {
     expect(selectedTab()).toEqual(['Workflows']);
   });
 
-  it('opens from setWorkflowStudioView every and hands the request back', () => {
+  it('opens from setWorkflowStudioView every and hands the request back', async () => {
     renderPanel();
 
     act(() => useAppStore.getState().setWorkflowStudioView('every'));
 
     expect(selectedTab()).toEqual(['Every run']);
-    screen.getByRole('region', { name: 'When a run stops for you' });
+    await screen.findByRole('region', { name: 'When a run stops for you' });
     screen.getByRole('region', { name: 'Roles' });
     expect(useAppStore.getState().workflowStudioView).toBe('workflows');
   });
 
-  it('shows the run defaults when the tab is clicked and the list again on Workflows', () => {
+  it('shows the run defaults when the tab is clicked and the list again on Workflows', async () => {
     renderPanel();
 
     fireEvent.click(tabs().getByRole('tab', { name: 'Every run' }));
-    screen.getByRole('region', { name: 'Spending' });
+    await screen.findByRole('region', { name: 'Spending' });
 
     fireEvent.click(tabs().getByRole('tab', { name: /^Workflows/ }));
     expect(screen.queryByRole('region', { name: 'Spending' })).toBeNull();

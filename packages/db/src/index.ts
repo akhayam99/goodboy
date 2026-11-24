@@ -470,7 +470,6 @@ export {
 } from './queries/impact';
 export { type PullRequestOutcomes, type PullRequestEntry } from './queries/impact-pull-requests';
 export {
-  getTurnRoleInsight,
   type TurnEffortCount,
   type TurnRoleEntry,
   type TurnRoleInsight,

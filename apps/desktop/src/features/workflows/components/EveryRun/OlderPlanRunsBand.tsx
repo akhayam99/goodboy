@@ -1,7 +1,6 @@
 import type { ProviderId, TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import { Band } from '@goodboy/ui';
-import { OrchestratorModelPickRow } from '../../../providers/components/ProviderStudio/DefaultsPanel/OrchestratorModelPickRow';
-import { TaskModelRow } from '../../../providers/components/ProviderStudio/DefaultsPanel/TaskModelRow';
+import { OrchestratorModelPickRow, TaskModelRow } from '../../../providers/defaultsPanelSurfaces';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

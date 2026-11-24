@@ -1,6 +1,6 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { WorkflowRulesPanel } from '../../../workflows/workflowRulesPanel';
-import { ReplyLengthBand } from '../../../workflows/components/WorkflowRulesPanel/ReplyLengthBand';
+import { ReplyLengthBand } from '../../../workflows/replyLengthBand';
 import { RunsAdvancedBand } from './RunsAdvancedBand';
 
 type Props = {

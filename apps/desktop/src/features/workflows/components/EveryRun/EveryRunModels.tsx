@@ -7,11 +7,13 @@ import { Band } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { mergeWorkspaceOverrides } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { ROLE_LABEL } from '../../../session/agent-kind';
-import { DefaultsGroup } from '../../../providers/components/ProviderStudio/DefaultsPanel/DefaultsGroup';
-import { RoleRow } from '../../../providers/components/ProviderStudio/DefaultsPanel/RoleRow';
-import { RunsSection } from '../../../providers/components/ProviderStudio/DefaultsPanel/RunsSection';
-import { useDefaultsPersistence } from '../../../providers/components/ProviderStudio/DefaultsPanel/useDefaultsPersistence';
-import { useHasPlanRuns } from '../../../providers/hooks/useHasPlanRuns';
+import {
+  DefaultsGroup,
+  RoleRow,
+  RunsSection,
+  useDefaultsPersistence,
+  useHasPlanRuns,
+} from '../../../providers/defaultsPanelSurfaces';
 import { OlderPlanRunsBand } from './OlderPlanRunsBand';
 
 type Props = {
