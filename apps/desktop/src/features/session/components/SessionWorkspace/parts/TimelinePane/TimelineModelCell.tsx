@@ -7,22 +7,37 @@ type Props = {
   readonly summary: ModelsSummary | null;
   readonly isPlanned?: boolean;
   readonly wrapCard?: CardWrap | null;
+  readonly isFluid?: boolean;
 };
 
 const MODEL_CELL =
   'flex w-44 min-w-0 shrink-0 items-center gap-2 overflow-hidden text-meta @max-[500px]:hidden';
 
+const FLUID_CELL = 'w-full shrink';
+
 const MAX_GLYPHS = 3;
 
-export const TimelineModelCell = ({ summary, isPlanned = false, wrapCard = null }: Props) => {
+export const TimelineModelCell = ({
+  summary,
+  isPlanned = false,
+  wrapCard = null,
+  isFluid = false,
+}: Props) => {
   if (summary === null) {
-    return <span aria-hidden data-meta-column="model" className={MODEL_CELL} />;
+    return (
+      <span
+        aria-hidden
+        data-meta-column="model"
+        className={cn(MODEL_CELL, isFluid && FLUID_CELL)}
+      />
+    );
   }
   const block = (
     <span
       data-meta-column="model"
       className={cn(
         MODEL_CELL,
+        isFluid && FLUID_CELL,
         'cursor-default',
         isPlanned ? 'text-faint-foreground' : 'text-muted-foreground',
       )}

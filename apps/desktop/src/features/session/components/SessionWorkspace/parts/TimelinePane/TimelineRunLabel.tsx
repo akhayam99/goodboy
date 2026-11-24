@@ -26,7 +26,7 @@ export const TimelineRunLabel = ({ entry, identity = null, isCardOpen = false }:
         className={cn(
           'flex-1 truncate text-body',
           WORK_ROW.title,
-          isDiscarded ? 'text-muted-foreground' : 'text-foreground',
+          isDiscarded && 'text-muted-foreground',
         )}
       >
         {title}

@@ -35,7 +35,6 @@ type Props = {
   readonly diffStat?: MountDiffStat | null;
   readonly worktrees?: ReadonlyArray<string>;
   readonly meta?: ReactNode;
-  readonly state?: ReactNode;
   readonly progress?: number | null;
   readonly runLane?: TimelineLaneTarget | null;
   readonly lanes?: TimelineLaneControl | null;
@@ -59,7 +58,6 @@ export const TimelineStreamRow = ({
   diffStat = null,
   worktrees,
   meta = null,
-  state = null,
   progress = null,
   runLane = null,
   lanes = null,
@@ -101,24 +99,19 @@ export const TimelineStreamRow = ({
     runLane.open();
   };
   const contentClassName = cn(
-    'flex min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-2 text-left',
+    'flex min-w-0 flex-1 items-center rounded-md text-left',
     openTarget == null ? null : ROW_INTERACTIVE,
     item.hasUnread && tintClasses('primary').bgSoft,
   );
   const content = (
-    <>
-      <span className={cn('flex flex-1 items-baseline gap-2 overflow-hidden', WORK_ROW.label)}>
-        <TimelineRowLabel
-          item={item}
-          diffStat={diffStat}
-          worktrees={worktrees}
-          identity={identity}
-          isCardOpen={card.isOpen}
-        />
-      </span>
-      {state}
-      {meta}
-    </>
+    <TimelineRowLabel
+      item={item}
+      diffStat={diffStat}
+      worktrees={worktrees}
+      identity={identity}
+      isCardOpen={card.isOpen}
+      meta={meta}
+    />
   );
 
   return (
