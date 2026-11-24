@@ -28,7 +28,7 @@ export type AdeQuestion = {
 export const ADE_GUIDE = {
   title: 'What is an agentic development environment (ADE)?',
   definition:
-    'An agentic development environment (ADE) is where you run several coding agents at once and stay in charge of the work. Each agent works in its own isolated copy of the code, shares context with the others and hands you a diff to review before anything merges. An IDE helps you write code, and an ADE helps you direct the agents that write it.',
+    'An agentic development environment (ADE) is where you run several coding agents at once and stay in charge of the work. Each agent works on its own branch in an isolated copy of the code, shares context with the others and hands you a diff to review before anything merges. An IDE helps you write code, and an ADE helps you direct the agents that write it.',
   compare: {
     heading: 'ADE, IDE and terminal agents',
     intro: 'Each row is a question to put to any tool that calls itself an ADE.',
@@ -50,7 +50,7 @@ export const ADE_GUIDE = {
         label: 'Where each agent works',
         ide: 'In your open checkout',
         terminal: 'In the folder you started it in',
-        ade: 'In its own isolated copy, such as a git worktree for each branch',
+        ade: 'In a git worktree for each branch, or one at a time in a folder without git',
       },
       {
         label: 'How context carries between agents',
@@ -80,15 +80,15 @@ export const ADE_GUIDE = {
       {
         id: 'isolation',
         title: 'Isolate each task',
-        need: 'Agents never edit the same files in place, and never your checkout.',
-        how: 'Each branch an agent works on gets its own git worktree, so agents edit in parallel without touching your checkout. One session can work across several repositories.',
+        need: 'Agents never edit the same files at the same time.',
+        how: 'In a git repository, each branch an agent works on gets its own git worktree, so agents edit in parallel without touching your checkout. A folder without commits is edited in place by one session at a time, and the next one waits. One session can work across several repositories.',
         links: [{ label: 'Worktrees', href: `${SITE.doc('workspace')}#worktrees` }],
       },
       {
         id: 'shared-context',
         title: 'Share context and decisions',
         need: 'The next agent should not need the story told again.',
-        how: 'The goal, decisions and a running summary travel with the session. Record a decision once and the agents after it read it.',
+        how: 'The goal, decisions and a running summary travel with the session. Record a decision once and the planners, implementers, reviewers, debuggers and resolvers after it read it, within a size limit that keeps the newest decisions. Scouts, docs agents and agents the Lead starts read only their brief.',
         links: [{ label: 'Decisions', href: `${SITE.doc('context')}#decisions` }],
       },
       {
