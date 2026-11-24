@@ -56,7 +56,9 @@ Pick a model with the reason next to it. The picker leads with **Auto** and what
 
 ### Impact
 
-See what Goodboy got done and what it cost over **7 days**, **30 days** or **All time**. **Overview** shows sessions, merged pull requests, resolved reviews and runs by workflows, and **Shipped**, **Flow** and **Spend** go deeper. The cost in the top bar opens **Spend**. A provider or a session opened from **Spend** names itself in the studio bar as **Impact › Spend › Claude**; **Spend** goes back to the list and **Impact** to the overview.
+See what Goodboy got done and what it cost over **7 days**, **30 days** or **All time**. **Overview** shows sessions, merged pull requests, resolved reviews and runs by workflows, and **Shipped**, **Flow**, **Spend** and **Agents** go deeper. The cost in the top bar opens **Spend**. A provider or a session opened from **Spend** names itself in the studio bar as **Impact › Spend › Claude**; **Spend** goes back to the list and **Impact** to the overview.
+
+**Agents** shows which roles did the work, on which models, at which effort and for what cost; open a role to see its models. **Pinned** is the share of turns on a model you pinned, counted where Goodboy knows it: workflow steps and the Lead's helpers. Its cost counts agent turns only, so it is lower than **Spend**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-impact-overview-dark.webp">

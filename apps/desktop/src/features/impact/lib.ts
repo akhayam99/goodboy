@@ -2,7 +2,7 @@ import type { ProviderName, SessionId } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
 
 export type ImpactWindowId = 'last7' | 'last30' | 'all';
-export type ImpactTab = 'overview' | 'shipped' | 'flow' | 'spend';
+export type ImpactTab = 'overview' | 'shipped' | 'flow' | 'spend' | 'agents';
 export type ImpactMetricGroup = 'overview' | 'shipped' | 'flow' | 'efficiency';
 
 export type ImpactScope =
@@ -28,6 +28,7 @@ export const IMPACT_TAB_OPTIONS: ReadonlyArray<SegmentedTabOption<ImpactTab>> = 
   { value: 'shipped', label: 'Shipped' },
   { value: 'flow', label: 'Flow' },
   { value: 'spend', label: 'Spend' },
+  { value: 'agents', label: 'Agents' },
 ];
 
 type WindowParams = {
