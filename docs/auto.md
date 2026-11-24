@@ -2205,14 +2205,14 @@ agents that write code do not run here yet. Claude: first in your order." A chil
 takes the best by the rule ("Claude: first in your order", "Codex: most room left", "Haiku 5.5:
 lighter, fits the step"). A role pin always wins; a preset step lock (`stepLock`) wins over all.
 The session composer's model steers the Lead only, never a helper. A reviewer is routed against
-the family of the writer whose artifact it reads (`writerFamilyOf`, from the producer's stored pick); with no writer artifact there is no family
-guard. The routing a helper keeps (`routing_json`, typed `AutoRouting`, built by
-`storedRoutingOf`) holds the pick, the reason,
+the family of the writer whose artifact it reads (`writerFamilyOf`, from the producer's stored
+pick); with no writer artifact there is no family guard. The routing a helper keeps
+(`routing_json`, typed `AutoRouting`, built by `storedRoutingOf`) holds the pick, the reason,
 `source` (lead, pin, rule, fallback, lock), the cause of a moved pick, the Lead's own words in
 `modelReason` and up to 18 candidates it weighed, without rates, the struck rows last. Tell a pin
 from a Lead pick by `source`, never by `requested`, which holds what the Lead asked for. An older
-row has none of these keys and reads as before, and the receipt the Lead gets keeps its keys. When no candidate
-passes, `childRoutingRefusal` names each connected provider with its reason (usage limit until a
+row has none of these keys and reads as before, and the receipt the Lead gets keeps its keys.
+When no candidate passes, `childRoutingRefusal` names each connected provider with its reason (usage limit until a
 time, budget reached, no visible model, reading roles only) and points to Settings › Models.
 
 A child queued behind running ones is checked again when its slot frees (`recheckQueuedRouting`
@@ -2221,8 +2221,8 @@ meantime, it starts on the best candidate instead and its stored routing says so
 the cause and the new candidates; the Lead's `modelReason` stays). The
 recheck sizes the step from the task type and difficulty the delegation request keeps. It
 never ran, so this is not a swap. A continue (a retry with a task, or a message from the person)
-keeps the agent's provider, model and `modelReason`: `resolveDelegateChild` hands the stored pick as `agentLock`,
-and a provider that cools down refuses the continue with "Codex is cooling down until 16:10. This
+keeps the agent's provider, model and `modelReason`: `resolveDelegateChild` hands the stored pick
+as `agentLock`, and a provider that cools down refuses the continue with "Codex is cooling down until 16:10. This
 agent keeps its model, so send it again then." (`agentLockWait`). A plain retry with no task picks
 again: the stored pick is offered as the Lead's pick and moves only when a guard removes it. With
 **Skip a provider near its limit** on (`spreadByHeadroom`), `resolveChildRouting` also passes the
