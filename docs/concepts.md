@@ -393,9 +393,12 @@ A deleted session shows up in Impact with a **Deleted** label and does not
 open. Its spend joins the live spend in one sum: the store reads the archived
 and deleted part once when the workspace opens (`dormantSpend`) and adds the
 live sessions on top. When Impact opens it asks the host before it trusts a
-stored state: it runs the request sweep for live mounts, and it settles up to
-60 still open pull requests of archived or deleted sessions and of unmounted
-branches with one GitHub query per repository, then reads its numbers again.
+stored state: it runs the request sweep for live mounts and waits for any
+refresh already asking, and it settles up to 60 still open pull requests of
+archived or deleted sessions and of unmounted branches with one GitHub query
+per repository and project, asking by number for one the branch list leaves
+out. When both are done, even if one failed, it reads its numbers again, and
+only the newest read is shown.
 A merge made on GitHub a minute ago, or after you archived the session, counts
 at once. A merged pull request sits in the window of its merge on the host;
 the time Goodboy saw it is the fallback.

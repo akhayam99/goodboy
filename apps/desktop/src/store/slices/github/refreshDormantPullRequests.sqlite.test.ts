@@ -128,11 +128,28 @@ const answerBatch = ({ args }: GhRunArgs) => {
   for (const arg of args) {
     const match = /^(b\d+)=(.+)$/.exec(arg);
     if (match?.[1] !== undefined && match[2] !== undefined) {
-      repository[match[1]] = { nodes: [mergedNode({ branch: match[2] })] };
+      const isListed = NUMBER_BY_BRANCH[match[2]] !== undefined;
+      repository[match[1]] = { nodes: isListed ? [mergedNode({ branch: match[2] })] : [] };
     }
   }
   return { stdout: JSON.stringify({ data: { repository } }), stderr: '', exitCode: 0 };
 };
+
+const BURIED_BRANCH = 'northwind/buried';
+
+const answerView = () => ({
+  stdout: JSON.stringify({
+    ...mergedNode({ branch: BURIED_BRANCH }),
+    number: 13,
+    url: `https://github.com/${REPOSITORY}/pull/13`,
+    statusCheckRollup: [],
+  }),
+  stderr: '',
+  exitCode: 0,
+});
+
+const answerHost = ({ args }: GhRunArgs) =>
+  args.includes('view') ? answerView() : answerBatch({ args });
 
 let useAppStore: StoryStore;
 
@@ -144,7 +161,7 @@ beforeEach(async () => {
   await resetStoryStore();
   const db = await openStorySqlite();
   await insertWorkspace({ db, workspace: buildStoryWorkspace({ id: WORKSPACE_ID }) });
-  stubStoryInvoke({ gh_run: (input: GhRunArgs) => answerBatch(input) });
+  stubStoryInvoke({ gh_run: (input: GhRunArgs) => answerHost(input) });
   useAppStore.setState({ githubStatus: { mode: 'pat', available: true } });
 });
 
@@ -164,5 +181,23 @@ describe('Impact settles pull requests no live mount watches', () => {
       sinceMs: null,
     });
     expect(outcomes).toMatchObject({ open: 0, merged: 2 });
+  });
+
+  it('asks for a pull request by number when its branch page leaves it out', async () => {
+    await seedWork({ key: 'buried', number: 13, isAttached: false, isArchived: false });
+
+    const settled = await useAppStore.getState().refreshDormantPullRequests(WORKSPACE_ID);
+
+    const viewCalls = storySpies.tauriInvoke.mock.calls.filter(
+      ([command, input]) => command === 'gh_run' && JSON.stringify(input).includes('"view"'),
+    );
+    expect(viewCalls).toHaveLength(1);
+    expect(settled).toBe(1);
+    const outcomes = await getPullRequestOutcomes({
+      db: storySqlite(),
+      workspaceId: WORKSPACE_ID,
+      sinceMs: null,
+    });
+    expect(outcomes).toMatchObject({ open: 0, merged: 1 });
   });
 });

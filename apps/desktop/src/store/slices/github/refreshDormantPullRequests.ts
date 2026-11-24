@@ -1,4 +1,4 @@
-import { listPrsForBranches } from '@goodboy/core/github';
+import { listPrsForBranches, viewPullRequest } from '@goodboy/core/github';
 import {
   insertSessionEvent,
   listDormantOpenPullRequests,
@@ -6,6 +6,7 @@ import {
 } from '@goodboy/db';
 import type {
   IsoDateTime,
+  ProjectId,
   PullRequestState,
   SessionEventId,
   SessionEventKind,
@@ -70,18 +71,44 @@ const settleDormantLink = async ({ dormant, pr }: SettleParams): Promise<number>
   return 1;
 };
 
-type RepositoryParams = {
-  readonly workspaceId: WorkspaceId;
+type DormantBatch = {
   readonly repository: string;
-  readonly members: ReadonlyArray<DormantPullRequestLink>;
+  readonly projectId: ProjectId | null;
+  readonly members: Array<DormantPullRequestLink>;
 };
 
-const settleRepository = async ({
+type BatchParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly batch: DormantBatch;
+};
+
+type FindParams = BatchParams & {
+  readonly byBranch: ReadonlyMap<string, ReadonlyArray<PullRequestState>>;
+  readonly dormant: DormantPullRequestLink;
+};
+
+const findPullRequest = async ({
   workspaceId,
-  repository,
-  members,
-}: RepositoryParams): Promise<number> => {
-  const projectId = members.find((member) => member.projectId !== null)?.projectId ?? null;
+  batch,
+  byBranch,
+  dormant,
+}: FindParams): Promise<PullRequestState | null> => {
+  const listed = byBranch
+    .get(dormant.link.headBranch)
+    ?.find((candidate) => candidate.number === dormant.link.prNumber);
+  if (listed !== undefined) {
+    return listed;
+  }
+  return viewPullRequest({
+    runner: tauriGhRunner,
+    repo: batch.repository,
+    number: dormant.link.prNumber,
+    opts: { workspaceId, ...(batch.projectId === null ? {} : { projectId: batch.projectId }) },
+  }).catch(() => null);
+};
+
+const settleBatch = async ({ workspaceId, batch }: BatchParams): Promise<number> => {
+  const { repository, projectId, members } = batch;
   const byBranch = await listPrsForBranches({
     runner: tauriGhRunner,
     repo: repository,
@@ -93,10 +120,8 @@ const settleRepository = async ({
   }
   let settled = 0;
   for (const dormant of members) {
-    const pr = byBranch
-      .get(dormant.link.headBranch)
-      ?.find((candidate) => candidate.number === dormant.link.prNumber);
-    if (pr === undefined) {
+    const pr = await findPullRequest({ workspaceId, batch, byBranch, dormant });
+    if (pr === null) {
       continue;
     }
     settled += await settleDormantLink({ dormant, pr });
@@ -114,18 +139,20 @@ export const refreshDormantPullRequests = (get: GetFn) => {
       workspaceId,
       limit: DORMANT_PULL_REQUEST_CAP,
     });
-    const byRepository = new Map<string, Array<DormantPullRequestLink>>();
+    const batches = new Map<string, DormantBatch>();
     for (const item of dormant) {
-      const key = item.link.repoSlug;
-      byRepository.set(key, [...(byRepository.get(key) ?? []), item]);
+      const key = JSON.stringify([item.link.repoSlug, item.projectId]);
+      const batch = batches.get(key) ?? {
+        repository: item.link.repoSlug,
+        projectId: item.projectId,
+        members: [],
+      };
+      batch.members.push(item);
+      batches.set(key, batch);
     }
     const settled = await runWithLimit({
       limit: REVIEW_REFRESH_CONCURRENCY,
-      tasks: [...byRepository.entries()].map(
-        ([repository, members]) =>
-          () =>
-            settleRepository({ workspaceId, repository, members }),
-      ),
+      tasks: [...batches.values()].map((batch) => () => settleBatch({ workspaceId, batch })),
     });
     return settled.reduce((sum, count) => sum + count, 0);
   };

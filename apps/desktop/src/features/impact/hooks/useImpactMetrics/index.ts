@@ -65,10 +65,15 @@ type LoadQueryParams<T> = {
   readonly query: () => Promise<T>;
   readonly setResult: Dispatch<SetStateAction<QueryResult<T>>>;
   readonly activeGeneration: number;
+  readonly isLatest?: () => boolean;
 };
 
 type LoadScopeParams = {
   readonly scope: ImpactMetricGroup;
+  readonly activeGeneration: number;
+};
+
+type LoadPullRequestsParams = {
   readonly activeGeneration: number;
 };
 
@@ -83,6 +88,7 @@ const EMPTY_RESULT = { data: null, error: null };
 
 export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetrics => {
   const generation = useRef(0);
+  const pullRequestRead = useRef(0);
   const [overview, setOverview] = useState<QueryResult<ImpactOverview>>(EMPTY_RESULT);
   const [pullRequests, setPullRequests] = useState<QueryResult<PullRequestOutcomes>>(EMPTY_RESULT);
   const [reviews, setReviews] = useState<QueryResult<ReviewOutcomes>>(EMPTY_RESULT);
@@ -110,21 +116,36 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
   );
 
   const loadQuery = useCallback(
-    async <T>({ query, setResult, activeGeneration }: LoadQueryParams<T>) => {
+    async <T>({ query, setResult, activeGeneration, isLatest }: LoadQueryParams<T>) => {
+      const isStale = () => generation.current !== activeGeneration || isLatest?.() === false;
       try {
         const data = await query();
-        if (generation.current !== activeGeneration) {
+        if (isStale()) {
           return;
         }
         setResult({ data, error: null });
       } catch (value) {
-        if (generation.current !== activeGeneration) {
+        if (isStale()) {
           return;
         }
         setResult((current) => ({ data: current.data, error: toError({ value }) }));
       }
     },
     [],
+  );
+
+  const loadPullRequests = useCallback(
+    ({ activeGeneration }: LoadPullRequestsParams) => {
+      pullRequestRead.current += 1;
+      const activeRead = pullRequestRead.current;
+      return loadQuery({
+        query: () => getPullRequestOutcomes(params),
+        setResult: setPullRequests,
+        activeGeneration,
+        isLatest: () => pullRequestRead.current === activeRead,
+      });
+    },
+    [loadQuery, params],
   );
 
   const loadScope = useCallback(
@@ -139,11 +160,7 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
       }
       if (scope === 'shipped') {
         await Promise.all([
-          loadQuery({
-            query: () => getPullRequestOutcomes(params),
-            setResult: setPullRequests,
-            activeGeneration,
-          }),
+          loadPullRequests({ activeGeneration }),
           loadQuery({
             query: () => getReviewOutcomes(params),
             setResult: setReviews,
@@ -199,7 +216,7 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
       }
       setLoading((current) => ({ ...current, [scope]: false }));
     },
-    [loadQuery, params],
+    [loadPullRequests, loadQuery, params],
   );
 
   useEffect(() => {
@@ -237,29 +254,22 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
   const sweepRequests = useAppStore((state) => state.sweepRequests);
   const isGithubAvailable = useAppStore((state) => state.githubStatus?.available === true);
   const reloadPullRequests = useCallback(
-    () =>
-      loadQuery({
-        query: () => getPullRequestOutcomes(params),
-        setResult: setPullRequests,
-        activeGeneration: generation.current,
-      }),
-    [loadQuery, params],
+    () => loadPullRequests({ activeGeneration: generation.current }),
+    [loadPullRequests],
   );
   const reloadRef = useRef(reloadPullRequests);
   reloadRef.current = reloadPullRequests;
 
   useEffect(() => {
     let isActive = true;
-    void Promise.all([
-      sweepRequests({ shouldSkipUnknownRequest: true }),
+    void Promise.allSettled([
+      sweepRequests({ shouldSkipUnknownRequest: true, shouldAwaitInFlight: true }),
       isGithubAvailable ? refreshDormantPullRequests(workspaceId) : Promise.resolve(0),
-    ])
-      .catch(() => undefined)
-      .then(() => {
-        if (isActive) {
-          void reloadRef.current();
-        }
-      });
+    ]).then(() => {
+      if (isActive) {
+        void reloadRef.current();
+      }
+    });
     return () => {
       isActive = false;
     };

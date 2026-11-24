@@ -3,6 +3,7 @@ import { runWithLimit } from '../../../shared/utils/runWithLimit';
 import type { SliceDeps } from '../../slice-types';
 import type { SweepRequestsParams } from './types';
 import { listSessionPrFetches } from '../github/resolveSessionPrFetch';
+import { mountRequestsInFlight } from '../project-mounts/mountRequestsInFlight';
 import { waitForIdle } from '../search-index/scheduleIdle';
 import { mountFetchFactsOf } from './mountFetchFactsOf';
 import { prefetchGithubBranches, type GithubSweepTarget } from './prefetchGithubBranches';
@@ -112,8 +113,8 @@ const sweepMatching = ({
     .then((prefetched) => run({ prefetched }));
 };
 
-export const sweepRequests = ({ set, get }: SliceDeps) => {
-  return (options: SweepRequestsParams = {}): Promise<void> => {
+const sweepScheduled = ({ set, get }: SliceDeps) => {
+  return (options: SweepRequestsParams): Promise<void> => {
     const { sessionId, isCurrentFirst = false } = options;
     const openSessionId = get().currentSessionId;
     const sweep = { set, get, options, openSessionId };
@@ -128,5 +129,15 @@ export const sweepRequests = ({ set, get }: SliceDeps) => {
       .then(() =>
         sweepMatching({ ...sweep, onlySessionId: null, skippedSessionId: openSessionId }),
       );
+  };
+};
+
+export const sweepRequests = ({ set, get }: SliceDeps) => {
+  const sweep = sweepScheduled({ set, get });
+  return async (options: SweepRequestsParams = {}): Promise<void> => {
+    await sweep(options);
+    if (options.shouldAwaitInFlight === true) {
+      await Promise.allSettled([...mountRequestsInFlight]);
+    }
   };
 };
