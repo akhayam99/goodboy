@@ -187,6 +187,27 @@ describe('queuedRowsOf', () => {
     expect(rows[1]?.images[0]).toMatchObject({ id: 'stored-1', previewSrc: stored.dataUrl });
   });
 
+  it('counts a pdf on a Lead message without drawing it as a thumb, as on a tray row', () => {
+    const brief = {
+      id: 'file-1',
+      kind: 'file' as const,
+      fileName: 'harborline-brief.pdf',
+      mimeType: 'application/pdf',
+      relPath: '.goodboy/attachments/file-1/harborline-brief.pdf',
+      dir: '/scratch/session-harborline',
+    };
+    const view = aView({
+      phase: 'waiting',
+      delegations: [RUNNING],
+      pendingMessages: [{ ...message('a', 0), images: [brief] }],
+    });
+
+    const [row] = queuedRowsOf({ queue: [], view, ...AT_REST });
+
+    expect(row?.images).toEqual([]);
+    expect(row?.imageCount).toBe(1);
+  });
+
   it('hides a message sent to an idle agent for its first half second', () => {
     const direct = turn('d1', { status: 'sending', isDirect: true });
 

@@ -227,6 +227,18 @@ describe('QueuedMessages', () => {
     expect(strips.every((strip) => strip.getAttribute('data-size') === 'compact')).toBe(true);
   });
 
+  it('shows the attachment count beside the text when a pdf has no thumb', () => {
+    renderQueue([
+      row('pdf', { content: 'read the ledger spec', imageCount: 1 }),
+      row('plain', { content: 'just text' }),
+    ]);
+
+    const counts = screen.getAllByTestId('queued-message-attachments');
+    expect(counts.map((count) => count.textContent)).toEqual(['1 attachment']);
+    screen.getByText('read the ledger spec');
+    expect(screen.queryByTestId('strip')).toBeNull();
+  });
+
   it('shows a failure under the list', () => {
     render(
       <QueuedMessages

@@ -49,8 +49,7 @@ export type RouteAutoUserTurnParams = Readonly<{
   storeImages?: typeof storeAutoImages;
 }>;
 
-const AUTO_ATTACHMENTS_MESSAGE = 'The Lead takes images in a message, not other files yet.';
-const AUTO_IMAGES_LOST_MESSAGE = "The Lead couldn't keep the images. Attach them again.";
+const AUTO_IMAGES_LOST_MESSAGE = "The Lead couldn't keep the files. Attach them again.";
 const AUTO_MESSAGE_LOST_MESSAGE = "The Lead couldn't take your message. Send it again in a moment.";
 
 const AUTO_NO_RUNTIME_MESSAGE = AUTO_STARTING_SENTENCE;
@@ -156,10 +155,6 @@ export const routeAutoUserTurn = async ({
   const port = currentAutoUserTurnPort();
   if (port === null) {
     return refuse({ get, input, message: AUTO_NO_RUNTIME_MESSAGE });
-  }
-  const given = input.attachments ?? [];
-  if (given.some((attachment) => !attachment.mimeType.startsWith('image/'))) {
-    return refuse({ get, input, message: AUTO_ATTACHMENTS_MESSAGE });
   }
   const images = await keptImages({ get, input, storeImages });
   const queued: { outboxId: string | null; isRepeat: boolean } = {

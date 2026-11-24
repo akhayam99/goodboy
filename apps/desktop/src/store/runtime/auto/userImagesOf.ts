@@ -6,11 +6,11 @@ type Params = {
   readonly rows: ReadonlyArray<Pick<AutoOutboxRow, 'payload'>>;
 };
 
-const isImage = (value: unknown): value is MessageAttachment =>
+const isAttachment = (value: unknown): value is MessageAttachment =>
   typeof value === 'object' &&
   value !== null &&
   'kind' in value &&
-  value.kind === 'image' &&
+  (value.kind === 'image' || value.kind === 'file') &&
   'id' in value &&
   typeof value.id === 'string' &&
   'relPath' in value &&
@@ -24,7 +24,7 @@ export const userImagesOf = ({ rows }: Params): ReadonlyArray<MessageAttachment>
       continue;
     }
     for (const image of row.payload.images ?? []) {
-      if (!isImage(image) || seen.has(image.id)) {
+      if (!isAttachment(image) || seen.has(image.id)) {
         continue;
       }
       seen.add(image.id);

@@ -1,4 +1,5 @@
 import type { AttachmentInput, MessageAttachment, SessionId } from '@goodboy/types';
+import { attachmentKindFor } from '../../../features/chat/attachment-kinds';
 import { writeAttachment } from '../../../features/chat/turn';
 import { scratchDirPrepare } from '../../../features/worktree/worktree';
 
@@ -25,7 +26,7 @@ export const storeAutoImages = async ({
       });
       return {
         id: image.id,
-        kind: 'image',
+        kind: attachmentKindFor(image.mimeType),
         fileName: image.fileName,
         mimeType: image.mimeType,
         relPath,

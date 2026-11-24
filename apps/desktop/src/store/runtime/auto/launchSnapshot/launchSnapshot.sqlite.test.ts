@@ -12,6 +12,7 @@ import { brandId, type MessageAttachment, type SessionId, type WorkspaceId } fro
 import { readAutoTreeViews } from '../../../slices/auto-view/readAutoTreeViews';
 import { writeRunGuidance } from '../../runGuidance/writeRunGuidance';
 import { childImagesOf } from '../childImagesOf';
+import { launchImagesOf } from './launchImagesOf';
 import { addOutboxRow } from '../testing/deliveryWorld';
 import {
   autoDelegates,
@@ -38,6 +39,15 @@ const TOTALS: MessageAttachment = {
   fileName: 'totals-narrow.png',
   mimeType: 'image/png',
   relPath: 'attachments/totals-narrow.png',
+  dir: '/scratch/session-harborline',
+};
+
+const BRIEF: MessageAttachment = {
+  id: 'attachment-brief',
+  kind: 'file',
+  fileName: 'harborline-brief.pdf',
+  mimeType: 'application/pdf',
+  relPath: 'attachments/harborline-brief.pdf',
   dir: '/scratch/session-harborline',
 };
 
@@ -209,6 +219,31 @@ describe('the launch snapshot of an attempt', () => {
       attemptId: delegation.firstAttemptId,
     });
     expect(attempt?.launchSnapshot).toMatchObject({ images: [BANNER] });
+  });
+
+  it('hands a pdf to the child and relaunches with it, named as a file you sent', async () => {
+    const world = await makeRuntimeWorld();
+    await addUserImageRow({
+      world,
+      id: 'outbox-user-brief',
+      text: 'Follow the attached brief.',
+      images: [BRIEF],
+    });
+    await world.runtime.drive(world.treeId);
+    await world.runtime.settled();
+    await autoDelegates({ world, spec: ONE_WRITER });
+    await autoTurnEnds({ world });
+
+    const attempt = await onlyAttempt(world);
+
+    expect(world.state.ports.childTurns[0]?.images).toEqual([BRIEF]);
+    expect(attempt.launchSnapshot).toMatchObject({
+      images: [BRIEF],
+      items: expect.arrayContaining([
+        expect.objectContaining({ ref: 'attachment-brief', detail: 'a file you sent' }),
+      ]),
+    });
+    expect(launchImagesOf({ snapshot: attempt.launchSnapshot })).toEqual([BRIEF]);
   });
 
   it('reaches the view by delegation, and an attempt from before reads as not recorded', async () => {

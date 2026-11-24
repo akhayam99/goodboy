@@ -287,18 +287,20 @@ rows in `pendingMessages` while the tree is stopping or stopped, so the row stil
 `finished` or `done` tree takes the message as a normal follow-up turn. Rows left from old trees
 show the same row on load and are never auto-sent.
 
-**Images.** A message to Auto may carry images. `routeAutoUserTurn` writes them once to the
-session's scratch folder (`storeAutoImages`), so they have a full path, queues them on the `user`
-outbox row (`images` in the payload), shows them as compact thumbs on the queued row and keeps them
-on the echo (`operator_text` with
+**Images and files.** A message to Auto may carry what the session chat takes: images, a PDF and
+the other files of the composer. `routeAutoUserTurn` writes them once to the
+session's scratch folder (`storeAutoImages`, `kind` from `attachmentKindFor`, so a PDF is a `file`),
+so they have a full path, queues them on the `user` outbox row (`images` in the payload, which holds
+files too), shows the images as compact thumbs on the queued row with a count of every file
+(`queuedRowsOf`) and keeps them on the echo (`operator_text` with
 `attachments`). The delivery that reads the row hands them to Auto's turn (`storedAttachments` on
 `sendTurn`, listed by full path in the prompt, never written again), and every child Auto starts
 after that message gets them in its brief (`childImagesOf`: the images of the accepted user rows
 of the tree's generation up to the delegation); the child page names them as chips. The launch
 reads those images once, into the launch snapshot of the attempt (see Why an agent exists), and
 starts the child with the stored list, so a relaunch after a crash hands over the same images
-even when the tree got more since. An image that
-cannot be written refuses the message with "The Lead couldn't keep the images. Attach them again.":
+even when the tree got more since. A file that
+cannot be written refuses the message with "The Lead couldn't keep the files. Attach them again.":
 nothing is dropped silently. A turn that is not an operator message or
 a child is left to the plain turn. A message to the root of an Auto tree is never a
 plain turn: with no Auto door registered at all (the runtime has not started yet)
