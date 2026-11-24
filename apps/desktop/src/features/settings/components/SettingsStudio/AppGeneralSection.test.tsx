@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAppStore } from '../../../../store';
 import { useThemeStore } from '../../../../shared/lib/theme';
+import { AppDevToolsSection } from './AppDevToolsSection';
 import { AppGeneralSection } from './AppGeneralSection';
 
 const EDITORS = [
@@ -81,9 +82,9 @@ describe('AppGeneralSection theme control', () => {
   });
 });
 
-describe('AppGeneralSection open with', () => {
+describe('AppDevToolsSection open with', () => {
   it('lists the editors by name alone in one dropdown and keeps the choice', async () => {
-    render(<AppGeneralSection />);
+    render(<AppDevToolsSection />);
 
     expect(screen.queryByRole('tablist', { name: 'Editor' })).toBeNull();
     await userEvent.click(screen.getByRole('combobox', { name: 'Editor' }));
@@ -101,7 +102,7 @@ describe('AppGeneralSection open with', () => {
 
   it('keeps the same dropdown once five editors are found', async () => {
     seed({ editors: 5, browsers: 3 });
-    render(<AppGeneralSection />);
+    render(<AppDevToolsSection />);
 
     await userEvent.click(screen.getByRole('combobox', { name: 'Editor' }));
     expect(screen.getAllByRole('option')).toHaveLength(5);
@@ -112,7 +113,7 @@ describe('AppGeneralSection open with', () => {
   });
 
   it('starts the browser at system default and saves a picked browser', async () => {
-    render(<AppGeneralSection />);
+    render(<AppDevToolsSection />);
 
     const browser = screen.getByRole('combobox', { name: 'Browser' });
     expect(browser.textContent).toContain('System default');
@@ -126,7 +127,7 @@ describe('AppGeneralSection open with', () => {
 
   it('uses a list for the browser when more than three are installed', () => {
     seed({ editors: 4, browsers: 4 });
-    render(<AppGeneralSection />);
+    render(<AppDevToolsSection />);
 
     expect(screen.queryByRole('tablist', { name: 'Browser' })).toBeNull();
     expect(screen.getByRole('combobox', { name: 'Browser' }).textContent).toContain(
@@ -137,7 +138,7 @@ describe('AppGeneralSection open with', () => {
   it('says so when the chosen browser is gone and links fall back to the system one', async () => {
     stored.set('browser.app', 'arc');
     seed({ editors: 4, browsers: 2 });
-    render(<AppGeneralSection />);
+    render(<AppDevToolsSection />);
 
     expect(
       await screen.findByText(
@@ -153,7 +154,7 @@ describe('AppGeneralSection open with', () => {
   });
 });
 
-describe('AppGeneralSection row rhythm', () => {
+describe('Look and alerts and Editor, terminal, git row rhythm', () => {
   const rowOf = (label: string): HTMLElement =>
     screen.getByText(label).parentElement?.parentElement as HTMLElement;
 
@@ -169,7 +170,12 @@ describe('AppGeneralSection row rhythm', () => {
     'renders Editor and Browser as plain field rows like Theme ($editors editors, $browsers browsers)',
     ({ editors, browsers }) => {
       seed({ editors, browsers });
-      render(<AppGeneralSection />);
+      render(
+        <>
+          <AppGeneralSection />
+          <AppDevToolsSection />
+        </>,
+      );
 
       const theme = rowOf('Theme');
       const editor = rowOf('Editor');

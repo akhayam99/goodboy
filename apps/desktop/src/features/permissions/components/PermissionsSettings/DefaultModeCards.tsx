@@ -15,6 +15,10 @@ type Props = {
   readonly workspaceId: WorkspaceId;
 };
 
+type SaveParams = {
+  readonly mode: PickerMode;
+};
+
 export const DefaultModeCards = ({ workspaceId }: Props) => {
   const defaultMode = useAppStore(
     (s) =>
@@ -26,7 +30,7 @@ export const DefaultModeCards = ({ workspaceId }: Props) => {
   const [isBusy, setIsBusy] = useState(false);
   const value = pickerModeOf({ mode: defaultMode });
 
-  const save = async (mode: PickerMode) => {
+  const save = async ({ mode }: SaveParams) => {
     setIsBusy(true);
     try {
       await setWorkspacePermissionDefault({ workspaceId, mode });
@@ -60,7 +64,7 @@ export const DefaultModeCards = ({ workspaceId }: Props) => {
               role="radio"
               aria-checked={isSelected}
               disabled={isBusy}
-              onClick={() => void save(mode)}
+              onClick={() => void save({ mode })}
               className={cn(
                 'flex min-w-0 flex-col items-start gap-1 rounded-lg border bg-subtle px-3 py-3 text-left motion-safe:transition-colors hover:bg-hover',
                 isSelected ? 'border-primary' : 'border-border-soft',

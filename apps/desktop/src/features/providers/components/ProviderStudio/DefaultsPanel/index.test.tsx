@@ -247,6 +247,14 @@ describe('DefaultsPanel', () => {
     expect(screen.queryByText('Models in older plan runs')).toBeNull();
   });
 
+  it('keeps the one provider rule of ux53 and none of the old routing words', () => {
+    withPlanRun();
+    const { container } = render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    screen.getByRole('tablist', { name: 'Provider priority' });
+    expect(container.textContent).not.toMatch(/Balanced|In order|most room|Send new steps to/);
+  });
+
   it('ignores a plan run of another workspace on Every run', () => {
     state.sessions = [
       aSession({

@@ -21,14 +21,18 @@ import {
 import { clearSceneInvoke, sceneInvoke } from '../../test/sceneInvoke';
 import { SettingsFrame } from '../../app/components/MockScene/scenes/audit/SettingsFrame';
 import { seedStorageScene } from '../../app/components/MockScene/scenes/brand/StorageScene';
-import { SETTING_ROWS, type SettingRowPage } from './settingRows';
+import { SETTING_ROWS, isRunDefaultsFocus, type SettingRowPage } from './settingRows';
 
 const SETTLE_MS = 2_000;
 
 const pageId = ({ scope, section }: SettingRowPage): string => `${scope}:${section}`;
 
 const PAGES: ReadonlyArray<SettingRowPage> = [
-  ...new Map(SETTING_ROWS.map((row) => [pageId(row.page), row.page] as const)).values(),
+  ...new Map(
+    SETTING_ROWS.filter((row) => !isRunDefaultsFocus(row.page)).map(
+      (row) => [pageId(row.page), row.page] as const,
+    ),
+  ).values(),
 ];
 
 const KEYS: ReadonlySet<string> = new Set(SETTING_ROWS.map((row) => row.key));
@@ -68,7 +72,7 @@ afterEach(() => {
   clearSceneInvoke();
 });
 
-const FOLDED: ReadonlySet<string> = new Set(['parallel-agents', 'reply-template-fixed']);
+const FOLDED: ReadonlySet<string> = new Set(['reply-template-fixed']);
 
 type MountParams = {
   readonly page: SettingRowPage;
@@ -124,7 +128,6 @@ describe('setting rows registry', () => {
   it.each([
     { scope: 'app', section: 'general', row: 'theme' },
     { scope: 'workspace', section: 'branches', row: 'branch-prefix' },
-    { scope: 'workspace', section: 'general', row: 'parallel-agents' },
   ] as const)('opens $section and lights the $row row itself', async (focus) => {
     const { container } = render(<SettingsFrame focus={focus} seed={seedPage} />);
     await act(async () => {
@@ -137,6 +140,42 @@ describe('setting rows registry', () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
     expect(lit?.dataset.highlighted).toBeUndefined();
+  });
+
+  it.each(
+    SETTING_ROWS.filter((row) => isRunDefaultsFocus(row.page)).map((row) => ({
+      key: row.key,
+      page: row.page,
+    })),
+  )('hands the $key row to Workflows, Every run', async ({ key, page }) => {
+    render(<SettingsFrame focus={{ ...page, row: key }} seed={seedPage} />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10);
+    });
+
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'workflow' });
+    expect(useAppStore.getState().workflowStudioView).toBe('every');
+  });
+
+  it('keeps every other row in Settings, in the same scope as before', () => {
+    expect(
+      SETTING_ROWS.filter((row) => !isRunDefaultsFocus(row.page)).map(
+        (row) => `${row.key}:${row.page.scope}:${row.page.section}`,
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        'theme:app:general',
+        'open-editor:app:devtools',
+        'links-open:app:devtools',
+        'command-status:app:devtools',
+        'check-origin:app:devtools',
+        'search-index:app:storage',
+        'search-rebuild:app:storage',
+        'search-leave-out:app:storage',
+        'background-download:app:general',
+        'provider-priority:workspace:models',
+      ]),
+    );
   });
 
   it('gives every row a unique key', () => {

@@ -64,28 +64,20 @@ describe('the Models page scenes', () => {
     expect(MOCK_SCENES.modelswilluse).toBe(U24_P_MODELS_SCENES.modelswilluse);
   });
 
-  it('modelswilluse shows the saved project settings, the skipped pins and the page line', async () => {
+  it('modelswilluse shows the saved project settings and leaves the role pins to Every run', async () => {
     await mount('modelswilluse');
 
     expect(screen.getByText('Saved model settings from 1 folder no longer apply.')).toBeDefined();
-    expect(
-      screen.getByText(
-        "With Codex as the only provider, 7 of 11 agents use a pin that can't run. Auto picks apply.",
-      ),
-    ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Back to Auto for those 7' })).toBeDefined();
-    expect(
-      screen.getAllByRole('img', { name: /^Pinned Opus 5\.5 is skipped: Claude is Off\./ }).length,
-    ).toBe(7);
-    expect(screen.queryByText(/^Pinned Opus 5\.5 is skipped/)).toBeNull();
-    expect(screen.queryByRole('button', { name: /Reset all/ })).toBeNull();
+    expect(screen.queryByText(/use a pin that can't run/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Back to Auto for/ })).toBeNull();
+    expect(screen.queryByRole('img', { name: /^Pinned Opus 5\.5 is skipped/ })).toBeNull();
   });
 
-  it('modelswilluse-cleared drops the notice and keeps the rows as they were', async () => {
+  it('modelswilluse-cleared drops the notice', async () => {
     await mount('modelswilluse-cleared');
 
     expect(screen.queryByText(/no longer apply/)).toBeNull();
-    expect(screen.getByRole('button', { name: 'Back to Auto for those 7' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Background tasks' })).toBeDefined();
   });
 
   it.each(Object.keys(U24_P_MODELS_SCENES))(

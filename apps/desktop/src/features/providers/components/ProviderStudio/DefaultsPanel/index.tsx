@@ -44,9 +44,7 @@ type RunTaskModelsParams = {
 };
 
 const runTaskModelsOf = ({ taskModels }: RunTaskModelsParams): OverrideSettings['taskModels'] => {
-  const kept = Object.entries(taskModels ?? {}).filter(
-    ([task]) => !BACKGROUND_TASK_IDS.has(task),
-  );
+  const kept = Object.entries(taskModels ?? {}).filter(([task]) => !BACKGROUND_TASK_IDS.has(task));
   return kept.length > 0 ? Object.fromEntries(kept) : null;
 };
 

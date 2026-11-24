@@ -68,28 +68,42 @@ describe('settings rail rows', () => {
     ).toEqual(['app']);
   });
 
-  it('lists the This Mac pages with Advanced, and Models under the workspace', () => {
+  it('lists the This Mac pages by what you came to change, and ends the workspace on the run defaults link', () => {
     const groups = settingsDirectory({ workspaceName: 'Acme', status: QUIET_STATUS });
     const labelsOf = (scope: string) =>
       groups.find((group) => group.scope === scope)?.pages.map((page) => page.label);
 
     expect(labelsOf('app')).toEqual([
-      'General',
+      'Look and alerts',
+      'Editor, terminal, git',
       'Keyboard shortcuts',
-      'Advanced',
-      'Storage',
+      'Storage and search',
       'Backup and reset',
       'iPhone',
     ]);
     expect(labelsOf('workspace')).toEqual([
       'Projects',
       'About you',
-      'Runs',
       'Models',
       'Permissions',
       'Branches',
       'Replies and commits',
+      'Run defaults are in Workflows',
     ]);
+    const link = groups
+      .flatMap((group) => group.pages)
+      .find((page) => page.label === 'Run defaults are in Workflows');
+    expect(link?.isLink).toBe(true);
+    expect(link?.target).toEqual({ scope: 'workspace', section: 'general' });
+  });
+
+  it('gives the This Mac pages their old names as search aliases', () => {
+    const aliasesOf = (key: string) =>
+      pagesOf(QUIET_STATUS).find((page) => page.key === key)?.searchAliases;
+
+    expect(aliasesOf('app:general')).toEqual(['General']);
+    expect(aliasesOf('app:devtools')).toEqual(['Advanced', 'Git']);
+    expect(aliasesOf('app:storage')).toEqual(['Search index']);
   });
 
   it('hides iPhone from the rail until a phone is paired, and keeps it for search', () => {
@@ -112,7 +126,8 @@ describe('settings rail rows', () => {
     { section: 'general', page: 'general' },
     { section: 'updates', page: 'general' },
     { section: 'shortcuts', page: 'shortcuts' },
-    { section: 'advanced', page: 'advanced' },
+    { section: 'devtools', page: 'devtools' },
+    { section: 'advanced', page: 'devtools' },
     { section: 'storage', page: 'storage' },
     { section: 'backup', page: 'backup' },
     { section: 'iphone', page: 'iphone' },
@@ -145,7 +160,7 @@ describe('settings rail rows', () => {
     expect(planPageOf({ section: 'branches' })).toBe('branches');
   });
 
-  it('keys an old updates link on General and an old models row on Models', () => {
+  it('keys an old updates link on Look and alerts and an old models row on Models', () => {
     expect(settingsPageKey({ scope: 'app', section: 'updates' })).toBe('app:general');
     expect(settingsPageKey({ scope: 'app', section: 'iphone' })).toBe('app:iphone');
     expect(settingsPageKey({ scope: 'workspace', section: 'models' })).toBe('workspace:models');
@@ -159,12 +174,12 @@ describe('settings rail rows', () => {
     expect(settingsPageKey({ scope: 'workspace', section: 'summarizer' })).toBe('workspace:models');
   });
 
-  it('puts the update dot on General, storage on Storage and findings on Permissions', () => {
+  it('puts the update dot on Look and alerts, storage on Storage and search, findings on Permissions', () => {
     const pages = pagesOf(LOUD_STATUS);
     const attentionOf = (key: string) => pages.find((page) => page.key === key)?.attention;
 
     expect(attentionOf('app:general')).toEqual({ text: 'Update available', tone: 'info' });
-    expect(attentionOf('app:advanced')).toBeNull();
+    expect(attentionOf('app:devtools')).toBeNull();
     expect(attentionOf('app:storage')).toEqual({ text: '12 GB can go', tone: 'warning' });
     expect(attentionOf('workspace:permissions')).toEqual({
       text: '3 open findings',

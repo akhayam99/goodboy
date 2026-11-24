@@ -32,6 +32,7 @@ import {
 import { selectResolution } from '../../store/runtime/models/selectResolution';
 import { OrchestratorRoutingRow } from '../workflows/components/OrchestratorStrip/OrchestratorRoutingRow';
 import { ROLE_LABEL } from '../session/agent-kind';
+import { EveryRunModels } from '../workflows/components/EveryRun/EveryRunModels';
 import { DefaultsPanel } from './components/ProviderStudio/DefaultsPanel';
 import { modelNameOf } from './components/ProviderStudio/DefaultsPanel/modelNameOf';
 import type { ProviderDisplayInfo } from './providers';
@@ -130,6 +131,14 @@ const nameOf = ({ task }: { readonly task: AuxTaskId }): string => {
   return modelNameOf({ provider: resolution.provider, model: resolution.model });
 };
 
+const renderModelHomes = () =>
+  render(
+    <>
+      <EveryRunModels workspaceId={WORKSPACE.id} />
+      <DefaultsPanel workspaceId={WORKSPACE.id} />
+    </>,
+  );
+
 const taskRow = ({ task }: { readonly task: string }): string => {
   const label = document.querySelector<HTMLElement>(`[data-default-row="${task}"]`);
   const row = label?.parentElement;
@@ -146,7 +155,7 @@ describe.each([
   ['Codex only, pins on Anthropic', CODEX_ONLY],
   ['Anthropic on, pins run', ANTHROPIC_ON],
 ] as const)('one resolution: %s', (_name, policy) => {
-  it('prints the same orchestrator model on the Models page and the run pill', () => {
+  it('prints the same orchestrator model on Every run and the run pill', () => {
     seed({ policy });
     const expected = nameOf({ task: 'workflow_orchestrator' });
 
@@ -155,13 +164,13 @@ describe.each([
     expect(pill.getAttribute('aria-label')).toContain(expected);
     cleanup();
 
-    render(<DefaultsPanel workspaceId={WORKSPACE.id} />);
+    renderModelHomes();
     expect(taskRow({ task: 'workflow_orchestrator' })).toContain(expected);
   });
 
-  it('prints the resolved model on every role row and task row of the Models page', () => {
+  it('prints the resolved model on every role row and task row of Every run and Models', () => {
     seed({ policy });
-    render(<DefaultsPanel workspaceId={WORKSPACE.id} />);
+    renderModelHomes();
 
     for (const role of DEFAULT_GROUPS.agents.flatMap((group) => group.members)) {
       const resolution = selectResolution({

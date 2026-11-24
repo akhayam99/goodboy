@@ -1,22 +1,17 @@
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { Band, Disclosure, Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import { useWorkspaceOverrideSave } from '../../hooks/useWorkspaceOverrideSave';
-import { SettingRowFocusContext } from '../../settingRowFocusContext';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
 };
 
-const ADVANCED_ROWS: ReadonlySet<string> = new Set(['parallel-agents']);
-
 export const RunsAdvancedBand = ({ workspaceId }: Props) => {
-  const { row } = useContext(SettingRowFocusContext);
-  const isTargeted = row !== null && ADVANCED_ROWS.has(row);
-  const [isOpen, setIsOpen] = useState(isTargeted);
+  const [isOpen, setIsOpen] = useState(false);
   const isParallelOn = useAppStore(
     (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).parallelAgents,
   );
@@ -26,14 +21,6 @@ export const RunsAdvancedBand = ({ workspaceId }: Props) => {
     saved: isParallelOn,
     patchOf: ({ value: isOn }) => ({ parallelAgents: isOn }),
   });
-
-  const [wasTargeted, setWasTargeted] = useState(isTargeted);
-  if (isTargeted !== wasTargeted) {
-    setWasTargeted(isTargeted);
-    if (isTargeted) {
-      setIsOpen(true);
-    }
-  }
 
   return (
     <Disclosure

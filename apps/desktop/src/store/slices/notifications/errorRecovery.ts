@@ -25,8 +25,8 @@ export const NOTHING_CHANGED: ErrorRecovery = { clause: 'nothing-changed' };
 
 export const WORK_KEPT: ErrorRecovery = { clause: 'work-kept' };
 
-export const OPEN_APP_SETTINGS_GENERAL: ErrorRecovery = {
-  action: { kind: 'open-settings', scope: 'app', section: 'general' },
+export const OPEN_APP_SETTINGS_TOOLS: ErrorRecovery = {
+  action: { kind: 'open-settings', scope: 'app', section: 'devtools' },
 };
 
 export const OPEN_PROVIDER_SETTINGS: ErrorRecovery = {

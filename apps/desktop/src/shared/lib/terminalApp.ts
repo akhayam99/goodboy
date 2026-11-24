@@ -1,6 +1,6 @@
 import type { ReportErrorParams } from '../../store/slices/notifications/reportError';
 import { invokeCommand } from './invokeCommand';
-import { OPEN_APP_SETTINGS_GENERAL } from '../../store/slices/notifications/errorRecovery';
+import { OPEN_APP_SETTINGS_TOOLS } from '../../store/slices/notifications/errorRecovery';
 
 export type DetectedTerminal = {
   readonly id: string;
@@ -37,7 +37,7 @@ export const openInConfiguredTerminal = async ({
     void state.reportError({
       title: "Couldn't open your terminal app",
       error,
-      recovery: OPEN_APP_SETTINGS_GENERAL,
+      recovery: OPEN_APP_SETTINGS_TOOLS,
     });
   }
 };

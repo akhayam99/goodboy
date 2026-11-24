@@ -170,7 +170,6 @@ export const NAMES = {
   keyboardShortcuts: 'Keyboard shortcuts',
   backupAndReset: 'Backup and reset',
   iphone: 'iPhone',
-  storage: 'Storage',
   lookAndAlerts: 'Look and alerts',
   editorTerminalGit: 'Editor, terminal, git',
   storageAndSearch: 'Storage and search',

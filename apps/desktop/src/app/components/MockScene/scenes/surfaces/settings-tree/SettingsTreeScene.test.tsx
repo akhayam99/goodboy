@@ -57,7 +57,7 @@ describe('the Settings tree scenes', () => {
     );
   });
 
-  it('u26s-settings-general draws the two scope labels and General with its Updates band', async () => {
+  it('u26s-settings-general draws the two scope labels and Look and alerts with its Updates band', async () => {
     const rail = await mount({ id: 'u26s-settings-general' });
 
     expect(
@@ -65,15 +65,15 @@ describe('the Settings tree scenes', () => {
         .getAllByRole('heading', { level: 2 })
         .map((heading) => heading.textContent),
     ).toEqual(['This Macevery workspace', 'Harborlinethis workspace']);
-    expect(title()).toBe('General');
+    expect(title()).toBe('Look and alerts');
     screen.getByRole('heading', { level: 2, name: 'Appearance' });
     screen.getByRole('heading', { level: 2, name: 'Updates' });
   });
 
-  it('u26s-settings-updates opens General, where Updates is a band', async () => {
+  it('u26s-settings-updates opens Look and alerts, where Updates is a band', async () => {
     await mount({ id: 'u26s-settings-updates' });
 
-    expect(title()).toBe('General');
+    expect(title()).toBe('Look and alerts');
     screen.getByRole('switch', { name: 'Download in the background' });
     screen.getByRole('button', { name: "Open What's new" });
   });
@@ -81,7 +81,7 @@ describe('the Settings tree scenes', () => {
   it('u26s-settings-storage keeps the cleanup policy as a row of Worktrees', async () => {
     await mount({ id: 'u26s-settings-storage' });
 
-    expect(title()).toBe('Storage');
+    expect(title()).toBe('Storage and search');
     const worktrees = await screen.findByRole('region', { name: 'Worktrees' }, WAIT);
     within(worktrees).getByRole('combobox', { name: 'Suggest cleanup after' });
     expect(screen.queryByRole('region', { name: 'Secrets in saved scripts' })).toBeNull();

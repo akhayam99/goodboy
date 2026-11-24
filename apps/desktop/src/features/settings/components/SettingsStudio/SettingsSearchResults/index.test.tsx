@@ -89,11 +89,11 @@ const settingsFocus = () => {
 };
 
 describe('SettingsSearchResults', () => {
-  it('finds the Theme row by its label and opens General on it with Return', () => {
+  it('finds the Theme row by its label and opens Look and alerts on it with Return', () => {
     const { field } = mount({ query: 'theme' });
 
     const theme = within(results()).getByRole('option', { name: /Theme/ });
-    expect(theme.textContent).toBe('ThemeGeneral · Appearance');
+    expect(theme.textContent).toBe('ThemeLook and alerts · Appearance');
     expect(theme.getAttribute('aria-selected')).toBe('true');
     fireEvent.keyDown(field, { key: 'Enter' });
 

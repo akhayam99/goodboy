@@ -12,7 +12,7 @@ import type { Notification } from '@goodboy/db';
 import {
   CHECK_STATE,
   NOTHING_CHANGED,
-  OPEN_APP_SETTINGS_GENERAL,
+  OPEN_APP_SETTINGS_TOOLS,
   READ_FAILED,
   WORK_KEPT,
 } from './errorRecovery';
@@ -533,12 +533,12 @@ describe('store contract', () => {
       await store.getState().reportError({
         title: "Couldn't open the editor",
         error: new Error('not found'),
-        recovery: OPEN_APP_SETTINGS_GENERAL,
+        recovery: OPEN_APP_SETTINGS_TOOLS,
       });
       expect(store.getState().notifications[0]?.action).toEqual({
         kind: 'open-settings',
         scope: 'app',
-        section: 'general',
+        section: 'devtools',
       });
     });
 

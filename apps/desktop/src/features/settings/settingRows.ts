@@ -372,7 +372,7 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
   row({
     key: 'lead-model',
     label: `${NAMES.lead} model`,
-    help: 'The model a new run starts with. A run can pick another for itself.',
+    help: 'The model a new run starts with.',
     page: EVERY_RUN,
     band: NAMES.runs,
   }),

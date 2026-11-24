@@ -99,6 +99,7 @@ type Props = {
   readonly policy: ProviderPolicy;
   readonly openRole?: string;
   readonly scrollTo?: string;
+  readonly page: 'every' | 'models';
 };
 
 const FOCUS_POLL_MS = 100;
@@ -143,7 +144,7 @@ const applyFocus = ({ openRole, scrollTo }: FocusParams): boolean => {
   return true;
 };
 
-const ModelsOverApp = ({ policy, openRole, scrollTo }: Props) => {
+const ModelsOverApp = ({ policy, openRole, scrollTo, page }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -157,15 +158,22 @@ const ModelsOverApp = ({ policy, openRole, scrollTo }: Props) => {
     if (!isReady) {
       return;
     }
-    const id = window.setTimeout(
-      () =>
-        useAppStore.getState().switchStudio({
-          studio: { kind: 'settings', focus: { scope: 'workspace', section: 'models' } },
-        }),
-      OPEN_DELAY_MS,
-    );
+    const id = window.setTimeout(() => {
+      if (page === 'every') {
+        useAppStore.setState({
+          loadPhaseTemplates: async () => undefined,
+          loadStepLibrary: async () => undefined,
+        });
+        useAppStore.getState().setWorkflowStudioView('every');
+        useAppStore.getState().switchStudio({ studio: { kind: 'workflow' } });
+        return;
+      }
+      useAppStore.getState().switchStudio({
+        studio: { kind: 'settings', focus: { scope: 'workspace', section: 'models' } },
+      });
+    }, OPEN_DELAY_MS);
     return () => window.clearTimeout(id);
-  }, [isReady]);
+  }, [isReady, page]);
 
   useEffect(() => {
     if (!isReady || (openRole === undefined && scrollTo === undefined)) {
@@ -188,10 +196,12 @@ const ModelsOverApp = ({ policy, openRole, scrollTo }: Props) => {
 };
 
 export const U24_RESOLVER_SCENES: Readonly<Record<string, ComponentType>> = {
-  'models-codex-only': () => <ModelsOverApp policy={CODEX_ONLY} />,
-  'models-anthropic-on': () => <ModelsOverApp policy={ANTHROPIC_ON} />,
-  'models-anthropic-sized': () => <ModelsOverApp policy={ANTHROPIC_ON} openRole="Implementer" />,
+  'models-codex-only': () => <ModelsOverApp policy={CODEX_ONLY} page="every" />,
+  'models-anthropic-on': () => <ModelsOverApp policy={ANTHROPIC_ON} page="every" />,
+  'models-anthropic-sized': () => (
+    <ModelsOverApp policy={ANTHROPIC_ON} openRole="Implementer" page="every" />
+  ),
   'models-anthropic-tasks': () => (
-    <ModelsOverApp policy={ANTHROPIC_ON} scrollTo="Background tasks" />
+    <ModelsOverApp policy={ANTHROPIC_ON} scrollTo="Background tasks" page="models" />
   ),
 };

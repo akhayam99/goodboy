@@ -28,7 +28,5 @@ const seedSplitLevels = (): void => {
 };
 
 export const U46_SETTINGS_RUNS_SCENES = {
-  'settings-runs-split': () => (
-    <EveryRunFrame seed={seedSplitLevels} />
-  ),
+  'settings-runs-split': () => <EveryRunFrame seed={seedSplitLevels} />,
 };

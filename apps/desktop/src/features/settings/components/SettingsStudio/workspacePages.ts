@@ -1,5 +1,5 @@
 import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/utils/names';
+import { NAMES, formerNamesOf } from '../../../../shared/utils/names';
 import { PERMISSIONS_SECTION_ID } from '../../../permissions/openPermissionSettings';
 import { REVIEW_REPLIES_SECTION_ID } from '../../../resolve/replySettingsCopy';
 import { MODELS_PAGE_SECTION, isModelsPage } from '../../isModelsPage';
@@ -68,7 +68,7 @@ const ALL_WORKSPACE_PAGES = [
 export const RUN_DEFAULTS_SEARCH_ALIASES: ReadonlyArray<string> = [
   NAMES.runs,
   NAMES.everyRun,
-  'Run defaults',
+  ...formerNamesOf(NAMES.runs),
   'Start as',
 ];
 

@@ -103,7 +103,6 @@
     "apps/desktop/src/features/integrations/components/LaunchSessionPanel/index.tsx": 1,
     "apps/desktop/src/features/integrations/components/WhatGoodboyCanDo.tsx": 1,
     "apps/desktop/src/features/integrations/linear/LinearConnectSteps.tsx": 1,
-    "apps/desktop/src/features/notifications/components/NotificationRow/index.tsx": 1,
     "apps/desktop/src/features/permissions/components/PermissionModePicker/index.tsx": 2,
     "apps/desktop/src/features/providers/components/CliGateLine.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderConnect/GuidePanel.tsx": 1,

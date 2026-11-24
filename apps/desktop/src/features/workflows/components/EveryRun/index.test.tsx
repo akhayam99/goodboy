@@ -170,6 +170,7 @@ describe('Every run', () => {
     expect(screen.getAllByRole('region').map((band) => band.getAttribute('aria-label'))).toEqual([
       'When a run stops for you',
       'Spending',
+      'Edits',
       'Agents',
       'Runs',
       'Roles',
@@ -218,7 +219,9 @@ describe('Every run', () => {
       page({ name: 'Every run tab' }).getByRole('form', { name: 'Limit for new runs' }),
     );
 
-    await waitFor(() => expect(limitInput({ name: 'Every run in another window' }).value).toBe('20'));
+    await waitFor(() =>
+      expect(limitInput({ name: 'Every run in another window' }).value).toBe('20'),
+    );
     expect(savedOverrides()?.workflowRules?.spendLimitUsd).toBe(20);
   });
 
@@ -290,6 +293,52 @@ describe('Every run', () => {
 
     expect(screen.queryByRole('region', { name: 'Older plan runs' })).toBeNull();
     expect(screen.queryByText('Models in older plan runs')).toBeNull();
+  });
+
+  it('saves the edit mode new sessions start in, the default Settings, Permissions used to hold', async () => {
+    stubStoryInvoke({ patch_workspace_overrides: null, db_select: () => [], db_execute: null });
+    render(<EveryRun workspaceId={HARBORLINE.id} />);
+    const edits = within(screen.getByRole('region', { name: 'Edits' }));
+
+    expect(edits.getByRole('radio', { name: /Full access/ }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
+    fireEvent.click(edits.getByRole('radio', { name: /Read only/ }));
+
+    await waitFor(() =>
+      expect(
+        useAppStore.getState().workspaces.find((workspace) => workspace.id === HARBORLINE.id)
+          ?.defaultPermissionMode,
+      ).toBe('plan'),
+    );
+    expect(edits.getByRole('radio', { name: /Read only/ }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
+  });
+
+  it('keeps the edit mode and shows the error when the save fails', async () => {
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({ reportError });
+    stubStoryInvoke({
+      patch_workspace_overrides: null,
+      db_select: () => [],
+      db_execute: () => {
+        throw new Error('database is locked');
+      },
+    });
+    render(<EveryRun workspaceId={HARBORLINE.id} />);
+    const edits = within(screen.getByRole('region', { name: 'Edits' }));
+
+    fireEvent.click(edits.getByRole('radio', { name: /Read only/ }));
+
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't change the default mode" }),
+      ),
+    );
+    expect(edits.getByRole('radio', { name: /Full access/ }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
   });
 
   it('names no provider rule of its own', () => {

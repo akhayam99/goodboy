@@ -25,6 +25,8 @@ const SETTLE_MS = 2_000;
 beforeAll(async () => {
   await importStore();
   await import('../../../../../features/settings/components/SettingsStudio');
+  await import('../../../../../features/workflows/components/WorkflowStudio');
+  await import('../../../../../features/workflows/components/EveryRun');
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {

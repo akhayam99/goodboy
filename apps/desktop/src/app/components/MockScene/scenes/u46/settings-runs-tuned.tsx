@@ -30,9 +30,7 @@ const TunedRuns = () => {
     }, OPEN_DETAILS_AFTER_MS);
     return () => clearTimeout(timer);
   }, []);
-  return (
-    <EveryRunFrame seed={seedTunedDetails} />
-  );
+  return <EveryRunFrame seed={seedTunedDetails} />;
 };
 
 export const U46_SETTINGS_RUNS_TUNED_SCENES = {
