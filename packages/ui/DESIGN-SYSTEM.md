@@ -596,11 +596,13 @@ the six places and Settings share one axis at either width.
 and `r4-column-light` scenes, and with an old folded choice.
 
 The foot of the rail is Settings, Report (with its word) and the signature. The
-signature (`RailSignature`) is a 24px `BrandTile`: passive, `aria-hidden`, with no
-hover, focus or tooltip, and no ring, plate, border, glow or gradient. It is the
-same in both themes and never inverted. It sits centered in one rail tile
-(`SHELL_RAIL_TILE`), so the dog lines up with the icons above; the rail pads its
-foot as much as its top (`SHELL_RAIL_EDGE_PX`), and the rail's `gap` spaces it
+signature (`RailSignature`) is a 24px `BrandTile` in a `quiet` `Button` that opens
+What's new, with the tooltip "What's new" and no word, and no ring, plate, border,
+glow or gradient. It is the same in both themes and never inverted. An unread
+release adds the `unread` `StatusDot` on its corner. It sits centered in one rail
+tile (`SHELL_RAIL_TILE`), so the dog lines up with the icons above; the rail pads
+its foot by `SHELL_RAIL_FOOT_PX` (`SHELL_GUTTER_PX`, the inset under the content
+sheet), so the tile ends on the sheet's bottom edge, and the rail's `gap` spaces it
 from Report. An update adds one more `ShellRailItem`
 above the signature and never replaces it: `tint="primary"` paints the tile
 `primary-subtle` with `primary` text and word (`danger` on `danger-subtle` when it

@@ -11,9 +11,11 @@ are owned by [docs/navigation/shell.md](../../../docs/navigation/shell.md) → S
 
 `ShellRail` reads `useShellRailForm` and `shellRailGeometry`: 64px with words,
 or 44px with icons and tooltips in a window under 1100px. The rail pads its
-top and its foot the same (`SHELL_RAIL_EDGE_PX`), and a passive mark at the
-foot sits in one rail tile (`SHELL_RAIL_TILE`, the size of an item's button),
-so its glyph lines up with the icons above it. `ShellRailItem`
+top by `SHELL_RAIL_EDGE_PX` and its foot by `SHELL_RAIL_FOOT_PX`, the shell
+gutter `DrawerColumn` keeps under the content sheet, so the last tile ends on
+the sheet's bottom edge. The brand mark at the foot sits in one rail tile
+(`SHELL_RAIL_TILE`, the size of an item's button), so its glyph lines up with
+the icons above it. `ShellRailItem`
 keeps the full accessible name when a shorter word is shown. The rail never
 folds, never resizes and saves no width. `App.tsx` supplies neither a top bar
 fold toggle nor a peek overlay.

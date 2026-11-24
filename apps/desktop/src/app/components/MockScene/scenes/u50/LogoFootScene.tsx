@@ -6,11 +6,14 @@ import { BoardShellScene } from '../BoardShellScene';
 type Props = {
   readonly theme: 'dark' | 'light';
   readonly hasUpdate: boolean;
+  readonly hasUnseenRelease?: boolean;
 };
 
 const VERSION = '0.40.1';
 
-export const LogoFootScene = ({ theme, hasUpdate }: Props) => {
+const SEEN_BEFORE = '0.0.1';
+
+export const LogoFootScene = ({ theme, hasUpdate, hasUnseenRelease = false }: Props) => {
   const afterSeed = useCallback(() => {
     applyDocumentTheme({ theme });
     useAppStore.setState({
@@ -20,8 +23,12 @@ export const LogoFootScene = ({ theme, hasUpdate }: Props) => {
       updateFailure: null,
       updateProgress: null,
       updateQueuedUntilIdle: false,
+      ...(hasUnseenRelease && {
+        changelogSeenHydrated: true,
+        changelogSeenVersion: SEEN_BEFORE,
+      }),
     });
-  }, [theme, hasUpdate]);
+  }, [theme, hasUpdate, hasUnseenRelease]);
 
   return <BoardShellScene afterSeed={afterSeed} />;
 };
