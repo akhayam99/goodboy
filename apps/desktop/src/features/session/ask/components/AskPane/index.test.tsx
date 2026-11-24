@@ -80,7 +80,8 @@ beforeEach(async () => {
   });
 });
 
-afterEach(() => {
+afterEach(async () => {
+  await act(() => new Promise((resolve) => setTimeout(resolve, 80)));
   cleanup();
   vi.unstubAllGlobals();
 });

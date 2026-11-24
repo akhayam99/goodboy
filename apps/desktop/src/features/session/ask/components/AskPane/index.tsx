@@ -1,8 +1,14 @@
+import { Suspense } from 'react';
 import { cn, useShellRailForm } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { selectIsAskOpen } from '../../../../../store/slices/ask/selectIsAskOpen';
-import { AskPaneBody } from './AskPaneBody';
+import { lazyNamed } from '../../../../../shared/lib/lazyNamed';
+
+const AskPaneBody = lazyNamed({
+  load: () => import('./AskPaneBody'),
+  pick: ({ AskPaneBody }) => AskPaneBody,
+});
 
 type Props = {
   readonly session: Session;
@@ -24,7 +30,9 @@ export const AskPane = ({ session }: Props) => {
         isOverlay ? 'absolute inset-y-0 right-0 z-30 shadow-xl' : 'relative shrink-0',
       )}
     >
-      <AskPaneBody key={sessionId} session={session} onClose={() => closeAsk({ sessionId })} />
+      <Suspense fallback={null}>
+        <AskPaneBody key={sessionId} session={session} onClose={() => closeAsk({ sessionId })} />
+      </Suspense>
     </div>
   );
 };
