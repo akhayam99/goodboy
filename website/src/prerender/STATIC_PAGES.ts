@@ -24,6 +24,16 @@ export const STATIC_PAGES = {
     crumbs: [HOME, { name: 'Features', path: SITE.features }],
     isIndexed: true,
   },
+  ade: {
+    path: SITE.ade,
+    title: 'What is an agentic development environment (ADE)? | Goodboy',
+    description:
+      'What an agentic development environment (ADE) is, how it differs from an IDE or a terminal agent, what it has to do, and how Goodboy does each part.',
+    ogType: 'article',
+    kind: 'guide',
+    crumbs: [HOME, { name: 'Agentic development environment', path: SITE.ade }],
+    isIndexed: true,
+  },
   notFound: {
     path: '/404',
     title: 'Page not found | Goodboy',

@@ -5,8 +5,10 @@ import { Nav } from '../home/sections/Nav';
 import '../../styles/base.css';
 import '../../styles/consent.css';
 import '../../components/Statement.css';
+import '../../components/StarCount.css';
 import '../home/sections/Footer.css';
 import './ContentPage.css';
+import './AdePage.css';
 
 const SECTIONS: readonly NavSection[] = ['home', 'features', 'docs', 'changelog', 'none'];
 

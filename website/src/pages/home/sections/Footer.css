@@ -28,6 +28,17 @@
   color: var(--t3);
 }
 
+.footerBrand p a {
+  transition: color 0.16s ease-out;
+}
+
+.footerBrand p a:hover {
+  color: var(--t1);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: none;
+}
+
 .footerBrand code {
   font: 400 13px/16px var(--mono);
   color: var(--t4);
@@ -66,6 +77,7 @@
 }
 
 @media (hover: none) and (pointer: coarse) {
+  .footerBrand p a,
   .footerColumn a {
     display: flex;
     align-items: center;

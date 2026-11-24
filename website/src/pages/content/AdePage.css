@@ -1,0 +1,31 @@
+.adeSection {
+  display: grid;
+  gap: 24px;
+}
+
+.prose.adeCompare > table {
+  max-width: none;
+}
+
+.adeCompare thead th,
+.adeCompare tbody td {
+  min-width: 180px;
+}
+
+.adeCompare tbody th {
+  min-width: 140px;
+}
+
+.adeJob {
+  display: grid;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.adeJobLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  font: var(--t-cell);
+  letter-spacing: var(--tr-cell);
+}

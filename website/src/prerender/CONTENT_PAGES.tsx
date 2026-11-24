@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import type { Crumb } from '../lib/Crumb';
+import { AdePage } from '../pages/content/AdePage';
 import { ChangelogIndex } from '../pages/content/ChangelogIndex';
 import { DocArticle } from '../pages/content/DocArticle';
 import { DocsIndex } from '../pages/content/DocsIndex';
@@ -142,6 +143,13 @@ const docPages = (): readonly ContentPageEntry[] =>
     };
   });
 
+const adeGuide = (): ContentPageEntry => ({
+  file: 'agentic-development-environment.html',
+  meta: STATIC_PAGES.ade,
+  nav: 'none',
+  element: <AdePage crumbs={STATIC_PAGES.ade.crumbs} />,
+});
+
 const notFound = (): ContentPageEntry => ({
   file: '404.html',
   meta: STATIC_PAGES.notFound,
@@ -150,6 +158,7 @@ const notFound = (): ContentPageEntry => ({
 });
 
 export const CONTENT_PAGES: readonly ContentPageEntry[] = [
+  adeGuide(),
   changelogIndex(),
   ...releasePages(),
   docsIndex(),

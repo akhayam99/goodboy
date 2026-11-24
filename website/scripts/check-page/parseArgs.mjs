@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 const DEFAULT_URLS = [
   'http://localhost:1499/',
   'http://localhost:1499/features',
+  'http://localhost:1499/agentic-development-environment',
   'http://localhost:1499/docs',
   'http://localhost:1499/docs/providers',
   'http://localhost:1499/changelog',

@@ -1,7 +1,14 @@
 import type { Crumb } from '../lib/Crumb';
 
 export type PageKind =
-  'home' | 'features' | 'docs-index' | 'doc' | 'changelog-index' | 'release' | 'not-found';
+  | 'home'
+  | 'features'
+  | 'guide'
+  | 'docs-index'
+  | 'doc'
+  | 'changelog-index'
+  | 'release'
+  | 'not-found';
 
 export type PageMeta = {
   readonly path: string;
