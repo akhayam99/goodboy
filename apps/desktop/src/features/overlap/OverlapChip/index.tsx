@@ -11,10 +11,9 @@ import { useSessionLabels } from '../hooks/useSessionLabels';
 
 type Props = {
   readonly mountId: MountId;
-  readonly placement: 'queue' | 'session';
 };
 
-export const OverlapChip = ({ mountId, placement }: Props) => {
+export const OverlapChip = ({ mountId }: Props) => {
   const { mounts } = useLiveMounts();
   const dropdown = useDropdown({
     align: 'start',
@@ -28,7 +27,7 @@ export const OverlapChip = ({ mountId, placement }: Props) => {
     [group],
   );
   const { labels: sessionLabels, titles: sessionTitles } = useSessionLabels({ sessionIds });
-  if (group === null || (placement === 'queue' && group.steps[0]?.isOwn === true)) {
+  if (group === null) {
     return null;
   }
   const words = overlapWordsOf({ group, sessionLabels });

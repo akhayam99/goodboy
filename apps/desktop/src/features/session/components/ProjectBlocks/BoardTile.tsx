@@ -122,10 +122,7 @@ const BoardTileView = ({ rowId }: Props) => {
           </span>
         )}
         {entry === null ? null : (
-          <OverlapChip
-            mountId={brandId<MountId>({ value: entry.fact.mountId })}
-            placement="session"
-          />
+          <OverlapChip mountId={brandId<MountId>({ value: entry.fact.mountId })} />
         )}
         <BoardTileAction rowId={rowId} />
         {entry === null ? null : (
