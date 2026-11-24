@@ -17,4 +17,9 @@ export const RETIRED: ReadonlyArray<RetiredName> = [
   { id: 'mark-read', pattern: /\bMark (?:un)?read\b/, use: NAMES.markAsRead },
   { id: 'mark-all-read', pattern: /\bMark all read\b/, use: NAMES.markAllAsRead },
   { id: 'ask-another-agent', pattern: /\bAsk another agent\b/, use: NAMES.messageAnAgent },
+  {
+    id: 'message-both-implementers',
+    pattern: /\bMessage both Implementers\b/,
+    use: NAMES.messageTheImplementers,
+  },
 ];

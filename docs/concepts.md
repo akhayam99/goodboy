@@ -2019,8 +2019,8 @@ session up again in Goodboy.
   | Add to message    | Attach to the composer      | Send to the agent                                    |
 
   A **Send to X** verb always sends. A verb that only attaches to the composer
-  is **Add to message**. **Message the Implementer** and **Message both
-  Implementers** stay: they write to one named agent and hand no work over.
+  is **Add to message**. **Message the Implementer** and **Message the
+  Implementers** stay: they write to named agents and hand no work over.
   One obvious Lead is one click; **Send to Lead…** opens a short choice only
   when several Leads fit and none holds the item; with none it is **Start new
   Lead**, a Lead run with the item attached and no form.

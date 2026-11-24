@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import {
   importStore,
   resetStoryStore,
@@ -52,20 +52,31 @@ const renderScene = ({ name }: SceneParams) => {
 };
 
 describe('the u50 overlap scenes', () => {
-  it('puts a chip on each row of the two overlapping sessions', async () => {
+  it('puts a chip on each row of the three overlapping sessions', async () => {
     renderScene({ name: 'u50-overlap-light' });
 
-    await screen.findByRole('button', { name: 'Overlaps Batch the Northwind statements' });
-    screen.getByRole('button', { name: 'Overlaps Retry the Harborline ledger export' });
+    await screen.findByRole('button', { name: 'Overlaps Retry the notify-relay sends +1' });
+    expect(
+      screen.getAllByRole('button', { name: 'Overlaps Fix the Harborline ledger totals' }),
+    ).toHaveLength(2);
   });
 
-  it('opens the popover with the file and the order in the open scene', async () => {
+  it('opens the merge order and the shared files in the open scene', async () => {
     renderScene({ name: 'u50-overlap-open-dark' });
 
-    await screen.findByRole('button', { name: 'Message both Implementers' }, { timeout: 3_000 });
-    expect(screen.getByRole('dialog', { name: 'Overlap' }).textContent).toContain(
-      'Both branches change src/retry/state.ts.',
-    );
+    await screen.findByRole('button', { name: 'Message the Implementers' }, { timeout: 3_000 });
+    const dialog = screen.getByRole('dialog', { name: '3 branches change the same files' });
+    expect(
+      within(within(dialog).getByRole('list', { name: 'Merge order' }))
+        .getAllByRole('listitem')
+        .map((row) => row.querySelector('[title]')?.getAttribute('title')),
+    ).toEqual([
+      'ak/notify-relay-retry',
+      'ak/fix-ledger-totals',
+      'ak/payments-api-refunds-for-northwind-statements',
+    ]);
+    within(dialog).getByText('5 shared files');
+    within(dialog).getByRole('button', { name: 'Show 2 more' });
   });
 
   it('lists every scene in light and dark', () => {

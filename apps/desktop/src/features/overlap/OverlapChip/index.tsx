@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { AnchoredPopover, Chip, useDropdown } from '@goodboy/ui';
 import type { MountId } from '@goodboy/types';
-import { mergeOrderOf } from '../mergeOrderOf';
-import { OverlapEntry } from './OverlapEntry';
-import { overlapsOf } from '../overlapsOf';
+import { MergeStepRow } from './MergeStepRow';
+import { OverlapActions } from './OverlapActions';
+import { SharedFiles } from './SharedFiles';
+import { overlapGroupOf } from '../overlapGroupOf';
 import { overlapWordsOf } from '../overlapWordsOf';
 import { useLiveMounts } from '../hooks/useLiveMounts';
 import { useSessionLabels } from '../hooks/useSessionLabels';
@@ -17,36 +18,26 @@ export const OverlapChip = ({ mountId, placement }: Props) => {
   const { mounts } = useLiveMounts();
   const dropdown = useDropdown({
     align: 'start',
-    width: 'w-80 max-w-[calc(100vw-2rem)]',
-    expectedWidth: 320,
-    expectedHeight: 140,
+    width: 'w-96 max-w-[calc(100vw-2rem)]',
+    expectedWidth: 384,
+    expectedHeight: 280,
   });
-  const overlaps = useMemo(
-    () =>
-      overlapsOf({ mounts, mountId }).filter(
-        (overlap) => placement === 'session' || mergeOrderOf({ overlap }).then.mountId === mountId,
-      ),
-    [mounts, mountId, placement],
-  );
+  const group = useMemo(() => overlapGroupOf({ mounts, mountId }), [mounts, mountId]);
   const sessionIds = useMemo(
-    () => [
-      ...new Set(overlaps.flatMap((overlap) => [overlap.mount.sessionId, overlap.other.sessionId])),
-    ],
-    [overlaps],
+    () => (group === null ? [] : [...new Set(group.steps.map((step) => step.mount.sessionId))]),
+    [group],
   );
   const sessionLabels = useSessionLabels({ sessionIds });
-  const [first] = overlaps;
-  if (first === undefined) {
+  if (group === null || (placement === 'queue' && group.steps[0]?.isOwn === true)) {
     return null;
   }
-  const chip = overlapWordsOf({ overlap: first, sessionLabels }).chip;
-  const label = overlaps.length > 1 ? `${chip} +${overlaps.length - 1}` : chip;
+  const words = overlapWordsOf({ group, sessionLabels });
 
   return (
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Overlap"
+      ariaLabel={words.title}
       className="gap-3 p-3"
       anchorClassName="pointer-events-auto flex min-w-0 max-w-48 shrink"
       trigger={
@@ -54,8 +45,8 @@ export const OverlapChip = ({ mountId, placement }: Props) => {
           as="button"
           tone="warning"
           kind="reference"
-          label={<span className="min-w-0 truncate">{label}</span>}
-          ariaLabel={label}
+          label={<span className="min-w-0 truncate">{words.chip}</span>}
+          ariaLabel={words.chip}
           hasPopup="dialog"
           expanded={dropdown.open}
           onClick={dropdown.toggle}
@@ -63,14 +54,23 @@ export const OverlapChip = ({ mountId, placement }: Props) => {
         />
       }
     >
-      {overlaps.map((overlap) => (
-        <OverlapEntry
-          key={overlap.other.mountId}
-          overlap={overlap}
-          sessionLabels={sessionLabels}
-          onSent={dropdown.close}
-        />
-      ))}
+      <div className="flex min-w-0 flex-col gap-1">
+        <h2 className="text-heading text-foreground">{words.title}</h2>
+        <p className="text-meta text-muted-foreground">{words.lead}</p>
+      </div>
+      <ol aria-label="Merge order" className="flex min-w-0 flex-col gap-2">
+        {group.steps.map((step, index) => (
+          <MergeStepRow
+            key={step.mount.mountId}
+            step={step}
+            position={index + 1}
+            title={sessionLabels.get(step.mount.sessionId) ?? ''}
+            reason={words.reasons[index] ?? ''}
+          />
+        ))}
+      </ol>
+      <SharedFiles paths={group.sharedPaths} label={words.shared} />
+      <OverlapActions group={group} onDone={dropdown.close} />
     </AnchoredPopover>
   );
 };
