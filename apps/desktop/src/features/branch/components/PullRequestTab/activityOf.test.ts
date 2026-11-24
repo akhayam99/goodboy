@@ -481,7 +481,7 @@ describe('pullRequestActivityOf', () => {
   });
 
   it('words the checks line from the runs', () => {
-    const run = (conclusion: 'success' | 'failure' | 'pending') => ({
+    const run = (conclusion: 'success' | 'failure' | 'pending' | 'skipped' | 'neutral') => ({
       name: 'unit',
       conclusion,
       detailsUrl: null,
@@ -497,7 +497,16 @@ describe('pullRequestActivityOf', () => {
         edits: [],
       }).find((item) => item.kind === 'checks');
 
-    expect(line([run('success'), run('success')])).toMatchObject({ text: 'Checks 2 passed' });
+    expect(line([run('success'), run('success')])).toMatchObject({
+      text: 'Checks 2 passed',
+      isSkipped: false,
+    });
+    expect(line([run('skipped'), run('neutral')])).toMatchObject({
+      text: 'Checks 2 skipped',
+      isRunning: false,
+      isFailing: false,
+      isSkipped: true,
+    });
     expect(line([run('success'), run('pending')])).toMatchObject({
       text: 'Checks 1 running',
       isRunning: true,

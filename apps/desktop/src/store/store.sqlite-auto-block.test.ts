@@ -20,6 +20,8 @@ import {
   type TurnEvent,
 } from '@goodboy/types';
 import { storedDeliveryOf } from '@goodboy/core/auto';
+import { getCapabilities } from '@goodboy/core/providers';
+import type { ProviderDisplayInfo } from '../features/providers/providers';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import type { AutoRuntime } from './runtime/auto/createAutoRuntime';
 import {
@@ -88,6 +90,7 @@ type Started = Readonly<{
   role: string | undefined;
   provider: string | undefined;
   systemPrompt: string;
+  prompt: string;
 }>;
 
 type Turns = {
@@ -112,6 +115,7 @@ type SpawnSeen = {
   readonly confinedRole?: string;
   readonly provider?: string;
   readonly systemPrompt?: string;
+  readonly prompt?: string;
 };
 
 const heldStream = (runId: ProviderRunId): AsyncIterable<TurnEvent> =>
@@ -133,6 +137,7 @@ const heldTurn = (spawn: SpawnSeen): AsyncIterable<TurnEvent> => {
     role: spawn.confinedRole,
     provider: spawn.provider,
     systemPrompt: spawn.systemPrompt ?? '',
+    prompt: spawn.prompt ?? '',
   });
   return heldStream(spawn.runId);
 };
@@ -500,5 +505,78 @@ describe('the block of an Auto turn, on the real store', () => {
     );
     await booted.runtime.stop(booted.treeId);
     expect(await refusalsOf(booted)).toHaveLength(0);
+  });
+});
+
+const CODEX_CONNECTED: ProviderDisplayInfo = {
+  id: 'codex',
+  binary: 'codex',
+  capabilities: getCapabilities({ id: 'codex' }),
+  connection: 'connected',
+  version: null,
+  identity: null,
+  label: 'Codex',
+  error: null,
+  docsUrl: '',
+};
+
+type CodexRowParams = {
+  readonly prompt: string;
+};
+
+const codexScoutModelOf = ({ prompt }: CodexRowParams): string => {
+  const line = prompt.split('\n').find((candidate) => /^\d+\. codex\b/.test(candidate));
+  const entry = line?.split(': ')[1]?.split('; ')[0] ?? '';
+  const model = entry.split(' ')[1];
+  if (model === undefined) {
+    throw new Error('the models list was expected to hold a Codex row');
+  }
+  return model;
+};
+
+describe('the Lead picks the model of each helper, on the real store', () => {
+  it('sends the models list on its first turn and starts a helper on the provider it picked', async () => {
+    useAppStore.setState({
+      providers: [...connectedAnthropicState().providers, CODEX_CONNECTED],
+    });
+    const booted = await boot();
+    await booted.runtime.say({ treeId: booted.treeId, text: GOAL });
+    await vi.waitFor(() => expect(turns.started).toHaveLength(1));
+    const prompt = turns.started[0]?.prompt ?? '';
+
+    expect(prompt).toContain('Models for new agents, by provider in your order:');
+    expect(prompt).toMatch(/^\d+\. anthropic\b/m);
+
+    await endTurn({
+      booted,
+      index: 0,
+      text: block({
+        action: 'delegate',
+        requestId: 'r1',
+        children: [
+          {
+            role: 'scout',
+            task: 'map the ledger export',
+            reason: 'orientation',
+            difficulty: 'light',
+            provider: 'codex',
+            model: codexScoutModelOf({ prompt }),
+          },
+        ],
+      }),
+    });
+
+    await vi.waitFor(() => expect(turns.started).toHaveLength(2));
+    const [delegation] = await listAutoDelegations({
+      db: booted.world.db,
+      treeId: booted.treeId,
+    });
+    expect(delegation?.routing).toMatchObject({
+      provider: 'codex',
+      reason: "Codex: the Lead's pick",
+      proposal: 'kept',
+    });
+    expect(turns.started[1]?.provider).toBe('codex');
+    await booted.runtime.stop(booted.treeId);
   });
 });

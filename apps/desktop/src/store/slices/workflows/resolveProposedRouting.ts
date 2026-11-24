@@ -39,6 +39,7 @@ export type ResolveProposedRoutingParams = Readonly<{
   availability: WorkflowRoutingAvailabilitySnapshot;
   headroom?: HeadroomMap | null;
   stepLock?: WorkflowRoutingLock | null;
+  agentLock?: WorkflowRoutingLock | null;
 }>;
 
 export type ProposedRouting = Readonly<{
@@ -103,6 +104,7 @@ export const resolveProposedRouting = ({
   availability,
   headroom = null,
   stepLock = null,
+  agentLock = null,
 }: ResolveProposedRoutingParams): ProposedRouting => {
   const parsedProposal = parseWorkflowRoutingProposal({
     fields: wireFieldsOf({ fields, isModelPickEnabled }),
@@ -122,7 +124,7 @@ export const resolveProposedRouting = ({
     headroom,
   });
   const resolution = resolveWorkflowRouting({
-    agentLock: null,
+    agentLock,
     stepLock,
     proposal: routingProposal,
     roleDefault: picks.roleDefault,
@@ -131,6 +133,7 @@ export const resolveProposedRouting = ({
     availability,
     contextEstimate: null,
     missingProposal: 'configured_default',
+    lockKind: agentLock === null ? 'node' : 'agent',
   });
   return { parsedProposal, routingProposal, picks, resolution };
 };

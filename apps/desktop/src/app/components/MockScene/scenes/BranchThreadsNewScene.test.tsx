@@ -10,6 +10,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { getAppliedTheme } from '../../../../shared/lib/theme';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -19,6 +20,7 @@ import {
 } from '../../../../store/storyHarness';
 import { SESSION_ID } from './resolveSeed';
 import { BranchThreadsNewScene } from './BranchThreadsNewScene';
+import { MOCK_SCENES } from '..';
 
 let useAppStore: StoryStore;
 
@@ -111,6 +113,25 @@ describe('the unread threads scenes', () => {
     await screen.findByTestId('merge-row-comments');
 
     expect(page.container.querySelector('[data-shot]')).toBeNull();
+  });
+
+  it('draws the light twin with the threads that need you on a solid node in the activity', async () => {
+    const Scene = MOCK_SCENES['branch-threads-new-light'];
+    if (Scene === undefined) {
+      throw new Error('branch-threads-new-light is not registered');
+    }
+    render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+
+    const activity = await screen.findByRole('region', { name: 'Activity' });
+    const node = await within(activity).findByRole('img', { name: 'Needs you' });
+
+    expect(getAppliedTheme()).toBe('light');
+    expect(node.getAttribute('data-node-look')).toBe('quiet');
+    expect(node.getAttribute('data-node-state')).toBe('alert');
   });
 
   it('shows no mark on the next visit because the threads were read', async () => {

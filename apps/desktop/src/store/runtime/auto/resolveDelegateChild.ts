@@ -53,6 +53,7 @@ import { leadRunFactsOf } from '../runLocks/leadRunFactsOf';
 import { pickChildMount } from './pickChildMount';
 import type { AgentGrant } from './ports';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
+import { storedPickOf } from './childRouting/storedPickOf';
 import type { AgentVerbContext } from './verbContext';
 
 export type ChildRefusal = Readonly<{
@@ -511,6 +512,8 @@ export const resolveDelegateChild = async ({
     },
     promptText: revise === null ? child.task : [child.task, ...(words?.words ?? [])].join('\n'),
     stepLock: lead.stepLock,
+    agentLock:
+      retry === null || continueWith === null ? null : storedPickOf({ routing: retry.routing }),
   });
   if (routing.kind === 'blocked') {
     return refuse({ slot, code: routing.code, message: routing.message });
@@ -550,6 +553,8 @@ export const resolveDelegateChild = async ({
         ...(child.title !== null && { title: child.title }),
         task: child.task,
         reason: child.reason,
+        ...(child.taskType !== null && { taskType: child.taskType }),
+        ...(child.difficulty !== null && { difficulty: child.difficulty }),
         ...(fit !== null &&
           child.roleReason !== null && { roleFit: fit, roleReason: child.roleReason }),
         ...(retry !== null &&

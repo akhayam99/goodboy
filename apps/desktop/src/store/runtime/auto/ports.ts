@@ -9,6 +9,7 @@ import type {
 } from '@goodboy/core/auto';
 import type { ExtractedScribeText } from '@goodboy/core/context';
 import type { WorkflowRoutingWireFields } from '@goodboy/core/orchestrator';
+import type { Candidate, CandidateCause, ModelFamily } from '@goodboy/core/providers';
 import type { AutoDelegation } from '@goodboy/db';
 import type {
   AgentId,
@@ -19,6 +20,7 @@ import type {
   MessageAttachment,
   ProviderId,
   SessionId,
+  WorkflowModelPick,
   WorkflowRoutingLock,
 } from '@goodboy/types';
 
@@ -51,9 +53,13 @@ export type RoutingRequest = Readonly<{
   fields: WorkflowRoutingWireFields;
   promptText: string;
   stepLock?: WorkflowRoutingLock | null;
+  agentLock?: WorkflowModelPick | null;
+  writerFamily?: ModelFamily | null;
 }>;
 
 export type RoutingProposalFate = 'kept' | 'adjusted' | 'replaced' | 'none';
+
+export type RoutingSource = 'lead' | 'pin' | 'rule' | 'fallback' | 'lock';
 
 export type RoutingOutcome =
   | Readonly<{
@@ -63,6 +69,9 @@ export type RoutingOutcome =
       effort: string | null;
       reason: string;
       proposal: RoutingProposalFate;
+      source?: RoutingSource;
+      cause?: CandidateCause | null;
+      candidates?: ReadonlyArray<Candidate>;
     }>
   | Readonly<{
       kind: 'blocked';

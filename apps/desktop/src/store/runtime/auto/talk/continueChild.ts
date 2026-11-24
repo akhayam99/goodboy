@@ -301,9 +301,10 @@ export const continueChild = async ({
     continueWith: prepared.continueWith,
   });
   if (resolved.kind !== 'ok') {
+    const { code, message } = resolved.refusal;
     return continueRefused({
-      code: resolved.refusal.code,
-      message: autoRefusalUserReason({ code: resolved.refusal.code }),
+      code,
+      message: code === 'no_provider' ? message : autoRefusalUserReason({ code }),
     });
   }
   const input = resolved.input;
