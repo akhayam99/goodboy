@@ -618,8 +618,8 @@
           "shown": true
         },
         {
-          "title": "Runs in Settings",
-          "text": "Set once what every new run starts with on the Runs page: when it stops for you, its limit, reply length and guidance.",
+          "title": "Every run",
+          "text": "Set once what every new run starts with on the Every run tab of Workflows: when it stops for you, its limit, reply length, guidance and models.",
           "group": "Workflows",
           "also": "run defaults",
           "shown": true

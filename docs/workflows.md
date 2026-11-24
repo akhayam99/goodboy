@@ -165,7 +165,7 @@ flag plus the run's copy of the rules, and can change later from the run's
 
 ## Workflow rules
 
-Rules are the workspace defaults every new run starts from. They live only in the
+Rules are the workspace defaults every new run starts from. They live in the
 **Runs** page of the workspace settings (Settings > This workspace > Runs, section
 id `general`) and on the **Every run** tab of the Workflows studio
 (`EveryRun`, `studioHomeView` `every`, opened by `setWorkflowStudioView('every')`).
