@@ -2,10 +2,10 @@ import { useState, type ReactNode } from 'react';
 import {
   Button,
   cn,
-  EmptyState,
   Eyebrow,
   ListItemMotion,
   ScrollFade,
+  StatusDot,
   Tooltip,
   useListMotion,
 } from '@goodboy/ui';
@@ -98,9 +98,12 @@ export const StageColumn = ({
   const isHalf = placement === 'half';
   const { isSelected } = selection;
   const [isWindowOpen, setIsWindowOpen] = useState(false);
-  const isWindowed = view.key === 'done' || view.key === 'archived';
-  const hiddenCount = isWindowed && !isWindowOpen ? Math.max(0, sessions.length - LANE_WINDOW) : 0;
-  const drawn = hiddenCount === 0 ? sessions : sessions.slice(0, LANE_WINDOW);
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const isFinished = view.key === 'done' || view.key === 'archived';
+  const isCollapsible = view.key === 'archived' && !isEmpty && !isLoading;
+  const isCollapsed = isCollapsible && !isArchiveOpen;
+  const hiddenCount = isFinished && !isWindowOpen ? Math.max(0, sessions.length - LANE_WINDOW) : 0;
+  const drawn = isCollapsed ? [] : hiddenCount === 0 ? sessions : sessions.slice(0, LANE_WINDOW);
   const motion = useListMotion({
     items: drawn.map((session) => ({ key: session.id, value: session })),
     resetKey: motionResetKey,
@@ -112,15 +115,21 @@ export const StageColumn = ({
       role="group"
       aria-label={view.presentation.label}
       aria-busy={isLoading}
+      data-lane={view.key}
       className={cn(
-        'flex min-h-0 min-w-0 flex-col',
-        PANE_RHYTHM.board.laneStack,
-        isHalf && (isEmpty ? 'flex-none' : 'flex-initial'),
+        'flex max-h-full min-h-0 min-w-0 flex-col self-start',
+        PANE_RHYTHM.board.lane,
+        isHalf && (isEmpty || isCollapsed ? 'flex-none' : 'flex-initial'),
       )}
     >
-      <div className="flex h-6 shrink-0 items-center justify-between gap-2">
+      <div className="flex h-6 shrink-0 items-center justify-between gap-2 pl-1">
         <Tooltip content={stateDescription({ presentation: view.presentation })}>
           <span className="flex shrink-0 items-center gap-2">
+            <StatusDot
+              tone={view.presentation.tone}
+              size="sm"
+              pulsing={view.key === 'running' && !isEmpty}
+            />
             <Eyebrow label={sentenceCase({ text: view.presentation.label })} muted={isEmpty} />
             {!isEmpty && (
               <span className="text-meta tabular-nums text-faint-foreground">
@@ -131,24 +140,35 @@ export const StageColumn = ({
         </Tooltip>
         {action === undefined ? null : <div className="flex min-w-0 justify-end">{action}</div>}
         {view.key === 'done' && !isEmpty && !isLoading && <DoneLaneMenu sessions={sessions} />}
+        {isCollapsible && (
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-expanded={isArchiveOpen}
+            onClick={() => setIsArchiveOpen((isOpen) => !isOpen)}
+          >
+            {isArchiveOpen ? 'Hide' : 'Show all'}
+          </Button>
+        )}
       </div>
 
       {isLoading && <ColumnSkeleton label="Loading sessions" />}
 
       {!isLoading && isEmpty && (
-        <EmptyState
-          icon={view.presentation.icon}
-          title={EMPTY_COPY[view.key].title}
-          size="section"
-        />
+        <p
+          data-slot="lane-empty"
+          className="flex h-9 shrink-0 items-center rounded-md border border-dashed border-border-soft px-3 text-meta text-faint-foreground"
+        >
+          {EMPTY_COPY[view.key].title}
+        </p>
       )}
 
-      {!isEmpty && (
-        <ScrollFade orientation="vertical" className="flex-1">
+      {!isEmpty && !isCollapsed && (
+        <ScrollFade orientation="vertical" className="min-h-0 flex-initial">
           <div
             className={cn(
               'flex flex-col group-data-[selecting=true]/select-list:pb-24',
-              PANE_RHYTHM.board.cardGap,
+              isFinished ? 'gap-1' : PANE_RHYTHM.board.cardGap,
             )}
           >
             {motion.map((entry) => (
@@ -157,6 +177,7 @@ export const StageColumn = ({
                   session={entry.value}
                   nav={nav}
                   archived={view.archived}
+                  density={isFinished ? 'row' : 'card'}
                   selected={isSelected(entry.value.id as SessionId)}
                   onModifierClick={selection.onItemClick}
                   getSelectedIds={selection.getSelectedIds}

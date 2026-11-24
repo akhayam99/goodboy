@@ -9,6 +9,7 @@ import {
   IconButton,
   PANE_RHYTHM,
   ScrollFade,
+  StatusDot,
   Tooltip,
 } from '@goodboy/ui';
 import type { Session, WorkspaceId } from '@goodboy/types';
@@ -23,7 +24,7 @@ import { ATTENTION_REASON_META } from '../../../../session/session-stage';
 import { openAttentionTarget } from '../../../../session/openAttentionTarget';
 import { rootRemPx } from '../boardLanesOf';
 import { NeedsYouCard } from '../NeedsYouCard';
-import { projectLineOf } from '../projectLineOf';
+import { cardContextOf } from '../cardContextOf';
 import { useStripScroll } from './useStripScroll';
 
 type Props = {
@@ -52,7 +53,7 @@ const AGE_MS = 30_000;
 const metaOf = ({ card, now }: MetaParams): string => {
   const age = formatSpan({ from: card.move.since, to: now });
   const questions = card.questionCount > 1 ? `${card.questionCount} questions` : '';
-  return [age, questions].filter((part) => part !== '').join(' · ');
+  return [age === '' ? '' : `Waiting ${age}`, questions].filter((part) => part !== '').join(' · ');
 };
 
 const moveCardFocus = ({ event }: KeyParams): void => {
@@ -78,10 +79,10 @@ export const NeedsYouStrip = ({ workspaceId, sessions, cards, laneRem }: Props) 
     () => new Map(sessions.map((session) => [session.id, sessionTitle({ session })])),
     [sessions],
   );
-  const projects = useAppStore(
+  const contexts = useAppStore(
     useShallow((state) =>
       cards.map((card) =>
-        projectLineOf({ mounts: state.sessionProjectMounts[card.sessionId] ?? EMPTY_ARRAY }),
+        cardContextOf({ mounts: state.sessionProjectMounts[card.sessionId] ?? EMPTY_ARRAY }),
       ),
     ),
   );
@@ -111,6 +112,7 @@ export const NeedsYouStrip = ({ workspaceId, sessions, cards, laneRem }: Props) 
       <div className="flex h-6 items-center justify-between gap-2">
         <Tooltip content="What waits on you, the oldest first" shortcut="session.nextNeedsYou">
           <span className="flex items-center gap-2">
+            <StatusDot tone="warning" size="sm" />
             <Eyebrow label={NAMES.needsYou} />
             <span className="text-meta tabular-nums text-faint-foreground">{cards.length}</span>
           </span>
@@ -160,7 +162,7 @@ export const NeedsYouStrip = ({ workspaceId, sessions, cards, laneRem }: Props) 
                 <NeedsYouCard
                   sessionId={card.sessionId}
                   title={title}
-                  project={projects[index] ?? ''}
+                  context={contexts[index] ?? ''}
                   reason={card.move.title}
                   meta={metaOf({ card, now })}
                   tone={ATTENTION_REASON_META[card.move.reason].tone}

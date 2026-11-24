@@ -123,6 +123,10 @@ const mountBoard = (sessions: ReadonlyArray<Session>) =>
 
 const lane = (name: (typeof LANES)[number]): HTMLElement => screen.getByRole('group', { name });
 
+const showArchive = (): void => {
+  fireEvent.click(within(lane('archived')).getByRole('button', { name: 'Show all' }));
+};
+
 const lanesInOrder = (): ReadonlyArray<string> =>
   screen
     .getAllByRole('group')
@@ -194,7 +198,7 @@ describe('StageBoard lanes', () => {
     expect(within(lane('archived')).queryByText('0')).toBeNull();
   });
 
-  it('shows the Done and Archived cards in place without a click', () => {
+  it('shows the Done rows in place and folds Archived to its count with Show all', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     const merged = sessionOf('Bump the lockfile after the security patch');
     const shelved = archivedOf('Update the refund macros for support');
@@ -202,21 +206,34 @@ describe('StageBoard lanes', () => {
     mountBoard([building, merged]);
 
     expect(within(lane('done')).getByRole('button', { name: merged.goal })).toBeDefined();
-    expect(within(lane('archived')).getByRole('button', { name: shelved.goal })).toBeDefined();
+    expect(lane('done').querySelector('article')?.getAttribute('data-density')).toBe('row');
+    expect(within(lane('archived')).getByText('1')).toBeDefined();
+    expect(within(lane('archived')).queryByRole('button', { name: shelved.goal })).toBeNull();
+
+    showArchive();
+
+    within(lane('archived')).getByRole('button', { name: shelved.goal });
     expect(within(lane('archived')).getByRole('button', { name: /Restore/ })).toBeDefined();
+    expect(lane('archived').querySelector('article')?.getAttribute('data-density')).toBe('row');
+
+    fireEvent.click(within(lane('archived')).getByRole('button', { name: 'Hide' }));
+
+    expect(within(lane('archived')).queryByRole('button', { name: shelved.goal })).toBeNull();
   });
 
   it('ignores a collapse value an older version stored', () => {
     localStorage.setItem(
       `goodboy:board-collapsed:v1:${workspace.id}`,
-      JSON.stringify({ done: true, archived: true }),
+      JSON.stringify({ done: true, archived: false }),
     );
     const building = sessionOf('Add idempotency keys to the refund endpoint');
+    const merged = sessionOf('Bump the lockfile after the security patch');
     const shelved = archivedOf('Update the refund macros for support');
-    seed({ active: [building], archived: [shelved] });
-    mountBoard([building]);
+    seed({ active: [building], done: [merged], archived: [shelved] });
+    mountBoard([building, merged]);
 
-    expect(within(lane('archived')).getByRole('button', { name: shelved.goal })).toBeDefined();
+    within(lane('done')).getByRole('button', { name: merged.goal });
+    expect(within(lane('archived')).queryByRole('button', { name: shelved.goal })).toBeNull();
   });
 
   it('shows a muted Loading line in Archived until the list answers, then its empty line', () => {
@@ -437,6 +454,17 @@ describe('StageBoard header', () => {
     expect(within(dialog).queryByRole('group', { name: 'Repositories' })).toBeNull();
   });
 
+  it('names the filter in words on the tool row of the page head', () => {
+    const building = sessionOf('Add idempotency keys to the refund endpoint');
+    seed({ active: [building] });
+    mountBoard([building]);
+
+    const toolRow = document.querySelector('[data-page="board"] [data-slot="pane-toolbar"]');
+    const filter = screen.getByRole('button', { name: 'Filter sessions' });
+    expect(toolRow?.contains(filter)).toBe(true);
+    expect(filter.textContent).toBe('Filter');
+  });
+
   it('shows no repo pill while every repo is fine', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     const repos = ['payments-api', 'ledger-core'].map((name) =>
@@ -482,6 +510,7 @@ describe('StageBoard selection over every lane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Select all 62' }));
 
     expect(within(toolbar()).getByText('62 selected')).toBeDefined();
+    showArchive();
     expect(
       checkboxesIn('done').filter((box) => box.getAttribute('aria-pressed') === 'true'),
     ).toHaveLength(50);
@@ -498,6 +527,7 @@ describe('StageBoard selection over every lane', () => {
     const observers = measureBoard({ width: 900 });
     mountBoard(done);
     act(() => observers.resizeAll());
+    showArchive();
 
     const doneBoxes = checkboxesIn('done');
     const archivedBoxes = checkboxesIn('archived');
@@ -517,6 +547,7 @@ describe('StageBoard selection over every lane', () => {
     const shelved = [archivedOf('Update the refund macros for support')];
     seed({ done, archived: shelved });
     mountBoard(done);
+    showArchive();
 
     fireEvent.click(checkboxesIn('done')[0] as HTMLElement, { altKey: true });
     fireEvent.click(checkboxesIn('archived')[0] as HTMLElement, { metaKey: true });

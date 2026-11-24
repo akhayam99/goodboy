@@ -117,7 +117,11 @@ export const BITBUCKET_PAGE_ROWS: ReadonlyArray<Row> = [
       () => heading(TITLE),
       async () => {
         expect(screen.queryByRole('button', { name: /Mark ready|Convert to draft/ })).toBeNull();
-        expect(screen.queryByText(/GitHub/)).toBeNull();
+        expect(
+          screen
+            .queryAllByText(/GitHub/)
+            .filter((node) => node.closest('[data-select-id]') === null),
+        ).toEqual([]);
       },
     ),
   },

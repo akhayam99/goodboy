@@ -91,8 +91,9 @@ export const PANE_RHYTHM = {
     lanesFour: 'grid-cols-[repeat(4,minmax(12.25rem,20rem))]',
     lanesScroll: 'w-max grid-cols-[repeat(4,12.25rem)]',
     laneStack: 'gap-3',
-    halves: 'gap-4',
-    cardGap: 'gap-3',
+    lane: 'gap-2 rounded-lg bg-subtle p-2',
+    halves: 'gap-3',
+    cardGap: 'gap-2',
   },
   sessionList: {
     pad: 'px-2 pb-2',

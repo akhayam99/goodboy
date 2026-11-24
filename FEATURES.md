@@ -68,7 +68,7 @@ The board shows every session of a workspace in lanes by stage, with what waits 
 - **Needs you**: See what waits on you at the top of the Board.
 - **Merge train**: Merge several pull requests, across sessions and repositories, with one gesture.
 - **Stage board**: See where each task stands without moving cards around.
-- **Session card**: Read a task at a glance: its title on two lines, its project in gray, and one signal at the right.
+- **Session card**: Read a task at a glance: repository and branch, a two-line title, then its state, last move and one signal.
 
 [More on the board](docs/features/board.md)
 

@@ -331,7 +331,7 @@
         },
         {
           "title": "Session card",
-          "text": "Read a task at a glance: its title, its project and one signal, such as an open question or the pull request. The rest waits in the hover card.",
+          "text": "Read a task at a glance: repository and branch, its title, its state and last move, and one signal, such as an open question or the pull request. The rest waits in the hover card.",
           "group": "The board",
           "also": "session cards",
           "shown": true

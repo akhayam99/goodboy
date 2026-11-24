@@ -242,6 +242,32 @@ describe('NeedsYouStrip', () => {
     within(itemAt({ index: 0 })).getByText(/2 questions/);
   });
 
+  it('reads like a lane card: repository and branch, title, the question, then how long it waits', () => {
+    const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
+    seed({
+      sessions: [asking],
+      questions: [
+        questionOf({ session: asking, text: 'Keep the retry window at five minutes?', minute: 1 }),
+      ],
+    });
+    useAppStore.setState({
+      sessionProjectMounts: { [asking.id]: [mountOf({ session: asking, project })] },
+    });
+    mountBoard([asking]);
+
+    const item = itemAt({ index: 0 });
+    const context = within(item).getByText(`ledger-core · goodboy/${asking.id}`);
+    expect(context.getAttribute('data-slot')).toBe('card-context');
+    const title = within(item).getByText(asking.goal);
+    const question = within(item).getByText('Keep the retry window at five minutes?');
+    const facts = within(item).getByText(/^Waiting \d/);
+    expect(facts.getAttribute('data-slot')).toBe('card-facts');
+    const following = Node.DOCUMENT_POSITION_FOLLOWING;
+    expect(context.compareDocumentPosition(title) & following).toBe(following);
+    expect(title.compareDocumentPosition(question) & following).toBe(following);
+    expect(question.compareDocumentPosition(facts) & following).toBe(following);
+  });
+
   it('draws no strip and no empty line when nothing needs you', () => {
     const quiet = sessionOf({ goal: 'Add idempotency keys to the refund endpoint' });
     seed({ sessions: [quiet] });
