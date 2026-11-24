@@ -152,7 +152,8 @@ describe('the run page scenes', () => {
     await mount({ name: 'run-page-plan' });
 
     const card = screen.getByRole('group', { name: 'Plan' });
-    expect(within(card).getAllByText('Done')).toHaveLength(1);
+    expect(within(card).queryAllByText('Done')).toHaveLength(0);
+    expect(within(card).getAllByRole('img', { name: 'Done' })).toHaveLength(1);
   });
 
   it('run-page-lead-next lists the choices one per row under a title with no raw id, one primary', async () => {

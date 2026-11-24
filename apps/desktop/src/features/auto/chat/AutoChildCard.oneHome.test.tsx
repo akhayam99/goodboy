@@ -11,6 +11,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import userEvent from '@testing-library/user-event';
 import { brandId, type AgentId, type IsoDateTime, type ProviderRunId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
+import { REST_HOVER_REST_MS } from '@goodboy/ui';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { ObjectMenuProvider } from '../../actions/components/ObjectMenuProvider';
 import {
@@ -56,7 +57,10 @@ beforeEach(async () => {
   });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 type ShowParams = {
   readonly onOpen?: (agentId: AgentId) => void;
@@ -73,6 +77,7 @@ const show = ({ onOpen = vi.fn() }: ShowParams = {}) => {
           card={delegationCardOf({ delegation, childAgent: null })}
           name="Post one credit per retry"
           revision={null}
+          costUsd={0}
           onOpen={onOpen}
         />
       </ObjectMenuProvider>
@@ -88,6 +93,24 @@ describe('the one home of Open and Stop on an Auto child card', () => {
     expect(screen.getAllByRole('button')).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /^Stop / })).toBeNull();
     expect(screen.getByRole('button').getAttribute('aria-label')).toContain('Running');
+  });
+
+  it('rests the role card open on its chip, and a click on the chip still opens the child', () => {
+    vi.useFakeTimers();
+    const onOpen = vi.fn();
+    show({ onOpen });
+
+    const chip = screen.getByTestId('role-glyph');
+    fireEvent.pointerEnter(chip, { pointerType: 'mouse' });
+    act(() => {
+      vi.advanceTimersByTime(REST_HOVER_REST_MS);
+    });
+    expect(screen.getByTestId('fact-card').textContent).toContain('Post one credit per retry');
+
+    fireEvent.pointerDown(chip, { pointerType: 'mouse' });
+    fireEvent.click(chip);
+    expect(onOpen).toHaveBeenCalledWith(CHILD);
+    expect(screen.queryByTestId('fact-card')).toBeNull();
   });
 
   it('opens the child by a click on the card', () => {
