@@ -4,6 +4,7 @@ import type { AgentTurnSpan } from '@goodboy/types';
 import { AGENT_KIND_DEFAULTS, kindWritesFiles } from '../../../features/session/agent-kind';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { autoSystemPromptOf } from '../../runtime/auto/level/autoSystemPromptOf';
+import { leadCandidatesBlock } from '../../runtime/auto/childRouting/leadCandidatesBlock';
 import { buildIntegrationsGuard } from './integrationsGuard';
 import { buildProfileGuard, explainMoreTopicsFor } from './profileGuard';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
@@ -248,7 +249,14 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     roleInstructions: kindSystemPrompt ?? '',
   });
   const fullSystemPrompt = renderedHandoff.system;
-  resolvedPrompt = renderedHandoff.message;
+  const candidatesBlock =
+    earlyAgentKind === 'auto'
+      ? await leadCandidatesBlock({ state: get(), sessionId, nowMs: Date.now() })
+      : null;
+  resolvedPrompt =
+    candidatesBlock === null
+      ? renderedHandoff.message
+      : `${renderedHandoff.message}\n\n${candidatesBlock}`;
 
   if (isHandoffTurn) {
     try {
