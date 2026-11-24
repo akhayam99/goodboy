@@ -1,13 +1,19 @@
 import { Check, Hand, Minus } from '../../icons';
 import { cn } from '../../cn';
 import { ICON_WEIGHT } from '../../iconSize';
-import { WORK_NODE_GLYPH_SIZE, type WorkNodeMark, type WorkNodeState } from './workNodeSpec';
+import {
+  WORK_NODE_GLYPH_SIZE,
+  type WorkNodeLook,
+  type WorkNodeMark,
+  type WorkNodeState,
+} from './workNodeSpec';
 
 type Props = {
   readonly state: WorkNodeState;
   readonly mark: WorkNodeMark;
   readonly hasArc: boolean;
   readonly glyphSize?: number;
+  readonly look?: WorkNodeLook;
 };
 
 const SIGN_CLASS = 'text-meta font-semibold leading-none tabular-nums';
@@ -58,12 +64,44 @@ const markOf = ({ mark, tone }: MarkParams) => {
   );
 };
 
+type QuietParams = {
+  readonly state: WorkNodeState;
+  readonly glyphSize: number;
+};
+
+const quietCenterOf = ({ state, glyphSize }: QuietParams) => {
+  if (state === 'question') {
+    return signOf({ sign: '?', className: 'text-on-warning' });
+  }
+  if (state === 'budget') {
+    return signOf({ sign: '$', className: 'text-on-warning' });
+  }
+  if (state === 'alert') {
+    return signOf({ sign: '!', className: 'text-on-warning' });
+  }
+  if (state === 'approval') {
+    return <Hand size={glyphSize} weight={ICON_WEIGHT.check} className="text-on-warning" />;
+  }
+  if (state === 'failed') {
+    return signOf({ sign: '!', className: 'text-on-danger' });
+  }
+  if (state === 'queued') {
+    return null;
+  }
+  return undefined;
+};
+
 export const WorkNodeCenter = ({
   state,
   mark,
   hasArc,
   glyphSize = WORK_NODE_GLYPH_SIZE,
+  look = 'ring',
 }: Props) => {
+  const quiet = look === 'quiet' ? quietCenterOf({ state, glyphSize }) : undefined;
+  if (quiet !== undefined) {
+    return quiet;
+  }
   switch (state) {
     case 'queued':
       return markOf({ mark, tone: 'faint' });
