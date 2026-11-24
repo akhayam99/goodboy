@@ -302,6 +302,24 @@ const hiddenTierPick = ({
   return { provider, model: model.id, effort: null, step: 'cost-tier', rung };
 };
 
+export type ProviderStepPickParams = HiddenTierParams & {
+  readonly isHeavy: boolean;
+};
+
+export const providerStepPick = ({
+  provider,
+  slot,
+  rung,
+  context,
+  isHeavy,
+  isCeilingKept,
+}: ProviderStepPickParams): StepPick | null =>
+  isCuratedProvider(provider)
+    ? (curatedPick({ provider, slot, rung, context }) ??
+      nearRungPick({ provider, slot, rung, context, isHeavy }) ??
+      hiddenTierPick({ provider, slot, rung, context, isCeilingKept }))
+    : tierPick({ provider, slot, rung, context });
+
 type PassParams = {
   readonly slot: AutoSlot;
   readonly size: StepSize | null;
@@ -313,11 +331,7 @@ const resolvePass = ({ slot, size, context, isCeilingKept }: PassParams): StepPi
   const rung = rungForStep({ slot: slot.id, size });
   const isHeavy = size === 'large';
   for (const provider of providerCandidates(context)) {
-    const pick = isCuratedProvider(provider)
-      ? (curatedPick({ provider, slot, rung, context }) ??
-        nearRungPick({ provider, slot, rung, context, isHeavy }) ??
-        hiddenTierPick({ provider, slot, rung, context, isCeilingKept }))
-      : tierPick({ provider, slot, rung, context });
+    const pick = providerStepPick({ provider, slot, rung, context, isHeavy, isCeilingKept });
     if (pick != null) {
       const skippedAtLimit = skippedAtLimitBefore({ pick, context });
       return skippedAtLimit.length === 0 ? pick : { ...pick, skippedAtLimit };
