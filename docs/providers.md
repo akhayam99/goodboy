@@ -175,7 +175,7 @@ Connections** beside it (`DefaultsPanel/ConnectionsPointer`). Below it each grou
 is one band with its label: Runs, Providers, Choosing models, Chat, Agents and
 Background tasks.
 
-- **When a provider is out**: the workspace's provider policy, summed up on the row
+- **Provider order**: the workspace's provider policy, summed up on the row
   ("Claude, Codex · Cursor as backup"). The row opens the list in place: drag a
   provider by its handle or move it with Alt and an arrow, and set it **On**,
   **Backup only** or **Off**. The first On provider is the default for new work, so
@@ -191,16 +191,38 @@ Background tasks.
   **Keep using after the limit** keeps the provider in the order at its limit. A
   provider connected later shows last as **New** and is unused until turned on.
   **Reset** goes back to every connected provider On. The row's help says the
-  order is a priority, not a pool: "Every new agent starts on Claude while Claude
-  can work. Codex and Cursor take over only when it can't." (the first On
-  provider, then the other On and Backup providers in order). Under the list the same
-  popover holds **Skip a provider near its limit**, the
-  `spreadByHeadroom` rule of the workflow rules (`useSpreadByHeadroom`, written
-  through `patchWorkspaceOverrides`); it is
-  disabled with "Only Claude and Codex report limits. Turn one on to use this."
-  while no On provider reports them. This is the one home of the provider policy: the Runs settings
-  page shows nothing of it. The page header names its scope: the workspace
-  name, or **All workspaces** when none is open
+  Lead reads the order when it picks a provider for a new agent, and that Backup
+  runs only when no On provider can work; with one On provider and no Backup it
+  says every new agent starts there (`ProvidersInOrder`). The rows below it sit in
+  the same band (`ProvidersInOrder` mounts them, never `DefaultsPanel/index.tsx`):
+  - **Provider priority** (`ProviderRuleRow`, `useProviderRule`): **By order**, your
+    provider order wins when several providers fit, or **By load**, the provider
+    with the most room left wins. It writes `spreadByHeadroom` in the workspace
+    workflow rules through `patchWorkspaceOverrides` (off is By order, on is By
+    load); a failed write reports "Couldn't save the provider priority" and keeps
+    the old rule. A workspace with no saved rules is on By order
+    (`DEFAULT_WORKFLOW_RULES`); a saved choice is never rewritten. The help says the
+    rule applies from the next agent and that a run started from a workflow keeps
+    its rule (its `rulesSnapshot`)
+  - **Room right now** (`RoomNowRow`): each On and Backup provider in order with a
+    bar and its used share, "62% used", or "about 40% used, estimated" for a
+    provider with no fresh usage reading, "cooling down" or "at its limit"
+    (`roomTextOf`). The help names the estimated providers
+  - **Never picked** (`GuardsRow`): Off, not connected, at its limit or cooling
+    down; past its budget; an agent that writes code on a provider outside
+    `AUTO_WRITER_CHILD_PROVIDERS`; a model outside a role's pin
+  - **Last 5 hours** (`LastHoursRow`): agents per provider in order, running ones
+    included (`providerLoad` over `ROOM_TURNS_WINDOW_MS`)
+
+  The room, load and candidates come from one snapshot, `useRoutingSnapshot`:
+  `selectCandidateInputs` for the workspace (the same selector the Lead's
+  candidates list reads) with the turns of `readProviderAgentTurns`, read again
+  every minute and when the policy, limits, cooldowns, budget alerts or rate limit
+  strikes change; a late read for an older state is dropped. This is the one home
+  of the provider policy and the rule: the Runs settings page shows nothing of
+  them. The page header names its scope: the workspace name, or **All
+  workspaces** when none is open
+
 - **Runs**: the two models a run starts with, first on the page. **Auto agent** is the
   `auto` role (`roleModels.auto`, narrowed to the providers Auto can run on, as
   `kindRouting` does at spawn) and **Older plan runs** is the `workflow_orchestrator` task
@@ -262,7 +284,14 @@ large step through `resolveSlot` with `size`, the same call the run makes, so it
 `Auto sizes it by the step: small Haiku 5.5 Medium, normal Sonnet 5.5 Medium, large Sonnet 5.5 High.`
 (or one model when the size moves nothing). A workflow step that follows its role names
 the pick with `sized for a small step` or `sized for a large step` when its size moved the
-rung (`isSizeMovingRung`). The background task rows (`TaskModelRow`) name the model Auto runs
+rung (`isSizeMovingRung`). Below it, every role but the Lead shows **Candidates for
+Scout right now** (`RoleRow/RoleCandidates`): `buildCandidates` for the role at its
+default size, read from the same `useRoutingSnapshot` as the Providers band, as a helper
+for a role the Lead can start and as a step otherwise. Each row names the model, its
+place in your order, its room (`roomTextOf`), its agents in the last hour and "lighter
+model" for the lighter rung; a row a guard removes is struck with its cause
+(`CANDIDATE_CAUSES`), and a check marks `bestCandidate` under Provider priority. A
+pinned role lists its pinned models. The background task rows (`TaskModelRow`) name the model Auto runs
 on their closed trigger. A **Choosing models** section, shown only while the workspace has
 a plan run, holds one switch, off by default:
 **Models in older plan runs** (`canOrchestratorPickModel` in the workspace `workflowRules`, read
