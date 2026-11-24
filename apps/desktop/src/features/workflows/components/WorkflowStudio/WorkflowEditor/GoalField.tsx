@@ -53,7 +53,6 @@ export const GoalField = ({
     {...(onSubmit !== undefined && {
       onSubmit,
       isSubmitBlocked: disabled || isPolishing,
-      hasChangedKeys: true,
       keyLabels: { send: 'start' },
     })}
     placeholder={placeholder}

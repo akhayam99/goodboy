@@ -13,6 +13,7 @@ import { runOpenQuestion } from '../../../../timeline/runOpenQuestion';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
 import { TimelineRunLabel } from './TimelineRunLabel';
+import { TimelineRowLabel } from './TimelineRowLabel';
 
 afterEach(cleanup);
 
@@ -198,11 +199,50 @@ describe('TimelineRunLabel', () => {
     expect(screen.queryByText(/Needs your answer/)).toBeNull();
   });
 
-  it('keeps a live run at full-strength label ink and a tinted glyph', () => {
+  it('lets a live run label take the row ink and keeps a tinted glyph', () => {
     render(<Label entry={entryOf()} />);
 
-    expect(screen.getByText('Refactor (example)').className).toContain('text-foreground');
+    expect(screen.getByText('Refactor (example)').className).not.toMatch(/text-\S*foreground/);
     expect(chipOf().className).toContain('bg-current/12');
+  });
+
+  it('lets a queued run title take the muted row ink, and keeps a discarded one muted', () => {
+    const inkOf = ({ discardedAt }: { readonly discardedAt: string | null }) => {
+      render(
+        <TimelineRowLabel
+          item={{
+            kind: 'row',
+            id: 'run:run-7',
+            at: '2026-08-18T09:00:00Z',
+            grade: 'entry',
+            entry: entryOf({ title: 'Ship the ledger', discardedAt }),
+            identity: null,
+            familyId: null,
+            ordinal: null,
+            rowState: { phase: 'queued', reason: null, ask: null },
+            hasUnread: false,
+            height: 52,
+            topY: 0,
+            markerY: 18,
+            groupId: null,
+            isPending: false,
+            gap: 'entry',
+          }}
+        />,
+      );
+      const ink = {
+        row: screen.getByTestId('activity-row-text').className.split(' '),
+        title: screen.getByText('Ship the ledger').className.split(' '),
+      };
+      cleanup();
+      return ink;
+    };
+    const queued = inkOf({ discardedAt: null });
+    const discarded = inkOf({ discardedAt: '2026-08-18T09:05:00Z' });
+
+    expect(queued.row).toContain('text-muted-foreground');
+    expect(queued.title.filter((name) => name.endsWith('foreground'))).toEqual([]);
+    expect(discarded.title).toContain('text-muted-foreground');
   });
 
   it('keeps the chip neutral while one of its steps waits on an answer', () => {

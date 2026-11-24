@@ -52,7 +52,8 @@ export const GoalTeaser = ({ session }: Props) => {
     );
   }
 
-  const isEmpty = value.trim() === '';
+  const text = flatTextOf({ text: value });
+  const isEmpty = text === '';
   const open = () => openContextDrawer({ sessionId, section: 'goal' });
 
   if (proposal.isReading) {
@@ -135,7 +136,6 @@ export const GoalTeaser = ({ session }: Props) => {
     );
   }
 
-  const text = flatTextOf({ text: value });
   if (text === flatTextOf({ text: sessionTitle({ session }) })) {
     return null;
   }

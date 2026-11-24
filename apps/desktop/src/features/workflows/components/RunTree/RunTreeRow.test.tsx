@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import type { Agent } from '@goodboy/types';
 import {
   layoutTimelineRail,
@@ -96,6 +96,63 @@ describe('RunTreeRow columns on a page or a checklist', () => {
     expect(slotOf({ laid: plain, id: 'implement', density: 'checklist' })).toBe(
       RUN_TREE_SLOT_WIDTH,
     );
+  });
+});
+
+describe('RunTreeRow on the activity row', () => {
+  type RowParams = {
+    readonly id: string;
+    readonly density: RunTreeDensity;
+  };
+
+  const rowOf = ({ id, density }: RowParams): HTMLElement => {
+    const laid = laidOut({ agents: [...baseAgents, ...NESTED] });
+    const item = laid.items.find((candidate) => candidate.id === `agent:${id}`);
+    const rail = laid.layout.rows.find((candidate) => candidate.id === `agent:${id}`);
+    if (item === undefined || rail === undefined || item.entry.kind !== 'agent') {
+      throw new Error(`row ${id} is missing`);
+    }
+    render(
+      <RunTreeRow
+        density={density}
+        item={item}
+        entry={item.entry}
+        rail={rail}
+        railWidth={laid.layout.width}
+        routing={ROUTING}
+        costUsd={0}
+        isNested={item.entry.agent.parentAgentId != null}
+        hasActionColumn={false}
+        plan={null}
+        parentStepName={null}
+        isSelected={false}
+        isHighlighted={false}
+        onSelect={vi.fn()}
+        onAnswer={vi.fn()}
+      />,
+    );
+    return screen.getByTestId('activity-row');
+  };
+
+  it('names a checklist step Step N, on one feed line', () => {
+    const row = rowOf({ id: 'implement', density: 'checklist' });
+
+    expect(row.dataset.activityDensity).toBe('feed');
+    within(row).getByText(/^Step \d+$/u);
+  });
+
+  it('keeps the bare label on a nested checklist row', () => {
+    const row = rowOf({ id: 'grand', density: 'checklist' });
+
+    expect(row.dataset.activityDensity).toBe('feed');
+    expect(within(row).queryByText(/^Step /u)).toBeNull();
+  });
+
+  it('keeps the bare label on a page row', () => {
+    const row = rowOf({ id: 'implement', density: 'page' });
+
+    expect(row.dataset.activityDensity).toBe('feed');
+    expect(within(row).queryByText(/^Step /u)).toBeNull();
   });
 });
 

@@ -1587,11 +1587,8 @@ Every field that talks to an agent is a `PromptField`
 
 The keys come from the registry (`composer.send`, `composer.newLine`,
 `composer.submit` through `isSubmitChord`) and `promptKeyAction` decides one
-press. Two kinds of field changed keys in 0.15.5 and carry `hasChangedKeys`:
-the Start a run field (it starts on `Enter`)
-and the review reply boxes (Edit, Answer and Reply now send on `⌘Enter`).
-The `composer.classicKeys` setting (Settings, Shortcuts, Message boxes)
-swaps the two kinds back on those fields for this release.
+press. The Start a run field starts on `Enter`, and the review reply boxes
+(Edit, Answer and Reply) send on `⌘Enter`.
 `composer-ratchet.test.ts` lists every file that renders a text area and
 says whether it talks to an agent and with which kind; a new agent field
 must be a `PromptField` of its kind. The workspace Chat bubble and the hint

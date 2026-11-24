@@ -87,9 +87,12 @@ describe('the u50 queue scenes', () => {
 
     expect(within(running).getAllByRole('button', { name: /^Overlaps/ })).toHaveLength(1);
     fireEvent.click(chip);
-    within(screen.getByRole('dialog', { name: 'Overlap' })).getByRole('button', {
-      name: 'Message both Implementers',
-    });
+    within(screen.getByRole('dialog', { name: /branches change the same files/ })).getByRole(
+      'button',
+      {
+        name: 'Message the Implementers',
+      },
+    );
   });
 
   it('says nothing waits on you when the pile is clear', async () => {

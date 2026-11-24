@@ -24,36 +24,53 @@ type RowSeed = Readonly<{
 }>;
 
 const WIDTH = 760;
-const HEIGHT = 360;
+const HEIGHT = 560;
 const CLICK_DELAY_MS = 300;
 const PROJECT_ID = 'mock-overlap-project-ledger-core';
+const TOTALS = 'packages/ledger-core/src/totals.ts';
+const ROUND = 'packages/ledger-core/src/round.ts';
+const EXPORTER =
+  'packages/ledger-core/src/reconcile/statements/export/reconciliationStatementExporter.ts';
+const CURRENCY = 'packages/ledger-core/src/currency.ts';
+const INDEX = 'packages/ledger-core/src/index.ts';
+const OPEN_MOUNT = brandId<MountId>({ value: 'mock-overlap-mount-totals' });
 
 const ROWS: ReadonlyArray<RowSeed> = [
   {
     sessionId: brandId<SessionId>({ value: 'mock-overlap-session-398' }),
-    mountId: brandId<MountId>({ value: 'mock-overlap-mount-retry' }),
-    agentId: brandId<AgentId>({ value: 'mock-overlap-agent-retry' }),
-    title: 'Retry the Harborline ledger export',
-    branch: 'hl/retry-export',
-    paths: ['src/retry/state.ts', 'src/retry/backoff.ts', 'src/retry/index.ts'],
-    createdAt: 1,
+    mountId: OPEN_MOUNT,
+    agentId: brandId<AgentId>({ value: 'mock-overlap-agent-totals' }),
+    title: 'Fix the Harborline ledger totals',
+    branch: 'ak/fix-ledger-totals',
+    paths: [TOTALS, ROUND, EXPORTER, CURRENCY, INDEX],
+    createdAt: 2,
   },
   {
     sessionId: brandId<SessionId>({ value: 'mock-overlap-session-412' }),
-    mountId: brandId<MountId>({ value: 'mock-overlap-mount-batch' }),
-    agentId: brandId<AgentId>({ value: 'mock-overlap-agent-batch' }),
-    title: 'Batch the Northwind statements',
-    branch: 'hl/ledger-batch',
+    mountId: brandId<MountId>({ value: 'mock-overlap-mount-relay' }),
+    agentId: brandId<AgentId>({ value: 'mock-overlap-agent-relay' }),
+    title: 'Retry the notify-relay sends',
+    branch: 'ak/notify-relay-retry',
+    paths: [TOTALS, INDEX, 'services/notify-relay/src/retry.ts'],
+    createdAt: 1,
+  },
+  {
+    sessionId: brandId<SessionId>({ value: 'mock-overlap-session-420' }),
+    mountId: brandId<MountId>({ value: 'mock-overlap-mount-refunds' }),
+    agentId: brandId<AgentId>({ value: 'mock-overlap-agent-refunds' }),
+    title: 'Refund the Northwind statements',
+    branch: 'ak/payments-api-refunds-for-northwind-statements',
     paths: [
-      'src/retry/state.ts',
-      'src/batch/plan.ts',
-      'src/batch/run.ts',
-      'src/batch/queue.ts',
-      'src/batch/report.ts',
-      'src/batch/index.ts',
-      'src/batch/limits.ts',
+      ROUND,
+      EXPORTER,
+      CURRENCY,
+      'services/payments-api/src/refunds/plan.ts',
+      'services/payments-api/src/refunds/run.ts',
+      'services/payments-api/src/refunds/report.ts',
+      'services/payments-api/src/refunds/limits.ts',
+      'services/payments-api/src/refunds/index.ts',
     ],
-    createdAt: 2,
+    createdAt: 3,
   },
 ];
 
@@ -99,10 +116,7 @@ export const OverlapScene = ({ theme, view }: Props) => {
       return;
     }
     const timer = window.setTimeout(() => {
-      const chip = [...document.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
-        (button.textContent ?? '').startsWith('Overlaps Retry'),
-      );
-      chip?.click();
+      document.querySelector<HTMLButtonElement>(`[data-scene-row="${OPEN_MOUNT}"] button`)?.click();
     }, CLICK_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, [isReady, view]);
@@ -118,6 +132,7 @@ export const OverlapScene = ({ theme, view }: Props) => {
       {ROWS.map((row) => (
         <div
           key={row.mountId}
+          data-scene-row={row.mountId}
           className="flex min-w-0 items-center gap-3 rounded-md border border-border-soft bg-subtle px-3 py-2"
         >
           <span className="shrink-0 text-body text-foreground">Implementer</span>

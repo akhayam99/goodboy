@@ -6,7 +6,7 @@ export const NOT_SAVED = "The message couldn't be saved, so it was not sent.";
 export const STILL_QUEUED =
   "The message couldn't be saved. One note stays held in its Implementer's queue; Retry sends the rest.";
 export const RECIPIENT_GONE =
-  'An Implementer of this overlap is gone, so the message was not sent.';
+  'An Implementer of these branches is gone, so the message was not sent.';
 export const NOT_WITHDRAWN =
   "One note couldn't be withdrawn and stays held in its Implementer's queue.";
 export const HELD_FOR_UNDO = 'Waiting for the Undo window to close.';
@@ -63,7 +63,7 @@ const save = ({ item }: QueuedParams): Promise<boolean> => {
   });
 };
 
-export const messageBothImplementers = async ({ notes }: Params): Promise<MessageOutcome> => {
+export const messageImplementers = async ({ notes }: Params): Promise<MessageOutcome> => {
   if (!notes.every((item) => hasRecipient({ item }))) {
     return { isSent: false, failure: RECIPIENT_GONE, canRetry: false };
   }
@@ -85,7 +85,7 @@ export const messageBothImplementers = async ({ notes }: Params): Promise<Messag
     }
   }, SEND_AFTER_MS);
   useAppStore.getState().undoable({
-    message: 'Sent to both Implementers',
+    message: 'Sent to the Implementers',
     conflictMessage: 'An Implementer already read it, so it stays sent.',
     doneMessage: 'Message withdrawn.',
     undo: async () => {

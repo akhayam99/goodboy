@@ -1,8 +1,6 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 
-const ENTRY_LIMIT = 50;
-
 const PULL_REQUEST_URL =
   /^https?:\/\/([^/]+)\/(.+?)\/(?:pull|merge_requests|pull-requests)\/(\d+)/i;
 
@@ -37,6 +35,7 @@ export type PullRequestFactRow = {
   readonly url: string | null;
   readonly state: string;
   readonly happened_at: number;
+  readonly is_host_time: number;
   readonly session_spend: number | null;
 };
 
@@ -67,6 +66,7 @@ export const selectPullRequestFacts = async ({
        link.url AS url,
        link.state AS state,
        COALESCE(link.merged_at, link.updated_at) AS happened_at,
+       CASE WHEN link.merged_at IS NULL THEN 0 ELSE 1 END AS is_host_time,
        ${SESSION_SPEND} AS session_spend
      FROM mount_pr_links link
      JOIN session_worktrees mount ON mount.id = link.mount_id
@@ -85,6 +85,7 @@ export const selectPullRequestFacts = async ({
        json_extract(e.payload_json, '$.url') AS url,
        CASE e.kind WHEN 'pr_merged' THEN 'merged' ELSE 'closed' END AS state,
        e.created_at AS happened_at,
+       0 AS is_host_time,
        ${SESSION_SPEND} AS session_spend
      FROM session_events e
      JOIN sessions s ON s.id = e.session_id
@@ -204,7 +205,10 @@ type FactParams = {
 };
 
 const toFact = ({ key, rows }: FactParams): PullRequestFact | null => {
-  const merged = earliestOf({ rows: rows.filter((row) => row.state === 'merged') });
+  const merges = rows.filter((row) => row.state === 'merged');
+  const merged =
+    earliestOf({ rows: merges.filter((row) => row.is_host_time === 1) }) ??
+    earliestOf({ rows: merges });
   const latestLink = latestOf({ rows: rows.filter((row) => row.source === 'link') });
   const primary = merged ?? latestLink ?? latestOf({ rows });
   if (primary === null || primary.number === null) {
@@ -275,6 +279,6 @@ export const summarizePullRequests = ({
     previousOpen: previous === null ? null : previous.filter(isOpen).length,
     previousMerged:
       previous === null ? null : previous.filter((fact) => fact.state === 'merged').length,
-    entries: current.slice(0, ENTRY_LIMIT).map((fact) => fact.entry),
+    entries: current.map((fact) => fact.entry),
   };
 };

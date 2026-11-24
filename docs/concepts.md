@@ -392,9 +392,16 @@ midnight and today never exceeds this month.
 A deleted session shows up in Impact with a **Deleted** label and does not
 open. Its spend joins the live spend in one sum: the store reads the archived
 and deleted part once when the workspace opens (`dormantSpend`) and adds the
-live sessions on top. When Impact opens it refreshes up to 20 pull requests of
-archived or deleted sessions that were still open, so a merge that happened
-after you deleted the session still counts.
+live sessions on top. When Impact opens it asks the host before it trusts a
+stored state: it runs the request sweep for live mounts and waits for any
+refresh already asking, and it settles up to 60 still open pull requests of
+archived or deleted sessions and of unmounted branches with one GitHub query
+per repository and project, asking by number for one the branch list leaves
+out. When both are done, even if one failed, it reads its numbers again, and
+only the newest read is shown.
+A merge made on GitHub a minute ago, or after you archived the session, counts
+at once. A merged pull request sits in the window of its merge on the host;
+the time Goodboy saw it is the fallback.
 
 ## Lazy sessions
 
@@ -2019,8 +2026,8 @@ session up again in Goodboy.
   | Add to message    | Attach to the composer      | Send to the agent                                    |
 
   A **Send to X** verb always sends. A verb that only attaches to the composer
-  is **Add to message**. **Message the Implementer** and **Message both
-  Implementers** stay: they write to one named agent and hand no work over.
+  is **Add to message**. **Message the Implementer** and **Message the
+  Implementers** stay: they write to named agents and hand no work over.
   One obvious Lead is one click; **Send to Lead…** opens a short choice only
   when several Leads fit and none holds the item; with none it is **Start new
   Lead**, a Lead run with the item attached and no form.

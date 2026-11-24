@@ -495,7 +495,7 @@ first, and by colour second.
 | 4     | `text-row` and `text-ui` | 13/20, 500 or 400 | foreground                          |
 | 5     | `text-meta`              | 12/16, 400        | muted, or faint for time and counts |
 
-`text-row-strong` is level 4 at 600, for the one live item of a list: the step of a run that works, waits or failed. Every other step reads `text-ui` and turns foreground on hover. `SectionLabel` draws a section label at level 2 with its count faint after it, as a span or as an `h2` or `h3`, and `PANE_RHYTHM.groups` spaces the groups of a page 32px apart.
+`text-row-strong` is level 4 at 600, for the one live item of a list. A run's steps are activity rows and all read `text-ui`: the node and the state word carry the live one. `SectionLabel` draws a section label at level 2 with its count faint after it, as a span or as an `h2` or `h3`, and `PANE_RHYTHM.groups` spaces the groups of a page 32px apart.
 
 `text-prose` is the only reading size: `text-read` is gone, merged into it.
 `text-chip` (11/16) stays for tags and moves to 12 later. The sidebar has three

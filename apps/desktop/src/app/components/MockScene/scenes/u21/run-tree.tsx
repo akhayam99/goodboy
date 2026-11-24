@@ -11,6 +11,7 @@ import type {
 import { SceneRunsSurface } from '../SceneRunsSurface';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import { useAppStore } from '../../../../../store';
+import { applyDocumentTheme, getAppliedTheme } from '../../../../../shared/lib/theme';
 import { sceneClock } from '../../sceneClock';
 import {
   AGENT_BACKFILL_ID,
@@ -280,12 +281,17 @@ const seedNested = (): void => {
 
 type SceneProps = {
   readonly seed: () => void;
+  readonly theme?: 'light' | 'dark';
 };
 
-const RunTreeScene = ({ seed }: SceneProps) => {
+const RunTreeScene = ({ seed, theme }: SceneProps) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    const previous = getAppliedTheme();
+    if (theme !== undefined) {
+      applyDocumentTheme({ theme });
+    }
     seed();
     seedShellChrome({
       session: FLOW_SESSION,
@@ -295,7 +301,8 @@ const RunTreeScene = ({ seed }: SceneProps) => {
       lens: 'workflows',
     });
     setIsReady(true);
-  }, [seed]);
+    return () => applyDocumentTheme({ theme: previous });
+  }, [seed, theme]);
 
   if (!isReady) {
     return null;
@@ -316,4 +323,5 @@ const RunTreeScene = ({ seed }: SceneProps) => {
 export const U21_RUN_TREE_SCENES = {
   'workflow-run-finished-sets': () => <RunTreeScene seed={seedFinishedSets} />,
   'workflow-run-nested': () => <RunTreeScene seed={seedNested} />,
+  'workflow-run-nested-light': () => <RunTreeScene seed={seedNested} theme="light" />,
 };

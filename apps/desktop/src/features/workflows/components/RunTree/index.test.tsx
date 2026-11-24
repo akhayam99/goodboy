@@ -26,6 +26,7 @@ import { carriesSpec } from '../../../../test/classTokens';
 import { useAppStore } from '../../../../store';
 import { RunTree } from './index';
 import { useRunTree } from './useRunTree';
+import type { RunTreeDensity } from './runTreeDensity';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -152,6 +153,7 @@ type RenderParams = {
   readonly highlightedStepId?: string | null;
   readonly onHighlight?: (stepId: string | null) => void;
   readonly guidanceRun?: WorkflowRun | null;
+  readonly density?: RunTreeDensity;
 };
 
 type HarnessProps = {
@@ -161,6 +163,7 @@ type HarnessProps = {
   readonly onSelect: (id: AgentId) => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
   readonly guidanceRun: WorkflowRun | null;
+  readonly density: RunTreeDensity;
 };
 
 const Harness = ({
@@ -170,10 +173,12 @@ const Harness = ({
   onSelect,
   onAnswer,
   guidanceRun,
+  density,
 }: HarnessProps) => {
   const tree = useRunTree({ session, run, workflow, agentKindOverride: {} });
   return (
     <RunTree
+      density={density}
       sessionId={SESSION_ID}
       runId={run.id}
       tree={tree}
@@ -204,6 +209,7 @@ const renderTree = ({
   highlightedStepId = null,
   onHighlight = vi.fn(),
   guidanceRun = null,
+  density = 'page',
 }: RenderParams = {}) => {
   useAppStore.setState({
     sessionPhaseRuns: { [SESSION_ID]: [...agents] },
@@ -220,6 +226,7 @@ const renderTree = ({
       onSelect={onSelect}
       onAnswer={onAnswer}
       guidanceRun={guidanceRun}
+      density={density}
     />,
   );
 };
@@ -539,6 +546,52 @@ describe('RunTree step row grammar', () => {
 
     fireEvent.keyDown(button, { key: 'i' });
     expect(screen.queryByTestId('fact-card')).toBeNull();
+  });
+});
+
+describe('RunTree checklist rows read as a quiet ledger', () => {
+  const stateOf = (id: string): string | null =>
+    rowOf(id).querySelector('[data-meta-column="state"]')?.textContent ?? null;
+
+  it('reads each step as Step N, the role chip and the task, with no role word', () => {
+    renderTree({ density: 'checklist' });
+    const row = rowOf('agent-2');
+
+    expect(within(row).getByTestId('activity-row').dataset.activityDensity).toBe('feed');
+    within(row).getByText('Step 2');
+    expect(within(row).getByRole('img', { name: 'Implementer' })).toBe(glyphOf('agent-2'));
+    expect(within(row).queryByText('Implementer')).toBeNull();
+    within(row).getByText('Implement');
+  });
+
+  it('says Running on the live step and Queued on the next, each on its own tone', () => {
+    renderTree({ density: 'checklist' });
+
+    expect(stateOf('agent-1')).toBe('');
+    expect(stateOf('agent-2')).toBe('Running');
+    expect(stateOf('agent-3')).toBe('Queued');
+    expect(within(rowOf('agent-1')).getByTestId('activity-row').dataset.activityTone).toBe('quiet');
+    expect(within(rowOf('agent-2')).getByTestId('activity-row').dataset.activityTone).toBe('live');
+    expect(within(rowOf('agent-3')).getByTestId('activity-row').dataset.activityTone).toBe(
+      'pending',
+    );
+  });
+
+  it('puts a tone bar only on the step that asks you', () => {
+    renderTree({ density: 'checklist', questions: [question('oq-1', implement.id)] });
+
+    expect(within(rowOf('agent-2')).getByTestId('tone-bar').dataset.tone).toBe('warning');
+    expect(within(rowOf('agent-1')).queryByTestId('tone-bar')).toBeNull();
+    expect(within(rowOf('agent-3')).queryByTestId('tone-bar')).toBeNull();
+  });
+
+  it('keeps a click on the step opening it', () => {
+    const onSelect = vi.fn();
+    renderTree({ density: 'checklist', onSelect });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Step 2, Implement' }));
+
+    expect(onSelect).toHaveBeenCalledWith(implement.id);
   });
 });
 

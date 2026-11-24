@@ -891,17 +891,25 @@ nothing; a git read that fails fails the whole read, and the chip keeps the last
 good answer while a warning offers Retry.
 
 The overlap chip warns and proposes an order; it never blocks a merge. It shows
-only when the two mounts share a file. Its popover names the shared file, says
-which branch to merge first (the one that changes fewer files; on a tie, the
-older mount) and offers Message both Implementers, which queues one message to
-the Implementer of each mount, with Undo while neither has read it. Both notes
-wait held in their queues for the ten seconds of Undo, so a finishing turn
-delivers neither; a note that can't be saved or withdrawn stays held, and Retry
-sends the same notes to the same Implementers. On the
-Queue the chip sits once, on the Running row of the mount that waits (the one
-the proposed order merges second): its Implementer's row, or its first agent
-when no Implementer runs (`overlapRunIdsOf`). Inside a session every branch row
-of the Overview with an overlapping mount carries its own (`BoardTile`).
+only when the mount shares a file with another mount. One function,
+`overlapGroupOf`, takes the mount and every mount it shares a file with, one
+step per branch, and orders them: fewer changed files first, on a tie the older
+mount. Each step carries its reason (fewest files, fewer files, started earlier,
+most files, started later) and the files it shares. The chip label and the
+popover both read it. The popover says how many branches change the same files,
+lists the merge order with this branch marked, then the shared files once:
+the first three, cut in the middle with the full path on hover, and Show N more
+in place. Its foot holds Message the Implementers, which queues one message
+to the Implementer of every step that has one, naming the order, with Undo
+while none has read it, and Open in Changes, which opens this branch's files on
+the first shared file when the session's worktree is known. The notes wait held
+in their queues for the ten seconds of Undo, so a finishing turn delivers none;
+a note that can't be saved or withdrawn stays held, and Retry sends the same
+notes to the same Implementers. On the Queue the chip sits on the Running row
+of every mount the order does not merge first: its Implementer's row, or its
+first agent when no Implementer runs (`overlapRunIdsOf`). Inside a session every
+branch row of the Overview with an overlapping mount carries its own
+(`BoardTile`).
 
 ## Confirmed mount folder
 

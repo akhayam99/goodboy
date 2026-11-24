@@ -18,7 +18,6 @@ import {
   ATTACHMENT_LIMIT,
   type PendingAttachment,
 } from '../../../features/attachments/pendingAttachment';
-import { useComposerClassicKeys } from '../../hooks/useComposerClassicKeys';
 import { ComposerSurface } from '../ComposerSurface';
 import { ComposerAttachmentCount } from '../ComposerSurface/ComposerAttachmentCount';
 import { ComposerAttachments } from '../ComposerSurface/ComposerAttachments';
@@ -26,7 +25,7 @@ import { ComposerFooter } from '../ComposerSurface/ComposerFooter';
 
 import { PromptKeysHint } from './PromptKeysHint';
 import { keyHintsOf, type PromptKeyLabels } from './keyHintsOf';
-import { effectiveKind, promptKeyAction, type PromptFieldKind } from './promptKeyAction';
+import { promptKeyAction, type PromptFieldKind } from './promptKeyAction';
 
 const PromptPreview = lazy(() =>
   import('./PromptPreview').then((module) => ({ default: module.PromptPreview })),
@@ -62,7 +61,6 @@ type Props = {
   readonly files?: PromptFieldFiles;
   readonly hasPreview?: boolean;
   readonly notice?: string | null;
-  readonly hasChangedKeys?: boolean;
   readonly keyLabels?: PromptKeyLabels;
   readonly minRows?: number;
   readonly maxRows?: number;
@@ -102,7 +100,6 @@ export const PromptField = ({
   files,
   hasPreview = false,
   notice = null,
-  hasChangedKeys = false,
   keyLabels,
   minRows = 2,
   maxRows = 12,
@@ -123,8 +120,6 @@ export const PromptField = ({
   className,
   textClassName,
 }: Props) => {
-  const isClassic = useComposerClassicKeys({ isEnabled: hasChangedKeys });
-  const keys = effectiveKind({ kind, isClassic });
   const hintsId = useId();
   const [isFocused, setIsFocused] = useState(false);
   const [chosenTab, setTab] = useState<Tab>('write');
@@ -160,7 +155,6 @@ export const PromptField = ({
       },
       kind,
       canSendNow,
-      isClassic,
     });
     if (action === 'none') {
       return;
@@ -170,10 +164,8 @@ export const PromptField = ({
   };
 
   const hints =
-    !isCard || onSubmit === undefined
-      ? []
-      : keyHintsOf({ kind: keys, labels: keyLabels, canSendNow });
-  const isKeyRowShown = isClassic || keys === 'document' || (value === '' && isFocused);
+    !isCard || onSubmit === undefined ? [] : keyHintsOf({ kind, labels: keyLabels, canSendNow });
+  const isKeyRowShown = kind === 'document' || (value === '' && isFocused);
 
   const textarea = (
     <Textarea
@@ -198,7 +190,7 @@ export const PromptField = ({
       autoFocus={autoFocus}
       data-testid={testId}
       data-prompt-kind={kind}
-      data-prompt-keys={keys}
+      data-prompt-keys={kind}
       {...(isKickoffField ? { 'data-kickoff-field': true } : {})}
       autoGrow
       rows={minRows}

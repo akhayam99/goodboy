@@ -57,7 +57,8 @@ describe('u34 stuck step scenes', () => {
     renderScene({ id: 'u34-p25-not-finished' });
 
     const word = await screen.findByText('Not finished', undefined, WAIT);
-    expect(word.closest('[data-testid="timeline-row-state"]')?.className).toContain('text-warning');
+    expect(word.closest('[data-meta-column="state"]')).not.toBeNull();
+    expect(word.closest('[data-step-tone]')?.getAttribute('data-step-tone')).toBe('warning');
     screen.getByRole('button', { name: /Keep working on/ });
     expect(screen.queryByText(/without saying why/)).toBeNull();
   });

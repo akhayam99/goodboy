@@ -57,7 +57,6 @@ const fieldRow = ({ field, ...entry }: FieldRowParams): SettingRow => {
 const GENERAL: SettingRowPage = { scope: 'app', section: 'general' };
 const ADVANCED: SettingRowPage = { scope: 'app', section: 'advanced' };
 const STORAGE: SettingRowPage = { scope: 'app', section: 'storage' };
-const SHORTCUTS: SettingRowPage = { scope: 'app', section: 'shortcuts' };
 const BACKUP: SettingRowPage = { scope: 'app', section: 'backup' };
 const IPHONE: SettingRowPage = { scope: 'app', section: 'iphone' };
 const PROJECTS: SettingRowPage = { scope: 'workspace', section: 'projects' };
@@ -175,13 +174,6 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     page: STORAGE,
     band: 'Worktrees',
     formerNames: ['Cleanup policy'],
-  }),
-  row({
-    key: 'classic-send-keys',
-    label: NAMES.classicSendKeys,
-    help: 'Return adds a line and Cmd Return starts, as before 0.15.5.',
-    page: SHORTCUTS,
-    band: 'Message boxes',
   }),
   row({
     key: 'backup-export',

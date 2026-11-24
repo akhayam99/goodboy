@@ -39,7 +39,17 @@ describe('the u21 run tree scenes', () => {
     expect(Object.keys(U21_RUN_TREE_SCENES).sort()).toEqual([
       'workflow-run-finished-sets',
       'workflow-run-nested',
+      'workflow-run-nested-light',
     ]);
+  });
+
+  it('draws the nested light twin in the light theme with the quiet step rows', async () => {
+    renderScene('workflow-run-nested-light');
+
+    expect(await screen.findByText('Map the retry path in notify-relay')).toBeDefined();
+    expect(document.documentElement.dataset.theme).toBe('light');
+    const tree = await screen.findByTestId('run-tree');
+    expect(tree.querySelectorAll('[data-testid="activity-row"]').length).toBeGreaterThan(0);
   });
 
   it('folds the settled scouts under their running step and keeps the working set open', async () => {

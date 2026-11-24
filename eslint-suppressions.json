@@ -2920,11 +2920,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/impact/hooks/useImpactMetrics/index.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/impact/openImpactStudio.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -5513,11 +5508,6 @@
     }
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/BranchTemplateField/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/settings/components/SettingsStudio/ClassicComposerKeysField.test.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 1
     }
