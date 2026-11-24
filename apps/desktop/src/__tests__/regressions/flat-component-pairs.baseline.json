@@ -125,7 +125,6 @@
   "apps/desktop/src/features/session/components/OrchestratedRun/PresetChangeAsk.tsx": 1,
   "apps/desktop/src/features/session/components/RunRoute/RunKindChip.tsx": 1,
   "apps/desktop/src/features/session/components/SessionArchiveBridge.tsx": 1,
-  "apps/desktop/src/features/session/components/SessionOverviewPane/ChatOriginRow.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/FolderCard.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/GoalTeaser.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkIssueAction.tsx": 1,
