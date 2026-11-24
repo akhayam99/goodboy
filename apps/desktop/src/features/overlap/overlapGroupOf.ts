@@ -42,7 +42,7 @@ const mergesBefore = ({ left, right }: PairParams): number => {
   return left.mountId < right.mountId ? -1 : 1;
 };
 
-const reasonOf = ({ order, index }: ReasonParams): MergeReason => {
+const mergeReasonOf = ({ order, index }: ReasonParams): MergeReason => {
   const files = order[index]?.paths.length ?? 0;
   const next = order[index + 1];
   if (next !== undefined) {
@@ -73,7 +73,7 @@ export const overlapGroupOf = ({ mounts, mountId }: Params): OverlapGroup | null
     sharedPaths,
     steps: order.map((step, index) => ({
       mount: step,
-      reason: reasonOf({ order, index }),
+      reason: mergeReasonOf({ order, index }),
       isOwn: step.mountId === mount.mountId,
       sharedPaths: pathsWith.get(step.mountId) ?? sharedPaths,
     })),

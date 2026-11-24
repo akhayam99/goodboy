@@ -1,4 +1,4 @@
-import { Chip } from '@goodboy/ui';
+import { Chip, Tooltip } from '@goodboy/ui';
 import { MiddleText } from '../../../shared/components/MiddleText';
 import { countNoun } from '../../../shared/utils/countNoun';
 import type { MergeStep } from '../overlapGroupOf';
@@ -22,9 +22,14 @@ export const MergeStepRow = ({ step, position, title, reason }: Props) => (
     <div className="flex min-w-0 flex-1 flex-col">
       <div className="flex min-w-0 items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span title={step.mount.branch} className="flex min-w-0 text-code text-foreground">
-            <MiddleText value={step.mount.branch} tail={BRANCH_TAIL} />
-          </span>
+          <Tooltip content={step.mount.branch}>
+            <span
+              data-branch={step.mount.branch}
+              className="flex min-w-0 text-code text-foreground"
+            >
+              <MiddleText value={step.mount.branch} tail={BRANCH_TAIL} />
+            </span>
+          </Tooltip>
           {step.isOwn ? (
             <Chip
               tone="neutral"

@@ -27,6 +27,7 @@ import { anAgent, aSession } from '@goodboy/types/testing';
 import {
   brandId,
   type AgentId,
+  type IsoDateTime,
   type MountId,
   type ProjectId,
   type SessionId,
@@ -138,7 +139,9 @@ const stepTexts = (): ReadonlyArray<string> =>
   [...document.querySelectorAll('[data-merge-step]')].map((element) => visibleText({ element }));
 
 const sharedPaths = (): ReadonlyArray<string | null> =>
-  [...document.querySelectorAll('[data-shared-path]')].map((row) => row.getAttribute('title'));
+  [...document.querySelectorAll('[data-shared-path]')].map((row) =>
+    row.getAttribute('data-shared-path'),
+  );
 
 const openAndSend = async () => {
   fireEvent.click(screen.getByRole('button', { name: /Overlaps/ }));
@@ -218,6 +221,32 @@ describe('OverlapChip', () => {
         .getAllByRole('button')
         .map((button) => button.textContent),
     ).toEqual(['Message the Implementers']);
+  });
+
+  it('names the task on the chip and the session title on its merge row', async () => {
+    useAppStore.setState((state) => ({
+      sessions: state.sessions.map((session) =>
+        session.id === RETRY_SESSION ? { ...session, goal: '[HBL-412] Retry backoff' } : session,
+      ),
+      sessionExternalTasks: {
+        [RETRY_SESSION]: [
+          {
+            sessionId: RETRY_SESSION,
+            provider: 'linear',
+            externalId: 'hbl-412',
+            identifier: 'HBL-412',
+            url: 'https://linear.app/harborline/issue/HBL-412',
+            title: 'Retry backoff',
+            createdAt: brandId<IsoDateTime>({ value: '2026-11-20T09:00:00.000Z' }),
+          },
+        ],
+      },
+    }));
+    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Overlaps HBL-412' }));
+
+    expect(stepTexts()[0]).toBe('1hl/retry2 filesRetry backoff · fewest files');
   });
 
   it('sits once on the Queue, on the row that merges second', async () => {
@@ -401,6 +430,25 @@ describe('OverlapChip', () => {
     expect(queuedIds()).toEqual([0, 0]);
     screen.getByRole('button', { name: 'Message the Implementers' });
   });
+
+  it('keeps saying why when Retry finds every Implementer gone', async () => {
+    h.saveAgentQueuedMessages.mockRejectedValue(new Error('disk full'));
+    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await openAndSend();
+    screen.getByText(NOT_SAVED);
+
+    act(() => {
+      useAppStore.setState({ sessionPhaseRuns: {} });
+    });
+    h.saveAgentQueuedMessages.mockResolvedValue(undefined);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    });
+
+    screen.getByText(RECIPIENT_GONE);
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    expect(queuedIds()).toEqual([0, 0]);
+  });
 });
 
 const THREE = [
@@ -473,16 +521,17 @@ describe('OverlapChip with three branches', () => {
   it('cuts a long branch and a long path in the middle and keeps the full name', async () => {
     await openThree();
 
-    const branch = document.querySelector(`[data-merge-step="${REFUND_MOUNT}"] [title]`);
-    const path = document.querySelector('[data-shared-path][title*="reconciliation"]');
-    expect(branch?.getAttribute('title')).toBe(REFUND_BRANCH);
-    expect(path?.getAttribute('title')).toBe(DEEP_PATH);
-    for (const cut of [branch, path]) {
+    const branch = document.querySelector(`[data-merge-step="${REFUND_MOUNT}"] [data-branch]`);
+    const path = document.querySelector('[data-shared-path*="reconciliation"]');
+    expect(branch?.getAttribute('data-branch')).toBe(REFUND_BRANCH);
+    expect(path?.getAttribute('data-shared-path')).toBe(DEEP_PATH);
+    for (const [cut, full] of [
+      [branch, REFUND_BRANCH],
+      [path, DEEP_PATH],
+    ] as const) {
       const [head, tail] = [...(cut?.querySelectorAll('[aria-hidden]') ?? [])];
-      expect(head?.className).toContain('truncate');
-      expect(`${head?.textContent ?? ''}${tail?.textContent ?? ''}`).toBe(
-        cut?.getAttribute('title'),
-      );
+      expect(cut?.textContent).toContain(full);
+      expect(`${head?.textContent ?? ''}${tail?.textContent ?? ''}`).toBe(full);
       expect((tail?.textContent ?? '').length).toBeLessThanOrEqual(24);
     }
   });

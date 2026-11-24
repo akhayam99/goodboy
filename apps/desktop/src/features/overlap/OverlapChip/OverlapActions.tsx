@@ -63,7 +63,7 @@ export const OverlapActions = ({ group, onDone }: Props) => {
     onDone();
   };
 
-  if (!canMessage && worktreePath === null) {
+  if (!canMessage && worktreePath === null && failure === null) {
     return null;
   }
   return (

@@ -18,7 +18,7 @@ type NoteParams = {
   readonly agent: Agent;
 };
 
-const listOf = ({ words }: ListParams): string => {
+const branchListOf = ({ words }: ListParams): string => {
   const last = words.at(-1) ?? '';
   return words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${last}` : last;
 };
@@ -33,7 +33,7 @@ export const implementerNotesOf = ({
     const listed = step.sharedPaths.slice(0, LISTED_PATHS).join(', ');
     const more = step.sharedPaths.length - LISTED_PATHS;
     const files = more > 0 ? `${listed} and ${more} more` : listed;
-    const branches = listOf({ words: partners.map((other) => other.mount.branch) });
+    const branches = branchListOf({ words: partners.map((other) => other.mount.branch) });
     return {
       sessionId: agent.sessionId,
       agentId: agent.id,

@@ -69,7 +69,7 @@ describe('the u50 overlap scenes', () => {
     expect(
       within(within(dialog).getByRole('list', { name: 'Merge order' }))
         .getAllByRole('listitem')
-        .map((row) => row.querySelector('[title]')?.getAttribute('title')),
+        .map((row) => row.querySelector('[data-branch]')?.getAttribute('data-branch')),
     ).toEqual([
       'ak/notify-relay-retry',
       'ak/fix-ledger-totals',

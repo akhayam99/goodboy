@@ -27,7 +27,7 @@ export const OverlapChip = ({ mountId, placement }: Props) => {
     () => (group === null ? [] : [...new Set(group.steps.map((step) => step.mount.sessionId))]),
     [group],
   );
-  const sessionLabels = useSessionLabels({ sessionIds });
+  const { labels: sessionLabels, titles: sessionTitles } = useSessionLabels({ sessionIds });
   if (group === null || (placement === 'queue' && group.steps[0]?.isOwn === true)) {
     return null;
   }
@@ -64,7 +64,7 @@ export const OverlapChip = ({ mountId, placement }: Props) => {
             key={step.mount.mountId}
             step={step}
             position={index + 1}
-            title={sessionLabels.get(step.mount.sessionId) ?? ''}
+            title={sessionTitles.get(step.mount.sessionId) ?? ''}
             reason={words.reasons[index] ?? ''}
           />
         ))}
