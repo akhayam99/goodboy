@@ -44,6 +44,8 @@ const DATA_DRIVEN: Readonly<Record<string, string>> = {
   'features/integrations/jira/TransitionMenu.tsx': 'the transitions Jira offers for one issue',
   'features/integrations/linear/LinearAssigneeMenu.tsx': 'a picker over the people of a team',
   'features/integrations/linear/LinearStateMenu.tsx': 'the states of a Linear team',
+  'features/session/ask/components/AskPane/AskEarlierMenu.tsx':
+    'the earlier Ask threads of a session, capped at five by EARLIER_CAP',
   'features/session/components/TaskPlacement/PutOnBranchPopover.tsx':
     'a picker over the branches of the project',
   'features/terminal/components/TerminalStudio/NewTerminalMenu.tsx':

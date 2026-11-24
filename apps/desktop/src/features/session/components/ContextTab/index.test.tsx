@@ -16,7 +16,7 @@ import {
   seedActivityRunScene,
 } from '../../../../app/components/MockScene/scenes/activityRunSeed';
 import { seedSessionAsk } from '../../../../app/components/MockScene/scenes/sessionAskSeed';
-import { AskDrawer } from '../../ask/components/AskDrawer';
+import { AskPane } from '../../ask/components/AskPane';
 import { ASK_FOCUS_EVENT } from '../../ask/askFocusEvent';
 import { currentStack } from '../../../../store/slices/navigation/currentStack';
 import { selectIsContextTabOpen } from '../../../../store/slices/contextDrawer/selectIsContextTabOpen';
@@ -136,12 +136,13 @@ describe('the Context tab', () => {
     within(tab).getByRole('group', { name: 'Linked' });
   });
 
-  it('keeps the conversation of the Ask panel when it is closed and opened again, and starts no agent', async () => {
+  it('keeps the conversation of the Ask pane when it is closed and opened again, and starts no agent', async () => {
     const startedAgents = vi.fn();
     store.setState({ createSession: startedAgents });
     act(() => seedSessionAsk({ state: 'answer', session: session() }));
+    act(() => store.getState().openAsk({ sessionId: SESSION_ID }));
     const agentsBefore = store.getState().sessionPhaseRuns[SESSION_ID];
-    const panel = () => render(<AskDrawer sessionId={SESSION_ID} onClose={vi.fn()} />);
+    const panel = () => render(<AskPane session={session()} />);
     const view = panel();
     await screen.findByTestId('ask-answer');
     const turns = screen.getAllByTestId('ask-answer').length;
@@ -154,14 +155,14 @@ describe('the Context tab', () => {
     expect(store.getState().sessionPhaseRuns[SESSION_ID]).toBe(agentsBefore);
   });
 
-  it('opens Ask as a detail panel from ask.open, with its input focused', async () => {
+  it('opens the Ask pane from ask.open, with its input focused and no drawer', async () => {
     const focusAsked = new Promise<void>((resolve) => {
       window.addEventListener(ASK_FOCUS_EVENT, () => resolve(), { once: true });
     });
     act(() => store.getState().openAsk({ sessionId: SESSION_ID }));
-    expect(store.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION_ID });
+    expect(store.getState().drawer).toBeNull();
 
-    render(<AskDrawer sessionId={SESSION_ID} onClose={vi.fn()} />);
+    render(<AskPane session={session()} />);
     const field = await screen.findByRole('textbox', { name: 'Ask about this session' });
     await focusAsked;
     await waitFor(() => expect(document.activeElement).toBe(field));

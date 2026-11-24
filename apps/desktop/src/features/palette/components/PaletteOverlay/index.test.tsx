@@ -800,7 +800,8 @@ describe('PaletteOverlay, Ask in chat', () => {
     });
 
     expect(onClose).toHaveBeenCalled();
-    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: PAYOUT });
+    expect(useAppStore.getState().askPaneOpen[PAYOUT]).toBe(true);
+    expect(useAppStore.getState().drawer).toBeNull();
     expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId: PAYOUT })).toBe(
       false,
     );

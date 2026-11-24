@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
+import { openPlanDrawer } from '../../../../plans/openPlanDrawer';
 import { useAppStore } from '../../../../../store';
 import { agentHomeFor } from '../../../../../store/slices/navigation/agentHomeFor';
 import {
@@ -15,7 +16,6 @@ import type { AskHandle } from '../../askHandles';
 
 type Params = {
   readonly sessionId: SessionId;
-  readonly onOpenInside: (artifactId: ArtifactId) => void;
 };
 
 type AgentChipParams = {
@@ -35,7 +35,7 @@ const agentChipPlace = ({ sessionId, agentId }: AgentChipParams): PlaceRequest =
   });
 };
 
-export const useAskChipOpen = ({ sessionId, onOpenInside }: Params) =>
+export const useAskChipOpen = ({ sessionId }: Params) =>
   useCallback(
     (handle: AskHandle): void => {
       const { navigate } = useAppStore.getState();
@@ -79,7 +79,7 @@ export const useAskChipOpen = ({ sessionId, onOpenInside }: Params) =>
           });
           return;
         case 'artifact':
-          onOpenInside(target.artifactId);
+          openPlanDrawer({ sessionId, planId: target.artifactId });
           return;
         default: {
           const exhaustive: never = target;
@@ -87,5 +87,5 @@ export const useAskChipOpen = ({ sessionId, onOpenInside }: Params) =>
         }
       }
     },
-    [onOpenInside, sessionId],
+    [sessionId],
   );

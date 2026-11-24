@@ -114,7 +114,6 @@
   "apps/desktop/src/features/scripts/components/ScriptRunDrawer/RunButton.tsx": 1,
   "apps/desktop/src/features/search/findInView/FindInViewController.tsx": 1,
   "apps/desktop/src/features/session/ask/components/AskDrawer/AskComposer.tsx": 1,
-  "apps/desktop/src/features/session/ask/components/AskDrawer/AskPlanView.tsx": 1,
   "apps/desktop/src/features/session/components/AgentCard/AgentStatusIcon.tsx": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentFollowUps.tsx": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentTitle.tsx": 1,
