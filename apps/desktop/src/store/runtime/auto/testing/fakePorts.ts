@@ -26,6 +26,7 @@ import type {
   RestoreBackupOutcome,
   RestoreBackupParams,
   RoutingOutcome,
+  RoutingRequest,
   RunCheckParams,
   RunOutcome,
   ScribePublication,
@@ -144,6 +145,7 @@ export type FakePorts = AutoPorts &
     deliveries: Map<string, DeliveryRun>;
     setMounts: (mounts: ReadonlyArray<PickableMount>) => void;
     setRouting: (routing: RoutingOutcome) => void;
+    routingRequests: Array<RoutingRequest>;
     setPlanApproval: (isRequired: boolean) => void;
     setAutoTurnOutcome: (outcome: TurnStartOutcome | null) => void;
     setAutoTurnFailure: (error: Error | null) => void;
@@ -200,6 +202,7 @@ export const makeFakePorts = ({
   let counter = 0;
   let mounts: ReadonlyArray<PickableMount> = [LEDGER_MOUNT, NOTIFY_MOUNT];
   let routing: RoutingOutcome = READY_ROUTING;
+  const routingRequests: Array<RoutingRequest> = [];
   let isApprovalRequired = true;
   let forcedOutcome: TurnStartOutcome | null = null;
   let forcedChildOutcome: ChildStartOutcome | null = null;
@@ -264,6 +267,7 @@ export const makeFakePorts = ({
     setRouting: (next) => {
       routing = next;
     },
+    routingRequests,
     setPlanApproval: (isRequired) => {
       isApprovalRequired = isRequired;
     },
@@ -347,7 +351,10 @@ export const makeFakePorts = ({
     setMountProjectOutcome: (next) => {
       mountProjectOutcome = next;
     },
-    resolveRouting: async () => routing,
+    resolveRouting: async (request) => {
+      routingRequests.push(request);
+      return routing;
+    },
     isPlanApprovalRequired: () => isApprovalRequired,
     startAutoTurn: async (params) => {
       if (failure !== null) {

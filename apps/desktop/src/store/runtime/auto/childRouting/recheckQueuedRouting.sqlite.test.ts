@@ -16,6 +16,8 @@ const SIX_SCOUTS = {
     role: 'scout',
     task: `map area ${area} of ledger-core`,
     reason: 'reading code',
+    taskType: 'research',
+    difficulty: 'hard',
   })),
 };
 
@@ -94,6 +96,17 @@ describe('a queued helper when its turn comes', () => {
     await endFirstChild({ world });
 
     expect(world.state.ports.childTurns[4]?.routedModel).toEqual(STORED);
+  });
+
+  it('rechecks with the step size the Lead routed for', async () => {
+    const world = await started();
+
+    await endFirstChild({ world });
+
+    expect(world.state.ports.routingRequests.at(-1)?.fields).toMatchObject({
+      taskType: 'research',
+      difficulty: 'hard',
+    });
   });
 
   it('keeps the stored model when the pick moved for a reason that is not the provider', async () => {

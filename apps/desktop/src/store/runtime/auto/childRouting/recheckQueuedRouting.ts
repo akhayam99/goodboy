@@ -39,6 +39,8 @@ export const recheckQueuedRouting = async ({
       provider: textFieldOf({ source: routing, key: 'provider' }) ?? undefined,
       model: textFieldOf({ source: routing, key: 'model' }) ?? undefined,
       effort: textFieldOf({ source: routing, key: 'effort' }) ?? undefined,
+      taskType: textFieldOf({ source: delegation.request, key: 'taskType' }) ?? undefined,
+      difficulty: textFieldOf({ source: delegation.request, key: 'difficulty' }) ?? undefined,
     },
     promptText: textFieldOf({ source: delegation.request, key: 'task' }) ?? '',
   });

@@ -553,6 +553,8 @@ export const resolveDelegateChild = async ({
         ...(child.title !== null && { title: child.title }),
         task: child.task,
         reason: child.reason,
+        ...(child.taskType !== null && { taskType: child.taskType }),
+        ...(child.difficulty !== null && { difficulty: child.difficulty }),
         ...(fit !== null &&
           child.roleReason !== null && { roleFit: fit, roleReason: child.roleReason }),
         ...(retry !== null &&
