@@ -107,11 +107,10 @@ const APART = [
 
 type ChipParams = {
   readonly mountId: MountId;
-  readonly placement: 'queue' | 'session';
 };
 
-const renderChip = async ({ mountId, placement }: ChipParams) => {
-  render(<OverlapChip mountId={mountId} placement={placement} />);
+const renderChip = async ({ mountId }: ChipParams) => {
+  render(<OverlapChip mountId={mountId} />);
   await act(async () => {
     await liveMounts.refresh();
   });
@@ -198,13 +197,13 @@ describe('OverlapChip', () => {
   it('shows nothing when the two branches share no file', async () => {
     stubStoryInvoke({ overlap_read: APART });
 
-    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await renderChip({ mountId: BATCH_MOUNT });
 
     expect(screen.queryByRole('button', { name: /Overlaps/ })).toBeNull();
   });
 
   it('says the point, the order with its reasons and the shared file once', async () => {
-    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await renderChip({ mountId: BATCH_MOUNT });
 
     fireEvent.click(screen.getByRole('button', { name: 'Overlaps Retry backoff' }));
 
@@ -242,31 +241,22 @@ describe('OverlapChip', () => {
         ],
       },
     }));
-    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await renderChip({ mountId: BATCH_MOUNT });
 
     fireEvent.click(screen.getByRole('button', { name: 'Overlaps HBL-412' }));
 
     expect(stepTexts()[0]).toBe('1hl/retry2 filesRetry backoff · fewest files');
   });
 
-  it('sits once on the Queue, on the row that merges second', async () => {
-    await renderChip({ mountId: RETRY_MOUNT, placement: 'queue' });
-    expect(screen.queryByRole('button', { name: /Overlaps/ })).toBeNull();
-    cleanup();
-
-    await renderChip({ mountId: BATCH_MOUNT, placement: 'queue' });
-    screen.getByRole('button', { name: 'Overlaps Retry backoff' });
-  });
-
   it('inside a session every overlapping row carries its chip', async () => {
-    await renderChip({ mountId: RETRY_MOUNT, placement: 'session' });
+    await renderChip({ mountId: RETRY_MOUNT });
 
     screen.getByRole('button', { name: 'Overlaps Batch export' });
   });
 
   it('queues one message per Implementer and Undo withdraws both', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await renderChip({ mountId: BATCH_MOUNT });
 
     await openAndSend();
 
@@ -289,7 +279,7 @@ describe('OverlapChip', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const drainAgentQueue = vi.fn(async () => undefined);
     useAppStore.setState({ drainAgentQueue });
-    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await renderChip({ mountId: BATCH_MOUNT });
     await openAndSend();
 
     await act(async () => {
@@ -318,7 +308,7 @@ describe('OverlapChip', () => {
 
   it('a failed save sends nothing, says why and Retry sends both', async () => {
     h.saveAgentQueuedMessages.mockRejectedValue(new Error('disk full'));
-    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await renderChip({ mountId: BATCH_MOUNT });
 
     await openAndSend();
 
@@ -336,7 +326,7 @@ describe('OverlapChip', () => {
 
   it('a turn that finishes inside the Undo window does not deliver either note', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await renderChip({ mountId: BATCH_MOUNT });
     await openAndSend();
 
     await act(async () => {
@@ -359,7 +349,7 @@ describe('OverlapChip', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const reportError = vi.fn(async () => undefined);
     useAppStore.setState({ reportError });
-    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await renderChip({ mountId: BATCH_MOUNT });
     await openAndSend();
     h.saveAgentQueuedMessages.mockRejectedValue(new Error('disk full'));
 
@@ -381,7 +371,7 @@ describe('OverlapChip', () => {
         throw new Error('disk full');
       }
     });
-    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await renderChip({ mountId: BATCH_MOUNT });
 
     await openAndSend();
 
@@ -399,7 +389,7 @@ describe('OverlapChip', () => {
 
   it('Retry keeps the failed recipients and says when one is gone', async () => {
     h.saveAgentQueuedMessages.mockRejectedValue(new Error('disk full'));
-    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await renderChip({ mountId: BATCH_MOUNT });
     await openAndSend();
     screen.getByText(NOT_SAVED);
 
@@ -433,7 +423,7 @@ describe('OverlapChip', () => {
 
   it('keeps saying why when Retry finds every Implementer gone', async () => {
     h.saveAgentQueuedMessages.mockRejectedValue(new Error('disk full'));
-    await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+    await renderChip({ mountId: BATCH_MOUNT });
     await openAndSend();
     screen.getByText(NOT_SAVED);
 
@@ -481,7 +471,7 @@ const THREE = [
 ];
 
 const openThree = async () => {
-  await renderChip({ mountId: BATCH_MOUNT, placement: 'session' });
+  await renderChip({ mountId: BATCH_MOUNT });
   fireEvent.click(screen.getByRole('button', { name: 'Overlaps Refund statements +1' }));
   return screen.getByRole('dialog', { name: '3 branches change the same files' });
 };
@@ -611,11 +601,5 @@ describe('OverlapChip with three branches', () => {
       }),
     });
     expect(screen.queryByRole('dialog')).toBeNull();
-  });
-
-  it('shows no chip on the Queue for the branch that merges first', async () => {
-    await renderChip({ mountId: REFUND_MOUNT, placement: 'queue' });
-
-    expect(screen.queryByRole('button', { name: /Overlaps/ })).toBeNull();
   });
 });

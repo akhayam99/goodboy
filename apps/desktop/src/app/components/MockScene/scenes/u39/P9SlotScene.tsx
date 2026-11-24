@@ -39,7 +39,9 @@ export const P9SlotScene = ({ view }: Props) => {
     }
     seedFlowSession();
     seedStudioChrome();
-    useAppStore.getState().openDrawer({ kind: 'ask', sessionId: FLOW_SESSION_ID, payload: null });
+    useAppStore
+      .getState()
+      .openDrawer({ kind: 'new', sessionId: FLOW_SESSION_ID, payload: { form: 'report' } });
     setIsReady(true);
   }, [view]);
 

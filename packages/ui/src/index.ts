@@ -43,6 +43,7 @@ export type { TextRole } from './textRoles';
 export {
   BOARD_LANE_FADE_PX,
   BOARD_LANE_GAP_REM,
+  BOARD_LANE_MAX_REM,
   BOARD_LANE_MIN_REM,
   BOARD_LANE_SCROLL_MIN_REM,
   PANE_GROUPS_GAP_REM,

@@ -296,11 +296,23 @@ const launchOne = async ({
   if (target === null) {
     return;
   }
-  const delegation = (await isFirstQueuedStart({ ctx, delegation: queued }))
+  const rechecked = (await isFirstQueuedStart({ ctx, delegation: queued }))
     ? await recheckQueuedRouting({ ctx, tree, delegation: queued, role })
-    : queued;
+    : { kind: 'ready' as const, delegation: queued };
+  const delegation = rechecked.kind === 'ready' ? rechecked.delegation : queued;
   const attempt = await attemptToLaunch({ ctx, tree, delegation, role, target });
   if (attempt === null) {
+    return;
+  }
+  if (rechecked.kind === 'blocked') {
+    await failAttempt({
+      ctx,
+      delegation,
+      attempt,
+      generation: tree.generation,
+      reason: reasonOf({ code: rechecked.code, message: rechecked.message }),
+      outcome: 'blocked',
+    });
     return;
   }
   const fail = (reason: string) =>

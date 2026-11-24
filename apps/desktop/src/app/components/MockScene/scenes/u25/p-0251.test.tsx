@@ -81,6 +81,7 @@ describe('the p-0251 scenes', () => {
 
     const panel = await screen.findByRole('region', { name: 'Ask' });
     within(panel).getByRole('button', { name: 'New question' });
-    await waitFor(() => expect(screen.getAllByTestId('ask-turn')).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByTestId('ask-turn')).toHaveLength(1));
+    expect(screen.getAllByTestId('ask-folded-turn')).toHaveLength(1);
   });
 });

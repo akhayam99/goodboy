@@ -5,7 +5,7 @@ import {
   BOARD_LANE_SCROLL_MIN_REM,
 } from '@goodboy/ui';
 
-const LANES_AT_END = 4;
+const LANES_AT_END = 3;
 
 type Params = {
   readonly width: number;

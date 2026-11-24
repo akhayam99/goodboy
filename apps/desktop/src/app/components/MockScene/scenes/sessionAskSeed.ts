@@ -1,11 +1,12 @@
-import type {
-  AskThread,
-  ChatId,
-  ChatMessage,
-  ChatMessageId,
-  IsoDateTime,
-  ProviderRunId,
-  Session,
+import {
+  brandId,
+  type AskThread,
+  type ChatId,
+  type ChatMessage,
+  type ChatMessageId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type Session,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { AskHandle } from '../../../../features/session/ask/askHandles';
@@ -83,6 +84,20 @@ const threadOf = (session: Session): AskThread => ({
   messageCount: 1,
 });
 
+const EARLIER_THREAD_ID = brandId<ChatId>({ value: 'mock-ask-thread-earlier' });
+
+type EarlierParams = {
+  readonly session: Session;
+};
+
+const earlierOf = ({ session }: EarlierParams): AskThread => ({
+  ...threadOf(session),
+  id: EARLIER_THREAD_ID,
+  title: 'Why did the first credit post twice?',
+  lastActivityAt: isoAgo({ minutes: 26 * 60 }),
+  createdAt: isoAgo({ minutes: 26 * 60 }),
+});
+
 type TurnParams = {
   readonly index: number;
   readonly question: string;
@@ -112,12 +127,15 @@ export const seedSessionAsk = ({ state, session = SESSION }: SeedParams): void =
   useAppStore.setState({ navigate: useAppStore.getInitialState().navigate });
   const store = useAppStore.getState();
   if (state === 'closed') {
-    useAppStore.setState({ askThreadId: { [session.id]: null }, drawer: null });
+    useAppStore.setState({ askThreadId: { [session.id]: null }, askPaneOpen: {}, drawer: null });
     return;
   }
   store.openAsk({ sessionId: session.id });
   if (state === 'rightnow') {
-    useAppStore.setState({ askThreadId: { [session.id]: null } });
+    useAppStore.setState({
+      askThreads: { [session.id]: [earlierOf({ session })] },
+      askThreadId: { [session.id]: null },
+    });
     return;
   }
   const pack = buildAskPack(
@@ -142,7 +160,7 @@ export const seedSessionAsk = ({ state, session = SESSION }: SeedParams): void =
     messages.filter((entry) => entry.role === 'assistant').map((entry) => [entry.id, pack.handles]),
   );
   useAppStore.setState({
-    askThreads: { [session.id]: [threadOf(session)] },
+    askThreads: { [session.id]: [threadOf(session), earlierOf({ session })] },
     askThreadId: { [session.id]: THREAD_ID },
     askMessages: { [THREAD_ID]: messages },
     askHandles: handles,

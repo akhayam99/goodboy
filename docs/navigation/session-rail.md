@@ -43,11 +43,14 @@ in `features/session/pageRegistry.ts`).
   it. A tab draws no back button. The first crumb reads `Overview`,
   never the session title, which the title row above it already shows. The session title in
   the title row is the h1 on a tab and plain text on a detail, whose own title row holds the h1.
-- **Ask** in the title row opens the Ask panel as a detail panel (drawer kind `ask`, a reader
-  kind, so `DrawerHost slot="detail"` draws it between the page and the tool dock, in the
-  `DrawerFrame` the artifact detail uses), pressed while open; a second press closes it. ⌘L
-  (`ask.open`) opens it too and focuses its box (`openAsk`). Ask keeps its conversation and
-  starts no agent. The Context tab holds no Ask.
+- **Ask** in the right rail opens the Ask pane of the session (`askPaneOpen`, written by
+  `openAsk` and `closeAsk` with the session they name, never a drawer), pressed while open; a
+  second press closes it. `SessionWorkspace` draws `AskPane` beside the tab content, so the
+  pane stays while the tabs change and the Overview never switches to the Desk. It pushes the
+  page at 400px; under the 1100px window of `useShellRailForm` it lies over the right of the
+  page with a shadow and never reflows it. ⌘L (`ask.open`) opens it too and focuses its box.
+  Close or Esc hides it. Ask keeps its conversation and starts no agent. The Context tab holds
+  no Ask.
 - **The tab is the stored place.** The selected tab is read from the open lens
   (`currentSignOf` over `useSessionPageLens`), so a reload that restores the place restores
   the tab. A lens the tabs do not own (an integration list) selects no tab; a place that no
@@ -643,7 +646,7 @@ activity yet show the plain overview with its actions.
   filled button of the row when every branch is merged, no agent works and no question is
   open (`ArchivePrimary`, `isArchivePrimaryOf`); otherwise Archive stays in the menu with
   the same guards. Below the head the Overview reads the state, Needs you, Now, Next, one
-  block per project (`ProjectBlocks`) and Activity, with the Ask line at the foot.
+  block per project (`ProjectBlocks`) and Activity, the last section.
 
 ## The session tools
 
@@ -754,9 +757,9 @@ Folding the rail leaves the column in place.
   `isPairedSlot`). `toggleRailTool` closes the selected panel when clicked
   again, and choosing another panel in the same slot replaces it. Esc closes
   through `DrawerFrame`.
-- **Scripts and Ask use the detail slot.** Their rail buttons name the session
-  in the drawer request (`toggleRailTool`); `DrawerHost` renders `ScriptsPanel`
-  or the registered `AskDrawer`, each in a `DrawerFrame`. The Scripts chord,
+- **Scripts uses the detail slot, Ask its own pane.** Their rail buttons name the
+  session (`toggleRailTool`); `DrawerHost` renders `ScriptsPanel` in a
+  `DrawerFrame`, and Ask opens the pane `SessionWorkspace` draws beside the page. The Scripts chord,
   palette's Open Scripts, toasts and stored notifications (`open-lens`
   scripts) still open Terminal through `openToolPane`. Explore is **All files**
   on Changes, and Context is its tab.

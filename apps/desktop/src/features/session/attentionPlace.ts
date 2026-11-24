@@ -2,6 +2,7 @@ import type {
   Agent,
   MountId,
   OpenQuestion,
+  OpenQuestionId,
   ResolveAttempt,
   ResolveThread,
   Session,
@@ -9,9 +10,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { agentPlace, branchPlace, questionPlace, sessionPlace } from '../../store';
-import { partitionDelegatedQuestions } from '../context/questionDelegate';
-import { stagedQuestionIds } from '../context/stagedQuestionIds';
-import { selectOpenQuestions } from './components/SessionOverviewPane/lib';
+import { waitingQuestionsOf } from './waitingQuestionsOf';
 import type { NotificationPlaceReason } from './notificationPlaceReason';
 import { branchLandingTabOf } from '../branch/branchLandingTab';
 import { isTurnStatePermissionBlocked } from './agent-lifecycle';
@@ -57,6 +56,7 @@ type Params = {
   readonly reason: SessionAttentionReason | NotificationPlaceReason | null;
   readonly mountId?: MountId | null;
   readonly subject?: 'note' | 'comment';
+  readonly questionId?: OpenQuestionId | null;
 };
 
 type MountPathParams = {
@@ -93,6 +93,7 @@ export const attentionPlace = ({
   reason,
   mountId = null,
   subject,
+  questionId = null,
 }: Params): PlaceRequest => {
   const mountPath = mountPathOf({ state, sessionId, mountId });
   const runWait = reason === null ? undefined : RUN_WAIT_BY_REASON[reason];
@@ -133,11 +134,11 @@ export const attentionPlace = ({
       : agentPlace({ sessionId, agentId: root.id });
   }
   if (reason === 'open-question') {
-    const staged = stagedQuestionIds();
-    const waiting = partitionDelegatedQuestions({
-      questions: selectOpenQuestions(state.sessionOpenQuestions?.[sessionId] ?? []),
+    const questions = waitingQuestionsOf({
+      questions: state.sessionOpenQuestions?.[sessionId] ?? [],
       agents: state.sessionPhaseRuns[sessionId] ?? [],
-    }).answerable.find((question) => !staged.includes(question.id));
+    });
+    const waiting = questions.find((question) => question.id === questionId) ?? questions[0];
     return waiting === undefined
       ? sessionPlace({ sessionId, lens: 'questions' })
       : questionPlace({ sessionId, questionId: waiting.id });

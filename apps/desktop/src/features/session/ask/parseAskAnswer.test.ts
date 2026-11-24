@@ -22,6 +22,19 @@ const ANSWER = [
 ].join('\n');
 
 describe('parseAskAnswer', () => {
+  it('keeps a numbered list apart from a bulleted one', () => {
+    const parsed = parseAskAnswer({
+      text: ['Two steps left:', '1. Answer [[Q1]]', '2) Merge [[PR]]', '- then rest'].join('\n'),
+      handles: HANDLES,
+    });
+    expect(parsed.blocks.map((block) => block.kind)).toEqual([
+      'paragraph',
+      'number',
+      'number',
+      'item',
+    ]);
+  });
+
   it('turns handles into chips and keeps the first sentence bold', () => {
     const parsed = parseAskAnswer({ text: ANSWER, handles: HANDLES });
     expect(parsed.blocks.map((block) => block.kind)).toEqual(['paragraph', 'item', 'item']);

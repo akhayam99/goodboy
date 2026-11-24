@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
 import { useElementWidth } from '../../../../../shared/hooks/useElementWidth';
 import { boardLanesOf, rootRemPx, type BoardLanes } from '../boardLanesOf';
-import { scrollLaneRemOf } from '../scrollLaneRemOf';
+import { laneWidthOf } from '../laneWidthOf';
 
 const WIDTH_BEFORE_MEASURE = Number.POSITIVE_INFINITY;
 
 type BoardLayout = {
   readonly ref: (node: HTMLElement | null) => void;
   readonly layout: BoardLanes;
-  readonly scrollLaneRem: number;
+  readonly laneRem: number;
 };
 
 export const useBoardLayout = (): BoardLayout => {
@@ -18,6 +18,6 @@ export const useBoardLayout = (): BoardLayout => {
   return {
     ref: frame.ref,
     layout: boardLanesOf({ width, remPx }),
-    scrollLaneRem: scrollLaneRemOf({ width, remPx }),
+    laneRem: laneWidthOf({ width, remPx }),
   };
 };

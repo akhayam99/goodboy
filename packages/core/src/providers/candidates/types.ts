@@ -37,6 +37,7 @@ export type CandidateNeed = Readonly<{
   size: StepSize | null;
   scope: CandidateScope;
   writerFamily?: ModelFamily | null;
+  failedStarts?: ReadonlyArray<ProviderId> | null;
 }>;
 
 export type Candidate = Readonly<{

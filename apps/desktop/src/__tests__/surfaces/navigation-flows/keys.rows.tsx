@@ -48,7 +48,6 @@ import {
   changesTab,
   clickButton,
   heading,
-  showStages,
   lens,
   pane,
   openCrumb,
@@ -708,10 +707,8 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'ask.open',
     lands: async (ctx) => {
-      expect(selectOpenDrawer(useAppStore.getState())).toMatchObject({
-        kind: 'ask',
-        sessionId: ctx.sessionId,
-      });
+      expect(useAppStore.getState().askPaneOpen[ctx.sessionId]).toBe(true);
+      expect(selectOpenDrawer(useAppStore.getState())).toBeNull();
       const composer = await screen.findByRole('textbox', { name: 'Ask about this session' });
       await waitFor(() => expect(document.activeElement).toBe(composer));
     },
@@ -1021,15 +1018,19 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       useAppStore.getState().navigate({ to: sessionPlace({ sessionId: ctx.sessionId }) });
       await settle();
+      useAppStore.getState().clearDrawer();
       useAppStore
         .getState()
         .openDrawer({ kind: 'scripts', sessionId: ctx.sessionId, payload: null });
-      useAppStore.getState().openDrawer({ kind: 'ask', sessionId: ctx.sessionId, payload: null });
+      await settle();
+      useAppStore
+        .getState()
+        .openDrawer({ kind: 'new', sessionId: ctx.sessionId, payload: { form: 'report' } });
       await settle();
       await pickMenuItem({ id: 'slot.close' });
     },
     lands: async () => {
-      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('scripts'));
+      await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts'));
       expect(useAppStore.getState().drawerBack).toBeNull();
     },
   }),
@@ -1200,7 +1201,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     note: 'inside the Ask panel, the new chord resets the chat, not a session',
     open: async (ctx) => {
       await press('ask.open')();
-      const composer = await screen.findByPlaceholderText('Ask about this session', {});
+      const composer = await screen.findByRole('textbox', { name: 'Ask about this session' });
       useAppStore.setState((state) => ({
         askThreadId: {
           ...state.askThreadId,
@@ -1220,7 +1221,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     note: 'in Ask a streaming reply arms the stop before the panel closes, then stops it',
     open: async (ctx) => {
       await press('ask.open')();
-      const composer = await screen.findByPlaceholderText('Ask about this session', {});
+      const composer = await screen.findByRole('textbox', { name: 'Ask about this session' });
       const threadId = brandedId<ChatId>({ value: 'keys-ask-stream' });
       askStops.length = 0;
       useAppStore.setState((state) => ({
@@ -1243,14 +1244,14 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await settle();
       expect(armed.defaultPrevented).toBe(true);
       await screen.findByText('Esc again to stop', undefined);
-      expect(useAppStore.getState().drawer?.kind).toBe('ask');
+      expect(useAppStore.getState().askPaneOpen[ctx.sessionId]).toBe(true);
       expect(askStops).toEqual([]);
       pressShortcut({ id: 'agent.stop', target: composer });
       await settle();
     },
     lands: async (ctx) => {
       expect(askStops).toEqual([ctx.sessionId]);
-      expect(useAppStore.getState().drawer?.kind).toBe('ask');
+      expect(useAppStore.getState().askPaneOpen[ctx.sessionId]).toBe(true);
     },
   }),
   keyRow({
@@ -1259,13 +1260,13 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     note: 'in Ask with no reply streaming, Esc closes the panel',
     open: async () => {
       await press('ask.open')();
-      const composer = await screen.findByPlaceholderText('Ask about this session', {});
+      const composer = await screen.findByRole('textbox', { name: 'Ask about this session' });
       composer.focus();
       pressShortcut({ id: 'agent.stop', target: composer });
       await settle();
     },
-    lands: async () => {
-      await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
+    lands: async (ctx) => {
+      await waitFor(() => expect(useAppStore.getState().askPaneOpen[ctx.sessionId]).toBe(false));
       expect(screen.queryByText('Esc again to stop')).toBeNull();
     },
   }),
@@ -1697,16 +1698,23 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
         throw new Error('the run world has no current session');
       }
       useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) });
-      await settle(4);
-      const openActivity = document.querySelector<HTMLElement>('[data-overview-log] [role="link"]');
-      openActivity?.click();
-      await settle(4);
-      const lane = Array.from(
-        document.querySelectorAll<HTMLElement>('button[aria-keyshortcuts="Shift+Enter"]'),
-      ).find((button) => /Open run/.test(button.getAttribute('aria-description') ?? ''));
-      if (lane === undefined) {
-        throw new Error('the full log has no run row');
-      }
+      const openActivity = await waitFor(() => {
+        const link = document.querySelector<HTMLElement>('[data-overview-log] [role="link"]');
+        if (link === null) {
+          throw new Error('the overview has no activity link');
+        }
+        return link;
+      });
+      openActivity.click();
+      const lane = await waitFor(() => {
+        const row = Array.from(
+          document.querySelectorAll<HTMLElement>('button[aria-keyshortcuts="Shift+Enter"]'),
+        ).find((button) => /Open run/.test(button.getAttribute('aria-description') ?? ''));
+        if (row === undefined) {
+          throw new Error('the full log has no run row');
+        }
+        return row;
+      });
       lane.focus();
       await pressed('activity.openRun', lane);
     },
@@ -1908,7 +1916,7 @@ let terminalTabCount = 0;
 const openBoardCard = async (): Promise<HTMLElement> => {
   await press('session.board')();
   await heading('Board');
-  await showStages();
+  await settle();
   const card = await waitFor(() => {
     const found = document.querySelector<HTMLElement>('[data-select-id]');
     expect(found).not.toBeNull();

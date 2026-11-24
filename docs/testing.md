@@ -391,7 +391,7 @@ To add a scene, add its id to `scenes.txt` through the scene registry, then one 
 
 ### Layer probe
 
-Stacked layers are proved in a real browser, because a unit test cannot tell what is on top at a point or where Tab goes. `scripts/validateScenesLayers.mjs` exports `LAYER_SCENES`, four scenes: the Ask drawer over the page (`drawer-overlay-narrow`), the notifications popover (`notifications&view=center`), the command palette (`command-palette`) and the image lightbox (`image-lightbox`). For each, the scene job checks:
+Stacked layers are proved in a real browser, because a unit test cannot tell what is on top at a point or where Tab goes. `scripts/validateScenesLayers.mjs` exports `LAYER_SCENES`, four scenes: a drawer over the page (`drawer-overlay-narrow`), the notifications popover (`notifications&view=center`), the command palette (`command-palette`) and the image lightbox (`image-lightbox`). For each, the scene job checks:
 
 - `document.elementFromPoint` at the centre of the layer returns the layer or a descendant, so nothing paints or hit-tests above it;
 - a modal layer (drawer, palette, lightbox) holds focus: the probe focuses its first control, presses Tab up to its control count plus two times through the DevTools key events, and fails the press that lands on a page element outside the layer (focus handed to the browser chrome, a `body`, is not an escape);

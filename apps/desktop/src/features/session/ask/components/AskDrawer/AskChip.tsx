@@ -1,40 +1,50 @@
 import type { IconGlyph } from '@goodboy/ui/icons';
-import { Chip, ICON_SIZE, tintClasses, type Tone } from '@goodboy/ui';
+import { Chip, ICON_SIZE } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../../store';
+import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { askAgentKindOf } from '../../askAgentKindOf';
 import type { AskHandle, AskTarget } from '../../askHandles';
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly handle: AskHandle;
   readonly onOpen: (handle: AskHandle) => void;
 };
 
-type Glyph = {
-  readonly icon: IconGlyph;
-  readonly tone: Tone;
+const GLYPH: Readonly<Record<AskTarget['kind'], IconGlyph>> = {
+  agent: CONCEPT_ICONS.agents,
+  run: CONCEPT_ICONS.workflows,
+  question: CONCEPT_ICONS.questions,
+  comment: CONCEPT_ICONS.comments,
+  pr: CONCEPT_ICONS.pr,
+  artifact: CONCEPT_ICONS.plans,
+  file: CONCEPT_ICONS.diff,
 };
 
-const GLYPH: Readonly<Record<AskTarget['kind'], Glyph>> = {
-  agent: { icon: CONCEPT_ICONS.agents, tone: 'success' },
-  run: { icon: CONCEPT_ICONS.workflows, tone: 'primary' },
-  question: { icon: CONCEPT_ICONS.questions, tone: 'warning' },
-  comment: { icon: CONCEPT_ICONS.comments, tone: 'info' },
-  pr: { icon: CONCEPT_ICONS.pr, tone: 'info' },
-  artifact: { icon: CONCEPT_ICONS.plans, tone: 'warning' },
-  file: { icon: CONCEPT_ICONS.diff, tone: 'info' },
-};
-
-export const AskChip = ({ handle, onOpen }: Props) => {
-  const glyph = GLYPH[handle.target.kind];
-  const Icon = glyph.icon;
+export const AskChip = ({ sessionId, handle, onOpen }: Props) => {
+  const { target } = handle;
+  const agentKind = useAppStore((state) =>
+    target.kind === 'agent' ? askAgentKindOf({ state, sessionId, agentId: target.agentId }) : null,
+  );
+  const Icon = GLYPH[target.kind];
+  const isFile = target.kind === 'file';
+  const glyph =
+    agentKind === null ? (
+      <Icon size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />
+    ) : (
+      <AgentKindChip kind={agentKind} density="glyph" isDecorative />
+    );
   return (
     <Chip
-      kind="state"
+      kind="reference"
       as="button"
       tone="neutral"
       testId="ask-chip"
       ariaLabel={`Open ${handle.label}`}
-      icon={<Icon size={ICON_SIZE.row} aria-hidden className={tintClasses(glyph.tone).icon} />}
-      label={handle.label}
+      icon={isFile ? null : glyph}
+      label={isFile ? <span className="font-mono text-info">{handle.label}</span> : handle.label}
       onClick={() => onOpen(handle)}
     />
   );

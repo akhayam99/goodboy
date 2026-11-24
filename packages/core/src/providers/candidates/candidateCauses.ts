@@ -9,6 +9,7 @@ export type CandidateCause =
   | 'breaker'
   | 'budget'
   | 'outside-run'
+  | 'failed-start'
   | 'not-for-helpers'
   | 'writer'
   | 'no-model'
@@ -36,6 +37,10 @@ export const CANDIDATE_CAUSES = {
   breaker: { text: 'paused after repeated failures', adjustment: 'disconnected' },
   budget: { text: 'past its budget', adjustment: 'budget' },
   'outside-run': { text: 'not one of the providers for this run', adjustment: 'disconnected' },
+  'failed-start': {
+    text: 'an agent for this role did not start here',
+    adjustment: 'disconnected',
+  },
   'not-for-helpers': { text: 'the Lead does not start agents here', adjustment: 'disconnected' },
   writer: { text: 'agents that write code do not run here yet', adjustment: 'disconnected' },
   'no-model': { text: 'no model here fits this step', adjustment: 'unknown_model' },

@@ -7,6 +7,7 @@ import {
   type AgentId,
   type ArtifactId,
   type MountId,
+  type OpenQuestionId,
   type ProjectId,
   type ResolveAttempt,
   type SessionId,
@@ -162,7 +163,11 @@ describe('restoring a saved window location', () => {
         target: { kind: 'artifact', artifactId: ARTIFACT },
       }),
     });
-    before.getState().openDrawer({ kind: 'ask', sessionId: S1, payload: null });
+    before.getState().openDrawer({
+      kind: 'question',
+      sessionId: S1,
+      payload: { questionId: brandId<OpenQuestionId>({ value: 'question-restore' }) },
+    });
     before.getState().amendFocus({ patch: { scroll: { plans: 320 } } });
     const saved = parseLocation({
       value: JSON.parse(JSON.stringify(captureWindowLocation({ state: before.getState() }))),
