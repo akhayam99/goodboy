@@ -117,8 +117,20 @@ version on the download page. The project's `ignoreCommand` runs
 `scripts/demo-ignore-build.mjs`: on `VERCEL_ENV=production` it builds only when
 the first line of `VERCEL_GIT_COMMIT_MESSAGE` is a release subject
 (`chore(repo): release X.Y.Z`, with or without ` (#N)`), and it skips every
-other push to `main`. Preview deployments of other branches always build.
-`scripts/demo-ignore-build.test.mjs` pins both answers.
+other push to `main`. A preview of another branch builds only when the branch
+changes what the demo shows: `apps/desktop/src`, `index.html`, `public`, `vite`,
+the Vite and TypeScript config, `package.json` and `vercel.json` of
+`apps/desktop`, `packages/*/src`, `packages/*/package.json`,
+`tsconfig.base.json` or `pnpm-lock.yaml`. A later push diffs against the
+branch's last deployed commit (`VERCEL_GIT_PREVIOUS_SHA`); a first push, or one
+whose last deploy the clone lacks, diffs against its merge base with
+`origin/main`. Vercel clones shallow, so `scripts/lib/changedSinceBaseOf.mjs`
+fetches `main` and deepens the clone until the merge base appears, through
+`origin` or the GitHub repository Vercel names. When it still finds no base, or
+git fails, the preview builds. A new demo input outside these paths joins
+`DEMO_PATHS` in the script, or its change never reaches a preview.
+`scripts/demo-ignore-build.test.mjs` and
+`scripts/lib/changedSinceBaseOf.test.mjs` pin every answer.
 
 The owner sets these by hand in the Vercel project, since `vercel.json` cannot:
 
