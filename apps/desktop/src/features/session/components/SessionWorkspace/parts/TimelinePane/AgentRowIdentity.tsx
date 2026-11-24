@@ -1,5 +1,5 @@
 import type { Step } from '@goodboy/types';
-import type { RowPhase } from '../../../../../workTreeModel/rowState';
+import type { RowState } from '../../../../../workTreeModel/rowState';
 import type { AgentRowWork } from '../../../../hooks/useAgentRowWork';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
 import type { AgentRowModels } from './useAgentRowModels';
@@ -12,7 +12,7 @@ type Params = {
   readonly step: Step | null;
   readonly work: AgentRowWork;
   readonly rowModels: AgentRowModels;
-  readonly phase: RowPhase;
+  readonly rowState: RowState;
   readonly costUsd: number;
 };
 
@@ -22,7 +22,7 @@ export const agentRowIdentity = ({
   step,
   work,
   rowModels,
-  phase,
+  rowState,
   costUsd,
 }: Params): TimelineRowIdentity => {
   const { models, kindWord } = rowModels;
@@ -46,7 +46,7 @@ export const agentRowIdentity = ({
         kindWord={kindWord}
         models={models}
         work={work}
-        phase={phase}
+        rowState={rowState}
         costUsd={costUsd}
         isOpen={isOpen}
       >

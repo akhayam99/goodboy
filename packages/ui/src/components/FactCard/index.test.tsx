@@ -451,16 +451,46 @@ describe('factCardSentence', () => {
           title: 'Implementer',
           sub: 'Step 4 of 7',
           task: 'Post one credit per retry in postCredit',
-          state: { tone: 'info', words: 'Working', note: '12m' },
+          state: { tone: 'info', words: 'Running', note: '12m' },
           models: [
-            { key: 'sonnet', name: 'Sonnet 5.5', effort: { word: 'High', step: 3, steps: 5 } },
+            {
+              key: 'sonnet',
+              name: 'Sonnet 5.5',
+              providerLabel: 'Claude',
+              effort: { word: 'High', step: 3, steps: 5 },
+            },
           ],
           facts: [{ label: 'Cost', value: '$0.31' }],
         },
       }),
     ).toBe(
-      'Implementer Step 4 of 7. Post one credit per retry in postCredit. Working 12m. Model, Sonnet 5.5, Effort High, 3 of 5. Cost, $0.31.',
+      'Implementer Step 4 of 7. Post one credit per retry in postCredit. Running 12m. Model, Claude, Sonnet 5.5, Effort High, 3 of 5. Cost, $0.31.',
     );
+  });
+
+  it('draws a model that ran first and last on two lines', () => {
+    render(
+      <FactCard
+        isOpen
+        card={{
+          title: 'Implementer',
+          models: [
+            { key: 'sonnet', name: 'Sonnet 5.5' },
+            { key: 'opus', name: 'Opus 5.5' },
+            { key: 'sonnet', name: 'Sonnet 5.5' },
+          ],
+          facts: [],
+        }}
+      >
+        <button type="button">trigger</button>
+      </FactCard>,
+    );
+
+    const lines = Array.from(cardNode()?.querySelectorAll('[data-fact-model="sonnet"]') ?? []);
+    expect(lines.map((line) => line.querySelector('dt')?.textContent)).toEqual([
+      'Models',
+      '+ 1 model',
+    ]);
   });
 
   it('does not double a full stop that is already there', () => {

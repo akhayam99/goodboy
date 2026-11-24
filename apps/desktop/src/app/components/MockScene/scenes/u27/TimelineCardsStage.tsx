@@ -239,7 +239,7 @@ export const TimelineCardsStage = ({ theme }: Props) => {
               isMuchLonger: false,
             },
           }}
-          phase="done"
+          rowState={{ phase: 'done', reason: null, ask: null }}
           costUsd={0.62}
           isOpen
         >

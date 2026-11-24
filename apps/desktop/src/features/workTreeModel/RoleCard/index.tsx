@@ -11,7 +11,7 @@ import type { AgentRowRouting } from '../../session/timeline/agentRowRouting';
 import type { TimelineAgentEntry } from '../../session/timeline/buildTimelineGroups';
 import type { AgentModels } from '../../session/timeline/ranModels';
 import { roleCardSpec, type RoleCardParams } from '../roleCardSpec';
-import type { RowPhase } from '../rowState';
+import type { RowState } from '../rowState';
 import { rowStateNode } from '../rowStateCopy';
 import type { WorkTime } from '../workTime';
 
@@ -22,7 +22,7 @@ type Props = {
   readonly models: AgentModels;
   readonly routing: AgentRowRouting;
   readonly time: WorkTime | null | undefined;
-  readonly phase: RowPhase;
+  readonly rowState: RowState;
   readonly costUsd: number;
   readonly markOf: RoleCardParams['markOf'];
   readonly isOpen?: boolean;
@@ -42,13 +42,14 @@ export const RoleCard = ({
   models,
   routing,
   time,
-  phase,
+  rowState,
   costUsd,
   markOf,
   isOpen = false,
   children,
 }: Props) => {
   const { agent } = entry;
+  const { phase } = rowState;
   const { divergence } = routingLabelModel({
     provider: routing.provider,
     model: routing.model,
@@ -60,14 +61,8 @@ export const RoleCard = ({
   const history = useAppStore((state) => state.agentRunHistory[agent.id] ?? EMPTY_RUN_IDS);
   const nowMs = useNow(MINUTE_MS, phase === 'waiting');
   const runIds = agent.runId == null ? history : [...history, agent.runId];
-  const isStopped = phase === 'waiting' && agent.status === 'stopped';
-  const node = rowStateNode({
-    state: {
-      phase,
-      reason: isStopped ? { kind: 'agentStopped', by: agent.stoppedBy ?? 'you' } : null,
-      ask: null,
-    },
-  });
+  const isStopped = phase === 'waiting' && rowState.reason?.kind === 'agentStopped';
+  const node = rowStateNode({ state: rowState });
   const askedAt = entry.openQuestions.reduce<string | null>(
     (latest, question) =>
       latest === null || question.createdAt > latest ? question.createdAt : latest,

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { ProviderId } from '@goodboy/types';
 import { formatTokens, formatUsd, type Fact, type FactCardSpec } from '@goodboy/ui';
 import { NAMES } from '../../shared/utils/names';
+import { PROVIDER_LABEL } from '../providers/providerLabel';
 import { formatAge } from '../../shared/utils/time/formatAge';
 import { formatClock } from '../../shared/utils/time/formatClock';
 import type { TokenTotals } from '../session/timeline/agentTokenTotals';
@@ -77,7 +78,7 @@ const stateLineOf = ({ phase, isStopped, time, askedAt, nowMs }: StateParams): F
     case 'running':
       return {
         tone: 'info',
-        words: 'Working',
+        words: NAMES.running,
         isRunning: true,
         ...(headline === undefined ? {} : { note: headline }),
       };
@@ -157,6 +158,7 @@ export const roleCardSpec = ({
         key: model.key,
         name: model.name,
         mark: markOf({ provider: model.provider }),
+        ...(model.provider === null ? {} : { providerLabel: PROVIDER_LABEL[model.provider] }),
         ...(effort === undefined ? {} : { effort }),
         ...(models.isPlanned ? { isPlanned: true } : {}),
       };

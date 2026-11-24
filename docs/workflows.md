@@ -861,7 +861,7 @@ the model and its effort ("Opus 5.5 · High"), and when a step moved to another 
 routing change) every model in the order it ran ("Kimi K3 → Sonnet 5.5", "3
 models" past two). The card that opens when the pointer rests on the role
 glyph is the role card: the role and its place, the task in full (four lines
-at most), the state line with its node and time ("Working 12m", "Needs you,
+at most), the state line with its node and time ("Running 12m", "Needs you,
 asked 3m ago", "Done in 6m 12s"), then one line per model in the order it
 ran, each with its provider mark, its name and its effort, then the start,
 the tokens and the cost above zero. Three models or more show the first and

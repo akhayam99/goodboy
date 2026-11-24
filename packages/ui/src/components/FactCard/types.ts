@@ -27,6 +27,7 @@ export type FactModel = {
   readonly key: string;
   readonly name: string;
   readonly mark?: ReactNode;
+  readonly providerLabel?: string;
   readonly effort?: FactEffort;
   readonly isPlanned?: boolean;
 };

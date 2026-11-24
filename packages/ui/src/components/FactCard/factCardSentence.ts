@@ -51,7 +51,12 @@ const effortPhrase = ({ effort }: EffortPhraseParams): string | undefined => {
 
 const modelPhrase = ({ line }: ModelPhraseParams): string =>
   joinFilled({
-    parts: [line.label, line.model.name, effortPhrase({ effort: line.model.effort })],
+    parts: [
+      line.label,
+      line.model.providerLabel,
+      line.model.name,
+      effortPhrase({ effort: line.model.effort }),
+    ],
     separator: ', ',
   });
 

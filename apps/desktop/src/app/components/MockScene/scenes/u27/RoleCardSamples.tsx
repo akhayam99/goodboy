@@ -169,7 +169,7 @@ export const RoleCardSamples = () => {
           effort: 'high',
           headline: '12m',
         })}
-        phase="running"
+        rowState={{ phase: 'running', reason: null, ask: null }}
         costUsd={0.31}
         isOpen
       >
@@ -184,7 +184,7 @@ export const RoleCardSamples = () => {
         kindWord="Reviewer"
         models={TWO_PROVIDERS}
         work={workOf({ model: 'gpt-6.1-sol', provider: 'codex', effort: 'xhigh', headline: '8m' })}
-        phase="waiting"
+        rowState={{ phase: 'waiting', reason: null, ask: null }}
         costUsd={0.06}
         isOpen
       >

@@ -25,7 +25,7 @@ import { formatClock } from '../../../shared/utils/time/formatClock';
 import type { AgentRowWork } from '../../session/hooks/useAgentRowWork';
 import type { TimelineAgentEntry } from '../../session/timeline/buildTimelineGroups';
 import type { AgentModels, RanModel } from '../../session/timeline/ranModels';
-import type { RowPhase } from '../rowState';
+import type { RowPhase, RowState, RowStateReason } from '../rowState';
 import { AgentRoleCard } from '../../session/components/SessionWorkspace/parts/TimelinePane/AgentRoleCard';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -231,6 +231,17 @@ const questionOf = ({ createdAt }: QuestionParams): OpenQuestion => ({
   createdAt: idOf<IsoDateTime>({ value: createdAt }),
 });
 
+type StateParams = {
+  readonly phase: RowPhase;
+  readonly reason?: RowStateReason;
+};
+
+const stateOf = ({ phase, reason }: StateParams): RowState => ({
+  phase,
+  reason: reason ?? null,
+  ask: null,
+});
+
 type CardProps = Omit<Parameters<typeof AgentRoleCard>[0], 'children' | 'isOpen'>;
 
 const renderCard = (props: Partial<CardProps> = {}) =>
@@ -241,7 +252,7 @@ const renderCard = (props: Partial<CardProps> = {}) =>
       kindWord="Implementer"
       models={ONE_MODEL}
       work={workOf()}
-      phase="done"
+      rowState={stateOf({ phase: 'done' })}
       costUsd={0.62}
       isOpen
       {...props}
@@ -305,7 +316,7 @@ type PhaseCase = {
 };
 
 const PHASES: ReadonlyArray<PhaseCase> = [
-  { phase: 'running', words: 'Working', note: '15m 59s' },
+  { phase: 'running', words: 'Running', note: '15m 59s' },
   { phase: 'done', words: 'Done', note: 'in 15m 59s' },
   { phase: 'failed', words: 'Failed', note: 'after 15m 59s' },
   { phase: 'queued', words: 'Queued', note: '15m 59s' },
@@ -326,7 +337,7 @@ describe('RoleCard', () => {
   });
 
   it.each(PHASES)('says $words with its time on the state line', ({ phase, words, note }) => {
-    renderCard({ phase });
+    renderCard({ rowState: stateOf({ phase }) });
 
     expect(shownCard().getByText(words)).toBeDefined();
     expect(note === null ? null : shownCard().getByText(note)).toBeDefined();
@@ -336,7 +347,7 @@ describe('RoleCard', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(Date.parse('2026-10-04T17:00:00Z'));
     renderCard({
-      phase: 'waiting',
+      rowState: stateOf({ phase: 'waiting', reason: { kind: 'openQuestions' } }),
       entry: entryOf({
         agent: STEP_FOUR,
         openQuestions: [
@@ -352,12 +363,21 @@ describe('RoleCard', () => {
 
   it('says Stopped, not Needs you, for an agent you stopped', () => {
     renderCard({
-      phase: 'waiting',
+      rowState: stateOf({ phase: 'waiting', reason: { kind: 'agentStopped', by: 'you' } }),
       entry: entryOf({ agent: { ...STEP_FOUR, status: 'stopped', stoppedBy: 'you' } }),
     });
 
     expect(shownCard().getByText('Stopped')).toBeDefined();
     expect(shownCard().queryByText('Needs you')).toBeNull();
+  });
+
+  it('draws the node the row resolved, an approval for a blocked permission', () => {
+    renderCard({
+      rowState: stateOf({ phase: 'waiting', reason: { kind: 'needsApproval' } }),
+    });
+
+    const node = screen.getByTestId('fact-card').querySelector('[data-node-state]');
+    expect(node?.getAttribute('data-node-state')).toBe('approval');
   });
 
   it('drops Finished and Active, which the state line already carries', () => {
@@ -399,7 +419,7 @@ describe('RoleCard', () => {
   it('draws the effort of a turn that has not run yet in faint ink', () => {
     const live: RanModel = { ...SONNET, endReason: null, endedAtMs: null };
     renderCard({
-      phase: 'running',
+      rowState: stateOf({ phase: 'running' }),
       models: { models: [live], isPlanned: false },
       work: workOf({ isEffortObserved: false }),
     });
@@ -438,7 +458,7 @@ describe('RoleCard', () => {
     expect(sentenceOf()).toContain('Implementer Step 4 of 6.');
     expect(sentenceOf()).toContain(`${TASK}.`);
     expect(sentenceOf()).toContain('Done in 15m 59s.');
-    expect(sentenceOf()).toContain('Model, Sonnet 5.5, Effort High, 3 of 5.');
+    expect(sentenceOf()).toContain('Model, Claude, Sonnet 5.5, Effort High, 3 of 5.');
     expect(sentenceOf()).toContain('Cost, $0.62.');
   });
 
@@ -450,7 +470,7 @@ describe('RoleCard', () => {
         kindWord="Implementer"
         models={ONE_MODEL}
         work={workOf()}
-        phase="done"
+        rowState={stateOf({ phase: 'done' })}
         costUsd={0.62}
       >
         <button type="button">glyph</button>
@@ -515,7 +535,7 @@ describe('RoleCard', () => {
     });
     renderCard({
       entry: entryOf({ agent: queued }),
-      phase: 'queued',
+      rowState: stateOf({ phase: 'queued' }),
       work: workOf({ timeLabel: '~8-11m' }),
       costUsd: 0,
     });

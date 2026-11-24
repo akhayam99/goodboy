@@ -8,7 +8,7 @@ type Props = {
 
 export const FactCardModels = ({ models }: Props) =>
   models.map(({ label, model }) => (
-    <div key={model.key} data-fact-model={model.key} className="contents">
+    <div key={`${label}:${model.key}`} data-fact-model={model.key} className="contents">
       <dt className="truncate text-muted-foreground">{label}</dt>
       <dd className="flex min-w-0 items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-2">

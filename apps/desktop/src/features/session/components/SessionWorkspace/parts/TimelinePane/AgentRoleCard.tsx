@@ -1,5 +1,5 @@
 import { RoleCard } from '../../../../../workTreeModel/RoleCard';
-import type { RowPhase } from '../../../../../workTreeModel/rowState';
+import type { RowState } from '../../../../../workTreeModel/rowState';
 import type { AgentRowWork } from '../../../../hooks/useAgentRowWork';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
 import type { AgentModels } from '../../../../timeline/ranModels';
@@ -13,7 +13,7 @@ type Props = {
   readonly kindWord: string;
   readonly models: AgentModels;
   readonly work: AgentRowWork;
-  readonly phase: RowPhase;
+  readonly rowState: RowState;
   readonly costUsd: number;
   readonly isOpen?: boolean;
   readonly children: CardTrigger;
@@ -25,7 +25,7 @@ export const AgentRoleCard = ({
   kindWord,
   models,
   work,
-  phase,
+  rowState,
   costUsd,
   isOpen = false,
   children,
@@ -39,7 +39,7 @@ export const AgentRoleCard = ({
       models={models}
       routing={work.routing}
       time={work.time}
-      phase={phase}
+      rowState={rowState}
       costUsd={costUsd}
       markOf={({ provider }) => <TimelineProviderGlyph provider={provider} />}
       isOpen={isOpen}

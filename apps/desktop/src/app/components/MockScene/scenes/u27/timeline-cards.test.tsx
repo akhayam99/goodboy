@@ -38,7 +38,7 @@ describe('timeline cards scene', () => {
     const cards = screen.getAllByTestId('fact-card');
     const one = cards[3];
     const two = cards[4];
-    expect(one?.textContent).toContain('Working12m');
+    expect(one?.textContent).toContain('Running12m');
     expect(one?.querySelectorAll('[data-provider]')).toHaveLength(1);
     expect(two?.textContent).toContain('Needs you');
     expect(two?.textContent).toContain('asked 3m ago');
