@@ -954,6 +954,8 @@ taskdrag-refused
 taskmove-issuepage
 taskmove-menu
 tasks-cursor
+tasks-detail-clean
+tasks-list-clean
 tasks-rail
 tasks-rail-folded
 tasks-rail-open

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ListGrid } from '@goodboy/ui';
 import type { InboxRecord } from '../../types';
@@ -92,16 +92,75 @@ describe('InboxRow', () => {
     renderRow();
 
     const option = screen.getByRole('option', {
-      name: 'HBL-412 Ledger export times out over 10k rows',
+      name: 'HBL-412 Ledger export times out over 10k rows, In progress, High priority',
     });
     const cells = Array.from(option.querySelectorAll('[data-list-grid-cell]')).map((node) =>
       node.getAttribute('data-list-grid-cell'),
     );
     expect(cells).toEqual(['source', 'key', 'title', 'status', 'priority', 'updated']);
     expect(cell('key').textContent).toBe('HBL-412');
-    expect(within(cell('status')).getByLabelText('In progress')).toBeDefined();
-    expect(within(cell('priority')).getByLabelText('Priority: High')).toBeDefined();
+    within(cell('status')).getByRole('img', { name: 'Status: In progress' });
+    within(cell('priority')).getByRole('img', { name: 'Priority: High' });
     expect(cell('updated').textContent).toBe('2h ago');
+  });
+
+  it('says what a status or priority glyph means in a tooltip on hover', () => {
+    vi.useFakeTimers();
+    try {
+      renderRow();
+
+      fireEvent.mouseEnter(within(cell('status')).getByRole('img'));
+      act(() => {
+        vi.advanceTimersByTime(1_000);
+      });
+      expect(screen.getByRole('tooltip').textContent).toBe('Status: In progress');
+      fireEvent.mouseLeave(within(cell('status')).getByRole('img'));
+      act(() => {
+        vi.advanceTimersByTime(1_000);
+      });
+
+      fireEvent.mouseEnter(within(cell('priority')).getByRole('img'));
+      act(() => {
+        vi.advanceTimersByTime(1_000);
+      });
+      expect(screen.getByRole('tooltip').textContent).toBe('Priority: High');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('names a thread with no status by its title alone', () => {
+    renderRow({
+      record: {
+        ...issue,
+        provider: 'slack',
+        identifier: '#payments',
+        stateLabel: 'Open',
+        kind: 'thread',
+        payload: {
+          provider: 'slack',
+          kind: 'thread',
+          channel: { id: 'C1', name: 'payments', isMember: true, topic: null, memberCount: 1 },
+          head: {
+            ts: '1',
+            threadTs: '1',
+            userId: null,
+            botId: null,
+            text: 'Ledger export times out over 10k rows',
+            subtype: null,
+            replyCount: 1,
+            replyUserCount: 1,
+            postedAt: null,
+            latestReplyAt: null,
+            reactions: [],
+          },
+          sessionId: null,
+        },
+      },
+    });
+
+    screen.getByRole('option', { name: '#payments Ledger export times out over 10k rows' });
+    expect(cell('status').childElementCount).toBe(0);
   });
 
   it('keeps an empty priority cell for a source without priorities, so columns stay aligned', () => {
