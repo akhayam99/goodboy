@@ -1,10 +1,11 @@
 import { Button } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { RelativeTime } from '../../../../shared/components/RelativeTime';
-import { NAMES } from '../../../../shared/utils/names';
-import { elapsedWordOf } from '../../central/board/boardRowWordsOf';
-import { SessionCostChip } from './SessionCostChip';
+import { useAppStore } from '../../../../../store';
+import { RelativeTime } from '../../../../../shared/components/RelativeTime';
+import { NAMES } from '../../../../../shared/utils/names';
+import { elapsedWordOf } from '../../../central/board/boardRowWordsOf';
+import { OverviewTicket } from '../OverviewTicket';
+import { SessionCostChip } from '../SessionCostChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -19,6 +20,7 @@ export const OverviewFacts = ({ sessionId, elapsedMs }: Props) => {
       data-overview-facts=""
       className="flex min-w-0 flex-wrap items-center gap-2 text-meta text-muted-foreground"
     >
+      <OverviewTicket sessionId={sessionId} />
       <span className="flex min-w-0">
         <SessionCostChip sessionId={sessionId} />
       </span>

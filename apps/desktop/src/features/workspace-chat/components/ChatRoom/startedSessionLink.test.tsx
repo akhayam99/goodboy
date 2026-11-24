@@ -17,7 +17,7 @@ vi.mock('@goodboy/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
   ChatId,
   ChatMessage,
@@ -39,13 +39,10 @@ import { brandedId } from '../../../history/testing/brandedId';
 
 let useAppStore: StoryStore;
 let ChatRoom: typeof import('./index').ChatRoom;
-let ChatOriginRow: typeof import('../../../session/components/SessionOverviewPane/ChatOriginRow').ChatOriginRow;
 
 beforeAll(async () => {
   useAppStore = await importStore();
   ({ ChatRoom } = await import('./index'));
-  ({ ChatOriginRow } =
-    await import('../../../session/components/SessionOverviewPane/ChatOriginRow'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
 const WORKSPACE_ID = brandedId<WorkspaceId>({ value: 'ws-harborline' });
@@ -121,20 +118,15 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const renderBothSides = () =>
+const renderChat = () =>
   render(
-    <>
-      <ChatRoom
-        workspaceId={WORKSPACE_ID}
-        chat={CHAT}
-        onCreated={vi.fn()}
-        onRemoved={vi.fn()}
-        onNewChat={vi.fn()}
-      />
-      <section aria-label="Overview">
-        <ChatOriginRow session={SESSION} />
-      </section>
-    </>,
+    <ChatRoom
+      workspaceId={WORKSPACE_ID}
+      chat={CHAT}
+      onCreated={vi.fn()}
+      onRemoved={vi.fn()}
+      onNewChat={vi.fn()}
+    />,
   );
 
 const startedLine = () => screen.queryByRole('button', { name: `Started ${SESSION_TITLE}` });
@@ -148,11 +140,10 @@ const recordLink = () =>
   });
 
 describe('a session started from a chat', () => {
-  it('shows the link on both sides only once the link is saved, and each side opens the other', async () => {
-    renderBothSides();
+  it('shows the Started line only once the link is saved, and it opens the session', async () => {
+    renderChat();
 
     expect(startedLine()).toBeNull();
-    expect(screen.queryByText(/From chat/)).toBeNull();
 
     await act(async () => {
       await recordLink();
@@ -161,31 +152,25 @@ describe('a session started from a chat', () => {
     const line = screen.getByRole('button', { name: `Started ${SESSION_TITLE}` });
     const answer = screen.getByText(/It lives in payments-api/).closest('li');
     expect(answer?.nextElementSibling?.contains(line)).toBe(true);
-    const overview = screen.getByRole('region', { name: 'Overview' });
-    expect(within(overview).getByRole('button').textContent).toBe(`From chat: ${CHAT_TITLE}`);
 
     fireEvent.click(line);
     expect(useAppStore.getState().currentSessionId).toBe(SESSION_ID);
-
-    fireEvent.click(within(overview).getByRole('button'));
-    expect(useAppStore.getState().appStudio).toEqual({ kind: 'chat', chatId: CHAT_ID });
   });
 
-  it('shows no link on either side when saving the link fails', async () => {
+  it('shows no link when saving the link fails', async () => {
     insertLink.mockRejectedValueOnce(new Error('disk full'));
-    renderBothSides();
+    renderChat();
 
     await act(async () => {
       await expect(recordLink()).rejects.toThrow('disk full');
     });
 
     expect(startedLine()).toBeNull();
-    expect(screen.queryByText(/From chat/)).toBeNull();
     expect(useAppStore.getState().chatLinks[CHAT_ID]).toBeUndefined();
   });
 
   it('records no link and shows none when the session cannot be created', async () => {
-    renderBothSides();
+    renderChat();
 
     fireEvent.click(screen.getByRole('button', { name: NAMES.startWorkFromChat }));
     const start = await screen.findByRole('button', { name: 'Start session' });
@@ -198,6 +183,5 @@ describe('a session started from a chat', () => {
     expect(insertLink).not.toHaveBeenCalled();
     expect(useAppStore.getState().chatLinks[CHAT_ID]).toBeUndefined();
     expect(startedLine()).toBeNull();
-    expect(screen.queryByText(/From chat/)).toBeNull();
   });
 });

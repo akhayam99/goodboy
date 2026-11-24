@@ -594,6 +594,7 @@ const CALLER_KINDS: Readonly<Record<string, ReadonlyArray<ObjectTarget['kind']>>
   'features/session/components/ContextDrawer/SlotSourceActions.tsx': ['contextSlot'],
   'features/session/components/MountRowMenuButton.tsx': ['mount'],
   'features/session/components/PresetRun/RunStepActions.tsx': ['workflowRun'],
+  'features/session/components/SessionOverviewPane/OverviewTicket.tsx': ['task'],
   'features/storage/components/StoragePage/WorktreeRowActions.tsx': ['worktree'],
   'features/workspace/components/StageBoard/StageColumn/DoneLaneMenu/index.tsx': ['doneLane'],
   'shared/components/StudioDetail/RecordHeader/index.tsx': ['record'],

@@ -82,8 +82,9 @@ never exists on one surface only.
   Frequent alternatives stay visible beside it or on the row they affect.
   `⋯` holds copy and rare actions. A linked task is one row of the session
   level's Linked group (`LinkedTaskRow`): a click opens the task, a drag moves
-  it, and Unlink, Move to and Remove from this branch sit in its right click
-  menu (⇧F10), with no kebab and no hover control.
+  it, and Open in Linear (the task's tracker), Unlink, Move to and Remove from
+  this branch sit in its right click menu (⇧F10), with no kebab and no hover
+  control.
   Putting work on a branch is `Link work to this branch` (`mount.putTaskOnBranch`), on the
   Overview branch row and in the Projects tree row menu. Link work is the single entry
   for linking work to a session or workspace. Moving a task is one verb,
