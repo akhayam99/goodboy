@@ -73,7 +73,10 @@ export const settingsPaletteEntries = ({ groups, open }: Params): ReadonlyArray<
   const pages = groups.flatMap((group) =>
     group.pages.map((page): PaletteEntry => ({
       key: `setting:${page.key}`,
-      label: page.label === group.label ? page.label : `${PREFIX[group.scope]}: ${page.label}`,
+      label:
+        page.label === group.label || page.isLink === true
+          ? page.label
+          : `${PREFIX[group.scope]}: ${page.label}`,
       kind: 'setting',
       group: 'action',
       icon: CONCEPT_ICONS[group.concept],

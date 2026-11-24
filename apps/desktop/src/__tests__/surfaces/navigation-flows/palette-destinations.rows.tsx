@@ -284,11 +284,14 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'palette: Workspace settings: Runs',
+    name: 'palette: Run defaults are in Workflows',
     covers: ['openSettings', 'scope:workspace', 'palette:Runs'],
     door: 'palette',
-    open: () => openPalette(/^Workspace settings: Runs/, 'runs'),
-    lands: () => heading(/^Runs$/),
+    open: () => openPalette(/^Run defaults are in Workflows/, 'runs'),
+    lands: both(
+      () => studio('Workflows'),
+      () => visible('region', 'When a run stops for you'),
+    ),
   },
   {
     name: 'palette: Impact',

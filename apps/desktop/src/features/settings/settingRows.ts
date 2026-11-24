@@ -1,8 +1,10 @@
+import { DEFAULT_GROUPS } from '@goodboy/core/settings';
 import { AFTER_MERGE_NEVER } from '../../shared/utils/afterMergeCopy';
 import { NAMES, formerNamesOf } from '../../shared/utils/names';
 import { STOPS_LEVEL_COPY } from '../workflows/stopsLevelCopy';
+import { RUN_DEFAULTS_SECTION } from './openRunDefaults';
 import type { WorkspaceSettingField } from './pageKeys';
-import type { SettingsPageScope } from './settingsFocus';
+import type { SettingsPageScope, SettingsStudioScope } from './settingsFocus';
 import { fieldDef } from './workspaceSettings/fields';
 
 export type SettingRowPage = {
@@ -55,12 +57,12 @@ const fieldRow = ({ field, ...entry }: FieldRowParams): SettingRow => {
 };
 
 const GENERAL: SettingRowPage = { scope: 'app', section: 'general' };
-const ADVANCED: SettingRowPage = { scope: 'app', section: 'advanced' };
+const DEVTOOLS: SettingRowPage = { scope: 'app', section: 'devtools' };
 const STORAGE: SettingRowPage = { scope: 'app', section: 'storage' };
 const BACKUP: SettingRowPage = { scope: 'app', section: 'backup' };
 const IPHONE: SettingRowPage = { scope: 'app', section: 'iphone' };
 const PROJECTS: SettingRowPage = { scope: 'workspace', section: 'projects' };
-const RUNS: SettingRowPage = { scope: 'workspace', section: 'general' };
+const EVERY_RUN: SettingRowPage = { scope: 'workspace', section: RUN_DEFAULTS_SECTION };
 const MODELS: SettingRowPage = { scope: 'workspace', section: 'models' };
 
 export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
@@ -97,42 +99,42 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     key: 'open-editor',
     label: 'Editor',
     help: 'Opens session worktrees.',
-    page: GENERAL,
+    page: DEVTOOLS,
     band: 'Open with',
   }),
   row({
     key: 'open-terminal',
     label: 'Terminal',
     help: 'Opens projects and runs provider CLIs.',
-    page: GENERAL,
+    page: DEVTOOLS,
     band: 'Open with',
   }),
   row({
     key: 'open-browser',
     label: 'Browser',
     help: 'Opens wireframes and links outside a session.',
-    page: GENERAL,
+    page: DEVTOOLS,
     band: 'Open with',
   }),
   row({
     key: 'links-open',
     label: NAMES.linksInSession,
     help: 'Where a click opens. Cmd-click opens the other one.',
-    page: GENERAL,
+    page: DEVTOOLS,
     band: 'Open with',
   }),
   row({
     key: 'command-status',
     label: NAMES.commandStatus,
     help: 'A check or a cross after each command. Your dotfiles stay untouched.',
-    page: ADVANCED,
+    page: DEVTOOLS,
     band: 'Built-in terminal',
   }),
   row({
     key: 'check-origin',
     label: 'Check origin',
     help: 'How often base branches are fetched. Goodboy never pulls.',
-    page: ADVANCED,
+    page: DEVTOOLS,
     band: 'Git',
     formerNames: ['Fetch'],
   }),
@@ -140,7 +142,7 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     key: 'search-index',
     label: 'Index',
     help: 'Kept up to date as you work. Never leaves this Mac.',
-    page: ADVANCED,
+    page: STORAGE,
     band: 'Search',
     formerNames: ['Search index'],
   }),
@@ -148,7 +150,7 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     key: 'search-rebuild',
     label: 'Rebuild the index',
     help: 'Empties it and fills it again while the app is idle.',
-    page: ADVANCED,
+    page: STORAGE,
     band: 'Search',
     formerNames: ['Rebuild'],
   }),
@@ -156,7 +158,7 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     key: 'search-leave-out',
     label: NAMES.skipFolders,
     help: 'Their sessions and branches stay out of search.',
-    page: ADVANCED,
+    page: STORAGE,
     band: 'Search',
   }),
   row({
@@ -282,7 +284,7 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     key: 'stops-for-ok',
     label: STOPS_LEVEL_COPY.label,
     help: STOPS_LEVEL_COPY.help,
-    page: RUNS,
+    page: EVERY_RUN,
     band: 'When a run stops for you',
     formerNames: [
       'Asks you',
@@ -296,7 +298,7 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     key: 'spend-limit',
     label: NAMES.spendCap,
     help: 'Per new run, saved on Enter. The session limit still applies.',
-    page: RUNS,
+    page: EVERY_RUN,
     band: 'Spending',
   }),
   fieldRow({
@@ -348,7 +350,7 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     key: 'permission-default',
     field: 'permissionMode',
     help: 'Read only, Ask first, Edits allowed or Full access.',
-    band: null,
+    band: 'Edits',
     formerNames: ['Default mode', 'Permission mode'],
   }),
   row({
@@ -368,11 +370,39 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     formerNames: ['Skip a provider near its limit'],
   }),
   row({
+    key: 'lead-model',
+    label: `${NAMES.lead} model`,
+    help: 'The model a new run starts with.',
+    page: EVERY_RUN,
+    band: NAMES.runs,
+  }),
+  row({
+    key: 'role-models',
+    label: 'Role models',
+    help: 'The models each agent role starts on.',
+    page: EVERY_RUN,
+    band: 'Roles',
+    formerNames: ['Agent models'],
+  }),
+  row({
     key: 'models-in-workflows',
     label: 'Models in older plan runs',
     help: 'Let the orchestrator of an older plan run choose models.',
-    page: MODELS,
-    band: 'Choosing models',
+    page: EVERY_RUN,
+    band: 'Older plan runs',
     formerNames: ['Models in workflows'],
   }),
 ];
+
+const RUN_DEFAULTS_SECTIONS: ReadonlySet<string> = new Set([
+  RUN_DEFAULTS_SECTION,
+  ...DEFAULT_GROUPS.runs.tasks,
+]);
+
+type RunDefaultsFocusParams = {
+  readonly scope: SettingsStudioScope;
+  readonly section?: string;
+};
+
+export const isRunDefaultsFocus = ({ scope, section }: RunDefaultsFocusParams): boolean =>
+  scope === 'workspace' && section !== undefined && RUN_DEFAULTS_SECTIONS.has(section);

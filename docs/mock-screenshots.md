@@ -816,7 +816,7 @@ the key form, the way Sign in works for agents.
 The Settings frames of the default shell are `settings-general-pinned` and
 `settings-providers-rail`; they live in `scenes/u21/settings.tsx`. Each mounts `audit/AppFrame` and opens
 Settings through the store. Both use the same places rail through
-`AppShell.leftRail`: `settings-general-pinned` shows General, and
+`AppShell.leftRail`: `settings-general-pinned` shows Look and alerts, and
 `settings-providers-rail` opens the Claude page in Connections, where provider pages moved, with Claude seeded near its
 limit to show the notice on its page. The audit scenes `settings-providers` and
 `settings-tools` keep their names: with a `provider` or `tool` they open that

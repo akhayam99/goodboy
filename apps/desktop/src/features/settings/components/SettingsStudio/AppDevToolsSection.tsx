@@ -1,13 +1,13 @@
+import { OpenWithBand } from './OpenWithBand';
 import { RepoCheckBand } from './RepoCheckBand';
-import { SearchIndexBand } from './SearchIndexBand';
 import { TerminalExitStatusBand } from './TerminalExitStatusBand';
 
-export const AppAdvancedSection = () => (
+export const AppDevToolsSection = () => (
   <div className="flex flex-col gap-6">
-    <RepoCheckBand />
+    <OpenWithBand />
 
     <TerminalExitStatusBand />
 
-    <SearchIndexBand />
+    <RepoCheckBand />
   </div>
 );

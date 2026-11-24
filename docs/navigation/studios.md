@@ -298,9 +298,9 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
 - **Settings opens on a page, never on a grid.** The Settings door, ⌘, and the
   the Settings entry of Search or run land on the page opened last, held in memory only
   (`lastSettingsFocus`, slice `settings-last-page`): the first open after the
-  app starts lands on General, and a remembered page that no longer exists
-  (a workspace page with no workspace, a provider that was removed) falls
-  back to General (`resolveSettingsFocus`). A link that names a page (a scope,
+  app starts lands on Look and alerts (id `general`), and a remembered page
+  that no longer exists (a workspace page with no workspace, a provider that
+  was removed, the old Runs page) falls back to it (`resolveSettingsFocus`). A link that names a page (a scope,
   a section, a provider or a tool) opens that page. `scope: 'home'` stays as
   the alias for "the last page" and `SettingsStudio` resolves it once, then
   amends the history entry to the concrete page. The scopes rail is the only
@@ -317,7 +317,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   row shows nothing. The sentence lives on the page: a provider about to run
   out or out opens on a notice at the top of its page (`ProviderAttentionNotice`,
   the usage notice that used to close the Usage band). Every page is also an entry in Search or run
-  (`settingsPaletteEntries`, `Settings: Storage`, `Providers: Claude`, `Workspace settings: Models`), built from
+  (`settingsPaletteEntries`, `Settings: Storage and search`, `Providers: Claude`, `Workspace settings: Models`), built from
   the same list, so ⌘K and the rail cannot disagree. Every setting row has a
   key in one registry (`settingRows.ts`: label, help, page, band, former names),
   and ⌘K lists those rows too, tagged `Setting`, with "Page · Band" as detail.
@@ -341,19 +341,26 @@ matches "x".` and points to ⌘K for actions. `settingRows.test.tsx` renders
   read (no storage scan, no branch scan, no provider refresh). Without a workspace the
   workspace group is one line that asks you to open one. Precedent: the VS Code
   settings editor and Linear's settings sidebar.
-- **Settings nests items in its rail.** The This Mac pages (General, Keyboard
-  shortcuts, Advanced, Storage, Backup and reset) always sit under their
-  heading, whichever scope is active, so switching scope never moves a row
-  above the pointer (`appSections.ts`). The workspace pages (Projects, About
-  you, Runs, Models, Permissions, Branches, Replies and commits) sit the
-  same way under the workspace name (`workspacePages.ts`,
-  `SettingsRailPageGroup`). General ends with the Updates band (version row,
-  What's new, background download) and carries the update dot; the old
-  `updates` id opens General scrolled to that band, and a remembered `updates`
-  page reopens as plain General (`resolveSettingsFocus`). Advanced holds Git,
-  Built-in terminal and Search. Models is the workspace page
-  `models`: `workspacePageOf` maps it and every model row id to it, and
-  `PlanPage` leaves it out of copy and restore. iPhone stays out of the rail
+- **Settings nests items in its rail, one page per job.** The This Mac pages
+  (Look and alerts, Editor, terminal, git, Keyboard shortcuts, Storage and
+  search, Backup and reset) always sit under their heading, whichever scope is
+  active, so switching scope never moves a row above the pointer
+  (`appSections.ts`). The workspace pages (Projects, About you, Models,
+  Permissions, Branches, Replies and commits) sit the same way under the
+  workspace name (`workspacePages.ts`, `SettingsRailPageGroup`), and the group
+  ends on one quiet link row, **Run defaults are in Workflows**
+  (`SettingsRailLink`, a page with `isLink`), that opens Workflows, Every run.
+  Look and alerts (id `general`) holds Appearance, Notifications and the
+  Updates band (version row, What's new, background download) and carries the
+  update dot; the old `updates` id opens it scrolled to that band, and a
+  remembered `updates` page reopens it plain (`resolveSettingsFocus`). Editor,
+  terminal, git (id `devtools`, the old `advanced` id is its alias) holds Open
+  with, Built-in terminal and Git. Storage and search (id `storage`) ends with
+  the Search band. The This Mac pages carry their old names as search aliases
+  (General, Advanced, Git, Search index), and every band keeps its name, so
+  old words still find the rows. Models is the workspace page `models`:
+  `workspacePageOf` maps it and every model row id to it, and `PlanPage`
+  leaves it out of copy and restore. iPhone stays out of the rail
   until `useIsIphonePaired` reads a paired phone (or while its page is open);
   Search settings and Search or run still list it. The panel shows one item at
   a time and enters with `nav-step-in` (`SETTINGS_PANE_ENTRY`), so no scope
@@ -369,8 +376,8 @@ matches "x".` and points to ⌘K for actions. `settingRows.test.tsx` renders
   under it) and help written under each field, never in a tooltip. Only the
   page on screen mounts, so Permissions and Replies and commits compute nothing
   while another page is open. The old anchors (`projects`, `profile`,
-  `general`, `after-merge`, `review-replies`, `permissions`, `danger`) now
-  pick a page (`workspacePageOf`); `track-with-git` (and the old
+  `after-merge`, `review-replies`, `permissions`, `danger`) now pick a page
+  (`workspacePageOf`), and `general` hands off to Every run; `track-with-git` (and the old
   `dev-project`) lands on Projects with the first commit review of the first
   plain code folder open. The workspace is renamed from the `Name` row of the
   `Workspace` band that opens the Projects page, and its name is written once
@@ -382,8 +389,15 @@ matches "x".` and points to ⌘K for actions. `settingRows.test.tsx` renders
   that puts a placeholder at the caret, `ReplyTemplatesBand`), `After a
 reply` (`Resolve the thread`, `Update the reply after a squash`) and
   `Commits` (`review-replies` stays its page id and anchor; a search hit on a
-  template opens the disclosure); Runs is its own page of the workspace
-  settings and holds no branch or reply setting. Branches opens on a Naming
+  template opens the disclosure). The run defaults have no Settings page:
+  they live on Workflows, Every run, and every door that named the old Runs
+  page (`general`, `workflow_orchestrator`, a run row) passes
+  `isRunDefaultsFocus` (`settingRows.ts`), so `SettingsStudio` switches the
+  studio to Every run in its place and remembers nothing. A searched row rides
+  along in `everyRunFocusRow`, so Every run scrolls to it, opens Advanced for
+  Parallel agents and clears it once shown. `general` stays a
+  `PlanPage` (labelled Every run) so the all-pages Restore defaults and Copy
+  from still carry those fields. Branches opens on a Naming
   band (`WorkspaceBranchNamingBand`: Branch prefix and Branch name), then
   After merge. Each field's page is `FIELD_PAGE` in
   `features/settings/pageKeys.ts`, so Restore defaults, Copy from and the

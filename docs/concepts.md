@@ -470,7 +470,7 @@ screen calls it **Close branch**, and a closed row offers **Reopen**.
 delete a mount that has uncommitted work, a lock, or a process still using the
 folder. It keeps track of it and tries again at the next cleanup.
 
-**Storage** (Settings > This Mac > Storage) shows every worktree folder Goodboy made
+**Storage** (Settings > This Mac > Storage and search) shows every worktree folder Goodboy made
 in three groups. **In use** belongs to a session that is still open and is never
 touched from there. **To review** belongs to an archived or deleted session, or
 to no session at all. **Kept** is what you chose to keep, for good or for 30
@@ -1970,7 +1970,7 @@ provider you picked.
 
 When you want to type code yourself, Goodboy opens your editor on the right
 worktree and branch. It finds the editors installed on your computer by
-itself. **Settings → App → General → Open with** picks the editor, the terminal app
+itself. **Settings → This Mac → Editor, terminal, git → Open with** picks the editor, the terminal app
 (Terminal.app, iTerm, Warp or Ghostty, as installed) and the browser. With up to four options the choice is a segmented control like Theme;
 with more it is a list. The browser starts at **System default**, and a
 ⌘-click on a link, wireframes and anything opened outside a session open there. A fourth row,
@@ -2143,11 +2143,18 @@ session up again in Goodboy.
   the share of a model window a turn filled, and **What's new** the release
   notes page. The old words are ⌘K aliases or retired names.
 - **This Mac** and the workspace name are the two groups of the Settings rail
-  (they were App and This workspace). **General**, **Keyboard shortcuts**,
-  **Advanced**, **Storage**, **Backup and reset** and **iPhone** are the This
-  Mac pages (Keyboard shortcuts was Shortcuts, iPhone was Pair device and
-  Companion; Updates is a band at the end of General; Security findings is the
-  Secrets in saved scripts band of the workspace's Permissions page). iPhone
+  (they were App and This workspace). **Look and alerts**, **Editor, terminal,
+  git**, **Keyboard shortcuts**, **Storage and search**, **Backup and reset**
+  and **iPhone** are the This Mac pages, one per job you open Settings for
+  (Look and alerts was General, Editor, terminal, git took Open with from
+  General and Git and Built-in terminal from Advanced, Storage and search took
+  the Search band from Advanced; Keyboard shortcuts was Shortcuts, iPhone was
+  Pair device and Companion; Updates is a band at the end of Look and alerts;
+  Security findings is the Secrets in saved scripts band of the workspace's
+  Permissions page). The workspace group has no Runs page: its last row,
+  **Run defaults are in Workflows**, opens Workflows, **Every run**, which holds
+  the run defaults, the edit mode new sessions start in, the Lead and the role
+  models. iPhone
   stays out of the rail until a phone is paired. **Branches** is a Workspace
   page that starts with Naming (branch prefix and branch name), then After
   merge. **Pair an iPhone** is the one verb that opens the iPhone

@@ -43,6 +43,7 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import { NAMES } from '../../../../shared/utils/names';
 import { PLAN_PAGES, planPageLabel } from './workspacePages';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
+import { EveryRun } from '../../../workflows/components/EveryRun';
 
 let useAppStore: StoryStore;
 
@@ -110,6 +111,13 @@ const renderPage = ({
     </ToastProvider>,
   );
 
+const renderEveryRun = () =>
+  render(
+    <ToastProvider>
+      <EveryRun workspaceId={HARBORLINE.id} />
+    </ToastProvider>,
+  );
+
 const pageMenu = (label: string) => {
   fireEvent.click(screen.getByRole('button', { name: `${label} actions` }));
   return screen.getByRole('menu', { name: `${label} actions` });
@@ -158,10 +166,9 @@ const expectRunsRows = () => {
 };
 
 describe('WorkspaceScopePanel pages', () => {
-  it('names the page Runs and asks one question per band, with Models left to its own page', () => {
-    renderPage({ section: 'general' });
+  it('asks one question per band on Every run, with no Models button', () => {
+    renderEveryRun();
 
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Runs');
     expectRunsRows();
     expect(screen.queryByText('Lead asks you')).toBeNull();
     expect(screen.queryByRole('button', { name: /^Asks you: / })).toBeNull();
@@ -169,7 +176,7 @@ describe('WorkspaceScopePanel pages', () => {
   });
 
   it('keeps Parallel agents in Advanced, closed until opened, and quiet while off', () => {
-    renderPage({ section: 'general' });
+    renderEveryRun();
 
     const advanced = screen.getByRole('button', { name: 'Advanced' });
     expect(advanced.getAttribute('aria-expanded')).toBe('false');
@@ -184,7 +191,7 @@ describe('WorkspaceScopePanel pages', () => {
 
   it('says Parallel agents on beside a closed Advanced when it is on', () => {
     seed({ harborline: overrides({ parallelAgents: true }) });
-    renderPage({ section: 'general' });
+    renderEveryRun();
 
     expect(screen.getByRole('button', { name: 'Advanced' }).getAttribute('aria-expanded')).toBe(
       'false',
@@ -195,7 +202,7 @@ describe('WorkspaceScopePanel pages', () => {
   it('leaves how a run starts to the start form, with or without a session open', () => {
     const session = aSession({ workspaceId: HARBORLINE.id, goal: 'Retry webhooks with backoff' });
     useAppStore.setState({ sessions: [session], currentSessionId: session.id });
-    renderPage({ section: 'general' });
+    renderEveryRun();
 
     expect(screen.getAllByRole('tablist').map((row) => row.getAttribute('aria-label'))).toEqual([
       'Stops for your OK',
@@ -347,8 +354,8 @@ describe('WorkspaceScopePanel pages', () => {
     ).toBeTruthy();
   });
 
-  it('keeps the branch names and Sign replies off Runs', () => {
-    renderPage({ section: 'general' });
+  it('keeps the branch names and Sign replies off Every run', () => {
+    renderEveryRun();
     expect(screen.queryByText('Sign replies')).toBeNull();
     expect(screen.queryByLabelText('Branch prefix')).toBeNull();
     expect(screen.queryByText('Branch name')).toBeNull();
@@ -427,7 +434,7 @@ describe('disconnect at the end of Projects', () => {
 describe('changed from default', () => {
   it('marks a value that differs from the default and resets it to null', async () => {
     seed({ harborline: overrides({ defaultBranchPrefix: 'hl', defaultVerbosity: 'normal' }) });
-    renderPage({ section: 'general' });
+    renderEveryRun();
     expect(screen.queryByRole('button', { name: /^Reset .* to default$/ })).toBeNull();
     cleanup();
 
@@ -477,7 +484,6 @@ describe('restore defaults', () => {
 
 describe('changed count per page', () => {
   it.each([
-    ['general', 'Runs', '1 change'],
     ['branches', 'Branches', '2 changes'],
     ['review-replies', 'Replies and commits', '1 change'],
   ] as const)('counts the moved fields on %s', (section, label, hint) => {
@@ -599,7 +605,7 @@ describe('folders that use their own value', () => {
     expect(screen.getAllByText(/folders? use[s]? (their|its) own/)).toHaveLength(1);
     cleanup();
 
-    renderPage({ section: 'general' });
+    renderEveryRun();
     fireEvent.click(screen.getByRole('button', { name: 'Advanced' }));
 
     within(labelLine('Reply length')).getByText('1 folder uses its own');
@@ -619,7 +625,7 @@ describe('folders that use their own value', () => {
         }),
       ],
     });
-    renderPage({ section: 'general' });
+    renderEveryRun();
 
     expect(screen.queryByText(/use their own|uses its own/)).toBeNull();
   });

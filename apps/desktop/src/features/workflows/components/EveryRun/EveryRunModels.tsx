@@ -10,6 +10,7 @@ import { ROLE_LABEL } from '../../../session/agent-kind';
 import {
   DefaultsGroup,
   RoleRow,
+  RolePinsOffLine,
   RunsSection,
   useDefaultsPersistence,
   useHasPlanRuns,
@@ -36,12 +37,20 @@ export const EveryRunModels = ({ workspaceId }: Props) => {
     error,
     persistRoleModel,
     persistTaskModel,
+    clearRoleModels,
   } = useDefaultsPersistence({
     workspaceId,
   });
 
   return (
     <>
+      <RolePinsOffLine
+        workspaceId={workspaceId}
+        policy={overrides.providerPool}
+        connectedProviderIds={connectedProviderIds}
+        isDisabled={isBusy}
+        onClear={clearRoleModels}
+      />
       <RunsSection
         workspaceId={workspaceId}
         overrides={overrides}

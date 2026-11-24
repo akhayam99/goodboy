@@ -136,10 +136,10 @@ describe('the update card scenes', () => {
     screen.getByText('The download was cut off at 61%.');
   });
 
-  it('u26s-update-settings puts the same verbs on the Updates band of Settings, General', async () => {
+  it('u26s-update-settings puts the same verbs on the Updates band of Settings, Look and alerts', async () => {
     await mount({ id: 'u26s-update-settings' });
 
-    expect(screen.getByRole('heading', { level: 1, name: 'General' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Look and alerts' })).toBeDefined();
     screen.getByRole('heading', { level: 2, name: 'Updates' });
     screen.getByText('Goodboy 0.27.2 is ready');
     screen.getByText('2 agents are running. A restart now picks them up where they stopped.');

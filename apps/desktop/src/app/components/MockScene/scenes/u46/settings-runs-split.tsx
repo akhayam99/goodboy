@@ -1,6 +1,6 @@
 import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { SettingsFrame } from '../audit/SettingsFrame';
+import { EveryRunFrame } from '../audit/EveryRunFrame';
 import { SETTINGS_WORKSPACE_ID } from '../audit/settingsSeed';
 
 const seedSplitLevels = (): void => {
@@ -28,7 +28,5 @@ const seedSplitLevels = (): void => {
 };
 
 export const U46_SETTINGS_RUNS_SCENES = {
-  'settings-runs-split': () => (
-    <SettingsFrame focus={{ scope: 'workspace', section: 'general' }} seed={seedSplitLevels} />
-  ),
+  'settings-runs-split': () => <EveryRunFrame seed={seedSplitLevels} />,
 };

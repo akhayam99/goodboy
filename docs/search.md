@@ -227,7 +227,7 @@ never indexed, so this is the one view global search cannot reach.
 
 ## Settings
 
-Settings, App, General has a Search band: the size of the index (from
+Settings, This Mac, Storage and search ends with a Search band: the size of the index (from
 `dbstat`) and its item count, the backfill progress while it runs, Rebuild,
 and the projects search leaves out. There is no switch to turn search off:
 the index costs little and holds nothing new.

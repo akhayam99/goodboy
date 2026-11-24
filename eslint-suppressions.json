@@ -4186,7 +4186,7 @@
   },
   "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 31
+      "count": 21
     },
     "@typescript-eslint/naming-convention": {
       "count": 3

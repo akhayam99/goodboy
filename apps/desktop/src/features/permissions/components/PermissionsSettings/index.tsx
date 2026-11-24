@@ -16,10 +16,8 @@ import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../shared/components/Toast';
 import { undoable } from '../../../../shared/utils/undoable';
 import { usePermissionRules } from '../../hooks/usePermissionRules';
-import { DEFAULT_PERMISSION_MODE, pickerModeOf, type PickerMode } from '../../modeCopy';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { hasIgnoredDeny } from '../../utils/providerSupport';
-import { DefaultModeCards } from './DefaultModeCards';
 import { IgnoredDenyNotice } from './IgnoredDenyNotice';
 import { ProviderSupportTable } from './ProviderSupportTable';
 import { RuleRow } from './RuleRow';
@@ -28,24 +26,12 @@ import { RecentDecisions } from './RecentDecisions';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly renderDefaultRow?: (control: ReactNode) => ReactNode;
   readonly afterRules?: ReactNode;
 };
 
-const asIs = (control: ReactNode): ReactNode => control;
-
-export const PermissionsSettings = ({
-  workspaceId,
-  renderDefaultRow = asIs,
-  afterRules = null,
-}: Props) => {
+export const PermissionsSettings = ({ workspaceId, afterRules = null }: Props) => {
   const workspaceName = useAppStore(
     (s) => s.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? null,
-  );
-  const defaultMode = useAppStore(
-    (s) =>
-      s.workspaces.find((workspace) => workspace.id === workspaceId)?.defaultPermissionMode ??
-      DEFAULT_PERMISSION_MODE,
   );
   const activeProviders = useAppStore(
     useShallow((s): ReadonlyArray<ProviderId> => {
@@ -58,28 +44,10 @@ export const PermissionsSettings = ({
       return [...new Set(providers)].sort();
     }),
   );
-  const setWorkspacePermissionDefault = useAppStore((s) => s.setWorkspacePermissionDefault);
   const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const rules = usePermissionRules({ workspaceId });
-
-  const saveDefault = async (mode: PickerMode) => {
-    setIsSaving(true);
-    try {
-      await setWorkspacePermissionDefault({ workspaceId, mode });
-    } catch (error) {
-      void reportError({
-        recovery: CHECK_STATE,
-        title: "Couldn't change the default mode",
-        error,
-        workspaceId,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const addRule = async (rule: Parameters<typeof rules.add>[0]): Promise<boolean> => {
     try {
@@ -116,22 +84,6 @@ export const PermissionsSettings = ({
 
   return (
     <>
-      <Band
-        inset="content"
-        label="Default"
-        ariaLabel="Default"
-        icon={<CONCEPT_ICONS.approval size={ICON_SIZE.row} aria-hidden />}
-        headingLevel={2}
-      >
-        {renderDefaultRow(
-          <DefaultModeCards
-            value={pickerModeOf({ mode: defaultMode })}
-            isBusy={isSaving}
-            onChange={(mode) => void saveDefault(mode)}
-          />,
-        )}
-      </Band>
-
       <Band
         inset="content"
         label="Rules"

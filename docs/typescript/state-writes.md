@@ -96,7 +96,7 @@ A response applies only while it is the answer to the newest request.
   `features/settings/hooks/` claims one token per settings row and queues the
   row's writes: an older answer is dropped, the latest failure puts the old
   value back under the row with Retry, and a toast shows only when the page
-  closed first (test: `WorkspaceDefaultsGrid.saveErrors.test.tsx`).
+  closed first (test: `workspaceSaveErrors.test.tsx`).
 - Worked example: `setCurrentWorkspace` in `store/slices/workspaces/`. It
   claims one token per switch, reads everything first, and checks `isCurrent()`
   after each await. Only then does one `set()` clear the old workspace and fill

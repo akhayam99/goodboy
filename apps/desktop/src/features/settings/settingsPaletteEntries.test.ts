@@ -40,7 +40,7 @@ describe('settingsPaletteEntries', () => {
     );
     expect(rows.every((entry) => entry.tag === 'Setting' && entry.kind === 'setting')).toBe(true);
     const theme = rows.find((entry) => entry.label === 'Theme');
-    expect(theme?.detail).toBe('General · Appearance');
+    expect(theme?.detail).toBe('Look and alerts · Appearance');
     theme?.run();
     expect(open).toHaveBeenCalledWith({ scope: 'app', section: 'general', row: 'theme' });
   });
@@ -168,11 +168,28 @@ describe('settingsPaletteEntries', () => {
       label: 'Workspace settings: Branches',
       target: { scope: 'workspace', section: 'branches' },
     },
-    ...['Run defaults', 'Start as', 'Rules', 'Workflow rules'].map((former) => ({
+    ...['Runs', 'Run defaults', 'Start as', 'Rules', 'Workflow rules', 'Every run'].map(
+      (former) => ({
+        former,
+        label: 'Run defaults are in Workflows',
+        target: { scope: 'workspace', section: 'general' },
+      }),
+    ),
+    {
+      former: 'General',
+      label: 'Settings: Look and alerts',
+      target: { scope: 'app', section: 'general' },
+    },
+    ...['Advanced', 'Git'].map((former) => ({
       former,
-      label: 'Workspace settings: Runs',
-      target: { scope: 'workspace', section: 'general' },
+      label: 'Settings: Editor, terminal, git',
+      target: { scope: 'app', section: 'devtools' },
     })),
+    {
+      former: 'Search index',
+      label: 'Settings: Storage and search',
+      target: { scope: 'app', section: 'storage' },
+    },
   ])('opens $label when searching its old name $former', ({ former, label, target }) => {
     const open = vi.fn();
     const entry = settingsPaletteEntries({
@@ -185,8 +202,8 @@ describe('settingsPaletteEntries', () => {
     expect(open).toHaveBeenCalledWith(target);
   });
 
-  it.each(['Run defaults', 'Start as'])(
-    'Search settings answers %s with the Runs page first',
+  it.each(['Run defaults', 'Start as', 'Runs'])(
+    'Search settings answers %s with the run defaults link first',
     (query) => {
       const hits = settingsSearchHits({
         groups: settingsDirectory({ status: QUIET_STATUS, workspaceName: 'Harborline' }),
@@ -194,7 +211,68 @@ describe('settingsPaletteEntries', () => {
         open: vi.fn(),
       });
 
-      expect(hits[0]?.label).toBe('Workspace settings: Runs');
+      expect(hits[0]?.label).toBe('Run defaults are in Workflows');
     },
   );
+
+  it.each([
+    { query: 'advanced', label: 'Settings: Editor, terminal, git' },
+    { query: 'Lead model', label: 'Lead model' },
+    { query: 'Models in older plan runs', label: 'Models in older plan runs' },
+  ])('Search settings answers $query with $label', ({ query, label }) => {
+    const open = vi.fn();
+    const hits = settingsSearchHits({
+      groups: settingsDirectory({ status: QUIET_STATUS, workspaceName: 'Harborline' }),
+      query,
+      open,
+    });
+
+    expect(hits.map((hit) => hit.label)).toContain(label);
+  });
+
+  it('sends the Lead model and older plan run rows to the run defaults door, never to Models', () => {
+    const open = vi.fn<(focus: { readonly section?: string }) => void>();
+    const hits = settingsSearchHits({
+      groups: settingsDirectory({ status: QUIET_STATUS, workspaceName: 'Harborline' }),
+      query: 'model',
+      open,
+    });
+    for (const label of ['Lead model', 'Role models', 'Models in older plan runs']) {
+      hits.find((hit) => hit.label === label)?.run();
+    }
+
+    expect(open.mock.calls.map(([focus]) => focus.section)).toEqual([
+      'general',
+      'general',
+      'general',
+    ]);
+  });
+
+  it.each(['Provider priority', 'By order', 'By load'])(
+    'Search settings still opens Models on %s',
+    (query) => {
+      const open = vi.fn<(focus: { readonly section?: string }) => void>();
+      const hits = settingsSearchHits({
+        groups: settingsDirectory({ status: QUIET_STATUS, workspaceName: 'Harborline' }),
+        query,
+        open,
+      });
+      hits.find((hit) => hit.label === 'Provider priority')?.run();
+
+      expect(open.mock.calls.map(([focus]) => focus.section)).toEqual(['models']);
+    },
+  );
+
+  it('finds Check origin, Command status and Rebuild the index on their new pages', () => {
+    const placeOf = (label: string) =>
+      settingsSearchHits({
+        groups: settingsDirectory({ status: QUIET_STATUS, workspaceName: 'Harborline' }),
+        query: label,
+        open: vi.fn(),
+      }).find((hit) => hit.label === label)?.place;
+
+    expect(placeOf('Check origin')).toBe('Editor, terminal, git · Git');
+    expect(placeOf('Command status')).toBe('Editor, terminal, git · Built-in terminal');
+    expect(placeOf('Rebuild the index')).toBe('Storage and search · Search');
+  });
 });

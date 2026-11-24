@@ -14,7 +14,7 @@ export const ExploreOpenError = ({ failure, className }: Props) => (
       <Button
         size="xs"
         variant="quiet"
-        onClick={() => openSettings({ scope: 'app', section: 'general' })}
+        onClick={() => openSettings({ scope: 'app', section: 'devtools' })}
       >
         Choose editor
       </Button>

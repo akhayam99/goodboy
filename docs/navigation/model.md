@@ -136,7 +136,7 @@
   `goodboy:open-settings` event on scope providers or tools opens Connections
   (`settingsOverlayFromEvent`), a stored notification action does too (`mapRecoveryAction`), a
   restored window on a provider or tool page lands on its Connections page
-  (`withoutRemovedPages`), and a remembered Settings page there lands on App, General, or on
+  (`withoutRemovedPages`), and a remembered Settings page there lands on This Mac, Look and alerts, or on
   This workspace, Models for the old Models page (`resolveSettingsFocus`). The Settings rail
   has no row to Connections: Search settings answers Providers and Integrations with Go to
   Connections (`settingsPaletteEntries`). `settings-has-no-connection-scopes.test.ts` keeps any new code from opening Settings on those
@@ -335,7 +335,7 @@ and the tab opens on the session's folder.
      **Guide: {chapter}** entry per `GUIDE_CHAPTERS` row (opens it through
      `openGuideChapter`, also while the Guide is open) are typed only. Pair an
      iPhone answers to Pair your iPhone and the other former names of the page.
-     Check for updates opens the Updates band of Settings > General and runs the updater check only
+     Check for updates opens the Updates band of Settings > Look and alerts and runs the updater check only
      in a status the menu item also checks. Palette and menu bar share one
      function, `checkForUpdatesNow` in `features/updater`.
      The overlay is a compact window: 640px wide (search 720px), a 48px input row,

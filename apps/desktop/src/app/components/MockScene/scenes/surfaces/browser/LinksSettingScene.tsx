@@ -13,5 +13,5 @@ export const LinksSettingScene = ({ theme }: Props) => {
     applyDocumentTheme({ theme });
     useAppStore.setState({ settings: { [SETTING_LINKS_OPEN]: 'goodboy' } });
   }, [theme]);
-  return <SettingsFrame focus={{ scope: 'app' }} seed={seed} />;
+  return <SettingsFrame focus={{ scope: 'app', section: 'devtools' }} seed={seed} />;
 };

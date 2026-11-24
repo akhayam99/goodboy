@@ -56,7 +56,7 @@ const mount = async (name: string): Promise<Element> => {
 };
 
 describe('the Settings scenes', () => {
-  it('keeps one scene for the General page of the default shell', () => {
+  it('keeps one scene for the Look and alerts page of the default shell', () => {
     const names = Object.keys(U21_SETTINGS_SCENES).sort();
 
     expect(names).toEqual(['settings-general-pinned', 'settings-providers-rail']);
@@ -71,7 +71,7 @@ describe('the Settings scenes', () => {
     expect(document.querySelector('[data-studio-band]')).not.toBeNull();
     expect(document.querySelector('[data-studio-rail="page"]')).not.toBeNull();
     expect(screen.getByRole('navigation', { name: 'Places' }).closest('[inert]')).toBeNull();
-    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Look and alerts' })).toBeDefined();
     expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
   });
 

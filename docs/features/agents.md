@@ -199,7 +199,7 @@ Every new run from **Start a run** has a Lead, unless you named one role. There 
 **Limit and control**
 
 - Set a **Limit** once per workspace.
-- Change, raise or remove the **Limit** of a running conversation from its word under the title, such as "Limit $5.00". Clear the amount to remove it. **Undo** is there. When the limit comes from the workspace, the "from Harborline" tag in the popover is a link to the Runs page in Settings.
+- Change, raise or remove the **Limit** of a running conversation from its word under the title, such as "Limit $5.00". Clear the amount to remove it. **Undo** is there. When the limit comes from the workspace, the "from Harborline" tag in the popover is a link to Workflows, Every run.
 - A message to the Lead takes the same files as the session chat, a PDF included, and the Lead reads them with your words.
 - A message you send to the Lead while it works waits in one list above the message box, in the order you sent it. It stays there until the Lead has read it. Each row reads **Waits for this reply**, **Waits for** the task it waits for, or **Not delivered** with the reason on hover. Its images show as small thumbnails, and the count on the row names every file. **Send now**, **Retry** or **Change limit** sit on the row. **Edit** or **Remove** take the message back, with its text and files, until the Lead has read it. Once it has, the message shows in the chat before the turn that read it.
 - The smallest limit pauses the Lead. A session limit under the Lead's own lowers it, and the chip says which one wins.

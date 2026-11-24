@@ -7,11 +7,9 @@ import { WorkspaceBranchNamingBand } from './WorkspaceBranchNamingBand';
 import { SecurityFindingsSection } from './SecurityFindingsSection';
 import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
-import { WorkspaceDefaultsGrid } from './WorkspaceDefaultsGrid';
 import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
 import { WorkspaceNameBand } from './WorkspaceNameBand';
 import { WorkspaceDisconnectBand } from './WorkspaceDisconnectBand';
-import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 import { isFolderOptionsSection, isTrackWithGitSection, type PlanPage } from './workspacePages';
 
 type Props = {
@@ -44,7 +42,7 @@ export const WorkspacePageBody = ({
     case 'profile':
       return <WorkspaceProfileSection workspaceId={workspaceId} />;
     case 'general':
-      return <WorkspaceDefaultsGrid workspaceId={workspaceId} />;
+      return null;
     case 'branches':
       return (
         <>
@@ -58,11 +56,6 @@ export const WorkspacePageBody = ({
       return (
         <PermissionsSettings
           workspaceId={workspaceId}
-          renderDefaultRow={(control) => (
-            <WorkspaceFieldRow workspaceId={workspaceId} field="permissionMode" layout="stacked">
-              {control}
-            </WorkspaceFieldRow>
-          )}
           afterRules={<SecurityFindingsSection workspaceId={workspaceId} />}
         />
       );

@@ -19,6 +19,7 @@ import { settingsDirectory, settingsPageKey } from './settingsDirectory';
 import { pageFocusOf, resolveSettingsFocus } from './resolveSettingsFocus';
 import { workspacePageOf } from './workspacePages';
 import { SettingRowFocusContext } from '../../settingRowFocusContext';
+import { isRunDefaultsFocus } from '../../settingRows';
 
 type Props = {
   readonly currentWorkspace: Workspace | null;
@@ -67,12 +68,21 @@ export const SettingsStudio = ({
   );
   const lastFocus = useAppStore((state) => state.lastSettingsFocus);
   const rememberFocus = useAppStore((state) => state.rememberSettingsFocus);
+  const setWorkflowStudioView = useAppStore((state) => state.setWorkflowStudioView);
+  const setEveryRunFocusRow = useAppStore((state) => state.setEveryRunFocusRow);
+  const switchStudio = useAppStore((state) => state.switchStudio);
   const focus = resolveSettingsFocus({ focus: requestedFocus, last: lastFocus, groups });
   const isRedirect = !isSamePage({ left: focus, right: requestedFocus });
+  const isRunDefaults = hasWorkspace && isRunDefaultsFocus(focus);
   const availableScope = pageScopeOf({ focus, hasWorkspace });
   const pageKey = settingsPageKey({ scope: availableScope, section: focus.section });
 
   const redirect = useEffectEvent(() => onScopeChange(focus));
+  const openEveryRun = useEffectEvent(() => {
+    setEveryRunFocusRow({ row: focus.row ?? null });
+    setWorkflowStudioView('every');
+    switchStudio({ studio: { kind: 'workflow' } });
+  });
   const rememberPage = useEffectEvent(() =>
     rememberFocus(pageFocusOf({ scope: availableScope, focus })),
   );
@@ -84,8 +94,16 @@ export const SettingsStudio = ({
   }, [isRedirect]);
 
   useEffect(() => {
-    rememberPage();
-  }, [pageKey]);
+    if (isRunDefaults) {
+      openEveryRun();
+    }
+  }, [isRunDefaults]);
+
+  useEffect(() => {
+    if (!isRunDefaults) {
+      rememberPage();
+    }
+  }, [pageKey, isRunDefaults]);
 
   const row = focus.row ?? null;
   const rowFocus = useMemo(
@@ -104,6 +122,9 @@ export const SettingsStudio = ({
   const focusSection = focus.section === MODELS_PAGE_SECTION ? undefined : focus.section;
 
   const renderDetail = (requestClose: () => void): ReactNode => {
+    if (isRunDefaults) {
+      return null;
+    }
     if (workspace !== null && workspacePageOf({ section: focus.section }) === MODELS_PAGE_SECTION) {
       return (
         <DefaultsPanel

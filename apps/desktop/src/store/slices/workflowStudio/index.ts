@@ -4,6 +4,7 @@ import { loadWorkflowRunHistory } from './loadWorkflowRunHistory';
 import { setWorkflowStudioDraft } from './setWorkflowStudioDraft';
 import { setWorkflowStudioVisible } from './setWorkflowStudioVisible';
 import { setWorkflowStudioFocus, setWorkflowStudioView } from './setWorkflowStudioFocus';
+import { setEveryRunFocusRow } from './setEveryRunFocusRow';
 import { restoreWorkflowSnapshot } from './restoreWorkflowSnapshot';
 import { startWorkflowGeneration } from './startWorkflowGeneration';
 import { undoWorkflowGeneration } from './undoWorkflowGeneration';
@@ -15,6 +16,7 @@ export const createWorkflowStudioSlice = ({ set, get }: SliceDeps) => ({
   setWorkflowStudioVisible: setWorkflowStudioVisible(set),
   setWorkflowStudioFocus: setWorkflowStudioFocus(set),
   setWorkflowStudioView: setWorkflowStudioView(set),
+  setEveryRunFocusRow: setEveryRunFocusRow({ set, get }),
   startWorkflowGeneration: startWorkflowGeneration(set, get),
   consumeWorkflowGeneration: consumeWorkflowGeneration(set),
   undoWorkflowGeneration: undoWorkflowGeneration(get),

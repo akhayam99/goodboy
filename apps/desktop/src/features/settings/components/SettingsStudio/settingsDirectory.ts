@@ -4,7 +4,14 @@ import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus
 import { APP_SECTIONS, IPHONE_SECTION_ID, appSectionOf, type AppSection } from './appSections';
 import { PERMISSIONS_SECTION_ID } from '../../../permissions/openPermissionSettings';
 import type { RailSubtitles } from './railSubtitles';
-import { WORKSPACE_PAGES, workspacePageOf, type WorkspacePage } from './workspacePages';
+import { NAMES } from '../../../../shared/utils/names';
+import { RUN_DEFAULTS_SECTION } from '../../openRunDefaults';
+import {
+  RUN_DEFAULTS_SEARCH_ALIASES,
+  WORKSPACE_PAGES,
+  workspacePageOf,
+  type WorkspacePage,
+} from './workspacePages';
 
 type Concept = keyof typeof CONCEPT_ICONS;
 
@@ -19,6 +26,7 @@ type SettingsPage = {
   readonly attention: SettingsAttention | null;
   readonly target: SettingsScopeChange;
   readonly isHidden?: boolean;
+  readonly isLink?: boolean;
   readonly searchAliases?: ReadonlyArray<string>;
 };
 
@@ -116,17 +124,29 @@ const appGroup = ({
     attention: appAttention({ section: section.id, subtitles: status.subtitles }),
     target: { scope: 'app', section: section.id },
     isHidden: section.id === IPHONE_SECTION_ID && !isIphonePaired,
+    searchAliases: section.searchAliases,
   })),
 });
 
-const workspacePagesOf = ({ status }: Pick<Params, 'status'>): ReadonlyArray<SettingsPage> =>
-  WORKSPACE_PAGES.map((page): SettingsPage => ({
+const RUN_DEFAULTS_LINK: SettingsPage = {
+  key: `workspace:${RUN_DEFAULTS_SECTION}`,
+  label: NAMES.runDefaultsInWorkflows,
+  attention: null,
+  target: { scope: 'workspace', section: RUN_DEFAULTS_SECTION },
+  isLink: true,
+  searchAliases: RUN_DEFAULTS_SEARCH_ALIASES,
+};
+
+const workspacePagesOf = ({ status }: Pick<Params, 'status'>): ReadonlyArray<SettingsPage> => [
+  ...WORKSPACE_PAGES.map((page): SettingsPage => ({
     key: `workspace:${page.id}`,
     label: page.label,
     attention: workspaceAttention({ page: page.id, subtitles: status.subtitles }),
     target: { scope: 'workspace', section: page.id },
     searchAliases: page.searchAliases,
-  }));
+  })),
+  RUN_DEFAULTS_LINK,
+];
 
 const workspaceGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
   scope: 'workspace',

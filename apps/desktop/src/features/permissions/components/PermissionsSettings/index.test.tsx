@@ -9,7 +9,6 @@ const mocks = vi.hoisted(() => ({
   remove: vi.fn(async () => undefined),
   upsert: vi.fn(),
   audit: vi.fn(),
-  setDefault: vi.fn(async () => undefined),
   reportError: vi.fn(async () => undefined),
   state: {
     workspaceOverrides: {} as Record<string, unknown>,
@@ -35,7 +34,6 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>
     selector({
       ...mocks.state,
-      setWorkspacePermissionDefault: mocks.setDefault,
       reportError: mocks.reportError,
     }),
 }));
@@ -97,14 +95,12 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('PermissionsSettings', () => {
-  it('starts on full access and lowers the default for new sessions', () => {
+  it('keeps the rules and leaves the default for new sessions to Every run', async () => {
     renderSettings();
 
-    expect(screen.getByRole('radio', { name: /full access/i }).getAttribute('aria-checked')).toBe(
-      'true',
-    );
-    fireEvent.click(screen.getByRole('radio', { name: /read only/i }));
-    expect(mocks.setDefault).toHaveBeenCalledWith({ workspaceId: WORKSPACE_ID, mode: 'plan' });
+    await screen.findByRole('region', { name: 'Rules' });
+    expect(screen.queryByRole('radiogroup', { name: 'Default for new sessions' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Default' })).toBeNull();
   });
 
   it('keeps what each provider does behind one folded row', () => {

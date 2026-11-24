@@ -16,7 +16,7 @@ import { recommendationSummary } from '../../../../shared/components/RoutingPick
 import { FactButton } from '../../../../shared/components/SettingChip/FactButton';
 import { FactDot } from '../../../../shared/components/SettingChip/FactDot';
 import { useIsSettingFact } from '../../../../shared/components/SettingChip/settingLookContext';
-import { openModelsSettings } from '../../../settings/openModelsSettings';
+import { openRunDefaults } from '../../../settings/openRunDefaults';
 import { RUN_MODEL_COPY } from '../../startRun/runModelCopy';
 import type { RunModelView } from './useRunModel';
 
@@ -35,7 +35,6 @@ export const RunModelChip = ({
 }: Props) => {
   const { effective, suggestion, isPinned, connectedProviders, pick } = model;
   const menuLabel = RUN_MODEL_COPY.forThisRun({ name: model.label });
-  const settingsSection = model.slot.kind === 'orchestrator' ? 'workflow_orchestrator' : undefined;
   const isPill = variant === 'pill';
   const isFact = useIsSettingFact();
   const dropdown = useDropdown({
@@ -134,9 +133,7 @@ export const RunModelChip = ({
           size="xs"
           onClick={() => {
             dropdown.close();
-            openModelsSettings({
-              ...(settingsSection !== undefined && { section: settingsSection }),
-            });
+            openRunDefaults();
           }}
         >
           {RUN_MODEL_COPY.changeDefault}

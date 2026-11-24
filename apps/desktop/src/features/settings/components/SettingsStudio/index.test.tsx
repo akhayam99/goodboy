@@ -107,6 +107,9 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     workspaceOverrides: {} as Record<string, unknown>,
     lastSettingsFocus: null as unknown,
     rememberSettingsFocus: vi.fn(),
+    setWorkflowStudioView: vi.fn(),
+    setEveryRunFocusRow: vi.fn(),
+    switchStudio: vi.fn(),
     amendStudio: vi.fn(),
   },
   toastMock: vi.fn(),
@@ -147,9 +150,27 @@ vi.mock('../../../onboarding/onboardingSettings', () => ({
 
 import { SettingsStudio } from './index';
 import { APP_SECTIONS } from './appSections';
-import type { SettingsScopeChange } from '../../settingsFocus';
+import type { SettingsFocus, SettingsScopeChange } from '../../settingsFocus';
 import { shortcutGlyphs, shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';
+import { aWorkspace } from '@goodboy/types/testing';
+
+const HARBORLINE: Workspace = aWorkspace({ name: 'Harborline' });
+
+type WorkspaceFocusParams = {
+  readonly focus: SettingsFocus;
+  readonly onScopeChange?: (params: SettingsScopeChange) => void;
+};
+
+const renderWorkspace = ({ focus, onScopeChange = vi.fn() }: WorkspaceFocusParams) =>
+  render(
+    <SettingsStudio
+      currentWorkspace={HARBORLINE}
+      onScopeChange={onScopeChange}
+      focus={focus}
+      onClose={vi.fn()}
+    />,
+  );
 
 beforeEach(() => {
   Object.defineProperty(Element.prototype, 'scrollIntoView', {
@@ -161,6 +182,11 @@ beforeEach(() => {
   state.loadDetectedEditors.mockClear();
   state.wipeLocalDatabase.mockClear();
   state.relaunchApp.mockClear();
+  state.setWorkflowStudioView.mockClear();
+  state.setEveryRunFocusRow.mockClear();
+  state.switchStudio.mockClear();
+  state.rememberSettingsFocus.mockClear();
+  state.lastSettingsFocus = null;
   toastMock.mockReset();
 });
 
@@ -220,6 +246,45 @@ describe('SettingsStudio', () => {
     expect(screen.getByText('Models content summarizer')).toBeDefined();
   });
 
+  it.each(['general', 'workflow_orchestrator'])(
+    'hands the old run defaults door %s to Workflows, Every run, and remembers nothing',
+    (section) => {
+      renderWorkspace({ focus: { scope: 'workspace', section } });
+
+      expect(state.setWorkflowStudioView).toHaveBeenCalledWith('every');
+      expect(state.switchStudio).toHaveBeenCalledWith({ studio: { kind: 'workflow' } });
+      expect(state.rememberSettingsFocus).not.toHaveBeenCalled();
+      expect(screen.queryByText('Workspace settings content')).toBeNull();
+    },
+  );
+
+  it('carries a searched row into Every run so it can scroll to it', () => {
+    renderWorkspace({ focus: { scope: 'workspace', section: 'general', row: 'parallel-agents' } });
+
+    expect(state.setEveryRunFocusRow).toHaveBeenCalledWith({ row: 'parallel-agents' });
+    expect(state.setWorkflowStudioView).toHaveBeenCalledWith('every');
+  });
+
+  it('lists no Runs page and ends the workspace rail on one link to Every run', () => {
+    const onScopeChange = vi.fn();
+    renderWorkspace({ focus: { scope: 'workspace', section: 'projects' }, onScopeChange });
+
+    const pages = screen.getByRole('list', { name: 'Harborline settings' });
+    expect(within(pages).queryByRole('button', { name: 'Runs' })).toBeNull();
+    expect(state.switchStudio).not.toHaveBeenCalled();
+    const rail = screen.getByRole('navigation', { name: 'Settings scopes' });
+    fireEvent.click(within(rail).getByRole('button', { name: 'Run defaults are in Workflows' }));
+    expect(onScopeChange).toHaveBeenCalledWith({ scope: 'workspace', section: 'general' });
+  });
+
+  it('opens Look and alerts when the remembered page was the old Runs page', () => {
+    state.lastSettingsFocus = { scope: 'workspace', section: 'general' };
+    renderWorkspace({ focus: { scope: 'home' } });
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Look and alerts' })).toBeDefined();
+    expect(state.switchStudio).not.toHaveBeenCalled();
+  });
+
   const renderApp = ({
     section,
     onScopeChange = vi.fn(),
@@ -250,39 +315,39 @@ describe('SettingsStudio', () => {
     );
     expect(APP_SECTIONS.map((section) => section.id)).toEqual([
       'general',
+      'devtools',
       'shortcuts',
-      'advanced',
       'storage',
       'backup',
       'iphone',
     ]);
     expect(
-      within(items).getByRole('button', { name: 'General' }).getAttribute('aria-current'),
+      within(items).getByRole('button', { name: 'Look and alerts' }).getAttribute('aria-current'),
     ).toBe('true');
-    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
-    expect(screen.getByText('Open with')).toBeDefined();
-    expect(screen.getByRole('heading', { level: 2, name: 'Updates' }).textContent).toBe('Updates');
+    expect(screen.getByRole('heading', { name: 'Look and alerts' })).toBeDefined();
+    expect(
+      screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
+    ).toEqual(expect.arrayContaining(['Appearance', 'Notifications', 'Updates']));
+    expect(screen.queryByText('Open with')).toBeNull();
     expect(screen.queryByRole('heading', { level: 2, name: 'Search' })).toBeNull();
   });
 
-  it('puts git, the terminal and search on Advanced, with no Work switch left', () => {
+  it('opens a remembered Advanced link on Editor, terminal, git, with search gone to Storage', () => {
     renderApp({ section: 'advanced' });
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Advanced' }).textContent).toBe(
-      'Advanced',
-    );
+    expect(screen.getByRole('heading', { level: 1, name: 'Editor, terminal, git' })).toBeDefined();
     const headings = screen
       .getAllByRole('heading', { level: 2 })
       .map((heading) => heading.textContent);
-    expect(headings).toEqual(expect.arrayContaining(['Git', 'Built-in terminal', 'Search']));
+    expect(headings).toEqual(expect.arrayContaining(['Open with', 'Built-in terminal', 'Git']));
+    expect(headings).not.toContain('Search');
     expect(headings).not.toContain('Experiments');
     expect(screen.queryByRole('switch', { name: 'Work' })).toBeNull();
     expect(screen.queryByRole('switch', { name: 'Auto agent' })).toBeNull();
-    expect(screen.queryByText('Open with')).toBeNull();
   });
 
   it('names the default editor before the detected list arrives', () => {
-    renderApp({ section: 'general' });
+    renderApp({ section: 'devtools' });
 
     expect(screen.queryByText('code')).toBeNull();
     expect(screen.getAllByText('VS Code').length).toBeGreaterThan(0);
@@ -292,7 +357,9 @@ describe('SettingsStudio', () => {
     const onScopeChange = vi.fn();
     renderApp({ section: 'updates', onScopeChange });
 
-    expect(screen.getByRole('heading', { level: 1, name: 'General' }).textContent).toBe('General');
+    expect(screen.getByRole('heading', { level: 1, name: 'Look and alerts' }).textContent).toBe(
+      'Look and alerts',
+    );
     expect(screen.getByRole('button', { name: "Open What's new" }).textContent).toBe(
       "Open What's new",
     );
@@ -313,10 +380,14 @@ describe('SettingsStudio', () => {
   it.each([
     {
       section: 'security-findings',
-      page: 'General',
+      page: 'Look and alerts',
       moved: { scope: 'workspace', section: 'permissions' },
     },
-    { section: 'branches', page: 'General', moved: { scope: 'workspace', section: 'branches' } },
+    {
+      section: 'branches',
+      page: 'Look and alerts',
+      moved: { scope: 'workspace', section: 'branches' },
+    },
   ])('moves the old $section link to its new page', ({ section, page, moved }) => {
     const onScopeChange = vi.fn();
     renderApp({ section, onScopeChange });
@@ -341,7 +412,7 @@ describe('SettingsStudio', () => {
     expect(within(rail).queryByRole('button', { name: /^Providers/ })).toBeNull();
     expect(within(rail).getByText('Open a workspace to see its settings.')).toBeDefined();
     expect(within(rail).queryByRole('button', { name: 'Open Connections' })).toBeNull();
-    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Look and alerts' })).toBeDefined();
   });
 
   it('keeps one rail mounted across pages', () => {
@@ -358,9 +429,9 @@ describe('SettingsStudio', () => {
     );
 
     expect(screen.getByRole('navigation', { name: /settings scopes/i })).toBe(rail);
-    expect(within(rail).getByRole('button', { name: 'Storage' }).getAttribute('aria-current')).toBe(
-      'true',
-    );
+    expect(
+      within(rail).getByRole('button', { name: 'Storage and search' }).getAttribute('aria-current'),
+    ).toBe('true');
   });
 
   it('shows tone on the rail only when something needs doing', () => {
@@ -383,10 +454,10 @@ describe('SettingsStudio', () => {
     const onScopeChange = vi.fn();
     renderApp({ onScopeChange });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Storage' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Storage and search' }));
 
     expect(onScopeChange.mock.calls).toEqual([[{ scope: 'app', section: 'storage' }]]);
-    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Look and alerts' })).toBeDefined();
   });
 
   it('opens the shortcuts item with the whole list visible', () => {
@@ -421,7 +492,7 @@ describe('SettingsStudio', () => {
   it('falls back to General for an unknown section', () => {
     renderApp({ section: 'integrations' });
 
-    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Look and alerts' })).toBeDefined();
   });
 
   it('leaves GitHub to Integrations settings', () => {
@@ -463,7 +534,7 @@ describe('SettingsStudio', () => {
 
     const rail = screen.getByRole('navigation', { name: 'Settings scopes' });
     expect(within(rail).queryByRole('button', { name: 'Help' })).toBeNull();
-    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Look and alerts' })).toBeDefined();
   });
 
   const renderHome = (onScopeChange = vi.fn()) =>
@@ -480,7 +551,7 @@ describe('SettingsStudio', () => {
     const onScopeChange = vi.fn();
     renderHome(onScopeChange);
 
-    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Look and alerts' })).toBeDefined();
     expect(screen.getByRole('navigation', { name: 'Settings scopes' })).toBeDefined();
     expect(onScopeChange).toHaveBeenCalledWith({ scope: 'app', section: 'general' });
   });
@@ -503,7 +574,7 @@ describe('SettingsStudio', () => {
     try {
       renderHome();
 
-      expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+      expect(screen.getByRole('heading', { name: 'Look and alerts' })).toBeDefined();
     } finally {
       state.lastSettingsFocus = null;
     }
@@ -515,7 +586,7 @@ describe('SettingsStudio', () => {
       const onScopeChange = vi.fn();
       renderHome(onScopeChange);
 
-      expect(screen.getByRole('heading', { level: 1, name: 'General' })).toBeDefined();
+      expect(screen.getByRole('heading', { level: 1, name: 'Look and alerts' })).toBeDefined();
       expect(onScopeChange).toHaveBeenCalledWith({ scope: 'app', section: 'general' });
     } finally {
       state.lastSettingsFocus = null;
@@ -528,8 +599,8 @@ describe('SettingsStudio', () => {
       const onScopeChange = vi.fn();
       renderHome(onScopeChange);
 
-      expect(screen.getByRole('heading', { level: 1, name: 'General' }).textContent).toBe(
-        'General',
+      expect(screen.getByRole('heading', { level: 1, name: 'Look and alerts' }).textContent).toBe(
+        'Look and alerts',
       );
       expect(onScopeChange).toHaveBeenCalledWith({ scope: 'app', section: 'general' });
       expect(scrollIntoViewMock).not.toHaveBeenCalledWith({ block: 'start' });
@@ -584,8 +655,8 @@ describe('SettingsStudio, the page it draws', () => {
     const hide = within(rail).getByRole('button', { name: 'Hide settings scopes' });
     const search = within(rail).getByRole('searchbox', { name: 'Search settings' });
     expect(hide.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    within(rail).getByRole('button', { name: 'General' });
-    screen.getByRole('heading', { name: 'General' });
+    within(rail).getByRole('button', { name: 'Look and alerts' });
+    screen.getByRole('heading', { name: 'Look and alerts' });
     expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
   });
 
@@ -613,7 +684,7 @@ describe('SettingsStudio, the page it draws', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Hide settings scopes' }));
     expect(screen.queryByRole('complementary', { name: 'Settings scopes' })).toBeNull();
     expect(localStorage.getItem('goodboy:studio-rail-folded:settings:v1')).toBe('1');
-    screen.getByRole('heading', { name: 'General' });
+    screen.getByRole('heading', { name: 'Look and alerts' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Search settings' }));
 

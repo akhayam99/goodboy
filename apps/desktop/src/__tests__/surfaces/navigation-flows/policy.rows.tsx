@@ -55,9 +55,10 @@ const flipRuleInProviders = async (): Promise<void> => {
   await waitFor(() => expect(spreadRule()).toBe(true), WAIT);
 };
 
-const runsLeavesThePolicyToModels = async (): Promise<void> => {
-  await heading(/^Runs$/);
+const everyRunLeavesThePolicyToModels = async (): Promise<void> => {
   await screen.findByRole('region', { name: 'When a run stops for you' });
+  await screen.findByRole('region', { name: 'Roles' });
+  expect(useAppStore.getState().appStudio?.kind).toBe('workflow');
   expect(screen.queryByRole('button', { name: 'Open Models' })).toBeNull();
   expect(screen.queryByRole('tablist', { name: RULE_LABEL })).toBeNull();
 };
@@ -98,14 +99,14 @@ const INSTALL_COMMAND = 'brew install gh';
 
 export const POLICY_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'policy: Provider priority set in Models has no second control or link in Runs',
+    name: 'policy: Provider priority set in Models has no second control or link in Every run',
     covers: ['openSettings', 'studio:workflow', 'palette:Runs', 'settings:models'],
     door: 'palette',
     open: async () => {
       await flipRuleInProviders();
-      await openPalette(/^Workspace settings: Runs/, 'run defaults');
+      await openPalette(/^Run defaults are in Workflows/, 'run defaults');
     },
-    lands: runsLeavesThePolicyToModels,
+    lands: everyRunLeavesThePolicyToModels,
   },
   {
     name: 'first lap: gh missing, copy the install command, press Check again, then the signed-in form',

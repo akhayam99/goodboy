@@ -6,8 +6,9 @@ import { BackupPage } from '../../../backup/components/BackupPage';
 import { iphoneSettingsPage } from '../../../companion/iphoneSettingsPage';
 import { useAppStore } from '../../../../store';
 import { AppResetSection } from './AppResetSection';
-import { AppAdvancedSection } from './AppAdvancedSection';
+import { AppDevToolsSection } from './AppDevToolsSection';
 import { AppGeneralSection } from './AppGeneralSection';
+import { SearchIndexBand } from './SearchIndexBand';
 import { ShortcutsSection } from './ShortcutsSection';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';
 import { STORAGE_APP_PAGES } from '../../../storage/storageAppPages';
@@ -36,10 +37,15 @@ const SectionBody = ({ section, isUpdatesFocused }: BodyProps) => {
       return <AppGeneralSection isUpdatesFocused={isUpdatesFocused} />;
     case 'shortcuts':
       return <ShortcutsSection />;
-    case 'advanced':
-      return <AppAdvancedSection />;
+    case 'devtools':
+      return <AppDevToolsSection />;
     case 'storage':
-      return STORAGE_APP_PAGES.storage.body;
+      return (
+        <div className="flex flex-col gap-8">
+          {STORAGE_APP_PAGES.storage.body}
+          <SearchIndexBand />
+        </div>
+      );
     case 'backup':
       return (
         <>

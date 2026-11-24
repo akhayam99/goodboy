@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { RotateCcw } from '@goodboy/ui/icons';
 import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
-import { ROLE_REGISTRY } from '@goodboy/core/roles';
 import { DEFAULT_GROUPS, TASKS } from '@goodboy/core/settings';
 import {
   Band,
@@ -14,27 +13,18 @@ import {
   appScrollIntoView,
 } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
-import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
 import { NAMES } from '../../../../../shared/utils/names';
 import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultModel';
 import { ChatModelRow } from './ChatModelRow';
 import { ConnectionsPointer } from './ConnectionsPointer';
 import { DefaultsGroup } from './DefaultsGroup';
-import { RoleRow } from './RoleRow';
-import { RunsSection } from './RunsSection';
 import { TaskModelRow } from './TaskModelRow';
-import { OrchestratorModelPickRow } from './OrchestratorModelPickRow';
 import { ProvidersInOrder } from './ProvidersInOrder';
-import { PinnedOffLine } from './PinnedOffLine';
 import { SavedModelsNotice } from './SavedModelsNotice';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
-import { useModelScope } from '../../../hooks/useModelScope';
-import { useHasPlanRuns } from '../../../hooks/useHasPlanRuns';
-import { resolutionOf } from '../../../../../store/runtime/models/selectResolution';
-import { isPinUnrunnable } from './resolutionNote';
 import { actionButtonLookOf } from '../../../../actions/actionButtonLookOf';
 
 type Props = {
@@ -44,6 +34,19 @@ type Props = {
 };
 
 const TASK_BY_ID = new Map(TASKS.map((task) => [task.id, task]));
+
+const BACKGROUND_TASK_IDS: ReadonlySet<string> = new Set(
+  DEFAULT_GROUPS.tasks.flatMap((group) => group.members),
+);
+
+type RunTaskModelsParams = {
+  readonly taskModels: OverrideSettings['taskModels'];
+};
+
+const runTaskModelsOf = ({ taskModels }: RunTaskModelsParams): OverrideSettings['taskModels'] => {
+  const kept = Object.entries(taskModels ?? {}).filter(([task]) => !BACKGROUND_TASK_IDS.has(task));
+  return kept.length > 0 ? Object.fromEntries(kept) : null;
+};
 
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
@@ -87,30 +90,23 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
     ),
   );
   const overrides = workspaceOverrides ?? EMPTY_OVERRIDES;
-  const policy = overrides.providerPool;
-  const scope = useModelScope({ workspaceId });
-  const hasPlanRuns = useHasPlanRuns({ workspaceId });
 
   const chatDefault = useChatDefaultModel({ workspaceId });
-  const { busy, error, persistOverrides, persistTaskModel, persistRoleModel, clearRoleModels } =
-    useDefaultsPersistence({ workspaceId });
+  const { busy, error, persistOverrides, persistTaskModel } = useDefaultsPersistence({
+    workspaceId,
+  });
 
-  const pinnedTaskCount = TASKS.filter((task) => overrides.taskModels?.[task.id] != null).length;
-  const pinnedRoleCount = Object.keys(overrides.roleModels ?? {}).length;
+  const pinnedTaskCount = TASKS.filter(
+    (task) => BACKGROUND_TASK_IDS.has(task.id) && overrides.taskModels?.[task.id] != null,
+  ).length;
   const pinnedChatCount = chatDefault.saved === null ? 0 : 1;
-  const pinnedCount = pinnedTaskCount + pinnedRoleCount + pinnedChatCount;
-
-  const shownRoles = DEFAULT_GROUPS.agents.flatMap((group) => group.members);
-  const unrunnableRoles = shownRoles.filter((role) =>
-    isPinUnrunnable({ resolution: resolutionOf({ scope, slot: { kind: 'role', id: role } }) }),
-  );
-  const onProviderIds = connectedProviderIds.filter(
-    (id) => policy == null || policy.some((entry) => entry.id === id && entry.state === 'on'),
-  );
+  const pinnedCount = pinnedTaskCount + pinnedChatCount;
 
   const onResetAll = async () => {
     chatDefault.clear();
-    await persistOverrides({ patch: { taskModels: null, roleModels: null } });
+    await persistOverrides({
+      patch: { taskModels: runTaskModelsOf({ taskModels: overrides.taskModels }) },
+    });
   };
 
   return (
@@ -120,12 +116,12 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
       title={NAMES.models}
       meta={scopeLabel ?? undefined}
       actions={
-        pinnedCount === 0 || unrunnableRoles.length > 0 ? undefined : (
+        pinnedCount === 0 ? undefined : (
           <ConfirmPopover
             role="danger"
             icon={<RotateCcw size={ICON_SIZE.control} aria-hidden />}
             title={`Reset ${pinnedCount} pinned ${pinnedCount === 1 ? 'model' : 'models'} to Auto?`}
-            description="New chats, every agent role and background task go back to Auto."
+            description="New chats and every background task go back to Auto."
             confirmLabel="Reset all"
             isBusy={busy}
             onConfirm={onResetAll}
@@ -148,25 +144,7 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
 
       <SavedModelsNotice workspaceId={workspaceId} />
 
-      <PinnedOffLine
-        count={unrunnableRoles.length}
-        total={shownRoles.length}
-        onProviderIds={onProviderIds}
-        isDisabled={busy}
-        onConfirm={() => clearRoleModels({ roles: unrunnableRoles })}
-      />
-
       <div ref={rowsRef} className="contents">
-        <RunsSection
-          workspaceId={workspaceId}
-          overrides={overrides}
-          connectedProviderIds={connectedProviderIds}
-          isDisabled={busy}
-          hasPlanRuns={hasPlanRuns}
-          onRoleChange={persistRoleModel}
-          onTaskChange={persistTaskModel}
-        />
-
         <Band label="Providers" ariaLabel="Providers" headingLevel={2} inset="content">
           {connectedProviderIds.length === 0 ? (
             <FieldRow label="When a provider is out">
@@ -182,44 +160,12 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
           )}
         </Band>
 
-        {hasPlanRuns ? (
-          <Band
-            label="Choosing models"
-            ariaLabel="Choosing models"
-            headingLevel={2}
-            inset="content"
-          >
-            <OrchestratorModelPickRow workspaceId={workspaceId} />
-          </Band>
-        ) : null}
-
         <Band label="Chat" ariaLabel="Chat" headingLevel={2}>
           <ChatModelRow
             workspaceId={workspaceId}
             connectedProviderIds={connectedProviderIds}
             disabled={busy}
           />
-        </Band>
-
-        <Band label="Agents" ariaLabel="Agents" headingLevel={2}>
-          {DEFAULT_GROUPS.agents.map((group) => (
-            <DefaultsGroup key={group.id} label={group.label}>
-              {group.members.map((role) => (
-                <RoleRow
-                  key={role}
-                  workspaceId={workspaceId}
-                  role={role}
-                  label={ROLE_LABEL[role]}
-                  help={ROLE_REGISTRY[role].summary}
-                  preference={overrides.roleModels?.[role] ?? null}
-                  isParallelOn={overrides.parallelAgents === true}
-                  connectedProviderIds={connectedProviderIds}
-                  disabled={busy}
-                  onChange={(preference) => persistRoleModel({ role, preference })}
-                />
-              ))}
-            </DefaultsGroup>
-          ))}
         </Band>
 
         <Band label="Background tasks" ariaLabel="Background tasks" headingLevel={2}>

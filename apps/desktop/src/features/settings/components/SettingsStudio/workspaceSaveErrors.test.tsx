@@ -23,14 +23,14 @@ import {
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { DEFAULT_BRANCH_PREFIX } from '../../settings';
 import { WorkspaceBranchNamingBand } from './WorkspaceBranchNamingBand';
-import { WorkspaceDefaultsGrid } from './WorkspaceDefaultsGrid';
+import { EveryRun } from '../../../workflows/components/EveryRun';
 import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
 
 const Pages = () => (
   <>
-    <WorkspaceDefaultsGrid workspaceId={WORKSPACE.id} />
+    <EveryRun workspaceId={WORKSPACE.id} />
     <WorkspaceBranchNamingBand workspaceId={WORKSPACE.id} />
     <WorkspaceReviewRepliesSection workspaceId={WORKSPACE.id} />
   </>
@@ -100,7 +100,7 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-describe('WorkspaceDefaultsGrid save errors', () => {
+describe('workspace page save errors', () => {
   it('puts a switch back and writes the error under its row, and Retry saves it', async () => {
     render(<Pages />);
 

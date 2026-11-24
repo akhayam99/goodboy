@@ -99,16 +99,15 @@ describe('SettingsRail', () => {
         .map((button) => button.textContent);
 
     expect(labelsOf('This Mac settings')).toEqual([
-      'General',
+      'Look and alerts',
+      'Editor, terminal, git',
       'Keyboard shortcuts',
-      'Advanced',
-      'Storage',
+      'Storage and search',
       'Backup and reset',
     ]);
     expect(labelsOf('Harborline settings')).toEqual([
       'Projects',
       'About you',
-      'Runs',
       'Models',
       'Permissions',
       'Branches',
@@ -132,14 +131,14 @@ describe('SettingsRail', () => {
     );
   });
 
-  it('keeps Models under the workspace and marks it current', () => {
+  it('keeps Models under the workspace, current, and links run defaults after the pages', () => {
     const { onSelect } = mount({ pageKey: 'workspace:models' });
 
     const workspace = screen.getByRole('list', { name: 'Harborline settings' });
     const models = within(workspace).getByRole('button', { name: 'Models' });
     expect(models.getAttribute('aria-current')).toBe('true');
 
-    fireEvent.click(within(workspace).getByRole('button', { name: 'Runs' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run defaults are in Workflows' }));
     expect(onSelect).toHaveBeenCalledWith({ scope: 'workspace', section: 'general' });
   });
 
@@ -170,11 +169,11 @@ describe('SettingsRail', () => {
     expect(screen.queryByText('Integrations belong to a workspace.')).toBeNull();
   });
 
-  it('puts the update dot on General, now that Updates is a band of it', () => {
+  it('puts the update dot on Look and alerts, where Updates is a band', () => {
     mount({ pageKey: 'app:storage' });
 
     expect(
-      within(screen.getByRole('button', { name: /^General/ })).getByRole('img', {
+      within(screen.getByRole('button', { name: /^Look and alerts/ })).getByRole('img', {
         name: 'Update available',
       }),
     ).toBeDefined();
