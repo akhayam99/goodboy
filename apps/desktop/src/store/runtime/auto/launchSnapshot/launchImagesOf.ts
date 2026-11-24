@@ -11,11 +11,12 @@ export const launchImagesOf = ({ snapshot }: Params): ReadonlyArray<MessageAttac
   }
   const images: Array<MessageAttachment> = [];
   for (const value of snapshot['images']) {
-    if (!isRecord(value) || value['kind'] !== 'image') {
+    if (!isRecord(value)) {
       continue;
     }
-    const { id, fileName, mimeType, relPath, dir } = value;
+    const { id, kind, fileName, mimeType, relPath, dir } = value;
     if (
+      (kind !== 'image' && kind !== 'file') ||
       typeof id !== 'string' ||
       typeof fileName !== 'string' ||
       typeof mimeType !== 'string' ||
@@ -25,7 +26,7 @@ export const launchImagesOf = ({ snapshot }: Params): ReadonlyArray<MessageAttac
     }
     images.push({
       id,
-      kind: 'image',
+      kind,
       fileName,
       mimeType,
       relPath,

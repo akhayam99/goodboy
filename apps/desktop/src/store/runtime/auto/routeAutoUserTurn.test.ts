@@ -20,8 +20,23 @@ import { routeAutoUserTurn, type RouteAutoUserTurnParams } from './routeAutoUser
 
 type AutoTurnState = ReturnType<RouteAutoUserTurnParams['get']>;
 
-const AUTO_ATTACHMENTS_MESSAGE = 'The Lead takes images in a message, not other files yet.';
-const AUTO_IMAGES_LOST_MESSAGE = "The Lead couldn't keep the images. Attach them again.";
+const AUTO_IMAGES_LOST_MESSAGE = "The Lead couldn't keep the files. Attach them again.";
+
+const BRIEF_INPUT = {
+  id: 'attachment-brief',
+  fileName: 'harborline-brief.pdf',
+  mimeType: 'application/pdf',
+  dataBase64: 'JVBERi0xLjQK',
+};
+
+const BRIEF_STORED: MessageAttachment = {
+  id: 'attachment-brief',
+  kind: 'file',
+  fileName: 'harborline-brief.pdf',
+  mimeType: 'application/pdf',
+  relPath: '.goodboy/attachments/attachment-brief/harborline-brief.pdf',
+  dir: '/scratch/session-harborline',
+};
 
 const BANNER_INPUT = {
   id: 'attachment-banner',
@@ -341,28 +356,26 @@ describe('a message typed to an Auto agent', () => {
     );
   });
 
-  it('is refused out loud when it carries files, and the door is not asked', async () => {
+  it('keeps a pdf as a file, hands it to Auto and shows it on the bubble', async () => {
     const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
     registerAutoUserTurnPort({ port });
-    const { get, reportError } = harness({ agents: [autoRow] });
-    const attachments = [
-      {
-        id: 'attachment-1',
-        fileName: 'notes.md',
-        mimeType: 'text/markdown',
-        dataBase64: 'bm90ZXM=',
-      },
-    ];
+    const { get, appendTurnEvent, reportError } = harness({ agents: [autoRow] });
+    const storeImages = vi.fn(async () => [BRIEF_STORED]);
 
-    await expect(
-      routeAutoUserTurn({
-        get,
-        input: inputOf({ attachments }),
-      }),
-    ).rejects.toThrow(AUTO_ATTACHMENTS_MESSAGE);
+    await routeAutoUserTurn({
+      get,
+      input: inputOf({ attachments: [BRIEF_INPUT] }),
+      storeImages,
+    });
 
-    expect(port).not.toHaveBeenCalled();
-    expect(reportError).toHaveBeenCalledTimes(1);
+    expect(reportError).not.toHaveBeenCalled();
+    expect(storeImages).toHaveBeenCalledWith({ sessionId: SESSION, images: [BRIEF_INPUT] });
+    expect(port).toHaveBeenCalledWith(expect.objectContaining({ images: [BRIEF_STORED] }));
+    expect(appendTurnEvent).toHaveBeenCalledWith(
+      AUTO_AGENT,
+      SESSION,
+      expect.objectContaining({ kind: 'operator_text', attachments: [BRIEF_STORED] }),
+    );
   });
 
   it('keeps the images, hands them to Auto and shows them on the bubble', async () => {

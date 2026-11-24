@@ -75,6 +75,33 @@ describe('the images of a user message', () => {
     expect(state.ports.autoTurns[0]?.images).toEqual([banner]);
   });
 
+  it('reach Auto with a pdf the message carried', async () => {
+    const state = await makeDeliveryWorld();
+    const brief = {
+      id: 'attachment-brief',
+      kind: 'file',
+      fileName: 'harborline-brief.pdf',
+      mimeType: 'application/pdf',
+      relPath: 'attachments/harborline-brief.pdf',
+      dir: '/scratch/session-harborline',
+    };
+    await addOutboxRow({
+      world: state.world,
+      id: 'outbox-user-brief',
+      kind: 'user',
+      payload: {
+        kind: 'user',
+        text: 'Follow the attached brief for the ledger-core export.',
+        facts: EMPTY_USER_FACTS,
+        images: [brief],
+      },
+    });
+
+    await deliver(state);
+
+    expect(state.ports.autoTurns[0]?.images).toEqual([brief]);
+  });
+
   it('send nothing extra with a message that had none', async () => {
     const state = await makeDeliveryWorld();
     await addUserRow({ world: state.world, id: 'outbox-user-1', text: 'hello' });

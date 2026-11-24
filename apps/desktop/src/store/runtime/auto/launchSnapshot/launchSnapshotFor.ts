@@ -93,7 +93,7 @@ const imageEntriesOf = ({ images }: ImagesParams): ReadonlyArray<LaunchSnapshotE
     ref: image.id,
     version: null,
     label: image.fileName,
-    detail: 'an image you sent',
+    detail: image.kind === 'image' ? 'an image you sent' : 'a file you sent',
   }));
 
 type ArtifactRef = Readonly<{
