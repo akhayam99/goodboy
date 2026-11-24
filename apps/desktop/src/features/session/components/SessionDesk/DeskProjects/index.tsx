@@ -1,10 +1,10 @@
 import { Button, ROW_HOVER, SectionLabel, StatusDot, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { branchPlace, sessionPlace, useAppStore } from '../../../../store';
-import { NAMES } from '../../../../shared/utils/names';
-import { boardSettledWordOf } from '../../central/board/boardSettledWordOf';
-import { boardTileChipOf } from '../../central/board/boardTileChipOf';
-import type { BranchBoardView } from '../ProjectBlocks/useBranchBoard';
+import { branchPlace, sessionPlace, useAppStore } from '../../../../../store';
+import { NAMES } from '../../../../../shared/utils/names';
+import { boardSettledWordOf } from '../../../central/board/boardSettledWordOf';
+import { boardTileChipOf } from '../../../central/board/boardTileChipOf';
+import type { BranchBoardView } from '../../ProjectBlocks/useBranchBoard';
 
 type Props = {
   readonly sessionId: SessionId;

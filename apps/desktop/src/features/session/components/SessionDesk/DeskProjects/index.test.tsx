@@ -5,10 +5,10 @@ vi.hoisted(() => {
 });
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,24 +18,24 @@ import {
   resetStoryStore,
   storySpies,
   STORE_IMPORT_TIMEOUT_MS,
-} from '../../../../store/storyHarness';
-import { ToastProvider } from '../../../../shared/components/Toast';
-import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
-import { sceneInvoke, clearSceneInvoke } from '../../../../test/sceneInvoke';
-import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStatuses/cache';
+} from '../../../../../store/storyHarness';
+import { ToastProvider } from '../../../../../shared/components/Toast';
+import { ObjectMenuProvider } from '../../../../actions/components/ObjectMenuProvider';
+import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import {
   COLUMN_SESSION_ID,
   seedCentralColumn,
-} from '../../../../app/components/MockScene/scenes/u26/centralColumnSeed';
+} from '../../../../../app/components/MockScene/scenes/u26/centralColumnSeed';
 
 let useAppStore: Awaited<ReturnType<typeof importStore>>;
-let DeskProjects: typeof import('./DeskProjects').DeskProjects;
-let useOverviewModel: typeof import('../SessionOverviewPane/useOverviewModel').useOverviewModel;
+let DeskProjects: typeof import('.').DeskProjects;
+let useOverviewModel: typeof import('../../SessionOverviewPane/useOverviewModel').useOverviewModel;
 
 beforeAll(async () => {
   useAppStore = await importStore();
-  ({ DeskProjects } = await import('./DeskProjects'));
-  ({ useOverviewModel } = await import('../SessionOverviewPane/useOverviewModel'));
+  ({ DeskProjects } = await import('.'));
+  ({ useOverviewModel } = await import('../../SessionOverviewPane/useOverviewModel'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
