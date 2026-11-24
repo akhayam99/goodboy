@@ -281,7 +281,7 @@ looks easy, the product looks like it's only for easy tasks.
 ## What already exists
 
 `apps/desktop/src/app/components/MockScene/` holds one scene component per
-screenshot. Each one is registered by its id through the `scenes/u*/` and `scenes/surfaces/*/` globs ([recipes/mock-scene.md](recipes/mock-scene.md)) and filled
+screenshot. Each one is registered by its id through the `scenes/u*/`, `scenes/surfaces/*/` and `scenes/hero/` globs ([recipes/mock-scene.md](recipes/mock-scene.md)) and filled
 from `apps/desktop/src/app/components/MockScene/mockFixtureData.ts` plus its own seed module. Read
 `scenes.txt` before you build anything. The surface you need is often already there,
 and the keys are the `?scene=` values. The scenes cost nothing at runtime when
@@ -865,13 +865,15 @@ feature-area guide ones in the public
 and light `.webp` pairs. The website's hero picture is the one capture on the
 site; every other product view there is a React mock. `pnpm readme:hero` shoots
 two scenes from the desktop mock dev server (`http://localhost:5230`, or the URL
-passed as its first argument), in both themes. The `readme-hero` scene (the
+passed as its first argument), in both themes. The README picture is the
+`readme-hero` scene: the
 Harborline session on its Context tab, with its decisions already read and the page
-held at the top so the state, Projects and Linked show above the goal) is shot twice
-from the same scene. The README picture is the
+held at the top so the state, Projects and Linked show above the goal. It is the
 whole app window, 1680x1118 css px at scale 2, so the places rail, the session head and
 the tools rail all show and the columns keep their widths; both themes come from one frozen clock so their times
 match, and it writes `docs/readme/readme-hero-{dark,light}.webp`. The site picture
+is the `hero-diff` scene in `scenes/hero/`: the same Harborline session on its
+Overview, with the diff of the file #318 shares with HBL-415 open on the right. It
 is shot at 1920x1200 and scale 4 and writes
 `website/public/hero/hero-{dark,light}-{1208,2416,3624}.webp`, 1, 2 and 3 times
 the width the site draws it at, cropped to the top 840 px of the window and
