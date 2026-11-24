@@ -20,6 +20,7 @@ export const storyDbStubs = () => ({
   lowerAutoTreeCapsOfSession: vi.fn(async () => []),
   listAutoTreesOfSession: vi.fn(async () => []),
   listSessionDecisions: vi.fn(async () => []),
+  listProviderAgentTurns: vi.fn(async () => []),
   getSessionContextSeenAt: vi.fn(async (): Promise<string | null> => null),
   setSessionContextSeenAt: vi.fn(async () => undefined),
   getSessionDockGrid: vi.fn(async (): Promise<string | null> => null),
