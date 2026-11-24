@@ -1,5 +1,6 @@
 import type { BranchFactsCheck, BranchFactsPart, BranchFactsRequest } from '@goodboy/core/auto';
 import { brandId, type MountId, type PullRequestView } from '@goodboy/types';
+import { checksWordOf } from '../../../../features/integrations/github/checksRollup';
 import type { AppStore } from '../../../store';
 import { mountRequestEntryOf } from '../../../slices/review-source/mountRequestEntryOf';
 import { sessionMountTargets } from '../../../slices/project-mounts/mountRequests';
@@ -23,6 +24,11 @@ const requestOf = ({ view }: ViewParams): BranchFactsRequest => ({
   isDraft: view.isDraft,
   baseBranch: view.baseBranch,
   headBranch: view.headBranch,
+  headSha: view.headSha,
+  checksWord:
+    view.checks.read === 'ok'
+      ? (checksWordOf({ runs: view.checks.runs }) ?? 'none reported')
+      : null,
 });
 
 const checksOf = ({ view }: ViewParams): BranchFactsPart<ReadonlyArray<BranchFactsCheck>> =>

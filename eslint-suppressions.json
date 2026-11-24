@@ -4280,11 +4280,6 @@
       "count": 3
     }
   },
-  "apps/desktop/src/features/providers/hooks/useSpreadByHeadroom/index.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/providers/limits/limitsChipHeadline.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -6269,16 +6264,6 @@
       "count": 5
     }
   },
-  "apps/desktop/src/features/workflows/rulesHeadroom.test.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/features/workflows/rulesHeadroom.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/workflows/runAutonomy.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 3
@@ -6297,11 +6282,6 @@
   "apps/desktop/src/features/workflows/savedSteps.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 7
-    }
-  },
-  "apps/desktop/src/features/workflows/spreadSentence.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/workflows/stepForAgent.test.ts": {

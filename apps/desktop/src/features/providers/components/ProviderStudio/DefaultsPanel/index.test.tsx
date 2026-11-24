@@ -56,6 +56,13 @@ vi.mock('../../../../../store', () => ({
   }),
 }));
 
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../../store/storyHarness')).dbModuleMock(),
+);
+vi.mock('../../../../../shared/lib/db', async () =>
+  (await import('../../../../../store/storyHarness')).dbLibModuleMock(),
+);
+
 vi.mock('../../../../../shared/components/RoutingPicker', () => ({
   RoutingPicker: ({
     ariaLabel,
@@ -308,7 +315,7 @@ describe('DefaultsPanel', () => {
     );
   });
 
-  it('sums up the provider policy and names the provider new work starts on', () => {
+  it('sums up the provider policy and says the Lead reads the order', () => {
     state.workspaceOverrides = {
       'ws-1': {
         ...EMPTY_OVERRIDES,
@@ -324,7 +331,7 @@ describe('DefaultsPanel', () => {
     expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
     expect(
       screen.getByText(
-        "Every new agent starts on Cursor while Cursor can work. Claude takes over only when it can't.",
+        'The Lead reads this order when it picks a provider for a new agent. Backup runs only when no On provider can work.',
       ),
     ).toBeDefined();
   });
@@ -742,10 +749,13 @@ describe('DefaultsPanel', () => {
   it('shows the providers, agents and background tasks on one page', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByText('When a provider is out')).toBeDefined();
+    expect(screen.getByText('Provider order')).toBeDefined();
+    screen.getByText('Provider priority');
     expect(screen.getByText('Step summaries')).toBeDefined();
     expect(screen.getByText('Scout')).toBeDefined();
-    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.getAllByRole('tablist').map((list) => list.getAttribute('aria-label'))).toEqual([
+      'Provider priority',
+    ]);
   });
 
   it('lays every run, chat, agent and background task row on the one model grid', () => {

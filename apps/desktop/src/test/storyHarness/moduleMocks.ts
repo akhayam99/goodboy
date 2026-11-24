@@ -3,6 +3,7 @@ import type {
   AcquireWriteSetParams,
   ReleaseWriteSetParams,
 } from '../../features/worktree/worktree';
+import type { invokeWorkflowNodeRoutingUpdate } from '../../features/workflows/workflows';
 import { createDbMock } from '../dbMock';
 import { storyDbStubs } from './dbStubs';
 import {
@@ -134,6 +135,9 @@ export const workflowsModuleMock = () => ({
   invokeAgentMarkViewed: storySpies.invokeAgentMarkViewed,
   invokeAgentSetProviderSessionId: storySpies.invokeAgentSetProviderSessionId,
   invokeAgentSetDone: storySpies.invokeAgentSetDone,
+  invokeWorkflowNodeRoutingUpdate: vi.fn<typeof invokeWorkflowNodeRoutingUpdate>(
+    async () => undefined,
+  ),
   invokeWorkspacesWithUnread: storySpies.invokeWorkspacesWithUnread,
   invokeWorkspacesAttention: storySpies.invokeWorkspacesAttention,
 });

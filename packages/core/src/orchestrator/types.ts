@@ -108,6 +108,7 @@ export type OrchestratorInput = {
   readonly providerId: ProviderId;
   readonly modelMenu: ReadonlyArray<OrchestratorModelOption>;
   readonly roleDefaults: ReadonlyArray<OrchestratorRoleDefault>;
+  readonly candidatesBlock?: string | null;
   readonly stepsUsed: number;
   readonly isModelMetadataEnabled?: boolean;
   readonly isModelPickEnabled?: boolean;

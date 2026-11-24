@@ -22,7 +22,7 @@ const seedBefore = async () => {
 };
 
 describe('m217 workflow rules', () => {
-  it('turns spreading off for workspaces that existed and leaves new ones on the default', async () => {
+  it('turns spreading off for workspaces that existed and starts new ones on By order', async () => {
     const db = await seedBefore();
 
     const existing = await getWorkspaceOverrides(db, HARBORLINE);
@@ -31,7 +31,7 @@ describe('m217 workflow rules', () => {
     expect(existing?.workflowRules?.spreadByHeadroom).toBe(false);
     expect(existing?.workflowRules?.autonomy).toBe('step');
     expect(created?.workflowRules).toBeNull();
-    expect(DEFAULT_WORKFLOW_RULES.spreadByHeadroom).toBe(true);
+    expect(DEFAULT_WORKFLOW_RULES.spreadByHeadroom).toBe(false);
   });
 
   it('saves the rules, reads them back, and clears them on restore', async () => {

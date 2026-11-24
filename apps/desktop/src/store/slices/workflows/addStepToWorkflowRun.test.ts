@@ -39,6 +39,7 @@ vi.mock('@goodboy/db', async () =>
   (await import('../../../test/dbMock')).createDbMock({
     repointWorkflowRunTemplate: repointWorkflowRunTemplateSpy,
     listOpenQuestionsForSession: listOpenQuestionsSpy,
+    listProviderAgentTurns: vi.fn(async () => []),
     updateWorkflowRunOrchestrationStop: updateOrchestrationStopSpy,
     updateWorkflowRunOrchestrationOutcome: updateOrchestrationOutcomeSpy,
   }),

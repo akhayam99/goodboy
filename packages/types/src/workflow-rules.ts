@@ -71,7 +71,7 @@ export const DEFAULT_WORKFLOW_RULES: WorkflowRules = {
   autonomy: 'step',
   spendLimitUsd: null,
   spendLimitMode: 'pause',
-  spreadByHeadroom: true,
+  spreadByHeadroom: false,
   standingGuidance: '',
   guidanceRoles: ['implementer', 'docs'],
 };

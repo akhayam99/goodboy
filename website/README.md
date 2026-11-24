@@ -188,9 +188,9 @@ table row) it has in the area file. Check the page fails when they drift.
 ## Product views
 
 The hero is the one screenshot on the page, a real app capture of the
-`readme-hero` mock scene, the scene of the README hero too. The two keep their
-own files (`website/public/hero/` and `docs/readme/`), so they show the same
-scene but not always the same capture. Every other product
+`hero-diff` mock scene: the session Overview with a diff open beside it. The
+README hero shows its own `readme-hero` scene, and the two keep their own files
+(`website/public/hero/` and `docs/readme/`). Every other product
 view is a React mock, built from the same tokens as the page, so it is sharp at
 any zoom, follows the theme and ships no raster file.
 
@@ -213,7 +213,7 @@ any zoom, follows the theme and ships no raster file.
   `website/public/hero/` at 1, 2 and 3 times the 1208 px it is drawn at, from
   one 4x capture, together with the README pair. Neither `img` is lazy, because
   the hero is above the fold, and both carry `fetchpriority="high"`: the one
-  the theme hides is fetched too, about 50 KB at 1x. The site keeps the top 840 of
+  the theme hides is fetched too, about 40 KB at 1x. The site keeps the top 840 of
   the 1200 px window, so the hero stays inside its 1100 px section budget.
 - On `/` and `/features` the only other images are brand assets, see
   [docs/brand.md](../docs/brand.md). The `/docs` pages show the guide's own

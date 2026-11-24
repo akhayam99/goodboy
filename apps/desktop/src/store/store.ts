@@ -62,6 +62,7 @@ import { createLeadPermissionsSlice } from './slices/lead-permissions';
 import { createSessionGroupingSlice } from './slices/session-grouping';
 import { createNextViewSlice } from './slices/next-view';
 import { createTrackerMovesSlice } from './slices/tracker-moves';
+import { createImpactRoutingSlice } from './slices/impact-routing';
 import {
   checkFixCommitsInitialState,
   createCheckFixCommitsSlice,
@@ -288,6 +289,7 @@ export type AppStore = AppState &
   ReturnType<typeof createNextViewSlice> &
   ReturnType<typeof createTrackerMovesSlice> &
   ReturnType<typeof createCheckFixCommitsSlice> &
+  ReturnType<typeof createImpactRoutingSlice> &
   ReturnType<typeof createSessionFiltersSlice> &
   ReturnType<typeof createSettingsSlice> &
   ReturnType<typeof createBootSlice> &
@@ -509,6 +511,7 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createNextViewSlice({ set, get }),
   ...createTrackerMovesSlice({ set, get }),
   ...createCheckFixCommitsSlice({ set, get }),
+  ...createImpactRoutingSlice(),
   ...createSessionViewSlice({ set, get }),
   ...createSavedProjectModelsSlice({ set, get }),
   ...createSessionPinsSlice({ set, get }),

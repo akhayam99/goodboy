@@ -305,6 +305,33 @@ describe('the branch facts of a session with several mounts', () => {
     expect(brief).not.toContain('Pull request: 77');
   });
 
+  it('names the live head commit and the checks word of the request the host holds', async () => {
+    const brief = await briefOf({ state, fixture: LEDGER });
+    expect(brief).toContain('Head commit on the host: a41c9e2b7d3');
+    expect(brief).toContain('Checks the host reports, not matched to that commit: 1 passed');
+  });
+
+  it('says a check still running is running, in the words of the branch page', async () => {
+    h.run.mockImplementation(async (args: ReadonlyArray<string>) =>
+      args.join(' ').endsWith('--json statusCheckRollup')
+        ? jsonOk({
+            statusCheckRollup: [
+              {
+                name: 'ci-421',
+                status: 'IN_PROGRESS',
+                conclusion: null,
+                startedAt: STAMP,
+                completedAt: null,
+                detailsUrl: 'https://github.com/harborline/actions/runs/2',
+              },
+            ],
+          })
+        : answerGh(args),
+    );
+    const brief = await briefOf({ state, fixture: LEDGER });
+    expect(brief).toContain('Checks the host reports, not matched to that commit: 1 running');
+  });
+
   it('names the own pull request, threads and checks of a mount that is not active', async () => {
     const brief = await briefOf({ state, fixture: RELAY });
     expect(brief).toContain('Pull request: 77');
