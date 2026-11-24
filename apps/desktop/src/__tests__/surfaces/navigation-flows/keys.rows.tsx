@@ -1696,16 +1696,23 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
         throw new Error('the run world has no current session');
       }
       useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) });
-      await settle(4);
-      const openActivity = document.querySelector<HTMLElement>('[data-overview-log] [role="link"]');
-      openActivity?.click();
-      await settle(4);
-      const lane = Array.from(
-        document.querySelectorAll<HTMLElement>('button[aria-keyshortcuts="Shift+Enter"]'),
-      ).find((button) => /Open run/.test(button.getAttribute('aria-description') ?? ''));
-      if (lane === undefined) {
-        throw new Error('the full log has no run row');
-      }
+      const openActivity = await waitFor(() => {
+        const link = document.querySelector<HTMLElement>('[data-overview-log] [role="link"]');
+        if (link === null) {
+          throw new Error('the overview has no activity link');
+        }
+        return link;
+      });
+      openActivity.click();
+      const lane = await waitFor(() => {
+        const row = Array.from(
+          document.querySelectorAll<HTMLElement>('button[aria-keyshortcuts="Shift+Enter"]'),
+        ).find((button) => /Open run/.test(button.getAttribute('aria-description') ?? ''));
+        if (row === undefined) {
+          throw new Error('the full log has no run row');
+        }
+        return row;
+      });
       lane.focus();
       await pressed('activity.openRun', lane);
     },
