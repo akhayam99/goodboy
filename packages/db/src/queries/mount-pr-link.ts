@@ -176,7 +176,7 @@ export const listDormantOpenPullRequests = async ({
      JOIN session_worktrees mount ON mount.id = link.mount_id
      JOIN sessions s ON s.id = mount.session_id
      WHERE s.workspace_id = ?
-       AND (s.deleted_at IS NOT NULL OR s.archived_at IS NOT NULL)
+       AND (s.deleted_at IS NOT NULL OR s.archived_at IS NOT NULL OR mount.is_attached = 0)
        AND link.provider = 'github'
        AND link.state NOT IN ('merged', 'closed')
      ORDER BY link.last_observed_at ASC, link.id

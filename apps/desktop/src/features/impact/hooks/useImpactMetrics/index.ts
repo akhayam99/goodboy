@@ -234,26 +234,36 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
   );
 
   const refreshDormantPullRequests = useAppStore((state) => state.refreshDormantPullRequests);
-  const githubAvailable = useAppStore((state) => state.githubStatus?.available === true);
-  const retryRef = useRef(retry);
-  retryRef.current = retry;
+  const sweepRequests = useAppStore((state) => state.sweepRequests);
+  const isGithubAvailable = useAppStore((state) => state.githubStatus?.available === true);
+  const reloadPullRequests = useCallback(
+    () =>
+      loadQuery({
+        query: () => getPullRequestOutcomes(params),
+        setResult: setPullRequests,
+        activeGeneration: generation.current,
+      }),
+    [loadQuery, params],
+  );
+  const reloadRef = useRef(reloadPullRequests);
+  reloadRef.current = reloadPullRequests;
 
   useEffect(() => {
-    if (!githubAvailable) {
-      return;
-    }
     let isActive = true;
-    void refreshDormantPullRequests(workspaceId)
-      .then((settled) => {
-        if (isActive && settled > 0) {
-          retryRef.current('shipped');
+    void Promise.all([
+      sweepRequests({ shouldSkipUnknownRequest: true }),
+      isGithubAvailable ? refreshDormantPullRequests(workspaceId) : Promise.resolve(0),
+    ])
+      .catch(() => undefined)
+      .then(() => {
+        if (isActive) {
+          void reloadRef.current();
         }
-      })
-      .catch(() => undefined);
+      });
     return () => {
       isActive = false;
     };
-  }, [githubAvailable, refreshDormantPullRequests, workspaceId]);
+  }, [isGithubAvailable, refreshDormantPullRequests, sweepRequests, workspaceId]);
 
   return {
     overview,
