@@ -81,7 +81,9 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await act(() => new Promise((resolve) => setTimeout(resolve, 80)));
+  await act(async () => {
+    await vi.dynamicImportSettled();
+  });
   cleanup();
   vi.unstubAllGlobals();
 });
