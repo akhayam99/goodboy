@@ -84,7 +84,7 @@ export const TimelineAgentStreamRow = ({
     step,
     work,
     rowModels,
-    phase: item.rowState.phase,
+    rowState: item.rowState,
     costUsd,
   });
   return (

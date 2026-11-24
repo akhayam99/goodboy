@@ -64,7 +64,7 @@ export const AgentStepRow = ({
     step,
     work,
     rowModels,
-    phase,
+    rowState: item.rowState,
     costUsd,
   });
   const card = useRowCard({ isEnabled: identity.hasGlyph });

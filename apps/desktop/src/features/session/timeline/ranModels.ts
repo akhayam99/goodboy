@@ -1,6 +1,7 @@
 import type {
   AgentId,
   AgentTurnSpanEndReason,
+  EffortLevel,
   MeasuredTurnSpan,
   ProviderId,
   WorkflowRunId,
@@ -12,6 +13,8 @@ export type RanModel = {
   readonly provider: ProviderId | null;
   readonly name: string;
   readonly effort: string | null;
+  readonly effortLevel?: EffortLevel | null;
+  readonly effortLevels?: ReadonlyArray<EffortLevel>;
   readonly endReason: AgentTurnSpanEndReason | null;
   readonly endedAtMs: number | null;
 };
@@ -41,7 +44,8 @@ type RouteParams = {
   readonly effort: string | null;
 };
 
-type Route = Pick<RanModel, 'key' | 'provider' | 'name' | 'effort'>;
+type Route = Pick<RanModel, 'key' | 'provider' | 'name' | 'effort'> &
+  Required<Pick<RanModel, 'effortLevel' | 'effortLevels'>>;
 
 const routeOf = ({ provider, model, effort }: RouteParams): Route | null => {
   const line = modelLineOf({ provider, model, effort });
@@ -53,6 +57,8 @@ const routeOf = ({ provider, model, effort }: RouteParams): Route | null => {
     provider: line.provider,
     name: line.name,
     effort: line.effort,
+    effortLevel: line.effortLevel,
+    effortLevels: line.effortLevels,
   };
 };
 
