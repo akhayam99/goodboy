@@ -58,13 +58,17 @@ export const WorkflowNextStepCta = ({
   const next = chain.kind === 'step' ? chain.step : null;
   const kind = useMemo(() => (next != null ? classifyStep({ step: next }) : 'generic'), [next]);
   const scope = useRoutingScope({ sessionId: runs[0]?.sessionId ?? null });
+  const pendingAgent =
+    next == null
+      ? undefined
+      : runs.find((agent) => agent.stepId === next.id && agent.status === 'pending');
   const routing = resolveStepRouting({
     step: next,
     kind,
     roleModels,
-    agentModel,
-    agentProvider,
-    agentEffort,
+    agentModel: agentModel ?? pendingAgent?.modelOverride ?? null,
+    agentProvider: agentProvider ?? pendingAgent?.providerOverride ?? null,
+    agentEffort: agentEffort ?? pendingAgent?.effort ?? null,
     sessionProvider,
     sessionEffort,
     scope,
@@ -87,7 +91,6 @@ export const WorkflowNextStepCta = ({
   if (next == null || blockReason === 'plan-approval') {
     return null;
   }
-  const pendingAgent = runs.find((agent) => agent.stepId === next.id && agent.status === 'pending');
   if (pendingAgent == null) {
     return null;
   }
