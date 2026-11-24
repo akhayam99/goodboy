@@ -341,6 +341,20 @@ describe('Every run', () => {
     );
   });
 
+  it('opens Advanced on a searched Parallel agents row, scrolls to it and hands the row back', async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(Element.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    useAppStore.setState({ everyRunFocusRow: 'parallel-agents' });
+    render(<EveryRun workspaceId={HARBORLINE.id} />);
+
+    screen.getByRole('switch', { name: 'Parallel agents' });
+    expect(scrollIntoView).toHaveBeenCalled();
+    await waitFor(() => expect(useAppStore.getState().everyRunFocusRow).toBeNull());
+  });
+
   it('names no provider rule of its own', () => {
     withRuns({ runs: [aWorkflowRun({ executionMode: 'dynamic' })] });
     const { container } = render(<EveryRun workspaceId={HARBORLINE.id} />);

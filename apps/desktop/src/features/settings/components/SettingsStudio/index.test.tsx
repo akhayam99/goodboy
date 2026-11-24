@@ -108,6 +108,7 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     lastSettingsFocus: null as unknown,
     rememberSettingsFocus: vi.fn(),
     setWorkflowStudioView: vi.fn(),
+    setEveryRunFocusRow: vi.fn(),
     switchStudio: vi.fn(),
     amendStudio: vi.fn(),
   },
@@ -182,6 +183,7 @@ beforeEach(() => {
   state.wipeLocalDatabase.mockClear();
   state.relaunchApp.mockClear();
   state.setWorkflowStudioView.mockClear();
+  state.setEveryRunFocusRow.mockClear();
   state.switchStudio.mockClear();
   state.rememberSettingsFocus.mockClear();
   state.lastSettingsFocus = null;
@@ -255,6 +257,13 @@ describe('SettingsStudio', () => {
       expect(screen.queryByText('Workspace settings content')).toBeNull();
     },
   );
+
+  it('carries a searched row into Every run so it can scroll to it', () => {
+    renderWorkspace({ focus: { scope: 'workspace', section: 'general', row: 'parallel-agents' } });
+
+    expect(state.setEveryRunFocusRow).toHaveBeenCalledWith({ row: 'parallel-agents' });
+    expect(state.setWorkflowStudioView).toHaveBeenCalledWith('every');
+  });
 
   it('lists no Runs page and ends the workspace rail on one link to Every run', () => {
     const onScopeChange = vi.fn();

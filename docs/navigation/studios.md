@@ -393,7 +393,9 @@ reply` (`Resolve the thread`, `Update the reply after a squash`) and
   they live on Workflows, Every run, and every door that named the old Runs
   page (`general`, `workflow_orchestrator`, a run row) passes
   `isRunDefaultsFocus` (`settingRows.ts`), so `SettingsStudio` switches the
-  studio to Every run in its place and remembers nothing. `general` stays a
+  studio to Every run in its place and remembers nothing. A searched row rides
+  along in `everyRunFocusRow`, so Every run scrolls to it, opens Advanced for
+  Parallel agents and clears it once shown. `general` stays a
   `PlanPage` (labelled Every run) so the all-pages Restore defaults and Copy
   from still carry those fields. Branches opens on a Naming
   band (`WorkspaceBranchNamingBand`: Branch prefix and Branch name), then

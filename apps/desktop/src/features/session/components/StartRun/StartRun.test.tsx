@@ -809,7 +809,7 @@ describe('StartRun model', () => {
     expect(spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('provider');
   });
 
-  it('links the picker to the default in Settings', () => {
+  it('links the picker to its default on Every run, not to Models', () => {
     connectProviders();
     const opened = vi.fn<(event: Event) => void>();
     window.addEventListener('goodboy:open-settings', opened);
@@ -822,7 +822,7 @@ describe('StartRun model', () => {
     const event = opened.mock.calls[0]?.[0];
     expect(event instanceof CustomEvent ? event.detail : null).toMatchObject({
       scope: 'workspace',
-      section: 'models',
+      section: 'general',
     });
     window.removeEventListener('goodboy:open-settings', opened);
   });

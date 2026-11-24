@@ -43,5 +43,6 @@ export type WorkflowStudioState = {
   readonly visibleWorkflowStudioWorkspaceId: WorkspaceId | null;
   readonly workflowStudioFocus: WorkflowId | null;
   readonly workflowStudioView: StudioHomeView;
+  readonly everyRunFocusRow: string | null;
   readonly workflowRunHistory: Readonly<Record<WorkspaceId, WorkflowRunHistoryLoad | undefined>>;
 };

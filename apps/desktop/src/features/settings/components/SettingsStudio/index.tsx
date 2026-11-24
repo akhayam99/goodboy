@@ -69,6 +69,7 @@ export const SettingsStudio = ({
   const lastFocus = useAppStore((state) => state.lastSettingsFocus);
   const rememberFocus = useAppStore((state) => state.rememberSettingsFocus);
   const setWorkflowStudioView = useAppStore((state) => state.setWorkflowStudioView);
+  const setEveryRunFocusRow = useAppStore((state) => state.setEveryRunFocusRow);
   const switchStudio = useAppStore((state) => state.switchStudio);
   const focus = resolveSettingsFocus({ focus: requestedFocus, last: lastFocus, groups });
   const isRedirect = !isSamePage({ left: focus, right: requestedFocus });
@@ -78,6 +79,7 @@ export const SettingsStudio = ({
 
   const redirect = useEffectEvent(() => onScopeChange(focus));
   const openEveryRun = useEffectEvent(() => {
+    setEveryRunFocusRow({ row: focus.row ?? null });
     setWorkflowStudioView('every');
     switchStudio({ studio: { kind: 'workflow' } });
   });
