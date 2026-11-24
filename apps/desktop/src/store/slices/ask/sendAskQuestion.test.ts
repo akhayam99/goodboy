@@ -170,6 +170,22 @@ describe('sendAskQuestion', () => {
     expect(useAppStore.getState().askStreams).toEqual({});
   });
 
+  it('sends one question when a second click lands before the first has started', async () => {
+    const { sendAskQuestion } = useAppStore.getState();
+    const first = sendAskQuestion({ sessionId: SESSION, question: 'What needs me?', rightNow: [] });
+    const second = sendAskQuestion({
+      sessionId: SESSION,
+      question: 'What needs me?',
+      rightNow: [],
+    });
+
+    expect(await second).toBe(false);
+    expect(await first).toBe(true);
+    expect(useAppStore.getState().askThreads[SESSION]).toHaveLength(1);
+    expect(messagesOf().filter((message) => message.role === 'user')).toHaveLength(1);
+    expect(prompts).toHaveLength(1);
+  });
+
   it('keeps follow-ups in the same thread with the earlier turns in the prompt', async () => {
     const { sendAskQuestion } = useAppStore.getState();
     await sendAskQuestion({ sessionId: SESSION, question: 'What needs me?', rightNow: [] });

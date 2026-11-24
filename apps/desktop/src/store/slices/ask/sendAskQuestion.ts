@@ -132,15 +132,24 @@ const finishReply = async ({ set, get, threadId, messageId, outcome }: FinishPar
   await activeAskBackend.finishMessage({ message: finished });
 };
 
+const startingSessions = new Set<SessionId>();
+
 export const sendAskQuestion =
   (set: SetFn, get: GetFn) =>
   async ({ sessionId, question, rightNow }: SendAskQuestionParams): Promise<boolean> => {
     const text = question.trim();
-    if (text === '' || isAskStreaming({ state: get(), sessionId })) {
+    if (
+      text === '' ||
+      isAskStreaming({ state: get(), sessionId }) ||
+      startingSessions.has(sessionId)
+    ) {
       return false;
     }
     const at = isoNow();
-    const thread = await ensureThread({ set, get, sessionId, question: text, at });
+    startingSessions.add(sessionId);
+    const thread = await ensureThread({ set, get, sessionId, question: text, at }).finally(() =>
+      startingSessions.delete(sessionId),
+    );
     if (thread === null) {
       return false;
     }
