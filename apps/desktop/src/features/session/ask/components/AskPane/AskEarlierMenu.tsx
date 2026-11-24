@@ -38,7 +38,6 @@ export const AskEarlierMenu = ({ threads, isDisabled, onShow }: Props) => {
       ariaLabel={LABEL}
       noun="question"
       disabled={isDisabled}
-      align="end"
     />
   );
 };
