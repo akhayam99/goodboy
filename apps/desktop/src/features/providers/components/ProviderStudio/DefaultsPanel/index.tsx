@@ -32,6 +32,7 @@ import { useDefaultsPersistence } from './useDefaultsPersistence';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { useModelScope } from '../../../hooks/useModelScope';
+import { useHasPlanRuns } from '../../../hooks/useHasPlanRuns';
 import { resolutionOf } from '../../../../../store/runtime/models/selectResolution';
 import { isPinUnrunnable } from './resolutionNote';
 import { actionButtonLookOf } from '../../../../actions/actionButtonLookOf';
@@ -88,6 +89,7 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
   const overrides = workspaceOverrides ?? EMPTY_OVERRIDES;
   const policy = overrides.providerPool;
   const scope = useModelScope({ workspaceId });
+  const hasPlanRuns = useHasPlanRuns({ workspaceId });
 
   const chatDefault = useChatDefaultModel({ workspaceId });
   const { busy, error, persistOverrides, persistTaskModel, persistRoleModel, clearRoleModels } =
@@ -160,6 +162,7 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
           overrides={overrides}
           connectedProviderIds={connectedProviderIds}
           isDisabled={busy}
+          hasPlanRuns={hasPlanRuns}
           onRoleChange={persistRoleModel}
           onTaskChange={persistTaskModel}
         />
@@ -179,9 +182,16 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
           )}
         </Band>
 
-        <Band label="Choosing models" ariaLabel="Choosing models" headingLevel={2} inset="content">
-          <OrchestratorModelPickRow workspaceId={workspaceId} />
-        </Band>
+        {hasPlanRuns ? (
+          <Band
+            label="Choosing models"
+            ariaLabel="Choosing models"
+            headingLevel={2}
+            inset="content"
+          >
+            <OrchestratorModelPickRow workspaceId={workspaceId} />
+          </Band>
+        ) : null}
 
         <Band label="Chat" ariaLabel="Chat" headingLevel={2}>
           <ChatModelRow

@@ -382,10 +382,14 @@ so Back moves to the group before and never leaves the site.
 The rail is one vertical spine drawn with the app's own primitives: rows go
 through `layoutTimelineRail`, drawn by `TimelineRail` in a `SpawnedRailCell`,
 with `WorkNode` markers, the same ones as the Spawned panel (`demoRailOf.ts`,
-`DemoRail.tsx`, `DemoRailGroupRow.tsx`, `DemoRailStep.tsx`). Each group is a
-heading on the spine with its title and a quiet "n of m" count. The open group lists its steps under it, indented on an elbow:
-a done step is a check, the step in progress is the live marker, the steps after
-it are dashed. A step is never a button: the path only moves forward. The
+`DemoRail.tsx`, `DemoRailGroupRow.tsx`, `DemoRailStep.tsx`). Every row is the
+activity log's row: a quiet node (`look="quiet"`) on the spine and an
+`ActivityRow` beside it, so the site draws the same rows as the app. Each group
+is a heading on the spine with its number in the ordinal column, its title and
+one right cell (`ActivityMeta`): a quiet "n of m" count, the lock, or Up next.
+The open group lists its steps under it, indented on an elbow: a done step is a
+bare check with its task still in the foreground, the step in progress is the
+live marker, the steps after it are dashed and muted. A step is never a button: the path only moves forward. The
 rail is the only place that shows the position: the header and the coach mark
 carry no dots and no "Step n of m" (the compact switcher, which replaces the
 rail on narrow windows, shows "Step n of m" as its one counter and no group
@@ -440,7 +444,7 @@ that Windows is on the way and no button. Its link carries the current
 `?theme=` (`downloadHrefOf.ts`), and a ghost Star on GitHub link, the one the
 phone page uses, sits beside it, with a ghost Replay the demo that restarts
 from Bring your repositories. Above them the screen recaps the four groups, one
-done `WorkNode` and the group's `outro` (`demoGroups.ts`) per row. While Get
+quiet done `WorkNode` (a bare check) and the group's `outro` (`demoGroups.ts`) per row. While Get
 Goodboy is open the top bar drops Hide hints and Show hint, and its rail node
 turns done once visited (until Restart). A hint the visitor dismissed shows a Show hint
 button in the top bar. The stage keeps the frames it preloads `inert`, and

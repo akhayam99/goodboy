@@ -37,8 +37,8 @@ export const TASKS: ReadonlyArray<{
   },
   {
     id: 'workflow_orchestrator',
-    label: 'Orchestrator',
-    description: 'Picks the next step in an orchestrated run.',
+    label: 'Older plan runs',
+    description: 'Picks the next step in an older plan run.',
   },
   {
     id: 'question_delegate',

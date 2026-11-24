@@ -13,7 +13,7 @@ export type ListGridProps = {
   readonly className?: string;
 };
 
-const ROW_SELECTOR = '[data-list-grid-row]';
+const ROW_SELECTOR = '[data-list-grid-row]:not([role="option"])';
 
 const STEP_FOR_KEY: Readonly<Record<string, number>> = { ArrowDown: 1, ArrowUp: -1 };
 

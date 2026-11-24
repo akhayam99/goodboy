@@ -26,8 +26,7 @@ const WORKSPACE = aWorkspace({ name: 'Harborline' });
 
 let useAppStore: StoryStore;
 
-const toggle = () =>
-  screen.getByRole('switch', { name: 'Let the workflow orchestrator choose models' });
+const toggle = () => screen.getByRole('switch', { name: 'Let older plan runs choose models' });
 
 const savedRule = () =>
   useAppStore.getState().workspaceOverrides[WORKSPACE.id]?.workflowRules?.canOrchestratorPickModel;

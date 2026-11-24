@@ -536,8 +536,6 @@ export const InboxStudio = ({
             isExpanded={false}
             canCollapse={false}
             lines={looseFailures}
-            onExpand={() => undefined}
-            onCollapse={() => undefined}
             {...groupHandlers}
           />
         ) : null}
@@ -578,6 +576,8 @@ export const InboxStudio = ({
             <TaskGroupRows
               key={group.key}
               label={group.label}
+              name={group.name}
+              provider={group.provider}
               records={group.records}
               total={groupTotals.get(group.key) ?? group.records.length}
               isExpanded={isGroupExpanded(group)}
@@ -597,8 +597,6 @@ export const InboxStudio = ({
             isExpanded={false}
             canCollapse={false}
             lines={[failureLineOf(provider)]}
-            onExpand={() => undefined}
-            onCollapse={() => undefined}
             {...groupHandlers}
           />
         ))}

@@ -38,12 +38,13 @@ import type { ProviderDisplayInfo } from './providers';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
 
+const RUN: WorkflowRun = aWorkflowRun({ executionMode: 'dynamic' });
+
 const SESSION = aSession({
   workspaceId: WORKSPACE.id,
   providerPreference: { defaultProvider: 'codex', allowTurnOverride: false },
+  workflowRuns: [RUN],
 });
-
-const RUN: WorkflowRun = aWorkflowRun({ executionMode: 'dynamic' });
 
 const CODEX_ONLY: ProviderPolicy = [
   { id: 'codex', state: 'on' },
