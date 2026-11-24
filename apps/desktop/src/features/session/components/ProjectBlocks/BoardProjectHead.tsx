@@ -5,12 +5,16 @@ import type { ProjectId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
+import { selectProjectById } from '../../../../store/slices/projects/selectProjectById';
 import {
   PROJECT_DETACH_EVENT,
   projectKeyOf,
   type ProjectDetachRequest,
 } from '../../../actions/kinds/project';
+import { NewBranchMountAction } from '../SessionOverviewPane/ProjectMountRows/NewBranchMountAction';
+import { attachedBranchCountOf } from './attachedBranchCountOf';
 import { sessionProjectIdsOf } from './sessionProjectIdsOf';
+import { UNMOUNT_BLOCKED_REASON } from './unmountBlockedReason';
 import { useBoardContext } from './useBoardContext';
 
 type Props = {
@@ -26,8 +30,15 @@ export const BoardProjectHead = ({ projectId, projectName, door }: Props) => {
   const hasMounts = useAppStore(
     (state) => projectId !== null && sessionProjectIdsOf({ state, sessionId }).includes(projectId),
   );
+  const isRepo = useAppStore(
+    (state) => projectId !== null && selectProjectById(state, projectId)?.kind === 'repo',
+  );
+  const attachedCount = useAppStore((state) =>
+    attachedBranchCountOf({ state, sessionId, projectId }),
+  );
+  const isUnmountBlocked = isRepo && attachedCount > 0;
   const requestDetach = () => {
-    if (projectId === null) {
+    if (projectId === null || isUnmountBlocked) {
       return;
     }
     window.dispatchEvent(
@@ -44,6 +55,13 @@ export const BoardProjectHead = ({ projectId, projectName, door }: Props) => {
       </span>
       <span className="min-w-0 flex-1" />
       {door}
+      {projectId !== null && isRepo && session.archivedAt == null ? (
+        <NewBranchMountAction
+          sessionId={sessionId}
+          projectId={projectId}
+          projectName={projectName}
+        />
+      ) : null}
       {hasMounts ? (
         <IconButton
           size="xs"
@@ -51,8 +69,10 @@ export const BoardProjectHead = ({ projectId, projectName, door }: Props) => {
           icon={Unlink}
           iconSize={ICON_SIZE.row}
           label={`${NAMES.unmount} ${projectName}`}
-          tooltip={NAMES.unmount}
-          aria-haspopup="dialog"
+          tooltip={isUnmountBlocked ? UNMOUNT_BLOCKED_REASON : NAMES.unmount}
+          aria-haspopup={isUnmountBlocked ? undefined : 'dialog'}
+          disabled={isUnmountBlocked}
+          data-unmount-project=""
           onClick={requestDetach}
         />
       ) : null}

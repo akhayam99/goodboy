@@ -3,10 +3,13 @@ import { countNoun } from '../../../shared/utils/countNoun';
 import { NAMES } from '../../../shared/utils/names';
 import type { ActionDefinition } from '../types';
 import { cleanUpRefusalOf } from './cleanUpRefusalOf';
+import { hasWorkOnlyInFolderOf } from './hasWorkOnlyInFolderOf';
 import type { MountFacts } from './mountFacts';
 import { mountCleanUpWordsOf } from './mountCleanUpWordsOf';
 
 const CLOSE_INSTEAD_NOTE = `${NAMES.closeBranch} keeps the local branch and removes the folder.`;
+
+const CLOSE_KEEPING_NOTE = `${NAMES.closeBranch} keeps the local branch and the folder.`;
 
 type Params = {
   readonly facts: MountFacts;
@@ -16,9 +19,9 @@ const notesOf = ({ facts }: Params): ReadonlyArray<string> =>
   facts.dirty > 0
     ? [
         `${countNoun({ count: facts.dirty, one: 'file is', many: 'files are' })} not committed in its folder. Delete stops and keeps them.`,
-        CLOSE_INSTEAD_NOTE,
+        CLOSE_KEEPING_NOTE,
       ]
-    : [CLOSE_INSTEAD_NOTE];
+    : [hasWorkOnlyInFolderOf({ facts }) ? CLOSE_KEEPING_NOTE : CLOSE_INSTEAD_NOTE];
 
 export const MOUNT_CLEAN_UP_ACTION: ActionDefinition<MountFacts> = {
   id: 'mount.cleanUp',

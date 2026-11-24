@@ -58,12 +58,7 @@ const show = async ({ name }: Params) => {
 
 describe('the u50 overview scenes', () => {
   it('registers every scene key', () => {
-    expect(Object.keys(U50_OVERVIEW_SCENES)).toEqual([
-      'u50-overview-light',
-      'u50-overview-dark',
-      'u50-overview-plain-light',
-      'u50-overview-plain-dark',
-    ]);
+    expect(Object.keys(U50_OVERVIEW_SCENES)).toEqual(['u50-overview-light', 'u50-overview-dark']);
   });
 
   it.each(['u50-overview-light', 'u50-overview-dark'])(
@@ -82,13 +77,11 @@ describe('the u50 overview scenes', () => {
 
     expect(document.querySelector('[data-overview-facts]')).toBeInstanceOf(HTMLElement);
     expect(document.querySelector('[data-slot="session-kpis"]')).toBeNull();
-    screen.getByRole('button', { name: 'Hide dev details' });
   });
 
-  it('draws the plain view with dev details off', async () => {
-    await show({ name: 'u50-overview-plain-dark' });
+  it('keeps the diff on the tiles with no switch to hide it', async () => {
+    await show({ name: 'u50-overview-dark' });
 
-    screen.getByRole('button', { name: 'Show dev details' });
-    expect(document.querySelector('[data-board-diff]')).toBeNull();
+    expect(screen.queryByRole('button', { name: /dev details/ })).toBeNull();
   });
 });

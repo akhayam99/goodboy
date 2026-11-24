@@ -28,11 +28,11 @@ export const ProjectBlock = ({ block, hasMergeDoor, hasRemoveDoor, onToggleFold 
         projectName={name}
         door={
           <>
+            {hasRemoveDoor ? <BoardRemoveButton mountIds={null} variant="quiet" /> : null}
+            {hasMergeDoor ? <BoardMergeInOrder /> : null}
             {block.projectId === null ? null : (
               <ProjectWorktreesDoor projectId={block.projectId} projectName={name} />
             )}
-            {hasRemoveDoor ? <BoardRemoveButton mountIds={null} variant="quiet" /> : null}
-            {hasMergeDoor ? <BoardMergeInOrder /> : null}
           </>
         }
       />

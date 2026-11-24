@@ -12,4 +12,9 @@ export const RETIRED: ReadonlyArray<RetiredName> = [
     pattern: /\bConnect a repo or folder\b/,
     use: NAMES.chooseAFolder,
   },
+  {
+    id: 'mount-a-folder',
+    pattern: /\bMount a folder\b/i,
+    use: NAMES.mountAProject,
+  },
 ];

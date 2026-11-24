@@ -290,8 +290,13 @@ before projecting it as writable. Disk states:
 - **Switch** changes the branch of one mount in place, and a mount follows by itself when its worktree lands on another branch (a rename or a checkout), adopting it unless git is mid-operation or another mount holds that branch.
 - **Fork** creates another mount from an explicit base and leaves the source
   intact.
-- **Close branch** (`unmountMount`) removes the worktree of one branch and keeps
-  the row with no current path.
+- **Close branch** (`unmountMount`) detaches one branch and keeps the row. Its
+  confirm (`mountCloseConfirm`) offers **Remove the folder** and **Keep the
+  folder** on a clean branch, and only **Keep the folder** while the folder holds
+  uncommitted changes or commits not pushed. Remove passes
+  `onKeptFolder: 'refuse'`: when git keeps the folder the operation fails and the
+  row stays attached as it was. Keep passes `keepDirectory`. A branch a run still
+  uses keeps the older close, which detaches even when the folder stays.
 - **Remove** removes the worktree of a mount whose work is complete, from its
   row or, for archived sessions, from storage settings, and keeps the row.
 - **Unmount** (`detachProject`) takes a project out of the session: every mount
@@ -728,7 +733,9 @@ branch has Open pull request, Open (Editor, Terminal, External terminal),
 Switch branch…, Copy (Branch name, Path) and Close branch; a merged one has
 Open pull request, Open, Copy and Delete local branch…, whose confirm offers
 Close branch instead (`altActionId`), and Close branch is hidden on a merged
-branch (`placement`); a closed one has Reopen, Copy and Unmount.
+branch (`placement`); a closed one has Reopen, Copy and Unmount. Close branch
+is a danger row. Its Keep the folder outcome is `mount.closeKeepFolder`, kept
+out of menus (`placement: 'palette'`) and reached as the confirm's alternative.
 The navigation rules live in [navigation/session-rail.md](navigation/session-rail.md#session-rail).
 
 What a worktree asks the user to decide shows once, in the Overview notices
