@@ -162,7 +162,6 @@
   "apps/desktop/src/features/settings/components/GuideStudio/parts/StagesExtra.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/AppGeneralSection.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/AwayAlertsBand.tsx": 1,
-  "apps/desktop/src/features/settings/components/SettingsStudio/ClassicComposerKeysField.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/ContrastPreferenceField.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/RepoCheckBand.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/SearchIndexBand.tsx": 1,

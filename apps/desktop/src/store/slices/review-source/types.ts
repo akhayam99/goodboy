@@ -64,6 +64,7 @@ export type SweepRequestsParams = Readonly<{
   mountIds?: ReadonlyArray<MountId>;
   isForced?: boolean;
   isCurrentFirst?: boolean;
+  shouldAwaitInFlight?: boolean;
 }>;
 
 export type ReviewSourceSlice = Readonly<{

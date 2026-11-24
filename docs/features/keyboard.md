@@ -18,7 +18,7 @@ Open a real login shell in the workspace folder or any linked worktree.
 
 **The Terminal page**
 
-- **Open full page** in the dock makes the terminal full size, with every terminal of the workspace beside it. **Dock** puts it back on the same tab, and so does Back.
+- **Open full page** in the dock's **⋯** makes the terminal full size, with every terminal of the workspace beside it. **Dock** puts it back on the same tab, and so does Back.
 - It says **No terminal yet** until you open one. **Dock** stays there too, and opens a terminal in the dock.
 - It groups terminals by session. Each group shows its row count from two.
 - One line per worktree shows the project, the branch and a dot while a shell runs a process.
@@ -36,7 +36,7 @@ The strip ends with the same controls on every scope.
 
 - **Change folder** is disabled while a command runs. It clears what is typed on the prompt, then types `cd`. The tab stays under the folder it started in.
 - The ports sit next to it.
-- **⋯** holds **Send last output**, **Copy worktree path** and **Open session**. In the dock it sits in the header, before **Open full page**, as in the Browser; on the page it comes before **Dock**. A folder with no session has a quiet **Copy folder path** instead.
+- **⋯** holds **Send last output**, **Copy worktree path** and **Open session**. In the dock it sits in the header and also holds **Open full page**, as in the Browser; on the page it comes before **Dock**. A folder with no session has a quiet **Copy folder path** instead.
 - **Send last output** attaches the end of the tab's scrollback to the session's composer. It is sent only when you send.
 - Selecting text in a terminal shows **Add to message**. It attaches just the selection the same way.
 - A port a terminal listens on shows as quiet text on a worktree row that is not selected. For the selected worktree it shows as a chip at the right edge of the tab strip, never on a tab. A click opens localhost on it in the session's browser, **⌘-click** in your own. A folder with no session opens your browser.
@@ -155,7 +155,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 
 - On the Commits page, **⌘Z** undoes a local commit edit and **⌘⇧Z** redoes it. Text fields keep their own undo.
 - Tooltips show keys beside their controls. Every hint in the app reads its keys from the shortcut registry, so a key is spelled once. That covers tooltips, the Guide, field hints and the key caps under a composer.
-- The key caps under a composer show while the box is empty and has the focus, and go at the first letter. They stay when your send keys changed, and in a document, where Enter adds a line. A screen reader reads each key by name with what it does, with the box every time.
+- The key caps under a composer show while the box is empty and has the focus, and go at the first letter. They stay in a document, where Enter adds a line. A screen reader reads each key by name with what it does, with the box every time.
 - **Esc** closes the dialog or preview in front, listed as Close the dialog or preview.
 - While an agent runs and nothing else is open, **Esc** twice stops it. The first press says "Esc again to stop" beside the Stop button for three seconds. The second stops the agent, listed as Stop the running agent, press twice.
 - In Chat and Ask, **Esc** twice in the box stops the reply the same way. Then **Send** is back.

@@ -11,7 +11,7 @@ export const SpreadByHeadroomRow = ({ workspaceId }: Props) => {
   return (
     <div className="flex flex-col gap-0.5 px-1">
       <Switch
-        label="Send new steps to the provider with the most room"
+        label="Skip a provider near its limit"
         checked={isOn}
         disabled={!canSpread}
         onChange={setSpread}

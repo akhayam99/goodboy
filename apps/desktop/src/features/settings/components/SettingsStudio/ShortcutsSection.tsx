@@ -1,6 +1,5 @@
-import { Band, FieldError } from '@goodboy/ui';
+import { FieldError } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { ClassicComposerKeysField } from './ClassicComposerKeysField';
 import { useShortcutOverrides } from '../../../../shared/keyboard/overrides/useShortcutOverrides';
 import { ShortcutGroupSurface } from './ShortcutGroupSurface';
 import { SHORTCUT_COLUMNS } from './shortcutRows';
@@ -12,18 +11,8 @@ export const ShortcutsSection = () => {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-meta text-muted-foreground">
-        {`A key does what fits where you are: ${shortcutGlyphs('session.new')} starts a session, but on Chat, Terminal and Ask it starts a chat, a terminal or a reset. ${shortcutGlyphs('palette.open')} goes anywhere. On a list row, right click or ${shortcutGlyphs('menu.open')} opens the actions of that row.`}
+        {`A key does what fits where you are: ${shortcutGlyphs('session.new')} starts a session, but on Chat, Terminal and Ask it starts a chat, a terminal or a reset. ${shortcutGlyphs('palette.open')} goes anywhere. On a list row, right click or ${shortcutGlyphs('menu.open')} opens the actions of that row. A message sends on ${shortcutGlyphs('composer.send')}, a document saves on ${shortcutGlyphs('composer.submit')}.`}
       </p>
-      <Band
-        inset="content"
-        label="Message boxes"
-        hint={`A message sends on ${shortcutGlyphs('composer.send')}, a document saves on ${shortcutGlyphs('composer.submit')}.`}
-        headingLevel={2}
-      >
-        <div className="flex flex-col">
-          <ClassicComposerKeysField />
-        </div>
-      </Band>
       <FieldError id={recorder.messageId} error={recorder.message} />
       <div id="keyboard-shortcuts-list" className="grid grid-cols-2 gap-4">
         {SHORTCUT_COLUMNS.map((column) => (

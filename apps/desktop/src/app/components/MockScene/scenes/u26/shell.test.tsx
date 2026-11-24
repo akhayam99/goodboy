@@ -96,7 +96,7 @@ describe('the u26 shell scenes', () => {
     expect(
       within(projectRow('acme-runbooks')).queryByRole('button', { name: /^New branch/ }),
     ).toBeNull();
-    expect(screen.getByRole('button', { name: 'Mount a folder' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Mount a project' })).toBeDefined();
   });
 
   it('u26-rail-projects-focus puts keyboard focus on the ledger-core plus', async () => {
@@ -108,7 +108,7 @@ describe('the u26 shell scenes', () => {
   it('u26-rail-projects-picker opens the picker with the spare projects and Connect', async () => {
     await mount('u26-rail-projects-picker');
 
-    const picker = within(screen.getByRole('dialog', { name: 'Mount a folder' }));
+    const picker = within(screen.getByRole('dialog', { name: 'Mount a project' }));
     expect(picker.getByRole('button', { name: 'Mount notify-relay' })).toBeDefined();
     expect(picker.getByRole('button', { name: 'Mount cascadia-web' })).toBeDefined();
     expect(picker.getByRole('button', { name: 'Choose a folder…' })).toBeDefined();

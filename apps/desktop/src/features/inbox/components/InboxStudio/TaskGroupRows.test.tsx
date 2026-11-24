@@ -126,6 +126,48 @@ describe('TaskGroupRows', () => {
     expect(onCollapse).toHaveBeenCalledOnce();
   });
 
+  it('draws Show all as a row of the grid, its words in the title column', () => {
+    render(group({ records: many(38) }));
+
+    const foot = screen.getByRole('button', { name: 'Show all' });
+    expect(foot.hasAttribute('data-list-grid-row')).toBe(true);
+    expect(
+      foot
+        .querySelector('[data-task-group-foot]')
+        ?.closest('[data-list-grid-cell]')
+        ?.getAttribute('data-list-grid-cell'),
+    ).toBe('title');
+  });
+
+  it('heads a status group with the source mark and the status word, named by both', () => {
+    render(
+      <ListGrid label="Task items" columns={TASK_COLUMNS} isGrouped>
+        <TaskGroupRows
+          label="Open"
+          name="GitHub, Open"
+          provider="github"
+          records={THREE}
+          isExpanded={false}
+          canCollapse
+          selectedKey={null}
+          cursorKey={null}
+          onExpand={vi.fn()}
+          onCollapse={vi.fn()}
+          onSelect={onSelect}
+          onActivate={onActivate}
+          starOf={starOf}
+          onToggleStar={onToggleStar}
+        />
+      </ListGrid>,
+    );
+
+    const heading = screen.getByRole('heading', { name: 'Open' });
+    const mark = heading.previousElementSibling;
+    expect(mark?.hasAttribute('data-list-grid-group-mark')).toBe(true);
+    expect(mark?.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('GitHub');
+    screen.getByRole('listbox', { name: 'GitHub, Open' });
+  });
+
   it('draws a window of a large expanded group and names the cursor position', () => {
     render(group({ records: many(312), isExpanded: true, cursorKey: 'github:issue:40' }));
 

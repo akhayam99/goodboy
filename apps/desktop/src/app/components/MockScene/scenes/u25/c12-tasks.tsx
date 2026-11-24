@@ -12,4 +12,6 @@ export const U25_C12_TASK_SCENES = {
   'c12-issue-edit': () => <TasksScene state="issue-edit" />,
   'c12-issue-sentry': () => <TasksScene state="issue-sentry" />,
   'c12-issue-full': () => <TasksScene state="issue-full" />,
+  'tasks-list-clean': () => <TasksScene state="status" />,
+  'tasks-detail-clean': () => <TasksScene state="issue-full" />,
 };

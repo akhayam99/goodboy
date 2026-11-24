@@ -223,6 +223,8 @@ export const TasksStage = ({
             <TaskGroupRows
               key={group.key}
               label={group.label}
+              name={group.name}
+              provider={group.provider}
               records={group.records}
               total={totals.get(group.key) ?? group.records.length}
               isExpanded={groupBy === 'none' || expandedKey === group.key}

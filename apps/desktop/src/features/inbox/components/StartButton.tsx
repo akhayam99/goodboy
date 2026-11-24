@@ -2,6 +2,7 @@ import { Rocket } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 
 import { NAMES } from '../../../shared/utils/names';
+import { actionIntentOf } from '../../actions/actionIntentOf';
 
 type Props = {
   readonly label: string;
@@ -12,6 +13,7 @@ type Props = {
 export const StartButton = ({ label, isBusy = false, onClick }: Props) => (
   <Button
     size="sm"
+    intent={actionIntentOf({ verb: 'record.launch' })}
     data-demo-anchor="task-start"
     isBusy={isBusy}
     busyLabel={NAMES.starting}

@@ -119,7 +119,6 @@ describe('SettingsSearchResults', () => {
     { former: 'Attribution line', label: 'Sign replies' },
     { former: 'Edit the posted reply', label: 'Update the reply after a squash' },
     { former: 'Leave out', label: 'Skip folders' },
-    { former: 'Keys from before 0.15.5', label: 'Classic send keys' },
     { former: 'Show if a command passed or failed', label: 'Command status' },
     { former: 'Banner when you are away', label: 'Banner when away' },
     { former: 'Setup file', label: 'Import a backup' },

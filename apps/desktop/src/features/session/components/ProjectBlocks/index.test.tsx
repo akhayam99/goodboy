@@ -364,9 +364,12 @@ describe('the project blocks on the Overview', () => {
     for (const head of projects().querySelectorAll<HTMLElement>('[data-board-project-head]')) {
       const doors = within(head)
         .queryAllByRole('button')
-        .filter(
-          (button) => !(button.getAttribute('aria-label') ?? '').startsWith(`${NAMES.unmount} `),
-        );
+        .filter((button) => {
+          const label = button.getAttribute('aria-label') ?? '';
+          return (
+            !label.startsWith(`${NAMES.unmount} `) && !label.startsWith(`${NAMES.newBranch} in `)
+          );
+        });
       expect(doors.length).toBeLessThanOrEqual(1);
     }
   });
@@ -447,7 +450,8 @@ describe('the project blocks on the Overview', () => {
         (node) =>
           node.closest('[data-board-actions]') === null &&
           node.closest('[data-section-actions]') === null &&
-          !node.hasAttribute('data-project-worktrees'),
+          !node.hasAttribute('data-project-worktrees') &&
+          !node.hasAttribute('data-project-new-branch'),
       ),
     ).toHaveLength(0);
     expect(document.querySelector('[data-slot="branch-work"]')).toBeNull();

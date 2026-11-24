@@ -42,7 +42,7 @@ const project = ({ id, name }: { readonly id: string; readonly name: string }) =
 });
 
 const openPicker = async () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Mount a folder' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Mount a project' }));
   await screen.findByRole('button', { name: 'Choose a folder…' });
 };
 
@@ -63,7 +63,7 @@ describe('MountProjectAction', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Mount a folder' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Mount a project' })).toBeDefined();
   });
 
   it('tells the workspace has no projects and offers to connect one in the same picker', async () => {

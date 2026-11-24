@@ -1,13 +1,17 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { Button, ListGridGroup, ListGridLine, Notice } from '@goodboy/ui';
+import { Button, ListGridGroup, Notice } from '@goodboy/ui';
+import { IntegrationGlyph } from '../../../../shared/components/IntegrationGlyph';
 import { useVirtualRows } from '../../../../shared/hooks/useVirtualRows';
 import { TASK_GROUP_CAP, TASK_VIRTUAL_MIN, shownTaskRecords } from '../../shownTaskRecords';
 import type { SourceFailure } from '../../sourceFailureOf';
-import type { InboxRecord } from '../../types';
+import type { InboxProvider, InboxRecord } from '../../types';
 import { InboxRow, inboxOptionId } from './InboxRow';
+import { TaskGroupFoot } from './TaskGroupFoot';
 import { TASK_ROW_HEIGHT } from './taskColumns';
 
 const NO_NEW_KEYS: ReadonlySet<string> = new Set();
+
+const NO_ACTION = (): void => undefined;
 
 export type TaskLine = {
   readonly key: string;
@@ -17,6 +21,8 @@ export type TaskLine = {
 
 type Props = {
   readonly label: string;
+  readonly name?: string;
+  readonly provider?: InboxProvider | null;
   readonly records: ReadonlyArray<InboxRecord>;
   readonly total?: number;
   readonly isExpanded: boolean;
@@ -26,8 +32,8 @@ type Props = {
   readonly selectedKey: string | null;
   readonly cursorKey: string | null;
   readonly newKeys?: ReadonlySet<string>;
-  readonly onExpand: () => void;
-  readonly onCollapse: () => void;
+  readonly onExpand?: () => void;
+  readonly onCollapse?: () => void;
   readonly onSelect: (record: InboxRecord) => void;
   readonly onActivate: (record: InboxRecord) => void;
   readonly starOf: (record: InboxRecord) => boolean | undefined;
@@ -45,6 +51,8 @@ const positionOf = ({ cursorIndex, firstVisible, total }: PositionParams): strin
 
 export const TaskGroupRows = ({
   label,
+  name = label,
+  provider = null,
   records,
   total = records.length,
   isExpanded,
@@ -54,8 +62,8 @@ export const TaskGroupRows = ({
   selectedKey,
   cursorKey,
   newKeys = NO_NEW_KEYS,
-  onExpand,
-  onCollapse,
+  onExpand = NO_ACTION,
+  onCollapse = NO_ACTION,
   onSelect,
   onActivate,
   starOf,
@@ -87,10 +95,10 @@ export const TaskGroupRows = ({
   const cursorRow = rendered.find((record) => record.key === cursorKey);
   const foot = (() => {
     if (isCapped) {
-      return <ListGridLine onClick={onExpand}>Show all</ListGridLine>;
+      return <TaskGroupFoot isExpanded={false} onClick={onExpand} />;
     }
     if (isExpanded && canCollapse && records.length > TASK_GROUP_CAP) {
-      return <ListGridLine onClick={onCollapse}>Show fewer</ListGridLine>;
+      return <TaskGroupFoot isExpanded onClick={onCollapse} />;
     }
     return null;
   })();
@@ -98,6 +106,8 @@ export const TaskGroupRows = ({
   return (
     <ListGridGroup
       label={label}
+      {...(provider === null ? {} : { mark: <IntegrationGlyph provider={provider} size="xs" /> })}
+      {...(name === label ? {} : { ariaLabel: name })}
       isListbox={records.length > 0}
       headingLevel={2}
       isSticky={isVirtual}

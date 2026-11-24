@@ -669,6 +669,10 @@ overview-first-lap
 overview-full
 overview-header-provenance
 overview-mount-mismatch
+overview-projects-close-dark
+overview-projects-close-light
+overview-projects-head-dark
+overview-projects-head-light
 overview-projects-many
 overview-refreshing
 overview-unassigned-notes
@@ -956,6 +960,8 @@ taskdrag-refused
 taskmove-issuepage
 taskmove-menu
 tasks-cursor
+tasks-detail-clean
+tasks-list-clean
 tasks-rail
 tasks-rail-folded
 tasks-rail-open
@@ -1508,8 +1514,6 @@ u50-overlap-open-dark
 u50-overlap-open-light
 u50-overview-dark
 u50-overview-light
-u50-overview-plain-dark
-u50-overview-plain-light
 u50-pr-entry-blocks-dark
 u50-pr-entry-blocks-light
 u50-pr-entry-checks-dark

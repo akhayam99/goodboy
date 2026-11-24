@@ -57,7 +57,6 @@ const fieldRow = ({ field, ...entry }: FieldRowParams): SettingRow => {
 const GENERAL: SettingRowPage = { scope: 'app', section: 'general' };
 const ADVANCED: SettingRowPage = { scope: 'app', section: 'advanced' };
 const STORAGE: SettingRowPage = { scope: 'app', section: 'storage' };
-const SHORTCUTS: SettingRowPage = { scope: 'app', section: 'shortcuts' };
 const BACKUP: SettingRowPage = { scope: 'app', section: 'backup' };
 const IPHONE: SettingRowPage = { scope: 'app', section: 'iphone' };
 const PROJECTS: SettingRowPage = { scope: 'workspace', section: 'projects' };
@@ -175,13 +174,6 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     page: STORAGE,
     band: 'Worktrees',
     formerNames: ['Cleanup policy'],
-  }),
-  row({
-    key: 'classic-send-keys',
-    label: NAMES.classicSendKeys,
-    help: 'Return adds a line and Cmd Return starts, as before 0.15.5.',
-    page: SHORTCUTS,
-    band: 'Message boxes',
   }),
   row({
     key: 'backup-export',
@@ -369,9 +361,10 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
   }),
   row({
     key: 'models-in-workflows',
-    label: 'Models in workflows',
-    help: 'Let the workflow orchestrator choose models.',
+    label: 'Models in older plan runs',
+    help: 'Let the orchestrator of an older plan run choose models.',
     page: MODELS,
     band: 'Choosing models',
+    formerNames: ['Models in workflows'],
   }),
 ];

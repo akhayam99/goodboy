@@ -18,36 +18,19 @@ type Params = {
   readonly event: KeyEvent;
   readonly kind: PromptFieldKind;
   readonly canSendNow: boolean;
-  readonly isClassic: boolean;
 };
 
 const ENTER_KEY = SHORTCUTS['composer.send'].combo;
 
-const CLASSIC_KIND: Readonly<Record<PromptFieldKind, PromptFieldKind>> = {
-  message: 'document',
-  document: 'message',
-};
-
-export const effectiveKind = ({
-  kind,
-  isClassic,
-}: Pick<Params, 'kind' | 'isClassic'>): PromptFieldKind => (isClassic ? CLASSIC_KIND[kind] : kind);
-
-export const promptKeyAction = ({
-  event,
-  kind,
-  canSendNow,
-  isClassic,
-}: Params): PromptKeyAction => {
+export const promptKeyAction = ({ event, kind, canSendNow }: Params): PromptKeyAction => {
   if (event.isComposing === true || event.key !== ENTER_KEY) {
     return 'none';
   }
-  const keys = effectiveKind({ kind, isClassic });
   if (isSubmitChord(event)) {
-    return keys === 'message' && canSendNow ? 'now' : 'send';
+    return kind === 'message' && canSendNow ? 'now' : 'send';
   }
   if (event.shiftKey || event.altKey) {
     return 'none';
   }
-  return keys === 'message' ? 'send' : 'none';
+  return kind === 'message' ? 'send' : 'none';
 };

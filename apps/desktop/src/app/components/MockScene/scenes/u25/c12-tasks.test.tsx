@@ -65,25 +65,28 @@ const groupNames = (): ReadonlyArray<string> =>
   Array.from(list().querySelectorAll('h2')).map((heading) => heading.textContent ?? '');
 
 describe('c12 task scenes', () => {
-  it.each(['c12-tasks-forme', 'c12-tasks-ratelimited', 'c12-issue-pane'] as const)(
-    '%s has no accessibility violation once drawn',
-    async (name) => {
-      const Scene = U25_C12_TASK_SCENES[name];
-      const { container } = render(
-        <ToastProvider>
-          <Scene />
-        </ToastProvider>,
-      );
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(SETTLE_MS);
-      });
-      vi.useRealTimers();
+  it.each([
+    'c12-tasks-forme',
+    'c12-tasks-ratelimited',
+    'c12-issue-pane',
+    'tasks-list-clean',
+    'tasks-detail-clean',
+  ] as const)('%s has no accessibility violation once drawn', async (name) => {
+    const Scene = U25_C12_TASK_SCENES[name];
+    const { container } = render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+    vi.useRealTimers();
 
-      const { violations } = await runA11yCheck(container);
+    const { violations } = await runA11yCheck(container);
 
-      expect(violations.map((violation) => violation.id)).toEqual([]);
-    },
-  );
+    expect(violations.map((violation) => violation.id)).toEqual([]);
+  });
 
   it('registers every state in the scene registry', () => {
     for (const name of Object.keys(U25_C12_TASK_SCENES)) {
@@ -106,6 +109,24 @@ describe('c12 task scenes', () => {
 
     expect(screen.getByText('1,024 open')).toBeDefined();
     expect(groupNames()).toEqual(['Starred', 'Linear', 'Jira', 'Sentry', 'Slack', 'GitHub']);
+  });
+
+  it('heads each status group with its source mark and one status word', async () => {
+    await mount('tasks-list-clean');
+
+    expect(groupNames().some((name) => name.includes(','))).toBe(false);
+    expect(groupNames()).toContain('In progress');
+    screen.getByRole('listbox', { name: 'Linear, In progress' });
+    expect(within(list()).getAllByRole('img', { name: /^Status: / }).length).toBeGreaterThan(0);
+  });
+
+  it('opens the full task under the Tasks crumb with its whole title', async () => {
+    await mount('tasks-detail-clean');
+
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    within(trail).getByRole('button', { name: 'Tasks' });
+    const title = document.querySelector('[data-record-title]');
+    expect(title?.closest('h1')?.querySelector('[data-truncated-text]')).toBeNull();
   });
 
   it('draws a window of the expanded Linear group and names the position', async () => {

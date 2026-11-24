@@ -106,9 +106,7 @@ describe('the policy and failure scenes', () => {
     const heading = screen.getByRole('heading', { level: 1, name: 'Models' });
     expect(heading.parentElement?.parentElement?.textContent).toContain('Harborline');
     const popover = within(screen.getByRole('dialog', { name: 'When a provider is out' }));
-    const toggle = popover.getByRole('switch', {
-      name: 'Send new steps to the provider with the most room',
-    });
+    const toggle = popover.getByRole('switch', { name: 'Skip a provider near its limit' });
     expect(toggle.hasAttribute('disabled')).toBe(false);
     expect(popover.getAllByRole('switch')).toHaveLength(1);
   });

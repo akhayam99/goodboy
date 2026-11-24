@@ -1,15 +1,11 @@
 import { useEffect, useState } from 'react';
-import { STORAGE_PREFIXES } from '../../../../../shared/lib/storage-keys';
-import { storedText } from '../../../../../shared/lib/storedText';
 import { useAppStore } from '../../../../../store';
-import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { CentralColumnScene } from '../u26/CentralColumnScene';
 import { COLUMN_SESSION_ID, seedCentralColumn } from '../u26/centralColumnSeed';
 
 type Props = {
   readonly theme: 'dark' | 'light';
-  readonly isDevShown: boolean;
 };
 
 type LiveRowsParams = {
@@ -36,22 +32,16 @@ const liveRowsOf = ({
     canSeeTools: true,
   }));
 
-export const OverviewScene = ({ theme, isDevShown }: Props) => {
+export const OverviewScene = ({ theme }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     seedCentralColumn({ kind: 'branches' });
-    const workspaceId =
-      sessionById(useAppStore.getState().sessions, COLUMN_SESSION_ID)?.workspaceId ?? '';
-    storedText.write({
-      key: `${STORAGE_PREFIXES.overviewDevDetails}${workspaceId}`,
-      text: isDevShown ? '' : 'hidden',
-    });
     const agentIds = (useAppStore.getState().sessionPhaseRuns[COLUMN_SESSION_ID] ?? [])
       .filter((agent) => agent.status === 'running')
       .map((agent) => agent.id);
     const rows = liveRowsOf({ agentIds });
     mockSceneIpc((command) => (command === 'live_work' ? rows : null));
     setIsReady(true);
-  }, [isDevShown, theme]);
+  }, [theme]);
   return isReady ? <CentralColumnScene theme={theme} kind="branches" /> : null;
 };

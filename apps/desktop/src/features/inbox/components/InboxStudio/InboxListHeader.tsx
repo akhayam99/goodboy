@@ -42,7 +42,14 @@ export const InboxListHeader = ({
   facets,
 }: Props) => (
   <>
-    <div className="flex w-[220px] min-w-0">
+    <SegmentedTabs
+      size="xs"
+      ariaLabel="Whose tasks"
+      options={SCOPE_OPTIONS}
+      value={scope}
+      onChange={onScopeChange}
+    />
+    <div data-task-search="" className="flex w-60 min-w-0">
       <SearchField
         inputRef={searchRef}
         value={query}
@@ -78,19 +85,14 @@ export const InboxListHeader = ({
         onClick={onClearSession}
       />
     ) : null}
-    <SegmentedTabs
-      size="xs"
-      ariaLabel="Whose tasks"
-      options={SCOPE_OPTIONS}
-      value={scope}
-      onChange={onScopeChange}
-    />
-    <FilterButton
-      popoverLabel="Task filters"
-      activeCount={activeFilterCount}
-      facets={facets}
-      popoverHeight={520}
-    />
-    <TasksGroupByMenu groupBy={groupBy} onGroupBy={onGroupBy} />
+    <div data-task-view-controls="" className="flex min-w-0 flex-1 items-center justify-end gap-2">
+      <FilterButton
+        popoverLabel="Task filters"
+        activeCount={activeFilterCount}
+        facets={facets}
+        popoverHeight={520}
+      />
+      <TasksGroupByMenu groupBy={groupBy} onGroupBy={onGroupBy} />
+    </div>
   </>
 );

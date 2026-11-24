@@ -268,7 +268,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session actions',
-        desc: 'Mount a folder, at the head of Projects, adds a folder, and Unmount in a project menu takes it out. More session actions, next to New, holds Pin, Link work, Copy, Archive and Delete.',
+        desc: 'Mount a project, at the head of Projects, adds a project, and Unmount in a project menu takes it out. More session actions, next to New, holds Pin, Link work, Copy, Archive and Delete.',
       },
       {
         term: 'Agents rail',
@@ -723,7 +723,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: NAMES.whatsNew,
-        desc: 'Release notes in the second tab of Help, beside the Guide. After an update, one page covers the releases you skipped, and a release that changes your data in one direction carries a mark.',
+        desc: 'Release notes in Help, beside the Guide. The Goodboy mark on the rail opens them. After an update, one page covers skipped releases, and a release that changes your data in one direction carries a mark.',
       },
       {
         term: 'Report a bug',

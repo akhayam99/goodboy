@@ -106,6 +106,15 @@ describe('RecordHeader', () => {
     ).toContain('text-title');
   });
 
+  it('keeps the whole title in the heading with no cut and no tooltip copy', () => {
+    const title = 'Ledger export times out over 10k rows when the March ledger holds split refunds';
+    render(<RecordHeader provider="linear" identifier="HBL-412" title={title} frame={frame()} />);
+
+    const heading = screen.getByRole('heading', { level: 1, name: title });
+    expect(heading.querySelector('[data-record-title]')?.textContent).toBe(title);
+    expect(heading.querySelector('[data-truncated-text]')).toBeNull();
+  });
+
   it('orders the overflow from the registry: tool verbs, session, the link, then destructive', () => {
     render(
       <RecordHeader

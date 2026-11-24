@@ -889,6 +889,7 @@ const WT_HISTORY = [
   'mount.switchBranch chip',
   'mount.putTaskOnBranch chip',
 ];
+const WT_CLOSE = ['mount.close menu', 'mount.closeKeepFolder menu'];
 const WT_PR = ['mount.openPullRequest inline', 'mount.openDiff inline'];
 
 const MOUNT_STATES: ReadonlyArray<
@@ -898,14 +899,7 @@ const MOUNT_STATES: ReadonlyArray<
     'PR open, 3 to resolve',
     { pr: 'open', openThreads: 3 },
     gitStatus({}),
-    [
-      ...WT_PR,
-      'mount.openReview inline',
-      ...WT_TOOLS,
-      ...WT_HISTORY,
-      ...WT_COPIES,
-      'mount.close menu',
-    ],
+    [...WT_PR, 'mount.openReview inline', ...WT_TOOLS, ...WT_HISTORY, ...WT_COPIES, ...WT_CLOSE],
   ],
   [
     'no PR, not pushed',
@@ -917,7 +911,7 @@ const MOUNT_STATES: ReadonlyArray<
       'mount.createPullRequest inline',
       ...WT_HISTORY,
       ...WT_COPIES,
-      'mount.close menu',
+      ...WT_CLOSE,
     ],
   ],
   [
@@ -930,26 +924,26 @@ const MOUNT_STATES: ReadonlyArray<
       'mount.createPullRequest inline',
       ...WT_HISTORY,
       ...WT_COPIES,
-      'mount.close menu',
+      ...WT_CLOSE,
     ],
   ],
   [
     'draft PR',
     { pr: 'draft' },
     gitStatus({ ahead: 4 }),
-    [...WT_PR, ...WT_TOOLS, ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
+    [...WT_PR, ...WT_TOOLS, ...WT_HISTORY, ...WT_COPIES, ...WT_CLOSE],
   ],
   [
     'PR open, 2 not pushed',
     { pr: 'open' },
     gitStatus({ ahead: 6, unpushed: 2 }),
-    [...WT_PR, ...WT_TOOLS, 'mount.push inline', ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
+    [...WT_PR, ...WT_TOOLS, 'mount.push inline', ...WT_HISTORY, ...WT_COPIES, ...WT_CLOSE],
   ],
   [
     'behind main by 4',
     { pr: 'open' },
     gitStatus({ behind: 4 }),
-    [...WT_PR, ...WT_TOOLS, 'mount.rebase inline', ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
+    [...WT_PR, ...WT_TOOLS, 'mount.rebase inline', ...WT_HISTORY, ...WT_COPIES, ...WT_CLOSE],
   ],
   [
     'behind, 2 uncommitted',
@@ -963,14 +957,14 @@ const MOUNT_STATES: ReadonlyArray<
       'mount.switchBranch chip (The 2 uncommitted changes would follow you. Commit or discard them first.)',
       'mount.putTaskOnBranch chip',
       ...WT_COPIES,
-      'mount.close menu',
+      ...WT_CLOSE,
     ],
   ],
   [
     'diverged from origin',
     { pr: 'open' },
     gitStatus({ unpushed: 1, originAhead: 1 }),
-    [...WT_PR, ...WT_TOOLS, 'mount.push menu', ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
+    [...WT_PR, ...WT_TOOLS, 'mount.push menu', ...WT_HISTORY, ...WT_COPIES, ...WT_CLOSE],
   ],
   [
     'rebase stopped',
@@ -999,14 +993,14 @@ const MOUNT_STATES: ReadonlyArray<
       'mount.switchBranch chip',
       'mount.putTaskOnBranch chip',
       ...WT_COPIES,
-      ...['mount.cleanUp inline', 'mount.close menu'],
+      ...['mount.cleanUp inline', ...WT_CLOSE],
     ],
   ],
   [
     'PR closed',
     { pr: 'closed' },
     gitStatus({}),
-    [...WT_PR, ...WT_TOOLS, ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
+    [...WT_PR, ...WT_TOOLS, ...WT_HISTORY, ...WT_COPIES, ...WT_CLOSE],
   ],
   [
     'new branch, no changes, one of two mounts',
@@ -1028,7 +1022,7 @@ const MOUNT_STATES: ReadonlyArray<
       'mount.putTaskOnBranch chip',
       'mount.startTurnsHere menu',
       ...WT_COPIES,
-      'mount.close menu',
+      ...WT_CLOSE,
     ],
   ],
   [

@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import { SectionLabel } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useMountDiffStats } from '../../../../store';
@@ -21,9 +21,7 @@ type Props = {
   readonly cardsByRowId: BoardCards['byRowId'];
   readonly actionsFor: ActionCardActions['actionsFor'];
   readonly openFor: ActionCardActions['openFor'];
-  readonly isDevShown: boolean;
   readonly shownAskIds: ReadonlySet<string>;
-  readonly devToggle?: ReactNode;
 };
 
 type ToggleParams = {
@@ -43,9 +41,7 @@ export const ProjectBlocks = ({
   cardsByRowId: placedByRowId,
   actionsFor,
   openFor,
-  isDevShown,
   shownAskIds,
-  devToggle,
 }: Props) => {
   const cards = session.archivedAt == null ? allCards : NO_CARDS;
   const sessionId = session.id;
@@ -85,7 +81,6 @@ export const ProjectBlocks = ({
     actionsFor,
     openFor,
     removal,
-    isDevShown,
     shownAskIds,
   };
   const toggle = ({ id }: ToggleParams) =>
@@ -104,16 +99,15 @@ export const ProjectBlocks = ({
     >
       <div className="flex h-7 min-w-0 items-center justify-between gap-2">
         <SectionLabel label={NAMES.projects} headingLevel={2} />
-        <div data-section-actions="" className="flex min-w-0 items-center gap-2">
-          {session.archivedAt == null ? (
+        {session.archivedAt == null ? (
+          <div data-section-actions="" className="flex min-w-0 items-center gap-2">
             <MountProjectAction
               sessionId={sessionId}
               workspaceId={session.workspaceId}
               presentation="button"
             />
-          ) : null}
-          {devToggle}
-        </div>
+          </div>
+        ) : null}
       </div>
       <BoardProjectRemovals sessionId={sessionId} />
       <BoardContext.Provider value={value}>

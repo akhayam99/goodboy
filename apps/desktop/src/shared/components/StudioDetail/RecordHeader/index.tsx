@@ -10,7 +10,6 @@ import {
   IconButton,
   PaneTitleRow,
   StarToggle,
-  TruncatedText,
   useInheritedPaneActions,
 } from '@goodboy/ui';
 import { IntegrationGlyph, type IntegrationGlyphProvider } from '../../IntegrationGlyph';
@@ -129,7 +128,7 @@ export const RecordHeader = ({
         ) : null}
       </div>
       <div onContextMenu={menu.onContextMenu} className="min-w-0">
-        <PaneTitleRow title={<TruncatedText>{title}</TruncatedText>} />
+        <PaneTitleRow isWrapping title={<span data-record-title="">{title}</span>} />
       </div>
       {byline == null ? null : (
         <div className="truncate text-ui text-faint-foreground">{byline}</div>

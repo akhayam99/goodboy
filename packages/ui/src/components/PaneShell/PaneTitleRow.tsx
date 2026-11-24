@@ -11,7 +11,10 @@ type Props = {
   readonly rowTestId?: string;
   readonly titleTestId?: string;
   readonly isHeading?: boolean;
+  readonly isWrapping?: boolean;
 };
+
+const WRAP = 'whitespace-normal break-words';
 
 type TitleParams = {
   readonly title: ReactNode;
@@ -47,19 +50,23 @@ export const PaneTitleRow = ({
   rowTestId,
   titleTestId,
   isHeading = true,
+  isWrapping = false,
 }: Props) => (
   <div data-slot="pane-title-block" className="flex min-w-0 flex-col">
     <div
       data-slot="pane-title-row"
       data-testid={rowTestId}
-      className={cn('flex min-w-0 items-center justify-between gap-3', PANE_RHYTHM.headerRow)}
+      className={cn(
+        'flex min-w-0 items-center justify-between gap-3',
+        isWrapping ? 'min-h-8' : PANE_RHYTHM.headerRow,
+      )}
     >
       {badge != null || leading != null ? (
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {leading}
           {titleNodeOf({
             title,
-            className: 'min-w-0 truncate text-title text-foreground',
+            className: cn('min-w-0 text-title text-foreground', isWrapping ? WRAP : 'truncate'),
             testId: titleTestId,
             isHeading,
           })}
@@ -68,7 +75,10 @@ export const PaneTitleRow = ({
       ) : (
         titleNodeOf({
           title,
-          className: 'min-w-0 flex-1 truncate text-title text-foreground',
+          className: cn(
+            'min-w-0 flex-1 text-title text-foreground',
+            isWrapping ? WRAP : 'truncate',
+          ),
           testId: titleTestId,
           isHeading,
         })

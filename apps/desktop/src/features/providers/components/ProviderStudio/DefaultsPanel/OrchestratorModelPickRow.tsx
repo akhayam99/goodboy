@@ -17,15 +17,11 @@ export const OrchestratorModelPickRow = ({ workspaceId }: Props) => {
   const { isOn, setIsOn } = useOrchestratorModelPick({ workspaceId });
   return (
     <SettingRow
-      label="Models in workflows"
+      label="Models in older plan runs"
       rowKey="models-in-workflows"
       help={isOn ? HELP_ON : HELP_OFF}
     >
-      <Switch
-        ariaLabel="Let the workflow orchestrator choose models"
-        checked={isOn}
-        onChange={setIsOn}
-      />
+      <Switch ariaLabel="Let older plan runs choose models" checked={isOn} onChange={setIsOn} />
     </SettingRow>
   );
 };

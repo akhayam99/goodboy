@@ -1,9 +1,8 @@
 import { memo } from 'react';
-import { cn, ICON_SIZE, ListGridRow, StatusDot, tintClasses } from '@goodboy/ui';
+import { cn, ListGridRow, StatusDot, TruncatedText } from '@goodboy/ui';
 import { IntegrationGlyph } from '../../../../shared/components/IntegrationGlyph';
 import { integrationLabel } from '../../../../shared/utils/integrationLabel';
 
-import { INBOX_STATE_PRESENTATION } from '../../../../shared/components/StudioDetail/RecordState';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { recordSessionId } from '../../recordSessionId';
 import { startLabelOf } from '../../startFromRecord';
@@ -11,7 +10,10 @@ import type { InboxRecord } from '../../types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { TaskPriorityMark } from './TaskPriorityMark';
+import { TaskStatusMark } from './TaskStatusMark';
 import { taskKeyOf } from '../../taskKeyOf';
+import { taskPriorityOf } from '../../taskPriorityOf';
+import { taskHasStatus, taskRowLabelOf } from '../../taskRowLabelOf';
 
 type Props = {
   readonly record: InboxRecord;
@@ -44,8 +46,7 @@ const InboxRowView = ({
   const now = useNow(30_000);
   const sessionId = recordSessionId({ record });
   const toolLabel = integrationLabel({ provider: record.provider });
-  const state = INBOX_STATE_PRESENTATION[record.state];
-  const StateIcon = state.icon;
+  const priority = taskPriorityOf({ record });
   const menu = useObjectMenuTrigger({
     target: {
       kind: 'record',
@@ -77,8 +78,7 @@ const InboxRowView = ({
       rowKey={record.key}
       isSelected={selected}
       isCursor={isCursor}
-      ariaLabel={`${record.identifier} ${record.title}`}
-      tooltip={record.title}
+      ariaLabel={taskRowLabelOf({ record })}
       onSelect={() => onSelect(record)}
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
@@ -99,17 +99,10 @@ const InboxRowView = ({
               <StatusDot tone="unread" size="sm" />
             </span>
           ) : null}
-          <span className="truncate">{record.title}</span>
+          <TruncatedText className="min-w-0">{record.title}</TruncatedText>
         </span>,
-        record.provider === 'slack' ? null : (
-          <StateIcon
-            key="status"
-            size={ICON_SIZE.row}
-            aria-label={record.stateLabel}
-            className={tintClasses(state.tone).icon}
-          />
-        ),
-        <TaskPriorityMark key="priority" record={record} />,
+        taskHasStatus({ record }) ? <TaskStatusMark key="status" record={record} /> : null,
+        priority === null ? null : <TaskPriorityMark key="priority" priority={priority} />,
         formatAge({ from: record.updatedAt, now }),
       ]}
     />
