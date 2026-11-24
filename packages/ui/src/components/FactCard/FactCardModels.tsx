@@ -26,7 +26,10 @@ export const FactCardModels = ({ models }: Props) =>
         </span>
         {model.effort === undefined ? null : (
           <span className="flex shrink-0 items-center gap-2 text-faint-foreground">
-            <EffortMeter effort={model.effort} isPlanned={model.isPlanned === true} />
+            <EffortMeter
+              effort={model.effort}
+              isPlanned={model.isPlanned === true || model.effort.isPlanned === true}
+            />
             <span>{model.effort.word}</span>
           </span>
         )}

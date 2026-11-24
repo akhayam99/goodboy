@@ -20,6 +20,7 @@ export type FactEffort = {
   readonly word: string;
   readonly step: number;
   readonly steps: number;
+  readonly isPlanned?: boolean;
 };
 
 export type FactModel = {

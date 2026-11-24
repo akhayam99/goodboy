@@ -960,6 +960,7 @@ terminal-studio-empty
 terminal-studio-newmenu
 terminal-studio-restored
 timeline-cards
+timeline-cards-light
 toast-over-drawer
 toast-over-drawer-overlay
 toasts
