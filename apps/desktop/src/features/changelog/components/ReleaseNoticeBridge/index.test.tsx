@@ -11,6 +11,7 @@ vi.mock('../../hooks/useInstalledVersion', () => ({
 
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
+import { CHANGELOG_RELEASES } from '../../changelogSource';
 import { ReleaseNoticeBridge } from './index';
 
 const markChangelogSeen = vi.fn(async () => undefined);
@@ -18,6 +19,7 @@ const focusChangelogRelease = vi.fn();
 
 const seed = ({ seen, hydrated = true }: { seen: string | null; hydrated?: boolean }) => {
   useAppStore.setState({
+    changelogReleases: CHANGELOG_RELEASES,
     changelogSeenHydrated: hydrated,
     changelogSeenVersion: seen,
     markChangelogSeen,

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { HelpStudio } from '../../../HelpStudio';
+import { CHANGELOG_RELEASES } from '../../../../../features/changelog/changelogSource';
 import { parseChangelog } from '../../../../../features/changelog/parseChangelog';
 import { UpdatePill } from '../../../../../features/updater/components/UpdatePill';
 import { useAppStore } from '../../../../../store';
@@ -81,6 +82,7 @@ export const UpdateWhatsNewScene = () => {
       return null;
     });
     useAppStore.setState({
+      changelogReleases: CHANGELOG_RELEASES,
       loadChangelogDates: async () => undefined,
       reloadChangelogDates: async () => undefined,
       markChangelogSeen: async () => undefined,
