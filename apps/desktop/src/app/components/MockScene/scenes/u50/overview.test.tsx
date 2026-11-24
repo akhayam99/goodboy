@@ -66,10 +66,21 @@ describe('the u50 overview scenes', () => {
     ]);
   });
 
-  it('opens on the state line with one facts line and no tiles', async () => {
+  it.each(['u50-overview-light', 'u50-overview-dark'])(
+    'opens %s on the quiet facts line, with no project state sentence',
+    async (name) => {
+      await show({ name });
+
+      const column = document.querySelector('[data-central-column]');
+      expect(column?.firstElementChild?.matches('[data-overview-facts]')).toBe(true);
+      expect(screen.queryByText(/^(payments-api|ledger-core): /)).toBeNull();
+    },
+  );
+
+  it('opens on one facts line and no tiles', async () => {
     await show({ name: 'u50-overview-light' });
 
-    expect(document.querySelector('[data-overview-status]')).not.toBeNull();
+    expect(document.querySelector('[data-overview-facts]')).toBeInstanceOf(HTMLElement);
     expect(document.querySelector('[data-slot="session-kpis"]')).toBeNull();
     screen.getByRole('button', { name: 'Hide dev details' });
   });

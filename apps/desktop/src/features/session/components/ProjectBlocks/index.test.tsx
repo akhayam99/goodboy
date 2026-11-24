@@ -474,6 +474,8 @@ describe('the project blocks on the Overview', () => {
       'payments-api',
     );
     expect(tenant.querySelector('[data-board-chip]')).toBeNull();
+    expect(tenant.querySelector('[data-board-facts]')?.textContent).toContain('Merged');
+    expect(tenant.querySelector('[data-board-facts]')?.textContent).not.toContain('Closed');
     expect(verbsOf({ tile: tenant })).toHaveLength(0);
   });
 
@@ -486,6 +488,8 @@ describe('the project blocks on the Overview', () => {
 
     const closed = tileOf({ branch: TENANT });
     expect(closed.querySelector('[data-board-chip]')).toBeNull();
+    expect(closed.querySelector('[data-board-facts]')?.textContent).toContain('Closed');
+    expect(closed.querySelector('[data-board-facts]')?.textContent).not.toContain('Merged');
     expect(verbsOf({ tile: closed })).toHaveLength(0);
     expect(screen.queryAllByRole('button', { name: /^Delete local branch(?:es)?/ })).toHaveLength(
       0,

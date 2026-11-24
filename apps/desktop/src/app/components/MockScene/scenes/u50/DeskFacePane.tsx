@@ -1,5 +1,6 @@
 import { UnderTrailContext } from '@goodboy/ui';
 import { SessionFace } from '../../../../../features/session/components/SessionDesk/SessionFace';
+import { SessionHeadFrame } from '../../../../../features/session/components/SessionHeadFrame';
 import { useAppStore } from '../../../../../store';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { SessionHead } from '../../../SessionHead';
@@ -11,13 +12,14 @@ export const DeskFacePane = () => {
     return null;
   }
   return (
-    <div className="flex h-full flex-col gap-2 overflow-hidden bg-background text-foreground">
-      <SessionHead session={session} />
-      <UnderTrailContext.Provider value>
-        <div className="flex min-h-0 flex-1 flex-col">
-          <SessionFace session={session} />
-        </div>
-      </UnderTrailContext.Provider>
+    <div className="flex h-full overflow-hidden bg-background text-foreground">
+      <SessionHeadFrame head={<SessionHead session={session} />}>
+        <UnderTrailContext.Provider value>
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            <SessionFace session={session} />
+          </div>
+        </UnderTrailContext.Provider>
+      </SessionHeadFrame>
     </div>
   );
 };

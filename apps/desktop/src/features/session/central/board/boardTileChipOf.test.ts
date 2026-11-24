@@ -12,6 +12,7 @@ import type {
 import type { BranchFacts } from '../branches/branchFactsOf';
 import { branchEntriesOf } from '../branches/branchStoryOf';
 import { NAMES } from '../../../../shared/utils/names';
+import { boardSettledWordOf } from './boardSettledWordOf';
 import { boardTileChipOf } from './boardTileChipOf';
 import type { BoardAsk } from './boardTypes';
 import { branchBoardOf } from './branchBoardOf';
@@ -157,5 +158,35 @@ describe('boardTileChipOf', () => {
   it('names the open pull request by its kind, the number living on the facts line', () => {
     expect(chipOf({ branch: branchOf({}) })?.word).toBe('PR open');
     expect(chipOf({ branch: branchOf({ noun: '!' }) })?.word).toBe('MR open');
+  });
+});
+
+type SettledParams = {
+  readonly branch: BranchFacts;
+};
+
+const settledOf = ({ branch }: SettledParams) => {
+  const board = branchBoardOf({ session, branches: [branch], asks: [], agents: [], leads: [] });
+  const [row] = board.rows;
+  if (row === undefined) {
+    throw new Error('no row');
+  }
+  return boardSettledWordOf({ row });
+};
+
+describe('boardSettledWordOf', () => {
+  it('tells a merged branch from a closed one once the chip is gone', () => {
+    expect(settledOf({ branch: branchOf({ state: 'merged' }) })).toEqual({
+      word: 'Merged',
+      tone: 'merged',
+    });
+    expect(settledOf({ branch: branchOf({ state: 'closed' }) })).toEqual({
+      word: 'Closed',
+      tone: 'neutral',
+    });
+  });
+
+  it('says nothing on an open branch, whose chip carries the state', () => {
+    expect(settledOf({ branch: branchOf({}) })).toBeNull();
   });
 });

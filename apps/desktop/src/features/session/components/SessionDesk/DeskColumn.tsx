@@ -7,7 +7,7 @@ import { useMoveKeys } from '../../hooks/useMoveKeys';
 import { NeedsYouSection } from '../SessionOverviewPane/NeedsYouSection';
 import { NextSection } from '../SessionOverviewPane/NextSection';
 import { NowSection } from '../SessionOverviewPane/NowSection';
-import { OverviewStatus } from '../SessionOverviewPane/OverviewStatus';
+import { OverviewFacts } from '../SessionOverviewPane/OverviewFacts';
 import type { useOverviewModel } from '../SessionOverviewPane/useOverviewModel';
 import { DeskProjects } from './DeskProjects';
 
@@ -44,11 +44,7 @@ export const DeskColumn = ({ session, model, isInPopover }: Props) => {
         viewportClassName={cn('flex min-h-0 flex-1 flex-col', PANE_RHYTHM.groups)}
       >
         {model.isEmpty ? null : (
-          <OverviewStatus
-            sessionId={sessionId}
-            status={model.status}
-            elapsedMs={model.board.kpis.elapsedMs}
-          />
+          <OverviewFacts sessionId={sessionId} elapsedMs={model.board.kpis.elapsedMs} />
         )}
         <HeightMotion isOpen={model.hasNeedsYou} parentGapRem={PANE_GROUPS_GAP_REM}>
           <NeedsYouSection

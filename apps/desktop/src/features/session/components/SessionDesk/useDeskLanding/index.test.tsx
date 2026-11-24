@@ -236,6 +236,18 @@ describe('closing the last tool', () => {
     expect(entries()).toBe(before);
   });
 
+  it('draws Desk closed in the page banner under the head, never as a block above the page', async () => {
+    const view = renderFace();
+    expect(view.container.querySelector('[data-slot="pane-banner"]')).toBeNull();
+    await openDesk();
+
+    await closeEveryTool();
+
+    const notice = screen.getByText('Desk closed');
+    expect(notice.closest('[data-slot="pane-banner"]')).toBeInstanceOf(HTMLElement);
+    expect(notice.closest('[data-slot="reveal-header"]')).toBeInstanceOf(HTMLElement);
+  });
+
   it('Reopen finds the tools as they were', async () => {
     renderFace();
     await openDesk();

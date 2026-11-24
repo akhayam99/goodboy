@@ -1,9 +1,10 @@
 import { Button, ROW_HOVER, SectionLabel, StatusDot, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { branchPlace, sessionPlace, useAppStore } from '../../../../store';
-import { NAMES } from '../../../../shared/utils/names';
-import { boardTileChipOf } from '../../central/board/boardTileChipOf';
-import type { BranchBoardView } from '../ProjectBlocks/useBranchBoard';
+import { branchPlace, sessionPlace, useAppStore } from '../../../../../store';
+import { NAMES } from '../../../../../shared/utils/names';
+import { boardSettledWordOf } from '../../../central/board/boardSettledWordOf';
+import { boardTileChipOf } from '../../../central/board/boardTileChipOf';
+import type { BranchBoardView } from '../../ProjectBlocks/useBranchBoard';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -32,6 +33,8 @@ export const DeskProjects = ({ sessionId, board }: Props) => {
           entry,
           runningCount: board.runningByRowId.get(row.id) ?? 0,
         });
+        const settled = boardSettledWordOf({ row });
+        const state = chip ?? settled;
         const name = row.projectName ?? row.branch ?? NAMES.notOnABranch;
         return (
           <Button
@@ -39,7 +42,7 @@ export const DeskProjects = ({ sessionId, board }: Props) => {
             variant="quiet"
             size="sm"
             data-desk-project={row.id}
-            aria-label={chip === null ? name : `${name}, ${chip.word}`}
+            aria-label={state === null ? name : `${name}, ${state.word}`}
             onClick={() =>
               navigate({
                 to:
@@ -50,10 +53,15 @@ export const DeskProjects = ({ sessionId, board }: Props) => {
             }
             className={cn('w-full justify-start gap-2 px-2 font-normal', ROW_HOVER)}
           >
-            <StatusDot tone={chip?.tone ?? 'neutral'} size="sm" />
+            <StatusDot tone={state?.tone ?? 'neutral'} size="sm" />
             <span className="min-w-0 truncate text-row text-foreground">{name}</span>
             {row.branch === null || row.projectName === null ? null : (
               <span className="min-w-0 truncate text-meta text-faint-foreground">{row.branch}</span>
+            )}
+            {settled === null ? null : (
+              <span data-desk-settled="" className="shrink-0 text-meta text-muted-foreground">
+                {settled.word}
+              </span>
             )}
           </Button>
         );

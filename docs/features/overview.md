@@ -12,7 +12,7 @@ Under the title sit the tabs **Overview**, **Runs**, **Artifacts**, **Questions*
 
 The goal sits above the page when it says more than the title. The Overview then reads top to bottom, always in this order:
 
-- **The state.** One short sentence per project, from the step of its branches, such as "payments-api: checks failing. ledger-core: in review." One line of facts sits under it: the spend, which opens its limit, and the agent time. **Summary, 5m ago** ends the line and opens the written summary in Context.
+- **The facts.** One quiet line: the spend, which opens its limit, and the agent time. **Summary, 5m ago** ends the line and opens the written summary in Context. Where each pull request stands is said once, in **Projects**.
 - Notices come next when a branch needs a decision. Examples: a branch that moved, a branch off its pull request's commits, a project not yet published, a stopped rebase. A closed worktree shows a notice with **Reopen**.
 - **Needs you**, with the move that waits on you on top: its project, its title, why, the proof you can open in place and its verb. An open question sits there too, with **Answer**. A warning bar marks the section, never a filled color. Only this move, or the first move of Next when nothing waits on you, has a filled button.
 - **Now** lists the agents with a live turn: who, the project, what it does right now and for how long. It shows three rows and **N more**. The agents of a Lead sit under it. An agent that waits for a file another agent holds says so on a quiet line with a warm dot. A click on a row opens that agent.
@@ -32,10 +32,9 @@ Needs you and Now open and close with a height motion, so Next never jumps under
 **Reading the task without a diff.** A product manager understands where a task stands from the page alone, never from a raw diff or a file list.
 
 1. **The goal.** The page opens on what the task is for, in the words you gave it.
-2. **The state.** The first line says where each project stands, worked out from its branches, so it is never behind a merge.
-3. **What waits for you.** **Needs you** comes next, and its move says why in words.
-4. **Where each branch stands.** Every row in a project block names the step its branch stands at.
-5. **What it costs.** The facts line adds up the spend and the agent time of every branch.
+2. **What waits for you.** **Needs you** comes next, and its move says why in words.
+3. **Where each branch stands.** Every row in a project block names the step its branch stands at, worked out from its branches, so it is never behind a merge.
+4. **What it costs.** The facts line adds up the spend and the agent time of every branch.
 
 An archived session keeps the same overview, read only. Its branches and their pull requests stay on it, with the pull request state, even after their worktree folders were removed. **Restore** brings back the worktree of each branch whose pull request is still open, from the remote when the branch is gone on this Mac. When one cannot come back, a message says why and the closed worktree stays on the overview with **Reopen**.
 
@@ -81,7 +80,7 @@ Each project is one block with its name in the head. Its branches sit inside by 
 
 Each branch is one tile, like a pull request in a list:
 
-- The first line names the branch. One chip on the right sums up where it stands: **Waits for you**, **Checks failing**, **Running**, **Not pushed**, **PR open**, **Merged** or **Closed**. A pull request closed without merging is never called merged. It sits in **Closed**, neutral like any settled row, with no button. The state has the same color everywhere in the app.
+- The first line names the branch. One chip on the right sums up where it stands: **Waits for you**, **Checks failing**, **Running**, **Not pushed** or **PR open**. A merged or closed branch has no chip: its second line says **Merged** or **Closed**, and so does its row on the Desk. A pull request closed without merging is never called merged. It stays neutral like any settled row, with no button. The state has the same color everywhere in the app.
 - The second line holds a few quiet facts: the pull request, the lines added and removed, the runs and the questions that wait. A pull request shows its number, such as **PR #12**.
 - A tile with something to do carries one button. **Answer** comes first and opens the exact question, then the first waiting step, such as **Rebase**, **Push** or **Open a pull request**. A move already shown in Needs you or Next is not repeated on its tile. A merged branch offers **Remove worktree** once its cleanup is proposed.
 - When a check fails, the chip names it, such as **integration-tests failed**. It is the one state in color on the tile.
@@ -163,8 +162,9 @@ See and undo what agents changed in a session without a branch.
 This part is for contributors and agents who change the feature.
 
 - Session head: `SessionHead` (`app/components/SessionHead`) is drawn once by `SessionWorkspace` through `SessionHeadContext`. It draws the tabs on a tab view (`isTabView`) and the crumbs from `crumbsOf` otherwise. On the Desk face it spans the page at the Desk gutter, so the head, the Desk column and the tools share one left edge. Esc goes up through `parentPlace`. The `session.ask` verb in More session actions (`sessionMenuOf`) opens the Ask panel.
-- Reading order: `CentralColumn` draws `OverviewStatus`, the notices, `NeedsYouSection`, `NowSection`, `NextSection`, `ProjectBlocks`, `OverviewLog` and `SessionAskLine`, spaced with `PANE_RHYTHM.groups`. `CentralColumn.readingOrder.test.tsx` pins the order.
-- State and facts: `overviewStatusOf` writes one sentence per project from the story word of its most urgent branch (`branchEntriesOf`). The facts line is `SessionCostChip` (the one spend number), the agent time from `sessionKpisOf`, and the summary age from `summarizerStatus`.
+- Reading order: `CentralColumn` draws `OverviewFacts`, the notices, `NeedsYouSection`, `NowSection`, `NextSection`, `ProjectBlocks`, `OverviewLog` and `SessionAskLine`, spaced with `PANE_RHYTHM.groups`. `CentralColumn.readingOrder.test.tsx` pins the order.
+- Facts: `OverviewFacts` is `SessionCostChip` (the one spend number), the agent time from `sessionKpisOf`, and the summary age from `summarizerStatus`. The head draws no project state; the pull request state lives on the `ProjectBlocks` rows.
+- Goal: `GoalTeaser` reads the goal as flat text (`inlineMarkdownText`), so a goal of only spaces or markup that renders to nothing offers **Add a goal** instead of an empty row.
 - Moves: `overviewMovesOf` splits the cards once. Band 0 goes to Needs you, the next three to Next, and the rest to the branch rows. An open question no move covers joins Needs you as `NeedsYouQuestion`. `shownAskIds` keeps an **Answer** off a row whose question Needs you already shows. `MoveCard` draws a move in two densities, `focus` for the top of Needs you and `row` elsewhere. It uses `MoveVerb` and `MoveEvidenceChips`, and reads the reason and evidence of the move (`actionCardsOf`). Tones come from `STAGE_TONE`.
 - Now: `useSessionWork` reads `live_work` through `readLiveWork` and `listenWorkChanged`, at most once a second. `nowRowsOf` places each live agent under its Lead from `liveGroupsOf`, caps the list at `NOW_LIMIT` and turns `agentWriterWait` into a warm wait line. `useNowModel` gathers the agent nouns and waits.
 - Dev details: `useDevDetails` keeps the choice per workspace in local storage; `BoardTileFacts` drops the line counts and run counts when it is off, and always while the branch runs.
@@ -189,7 +189,7 @@ This part is for contributors and agents who change the feature.
 - Row line: `TimelineRowLabel` draws each row as an `ActivityRow` in the `feed` density, toned by `timelineRowTone` from the row state. Agent and run rows pass `TimelineRowMeta` with `layout="feed"`, an `ActivityMeta` with the state, model and time columns; `TimelineFeedState` fills the state cell. The run page keeps the stacked layout. `TimelineCountRow` strokes an unlaned fold node in `--color-border-soft`. Tests: `TimelineStreamRow.test.tsx`, `TimelineMeta.test.tsx`, `TimelineRowLabel.test.tsx`, `TimelineRunStreamRow.test.tsx`; scenes `activity`, `activity-groups`, `activity-question`, `activity-log` and their `-light` twins.
 - Log paging: `LogPane` paints the search box and **Mark as read** at once. It mounts `LogRows` through `useDeferredValue`, keyed by the session. `LogRows` draws pages of `LOG_PAGE_ROWS` from `logPageOf`, each in a transition. `timelineFullGutterOf` sizes the gutter from one stream built with `shouldExpandEveryGroup`.
 - Notices: `overviewNoticesOf` counts them for `overviewCardsOf`. A closed notice is not counted.
-- `useOverviewNotices` holds the dismissals, keyed by `mismatchDismissalKeyOf` so a new mismatch shows again, and the stranded-branch check. A dismissal expires when its observation clears (`liveDismissalsOf`). Unchanged polls stay dismissed. `CentralColumn` draws the notices in one place under the state.
+- `useOverviewNotices` holds the dismissals, keyed by `mismatchDismissalKeyOf` so a new mismatch shows again, and the stranded-branch check. A dismissal expires when its observation clears (`liveDismissalsOf`). Unchanged polls stay dismissed. `CentralColumn` draws the notices in one place under the facts.
 - `overviewHasContentOf` decides when the start form leaves: a card is drawn, a branch has commits, a request or a run. A folder card, an unassigned note or a closed worktree notice also keeps it away.
 - Agent count: `runAgentCountOf` is the one agent count that the Runs grid and the subagent summaries share.
 - Branch rows: `RANK_OF_STATE` in `branchStoryOf` orders the rows, `mergeSeriesInOrder` merges a series and `useMountRowMenu` opens the branch menu.

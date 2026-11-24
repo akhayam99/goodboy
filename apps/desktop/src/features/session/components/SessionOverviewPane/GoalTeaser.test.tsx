@@ -138,6 +138,17 @@ describe('GoalTeaser on the real store', () => {
     mount();
     expect(screen.getByRole('button', { name: 'Add a goal' })).toBeDefined();
   });
+  it.each([['  \n\t '], ['![](ledger-core.png)'], ['****']])(
+    'treats a goal of %j that renders to nothing as no goal',
+    (value) => {
+      store.setState({
+        sessionSlots: { [session.id]: [{ key: 'goal', value, enabled: true }] },
+      });
+      const view = mount();
+      expect(view.container.querySelector('[data-overview-goal]')).toBeNull();
+      screen.getByRole('button', { name: 'Add a goal' });
+    },
+  );
   it('holds a skeleton while the slots load', () => {
     store.setState({
       sessionSlots: {},

@@ -404,7 +404,8 @@ tool the Desk can draw (`DESK_OPENS`), today the terminal. The rule runs after
 the saved grid is read, and a Desk saved with no tool comes back as the
 Overview with no line (`useDeskLanding`). Closing the last tool, by its X, ⌘⇧W
 or ⌘W, closes the Desk: the Overview comes back with **Desk closed** and
-**Reopen** in the page, the focus on Reopen, and the history unchanged.
+**Reopen** in the page banner under the head, the focus on Reopen, and the
+history unchanged.
 Closing hides: Reopen brings the tools back as they were. One window holds the
 Desk of a session (`desk_hold`, `window_heartbeat.rs`), read from the live
 windows only: a closed window, or one whose heartbeat stopped, frees it.
