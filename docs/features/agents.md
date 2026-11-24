@@ -15,7 +15,9 @@ Ask about the workspace without starting a session. **Chat**, in the places rail
 
 ### Ask in a session
 
-Ask what is happening in a session without leaving it. The Ask line sits at the foot of the Overview. **Ask**, or **⌘L**, opens a panel that offers a few questions to try. Answers name the agents, runs and files they mention as chips, and the panel is read only, so it never acts for you. Ask and Chat answer the same way: **Stop** keeps what was written and marks the answer stopped, a stop pressed before the provider started means it never starts, and a failure keeps the text so far with its reason.
+Ask what is happening in a session without leaving it. **Ask** in the right rail, or **⌘L**, opens a pane beside the page, and it stays while you move between Overview, Runs, Artifacts and Context. On a narrow window it lies over the right of the page until you close it.
+
+A question to try asks at once. Answers name the agents and files they mention as links, the last answer stays open and earlier ones fold to one line, and **Earlier** brings back a past question. The pane is read only, so it never acts for you. Ask and Chat answer the same way: **Stop** keeps what was written and marks the answer stopped, a stop pressed before the provider started means it never starts, and a failure keeps the text so far with its reason.
 
 ### Images in chat
 

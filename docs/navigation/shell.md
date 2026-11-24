@@ -587,7 +587,7 @@ covered.
   every search with text and no prefix starts with `Ask in Chat`, which opens
   a new chat with the query as its first message. Inside a session (the
   session or one of its agents in scope) `Ask about this session` comes first
-  and `Ask in Chat` second (`askEntries`): it opens the Ask drawer and sends the
+  and `Ask in Chat` second (`askEntries`): it opens the Ask pane and sends the
   query. A query that reads like a question (ends with `?` or has four words
   or more) has the first Ask row picked, a shorter one keeps the best match
   picked so Enter still jumps.

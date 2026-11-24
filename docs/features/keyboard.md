@@ -131,7 +131,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 
 **The Desk**
 
-- The Desk has no key. A tool opened on the Overview, by its key or from the right rail, splits the page into the Desk: **⌃`** for Terminal, **⌘L** for Ask.
+- The Desk has no key. A tool opened on the Overview, by its key or from the right rail, splits the page into the Desk: **⌃`** for Terminal. **⌘L** opens Ask beside the page and never splits it.
 - **⌘W** on the Desk closes one tool at a time, the focused one first. Closing the last one closes the Desk: the Overview comes back at full width with **Desk closed** and **Reopen**, and the focus goes to Reopen. **Reopen** brings the tools back as they were.
 - One window holds the Desk of a session. In a second window a tool says **Desk open in another window** with **Bring it here**. The window that loses the Desk says **Desk moved to another window** with **Bring the Desk back**. When the window cannot check who holds it, the Overview stays with the error and **Retry**.
 

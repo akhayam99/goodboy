@@ -187,8 +187,9 @@ model in [docs/navigation/model.md](./docs/navigation/model.md).
   centre shows (the Files of a pull request, the Agents of a run) is a rail on
   the left of the content, with its own first row, scroll and remembered width.
   It folds to a toggle on a narrow window.
-- **Panels keep one order.** Page content, then the detail
-  panel (an artifact, Ask, a check analysis), then the tool dock (Terminal,
+- **Panels keep one order.** Page content, then the Ask pane of the session (it
+  sits beside every tab and lies over the right of the page under 1100px), then
+  the detail panel (an artifact, a check analysis), then the tool dock (Terminal,
   Browser, Monitor), then the tools rail pinned to the window's right
   edge. Tools open to the rail's left. `DrawerDockBox` keeps the rail last;
   `DrawerColumn` leaves 12px between shell containers (`DRAWER_GUTTER`). The

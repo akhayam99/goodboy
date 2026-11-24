@@ -98,6 +98,20 @@ describe('withoutRemovedPages', () => {
     expect(withoutRemovedPages({ location })).toBe(location);
   });
 
+  it('drops a saved Ask drawer and keeps the page it was open on', () => {
+    const stored: Location = JSON.parse(
+      JSON.stringify({
+        ...storedAt({ lens: 'questions' }),
+        focus: { drawer: { kind: 'ask', sessionId: SESSION_ID, payload: null }, scroll: {} },
+      }),
+    );
+
+    const next = withoutRemovedPages({ location: stored });
+
+    expect(next.place).toEqual(storedAt({ lens: 'questions' }).place);
+    expect(next.focus.drawer).toBeNull();
+  });
+
   it('opens the agent page in place of a saved Auto child panel', () => {
     const stored: Location = JSON.parse(
       JSON.stringify({
