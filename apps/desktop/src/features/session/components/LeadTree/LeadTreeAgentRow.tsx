@@ -1,18 +1,19 @@
 import { memo } from 'react';
-import type { AgentId } from '@goodboy/types';
-import { Tooltip, WorkNode, cn, formatUsd, type WorkNodeState } from '@goodboy/ui';
-import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
+import type { AgentId, SessionId } from '@goodboy/types';
+import { ActivityMeta, ActivityRow, WorkNode, cn, type WorkNodeState } from '@goodboy/ui';
 import type { AgentKind } from '../../agent-kind';
-import type { RailRow } from '../../../workTreeModel/railGeometry';
+import { AgentRoleChip } from '../../AgentRoleChip';
+import type { RailInk, RailRow } from '../../../workTreeModel/railGeometry';
+import { activityStateWordOf } from '../../../workTreeModel/activityStateWordOf';
+import { ACTIVITY_TONE_OF_NODE } from '../../../workTreeModel/activityToneOfNode';
 import { DelegationClock } from '../../../auto/chat/DelegationClock';
 import { SpawnedRailCell } from '../SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
 import { LEAD_TREE_CURSOR } from './leadTreeCursor';
-import { LEAD_TREE_METER } from './leadTreeMeter';
-import { LEAD_TREE_QUIET_NODES } from './leadTreeQuietNodes';
 import { LEAD_TREE_ROW } from './leadTreeRow';
 
 type Props = {
   readonly id: string;
+  readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly number: string;
   readonly kind: AgentKind;
@@ -23,6 +24,7 @@ type Props = {
   readonly isSettled: boolean;
   readonly spendUsd: number;
   readonly rail: RailRow;
+  readonly tail: ReadonlyArray<RailInk>;
   readonly railWidth: number;
   readonly isSelected: boolean;
   readonly isActive: boolean;
@@ -33,6 +35,7 @@ type Props = {
 export const LeadTreeAgentRow = memo(
   ({
     id,
+    sessionId,
     agentId,
     number,
     kind,
@@ -43,13 +46,14 @@ export const LeadTreeAgentRow = memo(
     isSettled,
     spendUsd,
     rail,
+    tail,
     railWidth,
     isSelected,
     isActive,
     isCompact,
     onSelect,
   }: Props) => {
-    const isWordShown = !LEAD_TREE_QUIET_NODES.has(node);
+    const tone = ACTIVITY_TONE_OF_NODE[node];
     return (
       <div
         role="treeitem"
@@ -70,40 +74,40 @@ export const LeadTreeAgentRow = memo(
       >
         <SpawnedRailCell
           rail={rail}
+          tail={tail}
           width={railWidth}
-          marker={<WorkNode state={node} label={word} mark={{ kind: 'dot' }} size="sm" />}
+          marker={
+            <WorkNode look="quiet" state={node} label={word} mark={{ kind: 'dot' }} size="sm" />
+          }
         />
-        {isCompact ? null : (
-          <span
-            data-lead-tree-number=""
-            className="w-6 shrink-0 text-right text-chip tabular-nums text-faint-foreground"
-          >
-            {number}
-          </span>
-        )}
-        <AgentKindChip kind={kind} density="glyph" isDecorative />
-        <span className="shrink-0 text-ui text-foreground">{role}</span>
-        {isCompact || title === '' ? (
-          <span className="flex-1" />
-        ) : (
-          <Tooltip content={title} anchorClassName="flex min-w-0 flex-1">
-            <span
-              data-lead-tree-title=""
-              className="min-w-0 flex-1 truncate text-meta text-muted-foreground"
-            >
-              {title}
-            </span>
-          </Tooltip>
-        )}
-        {isWordShown ? (
-          <span className="shrink-0 text-meta text-muted-foreground">{word}</span>
-        ) : null}
-        <span
-          data-lead-tree-meter=""
-          className={cn(LEAD_TREE_METER, 'text-meta tabular-nums text-faint-foreground')}
-        >
-          {isSettled ? formatUsd(spendUsd) : <DelegationClock agentId={agentId} isLive />}
-        </span>
+        <ActivityRow
+          density="rail"
+          tone={tone}
+          ordinal={isCompact ? null : <span data-lead-tree-number="">{number}</span>}
+          glyph={
+            <AgentRoleChip
+              sessionId={sessionId}
+              agentId={agentId}
+              kind={kind}
+              position={`Subagent ${number}`}
+              costUsd={spendUsd}
+            />
+          }
+          text={<span data-lead-tree-title="">{title === '' ? role : title}</span>}
+          meta={
+            <ActivityMeta
+              density="rail"
+              columns={['state', 'time', 'cost']}
+              state={activityStateWordOf({ tone, word })}
+              time={
+                node === 'running' ? (
+                  <DelegationClock agentId={agentId} isLive className="text-info" />
+                ) : null
+              }
+              costUsd={isSettled ? spendUsd : null}
+            />
+          }
+        />
       </div>
     );
   },

@@ -85,6 +85,7 @@ export const RunAgentsRail = ({
         rail={
           <ScrollFade className="min-h-0 flex-1" viewportClassName="flex flex-col px-2 pb-3">
             <LeadTree
+              sessionId={sessionId}
               items={items}
               root={root}
               selectedAgentId={shownAgentId}
