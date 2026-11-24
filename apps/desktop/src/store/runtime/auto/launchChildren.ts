@@ -35,6 +35,7 @@ import { readFreeSlots } from './slots/readFreeSlots';
 import { readLiveDelegationIds } from './slots/readLiveDelegationIds';
 import { startQueuedAttempt } from './slots/startQueuedAttempt';
 import { readSnapshot } from './readSnapshot';
+import { recheckQueuedRouting } from './childRouting/recheckQueuedRouting';
 import type { AgentVerbContext } from './verbContext';
 
 export type LaunchChildrenParams = Readonly<{
@@ -267,13 +268,37 @@ type ReasonParams = {
 const reasonOf = ({ code, message }: ReasonParams): string =>
   message.trim() === '' ? code : `${code}: ${message.trim()}`;
 
-const launchOne = async (params: LaunchOneParams): Promise<void> => {
-  const { ctx, tree, delegation } = params;
-  const role = delegationRoleOf({ delegation });
-  const target = mountTargetOf({ delegation });
+type FirstStartParams = {
+  readonly ctx: AgentVerbContext;
+  readonly delegation: AutoDelegation;
+};
+
+const isFirstQueuedStart = async ({ ctx, delegation }: FirstStartParams): Promise<boolean> => {
+  if (
+    delegation.state !== 'accepted' ||
+    delegation.reviseOf !== null ||
+    delegation.request['continueWith'] !== undefined
+  ) {
+    return false;
+  }
+  const attempts = await listAutoAttemptsOfDelegation({ db: ctx.db, delegationId: delegation.id });
+  return attempts.length === 0;
+};
+
+const launchOne = async ({
+  ctx,
+  tree,
+  delegation: queued,
+  onChildEnded,
+}: LaunchOneParams): Promise<void> => {
+  const role = delegationRoleOf({ delegation: queued });
+  const target = mountTargetOf({ delegation: queued });
   if (target === null) {
     return;
   }
+  const delegation = (await isFirstQueuedStart({ ctx, delegation: queued }))
+    ? await recheckQueuedRouting({ ctx, tree, delegation: queued, role })
+    : queued;
   const attempt = await attemptToLaunch({ ctx, tree, delegation, role, target });
   if (attempt === null) {
     return;
@@ -290,7 +315,7 @@ const launchOne = async (params: LaunchOneParams): Promise<void> => {
     await fail(reasonOf({ code: AGENT_NOT_CREATED_REASON, message: formatError(error) }));
     return;
   }
-  const outcome = await startTurn({ ...params, attempt, role, target });
+  const outcome = await startTurn({ ctx, tree, delegation, onChildEnded, attempt, role, target });
   if (outcome.kind === 'refused') {
     await fail(reasonOf({ code: outcome.reason, message: outcome.message }));
     return;

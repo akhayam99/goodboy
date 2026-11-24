@@ -1082,7 +1082,7 @@
     "apps/desktop/src/store/runtime/auto/finishAttempt.ts": 2,
     "apps/desktop/src/store/runtime/auto/followArtifactAnnouncements.ts": 1,
     "apps/desktop/src/store/runtime/auto/landRevision.ts": 3,
-    "apps/desktop/src/store/runtime/auto/launchChildren.ts": 3,
+    "apps/desktop/src/store/runtime/auto/launchChildren.ts": 2,
     "apps/desktop/src/store/runtime/auto/makeAutoRuntime.ts": 4,
     "apps/desktop/src/store/runtime/auto/planPublish.ts": 1,
     "apps/desktop/src/store/runtime/auto/publishAct.ts": 1,
