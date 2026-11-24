@@ -134,8 +134,8 @@ export const jsonLd = ({ page }: Params) => {
     organization(),
     website(),
     software(),
-    ...(page.isIndexed ? [webPage({ page })] : []),
-    ...(page.isIndexed && page.crumbs.length > 1 ? [breadcrumbList({ page })] : []),
+    ...(page.kind === 'not-found' ? [] : [webPage({ page })]),
+    ...(page.kind !== 'not-found' && page.crumbs.length > 1 ? [breadcrumbList({ page })] : []),
     ...(page.isIndexed && page.kind === 'guide' ? [faqPage({ page })] : []),
   ];
   const json = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph });

@@ -24,7 +24,11 @@ export const Hero = () => {
     <section className="hero" aria-labelledby="hero-title">
       <div className="shell">
         <div className="heroCopy">
-          <Eyebrow text="Free desktop ADE, built in public" kind="page" className="rise" />
+          <Eyebrow
+            text="Free agentic development environment, built in public"
+            kind="page"
+            className="rise"
+          />
           <h1 id="hero-title" className="display rise" style={rise(1)}>
             Give every task a structure to work in
           </h1>

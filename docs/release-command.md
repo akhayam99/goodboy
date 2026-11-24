@@ -79,7 +79,8 @@ Below, `X` is the new version and `X-1` is the current latest.
      after the version into `website/src/data/releases/`: the feature map the
      site shows for that version, with its New items highlighted, the
      version the site footer shows, and today's date, which dates the
-     version's page under `/changelog` and its sitemap entry. Run it after the
+     version's page under `/changelog` and, for a minor or major release, its
+     sitemap entry (a patch page is `noindex`). Run it after the
      edits above, so the snapshot matches what shipped.
    - Commit the edits and the new JSON in the release PR.
 2. Create the release branch following the branch-naming rule in
