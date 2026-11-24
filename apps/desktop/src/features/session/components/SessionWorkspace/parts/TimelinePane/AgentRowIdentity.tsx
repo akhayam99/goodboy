@@ -3,7 +3,7 @@ import type { RowPhase } from '../../../../../workTreeModel/rowState';
 import type { AgentRowWork } from '../../../../hooks/useAgentRowWork';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
 import type { AgentRowModels } from './useAgentRowModels';
-import { RoleCard } from '../../../../../workTreeModel/components/RoleCard';
+import { AgentRoleCard } from './AgentRoleCard';
 import type { TimelineRowIdentity } from './timelineRowIdentity';
 
 type Params = {
@@ -40,7 +40,7 @@ export const agentRowIdentity = ({
       ? [last?.name, last?.effort].filter((part) => part != null).join(', ') || null
       : null,
     wrapCard: ({ children, isOpen }) => (
-      <RoleCard
+      <AgentRoleCard
         entry={entry}
         ordinal={ordinal}
         kindWord={kindWord}
@@ -51,7 +51,7 @@ export const agentRowIdentity = ({
         isOpen={isOpen}
       >
         {children}
-      </RoleCard>
+      </AgentRoleCard>
     ),
   };
 };

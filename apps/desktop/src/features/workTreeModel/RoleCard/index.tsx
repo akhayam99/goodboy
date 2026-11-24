@@ -1,31 +1,32 @@
+import type { ComponentProps } from 'react';
 import type { ProviderRunId, TelemetryRecord } from '@goodboy/types';
 import { FactCard, WorkNode } from '@goodboy/ui';
-import { useAppStore } from '../../../../store';
-import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
-import { routingLabelModel } from '../../../../shared/components/RoutingLabel/routingLabelModel';
-import { useNow } from '../../../../shared/hooks/useNow';
-import { agentDisplayName } from '../../../../shared/utils/agentDisplayName';
-import type { AgentRowWork } from '../../../session/hooks/useAgentRowWork';
-import { TimelineProviderGlyph } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineProviderGlyph';
-import type { CardTrigger } from '../../../session/components/SessionWorkspace/parts/TimelinePane/timelineRowIdentity';
-import { useRowPosition } from '../../../session/components/SessionWorkspace/parts/TimelinePane/useRowPosition';
-import { agentTokenTotals } from '../../../session/timeline/agentTokenTotals';
-import type { TimelineAgentEntry } from '../../../session/timeline/buildTimelineGroups';
-import type { AgentModels } from '../../../session/timeline/ranModels';
-import { roleCardSpec } from '../../roleCardSpec';
-import type { RowPhase } from '../../rowState';
-import { rowStateNode } from '../../rowStateCopy';
+import { useAppStore } from '../../../store';
+import { AgentKindChip } from '../../../shared/components/AgentKindChip';
+import { routingLabelModel } from '../../../shared/components/RoutingLabel/routingLabelModel';
+import { useNow } from '../../../shared/hooks/useNow';
+import { agentDisplayName } from '../../../shared/utils/agentDisplayName';
+import { agentTokenTotals } from '../../session/timeline/agentTokenTotals';
+import type { AgentRowRouting } from '../../session/timeline/agentRowRouting';
+import type { TimelineAgentEntry } from '../../session/timeline/buildTimelineGroups';
+import type { AgentModels } from '../../session/timeline/ranModels';
+import { roleCardSpec, type RoleCardParams } from '../roleCardSpec';
+import type { RowPhase } from '../rowState';
+import { rowStateNode } from '../rowStateCopy';
+import type { WorkTime } from '../workTime';
 
 type Props = {
   readonly entry: TimelineAgentEntry;
-  readonly ordinal: string | null;
+  readonly position: string;
   readonly kindWord: string;
   readonly models: AgentModels;
-  readonly work: AgentRowWork;
+  readonly routing: AgentRowRouting;
+  readonly time: WorkTime | null | undefined;
   readonly phase: RowPhase;
   readonly costUsd: number;
+  readonly markOf: RoleCardParams['markOf'];
   readonly isOpen?: boolean;
-  readonly children: CardTrigger;
+  readonly children: ComponentProps<typeof FactCard>['children'];
 };
 
 const EMPTY_RUN_IDS: ReadonlyArray<ProviderRunId> = [];
@@ -36,17 +37,18 @@ const MINUTE_MS = 60_000;
 
 export const RoleCard = ({
   entry,
-  ordinal,
+  position,
   kindWord,
   models,
-  work,
+  routing,
+  time,
   phase,
   costUsd,
+  markOf,
   isOpen = false,
   children,
 }: Props) => {
   const { agent } = entry;
-  const { routing, time } = work;
   const { divergence } = routingLabelModel({
     provider: routing.provider,
     model: routing.model,
@@ -56,7 +58,6 @@ export const RoleCard = ({
   });
   const records = useAppStore((state) => state.sessionTelemetry[agent.sessionId] ?? NO_RECORDS);
   const history = useAppStore((state) => state.agentRunHistory[agent.id] ?? EMPTY_RUN_IDS);
-  const position = useRowPosition({ entry, ordinal });
   const nowMs = useNow(MINUTE_MS, phase === 'waiting');
   const runIds = agent.runId == null ? history : [...history, agent.runId];
   const isStopped = phase === 'waiting' && agent.status === 'stopped';
@@ -80,7 +81,7 @@ export const RoleCard = ({
         stateGlyph: (
           <WorkNode state={node.state} label={node.label} mark={{ kind: 'dot' }} size="sm" />
         ),
-        markOf: ({ provider }) => <TimelineProviderGlyph provider={provider} />,
+        markOf,
         kindWord,
         position,
         task: agentDisplayName({ name: agent.name, kind: entry.agentKind }),

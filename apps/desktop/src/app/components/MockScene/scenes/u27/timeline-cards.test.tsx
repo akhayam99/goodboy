@@ -55,6 +55,6 @@ describe('timeline cards scene', () => {
     render(<Scene />);
 
     expect(await screen.findByTestId('timeline-cards-stage')).toBeDefined();
-    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    expect(document.documentElement.style.colorScheme).toBe('light');
   });
 });

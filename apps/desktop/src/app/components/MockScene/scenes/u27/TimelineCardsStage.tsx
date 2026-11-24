@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { RoleCardSamples } from './RoleCardSamples';
-import { RoleCard } from '../../../../../features/workTreeModel/components/RoleCard';
+import { AgentRoleCard } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/AgentRoleCard';
 import { RowModelsCard } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/RowModelsCard';
 import { RunIdentityCard } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/RunIdentityCard';
 import { TimelineModelCell } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/TimelineModelCell';
@@ -214,7 +214,7 @@ export const TimelineCardsStage = ({ theme }: Props) => {
         data-testid="timeline-cards-stage"
         className="grid w-264 grid-cols-3 items-start gap-x-6 gap-y-72 rounded-lg border border-border-soft bg-subtle p-6 pb-72"
       >
-        <RoleCard
+        <AgentRoleCard
           entry={AGENT_ENTRY}
           ordinal="4"
           kindWord="Implementer"
@@ -247,7 +247,7 @@ export const TimelineCardsStage = ({ theme }: Props) => {
             <AgentKindChip kind="implementer" density="glyph" isDecorative />
             Role glyph
           </span>
-        </RoleCard>
+        </AgentRoleCard>
         <RowModelsCard
           entry={AGENT_ENTRY}
           ordinal="4"

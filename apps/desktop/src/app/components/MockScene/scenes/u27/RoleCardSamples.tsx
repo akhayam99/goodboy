@@ -13,7 +13,7 @@ import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import type { AgentRowWork } from '../../../../../features/session/hooks/useAgentRowWork';
 import type { TimelineAgentEntry } from '../../../../../features/session/timeline/buildTimelineGroups';
 import type { AgentModels } from '../../../../../features/session/timeline/ranModels';
-import { RoleCard } from '../../../../../features/workTreeModel/components/RoleCard';
+import { AgentRoleCard } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/AgentRoleCard';
 
 type IdParams = {
   readonly value: string;
@@ -158,7 +158,7 @@ export const RoleCardSamples = () => {
   };
   return (
     <>
-      <RoleCard
+      <AgentRoleCard
         entry={entryOf({ agent: IMPLEMENTER, kind: 'implementer', openQuestions: [] })}
         ordinal="4"
         kindWord="Implementer"
@@ -177,8 +177,8 @@ export const RoleCardSamples = () => {
           <AgentKindChip kind="implementer" density="glyph" isDecorative />
           One provider
         </span>
-      </RoleCard>
-      <RoleCard
+      </AgentRoleCard>
+      <AgentRoleCard
         entry={entryOf({ agent: REVIEWER, kind: 'reviewer', openQuestions: [question] })}
         ordinal="4.2"
         kindWord="Reviewer"
@@ -192,7 +192,7 @@ export const RoleCardSamples = () => {
           <AgentKindChip kind="reviewer" density="glyph" isDecorative />
           Two providers
         </span>
-      </RoleCard>
+      </AgentRoleCard>
     </>
   );
 };

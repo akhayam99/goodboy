@@ -20,19 +20,19 @@ import {
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../../../store/storyHarness';
-import { formatClock } from '../../../../shared/utils/time/formatClock';
-import type { AgentRowWork } from '../../../session/hooks/useAgentRowWork';
-import type { TimelineAgentEntry } from '../../../session/timeline/buildTimelineGroups';
-import type { AgentModels, RanModel } from '../../../session/timeline/ranModels';
-import type { RowPhase } from '../../rowState';
-import { RoleCard } from '.';
+} from '../../../store/storyHarness';
+import { formatClock } from '../../../shared/utils/time/formatClock';
+import type { AgentRowWork } from '../../session/hooks/useAgentRowWork';
+import type { TimelineAgentEntry } from '../../session/timeline/buildTimelineGroups';
+import type { AgentModels, RanModel } from '../../session/timeline/ranModels';
+import type { RowPhase } from '../rowState';
+import { AgentRoleCard } from '../../session/components/SessionWorkspace/parts/TimelinePane/AgentRoleCard';
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
 type IdParams = {
@@ -231,11 +231,11 @@ const questionOf = ({ createdAt }: QuestionParams): OpenQuestion => ({
   createdAt: idOf<IsoDateTime>({ value: createdAt }),
 });
 
-type CardProps = Omit<Parameters<typeof RoleCard>[0], 'children' | 'isOpen'>;
+type CardProps = Omit<Parameters<typeof AgentRoleCard>[0], 'children' | 'isOpen'>;
 
 const renderCard = (props: Partial<CardProps> = {}) =>
   render(
-    <RoleCard
+    <AgentRoleCard
       entry={entryOf({ agent: STEP_FOUR })}
       ordinal="4"
       kindWord="Implementer"
@@ -247,7 +247,7 @@ const renderCard = (props: Partial<CardProps> = {}) =>
       {...props}
     >
       <button type="button">glyph</button>
-    </RoleCard>,
+    </AgentRoleCard>,
   );
 
 beforeEach(async () => {
@@ -322,7 +322,7 @@ describe('RoleCard', () => {
   it('shows the task in full under the role', () => {
     renderCard();
 
-    expect(shownCard().getByText(TASK).className).toContain('line-clamp-4');
+    expect(shownCard().getByText(TASK).textContent).toBe(TASK);
   });
 
   it.each(PHASES)('says $words with its time on the state line', ({ phase, words, note }) => {
@@ -404,8 +404,15 @@ describe('RoleCard', () => {
       work: workOf({ isEffortObserved: false }),
     });
 
-    const segment = modelLines()[0]?.querySelector('[data-segment="on"]');
-    expect(segment?.className).toContain('bg-faint-foreground');
+    const meter = modelLines()[0]?.querySelector('[data-effort-meter]');
+    expect(meter?.getAttribute('data-effort-meter')).toBe('planned');
+  });
+
+  it('draws the effort of a turn that ran in the used ink', () => {
+    renderCard();
+
+    const meter = modelLines()[0]?.querySelector('[data-effort-meter]');
+    expect(meter?.getAttribute('data-effort-meter')).toBe('used');
   });
 
   it('shows the first and the last of three models and counts the one between', () => {
@@ -437,7 +444,7 @@ describe('RoleCard', () => {
 
   it('stays shut until it is asked for', () => {
     render(
-      <RoleCard
+      <AgentRoleCard
         entry={entryOf({ agent: STEP_FOUR })}
         ordinal="4"
         kindWord="Implementer"
@@ -447,7 +454,7 @@ describe('RoleCard', () => {
         costUsd={0.62}
       >
         <button type="button">glyph</button>
-      </RoleCard>,
+      </AgentRoleCard>,
     );
 
     expect(screen.queryByTestId('fact-card')).toBeNull();

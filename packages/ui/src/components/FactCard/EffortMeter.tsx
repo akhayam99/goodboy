@@ -19,7 +19,7 @@ export const EffortMeter = ({ effort, isPlanned }: Props) => {
     <span
       role="img"
       aria-label={`Effort ${effort.word}, ${effort.step} of ${effort.steps}`}
-      data-effort-meter=""
+      data-effort-meter={isPlanned ? 'planned' : 'used'}
       className="inline-flex shrink-0 items-center gap-0.5"
     >
       {Array.from({ length: effort.steps }, (_, index) => (

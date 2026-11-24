@@ -109,7 +109,7 @@ describe('the role card parts', () => {
     const task = screen.getByText(TASK);
     expect(task.className).toContain('line-clamp-4');
     expect(task.className).not.toContain('truncate');
-    expect(screen.getByTestId('node')).toBeDefined();
+    screen.getByTestId('node');
     expect(screen.getByText('Working').className).toContain('text-info');
     expect(screen.getByText('12m').className).toContain('text-faint-foreground');
   });
@@ -133,7 +133,7 @@ describe('the role card parts', () => {
     expect(lines.map((line) => line.dataset.factModel)).toEqual([SONNET.key, SOL.key]);
     expect(lines[0]?.querySelector('[data-provider="anthropic"]')).not.toBeNull();
     expect(lines[1]?.querySelector('[data-provider="codex"]')).not.toBeNull();
-    expect(screen.getByText('Models')).toBeDefined();
+    screen.getByText('Models');
   });
 
   it('gives the meter one segment per level the model offers, filled to the level used', () => {
@@ -157,8 +157,8 @@ describe('the role card parts', () => {
     const { container } = renderModels({ models: [HAIKU] });
 
     expect(container.querySelector('[data-effort-meter]')).toBeNull();
-    expect(screen.getByText('Model')).toBeDefined();
-    expect(screen.getByText('Haiku 4.5')).toBeDefined();
+    screen.getByText('Model');
+    screen.getByText('Haiku 4.5');
   });
 
   it('draws the planned meter in faint ink and the used one in muted ink', () => {
@@ -187,6 +187,6 @@ describe('the role card parts', () => {
 
     const lines = Array.from(container.querySelectorAll<HTMLElement>('[data-fact-model]'));
     expect(lines.map((line) => line.dataset.factModel)).toEqual([SONNET.key, SOL.key]);
-    expect(screen.getByText('+ 1 model')).toBeDefined();
+    screen.getByText('+ 1 model');
   });
 });

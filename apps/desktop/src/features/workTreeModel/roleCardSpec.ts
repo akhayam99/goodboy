@@ -46,7 +46,7 @@ type StateParams = Pick<RoleCardParams, 'phase' | 'isStopped' | 'time' | 'askedA
 
 type AskedParams = Pick<RoleCardParams, 'askedAt' | 'nowMs'>;
 
-const effortOf = ({ model, isEffortObserved }: EffortParams): FactEffort | undefined => {
+const meterEffortOf = ({ model, isEffortObserved }: EffortParams): FactEffort | undefined => {
   if (model.effort === null) {
     return undefined;
   }
@@ -69,7 +69,7 @@ const askedNote = ({ askedAt, nowMs }: AskedParams): string | undefined => {
   return age === '' ? undefined : `asked ${age}`;
 };
 
-const stateOf = ({ phase, isStopped, time, askedAt, nowMs }: StateParams): FactState => {
+const stateLineOf = ({ phase, isStopped, time, askedAt, nowMs }: StateParams): FactState => {
   const headline = time?.headline;
   switch (phase) {
     case 'queued':
@@ -149,10 +149,10 @@ export const roleCardSpec = ({
     title: kindWord,
     sub: position,
     task,
-    state: stateOf({ phase, isStopped, time, askedAt, nowMs }),
+    state: stateLineOf({ phase, isStopped, time, askedAt, nowMs }),
     stateGlyph,
     models: models.models.map((model) => {
-      const effort = effortOf({ model, isEffortObserved });
+      const effort = meterEffortOf({ model, isEffortObserved });
       return {
         key: model.key,
         name: model.name,
