@@ -85,6 +85,8 @@ describe('a queued helper when its turn comes', () => {
       model: 'gpt-6.1-sol',
       reason: MOVED_REASON,
       proposal: 'replaced',
+      source: 'fallback',
+      cause: 'cooldown',
     });
     expect(world.errors).toEqual([]);
   });

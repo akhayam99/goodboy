@@ -1,3 +1,4 @@
+import { WORKFLOW_ROUTING_REASON_LIMIT } from '../orchestrator/parseWorkflowRoutingProposal';
 import { sha256Hex } from '../slug/sha256';
 import { AUTO_FACTS_MOUNTS_MAX } from './limits';
 import { parseDelegatePublish, type DelegatePublish } from './publish';
@@ -30,6 +31,7 @@ export type DelegateChildSpec = Readonly<{
   provider: string | null;
   model: string | null;
   effort: string | null;
+  modelReason: string | null;
   taskType: string | null;
   difficulty: string | null;
   doneWhen: string | null;
@@ -93,6 +95,13 @@ const listOf = ({ value }: ListParams): ReadonlyArray<string> => {
   }
   return out.slice(0, DELEGATE_LIST_MAX);
 };
+
+type ModelReasonParams = {
+  readonly value: unknown;
+};
+
+const modelReasonOf = ({ value }: ModelReasonParams): string | null =>
+  clippedTextOf({ value, max: WORKFLOW_ROUTING_REASON_LIMIT });
 
 type ReviseParams = {
   readonly value: unknown;
@@ -205,6 +214,7 @@ const retryChild = ({ raw, slot, retryOf }: RetryChildParams): ChildOutcome => {
       provider: clippedTextOf({ value: raw['provider'], max: DELEGATE_FIELD_CHARS }),
       model: clippedTextOf({ value: raw['model'], max: DELEGATE_FIELD_CHARS }),
       effort: clippedTextOf({ value: raw['effort'], max: DELEGATE_FIELD_CHARS }),
+      modelReason: modelReasonOf({ value: raw['modelReason'] }),
       taskType: null,
       difficulty: null,
       doneWhen: null,
@@ -293,6 +303,7 @@ const parseChild = ({ raw, slot }: ChildParams): ChildOutcome => {
       provider: clippedTextOf({ value: raw['provider'], max: DELEGATE_FIELD_CHARS }),
       model: clippedTextOf({ value: raw['model'], max: DELEGATE_FIELD_CHARS }),
       effort: clippedTextOf({ value: raw['effort'], max: DELEGATE_FIELD_CHARS }),
+      modelReason: modelReasonOf({ value: raw['modelReason'] }),
       taskType: clippedTextOf({ value: raw['taskType'], max: DELEGATE_FIELD_CHARS }),
       difficulty: clippedTextOf({ value: raw['difficulty'], max: DELEGATE_FIELD_CHARS }),
       doneWhen: clippedTextOf({ value: raw['doneWhen'], max: DELEGATE_FIELD_CHARS }),
@@ -366,6 +377,7 @@ export const hashDelegateChildren = ({ children }: HashParams): string =>
         ...(child.title === null ? [] : [['title', child.title]]),
         ...(child.replaces === null ? [] : [['replaces', child.replaces]]),
         ...(child.roleReason === null ? [] : [['roleReason', child.roleReason]]),
+        ...(child.modelReason === null ? [] : [['modelReason', child.modelReason]]),
         ...(child.shouldConfirm ? [['confirm', true]] : []),
       ]),
     ),

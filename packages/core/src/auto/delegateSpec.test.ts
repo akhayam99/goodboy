@@ -380,6 +380,48 @@ describe('parsing the spec of an agent delegate call', () => {
     expect(plain.kind === 'ok' && kept.kind === 'ok' && plain.hash !== kept.hash).toBe(true);
   });
 
+  it('reads the modelReason of a pick, caps it and keeps old specs hashing the same', () => {
+    const base = {
+      role: 'scout',
+      task: 'Find the retry cap in payments-api',
+      reason: 'read only search',
+      provider: 'codex',
+      model: 'gpt-6.1-sol',
+    };
+    const plain = parseDelegateSpec({ text: spec([base]) });
+    const said = parseDelegateSpec({
+      text: spec([{ ...base, modelReason: 'Codex has the most room left.' }]),
+    });
+    const long = parseDelegateSpec({ text: spec([{ ...base, modelReason: 'x'.repeat(400) }]) });
+    const blank = parseDelegateSpec({ text: spec([{ ...base, modelReason: ' ' }]) });
+    expect(plain).toMatchObject({ kind: 'ok', children: [{ modelReason: null }] });
+    expect(blank).toEqual(plain);
+    expect(said).toMatchObject({
+      kind: 'ok',
+      children: [{ modelReason: 'Codex has the most room left.' }],
+    });
+    expect(long.kind === 'ok' ? long.children[0]?.modelReason?.length : 0).toBe(240);
+    expect(plain.kind === 'ok' && said.kind === 'ok' && plain.hash !== said.hash).toBe(true);
+  });
+
+  it('reads the modelReason of a retry that picks again', () => {
+    const retry = parseDelegateSpec({
+      text: spec([
+        {
+          retryOf: 'delegation-a',
+          reason: 'again',
+          provider: 'cursor',
+          model: 'auto',
+          modelReason: 'A light read fits Cursor Auto.',
+        },
+      ]),
+    });
+    expect(retry).toMatchObject({
+      kind: 'ok',
+      children: [{ retryOf: 'delegation-a', modelReason: 'A light read fits Cursor Auto.' }],
+    });
+  });
+
   it('refuses a retry that sets a title', () => {
     const retry = parseDelegateSpec({
       text: spec([{ retryOf: 'delegation-a', reason: 'again', title: 'Fix it again' }]),

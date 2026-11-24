@@ -64,7 +64,7 @@
   "packages/db/src/queries/impact.ts": 773,
   "packages/db/src/queries/session-workflow.ts": 630,
   "packages/db/src/queries/workflow.ts": 616,
-  "packages/types/src/index.ts": 644,
+  "packages/types/src/index.ts": 636,
   "packages/ui/src/components/Listbox/index.tsx": 348,
   "packages/ui/src/components/Markdown/index.tsx": 675,
   "packages/ui/src/components/ReportSheet/index.tsx": 306,

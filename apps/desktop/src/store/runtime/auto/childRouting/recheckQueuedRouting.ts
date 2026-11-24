@@ -5,8 +5,11 @@ import {
   type AutoDelegation,
   type AutoTree,
 } from '@goodboy/db';
+import { isRecord } from '@goodboy/types/helpers';
 import { textFieldOf } from '../../../../shared/utils/textFieldOf';
 import type { AgentVerbContext } from '../verbContext';
+import { routingPickOf } from './routingPickOf';
+import { writerFamilyOf } from './writerFamilyOf';
 
 const PROVIDER_CAUSES: ReadonlyArray<CandidateCause> = [
   'off',
@@ -17,6 +20,21 @@ const PROVIDER_CAUSES: ReadonlyArray<CandidateCause> = [
   'budget',
   'outside-run',
 ];
+
+type InputRefsParams = {
+  readonly delegation: AutoDelegation;
+};
+
+const inputRefsOf = ({ delegation }: InputRefsParams) => {
+  const inputs = delegation.request['inputArtifacts'];
+  return (Array.isArray(inputs) ? inputs : []).flatMap((input: unknown) =>
+    isRecord(input) &&
+    typeof input['artifactId'] === 'string' &&
+    typeof input['revision'] === 'number'
+      ? [{ artifactId: input['artifactId'], revision: input['revision'] }]
+      : [],
+  );
+};
 
 type Params = {
   readonly ctx: AgentVerbContext;
@@ -32,6 +50,12 @@ export const recheckQueuedRouting = async ({
   role,
 }: Params): Promise<AutoDelegation> => {
   const { routing } = delegation;
+  const writerFamily = await writerFamilyOf({
+    ctx,
+    tree,
+    role,
+    inputs: inputRefsOf({ delegation }),
+  });
   const outcome = await ctx.ports.resolveRouting({
     sessionId: tree.sessionId,
     role,
@@ -43,23 +67,17 @@ export const recheckQueuedRouting = async ({
       difficulty: textFieldOf({ source: delegation.request, key: 'difficulty' }) ?? undefined,
     },
     promptText: textFieldOf({ source: delegation.request, key: 'task' }) ?? '',
+    writerFamily,
   });
   if (
     outcome.kind !== 'ready' ||
-    outcome.source !== 'fallback' ||
+    outcome.proposal !== 'replaced' ||
     outcome.cause == null ||
     !PROVIDER_CAUSES.includes(outcome.cause)
   ) {
     return delegation;
   }
-  const next = {
-    ...routing,
-    provider: outcome.provider,
-    model: outcome.model,
-    effort: outcome.effort,
-    reason: outcome.reason,
-    proposal: outcome.proposal,
-  };
+  const next = { ...routing, ...routingPickOf({ outcome }) };
   const patch = patchQueuedAutoDelegationRoutingStatement({
     delegationId: delegation.id,
     generation: tree.generation,
