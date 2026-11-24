@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import type { TurnRoleInsight } from '@goodboy/db';
 import {
   EmptyState,
   ErrorStrip,
@@ -13,6 +12,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import type { PaneFrame } from '../../../../shared/types/paneFrame';
 import { NOT_LOADED_HINT, UNKNOWN_VALUE } from '../../../../shared/utils/unknownValue';
 import type { ImpactRouting } from '../../hooks/useImpactRouting';
+import { pinnedShareOf } from '../../lib';
 import { AgentRoleRow } from './AgentRoleRow';
 
 const AGENT_TILE_LABELS = [
@@ -30,15 +30,6 @@ type Props = {
   readonly frame: PaneFrame;
   readonly routing: ImpactRouting;
 };
-
-type InsightParams = {
-  readonly insight: TurnRoleInsight;
-};
-
-const pinnedShare = ({ insight }: InsightParams): string =>
-  insight.knownTurns === 0
-    ? UNKNOWN_VALUE
-    : `${Math.round((insight.pinnedTurns / insight.knownTurns) * 100)}%`;
 
 export const AgentsPanel = ({ frame, routing }: Props) => {
   const [openRole, setOpenRole] = useState<string | null>(null);
@@ -62,7 +53,12 @@ export const AgentsPanel = ({ frame, routing }: Props) => {
             <StatCard label="Roles used" value={String(insight.roles.length)} />
             <StatCard
               label="Pinned by you"
-              value={pinnedShare({ insight })}
+              value={
+                pinnedShareOf({
+                  knownTurns: insight.knownTurns,
+                  pinnedTurns: insight.pinnedTurns,
+                }) ?? UNKNOWN_VALUE
+              }
               hint={`known for ${insight.knownTurns} of ${insight.turns} turns`}
             />
             <StatCard

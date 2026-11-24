@@ -5,6 +5,7 @@ import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { EFFORT_LABEL } from '../../../chat/utils/chat-constants';
 import { ROLE_LABEL, kindForRole } from '../../../session/agent-kind';
+import { pinnedShareOf } from '../../lib';
 
 type Props = {
   readonly entry: TurnRoleEntry;
@@ -44,15 +45,6 @@ const effortText = ({ efforts }: EffortParams): string => {
   const whole = set.reduce((sum, entry) => sum + entry.turns, 0);
   return `${label} ${shareOf({ part: top.turns, whole })}%`;
 };
-
-type EntryParams = {
-  readonly entry: TurnRoleEntry;
-};
-
-const pinnedText = ({ entry }: EntryParams): string =>
-  entry.knownTurns === 0
-    ? 'Not known'
-    : `${shareOf({ part: entry.pinnedTurns, whole: entry.knownTurns })}%`;
 
 export const AgentRoleRow = ({ entry, isOpen, onToggle }: Props) => {
   const name = ROLE_NAMES.get(entry.role) ?? entry.role;
@@ -104,7 +96,10 @@ export const AgentRoleRow = ({ entry, isOpen, onToggle }: Props) => {
         <td className={cn(NUMBER_CELL, 'text-muted-foreground')}>
           {formatUsd(entry.costPerTurnUsd)}
         </td>
-        <td className={cn(NUMBER_CELL, 'text-muted-foreground')}>{pinnedText({ entry })}</td>
+        <td className={cn(NUMBER_CELL, 'text-muted-foreground')}>
+          {pinnedShareOf({ knownTurns: entry.knownTurns, pinnedTurns: entry.pinnedTurns }) ??
+            'Not known'}
+        </td>
       </tr>
       {isOpen ? (
         <tr data-detail={entry.role}>

@@ -51,5 +51,13 @@ export const impactWindowStart = ({ windowId, nowMs }: WindowStartParams): numbe
   return windowMs === null ? null : nowMs - windowMs;
 };
 
+type PinnedShareParams = {
+  readonly knownTurns: number;
+  readonly pinnedTurns: number;
+};
+
+export const pinnedShareOf = ({ knownTurns, pinnedTurns }: PinnedShareParams): string | null =>
+  knownTurns === 0 ? null : `${Math.round((pinnedTurns / knownTurns) * 100)}%`;
+
 export const impactTabOf = ({ scope }: ScopeParams): ImpactTab =>
   scope.kind === 'provider' || scope.kind === 'session' ? 'spend' : scope.kind;
