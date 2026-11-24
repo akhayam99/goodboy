@@ -58,7 +58,6 @@ export const ProjectWorktrees = ({
       <Suspense fallback={<SkeletonRows label="Loading worktrees" />}>
         <ProjectWorktreesSheet
           worktrees={worktrees}
-          projectId={projectId}
           projectName={projectName}
           workspaceId={workspaceId}
           hostSessionId={hostSessionId}

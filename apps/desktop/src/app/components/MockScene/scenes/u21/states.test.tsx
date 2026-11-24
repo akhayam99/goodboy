@@ -93,7 +93,7 @@ describe('the u21 page-state scenes', () => {
     if (!(empty instanceof HTMLElement)) {
       throw new Error('no empty line around the sentence');
     }
-    expect(within(empty).getByRole('button', { name: 'Mount a folder' })).toBeDefined();
+    expect(within(empty).getByRole('button', { name: 'Mount a project' })).toBeDefined();
   });
 
   it('shows the Questions first-time state', async () => {

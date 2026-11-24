@@ -126,8 +126,8 @@ describe('detaching a branch an unfinished run still writes to', () => {
   it('keeps the plain close confirm when no run uses the branch', () => {
     const confirm = closeOf({ overrides: {} })?.confirm;
 
-    expect(confirm?.confirmLabel).toBe('Close branch');
-    expect(confirm?.altActionId).toBeUndefined();
+    expect(confirm?.confirmLabel).toBe('Remove the folder');
+    expect(confirm?.altActionId).toBe('mount.closeKeepFolder');
     expect(
       resolveActions({ definitions: MOUNT_KIND.actions, facts: facts({}) }).some(
         (action) => action.id === 'mount.stopPinnedRun',

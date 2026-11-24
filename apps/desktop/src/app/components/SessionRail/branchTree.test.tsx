@@ -785,8 +785,8 @@ describe('the folder cards of the session level', () => {
     await mountRail();
 
     const card = within(screen.getByRole('group', { name: 'Projects' }));
-    fireEvent.click(card.getByRole('button', { name: 'Mount a folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Mount a folder' }));
+    fireEvent.click(card.getByRole('button', { name: 'Mount a project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Mount a project' }));
 
     expect(await picker.findByRole('button', { name: 'Mount notify-relay' })).toBeDefined();
     expect(picker.queryByRole('button', { name: 'Mount payments-api' })).toBeNull();
@@ -807,8 +807,8 @@ describe('the folder cards of the session level', () => {
     const before = useAppStore.getState().projects.length;
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mount a folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Mount a folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mount a project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Mount a project' }));
     const choose = await picker.findByRole('button', { name: 'Choose a folder…' });
     await act(async () => fireEvent.click(choose));
     await settle();
@@ -834,7 +834,7 @@ describe('the folder cards of the session level', () => {
     expect(card.querySelector('[data-project-row]')?.compareDocumentPosition(rebaseAll)).toBe(
       Node.DOCUMENT_POSITION_PRECEDING,
     );
-    expect(within(card).getByRole('button', { name: 'Mount a folder' })).toBeDefined();
+    expect(within(card).getByRole('button', { name: 'Mount a project' })).toBeDefined();
     expect(within(card).getByRole('button', { name: 'New branch in ledger-core' })).toBeDefined();
   });
 
@@ -865,8 +865,8 @@ describe('the folder cards of the session level', () => {
     const before = useAppStore.getState().projects.length;
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mount a folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Mount a folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mount a project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Mount a project' }));
     const choose = await picker.findByRole('button', { name: 'Choose a folder…' });
     await act(async () => fireEvent.click(choose));
     await settle();
@@ -898,8 +898,8 @@ describe('the folder cards of the session level', () => {
     const before = useAppStore.getState().projects.length;
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mount a folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Mount a folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mount a project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Mount a project' }));
     const choose = await picker.findByRole('button', { name: 'Choose a folder…' });
     await act(async () => fireEvent.click(choose));
     await settle();
@@ -919,7 +919,7 @@ describe('the folder cards of the session level', () => {
     fireEvent.click(plus);
 
     expect(await screen.findByRole('dialog', { name: 'New branch in ledger-core' })).toBeDefined();
-    expect(screen.queryByRole('dialog', { name: 'Mount a folder' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Mount a project' })).toBeNull();
   });
 
   it('opens the same new branch form when the registry action runs', async () => {
@@ -980,7 +980,7 @@ describe('the folder cards of the session level', () => {
     );
     await settle();
 
-    expect(screen.queryByRole('button', { name: 'Mount a folder' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Mount a project' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^New branch in/ })).toBeNull();
   });
 });
@@ -1090,7 +1090,7 @@ describe('the branch row inside the Projects card', () => {
       throw new Error('the Projects toggle sits in no card');
     }
     await waitFor(() => expect(card.querySelector('[data-card-signal]')).not.toBeNull());
-    expect(within(card).getByRole('button', { name: 'Mount a folder' })).toBeDefined();
+    expect(within(card).getByRole('button', { name: 'Mount a project' })).toBeDefined();
   });
 });
 

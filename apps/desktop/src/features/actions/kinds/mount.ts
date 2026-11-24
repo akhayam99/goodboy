@@ -22,7 +22,8 @@ import { NAMES } from '../../../shared/utils/names';
 import { openExplorePane } from '../../explore/openExplorePane';
 import { openScriptsPane } from '../../scripts/openScriptsPane';
 import { MOUNT_CLEAN_UP_ACTION } from './mountCleanUpAction';
-import { mountCloseConfirm } from './mountCloseConfirm';
+import { MOUNT_CLOSE_ACTION } from './mountCloseAction';
+import { MOUNT_CLOSE_KEEP_FOLDER_ACTION } from './mountCloseKeepFolderAction';
 import { withSubmenus } from '../withSubmenus';
 import { MOUNT_STOP_PINNED_RUN_ACTION } from './mountStopPinnedRunAction';
 import { mountCleanupBlockers } from '../../../store/slices/mount-cleanup/cleanupPolicy';
@@ -421,36 +422,8 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   MOUNT_CLEAN_UP_ACTION,
   MOUNT_STOP_PINNED_RUN_ACTION,
-  {
-    id: 'mount.close',
-    label: NAMES.closeBranch,
-    icon: CONCEPT_ICONS.worktree,
-    group: 'danger',
-    when: ({ facts }) => isOpen({ facts }) && !facts.isRebasing,
-    slot: () => 'menu',
-    placement: ({ facts }) => (facts.pr === 'merged' ? 'palette' : 'everywhere'),
-    pendingLabel: () => NAMES.closing,
-    confirm: mountCloseConfirm,
-    run: async ({ facts, env }) => {
-      if (facts.pr === 'merged') {
-        const result = await env.getState().removeMountWorktree({
-          sessionId: facts.sessionId,
-          mountId: facts.mountId,
-          mode: 'safe',
-        });
-        if (result.kind === 'kept' || result.kind === 'failed') {
-          throw new Error(result.reason ?? `The worktree for ${facts.label} stayed.`);
-        }
-        return;
-      }
-      const result = await env
-        .getState()
-        .unmountMount({ sessionId: facts.sessionId, mountId: facts.mountId });
-      if (result.kept && facts.worktreePath !== null) {
-        env.showToast({ kind: 'info', message: `Worktree kept at ${facts.worktreePath}` });
-      }
-    },
-  },
+  MOUNT_CLOSE_ACTION,
+  MOUNT_CLOSE_KEEP_FOLDER_ACTION,
   {
     id: 'mount.forget',
     label: NAMES.unmount,

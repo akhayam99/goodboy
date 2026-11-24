@@ -235,6 +235,7 @@ describe('the branch menu on an Overview tile', () => {
       expect(unmountMount).toHaveBeenCalledWith({
         sessionId: COLUMN_SESSION_ID,
         mountId: mount.mountId,
+        keepDirectory: true,
       }),
     );
     expect(removeMountWorktree).not.toHaveBeenCalled();
@@ -300,6 +301,7 @@ describe('the branch menu on an Overview tile', () => {
       expect(unmountMount).toHaveBeenCalledWith({
         sessionId: COLUMN_SESSION_ID,
         mountId: mount.mountId,
+        onKeptFolder: 'detach',
       });
       await vi.waitFor(() =>
         expect(document.activeElement?.closest('[data-row]')?.getAttribute('data-row')).toBe(

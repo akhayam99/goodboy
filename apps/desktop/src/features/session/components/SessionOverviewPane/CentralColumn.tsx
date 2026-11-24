@@ -1,8 +1,7 @@
 import { useRef } from 'react';
-import { Button, HeightMotion, PANE_GROUPS_GAP_REM, PANE_RHYTHM } from '@goodboy/ui';
+import { HeightMotion, PANE_GROUPS_GAP_REM, PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { NAMES } from '../../../../shared/utils/names';
 import { SessionAskLine } from '../../ask/components/SessionAskLine';
 import { useMoveKeys } from '../../hooks/useMoveKeys';
 import { ProjectBlocks } from '../ProjectBlocks';
@@ -16,7 +15,6 @@ import { OverviewLog } from './OverviewLog';
 import { OverviewNotices } from './OverviewNotices';
 import { OverviewFacts } from './OverviewFacts';
 import { UnassignedNotes } from './UnassignedNotes';
-import { useDevDetails } from './useDevDetails';
 import { useOverviewModel } from './useOverviewModel';
 
 type Props = {
@@ -43,7 +41,6 @@ export const CentralColumn = ({ session }: Props) => {
   } = useOverviewModel({ session });
   const columnRef = useRef<HTMLDivElement>(null);
   useMoveKeys({ sessionId, face: 'overview', containerRef: columnRef, moves, actionsFor });
-  const dev = useDevDetails({ workspaceId: session.workspaceId });
   const isAskPanelOpen = useAppStore(
     (state) => state.drawer?.kind === 'ask' && state.drawer.sessionId === sessionId,
   );
@@ -95,13 +92,7 @@ export const CentralColumn = ({ session }: Props) => {
           cardsByRowId={placed.byRowId}
           actionsFor={actionsFor}
           openFor={openFor}
-          isDevShown={dev.isShown}
           shownAskIds={shownAskIds}
-          devToggle={
-            <Button size="sm" variant="quiet" aria-pressed={dev.isShown} onClick={dev.toggle}>
-              {dev.isShown ? NAMES.hideDevDetails : NAMES.showDevDetails}
-            </Button>
-          }
         />
       )}
       {isArchived || isEmpty ? null : <FolderCard sessionId={sessionId} />}

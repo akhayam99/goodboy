@@ -12,7 +12,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   importStore,
@@ -156,17 +156,16 @@ describe('the reading order of the Overview', () => {
     expect(screen.queryByText(/^From chat/)).toBeNull();
   });
 
-  it('keeps Show dev details per workspace, shown at first', async () => {
+  it('heads Projects with Mount a project only, with no switch for dev details', async () => {
     seedCentralColumn({ kind: 'branches' });
-    const first = await show();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Hide dev details' }));
-    screen.getByRole('button', { name: 'Show dev details' });
-    first.unmount();
-
     await show();
-    screen.getByRole('button', { name: 'Show dev details' });
-    fireEvent.click(screen.getByRole('button', { name: 'Show dev details' }));
-    screen.getByRole('button', { name: 'Hide dev details' });
+    const actions = document.querySelector('[data-slot="project-blocks"] [data-section-actions]');
+
+    expect(
+      [...(actions?.querySelectorAll('button') ?? [])].map((button) =>
+        button.getAttribute('aria-label'),
+      ),
+    ).toEqual(['Mount a project']);
+    expect(screen.queryByRole('button', { name: /dev details/ })).toBeNull();
   });
 });
