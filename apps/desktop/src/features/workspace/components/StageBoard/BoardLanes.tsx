@@ -3,28 +3,24 @@ import { BOARD_LANE_FADE_PX, cn, PANE_RHYTHM, ScrollFade, tintClasses } from '@g
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY } from '../../../../store';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
+import { MergeInOrder } from '../../../board/mergeTrain/MergeInOrder';
 import type { BoardLanes as BoardLanesLayout } from './boardLanesOf';
-import { BOARD_STAGES } from './boardStages';
+import { laneColumnsOf } from './laneColumnsOf';
+import { BOARD_LANE_SPECS } from './boardLaneSpecs';
 import { StageColumn } from './StageColumn';
 import type { BoardNavigation } from './useBoardNavigation';
 import type { BoardSelection } from './useBoardSelection';
 import { useBoardArrowKeys } from './useBoardArrowKeys';
 import { useLaneTravel } from './useLaneTravel';
 
-const LANE_STAGES = BOARD_STAGES.filter((stage) => stage !== 'done');
-
-const columnsClassOf = ({ layout }: { readonly layout: BoardLanesLayout }): string => {
-  if (layout.scrolls) {
-    return PANE_RHYTHM.board.lanesScroll;
-  }
-  return layout.stacked ? PANE_RHYTHM.board.lanesFive : PANE_RHYTHM.board.lanesSix;
-};
+const LANE_STAGES = BOARD_LANE_SPECS.flatMap((spec) =>
+  spec.kind === 'stage' && spec.stage !== 'done' ? [spec.stage] : [],
+);
 
 type Props = {
   readonly layout: BoardLanesLayout;
-  readonly scrollLaneRem: number;
+  readonly laneRem: number;
   readonly byStage: ReadonlyMap<string, ReadonlyArray<Session>>;
-  readonly needsYouCount: number;
   readonly archived: ReadonlyArray<Session>;
   readonly isArchivedLoading: boolean;
   readonly nav: BoardNavigation;
@@ -42,9 +38,8 @@ type CardHover = {
 
 export const BoardLanes = ({
   layout,
-  scrollLaneRem,
+  laneRem,
   byStage,
-  needsYouCount,
   archived,
   isArchivedLoading,
   nav,
@@ -73,6 +68,7 @@ export const BoardLanes = ({
   const onArrowKeyDown = useBoardArrowKeys({ selection });
   const lasso = useDragLasso<SessionId>({ containerRef: columnsRef, onSelect: onLassoSelect });
   const placement = layout.stacked ? 'half' : 'lane';
+  const columns = laneColumnsOf({ layout, laneRem });
   const travelerIds = useLaneTravel({
     byStage,
     resetKey: motionResetKey,
@@ -122,11 +118,11 @@ export const BoardLanes = ({
         onPointerDown={lasso.onPointerDown}
         onKeyDown={onArrowKeyDown}
         data-selecting={selectedIds.length > 0}
-        style={isScrolling ? { gridTemplateColumns: `repeat(5,${scrollLaneRem}rem)` } : undefined}
+        style={columns.style}
         className={cn(
           'group/select-list relative grid h-full min-h-0 grid-rows-[minmax(0,1fr)]',
           PANE_RHYTHM.board.laneGap,
-          columnsClassOf({ layout }),
+          columns.className,
         )}
       >
         {LANE_STAGES.map((stage) => (
@@ -134,7 +130,9 @@ export const BoardLanes = ({
             key={stage}
             spec={{ kind: 'stage', stage }}
             sessions={byStage.get(stage) ?? EMPTY_ARRAY}
-            {...(stage === 'attention' && { count: needsYouCount })}
+            {...(stage === 'review' && {
+              action: <MergeInOrder sessions={byStage.get(stage) ?? EMPTY_ARRAY} />,
+            })}
             nav={nav}
             selection={selection}
             onClearSelection={selection.clearAll}

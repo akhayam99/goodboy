@@ -1,0 +1,168 @@
+import type {
+  OpenQuestion,
+  OpenQuestionId,
+  Session,
+  SessionAttentionReason,
+  SessionId,
+  SessionStageInfo,
+} from '@goodboy/types';
+import { ATTENTION_REASON_META, attentionWordsOf } from '../../session/session-stage';
+import { attentionCountOf } from '../../../store/slices/session-view/attentionCountOf';
+import { attentionReasonsOf } from '../../../store/slices/session-view/attentionReasonsOf';
+
+export type NeedsYouMove = Readonly<{
+  id: string;
+  sessionId: SessionId;
+  reason: SessionAttentionReason;
+  questionId: OpenQuestionId | null;
+  title: string;
+  since: number | null;
+}>;
+
+export type NeedsYouCard = Readonly<{
+  sessionId: SessionId;
+  move: NeedsYouMove;
+  questionCount: number;
+}>;
+
+export type NeedsYou = Readonly<{
+  sessionCount: number;
+  moveCount: number;
+  moves: ReadonlyArray<NeedsYouMove>;
+  cards: ReadonlyArray<NeedsYouCard>;
+}>;
+
+type Params = {
+  readonly sessions: ReadonlyArray<Session>;
+  readonly infos: Readonly<Record<string, SessionStageInfo>>;
+  readonly openQuestions: Readonly<Record<string, ReadonlyArray<OpenQuestion>>>;
+};
+
+type SessionParams = {
+  readonly session: Session;
+  readonly info: SessionStageInfo;
+  readonly questions: ReadonlyArray<OpenQuestion>;
+};
+
+type ReasonParams = {
+  readonly reason: SessionAttentionReason;
+};
+
+const isLoud = ({ reason }: ReasonParams): boolean => {
+  const { tone } = ATTENTION_REASON_META[reason];
+  return tone === 'warning' || tone === 'danger';
+};
+
+type AskedParams = {
+  readonly question: OpenQuestion;
+};
+
+const askedAtOf = ({ question }: AskedParams): number | null => {
+  const at = Date.parse(question.createdAt);
+  return Number.isNaN(at) ? null : at;
+};
+
+const questionMovesOf = ({
+  session,
+  info,
+  questions,
+}: SessionParams): ReadonlyArray<NeedsYouMove> => {
+  const open = questions.filter((question) => question.status === 'open');
+  if (open.length === 0) {
+    return [
+      {
+        id: `${session.id}:open-question`,
+        sessionId: session.id,
+        reason: 'open-question',
+        questionId: null,
+        title: attentionWordsOf({ reason: 'open-question', counts: info }),
+        since: info.attentionSince ?? null,
+      },
+    ];
+  }
+  return open.map((question) => ({
+    id: `${session.id}:question:${question.id}`,
+    sessionId: session.id,
+    reason: 'open-question',
+    questionId: question.id,
+    title: question.text,
+    since: askedAtOf({ question }),
+  }));
+};
+
+const sessionMovesOf = ({ session, info, questions }: SessionParams): ReadonlyArray<NeedsYouMove> =>
+  attentionReasonsOf({ info })
+    .filter((reason) => isLoud({ reason }))
+    .flatMap((reason) =>
+      reason === 'open-question'
+        ? questionMovesOf({ session, info, questions })
+        : [
+            {
+              id: `${session.id}:${reason}`,
+              sessionId: session.id,
+              reason,
+              questionId: null,
+              title: attentionWordsOf({ reason, counts: info }),
+              since: info.attentionSince ?? null,
+            },
+          ],
+    );
+
+type OrderParams = {
+  readonly left: NeedsYouMove;
+  readonly right: NeedsYouMove;
+};
+
+const sinceOrder = ({ left, right }: OrderParams): number => {
+  if (left.since === right.since) {
+    return 0;
+  }
+  if (left.since === null) {
+    return 1;
+  }
+  if (right.since === null) {
+    return -1;
+  }
+  return left.since - right.since;
+};
+
+type CardsParams = {
+  readonly moves: ReadonlyArray<NeedsYouMove>;
+};
+
+const cardsOf = ({ moves }: CardsParams): ReadonlyArray<NeedsYouCard> => {
+  const cards = new Map<string, NeedsYouCard>();
+  for (const move of moves) {
+    const asks = move.reason === 'open-question' && move.questionId !== null ? 1 : 0;
+    const card = cards.get(move.sessionId);
+    if (card === undefined) {
+      cards.set(move.sessionId, { sessionId: move.sessionId, move, questionCount: asks });
+      continue;
+    }
+    cards.set(move.sessionId, { ...card, questionCount: card.questionCount + asks });
+  }
+  return [...cards.values()];
+};
+
+const NO_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
+
+export const needsYouOf = ({ sessions, infos, openQuestions }: Params): NeedsYou => {
+  const items = sessions.flatMap((session) => {
+    const info = infos[session.id];
+    return info === undefined ? [] : [{ id: session.id, info, session }];
+  });
+  const { countedIds } = attentionCountOf({ items });
+  const counted = new Set(countedIds);
+  const moves = items
+    .filter((item) => counted.has(item.id))
+    .flatMap(({ session, info }) =>
+      sessionMovesOf({ session, info, questions: openQuestions[session.id] ?? NO_QUESTIONS }),
+    )
+    .sort((left, right) => sinceOrder({ left, right }));
+  return {
+    sessionCount: countedIds.length,
+    moveCount: moves.length,
+    moves,
+    cards: cardsOf({ moves }),
+  };
+};

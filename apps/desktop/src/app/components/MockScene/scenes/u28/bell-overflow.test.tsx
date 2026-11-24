@@ -82,7 +82,9 @@ describe('the bell overflow scene', () => {
     );
     const rows = screen
       .getAllByRole('listitem')
-      .filter((row) => row.closest('[data-slot="setup-card"]') === null);
+      .filter(
+        (row) => row.closest('[data-slot="setup-card"], section[aria-label="Needs you"]') === null,
+      );
     expect(rows).toHaveLength(11);
     expect(rows.every((row) => row.querySelector('[data-unread-dot]') !== null)).toBe(true);
     within(screen.getByRole('tab', { name: /unread/i })).getByText('11');
@@ -96,7 +98,9 @@ describe('the bell overflow scene', () => {
 
     const rows = screen
       .getAllByRole('listitem')
-      .filter((row) => row.closest('[data-slot="setup-card"]') === null);
+      .filter(
+        (row) => row.closest('[data-slot="setup-card"], section[aria-label="Needs you"]') === null,
+      );
     expect(rows).toHaveLength(4);
     const opened = rows.filter((row) => row.querySelector('[data-notification-acted]') !== null);
     expect(opened).toHaveLength(1);

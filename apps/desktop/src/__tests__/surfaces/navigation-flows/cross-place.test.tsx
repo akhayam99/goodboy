@@ -36,7 +36,6 @@ import {
   clickButton,
   consoleErrors,
   heading,
-  showStages,
   installNavigationHooks,
   openCrumb,
   openPalette,
@@ -897,7 +896,7 @@ describe('moving across every place keeps one frame', () => {
       expectPlace({ session: null, lens: 'board', studio: null, doors: ['board'] });
       expectRail();
 
-      await showStages();
+      await settle();
       await click(boardCard(sessionId));
       expectPlace({ session: sessionId, lens: null, studio: null, doors: ['board'] });
       expect(currentPage()).toBe('Overview');

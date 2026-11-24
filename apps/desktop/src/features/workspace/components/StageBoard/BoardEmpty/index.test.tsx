@@ -14,22 +14,22 @@ describe('the empty board', () => {
     screen.getByText('A session holds one goal, its agents and, for code, a branch.');
   });
 
-  it('draws the five lanes in board order, each with one sentence of its own', () => {
+  it('draws the five board lanes in board order, each with one sentence of its own', () => {
     render(<BoardEmpty />);
 
     const lanes = screen.getAllByRole('group');
     expect(lanes.map((lane) => lane.getAttribute('aria-label'))).toEqual([
       'Building',
       'Running',
-      'Needs you',
       'In review',
       'Done',
+      'Archived',
     ]);
     expect(lanes.map((lane) => lane.querySelectorAll('p').length)).toEqual([1, 1, 1, 1, 1]);
     const sentences = lanes.map((lane) => lane.querySelector('p')?.textContent);
     expect(new Set(sentences).size).toBe(5);
-    expect(sentences[2]).toBe('Nothing moves until you act');
-    expect(sentences[4]).toBe('Finished sessions show what shipped');
+    expect(sentences[3]).toBe('Finished sessions show what shipped');
+    expect(sentences[4]).toBe('Put away, still here if you need it back');
   });
 
   it('holds a single New session, in the first lane', () => {

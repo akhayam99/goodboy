@@ -71,6 +71,8 @@ const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
   'features/context/components/QuestionsTab/QuestionCard/QuestionPager.tsx':
     'a pager between questions',
   'features/integrations/slack/SlackConnectGuide.tsx': 'the previous step of a setup guide',
+  'features/workspace/components/StageBoard/NeedsYouStrip/index.tsx':
+    'scrolls the Needs you cards sideways',
   'shared/components/GoneObject.tsx':
     'the empty state of a gone object; the crumbs above it are the way up',
 };

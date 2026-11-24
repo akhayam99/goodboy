@@ -5,7 +5,7 @@ import { StageBoard } from '../../../../../features/workspace/components/StageBo
 import { useAppStore, useSessions } from '../../../../../store';
 import { WORKSPACE_ID, seedBoardScene } from '../BoardScene';
 
-const STACKED_WIDTH = 1200;
+const STACKED_WIDTH = 960;
 const WIDE_WIDTH = 2560;
 
 const DAY = 86_400_000;

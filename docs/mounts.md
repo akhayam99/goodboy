@@ -912,11 +912,8 @@ while none has read it, and Open in Changes, which opens this branch's files on
 the first shared file when the session's worktree is known. The notes wait held
 in their queues for the ten seconds of Undo, so a finishing turn delivers none;
 a note that can't be saved or withdrawn stays held, and Retry sends the same
-notes to the same Implementers. On the Queue the chip sits on the Running row
-of every mount the order does not merge first: its Implementer's row, or its
-first agent when no Implementer runs (`overlapRunIdsOf`). Inside a session every
-branch row of the Overview with an overlapping mount carries its own
-(`BoardTile`).
+notes to the same Implementers. Inside a session every branch row of the
+Overview with an overlapping mount carries its own (`BoardTile`).
 
 ## Confirmed mount folder
 

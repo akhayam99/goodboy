@@ -22,7 +22,7 @@ import { U25_C11_SESSIONS_SCENES } from './c11-sessions';
 
 const SETTLE_MS = 2_000;
 
-const LANES = ['building', 'running', 'needs you', 'in review', 'done', 'archived'];
+const LANES = ['building', 'running', 'in review', 'done', 'archived'];
 
 type SceneName = keyof typeof U25_C11_SESSIONS_SCENES;
 
@@ -70,7 +70,7 @@ describe('the c11 Sessions scenes', () => {
     }
   });
 
-  it('c11-sessions-board shows the six lanes in pipeline order under one Sessions header', async () => {
+  it('c11-sessions-board shows the five lanes in pipeline order under one Sessions header', async () => {
     await mount('c11-sessions-board');
     expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
     const labels = screen

@@ -162,11 +162,13 @@ describe('journey: the board opens a session', () => {
     act(() => useAppStore.getState().navigate({ to: BOARD_PLACE }));
     await settle();
     expect(captureLocation({ state: useAppStore.getState() }).place.at).toBe('board');
-    await click(screen.getByRole('tab', { name: 'Stages' }));
 
-    const row = screen.getAllByRole('button', { name: /^Fix the rounding drift/ }).at(-1);
-    if (row === undefined) {
-      throw new Error('the board draws no row for the rounding session');
+    const row = screen
+      .getAllByRole('article')
+      .find((card) => card.getAttribute('data-select-id') !== sessionId)
+      ?.querySelector<HTMLElement>('button[aria-pressed]');
+    if (row == null) {
+      throw new Error('the board draws no row for another session');
     }
     await click(row);
 

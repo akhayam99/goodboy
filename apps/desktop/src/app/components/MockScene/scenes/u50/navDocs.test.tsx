@@ -17,7 +17,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { stageInfosOf } from '../../../../../store/slices/session-view/stageInfosOf';
-import { needsYouOf } from '../../../../../features/board/queue/needsYouOf';
+import { needsYouOf } from '../../../../../features/board/needsYou/needsYouOf';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U50_NAV_DOCS_SCENES } from './navDocs';

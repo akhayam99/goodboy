@@ -1519,10 +1519,6 @@ u50-pr-entry-blocks-dark
 u50-pr-entry-blocks-light
 u50-pr-entry-checks-dark
 u50-pr-entry-checks-light
-u50-queue-clear-dark
-u50-queue-clear-light
-u50-queue-dark
-u50-queue-light
 u50-send-to-lead-none-dark
 u50-send-to-lead-none-light
 u50-send-to-lead-one-dark
@@ -1541,6 +1537,12 @@ u50-worktrees-dark
 u50-worktrees-light
 u50-worktrees-sheet-dark
 u50-worktrees-sheet-light
+u52-board-0-dark
+u52-board-0-light
+u52-board-3-dark
+u52-board-3-light
+u52-board-9-dark
+u52-board-9-light
 u52-impact-agents-dark
 u52-impact-agents-light
 u52-impact-agents-open-dark

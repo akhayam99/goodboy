@@ -4,7 +4,7 @@ const POLL_MS = 150;
 
 const SELECTED_GOALS = [
   'Nightly reconciliation before the Monday close',
-  'Fix the rounding drift in the settlement export',
+  'Per-tenant limits on the public API',
   'Reconcile the settlement export against the ledger snapshot',
 ] as const;
 

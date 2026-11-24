@@ -7,22 +7,29 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
   resetStoryStore,
   storySpies,
   STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import type {
+  StartMergeTrainParams,
+  StartMergeTrainResult,
+} from '../../../../../store/slices/pr-series/startMergeTrain';
 import { U50_MERGE_TRAIN_SCENES } from './mergeTrain';
+
+let useAppStore: StoryStore;
 
 beforeAll(async () => {
   installFakeResizeObserver();
   Element.prototype.scrollIntoView = vi.fn();
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 beforeEach(async () => {
   window.localStorage.clear();
@@ -51,7 +58,7 @@ const show = async ({ name }: Params): Promise<HTMLElement> => {
       <Scene />
     </ToastProvider>,
   );
-  return screen.findByRole('region', { name: 'Ready to merge' });
+  return screen.findByRole('group', { name: 'in review' });
 };
 
 describe('the u50 merge train scenes', () => {
@@ -64,16 +71,26 @@ describe('the u50 merge train scenes', () => {
     ]);
   });
 
-  it('lists the ready pull requests in order with the reason under the first', async () => {
-    const band = await show({ name: 'u50-merge-train-ready-light' });
-    await waitFor(() => expect(band.querySelectorAll('[data-ready-row]')).toHaveLength(2));
-    within(band).getByRole('button', { name: 'Merge in order' });
-    expect(band.querySelector('[data-ready-reason]')?.textContent).toBe('First: waiting longest');
+  it('offers Merge 2 in order in the In review lane header and starts the train with both', async () => {
+    const lane = await show({ name: 'u50-merge-train-ready-light' });
+    const merge = await within(lane).findByRole('button', { name: 'Merge 2 in order' });
+    const start = vi.fn<(params: StartMergeTrainParams) => Promise<StartMergeTrainResult>>(
+      async () => ({ kind: 'busy' }),
+    );
+    useAppStore.setState({ startMergeTrain: start });
+
+    fireEvent.click(merge);
+
+    await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
+    expect(start.mock.calls[0]?.[0]).toMatchObject({
+      method: 'squash',
+      cars: [expect.objectContaining({ prNumber: 305 }), expect.objectContaining({ prNumber: 76 })],
+    });
   });
 
   it('shows the running train as one line with Stop after this one', async () => {
-    const band = await show({ name: 'u50-merge-train-running-dark' });
-    await waitFor(() => within(band).getByText('Updating #305 on main · checks running'));
-    within(band).getByRole('button', { name: 'Stop after this one' });
+    const lane = await show({ name: 'u50-merge-train-running-dark' });
+    await waitFor(() => within(lane).getByText('Updating #305 on main · checks running'));
+    within(lane).getByRole('button', { name: 'Stop after this one' });
   });
 });

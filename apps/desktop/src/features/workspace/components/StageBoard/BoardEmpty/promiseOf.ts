@@ -1,9 +1,16 @@
-import type { SessionStage } from '@goodboy/types';
-import { describeStageBucket } from '../../../../session/session-stage';
+import { sentenceCase } from '../../../../../shared/utils/sentenceCase';
+import { ARCHIVED_LANE, describeStageBucket } from '../../../../session/session-stage';
+import type { BoardLaneSpec } from '../boardLaneSpecs';
 
 type Params = {
-  readonly stage: SessionStage;
+  readonly spec: BoardLaneSpec;
 };
 
-export const promiseOf = ({ stage }: Params): string =>
-  stage === 'done' ? 'Finished sessions show what shipped' : describeStageBucket({ stage }).reason;
+export const promiseOf = ({ spec }: Params): string => {
+  if (spec.kind === 'archived') {
+    return sentenceCase({ text: ARCHIVED_LANE.reason });
+  }
+  return spec.stage === 'done'
+    ? 'Finished sessions show what shipped'
+    : describeStageBucket({ stage: spec.stage }).reason;
+};
