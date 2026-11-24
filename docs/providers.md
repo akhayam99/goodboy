@@ -1396,6 +1396,11 @@ project,local --no-session-persistence` in an empty scratch directory,
   `listProviderAgentTurns` reads the closed ones from `agent_turn_spans`, one
   row per provider and agent with its clean turns and last end. The windows are
   `ROOM_RECENT_WINDOW_MS` (1 hour) and `ROOM_TURNS_WINDOW_MS` (5 hours)
+- **Rate limits**: a turn that fails with a rate limit (429, too many requests)
+  records the time in `providerStrikes` (`withProviderStrike`), and the turn still
+  falls back as before. A usage limit sets a cooldown instead. Strikes live in
+  the window's store only: another window and a restart forget them, which is
+  why the room they feed is called an estimate
 
 ### Source map
 

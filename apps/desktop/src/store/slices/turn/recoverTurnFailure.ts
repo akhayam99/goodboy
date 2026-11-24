@@ -37,6 +37,7 @@ import type { GetFn, SendTurnResult, SetFn, SendTurnInput, TurnLease } from './t
 import { formatClock } from '../../../shared/utils/time/formatClock';
 import type { TurnContext } from './turnContext';
 import { liveEnabledProviders } from '../../runtime/models/liveEnabledProviders';
+import { withProviderStrike } from '../providerLimits/providerStrikes';
 
 const formatResetTime = ({ resetAtMs }: { readonly resetAtMs: number }): string =>
   formatClock({ at: resetAtMs });
@@ -143,6 +144,15 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
         cooldowns: state.providerCooldowns,
         provider,
         cooldownUntilMs: usageLimitResetAtMs,
+      }),
+    }));
+  }
+  if (failure.kind === 'rate_limit' && !cancelledBeforeFailure) {
+    set((state) => ({
+      providerStrikes: withProviderStrike({
+        strikes: state.providerStrikes,
+        provider,
+        atMs: Date.now(),
       }),
     }));
   }

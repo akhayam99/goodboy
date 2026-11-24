@@ -1,4 +1,5 @@
 import type { CodexResetCredits, IsoDateTime, ProviderId, ProviderLimits } from '@goodboy/types';
+import type { ProviderStrikes } from './providerStrikes';
 
 export type ProviderLimitsProbeStatus = {
   readonly isChecking: boolean;
@@ -11,6 +12,7 @@ export type ProviderLimitsState = {
   readonly providerLimitsProbe: Readonly<Partial<Record<ProviderId, ProviderLimitsProbeStatus>>>;
   readonly codexResetCredits: CodexResetCredits | null;
   readonly codexPendingReset: { readonly idempotencyKey: string } | null;
+  readonly providerStrikes: ProviderStrikes;
 };
 
 export const providerLimitsInitialState: ProviderLimitsState = {
@@ -18,4 +20,5 @@ export const providerLimitsInitialState: ProviderLimitsState = {
   providerLimitsProbe: {},
   codexResetCredits: null,
   codexPendingReset: null,
+  providerStrikes: {},
 };
