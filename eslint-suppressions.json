@@ -4960,11 +4960,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/ChatOriginRow.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 13
-    }
-  },
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkIssueAction.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
@@ -7789,11 +7784,6 @@
   "apps/desktop/src/store/slices/chats/saveChatImages.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/store/slices/chats/selectChatOrigins.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
     }
   },
   "apps/desktop/src/store/slices/chats/sendChatMessage.images.test.ts": {

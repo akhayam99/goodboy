@@ -83,7 +83,7 @@ describe('task actions', () => {
         definitions: TASK_KIND.actions,
         facts: facts({ task: row({}), branch: null }),
       }),
-    ).toEqual(['task.open chip', 'task.unlink hover']);
+    ).toEqual(['task.open chip', 'task.openInTracker menu', 'task.unlink hover']);
   });
 
   it('adds take off and Move to session on a branch row', () => {
@@ -96,7 +96,13 @@ describe('task actions', () => {
           branchCount: 1,
         }),
       }),
-    ).toEqual(['task.open chip', 'task.moveTo menu', 'task.takeOff hover', 'task.unlink menu']);
+    ).toEqual([
+      'task.open chip',
+      'task.openInTracker menu',
+      'task.moveTo menu',
+      'task.takeOff hover',
+      'task.unlink menu',
+    ]);
   });
 
   it('runs reversible removals without confirmation', () => {
@@ -114,7 +120,12 @@ describe('task actions', () => {
         definitions: TASK_KIND.actions,
         facts: facts({ task: row({}), branch: null, mounts: [mountOn('hl/ledger-rounding')] }),
       }),
-    ).toEqual(['task.open chip', 'task.moveTo menu', 'task.unlink hover']);
+    ).toEqual([
+      'task.open chip',
+      'task.openInTracker menu',
+      'task.moveTo menu',
+      'task.unlink hover',
+    ]);
   });
 
   it('offers no Move to when no branch is open', () => {

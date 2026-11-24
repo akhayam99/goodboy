@@ -79,6 +79,15 @@ describe('the u50 overview scenes', () => {
     expect(document.querySelector('[data-slot="session-kpis"]')).toBeNull();
   });
 
+  it('leads the facts line with the ticket the session came from', async () => {
+    await show({ name: 'u50-overview-light' });
+
+    const facts = document.querySelector('[data-overview-facts]');
+    expect(facts?.firstElementChild?.matches('[data-overview-ticket]')).toBe(true);
+    const ticket = screen.getByRole('button', { name: 'Open HBL-412' });
+    expect(ticket.getAttribute('title')).toBe('Stop retried webhooks posting a second credit');
+  });
+
   it('keeps the diff on the tiles with no switch to hide it', async () => {
     await show({ name: 'u50-overview-dark' });
 

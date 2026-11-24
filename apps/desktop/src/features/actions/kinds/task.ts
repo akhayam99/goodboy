@@ -6,8 +6,10 @@ import type {
   SessionId,
   SessionProjectMount,
 } from '@goodboy/types';
+import { integrationLabel } from '../../../shared/utils/integrationLabel';
 import { NAMES } from '../../../shared/utils/names';
 import { taskIdentityKey } from '../../../shared/utils/taskIdentityKey';
+import { openWebAction } from '../openWebAction';
 import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
 import type { ObjectKindDefinition, TaskActionTarget } from '../types';
 import { taskMoveTargets, type TaskMoveChoice } from './taskMoveTargets';
@@ -121,6 +123,16 @@ export const TASK_KIND: ObjectKindDefinition<TaskActionTarget, TaskFacts> = {
       group: 'open',
       when: () => true,
       run: ({ facts, env }) => env.getState().openExternalTaskLens(facts.sessionId, facts.row),
+    },
+    {
+      id: 'task.openInTracker',
+      slot: () => 'menu',
+      label: ({ facts }) => `Open in ${integrationLabel({ provider: facts.provider })}`,
+      icon: SquareArrowOutUpRight,
+      group: 'open',
+      when: ({ facts }) => facts.row.url !== '',
+      run: ({ facts, env }) =>
+        openWebAction({ url: facts.row.url, env, sessionId: facts.sessionId }),
     },
     {
       id: 'task.moveTo',

@@ -79,9 +79,8 @@
   done shows an empty state, instead of opening the last completed run.
 - **The Overview is one column: goal, notices, Needs you, Next, Activity.**
   The goal reads as prose (`GoalTeaser`, it opens the Context drawer on its
-  Goal), with one gray provenance line under it only when it came from chat
-  (`From chat: <title>`, one label whether the chat started or fed the
-  session, the others behind `+N more`). The notices slot (`OverviewNotices`) holds what a worktree
+  Goal). The facts line under it opens on the ticket the session came from
+  (`OverviewTicket`). The notices slot (`OverviewNotices`) holds what a worktree
   asks the user to decide ([mounts.md](../mounts.md#worktree-rows-and-the-overview-notices)):
   a closed worktree with Reopen, Restore branch or Remove, a failed action with
   `Retry`, a stopped rebase, foreign commits, a branch drift decision (a mount
