@@ -56,6 +56,7 @@ import { textFieldOf } from '../../../shared/utils/textFieldOf';
 import { storedPickOf } from './childRouting/storedPickOf';
 import { storedRoutingOf } from './childRouting/storedRoutingOf';
 import { failedStartsOf } from './childRouting/failedStartsOf';
+import { isStartFailure } from './childRouting/isStartFailure';
 import { writerFamilyOf } from './childRouting/writerFamilyOf';
 import type { AgentVerbContext } from './verbContext';
 
@@ -520,7 +521,8 @@ export const resolveDelegateChild = async ({
     },
     promptText: revise === null ? child.task : [child.task, ...(words?.words ?? [])].join('\n'),
     stepLock: lead.stepLock,
-    agentLock: retryPick === null || failedStarts.includes(retryPick.provider) ? null : retryPick,
+    agentLock:
+      retryPick === null || isStartFailure({ endReason: retry?.reason ?? null }) ? null : retryPick,
     writerFamily,
     failedStarts,
   });

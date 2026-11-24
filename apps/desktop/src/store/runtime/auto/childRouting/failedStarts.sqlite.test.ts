@@ -7,6 +7,7 @@ import { WORLD_GRANT } from '../testing/fakePorts';
 import {
   autoDelegates,
   autoTurnEnds,
+  childTurnEnds,
   makeRuntimeWorld,
   userSays,
   type RuntimeWorld,
@@ -84,10 +85,9 @@ type RetryParams = {
 };
 
 const retryFirst = async ({ world, extra = {} }: RetryParams) => {
-  const [original] = await listAutoDelegations({
-    db: world.state.world.db,
-    treeId: world.treeId,
-  });
+  const original = (
+    await listAutoDelegations({ db: world.state.world.db, treeId: world.treeId })
+  ).find((row) => row.request['task'] === PLANNER.task);
   const requests: RoutingRequest[] = [];
   const ctx = {
     ...world.state.ctx,
@@ -108,7 +108,14 @@ const retryFirst = async ({ world, extra = {} }: RetryParams) => {
       args: {
         'request-id': 'request-retry',
         spec: JSON.stringify({
-          children: [{ retryOf: original?.id, reason: 'Once more.', ...extra }],
+          children: [
+            {
+              retryOf: original?.id,
+              reason: 'Once more.',
+              task: 'Plan the export again, smaller.',
+              ...extra,
+            },
+          ],
         }),
       },
     },
@@ -160,5 +167,78 @@ describe('a helper that did not start', () => {
 
     expect(requests[0]?.fields).toMatchObject({ provider: undefined, model: undefined });
     expect(retried?.routing['provider']).toBe('anthropic');
+  });
+
+  it('keeps the model of a helper that ran when a sibling of its role did not start', async () => {
+    const world = await makeRuntimeWorld();
+    await userSays({ world, id: 'outbox-user-1', text: 'plan the ledger export' });
+    world.state.ports.setRouting(CURSOR_PICK);
+    await autoDelegates({ world, spec: { children: [PLANNER] } });
+    await autoTurnEnds({ world });
+    world.state.ports.setChildOutcome({
+      kind: 'refused',
+      reason: 'kickoff_failed',
+      message: REFUSAL,
+    });
+    await userSays({ world, id: 'outbox-user-3', text: 'plan the notify-relay side too' });
+    await autoDelegates({
+      world,
+      requestId: 'request-second',
+      spec: { children: [SECOND_PLANNER] },
+    });
+    await autoTurnEnds({ world });
+    world.state.ports.setChildOutcome(null);
+    await childTurnEnds({ world, index: 0, text: 'Planned the ledger export.' });
+
+    const { requests } = await retryFirst({ world });
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.failedStarts).toEqual(['cursor']);
+    expect(requests[0]?.agentLock).toMatchObject({ provider: 'cursor', model: 'sonnet-5.5' });
+  });
+
+  it('settles a queued helper with the refusal when its only provider did not start', async () => {
+    const world = await twoRefusedStarts();
+    world.state.ports.setChildOutcome(null);
+    await userSays({ world, id: 'outbox-user-4', text: 'map ledger-core, then plan again' });
+    await autoDelegates({
+      world,
+      requestId: 'request-queued',
+      spec: {
+        children: [
+          ...['a', 'b', 'c', 'd'].map((area) => ({
+            role: 'scout',
+            task: `map area ${area} of ledger-core`,
+            reason: 'reading code',
+          })),
+          { ...PLANNER, task: 'Plan the ledger export after the maps.' },
+        ],
+      },
+    });
+    await autoTurnEnds({ world });
+    const turnsBefore = world.state.ports.childTurns.length;
+    world.state.ports.setRouting({
+      kind: 'blocked',
+      code: 'no_provider',
+      message: 'No provider fits this step.',
+    });
+    await autoTurnEnds({ world });
+    const scout = world.state.ports.childTurns[turnsBefore - 1];
+
+    await childTurnEnds({
+      world,
+      index: turnsBefore - 1,
+      text: `Mapped it.\n<<artifact v=1 kind=report>>\n{"title":"Area map","format":"markdown","content":"mapped"}\n<</artifact>>\n<<step-done id="${String(scout?.childAgentId)}">>`,
+    });
+
+    const planner = (
+      await listAutoDelegations({ db: world.state.world.db, treeId: world.treeId })
+    ).find(
+      (row) =>
+        row.role === 'planner' && row.request['task'] === 'Plan the ledger export after the maps.',
+    );
+    expect(world.state.ports.childTurns).toHaveLength(turnsBefore);
+    expect(planner?.outcome).toBe('blocked');
+    expect(planner?.reason).toBe('no_provider: No provider fits this step.');
   });
 });

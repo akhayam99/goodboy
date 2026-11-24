@@ -2223,7 +2223,10 @@ tree's current generation, and `resolveDelegateChild` and `recheckQueuedRouting`
 `failedStarts`, so the next helper of that role starts elsewhere (cause `failed-start`). A retry
 of a helper that did not start drops the failed route: `prepareRetry` copies neither the stored
 pick nor the Lead's pick when it names the same provider into `requested`, and no `agentLock`
-holds it there. The routing a helper keeps
+holds it there; continuing a helper that ran keeps its lock even when a sibling of its role did
+not start. A queued helper whose stored provider did not start and that has no other provider
+left settles `blocked` with the refusal (`recheckQueuedRouting` returns it to `launchChildren`)
+instead of starting there. The routing a helper keeps
 (`routing_json`, typed `AutoRouting`, built by `storedRoutingOf`) holds the pick, the reason,
 `source` (lead, pin, rule, fallback, lock), the cause of a moved pick, the Lead's own words in
 `modelReason` and up to 18 candidates it weighed, without rates, the struck rows last. A role pin
