@@ -137,7 +137,7 @@ describe('the agent pages of a run', () => {
     for (const line of lines) {
       const word = railWordOf({ agentId: line.getAttribute('data-delegation') ?? '' });
       expect(word).not.toBe('');
-      expect(line.textContent).toContain(word);
+      expect(line.querySelector('[data-node-state]')?.getAttribute('aria-label')).toBe(word);
     }
     expect(lines.map((line) => line.textContent).join(' ')).toContain('Needs you');
     cleanup();

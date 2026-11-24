@@ -33,6 +33,7 @@ type ConceptParams = {
 
 const conceptNode = ({ icon: Icon, tone, label, isEmphasized }: ConceptParams) => (
   <WorkNode
+    look="quiet"
     state="marker"
     tone={tone}
     label={label}
@@ -70,6 +71,7 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
     const node = rowStateNode({ state: item.rowState });
     return (
       <WorkNode
+        look="quiet"
         state={node.state}
         label={node.label}
         mark={{ kind: 'dot' }}
@@ -85,6 +87,7 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
   if (entry.kind === 'issue') {
     return (
       <WorkNode
+        look="quiet"
         state="marker"
         label="Issue"
         mark={{

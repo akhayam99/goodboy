@@ -10,6 +10,10 @@ const NODES = [
   { id: 'tester', level: 2, isPending: true },
 ];
 
+type TailParams = {
+  readonly id: string;
+};
+
 describe('spawnedRailOf', () => {
   it('puts the root on the spine and every child on the lane of its parent', () => {
     const rail = spawnedRailOf({ nodes: NODES });
@@ -45,6 +49,24 @@ describe('spawnedRailOf', () => {
       ?.segments.filter((segment) => segment.column === 1)
       .map((segment) => segment.dash);
     expect(lane).toContain('dashed');
+  });
+
+  it('carries every lane that leaves a row down a tall row, the marker on its first line', () => {
+    const rail = spawnedRailOf({ nodes: NODES });
+    const tailColumns = ({ id }: TailParams) =>
+      (rail.tailById.get(id) ?? [])
+        .map((ink) => ink.column)
+        .sort((first, second) => first - second);
+
+    expect(tailColumns({ id: 'root' })).toEqual([0, 1]);
+    expect(tailColumns({ id: 'planner' })).toEqual([0, 1]);
+    expect(tailColumns({ id: 'implementer' })).toEqual([0, 1, 2]);
+    expect(tailColumns({ id: 'scout' })).toEqual([0, 1]);
+    expect(tailColumns({ id: 'tester' })).toEqual([0]);
+    expect(rail.tailById.get('tester')?.map((ink) => ink.dash)).toEqual(['solid']);
+    for (const node of NODES) {
+      expect(rail.railById.get(node.id)?.markerY).toBe(14);
+    }
   });
 
   it('keeps one lane of width for a tree with no children', () => {

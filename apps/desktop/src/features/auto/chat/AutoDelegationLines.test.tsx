@@ -55,7 +55,7 @@ const renderLines = ({ view, onOpenChild = vi.fn() }: RenderParams) => {
 };
 
 describe('AutoDelegationLines', () => {
-  it('shows a running child as a live card: role, task, state word, opening by the card', () => {
+  it('shows a running child as one quiet row: role chip, task, a live node, opening by the row', () => {
     const onOpenChild = vi.fn();
     renderLines({
       view: aView({
@@ -70,7 +70,8 @@ describe('AutoDelegationLines', () => {
     expect(within(line).getByRole('img', { name: 'Implementer' })).toBeDefined();
     expect(within(line).getByText('work for impl')).toBeDefined();
     expect(within(line).queryByText(/Reserved up to/)).toBeNull();
-    within(line).getByText('Running');
+    within(line).getByRole('img', { name: 'Running' });
+    expect(within(line).queryByText('Running')).toBeNull();
     fireEvent.click(within(line).getByRole('button', { name: /^Open / }));
     expect(onOpenChild).toHaveBeenCalledWith('agent-impl');
   });
@@ -351,10 +352,39 @@ describe('the live child card', () => {
     renderLines({ view: aView({ phase: 'done', delegations: [SETTLED_PLAN] }), onOpenChild });
     const row = screen.getByRole('listitem');
     within(row).getByText('A three part plan.');
-    within(row).getByText('Done');
+    expect(within(row).queryByText('Done')).toBeNull();
+    within(row).getByRole('img', { name: 'Done' });
     expect(within(row).getAllByRole('button')).toHaveLength(1);
     expect(within(row).queryByText('Open')).toBeNull();
     fireEvent.click(within(row).getByRole('button', { name: /^Open / }));
     expect(onOpenChild).toHaveBeenCalledWith(SETTLED_PLAN.childAgentId);
+  });
+
+  it('draws the child as a quiet ledger row: a quiet node, no card fill, a bar only when it failed', () => {
+    renderLines({
+      view: aView({
+        phase: 'waiting',
+        delegations: [
+          SETTLED_PLAN,
+          aDelegation({
+            key: 'fixer',
+            role: 'ci-fixer',
+            state: 'settled',
+            outcome: 'failed',
+            settledAt: 2_000,
+          }),
+        ],
+      }),
+    });
+
+    const [done, failed] = screen.getAllByRole('listitem');
+    if (done === undefined || failed === undefined) {
+      throw new Error('two rows expected');
+    }
+    expect(done.querySelector('[data-node-look]')?.getAttribute('data-node-look')).toBe('quiet');
+    expect(done.querySelector('.bg-elevated')).toBeNull();
+    expect(within(done).queryByTestId('tone-bar')).toBeNull();
+    within(failed).getByTestId('tone-bar');
+    within(failed).getByText('Failed');
   });
 });

@@ -1051,6 +1051,8 @@ A session worktree keeps its index, `HEAD` and `rebase-merge` in `<repo>/.git/wo
 ## Hover card triggers
 
 - A `FactCard` or `Tooltip` trigger must be a DOM element that takes a ref, pointer handlers and `aria-describedby`. A component wrapper drops them silently and the card never opens; spread the span props onto the element (`TimelineRunGlyph`) or wrap a native element.
+- A hover state under `PaneSwap` survives a hide: `Activity` keeps state and runs effect cleanups, and the anchor never gets a pointer leave. `useRestHover` drops its target in its cleanup; a new hover hook does the same, or its card comes back at the top left on a stale anchor when the layer shows again.
+- A focus handler that opens a card checks `isKeyboardFocus`: a focus put back after a click or a page change is not the keyboard, and a card it opened would never get a blur or a pointer leave.
 
 ## Theme switch is an instant swap
 

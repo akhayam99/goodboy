@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, type KeyboardEvent } from 'react';
-import type { AgentId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
+import type { RailInk } from '../../../workTreeModel/railGeometry';
 import { spawnedRailOf } from '../../../workTreeModel/spawnedRailOf';
 import { LeadTreeAgentRow } from './LeadTreeAgentRow';
 import { LeadTreeFoldRow } from './LeadTreeFoldRow';
@@ -14,6 +15,7 @@ export type LeadTreeDensity = 'full' | 'compact';
 const ROOT_ROW_ID = 'lead-tree-root';
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly items: ReadonlyArray<LeadTreeItem>;
   readonly root?: LeadTreeRoot | null;
   readonly selectedAgentId: AgentId | null;
@@ -43,7 +45,10 @@ const cursorStepOf = ({ ids, from, delta }: StepParams): string | null => {
   return ids[Math.min(ids.length - 1, Math.max(0, index + delta))] ?? null;
 };
 
+const NO_TAIL: ReadonlyArray<RailInk> = [];
+
 export const LeadTree = ({
+  sessionId,
   items,
   root = null,
   selectedAgentId,
@@ -127,8 +132,10 @@ export const LeadTree = ({
       {root === null || rootRail === undefined ? null : (
         <LeadTreeRootRow
           id={ROOT_ROW_ID}
+          sessionId={sessionId}
           root={root}
           rail={rootRail}
+          tail={rail.tailById.get(ROOT_ROW_ID) ?? NO_TAIL}
           railWidth={rail.width}
           isSelected={isRootSelected}
           isActive={cursorId === ROOT_ROW_ID}
@@ -138,6 +145,7 @@ export const LeadTree = ({
       {items.map((item) => {
         const isActive = item.id === cursorId;
         const itemRail = rail.railById.get(item.id);
+        const tail = rail.tailById.get(item.id) ?? NO_TAIL;
         if (itemRail === undefined) {
           return null;
         }
@@ -146,6 +154,7 @@ export const LeadTree = ({
             <LeadTreeAgentRow
               key={item.id}
               id={item.id}
+              sessionId={sessionId}
               agentId={item.agentId}
               number={item.number}
               kind={item.agentKind}
@@ -156,6 +165,7 @@ export const LeadTree = ({
               isSettled={item.isSettled}
               spendUsd={item.spendUsd}
               rail={itemRail}
+              tail={tail}
               railWidth={rail.width}
               isSelected={item.agentId === selectedAgentId}
               isActive={isActive}
@@ -173,6 +183,7 @@ export const LeadTree = ({
               isOpen={item.isOpen}
               isActive={isActive}
               rail={itemRail}
+              tail={tail}
               railWidth={rail.width}
               onToggle={onToggleFold}
             />
@@ -183,12 +194,14 @@ export const LeadTree = ({
             key={item.id}
             id={item.id}
             rail={itemRail}
+            tail={tail}
             railWidth={rail.width}
             text={item.text}
             word={item.word}
             canEdit={item.canEdit}
             canRemove={item.canRemove}
             isActive={isActive}
+            isCompact={isCompact}
             onEdit={onEditNote}
             onRemove={onRemoveNote}
           />

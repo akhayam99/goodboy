@@ -47,6 +47,7 @@ export const BranchWorkLeads = ({ sessionId, leads, onToggleFold, onLeave }: Pro
           {lead.items.length === 0 ? null : (
             <div style={{ paddingLeft: treeIndentPx({ depth: 2 }) }}>
               <LeadTree
+                sessionId={sessionId}
                 items={lead.items}
                 selectedAgentId={null}
                 density="compact"

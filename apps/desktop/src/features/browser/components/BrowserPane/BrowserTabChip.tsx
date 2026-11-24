@@ -15,13 +15,13 @@ type Props = {
 export const BrowserTabChip = ({ label, url, isSelected, isPin, onSelect, onClose }: Props) => (
   <div data-browser-tab="" className={toolTabClassName({ isSelected })}>
     <SelectableRow
-      selected={isSelected}
+      selected={false}
       ariaCurrent={isSelected ? 'page' : undefined}
       ariaLabel={isPin ? `${label}, pinned` : label}
       title={isPin ? `${label}, pinned to the project` : undefined}
       tooltipSide="top"
       onClick={onSelect}
-      className="w-auto min-w-12 flex-1 items-center gap-2 self-stretch focus-visible:ring-0"
+      className="w-auto min-w-12 flex-1 items-center gap-2 self-stretch text-inherit hover:bg-transparent hover:text-inherit focus-visible:ring-0"
     >
       <BrowserFavicon url={url} isPin={isPin} />
       <span className="min-w-0 truncate">{label}</span>

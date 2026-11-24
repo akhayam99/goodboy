@@ -153,6 +153,14 @@ describe('TimelineRail row edges', () => {
     return { from: Number(line.getAttribute('y1')), to: Number(line.getAttribute('y2')) };
   };
 
+  it('draws the spine in the soft border, so the line frames the rows and never competes with a node', () => {
+    render(<TimelineRail width={32} rail={railOf({ segment: segmentOf({}) })} />);
+
+    expect(screen.getByTestId('timeline-rail-segment').getAttribute('stroke')).toBe(
+      'var(--color-border-soft)',
+    );
+  });
+
   it('overlaps a solid line into both neighbouring rows so stacked rows never leave a hairline', () => {
     const { container } = render(
       <TimelineRail width={32} rail={railOf({ segment: segmentOf({}) })} />,

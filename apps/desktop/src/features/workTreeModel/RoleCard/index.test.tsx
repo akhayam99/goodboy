@@ -378,6 +378,7 @@ describe('RoleCard', () => {
 
     const node = screen.getByTestId('fact-card').querySelector('[data-node-state]');
     expect(node?.getAttribute('data-node-state')).toBe('approval');
+    expect(node?.getAttribute('data-node-look')).toBe('quiet');
   });
 
   it('drops Finished and Active, which the state line already carries', () => {

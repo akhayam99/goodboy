@@ -1,8 +1,8 @@
 import { memo } from 'react';
 import { ChevronDown, ChevronRight } from '@goodboy/ui/icons';
-import { cn, ICON_SIZE } from '@goodboy/ui';
+import { ActivityMeta, ActivityRow, ICON_SIZE, WorkNode, cn } from '@goodboy/ui';
 import { SpawnedRailCell } from '../SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
-import type { RailRow } from '../../../workTreeModel/railGeometry';
+import type { RailInk, RailRow } from '../../../workTreeModel/railGeometry';
 import { LEAD_TREE_CURSOR } from './leadTreeCursor';
 import { LEAD_TREE_ROW } from './leadTreeRow';
 
@@ -12,12 +12,13 @@ type Props = {
   readonly isOpen: boolean;
   readonly isActive: boolean;
   readonly rail: RailRow;
+  readonly tail: ReadonlyArray<RailInk>;
   readonly railWidth: number;
   readonly onToggle: (id: string) => void;
 };
 
 export const LeadTreeFoldRow = memo(
-  ({ id, label, isOpen, isActive, rail, railWidth, onToggle }: Props) => {
+  ({ id, label, isOpen, isActive, rail, tail, railWidth, onToggle }: Props) => {
     const Chevron = isOpen ? ChevronDown : ChevronRight;
     return (
       <div
@@ -27,24 +28,34 @@ export const LeadTreeFoldRow = memo(
         aria-label={`${label}, done, ${isOpen ? 'unfolded' : 'folded'}`}
         data-lead-tree-id={id}
         data-active={isActive}
-        className={cn(
-          LEAD_TREE_ROW,
-          'cursor-pointer text-muted-foreground hover:bg-hover',
-          isActive && LEAD_TREE_CURSOR,
-        )}
+        className={cn(LEAD_TREE_ROW, 'cursor-pointer hover:bg-hover', isActive && LEAD_TREE_CURSOR)}
         onClick={() => onToggle(id)}
       >
         <SpawnedRailCell
           rail={rail}
+          tail={tail}
           width={railWidth}
           marker={
-            <span className="flex size-4 items-center justify-center rounded-full bg-background">
-              <Chevron size={ICON_SIZE.row} aria-hidden="true" />
-            </span>
+            <WorkNode look="quiet" state="done" label="Done" mark={{ kind: 'dot' }} size="sm" />
           }
         />
-        <span className="min-w-0 flex-1 truncate text-ui">{label}</span>
-        <span className="shrink-0 text-meta">{isOpen ? 'done' : 'done · folded'}</span>
+        <ActivityRow
+          density="rail"
+          tone="pending"
+          glyph={
+            <Chevron size={ICON_SIZE.row} aria-hidden="true" className="text-faint-foreground" />
+          }
+          text={label}
+          meta={
+            <ActivityMeta
+              density="rail"
+              columns={['state']}
+              state={
+                <span className="text-faint-foreground">{isOpen ? 'done' : 'done · folded'}</span>
+              }
+            />
+          }
+        />
       </div>
     );
   },

@@ -498,6 +498,15 @@ export const clickMenuItem = async (name: RegExp | string): Promise<void> => {
   await click(await screen.findByRole('menuitem', { name }));
 };
 
+export const terminalDocked = async (): Promise<HTMLElement> =>
+  screen.findByRole('region', { name: 'Terminal' }, WAIT);
+
+export const openTerminalPage = async (): Promise<void> => {
+  const region = await terminalDocked();
+  await click(await within(region).findByRole('button', { name: /^More on / }, WAIT));
+  await clickMenuItem(/^Open full page$/);
+};
+
 const LEVEL = '[data-level-layer="session"]';
 
 const sessionTab = (label: RegExp): HTMLElement =>

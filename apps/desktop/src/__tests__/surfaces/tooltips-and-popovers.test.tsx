@@ -309,6 +309,7 @@ describe('a cut title in a row is reachable by hover and by keyboard', () => {
             card={card}
             name={LONG_TITLE}
             revision={null}
+            costUsd={0}
             onOpen={onOpen}
           />
         </ObjectMenuProvider>

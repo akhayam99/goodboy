@@ -70,4 +70,13 @@ export const RUN_LEAD_AGENT_SCENES = {
       shownAgentId={IMPLEMENTER_ID}
     />
   ),
+  'run-page-lead-agent-light': () => (
+    <RunPageScene
+      state="working"
+      theme="light"
+      isLead
+      extend={leadAgentSceneOf}
+      shownAgentId={IMPLEMENTER_ID}
+    />
+  ),
 } satisfies Readonly<Record<string, ComponentType>>;

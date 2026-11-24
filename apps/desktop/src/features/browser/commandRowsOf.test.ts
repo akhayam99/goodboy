@@ -128,23 +128,14 @@ describe('commandRowsOf', () => {
     expect(rowsFor({ text: 'checkout total' })).toEqual({ groups: [], hasNoMatch: true });
   });
 
-  it('lists the visits of this session, newest first, when nothing is typed', () => {
-    const rows = rowsFor({ text: '  ' });
+  it('offers nothing while nothing is typed, so visited pages are never the default list', () => {
+    expect(rowsFor({ text: '' })).toEqual({ groups: [], hasNoMatch: false });
+    expect(rowsFor({ text: '  ' })).toEqual({ groups: [], hasNoMatch: false });
+  });
 
-    expect(rows.hasNoMatch).toBe(false);
-    expect(keysOf({ text: '' })).toEqual([
-      [
-        'Visited',
-        [
-          'visit:http://localhost:5173/checkout/confirm',
-          'visit:http://localhost:5173/checkout',
-          'visit:https://acme.example/',
-        ],
-      ],
-    ]);
-    expect(rows.groups[0]?.rows[2]).toMatchObject({
-      title: 'acme.example',
-      address: 'acme.example',
-    });
+  it('names a visit with no title by its host once a word matches it', () => {
+    const visited = rowsFor({ text: 'acme' }).groups.find((group) => group.label === 'Visited');
+
+    expect(visited?.rows[0]).toMatchObject({ title: 'acme.example', address: 'acme.example' });
   });
 });

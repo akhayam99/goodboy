@@ -74,7 +74,8 @@ export const useCommandField = ({ model }: Params): CommandField => {
   const runRef = useRef<CommandRun | null>(null);
   const isEmpty = model.shown === null;
   const isFieldShown = isEmpty || isEditing;
-  const isOpen = isFieldShown && isFocused;
+  const isTyped = (draft ?? '').trim() !== '';
+  const isOpen = isFieldShown && isFocused && isTyped;
   const shownId = model.shown?.tab.id ?? null;
 
   useEffect(() => {
@@ -118,7 +119,7 @@ export const useCommandField = ({ model }: Params): CommandField => {
     close();
   };
 
-  useEscapeLayer(escape, isOpen || (isEditing && !isEmpty));
+  useEscapeLayer(escape, (isFieldShown && isFocused) || (isEditing && !isEmpty));
 
   const value = draft ?? model.address;
 
@@ -131,6 +132,9 @@ export const useCommandField = ({ model }: Params): CommandField => {
       const run = runRef.current;
       if (run !== null) {
         run({ isAlternate: false });
+        return;
+      }
+      if (value.trim() === '') {
         return;
       }
       const isDone = await model.submit({ text: value });

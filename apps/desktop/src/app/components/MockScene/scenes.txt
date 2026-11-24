@@ -21,6 +21,8 @@ activity-mark-seen
 activity-one-signal
 activity-question
 activity-resolves
+activity-row-kit
+activity-row-kit-light
 activity-run
 activity-run-finished
 activity-run-hover
@@ -841,6 +843,7 @@ run-page-agent-light
 run-page-done
 run-page-done-light
 run-page-lead-agent
+run-page-lead-agent-light
 run-page-lead-next
 run-page-lead-next-light
 run-page-lead-working
@@ -951,6 +954,8 @@ tasks-cursor
 tasks-rail
 tasks-rail-folded
 tasks-rail-open
+tasks-source-failure
+tasks-source-failure-dark
 terminal-drawer-page
 terminal-drawer-session
 terminal-empty
@@ -964,6 +969,8 @@ timeline-cards-light
 toast-over-drawer
 toast-over-drawer-overlay
 toasts
+tool-heads-narrow
+tool-heads-narrow-dark
 tooltip-labels
 tooltip-shortcut
 tooltip-truncated

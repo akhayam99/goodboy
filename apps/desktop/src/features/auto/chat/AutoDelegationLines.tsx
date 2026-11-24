@@ -1,6 +1,10 @@
+import { useMemo } from 'react';
 import type { AutoDelegation } from '@goodboy/db';
-import type { Agent, AgentId, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types';
+import { useAppStore } from '../../../store';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
+import { useSessionRunHistory } from '../../../shared/hooks/useSessionRunHistory';
+import { agentSpendById } from '../../session/timeline/agentSpendById';
 import { autoChildLabelsOf } from '../autoChildLabelsOf';
 import { isAutoDelegationReplaced } from '../isAutoDelegationReplaced';
 import { AutoChildCard } from './AutoChildCard';
@@ -19,6 +23,8 @@ type Props = {
   readonly onOpenChild: (agentId: AgentId) => void;
 };
 
+const NO_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
+
 export const AutoDelegationLines = ({
   sessionId,
   view,
@@ -27,10 +33,16 @@ export const AutoDelegationLines = ({
   onOpenChild,
 }: Props) => {
   const publishing = usePublishAct();
+  const telemetry = useAppStore((state) => state.sessionTelemetry[sessionId] ?? NO_TELEMETRY);
+  const agentRunHistory = useSessionRunHistory({ sessionId });
+  const spendById = useMemo(
+    () => agentSpendById({ records: telemetry, agents, agentRunHistory }),
+    [telemetry, agents, agentRunHistory],
+  );
   const labels = autoChildLabelsOf({ delegations: view.delegations });
   const publishRows = publishRowsOf({ delegations });
   return (
-    <ul aria-label="Delegations" className="flex min-w-0 flex-col gap-1">
+    <ul aria-label="Delegations" className="flex min-w-0 flex-col gap-0.5">
       {delegations.map((delegation) => {
         const childAgent = agents.find((agent) => agent.id === delegation.childAgentId) ?? null;
         const card = delegationCardOf({
@@ -49,6 +61,7 @@ export const AutoDelegationLines = ({
               card={card}
               name={name}
               revision={revision}
+              costUsd={spendById.get(card.childAgentId) ?? 0}
               onOpen={onOpenChild}
             />
           </li>
