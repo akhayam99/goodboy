@@ -25,7 +25,6 @@ import {
   type MountNote,
   type PickableMount,
 } from '@goodboy/core/auto';
-import { modelFamily, type ModelFamily } from '@goodboy/core/providers';
 import {
   getAutoArtifact,
   getAutoDelegation,
@@ -44,7 +43,6 @@ import {
   type AutoAttemptId,
   type AutoDelegationId,
   type AutoOutboxId,
-  type AutoRouting,
 } from '@goodboy/types';
 import type { AutoContinue } from '../../../features/auto/delegationContinueOf';
 import type { AdmitChildInput } from './admit';
@@ -55,8 +53,9 @@ import { leadRunFactsOf } from '../runLocks/leadRunFactsOf';
 import { pickChildMount } from './pickChildMount';
 import type { AgentGrant } from './ports';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
-import { routingPickOf } from './childRouting/routingPickOf';
 import { storedPickOf } from './childRouting/storedPickOf';
+import { storedRoutingOf } from './childRouting/storedRoutingOf';
+import { writerFamilyOf } from './childRouting/writerFamilyOf';
 import type { AgentVerbContext } from './verbContext';
 
 export type ChildRefusal = Readonly<{
@@ -317,51 +316,6 @@ const briefVersionOf = ({ retry }: BriefVersionParams): number | null => {
   return typeof stored === 'number' ? stored : null;
 };
 
-type WriterFamilyParams = {
-  readonly ctx: AgentVerbContext;
-  readonly tree: AutoTree;
-  readonly role: AutoDelegationRole;
-  readonly artifactIds: ReadonlyArray<string>;
-};
-
-const writerFamilyOf = async ({
-  ctx,
-  tree,
-  role,
-  artifactIds,
-}: WriterFamilyParams): Promise<ModelFamily | null> => {
-  if (role !== 'reviewer') {
-    return null;
-  }
-  for (const artifactId of artifactIds) {
-    const registered = await getAutoArtifact({
-      db: ctx.db,
-      artifactId: brandId<ArtifactId>({ value: artifactId }),
-    });
-    const ownerRole =
-      registered === null ? null : parseAutoDelegationRole({ role: registered.ownerRole });
-    if (
-      registered === null ||
-      registered.treeId !== tree.id ||
-      ownerRole === null ||
-      !isAutoWriterRole({ role: ownerRole })
-    ) {
-      continue;
-    }
-    const producer = await getAutoDelegation({
-      db: ctx.db,
-      delegationId: registered.ownerDelegationId,
-    });
-    const pick = producer === null ? null : storedPickOf({ routing: producer.routing });
-    const family =
-      pick === null ? null : modelFamily({ provider: pick.provider, model: pick.model });
-    if (family !== null) {
-      return family;
-    }
-  }
-  return null;
-};
-
 const isResolved = (value: ReviseTarget | ResolvedDelegateChild): value is ResolvedDelegateChild =>
   'kind' in value;
 
@@ -569,11 +523,6 @@ export const resolveDelegateChild = async ({
   if (routing.kind === 'blocked') {
     return refuse({ slot, code: routing.code, message: routing.message });
   }
-  const modelReason =
-    child.modelReason ??
-    (retry === null || continueWith === null
-      ? null
-      : textFieldOf({ source: retry.routing, key: 'modelReason' }));
   const mount = picked.mount;
   const childAgentId =
     revise === null
@@ -653,15 +602,7 @@ export const resolveDelegateChild = async ({
         sessionId: grant.sessionId,
         workspaceId: grant.workspaceId,
       },
-      routing: {
-        ...routingPickOf({ outcome: routing }),
-        requested: {
-          provider: child.provider,
-          model: child.model,
-          effort: child.effort,
-        },
-        ...(modelReason !== null && { modelReason }),
-      } satisfies AutoRouting,
+      routing: storedRoutingOf({ outcome: routing, child, retry, continueWith }),
       reviseOf:
         revise === null
           ? null

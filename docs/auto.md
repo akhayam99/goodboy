@@ -2205,9 +2205,9 @@ agents that write code do not run here yet. Claude: first in your order." A chil
 takes the best by the rule ("Claude: first in your order", "Codex: most room left", "Haiku 5.5:
 lighter, fits the step"). A role pin always wins; a preset step lock (`stepLock`) wins over all.
 The session composer's model steers the Lead only, never a helper. A reviewer is routed against
-the family of the writer whose artifact it reads (`writerFamily`, from the producer's stored pick in
-`resolveDelegateChild`); with no writer artifact there is no family guard. The routing a helper
-keeps (`routing_json`, typed `AutoRouting`, built by `routingPickOf`) holds the pick, the reason,
+the family of the writer whose artifact it reads (`writerFamilyOf`, from the producer's stored pick); with no writer artifact there is no family
+guard. The routing a helper keeps (`routing_json`, typed `AutoRouting`, built by
+`storedRoutingOf`) holds the pick, the reason,
 `source` (lead, pin, rule, fallback, lock), the cause of a moved pick, the Lead's own words in
 `modelReason` and up to 18 candidates it weighed, without rates, the struck rows last. Tell a pin
 from a Lead pick by `source`, never by `requested`, which holds what the Lead asked for. An older
