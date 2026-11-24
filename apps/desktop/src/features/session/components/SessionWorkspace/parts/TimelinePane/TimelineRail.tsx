@@ -32,7 +32,7 @@ const dashArrayOf = ({ dash }: { readonly dash: RailSegment['dash'] }): string |
   dash === 'dashed' ? DASH_PATTERN : undefined;
 
 const strokeOf = ({ identityIndex }: { readonly identityIndex: number | null }): string =>
-  identityIndex == null ? 'var(--color-border)' : runIdentityStroke({ index: identityIndex });
+  identityIndex == null ? 'var(--color-border-soft)' : runIdentityStroke({ index: identityIndex });
 
 const dimOf = ({ isMuted }: { readonly isMuted: boolean }): string | undefined =>
   isMuted ? TERMINAL_DIM : undefined;

@@ -21,6 +21,8 @@ activity-mark-seen
 activity-one-signal
 activity-question
 activity-resolves
+activity-row-kit
+activity-row-kit-light
 activity-run
 activity-run-finished
 activity-run-hover
@@ -962,6 +964,7 @@ terminal-studio-empty
 terminal-studio-newmenu
 terminal-studio-restored
 timeline-cards
+timeline-cards-light
 toast-over-drawer
 toast-over-drawer-overlay
 toasts
