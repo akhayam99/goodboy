@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react';
 import { formatUsd } from '@goodboy/ui';
 import type { AgentRowWork } from '../../../../hooks/useAgentRowWork';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
 import type { AgentRowModels } from './useAgentRowModels';
 import { RowModelsCard } from './RowModelsCard';
 import { TimelineModelCell } from './TimelineModelCell';
-import { TimelineRowMeta } from './TimelineRowMeta';
+import { TimelineRowMeta, type TimelineRowMetaLayout } from './TimelineRowMeta';
 
 type Props = {
   readonly entry: TimelineAgentEntry;
@@ -13,16 +14,31 @@ type Props = {
   readonly rowModels: AgentRowModels;
   readonly costUsd: number;
   readonly isRunning: boolean;
+  readonly layout?: TimelineRowMetaLayout;
+  readonly state?: ReactNode;
 };
 
-export const AgentRowMeta = ({ entry, ordinal, work, rowModels, costUsd, isRunning }: Props) => {
+export const AgentRowMeta = ({
+  entry,
+  ordinal,
+  work,
+  rowModels,
+  costUsd,
+  isRunning,
+  layout = 'stack',
+  state = null,
+}: Props) => {
   const { models, summary, kindWord } = rowModels;
   return (
     <TimelineRowMeta
+      layout={layout}
+      state={state}
+      isLive={isRunning}
       model={
         <TimelineModelCell
           summary={summary}
           isPlanned={models.isPlanned}
+          isFluid={layout === 'feed'}
           wrapCard={
             summary === null
               ? null
