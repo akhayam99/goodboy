@@ -70,6 +70,38 @@ describe('the secondary Notifications scenes', () => {
     expect(state.notifications.filter((row) => /how often to check/.test(row.title))).toEqual([]);
   });
 
+  it('u26s-notifications-rows draws each severity on the quiet node with the age in the time column', async () => {
+    mount({ id: 'u26s-notifications-rows' });
+
+    await screen.findAllByText(/Session reached/, undefined, WAIT);
+
+    const nodeOf = ({ title }: { readonly title: string }): HTMLElement => {
+      const row = screen.getAllByText(title)[0]?.closest<HTMLElement>('[data-notification-key]');
+      const node = row?.querySelector<HTMLElement>('[data-node-look]');
+      if (node == null) {
+        throw new Error(`the row "${title}" has no node`);
+      }
+      return node;
+    };
+    const expected = [
+      { title: 'Handoff degraded', state: 'failed', label: 'Error' },
+      { title: 'Session reached 80% of its limit', state: 'alert', label: 'Warning' },
+      { title: 'Pull request opened', state: 'done', label: 'Done' },
+      { title: '1 session folder left on disk', state: 'marker', label: 'Info' },
+    ] as const;
+    for (const { title, state, label } of expected) {
+      const node = nodeOf({ title });
+      expect(node.getAttribute('data-node-look')).toBe('quiet');
+      expect(node.getAttribute('data-node-state')).toBe(state);
+      expect(node.getAttribute('aria-label')).toBe(label);
+    }
+    const ages = [...document.querySelectorAll('[data-notification-key] time')];
+    expect(ages.length).toBeGreaterThan(0);
+    for (const age of ages) {
+      expect(age.closest('[data-meta-column="time"]')).not.toBeNull();
+    }
+  });
+
   it('u26s-notifications-header-menu offers Mark all as read and Delete all', async () => {
     mount({ id: 'u26s-notifications-header-menu' });
 
