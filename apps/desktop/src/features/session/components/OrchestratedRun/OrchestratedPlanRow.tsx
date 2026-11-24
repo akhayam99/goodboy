@@ -2,7 +2,7 @@ import { CircleDashed } from '@goodboy/ui/icons';
 import type { AgentRole } from '@goodboy/types';
 import { cn, ICON_SIZE, WORK_META_COLUMN } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
-import { agentKindPalette, kindForRole } from '../../agent-kind';
+import { kindForRole } from '../../agent-kind';
 import { OrchestratedPlanSlot } from './OrchestratedPlanSlot';
 
 type Props = {
@@ -19,20 +19,10 @@ export const OrchestratedPlanRow = ({ kind, label, role = null, slotWidth }: Pro
       <OrchestratedPlanSlot slotWidth={slotWidth}>
         <CircleDashed size={ICON_SIZE.mark} className="text-faint-foreground" />
       </OrchestratedPlanSlot>
-      <span className="flex min-w-0 flex-1 items-center gap-2 px-2 text-ui">
-        <span className="w-14 shrink-0" />
-        <span
-          data-checklist-cell="role"
-          className="flex w-28 shrink-0 items-center gap-1 text-meta"
-        >
-          {roleKind === null ? null : (
-            <>
-              <AgentKindChip kind={roleKind} density="glyph" isDecorative />
-              <span className="min-w-0 truncate text-muted-foreground">
-                {agentKindPalette({ kind: roleKind }).label}
-              </span>
-            </>
-          )}
+      <span className="flex min-w-0 flex-1 items-center gap-2 pl-3 pr-2 text-ui">
+        <span className="w-12 shrink-0" />
+        <span data-checklist-cell="role" className="flex w-5 shrink-0 items-center">
+          {roleKind === null ? null : <AgentKindChip kind={roleKind} density="glyph" />}
         </span>
         <span
           className={cn(

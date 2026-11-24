@@ -57,12 +57,12 @@ describe('the u23 step row scenes', () => {
     ]);
   });
 
-  it('draws the orchestrated steps as a checklist: step, role glyph and word, title, time', async () => {
+  it('draws the orchestrated steps as a checklist: step, role glyph, title, time', async () => {
     renderScene('step-rows-runs');
 
     const tree = await screen.findByTestId('run-tree', undefined, WAIT);
 
-    expect(within(tree).getAllByText('Implementer').length).toBeGreaterThan(0);
+    expect(within(tree).queryByText('Implementer')).toBeNull();
     expect(within(tree).getAllByRole('img', { name: 'Implementer' }).length).toBeGreaterThan(0);
     expect(tree.querySelectorAll('[data-checklist-cell="step"]').length).toBeGreaterThan(0);
     expect(tree.querySelectorAll('[data-checklist-cell="duration"]').length).toBeGreaterThan(0);

@@ -236,7 +236,7 @@ describe('the u28 run page scenes', () => {
     await mount('u28-run-step-blocked');
 
     const planned = [...checklist().querySelectorAll<HTMLElement>('[data-plan-row="left"]')];
-    expect(planned.map((row) => row.textContent)).toEqual(['DocsWrite the export notes']);
+    expect(planned.map((row) => row.textContent)).toEqual(['Write the export notes']);
     expect(within(checklist()).getAllByText('Run the 12k export benchmark')).toHaveLength(1);
     const notes = within(checklist()).getByRole('button', { name: 'Left open (1)' });
     expect(within(checklist()).queryByText('Stream rows to CSV')).toBeNull();

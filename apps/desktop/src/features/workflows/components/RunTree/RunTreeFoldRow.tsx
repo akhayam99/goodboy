@@ -1,13 +1,14 @@
 import type { KeyboardEvent } from 'react';
 import { ChevronDown, ChevronUp } from '@goodboy/ui/icons';
-import { ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import { ICON_SIZE, ROW_INTERACTIVE, WorkNode, cn } from '@goodboy/ui';
 import type { TimelineCountItem } from '../../../session/timeline/buildTimelineStream';
 import { groupSummaryText } from '../../../session/timeline/groupSummary';
-import { runIdentityStroke } from '../../../session/timeline/runIdentity';
 import { TimelineRail } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRail';
 import { RAIL_COUNT_RADIUS, railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
 import { rowSlotWidth } from './rowSlotWidth';
+
+const DONE_PART = 'done';
 
 type SetParams = {
   readonly id: string;
@@ -24,6 +25,12 @@ type Props = {
 
 export const RunTreeFoldRow = ({ item, rail, railWidth, isFixed, onSet }: Props) => {
   const label = groupSummaryText({ summary: item.summary });
+  const shownLabel = groupSummaryText({
+    summary: {
+      ...item.summary,
+      parts: item.summary.parts.filter((part) => part.text !== DONE_PART),
+    },
+  });
   const slot = rowSlotWidth({
     rail,
     railWidth,
@@ -53,17 +60,11 @@ export const RunTreeFoldRow = ({ item, rail, railWidth, isFixed, onSet }: Props)
           <span
             aria-hidden
             data-testid="timeline-count-node"
-            className="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-background"
-            style={{
-              left: railColumnX({ column: markerColumn }),
-              top: rail.markerY,
-              boxShadow: `inset 0 0 0 2px ${
-                item.identityIndex === null
-                  ? 'var(--color-border)'
-                  : runIdentityStroke({ index: item.identityIndex })
-              }`,
-            }}
-          />
+            className="pointer-events-none absolute flex -translate-x-1/2 -translate-y-1/2"
+            style={{ left: railColumnX({ column: markerColumn }), top: rail.markerY }}
+          >
+            <WorkNode look="quiet" size="sm" state="done" label={label} mark={{ kind: 'dot' }} />
+          </span>
         )}
       </span>
       <div className="flex min-w-0 flex-1 items-end">
@@ -80,7 +81,7 @@ export const RunTreeFoldRow = ({ item, rail, railWidth, isFixed, onSet }: Props)
           )}
           style={{ height: TIMELINE_RHYTHM.grade.count.height }}
         >
-          <span className="min-w-0 truncate">{label}</span>
+          <span className="min-w-0 truncate">{shownLabel}</span>
           <Chevron size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
         </button>
       </div>
