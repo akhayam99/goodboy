@@ -68,7 +68,9 @@ export const Footer = () => (
         <div className="footerGrid">
           <div className="footerBrand">
             <Logo />
-            <p>An agentic development environment for macOS and Linux.</p>
+            <p>
+              <a href={SITE.ade}>An agentic development environment for macOS and Linux.</a>
+            </p>
             <code>v{LATEST_VERSION}</code>
           </div>
           {COLUMNS.map((column) => (
