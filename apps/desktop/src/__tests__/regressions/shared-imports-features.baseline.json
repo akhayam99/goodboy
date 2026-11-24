@@ -45,7 +45,6 @@
   "apps/desktop/src/shared/hooks/useAgentOutcome/index.ts": 1,
   "apps/desktop/src/shared/hooks/useChatDefaultModel/index.ts": 2,
   "apps/desktop/src/shared/hooks/useCheckFixCommitSync/index.ts": 1,
-  "apps/desktop/src/shared/hooks/useComposerClassicKeys/index.ts": 1,
   "apps/desktop/src/shared/hooks/useKindRouting/index.ts": 1,
   "apps/desktop/src/shared/hooks/useLimitAmountDraft/index.ts": 1,
   "apps/desktop/src/shared/hooks/useNewProject/index.ts": 1,
