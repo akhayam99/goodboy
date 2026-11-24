@@ -1,5 +1,6 @@
 import { countNoun } from '../../../../shared/utils/countNoun';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
+import { boardSettledWordOf } from '../../central/board/boardSettledWordOf';
 import { requestShortOf } from '../../central/board/requestShortOf';
 import { branchWorkTabRegistration } from '../../branchWorkTabRegistration';
 import { useBoardContext } from './useBoardContext';
@@ -28,9 +29,12 @@ export const BoardTileFacts = ({ rowId }: Props) => {
   const requestWord =
     request === null ? '' : `${requestShortOf({ request })} ${request.noun}${request.number}`;
   const runs = work.counts === null ? 0 : work.counts.runs;
-  const asked = rowById.get(rowId)?.askIds.length ?? 0;
+  const row = rowById.get(rowId);
+  const asked = row?.askIds.length ?? 0;
+  const settled = row === undefined ? null : boardSettledWordOf({ row });
   const words = joinFacts({
     facts: [
+      settled?.word,
       isDevShown && runs > 0 && countNoun({ count: runs, one: 'run' }),
       asked > 0 &&
         `${countNoun({ count: asked, one: 'question' })} ${asked === 1 ? 'waits' : 'wait'}`,

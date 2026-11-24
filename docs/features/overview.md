@@ -79,7 +79,7 @@ Each project is one block with its name in the head. Its branches sit inside by 
 
 Each branch is one tile, like a pull request in a list:
 
-- The first line names the branch. One chip on the right sums up where it stands: **Waits for you**, **Checks failing**, **Running**, **Not pushed**, **PR open**, **Merged** or **Closed**. A pull request closed without merging is never called merged. It sits in **Closed**, neutral like any settled row, with no button. The state has the same color everywhere in the app.
+- The first line names the branch. One chip on the right sums up where it stands: **Waits for you**, **Checks failing**, **Running**, **Not pushed** or **PR open**. A merged or closed branch has no chip: its second line says **Merged** or **Closed**, and so does its row on the Desk. A pull request closed without merging is never called merged. It stays neutral like any settled row, with no button. The state has the same color everywhere in the app.
 - The second line holds a few quiet facts: the pull request, the lines added and removed, the runs and the questions that wait. A pull request shows its number, such as **PR #12**.
 - A tile with something to do carries one button. **Answer** comes first and opens the exact question, then the first waiting step, such as **Rebase**, **Push** or **Open a pull request**. A move already shown in Needs you or Next is not repeated on its tile. A merged branch offers **Remove worktree** once its cleanup is proposed.
 - When a check fails, the chip names it, such as **integration-tests failed**. It is the one state in color on the tile.
