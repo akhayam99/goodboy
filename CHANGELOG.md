@@ -12,6 +12,43 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.41.2
+
+The agent card names each model an agent ran on and its effort, and the Goodboy mark on the rail opens What's new.
+
+### Improved
+
+#### Agent card shows each model and its effort
+<!-- gb area=agents pr=2323 -->
+
+Rest on an agent's role mark in Activity to read its whole story: the task in full, its state with the time, such as Done in 15m or Needs you, asked 3m ago, then one line per model it ran on with the provider's mark and a small effort meter. Its start, tokens and cost close the card.
+
+#### The Goodboy mark opens What's new
+<!-- gb area=app pr=2326 -->
+
+The Goodboy mark at the foot of the rail opens What's new. A dot on it says the installed release has notes you have not read, and opening them clears it. The mark now lines up with the bottom edge of the page beside it.
+
+#### Quieter step marks in Activity
+<!-- gb area=sessions pr=2322 -->
+
+The session overview, the Activity page and the run page draw each step on a quieter mark. A finished step is a bare check, and only Needs you and Failed are solid discs, so they stand out in a long log.
+
+#### Browser address bar suggests as you type
+<!-- gb area=sessions pr=2321 -->
+
+Focusing the address bar lists nothing. Type, and suggestions float under the address row without moving the page: Open, matching tabs and visited pages that match your words, up to six.
+
+Drag the Browser by its address row to place it on the Desk, like the other tools.
+
+### Fixed
+
+- A quick double click on a suggestion in Ask asked the same question twice. One click now asks once. <!-- gb area=sessions pr=2325 -->
+- A Board hover card could come back after you returned from a session, sometimes stuck over the rail. It now closes on a click elsewhere or a page change. <!-- gb area=sessions pr=2320 -->
+- In Tasks, a source that fails shows its notice inside its own group, under the title, instead of over the group title. <!-- gb area=inbox pr=2321 -->
+- Tool heads on a narrow Desk no longer overlap: the title is cut short first and extra buttons fold into More. Terminal keeps Open full page in More. <!-- gb area=sessions pr=2321 -->
+- Browser tabs show one selected state, like Terminal tabs, and the console has its own icons. <!-- gb area=sessions pr=2321 -->
+- A Browser tab no longer logs a notification permission error in its console when a page loads. <!-- gb area=sessions pr=2321 -->
+
 ## Goodboy v0.41.1
 
 An archived session keeps its branch and pull request, and a merged pull request stops offering review moves.

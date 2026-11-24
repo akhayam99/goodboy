@@ -67,7 +67,7 @@ Get updates in the background, then see what is new. When one is ready, the Upda
 
 ### Changelog in the app
 
-Read release notes inside the app, in the **What's new** tab of Help, searchable, with links into the screen each change touched. Every release in the list shows its version, its date and whether it is installed, and a release that changes your data carries a quiet mark. Before an update, **What's new** shows every release it brings, and after one it covers the releases you skipped.
+Read release notes inside the app, in the **What's new** tab of Help, searchable, with links into the screen each change touched. The Goodboy mark at the foot of the rail opens it, with a dot while new notes are unread. Every release in the list shows its version, its date and whether it is installed, and a release that changes your data carries a quiet mark. Before an update, **What's new** shows every release it brings, and after one it covers the releases you skipped.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-changelog-update-dark.webp">
