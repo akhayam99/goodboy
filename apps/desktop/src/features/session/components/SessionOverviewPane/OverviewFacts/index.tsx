@@ -1,11 +1,11 @@
 import { Button } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { RelativeTime } from '../../../../shared/components/RelativeTime';
-import { NAMES } from '../../../../shared/utils/names';
-import { elapsedWordOf } from '../../central/board/boardRowWordsOf';
-import { OverviewTicket } from './OverviewTicket';
-import { SessionCostChip } from './SessionCostChip';
+import { useAppStore } from '../../../../../store';
+import { RelativeTime } from '../../../../../shared/components/RelativeTime';
+import { NAMES } from '../../../../../shared/utils/names';
+import { elapsedWordOf } from '../../../central/board/boardRowWordsOf';
+import { OverviewTicket } from '../OverviewTicket';
+import { SessionCostChip } from '../SessionCostChip';
 
 type Props = {
   readonly sessionId: SessionId;

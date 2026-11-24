@@ -1,12 +1,14 @@
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../../store/storyHarness')).dbModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
@@ -25,14 +27,14 @@ import {
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../../../store/storyHarness';
+} from '../../../../../store/storyHarness';
 
 let useAppStore: StoryStore;
-let OverviewFacts: typeof import('./OverviewFacts').OverviewFacts;
+let OverviewFacts: typeof import('.').OverviewFacts;
 
 beforeAll(async () => {
   useAppStore = await importStore();
-  ({ OverviewFacts } = await import('./OverviewFacts'));
+  ({ OverviewFacts } = await import('.'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
 const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'ws-harborline' });
@@ -147,6 +149,31 @@ describe('OverviewFacts origin', () => {
     fireEvent.click(more);
 
     expect(useAppStore.getState().activeLens[SESSION_ID]).toBe('context');
+  });
+
+  it('names the first session part-of ticket even when a branch row of another ticket comes first', () => {
+    useAppStore.setState({
+      sessionExternalTasks: {
+        [SESSION_ID]: [
+          taskOf({
+            identifier: 'HBL-398',
+            title: 'Ledger rounding on refunds',
+            scope: 'branch',
+            branch: 'hl/ledger-rounding',
+          }),
+          HBL_412,
+          taskOf({ identifier: 'HBL-398', title: 'Ledger rounding on refunds' }),
+        ],
+      },
+    });
+    render(<OverviewFacts sessionId={SESSION_ID} elapsedMs={0} />);
+
+    expect(within(facts()).getByRole('button', { name: 'Open HBL-412' })).toBeInstanceOf(
+      HTMLElement,
+    );
+    expect(
+      within(facts()).getByRole('button', { name: 'Open all 2 linked tasks' }).textContent,
+    ).toBe('+1');
   });
 
   it('leads with the ticket and draws no chat line when a chat also started the session', () => {

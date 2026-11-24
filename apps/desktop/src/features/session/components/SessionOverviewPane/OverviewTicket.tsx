@@ -3,8 +3,8 @@ import type { SessionExternalTask, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { IntegrationGlyph } from '../../../../shared/components/IntegrationGlyph';
 import { distinctTasks } from '../../../../shared/utils/distinctTasks';
-import { ObjectMenuArea } from '../../../actions/components/ObjectMenuArea';
-import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
+import { ObjectMenuArea } from '../../../actions/ObjectMenuArea';
+import { ObjectOverflowMenu } from '../../../actions/ObjectOverflowMenu';
 import { actionIntentOf } from '../../../actions/actionIntentOf';
 import { taskKeyOf } from '../../../actions/kinds/task';
 import type { ObjectTarget } from '../../../actions/types';
@@ -35,8 +35,8 @@ const originTaskOf = ({ tasks }: OriginParams): SessionExternalTask | null =>
 export const OverviewTicket = ({ sessionId }: Props) => {
   const rows = useAppStore((state) => state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const openExternalTaskLens = useAppStore((state) => state.openExternalTaskLens);
-  const tasks = distinctTasks({ tasks: rows }).map(({ task }) => task);
-  const origin = originTaskOf({ tasks });
+  const tasks = distinctTasks({ tasks: rows });
+  const origin = originTaskOf({ tasks: rows });
   if (origin === null) {
     return null;
   }
@@ -68,7 +68,7 @@ export const OverviewTicket = ({ sessionId }: Props) => {
           className="min-w-0 font-normal text-muted-foreground"
         >
           <IntegrationGlyph provider={origin.provider} size="xs" className="shrink-0" />
-          <span className="shrink-0 font-mono">{origin.identifier}</span>
+          <span className="shrink-0">{origin.identifier}</span>
           <span className="min-w-0 truncate">{origin.title}</span>
         </Button>
       </ObjectMenuArea>
