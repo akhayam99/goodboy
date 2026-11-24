@@ -10,6 +10,8 @@ export const MOCK_SCENES = buildSceneRegistry({
         '!../scenes/u*/*.test.tsx',
         '../scenes/surfaces/*/*.tsx',
         '!../scenes/surfaces/*/*.test.tsx',
+        '../scenes/hero/*.tsx',
+        '!../scenes/hero/*.test.tsx',
       ],
       { eager: true },
     ),

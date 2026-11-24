@@ -281,7 +281,7 @@ looks easy, the product looks like it's only for easy tasks.
 ## What already exists
 
 `apps/desktop/src/app/components/MockScene/` holds one scene component per
-screenshot. Each one is registered by its id through the `scenes/u*/` and `scenes/surfaces/*/` globs ([recipes/mock-scene.md](recipes/mock-scene.md)) and filled
+screenshot. Each one is registered by its id through the `scenes/u*/`, `scenes/surfaces/*/` and `scenes/hero/` globs ([recipes/mock-scene.md](recipes/mock-scene.md)) and filled
 from `apps/desktop/src/app/components/MockScene/mockFixtureData.ts` plus its own seed module. Read
 `scenes.txt` before you build anything. The surface you need is often already there,
 and the keys are the `?scene=` values. The scenes cost nothing at runtime when
@@ -875,7 +875,7 @@ match, and it writes `docs/readme/readme-hero-{dark,light}.webp`. The site pictu
 is shot at 1920x1200 and scale 4 and writes
 `website/public/hero/hero-{dark,light}-{1208,2416,3624}.webp`, 1, 2 and 3 times
 the width the site draws it at, cropped to the top 840 px of the window and
-resampled once from the same capture. To crop a short surface, use a `--window-size` height shorter than 900. The layout keeps its own proportions and the footer stays pinned.
+resampled once from the same capture. The `hero-ask`, `hero-diff` and `hero-agents` scenes in `scenes/hero/` are candidates for the next site picture: the same Harborline session on its Overview, with Ask, the diff of the file #318 shares with HBL-415, or the Lead's agents open on the right. Shoot them with the site settings above. To crop a short surface, use a `--window-size` height shorter than 900. The layout keeps its own proportions and the footer stays pinned.
 
 The scenes listed in `FRAME_SCENES` (`scripts/validateScenesFrame.mjs`) are also measured by the scene job at three window widths, so changing their layout can fail the frame probe: [testing.md](./testing.md) → Frame probe.
 
