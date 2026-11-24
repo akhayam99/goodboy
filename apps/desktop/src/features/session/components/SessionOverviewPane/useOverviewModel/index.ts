@@ -4,7 +4,6 @@ import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../.
 import { useNow } from '../../../../../shared/hooks/useNow';
 import { autoRetryTargetsOf } from '../../../../auto/autoRetryTargetsOf';
 import { branchEntriesOf } from '../../../central/branches/branchStoryOf';
-import { overviewStatusOf } from '../../../central/branches/overviewStatusOf';
 import { useBranchDetails } from '../../../central/branches/useBranchDetails';
 import { useBranchFacts } from '../../../central/branches/useBranchFacts';
 import { cardsOutsideRunningOf } from '../../../central/cards/cardsOutsideRunningOf';
@@ -76,7 +75,6 @@ export const useOverviewModel = ({ session }: Params) => {
     () => boardCardsOf({ cards: moves.rest, rows: board.board.rows }),
     [board.board.rows, moves.rest],
   );
-  const status = useMemo(() => overviewStatusOf({ branches }), [branches]);
   const now = useNowModel({ sessionId, groups });
   const kickerById = useMemo(() => {
     const projectByMount = new Map<string, string>(
@@ -118,7 +116,6 @@ export const useOverviewModel = ({ session }: Params) => {
     kickerById,
     board,
     placed,
-    status,
     now,
     nowCount,
     isNowShown,

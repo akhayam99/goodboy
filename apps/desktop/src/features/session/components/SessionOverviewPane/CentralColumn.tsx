@@ -14,7 +14,7 @@ import { NextSection } from './NextSection';
 import { NowSection } from './NowSection';
 import { OverviewLog } from './OverviewLog';
 import { OverviewNotices } from './OverviewNotices';
-import { OverviewStatus } from './OverviewStatus';
+import { OverviewFacts } from './OverviewFacts';
 import { UnassignedNotes } from './UnassignedNotes';
 import { useDevDetails } from './useDevDetails';
 import { useOverviewModel } from './useOverviewModel';
@@ -37,7 +37,6 @@ export const CentralColumn = ({ session }: Props) => {
     kickerById,
     board,
     placed,
-    status,
     now,
     isNowShown,
     noticesView,
@@ -50,9 +49,7 @@ export const CentralColumn = ({ session }: Props) => {
   );
   return (
     <div ref={columnRef} data-central-column className={PANE_RHYTHM.groups}>
-      {isEmpty ? null : (
-        <OverviewStatus sessionId={sessionId} status={status} elapsedMs={board.kpis.elapsedMs} />
-      )}
+      {isEmpty ? null : <OverviewFacts sessionId={sessionId} elapsedMs={board.kpis.elapsedMs} />}
       {isArchived ? null : (
         <HeightMotion
           isOpen={noticesView.rows.length > 0 || noticesView.isPublishShown}

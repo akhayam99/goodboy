@@ -4,10 +4,9 @@ type Params = {
   readonly needsYou: number;
   readonly now: number;
   readonly next: number;
-  readonly status: string | null;
 };
 
-export const deskStatusLineOf = ({ needsYou, now, next, status }: Params): string => {
+export const deskStatusLineOf = ({ needsYou, now, next }: Params): string => {
   const parts = [
     { label: NAMES.needsYou, count: needsYou },
     { label: NAMES.nowSection, count: now },
@@ -18,5 +17,5 @@ export const deskStatusLineOf = ({ needsYou, now, next, status }: Params): strin
   if (parts.length > 0) {
     return parts.join(' · ');
   }
-  return status ?? NAMES.overview;
+  return NAMES.overview;
 };

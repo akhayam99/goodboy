@@ -82,7 +82,7 @@ const show = async () => {
 };
 
 const READING_ORDER = [
-  '[data-overview-status]',
+  '[data-overview-facts]',
   '[data-overview-section="needs-you"]',
   '[data-overview-section="now"]',
   '[data-overview-section="next"]',
@@ -92,7 +92,7 @@ const READING_ORDER = [
 ];
 
 describe('the reading order of the Overview', () => {
-  it('reads state, Needs you, Now, Next, Projects, Activity, then the Ask line at the foot', async () => {
+  it('reads the facts, Needs you, Now, Next, Projects, Activity, then the Ask line at the foot', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
     const column = document.querySelector('[data-central-column]');
@@ -103,7 +103,7 @@ describe('the reading order of the Overview', () => {
     });
 
     for (const required of [
-      '[data-overview-status]',
+      '[data-overview-facts]',
       '[data-slot="project-blocks"]',
       '[data-overview-section="activity"]',
       '[data-overview-ask]',
@@ -114,6 +114,37 @@ describe('the reading order of the Overview', () => {
     expect(positions).toEqual([...positions].sort((first, second) => first - second));
     expect(column?.lastElementChild?.matches('[data-overview-ask]')).toBe(true);
   });
+
+  it.each([
+    ['mid', false],
+    ['finished', false],
+    ['finished', true],
+    ['branches', false],
+    ['orchestrated', false],
+    ['agent', false],
+  ] as const)(
+    'opens a %s session (archived: %s) on the quiet facts, with no project state sentence',
+    async (kind, isArchived) => {
+      seedCentralColumn({ kind });
+      if (isArchived) {
+        useAppStore.setState((state) => ({
+          sessions: state.sessions.map((session) =>
+            session.id === COLUMN_SESSION_ID
+              ? { ...session, archivedAt: session.updatedAt }
+              : session,
+          ),
+        }));
+      }
+      await show();
+      const column = document.querySelector('[data-central-column]');
+
+      expect(column?.firstElementChild?.matches('[data-overview-facts]')).toBe(true);
+      const sentences = [...(column?.querySelectorAll('p') ?? [])].map(
+        (node) => node.textContent ?? '',
+      );
+      expect(sentences.filter((text) => /^(payments-api|ledger-core): /.test(text))).toEqual([]);
+    },
+  );
 
   it('says each fact once: one spend, no tiles, no provenance line', async () => {
     seedCentralColumn({ kind: 'branches' });
