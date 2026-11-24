@@ -121,6 +121,19 @@ describe('the Ask line', () => {
     expect(Object.keys(useAppStore.getState().askMessages)).toEqual([]);
   });
 
+  it('asks at once on a chip click, leaves the field empty and fills it only on typing', async () => {
+    render(<SessionAskLine sessionId={SESSION} />);
+    const field = screen.getByRole('textbox', { name: 'Ask about this session' });
+
+    await askDoing();
+    fireEvent.click(screen.getByRole('button', { name: 'Close answer' }));
+    expect(field).toHaveProperty('value', '');
+
+    fireEvent.change(field, { target: { value: 'Why is the retry slow?' } });
+    expect(field).toHaveProperty('value', 'Why is the retry slow?');
+    expect(screen.queryByTestId('ask-line-origin')).toBeNull();
+  });
+
   it('says there is no plan instead of guessing what is left', async () => {
     render(<SessionAskLine sessionId={SESSION} />);
 

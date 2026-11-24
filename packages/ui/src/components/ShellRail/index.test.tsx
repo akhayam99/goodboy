@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Inbox, Mail, RefreshCw } from '../../icons';
 import type { ShellRailForm } from './shellRailFormContext';
+import { SHELL_GUTTER_PX } from '../../frameGeometry';
 import { SHELL_RAIL_EDGE_PX, SHELL_RAIL_TILE } from './shellRailGeometry';
 import { ShellRailItem } from './ShellRailItem';
 import { ShellRail } from '.';
@@ -159,15 +160,15 @@ describe('ShellRail', () => {
   });
 
   it.each<ShellRailForm>(['wide', 'narrow'])(
-    'leaves as much space under the last item as above the first, %s',
+    'ends the foot on the content sheet bottom, one shell gutter above the window edge, %s',
     (form) => {
       renderRail({ form });
       expect(railOf().style.paddingTop).toBe(`${SHELL_RAIL_EDGE_PX}px`);
-      expect(railOf().style.paddingBottom).toBe(railOf().style.paddingTop);
+      expect(railOf().style.paddingBottom).toBe(`${SHELL_GUTTER_PX}px`);
     },
   );
 
-  it('sizes every item button as one rail tile, the slot a passive mark sits in', () => {
+  it('sizes every item button as one rail tile, the slot the brand mark sits in', () => {
     renderRail({ form: 'wide' });
     within(railOf())
       .getAllByRole('button')

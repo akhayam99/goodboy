@@ -211,9 +211,9 @@
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
   is the only emphasised column control. Doors, Board included, are neutral at
-  rest, and the rail signature is no control at all, with one exception: a pending
-  update adds an Update mark above the signature until you act on it. An update is an
-  event, not a rest state.
+  rest, and the rail signature is a quiet door to What's new whose only signal is a
+  small dot while a release has unread notes. A pending update adds an Update mark
+  above the signature until you act on it. An update is an event, not a rest state.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.
