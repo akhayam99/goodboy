@@ -46,6 +46,7 @@ export type ActivityItem =
       readonly text: string;
       readonly isRunning: boolean;
       readonly isFailing: boolean;
+      readonly isSkipped: boolean;
     }
   | {
       readonly kind: 'bot';

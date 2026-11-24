@@ -31,3 +31,24 @@ describe('the comments line of the activity', () => {
     expect(lineOf({ open: 0, needYou: 0 })).toBe('All threads on files resolved');
   });
 });
+
+describe('the checks node of the activity', () => {
+  it('names skipped checks as skipped, never as passed', () => {
+    const row = activityRowOf({
+      item: {
+        kind: 'checks',
+        key: 'checks',
+        at: '',
+        text: 'Checks 2 skipped',
+        isRunning: false,
+        isFailing: false,
+        isSkipped: true,
+      },
+      nouns: PULL_REQUEST_NOUNS.github,
+      baseBranch: 'main',
+      onOpenComments: () => undefined,
+      onOpenChecks: () => undefined,
+    });
+    expect(row.lead).toMatchObject({ kind: 'node', state: 'skipped', label: 'Checks skipped' });
+  });
+});

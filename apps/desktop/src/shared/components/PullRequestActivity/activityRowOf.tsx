@@ -77,6 +77,9 @@ const checksLeadOf = ({ item }: ChecksLeadParams): ActivityLead => {
   if (item.isRunning) {
     return { kind: 'node', state: 'running', label: 'Checks running', mark: DOT };
   }
+  if (item.isSkipped) {
+    return { kind: 'node', state: 'skipped', label: 'Checks skipped', mark: DOT };
+  }
   return { kind: 'node', state: 'done', label: 'Checks passed', mark: DOT };
 };
 
