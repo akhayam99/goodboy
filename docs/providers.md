@@ -1410,6 +1410,24 @@ project,local --no-session-persistence` in an empty scratch directory,
   `providerLimits` store slice. A write never replaces a newer observation.
   Thresholds are in `packages/core/src/providers/limits/constants.ts`: warning from
   80%, old data after 30 minutes
+- **Room**: `providerRoom` gives each provider a used share and says whether it
+  is measured or estimated. A fresh reading is measured; a budget with a cap is
+  measured too. Every other provider, or one whose reading is older than 30
+  minutes, gets an estimate: it starts at 50%, each clean turn in the last 5
+  hours takes off 2 points down to 30%, each agent on it in the last hour adds
+  10, and a rate limit in the last hour puts it at 85% or more. An estimate stops
+  at 95%, so a guess never marks a provider full; only a cooldown or a measured
+  limit removes one. It is a fact for routing, never a guard
+- **Load**: `providerLoad` counts agents, not turns, per provider in a window:
+  the ones running now plus the ones that closed a turn in it, each once.
+  `listProviderAgentTurns` reads the closed ones from `agent_turn_spans`, one
+  row per provider and agent with its clean turns and last end. The windows are
+  `ROOM_RECENT_WINDOW_MS` (1 hour) and `ROOM_TURNS_WINDOW_MS` (5 hours)
+- **Rate limits**: a turn that fails with a rate limit (429, too many requests)
+  records the time in `providerStrikes` (`withProviderStrike`), and the turn still
+  falls back as before. A usage limit sets a cooldown instead. Strikes live in
+  the window's store only: another window and a restart forget them, which is
+  why the room they feed is called an estimate
 
 ### Source map
 

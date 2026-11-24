@@ -1,19 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import type {
-  AgentId,
-  AgentTurnSpan,
-  IsoDateTime,
-  MountId,
-  ProviderRunId,
-  SessionId,
-  TelemetryRecordId,
-  WorkspaceId,
+import {
+  brandId,
+  type AgentId,
+  type AgentTurnSpan,
+  type IsoDateTime,
+  type MountId,
+  type ProviderRunId,
+  type SessionId,
+  type TelemetryRecordId,
+  type WorkspaceId,
 } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   hasOtherSessionTurnSince,
   insertAgentTurnSpan,
   listAgentTurnSpanRoutes,
+  listProviderAgentTurns,
   listSessionTurnSpans,
   listTurnSpans,
   listWorkspaceTurnSpans,
@@ -324,6 +326,40 @@ describe('agent turn span queries', () => {
     expect(inside).toHaveLength(2);
     expect(workspaceOnly).toHaveLength(1);
     expect(await listTurnSpans({ db: database, sinceMs: Date.parse(endedAt) + 1 })).toEqual([]);
+  });
+
+  it('counts each agent once per provider with its clean turns and last end', async () => {
+    const database = await databaseWithRun({});
+    const scoutId = brandId<AgentId>({ value: 'agent-scout' });
+    await database.execute(
+      'INSERT INTO agents (id, session_id, ordinal, name, status) VALUES (?, ?, ?, ?, ?)',
+      [scoutId, sessionId, 1, 'scout', 'running'],
+    );
+    const endedMs = Date.parse(endedAt);
+    const later = brandId<IsoDateTime>({ value: new Date(endedMs + 60_000).toISOString() });
+    await insertAgentTurnSpan({ db: database, span: SPAN });
+    await insertAgentTurnSpan({
+      db: database,
+      span: { ...SPAN, runId: brandId<ProviderRunId>({ value: 'run-2' }), endedAt: later },
+    });
+    await insertAgentTurnSpan({
+      db: database,
+      span: {
+        ...SPAN,
+        runId: brandId<ProviderRunId>({ value: 'run-3' }),
+        agentId: scoutId,
+        provider: 'cursor',
+        endReason: 'failed',
+      },
+    });
+
+    expect(await listProviderAgentTurns({ db: database, sinceMs: endedMs })).toEqual([
+      { provider: 'anthropic', agentId, cleanTurns: 2, lastEndedAtMs: endedMs + 60_000 },
+      { provider: 'cursor', agentId: scoutId, cleanTurns: 0, lastEndedAtMs: endedMs },
+    ]);
+    expect(await listProviderAgentTurns({ db: database, sinceMs: endedMs + 1 })).toEqual([
+      { provider: 'anthropic', agentId, cleanTurns: 1, lastEndedAtMs: endedMs + 60_000 },
+    ]);
   });
 
   it('lists what each run of the session was started with', async () => {

@@ -1,17 +1,18 @@
-import type {
-  AgentId,
-  AgentRole,
-  AgentStatus,
-  AgentTurnSpan,
-  AgentTurnSpanEndReason,
-  AgentTurnSpanRoute,
-  MeasuredTurnSpan,
-  MountId,
-  ProviderName,
-  ProviderRunId,
-  SessionId,
-  WorkflowRunId,
-  WorkspaceId,
+import {
+  brandId,
+  type AgentId,
+  type AgentRole,
+  type AgentStatus,
+  type AgentTurnSpan,
+  type AgentTurnSpanEndReason,
+  type AgentTurnSpanRoute,
+  type MeasuredTurnSpan,
+  type MountId,
+  type ProviderName,
+  type ProviderRunId,
+  type SessionId,
+  type WorkflowRunId,
+  type WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { isStringArray, parseJsonColumn } from '../shared/parseJsonColumn';
@@ -138,6 +139,42 @@ export const listTurnSpans = async ({
     [sinceMs],
   );
   return rows.map((row) => toMeasuredSpan({ row }));
+};
+
+export type ProviderAgentTurns = Readonly<{
+  provider: ProviderName;
+  agentId: AgentId;
+  cleanTurns: number;
+  lastEndedAtMs: number;
+}>;
+
+type ProviderAgentRow = {
+  readonly provider: ProviderName;
+  readonly agent_id: string;
+  readonly clean_turns: number;
+  readonly last_ended_at: number;
+};
+
+export const listProviderAgentTurns = async ({
+  db,
+  sinceMs,
+}: WindowListParams): Promise<ReadonlyArray<ProviderAgentTurns>> => {
+  const rows = await db.select<ProviderAgentRow>(
+    `SELECT provider, agent_id,
+            SUM(CASE WHEN end_reason = 'succeeded' THEN 1 ELSE 0 END) AS clean_turns,
+            MAX(ended_at) AS last_ended_at
+       FROM agent_turn_spans
+      WHERE ended_at >= ? AND agent_id IS NOT NULL
+      GROUP BY provider, agent_id
+      ORDER BY provider, agent_id`,
+    [sinceMs],
+  );
+  return rows.map((row) => ({
+    provider: row.provider,
+    agentId: brandId<AgentId>({ value: row.agent_id }),
+    cleanTurns: row.clean_turns,
+    lastEndedAtMs: row.last_ended_at,
+  }));
 };
 
 type SessionListParams = {
