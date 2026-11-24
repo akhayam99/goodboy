@@ -245,7 +245,7 @@ section share one glyph.
 
 | Concept      | Glyph                       | Tone    | Meaning                                     |
 | ------------ | --------------------------- | ------- | ------------------------------------------- |
-| `appearance` | `Palette`                   | neutral | Settings > General, and its Appearance      |
+| `appearance` | `Palette`                   | neutral | Settings > Look and alerts, and Appearance  |
 | `updates`    | `CircleFadingArrowUp`       | info    | App updates                                 |
 | `editor`     | `SquareCode`                | neutral | The default editor                          |
 | `shortcuts`  | `Keyboard`                  | neutral | Keyboard shortcuts                          |

@@ -56,7 +56,7 @@ When the database cannot be opened at all, the start screen offers **Retry** fir
 
 ### Updates
 
-Get updates in the background, then see what is new. When one is ready, the Update mark at the foot of the rail opens a card with **Restart now** and **Later**, and a **What's new** link in its sentence. With agents running, **Restart when they finish** waits for them. The Updates band at the end of **Settings › This Mac › General** shows the installed version and **Check for updates**.
+Get updates in the background, then see what is new. When one is ready, the Update mark at the foot of the rail opens a card with **Restart now** and **Later**, and a **What's new** link in its sentence. With agents running, **Restart when they finish** waits for them. The Updates band at the end of **Settings › This Mac › Look and alerts** shows the installed version and **Check for updates**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-dark.webp">

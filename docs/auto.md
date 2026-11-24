@@ -78,7 +78,7 @@ accept. Neither tried to write a file or run a shell command, and the work tree 
   screens through `AutoReleaseContext`; `useIsAutoOn` returns it. A build with
   the gate false hides the Auto start and every Auto control and keeps the role
   start of before.
-- Settings, App, General has no Experiments band. The **Experimental** marker
+- Settings, This Mac, Look and alerts has no Experiments band. The **Experimental** marker
   stays on the Auto start (`NewDrawerBody`, `SessionKickoff`).
 
 ## Starting

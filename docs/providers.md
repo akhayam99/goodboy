@@ -172,8 +172,11 @@ Go to **Settings** → **Providers** → **Models** to choose what a workspace
 uses when you leave a model on **Auto**. A first line says that accounts, usage
 and which models show in the picker live in **Connections**, with **Open
 Connections** beside it (`DefaultsPanel/ConnectionsPointer`). Below it each group
-is one band with its label: Runs, Providers, Choosing models, Chat, Agents and
-Background tasks.
+is one band with its label: Providers, Chat and Background tasks. The Lead, the
+roles and the older plan run rows live on Workflows, **Every run**
+(`EveryRunModels`), which mounts the same `RunsSection`, `RoleRow`,
+`OlderPlanRunsBand` and the pins that can't run line (`RolePinsOffLine`) through
+`defaultsPanelSurfaces.ts`.
 
 - **Provider order**: the workspace's provider policy, summed up on the row
   ("Claude, Codex · Cursor as backup"). The row opens the list in place: drag a
@@ -231,13 +234,13 @@ Background tasks.
   them. The page header names its scope: the workspace name, or **All
   workspaces** when none is open
 
-- **Runs**: the two models a run starts with, first on the page. **Auto agent** is the
+- **Runs** (on Every run): the two models a run starts with. **Auto agent** is the
   `auto` role (`roleModels.auto`, narrowed to the providers Auto can run on, as
   `kindRouting` does at spawn) and **Older plan runs** is the `workflow_orchestrator` task
   (`taskModels.workflow_orchestrator`), shown only while the workspace has a plan run
   that is not discarded (`useHasPlanRuns`), the only runs that read it. `DEFAULT_GROUPS.runs`
   lists them and the Agents and Background tasks groups leave them out
-- **Agents**: one row per role, grouped as Explore and plan, Build, Review and write,
+- **Roles** (on Every run): one row per role, grouped as Explore and plan, Build, Review and write,
   and Other. If you pin a model on an agent or a workflow step, that pin beats the role
 - **Background tasks**: one row per side job, grouped as Writing for you, Running
   workflows, and Git
@@ -252,12 +255,13 @@ settings stay until one of the two succeeds.
 Each task row says what the job does and ends in a model picker. A row you have not
 pinned reads **Auto**. Open the picker to see what Auto picks right now. Pick a model to
 pin it: the picker then shows that model and an **x** that goes back to Auto. **Reset
-all to Auto**, in the menu at the top right, clears every pin after a confirm that says
-how many. The page header carries no count. Each provider page counts its own pins in
+all to Auto**, at the top right, clears the pins the page shows (new chats and the
+background tasks) after a confirm that says how many; the Lead, role and Orchestrator
+pins of Every run stay. The page header carries no count. Each provider page counts its own pins in
 the Models group header (`ProviderPage/ModelsGroup/PinnedCount`, `3 pinned`): the chat
 model, the roles and the tasks of this workspace that use that provider.
 
-Every run, chat, agent and background task row sits on one column template
+Every chat and background task row here, and every run and role row on Every run, sits on one column template
 (`DefaultsPanel/roleGrid.ts`): name, job, model, effort and the source chip, then the
 open chevron. A task or chat row's picker spans the model and effort columns and keeps
 an empty chevron slot, so the columns line up down the page. The job column hides when
@@ -300,8 +304,8 @@ place in your order, its room (`roomTextOf`), its agents in the last hour and "l
 model" for the lighter rung; a row a guard removes is struck with its cause
 (`CANDIDATE_CAUSES`), and a check marks `bestCandidate` under Provider priority. A
 pinned role lists its pinned models. The background task rows (`TaskModelRow`) name the model Auto runs
-on their closed trigger. A **Choosing models** section, shown only while the workspace has
-a plan run, holds one switch, off by default:
+on their closed trigger. The **Older plan runs** band of Every run, shown only while the
+workspace has a plan run, holds the Orchestrator row and one switch, off by default:
 **Models in older plan runs** (`canOrchestratorPickModel` in the workspace `workflowRules`, read
 from the run's `rulesSnapshot`). The Lead starts on the request as typed; a
 `models.classifyRequests` row an older build left in the settings table is never read. When

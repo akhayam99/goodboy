@@ -112,7 +112,7 @@ A pull leaves some branches alone.
 - A base branch checked out with uncommitted files says so instead of offering **Pull**.
 - A base branch that would not fast-forward, or is checked out in another worktree, is skipped.
 
-**Settings › Advanced › Git** sets how often it checks (Off, 5, 15 or 30 minutes). Several windows on one workspace share one fetch.
+**Settings › Editor, terminal, git › Git** sets how often it checks (Off, 5, 15 or 30 minutes). Several windows on one workspace share one fetch.
 
 ⌘K **Pull main in all linked repos** and **Pull <branch> in <repo>** run the same pull. A toast lists each repo with its branch, and the title counts updated, skipped and failed.
 
@@ -144,7 +144,7 @@ Choose how new session branches are named, under **Naming** on the **Branches** 
 
 ### Stops for your OK
 
-Choose when a new run in this workspace stops for your go: every step, after the plan or never. One row on the **Runs** page in Settings sets it for workflows and for the Lead alike. One click saves both, and a failed save keeps both old levels and shows the error under the row.
+Choose when a new run in this workspace stops for your go: every step, after the plan or never. One row on **Workflows › Every run** sets it for workflows and for the Lead alike. One click saves both, and a failed save keeps both old levels and shows the error under the row.
 
 If the two were saved apart, the row names both and selects none until you pick one. Nothing changes before you do. A level saved in one window shows in the others. Each Lead can change its own level and its permission rows from its page.
 

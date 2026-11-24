@@ -24,7 +24,7 @@ Open a real login shell in the workspace folder or any linked worktree.
 - One line per worktree shows the project, the branch and a dot while a shell runs a process.
 - The line names the command that runs. When it ends, the line says it passed, or that it failed with its exit code.
 - The exit status and the command it belongs to come from a small hook a zsh terminal adds when it starts. Your own shell files and hooks are never changed. Other shells show no status.
-- **Settings › Advanced › Built-in terminal › Command status** turns the hook off for the terminals you open next.
+- **Settings › Editor, terminal, git › Built-in terminal › Command status** turns the hook off for the terminals you open next.
 - Each worktree shows its terminals as tabs with a **+** to add one. A tab selects on a click anywhere on its body.
 - Issue chips and the diff stay on the session, not here.
 - The folder path line shows only for a plain folder, never for a worktree.
@@ -218,7 +218,7 @@ Pin the scripts you use and run them from the session.
 
 ### Open in editor
 
-Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim, at the worktree or the file. **Open with**, in **Settings › General**, picks the editor, the terminal app and the browser that links and artifacts open in. **Open in external terminal** sits in the menus of a session, a branch folder, a worktree and a folder in Files. It opens the folder in Terminal.app, iTerm, Warp or Ghostty, whichever are installed. A file path with a line number in a terminal opens at that line in your editor. `code -g`, `zed` and `subl` take `file:line:col`. The JetBrains IDEs take `--line` and `--column`. Linux uses the system terminal.
+Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim, at the worktree or the file. **Open with**, in **Settings › Editor, terminal, git**, picks the editor, the terminal app and the browser that links and artifacts open in. **Open in external terminal** sits in the menus of a session, a branch folder, a worktree and a folder in Files. It opens the folder in Terminal.app, iTerm, Warp or Ghostty, whichever are installed. A file path with a line number in a terminal opens at that line in your editor. `code -g`, `zed` and `subl` take `file:line:col`. The JetBrains IDEs take `--line` and `--column`. Linux uses the system terminal.
 
 ### Explore
 
@@ -249,7 +249,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - Type a word to find a tab of any session, a project pin or a page this session visited. The list floats over the page under the address and shows only while you type, so clicking the address alone lists nothing. Words are never searched on the web; when nothing matches, one quiet line says so. The arrows move between rows.
 - Type the path of a local page, image or PDF, like `~/harborline/plan.html`, to open it in a tab. The tab shows the path, takes the page's title, and Reload reads the file again. The page reads only the files in its folder and the folders under it. A missing file, a folder or another kind of file says why under the address. A link or a page never opens a local file.
 - A port chip, a running Service's port, a link in a conversation, a decision or an artifact and a web address in a terminal open beside the session. The tab already on that page is shown when there is one. **⌘-click** opens your own browser instead. Sign-in and connect links keep opening your own browser.
-- **Settings → App → General → Open with → Links in a session** picks where a plain click goes: **In Goodboy** or **In your browser**. **⌘-click** always opens your own browser.
+- **Settings → This Mac → Editor, terminal, git → Open with → Links in a session** picks where a plain click goes: **In Goodboy** or **In your browser**. **⌘-click** always opens your own browser.
 - A terminal with no session sends its links to your own browser.
 - Rest on a localhost link, or on a web address in a terminal, to see where a click goes before you open it.
 - While the browser is on screen, its keys are the ones every browser uses. **⌘L** goes to the address. **⌘T** opens a new tab. **⌘W** closes the shown tab, and with no tab left it closes the browser. **⌘⇧T** reopens the last tab you closed, up to five. **⌘⇧[** and **⌘⇧]** step through the tabs. **⌘D** pins or unpins the shown tab. **⌘⇧S** sends the page to the agent. **⌘F** finds text in the page. Elsewhere these keep their other meaning, so ⌘L stays Ask and ⌘F stays Search.

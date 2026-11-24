@@ -326,7 +326,7 @@ blocked.
 - It ends the run when the goal is met, or stops and asks you when a decision needs you
 
 The model of the orchestrator has three homes. The workspace default is the
-**Older plan runs** row of **Settings › Models › Runs**, shown only while the
+**Orchestrator** row of **Workflows › Every run › Older plan runs**, shown only while the
 workspace has a plan run that is not discarded (`useHasPlanRuns`). A run takes it from the
 **Model** chip of Start a run, and the run page shows it as the **Orchestrator**
 chip in the settings line, the composer row beside the hint box changes the same

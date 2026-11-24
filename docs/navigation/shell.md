@@ -685,7 +685,7 @@ only drop under zoom.
   of the top bar on the board, inside sessions, and under studios. Exactly one
   switcher is live, and ⌘O opens its single anchored popover.
 - **Theme is not in the bar.** It is set once, so the strip keeps live status:
-  Now, Limits, spend and the bell. Settings > This Mac > General > Appearance holds
+  Now, Limits, spend and the bell. Settings > This Mac > Look and alerts > Appearance holds
   the three-way choice, and the palette answers to **Theme** with **Theme: dark**,
   **Theme: light** and **Theme: system**. Both call `switchTheme({ to })` in
   `shared/lib/theme.ts`, the only writer. The swap stays one paint
@@ -997,7 +997,7 @@ state from `autoFactsByAgentId`.
 
 ## Column doors
 
-Settings (the foot door and ⌘,) always opens the last settings page (General
+Settings (the foot door and ⌘,) always opens the last settings page (Look and alerts
 at first), with or without a workspace; Workspace settings opens only from the
 gear on the current-workspace row of the workspace popover. Impact is a
 destination, so it is the quiet last place on the places rail (`isReference`), not
