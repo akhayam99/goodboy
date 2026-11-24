@@ -360,8 +360,8 @@ describe('the start, agent and workflow chapters', () => {
 
   it('names the Overview sections in their reading order', () => {
     const overview = pointOf('agents', 'Overview');
-    ['the state, Needs you, Now, Next, Projects and Activity', 'Ask line'].forEach((entry) =>
-      expect(overview).toContain(entry),
+    ['the state, Needs you, Now, Next, Projects and Activity', 'Ask opens in a pane'].forEach(
+      (entry) => expect(overview).toContain(entry),
     );
     ['Classic', 'drawer', 'Running row', 'Tiles', 'the Log'].forEach((gone) =>
       expect(overview).not.toContain(gone),

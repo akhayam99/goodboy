@@ -181,7 +181,9 @@ the release read; a fresh install marks it read at once, so it never shows a dot
 
 The changelog bundled in a build (`CHANGELOG.md?raw` in
 `features/changelog/changelogSource.ts`) stops at that build's own version, so
-it can't describe the update. When a check finds one, `checkForUpdates` starts
+it can't describe the update. It sits in its own chunk, out of the initial
+load: `hydrateChangelogSeen` imports it through `loadBundledReleases` at boot and
+marks the seen state hydrated only after the releases are in the store. When a check finds one, `checkForUpdates` starts
 `loadChangelogUpcoming` without waiting for it. The `release_changelog` command
 (`src-tauri/src/releases.rs`) fetches `CHANGELOG.md` at the update's tag from
 raw.githubusercontent.com in Rust, so the webview CSP stays closed. The text

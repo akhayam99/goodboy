@@ -240,6 +240,7 @@ describe('a11y smoke, SettingsStudio app scope', () => {
       updaterStatus: 'idle',
       updateFailure: null,
       updateCheckedAt: null,
+      changelogReleases: [],
       checkForUpdates: vi.fn(async () => undefined),
       loadSetting: vi.fn(async () => null),
       saveSetting: vi.fn(async () => undefined),

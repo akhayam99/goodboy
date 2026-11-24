@@ -92,6 +92,7 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     updateVersion: null,
     updateFailure: null,
     updateCheckedAt: null,
+    changelogReleases: [],
     checkForUpdates: vi.fn(async () => undefined),
     providers: [] as ReadonlyArray<unknown>,
     cliRequirements: [] as ReadonlyArray<unknown>,

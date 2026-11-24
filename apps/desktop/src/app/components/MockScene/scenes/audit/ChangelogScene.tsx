@@ -1,4 +1,5 @@
 import { mockIPC } from '@tauri-apps/api/mocks';
+import { CHANGELOG_RELEASES } from '../../../../../features/changelog/changelogSource';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { HelpStudio } from '../../../HelpStudio';
 import { useAppStore } from '../../../../../store';
@@ -29,6 +30,7 @@ const seedChangelog = (): void => {
     return null;
   });
   useAppStore.setState({
+    changelogReleases: CHANGELOG_RELEASES,
     loadChangelogDates: async () => undefined,
     reloadChangelogDates: async () => undefined,
     markChangelogSeen: async () => undefined,

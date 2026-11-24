@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { HelpStudio } from '../../../../HelpStudio';
+import { CHANGELOG_RELEASES } from '../../../../../../features/changelog/changelogSource';
 import { useAppStore } from '../../../../../../store';
 import { FramedStudioScene } from '../../u23/FramedStudioScene';
 
@@ -18,10 +19,10 @@ const TYPE_AFTER_MS = 1_000;
 const SEARCH_TEXT = 'export';
 
 const seedDates = (): void => {
-  const { changelogReleases } = useAppStore.getState();
   useAppStore.setState({
+    changelogReleases: CHANGELOG_RELEASES,
     changelogDates: Object.fromEntries(
-      changelogReleases.map((release, index) => [
+      CHANGELOG_RELEASES.map((release, index) => [
         release.version,
         new Date(NEWEST_PUBLISHED_AT - index * DAYS_BETWEEN_RELEASES * MS_PER_DAY).toISOString(),
       ]),

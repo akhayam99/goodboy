@@ -74,7 +74,7 @@ export const ADE_GUIDE = {
         id: 'parallel-sessions',
         title: 'Run agents in parallel',
         need: 'Several goals move at once, and you can see where each one stands.',
-        how: 'Goodboy starts one session for each goal and shows them all on the board, in six lanes from Building to Archived. Each session moves to the lane that matches what is happening in it.',
+        how: 'Goodboy starts one session for each goal and shows them all on the board, in five lanes from Building to Archived. Each session moves to the lane that matches what is happening in it, and the ones that wait on you sit as cards above the lanes.',
         links: [{ label: 'The stage board', href: `${SITE.doc('board')}#stage-board` }],
       },
       {

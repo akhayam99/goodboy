@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { mockIPC } from '@tauri-apps/api/mocks';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { CHANGELOG_RELEASES } from '../../../../../features/changelog/changelogSource';
 import { ReleaseNoticeBridge } from '../../../../../features/changelog/components/ReleaseNoticeBridge';
 import { UpdatePill } from '../../../../../features/updater/components/UpdatePill';
 import { useAppStore } from '../../../../../store';
@@ -21,6 +22,7 @@ export const ToastsScene = () => {
       return null;
     });
     useAppStore.setState({
+      changelogReleases: CHANGELOG_RELEASES,
       changelogSeenVersion: '0.26.0',
       changelogSeenHydrated: true,
       updaterStatus: VARIANT === 'downloading' ? 'downloading' : 'available',

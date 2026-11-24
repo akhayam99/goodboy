@@ -33,6 +33,7 @@ import {
   type StoryStore,
 } from '../../../store/storyHarness';
 import { hydrateOnboardingFromDb } from '../../../features/onboarding/onboardingSettings';
+import { CHANGELOG_RELEASES } from '../../../features/changelog/changelogSource';
 import type { MountGithubState } from '../../../store/types';
 import { seedSessionWithMounts } from '../../helpers/seedSessionWithMounts';
 import { pressShortcut } from '../../helpers/pressKey';
@@ -349,6 +350,7 @@ const bootEmpty = async (): Promise<Ctx> => {
   useAppStore.setState({
     hydrate: async () => undefined,
     checkForUpdates: async () => undefined,
+    changelogReleases: CHANGELOG_RELEASES,
     hydrated: true,
     isShellReady: true,
     bootPhase: 'ready',
@@ -438,6 +440,7 @@ export const boot = async ({ seed }: { readonly seed: Seed }): Promise<Ctx> => {
     }),
     hydrate: async () => undefined,
     checkForUpdates: async () => undefined,
+    changelogReleases: CHANGELOG_RELEASES,
     hydrated: true,
     isShellReady: true,
     bootPhase: 'ready',

@@ -12,6 +12,80 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.41.3
+
+The Board shows what needs you as cards, Ask opens beside the session, and the Lead picks each helper's model.
+
+### New
+
+#### Agents tab in Impact
+<!-- gb area=providers screen=impact pr=2345 -->
+
+Impact has an Agents tab: which roles did the agent work, on which models, at which effort and for what cost. Open a role to see its models with their turns, cost and failed turns. Pinned by you is the share of turns on a model you pinned.
+
+The cost counts agent turns only, so it is lower than Spend, which also counts chat and background tasks.
+
+### Improved
+
+#### Needs you cards on the Board
+<!-- gb area=sessions pr=2355 -->
+
+A row of cards above the lanes shows each session that waits on you, the oldest first, with the same count as the places rail. A click opens the session at the question, plan or run that needs you. A session with two questions is one card.
+
+The Queue view and the Needs you lane are gone, so each session shows once. Merge 2 in order sits in the In review lane head when approved pull requests have green checks.
+
+#### Ask opens beside the session
+<!-- gb area=sessions pr=2337 -->
+
+Ask is a pane beside the page, and it stays while you move between Overview, Runs, Artifacts and Context. Ask in the right rail or ⌘L opens it, and Esc closes it. On a narrow window it lies over the right of the page.
+
+Earlier lists your last five threads, and answers show bold text, code and lists, with agents and files as links.
+
+#### The Lead picks each helper's model
+<!-- gb area=agents pr=2342,2346 -->
+
+The Lead picks the provider and model of each helper from the providers you turned on, instead of starting every helper on the first in your order. When its pick cannot run, the helper starts on the best model left and its reason says why. A kept pick shows the Lead's own reason, and a Reviewer prefers a different model family from the helper that wrote what it reads.
+
+A pinned role keeps its pin. A queued helper whose provider went off, ran out or is cooling down starts on another model when its turn comes. A helper you continue keeps its model, and when its provider is cooling down, the message says until when. The model in the message box sets the Lead only.
+
+#### Provider priority in Models
+<!-- gb area=providers pr=2348,2329 -->
+
+The workspace's Models settings show Provider order and one Provider priority rule in place of the Skip a provider near its limit switch. By order, your order wins and a provider at 80% of its limit goes after the rest. By load, the provider with the most room left wins. Steps and helpers follow it unless the Lead picked one that can run, and new workspaces start on By order.
+
+Room right now shows how much of its limit each provider used, Never picked lists what a pick can never land on, and Last 5 hours counts the agents on each provider. Open a role to see its candidates right now and the one the rule picks.
+
+#### Workflow steps start on the best candidate
+<!-- gb area=workflows pr=2351 -->
+
+Workflow steps pick their model from the same candidates as the Lead's helpers, by your Provider priority, and By load spreads one run across providers. A waiting step moves off a provider that went off, ran out or is cooling down before it starts. A Reviewer step prefers a different model family from the step that wrote the code, and keeps the same family only when nothing else can run.
+
+#### Every run tab in Workflows
+<!-- gb area=workflows screen=workflows pr=2354 -->
+
+Workflows has an Every run tab, between Workflows and Saved steps, with what every new run starts with: stops for your OK, the limit, guidance, reply length, the models of the Lead and each role, and parallel agents. It writes the same values as Settings, so a change in one shows in the other.
+
+#### Close branch asks about the folder
+<!-- gb area=sessions pr=2336 -->
+
+Close branch in a project's menu is red and asks first, right beside it. A clean branch offers Keep the folder or Remove the folder. A branch with uncommitted changes or commits not pushed keeps its folder. The branch and its pull request stay either way.
+
+New branch sits in the project head, next to Unmount. Unmount waits until the project's branches are closed, and its tooltip says so. Mount a folder is now Mount a project, and every tile shows its diff and run counts without a switch.
+
+#### Quieter marks in pull request activity and notifications
+<!-- gb area=review pr=2344 -->
+
+Pull request activity and Notifications draw each event on the quiet mark Activity uses. Failing checks and errors are solid red, a thread that needs you and a warning solid amber, a passing check a bare check. Each age sits in its own time column.
+
+### Fixed
+
+- The Lead now starts helpers on Cursor and Codex reliably. <!-- gb area=agents pr=2356,2357 -->
+- The Lead now reads a PDF or any other file attached to your message, and a queued message keeps all its files when you edit it. <!-- gb area=agents pr=2360 -->
+- Tasks rows line up across groups, status and priority marks show their meaning on hover, groups head with one status word, and a task title wraps instead of being cut. <!-- gb area=inbox pr=2334 -->
+- The session Overview names the ticket the session came from, first on its facts line. A click opens it, and Open in Linear sits in its menu. <!-- gb area=sessions pr=2347 -->
+- The Lead sends a shell chore to the right helper, and a Scout reads a pull request's head commit and checks without an Implementer. <!-- gb area=agents pr=2350 -->
+- In Models, Older plan runs and Models in older plan runs show only while the workspace has a plan run. <!-- gb area=providers pr=2329 -->
+
 ## Goodboy v0.41.2
 
 The agent card names each model an agent ran on and its effort, and the Goodboy mark on the rail opens What's new.

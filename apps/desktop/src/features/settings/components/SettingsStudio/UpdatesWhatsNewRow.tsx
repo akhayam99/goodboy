@@ -2,7 +2,7 @@ import { Button } from '@goodboy/ui';
 import { APP_VERSION } from '../../../../shared/lib/appVersion';
 import { NAMES } from '../../../../shared/utils/names';
 import { openChangelogStudio } from '../../../changelog/changelogStudioEvent';
-import { CHANGELOG_RELEASES } from '../../../changelog/changelogSource';
+import { useAppStore } from '../../../../store';
 import { isInstalledRelease } from '../../../changelog/isInstalledRelease';
 import { releaseSummary } from '../../../changelog/releaseSummary';
 import { SettingRow } from './SettingRow';
@@ -10,7 +10,8 @@ import { SettingRow } from './SettingRow';
 const FALLBACK_HELP = 'What changed in each version, newest first.';
 
 export const UpdatesWhatsNewRow = () => {
-  const release = CHANGELOG_RELEASES.find((entry) =>
+  const releases = useAppStore((state) => state.changelogReleases);
+  const release = releases.find((entry) =>
     isInstalledRelease({ tag: entry.version, installed: APP_VERSION }),
   );
   const summary = release === undefined ? '' : releaseSummary({ release });

@@ -1,4 +1,3 @@
-import { CHANGELOG_RELEASES } from '../../../features/changelog/changelogSource';
 import type { ReleaseEntry } from '../../../features/changelog/parseChangelog';
 
 type ChangelogDatesStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -22,7 +21,7 @@ export type ChangelogState = {
 };
 
 export const changelogInitialState: ChangelogState = {
-  changelogReleases: CHANGELOG_RELEASES,
+  changelogReleases: [],
   changelogDates: {},
   changelogDatesStatus: 'idle',
   changelogDatesFetchedAt: null,

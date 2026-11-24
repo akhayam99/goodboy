@@ -62,9 +62,13 @@ describe('changelog slice', () => {
     localStorage.clear();
   });
 
-  it('has every release from CHANGELOG.md available synchronously, with no fetch', () => {
-    const { getState } = harness();
+  it('loads every release from CHANGELOG.md on hydrate, with no fetch', async () => {
+    const { slice, getState } = harness();
+    expect(getState().changelogReleases).toEqual([]);
 
+    await slice.hydrateChangelogSeen();
+
+    expect(getState().changelogSeenHydrated).toBe(true);
     expect(getState().changelogReleases.length).toBe(
       rawChangelog.split('\n').filter((line) => line.startsWith('## Goodboy v')).length,
     );
