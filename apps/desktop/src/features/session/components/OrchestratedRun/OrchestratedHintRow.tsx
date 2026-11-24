@@ -51,7 +51,9 @@ type NodeParams = {
 
 const offsetHeightOf = ({ node }: NodeParams): number => node.offsetHeight;
 
-const BUBBLE = '[data-testid="activity-message-bubble"]';
+const BUBBLE = '[data-activity-message-bubble]';
+
+const FENCE = /^\s*(```|~~~)/;
 
 const isClippedNode = ({ node }: NodeParams): boolean => {
   const bubble = node.querySelector<HTMLElement>(BUBBLE);
@@ -85,7 +87,9 @@ export const OrchestratedHintRow = ({
   });
   const canToggle = hintIsLong({ text: hint.text, isClipped }) || isExpanded;
   const first = hint.text.split('\n').find((line) => line.trim() !== '') ?? hint.text;
-  const rest = hint.text.slice(hint.text.indexOf(first) + first.length).trim();
+  const rest = FENCE.test(first)
+    ? ''
+    : hint.text.slice(hint.text.indexOf(first) + first.length).trim();
   const named = first.length > NAMED_HINT_CHARS ? `${first.slice(0, NAMED_HINT_CHARS)}...` : first;
   const isReading = state === 'reading';
   const remove =

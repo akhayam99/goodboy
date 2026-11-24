@@ -8,7 +8,7 @@ import { RAIL_COUNT_RADIUS, railColumnX, type RailRow } from '../../../workTreeM
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
 import { rowSlotWidth } from './rowSlotWidth';
 
-const DONE_PART = 'done';
+const DONE_STATE = 'done';
 
 type SetParams = {
   readonly id: string;
@@ -28,7 +28,7 @@ export const RunTreeFoldRow = ({ item, rail, railWidth, isFixed, onSet }: Props)
   const shownLabel = groupSummaryText({
     summary: {
       ...item.summary,
-      parts: item.summary.parts.filter((part) => part.text !== DONE_PART),
+      parts: item.summary.parts.filter((part) => part.state !== DONE_STATE),
     },
   });
   const slot = rowSlotWidth({

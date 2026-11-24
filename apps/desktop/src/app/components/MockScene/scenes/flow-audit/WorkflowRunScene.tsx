@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { applyDocumentTheme } from '../../../../../shared/lib/theme';
+import { applyDocumentTheme, getAppliedTheme } from '../../../../../shared/lib/theme';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { SceneRunsSurface } from '../SceneRunsSurface';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
@@ -62,6 +62,7 @@ export const WorkflowRunScene = ({ theme }: Props) => {
   const [session] = useState(sessionFor);
 
   useEffect(() => {
+    const previous = getAppliedTheme();
     if (theme !== undefined) {
       applyDocumentTheme({ theme });
     }
@@ -75,6 +76,7 @@ export const WorkflowRunScene = ({ theme }: Props) => {
       lens: 'workflows',
     });
     setIsReady(true);
+    return () => applyDocumentTheme({ theme: previous });
   }, [session, theme]);
 
   if (!isReady) {

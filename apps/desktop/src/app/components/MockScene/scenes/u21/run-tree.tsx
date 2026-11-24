@@ -11,7 +11,7 @@ import type {
 import { SceneRunsSurface } from '../SceneRunsSurface';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import { useAppStore } from '../../../../../store';
-import { applyDocumentTheme } from '../../../../../shared/lib/theme';
+import { applyDocumentTheme, getAppliedTheme } from '../../../../../shared/lib/theme';
 import { sceneClock } from '../../sceneClock';
 import {
   AGENT_BACKFILL_ID,
@@ -288,6 +288,7 @@ const RunTreeScene = ({ seed, theme }: SceneProps) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    const previous = getAppliedTheme();
     if (theme !== undefined) {
       applyDocumentTheme({ theme });
     }
@@ -300,6 +301,7 @@ const RunTreeScene = ({ seed, theme }: SceneProps) => {
       lens: 'workflows',
     });
     setIsReady(true);
+    return () => applyDocumentTheme({ theme: previous });
   }, [seed, theme]);
 
   if (!isReady) {

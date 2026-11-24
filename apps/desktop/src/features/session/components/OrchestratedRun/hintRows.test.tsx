@@ -235,6 +235,15 @@ describe('the text of a hint that does not fit', () => {
 
     await screen.findByRole('button', { name: /^Show more of hint: / });
   });
+
+  it('keeps a code block whole when the hint opens with its fence', async () => {
+    mount({ hints: [hintOf({ id: 'h1', text: '```ts\nconst ledger = 1;\n```' })] });
+
+    fireEvent.click(await screen.findByRole('button', { name: /^Show more of hint: / }));
+
+    const body = document.querySelector('[data-hint-body]');
+    expect(body?.querySelector('pre code')?.textContent).toContain('const ledger = 1;');
+  });
 });
 
 describe('what assistive tech reads for a hint', () => {
