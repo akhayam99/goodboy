@@ -16,7 +16,7 @@ import { AgentRowMeta } from './AgentRowMeta';
 import { CiFixStrip } from './CiFixStrip';
 import { agentRowIdentity } from './AgentRowIdentity';
 import { useAgentRowModels } from './useAgentRowModels';
-import { TimelineRowStateLine } from './TimelineRowStateLine';
+import { TimelineFeedState } from './TimelineFeedState';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 import { TimelineStreamRow, type TimelineBranchKey } from './TimelineStreamRow';
 
@@ -99,21 +99,21 @@ export const TimelineAgentStreamRow = ({
       worktrees={worktrees}
       identity={identity}
       meta={
-        <AgentRowMeta
-          entry={entry}
-          ordinal={item.ordinal}
-          work={work}
-          rowModels={rowModels}
-          costUsd={costUsd}
-          isRunning={item.rowState.phase === 'running'}
-        />
-      }
-      state={
-        item.ciStages === undefined ? (
-          <TimelineRowStateLine state={item.rowState} />
-        ) : (
-          <CiFixStrip stages={item.ciStages} word={ciWordOf({ item })} />
-        )
+        <>
+          {item.ciStages === undefined ? null : (
+            <CiFixStrip stages={item.ciStages} word={ciWordOf({ item })} />
+          )}
+          <AgentRowMeta
+            entry={entry}
+            ordinal={item.ordinal}
+            work={work}
+            rowModels={rowModels}
+            costUsd={costUsd}
+            isRunning={item.rowState.phase === 'running'}
+            layout="feed"
+            state={item.ciStages === undefined ? <TimelineFeedState state={item.rowState} /> : null}
+          />
+        </>
       }
       progress={work.time?.progress ?? null}
       runLane={runLane}

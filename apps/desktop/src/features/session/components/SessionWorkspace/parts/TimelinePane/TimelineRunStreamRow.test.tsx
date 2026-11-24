@@ -103,6 +103,36 @@ describe('a run row in Activity', () => {
   });
 });
 
+describe('the Activity feed as a quiet ledger', () => {
+  const workRows = (container: HTMLElement): ReadonlyArray<HTMLElement> =>
+    Array.from(
+      container.querySelectorAll<HTMLElement>('[data-row-id^="run:"], [data-row-id^="agent:"]'),
+    );
+
+  it('draws every run and agent as one feed line with the same columns in the same order', () => {
+    const { container } = renderActivity();
+    const rows = workRows(container);
+
+    expect(rows.length).toBeGreaterThan(1);
+    for (const row of rows) {
+      const columns = Array.from(
+        row.querySelectorAll('[data-testid="activity-meta"] > [data-meta-column]'),
+      ).map((cell) => cell.getAttribute('data-meta-column'));
+
+      expect(
+        row.querySelector('[data-testid="activity-row"]')?.getAttribute('data-activity-density'),
+      ).toBe('feed');
+      expect(columns).toEqual(['state', 'model', 'time']);
+    }
+  });
+
+  it('keeps the cost off every row', () => {
+    const { container } = renderActivity();
+
+    expect(container.querySelector('[data-meta-column="cost"]')).toBeNull();
+  });
+});
+
 describe('every clickable row in Activity', () => {
   it('names where it goes, so none is a bare click target', () => {
     const { container } = renderActivity();

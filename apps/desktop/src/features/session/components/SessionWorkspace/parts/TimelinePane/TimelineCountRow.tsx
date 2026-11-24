@@ -48,7 +48,7 @@ export const TimelineCountRow = ({ item, rail, railWidth, lanes, isExpanded, onS
               top: rail.markerY,
               boxShadow: `inset 0 0 0 2px ${
                 item.identityIndex === null
-                  ? 'var(--color-border)'
+                  ? 'var(--color-border-soft)'
                   : runIdentityStroke({ index: item.identityIndex })
               }`,
             }}

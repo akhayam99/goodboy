@@ -1,4 +1,5 @@
-import { cn, ICON_SIZE, Tooltip, ValueToken, WORK_ROW } from '@goodboy/ui';
+import type { ReactNode } from 'react';
+import { ActivityRow, cn, ICON_SIZE, Tooltip, ValueToken, WORK_ROW } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
@@ -22,6 +23,7 @@ import { TimelineRoleGlyph } from './TimelineRoleGlyph';
 import type { TimelineRowIdentity } from './timelineRowIdentity';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { TimelineRunLabel } from './TimelineRunLabel';
+import { timelineRowTone } from './timelineRowTone';
 import { DiffStat } from '../../../../../../shared/components/DiffStat';
 
 type Props = {
@@ -30,6 +32,7 @@ type Props = {
   readonly worktrees?: ReadonlyArray<string>;
   readonly identity?: TimelineRowIdentity | null;
   readonly isCardOpen?: boolean;
+  readonly meta?: ReactNode;
 };
 
 type FactParams = {
@@ -145,13 +148,26 @@ export const TimelineRowLabel = ({
   worktrees = NO_WORKTREES,
   identity = null,
   isCardOpen = false,
+  meta = null,
 }: Props) => {
   const { entry, grade } = item;
+  const tone = timelineRowTone({ state: item.rowState });
   if (entry.kind === 'run') {
-    return <TimelineRunLabel entry={entry} identity={identity} isCardOpen={isCardOpen} />;
+    return (
+      <ActivityRow
+        density="feed"
+        tone={tone}
+        textSize="body"
+        text={
+          <span className="flex min-w-0 items-center gap-2">
+            <TimelineRunLabel entry={entry} identity={identity} isCardOpen={isCardOpen} />
+          </span>
+        }
+        meta={meta}
+      />
+    );
   }
   const isStep = grade !== 'entry';
-  const isQueued = item.rowState.phase === 'queued';
   const emphasis =
     entry.kind === 'event' ? sessionEventEmphasis({ kind: entry.event.kind }) : 'plain';
   const head = factHeadOf({ entry, grade });
@@ -167,16 +183,16 @@ export const TimelineRowLabel = ({
         : [{ kind: 'text', text: head }];
   const title = titleOf({ entry, segments });
   const isAgent = entry.kind === 'agent';
+  const isFact = grade === 'fact';
   const titleNode = (
     <Tooltip content={detail === null ? title : `${title}\n${detail}`}>
       <span
+        data-timeline-title=""
         className={cn(
           'flex items-center overflow-hidden',
           isAgent ? cn(WORK_ROW.title, 'flex-1') : 'min-w-0',
-          isStep ? 'text-meta' : 'text-body',
-          emphasis === 'muted' || isQueued || grade === 'fact' || isMutedJob
-            ? 'text-muted-foreground'
-            : 'text-foreground',
+          isFact && 'text-meta',
+          (emphasis === 'muted' || isFact || isMutedJob) && 'text-muted-foreground',
         )}
       >
         {segments.map((segment, index) =>
@@ -212,23 +228,22 @@ export const TimelineRowLabel = ({
     </Tooltip>
   );
   return (
-    <>
-      {item.ordinal != null ? (
-        <span
-          data-timeline-ordinal=""
-          className="w-7 shrink-0 text-right text-meta tabular-nums text-faint-foreground"
-        >
-          {item.ordinal}
+    <ActivityRow
+      density="feed"
+      tone={tone}
+      textSize={isStep ? 'ui' : 'body'}
+      ordinal={item.ordinal == null ? null : <span data-timeline-ordinal="">{item.ordinal}</span>}
+      glyph={chipOf({ entry, identity, isCardOpen })}
+      text={
+        <span className="flex min-w-0 items-center gap-2">
+          {titleNode}
+          {diffStat == null ? null : (
+            <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
+          )}
+          {isAgent && <TimelineRowWorktrees names={worktrees} />}
         </span>
-      ) : null}
-      {chipOf({ entry, identity, isCardOpen })}
-      {titleNode}
-      {diffStat == null ? null : (
-        <span className="self-center">
-          <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
-        </span>
-      )}
-      {isAgent && <TimelineRowWorktrees names={worktrees} />}
-    </>
+      }
+      meta={meta}
+    />
   );
 };

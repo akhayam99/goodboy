@@ -7,7 +7,11 @@ import type {
   TimelineRowItem,
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
-import { DONE_ROW_STATE } from '../../../../../workTreeModel/rowState';
+import {
+  DONE_ROW_STATE,
+  type RowPhase,
+  type RowState,
+} from '../../../../../workTreeModel/rowState';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
 import type { TimelineLearningEntry } from '../../../../timeline/buildTimelineGroups';
 import type { IsoDateTime, SessionContextItemId, SessionId, WorkspaceId } from '@goodboy/types';
@@ -289,7 +293,7 @@ describe('TimelineRowLabel', () => {
       <TimelineRowLabel item={itemOf({ entry: projectRunEntry({ mounted: [], detached }) })} />,
     );
 
-    const label = container.firstElementChild;
+    const label = container.querySelector('[data-timeline-title]');
     expect(label instanceof HTMLElement ? tooltipTextOf({ element: label }) : null).toBe(
       'Removed api, storefront-web, infra, db and edge',
     );
@@ -413,6 +417,62 @@ describe('TimelineRowLabel', () => {
   });
 });
 
+describe('TimelineRowLabel, the quiet ledger', () => {
+  const stepOf = ({ rowState = DONE_ROW_STATE }: { readonly rowState?: RowState } = {}) => ({
+    ...itemOf({
+      entry: agentEntry({ agentKind: 'reviewer', name: 'Check the key' }),
+      grade: 'step',
+    }),
+    ordinal: '4.2',
+    rowState,
+  });
+
+  it('reads ordinal, role glyph and task in that order on one feed line', () => {
+    render(<TimelineRowLabel item={stepOf()} />);
+    const row = screen.getByTestId('activity-row');
+    const slots = Array.from(row.children).map((slot) => {
+      if (slot.querySelector('[data-timeline-ordinal]') !== null) {
+        return 'ordinal';
+      }
+      if (slot.querySelector('[role="img"]') !== null) {
+        return 'glyph';
+      }
+      return slot.getAttribute('data-testid');
+    });
+
+    expect(row.getAttribute('data-activity-density')).toBe('feed');
+    expect(slots).toEqual(['ordinal', 'glyph', 'activity-row-text']);
+  });
+
+  it('mutes a queued task and a stopped one, and keeps a done one at full contrast', () => {
+    const tones = (['queued', 'closed', 'done'] satisfies ReadonlyArray<RowPhase>).map((phase) => {
+      render(<TimelineRowLabel item={stepOf({ rowState: { phase, reason: null, ask: null } })} />);
+      const tone = screen.getByTestId('activity-row').getAttribute('data-activity-tone');
+      cleanup();
+      return tone;
+    });
+
+    expect(tones).toEqual(['pending', 'pending', 'quiet']);
+  });
+
+  it('bars only a row that waits on you or failed', () => {
+    const states: ReadonlyArray<RowState> = [
+      { phase: 'waiting', reason: null, ask: { kind: 'answer', question: null } },
+      { phase: 'failed', reason: null, ask: null },
+      { phase: 'running', reason: null, ask: null },
+      DONE_ROW_STATE,
+    ];
+    const bars = states.map((rowState) => {
+      render(<TimelineRowLabel item={stepOf({ rowState })} />);
+      const bar = screen.queryByTestId('tone-bar')?.getAttribute('data-tone') ?? null;
+      cleanup();
+      return bar;
+    });
+
+    expect(bars).toEqual(['warning', 'danger', null, null]);
+  });
+});
+
 describe('TimelineRowLabel, an explanation row', () => {
   it('reads Explained, then the topic and the title, as a compact fact', () => {
     const at = '2026-08-17T09:04:00Z' as IsoDateTime;
@@ -441,7 +501,7 @@ describe('TimelineRowLabel, an explanation row', () => {
     const { container } = render(<TimelineRowLabel item={itemOf({ entry, grade: 'fact' })} />);
 
     expect(container.textContent).toBe('Explained · Rust · Why the borrow checker rejects this');
-    const label = container.firstElementChild;
+    const label = container.querySelector('[data-timeline-title]');
     expect(label?.tagName).toBe('SPAN');
     expect(label instanceof HTMLElement ? tooltipTextOf({ element: label }) : null).toBe(
       'Explained\nRust · Why the borrow checker rejects this',
