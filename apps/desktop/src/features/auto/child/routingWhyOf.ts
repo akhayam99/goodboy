@@ -1,4 +1,4 @@
-import { CANDIDATE_CAUSES } from '@goodboy/core/providers';
+import { CANDIDATE_CAUSES, catalogModelForId } from '@goodboy/core/providers';
 import type { AutoRoutingSource, ProviderId } from '@goodboy/types';
 import { isProviderId } from '@goodboy/types/helpers';
 import { modelLineOf } from '../../providers/modelLine/modelLineOf';
@@ -28,6 +28,7 @@ export type RoutingWhyModel = Readonly<{
 type RoutedModel = Readonly<{
   provider: string;
   model: string;
+  effort: string | null;
 }>;
 
 const SOURCES: ReadonlyArray<AutoRoutingSource> = ['lead', 'pin', 'rule', 'fallback', 'lock'];
@@ -62,6 +63,28 @@ type ModelParams = {
   readonly model: string;
   readonly effort: string | null;
 };
+
+type KeyParams = {
+  readonly provider: string;
+  readonly model: string;
+};
+
+const modelKeyOf = ({ provider, model }: KeyParams): string => {
+  const key = isProviderId(provider) ? catalogModelForId({ provider, modelId: model })?.key : null;
+  return key == null ? `id:${model}` : `catalog:${key}`;
+};
+
+type SameParams = {
+  readonly routed: RoutedModel;
+  readonly provider: string;
+  readonly model: string;
+  readonly effort: string | null;
+};
+
+const isSameRow = ({ routed, provider, model, effort }: SameParams): boolean =>
+  routed.provider === provider &&
+  modelKeyOf({ provider, model: routed.model }) === modelKeyOf({ provider, model }) &&
+  (routed.effort === null || routed.effort === effort);
 
 const modelLabelOf = ({ provider, model, effort }: ModelParams): string => {
   const line = modelLineOf({ provider, model, effort });
@@ -102,6 +125,7 @@ type CandidateParams = {
   readonly pick: RoutedModel;
   readonly asked: RoutedModel | null;
   readonly isPickTaken: boolean;
+  readonly isAskedTaken: boolean;
 };
 
 const weighedRowOf = ({
@@ -110,6 +134,7 @@ const weighedRowOf = ({
   pick,
   asked,
   isPickTaken,
+  isAskedTaken,
 }: CandidateParams): RoutingWhyCandidate | null => {
   const provider = textField({ source: row, key: 'provider' });
   const model = textField({ source: row, key: 'model' });
@@ -119,9 +144,12 @@ const weighedRowOf = ({
   const effort = textField({ source: row, key: 'effort' });
   const cause = textField({ source: row, key: 'cause' });
   const isStruck = cause !== null;
-  const isPick = !isStruck && !isPickTaken && pick.provider === provider && pick.model === model;
+  const isPick = !isStruck && !isPickTaken && isSameRow({ routed: pick, provider, model, effort });
   const isAsked =
-    isStruck && asked !== null && asked.provider === provider && asked.model === model;
+    isStruck &&
+    !isAskedTaken &&
+    asked !== null &&
+    isSameRow({ routed: asked, provider, model, effort });
   const facts =
     cause === null
       ? usableFacts({ row })
@@ -157,6 +185,7 @@ const candidatesOf = ({
         pick,
         asked,
         isPickTaken: rows.some((taken) => taken.isPick),
+        isAskedTaken: rows.some((taken) => taken.isAsked),
       });
       return candidate === null ? rows : [...rows, candidate];
     },
@@ -190,7 +219,33 @@ const askedOf = ({ routing }: AskedParams): RoutedModel | null => {
   const requested = recordField({ source: routing, key: 'requested' });
   const provider = textField({ source: requested, key: 'provider' });
   const model = textField({ source: requested, key: 'model' });
-  return provider === null || model === null ? null : { provider, model };
+  const effort = textField({ source: requested, key: 'effort' });
+  return provider === null || model === null ? null : { provider, model, effort };
+};
+
+type EffortWordParams = {
+  readonly routed: RoutedModel;
+};
+
+const effortWordOf = ({ routed }: EffortWordParams): string | null =>
+  routed.effort === null ? null : (modelLineOf({ ...routed })?.effort ?? routed.effort);
+
+type AdjustedParams = {
+  readonly pick: RoutedModel;
+  readonly asked: RoutedModel | null;
+};
+
+const adjustedLineOf = ({ pick, asked }: AdjustedParams): string => {
+  const askedWord = asked === null ? null : effortWordOf({ routed: asked });
+  const usedWord = effortWordOf({ routed: pick });
+  const askedName = modelLineOf({ ...(asked ?? pick), effort: null })?.name ?? pick.model;
+  const askedPart =
+    askedWord === null
+      ? `The Lead asked for ${askedName} at another effort, not offered here.`
+      : `The Lead asked for ${askedName} at ${askedWord} effort, not offered here.`;
+  return usedWord === null
+    ? `${askedPart} It runs at its default effort.`
+    : `${askedPart} It runs at ${usedWord} effort.`;
 };
 
 type Params = {
@@ -207,22 +262,23 @@ export const routingWhyOf = ({ routing }: Params): RoutingWhyModel | null => {
   }
   const providerLabel = providerLabelOf({ provider });
   const modelReason = textField({ source: routing, key: 'modelReason' });
-  const isMoved = source === 'fallback' || textField({ source: routing, key: 'cause' }) !== null;
+  const isAdjusted = textField({ source: routing, key: 'proposal' }) === 'adjusted';
+  const isMoved =
+    isAdjusted || source === 'fallback' || textField({ source: routing, key: 'cause' }) !== null;
   const modelName = modelLineOf({ provider, model, effort: null })?.name ?? model;
   const split = splitReason({ reason, heads: [providerLabel, modelName] });
-  const isLeadWords = (source === 'lead' || source === 'lock') && modelReason !== null;
+  const isLeadWords = !isMoved && (source === 'lead' || source === 'lock') && modelReason !== null;
+  const pick = { provider, model, effort: textField({ source: routing, key: 'effort' }) };
+  const asked = isMoved ? askedOf({ routing }) : null;
+  const movedWhy = isAdjusted ? adjustedLineOf({ pick, asked }) : split.body;
   return {
     providerLabel,
     whyLabel: isLeadWords
       ? `Why the Lead chose ${providerLabel}: `
-      : `Why ${split.head ?? providerLabel}: `,
-    why: isLeadWords ? modelReason : split.body,
+      : `Why ${isAdjusted ? providerLabel : (split.head ?? providerLabel)}: `,
+    why: isLeadWords ? modelReason : movedWhy,
     leadSaid: isMoved ? modelReason : null,
     isMoved,
-    candidates: candidatesOf({
-      routing,
-      pick: { provider, model },
-      asked: isMoved ? askedOf({ routing }) : null,
-    }),
+    candidates: candidatesOf({ routing, pick, asked }),
   };
 };

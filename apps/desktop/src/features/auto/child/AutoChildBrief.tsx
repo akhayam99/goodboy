@@ -37,13 +37,15 @@ export const AutoChildBrief = ({
     routing.provider !== null && isProviderId(routing.provider)
       ? PROVIDER_LABEL[routing.provider]
       : undefined;
-  const shownName = modelLineOf({
+  const shownLine = modelLineOf({
     provider: routing.provider,
     model: routing.model,
     effort: null,
-  })?.name;
+  });
   const isStoredPickShown =
-    routing.provider === card.provider && shownName === card.modelLine?.name;
+    routing.provider === card.provider &&
+    shownLine?.name === card.modelLine?.name &&
+    shownLine?.rawId === card.modelLine?.rawId;
   const shownWhy = isStoredPickShown ? card.routingWhy : null;
   return (
     <section

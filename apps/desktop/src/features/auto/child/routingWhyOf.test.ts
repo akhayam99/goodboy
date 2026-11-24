@@ -133,6 +133,59 @@ describe('routingWhyOf', () => {
     expect(why?.candidates.filter((candidate) => candidate.isPick)).toHaveLength(1);
   });
 
+  it('marks the effort variant the pick ran at, not the first row of its model', () => {
+    const rows =
+      routingWhyOf({
+        routing: routing({
+          effort: 'high',
+          candidates: [
+            row({ provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' }),
+            row({ provider: 'codex', model: 'gpt-6.1-sol', effort: 'high' }),
+          ],
+        }),
+      })?.candidates ?? [];
+
+    expect(rows.map((candidate) => candidate.isPick)).toEqual([false, true]);
+  });
+
+  it('marks the row the Lead asked for when it named the model by an alias', () => {
+    const why = routingWhyOf({
+      routing: routing({
+        provider: 'codex',
+        model: 'gpt-6.1-sol',
+        source: 'fallback',
+        cause: 'writer',
+        proposal: 'replaced',
+        reason: 'The Lead asked for Claude Sonnet 5.5: agents that write code do not run here yet.',
+        requested: { provider: 'anthropic', model: 'claude-sonnet-5-5', effort: 'medium' },
+        candidates: [
+          row({ provider: 'anthropic', model: 'sonnet-5.5', cause: 'writer' }),
+          row({ provider: 'codex', model: 'gpt-6.1-sol' }),
+        ],
+      }),
+    });
+
+    expect(why?.candidates.map((candidate) => candidate.isAsked)).toEqual([true, false]);
+  });
+
+  it("says the effort changed when the app dropped the Lead's effort, and keeps its words apart", () => {
+    const why = routingWhyOf({
+      routing: routing({
+        effort: 'medium',
+        proposal: 'adjusted',
+        reason: 'Sol fits a standard step and Claude is at 62%.',
+        requested: { provider: 'codex', model: 'gpt-6.1-sol', effort: 'max' },
+      }),
+    });
+
+    expect(why).toMatchObject({
+      whyLabel: 'Why Codex: ',
+      why: 'The Lead asked for GPT-6.1 Sol at Max effort, not offered here. It runs at Medium effort.',
+      leadSaid: 'Sol fits a standard step and Claude is at 62%.',
+      isMoved: true,
+    });
+  });
+
   it('gives nothing for an older delegation stored before the source was kept', () => {
     expect(
       routingWhyOf({
