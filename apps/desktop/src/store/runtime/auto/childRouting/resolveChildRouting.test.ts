@@ -11,9 +11,14 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MODEL_CATALOGS, getCapabilities } from '@goodboy/core/providers';
+import { MODEL_CATALOGS, getCapabilities, modelFamily } from '@goodboy/core/providers';
 import { isAutoChildProvider, type AutoDelegationRole } from '@goodboy/core/auto';
-import type { ProviderId } from '@goodboy/types';
+import {
+  DEFAULT_WORKFLOW_RULES,
+  PROVIDER_IDS,
+  type ProviderId,
+  type WorkflowRules,
+} from '@goodboy/types';
 import { EMPTY_OVERRIDES, aSession, aWorkspace } from '@goodboy/types/testing';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { SETTING_HIDDEN_MODELS } from '../../../../features/settings/settings';
@@ -25,6 +30,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../storyHarness';
+import type { RoutingOutcome, RoutingRequest } from '../ports';
 import { resolveChildRouting } from './resolveChildRouting';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
@@ -37,6 +43,10 @@ const SESSION = aSession({
     enabledProviders: ['anthropic', 'codex', 'cursor'],
   },
 });
+
+const BY_ORDER: WorkflowRules = { ...DEFAULT_WORKFLOW_RULES, spreadByHeadroom: false };
+
+const BY_LOAD: WorkflowRules = { ...DEFAULT_WORKFLOW_RULES, spreadByHeadroom: true };
 
 const providerInfo = ({ id }: { readonly id: ProviderId }): ProviderDisplayInfo => ({
   id,
@@ -52,15 +62,22 @@ const providerInfo = ({ id }: { readonly id: ProviderId }): ProviderDisplayInfo 
 
 let useAppStore: StoryStore;
 
-const request = (fields: Record<string, unknown>) => ({
+const request = (fields: Record<string, unknown>): RoutingRequest => ({
   sessionId: SESSION.id,
-  role: 'implementer' as const,
+  role: 'implementer',
   fields,
   promptText: 'add the ledger export to ledger-core',
 });
 
-const resolve = (fields: Record<string, unknown>) =>
-  resolveChildRouting({ state: useAppStore.getState(), request: request(fields), nowMs: 0 });
+type ResolveParams = {
+  readonly request: RoutingRequest;
+  readonly nowMs?: number;
+};
+
+const resolveWith = ({ request: routed, nowMs = 0 }: ResolveParams): Promise<RoutingOutcome> =>
+  resolveChildRouting({ state: useAppStore.getState(), request: routed, nowMs, turns: [] });
+
+const resolve = (fields: Record<string, unknown>) => resolveWith({ request: request(fields) });
 
 type ResolveForParams = {
   readonly role: AutoDelegationRole;
@@ -68,10 +85,28 @@ type ResolveForParams = {
 };
 
 const resolveFor = ({ role, difficulty }: ResolveForParams) =>
-  resolveChildRouting({
-    state: useAppStore.getState(),
-    request: { ...request({ difficulty }), role },
-    nowMs: 0,
+  resolveWith({ request: { ...request({ difficulty }), role } });
+
+type ReadyParams = {
+  readonly outcome: RoutingOutcome;
+};
+
+const ready = ({ outcome }: ReadyParams): Extract<RoutingOutcome, { kind: 'ready' }> => {
+  if (outcome.kind !== 'ready') {
+    throw new Error(`expected a ready routing, got ${outcome.message}`);
+  }
+  return outcome;
+};
+
+type RulesParams = {
+  readonly rules: WorkflowRules;
+};
+
+const useRules = ({ rules }: RulesParams) =>
+  useAppStore.setState({
+    workspaceOverrides: {
+      [WORKSPACE.id]: { ...EMPTY_OVERRIDES, defaultProviderId: 'anthropic', workflowRules: rules },
+    },
   });
 
 const DIFFICULTIES = ['light', 'standard', 'heavy'] as const;
@@ -108,52 +143,47 @@ beforeEach(async () => {
       providerInfo({ id: 'cursor' }),
     ],
     providerLimits: {},
-    workspaceOverrides: {
-      [WORKSPACE.id]: { ...EMPTY_OVERRIDES, defaultProviderId: 'anthropic' },
-    },
+    providerStrikes: {},
   });
+  useRules({ rules: BY_ORDER });
 });
 
 describe('the model an Auto child runs on', () => {
-  it('resolves a role to a model the app can confine', () => {
-    const outcome = resolve({});
+  it('resolves a role to a model the app can confine', async () => {
+    const outcome = ready({ outcome: await resolve({}) });
 
-    expect(outcome.kind).toBe('ready');
-    if (outcome.kind === 'ready') {
-      expect(isAutoChildProvider({ provider: outcome.provider, role: 'implementer' })).toBe(true);
-      expect(outcome.reason.length).toBeGreaterThan(0);
-    }
+    expect(isAutoChildProvider({ provider: outcome.provider, role: 'implementer' })).toBe(true);
+    expect(outcome.reason.length).toBeGreaterThan(0);
   });
 
-  it('runs the child on the model its preset step pinned', () => {
+  it('runs the child on the model its preset step pinned', async () => {
     const pick = { provider: 'codex', model: 'gpt-5.5', effort: 'high' } as const;
-    const outcome = resolveChildRouting({
-      state: useAppStore.getState(),
+    const outcome = await resolveWith({
       request: { ...request({}), stepLock: { version: 1, pick, origin: 'user' } },
-      nowMs: 0,
     });
 
-    expect(outcome).toMatchObject({ kind: 'ready', ...pick });
+    expect(outcome).toMatchObject({ kind: 'ready', ...pick, source: 'pin' });
   });
 
-  it('never hands a writing child to Cursor or Gemini, even when Auto proposes one', () => {
+  it('never hands a writing child to Cursor or Gemini, even when the Lead picks one', async () => {
     for (const provider of ['cursor', 'gemini']) {
-      const outcome = resolve({ provider, model: 'composer-2.5', effort: 'medium' });
+      const outcome = ready({
+        outcome: await resolve({ provider, model: 'composer-2.5', effort: 'medium' }),
+      });
 
-      expect(outcome.kind).toBe('ready');
-      if (outcome.kind === 'ready') {
-        expect(isAutoChildProvider({ provider: outcome.provider, role: 'implementer' })).toBe(true);
-        expect(outcome.proposal).not.toBe('kept');
-      }
+      expect(isAutoChildProvider({ provider: outcome.provider, role: 'implementer' })).toBe(true);
+      expect(outcome.proposal).not.toBe('kept');
+      expect(outcome.source).toBe('fallback');
     }
   });
 
-  it('keeps to the providers the workspace left on', () => {
+  it('keeps to the providers the workspace left on', async () => {
     useAppStore.setState({
       workspaceOverrides: {
         [WORKSPACE.id]: {
           ...EMPTY_OVERRIDES,
           defaultProviderId: 'anthropic',
+          workflowRules: BY_ORDER,
           providerPool: [
             { id: 'anthropic', state: 'off' },
             { id: 'codex', state: 'on' },
@@ -163,18 +193,18 @@ describe('the model an Auto child runs on', () => {
       },
     });
 
-    const outcome = resolve({ provider: 'anthropic', model: 'sonnet', effort: 'medium' });
+    const outcome = ready({
+      outcome: await resolve({ provider: 'anthropic', model: 'sonnet-5.5', effort: 'medium' }),
+    });
 
-    expect(outcome.kind).toBe('ready');
-    if (outcome.kind === 'ready') {
-      expect(outcome.provider).toBe('codex');
-    }
+    expect(outcome.provider).toBe('codex');
+    expect(outcome.cause).toBe('off');
   });
 
-  it('blocks a writing child when only Cursor is connected, and says why', () => {
+  it('blocks a writing child when only Cursor is connected, and says why', async () => {
     useAppStore.setState({ providers: [providerInfo({ id: 'cursor' })] });
 
-    const outcome = resolve({});
+    const outcome = await resolve({});
 
     expect(outcome).toMatchObject({ kind: 'blocked', code: 'no_provider' });
     if (outcome.kind === 'blocked') {
@@ -183,22 +213,152 @@ describe('the model an Auto child runs on', () => {
     }
   });
 
-  it('runs a reading child on Cursor when only Cursor is connected', () => {
+  it('runs a reading child on Cursor when only Cursor is connected', async () => {
     useAppStore.setState({ providers: [providerInfo({ id: 'cursor' })] });
 
-    const outcome = resolveFor({ role: 'scout', difficulty: 'standard' });
+    const outcome = await resolveFor({ role: 'scout', difficulty: 'standard' });
 
     expect(outcome).toMatchObject({ kind: 'ready', provider: 'cursor' });
   });
 
-  it('blocks when the conversation is not open', () => {
-    const outcome = resolveChildRouting({
-      state: useAppStore.getState(),
-      request: { ...request({}), sessionId: aSession().id },
-      nowMs: 0,
-    });
+  it('blocks when the conversation is not open', async () => {
+    const outcome = await resolveWith({ request: { ...request({}), sessionId: aSession().id } });
 
     expect(outcome).toMatchObject({ kind: 'blocked', code: 'no_provider' });
+  });
+});
+
+describe('the Lead picks each helper from the candidates', () => {
+  it('starts the helper on the provider and model the Lead picked, with its reason', async () => {
+    const offered = ready({ outcome: await resolve({ difficulty: 'standard' }) });
+    const codex = offered.candidates?.find((row) => row.provider === 'codex' && row.cause === null);
+    if (codex === undefined) {
+      throw new Error('expected a Codex candidate for the implementer');
+    }
+
+    const outcome = ready({
+      outcome: await resolve({
+        difficulty: 'standard',
+        provider: codex.provider,
+        model: codex.model,
+        effort: codex.effort ?? undefined,
+        modelReason: 'Codex: most room left',
+      }),
+    });
+
+    expect(outcome).toMatchObject({
+      provider: 'codex',
+      model: codex.model,
+      source: 'lead',
+      proposal: 'kept',
+      reason: 'Codex: most room left',
+    });
+  });
+
+  it('moves a writer the Lead sent to Cursor and says what changed', async () => {
+    const outcome = ready({
+      outcome: await resolve({ provider: 'cursor', model: 'sonnet-5.5', effort: 'medium' }),
+    });
+
+    expect(outcome).toMatchObject({ provider: 'anthropic', source: 'fallback', cause: 'writer' });
+    expect(outcome.reason).toContain('The Lead asked for Cursor');
+    expect(outcome.reason).toContain('agents that write code do not run here yet');
+    expect(outcome.reason).toContain('Claude: first in your order');
+  });
+
+  it('takes the first provider in your order when the Lead names no model', async () => {
+    const outcome = ready({ outcome: await resolve({ difficulty: 'standard' }) });
+
+    expect(outcome).toMatchObject({ provider: 'anthropic', source: 'rule', proposal: 'none' });
+    expect(outcome.reason).toBe('Claude: first in your order');
+  });
+
+  it('by load, takes the provider with the most room left', async () => {
+    useRules({ rules: BY_LOAD });
+    useAppStore.setState({ providerStrikes: { anthropic: 0 } });
+
+    const outcome = ready({ outcome: await resolve({ difficulty: 'standard' }) });
+
+    expect(outcome).toMatchObject({ provider: 'codex', source: 'rule' });
+    expect(outcome.reason).toBe('Codex: most room left');
+  });
+
+  it('never lets the session composer model steer a helper', async () => {
+    useAppStore.setState({
+      sessions: [{ ...SESSION, modelOverride: 'gpt-6.1-sol', providerOverride: 'codex' }],
+    });
+
+    const outcome = ready({ outcome: await resolve({ difficulty: 'standard' }) });
+
+    expect(outcome.provider).toBe('anthropic');
+  });
+
+  it('keeps a pinned role on its pin over the Lead pick', async () => {
+    useAppStore.setState({
+      workspaceOverrides: {
+        [WORKSPACE.id]: {
+          ...EMPTY_OVERRIDES,
+          defaultProviderId: 'anthropic',
+          workflowRules: BY_ORDER,
+          roleModels: {
+            implementer: { providerId: 'anthropic', model: 'sonnet-5.5', effort: 'high' },
+          },
+        },
+      },
+    });
+
+    const outcome = ready({
+      outcome: await resolve({ provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' }),
+    });
+
+    expect(outcome).toMatchObject({
+      provider: 'anthropic',
+      model: 'sonnet-5.5',
+      source: 'fallback',
+      cause: 'off-pin',
+    });
+  });
+
+  it('starts the reviewer of a Claude change on another model family', async () => {
+    const outcome = ready({
+      outcome: await resolveWith({
+        request: {
+          ...request({ difficulty: 'standard' }),
+          role: 'reviewer',
+          writerFamily: 'claude',
+        },
+      }),
+    });
+    const provider = PROVIDER_IDS.find((candidate) => candidate === outcome.provider) ?? null;
+
+    expect(provider).not.toBeNull();
+    expect(provider === null ? 'claude' : modelFamily({ provider, model: outcome.model })).not.toBe(
+      'claude',
+    );
+  });
+});
+
+describe('an agent that goes on keeps its model', () => {
+  const UNTIL_MS = 60 * 60 * 1000;
+  const LOCK = { provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' } as const;
+
+  it('goes on with the provider and model it had', async () => {
+    const outcome = await resolveWith({ request: { ...request({}), agentLock: LOCK } });
+
+    expect(outcome).toMatchObject({ kind: 'ready', ...LOCK, source: 'lock' });
+  });
+
+  it('waits while its provider cools down and says until when, never moving', async () => {
+    useAppStore.setState({ providerCooldowns: { codex: UNTIL_MS } });
+
+    const outcome = await resolveWith({ request: { ...request({}), agentLock: LOCK } });
+
+    expect(outcome).toMatchObject({ kind: 'blocked', code: 'no_provider' });
+    if (outcome.kind === 'blocked') {
+      expect(outcome.message).toBe(
+        `Codex is cooling down until ${formatClock({ at: UNTIL_MS })}. This agent keeps its model, so send it again then.`,
+      );
+    }
   });
 });
 
@@ -212,22 +372,20 @@ describe('an Auto child when Claude and Codex are at their usage limit', () => {
     });
   });
 
-  it('hands every reading role to a visible Cursor model at each difficulty', () => {
+  it('hands every reading role to a visible Cursor model at each difficulty', async () => {
     for (const role of ['scout', 'planner', 'investigator', 'reviewer'] as const) {
       for (const difficulty of DIFFICULTIES) {
-        const outcome = resolveFor({ role, difficulty });
+        const outcome = ready({ outcome: await resolveFor({ role, difficulty }) });
 
-        expect(outcome).toMatchObject({ kind: 'ready', provider: 'cursor' });
-        if (outcome.kind === 'ready') {
-          expect(CURSOR_HIDDEN).not.toContain(outcome.model);
-        }
+        expect(outcome.provider).toBe('cursor');
+        expect(CURSOR_HIDDEN).not.toContain(outcome.model);
       }
     }
   });
 
-  it('refuses a writing child and names each provider with its reason', () => {
+  it('refuses a writing child and names each provider with its reason', async () => {
     for (const difficulty of DIFFICULTIES) {
-      const outcome = resolveFor({ role: 'implementer', difficulty });
+      const outcome = await resolveFor({ role: 'implementer', difficulty });
 
       expect(outcome).toMatchObject({ kind: 'blocked', code: 'no_provider' });
       if (outcome.kind === 'blocked') {
@@ -241,7 +399,7 @@ describe('an Auto child when Claude and Codex are at their usage limit', () => {
     }
   });
 
-  it('says Cursor has no visible model when every Cursor model is hidden', () => {
+  it('says Cursor has no visible model when every Cursor model is hidden', async () => {
     useAppStore.setState({
       settings: {
         ...useAppStore.getState().settings,
@@ -251,7 +409,7 @@ describe('an Auto child when Claude and Codex are at their usage limit', () => {
       },
     });
 
-    const outcome = resolveFor({ role: 'planner', difficulty: 'heavy' });
+    const outcome = await resolveFor({ role: 'planner', difficulty: 'heavy' });
 
     expect(outcome).toMatchObject({ kind: 'blocked', code: 'no_provider' });
     if (outcome.kind === 'blocked') {
@@ -259,9 +417,8 @@ describe('an Auto child when Claude and Codex are at their usage limit', () => {
     }
   });
 
-  it('goes back to Claude once its usage limit is over', () => {
-    const outcome = resolveChildRouting({
-      state: useAppStore.getState(),
+  it('goes back to Claude once its usage limit is over', async () => {
+    const outcome = await resolveWith({
       request: { ...request({ difficulty: 'standard' }), role: 'planner' },
       nowMs: UNTIL_MS + 1,
     });
