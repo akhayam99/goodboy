@@ -16,7 +16,10 @@ import { isAutoChildProvider, type AutoDelegationRole } from '@goodboy/core/auto
 import {
   DEFAULT_WORKFLOW_RULES,
   PROVIDER_IDS,
+  brandId,
+  type IsoDateTime,
   type ProviderId,
+  type ProviderLimits,
   type WorkflowRules,
 } from '@goodboy/types';
 import { EMPTY_OVERRIDES, aSession, aWorkspace } from '@goodboy/types/testing';
@@ -424,5 +427,71 @@ describe('an Auto child when Claude and Codex are at their usage limit', () => {
     });
 
     expect(outcome).toMatchObject({ kind: 'ready', provider: 'anthropic' });
+  });
+});
+
+describe('an Auto child while Claude is near its limit', () => {
+  const NOW_MS = Date.parse('2026-11-24T10:00:00.000Z');
+
+  const TIGHT_CLAUDE: ProviderLimits = {
+    providerId: 'anthropic',
+    plan: 'max',
+    status: 'ok',
+    windows: [
+      {
+        kind: 'fiveHour',
+        model: null,
+        status: 'ok',
+        usedFraction: 0.85,
+        resetsAt: brandId<IsoDateTime>({ value: new Date(NOW_MS + 3_600_000).toISOString() }),
+      },
+    ],
+    observedAt: brandId<IsoDateTime>({ value: new Date(NOW_MS).toISOString() }),
+  };
+
+  type RulesParams = {
+    readonly isSpreadOn: boolean;
+  };
+
+  const setSpread = ({ isSpreadOn }: RulesParams) =>
+    useAppStore.setState({
+      workspaceOverrides: {
+        [WORKSPACE.id]: {
+          ...EMPTY_OVERRIDES,
+          defaultProviderId: 'anthropic',
+          workflowRules: { ...DEFAULT_WORKFLOW_RULES, spreadByHeadroom: isSpreadOn },
+        },
+      },
+    });
+
+  const resolveNow = () =>
+    resolveChildRouting({
+      state: useAppStore.getState(),
+      request: request({ difficulty: 'standard' }),
+      nowMs: NOW_MS,
+      turns: [],
+    });
+
+  beforeEach(() => {
+    useAppStore.setState({ providerLimits: { anthropic: TIGHT_CLAUDE } });
+  });
+
+  it('starts a writing helper on Codex while Skip a provider near its limit is on', async () => {
+    setSpread({ isSpreadOn: true });
+
+    expect(await resolveNow()).toMatchObject({ kind: 'ready', provider: 'codex' });
+  });
+
+  it('skips the session model on a Claude near its limit', async () => {
+    setSpread({ isSpreadOn: true });
+    useAppStore.setState({ sessions: [{ ...SESSION, modelOverride: 'claude-sonnet-5-5' }] });
+
+    expect(await resolveNow()).toMatchObject({ kind: 'ready', provider: 'codex' });
+  });
+
+  it('puts a Claude near its limit behind Codex by order too', async () => {
+    setSpread({ isSpreadOn: false });
+
+    expect(await resolveNow()).toMatchObject({ kind: 'ready', provider: 'codex' });
   });
 });

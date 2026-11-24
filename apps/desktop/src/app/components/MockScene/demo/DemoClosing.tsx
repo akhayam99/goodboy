@@ -27,7 +27,12 @@ export const DemoClosing = ({ copy, theme, groups, onRestart }: Props) => (
     <ol aria-label="What you did" className="flex w-full max-w-lg flex-col gap-3">
       {groups.map((group) => (
         <li key={group.id} className="flex min-w-0 items-start gap-3">
-          <WorkNode state="done" label={`${group.title}, done`} mark={{ kind: 'dot' }} />
+          <WorkNode
+            look="quiet"
+            state="done"
+            label={`${group.title}, done`}
+            mark={{ kind: 'dot' }}
+          />
           <span className="min-w-0 text-body text-muted-foreground">{group.outro}</span>
         </li>
       ))}

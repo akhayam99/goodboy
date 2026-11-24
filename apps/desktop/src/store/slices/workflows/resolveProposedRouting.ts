@@ -19,6 +19,7 @@ import {
   type WorkflowRoutingResolution,
   type WorkflowRoutingWireFields,
 } from '@goodboy/core/orchestrator';
+import type { HeadroomMap } from '@goodboy/core/providers';
 import { rolePicks, type RolePicks } from '../workflowRouting/rolePicks';
 import type { AppStore } from '../../store';
 
@@ -36,6 +37,7 @@ export type ResolveProposedRoutingParams = Readonly<{
   roleModels: RoleModelPreferences | null;
   providerPool: ReadonlyArray<ProviderId> | null;
   availability: WorkflowRoutingAvailabilitySnapshot;
+  headroom?: HeadroomMap | null;
   stepLock?: WorkflowRoutingLock | null;
   agentLock?: WorkflowRoutingLock | null;
 }>;
@@ -50,13 +52,21 @@ export type ProposedRouting = Readonly<{
 type SessionDefaultParams = {
   readonly session: Session;
   readonly defaultProvider: ProviderId;
+  readonly headroom: HeadroomMap | null;
 };
+
+const isNearLimit = ({
+  headroom,
+  defaultProvider,
+}: Pick<SessionDefaultParams, 'headroom' | 'defaultProvider'>): boolean =>
+  headroom?.[defaultProvider] === 'tight' || headroom?.[defaultProvider] === 'out';
 
 const sessionDefaultOf = ({
   session,
   defaultProvider,
+  headroom,
 }: SessionDefaultParams): WorkflowModelPick | null =>
-  session.modelOverride == null
+  session.modelOverride == null || isNearLimit({ headroom, defaultProvider })
     ? null
     : {
         provider: defaultProvider,
@@ -92,6 +102,7 @@ export const resolveProposedRouting = ({
   roleModels,
   providerPool,
   availability,
+  headroom = null,
   stepLock = null,
   agentLock = null,
 }: ResolveProposedRoutingParams): ProposedRouting => {
@@ -110,13 +121,14 @@ export const resolveProposedRouting = ({
     profile:
       parsedProposal.kind === 'valid' ? parsedProposal.proposal.profile : parsedProposal.profile,
     providerPool,
+    headroom,
   });
   const resolution = resolveWorkflowRouting({
     agentLock,
     stepLock,
     proposal: routingProposal,
     roleDefault: picks.roleDefault,
-    sessionDefault: sessionDefaultOf({ session, defaultProvider }),
+    sessionDefault: sessionDefaultOf({ session, defaultProvider, headroom }),
     kindDefault: picks.kindDefault,
     availability,
     contextEstimate: null,

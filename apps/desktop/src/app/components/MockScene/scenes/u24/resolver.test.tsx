@@ -116,8 +116,8 @@ describe('the resolver scenes', () => {
   it('models-anthropic-on names the model Auto runs on every background task row', async () => {
     await mount('models-anthropic-on');
 
-    expect(screen.queryByText('Choosing models')).not.toBeNull();
-    expect(screen.queryByText('Models in workflows')).not.toBeNull();
+    expect(screen.queryByText('Choosing models')).toBeNull();
+    expect(screen.queryByText('Models in older plan runs')).toBeNull();
     expect(screen.queryByText('Typed requests')).toBeNull();
   });
 

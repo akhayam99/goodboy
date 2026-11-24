@@ -10,6 +10,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
+import { aWorkflowRun } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -108,7 +109,15 @@ const textsOf = ({ detail }: TextsParams): ReadonlySet<string> => {
 
 const seedPage = (): void => {
   seedStorageScene();
-  useAppStore.setState({ loadProjectGitStatus: async () => undefined });
+  const [first, ...rest] = useAppStore.getState().sessions;
+  const planRun = aWorkflowRun({ executionMode: 'dynamic' });
+  useAppStore.setState({
+    loadProjectGitStatus: async () => undefined,
+    sessions:
+      first === undefined
+        ? []
+        : [{ ...first, workflowRuns: [...first.workflowRuns, planRun] }, ...rest],
+  });
 };
 
 describe('setting rows registry', () => {

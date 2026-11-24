@@ -2217,7 +2217,10 @@ never ran, so this is not a swap. A continue (a retry with a task, or a message 
 keeps the agent's provider and model: `resolveDelegateChild` hands the stored pick as `agentLock`,
 and a provider that cools down refuses the continue with "Codex is cooling down until 16:10. This
 agent keeps its model, so send it again then." (`agentLockWait`). A plain retry with no task picks
-again: the stored pick is offered as the Lead's pick and moves only when a guard removes it. The pool of a tree is the run
+again: the stored pick is offered as the Lead's pick and moves only when a guard removes it. With
+**Skip a provider near its limit** on (`spreadByHeadroom`), `resolveChildRouting` also passes the
+headroom (`readHeadroom`) to the availability, so a Claude past 80% of a limit goes behind Codex
+and a writing helper starts on Codex. Only Claude and Codex report limits. The pool of a tree is the run
 pool when there is one, else the workspace pool (the providers the workspace
 policy on the Models page does not turn off), else every allowed provider
 (`autoChildPool`, `runProviderPool`).

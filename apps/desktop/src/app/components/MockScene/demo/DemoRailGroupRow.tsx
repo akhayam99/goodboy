@@ -1,6 +1,8 @@
-import { useRef } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { Lock } from '@goodboy/ui/icons';
 import {
+  ActivityMeta,
+  ActivityRow,
   FOCUS_RING,
   ICON_SIZE,
   ROW_INTERACTIVE,
@@ -46,6 +48,46 @@ const nodeStateOf = ({ access }: NodeStateParams) => {
   return access === 'locked' ? 'queued' : 'marker';
 };
 
+type OrdinalParams = {
+  readonly mark: WorkNodeMark;
+};
+
+const ordinalOf = ({ mark }: OrdinalParams): ReactNode => {
+  if (mark.kind === 'index') {
+    return mark.value;
+  }
+  return mark.kind === 'glyph' ? mark.glyph : null;
+};
+
+type StateParams = {
+  readonly isUpNext: boolean;
+  readonly isLocked: boolean;
+  readonly unlockHint: string | undefined;
+  readonly tally: HintTally | undefined;
+};
+
+const stateOf = ({ isUpNext, isLocked, unlockHint, tally }: StateParams): ReactNode => {
+  if (isUpNext) {
+    return <span className="text-primary">Up next</span>;
+  }
+  if (isLocked) {
+    return (
+      <span className="text-faint-foreground">
+        <Lock size={ICON_SIZE.row} aria-hidden />
+        <span className="sr-only">{unlockHint ?? 'Locked'}</span>
+      </span>
+    );
+  }
+  if (tally === undefined || tally.total === 0) {
+    return null;
+  }
+  return (
+    <span className="tabular-nums text-faint-foreground">
+      {tally.tried} of {tally.total}
+    </span>
+  );
+};
+
 export const DemoRailGroupRow = ({
   title,
   previousTitle,
@@ -69,10 +111,11 @@ export const DemoRailGroupRow = ({
   const hint = canReplay && access === 'done' ? REPLAY_HINT : unlockHint;
   const marker = (
     <WorkNode
+      look="quiet"
       state={nodeStateOf({ access })}
       tone={isActive ? 'primary' : 'neutral'}
       label={`${title}, ${access}`}
-      mark={mark}
+      mark={{ kind: 'dot' }}
     />
   );
   const row = (
@@ -92,39 +135,26 @@ export const DemoRailGroupRow = ({
       data-pulsing={isPulsing ? 'true' : 'false'}
       style={{ height: GROUP_ROW_HEIGHT }}
       className={cn(
-        'flex w-full min-w-0 items-center gap-2 rounded-md pr-2 text-left text-ui',
+        'flex w-full min-w-0 items-center rounded-md text-left',
         isLocked ? cn('cursor-default', FOCUS_RING) : ROW_INTERACTIVE,
         'data-[selected=true]:bg-selected data-[selected=true]:hover:bg-selected',
         'data-[up-next=ready]:bg-selected data-[up-next=ready]:ring-2 data-[up-next=ready]:ring-primary',
       )}
     >
       <SpawnedRailCell rail={rail} width={railWidth} marker={marker} />
-      <span className="flex min-w-0 flex-1 items-baseline gap-2">
-        <span
-          className={cn(
-            'truncate',
-            isLocked
-              ? 'text-faint-foreground'
-              : isActive
-                ? 'text-foreground'
-                : 'text-muted-foreground',
-          )}
-        >
-          {title}
-        </span>
-      </span>
-      {isUpNext ? <span className="shrink-0 text-meta text-primary">Up next</span> : null}
-      {isLocked ? (
-        <span className="shrink-0 text-faint-foreground">
-          <Lock size={ICON_SIZE.row} aria-hidden />
-          <span className="sr-only">{unlockHint ?? 'Locked'}</span>
-        </span>
-      ) : null}
-      {tally !== undefined && tally.total > 0 && !isUpNext && !isLocked ? (
-        <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
-          {tally.tried} of {tally.total}
-        </span>
-      ) : null}
+      <ActivityRow
+        density="feed"
+        tone={isLocked ? 'pending' : 'quiet'}
+        ordinal={ordinalOf({ mark })}
+        text={title}
+        meta={
+          <ActivityMeta
+            density="rail"
+            columns={['state']}
+            state={stateOf({ isUpNext, isLocked, unlockHint, tally })}
+          />
+        }
+      />
     </button>
   );
   return (

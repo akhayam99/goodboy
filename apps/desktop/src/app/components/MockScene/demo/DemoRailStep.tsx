@@ -1,4 +1,4 @@
-import { WorkNode, cn } from '@goodboy/ui';
+import { ActivityRow, WorkNode, type ActivityRowTone } from '@goodboy/ui';
 import type { RailRow } from '../../../../features/workTreeModel/railGeometry';
 import { SpawnedRailCell } from '../../../../features/session/components/SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
 import { STEP_ROW_HEIGHT } from './demoRailOf';
@@ -18,6 +18,12 @@ const NODE_STATE = {
   todo: 'queued',
 } as const satisfies Record<StepState, 'done' | 'running' | 'queued'>;
 
+const ROW_TONE = {
+  done: 'quiet',
+  current: 'live',
+  todo: 'pending',
+} as const satisfies Record<StepState, ActivityRowTone>;
+
 const WORD = {
   done: 'done',
   current: 'now',
@@ -30,24 +36,21 @@ export const DemoRailStep = ({ label, state, rail, railWidth }: Props) => (
     data-state={state}
     aria-label={`${label}, ${WORD[state]}`}
     style={{ height: STEP_ROW_HEIGHT }}
-    className="flex min-w-0 items-center gap-2 pr-2 text-ui"
+    className="flex min-w-0"
   >
     <SpawnedRailCell
       rail={rail}
       width={railWidth}
       marker={
-        <WorkNode state={NODE_STATE[state]} label={WORD[state]} mark={{ kind: 'dot' }} size="sm" />
+        <WorkNode
+          look="quiet"
+          state={NODE_STATE[state]}
+          label={WORD[state]}
+          mark={{ kind: 'dot' }}
+          size="sm"
+        />
       }
     />
-    <span
-      className={cn(
-        'min-w-0 truncate',
-        state === 'current' ? 'text-foreground' : null,
-        state === 'done' ? 'text-muted-foreground' : null,
-        state === 'todo' ? 'text-faint-foreground' : null,
-      )}
-    >
-      {label}
-    </span>
+    <ActivityRow density="feed" tone={ROW_TONE[state]} text={label} />
   </li>
 );

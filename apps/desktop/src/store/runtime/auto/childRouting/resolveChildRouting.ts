@@ -11,13 +11,21 @@ import {
   bestCandidate,
   buildCandidates,
   checkPick,
+  readHeadroom,
   stepSizeOf,
   type Candidate,
   type CandidateList,
   type CheckedPick,
+  type HeadroomMap,
 } from '@goodboy/core/providers';
 import type { ProviderAgentTurns } from '@goodboy/db';
-import { PROVIDER_IDS, type ProviderId, type Session } from '@goodboy/types';
+import {
+  DEFAULT_WORKFLOW_RULES,
+  PROVIDER_IDS,
+  type ProviderId,
+  type Session,
+  type WorkspaceId,
+} from '@goodboy/types';
 import { autoChildPool } from '../../../../features/auto/autoChildPool';
 import { autoRoutableProviders } from '../../../../features/providers/autoRoutableProviders';
 import { workflowAvailabilitySnapshot } from '../../../../features/workflows/workflowAvailabilitySnapshot';
@@ -67,6 +75,26 @@ type Scope = Readonly<{
   refusal: () => RoutingOutcome;
 }>;
 
+type HeadroomParams = {
+  readonly state: AppStore;
+  readonly workspaceId: WorkspaceId;
+  readonly nowMs: number;
+};
+
+const leadHeadroom = ({ state, workspaceId, nowMs }: HeadroomParams): HeadroomMap | null => {
+  const overrides = state.workspaceOverrides?.[workspaceId];
+  const isSpreadOn =
+    overrides?.workflowRules?.spreadByHeadroom ?? DEFAULT_WORKFLOW_RULES.spreadByHeadroom;
+  if (!isSpreadOn) {
+    return null;
+  }
+  return readHeadroom({
+    limits: state.providerLimits ?? {},
+    policy: overrides?.providerPool ?? null,
+    nowMs,
+  }).headroom;
+};
+
 const scopeOf = ({ state, request, session, nowMs }: ScopeParams): Scope => {
   const hidden = selectHiddenModels({ state });
   const workspacePolicy = workspacePolicyAvailability({
@@ -80,6 +108,7 @@ const scopeOf = ({ state, request, session, nowMs }: ScopeParams): Scope => {
     policy: workspacePolicy.policy,
     role: request.role,
   });
+  const headroom = leadHeadroom({ state, workspaceId: session.workspaceId, nowMs });
   const availability = workflowAvailabilitySnapshot({
     providers: state.providers ?? [],
     cooldowns: state.providerCooldowns ?? {},
@@ -90,6 +119,7 @@ const scopeOf = ({ state, request, session, nowMs }: ScopeParams): Scope => {
     nowMs,
     ...workspacePolicy,
     providerPool: pool,
+    headroom,
   });
   return {
     availability,
