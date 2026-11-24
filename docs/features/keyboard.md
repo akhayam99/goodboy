@@ -155,7 +155,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 
 - On the Commits page, **⌘Z** undoes a local commit edit and **⌘⇧Z** redoes it. Text fields keep their own undo.
 - Tooltips show keys beside their controls. Every hint in the app reads its keys from the shortcut registry, so a key is spelled once. That covers tooltips, the Guide, field hints and the key caps under a composer.
-- The key caps under a composer show while the box is empty and has the focus, and go at the first letter. They stay when your send keys changed, and in a document, where Enter adds a line. A screen reader reads each key by name with what it does, with the box every time.
+- The key caps under a composer show while the box is empty and has the focus, and go at the first letter. They stay in a document, where Enter adds a line. A screen reader reads each key by name with what it does, with the box every time.
 - **Esc** closes the dialog or preview in front, listed as Close the dialog or preview.
 - While an agent runs and nothing else is open, **Esc** twice stops it. The first press says "Esc again to stop" beside the Stop button for three seconds. The second stops the agent, listed as Stop the running agent, press twice.
 - In Chat and Ask, **Esc** twice in the box stops the reply the same way. Then **Send** is back.

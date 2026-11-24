@@ -307,7 +307,6 @@ const SHARED: ReadonlyArray<RetiredName> = [
     use: NAMES.bannerWhenAway,
   },
   { id: 'links-bare', pattern: /^Links$/, use: NAMES.linksInSession },
-  { id: 'keys-from-before', pattern: /\bKeys from before 0\.15\.5\b/, use: NAMES.classicSendKeys },
   {
     id: 'show-if-a-command-passed',
     pattern: /\bShow if a command passed or failed\b/,

@@ -5517,11 +5517,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/settings/components/SettingsStudio/ClassicComposerKeysField.test.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/settings/components/SettingsStudio/OpenWithBand.tsx": {
     "react-hooks/exhaustive-deps": {
       "count": 1

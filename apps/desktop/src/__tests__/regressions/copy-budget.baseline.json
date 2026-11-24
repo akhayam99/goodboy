@@ -19,7 +19,6 @@
     "features/session/components/SessionOverviewPane/ProjectMountRows/RebaseStoppedNotice.tsx": 1,
     "features/session/components/SessionWorkspace/parts/AgentOverlay.tsx": 1,
     "features/settings/components/SettingsStudio/AppResetSection.tsx": 1,
-    "features/settings/components/SettingsStudio/ClassicComposerKeysField.tsx": 1,
     "features/settings/components/SettingsStudio/SearchIndexBand.tsx": 2,
     "features/settings/components/SettingsStudio/WorkspaceProfileSection.tsx": 1,
     "features/settings/components/SettingsStudio/WorkspaceProjectsSection.tsx": 1,

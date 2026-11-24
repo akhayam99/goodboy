@@ -268,7 +268,6 @@ export const NAMES = {
   theme: 'Theme',
   bannerWhenAway: 'Banner when away',
   linksInSession: 'Links in a session',
-  classicSendKeys: 'Classic send keys',
   commandStatus: 'Command status',
   skipFolders: 'Skip folders',
   searchOrRun: 'Search or run',
@@ -449,7 +448,6 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.theme]: ['Switch to light mode', 'Switch to dark mode'],
   [NAMES.bannerWhenAway]: ['Banner when you are away'],
   [NAMES.linksInSession]: ['Links'],
-  [NAMES.classicSendKeys]: ['Keys from before 0.15.5'],
   [NAMES.commandStatus]: ['Show if a command passed or failed', 'Exit status'],
   [NAMES.skipFolders]: ['Leave out'],
 };

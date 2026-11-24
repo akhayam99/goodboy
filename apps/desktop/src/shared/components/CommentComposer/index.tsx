@@ -128,7 +128,6 @@ export const CommentComposer = ({
         kind="document"
         autoFocus
         hasPreview
-        hasChangedKeys
         label={label}
         placeholder={placeholder}
         value={value}
