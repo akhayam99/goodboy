@@ -92,9 +92,18 @@ describe('the u50 logo foot scenes', () => {
       expect(rail.lastElementChild).toBe(signature);
       expect(rail.style.paddingBottom).toBe(`${SHELL_GUTTER_PX}px`);
       expect(signature.getAttribute('aria-label')).toBe("What's new");
+      expect(signature.className.split(' ')).toContain('items-end');
       expect(signature.querySelector('[data-unseen-release]')).toBeNull();
     },
   );
+
+  it('drops the unread dot when a read scene follows an unread one', async () => {
+    await signatureOf({ name: 'u50-logo-foot-unread-light' });
+    cleanup();
+    const signature = await signatureOf({ name: 'u50-logo-foot-light' });
+
+    expect(signature.querySelector('[data-unseen-release]')).toBeNull();
+  });
 
   it('draws the same signature in light and dark', async () => {
     const light = (await signatureOf({ name: 'u50-logo-foot-light' })).outerHTML;

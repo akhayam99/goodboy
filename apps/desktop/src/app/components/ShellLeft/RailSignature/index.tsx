@@ -23,7 +23,7 @@ export const RailSignature = ({ onOpenChangelog }: Props) => {
         aria-label={name}
         data-rail-signature=""
         data-shell-rail-item="signature"
-        className={cn('relative shrink-0 px-0', SHELL_RAIL_TILE)}
+        className={cn('relative shrink-0 items-end px-0', SHELL_RAIL_TILE)}
         onClick={onOpenChangelog}
       >
         <BrandTile size={SIGNATURE_PX} />

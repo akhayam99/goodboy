@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { APP_VERSION } from '../../../../../shared/lib/appVersion';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../store';
 import { BoardShellScene } from '../BoardShellScene';
@@ -23,10 +24,8 @@ export const LogoFootScene = ({ theme, hasUpdate, hasUnseenRelease = false }: Pr
       updateFailure: null,
       updateProgress: null,
       updateQueuedUntilIdle: false,
-      ...(hasUnseenRelease && {
-        changelogSeenHydrated: true,
-        changelogSeenVersion: SEEN_BEFORE,
-      }),
+      changelogSeenHydrated: true,
+      changelogSeenVersion: hasUnseenRelease ? SEEN_BEFORE : APP_VERSION,
     });
   }, [theme, hasUpdate, hasUnseenRelease]);
 
