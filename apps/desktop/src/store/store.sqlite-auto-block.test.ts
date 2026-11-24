@@ -561,6 +561,7 @@ describe('the Lead picks the model of each helper, on the real store', () => {
             difficulty: 'light',
             provider: 'codex',
             model: codexScoutModelOf({ prompt }),
+            modelReason: 'Codex has the most room left.',
           },
         ],
       }),
@@ -573,9 +574,17 @@ describe('the Lead picks the model of each helper, on the real store', () => {
     });
     expect(delegation?.routing).toMatchObject({
       provider: 'codex',
-      reason: "Codex: the Lead's pick",
+      reason: 'Codex has the most room left.',
       proposal: 'kept',
+      source: 'lead',
+      modelReason: 'Codex has the most room left.',
     });
+    expect(delegation?.routing['candidates']).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ provider: 'anthropic' }),
+        expect.objectContaining({ provider: 'codex', model: codexScoutModelOf({ prompt }) }),
+      ]),
+    );
     expect(turns.started[1]?.provider).toBe('codex');
     await booted.runtime.stop(booted.treeId);
   });

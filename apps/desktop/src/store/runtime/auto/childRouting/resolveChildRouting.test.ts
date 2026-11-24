@@ -317,8 +317,35 @@ describe('the Lead picks each helper from the candidates', () => {
     expect(outcome).toMatchObject({
       provider: 'anthropic',
       model: 'sonnet-5.5',
-      source: 'fallback',
+      source: 'pin',
+      proposal: 'replaced',
       cause: 'off-pin',
+    });
+  });
+
+  it('marks a Lead pick that matches the role pin as the pin', async () => {
+    useAppStore.setState({
+      workspaceOverrides: {
+        [WORKSPACE.id]: {
+          ...EMPTY_OVERRIDES,
+          defaultProviderId: 'anthropic',
+          workflowRules: BY_ORDER,
+          roleModels: {
+            implementer: { providerId: 'anthropic', model: 'sonnet-5.5', effort: 'high' },
+          },
+        },
+      },
+    });
+
+    const outcome = ready({
+      outcome: await resolve({ provider: 'anthropic', model: 'sonnet-5.5', effort: 'high' }),
+    });
+
+    expect(outcome).toMatchObject({
+      provider: 'anthropic',
+      model: 'sonnet-5.5',
+      source: 'pin',
+      proposal: 'kept',
     });
   });
 

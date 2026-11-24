@@ -6,10 +6,19 @@ import {
   listAutoReservations,
 } from '@goodboy/db';
 import { AUTO_SEED_ROOT } from '@goodboy/db/test-helpers/auto-seeds';
-import { brandId, type AgentId, type AutoDelegationId, type WorkspaceId } from '@goodboy/types';
+import type { Candidate } from '@goodboy/core/providers';
+import {
+  brandId,
+  type AgentId,
+  type AutoDelegationId,
+  type AutoRequestId,
+  type WorkspaceId,
+} from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import { writeRunGuidance } from '../runGuidance/writeRunGuidance';
+import { delegationReceipt } from './delegationReceipt';
 import { runAutoCommand } from './runAutoCommand';
-import type { AgentCommand } from './ports';
+import type { AgentCommand, RoutingOutcome } from './ports';
 import { makeAutoWorld, secondScheduler, WORLD_TREE, type AutoWorld } from './testing/autoWorld';
 import { makeFakePorts, WORLD_GRANT, type FakePorts } from './testing/fakePorts';
 import type { AgentVerbContext } from './verbContext';
@@ -641,5 +650,195 @@ describe('the guidance of the run in the brief of a child', () => {
     for (const row of rows) {
       expect(String(row.request['kickoff'])).not.toContain(GUIDANCE);
     }
+  });
+});
+
+type CandidateRowParams = {
+  readonly provider: Candidate['provider'];
+  readonly model: string;
+  readonly order: number;
+  readonly cause?: Candidate['cause'];
+};
+
+const candidateRow = ({ provider, model, order, cause = null }: CandidateRowParams): Candidate => ({
+  provider,
+  model,
+  effort: 'medium',
+  rung: 'standard',
+  isLighter: false,
+  order,
+  family: provider === 'codex' ? 'gpt' : 'claude',
+  room: { usedPercent: 20 * order, isEstimated: provider !== 'anthropic' },
+  load: order,
+  price: { inputPerMtok: 3, outputPerMtok: 15 },
+  cause,
+});
+
+const WEIGHED: ReadonlyArray<Candidate> = [
+  candidateRow({ provider: 'anthropic', model: 'sonnet-5.5', order: 1 }),
+  candidateRow({ provider: 'cursor', model: 'auto', order: 2, cause: 'writer' }),
+  candidateRow({ provider: 'codex', model: 'gpt-6.1-sol', order: 3 }),
+];
+
+const LEAD_PICK: Extract<RoutingOutcome, { kind: 'ready' }> = {
+  kind: 'ready',
+  provider: 'codex',
+  model: 'gpt-6.1-sol',
+  effort: 'medium',
+  reason: 'Codex has the most room left.',
+  proposal: 'kept',
+  source: 'lead',
+  cause: null,
+  candidates: WEIGHED,
+};
+
+const pickedScout = {
+  children: [
+    {
+      role: 'scout',
+      task: 'find the retry cap in payments-api',
+      reason: 'read only search',
+      provider: 'codex',
+      model: 'gpt-6.1-sol',
+      modelReason: 'Codex has the most room left.',
+    },
+  ],
+};
+
+const RECEIPT_KEYS = [
+  'childAgentId',
+  'delegationId',
+  'effort',
+  'model',
+  'mountId',
+  'proposal',
+  'provider',
+  'role',
+  'routingReason',
+  'state',
+];
+
+describe('the routing a helper keeps', () => {
+  it("stores the Lead's pick, its own words, the source and the candidates it weighed", async () => {
+    const state = await setup();
+    state.ports.setRouting(LEAD_PICK);
+    await run(state, delegateCommand(pickedScout));
+    expect(state.ports.routingRequests[0]?.fields).toMatchObject({
+      provider: 'codex',
+      model: 'gpt-6.1-sol',
+      modelReason: 'Codex has the most room left.',
+    });
+    const [row] = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
+    expect(row?.routing).toEqual({
+      provider: 'codex',
+      model: 'gpt-6.1-sol',
+      effort: 'medium',
+      reason: 'Codex has the most room left.',
+      proposal: 'kept',
+      source: 'lead',
+      requested: { provider: 'codex', model: 'gpt-6.1-sol', effort: null },
+      modelReason: 'Codex has the most room left.',
+      candidates: [
+        {
+          provider: 'anthropic',
+          model: 'sonnet-5.5',
+          effort: 'medium',
+          order: 1,
+          isLighter: false,
+          room: { usedPercent: 20, isEstimated: false },
+          load: 1,
+          cause: null,
+        },
+        {
+          provider: 'codex',
+          model: 'gpt-6.1-sol',
+          effort: 'medium',
+          order: 3,
+          isLighter: false,
+          room: { usedPercent: 60, isEstimated: true },
+          load: 3,
+          cause: null,
+        },
+        {
+          provider: 'cursor',
+          model: 'auto',
+          effort: 'medium',
+          order: 2,
+          isLighter: false,
+          room: { usedPercent: 40, isEstimated: true },
+          load: 2,
+          cause: 'writer',
+        },
+      ],
+    });
+  });
+
+  it("keeps the Lead's words and the cause when a guard changed the pick", async () => {
+    const state = await setup();
+    const many = Array.from({ length: 20 }, (_, index) =>
+      candidateRow({
+        provider: 'anthropic',
+        model: `sonnet-5.5-${index}`,
+        order: 1,
+        cause: index < 4 ? 'same-family' : null,
+      }),
+    );
+    state.ports.setRouting({
+      ...LEAD_PICK,
+      provider: 'anthropic',
+      model: 'sonnet-5.5-4',
+      reason: 'The Lead asked for Codex GPT-6.1 Sol: out of room until its limit resets.',
+      proposal: 'replaced',
+      source: 'fallback',
+      cause: 'at-limit',
+      candidates: many,
+    });
+    await run(state, delegateCommand(pickedScout));
+    const [row] = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
+    expect(row?.routing).toMatchObject({
+      provider: 'anthropic',
+      source: 'fallback',
+      cause: 'at-limit',
+      modelReason: 'Codex has the most room left.',
+      requested: { provider: 'codex', model: 'gpt-6.1-sol' },
+    });
+    const stored = row?.routing['candidates'];
+    const models = Array.isArray(stored)
+      ? stored.map((entry: unknown) => (isRecord(entry) ? entry['model'] : null))
+      : [];
+    expect(models).toHaveLength(18);
+    expect(models[0]).toBe('sonnet-5.5-4');
+    expect(models.slice(-2)).toEqual(['sonnet-5.5-0', 'sonnet-5.5-1']);
+  });
+
+  it('writes the old shape when the routing weighed nothing, so an older delegation reads the same', async () => {
+    const state = await setup();
+    await run(state, delegateCommand(scoutAndImplementer));
+    const [row] = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
+    expect(Object.keys(row?.routing ?? {}).sort()).toEqual([
+      'effort',
+      'model',
+      'proposal',
+      'provider',
+      'reason',
+      'requested',
+    ]);
+  });
+
+  it('answers the Lead with the same receipt keys, whatever the routing stores', async () => {
+    const state = await setup();
+    state.ports.setRouting(LEAD_PICK);
+    await run(state, delegateCommand(pickedScout));
+    const receipt = await delegationReceipt({
+      db: state.world.db,
+      treeId: WORLD_TREE,
+      requestId: brandId<AutoRequestId>({ value: 'request-1' }),
+    });
+    expect(Object.keys(receipt?.delegations[0] ?? {}).sort()).toEqual(RECEIPT_KEYS);
+    expect(receipt?.delegations[0]).toMatchObject({
+      provider: 'codex',
+      routingReason: 'Codex has the most room left.',
+      proposal: 'kept',
+    });
   });
 });
