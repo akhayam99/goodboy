@@ -440,6 +440,7 @@ export const boot = async ({ seed }: { readonly seed: Seed }): Promise<Ctx> => {
     }),
     hydrate: async () => undefined,
     checkForUpdates: async () => undefined,
+    changelogReleases: CHANGELOG_RELEASES,
     hydrated: true,
     isShellReady: true,
     bootPhase: 'ready',
