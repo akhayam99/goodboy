@@ -144,6 +144,8 @@ export const sessionMountTargets = ({
   });
 };
 
+export const mountRequestsInFlight = new Set<Promise<unknown>>();
+
 export const mountRevision = ({ state, sessionId, mountId }: RevisionParams): number | null =>
   sessionMountTargets({ state, sessionId }).find((candidate) => candidate.id === mountId)
     ?.revision ?? null;

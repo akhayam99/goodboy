@@ -364,12 +364,14 @@ read top to bottom at the conversation measure:
   more worktrees can be written.
 - **Plan and progress** (`OrchestratedChecklist`). One checklist: the decided
   steps in execution order on the run step tree (`RunTree` with density
-  `checklist`: state glyph on the tracks, "Step 3", role glyph and word, title,
-  duration). The glyph slot is fixed at two levels (`RUN_TREE_SLOT_WIDTH`), so
+  `checklist`: quiet node on the tracks, then one `ActivityRow` with "Step 3",
+  the role glyph, title, state word and duration). The glyph slot is fixed at
+  two levels (`RUN_TREE_SLOT_WIDTH`), so
   sub agents keep their role and title at their step's x and nesting shows only
-  on the tracks and in the "3.1" label; one round hint node per read hint
-  (`OrchestratedHintRow`: text on one line, **Show more** when the line is cut
-  or the hint has a second line, image thumbnails, and "Read at step 4", a
+  on the tracks and in the "3.1" label; one message per read hint
+  (`OrchestratedHintRow` on `ActivityMessage`: text in a bubble on one line,
+  **Show more** when the line is cut or the hint has a second line, image
+  thumbnails, and "You · read at step 4", where "read at step 4" is a
   link that focuses that step, or opens it in the drawer when its row is not on
   screen) before the step whose decision read it; while that step has no row
   yet, or the hint has no recorded step, the hint sits after the steps and the
@@ -471,11 +473,11 @@ read top to bottom at the conversation measure:
   When another window reopened the run first, the hint is only queued and the
   orchestrator reads it with its next decision.
 - **Composer** (`OrchestratedComposer`), docked while the run lives: "Hint the
-  orchestrator". A queued hint is a dashed node with its first line, and
-  **Show more** when that line is cut or the hint has a second line.
-  Waiting hints sit on the run's line under the steps, under one heading,
-  **Queued, read at the next decision**, each row with **Remove**;
-  a row being read says **Reading now** with **Remove** disabled. While the
+  orchestrator". A queued hint is an outlined bubble with its first line and
+  "You · not read yet", and **Show more** when that line is cut or the hint
+  has a second line. Waiting hints sit on the run's line under the steps, under
+  one heading, **Queued, read at the next decision**, each row with **Remove**;
+  a row being read says "You · reading now" with **Remove** disabled. While the
   queue is out of view (`useIsQueueOutOfView`) one line, **3 hints queued** with
   **View**, floats over the input without moving it, and it counts from
   `hintQueueOf`, a hint being read left out. Enter queues,
@@ -859,19 +861,29 @@ ends with the model that ran, then its duration with what it has spent under
 it. The model is on the row, in a model cell of about 176px: the provider glyph,
 the model and its effort ("Opus 5.5 · High"), and when a step moved to another model (a fallback, a retry, a
 routing change) every model in the order it ran ("Kimi K3 → Sonnet 5.5", "3
-models" past two). Why a model took over, planned against picked,
-tokens and the start and finish times are in the card that opens when the
-pointer rests on the role glyph or on the model cell, and in the Brief. A step
+models" past two). The card that opens when the pointer rests on the role
+glyph is the role card: the role and its place, the task in full (four lines
+at most), the state line with its node and time ("Running 12m", "Needs you,
+asked 3m ago", "Done in 6m 12s"), then one line per model in the order it
+ran, each with its provider mark, its name and its effort, then the start,
+the tokens and the cost above zero. Three models or more show the first and
+the last, with "+ 1 model" between. Why a model took over and planned against
+picked are in the model cell's card, the role card's footnote and the Brief. A step
 that has not started shows its planned model and its meta in faint. In the run tree and
 a Brief's Subagents, every row keeps the model: before a step starts, the meta
 shows the routing it is planned to run on, in faint. Once it runs, the meta
-shows what actually ran, and the identity card names the plan when routing
+shows what actually ran, and the role card names the plan when routing
 picked something else. The
 effort works the same way: once a run has started, the column shows the effort
 the CLI was started with, in the row tone ("Planned High, ran Medium" in the
 card when it left the plan). A run with no recorded
 effort, like one from before turn spans existed or a CLI with no effort flag,
-keeps the planned effort in faint and never shows a made-up value. The agent
+keeps the planned effort in faint and never shows a made-up value. In the
+role card the effort is a meter beside its word: one neutral segment per
+level the model offers, filled to the level that ran ("High" on Sonnet 5.5
+fills three of five). A model with no effort setting shows no meter, an
+effort the CLI has not confirmed yet draws in faint ink, and the meter never
+takes a colour. The rows keep the word only. The agent
 header reads the same way. The
 run row in the feed shows the models of its steps ("Sonnet 5.5 + 1" on two, "4 models" on more) and what
 the whole run has spent; the step it has reached ("Step 4 of 7", or "Step 4"

@@ -75,7 +75,7 @@ export const OrchestratedQueue = ({
         </span>
         <p
           data-hint-queue-heading=""
-          className="min-w-0 flex-1 truncate px-2 text-ui text-faint-foreground"
+          className="min-w-0 flex-1 truncate pl-3 pr-2 text-meta text-faint-foreground"
         >
           {ORCHESTRATED_COPY.queuedHintsHeading}
         </p>

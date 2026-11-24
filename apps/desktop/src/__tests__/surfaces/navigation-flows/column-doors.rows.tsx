@@ -382,6 +382,22 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
+    name: "rail: the Goodboy mark at the foot opens What's new",
+    covers: ['openChangelog', 'studio:changelog'],
+    door: 'visible',
+    open: async () => {
+      const mark = document.querySelector<HTMLElement>('[data-shell-rail] [data-rail-signature]');
+      if (mark === null) {
+        throw new Error('The rail has no Goodboy mark');
+      }
+      await click(mark);
+    },
+    lands: both(
+      () => studio("What's new"),
+      () => heading(/^Goodboy \d/),
+    ),
+  },
+  {
     name: "palette: Guide, then the What's new tab",
     covers: ['openChangelog', 'studio:changelog'],
     door: 'palette',

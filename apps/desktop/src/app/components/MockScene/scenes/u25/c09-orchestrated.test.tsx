@@ -132,14 +132,19 @@ describe('the c09 orchestrated scenes', () => {
     expect(rows.getByText('Step 3')).toBeDefined();
     expect(rows.getByText('Run the 12k export benchmark')).toBeDefined();
     expect(rows.getByText('Time the export five times')).toBeDefined();
-    expect(rows.getByText('Read at step 3')).toBeDefined();
+    expect(rows.getByText('read at step 3')).toBeDefined();
     const planned = [...checklist().querySelectorAll<HTMLElement>('[data-plan-row="left"]')];
     expect(
-      planned.map((row) => row.querySelector('[data-checklist-cell="role"]')?.textContent ?? null),
+      planned.map(
+        (row) =>
+          row
+            .querySelector('[data-checklist-cell="role"] [role="img"]')
+            ?.getAttribute('aria-label') ?? null,
+      ),
     ).toEqual(['Tester', 'Implementer']);
     expect(planned.map((row) => row.textContent)).toEqual([
-      'TesterProve the batching on 12,000 rows',
-      'ImplementerStream rows to CSV',
+      'Prove the batching on 12,000 rows',
+      'Stream rows to CSV',
     ]);
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('waiting');
     expect(within(tail()).getByText(/^Step 3 is running: Tester/)).toBeDefined();
@@ -200,7 +205,7 @@ describe('the c09 orchestrated scenes', () => {
     expect(rows.filter((row) => row !== 'hint')[0]).toBe('now');
     expect(within(checklist()).getByRole('status').textContent).toBe('Choosing the next step');
     const queued = screen.getByRole('list', { name: 'Queued hints' });
-    expect(within(queued).getByText('Reading now')).toBeDefined();
+    expect(within(queued).getByText('reading now')).toBeDefined();
     expect(within(queued).getByRole('button', { name: 'Remove' }).hasAttribute('disabled')).toBe(
       true,
     );
@@ -243,7 +248,7 @@ describe('the c09 orchestrated scenes', () => {
     expect(within(result).getByRole('button', { name: 'Create report' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Add step' })).toBeNull();
     expect(document.querySelector('[data-run-add-step]')).toBeNull();
-    expect(within(checklist()).getByText('Read at step 4')).toBeDefined();
+    expect(within(checklist()).getByText('read at step 4')).toBeDefined();
     expect(within(checklist()).queryByText('Stream rows to CSV, a follow up')).toBeNull();
     expect(screen.queryByRole('list', { name: 'Queued hints' })).toBeNull();
   });

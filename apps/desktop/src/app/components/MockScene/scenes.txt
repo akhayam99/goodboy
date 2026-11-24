@@ -13,13 +13,17 @@ activity-check-fixed-local
 activity-ci-fix-unloaded
 activity-empty
 activity-groups
+activity-groups-light
 activity-jobs
 activity-kinds-dark
 activity-kinds-light
+activity-light
 activity-log
+activity-log-light
 activity-mark-seen
 activity-one-signal
 activity-question
+activity-question-light
 activity-resolves
 activity-row-kit
 activity-row-kit-light
@@ -966,6 +970,7 @@ terminal-studio-empty
 terminal-studio-newmenu
 terminal-studio-restored
 timeline-cards
+timeline-cards-light
 toast-over-drawer
 toast-over-drawer-overlay
 toasts
@@ -1479,6 +1484,8 @@ u50-fleet-rows-dark
 u50-fleet-rows-light
 u50-logo-foot-dark
 u50-logo-foot-light
+u50-logo-foot-unread-dark
+u50-logo-foot-unread-light
 u50-logo-foot-update-dark
 u50-logo-foot-update-light
 u50-merge-train-ready-dark
@@ -1565,7 +1572,9 @@ work-permissions-custom
 workflow
 workflow-run
 workflow-run-finished-sets
+workflow-run-light
 workflow-run-nested
+workflow-run-nested-light
 workflow-run-plan-question
 workflow-run-plan-review
 workflow-run-scrolled

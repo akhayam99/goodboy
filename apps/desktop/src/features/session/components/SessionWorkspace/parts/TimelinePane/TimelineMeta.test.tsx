@@ -4,8 +4,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { visibleTextAt } from '../../../../../../test/containerView';
 import { factCardOf } from '../../../../../../__tests__/helpers/factCard';
-import { DONE_ROW_STATE } from '../../../../../workTreeModel/rowState';
+import { DONE_ROW_STATE, type RowState } from '../../../../../workTreeModel/rowState';
 import type { WorkTime } from '../../../../../workTreeModel/workTime';
+import { TimelineFeedState } from './TimelineFeedState';
 import { TimelineModelCell } from './TimelineModelCell';
 import { TimelineProviderGlyph } from './TimelineProviderGlyph';
 import { TimelineRowMeta } from './TimelineRowMeta';
@@ -244,6 +245,89 @@ describe('TimelineRowStateLine', () => {
     const { container } = render(<TimelineRowStateLine state={DONE_ROW_STATE} />);
 
     expect(container.querySelector('[data-testid="timeline-row-state"]')).toBeNull();
+    expect(container.children).toHaveLength(0);
+  });
+});
+
+const columnsOf = ({ container }: { readonly container: HTMLElement }) =>
+  Array.from(container.querySelectorAll('[data-testid="activity-meta"] > [data-meta-column]')).map(
+    (cell) => cell.getAttribute('data-meta-column'),
+  );
+
+const QUESTION_STATE: RowState = {
+  phase: 'waiting',
+  reason: { kind: 'question', stepLabel: null },
+  ask: { kind: 'answer', question: null },
+};
+
+const FAILED_STATE: RowState = { phase: 'failed', reason: { kind: 'failed' }, ask: null };
+
+describe('TimelineRowMeta in the feed', () => {
+  it('declares the state, the model and the time once, in that order, with the cost in the card', () => {
+    const { container } = render(
+      <TimelineRowMeta
+        layout="feed"
+        state={<TimelineFeedState state={FAILED_STATE} />}
+        time={timeOf({ label: '6m 40s' })}
+        cost="$0.62"
+      />,
+    );
+
+    expect(columnsOf({ container })).toEqual(['state', 'model', 'time']);
+    expect(container.querySelector('[data-meta-column="cost"]')).toBeNull();
+    expect(screen.getByTestId('work-time').textContent).toBe('6m 40s');
+  });
+
+  it('keeps an empty state cell at its width so every row lines up', () => {
+    const { container } = render(
+      <TimelineRowMeta layout="feed" state={null} time={timeOf({ label: '4m' })} />,
+    );
+    const state = container.querySelector<HTMLElement>('[data-meta-column="state"]');
+
+    expect(state?.textContent).toBe('');
+    expect(columnsOf({ container })).toEqual(['state', 'model', 'time']);
+  });
+
+  const toneOfTime = ({ container }: { readonly container: HTMLElement }) =>
+    container.querySelector('[data-time-tone]')?.getAttribute('data-time-tone') ?? null;
+
+  it('draws a running clock in the info tone and a finished one quiet', () => {
+    const live = render(<TimelineRowMeta layout="feed" time={timeOf({ label: '12m' })} isLive />);
+    expect(toneOfTime({ container: live.container })).toBe('live');
+    cleanup();
+
+    const done = render(<TimelineRowMeta layout="feed" time={timeOf({ label: '3m 10s' })} />);
+    expect(toneOfTime({ container: done.container })).toBe('quiet');
+  });
+
+  it('keeps the stacked column on the run page, where no layout is asked for', () => {
+    const { container } = render(<TimelineRowMeta time={timeOf({ label: '4m' })} />);
+
+    expect(container.querySelector('[data-meta-column="stack"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="activity-meta"]')).toBeNull();
+  });
+});
+
+describe('TimelineFeedState', () => {
+  it('offers Answer on a row that waits on your answer, and names the state to a reader', () => {
+    const { container } = render(<TimelineFeedState state={QUESTION_STATE} />);
+    const action = within(container).getByTestId('timeline-row-action');
+
+    expect(action.textContent).toContain('Answer');
+    expect(within(action).queryByRole('button')).toBeNull();
+    expect(action.querySelector('.sr-only')).not.toBeNull();
+  });
+
+  it('writes a failed state in the danger tone', () => {
+    render(<TimelineFeedState state={FAILED_STATE} />);
+    const state = screen.getByTestId('timeline-row-state');
+
+    expect(state.getAttribute('data-state-tone')).toBe('failed');
+  });
+
+  it('says nothing on a done row', () => {
+    const { container } = render(<TimelineFeedState state={DONE_ROW_STATE} />);
+
     expect(container.children).toHaveLength(0);
   });
 });

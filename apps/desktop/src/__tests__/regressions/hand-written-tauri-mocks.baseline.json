@@ -315,7 +315,6 @@
   "apps/desktop/src/features/session/components/SessionOverviewPane/UnassignedNotes.test.tsx": 1,
   "apps/desktop/src/features/session/components/SessionTools/index.test.tsx": 1,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/QuestionsPane.test.tsx": 1,
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/RowIdentityCard.test.tsx": 1,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/RowModelsCard.test.tsx": 1,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineRunStreamRow.test.tsx": 1,
   "apps/desktop/src/features/session/mountQueryBridge/index.test.ts": 1,

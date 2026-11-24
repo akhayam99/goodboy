@@ -167,6 +167,23 @@ describe('sendTurn, provider failure fallback', () => {
     expect(useAppStore.getState().agentTurnState[AGENT_A]?.kind).not.toBe('error');
   });
 
+  it('counts a 429 against the provider and still retries the turn', async () => {
+    setup();
+    useAppStore.setState({ providerStrikes: {}, providerCooldowns: {} });
+    const beforeMs = Date.now();
+    storySpies.runTurn.mockImplementationOnce(async function* () {
+      throw new Error('HTTP 429 Too Many Requests');
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(2);
+    expect(useAppStore.getState().providerStrikes.anthropic).toBeGreaterThanOrEqual(beforeMs);
+    expect(useAppStore.getState().providerCooldowns.anthropic).toBeUndefined();
+  });
+
   it('tells the other windows when the turn settles, after a fallback too', async () => {
     setup();
     announceDataChanged.mockClear();
@@ -330,7 +347,7 @@ describe('sendTurn, provider failure fallback', () => {
 
   it('cools the provider down and offers to continue when a usage limit leaves no alternative', async () => {
     setup();
-    useAppStore.setState({ providerCooldowns: {}, limitStops: {} });
+    useAppStore.setState({ providerCooldowns: {}, providerStrikes: {}, limitStops: {} });
     const scheduled: number[] = [];
     vi.stubGlobal('setTimeout', (_handler: () => void, delay?: number) => {
       scheduled.push(delay ?? 0);
@@ -348,6 +365,7 @@ describe('sendTurn, provider failure fallback', () => {
     expect(useAppStore.getState().providerCooldowns.anthropic).toBe(
       parseUsageLimitResetAt({ message: USAGE_LIMIT_MESSAGE }),
     );
+    expect(useAppStore.getState().providerStrikes.anthropic).toBeUndefined();
     const notification = useAppStore
       .getState()
       .notifications.find((entry) => entry.coalesceKey === 'provider-usage-limit:anthropic');

@@ -99,7 +99,7 @@ export const ShellLeft = ({ arrangement, workspaceId, actions, placeOverride }: 
           <UpdateRailMark />
         </div>
       ) : null}
-      <RailSignature />
+      <RailSignature onOpenChangelog={actions.openChangelog} />
     </ShellRail>
   );
 };

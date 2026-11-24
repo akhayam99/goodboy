@@ -15,7 +15,7 @@ import { RunIdentityCard } from './RunIdentityCard';
 import { TimelineModelCell } from './TimelineModelCell';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowMeta } from './TimelineRowMeta';
-import { TimelineRowStateLine } from './TimelineRowStateLine';
+import { TimelineFeedState } from './TimelineFeedState';
 import { TimelineStreamRow, type TimelineBranchKey } from './TimelineStreamRow';
 
 type Props = {
@@ -99,9 +99,13 @@ export const TimelineRunStreamRow = ({
       }}
       meta={
         <TimelineRowMeta
+          layout="feed"
+          state={<TimelineFeedState state={item.rowState} />}
+          isLive={item.rowState.phase === 'running'}
           model={
             <TimelineModelCell
               summary={summary}
+              isFluid
               wrapCard={
                 summary === null
                   ? null
@@ -118,7 +122,6 @@ export const TimelineRunStreamRow = ({
           note={item.rowState.phase === 'running' ? (time?.note ?? null) : null}
         />
       }
-      state={<TimelineRowStateLine state={item.rowState} />}
       progress={time?.progress ?? null}
       contextMenu={contextMenu}
       runLane={runLane}

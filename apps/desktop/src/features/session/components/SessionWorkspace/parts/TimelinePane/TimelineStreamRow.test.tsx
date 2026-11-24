@@ -2,7 +2,7 @@
 
 import { FactCard } from '@goodboy/ui';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import type {
   TimelineAgentEntry,
@@ -25,7 +25,7 @@ vi.mock('../../../../../../store', () => ({
 import { formatClock } from '../../../../../../shared/utils/time/formatClock';
 import { TimelineModelCell } from './TimelineModelCell';
 import { TimelineRowMeta } from './TimelineRowMeta';
-import { TimelineRowStateLine } from './TimelineRowStateLine';
+import { TimelineFeedState } from './TimelineFeedState';
 import { TimelineStreamRow } from './TimelineStreamRow';
 import type { CardWrap, TimelineRowIdentity } from './timelineRowIdentity';
 
@@ -247,9 +247,14 @@ describe('TimelineStreamRow', () => {
         railWidth={32}
         sessionId={SESSION_ID}
         openTarget={null}
-        state={
-          <TimelineRowStateLine
-            state={{ phase: 'running', reason: { kind: 'deciding' }, ask: null }}
+        meta={
+          <TimelineRowMeta
+            layout="feed"
+            state={
+              <TimelineFeedState
+                state={{ phase: 'running', reason: { kind: 'deciding' }, ask: null }}
+              />
+            }
           />
         }
       />,
@@ -282,6 +287,53 @@ describe('TimelineStreamRow', () => {
     const button = screen.getByRole('button', { name: /Implement the parser/ });
 
     expect(button.getAttribute('style')).toContain(`${TIMELINE_RHYTHM.grade.step.height}px`);
+  });
+
+  const renderStateRow = ({ rowState }: { readonly rowState: RowState }) =>
+    render(
+      <TimelineStreamRow
+        item={{ ...itemOf(), rowState }}
+        rail={railOf()}
+        railWidth={32}
+        sessionId={SESSION_ID}
+        openTarget={{ label: 'Open agent', open: vi.fn() }}
+        meta={<TimelineRowMeta layout="feed" state={<TimelineFeedState state={rowState} />} />}
+      />,
+    );
+
+  it('draws the row as one feed line at the step height', () => {
+    renderStateRow({ rowState: DONE_ROW_STATE });
+    const line = within(screen.getByRole('button', { name: /Implement the parser/ })).getByTestId(
+      'activity-row',
+    );
+
+    expect(line.getAttribute('data-activity-density')).toBe('feed');
+    expect(line.getAttribute('data-activity-tone')).toBe('quiet');
+  });
+
+  it('puts Answer in the state column of a row that waits on you, behind a warning bar', () => {
+    renderStateRow({
+      rowState: {
+        phase: 'waiting',
+        reason: { kind: 'question', stepLabel: null },
+        ask: { kind: 'answer', question: null },
+      },
+    });
+    const row = screen.getByRole('button', { name: /Implement the parser/ });
+
+    expect(row.querySelector('[data-meta-column="state"]')?.textContent).toContain('Answer');
+    expect(within(row).getByTestId('tone-bar').getAttribute('data-tone')).toBe('warning');
+    expect(within(row).queryAllByRole('button')).toHaveLength(0);
+  });
+
+  it('marks a failed row with a danger bar and leaves a done row bare', () => {
+    renderStateRow({ rowState: { phase: 'failed', reason: { kind: 'failed' }, ask: null } });
+
+    expect(screen.getByTestId('tone-bar').getAttribute('data-tone')).toBe('danger');
+    cleanup();
+
+    renderStateRow({ rowState: DONE_ROW_STATE });
+    expect(screen.queryByTestId('tone-bar')).toBeNull();
   });
 
   const laneRailOf = (): RailRow => ({

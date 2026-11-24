@@ -8,6 +8,7 @@ import { refreshMountRequest, type MountRequestAdapter } from './refreshMountReq
 const h = vi.hoisted(() => ({ revision: 1 }));
 
 vi.mock('./mountRequests', () => ({
+  mountRequestsInFlight: new Set<Promise<unknown>>(),
   mountRevision: () => h.revision,
   observeMountRequestTransition: vi.fn(),
   requestIdentityEquals: () => false,

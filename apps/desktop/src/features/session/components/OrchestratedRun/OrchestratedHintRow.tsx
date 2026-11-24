@@ -1,11 +1,11 @@
 import { useId } from 'react';
 import { MessageSquareText } from '@goodboy/ui/icons';
 import {
+  ActivityMessage,
   Button,
+  ICON_SIZE,
   Markdown,
-  StatusDot,
   Tooltip,
-  WORK_NODE_GLYPH_SIZE,
   WorkNode,
   inlineMarkdownText,
 } from '@goodboy/ui';
@@ -13,6 +13,7 @@ import type { OrchestratorHint, SessionId, WorkflowRunId } from '@goodboy/types'
 import { hintIsLong } from '../../../workflows/hintIsLong';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import { AttachmentStrip } from '../../../attachments/AttachmentStrip';
+import { OrchestratedHintByline } from './OrchestratedHintByline';
 import { OrchestratedPlanSlot } from './OrchestratedPlanSlot';
 import { useHintImageItems } from './useHintImageItems';
 import { useHintRowState } from './useHintRowState';
@@ -50,7 +51,14 @@ type NodeParams = {
 
 const offsetHeightOf = ({ node }: NodeParams): number => node.offsetHeight;
 
-const isClippedNode = ({ node }: NodeParams): boolean => node.scrollWidth > node.clientWidth;
+const BUBBLE = '[data-activity-message-bubble]';
+
+const FENCE = /^\s*(```|~~~)/;
+
+const isClippedNode = ({ node }: NodeParams): boolean => {
+  const bubble = node.querySelector<HTMLElement>(BUBBLE);
+  return bubble !== null && bubble.scrollWidth > bubble.clientWidth;
+};
 
 export const OrchestratedHintRow = ({
   hint,
@@ -79,6 +87,9 @@ export const OrchestratedHintRow = ({
   });
   const canToggle = hintIsLong({ text: hint.text, isClipped }) || isExpanded;
   const first = hint.text.split('\n').find((line) => line.trim() !== '') ?? hint.text;
+  const rest = FENCE.test(first)
+    ? ''
+    : hint.text.slice(hint.text.indexOf(first) + first.length).trim();
   const named = first.length > NAMED_HINT_CHARS ? `${first.slice(0, NAMED_HINT_CHARS)}...` : first;
   const isReading = state === 'reading';
   const remove =
@@ -93,25 +104,24 @@ export const OrchestratedHintRow = ({
         Remove
       </Button>
     );
-  const step =
-    state === 'read' && hint.consumedAtStep != null ? (
-      onOpenStep === null ? (
-        <span className="shrink-0 text-faint-foreground">
-          {ORCHESTRATED_COPY.readHint({ step: hint.consumedAtStep })}
-        </span>
-      ) : (
-        <Button
-          variant="quiet"
-          size="xs"
-          className="shrink-0"
-          onClick={onOpenStep}
-          data-hint-step-link=""
-          data-hint-control="step"
-        >
-          {ORCHESTRATED_COPY.readHint({ step: hint.consumedAtStep })}
-        </Button>
-      )
-    ) : null;
+  const toggle = canToggle ? (
+    <Button
+      variant="quiet"
+      size="xs"
+      className="shrink-0"
+      aria-expanded={isExpanded}
+      aria-controls={bodyId}
+      aria-label={
+        isExpanded
+          ? ORCHESTRATED_COPY.hintLessNamed({ hint: named })
+          : ORCHESTRATED_COPY.hintMoreNamed({ hint: named })
+      }
+      data-hint-control="toggle"
+      onClick={() => setIsExpanded({ isExpanded: !isExpanded })}
+    >
+      {isExpanded ? ORCHESTRATED_COPY.hintLess : ORCHESTRATED_COPY.hintMore}
+    </Button>
+  ) : null;
 
   return (
     <div
@@ -143,83 +153,66 @@ export const OrchestratedHintRow = ({
       <div className="flex h-8 min-w-0 items-center">
         <OrchestratedPlanSlot slotWidth={slotWidth}>
           <WorkNode
-            state={state === 'queued' ? 'queued' : 'marker'}
+            look="quiet"
+            size="sm"
+            state="marker"
             tone={NODE_TONE[state]}
             label={ORCHESTRATED_COPY.hintNode}
             mark={{
               kind: 'glyph',
-              glyph: (
-                <MessageSquareText size={WORK_NODE_GLYPH_SIZE} className="text-muted-foreground" />
-              ),
+              glyph: <MessageSquareText size={ICON_SIZE.mark} className="text-muted-foreground" />,
             }}
           />
         </OrchestratedPlanSlot>
-        <span className="flex min-w-0 flex-1 items-center gap-2 px-2 text-ui">
-          <span className="sr-only">
-            {state === 'queued' ? ORCHESTRATED_COPY.hintQueued : ORCHESTRATED_COPY.hintNode}
-          </span>
-          {isExpanded ? (
-            <span className="flex-1" />
-          ) : (
-            <span
-              ref={textRef}
-              data-hint-text=""
-              className="min-w-0 flex-1 truncate text-foreground"
-            >
-              {inlineMarkdownText({ text: first })}
-            </span>
-          )}
-          {canToggle ? (
-            <Button
-              variant="quiet"
-              size="xs"
-              className="shrink-0"
-              aria-expanded={isExpanded}
-              aria-controls={bodyId}
-              aria-label={
-                isExpanded
-                  ? ORCHESTRATED_COPY.hintLessNamed({ hint: named })
-                  : ORCHESTRATED_COPY.hintMoreNamed({ hint: named })
-              }
-              data-hint-control="toggle"
-              onClick={() => setIsExpanded({ isExpanded: !isExpanded })}
-            >
-              {isExpanded ? ORCHESTRATED_COPY.hintLess : ORCHESTRATED_COPY.hintMore}
-            </Button>
-          ) : null}
-          <span data-hint-images="" className="flex w-14 shrink-0 justify-end">
-            {images.length > 0 ? (
-              <AttachmentStrip
-                items={images}
-                railLabel={ORCHESTRATED_COPY.hintImages}
-                size="compact"
-                viewer={{
-                  openId: openImageId,
-                  onOpenChange: setOpenImageId,
-                }}
-              />
-            ) : null}
-          </span>
-          {step}
-          {isReading ? (
-            <span className="flex shrink-0 items-center gap-1 text-muted-foreground">
-              <StatusDot tone="info" size="sm" pulsing />
-              {ORCHESTRATED_COPY.hintReading}
-            </span>
-          ) : null}
-          {isReading && remove !== null ? (
-            <Tooltip content="The orchestrator is reading it now" side="top">
-              <span className="inline-flex">{remove}</span>
-            </Tooltip>
-          ) : (
-            remove
-          )}
+        <span className="sr-only">
+          {state === 'queued' ? ORCHESTRATED_COPY.hintQueued : ORCHESTRATED_COPY.hintNode}
         </span>
+        <div ref={textRef} data-hint-message="" className="flex h-full min-w-0 flex-1">
+          <ActivityMessage
+            density="feed"
+            text={inlineMarkdownText({ text: first })}
+            isPending={state !== 'read'}
+            byline={
+              <OrchestratedHintByline
+                state={state}
+                step={hint.consumedAtStep ?? null}
+                onOpenStep={onOpenStep}
+              />
+            }
+            actions={
+              <>
+                {toggle}
+                {images.length > 0 ? (
+                  <span data-hint-images="" className="flex shrink-0">
+                    <AttachmentStrip
+                      items={images}
+                      railLabel={ORCHESTRATED_COPY.hintImages}
+                      size="compact"
+                      viewer={{
+                        openId: openImageId,
+                        onOpenChange: setOpenImageId,
+                      }}
+                    />
+                  </span>
+                ) : null}
+                {isReading && remove !== null ? (
+                  <Tooltip content="The orchestrator is reading it now" side="top">
+                    <span className="inline-flex">{remove}</span>
+                  </Tooltip>
+                ) : (
+                  remove
+                )}
+              </>
+            }
+          />
+        </div>
       </div>
       <div hidden={!isExpanded} className={isExpanded ? 'flex min-w-0' : 'hidden'}>
         <span aria-hidden className="shrink-0" style={{ width: slotWidth }} />
-        <div id={bodyId} data-hint-body="" className="min-w-0 flex-1 px-2">
-          {isExpanded ? <Markdown text={hint.text} className="text-ui text-foreground" /> : null}
+        <div id={bodyId} data-hint-body="" className="min-w-0 flex-1 pl-3 pr-2">
+          {isExpanded ? (
+            <Markdown text={rest === '' ? hint.text : rest} className="text-ui text-foreground" />
+          ) : null}
         </div>
       </div>
       {hasFailed ? (
@@ -227,7 +220,7 @@ export const OrchestratedHintRow = ({
           <span aria-hidden className="shrink-0" style={{ width: slotWidth }} />
           <p
             data-hint-images-failed=""
-            className="flex min-w-0 flex-1 items-center gap-2 px-2 text-meta text-muted-foreground"
+            className="flex min-w-0 flex-1 items-center gap-2 pl-3 pr-2 text-meta text-muted-foreground"
           >
             {ORCHESTRATED_COPY.hintImagesFailed}
             <Button variant="quiet" size="xs" onClick={retry}>

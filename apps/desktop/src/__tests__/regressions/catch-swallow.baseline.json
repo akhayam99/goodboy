@@ -59,7 +59,6 @@
   "apps/desktop/src/features/worktree/BaseBranchSelect.tsx": 1,
   "apps/desktop/src/features/worktree/useBranchChoices/index.ts": 4,
   "apps/desktop/src/shared/components/Conversation/ThreadBlock.tsx": 1,
-  "apps/desktop/src/shared/hooks/useComposerClassicKeys/index.ts": 1,
   "apps/desktop/src/shared/hooks/usePendingAction/index.ts": 1,
   "apps/desktop/src/shared/hooks/useTitlebarInset/index.ts": 1,
   "apps/desktop/src/shared/hooks/useUnhandledRejectionNotice/index.ts": 1,

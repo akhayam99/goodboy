@@ -201,13 +201,13 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
     expect(screen.getAllByText('Queued, read at the next decision')).toHaveLength(1);
     expect(document.querySelector('[data-hint-queue-line]')).toBeNull();
     expect(queued.getByRole('button', { name: 'Remove' })).toBeDefined();
-    expect(checklist().getByText('Read at step 3')).toBeDefined();
+    expect(checklist().getByText('read at step 3')).toBeDefined();
   });
 
   it('Hint states: Reading now cannot be removed', async () => {
     await mount('c09-orch-reading');
     const queued = within(screen.getByRole('list', { name: 'Queued hints' }));
-    expect(queued.getByText('Reading now')).toBeDefined();
+    expect(queued.getByText('reading now')).toBeDefined();
     expect(queued.getByRole('button', { name: 'Remove' }).hasAttribute('disabled')).toBe(true);
   });
 

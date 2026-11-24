@@ -76,6 +76,17 @@ describe('the u50 desk nav scenes', () => {
     expect(screen.queryByRole('complementary', { name: 'Desk' })).toBeNull();
   });
 
+  it.each(['u50-desk-nav-closed-light', 'u50-desk-nav-closed-dark'])(
+    'draws Desk closed of %s in the page banner under the session head',
+    async (name) => {
+      await show({ name });
+
+      const notice = screen.getByText('Desk closed');
+      expect(notice.closest('[data-slot="pane-banner"]')).toBeInstanceOf(HTMLElement);
+      expect(notice.closest('[data-session-head-frame]')).toBeInstanceOf(HTMLElement);
+    },
+  );
+
   it('draws the two lines of a Desk held by another window', async () => {
     await show({ name: 'u50-desk-nav-elsewhere-light' });
     screen.getByText('Desk open in another window');

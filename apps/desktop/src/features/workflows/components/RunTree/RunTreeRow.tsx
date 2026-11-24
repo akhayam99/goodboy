@@ -1,4 +1,4 @@
-import { Button, cn, InteractiveRow, TruncatedText, WORK_META_COLUMN, WORK_ROW } from '@goodboy/ui';
+import { ActivityRow, cn, InteractiveRow, TruncatedText, WORK_ROW } from '@goodboy/ui';
 import type {
   EffortLevel,
   OpenQuestion,
@@ -12,7 +12,6 @@ import { KIND_TO_ROLE } from '../../../session/agent-kind';
 import { guidanceSentTo } from '../../../../store/slices/workflows/standingGuidance';
 import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
-import { openPlanDrawer } from '../../../plans/openPlanDrawer';
 import { RunTreeGuidanceTag } from './RunTreeGuidanceTag';
 import { AgentStepRow } from '../../../session/components/SessionWorkspace/parts/TimelinePane/AgentStepRow';
 import { TimelineRail } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRail';
@@ -21,13 +20,14 @@ import type { TimelineAgentEntry } from '../../../session/timeline/buildTimeline
 import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStream';
 import { railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
-import { ROW_ACTION_LABEL } from '../../../workTreeModel/rowActionLabels';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { answerOf } from './answerOf';
-import { isNotFinishedNote } from './isNotFinishedNote';
+import { runStepOrdinalOf } from './runStepOrdinalOf';
+import { runStepTone } from './runStepTone';
 import { stuckActionOf } from './stuckActionOf';
 import { RunTreeChecklistCells } from './RunTreeChecklistCells';
 import { RunTreeContextNote } from './RunTreeContextNote';
+import { RunTreeRowActions } from './RunTreeRowActions';
 import { rowSlotWidth } from './rowSlotWidth';
 import type { RunTreeDensity } from './runTreeDensity';
 
@@ -86,6 +86,7 @@ export const RunTreeRow = ({
   const step =
     !isNested && agent.stepId != null ? (routing.stepById.get(agent.stepId) ?? null) : null;
   const isPage = density === 'page';
+  const isChecklist = density === 'checklist';
   const guidance =
     isNested || !isPage
       ? null
@@ -160,79 +161,63 @@ export const RunTreeRow = ({
                 onOpen={onSelect}
                 menu={menu}
                 frameClassName={cn('min-w-0 flex-1', isHighlighted && 'bg-hover text-foreground')}
-                className="flex h-full min-w-0 items-center gap-2 px-2"
+                className="flex h-full min-w-0"
               >
-                {density === 'checklist' ? (
-                  <RunTreeChecklistCells
-                    entry={entry}
-                    glyph={glyph}
-                    duration={time}
-                    phase={item.rowState.phase}
-                    state={isNotFinishedNote({ state: item.rowState }) ? state : null}
-                    action={stuckAction}
-                    isNested={isNested}
-                    change={
-                      isNested
-                        ? null
-                        : (routing.run?.rulesSnapshot?.planChanges?.find(
-                            (candidate) => candidate.agentId === agent.id,
-                          ) ?? null)
-                    }
-                  />
-                ) : (
-                  <>
-                    <span className="w-6 shrink-0 text-right text-chip text-faint-foreground">
-                      {entry.stepLabel}
+                <ActivityRow
+                  density="feed"
+                  tone={runStepTone({ state: item.rowState })}
+                  ordinal={
+                    <span data-checklist-cell="step">
+                      {runStepOrdinalOf({ entry, isNested, isChecklist })}
                     </span>
-                    {glyph}
-                    <span className="flex min-w-0 flex-1 items-center gap-2">
+                  }
+                  ordinalSlot={isChecklist ? 'wide' : 'narrow'}
+                  glyph={glyph}
+                  textSize={isPage && !isNested ? 'body' : 'ui'}
+                  text={
+                    <span className="flex min-w-0 items-center gap-2">
                       <TruncatedText
-                        isFocusable
-                        className={cn(
-                          WORK_ROW.title,
-                          'flex-1 truncate',
-                          density === 'rail' ? 'text-ui' : isNested ? 'text-meta' : 'text-body',
-                          item.rowState.phase === 'queued'
-                            ? 'text-muted-foreground'
-                            : 'text-foreground',
-                        )}
+                        isFocusable={!isChecklist}
+                        className={cn(WORK_ROW.title, 'flex-1 truncate')}
                       >
                         {agent.name}
                       </TruncatedText>
                       {guidance === null ? null : <RunTreeGuidanceTag text={guidance} />}
                       <RunTreeContextNote answersFor={answersFor} waveLabel={waveNote} />
                     </span>
-                    {state}
-                    {isPage ? stuckAction : null}
-                    {isPage ? meta : null}
-                    {hasActionColumn ? (
-                      <span data-meta-column="action" className={WORK_META_COLUMN.action}>
-                        {answer === null ? null : (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="h-6 shrink-0"
-                            onClick={() => onAnswer(answer.question)}
-                          >
-                            {ROW_ACTION_LABEL.answer}
-                          </Button>
-                        )}
-                        {planAction === null || isPlanHeld ? null : (
-                          <Button
-                            variant="ghost"
-                            size="xs"
-                            className="shrink-0"
-                            onClick={() =>
-                              openPlanDrawer({ sessionId: agent.sessionId, planId: planAction.id })
-                            }
-                          >
-                            {ROW_ACTION_LABEL.openPlan}
-                          </Button>
-                        )}
-                      </span>
-                    ) : null}
-                  </>
-                )}
+                  }
+                  meta={
+                    isChecklist ? (
+                      <RunTreeChecklistCells
+                        state={item.rowState}
+                        duration={time}
+                        action={stuckAction}
+                        change={
+                          isNested
+                            ? null
+                            : (routing.run?.rulesSnapshot?.planChanges?.find(
+                                (candidate) => candidate.agentId === agent.id,
+                              ) ?? null)
+                        }
+                      />
+                    ) : (
+                      <>
+                        {state}
+                        {isPage ? stuckAction : null}
+                        {isPage ? meta : null}
+                        {hasActionColumn ? (
+                          <RunTreeRowActions
+                            sessionId={agent.sessionId}
+                            answer={answer}
+                            plan={planAction}
+                            isPlanHeld={isPlanHeld}
+                            onAnswer={onAnswer}
+                          />
+                        ) : null}
+                      </>
+                    )
+                  }
+                />
               </InteractiveRow>
             </div>
           </div>

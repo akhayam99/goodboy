@@ -1,9 +1,7 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { useState } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { useAppStore } from '../../../store';
-import { SETTING_COMPOSER_CLASSIC_KEYS } from '../../../features/settings/settings';
 import { usePendingAttachments } from '../../hooks/usePendingAttachments';
 import { shortcutGlyphs } from '../../keyboard/registry';
 import { shortcutWords } from '../../keyboard/shortcutWords';
@@ -14,7 +12,6 @@ type HarnessProps = {
   readonly kind: PromptFieldKind;
   readonly withFiles: boolean;
   readonly canSendNow?: boolean;
-  readonly hasChangedKeys?: boolean;
   readonly hasPreview?: boolean;
   readonly sent: Array<{ readonly mode: PromptSubmitMode; readonly text: string }>;
 };
@@ -23,7 +20,6 @@ const Harness = ({
   kind,
   withFiles,
   canSendNow = false,
-  hasChangedKeys = false,
   hasPreview = false,
   sent,
 }: HarnessProps) => {
@@ -38,7 +34,6 @@ const Harness = ({
       onChange={setValue}
       onSubmit={(mode) => sent.push({ mode, text: value })}
       canSendNow={canSendNow}
-      hasChangedKeys={hasChangedKeys}
       hasPreview={hasPreview}
       notice={notice}
       keyLabels={{ send: 'send', now: 'send now' }}
@@ -62,7 +57,6 @@ type KeyRow = {
   readonly name: string;
   readonly kind: PromptFieldKind;
   readonly canSendNow: boolean;
-  readonly isClassic: boolean;
   readonly key: { readonly shiftKey?: boolean; readonly metaKey?: boolean };
   readonly sends: PromptSubmitMode | null;
 };
@@ -72,7 +66,6 @@ const KEY_ROWS: ReadonlyArray<KeyRow> = [
     name: 'message, Enter sends',
     kind: 'message',
     canSendNow: false,
-    isClassic: false,
     key: {},
     sends: 'send',
   },
@@ -80,7 +73,6 @@ const KEY_ROWS: ReadonlyArray<KeyRow> = [
     name: 'message, Shift+Enter adds a line',
     kind: 'message',
     canSendNow: false,
-    isClassic: false,
     key: { shiftKey: true },
     sends: null,
   },
@@ -88,7 +80,6 @@ const KEY_ROWS: ReadonlyArray<KeyRow> = [
     name: 'message, Cmd+Enter sends now where it exists',
     kind: 'message',
     canSendNow: true,
-    isClassic: false,
     key: { metaKey: true },
     sends: 'now',
   },
@@ -96,7 +87,6 @@ const KEY_ROWS: ReadonlyArray<KeyRow> = [
     name: 'message, Cmd+Enter sends where there is no now',
     kind: 'message',
     canSendNow: false,
-    isClassic: false,
     key: { metaKey: true },
     sends: 'send',
   },
@@ -104,7 +94,6 @@ const KEY_ROWS: ReadonlyArray<KeyRow> = [
     name: 'document, Enter adds a line',
     kind: 'document',
     canSendNow: false,
-    isClassic: false,
     key: {},
     sends: null,
   },
@@ -112,7 +101,6 @@ const KEY_ROWS: ReadonlyArray<KeyRow> = [
     name: 'document, Shift+Enter adds a line',
     kind: 'document',
     canSendNow: false,
-    isClassic: false,
     key: { shiftKey: true },
     sends: null,
   },
@@ -120,39 +108,6 @@ const KEY_ROWS: ReadonlyArray<KeyRow> = [
     name: 'document, Cmd+Enter saves',
     kind: 'document',
     canSendNow: false,
-    isClassic: false,
-    key: { metaKey: true },
-    sends: 'send',
-  },
-  {
-    name: 'classic keys, Enter adds a line in a changed message field',
-    kind: 'message',
-    canSendNow: false,
-    isClassic: true,
-    key: {},
-    sends: null,
-  },
-  {
-    name: 'classic keys, Enter sends a changed document field',
-    kind: 'document',
-    canSendNow: false,
-    isClassic: true,
-    key: {},
-    sends: 'send',
-  },
-  {
-    name: 'classic keys, Shift+Enter adds a line in a changed document field',
-    kind: 'document',
-    canSendNow: false,
-    isClassic: true,
-    key: { shiftKey: true },
-    sends: null,
-  },
-  {
-    name: 'classic keys, Cmd+Enter sends a changed message field',
-    kind: 'message',
-    canSendNow: false,
-    isClassic: true,
     key: { metaKey: true },
     sends: 'send',
   },
@@ -181,42 +136,18 @@ const settle = async () => {
   });
 };
 
-beforeEach(() => {
-  useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
-});
-
 afterEach(cleanup);
 
 describe('PromptField keys', () => {
   it.each(KEY_ROWS.map((row) => [row.name, row] as const))('%s', (_name, row) => {
-    useAppStore.setState({
-      settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: row.isClassic ? 'true' : 'false' },
-    });
     const sent: HarnessProps['sent'] = [];
-    render(
-      <Harness
-        kind={row.kind}
-        withFiles={false}
-        canSendNow={row.canSendNow}
-        hasChangedKeys={row.isClassic}
-        sent={sent}
-      />,
-    );
+    render(<Harness kind={row.kind} withFiles={false} canSendNow={row.canSendNow} sent={sent} />);
     fireEvent.change(field(), { target: { value: 'Keep the retry budget' } });
     const isDefaultKept = fireEvent.keyDown(field(), { key: 'Enter', code: 'Enter', ...row.key });
     expect(sent).toEqual(
       row.sends === null ? [] : [{ mode: row.sends, text: 'Keep the retry budget' }],
     );
     expect(isDefaultKept).toBe(row.sends === null);
-  });
-
-  it('keeps the new keys on a field whose keys did not change, even with classic keys on', () => {
-    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'true' } });
-    const sent: HarnessProps['sent'] = [];
-    render(<Harness kind="message" withFiles={false} sent={sent} />);
-    fireEvent.change(field(), { target: { value: 'hi' } });
-    fireEvent.keyDown(field(), { key: 'Enter', code: 'Enter' });
-    expect(sent).toEqual([{ mode: 'send', text: 'hi' }]);
   });
 
   it('shows the keys of its kind, read from the shortcut registry', () => {
@@ -238,7 +169,6 @@ describe('PromptField key row', () => {
   const keysRow = (): HTMLElement => screen.getByTestId('prompt-keys');
 
   it('shows the keys only on an empty field with the focus, and hides them at the first letter', () => {
-    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
     render(<Harness kind="message" withFiles={false} sent={[]} />);
     expect(keysRow().dataset.shown).toBe('false');
 
@@ -254,7 +184,6 @@ describe('PromptField key row', () => {
   });
 
   it('describes the field with the keys whether they show or not', () => {
-    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
     render(<Harness kind="message" withFiles={false} sent={[]} />);
     const description = `${shortcutWords({ id: 'composer.send' })} send, ${shortcutWords({ id: 'composer.newLine' })} new line`;
 
@@ -265,7 +194,6 @@ describe('PromptField key row', () => {
   });
 
   it('names each key of a document field in words for a screen reader', () => {
-    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
     render(<Harness kind="document" withFiles={false} sent={[]} />);
 
     screen.getByRole('textbox', {
@@ -274,17 +202,7 @@ describe('PromptField key row', () => {
     });
   });
 
-  it('keeps the keys shown when the keys changed, with text in the field', () => {
-    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'true' } });
-    render(<Harness kind="message" withFiles={false} hasChangedKeys sent={[]} />);
-
-    fireEvent.change(field(), { target: { value: 'Retry budget' } });
-
-    expect(keysRow().dataset.shown).toBe('true');
-  });
-
   it('keeps the keys shown in a document, where Enter adds a line', () => {
-    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
     render(<Harness kind="document" withFiles={false} sent={[]} />);
 
     fireEvent.change(field(), { target: { value: 'Retry budget' } });

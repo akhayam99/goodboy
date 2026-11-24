@@ -2920,11 +2920,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/impact/hooks/useImpactMetrics/index.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/impact/openImpactStudio.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -5161,16 +5156,6 @@
       "count": 6
     }
   },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/RowIdentityCard.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 18
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/RowIdentityCard.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/RowModelsCard.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -5523,11 +5508,6 @@
     }
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/BranchTemplateField/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/settings/components/SettingsStudio/ClassicComposerKeysField.test.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 1
     }

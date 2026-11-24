@@ -2,14 +2,29 @@
 
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { WorkspaceId } from '@goodboy/types';
+import {
+  insertSession,
+  insertSessionMount,
+  insertWorkspace,
+  upsertMountPullRequestLink,
+} from '@goodboy/db';
+import {
+  brandId,
+  type MountId,
+  type MountPullRequestLink,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
+import { aSession, TEST_NOW } from '@goodboy/types/testing';
 import { useImpactMetrics } from './index';
 import {
+  buildStoryWorkspace,
   injectDbFault,
   importStore,
   openStorySqlite,
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
+  storySqlite,
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
@@ -80,6 +95,113 @@ describe('impact refresh of open pull requests of deleted sessions', () => {
     });
 
     expect(refresh).toHaveBeenCalledExactlyOnceWith(WORKSPACE_ID);
+  });
+});
+
+const seedOpenLink = async () => {
+  const db = storySqlite();
+  const sessionId = brandId<SessionId>({ value: 'session-northwind-payout' });
+  const mountId = brandId<MountId>({ value: 'mount-payout' });
+  await insertWorkspace({ db, workspace: buildStoryWorkspace({ id: WORKSPACE_ID }) });
+  await insertSession(db, aSession({ id: sessionId, workspaceId: WORKSPACE_ID }));
+  await insertSessionMount({
+    db,
+    mount: {
+      id: mountId,
+      sessionId,
+      projectId: null,
+      worktreePath: '/tmp/payments-api/payout',
+      lastWorktreePath: null,
+      branch: 'northwind/payout',
+      baseBranch: 'main',
+      parallelIndex: 0,
+      mountName: 'payments-api',
+      repoSlug: 'acme/payments-api',
+      isAttached: true,
+      diskState: 'present',
+      revision: 1,
+      createdAt: TEST_NOW,
+      updatedAt: TEST_NOW,
+    },
+  });
+  const link: MountPullRequestLink = {
+    id: 'link-payout',
+    mountId,
+    provider: 'github',
+    host: 'github.com',
+    repoSlug: 'acme/payments-api',
+    prNumber: 31,
+    headBranch: 'northwind/payout',
+    baseBranch: 'main',
+    url: 'https://github.com/acme/payments-api/pull/31',
+    state: 'open',
+    snapshot: null,
+    mergedHeadSha: null,
+    mergedAt: null,
+    lastObservedAt: TEST_NOW,
+    createdAt: TEST_NOW,
+    updatedAt: TEST_NOW,
+  };
+  await upsertMountPullRequestLink({ db, sessionId, link });
+  const recordMerge = () =>
+    upsertMountPullRequestLink({
+      db,
+      sessionId,
+      link: { ...link, state: 'merged', mergedAt: TEST_NOW, lastObservedAt: TEST_NOW },
+    });
+  return { recordMerge };
+};
+
+describe('Impact asks about live work when it opens', () => {
+  it('shows a merge that the open sweep observes after the first read', async () => {
+    const { recordMerge } = await seedOpenLink();
+    const sweep = vi.fn(async () => {
+      await recordMerge();
+    });
+    useAppStore.setState({ sweepRequests: sweep });
+
+    const { result } = renderHook(() =>
+      useImpactMetrics({ workspaceId: WORKSPACE_ID, windowId: 'all' }),
+    );
+
+    await waitFor(() => expect(result.current.pullRequests.data?.merged).toBe(1));
+    expect(sweep).toHaveBeenCalledExactlyOnceWith({
+      shouldSkipUnknownRequest: true,
+      shouldAwaitInFlight: true,
+    });
+    expect(result.current.pullRequests.data?.open).toBe(0);
+  });
+
+  it('waits for the open sweep when the dormant refresh fails first', async () => {
+    const { recordMerge } = await seedOpenLink();
+    let finishSweep = (): void => undefined;
+    const sweep = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finishSweep = () => {
+            void recordMerge().then(() => resolve());
+          };
+        }),
+    );
+    const refresh = vi.fn(async () => {
+      throw new Error('database is locked');
+    });
+    useAppStore.setState({
+      sweepRequests: sweep,
+      refreshDormantPullRequests: refresh,
+      githubStatus: { mode: 'pat', available: true },
+    });
+
+    const { result } = renderHook(() =>
+      useImpactMetrics({ workspaceId: WORKSPACE_ID, windowId: 'all' }),
+    );
+    await waitFor(() => expect(result.current.pullRequests.data?.open).toBe(1));
+    await act(async () => {
+      finishSweep();
+    });
+
+    await waitFor(() => expect(result.current.pullRequests.data?.merged).toBe(1));
+    expect(refresh).toHaveBeenCalledOnce();
   });
 });
 

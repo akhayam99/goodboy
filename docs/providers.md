@@ -1238,6 +1238,33 @@ When a provider ships or retires a model, update these together:
   why, and a provider's Usage notice says where Auto sends new agents. No
   Cursor default needs Max Mode, and `defaults.test.ts` validates every cell against
   the catalogs and checks that each line cell starts on the newest model of its line
+- **Candidates** (`packages/core/src/providers/candidates/`) list every model a new
+  agent could start on, for one role and step size, across every On and Backup
+  provider, not only the first. `buildCandidates` walks `providerCandidates` and, per
+  provider, the same pick chain as the Auto ladder (`providerStepPick`): the rung for
+  the role and size plus one lighter rung, never below the role's lowest. Each row
+  carries the order, the room, the agents started in the last hour, the published rate
+  and the model family (`modelFamily`, from the catalog group, so Sonnet through Cursor
+  is the Claude family and Cursor Auto has none). A guard strikes a row with a cause
+  (`CANDIDATE_CAUSES`): not connected, Off, Backup idle, out of room, cooling down, an
+  open breaker, a budget alert, outside the run's providers, a provider the Lead never
+  starts helpers on, a writer off `AUTO_WRITER_CHILD_PROVIDERS`, hidden, CLI too old,
+  outside a role pin, or the writer's family for a review (kept, and said, when no
+  other family is left). A Backup provider stays idle only while an On provider has a
+  model that can run for the need. A role pin lists only its pinned models while one of
+  them can run; a pin skips the hidden check but not the CLI check or the family guard.
+  `bestCandidate` takes the best valid row by Provider priority: by order (not
+  near its limit, then the order, then the rung before the lighter one) or by load (room
+  band, then load plus picks already made in the same batch, then the order); a pin
+  wins over either. `checkPick` looks a pick up in the same list and keeps it, moves it
+  to the best row with its cause, or refuses it only when no row is valid; a pick at an
+  effort no row lists is moved, never kept at another effort. Every cause
+  maps to an `adjustment` word an older build reads, so a stored decision stays a patch.
+  `formatCandidatesBlock` writes one table for every role, one line per provider in
+  the order, with the role guards, the run budget and which providers keep a session
+  after a question; it drops the rates, then the facts, then the last providers to stay
+  under 2,400 characters, never throws, and is left out when the table and the valid
+  pins name fewer than two providers or one provider still does not fit
 - **Provider policy.** `workspaces.provider_pool` holds the policy, either the 0.15.4
   list of names (`["anthropic","codex"]`: those On in that order, the rest Off, the
   saved default moved first) or the list of entries
@@ -1383,6 +1410,24 @@ project,local --no-session-persistence` in an empty scratch directory,
   `providerLimits` store slice. A write never replaces a newer observation.
   Thresholds are in `packages/core/src/providers/limits/constants.ts`: warning from
   80%, old data after 30 minutes
+- **Room**: `providerRoom` gives each provider a used share and says whether it
+  is measured or estimated. A fresh reading is measured; a budget with a cap is
+  measured too. Every other provider, or one whose reading is older than 30
+  minutes, gets an estimate: it starts at 50%, each clean turn in the last 5
+  hours takes off 2 points down to 30%, each agent on it in the last hour adds
+  10, and a rate limit in the last hour puts it at 85% or more. An estimate stops
+  at 95%, so a guess never marks a provider full; only a cooldown or a measured
+  limit removes one. It is a fact for routing, never a guard
+- **Load**: `providerLoad` counts agents, not turns, per provider in a window:
+  the ones running now plus the ones that closed a turn in it, each once.
+  `listProviderAgentTurns` reads the closed ones from `agent_turn_spans`, one
+  row per provider and agent with its clean turns and last end. The windows are
+  `ROOM_RECENT_WINDOW_MS` (1 hour) and `ROOM_TURNS_WINDOW_MS` (5 hours)
+- **Rate limits**: a turn that fails with a rate limit (429, too many requests)
+  records the time in `providerStrikes` (`withProviderStrike`), and the turn still
+  falls back as before. A usage limit sets a cooldown instead. Strikes live in
+  the window's store only: another window and a restart forget them, which is
+  why the room they feed is called an estimate
 
 ### Source map
 

@@ -20,7 +20,6 @@ export const DeskStatusRow = ({ session, model }: Props) => {
     needsYou: model.moves.needsYou.length + model.looseQuestions.length,
     now: model.nowCount,
     next: model.moves.next.length,
-    status: model.status,
   });
   return (
     <div data-desk-status-row="" className="flex min-w-0 shrink-0 items-center">

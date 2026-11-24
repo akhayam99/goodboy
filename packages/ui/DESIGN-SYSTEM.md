@@ -495,7 +495,7 @@ first, and by colour second.
 | 4     | `text-row` and `text-ui` | 13/20, 500 or 400 | foreground                          |
 | 5     | `text-meta`              | 12/16, 400        | muted, or faint for time and counts |
 
-`text-row-strong` is level 4 at 600, for the one live item of a list: the step of a run that works, waits or failed. Every other step reads `text-ui` and turns foreground on hover. `SectionLabel` draws a section label at level 2 with its count faint after it, as a span or as an `h2` or `h3`, and `PANE_RHYTHM.groups` spaces the groups of a page 32px apart.
+`text-row-strong` is level 4 at 600, for the one live item of a list. A run's steps are activity rows and all read `text-ui`: the node and the state word carry the live one. `SectionLabel` draws a section label at level 2 with its count faint after it, as a span or as an `h2` or `h3`, and `PANE_RHYTHM.groups` spaces the groups of a page 32px apart.
 
 `text-prose` is the only reading size: `text-read` is gone, merged into it.
 `text-chip` (11/16) stays for tags and moves to 12 later. The sidebar has three
@@ -596,11 +596,13 @@ the six places and Settings share one axis at either width.
 and `r4-column-light` scenes, and with an old folded choice.
 
 The foot of the rail is Settings, Report (with its word) and the signature. The
-signature (`RailSignature`) is a 24px `BrandTile`: passive, `aria-hidden`, with no
-hover, focus or tooltip, and no ring, plate, border, glow or gradient. It is the
-same in both themes and never inverted. It sits centered in one rail tile
-(`SHELL_RAIL_TILE`), so the dog lines up with the icons above; the rail pads its
-foot as much as its top (`SHELL_RAIL_EDGE_PX`), and the rail's `gap` spaces it
+signature (`RailSignature`) is a 24px `BrandTile` in a `quiet` `Button` that opens
+What's new, with the tooltip "What's new" and no word, and no ring, plate, border,
+glow or gradient. It is the same in both themes and never inverted. An unread
+release adds the `unread` `StatusDot` on its corner. It sits centered in one rail
+tile (`SHELL_RAIL_TILE`), so the dog lines up with the icons above; the rail pads
+its foot by `SHELL_RAIL_FOOT_PX` (`SHELL_GUTTER_PX`, the inset under the content
+sheet), so the tile ends on the sheet's bottom edge, and the rail's `gap` spaces it
 from Report. An update adds one more `ShellRailItem`
 above the signature and never replaces it: `tint="primary"` paints the tile
 `primary-subtle` with `primary` text and word (`danger` on `danger-subtle` when it

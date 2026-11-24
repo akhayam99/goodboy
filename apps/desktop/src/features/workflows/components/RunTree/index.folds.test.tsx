@@ -245,6 +245,19 @@ describe('RunTree sub-agent sets', () => {
     expect(foldButton().getAttribute('aria-label')).toBe('3 scouts · done, expand');
   });
 
+  it('marks a folded set with the quiet check and names it without repeating done', () => {
+    seed({ agents: [...baseAgents, ...scouts()] });
+    render(<RunTreeHarness kinds={SCOUT_KINDS} />);
+    const node = within(screen.getByTestId('timeline-count-node')).getByRole('img', {
+      hidden: true,
+    });
+
+    expect(node.dataset.nodeLook).toBe('quiet');
+    expect(node.dataset.nodeState).toBe('done');
+    expect(foldButton().textContent).toBe('3 scouts');
+    expect(foldButton().getAttribute('aria-label')).toBe('3 scouts · done, expand');
+  });
+
   it('reveals the live row only, never a row of a folded set', () => {
     const reveal = vi
       .spyOn(Element.prototype, 'scrollIntoView')

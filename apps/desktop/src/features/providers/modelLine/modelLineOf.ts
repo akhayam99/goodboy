@@ -2,6 +2,7 @@ import type { EffortLevel, ProviderId } from '@goodboy/types';
 import {
   getModelDescriptor,
   getModelProvider,
+  modelEffortLevels,
   resolveStoredModelSelection,
 } from '@goodboy/core/providers';
 import { EFFORT_LABEL, EFFORT_LEVELS } from '../../chat/utils/chat-constants';
@@ -16,6 +17,8 @@ export type ModelLine = Readonly<{
   provider: ProviderId | null;
   name: string;
   effort: string | null;
+  effortLevel: EffortLevel | null;
+  effortLevels: ReadonlyArray<EffortLevel>;
   isUnknown: boolean;
   rawId: string | null;
 }>;
@@ -40,15 +43,24 @@ type EffortParams = {
   readonly value: string | null;
 };
 
+type WordParams = {
+  readonly word: string | null;
+};
+
 const UNKNOWN_NAME = 'Unknown model';
 
 const EFFORT_WORDS: ReadonlySet<string> = new Set(Object.values(EFFORT_LABEL));
+
+const NO_LEVELS: ReadonlyArray<EffortLevel> = [];
 
 const providerOf = ({ provider, model }: ProviderParams): ProviderId | null =>
   providerIdOf({ value: provider }) ?? (model === null ? null : getModelProvider(model));
 
 const effortLevelOf = ({ value }: EffortParams): EffortLevel | null =>
   EFFORT_LEVELS.find((candidate) => candidate === value) ?? null;
+
+const levelOfWord = ({ word }: WordParams): EffortLevel | null =>
+  EFFORT_LEVELS.find((candidate) => EFFORT_LABEL[candidate] === word) ?? null;
 
 const isKnownModel = ({ provider, model }: KnownParams): boolean =>
   resolveStoredModelSelection({ provider, id: model }).report?.kind !== 'unknown' ||
@@ -64,12 +76,22 @@ export const modelLineOf = ({ provider, model, effort }: Params): ModelLine | nu
       provider: resolved,
       name: PROVIDER_LABEL[resolved],
       effort: null,
+      effortLevel: null,
+      effortLevels: NO_LEVELS,
       isUnknown: false,
       rawId: null,
     };
   }
   if (resolved === null) {
-    return { provider: null, name: UNKNOWN_NAME, effort: null, isUnknown: true, rawId: model };
+    return {
+      provider: null,
+      name: UNKNOWN_NAME,
+      effort: null,
+      effortLevel: null,
+      effortLevels: NO_LEVELS,
+      isUnknown: true,
+      rawId: model,
+    };
   }
   const isKnown = isKnownModel({ provider: resolved, model });
   const parts = routingLabelParts({
@@ -77,10 +99,15 @@ export const modelLineOf = ({ provider, model, effort }: Params): ModelLine | nu
     model,
     effort: isKnown ? effortLevelOf({ value: effort }) : null,
   });
+  const word = parts.detail.find((segment) => EFFORT_WORDS.has(segment)) ?? null;
   return {
     provider: resolved,
     name: routingNameText(parts),
-    effort: parts.detail.find((segment) => EFFORT_WORDS.has(segment)) ?? null,
+    effort: word,
+    effortLevel: levelOfWord({ word }),
+    effortLevels: isKnown
+      ? (modelEffortLevels({ model, provider: resolved }) ?? NO_LEVELS)
+      : NO_LEVELS,
     isUnknown: !isKnown,
     rawId: isKnown ? null : model,
   };
