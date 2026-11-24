@@ -150,7 +150,7 @@ export const sendAskQuestion =
     const thread = await ensureThread({ set, get, sessionId, question: text, at }).finally(() =>
       startingSessions.delete(sessionId),
     );
-    if (thread === null) {
+    if (thread === null || isAskStreaming({ state: get(), sessionId })) {
       return false;
     }
     const routing = askRoutingOf({ state: get(), sessionId });

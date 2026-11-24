@@ -186,6 +186,23 @@ describe('sendAskQuestion', () => {
     expect(prompts).toHaveLength(1);
   });
 
+  it('sends one question when a second click lands a tick later on an existing thread', async () => {
+    const { sendAskQuestion } = useAppStore.getState();
+    await sendAskQuestion({ sessionId: SESSION, question: 'What needs me?', rightNow: [] });
+    const first = sendAskQuestion({ sessionId: SESSION, question: 'What changed?', rightNow: [] });
+    await Promise.resolve();
+    const second = sendAskQuestion({ sessionId: SESSION, question: 'What changed?', rightNow: [] });
+
+    expect(await second).toBe(false);
+    expect(await first).toBe(true);
+    expect(
+      messagesOf()
+        .filter((message) => message.role === 'user')
+        .map((message) => message.content),
+    ).toEqual(['What needs me?', 'What changed?']);
+    expect(prompts).toHaveLength(2);
+  });
+
   it('keeps follow-ups in the same thread with the earlier turns in the prompt', async () => {
     const { sendAskQuestion } = useAppStore.getState();
     await sendAskQuestion({ sessionId: SESSION, question: 'What needs me?', rightNow: [] });

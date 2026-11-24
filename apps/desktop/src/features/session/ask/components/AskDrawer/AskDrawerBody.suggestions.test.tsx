@@ -1,14 +1,18 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
-}));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
-const { asked, gate } = vi.hoisted(() => ({
-  asked: new Array<string>(),
-  gate: { release: () => undefined as void, wait: null as null | Promise<void> },
-}));
+type Gate = { release: () => void; wait: Promise<void> | null };
+
+const { asked, gate } = vi.hoisted(() => {
+  const hoistedGate: Gate = { release: () => undefined, wait: null };
+  return { asked: new Array<string>(), gate: hoistedGate };
+});
 
 vi.mock('../../activeAskBackend', async () => {
   const { createMemoryAskBackend } = await import('../../../../../test/createMemoryAskBackend');
