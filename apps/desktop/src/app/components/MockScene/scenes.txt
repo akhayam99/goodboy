@@ -1545,6 +1545,10 @@ u52-impact-agents-dark
 u52-impact-agents-light
 u52-impact-agents-open-dark
 u52-impact-agents-open-light
+u52-workflows-every-run-dark
+u52-workflows-every-run-light
+u52-workflows-every-run-plan-dark
+u52-workflows-every-run-plan-light
 update-card
 update-card-long-version
 update-card-narrow

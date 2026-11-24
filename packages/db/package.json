@@ -8,6 +8,10 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./turn-role-insight": {
+      "types": "./src/queries/turn-role-insight.ts",
+      "default": "./src/queries/turn-role-insight.ts"
+    },
     "./migrations": {
       "types": "./src/migrations/boot.ts",
       "default": "./src/migrations/boot.ts"

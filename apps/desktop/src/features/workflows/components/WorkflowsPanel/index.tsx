@@ -14,6 +14,7 @@ import { SavedStepsList } from '../WorkflowStudio/SavedStepsList';
 import { StudioHomeTabs } from '../WorkflowStudio/StudioHomeTabs';
 import type { StudioHomeView } from '../../studioHomeView';
 import { WorkflowList } from '../WorkflowStudio/WorkflowList';
+import { LazyEveryRun } from '../EveryRun/LazyEveryRun';
 import { useRemovedBuiltins } from '../../hooks/useRemovedBuiltins';
 import { useSavedSteps } from '../../hooks/useSavedSteps';
 import { isPresetWorkflow } from '../../isPresetWorkflow';
@@ -154,6 +155,8 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const list =
     view === 'steps' ? (
       <SavedStepsList workspaceId={workspaceId} connectedProviders={connectedProviders} />
+    ) : view === 'every' ? (
+      <LazyEveryRun workspaceId={workspaceId} />
     ) : (
       <WorkflowList
         workflows={presets}

@@ -165,9 +165,13 @@ flag plus the run's copy of the rules, and can change later from the run's
 
 ## Workflow rules
 
-Rules are the workspace defaults every new run starts from. They live only in the
+Rules are the workspace defaults every new run starts from. They live in the
 **Runs** page of the workspace settings (Settings > This workspace > Runs, section
-id `general`); the Workflows studio has no tab for them. Its old names (Run
+id `general`) and on the **Every run** tab of the Workflows studio
+(`EveryRun`, `studioHomeView` `every`, opened by `setWorkflowStudioView('every')`).
+Both mount `WorkflowRulesPanel` with `ReplyLengthBand`; Every run adds the Lead
+(`RunsSection`), the roles (`RoleRow`) and, gated by `useHasPlanRuns`, the
+**Older plan runs** band (`OlderPlanRunsBand`). Its old names (Run
 defaults, Rules, Workflow rules, Start as) find it in Search settings and in
 `⌘K` (`FORMER_NAMES`, `searchAliases` in `workspacePages.ts`). The all-pages
 Restore defaults and Copy from in the workspace settings menu still carry them

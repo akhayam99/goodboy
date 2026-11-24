@@ -10,11 +10,12 @@ type Props = {
 
 export const StudioHomeTabs = ({ value, workflowCount, stepCount, onChange }: Props) => (
   <PageTabs
-    ariaLabel="Workflows and saved steps"
+    ariaLabel="Workflows, every run and saved steps"
     value={value}
     onChange={onChange}
     options={[
       { value: 'workflows', label: 'Workflows', badge: workflowCount },
+      { value: 'every', label: 'Every run' },
       { value: 'steps', label: 'Saved steps', badge: stepCount },
     ]}
   />
