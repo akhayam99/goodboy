@@ -1007,7 +1007,7 @@ models page: it changes things in place (`app/components/ProvidersMenu`, opened
 from the Limits strip). Connections is the one home for
 providers and usage; the menu holds no usage figure and sends there with
 **Manage providers** (a door). It lists the same `ProviderPolicyList` as the
-Models row When a provider is out, writing through the same
+Models row Provider order, writing through the same
 `setProviderPolicy`, then Connect for each CLI provider that is not connected,
 then Manage providers. It reads the cached providers and never refreshes them
 on open. What's new is a tab of Help and a palette row, so it earns no

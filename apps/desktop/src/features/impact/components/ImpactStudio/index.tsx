@@ -11,6 +11,7 @@ import { SessionPanel } from '../../../budget/components/spend/SessionPanel';
 import { useWorkspaceSpend } from '../../../budget/hooks/useWorkspaceSpend';
 import { spendFigures } from '../../../budget/spendFigures';
 import { useImpactMetrics } from '../../hooks/useImpactMetrics';
+import { useImpactRouting } from '../../hooks/useImpactRouting';
 import { useWorkspaceRequestNoun } from '../../hooks/useWorkspaceRequestNoun';
 import { impactMeta } from '../../impactMeta';
 import {
@@ -21,6 +22,7 @@ import {
   type ImpactTab,
   type ImpactWindowId,
 } from '../../lib';
+import { AgentsPanel } from './AgentsPanel';
 import { FlowPanel } from './FlowPanel';
 import { ImpactTabs } from './ImpactTabs';
 import { OverviewPanel } from './OverviewPanel';
@@ -51,6 +53,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
   );
   const navigate = useAppStore((state) => state.navigate);
   const metrics = useImpactMetrics({ workspaceId, windowId });
+  const routing = useImpactRouting({ workspaceId, windowId, isOpen: scope.kind === 'agents' });
   const requestNoun = useWorkspaceRequestNoun({ workspaceId });
   const sinceMs = useMemo(() => impactWindowStart({ windowId, nowMs: Date.now() }), [windowId]);
   const spend = useWorkspaceSpend({ sinceMs });
@@ -163,6 +166,8 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
             onSelectSession={(sessionId) => setScope({ kind: 'session', sessionId })}
           />
         );
+      case 'agents':
+        return <AgentsPanel frame={frame} routing={routing} />;
       case 'provider':
         return (
           <div data-record-view="" className="flex min-h-0 min-w-0 flex-1 flex-col">

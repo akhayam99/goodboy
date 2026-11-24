@@ -265,13 +265,9 @@ With the rule on (the run's copy, `spreadByHeadroom`):
 - if dropping the _out_ providers empties the menu, the menu of today comes back
 
 With the rule off nothing changes. Workspaces that existed before 0.16.0 start
-with it off (m217); new workspaces start with it on. The switch is the
-**Skip a provider near its limit** option of the policy popover in
-Settings > This workspace > Models, with one sentence under it: with it off, "New
-agents follow the provider order." and that only Claude and Codex report limits;
-with it on and a provider passed, where new agents start and how full the passed
-one is, and otherwise "Past 80% of a limit, new agents start on the next
-provider. Only Claude and Codex report limits." (`nextStepPick`, `spreadSentence`).
+with it off (m217), and so does a workspace with no saved rules. The rule is
+**Provider priority** in Settings > This workspace > Models, **By order** (off)
+or **By load** (on); see [providers.md](./providers.md#defaults-and-task-models).
 The Lead's helpers read the workspace rule, not a run copy (see
 [auto.md](./auto.md#providers)). The Runs page shows nothing of it.
 

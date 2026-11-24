@@ -470,6 +470,12 @@ export {
 } from './queries/impact';
 export { type PullRequestOutcomes, type PullRequestEntry } from './queries/impact-pull-requests';
 export {
+  getTurnRoleInsight,
+  type TurnEffortCount,
+  type TurnRoleEntry,
+  type TurnRoleInsight,
+} from './queries/turn-role-insight';
+export {
   insertArtifact,
   getArtifact,
   getArtifactBySourceTurn,
@@ -630,13 +636,7 @@ export {
   listResolvePublicationThreads,
 } from './queries/resolve-publication';
 export * from './queries/project-sentry-link';
-export {
-  listStarredIssues,
-  starIssue,
-  unstarIssue,
-  unstarClosedIssues,
-  updateStarredIssueSnapshots,
-} from './queries/starred-issue';
+export * from './queries/starred-issue';
 export {
   deleteChats,
   finishChatMessage,

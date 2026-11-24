@@ -75,7 +75,7 @@ const read = ({ sessionId }: ReadParams) =>
   resolveWorkflowHeadroom({
     get: useAppStore.getState,
     sessionId,
-    rules: DEFAULT_WORKFLOW_RULES,
+    rules: { ...DEFAULT_WORKFLOW_RULES, spreadByHeadroom: true },
   });
 
 describe('resolveWorkflowHeadroom', () => {
