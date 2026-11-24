@@ -17,6 +17,7 @@ import {
   routingNameText,
 } from '../../../../../../../shared/components/RoutingPicker/routingSummary';
 import { useRoutingSnapshot } from '../../../../../hooks/useRoutingSnapshot';
+import { PROVIDER_LABEL } from '../../../../../providerLabel';
 import { roomTextOf } from '../../roomTextOf';
 
 type Props = {
@@ -84,7 +85,10 @@ export const RoleCandidates = ({ workspaceId, role, label }: Props) => {
           }),
     [role, snapshot],
   );
-  if (snapshot === null || list === null || list.rows.length === 0) {
+  if (snapshot === null || list === null) {
+    return null;
+  }
+  if (list.rows.length === 0 && list.excluded.length === 0) {
     return null;
   }
   const best = bestCandidate({ list });
@@ -127,6 +131,22 @@ export const RoleCandidates = ({ workspaceId, role, label }: Props) => {
             </li>
           );
         })}
+        {list.excluded.map((entry) => (
+          <li
+            key={`excluded:${entry.provider}`}
+            data-candidate="excluded"
+            className="grid grid-cols-[16px_16px_minmax(0,10rem)_minmax(0,1fr)] items-center gap-x-2 text-meta"
+          >
+            <span />
+            <ProviderGlyph id={entry.provider} size={ICON_SIZE.row} />
+            <span className="min-w-0 truncate text-faint-foreground line-through">
+              {PROVIDER_LABEL[entry.provider]}
+            </span>
+            <span className="min-w-0 truncate text-faint-foreground">
+              {CANDIDATE_CAUSES[entry.cause].text}
+            </span>
+          </li>
+        ))}
       </ul>
       <span className="text-meta text-faint-foreground">{note}</span>
     </section>

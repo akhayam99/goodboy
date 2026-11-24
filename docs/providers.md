@@ -196,8 +196,10 @@ Background tasks.
   says every new agent starts there (`ProvidersInOrder`). The rows below it sit in
   the same band (`ProvidersInOrder` mounts them, never `DefaultsPanel/index.tsx`):
   - **Provider priority** (`ProviderRuleRow`, `useProviderRule`): **By order**, your
-    provider order wins when several providers fit, or **By load**, the provider
-    with the most room left wins. It writes `spreadByHeadroom` in the workspace
+    provider order wins when several providers fit and one at 80% of its limit goes
+    after the rest, or **By load**, the provider in the lowest usage band (under 50%,
+    under 80%, under 100%) wins, then the one with fewer recent agents, then the order
+    (`bestCandidate`). It writes `spreadByHeadroom` in the workspace
     workflow rules through `patchWorkspaceOverrides` (off is By order, on is By
     load); a failed write reports "Couldn't save the provider priority" and keeps
     the old rule. A workspace with no saved rules is on By order
@@ -208,17 +210,23 @@ Background tasks.
     bar and its used share, "62% used", or "about 40% used, estimated" for a
     provider with no fresh usage reading, "cooling down" or "at its limit"
     (`roomTextOf`). The help names the estimated providers
-  - **Never picked** (`GuardsRow`): Off, not connected, at its limit or cooling
-    down; past its budget; an agent that writes code on a provider outside
-    `AUTO_WRITER_CHILD_PROVIDERS`; a model outside a role's pin
+  - **Never picked** (`GuardsRow`): Off, not connected or cooling down; at its
+    limit unless **Keep using after the limit** is on; past its budget; an agent that
+    writes code on a provider outside `AUTO_WRITER_CHILD_PROVIDERS`; a model outside a
+    role's pin while one pinned model can run (`buildCandidates` falls back to the
+    order when none can)
   - **Last 5 hours** (`LastHoursRow`): agents per provider in order, running ones
     included (`providerLoad` over `ROOM_TURNS_WINDOW_MS`)
 
   The room, load and candidates come from one snapshot, `useRoutingSnapshot`:
   `selectCandidateInputs` for the workspace (the same selector the Lead's
-  candidates list reads) with the turns of `readProviderAgentTurns`, read again
-  every minute and when the policy, limits, cooldowns, budget alerts or rate limit
-  strikes change; a late read for an older state is dropped. This is the one home
+  candidates list reads) over one turns read (`routingTurns`) that the rows and every
+  open role share. The turns are read again every minute, on a workspace switch and
+  when an agent starts or ends; a late read is dropped, and a read of another
+  workspace shows nothing. The inputs are worked out again at once when the policy,
+  limits, cooldowns, budget alerts, rate limit strikes, hidden models or CLI
+  requirements change. A role's candidates list the providers left out too, each
+  with its cause (`CANDIDATE_CAUSES`). This is the one home
   of the provider policy and the rule: the Runs settings page shows nothing of
   them. The page header names its scope: the workspace name, or **All
   workspaces** when none is open

@@ -15,6 +15,7 @@ vi.mock('../../../../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { MODEL_CATALOGS } from '@goodboy/core/providers';
 import { listProviderAgentTurns, type ProviderAgentTurns } from '@goodboy/db';
 import {
   brandId,
@@ -24,9 +25,11 @@ import {
   type ProviderId,
   type ProviderLimits,
   type ProviderPolicy,
+  type ProviderRunId,
 } from '@goodboy/types';
 import { isoNow } from '@goodboy/types/helpers';
-import { aWorkspace } from '@goodboy/types/testing';
+import { anAgent, aSession, aWorkspace } from '@goodboy/types/testing';
+import { SETTING_HIDDEN_MODELS } from '../../../../../../settings/settings';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -105,8 +108,26 @@ const seed = ({ isByLoad }: SeedParams) => {
       },
     },
   });
-  render(<RoleCandidates workspaceId={WORKSPACE.id} role="implementer" label="Implementer" />);
+  return render(
+    <RoleCandidates workspaceId={WORKSPACE.id} role="implementer" label="Implementer" />,
+  );
 };
+
+const startClaudeAgent = () => {
+  const session = aSession();
+  const runId = brandId<ProviderRunId>({ value: 'run-harborline' });
+  const agent = anAgent({ sessionId: session.id, status: 'running', runId });
+  act(() => {
+    useAppStore.setState({
+      sessionPhaseRuns: { [session.id]: [agent] },
+      runRouting: {
+        [agent.id]: { [runId]: { provider: 'anthropic', model: 'claude', effort: null } },
+      },
+    });
+  });
+};
+
+const bestText = async () => (await rowsByMark()).find((row) => row.mark === 'best')?.text ?? '';
 
 const rowsByMark = async () => {
   const section = within(await screen.findByRole('region', { name: 'Candidates for Implementer' }));
@@ -146,11 +167,10 @@ describe('RoleCandidates', () => {
       )
       .mockImplementationOnce(async () => []);
     seed({ isByLoad: false });
-    act(() => {
-      useAppStore.setState({ providerStrikes: {} });
+    startClaudeAgent();
+    await vi.waitFor(async () => {
+      expect(await bestText()).toContain('1 agent in the last hour');
     });
-    const before = await rowsByMark();
-    expect(before.find((row) => row.mark === 'best')?.text).toContain('0 agents in the last hour');
 
     await act(async () => {
       late.answer([
@@ -163,8 +183,67 @@ describe('RoleCandidates', () => {
       ]);
     });
 
-    const after = await rowsByMark();
-    expect(after.find((row) => row.mark === 'best')?.text).toContain('0 agents in the last hour');
+    expect(await bestText()).toContain('1 agent in the last hour');
+  });
+
+  it('counts an agent that starts without waiting for the next minute', async () => {
+    seed({ isByLoad: false });
+    expect(await bestText()).toContain('0 agents in the last hour');
+
+    startClaudeAgent();
+
+    expect(await bestText()).toContain('1 agent in the last hour');
+  });
+
+  it('moves the mark off a provider whose models get hidden and says why it is left out', async () => {
+    seed({ isByLoad: false });
+    expect(await bestText()).toContain('#1 in your order');
+
+    act(() => {
+      useAppStore.setState({
+        settings: {
+          [SETTING_HIDDEN_MODELS]: JSON.stringify({
+            anthropic: MODEL_CATALOGS.anthropic.map((model) => model.key),
+          }),
+        },
+      });
+    });
+
+    expect(await bestText()).toContain('#3 in your order');
+    const excluded = (await rowsByMark()).filter((row) => row.mark === 'excluded');
+    expect(excluded.map((row) => row.text)).toContain('Claudehidden in Settings');
+  });
+
+  it('shows nothing from the old workspace while the new turns read is pending', async () => {
+    const other = aWorkspace({ name: 'Northwind' });
+    const pending: { answer: (turns: ReadonlyArray<ProviderAgentTurns>) => void } = {
+      answer: () => undefined,
+    };
+    const view = seed({ isByLoad: false });
+    await rowsByMark();
+    vi.mocked(listProviderAgentTurns).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          pending.answer = resolve;
+        }),
+    );
+    act(() => {
+      useAppStore.setState((state) => ({
+        workspaces: [WORKSPACE, other],
+        workspaceOverrides: {
+          ...state.workspaceOverrides,
+          [other.id]: { ...other.overrides, providerPool: IN_ORDER },
+        },
+      }));
+    });
+
+    view.rerender(<RoleCandidates workspaceId={other.id} role="implementer" label="Implementer" />);
+
+    expect(screen.queryByRole('region', { name: 'Candidates for Implementer' })).toBeNull();
+    await act(async () => {
+      pending.answer([]);
+    });
+    expect(await bestText()).toContain('#1 in your order');
   });
 
   it('moves the mark to Codex, the provider with the most room left, under By load', async () => {

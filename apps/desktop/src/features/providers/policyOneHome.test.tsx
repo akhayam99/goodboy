@@ -174,16 +174,16 @@ describe('the provider policy has one home', () => {
 
     expect(ruleTab({ name: 'By order' }).getAttribute('aria-selected')).toBe('true');
     screen.getByText(
-      'Your provider order wins when several providers fit. Applies from the next agent. A run started from a workflow keeps its rule.',
+      'Your provider order wins when several providers fit, but one at 80% of its limit goes after the rest. Applies from the next agent. A run started from a workflow keeps its rule.',
     );
   });
 
-  it('says the provider with the most room left wins under By load', () => {
+  it('says By load ranks usage bands, then recent agents, then your order', () => {
     seed({ policy: POLICY, rules: { spreadByHeadroom: true } });
     renderRows();
 
     screen.getByText(
-      'The provider with the most room left wins when several fit. Applies from the next agent. A run started from a workflow keeps its rule.',
+      'The provider in the lowest usage band wins (under 50%, under 80%, under 100%), then the one with fewer recent agents, then your order. Applies from the next agent. A run started from a workflow keeps its rule.',
     );
   });
 
@@ -236,10 +236,11 @@ describe('the provider policy has one home', () => {
 
     const guards = within(screen.getByRole('list', { name: 'Never picked' }));
     expect(guards.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
-      'A provider that is Off, not connected, at its limit or cooling down',
+      'A provider that is Off, not connected or cooling down',
+      'A provider at its limit, unless it keeps going after the limit',
       'A provider past its budget',
       'An agent that writes code on Cursor',
-      "A model outside a role's pinned models",
+      "A model outside a role's pinned models, while one of them can run",
     ]);
   });
 

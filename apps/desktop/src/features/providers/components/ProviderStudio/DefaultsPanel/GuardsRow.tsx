@@ -20,14 +20,15 @@ const guardsOf = ({ providers }: GuardsParams): ReadonlyArray<string> => {
       !AUTO_WRITER_CHILD_PROVIDERS.some((writer) => writer === id),
   );
   return [
-    'A provider that is Off, not connected, at its limit or cooling down',
+    'A provider that is Off, not connected or cooling down',
+    'A provider at its limit, unless it keeps going after the limit',
     'A provider past its budget',
     ...(noWriters.length === 0
       ? []
       : [
           `An agent that writes code on ${LIST_FORMAT.format(noWriters.map((id) => PROVIDER_LABEL[id]))}`,
         ]),
-    "A model outside a role's pinned models",
+    "A model outside a role's pinned models, while one of them can run",
   ];
 };
 
