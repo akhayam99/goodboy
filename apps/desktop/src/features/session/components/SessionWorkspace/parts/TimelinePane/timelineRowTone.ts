@@ -23,5 +23,8 @@ export const timelineRowTone = ({ state }: Params): ActivityRowTone => {
   if (state.phase !== 'failed' && isRowNeedingYou({ state })) {
     return 'attention';
   }
+  if (state.reason?.kind === 'agentStopped' || state.reason?.kind === 'stepStopped') {
+    return 'pending';
+  }
   return PHASE_TONE[state.phase];
 };

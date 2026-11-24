@@ -455,6 +455,21 @@ describe('TimelineRowLabel, the quiet ledger', () => {
     expect(tones).toEqual(['pending', 'pending', 'quiet']);
   });
 
+  it('mutes a stopped agent and a run with a stopped step, which wait without asking', () => {
+    const states: ReadonlyArray<RowState> = [
+      { phase: 'waiting', reason: { kind: 'agentStopped', by: 'you' }, ask: null },
+      { phase: 'waiting', reason: { kind: 'stepStopped', stepLabel: 'Review' }, ask: null },
+    ];
+    const tones = states.map((rowState) => {
+      render(<TimelineRowLabel item={stepOf({ rowState })} />);
+      const tone = screen.getByTestId('activity-row').getAttribute('data-activity-tone');
+      cleanup();
+      return tone;
+    });
+
+    expect(tones).toEqual(['pending', 'pending']);
+  });
+
   it('bars only a row that waits on you or failed', () => {
     const states: ReadonlyArray<RowState> = [
       { phase: 'waiting', reason: null, ask: { kind: 'answer', question: null } },
