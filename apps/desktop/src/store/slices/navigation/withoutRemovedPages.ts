@@ -33,6 +33,8 @@ const REMOVED_TARGETS: ReadonlySet<string> = new Set(['terminal', 'explore', 'sc
 
 const REMOVED_DRAWERS: ReadonlySet<string> = new Set(['auto-child', 'run-step']);
 
+const DROPPED_DRAWERS: ReadonlySet<string> = new Set(['ask']);
+
 const CONTEXT_SECTIONS: ReadonlySet<unknown> = new Set([
   'goal',
   'decisions',
@@ -215,7 +217,11 @@ const pageOfRemovedDrawer = ({ drawer }: DrawerParams): Place | null => {
 };
 
 const withoutRemovedDrawer = ({ location }: Params): Location => {
-  const place = pageOfRemovedDrawer({ drawer: location.focus.drawer });
+  const { drawer } = location.focus;
+  if (drawer !== null && DROPPED_DRAWERS.has(String(drawer.kind))) {
+    return { ...location, focus: { ...location.focus, drawer: null } };
+  }
+  const place = pageOfRemovedDrawer({ drawer });
   return place === null
     ? location
     : { ...location, place, focus: { ...location.focus, drawer: null } };

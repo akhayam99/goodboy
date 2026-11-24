@@ -1,6 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { Eye } from '@goodboy/ui/icons';
-import { ICON_SIZE } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { askDraftKeyOf } from '../../../../../store/slices/ask/askDraftKeyOf';
@@ -21,10 +19,12 @@ type Props = {
   readonly onSend: (question: string) => Promise<boolean>;
   readonly onStop: () => void;
   readonly isAutoFocused?: boolean;
+  readonly hasTurns?: boolean;
 };
 
 export const AskComposer = ({
   sessionId,
+  hasTurns = false,
   isStreaming,
   isStopping,
   onSend,
@@ -59,7 +59,9 @@ export const AskComposer = ({
   return (
     <MessageComposer
       label="Ask about this session"
-      placeholder="Ask about this session"
+      placeholder={
+        hasTurns ? 'Ask a follow up' : 'Ask about this session. Read only, it starts nothing.'
+      }
       text={text}
       onTextChange={setText}
       onRestoreText={restoreText}
@@ -71,12 +73,6 @@ export const AskComposer = ({
       maxRows={6}
       fieldRef={fieldRef}
       testId="ask-composer"
-      footerStart={
-        <span className="flex items-center gap-1 text-meta text-faint-foreground">
-          <Eye size={ICON_SIZE.row} aria-hidden />
-          Read only
-        </span>
-      }
       model={<AskRoutingPicker sessionId={sessionId} />}
       onSend={({ text: question }) => onSend(question)}
       onStop={onStop}

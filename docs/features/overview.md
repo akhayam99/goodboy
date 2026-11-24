@@ -21,12 +21,11 @@ The goal sits above the page when it says more than the title. The Overview then
 - **Unmount** stays off while a branch of the project is attached. Its tooltip says "You can't unmount a project while branches are attached. Close them first."
 - **Mount a project** sits at the head of Projects. It lists the folders an agent asked for, then the workspace, then **Choose a folder…**, which adds a folder to the workspace and mounts it in one step. Agents of the session read and write a mounted folder. Undo takes back what the mount added; a plain folder that was already there has nothing to undo. A plain folder session shows Mount a project under its folder card.
 - **Activity** shows the last three rows of the log.
-- The **Ask** line stays at the foot of the page.
 - A session with no agent, no run and no branch shows the start form and nothing else.
 
 Needs you and Now open and close with a height motion, so Next never jumps under the pointer. The decisions and the summary live in the **Context** tab.
 
-**New** in the header starts an agent, a workflow or a write-up. **Ask about this session** in the **⋯**, or ⌘L, opens a panel beside the page. A branch, a pull request, an artifact or a run opens under the same head, and crumbs such as **Overview › Artifacts › Plan** replace the tabs. Each crumb is a link, and Esc goes one crumb up.
+**New** in the header starts an agent, a workflow or a write-up. **Ask about this session** in the **⋯**, or ⌘L, opens the Ask pane beside the page, and the Overview keeps every section. A branch, a pull request, an artifact or a run opens under the same head, and crumbs such as **Overview › Artifacts › Plan** replace the tabs. Each crumb is a link, and Esc goes one crumb up.
 
 **Reading the task without a diff.** A product manager understands where a task stands from the page alone, never from a raw diff or a file list.
 
@@ -161,8 +160,8 @@ See and undo what agents changed in a session without a branch.
 
 This part is for contributors and agents who change the feature.
 
-- Session head: `SessionHead` (`app/components/SessionHead`) is drawn once by `SessionWorkspace` through `SessionHeadContext`. It draws the tabs on a tab view (`isTabView`) and the crumbs from `crumbsOf` otherwise. On the Desk face it spans the page at the Desk gutter, so the head, the Desk column and the tools share one left edge. Esc goes up through `parentPlace`. The `session.ask` verb in More session actions (`sessionMenuOf`) opens the Ask panel.
-- Reading order: `CentralColumn` draws `OverviewFacts`, the notices, `NeedsYouSection`, `NowSection`, `NextSection`, `ProjectBlocks`, `OverviewLog` and `SessionAskLine`, spaced with `PANE_RHYTHM.groups`. `CentralColumn.readingOrder.test.tsx` pins the order.
+- Session head: `SessionHead` (`app/components/SessionHead`) is drawn once by `SessionWorkspace` through `SessionHeadContext`. It draws the tabs on a tab view (`isTabView`) and the crumbs from `crumbsOf` otherwise. On the Desk face it spans the page at the Desk gutter, so the head, the Desk column and the tools share one left edge. Esc goes up through `parentPlace`. The `session.ask` verb in More session actions (`sessionMenuOf`) opens the Ask pane.
+- Reading order: `CentralColumn` draws `OverviewFacts`, the notices, `NeedsYouSection`, `NowSection`, `NextSection`, `ProjectBlocks` and `OverviewLog`, spaced with `PANE_RHYTHM.groups`. `CentralColumn.readingOrder.test.tsx` pins the order.
 - Facts: `OverviewFacts` leads with `OverviewTicket`. It reads `sessionExternalTasks` with no fetch and no tracker state, and names the first session part-of task. Its menu verb is `task.openInTracker`, and `+N` opens the `context` lens (`OverviewFacts/index.test.tsx`, u50 overview scene). Then `SessionCostChip` (the one spend number), the agent time from `sessionKpisOf`, and the summary age from `summarizerStatus`. The head draws no project state; the pull request state lives on the `ProjectBlocks` rows.
 - Goal: `GoalTeaser` reads the goal as flat text (`inlineMarkdownText`), so a goal of only spaces or markup that renders to nothing offers **Add a goal** instead of an empty row.
 - Moves: `overviewMovesOf` splits the cards once. Band 0 goes to Needs you, the next three to Next, and the rest to the branch rows. An open question no move covers joins Needs you as `NeedsYouQuestion`. `shownAskIds` keeps an **Answer** off a row whose question Needs you already shows. `MoveCard` draws a move in two densities, `focus` for the top of Needs you and `row` elsewhere. It uses `MoveVerb` and `MoveEvidenceChips`, and reads the reason and evidence of the move (`actionCardsOf`). Tones come from `STAGE_TONE`.

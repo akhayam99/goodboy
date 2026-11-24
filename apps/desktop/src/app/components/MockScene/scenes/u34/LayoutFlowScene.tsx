@@ -59,7 +59,7 @@ export const LayoutFlowScene = ({
       ),
     }));
     if (isDrawerOpen) {
-      useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION.id, payload: null });
+      useAppStore.getState().openAsk({ sessionId: SESSION.id });
     }
     setIsReady(true);
   }, [isDrawerOpen, isFourBranches]);

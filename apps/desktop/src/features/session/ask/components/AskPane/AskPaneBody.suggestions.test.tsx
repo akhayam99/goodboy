@@ -46,7 +46,7 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { askInitialState } from '../../../../../store/slices/ask/state';
-import { AskDrawerBody } from './AskDrawerBody';
+import { AskPaneBody } from './AskPaneBody';
 
 const SUGGESTION = 'What changed since I last looked?';
 
@@ -81,7 +81,7 @@ afterEach(() => {
 const renderPane = () =>
   render(
     <ToastProvider>
-      <AskDrawerBody session={session} onClose={() => undefined} />
+      <AskPaneBody session={session} onClose={() => undefined} />
     </ToastProvider>,
   );
 

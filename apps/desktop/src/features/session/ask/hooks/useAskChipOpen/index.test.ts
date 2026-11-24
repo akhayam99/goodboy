@@ -73,9 +73,7 @@ beforeEach(async () => {
 });
 
 const openChip = (agentId: AgentId): void => {
-  const { result } = renderHook(() =>
-    useAskChipOpen({ sessionId: SESSION, onOpenInside: () => undefined }),
-  );
+  const { result } = renderHook(() => useAskChipOpen({ sessionId: SESSION }));
   act(() => result.current({ key: 'A1', label: 'Agent', target: { kind: 'agent', agentId } }));
 };
 

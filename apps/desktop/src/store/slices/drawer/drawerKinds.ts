@@ -26,7 +26,6 @@ export const DRAWER_KINDS = {
   monitoring: { ...TOOL, sizing: 'reader', pane: 'monitoring' },
   'explore-file': WIDE_READER,
   scriptRun: { ...READER, surface: 'tool', openerPane: 'scripts' },
-  ask: READER,
   question: { ...READER, surface: 'item', openerPane: null },
   new: { ...WIDE_READER, surface: 'form' },
   'fix-comments': { ...READER, surface: 'form' },

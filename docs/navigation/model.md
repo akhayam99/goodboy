@@ -586,7 +586,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   | Overview, Runs, Artifacts, Questions                             | the same place                                                             |
   | Changes page                                                     | the Branch page Changes tab, on its branch                                 |
   | Context panel, any section, or the Goal, Decisions, Summary lens | the Context tab, `context.section` = that section (`history` for versions) |
-  | Ask panel                                                        | unchanged, the Ask panel                                                   |
+  | The old Ask drawer                                               | the same page with no drawer (`DROPPED_DRAWERS`); ⌘L opens the Ask pane    |
   | An address of the old Agents drawer or Agents page               | Runs, `runs.filter` = `running`                                            |
   | Scripts panel, a script run                                      | unchanged, the Scripts drawer                                              |
   | An address of the old Explore drawer or page                     | the Changes tab, `changes.mode` = `all`                                    |

@@ -38,4 +38,5 @@ export type AskSlice = AskState & {
   readonly setAskDraft: (params: SetAskDraftParams) => void;
   readonly clearAskDraft: (params: AskDraftParams) => void;
   readonly openAsk: (params: AskSessionParams) => void;
+  readonly closeAsk: (params: AskSessionParams) => void;
 };

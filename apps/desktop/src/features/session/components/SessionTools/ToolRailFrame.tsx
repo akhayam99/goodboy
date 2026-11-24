@@ -6,6 +6,7 @@ import { selectBrowserTabCount } from '../../../../store/slices/browser/selectBr
 import { selectDetailDrawer } from '../../../../store/slices/drawer/selectDetailDrawer';
 import { shellPanelsOf } from '../../../../store/slices/drawer/shellPanelsOf';
 import { selectSlotBack } from '../../../../store/slices/drawer/selectSlotBack';
+import { selectIsAskOpen } from '../../../../store/slices/ask/selectIsAskOpen';
 import { monitoringSignalOf } from '../../../monitoring/monitoringSignalOf';
 import { runningTerminalCount } from '../../../terminal/runningTerminalCount';
 import { portsFactOf } from './portsFactOf';
@@ -39,6 +40,9 @@ export const ToolRailFrame = ({ sessionId, terminalSignal }: Props) => {
   );
   const detailKind = useAppStore((state) =>
     state.appStudio === null ? (selectDetailDrawer({ state })?.kind ?? null) : null,
+  );
+  const isAskOpen = useAppStore(
+    (state) => sessionId !== null && selectIsAskOpen({ state, sessionId }),
   );
   const pageKind = useAppStore((state) => state.appStudio?.kind ?? null);
   const waitingKind = useAppStore((state) => selectSlotBack({ state })?.kind ?? null);
@@ -132,7 +136,11 @@ export const ToolRailFrame = ({ sessionId, terminalSignal }: Props) => {
           <SessionToolButton
             key={tool.pane}
             tool={tool}
-            isOpen={gridKinds.split(' ').includes(tool.pane) || detailKind === tool.pane}
+            isOpen={
+              tool.pane === 'ask'
+                ? isAskOpen
+                : gridKinds.split(' ').includes(tool.pane) || detailKind === tool.pane
+            }
             isWaiting={waitingKind === tool.pane}
             isCurrent={pageKind === tool.pane}
             isDisabled={isSessionMissing}

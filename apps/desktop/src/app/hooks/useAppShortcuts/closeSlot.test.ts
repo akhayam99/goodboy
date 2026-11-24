@@ -37,7 +37,11 @@ afterEach(() => {
 describe('closeSlot', () => {
   it('closes the top of the slot and brings the chip back', () => {
     store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
-    store.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({
+      kind: 'question',
+      sessionId: SESSION_ID,
+      payload: { questionId: QUESTION_ID },
+    });
 
     closeSlot({});
 

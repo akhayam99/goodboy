@@ -6,10 +6,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NAMES } from '../../../../../shared/utils/names';
 import { useAskFollow } from '../../hooks/useAskFollow';
 import { RotateCcw } from '@goodboy/ui/icons';
-import { DrawerFrame, EmptyState, IconButton } from '@goodboy/ui';
-import type { ArtifactId, ChatMessage, ChatMessageId, Session } from '@goodboy/types';
+import { DrawerFrame, IconButton } from '@goodboy/ui';
+import type { ChatId, ChatMessage, ChatMessageId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { isAskStreaming } from '../../../../../store/slices/ask/isAskStreaming';
 import { requestAskFocus } from '../../askFocusEvent';
 import { askTurnsOf } from '../../askTurnsOf';
@@ -19,11 +18,11 @@ import { useAskChipOpen } from '../../hooks/useAskChipOpen';
 import { useAskResetRequest } from '../../hooks/useAskResetRequest';
 import { useAskResetShortcut } from '../../hooks/useAskResetShortcut';
 import { useAskRightNow } from '../../hooks/useAskRightNow';
-import { AskComposer } from './AskComposer';
-import { AskEarlier } from './AskEarlier';
-import { AskPlanView } from './AskPlanView';
-import { AskSuggestions } from './AskSuggestions';
-import { AskTurn } from './AskTurn';
+import { AskComposer } from '../AskDrawer/AskComposer';
+import { AskTurn } from '../AskDrawer/AskTurn';
+import { AskEarlierMenu } from './AskEarlierMenu';
+import { AskFoldedTurn } from './AskFoldedTurn';
+import { AskStarters } from './AskStarters';
 
 type Props = {
   readonly session: Session;
@@ -32,15 +31,12 @@ type Props = {
 
 const NO_MESSAGES: ReadonlyArray<ChatMessage> = [];
 
-export const AskDrawerBody = ({ session, onClose }: Props) => {
+export const AskPaneBody = ({ session, onClose }: Props) => {
   const sessionId = session.id;
   const threadId = useAppStore((state) => state.askThreadId[sessionId] ?? null);
   const threads = useAppStore((state) => state.askThreads[sessionId]);
   const messages = useAppStore((state) =>
     threadId === null ? NO_MESSAGES : (state.askMessages[threadId] ?? NO_MESSAGES),
-  );
-  const isLoaded = useAppStore(
-    (state) => threadId === null || state.askMessages[threadId] !== undefined,
   );
   const stream = useAppStore((state) =>
     threadId === null ? undefined : state.askStreams[threadId],
@@ -51,13 +47,13 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
   const newAskThread = useAppStore((state) => state.newAskThread);
   const sendAskQuestion = useAppStore((state) => state.sendAskQuestion);
   const stopAskReply = useAppStore((state) => state.stopAskReply);
-  const rightNow = useAskRightNow({ session });
-  const facts = useAskActionFacts({ sessionId });
-  const [insideId, setInsideId] = useState<ArtifactId | null>(null);
   const createSession = useAppStore((state) => state.createSession);
   const reportError = useAppStore((state) => state.reportError);
+  const rightNow = useAskRightNow({ session });
+  const facts = useAskActionFacts({ sessionId });
+  const [shownIds, setShownIds] = useState<ReadonlySet<ChatMessageId>>(() => new Set());
   const endRef = useRef<HTMLDivElement | null>(null);
-  const onOpen = useAskChipOpen({ sessionId, onOpenInside: setInsideId });
+  const onOpen = useAskChipOpen({ sessionId });
   const turns = useMemo(() => askTurnsOf({ messages }), [messages]);
   const earlier = useMemo(
     () => (threads ?? []).filter((thread) => thread.id !== threadId),
@@ -71,7 +67,7 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
 
   useAskFollow({
     endRef,
-    isActive: insideId === null,
+    isActive: true,
     contentLength: lastContent,
     turnCount: turns.length,
   });
@@ -85,7 +81,7 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
     if (isAnyStreaming) {
       return;
     }
-    setInsideId(null);
+    setShownIds(new Set());
     newAskThread({ sessionId });
     requestAskFocus();
   }, [isAnyStreaming, newAskThread, sessionId]);
@@ -116,10 +112,33 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
     [createSession, messages, reportError, sessionId, thread],
   );
 
-  const composer =
-    insideId === null ? (
+  const showEarlier = useCallback(
+    (id: ChatId) => {
+      setShownIds(new Set());
+      showAskThread({ sessionId, threadId: id }).catch((error: unknown) => {
+        void reportError({
+          recovery: NOTHING_CHANGED,
+          title: "Couldn't open the earlier question",
+          error,
+          workspaceId: session.workspaceId,
+        });
+      });
+    },
+    [reportError, session.workspaceId, sessionId, showAskThread],
+  );
+
+  const composer = (
+    <div className="flex min-w-0 flex-col gap-3">
+      {turns.length === 0 ? (
+        <AskStarters
+          suggestions={rightNow.suggestions}
+          isDisabled={isAnyStreaming}
+          onAsk={(question) => void ask(question)}
+        />
+      ) : null}
       <AskComposer
         sessionId={sessionId}
+        hasTurns={turns.length > 0}
         isStreaming={stream !== undefined}
         isStopping={stream?.isStopping === true}
         isAutoFocused
@@ -135,72 +154,50 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
           });
         }}
       />
-    ) : null;
-
-  const resetButton = (
-    <IconButton
-      icon={RotateCcw}
-      label={NAMES.newQuestion}
-      shortcut="ask.reset"
-      disabled={isAnyStreaming}
-      onClick={reset}
-    />
+    </div>
   );
 
-  const body =
-    insideId !== null ? (
-      <AskPlanView sessionId={sessionId} artifactId={insideId} />
-    ) : (
-      <div data-testid="ask-thread" className="flex min-w-0 flex-col gap-4">
-        {isLoaded && turns.length === 0 ? (
-          <EmptyState
-            size="section"
-            headingLevel={3}
-            icon={CONCEPT_ICONS.ask}
-            title="Ask this session"
-            description="What it did, what it found, what waits on you. It starts nothing."
-          />
-        ) : null}
-        {turns.length === 0 && rightNow.suggestions.length > 0 ? (
-          <AskSuggestions
-            suggestions={rightNow.suggestions}
-            onAsk={(question) => void ask(question)}
-          />
-        ) : null}
-        {turns.length === 0 ? (
-          <AskEarlier
-            threads={earlier}
-            onShow={(id) => void showAskThread({ sessionId, threadId: id })}
-          />
-        ) : null}
-        {turns.map((turn) => (
-          <AskTurn
-            key={turn.question.id}
-            sessionId={sessionId}
-            question={turn.question}
-            reply={turn.reply}
-            facts={facts}
-            onOpen={onOpen}
-            onStartWork={startWork}
-          />
-        ))}
-        <div ref={endRef} />
-      </div>
-    );
+  const actions = (
+    <>
+      <AskEarlierMenu threads={earlier} isDisabled={isAnyStreaming} onShow={showEarlier} />
+      <IconButton
+        icon={RotateCcw}
+        label={NAMES.newQuestion}
+        shortcut="ask.reset"
+        disabled={isAnyStreaming || turns.length === 0}
+        onClick={reset}
+      />
+    </>
+  );
 
   return (
-    <DrawerFrame
-      title="Ask"
-      icon={CONCEPT_ICONS.ask}
-      iconClassName="text-muted-foreground"
-      {...(insideId !== null && {
-        back: { label: 'Back to answer', onBack: () => setInsideId(null), isSubview: true },
-      })}
-      onClose={onClose}
-      action={resetButton}
-      dock={composer}
-    >
-      {body}
+    <DrawerFrame title="Ask" onClose={onClose} action={actions} dock={composer}>
+      <div data-testid="ask-thread" className="flex min-w-0 flex-col gap-4">
+        {turns.map((turn, index) => {
+          const isLast = index === turns.length - 1;
+          if (!isLast && !shownIds.has(turn.question.id)) {
+            return (
+              <AskFoldedTurn
+                key={turn.question.id}
+                question={turn.question.content}
+                onShow={() => setShownIds((ids) => new Set([...ids, turn.question.id]))}
+              />
+            );
+          }
+          return (
+            <AskTurn
+              key={turn.question.id}
+              sessionId={sessionId}
+              question={turn.question}
+              reply={turn.reply}
+              facts={facts}
+              onOpen={onOpen}
+              onStartWork={startWork}
+            />
+          );
+        })}
+        <div ref={endRef} />
+      </div>
     </DrawerFrame>
   );
 };

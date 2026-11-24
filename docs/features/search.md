@@ -24,7 +24,7 @@ The **⋯** holds **Ask about this session**, **Pin session**, **Refresh session
 
 A branch, an artifact or a run keeps the head and shows crumbs such as **Overview › Artifacts › Plan** in place of the tabs. Each crumb is a link, and **Esc** goes one crumb up.
 
-**Ask about this session**, from the **⋯** or ⌘L, opens a detail panel beside the page. From left to right a window holds the places rail, the page, the detail panel, the open tools and the tools rail. On a narrower window a panel first narrows, then lies over the page; the page stays live under it.
+**Ask about this session**, from the **⋯** or ⌘L, opens the Ask pane beside the page. From left to right a window holds the places rail, the page, the detail panel, the open tools and the tools rail. On a narrower window a panel first narrows, then lies over the page; the page stays live under it.
 
 A suggestion in the Ask panel, under **Try asking**, asks at once and never fills the field. A second click on it while that question is starting asks nothing more. Typing in the field is the only way to write a question first.
 
