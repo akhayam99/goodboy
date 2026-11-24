@@ -3,6 +3,7 @@ const MAIN_REFSPEC = '+refs/heads/main:refs/remotes/origin/main';
 const MAIN_REF = 'refs/remotes/origin/main';
 const FETCH_DEPTH = 200;
 const DEEPEN_BY = 1000;
+const MAX_DEEPENS = 5;
 
 const shortOf = ({ sha }) => sha.slice(0, 7);
 
@@ -48,22 +49,33 @@ const findMergeBase = ({ env, git, branch }) => {
   const isShallow = git({ args: ['rev-parse', '--is-shallow-repository'] }).stdout === 'true';
   const depth = isShallow ? [`--depth=${FETCH_DEPTH}`] : [];
   git({ args: ['fetch', '--no-tags', '--quiet', ...depth, remote, MAIN_REFSPEC] });
-  const base = mergeBaseOf({ git });
-  if (base != null || !isShallow) {
-    return base;
+  if (!isShallow) {
+    return mergeBaseOf({ git });
   }
   const branchRefspec = `+refs/heads/${branch}:refs/remotes/origin/${branch}`;
-  git({
-    args: [
-      'fetch',
-      '--no-tags',
-      '--quiet',
-      `--deepen=${DEEPEN_BY}`,
-      remote,
-      MAIN_REFSPEC,
-      branchRefspec,
-    ],
-  });
+  for (let round = 0; round < MAX_DEEPENS; round += 1) {
+    const base = mergeBaseOf({ git });
+    if (base != null) {
+      return base;
+    }
+    if (git({ args: ['rev-parse', '--is-shallow-repository'] }).stdout !== 'true') {
+      return null;
+    }
+    const { status } = git({
+      args: [
+        'fetch',
+        '--no-tags',
+        '--quiet',
+        `--deepen=${DEEPEN_BY}`,
+        remote,
+        MAIN_REFSPEC,
+        branchRefspec,
+      ],
+    });
+    if (status !== 0) {
+      return null;
+    }
+  }
   return mergeBaseOf({ git });
 };
 

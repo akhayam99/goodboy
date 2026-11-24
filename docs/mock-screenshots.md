@@ -125,7 +125,8 @@ the Vite and TypeScript config, `package.json` and `vercel.json` of
 branch's last deployed commit (`VERCEL_GIT_PREVIOUS_SHA`); a first push, or one
 whose last deploy the clone lacks, diffs against its merge base with
 `origin/main`. Vercel clones shallow, so `scripts/lib/changedSinceBaseOf.mjs`
-fetches `main` and deepens the clone until the merge base appears, through
+fetches `main` and deepens the clone, up to five times by 1000 commits, until
+the merge base appears, through
 `origin` or the GitHub repository Vercel names. When it still finds no base, or
 git fails, the preview builds. A new demo input outside these paths joins
 `DEMO_PATHS` in the script, or its change never reaches a preview.
