@@ -101,6 +101,10 @@ type RawWorkflowRow = {
   readonly description: string;
   readonly goal: string | null;
   readonly processText: string | null;
+  readonly entryCheck: string | null;
+  readonly stopRule: string | null;
+  readonly thenSuggestId: string | null;
+  readonly isOrderKept: boolean;
   readonly steps: ReadonlyArray<RawWorkflowStepRow>;
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -183,6 +187,10 @@ function rowToWorkflow(row: RawWorkflowRow): Workflow {
     description: row.description,
     ...(row.goal != null && { goal: row.goal }),
     ...(row.processText != null && row.processText !== '' && { processText: row.processText }),
+    ...(row.entryCheck != null && { entryCheck: row.entryCheck }),
+    ...(row.stopRule != null && { stopRule: row.stopRule }),
+    ...(row.thenSuggestId != null && { thenSuggestId: row.thenSuggestId as WorkflowId }),
+    ...(row.isOrderKept && { isOrderKept: true }),
     steps: row.steps.map(rowToStep),
     isPreset: row.isPreset,
     ...(isWorkflowOrigin(row.origin) && { origin: row.origin }),
