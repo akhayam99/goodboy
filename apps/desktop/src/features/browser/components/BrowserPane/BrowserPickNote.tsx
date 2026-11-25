@@ -72,7 +72,7 @@ export const BrowserPickNote = ({ pick }: Props) => {
           onChange={(event) => pick.setNote({ text: event.target.value })}
           onKeyDown={(event) => handleKeyDown({ event })}
         />
-        <FormActions leading={<BrowserPickTarget pick={pick} />} error={pick.error}>
+        <FormActions leading={<BrowserPickTarget pick={pick} />}>
           <Button variant="ghost" size="xs" onClick={pick.leave}>
             Cancel
           </Button>

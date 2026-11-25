@@ -5,13 +5,12 @@ import { useHandOutputToAgent } from '../../../../shared/hooks/useHandOutputToAg
 import { useMonitorPolling } from '../../../../shared/hooks/useMonitorPolling';
 import { usePoll } from '../../../../shared/lib/usePoll';
 import { addPickedElements } from '../../addPickedElements';
-import { browserFailureText } from '../../browserFailureText';
 import { browserHost } from '../../browserHost';
 import type { BrowserPickedElement, BrowserPickRead } from '../../types';
 
 const PICK_PULL_MS = 150;
 
-const AGENT_GONE_TEXT = "The agent isn't in this session anymore. Pick one and try again.";
+const AGENT_GONE = 'agent-gone';
 
 const NO_PICKS: ReadonlyArray<BrowserPickedElement> = [];
 
@@ -57,7 +56,6 @@ export type ElementPick = {
   readonly isAdding: boolean;
   readonly picks: ReadonlyArray<BrowserPickedElement>;
   readonly note: string;
-  readonly error: string | null;
   readonly agentId: AgentId | null;
   readonly agentName: string | null;
   readonly targets: ReadonlyArray<PickTarget>;
@@ -90,7 +88,6 @@ export const useElementPick = ({
   const [gesture, setGesture] = useState<Gesture | null>(null);
   const [picks, setPicks] = useState<ReadonlyArray<BrowserPickedElement>>(NO_PICKS);
   const [note, setNoteText] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const tokenRef = useRef(0);
   const gestureRef = useRef<Gesture | null>(null);
@@ -146,7 +143,6 @@ export const useElementPick = ({
     }
     tokenRef.current += 1;
     const token = tokenRef.current;
-    setError(null);
     void browserHost
       .pick({ tabId: liveId, sessionId, op: 'start', round: 0 })
       .then((answer) => {
@@ -236,17 +232,16 @@ export const useElementPick = ({
       isTabStill: () => liveIdRef.current === asked.liveId,
     })
       .then((result) => {
-        if (result === 'agent-gone') {
-          setError(AGENT_GONE_TEXT);
-          return;
-        }
         if (gestureRef.current?.token === asked.token) {
           end();
         }
+        if (result === 'agent-gone') {
+          onError({ error: new Error(AGENT_GONE) });
+        }
       })
-      .catch((failure: unknown) => setError(browserFailureText({ error: failure })))
+      .catch((failure: unknown) => onError({ error: failure }))
       .finally(() => setIsAdding(false));
-  }, [end, isAdding, note, pageTitle, picks, sessionId, target.agentId, target.queue]);
+  }, [end, isAdding, note, onError, pageTitle, picks, sessionId, target.agentId, target.queue]);
 
   return {
     canPick: liveId !== null && target.canHandOff,
@@ -254,7 +249,6 @@ export const useElementPick = ({
     isAdding,
     picks,
     note,
-    error,
     agentId: target.agentId,
     agentName: target.agentName,
     targets: phaseRuns.map((run) => ({ agentId: run.id, name: run.name })),

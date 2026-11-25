@@ -359,6 +359,39 @@ describe('pick an element and add it to your message', () => {
     expect(queued({ agentId: IMPLEMENTER })).toEqual([]);
   });
 
+  it('says so and adds nothing when the agent left while the picture was taken', async () => {
+    cropMode = 'wait';
+    await openCheckout();
+    await startPicking();
+    const note = await clickInPage({ elements: [PAY] });
+    fireEvent.change(note, { target: { value: NOTE } });
+    await act(async () => {
+      fireEvent.keyDown(note, { key: 'Enter' });
+    });
+    await waitFor(() => expect(releaseCrop).not.toBeNull());
+
+    act(() => {
+      store.setState({
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            buildStoryAgent({ id: REVIEWER, sessionId: SESSION_ID, name: 'Reviewer' }),
+          ],
+        },
+        selectedAgentId: { [SESSION_ID]: REVIEWER },
+      });
+    });
+    await act(async () => {
+      releaseCrop?.();
+    });
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      "The agent isn't in this session anymore. Pick one and try again.",
+    );
+    expect(queued({ agentId: IMPLEMENTER })).toEqual([]);
+    expect(queued({ agentId: REVIEWER })).toEqual([]);
+    expect(draftOf({ agentId: IMPLEMENTER })).toBe('');
+  });
+
   it('drops a late picture once the shown tab changed and still adds the element', async () => {
     cropMode = 'wait';
     await openCheckout();
