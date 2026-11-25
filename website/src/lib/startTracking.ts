@@ -1,3 +1,4 @@
+import { dataLayerEntry } from './dataLayerEntry';
 import { isCountedClick } from './isCountedClick';
 import { readTrackEvent, type TrackSpec } from './readTrackEvent';
 import trackEvents from './trackEvents.json';
@@ -46,7 +47,7 @@ const onClick = ({ event }: EventParams) => {
   if (tracked === null) {
     return;
   }
-  layer.push({ event: tracked.event, ...tracked.params });
+  layer.push(dataLayerEntry({ tracked, spec: SPEC }));
 };
 
 export const startTracking = () => {
