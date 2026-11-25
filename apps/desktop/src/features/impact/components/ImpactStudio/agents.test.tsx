@@ -109,7 +109,7 @@ const seedPick = async ({ db, runId, source }: PickParams) => {
   );
 };
 
-const COVERAGE_LINE = /Earlier turns stay not known/;
+const COVERAGE_LINE = /Other turns stay not known/;
 
 let useAppStore: StoryStore;
 

@@ -130,7 +130,7 @@ export const AgentsPanel = ({ frame, routing }: Props) => {
       </StudioWidget>
       {insight !== null && insight.knownTurns < insight.turns ? (
         <p className="text-meta text-faint-foreground">
-          Pinned is recorded for each new turn. Earlier turns stay not known.
+          Pinned is shown only where the model choice is known. Other turns stay not known.
         </p>
       ) : null}
     </PaneShell>

@@ -135,9 +135,10 @@ beforeEach(async () => {
 
 type TurnParams = {
   readonly agentId: string;
+  readonly model?: string;
 };
 
-const turnEnds = async ({ agentId }: TurnParams): Promise<void> => {
+const turnEnds = async ({ agentId, model = 'claude-sonnet-5-5' }: TurnParams): Promise<void> => {
   await recordTurnSpan({
     get: useAppStore.getState,
     span: {
@@ -148,7 +149,7 @@ const turnEnds = async ({ agentId }: TurnParams): Promise<void> => {
       workflowRunId: null,
       stepRole: 'implementer',
       provider: 'anthropic',
-      model: 'claude-sonnet-5-5',
+      model,
       effort: null,
       startedAt: brandId<IsoDateTime>({ value: '2026-11-20T10:00:00.000Z' }),
       endedAt: brandId<IsoDateTime>({ value: '2026-11-20T10:01:00.000Z' }),
@@ -205,6 +206,16 @@ describe('recordTurnPick, written with the span of each turn', () => {
     expect((await picks()).map((row) => [row.run_id, row.source])).toEqual([
       ['run-step-heuristic', 'best'],
       ['run-step-locked', 'pinned'],
+    ]);
+  });
+
+  it('counts a turn that ran off its pin as best candidate, not pinned', async () => {
+    await turnEnds({ agentId: 'step-locked', model: 'claude-haiku-5-5' });
+    await turnEnds({ agentId: 'helper-pin', model: 'claude-haiku-5-5' });
+
+    expect((await picks()).map((row) => [row.run_id, row.source])).toEqual([
+      ['run-helper-pin', 'best'],
+      ['run-step-locked', 'best'],
     ]);
   });
 
