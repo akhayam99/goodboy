@@ -153,8 +153,22 @@ export const readAutoTreeViews = async ({
         pendingRefusal: pendingRefusalOf({ tree, pending }),
         hold:
           guide?.check === 'held'
-            ? { reason: guide.holdReason, suggestion: guide.holdSuggestion?.name ?? null }
+            ? {
+                reason: guide.holdReason,
+                suggestion: guide.holdSuggestion?.name ?? null,
+                suggestionId: guide.holdSuggestion?.id ?? null,
+              }
             : null,
+        guide:
+          guide === null
+            ? null
+            : {
+                workflowId: guide.workflowId,
+                name: guide.name,
+                check: guide.check,
+                steps: guide.steps,
+                deviations: guide.deviations,
+              },
         pendingMessages: pendingMessagesOf({ tree, pending }),
         readMessages: readMessagesOf({ tree, accepted, delegations }),
         sentChange: sentChangeOf({ tree, rows: [...pending, ...accepted] }),
