@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, ICON_SIZE, Notice, PaneShell } from '@goodboy/ui';
+import { Button, ICON_SIZE, Notice, PaneShell, PaneTitleRow } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core/providers';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
@@ -154,7 +154,7 @@ export const WorkflowEditor = ({
       lead={<EditorLead editor={editor} isDisabled={blocked} />}
       header={
         isNew ? (
-          <h1 className="min-w-0 truncate py-1 text-display text-foreground">New workflow</h1>
+          <PaneTitleRow title="New workflow" />
         ) : (
           <BuilderTitleField
             value={form.name}
