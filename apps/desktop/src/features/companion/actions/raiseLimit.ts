@@ -14,7 +14,7 @@ export const raiseLimit = async ({
   const sessionId = sessionIdOf({ value: action.sessionId });
   const store = getStore();
   if (!isLimitRunOfSession({ store, sessionId, runId: action.runId })) {
-    return refusedResult({ code: 'unknown-target', message: 'This run is not on your Mac.' });
+    return refusedResult({ code: 'unknown-target', message: "This run isn't on your Mac." });
   }
   const budget = store.sessionBudgets[sessionId];
   if (budget === undefined || budget.softCapUsd !== action.seenLimit) {
@@ -40,7 +40,7 @@ export const raiseLimit = async ({
     await store.setSessionBudget(sessionId, action.offeredAmount, budget.onExceed);
   } catch (error) {
     console.error('[bridge] raiseLimit failed', error);
-    return failedResult({ error: 'Could not raise the limit.' });
+    return failedResult({ error: "Couldn't raise the limit." });
   }
   const undoActionId = expectedActionIdOf({
     action: {

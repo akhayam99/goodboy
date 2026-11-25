@@ -35,7 +35,7 @@ type EntryParams = {
   readonly raw: unknown;
 };
 
-const entryOf = ({ raw }: EntryParams): TrainRequestEntry | null => {
+const trainEntryOf = ({ raw }: EntryParams): TrainRequestEntry | null => {
   if (typeof raw !== 'object' || raw === null) {
     return null;
   }
@@ -116,7 +116,7 @@ export const parsePhoneAction = ({ raw }: ParseParams): PhoneAction | null => {
     case 'mergeTrain': {
       const method = read.pick({ name: 'method', options: METHODS });
       const list = read.list({ name: 'entries' });
-      const entries = list === null ? null : list.map((item) => entryOf({ raw: item }));
+      const entries = list === null ? null : list.map((item) => trainEntryOf({ raw: item }));
       if (method === null || entries === null || entries.some((entry) => entry === null)) {
         return null;
       }

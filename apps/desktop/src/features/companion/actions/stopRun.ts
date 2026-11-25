@@ -17,7 +17,7 @@ export const stopRun = async ({
   });
   const run = session === null ? null : workflowRunOf({ session, runId: action.runId });
   if (run === null) {
-    return refusedResult({ code: 'unknown-target', message: 'This run is not on your Mac.' });
+    return refusedResult({ code: 'unknown-target', message: "This run isn't on your Mac." });
   }
   const state = runStateOf({ store, sessionId, run });
   if (state === 'stopped') {

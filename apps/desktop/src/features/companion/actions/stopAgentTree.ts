@@ -13,7 +13,7 @@ export const stopAgentTree = async ({
   const leadId = agentIdOf({ value: action.agentId });
   const store = getStore();
   if (!isAgentOfSession({ store, sessionId, agentId: leadId })) {
-    return refusedResult({ code: 'unknown-target', message: 'This agent is not on your Mac.' });
+    return refusedResult({ code: 'unknown-target', message: "This agent isn't on your Mac." });
   }
   const family = agentFamilyOf({ store, sessionId, leadId });
   const running = family.filter(

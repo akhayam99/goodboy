@@ -27,14 +27,14 @@ export const mergePrChecked = async ({
       sessionId: action.sessionId,
     }) === null
   ) {
-    return refusedResult({ code: 'unknown-target', message: 'This session is not on your Mac.' });
+    return refusedResult({ code: 'unknown-target', message: "This session isn't on your Mac." });
   }
   const facts = mobileMergeFacts({ state: store, sessionId });
   const pr = facts.pr;
   if (pr === null || pr.number !== action.prNumber) {
     return refusedResult({
       code: 'unknown-target',
-      message: `Pull request #${action.prNumber} is not on this session.`,
+      message: `Pull request #${action.prNumber} isn't on this session.`,
     });
   }
   if (pr.state === 'merged') {

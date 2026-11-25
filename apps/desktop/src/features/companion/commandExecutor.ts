@@ -27,13 +27,11 @@ import { isMainWindow } from '../workspace/window';
 import { worktreeDiffFile } from '../worktree/worktree';
 import { evaluateMobileCreateSession, evaluateMobileSpawnWorkflow } from './mobileConfinement';
 import { decideKindOf } from './actions/decideAction';
-import { decidePorts } from './actions/decidePorts';
-import { executeDecideAction } from './actions/executeDecideAction';
-import { executePhoneAction } from './actions/executePhoneAction';
-import { parseDecideAction } from './actions/parseDecideAction';
-import { parsePhoneAction, phoneKindOf } from './actions/parsePhoneAction';
-import { startPortsOf } from './actions/startPorts';
-import { transcriptOf } from './actions/transcriptOf';
+import { decideCommand } from './actions/decideCommand';
+import { phoneCommand } from './actions/phoneCommand';
+import { queryTranscriptCommand } from './actions/queryTranscriptCommand';
+import { asString } from './asString';
+import { BridgeSafeError } from './bridgeSafeError';
 import type { AgentKind } from '../session/agent-kind';
 import {
   linearFetchAssignedIssues,
@@ -91,23 +89,12 @@ function inTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
-class BridgeSafeError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'BridgeSafeError';
-  }
-}
-
 function asRecord(v: unknown): Record<string, unknown> {
   return v !== null && typeof v === 'object' ? (v as Record<string, unknown>) : {};
 }
 
-function asString(v: unknown): string | undefined {
-  return typeof v === 'string' && v.length > 0 ? v : undefined;
-}
-
 function requireSession(data: Record<string, unknown>): SessionId {
-  const id = asString(data.sessionId);
+  const id = asString({ value: data.sessionId });
   if (!id) {
     throw new BridgeSafeError('missing sessionId');
   }
@@ -129,7 +116,7 @@ function requireAgent({ data, sessionId }: RequireAgentParams): AgentId | undefi
   if (data.agentId === undefined || data.agentId === null) {
     return undefined;
   }
-  const id = asString(data.agentId);
+  const id = asString({ value: data.agentId });
   if (id === undefined || id.length > MAX_AGENT_ID_LENGTH) {
     throw new BridgeSafeError('invalid agentId');
   }
@@ -147,10 +134,10 @@ function coerceAttachments(v: unknown): ReadonlyArray<AttachmentInput> {
   const out: AttachmentInput[] = [];
   for (const item of v) {
     const r = asRecord(item);
-    const id = asString(r.id);
-    const fileName = asString(r.fileName);
-    const mimeType = asString(r.mimeType);
-    const dataBase64 = asString(r.dataBase64);
+    const id = asString({ value: r.id });
+    const fileName = asString({ value: r.fileName });
+    const mimeType = asString({ value: r.mimeType });
+    const dataBase64 = asString({ value: r.dataBase64 });
     if (id && fileName && mimeType && dataBase64) {
       out.push({ id, fileName, mimeType, dataBase64 });
     }
@@ -159,11 +146,11 @@ function coerceAttachments(v: unknown): ReadonlyArray<AttachmentInput> {
 }
 
 function coerceOverride(data: Record<string, unknown>): TurnProviderOverride | undefined {
-  const providerId = asString(data.providerId);
+  const providerId = asString({ value: data.providerId });
   if (!providerId || !BRIDGE_PROVIDER_ALLOWLIST.includes(providerId as ProviderId)) {
     return undefined;
   }
-  const model = asString(data.model);
+  const model = asString({ value: data.model });
   return { providerId: providerId as ProviderId, ...(model ? { model } : {}) };
 }
 
@@ -524,64 +511,16 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
   const store = useAppStore.getState();
   const data = asRecord(cmd.data);
 
-  if (decideKindOf({ kind: cmd.kind }) !== null) {
-    const action = parseDecideAction({ raw: { ...data, kind: cmd.kind } });
-    if (action === null) {
-      throw new BridgeSafeError(`invalid ${cmd.kind} request`);
-    }
-    return executeDecideAction({
-      action,
-      phoneId: asString(data.phoneId) ?? null,
-      getStore: () => useAppStore.getState(),
-      ports: decidePorts,
-    });
-  }
-
-  if (phoneKindOf({ kind: cmd.kind }) !== null) {
-    const action = parsePhoneAction({ raw: { ...data, kind: cmd.kind } });
-    if (action === null) {
-      throw new BridgeSafeError(`invalid ${cmd.kind} request`);
-    }
-    return executePhoneAction({
-      action,
-      phoneId: asString(data.phoneId) ?? null,
-      getStore: () => useAppStore.getState(),
-      ports: startPortsOf({
-        resolveTask: ({ workspaceId, provider, key }) =>
-          resolveIssueForSessionSafe(workspaceId, provider, key),
-      }),
-    });
-  }
-
   switch (cmd.kind) {
     case 'queryTranscript': {
-      const workspaceId = asString(data.workspaceId);
-      const sessionId = asString(data.sessionId);
-      const agentId = asString(data.agentId);
-      if (workspaceId === undefined || sessionId === undefined || agentId === undefined) {
-        throw new BridgeSafeError('queryTranscript requires workspaceId, sessionId and agentId');
-      }
-      const projection = await transcriptOf({
-        query: {
-          workspaceId,
-          sessionId,
-          agentId,
-          limit: typeof data.limit === 'number' ? data.limit : 100,
-          beforeEntryId: asString(data.beforeEntryId) ?? null,
-        },
-        getStore: () => useAppStore.getState(),
-      });
-      if (projection === null) {
-        throw new BridgeSafeError('unknown agent for session');
-      }
-      return projection;
+      return queryTranscriptCommand({ data });
     }
 
     case 'queryProviders':
       return buildProviderMenu();
 
     case 'queryIssues': {
-      const rawProvider = asString(data.provider);
+      const rawProvider = asString({ value: data.provider });
       if (rawProvider === undefined) {
         return queryIssuesForMobile(undefined);
       }
@@ -593,7 +532,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
 
     case 'queryFileDiff': {
       const sessionId = requireSession(data);
-      const path = asString(data.path);
+      const path = asString({ value: data.path });
       if (!path) {
         throw new BridgeSafeError('queryFileDiff requires a path');
       }
@@ -611,9 +550,9 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
     }
 
     case 'createSessionFromIssue': {
-      const workspaceId = asString(data.workspaceId);
-      const provider = asString(data.provider);
-      const identifier = asString(data.issueIdentifier);
+      const workspaceId = asString({ value: data.workspaceId });
+      const provider = asString({ value: data.provider });
+      const identifier = asString({ value: data.issueIdentifier });
       const setupWorkflow = data.setupWorkflow === true;
       if (!identifier) {
         throw new BridgeSafeError('createSessionFromIssue requires an issueIdentifier');
@@ -673,7 +612,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
 
     case 'send': {
       const sessionId = requireSession(data);
-      const content = asString(data.content) ?? '';
+      const content = asString({ value: data.content }) ?? '';
       const attachments = coerceAttachments(data.attachments);
       if (content.trim().length === 0 && attachments.length === 0) {
         throw new BridgeSafeError('send requires content or attachments');
@@ -695,9 +634,9 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
 
     case 'spawnAgent': {
       const sessionId = requireSession(data);
-      const name = asString(data.name);
-      const prompt = asString(data.prompt);
-      const rawKind = asString(data.kind);
+      const name = asString({ value: data.name });
+      const prompt = asString({ value: data.prompt });
+      const rawKind = asString({ value: data.kind });
       const kind = rawKind && MOBILE_AGENT_KINDS.has(rawKind) ? (rawKind as AgentKind) : undefined;
       const override = coerceOverride(data);
       await store.spawnAgent(sessionId, {
@@ -713,7 +652,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
 
     case 'setContextSlot': {
       const sessionId = requireSession(data);
-      const rawKey = asString(data.key);
+      const rawKey = asString({ value: data.key });
       if (!rawKey || !isSlotKey(rawKey) || !MOBILE_EDITABLE_SLOTS.has(rawKey)) {
         throw new BridgeSafeError(`slot not editable from mobile: ${rawKey ?? '(missing)'}`);
       }
@@ -727,12 +666,12 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
 
     case 'resolveComment': {
       const sessionId = requireSession(data);
-      const prompt = asString(data.prompt);
+      const prompt = asString({ value: data.prompt });
       if (!prompt) {
         throw new BridgeSafeError('resolveComment requires a prompt describing the comment');
       }
-      const sourceCommentUrl = asString(data.commentUrl);
-      const sourceThreadId = asString(data.threadId);
+      const sourceCommentUrl = asString({ value: data.commentUrl });
+      const sourceThreadId = asString({ value: data.threadId });
       const sourceKind: AgentSourceKind | null = sourceThreadId
         ? 'review_comment'
         : sourceCommentUrl
@@ -750,8 +689,8 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
     }
 
     case 'spawnWorkflow': {
-      const workflowId = asString(data.workflowId);
-      const session = sessionById(store.sessions, asString(data.sessionId));
+      const workflowId = asString({ value: data.workflowId });
+      const session = sessionById(store.sessions, asString({ value: data.sessionId }));
       const gate = evaluateMobileSpawnWorkflow({
         sessionId: data.sessionId,
         workflowId,
@@ -769,8 +708,20 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       return undefined;
     }
 
-    default:
-      throw new BridgeSafeError(`unsupported mobile command: ${cmd.kind}`);
+    default: {
+      if (decideKindOf({ kind: cmd.kind }) !== null) {
+        return decideCommand({
+          kind: cmd.kind,
+          data,
+        });
+      }
+      return phoneCommand({
+        kind: cmd.kind,
+        data,
+        resolveTask: ({ workspaceId, provider, key }) =>
+          resolveIssueForSessionSafe(workspaceId, provider, key),
+      });
+    }
   }
 }
 
@@ -779,11 +730,11 @@ function genericMaskFor(kind: string): string {
     case 'mergePr':
       return 'merge failed';
     case 'mergeTrain':
-      return 'could not start the train';
+      return "couldn't start the train";
     case 'startSession':
-      return 'could not start the session';
+      return "couldn't start the session";
     case 'stopTrain':
-      return 'could not stop the train';
+      return "couldn't stop the train";
     case 'spawnAgent':
     case 'resolveComment':
       return 'could not spawn agent';
@@ -800,7 +751,7 @@ function genericMaskFor(kind: string): string {
     case 'queryFileDiff':
       return 'could not load file diff';
     case 'queryTranscript':
-      return 'could not load transcript';
+      return "couldn't load transcript";
     default:
       return 'command failed';
   }
@@ -821,7 +772,7 @@ export async function executeBridgeCommand(
     }
     const data = asRecord(cmd.data);
     console.error(
-      `[bridge] command failed (kind=${cmd.kind}, sessionId=${asString(data.sessionId) ?? '(none)'})`,
+      `[bridge] command failed (kind=${cmd.kind}, sessionId=${asString({ value: data.sessionId }) ?? '(none)'})`,
       err,
     );
     return { ok: false, error: genericMaskFor(cmd.kind) };

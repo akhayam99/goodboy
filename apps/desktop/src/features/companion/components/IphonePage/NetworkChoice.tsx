@@ -1,4 +1,4 @@
-import { Switch } from '@goodboy/ui';
+import { EmptyLine, Switch } from '@goodboy/ui';
 
 import type { NetworkInterface } from '../../bridge';
 
@@ -16,9 +16,9 @@ type Props = {
 export const NetworkChoice = ({ interfaces, isBusy, onToggle }: Props) => {
   if (interfaces.length === 0) {
     return (
-      <p className="text-meta text-muted-foreground">
+      <EmptyLine>
         No private network is on. Connect to Wi-Fi, Ethernet or a VPN such as Tailscale.
-      </p>
+      </EmptyLine>
     );
   }
   return (

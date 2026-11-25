@@ -1,6 +1,7 @@
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isTauriRuntime } from '../../../shared/lib/isTauriRuntime';
+import { startPoll } from '../../../shared/lib/usePoll/startPoll';
 import { useAppStore } from '../../../store/store';
 import { isMainWindow } from '../../workspace/window';
 import { changedDraftsOf } from './changedDraftsOf';
@@ -109,15 +110,25 @@ export const startCompanionProjections = async (): Promise<UnlistenFn> => {
   };
 
   const unsubscribe = useAppStore.subscribe(schedule);
-  const heartbeat = setInterval(() => void publishNow(), HEARTBEAT_MS);
-  const refresh = setInterval(() => void refreshOthers(), OTHERS_REFRESH_MS);
+  const stopHeartbeat = startPoll({
+    run: () => void publishNow(),
+    everyMs: HEARTBEAT_MS,
+    gate: 'always',
+    isImmediate: false,
+  });
+  const stopRefresh = startPoll({
+    run: () => void refreshOthers(),
+    everyMs: OTHERS_REFRESH_MS,
+    gate: 'always',
+    isImmediate: false,
+  });
   void refreshOthers();
   void publishNow();
 
   return () => {
     unsubscribe();
-    clearInterval(heartbeat);
-    clearInterval(refresh);
+    stopHeartbeat();
+    stopRefresh();
     if (debounce !== null) {
       clearTimeout(debounce);
     }

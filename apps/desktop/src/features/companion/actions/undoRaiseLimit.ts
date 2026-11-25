@@ -31,7 +31,7 @@ export const undoRaiseLimit = async ({
     await getStore().setSessionBudget(sessionId, undo.previousLimit, budget.onExceed);
   } catch (error) {
     console.error('[bridge] undoRaiseLimit failed', error);
-    return failedResult({ error: 'Could not restore the limit.' });
+    return failedResult({ error: "Couldn't restore the limit." });
   }
   dropLimitUndo({ raisedActionId: action.raisedActionId });
   return doneResult();

@@ -1,6 +1,7 @@
 import { needsYouOf, type NeedsYouMove } from '../../board/needsYou/needsYouOf';
 import { attentionMarkOf } from '../../session/attentionMarkOf';
 import { ATTENTION_REASON_META } from '../../session/session-stage';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import type { NeedsYouChips, NeedsYouFields, NeedsYouRow } from '../contract/projections';
 import { decisionOfMove } from './decisionOfMove';
 import { isLiveSession } from './isLiveSession';
@@ -23,8 +24,8 @@ type MoveParams = {
   readonly now: number;
 };
 
-const rowOf = ({ scope, move, now }: MoveParams): NeedsYouRow => {
-  const session = scope.sessions.find((candidate) => candidate.id === move.sessionId);
+const needsYouRowOf = ({ scope, move, now }: MoveParams): NeedsYouRow => {
+  const session = sessionById(scope.sessions, move.sessionId);
   const question = scope.openQuestions[move.sessionId]?.find(
     (candidate) => candidate.id === move.questionId,
   );
@@ -84,7 +85,7 @@ const sinceOrder = ({ left, right }: OrderParams): number => {
 export const needsYouFieldsOf = ({ scopes, chips, now }: Params): NeedsYouFields => {
   const grouped = scopes.map((scope) => movesOfScope({ scope }));
   const rows = grouped
-    .flatMap(({ scope, moves }) => moves.map((move) => rowOf({ scope, move, now })))
+    .flatMap(({ scope, moves }) => moves.map((move) => needsYouRowOf({ scope, move, now })))
     .sort((left, right) => sinceOrder({ left, right }));
   return {
     chips,

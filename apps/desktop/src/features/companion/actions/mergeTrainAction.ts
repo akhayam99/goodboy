@@ -46,7 +46,7 @@ const carOf = ({ action, entry, getStore }: EntryParams): CarResult => {
     return refusedCar({
       result: refusedResult({
         code: 'unknown-target',
-        message: `${label} is not on your Mac.`,
+        message: `${label} isn't on your Mac.`,
       }),
     });
   }
@@ -56,7 +56,7 @@ const carOf = ({ action, entry, getStore }: EntryParams): CarResult => {
     return refusedCar({
       result: refusedResult({
         code: 'unknown-target',
-        message: `${label} is not on this session.`,
+        message: `${label} isn't on this session.`,
       }),
     });
   }

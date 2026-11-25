@@ -9,7 +9,7 @@ export const stopTrain = async ({
   const store = getStore();
   const train = store.mergeTrain;
   if (train === null || train.id !== action.trainId) {
-    return refusedResult({ code: 'unknown-target', message: 'This train is not running.' });
+    return refusedResult({ code: 'unknown-target', message: "This train isn't running." });
   }
   if (train.outcome !== null) {
     return refusedResult({ code: 'already-decided', message: 'The train already ended.' });

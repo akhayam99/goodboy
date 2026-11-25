@@ -14,7 +14,7 @@ type InputParams = {
   readonly input: unknown;
 };
 
-const commandOf = ({ input }: InputParams): string => {
+const permissionCommandOf = ({ input }: InputParams): string => {
   if (typeof input === 'object' && input !== null) {
     const record: Record<string, unknown> = { ...input };
     for (const key of ['command', 'file_path', 'path', 'url', 'pattern']) {
@@ -38,7 +38,7 @@ export const permissionDecisionOf = ({ scope, sessionId }: Params): PermissionDe
       continue;
     }
     const inputHash = permissionHashOf({ toolName: ask.toolName, input: ask.input });
-    const command = safeTextOf({ text: commandOf({ input: ask.input }), max: 400 });
+    const command = safeTextOf({ text: permissionCommandOf({ input: ask.input }), max: 400 });
     return {
       kind: 'permission',
       actionId: actionIdOf({

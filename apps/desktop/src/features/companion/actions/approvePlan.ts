@@ -40,6 +40,6 @@ export const approvePlan = async ({
     });
   } catch (error) {
     console.error('[bridge] approvePlan failed', error);
-    return failedResult({ error: 'Could not approve the plan.' });
+    return failedResult({ error: "Couldn't approve the plan." });
   }
 };

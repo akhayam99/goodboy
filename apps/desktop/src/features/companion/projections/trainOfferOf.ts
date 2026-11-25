@@ -61,7 +61,7 @@ type StatusParams = {
   readonly train: MergeTrain;
 };
 
-const statusOf = ({ train }: StatusParams): TrainStatus => {
+const trainStatusOf = ({ train }: StatusParams): TrainStatus => {
   const { outcome } = train;
   const cars = train.cars.map((car, index): TrainCar => {
     const state = carStateOf({ train, index });
@@ -119,7 +119,7 @@ export const trainOfferOf = ({ scope }: Params): TrainOffer | null => {
     method: 'squash',
     orderLine: TRAIN_ORDER_LINE,
     entries,
-    status: train === null ? null : statusOf({ train }),
+    status: train === null ? null : trainStatusOf({ train }),
     stopActionId:
       train !== null && train.outcome === null && !train.isStopRequested
         ? stopTrainActionIdOf({ trainId: train.id })

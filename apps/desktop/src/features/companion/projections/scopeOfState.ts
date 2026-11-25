@@ -1,6 +1,7 @@
 import { DEFAULT_WORKFLOW_RULES, type Session, type Workspace } from '@goodboy/types';
 import type { AppState } from '../../../store/types';
 import { stageInfosOf } from '../../../store/slices/session-view/stageInfosOf';
+import { projectById } from '../../../store/slices/projects/projectIndex';
 import { unpushedCommitsOf } from '../../branch/unpushedCommitsOf';
 import { mobileMergeFactsOf } from '../mobileConfinement';
 import { totalUsd } from '../../budget/spendFigures';
@@ -107,7 +108,7 @@ export const scopeOfState = ({
         [
           ...new Set(
             (state.sessionProjectMounts[session.id] ?? []).flatMap((mount) => {
-              const project = state.projects.find((candidate) => candidate.id === mount.projectId);
+              const project = projectById(state.projects, mount.projectId);
               return project === undefined ? [] : [project.name];
             }),
           ),

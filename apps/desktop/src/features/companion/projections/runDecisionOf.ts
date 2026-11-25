@@ -2,6 +2,7 @@ import type { RunDecision } from '../contract/decisions';
 import { runStateFrom } from '../actions/targets';
 import { actionIdOf } from './actionIdOf';
 import type { WorkspaceScope } from './workspaceScope';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 type Params = {
   readonly scope: WorkspaceScope;
@@ -9,7 +10,7 @@ type Params = {
 };
 
 export const runDecisionOf = ({ scope, sessionId }: Params): RunDecision | null => {
-  const session = scope.sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(scope.sessions, sessionId);
   const agents = scope.agents[sessionId] ?? [];
   for (const run of session?.workflowRuns ?? []) {
     if (run.discardedAt != null) {

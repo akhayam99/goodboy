@@ -1,4 +1,5 @@
 import { useAppStore } from '../../../store/store';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { discardUncreatedSession } from '../../../store/slices/sessions/discardUncreatedSession';
 import { applyStartEdits } from '../../session/startRun/applyStartEdits';
 import { guidanceToSendOf } from '../../session/startRun/guidanceToSendOf';
@@ -24,7 +25,7 @@ export const startPortsOf = ({ resolveTask }: Params): StartPorts => ({
   launch: async ({ sessionId, mode, startKind, preset, ask, limit }) => {
     await applyStartEdits({ sessionId, mode });
     const state = useAppStore.getState();
-    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(state.sessions, sessionId);
     if (session === undefined) {
       throw new Error('The session is no longer here');
     }

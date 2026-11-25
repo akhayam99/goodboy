@@ -21,7 +21,7 @@ type PhaseParams = {
   readonly review: string | null;
 };
 
-const phaseOf = ({ state, isDraft, review }: PhaseParams): PullRequestPhase => {
+const pullRequestPhaseOf = ({ state, isDraft, review }: PhaseParams): PullRequestPhase => {
   if (state === 'merged' || state === 'closed' || state === 'queued') {
     return state;
   }
@@ -38,7 +38,11 @@ export const pullRequestFieldsOf = ({ scope, session }: Params): PullRequestFiel
   }
   const { pr } = facts;
   const readiness = evaluatePrMergeReadiness({ facts });
-  const phase = phaseOf({ state: pr.state, isDraft: pr.isDraft, review: pr.reviewDecision });
+  const phase = pullRequestPhaseOf({
+    state: pr.state,
+    isDraft: pr.isDraft,
+    review: pr.reviewDecision,
+  });
   const headSha = pr.headSha ?? '';
   const checks: ReadonlyArray<CheckRow> = [
     ...facts.failingChecks.map((name): CheckRow => ({

@@ -1,8 +1,7 @@
 import { selectLimitsChips, type LimitsChip } from '@goodboy/core/providers';
 import { formatUsd } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
+import { PROVIDER_IDS, type ProviderId } from '@goodboy/types';
 import { spendFigures } from '../../budget/spendFigures';
-import { PROVIDER_ORDER } from '../../providers/components/ProviderStudio/providerOrder';
 import { PROVIDER_LABEL } from '../../providers/providerLabel';
 import { spendSources } from '../../../shared/utils/spendSources';
 import type { AppState } from '../../../store/types';
@@ -49,7 +48,7 @@ export const chipsOfState = ({ state, now }: Params): NeedsYouChips => {
     .filter((provider) => provider.connection === 'connected')
     .map((provider) => provider.id);
   const chips = selectLimitsChips({
-    order: PROVIDER_ORDER,
+    order: PROVIDER_IDS,
     connected,
     limits: state.providerLimits,
     nowMs: now,

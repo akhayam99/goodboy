@@ -1,4 +1,5 @@
 import { DEFAULT_WORKFLOW_RULES, type ClaudePermissionMode, type SessionId } from '@goodboy/types';
+import { projectById } from '../../../store/slices/projects/projectIndex';
 import type { StartSessionAction } from '../contract/actions';
 import type { SessionAccess } from '../contract/vocabulary';
 import { workspaceIdOf } from './ids';
@@ -23,7 +24,7 @@ type InvalidParams = {
   readonly message: string;
 };
 
-const invalid = ({ message }: InvalidParams): HandlerResult =>
+const invalidRefusal = ({ message }: InvalidParams): HandlerResult =>
   refusedResult({ code: 'invalid-request', message });
 
 export const startSession = async ({
@@ -35,21 +36,19 @@ export const startSession = async ({
   const store = getStore();
   const workspaceId = workspaceIdOf({ value: action.workspaceId });
   if (!store.workspaces.some((workspace) => workspace.id === action.workspaceId)) {
-    return refusedResult({ code: 'unknown-target', message: 'This workspace is not on your Mac.' });
+    return refusedResult({ code: 'unknown-target', message: "This workspace isn't on your Mac." });
   }
-  const project = store.projects.find(
-    (candidate) =>
-      candidate.id === action.projectId && candidate.workspaceId === action.workspaceId,
-  );
+  const found = projectById(store.projects, action.projectId);
+  const project = found?.workspaceId === action.workspaceId ? found : undefined;
   if (project === undefined) {
-    return refusedResult({ code: 'unknown-target', message: 'This project is not on your Mac.' });
+    return refusedResult({ code: 'unknown-target', message: "This project isn't on your Mac." });
   }
   const typed = action.goal.trim();
   if (typed.length > MAX_GOAL_LENGTH) {
-    return invalid({ message: `The goal is longer than ${MAX_GOAL_LENGTH} characters.` });
+    return invalidRefusal({ message: `The goal is longer than ${MAX_GOAL_LENGTH} characters.` });
   }
   if (typed.length === 0 && action.task === null) {
-    return invalid({ message: 'Write a goal or pick a task.' });
+    return invalidRefusal({ message: 'Write a goal or pick a task.' });
   }
   const preset =
     action.startKind === 'leadPlan'
@@ -58,15 +57,15 @@ export const startSession = async ({
         ) ?? null)
       : null;
   if (action.startKind === 'leadPlan' && preset === null) {
-    return invalid({ message: 'This plan is not on your Mac.' });
+    return invalidRefusal({ message: "This plan isn't on your Mac." });
   }
   const rules = store.workspaceOverrides[workspaceId]?.workflowRules ?? DEFAULT_WORKFLOW_RULES;
   const defaultUsd = rules.spendLimitUsd;
   if (action.startKind === 'agentScout' && action.limitUsd !== null) {
-    return invalid({ message: 'A single agent has no limit to set.' });
+    return invalidRefusal({ message: 'A single agent has no limit to set.' });
   }
   if (action.limitUsd !== null && !startLimitAmountsOf({ defaultUsd }).includes(action.limitUsd)) {
-    return invalid({ message: 'This limit is not one your Mac offers.' });
+    return invalidRefusal({ message: "This limit isn't one your Mac offers." });
   }
   if (startsLeftToday({ now }) === 0) {
     return refusedResult({
@@ -86,7 +85,7 @@ export const startSession = async ({
           });
   } catch (error) {
     console.error('[bridge] startSession task lookup failed', error);
-    return failedResult({ error: 'Could not read this task. Try again.' });
+    return failedResult({ error: "Couldn't read this task. Try again." });
   }
   const goal = typed.length > 0 ? typed : (resolved?.goal ?? '');
   let sessionId: SessionId | null = null;
@@ -113,7 +112,9 @@ export const startSession = async ({
   } catch (error) {
     console.error('[bridge] startSession failed', error);
     if (sessionId !== null) {
-      await ports.discard({ sessionId }).catch(() => undefined);
+      await ports.discard({ sessionId }).catch((discardError) => {
+        console.error('[bridge] startSession discard failed', discardError);
+      });
     }
     return failedResult({ error: 'The session did not start. Nothing was kept. Try again.' });
   }
