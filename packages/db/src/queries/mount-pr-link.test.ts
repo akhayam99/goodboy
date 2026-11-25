@@ -1,16 +1,19 @@
 import { describe, expect, it } from 'vitest';
+import { brandId } from '@goodboy/types';
 import type {
   IsoDateTime,
   MountId,
   MountPullRequestLink,
   ProjectId,
   SessionId,
+  WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   listMergedRequestHeads,
   listMountPullRequestLinks,
+  listWorkspacePullRequestLinks,
   upsertMountPullRequestLink,
 } from './mount-pr-link';
 import { insertSessionWorktree } from './session-worktree';
@@ -98,5 +101,17 @@ describe('mount pull request merged head', () => {
     expect(await listMergedRequestHeads({ db, projectId })).toEqual({
       'goodboy/ledger-close': 'abc123',
     });
+  });
+
+  it('lists the links of the live sessions of a workspace with their session', async () => {
+    const db = await seed();
+    await upsertMountPullRequestLink({ db, sessionId, link: link({}) });
+
+    const workspaceId = brandId<WorkspaceId>({ value: 'workspace' });
+    const found = await listWorkspacePullRequestLinks({ db, workspaceId });
+    expect(found.map((entry) => [entry.sessionId, entry.link.prNumber])).toEqual([[sessionId, 12]]);
+
+    await db.execute("UPDATE sessions SET archived_at = 5 WHERE id = 'session'");
+    expect(await listWorkspacePullRequestLinks({ db, workspaceId })).toEqual([]);
   });
 });

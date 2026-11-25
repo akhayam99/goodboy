@@ -1,3 +1,4 @@
+import type { AutoLevel } from '@goodboy/core/auto';
 import type { PullRequestFacts } from '../../actions/kinds/pullRequestFacts';
 import type { MergeTrain } from '../../../store/slices/pr-series/mergeTrain';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
@@ -26,6 +27,14 @@ export type ReadyLine = Readonly<{
   reason: string | null;
 }>;
 
+export type LineStats = Readonly<{ additions: number; deletions: number }>;
+
+export type TaskFact = Readonly<{
+  description: string | null;
+  assignee: string | null;
+  stateLabel: string | null;
+}>;
+
 export type PresetFact = Readonly<{ id: string; name: string }>;
 
 export type ProjectFact = Readonly<{ id: string; name: string }>;
@@ -51,6 +60,11 @@ export type WorkspaceScope = Readonly<{
   readyLines: ReadonlyArray<ReadyLine>;
   mergeTrain: MergeTrain | null;
   fileCounts: Readonly<Record<string, number | null>>;
+  lineStats: Readonly<Record<string, LineStats | null>>;
+  summaries: Readonly<Record<string, string>>;
+  taskFacts: Readonly<Record<string, TaskFact>>;
+  defaultLevel: AutoLevel;
+  isOpen: boolean;
   presets: ReadonlyArray<PresetFact>;
   projects: ReadonlyArray<ProjectFact>;
   defaultLimitUsd: number | null;

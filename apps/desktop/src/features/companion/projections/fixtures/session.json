@@ -61,5 +61,5 @@
   "activity": [],
   "pullRequestNumber": 304,
   "decisions": [],
-  "summary": null
+  "summary": "The retry window now backs off in three steps."
 }

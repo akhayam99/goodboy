@@ -68,3 +68,5 @@ export type TaskProvider = 'linear' | 'sentry' | 'gitlab' | 'jira';
 export type SessionAccess = 'readOnly' | 'askFirst' | 'editsAllowed';
 
 export type StartKind = 'lead' | 'leadPlan' | 'agentScout';
+
+export type StartStops = 'everyStep' | 'afterPlan' | 'never';

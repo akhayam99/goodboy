@@ -22,7 +22,7 @@ type Params = {
 
 export const startPortsOf = ({ resolveTask }: Params): StartPorts => ({
   resolveTask,
-  launch: async ({ sessionId, mode, startKind, preset, ask, limit }) => {
+  launch: async ({ sessionId, mode, startKind, preset, ask, limit, level }) => {
     await applyStartEdits({ sessionId, mode });
     const state = useAppStore.getState();
     const session = sessionById(state.sessions, sessionId);
@@ -33,7 +33,8 @@ export const startPortsOf = ({ resolveTask }: Params): StartPorts => ({
     await startRoutedRun({
       sessionId,
       result: pickedRouteOf({ shape, ask, preset, closeness: 'adapt', role: 'scout' }),
-      level: null,
+      level: startKind === 'lead' ? level : null,
+      autonomy: startKind === 'leadPlan' ? level : null,
       limit,
       guidance: guidanceToSendOf({
         picked: null,

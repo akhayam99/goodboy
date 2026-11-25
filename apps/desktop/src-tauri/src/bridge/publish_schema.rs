@@ -563,6 +563,9 @@ pub struct TaskRow {
     pub words: String,
     pub session_id: Option<String>,
     pub can_start: bool,
+    pub description: Option<String>,
+    pub assignee: Option<String>,
+    pub state_label: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -595,6 +598,23 @@ pub struct StartKindChoice {
     pub preset_id: Option<String>,
     pub label: String,
     pub has_limit: bool,
+    pub has_stops: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum StartStops {
+    EveryStep,
+    AfterPlan,
+    Never,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StartStopsChoice {
+    pub stops: StartStops,
+    pub label: String,
+    pub promise: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -614,6 +634,8 @@ pub struct StartOffer {
     pub kinds: Vec<StartKindChoice>,
     pub access_choices: Vec<StartAccessChoice>,
     pub default_access: SessionAccess,
+    pub stops_choices: Vec<StartStopsChoice>,
+    pub default_stops: StartStops,
     pub limit_amounts: Vec<f64>,
     pub default_limit_usd: Option<f64>,
     pub max_goal_length: i64,

@@ -7,6 +7,7 @@ import { doneResult, failedResult, refusedResult } from './handlerResults';
 import type { HandlerResult, StartPorts, StoreHandlerParams } from './handlerTypes';
 import { startLimitAmountsOf } from './startOptions';
 import { phoneStartLimitOf } from './phoneStartLimitOf';
+import { AUTO_LEVEL_OF_STOPS, hasStopsOf } from './startStops';
 import { MAX_GOAL_LENGTH, recordStart, startsLeftToday } from './startState';
 
 export const ACCESS_MODE = {
@@ -64,6 +65,9 @@ export const startSession = async ({
   if (action.startKind === 'agentScout' && action.limitUsd !== null) {
     return invalidRefusal({ message: 'A single agent has no limit to set.' });
   }
+  if (action.stops !== null && !hasStopsOf({ startKind: action.startKind })) {
+    return invalidRefusal({ message: 'A single agent has no stops to set.' });
+  }
   if (action.limitUsd !== null && !startLimitAmountsOf({ defaultUsd }).includes(action.limitUsd)) {
     return invalidRefusal({ message: "This limit isn't one your Mac offers." });
   }
@@ -108,6 +112,7 @@ export const startSession = async ({
         action.startKind === 'agentScout'
           ? null
           : phoneStartLimitOf({ limitUsd: action.limitUsd, defaultUsd }),
+      level: action.stops === null ? null : AUTO_LEVEL_OF_STOPS[action.stops],
     });
   } catch (error) {
     console.error('[bridge] startSession failed', error);

@@ -172,6 +172,7 @@ const startRaw = (over: Record<string, unknown> = {}): Record<string, unknown> =
   startKind: 'lead',
   presetId: null,
   limitUsd: null,
+  stops: null,
   ...over,
 });
 
@@ -496,6 +497,45 @@ describe('startSession', () => {
       kit,
     });
     expect(refused.refusal?.code).toBe('invalid-request');
+  });
+
+  it.each([
+    ['everyStep', 'step'],
+    ['afterPlan', 'plan'],
+    ['never', 'run'],
+  ])('maps the %s stops to the desktop %s level', async (stops, level) => {
+    const ports = portsOf();
+    const outcome = await run({ raw: startRaw({ stops }), kit: kitOf(), ports });
+    expect(outcome.result).toBe('done');
+    expect(ports.launch).toHaveBeenCalledWith(expect.objectContaining({ level }));
+  });
+
+  it('leaves the level to the Mac when the phone sends no stops', async () => {
+    const ports = portsOf();
+    await run({ raw: startRaw(), kit: kitOf(), ports });
+    expect(ports.launch).toHaveBeenCalledWith(expect.objectContaining({ level: null }));
+  });
+
+  it('refuses stops for a single agent and never launches it', async () => {
+    const ports = portsOf();
+    const refused = await run({
+      raw: startRaw({ startKind: 'agentScout', stops: 'afterPlan' }),
+      kit: kitOf(),
+      ports,
+    });
+    expect(refused.refusal?.code).toBe('invalid-request');
+    expect(ports.launch).not.toHaveBeenCalled();
+  });
+
+  it('allows stops on a Lead plan and does not parse a stop the Mac never offered', async () => {
+    const ports = portsOf();
+    const planned = await run({
+      raw: startRaw({ startKind: 'leadPlan', presetId: 'preset-layout', stops: 'never' }),
+      kit: kitOf(),
+      ports,
+    });
+    expect(planned.result).toBe('done');
+    expect(parsePhoneAction({ raw: startRaw({ stops: 'sometimes' }) })).toBeNull();
   });
 
   it('stops at the per-day cap', async () => {

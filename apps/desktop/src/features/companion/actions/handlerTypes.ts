@@ -1,3 +1,4 @@
+import type { AutoLevel } from '@goodboy/core/auto';
 import type { AutoPlanApproval } from '../../auto/plan/approveAutoPlan';
 import type {
   AgentId,
@@ -51,6 +52,7 @@ export type StartLaunchParams = {
   readonly preset: Workflow | null;
   readonly ask: string;
   readonly limit: StartLimit | null;
+  readonly level: AutoLevel | null;
 };
 
 type ExternalTasks = NonNullable<Parameters<AppStore['createSession']>[0]['externalTasks']>;

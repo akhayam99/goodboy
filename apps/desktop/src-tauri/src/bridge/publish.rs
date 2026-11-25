@@ -432,10 +432,15 @@ mod tests {
 
         let mut tasks = fixture(TASKS);
         tasks["start"]["kinds"] = json!([
-            { "startKind": "leadPlan", "presetId": "preset-layout", "label": "Lead", "hasLimit": true }
+            { "startKind": "leadPlan", "presetId": "preset-layout", "label": "Lead", "hasLimit": true, "hasStops": true }
         ]);
         tasks["start"]["defaultAccess"] = json!("editsAllowed");
         let tasks_key = format!("tasks:{}", tasks["workspaceId"].as_str().unwrap());
+        assert!(validate(&item(&tasks_key, Kind::Tasks, tasks.clone())).is_ok());
+        tasks["start"]["defaultStops"] = json!("sometimes");
+        let err = validate(&item(&tasks_key, Kind::Tasks, tasks.clone())).unwrap_err();
+        assert!(err.starts_with("schema:"));
+        tasks["start"]["defaultStops"] = json!("never");
         assert!(validate(&item(&tasks_key, Kind::Tasks, tasks.clone())).is_ok());
         tasks["start"]["defaultAccess"] = json!("bypassPermissions");
         let err = validate(&item(&tasks_key, Kind::Tasks, tasks)).unwrap_err();

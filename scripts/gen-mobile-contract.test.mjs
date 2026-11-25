@@ -113,6 +113,22 @@ describe('the generated Swift', () => {
     );
   });
 
+  it('names the three stops, the optional stops of a start and the task row facts', () => {
+    assert.match(
+      swift,
+      /public enum StartStops: String[^\n]*\n    case everyStep = "everyStep"\n    case afterPlan = "afterPlan"\n    case never = "never"\n\}/,
+    );
+    assert.match(swift, /public let stops: StartStops\?/);
+    assert.match(swift, /public let hasStops: Bool/);
+    for (const field of ['description: String?', 'assignee: String?', 'stateLabel: String?']) {
+      assert.ok(swift.includes(`public let ${field}`), field);
+    }
+  });
+
+  it('pins the contract version at 5', () => {
+    assert.equal(contract.version, 5);
+  });
+
   it('carries the three projection fields on every projection', () => {
     for (const name of [
       'NeedsYouProjection',

@@ -11,11 +11,18 @@ import { readyToMergeOf } from '../../board/mergeTrain/readyToMergeOf';
 import { requestChecksOf } from '../../board/mergeTrain/requestChecksOf';
 import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { pullRequestViewOf } from '../../../store/slices/pull-request-view/pullRequestViewOf';
+import type { StarredIssuesState } from '../../../store/slices/starred-issues/state';
+import { DEFAULT_AUTO_LEVEL } from '@goodboy/core/auto';
+import { parseAutoLevelSetting } from '../../../store/runtime/auto/level/parseAutoLevelSetting';
+import { starIdentityOf } from '../../integrations/starred/starredIssueOf';
 import { isLiveSession } from './isLiveSession';
+import { lineStatsOf } from './lineStatsOf';
+import { summaryOf } from './summaryOf';
+import { taskFactOf } from './taskFactOf';
 import { pickForSessions } from './pickForSessions';
 import type { WorkspaceScope } from './workspaceScope';
 
-export type ScopeState = AppState;
+export type ScopeState = AppState & Pick<StarredIssuesState, 'starredRecords'>;
 
 type Params = {
   readonly workspace: Pick<Workspace, 'id' | 'name'>;
@@ -92,6 +99,22 @@ export const scopeOfState = ({
       }),
     ]),
   );
+  const views = Object.fromEntries(
+    live.map((session) => {
+      const fact = facts[session.id];
+      return [
+        session.id,
+        fact === undefined || fact.number === null
+          ? null
+          : (pullRequestViewOf({
+              state,
+              sessionId: session.id,
+              mountId: fact.mountId,
+              prNumber: fact.number,
+            })?.view ?? null),
+      ];
+    }),
+  );
   const ids = live.map((session) => session.id);
   const telemetry = pickForSessions({ ids, record: state.sessionTelemetry });
   const agents = Object.values(pickForSessions({ ids, record: state.sessionPhaseRuns })).flat();
@@ -133,21 +156,29 @@ export const scopeOfState = ({
     readyLines: readyLinesIn({ state, live, infos }),
     mergeTrain: trainOf({ train: state.mergeTrain, ids }),
     fileCounts: Object.fromEntries(
-      live.map((session) => {
-        const fact = facts[session.id];
-        return [
-          session.id,
-          fact === undefined || fact.number === null
-            ? null
-            : (pullRequestViewOf({
-                state,
-                sessionId: session.id,
-                mountId: fact.mountId,
-                prNumber: fact.number,
-              })?.view?.files.count ?? null),
-        ];
+      live.map((session) => [session.id, views[session.id]?.files.count ?? null]),
+    ),
+    lineStats: Object.fromEntries(
+      live.map((session) => [session.id, lineStatsOf({ view: views[session.id] })]),
+    ),
+    summaries: Object.fromEntries(
+      live.flatMap((session) => {
+        const summary = summaryOf({ slots: state.sessionSlots[session.id] });
+        return summary === null ? [] : [[session.id, summary]];
       }),
     ),
+    taskFacts: Object.fromEntries(
+      Object.values(state.starredRecords[workspace.id] ?? {}).flatMap((record) => {
+        const identity = starIdentityOf(record);
+        return identity === null
+          ? []
+          : [[`${identity.provider}:${identity.externalId}`, taskFactOf({ record })]];
+      }),
+    ),
+    defaultLevel:
+      parseAutoLevelSetting({ raw: state.workspaceValues[workspace.id]?.['auto.level'] ?? null })
+        .defaultLevel ?? DEFAULT_AUTO_LEVEL,
+    isOpen: isFullyLoaded,
     presets: (state.phaseTemplates[workspace.id] ?? [])
       .filter((workflow) => workflow.isPreset === true && workflow.deletedAt == null)
       .map((workflow) => ({ id: workflow.id, name: workflow.name })),

@@ -6,7 +6,13 @@ import type {
   StopTrainAction,
   TrainRequestEntry,
 } from '../contract/actions';
-import type { MergeMethod, SessionAccess, StartKind, TaskProvider } from '../contract/vocabulary';
+import type {
+  MergeMethod,
+  SessionAccess,
+  StartKind,
+  StartStops,
+  TaskProvider,
+} from '../contract/vocabulary';
 import type { PhoneKind } from './actionLimits';
 import { readerOf } from './actionReader';
 
@@ -29,6 +35,7 @@ export const phoneKindOf = ({ kind }: KindParams): PhoneKind | null =>
 const METHODS: ReadonlyArray<MergeMethod> = ['squash', 'merge', 'rebase'];
 const ACCESS: ReadonlyArray<SessionAccess> = ['readOnly', 'askFirst', 'editsAllowed'];
 const START_KINDS: ReadonlyArray<StartKind> = ['lead', 'leadPlan', 'agentScout'];
+const STOPS: ReadonlyArray<StartStops> = ['everyStep', 'afterPlan', 'never'];
 const PROVIDERS: ReadonlyArray<TaskProvider> = ['linear', 'sentry', 'gitlab', 'jira'];
 
 type EntryParams = {
@@ -141,6 +148,9 @@ export const parsePhoneAction = ({ raw }: ParseParams): PhoneAction | null => {
       const presetId = read.id({ name: 'presetId' });
       const limitValue = record.limitUsd;
       const limitUsd = read.number({ name: 'limitUsd' });
+      const stopsValue = record.stops;
+      const stops = read.pick({ name: 'stops', options: STOPS });
+      const isStopsValid = stopsValue === null || stopsValue === undefined || stops !== null;
       const isPresetValid = presetValue === null || presetValue === undefined || presetId !== null;
       const isLimitValid = limitValue === null || limitValue === undefined || limitUsd !== null;
       if (
@@ -150,7 +160,8 @@ export const parsePhoneAction = ({ raw }: ParseParams): PhoneAction | null => {
         startKind === null ||
         !task.isValid ||
         !isPresetValid ||
-        !isLimitValid
+        !isLimitValid ||
+        !isStopsValid
       ) {
         return null;
       }
@@ -164,6 +175,7 @@ export const parsePhoneAction = ({ raw }: ParseParams): PhoneAction | null => {
         startKind,
         presetId,
         limitUsd,
+        stops,
       };
     }
     default:

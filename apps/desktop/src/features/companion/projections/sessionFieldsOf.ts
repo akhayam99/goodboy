@@ -126,6 +126,6 @@ export const sessionFieldsOf = ({ scope, session, now }: Params): SessionFields 
       .filter((decision) => decision.status === 'active')
       .slice(0, DECISION_LIMIT)
       .map((decision) => safeTextOf({ text: decision.text, max: 240 })),
-    summary: null,
+    summary: scope.summaries[session.id] ?? null,
   };
 };

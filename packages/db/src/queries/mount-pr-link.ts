@@ -148,6 +148,40 @@ export const listMergedRequestHeads = async ({
   return Object.fromEntries(rows.map((row) => [row.headBranch, row.mergedHeadSha]));
 };
 
+type ListWorkspaceLinksParams = {
+  readonly db: Database;
+  readonly workspaceId: WorkspaceId;
+};
+
+type WorkspaceLinkRow = MountPullRequestLinkRow & {
+  readonly sessionId: SessionId;
+};
+
+type WorkspacePullRequestLink = {
+  readonly sessionId: SessionId;
+  readonly link: MountPullRequestLink;
+};
+
+export const listWorkspacePullRequestLinks = async ({
+  db,
+  workspaceId,
+}: ListWorkspaceLinksParams): Promise<ReadonlyArray<WorkspacePullRequestLink>> => {
+  const rows = await db.select<WorkspaceLinkRow>(
+    `SELECT ${MOUNT_PR_LINK_COLUMNS}, mount.session_id AS sessionId
+     FROM mount_pr_links link
+     JOIN session_worktrees mount ON mount.id = link.mount_id
+     JOIN sessions s ON s.id = mount.session_id
+     WHERE s.workspace_id = ?
+       AND s.deleted_at IS NULL
+       AND s.archived_at IS NULL
+       AND mount.is_attached = 1
+       AND link.provider = 'github'
+     ORDER BY link.last_observed_at DESC, link.id`,
+    [workspaceId],
+  );
+  return rows.map(({ sessionId, ...row }) => ({ sessionId, link: toMountPullRequestLink(row) }));
+};
+
 type ListDormantOpenParams = {
   readonly db: Database;
   readonly workspaceId: WorkspaceId;
