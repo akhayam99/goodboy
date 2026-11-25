@@ -12,20 +12,21 @@ deployed by Vercel from `website/vercel.json`.
 
 Find a file by what you want to change.
 
-| I want to change                          | Look in                                                                                                        |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| the hero or any landing section           | `src/pages/home/sections/` (`Hero.tsx`, `Tour.tsx`, `Install.tsx`), assembled by `src/pages/home/HomePage.tsx` |
-| a product mock shown on the page          | `src/mocks/` (`kit/` is the shared app look)                                                                   |
-| the features page or its copy             | `src/pages/features/`, copy in `features.data.json`                                                            |
-| the ADE guide page and its copy           | `src/pages/content/AdePage.tsx`, copy in `adeGuide.ts`                                                         |
-| docs, changelog, release or 404 pages     | `src/pages/content/`                                                                                           |
-| titles, JSON-LD, sitemap, feed, markdown  | `src/prerender/`                                                                                               |
-| a release snapshot                        | `src/data/releases/` (written by the release flow)                                                             |
-| colours, type, layout tokens              | `src/styles/base.css`                                                                                          |
-| shared button, chapter or logo pieces     | `src/components/`                                                                                              |
-| shared helpers, theme, links and URLs     | `src/lib/` (`site.ts` holds every link)                                                                        |
-| a hook                                    | `src/hooks/useFoo/index.ts`                                                                                    |
-| fonts, hero images, favicon, brand assets | `public/`                                                                                                      |
+| I want to change                           | Look in                                                                                                          |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| the hero or any landing section            | `src/pages/home/sections/` (`Hero.tsx`, `Tour.tsx`, `Install.tsx`), assembled by `src/pages/home/HomePage.tsx`   |
+| a product mock shown on the page           | `src/mocks/` (`kit/` is the shared app look)                                                                     |
+| the features page or its copy              | `src/pages/features/`, copy in `features.data.json`                                                              |
+| the ADE guide page and its copy            | `src/pages/content/AdePage.tsx`, copy in `adeGuide.ts`                                                           |
+| one of the eight topic guides and its copy | `src/pages/content/GuidePage.tsx`, copy in `src/pages/content/guides/<name>Guide.ts`, list in `guides/GUIDES.ts` |
+| docs, changelog, release or 404 pages      | `src/pages/content/`                                                                                             |
+| titles, JSON-LD, sitemap, feed, markdown   | `src/prerender/`                                                                                                 |
+| a release snapshot                         | `src/data/releases/` (written by the release flow)                                                               |
+| colours, type, layout tokens               | `src/styles/base.css`                                                                                            |
+| shared button, chapter or logo pieces      | `src/components/`                                                                                                |
+| shared helpers, theme, links and URLs      | `src/lib/` (`site.ts` holds every link)                                                                          |
+| a hook                                     | `src/hooks/useFoo/index.ts`                                                                                      |
+| fonts, hero images, favicon, brand assets  | `public/`                                                                                                        |
 
 Where code runs:
 
@@ -92,14 +93,14 @@ characters; a description takes 70 to 165 (`website/scripts/lib/seoCheck.mjs`).
   A doc page is a TechArticle, a release page a WebPage with the `datePublished`
   of its snapshot, the two index pages are CollectionPages, and every other page
   a WebPage. Mark up only what the page shows: no rating, no `license` and no FAQ
-  that isn't on the page. The ADE guide page adds a FAQPage built from the same
-  `adeGuide.ts` questions the page prints. The check fails on a type outside that list.
+  that isn't on the page. The ADE guide page and each topic guide with a FAQ add a FAQPage built from the
+  same questions the page prints (`guideFaqOf`). The check fails on a type outside that list.
 - `website/src/prerender/PAGE_REGISTRY.ts` is the one list of pages: the home page,
   features, every content page and the 404, each with its `PageMeta`. The build writes `dist/sitemap.xml` and `dist/llms.txt` from it, so they cannot
   disagree, and `/changelog.xml` from the release snapshots; a new release or doc shows up in all three on its own. A patch release (`x.y.z` with `z` not 0, decided by `isPatchRelease`) is `noindex`: its page still renders and the changelog index and the feed still link it, but the sitemap and `llms.txt` leave it out. A page has a `lastmod`
   only when its date is true: a release page has its snapshot date, the changelog index the newest release date, and the home page,
-  features, the ADE guide and docs have none. `llms.txt` is a plain index for agents that
-  reach the site: the home description, then Product (home, features, the ADE guide), Docs, the newest ten releases and Download, one line per
+  features, the ADE guide, the topic guides and docs have none. `llms.txt` is a plain index for agents that
+  reach the site: the home description, then Product (home, features, the ADE guide and the topic guides), Docs, the newest ten releases and Download, one line per
   page. No sitemap or `llms.txt` lives in `website/public/`, so there is none to edit by hand, and the SEO check fails
   when the sitemap, `llms.txt`, the feed and the built pages list different URLs
   (the feed lists every built release page, the sitemap and `llms.txt` only the indexed ones).
@@ -160,6 +161,23 @@ characters; a description takes 70 to 165 (`website/scripts/lib/seoCheck.mjs`).
   `/#install`, because a prerendered content page cannot pick a platform build.
   The footer line under the logo links to it on every page, and sits in place of a
   sixth Product link, which would push the home page past its height budget.
+  The ADE page ends with a Guides section that links the eight topic guides below.
+- The eight topic guides, one URL each, each answering one search:
+  `/git-worktrees-for-ai-coding-agents`, `/run-multiple-coding-agents-in-parallel`,
+  `/fix-pr-review-comments-with-ai`, `/context-handoff-between-coding-agents`,
+  `/control-coding-agent-costs`,
+  `/use-claude-code-codex-cursor-gemini-copilot-together`,
+  `/multi-repo-changes-with-coding-agents` and `/agentic-coding-glossary`. Each is typed
+  data of the `Guide` shape in `website/src/pages/content/guides/`, with its paths in
+  `SITE.guides`, listed in `GUIDES.ts` and rendered by `GuidePage.tsx` (sections with
+  paragraphs, numbered steps with a command, titled items and links, then an optional FAQ,
+  a Keep reading list and the Download call to action). `CONTENT_PAGES.tsx` builds the
+  `PageMeta` of each from its data, so a guide is in the sitemap and `llms.txt` with no
+  other list, and its path is added to `seo-published-paths.json`. A claim in a guide
+  links to the `/docs/<area>` heading that holds it, and each guide links to the ADE
+  guide and to at least two sibling guides. The footer has a Guides column of five of
+  them, short labels from `GUIDE_NAV`, because a longer column pushes the home page past
+  its height budget; the ADE page lists all eight.
 - `/changelog`, every release newest first, and `/changelog/<version>`, one
   page per release, titled `Goodboy <version>: <summary theme>` in 70 characters or fewer and described by its summary, plus the first note entries when the summary is short: its date and summary from the snapshot in
   `website/src/data/releases/`, and its New, Improved and Fixed notes from the
@@ -390,7 +408,7 @@ the tap holds casks and has no Linux formula. A phone has no download buttons.
 `pnpm check:page [url...]` drives headless Chrome over a running page (default
 `http://localhost:1499/`) at 1440, 1024, 768, 660 and 390 pixels wide, in
 both themes, at twice the pixel density. With no url it checks `/`,
-`/features`, the ADE guide and one page of each content kind; every route passes it. Tag
+`/features`, the ADE guide, the worktrees guide and one page of each content kind; every route passes it. Tag
 Manager is blocked during the run.
 
 `/` and `/features` are the marketing pages. On the changelog, docs and 404

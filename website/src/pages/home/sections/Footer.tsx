@@ -1,6 +1,7 @@
 import './Footer.css';
 import { Logo } from '../../../components/Logo';
 import { LATEST_VERSION } from '../../../data/latestVersion';
+import { GUIDE_NAV } from '../../../lib/GUIDE_NAV';
 import { SITE } from '../../../lib/site';
 import { trackAttributes, type TrackAttributes } from '../../../lib/trackAttributes';
 
@@ -29,6 +30,16 @@ const COLUMNS: readonly Column[] = [
       { label: 'How it works', href: SITE.howItWorks },
       { label: 'Workflows', href: `${SITE.features}#workflows` },
       { label: 'Changelog', href: SITE.changelog },
+    ],
+  },
+  {
+    title: 'Guides',
+    links: [
+      { label: GUIDE_NAV.worktrees, href: SITE.guides.worktrees },
+      { label: GUIDE_NAV.parallel, href: SITE.guides.parallel },
+      { label: GUIDE_NAV.review, href: SITE.guides.review },
+      { label: GUIDE_NAV.costs, href: SITE.guides.costs },
+      { label: GUIDE_NAV.glossary, href: SITE.guides.glossary },
     ],
   },
   {
