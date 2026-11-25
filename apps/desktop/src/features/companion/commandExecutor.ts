@@ -31,6 +31,11 @@ import {
   mobileMergeFacts,
   evaluateMobileSpawnWorkflow,
 } from './mobileConfinement';
+import { decideKindOf } from './actions/decideAction';
+import { decidePorts } from './actions/decidePorts';
+import { executeDecideAction } from './actions/executeDecideAction';
+import { parseDecideAction } from './actions/parseDecideAction';
+import { transcriptOf } from './actions/transcriptOf';
 import type { AgentKind } from '../session/agent-kind';
 import {
   linearFetchAssignedIssues,
@@ -521,7 +526,43 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
   const store = useAppStore.getState();
   const data = asRecord(cmd.data);
 
+  if (decideKindOf({ kind: cmd.kind }) !== null) {
+    const action = parseDecideAction({ raw: { ...data, kind: cmd.kind } });
+    if (action === null) {
+      throw new BridgeSafeError(`invalid ${cmd.kind} request`);
+    }
+    return executeDecideAction({
+      action,
+      phoneId: asString(data.phoneId) ?? null,
+      getStore: () => useAppStore.getState(),
+      ports: decidePorts,
+    });
+  }
+
   switch (cmd.kind) {
+    case 'queryTranscript': {
+      const workspaceId = asString(data.workspaceId);
+      const sessionId = asString(data.sessionId);
+      const agentId = asString(data.agentId);
+      if (workspaceId === undefined || sessionId === undefined || agentId === undefined) {
+        throw new BridgeSafeError('queryTranscript requires workspaceId, sessionId and agentId');
+      }
+      const projection = await transcriptOf({
+        query: {
+          workspaceId,
+          sessionId,
+          agentId,
+          limit: typeof data.limit === 'number' ? data.limit : 100,
+          beforeEntryId: asString(data.beforeEntryId) ?? null,
+        },
+        getStore: () => useAppStore.getState(),
+      });
+      if (projection === null) {
+        throw new BridgeSafeError('unknown agent for session');
+      }
+      return projection;
+    }
+
     case 'queryProviders':
       return buildProviderMenu();
 
@@ -754,6 +795,8 @@ function genericMaskFor(kind: string): string {
       return 'could not create session';
     case 'queryFileDiff':
       return 'could not load file diff';
+    case 'queryTranscript':
+      return 'could not load transcript';
     default:
       return 'command failed';
   }
