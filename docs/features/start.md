@@ -6,15 +6,22 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 Write what you want done and press Start. A Lead runs it: it plans first, then starts the agents it needs.
 
-- The **Start a run** field is a session's Runs page while it has no run. With runs, **New** in the head starts one.
-- On the **New session** page, the same form routes the goal you wrote the same way until you pick a kind.
-- Its hint reads "~ workflows, @ roles".
-- Typing `~` or `@` in an empty field opens the same menu as the chat box. Pick a workflow or a role and the **Plan** row shows it.
-- A name typed in the text still wins over the Plan row.
-- The Plan row and the settings under the box are [one start form](#one-start-form).
-- Under the box, a line reads "Starts as ..." with the reason and the model. It changes as you type, before you press Start. Once you pick a workflow or one agent, the line by Start says what runs.
-- The paperclip, paste and drop attach files and images, on Runs and on New session, whatever the kind. They go with the run to its first agent. A file that cannot be attached says why on the box, and the text and the other files stay.
+#### Where the field is
+
+- On a session's Runs page, the **Start a run** field is the page while it has no run. With runs, **New** in the head starts one.
+- **Start a run** in a session's New menu and ⌘K opens the field. ⌘K also offers **Start from** each preset, which opens it with `~` and the preset name.
+- Outside a session, ⌘K **Start a run** opens the New session page on Auto picks.
+- The branch page header has **Start a run on this branch**. It opens the field on Runs with that branch picked.
+- Setup's last step draws this field too, pinned to Scout, so the first start teaches the second.
+
+#### Write the ask
+
+- Under the box, a line reads "Starts as ..." with the reason and the model. It changes as you type, before you press Start.
+- Typing `~` or `@` in an empty field opens the same menu as the chat box. Pick a workflow or a role and the **Plan** row shows it. A name typed in the text still wins over the Plan row.
+- The paperclip, paste and drop attach files and images, whatever the kind. They go with the run to its first agent. A file that cannot be attached says why on the box, and the text and the other files stay.
 - ↵ starts, ⇧↵ adds a line.
+
+#### How Goodboy picks
 
 The pick is a rule table in the app, with no model call. Goodboy reads it top to bottom until a row holds.
 
@@ -27,51 +34,76 @@ The pick is a rule table in the app, with no model call. Goodboy reads it top to
 | 5     | Nothing above                                                                                      | A Lead                                                      |
 
 - A Lead never follows a workflow you did not pick.
-- When the ask names a saved workflow, or shares two words of its description and steps, a line under the Plan row reads "Looks like your workflow Fix a layout."
-- **Use it** picks **Follow a workflow** with it, and the Lead may change its steps.
-- A name match ranks first, then the workflow last used in the session.
-- A **Lead** default saved in Settings by an older version hides that line.
-- A preset becomes the Lead's plan: its brief lists the steps in order, with **Keep steps** or **May change steps**. A step pinned to a model keeps that model: the child the Lead starts for its role runs on it. A role you named starts that one agent, with no Lead.
-- New runs never start the orchestrator. A run started on it before keeps its engine, its line and its page.
+- When the ask names a saved workflow, or shares two words of its description and steps, a line under the Plan row reads "Looks like your workflow Fix a layout." **Use it** picks **Follow a workflow** with it, and the Lead may change its steps.
+- A preset becomes the Lead's plan: its brief lists the steps in order, with **Keep steps** or **May change steps**. A step pinned to a model keeps that model.
+- A role you named starts that one agent, with no Lead.
 - The reason is kept with the run.
 - If the start fails, the field keeps your text and Start becomes **Retry**.
-- Moving to another session while a start is on its way drops the late answer, so its text or error never lands on the other session.
-- **Start a run** in a session's New menu and ⌘K opens the field. ⌘K offers **Start from** each preset, which opens it with `~` and the preset name.
-- Outside a session, ⌘K **Start a run** opens the New session page on Auto picks.
-- Setup's last step draws this field too, pinned to Scout, so the first start teaches the second.
-- On a session's Runs page the settings row holds a **Branch** chip with the session's branches. It reads **Any branch** until you pick one, and shows the branch alone when the session has one.
-- A picked branch goes with the ask, so the run works on that branch. A failed start keeps it for Retry. A successful start clears it.
-- The branch page header has **Start a run on this branch**. It opens the field on Runs with that branch picked.
+
+#### Start on a branch
+
+On a session's Runs page the settings row holds a **Branch** chip with the session's branches. It reads **Any branch** until you pick one, and shows the branch alone when the session has one.
+
+A picked branch goes with the ask, so the run works on that branch. A failed start keeps it for Retry. A successful start clears it.
 
 ### One start form
 
 Every door draws the same form: the New session page, a session's Runs page (and so the New menu's **Start a run**), ⌘K, and the setup Scout run. The comment drawer of the Branch page draws it too.
 
-- In the comment drawer the goal comes written from the comment, and you can edit it. The comments sit under it as chips, and the run reads them word for word. Open comments from the same folder can be added with one click.
-- From a comment, the branch is the comment's branch and cannot change. **Cancel** keeps the goal and the chips for the next time you open it.
+#### From a comment
 
-- The goal comes first. Under it the **Plan** row says who plans the run: **The Lead plans it**, **Follow a workflow** or **One agent**. The action row ends the form, with one line by Start on what runs.
-- **The Lead plans it** is picked by default and reads the table above. A draft left on Orchestrated by an older version opens on it.
+- The goal comes written from the comment, and you can edit it.
+- The comments sit under it as chips, and the run reads them word for word. Open comments from the same folder can be added with one click.
+- The branch is the comment's branch and cannot change.
+- **Cancel** keeps the goal and the chips for the next time you open it.
+
+#### The Plan row
+
+The goal comes first. Under it the **Plan** row says who plans the run, and the action row ends the form with one line by Start on what runs.
+
+- **The Lead plans it** is the default. It reads the table above.
 - **Follow a workflow** is off until the workspace has a saved workflow. Picked, it shows the workflow picker, the box **Keep its steps as written** (empty, the Lead may change a step and says why) and the steps below.
 - **One agent** shows the role picker in the same row.
-- Under the Plan row the settings read as one sentence, such as "Stops after the plan · Edits full access · Limit $8.00 · harbor-portal". **Change** opens the controls under it and **Done** closes them.
-- Each control is written "Label: value" and opens its own popover, anchored to it, so it stays inside the window. The source of a value ("from Harborline") sits in the popover header, and a control is tinted when its value is not the default.
-- A plan shows only the settings it uses. **Projects** shows on the New session page only. **Limit** and **Asks you** do not show on One agent: a plain agent has no limit to enforce and no step to stop at.
-- The model sits in the message box, beside **Start**. It names the model of the Lead or the agent for this run, **Auto** until you pick one. A pick is for this run only.
+
+Setup's Scout run is pinned to one agent, so it draws no Plan row and no role picker.
+
+#### The settings row
+
+Under the Plan row the settings read as one sentence, such as "Stops after the plan · Edits full access · Limit $8.00 · harbor-portal". **Change** opens the controls under it and **Done** closes them. Each control is written "Label: value" and opens its own popover.
+
+A plan shows only the settings it uses. **Projects** shows on the New session page only. **Limit** and **Asks you** do not show on One agent: a plain agent has no limit to enforce and no step to stop at.
+
+- **Model** sits in the message box, beside **Start**. It names the model of the Lead or the agent for this run, **Auto** until you pick one. A pick is for this run only.
 - **Asks you** is the Lead's level, when the Lead plans and when it follows a workflow.
-- **Edits** is what agents may do in the session: **Read only**, **Ask first**, **Edits allowed** or **Full access**. It reads the workspace default until you pick, and a start never writes a mode you did not pick. A pick applies to the whole session, and is set before the first agent starts. The chat box picker reads **Edits: Ask first**, the same label.
-- **Limit** reads "Limit: $5.00" ("Limit: none" without one), with a quiet "default" while the amount is the one the kind starts from. Every kind, and a start with no kind pressed, starts from the limit on **Workflows › Every run**. Switching kind shows the new kind's default and keeps an amount you typed. Its popover lists $5, $10 and $25 beside the default and your typed amount, with an **Other amount** field and **No limit**.
-- Under the amounts the popover names the limits that still apply: the session limit, then each provider's monthly limit. Each shows what is spent, as in "Session $0 of $20.00 · Claude $41.20 of $200.00 this month".
-- The run gets exactly the amount the chip shows. **No limit** means no limit, even when the workspace has a default. A start never adds a limit you did not see. An amount you type applies to the run you start and never changes the default limit. It stays in the chip until the run starts, so a failed start keeps it for Retry and the next start begins from the default again. The help in the popover names the same source as the amount.
-- The run page shows the same amount with its source, **default** or **this run**.
+- **Edits** is what agents may do in the session: **Read only**, **Ask first**, **Edits allowed** or **Full access**. It reads the workspace default until you pick, and a start never writes a mode you did not pick. A pick applies to the whole session, and is set before the first agent starts.
 - **Guidance** shows on every kind. It starts as the workspace guidance, with a quiet "from Harborline" tag. Once you edit it the tag reads "this run", and "None" when you clear it.
-- The chip shows the start of the text, and a tooltip shows all of it. Its popover has the text, **Use workspace guidance** and **No guidance**.
+- **Limit** reads "Limit: $5.00" ("Limit: none" without one).
+
+#### Guidance
+
 - The popover says who reads it: the Lead and the agents it starts, or the one agent.
+- The chip shows the start of the text, and a tooltip shows all of it.
+- The popover has the text, **Use workspace guidance** and **No guidance**.
 - Switching the plan keeps the guidance you wrote. A start that fails keeps it, and Retry sends it again.
+
+#### Limit
+
+The chip shows a quiet "default" while the amount is the one the kind starts from. Every kind starts from the limit on **Workflows › Every run**.
+
+- The popover lists $5, $10 and $25 beside the default and your typed amount, with an **Other amount** field and **No limit**.
+- Under the amounts it names the limits that still apply: the session limit, then each provider's monthly limit. Each shows what is spent, as in "Session $0 of $20.00 · Claude $41.20 of $200.00 this month".
+- The run gets exactly the amount the chip shows. **No limit** means no limit, even when the workspace has a default. A start never adds a limit you did not see.
+- An amount you type applies to the run you start and never changes the default limit. A failed start keeps it for Retry, and the next start begins from the default again.
+- The run page shows the same amount with its source, **default** or **this run**.
+
+#### Switch the plan, and start from chat
+
 - Switching the plan keeps what you typed and the values that still apply.
-- The primary always reads **Start**, whatever the plan.
-- Setup's Scout run is pinned to one agent, so it draws no Plan row and no role picker, and the same settings as every other form.
 - Start work from chat drafts the brief in the drawer, makes the session, then opens this form on the session with the goal filled in.
+
+#### If a start fails
+
+A failed start keeps the goal and settings. Its cause appears above the form actions, and starting again retries. A missing provider offers Connect a provider. Other failures offer Copy details.
 
 ### Permission rows
 
@@ -80,12 +112,22 @@ A Lead's autonomy is nine rows you can read and change.
 - The rows are: approve the plan, start agents that read, start agents that write, push, and open a pull request. The rest are add dependencies, change protected files, add a project and close the work.
 - The three levels, **Every step**, **After the plan** and **Never**, set all the rows at once. When a row differs from its level, the level reads **Custom**, with how many details differ and **Reset** to go back.
 - Each row answers **Ask first** or **Go ahead**, with **After the plan**, **When checks pass** or **When allowed** where a row needs it. The rows sit under Agents, Git and publishing, and Project, and one line under them says what never changes.
-- On a run, **Stops** opens a menu: the three levels, one line each, and **Fine-tune this run** last. Fine-tune opens the Lead's details beside the chat, for this run only. Before a Lead exists the last row is **Fine-tune in Settings**.
-- **Stops for your OK** on **Workflows › Every run** sets the level for workflows and the Lead. **Fine-tune what the Lead does alone** opens the details for new runs in the page. Picking a level there clears the details, and Reset does the same. A run never changes the workspace default.
-- A row saves the moment you change it. A failed save keeps the old value and shows the error under the row.
+
+#### On a run
+
+- **Stops** opens a menu: the three levels, one line each, and **Fine-tune this run** last. Fine-tune opens the Lead's details beside the chat, for this run only.
+- Before a Lead exists the last row is **Fine-tune in Settings**.
 - A row you tighten while an agent runs applies to its next start. One you loosen never releases a start that already waits.
-- The spend limit shows under Finish, read only. Four rules never change, listed under Always on: a force push asks and takes a backup, you merge, agents never push, and the Lead never writes code.
 - An older workflow run keeps the level it started with.
+
+#### As a default
+
+- **Stops for your OK** on **Workflows › Every run** sets the level for workflows and the Lead.
+- **Fine-tune what the Lead does alone** opens the details for new runs in the page. Picking a level there clears the details, and Reset does the same.
+- A run never changes the workspace default.
+- A row saves the moment you change it. A failed save keeps the old value and shows the error under the row.
+
+The spend limit shows under Finish, read only. Four rules never change, listed under Always on: a force push asks and takes a backup, you merge, agents never push, and the Lead never writes code.
 
 ### The Kind chip
 
@@ -99,54 +141,64 @@ The chip opens one popover. It shows:
 - **With the workflow** (Keep steps, May change steps) on an older preset run;
 - the other kinds a new run can be (Lead, and Lead · plan for each preset).
 
-Its last line says what a pick does.
+Its last line says what a pick does, and it depends on the state of the run:
 
-- Before the first step starts, the list reads **Change it to** and a pick applies to the same run, so nothing is spent twice. A plan with no step yet that becomes one agent is replaced by that agent. Follow and Adapt switch in place.
-- While the run is going, the popover is read-only: it says what the run is and why, and offers no other kind ("Fixed while the run is going. Stop it to restart as something else."). Two runs never work on the same branch at once. A run with no agent yet counts as going while its first decision is pending.
-- When the run is stopped, failed or blocked, the list reads **Restart as**. A last line reads "Ends this run and starts a new one with what it did so far." The new run gets the same ask and what the first found. Then the first run closes. If the new run fails to start, the popover stays open with the reason and the first run is left as it was. If the first run cannot close, the popover says the new run started and the first did not end.
+- Before the first step starts, the list reads **Change it to** and a pick applies to the same run, so nothing is spent twice.
+- While the run is going, the popover is read-only. It says "Fixed while the run is going. Stop it to restart as something else."
+- When the run is stopped, failed or blocked, the list reads **Restart as**. A last line reads "Ends this run and starts a new one with what it did so far." The new run gets the same ask and what the first found, then the first run closes. If the new run fails to start, the popover stays open with the reason and the first run is left as it was.
 - Once the run is finished, the list reads **Start a new run as**. A last line reads "Starts a new run with the same goal." and the new run gets what the first found. The finished run stays in the list.
-- The session default is not on the chip: set it with **New runs in this session start as** in Settings.
+
+The session default is not on the chip: set it with **New runs in this session start as** in Settings.
 
 ### The model of a run
 
 The settings line of a run names the model that runs it, next to the **Kind** chip.
 
-- An older orchestrated run shows **Orchestrator** with its model, **Auto** while the run follows the default. A pick is for this run only, and **Auto** in the picker goes back to the default. The chip is fixed while the orchestrator decides and once the run is over. The hint box below holds the same control.
 - An agent or a Lead has its model in its message box, beside **Send**. A pick there applies from the next turn of that agent.
+- An older orchestrated run shows **Orchestrator** with its model, **Auto** while the run follows the default. A pick is for this run only, and **Auto** in the picker goes back to the default.
 - The default of each is in **Workflows › Every run**.
 
 ### The New session page
 
 Start a session from your goal: write it or pick an issue, then choose the kind of run.
 
+#### Goal and tasks
+
 - The first field is **Goal** ("Describe the goal, or pick one from Tasks"). Write it, or press **Pick from Tasks** in its bottom row to pick an open issue. The issue fills the goal when it is empty and links to the session.
-- **Pick from Tasks** lists your open tasks by source, newest first. Tabs on top narrow it to one source (Linear, GitHub, Sentry, whatever is connected) and count what matches the search. Each row shows the key, the title, its state and its repo or project. Arrows move, Enter picks, Tab reaches the source tabs. A source that didn't load says so in the list with **Retry**. The page remembers the source you picked in this workspace.
-- **Projects** sits in the settings row and reads **Auto picks**. The session runs on the workspace, and agents read every folder.
-- The folders the goal needs are mounted on start. They are the workspace's only repo, the repo of a linked GitHub or GitLab issue, and the repos the goal names by their exact name.
+- **Pick from Tasks** lists your open tasks by source, newest first. Tabs on top narrow it to one source (Linear, GitHub, Sentry, whatever is connected) and count what matches the search.
+- Each row shows the key, the title, its state and its repo or project. Arrows move, Enter picks, Tab reaches the source tabs.
+- A source that didn't load says so in the list with **Retry**.
+- A picked issue whose repository Goodboy recognizes pins that repository in **Projects**.
+
+#### Projects
+
+**Projects** is optional. It sits in the settings row and reads **Auto picks**. The session runs on the workspace, and agents read every folder.
+
+- On start, Goodboy mounts the folders the goal needs. They are the workspace's only repo, the repo of a linked GitHub or GitLab issue, and the repos the goal names by their exact name.
 - Later an agent mounts the folder it must edit by itself.
 - Both share one allowance: the active folder, a folder linked by the issue and up to two more per session. More wait for your approval. See [mounts.md](../mounts.md#who-picks-the-folders).
-- Open **Projects** to pin folders yourself. Clear it to give the choice back.
-- A picked issue whose repository Goodboy recognizes pins that repository in **Projects**.
+- A Lead that has to write and finds no folder picks one the same way, inside the same allowance. It asks where it should work only when the task names no folder of the workspace or the allowance is spent.
+
+Open **Projects** to pin folders yourself, and clear it to give the choice back. A pin always wins: with a folder pinned, nothing else is mounted on start. The button reads **Auto picks**, the folder you pinned, or how many you pinned.
+
+- Search it by name, even with 50 folders in the workspace.
+- The list opens on Starred, then Recent (the folders your latest sessions worked in, five at most), then All projects by name. A folder that matches the picked task leads Recent with the reason under its name.
+- The star on a row, or ⌘S on the highlighted row, stars or unstars it. A failed save leaves the star as it was and says why in the list. With nothing starred, one line at the bottom says how.
+
+#### Kind and start
 
 Under the task sits [one start form](#one-start-form).
 
-- The page remembers the last kind you started in this workspace (saved after a start succeeds). It opens on that kind next time. The first visit opens on Lead.
-- Each window keeps its own pick while it is open.
+- The page remembers the last kind you started in this workspace and opens on it next time. The first visit opens on Lead.
 - ⌘K **New workflow session**, **New agent session** and **Start a run** open the page on Lead.
-- The goal is required on every kind. If the start fails, the page keeps everything and Start becomes **Retry**. Leaving the page while a start is on its way drops the late answer.
-- A session with no run shows this form inline on its Overview, so the first action is on the page. **New** stays the outline button in every state.
-- After a start, if the new worktree reads its dependencies from another folder, a warning says to reinstall before the agent runs checks. The Branch page keeps its own notice.
+- The goal is required on every kind. If the start fails, the page keeps everything and Start becomes **Retry**.
 - Start sends the kind you pressed, so the router does not guess. The run's line says "you picked it".
+- After a start, if the new worktree reads its dependencies from another folder, a warning says to reinstall before the agent runs checks. The Branch page keeps its own notice.
+- A session with no run shows this form inline on its Overview, so the first action is on the page.
+
+#### Leave the page
 
 **Start blank** sits in the page header, and **Discard** sits next to Start once you wrote something. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text. The text you typed survives a reload too.
-
-**Projects** is optional. Search it by name, even with 50 folders in the workspace.
-
-- The list opens on Starred, then Recent (the folders your latest sessions worked in, five at most), then All projects by name. A folder that matches the picked task leads Recent with the reason under its name.
-- The star on a row, or ⌘S on the highlighted row, stars or unstars it. The star changes once the save is done; a failed save leaves it as it was and says why in the list. With nothing starred, one line at the bottom says how.
-- It reads **Auto picks**, the folder you pinned, or how many you pinned.
-- A pin always wins. With a folder pinned, nothing else is mounted on start.
-- A Lead that has to write and finds no folder picks one the same way, inside the same allowance. It asks where it should work only when the task names no folder of the workspace or the allowance is spent.
 
 ### Start from a task
 
@@ -154,7 +206,15 @@ Start a session from an issue in Tasks, with the issue linked and its goal writt
 
 A task is never a kind: **Pick from Tasks** works the same on every kind. Press Start. The session is created with the issue linked. The run starts as the kind you picked, or is routed like any other from Auto picks. If the start fails, the page keeps the issue and your text and Start becomes **Retry**.
 
-The Linked card in the Context tab holds the linked work list, with older work under **Show history**. A row opens its record, with the session title as its first crumb above it. Unlink returns there after saving; a failure keeps the record open. Sentry rows open in **Tasks**, which their tooltip says, and name their issue, as in **Open PAYMENTS-42 in Tasks**. Work on any branch the session holds counts as current whichever branch is active; only work of a branch the session no longer holds, or already merged, goes under history. Search or run and provider shortcuts open **Link work** on that provider, also when the session pages are folded, and are not offered on an archived session.
+#### Linked work
+
+The Linked card in the Context tab holds the linked work list, with older work under **Show history**.
+
+- A row opens its record, with the session title as its first crumb above it.
+- Unlink returns there after saving. A failure keeps the record open.
+- Sentry rows open in **Tasks**, which their tooltip says, and name their issue, as in **Open PAYMENTS-42 in Tasks**.
+- Only work of a branch the session no longer holds, or already merged, goes under history.
+- Search or run and provider shortcuts open **Link work** on that provider.
 
 ### Review a pull request
 
@@ -171,9 +231,13 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 - A run you like can be kept from its page with **Save as preset**.
 - While a run lives, **Pause run** (then **Continue** in its place) and **Stop run** sit as buttons in its header.
 
-**Tools beside the page**
+#### Tools beside the page
 
 A thin column of icons sits at the right of every screen, under the caption **Tools**. It holds **Terminal** (⌃\` or ⌘⌥T) and **Browser**. They open beside whatever you are doing and stay open as you move between pages. Each session keeps its own tools, and they come back when you return to it. With a dock open, the column sits on the dock's left edge. See [Terminal](keyboard.md#terminal) and [Browser](keyboard.md#browser).
+
+Hover a tool to read its name and key.
+
+#### Other views of a session
 
 The other views of a session open from its head and from the keyboard:
 
@@ -185,26 +249,28 @@ The other views of a session open from its head and from the keyboard:
 | Changes on All files | ⌘⌥X |
 | **Scripts**          | ⌘⌥S |
 
-- **Context** opens on Goal; its cards share one menu for editing, versions and who reads them.
-- Hover one to read its name and key. Each tool shows its name below its icon, brighter while it is open.
-- **Agents** lists every agent of the session as a tree, the same set as the Runs page. Each run sits with its agents under it, a Lead first, and an agent you started yourself is a launch of one row with its state word.
+**Context** opens on Goal. Its cards share one menu for editing, versions and who reads them.
+
+#### Agents
+
+**Agents** lists every agent of the session as a tree, the same set as the Runs page. Each run sits with its agents under it, a Lead first, and an agent you started yourself is a launch of one row with its state word.
+
 - The tree follows the run you have open, or shows only what is live when nothing is open. **All runs** goes to the Runs page.
 - Click an agent, or press Enter on it, to read it in the page beside the tree. The tree stays open with that agent selected.
 - **j** and **k** with focus on a row open the next and the previous agent.
 - A session with nothing live says "Nothing live right now".
 - On a narrow window the panel lies over the page, and Esc closes it.
 
-**Runs**
+#### Runs
 
 All the work of a session lives in one rail entry, **Runs**: the runs a Lead leads, older preset and orchestrated runs, and the agents you started. One row per request, newest first.
 
 - Each row says who leads it: "Lead", "Lead · plan Fix flaky tests" when the Lead follows a preset, and "Agent · Scout" for a one agent run. An older row keeps its own line, "Workflow · Preset Fix a layout", and an orchestrated one adds a gray "older run".
 - The page says what it holds in one gray line under its title, whether it is empty or full.
-- Groups read their name in bold with their count in gray, 32px apart. A run's name leads its row; the kind, state, progress, cost and age after it are one step smaller and gray.
+- A run's name leads its row. A finished run's name is gray, and a live run keeps its state.
 - **By branch** puts what needs you first, then what is running, then open branches with the newest work on top. **No branch** follows the same rules.
 - A Lead and every agent it starts sit under the branch they work on. In a session with one branch, every run sits under it, older runs too.
 - A branch whose pull request is merged or closed, or whose worktree is gone, folds under one **Finished** row at the bottom once its runs are done. The row is closed until you press **Show**.
-- A finished run's name is gray. A live run keeps full weight and its state.
 - Archived runs never show on Runs. The timeline keeps them, and the run's page restores them.
 - An empty Runs page is the Start a run field alone.
 
@@ -222,13 +288,11 @@ Get a short title without writing one. A new session is named for you and marked
 
 ### Undo an unlink
 
-Unlinking a task from a session acts at once, with a 10-second **Undo** toast, and **⌘Z** works too. The unlink stays in the log with **Re-link**. Unlinking the issue you have open takes you back to its list; the back row above the issue does the same. If you moved elsewhere before the unlink finished, you stay where you went.
+Unlinking a task from a session acts at once, with a 10-second **Undo** toast, and **⌘Z** works too. The unlink stays in the log with **Re-link**. Unlinking the issue you have open takes you back to its list. The back row above the issue does the same.
 
 ### Move an issue between the session and a branch
 
 Choose where an issue belongs with **Move to** in its chip menu: the session or one of the open branches of its project. You can also drag the chip onto a branch row, and hold ⌥ to copy it instead. Every move has one Undo.
-
-A failed start keeps the goal and settings. Its cause appears above the form actions, and starting again retries. A missing provider offers Connect a provider; other failures offer Copy details.
 
 ## Under the hood
 

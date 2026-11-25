@@ -19,14 +19,16 @@ A run started before every run had a Lead stays as it was.
 
 A preset you pick in **Start a run**, or one your ask matches, starts a Lead with that preset as its plan. The run's line reads "Lead · plan Fix a layout". The Lead reads your ask first, then the preset's steps.
 
-- **With the preset** sets how close the Lead keeps to the steps.
+**With the preset** sets how close the Lead keeps to the steps:
+
 - **Keep steps** runs the saved steps in their order. The Lead asks before it adds, skips or moves one. A preset you name with `~` starts this way.
 - **May change steps** lets the Lead add, skip or move a step, and it says why. A preset your ask matches starts this way.
-- A run started before 0.38 keeps its own line, such as "Workflow · Preset Fix a layout · Keep steps", and runs on as an older run.
+
+A run started before 0.38 keeps its own line, such as "Workflow · Preset Fix a layout · Keep steps", and runs on as an older run.
 
 ### Preset and Custom
 
-A preset is a ready sequence of steps, each with its role and model, kept in the Workflows studio. A run started from it follows it as a plan, as above; a run you like can be saved as a preset from its page with **Save as preset**.
+A preset is a ready sequence of steps, each with its role and model, kept in the Workflows studio. A run started from it follows it as a plan, as above. A run you like can be saved as a preset from its page with **Save as preset**.
 
 ### Built-in workflows
 
@@ -34,9 +36,20 @@ Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you dele
 
 ### Runs of a workflow
 
-The Workflows list is one grid: name, **Built in** or **Edited** in gray, the roles of its steps in gray ("Scout, Implementer +1"), the step count, when it last ran, and a link with its run count ("3 runs", "No runs"). The row opens the workflow. A workflow with no runs offers **Start from this preset**, which opens the New session page on the Preset form with that preset picked. The run count link opens the runs of that workflow beside the list, newest first, each a state dot, its session, its spend and its age; a row opens that run in its session. **Import workflows…** and **Restore built-in workflows…** sit in the page menu. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
+The Workflows list is one grid. Each row shows:
 
-A run that stopped on a failure, paused at its limit or finished a step and waits for you to continue puts its session in **Needs you** on the board, in Sessions and for the next-session key, with the same words as the run's row.
+- the name, with **Built in** or **Edited** in gray;
+- the roles of its steps in gray ("Scout, Implementer +1");
+- the step count and when it last ran;
+- a link with its run count ("3 runs", "No runs").
+
+The row opens the workflow. A workflow with no runs offers **Start from this preset**, which opens the New session page on the Preset form with that preset picked.
+
+The run count link opens the runs of that workflow beside the list, newest first. Each shows a state dot, its session, its spend and its age, and a row opens that run in its session. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
+
+**Import workflows…** and **Restore built-in workflows…** sit in the page menu.
+
+A run puts its session in **Needs you** on the board and in Sessions when it stopped on a failure or paused at its limit. It does the same when it finished a step and waits to continue. It uses the same words as the run's row.
 
 ### Saved steps
 
@@ -55,35 +68,71 @@ Put a light model on a scout and a strong one on the planner. A step follows its
 
 ### Asks you
 
-Choose how often a run stops for you: **Every step**, **After the plan** to approve once and then run on, or **Never**. The old names (Autonomy, Ask me, Balanced, Autopilot) still find it in search. A run on **Never** goes on until it is done or reaches its limit. That limit is on the run, the session, or a monthly limit on every provider the run can use. With no limit, an agent that ran 4 times in an hour without you reads **Needs you**, and a notice says "Ran 4 times in an hour with no limit set." Its page says the same, after a restart too. Anything you write to it resets the count. The count lives in each window on its own.
+Choose how often a run stops for you:
+
+- **Every step** stops at each step.
+- **After the plan** asks you to approve once, then runs on.
+- **Never** goes on until the run is done or reaches its limit.
+
+That limit is on the run, the session, or a monthly limit on every provider the run can use.
+
+With no limit, an agent that ran 4 times in an hour without you reads **Needs you**. A notice says "Ran 4 times in an hour with no limit set." Its page says the same. Anything you write to it resets the count.
 
 ### Pause, resume and skip
 
-**Pause** lets the step in flight finish and starts nothing new, even after a restart, and **Continue** picks up from there.
+#### Pause and continue
 
-**Stop** in the dock waits until the step has really ended: the run reads **Stopping**, then **Stopped**, and the step reads **Not finished**. **Continue** picks that same step up, and the run keeps its stop until the step has started again. When the run went on its own before you stopped it, Continue turns that back on, also after a reload. If the step does not stop, the run stays running and says so.
+**Pause** lets the step in flight finish and starts nothing new, even after a restart. **Continue** picks up from there.
 
-**Skip** passes a step that has not finished and keeps what it already wrote. If a step says nothing for 15 minutes, the run offers **Continue**. When an agent stops without saying it is done and without asking you anything, the agent page reads "This step ended without a result". The agent page offers **Mark step done**.
+#### Stop
 
-The run page has one title. Its state, here **Needs you**, is a chip on the line under the title, beside the branches, and the page body does not repeat the word. It reads **Needs you** once, with **Open step 3**. On the step page the dock holds one state line, **Not finished**, with **Retry** and **Continue**. The composer reads "Answer the step".
+**Stop** in the dock waits until the step has really ended. The run reads **Stopping**, then **Stopped**, and the step reads **Not finished**. **Continue** picks that same step up. If the step does not stop, the run stays running and says so.
 
-Goodboy also moves a step to that state within a few seconds if it is still running after its turn ended with nothing to continue it. That adds one line to the app log.
+#### Skip a step
+
+**Skip** passes a step that has not finished and keeps what it already wrote.
+
+- If a step says nothing for 15 minutes, the run offers **Continue**.
+- When an agent stops without saying it is done and without asking you anything, the agent page reads "This step ended without a result". It offers **Mark step done**.
+- The run page shows its state, here **Needs you**, once, as a chip under the title, with **Open step 3**.
+- On the step page the dock holds one state line, **Not finished**, with **Retry** and **Continue**. The composer reads "Answer the step".
 
 ### Steps that cannot finish
 
 A step that cannot finish ends as **Not finished**, and the level you picked decides if the run goes on.
 
-An agent that cannot finish a step says so. Goodboy also decides it for an agent that forgot to: a step that stops twice without saying it is done is not finished. With **Never** or **After the plan** the step ends as **Not finished** in amber, the run goes on, and the next steps are told what is missing. The rows after it say "without step 2", and a part that depends on it does not start. The run ends as "Finished, 1 step not finished", never plain Done, with a link to the step. **Keep working** on the row sends the same agent back to the step. **Skipped** stays the word for a step you skipped yourself.
+An agent that cannot finish a step says so. Goodboy also decides it for an agent that forgot to: a step that stops twice without saying it is done is not finished.
 
-With **Every step** the step stops as blocked and **Skip step** sits on its row. The field on the step page, whose button reads **Continue**, is the only place to type. Two steps in a row that do not finish stop the run at any level, and it asks. The reason shows only on the agent's own page, never on the run page or in a notification.
+#### With Never or After the plan
+
+- The step ends as **Not finished** in amber, the run goes on, and the next steps are told what is missing.
+- The rows after it say "without step 2", and a part that depends on it does not start.
+- The run ends as "Finished, 1 step not finished", never plain Done, with a link to the step.
+- **Keep working** on the row sends the same agent back to the step.
+- **Skipped** stays the word for a step you skipped yourself.
+
+#### With Every step
+
+- The step stops as blocked and **Skip step** sits on its row.
+- The field on the step page, whose button reads **Continue**, is the only place to type.
+
+Two steps in a row that do not finish stop the run at any level, and it asks. The reason shows only on the agent's own page, never on the run page or in a notification.
 
 ### Every run
 
-Set what every new run starts with on the **Every run** tab of Workflows, between **Workflows** and **Saved steps**. It is the one home of these rows: Settings has no Runs page, and its last row, **Run defaults are in Workflows**, opens this tab. **Edits** sets the mode new sessions start in, which Permissions in Settings used to hold. Under **Agents** come the models: **Runs** holds the Lead, **Roles** holds each role. While the workspace has a plan run that is not discarded, **Older plan runs** holds the Orchestrator and **Models in older plan runs**. Providers and their priority stay on the **Models** page.
+Set what every new run starts with on the **Every run** tab of Workflows, between **Workflows** and **Saved steps**. It is the one home of these rows: Settings has no Runs page, and its last row, **Run defaults are in Workflows**, opens this tab.
 
-**When a run stops for you** holds **Stops for your OK**, one level for workflows and the Lead. **Spending** holds the **Limit** with **Pause** or **Warn only**. **Agents** holds **Reply length**. **Guidance** is one field for the agents that write code, with **Polish**. **Advanced** stays closed and holds **Parallel agents**; it says so while they are on. A change reaches new runs only. Searching Runs, Run defaults or Start as in Settings finds the link here.
+- **Edits** sets the mode new sessions start in.
+- **Agents** holds the models and **Reply length**. **Runs** holds the Lead, and **Roles** holds each role.
+- **Older plan runs** holds the Orchestrator and **Models in older plan runs**, while the workspace has a plan run that is not discarded.
+- **When a run stops for you** holds **Stops for your OK**, one level for workflows and the Lead.
+- **Spending** holds the **Limit** with **Pause** or **Warn only**.
+- **Guidance** is one field for the agents that write code, with **Polish**.
+- **Advanced** stays closed and holds **Parallel agents**. It says so while they are on.
 
-The limit here applies to a run started from a chat prefix or a suggestion, and the run page names it **default**. Every kind starts from this one limit; a limit saved earlier as the Auto limit is folded into it. A new run starts from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives on the **Models** page.
+Providers and their priority stay on the **Models** page. A change reaches new runs only. Searching Runs, Run defaults or Start as in Settings finds the link here.
+
+The limit here applies to a run started from a chat prefix or a suggestion, and the run page names it **default**. Every kind starts from this one limit. A new run starts from these rules, and a **From your rules** line shows where one run differs, with a **Reset** on that control.
 
 ### Limit
 
@@ -91,11 +140,54 @@ Cap what a run or a session can spend, and choose **Pause workflows** or **Warn 
 
 ### Workflow run
 
-Follow a run step by step, with its sub-agents under their agent and one button that moves it on. A preset run and an orchestrated run draw one page: the goal, one status line, the steps top down, and on a preset run **Add step** under them. **Agents** beside the page holds the same steps with their sub-agents. Pick a step and it opens as its page, with **Back** to the run. A sub-agent that carries a part of a plan names its wave, such as **Runs first** or **Then, in parallel**. The line at the end says what the run waits for. Every step stays on the branch the run started on, even when you switch branch. Closing or removing a branch that a run still uses asks first: **Stop run first** or **Unmount anyway**. A branch whose row is already closed cannot be forgotten until the run stops. A step whose branch was detached shows as blocked and names that branch. Its line offers **Reattach**, **Use** the branch you write to, or **Pick a branch**, and your choice starts the step. With no other branch to write to, it offers **Add a project**. Pick one and **Add** it, and the step starts on it. A failed add keeps the line and shows the error. A new hint waits in the queue until you choose. The **Writes to** chip on the run names the branch of the step that is current. The run header holds the one button that moves it on, such as **Start step 3**, **Review plan**, **Answer** or **Raise limit**, or **Pause run** while nothing waits on you (once paused, **Continue** takes its place). Everything else sits in the run's **⋯** in one order: see, steer, settings, copy, then **Stop run** (it acts at once and the toast offers **Continue**), **Archive run** (it acts at once and the toast offers **Undo**) and **Delete run**. An orchestrated run opens from **Runs** in the session and reads as one document: the goal with one chip each for when it asks you, its limit and its models (each opens only its own setting, applied as you pick it), one checklist of the steps it decided, the hints it read and what is left, the line that says what the orchestrator does now with the reason for its last choice, the result once done, and the hint box at the bottom. The checklist sits under a **Steps** label and reads top down. Each step is one quiet line: **Step 3**, the role icon, the task, the state and the time. A finished step is a small green check. The step that works now has a spinning node and says **Running**, and a queued step is gray and says **Queued**. Only a step that needs you or failed takes a colored node and a thin bar at its edge. Rest on the role icon to see the role card. A set of finished sub-agents folds to one line, such as **3 scouts**, with a check. A step opens beside it. The time on a step row and on the line at the end counts only the time the agents worked, never the time a step waited for you. After a restart, **Continue all** restarts every stopped agent.
+Follow a run step by step, with its sub-agents under their agent and one button that moves it on.
 
-A run that stopped, whether at its limit, by you, on a failure or for an approval, still shows the questions its steps asked. They sit above the line that says why it stopped when they block the run, and below it otherwise. Answer them from the run page as anywhere else.
+#### The run page
 
-While the session's workflows load, the run page draws its goal, its facts and three step rows as a skeleton, after 120 ms and never as a blank page.
+A preset run and an orchestrated run draw one page: the goal, one status line, the steps top down, and on a preset run **Add step** under them.
+
+- **Agents** beside the page holds the same steps with their sub-agents.
+- Pick a step and it opens as its page, with **Back** to the run.
+- A sub-agent that carries a part of a plan names its wave, such as **Runs first** or **Then, in parallel**.
+- The line at the end says what the run waits for.
+- After a restart, **Continue all** restarts every stopped agent.
+
+A run that stopped, whether at its limit, by you, on a failure or for an approval, still shows the questions its steps asked. Answer them from the run page as anywhere else.
+
+#### Buttons on the run
+
+The run header holds the one button that moves it on, such as **Start step 3**, **Review plan**, **Answer** or **Raise limit**. While nothing waits on you it holds **Pause run**, and once paused **Continue** takes its place.
+
+Everything else sits in the run's **⋯**:
+
+- **Stop run** acts at once, and the toast offers **Continue**.
+- **Archive run** acts at once, and the toast offers **Undo**.
+- **Delete run** comes last.
+
+#### The branch of a run
+
+Every step stays on the branch the run started on, even when you switch branch. The **Writes to** chip on the run names the branch of the step that is current.
+
+- Closing or removing a branch that a run still uses asks first: **Stop run first** or **Unmount anyway**.
+- A step whose branch was detached shows as blocked and names that branch. Its line offers **Reattach**, **Use** the branch you write to, or **Pick a branch**, and your choice starts the step.
+- With no other branch to write to, it offers **Add a project**. Pick one and **Add** it, and the step starts on it. A failed add keeps the line and shows the error.
+
+#### An orchestrated run
+
+An orchestrated run opens from **Runs** in the session and reads as one document:
+
+- the goal, with one chip each for when it asks you, its limit and its models, each opening only its own setting;
+- one checklist of the steps it decided, the hints it read and what is left;
+- the line that says what the orchestrator does now, with the reason for its last choice;
+- the result once done, and the hint box at the bottom.
+
+The checklist sits under a **Steps** label and reads top down. Each step is one quiet line: **Step 3**, the role icon, the task, the state and the time.
+
+- The step that works now says **Running**, and a queued step says **Queued**.
+- Only a step that needs you or failed takes a colored node and a thin bar at its edge.
+- Rest on the role icon to see the role card.
+- A set of finished sub-agents folds to one line, such as **3 scouts**, with a check. A step opens beside it.
+- The time on a step row and on the line at the end counts only the time the agents worked, never the time a step waited for you.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">
@@ -104,27 +196,55 @@ While the session's workflows load, the run page draws its goal, its facts and t
 
 <sub>Screenshot from Goodboy 0.40.1</sub>
 
+#### The Runs page
+
 Runs opens on your runs. **New** in the head starts the next one, and **Start a run** from ⌘K opens the field above the list, where **Esc** closes it. With no run yet the field is the page.
 
-The groups are **Needs you**, **Running**, **Idle**, **Finished** and **Archived**. An agent you stopped reads **Stopped**. A preset that has not started reads **Ready**. The row always offers the real **Continue** or **Start**, and **Connect** when the provider is signed out. A row names the branch its run works on, and the rest as `+N`.
+The groups are:
 
-With two or more branches a switch groups the page **By branch** or **By state**, one choice per session. **By branch** has a group per branch or pull request series, and **No branch** comes last. Groups that need you come first, finished runs fold, and archived runs fold apart, last. The choice stays after a reload. A run on several branches stands in each, with **Also on feat/retry-budget**. With one branch the page is the same list.
+- **Needs you**, **Running**, **Idle**, **Finished** and **Archived**;
+- **Stopped**, for an agent you stopped;
+- **Ready**, for a preset that has not started.
 
-A row's branch chip opens the Branch page, **Also on** shows the same run in its other group, and a title click opens the run at once. Right click a row and pick **Rename** to edit its title. The Branch page has a **Runs** tab with the runs, questions and artifacts of that branch, the same rows as these pages. **All runs** opens this page with the group of the branch open, in the grouping you chose. **Open branch** on a group opens that Work tab, and Back from a run returns to it.
+The row always offers the real **Continue** or **Start**, and **Connect** when the provider is signed out. A row names the branch its run works on, and the rest as `+N`.
 
-When something listens on a port on this branch, the line under the branch name shows up to two ports with a live dot and their name, then **+1 more**. A click on a port opens it. **Ports** opens Monitoring on this branch. Nothing runs, nothing shows.
+With two or more branches a switch groups the page **By branch** or **By state**, one choice per session. The choice stays after a reload.
+
+- **By branch** has a group per branch or pull request series, and **No branch** comes last.
+- Groups that need you come first, finished runs fold, and archived runs fold apart, last.
+- A run on several branches stands in each, with **Also on feat/retry-budget**.
+- With one branch the page is the same list.
+
+A row's branch chip opens the Branch page, and a title click opens the run at once. Right click a row and pick **Rename** to edit its title.
+
+The Branch page has a **Runs** tab with the runs, questions and artifacts of that branch, the same rows as these pages. **All runs** opens this page with the group of the branch open, in the grouping you chose. **Open branch** on a group opens that Work tab, and Back from a run returns to it.
+
+When something listens on a port on this branch, the line under the branch name shows up to two ports with a live dot and their name, then **+1 more**. A click on a port opens it. **Ports** opens Monitoring on this branch.
 
 ### Hints to the orchestrator
 
-Every hint is your message on the run's line, not a step. It has a small speech node and its text in a bubble, with **You · read at step 3** at the end. The line runs through it, and on through hints after the last step. Queued hints sit under the steps, under **Queued, read at the next decision**. A queued hint has an outlined bubble and says **You · not read yet**.
+Steer a run while it goes with a markdown hint, images included. A run that only reads, and has no worktree yet, still takes the images.
 
-A hint's text sits on one line. A hint that is cut, or has a second line, has **Show more** to read the rest and **Show less** to fold it. Its images are small thumbnails at the end of the same line, and a click opens them in the viewer.
+- **Queue** keeps the hint for the next decision. On a finished run, **Read 2 queued** reads them all in one new turn.
+- **Send now** stops the step in flight, keeps what it wrote and decides again.
+- A complete orchestrated run keeps a field at its end, **Continue with a hint**. Send one and the run reopens, and the orchestrator picks the next step from the goal and your hint.
 
-The box under the page holds only the input and, while hints wait, one line such as **3 hints queued** with **Show**, which scrolls to them. That line never moves the input. The queue stays on the line when a run is blocked and the input swaps to **Continue**. When the orchestrator reads a queued hint, it moves to the steps. An image you attach to a hint shows once, on its hint, and not again under the goal. Focus stays on your thumbnail. Esc in an open viewer returns to it.
+The orchestrator picks the steps, so an orchestrated run has no **Add step**. When the project has more than one mount, it sees each one and sends a step to the mount whose repository the step changes. It also says how hard each step is, and Goodboy picks the model for that role and difficulty on your preferred provider. **Models in older plan runs** in Models, shown while such a run exists, lets the orchestrator name the model itself.
 
-A read hint sits before the step that read it. Once the step is on the list, **read at step 3** is a link that moves to the step, or opens it when it is out of view. Until then it is plain text. A hint keeps its open text and its open image when the orchestrator reads it. The words you are typing stay in the box when a step ends or the page changes under it, and go only when the hint is saved.
+#### How a hint reads
 
-Steer a run while it goes with a markdown hint, images included. A run that only reads, and has no worktree yet, still takes the images. **Queue** keeps it for the next decision; on a finished run, **Read 2 queued** reads them all in one new turn. **Send now** stops the step in flight, keeps what it wrote and decides again. A complete orchestrated run keeps a field at its end, **Continue with a hint**: send one and the run reopens and the orchestrator picks the next step from the goal and your hint. The orchestrator picks the steps, so an orchestrated run has no **Add step**. When the project has more than one mount, it sees each one and sends a step to the mount whose repository the step changes. It also says how hard each step is, and Goodboy picks the model for that role and difficulty on your preferred provider; **Models in older plan runs** in Models, shown while such a run exists, lets the orchestrator name the model itself.
+Every hint is your message on the run's line, not a step. Its text sits in a bubble, with **You · read at step 3** at the end.
+
+- Queued hints sit under the steps, under **Queued, read at the next decision**. A queued hint has an outlined bubble and says **You · not read yet**.
+- A hint's text sits on one line. A hint that is cut, or has a second line, has **Show more** to read the rest and **Show less** to fold it.
+- Its images are small thumbnails at the end of the same line, and a click opens them in the viewer. Esc in an open viewer returns to the thumbnail.
+- A read hint sits before the step that read it. Once the step is on the list, **read at step 3** is a link that moves to the step, or opens it when it is out of view.
+
+#### The hint box
+
+The box under the page holds only the input and, while hints wait, one line such as **3 hints queued** with **Show**, which scrolls to them.
+
+When the orchestrator reads a queued hint, it moves to the steps. An image you attach to a hint shows once, on its hint, and not again under the goal. The words you are typing stay in the box when a step ends or the page changes under it, and go only when the hint is saved.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-hints-dark.webp">
@@ -146,11 +266,36 @@ See why each step was picked. A short **Recap** says what is done and what is le
 
 ### Step handoff summary
 
-Each step starts from a short brief instead of the whole previous chat. When a step runs on a model that does not keep the conversation (Cursor, Codex, Gemini), its history comes as at most 8,000 estimated tokens with the original request always included, and the step's transcript says what was carried over and what was left out. If the summary fails, Goodboy tries the other models you allow, and only then keeps the start and end of the chat and marks the brief as degraded, with **Retry**.
+Each step starts from a short brief instead of the whole previous chat.
+
+- A step on a model that does not keep the conversation (Cursor, Codex, Gemini) gets its history as at most 8,000 estimated tokens. The original request is always included.
+- The step's transcript says what was carried over and what was left out.
+- If the summary fails, Goodboy tries the other models you allow. Only then does it keep the start and end of the chat and mark the brief as degraded, with **Retry**.
 
 ### Open questions
 
-Each question arrives as one card with whether it is **Blocking**, and numbered answers with the recommended one tagged and already picked. Press **Enter** to send it, pick another with a number key, or write your own. **Let an agent decide**, **Send as message** and **Dismiss question** sit in the **More** menu of the card, so **Answer** is the one filled button. A blocking question holds its step until you answer or choose **Send as message**. The step is not nudged to carry on while it waits. When an agent asks again in a later turn, only its newest blocking question stays open. A run page shows the same card. Several questions from one agent page as "1 of 3" with the number left, and the last **Answer** sends them together. The session's **Questions** page lists them under **Needs you** and **Answered**, with the answer in gray; a row opens its card in the drawer, and answering moves to the next one. With two or more branches among the questions the same **By branch** and **By state** switch applies, with the same choice for the session. A branch with a waiting question comes first. Its answered questions fold into **2 answered**. A question with no agent, or whose branch was detached, sits in **No branch**. A question of an agent on two branches is drawn in both groups with **Also on feat/retry-budget**. Answering, handing off or dismissing it in one group moves it in both. Every way to a question lands on that page with the question open, and a reload brings it back. **Close** goes back to where you came from, even after the last answer. The role in the drawer title ("Implementer asks") opens the agent that asked, or its run step when it asked inside a run, and **Open agent** in a row's right click menu does the same; an agent that was deleted keeps its role with no link.
+Questions from agents arrive as cards, and the session's **Questions** page lists them.
+
+#### The question card
+
+- Each question arrives as one card with whether it is **Blocking**, and numbered answers with the recommended one tagged and already picked.
+- Press **Enter** to send it, pick another with a number key, or write your own.
+- **Let an agent decide**, **Send as message** and **Dismiss question** sit in the **More** menu of the card, so **Answer** is the one filled button.
+- A blocking question holds its step until you answer or choose **Send as message**.
+- When an agent asks again in a later turn, only its newest blocking question stays open.
+- A run page shows the same card.
+- Several questions from one agent page as "1 of 3" with the number left, and the last **Answer** sends them together.
+
+#### The Questions page
+
+The session's **Questions** page lists them under **Needs you** and **Answered**, with the answer in gray. A row opens its card in the drawer, and answering moves to the next one.
+
+- With two or more branches among the questions the same **By branch** and **By state** switch applies, with the same choice for the session.
+- A branch with a waiting question comes first. Its answered questions fold into **2 answered**.
+- A question with no agent, or whose branch was detached, sits in **No branch**.
+- A question of an agent on two branches is drawn in both groups with **Also on feat/retry-budget**. Answering, handing off or dismissing it in one group moves it in both.
+- Every way to a question lands on that page with the question open. **Close** goes back to where you came from, even after the last answer.
+- The role in the drawer title ("Implementer asks") opens the agent that asked, or its run step when it asked inside a run. **Open agent** in a row's right click menu does the same.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-questions-dark.webp">

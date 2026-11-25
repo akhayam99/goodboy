@@ -7,20 +7,17 @@
     "docs/features/inbox.md": 6,
     "docs/features/providers.md": 1,
     "docs/features/review.md": 19,
-    "docs/features/setup.md": 8,
     "docs/features/storage.md": 4,
     "docs/features/switching.md": 8,
-    "docs/features/workflows.md": 13,
+    "docs/features/workflows.md": 1,
     "docs/features/workspace.md": 18
   },
   "long-paragraph": {
     "docs/features/board.md": 4,
     "docs/features/inbox.md": 2,
     "docs/features/review.md": 6,
-    "docs/features/setup.md": 3,
     "docs/features/storage.md": 1,
     "docs/features/switching.md": 3,
-    "docs/features/workflows.md": 5,
     "docs/features/workspace.md": 6
   },
   "long-alt": {
@@ -36,7 +33,7 @@
     "docs/features/review.md": 6,
     "docs/features/search.md": 4,
     "docs/features/security.md": 5,
-    "docs/features/setup.md": 9,
+    "docs/features/setup.md": 8,
     "docs/features/storage.md": 2,
     "docs/features/support.md": 1,
     "docs/features/switching.md": 3,
