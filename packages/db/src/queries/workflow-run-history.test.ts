@@ -332,3 +332,215 @@ describe('listWorkspaceWorkflowRuns', () => {
     expect(rows.map((row) => row.workflowRunId)).toEqual(['run-other']);
   });
 });
+
+const LEAD_AT = Date.parse('2026-10-16T09:00:00.000Z');
+
+type LeadRunParams = DbParams & {
+  readonly treeId: string;
+  readonly sessionId: string;
+  readonly rootId: string;
+  readonly createdAt: number;
+  readonly phase?: string;
+};
+
+const insertLeadRun = async ({
+  db,
+  treeId,
+  sessionId,
+  rootId,
+  createdAt,
+  phase = 'waiting',
+}: LeadRunParams): Promise<void> => {
+  await db.execute(
+    "INSERT INTO agents (id, session_id, ordinal, name, status, kind) VALUES (?, ?, 0, 'Lead', 'completed', 'auto')",
+    [rootId, sessionId],
+  );
+  await db.execute(
+    'INSERT INTO auto_trees (id, root_agent_id, session_id, phase, created_at, updated_at, hard_deadline_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [treeId, rootId, sessionId, phase, createdAt, createdAt, createdAt + 1],
+  );
+};
+
+type HelperParams = DbParams & {
+  readonly treeId: string;
+  readonly sessionId: string;
+  readonly helperId: string;
+  readonly status: string;
+  readonly providerRunId: string;
+};
+
+const insertHelper = async ({
+  db,
+  treeId,
+  sessionId,
+  helperId,
+  status,
+  providerRunId,
+}: HelperParams): Promise<void> => {
+  await db.execute(
+    'INSERT INTO agents (id, session_id, ordinal, name, status, provider_run_id) VALUES (?, ?, 1, ?, ?, ?)',
+    [helperId, sessionId, helperId, status, providerRunId],
+  );
+  await db.execute(
+    `INSERT INTO auto_delegations
+      (id, tree_id, generation, request_id, request_hash, batch_id, slot, child_agent_id,
+       first_attempt_id, role, request_json, target_json, routing_json, deadline_at, created_at)
+     VALUES (?, ?, 1, ?, 'hash', 'batch-1', 0, ?, ?, 'implementer', '{}', '{}', '{}', 1, 1)`,
+    [`d-${helperId}`, treeId, `r-${helperId}`, helperId, `at-${helperId}`],
+  );
+};
+
+type RoutesParams = DbParams & {
+  readonly sessionId: string;
+  readonly value: string;
+};
+
+const insertRoutes = async ({ db, sessionId, value }: RoutesParams): Promise<void> => {
+  await db.execute('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, 1)', [
+    `runs.routes.${sessionId}`,
+    value,
+  ]);
+};
+
+type LeadRouteParams = {
+  readonly extra: Readonly<Record<string, unknown>>;
+};
+
+const leadRoute = ({ extra }: LeadRouteParams) => ({
+  shape: 'lead',
+  row: 1,
+  closeness: 'adapt',
+  role: null,
+  choice: 'The Lead plans it',
+  why: 'Picked',
+  ...extra,
+});
+
+describe('listWorkspaceWorkflowRuns with Lead runs', () => {
+  it('counts a Lead run that followed the workflow, with its Lead and its helpers as steps', async () => {
+    const db = await seed();
+    await insertLeadRun({
+      db,
+      treeId: 'tree-ledger',
+      sessionId: 'ses-ledger',
+      rootId: 'lead-ledger',
+      createdAt: LEAD_AT,
+    });
+    await insertHelper({
+      db,
+      treeId: 'tree-ledger',
+      sessionId: 'ses-ledger',
+      helperId: 'h-impl',
+      status: 'running',
+      providerRunId: 'pr-h-impl',
+    });
+    await insertCost({ db, providerRunId: 'pr-h-impl', sessionId: 'ses-ledger', costUsd: 0.4 });
+    await insertRoutes({
+      db,
+      sessionId: 'ses-ledger',
+      value: JSON.stringify({
+        'lead-ledger': leadRoute({
+          extra: { presetName: 'Renamed later', workflowId: 'wf-flaky' },
+        }),
+      }),
+    });
+
+    const rows = await listWorkspaceWorkflowRuns({ db, workspaceId: WORKSPACE });
+
+    expect(rows.map((row) => [row.workflowRunId, row.workflowId, row.leadAgentId])).toEqual([
+      ['tree-ledger', 'wf-flaky', 'lead-ledger'],
+      ['run-ledger', 'wf-flaky', null],
+      ['run-nightly', 'wf-flaky', null],
+      ['run-acme', 'wf-flaky', null],
+    ]);
+    const lead = rows[0];
+    expect([lead?.executionMode, lead?.stepCount, lead?.startedSteps, lead?.runningSteps]).toEqual([
+      'dynamic',
+      3,
+      2,
+      1,
+    ]);
+    expect(lead?.costUsd).toBeCloseTo(0.4);
+  });
+
+  it('matches an older Lead run by the name it kept and leaves out a run with no workflow', async () => {
+    const db = await seed();
+    await insertLeadRun({
+      db,
+      treeId: 'tree-nightly',
+      sessionId: 'ses-nightly',
+      rootId: 'lead-nightly',
+      createdAt: LEAD_AT,
+      phase: 'finished',
+    });
+    await insertLeadRun({
+      db,
+      treeId: 'tree-plain',
+      sessionId: 'ses-nightly',
+      rootId: 'lead-plain',
+      createdAt: LEAD_AT + 1,
+    });
+    await insertRoutes({
+      db,
+      sessionId: 'ses-nightly',
+      value: JSON.stringify({
+        'lead-nightly': leadRoute({ extra: { presetName: 'Fix flaky tests' } }),
+        'lead-plain': leadRoute({ extra: { presetName: null } }),
+      }),
+    });
+
+    const rows = await listWorkspaceWorkflowRuns({ db, workspaceId: WORKSPACE });
+
+    expect(rows.map((row) => row.workflowRunId)).toEqual([
+      'tree-nightly',
+      'run-ledger',
+      'run-nightly',
+      'run-acme',
+    ]);
+    expect(rows[0]?.orchestrationOutcome).toBe('done');
+  });
+
+  it('skips a stored route that is not JSON, a plan route and a workflow of another workspace', async () => {
+    const db = await seed();
+    await insertLeadRun({
+      db,
+      treeId: 'tree-acme',
+      sessionId: 'ses-acme',
+      rootId: 'lead-acme',
+      createdAt: LEAD_AT,
+    });
+    await insertLeadRun({
+      db,
+      treeId: 'tree-ledger',
+      sessionId: 'ses-ledger',
+      rootId: 'lead-ledger',
+      createdAt: LEAD_AT,
+    });
+    await insertLeadRun({
+      db,
+      treeId: 'tree-other',
+      sessionId: 'ses-other',
+      rootId: 'lead-other',
+      createdAt: LEAD_AT,
+    });
+    await insertRoutes({ db, sessionId: 'ses-acme', value: 'not json' });
+    await insertRoutes({
+      db,
+      sessionId: 'ses-ledger',
+      value: JSON.stringify({
+        'lead-ledger': { ...leadRoute({ extra: { workflowId: 'wf-flaky' } }), shape: 'plan' },
+      }),
+    });
+    await insertRoutes({
+      db,
+      sessionId: 'ses-other',
+      value: JSON.stringify({ 'lead-other': leadRoute({ extra: { workflowId: 'wf-flaky' } }) }),
+    });
+
+    const own = await listWorkspaceWorkflowRuns({ db, workspaceId: WORKSPACE });
+    const other = await listWorkspaceWorkflowRuns({ db, workspaceId: OTHER_WORKSPACE });
+
+    expect(own.map((row) => row.workflowRunId)).toEqual(['run-ledger', 'run-nightly', 'run-acme']);
+    expect(other).toEqual([]);
+  });
+});
