@@ -139,8 +139,9 @@ characters; a description takes 70 to 165 (`website/scripts/lib/seoCheck.mjs`).
   a pull request from this repository. It first runs
   `scripts/website-ignore-build.mjs`, which deploys only when something the site
   reads changed: `website/`, `CHANGELOG.md`, `FEATURES.md` or `docs/features/`.
-  On `main` it diffs against the commit before the push; with no such commit it
-  deploys. On a pull request it diffs against the merge base with `origin/main`,
+  On `main` it diffs against the commit of the last ready production deploy,
+  read from Vercel (each deploy carries it as `deploySha`), so a failed deploy is
+  retried by the next push; with no such commit it deploys. On a pull request it diffs against the merge base with `origin/main`,
   and deploys when that base cannot be found. The changelog and the docs are
   prerendered into static pages at build time, so a change to them is a deploy.
   A new build input outside `website/` joins the path list in that script, or
