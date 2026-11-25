@@ -212,6 +212,45 @@ describe('startRoutedRun keeps the reason with the run', () => {
     expect(options?.stepLocks).toEqual([{ role: 'implementer', routingLock: lock }]);
   });
 
+  it('keeps the process text and the step briefs of a workflow in the first message', async () => {
+    const engines = mockEngines();
+    const briefed: Workflow = {
+      ...LAYOUT,
+      processText: 'Stay inside the billing folder.',
+      steps: LAYOUT.steps.map((step) => ({
+        ...step,
+        promptPrefix: 'Read the failing page first.',
+      })),
+    };
+    useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [briefed] } });
+    const result = runRouteOf({
+      facts: { ...FACTS, presets: [briefed], text: '~Fix a layout the totals table' },
+    });
+
+    await startRoutedRun({ sessionId: SESSION.id, result });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]?.initialPrompt).toBe(
+      [
+        'the totals table',
+        '1. Find: Read the failing page first.',
+        'Stay inside the billing folder.',
+      ].join('\n\n'),
+    );
+  });
+
+  it('hands the route to the spawn so it exists before the first turn', async () => {
+    const engines = mockEngines();
+    const result = routeOf({ text: '~Fix a layout the totals table' });
+
+    await startRoutedRun({ sessionId: SESSION.id, result });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]?.runRoute).toMatchObject({
+      shape: 'lead',
+      presetName: 'Fix a layout',
+      closeness: 'follow',
+    });
+  });
+
   it('hands no pinned model when no step of the preset is pinned', async () => {
     const engines = mockEngines();
 

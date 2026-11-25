@@ -36,7 +36,7 @@ The pick is a rule table in the app, with no model call. Goodboy reads it top to
 - A Lead never follows a workflow you did not pick.
 - When the ask names a saved workflow, or shares two words of its description and steps, the **Workflow** pill reads "Auto · likely Fix a layout".
 - Picking it from the pill makes it the plan. The Lead may change its steps.
-- A workflow you pick becomes the Lead's plan. The Lead reads its steps every turn, with **Keep steps** or **May change steps**. The first message is your ask alone.
+- A workflow you pick becomes the Lead's plan. The Lead reads its steps every turn, with **Keep steps** or **May change steps**. The first message is your ask, with the step briefs and process text the workflow holds.
 - A step pinned to a model keeps that model.
 - A role you named starts that one agent, with no Lead.
 - The reason is kept with the run.
@@ -83,7 +83,7 @@ A plan shows only the settings it uses. **Projects** shows on the New session pa
 - **Edits** is what agents may do in the session: **Read only**, **Ask first**, **Edits allowed** or **Full access**. It reads the workspace default until you pick, and a start never writes a mode you did not pick. A pick applies to the whole session, and is set before the first agent starts.
 - **Replies** shows the reply length from Every run. It opens Every run to change it.
 - **Guidance** shows on every kind. It starts as the workspace guidance, with a quiet "from Harborline" tag. Once you edit it the tag reads "this run", and "None" when you clear it.
-- **Limit** reads "Limit: $5.00" ("Limit: none" without one). The line adds whether the run pauses or only warns at the limit.
+- **Limit** reads "Limit: $5.00" ("Limit: none" without one). A Lead run pauses at its limit, and the line says so.
 
 Every **Change the default** link opens Every run.
 
@@ -336,7 +336,7 @@ This part is for contributors and agents who change the feature.
 - Limit popover: `AutoLimitChip` uses `AnchoredPopover` at the standard popover width, so it flips and shifts inside the window.
 - No limit: **No limit** on the chip is for that run only. A start never writes a limit, so the default changes only on Every run.
 - Kind chip: `runKindLineOf` words the chip, and the Runs list reads it too.
-- Stops chip: `AsksYouChip` is shared with the run's settings line and takes the launcher's label `NAMES.stops`. For the Lead `AutoLevelChip` wraps it, the same chip the running agent's settings line shows. The chip reads the session level, then the workspace default, through `useAutoLevel`, and `startRoutedRun` writes the pick with the `changeAutoLevel` store action before the lead starts. It sends the ask alone as the first message: the Lead reads the workflow from its guide record every turn (`docs/auto.md`, Following a workflow).
+- Stops chip: `AsksYouChip` is shared with the run's settings line and takes the launcher's label `NAMES.stops`. For the Lead `AutoLevelChip` wraps it, the same chip the running agent's settings line shows. The chip reads the session level, then the workspace default, through `useAutoLevel`, and `startRoutedRun` writes the pick with the `changeAutoLevel` store action before the lead starts. It sends the ask as the first message, with the step briefs and process text of a picked workflow (`workflowNotesOf`). The Lead reads the steps and their order from its guide record every turn (`docs/auto.md`, Following a workflow). The route reaches `spawnAgent` as `runRoute`, so the record exists on the first turn.
 - Guidance chip: `StartGuidanceSetting` reads the workspace text through `workspaceGuidanceOf` and the pick from the draft (`SessionDraft.guidance`, `null` until edited) or, on a session's Runs page, from `useStartRun`. `StartGuidanceChip` draws it on `SettingChip`, and `guidanceWordsOf` words the value and its tag. `guidanceShownOf` is the text on screen and `guidanceToSendOf` the text a start sends, so both read one pick. `startGuidanceReaderOf` picks the line on who reads it.
 - Run guidance: `startRoutedRun` takes `guidance`, and `useStartRun` forwards it. A plan writes it to `rulesSnapshot.standingGuidance`, which the orchestrator reads as its Operator process. `null` keeps the workspace value. `''` starts the run without any.
 - Agent guidance: an agent gets a `**Guidance**` section ahead of its ask. The Lead keeps its text in the `run.guidance` workspace value, which `spawnAgent` writes before the first turn.

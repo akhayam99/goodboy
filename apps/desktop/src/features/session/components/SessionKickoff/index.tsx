@@ -9,7 +9,7 @@ import { useRunModel } from '../StartRun/useRunModel';
 import { useStartRun } from '../StartRun/useStartRun';
 import { runModelSlotOfShape } from '../../startRun/runModelSlotOf';
 import { NewSessionStartForm } from '../StartForm/NewSessionStartForm';
-import { startFormKindOfDraft } from '../StartForm/startFormKinds';
+import { useDraftStartKind } from '../StartForm/useDraftStartKind';
 import { useDraftAgentModel } from '../StartForm/useDraftAgentModel';
 import { StartBranchNotice } from './StartBranchNotice';
 import { StartTaskField } from './StartTaskField';
@@ -26,9 +26,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
     (state) => selectSessionDraft({ state, workspaceId }).pickedIssues,
   );
   const projectIds = useAppStore((state) => selectSessionDraft({ state, workspaceId }).projectIds);
-  const startKind = useAppStore((state) => selectSessionDraft({ state, workspaceId }).startKind);
   const startShape = useAppStore((state) => selectSessionDraft({ state, workspaceId }).startShape);
-  const workflowId = useAppStore((state) => selectSessionDraft({ state, workspaceId }).workflowId);
   const isStarting = useAppStore((state) => selectSessionDraft({ state, workspaceId }).isStarting);
   const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
   const [first] = pickedIssues;
@@ -49,7 +47,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
   useRestoreLastStart({ workspaceId });
   const limit = useAutoTreeLimit({ workspaceId });
   const agentKind = useAppStore((state) => selectSessionDraft({ state, workspaceId }).agentKind);
-  const kind = startFormKindOfDraft({ startKind, startShape, workflowId });
+  const kind = useDraftStartKind({ workspaceId });
   const shapeModel = useRunModel({
     workspaceId,
     sessionId: null,

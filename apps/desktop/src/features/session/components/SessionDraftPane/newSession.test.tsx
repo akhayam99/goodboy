@@ -550,6 +550,27 @@ describe('New session page', () => {
     expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toBe(FITTING_GOAL);
   });
 
+  it('reads a draft whose workflow is gone as Auto and still starts', async () => {
+    useAppStore.setState({ startSessionFromDraft: startThenRun, loadSetting: noSetting });
+    useAppStore.getState().patchSessionDraft({
+      workspaceId: WORKSPACE_ID,
+      patch: {
+        startKind: 'workflow',
+        startShape: 'preset',
+        workflowId: brandedId<WorkflowId>({ value: 'wf-deleted' }),
+        hasChosenStart: true,
+      },
+    });
+    await openPage();
+
+    expect(workflowPill()?.textContent).toBe('WorkflowAuto');
+    typeGoal(GOAL);
+    fireEvent.click(startButton());
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toBe(GOAL);
+  });
+
   it('writes no workflow for Auto and the workflow id for a pick', async () => {
     useAppStore.setState({
       generateWorkflowTitle: vi.fn(async () => undefined),

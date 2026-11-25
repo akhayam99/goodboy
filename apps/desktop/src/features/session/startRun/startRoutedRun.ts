@@ -21,6 +21,7 @@ import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
 import { commentRunOf } from '../../resolve/commentRunOf';
 import { uniqueNameOf } from '../../workflows/uniqueNameOf';
 import { presetSnapshotOf } from './presetSnapshotOf';
+import { workflowNotesOf } from './workflowNotesOf';
 import type { StartLimit } from '../../auto/startLimitOf';
 import type { AgentKindRouting } from '../agent-kind';
 import type { RunRouteResult } from './runRouteOf';
@@ -110,7 +111,8 @@ export const startRoutedRun = async ({
     const agentId = await state.spawnAgent(sessionId, {
       kindOverride: role ?? 'auto',
       ...(leadMountId !== null && { mountId: leadMountId }),
-      initialPrompt: work,
+      initialPrompt: preset === null || role !== null ? work : workflowNotesOf({ work, preset }),
+      runRoute: route,
       focus: 'agent',
       ...(guidance !== null && { guidance }),
       ...(role === null && limit !== null && { limitUsd: limit.usd }),

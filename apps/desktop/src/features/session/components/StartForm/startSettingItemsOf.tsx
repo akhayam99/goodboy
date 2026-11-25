@@ -108,7 +108,7 @@ export const startSettingItemsOf = ({
       autonomy: asksAutonomyOf({ asks, level: level.value, autonomy: autonomy.value }),
       editsMode: edits.mode,
       limitUsd: limit.view.usd,
-      limitMode: limit.mode,
+      limitMode: limit.kind === 'autoAgent' ? 'pause' : limit.mode,
       replies,
       hasOwnGuidance: guidance.value !== null,
       projectNames: where.names,

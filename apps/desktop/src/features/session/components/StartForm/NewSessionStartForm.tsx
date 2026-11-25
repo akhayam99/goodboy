@@ -18,11 +18,12 @@ import type { RunModelView } from '../StartRun/useRunModel';
 import type { StartRunModel } from '../StartRun/useStartRun';
 import { liveStepsOf } from './liveStepsOf';
 import { StartForm } from './StartForm';
-import { startFormKindOfDraft, startShapeOfFormKind, type StartFormKind } from './startFormKinds';
+import { startShapeOfFormKind, type StartFormKind } from './startFormKinds';
 import { StartPlanRow, type StartPlanKind } from './StartPlanRow';
 import { StartWhereItRuns } from './StartWhereItRuns';
 import { StartWorkflowPill } from './StartWorkflowPill';
 import { StartWorkflowSteps } from './StartWorkflowSteps';
+import { useDraftStartKind } from './useDraftStartKind';
 import { useEveryRunFacts } from './useEveryRunFacts';
 import { useStartEditsMode } from './useStartEditsMode';
 import {
@@ -92,11 +93,7 @@ export const NewSessionStartForm = ({
       templates.length === 0 ? NO_PRESETS : templates.filter((entry) => entry.isPreset === true),
     [templates],
   );
-  const kind = startFormKindOfDraft({
-    startKind: draft.startKind,
-    startShape: draft.startShape,
-    workflowId: draft.workflowId,
-  });
+  const kind = useDraftStartKind({ workspaceId });
   const run = kind === null ? autoRun : shapeRun;
   const isDisabled = run.isStarting;
   const workflow = presets.find((preset) => preset.id === draft.workflowId) ?? null;
