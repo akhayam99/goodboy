@@ -17,6 +17,7 @@ import { autoRunTitleOf } from '../../../session/autoRunTitleOf';
 import type { RunWait } from '../../../workflows/runStateOf';
 import { workflowKindName } from '../../../workflows/workflowKindName';
 import { NAMES } from '../../../../shared/utils/names';
+import { holdWaitWords } from './holdWaitWords';
 import { leadWaitWordsOf } from './leadWaitWordsOf';
 
 export type WaitingRunState = AutoWaitState &
@@ -66,7 +67,10 @@ const leadRunsOf = ({ state, session, roots, fallback }: RootsParams): ReadonlyA
       return [];
     }
     const { lead } = autoTreeWordOf({ view, rootTurn: state.agentTurnState[root.id] ?? null });
-    const wait = leadWaitWordsOf({ lead, askCount: leadAsksOf({ view }).length });
+    const wait =
+      view.hold != null && lead.stop === 'waitsForYou'
+        ? holdWaitWords({ suggestion: view.hold.suggestion })
+        : leadWaitWordsOf({ lead, askCount: leadAsksOf({ view }).length });
     const title = autoRunTitleOf({ state, sessionId: session.id, agentId: root.id });
     return title === null
       ? []

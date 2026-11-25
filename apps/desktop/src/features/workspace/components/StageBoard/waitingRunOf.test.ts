@@ -41,6 +41,41 @@ describe('waitingRunOf', () => {
     ).toEqual({ title: ASK, words: 'Needs approval', verb: 'Review plan', more: 0 });
   });
 
+  it('names a held Lead run and offers its switch', () => {
+    const view = {
+      ...aView({ phase: 'done', rootAsk: ASK }),
+      hold: { reason: 'Not a bug', suggestion: 'Ship a feature', suggestionId: 'workflow-feature' },
+    };
+
+    expect(
+      waitingRunOf({
+        state: stateOf({ views: [view] }),
+        session: aSession({ id: FIXTURE_SESSION }),
+        reason: 'auto-needs-you',
+      }),
+    ).toEqual({
+      title: ASK,
+      words: 'Stopped on a check',
+      verb: 'Switch to Ship a feature',
+      more: 0,
+    });
+  });
+
+  it('names a held Lead run with no suggestion and opens the Lead', () => {
+    const view = {
+      ...aView({ phase: 'done', rootAsk: ASK }),
+      hold: { reason: 'Not a bug', suggestion: null, suggestionId: null },
+    };
+
+    expect(
+      waitingRunOf({
+        state: stateOf({ views: [view] }),
+        session: aSession({ id: FIXTURE_SESSION }),
+        reason: 'auto-needs-you',
+      })?.verb,
+    ).toBe('Open the Lead');
+  });
+
   it('names no run for a reason that is not about a run', () => {
     const view = aView({ phase: 'waiting', artifacts: [aPlanRow()], rootAsk: ASK });
 

@@ -125,10 +125,17 @@ export const attentionPlace = ({
   }
   if (reason === 'auto-needs-you') {
     const session = sessionById(state.sessions, sessionId);
-    const [root] =
+    const roots =
       session === undefined
         ? []
         : autoWaitRootsOf({ state, session, agents: state.sessionPhaseRuns[sessionId] ?? [] });
+    const root =
+      roots.find(
+        (candidate) =>
+          state.autoTreeViews?.[sessionId]?.some(
+            (view) => view.tree.rootAgentId === candidate.id && view.hold != null,
+          ) === true,
+      ) ?? roots[0];
     return root === undefined
       ? sessionPlace({ sessionId })
       : agentPlace({ sessionId, agentId: root.id });
