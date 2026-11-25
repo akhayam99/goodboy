@@ -8,13 +8,35 @@ Begin with an empty folder and no repository. **Start from scratch**, inside **N
 
 ### Track a folder with git later
 
-Start in a plain code folder and add git when you want it. When you pick a folder, Goodboy asks whether it is a **Code project** or **Documents**, preselected from what it holds, and you can change it later in **Settings › Folders**. A code folder can be tracked with git right at Create. **Track with git** in **Settings › Folders** shows the first commit before it happens: what goes in, dependency and build folders left out until you tick them back in, and files that look like secrets, which always stay out and go to `.gitignore`. Nothing leaves your Mac until **Publish to GitHub**. A repository with no commit yet holds sessions back, because a session branches from the latest commit: the empty board says so and its one action, **Make the first commit**, opens the same review in place and reads the repository again once it is made. A plain folder with an empty repository is still edited in place until its first commit. Git you set up outside the app is noticed when the window comes back: a code folder moves to branches between turns and offers **Keep editing in place**, and a documents folder asks first.
+Start in a plain code folder and add git when you want it. When you pick a folder, Goodboy asks whether it is a **Code project** or **Documents**, preselected from what it holds. You can change it later in **Settings › Folders**.
 
-A plain folder is edited in place by one session at a time, and the next one waits its turn; reading is never blocked. Each plain folder row in **Settings › Projects** opens to its face, the saved versions it uses and a switch between Code project and Documents. Office files and PDFs are read, never rewritten, in a documents folder. What each turn changed is under **Changes** in the Session pages list, and it stays there when you later track the folder with git. Unlinking a folder waits while an agent is writing in it.
+#### Track with git
+
+**Track with git** in **Settings › Folders** shows the first commit before it happens.
+
+- What goes in.
+- Dependency and build folders, left out until you tick them back in.
+- Files that look like secrets, which always stay out and go to `.gitignore`.
+
+Nothing leaves your Mac until **Publish to GitHub**.
+
+A repository with no commit yet holds sessions back, because a session branches from the latest commit. The empty board says so, and its one action, **Make the first commit**, opens the same review in place.
+
+Git you set up outside the app is noticed when the window comes back. A code folder offers **Keep editing in place**, and a documents folder asks first.
+
+#### Plain folders
+
+A plain folder is edited in place by one session at a time, and the next one waits its turn. Reading is never blocked.
+
+Each plain folder row in **Settings › Projects** opens to its face, the saved versions it uses and a switch between Code project and Documents. Office files and PDFs are read, never rewritten, in a documents folder.
+
+What each turn changed is under **Changes** in the Session pages list, and it stays there when you later track the folder with git. Unlinking a folder waits while an agent is writing in it.
 
 ### Workspace with several folders
 
-Keep your repos together as one workspace, and let one session work across several of them. The **Projects** card of a session lists each repo it touches, with its branch and the size of its changes. A folder gets a branch only when an agent needs to edit it. The **+** on the card adds another workspace folder, or connects a new repo or folder to the workspace from the same list.
+Keep your repos together as one workspace, and let one session work across several of them. The **Projects** card of a session lists each repo it touches, with its branch and the size of its changes. A folder gets a branch only when an agent needs to edit it.
+
+The **+** on the card adds another workspace folder, or connects a new repo or folder to the workspace from the same list.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-dark.webp">
@@ -36,9 +58,21 @@ Point agents at the right repo without naming it. Star a folder and give it a on
 
 ### Worktrees
 
-Let agents edit in parallel without touching your checkout. Each branch gets its own worktree, a separate folder with its own changes and pull request, named gb- and six characters such as gb-7k2q9x, with the session and the branch shown next to it. **New branch**, the **+** on a folder row of the session's **Projects** card, adds one, **Close branch** clears a merged one, and **Reopen** brings back one whose files were kept.
+Let agents edit in parallel without touching your checkout. Each branch gets its own worktree, a separate folder with its own changes and pull request, named gb- and six characters such as gb-7k2q9x, with the session and the branch shown next to it.
 
-The Projects card is one tree for every branch of the session. A branch is one line: its pull request state as a colored glyph, its pull request title (or the branch name when there is none) and, only when something needs you, one chip: failing checks, a conflict or how far it is behind. Live branches come first, queued, approved, open, draft, then those with no pull request; merged and closed ones fold into one **finished** line. Click a branch to open it: its pages (pull request, comments, changes, commits, checks) open under its row, with its **Rebase** line when it is behind, and a click on the open row folds them again. The branch menu, from the dots on the row, a right click or ⇧F10, holds Rebase, Switch branch, Link work to this branch, Copy branch name, Close branch and the rest.
+- **New branch**, the **+** on a folder row of the session's **Projects** card, adds one.
+- **Close branch** clears a merged one.
+- **Reopen** brings back one whose files were kept.
+
+#### The Projects card
+
+The card is one tree for every branch of the session. A branch is one line: its pull request state as a colored glyph, its pull request title (or the branch name when there is none) and, only when something needs you, one chip. The chip says failing checks, a conflict or how far the branch is behind.
+
+Live branches come first. Merged and closed ones fold into one **finished** line.
+
+Click a branch to open its pages: pull request, comments, changes, commits and checks. A branch that is behind shows its **Rebase** line.
+
+The branch menu, from the dots on the row, a right click or ⇧F10, holds Rebase, Switch branch, Close branch and the rest.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-dark.webp">
@@ -60,33 +94,65 @@ Work on several branches of one repo in the same session, each in its own worktr
 
 ### Workspace switcher and Reconnect
 
-Jump between workspaces and folders from one search. The current workspace sits on top with its folder count, **Add folder** (the folder picker, a repository or a plain folder, then an undo toast; a folder of another workspace points to its folders; **Move it here** into the open workspace, or a merge, adds the moved sessions without stopping any running agent, and it is refused with the number of agents running in the source until you stop them), **Manage folders** and its settings. The other workspaces follow in one list: a click switches once the new workspace has loaded, so a quick second click wins and a failed load keeps the workspace you were in, the window icon opens one in a new window, and a disconnected workspace keeps its place with **Reconnect**. **New workspace** closes the list and opens the one form. Disconnecting a workspace keeps its history, and adding its folder again offers **Reconnect** too.
+Jump between workspaces and folders from one search. The current workspace sits on top with its folder count, **Add folder**, **Manage folders** and its settings.
 
-A workspace you are not looking at can still need you. Its row in the list says **2 need you** in amber, or red when one of them is broken, with the reasons in place of the folder line, for a workspace open in another window as well as for one that is open nowhere. The same sessions are added up as a number on the workspace mark at the top of the left rail when any other workspace needs you, and the bell can widen to **All workspaces**. The count of a workspace nobody shows is read from the database every 30 seconds and counts what is saved there: an open question, a fix run waiting for your answer, a failed push, failing checks and an errored session. The window that shows a workspace also knows what lives only in memory, such as a plan or a permission waiting, so it sends its own count to the other windows and that count wins while the window is open.
+- **Add folder** opens the folder picker for a repository or a plain folder, then shows an undo toast.
+- **Move it here** moves a folder into the open workspace, or merges it, and adds the moved sessions without stopping any running agent. It is refused, with the number of agents running in the source, until you stop them.
+- The other workspaces follow in one list. A click switches once the new workspace has loaded, and a failed load keeps the workspace you were in. The window icon opens one in a new window.
+- A disconnected workspace keeps its place with **Reconnect**. Disconnecting keeps its history, and adding its folder again offers **Reconnect** too.
+- **New workspace** closes the list and opens the one form.
+
+#### Workspaces that need you
+
+A workspace you are not looking at can still need you. Its row in the list says **2 need you** in amber, or red when one of them is broken, with the reasons in place of the folder line.
+
+The same count shows on the workspace mark at the top of the left rail, and the bell can widen to **All workspaces**. It counts an open question, a fix run waiting for your answer, a failed push, failing checks and an errored session.
 
 ### Sessions in the bar
 
-**Sessions**, at the top left of the bar, or **⌘B** from any screen, opens your sessions in one list: Pinned first, then Needs you, Running, In review and Building. Type to filter by title or project, use the arrows and **Enter** to open one, and click a pin to move a row in or out of Pinned. A pin that cannot be saved leaves the row where it was and says so. A row counts what waits on you in that session, the same number as on the Board, and says **Desk** when the session opens again on its Desk. **Open Board** at its foot shows the finished ones too.
+Open any session from one list. **Sessions**, at the top left of the bar, or **⌘B** from any screen, lists them: Pinned first, then Needs you, Running, In review and Building.
+
+- Type to filter by title or project, and press **Enter** to open one.
+- Click a pin to move a row in or out of Pinned.
+- A row counts what waits on you in that session.
+- **Open Board** at the foot shows the finished ones too.
 
 ### Overview and Desk
 
-A session has two faces: **Overview** to read it, **Desk** to work in it. You build the Desk yourself: open Terminal, Browser, Scripts, Ask or Monitor from the right rail and the page splits. The Overview narrows to a column at the left, the tools sit at the right. Close the last tool and the whole Overview comes back. There is no switch and no key for the Desk. The head and the tabs stay the same on both faces. The split adds nothing to Back and Forward, and Esc never leaves the Desk.
+A session has two faces: **Overview** to read it, **Desk** to work in it. You build the Desk yourself: open Terminal, Browser, Scripts, Ask or Monitor from the right rail and the page splits. The Overview narrows to a column at the left, the tools sit at the right.
 
-On the Desk a column at the left keeps the session in view: its state, Needs you, Now, the first two moves of Next, and its projects. Everything to its right, under the head, is work: Terminal, Browser and Monitor fill it in up to two columns of two. The agent, a pull request or Scripts open beside them. No space stays empty between the column and the tools, and nothing lies over the column.
+Close the last tool and the whole Overview comes back. There is no switch and no key for the Desk. A session opens again with the tools it had open.
 
-When the tools would get less than 880px beside the column, it folds into one status line that opens it in a popover, and the tools take the whole width. When even then the tools do not fit side by side, the ones after the second become tabs of one cell. The face changes at once: the tool it opens shows its own loading state, and an error with **Retry** stays in that tool.
+#### On the Desk
 
-A session opens again with the tools it had open, split beside the Overview; the first time, on the whole Overview. A Desk whose tools do not come back opens on the whole Overview.
+A column at the left keeps the session in view: its state, Needs you, Now, the first two moves of Next, and its projects. Everything to its right, under the head, is work.
+
+- Terminal, Browser and Monitor fill it in up to two columns of two.
+- The agent, a pull request or Scripts open beside them.
+- On a narrow Desk the column folds into one status line, and extra tools become tabs of one cell.
+- Drag a tool by its head, the Browser by its address row, to place it anywhere on the Desk.
+- A tool that fails to load shows an error with **Retry** inside that tool.
+
+#### Terminal on the Desk
 
 On the Overview, ⌃` opens the terminal like the rail does: the page splits.
 
-The terminal has one tab per worktree of the session, named after its project. A tab opens its shell the first time you pick it. The head shows the branch and the folder, then `⋯` and Close; **Open full page** sits in `⋯`. On a narrow Desk a tool head never overlaps: the title is cut short first, and extra buttons fold into `⋯`, like Pin, Console and Open full page on the Browser. Drag a tool by its head, the Browser by its address row, to place it anywhere on the Desk.
+The terminal has one tab per worktree of the session, named after its project. A shell that ends with an error keeps its output and offers Restart.
 
-Above the prompt, the terminal suggests one command at a time, such as the failing test or a new migration. It shows the whole command and its folder, with **Run** or **Add to prompt**, and **Not now**. Only a script Goodboy found, with nothing added from outside, runs on the click. A test name read from a check log, or a script that migrates, seeds, deploys or cleans, is typed into the prompt and says **Press Enter to run**. It never runs on its own. A shell that ends with an error keeps its output and offers Restart.
+Above the prompt, the terminal suggests one command at a time, such as the failing test or a new migration. It shows the whole command and its folder, with **Run** or **Add to prompt**, and **Not now**.
+
+- Only a script Goodboy found, with nothing added from outside, runs on the click.
+- A test name read from a check log, or a script that migrates, seeds, deploys or cleans, is typed into the prompt and says **Press Enter to run**. It never runs on its own.
 
 ### New worktrees start usable
 
-A new worktree is a clean checkout, so the folder settings carry what it lacks. **Worktree setup**, under a repository folder in Settings, lists its git-ignored files (`.env.local`, `config/local.json`), none ticked, a secret marked **secret: only when ticked**; the ticked ones are copied into every new worktree, only when git ignores them and never over a file that is already there. **Setup after creation** is prefilled from the lockfile (`pnpm install`) and says where it came from. When a session cuts a worktree, the overview shows **Worktree payments-api/retry-webhook is ready**, what was copied and the proposed setup with **Run** and **Not now**; the setup never runs without that click. Dependencies are never copied byte by byte: that is what the setup is for.
+A new worktree is a clean checkout, so the folder settings carry what it lacks.
+
+- **Worktree setup**, under a repository folder in Settings, lists its git-ignored files (`.env.local`, `config/local.json`), none ticked. A secret is marked **secret: only when ticked**.
+- The ticked files are copied into every new worktree, only when git ignores them and never over a file that is already there.
+- **Setup after creation** is prefilled from the lockfile (`pnpm install`) and says where it came from.
+
+When a session cuts a worktree, the overview shows **Worktree payments-api/retry-webhook is ready**, what was copied and the proposed setup with **Run** and **Not now**. The setup never runs without that click. Dependencies are never copied byte by byte: that is what the setup is for.
 
 ### Repo status across folders
 
@@ -95,24 +161,19 @@ See which repos have something to pull, right next to the workspace switcher.
 Every 5 minutes Goodboy fetches origin for each repo. It compares the local base branch (the folder's base branch, else the remote default branch) with its upstream. Fetching never moves a local branch.
 
 - A repo that is behind puts a dot and **3 behind** on the **Repositories** entry.
-- A repo whose base branch has commits of its own reads **Diverged**. Its tooltip explains that Goodboy only fast-forwards, so you merge or rebase it yourself.
+- A repo whose base branch has commits of its own reads **Diverged**. Goodboy only fast-forwards, so you merge or rebase it yourself.
 - When origin cannot be reached, the entry reads **Check failed**, with **Retry** on the row, and no toast.
 
-The entry opens one header row: the title, when origin was last checked, **Pull all** once two or more repos can pull, and the refresh icon. Under it come the repos that need attention.
+The entry opens a header row with when origin was last checked, **Pull all** once two or more repos can pull, and a refresh icon. Under it come the repos that need attention.
 
 - A behind repo has **Pull**.
 - A diverged repo has the reason in words.
 - A failed check has **Retry**.
-- The repos with nothing to pull fold into one quiet line, **18 up to date**. It opens on click.
-- Every row shows its folder in Finder and opens it in the editor in one click. It keeps the action column put when it has no **Pull**, and opens its detail in place under the row.
+- The repos with nothing to pull fold into one quiet line, **18 up to date**.
 
-A pull leaves some branches alone.
+A pull leaves a checkout on a feature branch where it is. A base branch with uncommitted files says so instead of offering **Pull**, and one that would not fast-forward is skipped.
 
-- A checkout on a feature branch stays there while its base branch moves.
-- A base branch checked out with uncommitted files says so instead of offering **Pull**.
-- A base branch that would not fast-forward, or is checked out in another worktree, is skipped.
-
-**Settings › Editor, terminal, git › Git** sets how often it checks (Off, 5, 15 or 30 minutes). Several windows on one workspace share one fetch.
+**Settings › Editor, terminal, git › Git** sets how often it checks (Off, 5, 15 or 30 minutes).
 
 ⌘K **Pull main in all linked repos** and **Pull <branch> in <repo>** run the same pull. A toast lists each repo with its branch, and the title counts updated, skipped and failed.
 
@@ -146,23 +207,44 @@ Choose how new session branches are named, under **Naming** on the **Branches** 
 
 Choose when a new run in this workspace stops for your go: every step, after the plan or never. One row on **Workflows › Every run** sets it for workflows and for the Lead alike. One click saves both, and a failed save keeps both old levels and shows the error under the row.
 
-If the two were saved apart, the row names both and selects none until you pick one. Nothing changes before you do. A level saved in one window shows in the others. Each Lead can change its own level and its permission rows from its page.
+If the two were saved apart, the row names both and selects none until you pick one. Each Lead can change its own level and its permission rows from its page.
 
 ### Monitoring
 
 See which ports are taken and by whom.
 
-**Monitor** on the right rail opens a panel beside your page. Click it again to close it, or choose **Open full page** in its header. Its number shows ports in use and warns when a pinned port is down. With no port in use, a warning dot shows a down pin. The panel stays closed after a reload.
+**Monitor** on the right rail opens a panel beside your page, or choose **Open full page** in its header. Its number shows ports in use and warns when a pinned port is down.
 
-The page and panel share four groups: **Pinned** (ports you pin, with your own description), **Run by Goodboy**, **From workspace** and **Listening on this Mac**. Every group shares one column grid under one sticky header (Port, Label, Opened by, Process, Up, CPU, Memory), a process on many ports is one expandable row, and a group's header carries its count and its free ports (`3 · 2 free`); the free count opens the free ports under the ports in use. Expanded rows sit one step in. A terminal or script with no port says "no port" in faint text and shows its process. **Opened by** names the place as links: the session, then the agent and its run for an agent's process, or the branch for a shell or a script. Each part opens its page. The branch opens the worktree that shows it now; a branch no worktree shows is named without a link. A process stays under the branch it started on after its worktree switches branch; a renamed branch follows its new name. A port also open in another worktree shows the warning dot and "+2" after its owner, the worktrees in the tooltip. Leftover processes sit on the same grid with their age under Up. Monitoring keeps what you left when you go to another page and come back: the search text, the folds you opened and the scroll position. From a branch it opens on that branch only, and a chip shows every port again. The Terminal page keeps its Archived fold too.
+#### Groups and columns
 
-Rows rest quiet. **Stop** and the **⋯** button live in one fixed cell that fills when you rest on a row, tab into it or open its menu, and a right click on any row opens the same menu: Open in browser, Pin or Edit description, Stop, Force stop, Hide or Unpin, Copy address. Stop asks first and names who loses the port; a process that does not exit in time shows **Force stop** in its place, which asks again. A refused stop leaves the row and reports why. With nothing tracked the page says **No ports in use** and offers **Pin a port**. It works on macOS and Linux.
+The page and panel share four groups.
+
+- **Pinned**: ports you pin, with your own description.
+- **Run by Goodboy**.
+- **From workspace**.
+- **Listening on this Mac**.
+
+Every group shares the same columns: Port, Label, Opened by, Process, Up, CPU and Memory. A process on many ports is one expandable row. A group's header carries its count and its free ports (`3 · 2 free`).
+
+A port also open in another worktree shows the warning dot and "+2" after its owner.
+
+**Opened by** names the place as links, and each part opens its page: the session, then the agent and its run, or the branch.
+
+Monitoring keeps your search text, the folds you opened and the scroll position when you leave and come back. From a branch it opens on that branch only, and a chip shows every port again.
+
+#### Stopping a process
+
+**Stop** and the **⋯** button sit on each row. A right click opens the same menu: Open in browser, Pin or Edit description, Stop, Force stop, Hide or Unpin, Copy address.
+
+Stop asks first and names who loses the port. A process that does not exit in time shows **Force stop** in its place, which asks again. A refused stop leaves the row and reports why.
+
+With nothing tracked the page says **No ports in use** and offers **Pin a port**. It works on macOS and Linux.
 
 ### Copy settings from another workspace
 
 Set up a new workspace by copying another one. **Copy from…** in a settings page menu takes that page's values from another workspace, and **Copy all pages from…** takes them all. You see what changes before anything is saved, and folders and accounts are never copied.
 
-**Opening another workspace**
+#### Opening another workspace
 
 Click a workspace and the top bar names it at once, with a soft pulse, while the board shows its loading state. The old workspace stays whole until the new one has loaded. If it cannot open, the top bar keeps the old name, and a small card under it says "Couldn't open Northwind." with a **Retry** button.
 
