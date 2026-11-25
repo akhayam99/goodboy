@@ -197,8 +197,12 @@ brand-storage
 brand-tools
 browser-console
 browser-console-dark
+browser-console-right
+browser-console-right-dark
 browser-handoff
 browser-handoff-dark
+browser-network-detail
+browser-network-detail-dark
 browser-page
 browser-page-dark
 browser-pane
