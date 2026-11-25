@@ -285,7 +285,7 @@ describe('Impact, Agents tab', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Agents' }));
 
     await waitFor(() => expect(tileText('Pinned by you')).toContain('Known for 1 of 3 turns'));
-    expect(screen.getByText(COVERAGE_LINE)).toBeTruthy();
+    expect(screen.getByText(COVERAGE_LINE).textContent).toContain('not known');
 
     await seedPick({ db, runId: 'run-codex', source: 'fallback' });
     fireEvent.click(screen.getByRole('tab', { name: '7 days' }));
