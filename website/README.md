@@ -144,8 +144,7 @@ characters; a description takes 70 to 165 (`website/scripts/lib/seoCheck.mjs`).
 
 - `/`, the landing page, from `website/index.html` and `website/src/pages/home/HomePage.tsx`.
   Its sections live in `website/src/pages/home/sections/`, in this order: Nav, Hero,
-  TwoWays, SharedContext, Tour, Install, BrandLine, Footer. `BrandLine` is the
-  brand line alone, the last block before the footer.
+  TwoWays, SharedContext, Tour, Install, Footer.
 - `/features`, one cluster per topic, from `website/features.html` and
   `website/src/pages/features/`. The clusters, their groups and their copy come
   from `features.data.json` in that folder. Vite builds both pages as inputs,
