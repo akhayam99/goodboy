@@ -13,13 +13,13 @@ import type { WorkspaceScope } from './workspaceScope';
 const WORKSPACE = 'ws-harborline';
 
 const scopeOf = (over: Partial<WorkspaceScope> = {}): WorkspaceScope =>
-  ({
+  Object.assign(Object.create(null), {
     workspace: { id: WORKSPACE, name: 'Harborline' },
     presets: [{ id: 'preset-layout', name: 'Fix a layout' }],
     projects: [{ id: 'proj-ledger', name: 'ledger-core' }],
     defaultLimitUsd: 8,
     ...over,
-  }) as unknown as WorkspaceScope;
+  });
 
 beforeEach(() => {
   clearStartState();

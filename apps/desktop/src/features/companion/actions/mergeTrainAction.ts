@@ -133,7 +133,7 @@ export const mergeTrainAction = async ({
   const store = getStore();
   void store.startMergeTrain({ method: action.method, cars }).catch((error: unknown) => {
     console.error('[bridge] merge train failed', formatError(error));
-    store.reportError({ recovery: CHECK_STATE, title: "Couldn't merge in order", error });
+    return store.reportError({ recovery: CHECK_STATE, title: "Couldn't merge in order", error });
   });
   bumpTrainSequence();
   return doneResult();

@@ -50,8 +50,8 @@ const readyLinesIn = ({ state, live, infos }: ReadyParams): WorkspaceScope['read
   const rows = readyToMergeOf({ sessions: live, infos, numbers, checks });
   const cars = readyCarsOf({ state, rows });
   const titles = new Map(live.map((session) => [session.id, sessionTitle({ session })]));
-  const heads = new Map(
-    live.map((session) => [session.id as string, state.sessionGithub[session.id]?.pr?.headSha]),
+  const heads = new Map<string, string | null | undefined>(
+    live.map((session) => [session.id, state.sessionGithub[session.id]?.pr?.headSha]),
   );
   return readyLinesOf({ rows, cars, sessionTitles: titles }).flatMap((line) => {
     const headSha = heads.get(line.sessionId) ?? null;

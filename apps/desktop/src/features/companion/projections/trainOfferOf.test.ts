@@ -32,28 +32,27 @@ type ScopeParams = {
 };
 
 const scopeOf = ({ lines = LINES, train = null }: ScopeParams = {}): WorkspaceScope =>
-  ({
+  Object.assign(Object.create(null), {
     workspace: { id: WORKSPACE, name: 'Harborline' },
     readyLines: lines,
     mergeTrain: train,
-  }) as unknown as WorkspaceScope;
+  });
 
-const trainOf = (over: Partial<MergeTrain> = {}): MergeTrain =>
-  ({
-    id: 'train-1',
-    cars: [
-      { sessionId: 'ses-one', mountId: 'm1', prNumber: 11, repo: 'ledger-core', base: 'main' },
-      { sessionId: 'ses-two', mountId: 'm2', prNumber: 12, repo: 'notify-relay', base: 'main' },
-    ],
-    method: 'squash',
-    index: 0,
-    step: 'merging',
-    hasUpdated: false,
-    merged: 0,
-    isStopRequested: false,
-    outcome: null,
-    ...over,
-  }) as unknown as MergeTrain;
+const trainOf = (over: Partial<MergeTrain> = {}): MergeTrain => ({
+  id: 'train-1',
+  cars: [
+    { sessionId: 'ses-one', mountId: 'm1', prNumber: 11, repo: 'ledger-core', base: 'main' },
+    { sessionId: 'ses-two', mountId: 'm2', prNumber: 12, repo: 'notify-relay', base: 'main' },
+  ],
+  method: 'squash',
+  index: 0,
+  step: 'merging',
+  hasUpdated: false,
+  merged: 0,
+  isStopRequested: false,
+  outcome: null,
+  ...over,
+});
 
 describe('the train offer', () => {
   it('is absent below two ready pull requests and no train', () => {

@@ -72,7 +72,7 @@ const kitOf = ({ train = null }: StoreOptions = {}): Kit => {
     session: { id: `ses-${input.goal.length}` },
   }));
   const runAfterMergeCleanup = vi.fn(async () => ({ kind: 'skipped' }));
-  const store = {
+  const store: AppStore = Object.assign(Object.create(null), {
     sessions: [
       { id: 'ses-one', workspaceId: WORKSPACE },
       { id: 'ses-two', workspaceId: WORKSPACE },
@@ -94,7 +94,7 @@ const kitOf = ({ train = null }: StoreOptions = {}): Kit => {
     createSession,
     runAfterMergeCleanup,
     reportError: vi.fn(),
-  } as unknown as AppStore;
+  });
   return {
     store,
     mergePr,
@@ -112,7 +112,7 @@ const portsOf = (): StartPorts & {
   resolveTask: vi.fn(async () => ({
     goal: 'Fix the rounding bug',
     externalTask: {
-      provider: 'linear' as const,
+      provider: 'linear',
       externalId: 'abc',
       identifier: 'HBL-419',
       url: 'https://example.invalid/HBL-419',
@@ -276,11 +276,13 @@ describe('mergeTrain', () => {
     const done = await run({ raw: trainRaw(), kit });
     expect(done.result).toBe('done');
     expect(kit.startMergeTrain).toHaveBeenCalledTimes(1);
-    const [call] = kit.startMergeTrain.mock.calls as unknown as ReadonlyArray<
-      ReadonlyArray<{ method: string; cars: ReadonlyArray<{ prNumber: number; mountId: string }> }>
-    >;
-    expect(call?.[0]?.method).toBe('squash');
-    expect(call?.[0]?.cars.map((car) => car.prNumber)).toEqual([11, 12]);
+    expect(kit.startMergeTrain).toHaveBeenCalledWith({
+      method: 'squash',
+      cars: [
+        expect.objectContaining({ prNumber: 11, mountId: 'mount-ses-one' }),
+        expect.objectContaining({ prNumber: 12, mountId: 'mount-ses-two' }),
+      ],
+    });
   });
 
   it('stops before the first car when a head changed since the phone looked', async () => {
@@ -389,21 +391,17 @@ describe('stopTrain', () => {
 });
 
 describe('startSession', () => {
-  it('maps each access to a mode and never to full access', async () => {
-    const seen: string[] = [];
-    for (const access of ['readOnly', 'askFirst', 'editsAllowed']) {
-      clearStartState();
-      clearActionLedger();
-      clearRateSlots();
-      const ports = portsOf();
-      await run({ raw: startRaw({ access }), kit: kitOf(), ports });
-      const [call] = ports.launch.mock.calls as unknown as ReadonlyArray<
-        ReadonlyArray<{ mode: string }>
-      >;
-      seen.push(call?.[0]?.mode ?? 'none');
-    }
-    expect(seen).toEqual(['plan', 'default', 'acceptEdits']);
-    expect(seen).not.toContain('bypassPermissions');
+  it.each([
+    ['readOnly', 'plan'],
+    ['askFirst', 'default'],
+    ['editsAllowed', 'acceptEdits'],
+  ])('maps %s to the %s mode and never to full access', async (access, mode) => {
+    const ports = portsOf();
+    await run({ raw: startRaw({ access }), kit: kitOf(), ports });
+    expect(ports.launch).toHaveBeenCalledWith(expect.objectContaining({ mode }));
+    expect(ports.launch).not.toHaveBeenCalledWith(
+      expect.objectContaining({ mode: 'bypassPermissions' }),
+    );
   });
 
   it('does not parse full access or an access the Mac never offered', () => {
