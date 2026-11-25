@@ -66,6 +66,8 @@ type StageColumnProps = {
   readonly spec: BoardLaneSpec;
   readonly sessions: ReadonlyArray<Session>;
   readonly action?: ReactNode;
+  readonly lead?: ReactNode;
+  readonly leadCount?: number;
   readonly nav: BoardNavigation;
   readonly selection: ColumnSelection;
   readonly onClearSelection: () => void;
@@ -82,6 +84,8 @@ export const StageColumn = ({
   spec,
   sessions,
   action,
+  lead = null,
+  leadCount = 0,
   nav,
   selection,
   onClearSelection,
@@ -94,7 +98,8 @@ export const StageColumn = ({
   onCardLeave,
 }: StageColumnProps) => {
   const view = viewFor(spec);
-  const isEmpty = sessions.length === 0;
+  const count = sessions.length + leadCount;
+  const isEmpty = count === 0;
   const isHalf = placement === 'half';
   const { isSelected } = selection;
   const [isWindowOpen, setIsWindowOpen] = useState(false);
@@ -132,9 +137,7 @@ export const StageColumn = ({
             />
             <Eyebrow label={sentenceCase({ text: view.presentation.label })} muted={isEmpty} />
             {!isEmpty && (
-              <span className="text-meta tabular-nums text-faint-foreground">
-                {sessions.length}
-              </span>
+              <span className="text-meta tabular-nums text-faint-foreground">{count}</span>
             )}
           </span>
         </Tooltip>
@@ -171,6 +174,7 @@ export const StageColumn = ({
               isFinished ? 'gap-1' : PANE_RHYTHM.board.cardGap,
             )}
           >
+            {lead}
             {motion.map((entry) => (
               <ListItemMotion key={entry.key} phase={entry.phase}>
                 <StageBoardCard

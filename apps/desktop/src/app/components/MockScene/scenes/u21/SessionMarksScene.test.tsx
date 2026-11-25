@@ -48,7 +48,7 @@ const MARKS: ReadonlyArray<Mark> = [
   {
     title: 'Pick the retry window for webhooks',
     tone: 'warning',
-    state: 'question',
+    state: 'dot:warning',
     words: '1 question for you',
   },
   {
@@ -60,43 +60,43 @@ const MARKS: ReadonlyArray<Mark> = [
   {
     title: 'Move the ledger export to a queue',
     tone: 'warning',
-    state: 'alert',
+    state: 'dot:warning',
     words: 'Changes requested',
   },
   {
     title: 'Add idempotency keys to payments-api',
     tone: 'warning',
-    state: 'question',
+    state: 'dot:warning',
     words: '1 comment needs you',
   },
   {
     title: 'Backfill the settlement dates',
     tone: 'warning',
-    state: 'alert',
+    state: 'dot:warning',
     words: '1 comment failed',
   },
   {
     title: 'Write the notify-relay digest',
     tone: 'warning',
-    state: 'approval',
+    state: 'dot:warning',
     words: 'Needs permission',
   },
   {
     title: 'Plan the Cascadia onboarding',
     tone: 'warning',
-    state: 'approval',
+    state: 'dot:warning',
     words: 'Needs approval',
   },
   {
     title: 'Review the Acme import mapper',
     tone: 'info',
-    state: 'dot',
+    state: 'dot:unread',
     words: 'New reply',
   },
   {
     title: 'Tune the rate limiter',
     tone: 'warning',
-    state: 'question',
+    state: 'dot:warning',
     words: '1 question for you',
   },
   {
@@ -141,9 +141,9 @@ describe('the session marks scene', () => {
       const list = await openSessions();
       const node = rowOf(list, mark.title).querySelector('[role="img"]');
 
-      expect(
-        node?.getAttribute('data-status-state') ?? node?.getAttribute('data-status-mark'),
-      ).toBe(mark.state);
+      const kind = node?.getAttribute('data-status-mark');
+      const shape = kind === 'dot' ? `dot:${node?.getAttribute('data-status-tone') ?? ''}` : kind;
+      expect(node?.getAttribute('data-status-state') ?? shape).toBe(mark.state);
       expect((node?.getAttribute('aria-label') ?? '').replace(/, unseen$/, '')).toBe(mark.words);
     },
   );

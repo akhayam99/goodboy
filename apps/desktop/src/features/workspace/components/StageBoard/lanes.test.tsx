@@ -253,7 +253,7 @@ describe('StageBoard lanes', () => {
     expect(within(lane('archived')).getByText('Nothing archived')).toBeDefined();
   });
 
-  it('shows a running session with an open question as a Needs you card, in no lane', () => {
+  it('shows a running session with an open question as a yellow card at the top of Running, once', () => {
     const asking = sessionOf('Fix the rounding drift in the settlement export', {
       state: { kind: 'running', runId: 'run-1' as ProviderRunId, startedAt: NOW },
     });
@@ -264,15 +264,16 @@ describe('StageBoard lanes', () => {
     useAppStore.setState({ sessionOpenQuestions: { [asking.id]: [openQuestionOf(asking)] } });
     mountBoard([asking, working]);
 
-    const strip = screen.getByRole('region', { name: 'Needs you' });
-    expect(
-      within(strip).getByRole('button', {
-        name: `Open ${asking.goal}, Which export format should the settlement file use?`,
-      }),
-    ).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
+    const waiting = within(lane('running')).getByRole('button', {
+      name: `Open ${asking.goal}, Which export format should the settlement file use?`,
+    });
     expect(within(lane('running')).queryByRole('button', { name: asking.goal })).toBeNull();
     expect(screen.queryByRole('group', { name: 'needs you' })).toBeNull();
-    expect(within(lane('running')).getByRole('button', { name: working.goal })).toBeDefined();
+    const running = within(lane('running')).getByRole('button', { name: working.goal });
+    expect(
+      waiting.compareDocumentPosition(running) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('puts Done above Archived in one lane when five do not fit, each half with its own empty line', () => {

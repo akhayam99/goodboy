@@ -159,6 +159,22 @@ describe('the Sessions popover in the bar', () => {
     expect(screen.queryByRole('dialog', { name: 'Sessions' })).toBeNull();
   });
 
+  it('shows a yellow dot on the Sessions button while a session needs you, and none otherwise', () => {
+    const { unmount } = mount();
+    const trigger = screen.getByRole('button', { name: 'Sessions' });
+
+    expect(trigger.querySelector('[data-sessions-needs-you]')).not.toBeNull();
+    expect(trigger.querySelector('[data-sessions-needs-you] > span')?.className).toContain(
+      'bg-warning',
+    );
+    unmount();
+
+    mount({ questions: [] });
+    expect(
+      screen.getByRole('button', { name: 'Sessions' }).querySelector('[data-sessions-needs-you]'),
+    ).toBeNull();
+  });
+
   it('puts Pinned first, then the sessions by state with their counts', () => {
     mount();
     toggle();
@@ -305,6 +321,25 @@ describe('what each Sessions row says', () => {
       }),
     ).not.toBeNull();
     expect(within(rowOf({ session: quiet })).queryByTestId('sessions-needs-you')).toBeNull();
+  });
+
+  it('marks a row that needs you with a yellow dot, a running row with a blue one, and the rest with neither', () => {
+    mount();
+    toggle();
+
+    const askDot = rowOf({ session: ask }).querySelector('[data-status-mark]');
+    const runningDot = rowOf({ session: running }).querySelector('[data-status-mark]');
+    expect(askDot?.getAttribute('data-status-mark')).toBe('dot');
+    expect(askDot?.getAttribute('data-status-tone')).toBe('warning');
+    expect(askDot?.firstElementChild?.className).toContain('bg-warning');
+    expect(runningDot?.getAttribute('data-status-mark')).toBe('dot');
+    expect(runningDot?.getAttribute('data-status-tone')).toBe('info');
+    expect(runningDot?.firstElementChild?.className).toContain('bg-info');
+    expect(
+      rowOf({ session: quiet })
+        .querySelector('[data-status-mark]')
+        ?.getAttribute('data-status-mark'),
+    ).not.toBe('dot');
   });
 
   it('says Desk for a session saved on the Desk and nothing for the others', async () => {

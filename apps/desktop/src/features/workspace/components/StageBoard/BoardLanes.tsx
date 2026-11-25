@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { BOARD_LANE_FADE_PX, cn, PANE_RHYTHM, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY } from '../../../../store';
@@ -22,6 +22,8 @@ type Props = {
   readonly laneRem: number;
   readonly byStage: ReadonlyMap<string, ReadonlyArray<Session>>;
   readonly archived: ReadonlyArray<Session>;
+  readonly needsYou: ReactNode;
+  readonly needsYouCount: number;
   readonly isArchivedLoading: boolean;
   readonly nav: BoardNavigation;
   readonly selection: BoardSelection;
@@ -41,6 +43,8 @@ export const BoardLanes = ({
   laneRem,
   byStage,
   archived,
+  needsYou,
+  needsYouCount,
   isArchivedLoading,
   nav,
   selection,
@@ -133,6 +137,7 @@ export const BoardLanes = ({
             {...(stage === 'review' && {
               action: <MergeInOrder sessions={byStage.get(stage) ?? EMPTY_ARRAY} />,
             })}
+            {...(stage === 'running' && { lead: needsYou, leadCount: needsYouCount })}
             nav={nav}
             selection={selection}
             onClearSelection={selection.clearAll}

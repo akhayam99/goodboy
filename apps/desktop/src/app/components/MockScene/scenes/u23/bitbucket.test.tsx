@@ -356,14 +356,14 @@ describe('the session marks scene on Bitbucket', () => {
   const markOf = (title: string) => {
     const node = rowOf(title).querySelector('[role="img"]');
     return {
-      state: node?.getAttribute('data-status-state'),
+      state: node?.getAttribute('data-status-state') ?? node?.getAttribute('data-status-tone'),
       words: (node?.getAttribute('aria-label') ?? '').replace(/, unseen$/, ''),
     };
   };
 
   it.each([
     ['Stop notify-relay retries on a 409', 'failed', 'Checks failing'],
-    ['Move the ledger export to a queue', 'alert', 'Changes requested'],
+    ['Move the ledger export to a queue', 'warning', 'Changes requested'],
     ['Paginate the payments list', 'approved', 'Approved, ready to merge'],
     ['Ship the refund webhook', 'failed', 'Checks failing'],
   ] as const)(

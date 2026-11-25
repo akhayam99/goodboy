@@ -275,7 +275,33 @@ describe('StageBoardCard layout', () => {
     const facts = elementOf({
       node: screen.getByRole('article').querySelector('[data-slot="card-facts"]'),
     });
-    expect(facts.textContent).toBe('Draft #9484·2h ago');
+    expect(facts.textContent).toBe('·Draft #9484·2h ago');
+    expect(screen.getByText('Draft #9484')).toBeDefined();
+    expect(screen.getByText('2h ago')).toBeDefined();
+  });
+
+  it('wraps a long state word onto a second line instead of cutting it mid word', () => {
+    hooks.reason = 'Checking GitHub';
+    const updated = aSession({
+      ...session,
+      updatedAt: brandId<IsoDateTime>({ value: new Date(Date.now() - 7_200_000).toISOString() }),
+    });
+    render(<StageBoardCard session={updated} nav={nav} />);
+    const facts = elementOf({
+      node: screen.getByRole('article').querySelector('[data-slot="card-facts"]'),
+    });
+    const state = screen.getByText('Checking GitHub');
+    const age = elementOf({ node: facts.querySelector('.whitespace-nowrap') });
+    const line = elementOf({ node: facts.firstElementChild });
+
+    expect(line.className).toContain('flex-wrap');
+    expect(facts.className).toContain('overflow-hidden');
+    expect(facts.className).not.toMatch(/(^|\s)(truncate|line-clamp-\d)(\s|$)/);
+    expect(state.className).not.toMatch(/(^|\s)truncate(\s|$)/);
+    expect(state.getAttribute('data-truncated')).toBeNull();
+    expect(age.className).toContain('whitespace-nowrap');
+    expect(age.firstElementChild?.getAttribute('aria-hidden')).toBe('true');
+    expect(age.firstElementChild?.textContent).toBe('·');
   });
 
   it('draws a compact row in one line with the title and its signal, and no meta line', () => {

@@ -35,8 +35,8 @@ import { SessionsHeader } from './SessionsHeader';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { useClearSessionFilters } from './useClearSessionFilters';
-import { NeedsYouStrip } from './NeedsYouStrip';
-import { useNeedsYou } from './NeedsYouStrip/useNeedsYou';
+import { NeedsYouCards } from './NeedsYouCards';
+import { useNeedsYou } from './NeedsYouCards/useNeedsYou';
 import { useBoardByStage } from './useBoardByStage';
 
 type Props = {
@@ -192,27 +192,27 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
 
           {!pending && !empty && (
             <BoardFactsFrame workspaceId={workspaceId}>
-              <div className="flex min-h-0 flex-1 flex-col gap-3">
-                <NeedsYouStrip
-                  workspaceId={workspaceId}
-                  sessions={sessions}
-                  cards={needsYouCards}
-                  laneRem={laneRem}
-                />
-                <BoardLanes
-                  layout={layout}
-                  laneRem={laneRem}
-                  byStage={byStage}
-                  archived={projectArchived}
-                  isArchivedLoading={archivedList === undefined}
-                  nav={nav}
-                  selection={selection}
-                  onRestore={onRestore}
-                  motionResetKey={motionResetKey}
-                  onCardEnter={hover.enter}
-                  onCardLeave={hover.leave}
-                />
-              </div>
+              <BoardLanes
+                layout={layout}
+                laneRem={laneRem}
+                byStage={byStage}
+                archived={projectArchived}
+                needsYou={
+                  <NeedsYouCards
+                    workspaceId={workspaceId}
+                    sessions={sessions}
+                    cards={needsYouCards}
+                  />
+                }
+                needsYouCount={needsYouCards.length}
+                isArchivedLoading={archivedList === undefined}
+                nav={nav}
+                selection={selection}
+                onRestore={onRestore}
+                motionResetKey={motionResetKey}
+                onCardEnter={hover.enter}
+                onCardLeave={hover.leave}
+              />
             </BoardFactsFrame>
           )}
         </SessionsHeader>

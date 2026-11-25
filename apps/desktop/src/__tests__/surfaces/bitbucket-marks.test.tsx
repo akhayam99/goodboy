@@ -92,11 +92,16 @@ const tableMarkOf = ({ reason }: { readonly reason: SessionAttentionReason }) =>
   };
 };
 
+const sessionsRowMarkOf = ({ reason }: { readonly reason: SessionAttentionReason }) =>
+  ATTENTION_REASON_META[reason].tone === 'warning'
+    ? { kind: 'dot', state: null, tone: 'warning' }
+    : tableMarkOf({ reason });
+
 describe.each(REASONS)('a Bitbucket session says %s the same way on every surface', (reason) => {
   const tone = ATTENTION_REASON_META[reason].tone;
   const mark = tableMarkOf({ reason });
 
-  it('draws the Sessions row with the mark and words of the table', () => {
+  it('draws the Sessions row with the words of the table, and a yellow dot when it needs you', () => {
     const { session, info } = waitingFor({ reason });
     const { container } = render(
       <SessionsRow
@@ -111,7 +116,7 @@ describe.each(REASONS)('a Bitbucket session says %s the same way on every surfac
     );
 
     expect(wordsOf(container)).toBe(attentionWordsOf({ reason, counts: info }));
-    expect(markOf(container)).toEqual(mark);
+    expect(markOf(container)).toEqual(sessionsRowMarkOf({ reason }));
   });
 
   it('draws the switcher row with the same mark', () => {

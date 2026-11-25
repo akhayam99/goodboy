@@ -276,6 +276,26 @@ describe('AppTopBar', () => {
     expect(screen.getByRole('button', { name: SPEND_LABEL })).toBeDefined();
   });
 
+  it('says no Needs you in the bar, and puts the yellow dot on the Sessions button instead', () => {
+    hooks.attention = {
+      count: 2,
+      quietCount: 0,
+      tone: 'warning',
+      countedIds: ['a', 'b'],
+      reasons: ['1 question for you'],
+      quietReasons: [],
+      countedSessions: [ATTENTION_SESSION, ATTENTION_SESSION],
+    };
+    const { container } = renderBar();
+    const right = zones(container)[2];
+    const left = zones(container)[0];
+
+    expect(right?.textContent).not.toContain('Needs you');
+    expect(container.querySelector('[data-now-idle]')?.textContent).toBe('Idle');
+    expect(left?.querySelector('[data-sessions-needs-you]')).not.toBeNull();
+    expect(screen.getByTestId('notification-center')).toBeDefined();
+  });
+
   it('hides spend until the first cent today', () => {
     hooks.rollup = { attentionCount: 0, runningCount: 0, todaySpend: 0 };
     renderBar();
