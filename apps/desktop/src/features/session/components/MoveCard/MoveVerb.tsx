@@ -8,7 +8,7 @@ type Props = {
   readonly verb: CardVerb;
   readonly cardId: string;
   readonly cardTitle: string;
-  readonly variant: 'primary' | 'secondary';
+  readonly variant: 'primary' | 'secondary' | 'quiet';
   readonly isMain: boolean;
   readonly onOpen: (() => void) | null;
 };
