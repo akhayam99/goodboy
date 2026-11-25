@@ -22,6 +22,7 @@ import {
 } from '@goodboy/db';
 import { brandId, type ArtifactId, type AutoTreeId } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
+import { ensureRunGuide } from '../../runGuide/ensureRunGuide';
 import { readAdmissionPermissions } from './readAdmissionPermissions';
 
 export type ReadAdmissionSnapshotParams = {
@@ -144,6 +145,7 @@ export const readAdmissionSnapshot = async ({
     tree === null
       ? LEAD_PERMISSION_PRESETS[DEFAULT_AUTO_LEVEL]
       : await readAdmissionPermissions({ db, treeId });
+  const guide = tree === null ? null : await ensureRunGuide({ db, treeId });
   return {
     tree,
     ownerId,
@@ -157,5 +159,6 @@ export const readAdmissionSnapshot = async ({
     artifacts,
     isPlanApprovalRequired,
     permissions,
+    guide,
   };
 };

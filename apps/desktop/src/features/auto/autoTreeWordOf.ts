@@ -75,6 +75,7 @@ export const autoTreeWordOf = ({ view, rootTurn }: Params): AutoTreeWord => {
       projectAskOf({ view }) !== null ||
       needsYouRoleNouns({ delegations: view.delegations }).length > 0,
     isPausedAtLimit: isAutoPausedAtLimit({ view }),
+    isHeld: view.hold != null,
   });
   const face = AUTO_FACES[autoStateOf({ lead })];
   return {

@@ -18,6 +18,7 @@ export type AutoTreeView = Readonly<{
   artifacts: ReadonlyArray<AutoArtifactLedgerRow>;
   budget: AutoBudgetFacts | null;
   pendingRefusal: AutoPendingRefusal | null;
+  hold?: AutoHold | null;
   pendingMessages: ReadonlyArray<AutoPendingMessage>;
   readMessages?: ReadonlyArray<AutoReadMessage>;
   sentChange?: AutoSentChange | null;
@@ -47,6 +48,11 @@ export type AutoDeliveredResult = Readonly<{
   summary: string | null;
   outcomeLine: OutcomeLine | null;
   artifacts: ReadonlyArray<AutoDeliveredArtifact>;
+}>;
+
+export type AutoHold = Readonly<{
+  reason: string;
+  suggestion: string | null;
 }>;
 
 export type AutoPendingRefusal = Readonly<{

@@ -3,6 +3,7 @@ import {
   describeAutoRefusal,
   parseAutoBlock,
   parseAutoCloseBlocks,
+  parseAutoNoteBlocks,
   parseDelegateSpec,
   parseProposeSpec,
   type AutoBlock,
@@ -11,6 +12,7 @@ import {
 import { getAutoTree, type AutoTree } from '@goodboy/db';
 import { brandId, type AutoRequestId } from '@goodboy/types';
 import { replayAdmission } from './admit';
+import { applyGuideBlock } from './guide/applyGuideBlock';
 import { applyMountBlock } from './mount/applyMountBlock';
 import type { AgentCommand, AutoTurnEnded } from './ports';
 import { runAutoCommand } from './runAutoCommand';
@@ -45,7 +47,7 @@ const workspaceOf = async ({ ctx, tree }: Pick<GrantParams, 'ctx' | 'tree'>): Pr
 };
 
 type CommandParams = {
-  readonly block: Exclude<AutoBlock, { action: 'mount' }>;
+  readonly block: Exclude<AutoBlock, { action: 'mount' | 'follow' | 'hold' | 'deviate' }>;
   readonly grant: AgentCommand['grant'];
 };
 
@@ -164,6 +166,33 @@ const runEarlierCloses = async ({ ctx, tree, ended }: GrantParams): Promise<void
   });
 };
 
+const runEarlierNotes = async ({ ctx, tree, ended }: GrantParams): Promise<void> => {
+  const outcomes = parseAutoNoteBlocks({ text: ended.assistantText });
+  for (const [index, parsed] of outcomes.entries()) {
+    const joinSuffix = `note-${index}`;
+    if (
+      parsed.kind === 'block' &&
+      (parsed.block.action === 'follow' || parsed.block.action === 'deviate')
+    ) {
+      await applyGuideBlock({ ctx, tree, ended, block: parsed.block, joinSuffix });
+      continue;
+    }
+    await writeRefusal({
+      ctx,
+      tree,
+      runId: ended.runId,
+      action: 'block',
+      code: INVALID_BLOCK_CODE,
+      text: describeAutoRefusal({
+        code: INVALID_BLOCK_CODE,
+        ...(parsed.kind === 'invalid' && { message: parsed.reason }),
+      }),
+      roles: [],
+      joinKey: `refusal:${ended.runId}:${joinSuffix}`,
+    });
+  }
+};
+
 type RunBlockParams = {
   readonly ctx: AgentVerbContext;
   readonly tree: AutoTree;
@@ -183,6 +212,12 @@ const runBlock = async ({
       return { kind: 'applied', action: 'mount' };
     }
     return { kind: 'refused', action: 'mount', code: 'mount_missing' };
+  }
+  if (block.action === 'follow' || block.action === 'hold' || block.action === 'deviate') {
+    const outcome = await applyGuideBlock({ ctx, tree, ended, block });
+    return outcome.kind === 'applied'
+      ? { kind: 'applied', action: block.action }
+      : { kind: 'refused', action: block.action, code: outcome.code };
   }
   const command = commandOf({ block, grant: await grantOf({ ctx, tree, ended }) });
   const outcome = await runAutoCommand({ ctx, command });
@@ -278,6 +313,7 @@ export const applyAutoBlock = async ({
     return answerPastTurn({ ctx, tree, ended });
   }
   await runEarlierCloses({ ctx, tree, ended });
+  await runEarlierNotes({ ctx, tree, ended });
   const parsed = parseAutoBlock({ text: ended.assistantText });
   if (parsed.kind === 'none') {
     return { kind: 'skipped', reason: 'no_block' };
