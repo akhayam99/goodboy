@@ -1,11 +1,6 @@
 import { brandId, type ProjectId, type SessionId } from '@goodboy/types';
-import { browserTabListPref } from '../../../../../../features/browser/browserTabListPref';
 import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
-import type {
-  BrowserConsoleRead,
-  BrowserTabFacts,
-  BrowserTabListMode,
-} from '../../../../../../features/browser/types';
+import type { BrowserConsoleRead, BrowserTabFacts } from '../../../../../../features/browser/types';
 import { useAppStore } from '../../../../../../store';
 import type { BrowserTab, DevicePresetId } from '../../../../../../store/slices/browser/types';
 import type { BrowserVisit } from '../../../../../../store/slices/browser-visits/types';
@@ -15,7 +10,6 @@ import { mockSceneIpc } from '../../mockSceneIpc';
 export type BrowserPaneSceneState =
   | 'pane'
   | 'tabs'
-  | 'rail'
   | 'page'
   | 'peek'
   | 'address'
@@ -221,16 +215,20 @@ const rowOf = ({ id, url, title, sessionId, projectId, position }: RowParams): B
   updatedAt: 1,
 });
 
-type ListModeParams = {
-  readonly state: BrowserPaneSceneState;
-};
-
-const listModeOf = ({ state }: ListModeParams): BrowserTabListMode => {
-  if (state === 'tabs') {
-    return 'list';
-  }
-  return state === 'rail' ? 'rail' : 'hidden';
-};
+const MORE_TABS: ReadonlyArray<Pick<BrowserTab, 'id' | 'url' | 'title'>> = [
+  {
+    id: 'mock-browser-webhooks',
+    url: 'https://docs.notify-relay.dev/webhooks',
+    title: 'notify-relay webhooks',
+  },
+  { id: 'mock-browser-ledger', url: 'http://localhost:5173/ledger', title: 'Ledger entries' },
+  {
+    id: 'mock-browser-payments',
+    url: 'http://localhost:4000/payments',
+    title: 'payments-api health',
+  },
+  { id: 'mock-browser-acme', url: 'https://acme.example/invoices', title: 'Acme invoices' },
+];
 
 const factsOf = ({
   id,
@@ -284,6 +282,9 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
       projectId: null,
       position: 1,
     }),
+    ...(state === 'tabs' ? MORE_TABS : []).map((tab, index) =>
+      rowOf({ ...tab, sessionId: SESSION_ID, projectId: null, position: index + 2 }),
+    ),
   ];
   const pins =
     projectId === null
@@ -360,7 +361,6 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
         return null;
     }
   });
-  browserTabListPref.write({ mode: listModeOf({ state }) });
   useAppStore.setState({
     browserSessionTabs: { [SESSION_ID]: tabs },
     browserActiveTab: { [SESSION_ID]: 'mock-browser-checkout' },

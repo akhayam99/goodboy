@@ -34,13 +34,13 @@ Keep the sessions you return to at the top of the list. The pin on a row of the 
 
 ### Now chip
 
-Know what runs from any screen. The chip in the top bar counts the sessions and scripts running, and reads a muted **Idle** when nothing does. With a session that needs you it reads **Needs you** instead.
+Know what runs from any screen. The chip in the top bar counts the sessions and scripts running, and reads a muted **Idle** when nothing does. It never says what needs you: **Sessions** at the top left carries a yellow dot for that.
 
 A click opens a list where each row jumps to its session and says what its agent is doing, the same line as its Board card.
 
 #### Sessions that need you
 
-- An amber number on **Board** in the places rail counts them, red when one of them is broken, 9+ above nine. The top bar does not repeat it.
+- An amber number on **Board** in the places rail counts them, red when one of them is broken, 9+ above nine. The top bar does not repeat the number.
 - **⌥⌘↓** goes to the next one. Click the number for the board, where **Needs you** comes first.
 - The count ignores the project filter, so a session in another project is still counted.
 - A run that stopped, paused at its limit or waits for you to continue, an Auto agent waiting for your OK and a Slack reply waiting for approval count like a question does.

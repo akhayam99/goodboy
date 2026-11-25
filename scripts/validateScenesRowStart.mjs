@@ -3,7 +3,6 @@ export const ROW_START_SCENES = [
   'c13-terminal-workspace',
   'browser-page',
   'browser-pane',
-  'browser-pane-rail',
   'terminal-drawer-session',
   'c03-panes-terminal',
   'c03-panes-scripts',

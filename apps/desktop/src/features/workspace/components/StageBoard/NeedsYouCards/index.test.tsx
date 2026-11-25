@@ -14,7 +14,7 @@ vi.mock('../../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { aProject, aSession, aWorkspace, anAgent } from '@goodboy/types/testing';
 import {
   brandId,
@@ -31,14 +31,10 @@ import {
 } from '../../../../../store/storyHarness';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { useNowSessions } from '../../../../../shared/hooks/useNowSessions';
-import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { attentionTargetChannel } from '../../../../session/attentionTargetChannel';
 import { useOpenQuestions } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { stagesNavigationOf } from '../../../testing/stagesNavigationOf';
-import { mountOf } from '../../../testing/sessionColumn';
-import { boardLanesOf, rootRemPx } from '../boardLanesOf';
-import { laneColumnsOf } from '../laneColumnsOf';
-import { laneWidthOf } from '../laneWidthOf';
+import { mountOf, runningState } from '../../../testing/sessionColumn';
 import { StageBoard } from '../index';
 
 const workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
@@ -62,22 +58,22 @@ afterEach(() => {
   cleanup();
   useOpenQuestions.setState({ staged: [] });
   vi.restoreAllMocks();
-  Reflect.deleteProperty(HTMLElement.prototype, 'scrollWidth');
-  Reflect.deleteProperty(HTMLElement.prototype, 'clientWidth');
 });
 
 type SessionParams = {
   readonly goal: string;
   readonly isFailed?: boolean;
+  readonly isRunning?: boolean;
 };
 
-const sessionOf = ({ goal, isFailed = false }: SessionParams): Session =>
+const sessionOf = ({ goal, isFailed = false, isRunning = false }: SessionParams): Session =>
   aSession({
     workspaceId: workspace.id,
     goal,
     ...(isFailed && {
       state: { kind: 'error', message: 'provider gave up', failedAt: ERROR_AT },
     }),
+    ...(isRunning && { state: runningState() }),
   });
 
 type QuestionParams = {
@@ -138,10 +134,10 @@ const mountBoard = (sessions: ReadonlyArray<Session>) =>
     </ToastProvider>,
   );
 
-const strip = (): HTMLElement => screen.getByRole('region', { name: 'Needs you' });
+const runningLane = (): HTMLElement => screen.getByRole('group', { name: 'running' });
 
 const cards = (): ReadonlyArray<HTMLElement> =>
-  Array.from(strip().querySelectorAll<HTMLElement>('[data-needs-you-card]'));
+  Array.from(document.querySelectorAll<HTMLElement>('[data-needs-you-card]'));
 
 type CardParams = {
   readonly index: number;
@@ -150,47 +146,17 @@ type CardParams = {
 const cardAt = ({ index }: CardParams): HTMLElement => {
   const card = cards()[index];
   if (card === undefined) {
-    throw new Error(`the strip has no card ${index}`);
+    throw new Error(`the Running lane has no needs you card ${index}`);
   }
   return card;
 };
 
-const itemAt = ({ index }: CardParams): HTMLElement => {
-  const item = cardAt({ index }).closest<HTMLElement>('[role="listitem"]');
-  if (item === null) {
-    throw new Error(`card ${index} sits in no list item`);
+const frameAt = ({ index }: CardParams): HTMLElement => {
+  const frame = cardAt({ index }).parentElement;
+  if (frame === null) {
+    throw new Error(`card ${index} has no frame`);
   }
-  return item;
-};
-
-const stripViewport = (): HTMLElement => {
-  const viewport = strip().querySelector('[class*="overflow-x-auto"]');
-  if (!(viewport instanceof HTMLElement)) {
-    throw new Error('the strip has no horizontal scroller');
-  }
-  return viewport;
-};
-
-type BoxParams = {
-  readonly width: number;
-};
-
-const boxOf = ({ width }: BoxParams): DOMRect => new DOMRect(0, 0, width, 800);
-
-type ExtentParams = {
-  readonly scrollWidth: number;
-  readonly clientWidth: number;
-};
-
-const stubExtent = ({ scrollWidth, clientWidth }: ExtentParams): void => {
-  Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
-    configurable: true,
-    get: () => scrollWidth,
-  });
-  Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
-    configurable: true,
-    get: () => clientWidth,
-  });
+  return frame;
 };
 
 const currentPlace = () => {
@@ -198,14 +164,27 @@ const currentPlace = () => {
   return stack?.entries[stack.index]?.place;
 };
 
-const REM_PATTERN = /(\d+(?:\.\d+)?)rem/;
-
-const remOf = (value: string): number => Number(REM_PATTERN.exec(value)?.[1] ?? Number.NaN);
-
 const ROUTING_WORDS = ['Balanced', 'In order', 'most room', 'Send new steps to'];
 
-describe('NeedsYouStrip', () => {
-  it('shows one card per counted session, the same count as the rail badge', () => {
+const FOLLOWING = Node.DOCUMENT_POSITION_FOLLOWING;
+
+describe('NeedsYouCards', () => {
+  it('draws no Needs you strip above the stages, only cards inside the Running lane', () => {
+    const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
+    seed({
+      sessions: [asking],
+      questions: [
+        questionOf({ session: asking, text: 'Keep the retry window at five minutes?', minute: 1 }),
+      ],
+    });
+    mountBoard([asking]);
+
+    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
+    expect(cards()).toHaveLength(1);
+    expect(runningLane().contains(cardAt({ index: 0 }))).toBe(true);
+  });
+
+  it('shows one card per counted session, and Running counts them like the rail badge', () => {
     const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
     const failing = sessionOf({ goal: 'Retry webhook delivery with backoff', isFailed: true });
     const quiet = sessionOf({ goal: 'Add idempotency keys to the refund endpoint' });
@@ -221,7 +200,38 @@ describe('NeedsYouStrip', () => {
 
     expect(cards()).toHaveLength(2);
     expect(railCounts.at(-1)).toBe(2);
-    within(strip()).getByText('2');
+    within(runningLane()).getByText('2');
+  });
+
+  it('puts the yellow cards at the top of Running and the blue running cards below them', () => {
+    const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
+    const working = sessionOf({ goal: 'Speed up the payout export', isRunning: true });
+    seed({
+      sessions: [asking, working],
+      questions: [
+        questionOf({ session: asking, text: 'Keep the retry window at five minutes?', minute: 1 }),
+      ],
+    });
+    mountBoard([asking, working]);
+
+    const lane = runningLane();
+    const waiting = cardAt({ index: 0 });
+    const running = within(lane).getByText(working.goal).closest('article');
+    if (running === null) {
+      throw new Error('the running session has no card in Running');
+    }
+    expect(waiting.compareDocumentPosition(running) & FOLLOWING).toBe(FOLLOWING);
+    expect(within(frameAt({ index: 0 })).getByTestId('tone-bar').dataset.tone).toBe('warning');
+    expect(within(running).getByTestId('tone-bar').dataset.tone).toBe('info');
+    within(lane).getByText('2');
+  });
+
+  it('keeps a failing session yellow, since yellow means it needs you', () => {
+    const failing = sessionOf({ goal: 'Retry webhook delivery with backoff', isFailed: true });
+    seed({ sessions: [failing] });
+    mountBoard([failing]);
+
+    expect(within(frameAt({ index: 0 })).getByTestId('tone-bar').dataset.tone).toBe('warning');
   });
 
   it('gives a session with two open questions one card that says 2 questions', () => {
@@ -239,16 +249,41 @@ describe('NeedsYouStrip', () => {
     expect(cards()[0]?.getAttribute('aria-label')).toBe(
       `Open ${asking.goal}, Keep the retry window at five minutes?`,
     );
-    within(itemAt({ index: 0 })).getByText(/2 questions/);
+    within(frameAt({ index: 0 })).getByText(/2 questions/);
   });
 
-  it('draws no strip and no empty line when nothing needs you', () => {
+  it('reads like a lane card: repository and branch, title, then the wait and the question on one meta line', () => {
+    const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
+    seed({
+      sessions: [asking],
+      questions: [
+        questionOf({ session: asking, text: 'Keep the retry window at five minutes?', minute: 1 }),
+      ],
+    });
+    useAppStore.setState({
+      sessionProjectMounts: { [asking.id]: [mountOf({ session: asking, project })] },
+    });
+    mountBoard([asking]);
+
+    const frame = frameAt({ index: 0 });
+    const context = within(frame).getByText(`ledger-core · goodboy/${asking.id}`);
+    expect(context.getAttribute('data-slot')).toBe('card-context');
+    const title = within(frame).getByText(asking.goal);
+    const facts = within(frame).getByText(
+      /^Waiting \d+[a-z]+ · Keep the retry window at five minutes\?$/,
+    );
+    expect(facts.getAttribute('data-slot')).toBe('card-facts');
+    expect(context.compareDocumentPosition(title) & FOLLOWING).toBe(FOLLOWING);
+    expect(title.compareDocumentPosition(facts) & FOLLOWING).toBe(FOLLOWING);
+  });
+
+  it('draws no yellow card and leaves Running empty when nothing needs you', () => {
     const quiet = sessionOf({ goal: 'Add idempotency keys to the refund endpoint' });
     seed({ sessions: [quiet] });
     mountBoard([quiet]);
 
-    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
-    expect(screen.queryByText(/Nothing needs you/)).toBeNull();
+    expect(cards()).toHaveLength(0);
+    expect(runningLane().querySelector('[data-slot="lane-empty"]')).not.toBeNull();
   });
 
   it('resolves nothing on the card: no answer field, no choice, no send', () => {
@@ -261,104 +296,12 @@ describe('NeedsYouStrip', () => {
     });
     mountBoard([asking]);
 
-    expect(within(strip()).queryByRole('textbox')).toBeNull();
-    expect(within(strip()).queryByRole('button', { name: 'Keep five minutes' })).toBeNull();
-    expect(within(strip()).queryByRole('button', { name: /^Send/ })).toBeNull();
-    expect(within(strip()).queryByRole('button', { name: /Not now/ })).toBeNull();
-    expect(within(strip()).getAllByRole('button')).toHaveLength(1);
-  });
-
-  it.each([[1200], [900], [700]])(
-    'keeps each card as wide as one lane on a %ipx board',
-    (width) => {
-      const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
-      seed({
-        sessions: [asking],
-        questions: [
-          questionOf({
-            session: asking,
-            text: 'Keep the retry window at five minutes?',
-            minute: 1,
-          }),
-        ],
-      });
-      const observers = installFakeResizeObserver();
-      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(() =>
-        boxOf({ width }),
-      );
-      mountBoard([asking]);
-      act(() => observers.resizeAll());
-
-      const remPx = rootRemPx();
-      const laneRem = laneWidthOf({ width, remPx });
-      const columns = laneColumnsOf({ layout: boardLanesOf({ width, remPx }), laneRem });
-      const lanes = screen.getByRole('group', { name: 'building' }).parentElement;
-      expect(lanes?.style.gridTemplateColumns).toBe(columns.style?.gridTemplateColumns ?? '');
-      expect(remOf(itemAt({ index: 0 }).style.width)).toBe(laneRem);
-    },
-  );
-
-  it('hides the scroll arrows while every card fits', () => {
-    const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
-    seed({
-      sessions: [asking],
-      questions: [
-        questionOf({ session: asking, text: 'Keep the retry window at five minutes?', minute: 1 }),
-      ],
-    });
-    stubExtent({ scrollWidth: 600, clientWidth: 600 });
-    mountBoard([asking]);
-
-    expect(within(strip()).queryByRole('button', { name: 'Scroll left' })).toBeNull();
-    expect(within(strip()).queryByRole('button', { name: 'Scroll right' })).toBeNull();
-  });
-
-  it('shows the scroll arrows when the cards overflow and scrolls one card per press', () => {
-    const sessions = Array.from({ length: 6 }, (_, index) =>
-      sessionOf({ goal: `Ship the settlement change ${index + 1}` }),
-    );
-    seed({
-      sessions,
-      questions: sessions.map((session, index) =>
-        questionOf({ session, text: `Keep change ${index + 1} behind a flag?`, minute: index }),
-      ),
-    });
-    stubExtent({ scrollWidth: 1800, clientWidth: 900 });
-    mountBoard(sessions);
-
-    const left = within(strip()).getByRole('button', { name: 'Scroll left' });
-    const right = within(strip()).getByRole('button', { name: 'Scroll right' });
-    expect(left.hasAttribute('disabled')).toBe(true);
-
-    fireEvent.click(right);
-
-    expect(stripViewport().scrollLeft).toBeGreaterThan(0);
-    expect(
-      within(strip()).getByRole('button', { name: 'Scroll left' }).hasAttribute('disabled'),
-    ).toBe(false);
-  });
-
-  it('moves focus to the next card with ArrowRight and scrolls it into view', () => {
-    const first = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
-    const second = sessionOf({ goal: 'Retry webhook delivery with backoff' });
-    seed({
-      sessions: [first, second],
-      questions: [
-        questionOf({ session: first, text: 'Keep the retry window at five minutes?', minute: 1 }),
-        questionOf({ session: second, text: 'Back off per tenant?', minute: 2 }),
-      ],
-    });
-    const scrolled = vi.fn();
-    Element.prototype.scrollIntoView = scrolled;
-    mountBoard([first, second]);
-
-    const one = cardAt({ index: 0 });
-    const two = cardAt({ index: 1 });
-    one.focus();
-    fireEvent.keyDown(one, { key: 'ArrowRight' });
-
-    expect(document.activeElement).toBe(two);
-    expect(scrolled.mock.contexts).toContain(two);
+    const frame = frameAt({ index: 0 });
+    expect(within(frame).queryByRole('textbox')).toBeNull();
+    expect(within(frame).queryByRole('button', { name: 'Keep five minutes' })).toBeNull();
+    expect(within(frame).queryByRole('button', { name: /^Send/ })).toBeNull();
+    expect(within(frame).queryByRole('button', { name: /Not now/ })).toBeNull();
+    expect(within(frame).getAllByRole('button')).toHaveLength(1);
   });
 
   it('opens a question card at its question', async () => {
@@ -452,7 +395,7 @@ describe('NeedsYouStrip', () => {
     );
   });
 
-  it('counts a strip card of a filtered out project as shown, not hidden', () => {
+  it('counts a yellow card of a filtered out project as shown, not hidden', () => {
     const relay = aProject({ workspaceId: workspace.id, name: 'notify-relay', kind: 'folder' });
     const asking = sessionOf({ goal: 'Fix the rounding drift in the settlement export' });
     const quiet = sessionOf({ goal: 'Add idempotency keys to the refund endpoint' });

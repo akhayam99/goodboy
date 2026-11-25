@@ -1,7 +1,11 @@
-import { Button, Tooltip, TruncatedText } from '@goodboy/ui';
+import { Button, Tooltip } from '@goodboy/ui';
 import type { OpenQuestion, SessionId } from '@goodboy/types';
 import { questionPlace, useAppStore } from '../../../../store';
+import { useNow } from '../../../../shared/hooks/useNow';
+import { joinFacts } from '../../../../shared/utils/joinFacts';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
+import { NeedsYouTile } from '../MoveCard/NeedsYouTile';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -11,9 +15,12 @@ type Props = {
 
 const ANSWER = 'Answer';
 
+const QUESTION = 'Question';
+
 export const NeedsYouQuestion = ({ sessionId, question, isPrimary }: Props) => {
+  const now = useNow(30_000);
   const navigate = useAppStore((state) => state.navigate);
-  const look = actionButtonLookOf({ verb: ANSWER, variant: isPrimary ? 'primary' : 'secondary' });
+  const look = actionButtonLookOf({ verb: ANSWER, variant: isPrimary ? 'primary' : 'quiet' });
   const answer = (
     <Button
       size="sm"
@@ -26,23 +33,22 @@ export const NeedsYouQuestion = ({ sessionId, question, isPrimary }: Props) => {
       {ANSWER}
     </Button>
   );
+  const actions = isPrimary ? (
+    <Tooltip content={ANSWER} shortcut="list.open">
+      {answer}
+    </Tooltip>
+  ) : (
+    answer
+  );
   return (
-    <div
-      data-move={`question:${question.id}`}
-      data-move-density="row"
-      data-move-primary={isPrimary ? '' : undefined}
-      className="flex min-h-8 min-w-0 items-center gap-3"
-    >
-      <TruncatedText className="min-w-0 flex-1 text-ui text-foreground">
-        {question.text}
-      </TruncatedText>
-      {isPrimary ? (
-        <Tooltip content={ANSWER} shortcut="list.open">
-          {answer}
-        </Tooltip>
-      ) : (
-        answer
-      )}
-    </div>
+    <NeedsYouTile
+      moveId={`question:${question.id}`}
+      sentKey={null}
+      isPrimary={isPrimary}
+      title={question.text}
+      meta={joinFacts({ facts: [QUESTION, formatAge({ from: question.createdAt, now })] })}
+      actions={actions}
+      below={null}
+    />
   );
 };

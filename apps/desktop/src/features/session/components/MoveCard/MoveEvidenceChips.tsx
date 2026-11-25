@@ -72,7 +72,7 @@ export const MoveEvidenceChips = ({ sessionId, evidence }: Props) => {
         })}
       </div>
       {lines.length === 0 ? null : (
-        <pre className="min-w-0 rounded-md bg-background p-2 font-mono text-meta break-all whitespace-pre-wrap text-muted-foreground">
+        <pre className="min-w-0 rounded-md bg-subtle p-2 font-mono text-meta break-all whitespace-pre-wrap text-muted-foreground">
           {lines.join('\n')}
         </pre>
       )}

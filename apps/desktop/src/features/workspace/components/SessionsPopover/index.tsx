@@ -10,6 +10,11 @@ const EXPECTED_HEIGHT_PX = 640;
 
 export const SessionsPopover = () => {
   const workspace = useCurrentWorkspace();
+  const needsYouCount = useAppStore((state) =>
+    workspace === null || workspace === undefined
+      ? 0
+      : (state.attentionFromWindows[workspace.id]?.count ?? 0),
+  );
   const dropdown = useDropdown({
     align: 'start',
     width: POPOVER_WIDTH_CLASS.studio,
@@ -36,7 +41,9 @@ export const SessionsPopover = () => {
         role="dialog"
         ariaLabel="Sessions"
         className="overflow-y-hidden"
-        trigger={<SessionsTrigger isOpen={dropdown.open} onToggle={toggle} />}
+        trigger={
+          <SessionsTrigger isOpen={dropdown.open} needsYouCount={needsYouCount} onToggle={toggle} />
+        }
       >
         <SessionsPanel workspaceId={workspace.id} onClose={close} />
       </AnchoredPopover>

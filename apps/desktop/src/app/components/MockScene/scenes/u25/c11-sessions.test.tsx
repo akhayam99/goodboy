@@ -93,7 +93,9 @@ describe('the c11 Sessions scenes', () => {
   it('c11-sessions-board draws each card on the track of its lane', async () => {
     await mount('c11-sessions-board');
     const running = screen.getByRole('group', { name: 'running' });
-    const tracks = within(running).getAllByTestId('tone-bar');
+    const tracks = within(running)
+      .getAllByRole('article')
+      .flatMap((card) => within(card).getAllByTestId('tone-bar'));
     expect(tracks.length).toBeGreaterThan(0);
     expect(tracks.every((track) => track.getAttribute('data-tone') === 'info')).toBe(true);
   });

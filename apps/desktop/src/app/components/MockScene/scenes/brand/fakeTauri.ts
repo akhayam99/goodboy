@@ -17,6 +17,9 @@ type TauriWindow = Window & { __TAURI_INTERNALS__?: FakeInternals };
 const internalsOf = ({ handlers }: { readonly handlers: FakeHandlers }): FakeInternals => ({
   invoke: async (command, args) => {
     const handler = handlers[command];
+    if (handler === undefined && command === 'db_select') {
+      return [];
+    }
     if (handler === undefined) {
       throw new Error(`${command} is not available in the mock scene`);
     }

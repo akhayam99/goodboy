@@ -379,6 +379,25 @@ describe('sessionKpisOf', () => {
     expect(board.rows.find((row) => row.id === 'b')?.spendUsd).toBe(1);
   });
 
+  it('counts a running agent on every worktree its turns touched, once on each', () => {
+    const agents = [{ ...agentOf('g1', 'a', 1), isRunning: true }];
+    const board = boardOf({ branches: [branchOf('a'), branchOf('b')], agents });
+
+    expect(
+      runningByRowIdOf({
+        rows: board.rows,
+        agents,
+        leads: [],
+        touchedMountIds: new Map([['g1', ['a', 'b', 'b']]]),
+      }),
+    ).toEqual(
+      new Map([
+        ['a', 1],
+        ['b', 1],
+      ]),
+    );
+  });
+
   it('shows a running Lead with no children as running on its branch, counted as a Lead', () => {
     const leads = [{ ...leadOf('lead-1', 'a'), isRunning: true }];
     const board = boardOf({ branches: [branchOf('a'), branchOf('b')], leads });

@@ -1,9 +1,11 @@
-import { memo, useEffect, useId, useRef } from 'react';
-import { cn, isKeyboardFocus, Tooltip, InlineMarkdown, ToneBar } from '@goodboy/ui';
+import { memo, useId } from 'react';
+import { cn, isKeyboardFocus, Tooltip, InlineMarkdown, ToneBar, TruncatedText } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { RestoreCardAction } from './RestoreCardAction';
-import { CardAction, CardActionSlot, FOCUS_RING } from '@goodboy/ui';
+import { FOCUS_RING } from '@goodboy/ui';
+import { CardFactsLine } from './CardFactsLine';
+import { CardQuickActions } from './CardQuickActions';
+import { useCardHover, type CardHover } from './useCardHover';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
 import { stageTrackOf } from '../../../../session/stageTrackOf';
 import type { BoardNavigation } from '../useBoardNavigation';
@@ -20,7 +22,8 @@ import { useSessionTitleRename } from '../../../../session/hooks/useSessionTitle
 import { CardRenameField } from './CardRenameField';
 import { CardSignal } from './CardSignal';
 import { signalActionOf } from './signalActionOf';
-import { projectLineOf } from '../projectLineOf';
+import { cardContextOf } from '../cardContextOf';
+import { cardFactsOf } from '../cardFactsOf';
 import { useFleetPhrase } from '../../../hooks/useFleetPhrase';
 
 type CardSelectionEvent = {
@@ -30,18 +33,14 @@ type CardSelectionEvent = {
   readonly altKey: boolean;
 };
 
-type CardHover = {
-  readonly sessionId: SessionId;
-  readonly anchor: HTMLElement;
-};
-
-type EnterParams = Pick<CardHover, 'anchor'>;
+export type StageBoardCardDensity = 'card' | 'row';
 
 type StageBoardCardProps = {
   readonly session: Session;
   readonly nav: BoardNavigation;
   readonly archived?: boolean;
   readonly selected?: boolean;
+  readonly density?: StageBoardCardDensity;
   readonly getSelectedIds?: () => ReadonlyArray<SessionId>;
   readonly onClearSelection?: () => void;
   readonly onModifierClick?: (id: SessionId, event: CardSelectionEvent) => void;
@@ -53,11 +52,17 @@ type StageBoardCardProps = {
 const NO_SELECTION: ReadonlyArray<SessionId> = [];
 const noSelectedIds = (): ReadonlyArray<SessionId> => NO_SELECTION;
 
+const TITLE_CLASS: Record<StageBoardCardDensity, string> = {
+  card: 'line-clamp-2 text-row text-foreground',
+  row: 'line-clamp-1 text-ui text-foreground',
+};
+
 export const StageBoardCard = memo(function StageBoardCard({
   session,
   nav,
   archived,
   selected,
+  density = 'card',
   getSelectedIds = noSelectedIds,
   onClearSelection,
   onModifierClick,
@@ -68,6 +73,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   const id = session.id as SessionId;
   const stateWordId = useId();
   const isArchived = archived === true;
+  const isRow = density === 'row';
   const { summary, node, rowTitle, keys, title, plainTitle } = useSessionRowFacts({
     session,
     isArchived,
@@ -76,7 +82,14 @@ export const StageBoardCard = memo(function StageBoardCard({
   const { signal, waitingRun, attentionAction } = useCardSignal({ session, info, isArchived });
   const track = stageTrackOf({ stage, isArchived });
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[id] ?? EMPTY_ARRAY);
-  const projectLine = projectLineOf({ mounts });
+  const context = cardContextOf({ mounts });
+  const facts = cardFactsOf({
+    reason: summary.reason,
+    hasFact: summary.addsFact,
+    age: summary.age,
+    signal,
+    isArchived,
+  });
   const phrase = useFleetPhrase({ sessionId: id });
   const livePhrase = isArchived ? null : phrase;
   const dynamicActions = useDynamicActions(session, nav, stage);
@@ -120,37 +133,81 @@ export const StageBoardCard = memo(function StageBoardCard({
     return false;
   };
 
-  const isEnteredRef = useRef(false);
-  const leaveRef = useRef(onHoverLeave);
-  leaveRef.current = onHoverLeave;
-  useEffect(
-    () => () => {
-      if (isEnteredRef.current) {
-        isEnteredRef.current = false;
-        leaveRef.current?.();
-      }
-    },
-    [],
+  const { enterCard, leaveCard, resumeCard } = useCardHover({
+    sessionId: id,
+    onHoverEnter,
+    onHoverLeave,
+  });
+
+  const titleNode = rename.editing ? (
+    <CardRenameField rename={rename} keys={keys} />
+  ) : (
+    <Tooltip content={plainTitle}>
+      <button
+        type="button"
+        aria-pressed={selected === true}
+        aria-describedby={stateWordId}
+        aria-keyshortcuts="Alt+Enter Shift+Enter Shift+F10"
+        onFocus={(event) => {
+          if (!isKeyboardFocus({ target: event.currentTarget })) {
+            return;
+          }
+          enterCard({
+            anchor: event.currentTarget.closest('article') ?? event.currentTarget,
+          });
+        }}
+        onBlur={leaveCard}
+        onKeyDown={(event) => {
+          menu.onKeyDown(event);
+          if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          if (
+            (event.altKey || (event.shiftKey && event.key === 'Enter')) &&
+            selectFromEvent(event)
+          ) {
+            return;
+          }
+          nav.selectCard(session);
+        }}
+        className={cn('min-w-0 cursor-pointer self-start rounded-sm text-left', FOCUS_RING)}
+      >
+        <InlineMarkdown text={title} className={TITLE_CLASS[density]} />
+      </button>
+    </Tooltip>
   );
 
-  const enterCard = ({ anchor }: EnterParams) => {
-    isEnteredRef.current = true;
-    onHoverEnter?.({ sessionId: id, anchor });
-  };
+  const signalNode = (
+    <span className="flex min-w-0 max-w-[55%] shrink overflow-hidden">
+      <CardSignal
+        signal={signal}
+        action={signalAction}
+        onOpenRequest={handlePrClick}
+        onGlyphEnter={leaveCard}
+        onGlyphLeave={resumeCard}
+      />
+    </span>
+  );
 
-  const leaveCard = () => {
-    isEnteredRef.current = false;
-    onHoverLeave?.();
-  };
-
-  const resumeCard = ({ currentTarget }: React.MouseEvent<HTMLElement>) => {
-    enterCard({ anchor: currentTarget.closest('article') ?? currentTarget });
-  };
+  const actionNode = (
+    <CardQuickActions
+      session={session}
+      sessionId={id}
+      isArchived={isArchived}
+      action={visibleAction !== undefined && signalAction === null ? visibleAction : null}
+      onRestore={onRestore}
+      onPointerEnter={leaveCard}
+      onPointerLeave={resumeCard}
+    />
+  );
 
   return (
     <article
       data-archived={archived || undefined}
       data-select-id={id}
+      data-density={density}
       onContextMenu={menu.onContextMenu}
       onMouseEnter={({ currentTarget }) => enterCard({ anchor: currentTarget })}
       onMouseLeave={leaveCard}
@@ -161,99 +218,43 @@ export const StageBoardCard = memo(function StageBoardCard({
         nav.selectCard(session);
       }}
       className={cn(
-        'group/session-card grid min-h-24 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 pl-5 text-left select-none [content-visibility:auto]',
+        'group/session-card flex shrink-0 cursor-pointer text-left select-none [content-visibility:auto]',
+        isRow ? 'min-h-9 items-center gap-2 py-2 pr-2 pl-4' : 'flex-col gap-2 p-3 pl-5 shadow-sm',
         sessionCardShell({ selected }),
       )}
     >
-      <ToneBar tone={track.tone} density="card" isBreathing={track.isBreathing} />
-      {rename.editing ? (
-        <CardRenameField rename={rename} keys={keys} />
-      ) : (
-        <Tooltip content={plainTitle}>
-          <button
-            type="button"
-            aria-pressed={selected === true}
-            aria-describedby={stateWordId}
-            aria-keyshortcuts="Alt+Enter Shift+Enter Shift+F10"
-            onFocus={(event) => {
-              if (!isKeyboardFocus({ target: event.currentTarget })) {
-                return;
-              }
-              enterCard({
-                anchor: event.currentTarget.closest('article') ?? event.currentTarget,
-              });
-            }}
-            onBlur={leaveCard}
-            onKeyDown={(event) => {
-              menu.onKeyDown(event);
-              if (event.key !== 'Enter' && event.key !== ' ') {
-                return;
-              }
-              event.preventDefault();
-              event.stopPropagation();
-              if (
-                (event.altKey || (event.shiftKey && event.key === 'Enter')) &&
-                selectFromEvent(event)
-              ) {
-                return;
-              }
-              nav.selectCard(session);
-            }}
-            className={cn('min-w-0 cursor-pointer self-start rounded-sm text-left', FOCUS_RING)}
-          >
-            <InlineMarkdown text={title} className="line-clamp-2 text-row text-foreground" />
-          </button>
-        </Tooltip>
-      )}
+      <ToneBar tone={track.tone} density={density} isBreathing={track.isBreathing} />
       <span id={stateWordId} className="sr-only">
         {node.label}
       </span>
-
-      <span
-        onMouseEnter={leaveCard}
-        onMouseLeave={resumeCard}
-        className="col-start-2 row-start-1 flex items-center gap-1 self-start"
-      >
-        <CardActionSlot label="Session quick actions">
-          {!isArchived && visibleAction !== undefined && signalAction === null && (
-            <CardAction
-              key={visibleAction.key}
-              icon={visibleAction.icon}
-              tone={visibleAction.tone}
-              label={visibleAction.label}
-              onClick={visibleAction.onClick}
-            />
+      {isRow ? (
+        <>
+          <span className="flex min-w-0 flex-1">{titleNode}</span>
+          {signalNode}
+          {actionNode}
+        </>
+      ) : (
+        <>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            {context === '' ? null : (
+              <TruncatedText data-slot="card-context" className="text-meta text-muted-foreground">
+                {context}
+              </TruncatedText>
+            )}
+            <div className="flex min-w-0 items-start gap-2">
+              <span className="flex min-w-0 flex-1">{titleNode}</span>
+              {actionNode}
+            </div>
+          </div>
+          {waitingRun === null ? null : <WaitingRunLine run={waitingRun} />}
+          {livePhrase === null ? null : (
+            <span data-fleet-phrase="" className="min-w-0 truncate text-meta text-muted-foreground">
+              {livePhrase}
+            </span>
           )}
-          {isArchived && (
-            <RestoreCardAction session={session} sessionId={id} onRestore={onRestore} />
-          )}
-        </CardActionSlot>
-      </span>
-
-      <div className="col-span-full row-start-2 flex min-h-5 min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-        {waitingRun === null ? null : <WaitingRunLine run={waitingRun} />}
-        {livePhrase === null ? null : (
-          <span
-            data-fleet-phrase=""
-            className="min-w-0 basis-full truncate text-meta text-muted-foreground"
-          >
-            {livePhrase}
-          </span>
-        )}
-        <span
-          data-slot="card-project"
-          className="min-w-0 break-words text-meta text-muted-foreground"
-        >
-          {projectLine}
-        </span>
-        <CardSignal
-          signal={signal}
-          action={signalAction}
-          onOpenRequest={handlePrClick}
-          onGlyphEnter={leaveCard}
-          onGlyphLeave={resumeCard}
-        />
-      </div>
+          <CardFactsLine facts={facts} signal={signalNode} />
+        </>
+      )}
     </article>
   );
 });

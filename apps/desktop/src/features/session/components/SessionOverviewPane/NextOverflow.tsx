@@ -31,7 +31,7 @@ export const NextOverflow = ({ sessionId, cards, actionsFor, openFor }: Props) =
           openFor={openFor}
           density="row"
           isPrimary={false}
-          kicker={null}
+          project={null}
         />
       ))}
     </div>

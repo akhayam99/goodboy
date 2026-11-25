@@ -130,7 +130,7 @@ describe('the narrow tool head scenes', () => {
       const browser = paneOf({ id: 'browser' });
       await within(browser).findByRole('button', { name: /^Edit address/ }, WAIT);
       expect(browser.querySelector('[data-row-folded]')).not.toBeNull();
-      expect(within(browser).queryByRole('button', { name: 'Console' })).toBeNull();
+      within(browser).getByRole('button', { name: 'Console' });
       within(browser).getByRole('button', { name: 'More' });
       within(browser).getByRole('button', { name: 'Close' });
       expect(screen.queryAllByRole('tooltip')).toHaveLength(0);

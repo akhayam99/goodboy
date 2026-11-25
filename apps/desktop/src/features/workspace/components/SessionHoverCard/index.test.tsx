@@ -398,6 +398,7 @@ describe('what the hover card says', () => {
         patch: { isArchivedShown: true },
       });
     });
+    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
     fireEvent.mouseEnter(rowOf('Legacy hook cleanup'));
     rest(500);
     within(screen.getByTestId('session-hover-card')).getByText('Archived');

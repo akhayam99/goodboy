@@ -62,13 +62,21 @@ const BoardTileView = ({ rowId }: Props) => {
           nextTitle: cardsByRowId.get(rowId)?.[0]?.title ?? null,
         }).title
       : row.branch;
-  const open = () =>
+  const openOverview = () =>
     navigate({
       to:
         entry === null
           ? sessionPlace({ sessionId: session.id, lens: 'workflows' })
-          : branchTabPlaceOf({ sessionId: session.id, mountId: entry.fact.mountId, tab: 'files' }),
+          : branchTabPlaceOf({ sessionId: session.id, mountId: entry.fact.mountId, tab: 'pr' }),
     });
+  const openChanges = () => {
+    if (entry === null) {
+      return;
+    }
+    navigate({
+      to: branchTabPlaceOf({ sessionId: session.id, mountId: entry.fact.mountId, tab: 'files' }),
+    });
+  };
   return (
     <div
       data-board-row={rowId}
@@ -83,8 +91,8 @@ const BoardTileView = ({ rowId }: Props) => {
       <Button
         variant="quiet"
         role="link"
-        aria-label={`Open ${title}`}
-        onClick={open}
+        aria-label={`Open ${title} overview`}
+        onClick={openOverview}
         className="absolute inset-0 h-auto w-auto rounded-md px-0 hover:bg-transparent"
       />
       <span className="pointer-events-none relative flex min-w-0 flex-1 flex-col gap-0.5">
@@ -102,7 +110,9 @@ const BoardTileView = ({ rowId }: Props) => {
             <BoardBranchName name={row.branch} />
           )}
         </span>
-        {entry === null ? null : <BoardTileFacts rowId={rowId} />}
+        {entry === null ? null : (
+          <BoardTileFacts rowId={rowId} title={title} onOpenChanges={openChanges} />
+        )}
       </span>
       <span className="pointer-events-none relative flex min-w-0 shrink-0 items-center gap-3 text-meta">
         {chip === null ? null : (
