@@ -1,0 +1,40 @@
+{
+  "epoch": 1,
+  "seq": 1,
+  "generatedAt": "2026-10-05T09:05:00.000Z",
+  "workspaceId": "workspace-1",
+  "sessionId": "session-2",
+  "runs": [
+    {
+      "runId": "run-harborline",
+      "title": "Ship the retry window",
+      "mark": {
+        "kind": "state",
+        "state": "running"
+      },
+      "state": "running",
+      "words": "Running",
+      "spendText": null,
+      "limit": {
+        "amount": 5,
+        "text": "$5.00"
+      },
+      "canStop": true,
+      "canContinue": false,
+      "agents": [
+        {
+          "agentId": "agent-harborline",
+          "name": "Builder",
+          "mark": {
+            "kind": "state",
+            "state": "running"
+          },
+          "state": "running",
+          "words": "Running",
+          "canStop": true,
+          "canContinue": false
+        }
+      ]
+    }
+  ]
+}

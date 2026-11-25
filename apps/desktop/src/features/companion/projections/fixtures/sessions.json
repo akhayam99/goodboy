@@ -1,0 +1,72 @@
+{
+  "epoch": 1,
+  "seq": 1,
+  "generatedAt": "2026-10-05T09:05:00.000Z",
+  "workspaceId": "workspace-1",
+  "lanes": [
+    {
+      "stage": "attention",
+      "title": "Needs you",
+      "count": 1,
+      "rows": [
+        {
+          "id": "session-1",
+          "workspaceId": "workspace-1",
+          "ref": "HBL-412",
+          "goal": "Retry window for the webhook",
+          "stage": "attention",
+          "mark": {
+            "kind": "state",
+            "state": "question"
+          },
+          "words": "1 question for you",
+          "projectNames": ["payments-api"],
+          "prNumber": 304,
+          "costText": null,
+          "updatedAt": "2026-10-01T09:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "stage": "running",
+      "title": "Running",
+      "count": 1,
+      "rows": [
+        {
+          "id": "session-2",
+          "workspaceId": "workspace-1",
+          "ref": null,
+          "goal": "Cascade the ledger rounding",
+          "stage": "running",
+          "mark": {
+            "kind": "state",
+            "state": "running"
+          },
+          "words": null,
+          "projectNames": [],
+          "prNumber": null,
+          "costText": null,
+          "updatedAt": "2026-10-04T09:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "stage": "review",
+      "title": "In review",
+      "count": 0,
+      "rows": []
+    },
+    {
+      "stage": "building",
+      "title": "Building",
+      "count": 0,
+      "rows": []
+    },
+    {
+      "stage": "done",
+      "title": "Done",
+      "count": 0,
+      "rows": []
+    }
+  ]
+}
