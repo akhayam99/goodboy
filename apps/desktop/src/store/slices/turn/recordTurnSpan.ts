@@ -16,6 +16,11 @@ export const recordTurnSpan = async ({ span, get }: Params): Promise<void> => {
     console.error('agent turn span write failed', error);
     return;
   }
-  await recordTurnPick({ runId: span.runId, agentId: span.agentId });
+  await recordTurnPick({
+    runId: span.runId,
+    agentId: span.agentId,
+    provider: span.provider,
+    model: span.model,
+  });
   await get().refreshTurnSpans({ sessionId: span.sessionId, workspaceId: span.workspaceId });
 };

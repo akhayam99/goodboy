@@ -88,29 +88,95 @@ type RecordParams = {
   readonly record: AgentPickRecord;
 };
 
-const pickOf = ({ record }: RecordParams): TurnPick | null => {
+type Executed = {
+  readonly provider: string;
+  readonly model: string;
+};
+
+type ExecutedParams = {
+  readonly fields: Fields | null;
+  readonly path: ReadonlyArray<string>;
+  readonly executed: Executed;
+};
+
+type NestedParams = {
+  readonly fields: Fields | null;
+  readonly key: string;
+};
+
+const nestedOf = ({ fields, key }: NestedParams): Fields | null => {
+  const value = fields === null ? null : fields[key];
+  return isRecord(value) ? value : null;
+};
+
+const ranTheModelOf = ({ fields, path, executed }: ExecutedParams): boolean => {
+  const holder = path.reduce<Fields | null>(
+    (current, key) => nestedOf({ fields: current, key }),
+    fields,
+  );
+  if (holder === null) {
+    return true;
+  }
+  const provider = textFieldOf({ source: holder, key: 'provider' });
+  const model = textFieldOf({ source: holder, key: 'model' });
+  return (
+    (provider === null || provider === executed.provider) &&
+    (model === null || model === executed.model)
+  );
+};
+
+type PickOfParams = RecordParams & {
+  readonly executed: Executed;
+};
+
+const pickOf = ({ record, executed }: PickOfParams): TurnPick | null => {
   const delegation = fieldsOf({ raw: record.delegationRouting });
   if (delegation !== null) {
-    return delegationPickOf({ fields: delegation });
+    const pick = delegationPickOf({ fields: delegation });
+    const isOffPin =
+      pick?.source === 'pinned' &&
+      !ranTheModelOf({
+        fields: delegation,
+        path: nestedOf({ fields: delegation, key: 'pick' }) === null ? [] : ['pick'],
+        executed,
+      });
+    return pick === null || !isOffPin ? pick : { ...pick, source: 'best' };
   }
   const decision = fieldsOf({ raw: record.routingDecision });
   if (decision !== null) {
-    return decisionPickOf({ fields: decision });
+    const pick = decisionPickOf({ fields: decision });
+    const isOffPin =
+      pick?.source === 'pinned' &&
+      !ranTheModelOf({ fields: decision, path: ['selected'], executed });
+    return pick === null || !isOffPin ? pick : { ...pick, source: 'best' };
   }
-  return fieldsOf({ raw: record.routingLock }) === null
-    ? null
-    : { source: 'pinned', adjustment: null, requestedModel: null };
+  const lock = fieldsOf({ raw: record.routingLock });
+  if (lock === null) {
+    return null;
+  }
+  return {
+    source: ranTheModelOf({ fields: lock, path: ['pick'], executed }) ? 'pinned' : 'best',
+    adjustment: null,
+    requestedModel: null,
+  };
 };
 
 type Params = {
   readonly runId: ProviderRunId;
   readonly agentId: AgentId;
+  readonly provider: string;
+  readonly model: string;
 };
 
-export const recordTurnPick = async ({ runId, agentId }: Params): Promise<void> => {
+export const recordTurnPick = async ({
+  runId,
+  agentId,
+  provider,
+  model,
+}: Params): Promise<void> => {
   try {
     const record = await readAgentPickRecord({ db: tauriDatabase, agentId });
-    const pick = record === null ? null : pickOf({ record });
+    const pick = record === null ? null : pickOf({ record, executed: { provider, model } });
     if (pick === null) {
       return;
     }
