@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { TruncatedText } from '@goodboy/ui';
 
 type Props = {
   readonly title: string;
@@ -28,9 +29,13 @@ export const NeedsYouTile = ({
   >
     <div className="flex min-h-10 min-w-0 items-center gap-3">
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="line-clamp-2 min-w-0 text-row text-foreground">{title}</span>
+        <TruncatedText lines={2} isFocusable className="min-w-0 text-row text-foreground">
+          {title}
+        </TruncatedText>
         {meta === '' ? null : (
-          <span className="min-w-0 truncate text-meta text-muted-foreground">{meta}</span>
+          <TruncatedText isFocusable className="min-w-0 text-meta text-muted-foreground">
+            {meta}
+          </TruncatedText>
         )}
       </span>
       {actions}
