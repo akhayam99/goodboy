@@ -13,7 +13,7 @@ export const PRIVACY_SECTIONS: readonly LegalSection[] = [
     heading: 'What is collected',
     paragraphs: [
       'The site collects usage data automatically when you visit: the pages you open, number of users, session statistics and the data that tracking tools such as cookies produce. Server logs kept for operation and maintenance may include IP addresses.',
-      'Without your consent, the site counts page views with the Vercel Web Analytics counter, which sets no cookie and keeps no identifier. The mock-data demo at demo.goodboy-ai.dev does the same.',
+      'Without your consent, the site counts page views with the Vercel Web Analytics counter, which sets no cookie and tells visits apart with a hash made from the request that resets every day. The mock-data demo at demo.goodboy-ai.dev does the same.',
       'With your consent, the site also loads Google Tag Manager and Google Analytics 4, which set cookies and collect usage data. If you refuse or do not answer, nothing from Google loads.',
     ],
   },

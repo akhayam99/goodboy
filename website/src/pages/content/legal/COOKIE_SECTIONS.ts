@@ -29,7 +29,7 @@ export const COOKIE_SECTIONS: readonly LegalSection[] = [
   {
     heading: 'Counted without a cookie',
     paragraphs: [
-      'The site and the demo at demo.goodboy-ai.dev count page views with Vercel Web Analytics, which sets no cookie and keeps no identifier. It runs without consent because it stores nothing on your device.',
+      'The site and the demo at demo.goodboy-ai.dev count page views with Vercel Web Analytics, which sets no cookie. It tells visits apart with a hash made from the request, which resets every day. It runs without consent because it stores nothing on your device.',
     ],
   },
   {
