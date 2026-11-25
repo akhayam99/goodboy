@@ -145,7 +145,10 @@ characters; a description takes 70 to 165 (`website/scripts/lib/seoCheck.mjs`).
   prerendered into static pages at build time, so a change to them is a deploy.
   A new build input outside `website/` joins the path list in that script, or
   its change never reaches the live site. Without the secret the workflow warns
-  and deploys nothing.
+  and deploys nothing. Run it by hand (`gh workflow run vercel.yml`) to deploy
+  `main` to production without the check, website only (the demo still waits
+  for a release commit), for example after Vercel refused a
+  deploy at its daily limit.
 
 ## Pages
 

@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,7 +20,7 @@ env:
 jobs:
   deploy:
     name: ${{ matrix.project }} deploy
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -35,7 +36,7 @@ jobs:
     env:
       VERCEL_PROJECT_ID: ${{ matrix.project_id }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ENV: ${{ github.event_name == 'push' && 'production' || 'preview' }}
+      VERCEL_ENV: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -48,7 +49,8 @@ jobs:
           VERCEL_GIT_PREVIOUS_SHA: ${{ github.event_name == 'push' && github.event.before || '' }}
           VERCEL_GIT_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          if node "${{ matrix.decision }}"; then
+          force="${{ github.event_name == 'workflow_dispatch' && matrix.project == 'website' }}"
+          if [ "$force" != true ] && node "${{ matrix.decision }}"; then
             echo "deploy=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
