@@ -701,20 +701,34 @@ its own branch, the Lead's own turns to its primary branch, or to the group
 without a branch (`mountId` null), and the rows sum to the total.
 
 `LeadTree` (`features/session/components/LeadTree/index.tsx`) draws that model as
-the activity trace, in two densities. Every row is one 28px line on the trace
-rail (`spawnedRailOf` in `features/workTreeModel` lays it out, `SpawnedRailCell`
-beside `TimelineRail` draws it, as in the Full log): a spine through the top agents and an elbow
-for each child. The marker is the state node (a check when done, a breathing dot
-while it works, amber for Needs you, red for Failed), then the number, the role
-glyph, the role name and the title, cut in the middle with the whole title on
-hover. The state word shows only when it is neither Done nor Running. A working
-agent shows its clock, a settled one its own spend. The node and the word come
-from `delegationCardOf` (`delegationNodeOf`), the same status the Auto chat
-rail reads. A compact row drops the title and number. Arrow keys move a cursor, Enter selects an agent or toggles a fold, and
-a fold never changes the selected agent id. A queued note is a node with the
+an indented list, in two densities. The Lead is the header row, then a hairline,
+then every agent on one 28px line: no node and no circle, one uncircled role glyph
+tinted by state (`leadTreeInkOf`: muted when done, info while it works, warning for
+Needs you, danger for Failed, faint for Stopped and Queued), the brief as the title,
+the state word, and the cost. A child is indented one step under its parent with a
+faint 1px indent guide per level (`LeadTreeGuides`), like a file tree. The role name
+is not drawn: it is the tooltip and the accessible label of the glyph, and the row's
+label starts with its number (`2.1 Scout, the brief, Done`), so the order is kept for
+a screen reader. The brief is cut at a word edge with an ellipsis (`briefFitOf`,
+measured by `useBriefFit`), and the whole brief is on hover. The state word shows
+unless the agent is done. A working agent shows its clock, a settled one its own
+spend, in tabular figures. A failed or stopped row keeps its title and glyph faint,
+except its state word. The viewed agent has `aria-current`, `bg-selected` and a
+primary mark on the row's left edge (`LeadTreeSelectedMark`), distinct from hover and
+from the info tint of a running glyph. A retry chain is one row, the latest attempt,
+as `leadTreeOf` groups it by `retryOf`. The state and the word come from
+`delegationCardOf` (`delegationNodeOf`), the same status the Auto chat rail reads. A
+compact row has no brief, so it keeps the role name. Arrow keys move a cursor, Enter selects an agent or toggles a fold, and
+a fold never changes the selected agent id. A queued note is a row with the
 word Queued, Edit and Remove (`noteNodesOf`, over `queuedRowsOf`); both call
-the queue functions the composer tray uses, so a failure keeps the node. A
-note that is sending has no actions and a removed one leaves no node.
+the queue functions the composer tray uses, so a failure keeps the row. A
+note that is sending has no actions and a removed one leaves no row.
+When the Agents column of the run page is folded, `LeadTreeFolded` fills the strip
+under its open button (`foldedActions` of `StudioRailLayout`): one button per agent,
+the Lead first, in the same order, each child indented by its depth on the same guides.
+Each glyph is tinted by its state (`leadTreeInkOf`), the viewed one sits on
+`bg-selected` with the primary mark and `aria-current`, and a click selects the agent through
+the same `onSelect` as an open row. The tooltip and the label give role, brief and state.
 `useLeadTree` loads the delegations, mounts and costs into `leadTreeOf`.
 `LeadTree` shares the row tokens of `RunTree` but not its agent stream.
 
