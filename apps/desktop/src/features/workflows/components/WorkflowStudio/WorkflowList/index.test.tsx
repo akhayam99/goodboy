@@ -85,6 +85,7 @@ const renderList = (
 ) => {
   const onOpen = vi.fn();
   const onShowRuns = vi.fn();
+  const onDuplicate = vi.fn();
   render(
     <WorkflowList
       workflows={workflows}
@@ -98,13 +99,31 @@ const renderList = (
       onOpen={onOpen}
       onShowRuns={onShowRuns}
       onNew={vi.fn()}
+      onDuplicate={onDuplicate}
       onRestore={vi.fn(async () => undefined)}
     />,
   );
-  return { onOpen, onShowRuns };
+  return { onOpen, onShowRuns, onDuplicate };
 };
 
 describe('WorkflowList', () => {
+  it('says when to use each workflow on its row', () => {
+    renderList([workflow({ description: 'The task names a test that fails some of the time' })]);
+
+    const row = screen.getByRole('button', { name: 'Open Settlement replay' });
+    expect(row.textContent).toContain('The task names a test that fails some of the time');
+  });
+
+  it('duplicates a workflow from the menu of its row', () => {
+    const { onDuplicate, onOpen } = renderList([workflow()]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Actions for Settlement replay' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Duplicate workflow' }));
+
+    expect(onDuplicate).toHaveBeenCalledOnce();
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
   it('shows a row per workflow with its step count, and the row opens the editor', () => {
     const { onOpen, onShowRuns } = renderList([workflow()]);
     const row = screen.getByRole('button', { name: 'Open Settlement replay' });
@@ -234,6 +253,7 @@ describe('WorkflowList', () => {
         onOpen={vi.fn()}
         onShowRuns={vi.fn()}
         onNew={vi.fn()}
+        onDuplicate={vi.fn()}
         onRestore={onRestore}
       />,
     );
@@ -296,6 +316,7 @@ describe('WorkflowList', () => {
         onOpen={vi.fn()}
         onShowRuns={vi.fn()}
         onNew={vi.fn()}
+        onDuplicate={vi.fn()}
         onRestore={onRestore}
       />,
     );

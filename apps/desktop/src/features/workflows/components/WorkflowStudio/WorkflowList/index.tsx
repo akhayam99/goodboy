@@ -28,6 +28,7 @@ type Props = {
   readonly onOpen: (workflow: Workflow) => void;
   readonly onShowRuns: (workflow: Workflow) => void;
   readonly onNew: () => void;
+  readonly onDuplicate: (workflow: Workflow) => void;
   readonly onRestore: (slugs: ReadonlyArray<string>) => Promise<void>;
 };
 
@@ -56,6 +57,7 @@ export const WorkflowList = ({
   onOpen,
   onShowRuns,
   onNew,
+  onDuplicate,
   onRestore,
 }: Props) => {
   const [isConfirmingRestore, setIsConfirmingRestore] = useState(false);
@@ -142,6 +144,7 @@ export const WorkflowList = ({
               isHistoryFailed={isHistoryFailed}
               onOpen={() => onOpen(workflow)}
               onShowRuns={() => onShowRuns(workflow)}
+              onDuplicate={() => onDuplicate(workflow)}
             />
           ))}
         </ListGrid>
