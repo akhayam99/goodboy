@@ -27,7 +27,7 @@ type RowParams = {
   readonly session: Session;
 };
 
-const rowOf = ({ scope, session }: RowParams): SessionRow | null => {
+const sessionRowOf = ({ scope, session }: RowParams): SessionRow | null => {
   const info = scope.infos[session.id];
   if (info === undefined) {
     return null;
@@ -61,7 +61,7 @@ export const sessionsFieldsOf = ({ scope }: Params): SessionsFields => {
   const rows = scope.sessions
     .filter((session) => isLiveSession({ session }))
     .flatMap((session) => {
-      const row = rowOf({ scope, session });
+      const row = sessionRowOf({ scope, session });
       return row === null ? [] : [row];
     })
     .sort((left, right) => byRecent({ left, right }));

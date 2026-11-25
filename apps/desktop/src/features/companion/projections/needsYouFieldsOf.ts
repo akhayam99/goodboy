@@ -2,6 +2,7 @@ import type { OpenQuestion } from '@goodboy/types';
 import { needsYouOf, type NeedsYouMove } from '../../board/needsYou/needsYouOf';
 import { attentionMarkOf } from '../../session/attentionMarkOf';
 import { ATTENTION_REASON_META } from '../../session/session-stage';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import type { Decision } from '../contract/decisions';
 import type { NeedsYouFields, NeedsYouRow } from '../contract/projections';
 import { actionIdOf } from './actionIdOf';
@@ -43,8 +44,8 @@ const decisionOf = ({ move, question }: DecisionParams): Decision | null => {
   };
 };
 
-const rowOf = ({ scope, move, now }: MoveParams): NeedsYouRow => {
-  const session = scope.sessions.find((candidate) => candidate.id === move.sessionId);
+const needsYouRowOf = ({ scope, move, now }: MoveParams): NeedsYouRow => {
+  const session = sessionById(scope.sessions, move.sessionId);
   const question = scope.openQuestions[move.sessionId]?.find(
     (candidate) => candidate.id === move.questionId,
   );
@@ -104,7 +105,7 @@ const sinceOrder = ({ left, right }: OrderParams): number => {
 export const needsYouFieldsOf = ({ scopes, now }: Params): NeedsYouFields => {
   const grouped = scopes.map((scope) => movesOfScope({ scope }));
   const rows = grouped
-    .flatMap(({ scope, moves }) => moves.map((move) => rowOf({ scope, move, now })))
+    .flatMap(({ scope, moves }) => moves.map((move) => needsYouRowOf({ scope, move, now })))
     .sort((left, right) => sinceOrder({ left, right }));
   return {
     moveCount: grouped.reduce((total, group) => total + group.moves.length, 0),

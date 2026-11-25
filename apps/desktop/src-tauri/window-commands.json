@@ -462,5 +462,5 @@
     "worktree_writer_release",
     "worktree_writer_status"
   ],
-  "main-only": []
+  "main-only": ["bridge_publish"]
 }
