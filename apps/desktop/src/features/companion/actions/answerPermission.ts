@@ -13,14 +13,14 @@ export const answerPermission = async ({
   const sessionId = sessionIdOf({ value: action.sessionId });
   const agentId = agentIdOf({ value: action.agentId });
   if (!isAgentOfSession({ store: getStore(), sessionId, agentId })) {
-    return refusedResult({ code: 'unknown-target', message: 'This agent is not on your Mac.' });
+    return refusedResult({ code: 'unknown-target', message: "This agent isn't on your Mac." });
   }
   if (getStore().transcripts[agentId] === undefined) {
     try {
       await getStore().loadAgentTranscript(sessionId, agentId, { isSelecting: false });
     } catch (error) {
       console.error('[bridge] answerPermission transcript failed', error);
-      return failedResult({ error: 'Could not read the request.' });
+      return failedResult({ error: "Couldn't read the request." });
     }
   }
   const store = getStore();
@@ -34,7 +34,7 @@ export const answerPermission = async ({
     );
     return isDecided
       ? refusedResult({ code: 'already-decided', message: 'Decided on your Mac.' })
-      : refusedResult({ code: 'unknown-target', message: 'This request is not on your Mac.' });
+      : refusedResult({ code: 'unknown-target', message: "This request isn't on your Mac." });
   }
   const hash = permissionHashOf({ toolName: ask.toolName, input: ask.input });
   if (hash !== action.seenInputHash) {
@@ -59,7 +59,7 @@ export const answerPermission = async ({
     await store.denyWithReason({ ...target, reason: '' });
   } catch (error) {
     console.error('[bridge] answerPermission failed', error);
-    return failedResult({ error: 'Could not answer the request.' });
+    return failedResult({ error: "Couldn't answer the request." });
   }
   return doneResult();
 };

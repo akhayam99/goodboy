@@ -77,6 +77,6 @@ export const planTargetOf = ({
   }
   return {
     isFound: false,
-    result: refusedResult({ code: 'unknown-target', message: 'This plan is not on your Mac.' }),
+    result: refusedResult({ code: 'unknown-target', message: "This plan isn't on your Mac." }),
   };
 };

@@ -25,13 +25,13 @@ type RunParams = {
 const WORDS = {
   running: 'Running',
   paused: 'Paused at the limit',
-  waiting: 'Waiting for you',
+  waiting: 'Needs you',
   stopped: 'Stopped',
   done: 'Done',
   failed: 'Failed',
 } as const;
 
-const rowOf = ({ scope, session, run, now }: RunParams): RunRow => {
+const runRowOf = ({ scope, session, run, now }: RunParams): RunRow => {
   const sessionAgents = scope.agents[session.id] ?? [];
   const agents = sessionAgents.filter(
     (agent) => agent.workflowRunId === run.id && agent.deletedAt == null,
@@ -75,5 +75,5 @@ export const runsFieldsOf = ({ scope, session, now }: Params): RunsFields => ({
   runs: session.workflowRuns
     .filter((run) => run.discardedAt == null)
     .slice(-RUN_LIMIT)
-    .map((run) => rowOf({ scope, session, run, now })),
+    .map((run) => runRowOf({ scope, session, run, now })),
 });

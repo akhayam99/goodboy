@@ -93,7 +93,7 @@ type OutcomeParams = {
   readonly result: HandlerResult;
 };
 
-const outcomeOf = ({ action, result }: OutcomeParams): ActionOutcome => {
+const decideOutcomeOf = ({ action, result }: OutcomeParams): ActionOutcome => {
   if (result.kind === 'refused') {
     return refusedOutcome({ action, refusal: result.refusal });
   }
@@ -167,7 +167,7 @@ export const executeDecideAction = async ({
     return plainRefusal({
       action,
       code: 'unknown-target',
-      message: 'This session is not on your Mac.',
+      message: "This session isn't on your Mac.",
     });
   }
   if (!takeRateSlot({ kind: action.kind, now })) {
@@ -179,7 +179,10 @@ export const executeDecideAction = async ({
   }
   beginAction({ actionId: action.actionId });
   try {
-    const outcome = outcomeOf({ action, result: await runHandler({ action, getStore, ports }) });
+    const outcome = decideOutcomeOf({
+      action,
+      result: await runHandler({ action, getStore, ports }),
+    });
     const isFinal =
       outcome.result === 'done' || (outcome.refusal !== null && isRecordedRefusal(outcome.refusal));
     if (isFinal) {
@@ -188,7 +191,7 @@ export const executeDecideAction = async ({
     return outcome;
   } catch (error) {
     console.error(`[bridge] ${action.kind} crashed`, error);
-    return outcomeOf({
+    return decideOutcomeOf({
       action,
       result: { kind: 'failed', error: 'The action failed on your Mac.' },
     });

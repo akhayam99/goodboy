@@ -20,7 +20,7 @@ export const answerQuestion = async ({
     ].some((question) => question.id === action.questionId);
     return isDecided
       ? refusedResult({ code: 'already-decided', message: 'Answered on your Mac.' })
-      : refusedResult({ code: 'unknown-target', message: 'This question is not on your Mac.' });
+      : refusedResult({ code: 'unknown-target', message: "This question isn't on your Mac." });
   }
   if (questionVersionOf({ question: open }) !== action.seenVersion) {
     return refusedResult({
@@ -41,7 +41,7 @@ export const answerQuestion = async ({
     );
   } catch (error) {
     console.error('[bridge] answerQuestion failed', error);
-    return failedResult({ error: 'Could not send your answer.' });
+    return failedResult({ error: "Couldn't send your answer." });
   }
   return doneResult();
 };

@@ -17,7 +17,7 @@ export const continueRun = async ({
   });
   const run = session === null ? null : workflowRunOf({ session, runId: action.runId });
   if (run === null) {
-    return refusedResult({ code: 'unknown-target', message: 'This run is not on your Mac.' });
+    return refusedResult({ code: 'unknown-target', message: "This run isn't on your Mac." });
   }
   const state = runStateOf({ store, sessionId, run });
   if (state === 'running') {
@@ -34,7 +34,7 @@ export const continueRun = async ({
     await store.continueWorkflowRun(sessionId, run.id);
   } catch (error) {
     console.error('[bridge] continueRun failed', error);
-    return failedResult({ error: 'Could not continue the run.' });
+    return failedResult({ error: "Couldn't continue the run." });
   }
   return doneResult();
 };

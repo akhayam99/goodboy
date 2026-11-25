@@ -3,6 +3,7 @@ import type { LimitDecision } from '../contract/decisions';
 import { limitOffersOf } from '../actions/actionLimits';
 import { actionIdOf } from './actionIdOf';
 import type { WorkspaceScope } from './workspaceScope';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 type Params = {
   readonly scope: WorkspaceScope;
@@ -11,7 +12,7 @@ type Params = {
 
 export const limitDecisionOf = ({ scope, sessionId }: Params): LimitDecision | null => {
   const budget = scope.budgets[sessionId];
-  const session = scope.sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(scope.sessions, sessionId);
   if (budget === undefined || session === undefined) {
     return null;
   }

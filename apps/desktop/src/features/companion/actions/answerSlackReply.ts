@@ -31,7 +31,7 @@ export const answerSlackReply = async ({
     });
   } catch (error) {
     console.error('[bridge] answerSlackReply failed', error);
-    return failedResult({ error: 'Could not answer the draft. Reconnect Slack on your Mac.' });
+    return failedResult({ error: "Couldn't answer the draft. Reconnect Slack on your Mac." });
   }
   return doneResult();
 };

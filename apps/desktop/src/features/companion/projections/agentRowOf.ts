@@ -11,7 +11,7 @@ import type { WorkspaceScope } from './workspaceScope';
 
 const AGENT_WORDS = {
   running: 'Running',
-  waiting: 'Waiting for you',
+  waiting: 'Needs you',
   stopped: 'Stopped',
   done: 'Done',
   failed: 'Failed',

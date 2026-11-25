@@ -13,7 +13,7 @@ export const sendToAgent = async ({
   const agentId = agentIdOf({ value: action.agentId });
   const store = getStore();
   if (!isAgentOfSession({ store, sessionId, agentId })) {
-    return refusedResult({ code: 'unknown-target', message: 'This agent is not on your Mac.' });
+    return refusedResult({ code: 'unknown-target', message: "This agent isn't on your Mac." });
   }
   const current = sendSequenceOf({ agentId: action.agentId });
   if (current !== action.seenVersion) {
@@ -34,7 +34,7 @@ export const sendToAgent = async ({
     }
   } catch (error) {
     console.error('[bridge] sendToAgent failed', error);
-    return failedResult({ error: 'Could not send the message.' });
+    return failedResult({ error: "Couldn't send the message." });
   }
   bumpSendSequence({ agentId: action.agentId });
   return doneResult();

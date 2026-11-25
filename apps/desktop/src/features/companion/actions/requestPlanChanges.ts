@@ -34,12 +34,12 @@ export const requestPlanChanges = async ({
     if (refusal !== null) {
       return refusedResult({
         code: 'busy',
-        message: 'The Lead cannot read your changes right now. Try again in a moment.',
+        message: "The Lead can't read your changes right now. Try again in a moment.",
       });
     }
   } catch (error) {
     console.error('[bridge] requestPlanChanges failed', error);
-    return failedResult({ error: 'Could not send your changes to the Lead.' });
+    return failedResult({ error: "Couldn't send your changes to the Lead." });
   }
   return doneResult();
 };

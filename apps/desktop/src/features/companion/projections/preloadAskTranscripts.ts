@@ -1,4 +1,5 @@
 import type { AppStore } from '../../../store/store';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 const loading = new Set<string>();
 
@@ -14,7 +15,7 @@ export const preloadAskTranscripts = ({ state }: Params): void => {
         continue;
       }
       loading.add(agent.id);
-      const session = state.sessions.find((candidate) => candidate.id === sessionId);
+      const session = sessionById(state.sessions, sessionId);
       if (session === undefined) {
         loading.delete(agent.id);
         continue;

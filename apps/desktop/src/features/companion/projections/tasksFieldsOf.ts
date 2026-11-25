@@ -15,15 +15,15 @@ type ProviderParams = {
   readonly provider: string;
 };
 
-const providerOf = ({ provider }: ProviderParams): TaskProvider | null =>
+const taskProviderOf = ({ provider }: ProviderParams): TaskProvider | null =>
   PROVIDERS.find((candidate) => candidate === provider) ?? null;
 
 type RowParams = {
   readonly task: SessionExternalTask;
 };
 
-const rowOf = ({ task }: RowParams): TaskRow | null => {
-  const provider = providerOf({ provider: task.provider });
+const taskRowOf = ({ task }: RowParams): TaskRow | null => {
+  const provider = taskProviderOf({ provider: task.provider });
   if (provider === null) {
     return null;
   }
@@ -42,7 +42,7 @@ export const tasksFieldsOf = ({ scope }: Params): TasksFields => {
   const rows = Object.values(scope.tasks)
     .flat()
     .flatMap((task) => {
-      const row = rowOf({ task });
+      const row = taskRowOf({ task });
       return row === null ? [] : [row];
     });
   return {
