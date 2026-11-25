@@ -170,6 +170,8 @@ export type RefusalCode =
   | 'not-permitted'
   | 'rate-limited'
   | 'busy'
+  | 'not-mergeable'
+  | 'invalid-request'
   | 'unknown-target'
   | 'mac-closed';
 
@@ -192,4 +194,5 @@ export type ActionOutcome = {
   readonly refusal: Refusal | null;
   readonly error: string | null;
   readonly undoActionId: ActionId | null;
+  readonly createdSessionId: string | null;
 };

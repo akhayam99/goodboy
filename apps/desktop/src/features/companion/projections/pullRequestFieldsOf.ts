@@ -6,7 +6,8 @@ import type {
   PullRequestPhase,
   ReviewRow,
 } from '../contract/projections';
-import { actionIdOf } from './actionIdOf';
+import { mergePrActionIdOf } from '../actions/phoneActionIds';
+import { trainOfferOf } from './trainOfferOf';
 import type { WorkspaceScope } from './workspaceScope';
 
 type Params = {
@@ -60,6 +61,9 @@ export const pullRequestFieldsOf = ({ scope, session }: Params): PullRequestFiel
     words: 'Requested changes',
     mark: { kind: 'state', state: 'alert' },
   }));
+  const isInTrain =
+    scope.readyLines.some((line) => line.sessionId === session.id) ||
+    (scope.mergeTrain?.cars.some((car) => car.sessionId === session.id) ?? false);
   const isMergeable = mergeIsClear({ readiness }) && phase !== 'merged' && phase !== 'closed';
   return {
     workspaceId: scope.workspace.id,
@@ -79,9 +83,12 @@ export const pullRequestFieldsOf = ({ scope, session }: Params): PullRequestFiel
       caveats: readiness.caveats,
     },
     methods: facts.mergeMethods,
-    mergeActionId: isMergeable
-      ? actionIdOf({ kind: 'mergePr', objectId: String(pr.number), version: headSha })
-      : null,
-    train: null,
+    mergeActionId: isMergeable ? mergePrActionIdOf({ prNumber: pr.number, headSha }) : null,
+    changedFiles: scope.fileCounts[session.id] ?? null,
+    additions: null,
+    deletions: null,
+    commitCount: facts.commitCount,
+    reviewComments: facts.openComments,
+    train: isInTrain ? trainOfferOf({ scope }) : null,
   };
 };

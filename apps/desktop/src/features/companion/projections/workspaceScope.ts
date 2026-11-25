@@ -1,4 +1,5 @@
 import type { PullRequestFacts } from '../../actions/kinds/pullRequestFacts';
+import type { MergeTrain } from '../../../store/slices/pr-series/mergeTrain';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import type {
   Agent,
@@ -15,6 +16,19 @@ import type {
   TurnState,
   Workspace,
 } from '@goodboy/types';
+
+export type ReadyLine = Readonly<{
+  sessionId: string;
+  prNumber: number;
+  headSha: string;
+  title: string;
+  repo: string;
+  reason: string | null;
+}>;
+
+export type PresetFact = Readonly<{ id: string; name: string }>;
+
+export type ProjectFact = Readonly<{ id: string; name: string }>;
 
 export type WorkspaceScope = Readonly<{
   workspace: Pick<Workspace, 'id' | 'name'>;
@@ -34,4 +48,10 @@ export type WorkspaceScope = Readonly<{
   transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   turnStates: Readonly<Record<string, TurnState | undefined>>;
   decisions: Readonly<Record<string, ReadonlyArray<SessionDecision>>>;
+  readyLines: ReadonlyArray<ReadyLine>;
+  mergeTrain: MergeTrain | null;
+  fileCounts: Readonly<Record<string, number | null>>;
+  presets: ReadonlyArray<PresetFact>;
+  projects: ReadonlyArray<ProjectFact>;
+  defaultLimitUsd: number | null;
 }>;

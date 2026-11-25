@@ -25,16 +25,14 @@ import { WorkflowGateError } from '../../store/slices/workflows/workflowActivati
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import { isMainWindow } from '../workspace/window';
 import { worktreeDiffFile } from '../worktree/worktree';
-import {
-  evaluateMobileCreateSession,
-  evaluateMobileMerge,
-  mobileMergeFacts,
-  evaluateMobileSpawnWorkflow,
-} from './mobileConfinement';
+import { evaluateMobileCreateSession, evaluateMobileSpawnWorkflow } from './mobileConfinement';
 import { decideKindOf } from './actions/decideAction';
 import { decidePorts } from './actions/decidePorts';
 import { executeDecideAction } from './actions/executeDecideAction';
+import { executePhoneAction } from './actions/executePhoneAction';
 import { parseDecideAction } from './actions/parseDecideAction';
+import { parsePhoneAction, phoneKindOf } from './actions/parsePhoneAction';
+import { startPortsOf } from './actions/startPorts';
 import { transcriptOf } from './actions/transcriptOf';
 import type { AgentKind } from '../session/agent-kind';
 import {
@@ -539,6 +537,22 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
     });
   }
 
+  if (phoneKindOf({ kind: cmd.kind }) !== null) {
+    const action = parsePhoneAction({ raw: { ...data, kind: cmd.kind } });
+    if (action === null) {
+      throw new BridgeSafeError(`invalid ${cmd.kind} request`);
+    }
+    return executePhoneAction({
+      action,
+      phoneId: asString(data.phoneId) ?? null,
+      getStore: () => useAppStore.getState(),
+      ports: startPortsOf({
+        resolveTask: ({ workspaceId, provider, key }) =>
+          resolveIssueForSessionSafe(workspaceId, provider, key),
+      }),
+    });
+  }
+
   switch (cmd.kind) {
     case 'queryTranscript': {
       const workspaceId = asString(data.workspaceId);
@@ -735,22 +749,6 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       return undefined;
     }
 
-    case 'mergePr': {
-      const sessionId = requireSession(data);
-      const method = asString(data.method) ?? 'squash';
-      const gate = evaluateMobileMerge({
-        facts: mobileMergeFacts({ state: store, sessionId }),
-        method,
-      });
-      if (!gate.ok) {
-        throw new BridgeSafeError(`merge refused: ${gate.reason}`);
-      }
-      await store.mergePr(sessionId, gate.pr.number, gate.method, {
-        expectedHeadSha: gate.pr.headSha ?? null,
-      });
-      return undefined;
-    }
-
     case 'spawnWorkflow': {
       const workflowId = asString(data.workflowId);
       const session = sessionById(store.sessions, asString(data.sessionId));
@@ -780,6 +778,12 @@ function genericMaskFor(kind: string): string {
   switch (kind) {
     case 'mergePr':
       return 'merge failed';
+    case 'mergeTrain':
+      return 'could not start the train';
+    case 'startSession':
+      return 'could not start the session';
+    case 'stopTrain':
+      return 'could not stop the train';
     case 'spawnAgent':
     case 'resolveComment':
       return 'could not spawn agent';

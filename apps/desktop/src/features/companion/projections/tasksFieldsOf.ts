@@ -1,12 +1,14 @@
 import type { SessionExternalTask } from '@goodboy/types';
 import type { TasksFields, TaskRow } from '../contract/projections';
 import type { TaskProvider } from '../contract/vocabulary';
+import { startOfferOf } from './startOfferOf';
 import type { WorkspaceScope } from './workspaceScope';
 
 export const TASK_LIMIT = 40;
 
 type Params = {
   readonly scope: WorkspaceScope;
+  readonly now: number;
 };
 
 const PROVIDERS: ReadonlyArray<TaskProvider> = ['linear', 'sentry', 'gitlab', 'jira'];
@@ -38,7 +40,7 @@ const rowOf = ({ task }: RowParams): TaskRow | null => {
   };
 };
 
-export const tasksFieldsOf = ({ scope }: Params): TasksFields => {
+export const tasksFieldsOf = ({ scope, now }: Params): TasksFields => {
   const rows = Object.values(scope.tasks)
     .flat()
     .flatMap((task) => {
@@ -49,6 +51,6 @@ export const tasksFieldsOf = ({ scope }: Params): TasksFields => {
     workspaceId: scope.workspace.id,
     count: rows.length,
     rows: rows.slice(0, TASK_LIMIT),
-    start: null,
+    start: startOfferOf({ scope, now }),
   };
 };

@@ -245,13 +245,14 @@ pub struct SessionLane {
     pub rows: Vec<SessionRow>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionsProjection {
     #[serde(flatten)]
     pub meta: Meta,
     pub workspace_id: String,
     pub lanes: Vec<SessionLane>,
+    pub train: Option<TrainOffer>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -455,6 +456,62 @@ pub struct TrainEntry {
     pub pr_number: i64,
     pub head_sha: String,
     pub title: String,
+    pub repo: String,
+    pub reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TrainPhase {
+    Running,
+    Done,
+    Halted,
+    Stopped,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TrainStep {
+    Merging,
+    Updating,
+    Waiting,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TrainCarState {
+    Queued,
+    Merging,
+    Updating,
+    Waiting,
+    Merged,
+    Stopped,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TrainCar {
+    pub session_id: String,
+    pub pr_number: i64,
+    pub state: TrainCarState,
+    pub mark: StatusMark,
+    pub line: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TrainStatus {
+    pub train_id: String,
+    pub phase: TrainPhase,
+    pub index: i64,
+    pub merged: i64,
+    pub total: i64,
+    pub step: TrainStep,
+    pub line: String,
+    pub cars: Vec<TrainCar>,
+    pub stop_reason: Option<String>,
+    pub is_with_lead: bool,
+    pub is_stop_requested: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -462,7 +519,11 @@ pub struct TrainEntry {
 pub struct TrainOffer {
     pub action_id: String,
     pub is_busy: bool,
+    pub method: MergeMethod,
+    pub order_line: String,
     pub entries: Vec<TrainEntry>,
+    pub status: Option<TrainStatus>,
+    pub stop_action_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -484,6 +545,11 @@ pub struct PullRequestProjection {
     pub readiness: MergeReadiness,
     pub methods: Vec<MergeMethod>,
     pub merge_action_id: Option<String>,
+    pub changed_files: Option<i64>,
+    pub additions: Option<i64>,
+    pub deletions: Option<i64>,
+    pub commit_count: Option<i64>,
+    pub review_comments: i64,
     pub train: Option<TrainOffer>,
 }
 
@@ -506,17 +572,55 @@ pub struct StartProject {
     pub name: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum StartKind {
+    Lead,
+    LeadPlan,
+    AgentScout,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SessionAccess {
+    ReadOnly,
+    AskFirst,
+    EditsAllowed,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StartKindChoice {
+    pub start_kind: StartKind,
+    pub preset_id: Option<String>,
+    pub label: String,
+    pub has_limit: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StartAccessChoice {
+    pub access: SessionAccess,
+    pub label: String,
+    pub promise: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StartOffer {
     pub action_id: String,
     pub is_permitted: bool,
     pub projects: Vec<StartProject>,
+    pub kinds: Vec<StartKindChoice>,
+    pub access_choices: Vec<StartAccessChoice>,
+    pub default_access: SessionAccess,
+    pub limit_amounts: Vec<f64>,
+    pub default_limit_usd: Option<f64>,
     pub max_goal_length: i64,
     pub remaining_today: i64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TasksProjection {
     #[serde(flatten)]
