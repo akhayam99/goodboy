@@ -190,7 +190,6 @@ export const BrowserTabStrip = ({ model, field, page }: Props) => {
           isPin={item.isPin}
           isAsleep={item.isAsleep}
           onSelect={item.onSelect}
-          onClose={item.onClose}
         />
       </ObjectMenuArea>
     );

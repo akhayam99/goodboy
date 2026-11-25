@@ -206,11 +206,15 @@ describe('the browser pane scenes', () => {
   it('opens the Browser page with every tab grouped by session and the Browser tool selected', async () => {
     mount({ id: 'browser-page' });
 
-    const lists = await screen.findAllByRole('navigation', { name: 'Browser tabs' }, WAIT);
-    const list = lists.find((candidate) => candidate.closest('[data-browser-page]') !== null);
-    if (list === undefined) {
-      throw new Error(`The Browser page draws no tab row, ${lists.length} found elsewhere.`);
-    }
+    const list = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>(
+        '[data-browser-page] nav[aria-label="Browser tabs"]',
+      );
+      if (found === null) {
+        throw new Error('The Browser page draws no tab row yet.');
+      }
+      return found;
+    }, WAIT);
     await within(list).findByRole('button', { name: 'PR #318' }, WAIT);
     const groups = Array.from(list.querySelectorAll('[data-browser-group]')).map((group) =>
       group.getAttribute('data-browser-group'),

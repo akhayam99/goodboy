@@ -160,7 +160,7 @@ describe('the browser tabs in one row', () => {
     fireEvent.click(within(tabs).getByRole('button', { name: /^Edit address, Checkout/ }));
 
     const field = within(tabs).getByRole('combobox', { name: 'Address or search' });
-    expect((field as HTMLInputElement).value).toBe('http://localhost:5173/page-0');
+    expect(field).toHaveProperty('value', 'http://localhost:5173/page-0');
     within(tabs).getByRole('button', { name: 'Tax rates' });
   });
 

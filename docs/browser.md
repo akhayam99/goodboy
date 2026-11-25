@@ -379,8 +379,10 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   Close. Under 560px of row (`NARROW_ROW_PX`), Pin and Open full page leave
   the row (`foldedBrowserRowsOf` puts Pin first in More, which always holds
   Open full page), so the tabs keep their room and nothing overlaps. The page
-  sits flush under the row: no card, no border and no inset, only the
-  hairline on top of the view's frame (`BrowserView`, `data-browser-frame`).
+  sits flush under the row: no card, no border and no inset (`BrowserView`,
+  `data-browser-frame`). It draws no line under the row either: a
+  `border-t` there is a divider the divider guard refuses, so the page's own
+  edge separates it.
 - **Loading** shows on the row. From the host's `started` event of the shown tab
   to its `finished` event, a 2px `info` line breathes on the bottom edge of the
   row (`BrowserLoadLine`) and Reload becomes Stop (`browser_tab_stop`, which
@@ -506,8 +508,10 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   least 10rem and has its own Close for a session tab. Every other tab is a
   `BrowserTabChip` with its favicon and title; it starts at 8rem, shrinks to
   its icon (2rem) when the row fills, and only then the row scrolls. The
-  shown tab scrolls into view when it changes. Close on an inactive tab shows
-  on hover or focus. A tab's right click opens the tab menu (Add to message,
+  shown tab scrolls into view when it changes. An inactive tab has no Close
+  (a hover-only button breaks the no-hover-only-actions rule, and a visible
+  one would eat the icon width): show it, then close it, or use ⌘W. A tab's
+  right click opens the tab menu (Add to message,
   `browserTabTargetOf`). A tab the engine put to sleep or closed
   (`browser://tab-state`, read by `useTabStates`, corrected by every event and
   every list answer, and keyed by the engine's tab id so the Browser page
