@@ -182,9 +182,7 @@ describe('WorkflowList', () => {
     });
     renderList([workflow()], { runs: [leadRun, run({ id: 'run-old', minutesAgo: 90 })] });
 
-    expect(
-      screen.getByRole('button', { name: 'Runs of Settlement replay: last run 2m ago, 2 runs' }),
-    ).not.toBeNull();
+    screen.getByRole('button', { name: 'Runs of Settlement replay: last run 2m ago, 2 runs' });
     for (const word of ['Balanced', 'In order', 'most room', 'Send new steps to']) {
       expect(document.body.textContent).not.toContain(word);
     }
