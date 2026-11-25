@@ -45,7 +45,7 @@ The Workflows list is one grid. Each row shows:
 
 The row opens the workflow. A workflow with no runs offers **Start from this preset**, which opens the New session page on the Preset form with that preset picked.
 
-The run count link opens the runs of that workflow beside the list, newest first. Each shows a state dot, its session, its spend and its age, and a row opens that run in its session. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
+The run count link opens the runs of that workflow beside the list, newest first. Each shows a state dot, its session, its spend and its age, and a row opens that run in its session. A run where the Lead followed the workflow counts too, and its row opens the Lead. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
 
 **Import workflows…** and **Restore built-in workflows…** sit in the page menu.
 

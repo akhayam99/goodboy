@@ -199,6 +199,14 @@ pub struct PhaseTemplateBundle {
     pub goal: Option<String>,
     #[serde(default)]
     pub process_text: Option<String>,
+    #[serde(default)]
+    pub entry_check: Option<String>,
+    #[serde(default)]
+    pub stop_rule: Option<String>,
+    #[serde(default)]
+    pub then_suggest_id: Option<String>,
+    #[serde(default)]
+    pub is_order_kept: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

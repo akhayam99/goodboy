@@ -13,6 +13,9 @@ export type WorkflowLibraryEntry = {
   readonly name: string;
   readonly description: string;
   readonly goal?: string;
+  readonly entryCheck: string;
+  readonly stopRule: string;
+  readonly thenSuggestSlug: string | null;
   readonly steps: ReadonlyArray<WorkflowLibraryStep>;
 };
 
@@ -35,6 +38,9 @@ export const WORKFLOW_LIBRARY: ReadonlyArray<WorkflowLibraryEntry> = [
     name: 'Refactor',
     description: 'Scout the area, plan the change, implement it, then test.',
     goal: 'Restructure the target code without changing its behavior, keeping tests green throughout.',
+    entryCheck: "Pin today's behavior with tests first.",
+    stopRule: 'A test has to change what it asserts.',
+    thenSuggestSlug: 'plan-and-ship',
     steps: [
       {
         name: 'Scout',
@@ -75,6 +81,9 @@ export const WORKFLOW_LIBRARY: ReadonlyArray<WorkflowLibraryEntry> = [
     name: 'Plan and ship',
     description: 'Scout the codebase, plan the change, implement it, then review the diff.',
     goal: 'Ship the change the task describes, with a reviewed diff.',
+    entryCheck: "Restate the outcome and how we know it's done.",
+    stopRule: 'The ask is unclear or changes a public contract.',
+    thenSuggestSlug: null,
     steps: [
       builtinStep('scout'),
       builtinStep('planner'),
@@ -87,6 +96,9 @@ export const WORKFLOW_LIBRARY: ReadonlyArray<WorkflowLibraryEntry> = [
     name: 'Fix a bug',
     description: 'Investigate a bug, fix the root cause, and add regression tests.',
     goal: 'Fix the root cause of the bug and cover it with a regression test.',
+    entryCheck: 'Reproduce the bug with a failing test.',
+    stopRule: "It can't be reproduced, or it works as designed.",
+    thenSuggestSlug: 'plan-and-ship',
     steps: [builtinStep('investigator'), builtinStep('implementer'), builtinStep('tester')],
   },
 ];

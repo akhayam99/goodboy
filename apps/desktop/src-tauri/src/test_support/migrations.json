@@ -978,5 +978,9 @@
   {
     "version": 245,
     "sql": "\nCREATE TABLE work_events (\n  id TEXT PRIMARY KEY,\n  run_id TEXT NOT NULL UNIQUE,\n  session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,\n  mount_id TEXT,\n  agent_id TEXT,\n  kind TEXT NOT NULL,\n  started_at INTEGER NOT NULL,\n  ended_at INTEGER,\n  exit_code INTEGER,\n  payload_json TEXT NOT NULL DEFAULT '{}',\n  created_at INTEGER NOT NULL,\n  updated_at INTEGER NOT NULL\n);\n\nCREATE INDEX idx_work_events_mount ON work_events(mount_id, started_at);\nCREATE INDEX idx_work_events_session ON work_events(session_id, started_at);\n"
+  },
+  {
+    "version": 246,
+    "sql": "\nALTER TABLE workflows ADD COLUMN entry_check TEXT;\n\nALTER TABLE workflows ADD COLUMN stop_rule TEXT;\n\nALTER TABLE workflows ADD COLUMN then_suggest_id TEXT;\n\nALTER TABLE workflows ADD COLUMN is_order_kept INTEGER NOT NULL DEFAULT 0 CHECK (is_order_kept IN (0, 1));\n\nALTER TABLE auto_trees ADD COLUMN guide TEXT CHECK (guide IS NULL OR json_valid(guide));\n\nCREATE TABLE agent_turn_picks (\n  id TEXT PRIMARY KEY,\n  run_id TEXT NOT NULL UNIQUE REFERENCES agent_turn_spans(run_id) ON DELETE CASCADE,\n  source TEXT NOT NULL CHECK (source IN ('lead', 'fallback', 'pinned', 'best')),\n  adjustment TEXT,\n  requested_model TEXT,\n  created_at INTEGER NOT NULL,\n  updated_at INTEGER NOT NULL\n);\n"
   }
 ]

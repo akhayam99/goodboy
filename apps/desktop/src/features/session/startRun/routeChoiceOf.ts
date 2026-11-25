@@ -13,6 +13,7 @@ export const presetRouteOf = ({ preset, closeness, row, why }: PresetRouteParams
   shape: 'lead',
   row,
   presetName: preset.name,
+  workflowId: preset.id,
   closeness,
   role: null,
   choice: `${RUN_ROUTE_COPY.leadPlan({ name: preset.name })} · ${RUN_ROUTE_COPY.closeness[closeness]}`,

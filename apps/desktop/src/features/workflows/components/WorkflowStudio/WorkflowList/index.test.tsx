@@ -7,6 +7,7 @@ import { WORKFLOW_LIBRARY } from '@goodboy/core/workflows';
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import {
   brandId,
+  type AgentId,
   type AgentRole,
   type Step,
   type StepId,
@@ -170,6 +171,21 @@ describe('WorkflowList', () => {
     expect(runs.textContent).toBe('No runs');
     fireEvent.click(runs);
     expect(onShowRuns).toHaveBeenCalledOnce();
+  });
+
+  it('counts a Lead run that followed the workflow and names no old routing words', () => {
+    const leadRun = aRunHistoryRow({
+      id: 'tree-lead',
+      workflowId: 'wf-1',
+      createdAt: new Date(Date.now() - 2 * 60_000).toISOString(),
+      overrides: { leadAgentId: brandId<AgentId>({ value: 'agent-lead' }) },
+    });
+    renderList([workflow()], { runs: [leadRun, run({ id: 'run-old', minutesAgo: 90 })] });
+
+    screen.getByRole('button', { name: 'Runs of Settlement replay: last run 2m ago, 2 runs' });
+    for (const word of ['Balanced', 'In order', 'most room', 'Send new steps to']) {
+      expect(document.body.textContent).not.toContain(word);
+    }
   });
 
   it('draws no runs link while the runs load', () => {

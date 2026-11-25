@@ -10,6 +10,7 @@ import type {
 import { isoNow } from '@goodboy/types/helpers';
 import {
   readBuiltinSeedState,
+  fillSeededWorkflowGuide,
   findActiveWorkflowRunTitle,
   listWorkflowsIncludingDeleted,
   restoreSeededWorkflow,
@@ -88,6 +89,11 @@ const seededWorkflow = ({ entry, workspaceId, now, existing }: SeedParams): Work
     name: entry.name,
     description: entry.description,
     ...(entry.goal && { goal: entry.goal }),
+    entryCheck: entry.entryCheck,
+    stopRule: entry.stopRule,
+    thenSuggestId:
+      entry.thenSuggestSlug === null ? null : makeWorkflowId(entry.thenSuggestSlug, workspaceId),
+    isOrderKept: false,
     steps,
     origin: 'library',
     createdAt: existing?.createdAt ?? now,
@@ -125,10 +131,17 @@ export const seedMissingBuiltinWorkflows = async (
   for (const workspaceId of workspaceIds) {
     for (const entry of WORKFLOW_LIBRARY) {
       const workflow = seededWorkflow({ entry, workspaceId, now });
-      if (
-        seededIds.has(workflow.id) ||
-        takenNames.has(takenNameKey({ workspaceId, name: entry.name }))
-      ) {
+      if (seededIds.has(workflow.id)) {
+        await fillSeededWorkflowGuide({
+          db: deps.db,
+          workflowId: workflow.id,
+          entryCheck: entry.entryCheck,
+          stopRule: entry.stopRule,
+          thenSuggestId: workflow.thenSuggestId ?? null,
+        });
+        continue;
+      }
+      if (takenNames.has(takenNameKey({ workspaceId, name: entry.name }))) {
         continue;
       }
       const inserted = await upsertWorkflow(deps.db, workflow).then(

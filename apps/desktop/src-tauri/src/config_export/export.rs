@@ -260,7 +260,8 @@ fn export_phase_templates(
     }
     let mut stmt = conn.prepare(
         "SELECT id, workspace_id, name, description, created_at, updated_at,
-                is_preset, origin, goal, process_text
+                is_preset, origin, goal, process_text, entry_check, stop_rule,
+                then_suggest_id, is_order_kept
          FROM workflows
          WHERE deleted_at IS NULL
            AND workspace_id IN (
@@ -280,6 +281,10 @@ fn export_phase_templates(
             row.get::<_, Option<String>>(7)?,
             row.get::<_, Option<String>>(8)?,
             row.get::<_, Option<String>>(9)?,
+            row.get::<_, Option<String>>(10)?,
+            row.get::<_, Option<String>>(11)?,
+            row.get::<_, Option<String>>(12)?,
+            row.get::<_, i64>(13)?,
         ))
     })?;
     let mut templates: Vec<PhaseTemplateBundle> = Vec::new();
@@ -295,6 +300,10 @@ fn export_phase_templates(
             origin,
             goal,
             process_text,
+            entry_check,
+            stop_rule,
+            then_suggest_id,
+            is_order_kept_raw,
         ) = row?;
         if !live_workspace_ids.contains(&workspace_id) {
             continue;
@@ -342,6 +351,10 @@ fn export_phase_templates(
             origin,
             goal,
             process_text,
+            entry_check,
+            stop_rule,
+            then_suggest_id,
+            is_order_kept: Some(is_order_kept_raw != 0),
         });
     }
     Ok(templates)

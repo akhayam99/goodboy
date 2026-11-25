@@ -218,6 +218,7 @@ export {
   type ProviderTelemetrySummary,
 } from './queries/telemetry';
 export { listDormantSessionTelemetry, type DormantTelemetry } from './queries/dormant-telemetry';
+export * from './queries/agent-turn-pick';
 export * from './queries/agent-turn-span';
 export { listProviderLimits, upsertProviderLimits } from './queries/provider-limits';
 export { getAgentHandoff, insertAgentHandoff } from './queries/agent-handoff';
@@ -263,6 +264,7 @@ export {
   type WorkflowStepInput,
   type RestoreSeededWorkflowResult,
 } from './queries/workflow';
+export { fillSeededWorkflowGuide } from './queries/workflow-guide';
 export {
   isWorkflowRoutingDecision,
   isWorkflowRoutingLock,
@@ -380,11 +382,7 @@ export {
   purgeOrphanArtifact,
   type OrphanArtifactRow,
 } from './queries/artifact-orphan';
-export {
-  listWorktreeRoots,
-  markWorktreeRootScanned,
-  registerWorktreeRoot,
-} from './queries/worktree-root';
+export * from './queries/worktree-root';
 export { insertSessionEvent, listSessionEvents } from './queries/session-event';
 export {
   listProviderCredentials,
