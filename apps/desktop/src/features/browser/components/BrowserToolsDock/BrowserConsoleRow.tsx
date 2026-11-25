@@ -9,6 +9,7 @@ import {
 import { ICON_SIZE, SelectableRow, TruncatedText, cn } from '@goodboy/ui';
 import { isFailedRequest, networkStatusWordOf } from '../../networkStatusWordOf';
 import type { BrowserConsoleEntry, BrowserConsoleLevel } from '../../types';
+import { requestKeyOf } from './requestKeyOf';
 
 type Props = {
   readonly entry: BrowserConsoleEntry;
@@ -48,6 +49,7 @@ export const BrowserConsoleRow = ({ entry, isOpened = false, onOpen }: Props) =>
   return (
     <div
       data-console-level={entry.level}
+      data-request-key={isNetwork ? requestKeyOf({ entry }) : undefined}
       className="flex min-w-0 flex-col rounded-sm hover:bg-hover"
     >
       <SelectableRow

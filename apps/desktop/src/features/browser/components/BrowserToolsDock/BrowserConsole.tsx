@@ -15,7 +15,7 @@ import { BrowserConsoleRow } from './BrowserConsoleRow';
 import { BrowserConsoleSendMenu } from './BrowserConsoleSendMenu';
 import { BrowserRequestDetail } from './BrowserRequestDetail';
 import { BrowserToolsHead } from './BrowserToolsHead';
-import { requestKeyOf } from './requestKeyOf';
+import { useRequestSelection } from './useRequestSelection';
 import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
@@ -82,17 +82,19 @@ export const BrowserConsole = ({
   const [level, setLevel] = useState<ConsoleLevelFilter>('all');
   const [query, setQuery] = useState('');
   const [sendNote, setSendNote] = useState<string | null>(null);
-  const [openedKey, setOpenedKey] = useState<string | null>(null);
   const viewport = useRef<HTMLDivElement | null>(null);
+  const list = useRef<HTMLDivElement | null>(null);
   const isFollowing = useRef(true);
   const openSession = useOpenSession();
   const counts = consoleCounts({ entries: log.entries });
   const rows = consoleRowsOf({ entries: log.entries, kind, level, query });
   const isFiltered = level !== 'all' || query.trim() !== '';
-  const openedAt =
-    kind === 'network' && openedKey !== null
-      ? rows.findIndex((entry) => requestKeyOf({ entry }) === openedKey)
-      : -1;
+  const { openedAt, open, back } = useRequestSelection({
+    rows,
+    liveId: model.shownLiveId,
+    doc: log.doc,
+    list,
+  });
   const opened = openedAt < 0 ? null : (rows[openedAt] ?? null);
   const isDetailAlone = opened !== null && side === 'right';
 
@@ -114,7 +116,6 @@ export const BrowserConsole = ({
   const changeKind = ({ next }: KindParams): void => {
     setKind(next);
     setLevel('all');
-    setOpenedKey(null);
   };
 
   const changeLevel = ({ next }: LevelParams): void => setLevel(next);
@@ -142,7 +143,7 @@ export const BrowserConsole = ({
     if (next === undefined) {
       return;
     }
-    setOpenedKey(requestKeyOf({ entry: next }));
+    open({ entry: next });
   };
 
   const keys = ({ event }: KeyParams): void => {
@@ -163,7 +164,7 @@ export const BrowserConsole = ({
         placeholder={SEARCH_LABEL[kind]}
         value={query}
         onChange={setQuery}
-        className={cn('min-w-0 flex-1', isToolsInHead && 'max-w-56')}
+        className={cn('flex-1', isToolsInHead ? 'min-w-0 max-w-56' : 'min-w-32')}
       />
       <Button variant="quiet" size="xs" disabled={counts[kind] === 0} onClick={clear}>
         Clear
@@ -191,7 +192,7 @@ export const BrowserConsole = ({
         onClose={onClose}
       />
       {isToolsInHead || isDetailAlone ? null : (
-        <div className="flex shrink-0 items-center gap-2 px-2">{tools}</div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2 px-2">{tools}</div>
       )}
       {log.failure === null ? null : (
         <p role="status" className="shrink-0 px-3 text-meta text-danger">
@@ -212,6 +213,8 @@ export const BrowserConsole = ({
             isPageScroller={false}
           >
             <div
+              ref={list}
+              tabIndex={-1}
               role="log"
               aria-label={kind === 'console' ? 'Console messages' : 'Requests'}
               className="flex flex-col gap-px px-1"
@@ -226,9 +229,7 @@ export const BrowserConsole = ({
                     key={entry.seq}
                     entry={entry}
                     isOpened={entry === opened}
-                    onOpen={
-                      kind === 'network' ? () => setOpenedKey(requestKeyOf({ entry })) : undefined
-                    }
+                    onOpen={kind === 'network' ? () => open({ entry }) : undefined}
                   />
                 ))
               )}
@@ -241,7 +242,7 @@ export const BrowserConsole = ({
             isAlone={isDetailAlone}
             canStepBack={openedAt > 0}
             canStepOn={openedAt < rows.length - 1}
-            onBack={() => setOpenedKey(null)}
+            onBack={back}
             onStep={step}
           />
         )}

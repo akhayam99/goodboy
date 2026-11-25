@@ -1044,7 +1044,7 @@ that shadows it, so the chord follows Chrome's J.
   at most five live sessions of the project, this one first;
   `consoleSendTargetsOf`, `queueConsoleHandoff`). Docked below a dock at
   least 640 pixels wide they sit at the right of the head, otherwise in a row
-  under it. A row is a level icon, the message and its source at the right; a
+  under it, which wraps when narrow. A row is a level icon, the message and its source at the right; a
   click expands the whole message. The Console tab shows console lines and
   errors; an error linked to a request shows only as that request's Network
   row (`consoleTabOf`). A click on a Network row opens its detail
@@ -1053,8 +1053,10 @@ that shadows it, so the chord follows Chrome's J.
   and next request of the filtered list. Esc goes back to the list and the
   arrow keys step. Docked below, the detail sits beside the list; docked
   right, it replaces the list and its tools. The detail follows the request
-  id, so a newer record of the same request keeps it open, and a request
-  that leaves the list (Clear, a filter, a new load) closes it. The UI
+  id within one tab and load (`useRequestSelection`), so a newer record of the
+  same request keeps it open, and a request that leaves the list (Clear, a
+  filter, a new load, another tab) forgets it. Back and Esc focus its row
+  again, or the list when the row is gone. The UI
   pulls every second while the region is open and on screen
   (`useConsoleEntries`, `usePoll`), and once on each `finished` load. Rows
   append only after the read returns; a newer record of a request replaces

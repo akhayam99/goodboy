@@ -64,6 +64,10 @@ type RequestParams = {
   readonly size: number;
 };
 
+type SurfaceParams = {
+  readonly surface: 'pane' | 'page';
+};
+
 const DOCK_KEY = 'goodboy:browser-tools-dock:v1';
 
 let store: StoryStore;
@@ -269,6 +273,34 @@ const press = ({ key, times = 1, isShift = false }: PressParams) => {
 };
 
 const savedDock = (): unknown => JSON.parse(localStorage.getItem(DOCK_KEY) ?? 'null');
+
+const CART = entryOf({
+  seq: 1,
+  level: 'info',
+  text: '/api/cart',
+  kind: 'network',
+  method: 'GET',
+  status: 200,
+  network: requestOf({ id: 'r1', duration: 42, size: 2048 }),
+});
+
+const CHARGE = entryOf({
+  seq: 1,
+  level: 'error',
+  text: '/api/charge',
+  kind: 'network',
+  method: 'POST',
+  status: 500,
+  network: requestOf({ id: 'r1', duration: 380, size: 38 }),
+});
+
+const openCart = async ({ surface }: SurfaceParams) => {
+  await (surface === 'pane' ? renderPane() : renderPage());
+  const region = await openTools();
+  fireEvent.click(within(region).getByRole('tab', { name: /Network/ }));
+  fireEvent.click(await within(region).findByRole('button', { name: 'info: /api/cart' }));
+  return region;
+};
 
 const shownLevels = () =>
   Array.from(
@@ -688,6 +720,78 @@ describe('the browser console', () => {
     within(region).getByRole('log', { name: 'Requests' });
     within(region).getByRole('searchbox', { name: 'Search requests' });
   });
+
+  it('closes the detail on a reload that reuses the request id', async () => {
+    reader = async () => heard({ entries: [CART] });
+    const region = await openCart({ surface: 'page' });
+    reader = async () => heard({ doc: 'm4p2', entries: [CHARGE] });
+
+    finishLoad();
+
+    await within(region).findByRole('button', { name: 'error: /api/charge' });
+    expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
+  });
+
+  it('keeps the detail open while the same document updates the request', async () => {
+    reader = async () => heard({ entries: [CART] });
+    const region = await openCart({ surface: 'page' });
+    reader = async () => heard({ entries: [{ ...CART, seq: 3, status: 304 }] });
+
+    finishLoad();
+
+    const detail = within(region).getByRole('region', { name: 'Request' });
+    await within(detail).findByText('304 · 42 ms · 2.0 KB');
+  });
+
+  it('closes the detail on a tab switch and keeps it closed on the way back', async () => {
+    reader = async ({ tabId }) =>
+      heard({ entries: [tabId === facts.id ? CART : { ...CART, text: '/api/other' }] });
+    const region = await openCart({ surface: 'pane' });
+    const show = (liveId: string) =>
+      act(() => {
+        store.setState({ browserLiveTabs: { [SESSION_ID]: { [row.id]: liveId } } });
+      });
+
+    show('live-2');
+
+    await within(region).findByRole('button', { name: 'info: /api/other' });
+    expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
+
+    show(facts.id);
+
+    await within(region).findByRole('button', { name: 'info: /api/cart' });
+    expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
+  });
+
+  it('forgets the opened request once a filter leaves it out', async () => {
+    reader = async () => heard({ entries: [CART] });
+    const region = await openCart({ surface: 'pane' });
+    const search = within(region).getByRole('searchbox', { name: 'Search requests' });
+    search.focus();
+
+    fireEvent.change(search, { target: { value: 'zzz' } });
+    fireEvent.change(search, { target: { value: '' } });
+
+    within(region).getByRole('button', { name: 'info: /api/cart' });
+    expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
+    expect(document.activeElement).toBe(search);
+  });
+
+  it.each(['pane', 'page'] as const)(
+    'returns focus to the request row on Back and on Esc in the %s',
+    async (surface) => {
+      reader = async () => heard({ entries: [CART] });
+      const region = await openCart({ surface });
+      const cartRow = () => within(region).getByRole('button', { name: 'info: /api/cart' });
+
+      fireEvent.click(within(region).getByRole('button', { name: 'Back to requests' }));
+      expect(document.activeElement).toBe(cartRow());
+
+      fireEvent.click(cartRow());
+      fireEvent.keyDown(within(region).getByRole('region', { name: 'Request' }), { key: 'Escape' });
+      expect(document.activeElement).toBe(cartRow());
+    },
+  );
 
   it('opens and closes on the console chord', async () => {
     await renderPane();
