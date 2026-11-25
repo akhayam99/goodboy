@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppStore } from '../../../store/store';
 import { clearActionLedger } from './actionLedger';
 import { RATE_WINDOWS, clearRateSlots } from './actionLimits';
-import type { StartPorts } from './handlerTypes';
+import type { ResolvedTask, StartPorts } from './handlerTypes';
 import { executePhoneAction } from './executePhoneAction';
 import { parsePhoneAction } from './parsePhoneAction';
 import { registerPhoneScope, resetPhoneScope } from './phonePermissionScope';
@@ -109,7 +109,7 @@ const portsOf = (): StartPorts & {
   readonly launch: ReturnType<typeof vi.fn>;
   readonly discard: ReturnType<typeof vi.fn>;
 } => ({
-  resolveTask: vi.fn(async () => ({
+  resolveTask: vi.fn(async (): Promise<ResolvedTask> => ({
     goal: 'Fix the rounding bug',
     externalTask: {
       provider: 'linear',

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { MergeTrain } from '../../../store/slices/pr-series/mergeTrain';
+import type { MergeTrain, MergeTrainCar } from '../../../store/slices/pr-series/mergeTrain';
 import { trainActionIdOf, stopTrainActionIdOf } from '../actions/phoneActionIds';
 import { TRAIN_ORDER_LINE, trainOfferOf } from './trainOfferOf';
 import type { ReadyLine, WorkspaceScope } from './workspaceScope';
@@ -38,11 +38,21 @@ const scopeOf = ({ lines = LINES, train = null }: ScopeParams = {}): WorkspaceSc
     mergeTrain: train,
   });
 
+type CarParams = {
+  readonly sessionId: string;
+  readonly mountId: string;
+  readonly prNumber: number;
+  readonly repo: string;
+};
+
+const carOf = ({ sessionId, mountId, prNumber, repo }: CarParams): MergeTrainCar =>
+  Object.assign(Object.create(null), { sessionId, mountId, prNumber, repo, base: 'main' });
+
 const trainOf = (over: Partial<MergeTrain> = {}): MergeTrain => ({
   id: 'train-1',
   cars: [
-    { sessionId: 'ses-one', mountId: 'm1', prNumber: 11, repo: 'ledger-core', base: 'main' },
-    { sessionId: 'ses-two', mountId: 'm2', prNumber: 12, repo: 'notify-relay', base: 'main' },
+    carOf({ sessionId: 'ses-one', mountId: 'm1', prNumber: 11, repo: 'ledger-core' }),
+    carOf({ sessionId: 'ses-two', mountId: 'm2', prNumber: 12, repo: 'notify-relay' }),
   ],
   method: 'squash',
   index: 0,
