@@ -99,6 +99,23 @@ impl MobileAction {
         }
     }
 
+    pub fn is_decide(self) -> bool {
+        matches!(
+            self,
+            Self::AnswerQuestion
+                | Self::ApprovePlan
+                | Self::RequestPlanChanges
+                | Self::AnswerPermission
+                | Self::RaiseLimit
+                | Self::UndoRaiseLimit
+                | Self::StopRun
+                | Self::ContinueRun
+                | Self::StopAgent
+                | Self::ContinueAgent
+                | Self::AnswerSlackReply
+        )
+    }
+
     pub fn is_query(self) -> bool {
         matches!(
             self,

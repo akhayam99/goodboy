@@ -1,7 +1,11 @@
+mod action_guard;
 mod commands;
 mod frame;
 mod gate;
+mod handshake;
 mod identity;
+mod network;
+mod permissions;
 pub mod publish;
 mod publish_schema;
 mod server;
@@ -22,7 +26,10 @@ use tokio::net::TcpListener;
 use tokio::sync::{watch, Mutex};
 
 use commands::{CmdResult, PendingMap};
+use handshake::RefusalCode;
 use identity::Identity;
+use network::{interfaces_of, offered_addresses, raw_addresses, NetworkInterface, RawAddress};
+use permissions::Permissions;
 use publish::PublishHub;
 use server::{serve, ServerCtx};
 use tokens::TokenStore;
@@ -52,6 +59,10 @@ pub enum BridgeError {
     Protocol(String),
     #[error("unauthorized: {0}")]
     Unauthorized(String),
+    #[error("refused: {0}")]
+    Refused(RefusalCode),
+    #[error("no private network is offered to phones")]
+    NoPrivateNetwork,
 }
 
 impl BridgeError {
@@ -64,7 +75,13 @@ impl BridgeError {
             BridgeError::Json(_) => "json",
             BridgeError::Protocol(_) => "protocol",
             BridgeError::Unauthorized(_) => "unauthorized",
+            BridgeError::Refused(_) => "refused",
+            BridgeError::NoPrivateNetwork => "no_private_network",
         }
+    }
+
+    fn is_polite_refusal(&self) -> bool {
+        matches!(self, BridgeError::Refused(code) if code.is_polite())
     }
 }
 
@@ -104,8 +121,9 @@ impl BridgeState {
         if let Some(port) = inner.port {
             return Ok(port);
         }
-        let listener = TcpListener::bind(("0.0.0.0", 0)).await?;
-        let port = listener.local_addr()?.port();
+        let selected = self.identity.lock().await.interfaces.clone();
+        let offered = offered_addresses(&raw_addresses(), selected.as_deref());
+        let (listeners, port) = bind_offered(&offered).await?;
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
         let ctx = Arc::new(ServerCtx {
             identity: self.identity.clone(),
@@ -114,10 +132,11 @@ impl BridgeState {
             app,
             pending: self.pending.clone(),
             hub: self.hub.clone(),
+            in_flight: Default::default(),
             shutdown: shutdown_rx,
         });
         let task = tauri::async_runtime::spawn(async move {
-            serve(listener, ctx).await;
+            serve(listeners, ctx).await;
         });
         inner.port = Some(port);
         inner.task = Some(task);
@@ -137,6 +156,9 @@ impl BridgeState {
     }
 }
 
+pub const QR_VERSION: u8 = 2;
+const BIND_ATTEMPTS: usize = 8;
+
 #[derive(Serialize)]
 pub struct Endpoint {
     host: String,
@@ -152,6 +174,7 @@ struct QrPayload {
     token: String,
     endpoints: Vec<Endpoint>,
     service_name: String,
+    permissions: serde_json::Value,
 }
 
 #[derive(Serialize)]
@@ -178,16 +201,23 @@ pub async fn bridge_start(
     state: State<'_, BridgeState>,
 ) -> Result<QrInfo, BridgeError> {
     let port = state.ensure_running(app).await?;
+    let selected = state.identity.lock().await.interfaces.clone();
+    let endpoints = endpoints_for(&raw_addresses(), selected.as_deref(), port);
+    if endpoints.is_empty() {
+        state.stop().await;
+        return Err(BridgeError::NoPrivateNetwork);
+    }
     let token = state.tokens.mint();
     let device_name = device_name();
 
     let payload = QrPayload {
-        v: 1,
+        v: QR_VERSION,
         device_name: device_name.clone(),
         static_pub: state.static_pub_b64.clone(),
         token: base64::engine::general_purpose::STANDARD.encode(&token),
-        endpoints: endpoints(port),
+        endpoints,
         service_name: SERVICE_NAME.to_string(),
+        permissions: Permissions::default().wire(),
     };
     let json = serde_json::to_string(&payload)?;
     let svg = render_qr_svg(&json)?;
@@ -199,6 +229,78 @@ pub async fn bridge_start(
         port,
         expires_in_secs: 60,
     })
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PhoneView {
+    id: String,
+    name: String,
+    paired_at: String,
+    last_seen: Option<String>,
+    permissions: Permissions,
+}
+
+#[tauri::command]
+pub async fn bridge_interfaces(
+    state: State<'_, BridgeState>,
+) -> Result<Vec<NetworkInterface>, BridgeError> {
+    let selected = state.identity.lock().await.interfaces.clone();
+    Ok(interfaces_of(&raw_addresses(), selected.as_deref()))
+}
+
+#[tauri::command]
+pub async fn bridge_set_interfaces(
+    state: State<'_, BridgeState>,
+    names: Vec<String>,
+) -> Result<(), BridgeError> {
+    state.identity.lock().await.set_interfaces(Some(names))?;
+    state.stop().await;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn bridge_phones(state: State<'_, BridgeState>) -> Result<Vec<PhoneView>, BridgeError> {
+    let id = state.identity.lock().await;
+    Ok(id
+        .phones
+        .iter()
+        .map(|p| PhoneView {
+            id: p.key.clone(),
+            name: p.name.clone(),
+            paired_at: p.paired_at.clone(),
+            last_seen: p.last_seen.clone(),
+            permissions: p.permissions,
+        })
+        .collect())
+}
+
+#[tauri::command]
+pub async fn bridge_set_permissions(
+    state: State<'_, BridgeState>,
+    phone_id: String,
+    permissions: Permissions,
+) -> Result<(), BridgeError> {
+    let did = state
+        .identity
+        .lock()
+        .await
+        .set_permissions(&phone_id, permissions)?;
+    match did {
+        true => Ok(()),
+        false => Err(BridgeError::Protocol(
+            "that iPhone is no longer paired".into(),
+        )),
+    }
+}
+
+#[tauri::command]
+pub async fn bridge_revoke_phone(
+    state: State<'_, BridgeState>,
+    phone_id: String,
+) -> Result<(), BridgeError> {
+    state.identity.lock().await.revoke_one(&phone_id)?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -217,7 +319,7 @@ pub async fn bridge_stop(state: State<'_, BridgeState>) -> Result<(), BridgeErro
 #[tauri::command]
 pub async fn bridge_status(state: State<'_, BridgeState>) -> Result<BridgeStatus, BridgeError> {
     let inner = state.inner.lock().await;
-    let enrolled_count = state.identity.lock().await.allow_list.len();
+    let enrolled_count = state.identity.lock().await.phones.len();
     Ok(BridgeStatus {
         running: inner.port.is_some(),
         port: inner.port,
@@ -250,23 +352,44 @@ fn render_qr_svg(data: &str) -> Result<String, BridgeError> {
         .build())
 }
 
-fn endpoints(port: u16) -> Vec<Endpoint> {
-    let mut out = Vec::new();
-    if let Some(ip) = primary_ipv4() {
-        out.push(Endpoint { host: ip, port });
-    }
-    out
+pub(crate) fn endpoints_for(
+    raw: &[RawAddress],
+    selected: Option<&[String]>,
+    port: u16,
+) -> Vec<Endpoint> {
+    offered_addresses(raw, selected)
+        .into_iter()
+        .filter(|a| network::is_private(a.ip))
+        .map(|a| Endpoint {
+            host: a.ip.to_string(),
+            port,
+        })
+        .collect()
 }
 
-fn primary_ipv4() -> Option<String> {
-    use std::net::UdpSocket;
-    let sock = UdpSocket::bind("0.0.0.0:0").ok()?;
-    sock.connect("8.8.8.8:80").ok()?;
-    let ip = sock.local_addr().ok()?.ip();
-    if ip.is_loopback() || ip.is_unspecified() {
-        return None;
+async fn bind_offered(offered: &[RawAddress]) -> Result<(Vec<TcpListener>, u16), BridgeError> {
+    let Some(first) = offered.first() else {
+        return Err(BridgeError::NoPrivateNetwork);
+    };
+    for _ in 0..BIND_ATTEMPTS {
+        let lead = TcpListener::bind((first.ip, 0)).await?;
+        let port = lead.local_addr()?.port();
+        let mut listeners = vec![lead];
+        let mut is_complete = true;
+        for other in &offered[1..] {
+            match TcpListener::bind((other.ip, port)).await {
+                Ok(listener) => listeners.push(listener),
+                Err(_) => {
+                    is_complete = false;
+                    break;
+                }
+            }
+        }
+        if is_complete {
+            return Ok((listeners, port));
+        }
     }
-    Some(ip.to_string())
+    Err(BridgeError::NoPrivateNetwork)
 }
 
 fn device_name() -> String {
