@@ -183,18 +183,18 @@ describe('TimelineRowLabel', () => {
     expect(screen.getByText('Draft the migration')).toBeDefined();
   });
 
-  it('marks the role chip of a chain root with the chain glyph', () => {
+  it('shows one glyph on a chained agent row and no link icon, since the row is the link', () => {
     const { container } = renderKind({
       agentKind: 'planner',
       name: 'Draft the migration',
       isChained: true,
     });
 
-    expect(container.querySelector('svg')).not.toBeNull();
-    expect(container.querySelector('svg')?.classList.contains('absolute')).toBe(false);
+    screen.getByRole('img', { name: AGENT_KIND_META.planner.noun });
+    expect(container.querySelectorAll('svg')).toHaveLength(1);
   });
 
-  it('marks a chained descendant too, on the step row it lives on', () => {
+  it('keeps one glyph on a chained descendant on the step row it lives on', () => {
     const { container } = render(
       <TimelineRowLabel
         item={itemOf({
@@ -208,11 +208,11 @@ describe('TimelineRowLabel', () => {
       />,
     );
 
-    expect(screen.getByRole('img', { name: AGENT_KIND_META.implementer.noun })).toBeDefined();
-    expect(container.querySelector('svg')).not.toBeNull();
+    screen.getByRole('img', { name: AGENT_KIND_META.implementer.noun });
+    expect(container.querySelectorAll('svg')).toHaveLength(1);
   });
 
-  it('leaves the role glyph unmarked when the agent belongs to no chain', () => {
+  it('draws the same single glyph when the agent belongs to no chain', () => {
     const { container } = renderKind({ agentKind: 'planner', name: 'Draft the migration' });
 
     screen.getByRole('img', { name: AGENT_KIND_META.planner.noun });

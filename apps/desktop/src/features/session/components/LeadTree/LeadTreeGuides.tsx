@@ -19,7 +19,7 @@ export const LeadTreeGuides = ({
         key={level}
         aria-hidden
         data-lead-tree-guide=""
-        className="pointer-events-none absolute inset-y-0 w-px bg-border-soft"
+        className="pointer-events-none absolute inset-y-0 w-px bg-border"
         style={{ left: origin + level * unit }}
       />
     ))}

@@ -68,7 +68,7 @@ Follow what happened in a session in one list. **Activity** on the Overview show
 
 #### What a row shows
 
-- One row per agent, workflow run or fix run reads on one line: its role glyph, its task, then a state, model and time column. The role is the glyph's tooltip, and its number is for screen readers only. The cost sits in the card on the time.
+- One row per agent, workflow run or fix run reads on one line: its time, its role glyph, its task, then a state and model column. The glyph is tinted by the state and is the row's only marker: no node, no connector and no link icon. The role is the glyph's tooltip, and its number is for screen readers only. The cost sits in the card on the time.
 - Plain facts get a row too, such as context changes, branch events and links.
 - A script you ran gets a row with its result, such as `test:integration failed (exit 2) in payments-api`.
 - Done is a small green check. Only a row that waits on you or failed stands out.

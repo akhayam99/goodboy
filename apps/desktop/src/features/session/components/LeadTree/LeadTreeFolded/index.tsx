@@ -90,7 +90,7 @@ export const LeadTreeFolded = ({ items, root, selectedAgentId, onSelect }: Props
                   key={at}
                   aria-hidden
                   data-lead-tree-guide=""
-                  className="absolute inset-y-0 w-px bg-border-soft"
+                  className="absolute inset-y-0 w-px bg-border"
                   style={{ left: GUIDE_ORIGIN_PX + at * LEVEL_INDENT_PX }}
                 />
               ))}

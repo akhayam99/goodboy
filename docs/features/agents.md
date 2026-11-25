@@ -192,6 +192,7 @@ The header reads **Agents** with a count that includes every agent. The first ro
 - The column opens wide, can be resized and remembers its width. On a narrow window it folds to **Show agents**.
 - Picking a row shows that agent's conversation in the middle. The row you are viewing stands out with a lit surface and an accent on its edge.
 - Folded, the column keeps the list as a slim strip of glyphs, one per agent, in the same order. Each is tinted by its state. Pick one to open that agent.
+- In an agent's conversation, the agents it started list the same way: a glyph tinted by state, the task, the state word and **Open**. The role is the glyph's tooltip.
 - A task too long for the row is cut at a word with an ellipsis, and rest on it to read it whole.
 - **↑** and **↓** move through the rows, **Enter** opens one.
 - A note you queued in the composer shows as a row of the tree, with **Edit** and **Remove**.

@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import { ActivityRow, cn, ICON_SIZE, Tooltip, ValueToken, WORK_ROW } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
+import { ActivityRow, cn, Tooltip, ValueToken, WORK_ROW } from '@goodboy/ui';
 import type { MountDiffStat } from '../../../../../../store';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../../../../artifacts/artifactPresentation';
@@ -128,15 +127,7 @@ const chipOf = ({ entry, identity, isCardOpen, rowState }: ChipParams) => {
       className={leadTreeInkOf({ node: rowStateNode({ state: rowState }).state }).glyph}
     />
   );
-  if (entry.chain == null) {
-    return glyph;
-  }
-  return (
-    <span className="inline-flex shrink-0 items-center gap-1 self-center">
-      {glyph}
-      <CONCEPT_ICONS.chain size={ICON_SIZE.mark} aria-hidden className="text-faint-foreground" />
-    </span>
-  );
+  return glyph;
 };
 
 type ReasonTitleOfParams = {
