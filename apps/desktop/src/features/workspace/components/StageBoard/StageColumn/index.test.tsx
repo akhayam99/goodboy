@@ -11,15 +11,18 @@ vi.mock('../StageBoardCard', () => ({
   StageBoardCard: ({
     session,
     selected,
+    density,
     onModifierClick,
   }: {
     readonly session: Session;
     readonly selected?: boolean;
+    readonly density?: string;
     readonly onModifierClick?: (id: SessionId, event: { readonly altKey: boolean }) => void;
   }) => (
     <button
       type="button"
       aria-pressed={selected === true}
+      data-density={density}
       aria-label={`card ${session.goal}`}
       onClick={(event) => onModifierClick?.(session.id as SessionId, event)}
     />
@@ -291,6 +294,65 @@ describe('StageColumn', () => {
   });
 });
 
+describe('StageColumn finished lanes', () => {
+  it('folds Archived to its count, opens it with Show all and closes it with Hide', () => {
+    renderColumn({ spec: { kind: 'archived' }, sessions: [makeSession('s-1', 'one')] });
+    const lane = screen.getByRole('group', { name: 'archived' });
+    const toggle = within(lane).getByRole('button', { name: 'Show all' });
+
+    expect(within(lane).queryByRole('button', { name: 'card one' })).toBeNull();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    within(lane).getByText('1');
+
+    fireEvent.click(toggle);
+
+    within(lane).getByRole('button', { name: 'card one' });
+    expect(within(lane).getByRole('button', { name: 'Hide' }).getAttribute('aria-expanded')).toBe(
+      'true',
+    );
+
+    fireEvent.click(within(lane).getByRole('button', { name: 'Hide' }));
+
+    expect(within(lane).queryByRole('button', { name: 'card one' })).toBeNull();
+  });
+
+  it('offers no Show all while Archived is empty or loading', () => {
+    renderColumn({ spec: { kind: 'archived' } });
+    expect(screen.queryByRole('button', { name: 'Show all' })).toBeNull();
+
+    cleanup();
+    renderColumn({ spec: { kind: 'archived' }, isLoading: true });
+    expect(screen.queryByRole('button', { name: 'Show all' })).toBeNull();
+  });
+
+  it('draws Done and Archived as compact rows and the live lanes as cards', () => {
+    renderColumn({ spec: { kind: 'stage', stage: 'done' }, sessions: [makeSession('d', 'done')] });
+    expect(screen.getByRole('button', { name: 'card done' }).getAttribute('data-density')).toBe(
+      'row',
+    );
+
+    cleanup();
+    renderColumn({ spec: { kind: 'archived' }, sessions: [makeSession('a', 'shelved')] });
+    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+    expect(screen.getByRole('button', { name: 'card shelved' }).getAttribute('data-density')).toBe(
+      'row',
+    );
+
+    cleanup();
+    renderColumn({ sessions: [makeSession('b', 'live')] });
+    expect(screen.getByRole('button', { name: 'card live' }).getAttribute('data-density')).toBe(
+      'card',
+    );
+  });
+
+  it('draws an empty lane as one dashed slot with its line', () => {
+    renderColumn({ spec: { kind: 'stage', stage: 'running' } });
+    const slot = screen.getByText('Nothing running');
+
+    expect(slot.getAttribute('data-slot')).toBe('lane-empty');
+  });
+});
+
 describe('StageColumn window', () => {
   const many = (count: number): ReadonlyArray<Session> =>
     Array.from({ length: count }, (_, index) => makeSession(`s-${index}`, `task ${index}`));
@@ -299,8 +361,12 @@ describe('StageColumn window', () => {
     renderColumn({ spec: { kind: 'archived' }, sessions: many(237) });
     const lane = screen.getByRole('group', { name: 'archived' });
 
-    expect(within(lane).getAllByRole('button', { name: /^card / })).toHaveLength(50);
+    expect(within(lane).queryAllByRole('button', { name: /^card / })).toHaveLength(0);
     expect(within(lane).getByText('237').textContent).toBe('237');
+
+    fireEvent.click(within(lane).getByRole('button', { name: 'Show all' }));
+
+    expect(within(lane).getAllByRole('button', { name: /^card / })).toHaveLength(50);
 
     fireEvent.click(within(lane).getByRole('button', { name: 'Show 187 more' }));
 

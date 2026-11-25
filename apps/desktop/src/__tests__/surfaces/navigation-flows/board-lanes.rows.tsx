@@ -47,7 +47,7 @@ const shelveOneSession = ({ sessionId }: Ctx): void => {
 
 export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'Board: Archived stays in view and Restore sends its first card to its stage',
+    name: 'Board: Archived folds to its count, Show all opens it and Restore sends its first card to its stage',
     covers: ['navigate', 'board-lanes:archived-restore'],
     open: async (ctx) => {
       shelveOneSession(ctx);
@@ -57,7 +57,9 @@ export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       await heading('Board');
       const archived = await lane('archived');
-      expect(within(archived).getByRole('button', { name: ARCHIVED_GOAL })).toBeDefined();
+      expect(within(archived).queryByRole('button', { name: ARCHIVED_GOAL })).toBeNull();
+      await click(within(archived).getByRole('button', { name: 'Show all' }));
+      within(archived).getByRole('button', { name: ARCHIVED_GOAL });
       expect(await lane('done')).toBeDefined();
 
       await click(within(archived).getByRole('button', { name: /^Restore/ }));

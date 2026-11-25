@@ -36,7 +36,7 @@ vi.mock('./useBoardByStage', () => ({
   }) => ({ byStage: new Map(grouped.map((group) => [group.key, group.sessions])), infos: {} }),
 }));
 
-vi.mock('./NeedsYouStrip/useNeedsYou', () => ({
+vi.mock('./NeedsYouCards/useNeedsYou', () => ({
   useNeedsYou: () => ({ sessionCount: 0, moveCount: 0, moves: [], cards: [] }),
 }));
 
@@ -93,8 +93,8 @@ vi.mock('./SessionFilterPopover', () => ({
   SessionFilterPopover: () => <span data-testid="session-filter" />,
 }));
 
-vi.mock('./NeedsYouStrip', () => ({
-  NeedsYouStrip: () => null,
+vi.mock('./NeedsYouCards', () => ({
+  NeedsYouCards: () => null,
 }));
 
 vi.mock('./useBoardNavigation', () => ({

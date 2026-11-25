@@ -3,15 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ChevronRight, HelpCircle, Play, type IconGlyph } from '@goodboy/ui/icons';
 import { findGlyph } from '@goodboy/ui/icons/testing/findGlyph';
-import type {
-  IsoDateTime,
-  PullRequestState,
-  SessionAttentionReason,
-  SessionExternalTask,
-  SessionId,
-  SessionPrFetchState,
-  SessionStage,
-  WorkspaceId,
+import {
+  brandId,
+  type IsoDateTime,
+  type PullRequestState,
+  type SessionAttentionReason,
+  type SessionExternalTask,
+  type SessionId,
+  type SessionPrFetchState,
+  type SessionStage,
+  type WorkspaceId,
 } from '@goodboy/types';
 import { aSession, aWorkflowRun } from '@goodboy/types/testing';
 import type { GitlabMergeRequest } from '../../../../integrations/gitlab/client';
@@ -202,19 +203,18 @@ const reservedSlot = () =>
   screen.getByRole('article').querySelector('[data-slot="card-signal-reserve"]');
 
 describe('StageBoardCard layout', () => {
-  it('keeps a 96px floor with a two-line title and one bottom line', () => {
+  it('takes its height from its content: a two-line title over one meta line', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const card = screen.getByRole('article');
     const title = screen.getByText(session.goal);
-    expect(card.className).toContain('min-h-24');
-    expect(card.className).not.toContain('h-28');
     expect(title.className).toContain('line-clamp-2');
     expect(title.className).toContain('text-row');
     expect(cardTitle().getAttribute('title')).toBeNull();
     expect(cardTitle().closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe(session.goal);
-    const project = card.querySelector('[data-slot="card-project"]');
-    expect(project?.parentElement).toBe(signalSlot()?.parentElement);
-    expect(project?.parentElement?.parentElement).toBe(card);
+    const facts = elementOf({ node: card.querySelector('[data-slot="card-facts"]') });
+    expect(facts.parentElement?.contains(signalSlot())).toBe(true);
+    expect(facts.parentElement?.parentElement).toBe(card);
+    expect(card.getAttribute('data-density')).toBe('card');
   });
 
   it('says nothing under the title: no reason line, no progress, no chevron', () => {
@@ -235,24 +235,77 @@ describe('StageBoardCard layout', () => {
     );
   });
 
-  it('names the project in gray at the left, with a count when there are several', () => {
+  it('names the repository and its branch in gray above the title, with a count when there are several', () => {
     state.sessionProjectMounts = {
-      [SESSION_ID]: [{ projectId: 'project-1', mountName: 'payments-api' }],
+      [SESSION_ID]: [{ projectId: 'project-1', mountName: 'payments-api', branch: 'ak/retry' }],
     };
     render(<StageBoardCard session={session} nav={nav} />);
-    const project = screen.getByText('payments-api');
-    expect(project.className).toContain('text-muted-foreground');
-    expect(project.className).not.toContain('truncate');
+    const context = screen.getByText('payments-api · ak/retry');
+    expect(context.getAttribute('data-slot')).toBe('card-context');
+    expect(
+      context.compareDocumentPosition(cardTitle()) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
 
     cleanup();
     state.sessionProjectMounts = {
       [SESSION_ID]: [
-        { projectId: 'project-1', mountName: 'payments-api' },
-        { projectId: 'project-2', mountName: 'ledger-core' },
+        { projectId: 'project-1', mountName: 'payments-api', branch: 'ak/retry' },
+        { projectId: 'project-2', mountName: 'ledger-core', branch: 'ak/ledger' },
       ],
     };
     render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.getByText('payments-api +1')).toBeDefined();
+    screen.getByText('payments-api +1 · ak/retry');
+  });
+
+  it('draws no empty context line for a session with no repository', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.getByRole('article').querySelector('[data-slot="card-context"]')).toBeNull();
+    expect(screen.getByRole('article').querySelector('[data-slot="card-facts"]')).not.toBeNull();
+  });
+
+  it('says the state and when the session last moved on its meta line', () => {
+    hooks.reason = 'draft #9484';
+    const updated = aSession({
+      ...session,
+      updatedAt: brandId<IsoDateTime>({ value: new Date(Date.now() - 7_200_000).toISOString() }),
+    });
+    render(<StageBoardCard session={updated} nav={nav} />);
+    const facts = elementOf({
+      node: screen.getByRole('article').querySelector('[data-slot="card-facts"]'),
+    });
+    expect(facts.textContent).toBe('·Draft #9484·2h ago');
+    screen.getByText('Draft #9484');
+    screen.getByText('2h ago');
+  });
+
+  it('wraps a long state word onto a second line instead of cutting it mid word', () => {
+    hooks.reason = 'Checking GitHub';
+    const updated = aSession({
+      ...session,
+      updatedAt: brandId<IsoDateTime>({ value: new Date(Date.now() - 7_200_000).toISOString() }),
+    });
+    render(<StageBoardCard session={updated} nav={nav} />);
+    const facts = elementOf({
+      node: screen.getByRole('article').querySelector('[data-slot="card-facts"]'),
+    });
+    const state = screen.getByText('Checking GitHub');
+    const age = screen.getByText('2h ago');
+
+    expect(state.getAttribute('data-truncated')).toBeNull();
+    expect(age.firstElementChild?.getAttribute('aria-hidden')).toBe('true');
+    expect(age.firstElementChild?.textContent).toBe('·');
+  });
+
+  it('draws a compact row in one line with the title and its signal, and no meta line', () => {
+    state.sessionProjectMounts = {
+      [SESSION_ID]: [{ projectId: 'project-1', mountName: 'payments-api', branch: 'ak/retry' }],
+    };
+    render(<StageBoardCard session={session} nav={nav} density="row" />);
+    const card = screen.getByRole('article');
+    expect(card.getAttribute('data-density')).toBe('row');
+    expect(card.querySelector('[data-slot="card-context"]')).toBeNull();
+    expect(card.querySelector('[data-slot="card-facts"]')).toBeNull();
+    expect(signalSlot()).not.toBeNull();
   });
 });
 
@@ -682,7 +735,7 @@ describe('StageBoardCard in the Needs you lane', () => {
 });
 
 describe('StageBoardCard facts moved to the hover card', () => {
-  it('carries no age, cost, agent count, issue chips, Auto chip, pin or draft chip', () => {
+  it('carries its age but no cost, agent count, issue chips, Auto chip, pin or draft chip', () => {
     hooks.agents = [{}, {}];
     hooks.cost = 1.25;
     state.sessionExternalTasks = { [SESSION_ID]: [externalTask] };
@@ -697,7 +750,7 @@ describe('StageBoardCard facts moved to the hover card', () => {
       workflowRuns: [aWorkflowRun({ autoRun: true })],
     });
     render(<StageBoardCard session={updated} nav={nav} />);
-    expect(screen.queryByText('2h ago')).toBeNull();
+    screen.getByText('2h ago');
     expect(screen.queryByText('$1.25')).toBeNull();
     expect(screen.queryByLabelText('2 agents')).toBeNull();
     expect(screen.queryByLabelText('GB-123 from Linear')).toBeNull();

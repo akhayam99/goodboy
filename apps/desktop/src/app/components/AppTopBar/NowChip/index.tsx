@@ -49,7 +49,6 @@ type CountLabelParams = {
 const PANEL_WIDTH = 360;
 const PANEL_MAX_HEIGHT = 480;
 const IDLE_WORD = NAMES.idle;
-const WAITING_WORD = NAMES.needsYou;
 const SEGMENT = 'flex items-center gap-1';
 const SEGMENT_WORD = 'hidden text-muted-foreground @min-chrome-labels/topbar:inline';
 
@@ -63,7 +62,7 @@ const chipLabel = ({ running, scripts }: CountLabelParams): string =>
 
 export const NowChip = ({ onOpenScript }: Props) => {
   const workspace = useCurrentWorkspace();
-  const { running, needsYou } = useNowSessions({});
+  const { running } = useNowSessions({});
   const scripts = useRunningScripts();
   const navigate = useAppStore((state) => state.navigate);
   const openStudio = useAppStore((state) => state.openStudio);
@@ -102,12 +101,8 @@ export const NowChip = ({ onOpenScript }: Props) => {
           'flex shrink-0 items-center gap-1 px-2 text-meta text-muted-foreground',
         )}
       >
-        {needsYou.length > 0 ? (
-          <StatusDot tone="warning" size="sm" />
-        ) : (
-          <StatusDot tone="neutral" size="sm" isRing />
-        )}
-        <span>{needsYou.length > 0 ? WAITING_WORD : IDLE_WORD}</span>
+        <StatusDot tone="neutral" size="sm" isRing />
+        <span>{IDLE_WORD}</span>
       </span>
     );
   }

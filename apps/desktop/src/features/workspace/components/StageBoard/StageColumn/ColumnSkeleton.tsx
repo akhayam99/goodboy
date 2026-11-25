@@ -9,7 +9,7 @@ type Props = {
 export const ColumnSkeleton = ({ label }: Props) => (
   <div role="status" aria-label={label} className={cn('flex flex-col', PANE_RHYTHM.board.cardGap)}>
     {COLUMN_SKELETON_CARDS.map((card) => (
-      <Skeleton key={card} className="h-24 w-full rounded-lg" />
+      <Skeleton key={card} className="h-9 w-full rounded-lg" />
     ))}
   </div>
 );

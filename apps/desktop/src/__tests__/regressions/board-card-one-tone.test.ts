@@ -21,7 +21,7 @@ describe('a Board card says its state once', () => {
     const source = sourceOf({ path: CARD });
 
     expect(source).toMatch(/min-w-0 cursor-pointer self-start rounded-sm text-left/);
-    expect(source).toMatch(/shrink-0 cursor-pointer grid-cols/);
+    expect(source).toMatch(/shrink-0 cursor-pointer text-left/);
   });
 
   it('reveals nothing on hover: the menu and the facts are visible at rest or in the hover card', () => {

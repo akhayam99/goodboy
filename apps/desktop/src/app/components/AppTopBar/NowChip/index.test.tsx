@@ -86,27 +86,15 @@ describe('NowChip', () => {
     expect(screen.queryByRole('button', { name: /running/ })).toBeNull();
   });
 
-  it('never says Idle while a session waits on you and nothing runs', () => {
+  it('leaves needs you to the Sessions switcher: a waiting session with nothing running reads Idle', () => {
     seed([ASKING], [ASKING]);
     const { container } = render(<NowChip onOpenScript={vi.fn()} />);
+    const idle = container.querySelector('[data-now-idle]');
 
-    expect(container.querySelector('[data-now-idle]')?.textContent).toBe('Needs you');
-  });
-
-  it('marks Needs you with the warning dot and Idle with the neutral ring', () => {
-    seed([ASKING], [ASKING]);
-    const { container, unmount } = render(<NowChip onOpenScript={vi.fn()} />);
-    const waitingDot = container.querySelector('[data-now-idle] > span:first-child');
-
-    expect(waitingDot?.className).toContain('bg-warning');
-    expect(waitingDot?.className).not.toContain('ring-idle');
-    unmount();
-    seed([]);
-    const idle = render(<NowChip onOpenScript={vi.fn()} />);
-
-    expect(idle.container.querySelector('[data-now-idle] > span:first-child')?.className).toContain(
-      'ring-idle',
-    );
+    expect(idle?.textContent).toBe('Idle');
+    expect(screen.queryByText('Needs you')).toBeNull();
+    expect(idle?.querySelector('span:first-child')?.className).toContain('ring-idle');
+    expect(idle?.querySelector('span:first-child')?.className).not.toContain('bg-warning');
   });
 
   it('shows only the segments above zero, and names them all in one label', () => {

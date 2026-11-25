@@ -68,7 +68,7 @@ describe('the u52 board scenes', () => {
     ]);
   });
 
-  it.each(['dark', 'light'])('draws no strip when nothing needs you in %s', async (theme) => {
+  it.each(['dark', 'light'])('draws no yellow card when nothing needs you in %s', async (theme) => {
     await show({ name: `u52-board-0-${theme}` });
     expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'needs you' })).toBeNull();
@@ -79,10 +79,12 @@ describe('the u52 board scenes', () => {
     ['3', 'light', 3],
     ['9', 'dark', 9],
     ['9', 'light', 9],
-  ])('draws %s cards above the stages in %s', async (count, theme, expected) => {
+  ])('draws %s yellow cards at the top of Running in %s', async (count, theme, expected) => {
     await show({ name: `u52-board-${count}-${theme}` });
-    await screen.findByRole('region', { name: 'Needs you' });
     await waitFor(() => expect(cardCount()).toBe(expected));
+    const running = screen.getByRole('group', { name: 'running' });
+    expect(running.querySelectorAll('[data-needs-you-card]')).toHaveLength(expected);
+    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'needs you' })).toBeNull();
   });
 });

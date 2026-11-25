@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -67,6 +67,8 @@ describe('the u34 t26 scenes', () => {
     const lane = await screen.findByRole('group', { name: 'done' });
     expect(lane.querySelectorAll('article[data-select-id]')).toHaveLength(50);
     const archivedLane = screen.getByRole('group', { name: 'archived' });
+    expect(archivedLane.querySelectorAll('article[data-select-id]')).toHaveLength(0);
+    fireEvent.click(within(archivedLane).getByRole('button', { name: 'Show all' }));
     expect(archivedLane.querySelectorAll('article[data-select-id]')).toHaveLength(50);
     expect(screen.getAllByRole('button', { name: /Show \d+ more/ })).toHaveLength(2);
     expect(useAppStore.getState().archivedSessions[WORKSPACE_ID]).toHaveLength(

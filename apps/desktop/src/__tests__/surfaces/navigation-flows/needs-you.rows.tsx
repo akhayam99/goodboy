@@ -67,15 +67,14 @@ const markBoardEntryAsQueue = (): void => {
   });
 };
 
-const needsYou = (): Promise<HTMLElement> =>
-  screen.findByRole('region', { name: 'Needs you' }, WAIT);
+const needsYou = (): Promise<HTMLElement> => screen.findByRole('group', { name: 'running' }, WAIT);
 
 const opensTheQuestion = (name: string): boolean =>
   name.startsWith('Open ') && name.endsWith(QUESTION_TEXT);
 
 export const NEEDS_YOU_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'Board: one click on a Needs you card opens its session at the question',
+    name: 'Board: one click on a yellow card in Running opens its session at the question',
     covers: ['navigate', 'needs-you:card-opens'],
     open: async (ctx) => {
       seedQuestion(ctx);
