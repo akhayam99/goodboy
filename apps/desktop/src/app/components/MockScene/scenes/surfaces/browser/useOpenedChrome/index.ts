@@ -24,10 +24,12 @@ const SELECTORS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   more: `${PANE} button[aria-label="More"]`,
   handoff: `${PANE} button[aria-label="More"]`,
   console: `${PANE} button[aria-label="Console"]`,
+  pick: `${PANE} button[aria-label="Select an element"]`,
 };
 
 const OPENED: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   console: `${PANE} section[aria-label="Console"]`,
+  pick: `${PANE} [aria-label="Note for the picked element"]`,
 };
 
 const FIELDS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {

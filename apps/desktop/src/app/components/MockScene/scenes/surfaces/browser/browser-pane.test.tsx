@@ -107,6 +107,8 @@ describe('the browser pane scenes', () => {
       'browser-pane-tabs-dark',
       'browser-peek',
       'browser-peek-dark',
+      'browser-pick',
+      'browser-pick-dark',
       'browser-width-phone',
       'browser-width-tablet',
     ]);
@@ -179,6 +181,18 @@ describe('the browser pane scenes', () => {
     expect(screen.getByRole('button', { name: 'Console' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
+  });
+
+  it('picks the pay button and opens the note under the row', async () => {
+    mount({ id: 'browser-pick' });
+
+    const note = await screen.findByRole('group', { name: 'Note for the picked element' }, WAIT);
+    expect(note.textContent).toContain('<PayButton>  src/checkout/PayButton.tsx:42');
+    expect(within(note).getByRole('textbox', { name: 'What should change?' })).toBeTruthy();
+    expect(within(note).getByRole('button', { name: 'Add to message' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Select an element' }).getAttribute('aria-pressed'),
+    ).toBe('true');
   });
 
   it('frames the page at the width of the phone and tablet presets', async () => {
