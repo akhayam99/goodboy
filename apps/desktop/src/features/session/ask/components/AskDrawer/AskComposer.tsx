@@ -20,11 +20,15 @@ type Props = {
   readonly onStop: () => void;
   readonly isAutoFocused?: boolean;
   readonly hasTurns?: boolean;
+  readonly placeholder?: string;
+  readonly isInline?: boolean;
 };
 
 export const AskComposer = ({
   sessionId,
   hasTurns = false,
+  placeholder,
+  isInline = false,
   isStreaming,
   isStopping,
   onSend,
@@ -60,7 +64,8 @@ export const AskComposer = ({
     <MessageComposer
       label="Ask about this session"
       placeholder={
-        hasTurns ? 'Ask a follow up' : 'Ask about this session. Read only, it starts nothing.'
+        placeholder ??
+        (hasTurns ? 'Ask a follow up' : 'Ask about this session. Read only, it starts nothing.')
       }
       text={text}
       onTextChange={setText}
@@ -73,7 +78,8 @@ export const AskComposer = ({
       maxRows={6}
       fieldRef={fieldRef}
       testId="ask-composer"
-      model={<AskRoutingPicker sessionId={sessionId} />}
+      isInline={isInline}
+      model={isInline ? undefined : <AskRoutingPicker sessionId={sessionId} />}
       onSend={({ text: question }) => onSend(question)}
       onStop={onStop}
     />
