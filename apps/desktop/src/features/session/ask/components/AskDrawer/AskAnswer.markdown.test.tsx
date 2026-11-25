@@ -78,7 +78,7 @@ describe('the Ask answer', () => {
         {
           key: 'Q1',
           label: 'Question 1',
-          target: { kind: 'question', questionId: 'q-1' as OpenQuestionId },
+          target: { kind: 'question', questionId: brandId<OpenQuestionId>({ value: 'q-1' }) },
         },
       ],
     });
