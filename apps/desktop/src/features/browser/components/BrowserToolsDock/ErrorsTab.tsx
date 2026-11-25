@@ -89,6 +89,7 @@ export const ErrorsTab = ({
   const clear = (): void => {
     log.clear({ kind: 'errors' });
     setNote(null);
+    onTab({ next: 'console' });
   };
 
   const tools = (

@@ -927,6 +927,12 @@ describe('page errors', () => {
         .getAttribute('aria-selected'),
     ).toBe('true');
     expect(errorCounter()).toBeNull();
+
+    reader = async () => heard({ doc: 'n8q1', entries: [retryOf({ seq: 1 })] });
+    finishLoad();
+
+    const errorsTab = await within(region).findByRole('tab', { name: /Errors/ });
+    expect(errorsTab.getAttribute('aria-selected')).toBe('false');
   });
 
   it('adds one group, then all groups, to the message of the agent it names', async () => {
