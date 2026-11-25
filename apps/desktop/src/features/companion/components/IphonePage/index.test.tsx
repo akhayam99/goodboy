@@ -260,7 +260,7 @@ describe('IphonePage', () => {
     const first = await screen.findByRole('group', { name: 'Harborline iPhone' });
     const second = screen.getByRole('group', { name: 'Northwind iPhone' });
 
-    expect(within(first).getByText(/Not seen yet/)).toBeDefined();
+    expect(within(first).getByText(/Not seen yet/).textContent).toContain('Not seen yet');
     expect(
       within(first)
         .getByRole('switch', { name: 'Start sessions for Harborline iPhone' })
@@ -327,7 +327,9 @@ describe('IphonePage', () => {
     await waitFor(() =>
       expect(screen.queryByRole('group', { name: 'Harborline iPhone' })).toBeNull(),
     );
-    expect(screen.getByRole('group', { name: 'Northwind iPhone' })).toBeDefined();
+    expect(screen.getByRole('group', { name: 'Northwind iPhone' }).textContent).toContain(
+      'Northwind iPhone',
+    );
     expect(invokedCommands()).not.toContain('bridge_revoke');
   });
 
@@ -361,13 +363,15 @@ describe('IphonePage', () => {
     render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
 
     expect((await screen.findByRole('alert')).textContent).toBe(
-      'No private network is on. Switch one on below, or connect to Wi-Fi or a VPN.',
+      'No private network is on. Switch one on under Networks, or connect to Wi-Fi or a VPN.',
     );
   });
 
   it('tells the new iPhone what it may do before it pairs', async () => {
     render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
 
-    expect(await screen.findByText(/Starting sessions stays off/)).toBeDefined();
+    expect((await screen.findByText(/Starting sessions stays off/)).textContent).toContain(
+      'Change it per iPhone',
+    );
   });
 });

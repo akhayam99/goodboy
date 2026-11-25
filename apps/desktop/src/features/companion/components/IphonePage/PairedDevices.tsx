@@ -42,7 +42,7 @@ export const PairedDevices = ({
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="text-row text-foreground">{pluralize(enrolled, 'paired iPhone')}</span>
           <span className="text-meta text-muted-foreground">
-            Each iPhone gets only the rights you switch on below.
+            Each iPhone gets only the rights you switch on.
           </span>
         </div>
         <div className="flex shrink-0 items-center">
