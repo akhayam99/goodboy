@@ -44,10 +44,12 @@ const sizeOf = ({ element }: ElementParams): string | null =>
     ? null
     : `${Math.round(element.rect.width)} x ${Math.round(element.rect.height)}`;
 
+const isHtmlCutOf = ({ element }: ElementParams): boolean =>
+  element.isHtmlCut || element.html.length > ELEMENT_HTML_MAX_CHARS;
+
 const htmlOf = ({ element }: ElementParams): string => {
-  const isCut = element.isHtmlCut || element.html.length > ELEMENT_HTML_MAX_CHARS;
   const html = element.html.slice(0, ELEMENT_HTML_MAX_CHARS);
-  return isCut
+  return isHtmlCutOf({ element })
     ? `${html}\n[cut at ${ELEMENT_HTML_MAX_CHARS.toLocaleString('en-US')} characters]`
     : html;
 };
@@ -98,7 +100,7 @@ export const elementAttachmentOf = ({
     title,
     fileName: `${slug}.md`,
     text,
-    isTruncated: element.isHtmlCut,
+    isTruncated: isHtmlCutOf({ element }),
     mimeType: ELEMENT_MIME,
     source: {
       kind: 'element',

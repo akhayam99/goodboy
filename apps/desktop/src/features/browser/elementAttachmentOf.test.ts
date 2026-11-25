@@ -96,7 +96,7 @@ describe('elementAttachmentOf', () => {
     const html = (described?.text ?? '').split('```html\n')[1]?.split('\n[cut')[0] ?? '';
     expect(html.length).toBe(ELEMENT_HTML_MAX_CHARS);
     expect(described?.text).toContain('[cut at 4,000 characters]');
-    expect(described?.isTruncated).toBe(false);
+    expect(described?.isTruncated).toBe(true);
   });
 
   it('adds the crop as a picture when there is one', () => {
