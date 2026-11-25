@@ -1,6 +1,14 @@
 import { brandId, type ProjectId, type SessionId } from '@goodboy/types';
+import {
+  browserToolsDockPref,
+  type BrowserToolsSide,
+} from '../../../../../../features/browser/browserToolsDockPref';
 import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
-import type { BrowserConsoleRead, BrowserTabFacts } from '../../../../../../features/browser/types';
+import type {
+  BrowserConsoleRead,
+  BrowserRequestFacts,
+  BrowserTabFacts,
+} from '../../../../../../features/browser/types';
 import { useAppStore } from '../../../../../../store';
 import type { BrowserTab, DevicePresetId } from '../../../../../../store/slices/browser/types';
 import type { BrowserVisit } from '../../../../../../store/slices/browser-visits/types';
@@ -25,7 +33,38 @@ export type BrowserPaneSceneState =
   | 'saved-copy'
   | 'width-phone'
   | 'width-tablet'
-  | 'console';
+  | 'console'
+  | 'console-right'
+  | 'network-detail';
+
+const CONSOLE_STATES: ReadonlyArray<BrowserPaneSceneState> = [
+  'console',
+  'console-right',
+  'network-detail',
+];
+
+const DOCK_SIDE_OF: Readonly<Partial<Record<BrowserPaneSceneState, BrowserToolsSide>>> = {
+  'console-right': 'right',
+};
+
+type RequestParams = {
+  readonly id: string;
+  readonly duration: number;
+  readonly size: number;
+};
+
+const requestFactsOf = ({ id, duration, size }: RequestParams): BrowserRequestFacts => ({
+  id,
+  type: 'fetch',
+  start: 0,
+  duration,
+  size,
+  requestHeaders: [],
+  responseHeaders: [],
+  requestBody: null,
+  responseBody: null,
+  socket: null,
+});
 
 const CONSOLE_READ: BrowserConsoleRead = {
   doc: 'mockload',
@@ -84,7 +123,7 @@ const CONSOLE_READ: BrowserConsoleRead = {
       source: null,
       method: 'POST',
       status: 500,
-      network: null,
+      network: requestFactsOf({ id: 'mock-request-confirm', duration: 380, size: 38 }),
       error: null,
     },
     {
@@ -95,7 +134,7 @@ const CONSOLE_READ: BrowserConsoleRead = {
       source: null,
       method: 'GET',
       status: 200,
-      network: null,
+      network: requestFactsOf({ id: 'mock-request-cart', duration: 42, size: 2048 }),
       error: null,
     },
     {
@@ -175,7 +214,7 @@ type ConsoleReadParams = PayloadParams & {
 };
 
 const consoleReadOf = ({ state, payload }: ConsoleReadParams): BrowserConsoleRead => {
-  if (state !== 'console') {
+  if (!CONSOLE_STATES.includes(state)) {
     return UNHEARD_READ;
   }
   if (fieldOf({ payload, field: 'doc' }) === CONSOLE_READ.doc) {
@@ -328,6 +367,10 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
     .map(factsOf)
     .map((facts, index) => ({ ...facts, isPasskeyBlocked: isPasskey && index === 0 }));
   let opened = 0;
+  browserToolsDockPref.write({
+    surface: 'pane',
+    place: { side: DOCK_SIDE_OF[state] ?? 'bottom', height: 210, width: 360 },
+  });
   if (state === 'peek') {
     seedPeek({ tabs });
     return;

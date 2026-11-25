@@ -77,8 +77,12 @@ describe('the browser pane scenes', () => {
     expect(Object.keys(BROWSER_PANE_SCENES).sort()).toEqual([
       'browser-console',
       'browser-console-dark',
+      'browser-console-right',
+      'browser-console-right-dark',
       'browser-handoff',
       'browser-handoff-dark',
+      'browser-network-detail',
+      'browser-network-detail-dark',
       'browser-page',
       'browser-page-dark',
       'browser-pane',
@@ -179,6 +183,24 @@ describe('the browser pane scenes', () => {
     expect(screen.getByRole('button', { name: 'Console' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
+  });
+
+  it('docks the tools right of the page when the pane chose the right', async () => {
+    mount({ id: 'browser-console-right' });
+
+    const region = await screen.findByRole('region', { name: 'Console' }, WAIT);
+    expect(region.getAttribute('data-tools-side')).toBe('right');
+    within(region).getByRole('button', { name: 'Dock under the page' });
+  });
+
+  it('opens the failed request in a detail beside the requests', async () => {
+    mount({ id: 'browser-network-detail' });
+
+    const region = await screen.findByRole('region', { name: 'Console' }, WAIT);
+    const detail = await within(region).findByRole('region', { name: 'Request' }, WAIT);
+    within(detail).getByText('POST /api/orders/confirm');
+    within(detail).getByText('500 · 380 ms · 38 B');
+    within(region).getByRole('log', { name: 'Requests' });
   });
 
   it('frames the page at the width of the phone and tablet presets', async () => {
