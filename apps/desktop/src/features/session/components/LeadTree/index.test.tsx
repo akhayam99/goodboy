@@ -141,7 +141,7 @@ describe('LeadTree', () => {
     expect(onSelect).toHaveBeenCalledWith(IMPLEMENTER_ID);
   });
 
-  it('draws the run as a trace: a child hangs on an elbow, only a waiting row says its state', () => {
+  it('draws no status circles: a child gets an indent guide, and only a row that is not done says its state', () => {
     const reviewer: LeadTreeItem = {
       ...implementer,
       id: 'd3',
@@ -155,11 +155,11 @@ describe('LeadTree', () => {
       word: 'Needs you',
     };
     const { container } = render(<Harness items={[scout, implementer, reviewer]} />);
-    expect(container.querySelectorAll('[data-spawned-rail]')).toHaveLength(3);
-    expect(container.querySelectorAll('[data-spawned-rail] path').length).toBeGreaterThan(0);
+    expect(container.querySelector('[data-node-state]')).toBeNull();
+    expect(container.querySelectorAll('[data-lead-tree-guide]')).toHaveLength(1);
     screen.getByText('Needs you');
+    screen.getByText('Running');
     expect(screen.queryByText('Done')).toBeNull();
-    expect(screen.queryByText('Running')).toBeNull();
     expect(screen.getByRole('treeitem', { name: /Reviewer/ }).getAttribute('aria-label')).toBe(
       '2.1 Reviewer, Check the key is built once per credit, Needs you',
     );
@@ -170,7 +170,7 @@ describe('LeadTree', () => {
     screen.getByText('$0.31');
   });
 
-  it('keeps number and meter in fixed columns so roles and words line up at any depth', () => {
+  it('keeps the role name out of the visible text and the number out of the row, and the cost in one right column', () => {
     const child: LeadTreeItem = {
       ...scout,
       id: 'd4',
@@ -179,13 +179,31 @@ describe('LeadTree', () => {
       number: '2.1',
     };
     const { container } = render(<Harness items={[scout, implementer, child]} />);
-    const numbers = Array.from(container.querySelectorAll('[data-lead-tree-number]'));
     const meters = Array.from(container.querySelectorAll('[data-lead-tree-meter]'));
 
-    expect(numbers.map((node) => node.textContent)).toEqual(['1', '2', '2.1']);
-    expect(numbers.every((node) => node.className.split(' ').includes('w-6'))).toBe(true);
+    expect(container.querySelector('[data-lead-tree-number]')).toBeNull();
+    expect(container.textContent).not.toContain('Scout');
+    expect(container.textContent).not.toContain('Implementer');
+    screen.getByRole('treeitem', { name: /^2\.1 Scout/ });
+    expect(screen.getAllByRole('img', { name: 'Scout' })).toHaveLength(2);
     expect(meters).toHaveLength(3);
-    expect(meters.every((node) => node.className.split(' ').includes('min-w-8'))).toBe(true);
+  });
+
+  it('marks the viewed agent with aria-current and a mark, and no other row', () => {
+    const { container } = render(<Harness items={[scout, implementer]} initial={IMPLEMENTER_ID} />);
+    const viewed = screen.getByRole('treeitem', { name: /Implementer/ });
+    expect(viewed.getAttribute('aria-current')).toBe('true');
+    expect(viewed.getAttribute('data-selected')).toBe('true');
+    expect(viewed.querySelector('[data-lead-tree-selected-mark]')).not.toBeNull();
+    const other = screen.getByRole('treeitem', { name: /Scout/ });
+    expect(other.getAttribute('aria-current')).toBeNull();
+    expect(container.querySelectorAll('[data-lead-tree-selected-mark]')).toHaveLength(1);
+  });
+
+  it('keeps the role name visible on a compact row that hides the brief', () => {
+    render(<Harness items={[scout, implementer]} density="compact" />);
+    screen.getByText('Scout');
+    screen.getByText('Implementer');
   });
 
   it('gives a queued note Edit and Remove', async () => {

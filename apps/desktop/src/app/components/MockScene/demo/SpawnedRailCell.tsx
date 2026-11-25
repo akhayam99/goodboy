@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { railColumnX, type RailRow } from '../../../../../workTreeModel/railGeometry';
-import { TimelineRail } from './TimelineRail';
+import { railColumnX, type RailRow } from '../../../../features/workTreeModel/railGeometry';
+import { TimelineRail } from '../../../../features/session/components/SessionWorkspace/parts/TimelinePane/TimelineRail';
 
 type Props = {
   readonly rail: RailRow;

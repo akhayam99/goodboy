@@ -1,3 +1,4 @@
+import { cn } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../../../shared/components/AgentKindChip';
 import type { AgentKind } from '../../../../agent-kind';
 import type { TimelineRowIdentity } from './timelineRowIdentity';
@@ -6,11 +7,12 @@ type Props = {
   readonly kind: AgentKind;
   readonly identity: TimelineRowIdentity | null;
   readonly isCardOpen: boolean;
+  readonly className?: string;
 };
 
-export const TimelineRoleGlyph = ({ kind, identity, isCardOpen }: Props) => {
+export const TimelineRoleGlyph = ({ kind, identity, isCardOpen, className }: Props) => {
   if (identity === null) {
-    return <AgentKindChip kind={kind} density="glyph" className="self-center" />;
+    return <AgentKindChip kind={kind} density="bare" className={cn('self-center', className)} />;
   }
   return (
     <>
@@ -23,7 +25,7 @@ export const TimelineRoleGlyph = ({ kind, identity, isCardOpen }: Props) => {
             aria-label={identity.roleLabel ?? undefined}
             className="inline-flex shrink-0 self-center"
           >
-            <AgentKindChip kind={kind} density="glyph" isDecorative />
+            <AgentKindChip kind={kind} density="bare" isDecorative className={className} />
           </span>
         ),
       })}

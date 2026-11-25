@@ -12,7 +12,7 @@ import { useParkedTab } from '../../hooks/useParkedTab';
 import { devicePresetOf } from '../../devicePresets';
 import { promoteBrowserTab } from '../../promoteBrowserTab';
 import { BrowserAddressRow } from './BrowserAddressRow';
-import { BrowserConsole } from './BrowserConsole';
+import { BrowserToolsDock } from '../BrowserToolsDock';
 import { BrowserNotice } from './BrowserNotice';
 import { BrowserPasskeyNotice } from './BrowserPasskeyNotice';
 import { BrowserPickNote } from './BrowserPickNote';
@@ -92,7 +92,14 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
         <BrowserNotice notice={model.notice} />
         <BrowserSendLine pageSend={model.pageSend} />
         <BrowserPasskeyNotice model={model} />
-        <div data-browser-stage="" className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <BrowserToolsDock
+          surface="pane"
+          isOpen={isConsoleOpen && shownTab !== null}
+          model={model}
+          title={title}
+          log={consoleLog}
+          onClose={() => setIsConsoleOpen(false)}
+        >
           <BrowserView
             frame={frame}
             view={view}
@@ -103,10 +110,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
             onNew={model.startDraft}
             onWake={parked.isParked ? parked.wake : undefined}
           />
-          {isConsoleOpen && shownTab !== null ? (
-            <BrowserConsole model={model} title={title} log={consoleLog} />
-          ) : null}
-        </div>
+        </BrowserToolsDock>
       </div>
     </DrawerFrame>
   );

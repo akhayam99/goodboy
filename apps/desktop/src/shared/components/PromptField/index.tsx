@@ -11,18 +11,19 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { Paperclip } from '@goodboy/ui/icons';
-import { cn, IconButton, SegmentedTabs, Textarea } from '@goodboy/ui';
-import { ATTACHMENT_ACCEPT } from '../../../features/chat/attachment-kinds';
+import { cn, SegmentedTabs, Textarea } from '@goodboy/ui';
 import {
   ATTACHMENT_LIMIT,
   type PendingAttachment,
 } from '../../../features/attachments/pendingAttachment';
+import { ATTACHMENT_ACCEPT } from '../../../features/chat/attachment-kinds';
 import { ComposerSurface } from '../ComposerSurface';
 import { ComposerAttachmentCount } from '../ComposerSurface/ComposerAttachmentCount';
 import { ComposerAttachments } from '../ComposerSurface/ComposerAttachments';
 import { ComposerFooter } from '../ComposerSurface/ComposerFooter';
 
+import { PromptFieldAttach } from './PromptFieldAttach';
+import { PromptFieldInlineRow } from './PromptFieldInlineRow';
 import { PromptKeysHint } from './PromptKeysHint';
 import { keyHintsOf, type PromptKeyLabels } from './keyHintsOf';
 import { promptKeyAction, type PromptFieldKind } from './promptKeyAction';
@@ -65,6 +66,7 @@ type Props = {
   readonly minRows?: number;
   readonly maxRows?: number;
   readonly variant?: 'card' | 'bare';
+  readonly isInline?: boolean;
   readonly header?: ReactNode;
   readonly footerStart?: ReactNode;
   readonly model?: ReactNode;
@@ -104,6 +106,7 @@ export const PromptField = ({
   minRows = 2,
   maxRows = 12,
   variant = 'card',
+  isInline = false,
   header,
   footerStart,
   model,
@@ -261,25 +264,22 @@ export const PromptField = ({
       {header}
       <ComposerAttachments attachments={attachments} onRemove={(id) => files?.onRemove(id)} />
       {tabs}
-      {body}
+      {isInline ? <PromptFieldInlineRow actions={actions}>{body}</PromptFieldInlineRow> : body}
       {notice !== null && notice !== '' ? (
         <p role="alert" className="px-3 pb-1 text-meta text-warning">
           {notice}
         </p>
       ) : null}
-      {hasFooter ? (
+      {hasFooter && !isInline ? (
         <ComposerFooter
           start={
             <>
               {files !== undefined ? (
                 <>
-                  <IconButton
-                    icon={Paperclip}
-                    label={`Attach ${noun}`}
-                    {...(files.note !== undefined && { tooltip: files.note })}
-                    variant="ghost"
-                    disabled={disabled || attachments.length >= ATTACHMENT_LIMIT}
-                    onClick={() => files.fileInputRef.current?.click()}
+                  <PromptFieldAttach
+                    files={files}
+                    noun={noun}
+                    isDisabled={disabled || attachments.length >= ATTACHMENT_LIMIT}
                   />
                   <input
                     ref={files.fileInputRef}

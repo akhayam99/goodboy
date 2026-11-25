@@ -182,6 +182,7 @@ export { StopSign as OctagonX } from './generated/StopSign';
 export { Automatic as Orbit } from './generated/Automatic';
 export { Package } from './generated/Package';
 export { ColorPalette as Palette } from './generated/ColorPalette';
+export { OpenPanelBottom as PanelBottom } from './generated/OpenPanelBottom';
 export { OpenPanelLeft as PanelLeft } from './generated/OpenPanelLeft';
 export { SidePanelClose as PanelLeftClose } from './generated/SidePanelClose';
 export { SidePanelOpen as PanelLeftOpen } from './generated/SidePanelOpen';

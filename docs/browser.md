@@ -959,7 +959,7 @@ workspace profile stays signed out.
 
 ## Console
 
-The console is a region under the page, in the pane and on the Browser page.
+The console is a dock beside the page, in the pane and on the Browser page.
 The Console button in the address row, after the pin and before More, opens it
 with its own `CodeXml` icon, never the Terminal one (its log rows mark a plain
 log with `MessageSquareText`), and
@@ -1028,16 +1028,35 @@ that shadows it, so the chord follows Chrome's J.
   most 500 console lines, 300 requests and 100 errors. A runtime that does not answer reads as
   `isHeard: false`; a read that fails or times out after a second is
   `console-unavailable`.
-- **The region**: one toolbar row: Console and Network tabs, each with its
-  count from `consoleCounts`, a level filter menu (All levels, Errors,
-  Warnings, Info and logs; on Network All requests, Failed, Succeeded), a
-  search field (`consoleRowsOf`, every word must match the text, source,
-  method or status), Clear and a Send to session menu (the session chosen in
-  the menu, at most five live sessions of the project, this one first;
-  `consoleSendTargetsOf`, `queueConsoleHandoff`). A row is a level icon, the
-  message and its source at the right; a click expands the whole message. The
-  Console tab shows console lines and errors; an error linked to a request
-  shows only as that request's Network row (`consoleTabOf`). The UI
+- **The dock**: it sits below the page or right of it
+  (`BrowserToolsDock`). The icon in its head moves it to the other side, and
+  its edge (`SplitHandle`) drags its height from 110 pixels to the height
+  less 140, or its width from 260 to the width less 280
+  (`toolsDockBoundsOf`). Side, height and width are kept per surface, the
+  pane and the page (`browserToolsDockPref`,
+  `goodboy:browser-tools-dock:v1`); the first open is below in the pane and
+  right on the page. The head holds the Console and Network tabs, each with
+  its count from `consoleCounts`, the side icon and Close tools. The tools
+  are a level filter menu (All levels, Errors, Warnings, Info and logs; on
+  Network All requests, Failed, Succeeded), a search field
+  (`consoleRowsOf`, every word must match the text, source, method or
+  status), Clear and a Send to session menu (the session chosen in the menu,
+  at most five live sessions of the project, this one first;
+  `consoleSendTargetsOf`, `queueConsoleHandoff`). Docked below a dock at
+  least 640 pixels wide they sit at the right of the head, otherwise in a row
+  under it, which wraps when narrow. A row is a level icon, the message and its source at the right; a
+  click expands the whole message. The Console tab shows console lines and
+  errors; an error linked to a request shows only as that request's Network
+  row (`consoleTabOf`). A click on a Network row opens its detail
+  (`BrowserRequestDetail`): a back arrow, the method and path, the status,
+  time and size (`requestFactsOf`), and up and down arrows for the previous
+  and next request of the filtered list. Esc goes back to the list and the
+  arrow keys step. Docked below, the detail sits beside the list; docked
+  right, it replaces the list and its tools. The detail follows the request
+  id within one tab and load (`useRequestSelection`), so a newer record of the
+  same request keeps it open, and a request that leaves the list (Clear, a
+  filter, a new load, another tab) forgets it. Back and Esc focus its row
+  again, or the list when the row is gone. The UI
   pulls every second while the region is open and on screen
   (`useConsoleEntries`, `usePoll`), and once on each `finished` load. Rows
   append only after the read returns; a newer record of a request replaces

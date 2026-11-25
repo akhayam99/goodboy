@@ -169,12 +169,51 @@ describe('TimelineStreamRow', () => {
     expect(screen.queryByRole('button', { name: 'Open chat' })).toBeNull();
   });
 
-  it('centres the marker on the rail anchor rather than on the row box', () => {
-    const { container } = renderRow();
+  it('centres the marker on the rail anchor rather than on the row box, for a row that is not an agent', () => {
+    const { container } = render(
+      <TimelineStreamRow
+        item={runItemOf({ rowState: DONE_ROW_STATE })}
+        rail={railOf()}
+        railWidth={32}
+        sessionId={SESSION_ID}
+        openTarget={null}
+      />,
+    );
     const marker = container.querySelector('[style*="top: 18px"]');
 
     expect(marker).not.toBeNull();
     expect(marker?.className).toContain('-translate-y-1/2');
+  });
+
+  it('draws no gutter node and no curved connector on an agent row, the glyph is its only marker', () => {
+    const rail: RailRow = {
+      ...railOf(),
+      joins: [
+        {
+          kind: 'branch',
+          spineColumn: 0,
+          laneColumn: 1,
+          laneId: 'lane',
+          identityIndex: 0,
+          isMuted: false,
+          dash: 'solid',
+          anchorY: 18,
+          path: 'M 0 0 L 8 8',
+        },
+      ],
+    };
+    const { container } = render(
+      <TimelineStreamRow
+        item={itemOf()}
+        rail={rail}
+        railWidth={32}
+        sessionId={SESSION_ID}
+        openTarget={null}
+      />,
+    );
+
+    expect(container.querySelector('[data-node-state]')).toBeNull();
+    expect(container.querySelector('path[stroke]')).toBeNull();
   });
 
   it('prints the row instant in the gutter and its ordinal beside the label', () => {

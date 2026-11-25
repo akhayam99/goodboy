@@ -31,7 +31,7 @@ A branch, an artifact or a run keeps the head and shows crumbs such as **Overvie
 
 #### Ask about this session
 
-**Ask about this session**, from the **⋯** or ⌘L, opens the Ask pane beside the page. A suggestion under **Try asking** asks at once and never fills the field. Type in the field to write a question first.
+**Ask about this session**, from the **⋯** or ⌘L, opens the Ask pane as a dock at the right edge. The page and its title move together. In a narrow window the dock lies over the page. A suggestion under **Try asking** asks at once and never fills the field. Type in the field to write a question first.
 
 #### Tools rail
 

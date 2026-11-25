@@ -288,7 +288,9 @@ The find bar sits under the address row. It says **Found** or **Not found**. **E
 
 #### Console
 
-**Console**, the button after More, or **⌘⇧J**, opens the console under the page. **Console** lists what the page logged, with its errors, and **Network** the requests that failed. It starts over at every load. **Clear** empties the list you see, and **Send to** the agent puts both lists on the message box as one file you can remove. Nothing is read while the console is closed.
+**Console**, the button after More, or **⌘⇧J**, opens the console in a dock beside the page: below it in the Browser pane, right of it on the Browser page. The icon in the dock's head moves it to the other side, and its edge drags to resize it. Each place keeps its own side and size.
+
+**Console** lists what the page logged, with its errors, and **Network** the requests. Click a request to see it on its own. **Esc** or the back arrow returns to the list, and **↑** and **↓** step through the requests. It starts over at every load. **Clear** empties the list you see, and **Send to** the agent puts both lists on the message box as one file you can remove. Nothing is read while the console is closed.
 
 #### Tabs and sites
 
@@ -317,7 +319,7 @@ This part is for contributors and agents who change the feature.
 - Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule. The page is the `browser` studio kind (`BrowserStudio`), and [browser.md](../browser.md#the-page) owns its groups, its route and the view owner rule. `promoteBrowserTab` and `demoteBrowserTab` move a tab between them ([browser.md](../browser.md#moves)).
 - Browser doors: [browser.md](../browser.md#doors) owns `openInBrowser`, the click rule, the peek and the `browser.address` scope beside `ask.open`.
 - Add to message: `sendPageToAgent` reads through `browser_page_text` and queues the file for the agent `useHandOutputToAgent` names; [browser.md](../browser.md#doors) owns the rule and `browser.sendToAgent` is the key.
-- Browser console: `useConsoleEntries` pulls `browser_console_read`, and `applyConsoleRead` keeps the latest cursor. `BrowserConsole` draws the region and `consoleAttachmentOf` the file. [browser.md](../browser.md#console) owns the hook, the read and the caps. `browser.console` is the key.
+- Browser console: `useConsoleEntries` pulls `browser_console_read`, and `applyConsoleRead` keeps the latest cursor. `BrowserToolsDock` places the dock, and `browserToolsDockPref` keeps its side and size per surface. `BrowserConsole` draws its tabs and lists, and `consoleAttachmentOf` the file. [browser.md](../browser.md#console) owns the hook, the read and the caps. `browser.console` is the key.
 - Pick an element: `useElementPick` drives `browser_pick` (`page_runtime/pick.js`), `BrowserPickNote` draws the note and `addPickedElements` queues `elementAttachmentOf` files with the `browser_element_snapshot` picture. [browser.md](../browser.md#pick-an-element) owns the runtime, the read and the caps. `browser.pick` is the key; `pick.test.tsx` covers the flow.
 - Files: the Changes page switches between **Changed** and **All files** (`useChangesMode`); the file chord opens it on All files.
 
