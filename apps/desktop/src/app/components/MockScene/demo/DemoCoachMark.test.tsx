@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DemoCoachMark, type CoachMark } from './DemoCoachMark';
 import type { DemoRect } from './director/demoProtocol';
 
@@ -39,7 +39,14 @@ type ViewParams = {
 };
 
 const view = ({ coach }: ViewParams) => (
-  <DemoCoachMark coach={coach} scale={1} bounds={BOUNDS} isSpotlit={false} onHide={() => {}} />
+  <DemoCoachMark
+    coach={coach}
+    scale={1}
+    bounds={BOUNDS}
+    isSpotlit={false}
+    onHide={() => {}}
+    onOffer={() => {}}
+  />
 );
 
 const sideOf = (): string | null =>
@@ -85,5 +92,40 @@ describe('the demo coach mark', () => {
     cleanup();
     render(view({ coach: coachOf({ rect: moved, hintId: 'read' }) }));
     expect(sideOf()).toBe('bottom');
+  });
+
+  it('offers one demo button and presses it once per click', () => {
+    const onOffer = vi.fn();
+    render(
+      <DemoCoachMark
+        coach={{
+          ...coachOf({}),
+          offer: {
+            eyebrow: 'Demo',
+            title: 'Paste the example key',
+            note: 'A demo key, it only works here',
+            label: 'Paste example key',
+          },
+        }}
+        scale={1}
+        bounds={BOUNDS}
+        isSpotlit={false}
+        onHide={() => {}}
+        onOffer={onOffer}
+      />,
+    );
+    expect(screen.getByText('Demo').textContent).toBe('Demo');
+    expect(screen.getByText('Paste the example key').textContent).toBe('Paste the example key');
+    expect(screen.getByText('A demo key, it only works here').textContent).toBe(
+      'A demo key, it only works here',
+    );
+    expect(screen.queryByText('Open the plan')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Paste example key' }));
+    expect(onOffer).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows no demo button on a plain step', () => {
+    render(view({ coach: coachOf({}) }));
+    expect(screen.queryByRole('button', { name: 'Paste example key' })).toBeNull();
   });
 });
