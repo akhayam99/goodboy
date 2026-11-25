@@ -15,9 +15,10 @@ code is right when they disagree: a change to the registry, `LENS_LABEL` or
 
 Rules that hold everywhere:
 
-- Phosphor only, imported from `@goodboy/ui/icons`. That module re-exports
-  each Phosphor glyph under the name the code uses (`ChevronDown` draws
-  Phosphor `CaretDown`), one generated file each in
+- Carbon only (the IBM Carbon Design System icon library), imported from
+  `@goodboy/ui/icons`. That module re-exports each Carbon glyph under the name
+  the code uses (`Ellipsis` draws Carbon `overflow-menu--horizontal`, served as
+  `OverflowMenuHorizontal`), one generated file each in
   `packages/ui/src/icons/generated/`, so a glyph lands only in the chunk that
   draws it. To add a glyph, add its line to `packages/ui/src/icons/index.ts` and
   run `pnpm icons:glyphs`; `pnpm check:glyphs` fails when a generated file is
@@ -50,13 +51,15 @@ Five tokens, exported from `@goodboy/ui`:
 A glyph with no weight draws regular. `iconWeightOf({ size })` gives the weight
 of a size; `IconButton` and the folded rail's buttons draw with it. A check mark
 takes `ICON_WEIGHT.check` (bold) at any size, a starred star the fill weight.
-Bold is the regular outline widened by a round 8 unit stroke, which is the
-Phosphor bold line (24 units on the 256 grid instead of 16). Only `Star` carries
-fill, and only the plan, report and wireframe glyphs carry duotone (the
-emphasized timeline marker); any other glyph asked for those weights draws
-regular. A new fill or duotone use adds the glyph to `EXTRA_WEIGHTS` in
-`scripts/generate-glyphs.mjs`. Paths are rounded to whole units of the 256
-grid, under 0.04px at 18px.
+The generator reads the 32 unit Carbon artboard and scales it to the 256 grid,
+so a Carbon line (2 units of 32) is 16 units, and joins every shape of a glyph
+into one path. Bold is the regular outline widened by a round 8 unit stroke (24
+units on the 256 grid instead of 16). Only `Star` carries fill (Carbon
+`star--filled`); any other glyph asked for fill draws regular. Carbon has no
+duotone, so the emphasized timeline marker (plan, report, wireframe) draws
+bold. A new fill use adds the glyph and its Carbon filled icon to
+`FILL_SOURCES` in `scripts/generate-glyphs.mjs`. Paths are rounded to whole
+units of the 256 grid, under 0.04px at 18px.
 A test asks `findGlyph` (`@goodboy/ui/icons/testing/findGlyph`) whether an svg
 draws a glyph at any weight, since a generated svg carries no class.
 Import one spelling per

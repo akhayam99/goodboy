@@ -3,7 +3,6 @@ import { glyph } from '../glyph';
 export const ArrowRight = glyph({
   name: 'ArrowRight',
   drawing: {
-    regular:
-      'm222,134l-72,72a8,8,0,0,1-12-12l59-58H40a8,8,0,0,1,0-16h157l-59-58a8,8,0,0,1,12-12l72,72a8,8,0,0,1,0,12z',
+    regular: 'm144,48l-11,11l60,61l-161,0l0,16l161,0l-60,61l11,11l80-80l-80-80z',
   },
 });

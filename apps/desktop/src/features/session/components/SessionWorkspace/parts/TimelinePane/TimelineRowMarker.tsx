@@ -42,7 +42,7 @@ const conceptNode = ({ icon: Icon, tone, label, isEmphasized }: ConceptParams) =
       glyph: (
         <Icon
           size={WORK_NODE_GLYPH_SIZE}
-          weight={isEmphasized ? 'duotone' : 'regular'}
+          weight={isEmphasized ? 'bold' : 'regular'}
           className={tintClasses(tone).icon}
         />
       ),

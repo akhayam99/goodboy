@@ -14,7 +14,7 @@ vi.mock('../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { brandId, type SessionId } from '@goodboy/types';
-import { SHELL_GUTTER_PX } from '@goodboy/ui';
+import { SHELL_RAIL_FOOT_PX } from '@goodboy/ui';
 import { APP_VERSION } from '../../../shared/lib/appVersion';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -234,25 +234,25 @@ describe('the places rail', () => {
     expect(foot).toEqual(['settings', 'report', 'signature']);
   });
 
-  it("draws the signature as a 24px brand tile in a button named What's new, with no word", () => {
+  it("draws the signature as a 32px brand tile in a button named What's new, with no word", () => {
     mount({});
     const signature = within(rail()).getByRole('button', { name: "What's new" });
     const tile = signature.querySelector<HTMLElement>('[data-brand-tile]');
 
     expect(signature.hasAttribute('data-rail-signature')).toBe(true);
-    expect(tile?.style.width).toBe('24px');
-    expect(tile?.style.height).toBe('24px');
+    expect(tile?.style.width).toBe('32px');
+    expect(tile?.style.height).toBe('32px');
     expect(signature.textContent).toBe('');
     expect(wordsOf()).not.toContain("What's new");
     expect(signature.querySelector('[data-unseen-release]')).toBeNull();
   });
 
-  it('closes the rail with the signature, its foot one shell gutter above the window edge', () => {
+  it('closes the rail with the signature, its foot one rail edge above the content sheet bottom', () => {
     mount({});
     const signature = rail().querySelector<HTMLElement>('[data-rail-signature]');
 
     expect(rail().lastElementChild).toBe(signature);
-    expect(rail().style.paddingBottom).toBe(`${SHELL_GUTTER_PX}px`);
+    expect(rail().style.paddingBottom).toBe(`${SHELL_RAIL_FOOT_PX}px`);
   });
 
   it('reaches the signature with the arrow keys, after the last foot item', () => {

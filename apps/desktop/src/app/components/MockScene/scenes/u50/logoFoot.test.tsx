@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
-import { SHELL_GUTTER_PX } from '@goodboy/ui';
+import { SHELL_RAIL_FOOT_PX } from '@goodboy/ui';
 import {
   importStore,
   resetStoryStore,
@@ -84,13 +84,13 @@ describe('the u50 logo foot scenes', () => {
   });
 
   it.each(['u50-logo-foot-light', 'u50-logo-foot-dark'])(
-    "%s sits the signature on the content sheet bottom and names it What's new",
+    "%s lifts the signature above the content sheet bottom and names it What's new",
     async (name) => {
       const signature = await signatureOf({ name });
       const rail = screen.getByRole('navigation', { name: 'Places' });
 
       expect(rail.lastElementChild).toBe(signature);
-      expect(rail.style.paddingBottom).toBe(`${SHELL_GUTTER_PX}px`);
+      expect(rail.style.paddingBottom).toBe(`${SHELL_RAIL_FOOT_PX}px`);
       expect(signature.getAttribute('aria-label')).toBe("What's new");
       expect(signature.className.split(' ')).toContain('items-end');
       expect(signature.querySelector('[data-unseen-release]')).toBeNull();

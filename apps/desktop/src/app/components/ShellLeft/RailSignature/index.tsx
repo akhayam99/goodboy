@@ -4,7 +4,7 @@ import { destinationOf } from '../../../../shared/navigation/destinationOf';
 import { useHasUnseenRelease } from '../../../../features/changelog/hooks/useHasUnseenRelease';
 import { UnseenReleaseDot } from './UnseenReleaseDot';
 
-const SIGNATURE_PX = 24;
+const SIGNATURE_PX = 32;
 
 const WHATS_NEW = destinationOf({ id: 'whatsNew' });
 
