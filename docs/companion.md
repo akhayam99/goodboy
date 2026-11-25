@@ -7,32 +7,64 @@
 
 Goodboy for iPhone talks to a running desktop over the local network. The
 desktop side is the Rust module `apps/desktop/src-tauri/src/bridge/` plus the
-frontend executor in `apps/desktop/src/features/companion/`. The wire protocol,
-opcodes, Noise parameters and token lifetime are frozen by the mobile contract:
-a change there breaks every paired phone.
+frontend executor in `apps/desktop/src/features/companion/`. The Noise
+parameters, the opcodes and the token lifetime are fixed by the mobile
+contract; the pairing hello and the QR carry a protocol version, and a change
+to either raises it. The desktop refuses a phone that speaks an older version.
 
 ## The invariant
 
-**Pairing a phone grants it the ability to run agents on this machine.** A
-paired phone can send messages into a session, start agents and workflows,
-advance workflow steps, resolve review comments, create sessions from issues,
-and merge pull requests. A new session runs its agents with permissions
-bypassed, so a message from the phone can end in any command the agent
-chooses to run. Treat
-a paired phone like a second keyboard, not like a viewer.
+**Pairing a phone grants it rights on this machine, and you choose them per
+phone.** Every paired phone reads sessions. By default it may also reply and
+approve (send a message, advance a step, resolve a comment, set a context
+slot) and merge pull requests. Starting sessions (spawn an agent or a workflow,
+create a session from an issue) is off until you switch it on for that phone.
+A new session runs its agents with permissions bypassed, so a phone that may
+send or start can end in any command the agent chooses to run. Treat a paired
+phone with those rights like a second keyboard, not like a viewer.
 
 ## Pairing
 
-- The desktop keeps a long-term Noise static key and an allow list of paired
-  phone keys in `~/.goodboy/companion.json`. It never leaves the machine.
+- The desktop keeps a long-term Noise static key and one record per paired
+  phone in `~/.goodboy/companion.json`: its key, the name it gave, when it
+  paired, when it was last seen and its rights. It never leaves the machine.
+  A file written by an older version holds a bare list of keys: each becomes a
+  record with the default rights and is written back in the new shape.
 - Settings, iPhone mints a one-time 256-bit token that expires after 60
-  seconds and shows it with the desktop's key and address as a QR code. A
-  phone that completes the Noise XK handshake with a live token is added to
-  the allow list and the token is burned. A known key reconnects without a
+  seconds and shows it with the desktop's key and addresses as a QR code. The
+  payload has `v: 2`, the device name, the key, the token, the endpoints, the
+  service name and the rights a new phone gets, so the phone can list them
+  before it pairs. A phone that completes the Noise XK handshake with a live
+  token is added and the token is burned. A known key reconnects without a
   token.
-- The allow list holds any number of phones. Disconnect on Settings, iPhone
-  clears all of them and drops every live connection; each phone must scan a
-  new code to come back. A phone can never re-pair itself.
+- The phone opens the handshake with a version 2 hello: the version byte, a
+  flag for a token, the token when there is one, and its name in a fixed 64
+  byte field (66 or 98 bytes, never 0 or 32, which are version 1 payloads).
+- A refusal is a frame the phone can show (opcode `0x0B`): `protocol_unsupported`
+  for a hello that is not version 2 (a version 1 phone, or a newer one),
+  `not_paired` for a key the desktop does not know, and `token_invalid` for a
+  token that was used or has expired. A version refusal does not burn the
+  pairing code and does not count against the sender.
+- Disconnect on Settings, iPhone clears every phone and drops every live
+  connection; each phone must scan a new code to come back. Disconnect on one
+  phone's row forgets that phone alone, and a live connection of it ends
+  within one ping (20 seconds); its rights go at once. The row shows when the
+  phone was last seen. A phone can never re-pair itself.
+
+## Rights per phone
+
+| Right  | Allows                                                                   | Default   |
+| ------ | ------------------------------------------------------------------------ | --------- |
+| read   | the projections and the read-only queries (providers, issues, file diff) | always on |
+| decide | send, advance step, resolve comment, set context slot                    | on        |
+| merge  | merge a pull request                                                     | on        |
+| start  | spawn agent, spawn workflow, create session from issue                   | off       |
+
+The bridge checks the right of the phone that sent the command, read from the
+file at that moment, so a change on Settings, iPhone applies to a connected
+phone at once. A command the phone may not run is answered with
+`permission_denied` and the right it lacks; nothing reaches the executor. The
+hello the desktop sends after the handshake carries the phone's rights.
 
 ## What a phone may ask
 
@@ -58,12 +90,22 @@ merges from the phone like it does on the desktop.
   Leaving the page with no phone paired stops it; with at least one phone
   paired it stays up so that phone can reconnect, until the app quits or
   Disconnect runs.
-- It binds a random TCP port on all network interfaces, while the QR advertises
-  only the primary LAN IPv4. A handshake without a live token or a known key
-  is refused, but the port answers on every interface while it is open.
+- It binds a random TCP port on the private addresses of the interfaces you
+  switch on under Networks, and on no other address. A private address is
+  RFC 1918 (10/8, 172.16/12, 192.168/16), 100.64/10 (tailnets) or an IPv6
+  unique local address (fc00::/7). A public IPv4, a global IPv6, a link-local
+  or a loopback address is never offered in the QR and never bound, even on an
+  interface you switched on. Until you choose, every private interface is on.
+  Changing the choice restarts the listener and mints a new code. With no
+  private network on, the code cannot be made and the page says so.
 - Before a phone is authenticated the listener holds at most 8 connections,
-  one per source address; the next one is closed at accept. The whole Noise
-  handshake has 10 seconds, then the socket is dropped and the slot frees.
+  and at most 2 from one source address, so one holder behind a shared address
+  cannot block the rest. After two failed handshakes from a source, its next
+  attempts wait 2 seconds, then 4, doubling up to 5 minutes; a good handshake
+  clears the wait. When 30 handshakes fail within a minute, from any sources,
+  new connections are closed for 30 seconds. A connection that closes before it
+  authenticates counts as a failure. The whole Noise handshake has 10 seconds,
+  then the socket is dropped and the slot frees.
 - A connected phone that sends no frame for 60 seconds (three missed pings) is
   dropped; any frame, a PONG included, counts as an answer.
 

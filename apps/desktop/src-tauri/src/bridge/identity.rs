@@ -353,7 +353,7 @@ mod tests {
         assert_eq!(keys, ["phones", "static_priv_b64", "static_pub_b64"]);
         assert_eq!(raw["phones"][0]["key"], b64().encode(PHONE_A));
         assert_eq!(raw["phones"][0]["name"], "Harborline iPhone");
-        assert_eq!(raw["phones"][0]["permissions"]["start"], false);
+        assert_eq!(raw["phones"][0]["permissions"]["canStart"], false);
     }
 
     #[test]
@@ -374,9 +374,9 @@ mod tests {
         id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
         id.enroll(&PHONE_B, "Northwind iPhone").unwrap();
         let wide = Permissions {
-            decide: false,
-            merge: false,
-            start: true,
+            can_decide: false,
+            can_merge: false,
+            can_start: true,
         };
 
         let did = id.set_permissions(&b64().encode(PHONE_A), wide).unwrap();
@@ -408,9 +408,9 @@ mod tests {
         let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
         id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
         let wide = Permissions {
-            decide: true,
-            merge: false,
-            start: true,
+            can_decide: true,
+            can_merge: false,
+            can_start: true,
         };
         id.set_permissions(&b64().encode(PHONE_A), wide).unwrap();
 
@@ -458,9 +458,9 @@ mod tests {
         id.set_permissions(
             &b64().encode(PHONE_A),
             Permissions {
-                decide: false,
-                merge: false,
-                start: true,
+                can_decide: false,
+                can_merge: false,
+                can_start: true,
             },
         )
         .unwrap();

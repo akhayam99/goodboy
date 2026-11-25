@@ -6,17 +6,17 @@ use super::commands::MobileAction;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Permissions {
-    pub decide: bool,
-    pub merge: bool,
-    pub start: bool,
+    pub can_decide: bool,
+    pub can_merge: bool,
+    pub can_start: bool,
 }
 
 impl Default for Permissions {
     fn default() -> Self {
         Self {
-            decide: true,
-            merge: true,
-            start: false,
+            can_decide: true,
+            can_merge: true,
+            can_start: false,
         }
     }
 }
@@ -41,14 +41,19 @@ impl Permission {
 impl Permissions {
     pub fn allows(&self, permission: Permission) -> bool {
         match permission {
-            Permission::Decide => self.decide,
-            Permission::Merge => self.merge,
-            Permission::Start => self.start,
+            Permission::Decide => self.can_decide,
+            Permission::Merge => self.can_merge,
+            Permission::Start => self.can_start,
         }
     }
 
     pub fn wire(&self) -> Value {
-        json!({ "read": true, "decide": self.decide, "merge": self.merge, "start": self.start })
+        json!({
+            "canRead": true,
+            "canDecide": self.can_decide,
+            "canMerge": self.can_merge,
+            "canStart": self.can_start,
+        })
     }
 }
 
@@ -86,9 +91,9 @@ mod tests {
     fn a_new_phone_may_decide_and_merge_but_not_start_sessions() {
         let defaults = Permissions::default();
 
-        assert!(defaults.decide);
-        assert!(defaults.merge);
-        assert!(!defaults.start);
+        assert!(defaults.can_decide);
+        assert!(defaults.can_merge);
+        assert!(!defaults.can_start);
     }
 
     #[test]
@@ -131,14 +136,14 @@ mod tests {
     #[test]
     fn the_wire_form_always_grants_read() {
         let wire = Permissions {
-            decide: false,
-            merge: false,
-            start: true,
+            can_decide: false,
+            can_merge: false,
+            can_start: true,
         }
         .wire();
 
-        assert_eq!(wire["read"], true);
-        assert_eq!(wire["decide"], false);
-        assert_eq!(wire["start"], true);
+        assert_eq!(wire["canRead"], true);
+        assert_eq!(wire["canDecide"], false);
+        assert_eq!(wire["canStart"], true);
     }
 }

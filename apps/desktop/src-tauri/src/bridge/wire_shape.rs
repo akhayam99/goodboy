@@ -25,7 +25,7 @@ fn wire_shape_qr_payload() {
             "token": "t",
             "endpoints": [{ "host": "10.0.0.2", "port": 4000 }],
             "serviceName": "goodboy",
-            "permissions": { "read": true, "decide": true, "merge": true, "start": false },
+            "permissions": { "canRead": true, "canDecide": true, "canMerge": true, "canStart": false },
         }),
     );
 }
@@ -45,7 +45,7 @@ fn wire_shape_phone_view() {
             "name": "Harborline iPhone",
             "pairedAt": "2026-11-25T10:00:00.000Z",
             "lastSeen": null,
-            "permissions": { "decide": true, "merge": true, "start": false },
+            "permissions": { "canDecide": true, "canMerge": true, "canStart": false },
         }),
     );
 }

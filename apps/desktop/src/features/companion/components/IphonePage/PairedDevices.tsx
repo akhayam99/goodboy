@@ -1,48 +1,82 @@
 import { useState } from 'react';
-import { Smartphone, Unplug } from '@goodboy/ui/icons';
+import { Unplug } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 
 import { pluralize } from '../../../../shared/utils/pluralize';
+import type { PairedPhone, PhonePermissions } from '../../bridge';
+import { PhoneRow } from './PhoneRow';
+
+type SetPermissionsParams = {
+  readonly phoneId: string;
+  readonly permissions: PhonePermissions;
+};
+
+type RevokeParams = {
+  readonly phoneId: string;
+};
 
 type Props = {
   readonly enrolled: number;
-  readonly isRevoking: boolean;
-  readonly onRevoke: () => Promise<void>;
+  readonly phones: ReadonlyArray<PairedPhone>;
+  readonly now: number;
+  readonly isBusy: boolean;
+  readonly onSetPermissions: (params: SetPermissionsParams) => Promise<void>;
+  readonly onRevokeOne: (params: RevokeParams) => Promise<void>;
+  readonly onRevokeAll: () => Promise<void>;
 };
 
-export const PairedDevices = ({ enrolled, isRevoking, onRevoke }: Props) => {
+export const PairedDevices = ({
+  enrolled,
+  phones,
+  now,
+  isBusy,
+  onSetPermissions,
+  onRevokeOne,
+  onRevokeAll,
+}: Props) => {
   const [isConfirming, setIsConfirming] = useState(false);
 
   return (
-    <div className="flex w-full items-center gap-3">
-      <Smartphone size={ICON_SIZE.control} aria-hidden className="shrink-0 text-muted-foreground" />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-row text-foreground">{pluralize(enrolled, 'paired iPhone')}</span>
-        <span className="text-meta text-muted-foreground">
-          A paired iPhone can send messages, start agents and merge pull requests.
-        </span>
+    <div className="flex w-full flex-col gap-3">
+      <div className="flex w-full items-center gap-3">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="text-row text-foreground">{pluralize(enrolled, 'paired iPhone')}</span>
+          <span className="text-meta text-muted-foreground">
+            Each iPhone gets only the rights you switch on below.
+          </span>
+        </div>
+        <div className="flex shrink-0 items-center">
+          <ConfirmPopover
+            role="danger"
+            icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
+            title="Disconnect all paired devices?"
+            description="Each phone must scan a new code to reconnect."
+            confirmLabel="Disconnect"
+            isBusy={isBusy}
+            isOpen={isConfirming}
+            onConfirm={async () => {
+              await onRevokeAll();
+              setIsConfirming(false);
+            }}
+            onCancel={() => setIsConfirming(false)}
+            trigger={() => (
+              <Button variant="ghost-danger" size="sm" onClick={() => setIsConfirming(true)}>
+                <Unplug size={ICON_SIZE.row} aria-hidden /> Disconnect all
+              </Button>
+            )}
+          />
+        </div>
       </div>
-      <div className="flex shrink-0 items-center">
-        <ConfirmPopover
-          role="danger"
-          icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
-          title="Disconnect all paired devices?"
-          description="Each phone must scan a new code to reconnect."
-          confirmLabel="Disconnect"
-          isBusy={isRevoking}
-          isOpen={isConfirming}
-          onConfirm={async () => {
-            await onRevoke();
-            setIsConfirming(false);
-          }}
-          onCancel={() => setIsConfirming(false)}
-          trigger={() => (
-            <Button variant="ghost-danger" size="sm" onClick={() => setIsConfirming(true)}>
-              <Unplug size={ICON_SIZE.row} aria-hidden /> Disconnect
-            </Button>
-          )}
+      {phones.map((phone) => (
+        <PhoneRow
+          key={phone.id}
+          phone={phone}
+          now={now}
+          isBusy={isBusy}
+          onSetPermissions={onSetPermissions}
+          onRevoke={onRevokeOne}
         />
-      </div>
+      ))}
     </div>
   );
 };

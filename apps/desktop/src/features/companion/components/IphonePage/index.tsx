@@ -2,14 +2,25 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Band, Button, Notice, PaneShell } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 import { startPoll } from '../../../../shared/lib/usePoll/startPoll';
+import { CommandError } from '../../../../shared/lib/invokeCommand';
 import {
+  bridgeInterfaces,
+  bridgePhones,
   bridgeRevoke,
+  bridgeRevokePhone,
+  bridgeSetInterfaces,
+  bridgeSetPermissions,
   bridgeStart,
   bridgeStatus,
   bridgeStop,
+  NO_PRIVATE_NETWORK_KIND,
   type BridgeStatus,
+  type NetworkInterface,
+  type PairedPhone,
+  type PhonePermissions,
   type QrInfo,
 } from '../../bridge';
+import { NetworkChoice } from './NetworkChoice';
 import { PairedDevices } from './PairedDevices';
 import { PairingCode } from './PairingCode';
 
@@ -19,6 +30,35 @@ const PAIRING_STEPS = ['Open Goodboy on your iPhone.', 'Point the camera at this
 
 const PAIRING_CODE_FAILED = "Couldn't make a pairing code.";
 const DISCONNECT_FAILED = "Couldn't disconnect the paired devices.";
+const NO_NETWORK = 'No private network is on. Switch one on below, or connect to Wi-Fi or a VPN.';
+const CHANGE_FAILED = "Couldn't save that change.";
+const NEW_PHONE_NOTE =
+  'A new iPhone can read, reply, approve and merge. Starting sessions stays off. Change it per iPhone after it pairs.';
+
+type SetPermissionsParams = {
+  readonly phoneId: string;
+  readonly permissions: PhonePermissions;
+};
+
+type RevokeOneParams = {
+  readonly phoneId: string;
+};
+
+type ToggleParams = {
+  readonly name: string;
+  readonly isSelected: boolean;
+};
+
+type MintErrorParams = {
+  readonly failure: unknown;
+};
+
+const mintErrorOf = ({ failure }: MintErrorParams): string => {
+  if (failure instanceof CommandError && failure.kind === NO_PRIVATE_NETWORK_KIND) {
+    return NO_NETWORK;
+  }
+  return PAIRING_CODE_FAILED;
+};
 
 type StopFailure = {
   readonly title: string;
@@ -52,6 +92,10 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRevoking, setIsRevoking] = useState(false);
   const [isPairing, setIsPairing] = useState(false);
+  const [phones, setPhones] = useState<ReadonlyArray<PairedPhone>>([]);
+  const [interfaces, setInterfaces] = useState<ReadonlyArray<NetworkInterface>>([]);
+  const [isChanging, setIsChanging] = useState(false);
+  const [changeError, setChangeError] = useState<string | null>(null);
   const [remaining, setRemaining] = useState(0);
   const totalRef = useRef(0);
   const enrolledRef = useRef(0);
@@ -66,15 +110,43 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
   const isShowingCode = !isPaired || isPairing || error !== null;
   const total = totalRef.current > 0 ? totalRef.current : 1;
 
-  const refreshStatus = useCallback(async () => {
+  const refreshStatus = useCallback(async (): Promise<BridgeStatus | null> => {
     try {
       const next = await bridgeStatus();
       if (isMountedRef.current) {
         setStatus(next);
       }
+      return next;
     } catch {
       if (isMountedRef.current) {
         setStatus(null);
+      }
+      return null;
+    }
+  }, []);
+
+  const refreshPhones = useCallback(async () => {
+    try {
+      const next = await bridgePhones();
+      if (isMountedRef.current) {
+        setPhones(next);
+      }
+    } catch {
+      if (isMountedRef.current) {
+        setPhones([]);
+      }
+    }
+  }, []);
+
+  const refreshInterfaces = useCallback(async () => {
+    try {
+      const next = await bridgeInterfaces();
+      if (isMountedRef.current) {
+        setInterfaces(next);
+      }
+    } catch {
+      if (isMountedRef.current) {
+        setInterfaces([]);
       }
     }
   }, []);
@@ -91,9 +163,10 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
       setRemaining(next.expiresInSecs);
       setInfo(next);
       await refreshStatus();
-    } catch {
+      await refreshPhones();
+    } catch (failure: unknown) {
       if (isMountedRef.current) {
-        setError(PAIRING_CODE_FAILED);
+        setError(mintErrorOf({ failure }));
         setInfo(null);
       }
     } finally {
@@ -101,7 +174,7 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
         setIsLoading(false);
       }
     }
-  }, [refreshStatus]);
+  }, [refreshStatus, refreshPhones]);
 
   const revoke = useCallback(async () => {
     setIsRevoking(true);
@@ -117,6 +190,61 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
     }
   }, [mint]);
 
+  const revokeOne = useCallback(
+    async ({ phoneId }: RevokeOneParams) => {
+      setIsChanging(true);
+      setChangeError(null);
+      try {
+        await bridgeRevokePhone({ phoneId });
+        const next = await refreshStatus();
+        await refreshPhones();
+        if (next !== null && next.enrolledCount === 0) {
+          await mint();
+        }
+      } catch {
+        setChangeError(DISCONNECT_FAILED);
+      } finally {
+        setIsChanging(false);
+      }
+    },
+    [mint, refreshPhones, refreshStatus],
+  );
+
+  const setPermissions = useCallback(
+    async ({ phoneId, permissions }: SetPermissionsParams) => {
+      setIsChanging(true);
+      setChangeError(null);
+      try {
+        await bridgeSetPermissions({ phoneId, permissions });
+      } catch {
+        setChangeError(CHANGE_FAILED);
+      } finally {
+        await refreshPhones();
+        setIsChanging(false);
+      }
+    },
+    [refreshPhones],
+  );
+
+  const toggleInterface = useCallback(
+    async ({ name, isSelected }: ToggleParams) => {
+      setIsChanging(true);
+      setChangeError(null);
+      const chosen = interfaces.filter((net) => net.isSelected).map((net) => net.name);
+      const names = isSelected ? [...chosen, name] : chosen.filter((n) => n !== name);
+      try {
+        await bridgeSetInterfaces({ names });
+        await refreshInterfaces();
+        await mint();
+      } catch {
+        setChangeError(CHANGE_FAILED);
+      } finally {
+        setIsChanging(false);
+      }
+    },
+    [interfaces, mint, refreshInterfaces],
+  );
+
   const pair = () => {
     setIsPairing(true);
     void mint();
@@ -129,6 +257,7 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
 
   useEffect(() => {
     isMountedRef.current = true;
+    void refreshInterfaces();
     void mint();
     return () => {
       isMountedRef.current = false;
@@ -138,7 +267,7 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
         );
       }
     };
-  }, [mint]);
+  }, [mint, refreshInterfaces]);
 
   useEffect(() => {
     if (info === null) {
@@ -164,12 +293,15 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
     }
     pairedAtStartRef.current = enrolledRef.current;
     return startPoll({
-      run: () => void refreshStatus(),
+      run: () => {
+        void refreshStatus();
+        void refreshPhones();
+      },
       everyMs: STATUS_POLL_MS,
       gate: 'visible',
       isImmediate: false,
     });
-  }, [isShowingCode, refreshStatus]);
+  }, [isShowingCode, refreshStatus, refreshPhones]);
 
   useEffect(() => {
     if (isPairing && enrolled > pairedAtStartRef.current) {
@@ -215,12 +347,22 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
                   onMint={() => void mint()}
                 />
               </div>
-              <ol className="flex list-inside list-decimal flex-col gap-2 text-ui text-muted-foreground">
-                {PAIRING_STEPS.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
+              <div className="flex max-w-[22rem] flex-col gap-3">
+                <ol className="flex list-inside list-decimal flex-col gap-2 text-ui text-muted-foreground">
+                  {PAIRING_STEPS.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+                <p className="text-meta text-muted-foreground">{NEW_PHONE_NOTE}</p>
+              </div>
             </div>
+          </Band>
+          <Band inset="content" label="Networks" ariaLabel="Networks" headingLevel={2}>
+            <NetworkChoice
+              interfaces={interfaces}
+              isBusy={isChanging || isLoading}
+              onToggle={toggleInterface}
+            />
           </Band>
           <Notice
             tone="info"
@@ -230,9 +372,29 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
           />
         </>
       ) : (
-        <Band inset="content" label="Paired iPhones" ariaLabel="Paired iPhones" headingLevel={2}>
-          <PairedDevices enrolled={enrolled} isRevoking={isRevoking} onRevoke={revoke} />
-        </Band>
+        <>
+          {changeError === null ? null : (
+            <Notice tone="danger" placement="inline" title={changeError} />
+          )}
+          <Band inset="content" label="Paired iPhones" ariaLabel="Paired iPhones" headingLevel={2}>
+            <PairedDevices
+              enrolled={enrolled}
+              phones={phones}
+              now={Date.now()}
+              isBusy={isRevoking || isChanging}
+              onSetPermissions={setPermissions}
+              onRevokeOne={revokeOne}
+              onRevokeAll={revoke}
+            />
+          </Band>
+          <Band inset="content" label="Networks" ariaLabel="Networks" headingLevel={2}>
+            <NetworkChoice
+              interfaces={interfaces}
+              isBusy={isChanging || isLoading}
+              onToggle={toggleInterface}
+            />
+          </Band>
+        </>
       )}
     </PaneShell>
   );
