@@ -88,7 +88,9 @@ merges from the phone like it does on the desktop.
 
 A phone may also answer a question, approve a plan or ask for changes, allow or
 deny one permission request once, raise a limit, stop or continue a run or an
-agent, and send or discard a Slack reply draft. Always allow, permission rules
+agent, stop a Lead with all its running agents in one action (`stopAgentTree`),
+send a message to one agent (`sendToAgent`), and send or discard a Slack reply
+draft. Always allow, permission rules
 and every other setting stay on the Mac. Each of these actions follows five
 rules, kept in `features/companion/actions/`:
 
@@ -106,12 +108,29 @@ rules, kept in `features/companion/actions/`:
   characters. A limit is raised only to an amount the Mac offered (the current
   limit plus 5, plus 10 or doubled, never above $500), and a raise can be undone
   once while the limit is still the raised one.
+- The bridge guards the same id before the frontend sees it. A decide action
+  must carry an id in the Mac format, its correlation id is the action id, and
+  an id already running is refused as `action_in_flight`. The Mac stamps the
+  phone's id from its Noise key into every command, over anything the phone
+  sent, and never uses a phone-chosen key to wait for the answer. Queries and
+  the v1 `send` keep a phone-made correlation id, which the result echoes.
+- A message to an agent (`sendToAgent`) uses a counter of the messages the Mac
+  already accepted for that agent as its version, so the second message gets a
+  new id and a repeated one is replayed, never sent twice.
 - The phone needs the permission to decide. The check reads one scope function
   (`phoneScope.ts`) that allows every phone until the pairing settings register
   their own reader.
 - The same store action runs as on the desktop: a permission goes through
   Allow and continue or Deny, a plan through the Lead approval, a stop through
   the confirmed stop of the turn.
+
+A decision the phone is offered carries what it needs to answer without
+guessing: the options of a question, the steps and touched files of a plan, the
+line that stopped an agent, the amounts the Mac offers for a limit, the draft of
+a Slack reply, and for a run that waits the id that continues it. A run and an
+agent row carry the ids of their own stop and continue, and the Lead row the id
+that stops the whole tree. Every one of these ids goes through
+`expectedActionIdOf` in a test.
 
 The phone reads one agent's conversation on request: words as text, each tool as
 one short line with the file name and the changed line counts, never a diff and
@@ -158,15 +177,24 @@ projection against a closed schema (`bridge/publish_schema.rs`), drops fields
 the schema does not name, refuses a value outside the vocabulary, a string that
 reads as an absolute path and a projection over 56,000 bytes, and cuts lists to
 a fixed length (60 moves, 30 sessions per lane, 20 lines, 20 runs, 40 tasks).
-A workspace is sent by its name only, a project by its name, never a path. A
+A workspace is sent by its name only, a project by its name, never a path.
+Free text that can hold a path (a command, a plan step, a draft) is cut to a
+length and has every absolute path reduced to its file name before it is sent.
+The Needs you projection also carries today's spend and the left share of each
+connected plan, from the same functions as the desktop chips. A
 projection holds no archived or deleted session, and none of the transcript.
 
 Only what changed is sent: the phone gets one frame per changed projection
-(`0x0B`), a frame when one disappears (`0x0D`), and everything again when it
+(`0x0B`), a frame when one disappears (`0x0D`), a refusal of the handshake
+(`0x0E`), and everything again when it
 asks (`0x82`). The other workspaces are read by a read-only loader that never
 writes the store; for them the sessions, agents, open questions and tasks come
 from the database, and the pull request facts, mounts and project names are not
-loaded, so a pull request reason shows for the current workspace only.
+loaded, so a pull request reason shows for the current workspace only. Plans,
+permission asks, limits and Slack drafts of another workspace are not loaded
+either, so only the current workspace's rows carry those decisions. The Mac
+reads the transcript of a blocked agent in the background, so the permission ask
+appears a moment after the agent blocks.
 
 While the main window is open it publishes at least every four seconds. When no
 call reached the bridge for 10 seconds (the window reloaded or closed) the

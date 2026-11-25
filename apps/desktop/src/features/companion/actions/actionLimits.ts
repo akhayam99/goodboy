@@ -18,6 +18,8 @@ export const RATE_WINDOWS = {
   continueRun: { max: 12, windowMs: MINUTE_MS },
   stopAgent: { max: 12, windowMs: MINUTE_MS },
   continueAgent: { max: 12, windowMs: MINUTE_MS },
+  stopAgentTree: { max: 12, windowMs: MINUTE_MS },
+  sendToAgent: { max: 30, windowMs: MINUTE_MS },
   answerSlackReply: { max: 10, windowMs: MINUTE_MS },
 } as const satisfies Record<DecideKind, Window>;
 

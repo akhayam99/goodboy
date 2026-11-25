@@ -1,1 +1,1 @@
-export const CONTRACT_VERSION = 2;
+export const CONTRACT_VERSION = 3;

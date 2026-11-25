@@ -1,10 +1,8 @@
-import type { OpenQuestion } from '@goodboy/types';
 import { needsYouOf, type NeedsYouMove } from '../../board/needsYou/needsYouOf';
 import { attentionMarkOf } from '../../session/attentionMarkOf';
 import { ATTENTION_REASON_META } from '../../session/session-stage';
-import type { Decision } from '../contract/decisions';
-import type { NeedsYouFields, NeedsYouRow } from '../contract/projections';
-import { actionIdOf } from './actionIdOf';
+import type { NeedsYouChips, NeedsYouFields, NeedsYouRow } from '../contract/projections';
+import { decisionOfMove } from './decisionOfMove';
 import { isLiveSession } from './isLiveSession';
 import { isoOrNull } from './isoOrNull';
 import { sessionRefOf } from './sessionRefOf';
@@ -15,6 +13,7 @@ export const NEEDS_YOU_ROW_LIMIT = 60;
 
 type Params = {
   readonly scopes: ReadonlyArray<WorkspaceScope>;
+  readonly chips: NeedsYouChips;
   readonly now: number;
 };
 
@@ -22,25 +21,6 @@ type MoveParams = {
   readonly scope: WorkspaceScope;
   readonly move: NeedsYouMove;
   readonly now: number;
-};
-
-type DecisionParams = {
-  readonly move: NeedsYouMove;
-  readonly question: OpenQuestion | undefined;
-};
-
-const decisionOf = ({ move, question }: DecisionParams): Decision | null => {
-  if (question === undefined || move.questionId === null) {
-    return null;
-  }
-  const version = question.createdAt;
-  return {
-    kind: 'question',
-    actionId: actionIdOf({ kind: 'answerQuestion', objectId: question.id, version }),
-    questionId: question.id,
-    version,
-    text: question.text,
-  };
 };
 
 const rowOf = ({ scope, move, now }: MoveParams): NeedsYouRow => {
@@ -60,7 +40,7 @@ const rowOf = ({ scope, move, now }: MoveParams): NeedsYouRow => {
     words: move.title,
     waitingText: waitingTextOf({ since: move.since, now }),
     since: isoOrNull({ at: move.since }),
-    decision: decisionOf({ move, question }),
+    decision: decisionOfMove({ scope, move, question }),
   };
 };
 
@@ -101,12 +81,13 @@ const sinceOrder = ({ left, right }: OrderParams): number => {
   return left.since < right.since ? -1 : 1;
 };
 
-export const needsYouFieldsOf = ({ scopes, now }: Params): NeedsYouFields => {
+export const needsYouFieldsOf = ({ scopes, chips, now }: Params): NeedsYouFields => {
   const grouped = scopes.map((scope) => movesOfScope({ scope }));
   const rows = grouped
     .flatMap(({ scope, moves }) => moves.map((move) => rowOf({ scope, move, now })))
     .sort((left, right) => sinceOrder({ left, right }));
   return {
+    chips,
     moveCount: grouped.reduce((total, group) => total + group.moves.length, 0),
     sessionCount: grouped.reduce((total, group) => total + group.sessionCount, 0),
     workspaces: grouped

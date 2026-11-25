@@ -4,6 +4,8 @@ import { isTauriRuntime } from '../../../shared/lib/isTauriRuntime';
 import { useAppStore } from '../../../store/store';
 import { isMainWindow } from '../../workspace/window';
 import { changedDraftsOf } from './changedDraftsOf';
+import { chipsOfState } from './chipsOfState';
+import { preloadAskTranscripts } from './preloadAskTranscripts';
 import { loadOtherWorkspaceScope } from './loadOtherWorkspaceScope';
 import { projectionFieldsOf } from './projectionFieldsOf';
 import { publishToBridge } from './publishToBridge';
@@ -49,9 +51,11 @@ export const startCompanionProjections = async (): Promise<UnlistenFn> => {
     try {
       const now = Date.now();
       const state = useAppStore.getState();
+      preloadAskTranscripts({ state });
       const drafts = projectionFieldsOf({
         scopes: scopesNow(),
         detailWorkspaceId: state.currentWorkspaceId,
+        chips: chipsOfState({ state, now }),
         now,
       });
       const { changed, removed } = changedDraftsOf({ drafts, sent });

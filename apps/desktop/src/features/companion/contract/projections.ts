@@ -37,7 +37,19 @@ export type NeedsYouWorkspace = {
   readonly sessionCount: Int;
 };
 
+export type LimitChip = {
+  readonly providerLabel: string;
+  readonly leftText: string;
+  readonly tone: Tone;
+};
+
+export type NeedsYouChips = {
+  readonly spendToday: string | null;
+  readonly limits: ReadonlyArray<LimitChip>;
+};
+
 export type NeedsYouFields = {
+  readonly chips: NeedsYouChips;
   readonly moveCount: Int;
   readonly sessionCount: Int;
   readonly workspaces: ReadonlyArray<NeedsYouWorkspace>;
@@ -54,6 +66,10 @@ export type SessionRow = {
   readonly stage: SessionStage;
   readonly mark: StatusMark;
   readonly words: string | null;
+  readonly tone: Tone | null;
+  readonly reason: AttentionReason | null;
+  readonly waitingText: string | null;
+  readonly branch: string | null;
   readonly projectNames: ReadonlyArray<string>;
   readonly prNumber: Int | null;
   readonly costText: string | null;
@@ -86,11 +102,20 @@ export type SessionNotice = {
   readonly isMacOnly: boolean;
 };
 
+export type LineTargetKind = 'agent' | 'run' | 'pullRequest' | 'decision';
+
+export type LineTarget = {
+  readonly kind: LineTargetKind;
+  readonly id: string;
+};
+
 export type SessionLine = {
   readonly id: string;
   readonly mark: StatusMark;
   readonly text: string;
   readonly at: IsoTimestamp | null;
+  readonly role: string | null;
+  readonly target: LineTarget | null;
 };
 
 export type SessionProject = {
@@ -114,6 +139,8 @@ export type SessionFields = {
   readonly projects: ReadonlyArray<SessionProject>;
   readonly activity: ReadonlyArray<SessionLine>;
   readonly pullRequestNumber: Int | null;
+  readonly decisions: ReadonlyArray<string>;
+  readonly summary: string | null;
 };
 
 export type SessionProjection = ProjectionMeta & SessionFields;
@@ -130,6 +157,15 @@ export type RunLimit = {
 export type AgentRow = {
   readonly agentId: string;
   readonly name: string;
+  readonly role: string;
+  readonly isLead: boolean;
+  readonly model: string | null;
+  readonly spendText: string | null;
+  readonly timeText: string | null;
+  readonly stopActionId: ActionId | null;
+  readonly stopTreeActionId: ActionId | null;
+  readonly continueActionId: ActionId | null;
+  readonly sendActionId: ActionId;
   readonly mark: StatusMark;
   readonly state: AgentState;
   readonly words: string;
@@ -144,6 +180,8 @@ export type RunRow = {
   readonly state: RunState;
   readonly words: string;
   readonly spendText: string | null;
+  readonly stopActionId: ActionId | null;
+  readonly continueActionId: ActionId | null;
   readonly limit: RunLimit | null;
   readonly canStop: boolean;
   readonly canContinue: boolean;

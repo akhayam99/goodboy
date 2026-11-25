@@ -147,6 +147,23 @@ export const parseDecideAction = ({ raw }: ParseParams): DecideAction | null => 
       }
       return { kind: record.kind, ...base, agentId, seenState };
     }
+    case 'stopAgentTree': {
+      const agentId = read.id({ name: 'agentId' });
+      const seenState = read.pick({ name: 'seenState', options: AGENT_STATES });
+      if (agentId === null || seenState === null) {
+        return null;
+      }
+      return { kind: 'stopAgentTree', ...base, agentId, seenState };
+    }
+    case 'sendToAgent': {
+      const agentId = read.id({ name: 'agentId' });
+      const seenVersion = read.id({ name: 'seenVersion' });
+      const text = read.text({ name: 'text' });
+      if (agentId === null || seenVersion === null || text === null) {
+        return null;
+      }
+      return { kind: 'sendToAgent', ...base, agentId, seenVersion, text };
+    }
     case 'answerSlackReply': {
       const verdict = read.pick({ name: 'verdict', options: ['send', 'discard'] });
       const draftId = read.id({ name: 'draftId' });

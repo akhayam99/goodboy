@@ -1,4 +1,4 @@
-import type { Session, SessionId, WorkflowRun } from '@goodboy/types';
+import type { Agent, Session, SessionId, TurnState, WorkflowRun } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import type { AgentState, RunState } from '../contract/projections';
@@ -30,13 +30,12 @@ type RunParams = {
 export const workflowRunOf = ({ session, runId }: RunParams): WorkflowRun | null =>
   session.workflowRuns.find((run) => run.id === runId && run.discardedAt == null) ?? null;
 
-type RunStateParams = {
-  readonly store: AppStore;
-  readonly sessionId: SessionId;
+type RunStateFromParams = {
   readonly run: WorkflowRun;
+  readonly agents: ReadonlyArray<Agent>;
 };
 
-export const runStateOf = ({ store, sessionId, run }: RunStateParams): RunState => {
+export const runStateFrom = ({ run, agents }: RunStateFromParams): RunState => {
   if (run.orchestrationStop?.kind === 'closed') {
     return 'stopped';
   }
@@ -49,9 +48,6 @@ export const runStateOf = ({ store, sessionId, run }: RunStateParams): RunState 
   if (run.orchestrationStop?.kind === 'operator' || run.orchestrationStop?.kind === 'paused') {
     return 'paused';
   }
-  const agents = (store.sessionPhaseRuns[sessionId] ?? []).filter(
-    (agent) => agent.workflowRunId === run.id,
-  );
   if (agents.some((agent) => agent.status === 'running')) {
     return 'running';
   }
@@ -63,6 +59,20 @@ export const runStateOf = ({ store, sessionId, run }: RunStateParams): RunState 
   }
   return 'running';
 };
+
+type RunStateParams = {
+  readonly store: AppStore;
+  readonly sessionId: SessionId;
+  readonly run: WorkflowRun;
+};
+
+export const runStateOf = ({ store, sessionId, run }: RunStateParams): RunState =>
+  runStateFrom({
+    run,
+    agents: (store.sessionPhaseRuns[sessionId] ?? []).filter(
+      (agent) => agent.workflowRunId === run.id,
+    ),
+  });
 
 type AgentParams = {
   readonly store: AppStore;
@@ -81,17 +91,18 @@ export const isAgentOfSession = ({ store, sessionId, agentId }: AgentParams): bo
   );
 };
 
-export const agentStateOf = ({ store, sessionId, agentId }: AgentParams): AgentState => {
-  const turn = store.agentTurnState[agentIdOf({ value: agentId })];
+type AgentStateFromParams = {
+  readonly turn: TurnState | undefined;
+  readonly agent: Agent | undefined;
+};
+
+export const agentStateFrom = ({ turn, agent }: AgentStateFromParams): AgentState => {
   if (turn?.kind === 'running') {
     return 'running';
   }
   if (turn?.kind === 'blocked') {
     return 'waiting';
   }
-  const agent = (store.sessionPhaseRuns[sessionId] ?? []).find(
-    (candidate) => candidate.id === agentId,
-  );
   if (agent?.status === 'stopped' || agent?.stoppedAt !== undefined) {
     return 'stopped';
   }
@@ -103,3 +114,9 @@ export const agentStateOf = ({ store, sessionId, agentId }: AgentParams): AgentS
   }
   return 'done';
 };
+
+export const agentStateOf = ({ store, sessionId, agentId }: AgentParams): AgentState =>
+  agentStateFrom({
+    turn: store.agentTurnState[agentIdOf({ value: agentId })],
+    agent: (store.sessionPhaseRuns[sessionId] ?? []).find((candidate) => candidate.id === agentId),
+  });

@@ -29,6 +29,10 @@ const targetOf = ({ action }: ActionParams): Target => {
     case 'stopAgent':
     case 'continueAgent':
       return { objectId: action.agentId, version: action.seenState };
+    case 'stopAgentTree':
+      return { objectId: action.agentId, version: action.seenState };
+    case 'sendToAgent':
+      return { objectId: action.agentId, version: action.seenVersion };
     case 'answerSlackReply':
       return { objectId: action.draftId, version: action.seenVersion };
     default: {

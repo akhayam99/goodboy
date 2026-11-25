@@ -1,22 +1,11 @@
-import type { AgentStatus } from '@goodboy/types';
+import type { Agent, TurnState } from '@goodboy/types';
+import { agentStateFrom } from '../actions/targets';
 import type { AgentState } from '../contract/projections';
 
 type Params = {
-  readonly status: AgentStatus;
+  readonly agent: Agent;
+  readonly turn: TurnState | undefined;
 };
 
-export const agentStateOf = ({ status }: Params): AgentState => {
-  if (status === 'running') {
-    return 'running';
-  }
-  if (status === 'blocked') {
-    return 'waiting';
-  }
-  if (status === 'failed') {
-    return 'failed';
-  }
-  if (status === 'stopped') {
-    return 'stopped';
-  }
-  return 'done';
-};
+export const agentStateOf = ({ agent, turn }: Params): AgentState =>
+  agentStateFrom({ agent, turn });

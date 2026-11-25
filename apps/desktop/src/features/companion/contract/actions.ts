@@ -78,6 +78,19 @@ export type ContinueAgentAction = SessionActionBase & {
   readonly seenState: AgentState;
 };
 
+export type StopAgentTreeAction = SessionActionBase & {
+  readonly kind: 'stopAgentTree';
+  readonly agentId: string;
+  readonly seenState: AgentState;
+};
+
+export type SendToAgentAction = SessionActionBase & {
+  readonly kind: 'sendToAgent';
+  readonly agentId: string;
+  readonly seenVersion: ObjectVersion;
+  readonly text: string;
+};
+
 export type SlackVerdict = 'send' | 'discard';
 
 export type AnswerSlackReplyAction = SessionActionBase & {
@@ -131,6 +144,8 @@ export type MobileAction =
   | ContinueRunAction
   | StopAgentAction
   | ContinueAgentAction
+  | StopAgentTreeAction
+  | SendToAgentAction
   | AnswerSlackReplyAction
   | MergePrAction
   | StartSessionAction
