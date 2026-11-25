@@ -40,7 +40,7 @@ const OPENED: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
 
 const NEXT_CLICKS: Readonly<Partial<Record<BrowserPaneSceneState, ReadonlyArray<string>>>> = {
   'network-detail': [
-    `${TOOLS} [role="tablist"][aria-label="Console or Network"] [role="tab"][aria-selected="false"]`,
+    `${TOOLS} [role="tablist"][aria-label="Tools"] [role="tab"][aria-selected="false"]`,
     `${TOOLS} button[aria-label="error: /api/orders/confirm"]`,
   ],
 };

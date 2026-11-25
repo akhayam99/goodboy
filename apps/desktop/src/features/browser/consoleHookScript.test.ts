@@ -393,14 +393,24 @@ describe('the page runtime', () => {
     ]);
   });
 
-  it('links an error record to every failed request', async () => {
+  it('links an error record to every failed request, stamped with the time it failed', async () => {
+    const before = Date.now();
     const tab = page({ fetchAnswer: () => Promise.resolve({ status: 502 }) });
     await tab.window.fetch('/api/orders', { method: 'PUT' });
 
     const [request] = tab.ofKind({ kind: 'network' });
     expect(tab.ofKind({ kind: 'error' }).map((entry) => [entry.text, entry.error])).toEqual([
-      ['PUT /api/orders 502', { origin: 'request', stack: null, requestId: request?.network?.id }],
+      [
+        'PUT /api/orders 502',
+        {
+          origin: 'request',
+          stack: null,
+          requestId: request?.network?.id,
+          at: expect.any(Number),
+        },
+      ],
     ]);
+    expect(tab.ofKind({ kind: 'error' })[0]?.error?.at).toBeGreaterThanOrEqual(before);
     expect(request?.network?.id).toMatch(/^r\d+$/);
   });
 

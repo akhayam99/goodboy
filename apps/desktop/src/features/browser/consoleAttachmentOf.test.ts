@@ -77,9 +77,9 @@ const ENTRIES: ReadonlyArray<BrowserConsoleEntry> = [
 ];
 
 describe('the console attachment', () => {
-  it('counts each tab from one function, a request error only as its request', () => {
-    expect(consoleCounts({ entries: ENTRIES })).toEqual({ console: 2, network: 2 });
-    expect(consoleCounts({ entries: [] })).toEqual({ console: 0, network: 0 });
+  it('counts each tab from one function, a request error as its request and as an error', () => {
+    expect(consoleCounts({ entries: ENTRIES })).toEqual({ console: 2, network: 2, errors: 2 });
+    expect(consoleCounts({ entries: [] })).toEqual({ console: 0, network: 0, errors: 0 });
   });
 
   it('is a markdown file named after the tab with both sections', () => {

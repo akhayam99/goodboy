@@ -5,9 +5,11 @@ import {
   type BrowserToolsPlace,
   type BrowserToolsSurface,
 } from '../../browserToolsDockPref';
+import { consoleCounts } from '../../consoleCounts';
 import type { ConsoleEntries } from '../../hooks/useConsoleEntries';
-import type { BrowserPaneModel } from '../../types';
+import type { BrowserPaneModel, BrowserToolsTab } from '../../types';
 import { BrowserConsole } from './BrowserConsole';
+import { ErrorsTab } from './ErrorsTab';
 import { toolsDockBoundsOf } from './toolsDockBoundsOf';
 
 type Props = {
@@ -16,8 +18,14 @@ type Props = {
   readonly model: BrowserPaneModel;
   readonly title: string;
   readonly log: ConsoleEntries;
+  readonly tab: BrowserToolsTab;
+  readonly onTab: (params: TabParams) => void;
   readonly onClose: () => void;
   readonly children: ReactNode;
+};
+
+type TabParams = {
+  readonly next: BrowserToolsTab;
 };
 
 type Room = {
@@ -42,9 +50,13 @@ export const BrowserToolsDock = ({
   model,
   title,
   log,
+  tab,
+  onTab,
   onClose,
   children,
 }: Props) => {
+  const counts = consoleCounts({ entries: log.entries });
+  const shownTab = tab === 'errors' && counts.errors === 0 ? 'console' : tab;
   const stage = useRef<HTMLDivElement | null>(null);
   const [place, setPlace] = useState<BrowserToolsPlace>(() =>
     browserToolsDockPref.read({ surface }),
@@ -115,15 +127,32 @@ export const BrowserToolsDock = ({
               onCommit={(next) => commit({ size: next })}
             />
           </div>
-          <BrowserConsole
-            model={model}
-            title={title}
-            log={log}
-            side={place.side}
-            isToolsInHead={isToolsInHead}
-            onSide={moveSide}
-            onClose={onClose}
-          />
+          {shownTab === 'errors' ? (
+            <ErrorsTab
+              model={model}
+              title={title}
+              log={log}
+              counts={counts}
+              side={place.side}
+              isToolsInHead={isToolsInHead}
+              onTab={onTab}
+              onSide={moveSide}
+              onClose={onClose}
+            />
+          ) : (
+            <BrowserConsole
+              model={model}
+              kind={shownTab}
+              counts={counts}
+              title={title}
+              log={log}
+              side={place.side}
+              isToolsInHead={isToolsInHead}
+              onTab={onTab}
+              onSide={moveSide}
+              onClose={onClose}
+            />
+          )}
         </section>
       ) : null}
     </div>

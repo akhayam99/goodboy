@@ -197,6 +197,11 @@ export type BrowserConsoleToggle = {
   readonly onToggle: () => void;
 };
 
+export type BrowserErrorsShow = {
+  readonly count: number;
+  readonly onShow: () => void;
+};
+
 export type BrowserPaneModel = {
   readonly sessionId: SessionId;
   readonly tabs: ReadonlyArray<BrowserTab>;
