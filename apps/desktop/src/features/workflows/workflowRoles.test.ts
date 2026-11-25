@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import { brandId, type SessionId, type WorkspaceId } from '@goodboy/types';
 
 const { invokeCommandSpy } = vi.hoisted(() => ({ invokeCommandSpy: vi.fn() }));
 
@@ -94,7 +94,9 @@ describe('workflow step roles on load', () => {
     invokeCommandSpy.mockResolvedValue([guided]);
 
     const [listed] = await invokeWorkflowList(WORKSPACE_ID);
-    const [forSession] = await invokeWorkflowsForSession('session-1' as SessionId);
+    const [forSession] = await invokeWorkflowsForSession(
+      brandId<SessionId>({ value: 'session-1' }),
+    );
 
     for (const workflow of [listed, forSession]) {
       expect(workflow?.entryCheck).toBe('A ledger fix is requested');

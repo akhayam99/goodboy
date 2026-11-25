@@ -56,7 +56,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
-import { isStepSize, isWorkflowOrigin } from '@goodboy/types';
+import { brandId, isStepSize, isWorkflowOrigin } from '@goodboy/types';
 
 type RawWorkflowStepRow = {
   readonly id: string;
@@ -189,7 +189,9 @@ function rowToWorkflow(row: RawWorkflowRow): Workflow {
     ...(row.processText != null && row.processText !== '' && { processText: row.processText }),
     ...(row.entryCheck != null && { entryCheck: row.entryCheck }),
     ...(row.stopRule != null && { stopRule: row.stopRule }),
-    ...(row.thenSuggestId != null && { thenSuggestId: row.thenSuggestId as WorkflowId }),
+    ...(row.thenSuggestId != null && {
+      thenSuggestId: brandId<WorkflowId>({ value: row.thenSuggestId }),
+    }),
     ...(row.isOrderKept && { isOrderKept: true }),
     steps: row.steps.map(rowToStep),
     isPreset: row.isPreset,
