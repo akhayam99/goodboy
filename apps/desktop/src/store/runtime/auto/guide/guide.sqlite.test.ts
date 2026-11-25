@@ -371,6 +371,7 @@ describe('the hold block', () => {
     expect(view?.hold).toEqual({
       reason: "It works as designed, so this isn't a bug.",
       suggestion: 'Plan and ship',
+      suggestionId: SHIP,
     });
     expect(view === undefined ? null : autoTreeWordOf({ view, rootTurn: null }).state).toBe(
       'asking',

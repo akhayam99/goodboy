@@ -7,6 +7,7 @@ import {
   autoWaitRootsOf,
   type AutoWaitState,
 } from '../../../../store/slices/session-view/autoRoots/autoWaitRootsOf';
+import { heldFirstRootsOf } from '../../../../store/slices/session-view/autoRoots/heldFirstRootsOf';
 import {
   runWaitEntriesOf,
   type RunWaitState,
@@ -17,6 +18,7 @@ import { autoRunTitleOf } from '../../../session/autoRunTitleOf';
 import type { RunWait } from '../../../workflows/runStateOf';
 import { workflowKindName } from '../../../workflows/workflowKindName';
 import { NAMES } from '../../../../shared/utils/names';
+import { holdWaitWords } from './holdWaitWords';
 import { leadWaitWordsOf } from './leadWaitWordsOf';
 
 export type WaitingRunState = AutoWaitState &
@@ -66,7 +68,10 @@ const leadRunsOf = ({ state, session, roots, fallback }: RootsParams): ReadonlyA
       return [];
     }
     const { lead } = autoTreeWordOf({ view, rootTurn: state.agentTurnState[root.id] ?? null });
-    const wait = leadWaitWordsOf({ lead, askCount: leadAsksOf({ view }).length });
+    const wait =
+      view.hold != null && lead.stop === 'waitsForYou'
+        ? holdWaitWords({ suggestion: view.hold.suggestion })
+        : leadWaitWordsOf({ lead, askCount: leadAsksOf({ view }).length });
     const title = autoRunTitleOf({ state, sessionId: session.id, agentId: root.id });
     return title === null
       ? []
@@ -110,7 +115,11 @@ const workflowRunsOf = ({ state, session, runs }: RunsParams): ReadonlyArray<Nam
 const waitingRunsOf = ({ state, session, reason }: Params): ReadonlyArray<Named> => {
   const agents = state.sessionPhaseRuns[session.id] ?? NO_AGENTS;
   if (reason === 'auto-needs-you') {
-    const roots = autoWaitRootsOf({ state, session, agents });
+    const roots = heldFirstRootsOf({
+      state,
+      sessionId: session.id,
+      roots: autoWaitRootsOf({ state, session, agents }),
+    });
     return leadRunsOf({ state, session, roots, fallback: 'Asks you' });
   }
   if (reason === 'agent-error') {
