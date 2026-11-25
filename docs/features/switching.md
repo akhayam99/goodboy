@@ -4,11 +4,13 @@ Move between the tasks of a workspace without losing your place, and see from an
 
 ### Sessions
 
-Sessions in the top bar opens the list of the workspace's sessions, from any screen. **⌘B** opens and closes it. The first time you open Goodboy after an update that took the sessions out of the left column, a card under the control says **Your sessions moved here**. **Show sessions** opens the list, and opening it in any way closes the card for good. It does not come back, and a new install never shows it.
+Sessions in the top bar opens the list of the workspace's sessions, from any screen. **⌘B** opens and closes it.
 
-The list is a search field, then the sessions in groups: **Pinned** first, then one group per state. A session with an agent at work says what it does in place of its project, the same line as its Board card. Type to narrow by title or project, move with the arrows and press **Enter** to open a row on its Overview. **Open Board** at the foot opens the Board. The list keeps a margin from every window edge and scrolls inside.
+The list is a search field, then the sessions in groups: **Pinned** first, then one group per state. A session with an agent at work says what it does in place of its project, the same line as its Board card.
 
-**Where each row of the old sidebar went**
+Type to narrow by title or project, move with the arrows and press **Enter** to open a row on its Overview. **Open Board** at the foot opens the Board.
+
+#### Where each row of the old sidebar went
 
 | In the sidebar                                     | Now                                                                  |
 | -------------------------------------------------- | -------------------------------------------------------------------- |
@@ -19,9 +21,12 @@ The list is a search field, then the sessions in groups: **Pinned** first, then 
 | The workspace name                                 | The workspace mark at the top of the rail (**⌘O**, **⌘1** to **⌘9**) |
 | Settings, the bug icon                             | The foot of the rail (**⌘,**, **⌘I**)                                |
 
-**⌘⇧[** and **⌘⇧]** still go to the previous and next session, in the order of the list. **Control+Tab** still flips through recent sessions without the list.
+#### Move between sessions
 
-**Sort, group and filter.** The funnel in the Board header sorts, groups and filters the sessions of the board. Pick several sessions and archive, restore or delete them on the Board: see [the board](board.md#bulk-select).
+- **⌘⇧[** and **⌘⇧]** go to the previous and next session, in the order of the list.
+- **Control+Tab** flips through recent sessions without the list.
+- The funnel in the Board header sorts, groups and filters the sessions of the board.
+- Pick several sessions and archive, restore or delete them on the Board: see [the board](board.md#bulk-select).
 
 ### Pin a session to keep it at the top
 
@@ -29,7 +34,17 @@ Keep the sessions you return to at the top of the list. The pin on a row of the 
 
 ### Now chip
 
-Know what runs from any screen. The chip in the top bar counts the sessions and scripts running, and reads a muted **Idle** when nothing does, so the chips beside it stay put. With a session that needs you it reads **Needs you** instead. A click opens a list where each row jumps to its session and says what its agent is doing, the same line as its Board card. Sessions that need you show as an amber number on **Board** in the places rail, red when one of them is broken, 9+ above nine. The top bar does not repeat it; **⌥⌘↓** goes to the next one. Rest on it for the reasons, and click it for the board, where **Needs you** comes first. The count ignores the project filter, so a session in another project is still counted, and its card stays in the Needs you strip above the lanes. A reply to read or an approval to merge shows only a quiet gray dot, not a number. A run that stopped, paused at its limit or waits for you to continue, an Auto agent waiting for your OK and a Slack reply waiting for approval count like a question does.
+Know what runs from any screen. The chip in the top bar counts the sessions and scripts running, and reads a muted **Idle** when nothing does. With a session that needs you it reads **Needs you** instead.
+
+A click opens a list where each row jumps to its session and says what its agent is doing, the same line as its Board card.
+
+#### Sessions that need you
+
+- An amber number on **Board** in the places rail counts them, red when one of them is broken, 9+ above nine. The top bar does not repeat it.
+- **⌥⌘↓** goes to the next one. Click the number for the board, where **Needs you** comes first.
+- The count ignores the project filter, so a session in another project is still counted.
+- A run that stopped, paused at its limit or waits for you to continue, an Auto agent waiting for your OK and a Slack reply waiting for approval count like a question does.
+- A reply to read or an approval to merge shows only a quiet gray dot, not a number.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-dark.webp">
@@ -40,9 +55,37 @@ Know what runs from any screen. The chip in the top bar counts the sessions and 
 
 ### Notifications
 
-Catch up in one place. Everything Goodboy has to tell you, from a pull request opened to a session near its limit, lands in one list behind the bell, and **Needs action** shows only what you still owe: a retry or an update stays there until it resolves or you delete it, while a link such as Open spend or Open Checks is marked Opened, read and out of the list the moment you use it, from the row or from the toast. The bell, the toast and the Notifications page open the same place, and the button names it: Open Comments, Open Files (a fix that waits on a note only), Open Checks, Open branch, Open pull request (Open merge request on GitLab) or Open session. A fix notice stores note or comment, and the landing and the label follow it. A push failure keeps its mount. All three open the notification's own workspace first, in the window that shows it. Checks and Comments wait for the request data before they open. A notification from before this keeps no place and opens its session. An error from an action ends in its way out. An error already shown under the button that started it lands read and makes no toast. A failed push offers Retry push and says your work is still on the branch. A rejected sign-in offers Reconnect with the tool's name. A missing editor opens Settings. A settings save that failed says nothing was changed. Opening the bell marks nothing read: the list scrolls instead of cutting off, a row is read after a second on screen, the rows out of sight stay unread and the list says how many, and **Mark all as read** clears the rest of the list you are looking at, this workspace or all workspaces, and the bell in another window shows it the next time it loads. A fix or push notice reads like the banner for the same event ("1 comment needs you", "1 comment failed", "1 comment didn't go out"). Each row leads with the mark the activity logs use. An error is solid red and a warning solid amber. A success is a plain check, and information a quiet gray mark. Its age sits at the right. An unread row carries a small dot, amber when a retry waits on it, and the bell shows the number of unread rows (9+ above nine) beside its dot. **Open all notifications** at the foot of the list opens the Notifications page, and the bell stays pressed for as long as that page is open. The page has no Close button: Esc, Back or any other destination leaves it. With more than one workspace the bell has **This workspace** and **All workspaces**, and the second shows how many sessions need you in the other workspaces.
+Catch up in one place. Everything Goodboy has to tell you, from a pull request opened to a session near its limit, lands in one list behind the bell.
 
-Leave agents working and look away. While no Goodboy window is in front, the app icon shows the number of sessions that need you in all your workspaces, the count of the workspace you work in plus the others, and clears as they are answered. A system banner also appears when a session starts to wait on a question, a permission, a plan approval, an agent error, a failed push or failing checks: one per session and reason, titled with the session, with the sentence the board shows, and a click on it opens that session. Three or more within 30 seconds become one banner for the workspace. The first time something waits while you are away, a toast asks once whether to turn banners on. **Settings › Look and alerts › Notifications** holds two switches, **Banner when away** and **Dock badge**. Both are local to this Mac: nothing is sent anywhere. A toast that arrives while the window is behind others waits until you come back before its timer starts.
+#### The list
+
+- **Needs action** shows only what you still owe. A retry or an update stays there until it resolves or you delete it.
+- A link such as Open spend or Open Checks is marked Opened, read and out of that list the moment you use it, from the row or from the toast.
+- Opening the bell marks nothing read. A row is read after a second on screen, and **Mark all as read** clears the rest of the list you are looking at, this workspace or all workspaces.
+- An unread row carries a small dot, amber when a retry waits on it. The bell shows the number of unread rows, 9+ above nine.
+- **Open all notifications** at the foot of the list opens the Notifications page. Esc, Back or any other destination leaves it.
+- With more than one workspace the bell has **This workspace** and **All workspaces**, and the second shows how many sessions need you in the other workspaces.
+
+#### Open the item
+
+The bell, the toast and the Notifications page open the same place, and the button names it: Open Comments, Open Files, Open Checks, Open branch, Open pull request (Open merge request on GitLab) or Open session. It opens the notification's own workspace first, in the window that shows it.
+
+#### When something fails
+
+An error from an action ends in its way out:
+
+- A failed push offers **Retry push** and says your work is still on the branch.
+- A rejected sign-in offers **Reconnect** with the tool's name.
+- A missing editor opens Settings.
+- A settings save that failed says nothing was changed.
+
+#### While you are away
+
+Leave agents working and look away. While no Goodboy window is in front, the app icon shows the number of sessions that need you in all your workspaces, and clears as they are answered.
+
+A system banner also appears when a session starts to wait on a question, a permission, a plan approval, an agent error, a failed push or failing checks. It is one per session and reason, titled with the session, and a click on it opens that session. Three or more within 30 seconds become one banner for the workspace.
+
+The first time something waits while you are away, a toast asks once whether to turn banners on. **Settings › Look and alerts › Notifications** holds two switches, **Banner when away** and **Dock badge**. Both are local to this Mac: nothing is sent anywhere.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-dark.webp">
@@ -53,6 +96,8 @@ Leave agents working and look away. While no Goodboy window is in front, the app
 
 ### Open in new window
 
-Give each workspace its own window, so switching does not interrupt running agents. After a reload or an update, every window comes back on the screen it showed. Closing a window while its agents work asks once: **Stop 2 agents**, or **Cancel**. A run deciding its next step counts too. An agent that does not stop says so, with **Close anyway**. On a Mac the main window hides instead of closing, so Auto keeps working; the dock icon brings it back.
+Give each workspace its own window, so switching does not interrupt running agents. After a reload or an update, every window comes back on the screen it showed.
 
-Switching workspace or disconnecting one stops its agents the way **Stop** does: on return each reads **Stopped by you** with **Continue**, and nothing half done reads Done. An agent that does not stop keeps you where you are: nothing is switched or disconnected, a warning says so, and you can stop it and try again.
+Closing a window while its agents work asks once: **Stop 2 agents**, or **Cancel**. An agent that does not stop says so, with **Close anyway**. On a Mac the main window hides instead of closing, so Auto keeps working; the dock icon brings it back.
+
+Switching workspace or disconnecting one stops its agents the way **Stop** does. On return each reads **Stopped by you** with **Continue**, and nothing half done reads Done. An agent that does not stop keeps you where you are: nothing is switched or disconnected, a warning says so, and you can stop it and try again.

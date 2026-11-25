@@ -4,29 +4,48 @@ The Board shows every session of a workspace in lanes by stage, so you see where
 
 ### Needs you
 
-See what waits on you at the top of the Board. One row of cards sits above the lanes, the oldest wait first. Its head says **Needs you** with the count, the same number as the places rail. Each card is a session: its project, its title, why it waits and how long. The reason is the question itself, or the registry's words, such as "An agent failed". A session with two open questions is one card that says "2 questions". A card is as wide as one lane below it.
+See what waits on you at the top of the Board. One row of cards sits above the lanes, the oldest wait first. Its head says **Needs you** with the count, the same number as the places rail. With nothing waiting there is no row.
 
-A card resolves nothing on the Board. Click it and its session opens at the exact point that needs you: a question on its answer, a plan on its review, a stopped or paused run on its run. A session of another workspace opens through that workspace.
+Each card is a session: its project, its title, why it waits and how long. The reason is the question itself, or the words of the state, such as "An agent failed". A session with two open questions is one card that says "2 questions".
 
-When the cards are more than the row holds, the row scrolls sideways. **Scroll left** and **Scroll right** sit at its right end, and a trackpad scrolls it too. Every card is in the tab order, **←** and **→** move between cards, and a focused card scrolls into view. With nothing waiting there is no row at all.
+A card resolves nothing on the Board. Click it and its session opens at the exact point that needs you:
+
+- a question, on its answer
+- a plan, on its review
+- a stopped or paused run, on its run
+
+A session of another workspace opens through that workspace. When the cards are more than the row holds, the row scrolls sideways, and **←** and **→** move between cards.
 
 ### Merge train
 
 Merge several pull requests, across sessions and repositories, with one gesture.
 
-- **Merge 2 in order** sits in the **In review** lane head when pull requests there are approved with green checks. It merges them one at a time, the smallest change first and a branch before the one that builds on it. Its tooltip names the method: squash and merge.
+**Merge 2 in order** sits in the **In review** lane head when pull requests there are approved with green checks. It merges them one at a time, the smallest change first and a branch before the one that builds on it. Its tooltip names the method: squash and merge.
+
 - Before each merge Goodboy reads the pull request again. When an earlier one landed in the same repository, it updates the next branch on the base its pull request targets and waits for its checks to report.
-- A merge counts only once the pull request shows as merged. One the host put in its merge queue stops the train.
 - While it runs, one line takes the place of the button: "Merging 1 of 2 · #76 notify-relay", then "Updating #305 on main · checks running", then "Merged 2 of 2".
 - **Stop after this one** lets the pull request in flight finish and stops there.
-- The train stops at the first pull request it cannot merge and says why. A missing approval, checks it cannot read and a base that just merged each stop it too. A conflict goes to the Lead, which resolves the rebase; the train never resolves it alone.
-- Nothing merges without your gesture: the train starts from the button and stops when you say so.
+- The train stops at the first pull request it cannot merge and says why. A conflict goes to the Lead, which resolves the rebase; the train never resolves it alone.
+
+Nothing merges without your gesture: the train starts from the button and stops when you say so.
 
 **Merge when green**, in the branch page menu while checks run, hands the merge to GitHub: it merges the reviewed head once every check passes. **Cancel auto-merge** takes it back.
 
 ### Stage board
 
-See where each task stands without moving cards around. Five lanes, **Building**, **Running**, **In review**, **Done** and **Archived**, always sit in that order, and each session sits in the lane that matches what is happening in it. A session that waits on you shows once, as a card in the **Needs you** row above the lanes, and in no lane. One that only waits for a quiet look, such as an approved pull request or an unread reply, stays in **In review** or **Building**. The row's tooltip teaches **⌥⌘↓**, the key to the next session that needs you. When nothing needs you the key says so in the top bar for two seconds, and when the open session is the only one it says that instead. The **Board** title sits on the same header row, at the same height, as every other page. While the page loads it shows empty lanes, until it knows what needs you in every session, so a card never changes lane after it appears. If that read fails, one line says so above the lanes, with **Retry**. With no session yet, **No sessions yet** sits under the title at its left edge. It says a session holds one goal, its agents and, for code, a branch. It draws the five lanes muted with one sentence each. The only **New session** button sits in the first lane.
+See where each task stands without moving cards around. Five lanes always sit in this order, and each session sits in the lane that matches what is happening in it:
+
+- **Building**
+- **Running**
+- **In review**
+- **Done**
+- **Archived**
+
+A session that waits on you shows once, as a card in the **Needs you** row above the lanes, and in no lane. One that only waits for a quiet look, such as an approved pull request or an unread reply, stays in **In review** or **Building**.
+
+**⌥⌘↓** goes to the next session that needs you. If the read of the sessions fails, one line says so above the lanes, with **Retry**.
+
+With no session yet, **No sessions yet** explains that a session holds one goal, its agents and, for code, a branch. The five lanes show muted, with one sentence each. The only **New session** button sits in the first lane.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-dark.webp">
@@ -37,11 +56,30 @@ See where each task stands without moving cards around. Five lanes, **Building**
 
 ### Done and Archived lanes
 
-Finished work stays in view. In Sessions, in the top bar, finished sessions sit in a **Done** group after the others, so a merged session is one click from reopening. A session that never opens a pull request reaches **Done** too: an answer from a read-only agent, a report, a plan, or a finished edit in a folder with no branch reads **Done** with the reason "answered", "report ready", "plan ready" or "finished" in the hover card, once its reply is read and nothing is running or open; writing again brings it back. A session whose pull request merged or closed also leaves the live groups of Sessions at once, unless you wrote after the merge. The **Done** lane header carries a **⋯** menu with **Archive all in Done** and **Archive done older than 7 days** (by the session's last activity), each archiving at once with **Undo**, or asking first when an agent there is still live, like the card menu. **Done** and **Archived** are lanes like the others, and **Restore** on an archived card puts the session back where it belongs. On a narrow window the two share the last lane.
+Finished work stays in view. In Sessions, in the top bar, finished sessions sit in a **Done** group after the others, so a merged session is one click from reopening.
+
+A session whose pull request merged or closed leaves the live groups of Sessions at once, unless you wrote after the merge. A session that never opens a pull request reaches **Done** too, once its reply is read and nothing is running or open. The hover card gives the reason: "answered", "report ready", "plan ready" or "finished". Writing again brings it back.
+
+- The **Done** lane header carries a **⋯** menu with **Archive all in Done** and **Archive done older than 7 days**, by the session's last activity.
+- Each archives at once with **Undo**, or asks first when an agent there is still live.
+- **Restore** on an archived card puts the session back where it belongs.
+
+On a narrow window the two lanes share the last lane.
 
 ### Session card
 
-Read a task at a glance: its title on two lines, its project in gray, and one signal at the right. The signal is the first that applies. A card that waits for a quiet look says why in the registry's words, such as "Approved, ready to merge". The list rows show the same words. Otherwise it is a failed check or an open question, then the pull request in its state color (click it to open the pull request), or a running dot with the number of agents at work (the number shows from two on). While an agent works, a line says what it does, in the words of the session's Now: "Running pnpm test in payments-api". An agent with no project of its own names none. The line changes at most every 5 seconds, catches up within 15 and never moves; the hover card, the Now chip and Sessions say the same line. Age, linked issues, agent count, cost, the pin and draft review comments wait in the card that opens when you rest the pointer on it. When the signal already names the action that waits on you, such as "1 question for you", the signal itself is the button. No second icon shows. The hover card also opens when the title takes keyboard focus; the rest of the session's verbs are in the card's right-click menu, among them **Mark as unread** and **Mark as read**. Focus from a click never opens the hover card. Esc, a click elsewhere or another page closes it. A thin colored line at the card's left edge tells its stage at a glance: gray while building, cyan and breathing while running, amber when it needs you, green in review, purple when done, and gray again once archived.
+Read a task at a glance: its title on two lines, its project in gray, and one signal at the right. The signal is the first of these that applies:
+
+- the reason a quiet card waits, such as "Approved, ready to merge"
+- a failed check or an open question
+- the pull request in its state color, which opens the pull request on a click
+- a running dot, with the number of agents at work from two on
+
+While an agent works, a line says what it does, such as "Running pnpm test in payments-api". The hover card, the Now chip and Sessions say the same line. When the signal already names the action that waits on you, such as "1 question for you", the signal itself is the button.
+
+Rest the pointer on a card, or focus its title with the keyboard, to open the hover card with age, linked issues, agent count, cost, the pin and draft review comments. Esc, a click elsewhere or another page closes it. The card's right-click menu holds the rest of the session's verbs, among them **Mark as unread** and **Mark as read**.
+
+A thin colored line at the card's left edge tells its stage: gray while building, cyan while running, amber when it needs you, green in review, purple when done, and gray again once archived.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-card-dark.webp">
@@ -52,11 +90,20 @@ Read a task at a glance: its title on two lines, its project in gray, and one si
 
 ### Bulk select
 
-Tidy many sessions at once. A card has no checkbox: **Shift** click picks a range, **Option** click adds or removes one card, a lasso with Option held picks the cards it crosses, **Shift+Enter** and **Alt+Enter** do the same from the keyboard, **Select** in a card's right click menu picks it, and **⌘A** picks them all. Then **Archive**, **Restore** or **Delete** them from the bar at the bottom. Archive asks once for all of them only when agents are still live, **Stop 2 agents and archive**, and stops them first; with nothing live it archives at once. Delete asks first. Archive and Restore can be undone, and when some sessions could not be archived the bar names them with **Retry**.
+Tidy many sessions at once. A card has no checkbox. Pick cards with:
+
+- **Shift** click for a range
+- **Option** click to add or remove one card
+- a lasso with **Option** held for the cards it crosses
+- **Shift+Enter** and **Alt+Enter** from the keyboard
+- **Select** in a card's right click menu
+- **⌘A** for all of them
+
+Then **Archive**, **Restore** or **Delete** them from the bar at the bottom. Archive stops live agents first and asks once, **Stop 2 agents and archive**. With nothing live it archives at once. Delete asks first. Archive and Restore can be undone, and when some sessions could not be archived the bar names them with **Retry**.
 
 **↑** and **↓** move between the cards of a lane. With **Shift** they extend the pick one card at a time.
 
-**Rename** in the same menu edits the title on the card. **Enter** saves once the write lands and **Esc** leaves the name as it was. When the write fails the card keeps its old name. The field stays open, says why, and offers **Retry**.
+**Rename** in the same menu edits the title on the card. **Enter** saves and **Esc** leaves the name as it was. When the write fails the card keeps its old name, and the field stays open, says why and offers **Retry**.
 
 ## Under the hood
 

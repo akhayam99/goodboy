@@ -4,7 +4,20 @@ Talk to agents, watch what they do and steer them while they work. You can ask q
 
 ### Workspace chat
 
-Ask about the workspace without starting a session. **Chat**, in the places rail after **Workflows**, reads every project and never changes a file. Your first visit opens a new chat, with the message box ready when you opened Chat yourself. Archive, from the list or the chat header, shows one toast with **Undo**, and ⌘Z does the same; the chat below takes its place. A rename stays open with its error and **Retry** until it saves. When an answer is worth acting on, **Start work from chat** drafts a session from it and opens **Start a run** there with the brief, routed like any ask, and chats you stop using move to **Idle** so you can archive them. **Archived** at the foot of the list names itself in the studio bar as **Chat › Archived**, and **Chat** goes back to the list. Once the session is saved, the answer keeps one quiet line, **Started** and the session title, that opens it. The title, on the same header row and height as every other page, the answers and the message box share one reading column, and every answer names its model beside the provider's mark. An answer writes itself in as it arrives and is there at once when you open the chat again.
+Ask about the workspace without starting a session. **Chat**, in the places rail after **Workflows**, reads every project and never changes a file.
+
+Your first visit opens a new chat, with the message box ready when you opened Chat yourself. An answer writes itself in as it arrives and is there at once when you open the chat again. Every answer names its model beside the provider's mark.
+
+#### Act on an answer
+
+When an answer is worth acting on, **Start work from chat** drafts a session from it. It opens **Start a run** with the brief, routed like any ask. Once the session is saved, the answer keeps one quiet line, **Started** and the session title, that opens it.
+
+#### Archive and rename
+
+- Archive, from the list or the chat header, shows one toast with **Undo**, and ⌘Z does the same. The chat below takes its place.
+- Chats you stop using move to **Idle** so you can archive them.
+- **Archived** at the foot of the list names itself in the studio bar as **Chat › Archived**, and **Chat** goes back to the list.
+- A rename stays open with its error and **Retry** until it saves.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-dark.webp">
@@ -15,35 +28,82 @@ Ask about the workspace without starting a session. **Chat**, in the places rail
 
 ### Ask in a session
 
-Ask what is happening in a session without leaving it. **Ask** in the right rail, or **⌘L**, opens a pane beside the page, and it stays while you move between Overview, Runs, Artifacts and Context. On a narrow window it lies over the right of the page until you close it.
+Ask what is happening in a session without leaving it. **Ask** in the right rail, or **⌘L**, opens a pane beside the page. It stays while you move between Overview, Runs, Artifacts and Context. On a narrow window it lies over the right of the page until you close it.
 
-A question to try asks at once. Answers name the agents and files they mention as links, the last answer stays open and earlier ones fold to one line, and **Earlier** brings back a past question. The pane is read only, so it never acts for you. Ask and Chat answer the same way: **Stop** keeps what was written and marks the answer stopped, a stop pressed before the provider started means it never starts, and a failure keeps the text so far with its reason.
+A question to try asks at once. Answers name the agents and files they mention as links. The last answer stays open and earlier ones fold to one line, and **Earlier** brings back a past question.
+
+The pane is read only, so it never acts for you. Ask and Chat answer the same way: **Stop** keeps what was written and marks the answer stopped, and a failure keeps the text so far with its reason.
 
 ### Images in chat
 
 Paste, drop or attach images in the chat message box, up to 10 per message, in PNG, JPEG, GIF or WebP. The model reads them with your question, on Claude and on Codex. The image shows as a thumbnail in the message box and in your message, and a click on it opens it large.
 
-Images of a message or of a hint show as one row of small thumbnails. What does not fit the row folds into **+N**. The goal keeps every image in view, each with its Remove control. Other files keep their file chip.
+Images of a message or of a hint show as one row of small thumbnails, and what does not fit folds into **+N**. The goal keeps every image in view, each with its Remove control. Other files keep their file chip.
 
-Opening one image shows the others in a rail on the left, and the rail follows the image you are on. Press the arrow keys or click a thumbnail to move, and Esc to close. An image that cannot be read shows a quiet placeholder that still opens the viewer.
+Opening one image shows the others in a rail on the left. Press the arrow keys or click a thumbnail to move, and Esc to close.
 
 ### Roles
 
-Give each agent the job it is good at. Nine roles come with the app, **Scout**, **Debug**, **Plan**, **Implement**, **Review**, **Test**, **Resolve**, **Docs** and **Generalist**, and a role sets the agent's instructions, its default model and what it hands back. **Analyze** on a failing check starts the Debugger: it reproduces the failure and proposes one fix, or two or three options with a recommended one, and you start the one you pick.
+Give each agent the job it is good at. Nine roles come with the app: **Scout**, **Debug**, **Plan**, **Implement**, **Review**, **Test**, **Resolve**, **Docs** and **Generalist**. A role sets the agent's instructions, its default model and what it hands back.
+
+**Analyze** on a failing check starts the Debugger. It reproduces the failure and proposes one fix, or two or three options with a recommended one, and you start the one you pick.
 
 ### Agent header
 
-Find an agent, then read who it is before you read its work. **Runs** in a session lists every run and every agent you started on one aligned grid: state dot, kind, name, origin, state word, progress, cost and age. The groups are **Needs you**, **Running**, **Idle** and **Finished**, newest first inside each, and a group header counts its rows from two. An archived run leaves Runs and stays on its branch page behind **N archived**. The group name is bold and the agent's name leads its row; every other cell is smaller and gray. The grid, the page count, the Running card and the Agents tree use the same words, so an agent waiting for a permission reads **Needs permission** in all four instead of Running, one with an open question reads **Needs you**, and one that stopped without asking reads **Needs you** in the amber of a warning. An agent you or a restart stopped stays under **Idle** as **Stopped** until you close it, its row shows **Continue** (**Connect** when its provider is signed out), and **Continue all** at the top of the page brings back two or more that a restart stopped. **Finished** holds the done and closed agents, newest first, and a reply you have not read lifts its row and shows a dot. A row opens the agent, its other actions are in the right click menu; a new agent starts from **Start a run** on Runs, or with `@` and a role in its field. On the agent, its role, its task and the mark of the provider it runs on share one row with its menu, which holds at most five actions: **Rename**, **Let the Lead take it from here** (or **Detach from the Lead**, or **Mark finished** on a Lead) and **Delete agent**. The model control stays on the page. **Open in Changes**, **Message this agent**, **Copy name** and **Change model** stay in the right click menu. An agent still named by its role is titled by its brief, and a click on the title opens the full text. A double click on the title renames the agent, a run step or a Lead. A step keeps the new name in that run only. A save that fails keeps the old name and shows the error. The header never repeats the agent's state or model: the state is the line at the end of the conversation, and a footer names the model when it changes.
+Find an agent, then read who it is before you read its work.
+
+#### The Runs grid
+
+**Runs** in a session lists every run and every agent you started on one aligned grid: state dot, kind, name, origin, state word, progress, cost and age.
+
+- The groups are **Needs you**, **Running**, **Idle** and **Finished**, newest first inside each. A group header counts its rows from two.
+- **Finished** holds the done and closed agents. A reply you have not read lifts its row and shows a dot.
+- An archived run leaves Runs and stays on its branch page behind **N archived**.
+- A row opens the agent, and its other actions are in the right click menu.
+- A new agent starts from **Start a run** on Runs, or with `@` and a role in its field.
+
+#### State words
+
+The grid, the page count, the Running card and the Agents tree use the same words:
+
+- **Needs permission**: the agent waits for a permission.
+- **Needs you**: the agent has an open question.
+- **Needs you**, in the amber of a warning: the agent stopped without asking.
+
+An agent you or a restart stopped stays under **Idle** as **Stopped** until you close it. Its row shows **Continue** (**Connect** when its provider is signed out). **Continue all** at the top of the page brings back two or more that a restart stopped.
+
+#### On the agent
+
+The role, the task and the mark of the provider the agent runs on share one row with its menu. The menu holds at most five actions: **Rename**, **Let the Lead take it from here** (or **Detach from the Lead**, or **Mark finished** on a Lead) and **Delete agent**. **Open in Changes**, **Message this agent**, **Copy name** and **Change model** stay in the right click menu, and the model control stays on the page.
+
+An agent still named by its role is titled by its brief, and a click on the title opens the full text. A double click on the title renames the agent, a run step or a Lead. A step keeps the new name in that run only. A save that fails keeps the old name and shows the error.
+
+The header never repeats the agent's state or model. The state is the line at the end of the conversation, and a footer names the model when it changes.
 
 ### One page per agent
 
-Open any agent or step on its own page, in every kind of run. Every door lands there: the Runs grid, the Agents column, a chat card and a notification. The page says who the agent is, why it started, its brief and what came back. Its composer talks to that agent. The panel beside a chat reads **Steps** and keeps the error that **Failed here** points at. A failed child of a Lead has one **Retry** in the dock. The agent menu holds five rows at most.
+Open any agent or step on its own page, in every kind of run. Every door lands there: the Runs grid, the Agents column, a chat card and a notification.
+
+The page says who the agent is, why it started, its brief and what came back. Its composer talks to that agent. The panel beside a chat reads **Steps** and keeps the error that **Failed here** points at. A failed child of a Lead has one **Retry** in the dock.
 
 ### Agent and pull request on the Desk
 
-Watch an agent fix what its pull request shows, side by side. On the Desk the agent and the pull request open as two short panels in the place beside the tools, the agent on top. The agent panel holds its conversation, what it does right now and a message box; when it finishes it says **Finished**, and **Open run** opens its page. **Failed here** brings the failed step into view.
+Watch an agent fix what its pull request shows, side by side. On the Desk the agent and the pull request open as two short panels in the place beside the tools, the agent on top. On the Overview the two open one at a time.
 
-The pull request panel shows **Checks**, with the log of the failing check, and **Conversation**, on GitHub, GitLab and Bitbucket. A check outside GitHub Actions shows **Open on** and its host instead of a log. A read that fails says so, with **Retry**. **Open pull request** opens its page. On the Overview the two open one at a time. Each panel has one head, one action and its X, with no crumbs and no back. Rerun and Send stay on the move in the Desk column. A row of Now opens its agent here, and the row of the open agent is selected. The Desk opens again with the agent and the pull request it had.
+The agent panel:
+
+- Holds its conversation, what it does right now and a message box.
+- Says **Finished** when the agent is done, and **Open run** opens its page.
+- Brings the failed step into view with **Failed here**.
+
+The pull request panel:
+
+- Shows **Checks**, with the log of the failing check, and **Conversation**, on GitHub, GitLab and Bitbucket.
+- Shows **Open on** and its host instead of a log for a check outside GitHub Actions.
+- Says so when a read fails, with **Retry**.
+- Opens its page with **Open pull request**.
+
+A row of Now opens its agent here, and the row of the open agent is selected. The Desk opens again with the agent and the pull request it had.
 
 ### What the agent received
 
@@ -58,7 +118,35 @@ Check exactly what an agent was told. The top of each chat shows the message and
 
 ### Transcript
 
-Follow one agent's work as one conversation you can write in. Each finished turn says in one quiet line what it did ("Read 4 files, ran 8 commands (2 errors)"), and a click on the line opens **Steps** beside the conversation at that turn; then comes the answer, never the running commentary. The answer writes itself in as the turn ends, at a pace that never trails the agent by more than a second and a half, and a click, a selection or find shows it whole. A message you send sits 40px under the top of the view. The reply grows below it, so the text starts at the top and never piles against the message box. The last line keeps 32px of air above the box, the gap between two turns. The view does not follow the reply: **Scroll to latest** shows when it passes the bottom and takes you to the last line. An answer that arrives while you are at the bottom stops the view where it starts. An agent that keeps a task list shows it once, as a checklist that updates in place. The plan, report and wireframe it writes show as chips under its answer, questions and permission requests appear where you answer them, and each subagent is one line, its role, its task and its state, with **Open** taking you to its page. Every door to an agent or a step lands on that same page. It holds the brief, why it was started, the conversation, what came back and one message box. Each turn ends with a quiet footer with its time. It shows the provider mark and the model once, again when they change, and on a stopped or failed turn. Its tokens and cost are one click away. **Steps** on the right holds only the tool rows of every turn: each tool call and file, with its input and output, and no message and no action. While a turn runs, the line at the end says what the agent does right now ("Running pnpm in payments-api", "Reading webhook.ts", "Editing ledger.ts", "Writing the answer", or "Thinking" when nothing has happened yet) and changes only when the activity does. The conversation reads in one 880px column, centred in the space it has, with the session title, the crumbs and the message box on the same edges. Scrolling up through older turns keeps the line you read still: the turns a screen above and below are drawn before they come into view. The agent's name is the last crumb of the session head. Its state, spend and settings sit on the line under it, with the one action and the menu at its end. A lead's **Agents** column stands beside them, its header on the title line. It draws the agents the way the Activity page does. Each agent is one line on the trace, with its state as the node, its role and its task. A child hangs on an elbow under the agent that started it, and no group folds. Messages are 15 on 24, and the outcome of a message is a heading. Turns sit 32px apart and the blocks of a turn 16px. A finished answer of plain text shows its first 12 lines with **Show more**, and an answer that holds a code block or a table always shows whole. A heading sits close to the text it opens and 24px under the text before it. Earlier notes stay folded. **Copy** appears at the end of a message when you point at it or tab to it. The right click menu of a message always has it. A message you type shows once, as you wrote it. Text Goodboy writes for an agent (a Lead delivery, a delegated brief) never shows as yours. It sits in one collapsed row, **What the Lead was told**, that you can open.
+Follow one agent's work as one conversation you can write in. Each finished turn says in one quiet line what it did ("Read 4 files, ran 8 commands (2 errors)"). A click on the line opens **Steps** beside the conversation at that turn. Then comes the answer, never the running commentary.
+
+#### While a turn runs
+
+- The line at the end says what the agent does right now ("Running pnpm in payments-api", "Reading webhook.ts", "Editing ledger.ts", "Writing the answer", or "Thinking" when nothing has happened yet).
+- The answer writes itself in as the turn ends, never trailing the agent by more than a second and a half. A click, a selection or find shows it whole.
+- An agent that keeps a task list shows it once, as a checklist that updates in place.
+- The plan, report and wireframe it writes show as chips under its answer.
+- Questions and permission requests appear where you answer them.
+- Each subagent is one line with its role, its task and its state, and **Open** takes you to its page.
+
+#### Reading it
+
+- A message you send sits near the top of the view and the reply grows below it. The view does not follow the reply: **Scroll to latest** shows when it passes the bottom and takes you to the last line.
+- A finished answer of plain text shows its first 12 lines with **Show more**. An answer that holds a code block or a table always shows whole. Earlier notes stay folded.
+- **Copy** appears at the end of a message when you point at it or tab to it, and the right click menu of a message always has it.
+- A message you type shows once, as you wrote it. Text Goodboy writes for an agent (a Lead delivery, a delegated brief) never shows as yours. It sits in one collapsed row, **What the Lead was told**.
+
+#### Footer and Steps
+
+Each turn ends with a quiet footer with its time. It shows the provider mark and the model once, again when they change, and on a stopped or failed turn. Its tokens and cost are one click away.
+
+**Steps** on the right holds only the tool rows of every turn: each tool call and file, with its input and output, and no message and no action.
+
+#### The head and the Agents column
+
+The agent's name is the last crumb of the session head. Its state, spend and settings sit on the line under it, with the one action and the menu at its end.
+
+A Lead's **Agents** column stands beside them. Each agent is one line on the trace, with its state as the node, its role and its task. A child hangs under the agent that started it, and no group folds.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-dark.webp">
@@ -73,47 +161,106 @@ When an agent recommends another role, its transcript shows **Agent suggests** w
 
 ### Queue or send now
 
-Keep talking while an agent works. **Enter** queues your message for its next turn, and **Send now** (**⌘Enter**), in view beside **Queue** for as long as the turn runs, reads it now, interrupting the turn. The queue survives a restart. A queued message stays saved until the provider accepts it, so a refused send puts it back and a crash does not lose it.
+Keep talking while an agent works. **Enter** queues your message for its next turn. **Send now** (**⌘Enter**), in view beside **Queue** for as long as the turn runs, reads it now, interrupting the turn.
 
-**Send** to an idle agent saves the message the same way first. When it starts at once, you see nothing extra. When it cannot start, it stays above the box as a row that reads **Not delivered**, with the reason on hover and **Retry**. Click the row to put the text back in the box. A message for a stopped agent reads **Sends when you Continue**. A message that reads **Not delivered** keeps that after a reload and waits for **Retry**. Other saved messages start on their own when the session opens, and never twice.
+The queue survives a restart. A queued message stays saved until the provider accepts it, so a refused send puts it back and a crash does not lose it.
+
+**Send** to an idle agent saves the message the same way first. When it starts at once, you see nothing extra. When it cannot start, the message stays above the box:
+
+- **Not delivered**: the row shows the reason on hover and **Retry**. Click the row to put the text back in the box. It keeps that state after a reload and waits for **Retry**.
+- **Sends when you Continue**: the agent is stopped.
+
+Other saved messages start on their own when the session opens, and never twice.
 
 ### Message and document fields
 
-Write to an agent the same way everywhere. Every message and document field takes markdown with **Write** and **Preview**, and files by paste, drop or **Attach**. A message sends on **Enter** with the same **Send** button in the session, Ask and Chat composers, and a document saves on **⌘Enter**. What you type in the message box, in **New session** and in an answer to a question survives a reload and an archive, and a send that lands clears it. When every provider is over its limit, a button that sends says so instead of doing nothing.
+Write to an agent the same way everywhere.
+
+- Every message and document field takes markdown with **Write** and **Preview**, and files by paste, drop or **Attach**.
+- A message sends on **Enter** with the same **Send** button in the session, Ask and Chat composers. A document saves on **⌘Enter**.
+- What you type in the message box, in **New session** and in an answer to a question survives a reload and an archive. A send that lands clears it.
+- When every provider is over its limit, a button that sends says so instead of doing nothing.
 
 ### Agents column
 
-See every agent of a run beside its page. A Lead run and every agent under it share one page. It keeps one session head and an **Agents** column on the left, like the files of the Changes page. The header reads **Agents** with a count that includes every agent. The first row is the run itself; under it one row per agent with its role, task, state and cost, and the activity trace on its left edge.
+See every agent of a run beside its page. A Lead run and every agent under it share one page. It keeps one session head and an **Agents** column on the left, like the files of the Changes page.
+
+The header reads **Agents** with a count that includes every agent. The first row is the run itself. Under it is one row per agent with its role, task, state and cost, and the activity trace on its left edge. Each row shows the model by name with the effort, muted, and hides it when the panel is too narrow to keep the title whole.
+
+#### Using the column
 
 - The column opens wide, can be resized and remembers its width. On a narrow window it folds to **Show agents**.
-- Picking a row shows that agent's conversation in the middle and marks the row; picking the run row shows the run again. The column keeps its place. **↑** and **↓** move through the rows, **Enter** opens one.
-- An agent's page starts with why the Lead started it: the reason for the role, when it is done, what went in, where it runs and the attempt. Where it runs names the provider, the model and the step size.
-- Under the model, one line says why it runs there, in the Lead's words or by your rule. When a guard moved the Lead's pick or changed its effort, the line says why and the Lead's own words follow. **Candidates it weighed** lists every model it weighed when it started, with its place in your order, how much room was left and its agents in the last hour. The pick is checked, and a model it could not use is struck with the reason. An agent started before this release has no why line.
+- Picking a row shows that agent's conversation in the middle and marks the row. Picking the run row shows the run again.
+- **↑** and **↓** move through the rows, **Enter** opens one.
 - A note you queued in the composer shows as a row of the tree, with **Edit** and **Remove**.
-- A page has one **Stop**. On a running agent it sits in the box you type in, and the line at the end of the conversation leaves it there. **Esc** goes one crumb up.
-- An agent says its state with the word of its row: in the head, in the lines of the agents it started and in the column.
-- The run reads the same name everywhere: its crumb, the run page and the first row of the column. A deep agent keeps the first crumb and the last two; the crumbs between them fold into one **…** that lists them.
-- The box you type in on an agent's page names the model the Lead chose for that agent.
+- A page has one **Stop**. On a running agent it sits in the box you type in. **Esc** goes one crumb up.
+- The run reads the same name everywhere: its crumb, the run page and the first row of the column. A deep agent keeps the first crumb and the last two, and the crumbs between them fold into one **…** that lists them.
 
-Each agent row shows its model by name with the effort, muted. It hides when the panel is too narrow to keep the title whole.
+#### An agent's page
+
+An agent's page starts with why the Lead started it: the reason for the role, when it is done, what went in, where it runs and the attempt. Where it runs names the provider, the model and the step size. The box you type in names the model the Lead chose for that agent.
+
+Under the model, one line says why it runs there, in the Lead's words or by your rule. When a guard moved the Lead's pick or changed its effort, the line says why and the Lead's own words follow. An agent started before this release has no why line.
+
+**Candidates it weighed** lists every model it weighed when it started, with its place in your order, how much room was left and its agents in the last hour. The pick is checked, and a model it could not use is struck with the reason.
 
 Rest on an agent's role glyph to read its whole story. The card shows the task in full and its state with the time. Each model it ran on gets a line with the provider's mark and a small effort meter. Then come its start, its tokens and its cost.
 
 ### One dock
 
-Everything that needs you sits in one block joined to the box you type in. The header keeps the state word, the spend and the settings, and the dock says the sentence. A permission asks there, with **Allow and continue**, **Always allow**, **Deny** and a `⋯` for the rarer answers. One line stays in the chat for each answer, such as "Allowed rm -rf node_modules". A question asks there too, with its pager, and the chat keeps "You answered". When two asks wait, the dock shows `1 of 2` and the agent goes on once you answered both. On a Lead, a subagent's permission reaches the same dock and names the agent. **Open Implementer** goes to its page.
+Everything that needs you sits in one block joined to the box you type in. The header keeps the state word, the spend and the settings, and the dock says the sentence.
 
-A failed turn keeps **Retry** in the dock and **Failed here** in the chat. The latter opens its explanation in Steps, even after a later success. On an older failure it shows the reason on hover.
+#### Permissions and questions
 
-A stopped agent reads **Stopped by you. What it wrote is kept.** with a filled **Continue**, and a stopped subagent offers **Continue**, never **Retry**. The Lead's limit, failure and project ask sit there too: **Raise to $20.00**, **Retry**, **Use payments-api**. When a run ends with changes, the dock reads **2 files changed on hl/reinstall-deps** with **Review changes**, and nothing when nothing changed. A wait elsewhere in the session stays in the agents rail and in **Needs you** at the top, never in this dock. A next step the Lead proposes waits there too.
+- A permission asks there, with **Allow and continue**, **Always allow**, **Deny** and a `⋯` for the rarer answers. One line stays in the chat for each answer, such as "Allowed rm -rf node_modules".
+- A question asks there too, with its pager, and the chat keeps "You answered".
+- When two asks wait, the dock shows `1 of 2` and the agent goes on once you answered both.
+- On a Lead, a subagent's permission reaches the same dock and names the agent. **Open Implementer** goes to its page.
+- An **Always allow** that could not resume reads **Stopped before your answer** with a filled **Continue**.
 
-An **Always allow** that could not resume reads **Stopped before your answer** with a filled **Continue**.
+#### Failed and stopped
 
-A message you send while a permission waits denies it, and your text is the reason the agent reads. The box says so first: **Your message will deny this, with your text as the reason**, and Send reads **Send and deny**, and so does Retry on a **Not delivered** row. On a Lead the message goes to the agent that asks, and if that agent can't take it the message comes back to the box with the reason. If the message can't be sent, the ask stays open. A message you queued during the turn waits in the tray while a permission is open, and you can still edit it. It goes on once you answer.
+- A failed turn keeps **Retry** in the dock and **Failed here** in the chat. The latter opens its explanation in Steps, even after a later success.
+- A stopped agent reads **Stopped by you. What it wrote is kept.** with a filled **Continue**. A stopped subagent offers **Continue**, never **Retry**.
+- The Lead's limit, failure and project ask sit there too: **Raise to $20.00**, **Retry**, **Use payments-api**. A next step the Lead proposes waits there as well.
+- When a run ends with changes, the dock reads **2 files changed on hl/reinstall-deps** with **Review changes**. It says nothing when nothing changed.
+- A wait elsewhere in the session stays in the agents rail and in **Needs you** at the top, never in this dock.
+
+#### Writing while a permission waits
+
+A message you send while a permission waits denies it, and your text is the reason the agent reads.
+
+- The box says so first: **Your message will deny this, with your text as the reason**. Send reads **Send and deny**, and so does Retry on a **Not delivered** row.
+- On a Lead the message goes to the agent that asks. If that agent can't take it, the message comes back to the box with the reason.
+- If the message can't be sent, the ask stays open.
+- A message you queued during the turn waits in the tray while a permission is open, and you can still edit it. It goes on once you answer.
 
 ### Stop and Continue
 
-Stop an agent without losing its work. While a turn runs, the dock says what the agent does now, with its clock and one labeled **Stop**. On a Lead it names what it stops, as in **Stop Lead and 2 agents**. On that page the button ends the crumb row. On a step page it reads **Stop this reply**: the step reads Stopped and the run is paused. A single subagent stops from its right click, or from its own page. **Send now** and **Queue** come with a draft, and the box never moves. The agent header has no **Stop** and no state word. Search or run and the right click menu say **Stop** too. **Esc** twice presses that same button, when no menu, drawer or dialog is open. Stopping keeps what the agent wrote and offers **Continue**. A turn that waits on a permission ask stops the same way, and the ask stays undecided. **Stop** waits until the process has exited: the button and the line read **Stopping** and stay busy, and when the exit takes more than 5 seconds they read **Still stopping** with **Force stop**, which asks again. One word halts each thing: **Stop** an agent, **Stop run** a run (it acts at once, and the toast offers **Continue**), and **Pause run** exists on the run page only. One word picks it up: **Continue** an agent, a step or a run, and **Continue all** several. If Goodboy cannot stop the agent, the agent stays running with the error shown. **Stop all running agents (N)** in the session menu and Search or run, and **Stop all (N)** at the top of Runs, stop every running agent of the session without asking, one waiting for your permission included, and report "Stopped 4, 1 still running" in a toast whose **Continue** brings back each agent that really stopped, with its work kept. It never touches one that is still running. **Continue** retries only the agents not yet brought back. It skips an agent that has started again. A review fix closes only once its process has exited. A fix stopped in a lane offers **Continue** for every fix the lane closed. A run stopped between steps offers **Continue** for the run. An agent that was working when you restart or update Goodboy picks up where it stopped, and **Continue all** brings back every one a restart stopped.
+Stop an agent without losing its work.
+
+#### Stop
+
+- While a turn runs, the dock says what the agent does now, with its clock and one labeled **Stop**.
+- On a Lead it names what it stops, as in **Stop Lead and 2 agents**. On a step page it reads **Stop this reply**: the step reads Stopped and the run is paused. A single subagent stops from its right click, or from its own page.
+- Search or run and the right click menu say **Stop** too. **Esc** twice presses that same button, when no menu, drawer or dialog is open.
+- Stopping keeps what the agent wrote and offers **Continue**. A turn that waits on a permission ask stops the same way, and the ask stays undecided.
+- **Stop** waits until the process has exited: the button and the line read **Stopping** and stay busy. When the exit takes more than 5 seconds they read **Still stopping** with **Force stop**, which asks again.
+- If Goodboy cannot stop the agent, the agent stays running with the error shown.
+
+One word halts each thing: **Stop** an agent, **Stop run** a run, and **Pause run** on the run page only. **Stop run** acts at once, and its toast offers **Continue**. One word picks it up: **Continue** an agent, a step or a run, and **Continue all** several.
+
+#### Stop all
+
+**Stop all running agents (N)** in the session menu and Search or run, and **Stop all (N)** at the top of Runs, stop every running agent of the session without asking. An agent waiting for your permission is included.
+
+A toast reports "Stopped 4, 1 still running". Its **Continue** brings back each agent that really stopped, with its work kept. It never touches one that is still running, retries only the agents not yet brought back, and skips an agent that has started again.
+
+#### After a restart
+
+- An agent that was working when you restart or update Goodboy picks up where it stopped. **Continue all** brings back every one a restart stopped.
+- A review fix closes only once its process has exited. A fix stopped in a lane offers **Continue** for every fix the lane closed.
+- A run stopped between steps offers **Continue** for the run.
 
 ### Quiet agents
 
@@ -125,7 +272,16 @@ See what each turn cost: the model with its provider mark, the duration and the 
 
 ### Tool call states
 
-Tell at a glance what a tool call did: **Running**, **Done**, **Failed**, **Needs permission**, **Stopped** or **Denied**, with elapsed time and readable input and output. A command (Bash, shell) opens to its command as `$ command` and its output in monospace, the output cut to its last 40 lines with **Show all N lines**, and the exit code in the heading when the provider reports one. Under them: **Copy command**, **Copy output**, **Run in terminal** and **Ask about this output**. **Run in terminal** opens a new tab of the session terminal on the folder the agent ran in and types the command; it never presses Enter, and several lines go in as one paste so none of them runs by itself. **Ask about this output** attaches the command and its output to the composer of the agent that ran it, without sending it. A code block in an agent's message has its own header with the language on the left and **Wrap** and **Copy** on the right; a shell block (`bash`, `sh`, `zsh`, `console`, or untagged and starting like a command) also shows **Run in terminal**. A long line scrolls inside the block until you turn **Wrap** on. An archived session keeps **Copy** and drops the other verbs.
+Tell at a glance what a tool call did: **Running**, **Done**, **Failed**, **Needs permission**, **Stopped** or **Denied**, with elapsed time and readable input and output.
+
+A command (Bash, shell) opens to its command as `$ command` and its output in monospace:
+
+- The output is cut to its last 40 lines with **Show all N lines**, and the exit code is in the heading when the provider reports one.
+- **Copy command** and **Copy output** copy each part.
+- **Run in terminal** opens a new tab of the session terminal on the folder the agent ran in and types the command. It never presses Enter, and several lines go in as one paste so none of them runs by itself.
+- **Ask about this output** attaches the command and its output to the composer of the agent that ran it, without sending it.
+
+A code block in an agent's message has its own header with the language on the left and **Wrap** and **Copy** on the right. A long line scrolls inside the block until you turn **Wrap** on. A shell block (`bash`, `sh`, `zsh`, `console`, or untagged and starting like a command) also shows **Run in terminal**. An archived session keeps **Copy** and drops the other verbs.
 
 ### Composer plus menu
 
@@ -152,15 +308,27 @@ Run a plan part by part. An implementer given a plan splits into one sub-agent p
 
 ### Lead
 
-A Lead plans a run, hands the work to helpers and asks you only for what your [permission rows](start.md#permission-rows) say. It answers a question itself. When there is something to make, it hands the work to the narrowest role that fits. That is a CI fixer for a red check, a Scribe for pull request text, a Tester for tests, and Docs for the README or changelog. The Implementer is the fallback for code changes. It picks the provider and model of each from the providers you turned on, and reads what comes back. When its pick cannot run, the helper starts on the best model left and its reason says why. A helper you continue keeps its model.
+A Lead plans a run, hands the work to helpers and asks you only for what your [permission rows](start.md#permission-rows) say. It answers a question itself.
 
-When the provider a role would use is at its usage limit, the work moves to another connected provider on a model you have not hidden. A Scout, a Planner, an Investigator or a Reviewer can run wherever the Lead can, Cursor included. A role that writes code runs only on Claude or Codex. When no provider can take a role, the Lead hears each provider and why. It reads "Claude: usage limit until 16:10. Cursor: runs only reading roles for Auto." and points to Settings › Models.
+When there is something to make, it hands the work to the narrowest role that fits:
+
+- a CI fixer for a red check
+- a Scribe for pull request text
+- a Tester for tests
+- Docs for the README or changelog
+- the Implementer for code changes, as the fallback
+
+The Lead picks the provider and model of each from the providers you turned on, and reads what comes back. When its pick cannot run, the helper starts on the best model left and its reason says why. A helper you continue keeps its model.
+
+When the provider a role would use is at its usage limit, the work moves to another connected provider on a model you have not hidden. A Scout, a Planner, an Investigator or a Reviewer can run wherever the Lead can, Cursor included. A role that writes code runs only on Claude or Codex.
+
+When no provider can take a role, the Lead hears each provider and why. It reads "Claude: usage limit until 16:10. Cursor: runs only reading roles for Auto." and points to Settings › Models.
 
 A new Implementer child whose task fits a narrower role is refused once, with the role named. The Lead can resend it with a reason, and the child page shows **Why not Tester** under why the Lead chose Implementer.
 
 Every new run from **Start a run** has a Lead, unless you named one role. There is no switch in Settings. Its row on Runs and in the Overview reads "Lead", or "Lead · plan Fix flaky tests" when it follows a preset. A run started from review comments reads "From comment LedgerPage.tsx:24", or "From 2 comments".
 
-**The Lead page**
+#### The Lead page
 
 - A Lead reads the same words as every other row: **Running**, **Needs you**, **Idle**, **Stopped** or **Done**. A plan that waits for you reads **Needs approval**. The reason for a wait, a question, the limit or a failure, stands next to it.
 - The Lead page is the page of its run, inside Runs. It shows the chat and the tree of its agents. For the agent you select it also shows the record of what it was given at launch. Under 860 pixels of width the tree opens from the **Agents** count in the header.
@@ -169,53 +337,95 @@ Every new run from **Start a run** has a Lead, unless you named one role. There 
 - An ask to push, open a pull request, add a dependency or change a protected file appears in the action bar. It has one main answer and one quiet one.
 - With **Close the work** at Lead, a Lead that decides the work is done ends in **Finished**, once no agent is open and nothing waits. A message from you opens it again.
 - ⌘K lists one row per open Lead, and the [Board](board.md#session-card) shows which session waits for you. There is no Work page: a window left on it opens on the Board.
+- The Lead's state shows once, in the dock, as in **Implementer running, Tester queued**. While any agent waits on you the run reads **Needs you** everywhere, and the dock keeps only its actions.
+- Each Lead conversation is titled by what you asked it.
 
-**Where you see it**
+#### Its agents in the Agents column
 
 - The **Agents** column shows the Lead, then every agent it started with its state.
-- Each agent has a short name for what it does, such as **Review the payments-api side**. The Lead gives it, or the first sentence of the task stands in. The role is the glyph beside it.
-- The same name shows in the **Agents** column, the chat lines, the result cards and what the Lead reads.
-- Each Lead conversation is titled by what you asked it.
-- Open a conversation and the Lead sits on top of its column. Its subagents sit below in four groups: **Running**, **Needs you**, **Queued** and **Done**, each with a count of its subagents. Queued holds queued and ready agents; Needs you holds any agent that needs you. One line under the title sums them up, such as "2 running, 1 needs you, 1 queued, 7 done". With no subagent yet there is no summary and no group, only "No agents started yet".
+- Each agent has a short name for what it does, such as **Review the payments-api side**. The Lead gives it, or the first sentence of the task stands in. The role is the glyph beside it. The same name shows in the column, the chat lines, the result cards and what the Lead reads.
+- Open a conversation and the Lead sits on top of its column. Its subagents sit below in four groups, each with a count: **Running**, **Needs you**, **Queued** and **Done**. Queued holds queued and ready agents. Needs you holds any agent that needs you.
+- One line under the title sums them up, such as "2 running, 1 needs you, 1 queued, 7 done". With no subagent yet there is only "No agents started yet".
 - A Lead can hand work to as many agents as it wants. Four run at once. The others wait under **Queued**, and each starts by itself when a running one ends. **Stop** clears the queued ones too.
-- An agent takes two lines. The first is its name, at most two lines long. The second is its role, then who asked it when another agent did ("from Planner"), then its time. A working agent reads stronger, in medium weight; waiting and done agents read quieter.
-- **Done** is folded. Open or fold it with a click or the arrow keys. It stays open while the agent you opened is in it, and once the Lead has stopped working and every helper is done. Your choice to open or fold it holds in every other case.
-- Inside a group the agent started last comes first, a helper of another agent included. A new agent arrives at the top of its group without moving what you are reading. Keyboard focus stays on a row that changes group.
-- In the list of all conversations, a conversation row never folds. A finished one keeps its helpers behind one line under it, such as "3 helpers", with the most urgent state of those helpers beside the count. An agent with helpers of its own folds the same way. A fold opens by itself when a hidden helper needs you.
-- The chat shows each agent the Lead starts as one line with its role, task, state and elapsed time. The whole line opens the agent, by a click or by Enter, and it has no buttons. To stop that agent, right click the line and pick **Stop**. **Open** on a finished agent reveals it in **Agents** and keeps the Lead in view.
+- An agent takes two lines. The first is its name. The second is its role, then who asked it when another agent did ("from Planner"), then its time.
+- **Done** is folded. Open or fold it with a click or the arrow keys. It stays open while the agent you opened is in it, and once the Lead has stopped working and every helper is done.
+- In the list of all conversations, a finished conversation keeps its helpers behind one line under it, such as "3 helpers", with the most urgent state of those helpers beside the count. An agent with helpers of its own folds the same way. A fold opens by itself when a hidden helper needs you.
+
+#### Agents in the chat
+
+- The chat shows each agent the Lead starts as one line with its role, task, state and elapsed time. The whole line opens the agent, by a click or by Enter. To stop that agent, right click the line and pick **Stop**.
+- **Open** on a finished agent reveals it in **Agents** and keeps the Lead in view.
 - When agents report back, each report sits in that agent's card right above the Lead's reply. The card shows role, name, model, state and **Open**.
-- The Lead's reply adds only what the reports mean together. The plan waits in the dock joined to the message field with **Approve and start Build**, **Ask for changes** and **Open plan**. Approving from the dock or from the plan drawer clears that bar at once, in every window, and the Lead moves on to Build. A second approve of the same version does nothing. An approve of a version that is no longer current is refused and names the current one.
-- While the plan waits, a message to the Lead is a request for changes. **Ask for changes** puts the cursor in the same field. The Lead reads the message at once. With two plans waiting, the Lead asks which one you mean. A message sent while the Lead is working waits in the queue as any other.
-- While a change is read or a Planner writes a new plan, the dock reads **Updating plan v1 to v2**. A Planner that only waits for your go leaves plan v1 waiting. Approve and **Ask for changes** stay disabled, and hovering says why. When the Next step already asks for that change, Approve is left out so **Continue** stays the one primary. Then the dock asks for **Plan v2**, and v1 reads **Superseded**. A failed Planner reads **Plan v2 failed** with **Retry plan v2** and **Keep plan v1**. A discarded plan or Planner never asks.
-- The Lead's state shows once, in the dock, as in **Implementer running, Tester queued**. While any agent waits on you the run reads **Needs you** everywhere, and the dock keeps only its actions.
-- An agent that cannot finish comes back to the Lead at once, while the others keep working. The Lead must decide about it: go on with it, give the task to another role, let it go with a reason, or ask you with a **Next step** card. An agent comes back twice at most, and a task is handed over three times at most before the Lead asks you.
-- Each task goes to the narrowest role that fits: a red check to a CI fixer, the pull request to a Scribe, tests to a Tester, docs to Docs. The Implementer changes code. When the Lead keeps an Implementer for work a narrower role fits, the agent's page says why, as in **Why not Tester**.
-- The Lead talks to the agents it started. It can give one that ended new instructions, and it keeps its role and its work. It can send a working one a message, which the agent reads when its turn ends. It can stop one. The line reads **Stopped by the Lead** with the reason. It sends one agent four messages at most.
-- The Lead also tidies its own work, so the run never waits for nothing. It can close an agent as done, mark a step skipped, or discard an agent. A discarded agent leaves the column, and its conversation is kept. A working agent stops first. The agent's line reads **Closed by the Lead**, **Skipped by the Lead** or **Discarded by the Lead**, with the reason, and a skipped step counts as done.
-- The Lead can drop a plan it replaced. When you approve plans, the dock asks first, as in **The Lead wants to drop plan v1**, with **Drop plan v1** beside **Approve and start Build**. Otherwise the plan goes at once. A dropped plan no longer asks for approval, and the dock shows the newest plan that waits.
-- When you ask for a new plan, the Lead makes the next version of the same plan, so the dock reads **Plan v2 needs approval**.
+- The Lead's reply adds only what the reports mean together.
 - When you write to an agent the Lead started, your message goes on with that agent's work, in its role and on its model. The answer goes to the Lead. While the agent works, your message waits for its turn to end.
 
-**Limit and control**
+#### Plans
+
+The plan waits in the dock joined to the message field with **Approve and start Build**, **Ask for changes** and **Open plan**.
+
+- Approving from the dock or from the plan drawer clears that bar at once, and the Lead moves on to Build. An approve of a version that is no longer current is refused and names the current one.
+- While the plan waits, a message to the Lead is a request for changes. **Ask for changes** puts the cursor in the same field, and the Lead reads the message at once. With two plans waiting, the Lead asks which one you mean.
+- While a change is read or a Planner writes a new plan, the dock reads **Updating plan v1 to v2**, and Approve and **Ask for changes** stay disabled. Hovering says why.
+- Then the dock asks for **Plan v2**, and v1 reads **Superseded**. When you ask for a new plan, the Lead makes the next version of the same plan, so the dock reads **Plan v2 needs approval**.
+- A failed Planner reads **Plan v2 failed** with **Retry plan v2** and **Keep plan v1**.
+- The Lead can drop a plan it replaced. When you approve plans, the dock asks first, as in **The Lead wants to drop plan v1**, with **Drop plan v1** beside **Approve and start Build**. Otherwise the plan goes at once. A dropped plan no longer asks for approval, and the dock shows the newest plan that waits.
+
+#### How the Lead manages its agents
+
+- An agent that cannot finish comes back to the Lead at once, while the others keep working. The Lead must decide about it: go on with it, give the task to another role, let it go with a reason, or ask you with a **Next step** card. An agent comes back twice at most, and a task is handed over three times at most before the Lead asks you.
+- Each task goes to the narrowest role that fits. When the Lead keeps an Implementer for work a narrower role fits, the agent's page says why, as in **Why not Tester**.
+- The Lead talks to the agents it started. It can give one that ended new instructions, and it keeps its role and its work. It can send a working one a message, which the agent reads when its turn ends. It sends one agent four messages at most.
+- It can stop one. The line reads **Stopped by the Lead** with the reason.
+- The Lead also tidies its own work, so the run never waits for nothing. It can close an agent as done, mark a step skipped, or discard an agent. A working agent stops first. A discarded agent leaves the column, and its conversation is kept.
+- The agent's line reads **Closed by the Lead**, **Skipped by the Lead** or **Discarded by the Lead**, with the reason, and a skipped step counts as done.
+
+#### Limit and control
 
 - Set a **Limit** once per workspace.
 - Change, raise or remove the **Limit** of a running conversation from its word under the title, such as "Limit $5.00". Clear the amount to remove it. **Undo** is there. When the limit comes from the workspace, the "from Harborline" tag in the popover is a link to Workflows, Every run.
-- A message to the Lead takes the same files as the session chat, a PDF included, and the Lead reads them with your words.
-- A message you send to the Lead while it works waits in one list above the message box, in the order you sent it. It stays there until the Lead has read it. Each row reads **Waits for this reply**, **Waits for** the task it waits for, or **Not delivered** with the reason on hover. Its images show as small thumbnails, and the count on the row names every file. **Send now**, **Retry** or **Change limit** sit on the row. **Edit** or **Remove** take the message back, with its text and files, until the Lead has read it. Once it has, the message shows in the chat before the turn that read it.
 - The smallest limit pauses the Lead. A session limit under the Lead's own lowers it, and the chip says which one wins.
-- An agent's page, a run's page and a Lead page have the same one line under their title: the state, one sentence, what that agent spent and its settings. A Lead reads "Stops after the plan · Ask first · Limit $10.00", an agent "Ask first · No limit". A running agent shows the state word alone, and a Lead page drops the sentence while its dock says it. Each word is underlined with dots and opens one choice; its tooltip says what it changes. Nothing unfolds above the chat. The model is picked in the message box, beside **Send**.
-- A Lead page shows **Asks you** in that chip line, which opens its permission rows. It starts on the workspace default, a pick changes this Lead only, and it applies to what the Lead starts next. An agent already waiting for your go keeps waiting. The message field stays under the conversation at every level.
-- When the Lead needs a choice, it shows one **Next step** card, never a yes or no question. The proposed agent is the first option, such as **Spawn implementer**, tagged **Recommended**. One or two others follow, one row each, and the main button reads **Continue**. The picked option is filled and outlined. The card is small and plain, and only a small dot says it waits for you. A hint stays hidden until you press **Add a hint**. The keys 1 to 3 and the arrow keys pick an option once you are in the card. An option other than the first declines the proposal and tells the Lead your pick. **Not now** declines and tells nothing.
-- A Lead goes on while your settings allow it. Its limit stops it: "The run reached its limit." with **Raise limit**.
-- A few health checks stop it too, each with its sentence on the page. Three replies that leave the work where it was: "The Lead replied 3 times with no next step." with **Retry**. With no limit set, six returns in 30 minutes: "Agents came back to the Lead 6 times in 30 minutes with no limit set."
-- An agent of a Lead has no time limit. One that shows no output for 30 minutes, with no tool still running, reads **Needs you**: "No output for 30 minutes." with **Retry**. An agent waiting on a question waits as long as you need.
-- An agent that keeps coming back, or a task handed over again and again, ends in **Needs you** with its reason.
-- Two helpers of one agent run at once. A third waits under **Queued** and starts when one is done. It leaves if the agent stops waiting for it.
-- When the work rests, the Lead reads **Idle**. **Mark finished** in its header menu closes it, and writing to it again reopens it.
-- When the Lead cannot decide its next step, it reads **Failed** with the reason and a **Retry**. A message you send retries too. The reason shows on two lines at most, and the whole text opens when you point at it or tab to it. **Open transcript** opens the conversation.
-- **Stop** and **Retry** work from every Goodboy window. A failure says why under them.
+- An agent's page, a run's page and a Lead page have the same one line under their title: the state, one sentence, what that agent spent and its settings. A Lead reads "Stops after the plan · Ask first · Limit $10.00", an agent "Ask first · No limit". Each word opens one choice, and its tooltip says what it changes.
+- The model is picked in the message box, beside **Send**.
+- A Lead page shows **Asks you** in that line, which opens its permission rows. It starts on the workspace default, a pick changes this Lead only, and it applies to what the Lead starts next. An agent already waiting for your go keeps waiting.
 
-**Hand an agent to a Lead**
+#### Messages to a Lead
+
+A message to the Lead takes the same files as the session chat, a PDF included, and the Lead reads them with your words.
+
+A message you send while the Lead works waits in one list above the message box, in the order you sent it. It stays there until the Lead has read it. Each row reads:
+
+- **Waits for this reply**
+- **Waits for** the task it waits for
+- **Not delivered**, with the reason on hover
+
+**Send now**, **Retry** or **Change limit** sit on the row. **Edit** or **Remove** take the message back, with its text and files, until the Lead has read it. Once it has, the message shows in the chat before the turn that read it.
+
+#### The Next step card
+
+When the Lead needs a choice, it shows one **Next step** card, never a yes or no question.
+
+- The proposed agent is the first option, such as **Spawn implementer**, tagged **Recommended**. One or two others follow, one row each.
+- The main button reads **Continue**. A hint stays hidden until you press **Add a hint**.
+- The keys 1 to 3 and the arrow keys pick an option once you are in the card.
+- An option other than the first declines the proposal and tells the Lead your pick. **Not now** declines and tells nothing.
+
+#### When the Lead stops
+
+A Lead goes on while your settings allow it. These stop it:
+
+- Its limit: "The run reached its limit." with **Raise limit**.
+- Three replies that leave the work where it was: "The Lead replied 3 times with no next step." with **Retry**.
+- With no limit set, six returns in 30 minutes: "Agents came back to the Lead 6 times in 30 minutes with no limit set."
+- An agent that keeps coming back, or a task handed over again and again, ends in **Needs you** with its reason.
+- When the Lead cannot decide its next step, it reads **Failed** with the reason and a **Retry**. A message you send retries too. **Open transcript** opens the conversation.
+
+An agent of a Lead has no time limit. One that shows no output for 30 minutes, with no tool still running, reads **Needs you**: "No output for 30 minutes." with **Retry**. An agent waiting on a question waits as long as you need.
+
+Two helpers of one agent run at once. A third waits under **Queued** and starts when one is done. It leaves if the agent stops waiting for it.
+
+When the work rests, the Lead reads **Idle**. **Mark finished** in its header menu closes it, and writing to it again reopens it. **Stop** and **Retry** work from every Goodboy window. A failure says why under them.
+
+#### Hand an agent to a Lead
 
 Use **Let the Lead take it from here** in the menu of an agent you started yourself. That means an Implementer, Tester, analysis agent or Generalist that is not part of a Run. Agents that Start a run started never show it.
 
@@ -223,7 +433,7 @@ The **Continue** cards at the end of a finished agent, such as **Continue with P
 
 The agent keeps its chat and its files, but you can only read it from then on. **Detach from the Lead** takes it back. Inside a Lead conversation, the other next-step buttons stay out of the way.
 
-**Checks and push**
+#### Checks and push
 
 - In a project's settings, a script row has a second button, **Use as an Auto check**.
 - After an agent that writes finishes on a clean tree, Goodboy runs the scripts you ticked. It runs them one at a time with a 5 minute limit each.
@@ -231,18 +441,19 @@ The agent keeps its chat and its files, but you can only read it from then on. *
 - **Not checked** gives one of these reasons: nothing ticked, timed out, the tree changed or has uncommitted changes, or the checks could not run.
 - **Retry checks** on the card repeats them on the same commit from any window.
 - When you ask the Lead to push, Goodboy pushes the checked commit after the agent finishes and its checks are not red. The card says **Pushed**, **Not pushed** with the reason, or **Waiting for you to confirm**.
-- A force push keeps a backup of the online version it replaces. It pushes exactly the commit that was checked and waits for one **Force push** for the whole batch. The button reads **Pushing** while it works, and it still reads so after a reload or in a second window. Then the row shows each branch in place: pushed, **Not pushed**, or the reason with **Retry push**. **Undo force push** on the card restores the branch on origin first, then here.
-- A push that Goodboy lost by closing mid way turns into a failure with **Retry push**. That waits until it has been pushing for 100 minutes, longer than the three network steps of a push can take. A second window never cuts a push that is still running. A push that ran but whose result could not be saved is reported, and Goodboy keeps trying to save the real result until it can. If a restart comes first, it ends the same way as a lost push. Both show their reason and **Retry push** even when it was the first push.
+- A force push keeps a backup of the online version it replaces. It pushes exactly the commit that was checked and waits for one **Force push** for the whole batch. The button reads **Pushing** while it works, and it still reads so after a reload or in a second window.
+- Then the row shows each branch in place: pushed, **Not pushed**, or the reason with **Retry push**. **Undo force push** on the card restores the branch on origin first, then here.
+- A push that Goodboy lost by closing midway turns into a failure with **Retry push**, once it has been pushing for 100 minutes. A push that ran but whose result could not be saved is reported, and Goodboy keeps trying to save the real result until it can. Both show their reason and **Retry push**.
 - **Retry push** appears once, for a failure that can still pass. If the retry is held again, the row stays with the new reason.
 
-**Safety**
+#### Safety
 
 - Goodboy refuses an agent the Lead started that asks it to push your branch, open a pull request or merge one. It gives that agent no git host token.
 - The agent can read and comment. Its report says what should be pushed.
 - When an agent that writes finishes and its branch changed online while it worked, its card says so: "The branch changed online while this agent worked." The report the Lead reads says so too. When Goodboy could not check, the card says that instead.
 - The files an agent that writes changed include the ones it committed.
 
-**Helpers**
+#### Helpers
 
 An agent that waits on a question can say it needs a Scout or an Investigator. The Lead answers it itself or starts one. The helper shows one level under the agent that waits in the **Agents** column, and the Lead hands its report back with the answer.
 

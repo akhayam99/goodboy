@@ -6,9 +6,34 @@ Get from install to a first agent. Check the agents on this Mac, make a workspac
 
 Setup opens on your agents, step one of three from install to a first agent reading your code. The steps are **Agents**, **Workspace** and **First session**, and the first one opens with the welcome and the line that nothing is pushed until you say so.
 
-Goodboy runs the coding agents already on this Mac, and one ready agent is enough. Each row says where its CLI stands: **Ready** with its version and account, **Not signed in** with **Sign in**, **Not installed** with **Install** and the exact command, **Can't start** with the CLI's output and **Check again**, or **Update needed** with **Update** when the CLI is too old to report its sign in. Claude, Codex, Cursor, Gemini and Copilot each have a row. Rows check again when you come back to the window. The agent marked **Default** becomes the default of your first workspace, and providers billed by API key sit behind **Use an API key instead**.
+#### Check your agents
 
-Nothing is saved until you create a workspace. **Set up later** sits in the header, Escape goes back one step and never ends setup, and the next launch opens at the step you left. If one step of the launch takes ten seconds, the splash says so and offers **Restart**. If making the workspace fails, the reason shows in the action row of the Workspace step and the buttons stay. A setup card on the Board counts the three steps, **Setup · 2 of 3** beside a small meter, folds finished steps into one line, gives the open step the one button, and offers **Resume setup** while setup is paused. The last step is the same **Start a run** field a session uses, filled with a starter and set to Scout, which reads the folder and changes nothing. A Scout run has no Limit chip. With a task tool connected and an open issue it opens on **Pick an issue** with the first issue selected, and **Draft the brief** takes it to the New session page; with a tool and no open issue, or no tool, it stays on **Ask about the code**, with a **Connect Linear or Jira** link that opens the tools and brings you back.
+Goodboy runs the coding agents already on this Mac, and one ready agent is enough. Claude, Codex, Cursor, Gemini and Copilot each have a row. Each row says where its CLI stands:
+
+- **Ready**, with its version and account.
+- **Not signed in**, with **Sign in**.
+- **Not installed**, with **Install** and the exact command.
+- **Can't start**, with the CLI's output and **Check again**.
+- **Update needed**, with **Update**, when the CLI is too old to report its sign in.
+
+Rows check again when you come back to the window. The agent marked **Default** becomes the default of your first workspace. Providers billed by API key sit behind **Use an API key instead**.
+
+#### Leave and resume setup
+
+Nothing is saved until you create a workspace.
+
+- **Set up later** sits in the header. The next launch opens at the step you left.
+- Escape goes back one step and never ends setup.
+- If one step of the launch takes ten seconds, the splash says so and offers **Restart**.
+- If making the workspace fails, the reason shows in the action row of the Workspace step and the buttons stay.
+- A setup card on the Board counts the three steps, **Setup · 2 of 3** beside a small meter. It folds finished steps into one line, gives the open step the one button, and offers **Resume setup** while setup is paused.
+
+#### First session
+
+The last step is the same **Start a run** field a session uses, filled with a starter and set to Scout, which reads the folder and changes nothing.
+
+- With a task tool connected and an open issue, it opens on **Pick an issue** with the first issue selected. **Draft the brief** takes it to the New session page.
+- With a tool and no open issue, or no tool, it stays on **Ask about the code**. It has a **Connect Linear or Jira** link that opens the tools and brings you back.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-agents-dark.webp">
@@ -19,7 +44,34 @@ Nothing is saved until you create a workspace. **Set up later** sits in the head
 
 ### Your first workspace
 
-A workspace is what you work on: one repository, or a folder that holds several. Drop a folder or press **Choose folder** (⌘O), and the workspace takes the folder's name, so acme-web becomes Acme web, which you can edit in place. A folder of repositories lists them checked, a plain folder asks whether it is a **Code project** or **Documents** (preselected from what it holds, with git offered at **Create** for code), and a folder another workspace holds asks whether to move it here. Under the drop area, **Likely folders** lists the places code usually lives (~/code, ~/dev, ~/Developer, ~/work and the like, only the ones this Mac has, plus ~/Documents on macOS) as boxes to tick. A tick reads nothing: **Look in 2 folders** reads the ticked ones, and their repositories appear checked. A repository that is not on this Mac clones from the same step. **Clone it** takes a GitHub, GitLab or Bitbucket address (`https://github.com/owner/name`, `git@github.com:owner/name.git` or `owner/name`, which asks for the host). The destination starts as `~/Developer/<name>` and stays editable. The clone shows its progress with **Cancel**, and a cancel removes the partial folder. A folder that already holds files is never overwritten: setup offers the next free name, such as `name-2`. A private repository clones with the login `gh`, `glab` or git already holds. With none, the line names the command to run and Connections, where hosts connect. A public repository needs no login. A network failure offers **Retry**. **Clone** and Enter wait while a folder is being read. On success the folder is added exactly like a ticked one. **Start from scratch** makes a new repository instead. Nothing is saved until **Create**.
+A workspace is what you work on: one repository, or a folder that holds several. Nothing is saved until **Create**.
+
+#### Add a folder
+
+Drop a folder or press **Choose folder** (⌘O). The workspace takes the folder's name, so acme-web becomes Acme web, which you can edit in place.
+
+- A folder of repositories lists them checked.
+- A plain folder asks whether it is a **Code project** or **Documents**. The answer is preselected from what the folder holds, with git offered at **Create** for code.
+- A folder another workspace holds asks whether to move it here.
+
+#### Find folders
+
+Under the drop area, **Likely folders** lists the places code usually lives, as boxes to tick. It shows only the ones this Mac has: ~/code, ~/dev, ~/Developer, ~/work and the like, plus ~/Documents on macOS.
+
+A tick reads nothing. **Look in 2 folders** reads the ticked ones, and their repositories appear checked.
+
+#### Clone a repository
+
+A repository that is not on this Mac clones from the same step. **Clone it** takes a GitHub, GitLab or Bitbucket address: `https://github.com/owner/name`, `git@github.com:owner/name.git` or `owner/name`, which asks for the host.
+
+- The destination starts as `~/Developer/<name>` and stays editable.
+- The clone shows its progress with **Cancel**, and a cancel removes the partial folder.
+- A folder that already holds files is never overwritten. Setup offers the next free name, such as `name-2`.
+- A private repository clones with the login `gh`, `glab` or git already holds. With none, the line names the command to run and Connections, where hosts connect. A public repository needs no login.
+- A network failure offers **Retry**.
+- On success the folder is added exactly like a ticked one.
+
+**Start from scratch** makes a new repository instead.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-workspace-dark.webp">
@@ -96,7 +148,39 @@ Tell agents once who you are and how you like to work, in four short fields. **S
 
 ### Settings
 
-Settings opens from the foot of the places rail or with **⌘,**, on the page you used last. It is a page like the others: the places rail stays visible. Its pages sit in their own list at its left, which folds, in two groups named for where they apply. Each page is one thing you came to change. **This Mac**, for every workspace, holds Look and alerts, Editor, terminal, git, Keyboard shortcuts, Storage and search and Backup and reset. Your workspace, by its name, holds Projects, About you, **Models**, Permissions, Branches and Replies and commits. Its last row, **Run defaults are in Workflows**, opens Workflows on Every run, where the run defaults, the edit mode of new sessions, the Lead and the roles live. The list holds only settings pages. **Search settings**, at the top of that list, finds any setting by its name, its old name or its help line. A result names the setting and its page; it opens the page and lights the row for a moment. Names come before help lines; the arrows move, Return opens and Esc clears. Every page and every setting is also in Search or run (**⌘K**), tagged Setting, and a dot marks a page that needs you. When nothing matches, the list says so and points to **⌘K** for actions like Export. Searching Providers or Integrations finds **Go to Connections**, and Runs, Run defaults or Start as finds the link to Every run. Old page names still work: General, Advanced, Git and Search index find their new pages. The **iPhone** page joins the list once a phone is paired; until then Search settings and Search or run find it. Under This Mac, Look and alerts, **Appearance** holds the theme (Search or run has it too: type Theme for **Theme: dark**, **Theme: light** and **Theme: system**; the top bar has no theme switch) and **More contrast**: stronger borders, hover marks and quiet text, on its own when your system asks for more contrast and on request with the switch, which is remembered on this Mac. Below it, **Notifications** holds **Banner when away** and **Dock badge**: the banner asks once, the badge starts on, and both are remembered on this Mac and shared by its windows. The page ends with **Updates**: the version you run, **Check for updates**, What's new and the switch to download in the background. A new version puts its dot on Look and alerts. **Editor, terminal, git** holds the apps that open your files, the built-in terminal's command status and how often Goodboy checks origin. **Storage and search** ends with the search index, since the index is disk too. A setting you save in one window shows in the other windows at once, without a reload. When folders hold a value of their own for a setting, its row says how many ("2 folders use their own"), and a folder's own After merge rule is marked **From project**, so you stop wondering why one folder behaves differently.
+Settings opens from the foot of the places rail or with **⌘,**, on the page you used last. It is a page like the others: the places rail stays visible.
+
+#### Pages
+
+Its pages sit in their own list at its left, which folds, in two groups named for where they apply. Each page is one thing you came to change.
+
+- **This Mac**, for every workspace, holds Look and alerts, Editor, terminal, git, Keyboard shortcuts, Storage and search and Backup and reset.
+- Your workspace, by its name, holds Projects, About you, **Models**, Permissions, Branches and Replies and commits.
+- Its last row, **Run defaults are in Workflows**, opens Workflows on Every run, where the run defaults, the edit mode of new sessions, the Lead and the roles live.
+- The **iPhone** page joins the list once a phone is paired. Until then Search settings and Search or run find it.
+
+#### Find a setting
+
+**Search settings**, at the top of the list, finds any setting by its name, its old name or its help line.
+
+- A result names the setting and its page. It opens the page and lights the row for a moment.
+- The arrows move, Return opens and Esc clears.
+- When nothing matches, the list says so and points to **⌘K** for actions like Export.
+- Searching Providers or Integrations finds **Go to Connections**. Runs, Run defaults or Start as finds the link to Every run.
+- Every page and every setting is also in Search or run (**⌘K**), tagged Setting. A dot marks a page that needs you.
+
+#### Look and alerts
+
+- **Appearance** holds the theme and **More contrast**. Search or run has the theme too: type Theme for **Theme: dark**, **Theme: light** and **Theme: system**.
+- **More contrast** gives stronger borders, hover marks and quiet text. It turns on by itself when your system asks for more contrast, and on request with the switch, which is remembered on this Mac.
+- **Notifications** holds **Banner when away** and **Dock badge**. The banner asks once and the badge starts on. Both are remembered on this Mac.
+- **Updates** ends the page: the version you run, **Check for updates**, What's new and the switch to download in the background. A new version puts its dot on Look and alerts.
+
+#### Editor, terminal, git and storage
+
+- **Editor, terminal, git** holds the apps that open your files, the built-in terminal's command status and how often Goodboy checks origin.
+- **Storage and search** ends with the search index, since the index is disk too.
+- When folders hold a value of their own for a setting, its row says how many ("2 folders use their own"). A folder's own After merge rule is marked **From project**, so you stop wondering why one folder behaves differently.
 
 **Also in this area**
 

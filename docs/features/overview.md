@@ -6,35 +6,50 @@ Open a session to see what it is for, what needs you and what happened so far.
 
 Read a session as one page: the goal, what needs you, what runs and where each branch stands.
 
-Every page of a session shares one head. The title row holds the session name, with its linked issue key in gray before it, then **New** and **⋯**, which holds Ask, pin, refresh, archive and delete. A single click on the name renames it in place. Enter saves and Escape cancels. A small ring at the end of the field fills toward the 120 character limit and turns amber near it.
+#### The head and the tabs
 
-Under the title sit the tabs **Overview**, **Runs**, **Artifacts**, **Questions** and **Context**. Runs, Artifacts and Questions carry a count. No tab draws a title of its own, because the tab names the page. There is no Changes tab: changes belong to a branch and its pull request, so they open from the pull request row under **Projects**.
+Every page of a session shares one head. The title row holds the session name, with its linked issue key in gray before it, then **New** and **⋯**, which holds Ask, pin, refresh, archive and delete. A single click on the name renames it in place. Enter saves and Escape cancels.
+
+Under the title sit the tabs **Overview**, **Runs**, **Artifacts**, **Questions** and **Context**. Runs, Artifacts and Questions carry a count. There is no Changes tab: changes belong to a branch and its pull request, so they open from the pull request row under **Projects**.
+
+**New** in the header starts an agent, a workflow or a write-up. **Ask about this session** in the **⋯**, or ⌘L, opens the Ask pane beside the page. A branch, a pull request, an artifact or a run opens under the same head, and crumbs such as **Overview › Artifacts › Plan** replace the tabs. Each crumb is a link, and Esc goes one crumb up.
+
+#### What the Overview shows
 
 The goal sits above the page when it says more than the title. The Overview then reads top to bottom, always in this order:
 
-- **The facts.** One quiet line: the ticket the session came from, the spend, which opens its limit, and the agent time. The ticket shows its tracker icon, its key such as **HBL-412** and its title, and opens the task. Its **⋯** holds **Open in Linear**, or the tracker the task lives in. With more linked work, **+2** opens the Linked list in Context. **Summary, 5m ago** ends the line and opens the written summary in Context. Where each pull request stands is said once, in **Projects**.
-- Notices come next when a branch needs a decision. Examples: a branch that moved, a branch off its pull request's commits, a project not yet published, a stopped rebase. A closed worktree shows a notice with **Reopen**.
-- **Needs you**, with the move that waits on you on top: its project, its title, why, the proof you can open in place and its verb. An open question sits there too, with **Answer**. A warning bar marks the section, never a filled color. Only this move, or the first move of Next when nothing waits on you, has a filled button.
-- **Now** lists the agents with a live turn: who, the project, what it does right now and for how long. It shows three rows and **N more**. The agents of a Lead sit under it. An agent that waits for a file another agent holds says so on a quiet line with a warm dot. A click on a row opens that agent.
+- **The facts.** One quiet line: the ticket the session came from, the spend, which opens its limit, and the agent time. The ticket opens the task, and its **⋯** holds **Open in Linear**, or the tracker the task lives in. With more linked work, **+2** opens the Linked list in Context. **Summary, 5m ago** opens the written summary in Context.
+- **Notices**, when a branch needs a decision. Examples: a branch that moved, a branch off its pull request's commits, a project not yet published, a stopped rebase. A closed worktree shows a notice with **Reopen**.
+- **Needs you**, with the move that waits on you on top: its project, its title, why, the proof you can open in place and its verb. An open question sits there too, with **Answer**.
+- **Now** lists the agents with a live turn: who, the project, what it does right now and for how long. It shows three rows and **N more**. A click on a row opens that agent.
 - **Next** holds up to three moves.
-- **Projects**: one block per project with its branches inside. The head carries the project name, one door, the worktrees and their size, **New branch** and **Unmount**, the same verb as the project menu. The door is **Merge in order** for a series, or else **Delete local branches** for merged ones. It asks first: keep the files or remove the worktree. The toast offers Undo.
-- **Unmount** stays off while a branch of the project is attached. Its tooltip says "You can't unmount a project while branches are attached. Close them first."
-- **Mount a project** sits at the head of Projects. It lists the folders an agent asked for, then the workspace, then **Choose a folder…**, which adds a folder to the workspace and mounts it in one step. Agents of the session read and write a mounted folder. Undo takes back what the mount added; a plain folder that was already there has nothing to undo. A plain folder session shows Mount a project under its folder card.
+- **Projects**: one block per project with its branches inside.
 - **Activity** shows the last three rows of the log.
-- A session with no agent, no run and no branch shows the start form and nothing else.
 
-Needs you and Now open and close with a height motion, so Next never jumps under the pointer. The decisions and the summary live in the **Context** tab.
+A session with no agent, no run and no branch shows the start form and nothing else. The decisions and the summary live in the **Context** tab.
 
-**New** in the header starts an agent, a workflow or a write-up. **Ask about this session** in the **⋯**, or ⌘L, opens the Ask pane beside the page, and the Overview keeps every section. A branch, a pull request, an artifact or a run opens under the same head, and crumbs such as **Overview › Artifacts › Plan** replace the tabs. Each crumb is a link, and Esc goes one crumb up.
+#### Projects
 
-**Reading the task without a diff.** A product manager understands where a task stands from the page alone, never from a raw diff or a file list.
+The head of a project block carries the project name, one door, the worktrees and their size, **New branch** and **Unmount**. The door is **Merge in order** for a series, or else **Delete local branches** for merged ones. It asks first: keep the files or remove the worktree. The toast offers Undo.
+
+**Unmount** stays off while a branch of the project is attached. Its tooltip says "You can't unmount a project while branches are attached. Close them first."
+
+**Mount a project** sits at the head of Projects. It lists the folders an agent asked for, then the workspace, then **Choose a folder…**, which adds a folder to the workspace and mounts it in one step. Agents of the session read and write a mounted folder. Undo takes back what the mount added.
+
+#### Read a task without a diff
+
+You understand where a task stands from the page alone, never from a raw diff or a file list.
 
 1. **The goal.** The page opens on what the task is for, in the words you gave it.
 2. **What waits for you.** **Needs you** comes next, and its move says why in words.
-3. **Where each branch stands.** Every row in a project block names the step its branch stands at, worked out from its branches, so it is never behind a merge.
+3. **Where each branch stands.** Every row in a project block names the step its branch stands at.
 4. **What it costs.** The facts line adds up the spend and the agent time of every branch.
 
-An archived session keeps the same overview, read only. Its branches and their pull requests stay on it, with the pull request state, even after their worktree folders were removed. **Restore** brings back the worktree of each branch whose pull request is still open, from the remote when the branch is gone on this Mac. When one cannot come back, a message says why and the closed worktree stays on the overview with **Reopen**.
+#### Archived sessions
+
+An archived session keeps the same overview, read only. Its branches and their pull requests stay on it, with the pull request state, even after their worktree folders were removed.
+
+**Restore** brings back the worktree of each branch whose pull request is still open, from the remote when the branch is gone on this Mac. When one cannot come back, a message says why and the closed worktree stays on the overview with **Reopen**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-dark.webp">
@@ -49,18 +64,21 @@ Pull requests opened outside Goodboy, by an agent or from a terminal, show up wh
 
 ### Activity
 
-Follow what happened in a session in one list. **Activity** on the Overview shows the last three rows, and **Open activity** opens the Activity page under the Overview, with the crumbs Overview › Activity. **Open › Activity** in the Board card's menu, or **Open activity** in ⌘K, opens it too. The page comes back after a reload.
+Follow what happened in a session in one list. **Activity** on the Overview shows the last three rows, and **Open activity** opens the Activity page under the Overview, with the crumbs Overview › Activity. **Open › Activity** in the Board card's menu, or **Open activity** in ⌘K, opens it too.
 
-- One row per agent, workflow run or fix run reads on one line: its role, its task, then a state, model and time column, lined up down the list. The cost sits in the card on the time.
-- Done is a small green check and says nothing more. Only a row that waits on you or failed gets a solid node and a thin bar on its edge, so it stands out in a calm list.
+#### What a row shows
+
+- One row per agent, workflow run or fix run reads on one line: its role, its task, then a state, model and time column. The cost sits in the card on the time.
 - Plain facts get a row too, such as context changes, branch events and links.
 - A script you ran gets a row with its result, such as `test:integration failed (exit 2) in payments-api`.
+- Done is a small green check. Only a row that waits on you or failed stands out.
+- Rows hold no buttons. A row that waits on your answer shows **Answer** in its state column, and the row opens the agent that asks. The next step for a row, such as **Push** or **Apply fix**, stays on its branch row above.
+
+#### Find a row
+
 - Rows go newest first, with a search box.
 - Filter by kind (All, Agents, Branches, Checks, Scripts, Context) and, when the session has two projects or more, by project.
-- Rows hold no buttons. A row that waits on your answer shows **Answer** in its state column, and the row opens the agent that asks. The next step for a row, such as **Push** or **Apply fix**, stays on its branch row above, so a step is offered once on the page.
-- The rail draws like the Agents column of a run: one thin line, the same nodes and elbows, the same step height. A day starts under a thin rule with its name.
-- A long log stays smooth. The search box shows at once and the rows fill in right after the page. The log shows the newest 50 rows, and **Show 50 older rows** adds the next 50. Rows far from the screen are skipped but keep their height. Rows a screen away are drawn before you reach them.
-- Every row carries the glyph its concept has in the places rail and the **New** menu. A workflow run has the Workflows glyph, an orchestrated run the orchestrator glyph, and an agent its role.
+- The log shows the newest 50 rows, and **Show 50 older rows** adds the next 50.
 - **Mark as read** clears the unread marks.
 
 <picture>
@@ -74,24 +92,34 @@ Follow what happened in a session in one list. **Activity** on the Overview show
 
 See where each branch of each project stands, and what finished, under **Projects**.
 
-Each project is one block with its name in the head. Its branches sit inside by state: what needs you first, then what is in progress, then merged and closed. Work with no branch sits in a **Not on a branch** block. No head carries a count.
+Each project is one block with its name in the head. Its branches sit inside by state: what needs you first, then what is in progress, then merged and closed. Work with no branch sits in a **Not on a branch** block.
 
-Each branch is one tile, like a pull request in a list:
+#### A branch tile
 
-- The first line names the branch. One chip on the right sums up where it stands: **Waits for you**, **Checks failing**, **Running**, **Not pushed** or **PR open**. A merged or closed branch has no chip: its second line says **Merged** or **Closed**, and so does its row on the Desk. A pull request closed without merging is never called merged. It stays neutral like any settled row, with no button. The state has the same color everywhere in the app.
-- The second line holds a few quiet facts: the pull request, the lines added and removed, the runs and the questions that wait. A pull request shows its number, such as **PR #12**.
-- A tile with something to do carries one button. **Answer** comes first and opens the exact question, then the first waiting step, such as **Rebase**, **Push** or **Open a pull request**. A move already shown in Needs you or Next is not repeated on its tile. A merged branch offers **Remove worktree** once its cleanup is proposed.
-- When a check fails, the chip names it, such as **integration-tests failed**. It is the one state in color on the tile.
-- When another session changes the same file of the project, **Overlaps** sits before the button. Its popover lists the branches in the order to merge them, marks this one, names the shared files once and offers **Message the Implementers** and **Open in Changes**. It warns and never blocks.
-- A click on the tile opens the changes of its pull request, on the **Changes** tab of the branch page. The session has no Changes tab of its own: this row is the way in. The other tabs of the branch page hold the conversation, commits, checks and runs, with the questions and artifacts of each run. The tile and its button are two separate stops for Tab.
-- Every tile has the same **⋯** menu as the branch on the **Projects** card: open, terminal, editor, copy the name, push, close the branch and the rest. It shows on hover and on focus. A right click on the tile opens the full menu at the pointer, and ⇧F10 opens it from the keyboard.
-- **Close branch** is red and asks first, inside the menu. A clean branch offers **Remove the folder** and **Keep the folder**. A branch with uncommitted changes or commits not pushed says so and offers only **Keep the folder**. The branch and any pull request stay. When the folder can't be removed, the branch stays attached and a message says why.
-- A Lead counts as work on its own branch: a working Lead shows that branch **Running**, and a Lead that waits for you or failed puts it under **Needs you**.
-- A long branch name is cut in the middle, so its end stays readable. A dot marks what is new since you last looked.
-- The **Not on a branch** tile holds work that has no branch. It names itself by its next step, such as the open question, and opens Runs. It shows only while that work runs or needs you. A finished run with no branch adds no tile; its spend and time still count in the facts line.
-- With many tiles, merged and closed branches fold after the first few and **Show 4 more** opens the rest of that block. A request that is reopened moves back up with its state. The head of the first block with a merged branch holds one button that removes every merged worktree. A failed removal keeps its reason and offers a retry for what is left.
+Each branch is one tile, like a pull request in a list.
 
-**Merge in order**
+- The first line names the branch. One chip on the right sums up where it stands: **Waits for you**, **Checks failing**, **Running**, **Not pushed** or **PR open**. A merged or closed branch has no chip: its second line says **Merged** or **Closed**.
+- The second line holds a few quiet facts: the pull request, such as **PR #12**, the lines added and removed, the runs and the questions that wait.
+- When a check fails, the chip names it, such as **integration-tests failed**.
+- A tile with something to do carries one button. **Answer** comes first and opens the exact question, then the first waiting step, such as **Rebase**, **Push** or **Open a pull request**. A merged branch offers **Remove worktree** once its cleanup is proposed.
+- When another session changes the same file of the project, **Overlaps** sits before the button. Its popover lists the branches in the order to merge them, names the shared files and offers **Message the Implementers** and **Open in Changes**. It warns and never blocks.
+- A Lead counts as work on its own branch. A working Lead shows that branch **Running**, and a Lead that waits for you or failed puts it under **Needs you**.
+
+A click on the tile opens the changes of its pull request, on the **Changes** tab of the branch page. The other tabs of the branch page hold the conversation, commits, checks and runs.
+
+#### The tile menu
+
+Every tile has the same **⋯** menu as the branch on the **Projects** card: open, terminal, editor, copy the name, push, close the branch and the rest. A right click on the tile opens the full menu at the pointer.
+
+**Close branch** is red and asks first, inside the menu. A clean branch offers **Remove the folder** and **Keep the folder**. A branch with uncommitted changes or commits not pushed says so and offers only **Keep the folder**. The branch and any pull request stay. When the folder can't be removed, the branch stays attached and a message says why.
+
+#### Not on a branch and long lists
+
+The **Not on a branch** tile holds work that has no branch. It names itself by its next step, such as the open question, and opens Runs. It shows only while that work runs or needs you.
+
+With many tiles, merged and closed branches fold after the first few and **Show 4 more** opens the rest of that block. The head of the first block with a merged branch holds one button that removes every merged worktree. A failed removal keeps its reason and offers a retry for what is left.
+
+#### Merge in order
 
 - Two or more branches that an agent declared a series show **Merge ledger-rounding in order** in the head of the first block.
 - It asks for confirmation. It merges the bottom part first and re-reads each part right before it merges.
@@ -102,34 +130,42 @@ Each branch is one tile, like a pull request in a list:
 
 Know the moves that unblock the task, such as answering a question, fixing a failing check or opening a pull request.
 
-- **Next** shows the first three moves, each with its reason. The rest stay on their branch rows as one short button such as **Start**, **Analyze** or **Push**. A move with no branch row waits under **Next**, in **More next steps**.
-- **Not now** puts a suggestion away until the situation changes. It says Dismissed with **Undo**, and ⌘Z brings the last one back.
-- A question or an approval of your own is never put away this way.
+**Next** shows the first three moves, each with its reason. The rest stay on their branch rows as one short button such as **Start**, **Analyze** or **Push**. A move with no branch row waits under **Next**, in **More next steps**.
+
+#### Dismiss a move
+
+**Not now** puts a suggestion away until the situation changes. It says Dismissed with **Undo**, and ⌘Z brings the last one back. A question or an approval of your own is never put away this way.
+
+#### Checks and scripts
+
 - **Analyze** starts the Debugger on a failing check. Its next moves (open the analysis, **Start fix**, **Push**) then sit on that run.
+- **Run the failing test** names the test a failed GitHub Actions check points at and writes the command in the terminal of that worktree. It waits for your Enter.
+- **Rerun integration-tests** shows when the job log says the check timed out. It reruns only the failed jobs. A check outside GitHub Actions shows **Open on** and the host instead of a log.
+- After a turn that changed a migration, a lockfile or a schema, the script that follows is offered with the file as its reason.
+- **db:migrate** is written in the terminal and waits for Enter. An install or a generate runs on the click.
+
+#### Pull requests and cleanup
+
 - **Open a pull request** names the branch it opens. With several branches still without one, the row of the branch furthest ahead offers it.
 - Once a pull request merges, **Remove the payments-api worktree** is offered with the reason and its size (`#418 merged · 412 MB`).
-- Once a pull request merges or closes, its branch offers no review and no Lead option. Next keeps only the cleanup, or nothing.
-- When Goodboy reads the merge before the cleanup is proposed, the reason carries the age instead (`#418 merged 3d ago`).
 - When the last branch is merged or closed and a linked Linear or Jira item is not done, **Move HBL-412 to Done** is offered. The toast has **Undo**.
-- **Run the failing test** names the test a failed GitHub Actions check points at and writes the command in the terminal of that worktree. It waits for your Enter.
-- After a turn that changed a migration, a lockfile or a schema, the script that follows is offered with the file as its reason.
-- **db:migrate** is written in the terminal and waits for Enter. When the command you typed exits with code 0 in that terminal, the move is done. An install or a generate runs on the click. A script runs in the package that owns the changed file, and its run is kept under that package and worktree, so two worktrees never share one.
-- **Rerun integration-tests** shows when the job log says the check timed out. It reruns only the failed jobs and shows the log of that check. It is done when that check passes, whatever the other checks do. A check outside GitHub Actions shows **Open on** and the host instead of a log. A rerun that is running keeps its place until the check ends.
-- **Ask the Implementer what blocks it** shows when an agent has been quiet for 5 minutes. After 30 minutes the question moves to Needs you.
-- A stopped rebase sits in Fix, first, above **Rerun**, and says how many files conflict. A branch that is only behind stays in Update.
-- Moves that unblock come before moves that carry the task forward, and upkeep comes last.
-- A folder no turn touched for 7 days offers **Unmount**. A clean worktree with nothing to push, no pull request and no change for 7 days offers **Remove the ledger-core worktree**. Only one such move shows, and only when nothing else is left.
-- A move whose pull request read is old stays and says **Checked 12m ago** with **Recheck**. When a move is done, a quiet line such as "integration-tests passed on rerun" stays for 2 seconds.
 - **Archive this session** shows with the reason "All branches merged". It needs every branch merged or closed and nothing running, waiting or asking. The toast offers **Undo**.
+- A folder no turn touched for 7 days offers **Unmount**. A clean worktree with nothing to push, no pull request and no change for 7 days offers **Remove the ledger-core worktree**.
 
-**A stopped rebase**
+#### Agents that go quiet
+
+**Ask the Implementer what blocks it** shows when an agent has been quiet for 5 minutes. After 30 minutes the question moves to Needs you.
+
+#### A stopped rebase
+
+A stopped rebase sits in Fix, first, above **Rerun**, and says how many files conflict. A branch that is only behind stays in Update.
 
 - Its row says in one sentence what stopped ("2 files conflict with main: MembersPage.tsx and 1 more. Your branch is as it was.").
 - It leads with the verb that fixes it: **Start new Lead**, **Rebase on their commits**, **Retry rebase** or **Fix with an agent**.
 - **Resolve in terminal**, **Abort rebase**, **Undo rebase** and **Open branch** sit in its **⋯** menu as they apply.
 - A click on its title opens the branch with the rebase panel.
 
-**Where a click goes**
+#### Where a click goes
 
 - A stuck agent or a plan opens the Lead step.
 - A check, review conversations or a pull request open that tab of the branch.
@@ -143,18 +179,26 @@ See how long a step has left, estimated from your own past runs. Queued steps sh
 
 See and undo what agents changed in a session without a branch.
 
-- In a plain folder agents edit in place. Every writing turn saves what it may change first, shell commands such as `rm` and `mv` and new files included.
-- **⌘⌥F** opens the session's file versions. They show each turn, newest first, with the files it added, changed or removed and their line counts.
-- Pick a file to see its text before and after, with the changed words marked.
-- **Restore to before reply 3** puts one file back. **Undo changes from this reply** puts back the whole reply. **Remove this new file** takes out a file the agent created.
-- Each restore first saves the text you have now, so **Undo restore** puts it back.
-- A restore over text that changed after the turn asks in place before it writes. It names the other agent when a later turn of one wrote the same file (**Scout wrote there after turn 3.**).
-- The Overview has a card that says where agents write and what is saved. It sits after the board.
-- Each writing turn in the chat ends in a card with **Open in Changes** and **Undo changes from this reply**.
+In a plain folder agents edit in place. Every writing turn saves what it may change first, shell commands such as `rm` and `mv` and new files included.
+
+#### Review and restore
+
+1. Press **⌘⌥F** to open the session's file versions. They show each turn, newest first, with the files it added, changed or removed and their line counts.
+2. Pick a file to see its text before and after, with the changed words marked.
+3. Restore it:
+   - **Restore to before reply 3** puts one file back.
+   - **Undo changes from this reply** puts back the whole reply.
+   - **Remove this new file** takes out a file the agent created.
+
+Each restore first saves the text you have now, so **Undo restore** puts it back. A restore over text that changed after the turn asks in place before it writes. It names the other agent when a later turn of one wrote the same file (**Scout wrote there after turn 3.**).
+
+Each writing turn in the chat ends in a card with **Open in Changes** and **Undo changes from this reply**.
+
+#### What is kept
+
 - Versions are kept until 30 days after the session ends. The cap per folder is 1 GB or the folder's own size, whichever is larger.
 - The page shows how much they use and what was left out: files over 15 MB, links that leave the folder, dependencies and build output.
 - Storage shows their size under **Saved versions**.
-- A session that still works in an older session folder keeps its list of file versions under the same page.
 
 ## Under the hood
 
