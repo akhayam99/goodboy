@@ -61,7 +61,6 @@ export const BrowserConsole = ({ model, title, log }: Props) => {
   const isFollowing = useRef(true);
   const openSession = useOpenSession();
   const counts = consoleCounts({ entries: log.entries });
-  const kindRows = log.entries.filter((entry) => entry.kind === kind);
   const rows = consoleRowsOf({ entries: log.entries, kind, level, query });
   const isFiltered = level !== 'all' || query.trim() !== '';
 
@@ -129,7 +128,7 @@ export const BrowserConsole = ({ model, title, log }: Props) => {
           onChange={setQuery}
           className="min-w-0 flex-1"
         />
-        <Button variant="quiet" size="xs" disabled={kindRows.length === 0} onClick={clear}>
+        <Button variant="quiet" size="xs" disabled={counts[kind] === 0} onClick={clear}>
           Clear
         </Button>
         <BrowserConsoleSendMenu
@@ -162,7 +161,7 @@ export const BrowserConsole = ({ model, title, log }: Props) => {
           >
             {rows.length === 0 ? (
               <EmptyLine className="px-2">
-                {isFiltered && kindRows.length > 0 ? NO_MATCH_TEXT : EMPTY_TEXT[kind]}
+                {isFiltered && counts[kind] > 0 ? NO_MATCH_TEXT : EMPTY_TEXT[kind]}
               </EmptyLine>
             ) : (
               rows.map((entry) => <BrowserConsoleRow key={entry.seq} entry={entry} />)

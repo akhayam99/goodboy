@@ -1,6 +1,7 @@
 import type { OutputHandoff } from '../../shared/utils/outputHandoff';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
 import { consoleCounts } from './consoleCounts';
+import { consoleTabOf } from './consoleTabOf';
 import { hostOf } from './hostOf';
 import { isFailedRequest, networkStatusWordOf } from './networkStatusWordOf';
 import type { BrowserConsoleEntry } from './types';
@@ -12,10 +13,16 @@ const CONSOLE_NOTE =
 
 export const CONSOLE_SECTION_MAX_CHARS = 30_000;
 
+const STACK_LINES_KEPT = 5;
+
 type Params = {
   readonly entries: ReadonlyArray<BrowserConsoleEntry>;
   readonly title: string;
   readonly url: string;
+};
+
+type LineParams = {
+  readonly line: string;
 };
 
 type EntryParams = {
@@ -36,10 +43,26 @@ type Tail = {
   readonly isCut: boolean;
 };
 
+const LOCAL_LIVE_PATTERN =
+  /\b(?:gblocal:[/][/]localhost|https?:[/][/]gblocal\.localhost)[/][0-9a-f-]+[/]/gi;
+
+const withoutGrantOf = ({ line }: LineParams): string =>
+  line.replace(LOCAL_LIVE_PATTERN, 'file:///');
+
+const stackLinesOf = ({ entry }: EntryParams): ReadonlyArray<string> =>
+  (entry.error?.stack ?? '')
+    .split('\n')
+    .filter((line) => line.trim() !== '')
+    .slice(0, STACK_LINES_KEPT)
+    .map((line) => `    ${withoutGrantOf({ line: line.trim() })}`);
+
 const consoleLineOf = ({ entry }: EntryParams): string =>
-  entry.source === null
-    ? `- ${entry.level}: ${entry.text}`
-    : `- ${entry.level}: ${entry.text} (${entry.source})`;
+  [
+    entry.source === null
+      ? `- ${entry.level}: ${withoutGrantOf({ line: entry.text })}`
+      : `- ${entry.level}: ${withoutGrantOf({ line: entry.text })} (${withoutGrantOf({ line: entry.source })})`,
+    ...stackLinesOf({ entry }),
+  ].join('\n');
 
 const networkLineOf = ({ entry }: EntryParams): string =>
   `- ${entry.method ?? 'GET'} ${networkStatusWordOf({ status: entry.status })} ${entry.text}`;
@@ -73,7 +96,7 @@ export const consoleAttachmentOf = ({ entries, title, url }: Params): OutputHand
   const counts = consoleCounts({ entries });
   const logged = newestThatFit({
     lines: entries
-      .filter((entry) => entry.kind === 'console')
+      .filter((entry) => consoleTabOf({ entry }) === 'console')
       .map((entry) => consoleLineOf({ entry })),
   });
   const failed = newestThatFit({

@@ -10,6 +10,7 @@ import {
   type TabConsole,
 } from '../../applyConsoleRead';
 import { browserHost } from '../../browserHost';
+import { consoleTabOf } from '../../consoleTabOf';
 import { listenTabLoad } from '../../listenTabLoad';
 import type { BrowserConsoleEntry, BrowserConsoleKind } from '../../types';
 
@@ -38,6 +39,15 @@ export type ConsoleEntries = {
 };
 
 type TabMap = Readonly<Record<string, TabConsole>>;
+
+type ClearedParams = ClearParams & {
+  readonly entry: BrowserConsoleEntry;
+};
+
+const isClearedBy = ({ entry, kind }: ClearedParams): boolean => {
+  const tab = consoleTabOf({ entry });
+  return tab === kind || (tab === null && kind === 'network');
+};
 
 export const useConsoleEntries = ({ sessionId, liveId, isOpen }: Params): ConsoleEntries => {
   const [byTab, setByTab] = useState<TabMap>({});
@@ -144,7 +154,10 @@ export const useConsoleEntries = ({ sessionId, liveId, isOpen }: Params): Consol
         }
         return {
           ...previous,
-          [liveId]: { ...tab, entries: tab.entries.filter((entry) => entry.kind !== kind) },
+          [liveId]: {
+            ...tab,
+            entries: tab.entries.filter((entry) => !isClearedBy({ entry, kind })),
+          },
         };
       });
     },

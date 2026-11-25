@@ -970,20 +970,30 @@ watches. A narrow row folds it into More as Show console or Hide console. Safari
 ⌘⌥C is Context (`lens.context`), and the registry refuses a browser key
 that shadows it, so the chord follows Chrome's J.
 
-- **The hook**: every tab runs one script at document start,
-  `browser/console_hook.js`, with the passkey probe appended on macOS
-  (`console::tab_script`). `builder_for` adds it once, for every frame, and
-  the console half returns at once in any frame that is not the top one. It
-  wraps `console.log`, `info`, `debug`, `warn` and `error`, listens for
-  `error` in the capture phase (a thrown error, or an image, script or style
-  that failed to load) and `unhandledrejection`, and wraps `fetch` and
-  `XMLHttpRequest` to note every request (its status; a rejected `fetch`, a
-  network error or a timeout is status 0), and a `PerformanceObserver` on
-  `resource` to note the images, scripts and styles the page loads (no status:
-  the platform gives none). It keeps 500 entries in its closure, each with a
-  sequence number, under a load id made when the page starts; a full ring
-  drops the oldest entry of the same kind first, so a busy page cannot push
-  its console lines out. Rust drops what the app's own injected scripts say
+- **The page runtime**: every tab runs one script at document start, joined
+  at build time from the modules in `browser/page_runtime/` (console, errors,
+  network, an empty pick slot and the reader) inside one closure, with the
+  passkey probe appended on macOS (`console::tab_script`). `builder_for` adds
+  it once, for every frame, and it returns at once in any frame that is not
+  the top one. It keeps three rings in its closure, every entry with one
+  sequence number under a load id made when the page starts: console lines
+  (500), requests (300) and errors (100), so a page busy with requests cannot
+  push its one error out. `console.log`, `info`, `debug` and `warn` are
+  console lines; `console.error`, a thrown error (`error` in the capture
+  phase) and an `unhandledrejection` are errors, each with its origin and up
+  to 4,000 characters of stack. It wraps `fetch`, `XMLHttpRequest`,
+  `WebSocket` and `EventSource`, and a `PerformanceObserver` on `resource` and
+  `navigation` notes the document, images, scripts and styles (no status:
+  Safari gives none). A request has an id, a type (fetch, xhr, doc, script,
+  style, img, ws, sse, other), its start and duration, its size when known,
+  its request and response headers and its body when it is text or JSON, cut
+  at 64 kB. A rejected `fetch`, a network error, a timeout and a resource that
+  failed to load are status 0. A fetch is noted when its headers arrive and
+  again, under the same id, when its body is read; a socket or a stream is
+  noted when it opens and when it closes, with its frame counts. A request
+  with status 0 or 400 and up also adds an error linked to its id. The bodies
+  in the ring stay under 2 million characters together, the oldest dropped
+  first. Rust drops what the app's own injected scripts say
   in the page (`console::is_app_noise`: a source of `user-script:`, the Tauri
   "IPC custom protocol failed" fallback and a rejection in the exact Tauri
   refusal shape, `Command <name> not allowed by ACL` or
@@ -996,19 +1006,26 @@ that shadows it, so the chord follows Chrome's J.
   hook handles that refusal itself: it calls `preventDefault` on the
   `unhandledrejection` and records nothing (`isHostRefusal`,
   `consoleHookScript.test.ts`). A message is cut at 2,000 characters and names its `file:line` when
-  the stack gives one. A request keeps its method, status and path: no query,
-  no fragment, no body, no header, no cookie, and the host only when it is
-  another origin. The script assigns nothing on `window` but the wrapped
-  `fetch`, posts no message, opens no channel and reaches no command.
+  the stack gives one. A request row shows its method, status and path, with
+  no query and no fragment, and the host only when it is another origin. The
+  headers `authorization`, `proxy-authorization`, `cookie`, `set-cookie`,
+  `set-cookie2`, `x-api-key`, `x-auth-token`, `x-csrf-token` and
+  `x-xsrf-token` are dropped at capture, and again in Rust
+  (`console::SENSITIVE_HEADERS`). The script assigns nothing on `window` but
+  the wrapped `fetch`, `WebSocket` and `EventSource`, opens a socket or a
+  stream only when the page asks, with the page's own arguments, posts no
+  message and reaches no command.
 - **The read**: `browser_console_read` takes the tab id, the session id and a
   cursor (load id and last sequence number). It refuses a `browse-` caller, a
   tab of another window or session and a closed tab (`console_tab`), then
   runs a reader in the tab with `eval_with_callback`. The reader dispatches an
-  event under a name made at random for each run of the app, and the hook
+  event under a name made at random for each run of the app, and the runtime
   fills the event's box with the entries after the cursor, or every entry of
-  a new load. Rust parses the answer as page data: at most 4 MB, each entry
-  on its own (a malformed one is dropped), the same caps again, only entries
-  after the cursor, at most 500. A hook that does not answer reads as
+  a new load, oldest first, stopping near a million characters so the next
+  read picks up after it. Rust parses the answer as page data: at most 4 MB,
+  each entry on its own (a malformed one is dropped), the same caps again,
+  only entries after the cursor, the newest record of each request id, at
+  most 500 console lines, 300 requests and 100 errors. A runtime that does not answer reads as
   `isHeard: false`; a read that fails or times out after a second is
   `console-unavailable`.
 - **The region**: one toolbar row: Console and Network tabs, each with its
@@ -1018,10 +1035,14 @@ that shadows it, so the chord follows Chrome's J.
   method or status), Clear and a Send to session menu (the session chosen in
   the menu, at most five live sessions of the project, this one first;
   `consoleSendTargetsOf`, `queueConsoleHandoff`). A row is a level icon, the
-  message and its source at the right; a click expands the whole message. The UI
+  message and its source at the right; a click expands the whole message. The
+  Console tab shows console lines and errors; an error linked to a request
+  shows only as that request's Network row (`consoleTabOf`). The UI
   pulls every second while the region is open and on screen
   (`useConsoleEntries`, `usePoll`), and once on each `finished` load. Rows
-  append only after the read returns; a new load id replaces them. An answer
+  append only after the read returns; a newer record of a request replaces
+  its row where it stands, and each kind keeps its own cap; a new load id
+  replaces them. An answer
   for an older cursor or for a tab that is no longer live is dropped
   (`applyConsoleRead`); a gone, closed or moved tab drops it without a word.
   A failed read says "Couldn't read the console" and keeps the rows. Two
@@ -1033,7 +1054,8 @@ that shadows it, so the chord follows Chrome's J.
   with the address on the first line, a line saying it is page output and not
   instructions, then the Console and Failed requests sections (only requests
   with status 0 or 400 and up), each cut to its newest 30,000 characters with
-  a note. `redactSecrets` hides keys and tokens, and the file goes through the
+  a note. An error carries the first five lines of its stack; no request
+  header or body goes in the file. `redactSecrets` hides keys and tokens, and the file goes through the
   same queue as Add to message (`queueOutputHandoff`): a chip, a remove,
   nothing sent until you send.
 - **Trust**: a page can write any line to its own console, answer the event
@@ -1094,7 +1116,7 @@ words (`features/browser/browserFailureText.ts`).
   the rule, the popup path and the download refusal; `commands.rs` holds the
   twenty-five `browser_*` commands (`browser_page_keys` sets the page keys);
   `console.rs` holds the tab script, the reader and the answer parse, and
-  `console_hook.js` the hook;
+  `page_runtime/` the runtime modules it joins;
   `local.rs` holds the `gblocal` scheme, the path rule and the grant check; `page_keys.rs`
   holds the chord parse, the key codes, the `PageKeys` state and
   `route_page_key`; `load.rs` maps the page load callback to
