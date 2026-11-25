@@ -179,10 +179,20 @@ const stubHost = () => {
   });
 };
 
+type PayloadParams = {
+  readonly payload: unknown;
+};
+
+const opOf = ({ payload }: PayloadParams): unknown => {
+  const args: unknown =
+    typeof payload === 'object' && payload !== null ? Reflect.get(payload, 'args') : null;
+  return typeof args === 'object' && args !== null ? Reflect.get(args, 'op') : null;
+};
+
 const pickCalls = () =>
   storySpies.tauriInvoke.mock.calls
     .filter(([name]) => name === 'browser_pick')
-    .map(([, payload]) => (payload as PickArgs).args.op);
+    .map(([, payload]) => opOf({ payload }));
 
 const typeAddress = async ({ text }: TypeParams) => {
   const field = await screen.findByRole('combobox', { name: 'Address or search' });

@@ -1,11 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
-import type { SessionId } from '@goodboy/types';
+import { nextSessionId } from '@goodboy/types/testing';
 import { elementFileOf } from './elementFileOf';
 import type { BrowserPickedElement } from './types';
 
-const SESSION = 'session-harborline' as SessionId;
+const SESSION = nextSessionId();
 const WORKTREE = '/work/payments-api';
 
 const PAY: BrowserPickedElement = {
@@ -82,7 +82,12 @@ describe('elementFileOf', () => {
 
   it('knows no file when the port belongs to another session or to nobody', () => {
     expect(
-      elementFileOf({ element: PAY, sessionId: SESSION, rows: [rowOf('other')], processes: [] }),
+      elementFileOf({
+        element: PAY,
+        sessionId: SESSION,
+        rows: [rowOf(nextSessionId())],
+        processes: [],
+      }),
     ).toBeNull();
     expect(elementFileOf({ element: PAY, sessionId: SESSION, rows: [], processes: [] })).toBeNull();
   });
