@@ -546,7 +546,6 @@ const trackAttributeChecks = ({ page, trackSpec }) =>
         : [];
     });
 
-const IUBENDA_SCRIPT = 'cdn.iubenda.com/cs/iubenda_cs.js';
 const GOOGLE_HOSTS = [
   'googletagmanager.com',
   'google-analytics.com',
@@ -613,23 +612,23 @@ const trackingChecks = ({ page }) => {
       }),
     );
   }
-  const iubenda = page.html.indexOf(IUBENDA_SCRIPT);
+  const module = page.html.search(/<script[^>]*type="module"/);
   const handler = page.html.search(/\.onPreference\s*=/);
-  if (iubenda !== -1 && (consent === -1 || consent > iubenda)) {
+  if (module !== -1 && (consent === -1 || consent > module)) {
     found.push(
       issue({
         rule: 'consent-order',
         file: page.file,
-        message: 'Consent Mode default does not come before the iubenda script',
+        message: 'Consent Mode default does not come before the page script',
       }),
     );
   }
-  if (iubenda !== -1 && (handler === -1 || handler > iubenda)) {
+  if (module !== -1 && (handler === -1 || handler > module)) {
     found.push(
       issue({
         rule: 'consent-order',
         file: page.file,
-        message: 'the preference handler is not installed before the iubenda script',
+        message: 'the preference handler is not installed before the page script',
       }),
     );
   }

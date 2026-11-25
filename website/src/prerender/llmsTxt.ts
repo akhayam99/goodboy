@@ -56,6 +56,7 @@ export const llmsTxt = ({ pages }: Params) => {
         ...ofKinds({ pages, kinds: ['release'] }).slice(0, LATEST_RELEASES),
       ],
     }),
+    ...section({ title: 'Legal', pages: ofKinds({ pages, kinds: ['legal'] }) }),
     '## Download',
     `- [Install Goodboy](${SITE.origin}/#install)`,
     `- [All releases](${SITE.releases})`,

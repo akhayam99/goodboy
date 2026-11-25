@@ -7,7 +7,7 @@ import { trackAttributes, type TrackAttributes } from '../../../lib/trackAttribu
 type FooterLink = {
   readonly label: string;
   readonly href: string;
-  readonly className?: string;
+  readonly dataCc?: string;
   readonly track?: TrackAttributes;
 };
 
@@ -56,7 +56,7 @@ const COLUMNS: readonly Column[] = [
     links: [
       { label: 'Privacy policy', href: SITE.privacy },
       { label: 'Cookie policy', href: SITE.cookies },
-      { label: 'Cookie settings', href: '#', className: 'iubenda-cs-preferences-link' },
+      { label: 'Cookie settings', href: SITE.cookies, dataCc: 'show-preferencesModal' },
     ],
   },
 ];
@@ -77,7 +77,7 @@ export const Footer = () => (
             <nav key={column.title} className="footerColumn" aria-label={column.title}>
               <p className="footerTitle">{column.title}</p>
               {column.links.map((link) => (
-                <a key={link.label} href={link.href} className={link.className} {...link.track}>
+                <a key={link.label} href={link.href} data-cc={link.dataCc} {...link.track}>
                   {link.label}
                 </a>
               ))}

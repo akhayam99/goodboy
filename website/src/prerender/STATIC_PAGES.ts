@@ -34,6 +34,28 @@ export const STATIC_PAGES = {
     crumbs: [HOME, { name: 'Agentic development environment', path: SITE.ade }],
     isIndexed: true,
   },
+  privacy: {
+    path: SITE.privacy,
+    title: 'Privacy policy: how Goodboy handles your data',
+    description:
+      'What goodboy-ai.dev collects, why, who processes it, how long it is kept and how to use your rights. The Goodboy app itself sends no telemetry.',
+    ogType: 'website',
+    kind: 'legal',
+    crumbs: [HOME, { name: 'Privacy policy', path: SITE.privacy }],
+    lastmod: '2026-11-25',
+    isIndexed: true,
+  },
+  cookies: {
+    path: SITE.cookies,
+    title: 'Cookie policy: what Goodboy sets and when',
+    description:
+      'The cookies and trackers goodboy-ai.dev uses, which load only after you accept, and how to change your choice at any time.',
+    ogType: 'website',
+    kind: 'legal',
+    crumbs: [HOME, { name: 'Cookie policy', path: SITE.cookies }],
+    lastmod: '2026-11-25',
+    isIndexed: true,
+  },
   notFound: {
     path: '/404',
     title: 'Page not found | Goodboy',

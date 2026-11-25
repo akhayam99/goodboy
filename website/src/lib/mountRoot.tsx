@@ -1,5 +1,6 @@
 import { StrictMode, type ReactNode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
+import { startConsent } from './consent/startConsent';
 import { startTracking } from './startTracking';
 import { syncDemoLinks } from './syncDemoLinks';
 
@@ -13,6 +14,7 @@ export const mountRoot = ({ container = document.getElementById('root'), childre
     throw new Error('mountRoot: no container element');
   }
   syncDemoLinks();
+  startConsent();
   startTracking();
   const element = <StrictMode>{children}</StrictMode>;
   if (import.meta.env.DEV || container.firstElementChild === null) {

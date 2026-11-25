@@ -37,54 +37,11 @@
         wait_for_update: 500,
       });
       window.goodboyConsent = { isMeasurementGranted: false, onPreference: function () {} };
-      var _iub = window._iub || [];
-      window._iub = _iub;
-      _iub.csConfiguration = {
-        siteId: 4548648,
-        cookiePolicyId: 46359357,
-        lang: 'it',
-        storage: { useSiteId: true },
-        askConsentAtCookiePolicyUpdate: true,
-        enableFadp: true,
-        enableLgpd: true,
-        fadpApplies: true,
-        perPurposeConsent: true,
-        preferenceCookie: { expireAfter: 180 },
-        floatingPreferencesButtonDisplay: false,
-        callback: {
-          onPreferenceExpressedOrNotNeeded: function (preference) {
-            window.goodboyConsent.onPreference(preference);
-          },
-          onBannerShown: function () {
-            document
-              .querySelectorAll(
-                '#iubenda-cs-banner .iubenda-cs-content, #iubenda-cs-banner .iubenda-cs-opt-group',
-              )
-              .forEach(function (node) {
-                node.removeAttribute('style');
-              });
-          },
-        },
-        banner: {
-          position: 'float-bottom-left',
-          acceptButtonDisplay: true,
-          rejectButtonDisplay: true,
-          customizeButtonDisplay: true,
-          closeButtonDisplay: false,
-          explicitWithdrawal: true,
-          listPurposes: true,
-          ownerName: 'goodboy-ai.dev',
-          showTitle: false,
-          showTotalNumberOfProviders: true,
-          backgroundOverlay: false,
-        },
-      };
     </script>
     <!-- Google Tag Manager, loaded only after the visitor accepts measurement -->
     <script>
       (function (w, d) {
         var GTM_ID = 'GTM-5NM3VX7Q';
-        var MEASUREMENT = '4';
         var consent = w.goodboyConsent;
         var isLoaded = false;
         var load = function () {
@@ -102,9 +59,7 @@
           else w.setTimeout(load, 2000);
         };
         var isAccepted = function (preference) {
-          if (!preference) return false;
-          if (preference.purposes) return preference.purposes[MEASUREMENT] === true;
-          return preference.consent === true;
+          return !!preference && preference.isMeasurementGranted === true;
         };
         consent.onPreference = function (preference) {
           var isGranted = isAccepted(preference);
@@ -122,7 +77,6 @@
       })(window, document);
     </script>
     <!-- End Google Tag Manager -->
-    <script src="https://cdn.iubenda.com/cs/iubenda_cs.js" charset="UTF-8" async></script>
 
     <link
       rel="preload"

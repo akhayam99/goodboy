@@ -25,6 +25,7 @@ const SCHEMA_TYPE = {
   doc: 'TechArticle',
   'changelog-index': 'CollectionPage',
   release: 'WebPage',
+  legal: 'WebPage',
   'not-found': 'WebPage',
 } as const satisfies Record<PageKind, string>;
 

@@ -4,6 +4,9 @@ import { AdePage } from '../pages/content/AdePage';
 import { ChangelogIndex } from '../pages/content/ChangelogIndex';
 import { DocArticle } from '../pages/content/DocArticle';
 import { DocsIndex } from '../pages/content/DocsIndex';
+import { COOKIE_SECTIONS } from '../pages/content/legal/COOKIE_SECTIONS';
+import { LegalPage } from '../pages/content/legal/LegalPage';
+import { PRIVACY_SECTIONS } from '../pages/content/legal/PRIVACY_SECTIONS';
 import { NotFound } from '../pages/content/NotFound';
 import { ReleaseNotes } from '../pages/content/ReleaseNotes';
 import featuresData from '../pages/features/features.data.json';
@@ -151,6 +154,36 @@ const adeGuide = (): ContentPageEntry => ({
   element: <AdePage crumbs={STATIC_PAGES.ade.crumbs} />,
 });
 
+const privacyPolicy = (): ContentPageEntry => ({
+  file: 'privacy.html',
+  meta: STATIC_PAGES.privacy,
+  nav: 'none',
+  element: (
+    <LegalPage
+      crumbs={STATIC_PAGES.privacy.crumbs}
+      title="Privacy policy"
+      lead="What goodboy-ai.dev collects, why, who processes it and what you can ask for."
+      updated={STATIC_PAGES.privacy.lastmod}
+      sections={PRIVACY_SECTIONS}
+    />
+  ),
+});
+
+const cookiePolicy = (): ContentPageEntry => ({
+  file: 'cookies.html',
+  meta: STATIC_PAGES.cookies,
+  nav: 'none',
+  element: (
+    <LegalPage
+      crumbs={STATIC_PAGES.cookies.crumbs}
+      title="Cookie policy"
+      lead="The trackers this site uses, and how to change your choice at any time."
+      updated={STATIC_PAGES.cookies.lastmod}
+      sections={COOKIE_SECTIONS}
+    />
+  ),
+});
+
 const notFound = (): ContentPageEntry => ({
   file: '404.html',
   meta: STATIC_PAGES.notFound,
@@ -164,5 +197,7 @@ export const CONTENT_PAGES: readonly ContentPageEntry[] = [
   ...releasePages(),
   docsIndex(),
   ...docPages(),
+  privacyPolicy(),
+  cookiePolicy(),
   notFound(),
 ];
