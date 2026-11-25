@@ -1,4 +1,5 @@
 import { SITE } from '../../lib/site';
+import type { GuideCta, GuideFaq } from './Guide';
 
 export type AdeCompareRow = {
   readonly label: string;
@@ -18,11 +19,6 @@ export type AdeJob = {
   readonly need: string;
   readonly how: string;
   readonly links: readonly AdeLink[];
-};
-
-export type AdeQuestion = {
-  readonly question: string;
-  readonly answer: string;
 };
 
 export const ADE_GUIDE = {
@@ -120,6 +116,11 @@ export const ADE_GUIDE = {
       },
     ],
   },
+  guides: {
+    heading: 'Guides',
+    intro:
+      'Each guide takes one part of the work and shows how to do it, with the steps in Goodboy.',
+  },
   faq: {
     heading: 'Common questions',
     items: [
@@ -167,12 +168,10 @@ export const ADE_GUIDE = {
     readonly intro: string;
     readonly items: readonly AdeJob[];
   };
-  readonly faq: {
+  readonly guides: {
     readonly heading: string;
-    readonly items: readonly AdeQuestion[];
+    readonly intro: string;
   };
-  readonly cta: {
-    readonly heading: string;
-    readonly lead: string;
-  };
+  readonly faq: GuideFaq;
+  readonly cta: GuideCta;
 };

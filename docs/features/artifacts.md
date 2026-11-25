@@ -4,15 +4,32 @@ Plans, reports and wireframes live next to the task, not inside a chat. You can 
 
 ### Artifacts
 
-Keep everything a session made in one list. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter it, and the rows group under plain labels by what needs you first: **Needs you** (for a plan, only while its own planner waits for your answer), **Running**, **Ready** (plans), **To read** (reports and wireframes), **Used** (a plan that ran, or a version a newer one replaced) and **Recently deleted**, every row in view except the deleted ones, behind **Show**. Each row has one action, such as **Run plan**, **Approve** or **Answer**, and **Delete** moves an artifact to **Recently deleted**, where **Restore** brings it back.
+Keep everything a session made in one list. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter it.
+
+#### Groups
+
+Rows group under plain labels, the ones that need you first:
+
+- **Needs you**: for a plan, only while its own planner waits for your answer
+- **Running**
+- **Ready**: plans
+- **To read**: reports and wireframes
+- **Used**: a plan that ran, or a version a newer one replaced
+- **Recently deleted**: behind **Show**
+
+#### Rows
 
 A row has the same shape as a Runs or Questions row: a state dot, the kind, the title, the state word, the age and the action. A plan with parts opens them from the arrow before its title. Resting on the state word opens a fact card.
 
+Each row has one action, such as **Run plan**, **Approve** or **Answer**. **Delete** moves an artifact to **Recently deleted**, where **Restore** brings it back.
+
 A row action that fails leaves the row as it was and writes one line to the log with **Retry**. An empty page says **No artifacts yet** and carries **New artifact**. A read that fails says **Couldn't load artifacts** with **Retry**.
 
-With two or more branches among the artifacts a switch groups the list **By branch** or **By state**, the same choice as on Runs and Questions. A branch comes from the mounts the artifact was made for, else its agent, else its run. Each branch or series is a group, with the ones that need you first and **No branch** for what is not tied to one.
+#### By branch
 
-The state is a dot and a word on the row, used ones fold into **N used**, and **Recently deleted** stays its own group at the end. The tabs stay on top and filter over the groups. An artifact on two branches is drawn in both with **Also on**, and a plan on a series sits once in the series group. Each copy has its own row key, so Stop, Delete and the row menu act on the one artifact you press.
+With two or more branches among the artifacts, a switch groups the list **By branch** or **By state**, the same choice as on Runs and Questions. A branch comes from the mounts the artifact was made for, else its agent, else its run.
+
+Each branch or series is a group, the ones that need you first, and **No branch** holds what is not tied to one. An artifact on two branches is drawn in both with **Also on**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-dark.webp">
@@ -23,7 +40,11 @@ The state is a dot and a word on the row, used ones fold into **N used**, and **
 
 ### Plan parts and Run plan
 
-Check a plan before it runs. A plan can give each part done-when checks and the files it expects to touch, and **Run plan** turns each part into a sub-agent. Parts that touch the same file never run at the same time. The plan page groups parts into **Runs first** and **Then, in parallel**. It names a shared file and shows each part as a block of its files. On a plan that came from a workflow, the action reads **Approve** and continues that workflow.
+Check a plan before it runs. A plan can give each part done-when checks and the files it expects to touch, and **Run plan** turns each part into a sub-agent.
+
+Parts that touch the same file never run at the same time. The plan page groups parts into **Runs first** and **Then, in parallel**, names a shared file and shows each part as a block of its files.
+
+On a plan that came from a workflow, the action reads **Approve** and continues that workflow.
 
 One line under **Parts** says how they run. It reads `3 parts, one after the other.` or `3 parts, 2 at once.` A part with no chosen model reads **Default model**. A plan version reads `v3`.
 
@@ -35,19 +56,25 @@ Read the plan without leaving the planner. It shows as one row in the planner's 
 
 Point at a part, a paragraph or a few words and leave a comment. Comments stay drafts until **Send to planner** posts them in plan order and asks for an updated plan. When the new version lands, each comment reads **Addressed** or **Not changed in v2**.
 
-While comments wait, **Send to planner** is the one filled button. **Run plan** and **Approve** ask before they go on without them. Text you typed and did not add is kept as a draft. It is saved when you leave the box, press Esc, press a button, close the page or reload.
+While comments wait, **Send to planner** is the one filled button. **Run plan** and **Approve** ask before they go on without them.
 
-**Send to planner**, **Send to** the agent, **Copy**, **Run plan**, **Approve** and **Start implementer** wait for that save, from the header, the menu, Search or run and the chat row. If it made a new comment, they ask again instead of starting. A comment that failed to save keeps its text and place and comes back as an open box. Those buttons stay off until you save it or press Cancel.
+#### Drafts
 
-Drafts load when the session opens, so a restart keeps them in the chat row, the list and Search or run too.
+Text you typed and did not add is kept as a draft. It is saved when you leave the box, press Esc, press a button, close the page or reload. Drafts load when the session opens, so a restart keeps them.
 
-After the plan ran, the bar reads **Not sent**, with **Send to** the agent and **Copy**. A stopped agent, or a plan with no known agent, leaves only **Copy**. An agent that is still writing takes the comments in its queue, as a chat message does, and they read Sent once the turn starts or the queue is saved. A second batch goes through once the first was taken. Comments sent this way are never read back as a plan revision.
+The send and run buttons wait for that save. If it made a new comment, they ask again instead of starting. A comment that failed to save keeps its text and place and comes back as an open box, and those buttons stay off until you save it or press Cancel.
+
+#### After the plan ran
+
+The bar reads **Not sent**, with **Send to** the agent and **Copy**. A stopped agent, or a plan with no known agent, leaves only **Copy**.
+
+An agent that is still writing takes the comments in its queue, as a chat message does. Comments sent this way are never read back as a plan revision.
 
 ### Report as a document
 
-Read a report as one document. The **Outline** on the left jumps to each section, and **Edit** changes the text in place. Its page shows no glyph above its own title.
+Read a report as one document. The **Outline** on the left jumps to each section, and **Edit** changes the text in place.
 
-While an agent still writes an artifact, its page says so in one sentence, with no placeholder bars. **Follow** opens that agent, and each scout under **Agents on this run** opens its own. The wireframe **Flow** view says Flow once, on its tab.
+While an agent still writes an artifact, its page says so in one sentence. **Follow** opens that agent, and each scout under **Agents on this run** opens its own.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-report-dark.webp">
@@ -58,11 +85,22 @@ While an agent still writes an artifact, its page says so in one sentence, with 
 
 ### Files on disk
 
-Open any artifact as a folder, in your browser or your file manager. A plan or a report opens in a tab beside the session when Links says In Goodboy, and in your browser on a ⌘-click. A wireframe always opens in your browser. The folder is rewritten on each revision and follows renames.
+Open any artifact as a folder, in your browser or your file manager. The folder is rewritten on each revision and follows renames.
+
+- A plan or a report opens in a tab beside the session when Links says In Goodboy, and in your browser on a ⌘-click.
+- A wireframe always opens in your browser.
 
 ### Create a wireframe
 
-Describe the screen, add attachments, and choose how faithful it is and which device it targets. **Draw a wireframe** is the last entry of the **New** menu in a session, after **Start a run** and **Write a report**. Describe the screen in a **Brief**, add **Attachments**, and choose the **Fidelity** (**Plain wireframe** or **Repository styled wireframe**) and the **Target** (**Phone**, **Desktop** or **Phone and desktop**). **Included context** lists exactly what goes into the pack.
+Describe the screen, add attachments, and choose how faithful it is and which device it targets. **Draw a wireframe** is the last entry of the **New** menu in a session, after **Start a run** and **Write a report**.
+
+The form has these fields:
+
+- **Brief**: describe the screen
+- **Attachments**: files that go with the brief
+- **Fidelity**: **Plain wireframe** or **Repository styled wireframe**
+- **Target**: **Phone**, **Desktop** or **Phone and desktop**
+- **Included context**: lists exactly what goes into the pack
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-create-dark.webp">
@@ -103,7 +141,9 @@ Point at what you want changed: pick elements on the wireframe, choose this scre
 
 ### Import wireframe JSON
 
-Bring in a wireframe made elsewhere, with a preview of any fixes before it lands. On an empty Artifacts page it sits in **New artifact**. Once the session has artifacts, **New** in the head makes reports and wireframes, and the folder icon **Artifact files** holds the import and **Show in Finder**.
+Bring in a wireframe made elsewhere, with a preview of any fixes before it lands.
+
+On an empty Artifacts page the import sits in **New artifact**. Once the session has artifacts, **New** in the head makes reports and wireframes, and the folder icon **Artifact files** holds the import and **Show in Finder**.
 
 ### Revisions and Restore
 
