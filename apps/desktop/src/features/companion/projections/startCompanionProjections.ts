@@ -56,7 +56,10 @@ export const startCompanionProjections = async (): Promise<UnlistenFn> => {
       });
       const { changed, removed } = changedDraftsOf({ drafts, sent });
       const nextSeq = changed.length > 0 || removed.length > 0 ? seq + 1 : seq;
-      await publishToBridge({ changed, removed, epoch, seq: nextSeq, now });
+      const report = await publishToBridge({ changed, removed, epoch, seq: nextSeq, now });
+      for (const rejected of report.rejected) {
+        console.error('[companion] projection rejected', rejected.key, rejected.reason);
+      }
       seq = nextSeq;
       for (const draft of changed) {
         sent.set(draft.key, JSON.stringify(draft.fields));

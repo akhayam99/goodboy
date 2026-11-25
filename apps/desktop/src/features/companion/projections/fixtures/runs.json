@@ -6,7 +6,7 @@
   "sessionId": "session-2",
   "runs": [
     {
-      "runId": "run-harborline",
+      "runId": "run-1",
       "title": "Ship the retry window",
       "mark": {
         "kind": "state",
@@ -23,7 +23,7 @@
       "canContinue": false,
       "agents": [
         {
-          "agentId": "agent-harborline",
+          "agentId": "agent-1",
           "name": "Builder",
           "mark": {
             "kind": "state",

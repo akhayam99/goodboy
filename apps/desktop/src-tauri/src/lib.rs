@@ -394,6 +394,7 @@ pub fn run() {
             bridge::bridge_command_result,
             bridge::bridge_revoke,
             bridge::bridge_stop,
+            bridge::publish::bridge_publish,
             artifact_folder::export_artifact_folder,
             artifact_mirror::artifact_mirror_write,
             artifact_mirror::artifact_mirror_pending,

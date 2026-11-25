@@ -14,7 +14,7 @@ vi.mock('../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { aSession, aWorkspace, anAgent, aWorkflowRun } from '@goodboy/types/testing';
-import type { AgentId, SessionExternalTask, WorkflowRunId } from '@goodboy/types';
+import type { SessionExternalTask } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -68,13 +68,11 @@ const inNorthwind = aSession({
 });
 
 const run = aWorkflowRun({
-  id: 'run-harborline' as WorkflowRunId,
   title: 'Ship the retry window',
   spendLimitUsd: 5,
 });
 
 const worker = anAgent({
-  id: 'agent-harborline' as AgentId,
   sessionId: building.id,
   workflowRunId: run.id,
   name: 'Builder',
@@ -140,10 +138,15 @@ const draftOf = (key: string): ProjectionDraft => {
   return draft;
 };
 
+const fieldsOf = <T,>(key: string): T => JSON.parse(JSON.stringify(draftOf(key).fields));
+
 const stamped = (draft: ProjectionDraft): object => ({
   ...projectionMetaOf({ epoch: 1, seq: 1, now: NOW }),
   ...draft.fields,
 });
+
+const fixtureOf = (draft: ProjectionDraft): string =>
+  `${JSON.stringify(stamped(draft), null, 2)}\n`;
 
 const FIXTURES = './fixtures';
 
@@ -151,7 +154,7 @@ describe('companion projections, one builder per contract projection', () => {
   it('lists the moves of every workspace with the desktop words', async () => {
     seed();
 
-    const fields = draftOf('needsYou').fields as {
+    const fields = fieldsOf<{
       moveCount: number;
       rows: ReadonlyArray<{
         goal: string;
@@ -159,7 +162,7 @@ describe('companion projections, one builder per contract projection', () => {
         workspaceId: string;
         sessionRef: string | null;
       }>;
-    };
+    }>('needsYou');
 
     expect(fields.moveCount).toBe(2);
     expect(fields.rows.map((row) => row.words)).toEqual([
@@ -170,17 +173,15 @@ describe('companion projections, one builder per contract projection', () => {
       new Set([harborline.id, northwind.id]),
     );
     expect(fields.rows.find((row) => row.goal === asking.goal)?.sessionRef).toBe('HBL-412');
-    await expect(JSON.stringify(stamped(draftOf('needsYou')), null, 2)).toMatchFileSnapshot(
-      `${FIXTURES}/needsYou.json`,
-    );
+    await expect(fixtureOf(draftOf('needsYou'))).toMatchFileSnapshot(`${FIXTURES}/needsYou.json`);
   });
 
   it('puts a decision on a question row that names the question and its version', () => {
     seed();
 
-    const fields = draftOf('needsYou').fields as {
+    const fields = fieldsOf<{
       rows: ReadonlyArray<{ decision: { kind: string; version: string } | null }>;
-    };
+    }>('needsYou');
 
     expect(fields.rows[0]?.decision?.kind).toBe('question');
     expect(fields.rows[0]?.decision?.version).toBe('2026-10-05T09:00:00.000Z');
@@ -189,9 +190,9 @@ describe('companion projections, one builder per contract projection', () => {
   it('groups sessions in lanes and leaves the archived one out', async () => {
     seed();
 
-    const fields = draftOf(`sessions:${harborline.id}`).fields as {
+    const fields = fieldsOf<{
       lanes: ReadonlyArray<{ stage: string; count: number; rows: ReadonlyArray<{ goal: string }> }>;
-    };
+    }>(`sessions:${harborline.id}`);
 
     const goals = fields.lanes.flatMap((lane) => lane.rows.map((row) => row.goal));
     expect(goals).toContain(asking.goal);
@@ -203,76 +204,68 @@ describe('companion projections, one builder per contract projection', () => {
       'building',
       'done',
     ]);
-    await expect(
-      JSON.stringify(stamped(draftOf(`sessions:${harborline.id}`)), null, 2),
-    ).toMatchFileSnapshot(`${FIXTURES}/sessions.json`);
+    await expect(fixtureOf(draftOf(`sessions:${harborline.id}`))).toMatchFileSnapshot(
+      `${FIXTURES}/sessions.json`,
+    );
   });
 
   it('builds the session detail with its projects and the question it waits on', async () => {
     seed();
 
     const key = `session:${harborline.id}:${asking.id}`;
-    const fields = draftOf(key).fields as {
+    const fields = fieldsOf<{
       needsYou: ReadonlyArray<unknown>;
       projects: ReadonlyArray<{ name: string }>;
-    };
+    }>(key);
 
     expect(fields.needsYou).toHaveLength(1);
     expect(fields.projects.map((project) => project.name)).toEqual(['payments-api']);
-    await expect(JSON.stringify(stamped(draftOf(key)), null, 2)).toMatchFileSnapshot(
-      `${FIXTURES}/session.json`,
-    );
+    await expect(fixtureOf(draftOf(key))).toMatchFileSnapshot(`${FIXTURES}/session.json`);
   });
 
   it('builds runs with the limit and the running agent', async () => {
     seed();
 
     const key = `runs:${harborline.id}:${building.id}`;
-    const fields = draftOf(key).fields as {
+    const fields = fieldsOf<{
       runs: ReadonlyArray<{
         state: string;
         limit: { text: string } | null;
         agents: ReadonlyArray<unknown>;
       }>;
-    };
+    }>(key);
 
     expect(fields.runs[0]?.state).toBe('running');
     expect(fields.runs[0]?.limit?.text).toBe('$5.00');
     expect(fields.runs[0]?.agents).toHaveLength(1);
-    await expect(JSON.stringify(stamped(draftOf(key)), null, 2)).toMatchFileSnapshot(
-      `${FIXTURES}/runs.json`,
-    );
+    await expect(fixtureOf(draftOf(key))).toMatchFileSnapshot(`${FIXTURES}/runs.json`);
   });
 
   it('builds the pull request of a session that has one', async () => {
     seed();
 
     const key = `pullRequest:${harborline.id}:${asking.id}`;
-    const fields = draftOf(key).fields as {
+    const fields = fieldsOf<{
       number: number;
       phase: string;
       mergeActionId: string | null;
-    };
+    }>(key);
 
     expect(fields.number).toBe(304);
     expect(fields.phase).toBe('merged');
     expect(fields.mergeActionId).toBeNull();
-    await expect(JSON.stringify(stamped(draftOf(key)), null, 2)).toMatchFileSnapshot(
-      `${FIXTURES}/pullRequest.json`,
-    );
+    await expect(fixtureOf(draftOf(key))).toMatchFileSnapshot(`${FIXTURES}/pullRequest.json`);
   });
 
   it('builds the tasks of the workspace', async () => {
     seed();
 
     const key = `tasks:${harborline.id}`;
-    const fields = draftOf(key).fields as { count: number; rows: ReadonlyArray<{ key: string }> };
+    const fields = fieldsOf<{ count: number; rows: ReadonlyArray<{ key: string }> }>(key);
 
     expect(fields.count).toBe(1);
     expect(fields.rows[0]?.key).toBe('HBL-412');
-    await expect(JSON.stringify(stamped(draftOf(key)), null, 2)).toMatchFileSnapshot(
-      `${FIXTURES}/tasks.json`,
-    );
+    await expect(fixtureOf(draftOf(key))).toMatchFileSnapshot(`${FIXTURES}/tasks.json`);
   });
 
   it('never carries an absolute path, an archived session, a token or a mount path', () => {

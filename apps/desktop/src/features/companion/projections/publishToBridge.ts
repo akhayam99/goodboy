@@ -2,6 +2,10 @@ import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { projectionMetaOf } from './projectionMetaOf';
 import type { ProjectionDraft } from './projectionFieldsOf';
 
+export type PublishReport = {
+  readonly rejected: ReadonlyArray<{ readonly key: string; readonly reason: string }>;
+};
+
 type Params = {
   readonly changed: ReadonlyArray<ProjectionDraft>;
   readonly removed: ReadonlyArray<string>;
@@ -10,9 +14,15 @@ type Params = {
   readonly now: number;
 };
 
-export const publishToBridge = ({ changed, removed, epoch, seq, now }: Params): Promise<void> => {
+export const publishToBridge = ({
+  changed,
+  removed,
+  epoch,
+  seq,
+  now,
+}: Params): Promise<PublishReport> => {
   const meta = projectionMetaOf({ epoch, seq, now });
-  return invokeCommand<void>('bridge_publish', {
+  return invokeCommand<PublishReport>('bridge_publish', {
     epoch,
     items: changed.map((draft) => ({
       key: draft.key,
