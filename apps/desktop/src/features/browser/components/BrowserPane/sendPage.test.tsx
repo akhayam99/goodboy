@@ -282,7 +282,6 @@ describe('send the page to the agent', () => {
   it('sends the tab of a row from its menu, not the shown one', async () => {
     await openCheckout();
     await openBilling();
-    fireEvent.click(screen.getByRole('button', { name: 'Show tab list' }));
 
     const list = screen.getByRole('navigation', { name: 'Browser tabs' });
     fireEvent.contextMenu(within(list).getByText('localhost:5173'));

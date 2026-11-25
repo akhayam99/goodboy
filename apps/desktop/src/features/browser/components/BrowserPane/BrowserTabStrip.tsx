@@ -42,11 +42,17 @@ type StripTab = {
 type StripGroup = {
   readonly key: string;
   readonly label: string | null;
+  readonly isPins: boolean;
   readonly tabs: ReadonlyArray<StripTab>;
 };
 
 type TabNodeParams = {
   readonly item: StripTab;
+};
+
+type GroupNodeParams = {
+  readonly group: StripGroup;
+  readonly hasSeparator: boolean;
 };
 
 type GroupsParams = {
@@ -73,11 +79,6 @@ type LabelParams = ModelParams & {
   readonly isHere: boolean;
 };
 
-type StripTabs = {
-  readonly pins: ReadonlyArray<StripTab>;
-  readonly groups: ReadonlyArray<StripGroup>;
-};
-
 const NO_GROUPS: ReadonlyArray<BrowserPageGroup> = [];
 
 const labelOf = ({ model, tab, isHere }: LabelParams): string => {
@@ -87,7 +88,7 @@ const labelOf = ({ model, tab, isHere }: LabelParams): string => {
   return tab.title === '' ? hostOf({ url: tab.url }) : tab.title;
 };
 
-const paneTabsOf = ({ model }: ModelParams): StripTabs => {
+const paneGroupsOf = ({ model }: ModelParams): ReadonlyArray<StripGroup> => {
   const shownId = model.shown?.tab.id ?? null;
   const pins = model.pins.map((pin): StripTab => ({
     tab: pin,
@@ -106,8 +107,11 @@ const paneTabsOf = ({ model }: ModelParams): StripTabs => {
     onSelect: () => model.select({ tab }),
     onClose: () => model.close({ tab }),
   }));
-  const groups: ReadonlyArray<StripGroup> = [{ key: 'session', label: null, tabs }];
-  return { pins, groups };
+  const pinLabel = model.projectName === null ? null : `Pinned · ${model.projectName}`;
+  return [
+    ...(pins.length > 0 ? [{ key: 'pins', label: pinLabel, isPins: true, tabs: pins }] : []),
+    { key: 'session', label: null, isPins: false, tabs },
+  ];
 };
 
 const itemsOf = ({ model, page, bindings, group, index }: ItemsParams): ReadonlyArray<StripTab> => {
@@ -124,23 +128,17 @@ const itemsOf = ({ model, page, bindings, group, index }: ItemsParams): Readonly
   }));
 };
 
-const pageTabsOf = ({ model, page, bindings }: GroupsParams): StripTabs => {
-  const pins = page.groups.flatMap((group, index) =>
-    group.isPins ? itemsOf({ model, page, bindings, group, index }) : [],
-  );
-  const groups = page.groups.flatMap((group, index): ReadonlyArray<StripGroup> =>
-    group.isPins
-      ? []
-      : [
-          {
-            key: group.key,
-            label: group.label,
-            tabs: itemsOf({ model, page, bindings, group, index }),
-          },
-        ],
-  );
-  return { pins, groups };
-};
+const pageGroupsOf = ({ model, page, bindings }: GroupsParams): ReadonlyArray<StripGroup> =>
+  page.groups.map((group, index) => ({
+    key: group.key,
+    label: group.label,
+    isPins: group.isPins,
+    tabs: itemsOf({ model, page, bindings, group, index }),
+  }));
+
+const SEPARATOR = (
+  <span role="separator" aria-orientation="vertical" className="h-4 w-px shrink-0 bg-border-soft" />
+);
 
 export const BrowserTabStrip = ({ model, field, page }: Props) => {
   const [folded, setFolded] = useState<ReadonlySet<string>>(() => new Set());
@@ -150,8 +148,12 @@ export const BrowserTabStrip = ({ model, field, page }: Props) => {
     useShallow((state) => pageGroups.map((group) => state.browserLiveTabs[group.sessionId])),
   );
   const shownId = model.shown?.tab.id ?? null;
-  const { pins, groups } =
-    page === undefined ? paneTabsOf({ model }) : pageTabsOf({ model, page, bindings });
+  const all =
+    page === undefined ? paneGroupsOf({ model }) : pageGroupsOf({ model, page, bindings });
+  const pinGroups = all.filter((group) => group.isPins);
+  const tabGroups = all.filter((group) => !group.isPins);
+  const isPaged = page !== undefined;
+  const hasTabs = tabGroups.some((group) => isPaged || group.tabs.length > 0);
 
   useEffect(() => {
     viewport.current
@@ -172,7 +174,9 @@ export const BrowserTabStrip = ({ model, field, page }: Props) => {
 
   const tabNode = ({ item }: TabNodeParams): ReactNode => {
     if (item.isShown) {
-      return <BrowserAddressPill key={item.tab.id} model={model} field={field} />;
+      return (
+        <BrowserAddressPill key={item.tab.id} model={model} field={field} onClose={item.onClose} />
+      );
     }
     return (
       <ObjectMenuArea
@@ -192,7 +196,31 @@ export const BrowserTabStrip = ({ model, field, page }: Props) => {
     );
   };
 
-  const hasTabs = groups.some((group) => group.tabs.length > 0 || group.label !== null);
+  const groupNode = ({ group, hasSeparator }: GroupNodeParams): ReactNode => {
+    const isFolded = folded.has(group.key);
+    const canFold = isPaged && !group.isPins && group.label !== null;
+    const shownTabs = isFolded ? group.tabs.filter((item) => item.isShown) : group.tabs;
+    return (
+      <div
+        key={group.key}
+        role="group"
+        aria-label={group.label ?? undefined}
+        data-browser-group={group.isPins ? 'pins' : 'session'}
+        className="contents"
+      >
+        {hasSeparator ? SEPARATOR : null}
+        {canFold && group.label !== null ? (
+          <BrowserTabGroupLabel
+            label={group.label}
+            count={group.tabs.length}
+            isFolded={isFolded}
+            onToggle={() => toggle({ key: group.key })}
+          />
+        ) : null}
+        {shownTabs.map((item) => tabNode({ item }))}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -203,43 +231,10 @@ export const BrowserTabStrip = ({ model, field, page }: Props) => {
         viewportClassName="flex items-center gap-0.5"
       >
         <nav aria-label="Browser tabs" className="contents">
-          {pins.map((item) => tabNode({ item }))}
-          {pins.length > 0 && hasTabs ? (
-            <span
-              role="separator"
-              aria-orientation="vertical"
-              className="h-4 w-px shrink-0 bg-border-soft"
-            />
-          ) : null}
-          {groups.map((group, index) => {
-            const isFolded = folded.has(group.key);
-            const shownTabs = isFolded ? group.tabs.filter((item) => item.isShown) : group.tabs;
-            return (
-              <div
-                key={group.key}
-                role="group"
-                aria-label={group.label ?? undefined}
-                className="contents"
-              >
-                {index > 0 ? (
-                  <span
-                    role="separator"
-                    aria-orientation="vertical"
-                    className="h-4 w-px shrink-0 bg-border-soft"
-                  />
-                ) : null}
-                {group.label === null ? null : (
-                  <BrowserTabGroupLabel
-                    label={group.label}
-                    count={group.tabs.length}
-                    isFolded={isFolded}
-                    onToggle={() => toggle({ key: group.key })}
-                  />
-                )}
-                {shownTabs.map((item) => tabNode({ item }))}
-              </div>
-            );
-          })}
+          {pinGroups.map((group) => groupNode({ group, hasSeparator: false }))}
+          {tabGroups.map((group, index) =>
+            groupNode({ group, hasSeparator: hasTabs && (index > 0 || pinGroups.length > 0) }),
+          )}
           {model.shown === null ? <BrowserAddressPill model={model} field={field} /> : null}
         </nav>
       </ScrollFade>

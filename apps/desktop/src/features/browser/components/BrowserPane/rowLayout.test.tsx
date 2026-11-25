@@ -180,8 +180,8 @@ describe('the browser address row at a narrow pane width', () => {
     screen.getByRole('button', { name: 'Open full page' });
   });
 
-  it('folds Console and Open full page into More and keeps the address, More and Close', () => {
-    stubWidths({ rowWidth: 360 });
+  it('folds Open full page into More under 560px and keeps the address, Console, More and Close', () => {
+    stubWidths({ rowWidth: 540 });
     render(
       <ToastProvider>
         <BrowserPane sessionId={SESSION_ID} onClose={() => undefined} />
@@ -189,14 +189,13 @@ describe('the browser address row at a narrow pane width', () => {
     );
 
     expect(document.querySelector('[data-row-folded]')).not.toBeNull();
-    expect(screen.queryByRole('button', { name: 'Console' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open full page' })).toBeNull();
+    screen.getByRole('button', { name: 'Console' });
     screen.getByRole('combobox', { name: 'Address or search' });
     screen.getByRole('button', { name: 'Close' });
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
 
     const menu = screen.getByRole('menu', { name: 'More' });
-    within(menu).getByRole('menuitem', { name: /Show console/ });
     within(menu).getByRole('menuitem', { name: /Open full page/ });
   });
 });
