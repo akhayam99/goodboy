@@ -81,7 +81,7 @@ pub fn stamp_phone(data: Value, phone_id: &str) -> Value {
 }
 
 pub fn action_id_of(action: MobileAction, data: &Value) -> Result<Option<String>, Refusal> {
-    if !action.is_decide() {
+    if !action.needs_action_id() {
         return Ok(None);
     }
     let cmd_id = correlation_of(data).unwrap_or_default();
@@ -150,6 +150,22 @@ mod tests {
         assert!(action_id_of(MobileAction::StopRun, &phone_minted).is_err());
         assert!(action_id_of(MobileAction::StopRun, &split).is_err());
         assert!(action_id_of(MobileAction::StopRun, &json!({})).is_err());
+    }
+
+    #[test]
+    fn merge_and_start_actions_need_an_id_in_the_mac_format() {
+        for action in [
+            MobileAction::MergePr,
+            MobileAction::MergePrChecked,
+            MobileAction::MergeTrain,
+            MobileAction::StartSession,
+            MobileAction::StopTrain,
+        ] {
+            let bad = json!({ "cmdId": "c1" });
+            assert!(action_id_of(action, &bad).is_err());
+            let ok = json!({ "cmdId": "act:x:1:2", "actionId": "act:x:1:2" });
+            assert!(matches!(action_id_of(action, &ok), Ok(Some(id)) if id == "act:x:1:2"));
+        }
     }
 
     #[test]

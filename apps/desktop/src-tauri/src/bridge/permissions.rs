@@ -80,8 +80,12 @@ pub fn permission_for(action: MobileAction) -> Option<Permission> {
         | MobileAction::SendToAgent
         | MobileAction::StopAgentTree
         | MobileAction::AnswerSlackReply => Some(Permission::Decide),
-        MobileAction::MergePr => Some(Permission::Merge),
-        MobileAction::SpawnAgent
+        MobileAction::MergePr
+        | MobileAction::MergePrChecked
+        | MobileAction::MergeTrain
+        | MobileAction::StopTrain => Some(Permission::Merge),
+        MobileAction::StartSession
+        | MobileAction::SpawnAgent
         | MobileAction::SpawnWorkflow
         | MobileAction::CreateSessionFromIssue => Some(Permission::Start),
     }
@@ -145,6 +149,18 @@ mod tests {
             permission_for(MobileAction::MergePr),
             Some(Permission::Merge)
         );
+    }
+
+    #[test]
+    fn the_merge_and_start_opcodes_need_their_own_permission() {
+        for op in [0x9Eu8, 0x9F, 0xA1] {
+            let action = MobileAction::from_opcode(op).unwrap();
+            assert_eq!(permission_for(action), Some(Permission::Merge), "{op:#04x}");
+        }
+        let start = MobileAction::from_opcode(0xA0).unwrap();
+        assert_eq!(permission_for(start), Some(Permission::Start));
+        assert_eq!(start.kind(), "startSession");
+        assert_eq!(MobileAction::MergePrChecked.kind(), "mergePr");
     }
 
     #[test]
