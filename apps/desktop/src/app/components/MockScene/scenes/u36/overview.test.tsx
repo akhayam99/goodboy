@@ -66,6 +66,8 @@ describe('the u36 overview scenes', () => {
       'u36-p15-next-only-dark',
       'u36-p15-needs-you-light',
       'u36-p15-needs-you-dark',
+      'u36-p15-needs-you-two-light',
+      'u36-p15-needs-you-two-dark',
     ]);
   });
 
@@ -87,6 +89,20 @@ describe('the u36 overview scenes', () => {
       expect(glance()).toBeNull();
       expect(document.querySelector('[data-slot="session-kpis"]')).toBeNull();
       expect(document.querySelector('[data-slot="project-blocks"]')).not.toBeNull();
+    },
+  );
+});
+
+describe('the u36 two item Needs you scenes', () => {
+  it.each(['light', 'dark'])(
+    'u36-p15-needs-you-two-%s draws one row per item under a section head',
+    async (theme) => {
+      await show({ name: `u36-p15-needs-you-two-${theme}` });
+
+      const section = document.querySelector('[data-overview-section="needs-you"]');
+      expect(section).not.toBeNull();
+      expect(section?.querySelectorAll('[data-needs-you-rows] [data-move]')).toHaveLength(2);
+      expect(document.querySelector('[data-testid="tone-bar"]')).toBeNull();
     },
   );
 });

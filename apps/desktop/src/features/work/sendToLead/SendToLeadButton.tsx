@@ -21,7 +21,7 @@ import { useLeadChoice } from './hooks/useLeadChoice';
 type Props = {
   readonly cardKey: string;
   readonly send: LeadSend;
-  readonly variant: 'primary' | 'secondary';
+  readonly variant: 'primary' | 'secondary' | 'quiet';
   readonly editNote: string | null;
 };
 

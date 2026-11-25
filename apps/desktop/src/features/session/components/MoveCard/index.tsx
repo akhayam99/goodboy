@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { CircleAlert } from '@goodboy/ui/icons';
 import { ICON_SIZE, TruncatedText } from '@goodboy/ui';
+import { useNow } from '../../../../shared/hooks/useNow';
 import type { SessionId } from '@goodboy/types';
 import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import type { ActionCardActions } from '../../central/next/useActionCardActions';
 import { useAppStore } from '../../../../store';
 import { SendToLeadButton } from '../../../work/sendToLead/SendToLeadButton';
+import { needsYouLinesOf } from '../../central/next/needsYouLinesOf';
 import { MoveEvidenceChips } from './MoveEvidenceChips';
 import { MoveVerb } from './MoveVerb';
+import { NeedsYouTile } from './NeedsYouTile';
 import { SentToLeadRow } from './SentToLeadRow';
 import { sentViewOf } from './sentViewOf';
 import { useMoveLeadSend } from './useMoveLeadSend';
@@ -17,9 +20,9 @@ type Props = {
   readonly card: ActionCardModel;
   readonly actionsFor: ActionCardActions['actionsFor'];
   readonly openFor: ActionCardActions['openFor'];
-  readonly density: 'focus' | 'row';
+  readonly density: 'needs' | 'row';
   readonly isPrimary: boolean;
-  readonly kicker: string | null;
+  readonly project: string | null;
 };
 
 export const MoveCard = ({
@@ -29,11 +32,12 @@ export const MoveCard = ({
   openFor,
   density,
   isPrimary,
-  kicker,
+  project,
 }: Props) => {
   const { main, second, failure } = actionsFor({ card });
   const onOpen = openFor({ card });
   const why = card.reason ?? card.detail;
+  const now = useNow(30_000);
   const leadSend = useMoveLeadSend({ sessionId, card });
   const sentKey = leadSend === null ? card.id : `${card.id}|${leadSend.identity}`;
   const sent = useAppStore((state) => state.sentToLead[sentKey]);
@@ -59,13 +63,14 @@ export const MoveCard = ({
     sent !== undefined && sentView === 'line' ? (
       <SentToLeadRow entry={sent} onEdit={() => void onEdit()} />
     ) : null;
+  const restVariant = density === 'needs' ? 'quiet' : 'secondary';
   const verbs = (
     <span className="flex shrink-0 items-center gap-2">
       {leadSend === null || sent !== undefined ? null : (
         <SendToLeadButton
           cardKey={sentKey}
           send={leadSend}
-          variant="secondary"
+          variant={restVariant}
           editNote={editNote}
         />
       )}
@@ -74,7 +79,7 @@ export const MoveCard = ({
           verb={main}
           cardId={card.id}
           cardTitle={card.title}
-          variant={isPrimary ? 'primary' : 'secondary'}
+          variant={isPrimary ? 'primary' : restVariant}
           isMain
           onOpen={onOpen}
         />
@@ -84,7 +89,7 @@ export const MoveCard = ({
           verb={second}
           cardId={card.id}
           cardTitle={card.title}
-          variant="secondary"
+          variant={restVariant}
           isMain={false}
           onOpen={onOpen}
         />
@@ -123,25 +128,22 @@ export const MoveCard = ({
       </div>
     );
   }
+  const lines = needsYouLinesOf({ card, project, now });
   return (
-    <div
-      data-move={card.id}
-      data-sent-key={sentKey}
-      data-move-density="focus"
-      data-move-primary={isPrimary ? '' : undefined}
-      className="flex min-w-0 flex-col gap-2"
-    >
-      {kicker === null || kicker === '' ? null : (
-        <span className="min-w-0 truncate text-meta text-muted-foreground">{kicker}</span>
-      )}
-      <span className="min-w-0 text-row text-foreground">{card.title}</span>
-      {why === null || why === '' ? null : (
-        <span className="min-w-0 text-ui text-muted-foreground">{why}</span>
-      )}
-      <MoveEvidenceChips sessionId={sessionId} evidence={card.evidence} />
-      <div className="flex min-w-0 items-center gap-2">{verbs}</div>
-      {failureLine}
-      {sentLine}
-    </div>
+    <NeedsYouTile
+      moveId={card.id}
+      sentKey={sentKey}
+      isPrimary={isPrimary}
+      title={lines.title}
+      meta={lines.meta}
+      actions={verbs}
+      below={
+        <>
+          <MoveEvidenceChips sessionId={sessionId} evidence={card.evidence} />
+          {failureLine}
+          {sentLine}
+        </>
+      }
+    />
   );
 };
