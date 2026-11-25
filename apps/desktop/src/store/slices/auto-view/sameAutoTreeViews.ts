@@ -39,6 +39,7 @@ const signatureOf = (view: AutoTreeView): string =>
     view.budget,
     view.pendingRefusal,
     view.hold ?? null,
+    view.guide ?? null,
     view.pendingMessages,
     view.readMessages ?? [],
     view.sentChange ?? null,

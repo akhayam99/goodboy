@@ -388,6 +388,35 @@ describe('attentionPlace and Auto or Slack', () => {
     ).toEqual({ at: 'agent', sessionId: SESSION_ID, agentId: root.id });
   });
 
+  it('opens the held Lead first when two Leads wait for you', () => {
+    const held = {
+      ...agent({
+        id: brandId<AgentId>({ value: 'agent-auto-held' }),
+        ordinal: 1,
+        status: 'running',
+      }),
+      kind: 'auto',
+      name: 'Auto',
+    } satisfies Agent;
+    const two = {
+      ...state,
+      sessionPhaseRuns: { [SESSION_ID]: [...AGENTS, root, held] },
+      autoTreeViews: {
+        [SESSION_ID]: [
+          blockedViewOf({ rootAgentId: root.id }),
+          {
+            ...blockedViewOf({ rootAgentId: held.id }),
+            hold: { reason: 'Not a bug', suggestion: null, suggestionId: null },
+          },
+        ],
+      },
+    };
+
+    expect(attentionPlace({ state: two, sessionId: SESSION_ID, reason: 'auto-needs-you' })).toEqual(
+      { at: 'agent', sessionId: SESSION_ID, agentId: held.id },
+    );
+  });
+
   it('opens the Auto agent that paused at its limit behind run-paused-at-limit', () => {
     const limited = {
       ...state,
