@@ -446,6 +446,8 @@ fn after_of(cursor: &Cursor, doc: &str) -> u64 {
     cursor.after
 }
 
+const MAX_SAFE_SEQ: u64 = 9_007_199_254_740_991;
+
 pub(crate) fn answer_of(raw: &str, cursor: &Cursor) -> Option<ConsoleRead> {
     if raw.len() > MAX_ANSWER_BYTES {
         return None;
@@ -465,6 +467,7 @@ pub(crate) fn answer_of(raw: &str, cursor: &Cursor) -> Option<ConsoleRead> {
         .entries
         .iter()
         .filter_map(|value| value.get("seq").and_then(serde_json::Value::as_u64))
+        .filter(|seq| *seq <= MAX_SAFE_SEQ)
         .max()
         .map_or(after, |last| last.max(after));
     let mut entries: Vec<ConsoleEntry> = answer
@@ -715,6 +718,18 @@ mod tests {
         .expect("reads");
         assert_eq!(seqs_of(&next), vec![500]);
         assert_eq!(next.watermark, 500);
+    }
+
+    #[test]
+    fn ignores_a_forged_sequence_beyond_the_safe_range_in_the_watermark() {
+        let mut forged = entry(2);
+        forged["seq"] = json!(u64::MAX);
+        let read = answer_of(
+            &answer_with("k3x9", vec![entry(1), forged]),
+            &Cursor::of(None, 0),
+        )
+        .expect("reads");
+        assert_eq!(read.watermark, 1);
     }
 
     #[test]
