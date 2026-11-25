@@ -390,7 +390,9 @@ mod tests {
     fn refuses_an_answer_from_a_forged_load_or_too_large() {
         let forged = json!({ "doc": "\");alert(1);(\"", "picks": [] }).to_string();
         assert_eq!(pick_answer_of(&forged), None);
-        let huge = answer(vec![pick(json!({ "text": "a".repeat(MAX_PICK_ANSWER_BYTES) }))]);
+        let huge = answer(vec![pick(
+            json!({ "text": "a".repeat(MAX_PICK_ANSWER_BYTES) }),
+        )]);
         assert_eq!(pick_answer_of(&huge), None);
     }
 
@@ -403,12 +405,16 @@ mod tests {
     #[test]
     fn the_script_dispatches_one_named_event_and_reaches_nothing_else() {
         let script = pick_script(PickOp::Start);
-        assert!(script.contains(&format!(
-            "{}",
-            serde_json::to_string(&console::pick_event_name()).expect("name")
-        )));
+        assert!(script.contains(&serde_json::to_string(&console::pick_event_name()).expect("name")));
         assert!(script.contains("op:\"start\""));
-        for banned in ["__TAURI", "invoke", "postMessage", "webkit", "fetch", "cookie"] {
+        for banned in [
+            "__TAURI",
+            "invoke",
+            "postMessage",
+            "webkit",
+            "fetch",
+            "cookie",
+        ] {
             assert!(!script.contains(banned), "{banned}");
         }
     }

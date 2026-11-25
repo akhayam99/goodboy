@@ -10,13 +10,13 @@ use super::lifecycle;
 use super::local::{self, LocalFile};
 use super::page_keys::PageKeys;
 use super::pick::{self, PickOp, PickRead, PickRect};
-use super::snapshot;
 use super::profile::{self, ClearOutcome, Isolation, ProfileId};
 use super::reason::{
     self, BROWSER_CALLER, HOST_UNKNOWN, INVALID_ADDRESS, INVALID_PRESET, NOT_WEB_ADDRESS,
     OTHER_SESSION, OTHER_WINDOW, PAGE_MOVED, PAGE_TEXT_UNAVAILABLE, TAB_CLOSED, TAB_GONE,
 };
 use super::registry::{BrowserRegistry, TabFacts, TabState};
+use super::snapshot;
 use crate::platform::web_history::{HistoryState, HistoryStep};
 use crate::platform::web_text::{self, PageText};
 use crate::platform::web_url;

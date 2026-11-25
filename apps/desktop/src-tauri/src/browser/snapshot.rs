@@ -177,7 +177,9 @@ pub(crate) fn snapshot_element<R: Runtime>(
     webview
         .with_webview(move |platform| native::take(platform, rect, sender))
         .map_err(|_| reason::failed(SNAPSHOT_UNAVAILABLE))?;
-    Ok(png_text_of(receiver.recv_timeout(SNAPSHOT_WAIT).ok().flatten()))
+    Ok(png_text_of(
+        receiver.recv_timeout(SNAPSHOT_WAIT).ok().flatten(),
+    ))
 }
 
 #[cfg(not(target_os = "macos"))]
@@ -220,9 +222,18 @@ mod tests {
 
     #[test]
     fn refuses_a_rect_off_screen_or_empty() {
-        assert_eq!(clamped_rect(rect(900.0, 10.0, 50.0, 50.0), (800.0, 600.0)), None);
-        assert_eq!(clamped_rect(rect(10.0, 10.0, 0.0, 50.0), (800.0, 600.0)), None);
-        assert_eq!(clamped_rect(rect(f64::NAN, 10.0, 5.0, 5.0), (800.0, 600.0)), None);
+        assert_eq!(
+            clamped_rect(rect(900.0, 10.0, 50.0, 50.0), (800.0, 600.0)),
+            None
+        );
+        assert_eq!(
+            clamped_rect(rect(10.0, 10.0, 0.0, 50.0), (800.0, 600.0)),
+            None
+        );
+        assert_eq!(
+            clamped_rect(rect(f64::NAN, 10.0, 5.0, 5.0), (800.0, 600.0)),
+            None
+        );
     }
 
     #[test]
@@ -230,6 +241,9 @@ mod tests {
         assert_eq!(png_text_of(None), None);
         assert_eq!(png_text_of(Some(Vec::new())), None);
         assert_eq!(png_text_of(Some(vec![0; MAX_SNAPSHOT_BYTES + 1])), None);
-        assert_eq!(png_text_of(Some(vec![137, 80, 78, 71])), Some("iVBORw==".to_string()));
+        assert_eq!(
+            png_text_of(Some(vec![137, 80, 78, 71])),
+            Some("iVBORw==".to_string())
+        );
     }
 }
