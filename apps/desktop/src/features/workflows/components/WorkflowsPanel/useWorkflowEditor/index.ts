@@ -8,7 +8,13 @@ import { deleteWorkflowWithUndo } from '../../../deleteWorkflowWithUndo';
 import { editedStepKeys } from '../../../presetEdits';
 import type { WorkflowDraft } from '../../../engine';
 import { draftFromWorkflow, upsertArgsFromDraft, validateDraft } from '../../../engine';
+import { blankWorkflowDraft } from '../../../engine/blankWorkflowDraft';
+import { createBlockOf } from '../../../engine/createBlockOf';
+import { duplicateWorkflowDraft } from '../../../engine/duplicateWorkflowDraft';
+import { hasWorkflowDraftContent } from '../../../engine/hasWorkflowDraftContent';
+import { stepDraftsOfArgs } from '../../../engine/stepDraftsOfArgs';
 import { useWorkflowDraft } from '../../../engine/useWorkflowDraft';
+import { isPresetWorkflow } from '../../../isPresetWorkflow';
 import { useWorkflowAutosave } from '../useWorkflowAutosave';
 
 export type EditorTarget = Workflow | 'new' | null;
@@ -21,16 +27,6 @@ type Params = {
   readonly workingDir: string | null;
 };
 
-const emptyWorkflowDraft = (): WorkflowDraft => ({
-  name: '',
-  description: '',
-  goal: '',
-  processText: '',
-  steps: [],
-  origin: 'custom',
-  isPreset: true,
-});
-
 type SavableParams = {
   readonly form: WorkflowDraft;
 };
@@ -38,11 +34,27 @@ type SavableParams = {
 const isSavable = ({ form }: SavableParams): boolean =>
   form.name.trim().length > 0 && form.steps.every((step) => step.name.trim().length > 0);
 
+type StartNewParams = {
+  readonly draft: WorkflowDraft;
+};
+
+type DuplicateParams = {
+  readonly source?: Workflow;
+};
+
+type NamesParams = {
+  readonly workflows: ReadonlyArray<Workflow>;
+};
+
+const liveNamesOf = ({ workflows }: NamesParams): ReadonlySet<string> =>
+  new Set(workflows.filter(isPresetWorkflow).map((workflow) => workflow.name));
+
 export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) => {
   const templates = useAppStore((state) => state.phaseTemplates[workspaceId]);
   const storedDraft = useAppStore((state) => state.workflowStudioDrafts[workspaceId]);
   const generation = useAppStore((state) => state.workflowGenerations[workspaceId]);
   const savePhaseTemplate = useAppStore((state) => state.savePhaseTemplate);
+  const loadPhaseTemplates = useAppStore((state) => state.loadPhaseTemplates);
   const restoreWorkflowSnapshot = useAppStore((state) => state.restoreWorkflowSnapshot);
   const deleteWorkflow = useAppStore((state) => state.deleteWorkflow);
   const setWorkflowStudioDraft = useAppStore((state) => state.setWorkflowStudioDraft);
@@ -61,16 +73,20 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
   const [baseline, setBaseline] = useState<Workflow | null>(restoredWorkflow);
   const [openedForm, setOpenedForm] = useState<WorkflowDraft>(() =>
     restoredWorkflow === null
-      ? emptyWorkflowDraft()
+      ? blankWorkflowDraft()
       : draftFromWorkflow({ workflow: restoredWorkflow }),
   );
   const { draft: form, setDraft: setForm } = useWorkflowDraft({
-    initial: storedDraft?.form ?? emptyWorkflowDraft(),
+    initial: storedDraft?.form ?? blankWorkflowDraft(),
   });
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [lateTakenName, setLateTakenName] = useState<string | null>(null);
   const editingIdRef = useRef<WorkflowId | null>(restoredWorkflow?.id ?? null);
+  const editingRef = useRef(editing);
+  editingRef.current = editing;
   const handledGenerationRef = useRef<string | null>(null);
   const handledRestoreRef = useRef<string | null>(storedDraft?.restoreNonce ?? null);
   const contextKeyRef = useRef(0);
@@ -96,6 +112,23 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
       savedFormRef.current = JSON.stringify(nextForm);
       setExpandedKey(null);
       setFormError(null);
+      setLateTakenName(null);
+    },
+    [setForm],
+  );
+
+  const startNew = useCallback(
+    ({ draft }: StartNewParams) => {
+      contextKeyRef.current += 1;
+      setEditing('new');
+      setBaseline(null);
+      editingIdRef.current = null;
+      setForm(draft);
+      setOpenedForm(blankWorkflowDraft());
+      savedFormRef.current = null;
+      setExpandedKey(null);
+      setFormError(null);
+      setLateTakenName(null);
     },
     [setForm],
   );
@@ -135,6 +168,26 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
   ]);
 
   useEffect(() => {
+    if (generation?.status !== 'drafted') {
+      return;
+    }
+    if (handledGenerationRef.current === generation.notificationId) {
+      return;
+    }
+    handledGenerationRef.current = generation.notificationId;
+    consumeWorkflowGeneration({ workspaceId });
+    if (editingRef.current !== 'new') {
+      return;
+    }
+    const steps = stepDraftsOfArgs({ steps: generation.steps });
+    setForm((current) => ({
+      ...current,
+      steps,
+      name: current.name.trim().length === 0 ? generation.name : current.name,
+    }));
+  }, [consumeWorkflowGeneration, generation, setForm, workspaceId]);
+
+  useEffect(() => {
     const nonce = storedDraft?.restoreNonce;
     if (storedDraft === undefined || nonce === undefined || handledRestoreRef.current === nonce) {
       return;
@@ -171,20 +224,16 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
       setFormError('All steps need a name');
       return false;
     }
-    const args = upsertArgsFromDraft({
-      draft: snapshot,
-      workspaceId,
-      ...(editingIdRef.current !== null && { id: editingIdRef.current }),
-    });
+    const id = editingIdRef.current;
+    if (id === null) {
+      return false;
+    }
+    const args = upsertArgsFromDraft({ draft: snapshot, workspaceId, id });
     setSaving(true);
     setFormError(null);
     try {
-      const saved = await savePhaseTemplate(args);
-      editingIdRef.current = saved.id;
+      await savePhaseTemplate(args);
       savedFormRef.current = JSON.stringify(snapshot);
-      if (editing === 'new') {
-        setEditing(saved);
-      }
       clearWorkflowStudioDraft({ workspaceId });
       return true;
     } catch (error) {
@@ -193,11 +242,13 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
     } finally {
       setSaving(false);
     }
-  }, [clearWorkflowStudioDraft, editing, savePhaseTemplate, workspaceId]);
+  }, [clearWorkflowStudioDraft, savePhaseTemplate, workspaceId]);
+
+  const isSavedWorkflow = editing !== null && editing !== 'new';
 
   useWorkflowAutosave({
     form,
-    isEditing: editing !== null && !(editingIdRef.current === null && form.steps.length === 0),
+    isEditing: isSavedWorkflow,
     savedForm: savedFormRef,
     flush: flushSave,
   });
@@ -207,36 +258,70 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
     setEditing(null);
     setBaseline(null);
     editingIdRef.current = null;
-    setForm(emptyWorkflowDraft());
-    setOpenedForm(emptyWorkflowDraft());
+    setForm(blankWorkflowDraft());
+    setOpenedForm(blankWorkflowDraft());
     savedFormRef.current = null;
     setExpandedKey(null);
     setFormError(null);
+    setLateTakenName(null);
     clearWorkflowStudioDraft({ workspaceId });
   };
 
   const openNew = () => {
     close();
-    setEditing('new');
+    startNew({ draft: blankWorkflowDraft() });
   };
 
-  const duplicate = async () => {
-    const source = formRef.current;
+  const duplicate = ({ source }: DuplicateParams = {}) => {
+    const draft = duplicateWorkflowDraft({
+      source: source === undefined ? formRef.current : draftFromWorkflow({ workflow: source }),
+    });
+    close();
+    startNew({ draft });
+  };
+
+  const discard = () => {
+    const snapshot = formRef.current;
+    const hasContent = hasWorkflowDraftContent({ draft: snapshot });
+    close();
+    if (!hasContent) {
+      return;
+    }
+    undoable({
+      showToast,
+      message: 'Discarded New workflow',
+      isCurrent: () => editingRef.current === null,
+      undo: async () => startNew({ draft: snapshot }),
+    });
+  };
+
+  const create = async () => {
+    const snapshot = formRef.current;
+    if (isCreating || !isSavable({ form: snapshot }) || snapshot.steps.length === 0) {
+      return;
+    }
+    const name = snapshot.name.trim();
+    setIsCreating(true);
+    setFormError(null);
+    setLateTakenName(null);
     try {
-      const saved = await savePhaseTemplate(
-        upsertArgsFromDraft({
-          workspaceId,
-          draft: {
-            ...source,
-            name: `${source.name.trim()} copy`,
-            origin: 'custom',
-            steps: source.steps.map((step) => ({ ...step, sourceStepId: null })),
-          },
-        }),
-      );
-      load(saved);
+      await loadPhaseTemplates(workspaceId);
+      const live = useAppStore.getState().phaseTemplates[workspaceId] ?? [];
+      if (liveNamesOf({ workflows: live }).has(name)) {
+        setLateTakenName(name);
+        return;
+      }
+      const saved = await savePhaseTemplate(upsertArgsFromDraft({ draft: snapshot, workspaceId }));
+      editingIdRef.current = saved.id;
+      savedFormRef.current = JSON.stringify(snapshot);
+      setBaseline(saved);
+      setOpenedForm(snapshot);
+      setEditing(saved);
+      clearWorkflowStudioDraft({ workspaceId });
     } catch (error) {
       setFormError(formatError(error));
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -267,9 +352,11 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
   };
 
   const draftSteps = async () => {
-    const goal = form.goal.trim();
-    if (goal.length === 0) {
-      setFormError('Add a goal before drafting steps');
+    const forGoal = [form.description.trim(), form.entryCheck.trim()]
+      .filter((text) => text.length > 0)
+      .join('. ');
+    if (forGoal.length === 0) {
+      setFormError('Say when to use it before drafting steps');
       return;
     }
     setFormError(null);
@@ -277,10 +364,11 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
     const workflow = id === null ? null : (presets.find((preset) => preset.id === id) ?? null);
     const accepted = await startWorkflowGeneration({
       workspaceId,
-      description: goal,
+      description: forGoal,
       ...(workingDir !== null && { workingDir }),
       workflow,
       form,
+      isDraftOnly: workflow === null,
     });
     if (!accepted && generation?.status === 'running') {
       setFormError('Steps are already being drafted in this workspace');
@@ -291,6 +379,13 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
     () => (baseline === null ? new Set() : editedStepKeys({ steps: form.steps, preset: baseline })),
     [baseline, form.steps],
   );
+  const takenNames = useMemo(() => liveNamesOf({ workflows: presets }), [presets]);
+  const isDrafting = generation?.status === 'running';
+  const block = createBlockOf({
+    draft: form,
+    isDrafting,
+    takenNames: lateTakenName === null ? takenNames : new Set([...takenNames, lateTakenName]),
+  });
   const isDirty = JSON.stringify(form) !== JSON.stringify(openedForm);
   const isSaved = savedFormRef.current !== null && JSON.stringify(form) === savedFormRef.current;
   const saveStatus: SaveStatus = saving
@@ -312,13 +407,20 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
     editedKeys,
     isDirty,
     contextKey: contextKeyRef.current,
-    isSavedWorkflow: editingIdRef.current !== null,
-    isGenerating: generation?.status === 'running',
-    generationError: generation?.status === 'failed' ? generation.error : null,
+    isSavedWorkflow,
+    editingId: editingIdRef.current,
+    isCreating,
+    createReason: block.reason,
+    nameError: block.nameError,
+    isGenerating: isDrafting,
+    generationError:
+      generation?.status === 'failed' ? `Couldn't draft steps. ${generation.error}` : null,
     open: load,
     openNew,
     close,
     duplicate,
+    discard,
+    create,
     remove,
     undoSinceOpened,
     draftSteps,

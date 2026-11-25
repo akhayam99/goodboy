@@ -178,6 +178,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         onOpen={editor.open}
         onShowRuns={showRuns}
         onNew={editor.openNew}
+        onDuplicate={(workflow) => editor.duplicate({ source: workflow })}
         onRestore={restore}
       />
     );
@@ -192,6 +193,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         workspaceId={workspaceId}
         workingDir={workingDir}
         connectedProviders={connectedProviders}
+        workflows={presets}
         editor={editor}
       />
     );

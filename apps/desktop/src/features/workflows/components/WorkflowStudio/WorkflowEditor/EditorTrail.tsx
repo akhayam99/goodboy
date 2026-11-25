@@ -36,7 +36,7 @@ export const EditorTrail = ({
   const duplicateItem: MenuItemEntry = {
     kind: 'item',
     key: 'duplicate',
-    label: 'Duplicate',
+    label: 'Duplicate workflow',
     icon: Copy,
     onSelect: onDuplicate,
   };
@@ -57,8 +57,8 @@ export const EditorTrail = ({
   };
   const candidates: ReadonlyArray<MenuItemEntry | null> = [
     isSavedWorkflow ? duplicateItem : null,
-    isDirty ? undoItem : null,
-    deleteItem,
+    isSavedWorkflow && isDirty ? undoItem : null,
+    isSavedWorkflow ? deleteItem : null,
   ];
   const entries = candidates.filter((entry): entry is MenuItemEntry => entry !== null);
 
@@ -74,33 +74,39 @@ export const EditorTrail = ({
         },
         {
           id: 'workflow',
-          label: name.trim() === '' ? 'Untitled workflow' : name.trim(),
+          label: !isSavedWorkflow
+            ? 'New workflow'
+            : name.trim() === ''
+              ? 'Untitled workflow'
+              : name.trim(),
           icon: CONCEPT_ICONS.workflows,
         },
       ]}
       accessory={
-        <>
-          <span
-            role="status"
-            className="inline-flex shrink-0 items-center gap-1 text-meta text-faint-foreground"
-          >
-            {saveStatus === 'saved' ? <Check size={ICON_SIZE.row} aria-hidden /> : null}
-            {STATUS_LABEL[saveStatus]}
-          </span>
-          {entries.length > 1 ? (
-            <OverflowMenu
-              label="Workflow actions"
-              disabled={disabled}
-              align="left"
-              trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
-              entries={entries}
-            />
-          ) : (
-            <Button size="sm" variant="ghost-danger" disabled={disabled} onClick={onDelete}>
-              {deleteItem.label}
-            </Button>
-          )}
-        </>
+        !isSavedWorkflow ? null : (
+          <>
+            <span
+              role="status"
+              className="inline-flex shrink-0 items-center gap-1 text-meta text-faint-foreground"
+            >
+              {saveStatus === 'saved' ? <Check size={ICON_SIZE.row} aria-hidden /> : null}
+              {STATUS_LABEL[saveStatus]}
+            </span>
+            {entries.length > 1 ? (
+              <OverflowMenu
+                label="Workflow actions"
+                disabled={disabled}
+                align="left"
+                trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
+                entries={entries}
+              />
+            ) : (
+              <Button size="sm" variant="ghost-danger" disabled={disabled} onClick={onDelete}>
+                {deleteItem.label}
+              </Button>
+            )}
+          </>
+        )
       }
     />
   );

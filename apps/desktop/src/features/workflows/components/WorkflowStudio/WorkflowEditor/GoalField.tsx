@@ -4,6 +4,8 @@ import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { PromptField, type PromptFieldFiles } from '../../../../../shared/components/PromptField';
 
 type Props = {
+  readonly label?: string;
+  readonly id?: string;
   readonly value: string;
   readonly placeholder?: string;
   readonly hasSessionGoal: boolean;
@@ -27,6 +29,8 @@ const TOOL_CLASS =
 const SESSION_PLACEHOLDER = 'What should this run get done? The session goal, or one part of it.';
 
 export const GoalField = ({
+  label = 'Goal',
+  id = 'workflow-goal',
   value,
   placeholder = SESSION_PLACEHOLDER,
   hasSessionGoal,
@@ -45,8 +49,8 @@ export const GoalField = ({
 }: Props) => (
   <PromptField
     kind="document"
-    label="Goal"
-    id="workflow-goal"
+    label={label}
+    id={id}
     value={value}
     onChange={onChange}
     onBlur={onBlur}
@@ -79,7 +83,7 @@ export const GoalField = ({
             type="button"
             onClick={onUndo}
             disabled={disabled || isPolishing}
-            aria-label="Undo goal change"
+            aria-label={`Undo ${label.toLowerCase()} change`}
             className={TOOL_CLASS}
           >
             <Undo2 size={ICON_SIZE.row} aria-hidden /> Undo
@@ -89,7 +93,7 @@ export const GoalField = ({
           type="button"
           onClick={onPolish}
           disabled={disabled || isPolishing || value.trim().length === 0}
-          aria-label="Polish goal"
+          aria-label={`Polish ${label.toLowerCase()}`}
           className={TOOL_CLASS}
         >
           <CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden />
