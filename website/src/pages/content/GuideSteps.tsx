@@ -8,12 +8,14 @@ export const GuideSteps = ({ steps }: Props) => (
   <ol className="guideSteps">
     {steps.map((step) => (
       <li key={step.text}>
-        <span>{step.text}</span>
-        {step.command === undefined ? null : (
-          <pre className="guideCode">
-            <code>{step.command}</code>
-          </pre>
-        )}
+        <div className="guideStep">
+          <span>{step.text}</span>
+          {step.command === undefined ? null : (
+            <pre className="guideCode">
+              <code>{step.command}</code>
+            </pre>
+          )}
+        </div>
       </li>
     ))}
   </ol>

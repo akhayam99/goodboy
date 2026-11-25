@@ -24,7 +24,7 @@ export const AGENT_COSTS_GUIDE = {
       id: 'run-limit',
       heading: 'Set a limit on a run',
       paragraphs: [
-        'The start form has a Limit chip. Its popover lists $5, $10 and $25 beside the default, with Other amount and No limit. The run gets exactly the amount the chip shows, and No limit means no limit, even when the workspace has a default.',
+        'The start form of a Lead or a preset run has a Limit chip, and One agent has none. Its popover lists $5, $10 and $25 beside the default, with Other amount and No limit. The run gets exactly the amount the chip shows, and No limit means no limit, even when the workspace has a default.',
         'The default for every new run is set once per workspace, on the Every run tab of Workflows. A running conversation shows its limit under the title, and you can raise, change or remove it there, with Undo.',
         'A Lead stops at its limit with The run reached its limit and offers Raise limit.',
       ],

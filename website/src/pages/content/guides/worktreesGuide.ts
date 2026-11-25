@@ -44,8 +44,9 @@ export const WORKTREES_GUIDE = {
           command: 'git worktree list',
         },
         {
-          text: 'After the branch is merged, remove the folder and then the branch.',
-          command: 'git worktree remove ../payments-api-retry\ngit branch -d fix/webhook-retry',
+          text: 'After the branch is merged, go back to your checkout, then remove the folder and the branch.',
+          command:
+            'cd ../payments-api\ngit worktree remove ../payments-api-retry\ngit branch -d fix/webhook-retry',
         },
       ],
     },

@@ -37,7 +37,7 @@
   list-style: decimal;
 }
 
-.guideSteps li {
+.guideStep {
   display: grid;
   gap: 8px;
 }
