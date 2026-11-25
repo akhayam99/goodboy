@@ -33,6 +33,8 @@ const LEVEL_INDENT_PX = 8;
 
 const GUIDE_ORIGIN_PX = 16;
 
+const MAX_DEPTH = 1;
+
 const foldedEntriesOf = ({ items, root }: EntriesParams): ReadonlyArray<Entry> => {
   const offset = root === null ? 0 : 1;
   const rows: Entry[] =
@@ -77,7 +79,7 @@ export const LeadTreeFolded = ({ items, root, selectedAgentId, onSelect }: Props
     <nav aria-label={NAMES.agents} data-lead-tree-folded="" className="flex w-full flex-col pb-3">
       {entries.map((entry, index) => {
         const isSelected = entry.agentId === selectedAgentId;
-        const depth = hasRoot ? Math.max(0, entry.level - 1) : entry.level;
+        const depth = Math.min(MAX_DEPTH, hasRoot ? Math.max(0, entry.level - 1) : entry.level);
         const label = `${entry.role}${entry.title === '' ? '' : `, ${entry.title}`}, ${entry.word}`;
         return (
           <Fragment key={entry.id}>

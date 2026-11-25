@@ -114,4 +114,20 @@ describe('LeadTreeFolded', () => {
     expect(margin(/^Scout/)).toBe(margin(/^Lead/));
     expect(margin(/^Reviewer/)).toBeGreaterThan(margin(/^Scout/));
   });
+
+  it('keeps a deep agent inside the strip', () => {
+    const grandchild: LeadTreeItem = { ...reviewer, id: 'd3', agentId: nextAgentId(), depth: 2 };
+    render(
+      <LeadTreeFolded
+        items={[scout, reviewer, grandchild]}
+        root={root}
+        selectedAgentId={null}
+        onSelect={vi.fn()}
+      />,
+    );
+    const margins = screen
+      .getAllByRole('button')
+      .map((button) => Number.parseInt(button.style.marginLeft, 10));
+    expect(Math.max(...margins) + 24).toBeLessThanOrEqual(44);
+  });
 });
