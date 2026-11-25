@@ -1,0 +1,56 @@
+.guideSection {
+  display: grid;
+  gap: 24px;
+}
+
+.guideItem {
+  display: grid;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.guideLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  font: var(--t-cell);
+  letter-spacing: var(--tr-cell);
+}
+
+.guideList {
+  list-style: none;
+  padding-left: 0;
+}
+
+.guideList li {
+  display: grid;
+  gap: 2px;
+}
+
+.guideList span {
+  color: var(--t3);
+}
+
+.guideSteps {
+  gap: 16px;
+  padding-left: 24px;
+  list-style: decimal;
+}
+
+.guideSteps li {
+  display: grid;
+  gap: 8px;
+}
+
+.guideCode {
+  overflow-x: auto;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  font: 400 13px/20px var(--mono);
+  color: var(--t1);
+}
+
+.prose .guideCode code {
+  font: inherit;
+}

@@ -2,13 +2,17 @@ import { BrandMark } from '../../components/BrandIcons';
 import { StarCount } from '../../components/StarCount';
 import { SITE } from '../../lib/site';
 import { trackAttributes } from '../../lib/trackAttributes';
-import { ADE_GUIDE } from './adeGuide';
+import type { GuideCta as GuideCtaData } from './Guide';
 
-export const AdeCta = () => (
-  <section className="adeSection" aria-labelledby="ade-cta">
+type Props = {
+  readonly cta: GuideCtaData;
+};
+
+export const GuideCta = ({ cta }: Props) => (
+  <section className="guideSection" aria-labelledby="guide-cta">
     <div className="prose">
-      <h2 id="ade-cta">{ADE_GUIDE.cta.heading}</h2>
-      <p>{ADE_GUIDE.cta.lead}</p>
+      <h2 id="guide-cta">{cta.heading}</h2>
+      <p>{cta.lead}</p>
     </div>
     <div className="ctaRow">
       <a className="btn" href="/#install">

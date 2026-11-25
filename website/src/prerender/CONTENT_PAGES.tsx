@@ -4,6 +4,8 @@ import { AdePage } from '../pages/content/AdePage';
 import { ChangelogIndex } from '../pages/content/ChangelogIndex';
 import { DocArticle } from '../pages/content/DocArticle';
 import { DocsIndex } from '../pages/content/DocsIndex';
+import { GuidePage } from '../pages/content/GuidePage';
+import { GUIDES } from '../pages/content/guides/GUIDES';
 import { NotFound } from '../pages/content/NotFound';
 import { ReleaseNotes } from '../pages/content/ReleaseNotes';
 import featuresData from '../pages/features/features.data.json';
@@ -151,6 +153,25 @@ const adeGuide = (): ContentPageEntry => ({
   element: <AdePage crumbs={STATIC_PAGES.ade.crumbs} />,
 });
 
+const guidePages = (): readonly ContentPageEntry[] =>
+  GUIDES.map((guide) => {
+    const crumbs = [HOME, { name: guide.navLabel, path: guide.path }];
+    return {
+      file: `${guide.path.slice(1)}.html`,
+      meta: {
+        path: guide.path,
+        title: `${guide.title} | Goodboy`,
+        description: guide.description,
+        ogType: 'article',
+        kind: 'guide',
+        crumbs,
+        isIndexed: true,
+      },
+      nav: 'none',
+      element: <GuidePage guide={guide} crumbs={crumbs} />,
+    };
+  });
+
 const notFound = (): ContentPageEntry => ({
   file: '404.html',
   meta: STATIC_PAGES.notFound,
@@ -160,6 +181,7 @@ const notFound = (): ContentPageEntry => ({
 
 export const CONTENT_PAGES: readonly ContentPageEntry[] = [
   adeGuide(),
+  ...guidePages(),
   changelogIndex(),
   ...releasePages(),
   docsIndex(),
