@@ -66,7 +66,7 @@ The page asks, in order:
 
 Nothing is written until **Create workflow**. The button says why it is off: "Name it first", "Add one step or draft them", "Steps are being drafted". A name another workflow holds shows "A workflow named Fix a bug exists" under the field. If the write fails, the error shows under the form with every field kept, and **Retry** writes again. **Discard** goes back to the list and a toast offers **Undo**, which brings the draft back. A draft you leave stays open when you come back.
 
-**Duplicate workflow**, on a workflow page and in the menu of each list row, fills the same page with a copy: "Fix a bug copy", its fields, steps and models. It writes nothing until **Create workflow**.
+**Duplicate workflow** sits in the menu of a workflow page and as a button on each list row. It fills the same page with a copy, "Fix a bug copy", and writes nothing until **Create workflow**.
 
 After **Create workflow** the page is that workflow's page, and it saves as you type. On it, **Models** shows each role in use: muted when it follows Every run, in full with **Reset** when this workflow pins a model. A row in the list says when to use that workflow.
 

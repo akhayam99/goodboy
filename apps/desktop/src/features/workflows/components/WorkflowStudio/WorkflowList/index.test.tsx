@@ -114,11 +114,10 @@ describe('WorkflowList', () => {
     expect(row.textContent).toContain('The task names a test that fails some of the time');
   });
 
-  it('duplicates a workflow from the menu of its row', () => {
+  it('duplicates a workflow from its row', () => {
     const { onDuplicate, onOpen } = renderList([workflow()]);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Actions for Settlement replay' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Duplicate workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate Settlement replay' }));
 
     expect(onDuplicate).toHaveBeenCalledOnce();
     expect(onOpen).not.toHaveBeenCalled();

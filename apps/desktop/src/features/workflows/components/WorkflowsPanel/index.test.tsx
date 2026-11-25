@@ -507,11 +507,10 @@ describe('WorkflowsPanel editor', () => {
     });
   });
 
-  it('duplicates from a list row menu into the same form', () => {
+  it('duplicates from a list row into the same form', () => {
     state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
     renderPanel();
-    fireEvent.click(screen.getByRole('button', { name: 'Actions for Plan and build' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Duplicate workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate Plan and build' }));
 
     screen.getByRole('heading', { name: 'New workflow' });
     expect(screen.getByRole('textbox', { name: 'Workflow name' })).toHaveProperty(

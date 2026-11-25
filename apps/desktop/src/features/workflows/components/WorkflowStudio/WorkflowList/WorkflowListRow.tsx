@@ -1,8 +1,7 @@
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import type { Workflow } from '@goodboy/types';
 import { Copy } from '@goodboy/ui/icons';
-import { ICON_SIZE, OverflowMenu, ROW_INTERACTIVE, TEXT_ROLE, cn } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { IconButton, ROW_INTERACTIVE, TEXT_ROLE, cn } from '@goodboy/ui';
 import { formatAge } from '../../../../../shared/utils/time/formatAge';
 import { useNow } from '../../../../../shared/hooks/useNow';
 import type { BuiltinWorkflowState } from '../../../builtinWorkflowState';
@@ -111,25 +110,13 @@ export const WorkflowListRow = ({
         )}
       </span>
       <span className="col-start-[-3] col-end-[-1] flex h-8 min-w-0 items-center justify-end">
-        <OverflowMenu
-          label={`Actions for ${workflow.name}`}
-          trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
-          entries={[
-            {
-              kind: 'item',
-              key: 'duplicate',
-              label: 'Duplicate workflow',
-              icon: Copy,
-              onSelect: onDuplicate,
-            },
-            {
-              kind: 'item',
-              key: 'runs',
-              label: 'Show runs',
-              icon: CONCEPT_ICONS.runs,
-              onSelect: onShowRuns,
-            },
-          ]}
+        <IconButton
+          icon={Copy}
+          label={`Duplicate ${workflow.name}`}
+          tooltip="Duplicate workflow"
+          size="xs"
+          variant="ghost"
+          onClick={onDuplicate}
         />
       </span>
     </li>

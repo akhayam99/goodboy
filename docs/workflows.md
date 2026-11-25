@@ -142,7 +142,7 @@ once the new steps land.
 **New workflow** and **Duplicate workflow** open the same page for a workflow
 that does not exist yet: it starts from **Every run**, asks for a name first,
 and writes once, on **Create workflow**. Nothing autosaves before that.
-**Duplicate workflow** (the page menu and the menu of each list row) fills the
+**Duplicate workflow** (the page menu and a button on each list row) fills the
 page from the source under the name "<name> copy". **Discard** goes back to the
 list at once and the toast offers **Undo**, which reopens the draft. **Models**
 shows each role of the steps muted while it follows Every run; a pick pins that
