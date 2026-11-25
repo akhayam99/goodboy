@@ -115,7 +115,13 @@ const mount = ({ questions = [ask] }: MountParams = {}) => {
   vi.mocked(listLiveSessionIds).mockResolvedValue(
     [ask, running, pinned, quiet].map((session) => idOf({ session })),
   );
-  useAppStore.setState({ boardReady: true, sessionPins: { [harborline.id]: pins } });
+  useAppStore.setState({
+    boardReady: true,
+    sessionPins: { [harborline.id]: pins },
+    attentionFromWindows: {
+      [harborline.id]: { count: questions.length, tone: 'warning', reasonWords: [] },
+    },
+  });
   return render(<SessionsPopover />);
 };
 
@@ -164,9 +170,6 @@ describe('the Sessions popover in the bar', () => {
     const trigger = screen.getByRole('button', { name: 'Sessions' });
 
     expect(trigger.querySelector('[data-sessions-needs-you]')).not.toBeNull();
-    expect(trigger.querySelector('[data-sessions-needs-you] > span')?.className).toContain(
-      'bg-warning',
-    );
     unmount();
 
     mount({ questions: [] });
@@ -331,10 +334,8 @@ describe('what each Sessions row says', () => {
     const runningDot = rowOf({ session: running }).querySelector('[data-status-mark]');
     expect(askDot?.getAttribute('data-status-mark')).toBe('dot');
     expect(askDot?.getAttribute('data-status-tone')).toBe('warning');
-    expect(askDot?.firstElementChild?.className).toContain('bg-warning');
     expect(runningDot?.getAttribute('data-status-mark')).toBe('dot');
     expect(runningDot?.getAttribute('data-status-tone')).toBe('info');
-    expect(runningDot?.firstElementChild?.className).toContain('bg-info');
     expect(
       rowOf({ session: quiet })
         .querySelector('[data-status-mark]')

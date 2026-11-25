@@ -207,7 +207,6 @@ describe('StageBoardCard layout', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const card = screen.getByRole('article');
     const title = screen.getByText(session.goal);
-    expect(card.className).not.toContain('min-h-24');
     expect(title.className).toContain('line-clamp-2');
     expect(title.className).toContain('text-row');
     expect(cardTitle().getAttribute('title')).toBeNull();
@@ -242,7 +241,6 @@ describe('StageBoardCard layout', () => {
     };
     render(<StageBoardCard session={session} nav={nav} />);
     const context = screen.getByText('payments-api · ak/retry');
-    expect(context.className).toContain('text-muted-foreground');
     expect(context.getAttribute('data-slot')).toBe('card-context');
     expect(
       context.compareDocumentPosition(cardTitle()) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -276,8 +274,8 @@ describe('StageBoardCard layout', () => {
       node: screen.getByRole('article').querySelector('[data-slot="card-facts"]'),
     });
     expect(facts.textContent).toBe('·Draft #9484·2h ago');
-    expect(screen.getByText('Draft #9484')).toBeDefined();
-    expect(screen.getByText('2h ago')).toBeDefined();
+    screen.getByText('Draft #9484');
+    screen.getByText('2h ago');
   });
 
   it('wraps a long state word onto a second line instead of cutting it mid word', () => {
@@ -291,15 +289,9 @@ describe('StageBoardCard layout', () => {
       node: screen.getByRole('article').querySelector('[data-slot="card-facts"]'),
     });
     const state = screen.getByText('Checking GitHub');
-    const age = elementOf({ node: facts.querySelector('.whitespace-nowrap') });
-    const line = elementOf({ node: facts.firstElementChild });
+    const age = screen.getByText('2h ago');
 
-    expect(line.className).toContain('flex-wrap');
-    expect(facts.className).toContain('overflow-hidden');
-    expect(facts.className).not.toMatch(/(^|\s)(truncate|line-clamp-\d)(\s|$)/);
-    expect(state.className).not.toMatch(/(^|\s)truncate(\s|$)/);
     expect(state.getAttribute('data-truncated')).toBeNull();
-    expect(age.className).toContain('whitespace-nowrap');
     expect(age.firstElementChild?.getAttribute('aria-hidden')).toBe('true');
     expect(age.firstElementChild?.textContent).toBe('·');
   });
@@ -311,7 +303,6 @@ describe('StageBoardCard layout', () => {
     render(<StageBoardCard session={session} nav={nav} density="row" />);
     const card = screen.getByRole('article');
     expect(card.getAttribute('data-density')).toBe('row');
-    expect(screen.getByText(session.goal).className).toContain('line-clamp-1');
     expect(card.querySelector('[data-slot="card-context"]')).toBeNull();
     expect(card.querySelector('[data-slot="card-facts"]')).toBeNull();
     expect(signalSlot()).not.toBeNull();

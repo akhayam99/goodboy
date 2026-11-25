@@ -18,7 +18,7 @@ export const NeedsYouCard = ({ sessionId, title, context, reason, meta, onOpen }
     radius="lg"
     dataAttributes={{ 'data-needs-you-card': sessionId }}
     frameClassName="flex w-full shrink-0 flex-col border border-border-soft bg-elevated text-foreground shadow-sm hover:border-border"
-    className="flex min-h-0 flex-1 flex-col gap-2 p-3 pl-5 text-left select-none"
+    className="flex min-h-0 flex-1 flex-col gap-2 p-3 pl-4 text-left select-none"
   >
     <ToneBar tone="warning" density="card" />
     <span className="flex min-w-0 flex-col gap-0.5">

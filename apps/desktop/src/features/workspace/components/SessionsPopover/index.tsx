@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { AnchoredPopover, POPOVER_WIDTH_CLASS, POPOVER_WIDTH_PX, useDropdown } from '@goodboy/ui';
 import { useAppStore, useCurrentWorkspace } from '../../../../store';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
-import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
 import { SessionsCard } from './SessionsCard';
 import { SessionsPanel } from './SessionsPanel';
 import { SessionsTrigger } from './SessionsTrigger';
@@ -11,7 +10,11 @@ const EXPECTED_HEIGHT_PX = 640;
 
 export const SessionsPopover = () => {
   const workspace = useCurrentWorkspace();
-  const { attention } = useNowSessions({});
+  const needsYouCount = useAppStore((state) =>
+    workspace === null || workspace === undefined
+      ? 0
+      : (state.attentionFromWindows[workspace.id]?.count ?? 0),
+  );
   const dropdown = useDropdown({
     align: 'start',
     width: POPOVER_WIDTH_CLASS.studio,
@@ -39,11 +42,7 @@ export const SessionsPopover = () => {
         ariaLabel="Sessions"
         className="overflow-y-hidden"
         trigger={
-          <SessionsTrigger
-            isOpen={dropdown.open}
-            needsYouCount={attention.count}
-            onToggle={toggle}
-          />
+          <SessionsTrigger isOpen={dropdown.open} needsYouCount={needsYouCount} onToggle={toggle} />
         }
       >
         <SessionsPanel workspaceId={workspace.id} onClose={close} />

@@ -65,6 +65,7 @@ const { currentWorkspace, hooks, store, noAttention } = vi.hoisted(() => {
       setActiveLens: vi.fn(),
       cancelScript: vi.fn(async () => undefined),
       currentWorkspaceId: workspace.id,
+      attentionFromWindows: Object.fromEntries<{ readonly count: number }>([]),
       projectScripts: {} as Record<string, ReadonlyArray<never>>,
       projects: [] as ReadonlyArray<never>,
       scriptRuns: {} as Record<string, never>,
@@ -120,6 +121,7 @@ beforeEach(() => {
   hooks.sessions = [];
   hooks.groups = [];
   hooks.attention = noAttention();
+  store.attentionFromWindows = Object.fromEntries<{ readonly count: number }>([]);
   hooks.rollup = { attentionCount: 0, runningCount: 0, todaySpend: 1.25 };
   store.setCurrentSession.mockClear();
 });
@@ -286,6 +288,7 @@ describe('AppTopBar', () => {
       quietReasons: [],
       countedSessions: [ATTENTION_SESSION, ATTENTION_SESSION],
     };
+    store.attentionFromWindows = { [store.currentWorkspaceId]: { count: 2 } };
     const { container } = renderBar();
     const right = zones(container)[2];
     const left = zones(container)[0];
@@ -293,7 +296,7 @@ describe('AppTopBar', () => {
     expect(right?.textContent).not.toContain('Needs you');
     expect(container.querySelector('[data-now-idle]')?.textContent).toBe('Idle');
     expect(left?.querySelector('[data-sessions-needs-you]')).not.toBeNull();
-    expect(screen.getByTestId('notification-center')).toBeDefined();
+    screen.getByTestId('notification-center');
   });
 
   it('hides spend until the first cent today', () => {

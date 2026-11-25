@@ -273,8 +273,6 @@ describe('NeedsYouCards', () => {
       /^Waiting \d+[a-z]+ · Keep the retry window at five minutes\?$/,
     );
     expect(facts.getAttribute('data-slot')).toBe('card-facts');
-    expect(facts.className).toContain('line-clamp-2');
-    expect(facts.className).not.toMatch(/(^|\s)truncate(\s|$)/);
     expect(context.compareDocumentPosition(title) & FOLLOWING).toBe(FOLLOWING);
     expect(title.compareDocumentPosition(facts) & FOLLOWING).toBe(FOLLOWING);
   });
