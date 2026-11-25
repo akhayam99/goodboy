@@ -104,15 +104,16 @@ Outside `ci.yml`, `scenes.yml` runs the scene measures on pull requests that tou
 
 Branch protection is a repository setting the repo cannot read, so this table is the written contract and `scripts/ci-gate.test.mjs` fails when a workflow with a `pull_request` or `pull_request_target` trigger is missing from it, or a row names a file or job that does not exist. `required` rows are the contexts the owner keeps in branch protection next to `gate`. A merge needs all of them, not `gate` alone.
 
-| Context                           | Workflow                 | Kind     | Why                                                                 |
-| --------------------------------- | ------------------------ | -------- | ------------------------------------------------------------------- |
-| `lint + typecheck + test + build` | `ci.yml`                 | required | the gate over every job of `ci.yml`                                 |
-| `fmt + clippy + test`             | `rust.yml`               | required | every Tauri command change; steps skip when no Rust file changed    |
-| `website build`                   | `website.yml`            | required | the site builds; steps skip when `website/` is untouched            |
-| `bundle weight`                   | `perf.yml`               | advisory | red when the initial load passes `bundle-budget.json`               |
-| `scenes`                          | `scenes.yml`             | advisory | `chrome ready` blocks, `scene measures` annotates (docs/testing.md) |
-| `appimage + deb + rpm`            | `linux-build.yml`        | advisory | proves the Linux bundle path before a tag; costs minutes            |
-| `label`                           | `db-migration-label.yml` | advisory | adds a label, judges nothing                                        |
+| Context                           | Workflow                 | Kind     | Why                                                                                         |
+| --------------------------------- | ------------------------ | -------- | ------------------------------------------------------------------------------------------- |
+| `lint + typecheck + test + build` | `ci.yml`                 | required | the gate over every job of `ci.yml`                                                         |
+| `fmt + clippy + test`             | `rust.yml`               | required | every Tauri command change; steps skip when no Rust file changed                            |
+| `website build`                   | `website.yml`            | required | the site builds; steps skip when `website/` is untouched                                    |
+| `bundle weight`                   | `perf.yml`               | advisory | red when the initial load passes `bundle-budget.json`                                       |
+| `scenes`                          | `scenes.yml`             | advisory | `chrome ready` blocks, `scene measures` annotates (docs/testing.md)                         |
+| `appimage + deb + rpm`            | `linux-build.yml`        | advisory | proves the Linux bundle path before a tag; costs minutes                                    |
+| `label`                           | `db-migration-label.yml` | advisory | adds a label, judges nothing                                                                |
+| `deploy`                          | `vercel.yml`             | advisory | `website deploy` and `demo deploy`: the Vercel CLI deploys what changed (website/README.md) |
 
 ## CI parity
 

@@ -131,15 +131,25 @@ characters; a description takes 70 to 165 (`website/scripts/lib/seoCheck.mjs`).
   `/features`, and caches `/assets/` and `/fonts/` for a year as immutable. A
   hashed asset changes name when it changes; the font carries its version in
   its name, so a new font file needs a new name.
-- `vercel.json` runs `scripts/website-ignore-build.mjs` as its
-  `ignoreCommand`, which skips the Vercel build, preview included, when nothing
-  the site reads changed: `website/`, `CHANGELOG.md`, `FEATURES.md` or
-  `docs/features/`. It diffs against the last deployed commit of that branch
-  (`VERCEL_GIT_PREVIOUS_SHA`). On `main` with no such commit, or one the clone
-  lacks, it builds. On any other branch it diffs against the merge base with
-  `origin/main` instead, and builds when that base cannot be found. A new build
-  input outside `website/` joins the path list in that script, or its change
-  never reaches the live site.
+- Vercel creates no deployment on a push: `vercel.json` sets
+  `git.deploymentEnabled` to false, because a deployment its ignore step cancels
+  still counts against the Hobby limit of 100 a day. The `vercel` workflow
+  (`.github/workflows/vercel.yml`) deploys instead, with the Vercel CLI and the
+  `VERCEL_TOKEN` repository secret: production on a push to `main`, a preview on
+  a pull request from this repository. It first runs
+  `scripts/website-ignore-build.mjs`, which deploys only when something the site
+  reads changed: `website/`, `CHANGELOG.md`, `FEATURES.md` or `docs/features/`.
+  On `main` it diffs against the commit of the last ready production deploy,
+  read from Vercel (each deploy carries it as `deploySha`), so a failed deploy is
+  retried by the next push; with no such commit it deploys. On a pull request it diffs against the merge base with `origin/main`,
+  and deploys when that base cannot be found. The changelog and the docs are
+  prerendered into static pages at build time, so a change to them is a deploy.
+  A new build input outside `website/` joins the path list in that script, or
+  its change never reaches the live site. Without the secret the workflow warns
+  and deploys nothing. Run it by hand (`gh workflow run vercel.yml`) to deploy
+  `main` to production without the check, website only (the demo still waits
+  for a release commit), for example after Vercel refused a
+  deploy at its daily limit.
 
 ## Pages
 

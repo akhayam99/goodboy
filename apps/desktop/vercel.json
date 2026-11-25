@@ -4,7 +4,7 @@
   "installCommand": "pnpm install --frozen-lockfile --ignore-scripts",
   "buildCommand": "pnpm build:demo",
   "outputDirectory": "dist-demo",
-  "ignoreCommand": "node ../../scripts/demo-ignore-build.mjs",
+  "git": { "deploymentEnabled": false },
   "cleanUrls": true,
   "headers": [
     {

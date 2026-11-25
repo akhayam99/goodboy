@@ -4,7 +4,7 @@
   "installCommand": "pnpm install --ignore-workspace --frozen-lockfile",
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
-  "ignoreCommand": "node ../scripts/website-ignore-build.mjs",
+  "git": { "deploymentEnabled": false },
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
