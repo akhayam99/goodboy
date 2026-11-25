@@ -200,11 +200,7 @@ The checklist sits under a **Steps** label and reads top down. Each step is one 
 
 Runs opens on your runs. **New** in the head starts the next one, and **Start a run** from ⌘K opens the field above the list, where **Esc** closes it. With no run yet the field is the page.
 
-The groups are:
-
-- **Needs you**, **Running**, **Idle**, **Finished** and **Archived**;
-- **Stopped**, for an agent you stopped;
-- **Ready**, for a preset that has not started.
+The groups are **Needs you**, **Running**, **Idle**, **Finished** and **Archived**. Inside them, a row reads **Stopped** for an agent you stopped and **Ready** for a preset that has not started.
 
 The row always offers the real **Continue** or **Start**, and **Connect** when the provider is signed out. A row names the branch its run works on, and the rest as `+N`.
 

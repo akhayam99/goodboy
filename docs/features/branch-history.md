@@ -228,10 +228,10 @@ Decide what happens to a merged branch: **Ask first**, **Delete on this Mac** or
 
 A merged branch is done. It shows no behind count, no warning dot, no rebase offer and no rebase conflict, and says "Merged, work complete".
 
-**Delete local branch…** deletes the local branch and its folder after one inline confirmation. The pull request stays, and the branch on origin stays unless the after-merge setting removes it.
+**Delete local branch…** deletes the local branch and its folder after one inline confirmation. The pull request stays, and the branch on origin stays unless the after-merge setting removes it. The delete stops and says why when the folder holds uncommitted or unpushed work.
 
 - The confirmation offers **Close branch** instead, which keeps the local branch and removes the folder, and counts the files that are not committed.
-- **Undo** brings the branch back in a fresh folder. It stops and says why when the folder holds uncommitted or unpushed work.
+- **Undo** brings the branch back in a fresh folder.
 - **Close branch** shows on its own only on a branch that did not merge.
 - With two or more merged branches in a session, **Clean up N merged** does the same for each.
 
