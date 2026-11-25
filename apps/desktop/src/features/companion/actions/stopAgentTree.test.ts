@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { AGENT, LEAD, RUN, SESSION, WORKSPACE, buildTestStore } from './decideTestKit';
+import { AGENT, LEAD, RUN, SESSION, WORKSPACE, buildTestStore } from './testing/decideTestKit';
 import { stopAgentTree } from './stopAgentTree';
 
 const RUNNING = {
