@@ -21,6 +21,12 @@ type PickParams = {
 export type BrowserStripGroups = {
   readonly groups: ReadonlyArray<BrowserPageGroup>;
   readonly onPick: (params: PickParams) => void;
+  readonly folded: ReadonlySet<string>;
+  readonly onFoldedChange: (params: FoldedParams) => void;
+};
+
+type FoldedParams = {
+  readonly folded: ReadonlySet<string>;
 };
 
 type Props = {
@@ -141,7 +147,15 @@ const SEPARATOR = (
 );
 
 export const BrowserTabStrip = ({ model, field, page }: Props) => {
-  const [folded, setFolded] = useState<ReadonlySet<string>>(() => new Set());
+  const [paneFolded, setPaneFolded] = useState<ReadonlySet<string>>(() => new Set());
+  const folded = page?.folded ?? paneFolded;
+  const setFolded = ({ folded: next }: FoldedParams): void => {
+    if (page === undefined) {
+      setPaneFolded(next);
+      return;
+    }
+    page.onFoldedChange({ folded: next });
+  };
   const viewport = useRef<HTMLDivElement | null>(null);
   const pageGroups = page?.groups ?? NO_GROUPS;
   const bindings = useAppStore(
@@ -156,41 +170,41 @@ export const BrowserTabStrip = ({ model, field, page }: Props) => {
   const hasTabs = tabGroups.some((group) => isPaged || group.tabs.length > 0);
 
   useEffect(() => {
-    viewport.current
-      ?.querySelector('[data-browser-tab="active"]')
-      ?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
-  }, [shownId]);
+    const target = field.isFieldShown
+      ? field.fieldRef.current
+      : viewport.current?.querySelector('[data-browser-tab="active"]');
+    target?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  }, [shownId, field.isFieldShown, field.fieldRef]);
 
   const toggle = ({ key }: FoldParams): void => {
     const next = new Set(folded);
     if (next.has(key)) {
       next.delete(key);
-      setFolded(next);
+      setFolded({ folded: next });
       return;
     }
     next.add(key);
-    setFolded(next);
+    setFolded({ folded: next });
   };
 
   const tabNode = ({ item }: TabNodeParams): ReactNode => {
-    if (item.isShown) {
-      return (
-        <BrowserAddressPill key={item.tab.id} model={model} field={field} onClose={item.onClose} />
-      );
-    }
     return (
       <ObjectMenuArea
         key={item.tab.id}
         target={browserTabTargetOf({ model, tab: item.tab })}
         anchorKey={`browser-tab:${item.tab.id}`}
       >
-        <BrowserTabChip
-          label={item.label}
-          url={item.tab.url}
-          isPin={item.isPin}
-          isAsleep={item.isAsleep}
-          onSelect={item.onSelect}
-        />
+        {item.isShown ? (
+          <BrowserAddressPill model={model} field={field} onClose={item.onClose} />
+        ) : (
+          <BrowserTabChip
+            label={item.label}
+            url={item.tab.url}
+            isPin={item.isPin}
+            isAsleep={item.isAsleep}
+            onSelect={item.onSelect}
+          />
+        )}
       </ObjectMenuArea>
     );
   };

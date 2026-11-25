@@ -11,6 +11,7 @@ import { useConsoleEntries } from '../../hooks/useConsoleEntries';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
 import type { BrowserPageGroup } from '../../types';
 import { BrowserAddressRow } from '../BrowserPane/BrowserAddressRow';
+import type { BrowserStripGroups } from '../BrowserPane/BrowserTabStrip';
 import { BrowserConsole } from '../BrowserPane/BrowserConsole';
 import { BrowserNotice } from '../BrowserPane/BrowserNotice';
 import { BrowserPasskeyNotice } from '../BrowserPane/BrowserPasskeyNotice';
@@ -22,6 +23,8 @@ type Props = {
   readonly sessionId: SessionId;
   readonly tabId: string | null;
   readonly groups: ReadonlyArray<BrowserPageGroup>;
+  readonly folded: ReadonlySet<string>;
+  readonly onFoldedChange: BrowserStripGroups['onFoldedChange'];
 };
 
 type PickParams = {
@@ -29,7 +32,7 @@ type PickParams = {
   readonly tab: BrowserTab;
 };
 
-export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
+export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChange }: Props) => {
   const model = useBrowserPane({ sessionId });
   const frame = useRef<HTMLDivElement | null>(null);
   const view = useRef<HTMLDivElement | null>(null);
@@ -87,7 +90,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
             isOpen: isConsoleOpen,
             onToggle: () => setIsConsoleOpen(!isConsoleOpen),
           }}
-          page={{ groups, onPick: pick }}
+          page={{ groups, onPick: pick, folded, onFoldedChange }}
           onDock={() => demoteBrowserTab({ sessionId })}
         />
         {model.error === null ? null : (
