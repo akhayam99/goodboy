@@ -12,7 +12,7 @@ import {
   WORKSPACE,
   buildTestStore,
   fixtureOf,
-} from './decideTestKit';
+} from './testing/decideTestKit';
 import { executeDecideAction } from './executeDecideAction';
 import { clearLimitUndos } from './limitUndos';
 import { parseDecideAction } from './parseDecideAction';

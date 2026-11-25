@@ -41,7 +41,7 @@ type ToolParams = {
   readonly input: unknown;
 };
 
-const summaryOf = ({ toolName, input }: ToolParams): string => {
+const toolSummaryOf = ({ toolName, input }: ToolParams): string => {
   const path = stringFieldOf({ input, key: 'file_path' }) ?? stringFieldOf({ input, key: 'path' });
   if (toolName === 'Bash') {
     const command = stringFieldOf({ input, key: 'command' }) ?? '';
@@ -115,7 +115,7 @@ export const transcriptEntriesOf = ({ events }: EventsParams): ReadonlyArray<Tra
         kind: 'tool',
         id: `e${index}`,
         name: event.toolName,
-        summary: summaryOf({ toolName: event.toolName, input: event.input }),
+        summary: toolSummaryOf({ toolName: event.toolName, input: event.input }),
         isError: false,
         addedLines: lines.added,
         removedLines: lines.removed,

@@ -12,7 +12,7 @@ export const continueAgent = async ({
   const agentId = agentIdOf({ value: action.agentId });
   const store = getStore();
   if (!isAgentOfSession({ store, sessionId, agentId })) {
-    return refusedResult({ code: 'unknown-target', message: 'This agent is not on your Mac.' });
+    return refusedResult({ code: 'unknown-target', message: "This agent isn't on your Mac." });
   }
   const state = agentStateOf({ store, sessionId, agentId });
   if (state === 'running') {
@@ -29,7 +29,7 @@ export const continueAgent = async ({
     await store.continueStoppedAgent({ sessionId, agentId });
   } catch (error) {
     console.error('[bridge] continueAgent failed', error);
-    return failedResult({ error: 'Could not continue the agent.' });
+    return failedResult({ error: "Couldn't continue the agent." });
   }
   return doneResult();
 };

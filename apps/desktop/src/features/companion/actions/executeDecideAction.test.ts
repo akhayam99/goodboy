@@ -18,7 +18,7 @@ import {
   WORKSPACE,
   buildTestStore,
   type TestStore,
-} from './decideTestKit';
+} from './testing/decideTestKit';
 import type { DecideKind } from './decideAction';
 import { executeDecideAction } from './executeDecideAction';
 import { clearLimitUndos } from './limitUndos';

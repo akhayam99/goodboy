@@ -10,7 +10,7 @@ type Target = {
   readonly version: string;
 };
 
-const targetOf = ({ action }: ActionParams): Target => {
+const actionTargetOf = ({ action }: ActionParams): Target => {
   switch (action.kind) {
     case 'answerQuestion':
       return { objectId: action.questionId, version: action.seenVersion };
@@ -39,6 +39,6 @@ const targetOf = ({ action }: ActionParams): Target => {
 };
 
 export const expectedActionIdOf = ({ action }: ActionParams): ActionId => {
-  const { objectId, version } = targetOf({ action });
+  const { objectId, version } = actionTargetOf({ action });
   return `act:${action.kind}:${objectId}:${version}`;
 };
