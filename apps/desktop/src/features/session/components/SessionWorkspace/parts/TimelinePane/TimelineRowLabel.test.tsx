@@ -153,7 +153,7 @@ describe('TimelineRowLabel', () => {
     expect(container.textContent).toBe('Look into the failing build');
   });
 
-  it('holds one fixed glyph size down the column, whatever the role is', () => {
+  it('holds one fixed uncircled glyph size down the column, whatever the role is', () => {
     const sizes = new Set<string>();
     for (const agentKind of [
       'resolver',
@@ -168,7 +168,7 @@ describe('TimelineRowLabel', () => {
         .filter((token) => token.startsWith('size-'))
         .join(' ');
 
-      expect(size).toBe('size-4.5');
+      expect(size).toBe('size-4');
       sizes.add(size);
       cleanup();
     }

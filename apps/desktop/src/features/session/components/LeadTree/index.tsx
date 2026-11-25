@@ -4,7 +4,6 @@ import { LeadTreeAgentRow } from './LeadTreeAgentRow';
 import { LeadTreeFoldRow } from './LeadTreeFoldRow';
 import { LeadTreeNoteRow } from './LeadTreeNoteRow';
 import { LeadTreeRootRow } from './LeadTreeRootRow';
-import { leadTreeGuidesOf } from './leadTreeGuidesOf';
 import type { LeadTreeRoot } from './leadTreeRoot';
 import type { LeadTreeItem } from '../../../auto/tree/leadTreeItemsOf';
 import { NAMES } from '../../../../shared/utils/names';
@@ -55,13 +54,6 @@ export const LeadTree = ({
 }: Props) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const hasRoot = root !== null;
-  const guides = useMemo(
-    () =>
-      leadTreeGuidesOf({
-        levels: [...(hasRoot ? [0] : []), ...items.map((item) => item.depth + (hasRoot ? 1 : 0))],
-      }),
-    [items, hasRoot],
-  );
   const ids = useMemo(
     () => [...(hasRoot ? [ROOT_ROW_ID] : []), ...items.map((item) => item.id)],
     [hasRoot, items],
@@ -105,8 +97,6 @@ export const LeadTree = ({
     },
     [ids, items, root, cursorId, onSelect, onToggleFold],
   );
-  const rootGuide = hasRoot ? guides[0] : undefined;
-  const itemGuideOffset = hasRoot ? 1 : 0;
 
   return (
     <div
@@ -118,22 +108,22 @@ export const LeadTree = ({
       className="group/tree flex min-w-0 flex-col outline-none"
       onKeyDown={onKeyDown}
     >
-      {root === null || rootGuide === undefined ? null : (
+      {root === null ? null : (
         <LeadTreeRootRow
           id={ROOT_ROW_ID}
           root={root}
-          guide={rootGuide}
           isSelected={isRootSelected}
           isActive={cursorId === ROOT_ROW_ID}
           onSelect={onSelect}
         />
       )}
-      {items.map((item, index) => {
+      {root === null || items.length === 0 ? null : (
+        <div aria-hidden data-lead-tree-sep="" className="px-2 pb-1 pt-0.5">
+          <div className="h-px bg-border-soft" />
+        </div>
+      )}
+      {items.map((item) => {
         const isActive = item.id === cursorId;
-        const itemGuide = guides[index + itemGuideOffset];
-        if (itemGuide === undefined) {
-          return null;
-        }
         if (item.kind === 'agent') {
           return (
             <LeadTreeAgentRow
@@ -148,7 +138,7 @@ export const LeadTree = ({
               word={item.word}
               isSettled={item.isSettled}
               spendUsd={item.spendUsd}
-              guide={itemGuide}
+              depth={item.depth}
               isSelected={item.agentId === selectedAgentId}
               isActive={isActive}
               isCompact={isCompact}
@@ -164,7 +154,7 @@ export const LeadTree = ({
               label={item.label}
               isOpen={item.isOpen}
               isActive={isActive}
-              guide={itemGuide}
+              depth={item.depth}
               onToggle={onToggleFold}
             />
           );
@@ -173,7 +163,7 @@ export const LeadTree = ({
           <LeadTreeNoteRow
             key={item.id}
             id={item.id}
-            guide={itemGuide}
+            depth={item.depth}
             text={item.text}
             word={item.word}
             canEdit={item.canEdit}

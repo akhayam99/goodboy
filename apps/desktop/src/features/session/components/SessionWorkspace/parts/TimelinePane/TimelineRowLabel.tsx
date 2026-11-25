@@ -17,9 +17,11 @@ import type {
   TimelineRowItem,
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
-import type { RowStateReason } from '../../../../../workTreeModel/rowState';
+import type { RowState, RowStateReason } from '../../../../../workTreeModel/rowState';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
 import { TimelineRoleGlyph } from './TimelineRoleGlyph';
+import { leadTreeInkOf } from '../../../LeadTree/leadTreeInkOf';
+import { rowStateNode } from '../../../../../workTreeModel/rowStateCopy';
 import type { TimelineRowIdentity } from './timelineRowIdentity';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { TimelineRunLabel } from './TimelineRunLabel';
@@ -108,9 +110,10 @@ const titleOf = ({ entry, segments }: TitleParams): string => {
 type ChipParams = EntryParams & {
   readonly identity: TimelineRowIdentity | null;
   readonly isCardOpen: boolean;
+  readonly rowState: RowState;
 };
 
-const chipOf = ({ entry, identity, isCardOpen }: ChipParams) => {
+const chipOf = ({ entry, identity, isCardOpen, rowState }: ChipParams) => {
   if (entry.kind !== 'agent') {
     return null;
   }
@@ -118,7 +121,12 @@ const chipOf = ({ entry, identity, isCardOpen }: ChipParams) => {
     return null;
   }
   const glyph = (
-    <TimelineRoleGlyph kind={entry.agentKind} identity={identity} isCardOpen={isCardOpen} />
+    <TimelineRoleGlyph
+      kind={entry.agentKind}
+      identity={identity}
+      isCardOpen={isCardOpen}
+      className={leadTreeInkOf({ node: rowStateNode({ state: rowState }).state }).glyph}
+    />
   );
   if (entry.chain == null) {
     return glyph;
@@ -232,7 +240,7 @@ export const TimelineRowLabel = ({
       density="feed"
       tone={tone}
       textSize={isStep ? 'ui' : 'body'}
-      glyph={chipOf({ entry, identity, isCardOpen })}
+      glyph={chipOf({ entry, identity, isCardOpen, rowState: item.rowState })}
       text={
         <span className="flex min-w-0 items-center gap-2">
           {item.ordinal == null ? null : (

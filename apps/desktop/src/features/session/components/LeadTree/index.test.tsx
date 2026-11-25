@@ -141,7 +141,7 @@ describe('LeadTree', () => {
     expect(onSelect).toHaveBeenCalledWith(IMPLEMENTER_ID);
   });
 
-  it('draws the run as a trace: a child hangs on an elbow, only a waiting row says its state', () => {
+  it('draws no status circles: a child gets an indent guide, and only a row that is not done says its state', () => {
     const reviewer: LeadTreeItem = {
       ...implementer,
       id: 'd3',
@@ -155,11 +155,11 @@ describe('LeadTree', () => {
       word: 'Needs you',
     };
     const { container } = render(<Harness items={[scout, implementer, reviewer]} />);
-    expect(container.querySelectorAll('[data-lead-tree-guide]')).toHaveLength(3);
-    expect(container.querySelectorAll('[data-lead-tree-guide] path').length).toBeGreaterThan(0);
+    expect(container.querySelector('[data-node-state]')).toBeNull();
+    expect(container.querySelectorAll('[data-lead-tree-guide]')).toHaveLength(1);
     screen.getByText('Needs you');
+    screen.getByText('Running');
     expect(screen.queryByText('Done')).toBeNull();
-    expect(screen.queryByText('Running')).toBeNull();
     expect(screen.getByRole('treeitem', { name: /Reviewer/ }).getAttribute('aria-label')).toBe(
       '2.1 Reviewer, Check the key is built once per credit, Needs you',
     );

@@ -99,7 +99,7 @@ describe('LeadTreeFolded', () => {
     expect(marked.map((button) => button.getAttribute('data-lead-tree-agent'))).toEqual([SCOUT_ID]);
   });
 
-  it('indents a child by its depth', () => {
+  it('indents a child under its parent and draws no status circle', () => {
     render(
       <LeadTreeFolded
         items={[scout, reviewer]}
@@ -108,9 +108,10 @@ describe('LeadTreeFolded', () => {
         onSelect={vi.fn()}
       />,
     );
+    expect(document.querySelector('[data-node-state]')).toBeNull();
     const margin = (name: RegExp): number =>
       Number.parseInt(screen.getByRole('button', { name }).style.marginLeft, 10);
-    expect(margin(/^Scout/)).toBeGreaterThan(margin(/^Lead/));
+    expect(margin(/^Scout/)).toBe(margin(/^Lead/));
     expect(margin(/^Reviewer/)).toBeGreaterThan(margin(/^Scout/));
   });
 });

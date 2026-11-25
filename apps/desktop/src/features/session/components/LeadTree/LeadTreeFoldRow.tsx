@@ -1,8 +1,7 @@
 import { memo } from 'react';
 import { ChevronDown, ChevronRight } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE } from '@goodboy/ui';
-import { LeadTreeGuide } from './LeadTreeGuide';
-import type { LeadTreeGuide as Guide } from './leadTreeGuidesOf';
+import { LEAD_TREE_UNIT, LeadTreeGuides } from './LeadTreeGuides';
 import { LEAD_TREE_CURSOR } from './leadTreeCursor';
 import { LEAD_TREE_ROW } from './leadTreeRow';
 
@@ -11,11 +10,11 @@ type Props = {
   readonly label: string;
   readonly isOpen: boolean;
   readonly isActive: boolean;
-  readonly guide: Guide;
+  readonly depth: number;
   readonly onToggle: (id: string) => void;
 };
 
-export const LeadTreeFoldRow = memo(({ id, label, isOpen, isActive, guide, onToggle }: Props) => {
+export const LeadTreeFoldRow = memo(({ id, label, isOpen, isActive, depth, onToggle }: Props) => {
   const Chevron = isOpen ? ChevronDown : ChevronRight;
   return (
     <div
@@ -32,14 +31,11 @@ export const LeadTreeFoldRow = memo(({ id, label, isOpen, isActive, guide, onTog
       )}
       onClick={() => onToggle(id)}
     >
-      <LeadTreeGuide
-        guide={guide}
-        marker={
-          <span className="flex size-4 items-center justify-center rounded-full bg-background">
-            <Chevron size={ICON_SIZE.row} aria-hidden="true" />
-          </span>
-        }
-      />
+      <LeadTreeGuides depth={depth} />
+      <span aria-hidden className="shrink-0" style={{ width: depth * LEAD_TREE_UNIT }} />
+      <span className="flex size-4 shrink-0 items-center justify-center">
+        <Chevron size={ICON_SIZE.row} aria-hidden="true" />
+      </span>
       <span className="min-w-0 flex-1 truncate text-ui">{label}</span>
       <span className="shrink-0 text-meta">{isOpen ? 'done' : 'done · folded'}</span>
     </div>

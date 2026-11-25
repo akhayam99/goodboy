@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import type { AgentId } from '@goodboy/types';
-import { Button, Tooltip, cn, tintClasses, type WorkNodeState } from '@goodboy/ui';
+import { Button, Tooltip, cn, type WorkNodeState } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import { NAMES } from '../../../../../shared/utils/names';
 import type { LeadTreeItem } from '../../../../auto/tree/leadTreeItemsOf';
 import type { AgentKind } from '../../../agent-kind';
-import { leadTreeToneOf } from '../leadTreeToneOf';
+import { LeadTreeSelectedMark } from '../LeadTreeSelectedMark';
+import { leadTreeInkOf } from '../leadTreeInkOf';
 import type { LeadTreeRoot } from '../leadTreeRoot';
 
 type Props = {
@@ -26,11 +27,13 @@ type Entry = Readonly<{
   word: string;
 }>;
 
+type EntriesParams = Pick<Props, 'items' | 'root'>;
+
 const LEVEL_INDENT_PX = 8;
 
-const TRUNK_X_PX = 8;
+const GUIDE_ORIGIN_PX = 16;
 
-const foldedEntriesOf = ({ items, root }: Pick<Props, 'items' | 'root'>): ReadonlyArray<Entry> => {
+const foldedEntriesOf = ({ items, root }: EntriesParams): ReadonlyArray<Entry> => {
   const offset = root === null ? 0 : 1;
   const rows: Entry[] =
     root === null
@@ -69,61 +72,58 @@ export const LeadTreeFolded = ({ items, root, selectedAgentId, onSelect }: Props
   if (entries.length === 0) {
     return null;
   }
+  const hasRoot = root !== null;
   return (
-    <nav
-      aria-label={NAMES.agents}
-      data-lead-tree-folded=""
-      className="relative flex w-full flex-col pb-3"
-    >
-      {entries.length > 1 ? (
-        <span
-          aria-hidden
-          className="absolute bottom-6 top-6 w-px bg-border"
-          style={{ left: TRUNK_X_PX }}
-        />
-      ) : null}
-      {entries.map((entry) => {
+    <nav aria-label={NAMES.agents} data-lead-tree-folded="" className="flex w-full flex-col pb-3">
+      {entries.map((entry, index) => {
         const isSelected = entry.agentId === selectedAgentId;
-        const tone = tintClasses(leadTreeToneOf({ node: entry.node }));
+        const depth = hasRoot ? Math.max(0, entry.level - 1) : entry.level;
         const label = `${entry.role}${entry.title === '' ? '' : `, ${entry.title}`}, ${entry.word}`;
         return (
-          <div key={entry.id} className="relative flex h-7 items-center">
-            {entry.level === 0 ? null : (
-              <span
-                aria-hidden
-                className="absolute h-px bg-border"
-                style={{ left: TRUNK_X_PX, width: entry.level * LEVEL_INDENT_PX }}
-              />
-            )}
-            <Tooltip
-              content={`${entry.role}${entry.title === '' ? '' : `\n${entry.title}`}\n${entry.word}`}
-              side="right"
-              anchorClassName="flex"
-            >
-              <Button
-                variant="ghost"
-                size="xs"
-                aria-label={label}
-                aria-current={isSelected ? 'true' : undefined}
-                data-lead-tree-agent={entry.agentId}
-                data-lead-tree-node={entry.node}
-                data-selected={isSelected}
-                className={cn('w-6 px-0', isSelected && 'bg-selected hover:bg-selected')}
-                style={{ marginLeft: 4 + entry.level * LEVEL_INDENT_PX }}
-                onClick={() => onSelect(entry.agentId)}
-              >
-                <AgentKindChip
-                  kind={entry.kind}
-                  density="glyph"
-                  isDecorative
-                  className={cn(
-                    tone.icon,
-                    isSelected ? 'ring-2 ring-primary' : cn('ring-1', tone.ring),
-                  )}
+          <Fragment key={entry.id}>
+            <div className="relative flex h-7 w-full items-center">
+              {isSelected ? <LeadTreeSelectedMark /> : null}
+              {Array.from({ length: depth }, (_, at) => (
+                <span
+                  key={at}
+                  aria-hidden
+                  data-lead-tree-guide=""
+                  className="absolute inset-y-0 w-px bg-border-soft"
+                  style={{ left: GUIDE_ORIGIN_PX + at * LEVEL_INDENT_PX }}
                 />
-              </Button>
-            </Tooltip>
-          </div>
+              ))}
+              <Tooltip
+                content={`${entry.role}${entry.title === '' ? '' : `\n${entry.title}`}\n${entry.word}`}
+                side="right"
+                anchorClassName="flex"
+              >
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  aria-label={label}
+                  aria-current={isSelected ? 'true' : undefined}
+                  data-lead-tree-agent={entry.agentId}
+                  data-lead-tree-node={entry.node}
+                  data-selected={isSelected}
+                  className={cn('w-6 px-0', isSelected && 'bg-selected hover:bg-selected')}
+                  style={{ marginLeft: 10 + depth * LEVEL_INDENT_PX }}
+                  onClick={() => onSelect(entry.agentId)}
+                >
+                  <AgentKindChip
+                    kind={entry.kind}
+                    density="bare"
+                    isDecorative
+                    className={leadTreeInkOf({ node: entry.node }).glyph}
+                  />
+                </Button>
+              </Tooltip>
+            </div>
+            {hasRoot && index === 0 && entries.length > 1 ? (
+              <div aria-hidden data-lead-tree-sep="" className="px-2 py-1">
+                <div className="h-px bg-border-soft" />
+              </div>
+            ) : null}
+          </Fragment>
         );
       })}
     </nav>

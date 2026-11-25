@@ -146,7 +146,7 @@ Each turn ends with a quiet footer with its time. It shows the provider mark and
 
 The agent's name is the last crumb of the session head. Its state, spend and settings sit on the line under it, with the one action and the menu at its end.
 
-A Lead's **Agents** column stands beside them. It is a tree: each agent is one line with its state as the node at the end of an elbow, its role glyph and its task as the title. A child hangs under the agent that started it, and no group folds. Rest on a glyph to read the role.
+A Lead's **Agents** column stands beside them. It is an indented list. The Lead is the header row. Each agent is one line with its role glyph, tinted by its state, and its task as the title. A child is indented under the agent that started it, and no group folds. Rest on a glyph to read the role.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-dark.webp">
@@ -190,8 +190,8 @@ The header reads **Agents** with a count that includes every agent. The first ro
 #### Using the column
 
 - The column opens wide, can be resized and remembers its width. On a narrow window it folds to **Show agents**.
-- Picking a row shows that agent's conversation in the middle. The row you are viewing stands out with a lit surface, an accent on its edge and a ringed glyph.
-- Folded, the column keeps the tree as a slim strip of glyphs, one per agent in the same order, toned by state. Pick one to open that agent.
+- Picking a row shows that agent's conversation in the middle. The row you are viewing stands out with a lit surface and an accent on its edge.
+- Folded, the column keeps the list as a slim strip of glyphs, one per agent, in the same order. Each is tinted by its state. Pick one to open that agent.
 - A task too long for the row is cut at a word with an ellipsis, and rest on it to read it whole.
 - **↑** and **↓** move through the rows, **Enter** opens one.
 - A note you queued in the composer shows as a row of the tree, with **Edit** and **Remove**.

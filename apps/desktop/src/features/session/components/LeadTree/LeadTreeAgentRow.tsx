@@ -1,14 +1,14 @@
 import { memo } from 'react';
 import type { AgentId } from '@goodboy/types';
-import { WorkNode, cn, formatUsd, tintClasses, type WorkNodeState } from '@goodboy/ui';
+import { cn, formatUsd, type WorkNodeState } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import type { AgentKind } from '../../agent-kind';
 import { DelegationClock } from '../../../auto/chat/DelegationClock';
 import { LeadTreeBrief } from './LeadTreeBrief';
-import { LeadTreeGuide } from './LeadTreeGuide';
+import { LEAD_TREE_UNIT, LeadTreeGuides } from './LeadTreeGuides';
 import { LeadTreeSelectedMark } from './LeadTreeSelectedMark';
 import { LEAD_TREE_CURSOR } from './leadTreeCursor';
-import type { LeadTreeGuide as Guide } from './leadTreeGuidesOf';
+import { leadTreeInkOf } from './leadTreeInkOf';
 import { LEAD_TREE_METER } from './leadTreeMeter';
 import { LEAD_TREE_MUTED_NODES, LEAD_TREE_QUIET_NODES } from './leadTreeQuietNodes';
 import { LEAD_TREE_ROW } from './leadTreeRow';
@@ -24,7 +24,7 @@ type Props = {
   readonly word: string;
   readonly isSettled: boolean;
   readonly spendUsd: number;
-  readonly guide: Guide;
+  readonly depth: number;
   readonly isSelected: boolean;
   readonly isActive: boolean;
   readonly isCompact: boolean;
@@ -55,13 +55,13 @@ export const LeadTreeAgentRow = memo(
     word,
     isSettled,
     spendUsd,
-    guide,
+    depth,
     isSelected,
     isActive,
     isCompact,
     onSelect,
   }: Props) => {
-    const isWordShown = !LEAD_TREE_QUIET_NODES.has(node);
+    const ink = leadTreeInkOf({ node });
     const isMuted = LEAD_TREE_MUTED_NODES.has(node);
     const hasTitle = !isCompact && title !== '';
     return (
@@ -85,18 +85,9 @@ export const LeadTreeAgentRow = memo(
         onClick={() => onSelect(agentId)}
       >
         {isSelected ? <LeadTreeSelectedMark /> : null}
-        <LeadTreeGuide
-          guide={guide}
-          marker={
-            <WorkNode look="quiet" state={node} label={word} mark={{ kind: 'dot' }} size="sm" />
-          }
-        />
-        <AgentKindChip
-          kind={kind}
-          density="glyph"
-          title={role}
-          className={cn(isMuted && 'text-faint-foreground', isSelected && 'ring-1 ring-primary')}
-        />
+        <LeadTreeGuides depth={depth} />
+        <span aria-hidden className="shrink-0" style={{ width: depth * LEAD_TREE_UNIT }} />
+        <AgentKindChip kind={kind} density="bare" title={role} className={ink.glyph} />
         {hasTitle ? (
           <LeadTreeBrief text={title} className={titleToneOf({ node, isSettled })} />
         ) : (
@@ -109,16 +100,11 @@ export const LeadTreeAgentRow = memo(
             {isCompact ? role : ''}
           </span>
         )}
-        {isWordShown ? (
-          <span
-            className={cn(
-              'shrink-0 text-meta',
-              node === 'failed' ? tintClasses('danger').text : 'text-muted-foreground',
-            )}
-          >
+        {LEAD_TREE_QUIET_NODES.has(node) ? null : (
+          <span data-lead-tree-word="" className={cn('shrink-0 text-meta', ink.word)}>
             {word}
           </span>
-        ) : null}
+        )}
         <span
           data-lead-tree-meter=""
           className={cn(
