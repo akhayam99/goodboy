@@ -46,6 +46,9 @@ export const AUTO_REFUSAL_TEXT = {
     'That agent got too many messages. Stop it with a stop block, or continue it with "retryOf" and a "task" once it is done.',
   not_running:
     'That agent is not working right now. Continue a finished agent with "retryOf" and a "task", and answer a waiting one with an answer block.',
+  check_pending:
+    'The first check of the workflow is not reported yet. Do the check, then send a follow block when it passes or a hold block when it fails. Agents that change files start after the follow block.',
+  held: 'You stopped this run with a hold block. Nothing new starts until the user answers.',
 } as const satisfies Readonly<Record<AutoRefusalCode, string>>;
 
 export type RefusalChild = Readonly<{

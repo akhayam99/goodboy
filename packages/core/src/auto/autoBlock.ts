@@ -1,6 +1,12 @@
 import { escapeControlCharsInStrings } from '../providers/shared/escapeControlCharsInStrings';
 import { AUTO_CHILD_MESSAGE_CHARS } from './limits';
 import { parseMountSpec } from './mountSpec';
+import {
+  GUIDE_CHANGES,
+  GUIDE_DEVIATE_SHAPE,
+  GUIDE_FOLLOW_SHAPE,
+  GUIDE_HOLD_SHAPE,
+} from './guideSpec';
 import { parseProposeSpec } from './proposeSpec';
 import { clippedTextOf, isRecord } from '@goodboy/types/helpers';
 
@@ -17,6 +23,9 @@ export const AUTO_BLOCK_ACTIONS = [
   'stop',
   'close',
   'finish',
+  'follow',
+  'hold',
+  'deviate',
 ] as const;
 
 export const AUTO_CLOSE_AS = ['done', 'skipped', 'discarded'] as const;
@@ -42,7 +51,15 @@ export type AutoBlock =
   | Readonly<{ action: 'message'; delegation: string; text: string }>
   | Readonly<{ action: 'stop'; delegation: string; reason: string }>
   | Readonly<{ action: 'close'; target: string; as: AutoCloseAs; reason: string }>
-  | Readonly<{ action: 'finish'; summary: string }>;
+  | Readonly<{ action: 'finish'; summary: string }>
+  | Readonly<{ action: 'follow'; check: string }>
+  | Readonly<{ action: 'hold'; reason: string; suggest: string | null }>
+  | Readonly<{
+      action: 'deviate';
+      change: (typeof GUIDE_CHANGES)[number];
+      step: string;
+      reason: string;
+    }>;
 
 export type AutoBlockOutcome =
   | Readonly<{ kind: 'none' }>
@@ -245,6 +262,39 @@ const finishOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   return { kind: 'block', block: { action: 'finish', summary } };
 };
 
+const followOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
+  const check = clippedTextOf({ value: fields['check'], max: FIELD_CHARS });
+  if (check === null) {
+    return invalid({ reason: `write a follow block as ${GUIDE_FOLLOW_SHAPE}` });
+  }
+  return { kind: 'block', block: { action: 'follow', check } };
+};
+
+const holdBlockOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
+  const reason = clippedTextOf({ value: fields['reason'], max: FIELD_CHARS });
+  if (reason === null) {
+    return invalid({ reason: `write a hold block as ${GUIDE_HOLD_SHAPE}` });
+  }
+  return {
+    kind: 'block',
+    block: {
+      action: 'hold',
+      reason,
+      suggest: clippedTextOf({ value: fields['suggest'], max: FIELD_CHARS }),
+    },
+  };
+};
+
+const deviateOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
+  const change = GUIDE_CHANGES.find((candidate) => candidate === fields['change']);
+  const step = clippedTextOf({ value: fields['step'], max: FIELD_CHARS });
+  const reason = clippedTextOf({ value: fields['reason'], max: FIELD_CHARS });
+  if (change === undefined || step === null || reason === null) {
+    return invalid({ reason: `write a deviate block as ${GUIDE_DEVIATE_SHAPE}` });
+  }
+  return { kind: 'block', block: { action: 'deviate', change, step, reason } };
+};
+
 export const parseAutoBlock = ({ text }: ParseAutoBlockParams): AutoBlockOutcome => {
   const slice = lastCompleteSlice({ text }) ?? unclosedSlice({ text });
   if (slice === null) {
@@ -275,6 +325,12 @@ export const parseAutoBlock = ({ text }: ParseAutoBlockParams): AutoBlockOutcome
       return closeOf({ fields: parsed });
     case 'finish':
       return finishOf({ fields: parsed });
+    case 'follow':
+      return followOf({ fields: parsed });
+    case 'hold':
+      return holdBlockOf({ fields: parsed });
+    case 'deviate':
+      return deviateOf({ fields: parsed });
     default:
       return invalid({
         reason: `"action" must be one of ${AUTO_BLOCK_ACTIONS.join(', ')}`,
@@ -308,4 +364,20 @@ export const parseAutoCloseBlocks = ({
     .flatMap((slice): ReadonlyArray<AutoBlockOutcome> => {
       const parsed = parseJson({ value: slice });
       return isRecord(parsed) && parsed['action'] === 'close' ? [closeOf({ fields: parsed })] : [];
+    });
+
+export const parseAutoNoteBlocks = ({
+  text,
+}: ParseAutoBlockParams): ReadonlyArray<AutoBlockOutcome> =>
+  completeSlices({ text })
+    .slice(0, -1)
+    .flatMap((slice): ReadonlyArray<AutoBlockOutcome> => {
+      const parsed = parseJson({ value: slice });
+      if (!isRecord(parsed)) {
+        return [];
+      }
+      if (parsed['action'] === 'follow') {
+        return [followOf({ fields: parsed })];
+      }
+      return parsed['action'] === 'deviate' ? [deviateOf({ fields: parsed })] : [];
     });

@@ -348,6 +348,7 @@ export {
   AUTO_CLOSE_SHAPE,
   parseAutoBlock,
   parseAutoCloseBlocks,
+  parseAutoNoteBlocks,
   type AutoCloseAs,
   type AutoBlock,
   type AutoBlockOutcome,
@@ -414,3 +415,29 @@ export {
 } from './roleTools';
 export { roleFitOf, roleNarrowerMessage } from './roleFit';
 export { AUTO_WITHDRAWN_REASON } from './AUTO_WITHDRAWN_REASON';
+
+export {
+  GUIDE_CHANGES,
+  GUIDE_CHECKS,
+  GUIDE_DEVIATE_SHAPE,
+  GUIDE_FOLLOW_SHAPE,
+  GUIDE_HOLD_SHAPE,
+  GUIDE_SECTION_CHARS,
+  continuedGuide,
+  deviatedGuide,
+  followedGuide,
+  guideChoiceNamed,
+  guideGateOf,
+  guideSectionOf,
+  heldGuide,
+  parseGuideRecord,
+  serializeGuideRecord,
+  startGuideRecord,
+  type GuideChange,
+  type GuideChoice,
+  type GuideCheck,
+  type GuideDeviation,
+  type GuideGate,
+  type GuideRecord,
+  type GuideStep,
+} from './guideSpec';
