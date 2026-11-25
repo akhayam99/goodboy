@@ -37,7 +37,7 @@ export const PAGE_PROBE = `(async () => {
       new Promise((done) => setTimeout(done, ${HERO_SETTLE_MS})),
     ]);
   }
-  const banner = document.querySelector('#iubenda-cs-banner .iubenda-cs-content');
+  const banner = document.querySelector('#cc-main .cm--box');
   const h1 = document.querySelector('h1');
   const periods = [...document.querySelectorAll('h1, h2, h3')]
     .map((node) => node.textContent.trim())

@@ -8,6 +8,7 @@ export type PageKind =
   | 'doc'
   | 'changelog-index'
   | 'release'
+  | 'legal'
   | 'not-found';
 
 export type PageMeta = {

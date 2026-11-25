@@ -278,36 +278,34 @@ OG image renders in Inter on a machine without it installed.
 
 ## Cookie consent
 
-The consent card is iubenda's Cookie Solution, embedded in `website/index.html`
-rather than through Google Tag Manager, so the repo owns its language, position
-and look. It asks in Italian, sits at the bottom left, and takes its colours
-from `website/src/styles/consent.css`; the `onBannerShown` callback drops
-iubenda's inline colours so the site tokens apply in both themes. Consent Mode
-defaults to denied in the first script of each template, with one `wait_for_update`.
-Nothing from Google loads before consent: the Tag Manager loader in each template
-runs only when iubenda's `onPreferenceExpressedOrNotNeeded` callback reports the
-Measurement purpose (`preference.purposes["4"]`) as accepted, for a new
+The consent card is `vanilla-cookieconsent` (MIT, pinned in `website/package.json`), bundled
+into every page by `website/src/lib/mountRoot.tsx`, so no consent script comes from a CDN.
+`website/src/lib/consent/CONSENT_CONFIG.ts` holds its English text, the
+`goodboy_consent` cookie (180 days) and two categories: necessary, read only, and
+`analytics`, the Measurement choice. The card sits at the bottom left, and
+`website/src/styles/consent.css` maps the library's variables onto the site tokens, so
+it follows both themes. Consent Mode defaults to denied in the first script of each
+template, with one `wait_for_update`. Nothing from Google loads before consent: the Tag
+Manager loader in each template runs only when `reportPreference` (called by the
+library's `onConsent` and `onChange`) hands it `{ isMeasurementGranted: true }`, for a new
 acceptance and for a returning visitor whose choice is stored. It pushes
 `gtag('consent', 'update', { analytics_storage: 'granted' })` first, then starts
-`gtm.js` when the browser is idle. A refusal, a visitor who has not answered
-and a visit where no preference is needed load nothing from Google, and the
-templates carry no `noscript` frame, since a visitor without JavaScript
-cannot answer the banner. A visitor who withdraws in the preferences panel
-sets `analytics_storage` back to denied and `window.goodboyConsent.isMeasurementGranted` to false,
-and when Tag Manager was already requested the page reloads once, so the tag is
-gone. The reload cannot loop: a fresh page has no tag, so it never reloads
-again. The loader installs `onPreference` before the iubenda script tag, so a
-cached iubenda cannot call the empty stub. `check-seo` fails a Google script,
-frame or image in the static HTML, a repeated Tag Manager id, a Consent Mode
-default that comes after it, and an iubenda script that comes before the
-Consent Mode default or before the preference handler. iubenda shows no card for a language
-the cookie policy lacks, and the policy has only an Italian version, so the
-embed uses `lang: 'it'` and goes back to `'en'` once an English policy exists
-in the iubenda dashboard. The Tag Manager container holds no iubenda tag, so
-the card never loads twice. The card shows only while the Cookie Solution is
-enabled for the site in the iubenda dashboard: when the site configuration
-iubenda serves says `_iub.csEnabled = false`, no visitor sees a card, nobody can
-accept, and nothing from Google ever loads.
+`gtm.js` when the browser is idle. A refusal and a visitor who has not answered
+load nothing from Google, and the templates carry no `noscript` frame, since a visitor
+without JavaScript cannot answer the banner. A visitor who withdraws in the preferences
+panel sets `analytics_storage` back to denied and `window.goodboyConsent.isMeasurementGranted`
+to false, the library clears the `_ga` cookies, and when Tag Manager was already
+requested the page reloads once, so the tag is gone. The reload cannot loop: a fresh
+page has no tag, so it never reloads again. The loader installs `onPreference` in the
+head, before the module script that starts the library. `check-seo` fails a Google
+script, frame or image in the static HTML, a repeated Tag Manager id, a Consent Mode
+default that comes after it, and a module script that comes before the Consent Mode
+default or before the preference handler. The footer's Cookie settings link carries
+`data-cc="show-preferencesModal"`, which opens the preferences panel and, without
+JavaScript, goes to `/cookies`. The policies are our own pages, `/privacy` and
+`/cookies`, written in `website/src/pages/content/legal/` and registered in
+`STATIC_PAGES.ts` and `CONTENT_PAGES.tsx`; the controller line is `SITE.controller`.
+A change to what the site collects changes those two pages in the same commit.
 
 ## Tracking events
 

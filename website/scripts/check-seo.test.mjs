@@ -396,17 +396,17 @@ describe('checkSeo', () => {
     assert.deepEqual(ok, []);
   });
 
-  it('fails an iubenda script that comes before the consent default or the preference handler', () => {
+  it('fails a page script that comes before the consent default or the preference handler', () => {
     const consent = "<script>gtag('consent', 'default', {});</script>";
     const handler = '<script>consent.onPreference = function () {};</script>';
-    const iubenda = '<script src="https://cdn.iubenda.com/cs/iubenda_cs.js" async></script>';
+    const entry = '<script type="module" src="/assets/main.js"></script>';
     const check = (head) => run({ htmlFiles: { 'index.html': page({ head }) } });
-    assert.deepEqual(check(`${consent}${handler}${iubenda}`), []);
-    const early = check(`${consent}${iubenda}${handler}`);
+    assert.deepEqual(check(`${consent}${handler}${entry}`), []);
+    const early = check(`${consent}${entry}${handler}`);
     assert.deepEqual(rulesOf(early), ['consent-order']);
     assert.match(early[0].message, /handler/);
-    assert.deepEqual(rulesOf(check(`${consent}${iubenda}`)), ['consent-order']);
-    const unguarded = check(`${handler}${iubenda}${consent}`);
+    assert.deepEqual(rulesOf(check(`${consent}${entry}`)), ['consent-order']);
+    const unguarded = check(`${handler}${entry}${consent}`);
     assert.deepEqual(rulesOf(unguarded), ['consent-order']);
     assert.match(unguarded[0].message, /default/);
   });

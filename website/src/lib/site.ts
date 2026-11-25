@@ -1,6 +1,5 @@
 const REPO = 'https://github.com/akhayam99/goodboy';
 const BLOB = `${REPO}/blob/main`;
-const POLICY = 'https://www.iubenda.com/privacy-policy/46359357';
 
 export const SITE = {
   origin: 'https://goodboy-ai.dev',
@@ -35,8 +34,9 @@ export const SITE = {
   changelogSource: `${BLOB}/CHANGELOG.md`,
   releaseTag: (version: string) => `${REPO}/releases/tag/v${version}`,
   security: `${BLOB}/SECURITY.md`,
-  privacy: POLICY,
-  cookies: `${POLICY}/cookie-policy`,
+  privacy: '/privacy',
+  cookies: '/cookies',
+  controller: { name: 'Amin Khayam', email: 'privacy@goodboy-ai.dev' },
   brew: 'brew install --cask akhayam99/tap/goodboy',
   x: 'https://x.com/GoodboyWorks',
 } as const;
