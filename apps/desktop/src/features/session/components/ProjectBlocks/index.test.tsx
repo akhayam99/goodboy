@@ -456,7 +456,7 @@ describe('the project blocks on the Overview', () => {
     await show();
     const mountId = mountIdOf({ branch: TENANT });
     const tile = tileOf({ branch: TENANT });
-    fireEvent.click(await within(tile).findByRole('button', { name: `Open changes of ${TENANT}` }));
+    fireEvent.click(await within(tile).findByRole('button', { name: `Open ${TENANT} in Changes` }));
 
     expect(navigate).toHaveBeenCalledTimes(1);
     expect(navigate).toHaveBeenLastCalledWith({
