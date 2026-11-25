@@ -90,7 +90,7 @@ export const WorkflowModelRow = ({
               disabled={isDisabled}
               aria-expanded={isPicking}
               aria-label={`Change ${label} model`}
-              onClick={() => setIsPicking((current) => !current)}
+              onClick={() => setIsPicking((isOpen) => !isOpen)}
             >
               {isPicking ? 'Done' : 'Change'}
             </Button>
