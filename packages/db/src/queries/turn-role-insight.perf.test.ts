@@ -44,6 +44,14 @@ const seedHeavyMonth = async (): Promise<Database> => {
        FROM n`,
     [SPANS, WORKSPACE, NOW, DAY_MS, NOW, DAY_MS],
   );
+  await db.execute(
+    `INSERT INTO agent_turn_picks (id, run_id, source, created_at, updated_at)
+     SELECT 'pick-' || run_id, run_id,
+            CASE ABS(RANDOM()) % 4 WHEN 0 THEN 'lead' WHEN 1 THEN 'fallback'
+                                   WHEN 2 THEN 'pinned' ELSE 'best' END, ?, ?
+       FROM agent_turn_spans`,
+    [NOW, NOW],
+  );
   return db;
 };
 

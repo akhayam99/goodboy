@@ -30,6 +30,15 @@ const costHintOf = ({ insight }: CostHintParams): string => {
     : perTurn;
 };
 
+type CoverageParams = {
+  readonly insight: TurnRoleInsight;
+};
+
+const coverageHintOf = ({ insight }: CoverageParams): string =>
+  insight.knownTurns === insight.turns
+    ? 'Known for every turn'
+    : `Known for ${insight.knownTurns} of ${insight.turns} turns`;
+
 const AGENT_TILE_LABELS = [
   'Agent turns',
   'Roles used',
@@ -72,7 +81,7 @@ export const AgentsPanel = ({ frame, routing }: Props) => {
                 turnShareOf({ part: insight.pinnedTurns, whole: insight.knownTurns }) ??
                 UNKNOWN_VALUE
               }
-              hint={`Known for ${insight.knownTurns} of ${insight.turns} turns`}
+              hint={coverageHintOf({ insight })}
             />
             <StatCard
               label="Cost on agent turns"
@@ -119,9 +128,11 @@ export const AgentsPanel = ({ frame, routing }: Props) => {
           </table>
         )}
       </StudioWidget>
-      <p className="text-meta text-faint-foreground">
-        Pinned is known for workflow steps and the Lead&apos;s helpers. Other turns stay not known.
-      </p>
+      {insight !== null && insight.knownTurns < insight.turns ? (
+        <p className="text-meta text-faint-foreground">
+          Pinned is recorded for each new turn. Earlier turns stay not known.
+        </p>
+      ) : null}
     </PaneShell>
   );
 };

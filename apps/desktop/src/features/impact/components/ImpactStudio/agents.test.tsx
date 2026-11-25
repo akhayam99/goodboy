@@ -95,6 +95,22 @@ const seedSpan = async ({ db, span }: SeedParams) => {
   );
 };
 
+type PickParams = {
+  readonly db: Database;
+  readonly runId: string;
+  readonly source: string;
+};
+
+const seedPick = async ({ db, runId, source }: PickParams) => {
+  await db.execute(
+    `INSERT INTO agent_turn_picks (id, run_id, source, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?)`,
+    [`pick-${runId}`, runId, source, NOW, NOW],
+  );
+};
+
+const COVERAGE_LINE = /Earlier turns stay not known/;
+
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
@@ -260,5 +276,22 @@ describe('Impact, Agents tab', () => {
     fireEvent.click(retry);
 
     await waitFor(() => expect(tileText('Agent turns')).toContain('3'));
+  });
+
+  it('keeps the coverage line while older turns have no record, and drops it when all are recorded', async () => {
+    const db = storySqlite();
+    await seedPick({ db, runId: 'run-today', source: 'pinned' });
+    renderStudio();
+    fireEvent.click(screen.getByRole('tab', { name: 'Agents' }));
+
+    await waitFor(() => expect(tileText('Pinned by you')).toContain('Known for 1 of 3 turns'));
+    expect(screen.getByText(COVERAGE_LINE)).toBeTruthy();
+
+    await seedPick({ db, runId: 'run-codex', source: 'fallback' });
+    fireEvent.click(screen.getByRole('tab', { name: '7 days' }));
+
+    await waitFor(() => expect(tileText('Pinned by you')).toContain('50%'));
+    expect(tileText('Pinned by you')).toContain('Known for every turn');
+    expect(screen.queryByText(COVERAGE_LINE)).toBeNull();
   });
 });

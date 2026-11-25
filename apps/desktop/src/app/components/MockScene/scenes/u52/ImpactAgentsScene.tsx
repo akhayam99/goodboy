@@ -32,20 +32,24 @@ const GROUPS: ReadonlyArray<GroupRow> = [
   ['docs', 'anthropic', 'claude-haiku-5-5', 'low', 50, 1.5, 0],
 ];
 
-const PICKS: ReadonlyMap<string, readonly [number, number, number]> = new Map([
-  ['implementer', [330, 46, 250]],
-  ['scout', [160, 12, 140]],
-  ['reviewer', [120, 34, 70]],
-  ['tester', [90, 6, 80]],
-  ['planner', [60, 30, 20]],
+type PickCounts = readonly [number, number, number, number, number];
+
+const PICKS: ReadonlyMap<string, PickCounts> = new Map<string, PickCounts>([
+  ['implementer', [330, 46, 250, 24, 10]],
+  ['scout', [160, 12, 140, 6, 2]],
+  ['reviewer', [120, 34, 70, 10, 6]],
+  ['tester', [90, 6, 80, 3, 1]],
+  ['planner', [60, 30, 20, 6, 4]],
 ]);
 
-const NO_PICKS = [0, 0, 0] as const;
+const NO_PICKS: PickCounts = [0, 0, 0, 0, 0];
 
 const GROUP_ROWS = GROUPS.map(
   ([role, provider, model, effort, turns, costUsd, failedTurns], index) => {
     const isFirstOfRole = GROUPS.findIndex((group) => group[0] === role) === index;
-    const [known, pinned, lead] = isFirstOfRole ? (PICKS.get(role) ?? NO_PICKS) : NO_PICKS;
+    const [known, pinned, lead, fallback, best] = isFirstOfRole
+      ? (PICKS.get(role) ?? NO_PICKS)
+      : NO_PICKS;
     return {
       step_role: role,
       provider,
@@ -58,6 +62,8 @@ const GROUP_ROWS = GROUPS.map(
       known_turns: known,
       pinned_turns: pinned,
       lead_turns: lead,
+      fallback_turns: fallback,
+      best_turns: best,
     };
   },
 );

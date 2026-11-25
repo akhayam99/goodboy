@@ -144,6 +144,7 @@ export const AgentRoleRow = ({ entry, isOpen, onToggle }: Props) => {
               {entry.knownTurns > 0 ? (
                 <p className="px-3 text-meta text-muted-foreground">
                   Pinned by you: {entry.pinnedTurns} turns. Lead&apos;s pick: {entry.leadPickTurns}{' '}
+                  turns. Fallback: {entry.fallbackTurns} turns. Best candidate: {entry.bestTurns}{' '}
                   turns. Known for {entry.knownTurns} of {entry.turns} turns.
                 </p>
               ) : null}
