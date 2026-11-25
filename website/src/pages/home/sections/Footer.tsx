@@ -1,13 +1,14 @@
 import './Footer.css';
 import { Logo } from '../../../components/Logo';
 import { LATEST_VERSION } from '../../../data/latestVersion';
+import { GUIDE_NAV } from '../../../lib/GUIDE_NAV';
 import { SITE } from '../../../lib/site';
 import { trackAttributes, type TrackAttributes } from '../../../lib/trackAttributes';
 
 type FooterLink = {
   readonly label: string;
   readonly href: string;
-  readonly className?: string;
+  readonly dataCc?: string;
   readonly track?: TrackAttributes;
 };
 
@@ -29,6 +30,16 @@ const COLUMNS: readonly Column[] = [
       { label: 'How it works', href: SITE.howItWorks },
       { label: 'Workflows', href: `${SITE.features}#workflows` },
       { label: 'Changelog', href: SITE.changelog },
+    ],
+  },
+  {
+    title: 'Guides',
+    links: [
+      { label: GUIDE_NAV.worktrees, href: SITE.guides.worktrees },
+      { label: GUIDE_NAV.parallel, href: SITE.guides.parallel },
+      { label: GUIDE_NAV.review, href: SITE.guides.review },
+      { label: GUIDE_NAV.costs, href: SITE.guides.costs },
+      { label: GUIDE_NAV.glossary, href: SITE.guides.glossary },
     ],
   },
   {
@@ -56,7 +67,7 @@ const COLUMNS: readonly Column[] = [
     links: [
       { label: 'Privacy policy', href: SITE.privacy },
       { label: 'Cookie policy', href: SITE.cookies },
-      { label: 'Cookie settings', href: '#', className: 'iubenda-cs-preferences-link' },
+      { label: 'Cookie settings', href: SITE.cookies, dataCc: 'show-preferencesModal' },
     ],
   },
 ];
@@ -77,7 +88,7 @@ export const Footer = () => (
             <nav key={column.title} className="footerColumn" aria-label={column.title}>
               <p className="footerTitle">{column.title}</p>
               {column.links.map((link) => (
-                <a key={link.label} href={link.href} className={link.className} {...link.track}>
+                <a key={link.label} href={link.href} data-cc={link.dataCc} {...link.track}>
                   {link.label}
                 </a>
               ))}

@@ -39,8 +39,8 @@ const boot = ({ file }) => {
   return { window, inserted, reloads, flush };
 };
 
-const accepted = { purposes: { 4: true } };
-const refused = { purposes: { 4: false } };
+const accepted = { isMeasurementGranted: true };
+const refused = { isMeasurementGranted: false };
 
 TEMPLATES.forEach((file) => {
   describe(`consent loader in ${file}`, () => {

@@ -7,15 +7,15 @@ settings:
 importers:
   .:
     devDependencies:
+      '@carbon/icons':
+        specifier: 11.92.0
+        version: 11.92.0
       '@commitlint/cli':
         specifier: ^21.2.4
         version: 21.2.4(conventional-commits-parser@7.1.2)(typescript@5.9.3)
       '@commitlint/config-conventional':
         specifier: ^21.2.4
         version: 21.2.4
-      '@phosphor-icons/react':
-        specifier: 2.1.10
-        version: 2.1.10(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       eslint:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.7.0)
@@ -370,6 +370,12 @@ packages:
         integrity: sha512-buipgOVDkkPXNR5+xBpDw7Zk2n1EvU7qBJCNUcL7rhQ//kfpOXPAvQ511Os0vpLYJ1pZnvudNytkQt2hst3wqA==,
       }
 
+  '@carbon/icons@11.92.0':
+    resolution:
+      {
+        integrity: sha512-Xtb4IH/huGjbk25Un6ugDuBC4CtbbNndUGZoc4qjv2cyPAy75VwKQ802gskur/R1+ZOs+aWFK+Vqve6LntIEfg==,
+      }
+
   '@commitlint/cli@21.2.4':
     resolution:
       {
@@ -633,6 +639,13 @@ packages:
         integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==,
       }
     engines: { node: '>=18.18' }
+
+  '@ibm/telemetry-js@1.12.0':
+    resolution:
+      {
+        integrity: sha512-tNgmk2k8loNDTnPInlu7yMP9YOCr9UMwSnXN7SCEsGIV8xHfTawhXlDnp1PV0Lbv+2GoLQKSgkShlJeGPi4jTg==,
+      }
+    hasBin: true
 
   '@isaacs/nonrecursive-glob-match@1.1.0':
     resolution:
@@ -1056,16 +1069,6 @@ packages:
       }
     cpu: [x64]
     os: [win32]
-
-  '@phosphor-icons/react@2.1.10':
-    resolution:
-      {
-        integrity: sha512-vt8Tvq8GLjheAZZYa+YG/pW7HDbov8El/MANW8pOAz4eGxrwhnbfrQZq0Cp4q8zBEu8NIhHdnr+r8thnfRSNYA==,
-      }
-    engines: { node: '>=10' }
-    peerDependencies:
-      react: '>= 16.8'
-      react-dom: '>= 16.8'
 
   '@rolldown/binding-android-arm-eabi@1.2.19':
     resolution:
@@ -4014,6 +4017,10 @@ snapshots:
       hashery: 1.5.1
       keyv: 5.6.0
 
+  '@carbon/icons@11.92.0':
+    dependencies:
+      '@ibm/telemetry-js': 1.12.0
+
   '@commitlint/cli@21.2.4(conventional-commits-parser@7.1.2)(typescript@5.9.3)':
     dependencies:
       '@commitlint/config-conventional': 21.2.4
@@ -4209,6 +4216,8 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
+  '@ibm/telemetry-js@1.12.0': {}
+
   '@isaacs/nonrecursive-glob-match@1.1.0': {}
 
   '@jridgewell/gen-mapping@0.3.13':
@@ -4373,11 +4382,6 @@ snapshots:
 
   '@oxc-resolver/binding-win32-x64-msvc@11.24.2':
     optional: true
-
-  '@phosphor-icons/react@2.1.10(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
-    dependencies:
-      react: 19.3.1
-      react-dom: 19.3.1(react@19.3.1)
 
   '@rolldown/binding-android-arm-eabi@1.2.19':
     optional: true

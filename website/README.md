@@ -12,20 +12,21 @@ deployed by Vercel from `website/vercel.json`.
 
 Find a file by what you want to change.
 
-| I want to change                          | Look in                                                                                                        |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| the hero or any landing section           | `src/pages/home/sections/` (`Hero.tsx`, `Tour.tsx`, `Install.tsx`), assembled by `src/pages/home/HomePage.tsx` |
-| a product mock shown on the page          | `src/mocks/` (`kit/` is the shared app look)                                                                   |
-| the features page or its copy             | `src/pages/features/`, copy in `features.data.json`                                                            |
-| the ADE guide page and its copy           | `src/pages/content/AdePage.tsx`, copy in `adeGuide.ts`                                                         |
-| docs, changelog, release or 404 pages     | `src/pages/content/`                                                                                           |
-| titles, JSON-LD, sitemap, feed, markdown  | `src/prerender/`                                                                                               |
-| a release snapshot                        | `src/data/releases/` (written by the release flow)                                                             |
-| colours, type, layout tokens              | `src/styles/base.css`                                                                                          |
-| shared button, chapter or logo pieces     | `src/components/`                                                                                              |
-| shared helpers, theme, links and URLs     | `src/lib/` (`site.ts` holds every link)                                                                        |
-| a hook                                    | `src/hooks/useFoo/index.ts`                                                                                    |
-| fonts, hero images, favicon, brand assets | `public/`                                                                                                      |
+| I want to change                           | Look in                                                                                                          |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| the hero or any landing section            | `src/pages/home/sections/` (`Hero.tsx`, `Tour.tsx`, `Install.tsx`), assembled by `src/pages/home/HomePage.tsx`   |
+| a product mock shown on the page           | `src/mocks/` (`kit/` is the shared app look)                                                                     |
+| the features page or its copy              | `src/pages/features/`, copy in `features.data.json`                                                              |
+| the ADE guide page and its copy            | `src/pages/content/AdePage.tsx`, copy in `adeGuide.ts`                                                           |
+| one of the eight topic guides and its copy | `src/pages/content/GuidePage.tsx`, copy in `src/pages/content/guides/<name>Guide.ts`, list in `guides/GUIDES.ts` |
+| docs, changelog, release or 404 pages      | `src/pages/content/`                                                                                             |
+| titles, JSON-LD, sitemap, feed, markdown   | `src/prerender/`                                                                                                 |
+| a release snapshot                         | `src/data/releases/` (written by the release flow)                                                               |
+| colours, type, layout tokens               | `src/styles/base.css`                                                                                            |
+| shared button, chapter or logo pieces      | `src/components/`                                                                                                |
+| shared helpers, theme, links and URLs      | `src/lib/` (`site.ts` holds every link)                                                                          |
+| a hook                                     | `src/hooks/useFoo/index.ts`                                                                                      |
+| fonts, hero images, favicon, brand assets  | `public/`                                                                                                        |
 
 Where code runs:
 
@@ -92,14 +93,14 @@ characters; a description takes 70 to 165 (`website/scripts/lib/seoCheck.mjs`).
   A doc page is a TechArticle, a release page a WebPage with the `datePublished`
   of its snapshot, the two index pages are CollectionPages, and every other page
   a WebPage. Mark up only what the page shows: no rating, no `license` and no FAQ
-  that isn't on the page. The ADE guide page adds a FAQPage built from the same
-  `adeGuide.ts` questions the page prints. The check fails on a type outside that list.
+  that isn't on the page. The ADE guide page and each topic guide with a FAQ add a FAQPage built from the
+  same questions the page prints (`guideFaqOf`). The check fails on a type outside that list.
 - `website/src/prerender/PAGE_REGISTRY.ts` is the one list of pages: the home page,
   features, every content page and the 404, each with its `PageMeta`. The build writes `dist/sitemap.xml` and `dist/llms.txt` from it, so they cannot
   disagree, and `/changelog.xml` from the release snapshots; a new release or doc shows up in all three on its own. A patch release (`x.y.z` with `z` not 0, decided by `isPatchRelease`) is `noindex`: its page still renders and the changelog index and the feed still link it, but the sitemap and `llms.txt` leave it out. A page has a `lastmod`
   only when its date is true: a release page has its snapshot date, the changelog index the newest release date, and the home page,
-  features, the ADE guide and docs have none. `llms.txt` is a plain index for agents that
-  reach the site: the home description, then Product (home, features, the ADE guide), Docs, the newest ten releases and Download, one line per
+  features, the ADE guide, the topic guides and docs have none. `llms.txt` is a plain index for agents that
+  reach the site: the home description, then Product (home, features, the ADE guide and the topic guides), Docs, the newest ten releases and Download, one line per
   page. No sitemap or `llms.txt` lives in `website/public/`, so there is none to edit by hand, and the SEO check fails
   when the sitemap, `llms.txt`, the feed and the built pages list different URLs
   (the feed lists every built release page, the sitemap and `llms.txt` only the indexed ones).
@@ -144,8 +145,7 @@ characters; a description takes 70 to 165 (`website/scripts/lib/seoCheck.mjs`).
 
 - `/`, the landing page, from `website/index.html` and `website/src/pages/home/HomePage.tsx`.
   Its sections live in `website/src/pages/home/sections/`, in this order: Nav, Hero,
-  TwoWays, SharedContext, Tour, Install, BrandLine, Footer. `BrandLine` is the
-  brand line alone, the last block before the footer.
+  TwoWays, SharedContext, Tour, Install, Footer.
 - `/features`, one cluster per topic, from `website/features.html` and
   `website/src/pages/features/`. The clusters, their groups and their copy come
   from `features.data.json` in that folder. Vite builds both pages as inputs,
@@ -161,6 +161,23 @@ characters; a description takes 70 to 165 (`website/scripts/lib/seoCheck.mjs`).
   `/#install`, because a prerendered content page cannot pick a platform build.
   The footer line under the logo links to it on every page, and sits in place of a
   sixth Product link, which would push the home page past its height budget.
+  The ADE page ends with a Guides section that links the eight topic guides below.
+- The eight topic guides, one URL each, each answering one search:
+  `/git-worktrees-for-ai-coding-agents`, `/run-multiple-coding-agents-in-parallel`,
+  `/fix-pr-review-comments-with-ai`, `/context-handoff-between-coding-agents`,
+  `/control-coding-agent-costs`,
+  `/use-claude-code-codex-cursor-gemini-copilot-together`,
+  `/multi-repo-changes-with-coding-agents` and `/agentic-coding-glossary`. Each is typed
+  data of the `Guide` shape in `website/src/pages/content/guides/`, with its paths in
+  `SITE.guides`, listed in `GUIDES.ts` and rendered by `GuidePage.tsx` (sections with
+  paragraphs, numbered steps with a command, titled items and links, then an optional FAQ,
+  a Keep reading list and the Download call to action). `CONTENT_PAGES.tsx` builds the
+  `PageMeta` of each from its data, so a guide is in the sitemap and `llms.txt` with no
+  other list, and its path is added to `seo-published-paths.json`. A claim in a guide
+  links to the `/docs/<area>` heading that holds it, and each guide links to the ADE
+  guide and to at least two sibling guides. The footer has a Guides column of five of
+  them, short labels from `GUIDE_NAV`, because a longer column pushes the home page past
+  its height budget; the ADE page lists all eight.
 - `/changelog`, every release newest first, and `/changelog/<version>`, one
   page per release, titled `Goodboy <version>: <summary theme>` in 70 characters or fewer and described by its summary, plus the first note entries when the summary is short: its date and summary from the snapshot in
   `website/src/data/releases/`, and its New, Improved and Fixed notes from the
@@ -261,33 +278,34 @@ OG image renders in Inter on a machine without it installed.
 
 ## Cookie consent
 
-The consent card is iubenda's Cookie Solution, embedded in `website/index.html`
-rather than through Google Tag Manager, so the repo owns its language, position
-and look. It asks in Italian, sits at the bottom left, and takes its colours
-from `website/src/styles/consent.css`; the `onBannerShown` callback drops
-iubenda's inline colours so the site tokens apply in both themes. Consent Mode
-defaults to denied in the first script of each template, with one `wait_for_update`.
-Nothing from Google loads before consent: the Tag Manager loader in each template
-runs only when iubenda's `onPreferenceExpressedOrNotNeeded` callback reports the
-Measurement purpose (`preference.purposes["4"]`) as accepted, for a new
+The consent card is `vanilla-cookieconsent` (MIT, pinned in `website/package.json`), bundled
+into every page by `website/src/lib/mountRoot.tsx`, so no consent script comes from a CDN.
+`website/src/lib/consent/CONSENT_CONFIG.ts` holds its English text, the
+`goodboy_consent` cookie (180 days) and two categories: necessary, read only, and
+`analytics`, the Measurement choice. The card sits at the bottom left, and
+`website/src/styles/consent.css` maps the library's variables onto the site tokens, so
+it follows both themes. Consent Mode defaults to denied in the first script of each
+template, with one `wait_for_update`. Nothing from Google loads before consent: the Tag
+Manager loader in each template runs only when `reportPreference` (called by the
+library's `onConsent` and `onChange`) hands it `{ isMeasurementGranted: true }`, for a new
 acceptance and for a returning visitor whose choice is stored. It pushes
 `gtag('consent', 'update', { analytics_storage: 'granted' })` first, then starts
-`gtm.js` when the browser is idle. A refusal, a visitor who has not answered
-and a visit where no preference is needed load nothing from Google, and the
-templates carry no `noscript` frame, since a visitor without JavaScript
-cannot answer the banner. A visitor who withdraws in the preferences panel
-sets `analytics_storage` back to denied and `window.goodboyConsent.isMeasurementGranted` to false,
-and when Tag Manager was already requested the page reloads once, so the tag is
-gone. The reload cannot loop: a fresh page has no tag, so it never reloads
-again. The loader installs `onPreference` before the iubenda script tag, so a
-cached iubenda cannot call the empty stub. `check-seo` fails a Google script,
-frame or image in the static HTML, a repeated Tag Manager id, a Consent Mode
-default that comes after it, and an iubenda script that comes before the
-Consent Mode default or before the preference handler. iubenda shows no card for a language
-the cookie policy lacks, and the policy has only an Italian version, so the
-embed uses `lang: 'it'` and goes back to `'en'` once an English policy exists
-in the iubenda dashboard. The GTM iubenda tag stays paused so the card never
-loads twice.
+`gtm.js` when the browser is idle. A refusal and a visitor who has not answered
+load nothing from Google, and the templates carry no `noscript` frame, since a visitor
+without JavaScript cannot answer the banner. A visitor who withdraws in the preferences
+panel sets `analytics_storage` back to denied and `window.goodboyConsent.isMeasurementGranted`
+to false, the library clears the `_ga` cookies, and when Tag Manager was already
+requested the page reloads once, so the tag is gone. The reload cannot loop: a fresh
+page has no tag, so it never reloads again. The loader installs `onPreference` in the
+head, before the module script that starts the library. `check-seo` fails a Google
+script, frame or image in the static HTML, a repeated Tag Manager id, a Consent Mode
+default that comes after it, and a module script that comes before the Consent Mode
+default or before the preference handler. The footer's Cookie settings link carries
+`data-cc="show-preferencesModal"`, which opens the preferences panel and, without
+JavaScript, goes to `/cookies`. The policies are our own pages, `/privacy` and
+`/cookies`, written in `website/src/pages/content/legal/` and registered in
+`STATIC_PAGES.ts` and `CONTENT_PAGES.tsx`; the controller line is `SITE.controller`.
+A change to what the site collects changes those two pages in the same commit.
 
 ## Tracking events
 
@@ -300,12 +318,25 @@ Four actions carry an event, and no link text, class or menu is read. The spec i
 `downloadTrack` writes the download set. One click listener on the document,
 started by `website/src/lib/mountRoot.tsx` for every page entry
 (`website/src/lib/startTracking.ts`), reads the attributes with `readTrackEvent` and
-pushes `{ event, ...parameters }` to `dataLayer`. It pushes nothing, and queues
+pushes the entry `dataLayerEntry` builds: the event, every parameter of the spec
+set to `undefined`, then the event's own values. Tag Manager keeps `dataLayer`
+keys from one push to the next, so without the reset a download's `platform`
+would ride along on the next `copy_install_command`. It pushes nothing, and queues
 nothing, unless `window.goodboyConsent.isMeasurementGranted` is true (Cookie consent
 above). An event or value outside the spec is dropped, and `check-seo` fails the
 build on a `data-track` outside it and on a `data-download` or `data-star` link
-without one. A new event is a line in the spec, a `data-track` in the markup and a
-trigger in the Tag Manager container.
+without one.
+
+The Tag Manager container (`GTM-5NM3VX7Q`) mirrors the spec with two tags. The
+Google tag loads Google Analytics on every page. One Google Analytics event tag
+fires on one custom event trigger whose regex lists the four event names, sends
+the `dataLayer` event name as the Google Analytics event name, and maps each
+spec parameter through its own Data Layer Variable (`DLV - <parameter>`). Google
+Analytics holds one event scoped custom dimension per parameter, and
+`download_click` is the key event. A new event is a line in the spec, a
+`data-track` in the markup and its name in the trigger regex. A new parameter
+is also a Data Layer Variable, a row in the event tag and a custom dimension.
+The container reads no link text, class or URL.
 
 ## Components
 
@@ -375,7 +406,7 @@ the tap holds casks and has no Linux formula. A phone has no download buttons.
 `pnpm check:page [url...]` drives headless Chrome over a running page (default
 `http://localhost:1499/`) at 1440, 1024, 768, 660 and 390 pixels wide, in
 both themes, at twice the pixel density. With no url it checks `/`,
-`/features`, the ADE guide and one page of each content kind; every route passes it. Tag
+`/features`, the ADE guide, the worktrees guide and one page of each content kind; every route passes it. Tag
 Manager is blocked during the run.
 
 `/` and `/features` are the marketing pages. On the changelog, docs and 404

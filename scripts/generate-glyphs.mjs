@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'nod
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { format, resolveConfig } from 'prettier';
+import { carbonPathOf } from './lib/carbonPathOf.mjs';
 import { compactPath } from './lib/compactPath.mjs';
 
 const REPOSITORY_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -9,72 +10,82 @@ const ICONS_DIRECTORY = resolve(REPOSITORY_DIRECTORY, 'packages/ui/src/icons');
 const INDEX_PATH = resolve(ICONS_DIRECTORY, 'index.ts');
 const GENERATED_DIRECTORY = resolve(ICONS_DIRECTORY, 'generated');
 const GENERATED_IMPORT = /from '\.\/generated\/(\w+)';$/gm;
-const BASE_WEIGHTS = ['regular'];
-const EXTRA_WEIGHTS = {
-  ClipboardText: ['duotone'],
-  FileText: ['duotone'],
-  Layout: ['duotone'],
-  Star: ['fill'],
+const ARTBOARD = '32';
+const FILL_SOURCES = {
+  Star: 'star--filled',
 };
-const SHADE_OPACITY = '0.2';
 
 const glyphNamesOf = ({ indexSource }) =>
   [...new Set([...indexSource.matchAll(GENERATED_IMPORT)].map((match) => match[1]))].sort();
 
 const definitionsDirectory = () =>
-  resolve(dirname(fileURLToPath(import.meta.resolve('@phosphor-icons/react'))), 'defs');
+  resolve(dirname(fileURLToPath(import.meta.resolve('@carbon/icons/metadata.json'))), 'es');
 
-const pathsOf = ({ fragment }) => [fragment.props.children].flat().map((child) => child.props);
+const pascalNameOf = ({ module }) =>
+  module
+    .split(/-+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('');
 
-const singlePath = ({ name, weight, paths }) => {
-  if (paths.length !== 1 || paths[0].opacity !== undefined) {
-    throw new Error(`${name} ${weight} is not one plain path`);
-  }
-  return compactPath({ d: paths[0].d });
+const modulesByName = () => {
+  const modules = new Map();
+  readdirSync(definitionsDirectory()).forEach((module) => {
+    const name = pascalNameOf({ module });
+    if (modules.has(name)) {
+      throw new Error(`${module} and ${modules.get(name)} share the name ${name}`);
+    }
+    modules.set(name, module);
+  });
+  return modules;
 };
 
-const duotoneOf = ({ name, paths }) => {
-  const [shade, line] = paths;
-  if (paths.length !== 2 || shade.opacity !== SHADE_OPACITY || line.opacity !== undefined) {
-    throw new Error(`${name} duotone is not one shade and one line`);
-  }
-  return { shade: compactPath({ d: shade.d }), line: compactPath({ d: line.d }) };
+const descriptorOf = async ({ module }) => {
+  const directory = resolve(definitionsDirectory(), module);
+  const artboard = readdirSync(directory).includes(`${ARTBOARD}.js`)
+    ? ARTBOARD
+    : readdirSync(directory)
+        .filter((file) => /^\d+\.js$/.test(file))
+        .map((file) => file.replace('.js', ''))
+        .sort((left, right) => Number(right) - Number(left))[0];
+  const url = pathToFileURL(resolve(directory, `${artboard}.js`)).href;
+  return (await import(url)).default;
 };
 
-const drawingOf = ({ name, weights }) =>
-  Object.fromEntries(
-    [...BASE_WEIGHTS, ...(EXTRA_WEIGHTS[name] ?? [])].map((weight) => {
-      const paths = weights.get(weight);
-      if (weight === 'duotone') {
-        return [weight, duotoneOf({ name, paths })];
-      }
-      return [weight, singlePath({ name, weight, paths })];
-    }),
-  );
+const drawingOf = async ({ name, modules }) => {
+  const module = modules.get(name);
+  if (module == null) {
+    throw new Error(`${name} is not a Carbon icon`);
+  }
+  const regular = compactPath({ d: carbonPathOf({ descriptor: await descriptorOf({ module }) }) });
+  const fillModule = FILL_SOURCES[name];
+  if (fillModule == null) {
+    return { regular };
+  }
+  const fill = compactPath({
+    d: carbonPathOf({ descriptor: await descriptorOf({ module: fillModule }) }),
+  });
+  return { regular, fill };
+};
 
-const glyphSource = async ({ name, weights }) => {
-  const options = JSON.stringify({ name, drawing: drawingOf({ name, weights }) }, null, 2);
+const glyphSource = async ({ name, drawing }) => {
+  const options = JSON.stringify({ name, drawing }, null, 2);
   return format(
     ["import { glyph } from '../glyph';", `export const ${name} = glyph(${options});`].join('\n\n'),
     { ...(await resolveConfig(INDEX_PATH)), parser: 'typescript' },
   );
 };
 
-const readWeights = async ({ name }) => {
-  const url = pathToFileURL(resolve(definitionsDirectory(), `${name}.es.js`)).href;
-  const definitions = Object.values(await import(url))[0];
-  return new Map([...definitions].map(([weight, fragment]) => [weight, pathsOf({ fragment })]));
-};
-
-const generatedFiles = async ({ names }) =>
-  new Map(
+const generatedFiles = async ({ names }) => {
+  const modules = modulesByName();
+  return new Map(
     await Promise.all(
       names.map(async (name) => [
         `${name}.ts`,
-        await glyphSource({ name, weights: await readWeights({ name }) }),
+        await glyphSource({ name, drawing: await drawingOf({ name, modules }) }),
       ]),
     ),
   );
+};
 
 const listGenerated = () => {
   try {

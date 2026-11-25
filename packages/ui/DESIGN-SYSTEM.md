@@ -596,14 +596,14 @@ the six places and Settings share one axis at either width.
 and `r4-column-light` scenes, and with an old folded choice.
 
 The foot of the rail is Settings, Report (with its word) and the signature. The
-signature (`RailSignature`) is a 24px `BrandTile` in a `quiet` `Button` that opens
+signature (`RailSignature`) is a 32px `BrandTile` in a `quiet` `Button` that opens
 What's new, with the tooltip "What's new" and no word, and no ring, plate, border,
 glow or gradient. It is the same in both themes and never inverted. An unread
-release adds the `unread` `StatusDot` on its corner. It sits centered in one rail
+release adds the `unread` `StatusDot` on its corner. It fills one rail
 tile (`SHELL_RAIL_TILE`), so the dog lines up with the icons above; the rail pads
 its foot by `SHELL_RAIL_FOOT_PX` (`SHELL_GUTTER_PX`, the inset under the content
-sheet), so the tile ends on the sheet's bottom edge, and the rail's `gap` spaces it
-from Report. An update adds one more `ShellRailItem`
+sheet, plus `SHELL_RAIL_EDGE_PX`), so the tile ends 4px above the sheet's bottom
+edge, and the rail's `gap` spaces it from Report. An update adds one more `ShellRailItem`
 above the signature and never replaces it: `tint="primary"` paints the tile
 `primary-subtle` with `primary` text and word (`danger` on `danger-subtle` when it
 failed), `isEdged` adds a `primary-edge` ring once the update is ready, and the
@@ -837,7 +837,7 @@ ternary. `icon-size-uses-a-token.test.ts` scans the app and `packages/ui`.
 | `ICON_SIZE.notice`  | 16  | the tone icon of a `Notice`, the `DogMascot` default      |
 | `ICON_SIZE.hero`    | 18  | empty states, studio headers, choice tiles                |
 
-Weight is one rule, `ICON_WEIGHT` in the same file: Phosphor bold at `mark`
+Weight is one rule, `ICON_WEIGHT` in the same file: bold at `mark`
 and `row` and on a check mark, regular at `control`, `notice` and `hero`, so
 every icon draws a line about 1px wide. Bold is drawn as the regular outline
 widened by a round stroke ([iconography.md](../../docs/iconography.md#sizes)). A call site passes the token, never a

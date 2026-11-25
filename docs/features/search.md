@@ -6,37 +6,49 @@ Find any session, message, plan or action, and reach it from the keyboard. The p
 
 Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left.
 
-**New** sits first and opens **New session**. A dot marks a draft waiting there while you are elsewhere. The six places follow, with **Impact** quieter and last. **Connect** opens **Connections**, whose full name appears on hover. **Board** stays highlighted while a session is open.
+#### The rail
 
-An amber number on **Board** counts sessions that need you. A dot on **Tasks** marks new tasks. The rail holds no session list. **Monitoring** opens from the Go menu or **⌘K**.
+- **New** sits first and opens **New session**. A dot marks a draft waiting there.
+- **Board**, **Tasks**, **Workflows**, **Chat**, **Connect** and **Impact** follow. **Connect** opens **Connections**. **Impact** is quieter and last.
+- An amber number on **Board** counts sessions that need you. A dot on **Tasks** marks new tasks.
+- At the foot sit **Settings**, then **Report**, then the **Goodboy** mark. With an update waiting, the mark becomes an **Update** mark.
 
-The rail keeps the same places on every page. It never folds or resizes. In a window narrower than 1100 pixels, the words below the icons move into tooltips.
+The rail holds no session list and never folds. In a window narrower than 1100 pixels, the words below the icons move into tooltips. **Monitoring** opens from the Go menu or **⌘K**.
 
-At the foot sit **Settings**, then **Report**, then the **Goodboy** mark. With an update waiting, the mark becomes an **Update** mark. Before you create a workspace, only this foot appears.
+#### Find a session
 
 Open **Sessions** in the top bar, or press **⌘B**, to find a session by title or project. Pinned sessions come first. **Open Board** shows finished sessions too.
 
+#### Session pages
+
 A session opens on its Overview, with its title, **New** and **⋯** above the page tabs. The tabs are **Overview**, **Runs**, **Artifacts**, **Questions** and **Context**. Runs, Artifacts and Questions carry counts.
 
-The **Context** tab holds a **Projects** card that folds each folder and branch, and a **Linked** card with the work linked to it. Every branch is led by its pull request icon in its color. Click one to open its Branch page, with the tabs **Conversation**, **Changes**, **Commits**, **Checks**, **Work** and **Comments**.
-
-The **⋯** holds **Ask about this session**, **Pin session**, **Refresh session**, **Archive** and **Delete**. The limit and the rest of the session's actions are in the Board row's menu and in ⌘K.
+- The **Context** tab holds a **Projects** card that folds each folder and branch, and a **Linked** card with the work linked to it.
+- Click a branch's pull request icon to open its Branch page, with the tabs **Conversation**, **Changes**, **Commits**, **Checks**, **Work** and **Comments**.
+- The **⋯** holds **Ask about this session**, **Pin session**, **Refresh session**, **Archive** and **Delete**.
 
 A branch, an artifact or a run keeps the head and shows crumbs such as **Overview › Artifacts › Plan** in place of the tabs. Each crumb is a link, and **Esc** goes one crumb up.
 
-**Ask about this session**, from the **⋯** or ⌘L, opens the Ask pane beside the page. From left to right a window holds the places rail, the page, the detail panel, the open tools and the tools rail. On a narrower window a panel first narrows, then lies over the page; the page stays live under it.
+#### Ask about this session
 
-A suggestion in the Ask panel, under **Try asking**, asks at once and never fills the field. A second click on it while that question is starting asks nothing more. Typing in the field is the only way to write a question first.
+**Ask about this session**, from the **⋯** or ⌘L, opens the Ask pane beside the page. A suggestion under **Try asking** asks at once and never fills the field. Type in the field to write a question first.
 
-The tools rail sits at the right edge of every page: **Terminal**, **Browser**, **Scripts**, **Ask** and **Monitor**, each named with its shortcut on hover. A click opens the tool to its left, and the rail never moves. Tools stay open as you move between pages, and each session keeps its own. **Open full page** in a tool's header makes it a page, and **Dock**, last in the page's first row, puts it back.
+#### Tools rail
 
-Open more tools and they share the space, up to four in two columns of two, each in its own card. **F6** moves between the page and the panels, and **⌘⇧W** closes the one with the focus. With two tools open, a button in their heads stacks them or puts them side by side. Each session keeps its own layout and brings it back when you return.
+The tools rail sits at the right edge of every page: **Terminal**, **Browser**, **Scripts**, **Ask** and **Monitor**, each named with its shortcut on hover. A click opens the tool to its left. Tools stay open as you move between pages, and each session keeps its own.
+
+- **Open full page** in a tool's header makes it a page, and **Dock**, last in the page's first row, puts it back.
+- Open more tools and they share the space, up to four in two columns of two, each in its own card.
+- With two tools open, a button in their heads stacks them or puts them side by side.
+- **F6** moves between the page and the panels, and **⌘⇧W** closes the one with the focus.
 
 In a window narrower than 1100 pixels the tools rail shows icons only. A narrow tool still sits beside the page, and the Browser lies over it.
 
+#### Fold a side list
+
 **⌥⌘B** folds the list beside the page you are on, such as the files of the Changes page, Chat, Terminal, the Guide or Settings. Each of those lists has its Hide button at its top left.
 
-A drawer that opens in the side slot keeps the one it replaced. That one waits in a chip at the left of the drawer head. **Esc**, the close button or **⌘⇧W** brings it back with its state. A third open drops the oldest.
+A drawer that opens in the side slot keeps the one it replaced in a chip at the left of the drawer head. **Esc**, the close button or **⌘⇧W** brings it back with its state.
 
 ### Go anywhere
 
@@ -80,7 +92,7 @@ Find a message, a plan, a decision, an issue or a branch with **⌘F**. Search s
 
 ### Right click menus
 
-Right click a session, agent, run, artifact, pull request, file or message to see every action it has. The `⋯` menu and Search or run list the same actions, and one that cannot run says why. On a session scope that has not loaded yet, an empty Search or run draws skeleton rows instead of "Nothing to do here yet".
+Right click a session, agent, run, artifact, pull request, file or message to see every action it has. The `⋯` menu and Search or run list the same actions, and one that cannot run says why.
 
 ## Under the hood
 

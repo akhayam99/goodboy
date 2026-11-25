@@ -1,168 +1,157 @@
-#iubenda-cs-banner#iubenda-cs-banner {
-  inset: auto auto 16px 16px !important;
-  width: auto !important;
-  height: auto !important;
+@import 'vanilla-cookieconsent/dist/cookieconsent.css';
+
+#cc-main#cc-main {
+  --cc-font-family: var(--sans);
+  --cc-bg: var(--raise);
+  --cc-primary-color: var(--t1);
+  --cc-secondary-color: var(--t2);
+  --cc-separator-border-color: var(--line);
+  --cc-link-color: var(--accent);
+  --cc-modal-border-radius: 12px;
+  --cc-btn-border-radius: 8px;
+  --cc-modal-margin: 16px;
+  --cc-overlay-bg: rgb(0 0 0 / 0.4);
+  --cc-btn-primary-bg: var(--btn-bg);
+  --cc-btn-primary-color: var(--btn-ink);
+  --cc-btn-primary-border-color: var(--btn-bg);
+  --cc-btn-primary-hover-bg: var(--btn-hover);
+  --cc-btn-primary-hover-color: var(--btn-ink);
+  --cc-btn-primary-hover-border-color: var(--btn-hover);
+  --cc-btn-secondary-bg: transparent;
+  --cc-btn-secondary-color: var(--t1);
+  --cc-btn-secondary-border-color: var(--line-strong);
+  --cc-btn-secondary-hover-bg: var(--hover);
+  --cc-btn-secondary-hover-color: var(--t1);
+  --cc-btn-secondary-hover-border-color: var(--line-strong);
+  --cc-toggle-on-bg: var(--accent);
+  --cc-toggle-off-bg: var(--line-strong);
+  --cc-toggle-on-knob-bg: var(--raise);
+  --cc-toggle-off-knob-bg: var(--raise);
+  --cc-toggle-readonly-bg: var(--line-strong);
+  --cc-toggle-readonly-knob-bg: var(--raise);
+  --cc-toggle-enabled-icon-color: var(--accent);
+  --cc-toggle-disabled-icon-color: var(--t3);
+  --cc-toggle-readonly-knob-icon-color: var(--t3);
+  --cc-cookie-category-block-bg: transparent;
+  --cc-cookie-category-block-border: var(--line);
+  --cc-cookie-category-block-hover-bg: var(--hover);
+  --cc-cookie-category-block-hover-border: var(--line);
+  --cc-cookie-category-expanded-block-bg: transparent;
+  --cc-cookie-category-expanded-block-hover-bg: var(--hover);
+  --cc-section-category-border: var(--line);
+  --cc-footer-bg: transparent;
+  --cc-footer-color: var(--t3);
+  --cc-footer-border-color: var(--line);
+  --cc-webkit-scrollbar-bg: var(--line);
+  --cc-webkit-scrollbar-hover-bg: var(--line-strong);
+  font-family: var(--sans);
+}
+
+#cc-main#cc-main .cm {
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+#cc-main#cc-main .cm__body {
+  padding: 0;
+}
+
+#cc-main#cc-main .cm__texts {
+  padding: 20px 20px 0;
+}
+
+#cc-main#cc-main .cm__texts {
+  border: 0;
+}
+
+#cc-main#cc-main .cm__texts .cm__title {
   padding: 0 !important;
-  background: transparent !important;
-  font-family: var(--sans) !important;
-  pointer-events: none !important;
+  font: 500 15px/22px var(--sans);
+  color: var(--t1);
 }
 
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-container {
-  width: 400px !important;
-  max-width: calc(100vw - 32px) !important;
-  margin: 0 !important;
-  pointer-events: auto !important;
+#cc-main#cc-main .cm__desc {
+  padding: 0;
+  font: 400 14px/22px var(--sans);
+  color: var(--t2);
 }
 
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-content {
-  margin: 0 !important;
-  padding: 20px !important;
-  border: 1px solid var(--line) !important;
-  border-radius: 12px !important;
-  background: var(--raise) !important;
-  box-shadow: none !important;
-  color: var(--t2) !important;
-  font: 400 14px/22px var(--sans) !important;
+#cc-main#cc-main .cm__title + .cm__desc {
+  margin-top: 4px;
 }
 
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-rationale,
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-banner-content,
-#iubenda-cs-banner#iubenda-cs-banner #iubenda-cs-paragraph {
-  margin: 0 !important;
-  padding: 0 !important;
-  max-height: none !important;
-  overflow: visible !important;
+#cc-main#cc-main .cm__link,
+#cc-main#cc-main a {
+  background-image: none;
+  font-weight: 500;
+  text-decoration: none;
 }
 
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-banner-content::after {
-  display: none !important;
+#cc-main#cc-main a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-#iubenda-cs-banner#iubenda-cs-banner #iubenda-cs-paragraph .iub-p {
-  display: block !important;
-  margin: 0 !important;
-  color: var(--t2) !important;
-  font: 400 14px/22px var(--sans) !important;
+#cc-main#cc-main .cm__btns {
+  padding: 16px 20px 20px;
+  gap: 8px;
 }
 
-#iubenda-cs-banner#iubenda-cs-banner #iubenda-cs-paragraph .iub-p:empty {
-  display: none !important;
+#cc-main#cc-main .cm__btn-group {
+  gap: 8px;
 }
 
-#iubenda-cs-banner#iubenda-cs-banner #iubenda-cs-paragraph .iub-p + .iub-p {
-  margin-top: 8px !important;
+#cc-main#cc-main .cm__btn,
+#cc-main#cc-main .pm__btn {
+  height: 36px;
+  padding: 0 14px;
+  font: 500 14px/20px var(--sans);
+  box-shadow: none;
+  transition: background-color 0.16s ease-out;
 }
 
-#iubenda-cs-banner#iubenda-cs-banner #iubenda-cs-paragraph strong {
-  color: var(--t1) !important;
-  font-weight: 500 !important;
+#cc-main#cc-main .cm__btn:hover,
+#cc-main#cc-main .pm__btn:hover {
+  transition: none;
 }
 
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-cookie-policy-lnk {
-  color: var(--accent) !important;
-  font-weight: 500 !important;
-  text-decoration: none !important;
+#cc-main#cc-main .cm__btn:focus-visible,
+#cc-main#cc-main .pm__btn:focus-visible,
+#cc-main#cc-main a:focus-visible,
+#cc-main#cc-main .section__toggle:focus-visible ~ .toggle__icon {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  gap: 12px !important;
-  margin: 16px 0 0 !important;
-  padding: 0 !important;
-  color: inherit !important;
+#cc-main#cc-main .pm {
+  border: 1px solid var(--line);
+  box-shadow: none;
 }
 
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group > div {
-  display: flex !important;
-  gap: 8px !important;
-  width: 100% !important;
-  margin: 0 !important;
+#cc-main#cc-main .pm__title,
+#cc-main#cc-main .pm__section-title {
+  font: 500 15px/22px var(--sans);
 }
 
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group-consent {
-  order: 1 !important;
-}
-
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group-custom {
-  order: 2 !important;
-}
-
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group button {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: auto !important;
-  height: 36px !important;
-  margin: 0 !important;
-  padding: 0 14px !important;
-  border: 0 !important;
-  border-radius: 8px !important;
-  box-shadow: none !important;
-  font: 500 14px/20px var(--sans) !important;
-  letter-spacing: 0 !important;
-  opacity: 1 !important;
-  cursor: pointer !important;
-  transition: background-color 0.16s ease-out !important;
-}
-
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group-consent button {
-  flex: 1 1 0 !important;
-}
-
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group .iubenda-cs-accept-btn {
-  background: var(--btn-bg) !important;
-  color: var(--btn-ink) !important;
-}
-
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group .iubenda-cs-accept-btn:hover {
-  background: var(--btn-hover) !important;
-  transition: none !important;
-}
-
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group .iubenda-cs-reject-btn {
-  background: transparent !important;
-  color: var(--t1) !important;
-  box-shadow: inset 0 0 0 1px var(--line-strong) !important;
-}
-
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group .iubenda-cs-reject-btn:hover,
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group .iubenda-cs-customize-btn:hover {
-  background: var(--hover) !important;
-  transition: none !important;
-}
-
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group .iubenda-cs-customize-btn {
-  height: 28px !important;
-  padding: 0 8px !important;
-  margin-left: -8px !important;
-  background: transparent !important;
-  color: var(--t3) !important;
-  font-size: 13px !important;
-}
-
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group button:focus-visible {
-  outline: 2px solid var(--accent) !important;
-  outline-offset: 2px !important;
-}
-
-#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-brand-badge-outer {
-  display: none !important;
+#cc-main#cc-main .pm__section-desc,
+#cc-main#cc-main .pm__table-td,
+#cc-main#cc-main .pm__table-th {
+  font: 400 14px/22px var(--sans);
 }
 
 @media (hover: none) and (pointer: coarse) {
-  #iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group button,
-  #iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group .iubenda-cs-customize-btn {
-    height: 44px !important;
+  #cc-main#cc-main .cm__btn,
+  #cc-main#cc-main .pm__btn {
+    height: 44px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #iubenda-cs-banner#iubenda-cs-banner,
-  #iubenda-cs-banner#iubenda-cs-banner * {
-    animation: none !important;
-    transition: none !important;
+  #cc-main#cc-main,
+  #cc-main#cc-main * {
+    animation: none;
+    transition: none;
   }
 }

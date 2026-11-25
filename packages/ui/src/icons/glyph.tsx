@@ -23,14 +23,6 @@ const pathsOf = ({ drawing, weight, color }: PathsParams) => {
   if (weight === 'fill' && drawing.fill != null) {
     return <path d={drawing.fill} />;
   }
-  if (weight === 'duotone' && drawing.duotone != null) {
-    return (
-      <>
-        <path d={drawing.duotone.shade} opacity="0.2" />
-        <path d={drawing.duotone.line} />
-      </>
-    );
-  }
   return <path d={drawing.regular} />;
 };
 

@@ -370,6 +370,10 @@ const ICON_FILES = readdirSync(DESKTOP_ICONS).filter((name) => name.endsWith('.p
 const GENERATOR_SOURCE = readFileSync(BRAND_GENERATOR, 'utf8');
 const MARK_SCALE = ratioOf({ source: GENERATOR_SOURCE, name: 'MARK_SCALE' });
 const TILE_RADIUS = ratioOf({ source: GENERATOR_SOURCE, name: 'TILE_RADIUS_RATIO' });
+const FAVICON_TILE_RADIUS = ratioOf({
+  source: GENERATOR_SOURCE,
+  name: 'FAVICON_TILE_RADIUS_EXCEPTION',
+});
 const APP_ICON_SCALE = ratioOf({
   source: GENERATOR_SOURCE,
   name: 'APP_ICON_MARK_SCALE_EXCEPTION',
@@ -503,9 +507,9 @@ describe('brand mark is centered in its tile', () => {
     expect(margins.top).toBe(margins.bottom);
   });
 
-  it('draws the rail signature as the brand tile at 24px, with no tile of its own', () => {
+  it('draws the rail signature as the brand tile at 32px, filling its rail tile', () => {
     expect(RAIL_SIGNATURE_SOURCE).toContain('<BrandTile size={SIGNATURE_PX} />');
-    expect(RAIL_SIGNATURE_SOURCE).toMatch(/SIGNATURE_PX = 24;/);
+    expect(RAIL_SIGNATURE_SOURCE).toMatch(/SIGNATURE_PX = 32;/);
     expect(RAIL_SIGNATURE_SOURCE).not.toContain('DogMascot');
     expect(RAIL_SIGNATURE_SOURCE).not.toContain('absolute');
     expect(RAIL_SIGNATURE_SOURCE).not.toMatch(/MARK_(LEFT|TOP)/);
@@ -544,7 +548,7 @@ describe('brand mark is centered in its tile', () => {
     expect(markSize / canvas).toBeCloseTo(MARK_SCALE, 10);
     expect(
       numberAttribute({ source: FAVICON_SOURCE, tag: 'rect', attribute: 'rx' }) / canvas,
-    ).toBeCloseTo(TILE_RADIUS, 10);
+    ).toBeCloseTo(FAVICON_TILE_RADIUS, 10);
     expect(left).toBeCloseTo((canvas - markSize) / 2, 10);
     expect(top).toBeCloseTo((canvas - markHeight) / 2, 10);
   });

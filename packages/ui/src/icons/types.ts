@@ -1,6 +1,6 @@
 import type { ComponentPropsWithoutRef, ForwardRefExoticComponent, RefAttributes } from 'react';
 
-export type IconWeight = 'regular' | 'bold' | 'fill' | 'duotone';
+export type IconWeight = 'regular' | 'bold' | 'fill';
 
 export type IconGlyphProps = ComponentPropsWithoutRef<'svg'> &
   RefAttributes<SVGSVGElement> & {
@@ -12,13 +12,7 @@ export type IconGlyphProps = ComponentPropsWithoutRef<'svg'> &
 
 export type IconGlyph = ForwardRefExoticComponent<IconGlyphProps>;
 
-type DuotoneDrawing = {
-  readonly shade: string;
-  readonly line: string;
-};
-
 export type GlyphDrawing = {
   readonly regular: string;
   readonly fill?: string;
-  readonly duotone?: DuotoneDrawing;
 };

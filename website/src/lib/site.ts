@@ -1,6 +1,5 @@
 const REPO = 'https://github.com/akhayam99/goodboy';
 const BLOB = `${REPO}/blob/main`;
-const POLICY = 'https://www.iubenda.com/privacy-policy/46359357';
 
 export const SITE = {
   origin: 'https://goodboy-ai.dev',
@@ -10,6 +9,16 @@ export const SITE = {
   latestApi: 'https://api.github.com/repos/akhayam99/goodboy/releases/latest',
   features: '/features',
   ade: '/agentic-development-environment',
+  guides: {
+    worktrees: '/git-worktrees-for-ai-coding-agents',
+    parallel: '/run-multiple-coding-agents-in-parallel',
+    review: '/fix-pr-review-comments-with-ai',
+    handoff: '/context-handoff-between-coding-agents',
+    costs: '/control-coding-agent-costs',
+    together: '/use-claude-code-codex-cursor-gemini-copilot-together',
+    multiRepo: '/multi-repo-changes-with-coding-agents',
+    glossary: '/agentic-coding-glossary',
+  },
   demo: 'https://demo.goodboy-ai.dev',
   howItWorks: '/#tour',
   issues: `${REPO}/issues`,
@@ -25,8 +34,9 @@ export const SITE = {
   changelogSource: `${BLOB}/CHANGELOG.md`,
   releaseTag: (version: string) => `${REPO}/releases/tag/v${version}`,
   security: `${BLOB}/SECURITY.md`,
-  privacy: POLICY,
-  cookies: `${POLICY}/cookie-policy`,
+  privacy: '/privacy',
+  cookies: '/cookies',
+  controller: { name: 'Amin Khayam', email: 'privacy@goodboy-ai.dev' },
   brew: 'brew install --cask akhayam99/tap/goodboy',
   x: 'https://x.com/GoodboyWorks',
 } as const;

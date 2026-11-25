@@ -61,7 +61,7 @@ describe('isThirdParty', () => {
   });
 
   it('drops a script from another origin', () => {
-    const url = 'https://cdn.iubenda.com/cs/iubenda_cs.js';
+    const url = 'https://www.googletagmanager.com/gtm.js';
     assert.equal(isThirdParty({ url, pageOrigin }), true);
   });
 

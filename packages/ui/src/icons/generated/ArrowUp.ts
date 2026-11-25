@@ -3,7 +3,6 @@ import { glyph } from '../glyph';
 export const ArrowUp = glyph({
   name: 'ArrowUp',
   drawing: {
-    regular:
-      'm206,118a8,8,0,0,1-12,0l-58-59v157a8,8,0,0,1-16,0V59l-58,59a8,8,0,0,1-12-12l72-72a8,8,0,0,1,12,0l72,72a8,8,0,0,1,0,12z',
+    regular: 'm128,32l-80,80l11,11l61-60l0,161l16,0l0-161l61,60l11-11l-80-80z',
   },
 });

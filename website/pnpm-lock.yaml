@@ -16,6 +16,9 @@ importers:
       react-dom:
         specifier: ^19.3.1
         version: 19.3.1(react@19.3.1)
+      vanilla-cookieconsent:
+        specifier: 3.3.0
+        version: 3.3.0
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.3.5
@@ -1297,6 +1300,12 @@ packages:
     peerDependencies:
       browserslist: '>= 4.21.0'
 
+  vanilla-cookieconsent@3.3.0:
+    resolution:
+      {
+        integrity: sha512-KkFJL9W9MAOC7ipSmk1CqTY1PHBViDU81jRBRWGw1Zhx5Y3nyAQ2COYwMpEG2z2SM75HNUIOwM7NnkSJe775Tw==,
+      }
+
   vite@6.4.2:
     resolution:
       {
@@ -1966,6 +1975,8 @@ snapshots:
       browserslist: 4.28.2
       escalade: 3.2.0
       picocolors: 1.1.1
+
+  vanilla-cookieconsent@3.3.0: {}
 
   vite@6.4.2(jiti@2.7.0)(lightningcss@1.33.0):
     dependencies:

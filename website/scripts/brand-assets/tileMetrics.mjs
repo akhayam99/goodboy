@@ -5,6 +5,7 @@ export const ICNS_HEADER_BYTES = 8;
 export const TILE_RADIUS_RATIO = 0.28;
 export const MARK_SCALE = 0.76;
 export const APP_ICON_MARK_SCALE_EXCEPTION = 0.66;
+export const FAVICON_TILE_RADIUS_EXCEPTION = 0;
 export const DEV_ICON_CONTENT_RATIO = 0.8125;
 export const DEV_ICON_CORNER_RADIUS_RATIO = 0.2237;
 export const DEV_ICON_FILES = ['icon.png', '32x32.png', '128x128.png', '128x128@2x.png'];
