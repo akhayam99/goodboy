@@ -35,6 +35,7 @@
         "src/features/companion/contract/decisions.ts": ["files"],
         "src/features/companion/contract/primitives.ts": ["files"],
         "src/features/companion/contract/projections.ts": ["files"],
+        "src/features/companion/contract/vocabulary.ts": ["files"],
         "src/features/history/historyEngine.ts": ["exports"],
         "src/features/integrations/hooks/useIssueLookup/index.ts": ["exports"],
         "src/store/runtime/worktreeStatuses/cache.ts": ["exports"],
