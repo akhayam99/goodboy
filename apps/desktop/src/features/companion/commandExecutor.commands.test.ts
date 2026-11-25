@@ -595,7 +595,10 @@ const mergeCmd = (over: Record<string, unknown> = {}): BridgeCommand =>
     ...over,
   });
 
-const outcomeOf = (res: { data?: unknown }) => res.data as { result: string; refusal: unknown };
+type OutcomeLike = { readonly result?: unknown; readonly refusal?: unknown };
+
+const outcomeOf = ({ data }: { readonly data?: unknown }): OutcomeLike =>
+  typeof data === 'object' && data !== null ? { ...data } : {};
 
 describe('mergePr (checked write path, security-gated)', () => {
   it('merges with the server-known PR number and the head the phone saw', async () => {
