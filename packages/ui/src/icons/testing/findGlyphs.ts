@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { IconGlyph, IconWeight } from '../types';
 
-const WEIGHTS: ReadonlyArray<IconWeight> = ['regular', 'bold', 'fill', 'duotone'];
+const WEIGHTS: ReadonlyArray<IconWeight> = ['regular', 'bold', 'fill'];
 
 type DrawingParams = {
   readonly icon: IconGlyph;

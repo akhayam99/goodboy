@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import * as icons from '../icons';
-import { Check, PanelsTopLeft, Star } from '../icons';
+import { Check, Star } from '../icons';
 import type { IconGlyph } from '../icons';
 
 afterEach(cleanup);
@@ -11,7 +11,7 @@ const GENERATED: ReadonlyArray<IconGlyph> = [...new Set(Object.values(icons))];
 
 type DrawParams = {
   readonly icon: IconGlyph;
-  readonly weight?: 'regular' | 'bold' | 'fill' | 'duotone';
+  readonly weight?: 'regular' | 'bold' | 'fill';
 };
 
 const drawn = ({ icon: Icon, weight }: DrawParams): SVGSVGElement => {
@@ -72,21 +72,11 @@ describe('generated glyphs', () => {
     expect(fill.querySelectorAll('path')).toHaveLength(1);
   });
 
-  it('draws duotone as a faint shade under the line on the glyph that carries it', () => {
-    const paths = drawn({ icon: PanelsTopLeft, weight: 'duotone' }).querySelectorAll('path');
-
-    expect(paths).toHaveLength(2);
-    expect(paths[0]?.getAttribute('opacity')).toBe('0.2');
-    expect(paths[1]?.hasAttribute('opacity')).toBe(false);
-  });
-
   it('falls back to regular for a weight the glyph does not carry', () => {
     const regular = drawn({ icon: Check }).innerHTML;
     cleanup();
 
     expect(drawn({ icon: Check, weight: 'fill' }).innerHTML).toBe(regular);
-    cleanup();
-    expect(drawn({ icon: Check, weight: 'duotone' }).innerHTML).toBe(regular);
   });
 
   it('takes size, color, a title and svg attributes from its props', () => {

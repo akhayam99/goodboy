@@ -3,8 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Inbox, Mail, RefreshCw } from '../../icons';
 import type { ShellRailForm } from './shellRailFormContext';
-import { SHELL_GUTTER_PX } from '../../frameGeometry';
-import { SHELL_RAIL_EDGE_PX, SHELL_RAIL_TILE } from './shellRailGeometry';
+import { SHELL_RAIL_EDGE_PX, SHELL_RAIL_FOOT_PX, SHELL_RAIL_TILE } from './shellRailGeometry';
 import { ShellRailItem } from './ShellRailItem';
 import { ShellRail } from '.';
 
@@ -160,11 +159,11 @@ describe('ShellRail', () => {
   });
 
   it.each<ShellRailForm>(['wide', 'narrow'])(
-    'ends the foot on the content sheet bottom, one shell gutter above the window edge, %s',
+    'lifts the foot one rail edge above the content sheet bottom, %s',
     (form) => {
       renderRail({ form });
       expect(railOf().style.paddingTop).toBe(`${SHELL_RAIL_EDGE_PX}px`);
-      expect(railOf().style.paddingBottom).toBe(`${SHELL_GUTTER_PX}px`);
+      expect(railOf().style.paddingBottom).toBe(`${SHELL_RAIL_FOOT_PX}px`);
     },
   );
 

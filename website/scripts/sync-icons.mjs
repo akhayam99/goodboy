@@ -125,11 +125,6 @@ const drawingLiteral = (drawing) => {
   if (drawing.fill !== undefined) {
     entries.push(`fill: ${literal(drawing.fill)}`);
   }
-  if (drawing.duotone !== undefined) {
-    entries.push(
-      `duotone: { shade: ${literal(drawing.duotone.shade)}, line: ${literal(drawing.duotone.line)} }`,
-    );
-  }
   return `{ ${entries.join(', ')} }`;
 };
 
@@ -144,7 +139,7 @@ const buildSource = ({ appGlyphs, brandPaths, names }) => {
 
   return `import { createElement, type ReactElement, type SVGProps } from 'react';
 
-export type IconWeight = 'regular' | 'bold' | 'fill' | 'duotone';
+export type IconWeight = 'regular' | 'bold' | 'fill';
 
 type IconProps = Omit<SVGProps<SVGSVGElement>, 'children'> & {
   readonly color?: string;
@@ -157,7 +152,6 @@ export type IconComponent = (props: IconProps) => ReactElement;
 type GlyphDrawing = {
   readonly regular: string;
   readonly fill?: string;
-  readonly duotone?: { readonly shade: string; readonly line: string };
 };
 
 type PathsParams = {
@@ -186,12 +180,6 @@ const pathsOf = ({ drawing, weight, color }: PathsParams): ReactElement[] => {
   }
   if (weight === 'fill' && drawing.fill != null) {
     return [createElement('path', { key: 'fill', d: drawing.fill })];
-  }
-  if (weight === 'duotone' && drawing.duotone != null) {
-    return [
-      createElement('path', { key: 'shade', d: drawing.duotone.shade, opacity: '0.2' }),
-      createElement('path', { key: 'line', d: drawing.duotone.line }),
-    ];
   }
   return [createElement('path', { key: 'regular', d: drawing.regular })];
 };
@@ -335,8 +323,8 @@ const main = async () => {
   }
   console.log(
     IS_CHECK
-      ? `icons ok: ${names.length} phosphor glyphs, ${Object.keys(brandPaths).length} brand glyphs`
-      : `icons written: ${names.length} phosphor glyphs, ${Object.keys(brandPaths).length} brand glyphs`,
+      ? `icons ok: ${names.length} app glyphs, ${Object.keys(brandPaths).length} brand glyphs`
+      : `icons written: ${names.length} app glyphs, ${Object.keys(brandPaths).length} brand glyphs`,
   );
 };
 

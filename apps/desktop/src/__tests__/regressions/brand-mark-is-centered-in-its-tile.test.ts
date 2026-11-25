@@ -503,9 +503,9 @@ describe('brand mark is centered in its tile', () => {
     expect(margins.top).toBe(margins.bottom);
   });
 
-  it('draws the rail signature as the brand tile at 24px, with no tile of its own', () => {
+  it('draws the rail signature as the brand tile at 32px, filling its rail tile', () => {
     expect(RAIL_SIGNATURE_SOURCE).toContain('<BrandTile size={SIGNATURE_PX} />');
-    expect(RAIL_SIGNATURE_SOURCE).toMatch(/SIGNATURE_PX = 24;/);
+    expect(RAIL_SIGNATURE_SOURCE).toMatch(/SIGNATURE_PX = 32;/);
     expect(RAIL_SIGNATURE_SOURCE).not.toContain('DogMascot');
     expect(RAIL_SIGNATURE_SOURCE).not.toContain('absolute');
     expect(RAIL_SIGNATURE_SOURCE).not.toMatch(/MARK_(LEFT|TOP)/);

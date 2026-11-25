@@ -109,23 +109,22 @@ registries:
   second `zbus` 5 beside the 4 that `keyring` pulls), one new npm package, no new
   transitive npm package. `pnpm audit` is clean.
 
-`@phosphor-icons/react` 2.1.10 (npm, pinned exactly, a root dev dependency)
-is the source of every app glyph, in place of `lucide-react`. The app never
-imports it: `scripts/generate-glyphs.mjs` reads its drawings and writes one
-small component per glyph into `packages/ui/src/icons/generated/`, which
-`@goodboy/ui/icons` serves. Checked on 17 November 2026 against the registry:
+`@carbon/icons` 11.92.0 (npm, pinned exactly, a root dev dependency) is the
+source of every app glyph, in place of `@phosphor-icons/react`. The app never
+imports it: `scripts/generate-glyphs.mjs` reads its 32 unit icon descriptors
+through `scripts/lib/carbonPathOf.mjs` and writes one small component per
+glyph into `packages/ui/src/icons/generated/`, which `@goodboy/ui/icons`
+serves. Checked on 25 November 2026 against the registry:
 
 - **In-house**: the drawn glyphs are. The package stays only as the source the
   generator reads.
-- **Maintenance**: last release 22 May 2025, so the six month rule above
-  refuses it as a runtime dependency; as a generator input nothing of it ships.
-  One npm maintainer, the Phosphor organisation's repository.
-- **Adoption**: 7.8M downloads a week. **Licence**: MIT. **Transitive deps**:
-  none, React is a peer. `pnpm audit` is clean.
-- **Size**: each package module carries all six weights (2,056,049 bytes gzip
-  at first load). The generated set keeps the regular path rounded to whole
-  units, plus fill on one glyph and duotone on three, and draws bold from
-  regular: 1,936,479 bytes gzip, under the 1,938,492 byte budget.
+- **Maintenance**: released 4 November 2026, weekly cadence, maintained by the
+  Carbon Design System team at IBM.
+- **Adoption**: 100K downloads a week. **Licence**: Apache-2.0.
+- **Transitive deps**: one, `@ibm/telemetry-js` (Apache-2.0), which the
+  package runs from a `postinstall` script. It is not in `onlyBuiltDependencies`
+  in the root `package.json`, so pnpm never runs that script and nothing is
+  sent. Keep it off that list. Nothing of either package ships in the app.
 
 The website draws the same glyphs: `website/scripts/sync-icons.mjs` copies the
 generated drawings it imports, under the names `@goodboy/ui/icons` exports,
