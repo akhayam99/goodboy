@@ -26,8 +26,8 @@ export const AskPane = ({ session }: Props) => {
     <div
       data-ask-pane={isOverlay ? 'overlay' : 'push'}
       className={cn(
-        'panel-on-page flex min-h-0 w-100 max-w-full flex-col border-l border-border-soft bg-background',
-        isOverlay ? 'absolute inset-y-0 right-0 z-30 shadow-xl' : 'relative shrink-0',
+        'panel-on-page flex min-h-0 w-116 max-w-full flex-col border-l border-border-soft bg-background',
+        isOverlay ? 'absolute inset-y-0 right-0 z-50 shadow-xl' : 'relative shrink-0',
       )}
     >
       <Suspense fallback={null}>

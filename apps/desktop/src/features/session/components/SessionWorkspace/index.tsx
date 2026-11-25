@@ -113,14 +113,19 @@ export const SessionWorkspace = ({ session }: Props) => {
             </PaneBannerContext.Provider>
           ) : null}
         </div>
-        <AskPane session={session} />
       </div>
     </UnderTrailContext.Provider>
   );
-  if (Head === null) {
-    return (
+  const page =
+    Head === null ? (
       <div className="@container relative flex h-full w-full min-w-0 flex-col gap-2">{body}</div>
+    ) : (
+      <SessionHeadFrame head={<Head session={session} />}>{body}</SessionHeadFrame>
     );
-  }
-  return <SessionHeadFrame head={<Head session={session} />}>{body}</SessionHeadFrame>;
+  return (
+    <div data-session-dock-row="" className="relative flex h-full w-full min-w-0">
+      <div className="relative flex h-full min-w-0 flex-1 flex-col">{page}</div>
+      <AskPane session={session} />
+    </div>
+  );
 };
