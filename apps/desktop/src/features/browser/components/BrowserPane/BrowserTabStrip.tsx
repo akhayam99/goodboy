@@ -142,7 +142,7 @@ const pageGroupsOf = ({ model, page, bindings }: GroupsParams): ReadonlyArray<St
     tabs: itemsOf({ model, page, bindings, group, index }),
   }));
 
-const SEPARATOR = (
+const GROUP_DIVIDER = (
   <span role="separator" aria-orientation="vertical" className="h-4 w-px shrink-0 bg-border-soft" />
 );
 
@@ -221,7 +221,7 @@ export const BrowserTabStrip = ({ model, field, page }: Props) => {
         data-browser-group={group.isPins ? 'pins' : 'session'}
         className="contents"
       >
-        {hasSeparator ? SEPARATOR : null}
+        {hasSeparator ? GROUP_DIVIDER : null}
         {canFold && group.label !== null ? (
           <BrowserTabGroupLabel
             label={group.label}
