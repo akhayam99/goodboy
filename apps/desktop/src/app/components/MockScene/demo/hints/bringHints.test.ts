@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it } from 'vitest';
+import { NAMES } from '../../../../../shared/utils/names';
+import { STORY_EXAMPLE_KEY } from '../../scenes/story/storyTasks';
 import { BRING_HINTS } from './bringHints';
 
 type TargetParams = {
@@ -15,15 +17,6 @@ const targetOf = ({ selector }: TargetParams): Element => {
   return target;
 };
 
-type MountParams = {
-  readonly step: string;
-  readonly body: string;
-};
-
-const mountStep = ({ step, body }: MountParams): void => {
-  document.body.innerHTML = `<div aria-label="Goodboy setup" data-step="${step}">${body}</div>`;
-};
-
 const isBlockedFor = ({ selector }: TargetParams): ReadonlyArray<boolean> =>
   BRING_HINTS.map((hint) => hint.isBlocked?.({ target: targetOf({ selector }) }) ?? false);
 
@@ -31,58 +24,75 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('the setup group guard', () => {
-  it('lets Continue on Agents through after Escape stepped back from Workspace', () => {
-    mountStep({
-      step: 'agents',
-      body: '<button type="button" id="next" data-demo-anchor="setup-continue">Continue</button>',
-    });
-
-    expect(isBlockedFor({ selector: '#next' })).toEqual(BRING_HINTS.map(() => false));
+describe('the bring your work steps', () => {
+  it('walks five steps with the rail labels of the plan', () => {
+    expect(BRING_HINTS.map((hint) => hint.label)).toEqual([
+      'Connect Linear',
+      'Open your tasks',
+      'Open HBL-412',
+      'Start session',
+      'Start work',
+    ]);
   });
 
-  it('lets Connect Linear or Jira through after Escape stepped back from Tools', () => {
-    mountStep({
-      step: 'first-session',
-      body: '<button type="button" id="open" data-demo-anchor="setup-open-tools">Connect Linear or Jira</button>',
-    });
-
-    expect(isBlockedFor({ selector: '#open' })).toEqual(BRING_HINTS.map(() => false));
+  it('gives each step the instruction of the plan', () => {
+    expect(BRING_HINTS.map((hint) => hint.instruction)).toEqual([
+      'Press **Paste example key** to connect Linear with a demo key.',
+      "Press **Open in Tasks** to see everything Harborline's tools sent.",
+      'Press **HBL-412** to read the duplicate credit bug.',
+      'Press **Start session** to hand HBL-412 to your agents.',
+      'Press **Start** to begin work on HBL-412.',
+    ]);
   });
 
-  it('lets Choose folder through when Workspace opens without a folder', () => {
-    mountStep({
-      step: 'workspace',
-      body: '<button type="button" id="pick" data-demo-anchor="setup-choose-folder">Choose folder</button>',
-    });
-
-    expect(isBlockedFor({ selector: '#pick' })).toEqual(BRING_HINTS.map(() => false));
+  it('names the Start button the way the draft form does', () => {
+    expect(BRING_HINTS.at(-1)?.instruction).toContain(`**${NAMES.start}**`);
   });
 
-  it('still blocks Start and Skip on the first session', () => {
-    mountStep({
-      step: 'first-session',
-      body: [
-        '<button type="button" id="start" data-demo-anchor="setup-first-start">Start</button>',
-        '<button type="button" id="skip">Skip</button>',
-      ].join(''),
+  it('offers the example key only on the first step', () => {
+    expect(BRING_HINTS.map((hint) => hint.offer?.label ?? null)).toEqual([
+      'Paste example key',
+      null,
+      null,
+      null,
+      null,
+    ]);
+    expect(BRING_HINTS[0]?.offer).toMatchObject({
+      eyebrow: 'Demo',
+      title: 'Paste the example key',
+      note: 'A demo key, it only works here',
     });
-
-    expect(isBlockedFor({ selector: '#start' })).toEqual(BRING_HINTS.map(() => true));
-    expect(isBlockedFor({ selector: '#skip' })).toEqual(BRING_HINTS.map(() => true));
   });
 });
 
-describe('the setup copy', () => {
-  it('keeps Claude as the default agent before Harborline is on screen', () => {
-    const agents = BRING_HINTS.find((hint) => hint.id === 'setup-agents');
-    expect(agents?.instruction).toBe('Press **Continue** to keep Claude as your default agent.');
-    expect(agents?.result).toBe('Claude stays your default agent.');
+describe('the example key', () => {
+  it('lands in the real key field and fires its input event', () => {
+    document.body.innerHTML = '<input id="linear-api-key" type="password" />';
+    const input = targetOf({ selector: '#linear-api-key' });
+    const seen: Array<string> = [];
+    input.addEventListener('input', () => {
+      if (input instanceof HTMLInputElement) {
+        seen.push(input.value);
+      }
+    });
+    BRING_HINTS[0]?.offer?.run({ root: document });
+    expect(seen).toEqual([STORY_EXAMPLE_KEY]);
   });
 
-  it('ends the chapter on the issue it unlocked and leaves the bridge to the done card', () => {
-    expect(BRING_HINTS.at(-1)?.result).toBe(
-      'Pick an issue now lists HBL-412, the duplicate-credit bug.',
-    );
+  it('does nothing when the field is not on the page', () => {
+    expect(() => BRING_HINTS[0]?.offer?.run({ root: document })).not.toThrow();
+  });
+});
+
+describe('the guard path', () => {
+  it('blocks every control and task row that is not the step target', () => {
+    document.body.innerHTML = [
+      '<button type="button" id="other">Disconnect</button>',
+      '<div role="option" id="row" aria-label="HBL-409 Statement export drops the last day">row</div>',
+      '<p id="text">text</p>',
+    ].join('');
+    expect(isBlockedFor({ selector: '#other' })).toEqual(BRING_HINTS.map(() => true));
+    expect(isBlockedFor({ selector: '#row' })).toEqual(BRING_HINTS.map(() => true));
+    expect(isBlockedFor({ selector: '#text' })).toEqual(BRING_HINTS.map(() => false));
   });
 });

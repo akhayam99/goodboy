@@ -34,7 +34,7 @@ const harborlineAccent = (): string | null => {
 };
 
 const SEEDS: ReadonlyArray<readonly [string, () => void]> = [
-  ['story-direction', () => seedStoryWorld({ stage: 'draft' })],
+  ['story-bring', () => seedStoryWorld({ stage: 'bring' })],
   ['story-plan', () => seedStoryWorld({ stage: 'asking' })],
   ['story-review', () => seedStoryReview()],
   [

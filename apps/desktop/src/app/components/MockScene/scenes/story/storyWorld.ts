@@ -17,7 +17,9 @@ import { agentPlace, useAppStore } from '../../../../../store';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import { castAutoScene } from '../../demo/director/castAutoScene';
 import { AUTO_STORY, GUARD_BRANCH } from '../../demo/director/autoStory';
-import { linearBindingOf } from '../brand/kickoffIssues';
+import { writeTaskListView } from '../../../../../features/inbox/taskListViewStorage';
+import { storyBindingsOf } from './storyBindings';
+import { storyKnownTaskKeys } from './storyTasks';
 import { seedActivityRunScene } from '../activityRunSeed';
 import {
   AUTO_PLAN_ID,
@@ -28,7 +30,7 @@ import {
 } from '../u24/autoSceneSeed';
 import { STORY_ISSUE, STORY_PLANNER, STORY_QUESTION } from './storyContent';
 
-export type StoryStage = 'draft' | 'asking';
+export type StoryStage = 'bring' | 'asking';
 
 export const STORY_SESSION_ID = AUTO_SESSION.id;
 export const STORY_PLANNER_ID = PLANNER_ID;
@@ -247,12 +249,25 @@ type SeedParams = {
   readonly stage: StoryStage;
 };
 
+const HOUR_MS = 3_600_000;
+
+const knownArrivalsOf = () => {
+  const now = Date.now();
+  return {
+    firstSeen: new Map(storyKnownTaskKeys().map((key): [string, number] => [key, now - HOUR_MS])),
+    seenAt: now - HOUR_MS / 6,
+  };
+};
+
 export const seedStoryWorld = ({ stage }: SeedParams): void => {
   seedActivityRunScene();
   const { navigate, openExternalTaskLens } = useAppStore.getInitialState();
   const base = useAppStore.getState();
   const workspace = base.workspaces[0];
   const workspaceProjects = projectsOf({ projects: base.projects });
+  if (workspace !== undefined) {
+    writeTaskListView({ workspaceId: workspace.id, view: { scope: 'all', groupBy: 'source' } });
+  }
   useAppStore.setState({
     navigate,
     openExternalTaskLens,
@@ -265,7 +280,15 @@ export const seedStoryWorld = ({ stage }: SeedParams): void => {
     workspaceIntegrations:
       workspace === undefined
         ? {}
-        : { [workspace.id]: [linearBindingOf({ workspaceId: workspace.id })] },
+        : {
+            [workspace.id]: storyBindingsOf({
+              workspaceId: workspace.id,
+              hasLinear: stage !== 'bring',
+            }),
+          },
+    projectSentryLinks: workspace === undefined ? {} : { [workspace.id]: [] },
+    loadProjectSentryLinks: async () => undefined,
+    taskArrivals: workspace === undefined ? {} : { [workspace.id]: knownArrivalsOf() },
     notifications: [],
     notificationsLoading: false,
     notificationCounts: [],

@@ -8,9 +8,9 @@ export type DemoGroup = {
 export const DEMO_GROUPS = {
   bring: {
     id: 'bring',
-    title: 'Bring your repositories',
-    line: 'Put the code and its issue tracker together',
-    outro: 'Harborline holds payments-api, ledger-core and notify-relay, with Linear connected.',
+    title: 'Bring your work',
+    line: 'Connect Linear, pick a task and hand it to your agents',
+    outro: 'Linear is connected, and HBL-412 is with your agents in Harborline.',
   },
   direction: {
     id: 'direction',
