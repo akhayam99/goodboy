@@ -823,6 +823,43 @@ from `autoTreeWordOf` and so from `leadStopOf`, the pending asks from
 `leadAsksOf`, and the agents running and the spend from the view. A Stopped Lead
 is not open.
 
+## Following a workflow
+
+A Lead run started on a workflow keeps one record of it on its tree (`auto_trees.guide`, the
+`GuideRecord` of `guideSpec.ts`): the workflow's name, first check, stop rule, suggestion, steps,
+whether its order is kept, the workflows the Lead may suggest, the state of the check
+(`pending`, `passed`, `held`, `continued`), the hold reason and its suggestion, and the deviations.
+`ensureRunGuide` (`store/runtime/runGuide/`) writes it once, on the first turn or the first
+admission, from the run route of the Lead (`runs.routes.<session>`, its `workflowId`, or its
+preset name for an older route) and the workflow row. A run with no workflow gets no record and
+nothing below applies to it. A workflow with no check and no stop rule, and a tree that already has
+agents when the record is first written, start `passed`. Every write goes through `changeRunGuide`,
+a compare and swap on the stored text that names its tree; a block's write also names the turn
+(generation, run, not stopped, still deciding) and is dropped when that turn is no longer current.
+
+Every turn the prompt carries a **Workflow for this run** section built from the record
+(`guideSectionOf`, passed to `buildAutoSystemPrompt` as `guide`). `autoSystemPromptOf` reads the
+record again each turn, so the section follows the state. The candidates block and the delegation
+line are not part of it and stay as they are.
+
+The gate lives in `diagnoseAdmission` (`guideGateOf`). While the check is `pending` a writer role is
+refused with `check_pending`, named per child; readers pass. While it is `held`, every new child is
+refused with `held`. A refusal comes back to the Lead at the start of its next turn like any other,
+so it reports the check. A `follow` block turns `pending` into `passed` and keeps its note. A `hold`
+block turns any state into `held`, keeps the reason and resolves its `suggest` against the stored
+list of workflows (a name outside the list leaves no suggestion). A `deviate` block adds one line
+to the record, once. Blocks of a run with no record are refused with `spec_invalid` and a sentence.
+The handlers are `applyGuideBlock` (`store/runtime/auto/guide/`); `applyAutoBlock` runs the earlier
+`follow` and `deviate` blocks of a turn first.
+
+A held run reads as **Needs you**: `AutoTreeView.hold` carries the reason and the suggestion,
+`autoTreeWordOf` passes it to `leadStopOf` as `isHeld`, and a rested Lead with a hold waits for you
+through the same path as any ask (`autoWaitRootsOf`, `auto-needs-you`). The Lead's own message above
+the block is the question; any message the user sends to the Lead lifts the hold into `continued`
+(`submitUserMessage` adds `liftRunHoldStatement` to the transaction that queues the message, so the
+answer and the release commit together), which reads as Continue.
+Stopping the run uses the existing stop.
+
 ## Plans
 
 The plan a Planner writes opens in the right drawer. Its second row shows
@@ -1107,6 +1144,11 @@ It decides by ending its final reply with at most one block:
   instructions on top of the work so far: the same agent, its role and its worktree, the task
   briefed as **New instructions** (`prepareRetry`, `resolveDelegateChild`). A role, a title or a
   mount on a retry is still refused (`spec_invalid`).
+- `follow`, `hold` and `deviate` exist only for a run that follows a workflow (see Following a
+  workflow). `follow` reports the first check once (`check`), `hold` stops the run (`reason`, an
+  optional `suggest` naming a workflow of the list) and `deviate` reports an added, skipped or
+  moved step (`change`, `step`, `reason`). `follow` and `deviate` may come before the last block,
+  like `close` (`parseAutoNoteBlocks`); `hold` is the last block of its turn.
 - `message` tells a working child something (`delegation`, `text` of at most 2,000 characters,
   `AUTO_CHILD_MESSAGE_CHARS`). It is queued for the child and reaches it as its next turn when
   the current one ends, never in the middle of one (`messageChild`); a child that is not working

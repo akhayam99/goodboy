@@ -16,8 +16,17 @@ import {
   AUTO_SEED_ROOT,
   AUTO_SEED_SESSION,
   seedAutoSession,
+  seedAutoTree,
 } from '@goodboy/db/test-helpers/auto-seeds';
-import { brandId, type AgentId, type SessionId, type WorkspaceId } from '@goodboy/types';
+import { insertSettingIfAbsent, upsertWorkflow } from '@goodboy/db';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type SessionId,
+  type WorkflowId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import { openStorySqlite, resetStoryStore, storySqlite } from '../../../storyHarness';
 import { autoSystemPromptOf } from './autoSystemPromptOf';
 import { writeRunGuidance } from '../../runGuidance/writeRunGuidance';
@@ -151,5 +160,75 @@ describe('autoSystemPromptOf with the guidance of the run', () => {
     });
 
     expect(prompt).not.toContain(GUIDANCE);
+  });
+});
+
+describe('autoSystemPromptOf with a workflow', () => {
+  const WORKSPACE = brandId<WorkspaceId>({ value: 'workspace-harborline' });
+  const FIX = brandId<WorkflowId>({ value: 'wf-fix-a-flaky-test' });
+  const NOW = brandId<IsoDateTime>({ value: '2026-11-25T08:00:00.000Z' });
+
+  const seedRun = async (): Promise<void> => {
+    await seedAutoTree({ db: storySqlite() });
+    await upsertWorkflow(storySqlite(), {
+      id: FIX,
+      workspaceId: WORKSPACE,
+      name: 'Fix a flaky test',
+      description: 'Steps for ledger-core.',
+      goal: '',
+      steps: [],
+      isPreset: true,
+      origin: 'custom',
+      entryCheck: 'Run the test ten times and confirm it fails at least once.',
+      stopRule: 'It never fails, or it fails every time.',
+      createdAt: NOW,
+      updatedAt: NOW,
+    });
+    await insertSettingIfAbsent({
+      db: storySqlite(),
+      key: `runs.routes.${AUTO_SEED_SESSION}`,
+      value: JSON.stringify({
+        [AUTO_SEED_ROOT]: {
+          shape: 'lead',
+          row: 6,
+          presetName: 'Fix a flaky test',
+          workflowId: FIX,
+          closeness: 'follow',
+          role: null,
+          choice: 'Lead plans it',
+          why: 'The task names a test.',
+        },
+      }),
+    });
+  };
+
+  it('adds the workflow section on every turn of a run that follows one', async () => {
+    await seedRun();
+
+    const first = await autoSystemPromptOf({
+      sessionId: AUTO_SEED_SESSION,
+      agentId: AUTO_SEED_ROOT,
+    });
+    const second = await autoSystemPromptOf({
+      sessionId: AUTO_SEED_SESSION,
+      agentId: AUTO_SEED_ROOT,
+    });
+
+    expect(first).toContain('You follow the workflow "Fix a flaky test".');
+    expect(first).toContain(
+      'First, check: Run the test ten times and confirm it fails at least once.',
+    );
+    expect(second).toBe(first);
+  });
+
+  it('keeps the rest of the prompt as it is without a workflow', async () => {
+    await seedAutoTree({ db: storySqlite() });
+    const prompt = await autoSystemPromptOf({
+      sessionId: AUTO_SEED_SESSION,
+      agentId: AUTO_SEED_ROOT,
+    });
+    const bare = await autoSystemPromptOf({ sessionId: AUTO_SEED_SESSION });
+
+    expect(prompt).toBe(bare);
   });
 });

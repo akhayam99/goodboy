@@ -37,6 +37,8 @@ export const AUTO_REFUSAL_CODES = [
   'not_returned',
   'message_limit',
   'not_running',
+  'check_pending',
+  'held',
 ] as const;
 
 export type AutoRefusalCode = (typeof AUTO_REFUSAL_CODES)[number];
