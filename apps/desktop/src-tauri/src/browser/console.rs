@@ -734,8 +734,14 @@ mod tests {
         headers.extend((0..80).map(|n| json!({ "name": format!("x-h{n}"), "value": "1" })));
         value["network"]["requestHeaders"] = json!(headers);
         value["network"]["responseHeaders"] = json!([{ "name": "set-cookie", "value": "sid=3" }]);
-        let facts = only_entry(value).and_then(|e| e.network).expect("a request");
-        let names: Vec<&str> = facts.request_headers.iter().map(|h| h.name.as_str()).collect();
+        let facts = only_entry(value)
+            .and_then(|e| e.network)
+            .expect("a request");
+        let names: Vec<&str> = facts
+            .request_headers
+            .iter()
+            .map(|h| h.name.as_str())
+            .collect();
         assert_eq!(names[..2], ["content-type", "x-trace"]);
         assert_eq!(facts.request_headers.len(), MAX_HEADERS);
         assert_eq!(
@@ -754,7 +760,9 @@ mod tests {
         value["network"]["responseBody"] = json!("b".repeat(MAX_BODY_CHARS + 10));
         value["network"]["socket"] =
             json!({ "phase": "open", "sent": 1, "received": 2, "code": null });
-        let facts = only_entry(value).and_then(|e| e.network).expect("a request");
+        let facts = only_entry(value)
+            .and_then(|e| e.network)
+            .expect("a request");
         assert_eq!(
             facts.response_body.map(|body| body.chars().count()),
             Some(MAX_BODY_CHARS)
@@ -765,7 +773,9 @@ mod tests {
         socket["network"]["type"] = json!("ws");
         socket["network"]["socket"] =
             json!({ "phase": "closed", "sent": 3, "received": 4, "code": 1000 });
-        let facts = only_entry(socket).and_then(|e| e.network).expect("a socket");
+        let facts = only_entry(socket)
+            .and_then(|e| e.network)
+            .expect("a socket");
         assert_eq!(facts.socket.map(|s| (s.sent, s.received)), Some((3, 4)));
 
         let mut thrown = failure(3);

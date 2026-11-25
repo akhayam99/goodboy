@@ -300,8 +300,10 @@ const readCapped = (response, done) =>
     step();
   });
 
+const isOpaque = (response) => response.type === 'opaque' || response.type === 'opaqueredirect';
+
 const answerFetch = (request, response) => {
-  const status = statusOf(response.status);
+  const status = isOpaque(response) ? null : statusOf(response.status);
   const responseHeaders = headersOf(response.headers);
   const declared = declaredSizeOf(responseHeaders);
   saveRequest(request, status, answerOf(now(), declared, responseHeaders, null, null));
@@ -623,9 +625,12 @@ if (typeof Observer === 'function') {
   const watchTimings = (type) =>
     quietly(() => {
       const watch = new Observer((list) => {
-        const found = list.getEntries();
+        let found = [];
+        quietly(() => {
+          found = list.getEntries();
+        });
         for (let index = 0; index < found.length; index += 1) {
-          saveTiming(found[index]);
+          quietly(() => saveTiming(found[index]));
         }
       });
       watch.observe({ type, buffered: true });

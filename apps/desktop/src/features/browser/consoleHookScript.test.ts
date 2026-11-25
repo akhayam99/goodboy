@@ -404,6 +404,16 @@ describe('the page runtime', () => {
     expect(request?.network?.id).toMatch(/^r\d+$/);
   });
 
+  it('records an opaque answer without a status, never as a failure', async () => {
+    const tab = page({ fetchAnswer: () => Promise.resolve({ status: 0, type: 'opaque' }) });
+    await tab.window.fetch('https://cdn.acme.dev/pixel', { mode: 'no-cors' });
+
+    expect(tab.ofKind({ kind: 'network' }).map((entry) => [entry.status, entry.level])).toEqual([
+      [null, 'info'],
+    ]);
+    expect(tab.ofKind({ kind: 'error' })).toHaveLength(0);
+  });
+
   it('records a rejected fetch as failed and passes the rejection on', async () => {
     const tab = page({ fetchAnswer: () => Promise.reject(new Error('offline')) });
     await expect(tab.window.fetch('/api/cart')).rejects.toThrow('offline');
@@ -638,6 +648,25 @@ describe('the page runtime', () => {
       ['/assets/app.css', null, 'style', 14, 3, null],
       ['/checkout', null, 'doc', 0, 40, null],
     ]);
+  });
+
+  it('skips a timing it cannot read and keeps the rest of the batch', () => {
+    const tab = page();
+    const broken = {
+      name: 'http://localhost:5173/broken.js',
+      get initiatorType(): string {
+        throw new Error('Acme getter');
+      },
+    };
+
+    expect(() =>
+      tab.time({
+        type: 'resource',
+        items: [broken, { name: 'http://localhost:5173/logo.svg', initiatorType: 'img' }],
+      }),
+    ).not.toThrow();
+    expect(tab.ofKind({ kind: 'network' }).map((entry) => entry.text)).toEqual(['/logo.svg']);
+    expect(tab.ofKind({ kind: 'error' })).toHaveLength(0);
   });
 
   it('records thrown errors and rejections with their stack, and a resource that failed to load', () => {
