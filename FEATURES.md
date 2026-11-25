@@ -111,13 +111,13 @@ The Commits section of the Branch page lets you clean up a branch before it goes
 
 [More on commits and history](docs/features/branch-history.md)
 
-<a id="start-a-workflow"></a><a id="run-a-preset"></a><a id="workflow-builder"></a><a id="orchestrated"></a><a id="older-runs"></a><a id="a-preset-as-the-plan-a-run-starts-from"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="runs-of-a-workflow"></a><a id="create-and-edit-a-workflow"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="asks-you"></a><a id="pause-resume-and-skip"></a><a id="steps-that-cannot-finish"></a><a id="run-defaults"></a><a id="runs-in-settings"></a><a id="every-run"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
+<a id="start-a-workflow"></a><a id="run-a-preset"></a><a id="workflow-builder"></a><a id="orchestrated"></a><a id="older-runs"></a><a id="a-preset-as-the-plan-a-run-starts-from"></a><a id="the-lead-follows-the-workflow"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="runs-of-a-workflow"></a><a id="create-and-edit-a-workflow"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="asks-you"></a><a id="pause-resume-and-skip"></a><a id="steps-that-cannot-finish"></a><a id="run-defaults"></a><a id="runs-in-settings"></a><a id="every-run"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
 
 ## Workflows
 
 A workflow runs several agents in one session, each step with its own role, model and effort. Use it to split a job into steps such as scout, plan, implement and review, and to steer the run while it goes. You choose how much it asks you and how much it may spend.
 
-- **Run a preset**: To run a preset, open Start a run and pick Preset under How, or type ~ and its name.
+- **Run a preset**: To run a preset, pick it in the Workflow pill of Start a run, or type ~ and its name.
 - **Older runs**: A run started before every run had a Lead stays as it was.
 - **Every run**: Set what every new run starts with on the Every run tab of Workflows, between Workflows and Saved steps.
 - **Workflow run**: Follow a run step by step, with its sub-agents under their agent and one button that moves it on.
