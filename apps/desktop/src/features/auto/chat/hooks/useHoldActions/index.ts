@@ -17,6 +17,7 @@ type Params = {
   readonly rootAgent: Agent;
   readonly suggestionId: string | null;
   readonly workflowName: string;
+  readonly holdKey: string;
 };
 
 export type HoldBusy = 'switch' | 'continue' | null;
@@ -71,6 +72,7 @@ export const useHoldActions = ({
   rootAgent,
   suggestionId,
   workflowName,
+  holdKey,
 }: Params): HoldActions => {
   const [busy, setBusy] = useState<HoldBusy>(null);
 
@@ -126,13 +128,14 @@ export const useHoldActions = ({
           sessionId,
           workspaceId: session.workspaceId,
           text: `Continue with ${workflowName}. Go on past the first check.`,
+          deliveryId: `hold-continue:${holdKey}`,
         });
         if (result === 'lost') {
           throw new Error('This run is no longer here');
         }
       },
     });
-  }, [run, sessionId, rootAgent.id, workflowName]);
+  }, [run, sessionId, rootAgent.id, workflowName, holdKey]);
 
   return { busy, switchRun, continueRun };
 };

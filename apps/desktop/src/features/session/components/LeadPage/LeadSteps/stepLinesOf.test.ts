@@ -96,4 +96,67 @@ describe('stepLinesOf', () => {
 
     expect(statesOf(lines)).toEqual(['done', 'queued']);
   });
+
+  it('counts a retry as the same step, with the latest attempt deciding', () => {
+    const failed = aDelegation({
+      key: 'build-1',
+      role: 'implementer',
+      state: 'settled',
+      outcome: 'failed',
+    });
+    const retried = {
+      ...aDelegation({
+        key: 'build-2',
+        role: 'implementer',
+        state: 'settled',
+        outcome: 'completed',
+      }),
+      retryOf: failed.id,
+      createdAt: failed.createdAt + 1,
+    };
+
+    const lines = stepLinesOf({
+      guide: {
+        ...GUIDE,
+        steps: [
+          { name: 'Build it', role: 'implementer' },
+          { name: 'Check it', role: 'implementer' },
+        ],
+      },
+      delegations: [failed, retried],
+    });
+
+    expect(statesOf(lines)).toEqual(['done', 'queued']);
+  });
+
+  it('shows queued and paused helpers as not started, never as running', () => {
+    const lines = stepLinesOf({
+      guide: GUIDE,
+      delegations: [
+        aDelegation({ key: 'scout', role: 'scout', state: 'accepted' }),
+        aDelegation({ key: 'plan', role: 'planner', state: 'paused' }),
+        aDelegation({ key: 'build', role: 'implementer', state: 'starting' }),
+      ],
+    });
+
+    expect(statesOf(lines)).toEqual(['queued', 'queued', 'running', 'queued']);
+  });
+
+  it('does not spend a delegation on a skipped step of the same role', () => {
+    const lines = stepLinesOf({
+      guide: {
+        ...GUIDE,
+        steps: [
+          { name: 'Build the first half', role: 'implementer' },
+          { name: 'Build the second half', role: 'implementer' },
+        ],
+        deviations: [{ change: 'skipped', step: 'Build the first half', reason: 'Not needed.' }],
+      },
+      delegations: [
+        aDelegation({ key: 'one', role: 'implementer', state: 'settled', outcome: 'completed' }),
+      ],
+    });
+
+    expect(statesOf(lines)).toEqual(['skipped', 'done']);
+  });
 });

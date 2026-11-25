@@ -23,7 +23,7 @@ import { switchHeldRun } from '../../session/startRun/switchHeldRun';
 import { registerAutoUserTurnPort, type AutoUserTurnPort } from '../autoUserTurnPort';
 import { registerTreeStopPort, type TreeStopPort } from '../treeStopPort';
 import { AutoDockUnderTest } from '../testing/AutoDockUnderTest';
-import { FIXTURE_SESSION, aView } from '../testing/autoViewFixtures';
+import { FIXTURE_SESSION, aPlanRow, aView } from '../testing/autoViewFixtures';
 
 let useAppStore: StoryStore;
 
@@ -103,6 +103,14 @@ describe('AutoDock hold card', () => {
     renderDock(viewOf(null));
 
     expect(document.querySelector('[data-hold-card]')).toBeNull();
+  });
+
+  it('hides a waiting plan so the card stands alone', () => {
+    const planned = aView({ phase: 'waiting', artifacts: [aPlanRow()] });
+    renderDock({ ...viewOf(HOLD), tree: planned.tree, artifacts: planned.artifacts });
+
+    screen.getByRole('button', { name: 'Switch to Ship a feature' });
+    expect(screen.queryByRole('button', { name: /Approve/ })).toBeNull();
   });
 
   it('puts focus on the switch when the page lands on the card', () => {
@@ -196,6 +204,7 @@ describe('AutoDock hold card', () => {
       agentId: ROOT.id,
       sessionId: FIXTURE_SESSION,
       workspaceId: WORKSPACE.id,
+      deliveryId: 'hold-continue:tree-harborline:0',
     });
     expect(port.mock.calls[0]?.[0].text).toContain('Continue with Fix a bug');
   });

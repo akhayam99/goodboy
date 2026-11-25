@@ -29,6 +29,7 @@ export const AutoDockHold = ({ sessionId, view, rootAgent, actions }: Props) => 
     rootAgent,
     suggestionId: card?.suggestionId ?? null,
     workflowName: card?.workflowName ?? '',
+    holdKey: `${view.tree.id}:${view.tree.phaseRev}`,
   });
   const firstRef = useRef<HTMLButtonElement | null>(null);
   const isCard = card !== null;

@@ -59,7 +59,7 @@ export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact, actions }
       {!isHoldShown ? null : (
         <AutoDockHold sessionId={sessionId} view={view} rootAgent={rootAgent} actions={actions} />
       )}
-      {plan === null || hasAskAbove ? null : (
+      {plan === null || hasAskAbove || isHoldShown ? null : (
         <AutoDockPlan
           sessionId={sessionId}
           dockPlan={plan}

@@ -7,6 +7,7 @@ import {
   autoWaitRootsOf,
   type AutoWaitState,
 } from '../../../../store/slices/session-view/autoRoots/autoWaitRootsOf';
+import { heldFirstRootsOf } from '../../../../store/slices/session-view/autoRoots/heldFirstRootsOf';
 import {
   runWaitEntriesOf,
   type RunWaitState,
@@ -114,7 +115,11 @@ const workflowRunsOf = ({ state, session, runs }: RunsParams): ReadonlyArray<Nam
 const waitingRunsOf = ({ state, session, reason }: Params): ReadonlyArray<Named> => {
   const agents = state.sessionPhaseRuns[session.id] ?? NO_AGENTS;
   if (reason === 'auto-needs-you') {
-    const roots = autoWaitRootsOf({ state, session, agents });
+    const roots = heldFirstRootsOf({
+      state,
+      sessionId: session.id,
+      roots: autoWaitRootsOf({ state, session, agents }),
+    });
     return leadRunsOf({ state, session, roots, fallback: 'Asks you' });
   }
   if (reason === 'agent-error') {

@@ -24,6 +24,7 @@ import {
   autoWaitRootsOf,
   type AutoWaitState,
 } from '../../store/slices/session-view/autoRoots/autoWaitRootsOf';
+import { heldFirstRootsOf } from '../../store/slices/session-view/autoRoots/heldFirstRootsOf';
 import {
   runWaitEntriesOf,
   type RunWaitEntry,
@@ -125,17 +126,18 @@ export const attentionPlace = ({
   }
   if (reason === 'auto-needs-you') {
     const session = sessionById(state.sessions, sessionId);
-    const roots =
+    const [root] =
       session === undefined
         ? []
-        : autoWaitRootsOf({ state, session, agents: state.sessionPhaseRuns[sessionId] ?? [] });
-    const root =
-      roots.find(
-        (candidate) =>
-          state.autoTreeViews?.[sessionId]?.some(
-            (view) => view.tree.rootAgentId === candidate.id && view.hold != null,
-          ) === true,
-      ) ?? roots[0];
+        : heldFirstRootsOf({
+            state,
+            sessionId,
+            roots: autoWaitRootsOf({
+              state,
+              session,
+              agents: state.sessionPhaseRuns[sessionId] ?? [],
+            }),
+          });
     return root === undefined
       ? sessionPlace({ sessionId })
       : agentPlace({ sessionId, agentId: root.id });

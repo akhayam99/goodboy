@@ -212,4 +212,20 @@ describe('switchHeldRun', () => {
     expect(stop).toHaveBeenLastCalledWith({ treeId });
     expect(spawnAgent).toHaveBeenCalledTimes(1);
   });
+
+  it('a second switch after the start only stops the old run', async () => {
+    const { spawnAgent, treeId } = await seed();
+    const stop = vi.fn<TreeStopPort>().mockResolvedValueOnce('stuck').mockResolvedValue('stopped');
+    registerTreeStopPort({ port: stop });
+    const params = { sessionId: SESSION.id, agentId: ROOT, workflowId: FEATURE_ID };
+
+    await expect(switchHeldRun(params)).rejects.toBeInstanceOf(OldRunLeftError);
+    await switchHeldRun(params);
+
+    expect(spawnAgent).toHaveBeenCalledTimes(1);
+    expect(stop).toHaveBeenCalledTimes(2);
+    expect(stop).toHaveBeenLastCalledWith({ treeId });
+    await switchHeldRun(params);
+    expect(spawnAgent).toHaveBeenCalledTimes(2);
+  });
 });
