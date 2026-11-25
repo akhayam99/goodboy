@@ -1,12 +1,9 @@
 import { useRef, useState } from 'react';
-import { DrawerFrame, PANE_RHYTHM, cn } from '@goodboy/ui';
+import { DrawerFrame } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useReloadSurface } from '../../../../shared/hooks/useReloadSurface';
 import { selectDockDrawer } from '../../../../store/slices/drawer/selectDockDrawer';
-import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
-import { browserTabListPref } from '../../browserTabListPref';
-import type { BrowserTabListMode } from '../../types';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useConsoleEntries } from '../../hooks/useConsoleEntries';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
@@ -18,15 +15,7 @@ import { BrowserConsole } from './BrowserConsole';
 import { BrowserNotice } from './BrowserNotice';
 import { BrowserPasskeyNotice } from './BrowserPasskeyNotice';
 import { BrowserSendLine } from './BrowserSendLine';
-import { BrowserTabList } from './BrowserTabList';
-import { BrowserTabStrip } from './BrowserTabStrip';
 import { BrowserView } from './BrowserView';
-
-const NARROW_PANE_PX = 560;
-
-type ModeParams = {
-  readonly next: BrowserTabListMode;
-};
 
 type Props = {
   readonly sessionId: SessionId;
@@ -38,18 +27,8 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
   const frame = useRef<HTMLDivElement | null>(null);
   const view = useRef<HTMLDivElement | null>(null);
   const root = useRef<HTMLDivElement | null>(null);
-  const [mode, setMode] = useState<BrowserTabListMode>(browserTabListPref.read);
-  const { ref: paneRef, width } = useElementWidth();
-  const isListOpen = mode !== 'hidden';
-  const isNarrow = width !== null && width < NARROW_PANE_PX;
-  const isRail = mode === 'rail' || isNarrow;
-  const changeMode = ({ next }: ModeParams): void => {
-    browserTabListPref.write({ mode: next });
-    setMode(next);
-  };
   const shownTab = model.shown?.tab ?? null;
   const title = shownTab === null ? '' : model.titleOf({ tab: shownTab });
-  const hasTabs = model.tabs.length > 0 || model.pins.length > 0;
   const isOnScreen = useAppStore((state) => selectDockDrawer({ state })?.kind === 'browser');
   const boundLiveId = useAppStore((state) =>
     shownTab === null ? undefined : state.browserLiveTabs[sessionId]?.[shownTab.id],
@@ -82,16 +61,14 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
 
   return (
     <DrawerFrame title="Browser" isHeaderless onClose={onClose}>
-      <div ref={root} className={cn('flex min-h-0 flex-1 flex-col', PANE_RHYTHM.head.rows)}>
+      <div ref={root} className="flex min-h-0 flex-1 flex-col gap-1">
         <BrowserAddressRow
           model={model}
           isAddressShortcutOn={isOnScreen}
-          isListOpen={isListOpen}
           consoleToggle={{
             isOpen: isConsoleOpen,
             onToggle: () => setIsConsoleOpen(!isConsoleOpen),
           }}
-          onToggleList={() => changeMode({ next: isListOpen ? 'hidden' : 'list' })}
           onOpenAsPage={() => promoteBrowserTab({ sessionId, tabId: shownTab?.id ?? null })}
           onClose={onClose}
         />
@@ -103,31 +80,20 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
         <BrowserNotice notice={model.notice} />
         <BrowserSendLine pageSend={model.pageSend} />
         <BrowserPasskeyNotice model={model} />
-        {hasTabs && !isListOpen ? <BrowserTabStrip model={model} /> : null}
-        <div ref={paneRef} className="flex min-h-0 flex-1 gap-2 px-2 pb-2">
-          {isListOpen ? (
-            <BrowserTabList
-              model={model}
-              isRail={isRail}
-              canFold={!isNarrow}
-              onFold={() => changeMode({ next: isRail ? 'list' : 'rail' })}
-            />
+        <div data-browser-stage="" className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <BrowserView
+            frame={frame}
+            view={view}
+            shown={model.shown}
+            title={title}
+            cover={cover}
+            devicePreset={model.devicePreset}
+            onNew={model.startDraft}
+            onWake={parked.isParked ? parked.wake : undefined}
+          />
+          {isConsoleOpen && shownTab !== null ? (
+            <BrowserConsole model={model} title={title} log={consoleLog} />
           ) : null}
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-            <BrowserView
-              frame={frame}
-              view={view}
-              shown={model.shown}
-              title={title}
-              cover={cover}
-              devicePreset={model.devicePreset}
-              onNew={model.startDraft}
-              onWake={parked.isParked ? parked.wake : undefined}
-            />
-            {isConsoleOpen && shownTab !== null ? (
-              <BrowserConsole model={model} title={title} log={consoleLog} />
-            ) : null}
-          </div>
         </div>
       </div>
     </DrawerFrame>

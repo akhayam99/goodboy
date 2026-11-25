@@ -53,7 +53,8 @@ export const BrowserView = ({
   return (
     <div
       ref={frame}
-      className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border-soft bg-background"
+      data-browser-frame=""
+      className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-t border-border-soft bg-background"
     >
       {parked}
       {page === null && parked === null ? (
