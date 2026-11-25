@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
-import type { AppStore } from '../../../store/store';
-import type { DecidePorts } from './handlerTypes';
-import { permissionHashOf, questionVersionOf, slackDraftVersionOf } from './versions';
+import type { AppStore } from '../../../../store/store';
+import type { DecidePorts } from '../handlerTypes';
+import { permissionHashOf, questionVersionOf, slackDraftVersionOf } from '../versions';
 
 export const WORKSPACE = 'ws-harborline';
 export const SESSION = 'ses-ledger-core';

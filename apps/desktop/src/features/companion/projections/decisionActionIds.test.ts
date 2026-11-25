@@ -14,7 +14,7 @@ import {
   TOOL_USE,
   WORKSPACE,
   fixtureOf,
-} from '../actions/decideTestKit';
+} from '../actions/testing/decideTestKit';
 import { clearSendSequences } from '../actions/sendSequence';
 import { decisionOfMove } from './decisionOfMove';
 import { runsFieldsOf } from './runsFieldsOf';
