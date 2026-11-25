@@ -56,6 +56,7 @@ export const BoardTileFacts = ({ rowId, title, onOpenChanges }: Props) => {
           variant="quiet"
           data-board-diff=""
           aria-label={`Open ${title} in Changes`}
+          aria-description={`${stat.additions} added, ${stat.deletions} removed`}
           onClick={onOpenChanges}
           className="pointer-events-auto relative h-auto w-auto min-w-0 rounded-sm px-0 py-0 text-meta font-normal tabular-nums"
         >

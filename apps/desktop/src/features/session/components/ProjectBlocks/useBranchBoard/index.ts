@@ -97,8 +97,14 @@ export const useBranchBoard = ({ session, entries }: Params): BranchBoardView =>
     [entries, inputs, settledAtByMountId, session],
   );
   const runningByRowId = useMemo(
-    () => runningByRowIdOf({ rows: board.rows, agents: inputs.agents, leads: inputs.leads }),
-    [board.rows, inputs.agents, inputs.leads],
+    () =>
+      runningByRowIdOf({
+        rows: board.rows,
+        agents: inputs.agents,
+        leads: inputs.leads,
+        touchedMountIds,
+      }),
+    [board.rows, inputs.agents, inputs.leads, touchedMountIds],
   );
   const newRowIds = useMemo(() => {
     const unread = new Set<string>(
