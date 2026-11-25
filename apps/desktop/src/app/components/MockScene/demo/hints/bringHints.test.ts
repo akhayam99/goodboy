@@ -38,7 +38,7 @@ describe('the bring your work steps', () => {
   it('gives each step the instruction of the plan', () => {
     expect(BRING_HINTS.map((hint) => hint.instruction)).toEqual([
       'Press **Paste example key** to connect Linear with a demo key.',
-      "Press **Open in Tasks** to see everything Harborline's tools sent.",
+      "Press **Tasks** to see everything Harborline's tools sent.",
       'Press **HBL-412** to read the duplicate credit bug.',
       'Press **Start session** to hand HBL-412 to your agents.',
       'Press **Start** to begin work on HBL-412.',

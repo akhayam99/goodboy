@@ -6,7 +6,6 @@ import { SETTLED_MOTION } from '../onboarding/wizardSceneSeed';
 import { applyStoryAnswer } from '../../demo/director/applyStoryAnswer';
 import { storyIpcAnswer } from './storyIpc';
 import { seedStoryWorld, type StoryStage } from './storyWorld';
-import { useOpenAllTasks } from './useOpenAllTasks';
 
 type SceneStage = StoryStage | 'planned';
 
@@ -16,7 +15,6 @@ type Props = {
 
 export const StorySessionScene = ({ stage }: Props) => {
   const [isReady, setIsReady] = useState(false);
-  useOpenAllTasks({ isActive: stage === 'bring' });
 
   useEffect(() => {
     installSceneDatabase({ fallback: storyIpcAnswer });

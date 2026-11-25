@@ -130,8 +130,7 @@ describe('the bring your work scene', () => {
     await screen.findByLabelText('API key', {}, { timeout: 5000 });
     act(() => BRING_HINTS[0]?.offer?.run({ root: document }));
     await waitFor(() => expect(hasLinear()).toBe(true), { timeout: 8000 });
-    fireEvent.click(await screen.findByRole('button', { name: 'More Linear actions' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: /Open in Tasks/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Tasks/ }));
     await waitFor(() => expect(labels()).toHaveLength(11), { timeout: 8000 });
     expect(labels()[0]).toContain('HBL-412 Retried webhooks post a second credit, Todo, Urgent');
     expect(labels().filter((label) => label.startsWith('HBL-'))).toHaveLength(3);
@@ -144,8 +143,7 @@ describe('the bring your work scene', () => {
     await screen.findByLabelText('API key', {}, { timeout: 5000 });
     act(() => BRING_HINTS[0]?.offer?.run({ root: document }));
     await waitFor(() => expect(hasLinear()).toBe(true), { timeout: 8000 });
-    fireEvent.click(await screen.findByRole('button', { name: 'More Linear actions' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: /Open in Tasks/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Tasks/ }));
     await waitFor(() => expect(labels()).toHaveLength(11), { timeout: 8000 });
     installStoryDirection({ store: store });
     fireEvent.click(screen.getByRole('option', { name: /^HBL-412 / }));

@@ -127,12 +127,7 @@ describe('walking the bring your work group', () => {
     act(() => engine?.offer({ hintId: 'bring-connect' }));
     await waitFor(() => expect(tried()).toEqual(['bring-connect']), { timeout: 8000 });
 
-    await visitorClick({
-      element: await found({ selector: 'button[aria-label="More Linear actions"]' }),
-    });
-    await visitorClick({
-      element: await found({ selector: '[role="menuitem"][data-menu-label="Open in Tasks"]' }),
-    });
+    await visitorClick({ element: await found({ selector: '[data-shell-rail-item="inbox"]' }) });
     await waitFor(() => expect(tried()).toContain('bring-tasks'), { timeout: 8000 });
 
     const other = await found({ selector: '[role="option"][aria-label^="HBL-409 "]' });

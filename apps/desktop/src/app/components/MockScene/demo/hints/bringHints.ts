@@ -14,8 +14,7 @@ type RootParams = {
 
 const ISSUE = 'HBL-412';
 const LINEAR_STEPS = '[aria-label="Connect Linear"]';
-const MENU_TRIGGER = 'button[aria-label="More Linear actions"]';
-const MENU_ITEM = '[role="menuitem"][data-menu-label="Open in Tasks"]';
+const RAIL_TASKS = '[data-shell-rail-item="inbox"]';
 const TASK_ROW = `[role="option"][aria-label^="${ISSUE} "]`;
 const START_SESSION = '[data-demo-anchor="task-start"]';
 const START = '[data-demo-anchor="draft-start"]';
@@ -44,9 +43,6 @@ const isTaskRowSelected = ({ root }: RootParams): boolean =>
 const isOffPath = ({ target }: BlockParams): boolean =>
   isAnyControl({ target }) || target.closest(OPTION) !== null;
 
-const menuAnchorOf = ({ root }: RootParams): string =>
-  hasElement({ root, selector: MENU_ITEM }) ? MENU_ITEM : MENU_TRIGGER;
-
 export const BRING_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'bring-connect',
@@ -74,13 +70,14 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     id: 'bring-tasks',
     label: 'Open your tasks',
     copy: 'Open your tasks',
-    instruction: "Press **Open in Tasks** to see everything Harborline's tools sent.",
+    instruction: "Press **Tasks** to see everything Harborline's tools sent.",
     result: 'Tasks lists 11 items from five tools. The new ones are marked.',
     beat: 0,
-    anchor: ({ root }) => menuAnchorOf({ root }),
+    anchor: RAIL_TASKS,
+    side: 'right',
     isBlocked: isOffPath,
     revealWhen: ({ root, state }) =>
-      hasLinear({ state }) && hasElement({ root, selector: menuAnchorOf({ root }) }),
+      hasLinear({ state }) && hasElement({ root, selector: RAIL_TASKS }),
     doneWhen: ({ root }) => hasElement({ root, selector: TASK_ROW }),
   },
   {
