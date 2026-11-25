@@ -1,12 +1,14 @@
 import type { Agent, MountId, SessionMountView } from '@goodboy/types';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { delegationMountIdOf } from '../auto/delegationMountIdOf';
+import { NO_TOUCHED_MOUNT_IDS, type TouchedMountIds } from './touchedMountIdsOf';
 import { soleMountIdOf } from './soleMountIdOf';
 
 type Params = {
   readonly agents: ReadonlyArray<Agent>;
   readonly autoViews: ReadonlyArray<AutoTreeView>;
   readonly mounts: ReadonlyArray<SessionMountView>;
+  readonly touchedMountIds?: TouchedMountIds;
 };
 
 type KnownParams = {
@@ -39,7 +41,12 @@ const leadMountsOf = ({ autoViews, mounts }: LeadParams): ReadonlyMap<string, Mo
   return leadMounts;
 };
 
-export const placedAgentsOf = ({ agents, autoViews, mounts }: Params): ReadonlyArray<Agent> => {
+export const placedAgentsOf = ({
+  agents,
+  autoViews,
+  mounts,
+  touchedMountIds = NO_TOUCHED_MOUNT_IDS,
+}: Params): ReadonlyArray<Agent> => {
   if (!agents.some((agent) => agent.mountId == null)) {
     return agents;
   }
@@ -49,7 +56,10 @@ export const placedAgentsOf = ({ agents, autoViews, mounts }: Params): ReadonlyA
     if (agent.mountId != null) {
       return agent;
     }
-    const mountId = leadMounts.get(agent.id) ?? soleMountId;
+    const touched = (touchedMountIds.get(agent.id) ?? []).find(
+      (candidate) => knownMountIdOf({ value: candidate, mounts }) !== null,
+    );
+    const mountId = leadMounts.get(agent.id) ?? touched ?? soleMountId;
     return mountId === null ? agent : { ...agent, mountId };
   });
 };

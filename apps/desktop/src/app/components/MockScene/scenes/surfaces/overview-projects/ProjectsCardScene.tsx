@@ -14,7 +14,7 @@ const CLICK_MS = 250;
 
 const CLOSE_LABELS: ReadonlyArray<string> = ['Close branch'];
 
-const TILE = '[data-board-row] [role="link"][aria-label="Open hl/ledger-limits"]';
+const TILE = '[data-board-row] [role="link"][aria-label="Open hl/ledger-limits overview"]';
 
 export const ProjectsCardScene = ({ theme, isConfirmOpen }: Props) => {
   const [isReady, setIsReady] = useState(false);
