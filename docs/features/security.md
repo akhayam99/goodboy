@@ -19,9 +19,24 @@ Move your setup to a new machine without carrying a flagged token: an export lea
 
 ### Export and import your setup
 
-Move your setup to another Mac, or keep a copy. **Backup** exports in groups such as workspaces, workflows and saved scripts, and **Never included** lists what always stays behind, keys and sign-ins first. **Import** shows what it adds before writing and never deletes. The preview lists every allow rule and the first line of every script, and it carries the file's SHA-256. Import refuses a file that changed after the preview. A rule that allows anything needs its own checkbox, and imported scripts arrive disabled until you open one and save it. **Delete all data** sits alone at the end of the page, in a Danger zone that asks before it runs.
+Move your setup to another Mac, or keep a copy.
 
-A finished export says **Saved** with the file name and a button to show the file. A failed export or import goes to the log with **Retry**. A file that moved says so.
+#### Export
+
+**Backup** exports in groups such as workspaces, workflows and saved scripts. **Never included** lists what always stays behind, keys and sign-ins first.
+
+A finished export says **Saved** with the file name and a button to show the file.
+
+#### Import
+
+- **Import** shows what it adds before writing and never deletes.
+- The preview lists every allow rule and the first line of every script, and it carries the file's SHA-256. Import refuses a file that changed after the preview.
+- A rule that allows anything needs its own checkbox.
+- Imported scripts arrive disabled until you open one and save it.
+
+A failed export or import goes to the log with **Retry**. A file that moved says so.
+
+**Delete all data** sits alone at the end of the page, in a Danger zone that asks before it runs.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-export-import-dark.webp">
@@ -45,7 +60,9 @@ Update without worrying about your data. Before an update changes it, Goodboy ma
 
 Open an older Goodboy on newer data without damage. It stops before touching anything and offers **Restore backup** or **Quit**, and your current data stays in a copy next to the database.
 
-When the database cannot be opened at all, the start screen offers **Retry** first, because a locked file is often temporary. **Start with a new database** asks once, moves the file and its journals next to it as `data.db.unopened-<time>`, and starts with an empty database. Nothing is deleted.
+When the database cannot be opened at all, the start screen offers **Retry** first, because a locked file is often temporary.
+
+**Start with a new database** asks once, moves the file and its journals next to it as `data.db.unopened-<time>`, and starts with an empty database. Nothing is deleted.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-newer-data-dark.webp">
@@ -67,7 +84,11 @@ Get updates in the background, then see what is new. When one is ready, the Upda
 
 ### Changelog in the app
 
-Read release notes inside the app, in the **What's new** tab of Help, searchable, with links into the screen each change touched. The Goodboy mark at the foot of the rail opens it, with a dot while new notes are unread. Every release in the list shows its version, its date and whether it is installed, and a release that changes your data carries a quiet mark. Before an update, **What's new** shows every release it brings, and after one it covers the releases you skipped.
+Read release notes inside the app, in the **What's new** tab of Help, searchable, with links into the screen each change touched. The Goodboy mark at the foot of the rail opens it, with a dot while new notes are unread.
+
+- Every release in the list shows its version, its date and whether it is installed.
+- A release that changes your data carries a quiet mark.
+- Before an update, **What's new** shows every release it brings, and after one it covers the releases you skipped.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-changelog-update-dark.webp">
@@ -82,7 +103,13 @@ See a change instead of reading about it. Release notes can show **Before** and 
 
 ### Guide
 
-Learn how Goodboy works in short chapters, one per page with Previous and Next. Help holds two tabs, **Guide** and **What's new**, with one search over both. Results lead with title matches, show a line of context, and list three **What's new** versions with a button for the rest. Press Enter to land on the point you need, and the links at the end of a chapter open its screen. **Back to app** at the top left, or Esc, leaves Help. **Sponsor on GitHub** sits in its band. Open it from Help in the menu bar, or from Search or run.
+Learn how Goodboy works in short chapters, one per page with Previous and Next. Open it from Help in the menu bar, or from Search or run.
+
+- Help holds two tabs, **Guide** and **What's new**, with one search over both.
+- Results lead with title matches and show a line of context. Press Enter to land on the point you need.
+- The links at the end of a chapter open its screen.
+- **Back to app** at the top left, or Esc, leaves Help.
+- **Sponsor on GitHub** sits in its band.
 
 **Also in this area**
 

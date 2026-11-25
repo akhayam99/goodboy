@@ -12,15 +12,34 @@ Agents on any provider can read and act on the tools you connected, without hold
 
 ### Tasks
 
-Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and your pull and merge requests sit together, and the header reads **Tasks** with how many are open in a chip beside it. The row under it starts with the scope switch and the search and ends with filters and grouping, and `⋯` sits beside the title. Tasks opens on **For you**: issues assigned to you, what you starred and what is linked to your sessions. **All** next to it shows everything your tools sent.
+Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and your pull and merge requests sit together, and the header reads **Tasks** with how many are open in a chip beside it. Tasks opens on **For you**: issues assigned to you, what you starred and what is linked to your sessions. **All** next to it shows everything your tools sent.
 
-Items come in groups, by source unless you pick **Status**, **Project** or **None** from the grouping button, which names the current one (**Group by: Source**). Items tied to no project sit under **No project**. A status group shows the tool's mark beside the status word ("In progress"). Each group names its total once, beside its label, shows its first five rows and a **Show all** row, and a starred item still counts in its source group; an expanded group draws only the rows on screen and names where you are ("41 of 312"), so a thousand open items never scroll forever. Every row has the same columns: source, key, title, status, priority and age. The key shows what tells rows apart (a Sentry error shows its number, a Slack thread has none), and a thread has no status. Hover a status or priority mark to read what it means; a screen reader hears the key, the title, the status and the priority. Rows carry no buttons: the row is the button.
+#### Read the list
 
-Narrow the list from one **Filters** button in the header, the same lines icon as every filter: **Source** with its counts, **Show** (starred, in progress, with a session, closed), **Type** and **Projects**; a choice with nothing in it is dimmed and shows no number, a choice with one item shows 1, and the button shows how many filters are on. A search that is a key shows the issue found and the rows that match. A tool that didn't load, or is rate limited, says so in a notice under its group's title, above its rows. It offers **Retry**, or **Reconnect** when the tool refused the key. **Refresh tasks** and **Manage tools** sit in `⋯`.
+Items come in groups, by source unless you pick **Status**, **Project** or **None** from the grouping button. Items tied to no project sit under **No project**. Each group names its total, shows its first five rows and a **Show all** row.
 
-What arrived since you last looked has a small dot before its title, and the chip beside the title adds how many ("12 open, 2 new"). Goodboy remembers, on this Mac and per workspace, when it first saw each item and when you last had Tasks in front for a few seconds; the dots stay until you leave, and the next visit starts clean. The very first visit marks nothing. Tasks in the places rail shows a dot while something assigned to you arrived and you haven't looked yet. Nothing is fetched in the background for it: the dot follows what Tasks, the task picker or the work-item links already loaded.
+Every row has the same columns: source, key, title, status, priority and age. A Slack thread has no key and no status. The row is the button, and rows carry no other buttons.
 
-Click a row or press **Enter** to open it in the pane on the right, and move with **j** and **k** while the pane follows. **Enter** again starts from the open item. **Open** in the pane shows it at full width; **Back** at the top returns to the list.
+#### Narrow the list
+
+The row under the title starts with the scope switch and the search and ends with filters and grouping. The **Filters** button holds:
+
+- **Source**, with its counts
+- **Show**: starred, in progress, with a session, closed
+- **Type**
+- **Projects**
+
+A search that is a key shows the issue found and the rows that match. **Refresh tasks** and **Manage tools** sit in the `⋯` beside the title.
+
+A tool that didn't load, or is rate limited, says so in a notice under its group's title. It offers **Retry**, or **Reconnect** when the tool refused the key.
+
+#### See what is new
+
+What arrived since you last looked has a small dot before its title, and the chip adds how many ("12 open, 2 new"). The dots stay until you leave, and the next visit starts clean. The very first visit marks nothing. Tasks in the places rail shows a dot while something assigned to you arrived and you haven't looked yet.
+
+#### Open an item
+
+Click a row or press **Enter** to open it in the pane on the right, and move with **j** and **k** while the pane follows. **Open** in the pane shows it at full width; **Back** at the top returns to the list.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-dark.webp">
@@ -67,7 +86,7 @@ Read Sentry errors with stack trace, breadcrumbs and tags inside Goodboy, and fi
 
 Work on GitHub pull requests and issues, GitLab merge requests, and Bitbucket comments, approvals and merges without leaving Goodboy. GitHub and GitLab can work side by side, one for code and one for tickets.
 
-A GitLab merge request merges from Tasks the way it does from its Branch page: with the project that owns the repository and the method that project prefers (merge, squash or rebase). When GitLab refuses, the panel stays open with the reason, and **Merge** tries again. Every task list shows only the answer for the workspace and source you have open, so a slow answer for a workspace you left never replaces the list.
+A GitLab merge request merges from Tasks the way it does from its Branch page: with the project that owns the repository and the method that project prefers (merge, squash or rebase). When GitLab refuses, the panel stays open with the reason, and **Merge** tries again.
 
 ### Slack: what agents can do
 
@@ -101,7 +120,11 @@ See screenshots attached in Linear, Jira and GitHub inside Goodboy. Your key goe
 
 ### Records read the same way
 
-Read items from any tool the same way. The header holds the tool mark, the key and the star, with the start action, **Open** and `⋯` (open in the tool, copy the link, refresh) beside them, and the title on its own line, wrapped instead of cut. Under it, the properties sit in groups spaced apart on one grid of labels and values: status, priority and assignee, then project and labels, then pull requests and sessions, then details. A Sentry error shows its level as a word and its culprit once, with no made up description. The conversation ends with its reply box, **Reply on Linear** or **Reply on GitHub**, which scrolls with it. On the full page the studio band reads **Tasks › key**, and the Tasks crumb leads back. Values you can change, like the status or the assignee of a Linear issue, open their menu from the value.
+Read items from any tool the same way. The header holds the tool mark, the key and the star, with the start action, **Open** and `⋯` (open in the tool, copy the link, refresh) beside them. The title sits on its own line.
+
+Under it, the properties come in groups: status, priority and assignee, then project and labels, then pull requests and sessions, then details. Values you can change, like the status or the assignee of a Linear issue, open their menu from the value.
+
+The conversation ends with its reply box, **Reply on Linear** or **Reply on GitHub**. On the full page the studio band reads **Tasks › key**, and the Tasks crumb leads back.
 
 ### Comment threads
 

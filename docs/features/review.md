@@ -4,7 +4,7 @@ The Branch page holds one branch: its pull request, review comments, changed fil
 
 ### Resolve
 
-Turn review comments into commits without writing the fixes yourself. Check the comments you want and press **Fix**: one agent works through them in its own copy of the branch and ends each one with a fix, a reply or a question. You accept, edit or skip each result, and nothing leaves your machine until you push.
+Turn review comments into commits without writing the fixes yourself. Check the comments you want and press **Fix**. One agent works through them in its own copy of the branch and ends each one with a fix, a reply or a question. You accept, edit or skip each result, and nothing leaves your machine until you push.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-dark.webp">
@@ -15,33 +15,59 @@ Turn review comments into commits without writing the fixes yourself. Check the 
 
 ### Bulk actions
 
-Handle many comments at once. **Fix comments** checks every open comment, **Use the recommended answers** answers the agent's open questions in one go, and **Apply fix** takes every waiting fix, with **Undo** right after.
+Handle many comments at once.
+
+- **Fix comments** checks every open comment.
+- **Use the recommended answers** answers the agent's open questions in one go.
+- **Apply fix** takes every waiting fix, with **Undo** right after.
 
 ### Review sources
 
-Read pull request comments and your own notes in one list in the Comments section. Each row is the button: author and age, then `path:line`, then the comment; a **Draft** chip shows only while the list mixes notes and host threads, and the source switch shows only then. Group labels carry their row count and no verbs, and the Open and Resolved switch shows from the first comment on. One header button follows the state: **Fix N threads**, **Apply N fixes**, **Push N commits** or **Request review**. A line at the list end counts unpushed commits.
+Read pull request comments and your own notes in one list in the Comments section. Each row is the button: author and age, then `path:line`, then the comment. A **Draft** chip and the source switch show only while the list mixes notes and host threads.
 
-The Open and Resolved switch carries a count on each side, and its Open count is the one the Comments tab carries. A bot comment reads as its first plain line: headings, HTML comments, severity badges and boilerplate are left out.
+The Open and Resolved switch carries a count on each side, and its Open count is the one the Comments tab carries. A bot comment reads as its first plain line, without headings, HTML comments, severity badges or boilerplate.
 
-Open a comment to read it in the drawer beside the list, the same way a failing check opens the Debugger. The drawer holds the code around the line, then the comment and its thread, then its actions at the end: **Fix** as the primary, **Reply** and **Skip** beside it, each with its key (F, R, S), and a `⋯` only when two or more rarer verbs remain. J and K, or the arrow keys, move to the next or previous comment while it is open, and Escape closes it on the row you were on. A verb that fails says why under the actions and its button reads **Retry**. The open comment survives a refresh of the list and a window reload. Reading and replying work on every host, and a Bitbucket thread stays open because Bitbucket cannot resolve it.
+One header button follows the state: **Fix N threads**, **Apply N fixes**, **Push N commits** or **Request review**. A line at the list end counts unpushed commits.
+
+#### The comment drawer
+
+Open a comment to read it in the drawer beside the list, the same way a failing check opens the Debugger. The drawer holds the code around the line, then the comment and its thread, then its actions.
+
+- **Fix** is the primary, with **Reply** and **Skip** beside it, each with its key (F, R, S).
+- A `⋯` shows only when two or more rarer verbs remain.
+- J and K, or the arrow keys, move to the next or previous comment. Escape closes the drawer on the row you were on.
+- A verb that fails says why under the actions and its button reads **Retry**.
+
+The open comment survives a refresh of the list and a window reload. Reading and replying work on every host, and a Bitbucket thread stays open because Bitbucket cannot resolve it.
 
 ### Comment states
 
 See what each comment needs next. The list groups comments under **Needs you**, **Working**, **Done** and **Left open**, and each comment names its state, such as **Question**, **Fix ready** or **Failed**. If the reviewer edits a comment after the agent drafted an answer, you choose to redraft or keep the draft.
 
-A broad comment asks for a run, not a quick fix. It shows two of three signs: it asks for a rethink, it names other files or routes, or it is long. Its drawer says why and leads with **Start a run**, and **Fix as one change** moves to the `⋯`. Every open comment has **Start a run** in its `⋯`.
+#### Broad comments
 
-**Fix N comments** counts only the small comments. A line under it says **1 comment suggests a run**, with **Start a run** beside it. When only broad comments are left, the header leads with **Start a run**.
+A broad comment asks for a run, not a quick fix. It shows two of three signs: it asks for a rethink, it names other files or routes, or it is long.
 
-A comment a run works on reads **In a run** with the run's word, such as **In a run · Working**, and its row names the run. Its drawer shows the run with **Open run**, and says that nothing is posted while the run works. **Fix** and **Skip** stay out until the run ends, so one comment never has two agents. A comment resolved on the host meanwhile keeps its own word.
+- Its drawer says why and leads with **Start a run**. **Fix as one change** moves to the `⋯`.
+- Every open comment has **Start a run** in its `⋯`.
+- **Fix N comments** counts only the small comments. A line under it says **1 comment suggests a run**, with **Start a run** beside it.
+- When only broad comments are left, the header leads with **Start a run**.
 
-If the reviewer edits the comment while the run works, it reads **In a run · Changed**. The run keeps the text it started with until you pick **Send the new text to the run** or **Keep the run as it is**.
+#### Comments in a run
+
+A comment a run works on reads **In a run** with the run's word, such as **In a run · Working**, and its row names the run. Its drawer shows the run with **Open run**, and says that nothing is posted while the run works.
+
+**Fix** and **Skip** stay out until the run ends, so one comment never has two agents. If the reviewer edits the comment meanwhile, it reads **In a run · Changed**. The run keeps its text until you pick **Send the new text to the run** or **Keep the run as it is**.
 
 Nothing closes when a run ends. Each comment of the run reads **Run finished** and waits for you, one at a time. A note shows what the run did, with **Resolve note** and **Keep open**, and **Reopen** after.
 
 A host comment shows the reply the Lead wrote, which you can edit, and **Reply and resolve on GitHub**, or on GitLab. On Bitbucket it is **Reply on Bitbucket**, which leaves the thread open. The reply goes out only once the run's commits are on origin.
 
-When a run stops or fails, its comments are open again with **The run stopped. Nothing was resolved.** and **Open run**. To give an open Lead on the same branch one more open comment, pick **Send to Lead** in the comment's `⋯`. The Lead gets the comment with its replies, the file and lines, the branch and the pull request, and keeps working without starting over. A note says the Lead has it, with **Follow**.
+When a run stops or fails, its comments are open again with **The run stopped. Nothing was resolved.** and **Open run**.
+
+#### Send to Lead
+
+To give an open Lead on the same branch one more open comment, pick **Send to Lead** in the comment's `⋯`. The Lead gets the comment with its replies, the file and lines, the branch and the pull request, and keeps working without starting over. A note says the Lead has it, with **Follow**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-dark.webp">
@@ -58,35 +84,78 @@ Pick up to three more open comments from the branch to start with. The run reads
 
 ### Failed drafts
 
-When a fix fails, the comment says why in one sentence and links to the agent's transcript. Retry it in the same run, start over with a new agent, try another model or add a hint.
+When a fix fails, the comment says why in one sentence and links to the agent's transcript. You can:
 
-When the fix agent finds a comment bigger than one change, it stops early and the comment reads **Needs a run** with what the agent found. Its one button is **Start a run**, and the goal of the run ends with that finding. **Retry the fix**, **Retry with a hint** and **Start over** stay in the `⋯`, and a retry tells the agent you want one change anyway. Such a comment is left out of **Fix N comments** and **Retry N**, and the other comments of the same fix keep their own result.
+- retry it in the same run
+- start over with a new agent
+- try another model
+- add a hint
+
+When the fix agent finds a comment bigger than one change, it stops early and the comment reads **Needs a run** with what the agent found. Its one button is **Start a run**, and the goal of the run ends with that finding.
+
+**Retry the fix**, **Retry with a hint** and **Start over** stay in the `⋯`, and a retry tells the agent you want one change anyway. Such a comment is left out of **Fix N comments** and **Retry N**.
 
 ### See what a resolve did
 
-Open a fix run from Activity or from a comment to see what the agent did. A drawer beside the list has two tabs. Fix shows the status, the comments the run covers, what it did and its commits. Transcript shows the whole conversation, and you can write to the agent from there. It opens on Transcript while the run works, and on Fix once it ended or when it asks a question. A dot on the other tab tells you when something new happens there.
+Open a fix run from Activity or from a comment to see what the agent did.
 
-A comment a fix run covers shows the work on its own row. While the fix works on it, a line under the comment reads **Fixing**, the step and the time. A comment that waits its turn reads **Queued** and its place, **2nd in this fix**. Point at the row for **Stop** and **Open transcript**. One agent fixes a batch, so Stop ends all of it. Its tooltip names the batch, **Stop fixing 3 comments**, and Stop acts at once: the toast offers **Continue** and the comments stay open.
+#### The run drawer
 
-A batch shows one quiet count above the list, **Fixing · 2 of 3**, with **Stop all** and **Open transcript** in its menu. Off the tab, a dot on Comments says a fix works. While you stay on the tab, a comment keeps its group and its place.
+A drawer beside the list has two tabs:
 
-Point at an open comment for **Fix** to fix that comment alone. The button is busy and the row reads **Starting** until the agent exists, and a second click starts nothing. The result lands on the same row. A ready fix reads **Fix ready · Fixed in 90b1d57** with **Review** and **Apply**. **Review** opens the change under the row with **Apply**, **Retry with a hint**, **Discard** and **Open in Changes**. **Open in Changes** opens the Changes of the branch on that commit.
+- **Fix** shows the status, the comments the run covers, what it did and its commits.
+- **Transcript** shows the whole conversation, and you can write to the agent from there.
 
-**Apply** accepts that fix only, and the row reads **Applied, not pushed**. The undo bar under the list takes it back, as after a bulk apply. **Discard** throws the fix away: nothing is applied and no reply is posted. The comment is open again, with **Fix**. A fix shared with other comments goes for all of them at once, and each one is open again. A fix made in another worktree, already on the branch or shared with a comment you already decided stays, and the error says why.
+It opens on Transcript while the run works, and on Fix once it ended or when it asks a question. A dot on the other tab tells you when something new happens there.
 
-The Fix comments drawer reads the same: its **Discard** throws the fix away, and parking a comment is **Skip**. After a run, **Retry 2 failed** puts every failed comment back in the same run. The session marks, the board, Ask and the transcript line use the words of the rows, such as **2 comments failed** or **Fixed**.
+#### Progress on a comment
 
-A comment the run could not fix reads **Failed** and says why in one sentence. A stopped one reads **Stopped**. Both offer **Retry** in the same run, and a menu with **Retry with a hint**, **Start over** with a new agent and **Open transcript**. A comment that changed after its fix keeps **Fixed in 90b1d57 · Review the fix** and its choice in the drawer. The state comes from the thread, so it is still there when you come back to Comments. Starting a fix takes its comments out of the selection. Leaving the list drops a selection that sits on comments nobody can act on.
+A comment a fix run covers shows the work on its own row. While the fix works on it, a line under the comment reads **Fixing**, the step and the time. A comment that waits its turn reads **Queued** and its place, **2nd in this fix**.
 
-When the run has finished with fixes ready, every comment keeps its result on its row and in its group. The bar above the list counts them quietly, **4 fixes ready**. Resting on the count says what Apply does: it accepts the fixes, and the next push sends them. The push replies to the threads and resolves them where the host can. With two or more ready the header offers **Apply N fixes**.
+Point at the row for **Stop** and **Open transcript**. One agent fixes a batch, so Stop ends all of it. Its tooltip names the batch, **Stop fixing 3 comments**, and Stop acts at once: the toast offers **Continue** and the comments stay open.
 
-When the agent says its checks did not run, Goodboy shows **Checks were skipped: <reason>**. It sits in the count's menu while the run works, then under the bar and in the Fix tab of the run drawer. An example is dependencies missing from its copy. Goodboy reads the agent's final message for it. When the reason names dependencies, or the worktree of the branch is missing them, the warning offers **Reinstall dependencies**. It installs them in that worktree so the next fix run can check.
+A batch shows one count above the list, **Fixing · 2 of 3**, with **Stop all** and **Open transcript** in its menu. Off the tab, a dot on Comments says a fix works.
+
+Point at an open comment for **Fix** to fix that comment alone. The result lands on the same row.
+
+#### Review a ready fix
+
+A ready fix reads **Fix ready · Fixed in 90b1d57** with **Review** and **Apply**. **Review** opens the change under the row with **Apply**, **Retry with a hint**, **Discard** and **Open in Changes**. **Open in Changes** opens the Changes of the branch on that commit.
+
+- **Apply** accepts that fix only, and the row reads **Applied, not pushed**. The undo bar under the list takes it back, as after a bulk apply.
+- **Discard** throws the fix away: nothing is applied and no reply is posted. The comment is open again, with **Fix**.
+
+A fix shared with other comments goes for all of them at once, and each one is open again. A fix made in another worktree, already on the branch or shared with a comment you already decided stays, and the error says why. In the Fix comments drawer, **Discard** throws the fix away and parking a comment is **Skip**.
+
+When the run has finished with fixes ready, every comment keeps its result on its row and in its group. The bar above the list counts them, **4 fixes ready**. Resting on the count says what Apply does: it accepts the fixes, and the next push sends them. The push replies to the threads and resolves them where the host can. With two or more ready the header offers **Apply N fixes**.
+
+#### A fix that failed or stopped
+
+A comment the run could not fix reads **Failed** and says why in one sentence. A stopped one reads **Stopped**. Both offer **Retry** in the same run, and a menu with **Retry with a hint**, **Start over** with a new agent and **Open transcript**. After a run, **Retry 2 failed** puts every failed comment back in the same run.
+
+A comment that changed after its fix keeps **Fixed in 90b1d57 · Review the fix** and its choice in the drawer.
+
+#### Skipped checks
+
+When the agent says its checks did not run, Goodboy shows **Checks were skipped: <reason>**. It sits in the count's menu while the run works, then under the bar and in the Fix tab of the run drawer. An example is dependencies missing from its copy.
+
+When the reason names dependencies, or the worktree of the branch is missing them, the warning offers **Reinstall dependencies**. It installs them in that worktree so the next fix run can check.
 
 ### Hints when a fix starts
 
-Tell the agent what to weigh before a fix starts. Every start that launches a fix has one quiet line, **Add a hint**, above its buttons: Fix comments, **Apply fix** on a check, **Analyze again** on a failing check, **Fix with an agent** after a failed push and **Rewrite with an agent** on a conflict. The line is closed by default and never required. A click opens an unboxed field, **Hint for the agent** (**Hint for the Implementer** for a fix), that grows to six lines, shows a small counter near 2000 characters and clears with an x. **Esc** closes the open popover first, then the field with its text kept, then the page. The first **Analyze** of a failing check stays one click with no field.
+Tell the agent what to weigh before a fix starts. Every start that launches a fix has one quiet line, **Add a hint**, above its buttons:
 
-The hint goes to the agent as typed, trimmed, after the rules and after the evidence under **Operator notes**, with one line that ranks it below the role and the tool limits and asks the agent to say in a sentence how it applied it. It is never posted to GitHub, GitLab or Bitbucket. The first message of the run shows it once as **Your hint**. The draft lives in memory, per session and per target, and clears only once the agent's first turn has started: a failed start keeps it, and text typed while the start is pending stays. A **Retry** on a failed comment reuses the hint of the request that failed.
+- **Fix comments**
+- **Apply fix** on a check
+- **Analyze again** on a failing check
+- **Fix with an agent** after a failed push
+- **Rewrite with an agent** on a conflict
+
+The line is closed by default and never required. A click opens a field, **Hint for the agent** (**Hint for the Implementer** for a fix). It grows to six lines, shows a small counter near 2000 characters and clears with an x. **Esc** closes the open popover first, then the field with its text kept, then the page. The first **Analyze** of a failing check stays one click with no field.
+
+The hint goes to the agent as typed, ranked below the role and the tool limits, and the agent says in a sentence how it applied it. It is never posted to GitHub, GitLab or Bitbucket. The first message of the run shows it once as **Your hint**.
+
+A failed start keeps the hint, and so does text typed while the start is pending. A **Retry** on a failed comment reuses the hint of the request that failed.
 
 ### Fixes already on the branch
 
@@ -98,11 +167,20 @@ If a fix commit is no longer on the branch, for example after a squash done else
 
 ### Push fixes and replies
 
-Finish a review with **Push N commits** in the Branch header. It covers the comments of the branch on screen, and the confirm names the repository (`Push 2 commits to hl/fix-duplicate-credit in payments-api?`) when the session has more than one. It always covers every ready comment. When nothing needs a decision it pushes on that click and says what went out in one line. Otherwise a preview counts the fixes, replies and threads to resolve and the one **Push** in it sends them to GitHub or GitLab. **Push only this one** in a comment's actions sends just that fix and hides while the preview is open. A reply with no code change goes out right away when no fix is waiting.
+Finish a review with **Push N commits** in the Branch header. It covers the comments of the branch on screen, and the confirm names the repository (`Push 2 commits to hl/fix-duplicate-credit in payments-api?`) when the session has more than one. It always covers every ready comment.
 
-When a check of the repository stops the push, the failure card names the check and shows its first findings. **Fix with an agent** starts an agent on the same branch that fixes what the check reports without skipping it. The card follows that agent. It keeps following it when you leave the page and come back, or reload the window.
+- When nothing needs a decision, it pushes on that click and says what went out in one line.
+- Otherwise a preview counts the fixes, replies and threads to resolve, and the one **Push** in it sends them to GitHub or GitLab.
+- **Push only this one** in a comment's actions sends just that fix.
+- A reply with no code change goes out right away when no fix is waiting.
 
-While the agent works, the card reads **Fixing** with its step and time. It offers **Stop** and **Open transcript**, never **Retry**. Then it reads **Pushed** with what came next, **Stopped** with what stays on the branch, or **Failed** with the reason. **Retry** starts a new agent. When the agent finishes, Goodboy pushes and sends the replies, or opens the pull request with the text you wrote.
+#### When a check stops the push
+
+When a check of the repository stops the push, the failure card names the check and shows its first findings. **Fix with an agent** starts an agent on the same branch that fixes what the check reports without skipping it. The card follows that agent, also when you leave the page and come back, or reload the window.
+
+While the agent works, the card reads **Fixing** with its step and time. It offers **Stop** and **Open transcript**, never **Retry**. Then it reads **Pushed** with what came next, **Stopped** with what stays on the branch, or **Failed** with the reason. **Retry** starts a new agent.
+
+When the agent finishes, Goodboy pushes and sends the replies, or opens the pull request with the text you wrote.
 
 The page says so before you push if the worktree has no dependencies installed or reads them from another folder. The failure card then offers **Reinstall dependencies**. It installs them in that worktree with the install command of its lockfile, shows the progress and retries the push.
 
@@ -127,25 +205,115 @@ Tidy the fix commits before reviewers see them, in the **Commits** section. Fold
 
 ### Notes before a pull request
 
-Review your own diff before anyone else does. Leave notes on lines or whole files in the **Changes** section, where each file header keeps **Viewed**, **Comment** and one menu with open in your editor, copy the path and show the whole file in a drawer. Resting on the path opens a fact card with the file name, its status, its folder and, for a rename, where it came from. Then hand the open ones to an agent with **Fix comments** or move one into your GitHub review with **Post to GitHub**. Notes stay on their branch, and notes with no branch wait on the Session overview. Every comment box here, in Write review and in the resolve flow is the same field: **⌘Enter** saves, **Esc** cancels only that box, and the replies under a comment fold to a count when there are more than two.
+Review your own diff before anyone else does. Leave notes on lines or whole files in the **Changes** section. Each file header keeps **Viewed**, **Comment** and one menu with open in your editor, copy the path and show the whole file in a drawer. Resting on the path opens a fact card with the file name, its status, its folder and, for a rename, where it came from.
 
-A fix for a note starts on your working tree as it is, uncommitted and untracked files included. The agent is told the note is yours and local, and it never fetches or pushes. The proposed change holds only what the agent changed, and Apply lands it uncommitted on top of your work, as the ready banner says. Apply refuses rather than overwrite a file of yours, an ignored one included. Skip leaves your work as it was. A proposed change that misses the commented code says so in one line.
+Then hand the open notes to an agent with **Fix comments** or move one into your GitHub review with **Post to GitHub**. Notes stay on their branch, and notes with no branch wait on the Session overview.
+
+Every comment box here, in Write review and in the resolve flow is the same field. **⌘Enter** saves and **Esc** cancels only that box. The replies under a comment fold to a count when there are more than two.
+
+#### Fixes for a note
+
+A fix for a note starts on your working tree as it is, uncommitted and untracked files included. The agent is told the note is yours and local, and it never fetches or pushes.
+
+- The proposed change holds only what the agent changed. Apply lands it uncommitted on top of your work.
+- Apply refuses rather than overwrite a file of yours, an ignored one included.
+- Skip leaves your work as it was.
+- A proposed change that misses the commented code says so in one line.
 
 Notes take one fix at a time. While a fix waits for review on the branch, a note fix does not start, and while a note fix waits there, no other fix starts. The comment says **Apply or skip the ready fix first**, with both buttons, and the waiting fix starts once you choose.
 
 ### Pull request on the Branch page
 
-Click a branch under **Projects** in a session and the Branch page opens on **Conversation**, the branch page when it has none yet. The tabs under the title are the way around it: **Conversation**, **Changes**, **Commits**, **Checks**, **Runs** and **Comments**. Each tab carries its count in gray, and color only for what wants you, such as the comments that need you and the checks that fail. The Session pages stay on the session, so any other branch is one click away.
+Click a branch under **Projects** in a session and the Branch page opens on **Conversation**, the branch page when it has none yet. The Session pages stay on the session, so any other branch is one click away.
 
-A branch row on the Overview opens the tab its state names. A failing or running check opens **Checks**. Requested changes open **Comments**. A conflict, a rebase or commits not pushed open **Commits**. Anything else opens **Conversation**, and so do Search, Activity and Tasks.
+#### Tabs
+
+The tabs under the title are **Conversation**, **Changes**, **Commits**, **Checks**, **Runs** and **Comments**. Each tab carries its count in gray, and color only for what wants you, such as the comments that need you and the checks that fail.
+
+A branch row on the Overview opens the tab its state names:
+
+- A failing or running check opens **Checks**.
+- Requested changes open **Comments**.
+- A conflict, a rebase or commits not pushed open **Commits**.
+- Anything else opens **Conversation**, and so do Search, Activity and Tasks.
+
+#### Checks tab
 
 On **Checks**, a failing GitHub Actions row shows the end of its log under its name. **Open on GitHub** opens the rest. The first failing check opens with its log, and a click on the row hides or shows it. A check from another service opens on its host.
 
-The **Conversation** tab is the pull request. The title carries its state, and the line under it says the number, the branch, the base and who opened it, and when. A merge box comes first and answers whether it can merge: **Not ready to merge** with the next two steps in the order the header takes them, **Waiting for a review**, **Ready to merge** with what the header button does, **Draft** or **Merged into main**. Under it each thing that holds the merge gets one row, the worst first, such as **1 check failing** with the check's name, **Changes requested by omar-t** or **3 commits behind main**, and a click opens where you fix it: Checks, Comments, Changes or Commits. Everything that passes folds into one quiet line you can open. The box never holds the merge button: the header keeps it. Under it the description is a card with its author and age. A long one folds behind **Show the full description**. The activity is one timeline. A person's item shows their face. Every other item shows the same quiet mark as the session logs: red for failing checks, amber for threads that need you and a plain check for passing ones. Each item's age sits at the right. Pushes by one person in a row fold into one line, such as **nadia-p pushed 5 commits in 2 pushes**. Each review app folds into one row behind the **Bots** filter, beside **All** and **People**. A rail beside it holds four sections. **Reviewers** show the state in words: **Not yet reviewed**, **Asked for changes** or **Approved**. **Checks** shows **6 of 7 passed** and a bar. **People** lists the author and the bots. **Linked issues** closes the rail. The tabs carry the rest: **Changes** and **Commits** show their count on the tab, and the same count heads their list. When review threads are open, a row of the merge box such as **2 threads need you** with **6 open threads · 2 unread** opens Comments. It counts the threads Comments lists for that pull request, and the dots in Comments come from the same count. A thread is unread when you never saw it in Comments. It is also unread when someone else wrote in it after you last saw it. A reply you wrote never makes a thread unread, and a thread only you wrote never is. Opening Comments marks the unread threads with a small dot in the left margin of the row. The dots stay while Comments is open, also when you switch between Open and Resolved or a reply arrives. The threads count as read from then on, up to the latest comment you were shown. The dots are gone on your next visit, and the row drops them. Both windows read the same record. After the update every thread that already existed counts as read. To tell your replies, Goodboy needs your name on the host: GitHub gives it through the status of the workspace. GitLab gives it through the username kept when you connected to that host. Bitbucket gives it through its nickname. Only that login counts, never a display name. An account of another workspace or host never stands in for it. Goodboy reads that name again from the host when you connect and when the app starts. An older GitLab or Bitbucket connection fills it in by itself. When the host refuses, the integration page starts with "Unread needs your username." and a **Reconnect** button. Comments shows one quiet line until the name is known. Until the name is known, or while the comments have not loaded, the row shows no unread part. A host that gives no author or time keeps the thread unread until you open Comments once. The description and the activity read in a column of comfortable width, and a long description folds after five lines behind **Show all**; reviewers, linked issues and author sit beside it, the person you asked first with their verdict next to the name, and every bot in its own **Bots** group with one word, such as **1 issue** for the open threads it started. On GitHub a review app is known as a bot by its author type even when its name has no bot suffix. Rename it, edit the description and ask for reviewers there. The header holds one next step, the same on every tab, never a disabled button. It answers a question first, then applies the waiting fixes, fixes the comments, pushes once, fixes the checks still red, and last asks for a review or merges. **Fix checks** starts a Debugger at the first press, and resting on it names the model. Once the Debugger proposes a fix the step reads **Start fix**, then **Push fix**. While an agent works the header has no filled button. A check agent shows on its check row with **Stop**, and the Checks tab carries a live dot on every tab. A comment fix run shows on a line under the tabs. Anything blocked waits in **⋯** with its reason. Merge, mark ready, reopen, convert to draft and close act on the repository of the branch on screen, never on another repository of the session. Reviewers, linked issues and the text Scribe writes go to that repository too, and a review request the host refuses says why under the list, with **Retry**. While the host answers, the add button pulses and a line names who is asked. **Merge** offers only the ways the host allows and is tied to the commit you reviewed on GitHub, GitLab and Bitbucket: if the branch moved since, nothing merges and the page asks you to refresh and review again. On GitLab the page uses GitLab's words, such as **Merge request** and **MR !42**. While commits are only on your machine and no comment waits, **Push 3 commits** is the one primary and the merge waits, with **3 commits not pushed** in the merge box.
+#### Conversation tab
 
-The page shows the pull request of the branch you opened, even while a rebase runs on it or the session writes to another branch. The form for a new pull request appears only when the host reports none for that branch; an empty or failed answer keeps the one already known.
+The **Conversation** tab is the pull request. The title carries its state, and the line under it says the number, the branch, the base and who opened it, and when.
 
-A branch with no pull request gets its own page: the branch name, whether it is pushed, how far it is behind its base when the base moved, a declined pre-push hook when there is one, then the form. **Push and create pull request** is the one primary while the commits are only on your machine, with **Push 3 commits** beside the title for a push alone. **Rebase on main** leads while the branch is behind, and once it is pushed and up to date the form's **Create pull request** does. The form is filled from the branch: one commit gives its headline as the title, several give the linked issue and the first headline, and the description lists the commits. It always opens the pull request from the branch on screen. When origin also holds commits the branch lacks, the branch reads **Diverged** (never Pushed) and the form offers **Force push and create pull request** behind the same confirm as **Force push**. While a rebase is stopped on conflicts the form waits and the conflicting files are listed instead.
+A merge box comes first and answers whether it can merge:
+
+- **Not ready to merge**, with the next two steps in the order the header takes them
+- **Waiting for a review**
+- **Ready to merge**, with what the header button does
+- **Draft**
+- **Merged into main**
+
+Under it each thing that holds the merge gets one row, the worst first. Examples are **1 check failing** with the check's name, **Changes requested by omar-t** and **3 commits behind main**. A click opens where you fix it: Checks, Comments, Changes or Commits. Everything that passes folds into one line you can open. The box never holds the merge button: the header keeps it.
+
+Under the box the description is a card with its author and age. A long one folds behind **Show the full description**. It also folds after five lines behind **Show all**, in a column of comfortable width beside the reviewers, linked issues and author. You can rename the pull request, edit the description and ask for reviewers there.
+
+The activity is one timeline, with each item's age at the right. A person's item shows their face. Every other item shows the same quiet mark as the session logs: red for failing checks, amber for threads that need you and a plain check for passing ones. Pushes by one person in a row fold into one line, such as **nadia-p pushed 5 commits in 2 pushes**. Each review app folds into one row behind the **Bots** filter, beside **All** and **People**.
+
+A rail beside it holds four sections:
+
+- **Reviewers** show the state in words: **Not yet reviewed**, **Asked for changes** or **Approved**. The person you asked first shows their verdict next to the name.
+- **Checks** shows **6 of 7 passed** and a bar.
+- **People** lists the author and the bots. Every bot has its own **Bots** group with one word, such as **1 issue** for the open threads it started.
+- **Linked issues** closes the rail.
+
+The tabs carry the rest: **Changes** and **Commits** show their count on the tab, and the same count heads their list.
+
+#### Unread threads
+
+When review threads are open, a row of the merge box such as **2 threads need you** with **6 open threads · 2 unread** opens Comments. A thread is unread when you never saw it in Comments, or when someone else wrote in it after you last saw it. A reply you wrote never makes a thread unread.
+
+Opening Comments marks the unread threads with a small dot in the left margin of the row. The dots stay while Comments is open, also when you switch between Open and Resolved or a reply arrives. They are gone on your next visit.
+
+To tell your replies, Goodboy needs your login on the host. It reads it from the host when you connect and when the app starts. Only that login counts, never a display name.
+
+When the host refuses, the integration page starts with "Unread needs your username." and a **Reconnect** button. Comments shows one quiet line until the name is known, and the row shows no unread part until then.
+
+#### The header step
+
+The header holds one next step, the same on every tab, never a disabled button. It takes the first that applies:
+
+1. Answer a question.
+2. Apply the waiting fixes.
+3. Fix the comments.
+4. Push once.
+5. Fix the checks still red.
+6. Ask for a review, or merge.
+
+**Fix checks** starts a Debugger at the first press, and resting on it names the model. Once the Debugger proposes a fix the step reads **Start fix**, then **Push fix**.
+
+While an agent works the header has no filled button. A check agent shows on its check row with **Stop**, and a comment fix run shows on a line under the tabs. Anything blocked waits in **⋯** with its reason.
+
+#### Merge and other actions
+
+Merge, mark ready, reopen, convert to draft and close act on the repository of the branch on screen, never on another repository of the session. Reviewers, linked issues and the text Scribe writes go to that repository too. A review request the host refuses says why under the list, with **Retry**.
+
+**Merge** offers only the ways the host allows and is tied to the commit you reviewed on GitHub, GitLab and Bitbucket. If the branch moved since, nothing merges and the page asks you to refresh and review again. On GitLab the page uses GitLab's words, such as **Merge request** and **MR !42**.
+
+While commits are only on your machine and no comment waits, **Push 3 commits** is the one primary. The merge waits, with **3 commits not pushed** in the merge box.
+
+The page shows the pull request of the branch you opened, even while a rebase runs on it or the session writes to another branch. The form for a new pull request appears only when the host reports none for that branch.
+
+#### A branch with no pull request
+
+A branch with no pull request gets its own page. It shows the branch name, whether it is pushed, how far it is behind its base when the base moved, a declined pre-push hook when there is one, then the form.
+
+- **Push and create pull request** is the one primary while the commits are only on your machine, with **Push 3 commits** beside the title for a push alone.
+- **Rebase on main** leads while the branch is behind. Once it is pushed and up to date, the form's **Create pull request** does.
+- The form is filled from the branch. One commit gives its headline as the title, several give the linked issue and the first headline, and the description lists the commits.
+- It always opens the pull request from the branch on screen.
+- When origin also holds commits the branch lacks, the branch reads **Diverged** (never Pushed).
+- Then the form offers **Force push and create pull request** behind the same confirm as **Force push**.
+- While a rebase is stopped on conflicts the form waits and the conflicting files are listed instead.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-dark.webp">
@@ -156,7 +324,12 @@ A branch with no pull request gets its own page: the branch name, whether it is 
 
 ### Work behind a branch
 
-The **Runs** tab shows what Goodboy did on the branch: its runs, its questions, answered ones folded with their answer, and its plans and reports. They are the same rows as the session's Runs, Questions and Artifacts pages, so the counts always match. Its badge counts what waits for you in color, else the runs still working, else everything on the branch in gray. Open a run or an artifact and **Back** returns to the tab. **All runs**, **All questions** and **All artifacts** open the whole session page on this branch, grouped the way you left it, and **Open branch** on those pages lands on this tab.
+The **Runs** tab shows what Goodboy did on the branch: its runs, its questions, answered ones folded with their answer, and its plans and reports. They are the same rows as the session's Runs, Questions and Artifacts pages, so the counts always match.
+
+- Its badge counts what waits for you in color, else the runs still working, else everything on the branch in gray.
+- Open a run or an artifact and **Back** returns to the tab.
+- **All runs**, **All questions** and **All artifacts** open the whole session page on this branch, grouped the way you left it.
+- **Open branch** on those pages lands on this tab.
 
 ### One trail to the Branch page
 
@@ -164,7 +337,11 @@ Every way into a branch, from Search or run, a notification, a chat card or the 
 
 ### Write it
 
-Get a pull request title, description and changelog entry in your repo's format, then Goodboy pushes the branch and opens the pull request. Linked issues become closing references. If a step fails, the reason shows next to **Retry** and the text is kept. A retry never opens a second request: when the host already has one for the branch (the first try landed but Goodboy could not save its link, or someone opened it meanwhile), Goodboy links that one, and when only the saving failed it still returns the number with a warning, **Opened #14, but Goodboy could not save the link**, so **Refresh** picks it up.
+Get a pull request title, description and changelog entry in your repo's format, then Goodboy pushes the branch and opens the pull request. Linked issues become closing references.
+
+If a step fails, the reason shows next to **Retry** and the text is kept. A retry never opens a second request. When the host already has one for the branch, Goodboy links that one.
+
+When only the saving of the link failed, Goodboy still returns the number with a warning, **Opened #14, but Goodboy could not save the link**, so **Refresh** picks it up.
 
 ### PR description follows the push
 
@@ -172,7 +349,11 @@ A description Goodboy wrote is updated after a history push, so it keeps matchin
 
 ### Read the code
 
-Read the branch against its base in **Changes**, unified or split. The changed files sit in a list on the left that tracks what you marked **Viewed**, with a filter and **All**, **Unviewed** and **Commented** in one menu; the diff scrolls beside it, with **Viewed 2 of 6** and **Next** in its toolbar. Drag the list's edge to widen it or hide it; **Show files** brings it back. Quote lines into a note, or choose **Ask agent** to send them to an agent with your question. The Branch header refreshes after a local commit edit; **Force push** waits in **⋯** behind its confirm.
+Read the branch against its base in **Changes**, unified or split. The changed files sit in a list on the left that tracks what you marked **Viewed**, with a filter and **All**, **Unviewed** and **Commented** in one menu. The diff scrolls beside it, with **Viewed 2 of 6** and **Next** in its toolbar.
+
+- Drag the list's edge to widen it or hide it. **Show files** brings it back.
+- Quote lines into a note, or choose **Ask agent** to send them to an agent with your question.
+- The Branch header refreshes after a local commit edit. **Force push** waits in **⋯** behind its confirm.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-dark.webp">
@@ -189,7 +370,10 @@ Review someone else's pull request from its diff. Click a line number to leave a
 
 The review goes to the pull request of the branch on screen, the one you picked when the branch has several. The line under the form names it: **GitHub shows it on payments-api #318 as one review.** A comment stays on the request you wrote it on, even if you switch projects before you submit.
 
-A branch without a request offers only the requests linked to the session from its own repository. When the page holds more than one request, the form asks which one. The choice stays while the diff loads or fails to load. On Bitbucket the page says **Bitbucket reviews are written on Bitbucket.** with **Open on Bitbucket**. A submit that fails keeps your comments and the summary.
+- A branch without a request offers only the requests linked to the session from its own repository.
+- When the page holds more than one request, the form asks which one. The choice stays while the diff loads or fails to load.
+- On Bitbucket the page says **Bitbucket reviews are written on Bitbucket.** with **Open on Bitbucket**.
+- A submit that fails keeps your comments and the summary.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-write-dark.webp">
