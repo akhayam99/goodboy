@@ -264,9 +264,7 @@ describe('RunKindChip', () => {
     expect(engines.spawnAgent.mock.calls[0]?.[1].initialPrompt).toContain(
       'Six pages share one wrapper',
     );
-    expect(engines.spawnAgent.mock.calls[0]?.[1].initialPrompt).toContain(
-      'Plan: follow the preset "Fix a layout".',
-    );
+    expect(engines.spawnAgent.mock.calls[0]?.[1].initialPrompt).not.toContain('Plan: follow');
     await waitFor(() => expect(engines.closeWorkflowRun).toHaveBeenCalledWith(SESSION.id, RUN_ID));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Kind' })).toBeNull());
   });

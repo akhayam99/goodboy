@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import { Button, cn } from '@goodboy/ui';
+import { openRunDefaults } from '../../../../settings/openRunDefaults';
 import { START_KIND_COPY } from '../../../startKind/startKindCopy';
 import { START_SENTENCE_ORDER } from '../startFormKinds';
 import type { StartSettingItem } from '../startSettingsOf';
@@ -44,10 +45,17 @@ export const StartSettingsRow = ({ items, className }: Props) => {
         </Button>
       </div>
       {isOpen ? (
-        <div className="flex min-w-0 flex-wrap items-center gap-1 rounded-lg bg-subtle p-2">
-          {items.map((item) => (
-            <Fragment key={item.key}>{item.node}</Fragment>
-          ))}
+        <div className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle p-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-1">
+            {items.map((item) => (
+              <Fragment key={item.key}>{item.node}</Fragment>
+            ))}
+          </div>
+          <div className="flex min-w-0 items-center gap-2">
+            <Button size="xs" variant="quiet" data-start-defaults-door="" onClick={openRunDefaults}>
+              {START_KIND_COPY.defaultsDoor}
+            </Button>
+          </div>
         </div>
       ) : null}
     </div>

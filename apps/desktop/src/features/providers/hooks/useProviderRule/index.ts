@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import type { ProviderRule } from '@goodboy/core/providers';
 import { DEFAULT_WORKFLOW_RULES, type WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { selectProviderRule } from '../../../../store/slices/overrides/selectProviderRule';
 import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Params = {
@@ -14,11 +15,7 @@ export type ProviderRuleModel = Readonly<{
 }>;
 
 export const useProviderRule = ({ workspaceId }: Params): ProviderRuleModel => {
-  const isByLoad = useAppStore(
-    (state) =>
-      state.workspaceOverrides[workspaceId]?.workflowRules?.spreadByHeadroom ??
-      DEFAULT_WORKFLOW_RULES.spreadByHeadroom,
-  );
+  const rule = useAppStore((state) => selectProviderRule({ state, workspaceId }));
   const patchWorkspaceOverrides = useAppStore((state) => state.patchWorkspaceOverrides);
   const reportError = useAppStore((state) => state.reportError);
 
@@ -42,5 +39,5 @@ export const useProviderRule = ({ workspaceId }: Params): ProviderRuleModel => {
     [patchWorkspaceOverrides, reportError, workspaceId],
   );
 
-  return { rule: isByLoad ? 'load' : 'order', setRule };
+  return { rule, setRule };
 };

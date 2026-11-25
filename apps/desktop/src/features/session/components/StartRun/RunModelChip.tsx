@@ -10,7 +10,6 @@ import {
   useDropdown,
 } from '@goodboy/ui';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
-import { ROUTING_PILL_CLASS } from '../../../../shared/components/RoutingPicker/ROUTING_PILL_CLASS';
 import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { FactButton } from '../../../../shared/components/SettingChip/FactButton';
@@ -24,7 +23,7 @@ type Props = {
   readonly model: RunModelView;
   readonly label?: string;
   readonly isDisabled: boolean;
-  readonly variant?: 'chip' | 'pill';
+  readonly variant?: 'chip' | 'change';
 };
 
 export const RunModelChip = ({
@@ -35,7 +34,7 @@ export const RunModelChip = ({
 }: Props) => {
   const { effective, suggestion, isPinned, connectedProviders, pick } = model;
   const menuLabel = RUN_MODEL_COPY.forThisRun({ name: model.label });
-  const isPill = variant === 'pill';
+  const isChange = variant === 'change';
   const isFact = useIsSettingFact();
   const dropdown = useDropdown({
     disabled: isDisabled,
@@ -75,19 +74,18 @@ export const RunModelChip = ({
       </FactButton>
     </Tooltip>
   );
-  const pill = (
+  const change = (
     <Button
-      variant="ghost"
+      variant="quiet"
       size="xs"
       disabled={isDisabled}
       aria-haspopup="dialog"
       aria-expanded={dropdown.open}
-      aria-label={ariaLabel}
+      aria-label={`${RUN_MODEL_COPY.changeLabel({ name: model.label })}, ${summary}, ${state}`}
       data-run-model={isPinned ? 'pinned' : 'auto'}
       onClick={dropdown.toggle}
-      className={cn(ROUTING_PILL_CLASS, dropdown.open && 'bg-selected')}
     >
-      {route}
+      {RUN_MODEL_COPY.change}
     </Button>
   );
   const chip = (
@@ -107,7 +105,7 @@ export const RunModelChip = ({
       {route}
     </Button>
   );
-  const look = isPill ? pill : chip;
+  const look = isChange ? change : chip;
   const popover = (
     <AnchoredPopover
       dropdown={dropdown}

@@ -16,6 +16,7 @@ type Props = {
   readonly isDisabled: boolean;
   readonly onPick: (params: PickParams) => void;
   readonly onChangeDefault?: () => void;
+  readonly label?: string;
 };
 
 export const AsksYouChip = ({
@@ -26,6 +27,7 @@ export const AsksYouChip = ({
   isDisabled,
   onPick,
   onChangeDefault,
+  label = RUN_AUTONOMY_HEADER,
 }: Props) => {
   const dropdown = useDropdown({
     expectedHeight: 200,
@@ -35,7 +37,7 @@ export const AsksYouChip = ({
   return (
     <SettingChip
       dropdown={dropdown}
-      label={RUN_AUTONOMY_HEADER}
+      label={label}
       words={words}
       help={help}
       error={error}
@@ -44,7 +46,7 @@ export const AsksYouChip = ({
       <SegmentedTabs<WorkflowAutonomy>
         fill
         size="xs"
-        ariaLabel={RUN_AUTONOMY_HEADER}
+        ariaLabel={label}
         options={RUN_AUTONOMY_OPTIONS.map((option) => ({
           value: option.key,
           label: option.label,

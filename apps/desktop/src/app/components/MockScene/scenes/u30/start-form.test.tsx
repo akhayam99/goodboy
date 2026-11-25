@@ -69,13 +69,16 @@ describe('the u30 start form scenes', () => {
 
     const row = await settingsRow();
     expect(
-      screen.getByRole('tab', { name: 'Follow a workflow' }).getAttribute('aria-selected'),
+      screen.getByRole('tab', { name: 'The Lead plans it' }).getAttribute('aria-selected'),
     ).toBe('true');
+    expect(screen.getByRole('combobox', { name: 'Workflow' }).textContent).toContain(
+      'Fix a layout',
+    );
     expect(document.querySelector('[data-start-settings-line]')?.textContent).toMatch(
-      /^Stops after the plan · Edits full access · Limit \$8\.00 · /,
+      /^Stops after the plan · Edits full access · Limit \$8\.00, then pause · /,
     );
     row.getByRole('combobox', { name: 'Projects' });
-    row.getByRole('button', { name: /^Asks you:/ });
+    row.getByRole('button', { name: /^Stops:/ });
     row.getByRole('button', { name: /^Edits:/ });
     row.getByRole('button', { name: /^Limit: \$8\.00/ });
     within(screen.getByRole('list', { name: 'Workflow steps' })).getAllByRole('listitem');
@@ -84,20 +87,20 @@ describe('the u30 start form scenes', () => {
     expect(document.body.textContent).not.toMatch(/preset/i);
   });
 
-  it('draws the agent kind with a role and no limit or Asks you', async () => {
+  it('draws the agent kind with a role and no limit or Stops', async () => {
     mount({ id: 'u30-start-form-agent' });
 
     const row = await settingsRow();
     expect(screen.getByRole('combobox', { name: 'Role' }).textContent).toContain('Scout');
     expect(row.queryByRole('button', { name: /^Limit: / })).toBeNull();
-    expect(row.queryByRole('button', { name: /^Asks you:/ })).toBeNull();
+    expect(row.queryByRole('button', { name: /^Stops:/ })).toBeNull();
     screen.getByRole('button', { name: 'Start' });
   });
 
   it('draws the Auto and Orchestrated kinds', async () => {
     mount({ id: 'u30-start-form-auto' });
     screen.getByRole('button', { name: 'Start' });
-    (await settingsRow()).getByRole('button', { name: /^Asks you:/ });
+    (await settingsRow()).getByRole('button', { name: /^Stops:/ });
     cleanup();
 
     mount({ id: 'u30-start-form-orchestrated' });
@@ -110,8 +113,8 @@ describe('the u30 start form scenes', () => {
     await settingsRow();
     const line = screen.getByText(/^Starts[ ]as/);
     expect(line.textContent).not.toContain('Fix a layout');
-    expect(document.querySelector('[data-start-suggestion]')?.textContent).toBe(
-      'Looks like your workflow Fix a layout.Use it',
+    expect(screen.getByRole('combobox', { name: 'Workflow' }).textContent).toBe(
+      'WorkflowAuto · likely Fix a layout',
     );
   });
 

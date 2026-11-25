@@ -20,6 +20,13 @@ export const startFormNoteOf = ({ kind, workflow, closeness }: NoteParams): stri
   if (workflow === null) {
     return null;
   }
+  const check = workflow.entryCheck?.trim() ?? '';
+  if (check !== '') {
+    return START_KIND_COPY.plan.checksFirst({
+      name: workflow.name,
+      check: `${check.charAt(0).toLowerCase()}${check.slice(1)}`,
+    });
+  }
   return closeness === 'follow'
     ? START_KIND_COPY.plan.followLine({ count: liveStepsOf({ workflow }).length })
     : START_KIND_COPY.plan.adaptLine({ name: workflow.name });
@@ -73,13 +80,7 @@ export const startGuidanceReaderOf = ({
 
 type ReasonParams = {
   readonly hasGoal: boolean;
-  readonly kind: StartFormKind | null;
-  readonly hasPreset: boolean;
 };
 
-export const startReasonOf = ({ hasGoal, kind, hasPreset }: ReasonParams): string | null => {
-  if (!hasGoal) {
-    return START_KIND_COPY.goalNeeded;
-  }
-  return kind === 'preset' && !hasPreset ? START_KIND_COPY.presetNeeded : null;
-};
+export const startReasonOf = ({ hasGoal }: ReasonParams): string | null =>
+  hasGoal ? null : START_KIND_COPY.goalNeeded;

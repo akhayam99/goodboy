@@ -448,11 +448,11 @@ describe('one run page', () => {
 });
 
 describe('the form and the row', () => {
-  it('shows the Plan row with three choices and opens the run settings under Change', async () => {
+  it('shows the Plan row with two kinds and opens the run settings under Change', async () => {
     await mount('u36-p14-form-how-open');
 
     const kinds = screen.getByRole('tablist', { name: 'Plan' });
-    expect(within(kinds).getAllByRole('tab')).toHaveLength(3);
+    expect(within(kinds).getAllByRole('tab')).toHaveLength(2);
     within(kinds).getByRole('tab', { name: 'The Lead plans it' });
     screen.getByRole('button', { name: 'Done' });
     screen.getByRole('button', { name: /^Edits:/ });

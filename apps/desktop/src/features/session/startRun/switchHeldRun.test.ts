@@ -152,7 +152,7 @@ describe('switchHeldRun', () => {
     const options = spawnAgent.mock.calls[0]?.[1];
     expect(options?.initialPrompt).toContain(ASK);
     expect(options?.initialPrompt).toContain('Rounding each line matches the settlement spec');
-    expect(options?.initialPrompt).toContain('Ship a feature');
+    expect(options?.runRoute).toMatchObject({ presetName: 'Ship a feature' });
     expect(options?.guidance).toBe(GUIDANCE);
     expect(stop).toHaveBeenCalledWith({ treeId });
   });

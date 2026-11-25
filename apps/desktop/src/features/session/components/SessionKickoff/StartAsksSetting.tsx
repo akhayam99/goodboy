@@ -1,5 +1,6 @@
 import { DEFAULT_WORKFLOW_RULES, type WorkflowAutonomy, type WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { NAMES } from '../../../../shared/utils/names';
 import { AsksYouChip } from '../../../workflows/AsksYouChip';
 import { openRunDefaults } from '../../../settings/openRunDefaults';
 import { asksWordsOf } from '../../../workflows/asksWordsOf';
@@ -37,6 +38,7 @@ export const StartAsksSetting = ({ workspaceId, autonomy, isDisabled, onPick }: 
       error={null}
       isDisabled={isDisabled}
       onPick={onPick}
+      label={NAMES.stops}
       onChangeDefault={openRunDefaults}
     />
   );

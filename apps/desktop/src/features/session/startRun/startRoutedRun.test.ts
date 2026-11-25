@@ -179,14 +179,7 @@ describe('startRoutedRun keeps the reason with the run', () => {
     expect(engines.attachWorkflowToSession).not.toHaveBeenCalled();
     const options = engines.spawnAgent.mock.calls[0]?.[1];
     expect(options?.kindOverride).toBe('auto');
-    expect(options?.initialPrompt).toBe(
-      [
-        'the totals table',
-        'Plan: follow the preset "Fix a layout".',
-        '1. Find (scout)',
-        'Keep these steps in their order. Ask before you add, skip or move one.',
-      ].join('\n\n'),
-    );
+    expect(options?.initialPrompt).toBe('the totals table');
     expect((await readRoutes())[AGENT]).toMatchObject({
       shape: 'lead',
       row: 1,
@@ -196,7 +189,7 @@ describe('startRoutedRun keeps the reason with the run', () => {
     });
   });
 
-  it('hands the Lead the model pinned on a preset step, in its brief and for its children', async () => {
+  it('hands the children the model pinned on a preset step and the Lead no brief', async () => {
     const engines = mockEngines();
     const lock = {
       version: 1,
@@ -215,10 +208,47 @@ describe('startRoutedRun keeps the reason with the run', () => {
     await startRoutedRun({ sessionId: SESSION.id, result });
 
     const options = engines.spawnAgent.mock.calls[0]?.[1];
-    expect(options?.initialPrompt).toContain(
-      '1. Find (implementer, pinned to anthropic claude-opus-5-5 high)',
-    );
+    expect(options?.initialPrompt).toBe('the totals table');
     expect(options?.stepLocks).toEqual([{ role: 'implementer', routingLock: lock }]);
+  });
+
+  it('keeps the process text and the step briefs of a workflow in the first message', async () => {
+    const engines = mockEngines();
+    const briefed: Workflow = {
+      ...LAYOUT,
+      processText: 'Stay inside the billing folder.',
+      steps: LAYOUT.steps.map((step) => ({
+        ...step,
+        promptPrefix: 'Read the failing page first.',
+      })),
+    };
+    useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [briefed] } });
+    const result = runRouteOf({
+      facts: { ...FACTS, presets: [briefed], text: '~Fix a layout the totals table' },
+    });
+
+    await startRoutedRun({ sessionId: SESSION.id, result });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]?.initialPrompt).toBe(
+      [
+        'the totals table',
+        '1. Find: Read the failing page first.',
+        'Stay inside the billing folder.',
+      ].join('\n\n'),
+    );
+  });
+
+  it('hands the route to the spawn so it exists before the first turn', async () => {
+    const engines = mockEngines();
+    const result = routeOf({ text: '~Fix a layout the totals table' });
+
+    await startRoutedRun({ sessionId: SESSION.id, result });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]?.runRoute).toMatchObject({
+      shape: 'lead',
+      presetName: 'Fix a layout',
+      closeness: 'follow',
+    });
   });
 
   it('hands no pinned model when no step of the preset is pinned', async () => {
@@ -244,7 +274,7 @@ describe('startRoutedRun keeps the reason with the run', () => {
     );
   });
 
-  it('starts a Lead free to adapt the workflow Use it picked', async () => {
+  it('starts a Lead free to adapt the workflow picked, with the ask alone', async () => {
     const engines = mockEngines();
     const result = runAsRouteOf({
       runAs: { kind: 'preset', presetId: LAYOUT.id, closeness: 'adapt' },
@@ -254,9 +284,13 @@ describe('startRoutedRun keeps the reason with the run', () => {
     await startRoutedRun({ sessionId: SESSION.id, result });
 
     expect(engines.attachWorkflowToSession).not.toHaveBeenCalled();
-    expect(engines.spawnAgent.mock.calls[0]?.[1]?.initialPrompt).toContain(
-      'You may add, skip or move a step. Say why when you do.',
+    expect(engines.spawnAgent.mock.calls[0]?.[1]?.initialPrompt).toBe(
+      'Fix the layout on every billing page',
     );
+    expect((await readRoutes())[AGENT]).toMatchObject({
+      presetName: 'Fix a layout',
+      closeness: 'adapt',
+    });
   });
 
   it('sends the ask alone when one role runs it', async () => {

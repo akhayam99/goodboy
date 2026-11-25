@@ -1,23 +1,23 @@
+import type { WorkflowId } from '@goodboy/types';
 import type { StartKind, StartShape } from '../../../../store/slices/sessionDraft/state';
 
 export type StartFormKind = 'lead' | 'preset' | 'agent';
 
-export type StartSettingKey = 'where' | 'asks' | 'edits' | 'limit' | 'guidance';
-
-export const START_FORM_KINDS: ReadonlyArray<StartFormKind> = ['lead', 'preset', 'agent'];
+export type StartSettingKey = 'where' | 'asks' | 'edits' | 'limit' | 'replies' | 'guidance';
 
 export const START_SENTENCE_ORDER: ReadonlyArray<StartSettingKey> = [
   'asks',
   'edits',
   'limit',
+  'replies',
   'guidance',
   'where',
 ];
 
 const START_KIND_SETTINGS = {
-  lead: ['where', 'asks', 'edits', 'limit', 'guidance'],
-  preset: ['where', 'asks', 'edits', 'limit', 'guidance'],
-  agent: ['where', 'edits', 'guidance'],
+  lead: ['where', 'asks', 'edits', 'limit', 'replies', 'guidance'],
+  preset: ['where', 'asks', 'edits', 'limit', 'replies', 'guidance'],
+  agent: ['where', 'edits', 'replies', 'guidance'],
 } as const satisfies Record<StartFormKind, ReadonlyArray<StartSettingKey>>;
 
 const START_PICK_SETTINGS = [
@@ -25,6 +25,7 @@ const START_PICK_SETTINGS = [
   'asks',
   'edits',
   'limit',
+  'replies',
   'guidance',
 ] as const satisfies ReadonlyArray<StartSettingKey>;
 
@@ -45,17 +46,19 @@ export const startShapeOfFormKind = ({ kind }: KindParams): StartShape =>
 type DraftParams = {
   readonly startKind: StartKind | null;
   readonly startShape: StartShape | null;
+  readonly workflowId: WorkflowId | null;
 };
 
 export const startFormKindOfDraft = ({
   startKind,
   startShape,
+  workflowId,
 }: DraftParams): StartFormKind | null => {
   if (startKind !== 'workflow' && startKind !== 'agent') {
     return null;
   }
-  if (startShape === 'preset' || startShape === 'agent') {
-    return startShape;
+  if (startShape === 'preset') {
+    return workflowId === null ? null : 'preset';
   }
-  return null;
+  return startShape === 'agent' ? 'agent' : null;
 };

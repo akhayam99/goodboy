@@ -323,7 +323,7 @@ describe('the shell chapter', () => {
 describe('the start, agent and workflow chapters', () => {
   it('names the one way to start a session and the folder picker', () => {
     expect(pointOf('kickoff', 'Plan')).toContain(
-      'The Lead plans it, Follow a workflow or One agent',
+      'The Lead plans it, with a Workflow pill, or One agent',
     );
     expect(pointOf('kickoff', 'Plan')).not.toMatch(/Orchestrated|Preset/);
     expect(pointOf('kickoff', NAMES.startARun)).toContain('a Lead plans the run');

@@ -177,7 +177,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Plan',
-        desc: 'The Lead plans it, Follow a workflow or One agent.',
+        desc: 'The Lead plans it, with a Workflow pill, or One agent.',
       },
       {
         term: NAMES.startARun,

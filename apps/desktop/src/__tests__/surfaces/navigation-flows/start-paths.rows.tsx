@@ -270,19 +270,20 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
   {
     name: 'New session door: the Plan row and one settings row, with Where in the row and not under the task',
     covers: ['navigate'],
-    open: (ctx) => openTasksAndStartOn({ ctx, lastStart: 'preset' }),
+    open: (ctx) => openTasksAndStartOn({ ctx, lastStart: 'auto' }),
     lands: async () => {
       await screen.findByRole('list', { name: 'Picked issues' }, WAIT);
       expect(
-        screen.getByRole('tab', { name: 'Follow a workflow' }).getAttribute('aria-selected'),
+        screen.getByRole('tab', { name: 'The Lead plans it' }).getAttribute('aria-selected'),
       ).toBe('true');
+      expect(screen.getByRole('combobox', { name: 'Workflow' }).textContent).toBe('WorkflowAuto');
       const task = within(screen.getByRole('region', { name: 'Goal' }));
       expect(task.queryByRole('combobox', { name: 'Projects' })).toBeNull();
       const settings = startSettingsRowOf({
         group: screen.getByRole('group', { name: 'Run settings' }),
       });
       settings.getByRole('combobox', { name: 'Projects' });
-      settings.getByRole('button', { name: /^Asks you:/ });
+      settings.getByRole('button', { name: /^Stops:/ });
       settings.getByRole('button', { name: /^Edits:/ });
       settings.getByRole('button', { name: /^Limit:/ });
     },

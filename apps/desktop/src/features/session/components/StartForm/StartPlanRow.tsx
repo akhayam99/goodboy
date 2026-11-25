@@ -1,37 +1,36 @@
 import type { ReactNode } from 'react';
 import { SegmentedTabs } from '@goodboy/ui';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
-import { START_FORM_KINDS, type StartFormKind } from './startFormKinds';
+import type { StartFormKind } from './startFormKinds';
+
+export type StartPlanKind = 'lead' | 'agent';
 
 type Props = {
   readonly kind: StartFormKind;
-  readonly hasPresets: boolean;
   readonly isDisabled: boolean;
-  readonly onPick: (kind: StartFormKind) => void;
+  readonly onPick: (kind: StartPlanKind) => void;
   readonly pick: ReactNode;
   readonly detail: ReactNode;
 };
 
 const COPY = START_KIND_COPY.plan;
 
-export const StartPlanRow = ({ kind, hasPresets, isDisabled, onPick, pick, detail }: Props) => (
+const PLAN_KINDS: ReadonlyArray<StartPlanKind> = ['lead', 'agent'];
+
+export const StartPlanRow = ({ kind, isDisabled, onPick, pick, detail }: Props) => (
   <>
     <span className="text-meta text-muted-foreground">{COPY.label}</span>
     <div className="flex min-w-0 flex-wrap items-center gap-2">
-      <SegmentedTabs<StartFormKind>
+      <SegmentedTabs<StartPlanKind>
         ariaLabel={COPY.label}
         size="sm"
-        value={kind}
+        value={kind === 'agent' ? 'agent' : 'lead'}
         onChange={onPick}
-        options={START_FORM_KINDS.map((value) => {
-          const isMissing = value === 'preset' && !hasPresets;
-          return {
-            value,
-            label: COPY[value],
-            disabled: isDisabled || isMissing,
-            ...(isMissing && { tooltip: START_KIND_COPY.noPresets }),
-          };
-        })}
+        options={PLAN_KINDS.map((value) => ({
+          value,
+          label: COPY[value],
+          disabled: isDisabled,
+        }))}
       />
       {pick}
     </div>
