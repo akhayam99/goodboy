@@ -126,7 +126,11 @@ mod tests {
     fn every_decide_opcode_needs_decide_and_the_transcript_query_needs_nothing() {
         for op in (0x90u8..=0x9A).chain(0x9C..=0x9D) {
             let action = MobileAction::from_opcode(op).unwrap();
-            assert_eq!(permission_for(action), Some(Permission::Decide), "{op:#04x}");
+            assert_eq!(
+                permission_for(action),
+                Some(Permission::Decide),
+                "{op:#04x}"
+            );
         }
         let transcript = MobileAction::from_opcode(0x9B).unwrap();
         assert_eq!(permission_for(transcript), None);
