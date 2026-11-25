@@ -1,4 +1,4 @@
-import { SectionLabel, StatusDot, ToneBar } from '@goodboy/ui';
+import { SectionLabel, StatusDot } from '@goodboy/ui';
 import type { OpenQuestion, SessionId } from '@goodboy/types';
 import { NAMES } from '../../../../shared/utils/names';
 import type { ActionCardModel } from '../../central/next/actionCardsOf';
@@ -24,7 +24,7 @@ export const NeedsYouSection = ({
   openFor,
   kickerById,
 }: Props) => {
-  const [move, ...rest] = cards;
+  const [move] = cards;
   if (move === undefined && questions.length === 0) {
     return null;
   }
@@ -32,44 +32,34 @@ export const NeedsYouSection = ({
     <section
       aria-label={NAMES.needsYou}
       data-overview-section="needs-you"
-      className="relative flex min-w-0 flex-col gap-3 rounded-lg bg-subtle p-4"
+      className="flex min-w-0 flex-col gap-2"
     >
-      <ToneBar tone={STAGE_TONE.attention} density="card" />
-      <span className="flex min-w-0 items-center gap-2">
+      <span className="flex h-7 min-w-0 items-center gap-2">
         <StatusDot tone={STAGE_TONE.attention} size="sm" />
         <SectionLabel label={NAMES.needsYou} headingLevel={2} />
       </span>
-      {move === undefined ? null : (
-        <MoveCard
-          sessionId={sessionId}
-          card={move}
-          actionsFor={actionsFor}
-          openFor={openFor}
-          density="focus"
-          isPrimary
-          kicker={kickerById.get(move.id) ?? null}
-        />
-      )}
-      {rest.map((card) => (
-        <MoveCard
-          key={card.id}
-          sessionId={sessionId}
-          card={card}
-          actionsFor={actionsFor}
-          openFor={openFor}
-          density="row"
-          isPrimary={false}
-          kicker={null}
-        />
-      ))}
-      {questions.map((question, index) => (
-        <NeedsYouQuestion
-          key={question.id}
-          sessionId={sessionId}
-          question={question}
-          isPrimary={move === undefined && index === 0}
-        />
-      ))}
+      <div data-needs-you-rows="" className="flex min-w-0 flex-col gap-1 rounded-lg bg-subtle p-2">
+        {cards.map((card, index) => (
+          <MoveCard
+            key={card.id}
+            sessionId={sessionId}
+            card={card}
+            actionsFor={actionsFor}
+            openFor={openFor}
+            density="needs"
+            isPrimary={index === 0}
+            project={kickerById.get(card.id) ?? null}
+          />
+        ))}
+        {questions.map((question, index) => (
+          <NeedsYouQuestion
+            key={question.id}
+            sessionId={sessionId}
+            question={question}
+            isPrimary={move === undefined && index === 0}
+          />
+        ))}
+      </div>
     </section>
   );
 };

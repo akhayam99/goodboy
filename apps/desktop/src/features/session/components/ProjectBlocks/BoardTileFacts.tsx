@@ -1,3 +1,4 @@
+import { Button } from '@goodboy/ui';
 import { countNoun } from '../../../../shared/utils/countNoun';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { boardSettledWordOf } from '../../central/board/boardSettledWordOf';
@@ -7,11 +8,13 @@ import { useBoardContext } from './useBoardContext';
 
 type Props = {
   readonly rowId: string;
+  readonly title: string;
+  readonly onOpenChanges: () => void;
 };
 
 const SEPARATOR = ' · ';
 
-export const BoardTileFacts = ({ rowId }: Props) => {
+export const BoardTileFacts = ({ rowId, title, onOpenChanges }: Props) => {
   const { session, rowById, entryByRowId, diffStatByPath, runningByRowId } = useBoardContext();
   const entry = entryByRowId.get(rowId) ?? null;
   const mountPath = entry === null ? null : entry.fact.mountPath;
@@ -49,10 +52,17 @@ export const BoardTileFacts = ({ rowId }: Props) => {
       {requestWord === '' ? null : <span data-board-request="">{requestWord}</span>}
       {requestWord !== '' && (hasDiff || words !== '') ? SEPARATOR : null}
       {hasDiff ? (
-        <span data-board-diff="">
+        <Button
+          variant="quiet"
+          data-board-diff=""
+          aria-label={`Open ${title} in Changes`}
+          aria-description={`${stat.additions} added, ${stat.deletions} removed`}
+          onClick={onOpenChanges}
+          className="pointer-events-auto relative h-auto w-auto min-w-0 rounded-sm px-0 py-0 text-meta font-normal tabular-nums"
+        >
           <span className="text-success">+{stat.additions}</span>{' '}
           <span className="text-danger">-{stat.deletions}</span>
-        </span>
+        </Button>
       ) : null}
       {hasDiff && words !== '' ? SEPARATOR : null}
       {words}

@@ -35,7 +35,7 @@ export const NextSection = ({ sessionId, cards, actionsFor, openFor, hasFilledMo
           openFor={openFor}
           density="row"
           isPrimary={hasFilledMove && index === 0}
-          kicker={null}
+          project={null}
         />
       ))}
     </section>

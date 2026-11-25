@@ -80,4 +80,16 @@ describe('placedAgentsOf', () => {
 
     expect(placedAgentsOf({ agents, autoViews: [], mounts: [API] })).toBe(agents);
   });
+
+  it('places an agent with no mount on the worktree its turns touched when two mounts share a session', () => {
+    const agent = anAgent({});
+    const placed = placedAgentsOf({
+      agents: [agent],
+      autoViews: [],
+      mounts: [API, BOOKS],
+      touchedMountIds: new Map([[agent.id, [BOOKS.id]]]),
+    });
+
+    expect(placed[0]?.mountId).toBe(BOOKS.id);
+  });
 });

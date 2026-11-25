@@ -162,4 +162,28 @@ describe('workBranchesOf', () => {
     });
     expect(branches[0]?.projectName).toBe('payments-api');
   });
+
+  it('adds the worktrees an agent touched to the one it was started on', () => {
+    const agent = anAgent({ sessionId: SESSION, mountId: DUP.id });
+    const branches = workBranchesOf({
+      agentIds: [agent.id],
+      agents: [agent],
+      mounts: [DUP, RETRY],
+      projects: PROJECTS,
+      touchedMountIds: new Map([[agent.id, [DUP.id, RETRY.id]]]),
+    });
+    expect(branches.map((branch) => branch.mountId)).toEqual([DUP.id, RETRY.id]);
+  });
+
+  it('reads the worktree of an agent with no mount from its touched ones', () => {
+    const agent = anAgent({ sessionId: SESSION });
+    const branches = workBranchesOf({
+      agentIds: [agent.id],
+      agents: [agent],
+      mounts: [DUP, RETRY],
+      projects: PROJECTS,
+      touchedMountIds: new Map([[agent.id, [RETRY.id]]]),
+    });
+    expect(branches.map((branch) => branch.mountId)).toEqual([RETRY.id]);
+  });
 });

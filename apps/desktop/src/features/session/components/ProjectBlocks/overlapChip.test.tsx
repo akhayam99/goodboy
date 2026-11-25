@@ -127,7 +127,7 @@ const show = async () => {
 
 const tenantTile = (): HTMLElement => {
   const tile = screen
-    .getByRole('link', { name: `Open ${TENANT}` })
+    .getByRole('link', { name: `Open ${TENANT} overview` })
     .closest<HTMLElement>('[data-board-row]');
   if (tile === null) {
     throw new Error('The link must sit in a tile.');

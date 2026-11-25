@@ -3,8 +3,6 @@ import type { BrowserTab, DevicePresetId } from '../../store/slices/browser/type
 
 export type BrowserTabState = 'live' | 'asleep' | 'closed';
 
-export type BrowserTabListMode = 'list' | 'rail' | 'hidden';
-
 export type BrowserTabFacts = {
   readonly id: string;
   readonly sessionId: SessionId;

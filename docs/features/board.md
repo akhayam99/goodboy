@@ -1,12 +1,14 @@
 # The board
 
-The Board shows every session of a workspace in lanes by stage, so you see where each task stands, with what needs you as a row of cards above them. Sessions in the top bar lists the same sessions, so the page stays a board. Open a session and come back: the board is as you left it, with the same scroll and the same cards selected.
+The Board shows every session of a workspace in lanes by stage, so you see where each task stands, with what needs you at the top of **Running**. Sessions in the top bar lists the same sessions, so the page stays a board. Open a session and come back: the board is as you left it, with the same scroll and the same cards selected.
 
 ### Needs you
 
-See what waits on you at the top of the Board. One row of cards sits above the lanes, the oldest wait first. Its head says **Needs you** with the count, the same number as the places rail. With nothing waiting there is no row.
+See what waits on you at the top of the **Running** lane. A session that needs you sits there, whatever stage it was in, the oldest wait first. Its card has a yellow line at the left edge. The sessions that only run follow below it, with a blue line: blue means working, yellow means it needs you.
 
-Each card is a session: its project, its title, why it waits and how long. The reason is the question itself, or the words of the state, such as "An agent failed". A session with two open questions is one card that says "2 questions".
+Each card reads like a lane card: the repository and branch, the title, then how long it waited and why, such as "Waiting 5h · Which currency rounds first?". The reason is the question itself, or the words of the state, such as "An agent failed". It wraps to two lines at most. A session with two open questions is one card that says "2 questions".
+
+The lane count holds both kinds of card. The number on **Board** in the places rail stays the count of what needs you.
 
 A card resolves nothing on the Board. Click it and its session opens at the exact point that needs you:
 
@@ -15,7 +17,7 @@ A card resolves nothing on the Board. Click it and its session opens at the exac
 - a stopped or paused run, on its run
 - a run held on its first check, on its card, with **Switch** in focus
 
-A session of another workspace opens through that workspace. When the cards are more than the row holds, the row scrolls sideways, and **←** and **→** move between cards.
+A session of another workspace opens through that workspace.
 
 ### Merge train
 
@@ -42,7 +44,9 @@ See where each task stands without moving cards around. Five lanes always sit in
 - **Done**
 - **Archived**
 
-A session that waits on you shows once, as a card in the **Needs you** row above the lanes, and in no lane. One that only waits for a quiet look, such as an approved pull request or an unread reply, stays in **In review** or **Building**.
+A session that waits on you shows once, as a yellow card at the top of **Running**, and in no other lane. One that only waits for a quiet look, such as an approved pull request or an unread reply, stays in **In review** or **Building**.
+
+Each lane is a quiet panel with a dot in its stage color beside its name and count. An empty lane shows one dashed slot. **Filter** sits on the tool row under the **Board** title.
 
 **⌥⌘↓** goes to the next session that needs you. If the read of the sessions fails, one line says so above the lanes, with **Retry**.
 
@@ -63,13 +67,17 @@ A session whose pull request merged or closed leaves the live groups of Sessions
 
 - The **Done** lane header carries a **⋯** menu with **Archive all in Done** and **Archive done older than 7 days**, by the session's last activity.
 - Each archives at once with **Undo**, or asks first when an agent there is still live.
-- **Restore** on an archived card puts the session back where it belongs.
+- **Done** and **Archived** draw each session as one compact row: its title and its pull request.
+- **Archived** folds to its count. **Show all** opens it and **Hide** folds it again.
+- **Restore** on an archived row puts the session back where it belongs.
 
 On a narrow window the two lanes share the last lane.
 
 ### Session card
 
-Read a task at a glance: its title on two lines, its project in gray, and one signal at the right. The signal is the first of these that applies:
+Read a task at a glance: repository and branch, a two-line title, then its state, last move and one signal. The repository and branch sit in gray above the title, and the state, the time and the signal share the line under it. A card is as tall as what it says, and a session with no repository skips the gray line. The meta line never cuts a word: a long state wraps to a second line.
+
+The signal is the first of these that applies:
 
 - the reason a quiet card waits, such as "Approved, ready to merge"
 - a failed check or an open question
@@ -80,7 +88,7 @@ While an agent works, a line says what it does, such as "Running pnpm test in pa
 
 Rest the pointer on a card, or focus its title with the keyboard, to open the hover card with age, linked issues, agent count, cost, the pin and draft review comments. Esc, a click elsewhere or another page closes it. The card's right-click menu holds the rest of the session's verbs, among them **Mark as unread** and **Mark as read**.
 
-A thin colored line at the card's left edge tells its stage: gray while building, cyan while running, amber when it needs you, green in review, purple when done, and gray again once archived.
+A thin colored line at the card's left edge tells its stage: gray while building, blue while running, yellow when it needs you, green in review, purple when done, and gray again once archived.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-card-dark.webp">
@@ -121,9 +129,11 @@ This part is for contributors and agents who change the feature.
 - Card signal: `boardSignalOf` reads `attentionWordsOf`, so a new reason needs no second table.
 - Live line: `useFleetPhrase` reads `live_work` for every session in one call that all its readers share. A `work-changed` event or the poll (`FLEET_EVERY_MS`, 15 s) asks for a read while the window shows. `fleetPhraseOf` keeps the newest run's phrase. A phrase stays `FLEET_MIN_MS` (5 s) after it changed, and only the newest waiting one follows. A failed read keeps the last line, and a late answer is dropped. `StageBoardCard`, `SessionHoverCardBody`, the Now chip rows and `SessionsRow` read it.
 - Waiting run: `waitingRunOf` names the run `attentionPlace` opens for the same reason, and `leadWaitWordsOf` gives a Lead its words and its button.
-- Lanes: `boardByStageOf` drops every session `attentionCountOf` counts from the lanes and files a quiet attention session under `review` when it has a pull request, else `building`. `boardLanesOf` gives five lanes, four with Done over Archived, or four that scroll. `laneColumnsOf` picks the `PANE_RHYTHM` lane tracks for `BoardLanes` and `BoardSkeleton`, and `laneWidthOf` gives the same width in rem to the scrolling tracks and to each Needs you card (`laneWidthOf.test.ts`, `NeedsYouStrip/index.test.tsx`).
+- Lanes: `boardByStageOf` drops every session `attentionCountOf` counts from the lanes and files a quiet attention session under `review` when it has a pull request, else `building`. `boardLanesOf` gives five lanes, four with Done over Archived, or four that scroll. `laneColumnsOf` picks the `PANE_RHYTHM` lane tracks for `BoardLanes` and `BoardSkeleton`, and `laneWidthOf` gives the same width in rem to the scrolling tracks (`laneWidthOf.test.ts`). `needsYouPlacement.test.ts` checks that every loud attention reason lands as one Running card and in no other lane, and every quiet one stays a plain card in its own lane.
 - Needs you count: `needsYouOf` counts the sessions with `attentionCountOf`, the count the places rail uses, and turns each loud reason into moves, one per open question. Each session then gets one card with its question count. `pr-approved` stays out and lands in `readyToMergeOf`. It also needs `requestChecksOf` to read `success` (`readyToMergeOf.test.ts`). Tested in `needsYouOf.test.ts`.
-- Needs you strip: `NeedsYouStrip` reads `useNeedsYou` and draws one `NeedsYouCard`, an `InteractiveRow`, per card in a horizontal `ScrollFade`; `useStripScroll` shows the arrows only on overflow. A click calls `openAttentionTarget` with the card's reason, so the landing is `attentionPlace` and another workspace goes through `attentionTargetChannel`. Tested in `NeedsYouStrip/index.test.tsx`, `needs-you.rows.tsx` and the u52 board scenes.
+- Needs you in Running: `NeedsYouCards` reads `useNeedsYou` and draws one `NeedsYouCard`, an `InteractiveRow` with the `warning` `ToneBar`, per card. `BoardLanes` hands them to the `running` `StageColumn` as its `lead`, above its own cards, and adds their count to the lane head. A click calls `openAttentionTarget` with the card's reason, so the landing is `attentionPlace` and another workspace goes through `attentionTargetChannel`. Tested in `NeedsYouCards/index.test.tsx`, `lanes.test.tsx`, `needs-you.rows.tsx` and the u52 board scenes.
+- Card grammar: `cardContextOf` gives the gray line (`projectLineOf` and the first branch), and `cardFactsOf` the state and age of the meta line. `CardFactsLine` draws them in a wrapping row whose separator hides at a line start, beside the signal. `StageColumn` passes `density="row"` to the `done` and `archived` lanes. Tested in `cardContextOf.test.ts`, `cardFactsOf.test.ts` and `StageBoardCard/index.test.tsx`.
+- Archived fold: `StageColumn` keeps the fold in local state, folded on mount and never while the list loads or is empty. Selection still reads the whole list, so Select all picks a folded session too (`lanes.test.tsx`, the `board-lanes` flow row).
 - Held run: `waitingRunOf` words a held Lead "Stopped on a check" with the verb "Switch to <workflow>" (`holdWaitWords`). `attentionPlace` opens the held Lead first when two wait, and `AutoDockHold` puts focus on its first button when nothing else holds focus (`AutoDock.hold.test.tsx`, `waitingRunOf.test.ts`).
 - Old entries: a history entry saved with the retired `board.layout` and `board.move` rows opens the stages (`needs-you.rows.tsx`).
 - Merge order: `mergeOrderOf` proposes the order and its reason from `readyCarsOf`. It reads the mount, the base branch and the file count of a cached view. `MergeInOrder` in the In review lane head reads `useReadyToMerge` and `useMergeTrain`, which merges every ready car in that order (u50 merge train scenes).

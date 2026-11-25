@@ -18,6 +18,7 @@ import { autoRootsOf } from '../../../auto/autoRootsOf';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { sessionRunsOf, type SessionRun } from '../../sessionRunsOf';
 import { useRunRoutes } from '../useRunRoutes';
+import { useTouchedMountIds } from '../useTouchedMountIds';
 import { useLiveAgentTurns } from '../../../../shared/hooks/useLiveAgentTurns';
 
 type Params = {
@@ -46,6 +47,7 @@ export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> =
   const projects = useAppStore((state) => state.projects);
   const turnByAgentId = useLiveAgentTurns({ agents });
   const routes = useRunRoutes({ sessionId });
+  const touchedMountIds = useTouchedMountIds({ sessionId });
   const notes = useAppStore((state) => state.diffComments[sessionId] ?? NO_NOTES);
   const comments = useAppStore((state) => {
     const loaded = activeReviewSourceOf({ state, sessionId })?.comments ?? NO_COMMENTS;
@@ -102,8 +104,10 @@ export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> =
         projects,
         routes,
         commentPlaces,
+        touchedMountIds,
       }),
     [
+      touchedMountIds,
       routes,
       commentPlaces,
       attachedRuns,

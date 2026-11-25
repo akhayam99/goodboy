@@ -1,6 +1,7 @@
 import type { Agent, AgentId, MountId, ProjectId, SessionMountView } from '@goodboy/types';
 import { projectById } from '../../store/slices/projects/projectIndex';
 import { inheritedMountIdOf } from '../../store/slices/workflows/runMount/inheritedMountIdOf';
+import { NO_TOUCHED_MOUNT_IDS, type TouchedMountIds } from './touchedMountIdsOf';
 import { soleMountIdOf } from './soleMountIdOf';
 
 export type WorkBranch = Readonly<{
@@ -22,6 +23,7 @@ type Params = {
   readonly mounts: ReadonlyArray<SessionMountView>;
   readonly projects: ReadonlyArray<WorkBranchProject>;
   readonly isDetachedIncluded?: boolean;
+  readonly touchedMountIds?: TouchedMountIds;
 };
 
 type MountParams = {
@@ -68,6 +70,7 @@ export const workBranchesOf = ({
   mounts,
   projects,
   isDetachedIncluded,
+  touchedMountIds = NO_TOUCHED_MOUNT_IDS,
 }: Params): ReadonlyArray<WorkBranch> => {
   const members = new Set<string>(agentIds);
   const found = new Map<string, WorkBranch>();
@@ -76,15 +79,20 @@ export const workBranchesOf = ({
     if (!members.has(agent.id)) {
       continue;
     }
-    const mountId = stepMountIdOf({ agent, agents, soleMountId });
-    if (mountId === null || found.has(mountId)) {
-      continue;
+    const stepMountId = stepMountIdOf({ agent, agents, soleMountId });
+    const mountIds = [
+      ...(stepMountId === null ? [] : [stepMountId]),
+      ...(touchedMountIds.get(agent.id) ?? []),
+    ];
+    for (const mountId of mountIds) {
+      if (found.has(mountId)) {
+        continue;
+      }
+      const branch = workBranchOf({ mountId, mounts, projects, isDetachedIncluded });
+      if (branch !== null) {
+        found.set(mountId, branch);
+      }
     }
-    const branch = workBranchOf({ mountId, mounts, projects, isDetachedIncluded });
-    if (branch === null) {
-      continue;
-    }
-    found.set(mountId, branch);
   }
   return [...found.values()];
 };

@@ -36,6 +36,7 @@ import { commentRunOriginOf } from './commentRunOriginOf';
 import { descendantAgentsOf } from './descendantAgentsOf';
 import { runAgentCountOf } from './runAgentCountOf';
 import { placedAgentsOf } from './placedAgentsOf';
+import { NO_TOUCHED_MOUNT_IDS, type TouchedMountIds } from './touchedMountIdsOf';
 import { workBranchesOf, type WorkBranch, type WorkBranchProject } from './workBranchesOf';
 
 type SessionRunKind = 'preset' | 'orchestrated' | 'auto' | 'agent';
@@ -96,6 +97,7 @@ type Params = {
   readonly projects: ReadonlyArray<WorkBranchProject>;
   readonly routes?: Readonly<Record<string, RunRoute>>;
   readonly commentPlaces?: Readonly<Record<string, string>>;
+  readonly touchedMountIds?: TouchedMountIds;
 };
 
 const NO_ROUTES: Readonly<Record<string, RunRoute>> = {};
@@ -425,6 +427,7 @@ export const sessionRunsOf = ({
   projects,
   routes = NO_ROUTES,
   commentPlaces = NO_PLACES,
+  touchedMountIds = NO_TOUCHED_MOUNT_IDS,
 }: Params): ReadonlyArray<SessionRun> => {
   const standalone = agents.filter((agent) => isStandaloneAgent({ agent }));
   const kinds = standalone.map((agent) => ({
@@ -455,7 +458,7 @@ export const sessionRunsOf = ({
         places: commentPlaces,
       }),
     );
-  const placedAgents = placedAgentsOf({ agents, autoViews, mounts });
+  const placedAgents = placedAgentsOf({ agents, autoViews, mounts, touchedMountIds });
   return [
     ...workflowRowsOf({ attachedRuns, agents, orchestrating, questions, revisingStarts }),
     ...autoRows,
@@ -467,12 +470,14 @@ export const sessionRunsOf = ({
         agents: placedAgents,
         mounts,
         projects,
+        touchedMountIds,
       });
       const touched = workBranchesOf({
         agentIds: row.agentIds,
         agents: placedAgents,
         mounts,
         projects,
+        touchedMountIds,
         isDetachedIncluded: true,
       });
       return {

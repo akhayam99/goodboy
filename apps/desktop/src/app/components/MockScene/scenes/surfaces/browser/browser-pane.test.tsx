@@ -101,8 +101,6 @@ describe('the browser pane scenes', () => {
       'browser-pane-more-dark',
       'browser-pane-passkey',
       'browser-pane-passkey-dark',
-      'browser-pane-rail',
-      'browser-pane-rail-dark',
       'browser-pane-saved-copy',
       'browser-pane-saved-copy-dark',
       'browser-pane-tabs',
@@ -117,20 +115,19 @@ describe('the browser pane scenes', () => {
     }
   });
 
-  it('opens the browser beside the session with its tabs in a strip', async () => {
+  it('opens the browser beside the session with its tabs in the address row', async () => {
     mount({ id: 'browser-pane' });
 
     const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
-    const pill = within(pane).getByRole('button', {
+    const strip = within(pane).getByRole('navigation', { name: 'Browser tabs' });
+    const pill = within(strip).getByRole('button', {
       name: 'Edit address, Checkout, localhost:5173',
     });
     expect(pill.textContent).toContain('localhost:5173');
+    expect(pill.getAttribute('aria-current')).toBe('page');
     expect(within(pane).queryByRole('combobox', { name: 'Address or search' })).toBeNull();
-    const strip = within(pane).getByRole('navigation', { name: 'Browser tabs' });
-    expect(
-      within(strip).getByRole('button', { name: 'Checkout' }).getAttribute('aria-current'),
-    ).toBe('page');
     within(strip).getByRole('button', { name: 'Staging checkout, pinned' });
+    expect(pane.querySelector('[data-browser-row]')?.contains(strip)).toBe(true);
     expect(screen.getAllByTestId('pane-toggle-browser')[0]?.getAttribute('aria-pressed')).toBe(
       'true',
     );
@@ -143,16 +140,11 @@ describe('the browser pane scenes', () => {
 
       const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
       const strip = within(pane).getByRole('navigation', { name: 'Browser tabs' });
-      const chip = within(strip)
-        .getByRole('button', { name: 'Checkout' })
-        .closest('[data-browser-tab]');
-      if (chip === null) {
-        throw new Error('The shown tab sits in no chip.');
-      }
-      expect(
-        within(strip).getByRole('button', { name: 'Checkout' }).getAttribute('aria-current'),
-      ).toBe('page');
-      expect(chip.querySelectorAll('[data-selected="true"]')).toHaveLength(0);
+      const shown = within(strip).getByRole('button', { name: /^Edit address, Checkout/ });
+      expect(shown.getAttribute('data-browser-tab')).toBe('active');
+      expect(shown.getAttribute('aria-current')).toBe('page');
+      expect(shown.querySelectorAll('[data-selected="true"]')).toHaveLength(0);
+      expect(strip.querySelectorAll('[data-browser-tab="active"]')).toHaveLength(1);
     },
   );
 
@@ -214,14 +206,26 @@ describe('the browser pane scenes', () => {
   it('opens the Browser page with every tab grouped by session and the Browser tool selected', async () => {
     mount({ id: 'browser-page' });
 
-    const list = await screen.findByRole('navigation', { name: 'Tabs by session' }, WAIT);
+    const list = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>(
+        '[data-browser-page] nav[aria-label="Browser tabs"]',
+      );
+      if (found === null) {
+        throw new Error('The Browser page draws no tab row yet.');
+      }
+      return found;
+    }, WAIT);
     await within(list).findByRole('button', { name: 'PR #318' }, WAIT);
     const groups = Array.from(list.querySelectorAll('[data-browser-group]')).map((group) =>
       group.getAttribute('data-browser-group'),
     );
     expect(groups).toEqual(['pins', 'session', 'session']);
+    within(list).getByRole('button', { name: 'Fix the rounding drift' });
+    expect(screen.queryByRole('navigation', { name: 'Tabs by session' })).toBeNull();
     expect(
-      within(list).getByRole('button', { name: 'Checkout' }).getAttribute('aria-current'),
+      within(list)
+        .getByRole('button', { name: /^Edit address, Checkout/ })
+        .getAttribute('aria-current'),
     ).toBe('page');
     expect(
       document.querySelector('[data-testid="pane-toggle-browser"]')?.getAttribute('aria-current'),
@@ -373,17 +377,17 @@ describe('the browser pane scenes', () => {
     );
   });
 
-  it('lists the session tabs and the project pins beside the page', async () => {
+  it('keeps many tabs in the one row, the inactive ones shrinkable to their icon', async () => {
     mount({ id: 'browser-pane-tabs' });
 
     const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
     const list = within(pane).getByRole('navigation', { name: 'Browser tabs' });
-    within(list).getByText('This session');
-    within(list).getByText(/^Pinned · /);
-    expect(within(list).queryByText('Tabs close when the session is archived.')).toBeNull();
-    expect(
-      within(pane).getByRole('button', { name: 'Hide tab list' }).getAttribute('aria-pressed'),
-    ).toBe('true');
+    const inactive = list.querySelectorAll('[data-browser-tab="tab"]');
+    expect(inactive).toHaveLength(5);
+    within(list).getByRole('button', { name: 'Acme invoices' });
+    within(list).getByRole('group', { name: /^Pinned · / });
+    expect(list.closest('.overflow-x-auto')).not.toBeNull();
+    expect(within(pane).queryByRole('button', { name: /tab list$/ })).toBeNull();
   });
 
   it('lists the tabs of every session and the pins in the palette, each with its place', async () => {
@@ -405,14 +409,14 @@ describe('the browser pane scenes', () => {
     expect(within(menu).getAllByRole('menuitem')).toHaveLength(3);
   });
 
-  it('marks the sleeping tab and folds the list to a rail of favicons', async () => {
-    mount({ id: 'browser-pane-rail' });
+  it('marks the sleeping tab in the row and shows the pin as a square icon', async () => {
+    mount({ id: 'browser-pane' });
 
     const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
     const list = within(pane).getByRole('navigation', { name: 'Browser tabs' });
-    expect(list.getAttribute('data-tab-list')).toBe('rail');
     await within(list).findByRole('button', { name: 'Tax rates, asleep' }, WAIT);
-    within(list).getByRole('button', { name: 'Staging checkout, pinned' });
-    expect(within(list).queryByText('Tax rates')).toBeNull();
+    const pin = within(list).getByRole('button', { name: 'Staging checkout, pinned' });
+    expect(pin.closest('[data-browser-tab]')?.getAttribute('data-browser-tab')).toBe('pin');
+    expect(within(pin).queryByText('Staging checkout')).toBeNull();
   });
 });

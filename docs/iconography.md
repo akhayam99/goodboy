@@ -138,7 +138,10 @@ never a glyph inside a ring; packages/ui/DESIGN-SYSTEM.md → Status marks has t
 table. The folded rail, the pinned rows, the switcher, the hover card, the
 Board card signal, the Now chip rows, the palette's Needs you rows and the
 Guide legend draw the same `StatusMark`, never a concept icon and never a
-`WorkNode`: a state has one glyph and one tone. The mark follows the reason that
+`WorkNode`: a state has one glyph and one tone. Sessions in the bar is the one
+exception: a row that needs you draws an amber `dot` mark and a running row a
+blue one, with the same sentence as label, while a red `failed` mark stays
+(`switcherDotOf`). The mark follows the reason that
 holds the session, from `ATTENTION_REASON_META` in
 `features/session/session-stage.ts` through `attentionMarkOf`, which gives each
 reason one mark, one tone and one sentence. Red

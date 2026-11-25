@@ -55,6 +55,7 @@ export const SessionFilterPopover = ({ workspaceId, sessions }: Props) => {
   return (
     <FilterButton
       label={FILTER_LABEL}
+      word="Filter"
       popoverLabel={FILTER_LABEL}
       activeCount={display.activeFilterCount}
       popoverHeight={440}

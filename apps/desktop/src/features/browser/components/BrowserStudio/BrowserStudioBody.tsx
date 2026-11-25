@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { EmptyState, PAGE_MEASURE, PageColumn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { DockButton } from '../../../../shared/components/DockButton';
@@ -15,6 +16,7 @@ type Props = {
 
 export const BrowserStudioBody = ({ sessionId, tabId }: Props) => {
   const page = useBrowserPage({ sessionId });
+  const [folded, setFolded] = useState<ReadonlySet<string>>(() => new Set());
   if (page.selectedId === null) {
     return (
       <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
@@ -44,6 +46,8 @@ export const BrowserStudioBody = ({ sessionId, tabId }: Props) => {
       sessionId={page.selectedId}
       tabId={page.selectedId === sessionId ? tabId : null}
       groups={page.groups}
+      folded={folded}
+      onFoldedChange={({ folded: next }) => setFolded(next)}
     />
   );
 };

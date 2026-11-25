@@ -116,7 +116,7 @@ const show = async ({ hasRail }: ShowParams) => {
 
 const tenantTile = (): HTMLElement => {
   const tile = screen
-    .getByRole('link', { name: `Open ${TENANT}` })
+    .getByRole('link', { name: `Open ${TENANT} overview` })
     .closest<HTMLElement>('[data-board-row]');
   if (tile === null) {
     throw new Error('The link must sit in a tile.');
@@ -145,7 +145,7 @@ describe('the branch menu on an Overview tile', () => {
     seedCentralColumn({ kind: 'branches' });
     await show({ hasRail: false });
 
-    fireEvent.contextMenu(screen.getByRole('link', { name: `Open ${TENANT}` }), {
+    fireEvent.contextMenu(screen.getByRole('link', { name: `Open ${TENANT} overview` }), {
       clientX: 240,
       clientY: 160,
     });
@@ -160,7 +160,7 @@ describe('the branch menu on an Overview tile', () => {
   it('opens the same list from Shift+F10 on the focused tile and from its dots', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show({ hasRail: false });
-    const link = screen.getByRole('link', { name: `Open ${TENANT}` });
+    const link = screen.getByRole('link', { name: `Open ${TENANT} overview` });
 
     fireEvent.contextMenu(link);
     const fromClick = await menuLabels();
@@ -217,7 +217,7 @@ describe('the branch menu on an Overview tile', () => {
     });
     await show({ hasRail: false });
 
-    fireEvent.contextMenu(screen.getByRole('link', { name: `Open ${TENANT}` }));
+    fireEvent.contextMenu(screen.getByRole('link', { name: `Open ${TENANT} overview` }));
     fireEvent.click(await screen.findByRole('menuitem', { name: /Close branch/ }));
     const menu = document.querySelector<HTMLElement>('[data-context-menu]');
     if (menu === null) {
@@ -320,7 +320,7 @@ describe('the branch menu on an Overview tile', () => {
     });
     await show({ hasRail: false });
 
-    fireEvent.contextMenu(screen.getByRole('link', { name: `Open ${TENANT}` }));
+    fireEvent.contextMenu(screen.getByRole('link', { name: `Open ${TENANT} overview` }));
     await menuLabels();
     act(() => {
       useAppStore.setState((store) => ({
@@ -334,7 +334,7 @@ describe('the branch menu on an Overview tile', () => {
     });
     await settle();
 
-    expect(screen.queryByRole('link', { name: `Open ${TENANT}` })).toBeNull();
+    expect(screen.queryByRole('link', { name: `Open ${TENANT} overview` })).toBeNull();
     expect(document.querySelector('[data-context-menu]')).toBeNull();
     expect(unmountMount).not.toHaveBeenCalled();
   });

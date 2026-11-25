@@ -16,6 +16,7 @@ type Props = {
   readonly activeCount: number;
   readonly facets: ReactNode;
   readonly popoverHeight?: number;
+  readonly word?: string;
 };
 
 export const FilterButton = ({
@@ -24,6 +25,7 @@ export const FilterButton = ({
   activeCount,
   facets,
   popoverHeight = 420,
+  word,
 }: Props) => {
   const dropdown = useDropdown({ width: 'w-80', expectedHeight: popoverHeight });
   const hasActive = activeCount > 0;
@@ -36,7 +38,7 @@ export const FilterButton = ({
       ariaLabel={popoverLabel}
       className="max-h-[70vh] py-1"
       trigger={
-        <Tooltip content={name} isSuppressed={dropdown.open}>
+        <Tooltip content={name} isSuppressed={dropdown.open || word !== undefined}>
           <Button
             variant="secondary"
             size="sm"
@@ -48,6 +50,7 @@ export const FilterButton = ({
             className={cn(dropdown.open && 'bg-selected')}
           >
             <ListFilter size={ICON_SIZE.row} aria-hidden />
+            {word === undefined ? null : <span aria-hidden>{word}</span>}
             <CountBadge count={activeCount} isAnnounced={false} />
           </Button>
         </Tooltip>

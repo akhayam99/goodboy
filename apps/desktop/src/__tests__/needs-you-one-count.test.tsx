@@ -29,7 +29,7 @@ import {
   sessionOf,
 } from '../features/workspace/testing/sessionColumn';
 import { useDoorSignals } from '../app/components/ShellLeft/useDoorSignals';
-import { useNeedsYou } from '../features/workspace/components/StageBoard/NeedsYouStrip/useNeedsYou';
+import { useNeedsYou } from '../features/workspace/components/StageBoard/NeedsYouCards/useNeedsYou';
 import { stageInfosOf } from '../store/slices/session-view/stageInfosOf';
 import { useNowSessions } from '../shared/hooks/useNowSessions';
 import { useSessionOrder } from '../store/slices/session-view/selectors';

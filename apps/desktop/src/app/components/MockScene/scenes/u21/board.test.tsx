@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -90,6 +90,7 @@ describe('the u21 board scenes', () => {
     const archived = lane('archived');
     expect(done.parentElement).toBe(archived.parentElement);
     expect(Array.from(done.parentElement?.children ?? [])).toEqual([done, archived]);
+    fireEvent.click(within(archived).getByRole('button', { name: 'Show all' }));
     expect(within(done).getAllByRole('button', { pressed: false }).length).toBeGreaterThan(2);
     expect(within(archived).getAllByRole('button', { pressed: false }).length).toBeGreaterThan(2);
     expect(screen.getByTestId('board-scene-frame').style.width).toBe('960px');

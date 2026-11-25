@@ -23,11 +23,11 @@ export const BoardSkeleton = ({ layout, laneRem }: Props) => {
       aria-label="Loading board"
     >
       {SKELETON_CARDS.slice(0, layout.lanes).map((cards, lane) => (
-        <div key={lane} className={cn('flex min-h-0 flex-col', PANE_RHYTHM.board.laneStack)}>
-          <Skeleton className="h-4 w-24 rounded-full" />
+        <div key={lane} className={cn('flex min-h-0 flex-col self-start', PANE_RHYTHM.board.lane)}>
+          <Skeleton className="h-6 w-24 rounded-md" />
           <div className={cn('flex flex-col', PANE_RHYTHM.board.cardGap)}>
             {Array.from({ length: cards }).map((_, i) => (
-              <Skeleton key={i} className="h-24 w-full rounded-lg" />
+              <Skeleton key={i} className="h-20 w-full rounded-lg" />
             ))}
           </div>
         </div>

@@ -32,6 +32,7 @@ import { pageSlotOf } from './pageSlot';
 import { sessionRunCountsOf } from './sessionRunCountsOf';
 import { sessionRunsOf } from './sessionRunsOf';
 import { aMountView } from './testing/aMountView';
+import type { TouchedMountIds } from './touchedMountIdsOf';
 
 const PAYMENTS_PROJECT = aProject({ name: 'payments-api' });
 
@@ -61,6 +62,7 @@ type WorldParams = {
   readonly questions?: ReadonlyArray<OpenQuestion>;
   readonly turns?: ReadonlyMap<string, TurnState>;
   readonly mounts?: ReadonlyArray<SessionMountView>;
+  readonly touchedMountIds?: TouchedMountIds;
 };
 
 const BLOCKED: TurnState = {
@@ -76,6 +78,7 @@ const runsOf = ({
   questions = [],
   turns = new Map(),
   mounts = [],
+  touchedMountIds,
 }: WorldParams) =>
   sessionRunsOf({
     attachedRuns: runs,
@@ -89,6 +92,7 @@ const runsOf = ({
     revisingStarts: {},
     mounts,
     projects: [PAYMENTS_PROJECT, LEDGER_PROJECT],
+    ...(touchedMountIds !== undefined && { touchedMountIds }),
   });
 
 const presetRun = () =>
@@ -782,5 +786,27 @@ describe('the branches a run works on', () => {
     const runs = runsOf({ agents: [handScout({ status: 'completed' })], mounts: [API, LEDGER] });
 
     expect(runs[0]?.branches).toEqual([]);
+  });
+
+  it('files a run with no recorded mount under the worktree its turns touched', () => {
+    const scout = handScout({ status: 'completed' });
+    const touchedMountIds: TouchedMountIds = new Map([[scout.id, [LEDGER.id]]]);
+    const runs = runsOf({ agents: [scout], mounts: [API, LEDGER], touchedMountIds });
+    const groups = branchGroupsOf({ runs, mounts: [] });
+
+    expect(runs[0]?.branches.map((branch) => branch.branch)).toEqual(['rec/2-backfill']);
+    expect(groups.find((group) => group.key === `mount:${LEDGER.id}`)?.runs).toHaveLength(1);
+    expect(groups.find((group) => group.key === `mount:${API.id}`)).toBeUndefined();
+  });
+
+  it('files a run under every worktree its turns touched', () => {
+    const scout = { ...handScout({ status: 'completed' }), mountId: NOW_MOUNT_API };
+    const touchedMountIds: TouchedMountIds = new Map([[scout.id, [API.id, LEDGER.id]]]);
+    const runs = runsOf({ agents: [scout], mounts: [API, LEDGER], touchedMountIds });
+
+    expect(runs[0]?.branches.map((branch) => branch.branch)).toEqual([
+      'fix/duplicate-credit',
+      'rec/2-backfill',
+    ]);
   });
 });

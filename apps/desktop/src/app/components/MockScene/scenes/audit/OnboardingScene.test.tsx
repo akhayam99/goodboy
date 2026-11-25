@@ -54,20 +54,6 @@ const mount = async ({ query }: MountParams): Promise<void> => {
 const shownStep = (): string | null =>
   screen.queryByRole('dialog', { name: 'Goodboy setup' })?.getAttribute('data-step') ?? null;
 
-const SCENE_OPEN_MS = 150;
-
-const mountOpen = async ({ query }: MountParams): Promise<void> => {
-  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-  try {
-    await mount({ query });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(SCENE_OPEN_MS);
-    });
-  } finally {
-    vi.useRealTimers();
-  }
-};
-
 type ButtonParams = {
   readonly name: string | RegExp;
 };
@@ -112,7 +98,7 @@ describe('onboarding scene', () => {
   });
 
   it('shows an old Claude CLI as needing an update, with the action on the row', async () => {
-    await mountOpen({ query: '&step=agents&agents=outdated' });
+    await mount({ query: '&step=agents&agents=outdated' });
 
     const row = await waitFor(() => {
       const found = document.querySelector<HTMLElement>('[data-row="anthropic"]');
@@ -127,7 +113,7 @@ describe('onboarding scene', () => {
   });
 
   it('connects Linear with a mock account and asks for no key', async () => {
-    await mountOpen({ query: '&step=tools' });
+    await mount({ query: '&step=tools' });
     expect(shownStep()).toBe('tools');
 
     fireEvent.click(await enabledButton({ name: 'Connect Linear' }));
@@ -152,7 +138,7 @@ describe('onboarding scene', () => {
   });
 
   it('walks from the folder pick to a running first session with no native call', async () => {
-    await mountOpen({ query: '&step=workspace' });
+    await mount({ query: '&step=workspace' });
     expect(shownStep()).toBe('workspace');
 
     fireEvent.click(await enabledButton({ name: /Choose folder/ }));
@@ -206,7 +192,7 @@ describe('onboarding scene', () => {
   });
 
   it('starts the sample scout on the model and edit mode the composer showed', async () => {
-    await mountOpen({ query: '&step=workspace' });
+    await mount({ query: '&step=workspace' });
     fireEvent.click(await enabledButton({ name: /Choose folder/ }));
     fireEvent.click(await enabledButton({ name: /Create workspace/ }));
     await waitFor(() => expect(shownStep()).toBe('first-session'), { timeout: 5000 });

@@ -63,7 +63,6 @@ const readSetup = (): SceneSetup => {
 };
 
 const REOPEN_NOTICE = 'Setup stays open in the demo.';
-const OPEN_DELAY_MS = 100;
 const REOPEN_MS = 1200;
 const WATCH_MS = 200;
 const PICK_POLL_MS = 80;
@@ -85,10 +84,7 @@ export const OnboardingScene = () => {
       return;
     }
     const detail: OpenWizardDetail = { mode: 'full', step: setup.step };
-    const timer = window.setTimeout(() => {
-      window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT, { detail }));
-    }, OPEN_DELAY_MS);
-    return () => window.clearTimeout(timer);
+    window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT, { detail }));
   }, [isReady, setup]);
 
   useEffect(() => {

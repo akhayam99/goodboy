@@ -1,5 +1,13 @@
 import { Pin } from '@goodboy/ui/icons';
-import { CountBadge, ICON_SIZE, SelectableRow, StatusMark, Tooltip, cn } from '@goodboy/ui';
+import {
+  CountBadge,
+  ICON_SIZE,
+  SelectableRow,
+  StatusMark,
+  Tooltip,
+  cn,
+  type StatusMarkSpec,
+} from '@goodboy/ui';
 import { brandId, type Session, type SessionId } from '@goodboy/types';
 import { NAMES } from '../../../../shared/utils/names';
 import { needsYouText } from '../../../../shared/utils/needsYouText';
@@ -8,6 +16,7 @@ import { useSessionRowFacts } from '../../hooks/useSessionRowFacts';
 import { useFleetPhrase } from '../../hooks/useFleetPhrase';
 import { useSessionMoveCount } from '../../hooks/useSessionMoveCount';
 import { useSavedSessionFace } from '../../hooks/useSavedSessionFace';
+import { switcherDotOf } from './switcherDotOf';
 
 type Props = {
   readonly session: Session;
@@ -34,6 +43,8 @@ export const SessionsRow = ({
   const moveCount = useSessionMoveCount({ session, info: summary.info });
   const face = useSavedSessionFace({ sessionId });
   const pinLabel = isPinned ? NAMES.unpin : NAMES.pin;
+  const dot = switcherDotOf({ id: session.id, info: summary.info });
+  const shown: StatusMarkSpec = dot === null ? mark : { kind: 'dot', tone: dot };
   return (
     <SelectableRow
       id={optionId}
@@ -44,7 +55,7 @@ export const SessionsRow = ({
       onClick={onOpen}
       className="h-8 items-center gap-3 px-3 text-ui"
     >
-      <StatusMark mark={mark} {...(mark.kind !== 'empty' && { label: node.label })} />
+      <StatusMark mark={shown} {...(shown.kind !== 'empty' && { label: node.label })} />
       <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
       {phrase === null ? null : (
         <span
