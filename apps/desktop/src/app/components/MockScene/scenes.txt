@@ -1551,6 +1551,9 @@ u52-impact-agents-dark
 u52-impact-agents-light
 u52-impact-agents-open-dark
 u52-impact-agents-open-light
+u52-stop-suggest-deviated
+u52-stop-suggest-stopped
+u52-stop-suggest-switched
 u52-workflow-create-drafting-dark
 u52-workflow-create-drafting-light
 u52-workflow-create-empty-dark

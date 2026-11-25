@@ -8,6 +8,7 @@ import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
 import { RunAgentsRail } from '../RunAgentsRail';
 import { CommentRunSources } from './CommentRunSources';
 import { LeadHeaderWord } from './LeadHeaderWord';
+import { LeadSteps } from './LeadSteps';
 
 type Props = {
   readonly session: Session;
@@ -62,7 +63,12 @@ export const LeadPageBody = ({
               agent={agent}
               isChatActive={isChatActive}
               onBack={onBack}
-              context={<CommentRunSources sessionId={session.id} agent={agent} />}
+              context={
+                <>
+                  <CommentRunSources sessionId={session.id} agent={agent} />
+                  <LeadSteps sessionId={session.id} rootAgentId={agent.id} />
+                </>
+              }
               headerState={<LeadHeaderWord sessionId={session.id} rootAgentId={agent.id} />}
             />
           </QueuedNotesReportContext.Provider>

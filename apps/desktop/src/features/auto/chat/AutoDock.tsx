@@ -3,10 +3,12 @@ import type { Agent, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { useConversationAsks } from '../../../store/hooks/useConversationAsks';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
+import { autoTreeWordOf } from '../autoTreeWordOf';
 import { dockPlanOf } from '../dockPlanOf';
 import { planDiscardAskOf } from '../planDiscardAskOf';
 import { askBarsOf } from './askBarOf';
 import { AutoDockAsk } from './AutoDockAsk';
+import { AutoDockHold } from './AutoDockHold';
 import { AutoDockLive } from './AutoDockLive';
 import { AutoDockPlan } from './AutoDockPlan';
 import { AutoNextAction } from './AutoNextAction';
@@ -33,19 +35,31 @@ export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact, actions }
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const { permissions, questions } = useConversationAsks({ sessionId, agentId: rootAgent.id });
   const [untold, setUntold] = useState<Readonly<Record<string, string>>>({});
+  const rootTurn = useAppStore((state) => state.agentTurnState[rootAgent.id] ?? null);
   const hasAskAbove = permissions.length > 0 || questions.length > 0;
+  const isHoldShown =
+    !hasAskAbove &&
+    view.hold != null &&
+    autoTreeWordOf({ view, rootTurn }).lead.stop === 'waitsForYou';
   const plan = dockPlanOf({ view });
   const isPlanWaiting = plan?.kind === 'waiting';
   const nextStep = dockNextStepOf({ view, agents, untold });
   const isRevisionAsked = nextStep !== null && nextStep.reviseOf === plan?.row.artifact.artifactId;
-  const isNextShown = !hasAskAbove && nextStep !== null && (!isPlanWaiting || isRevisionAsked);
-  const projectAsk = hasAskAbove || isPlanWaiting || isNextShown ? null : projectAskOf({ view });
+  const isNextShown =
+    !hasAskAbove && !isHoldShown && nextStep !== null && (!isPlanWaiting || isRevisionAsked);
+  const projectAsk =
+    hasAskAbove || isHoldShown || isPlanWaiting || isNextShown ? null : projectAskOf({ view });
   const asks = askBarsOf({ view });
   const askBar =
-    hasAskAbove || isPlanWaiting || isNextShown || projectAsk !== null ? null : asks.first;
+    hasAskAbove || isHoldShown || isPlanWaiting || isNextShown || projectAsk !== null
+      ? null
+      : asks.first;
   return (
     <div data-auto-dock="" data-dock-row="" className="flex min-w-0 flex-col gap-2 empty:hidden">
-      {plan === null || hasAskAbove ? null : (
+      {!isHoldShown ? null : (
+        <AutoDockHold sessionId={sessionId} view={view} rootAgent={rootAgent} actions={actions} />
+      )}
+      {plan === null || hasAskAbove || isHoldShown ? null : (
         <AutoDockPlan
           sessionId={sessionId}
           dockPlan={plan}

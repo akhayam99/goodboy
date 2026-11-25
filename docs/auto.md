@@ -860,6 +860,32 @@ the block is the question; any message the user sends to the Lead lifts the hold
 answer and the release commit together), which reads as Continue.
 Stopping the run uses the existing stop.
 
+### The hold card
+
+A rested Lead with a hold shows **the hold card** in the dock (`AutoDockHold`, `holdCardOf`): the
+reason, **Switch to <suggestion>**, **Continue with <workflow>** and **Stop the run**. Without a
+suggestion only Continue and Stop show. The card sits in the dock only while the Lead rests; it
+takes the place of the dock's other rows and puts focus on its first button when nothing else holds
+focus, so a click on the Board card lands on Switch. Each button is busy while one runs, and a second
+click does nothing.
+
+- **Switch** is `switchHeldRun`: `changeRunRoute` starts a second Lead on the suggested workflow
+  with the first run's findings and its guidance (`changeLeadRun`), then `endHeldRun` stops the held
+  run through the tree stop port. The second run starts with no provider, model or effort of the
+  first, so its helpers go through the Lead's pick; the first run's agents keep their stored picks.
+  A failed start changes nothing and offers Retry. A stop that fails after the start keeps the new
+  run and offers a Retry that only stops the old one (`OldRunLeftError`).
+- **Continue** sends one message to the Lead through the user turn port, which lifts the hold in
+  the transaction that queues it. A lost run or a missing port shows the error with Retry.
+- **Stop the run** is the tree stop; a refusal shows its notice and the button can be pressed again.
+
+`AutoTreeView.guide` carries the workflow's name, steps and deviations so the page can draw them.
+Under the Lead page header **Usual steps** (`LeadSteps`) lists the steps. A step shows done or
+running by the role of the delegations (the n-th step of a role takes the n-th delegation of that
+role), a skipped step shows its reason, an added or moved one shows an underlined word with its
+reason on hover, and a held check marks the first waiting step as needing you. The record keeps no
+position for an added step, so it goes after the usual ones. The kind chip counts the deviations.
+
 ## Plans
 
 The plan a Planner writes opens in the right drawer. Its second row shows
