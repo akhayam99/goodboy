@@ -375,28 +375,48 @@ describe('the browser page', () => {
         'Fix the rounding drift',
       ]),
     );
-    const checkout = screen.getByRole('region', { name: 'Show tax in the checkout total' });
+    const checkout = screen.getByRole('group', { name: 'Show tax in the checkout total' });
     expect(
-      Array.from(checkout.querySelectorAll('[aria-current], button[aria-label]')).map((row) =>
+      Array.from(checkout.querySelectorAll('button[aria-label]')).map((row) =>
         row.getAttribute('aria-label'),
       ),
-    ).toEqual(expect.arrayContaining(['Checkout', 'Tax rates']));
+    ).toEqual(expect.arrayContaining(['Edit address, Checkout, localhost:5173', 'Tax rates']));
+    const row = document.querySelector<HTMLElement>('[data-browser-row]');
+    expect(row?.contains(checkout)).toBe(true);
     screen.getByRole('button', { name: 'PR #318' });
     screen.getByRole('button', { name: 'API guides, pinned' });
+    expect(screen.queryByRole('navigation', { name: 'Tabs by session' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Browser' })).toBeNull();
     screen.getByRole('button', { name: 'Dock' });
     screen.getByRole('button', { name: 'New tab' });
   });
 
-  it('folds and shows the tab list from the address row', async () => {
+  it('folds a session group from its label in the row and keeps its count on the label', async () => {
     openPage({ tabId: null });
-    await waitFor(() => screen.getByRole('region', { name: 'Show tax in the checkout total' }));
+    await screen.findByRole('button', { name: 'PR #318' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Hide tab list' }));
-    expect(screen.queryByRole('region', { name: 'Show tax in the checkout total' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Fix the rounding drift' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Show tab list' }));
-    screen.getByRole('region', { name: 'Show tax in the checkout total' });
+    expect(screen.queryByRole('button', { name: 'PR #318' })).toBeNull();
+    const label = screen.getByRole('button', { name: 'Fix the rounding drift, folded, 1 tab' });
+    expect(label.getAttribute('aria-expanded')).toBe('false');
+    within(label).getByText('1');
+    screen.getByRole('button', { name: 'Tax rates' });
+
+    fireEvent.click(label);
+    screen.getByRole('button', { name: 'PR #318' });
+  });
+
+  it('keeps the shown tab in the row when its own group folds', async () => {
+    openPage({ tabId: null });
+    await screen.findByRole('button', { name: 'Tax rates' });
+
+    const tabs = screen.getByRole('navigation', { name: 'Browser tabs' });
+    fireEvent.click(within(tabs).getByRole('button', { name: 'Show tax in the checkout total' }));
+
+    expect(screen.queryByRole('button', { name: 'Tax rates' })).toBeNull();
+    screen.getByRole('button', { name: 'Edit address, Checkout, localhost:5173' });
+    screen.getByRole('button', { name: 'Show tax in the checkout total, folded, 2 tabs' });
   });
 
   it('marks a tab asleep in a session the page is not showing', async () => {
@@ -467,7 +487,7 @@ describe('the browser page', () => {
       }
       return found;
     });
-    const layout = document.querySelector('[data-studio-rail="page"]');
+    const layout = document.querySelector('[data-browser-page]');
 
     expect(layout).not.toBeNull();
     expect(unsizedBetween({ from: view, to: layout?.parentElement ?? view })).toEqual([]);
@@ -518,9 +538,9 @@ describe('the browser page', () => {
         }),
       ),
     );
-    expect(screen.getByRole('button', { name: 'PR #318' }).getAttribute('aria-current')).toBe(
-      'page',
-    );
+    expect(
+      screen.getByRole('button', { name: /^Edit address, PR #318/ }).getAttribute('aria-current'),
+    ).toBe('page');
   });
 
   it('comes back to the tab the route names, not the first one, after a reload', async () => {
@@ -584,7 +604,7 @@ describe('the browser page', () => {
     await waitFor(() =>
       expect(
         screen.getAllByRole('button', {
-          name: /^(Checkout|Tax rates|PR #318|API guides, pinned)$/,
+          name: /^(Edit address, Checkout, localhost:5173|Tax rates|PR #318|API guides, pinned)$/,
         }),
       ).toHaveLength(4),
     );
@@ -607,9 +627,9 @@ describe('the browser page', () => {
         tabId: 'tab-checkout',
       }),
     );
-    expect(screen.getByRole('button', { name: 'Checkout' }).getAttribute('aria-current')).toBe(
-      'page',
-    );
+    expect(
+      screen.getByRole('button', { name: /^Edit address, Checkout/ }).getAttribute('aria-current'),
+    ).toBe('page');
   });
 
   it('opens on a session that hosts a pin when no session holds a tab', async () => {

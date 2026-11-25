@@ -369,16 +369,20 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   rewritten by a resize and comes back when the window grows. The page follows
   the pane because the placement loop measures the placeholder every frame.
 
-- **The address row** is one 36px row (`BrowserAddressRow`). It holds a grip
-  mark when the pane sits in the desk grid (the row is the pane's head, so a
-  press on it, never on a control, moves the pane like any other:
-  `useDockGrip`, [home-and-drawer.md](navigation/home-and-drawer.md)), the tab
-  list toggle, Back, Forward and Reload, the address pill, Pin to the session's
-  project (Unpin when a pin is shown), Console (see Console), More, Open full
-  page and Close. The pane remembers the list toggle
-  (`goodboy:browser-tab-list:v1`). Under 520px of row (`NARROW_ROW_PX`), Pin,
-  Console and Open full page leave the row and sit first in More
-  (`foldedBrowserRowsOf`), so the address keeps its room and nothing overlaps.
+- **The address row** is the one row of the pane (`BrowserAddressRow`,
+  `PANE_RHYTHM.firstRow`). It holds a grip mark when the pane sits in the
+  desk grid (the row is the pane's head, so a press on it, never on a
+  control, moves the pane like any other: `useDockGrip`,
+  [home-and-drawer.md](navigation/home-and-drawer.md)), Back, Forward and
+  Reload, the tabs (see Tabs), New tab, Pin to the session's project (Unpin
+  when a pin is shown), Console (see Console), More, Open full page and
+  Close. Under 560px of row (`NARROW_ROW_PX`), Pin and Open full page leave
+  the row (`foldedBrowserRowsOf` puts Pin first in More, which always holds
+  Open full page), so the tabs keep their room and nothing overlaps. The page
+  sits flush under the row: no card, no border and no inset (`BrowserView`,
+  `data-browser-frame`). It draws no line under the row either: a
+  `border-t` there is a divider the divider guard refuses, so the page's own
+  edge separates it.
 - **Loading** shows on the row. From the host's `started` event of the shown tab
   to its `finished` event, a 2px `info` line breathes on the bottom edge of the
   row (`BrowserLoadLine`) and Reload becomes Stop (`browser_tab_stop`, which
@@ -496,23 +500,26 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   files). Words and a host with no dot are matched against tabs and visits
   instead, and every other scheme gets no Open row. The pane never sends text
   to a search engine.
-- **Tabs**: the strip shows the session's tabs, then the project pins with
-  their title and a pin mark, then New tab. The shown tab has one selected
-  state, the tool tab chip of `toolTabClassName` that Terminal tabs use; the
-  label inside it is an unselected `SelectableRow` with no fill of its own,
-  on hover too (`BrowserTabChip`). The list shows `Pinned · <project>`
-  first, then This session, then New tab; the note that tabs close when the
-  session is archived is the tooltip of the This session label. A tab the
-  engine put to sleep or closed (`browser://tab-state`, read by
-  `useTabStates`, corrected by every event and every list answer, and keyed by
-  the engine's tab id so the Browser page marks tabs of every session) shows its favicon faint and
-  a moon mark, "Asleep, opens at its address and may reload" (an asleep webview comes back
-  as it was, a closed one loads again). The list has three widths in
-  `browserTabListPref`: `list` (192px), `rail` (36px of favicons, titles in
-  tooltips) and `hidden`; the fold button cycles `list` and `rail`, and a pane
-  under 560px wide shows the rail. The old boolean value reads as `list` or
-  `hidden`. The Browser page rail uses the same rows and the same groups order.
-  With no tab the pane shows an empty state and focuses the address.
+- **Tabs** sit in the address row (`BrowserTabStrip`, one horizontal
+  `ScrollFade`): the project pins first as square favicons (a group named
+  `Pinned · <project>` for assistive tech), a separator, then the session's
+  tabs. The shown tab is the address pill (`BrowserAddressPill`,
+  `data-browser-tab="active"`): it grows to take the free room, keeps at
+  least 10rem and has its own Close for a session tab. Every other tab is a
+  `BrowserTabChip` with its favicon and title; it starts at 8rem, shrinks to
+  its icon (2rem) when the row fills, and only then the row scrolls. The
+  shown tab scrolls into view when it changes. An inactive tab has no Close
+  (a hover-only button breaks the no-hover-only-actions rule, and a visible
+  one would eat the icon width): show it, then close it, or use ⌘W. A tab's
+  right click opens the tab menu (Add to message,
+  `browserTabTargetOf`). A tab the engine put to sleep or closed
+  (`browser://tab-state`, read by `useTabStates`, corrected by every event and
+  every list answer, and keyed by the engine's tab id so the Browser page
+  marks tabs of every session) shows its favicon faint and says "Asleep,
+  opens at its address and may reload" in its name and tooltip (an asleep
+  webview comes back as it was, a closed one loads again). With no tab shown
+  the command field takes the place of the shown tab at the end of the row,
+  New tab leaves the row, and the pane shows an empty state.
 - **Live tabs**: a row and a live webview are not the same thing. Opening a
   page asks the host for a hidden webview, saves its row with the webview's id
   and binds the two in `browserLiveTabs`. After a restart a row has no live
@@ -571,7 +578,7 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   watches the view's frame (`BrowserView`), which is mounted whenever the pane
   is, never the placeholder inside it: the placeholder mounts later, once a tab
   is shown, so an observer started at mount would watch nothing. An error row
-  or a tab strip that grows the chrome shrinks the frame and moves the native
+  or a notice that grows the chrome shrinks the frame and moves the native
   view at once, even when no frame runs.
 - **Overlays**: a menu, a popover, a dialog or Search or run is any element that
   matches `OVERLAY_SELECTOR` (`shared/keyboard/overlaySelector.ts`). For a
@@ -626,16 +633,20 @@ Open full page in the dock opens the Browser page, a studio kind of its own
 (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page. While it is
 open the Browser button on the right rail is selected and does nothing.
 
-- **The list** shows every tab of the workspace's sessions, one group per
-  session in the workspace's session order, then one group of pins per
-  project. It does not follow the sidebar's sort or filters, because a filter
+- **The groups** sit in the address row, there is no column beside the page:
+  the pins of each project first as square favicons, then one group per
+  session in the workspace's session order, each behind a label with the
+  session's title (`BrowserTabGroupLabel`). A click on a label folds the
+  group: its tabs leave the row, the shown one excepted, and the label shows
+  their count. The fold lasts while the page is open. The groups do not
+  follow the sidebar's sort or filters, because a filter
   can hide a session that holds a tab. A pin opens in the picked session when
   it works on that project, else in the first session that does. The picked
   session keeps its group with no tab, so New tab opens a page in it. With
   pins and no session tab, the page opens on a session that hosts a pin. With
   neither, the page says so.
-- **The view** is the pane's: the same address row (no list toggle and no
-  Close, the band and Esc close the page), the same model for the picked
+- **The view** is the pane's: the same address row (Dock in place of Open
+  full page and Close, the band and Esc close the page), the same model for the picked
   session and the same placement loop and overlay rule. The dock stays in the
   store under its own page but is not mounted, so the page alone places the
   view.
@@ -665,14 +676,9 @@ open the Browser button on the right rail is selected and does nothing.
 A move never reloads the page: the same live webview, with the same id, gets
 new bounds or a new window. A form half typed and the scroll stay.
 
-- **Tab strip**: the Browser and the Terminal share one strip
-  (`ToolTabStrip`: the tabs, then New tab; 40px on a page grid, 36px in a
-  dock with `isUnderHead`, where it sits `PANE_RHYTHM.head.rows` under the
-  dock's first row, so dock tabs share the line of the session tabs or crumbs
-  and the first row the session title line) and one tab look
-  (`toolTabClassName`: 28px, close inside the tab, the selected fill). A chip
-  keeps its title up to 12rem, then the strip scrolls sideways with fade
-  edges; the address row never wraps.
+- **Tab strip**: the Terminal keeps its own strip under its head
+  (`ToolTabStrip`, `toolTabClassName`). The Browser has none: its tabs sit in
+  the address row (see Tabs), which never wraps.
 - **One header order** for both docks: what the tool shows first (the
   Terminal's folder pill, the Browser's address), then its own buttons, then
   More, Open full page and Close. On a full page the last control of the first
@@ -704,7 +710,7 @@ sits in and the address, and one function opens it (`openInBrowser`).
   a terminal on a plain folder, opens your browser.
 - **Send to agent** is a door in the other direction: the text of a tab goes
   to the session's agent. The entries are the first row of More, a row in the
-  tab list's right-click menu (the `browserTab` kind of the action registry)
+  right-click menu of a tab in the row (the `browserTab` kind of the action registry)
   and `browser.sendToAgent` (⌘⇧S); all call
   `sendPageToAgent`. The press names the tab, the session, its host and the
   agent the composer would send to (`useHandOutputToAgent`). Rust reads the
@@ -777,7 +783,7 @@ sits in and the address, and one function opens it (`openInBrowser`).
   only once the open succeeded, so a failure leaves it for a retry. The stack is
   per session, in memory, five deep: `closeTab` pushes the closed row in the
   same commit (`pushClosedTab`), and `closeBrowserSessionTabs` and archive
-  eviction clear it. The Browser rail entry, the pin button and the tab strip's
+  eviction clear it. The Browser rail entry, the pin button and the row's
   New tab teach their chord in the tooltip. ⌘F opens the find bar (see Find in
   page).
 - **A focused page and the app's keys.** After a click inside a tab, the native

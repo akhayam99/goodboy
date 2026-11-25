@@ -4,7 +4,6 @@ import {
   ArrowUpRight,
   CodeXml,
   GripVertical,
-  PanelLeft,
   Pin,
   RotateCw,
   Square,
@@ -17,23 +16,22 @@ import { useBrowserKeys } from '../../hooks/useBrowserKeys';
 import { useCommandField } from '../../hooks/useCommandField';
 import { useFindInPage } from '../../hooks/useFindInPage';
 import type { BrowserConsoleToggle, BrowserPaneModel } from '../../types';
-import { BrowserAddressPill } from './BrowserAddressPill';
 import { BrowserCommandPanel } from './BrowserCommandPanel';
 import { BrowserFindBar } from './BrowserFindBar';
 import { BrowserLoadLine } from './BrowserLoadLine';
 import { BrowserMoreMenu } from './BrowserMoreMenu';
+import { BrowserTabStrip, type BrowserStripGroups } from './BrowserTabStrip';
 import { foldedBrowserRowsOf } from './foldedBrowserRowsOf';
 import { NAMES } from '../../../../shared/utils/names';
 import { DockButton } from '../../../../shared/components/DockButton';
 
-const NARROW_ROW_PX = 520;
+const NARROW_ROW_PX = 560;
 
 type Props = {
   readonly model: BrowserPaneModel;
   readonly isAddressShortcutOn: boolean;
-  readonly isListOpen?: boolean;
   readonly consoleToggle?: BrowserConsoleToggle;
-  readonly onToggleList?: () => void;
+  readonly page?: BrowserStripGroups;
   readonly onOpenAsPage?: () => void;
   readonly onDock?: () => void;
   readonly onClose?: () => void;
@@ -42,9 +40,8 @@ type Props = {
 export const BrowserAddressRow = ({
   model,
   isAddressShortcutOn,
-  isListOpen = false,
   consoleToggle,
-  onToggleList,
+  page,
   onOpenAsPage,
   onDock,
   onClose,
@@ -55,8 +52,9 @@ export const BrowserAddressRow = ({
   const grip = useDockGrip();
   const { ref: rowRef, width } = useElementWidth();
   const isFolded = width !== null && width > 0 && width < NARROW_ROW_PX;
-  const folded = isFolded ? foldedBrowserRowsOf({ model, consoleToggle }) : [];
+  const folded = isFolded ? foldedBrowserRowsOf({ model }) : [];
   useBrowserKeys({ model, isOn: isAddressShortcutOn, onFind: find.open });
+  useShortcut('browser.address', field.edit, isAddressShortcutOn);
   useShortcut(
     'browser.console',
     () => {
@@ -74,11 +72,12 @@ export const BrowserAddressRow = ({
       <div
         ref={rowRef}
         data-grid-row="1"
+        data-browser-row=""
         data-dock-drag-source={grip.canDrag ? '' : undefined}
         data-row-folded={isFolded ? '' : undefined}
         onPointerDown={grip.canDrag ? (event) => grip.press({ event }) : undefined}
         className={cn(
-          'relative flex shrink-0 items-center gap-1 px-2',
+          'relative flex shrink-0 items-center gap-0.5 px-2',
           PANE_RHYTHM.firstRow,
           grip.canDrag && 'cursor-grab',
         )}
@@ -91,15 +90,6 @@ export const BrowserAddressRow = ({
             className="shrink-0 text-faint-foreground"
           />
         ) : null}
-        {onToggleList === undefined ? null : (
-          <IconButton
-            icon={PanelLeft}
-            label={isListOpen ? 'Hide tab list' : 'Show tab list'}
-            aria-pressed={isListOpen}
-            tooltipSide="top"
-            onClick={onToggleList}
-          />
-        )}
         <IconButton
           icon={ArrowLeft}
           label="Back"
@@ -125,7 +115,7 @@ export const BrowserAddressRow = ({
             onClick={model.reload}
           />
         )}
-        <BrowserAddressPill model={model} field={field} isAddressShortcutOn={isAddressShortcutOn} />
+        <BrowserTabStrip model={model} field={field} page={page} />
         {isFolded || model.shown === null || model.projectName === null ? null : (
           <IconButton
             icon={Pin}
@@ -138,7 +128,7 @@ export const BrowserAddressRow = ({
             onClick={model.togglePin}
           />
         )}
-        {isFolded || consoleToggle === undefined ? null : (
+        {consoleToggle === undefined ? null : (
           <IconButton
             icon={CodeXml}
             label="Console"
