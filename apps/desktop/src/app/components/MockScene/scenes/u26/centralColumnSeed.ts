@@ -40,7 +40,6 @@ export type ColumnKind =
   | 'mid'
   | 'finished'
   | 'stuck'
-  | 'stuckAsk'
   | 'blocked'
   | 'failed'
   | 'noreply'
@@ -701,20 +700,6 @@ const partsOf = ({ kind }: SeedParams): Parts => {
         pr: prOf({ checks: 'success' }),
         checks: PASSED,
       };
-    case 'stuckAsk': {
-      const auto = autoPartsOf({ variant: 'stuck' });
-      return {
-        ...NO_PARTS,
-        agents: auto.agents,
-        questions: [CAP_QUESTION],
-        views: [auto.view],
-        extraSpans: auto.spans,
-        pr: prOf({ checks: 'pending' }),
-        runningIds: auto.agents
-          .filter((agent) => agent.status === 'running')
-          .map((agent) => agent.id),
-      };
-    }
     case 'stuck':
     case 'blocked':
     case 'failed': {

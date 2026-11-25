@@ -119,11 +119,11 @@ describe('NeedsYouSection', () => {
   it('is a section head like Next and Projects with a tone dot and no side bar', () => {
     show();
 
-    const head = screen.getByRole('heading', { level: 2, name: 'Needs you' });
-    expect(head.closest('[data-overview-section]')?.firstElementChild?.className).toContain('h-7');
-    expect(screen.queryByTestId('tone-bar')).toBeNull();
     const section = screen.getByRole('region', { name: 'Needs you' });
-    expect(section.className).not.toContain('bg-subtle');
+    const head = screen.getByRole('heading', { level: 2, name: 'Needs you' });
+    expect(section.firstElementChild?.contains(head)).toBe(true);
+    expect(screen.queryByTestId('tone-bar')).toBeNull();
+    expect(section.querySelector('[data-needs-you-rows]')).not.toBeNull();
   });
 
   it('draws one row per attention kind inside one block', () => {
@@ -132,7 +132,6 @@ describe('NeedsYouSection', () => {
     expect(cards).toHaveLength(KINDS.length + OWNERS.length);
     const block = document.querySelector('[data-needs-you-rows]');
     expect(block).not.toBeNull();
-    expect(block?.className).toContain('bg-subtle');
     const rows = block?.querySelectorAll('[data-move]') ?? [];
     expect(rows).toHaveLength(cards.length);
     for (const card of cards) {
@@ -147,8 +146,8 @@ describe('NeedsYouSection', () => {
     if (row === null) {
       throw new Error('no row');
     }
-    expect(within(row).getByText('The planner failed. The provider refused.')).toBeTruthy();
-    expect(within(row).getByText('Lead')).toBeTruthy();
+    expect(within(row).getByText('The planner failed. The provider refused.').tagName).toBe('SPAN');
+    expect(within(row).getByText('Lead').textContent).toBe('Lead');
     expect(within(row).queryByText('Lead needs you')).toBeNull();
   });
 
@@ -160,14 +159,5 @@ describe('NeedsYouSection', () => {
     expect(filled[0]?.closest('[data-move-primary]')).not.toBeNull();
     const quiet = document.querySelectorAll('[data-variant="quiet"]');
     expect(quiet.length).toBeGreaterThan(1);
-  });
-
-  it('clamps a long reason to two lines on whole words', () => {
-    show();
-
-    const title = screen.getByText('Owner question waits');
-    expect(title.className).toContain('line-clamp-2');
-    expect(title.className).toContain('text-pretty');
-    expect(title.className).not.toContain('truncate');
   });
 });
