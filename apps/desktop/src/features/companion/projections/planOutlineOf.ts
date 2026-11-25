@@ -2,7 +2,8 @@ import { safeTextOf } from './safeTextOf';
 
 export const PLAN_STEP_LIMIT = 8;
 export const PLAN_TOUCH_LIMIT = 6;
-const STEP_LINE = /^\s*(?:[-*]|\d+[.)])\s+(.+)$/;
+const BULLETS = ['- ', '* '];
+const NUMBERED = /^\d{1,3}[.)] /;
 const FILE_TOKEN = /`([\w@.-]+(?:\/[\w@.-]+)*\.[A-Za-z0-9]{1,6})`/g;
 
 type Params = {
@@ -18,8 +19,13 @@ export const planOutlineOf = ({ source }: Params): PlanOutline => {
   const steps = source
     .split('\n')
     .flatMap((line) => {
-      const match = STEP_LINE.exec(line);
-      return match?.[1] === undefined ? [] : [match[1].trim()];
+      const text = line.trim();
+      const bullet = BULLETS.find((prefix) => text.startsWith(prefix));
+      if (bullet !== undefined) {
+        return [text.slice(bullet.length).trim()];
+      }
+      const numbered = NUMBERED.exec(text);
+      return numbered === null ? [] : [text.slice(numbered[0].length).trim()];
     })
     .map((line) => safeTextOf({ text: line.replace(/[*_`]/g, ''), max: 140 }))
     .filter((line) => line.length > 0)
