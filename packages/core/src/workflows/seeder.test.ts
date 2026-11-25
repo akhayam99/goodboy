@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type IsoDateTime,
+  type StepId,
+  type Workflow,
+  type WorkflowId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import {
   deleteWorkflow,
   getWorkflow,
@@ -115,6 +122,45 @@ describe('seedWorkflowLibrary', () => {
     }
   });
 
+  it('seeds every built-in with a first check, a stop rule and its suggestion', async () => {
+    const { db, workspaceId } = await setup();
+    await seedWorkflowLibrary({ db }, workspaceId);
+
+    const workflows = await listWorkflows(db, workspaceId);
+
+    expect(
+      workflows.map((workflow) => [
+        workflow.name,
+        workflow.entryCheck,
+        workflow.stopRule,
+        workflow.thenSuggestId,
+        workflow.isOrderKept,
+      ]),
+    ).toEqual([
+      [
+        'Refactor',
+        "Pin today's behavior with tests first.",
+        'A test has to change what it asserts.',
+        `wf_seed_plan-and-ship_${workspaceId}`,
+        undefined,
+      ],
+      [
+        'Plan and ship',
+        "Restate the outcome and how we know it's done.",
+        'The ask is unclear or changes a public contract.',
+        undefined,
+        undefined,
+      ],
+      [
+        'Fix a bug',
+        'Reproduce the bug with a failing test.',
+        "It can't be reproduced, or it works as designed.",
+        `wf_seed_plan-and-ship_${workspaceId}`,
+        undefined,
+      ],
+    ]);
+  });
+
   it('ships refactor, plan and ship, and fix a bug as built-ins', () => {
     expect(WORKFLOW_LIBRARY.map((entry) => entry.name)).toEqual([
       'Refactor',
@@ -180,6 +226,51 @@ describe('seedWorkflowLibrary', () => {
         `wf_seed_plan-and-ship_${workspaceId}`,
       ]);
       expect(await getWorkflow(db, `wf_seed_fix-a-bug_${workspaceId}` as WorkflowId)).toBeNull();
+    });
+
+    type ClearParams = {
+      readonly db: DbInterface;
+    };
+
+    const clearGuides = async ({ db }: ClearParams) => {
+      await db.execute(
+        'UPDATE workflows SET entry_check = NULL, stop_rule = NULL, then_suggest_id = NULL',
+      );
+    };
+
+    it('gives the built-ins of a database from before m246 their first check and stop rule', async () => {
+      const { db, workspaceId } = await setup();
+      await seedWorkflowLibrary({ db }, workspaceId);
+      await clearGuides({ db });
+
+      await seedMissingBuiltinWorkflows({ db });
+
+      const fix = await getWorkflow(
+        db,
+        brandId<WorkflowId>({ value: `wf_seed_fix-a-bug_${workspaceId}` }),
+      );
+      expect(fix).toMatchObject({
+        entryCheck: 'Reproduce the bug with a failing test.',
+        stopRule: "It can't be reproduced, or it works as designed.",
+        thenSuggestId: `wf_seed_plan-and-ship_${workspaceId}`,
+      });
+    });
+
+    it('never overwrites a check, a stop rule or a suggestion the user already set', async () => {
+      const { db, workspaceId } = await setup();
+      await seedWorkflowLibrary({ db }, workspaceId);
+      await clearGuides({ db });
+      const fixId = `wf_seed_fix-a-bug_${workspaceId}`;
+      await db.execute("UPDATE workflows SET entry_check = 'Run the replay twice.' WHERE id = ?", [
+        fixId,
+      ]);
+
+      await seedMissingBuiltinWorkflows({ db });
+
+      const fix = await getWorkflow(db, brandId<WorkflowId>({ value: fixId }));
+      expect(fix?.entryCheck).toBe('Run the replay twice.');
+      expect(fix?.stopRule).toBe("It can't be reproduced, or it works as designed.");
+      expect(fix?.thenSuggestId).toBeUndefined();
     });
   });
 
