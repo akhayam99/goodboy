@@ -12,6 +12,8 @@ import type { BrowserConsoleEntry, BrowserConsoleLevel } from '../../types';
 
 type Props = {
   readonly entry: BrowserConsoleEntry;
+  readonly isOpened?: boolean;
+  readonly onOpen?: () => void;
 };
 
 const LEVEL_ICON = {
@@ -35,8 +37,10 @@ const LEVEL_ICON_TEXT = {
   log: 'text-faint-foreground',
 } as const satisfies Record<BrowserConsoleLevel, string>;
 
-export const BrowserConsoleRow = ({ entry }: Props) => {
+export const BrowserConsoleRow = ({ entry, isOpened = false, onOpen }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
+  const isExpandable = onOpen === undefined;
+  const isExpanded = isExpandable && isOpen;
   const isNetwork = entry.kind === 'network';
   const status = isNetwork ? networkStatusWordOf({ status: entry.status }) : null;
   const tone = isNetwork && !isFailedRequest({ status: entry.status }) ? 'log' : entry.level;
@@ -47,10 +51,10 @@ export const BrowserConsoleRow = ({ entry }: Props) => {
       className="flex min-w-0 flex-col rounded-sm hover:bg-hover"
     >
       <SelectableRow
-        selected={false}
-        isExpanded={isOpen}
+        selected={isOpened}
+        isExpanded={isExpandable ? isOpen : undefined}
         ariaLabel={`${entry.level}: ${entry.text}`}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={onOpen ?? (() => setIsOpen(!isOpen))}
         className="min-w-0 items-center gap-2 px-2 py-0.5 text-code"
       >
         <ChevronRight
@@ -58,7 +62,7 @@ export const BrowserConsoleRow = ({ entry }: Props) => {
           aria-hidden
           className={cn(
             'shrink-0 text-faint-foreground motion-safe:transition-transform',
-            isOpen && 'rotate-90',
+            isExpanded && 'rotate-90',
           )}
         />
         <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', LEVEL_ICON_TEXT[tone])} />
@@ -76,7 +80,7 @@ export const BrowserConsoleRow = ({ entry }: Props) => {
           </TruncatedText>
         )}
       </SelectableRow>
-      {isOpen ? (
+      {isExpanded ? (
         <pre
           aria-label="Details"
           className={cn('whitespace-pre-wrap break-words px-2 pb-1 text-code', LEVEL_TEXT[tone])}
