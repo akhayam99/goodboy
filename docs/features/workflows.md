@@ -4,7 +4,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 ### Run a preset
 
-To run a preset, open **Start a run** and pick **Preset** under **How**, or type `~` and its name. The run gets a Lead with the preset as its plan, and its row reads "Lead · plan Fix a layout". A preset's steps, roles and models are edited in the Workflows studio.
+To run a preset, pick it in the **Workflow** pill of **Start a run**, or type `~` and its name. The run gets a Lead with the preset as its plan, and its row reads "Lead · plan Fix a layout". A preset's steps, roles and models are edited in the Workflows studio.
 
 ### Older runs
 
@@ -17,12 +17,24 @@ A run started before every run had a Lead stays as it was.
 
 ### A preset as the plan a run starts from
 
-A preset you pick in **Start a run**, or one your ask matches, starts a Lead with that preset as its plan. The run's line reads "Lead · plan Fix a layout". The Lead reads your ask first, then the preset's steps.
+A preset you pick in **Start a run** starts a Lead with that preset as its plan. The run's line reads "Lead · plan Fix a layout". The Lead reads your ask first, then the preset's steps.
 
-**With the preset** sets how close the Lead keeps to the steps:
+The run's line says how close the Lead keeps to the steps:
 
 - **Keep steps** runs the saved steps in their order. The Lead asks before it adds, skips or moves one. A preset you name with `~` starts this way.
-- **May change steps** lets the Lead add, skip or move a step, and it says why. A preset your ask matches starts this way.
+- **May change steps** lets the Lead add, skip or move a step, and it says why.
+
+### The Lead follows the workflow
+
+The Lead reads the workflow's **First, check** and **Stop and ask when** on every turn. No agent writes code before the Lead reports the first check.
+
+When the check fails, the run stops and the Lead page shows one card:
+
+- **Switch to Plan and ship** starts a new run on the suggested workflow, with what the Lead found, and stops this one.
+- **Continue with Fix a bug** keeps this workflow. Any message to the Lead does the same.
+- **Stop the run** ends it.
+
+On the Board the stopped run is one card, and its click lands on this choice. **Usual steps**, under the Lead page header, marks each step done, running, skipped, added or moved.
 
 A run started before 0.38 keeps its own line, such as "Workflow · Preset Fix a layout · Keep steps", and runs on as an older run.
 

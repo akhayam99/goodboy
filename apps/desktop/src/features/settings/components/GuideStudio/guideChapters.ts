@@ -318,11 +318,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'workflows',
     group: 'daily',
     title: 'Workflows',
-    lead: 'A workflow is a list of steps you can reuse. A run that follows one has a Lead, with the steps as its plan.',
+    lead: 'A workflow is a guide the Lead follows: a first check, a stop rule and the usual steps.',
     points: [
       {
         term: 'Built in and your own',
-        desc: 'Refactor, Plan and ship and Fix a bug come with the app, or build your own. A step follows its role or pins a model, and Restore built-in workflows restores one.',
+        desc: 'Refactor, Plan and ship and Fix a bug come with the app; New workflow or Duplicate workflow builds your own, and Restore built-in workflows restores one.',
       },
       {
         term: 'Run page',
@@ -337,8 +337,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Every step, After the plan or Never sets how often workflows and the Lead stop for you, in Every run on Workflows.',
       },
       {
-        term: 'Runs in Settings',
-        desc: 'This Settings page sets what new runs start with. A run keeps the rules it started with.',
+        term: 'First check and stop',
+        desc: 'The Lead reports the first check before any agent writes. A failed check offers Switch to, Continue with or Stop the run.',
       },
       {
         term: 'Open questions',
@@ -647,7 +647,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: 'Open Storage',
+        label: `Open ${NAMES.storageAndSearch}`,
         target: {
           kind: 'studio',
           studio: { kind: 'settings', focus: { scope: 'app', section: 'storage' } },
@@ -678,11 +678,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'This Mac pages',
-        desc: `General, with Updates at its end, ${NAMES.keyboardShortcuts}, Advanced, Storage and ${NAMES.backupAndReset}. ${NAMES.iphone} shows once a phone is paired.`,
+        desc: `${NAMES.lookAndAlerts}, with Updates at its end, ${NAMES.editorTerminalGit}, ${NAMES.keyboardShortcuts}, ${NAMES.storageAndSearch} and ${NAMES.backupAndReset}. ${NAMES.iphone} shows once a phone is paired.`,
       },
       {
         term: 'Open with',
-        desc: 'In General, pick the editor worktrees open in and the browser for links and artifacts.',
+        desc: `In ${NAMES.editorTerminalGit}, pick the editor worktrees open in and the browser for links and artifacts.`,
       },
       {
         term: 'Export and import',
@@ -719,7 +719,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Check for Updates',
-        desc: 'In the Goodboy menu of the macOS menu bar, or Check for updates on Settings, App, Updates, it looks for an update now.',
+        desc: `In the Goodboy menu of the macOS menu bar, or Check for updates on Settings, ${NAMES.lookAndAlerts}, it looks for an update now.`,
       },
       {
         term: NAMES.whatsNew,

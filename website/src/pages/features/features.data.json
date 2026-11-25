@@ -548,7 +548,7 @@
       "items": [
         {
           "title": "Run a preset",
-          "text": "To run a preset, open Start a run and pick Preset under How, or type ~ and its name.",
+          "text": "To run a preset, pick it in the Workflow pill of Start a run, or type ~ and its name.",
           "group": "Workflows",
           "main": true
         },
