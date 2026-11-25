@@ -565,6 +565,12 @@
           "also": "preset plans"
         },
         {
+          "title": "The Lead follows the workflow",
+          "text": "The Lead reports the workflow's first check before any agent writes. When the check fails, the run stops with Switch to, Continue with and Stop the run.",
+          "group": "Workflows",
+          "also": "workflow guides"
+        },
+        {
           "title": "Preset and Custom",
           "text": "A preset is a ready sequence of steps with a role and model each, kept in the Workflows studio. Save a run you like as a preset from its page.",
           "group": "Workflows",
