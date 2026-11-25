@@ -96,8 +96,8 @@ jobs:
         if: steps.decide.outputs.deploy == 'true'
         run: |
           if [ "$VERCEL_ENV" = production ]; then
-            url=$(vercel deploy --prebuilt --prod --meta deploySha="$GITHUB_SHA" --token="$VERCEL_TOKEN")
+            url=$(vercel deploy --prebuilt --archive=tgz --prod --meta deploySha="$GITHUB_SHA" --token="$VERCEL_TOKEN")
           else
-            url=$(vercel deploy --prebuilt --meta deploySha="$GITHUB_SHA" --token="$VERCEL_TOKEN")
+            url=$(vercel deploy --prebuilt --archive=tgz --meta deploySha="$GITHUB_SHA" --token="$VERCEL_TOKEN")
           fi
           echo "${{ matrix.project }} $VERCEL_ENV: $url" >> "$GITHUB_STEP_SUMMARY"

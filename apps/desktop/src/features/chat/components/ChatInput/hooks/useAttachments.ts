@@ -7,6 +7,7 @@ import type { ShowToast } from '../../../../../shared/components/Toast';
 import {
   ATTACHMENT_LIMIT,
   ATTACHMENT_LIMIT_NOTICE,
+  base64ToBlob,
   dataUrlToBlob,
   readBlobAsBase64,
   type PendingAttachment,
@@ -169,7 +170,10 @@ export const useAttachments = ({
       const built: PendingAttachment[] = [];
       for (const handoff of handoffs) {
         const mimeType = handoff.mimeType ?? OUTPUT_HANDOFF_MIME;
-        const blob = new Blob([handoff.text], { type: mimeType });
+        const blob =
+          handoff.dataBase64 === undefined
+            ? new Blob([handoff.text], { type: mimeType })
+            : base64ToBlob({ dataBase64: handoff.dataBase64, mimeType });
         const id = crypto.randomUUID();
         const relPath = await persistAttachmentToDisk({ id, fileName: handoff.fileName, blob });
         built.push({

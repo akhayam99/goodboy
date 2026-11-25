@@ -6,6 +6,7 @@ import {
 import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
 import type {
   BrowserConsoleRead,
+  BrowserPickRead,
   BrowserRequestFacts,
   BrowserTabFacts,
 } from '../../../../../../features/browser/types';
@@ -35,7 +36,41 @@ export type BrowserPaneSceneState =
   | 'width-tablet'
   | 'console'
   | 'console-right'
-  | 'network-detail';
+  | 'network-detail'
+  | 'pick';
+
+const PICK_READ: BrowserPickRead = {
+  doc: 'mockload',
+  isHeard: true,
+  isOn: true,
+  isLeft: false,
+  round: 2,
+  scale: 2,
+  picks: [
+    {
+      tag: 'button',
+      label: 'button.pay',
+      selector: '#root > main > button.pay',
+      text: 'Pay $85.00',
+      html: '<button class="pay">Pay $85.00</button>',
+      isHtmlCut: false,
+      styles: [{ name: 'display', value: 'inline-flex' }],
+      component: 'PayButton',
+      source: { path: '/src/checkout/PayButton.tsx', line: 42 },
+      isSourceSettled: true,
+      rect: { x: 312, y: 388, width: 101, height: 34 },
+      url: 'http://localhost:5173/checkout',
+    },
+  ],
+};
+
+const IDLE_PICK: BrowserPickRead = {
+  ...PICK_READ,
+  doc: null,
+  isHeard: false,
+  isOn: false,
+  picks: [],
+};
 
 const CONSOLE_STATES: ReadonlyArray<BrowserPaneSceneState> = [
   'console',
@@ -396,6 +431,13 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
         return { isFound: textOf({ payload, field: 'needle' }) === 'retry' };
       case 'browser_console_read':
         return consoleReadOf({ state, payload });
+      case 'browser_pick':
+        return state === 'pick' ? PICK_READ : IDLE_PICK;
+      case 'monitor_snapshot':
+        return { listeners: [], processes: [], takenAt: 1, isPlatformSupported: true };
+      case 'process_ledger_list':
+      case 'monitor_watched_ports':
+        return [];
       case 'browser_visits_list':
         return VISITS;
       case 'browser_tab_open':

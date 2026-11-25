@@ -239,6 +239,8 @@ browser-pane-tabs
 browser-pane-tabs-dark
 browser-peek
 browser-peek-dark
+browser-pick
+browser-pick-dark
 browser-width-phone
 browser-width-tablet
 c01-grid-dots

@@ -6,6 +6,7 @@ import { useReloadSurface } from '../../../../shared/hooks/useReloadSurface';
 import { selectDockDrawer } from '../../../../store/slices/drawer/selectDockDrawer';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useConsoleEntries } from '../../hooks/useConsoleEntries';
+import { useElementPick } from '../../hooks/useElementPick';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
 import { useParkedTab } from '../../hooks/useParkedTab';
 import { devicePresetOf } from '../../devicePresets';
@@ -14,6 +15,7 @@ import { BrowserAddressRow } from './BrowserAddressRow';
 import { BrowserToolsDock } from '../BrowserToolsDock';
 import { BrowserNotice } from './BrowserNotice';
 import { BrowserPasskeyNotice } from './BrowserPasskeyNotice';
+import { BrowserPickNote } from './BrowserPickNote';
 import { BrowserSendLine } from './BrowserSendLine';
 import { BrowserView } from './BrowserView';
 
@@ -49,6 +51,14 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
     reload: model.reload,
   });
 
+  const pick = useElementPick({
+    sessionId,
+    liveId: model.shownLiveId,
+    pageTitle: title,
+    isShown: isOnScreen,
+    onError: model.showError,
+  });
+
   const cover = useNativePlacement({
     sessionId,
     frame,
@@ -69,9 +79,11 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
             isOpen: isConsoleOpen,
             onToggle: () => setIsConsoleOpen(!isConsoleOpen),
           }}
+          pick={pick}
           onOpenAsPage={() => promoteBrowserTab({ sessionId, tabId: shownTab?.id ?? null })}
           onClose={onClose}
         />
+        {pick.picks.length > 0 ? <BrowserPickNote pick={pick} /> : null}
         {model.error === null ? null : (
           <p role="alert" className="px-4 text-meta text-danger">
             {model.error}

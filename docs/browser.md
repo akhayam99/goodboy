@@ -972,7 +972,7 @@ that shadows it, so the chord follows Chrome's J.
 
 - **The page runtime**: every tab runs one script at document start, joined
   at build time from the modules in `browser/page_runtime/` (console, errors,
-  network, an empty pick slot and the reader) inside one closure, with the
+  network, the picker and the reader) inside one closure, with the
   passkey probe appended on macOS (`console::tab_script`). `builder_for` adds
   it once, for every frame, and it returns at once in any frame that is not
   the top one. It keeps three rings in its closure, every entry with one
@@ -1082,6 +1082,75 @@ that shadows it, so the chord follows Chrome's J.
   what the page says, or stops. That is no more than the page can do with
   `console.log`, and the wall above does not move.
 
+## Pick an element
+
+The Select an element button sits in the pane's address row before Console,
+with the `SquareDashedMousePointer` glyph, and `browser.pick` (⌘⇧C, Chrome's
+inspect key) toggles it while a tab is shown and the session has a live agent.
+It is a page key, so it works with the focus inside the page. The full Browser
+page has no pick yet.
+
+- **In the page**: `page_runtime/pick.js` waits for a second event under the
+  read name plus `:pick` (`console::pick_event_name`) with `start`, `stop` or
+  `read`. On `start` it adds one host element with every style inline and
+  `!important`, a closed shadow root and a layer over the whole view, so page
+  CSS cannot hide or restyle it and no pointer event reaches the page (its
+  capture listeners run before the page's and stop the event). It draws the
+  hint, an outline and a label under the pointer (the React component when
+  the element's fiber has a `_debugOwner`, else tag and class, and the size),
+  and a filled outline on each picked element. A click picks one element,
+  ⇧-click adds or removes one, up to four (`MAX_PICKS`); Esc in the page stops
+  and marks the pick as left. For each pick it notes the tag, a label, a
+  selector (an id or `data-testid` anchor, else up to five steps with
+  `nth-of-type`), the visible text (1,000 characters), the outer HTML (4,000),
+  fifteen computed styles, the rect in view points and the address. On a
+  loopback page it also reads the fiber's `_debugStack`, takes the first
+  same-origin frame outside `node_modules`, `.vite` and `/@`, fetches that
+  module with the page's original `fetch` and maps the line through its inline
+  or same-origin source map; the answer then carries the original source line
+  and the path the map's `sources` and `sourceRoot` give for it. A source on
+  another origin, under `node_modules` or climbing above the served root gives
+  no file. React before 19 or a production build gives no component and no
+  line, and the rest works the same.
+- **The read**: `browser_pick` takes the tab id, the session id, the op and
+  the round the app has seen. It refuses like the console read
+  (`session_tab`), runs the script with `eval_with_callback` and parses the
+  answer as page data (`pick::pick_answer_of`: 200 kB, a load id, four picks,
+  each field capped, a rect only when finite and at least one point wide and
+  high, a source only with an absolute path and a line). When a later round
+  brings picks it gives the focus back to the app window, so the note takes
+  the keys. `useElementPick` sends `start` on the gesture and turns on only
+  after the page answers, then reads every 150 ms; an answer for an older
+  gesture is dropped, and a new load, an unheard runtime, `isOn: false`, a
+  failed read or another shown tab ends the pick. A failed read, another tab, a
+  hidden pane and an unmount send `stop`, also for a start the page has not
+  answered yet.
+- **The note**: `BrowserPickNote` sits under the address row, not over the
+  page, because anything over the native view covers the page. The note is
+  typed in the app, so a page never writes into the draft. Its head is the
+  component and `path:line`, or the count of elements; the target is the agent
+  `useHandOutputToAgent` names, a menu of the session's agents when it has
+  more than one. Enter adds, ⇧Enter is a new line, Esc leaves and stops the
+  page.
+- **Add**: `addPickedElements` captures the tab, the load id, the agent, the
+  picks and the note at the gesture. It sends `stop` (the overlay goes, the
+  answer has fresh rects) and asks `browser_element_snapshot` for each rect,
+  which refuses a load id that changed or a tab that navigated during the
+  picture, and on macOS crops the view with a
+  `WKSnapshotConfiguration` after screen updates, at the view's scale; an
+  empty image or one over 5 MB is none, and other systems give none. A crop
+  that comes back after the shown tab changed is dropped.
+  `elementAttachmentOf` makes one markdown file per element (address, the page
+  content note, heading, file line, selector, size, text, styles, HTML cut at
+  4,000 characters with a note, through `redactSecrets`) with a source of kind
+  `element` for the chip, and a PNG when there is a crop (`dataBase64`).
+  `elementFileOf` maps the served path into the session worktree only when the
+  page's loopback port is listening for a process this session owns: the
+  worktree, the process folder inside it, then the path; a path that climbs
+  gives none. The files go through `queueOutputHandoff` and the note is
+  appended to the agent's draft. Nothing is sent. The app stops reading the
+  page while it adds; a failed add keeps the picks and the note for a retry.
+
 ## Known limits
 
 - Tauri gives a tab the same initialization scripts as a window, and 2.12
@@ -1133,9 +1202,10 @@ words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  twenty-five `browser_*` commands (`browser_page_keys` sets the page keys);
+  twenty-eight `browser_*` commands (`browser_page_keys` sets the page keys);
   `console.rs` holds the tab script, the reader and the answer parse, and
-  `page_runtime/` the runtime modules it joins;
+  `page_runtime/` the runtime modules it joins; `pick.rs` drives the picker
+  and parses its answer, and `snapshot.rs` crops a picked element;
   `local.rs` holds the `gblocal` scheme, the path rule and the grant check; `page_keys.rs`
   holds the chord parse, the key codes, the `PageKeys` state and
   `route_page_key`; `load.rs` maps the page load callback to
