@@ -708,7 +708,7 @@ describe('demo playground', () => {
     const first = chapterOf({ id: 'bring' }).hints[0]?.id ?? '';
     hint({ frame, hintId: first });
     hint({ frame, hintId: first, isClicked: true, isPressed: true });
-    expect(screen.getByRole('button', { name: 'Paste example key' })).not.toBeNull();
+    screen.getByRole('button', { name: 'Paste example key' });
     expect(instruction()).toBe(plain(chapterOf({ id: 'bring' }).hints[0]?.instruction));
   });
 
