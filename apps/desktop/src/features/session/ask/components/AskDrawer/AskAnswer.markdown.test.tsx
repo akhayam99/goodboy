@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { brandId, type SessionId } from '@goodboy/types';
+import { brandId, type OpenQuestionId, type SessionId } from '@goodboy/types';
 import { parseAskAnswer } from '../../parseAskAnswer';
 import { AskAnswer } from './AskAnswer';
 
@@ -28,7 +28,11 @@ const FENCED = [
   'Done.',
 ].join('\n');
 
-const show = (text: string) => {
+type ShowParams = {
+  readonly text: string;
+};
+
+const show = ({ text }: ShowParams) => {
   const parsed = parseAskAnswer({ text, handles: [] });
   return render(
     <AskAnswer sessionId={SESSION} blocks={parsed.blocks} isStreaming={false} onOpen={() => {}} />,
@@ -50,7 +54,7 @@ describe('the Ask answer', () => {
   });
 
   it('draws a fenced block as code with its language and a Copy button', () => {
-    const view = show(FENCED);
+    const view = show({ text: FENCED });
     const code = view.container.querySelector('[data-block="code"]');
     expect(code?.textContent).toContain('const isRetry = attempts > 1;');
     expect(code?.textContent).toContain('ts');
@@ -59,7 +63,7 @@ describe('the Ask answer', () => {
   });
 
   it('draws a markdown table as a real table', () => {
-    const view = show(FENCED);
+    const view = show({ text: FENCED });
     const cells = [...view.container.querySelectorAll('table td, table th')].map(
       (cell) => cell.textContent,
     );
@@ -67,8 +71,25 @@ describe('the Ask answer', () => {
     expect(view.container.textContent).not.toContain('| ---');
   });
 
+  it('keeps a bracket pair inside a fence and names a handle cited in a table cell', () => {
+    const parsed = parseAskAnswer({
+      text: ['```ts', 'const prefix = "[[";', '```', '| Q |', '| --- |', '| [[Q1]] |'].join('\n'),
+      handles: [
+        {
+          key: 'Q1',
+          label: 'Question 1',
+          target: { kind: 'question', questionId: 'q-1' as OpenQuestionId },
+        },
+      ],
+    });
+    expect(parsed.blocks.map((block) => block.kind)).toEqual(['markdown', 'markdown']);
+    expect(parsed.blocks[0]).toMatchObject({ text: expect.stringContaining('"[["') });
+    expect(parsed.blocks[1]).toMatchObject({ text: expect.stringContaining('Question 1') });
+    expect(parsed.cited).toHaveLength(1);
+  });
+
   it('keeps a fence that is still streaming as code', () => {
-    const view = show('Here:\n```sh\npnpm test');
+    const view = show({ text: 'Here:\n```sh\npnpm test' });
     expect(view.container.querySelector('[data-block="code"]')?.textContent).toContain('pnpm test');
   });
 });

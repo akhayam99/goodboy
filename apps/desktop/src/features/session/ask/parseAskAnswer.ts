@@ -44,8 +44,14 @@ const withoutOpenMarkers = (text: string): string => {
   const suggestAt = text.indexOf(SUGGEST_START);
   const closed = suggestAt === -1 || SUGGEST.test(text.slice(suggestAt));
   const trimmed = closed ? text : text.slice(0, suggestAt);
+  const fenceCount = trimmed.split('\n').filter((line) => line.trim().startsWith(FENCE)).length;
+  if (fenceCount % 2 === 1) {
+    return trimmed;
+  }
+  const proseStart =
+    trimmed.lastIndexOf(FENCE) === -1 ? 0 : trimmed.lastIndexOf(FENCE) + FENCE.length;
   const lastOpen = trimmed.lastIndexOf('[[');
-  if (lastOpen === -1 || trimmed.indexOf(']]', lastOpen) !== -1) {
+  if (lastOpen < proseStart || trimmed.indexOf(']]', lastOpen) !== -1) {
     return trimmed;
   }
   return trimmed.slice(0, lastOpen);
@@ -177,7 +183,15 @@ export const parseAskAnswer = ({ text, handles }: Params): ParsedAskAnswer => {
         rows.push(lines[at] ?? '');
         at += 1;
       }
-      blocks.push({ kind: 'markdown', text: rows.join('\n'), inlines: [] });
+      const cellText = rows.join('\n').replace(CHIP, (whole, raw: string) => {
+        const handle = resolveHandle({ raw, byKey });
+        if (handle === null) {
+          return raw;
+        }
+        cited.set(handle.key, handle);
+        return handle.label;
+      });
+      blocks.push({ kind: 'markdown', text: cellText, inlines: [] });
       continue;
     }
     const isItem = LIST_ITEM.test(line);

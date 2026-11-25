@@ -12,7 +12,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   importStore,
