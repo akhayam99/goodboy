@@ -773,6 +773,12 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
   bounds the DNS lookup, the first request, the one GitHub redirect and the
   streamed body together. A redirect gets what is left, never a fresh budget,
   and a lookup also stops after 5 s (`DNS_TIMEOUT`).
+- **What a browser tab's page runtime records is page data.** The runtime
+  (`browser/page_runtime/`, joined by `console::tab_script`) keeps console
+  lines, requests and errors in separate rings in the page, and Rust parses
+  every read as untrusted: each entry on its own, every field capped, the
+  sensitive headers dropped again (`console::SENSITIVE_HEADERS`). The rest is
+  in [browser.md](./browser.md) → Console.
 
 ### Hidden pages
 

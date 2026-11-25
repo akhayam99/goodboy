@@ -79,7 +79,17 @@ const entryOf = ({
   method = null,
   status = null,
   source = null,
-}: EntryParams): BrowserConsoleEntry => ({ seq, level, text, kind, method, status, source });
+}: EntryParams): BrowserConsoleEntry => ({
+  seq,
+  level,
+  text,
+  kind,
+  method,
+  status,
+  source,
+  network: null,
+  error: null,
+});
 
 const ENTRIES: ReadonlyArray<BrowserConsoleEntry> = [
   entryOf({
@@ -104,10 +114,11 @@ const ENTRIES: ReadonlyArray<BrowserConsoleEntry> = [
 const heard = ({ doc = 'k3x9', entries }: ReadParams): BrowserConsoleRead => ({
   doc,
   entries,
+  watermark: 0,
   isHeard: true,
 });
 
-const UNHEARD: BrowserConsoleRead = { doc: null, entries: [], isHeard: false };
+const UNHEARD: BrowserConsoleRead = { doc: null, entries: [], watermark: 0, isHeard: false };
 
 const argsOf = ({ payload }: PayloadParams): Readonly<Record<string, unknown>> => {
   const args: unknown =
