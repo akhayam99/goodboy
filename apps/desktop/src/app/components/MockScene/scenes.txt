@@ -1551,6 +1551,14 @@ u52-impact-agents-dark
 u52-impact-agents-light
 u52-impact-agents-open-dark
 u52-impact-agents-open-light
+u52-workflow-create-drafting-dark
+u52-workflow-create-drafting-light
+u52-workflow-create-empty-dark
+u52-workflow-create-empty-light
+u52-workflow-create-failed-dark
+u52-workflow-create-failed-light
+u52-workflow-create-filled-dark
+u52-workflow-create-filled-light
 u52-workflows-every-run-dark
 u52-workflows-every-run-light
 u52-workflows-every-run-plan-dark
