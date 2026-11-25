@@ -74,14 +74,17 @@ type SpawnFn = ReturnType<StoryStore['getState']>['spawnAgent'];
 
 const field = () => screen.getByRole('textbox', { name: 'Start a run' });
 
-const suggestionLine = () => document.querySelector('[data-start-suggestion]');
+const pill = () => screen.getByRole('combobox', { name: 'Workflow' });
+
+const likelyText = (): string | null => {
+  const text = pill().textContent ?? '';
+  return text.includes('likely') ? text : null;
+};
 
 const routeLine = () => document.querySelector('[data-run-route-line]')?.textContent ?? '';
 
-const isFollowPicked = (): boolean =>
-  within(screen.getByRole('tablist', { name: 'Plan' }))
-    .getByRole('tab', { name: 'Follow a workflow' })
-    .getAttribute('aria-selected') === 'true';
+const isWorkflowPicked = (): boolean =>
+  (pill().textContent ?? '').includes('Fix a layout') && likelyText() === null;
 
 const renderField = (): void => {
   render(
@@ -125,9 +128,7 @@ describe('StartRun workflow suggestion', () => {
 
     fireEvent.change(field(), { target: { value: LAYOUT_ASK } });
 
-    await waitFor(() =>
-      expect(suggestionLine()?.textContent).toBe('Looks like your workflow Fix a layout.Use it'),
-    );
+    await waitFor(() => expect(likelyText()).toBe('WorkflowAuto · likely Fix a layout'));
     expect(routeLine()).not.toContain('Fix a layout');
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
@@ -137,31 +138,26 @@ describe('StartRun workflow suggestion', () => {
     expect(await storedRoute()).toMatchObject({ shape: 'lead', presetName: null });
   });
 
-  it('gives a Lead the suggested workflow on Use it, free to change its steps', async () => {
+  it('gives a Lead the likely workflow once you pick it, free to change its steps', async () => {
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     useAppStore.setState({ spawnAgent });
     renderField();
 
     fireEvent.change(field(), { target: { value: LAYOUT_ASK } });
-    fireEvent.click(screen.getByRole('button', { name: 'Use it' }));
+    await waitFor(() => expect(likelyText()).not.toBeNull());
+    fireEvent.click(pill());
+    fireEvent.click(screen.getByRole('option', { name: /^Fix a layout/ }));
 
-    expect(isFollowPicked()).toBe(true);
+    expect(isWorkflowPicked()).toBe(true);
     expect(screen.getByRole('checkbox', { name: 'Keep its steps as written' })).toHaveProperty(
       'checked',
       false,
     );
-    expect(suggestionLine()).toBeNull();
+    expect(likelyText()).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
-    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toBe(
-      [
-        LAYOUT_ASK,
-        'Plan: follow the preset "Fix a layout".',
-        '1. Find (scout)\n2. Center',
-        'You may add, skip or move a step. Say why when you do.',
-      ].join('\n\n'),
-    );
+    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toBe(LAYOUT_ASK);
     expect(await storedRoute()).toMatchObject({
       row: 1,
       closeness: 'adapt',
@@ -176,9 +172,7 @@ describe('StartRun workflow suggestion', () => {
 
     fireEvent.change(field(), { target: { value: LAYOUT_ASK } });
 
-    await waitFor(() =>
-      expect(suggestionLine()?.textContent).toBe('Looks like your workflow Fix a layout.Use it'),
-    );
+    await waitFor(() => expect(likelyText()).toBe('WorkflowAuto · likely Fix a layout'));
   });
 
   it('suggests nothing for an ask that fits no workflow', () => {
@@ -187,6 +181,6 @@ describe('StartRun workflow suggestion', () => {
     fireEvent.change(field(), { target: { value: 'Which notify-relay handler fires twice?' } });
 
     expect(routeLine()).toContain('A question or a check');
-    expect(suggestionLine()).toBeNull();
+    expect(likelyText()).toBeNull();
   });
 });

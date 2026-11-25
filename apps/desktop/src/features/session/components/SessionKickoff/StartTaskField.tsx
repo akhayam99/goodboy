@@ -3,8 +3,6 @@ import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import { PromptField, type PromptFieldFiles } from '../../../../shared/components/PromptField';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
-import { RunModelChip } from '../StartRun/RunModelChip';
-import type { RunModelView } from '../StartRun/useRunModel';
 import { DraftTasks } from './DraftTasks';
 import { TaskPicker } from './TaskPicker';
 
@@ -12,7 +10,6 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly isDisabled: boolean;
   readonly isSubmitBlocked: boolean;
-  readonly model: RunModelView;
   readonly files: PromptFieldFiles;
   readonly filesNotice: string | null;
   readonly onSubmit: () => void;
@@ -22,7 +19,6 @@ export const StartTaskField = ({
   workspaceId,
   isDisabled,
   isSubmitBlocked,
-  model,
   files,
   filesNotice,
   onSubmit,
@@ -54,7 +50,6 @@ export const StartTaskField = ({
         footerStart={
           hasTask ? null : <TaskPicker workspaceId={workspaceId} isDisabled={isDisabled} />
         }
-        model={<RunModelChip model={model} isDisabled={isDisabled} variant="pill" />}
       />
     </section>
   );

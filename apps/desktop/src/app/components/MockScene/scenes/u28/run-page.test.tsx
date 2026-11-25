@@ -303,7 +303,7 @@ describe('the u28 run page scenes', () => {
     expect(chip.getAttribute('data-run-model')).toBe('auto');
     const popover = screen.getByRole('dialog', { name: 'Orchestrator model' });
     within(popover).getByRole('button', { name: /^Auto, now / });
-    within(popover).getByRole('button', { name: 'Change the default in Settings' });
+    within(popover).getByRole('button', { name: 'Change the default in Every run' });
   });
 
   it('u28-run-kind-ended offers Restart as on a stopped run', async () => {

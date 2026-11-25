@@ -17,6 +17,7 @@ type Props = {
   readonly isDisabled: boolean;
   readonly onPick: (params: PickParams) => void;
   readonly permissions?: LeadPermissionsTarget;
+  readonly label?: string;
 };
 
 export const AutoLevelChip = ({ permissions, ...level }: Props) =>

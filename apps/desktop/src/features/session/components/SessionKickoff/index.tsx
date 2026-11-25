@@ -28,6 +28,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
   const projectIds = useAppStore((state) => selectSessionDraft({ state, workspaceId }).projectIds);
   const startKind = useAppStore((state) => selectSessionDraft({ state, workspaceId }).startKind);
   const startShape = useAppStore((state) => selectSessionDraft({ state, workspaceId }).startShape);
+  const workflowId = useAppStore((state) => selectSessionDraft({ state, workspaceId }).workflowId);
   const isStarting = useAppStore((state) => selectSessionDraft({ state, workspaceId }).isStarting);
   const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
   const [first] = pickedIssues;
@@ -48,7 +49,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
   useRestoreLastStart({ workspaceId });
   const limit = useAutoTreeLimit({ workspaceId });
   const agentKind = useAppStore((state) => selectSessionDraft({ state, workspaceId }).agentKind);
-  const kind = startFormKindOfDraft({ startKind, startShape });
+  const kind = startFormKindOfDraft({ startKind, startShape, workflowId });
   const shapeModel = useRunModel({
     workspaceId,
     sessionId: null,
@@ -93,7 +94,6 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
         workspaceId={workspaceId}
         isDisabled={isBusy}
         isSubmitBlocked={!hasGoal || isBusy}
-        model={model}
         files={autoRun.files}
         filesNotice={autoRun.filesNotice}
         onSubmit={() => void (kind === null ? autoRun.start() : shapeRun.start())}

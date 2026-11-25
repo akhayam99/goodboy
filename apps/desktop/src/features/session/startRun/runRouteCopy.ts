@@ -1,4 +1,5 @@
 import { runKindLineOf } from '../startKind/runKindLineOf';
+import { START_KIND_COPY } from '../startKind/startKindCopy';
 
 type CountParams = {
   readonly count: number;
@@ -25,7 +26,7 @@ export const RUN_ROUTE_COPY = {
   hint: '~ workflows, @ roles',
   runAs: {
     startsAs: 'Starts as',
-    emptyPresets: 'No saved workflows yet. Save a run as a workflow to start from it.',
+    emptyPresets: START_KIND_COPY.autoNoPresets,
   },
   attachFiles: 'Files go to the run',
   attached: 'Attached to this run',
@@ -33,10 +34,10 @@ export const RUN_ROUTE_COPY = {
   askAboutFile: 'Ask about this file',
   fromThisPreset: 'Start from this workflow',
   start: 'Start',
-  starting: 'Starting',
-  discard: 'Discard',
+  starting: START_KIND_COPY.starting,
+  discard: START_KIND_COPY.discard,
   retry: 'Retry',
-  failed: "Couldn't start the run",
+  failed: START_KIND_COPY.failed,
   shapes: {
     plan: ORCHESTRATED_LINE,
     lead: LEAD_LINE,

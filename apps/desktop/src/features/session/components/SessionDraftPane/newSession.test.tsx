@@ -229,7 +229,6 @@ const LEAD_LINE = 'The Lead writes a plan first, then starts the agents it needs
 
 const PLAN_CHOICES: Readonly<Record<string, string>> = {
   '^Lead': 'The Lead plans it',
-  '^Preset': 'Follow a workflow',
   '^Agent': 'One agent',
 };
 
@@ -237,18 +236,39 @@ type KindParams = {
   readonly name: RegExp;
 };
 
-const kindTab = ({ name }: KindParams): HTMLElement =>
+const planTab = ({ name }: KindParams): HTMLElement =>
   within(screen.getByRole('tablist', { name: PLAN })).getByRole('tab', {
     name: PLAN_CHOICES[name.source] ?? name,
   });
 
+const workflowPill = (): HTMLElement | null => screen.queryByRole('combobox', { name: 'Workflow' });
+
+const isAuto = (): boolean => workflowPill()?.textContent?.includes('Auto') === true;
+
 const pickKind = async ({ name }: KindParams): Promise<void> => {
-  fireEvent.click(kindTab({ name }));
+  if (name.source === '^Preset') {
+    if (workflowPill() === null) {
+      fireEvent.click(planTab({ name: /^Lead/ }));
+      await settle();
+    }
+    await chooseOption({ box: 'Workflow', option: /Scout, plan, build/ });
+    return;
+  }
+  if (name.source === '^Lead' && workflowPill() !== null && !isAuto()) {
+    await chooseOption({ box: 'Workflow', option: /^Auto/ });
+    return;
+  }
+  fireEvent.click(planTab({ name }));
   await settle();
 };
 
-const isPicked = ({ name }: KindParams): boolean =>
-  kindTab({ name }).getAttribute('aria-selected') === 'true';
+const isPicked = ({ name }: KindParams): boolean => {
+  if (name.source === '^Agent') {
+    return planTab({ name }).getAttribute('aria-selected') === 'true';
+  }
+  const isLead = planTab({ name: /^Lead/ }).getAttribute('aria-selected') === 'true';
+  return isLead && isAuto() === (name.source === '^Lead');
+};
 
 describe('New session page', () => {
   it('opens on the task first, with Tasks in its bottom row and Where in the settings row', async () => {
@@ -268,19 +288,18 @@ describe('New session page', () => {
     screen.getByText('Write the goal first.');
   });
 
-  it('shows a Plan row of three choices, the Lead picked, and says what the Lead does', async () => {
+  it('shows a Plan row of two kinds and a Workflow pill, the Lead on Auto, and says what the Lead does', async () => {
     await openPage();
 
     const kinds = within(screen.getByRole('tablist', { name: PLAN }));
     expect(kinds.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
       'The Lead plans it',
-      'Follow a workflow',
       'One agent',
     ]);
+    expect(workflowPill()?.textContent).toBe('WorkflowAuto');
     expect(kinds.queryByRole('tab', { name: /^Orchestrated/ })).toBeNull();
     expect(kinds.getAllByRole('tab').map((tab) => tab.getAttribute('aria-selected'))).toEqual([
       'true',
-      'false',
       'false',
     ]);
     screen.getByText(LEAD_LINE);
@@ -318,7 +337,7 @@ describe('New session page', () => {
   it('keeps the goal and the values that still apply when you switch kind', async () => {
     await openPage();
     await pickKind({ name: /^Preset/ });
-    fireEvent.click(screen.getByRole('button', { name: /^Asks you:/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Stops:/ }));
     await settle();
     fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
     await settle();
@@ -332,7 +351,7 @@ describe('New session page', () => {
 
     expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.workflowGoal).toBe(GOAL);
     expect(textBox('Goal').value).toBe(GOAL);
-    screen.getByRole('button', { name: /^Asks you: Never/ });
+    screen.getByRole('button', { name: /^Stops: Never/ });
   });
 
   it('keeps the Limit chip under Auto picks, and drops it once the route is an agent', async () => {
@@ -366,12 +385,23 @@ describe('New session page', () => {
 
   it('opens on the kind you started last in this workspace', async () => {
     const loadSetting: AppStore['loadSetting'] = async (key) =>
+      key === `newSession.lastStart.${WORKSPACE_ID}` ? 'agent' : null;
+    useAppStore.setState({ loadSetting });
+
+    await openPage();
+
+    expect(isPicked({ name: /^Agent/ })).toBe(true);
+  });
+
+  it('opens a remembered workflow start on Auto, since a workflow is not remembered', async () => {
+    const loadSetting: AppStore['loadSetting'] = async (key) =>
       key === `newSession.lastStart.${WORKSPACE_ID}` ? 'preset' : null;
     useAppStore.setState({ loadSetting });
 
     await openPage();
 
-    expect(isPicked({ name: /^Preset/ })).toBe(true);
+    expect(isPicked({ name: /^Lead/ })).toBe(true);
+    expect(workflowPill()?.textContent).toBe('WorkflowAuto');
   });
 
   it('keeps the pick of this window when another window starts something else', async () => {
@@ -430,9 +460,7 @@ describe('New session page', () => {
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(spawnAgent.mock.calls[0]?.[0]).toBe(cameFrom.id);
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ kindOverride: 'auto' });
-    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toContain(
-      'Plan: follow the preset "Scout, plan, build".',
-    );
+    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toBe(GOAL);
     expect(attach).not.toHaveBeenCalled();
   });
 
@@ -456,19 +484,19 @@ describe('New session page', () => {
     expect(attach).not.toHaveBeenCalled();
   });
 
-  it('shows Asks you on every kind but a plain agent, named like the run page', async () => {
+  it('shows Stops on every kind but a plain agent, named like the run page', async () => {
     await openPage();
     await pickKind({ name: /^Preset/ });
-    screen.getByRole('button', { name: /^Asks you: / });
+    screen.getByRole('button', { name: /^Stops: / });
 
     await pickKind({ name: /^Lead/ });
-    screen.getByRole('button', { name: /^Asks you: / });
+    screen.getByRole('button', { name: /^Stops: / });
 
     await pickKind({ name: /^Agent/ });
-    expect(screen.queryByRole('button', { name: /^Asks you/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Stops/ })).toBeNull();
   });
 
-  it('starts the preset Lead on the Asks you level you picked', async () => {
+  it('starts the preset Lead on the Stops level you picked', async () => {
     const changeAutoLevel = vi.fn<AppStore['changeAutoLevel']>(async () => undefined);
     useAppStore.setState({
       startSessionFromDraft: startThenRun,
@@ -478,7 +506,7 @@ describe('New session page', () => {
     await openPage();
     await pickKind({ name: /^Preset/ });
     await chooseOption({ box: 'Workflow', option: /Scout, plan, build/ });
-    fireEvent.click(screen.getByRole('button', { name: /^Asks you:/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Stops:/ }));
     await settle();
     fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
     await settle();
@@ -492,7 +520,7 @@ describe('New session page', () => {
     expect(attach).not.toHaveBeenCalled();
   });
 
-  it('suggests a workflow that fits under the Lead, and Use it picks it, free to change steps', async () => {
+  it('names the workflow that fits on the Auto pill, and picking it is free to change steps', async () => {
     useAppStore.setState({
       generateWorkflowTitle: vi.fn(async () => undefined),
       startSessionFromDraft: startThenRun,
@@ -500,17 +528,14 @@ describe('New session page', () => {
     });
     await openPage();
     typeGoal(GOAL);
-    expect(document.querySelector('[data-start-suggestion]')).toBeNull();
+    expect(workflowPill()?.textContent).toBe('WorkflowAuto');
 
     typeGoal(FITTING_GOAL);
-    expect(document.querySelector('[data-start-suggestion]')?.textContent).toBe(
-      'Looks like your workflow Scout, plan, build.Use it',
-    );
+    expect(workflowPill()?.textContent).toBe('WorkflowAuto · likely Scout, plan, build');
     expect(document.querySelector('[data-run-route-line]')?.textContent).not.toContain(
       'Scout, plan, build',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Use it' }));
-    await settle();
+    await chooseOption({ box: 'Workflow', option: /^Scout, plan, build/ });
 
     expect(isPicked({ name: /^Preset/ })).toBe(true);
     expect(
@@ -519,13 +544,26 @@ describe('New session page', () => {
     screen.getByText(
       'The Lead starts from Scout, plan, build and says why when it changes a step.',
     );
-    expect(document.querySelector('[data-start-suggestion]')).toBeNull();
     fireEvent.click(startButton());
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
-    const brief = spawnAgent.mock.calls[0]?.[1].initialPrompt ?? '';
-    expect(brief).toContain('Plan: follow the preset "Scout, plan, build".');
-    expect(brief).toContain('You may add, skip or move a step. Say why when you do.');
+    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toBe(FITTING_GOAL);
+  });
+
+  it('writes no workflow for Auto and the workflow id for a pick', async () => {
+    useAppStore.setState({
+      generateWorkflowTitle: vi.fn(async () => undefined),
+      startSessionFromDraft: startThenRun,
+      loadSetting: noSetting,
+    });
+    await openPage();
+
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.workflowId ?? null).toBeNull();
+    await pickKind({ name: /^Preset/ });
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.workflowId).toBe(PRESET_ID);
+    await pickKind({ name: /^Lead/ });
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.workflowId).toBeNull();
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.startKind).toBe('auto');
   });
 
   it('starts the preset you picked and follows it when you say so', async () => {
@@ -538,9 +576,6 @@ describe('New session page', () => {
     await pickKind({ name: /^Preset/ });
     typeGoal(GOAL);
 
-    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Start' }).disabled).toBe(true);
-    screen.getByText('Pick a workflow first.');
-    await chooseOption({ box: 'Workflow', option: /Scout, plan, build/ });
     const steps = screen.getByRole('list', { name: 'Workflow steps' });
     expect(within(steps).getAllByRole('listitem')).toHaveLength(1);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Keep its steps as written' }));
@@ -550,10 +585,7 @@ describe('New session page', () => {
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(attach).not.toHaveBeenCalled();
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ kindOverride: 'auto' });
-    const brief = spawnAgent.mock.calls[0]?.[1].initialPrompt ?? '';
-    expect(brief).toContain('Plan: follow the preset "Scout, plan, build".');
-    expect(brief).toContain('1. Scout the retry path (scout)');
-    expect(brief).toContain('Keep these steps in their order.');
+    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toBe(GOAL);
   });
 
   it('starts the role you picked on the model you picked', async () => {
@@ -593,21 +625,23 @@ describe('New session page', () => {
     await openPage();
     await pickKind({ name: /^Agent/ });
     await chooseOption({ box: 'Role', option: /^Planner/ });
-    const chip = screen.getByRole('button', { name: /^Model:/ });
+    const chip = screen.getByRole('button', { name: /^Change the .* model for this run/ });
     expect(chip.getAttribute('data-run-model')).toBe('auto');
     expect(chip.getAttribute('aria-label')).toMatch(/, Auto$/);
 
     fireEvent.click(chip);
     await settle();
-    screen.getByRole('button', { name: 'Change the default in Settings' });
+    screen.getByRole('button', { name: 'Change the default in Every run' });
     fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
     await settle();
 
     const picked = useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.agentRouting;
     expect(picked).toMatchObject({ provider: 'cursor' });
-    expect(screen.getByRole('button', { name: /^Model:/ }).getAttribute('data-run-model')).toBe(
-      'pinned',
-    );
+    expect(
+      screen
+        .getByRole('button', { name: /^Change the .* model for this run/ })
+        .getAttribute('data-run-model'),
+    ).toBe('pinned');
     typeGoal(GOAL);
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
@@ -810,11 +844,11 @@ describe('New session settings row', () => {
 
     await pickKind({ name: /^Preset/ });
     expect(chipNames()).toEqual(
-      expect.arrayContaining(['Asks you', 'Edits', expect.stringMatching(/^Limit/)]),
+      expect.arrayContaining(['Stops', 'Edits', expect.stringMatching(/^Limit/)]),
     );
     await pickKind({ name: /^Agent/ });
     expect(chipNames()).toEqual(expect.arrayContaining(['Edits']));
-    expect(chipNames().some((name) => name.startsWith('Limit') || name === 'Asks you')).toBe(false);
+    expect(chipNames().some((name) => name.startsWith('Limit') || name === 'Stops')).toBe(false);
     screen.getByRole('combobox', { name: 'Role' });
   });
 
@@ -823,7 +857,7 @@ describe('New session settings row', () => {
     await pickKind({ name: /^Preset/ });
 
     const row = within(screen.getByRole('group', { name: 'Run settings' }));
-    const chips: ReadonlyArray<RegExp> = [/^Asks you:/, /^Edits:/, /^Limit: /, /^Guidance:/];
+    const chips: ReadonlyArray<RegExp> = [/^Stops:/, /^Edits:/, /^Limit: /, /^Guidance:/];
     for (const name of chips) {
       fireEvent.click(row.getByRole('button', { name }));
       await settle();
@@ -870,7 +904,7 @@ describe('New session settings row', () => {
     expect(setMode).not.toHaveBeenCalled();
   });
 
-  it('starts the Auto agent on the Asks you level picked for it', async () => {
+  it('starts the Auto agent on the Stops level picked for it', async () => {
     const changeAutoLevel = vi.fn<AppStore['changeAutoLevel']>(async () => undefined);
     useAppStore.setState({
       startSessionFromDraft: startThenRun,
@@ -880,7 +914,7 @@ describe('New session settings row', () => {
     await openPage();
     await pickKind({ name: /^Lead/ });
     typeGoal(GOAL);
-    fireEvent.click(screen.getByRole('button', { name: /^Asks you:/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Stops:/ }));
     await settle();
     fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
     await settle();

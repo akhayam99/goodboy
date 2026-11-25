@@ -9,6 +9,7 @@ type Props = {
   readonly hint: string | null;
   readonly isRouteHint?: boolean;
   readonly settings: ReadonlyArray<StartSettingItem>;
+  readonly runsOn?: ReactNode;
   readonly note: string | null;
   readonly error: string | null;
   readonly reason: string | null;
@@ -21,6 +22,7 @@ export const StartForm = ({
   hint,
   isRouteHint = false,
   settings,
+  runsOn = null,
   note,
   error,
   reason,
@@ -36,6 +38,7 @@ export const StartForm = ({
           <StartSettingsRow items={settings} className={hasPlan ? 'col-start-2' : 'col-span-2'} />
         </div>
       )}
+      {runsOn}
       {hint === null ? null : (
         <p
           className="text-meta text-muted-foreground"

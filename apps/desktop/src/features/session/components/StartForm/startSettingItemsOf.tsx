@@ -4,8 +4,10 @@ import type {
   ClaudePermissionMode,
   SessionId,
   WorkflowAutonomy,
+  WorkflowSpendLimitMode,
   WorkspaceId,
 } from '@goodboy/types';
+import { NAMES } from '../../../../shared/utils/names';
 import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import type { AutoLimitKind } from '../../../auto/autoLimitCopy';
 import { AutoLevelChip } from '../../../auto/level/AutoLevelChip';
@@ -15,6 +17,7 @@ import { StartAsksSetting } from '../SessionKickoff/StartAsksSetting';
 import type { RunModelView } from '../StartRun/useRunModel';
 import { StartEditsSetting } from './StartEditsSetting';
 import { StartGuidanceSetting } from './StartGuidanceSetting';
+import { StartRepliesChip } from './StartRepliesChip';
 import type { StartFormKind } from './startFormKinds';
 import type { StartAsksKind, StartGuidanceReader } from './startFormWords';
 import { startSettingsOf, type StartSettingItem } from './startSettingsOf';
@@ -60,7 +63,9 @@ type Params = {
   readonly limit: {
     readonly view: LimitView;
     readonly kind: AutoLimitKind | null;
+    readonly mode: WorkflowSpendLimitMode;
   };
+  readonly replies: string;
 };
 
 type AsksAutonomyParams = {
@@ -90,6 +95,7 @@ export const startSettingItemsOf = ({
   edits,
   guidance,
   limit,
+  replies,
 }: Params): ReadonlyArray<StartSettingItem> =>
   startSettingsOf({
     kind,
@@ -102,6 +108,8 @@ export const startSettingItemsOf = ({
       autonomy: asksAutonomyOf({ asks, level: level.value, autonomy: autonomy.value }),
       editsMode: edits.mode,
       limitUsd: limit.view.usd,
+      limitMode: limit.mode,
+      replies,
       hasOwnGuidance: guidance.value !== null,
       projectNames: where.names,
     }),
@@ -110,6 +118,7 @@ export const startSettingItemsOf = ({
       asks:
         asks === 'level' ? (
           <AutoLevelChip
+            label={NAMES.stops}
             value={level.value}
             workspaceLevel={level.workspaceLevel}
             error={null}
@@ -145,6 +154,7 @@ export const startSettingItemsOf = ({
             onChangeDefault={openRunDefaults}
           />
         ),
+      replies: <StartRepliesChip value={replies} isDisabled={isDisabled} />,
       guidance: (
         <StartGuidanceSetting
           workspaceId={workspaceId}

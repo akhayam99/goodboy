@@ -5,7 +5,6 @@ import type { Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProjectMatch } from '../../../../shared/components/ProjectPicker/projectMatch';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
-import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { NAMES } from '../../../../shared/utils/names';
 import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
@@ -20,10 +19,11 @@ import type { StartRunModel } from '../StartRun/useStartRun';
 import { liveStepsOf } from './liveStepsOf';
 import { StartForm } from './StartForm';
 import { startFormKindOfDraft, startShapeOfFormKind, type StartFormKind } from './startFormKinds';
-import { StartPlanRow } from './StartPlanRow';
-import { StartWorkflowPick } from './StartWorkflowPick';
+import { StartPlanRow, type StartPlanKind } from './StartPlanRow';
+import { StartWhereItRuns } from './StartWhereItRuns';
+import { StartWorkflowPill } from './StartWorkflowPill';
 import { StartWorkflowSteps } from './StartWorkflowSteps';
-import { StartWorkflowSuggestion } from './StartWorkflowSuggestion';
+import { useEveryRunFacts } from './useEveryRunFacts';
 import { useStartEditsMode } from './useStartEditsMode';
 import {
   startAsksOf,
@@ -92,14 +92,19 @@ export const NewSessionStartForm = ({
       templates.length === 0 ? NO_PRESETS : templates.filter((entry) => entry.isPreset === true),
     [templates],
   );
-  const kind = startFormKindOfDraft({ startKind: draft.startKind, startShape: draft.startShape });
+  const kind = startFormKindOfDraft({
+    startKind: draft.startKind,
+    startShape: draft.startShape,
+    workflowId: draft.workflowId,
+  });
   const run = kind === null ? autoRun : shapeRun;
   const isDisabled = run.isStarting;
   const workflow = presets.find((preset) => preset.id === draft.workflowId) ?? null;
   const steps = liveStepsOf({ workflow });
   const where = useDraftProjects({ workspaceId });
+  const everyRun = useEveryRunFacts({ workspaceId });
   const edits = useStartEditsMode({ workspaceId, sessionId: null, picked: draft.permissionMode });
-  const reason = startReasonOf({ hasGoal, kind, hasPreset: workflow !== null });
+  const reason = startReasonOf({ hasGoal });
   const { route } = autoRun;
   const suggestion = kind === null ? autoRun.suggestion : null;
   const isAutoLead = route.route.shape === 'lead' && route.role === null;
@@ -111,23 +116,13 @@ export const NewSessionStartForm = ({
     routeKind: limitKindOfRoute({ route: route.route }),
   });
   const isRouteHint = kind === null && hasGoal;
-  const hint = isRouteHint
-    ? routeLineOf({
-        result: route,
-        modelSummary: recommendationSummary({
-          provider: autoRun.model.effective.provider,
-          model: autoRun.model.effective.model,
-          effort: autoRun.model.effective.effort,
-        }),
-        isModelShown: true,
-      })
-    : null;
+  const hint = isRouteHint ? routeLineOf({ result: route }) : null;
 
   const pickKind = ({ next, workflowId }: PickParams): void => {
     if (next === 'lead') {
       patchSessionDraft({
         workspaceId,
-        patch: { startKind: 'auto', startShape: null, hasChosenStart: true },
+        patch: { startKind: 'auto', startShape: null, workflowId: null, hasChosenStart: true },
       });
       return;
     }
@@ -173,7 +168,8 @@ export const NewSessionStartForm = ({
       reader: guidanceReader,
       onPick: ({ next }) => patchSessionDraft({ workspaceId, patch: { guidance: next } }),
     },
-    limit: { view: limit.view, kind: limitKind },
+    limit: { view: limit.view, kind: limitKind, mode: everyRun.limitMode },
+    replies: everyRun.replies,
   });
 
   return (
@@ -181,24 +177,10 @@ export const NewSessionStartForm = ({
       plan={
         <StartPlanRow
           kind={kind ?? 'lead'}
-          hasPresets={presets.length > 0}
           isDisabled={isDisabled}
-          onPick={(next) => pickKind({ next })}
+          onPick={(next: StartPlanKind) => pickKind({ next })}
           pick={
-            kind === 'preset' ? (
-              <StartWorkflowPick
-                presets={presets}
-                presetId={draft.workflowId}
-                closeness={draft.presetCloseness}
-                isDisabled={isDisabled}
-                onPreset={({ next }) =>
-                  patchSessionDraft({ workspaceId, patch: { workflowId: next } })
-                }
-                onCloseness={({ next }) =>
-                  patchSessionDraft({ workspaceId, patch: { presetCloseness: next } })
-                }
-              />
-            ) : kind === 'agent' ? (
+            kind === 'agent' ? (
               <StartRoleField
                 value={draft.agentKind}
                 isDisabled={isDisabled}
@@ -206,21 +188,30 @@ export const NewSessionStartForm = ({
                   patchSessionDraft({ workspaceId, patch: { agentKind: next, agentRouting: null } })
                 }
               />
-            ) : null
+            ) : (
+              <StartWorkflowPill
+                presets={presets}
+                workflow={workflow}
+                likely={suggestion}
+                closeness={draft.presetCloseness}
+                isDisabled={isDisabled}
+                onPick={({ next }) =>
+                  next === null
+                    ? pickKind({ next: 'lead' })
+                    : pickKind({ next: 'preset', workflowId: next.id })
+                }
+                onCloseness={({ next }) =>
+                  patchSessionDraft({ workspaceId, patch: { presetCloseness: next } })
+                }
+              />
+            )
           }
           detail={
-            kind === 'preset' && steps.length > 0 ? (
-              <StartWorkflowSteps steps={steps} />
-            ) : suggestion !== null ? (
-              <StartWorkflowSuggestion
-                workflow={suggestion}
-                isDisabled={isDisabled}
-                onUse={() => pickKind({ next: 'preset', workflowId: suggestion.id })}
-              />
-            ) : null
+            kind === 'preset' && steps.length > 0 ? <StartWorkflowSteps steps={steps} /> : null
           }
         />
       }
+      runsOn={<StartWhereItRuns workspaceId={workspaceId} model={model} isDisabled={isDisabled} />}
       hint={hint}
       isRouteHint={isRouteHint}
       settings={settings}

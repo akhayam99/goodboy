@@ -720,8 +720,8 @@ settled steps' summaries). On a stopped run the first run is then closed
 (`closeWorkflowRun`), so two runs never edit one branch; on a finished run, or
 an agent that finished, nothing is written to the first (`route.changedTo` is
 only parsed, for older runs). The router never adopts a workflow: a typed
-`~name` or the Plan row picks one, and `suggestedWorkflowOf` only names the
-best match for the "Looks like your workflow" line (`StartWorkflowSuggestion`).
+`~name` or the Workflow pill picks one, and `suggestedWorkflowOf` only names the
+best match on the pill, as "Auto · likely Fix a bug" (`StartWorkflowPill`).
 The settings keys `runs.defaultShape.session.<sessionId>` and
 `runs.defaultShape.<workspaceId>`, once written by **Start as**, are not read
 since 0.41.0 ([versioning.md](versioning.md), Retired state). Opening a preset run shows its page; the session rail stays

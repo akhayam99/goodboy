@@ -14,6 +14,7 @@ type Props = {
   readonly error: string | null;
   readonly isDisabled: boolean;
   readonly onPick: (params: PickParams) => void;
+  readonly label?: string;
 };
 
 const HELP =
@@ -26,6 +27,7 @@ export const AsksLevelChip = ({
   error,
   isDisabled,
   onPick,
+  label,
 }: Props) => {
   const own = runAutonomyOf({ autoRun: false, autonomy: value });
   return (
@@ -36,6 +38,7 @@ export const AsksLevelChip = ({
       error={error}
       isDisabled={isDisabled}
       onPick={onPick}
+      {...(label !== undefined && { label })}
     />
   );
 };

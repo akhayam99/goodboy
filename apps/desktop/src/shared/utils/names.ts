@@ -31,6 +31,7 @@ export const NAMES = {
   skipped: 'Skipped',
   closed: 'Closed',
   asksYou: 'Asks you',
+  stops: 'Stops',
   edits: 'Edits',
   replyLength: 'Reply length',
   short: 'Short',

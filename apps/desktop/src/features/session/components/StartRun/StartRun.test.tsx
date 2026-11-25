@@ -106,21 +106,47 @@ type KindParams = {
 
 const PLAN_CHOICES: Readonly<Record<string, string>> = {
   Lead: 'The Lead plans it',
-  Preset: 'Follow a workflow',
   Agent: 'One agent',
 };
 
-const kindTab = ({ name }: KindParams): HTMLElement =>
+const planTab = ({ name }: KindParams): HTMLElement =>
   within(screen.getByRole('tablist', { name: 'Plan' })).getByRole('tab', {
     name: PLAN_CHOICES[name] ?? name,
   });
 
-const pickKind = ({ name }: KindParams): void => {
-  fireEvent.click(kindTab({ name }));
+const workflowPill = (): HTMLElement | null => screen.queryByRole('combobox', { name: 'Workflow' });
+
+const pillOption = ({ name }: KindParams): void => {
+  const pill = workflowPill();
+  if (pill === null) {
+    throw new Error('no workflow pill');
+  }
+  fireEvent.click(pill);
+  fireEvent.click(screen.getByRole('option', { name: new RegExp(`^${name}`) }));
 };
 
-const isPicked = ({ name }: KindParams): boolean =>
-  kindTab({ name }).getAttribute('aria-selected') === 'true';
+const pickKind = ({ name }: KindParams): void => {
+  if (name === 'Preset') {
+    pillOption({ name: 'Fix a layout' });
+    return;
+  }
+  if (name === 'Lead' && workflowPill()?.textContent?.includes('Auto') === false) {
+    pillOption({ name: 'Auto' });
+    return;
+  }
+  fireEvent.click(planTab({ name }));
+};
+
+const isPicked = ({ name }: KindParams): boolean => {
+  if (name === 'Agent') {
+    return planTab({ name }).getAttribute('aria-selected') === 'true';
+  }
+  const isAuto = workflowPill()?.textContent?.includes('Auto') === true;
+  return (
+    planTab({ name: 'Lead' }).getAttribute('aria-selected') === 'true' &&
+    isAuto === (name === 'Lead')
+  );
+};
 
 type RenderParams = {
   readonly sessionId: SessionId;
@@ -379,9 +405,7 @@ describe('StartRun run as', () => {
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(attachWorkflowToSession).not.toHaveBeenCalled();
-    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toContain(
-      'Plan: follow the preset "Fix a layout".',
-    );
+    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toBe(QUESTION);
     const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
     expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({
       row: 1,
@@ -480,21 +504,26 @@ describe('StartRun run as', () => {
     await waitFor(() => screen.getByText('Never'));
   });
 
-  it('offers three plans, lists the roles on one agent and keeps a workflow for a saved one', () => {
+  it('offers two plans and a workflow pill, lists the roles on one agent and keeps a workflow for a saved one', () => {
     renderField({ sessionId: SESSION.id });
 
     expect(
       within(screen.getByRole('tablist', { name: 'Plan' }))
         .getAllByRole('tab')
         .map((tab) => tab.textContent),
-    ).toEqual(['The Lead plans it', 'Follow a workflow', 'One agent']);
+    ).toEqual(['The Lead plans it', 'One agent']);
     expect(isPicked({ name: 'Lead' })).toBe(true);
-    expect(kindTab({ name: 'Preset' }).hasAttribute('disabled')).toBe(true);
+    fireEvent.click(screen.getByRole('combobox', { name: 'Workflow' }));
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
+      expect.stringMatching(/^AutoNo saved workflows yet/),
+    ]);
     cleanup();
 
     useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
     renderField({ sessionId: SESSION.id });
-    expect(kindTab({ name: 'Preset' }).hasAttribute('disabled')).toBe(false);
+    fireEvent.click(screen.getByRole('combobox', { name: 'Workflow' }));
+    expect(screen.getAllByRole('option')).toHaveLength(2);
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
     pickKind({ name: 'Agent' });
     fireEvent.click(screen.getByRole('combobox', { name: 'Role' }));
     screen.getByRole('option', { name: /^Scout/ });
@@ -688,7 +717,9 @@ describe('StartRun attachments', () => {
   });
 });
 
-const modelChip = () => screen.getByRole('button', { name: /^Model:/ });
+const modelChip = () => screen.getByRole('button', { name: /^Change the .* model for this run/ });
+
+const whereItRuns = () => screen.getByRole('group', { name: 'Where it runs' });
 
 const providerOf = ({ id }: { readonly id: ProviderId }): ProviderDisplayInfo => ({
   id,
@@ -716,7 +747,7 @@ describe('StartRun model', () => {
     expect(modelChip().getAttribute('data-run-model')).toBe('auto');
   });
 
-  it('puts the model in the route line and follows the kind', () => {
+  it('names where it runs on its own line and follows the kind', () => {
     connectProviders();
     renderField({ sessionId: SESSION.id });
     fireEvent.change(field(), { target: { value: QUESTION } });
@@ -725,7 +756,9 @@ describe('StartRun model', () => {
     pickKind({ name: 'Agent' });
 
     expect(leadLine).toContain('Starts as Lead · ');
-    expect(modelChip().getAttribute('aria-label')).toContain('Model: ');
+    expect(leadLine).not.toContain('Claude');
+    expect(whereItRuns().textContent).toMatch(/^Scout on /);
+    expect(modelChip().getAttribute('aria-label')).toContain('Change the Scout model');
   });
 
   it('starts the Auto agent on the model picked for this run only', async () => {
@@ -816,7 +849,7 @@ describe('StartRun model', () => {
     renderField({ sessionId: SESSION.id });
 
     fireEvent.click(modelChip());
-    fireEvent.click(screen.getByRole('button', { name: 'Change the default in Settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Change the default in Every run' }));
 
     expect(opened).toHaveBeenCalledTimes(1);
     const event = opened.mock.calls[0]?.[0];
