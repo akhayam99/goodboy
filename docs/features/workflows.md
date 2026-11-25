@@ -51,6 +51,25 @@ The run count link opens the runs of that workflow beside the list, newest first
 
 A run puts its session in **Needs you** on the board and in Sessions when it stopped on a failure or paused at its limit. It does the same when it finished a step and waits to continue. It uses the same words as the run's row.
 
+### Create and edit a workflow
+
+**New workflow** and **Duplicate workflow** open the same page, "Workflows / New workflow". It starts from **Every run**: stops, limit, edits, reply length and every role's model read "Same as Every run" until you change them.
+
+The page asks, in order:
+
+- **Name**.
+- **Use it when**, and **First, check**: what the Lead confirms before it starts.
+- **Stop and ask when**, and **Then suggest**: another workflow to offer when this one stops.
+- **Usual steps**. **Draft steps** writes them from **Use it when** and **First, check**.
+- **Keep steps in order**: **The Lead may adapt** or **Keep this order**.
+- **Models**, one line, "Same as Every run", with **Change**.
+
+Nothing is written until **Create workflow**. The button says why it is off: "Name it first", "Add one step or draft them", "Steps are being drafted". A name another workflow holds shows "A workflow named Fix a bug exists" under the field. If the write fails, the error shows under the form with every field kept, and **Retry** writes again. **Discard** goes back to the list and a toast offers **Undo**, which brings the draft back. A draft you leave stays open when you come back.
+
+**Duplicate workflow**, on a workflow page and in the menu of each list row, fills the same page with a copy: "Fix a bug copy", its fields, steps and models. It writes nothing until **Create workflow**.
+
+After **Create workflow** the page is that workflow's page, and it saves as you type. On it, **Models** shows each role in use: muted when it follows Every run, in full with **Reset** when this workflow pins a model. A row in the list says when to use that workflow.
+
 ### Saved steps
 
 Reuse steps across workflows. The built-in steps are read-only, and **Save a copy** makes your own.
@@ -321,6 +340,7 @@ Bring custom workflows over from your other workspaces with **Import** in the Wo
 - Older runs: the rows stay in `session_workflows` with their `execution_mode` (`packages/db/src/migrations/m091-workflow-execution-mode.ts`), and no migration touches them. `sessionRunsOf` keeps the `orchestrated` and `preset` kinds, `runKindLineOf` words their line, and `RunsGridRow` adds the gray `NAMES.runKind.olderRun` tag. The orchestrator engine is removed no earlier than two minor releases after 0.38.0, the first release where new runs never start it ([versioning.md](../versioning.md)).
 - Preset as a plan: `runRouteOf` sends a named preset to `presetRouteOf` with `follow` and a matched one with `adapt`. `startRoutedRun` spawns the Lead with `leadPlanBriefOf`, which puts the ask first, then the steps, then the closeness line. The chip words are `START_KIND_COPY.closeness` and the route words `RUN_ROUTE_COPY.closeness` (`startRoutedRun.test.ts`).
 - Run transcript doors: `workflowRun.stepTranscript` and `OrchestratedTailVerb` navigate to the step agent page and close the drawer, keeping one composer (`workflowRun.subagent.test.ts`, `run-pages.test.tsx`, `failure-links.test.tsx`).
+- Create and edit: `useWorkflowEditor` holds the draft; `create` is the only write of a new workflow, and `useWorkflowAutosave` runs only for a saved one. `createBlockOf` words the reason under **Create workflow**, and `startWorkflowGeneration` with `isDraftOnly` drafts steps without a write (`createWorkflow.test.tsx`, `createFlow.test.ts`, `startWorkflowGeneration.draft.test.ts`). **Models** pins steps through `pinRoleSteps` and reads them with `rolePinOf`, so a pin reaches step routing as a step pin (`stepRouting.test.tsx`). Scenes: `u52-workflow-create-*`.
 - Older runs: an orchestrated run stopped halfway keeps its "Workflow · Orchestrated" row in Runs, and **Continue** finishes it on the Orchestrator with no Lead tree (`olderRunsResume.sqlite.test.tsx`).
 
 This part is for contributors and agents who change the feature.
