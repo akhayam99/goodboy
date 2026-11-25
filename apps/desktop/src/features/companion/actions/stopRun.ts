@@ -1,14 +1,14 @@
-import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import type { HandlerParams, HandlerResult } from './handlerTypes';
 import type { DecideActionOf } from './decideAction';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
 import { runStateOf, sessionOfAction, workflowRunOf } from './targets';
+import { sessionIdOf } from './ids';
 
 export const stopRun = async ({
   action,
   getStore,
 }: HandlerParams<DecideActionOf<'stopRun'>>): Promise<HandlerResult> => {
-  const sessionId = action.sessionId as SessionId;
+  const sessionId = sessionIdOf({ value: action.sessionId });
   const store = getStore();
   const session = sessionOfAction({
     store,
@@ -30,7 +30,7 @@ export const stopRun = async ({
       changes: [{ label: 'Run', was: action.seenState, now: state }],
     });
   }
-  const outcome = await store.closeWorkflowRun(sessionId, run.id as WorkflowRunId);
+  const outcome = await store.closeWorkflowRun(sessionId, run.id);
   return outcome === 'closed'
     ? doneResult()
     : failedResult({ error: 'A step did not stop. Press Stop run again.' });

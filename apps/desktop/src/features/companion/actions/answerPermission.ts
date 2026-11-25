@@ -1,17 +1,17 @@
-import type { AgentId, SessionId } from '@goodboy/types';
 import { openPermissionAsksOf } from '../../permissions/openPermissionAsksOf';
 import type { HandlerParams, HandlerResult } from './handlerTypes';
 import type { DecideActionOf } from './decideAction';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
 import { isAgentOfSession } from './targets';
 import { permissionHashOf } from './versions';
+import { sessionIdOf, agentIdOf } from './ids';
 
 export const answerPermission = async ({
   action,
   getStore,
 }: HandlerParams<DecideActionOf<'answerPermission'>>): Promise<HandlerResult> => {
-  const sessionId = action.sessionId as SessionId;
-  const agentId = action.agentId as AgentId;
+  const sessionId = sessionIdOf({ value: action.sessionId });
+  const agentId = agentIdOf({ value: action.agentId });
   if (!isAgentOfSession({ store: getStore(), sessionId, agentId })) {
     return refusedResult({ code: 'unknown-target', message: 'This agent is not on your Mac.' });
   }

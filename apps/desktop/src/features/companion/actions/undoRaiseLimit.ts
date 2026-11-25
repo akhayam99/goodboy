@@ -1,14 +1,14 @@
-import type { SessionId } from '@goodboy/types';
 import type { HandlerParams, HandlerResult } from './handlerTypes';
 import type { DecideActionOf } from './decideAction';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
 import { dropLimitUndo, limitUndoOf } from './limitUndos';
+import { sessionIdOf } from './ids';
 
 export const undoRaiseLimit = async ({
   action,
   getStore,
 }: HandlerParams<DecideActionOf<'undoRaiseLimit'>>): Promise<HandlerResult> => {
-  const sessionId = action.sessionId as SessionId;
+  const sessionId = sessionIdOf({ value: action.sessionId });
   const undo = limitUndoOf({ raisedActionId: action.raisedActionId });
   if (undo === null || undo.sessionId !== action.sessionId || undo.runId !== action.runId) {
     return refusedResult({ code: 'unknown-target', message: 'There is nothing to undo.' });

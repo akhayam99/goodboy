@@ -1,15 +1,15 @@
-import type { SessionId } from '@goodboy/types';
 import { turnRefusalOf } from '../../../store/slices/turn/refusal/turnRefusalOf';
 import type { HandlerParams, HandlerResult } from './handlerTypes';
 import type { DecideActionOf } from './decideAction';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
 import { planTargetOf } from './planTargetOf';
+import { sessionIdOf } from './ids';
 
 export const requestPlanChanges = async ({
   action,
   getStore,
 }: HandlerParams<DecideActionOf<'requestPlanChanges'>>): Promise<HandlerResult> => {
-  const sessionId = action.sessionId as SessionId;
+  const sessionId = sessionIdOf({ value: action.sessionId });
   const found = planTargetOf({
     store: getStore(),
     sessionId,

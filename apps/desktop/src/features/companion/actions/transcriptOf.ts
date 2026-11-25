@@ -1,4 +1,4 @@
-import type { AgentId, SessionId, TurnEvent } from '@goodboy/types';
+import type { TurnEvent } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
 import type {
   TranscriptEntry,
@@ -6,6 +6,7 @@ import type {
   TranscriptQuery,
 } from '../contract/transcript';
 import { isAgentOfSession, sessionOfAction } from './targets';
+import { sessionIdOf, agentIdOf } from './ids';
 
 const MAX_PAGE = 500;
 const MAX_SUMMARY_LENGTH = 160;
@@ -158,8 +159,8 @@ export const transcriptOf = async ({
   getStore,
   now = new Date(),
 }: QueryParams): Promise<TranscriptProjection | null> => {
-  const sessionId = query.sessionId as SessionId;
-  const agentId = query.agentId as AgentId;
+  const sessionId = sessionIdOf({ value: query.sessionId });
+  const agentId = agentIdOf({ value: query.agentId });
   const first = getStore();
   const session = sessionOfAction({
     store: first,

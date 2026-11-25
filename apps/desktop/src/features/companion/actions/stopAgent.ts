@@ -1,15 +1,15 @@
-import type { AgentId, SessionId } from '@goodboy/types';
 import type { HandlerParams, HandlerResult } from './handlerTypes';
 import type { DecideActionOf } from './decideAction';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
 import { agentStateOf, isAgentOfSession } from './targets';
+import { sessionIdOf, agentIdOf } from './ids';
 
 export const stopAgent = async ({
   action,
   getStore,
 }: HandlerParams<DecideActionOf<'stopAgent'>>): Promise<HandlerResult> => {
-  const sessionId = action.sessionId as SessionId;
-  const agentId = action.agentId as AgentId;
+  const sessionId = sessionIdOf({ value: action.sessionId });
+  const agentId = agentIdOf({ value: action.agentId });
   const store = getStore();
   if (!isAgentOfSession({ store, sessionId, agentId })) {
     return refusedResult({ code: 'unknown-target', message: 'This agent is not on your Mac.' });

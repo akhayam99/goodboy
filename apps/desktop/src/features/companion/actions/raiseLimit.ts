@@ -1,4 +1,3 @@
-import type { SessionId } from '@goodboy/types';
 import { mintActionId } from './actionRegistry';
 import { limitOffersOf } from './actionLimits';
 import type { HandlerParams, HandlerResult } from './handlerTypes';
@@ -6,12 +5,13 @@ import type { DecideActionOf } from './decideAction';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
 import { saveLimitUndo } from './limitUndos';
 import { isLimitRunOfSession } from './limitTargets';
+import { sessionIdOf } from './ids';
 
 export const raiseLimit = async ({
   action,
   getStore,
 }: HandlerParams<DecideActionOf<'raiseLimit'>>): Promise<HandlerResult> => {
-  const sessionId = action.sessionId as SessionId;
+  const sessionId = sessionIdOf({ value: action.sessionId });
   const store = getStore();
   if (!isLimitRunOfSession({ store, sessionId, runId: action.runId })) {
     return refusedResult({ code: 'unknown-target', message: 'This run is not on your Mac.' });

@@ -1,14 +1,14 @@
-import type { OpenQuestionId, SessionId } from '@goodboy/types';
 import type { HandlerParams, HandlerResult } from './handlerTypes';
 import type { DecideActionOf } from './decideAction';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
 import { questionVersionOf } from './versions';
+import { sessionIdOf } from './ids';
 
 export const answerQuestion = async ({
   action,
   getStore,
 }: HandlerParams<DecideActionOf<'answerQuestion'>>): Promise<HandlerResult> => {
-  const sessionId = action.sessionId as SessionId;
+  const sessionId = sessionIdOf({ value: action.sessionId });
   const store = getStore();
   const open = (store.sessionOpenQuestions[sessionId] ?? []).find(
     (question) => question.id === action.questionId && question.status === 'open',
@@ -36,7 +36,7 @@ export const answerQuestion = async ({
   try {
     await store.answerOpenQuestions(
       sessionId,
-      [{ id: open.id as OpenQuestionId, text: open.text, answer }],
+      [{ id: open.id, text: open.text, answer }],
       open.createdByAgentId ?? null,
     );
   } catch (error) {

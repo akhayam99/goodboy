@@ -1,7 +1,8 @@
-import type { AgentId, Session, SessionId, WorkflowRun } from '@goodboy/types';
+import type { Session, SessionId, WorkflowRun } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import type { AgentState, RunState } from '../contract/projections';
+import { agentIdOf } from './ids';
 
 type SessionParams = {
   readonly store: AppStore;
@@ -81,7 +82,7 @@ export const isAgentOfSession = ({ store, sessionId, agentId }: AgentParams): bo
 };
 
 export const agentStateOf = ({ store, sessionId, agentId }: AgentParams): AgentState => {
-  const turn = store.agentTurnState[agentId as AgentId];
+  const turn = store.agentTurnState[agentIdOf({ value: agentId })];
   if (turn?.kind === 'running') {
     return 'running';
   }

@@ -1,14 +1,14 @@
-import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import type { HandlerParams, HandlerResult } from './handlerTypes';
 import type { DecideActionOf } from './decideAction';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
 import { runStateOf, sessionOfAction, workflowRunOf } from './targets';
+import { sessionIdOf } from './ids';
 
 export const continueRun = async ({
   action,
   getStore,
 }: HandlerParams<DecideActionOf<'continueRun'>>): Promise<HandlerResult> => {
-  const sessionId = action.sessionId as SessionId;
+  const sessionId = sessionIdOf({ value: action.sessionId });
   const store = getStore();
   const session = sessionOfAction({
     store,
@@ -31,7 +31,7 @@ export const continueRun = async ({
     });
   }
   try {
-    await store.continueWorkflowRun(sessionId, run.id as WorkflowRunId);
+    await store.continueWorkflowRun(sessionId, run.id);
   } catch (error) {
     console.error('[bridge] continueRun failed', error);
     return failedResult({ error: 'Could not continue the run.' });
