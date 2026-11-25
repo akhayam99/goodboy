@@ -188,8 +188,8 @@ describe('the browser pane scenes', () => {
 
     const note = await screen.findByRole('group', { name: 'Note for the picked element' }, WAIT);
     expect(note.textContent).toContain('<PayButton>  src/checkout/PayButton.tsx:42');
-    expect(within(note).getByRole('textbox', { name: 'What should change?' })).toBeTruthy();
-    expect(within(note).getByRole('button', { name: 'Add to message' })).toBeTruthy();
+    within(note).getByRole('textbox', { name: 'What should change?' });
+    within(note).getByRole('button', { name: 'Add to message' });
     expect(
       screen.getByRole('button', { name: 'Select an element' }).getAttribute('aria-pressed'),
     ).toBe('true');

@@ -6,6 +6,7 @@ import { useMonitorPolling } from '../../../../shared/hooks/useMonitorPolling';
 import { usePoll } from '../../../../shared/lib/usePoll';
 import { addPickedElements } from '../../addPickedElements';
 import { browserHost } from '../../browserHost';
+import { isTabGone } from '../../isTabGone';
 import type { BrowserPickedElement, BrowserPickRead } from '../../types';
 
 const PICK_PULL_MS = 150;
@@ -114,9 +115,13 @@ export const useElementPick = ({
     if (current !== null) {
       void browserHost
         .pick({ tabId: current.liveId, sessionId, op: 'stop', round: 0 })
-        .catch(() => null);
+        .catch((error: unknown) => {
+          if (!isTabGone({ error })) {
+            onError({ error });
+          }
+        });
     }
-  }, [end, sessionId]);
+  }, [end, onError, sessionId]);
 
   const apply = useCallback(
     ({ gesture: asked, answer }: AnswerParams): void => {
@@ -201,9 +206,9 @@ export const useElementPick = ({
     () => () => {
       const current = gestureRef.current;
       if (current !== null) {
-        void browserHost
-          .pick({ tabId: current.liveId, sessionId, op: 'stop', round: 0 })
-          .catch(() => null);
+        void Promise.allSettled([
+          browserHost.pick({ tabId: current.liveId, sessionId, op: 'stop', round: 0 }),
+        ]);
       }
     },
     [sessionId],

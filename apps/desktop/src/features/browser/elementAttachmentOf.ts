@@ -39,7 +39,7 @@ const slugOf = ({ text }: SlugParams): string => {
   return slug === '' ? 'element' : slug;
 };
 
-const sizeOf = ({ element }: ElementParams): string | null =>
+const elementSizeOf = ({ element }: ElementParams): string | null =>
   element.rect === null
     ? null
     : `${Math.round(element.rect.width)} x ${Math.round(element.rect.height)}`;
@@ -54,10 +54,10 @@ const htmlOf = ({ element }: ElementParams): string => {
     : html;
 };
 
-const bodyOf = ({ element, fileLine }: ElementParams & Pick<Params, 'fileLine'>): string => {
+const elementBodyOf = ({ element, fileLine }: ElementParams & Pick<Params, 'fileLine'>): string => {
   const heading =
     element.component === null ? element.label : `<${element.component}> ${element.label}`;
-  const size = sizeOf({ element });
+  const size = elementSizeOf({ element });
   const facts = [
     ...(fileLine === null ? [] : [`- File: ${fileLine}`]),
     `- Selector: \`${element.selector}\``,
@@ -93,7 +93,7 @@ export const elementAttachmentOf = ({
   const title = `${name} · ${place}`;
   const slug = slugOf({ text: `${name}-${place}` });
   const text = redactSecrets({
-    text: `${element.url}\n\n${ELEMENT_NOTE}\n\n${bodyOf({ element, fileLine })}\n`,
+    text: `${element.url}\n\n${ELEMENT_NOTE}\n\n${elementBodyOf({ element, fileLine })}\n`,
   });
   const described: OutputHandoff = {
     id: crypto.randomUUID(),

@@ -337,7 +337,7 @@ describe('pick an element and add it to your message', () => {
     await startPicking();
 
     const note = await clickInPage({ elements: [PAY, SHIPPING] });
-    await waitFor(() => expect(screen.getByText('2 elements')).toBeTruthy());
+    await screen.findByText('2 elements');
     await act(async () => {
       fireEvent.keyDown(note, { key: 'Enter' });
     });

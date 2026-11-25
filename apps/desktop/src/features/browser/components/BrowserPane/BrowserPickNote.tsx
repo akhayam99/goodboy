@@ -1,6 +1,6 @@
-import type { KeyboardEvent } from 'react';
 import { SquareDashedMousePointer } from '@goodboy/ui/icons';
-import { Button, FormActions, ICON_SIZE, Textarea } from '@goodboy/ui';
+import { Button, ICON_SIZE, useEscapeLayer } from '@goodboy/ui';
+import { PromptField } from '../../../../shared/components/PromptField';
 import { NAMES } from '../../../../shared/utils/names';
 import { elementNameOf } from '../../elementNameOf';
 import type { ElementPick } from '../../hooks/useElementPick';
@@ -17,11 +17,7 @@ type HeadParams = {
   readonly picks: ReadonlyArray<BrowserPickedElement>;
 };
 
-type KeyParams = {
-  readonly event: KeyboardEvent<HTMLTextAreaElement>;
-};
-
-const headOf = ({ picks }: HeadParams): string => {
+const noteHeadOf = ({ picks }: HeadParams): string => {
   const first = picks[0];
   if (picks.length > 1 || first === undefined) {
     return `${picks.length} elements`;
@@ -35,52 +31,44 @@ const headOf = ({ picks }: HeadParams): string => {
 };
 
 export const BrowserPickNote = ({ pick }: Props) => {
-  const handleKeyDown = ({ event }: KeyParams): void => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopPropagation();
-      pick.leave();
-      return;
-    }
-    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) {
-      return;
-    }
-    event.preventDefault();
-    pick.add();
-  };
-
+  useEscapeLayer(pick.leave);
+  const isBlocked = pick.isAdding || pick.agentId === null;
   return (
-    <div className="shrink-0 px-2">
-      <div
-        role="group"
-        aria-label="Note for the picked element"
-        data-browser-pick-note=""
-        className="flex flex-col gap-2 rounded-md bg-subtle p-2"
-      >
-        <div className="flex min-w-0 items-center gap-2 text-code text-muted-foreground">
-          <SquareDashedMousePointer size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          <span className="truncate">{headOf({ picks: pick.picks })}</span>
-        </div>
-        <Textarea
-          value={pick.note}
-          placeholder={NOTE_PLACEHOLDER}
-          aria-label={NOTE_PLACEHOLDER}
-          autoFocus
-          autoGrow
-          minRows={2}
-          maxRows={6}
-          onChange={(event) => pick.setNote({ text: event.target.value })}
-          onKeyDown={(event) => handleKeyDown({ event })}
-        />
-        <FormActions leading={<BrowserPickTarget pick={pick} />}>
-          <Button variant="ghost" size="xs" onClick={pick.leave}>
-            Cancel
-          </Button>
-          <Button size="xs" disabled={pick.isAdding || pick.agentId === null} onClick={pick.add}>
-            {NAMES.addToMessage}
-          </Button>
-        </FormActions>
-      </div>
+    <div
+      role="group"
+      aria-label="Note for the picked element"
+      data-browser-pick-note=""
+      className="shrink-0 px-2"
+    >
+      <PromptField
+        kind="message"
+        label={NOTE_PLACEHOLDER}
+        placeholder={NOTE_PLACEHOLDER}
+        value={pick.note}
+        onChange={(text) => pick.setNote({ text })}
+        onSubmit={pick.add}
+        isSubmitBlocked={isBlocked}
+        autoFocus
+        minRows={2}
+        maxRows={6}
+        header={
+          <div className="flex min-w-0 items-center gap-2 px-3 pt-2 text-code text-muted-foreground">
+            <SquareDashedMousePointer size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+            <span className="truncate">{noteHeadOf({ picks: pick.picks })}</span>
+          </div>
+        }
+        footerStart={<BrowserPickTarget pick={pick} />}
+        actions={
+          <>
+            <Button variant="ghost" size="xs" onClick={pick.leave}>
+              Cancel
+            </Button>
+            <Button size="xs" disabled={isBlocked} onClick={pick.add}>
+              {NAMES.addToMessage}
+            </Button>
+          </>
+        }
+      />
     </div>
   );
 };

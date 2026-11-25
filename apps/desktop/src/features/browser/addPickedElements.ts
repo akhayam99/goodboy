@@ -41,10 +41,10 @@ const cropOf = async ({
   if (element.rect === null) {
     return null;
   }
-  const crop = await browserHost
-    .elementSnapshot({ tabId, sessionId, doc, rect: element.rect })
-    .catch(() => null);
-  return isTabStill() ? crop : null;
+  const [taken] = await Promise.allSettled([
+    browserHost.elementSnapshot({ tabId, sessionId, doc, rect: element.rect }),
+  ]);
+  return taken.status === 'fulfilled' && isTabStill() ? taken.value : null;
 };
 
 export const addPickedElements = async ({
@@ -58,12 +58,14 @@ export const addPickedElements = async ({
   queue,
   isTabStill,
 }: Params): Promise<PickAddResult> => {
-  const final = await browserHost
-    .pick({ tabId, sessionId, op: 'stop', round: 0 })
-    .catch(() => null);
+  const [stopped] = await Promise.allSettled([
+    browserHost.pick({ tabId, sessionId, op: 'stop', round: 0 }),
+  ]);
   const fresh =
-    final !== null && final.doc === doc && final.picks.length === elements.length
-      ? final.picks
+    stopped.status === 'fulfilled' &&
+    stopped.value.doc === doc &&
+    stopped.value.picks.length === elements.length
+      ? stopped.value.picks
       : elements;
   const crops = await Promise.all(
     fresh.map((element) => cropOf({ sessionId, tabId, doc, element, isTabStill })),
