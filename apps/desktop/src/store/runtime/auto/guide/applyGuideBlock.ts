@@ -16,7 +16,9 @@ import type { AgentVerbContext } from '../verbContext';
 export type GuideBlock = Extract<AutoBlock, { action: 'follow' | 'hold' | 'deviate' }>;
 
 export type GuideBlockOutcome =
-  Readonly<{ kind: 'applied' }> | Readonly<{ kind: 'refused'; code: AutoRefusalCode }>;
+  | Readonly<{ kind: 'applied' }>
+  | Readonly<{ kind: 'stale' }>
+  | Readonly<{ kind: 'refused'; code: AutoRefusalCode }>;
 
 type Params = {
   readonly ctx: AgentVerbContext;
@@ -61,9 +63,10 @@ export const applyGuideBlock = async ({
   if (guide.check === 'held') {
     return refuse({ code: 'held' });
   }
-  await changeRunGuide({
+  const changed = await changeRunGuide({
     db: ctx.db,
     treeId: tree.id,
+    turn: { generation: ended.generation, runId: ended.runId },
     change: ({ guide: current }) => {
       if (block.action === 'follow') {
         return followedGuide({ guide: current, note: block.check });
@@ -77,5 +80,5 @@ export const applyGuideBlock = async ({
       });
     },
   });
-  return { kind: 'applied' };
+  return changed.kind === 'stale' ? { kind: 'stale' } : { kind: 'applied' };
 };

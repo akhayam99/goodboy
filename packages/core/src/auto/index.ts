@@ -423,7 +423,6 @@ export {
   GUIDE_FOLLOW_SHAPE,
   GUIDE_HOLD_SHAPE,
   GUIDE_SECTION_CHARS,
-  continuedGuide,
   deviatedGuide,
   followedGuide,
   guideChoiceNamed,

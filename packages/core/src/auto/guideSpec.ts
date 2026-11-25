@@ -250,9 +250,6 @@ export const heldGuide = ({ guide, reason, suggest }: HoldParams): GuideRecord =
   holdSuggestion: guideChoiceNamed({ guide, suggest }),
 });
 
-export const continuedGuide = ({ guide }: RecordParams): GuideRecord =>
-  guide.check === 'held' ? { ...guide, check: 'continued' } : guide;
-
 type DeviateParams = {
   readonly guide: GuideRecord;
   readonly deviation: GuideDeviation;

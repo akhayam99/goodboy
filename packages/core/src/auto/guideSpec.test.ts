@@ -5,7 +5,6 @@ import { diagnoseAdmission, type AdmissionSnapshot } from './admission';
 import { parseAutoBlock, parseAutoNoteBlocks } from './autoBlock';
 import {
   GUIDE_SECTION_CHARS,
-  continuedGuide,
   deviatedGuide,
   followedGuide,
   guideGateOf,
@@ -114,13 +113,6 @@ describe('guide transitions', () => {
     ).toBeNull();
   });
 
-  it('lifts a hold into continued and leaves other states alone', () => {
-    const held = heldGuide({ guide: pending, reason: 'r', suggest: null });
-
-    expect(continuedGuide({ guide: held }).check).toBe('continued');
-    expect(continuedGuide({ guide: pending })).toBe(pending);
-  });
-
   it('records a deviation once', () => {
     const deviation = {
       change: 'skipped',
@@ -161,11 +153,9 @@ describe('guideGateOf', () => {
   });
 
   it('lets work through once the user continued', () => {
-    const held = heldGuide({ guide: pending, reason: 'r', suggest: null });
+    const continued: GuideRecord = { ...pending, check: 'continued' };
 
-    expect(
-      guideGateOf({ guide: continuedGuide({ guide: held }), roles: ['implementer'] }),
-    ).toBeNull();
+    expect(guideGateOf({ guide: continued, roles: ['implementer'] })).toBeNull();
   });
 
   it('gates nothing for a run without a workflow', () => {

@@ -215,6 +215,9 @@ const runBlock = async ({
   }
   if (block.action === 'follow' || block.action === 'hold' || block.action === 'deviate') {
     const outcome = await applyGuideBlock({ ctx, tree, ended, block });
+    if (outcome.kind === 'stale') {
+      return { kind: 'skipped', reason: 'stale' };
+    }
     return outcome.kind === 'applied'
       ? { kind: 'applied', action: block.action }
       : { kind: 'refused', action: block.action, code: outcome.code };

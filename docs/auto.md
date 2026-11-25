@@ -834,7 +834,8 @@ admission, from the run route of the Lead (`runs.routes.<session>`, its `workflo
 preset name for an older route) and the workflow row. A run with no workflow gets no record and
 nothing below applies to it. A workflow with no check and no stop rule, and a tree that already has
 agents when the record is first written, start `passed`. Every write goes through `changeRunGuide`,
-a compare and swap on the stored text that names its tree.
+a compare and swap on the stored text that names its tree; a block's write also names the turn
+(generation, run, not stopped, still deciding) and is dropped when that turn is no longer current.
 
 Every turn the prompt carries a **Workflow for this run** section built from the record
 (`guideSectionOf`, passed to `buildAutoSystemPrompt` as `guide`). `autoSystemPromptOf` reads the
@@ -855,7 +856,8 @@ A held run reads as **Needs you**: `AutoTreeView.hold` carries the reason and th
 `autoTreeWordOf` passes it to `leadStopOf` as `isHeld`, and a rested Lead with a hold waits for you
 through the same path as any ask (`autoWaitRootsOf`, `auto-needs-you`). The Lead's own message above
 the block is the question; any message the user sends to the Lead lifts the hold into `continued`
-(`submitUserMessage` calls `liftRunHold` once the message is queued), which reads as Continue.
+(`submitUserMessage` adds `liftRunHoldStatement` to the transaction that queues the message, so the
+answer and the release commit together), which reads as Continue.
 Stopping the run uses the existing stop.
 
 ## Plans

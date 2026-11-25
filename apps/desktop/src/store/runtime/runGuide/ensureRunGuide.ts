@@ -60,7 +60,7 @@ export const ensureRunGuide = async ({ db, treeId }: Params): Promise<GuideRecor
     entryCheck: workflow.entryCheck ?? '',
     stopRule: workflow.stopRule ?? '',
     suggestion: suggested ?? null,
-    isOrderKept: workflow.isOrderKept === true,
+    isOrderKept: (route.closeness ?? 'follow') === 'follow',
     steps: workflow.steps.map((step) => ({ name: step.name, role: step.role ?? null })),
     choices,
     isUnderway: delegations.length > 0,

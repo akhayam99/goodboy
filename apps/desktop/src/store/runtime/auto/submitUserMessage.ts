@@ -13,7 +13,7 @@ import {
   type AutoTree,
 } from '@goodboy/db';
 import { brandId, type AutoOutboxId, type MessageAttachment } from '@goodboy/types';
-import { liftRunHold } from '../runGuide/liftRunHold';
+import { liftRunHoldStatement } from '../runGuide/liftRunHoldStatement';
 import { readAutoLevel } from './level/readAutoLevel';
 import { treeArtifacts } from './treeArtifacts';
 import type { AgentVerbContext } from './verbContext';
@@ -134,6 +134,7 @@ export const submitUserMessage = async ({
             nowMs: ctx.now(),
           },
         }),
+        liftRunHoldStatement({ treeId }),
         {
           sql: 'SELECT 1 FROM auto_outbox WHERE id = ?',
           params: [rowId],
@@ -143,7 +144,6 @@ export const submitUserMessage = async ({
       ],
     });
     if (outcome.status === 'committed') {
-      await liftRunHold({ db: ctx.db, treeId });
       return { kind: 'queued', rowId };
     }
   }

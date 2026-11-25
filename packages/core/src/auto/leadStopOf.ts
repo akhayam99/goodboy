@@ -48,7 +48,7 @@ export const leadStopOf = ({
   if (phase === 'blocked') {
     return stopStateOf({ stop: 'waitsForYou', reason: isPausedAtLimit ? 'limit' : 'failed' });
   }
-  if (isHeld && (phase === 'done' || phase === 'answering')) {
+  if (isHeld && (phase === 'done' || phase === 'answering' || phase === 'waiting')) {
     return isRootTurnLive
       ? stopStateOf({ stop: 'working' })
       : stopStateOf({ stop: 'waitsForYou', reason: 'ask' });

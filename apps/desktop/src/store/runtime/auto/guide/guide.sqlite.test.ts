@@ -174,12 +174,25 @@ describe('the record of a run that follows a workflow', () => {
         { name: 'Investigate', role: 'investigator' },
         { name: 'Implement', role: 'implementer' },
       ],
+      isOrderKept: true,
       check: 'pending',
     });
     expect(parseGuideRecord({ raw: await readRunGuideRaw({ db, treeId: world.treeId }) })).toEqual(
       guide,
     );
     expect(await ensureRunGuide({ db, treeId: world.treeId })).toEqual(guide);
+  });
+
+  it('keeps the order of the steps only when the run was started to follow them', async () => {
+    const db = world.state.world.db;
+    await db.execute('UPDATE settings SET value = ? WHERE key = ?', [
+      JSON.stringify({ [AUTO_SEED_ROOT]: { ...LEAD_ROUTE, closeness: 'adapt' } }),
+      `runs.routes.${AUTO_SEED_SESSION}`,
+    ]);
+
+    const guide = await ensureRunGuide({ db, treeId: world.treeId });
+
+    expect(guide?.isOrderKept).toBe(false);
   });
 
   it('is not written for a run without a workflow', async () => {
@@ -211,8 +224,45 @@ describe('the record of a run that follows a workflow', () => {
       change: ({ guide }) => followedGuide({ guide, note: 'Failed on run four.' }),
     });
 
-    expect(changed?.check).toBe('passed');
+    expect(changed.kind === 'changed' && changed.guide.check).toBe('passed');
     expect((await guideOf(world)).checkNote).toBe('Failed on run four.');
+  });
+});
+
+describe('a write from a turn that is no longer current', () => {
+  it('is dropped once the run was stopped, and leaves the record as it was', async () => {
+    const world = await guidedWorld();
+    const db = world.state.world.db;
+    await userSays({ world, id: 'outbox-user-1', text: 'fix the flaky export test' });
+    await ensureRunGuide({ db, treeId: world.treeId });
+    const turn = { generation: 1, runId: world.state.ports.autoTurns.at(-1)?.runId ?? '' };
+    await db.execute("UPDATE auto_trees SET stop_state = 'requested' WHERE id = ?", [world.treeId]);
+
+    const outcome = await changeRunGuide({
+      db,
+      treeId: world.treeId,
+      turn,
+      change: ({ guide }) => followedGuide({ guide, note: 'Failed on run four.' }),
+    });
+
+    expect(outcome.kind).toBe('stale');
+    expect((await guideOf(world)).check).toBe('pending');
+  });
+
+  it('is dropped when another run owns the tree', async () => {
+    const world = await guidedWorld();
+    const db = world.state.world.db;
+    await userSays({ world, id: 'outbox-user-1', text: 'fix the flaky export test' });
+    await ensureRunGuide({ db, treeId: world.treeId });
+
+    const outcome = await changeRunGuide({
+      db,
+      treeId: world.treeId,
+      turn: { generation: 1, runId: 'run-from-an-older-turn' },
+      change: ({ guide }) => followedGuide({ guide, note: 'Old.' }),
+    });
+
+    expect(outcome.kind).toBe('stale');
   });
 });
 
