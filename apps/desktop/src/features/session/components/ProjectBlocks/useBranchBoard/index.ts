@@ -14,6 +14,7 @@ import { branchBoardOf } from '../../../central/board/branchBoardOf';
 import { runningByRowIdOf } from '../../../central/board/runningByRowIdOf';
 import type { BranchBoard } from '../../../central/board/boardTypes';
 import { sessionKpisOf, type SessionKpis } from '../../../central/board/sessionKpisOf';
+import { useTouchedMountIds } from '../../../hooks/useTouchedMountIds';
 import { placedAgentsOf } from '../../../placedAgentsOf';
 import { agentSpendById } from '../../../timeline/agentSpendById';
 
@@ -51,6 +52,7 @@ export const useBranchBoard = ({ session, entries }: Params): BranchBoardView =>
   const questions = useSessionOpenQuestions(sessionId);
   const agentRunHistory = useSessionRunHistory({ sessionId });
   const { mountGithub } = useSessionMountHosts({ sessionId });
+  const touchedMountIds = useTouchedMountIds({ sessionId });
   const now = useNow(CLOCK_MS, true);
   const views = useMemo(() => liveAutoViewsOf({ views: allViews, agents }), [agents, allViews]);
   const rootTurns = useAppStore(
@@ -77,8 +79,8 @@ export const useBranchBoard = ({ session, entries }: Params): BranchBoardView =>
     return byMount;
   }, [entries, mountGithub]);
   const placedAgents = useMemo(
-    () => placedAgentsOf({ agents, autoViews: allViews, mounts }),
-    [agents, allViews, mounts],
+    () => placedAgentsOf({ agents, autoViews: allViews, mounts, touchedMountIds }),
+    [agents, allViews, mounts, touchedMountIds],
   );
   const inputs = useMemo(
     () => boardInputsOf({ agents: placedAgents, questions, views, rootTurns, spendByAgentId, now }),

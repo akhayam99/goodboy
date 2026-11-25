@@ -105,7 +105,9 @@ Each branch is one tile, like a pull request in a list.
 - When another session changes the same file of the project, **Overlaps** sits before the button. Its popover lists the branches in the order to merge them, names the shared files and offers **Message the Implementers** and **Open in Changes**. It warns and never blocks.
 - A Lead counts as work on its own branch. A working Lead shows that branch **Running**, and a Lead that waits for you or failed puts it under **Needs you**.
 
-A click on the tile opens the changes of its pull request, on the **Changes** tab of the branch page. The other tabs of the branch page hold the conversation, commits, checks and runs.
+A click on the tile opens the page of its branch. A click on the lines added and removed opens the **Changes** tab. The tabs of the branch page hold the conversation, changes, commits, checks and runs.
+
+The run count of a tile holds every run that worked on its worktree, also a run that was not started on it and only touched it.
 
 #### The tile menu
 

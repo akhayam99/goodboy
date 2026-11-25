@@ -38,12 +38,14 @@ import {
 
 let useAppStore: Awaited<ReturnType<typeof importStore>>;
 let SessionOverviewPane: typeof import('../SessionOverviewPane').SessionOverviewPane;
+let registerMockFixtures: typeof import('../../../../shared/lib/mockFixtures').registerMockFixtures;
 
 beforeAll(async () => {
   installFakeResizeObserver();
   Element.prototype.scrollIntoView = vi.fn();
   useAppStore = await importStore();
   ({ SessionOverviewPane } = await import('../SessionOverviewPane'));
+  ({ registerMockFixtures } = await import('../../../../shared/lib/mockFixtures'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -150,7 +152,7 @@ type TileParams = {
 };
 
 const tileOf = ({ branch }: TileParams): HTMLElement => {
-  const link = screen.getByRole('link', { name: `Open ${branch}` });
+  const link = screen.getByRole('link', { name: `Open ${branch} overview` });
   const tile = link.closest<HTMLElement>('[data-board-row]');
   if (tile === null) {
     throw new Error('The link must sit in a tile.');
@@ -374,7 +376,7 @@ describe('the project blocks on the Overview', () => {
     }
   });
 
-  it('opens the changes of the pull request from its row, by its mount, and leaves the tools alone', async () => {
+  it('opens the overview of the branch from its row, by its mount, and leaves the tools alone', async () => {
     seedCentralColumn({ kind: 'branches' });
     const navigate = vi.fn();
     act(() => {
@@ -383,19 +385,19 @@ describe('the project blocks on the Overview', () => {
     await show();
     const before = useAppStore.getState().drawer;
 
-    fireEvent.click(screen.getByRole('link', { name: `Open ${TENANT}` }));
+    fireEvent.click(screen.getByRole('link', { name: `Open ${TENANT} overview` }));
 
     expect(navigate).toHaveBeenCalledWith({
       to: branchTabPlaceOf({
         sessionId: COLUMN_SESSION_ID,
         mountId: mountIdOf({ branch: TENANT }),
-        tab: 'files',
+        tab: 'pr',
       }),
     });
     expect(useAppStore.getState().drawer).toBe(before);
   });
 
-  it('opens the changes from a row whose chip names no fact too', async () => {
+  it('opens the overview from a row whose chip names no fact too', async () => {
     seedCentralColumn({ kind: 'branches' });
     const navigate = vi.fn();
     act(() => {
@@ -403,14 +405,72 @@ describe('the project blocks on the Overview', () => {
     });
     await show();
 
-    fireEvent.click(screen.getByRole('link', { name: `Open ${LEDGER}` }));
+    fireEvent.click(screen.getByRole('link', { name: `Open ${LEDGER} overview` }));
 
     expect(navigate).toHaveBeenCalledWith({
       to: branchTabPlaceOf({
         sessionId: COLUMN_SESSION_ID,
         mountId: mountIdOf({ branch: LEDGER }),
-        tab: 'files',
+        tab: 'pr',
       }),
+    });
+  });
+
+  it('opens the changes only from the diff stat and the overview from the rest of the row', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    registerMockFixtures({
+      readers: {
+        mountDiffStat: () => ({ additions: 5, deletions: 0 }),
+        artifactProvenance: () => null,
+      },
+    });
+    const navigate = vi.fn();
+    act(() => {
+      useAppStore.setState((store) => ({
+        navigate,
+        sessionPhaseRuns: {
+          ...store.sessionPhaseRuns,
+          [COLUMN_SESSION_ID]: (store.sessionPhaseRuns[COLUMN_SESSION_ID] ?? []).map((agent) => ({
+            ...agent,
+            status: 'completed' as const,
+          })),
+        },
+        sessionWorktreeRecords: {
+          ...store.sessionWorktreeRecords,
+          [COLUMN_SESSION_ID]: (store.sessionProjectMounts[COLUMN_SESSION_ID] ?? []).map(
+            (mount, index) => ({
+              id: mount.mountId,
+              sessionId: COLUMN_SESSION_ID,
+              worktreePath: mount.worktreePath,
+              branch: mount.branch,
+              parallelIndex: index,
+              projectId: mount.projectId,
+              mountName: mount.mountName,
+              repoSlug: 'harborline/payments-api',
+              createdAt: 1,
+            }),
+          ),
+        },
+      }));
+    });
+    await show();
+    const mountId = mountIdOf({ branch: TENANT });
+    const tile = tileOf({ branch: TENANT });
+    fireEvent.click(await within(tile).findByRole('button', { name: `Open changes of ${TENANT}` }));
+
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenLastCalledWith({
+      to: branchTabPlaceOf({ sessionId: COLUMN_SESSION_ID, mountId, tab: 'files' }),
+    });
+
+    fireEvent.click(within(tile).getByRole('link', { name: `Open ${TENANT} overview` }));
+
+    expect(navigate).toHaveBeenCalledTimes(2);
+    expect(navigate).toHaveBeenLastCalledWith({
+      to: branchTabPlaceOf({ sessionId: COLUMN_SESSION_ID, mountId, tab: 'pr' }),
+    });
+    registerMockFixtures({
+      readers: { mountDiffStat: () => null, artifactProvenance: () => null },
     });
   });
 
