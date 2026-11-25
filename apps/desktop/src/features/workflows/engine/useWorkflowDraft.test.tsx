@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { blankWorkflowDraft } from './blankWorkflowDraft';
 import { useWorkflowDraft } from './useWorkflowDraft';
 
 describe('useWorkflowDraft', () => {
@@ -7,11 +8,7 @@ describe('useWorkflowDraft', () => {
     const { result } = renderHook(() =>
       useWorkflowDraft({
         initial: {
-          name: '',
-          description: '',
-          goal: '',
-          steps: [],
-          origin: 'custom',
+          ...blankWorkflowDraft(),
           isPreset: false,
         },
       }),

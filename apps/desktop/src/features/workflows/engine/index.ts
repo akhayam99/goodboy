@@ -16,6 +16,10 @@ export const draftFromWorkflow = ({ workflow }: DraftFromWorkflowParams): Workfl
   description: workflow.description,
   goal: workflow.goal ?? '',
   processText: workflow.processText ?? '',
+  entryCheck: workflow.entryCheck ?? '',
+  stopRule: workflow.stopRule ?? '',
+  thenSuggestId: workflow.thenSuggestId ?? null,
+  isOrderKept: workflow.isOrderKept === true,
   origin: workflow.origin ?? 'custom',
   isPreset: workflow.isPreset !== false,
   steps: [...workflow.steps]
@@ -58,6 +62,10 @@ export const upsertArgsFromDraft = ({
   ...(draft.goal.trim().length > 0 && { goal: draft.goal.trim() }),
   ...(draft.processText != null &&
     draft.processText.trim() !== '' && { processText: draft.processText.trim() }),
+  entryCheck: draft.entryCheck.trim(),
+  stopRule: draft.stopRule.trim(),
+  thenSuggestId: draft.thenSuggestId,
+  isOrderKept: draft.isOrderKept,
   steps: draft.steps.map((step, ordinal) => ({
     ...(step.sourceStepId !== null && { id: step.sourceStepId }),
     ...(step.libraryStepId !== null && { libraryStepId: step.libraryStepId }),

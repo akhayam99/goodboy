@@ -95,6 +95,7 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
     workingDir,
     workflow,
     form,
+    isDraftOnly = false,
   }: StartWorkflowGenerationParams): Promise<boolean> => {
     const current = get().workflowGenerations[workspaceId];
     if (current?.status === 'running') {
@@ -141,8 +142,17 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
         ...(workflow !== null && { id: workflow.id }),
         workspaceId,
         name: formatted.name.trim().length > 0 ? formatted.name : 'Generated workflow',
-        description: formatted.description,
+        description:
+          form !== null && form.description.trim().length > 0
+            ? form.description
+            : formatted.description,
         ...(formatted.goal !== undefined && { goal: formatted.goal }),
+        ...(form !== null && {
+          entryCheck: form.entryCheck,
+          stopRule: form.stopRule,
+          thenSuggestId: form.thenSuggestId,
+          isOrderKept: form.isOrderKept,
+        }),
         steps: formatted.steps.map((step, ordinal) =>
           generatedStepArgs({
             step,
@@ -154,6 +164,21 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
         isPreset: true,
         origin: 'custom',
       };
+      if (isDraftOnly) {
+        set((state) => ({
+          workflowGenerations: {
+            ...state.workflowGenerations,
+            [workspaceId]: {
+              status: 'drafted',
+              workspaceId,
+              notificationId: crypto.randomUUID(),
+              name: args.name,
+              steps: args.steps,
+            },
+          },
+        }));
+        return true;
+      }
       const saved = await get().savePhaseTemplate(args);
       get().clearWorkflowStudioDraft({ workspaceId });
       set((state) => ({
