@@ -557,7 +557,7 @@ describe('the browser console', () => {
 
     expect(region.getAttribute('data-tools-side')).toBe('right');
     expect(region.style.width).toBe('360px');
-    within(region).getByRole('button', { name: 'Dock below the page' });
+    within(region).getByRole('button', { name: 'Dock under the page' });
     within(region).getByRole('separator', { name: 'Resize the tools width' });
   });
 
@@ -573,14 +573,14 @@ describe('the browser console', () => {
       page: { side: 'right', height: 210, width: 360 },
     });
 
-    fireEvent.click(within(region).getByRole('button', { name: 'Dock below the page' }));
+    fireEvent.click(within(region).getByRole('button', { name: 'Dock under the page' }));
     expect(region.getAttribute('data-tools-side')).toBe('bottom');
     fireEvent.click(within(region).getByRole('button', { name: 'Dock right of the page' }));
     cleanup();
 
     await renderPage();
     const page = await openTools();
-    fireEvent.click(within(page).getByRole('button', { name: 'Dock below the page' }));
+    fireEvent.click(within(page).getByRole('button', { name: 'Dock under the page' }));
     expect(page.getAttribute('data-tools-side')).toBe('bottom');
     cleanup();
 

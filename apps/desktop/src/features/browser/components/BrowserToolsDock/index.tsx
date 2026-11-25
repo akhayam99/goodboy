@@ -100,10 +100,7 @@ export const BrowserToolsDock = ({
           aria-label="Console"
           data-tools-side={place.side}
           style={isRight ? { width: size } : { height: size }}
-          className={cn(
-            'relative flex min-h-0 min-w-0 shrink-0 flex-col border-border-soft bg-background',
-            isRight ? 'border-l' : 'border-t',
-          )}
+          className="relative flex min-h-0 min-w-0 shrink-0 flex-col bg-drawer"
         >
           <div
             className={cn('absolute z-10 flex', isRight ? 'inset-y-0 left-0' : 'inset-x-0 top-0')}

@@ -20,7 +20,7 @@ type Props = {
 
 const SIDE_LABEL = {
   bottom: 'Dock right of the page',
-  right: 'Dock below the page',
+  right: 'Dock under the page',
 } as const satisfies Record<BrowserToolsSide, string>;
 
 export const BrowserToolsHead = ({ kind, counts, side, tools, onKind, onSide, onClose }: Props) => (

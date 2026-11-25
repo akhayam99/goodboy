@@ -39,16 +39,16 @@ const FIRST_PLACES = {
   page: { side: 'right', height: 210, width: 360 },
 } as const satisfies Places;
 
-const sizeOf = ({ value }: SizeParams): number | null =>
+const dockSizeOf = ({ value }: SizeParams): number | null =>
   typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
 
-const placeOf = ({ raw, fallback }: PlaceParams): BrowserToolsPlace => {
+const dockPlaceOf = ({ raw, fallback }: PlaceParams): BrowserToolsPlace => {
   if (!isRecord(raw)) {
     return fallback;
   }
   const side = raw['side'];
-  const height = sizeOf({ value: raw['height'] });
-  const width = sizeOf({ value: raw['width'] });
+  const height = dockSizeOf({ value: raw['height'] });
+  const width = dockSizeOf({ value: raw['width'] });
   if ((side !== 'bottom' && side !== 'right') || height === null || width === null) {
     return fallback;
   }
@@ -63,8 +63,8 @@ const placesParser =
       return undefined;
     }
     return {
-      pane: placeOf({ raw: parsed['pane'], fallback: fallback.pane }),
-      page: placeOf({ raw: parsed['page'], fallback: fallback.page }),
+      pane: dockPlaceOf({ raw: parsed['pane'], fallback: fallback.pane }),
+      page: dockPlaceOf({ raw: parsed['page'], fallback: fallback.page }),
     };
   };
 

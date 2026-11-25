@@ -190,7 +190,7 @@ describe('the browser pane scenes', () => {
 
     const region = await screen.findByRole('region', { name: 'Console' }, WAIT);
     expect(region.getAttribute('data-tools-side')).toBe('right');
-    within(region).getByRole('button', { name: 'Dock below the page' });
+    within(region).getByRole('button', { name: 'Dock under the page' });
   });
 
   it('opens the failed request in a detail beside the requests', async () => {

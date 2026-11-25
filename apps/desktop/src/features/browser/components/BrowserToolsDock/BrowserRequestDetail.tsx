@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { ArrowLeft, ChevronDown, ChevronUp } from '@goodboy/ui/icons';
-import { IconButton, ScrollFade, TruncatedText, cn } from '@goodboy/ui';
+import { IconButton, ScrollFade, TruncatedText, cn, useEscapeLayer } from '@goodboy/ui';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { isFailedRequest } from '../../networkStatusWordOf';
 import type { BrowserConsoleEntry } from '../../types';
@@ -45,6 +45,8 @@ export const BrowserRequestDetail = ({
     ...(facts.size === null ? [] : [{ label: 'Size', value: facts.size }]),
     ...(entry.source === null ? [] : [{ label: 'Source', value: entry.source }]),
   ];
+
+  useEscapeLayer(onBack);
 
   useEffect(() => {
     root.current?.focus();

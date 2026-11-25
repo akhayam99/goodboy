@@ -146,16 +146,7 @@ export const BrowserConsole = ({
   };
 
   const keys = ({ event }: KeyParams): void => {
-    if (opened === null || event.defaultPrevented) {
-      return;
-    }
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopPropagation();
-      setOpenedKey(null);
-      return;
-    }
-    if (isTextEntryTarget(event.target)) {
+    if (opened === null || event.defaultPrevented || isTextEntryTarget(event.target)) {
       return;
     }
     if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
