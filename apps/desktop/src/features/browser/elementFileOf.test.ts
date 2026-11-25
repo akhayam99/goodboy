@@ -92,6 +92,19 @@ describe('elementFileOf', () => {
     expect(elementFileOf({ element: PAY, sessionId: SESSION, rows: [], processes: [] })).toBeNull();
   });
 
+  it('reads the default port from the protocol', () => {
+    const element = { ...PAY, url: 'https://localhost/checkout' };
+    const fileOn = (port: number) =>
+      elementFileOf({
+        element,
+        sessionId: SESSION,
+        rows: [{ ...rowOf(SESSION), port }],
+        processes: [processOf(WORKTREE)],
+      });
+    expect(fileOn(443)).toBe('src/checkout/PayButton.tsx:42');
+    expect(fileOn(80)).toBeNull();
+  });
+
   it('knows no file for a page off loopback, without a source or with a path that climbs', () => {
     const rows = [rowOf(SESSION)];
     expect(

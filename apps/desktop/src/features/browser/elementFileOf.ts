@@ -40,7 +40,8 @@ const portOf = ({ url }: PortParams): number | null => {
     if (!isLoopbackHost({ host: parsed.hostname })) {
       return null;
     }
-    const port = Number(parsed.port === '' ? '80' : parsed.port);
+    const defaultPort = parsed.protocol === 'https:' ? '443' : '80';
+    const port = Number(parsed.port === '' ? defaultPort : parsed.port);
     return Number.isInteger(port) && port > 0 ? port : null;
   } catch {
     return null;

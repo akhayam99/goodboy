@@ -33,6 +33,19 @@ type Gesture = {
   readonly doc: string;
 };
 
+type PendingStart = {
+  readonly token: number;
+  readonly liveId: string;
+};
+
+type TabParams = {
+  readonly tabId: string;
+};
+
+type TokenParams = {
+  readonly token: number;
+};
+
 type NoteParams = {
   readonly text: string;
 };
@@ -92,6 +105,8 @@ export const useElementPick = ({
   const [isAdding, setIsAdding] = useState(false);
   const tokenRef = useRef(0);
   const gestureRef = useRef<Gesture | null>(null);
+  const pendingRef = useRef<PendingStart | null>(null);
+  const heldRef = useRef<number | null>(null);
   const roundRef = useRef(0);
   const pickKeyRef = useRef('');
   const isReading = useRef(false);
@@ -102,6 +117,7 @@ export const useElementPick = ({
   const end = useCallback((): void => {
     tokenRef.current += 1;
     gestureRef.current = null;
+    pendingRef.current = null;
     roundRef.current = 0;
     pickKeyRef.current = '';
     setGesture(null);
@@ -109,23 +125,44 @@ export const useElementPick = ({
     setNoteText('');
   }, []);
 
+  const stopPage = useCallback(
+    ({ tabId }: TabParams): void => {
+      void browserHost.pick({ tabId, sessionId, op: 'stop', round: 0 }).catch((error: unknown) => {
+        if (!isTabGone({ error })) {
+          onError({ error });
+        }
+      });
+    },
+    [onError, sessionId],
+  );
+
   const leave = useCallback((): void => {
     const current = gestureRef.current;
     end();
     if (current !== null) {
-      void browserHost
-        .pick({ tabId: current.liveId, sessionId, op: 'stop', round: 0 })
-        .catch((error: unknown) => {
-          if (!isTabGone({ error })) {
-            onError({ error });
-          }
-        });
+      stopPage({ tabId: current.liveId });
     }
-  }, [end, onError, sessionId]);
+  }, [end, stopPage]);
+
+  const stopAbandoned = useCallback(
+    ({ tabId }: TabParams): void => {
+      if (gestureRef.current?.liveId === tabId || pendingRef.current?.liveId === tabId) {
+        return;
+      }
+      stopPage({ tabId });
+    },
+    [stopPage],
+  );
+
+  const settlePending = useCallback(({ token }: TokenParams): void => {
+    if (pendingRef.current?.token === token) {
+      pendingRef.current = null;
+    }
+  }, []);
 
   const apply = useCallback(
     ({ gesture: asked, answer }: AnswerParams): void => {
-      if (gestureRef.current?.token !== asked.token) {
+      if (gestureRef.current?.token !== asked.token || heldRef.current === asked.token) {
         return;
       }
       if (!answer.isHeard || !answer.isOn || answer.doc !== asked.doc) {
@@ -148,10 +185,13 @@ export const useElementPick = ({
     }
     tokenRef.current += 1;
     const token = tokenRef.current;
+    pendingRef.current = { token, liveId };
     void browserHost
       .pick({ tabId: liveId, sessionId, op: 'start', round: 0 })
       .then((answer) => {
+        settlePending({ token });
         if (tokenRef.current !== token || liveIdRef.current !== liveId) {
+          stopAbandoned({ tabId: liveId });
           return;
         }
         if (!answer.isHeard || !answer.isOn || answer.doc === null) {
@@ -164,25 +204,34 @@ export const useElementPick = ({
         setGesture(started);
       })
       .catch((failure: unknown) => {
-        if (tokenRef.current === token) {
+        settlePending({ token });
+        const isCurrent = tokenRef.current === token;
+        if (!isTabGone({ error: failure })) {
+          stopAbandoned({ tabId: liveId });
+        }
+        if (isCurrent) {
           onError({ error: failure });
         }
       });
-  }, [liveId, onError, sessionId, target.canHandOff]);
+  }, [liveId, onError, sessionId, settlePending, stopAbandoned, target.canHandOff]);
 
   usePoll({
     run: () => {
       const asked = gestureRef.current;
-      if (asked === null || isReading.current) {
+      if (asked === null || isReading.current || heldRef.current === asked.token) {
         return;
       }
       isReading.current = true;
       void browserHost
         .pick({ tabId: asked.liveId, sessionId, op: 'read', round: roundRef.current })
         .then((answer) => apply({ gesture: asked, answer }))
-        .catch(() => {
-          if (gestureRef.current?.token === asked.token) {
-            end();
+        .catch((error: unknown) => {
+          if (gestureRef.current?.token !== asked.token || heldRef.current === asked.token) {
+            return;
+          }
+          leave();
+          if (!isTabGone({ error })) {
+            onError({ error });
           }
         })
         .finally(() => {
@@ -196,7 +245,7 @@ export const useElementPick = ({
   });
 
   useEffect(() => {
-    const current = gestureRef.current;
+    const current = gestureRef.current ?? pendingRef.current;
     if (current !== null && (current.liveId !== liveId || !isShown)) {
       leave();
     }
@@ -204,6 +253,8 @@ export const useElementPick = ({
 
   useEffect(
     () => () => {
+      tokenRef.current += 1;
+      pendingRef.current = null;
       const current = gestureRef.current;
       if (current !== null) {
         void Promise.allSettled([
@@ -224,6 +275,7 @@ export const useElementPick = ({
     const text = note;
     const title = pageTitle;
     const queue = target.queue;
+    heldRef.current = asked.token;
     setIsAdding(true);
     void addPickedElements({
       sessionId,
@@ -237,11 +289,12 @@ export const useElementPick = ({
       isTabStill: () => liveIdRef.current === asked.liveId,
     })
       .then((result) => {
-        if (gestureRef.current?.token === asked.token) {
-          end();
-        }
         if (result === 'agent-gone') {
           onError({ error: new Error(AGENT_GONE) });
+          return;
+        }
+        if (gestureRef.current?.token === asked.token) {
+          end();
         }
       })
       .catch((failure: unknown) => onError({ error: failure }))

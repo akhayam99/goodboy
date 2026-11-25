@@ -6,7 +6,7 @@ use base64::Engine;
 use tauri::{Runtime, Webview};
 
 use super::pick::PickRect;
-use super::reason::{self, SNAPSHOT_UNAVAILABLE};
+use super::reason::SNAPSHOT_UNAVAILABLE;
 use crate::util::MessageError;
 
 pub(crate) const MAX_SNAPSHOT_BYTES: usize = 5 * 1024 * 1024;
@@ -176,7 +176,7 @@ pub(crate) fn snapshot_element<R: Runtime>(
     let (sender, receiver) = std::sync::mpsc::sync_channel(1);
     webview
         .with_webview(move |platform| native::take(platform, rect, sender))
-        .map_err(|_| reason::failed(SNAPSHOT_UNAVAILABLE))?;
+        .map_err(|_| super::reason::failed(SNAPSHOT_UNAVAILABLE))?;
     Ok(png_text_of(
         receiver.recv_timeout(SNAPSHOT_WAIT).ok().flatten(),
     ))

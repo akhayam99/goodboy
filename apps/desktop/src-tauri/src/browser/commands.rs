@@ -376,9 +376,7 @@ fn check_capture(
     args: &PageTextArgs,
     page: &PageText,
 ) -> Result<(), MessageError> {
-    if now != Some(checked) {
-        return Err(reason::refused(PAGE_MOVED));
-    }
+    check_navigation(checked, now)?;
     let host = guard::parse_address(&page.url).map(|url| guard::host_of(&url));
     if host.as_deref()
         != Some(
@@ -390,6 +388,13 @@ fn check_capture(
         )
     {
         return Err(reason::refused(HOST_UNKNOWN));
+    }
+    Ok(())
+}
+
+fn check_navigation(checked: u64, now: Option<u64>) -> Result<(), MessageError> {
+    if now != Some(checked) {
+        return Err(reason::refused(PAGE_MOVED));
     }
     Ok(())
 }
@@ -434,11 +439,17 @@ pub async fn browser_element_snapshot(
     args: SnapshotArgs,
 ) -> Result<Option<String>, MessageError> {
     let tab = session_tab(&webview, &args.tab_id, &args.session_id)?;
+    let registry = webview.state::<BrowserRegistry>();
+    let navigation = registry
+        .navigation_of(&args.tab_id)
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
     let read = pick::drive_pick(&tab, PickOp::Read)?;
     if read.doc.as_deref() != Some(args.doc.as_str()) {
         return Err(reason::refused(PAGE_MOVED));
     }
-    snapshot::snapshot_element(&tab, args.rect)
+    let picture = snapshot::snapshot_element(&tab, args.rect)?;
+    check_navigation(navigation, registry.navigation_of(&args.tab_id))?;
+    Ok(picture)
 }
 
 #[tauri::command]
@@ -764,6 +775,20 @@ mod tests {
         let read = body.find("read_page_text(&tab").expect("capture");
         let bound = body.find("check_capture(").expect("bound");
         assert!(checked < live && live < read && read < bound, "{body}");
+    }
+
+    #[test]
+    fn an_element_picture_is_bound_to_the_navigation_read_before_it() {
+        let command = include_str!("commands.rs");
+        let start = command
+            .find("pub async fn browser_element_snapshot")
+            .expect("the command");
+        let body = &command[start..start + command[start..].find("\n}\n").expect("end")];
+        let checked = body.find("navigation_of(&args.tab_id)").expect("read");
+        let read = body.find("drive_pick(&tab").expect("page");
+        let taken = body.find("snapshot_element(&tab").expect("picture");
+        let bound = body.find("check_navigation(").expect("bound");
+        assert!(checked < read && read < taken && taken < bound, "{body}");
     }
 
     #[test]

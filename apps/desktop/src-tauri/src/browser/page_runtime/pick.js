@@ -231,6 +231,7 @@ const originalLineOf = (map, line, column) => {
   if (line < 1 || line > rows.length) {
     return null;
   }
+  let sourceIndex = 0;
   let sourceLine = 0;
   let found = null;
   for (let row = 0; row < line; row += 1) {
@@ -243,14 +244,51 @@ const originalLineOf = (map, line, column) => {
       }
       generated += values[0];
       if (values.length >= 4) {
+        sourceIndex += values[1];
         sourceLine += values[2];
         if (row === line - 1 && generated <= column - 1) {
-          found = sourceLine + 1;
+          found = { index: sourceIndex, line: sourceLine + 1 };
         }
       }
     }
   }
   return found;
+};
+
+const isClimbingOut = (reference, base) => {
+  if (reference.charAt(0) === '/' || reference.indexOf(':') !== -1) {
+    return false;
+  }
+  let depth = new Url(base).pathname.split('/').length - 2;
+  const parts = reference.split('/');
+  for (let index = 0; index < parts.length; index += 1) {
+    if (parts[index] === '..') {
+      depth -= 1;
+    } else if (parts[index] !== '.' && parts[index] !== '') {
+      depth += 1;
+    }
+    if (depth < 0) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const originalPathOf = (map, index, base) => {
+  const name = map.sources == null ? null : map.sources[index];
+  if (typeof name !== 'string' || name === '') {
+    return null;
+  }
+  const root = typeof map.sourceRoot === 'string' ? map.sourceRoot : '';
+  const reference = root === '' || root.endsWith('/') ? root + name : root + '/' + name;
+  if (isClimbingOut(reference, base)) {
+    return null;
+  }
+  const url = new Url(reference, base);
+  if (url.origin !== here.origin || url.pathname.indexOf('/node_modules/') !== -1) {
+    return null;
+  }
+  return url.pathname;
 };
 
 const textOfBase64 = (encoded) => {
@@ -285,14 +323,17 @@ const mapOfModule = (address, code) => {
     .trim();
   const inline = mark.indexOf(BASE64_MAP);
   if (mark.indexOf('data:') === 0 && inline > 0) {
-    return JSON.parse(textOfBase64(mark.slice(inline + BASE64_MAP.length)));
+    const text = textOfBase64(mark.slice(inline + BASE64_MAP.length));
+    return { map: JSON.parse(text), base: address };
   }
   const url = new Url(mark, address);
   if (url.origin !== here.origin) {
     return null;
   }
   return readText(url.href).then((text) =>
-    typeof text === 'string' && text.length <= MAX_MAP_CHARS ? JSON.parse(text) : null,
+    typeof text === 'string' && text.length <= MAX_MAP_CHARS
+      ? { map: JSON.parse(text), base: url.href }
+      : null,
   );
 };
 
@@ -314,10 +355,11 @@ const resolveSource = (fact, frame) => {
     return;
   }
   sourceMapOf(frame.url)
-    .then((map) => {
-      const line = map === null ? null : originalLineOf(map, frame.line, frame.column);
-      if (line !== null) {
-        fact.source = { path: clip(frame.path, MAX_PATH), line };
+    .then((loaded) => {
+      const found = loaded === null ? null : originalLineOf(loaded.map, frame.line, frame.column);
+      const path = found === null ? null : originalPathOf(loaded.map, found.index, loaded.base);
+      if (path !== null) {
+        fact.source = { path: clip(path, MAX_PATH), line: found.line };
       }
     })
     .catch(() => null)

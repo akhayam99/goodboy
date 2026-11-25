@@ -99,6 +99,9 @@ let opened: number;
 let page: BrowserPickRead;
 let cropMode: CropMode;
 let releaseCrop: (() => void) | null;
+let startMode: CropMode;
+let releaseStart: (() => void) | null;
+let isReadFailing: boolean;
 
 const rowOf = ({ args }: SaveArgs): BrowserTab => ({
   id: args.id,
@@ -128,7 +131,15 @@ const factsOf = ({ args }: OpenArgs): BrowserTabFacts => {
   return facts;
 };
 
-const answerPick = ({ args }: PickArgs): BrowserPickRead => {
+const answerPick = async ({ args }: PickArgs): Promise<BrowserPickRead> => {
+  if (args.op === 'read' && isReadFailing) {
+    throw new Error('read timed out');
+  }
+  if (args.op === 'start' && startMode === 'wait') {
+    await new Promise<void>((resolve) => {
+      releaseStart = resolve;
+    });
+  }
   if (args.op === 'start') {
     page = { ...page, isOn: true, isLeft: false, round: page.round + 1, picks: [] };
   }
@@ -251,6 +262,9 @@ beforeEach(async () => {
   opened = 0;
   cropMode = 'ok';
   releaseCrop = null;
+  startMode = 'ok';
+  releaseStart = null;
+  isReadFailing = false;
   page = {
     doc: 'k3x9',
     isHeard: true,
@@ -400,6 +414,70 @@ describe('pick an element and add it to your message', () => {
     expect(queued({ agentId: IMPLEMENTER })).toEqual([]);
     expect(queued({ agentId: REVIEWER })).toEqual([]);
     expect(draftOf({ agentId: IMPLEMENTER })).toBe('');
+    const kept = screen.getByRole('textbox', { name: 'What should change?' });
+    expect(kept).toHaveProperty('value', NOTE);
+    cropMode = 'ok';
+    await act(async () => {
+      fireEvent.keyDown(kept, { key: 'Enter' });
+    });
+
+    await waitFor(() => expect(queued({ agentId: REVIEWER })).toHaveLength(2));
+    expect(draftOf({ agentId: REVIEWER })).toBe(NOTE);
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: 'What should change?' })).toBeNull(),
+    );
+  });
+
+  it('stops the page picker when the tab changed before the start was answered', async () => {
+    startMode = 'wait';
+    await openCheckout();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Select an element' }));
+    });
+    await waitFor(() => expect(releaseStart).not.toBeNull());
+
+    await act(async () => {
+      pressShortcut({ id: 'browser.newTab' });
+    });
+    await typeAddress({ text: 'harborline.dev/billing' });
+    await waitFor(() => expect(tabIds()).toEqual(['live-1', 'live-2']));
+    await act(async () => {
+      releaseStart?.();
+    });
+
+    await waitFor(() => expect(pickCalls()).toEqual(['start', 'stop']));
+    expect(
+      screen.getByRole('button', { name: 'Select an element' }).getAttribute('aria-pressed'),
+    ).toBe('false');
+  });
+
+  it('stops the page picker when the pane closed before the start was answered', async () => {
+    startMode = 'wait';
+    await openCheckout();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Select an element' }));
+    });
+    await waitFor(() => expect(releaseStart).not.toBeNull());
+
+    cleanup();
+    await act(async () => {
+      releaseStart?.();
+    });
+
+    await waitFor(() => expect(pickCalls()).toEqual(['start', 'stop']));
+  });
+
+  it('stops the page picker and says so when reading it fails', async () => {
+    await openCheckout();
+    await startPicking();
+
+    isReadFailing = true;
+
+    await waitFor(() => expect(pickCalls()).toContain('stop'));
+    expect(await screen.findByRole('alert')).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: 'Select an element' }).getAttribute('aria-pressed'),
+    ).toBe('false');
   });
 
   it('drops a late picture once the shown tab changed and still adds the element', async () => {
