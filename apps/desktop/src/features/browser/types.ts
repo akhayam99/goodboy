@@ -28,16 +28,56 @@ export type BrowserFindOutcome = {
 
 export type BrowserConsoleKind = 'console' | 'network';
 
+export type BrowserEntryKind = BrowserConsoleKind | 'error';
+
 export type BrowserConsoleLevel = 'log' | 'info' | 'warn' | 'error';
+
+export type BrowserRequestType =
+  'fetch' | 'xhr' | 'doc' | 'script' | 'style' | 'img' | 'ws' | 'sse' | 'other';
+
+export type BrowserHeader = {
+  readonly name: string;
+  readonly value: string;
+};
+
+export type BrowserSocketFacts = {
+  readonly phase: 'open' | 'closed';
+  readonly sent: number;
+  readonly received: number;
+  readonly code: number | null;
+};
+
+export type BrowserRequestFacts = {
+  readonly id: string;
+  readonly type: BrowserRequestType;
+  readonly start: number;
+  readonly duration: number | null;
+  readonly size: number | null;
+  readonly requestHeaders: ReadonlyArray<BrowserHeader>;
+  readonly responseHeaders: ReadonlyArray<BrowserHeader>;
+  readonly requestBody: string | null;
+  readonly responseBody: string | null;
+  readonly socket: BrowserSocketFacts | null;
+};
+
+export type BrowserErrorOrigin = 'uncaught' | 'rejection' | 'console' | 'request';
+
+export type BrowserErrorFacts = {
+  readonly origin: BrowserErrorOrigin;
+  readonly stack: string | null;
+  readonly requestId: string | null;
+};
 
 export type BrowserConsoleEntry = {
   readonly seq: number;
-  readonly kind: BrowserConsoleKind;
+  readonly kind: BrowserEntryKind;
   readonly level: BrowserConsoleLevel;
   readonly text: string;
   readonly source: string | null;
   readonly method: string | null;
   readonly status: number | null;
+  readonly network: BrowserRequestFacts | null;
+  readonly error: BrowserErrorFacts | null;
 };
 
 export type BrowserConsoleRead = {

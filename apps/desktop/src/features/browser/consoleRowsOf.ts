@@ -1,3 +1,4 @@
+import { consoleTabOf } from './consoleTabOf';
 import { matchesWords } from './matchesWords';
 import type { BrowserConsoleEntry, BrowserConsoleKind } from './types';
 
@@ -37,7 +38,7 @@ export const consoleRowsOf = ({
     .filter((word) => word !== '');
   return entries.filter(
     (entry) =>
-      entry.kind === kind &&
+      consoleTabOf({ entry }) === kind &&
       isLevelShown({ entry, level }) &&
       matchesWords({
         words,

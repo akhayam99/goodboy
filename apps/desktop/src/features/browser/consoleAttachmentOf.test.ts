@@ -2,49 +2,81 @@
 import { describe, expect, it } from 'vitest';
 import { CONSOLE_SECTION_MAX_CHARS, consoleAttachmentOf } from './consoleAttachmentOf';
 import { consoleCounts } from './consoleCounts';
-import type { BrowserConsoleEntry } from './types';
+import type { BrowserConsoleEntry, BrowserRequestFacts } from './types';
+
+type EntryParams = Pick<BrowserConsoleEntry, 'seq' | 'kind' | 'level' | 'text'> &
+  Partial<BrowserConsoleEntry>;
+
+const entryOf = (over: EntryParams): BrowserConsoleEntry => ({
+  source: null,
+  method: null,
+  status: null,
+  network: null,
+  error: null,
+  ...over,
+});
+
+const REQUEST: BrowserRequestFacts = {
+  id: 'r3',
+  type: 'fetch',
+  start: 120,
+  duration: 48,
+  size: 64,
+  requestHeaders: [{ name: 'x-tenant', value: 'acme-internal-header' }],
+  responseHeaders: [{ name: 'content-type', value: 'application/json' }],
+  requestBody: '{"secretCart":"northwind-body"}',
+  responseBody: '{"error":"payments-api refused"}',
+  socket: null,
+};
 
 const ENTRIES: ReadonlyArray<BrowserConsoleEntry> = [
-  {
+  entryOf({
     seq: 1,
-    kind: 'console',
+    kind: 'error',
     level: 'error',
     text: 'TypeError: retry is not a function',
     source: 'checkout.js:214',
-    method: null,
-    status: null,
-  },
-  {
+    error: {
+      origin: 'uncaught',
+      stack:
+        'TypeError: retry is not a function\nat retry (checkout.js:214:9)\nat confirm (checkout.js:88:3)',
+      requestId: null,
+    },
+  }),
+  entryOf({
     seq: 2,
     kind: 'console',
     level: 'log',
     text: 'ledger-core: confirm step mounted token=ghp_abcdefghijklmnopqrstuvwx',
-    source: null,
-    method: null,
-    status: null,
-  },
-  {
+  }),
+  entryOf({
     seq: 3,
     kind: 'network',
     level: 'error',
     text: '/api/orders/confirm',
-    source: null,
     method: 'POST',
     status: 500,
-  },
-  {
+    network: REQUEST,
+  }),
+  entryOf({
     seq: 4,
+    kind: 'error',
+    level: 'error',
+    text: 'POST /api/orders/confirm 500',
+    error: { origin: 'request', stack: null, requestId: 'r3' },
+  }),
+  entryOf({
+    seq: 5,
     kind: 'network',
     level: 'error',
     text: '/logo.png',
-    source: null,
     method: 'GET',
     status: 0,
-  },
+  }),
 ];
 
 describe('the console attachment', () => {
-  it('counts each kind from one function', () => {
+  it('counts each tab from one function, a request error only as its request', () => {
     expect(consoleCounts({ entries: ENTRIES })).toEqual({ console: 2, network: 2 });
     expect(consoleCounts({ entries: [] })).toEqual({ console: 0, network: 0 });
   });
@@ -66,7 +98,37 @@ describe('the console attachment', () => {
     expect(handoff.text).toContain('## Failed requests (2)');
     expect(handoff.text).toContain('- POST 500 /api/orders/confirm');
     expect(handoff.text).toContain('- GET failed /logo.png');
+    expect(handoff.text).not.toContain('POST /api/orders/confirm 500');
     expect(handoff.text).not.toContain('ghp_abcdefghijklmnopqrstuvwx');
+  });
+
+  it('carries the stack of an error under its line', () => {
+    const handoff = consoleAttachmentOf({
+      entries: ENTRIES,
+      title: 'Checkout',
+      url: 'http://localhost:5173/checkout',
+    });
+
+    expect(handoff.text).toContain(
+      [
+        '- error: TypeError: retry is not a function (checkout.js:214)',
+        '    TypeError: retry is not a function',
+        '    at retry (checkout.js:214:9)',
+        '    at confirm (checkout.js:88:3)',
+      ].join('\n'),
+    );
+  });
+
+  it('never carries the headers or bodies of a request', () => {
+    const handoff = consoleAttachmentOf({
+      entries: ENTRIES,
+      title: 'Checkout',
+      url: 'http://localhost:5173/checkout',
+    });
+
+    expect(handoff.text).not.toContain('acme-internal-header');
+    expect(handoff.text).not.toContain('northwind-body');
+    expect(handoff.text).not.toContain('payments-api refused');
   });
 
   it('names the file after the host when the tab has no title', () => {
@@ -81,15 +143,14 @@ describe('the console attachment', () => {
   });
 
   it('keeps the newest lines that fit and says it cut', () => {
-    const long: ReadonlyArray<BrowserConsoleEntry> = Array.from({ length: 400 }, (_, index) => ({
-      seq: index + 1,
-      kind: 'console',
-      level: 'log',
-      text: `${index + 1} ${'a'.repeat(200)}`,
-      source: null,
-      method: null,
-      status: null,
-    }));
+    const long: ReadonlyArray<BrowserConsoleEntry> = Array.from({ length: 400 }, (_, index) =>
+      entryOf({
+        seq: index + 1,
+        kind: 'console',
+        level: 'log',
+        text: `${index + 1} ${'a'.repeat(200)}`,
+      }),
+    );
 
     const handoff = consoleAttachmentOf({
       entries: long,

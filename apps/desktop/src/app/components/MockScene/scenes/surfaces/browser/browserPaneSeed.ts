@@ -45,6 +45,8 @@ const CONSOLE_READ: BrowserConsoleRead = {
       source: 'checkout.js:214',
       method: null,
       status: null,
+      network: null,
+      error: null,
     },
     {
       seq: 2,
@@ -54,6 +56,8 @@ const CONSOLE_READ: BrowserConsoleRead = {
       source: 'CartLines.tsx:58',
       method: null,
       status: null,
+      network: null,
+      error: null,
     },
     {
       seq: 3,
@@ -63,6 +67,8 @@ const CONSOLE_READ: BrowserConsoleRead = {
       source: 'rates.ts:31',
       method: null,
       status: null,
+      network: null,
+      error: null,
     },
     {
       seq: 4,
@@ -72,6 +78,8 @@ const CONSOLE_READ: BrowserConsoleRead = {
       source: 'confirm.ts:12',
       method: null,
       status: null,
+      network: null,
+      error: null,
     },
     {
       seq: 5,
@@ -81,6 +89,8 @@ const CONSOLE_READ: BrowserConsoleRead = {
       source: null,
       method: 'POST',
       status: 500,
+      network: null,
+      error: null,
     },
     {
       seq: 6,
@@ -90,6 +100,8 @@ const CONSOLE_READ: BrowserConsoleRead = {
       source: null,
       method: 'GET',
       status: 200,
+      network: null,
+      error: null,
     },
     {
       seq: 7,
@@ -99,6 +111,8 @@ const CONSOLE_READ: BrowserConsoleRead = {
       source: null,
       method: 'GET',
       status: null,
+      network: null,
+      error: null,
     },
   ],
 };

@@ -10,6 +10,8 @@ const entry = (over: Partial<BrowserConsoleEntry> & Pick<BrowserConsoleEntry, 's
     source: null,
     method: null,
     status: null,
+    network: null,
+    error: null,
     ...over,
   }) satisfies BrowserConsoleEntry;
 
@@ -60,6 +62,39 @@ describe('consoleRowsOf', () => {
     expect(seqsOf({ entries: ENTRIES, kind: 'console', level: 'all', query: 'nothing' })).toEqual(
       [],
     );
+  });
+
+  it('shows thrown errors and rejections in the console, a request error only as its request', () => {
+    const entries: ReadonlyArray<BrowserConsoleEntry> = [
+      ...ENTRIES,
+      entry({
+        seq: 7,
+        kind: 'error',
+        level: 'error',
+        text: 'Uncaught TypeError: total is undefined',
+        error: { origin: 'uncaught', stack: 'at checkout.js:40:3', requestId: null },
+      }),
+      entry({
+        seq: 8,
+        kind: 'error',
+        level: 'error',
+        text: 'POST /api/payments 502',
+        error: { origin: 'request', stack: null, requestId: 'r6' },
+      }),
+      entry({
+        seq: 9,
+        kind: 'error',
+        level: 'error',
+        text: 'Unhandled rejection: payment declined',
+        error: { origin: 'rejection', stack: null, requestId: null },
+      }),
+    ];
+
+    expect(seqsOf({ entries, kind: 'console', level: 'all', query: '' })).toEqual([
+      1, 2, 3, 4, 7, 9,
+    ]);
+    expect(seqsOf({ entries, kind: 'console', level: 'error', query: '' })).toEqual([3, 7, 9]);
+    expect(seqsOf({ entries, kind: 'network', level: 'all', query: '' })).toEqual([5, 6]);
   });
 
   it('combines the level and the search', () => {

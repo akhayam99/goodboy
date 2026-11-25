@@ -79,7 +79,17 @@ const entryOf = ({
   method = null,
   status = null,
   source = null,
-}: EntryParams): BrowserConsoleEntry => ({ seq, level, text, kind, method, status, source });
+}: EntryParams): BrowserConsoleEntry => ({
+  seq,
+  level,
+  text,
+  kind,
+  method,
+  status,
+  source,
+  network: null,
+  error: null,
+});
 
 const ENTRIES: ReadonlyArray<BrowserConsoleEntry> = [
   entryOf({
