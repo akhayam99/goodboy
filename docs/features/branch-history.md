@@ -4,9 +4,13 @@ The Commits section of the Branch page lets you clean up a branch before it goes
 
 ### Shape the history
 
-Clean up a branch by hand in the **Commits** section. Drag a commit to move it, drop it onto another to fixup into it, or reword or drop it; each edit updates the local branch immediately. Commits not yet on origin are marked **Not pushed**.
+Clean up a branch by hand in the **Commits** section. Each edit updates the local branch immediately. Commits not yet on origin are marked **Not pushed**.
 
-Commits use one line, grouped by Today, Yesterday or date. Your author label is hidden when it matches the repository's configured git name; if that name cannot be read, all authors show. An open editor or a history mark gives the row more room.
+- Drag a commit to move it.
+- Drop it onto another to fixup into it.
+- Reword or drop it.
+
+Commits use one line, grouped by Today, Yesterday or date. Your author label is hidden when it matches the repository's configured git name.
 
 A mark on a planned row (squash into, fixup into, reworded) opens a fact card on rest. The card shows the commits it takes in or the new message. A step that may conflict in two or more files lists them.
 
@@ -19,7 +23,9 @@ A mark on a planned row (squash into, fixup into, reworded) opens a fact card on
 
 ### Safe edits
 
-**Undo** and **Redo**, also **⌘Z** and **⌘⇧Z**, restore edits while the Commits page stays open. Each edit checks a temporary copy and saves a backup before the branch moves. An agent writing in the worktree blocks edits, and overlapping uncommitted files require stash consent.
+**Undo** and **Redo**, also **⌘Z** and **⌘⇧Z**, restore edits while the Commits page stays open. Each edit checks a temporary copy and saves a backup before the branch moves.
+
+An agent writing in the worktree blocks edits, and overlapping uncommitted files require stash consent.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-trial-dark.webp">
@@ -52,7 +58,11 @@ When a step stops on a conflict, the notice names the step and the file, and you
 
 ### Push with lease and restore
 
-**Force push** updates the online branch separately after a local edit. It sits in **Branch actions** and says your branch and origin differ. It is one verb, whichever button started it. A push that used the lease also finishes the waiting rebase or rewrite, with the edited replies, the pushed event and the pull request description. It checks origin with a lease so a teammate's newer push is never overwritten. Undo and Redo remain local, and leaving the page clears their stack while keeping the backup refs.
+**Force push** updates the online branch separately after a local edit. It sits in **Branch actions** and says your branch and origin differ. It is one verb, whichever button started it.
+
+It checks origin with a lease so a teammate's newer push is never overwritten. A push that used the lease also finishes the waiting rebase or rewrite, with the edited replies, the pushed event and the pull request description.
+
+Undo and Redo remain local. Leaving the page clears their stack and keeps the backups.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-result-dark.webp">
@@ -84,79 +94,87 @@ If someone pushed after you applied, Goodboy lists their new commits and offers 
 
 **Rebase** on the worktree status line (`6 behind main`) moves the branch onto the latest main with git alone. It needs no agent and no tokens.
 
+#### Start a rebase
+
 - The Commits base row reads `Based on main 9d4b1f7`. It offers a rebase only onto another base.
 - If your uncommitted files are in the way, Goodboy asks once to set them aside. It brings them back after the move.
 - While the rebase runs, the status line reads it (`Rebasing · 3 of 7 · 1 conflict`), with **Abort**.
-- Once it settles, a card above the Branch title says what happened and what you can do. It sits in the page flow, so it never covers the title, at any width.
-- Every card, stopped or done, has **Dismiss** on its title row. Dismiss hides that card in this window, a reload included. It keeps the backup, and a new stop shows a new card.
-- A branch shows one card at most, the newest. A rebase that finishes settles every older stop of the branch, so dismissing it shows nothing behind it.
-- **Force push** replaces the branch on origin only if nobody pushed since you last looked. A failed Push or Force push in the Branch header offers the same two actions.
-- If origin changed between your confirm and the push, the failure leads with **Check again**. It fetches and lists the commits only on origin, with author and subject. Then it asks again: **Force push anyway** drops them, **Rebase on their commits** keeps them. It offers no **Retry**, since that would reuse the old check.
-- There, **Fix with an agent** and **Open in Terminal** read origin again first. Since nobody confirmed the new commits, they keep everything on origin: the agent rebases on it, and the terminal gets a rebase on origin, then a push. A failed start shows in the card, not in a toast.
-- **Add a hint** under **Fix with an agent** and under **Rewrite with an agent** passes your words to the agent. A failed start keeps them.
-- While Push, Rebase, Merge or another Branch header action runs, its button shows the pending word (**Pushing…**) and ignores more clicks.
-- When it finishes, a line under the header says what happened (**Pushed 1 commit to origin.**). It stays until you dismiss it or start the next action.
+- Once it settles, a card above the Branch title says what happened and what you can do.
+- Every card has **Dismiss** on its title row. Dismiss hides that card in this window, a reload included. It keeps the backup.
 
-**When a rebase stops**
+While Push, Rebase, Merge or another Branch header action runs, its button shows the pending word (**Pushing…**) and ignores more clicks. When it finishes, a line under the header says what happened (**Pushed 1 commit to origin.**). It stays until you dismiss it or start the next action.
+
+#### Push after a rebase
+
+**Force push** replaces the branch on origin only if nobody pushed since you last looked. A failed Push or Force push in the Branch header offers the same two actions.
+
+If origin changed between your confirm and the push, the failure leads with **Check again**:
+
+1. **Check again** fetches and lists the commits only on origin, with author and subject.
+2. It asks again: **Force push anyway** drops them, **Rebase on their commits** keeps them.
+3. It offers no **Retry**, since that would reuse the old check.
+
+There, **Fix with an agent** and **Open in Terminal** read origin again first and keep everything on origin. The agent rebases on it, and the terminal gets a rebase on origin, then a push. A failed start shows in the card, not in a toast.
+
+**Add a hint** under **Fix with an agent** and under **Rewrite with an agent** passes your words to the agent. A failed start keeps them.
+
+#### When a rebase stops
 
 Nothing starts by itself. The Branch page shows one card above the title, on every tab. The rail keeps one line with **Open rebase**.
 
-On a conflict or a commit hook, the panel does three things.
+On a conflict or a commit hook, the panel does three things:
 
 - It reads **Rebase on main stopped: 2 files conflict** and **Your branch is as it was**.
 - It lists every file with **Open** (your editor).
 - It offers **Start new Lead**, **Resolve in terminal** and **Abort rebase**, with **Add a hint** for the Lead.
 
-**Start new Lead**
+**Start new Lead** starts one Lead run. The run picks the agent and the model, rebases the branch in its worktree and resolves the conflict.
 
-- It starts one Lead run. The run picks the agent and the model, rebases the branch in its worktree and resolves the conflict.
 - It asks you in the session only when a conflict is ambiguous. It never pushes.
-- Until the Lead took the goal, the panel stays. A failed start keeps your hint and you can try again.
-- While the Lead works, the panel reads **The Lead is rebasing on main** with **1 of 2 files resolved** and **Open transcript**. The word on the card reads **Resolving**, as on a check or a comment.
+- A failed start keeps your hint and you can try again.
+- While the Lead works, the panel reads **The Lead is rebasing on main** with **1 of 2 files resolved** and **Open transcript**.
 
-**Resolve in terminal**
+**Resolve in terminal** starts the rebase in the worktree and opens the terminal on it. If the stop, the mount or its branch changed while it read the base, it starts nothing and says so.
 
-- It starts the rebase in the worktree and opens the terminal on it. If the stop, the mount or its branch changed while it read the base, it starts nothing and says so.
-- Then the panel reads **You are rebasing on main in the terminal**.
+- The panel reads **You are rebasing on main in the terminal**.
 - A file turns green once it has no conflict markers. Each row also names its state to a screen reader: **Resolved**, **Still conflicts** or **The Lead is resolving**.
-- **Continue rebase** stays off until no file is left. It stages the resolved files and continues. **Abort rebase** asks first.
-- A conflict git leaves without markers stays open until you stage it with `git add` or `git rm`. Examples are a binary file, or a file that one side deleted. The panel says so, and Continue refuses it too.
+- **Continue rebase** stays off until no file is left. It stages the resolved files and continues.
+- **Abort rebase** asks first.
+- A conflict git leaves without markers, such as a binary file or a file that one side deleted, stays open until you stage it with `git add` or `git rm`. The panel says so.
 
-**After the rebase**
+The banner, the panel and the Next row run the same verbs. A hint typed under **Start new Lead** or **Fix with an agent** applies from whichever place you press the verb.
 
-- Once the branch caught up, by the Lead or by you, the panel reads **Rebased on main** and **Origin still has the old copy**.
-- **Push** is the force push with lease of the Branch header. The panel reads **Pushed to origin** once origin has it.
-- With or without a pull request, **Push** is the branch page's one push action. It has the same confirm, force with lease and failure line as the header. It shows while the branch has commits origin lacks.
-- When someone pushed while you rebased, the panel reads **Rebased here, but origin has 1 new commit** and names the commit. It offers three verbs.
+#### After the rebase
+
+Once the branch caught up, by the Lead or by you, the panel reads **Rebased on main** and **Origin still has the old copy**. **Push** is the force push with lease of the Branch header. The panel reads **Pushed to origin** once origin has it.
+
+When someone pushed while you rebased, the panel reads **Rebased here, but origin has 1 new commit** and names the commit. It offers three verbs:
+
 - **Rebase on their commits** puts yours on top of theirs, then pushes with the lease of what it rebased on.
 - **Resolve in terminal** opens the terminal.
 - **Undo rebase** uses the backup.
 
-**The verbs of a stopped rebase**
+#### When a push fails
 
-- The verbs are one set. The banner, the panel and the Next row run the same ones. A hint typed under **Start new Lead** or **Fix with an agent** therefore applies from whichever place you press the verb.
-- A failed push keeps **Fix with an agent**, **Open in Terminal** and **Retry push**.
-- While that agent works, the same panel reads **Fixing** with its step and time, with **Stop** and **Open transcript**. **Retry push** waits until it ends.
-- It reads **Stopped: hook stopped the push** only when its error names `pre-push`. A remote `pre-receive hook declined` reads **Stopped: push failed**. The Local checks cell uses the same test.
+A failed push keeps **Fix with an agent**, **Open in Terminal** and **Retry push**.
+
+- While that agent works, the panel reads **Fixing** with its step and time, with **Stop** and **Open transcript**. **Retry push** waits until it ends.
+- It reads **Stopped: hook stopped the push** only when its error names `pre-push`. A remote `pre-receive hook declined` reads **Stopped: push failed**.
 - A dirty tree, a moved branch, a blocked move, a result that differs and a failed rebase offer **Retry rebase** and **Open in Terminal**.
 - A verb that fails keeps the panel with its error and **Retry**, on the branch it failed on.
-- The error is kept per branch. It names the branch when the session has more than one. Moving to another branch neither shows it nor locks that branch's verbs.
-- A rebase can be in progress in the worktree without a Goodboy stop. A terminal or an agent can start it.
-- Then the banner is one row, **Rebase in progress in the worktree**, with **Continue rebase**, **Open in Terminal** and **Abort rebase**. The header never yields to a banner that does not draw.
 
-**While a stop is open**
+#### While a stop is open
 
-- Whatever its reason, the pull request's Merge says **Conflicts with main. Resolve them in the banner.** The Branch header drops its primary and push.
-- The header, the banner, the action registry and the rail all read one test. Merge in Search or run belongs to the registry. It reads the write destination's mount when it names none.
-- The test finds a Goodboy stop in the phase stopped, or a rebase in progress in the worktree. It reads the page's live status or the status cache.
-- **Abort rebase** closes the panel, leaves the branch where it was and records it. The stop leaves Next in every window, and Activity reads **Kept hl/fix-duplicate-credit as it was**. A later rebase that stops again brings a new row.
-- A stop also leaves Next once its pull request merged or closed or its branch left the session. A newer stop on the same branch replaces it, so the older History rewriter stops asking under Needs you.
-- Search or run has the same verb as **Resolve rebase conflicts with the Lead**.
-- The panel does not depend on the window that ran the rebase. After a restart, a reload or in a second window, it comes back from the saved stop with the same verbs. **Start new Lead** reads the rebase plan again before it starts.
-- In Next the stop is one row titled by the branch, with the panel's main verb (see Overview).
-- **Open rebase** on the stop's row in Activity, a click on its title in Next, and **Open rebase** on the transcript of a finished History rewriter all do the same. They open the branch the rebase stopped on, with this panel in view, by its mount, never the branch on screen.
+Whatever its reason, the pull request's Merge says **Conflicts with main. Resolve them in the banner.** The Branch header drops its primary and push.
 
-**Rebase all**
+- A rebase can also be in progress in the worktree without a Goodboy stop, started by a terminal or an agent. The banner is then one row, **Rebase in progress in the worktree**, with **Continue rebase**, **Open in Terminal** and **Abort rebase**.
+- **Abort rebase** closes the panel and leaves the branch where it was. Activity reads **Kept hl/fix-duplicate-credit as it was**.
+- A stop leaves Next once its pull request merged or closed, or its branch left the session. A newer stop on the same branch replaces it.
+- After a restart, a reload or in a second window, the panel comes back from the saved stop with the same verbs.
+- In Next the stop is one row titled by the branch, with the panel's main verb (see Overview). Search or run has the same verb as **Resolve rebase conflicts with the Lead**.
+- **Open rebase** opens the branch the rebase stopped on, with this panel in view. It sits on the stop's row in Activity and on the transcript of a finished History rewriter. A click on the stop's title in Next does the same.
+
+#### Rebase all
 
 **Rebase all** rebases every clean branch of a session with git, one at a time. It sits on the session Projects card when two or more branches are behind their base. Search or run has **Rebase all behind branches**.
 
@@ -164,17 +182,17 @@ A branch that conflicts goes to one Lead run. The Lead resolves the conflicts on
 
 - While it runs, the card line reads **Rebasing 2 of 9** with **Abort**. Once The Lead has the rest, it reads **The Lead has the rest**.
 - **Abort** stops the branches that have not started and leaves the finished ones rebased. A failure on one branch never undoes the others.
-- Each branch shows its own state on its row in the tree.
+- Each branch shows its own state on its row in the tree:
 
-| Chip                    | Means                                                                     |
-| ----------------------- | ------------------------------------------------------------------------- |
-| **Rebasing**            | a breathing chip, with the replay step in its tooltip                     |
-| **Queued**              | a quiet chip                                                              |
-| no chip                 | the branch is rebased                                                     |
-| **Conflict**            | the branch waits for the Lead                                             |
-| **Lead resolving**      | a breathing chip while the Lead works on it, with the file in its tooltip |
-| **Rebased by the Lead** | shown until every branch the Lead took is clean, and then nothing         |
-| **Failed**              | the cause is in its tooltip                                               |
+| Chip                    | Means                                                         |
+| ----------------------- | ------------------------------------------------------------- |
+| **Rebasing**            | the replay step is in its tooltip                             |
+| **Queued**              | waiting for its turn                                          |
+| no chip                 | the branch is rebased                                         |
+| **Conflict**            | the branch waits for the Lead                                 |
+| **Lead resolving**      | the Lead works on it, with the file in its tooltip            |
+| **Rebased by the Lead** | shown until every branch the Lead took is clean, then nothing |
+| **Failed**              | the cause is in its tooltip                                   |
 
 **Update all** in the Update group of Next runs the same batch with git only. It rebases behind and stopped branches, brings origin in where someone pushed and leaves every conflict to its own row.
 
@@ -184,27 +202,25 @@ The **Rebase N branches** step in Next opens the same flow as an inline picker.
 - **Also tidy commits with the Lead** is off by default. When on, it asks the same Lead run to fold fix-ups and reword messages after each rebase, locally.
 - You push from the Branch header, which asks before a force push.
 
-**When a stop settles**
+#### When a stop settles
 
 A **Conflict** or **Failed** from a rebase is a record of where the branch stood when the rebase stopped. It is not the branch's state forever.
 
 An agent or the terminal can finish the rebase outside this flow, for example a fixer, a Lead started elsewhere, or `git rebase --continue`. The stop then settles as soon as git shows all of these:
 
-- no rebase in progress and no unmerged file;
-- a branch no longer behind its base;
-- when the stop recorded a head, a branch head that moved past it.
+- no rebase in progress and no unmerged file
+- a branch no longer behind its base
+- when the stop recorded a head, a branch head that moved past it
 
-Then the row chip, the line under the Branch header, the inline conflict prompt and the **Couldn't rebase** step in Next all go. They go in every window, after the agent turn ends, on focus and on the status poll.
-
-A rebase still in progress keeps **Conflict**. So does one the agent aborted back to the old head, and an unrelated commit that leaves the branch behind its base.
+Then the row chip, the line under the Branch header, the inline conflict prompt and the **Couldn't rebase** step in Next all go, in every window. A rebase still in progress keeps **Conflict**. So does one the agent aborted back to the old head.
 
 The other stops settle the same way when their cause is gone:
 
-- **Rebased here, but someone pushed to origin** and a failed push settle once origin has every local commit and no rebase or merge is in progress. One quiet line, **Origin now has your rebased commits**, shows and fades. It is never a toast.
+- **Rebased here, but someone pushed to origin** and a failed push settle once origin has every local commit and no rebase or merge is in progress. One quiet line, **Origin now has your rebased commits**, shows and fades.
 - A dirty tree settles once the tree is clean or the head moved.
 - A moved branch settles like a conflict.
 
-A git read that started before the stop never settles it. The backup stays, so **Undo** is still in the commits history.
+The backup stays, so **Undo** is still in the commits history.
 
 ### After a pull request merges
 
@@ -212,7 +228,12 @@ Decide what happens to a merged branch: **Ask first**, **Delete on this Mac** or
 
 A merged branch is done. It shows no behind count, no warning dot, no rebase offer and no rebase conflict, and says "Merged, work complete".
 
-**Delete local branch…** deletes the local branch and its folder after one inline confirmation: the pull request stays, and the branch on origin stays unless the after-merge setting removes it. The confirmation offers **Close branch** instead, which keeps the local branch and removes the folder, and counts the files that are not committed. **Undo** brings the branch back in a fresh folder. It stops and says why when the folder holds uncommitted or unpushed work. **Close branch** shows on its own only on a branch that did not merge, and says "Closing…" while it works. With two or more merged branches in a session, **Clean up N merged** does the same for each.
+**Delete local branch…** deletes the local branch and its folder after one inline confirmation. The pull request stays, and the branch on origin stays unless the after-merge setting removes it.
+
+- The confirmation offers **Close branch** instead, which keeps the local branch and removes the folder, and counts the files that are not committed.
+- **Undo** brings the branch back in a fresh folder. It stops and says why when the folder holds uncommitted or unpushed work.
+- **Close branch** shows on its own only on a branch that did not merge.
+- With two or more merged branches in a session, **Clean up N merged** does the same for each.
 
 ## Under the hood
 
