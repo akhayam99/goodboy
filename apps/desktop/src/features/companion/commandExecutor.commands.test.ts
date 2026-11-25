@@ -748,26 +748,28 @@ describe('bridge error sanitization gate', () => {
     errSpy.mockRestore();
   });
 
-  it('lets a friendly validation throw (unknown session) reach the phone verbatim', async () => {
-    // BridgeSafeError must pass the gate unchanged — this is our own safe message.
+  it('lets a friendly validation throw (invalid request) reach the phone verbatim', async () => {
     const res = await executeBridgeCommand(
       cmd('mergePr', { sessionId: 'ghost', method: 'squash' }),
     );
     expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/unknown session: ghost/);
-    // It is NOT the generic mask.
+    expect(res.error).toBe('invalid mergePr request');
     expect(res.error).not.toBe('merge failed');
     expect(h.mergePr).not.toHaveBeenCalled();
   });
 
-  it('lets the friendly "merge refused" precondition reach the phone verbatim', async () => {
+  it('lets a refusal reach the phone as an outcome with the desktop reason', async () => {
     h.state.value = makeStore({
-      sessionGithub: { s1: { pr: eligiblePr({ reviewDecision: 'changes_requested' }) } },
+      sessionGithub: {
+        s1: { pr: eligiblePr({ headSha: HEAD, reviewDecision: 'changes_requested' }) },
+      },
     });
-    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
-    expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/merge refused/i);
-    expect(res.error).not.toBe('merge failed');
+    const res = await executeBridgeCommand(mergeCmd());
+    expect(res.ok).toBe(true);
+    expect(res.data).toMatchObject({
+      result: 'refused',
+      refusal: { code: 'not-mergeable', message: 'A reviewer asked for changes.' },
+    });
   });
 });
 
