@@ -88,6 +88,18 @@ const generatedStepArgs = ({
   };
 };
 
+type GoalParams = {
+  readonly form: StartWorkflowGenerationParams['form'];
+  readonly generated: string | undefined;
+};
+
+const goalOf = ({ form, generated }: GoalParams): string | undefined => {
+  if (form === null) {
+    return generated;
+  }
+  return form.goal.trim().length > 0 ? form.goal : undefined;
+};
+
 export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
   return async ({
     workspaceId,
@@ -95,6 +107,8 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
     workingDir,
     workflow,
     form,
+    isDraftOnly = false,
+    draftKey = 0,
   }: StartWorkflowGenerationParams): Promise<boolean> => {
     const current = get().workflowGenerations[workspaceId];
     if (current?.status === 'running') {
@@ -137,12 +151,22 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
           'The agent could not build a workflow from that description. Try adding the outcome and the steps you expect.',
         );
       }
+      const goal = goalOf({ form, generated: formatted.goal });
       const args: WorkflowUpsertArgs = {
         ...(workflow !== null && { id: workflow.id }),
         workspaceId,
         name: formatted.name.trim().length > 0 ? formatted.name : 'Generated workflow',
-        description: formatted.description,
-        ...(formatted.goal !== undefined && { goal: formatted.goal }),
+        description:
+          form !== null && form.description.trim().length > 0
+            ? form.description
+            : formatted.description,
+        ...(goal !== undefined && { goal }),
+        ...(form !== null && {
+          entryCheck: form.entryCheck,
+          stopRule: form.stopRule,
+          thenSuggestId: form.thenSuggestId,
+          isOrderKept: form.isOrderKept,
+        }),
         steps: formatted.steps.map((step, ordinal) =>
           generatedStepArgs({
             step,
@@ -154,6 +178,22 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
         isPreset: true,
         origin: 'custom',
       };
+      if (isDraftOnly) {
+        set((state) => ({
+          workflowGenerations: {
+            ...state.workflowGenerations,
+            [workspaceId]: {
+              status: 'drafted',
+              draftKey,
+              workspaceId,
+              notificationId: crypto.randomUUID(),
+              name: args.name,
+              steps: args.steps,
+            },
+          },
+        }));
+        return true;
+      }
       const saved = await get().savePhaseTemplate(args);
       get().clearWorkflowStudioDraft({ workspaceId });
       set((state) => ({

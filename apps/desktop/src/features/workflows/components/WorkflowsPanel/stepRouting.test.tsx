@@ -166,6 +166,10 @@ const startPreset = () => {
   fireEvent.click(screen.getByRole('tab', { name: 'Pin a model' }));
 };
 
+const createWorkflow = () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Create workflow' }));
+};
+
 type StoredStep = {
   readonly providerOverride?: string;
   readonly modelOverride?: string;
@@ -209,6 +213,7 @@ describe('model picked on a preset step in the Workflows studio', () => {
       pickOpus55Medium();
 
       expect(pressed()).toEqual([expect.stringMatching(/^Cursor/), 'Opus', '5.5', 'Medium']);
+      createWorkflow();
       await expectSavedStep({
         providerOverride: 'cursor',
         modelOverride: 'claude-opus-5-5-medium',
@@ -223,6 +228,7 @@ describe('model picked on a preset step in the Workflows studio', () => {
   it('keeps Claude, Opus 5.5 and Medium, and after reopening', async () => {
     startPreset();
     pickOpus55Medium();
+    createWorkflow();
 
     await expectSavedStep({
       providerOverride: 'anthropic',
@@ -241,6 +247,7 @@ describe('model picked on a preset step in the Workflows studio', () => {
     pickChip({ group: 'Version', name: '5.5' });
     pickProvider(/^Codex/);
     expect(pressed()[0]).toMatch(/^Codex/);
+    createWorkflow();
     await expectSavedStep({ providerOverride: 'codex' });
 
     pickProvider(/^Claude/);

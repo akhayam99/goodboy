@@ -89,7 +89,7 @@ describe('Workflows rows stay reachable from the Workflows grid', () => {
     expect(screen.queryByRole('list', { name: 'Workflows' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
     expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeDefined();
-    expect(screen.getByRole('menuitem', { name: 'Duplicate' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Duplicate workflow' })).toBeDefined();
   });
 
   it('turns Last run into the runs pane of that workflow', async () => {

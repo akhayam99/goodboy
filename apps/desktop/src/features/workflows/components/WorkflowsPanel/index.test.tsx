@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const { invokeMock, state } = vi.hoisted(() => ({
   invokeMock: vi.fn(async (_cmd: string, _args?: unknown): Promise<unknown> => undefined),
@@ -109,7 +109,10 @@ beforeEach(() => {
   invokeMock.mockReset();
   invokeMock.mockResolvedValue(undefined);
 });
-afterEach(cleanup);
+afterEach(() => {
+  vi.useRealTimers();
+  cleanup();
+});
 
 const makeWorkflow = (overrides: Record<string, unknown> = {}) => ({
   id: 'wf-1',
@@ -149,6 +152,20 @@ const draftStep = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+const draftForm = (overrides: Record<string, unknown> = {}) => ({
+  name: '',
+  description: '',
+  goal: '',
+  entryCheck: '',
+  stopRule: '',
+  thenSuggestId: null,
+  isOrderKept: false,
+  steps: [],
+  origin: 'custom',
+  isPreset: true,
+  ...overrides,
+});
+
 const connectProvider = () => {
   state.providers = [{ id: 'anthropic', connection: 'connected' }];
 };
@@ -165,7 +182,7 @@ const openMenuItem = (name: string) => {
 describe('WorkflowsPanel home', () => {
   it('shows one primary and one import in the header, and no menu of one', () => {
     renderPanel();
-    expect(screen.getByRole('button', { name: /new workflow/i })).toBeDefined();
+    screen.getByRole('button', { name: /new workflow/i });
     expect(screen.getByRole('button', { name: 'Import' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Workflow actions' })).toBeNull();
     expect(screen.getByText(/no workflows yet/i)).toBeDefined();
@@ -215,17 +232,34 @@ describe('WorkflowsPanel restore and discard popovers', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
-  it('asks in a popover before it discards a workflow that was never saved', async () => {
+  it('discards a new workflow with typed content at once and offers Undo that restores the draft', async () => {
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: /new workflow/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Workflow name' }), {
+      target: { value: 'Fix a flaky test' },
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
 
-    const dialog = screen.getByRole('dialog', { name: 'Discard this workflow?' });
-    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
-    expect(state.deleteWorkflow).not.toHaveBeenCalled();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Discard' }));
-    expect(await screen.findByRole('button', { name: /new workflow/i })).toBeDefined();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(state.savePhaseTemplate).not.toHaveBeenCalled();
+    screen.getByRole('button', { name: /new workflow/i });
+    expect(await screen.findByText('Discarded New workflow')).toBeDefined();
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+
+    expect(await screen.findByRole('textbox', { name: 'Workflow name' })).toHaveProperty(
+      'value',
+      'Fix a flaky test',
+    );
+  });
+
+  it('discards an empty new workflow without a toast', () => {
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: /new workflow/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+    screen.getByRole('button', { name: /new workflow/i });
+    expect(screen.queryByText('Discarded New workflow')).toBeNull();
   });
 });
 
@@ -237,7 +271,7 @@ describe('WorkflowsPanel editor', () => {
 
     const name = screen.getByRole('textbox', { name: 'Workflow name' }) as HTMLTextAreaElement;
     expect(name.value).toBe('Plan and build');
-    expect(screen.getByRole('button', { name: 'Step 1: Plan' })).toBeDefined();
+    screen.getByRole('button', { name: 'Step 1: Plan' });
     expect(screen.getByRole('button', { name: /Redraft steps/ })).toBeDefined();
 
     fireEvent.click(
@@ -280,17 +314,22 @@ describe('WorkflowsPanel editor', () => {
     expect(draft.disabled).toBe(true);
     expect(screen.getByRole('button', { name: 'Add step' })).toBeDefined();
 
-    fireEvent.change(screen.getByLabelText('Goal'), {
+    fireEvent.change(screen.getByLabelText('Use it when'), {
       target: { value: 'Replay settled batches behind a dry run flag' },
+    });
+    fireEvent.change(screen.getByLabelText('First, check'), {
+      target: { value: 'Confirm the flag exists' },
     });
     fireEvent.click(screen.getByRole('button', { name: /Draft steps/ }));
 
     await waitFor(() => expect(state.startWorkflowGeneration).toHaveBeenCalledOnce());
     expect(state.startWorkflowGeneration.mock.calls[0]?.[0]).toMatchObject({
       workspaceId: 'ws-1',
-      description: 'Replay settled batches behind a dry run flag',
+      description: 'Replay settled batches behind a dry run flag. Confirm the flag exists',
       workflow: null,
+      isDraftOnly: true,
     });
+    expect(state.savePhaseTemplate).not.toHaveBeenCalled();
   });
 
   it('draws a new workflow with a visible Discard and no menu of one', () => {
@@ -304,7 +343,10 @@ describe('WorkflowsPanel editor', () => {
 
   it('redrafts existing steps at once without a confirm', async () => {
     connectProvider();
-    const original = makeWorkflow({ name: 'Plan and build', goal: 'Ship the ledger export' });
+    const original = makeWorkflow({
+      name: 'Plan and build',
+      description: 'Ship the ledger export',
+    });
     state.phaseTemplates = { 'ws-1': [original] };
     renderPanel();
     openWorkflow('Plan and build');
@@ -419,23 +461,63 @@ describe('WorkflowsPanel editor', () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
   });
 
-  it('duplicates a workflow as an independent preset from the menu', async () => {
-    const original = makeWorkflow({ name: 'Plan and build' });
+  it('fills a new workflow from the one duplicated and writes nothing until Create', async () => {
+    const original = makeWorkflow({
+      name: 'Plan and build',
+      description: 'The task needs a plan first',
+      entryCheck: 'Restate the outcome',
+      stopRule: 'The ask is unclear',
+      isOrderKept: true,
+    });
     state.phaseTemplates = { 'ws-1': [original] };
     state.savePhaseTemplate = vi.fn(async (input: unknown) => ({
       ...original,
       ...(input as Record<string, unknown>),
       id: 'wf-copy',
-      steps: [],
     }));
+    vi.useFakeTimers();
     renderPanel();
     openWorkflow('Plan and build');
-    openMenuItem('Duplicate');
+    openMenuItem('Duplicate workflow');
+
+    expect(screen.getByRole('textbox', { name: 'Workflow name' })).toHaveProperty(
+      'value',
+      'Plan and build copy',
+    );
+    expect(screen.getByLabelText('First, check')).toHaveProperty('value', 'Restate the outcome');
+    screen.getByRole('button', { name: 'Step 1: Plan' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_000);
+    });
+    expect(state.savePhaseTemplate).not.toHaveBeenCalled();
+    vi.useRealTimers();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create workflow' }));
 
     await waitFor(() => expect(state.savePhaseTemplate).toHaveBeenCalledOnce());
     const input = state.savePhaseTemplate.mock.calls[0]?.[0];
     expect(input).not.toHaveProperty('id');
-    expect(input).toMatchObject({ name: 'Plan and build copy', isPreset: true, origin: 'custom' });
+    expect(input).toMatchObject({
+      name: 'Plan and build copy',
+      isPreset: true,
+      origin: 'custom',
+      entryCheck: 'Restate the outcome',
+      stopRule: 'The ask is unclear',
+      isOrderKept: true,
+    });
+  });
+
+  it('duplicates from a list row into the same form', () => {
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate Plan and build' }));
+
+    screen.getByRole('heading', { name: 'New workflow' });
+    expect(screen.getByRole('textbox', { name: 'Workflow name' })).toHaveProperty(
+      'value',
+      'Plan and build copy',
+    );
+    expect(state.savePhaseTemplate).not.toHaveBeenCalled();
   });
 
   it('undoes changes since the workflow was opened', () => {
@@ -481,14 +563,7 @@ describe('WorkflowsPanel editor', () => {
     state.workflowStudioDrafts = {
       'ws-1': {
         workflowId: 'wf-1',
-        form: {
-          name: 'Plan and build, revised',
-          description: '',
-          goal: '',
-          steps: [draftStep()],
-          origin: 'custom',
-          isPreset: true,
-        },
+        form: draftForm({ name: 'Plan and build, revised', steps: [draftStep()] }),
       },
     };
     state.savePhaseTemplate = vi.fn(async (input: unknown) => ({
@@ -550,14 +625,7 @@ describe('WorkflowsPanel editor', () => {
     state.workflowStudioDrafts = {
       'ws-1': {
         workflowId: 'wf-1',
-        form: {
-          name: 'Plan and build, emptied',
-          description: '',
-          goal: '',
-          steps: [],
-          origin: 'custom',
-          isPreset: true,
-        },
+        form: draftForm({ name: 'Plan and build, emptied' }),
       },
     };
     renderPanel();
