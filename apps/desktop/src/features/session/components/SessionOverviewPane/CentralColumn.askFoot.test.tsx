@@ -111,6 +111,16 @@ describe('the Ask foot of the Overview', () => {
     within(foot).getByPlaceholderText('Ask about this session');
   });
 
+  it('keeps the field to one line: the hint and Send, with no model picker', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    await show();
+    const foot = askFoot();
+
+    within(foot).getByRole('button', { name: 'Send' });
+    expect(within(foot).queryByText(/Sonnet/)).toBeNull();
+    expect(foot.querySelector('[data-testid="ask-composer"]')).not.toBeNull();
+  });
+
   it('hides while the pane is open and returns when it closes', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();

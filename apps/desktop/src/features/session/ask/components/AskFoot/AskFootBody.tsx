@@ -36,6 +36,7 @@ export const AskFootBody = ({ session }: Props) => {
         sessionId={sessionId}
         placeholder={FOOT_HINT}
         isAutoFocused={false}
+        isInline
         isStreaming={false}
         isStopping={false}
         onSend={ask}

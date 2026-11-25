@@ -65,6 +65,7 @@ type Props = {
   readonly minRows?: number;
   readonly maxRows?: number;
   readonly variant?: 'card' | 'bare';
+  readonly isInline?: boolean;
   readonly header?: ReactNode;
   readonly footerStart?: ReactNode;
   readonly model?: ReactNode;
@@ -104,6 +105,7 @@ export const PromptField = ({
   minRows = 2,
   maxRows = 12,
   variant = 'card',
+  isInline = false,
   header,
   footerStart,
   model,
@@ -237,11 +239,12 @@ export const PromptField = ({
   }
 
   const hasFooter =
-    files !== undefined ||
-    footerStart != null ||
-    model != null ||
-    actions != null ||
-    hints.length > 0;
+    !isInline &&
+    (files !== undefined ||
+      footerStart != null ||
+      model != null ||
+      actions != null ||
+      hints.length > 0);
 
   return (
     <ComposerSurface
@@ -261,7 +264,14 @@ export const PromptField = ({
       {header}
       <ComposerAttachments attachments={attachments} onRemove={(id) => files?.onRemove(id)} />
       {tabs}
-      {body}
+      {isInline ? (
+        <div className="flex items-center gap-2 pr-2">
+          <div className="min-w-0 flex-1">{body}</div>
+          <div className="flex shrink-0 items-center">{actions}</div>
+        </div>
+      ) : (
+        body
+      )}
       {notice !== null && notice !== '' ? (
         <p role="alert" className="px-3 pb-1 text-meta text-warning">
           {notice}

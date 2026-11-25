@@ -21,12 +21,14 @@ type Props = {
   readonly isAutoFocused?: boolean;
   readonly hasTurns?: boolean;
   readonly placeholder?: string;
+  readonly isInline?: boolean;
 };
 
 export const AskComposer = ({
   sessionId,
   hasTurns = false,
   placeholder,
+  isInline = false,
   isStreaming,
   isStopping,
   onSend,
@@ -76,7 +78,8 @@ export const AskComposer = ({
       maxRows={6}
       fieldRef={fieldRef}
       testId="ask-composer"
-      model={<AskRoutingPicker sessionId={sessionId} />}
+      isInline={isInline}
+      model={isInline ? undefined : <AskRoutingPicker sessionId={sessionId} />}
       onSend={({ text: question }) => onSend(question)}
       onStop={onStop}
     />
