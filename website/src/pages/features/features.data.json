@@ -584,6 +584,12 @@
           "also": "runs of a workflow"
         },
         {
+          "title": "Create and edit a workflow",
+          "text": "One page asks for a name, when to use it, what to check first and when to stop and ask. Nothing is saved until you create it.",
+          "group": "Workflows",
+          "also": "create a workflow"
+        },
+        {
           "title": "Saved steps",
           "text": "Reuse steps across workflows. The built-in steps are read-only, and Save a copy makes your own.",
           "group": "Workflows",
