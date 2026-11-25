@@ -26,7 +26,7 @@ export const SITE = {
   security: `${BLOB}/SECURITY.md`,
   privacy: '/privacy',
   cookies: '/cookies',
-  controller: { name: 'Amin Khayam', email: 'aa.khayam99@gmail.com' },
+  controller: { name: 'Amin Khayam', email: 'privacy@goodboy-ai.dev' },
   brew: 'brew install --cask akhayam99/tap/goodboy',
   x: 'https://x.com/GoodboyWorks',
 } as const;
