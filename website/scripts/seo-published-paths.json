@@ -1,5 +1,6 @@
 [
   "/",
+  "/agentic-coding-glossary",
   "/agentic-development-environment",
   "/changelog",
   "/changelog/0.11.1",
@@ -86,6 +87,8 @@
   "/changelog/0.31.7",
   "/changelog/0.31.8",
   "/changelog/0.31.9",
+  "/context-handoff-between-coding-agents",
+  "/control-coding-agent-costs",
   "/docs",
   "/docs/agents",
   "/docs/artifacts",
@@ -106,5 +109,10 @@
   "/docs/switching",
   "/docs/workflows",
   "/docs/workspace",
-  "/features"
+  "/features",
+  "/fix-pr-review-comments-with-ai",
+  "/git-worktrees-for-ai-coding-agents",
+  "/multi-repo-changes-with-coding-agents",
+  "/run-multiple-coding-agents-in-parallel",
+  "/use-claude-code-codex-cursor-gemini-copilot-together"
 ]

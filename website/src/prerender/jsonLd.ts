@@ -1,7 +1,8 @@
 import PROVIDER_SOURCES from '../components/brandIcons.source.json';
 import { BUILD_ASSET_URLS } from '../lib/downloads';
 import { SITE } from '../lib/site';
-import { ADE_GUIDE } from '../pages/content/adeGuide';
+import type { GuideFaq } from '../pages/content/Guide';
+import { guideFaqOf } from '../pages/content/guides/guideFaqOf';
 import type { PageKind, PageMeta } from './PageMeta';
 import { RELEASES } from './RELEASES';
 import { STATIC_PAGES } from './STATIC_PAGES';
@@ -97,11 +98,15 @@ const breadcrumbList = ({ page }: Params) => ({
   })),
 });
 
-const faqPage = ({ page }: Params) => ({
+type FaqParams = Params & {
+  readonly faq: GuideFaq;
+};
+
+const faqPage = ({ page, faq }: FaqParams) => ({
   '@type': 'FAQPage',
   '@id': `${SITE.origin}${page.path}#faq`,
   isPartOf: { '@id': `${SITE.origin}${page.path}#webpage` },
-  mainEntity: ADE_GUIDE.faq.items.map((item) => ({
+  mainEntity: faq.items.map((item) => ({
     '@type': 'Question',
     name: item.question,
     acceptedAnswer: { '@type': 'Answer', text: item.answer },
@@ -131,13 +136,14 @@ const webPage = ({ page }: Params) => {
 };
 
 export const jsonLd = ({ page }: Params) => {
+  const faq = page.kind === 'guide' ? guideFaqOf({ path: page.path }) : undefined;
   const graph = [
     organization(),
     website(),
     software(),
     ...(page.kind === 'not-found' ? [] : [webPage({ page })]),
     ...(page.kind !== 'not-found' && page.crumbs.length > 1 ? [breadcrumbList({ page })] : []),
-    ...(page.isIndexed && page.kind === 'guide' ? [faqPage({ page })] : []),
+    ...(page.isIndexed && faq !== undefined ? [faqPage({ page, faq })] : []),
   ];
   const json = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph });
   return `<script type="application/ld+json">${json.replace(/</g, '\\u003c')}</script>`;

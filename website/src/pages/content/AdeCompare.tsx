@@ -1,7 +1,7 @@
 import { ADE_GUIDE } from './adeGuide';
 
 export const AdeCompare = () => (
-  <section className="adeSection" aria-labelledby="ade-compare">
+  <section className="guideSection" aria-labelledby="ade-compare">
     <div className="prose adeCompare">
       <h2 id="ade-compare">{ADE_GUIDE.compare.heading}</h2>
       <p>{ADE_GUIDE.compare.intro}</p>
