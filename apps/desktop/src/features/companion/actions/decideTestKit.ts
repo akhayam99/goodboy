@@ -20,6 +20,7 @@ export const QUESTION = {
   sessionId: SESSION,
   text: 'Which currency does the ledger use?',
   suggestedAnswers: ['EUR', 'USD'],
+  createdAt: AT,
   status: 'open',
   createdByAgentId: AGENT,
 };

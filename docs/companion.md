@@ -64,11 +64,12 @@ rules, kept in `features/companion/actions/`:
   plan version, the hash of the tool and its input, the limit, the run or agent
   state, the draft. The Mac compares and refuses with a code, a message and the
   list of what changed. A stop or continue that already holds is a no-op.
-- The Mac mints each action id into the projection that offers the action, so a
-  phone cannot invent one. The executor keeps the last 500 finished outcomes and
-  answers a repeated id with the first outcome and `isReplay: true`. An id that
-  is still running is refused as a duplicate. A failed action is not kept, so a
-  retry with the same id runs again.
+- The action id is `act:<kind>:<objectId>:<version>`, built by the Mac in the
+  projection that offers the action, so a retry reuses it. The executor
+  recomputes it from the action's own fields and refuses an id that differs. It
+  keeps the last 500 finished outcomes and answers a repeated id with the first
+  outcome and `isReplay: true`. An id that is still running is refused as a
+  duplicate. A failed action is not kept, so a retry with the same id runs again.
 - Each action has its own rate limit per minute and a text cap of 4,000
   characters. A limit is raised only to an amount the Mac offered (the current
   limit plus 5, plus 10 or doubled, never above $500), and a raise can be undone

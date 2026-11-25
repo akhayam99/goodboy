@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearActionLedger } from './actionLedger';
 import { RATE_WINDOWS, clearRateSlots } from './actionLimits';
-import { clearActionRegistry, mintActionId } from './actionRegistry';
+import { expectedActionIdOf } from './actionIds';
 import {
   AGENT,
   DRAFT,
@@ -129,14 +129,11 @@ type RunParams = {
   readonly now?: number;
 };
 
-const mintFor = ({ kase }: { readonly kase: Case }): string =>
-  mintActionId({ kind: kase.kind, workspaceId: WORKSPACE, sessionId: SESSION });
-
 const run = ({ kit, kase, overrides = {}, actionId, phoneId = 'phone-1', now }: RunParams) => {
   const action = parseDecideAction({
     raw: {
       kind: kase.kind,
-      actionId: actionId ?? mintFor({ kase }),
+      actionId: 'placeholder',
       workspaceId: WORKSPACE,
       sessionId: SESSION,
       ...kase.fields,
@@ -147,7 +144,7 @@ const run = ({ kit, kase, overrides = {}, actionId, phoneId = 'phone-1', now }: 
     throw new Error(`test action ${kase.kind} did not parse`);
   }
   return executeDecideAction({
-    action,
+    action: { ...action, actionId: actionId ?? expectedActionIdOf({ action }) },
     phoneId,
     getStore: () => kit.store,
     ports: kit.ports,
@@ -157,7 +154,6 @@ const run = ({ kit, kase, overrides = {}, actionId, phoneId = 'phone-1', now }: 
 
 beforeEach(() => {
   clearActionLedger();
-  clearActionRegistry();
   clearRateSlots();
   clearLimitUndos();
   resetDecideScope();
@@ -181,9 +177,8 @@ describe.each(CASES)('$kind', (kase) => {
 
   it('replays the first outcome for the same action id', async () => {
     const kit = buildTestStore({ state: kase.state ?? {} });
-    const actionId = mintFor({ kase });
-    const first = await run({ kit, kase, actionId });
-    const second = await run({ kit, kase, actionId });
+    const first = await run({ kit, kase });
+    const second = await run({ kit, kase });
     expect(first.isReplay).toBe(false);
     expect({ replay: second.isReplay, result: second.result }).toEqual({
       replay: true,
@@ -196,8 +191,10 @@ describe.each(CASES)('$kind', (kase) => {
     const kit = buildTestStore({ state: kase.state ?? {} });
     const { max } = RATE_WINDOWS[kase.kind];
     for (let index = 0; index < max; index += 1) {
+      clearActionLedger();
       await run({ kit, kase, now: 1000 });
     }
+    clearActionLedger();
     const outcome = await run({ kit, kase, now: 1000 });
     expect(outcome.refusal?.code).toBe('rate-limited');
   });

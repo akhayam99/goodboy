@@ -1,4 +1,4 @@
-import type { OpenQuestion, IntegrationDraft } from '@goodboy/types';
+import type { IntegrationDraft } from '@goodboy/types';
 
 const FNV_OFFSET = 0xcbf29ce484222325n;
 const FNV_PRIME = 0x100000001b3n;
@@ -43,11 +43,10 @@ export const permissionHashOf = ({ toolName, input }: PermissionParams): string 
   digestOf({ text: `${toolName}\u0000${stableJsonOf({ value: input })}` });
 
 type QuestionParams = {
-  readonly question: Pick<OpenQuestion, 'text' | 'suggestedAnswers'>;
+  readonly question: { readonly createdAt: string };
 };
 
-export const questionVersionOf = ({ question }: QuestionParams): string =>
-  digestOf({ text: `${question.text}\u0000${question.suggestedAnswers.join('\u0001')}` });
+export const questionVersionOf = ({ question }: QuestionParams): string => question.createdAt;
 
 type DraftParams = {
   readonly draft: Pick<IntegrationDraft, 'body' | 'updatedAt'>;

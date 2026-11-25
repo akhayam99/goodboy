@@ -1,4 +1,4 @@
-import { mintActionId } from './actionRegistry';
+import { expectedActionIdOf } from './actionIds';
 import { limitOffersOf } from './actionLimits';
 import type { HandlerParams, HandlerResult } from './handlerTypes';
 import type { DecideActionOf } from './decideAction';
@@ -42,10 +42,15 @@ export const raiseLimit = async ({
     console.error('[bridge] raiseLimit failed', error);
     return failedResult({ error: 'Could not raise the limit.' });
   }
-  const undoActionId = mintActionId({
-    kind: 'undoRaiseLimit',
-    workspaceId: action.workspaceId,
-    sessionId: action.sessionId,
+  const undoActionId = expectedActionIdOf({
+    action: {
+      kind: 'undoRaiseLimit',
+      actionId: '',
+      workspaceId: action.workspaceId,
+      sessionId: action.sessionId,
+      runId: action.runId,
+      raisedActionId: action.actionId,
+    },
   });
   saveLimitUndo({
     raisedActionId: action.actionId,

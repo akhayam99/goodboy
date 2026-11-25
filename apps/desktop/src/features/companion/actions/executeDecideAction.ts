@@ -2,7 +2,7 @@ import type { ActionOutcome, Refusal } from '../contract/actions';
 import type { AppStore } from '../../../store/store';
 import { beginAction, endAction, isInFlight, recordOutcome, replayOf } from './actionLedger';
 import { takeRateSlot } from './actionLimits';
-import { offeredActionOf } from './actionRegistry';
+import { expectedActionIdOf } from './actionIds';
 import { answerPermission } from './answerPermission';
 import { answerQuestion } from './answerQuestion';
 import { answerSlackReply } from './answerSlackReply';
@@ -137,13 +137,7 @@ export const executeDecideAction = async ({
       message: 'This action is already running on your Mac.',
     });
   }
-  const offered = offeredActionOf({ actionId: action.actionId });
-  if (
-    offered === null ||
-    offered.kind !== action.kind ||
-    offered.workspaceId !== action.workspaceId ||
-    offered.sessionId !== action.sessionId
-  ) {
+  if (expectedActionIdOf({ action }) !== action.actionId) {
     return plainRefusal({
       action,
       code: 'unknown-target',

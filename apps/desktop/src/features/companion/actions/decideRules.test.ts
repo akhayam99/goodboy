@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearActionLedger } from './actionLedger';
 import { MAX_RAISED_LIMIT_USD, clearRateSlots, limitOffersOf } from './actionLimits';
-import { clearActionRegistry, mintActionId } from './actionRegistry';
+import { expectedActionIdOf } from './actionIds';
 import {
   AGENT,
   QUESTION_ID,
@@ -13,7 +13,6 @@ import {
   buildTestStore,
   fixtureOf,
 } from './decideTestKit';
-import type { DecideAction, DecideKind } from './decideAction';
 import { executeDecideAction } from './executeDecideAction';
 import { clearLimitUndos } from './limitUndos';
 import { parseDecideAction } from './parseDecideAction';
@@ -22,9 +21,6 @@ import { transcriptEntriesOf } from './transcriptOf';
 import type { TurnEvent } from '@goodboy/types';
 
 type Raw = Readonly<Record<string, unknown>>;
-
-const mint = ({ kind }: { readonly kind: DecideKind }): string =>
-  mintActionId({ kind, workspaceId: WORKSPACE, sessionId: SESSION });
 
 type ExecParams = {
   readonly kit: ReturnType<typeof buildTestStore>;
@@ -37,7 +33,7 @@ const exec = ({ kit, raw }: ExecParams) => {
     throw new Error('test action did not parse');
   }
   return executeDecideAction({
-    action,
+    action: { ...action, actionId: expectedActionIdOf({ action }) },
     phoneId: 'phone-1',
     getStore: () => kit.store,
     ports: kit.ports,
@@ -46,7 +42,6 @@ const exec = ({ kit, raw }: ExecParams) => {
 
 beforeEach(() => {
   clearActionLedger();
-  clearActionRegistry();
   clearRateSlots();
   clearLimitUndos();
   resetDecideScope();
@@ -64,7 +59,7 @@ describe('the amounts a phone may raise a limit to', () => {
       kit,
       raw: {
         kind: 'raiseLimit',
-        actionId: mint({ kind: 'raiseLimit' }),
+        actionId: 'placeholder',
         runId: RUN,
         seenLimit: 10,
         offeredAmount: 9999,
@@ -80,7 +75,7 @@ describe('the amounts a phone may raise a limit to', () => {
       kit,
       raw: {
         kind: 'raiseLimit',
-        actionId: mint({ kind: 'raiseLimit' }),
+        actionId: 'placeholder',
         runId: RUN,
         seenLimit: 10,
         offeredAmount: 15,
@@ -108,7 +103,7 @@ describe('the amounts a phone may raise a limit to', () => {
       kit,
       raw: {
         kind: 'raiseLimit',
-        actionId: mint({ kind: 'raiseLimit' }),
+        actionId: 'placeholder',
         runId: RUN,
         seenLimit: 10,
         offeredAmount: 15,
@@ -134,7 +129,7 @@ describe('what the executor remembers', () => {
     kit.actions.answerOpenQuestions.mockRejectedValueOnce(new Error('offline'));
     const raw = {
       kind: 'answerQuestion',
-      actionId: mint({ kind: 'answerQuestion' }),
+      actionId: 'placeholder',
       questionId: QUESTION_ID,
       seenVersion: QUESTION_VERSION,
       text: 'EUR',
@@ -159,7 +154,7 @@ describe('what the executor remembers', () => {
     );
     const raw = {
       kind: 'answerQuestion',
-      actionId: mint({ kind: 'answerQuestion' }),
+      actionId: 'placeholder',
       questionId: QUESTION_ID,
       seenVersion: QUESTION_VERSION,
       text: 'EUR',
@@ -195,7 +190,7 @@ describe('what the executor remembers', () => {
       kit,
       raw: {
         kind: 'answerPermission',
-        actionId: mint({ kind: 'answerPermission' }),
+        actionId: 'placeholder',
         agentId: AGENT,
         requestId: 'tool-use-1',
         seenInputHash: 'x',
