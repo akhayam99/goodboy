@@ -3,7 +3,7 @@ import { escapeHtml } from './escapeHtml';
 import { jsonLd } from './jsonLd';
 import type { PageMeta } from './PageMeta';
 
-const OG_IMAGE = `${SITE.origin}/og-image.png?v=4`;
+const OG_IMAGE = `${SITE.origin}/og-image.png?v=5`;
 const OG_IMAGE_ALT =
   'Goodboy, a free desktop ADE built in public: Stop re-explaining yourself, with the coding agents and tools it works with';
 const AUTHOR = 'Amin Khayam';
