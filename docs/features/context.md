@@ -4,7 +4,11 @@ What one agent learns, the next one reads. The goal, decisions and a running sum
 
 ### Decisions
 
-Record a decision once and have the agents after it read it. Each one gets a number, and replacing or withdrawing it needs a reason that stays next to it. Changed decisions appear first with **Added**, **Reworded**, **Withdrawn** or their replacement number. Each decision appears once, and closed rows stay struck through until **Mark as read** succeeds. Click a decision for **Edit** and **Remove**; **Undo** stays while the **Context** tab is open.
+Record a decision once and have the agents after it read it. Each one gets a number, and replacing or withdrawing it needs a reason that stays next to it.
+
+Changed decisions appear first, marked **Added**, **Reworded**, **Withdrawn** or with their replacement number. Closed rows stay struck through until **Mark as read** succeeds.
+
+Click a decision for **Edit** and **Remove**. **Undo** stays while the **Context** tab is open.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-decisions-dark.webp">
@@ -19,7 +23,14 @@ Read the reason behind a decision without opening the run. When Goodboy records 
 
 ### Running summary
 
-Hand the next agent where things stand. After a reply the Context tab opens on the **State**: a glyph, a count of blockers or of steps left, and the State's first sentence. Each blocker gets its own row with a warning glyph, and the rest of the State follows. The Summary card lists **Next** as numbered steps, the first one leading, and **Learned** as facts. Each group shows three and opens the rest with one **Show all**. Code reads in quiet mono, and a long path is shortened in the middle with the full path on hover. Open questions have their own **Questions** tab. Copied context and agent prompts keep the complete summary.
+Hand the next agent where things stand. After a reply the Context tab opens on the **State**: a glyph, a count of blockers or of steps left, and the State's first sentence. Each blocker gets its own row with a warning glyph.
+
+The Summary card has two groups:
+
+- **Next**: numbered steps, the first one leading.
+- **Learned**: facts.
+
+Each group shows three and opens the rest with **Show all**. A long path is shortened in the middle, with the full path on hover. Open questions have their own **Questions** tab. Copied context and agent prompts keep the complete summary.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-summary-dark.webp">
@@ -32,7 +43,9 @@ Hand the next agent where things stand. After a reply the Context tab opens on t
 
 Open goal, decisions, summary and explanations in the **Context** tab, with Projects and Linked beside them, and copy them with **Copy context**. The **State** of the running summary leads the tab, then Projects and Linked, then the cards from Goal down.
 
-Every card has the same head: its title, a count from two, and its actions on the right. Goal, Decisions and Summary each have one menu: **Edit**, **Versions** and **Change visibility**. **Context updates** heads the tab with **Copy context** on the same line; it shows the last update and its model and cost, and **Update now** runs one on demand. An empty card says what it will hold and offers one action. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
+Every card has the same head: its title, a count from two, and its actions on the right. Goal, Decisions and Summary each have one menu with **Edit**, **Versions** and **Change visibility**. An empty card says what it will hold and offers one action.
+
+**Context updates** heads the tab, with **Copy context** on the same line. It shows the last update with its model and cost, and **Update now** runs one on demand. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-dark.webp">
@@ -43,9 +56,15 @@ Every card has the same head: its title, a count from two, and its actions on th
 
 ### Who receives what
 
-See which agents read each part of the context. **Change visibility** in the card menu lists the roles that receive that part. Planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and you always see everything. Agents the Lead starts read only their brief, so the line says "Lead children read only their brief" on every part but the goal.
+See which agents read each part of the context. **Change visibility** in the card menu lists the roles that receive that part.
 
-The **What Goodboy sends** card shows what each agent gets before it starts. It lists the default parts for each role, and roles that receive the same parts share a row. Each part shows its size in tokens, and each row its total against the brief's limit. A part with nothing in it is greyed out. Agents the Lead starts have their own row: they read only the goal. An Ask question has its own row with its live work limit. Under **Context window**, each running agent shows how full its context is in its current provider's conversation.
+- Planners, implementers, reviewers, debuggers and resolvers get the decisions. Scouts and docs agents do not.
+- You always see everything.
+- Agents the Lead starts read only their brief, so every part but the goal says "Lead children read only their brief".
+
+The **What Goodboy sends** card shows what each agent gets before it starts. It lists the default parts for each role, and roles that receive the same parts share a row. Each part shows its size in tokens, and each row its total against the brief's limit. A part with nothing in it is greyed out.
+
+Two roles have their own row. Agents the Lead starts read only the goal. An Ask question shows its live work limit. Under **Context window**, each running agent shows how full its context is.
 
 ### Explanations
 

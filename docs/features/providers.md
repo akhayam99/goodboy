@@ -34,7 +34,32 @@ When no provider can take the turn, because you pinned the model or only one pro
 
 ### Provider order and Auto
 
-Choose which providers a workspace uses and in what order. **Provider order**, in **Settings › This workspace › Models**, lists them, and you set each one to **On**, **Backup only** or **Off**. **Provider priority** decides when several providers fit: **By order**, your order wins and a provider at 80% of its limit goes after the rest, or **By load**, the provider that has used the least of its limit wins, then the one with fewer recent agents, then your order. New workspaces start on By order. **Room right now** shows how much each provider has used, marked estimated when it gives no reading. **Never picked** lists what a pick can never land on, and **Last 5 hours** counts the agents on each provider. Each role shows what Auto picks for it on fixed columns (model with its mark, effort, Auto or Pinned). A pin that cannot run shows a warning glyph whose tooltip says why, and one line above the roles offers **Back to Auto** for those. Auto also sizes each agent by its step: open a role to read what a small, a normal and a large step run, and the candidates the Lead picks from right now, with a check on the one your priority prefers. Each background task shows the model it uses. While the workspace has an older plan run, **Older plan runs** under Runs sets its orchestrator's model, and **Models in older plan runs** under **Choosing models**, off by default, lets that orchestrator name the model of each step itself (otherwise it says how hard the step is and Goodboy picks).
+Choose which providers a workspace uses and in what order. Open **Settings › This workspace › Models**.
+
+#### Provider order
+
+**Provider order** lists your providers. Set each one to **On**, **Backup only** or **Off**.
+
+**Provider priority** decides which provider wins when several fit:
+
+- **By order**: your order wins, and a provider at 80% of its limit goes after the rest. New workspaces start here.
+- **By load**: the provider that has used the least of its limit wins, then the one with fewer recent agents, then your order.
+
+Under the order, three lines help you read the state:
+
+- **Room right now** shows how much each provider has used, marked estimated when it gives no reading.
+- **Never picked** lists what a pick can never land on.
+- **Last 5 hours** counts the agents on each provider.
+
+#### What Auto picks
+
+Each role shows what Auto picks for it: the model with its mark, the effort, and Auto or Pinned. A pin that cannot run shows a warning glyph with the reason in its tooltip. One line above the roles offers **Back to Auto** for those pins.
+
+Auto also sizes each agent by its step. Open a role to read what a small, a normal and a large step run. The same view lists the candidates the Lead picks from right now, with a check on the one your priority prefers. Each background task shows the model it uses.
+
+#### Older plan runs
+
+While the workspace has an older plan run, **Older plan runs** under Runs sets its orchestrator's model. **Models in older plan runs** under **Choosing models** is off by default. Turn it on to let that orchestrator name the model of each step. Otherwise it says how hard the step is and Goodboy picks.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-dark.webp">
