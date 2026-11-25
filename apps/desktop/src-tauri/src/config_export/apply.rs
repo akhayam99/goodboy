@@ -267,8 +267,9 @@ pub(super) fn apply_bundle(
             conn.execute(
                 "INSERT INTO workflows
                    (id, workspace_id, name, description, created_at, updated_at,
-                    is_preset, origin, goal, process_text)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+                    is_preset, origin, goal, process_text, entry_check, stop_rule,
+                    then_suggest_id, is_order_kept)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, COALESCE(?14, 0))
                  ON CONFLICT(id) DO UPDATE SET
                    name        = excluded.name,
                    description = excluded.description,
@@ -276,7 +277,12 @@ pub(super) fn apply_bundle(
                    is_preset   = excluded.is_preset,
                    origin      = excluded.origin,
                    goal        = excluded.goal,
-                   process_text = excluded.process_text",
+                   process_text = excluded.process_text,
+                   entry_check = IIF(?14 IS NULL, workflows.entry_check, excluded.entry_check),
+                   stop_rule   = IIF(?14 IS NULL, workflows.stop_rule, excluded.stop_rule),
+                   then_suggest_id = IIF(?14 IS NULL, workflows.then_suggest_id,
+                                         excluded.then_suggest_id),
+                   is_order_kept  = IIF(?14 IS NULL, workflows.is_order_kept, excluded.is_order_kept)",
                 rusqlite::params![
                     t.id,
                     t.workspace_id,
@@ -288,6 +294,10 @@ pub(super) fn apply_bundle(
                     t.origin,
                     t.goal,
                     t.process_text,
+                    t.entry_check,
+                    t.stop_rule,
+                    t.then_suggest_id,
+                    t.is_order_kept.map(i64::from),
                 ],
             )?;
             for d in &t.steps {

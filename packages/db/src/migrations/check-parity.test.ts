@@ -13,6 +13,7 @@ import {
   SESSION_EVENT_KINDS,
 } from '@goodboy/types';
 import { describe, expect, it } from 'vitest';
+import { AGENT_TURN_PICK_SOURCES } from '../queries/agent-turn-pick';
 import { ARTIFACT_REVISION_AUTHORS } from '../queries/artifactRevision';
 import { AUTO_APPROVAL_STATES } from '../queries/auto-artifacts';
 import { AUTO_ATTEMPT_STATES } from '../queries/auto-attempts';
@@ -27,6 +28,7 @@ import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 type Values = ReadonlyArray<string>;
 
 const CHECKED_CONSTANTS: Readonly<Record<string, Values>> = {
+  'agent_turn_picks.source': AGENT_TURN_PICK_SOURCES,
   'artifact_revisions.author': ARTIFACT_REVISION_AUTHORS,
   'auto_artifacts.approval_state': AUTO_APPROVAL_STATES,
   'auto_attempts.state': AUTO_ATTEMPT_STATES,

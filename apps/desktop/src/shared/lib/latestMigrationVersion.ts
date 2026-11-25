@@ -1,1 +1,1 @@
-export const LATEST_MIGRATION_VERSION = 245;
+export const LATEST_MIGRATION_VERSION = 246;

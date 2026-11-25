@@ -161,7 +161,7 @@ CREATE TABLE "workflows" (
   is_preset INTEGER NOT NULL DEFAULT 1,
   goal TEXT,
   process_text TEXT,
-  origin TEXT,
+  origin TEXT, entry_check TEXT, stop_rule TEXT, then_suggest_id TEXT, is_order_kept INTEGER NOT NULL DEFAULT 0 CHECK (is_order_kept IN (0, 1)),
   FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
 );
 
@@ -1347,7 +1347,7 @@ CREATE TABLE "auto_trees" (
   updated_at INTEGER NOT NULL,
   hard_deadline_at INTEGER NOT NULL,
   scheduler_owner TEXT,
-  owner_lease_expires_at INTEGER, permissions TEXT NOT NULL DEFAULT '{}' CHECK (json_valid(permissions)),
+  owner_lease_expires_at INTEGER, permissions TEXT NOT NULL DEFAULT '{}' CHECK (json_valid(permissions)), guide TEXT CHECK (guide IS NULL OR json_valid(guide)),
   FOREIGN KEY (root_agent_id) REFERENCES agents(id) ON DELETE CASCADE,
   FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
   FOREIGN KEY (primary_mount_id) REFERENCES session_worktrees(id) ON DELETE SET NULL
@@ -1501,6 +1501,16 @@ CREATE TABLE work_events (
   ended_at INTEGER,
   exit_code INTEGER,
   payload_json TEXT NOT NULL DEFAULT '{}',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE agent_turn_picks (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL UNIQUE REFERENCES agent_turn_spans(run_id) ON DELETE CASCADE,
+  source TEXT NOT NULL CHECK (source IN ('lead', 'fallback', 'pinned', 'best')),
+  adjustment TEXT,
+  requested_model TEXT,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
