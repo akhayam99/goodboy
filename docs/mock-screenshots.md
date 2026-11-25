@@ -113,18 +113,20 @@ the yellow pill in the nav actions (a sheet link on narrow screens), the
 hero's text link and the install section on desktop, and the footer.
 
 Production deploys only on a release commit, so the demo always matches the
-version on the download page. The project's `ignoreCommand` runs
-`scripts/demo-ignore-build.mjs`: on `VERCEL_ENV=production` it builds only when
-the first line of `VERCEL_GIT_COMMIT_MESSAGE` is a release subject
-(`chore(repo): release X.Y.Z`, with or without ` (#N)`), and it skips every
-other push to `main`. A preview of another branch builds only when the branch
+version on the download page. Vercel creates no deployment on a push
+(`git.deploymentEnabled` is false in `apps/desktop/vercel.json`): the `vercel`
+workflow (`.github/workflows/vercel.yml`) runs
+`scripts/demo-ignore-build.mjs` and deploys with the Vercel CLI only when it
+says so. On `VERCEL_ENV=production` it builds only when a
+release subject (`chore(repo): release X.Y.Z`, with or without ` (#N)`) landed
+since the last ready production deploy, which the workflow reads from Vercel,
+or, when that commit is unknown, when the first line of
+`VERCEL_GIT_COMMIT_MESSAGE` is one. It skips every other push to `main`. A preview of another branch builds only when the branch
 changes what the demo shows: `apps/desktop/src`, `index.html`, `public`, `vite`,
 the Vite and TypeScript config, `package.json` and `vercel.json` of
 `apps/desktop`, `packages/*/src`, `packages/*/package.json`,
-`tsconfig.base.json` or `pnpm-lock.yaml`. A later push diffs against the
-branch's last deployed commit (`VERCEL_GIT_PREVIOUS_SHA`); a first push, or one
-whose last deploy the clone lacks, diffs against its merge base with
-`origin/main`. Vercel clones shallow, so `scripts/lib/changedSinceBaseOf.mjs`
+`tsconfig.base.json` or `pnpm-lock.yaml`. A pull request diffs against its merge base with `origin/main`. In a shallow
+clone `scripts/lib/changedSinceBaseOf.mjs`
 fetches `main` and deepens the clone, up to five times by 1000 commits, until
 the merge base appears, through
 `origin` or the GitHub repository Vercel names. When it still finds no base, or

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { brandId, type WorkflowRunId } from '@goodboy/types';
+import { brandId, type AgentId, type AutoTreeId, type WorkflowRunId } from '@goodboy/types';
 import { anAgent, aSession, aWorkflowRun } from '@goodboy/types/testing';
 import {
   aPlanRow,
@@ -39,6 +39,94 @@ describe('waitingRunOf', () => {
         reason: 'auto-needs-you',
       }),
     ).toEqual({ title: ASK, words: 'Needs approval', verb: 'Review plan', more: 0 });
+  });
+
+  it('names a held Lead run and offers its switch', () => {
+    const view = {
+      ...aView({ phase: 'done', rootAsk: ASK }),
+      hold: { reason: 'Not a bug', suggestion: 'Ship a feature', suggestionId: 'workflow-feature' },
+    };
+
+    expect(
+      waitingRunOf({
+        state: stateOf({ views: [view] }),
+        session: aSession({ id: FIXTURE_SESSION }),
+        reason: 'auto-needs-you',
+      }),
+    ).toEqual({
+      title: ASK,
+      words: 'Stopped on a check',
+      verb: 'Switch to Ship a feature',
+      more: 0,
+    });
+  });
+
+  it('names a held Lead run with no suggestion and opens the Lead', () => {
+    const view = {
+      ...aView({ phase: 'done', rootAsk: ASK }),
+      hold: { reason: 'Not a bug', suggestion: null, suggestionId: null },
+    };
+
+    expect(
+      waitingRunOf({
+        state: stateOf({ views: [view] }),
+        session: aSession({ id: FIXTURE_SESSION }),
+        reason: 'auto-needs-you',
+      })?.verb,
+    ).toBe('Open the Lead');
+  });
+
+  it('names the held Lead first when a newer Lead waits for plan approval', () => {
+    const olderRoot = anAgent({
+      id: brandId<AgentId>({ value: 'agent-auto-older' }),
+      sessionId: FIXTURE_SESSION,
+      kind: 'auto',
+      ordinal: 0,
+    });
+    const newerRoot = anAgent({
+      id: brandId<AgentId>({ value: 'agent-auto-newer' }),
+      sessionId: FIXTURE_SESSION,
+      kind: 'auto',
+      ordinal: 1,
+    });
+    const held = aView({ phase: 'done', rootAsk: ASK });
+    const planning = aView({
+      phase: 'waiting',
+      artifacts: [aPlanRow()],
+      rootAsk: 'Plan the export',
+    });
+    const state = {
+      ...stateOf({
+        views: [
+          {
+            ...planning,
+            tree: {
+              ...planning.tree,
+              id: brandId<AutoTreeId>({ value: 'tree-newer' }),
+              rootAgentId: newerRoot.id,
+            },
+          },
+          {
+            ...held,
+            tree: {
+              ...held.tree,
+              id: brandId<AutoTreeId>({ value: 'tree-older' }),
+              rootAgentId: olderRoot.id,
+            },
+            hold: { reason: 'Not a bug', suggestion: null, suggestionId: null },
+          },
+        ],
+      }),
+      sessionPhaseRuns: { [FIXTURE_SESSION]: [olderRoot, newerRoot] },
+    };
+
+    expect(
+      waitingRunOf({
+        state,
+        session: aSession({ id: FIXTURE_SESSION }),
+        reason: 'auto-needs-you',
+      })?.words,
+    ).toBe('Stopped on a check');
   });
 
   it('names no run for a reason that is not about a run', () => {

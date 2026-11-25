@@ -652,3 +652,80 @@ fn a_bundle_carrying_the_retired_classify_requests_key_imports_and_skips_it() {
         .unwrap();
     assert_eq!(retired, 0);
 }
+
+type GuideRow = (Option<String>, Option<String>, Option<String>, i64);
+
+fn guide_of(conn: &rusqlite::Connection, id: &str) -> GuideRow {
+    conn.query_row(
+        "SELECT entry_check, stop_rule, then_suggest_id, is_order_kept FROM workflows WHERE id = ?1",
+        [id],
+        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+    )
+    .expect("workflow imported")
+}
+
+#[test]
+fn workflow_check_stop_rule_and_suggestion_round_trip() {
+    let source = export_conn();
+    source
+        .execute_batch(
+            "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('w', 'W', 'w', 1, 1);
+             INSERT INTO workflows
+               (id, workspace_id, name, description, created_at, updated_at,
+                entry_check, stop_rule, then_suggest_id, is_order_kept)
+             VALUES ('wf-release', 'w', 'Harborline release', 'Cut a payments-api release', 1, 1,
+               'Check that main is green.', 'A check fails on main.', 'wf-ship', 1);",
+        )
+        .unwrap();
+    let bundle =
+        build_bundle(&source, &ExportGroups::default(), &HashSet::new()).expect("export failed");
+    assert_eq!(bundle.phase_templates[0].is_order_kept, Some(true));
+
+    let target = export_conn();
+    target
+        .execute_batch(
+            "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('w', 'W', 'w', 1, 1);",
+        )
+        .unwrap();
+    apply_bundle(&target, bundle, &HashMap::new(), &HashMap::new(), false).expect("import failed");
+
+    assert_eq!(
+        guide_of(&target, "wf-release"),
+        (
+            Some("Check that main is green.".to_string()),
+            Some("A check fails on main.".to_string()),
+            Some("wf-ship".to_string()),
+            1
+        )
+    );
+}
+
+#[test]
+fn a_bundle_from_before_the_check_keeps_the_check_already_saved() {
+    let conn = export_conn();
+    conn.execute_batch(
+        "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('w', 'W', 'w', 1, 1);
+         INSERT INTO workflows
+           (id, workspace_id, name, description, created_at, updated_at, entry_check, stop_rule)
+         VALUES ('wf-fix', 'w', 'Fix a bug', 'A bug', 1, 1, 'Reproduce it.', 'It works as designed.');",
+    )
+    .unwrap();
+    let mut bundle =
+        build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
+    let template = &mut bundle.phase_templates[0];
+    template.entry_check = None;
+    template.stop_rule = None;
+    template.is_order_kept = None;
+
+    apply_bundle(&conn, bundle, &HashMap::new(), &HashMap::new(), false).expect("import failed");
+
+    assert_eq!(
+        guide_of(&conn, "wf-fix"),
+        (
+            Some("Reproduce it.".to_string()),
+            Some("It works as designed.".to_string()),
+            None,
+            0
+        )
+    );
+}

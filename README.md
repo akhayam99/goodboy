@@ -39,7 +39,7 @@ Every task is a session, and the board shows where each one stands. What waits o
 
 ## Workflows
 
-A workflow splits a task into steps, such as scout, plan, implement and review. Each step is its own agent with its own role, model and effort, and it starts from a short brief. You choose how much it asks you and how much it may spend.
+A workflow splits a task into steps, such as scout, plan, implement and review. Each step is its own agent with its own role, model and effort, and it starts from a short brief. You choose how much it asks you and how much it may spend. The Lead follows a workflow as a guide: it reports the first check before any agent writes, and stops to ask you when the check fails.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">

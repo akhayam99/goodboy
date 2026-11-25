@@ -25,6 +25,17 @@ export const demoBuildDecisionOf = ({ env, git }) => {
   if ((env.VERCEL_ENV ?? '') !== 'production') {
     return changedSinceBaseOf({ env, paths: DEMO_PATHS, git });
   }
+  const previousSha = env.VERCEL_GIT_PREVIOUS_SHA ?? '';
+  if (previousSha !== '' && git({ args: ['cat-file', '-e', `${previousSha}^{commit}`] }).status === 0) {
+    const { status, stdout } = git({ args: ['log', '--format=%s', `${previousSha}..HEAD`] });
+    const release = status === 0 ? stdout.split('\n').find((line) => RELEASE_SUBJECT.test(line.trim())) : undefined;
+    if (release !== undefined) {
+      return { shouldBuild: true, reason: `release commit "${release.trim()}" since the last deploy` };
+    }
+    if (status === 0) {
+      return { shouldBuild: false, reason: 'no release commit since the last deploy' };
+    }
+  }
   const subject = (env.VERCEL_GIT_COMMIT_MESSAGE ?? '').split('\n')[0].trim();
   if (RELEASE_SUBJECT.test(subject)) {
     return { shouldBuild: true, reason: `release commit "${subject}"` };

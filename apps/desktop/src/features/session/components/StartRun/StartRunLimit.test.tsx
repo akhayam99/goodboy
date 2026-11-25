@@ -87,17 +87,26 @@ type KindParams = {
 
 const PLAN_CHOICES: Readonly<Record<string, string>> = {
   Lead: 'The Lead plans it',
-  Preset: 'Follow a workflow',
   Agent: 'One agent',
 };
 
-const kindTab = ({ name }: KindParams): HTMLElement =>
-  within(screen.getByRole('tablist', { name: 'Plan' })).getByRole('tab', {
-    name: PLAN_CHOICES[name] ?? name,
-  });
-
 const pickKind = ({ name }: KindParams): void => {
-  fireEvent.click(kindTab({ name }));
+  if (name === 'Preset') {
+    fireEvent.click(screen.getByRole('combobox', { name: 'Workflow' }));
+    fireEvent.click(screen.getByRole('option', { name: /^Fix a layout/ }));
+    return;
+  }
+  const pill = screen.queryByRole('combobox', { name: 'Workflow' });
+  if (name === 'Lead' && pill?.textContent?.includes('Auto') === false) {
+    fireEvent.click(pill);
+    fireEvent.click(screen.getByRole('option', { name: /^Auto/ }));
+    return;
+  }
+  fireEvent.click(
+    within(screen.getByRole('tablist', { name: 'Plan' })).getByRole('tab', {
+      name: PLAN_CHOICES[name] ?? name,
+    }),
+  );
 };
 
 type RenderParams = {

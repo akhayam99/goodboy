@@ -20,6 +20,8 @@ export type TurnPickCounts = Readonly<{
   knownTurns: number;
   pinnedTurns: number;
   leadPickTurns: number;
+  fallbackTurns: number;
+  bestTurns: number;
 }>;
 
 export type TurnRoleEntry = TurnPickCounts &
@@ -63,43 +65,17 @@ type GroupRow = {
   readonly known_turns: number;
   readonly pinned_turns: number;
   readonly lead_turns: number;
+  readonly fallback_turns: number;
+  readonly best_turns: number;
 };
-
-const PINNED_SOURCES = "('step_lock', 'run_role_lock', 'role_default')";
-
-const RAN_THE_LOCK = `COALESCE(json_extract(a.routing_lock, '$.pick.provider'), s.provider) = s.provider
-        AND COALESCE(json_extract(a.routing_lock, '$.pick.model'), s.model) = s.model`;
-
-const RAN_THE_DECISION = `COALESCE(json_extract(a.routing_decision, '$.selected.provider'), s.provider) = s.provider
-        AND COALESCE(json_extract(a.routing_decision, '$.selected.model'), s.model) = s.model`;
-
-const PICK_OF_TURN = `CASE
-      WHEN a.routing_lock IS NOT NULL AND ${RAN_THE_LOCK} THEN 'pinned'
-      WHEN json_extract(a.routing_decision, '$.source') IN ${PINNED_SOURCES}
-        AND ${RAN_THE_DECISION} THEN 'pinned'
-      WHEN d.routing_json IS NOT NULL
-        AND COALESCE(json_extract(d.routing_json, '$.proposal'), '') <> 'replaced'
-        AND (json_extract(d.routing_json, '$.pick.model') IS NOT NULL
-          OR json_extract(d.routing_json, '$.pick.provider') IS NOT NULL
-          OR json_extract(d.routing_json, '$.requested.model') IS NOT NULL
-          OR json_extract(d.routing_json, '$.requested.provider') IS NOT NULL) THEN 'lead'
-      WHEN d.routing_json IS NOT NULL OR a.routing_decision IS NOT NULL
-        OR a.routing_lock IS NOT NULL THEN 'picked'
-    END`;
 
 const selectGroups = ({ db, workspaceId, sinceMs }: TurnRoleInsightParams) =>
   db.select<GroupRow>(
     `WITH turn_picks AS (
        SELECT s.step_role, s.provider, s.model, s.effort, s.cost_usd, s.end_reason,
-              ${PICK_OF_TURN} AS pick
+              p.source AS pick
          FROM agent_turn_spans s
-         LEFT JOIN agents a ON a.id = s.agent_id
-         LEFT JOIN auto_delegations d ON d.rowid = (
-           SELECT latest.rowid FROM auto_delegations latest
-            WHERE latest.child_agent_id = s.agent_id AND latest.created_at <= s.started_at
-            ORDER BY latest.created_at DESC, latest.rowid DESC
-            LIMIT 1
-         )
+         LEFT JOIN agent_turn_picks p ON p.run_id = s.run_id
         WHERE s.workspace_id = ? AND s.ended_at >= ?
      )
      SELECT step_role, provider, model, effort,
@@ -107,9 +83,11 @@ const selectGroups = ({ db, workspaceId, sinceMs }: TurnRoleInsightParams) =>
             COUNT(cost_usd) AS priced_turns,
             COALESCE(SUM(cost_usd), 0) AS cost_usd,
             SUM(CASE WHEN end_reason = 'failed' THEN 1 ELSE 0 END) AS failed_turns,
-            SUM(CASE WHEN pick IS NOT NULL THEN 1 ELSE 0 END) AS known_turns,
+            COUNT(pick) AS known_turns,
             SUM(CASE WHEN pick = 'pinned' THEN 1 ELSE 0 END) AS pinned_turns,
-            SUM(CASE WHEN pick = 'lead' THEN 1 ELSE 0 END) AS lead_turns
+            SUM(CASE WHEN pick = 'lead' THEN 1 ELSE 0 END) AS lead_turns,
+            SUM(CASE WHEN pick = 'fallback' THEN 1 ELSE 0 END) AS fallback_turns,
+            SUM(CASE WHEN pick = 'best' THEN 1 ELSE 0 END) AS best_turns
        FROM turn_picks
       GROUP BY step_role, provider, model, effort`,
     [workspaceId, sinceMs ?? 0],
@@ -196,6 +174,8 @@ const picksOf = ({ rows }: EffortsParams): TurnPickCounts => ({
   knownTurns: sumOf({ values: rows.map((row) => row.known_turns) }),
   pinnedTurns: sumOf({ values: rows.map((row) => row.pinned_turns) }),
   leadPickTurns: sumOf({ values: rows.map((row) => row.lead_turns) }),
+  fallbackTurns: sumOf({ values: rows.map((row) => row.fallback_turns) }),
+  bestTurns: sumOf({ values: rows.map((row) => row.best_turns) }),
 });
 
 export const getTurnRoleInsight = async ({

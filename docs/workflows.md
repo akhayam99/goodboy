@@ -131,14 +131,25 @@ changed the button is not shown. A built-in whose name one of your
 own workflows now holds is left out. When an update brings a new built-in,
 every workspace gets it at the next launch, unless one of your workflows
 already has that name. A built-in you never had is not counted as deleted.
-A row opens the editor: the builder without its launch bar, with the same step
-tree, a breadcrumb back to the list, and autosave. The breadcrumb stays at the
-top; the name field steps aside while you read the steps. **Draft steps** asks an
-agent to write the steps from the goal. With steps already there it reads
-**Redraft steps**, starts at once, and offers an undo once the new steps land.
+A row opens the workflow page: the builder without its launch bar, with a
+breadcrumb back to the list, and autosave. Its fields run **Use it when**,
+**First, check**, **Stop and ask when**, **Then suggest**, the step tree,
+**Keep steps in order** and **Models**. The breadcrumb stays at the top; the
+name field steps aside while you read the steps. **Draft steps** asks an agent
+to write the steps from **Use it when** and **First, check**. With steps
+already there it reads **Redraft steps**, starts at once, and offers an undo
+once the new steps land.
+**New workflow** and **Duplicate workflow** open the same page for a workflow
+that does not exist yet: it starts from **Every run**, asks for a name first,
+and writes once, on **Create workflow**. Nothing autosaves before that.
+**Duplicate workflow** (the page menu and a button on each list row) fills the
+page from the source under the name "<name> copy". **Discard** goes back to the
+list at once and the toast offers **Undo**, which reopens the draft. **Models**
+shows each role of the steps muted while it follows Every run; a pick pins that
+model on every step of the role and **Reset** clears it, so the Lead's
+per-agent routing and the step pins of ux53 read it as any step pin.
 **Delete** on a workflow, **Delete** on a preset in the launch picker and
-**Remove** on a saved step act at once and the toast offers **Undo**; only a
-workflow that was never saved asks before it is discarded.
+**Remove** on a saved step act at once and the toast offers **Undo**.
 
 **Add step**, in the Studio and in the builder, opens a menu: a search field,
 **Blank step**, then the built-in steps and the steps saved in this workspace.
@@ -720,8 +731,8 @@ settled steps' summaries). On a stopped run the first run is then closed
 (`closeWorkflowRun`), so two runs never edit one branch; on a finished run, or
 an agent that finished, nothing is written to the first (`route.changedTo` is
 only parsed, for older runs). The router never adopts a workflow: a typed
-`~name` or the Plan row picks one, and `suggestedWorkflowOf` only names the
-best match for the "Looks like your workflow" line (`StartWorkflowSuggestion`).
+`~name` or the Workflow pill picks one, and `suggestedWorkflowOf` only names the
+best match on the pill, as "Auto · likely Fix a bug" (`StartWorkflowPill`).
 The settings keys `runs.defaultShape.session.<sessionId>` and
 `runs.defaultShape.<workspaceId>`, once written by **Start as**, are not read
 since 0.41.0 ([versioning.md](versioning.md), Retired state). Opening a preset run shows its page; the session rail stays
@@ -1062,7 +1073,7 @@ Everything below is the code behind the sections above.
 - `apps/desktop/src/store/slices/workflows/findIdleRuns.ts` and `sweepIdleRuns.ts`: the watchdog over orchestrated runs. `apps/desktop/src/features/workflows/hooks/useRunWatchdog/` drives it from `App`
 - `apps/desktop/src/store/slices/workflows/summarizerGate.ts`: `waitForSessionSummarizer`, the 60s wait on the session summarizer
 - `apps/desktop/src/features/workflows/runProviderPool.ts`: reads the provider pool of the run an agent belongs to. The run pool wins; outside a run, or for a run with none, a caller may pass the workspace pool (`features/auto/workspaceProviderPool.ts`: the providers the workspace policy does not turn off). Only Auto trees pass it today, through `autoChildPool`, which keeps Claude and Codex and never Cursor or Gemini
-- `apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowEditor/`: the Studio editor. It draws the plan with the shared step tree; `GoalField`, `BuilderTitleField` and `PlanDraftingBanner` sit beside it. `presetEdits.ts` marks the steps edited from their preset and `providerPool.ts` toggles the provider pool of a run, both in `features/workflows/`
+- `apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowEditor/`: the Studio editor. It draws the plan with the shared step tree; `GuideFields` (`NameField`, `UseItWhenField` on `GoalField`, `GuideTextField`, `ThenSuggestField`), `WorkflowStepRow`, `KeepOrderField`, `WorkflowModels`, `CreateActions`, `BuilderTitleField` and `PlanDraftingBanner` sit beside it. `presetEdits.ts` marks the steps edited from their preset and `providerPool.ts` toggles the provider pool of a run, both in `features/workflows/`
 - `apps/desktop/src/features/workflows/components/StepTree/`: the step tree (`StepTree`, `StepRow`, `StepEditor`). It draws steps with `WorkNode` and `WorkMeta`, and `StepEditor` mounts `RoutingPicker` with `presentation="inline"`. Polish and the estimate note are optional, so a host without a session leaves them out
 - `apps/desktop/src/features/workflows/components/WorkflowsPanel/`: the Studio. `useWorkflowEditor` owns the open workflow, autosave and Draft steps; `WorkflowStudio/WorkflowList` is the home and `WorkflowStudio/WorkflowEditor` the editor on the step tree. The Studio leaves the time and cost columns empty: a preset has no run to estimate from
 - `apps/desktop/src/store/slices/workflows/generateWorkflowTitle.ts`: renames a saved orchestrated run that started on the fallback name, with the same tagged reply as every generated title

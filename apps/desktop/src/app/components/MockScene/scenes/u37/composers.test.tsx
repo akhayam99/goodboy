@@ -21,6 +21,7 @@ import { U37_COMPOSER_SCENES } from './composers';
 
 const SETTLE_MS = 2_000;
 const TEST_TIMEOUT_MS = 30_000;
+const LAUNCHER_SCENES = /^u37-composer-(start-run|new-session)-/;
 const MODEL_PICKER = /^(Model routing|Model for this chat|Model for Ask|Model): /;
 
 type SceneName = keyof typeof U37_COMPOSER_SCENES;
@@ -73,7 +74,7 @@ describe('the u37 composer scenes', () => {
     }
   });
 
-  it.each(SCENE_NAMES)(
+  it.each(SCENE_NAMES.filter((name) => !LAUNCHER_SCENES.test(name)))(
     '%s draws a composer with its model picker in the footer',
     async (name) => {
       await mount(name);
@@ -84,6 +85,22 @@ describe('the u37 composer scenes', () => {
         );
         expect(withModel.length).toBeGreaterThan(0);
       });
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it.each(SCENE_NAMES.filter((name) => LAUNCHER_SCENES.test(name)))(
+    '%s draws a composer with no model picker, the model sits on the Where it runs line',
+    async (name) => {
+      await mount(name);
+
+      await vi.waitFor(() => {
+        expect(composerBoxes().length).toBeGreaterThan(0);
+        screen.getByRole('group', { name: 'Where it runs' });
+      });
+      for (const box of composerBoxes()) {
+        expect(within(box).queryAllByRole('button', { name: MODEL_PICKER })).toHaveLength(0);
+      }
     },
     TEST_TIMEOUT_MS,
   );

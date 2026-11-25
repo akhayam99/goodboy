@@ -101,6 +101,7 @@ import { m242TurnAdmissions } from './m242-turn-admissions';
 import { m243LeadPermissions } from './m243-lead-permissions';
 import { m244SessionDockGrids } from './m244-session-dock-grids';
 import { m245WorkEvents } from './m245-work-events';
+import { m246WorkflowGuides } from './m246-workflow-guides';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -495,4 +496,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 243, sql: m243LeadPermissions },
   { version: 244, sql: m244SessionDockGrids },
   { version: 245, sql: m245WorkEvents },
+  { version: 246, sql: m246WorkflowGuides },
 ];

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { WorkflowId, WorkspaceId } from '@goodboy/types';
+import { brandId, type WorkflowId, type WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 import { NotFoundError } from '../shared/errors';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
@@ -107,6 +107,43 @@ describe('saveWorkflow', () => {
       const second = await saveWorkflow(db, draft({ id: first.id, origin: undefined }));
 
       expect(second.origin).toBe('orchestrated');
+    });
+  });
+
+  describe('first check and stop rule', () => {
+    const GUIDE = {
+      entryCheck: 'Run the test ten times and confirm it fails at least once',
+      stopRule: 'It never fails, or it fails every time',
+      thenSuggestId: brandId<WorkflowId>({ value: 'wf-plan-and-ship' }),
+      isOrderKept: true,
+    };
+
+    it('saves and reads back the check, the stop rule, the suggestion and the order', async () => {
+      const saved = await saveWorkflow(db, draft(GUIDE));
+
+      expect(await getWorkflow(db, saved.id)).toMatchObject(GUIDE);
+    });
+
+    it('keeps each stored field a later save leaves out', async () => {
+      const first = await saveWorkflow(db, draft(GUIDE));
+
+      const second = await saveWorkflow(db, draft({ id: first.id, description: 'Renamed' }));
+
+      expect(second).toMatchObject({ ...GUIDE, description: 'Renamed' });
+    });
+
+    it('clears a field saved empty or as none, and the order saved off', async () => {
+      const first = await saveWorkflow(db, draft(GUIDE));
+
+      const second = await saveWorkflow(
+        db,
+        draft({ id: first.id, entryCheck: '', thenSuggestId: null, isOrderKept: false }),
+      );
+
+      expect(second.entryCheck).toBe('');
+      expect(second.stopRule).toBe(GUIDE.stopRule);
+      expect(second.thenSuggestId).toBeUndefined();
+      expect(second.isOrderKept).toBeUndefined();
     });
   });
 

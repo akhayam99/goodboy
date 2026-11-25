@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import { brandId, type SessionId, type WorkspaceId } from '@goodboy/types';
 
 const { invokeCommandSpy } = vi.hoisted(() => ({ invokeCommandSpy: vi.fn() }));
 
@@ -42,6 +42,10 @@ const workflowRow = (role: string | null) => ({
   description: 'Plan, build, fix',
   goal: null,
   processText: null,
+  entryCheck: null,
+  stopRule: null,
+  thenSuggestId: null,
+  isOrderKept: false,
   steps: [stepRow(role)],
   createdAt: '2026-10-07T10:00:00.000Z',
   updatedAt: '2026-10-07T10:00:00.000Z',
@@ -77,6 +81,38 @@ describe('workflow step roles on load', () => {
     const [workflow] = await invokeWorkflowList(WORKSPACE_ID);
 
     expect(workflow?.steps.map((step) => step.role)).toEqual(['reviewer']);
+  });
+
+  it('keeps the guide fields of a workflow in a workspace list and in a session run', async () => {
+    const guided = {
+      ...workflowRow('reviewer'),
+      entryCheck: 'A ledger fix is requested',
+      stopRule: 'Tests pass in ledger-core',
+      thenSuggestId: 'wf-next',
+      isOrderKept: true,
+    };
+    invokeCommandSpy.mockResolvedValue([guided]);
+
+    const [listed] = await invokeWorkflowList(WORKSPACE_ID);
+    const [forSession] = await invokeWorkflowsForSession(
+      brandId<SessionId>({ value: 'session-1' }),
+    );
+
+    for (const workflow of [listed, forSession]) {
+      expect(workflow?.entryCheck).toBe('A ledger fix is requested');
+      expect(workflow?.stopRule).toBe('Tests pass in ledger-core');
+      expect(workflow?.thenSuggestId).toBe('wf-next');
+      expect(workflow?.isOrderKept).toBe(true);
+    }
+  });
+
+  it('leaves the guide fields off a workflow that has none', async () => {
+    invokeCommandSpy.mockResolvedValue([workflowRow('reviewer')]);
+
+    const [workflow] = await invokeWorkflowList(WORKSPACE_ID);
+
+    expect(workflow).not.toHaveProperty('entryCheck');
+    expect(workflow).not.toHaveProperty('isOrderKept');
   });
 
   it('reads a saved step of the Resolve role as an Implement step', async () => {

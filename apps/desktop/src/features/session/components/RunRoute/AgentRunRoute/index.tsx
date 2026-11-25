@@ -1,10 +1,10 @@
-import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
+import { READ_FAILED } from '../../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { parseRunRoutes, runRoutesKey } from '../../startRun/runRoutesSetting';
-import { RunKindChip } from './RunKindChip';
-import { runKindPhaseOf } from './runKindPhaseOf';
+import { useAppStore } from '../../../../../store';
+import { parseRunRoutes, runRoutesKey } from '../../../startRun/runRoutesSetting';
+import { RunKindChip } from '../RunKindChip';
+import { runKindPhaseOf } from '../runKindPhaseOf';
 
 type Props = {
   readonly session: Session;
@@ -23,6 +23,11 @@ export const AgentRunRoute = ({ session, agentId }: Props) => {
   );
 
   const reportError = useAppStore((state) => state.reportError);
+  const changeCount = useAppStore(
+    (state) =>
+      state.autoTreeViews[sessionId]?.find((view) => view.tree.rootAgentId === agentId)?.guide
+        ?.deviations.length ?? 0,
+  );
   const status = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId]?.find((agent) => agent.id === agentId)?.status,
   );
@@ -45,7 +50,7 @@ export const AgentRunRoute = ({ session, agentId }: Props) => {
       workspaceId={session.workspaceId}
       target={target}
       route={route}
-      changeCount={0}
+      changeCount={changeCount}
       phase={runKindPhaseOf({
         agentCount: 1,
         isFinished: false,

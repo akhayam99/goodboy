@@ -39,6 +39,8 @@ export const AUTO_REFUSAL_USER_REASON = {
   not_returned: "it released an agent that wasn't waiting for it",
   message_limit: 'it sent that agent too many messages',
   not_running: "it wrote to an agent that wasn't working",
+  check_pending: 'the first check of the workflow is not reported yet',
+  held: 'the run is held until you answer',
 } as const satisfies Readonly<Record<AutoRefusalCode, string>>;
 
 type UserReasonParams = {

@@ -23,6 +23,7 @@ import {
 import type { SessionId } from '@goodboy/types';
 import { delegationClosedOf } from '../../../features/auto/delegationClosedOf';
 import { readAutoLevel } from '../../runtime/auto/level/readAutoLevel';
+import { readRunGuide } from '../../runtime/runGuide/readRunGuide';
 import { userImagesOf } from '../../runtime/auto/userImagesOf';
 import { deliveredResultsOf } from './deliveredResultsOf';
 import { hiddenChildIdsOf } from './hiddenChildIdsOf';
@@ -121,6 +122,7 @@ export const readAutoTreeViews = async ({
         grantAsks,
         snapshots,
         runSlots,
+        guide,
       ] = await Promise.all([
         listAutoDelegations({ db, treeId: tree.id }),
         listGoneAutoChildIds({ db, treeId: tree.id, sessionId }),
@@ -132,6 +134,7 @@ export const readAutoTreeViews = async ({
         listAutoGrantsOfTree({ db, treeId: tree.id }),
         listAutoLaunchSnapshotsOfTree({ db, treeId: tree.id }),
         readAutoRunSlots({ db, treeId: tree.id }),
+        readRunGuide({ db, treeId: tree.id }),
       ]);
       const discardedChildIds = delegations
         .filter((delegation) => delegationClosedOf({ delegation })?.as === 'discarded')
@@ -148,6 +151,24 @@ export const readAutoTreeViews = async ({
         artifacts,
         budget: spend === null ? null : autoBudgetOf({ spend }),
         pendingRefusal: pendingRefusalOf({ tree, pending }),
+        hold:
+          guide?.check === 'held'
+            ? {
+                reason: guide.holdReason,
+                suggestion: guide.holdSuggestion?.name ?? null,
+                suggestionId: guide.holdSuggestion?.id ?? null,
+              }
+            : null,
+        guide:
+          guide === null
+            ? null
+            : {
+                workflowId: guide.workflowId,
+                name: guide.name,
+                check: guide.check,
+                steps: guide.steps,
+                deviations: guide.deviations,
+              },
         pendingMessages: pendingMessagesOf({ tree, pending }),
         readMessages: readMessagesOf({ tree, accepted, delegations }),
         sentChange: sentChangeOf({ tree, rows: [...pending, ...accepted] }),

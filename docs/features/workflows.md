@@ -4,7 +4,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 ### Run a preset
 
-To run a preset, open **Start a run** and pick **Preset** under **How**, or type `~` and its name. The run gets a Lead with the preset as its plan, and its row reads "Lead · plan Fix a layout". A preset's steps, roles and models are edited in the Workflows studio.
+To run a preset, pick it in the **Workflow** pill of **Start a run**, or type `~` and its name. The run gets a Lead with the preset as its plan, and its row reads "Lead · plan Fix a layout". A preset's steps, roles and models are edited in the Workflows studio.
 
 ### Older runs
 
@@ -17,12 +17,24 @@ A run started before every run had a Lead stays as it was.
 
 ### A preset as the plan a run starts from
 
-A preset you pick in **Start a run**, or one your ask matches, starts a Lead with that preset as its plan. The run's line reads "Lead · plan Fix a layout". The Lead reads your ask first, then the preset's steps.
+A preset you pick in **Start a run** starts a Lead with that preset as its plan. The run's line reads "Lead · plan Fix a layout". The Lead reads your ask first, then the preset's steps.
 
-**With the preset** sets how close the Lead keeps to the steps:
+The run's line says how close the Lead keeps to the steps:
 
 - **Keep steps** runs the saved steps in their order. The Lead asks before it adds, skips or moves one. A preset you name with `~` starts this way.
-- **May change steps** lets the Lead add, skip or move a step, and it says why. A preset your ask matches starts this way.
+- **May change steps** lets the Lead add, skip or move a step, and it says why.
+
+### The Lead follows the workflow
+
+The Lead reads the workflow's **First, check** and **Stop and ask when** on every turn. No agent writes code before the Lead reports the first check.
+
+When the check fails, the run stops and the Lead page shows one card:
+
+- **Switch to Plan and ship** starts a new run on the suggested workflow, with what the Lead found, and stops this one.
+- **Continue with Fix a bug** keeps this workflow. Any message to the Lead does the same.
+- **Stop the run** ends it.
+
+On the Board the stopped run is one card, and its click lands on this choice. **Usual steps**, under the Lead page header, marks each step done, running, skipped, added or moved.
 
 A run started before 0.38 keeps its own line, such as "Workflow · Preset Fix a layout · Keep steps", and runs on as an older run.
 
@@ -45,11 +57,30 @@ The Workflows list is one grid. Each row shows:
 
 The row opens the workflow. A workflow with no runs offers **Start from this preset**, which opens the New session page on the Preset form with that preset picked.
 
-The run count link opens the runs of that workflow beside the list, newest first. Each shows a state dot, its session, its spend and its age, and a row opens that run in its session. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
+The run count link opens the runs of that workflow beside the list, newest first. Each shows a state dot, its session, its spend and its age, and a row opens that run in its session. A run where the Lead followed the workflow counts too, and its row opens the Lead. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
 
 **Import workflows…** and **Restore built-in workflows…** sit in the page menu.
 
 A run puts its session in **Needs you** on the board and in Sessions when it stopped on a failure or paused at its limit. It does the same when it finished a step and waits to continue. It uses the same words as the run's row.
+
+### Create and edit a workflow
+
+**New workflow** and **Duplicate workflow** open the same page, "Workflows / New workflow". It starts from **Every run**: stops, limit, edits, reply length and every role's model read "Same as Every run" until you change them.
+
+The page asks, in order:
+
+- **Name**.
+- **Use it when**, and **First, check**: what the Lead confirms before it starts.
+- **Stop and ask when**, and **Then suggest**: another workflow to offer when this one stops.
+- **Usual steps**. **Draft steps** writes them from **Use it when** and **First, check**.
+- **Keep steps in order**: **The Lead may adapt** or **Keep this order**.
+- **Models**, one line, "Same as Every run", with **Change**.
+
+Nothing is written until **Create workflow**. The button says why it is off: "Name it first", "Add one step or draft them", "Steps are being drafted". A name another workflow holds shows "A workflow named Fix a bug exists" under the field. If the write fails, the error shows under the form with every field kept, and **Retry** writes again. **Discard** goes back to the list and a toast offers **Undo**, which brings the draft back. A draft you leave stays open when you come back.
+
+**Duplicate workflow** sits in the menu of a workflow page and as a button on each list row. It fills the same page with a copy, "Fix a bug copy", and writes nothing until **Create workflow**.
+
+After **Create workflow** the page is that workflow's page, and it saves as you type. On it, **Models** shows each role in use: muted when it follows Every run, in full with **Reset** when this workflow pins a model. A row in the list says when to use that workflow.
 
 ### Saved steps
 
@@ -319,8 +350,9 @@ Bring custom workflows over from your other workspaces with **Import** in the Wo
 
 - Provider routing: `workflowRoutingCodec.ts` reads provider ids and effort levels from the shared registry. `orchestratedRun.sqlite.test.tsx` covers a Copilot step starting and Retry after its agent write failed. Stored rows need no repair.
 - Older runs: the rows stay in `session_workflows` with their `execution_mode` (`packages/db/src/migrations/m091-workflow-execution-mode.ts`), and no migration touches them. `sessionRunsOf` keeps the `orchestrated` and `preset` kinds, `runKindLineOf` words their line, and `RunsGridRow` adds the gray `NAMES.runKind.olderRun` tag. The orchestrator engine is removed no earlier than two minor releases after 0.38.0, the first release where new runs never start it ([versioning.md](../versioning.md)).
-- Preset as a plan: `runRouteOf` sends a named preset to `presetRouteOf` with `follow` and a matched one with `adapt`. `startRoutedRun` spawns the Lead with `leadPlanBriefOf`, which puts the ask first, then the steps, then the closeness line. The chip words are `START_KIND_COPY.closeness` and the route words `RUN_ROUTE_COPY.closeness` (`startRoutedRun.test.ts`).
+- Preset as a plan: `runRouteOf` sends a named preset to `presetRouteOf` with `follow` and a matched one with `adapt`. `startRoutedRun` spawns the Lead with the ask and the step briefs, and passes the route to the spawn. The Lead reads the steps and the closeness from its guide record each turn. The chip words are `START_KIND_COPY.closeness` and the route words `RUN_ROUTE_COPY.closeness` (`startRoutedRun.test.ts`).
 - Run transcript doors: `workflowRun.stepTranscript` and `OrchestratedTailVerb` navigate to the step agent page and close the drawer, keeping one composer (`workflowRun.subagent.test.ts`, `run-pages.test.tsx`, `failure-links.test.tsx`).
+- Create and edit: `useWorkflowEditor` holds the draft; `create` is the only write of a new workflow, and `useWorkflowAutosave` runs only for a saved one. `createBlockOf` words the reason under **Create workflow**, and `startWorkflowGeneration` with `isDraftOnly` drafts steps without a write (`createWorkflow.test.tsx`, `createFlow.test.ts`, `startWorkflowGeneration.draft.test.ts`). **Models** pins steps through `pinRoleSteps` and reads them with `rolePinOf`, so a pin reaches step routing as a step pin (`stepRouting.test.tsx`). Scenes: `u52-workflow-create-*`.
 - Older runs: an orchestrated run stopped halfway keeps its "Workflow · Orchestrated" row in Runs, and **Continue** finishes it on the Orchestrator with no Lead tree (`olderRunsResume.sqlite.test.tsx`).
 
 This part is for contributors and agents who change the feature.

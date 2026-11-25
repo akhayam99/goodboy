@@ -15,6 +15,7 @@ export type LeadStopFacts = Readonly<{
   isPlanReady: boolean;
   isAsking: boolean;
   isPausedAtLimit: boolean;
+  isHeld?: boolean;
 }>;
 
 type StateParams = {
@@ -33,6 +34,7 @@ export const leadStopOf = ({
   isPlanReady,
   isAsking,
   isPausedAtLimit,
+  isHeld = false,
 }: LeadStopFacts): LeadStopState => {
   if (phase === 'stopping') {
     return stopStateOf({ stop: 'stopped', reason: 'stopping' });
@@ -45,6 +47,11 @@ export const leadStopOf = ({
   }
   if (phase === 'blocked') {
     return stopStateOf({ stop: 'waitsForYou', reason: isPausedAtLimit ? 'limit' : 'failed' });
+  }
+  if (isHeld && (phase === 'done' || phase === 'answering' || phase === 'waiting')) {
+    return isRootTurnLive
+      ? stopStateOf({ stop: 'working' })
+      : stopStateOf({ stop: 'waitsForYou', reason: 'ask' });
   }
   if (phase === 'done' || phase === 'answering') {
     return stopStateOf({ stop: isRootTurnLive ? 'working' : 'resting' });

@@ -154,7 +154,7 @@ const open = () => {
   fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), { target: { value: GOAL } });
 };
 
-const modelChip = () => screen.getByRole('button', { name: /^Model:/ });
+const modelChip = () => screen.getByRole('button', { name: /^Change the .* model for this run/ });
 
 const pickCursor = () => {
   fireEvent.click(modelChip());

@@ -1,0 +1,103 @@
+name: vercel
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  VERCEL_ORG_ID: team_dzL0maN2VW8I835U4TbvF1iF
+  VERCEL_CLI_VERSION: 66.6.0
+
+jobs:
+  deploy:
+    name: ${{ matrix.project }} deploy
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: website
+            vercel_name: goodboy-website
+            project_id: prj_NWysxq84jfzERsiuGiB2nMov1U53
+            decision: scripts/website-ignore-build.mjs
+          - project: demo
+            vercel_name: goodboy-demo
+            project_id: prj_Gihk0Sj1ojinbHWplbFIddCrsye5
+            decision: scripts/demo-ignore-build.mjs
+    env:
+      VERCEL_PROJECT_ID: ${{ matrix.project_id }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ENV: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: decide
+        id: decide
+        env:
+          VERCEL_GIT_COMMIT_REF: ${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
+          VERCEL_GIT_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          if [ "$VERCEL_ENV" = production ] && [ -n "$VERCEL_TOKEN" ]; then
+            VERCEL_GIT_PREVIOUS_SHA=$(npx --yes "vercel@$VERCEL_CLI_VERSION" list "${{ matrix.vercel_name }}" --environment production --status READY --format json --token="$VERCEL_TOKEN" 2>/dev/null | node -e 'let s="";process.stdin.on("data",(c)=>{s+=c}).on("end",()=>{try{const m=JSON.parse(s).deployments[0]?.meta??{};process.stdout.write(m.deploySha??m.githubCommitSha??"")}catch{process.stdout.write("")}})')
+            export VERCEL_GIT_PREVIOUS_SHA
+            echo "last production deploy: ${VERCEL_GIT_PREVIOUS_SHA:-unknown}"
+          fi
+          force="${{ github.event_name == 'workflow_dispatch' && matrix.project == 'website' }}"
+          if [ "$force" != true ] && node "${{ matrix.decision }}"; then
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::warning::VERCEL_TOKEN is not set, so ${{ matrix.project }} was not deployed"
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "deploy=true" >> "$GITHUB_OUTPUT"
+
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v4
+        if: steps.decide.outputs.deploy == 'true'
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.decide.outputs.deploy == 'true'
+        with:
+          node-version: 24
+
+      - name: install vercel cli
+        if: steps.decide.outputs.deploy == 'true'
+        run: npm install --global "vercel@$VERCEL_CLI_VERSION"
+
+      - name: pull settings
+        if: steps.decide.outputs.deploy == 'true'
+        run: vercel pull --yes --environment="$VERCEL_ENV" --token="$VERCEL_TOKEN"
+
+      - name: build
+        if: steps.decide.outputs.deploy == 'true'
+        run: |
+          if [ "$VERCEL_ENV" = production ]; then
+            vercel build --prod --token="$VERCEL_TOKEN"
+          else
+            vercel build --token="$VERCEL_TOKEN"
+          fi
+
+      - name: deploy
+        if: steps.decide.outputs.deploy == 'true'
+        run: |
+          if [ "$VERCEL_ENV" = production ]; then
+            url=$(vercel deploy --prebuilt --prod --meta deploySha="$GITHUB_SHA" --token="$VERCEL_TOKEN")
+          else
+            url=$(vercel deploy --prebuilt --meta deploySha="$GITHUB_SHA" --token="$VERCEL_TOKEN")
+          fi
+          echo "${{ matrix.project }} $VERCEL_ENV: $url" >> "$GITHUB_STEP_SUMMARY"

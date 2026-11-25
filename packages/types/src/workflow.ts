@@ -109,20 +109,28 @@ export type WorkflowOrigin = (typeof WORKFLOW_ORIGINS)[number];
 export const isWorkflowOrigin = (value: unknown): value is WorkflowOrigin =>
   typeof value === 'string' && WORKFLOW_ORIGINS.some((origin) => origin === value);
 
-export type Workflow = Readonly<{
-  id: WorkflowId;
-  workspaceId: WorkspaceId;
-  name: string;
-  description: string;
-  goal?: string;
-  processText?: string;
-  steps: ReadonlyArray<Step>;
-  isPreset?: boolean;
-  origin?: WorkflowOrigin;
-  deletedAt?: IsoDateTime;
-  createdAt: IsoDateTime;
-  updatedAt: IsoDateTime;
+type WorkflowGuideFields = Readonly<{
+  entryCheck?: string;
+  stopRule?: string;
+  thenSuggestId?: WorkflowId | null;
+  isOrderKept?: boolean;
 }>;
+
+export type Workflow = WorkflowGuideFields &
+  Readonly<{
+    id: WorkflowId;
+    workspaceId: WorkspaceId;
+    name: string;
+    description: string;
+    goal?: string;
+    processText?: string;
+    steps: ReadonlyArray<Step>;
+    isPreset?: boolean;
+    origin?: WorkflowOrigin;
+    deletedAt?: IsoDateTime;
+    createdAt: IsoDateTime;
+    updatedAt: IsoDateTime;
+  }>;
 
 export type Agent = Readonly<{
   id: AgentId;

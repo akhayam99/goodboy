@@ -1206,7 +1206,7 @@
   },
   "packages/db/src/queries/workflow.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 7
+      "count": 6
     }
   },
   "packages/ui/src/components/Checkbox.tsx": {

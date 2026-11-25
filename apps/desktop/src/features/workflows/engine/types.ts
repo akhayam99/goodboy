@@ -5,6 +5,7 @@ import type {
   StepId,
   StepSize,
   VerbosityLevel,
+  WorkflowId,
   WorkflowOrigin,
   WorkflowRoutingDecision,
   WorkflowRoutingLock,
@@ -36,6 +37,10 @@ export type WorkflowDraft = {
   readonly description: string;
   readonly goal: string;
   readonly processText?: string;
+  readonly entryCheck: string;
+  readonly stopRule: string;
+  readonly thenSuggestId: WorkflowId | null;
+  readonly isOrderKept: boolean;
   readonly steps: ReadonlyArray<StepDraft>;
   readonly origin: WorkflowOrigin;
   readonly isPreset: boolean;

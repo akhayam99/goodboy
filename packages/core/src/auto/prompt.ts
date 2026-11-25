@@ -2,6 +2,7 @@ import { sessionLanguageTurnRule } from '../language/sessionLanguage';
 import { ROLE_REGISTRY } from '../roles';
 import { roleNeedsSection } from '../roleNeeds';
 import { AUTO_GATES, AUTO_MAX_RUNNING_CHILDREN, AUTO_TREE_LIMITS } from './limits';
+import { guideSectionOf, type GuideRecord } from './guideSpec';
 import { DEFAULT_AUTO_LEVEL, type AutoLevel } from './level';
 import { canAutoRoleRunCommands } from './roleTools';
 import { READING_ORDER_RULE } from './readingOrderRule';
@@ -167,6 +168,7 @@ type AutoSystemPromptParams = {
   readonly guidance?: string | null;
   readonly languageAnchor?: string;
   readonly isLeadClosing?: boolean;
+  readonly guide?: GuideRecord | null;
 };
 
 type GuidanceBlockParams = {
@@ -188,6 +190,7 @@ export const buildAutoSystemPrompt = ({
   guidance = null,
   languageAnchor = '',
   isLeadClosing = false,
+  guide = null,
 }: AutoSystemPromptParams): string =>
   [
     AUTO_IDENTITY,
@@ -204,6 +207,7 @@ export const buildAutoSystemPrompt = ({
         ]
       : []),
     ...guidanceBlockOf({ guidance }),
+    ...(guide === null || !isDelegationEnabled ? [] : [guideSectionOf({ guide })]),
     autoRoleCatalog(),
     autoRoutingTable(),
     roleNeedsSection({ driver: 'auto' }),

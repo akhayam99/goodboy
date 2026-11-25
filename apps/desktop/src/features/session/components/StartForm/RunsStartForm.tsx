@@ -2,12 +2,13 @@ import { useId, type ReactNode } from 'react';
 import { Button } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { NAMES } from '../../../../shared/utils/names';
 import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
 import type { AgentKind } from '../../agent-kind';
 import { limitKindOfRoute } from '../../startRun/limitKindOfRoute';
 import { routeLineOf } from '../../startRun/routeLineOf';
+import { START_KIND_COPY } from '../../startKind/startKindCopy';
+import { AUTO_RUN_AS } from '../../startRun/runAsOf';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
 import { StartRoleField } from '../SessionKickoff/StartRoleField';
 import { StartRunBranchChip } from '../StartRun/StartRunBranchChip';
@@ -15,11 +16,11 @@ import type { StartRunModel } from '../StartRun/useStartRun';
 import { liveStepsOf } from './liveStepsOf';
 import { StartForm } from './StartForm';
 import { runAsOfStartFormKind, startFormKindOfRunAs } from './runAsOfStartKind';
-import type { StartFormKind } from './startFormKinds';
-import { StartPlanRow } from './StartPlanRow';
-import { StartWorkflowPick } from './StartWorkflowPick';
+import { StartPlanRow, type StartPlanKind } from './StartPlanRow';
+import { StartWhereItRuns } from './StartWhereItRuns';
+import { StartWorkflowPill } from './StartWorkflowPill';
 import { StartWorkflowSteps } from './StartWorkflowSteps';
-import { StartWorkflowSuggestion } from './StartWorkflowSuggestion';
+import { useEveryRunFacts } from './useEveryRunFacts';
 import { useStartEditsMode } from './useStartEditsMode';
 import {
   startAsksOf,
@@ -45,7 +46,7 @@ type Props = {
 };
 
 type PickParams = {
-  readonly next: StartFormKind;
+  readonly next: StartPlanKind;
 };
 
 export const RunsStartForm = ({
@@ -80,14 +81,7 @@ export const RunsStartForm = ({
     routeKind: limitKindOfRoute({ route: route.route }),
   });
   const isRouting = isPinned || kind === null;
-  const modelSummary = recommendationSummary({
-    provider: run.model.effective.provider,
-    model: run.model.effective.model,
-    effort: run.model.effective.effort,
-  });
-  const routeHint = hasText
-    ? routeLineOf({ result: route, modelSummary, isModelShown: !isPinned })
-    : hint;
+  const routeHint = hasText ? routeLineOf({ result: route }) : hint;
   const shownHint = isRouting ? routeHint : null;
   const workflow =
     runAs.kind === 'preset'
@@ -97,9 +91,11 @@ export const RunsStartForm = ({
   const steps = liveStepsOf({ workflow });
   const suggestion = kind === null ? run.suggestion : null;
   const edits = useStartEditsMode({ workspaceId, sessionId, picked: run.edits });
+  const everyRun = useEveryRunFacts({ workspaceId });
+  const reason = blockedReason ?? (hasText ? null : START_KIND_COPY.goalNeeded);
 
   const pickKind = ({ next }: PickParams): void => {
-    if (next === kind) {
+    if (next === (kind === 'agent' ? 'agent' : 'lead')) {
       return;
     }
     run.setRunAs(runAsOfStartFormKind({ kind: next, presets }));
@@ -143,7 +139,8 @@ export const RunsStartForm = ({
       reader: guidanceReader,
       onPick: ({ next }) => run.setGuidance(next),
     },
-    limit: { view: limit.view, kind: limitKind },
+    limit: { view: limit.view, kind: limitKind, mode: everyRun.limitMode },
+    replies: everyRun.replies,
   });
 
   return (
@@ -152,49 +149,54 @@ export const RunsStartForm = ({
         isPinned ? null : (
           <StartPlanRow
             kind={kind ?? 'lead'}
-            hasPresets={presets.length > 0}
             isDisabled={isStarting}
             onPick={(next) => pickKind({ next })}
             pick={
-              runAs.kind === 'preset' ? (
-                <StartWorkflowPick
-                  presets={presets}
-                  presetId={workflow?.id ?? null}
-                  closeness={closeness}
-                  isDisabled={isStarting}
-                  onPreset={({ next }) => run.setRunAs({ ...runAs, presetId: next })}
-                  onCloseness={({ next }) => run.setRunAs({ ...runAs, closeness: next })}
-                />
-              ) : runAs.kind === 'role' ? (
+              runAs.kind === 'role' ? (
                 <StartRoleField
                   value={runAs.role}
                   isDisabled={isStarting}
                   onChange={(next) => run.setRunAs({ kind: 'role', role: next })}
                 />
-              ) : null
-            }
-            detail={
-              steps.length > 0 ? (
-                <StartWorkflowSteps steps={steps} />
-              ) : suggestion !== null ? (
-                <StartWorkflowSuggestion
-                  workflow={suggestion}
+              ) : (
+                <StartWorkflowPill
+                  presets={presets}
+                  workflow={workflow}
+                  likely={suggestion}
+                  closeness={closeness}
                   isDisabled={isStarting}
-                  onUse={() =>
-                    run.setRunAs({ kind: 'preset', presetId: suggestion.id, closeness: 'adapt' })
+                  onPick={({ next }) =>
+                    run.setRunAs(
+                      next === null
+                        ? AUTO_RUN_AS
+                        : {
+                            kind: 'preset',
+                            presetId: next.id,
+                            closeness: runAs.kind === 'preset' ? closeness : 'adapt',
+                          },
+                    )
+                  }
+                  onCloseness={({ next }) =>
+                    runAs.kind === 'preset'
+                      ? run.setRunAs({ ...runAs, closeness: next })
+                      : undefined
                   }
                 />
-              ) : null
+              )
             }
+            detail={steps.length > 0 ? <StartWorkflowSteps steps={steps} /> : null}
           />
         )
+      }
+      runsOn={
+        <StartWhereItRuns workspaceId={workspaceId} model={run.model} isDisabled={isStarting} />
       }
       hint={shownHint}
       isRouteHint={isRouting && hasText}
       settings={settings}
       note={note}
       error={run.error}
-      reason={blockedReason}
+      reason={reason}
       reasonId={reasonId}
     >
       {actions}
@@ -205,8 +207,8 @@ export const RunsStartForm = ({
       ) : null}
       <Button
         size="sm"
-        disabled={!hasText || isStarting || blockedReason !== null}
-        {...(blockedReason !== null && { 'aria-describedby': reasonId })}
+        disabled={reason !== null || isStarting}
+        {...(reason !== null && { 'aria-describedby': reasonId })}
         isBusy={isStarting}
         busyLabel={RUN_ROUTE_COPY.starting}
         onClick={() => void run.start()}

@@ -3,20 +3,6 @@ use tauri::State;
 
 use crate::db::{Db, DbError};
 
-type WorkflowTuple = (
-    String,
-    String,
-    String,
-    String,
-    Option<String>,
-    Option<String>,
-    i64,
-    i64,
-    Option<i64>,
-    i64,
-    Option<String>,
-);
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StepRow {
@@ -84,6 +70,10 @@ pub struct WorkflowRow {
     pub description: String,
     pub goal: Option<String>,
     pub process_text: Option<String>,
+    pub entry_check: Option<String>,
+    pub stop_rule: Option<String>,
+    pub then_suggest_id: Option<String>,
+    pub is_order_kept: bool,
     pub steps: Vec<StepRow>,
     pub created_at: String,
     pub updated_at: String,
@@ -166,36 +156,75 @@ fn load_steps(
     rows.collect()
 }
 
-#[allow(clippy::too_many_arguments)]
-fn row_to_template(
-    conn: &rusqlite::Connection,
-    id: String,
-    workspace_id: String,
-    name: String,
-    description: String,
-    goal: Option<String>,
-    process_text: Option<String>,
-    created_at: i64,
-    updated_at: i64,
-    deleted_at: Option<i64>,
-    is_preset: bool,
-    origin: Option<String>,
-) -> Result<WorkflowRow, rusqlite::Error> {
-    let steps = load_steps(conn, &id)?;
+fn map_workflow_row(row: &rusqlite::Row<'_>) -> Result<WorkflowRow, rusqlite::Error> {
     Ok(WorkflowRow {
-        id,
-        workspace_id,
-        name,
-        description,
-        goal,
-        process_text,
-        steps,
-        created_at: crate::util::ms_to_iso(created_at),
-        updated_at: crate::util::ms_to_iso(updated_at),
-        deleted_at,
-        is_preset,
-        origin,
+        id: row.get(0)?,
+        workspace_id: row.get(1)?,
+        name: row.get(2)?,
+        description: row.get(3)?,
+        goal: row.get(4)?,
+        process_text: row.get(5)?,
+        entry_check: row.get(6)?,
+        stop_rule: row.get(7)?,
+        then_suggest_id: row.get(8)?,
+        is_order_kept: row.get::<_, i64>(9)? != 0,
+        steps: Vec::new(),
+        created_at: crate::util::ms_to_iso(row.get(10)?),
+        updated_at: crate::util::ms_to_iso(row.get(11)?),
+        deleted_at: row.get(12)?,
+        is_preset: row.get::<_, i64>(13)? != 0,
+        origin: row.get(14)?,
     })
+}
+
+fn list_workflow_rows(
+    conn: &rusqlite::Connection,
+    sql: &str,
+    key: &str,
+) -> Result<Vec<WorkflowRow>, rusqlite::Error> {
+    let mut stmt = conn.prepare(sql)?;
+    let heads = stmt
+        .query_map(rusqlite::params![key], map_workflow_row)?
+        .collect::<Result<Vec<_>, _>>()?;
+    heads
+        .into_iter()
+        .map(|head| {
+            let steps = load_steps(conn, &head.id)?;
+            Ok(WorkflowRow { steps, ..head })
+        })
+        .collect()
+}
+
+fn list_workspace_workflows(
+    conn: &rusqlite::Connection,
+    workspace_id: &str,
+) -> Result<Vec<WorkflowRow>, rusqlite::Error> {
+    list_workflow_rows(
+        conn,
+        "SELECT id, workspace_id, name, description, goal, process_text, entry_check, stop_rule,
+                then_suggest_id, is_order_kept, created_at, updated_at, deleted_at, is_preset, origin
+         FROM workflows
+         WHERE workspace_id = ?1 AND deleted_at IS NULL AND is_preset = 1
+         ORDER BY created_at ASC",
+        workspace_id,
+    )
+}
+
+fn list_session_workflows(
+    conn: &rusqlite::Connection,
+    session_id: &str,
+) -> Result<Vec<WorkflowRow>, rusqlite::Error> {
+    list_workflow_rows(
+        conn,
+        "SELECT w.id, w.workspace_id, w.name, w.description, w.goal, w.process_text,
+                w.entry_check, w.stop_rule, w.then_suggest_id, w.is_order_kept, w.created_at,
+                w.updated_at, w.deleted_at, w.is_preset, w.origin
+         FROM workflows w
+         JOIN session_workflows sw ON sw.workflow_id = w.id
+         WHERE sw.session_id = ?1
+         ORDER BY sw.ordinal ASC",
+        session_id,
+    )
 }
 
 #[tauri::command]
@@ -204,54 +233,7 @@ pub async fn workflow_list(
     workspace_id: String,
 ) -> Result<Vec<WorkflowRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
-    let mut stmt = conn.prepare(
-        "SELECT id, workspace_id, name, description, goal, process_text, created_at, updated_at,
-                deleted_at, is_preset, origin
-         FROM workflows
-         WHERE workspace_id = ?1 AND deleted_at IS NULL AND is_preset = 1
-         ORDER BY created_at ASC",
-    )?;
-    let template_ids: Vec<WorkflowTuple> = stmt
-        .query_map(rusqlite::params![workspace_id], |row| {
-            Ok((
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                row.get(3)?,
-                row.get(4)?,
-                row.get(5)?,
-                row.get(6)?,
-                row.get(7)?,
-                row.get(8)?,
-                row.get(9)?,
-                row.get(10)?,
-            ))
-        })?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(PhaseError::Db)?;
-
-    let mut result = Vec::with_capacity(template_ids.len());
-    for (id, ws, name, desc, goal, process, created, updated, deleted, is_preset, origin) in
-        template_ids
-    {
-        let template = row_to_template(
-            &conn,
-            id,
-            ws,
-            name,
-            desc,
-            goal,
-            process,
-            created,
-            updated,
-            deleted,
-            is_preset != 0,
-            origin,
-        )
-        .map_err(PhaseError::Db)?;
-        result.push(template);
-    }
-    Ok(result)
+    Ok(list_workspace_workflows(&conn, &workspace_id)?)
 }
 
 #[tauri::command]
@@ -260,53 +242,7 @@ pub async fn workflows_for_session(
     session_id: String,
 ) -> Result<Vec<WorkflowRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
-    let mut stmt = conn.prepare(
-        "SELECT w.id, w.workspace_id, w.name, w.description, w.goal, w.process_text, w.created_at,
-                w.updated_at, w.deleted_at, w.is_preset, w.origin
-         FROM workflows w
-         JOIN session_workflows sw ON sw.workflow_id = w.id
-         WHERE sw.session_id = ?1
-         ORDER BY sw.ordinal ASC",
-    )?;
-    let rows: Vec<WorkflowTuple> = stmt
-        .query_map(rusqlite::params![session_id], |row| {
-            Ok((
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                row.get(3)?,
-                row.get(4)?,
-                row.get(5)?,
-                row.get(6)?,
-                row.get(7)?,
-                row.get(8)?,
-                row.get(9)?,
-                row.get(10)?,
-            ))
-        })?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(PhaseError::Db)?;
-
-    let mut result = Vec::with_capacity(rows.len());
-    for (id, ws, name, desc, goal, process, created, updated, deleted, is_preset, origin) in rows {
-        let template = row_to_template(
-            &conn,
-            id,
-            ws,
-            name,
-            desc,
-            goal,
-            process,
-            created,
-            updated,
-            deleted,
-            is_preset != 0,
-            origin,
-        )
-        .map_err(PhaseError::Db)?;
-        result.push(template);
-    }
-    Ok(result)
+    Ok(list_session_workflows(&conn, &session_id)?)
 }
 
 fn map_step_def_row(row: &rusqlite::Row<'_>) -> Result<StepDefRow, rusqlite::Error> {
@@ -599,6 +535,37 @@ mod tests {
         delete_step_def(&conn, &saved.id).unwrap();
         assert!(list_step_defs(&conn, "ws1").unwrap().is_empty());
     }
+
+    #[test]
+    fn workflow_list_carries_the_first_check_and_the_stop_rule() {
+        let conn = crate::test_support::migrated_connection();
+        conn.execute_batch(
+            "INSERT INTO workspaces (id, name, slug, created_at, updated_at)
+               VALUES ('harborline', 'Harborline', 'harborline', 1, 1);
+             INSERT INTO workflows
+               (id, workspace_id, name, description, created_at, updated_at,
+                entry_check, stop_rule, then_suggest_id, is_order_kept)
+               VALUES ('wf-fix', 'harborline', 'Fix a bug', 'A bug', 1, 1,
+                'Reproduce the bug with a failing test.', 'It works as designed.', 'wf-ship', 1);
+             INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at)
+               VALUES ('wf-ship', 'harborline', 'Plan and ship', 'A change', 2, 2);",
+        )
+        .unwrap();
+
+        let rows = list_workspace_workflows(&conn, "harborline").unwrap();
+
+        assert_eq!(rows.len(), 2);
+        assert_eq!(
+            rows[0].entry_check.as_deref(),
+            Some("Reproduce the bug with a failing test.")
+        );
+        assert_eq!(rows[0].stop_rule.as_deref(), Some("It works as designed."));
+        assert_eq!(rows[0].then_suggest_id.as_deref(), Some("wf-ship"));
+        assert!(rows[0].is_order_kept);
+        assert_eq!(rows[1].entry_check, None);
+        assert_eq!(rows[1].then_suggest_id, None);
+        assert!(!rows[1].is_order_kept);
+    }
 }
 
 #[cfg(test)]
@@ -655,7 +622,7 @@ mod wire_shape_tests {
     #[test]
     fn workflow_row_wire_json_is_pinned() {
         assert_roundtrip::<WorkflowRow>(
-            r#"{"id":"v_id","workspaceId":"v_workspaceId","name":"v_name","description":"v_description","goal":"v_goal","processText":"v_processText","steps":[{"id":"v_id","workflowId":"v_workflowId","libraryStepId":"v_libraryStepId","role":"v_role","ordinal":7,"name":"v_name","promptPrefix":"v_promptPrefix","expectedOutput":"v_expectedOutput","providerOverride":"v_providerOverride","modelOverride":"v_modelOverride","effort":"v_effort","verbosity":"v_verbosity","orchestratorReason":"v_orchestratorReason","routingLock":"v_routingLock","routingDecision":"v_routingDecision","taskProfile":"v_taskProfile","size":"v_size"}],"createdAt":"v_createdAt","updatedAt":"v_updatedAt","deletedAt":9,"isPreset":true,"origin":"v_origin"}"#,
+            r#"{"id":"v_id","workspaceId":"v_workspaceId","name":"v_name","description":"v_description","goal":"v_goal","processText":"v_processText","entryCheck":"v_entryCheck","stopRule":"v_stopRule","thenSuggestId":"v_thenSuggestId","isOrderKept":true,"steps":[{"id":"v_id","workflowId":"v_workflowId","libraryStepId":"v_libraryStepId","role":"v_role","ordinal":7,"name":"v_name","promptPrefix":"v_promptPrefix","expectedOutput":"v_expectedOutput","providerOverride":"v_providerOverride","modelOverride":"v_modelOverride","effort":"v_effort","verbosity":"v_verbosity","orchestratorReason":"v_orchestratorReason","routingLock":"v_routingLock","routingDecision":"v_routingDecision","taskProfile":"v_taskProfile","size":"v_size"}],"createdAt":"v_createdAt","updatedAt":"v_updatedAt","deletedAt":9,"isPreset":true,"origin":"v_origin"}"#,
         );
     }
 }

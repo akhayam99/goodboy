@@ -26,6 +26,7 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/resolve/components/FixCommentsDrawer/OutcomeQuestion.tsx': ['document'],
   'features/resolve/components/FixCommentsDrawer/OutcomeReply.tsx': ['document'],
   'features/workflows/components/WorkflowStudio/WorkflowEditor/GoalField.tsx': ['document'],
+  'features/workflows/components/WorkflowStudio/WorkflowEditor/GuideTextField.tsx': ['document'],
   'features/workflows/components/WorkflowRulesPanel/RulesGuidanceBand.tsx': ['document'],
   'features/workflows/components/StepTree/StepEditorFields.tsx': ['document', 'document'],
   'features/artifacts/components/ArtifactCreationPane/ArtifactBriefField.tsx': ['document'],

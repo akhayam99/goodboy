@@ -1,31 +1,32 @@
 import { useState } from 'react';
-import { Button, ICON_SIZE, Notice, PaneShell } from '@goodboy/ui';
+import { Button, ICON_SIZE, Notice, PaneShell, PaneTitleRow } from '@goodboy/ui';
+import type { Workflow } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core/providers';
-import { modelOnProvider } from '../../../../providers/roleResolution';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
-import { ROLE_LABEL, classifyStep } from '../../../../session/agent-kind';
+import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { BuilderTitleField } from './BuilderTitleField';
-import { GoalField } from './GoalField';
+import { CreateActions } from './CreateActions';
+import { GuideFields } from './GuideFields';
+import { KeepOrderField } from './KeepOrderField';
+import { WorkflowModels } from './WorkflowModels';
+import { modelOnProvider } from '../../../../providers/roleResolution';
+import { WorkflowStepRow } from './WorkflowStepRow';
 import { PlanDraftingBanner } from './PlanDraftingBanner';
-import type { StepDraft } from '../../../engine';
+import type { StepDraft, WorkflowDraft } from '../../../engine';
 import { addStep, blankStepDraft, duplicateStep, reorderSteps, updateStep } from '../../../engine';
 import { useSaveAsStep } from '../../../hooks/useSaveAsStep';
 import { useSavedSteps } from '../../../hooks/useSavedSteps';
 import { useWorkflowDrag } from '../../../../../shared/hooks/useWorkflowDrag';
 import { stepDraftFromSavedStep, type SavedStep } from '../../../savedSteps';
 import { StepTree } from '../../StepTree';
-import { StepEditor } from '../../StepTree/StepEditor';
-import { StepRow } from '../../StepTree/StepRow';
 import type { useWorkflowEditor } from '../../WorkflowsPanel/useWorkflowEditor';
 import { usePolish } from '../../../hooks/usePolish';
 import { useProsePolishDeps } from '../../../hooks/useProsePolishDeps';
 import { useStepDeleteUndo } from '../../../hooks/useStepDeleteUndo';
 import { stepPolishFields } from '../../../stepPolishFields';
-import { polishWorkflowGoalText } from '../../../workflows';
 import { DragGhost } from '../DragGhost';
-import { roleSetLine } from '../../../roleSetLine';
 import { EditorLead } from './EditorLead';
 import { NoProvidersNotice } from './NoProvidersNotice';
 
@@ -33,12 +34,19 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly workingDir: string | null;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly workflows: ReadonlyArray<Workflow>;
   readonly editor: ReturnType<typeof useWorkflowEditor>;
 };
 
 const IDENTITY_INDEX = 0;
 
-export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, editor }: Props) => {
+export const WorkflowEditor = ({
+  workspaceId,
+  workingDir,
+  connectedProviders,
+  workflows,
+  editor,
+}: Props) => {
   const overrides = useAppStore((state) => state.workspaceOverrides?.[workspaceId] ?? null);
   const roleModels = overrides?.roleModels ?? null;
   const { form, setForm, expandedKey, setExpandedKey } = editor;
@@ -79,7 +87,8 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
     contextKey: editor.contextKey,
     onDeleted: (key) => setExpandedKey(expandedKey === key ? null : expandedKey),
   });
-  const setGoal = (goal: string) => setForm((current) => ({ ...current, goal }));
+  const setField = (patch: Partial<WorkflowDraft>) =>
+    setForm((current) => ({ ...current, ...patch }));
   const insertStep = (picked: SavedStep | null) => {
     const step = picked === null ? blankStepDraft() : stepDraftFromSavedStep({ step: picked });
     setSteps((current) => addStep({ steps: current, step }));
@@ -110,20 +119,21 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
   const resolvedModel = (step: StepDraft): string =>
     step.model !== '' ? step.model : recommendedModel(step);
 
-  const hasGoal = form.goal.trim().length > 0;
+  const hasPurpose = form.description.trim().length > 0 || form.entryCheck.trim().length > 0;
+  const isLocked = blocked || editor.isCreating;
+  const isDraftOff = isLocked || !hasProviders || !hasPurpose;
+  const draftHint = !hasProviders
+    ? 'Connect a provider to draft steps'
+    : !hasPurpose
+      ? 'Say when to use it first'
+      : undefined;
   const draftLabel = steps.length === 0 ? 'Draft steps' : 'Redraft steps';
   const draftAction = (
     <Button
       variant="ghost"
       size="sm"
-      disabled={blocked || !hasProviders || !hasGoal}
-      title={
-        !hasProviders
-          ? 'Connect a provider to draft steps'
-          : !hasGoal
-            ? 'Write a goal first'
-            : undefined
-      }
+      disabled={isDraftOff}
+      title={draftHint}
       onClick={() => void editor.draftSteps()}
     >
       <CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden />
@@ -134,48 +144,42 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
   const banner = blocked && steps.length > 0 ? <PlanDraftingBanner /> : null;
 
   const error = editor.formError ?? editor.generationError ?? polishError ?? saveError;
+  const isNew = !editor.isSavedWorkflow;
+  const errorNotice =
+    error === null ? null : <Notice tone="danger" placement="inline" role="alert" title={error} />;
 
   return (
     <PaneShell
       page="workflows"
       lead={<EditorLead editor={editor} isDisabled={blocked} />}
       header={
-        <BuilderTitleField
-          value={form.name}
-          placeholder="Untitled workflow"
-          suggestion={null}
-          disabled={blocked}
-          onChange={(name) => setForm((current) => ({ ...current, name }))}
-          onAcceptSuggestion={() => {}}
-        />
+        isNew ? (
+          <PaneTitleRow title="New workflow" />
+        ) : (
+          <BuilderTitleField
+            value={form.name}
+            placeholder="Untitled workflow"
+            suggestion={null}
+            disabled={blocked}
+            onChange={(name) => setField({ name })}
+            onAcceptSuggestion={() => {}}
+          />
+        )
       }
     >
-      <GoalField
-        value={form.goal}
-        placeholder="What should this workflow accomplish? Draft steps writes the plan from it…"
-        hasSessionGoal={false}
-        isSessionGoal={false}
-        canUndo={polish.canUndo({ id: 'goal', current: form.goal })}
-        isPolishing={polish.polishingId === 'goal'}
-        disabled={blocked}
-        onChange={setGoal}
-        onBlur={() => {}}
-        onUseSessionGoal={() => {}}
-        onUndo={() => polish.undo({ id: 'goal', current: form.goal, apply: setGoal })}
-        onPolish={() =>
-          void polish.run({
-            id: 'goal',
-            current: form.goal,
-            keptMessage: "Kept your wording. The goal couldn't be polished.",
-            polish: () => polishWorkflowGoalText({ deps: polishDeps, goal: form.goal }),
-            apply: setGoal,
-          })
-        }
+      <GuideFields
+        workspaceId={workspaceId}
+        workingDir={workingDir}
+        form={form}
+        workflows={workflows}
+        selfId={editor.editingId}
+        isNew={isNew}
+        nameError={editor.nameError}
+        isLocked={isLocked}
+        onChange={setField}
       />
       {hasProviders ? null : <NoProvidersNotice />}
-      {error === null ? null : (
-        <Notice tone="danger" placement="inline" role="alert" title={error} />
-      )}
+      {isNew ? null : errorNotice}
       <StepTree
         steps={steps}
         editedCount={editor.editedKeys.size}
@@ -183,85 +187,81 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
         isPlanning={blocked}
         isDragging={drag !== null}
         dropIndex={dropIndex}
-        disabled={blocked}
+        disabled={isLocked}
         banner={banner}
         action={draftAction}
         savedSteps={savedSteps}
         onAddStep={insertStep}
         renderStep={({ step, index, span }) => {
-          const effort = step.effort;
+          const isOpen = expandedKey === step.key;
           return (
-            <StepRow
+            <WorkflowStepRow
               key={step.key}
               step={step}
-              ordinal={index + 1}
-              kind={classifyStep({ step })}
+              index={index}
+              span={span}
+              stepCount={steps.length}
+              defaultProvider={defaultProvider}
               provider={resolvedProvider(step)}
               model={resolvedModel(step)}
-              effort={effort}
-              span={span}
-              identityIndex={IDENTITY_INDEX}
-              isExpanded={expandedKey === step.key}
+              recommendedModel={recommendedModel(step)}
+              roleModels={roleModels}
+              connectedProviders={connectedProviders}
+              polish={stepPolishFields({
+                polish,
+                deps: polishDeps,
+                goal: form.description,
+                step,
+                patchStep,
+              })}
+              isLocked={isLocked}
+              isExpanded={isOpen}
               isEdited={editor.editedKeys.has(step.key)}
-              isPinned={step.provider !== '' || step.model !== ''}
               isDragging={draggingKey === step.key}
-              disabled={blocked}
-              onToggle={() => setExpandedKey(expandedKey === step.key ? null : step.key)}
+              isSaving={savingKey === step.key}
+              onToggle={() => setExpandedKey(isOpen ? null : step.key)}
               onStartDrag={(event) =>
                 startStepDrag(index, step.name.trim() || ROLE_LABEL[step.role], event)
               }
-              onMoveUp={() => moveStep(step.key, -1)}
-              onMoveDown={() => moveStep(step.key, 1)}
-              editor={
-                <StepEditor
-                  step={step}
-                  ordinal={index + 1}
-                  stepCount={steps.length}
-                  effort={effort}
-                  recommendedProvider={defaultProvider}
-                  recommendedModel={recommendedModel(step)}
-                  connectedProviders={connectedProviders}
-                  isRoutingOverridden={step.provider !== '' || step.model !== ''}
-                  roleSetLine={roleSetLine({ role: step.role, roleModels })}
-                  disabled={blocked}
-                  polish={stepPolishFields({
-                    polish,
-                    deps: polishDeps,
-                    goal: form.goal,
-                    step,
-                    patchStep,
-                  })}
-                  onName={(name) => patchStep(step.key, { name })}
-                  onRole={(role) => patchStep(step.key, { role })}
-                  onPrompt={(prompt) => patchStep(step.key, { prompt })}
-                  onExpectedOutput={(expectedOutput) => patchStep(step.key, { expectedOutput })}
-                  onRoute={(route) => patchStep(step.key, route)}
-                  onVerbosity={(verbosity) => patchStep(step.key, { verbosity })}
-                  onRoutingReset={() => patchStep(step.key, { provider: '', model: '' })}
-                  onPin={() =>
-                    patchStep(step.key, {
-                      provider: resolvedProvider(step),
-                      model: resolvedModel(step),
-                    })
-                  }
-                  onMoveUp={() => moveStep(step.key, -1)}
-                  onMoveDown={() => moveStep(step.key, 1)}
-                  onDuplicate={() =>
-                    setSteps((current) => duplicateStep({ steps: current, key: step.key }))
-                  }
-                  isSavingAsStep={savingKey === step.key}
-                  onSaveAsStep={() => {
-                    setSaveError(null);
-                    void saveAsStep(step);
-                  }}
-                  onDelete={() => deleteStep(step.key)}
-                  onDone={() => setExpandedKey(null)}
-                />
+              onPatch={(patch) => patchStep(step.key, patch)}
+              onMove={(direction) => moveStep(step.key, direction)}
+              onDuplicate={() =>
+                setSteps((current) => duplicateStep({ steps: current, key: step.key }))
               }
+              onSaveAsStep={() => {
+                setSaveError(null);
+                void saveAsStep(step);
+              }}
+              onDelete={() => deleteStep(step.key)}
+              onDone={() => setExpandedKey(null)}
             />
           );
         }}
       />
+      <KeepOrderField
+        isOrderKept={form.isOrderKept}
+        isDisabled={isLocked}
+        onChange={(isOrderKept) => setField({ isOrderKept })}
+      />
+      <WorkflowModels
+        workspaceId={workspaceId}
+        steps={steps}
+        connectedProviders={connectedProviders}
+        isCollapsed={isNew}
+        isDisabled={isLocked}
+        onSteps={setSteps}
+      />
+      {isNew ? errorNotice : null}
+      {isNew ? (
+        <CreateActions
+          reason={editor.isCreating ? null : editor.createReason}
+          error={editor.formError}
+          isCreating={editor.isCreating}
+          isDisabled={isLocked || editor.createReason !== null || editor.nameError !== null}
+          onDiscard={editor.discard}
+          onCreate={() => void editor.create()}
+        />
+      ) : null}
       <DragGhost ghost={ghost} />
     </PaneShell>
   );

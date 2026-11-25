@@ -16,7 +16,7 @@ Write what you want done and press Start. A Lead runs it: it plans first, then s
 
 #### Write the ask
 
-- Under the box, a line reads "Starts as ..." with the reason and the model. It changes as you type, before you press Start.
+- Under the box, a line reads "Starts as ..." with the reason. It changes as you type, before you press Start.
 - Typing `~` or `@` in an empty field opens the same menu as the chat box. Pick a workflow or a role and the **Plan** row shows it. A name typed in the text still wins over the Plan row.
 - The paperclip, paste and drop attach files and images, whatever the kind. They go with the run to its first agent. A file that cannot be attached says why on the box, and the text and the other files stay.
 - ↵ starts, ⇧↵ adds a line.
@@ -34,8 +34,10 @@ The pick is a rule table in the app, with no model call. Goodboy reads it top to
 | 5     | Nothing above                                                                                      | A Lead                                                      |
 
 - A Lead never follows a workflow you did not pick.
-- When the ask names a saved workflow, or shares two words of its description and steps, a line under the Plan row reads "Looks like your workflow Fix a layout." **Use it** picks **Follow a workflow** with it, and the Lead may change its steps.
-- A preset becomes the Lead's plan: its brief lists the steps in order, with **Keep steps** or **May change steps**. A step pinned to a model keeps that model.
+- When the ask names a saved workflow, or shares two words of its description and steps, the **Workflow** pill reads "Auto · likely Fix a layout".
+- Picking it from the pill makes it the plan. The Lead may change its steps.
+- A workflow you pick becomes the Lead's plan. The Lead reads its steps every turn, with **Keep steps** or **May change steps**. The first message is your ask, with the step briefs and process text the workflow holds.
+- A step pinned to a model keeps that model.
 - A role you named starts that one agent, with no Lead.
 - The reason is kept with the run.
 - If the start fails, the field keeps your text and Start becomes **Retry**.
@@ -61,23 +63,33 @@ Every door draws the same form: the New session page, a session's Runs page (and
 
 The goal comes first. Under it the **Plan** row says who plans the run, and the action row ends the form with one line by Start on what runs.
 
-- **The Lead plans it** is the default. It reads the table above.
-- **Follow a workflow** is off until the workspace has a saved workflow. Picked, it shows the workflow picker, the box **Keep its steps as written** (empty, the Lead may change a step and says why) and the steps below.
+- **The Lead plans it** is the default, with the **Workflow** pill beside it.
+- The pill reads **Auto**: the Lead picks a workflow or plans alone. It names the one that fits your ask.
+- Open the pill to pick a workflow, each with its "use it when" line. **Auto** writes no workflow. A pick writes that workflow.
+- A pick shows the box **Keep its steps as written** and the steps below. Empty, the Lead may change a step and says why.
 - **One agent** shows the role picker in the same row.
+- The line by Start gives one hint: what the Lead does, or what the picked workflow checks first.
+- Start says why it is off, on the New session page and on a session's Runs page alike.
 
 Setup's Scout run is pinned to one agent, so it draws no Plan row and no role picker.
 
 #### The settings row
 
-Under the Plan row the settings read as one sentence, such as "Stops after the plan · Edits full access · Limit $8.00 · harbor-portal". **Change** opens the controls under it and **Done** closes them. Each control is written "Label: value" and opens its own popover.
+Under the Plan row the settings read as one line, such as "Stops after the plan · Edits full access · Limit $8.00, then pause · Replies normal". The values are the ones on **Workflows › Every run**. **Change** opens the controls under it, with one link back to Every run, and **Done** closes them. Each control is written "Label: value" and opens its own popover.
 
-A plan shows only the settings it uses. **Projects** shows on the New session page only. **Limit** and **Asks you** do not show on One agent: a plain agent has no limit to enforce and no step to stop at.
+A plan shows only the settings it uses. **Projects** shows on the New session page, **Branch** on a session's Runs page. **Limit** and **Stops** do not show on One agent. A plain agent has no limit to enforce and no step to stop at.
 
-- **Model** sits in the message box, beside **Start**. It names the model of the Lead or the agent for this run, **Auto** until you pick one. A pick is for this run only.
-- **Asks you** is the Lead's level, when the Lead plans and when it follows a workflow.
+- **Stops** is the Lead's level, when the Lead plans and when it follows a workflow. It is the same word on both pages.
 - **Edits** is what agents may do in the session: **Read only**, **Ask first**, **Edits allowed** or **Full access**. It reads the workspace default until you pick, and a start never writes a mode you did not pick. A pick applies to the whole session, and is set before the first agent starts.
+- **Replies** shows the reply length from Every run. It opens Every run to change it.
 - **Guidance** shows on every kind. It starts as the workspace guidance, with a quiet "from Harborline" tag. Once you edit it the tag reads "this run", and "None" when you clear it.
-- **Limit** reads "Limit: $5.00" ("Limit: none" without one).
+- **Limit** reads "Limit: $5.00" ("Limit: none" without one). A Lead run pauses at its limit, and the line says so.
+
+Every **Change the default** link opens Every run.
+
+#### Where it runs
+
+Under the settings a line reads "Lead on Claude · Sonnet 5.5 · Medium · the Lead picks helpers, by load". It names the model of the Lead, or of the one agent, for this run. **Change** opens the model for this run only. It reads **Auto** until you pick one. The way helpers are shared follows **Provider priority** in **Settings › Models**. The launcher adds no provider choice.
 
 #### Guidance
 
@@ -303,20 +315,20 @@ Overview opening is bounded by `CentralColumn.bigSession.test.tsx`; the responsi
 
 This part is for contributors and agents who change the feature.
 
-- Start form: `StartForm` draws the Plan row (`StartPlanRow`, with `StartWorkflowPick` and `StartWorkflowSteps`), the settings row and the actions. `NewSessionStartForm` feeds it from the session draft and `RunsStartForm` from `useStartRun`. A kind declares the settings it uses in `START_KIND_SETTINGS`, and `startSettingsOf` keeps the order and drops a setting nothing supplies.
-- Settings sentence: `StartSettingsRow` reads the words of each setting in `START_SENTENCE_ORDER` and keeps the controls under **Change**. `startSettingWordsOf` writes those words from the values the controls show: `useStartEditsMode` and `useDraftProjects` are shared with `StartEditsSetting` and `WhereChip` (`StartSettingsRow/index.test.tsx`). `startFormNoteOf` writes the line by Start.
+- Start form: `StartForm` draws the Plan row (`StartPlanRow`, with `StartWorkflowPill` and `StartWorkflowSteps`), the settings row, the Where it runs line (`StartWhereItRuns`) and the actions. `StartPlanRow` has two kinds, lead and agent; a workflow is the pill's pick, so `startFormKindOfDraft` reads a draft on a workflow shape with no workflow id as Auto. `NewSessionStartForm` feeds it from the session draft and `RunsStartForm` from `useStartRun`. A kind declares the settings it uses in `START_KIND_SETTINGS`, and `startSettingsOf` keeps the order and drops a setting nothing supplies.
+- Settings sentence: `StartSettingsRow` reads the words of each setting in `START_SENTENCE_ORDER` and keeps the controls under **Change**. `startSettingWordsOf` writes those words from the values the controls show: `useStartEditsMode` and `useDraftProjects` are shared with `StartEditsSetting` and `WhereChip` (`StartSettingsRow/index.test.tsx`). `startFormNoteOf` writes the line by Start: the workflow's first check when it has one. `useEveryRunFacts` reads the limit mode and the reply length from Every run. `startReasonOf` and the Runs form's blocked reason give both screens one reason when Start is off.
 - Branch chip: `StartRunBranchChip` sits in the Where slot of `RunsStartForm` and lists the attached mounts through `startRunBranchOptionsOf`. `openStartRun` takes the branch, `startRunBranchOf` reads it from the event, and `askOnBranchOf` adds it to the ask. `BranchTools` is the branch page door; `startRunDoors.scenes.test.tsx` and `BranchPage/overviewDoors.test.tsx` cover the doors.
-- Kind to route: `runAsOfStartFormKind` turns a pressed kind into the `RunAs` that `runAsRouteOf` turns into the route Start uses, with a typed token ahead of the kind. `routeLineOf` builds the live "Starts as" line.
-- Workflow suggestion: `runRouteOf` never picks a workflow. `suggestedWorkflowOf` scores the saved ones against the ask, and `useStartRun` hands the best one to both forms. `StartWorkflowSuggestion` draws the line under the Plan row. **Use it** sets the kind and workflow the Plan row would, with `adapt` (`runRouteOf.test.ts`, `StartRun.test.tsx`, `newSession.test.tsx`). The old `runs.defaultShape` keys are not read since 0.41.0 (`docs/versioning.md`, Retired state).
+- Kind to route: `runAsOfStartFormKind` turns a pressed kind into the `RunAs` that `runAsRouteOf` turns into the route Start uses, with a typed token ahead of the kind. `routeLineOf` builds the live "Starts as" line, with no model: the model is on the Where it runs line.
+- Workflow suggestion: `runRouteOf` never picks a workflow. `suggestedWorkflowOf` scores the saved ones against the ask, and `useStartRun` hands the best one to both forms. `StartWorkflowPill` names it on the Auto row and in its value. Picking it sets the workflow the pill would, with `adapt` (`runRouteOf.test.ts`, `StartRun.test.tsx`, `newSession.test.tsx`). The old `runs.defaultShape` keys are not read since 0.41.0 (`docs/versioning.md`, Retired state).
 - Edits: `StartEditsSetting` reads the draft, or the session on Runs. `applyStartEdits` calls `setSessionPermissionMode` before the first agent starts and does nothing when no mode was picked.
-- Model chip: `RunModelChip` is the one control on every door and kind, the Agent kind of the New session page included. Its `pill` variant sits in the `model` slot of the start box (`StartRun`, `StartTaskField`) with the composer pill look (`ROUTING_PILL_CLASS`); `START_KIND_SETTINGS` has no model key. `SessionKickoff` picks the view once and hands it to the box and to `NewSessionStartForm`. There `useDraftAgentModel` wraps the `useRunModel` view so a pick lands in the draft's `agentRouting`. `useRunModel` resolves the default of the slot the route lands on and keeps this start's pins by slot. `runModelSlotOf` maps a plan to the `workflow_orchestrator` task and a lead to its role, `auto` by default.
+- Model chip: `RunModelChip` is the one control on every door and kind, the Agent kind of the New session page included. Its `change` variant is the **Change** button of `StartWhereItRuns`, which names the model through `recommendedRoutingOf` and the helpers part from `useProviderRule` (`RUN_MODEL_COPY.helpers`, one phrase per rule). The start box has no model slot; `START_KIND_SETTINGS` has no model key. `SessionKickoff` picks the view once and hands it to `NewSessionStartForm`. There `useDraftAgentModel` wraps the `useRunModel` view so a pick lands in the draft's `agentRouting`. `useRunModel` resolves the default of the slot the route lands on and keeps this start's pins by slot. `runModelSlotOf` maps a plan to the `workflow_orchestrator` task and a lead to its role, `auto` by default.
 - Run page: `OrchestratorModelChip` reads `useOrchestratorModel`, which writes `setWorkflowOrchestratorRouting`. An agent page keeps its model in `ComposerToolbar` (`ComposerRoutingPicker`); `AgentSettingsLine` draws no model (`modelInComposer.test.tsx`).
 - Run from comments: `startRoutedRun` takes `sourceThreadIds` and `sourceMountId`. The Lead, or the one agent of a role run, starts on that mount with `sourceKind` `comment_run` and the thread ids once each. A plan start with comments, a mount that left the session and a thread a live comment run already holds all throw before any write (`startRoutedRun.test.ts`). The link is described in [concepts.md](../concepts.md).
 - Comment door: `CommentRunStart` draws `StartRun` through the flat `startRun/StartRunFromSources` (so resolve imports no session component) in the comment drawer while the `comment-run-start` slice names that thread as open. `runGoalOf` writes the goal, `commentRunQuoteOf` the word for word quote passed as `findings`, and `commentRunSourcesOf` picks the chips and blocks a comment in a run or a fix. `useStartRun` takes `seedText`, `seedBranch` and `sources`; `onLaunched` clears the draft even when the drawer moved on (`CommentRunStart.test.tsx`, scenes `u47-comment-run-compose`).
 - Model pins: `startRoutedRun` takes `routing` for a lead and `orchestratorRouting` for a plan. `attachWorkflowToSession` stores the second as the run's `orchestratorRouting`. A start clears the pins.
 - Prefix menu: `useRunPrefixMenu` reuses `QuickActionsPopover` for `~` and `@`. A pick sets the chip and empties the field. The list floats above the field in `AnchoredLayer`, as wide as the field up to 500px.
 - Attachments: `usePromptFiles` stages them. `startRoutedRun` saves them as goal attachments of the session (an agent) or the run (a plan) before the first agent starts. On New session, `SessionKickoff` hands the files `useStartRun` stages to `StartTaskField` and to `useStartShape`. An agent or preset start sends them and removes them once it went through (`newSessionAttach.test.tsx`).
-- Limit chip: `autoLimitOf` returns the amount, its source and the default. `useAutoTreeLimit` returns `view`, `start` and `settle`. Every kind reads the one default, `runDefaultLimitOf`, which reads the workspace rules through `workspaceRulesFor`, the same fn `attachWorkflowToSession` uses. The chip, its help (`AUTO_LIMIT_COPY.helpOf`) and the start read that one source, and the chip links to the Runs page (Change default, `openRunDefaults`). A typed amount is for that run only and never becomes the default. `useStartRun` and `useStartShape` call `settle` after a successful start, which drops the typed amount.
+- Limit chip: `autoLimitOf` returns the amount, its source and the default. `useAutoTreeLimit` returns `view`, `start` and `settle`. Every kind reads the one default, `runDefaultLimitOf`, which reads the workspace rules through `workspaceRulesFor`, the same fn `attachWorkflowToSession` uses. The chip, its help (`AUTO_LIMIT_COPY.helpOf`) and the start read that one source, and the chip links to Every run (Change default, `openRunDefaults`). A typed amount is for that run only and never becomes the default. `useStartRun` and `useStartShape` call `settle` after a successful start, which drops the typed amount.
 - Limit at start: `start` returns the `StartLimit` that `startLimitOf` builds from the same facts the chip shows. `useStartRun` and `useStartShape` call it at start time, and pass the result to `startRoutedRun`, which hands `spendLimitUsd` and `limitSource` to `attachWorkflowToSession`. `runLimitOf` there sets the run's own limit and writes the same amount into its `rulesSnapshot`. The snapshot never carries a limit the form did not show. A start that passes nothing, such as a workflow from the chat prefix, copies the workspace limit of the Runs page instead.
 - Limit of a Lead: for a Lead, a preset one included, `startRoutedRun` hands the amount to `spawnAgent` as `limitUsd`, or `null` when the person chose No limit. It lands in the `run.limit` workspace value before the agent row exists. `startAutoTree` reads it in place of the workspace default, so the tree starts at that cap, or uncapped. A lower session limit still wins (`startAutoTrees.sqlite.test.ts`, `spawnAgent.limit.sqlite.test.ts`, `runLimit.sqlite.test.ts`).
 - Pinned steps of a Lead: the locked steps of a preset go to `spawnAgent` as `stepLocks`. They land in the `run.locks` workspace value before the agent row exists. `resolveDelegateChild` reads the lock of the first step with the child's role (`readRunStepLock`). It passes it as `stepLock`, so the child runs on that provider, model and effort (`runLocks.sqlite.test.ts`, `resolveChildRouting.test.ts`).
@@ -324,7 +336,7 @@ This part is for contributors and agents who change the feature.
 - Limit popover: `AutoLimitChip` uses `AnchoredPopover` at the standard popover width, so it flips and shifts inside the window.
 - No limit: **No limit** on the chip is for that run only. A start never writes a limit, so the default changes only on Every run.
 - Kind chip: `runKindLineOf` words the chip, and the Runs list reads it too.
-- Asks you chip: `AsksYouChip` is shared with the run's settings line. For the Lead `AutoLevelChip` wraps it, the same chip the running agent's settings line shows. The chip reads the session level, then the workspace default, through `useAutoLevel`, and `startRoutedRun` writes the pick with the `changeAutoLevel` store action before the lead starts.
+- Stops chip: `AsksYouChip` is shared with the run's settings line and takes the launcher's label `NAMES.stops`. For the Lead `AutoLevelChip` wraps it, the same chip the running agent's settings line shows. The chip reads the session level, then the workspace default, through `useAutoLevel`, and `startRoutedRun` writes the pick with the `changeAutoLevel` store action before the lead starts. It sends the ask as the first message, with the step briefs and process text of a picked workflow (`workflowNotesOf`). The Lead reads the steps and their order from its guide record every turn (`docs/auto.md`, Following a workflow). The route reaches `spawnAgent` as `runRoute`, so the record exists on the first turn.
 - Guidance chip: `StartGuidanceSetting` reads the workspace text through `workspaceGuidanceOf` and the pick from the draft (`SessionDraft.guidance`, `null` until edited) or, on a session's Runs page, from `useStartRun`. `StartGuidanceChip` draws it on `SettingChip`, and `guidanceWordsOf` words the value and its tag. `guidanceShownOf` is the text on screen and `guidanceToSendOf` the text a start sends, so both read one pick. `startGuidanceReaderOf` picks the line on who reads it.
 - Run guidance: `startRoutedRun` takes `guidance`, and `useStartRun` forwards it. A plan writes it to `rulesSnapshot.standingGuidance`, which the orchestrator reads as its Operator process. `null` keeps the workspace value. `''` starts the run without any.
 - Agent guidance: an agent gets a `**Guidance**` section ahead of its ask. The Lead keeps its text in the `run.guidance` workspace value, which `spawnAgent` writes before the first turn.

@@ -1,8 +1,10 @@
 import { NAMES } from '../../shared/utils/names';
-import type { WorkflowRunHistoryRow } from '@goodboy/db';
+import { isAutoBudgetBlock, leadStopOf, type LeadStopState } from '@goodboy/core/auto';
+import type { WorkflowRunHistoryRow, WorkflowRunLeadFacts } from '@goodboy/db';
 import type { DotState } from '@goodboy/ui';
 
-export type RunHistoryStateKey = 'running' | 'failed' | 'done' | 'stopped' | 'waiting' | 'queued';
+export type RunHistoryStateKey =
+  'running' | 'failed' | 'done' | 'stopped' | 'waiting' | 'queued' | 'idle';
 
 export type RunHistoryState = {
   readonly key: RunHistoryStateKey;
@@ -21,6 +23,47 @@ const STATES: Readonly<Record<RunHistoryStateKey, RunHistoryState>> = {
   stopped: { key: 'stopped', label: 'Stopped', dot: 'idle' },
   waiting: { key: 'waiting', label: NAMES.needsYou, dot: 'needsYou' },
   queued: { key: 'queued', label: 'Not started', dot: 'idle' },
+  idle: { key: 'idle', label: NAMES.idle, dot: 'idle' },
+};
+
+type LeadParams = {
+  readonly lead: WorkflowRunLeadFacts;
+};
+
+const isSpent = ({ lead }: LeadParams): boolean =>
+  lead.remainingUsd !== null && Math.round(lead.remainingUsd * 100) <= 0;
+
+const isPausedAtLimit = ({ lead }: LeadParams): boolean =>
+  (lead.phase === 'blocked' && isAutoBudgetBlock({ reason: lead.blockedReason })) ||
+  (lead.phase !== 'blocked' && isSpent({ lead }));
+
+const leadStateOf = ({ lead }: LeadParams): LeadStopState =>
+  leadStopOf({
+    phase: lead.phase,
+    isRootTurnLive: lead.isTurnLive,
+    isPlanReady: false,
+    isAsking: lead.isAsking,
+    isPausedAtLimit: isPausedAtLimit({ lead }),
+  });
+
+const leadHistoryState = ({ lead }: LeadParams): RunHistoryState => {
+  const stop = leadStateOf({ lead });
+  switch (stop.stop) {
+    case 'working':
+      return STATES.running;
+    case 'waitsForYou':
+      return stop.reason === 'failed' ? STATES.failed : STATES.waiting;
+    case 'resting':
+      return STATES.idle;
+    case 'stopped':
+      return STATES.stopped;
+    case 'finished':
+      return STATES.done;
+    default: {
+      const exhaustive: never = stop.stop;
+      return exhaustive;
+    }
+  }
 };
 
 const isDone = ({ run }: Params): boolean => {
@@ -31,6 +74,9 @@ const isDone = ({ run }: Params): boolean => {
 };
 
 export const runHistoryState = ({ run }: Params): RunHistoryState => {
+  if (run.lead !== null) {
+    return leadHistoryState({ lead: run.lead });
+  }
   if (run.runningSteps > 0) {
     return STATES.running;
   }

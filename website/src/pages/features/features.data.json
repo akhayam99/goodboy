@@ -548,7 +548,7 @@
       "items": [
         {
           "title": "Run a preset",
-          "text": "To run a preset, open Start a run and pick Preset under How, or type ~ and its name.",
+          "text": "To run a preset, pick it in the Workflow pill of Start a run, or type ~ and its name.",
           "group": "Workflows",
           "main": true
         },
@@ -563,6 +563,12 @@
           "text": "A preset starts a Lead with its steps as the plan. Keep steps asks before a change, May change steps lets the Lead change them and say why.",
           "group": "Workflows",
           "also": "preset plans"
+        },
+        {
+          "title": "The Lead follows the workflow",
+          "text": "The Lead reports the workflow's first check before any agent writes. When the check fails, the run stops with Switch to, Continue with and Stop the run.",
+          "group": "Workflows",
+          "also": "workflow guides"
         },
         {
           "title": "Preset and Custom",
@@ -582,6 +588,12 @@
           "text": "Each workflow row shows when it last ran and how many runs it has. The run count opens every run of that workflow beside the list, newest first.",
           "group": "Workflows",
           "also": "runs of a workflow"
+        },
+        {
+          "title": "Create and edit a workflow",
+          "text": "One page asks for a name, when to use it, what to check first and when to stop and ask. Nothing is saved until you create it.",
+          "group": "Workflows",
+          "also": "create a workflow"
         },
         {
           "title": "Saved steps",

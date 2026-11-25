@@ -12,6 +12,60 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.42.0
+
+The Lead follows a workflow as a guide and stops on a failed first check, and New session and Start run share one launcher.
+
+This version updates your data in one direction. To go back to 0.41, restore the backup Goodboy made before updating.
+
+### New
+
+#### The Lead follows a workflow and stops on a failed check
+<!-- gb area=workflows image=hold pr=2374,2375,2363 -->
+
+A Lead run that follows a workflow reads its first check and its stop rule on every turn, and no agent writes code before the Lead reports the first check. Refactor, Plan and ship and Fix a bug come with a check and a stop rule of their own.
+
+When the check fails, the run stops on one card. Switch to the suggested workflow starts a new run with what the Lead found and stops this one, Continue with keeps the workflow, and Stop the run ends it. On the Board the stopped run is one card that opens on this choice.
+
+Usual steps, under the Lead page header, marks each step done, running, skipped, added or moved. Workflows counts these runs too, and their row opens the Lead.
+
+### Improved
+
+#### New session and Start run share one launcher
+<!-- gb area=sessions image=launcher pr=2376 -->
+
+New session and Start run draw the same launcher. Pick The Lead plans it, with a Workflow pill that starts on Auto and names the likely workflow, or One agent, with a Role pill. Follow a workflow is gone: pick the workflow in the pill.
+
+The settings line reads your Every run values. Where it runs replaces the model pill and says which model the Lead starts on and how it picks helpers, and Change sets the model for this run only. Start says why it is off, such as Write the goal first.
+
+#### Create and edit a workflow as a guide
+<!-- gb area=workflows screen=workflows pr=2377 -->
+
+One page creates and edits a workflow: Use it when, First, check, Stop and ask when, Then suggest, the usual steps, Keep steps in order and Models. New workflow and Duplicate workflow open it with your Every run values, and nothing is saved until you press Create workflow. Each row in the list says when to use that workflow and offers Duplicate workflow.
+
+#### Settings grouped by what you came to change
+<!-- gb area=settings screen=settings/app image=settings pr=2361 -->
+
+This Mac holds Look and alerts, Editor, terminal, git, Keyboard shortcuts, Storage and search, and Backup and reset. This workspace holds Projects, About you, Models, Permissions, Branches, and Replies and commits. Searching General or Advanced still finds their rows.
+
+The Runs page is gone. Run defaults, the Lead and role models and the edit mode new sessions start in live in Workflows, Every run, and Run defaults are in Workflows, at the end of the rail, opens it.
+
+#### Each agent says where it runs and why
+<!-- gb area=agents pr=2352 -->
+
+An agent's page names its provider, model, effort and step size, with one line on why it runs there: the Lead's own words when the Lead picked it, or the reason your Provider priority gave. When a guard moved the Lead's pick, the line names the cause and quotes the Lead.
+
+Candidates it weighed lists the models the pick looked at, with your order, the room each had left and its recent load. The ones it could not use are struck through with the reason.
+
+#### Redrawn icons and a larger rail logo
+<!-- gb area=app pr=2370 -->
+
+The app's icons are redrawn as one set, and Ask and Chat have icons of their own. The Goodboy logo at the foot of the rail is larger.
+
+### Fixed
+
+- Impact's Agents tab now keeps a turn as pinned after you remove the pin, and counts fallback and best candidate turns. <!-- gb area=providers screen=impact pr=2373 -->
+
 ## Goodboy v0.41.3
 
 The Board shows what needs you as cards, Ask opens beside the session, and the Lead picks each helper's model.

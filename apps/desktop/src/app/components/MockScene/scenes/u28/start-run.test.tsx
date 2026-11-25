@@ -63,7 +63,7 @@ describe('the u28 start run scenes', () => {
     expect(line.textContent).toContain('A question or a check');
     screen.getByRole('button', { name: 'Attach files' });
     const kinds = screen.getByRole('tablist', { name: 'Plan' });
-    expect(within(kinds).getAllByRole('tab')).toHaveLength(3);
+    expect(within(kinds).getAllByRole('tab')).toHaveLength(2);
   });
 
   it('opens the Edits menu with the four things an agent may do', async () => {
@@ -82,13 +82,14 @@ describe('the u28 start run scenes', () => {
     ]);
   });
 
-  it('names the model of the Lead in the settings row, and in the route line', async () => {
+  it('names the model of the Lead on the Where it runs line, not in the route line', async () => {
     mount({ id: 'u28-start-run-route-line' });
 
     const line = await screen.findByText(/^Starts[ ]as[ ]Lead/, {}, WAIT);
-    const chip = screen.getByRole('button', { name: /^Model:/ });
+    const chip = screen.getByRole('button', { name: /^Change the Lead model for this run/ });
     expect(chip.getAttribute('aria-label')).toMatch(/, Auto$/);
-    expect(line.textContent).toMatch(/^Starts[ ]as[ ]Lead · .+ · A question or a check/);
+    expect(line.textContent).toMatch(/^Starts[ ]as[ ]Lead · A question or a check/);
+    expect(screen.getByRole('group', { name: 'Where it runs' }).textContent).toMatch(/^Lead on /);
   });
 
   it('opens the Model menu with the picker and the link to the default', async () => {
@@ -96,7 +97,7 @@ describe('the u28 start run scenes', () => {
 
     const menu = await screen.findByRole('dialog', { name: 'Lead model' }, WAIT);
     within(menu).getByRole('button', { name: /^Auto, now / });
-    within(menu).getByRole('button', { name: 'Change the default in Settings' });
+    within(menu).getByRole('button', { name: 'Change the default in Every run' });
   });
 
   it('starts a task with an end as a Lead, never the orchestrator', async () => {
@@ -105,9 +106,11 @@ describe('the u28 start run scenes', () => {
     const line = await screen.findByText(/^Starts[ ]as[ ]Lead/, {}, WAIT);
     expect(line.textContent).toContain('A task with an end');
     expect(line.textContent).not.toContain('Orchestrated');
-    expect(screen.getByRole('button', { name: /^Model:/ }).getAttribute('data-run-model')).toBe(
-      'auto',
-    );
+    expect(
+      screen
+        .getByRole('button', { name: /^Change the Lead model for this run/ })
+        .getAttribute('data-run-model'),
+    ).toBe('auto');
   });
 
   it('shows No limit on the Limit chip when none is set', async () => {

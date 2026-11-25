@@ -20,6 +20,13 @@ import { isStepSize, isWorkflowOrigin } from '@goodboy/types';
 import type { Database, GuardedStatement, PlainStatement, TransactionOutcome } from '../client';
 import { NotFoundError, UniqueViolationError } from '../shared/errors';
 import {
+  guideFieldsOf,
+  guideFieldsOfRow,
+  guideUpsertParamsOf,
+  type WorkflowGuideFields,
+  type WorkflowGuideRow,
+} from './workflow-guide';
+import {
   isWorkflowRoutingDecision,
   isWorkflowRoutingLock,
   isWorkflowTaskProfile,
@@ -28,7 +35,7 @@ import {
   stringifyRoutingJson,
 } from './workflowRoutingCodec';
 
-type WorkflowRow = {
+type WorkflowRow = WorkflowGuideRow & {
   id: string;
   workspace_id: string;
   name: string;
@@ -108,6 +115,7 @@ function toWorkflow(row: WorkflowRow, steps: ReadonlyArray<Step>): Workflow {
     description: row.description,
     ...(row.goal != null && { goal: row.goal }),
     ...(row.process_text != null && row.process_text !== '' && { processText: row.process_text }),
+    ...guideFieldsOfRow({ row }),
     steps,
     isPreset: row.is_preset == null ? true : row.is_preset !== 0,
     ...(isWorkflowOrigin(row.origin) && { origin: row.origin }),
@@ -119,15 +127,12 @@ function toWorkflow(row: WorkflowRow, steps: ReadonlyArray<Step>): Workflow {
   };
 }
 
-export const listWorkflows = async (
-  db: Database,
-  workspaceId: WorkspaceId,
-): Promise<ReadonlyArray<Workflow>> => {
-  const rows = await db.select<WorkflowRow>(
-    'SELECT * FROM workflows WHERE workspace_id = ? AND deleted_at IS NULL ORDER BY created_at ASC',
-    [workspaceId],
-  );
+type WithStepsParams = {
+  readonly db: Database;
+  readonly rows: ReadonlyArray<WorkflowRow>;
+};
 
+const withSteps = async ({ db, rows }: WithStepsParams): Promise<ReadonlyArray<Workflow>> => {
   if (rows.length === 0) {
     return [];
   }
@@ -145,6 +150,17 @@ export const listWorkflows = async (
     stepsByWorkflow.set(stepRow.workflow_id, bucket);
   }
   return rows.map((row) => toWorkflow(row, stepsByWorkflow.get(row.id) ?? []));
+};
+
+export const listWorkflows = async (
+  db: Database,
+  workspaceId: WorkspaceId,
+): Promise<ReadonlyArray<Workflow>> => {
+  const rows = await db.select<WorkflowRow>(
+    'SELECT * FROM workflows WHERE workspace_id = ? AND deleted_at IS NULL ORDER BY created_at ASC',
+    [workspaceId],
+  );
+  return withSteps({ db, rows });
 };
 
 type ListWorkflowsIncludingDeletedParams = {
@@ -160,38 +176,13 @@ export const listWorkflowsIncludingDeleted = async ({
     'SELECT * FROM workflows WHERE workspace_id = ? ORDER BY created_at ASC',
     [workspaceId],
   );
-  if (rows.length === 0) {
-    return [];
-  }
-  const workflowIds = rows.map((row) => row.id);
-  const stepRows = await db.select<StepRow>(
-    `SELECT * FROM steps
-     WHERE workflow_id IN (${workflowIds.map(() => '?').join(', ')}) AND deleted_at IS NULL
-     ORDER BY workflow_id, ordinal ASC`,
-    workflowIds,
-  );
-  const stepsByWorkflow = new Map<string, Step[]>();
-  for (const stepRow of stepRows) {
-    const bucket = stepsByWorkflow.get(stepRow.workflow_id) ?? [];
-    bucket.push(toStep(stepRow));
-    stepsByWorkflow.set(stepRow.workflow_id, bucket);
-  }
-  return rows.map((row) => toWorkflow(row, stepsByWorkflow.get(row.id) ?? []));
+  return withSteps({ db, rows });
 };
 
 export const getWorkflow = async (db: Database, id: WorkflowId): Promise<Workflow | null> => {
   const rows = await db.select<WorkflowRow>('SELECT * FROM workflows WHERE id = ?', [id]);
-  const row = rows[0];
-  if (!row) {
-    return null;
-  }
-
-  const stepRows = await db.select<StepRow>(
-    'SELECT * FROM steps WHERE workflow_id = ? AND deleted_at IS NULL ORDER BY ordinal ASC',
-    [row.id],
-  );
-
-  return toWorkflow(row, stepRows.map(toStep));
+  const [workflow] = await withSteps({ db, rows });
+  return workflow ?? null;
 };
 
 const STEP_UPSERT_SQL = `INSERT INTO steps
@@ -256,8 +247,8 @@ const upsertStatements = (workflow: Workflow): ReadonlyArray<PlainStatement> => 
   const workflowStatement: PlainStatement = {
     sql: `INSERT INTO workflows
       (id, workspace_id, name, description, goal, process_text, created_at, updated_at, is_preset,
-       origin)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       origin, entry_check, stop_rule, then_suggest_id, is_order_kept)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name = excluded.name,
        description = excluded.description,
@@ -265,7 +256,11 @@ const upsertStatements = (workflow: Workflow): ReadonlyArray<PlainStatement> => 
        process_text = excluded.process_text,
        updated_at = excluded.updated_at,
        is_preset = excluded.is_preset,
-       origin = COALESCE(workflows.origin, excluded.origin)`,
+       origin = COALESCE(workflows.origin, excluded.origin),
+       entry_check = IIF(? = 1, excluded.entry_check, workflows.entry_check),
+       stop_rule = IIF(? = 1, excluded.stop_rule, workflows.stop_rule),
+       then_suggest_id = IIF(? = 1, excluded.then_suggest_id, workflows.then_suggest_id),
+       is_order_kept = IIF(? = 1, excluded.is_order_kept, workflows.is_order_kept)`,
     params: [
       workflow.id,
       workflow.workspaceId,
@@ -277,6 +272,7 @@ const upsertStatements = (workflow: Workflow): ReadonlyArray<PlainStatement> => 
       Date.parse(workflow.updatedAt),
       workflow.isPreset === false ? 0 : 1,
       workflow.origin ?? null,
+      ...guideUpsertParamsOf({ source: workflow }),
     ],
   };
   return [workflowStatement, ...stepStatements];
@@ -443,7 +439,7 @@ export type WorkflowStepInput = {
   readonly size?: StepSize;
 };
 
-export type SaveWorkflowInput = {
+export type SaveWorkflowInput = WorkflowGuideFields & {
   readonly id?: WorkflowId;
   readonly workspaceId: WorkspaceId;
   readonly name: string;
@@ -559,6 +555,7 @@ const draftWorkflow = async (db: Database, input: SaveWorkflowInput): Promise<Wo
     description: input.description,
     ...(input.goal !== undefined && { goal: input.goal }),
     ...(input.processText !== undefined && { processText: input.processText }),
+    ...guideFieldsOf({ source: input }),
     steps: input.steps.map((step) => stepFromInput(step, id)),
     isPreset,
     ...(input.origin !== undefined && { origin: input.origin }),

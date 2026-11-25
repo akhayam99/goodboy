@@ -7,7 +7,14 @@ import type {
   AutoRunSlots,
   AutoTree,
 } from '@goodboy/db';
-import type { AutoBudgetFacts, MountNote, OutcomeLine } from '@goodboy/core/auto';
+import type {
+  AutoBudgetFacts,
+  GuideCheck,
+  GuideDeviation,
+  GuideStep,
+  MountNote,
+  OutcomeLine,
+} from '@goodboy/core/auto';
 import type { AgentId, MessageAttachment, ProviderRunId, SessionId } from '@goodboy/types';
 
 export type AutoTreeView = Readonly<{
@@ -18,6 +25,8 @@ export type AutoTreeView = Readonly<{
   artifacts: ReadonlyArray<AutoArtifactLedgerRow>;
   budget: AutoBudgetFacts | null;
   pendingRefusal: AutoPendingRefusal | null;
+  hold?: AutoHold | null;
+  guide?: AutoGuideView | null;
   pendingMessages: ReadonlyArray<AutoPendingMessage>;
   readMessages?: ReadonlyArray<AutoReadMessage>;
   sentChange?: AutoSentChange | null;
@@ -47,6 +56,20 @@ export type AutoDeliveredResult = Readonly<{
   summary: string | null;
   outcomeLine: OutcomeLine | null;
   artifacts: ReadonlyArray<AutoDeliveredArtifact>;
+}>;
+
+export type AutoHold = Readonly<{
+  reason: string;
+  suggestion: string | null;
+  suggestionId?: string | null;
+}>;
+
+export type AutoGuideView = Readonly<{
+  workflowId: string;
+  name: string;
+  check: GuideCheck;
+  steps: ReadonlyArray<GuideStep>;
+  deviations: ReadonlyArray<GuideDeviation>;
 }>;
 
 export type AutoPendingRefusal = Readonly<{

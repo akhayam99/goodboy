@@ -1,5 +1,6 @@
 import { AUTO_USD_EPSILON, type AutoArtifact, type AutoTree } from '@goodboy/db';
 import { admissionChildRefusals } from './admissionChildRefusals';
+import { guideGateOf, type GuideRecord } from './guideSpec';
 import type { AutoRefusalCode } from './refusals';
 import type { AutoDelegationRole } from './roles';
 import type { LeadPermissionRows } from './permissions';
@@ -48,6 +49,7 @@ export type AdmissionSnapshot = Readonly<{
   isPlanApprovalRequired: boolean;
   permissions: AdmissionPermissions;
   parents?: ReadonlyArray<AdmissionParentFacts>;
+  guide?: GuideRecord | null;
 }>;
 
 export type AdmissionChildRefusal = Readonly<{
@@ -115,6 +117,17 @@ export const diagnoseAdmission = ({
   const whole = treeRefusal({ snapshot, tree, count: children.length });
   if (whole !== null) {
     return { kind: 'refused', code: whole, perChild: [] };
+  }
+  const gate = guideGateOf({
+    guide: snapshot.guide ?? null,
+    roles: children.map((child) => child.role),
+  });
+  if (gate !== null) {
+    return {
+      kind: 'refused',
+      code: gate.code,
+      perChild: gate.slots.map((slot) => ({ slot, code: gate.code, latestRevision: null })),
+    };
   }
   const perChild = admissionChildRefusals({ snapshot, tree, children });
   const first = perChild[0];

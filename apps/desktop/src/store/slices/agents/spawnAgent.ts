@@ -8,6 +8,7 @@ import {
   type PlanId,
   type PlanWithCount,
   type ProviderId,
+  type RunRoute,
   type Session,
   type SessionId,
   type Step,
@@ -35,6 +36,7 @@ import { writeRunGuidance } from '../../runtime/runGuidance/writeRunGuidance';
 import { writeRunLimit } from '../../runtime/runLimit/writeRunLimit';
 import type { RunStepLock } from '../../runtime/runLocks/parseRunLocks';
 import { writeRunLocks } from '../../runtime/runLocks/writeRunLocks';
+import { writeRunRoute } from '../../../features/session/startRun/runRoutesSetting';
 import { namedMountTarget } from '../resolve/mountTarget';
 import {
   canFanOutClusters,
@@ -69,6 +71,7 @@ type SpawnArgs = {
   guidance?: string | null;
   limitUsd?: number | null;
   stepLocks?: ReadonlyArray<RunStepLock>;
+  runRoute?: RunRoute;
   humanPrompt?: string;
   seedPrompt?: string;
   triggeredPlanId?: PlanId;
@@ -215,6 +218,14 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
             workspaceId: session.workspaceId,
             agentId: newAgentId,
             locks: args.stepLocks,
+          });
+        }
+        if (args.runRoute !== undefined) {
+          await writeRunRoute({
+            db: tauriDatabase,
+            sessionId,
+            agentId: newAgentId,
+            route: args.runRoute,
           });
         }
         const inserted = await invokeAgentInsert({

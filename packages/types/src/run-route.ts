@@ -8,6 +8,7 @@ export type RunRoute = Readonly<{
   shape: RunRouteShape;
   row: number;
   presetName: string | null;
+  workflowId?: string;
   closeness: RunRouteCloseness | null;
   role: string | null;
   choice: string;
@@ -34,6 +35,7 @@ export const parseRunRoute = ({ value }: ParseParams): RunRoute | null => {
     shape,
     row: typeof value.row === 'number' && Number.isInteger(value.row) ? value.row : 6,
     presetName: textOrNull(value.presetName),
+    ...(typeof value.workflowId === 'string' && { workflowId: value.workflowId }),
     closeness: value.closeness === 'follow' || value.closeness === 'adapt' ? value.closeness : null,
     role: textOrNull(value.role),
     choice: value.choice,

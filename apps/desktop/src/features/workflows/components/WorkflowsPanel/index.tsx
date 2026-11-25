@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ProviderId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { DrawerColumn, PaneShell } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { sessionPlace } from '../../../../store/slices/navigation/place';
+import { agentPlace, sessionPlace } from '../../../../store/slices/navigation/place';
 import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
 import { NAMES } from '../../../../shared/utils/names';
 import { useWorkflowRunHistory } from '../../hooks/useWorkflowRunHistory';
@@ -110,11 +110,14 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         }}
         onOpenRun={(run) =>
           navigate({
-            to: sessionPlace({
-              sessionId: run.sessionId,
-              lens: 'workflows',
-              target: { kind: 'run', runId: run.workflowRunId },
-            }),
+            to:
+              run.leadAgentId === null
+                ? sessionPlace({
+                    sessionId: run.sessionId,
+                    lens: 'workflows',
+                    target: { kind: 'run', runId: run.workflowRunId },
+                  })
+                : agentPlace({ sessionId: run.sessionId, agentId: run.leadAgentId }),
           })
         }
         onStartRun={() =>
@@ -175,6 +178,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         onOpen={editor.open}
         onShowRuns={showRuns}
         onNew={editor.openNew}
+        onDuplicate={(workflow) => editor.duplicate({ source: workflow })}
         onRestore={restore}
       />
     );
@@ -189,6 +193,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         workspaceId={workspaceId}
         workingDir={workingDir}
         connectedProviders={connectedProviders}
+        workflows={presets}
         editor={editor}
       />
     );

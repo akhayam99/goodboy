@@ -7,6 +7,7 @@ import { WORKFLOW_LIBRARY } from '@goodboy/core/workflows';
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import {
   brandId,
+  type AgentId,
   type AgentRole,
   type Step,
   type StepId,
@@ -84,6 +85,7 @@ const renderList = (
 ) => {
   const onOpen = vi.fn();
   const onShowRuns = vi.fn();
+  const onDuplicate = vi.fn();
   render(
     <WorkflowList
       workflows={workflows}
@@ -97,13 +99,30 @@ const renderList = (
       onOpen={onOpen}
       onShowRuns={onShowRuns}
       onNew={vi.fn()}
+      onDuplicate={onDuplicate}
       onRestore={vi.fn(async () => undefined)}
     />,
   );
-  return { onOpen, onShowRuns };
+  return { onOpen, onShowRuns, onDuplicate };
 };
 
 describe('WorkflowList', () => {
+  it('says when to use each workflow on its row', () => {
+    renderList([workflow({ description: 'The task names a test that fails some of the time' })]);
+
+    const row = screen.getByRole('button', { name: 'Open Settlement replay' });
+    expect(row.textContent).toContain('The task names a test that fails some of the time');
+  });
+
+  it('duplicates a workflow from its row', () => {
+    const { onDuplicate, onOpen } = renderList([workflow()]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate Settlement replay' }));
+
+    expect(onDuplicate).toHaveBeenCalledOnce();
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
   it('shows a row per workflow with its step count, and the row opens the editor', () => {
     const { onOpen, onShowRuns } = renderList([workflow()]);
     const row = screen.getByRole('button', { name: 'Open Settlement replay' });
@@ -172,6 +191,21 @@ describe('WorkflowList', () => {
     expect(onShowRuns).toHaveBeenCalledOnce();
   });
 
+  it('counts a Lead run that followed the workflow and names no old routing words', () => {
+    const leadRun = aRunHistoryRow({
+      id: 'tree-lead',
+      workflowId: 'wf-1',
+      createdAt: new Date(Date.now() - 2 * 60_000).toISOString(),
+      overrides: { leadAgentId: brandId<AgentId>({ value: 'agent-lead' }) },
+    });
+    renderList([workflow()], { runs: [leadRun, run({ id: 'run-old', minutesAgo: 90 })] });
+
+    screen.getByRole('button', { name: 'Runs of Settlement replay: last run 2m ago, 2 runs' });
+    for (const word of ['Balanced', 'In order', 'most room', 'Send new steps to']) {
+      expect(document.body.textContent).not.toContain(word);
+    }
+  });
+
   it('draws no runs link while the runs load', () => {
     renderList([workflow()], { runs: null });
     expect(screen.queryByRole('button', { name: /^Runs of Settlement replay/ })).toBeNull();
@@ -218,6 +252,7 @@ describe('WorkflowList', () => {
         onOpen={vi.fn()}
         onShowRuns={vi.fn()}
         onNew={vi.fn()}
+        onDuplicate={vi.fn()}
         onRestore={onRestore}
       />,
     );
@@ -280,6 +315,7 @@ describe('WorkflowList', () => {
         onOpen={vi.fn()}
         onShowRuns={vi.fn()}
         onNew={vi.fn()}
+        onDuplicate={vi.fn()}
         onRestore={onRestore}
       />,
     );

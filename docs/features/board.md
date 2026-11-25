@@ -15,6 +15,7 @@ A card resolves nothing on the Board. Click it and its session opens at the exac
 - a question, on its answer
 - a plan, on its review
 - a stopped or paused run, on its run
+- a run held on its first check, on its card, with **Switch** in focus
 
 A session of another workspace opens through that workspace.
 
@@ -133,6 +134,7 @@ This part is for contributors and agents who change the feature.
 - Needs you in Running: `NeedsYouCards` reads `useNeedsYou` and draws one `NeedsYouCard`, an `InteractiveRow` with the `warning` `ToneBar`, per card. `BoardLanes` hands them to the `running` `StageColumn` as its `lead`, above its own cards, and adds their count to the lane head. A click calls `openAttentionTarget` with the card's reason, so the landing is `attentionPlace` and another workspace goes through `attentionTargetChannel`. Tested in `NeedsYouCards/index.test.tsx`, `lanes.test.tsx`, `needs-you.rows.tsx` and the u52 board scenes.
 - Card grammar: `cardContextOf` gives the gray line (`projectLineOf` and the first branch), and `cardFactsOf` the state and age of the meta line. `CardFactsLine` draws them in a wrapping row whose separator hides at a line start, beside the signal. `StageColumn` passes `density="row"` to the `done` and `archived` lanes. Tested in `cardContextOf.test.ts`, `cardFactsOf.test.ts` and `StageBoardCard/index.test.tsx`.
 - Archived fold: `StageColumn` keeps the fold in local state, folded on mount and never while the list loads or is empty. Selection still reads the whole list, so Select all picks a folded session too (`lanes.test.tsx`, the `board-lanes` flow row).
+- Held run: `waitingRunOf` words a held Lead "Stopped on a check" with the verb "Switch to <workflow>" (`holdWaitWords`). `attentionPlace` opens the held Lead first when two wait, and `AutoDockHold` puts focus on its first button when nothing else holds focus (`AutoDock.hold.test.tsx`, `waitingRunOf.test.ts`).
 - Old entries: a history entry saved with the retired `board.layout` and `board.move` rows opens the stages (`needs-you.rows.tsx`).
 - Merge order: `mergeOrderOf` proposes the order and its reason from `readyCarsOf`. It reads the mount, the base branch and the file count of a cached view. `MergeInOrder` in the In review lane head reads `useReadyToMerge` and `useMergeTrain`, which merges every ready car in that order (u50 merge train scenes).
 - Merge train: `startMergeTrain` keeps one `mergeTrain` in the store, so the line survives leaving the Board. A second start while one runs answers `busy`. The train lives in the window that started it.

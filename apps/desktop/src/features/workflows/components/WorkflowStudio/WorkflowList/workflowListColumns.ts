@@ -7,4 +7,5 @@ export const WORKFLOW_LIST_COLUMNS = [
   { key: 'steps', width: 56, align: 'end', isNumeric: true },
   { key: 'lastRun', width: 72, align: 'end', isNumeric: true, tone: 'hint' },
   { key: 'runs', width: 56, align: 'end', isNumeric: true },
+  { key: 'actions', width: 28, align: 'end' },
 ] as const satisfies ReadonlyArray<ListGridColumn>;

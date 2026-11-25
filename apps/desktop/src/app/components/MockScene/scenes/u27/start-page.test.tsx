@@ -63,27 +63,32 @@ describe('the u27 start page scenes', () => {
       within(kinds)
         .getAllByRole('tab')
         .map((tab) => tab.getAttribute('aria-selected')),
-    ).toEqual(['true', 'false', 'false']);
-    for (const name of ['The Lead plans it', 'Follow a workflow', 'One agent']) {
+    ).toEqual(['true', 'false']);
+    for (const name of ['The Lead plans it', 'One agent']) {
       within(kinds).getByRole('tab', { name });
     }
+    expect(screen.getByRole('combobox', { name: 'Workflow' }).textContent).toContain('Auto');
     screen.getByText('The Lead writes a plan first, then starts the agents it needs.');
   });
 
-  it('gives the agent a role, Edits and no limit, and its model in the message box', async () => {
+  it('gives the agent a role, Edits and no limit, and its model on the Where it runs line', async () => {
     mount({ id: 'u27-start-page-after-agent-form' });
 
     const row = startSettingsRowOf({
       group: await screen.findByRole('group', { name: 'Run settings' }, WAIT),
     });
     expect(screen.getByRole('combobox', { name: 'Role' }).textContent).toContain('Scout');
-    expect(row.queryByRole('button', { name: /^Model: / })).toBeNull();
+    expect(row.queryByRole('button', { name: /^Change the .* model/ })).toBeNull();
     const goal = screen.getByRole('textbox', { name: START_KIND_COPY.goal });
     const box = goal.closest<HTMLElement>('[data-prompt-field]');
-    within(box ?? document.body).getByRole('button', { name: /^Model: / });
+    expect(
+      within(box ?? document.body).queryByRole('button', { name: /^Change the .* model/ }),
+    ).toBeNull();
+    const where = within(screen.getByRole('group', { name: 'Where it runs' }));
+    where.getByRole('button', { name: /^Change the Scout model for this run/ });
     row.getByRole('button', { name: /^Edits: / });
     expect(row.queryByText(/Limit/)).toBeNull();
-    expect(row.queryByRole('button', { name: /^Asks you/ })).toBeNull();
+    expect(row.queryByRole('button', { name: /^Stops/ })).toBeNull();
     screen.getByRole('button', { name: 'Start' });
   });
 
@@ -97,8 +102,8 @@ describe('the u27 start page scenes', () => {
     ).toHaveLength(3);
     screen.getByRole('checkbox', { name: 'Keep its steps as written' });
     const row = startSettingsRowOf({ group: screen.getByRole('group', { name: 'Run settings' }) });
-    row.getByRole('button', { name: /^Asks you: / });
-    expect(row.queryByRole('button', { name: /^Asks you: Every step/ })).toBeNull();
+    row.getByRole('button', { name: /^Stops: / });
+    expect(row.queryByRole('button', { name: /^Stops: Every step/ })).toBeNull();
     expect(row.getByRole('combobox', { name: 'Projects' }).textContent).toContain('harbor-portal');
     screen.getByText('Member pages drift left on wide screens');
     screen.getByRole('button', { name: 'Start' });

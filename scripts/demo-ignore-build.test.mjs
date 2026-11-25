@@ -15,7 +15,7 @@ const exitCodeOf = ({ environment, message }) =>
     encoding: 'utf8',
   }).status;
 
-const gitOf = ({ diffStatus, hasMergeBase = true, hasLastDeploy = false }) => {
+const gitOf = ({ diffStatus, hasMergeBase = true, hasLastDeploy = false, subjects = [] }) => {
   const calls = [];
   const git = ({ args }) => {
     calls.push(args);
@@ -38,6 +38,9 @@ const gitOf = ({ diffStatus, hasMergeBase = true, hasLastDeploy = false }) => {
     if (command === 'diff') {
       return { status: diffStatus, stdout: '' };
     }
+    if (command === 'log') {
+      return { status: 0, stdout: subjects.join('\n') };
+    }
     return { status: 128, stdout: '' };
   };
   return { git, calls };
@@ -48,6 +51,40 @@ const diffOf = ({ calls }) => calls.find((args) => args[0] === 'diff');
 const preview = { VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'ak/board-tidy' };
 
 describe('demoBuildDecisionOf', () => {
+  it('builds production when a release landed after the last deploy, even under a later commit', () => {
+    const { git } = gitOf({
+      diffStatus: 0,
+      hasLastDeploy: true,
+      subjects: ['fix(repo): tidy the footer (#2400)', 'chore(repo): release 0.42.1 (#2399)'],
+    });
+    const decision = demoBuildDecisionOf({
+      env: {
+        VERCEL_ENV: 'production',
+        VERCEL_GIT_PREVIOUS_SHA: LAST_DEPLOY,
+        VERCEL_GIT_COMMIT_MESSAGE: 'fix(repo): tidy the footer (#2400)',
+      },
+      git,
+    });
+    assert.equal(decision.shouldBuild, true);
+  });
+
+  it('skips production when no release landed after the last deploy', () => {
+    const { git } = gitOf({
+      diffStatus: 0,
+      hasLastDeploy: true,
+      subjects: ['fix(repo): tidy the footer (#2400)'],
+    });
+    const decision = demoBuildDecisionOf({
+      env: {
+        VERCEL_ENV: 'production',
+        VERCEL_GIT_PREVIOUS_SHA: LAST_DEPLOY,
+        VERCEL_GIT_COMMIT_MESSAGE: 'fix(repo): tidy the footer (#2400)',
+      },
+      git,
+    });
+    assert.equal(decision.shouldBuild, false);
+  });
+
   it('builds production on a squashed release commit', () => {
     const { git } = gitOf({ diffStatus: 0 });
     const decision = demoBuildDecisionOf({

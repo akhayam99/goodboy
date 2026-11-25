@@ -7,6 +7,7 @@ const NODES = {
   asks: 'asks',
   edits: 'edits',
   limit: 'limit',
+  replies: 'replies',
   guidance: 'guidance',
 };
 
@@ -19,14 +20,14 @@ const keysOf = ({ kind }: KeysParams): ReadonlyArray<string> =>
 
 describe('startSettingsOf', () => {
   it('gives every kind that asks and limits the same chip order', () => {
-    const expected = ['where', 'asks', 'edits', 'limit', 'guidance'];
+    const expected = ['where', 'asks', 'edits', 'limit', 'replies', 'guidance'];
     expect(keysOf({ kind: null })).toEqual(expected);
     expect(keysOf({ kind: 'lead' })).toEqual(expected);
     expect(keysOf({ kind: 'preset' })).toEqual(expected);
   });
 
   it('drops Asks you and Limit for one agent, whose role sits in the Plan row', () => {
-    expect(keysOf({ kind: 'agent' })).toEqual(['where', 'edits', 'guidance']);
+    expect(keysOf({ kind: 'agent' })).toEqual(['where', 'edits', 'replies', 'guidance']);
   });
 
   it('marks the changed settings and keeps the words of each', () => {
