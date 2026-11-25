@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { dataLayerEntry } from '../src/lib/dataLayerEntry.ts';
 import { isCountedClick } from '../src/lib/isCountedClick.ts';
 import { readTrackEvent } from '../src/lib/readTrackEvent.ts';
 import { trackAttributes } from '../src/lib/trackAttributes.ts';
@@ -162,5 +163,29 @@ describe('the downloaded version', () => {
       assert.ok(calls > 0);
       assert.equal(versions, calls, name);
     });
+  });
+});
+
+describe('dataLayerEntry', () => {
+  it('clears every parameter of the spec so a value never leaks into the next event', () => {
+    const entry = dataLayerEntry({
+      tracked: { event: 'copy_install_command', params: { install_method: 'brew' } },
+      spec: SPEC,
+    });
+    const names = [...new Set(Object.values(SPEC).flatMap((rules) => Object.keys(rules)))];
+    assert.deepEqual(Object.keys(entry).sort(), ['event', ...names].sort());
+    assert.equal(entry.event, 'copy_install_command');
+    assert.equal(entry.install_method, 'brew');
+    assert.equal(entry.platform, undefined);
+    assert.equal(entry.cta_location, undefined);
+  });
+
+  it('keeps the values the event declares', () => {
+    const entry = dataLayerEntry({
+      tracked: { event: 'star_click', params: { cta_location: 'hero' } },
+      spec: SPEC,
+    });
+    assert.equal(entry.cta_location, 'hero');
+    assert.equal(entry.app_version, undefined);
   });
 });

@@ -301,12 +301,25 @@ Four actions carry an event, and no link text, class or menu is read. The spec i
 `downloadTrack` writes the download set. One click listener on the document,
 started by `website/src/lib/mountRoot.tsx` for every page entry
 (`website/src/lib/startTracking.ts`), reads the attributes with `readTrackEvent` and
-pushes `{ event, ...parameters }` to `dataLayer`. It pushes nothing, and queues
+pushes the entry `dataLayerEntry` builds: the event, every parameter of the spec
+set to `undefined`, then the event's own values. Tag Manager keeps `dataLayer`
+keys from one push to the next, so without the reset a download's `platform`
+would ride along on the next `copy_install_command`. It pushes nothing, and queues
 nothing, unless `window.goodboyConsent.isMeasurementGranted` is true (Cookie consent
 above). An event or value outside the spec is dropped, and `check-seo` fails the
 build on a `data-track` outside it and on a `data-download` or `data-star` link
-without one. A new event is a line in the spec, a `data-track` in the markup and a
-trigger in the Tag Manager container.
+without one.
+
+The Tag Manager container (`GTM-5NM3VX7Q`) mirrors the spec with two tags. The
+Google tag loads Google Analytics on every page. One Google Analytics event tag
+fires on one custom event trigger whose regex lists the four event names, sends
+the `dataLayer` event name as the Google Analytics event name, and maps each
+spec parameter through its own Data Layer Variable (`DLV - <parameter>`). Google
+Analytics holds one event scoped custom dimension per parameter, and
+`download_click` is the key event. A new event is a line in the spec, a
+`data-track` in the markup and its name in the trigger regex. A new parameter
+is also a Data Layer Variable, a row in the event tag and a custom dimension.
+The container reads no link text, class or URL.
 
 ## Components
 
