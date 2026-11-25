@@ -18,7 +18,7 @@ const POLISH_ID = 'use-it-when';
 
 export const UseItWhenField = ({ workspaceId, workingDir, value, isDisabled, onChange }: Props) => {
   const polishDeps = useProsePolishDeps({ workspaceId, workingDir });
-  const [, setPolishError] = useState<string | null>(null);
+  const [polishError, setPolishError] = useState<string | null>(null);
   const polish = usePolish({ onError: setPolishError });
   return (
     <WorkflowSection label="Use it when" help="Say what kind of task this workflow fits.">
@@ -32,19 +32,21 @@ export const UseItWhenField = ({ workspaceId, workingDir, value, isDisabled, onC
         canUndo={polish.canUndo({ id: POLISH_ID, current: value })}
         isPolishing={polish.polishingId === POLISH_ID}
         disabled={isDisabled}
+        notice={polishError}
         onChange={onChange}
         onBlur={() => {}}
         onUseSessionGoal={() => {}}
         onUndo={() => polish.undo({ id: POLISH_ID, current: value, apply: onChange })}
-        onPolish={() =>
+        onPolish={() => {
+          setPolishError(null);
           void polish.run({
             id: POLISH_ID,
             current: value,
             keptMessage: "Kept your wording. It couldn't be polished.",
             polish: () => polishWorkflowGoalText({ deps: polishDeps, goal: value }),
             apply: onChange,
-          })
-        }
+          });
+        }}
       />
     </WorkflowSection>
   );

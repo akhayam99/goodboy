@@ -18,6 +18,7 @@ type WorkflowGeneration =
   | { readonly status: 'failed'; readonly description: string; readonly error: string }
   | {
       readonly status: 'drafted';
+      readonly draftKey: number;
       readonly workspaceId: WorkspaceId;
       readonly notificationId: string;
       readonly name: string;
@@ -38,6 +39,7 @@ export type StartWorkflowGenerationParams = {
   readonly workflow: Workflow | null;
   readonly form: WorkflowDraft | null;
   readonly isDraftOnly?: boolean;
+  readonly draftKey?: number;
 };
 
 export type WorkflowRunHistoryLoad = {

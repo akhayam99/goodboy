@@ -120,4 +120,34 @@ describe('drafting the steps of a workflow with a form', () => {
       }),
     );
   });
+
+  it('keeps the goal of the form on a save and uses the generated one only without a form', async () => {
+    storySpies.invokeWorkflowUpsert.mockImplementation(async (args) => ({
+      ...args,
+      id: brandId<WorkflowId>({ value: 'wf-9' }),
+      steps: [],
+      createdAt: brandId({ value: '2026-10-01T10:00:00.000Z' }),
+      updatedAt: brandId({ value: '2026-10-01T10:00:00.000Z' }),
+    }));
+
+    await useAppStore.getState().startWorkflowGeneration({
+      workspaceId: WORKSPACE.id,
+      description: 'A test fails some of the time',
+      workflow: null,
+      form: { ...form, goal: 'Keep the ledger export exact' },
+    });
+    const withForm = storySpies.invokeWorkflowUpsert.mock.calls.at(-1)?.[0];
+    await useAppStore.getState().clearWorkflowStudioDraft({ workspaceId: WORKSPACE.id });
+    useAppStore.getState().consumeWorkflowGeneration({ workspaceId: WORKSPACE.id });
+    await useAppStore.getState().startWorkflowGeneration({
+      workspaceId: WORKSPACE.id,
+      description: 'A test fails some of the time',
+      workflow: null,
+      form: null,
+    });
+    const withoutForm = storySpies.invokeWorkflowUpsert.mock.calls.at(-1)?.[0];
+
+    expect(withForm).toMatchObject({ goal: 'Keep the ledger export exact' });
+    expect(withoutForm).toMatchObject({ goal: 'Ship the change' });
+  });
 });

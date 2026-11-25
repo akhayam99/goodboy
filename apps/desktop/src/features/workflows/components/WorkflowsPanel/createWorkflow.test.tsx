@@ -274,11 +274,12 @@ describe('creating a workflow', () => {
 
   it('drafts steps without writing and fills the form', async () => {
     useAppStore.setState({
-      startWorkflowGeneration: async () => {
+      startWorkflowGeneration: async ({ draftKey }) => {
         useAppStore.setState({
           workflowGenerations: {
             [WORKSPACE.id]: {
               status: 'drafted',
+              draftKey: draftKey ?? 0,
               workspaceId: WORKSPACE.id,
               notificationId: 'n-1',
               name: 'Drafted name',
@@ -324,6 +325,82 @@ describe('creating a workflow', () => {
     expect(actions).not.toBeNull();
     screen.getByRole('button', { name: 'Discard' });
     expect(actions?.nextElementSibling).toBeNull();
+  });
+});
+
+describe('a draft that changes under a pending request', () => {
+  const draftedWith = (draftKey: number) => ({
+    [WORKSPACE.id]: {
+      status: 'drafted' as const,
+      draftKey,
+      workspaceId: WORKSPACE.id,
+      notificationId: `n-${draftKey}`,
+      name: 'Drafted name',
+      steps: [
+        { ordinal: 0, name: 'Reproduce', promptPrefix: 'Reproduce it', role: 'scout' as const },
+      ],
+    },
+  });
+
+  it('drops steps drafted for a draft that is not the open one', async () => {
+    openNew();
+    typeName('Another draft');
+    useAppStore.setState({ workflowGenerations: draftedWith(-1) });
+
+    await waitFor(() =>
+      expect(useAppStore.getState().workflowGenerations[WORKSPACE.id]).toEqual({ status: 'idle' }),
+    );
+    expect(screen.queryByRole('button', { name: 'Step 1: Reproduce' })).toBeNull();
+    expect(screen.getByLabelText('Workflow name')).toHaveProperty('value', 'Another draft');
+  });
+
+  it('offers Undo that brings the earlier steps back after a redraft', async () => {
+    useAppStore.setState({
+      startWorkflowGeneration: async ({ draftKey }) => {
+        useAppStore.setState({ workflowGenerations: draftedWith(draftKey ?? 0) });
+        return true;
+      },
+    });
+    openNew();
+    typeName(NAME);
+    addNamedStep();
+    fireEvent.change(screen.getByLabelText('Use it when'), { target: { value: 'A test fails' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Redraft steps/ }));
+
+    await screen.findByRole('button', { name: 'Step 1: Reproduce' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+    await screen.findByRole('button', { name: `Step 1: ${STEP}` });
+  });
+
+  it('leaves the page alone when Create finishes after you left the draft', async () => {
+    let finish: () => void = () => undefined;
+    storySpies.invokeWorkflowUpsert.mockImplementationOnce(
+      (args) =>
+        new Promise((resolve) => {
+          finish = () => resolve(persist(args));
+        }),
+    );
+    openNew();
+    typeName(NAME);
+    addNamedStep();
+
+    fireEvent.click(createButton());
+    expect(screen.getByRole('button', { name: /Draft steps|Redraft steps/ })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    fireEvent.click(
+      within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('button', {
+        name: 'Workflows',
+      }),
+    );
+    await act(async () => {
+      finish();
+    });
+
+    expect(await screen.findByRole('button', { name: /new workflow/i })).toBeDefined();
+    expect(screen.queryByLabelText('Workflow name')).toBeNull();
   });
 });
 

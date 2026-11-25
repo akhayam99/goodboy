@@ -189,6 +189,31 @@ describe('role model pins', () => {
     expect(rolePinOf({ steps: pinned, role: 'scout' })).toEqual({ kind: 'follows' });
   });
 
+  it('drops the stored routing of a step when its role is pinned or reset', () => {
+    const locked = [
+      step({
+        key: 'a',
+        provider: 'codex',
+        model: 'gpt-5.6-terra',
+        routingLock: {
+          version: 1,
+          pick: { provider: 'codex', model: 'gpt-5.6-terra', effort: 'high' },
+          origin: 'user',
+        },
+      }),
+    ];
+
+    const pinned = pinRoleSteps({
+      steps: locked,
+      role: 'reviewer',
+      route: { provider: 'anthropic', model: 'claude-opus-5-5' },
+    });
+    const reset = pinRoleSteps({ steps: locked, role: 'reviewer', route: null });
+
+    expect(pinned[0]).toMatchObject({ routingLock: null, routingDecision: null });
+    expect(reset[0]).toMatchObject({ routingLock: null, routingDecision: null });
+  });
+
   it('reads steps with different pins as set per step, and Reset clears them', () => {
     const mixed = [
       step({ key: 'a', provider: 'codex', model: 'gpt-5.6-terra' }),

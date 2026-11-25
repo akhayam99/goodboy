@@ -176,16 +176,27 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
     }
     handledGenerationRef.current = generation.notificationId;
     consumeWorkflowGeneration({ workspaceId });
-    if (editingRef.current !== 'new') {
+    if (editingRef.current !== 'new' || generation.draftKey !== contextKeyRef.current) {
       return;
     }
     const steps = stepDraftsOfArgs({ steps: generation.steps });
+    const previous = formRef.current.steps;
+    const draftKey = generation.draftKey;
     setForm((current) => ({
       ...current,
       steps,
       name: current.name.trim().length === 0 ? generation.name : current.name,
     }));
-  }, [consumeWorkflowGeneration, generation, setForm, workspaceId]);
+    if (previous.length === 0) {
+      return;
+    }
+    undoable({
+      showToast,
+      message: 'Redrafted the steps.',
+      isCurrent: () => contextKeyRef.current === draftKey,
+      undo: async () => setForm((current) => ({ ...current, steps: previous })),
+    });
+  }, [consumeWorkflowGeneration, generation, setForm, showToast, workspaceId]);
 
   useEffect(() => {
     const nonce = storedDraft?.restoreNonce;
@@ -301,17 +312,24 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
       return;
     }
     const name = snapshot.name.trim();
+    const contextKey = contextKeyRef.current;
     setIsCreating(true);
     setFormError(null);
     setLateTakenName(null);
     try {
       await loadPhaseTemplates(workspaceId);
       const live = useAppStore.getState().phaseTemplates[workspaceId] ?? [];
+      if (contextKeyRef.current !== contextKey) {
+        return;
+      }
       if (liveNamesOf({ workflows: live }).has(name)) {
         setLateTakenName(name);
         return;
       }
       const saved = await savePhaseTemplate(upsertArgsFromDraft({ draft: snapshot, workspaceId }));
+      if (contextKeyRef.current !== contextKey) {
+        return;
+      }
       editingIdRef.current = saved.id;
       savedFormRef.current = JSON.stringify(snapshot);
       setBaseline(saved);
@@ -319,7 +337,9 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
       setEditing(saved);
       clearWorkflowStudioDraft({ workspaceId });
     } catch (error) {
-      setFormError(formatError(error));
+      if (contextKeyRef.current === contextKey) {
+        setFormError(formatError(error));
+      }
     } finally {
       setIsCreating(false);
     }
@@ -369,6 +389,7 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
       workflow,
       form,
       isDraftOnly: workflow === null,
+      draftKey: contextKeyRef.current,
     });
     if (!accepted && generation?.status === 'running') {
       setFormError('Steps are already being drafted in this workspace');

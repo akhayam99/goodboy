@@ -14,6 +14,8 @@ export const pinRoleSteps = ({ steps, role, route }: Params): ReadonlyArray<Step
           ...step,
           provider: route === null ? '' : route.provider,
           model: route === null ? '' : route.model,
+          routingLock: null,
+          routingDecision: null,
         }
       : step,
   );

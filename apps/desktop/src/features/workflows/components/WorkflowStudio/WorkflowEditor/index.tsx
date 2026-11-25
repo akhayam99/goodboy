@@ -120,7 +120,8 @@ export const WorkflowEditor = ({
     step.model !== '' ? step.model : recommendedModel(step);
 
   const hasPurpose = form.description.trim().length > 0 || form.entryCheck.trim().length > 0;
-  const isDraftOff = blocked || !hasProviders || !hasPurpose;
+  const isLocked = blocked || editor.isCreating;
+  const isDraftOff = isLocked || !hasProviders || !hasPurpose;
   const draftHint = !hasProviders
     ? 'Connect a provider to draft steps'
     : !hasPurpose
@@ -144,7 +145,6 @@ export const WorkflowEditor = ({
 
   const error = editor.formError ?? editor.generationError ?? polishError ?? saveError;
   const isNew = !editor.isSavedWorkflow;
-  const isLocked = blocked || editor.isCreating;
   const errorNotice =
     error === null ? null : <Notice tone="danger" placement="inline" role="alert" title={error} />;
 

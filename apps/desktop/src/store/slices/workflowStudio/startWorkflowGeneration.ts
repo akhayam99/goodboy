@@ -88,6 +88,18 @@ const generatedStepArgs = ({
   };
 };
 
+type GoalParams = {
+  readonly form: StartWorkflowGenerationParams['form'];
+  readonly generated: string | undefined;
+};
+
+const goalOf = ({ form, generated }: GoalParams): string | undefined => {
+  if (form === null) {
+    return generated;
+  }
+  return form.goal.trim().length > 0 ? form.goal : undefined;
+};
+
 export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
   return async ({
     workspaceId,
@@ -96,6 +108,7 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
     workflow,
     form,
     isDraftOnly = false,
+    draftKey = 0,
   }: StartWorkflowGenerationParams): Promise<boolean> => {
     const current = get().workflowGenerations[workspaceId];
     if (current?.status === 'running') {
@@ -138,6 +151,7 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
           'The agent could not build a workflow from that description. Try adding the outcome and the steps you expect.',
         );
       }
+      const goal = goalOf({ form, generated: formatted.goal });
       const args: WorkflowUpsertArgs = {
         ...(workflow !== null && { id: workflow.id }),
         workspaceId,
@@ -146,7 +160,7 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
           form !== null && form.description.trim().length > 0
             ? form.description
             : formatted.description,
-        ...(formatted.goal !== undefined && { goal: formatted.goal }),
+        ...(goal !== undefined && { goal }),
         ...(form !== null && {
           entryCheck: form.entryCheck,
           stopRule: form.stopRule,
@@ -170,6 +184,7 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
             ...state.workflowGenerations,
             [workspaceId]: {
               status: 'drafted',
+              draftKey,
               workspaceId,
               notificationId: crypto.randomUUID(),
               name: args.name,
