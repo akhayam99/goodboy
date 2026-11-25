@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::mpsc;
 use std::sync::LazyLock;
 use std::time::Duration;
@@ -8,14 +9,42 @@ use tauri::{Runtime, Webview};
 use super::reason::{self, CONSOLE_UNAVAILABLE};
 use crate::util::{uuid_v4, MessageError};
 
-pub(crate) const RING_SIZE: usize = 500;
+pub(crate) const CONSOLE_RING_SIZE: usize = 500;
+pub(crate) const NETWORK_RING_SIZE: usize = 300;
+pub(crate) const ERROR_RING_SIZE: usize = 100;
 pub(crate) const MAX_TEXT_CHARS: usize = 2_000;
 pub(crate) const MAX_SOURCE_CHARS: usize = 200;
 pub(crate) const MAX_METHOD_CHARS: usize = 16;
+pub(crate) const MAX_STACK_CHARS: usize = 4_000;
+pub(crate) const MAX_BODY_CHARS: usize = 65_536;
+pub(crate) const MAX_HEADERS: usize = 50;
+pub(crate) const MAX_HEADER_NAME_CHARS: usize = 100;
+pub(crate) const MAX_HEADER_VALUE_CHARS: usize = 1_000;
 pub(crate) const MAX_ANSWER_BYTES: usize = 4_000_000;
+pub(crate) const SENSITIVE_HEADERS: [&str; 9] = [
+    "authorization",
+    "proxy-authorization",
+    "cookie",
+    "set-cookie",
+    "set-cookie2",
+    "x-api-key",
+    "x-auth-token",
+    "x-csrf-token",
+    "x-xsrf-token",
+];
 const MAX_DOC_CHARS: usize = 32;
+const MAX_ID_CHARS: usize = 32;
 
-const HOOK: &str = include_str!("console_hook.js");
+const RUNTIME: &str = concat!(
+    "(() => {\n  if (window.top !== window) {\n    return;\n  }\n",
+    include_str!("page_runtime/prelude.js"),
+    include_str!("page_runtime/console.js"),
+    include_str!("page_runtime/errors.js"),
+    include_str!("page_runtime/network.js"),
+    include_str!("page_runtime/pick.js"),
+    include_str!("page_runtime/reader.js"),
+    "})();\n",
+);
 const APP_SCRIPT_SOURCE: &str = "user-script:";
 const IPC_FALLBACK_TEXT: &str = "IPC custom protocol failed";
 const REJECTION_TEXT: &str = "Unhandled rejection: ";
@@ -28,11 +57,22 @@ const READ_TIMEOUT: Duration = Duration::from_secs(1);
 static READ_NAME: LazyLock<String> =
     LazyLock::new(|| format!("goodboy-console-{}", uuid_v4().replace('-', "")));
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) enum EntryKind {
     Console,
     Network,
+    Error,
+}
+
+impl EntryKind {
+    fn ring_size(self) -> usize {
+        match self {
+            EntryKind::Console => CONSOLE_RING_SIZE,
+            EntryKind::Network => NETWORK_RING_SIZE,
+            EntryKind::Error => ERROR_RING_SIZE,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -44,7 +84,77 @@ pub(crate) enum EntryLevel {
     Error,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum RequestType {
+    Fetch,
+    Xhr,
+    Doc,
+    Script,
+    Style,
+    Img,
+    Ws,
+    Sse,
+    Other,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum ErrorOrigin {
+    Uncaught,
+    Rejection,
+    Console,
+    Request,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum SocketPhase {
+    Open,
+    Closed,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct Header {
+    pub(crate) name: String,
+    pub(crate) value: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SocketFacts {
+    pub(crate) phase: SocketPhase,
+    pub(crate) sent: u32,
+    pub(crate) received: u32,
+    pub(crate) code: Option<u16>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RequestFacts {
+    pub(crate) id: String,
+    #[serde(rename = "type")]
+    pub(crate) request_type: RequestType,
+    pub(crate) start: f64,
+    pub(crate) duration: Option<f64>,
+    pub(crate) size: Option<u64>,
+    pub(crate) request_headers: Vec<Header>,
+    pub(crate) response_headers: Vec<Header>,
+    pub(crate) request_body: Option<String>,
+    pub(crate) response_body: Option<String>,
+    pub(crate) socket: Option<SocketFacts>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ErrorFacts {
+    pub(crate) origin: ErrorOrigin,
+    pub(crate) stack: Option<String>,
+    pub(crate) request_id: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ConsoleEntry {
     pub(crate) seq: u64,
@@ -54,13 +164,16 @@ pub(crate) struct ConsoleEntry {
     pub(crate) source: Option<String>,
     pub(crate) method: Option<String>,
     pub(crate) status: Option<u16>,
+    pub(crate) network: Option<RequestFacts>,
+    pub(crate) error: Option<ErrorFacts>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ConsoleRead {
     pub(crate) doc: Option<String>,
     pub(crate) entries: Vec<ConsoleEntry>,
+    pub(crate) watermark: u64,
     pub(crate) is_heard: bool,
 }
 
@@ -86,6 +199,32 @@ struct RawAnswer {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawRequest {
+    id: String,
+    #[serde(rename = "type")]
+    request_type: RequestType,
+    start: f64,
+    duration: Option<f64>,
+    size: Option<u64>,
+    #[serde(default)]
+    request_headers: Vec<Header>,
+    #[serde(default)]
+    response_headers: Vec<Header>,
+    request_body: Option<String>,
+    response_body: Option<String>,
+    socket: Option<SocketFacts>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawError {
+    origin: ErrorOrigin,
+    stack: Option<String>,
+    request_id: Option<String>,
+}
+
+#[derive(Deserialize)]
 struct RawEntry {
     seq: u64,
     kind: EntryKind,
@@ -94,6 +233,10 @@ struct RawEntry {
     source: Option<String>,
     method: Option<String>,
     status: Option<u16>,
+    #[serde(default)]
+    network: Option<RawRequest>,
+    #[serde(default)]
+    error: Option<RawError>,
 }
 
 fn is_doc_id(doc: &str) -> bool {
@@ -104,6 +247,10 @@ fn is_doc_id(doc: &str) -> bool {
             .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
 }
 
+fn is_request_id(id: &str) -> bool {
+    !id.is_empty() && id.len() <= MAX_ID_CHARS && id.chars().all(|c| c.is_ascii_alphanumeric())
+}
+
 fn clipped(text: &str, max: usize) -> String {
     text.chars().take(max).collect()
 }
@@ -111,6 +258,69 @@ fn clipped(text: &str, max: usize) -> String {
 fn method_of(raw: Option<String>) -> Option<String> {
     raw.map(|method| clipped(&method, MAX_METHOD_CHARS))
         .filter(|method| !method.is_empty() && method.chars().all(|c| c.is_ascii_uppercase()))
+}
+
+fn is_header_name(name: &str) -> bool {
+    !name.is_empty()
+        && name.len() <= MAX_HEADER_NAME_CHARS
+        && name
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || "!#$%&'*+-.^_`|~".contains(c))
+}
+
+fn headers_of(raw: Vec<Header>) -> Vec<Header> {
+    raw.into_iter()
+        .filter_map(|header| {
+            let name = header.name.trim().to_ascii_lowercase();
+            if !is_header_name(&name) || SENSITIVE_HEADERS.contains(&name.as_str()) {
+                return None;
+            }
+            Some(Header {
+                name,
+                value: clipped(&header.value, MAX_HEADER_VALUE_CHARS),
+            })
+        })
+        .take(MAX_HEADERS)
+        .collect()
+}
+
+fn body_of(raw: Option<String>) -> Option<String> {
+    raw.map(|body| clipped(&body, MAX_BODY_CHARS))
+}
+
+fn is_stream(request_type: RequestType) -> bool {
+    matches!(request_type, RequestType::Ws | RequestType::Sse)
+}
+
+fn request_of(raw: RawRequest) -> Option<RequestFacts> {
+    if !is_request_id(&raw.id) {
+        return None;
+    }
+    Some(RequestFacts {
+        id: raw.id,
+        request_type: raw.request_type,
+        start: raw.start.max(0.0),
+        duration: raw.duration.filter(|duration| *duration >= 0.0),
+        size: raw.size,
+        request_headers: headers_of(raw.request_headers),
+        response_headers: headers_of(raw.response_headers),
+        request_body: body_of(raw.request_body),
+        response_body: body_of(raw.response_body),
+        socket: raw.socket.filter(|_| is_stream(raw.request_type)),
+    })
+}
+
+fn error_of(raw: RawError) -> ErrorFacts {
+    ErrorFacts {
+        origin: raw.origin,
+        stack: raw
+            .stack
+            .map(|stack| clipped(&stack, MAX_STACK_CHARS))
+            .filter(|stack| !stack.is_empty()),
+        request_id: raw
+            .request_id
+            .filter(|id| raw.origin == ErrorOrigin::Request && is_request_id(id)),
+    }
 }
 
 fn is_command_name(text: &str) -> bool {
@@ -129,7 +339,7 @@ fn is_host_refusal(reason: &str) -> bool {
 }
 
 fn is_app_noise(raw: &RawEntry) -> bool {
-    if raw.kind != EntryKind::Console {
+    if raw.kind == EntryKind::Network {
         return false;
     }
     raw.source
@@ -148,6 +358,14 @@ fn entry_of(value: serde_json::Value) -> Option<ConsoleEntry> {
         return None;
     }
     let is_network = raw.kind == EntryKind::Network;
+    let network = match raw.network {
+        Some(request) if is_network => Some(request_of(request)?),
+        _ => None,
+    };
+    let error = raw
+        .error
+        .filter(|_| raw.kind == EntryKind::Error)
+        .map(error_of);
     Some(ConsoleEntry {
         seq: raw.seq,
         kind: raw.kind,
@@ -159,7 +377,30 @@ fn entry_of(value: serde_json::Value) -> Option<ConsoleEntry> {
             .filter(|source| !source.is_empty()),
         method: method_of(raw.method).filter(|_| is_network),
         status: raw.status.filter(|_| is_network),
+        network,
+        error,
     })
+}
+
+fn newest_of_each_ring(entries: Vec<ConsoleEntry>) -> Vec<ConsoleEntry> {
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut counts = [0_usize; 3];
+    let mut kept: Vec<ConsoleEntry> = entries
+        .into_iter()
+        .rev()
+        .filter(|entry| {
+            if let Some(request) = &entry.network {
+                if !seen.insert(request.id.clone()) {
+                    return false;
+                }
+            }
+            let slot = &mut counts[entry.kind as usize];
+            *slot += 1;
+            *slot <= entry.kind.ring_size()
+        })
+        .collect();
+    kept.reverse();
+    kept
 }
 
 #[cfg(target_os = "macos")]
@@ -173,7 +414,7 @@ fn with_passkey_probe(hook: String) -> String {
 }
 
 pub(crate) fn tab_script() -> String {
-    with_passkey_probe(HOOK.replace(READ_NAME_SLOT, &READ_NAME))
+    with_passkey_probe(RUNTIME.replace(READ_NAME_SLOT, &READ_NAME))
 }
 
 pub(crate) fn reader_script(cursor: &Cursor) -> String {
@@ -193,6 +434,7 @@ fn unheard() -> ConsoleRead {
     ConsoleRead {
         doc: None,
         entries: Vec::new(),
+        watermark: 0,
         is_heard: false,
     }
 }
@@ -203,6 +445,8 @@ fn after_of(cursor: &Cursor, doc: &str) -> u64 {
     }
     cursor.after
 }
+
+const MAX_SAFE_SEQ: u64 = 9_007_199_254_740_991;
 
 pub(crate) fn answer_of(raw: &str, cursor: &Cursor) -> Option<ConsoleRead> {
     if raw.len() > MAX_ANSWER_BYTES {
@@ -219,6 +463,13 @@ pub(crate) fn answer_of(raw: &str, cursor: &Cursor) -> Option<ConsoleRead> {
         return None;
     }
     let after = after_of(cursor, &answer.doc);
+    let watermark = answer
+        .entries
+        .iter()
+        .filter_map(|value| value.get("seq").and_then(serde_json::Value::as_u64))
+        .filter(|seq| *seq <= MAX_SAFE_SEQ)
+        .max()
+        .map_or(after, |last| last.max(after));
     let mut entries: Vec<ConsoleEntry> = answer
         .entries
         .into_iter()
@@ -227,12 +478,10 @@ pub(crate) fn answer_of(raw: &str, cursor: &Cursor) -> Option<ConsoleRead> {
         .collect();
     entries.sort_by_key(|entry| entry.seq);
     entries.dedup_by_key(|entry| entry.seq);
-    if entries.len() > RING_SIZE {
-        entries.drain(..entries.len() - RING_SIZE);
-    }
     Some(ConsoleRead {
         doc: Some(answer.doc),
-        entries,
+        entries: newest_of_each_ring(entries),
+        watermark,
         is_heard: true,
     })
 }
@@ -270,17 +519,69 @@ mod tests {
             "source": "checkout.js:12",
             "method": null,
             "status": null,
+            "network": null,
+            "error": null,
         })
     }
 
-    fn page_answer(doc: &str, seqs: impl IntoIterator<Item = u64>) -> String {
-        let entries: Vec<serde_json::Value> = seqs.into_iter().map(entry).collect();
+    fn request(seq: u64, id: &str) -> serde_json::Value {
+        json!({
+            "seq": seq,
+            "kind": "network",
+            "level": "info",
+            "text": "/api/orders",
+            "source": null,
+            "method": "GET",
+            "status": 200,
+            "network": {
+                "id": id,
+                "type": "fetch",
+                "start": 12.5,
+                "duration": 30.0,
+                "size": 120,
+                "requestHeaders": [],
+                "responseHeaders": [],
+                "requestBody": null,
+                "responseBody": null,
+                "socket": null,
+            },
+            "error": null,
+        })
+    }
+
+    fn failure(seq: u64) -> serde_json::Value {
+        json!({
+            "seq": seq,
+            "kind": "error",
+            "level": "error",
+            "text": "TypeError: total is undefined",
+            "source": "checkout.js:40",
+            "method": null,
+            "status": null,
+            "network": null,
+            "error": { "origin": "uncaught", "stack": "at checkout.js:40:3", "requestId": null },
+        })
+    }
+
+    fn answer_with(doc: &str, entries: Vec<serde_json::Value>) -> String {
         serde_json::to_string(&json!({ "doc": doc, "entries": entries }).to_string())
             .expect("a string answer")
     }
 
+    fn page_answer(doc: &str, seqs: impl IntoIterator<Item = u64>) -> String {
+        answer_with(doc, seqs.into_iter().map(entry).collect())
+    }
+
     fn seqs_of(read: &ConsoleRead) -> Vec<u64> {
         read.entries.iter().map(|entry| entry.seq).collect()
+    }
+
+    fn only_entry(value: serde_json::Value) -> Option<ConsoleEntry> {
+        answer_of(&answer_with("k3x9", vec![value]), &Cursor::of(None, 0))
+            .expect("reads")
+            .entries
+            .into_iter()
+            .next()
     }
 
     #[test]
@@ -288,28 +589,89 @@ mod tests {
         assert_wire_value(
             &ConsoleRead {
                 doc: Some("k3x9".into()),
-                entries: vec![ConsoleEntry {
-                    seq: 4,
-                    kind: EntryKind::Network,
-                    level: EntryLevel::Error,
-                    text: "/api/orders/confirm".into(),
-                    source: None,
-                    method: Some("POST".into()),
-                    status: Some(500),
-                }],
+                entries: vec![
+                    ConsoleEntry {
+                        seq: 4,
+                        kind: EntryKind::Network,
+                        level: EntryLevel::Error,
+                        text: "/api/orders/confirm".into(),
+                        source: None,
+                        method: Some("POST".into()),
+                        status: Some(500),
+                        network: Some(RequestFacts {
+                            id: "r4".into(),
+                            request_type: RequestType::Fetch,
+                            start: 12.5,
+                            duration: Some(30.5),
+                            size: Some(42),
+                            request_headers: vec![Header {
+                                name: "content-type".into(),
+                                value: "application/json".into(),
+                            }],
+                            response_headers: Vec::new(),
+                            request_body: Some("{\"cart\":12}".into()),
+                            response_body: None,
+                            socket: None,
+                        }),
+                        error: None,
+                    },
+                    ConsoleEntry {
+                        seq: 5,
+                        kind: EntryKind::Error,
+                        level: EntryLevel::Error,
+                        text: "POST /api/orders/confirm 500".into(),
+                        source: None,
+                        method: None,
+                        status: None,
+                        network: None,
+                        error: Some(ErrorFacts {
+                            origin: ErrorOrigin::Request,
+                            stack: None,
+                            request_id: Some("r4".into()),
+                        }),
+                    },
+                ],
+                watermark: 5,
                 is_heard: true,
             },
             json!({
                 "doc": "k3x9",
-                "entries": [{
-                    "seq": 4,
-                    "kind": "network",
-                    "level": "error",
-                    "text": "/api/orders/confirm",
-                    "source": null,
-                    "method": "POST",
-                    "status": 500,
-                }],
+                "entries": [
+                    {
+                        "seq": 4,
+                        "kind": "network",
+                        "level": "error",
+                        "text": "/api/orders/confirm",
+                        "source": null,
+                        "method": "POST",
+                        "status": 500,
+                        "network": {
+                            "id": "r4",
+                            "type": "fetch",
+                            "start": 12.5,
+                            "duration": 30.5,
+                            "size": 42,
+                            "requestHeaders": [{ "name": "content-type", "value": "application/json" }],
+                            "responseHeaders": [],
+                            "requestBody": "{\"cart\":12}",
+                            "responseBody": null,
+                            "socket": null,
+                        },
+                        "error": null,
+                    },
+                    {
+                        "seq": 5,
+                        "kind": "error",
+                        "level": "error",
+                        "text": "POST /api/orders/confirm 500",
+                        "source": null,
+                        "method": null,
+                        "status": null,
+                        "network": null,
+                        "error": { "origin": "request", "stack": null, "requestId": "r4" },
+                    },
+                ],
+                "watermark": 5,
                 "isHeard": true,
             }),
         );
@@ -333,12 +695,160 @@ mod tests {
     }
 
     #[test]
-    fn caps_the_answer_at_the_ring_size_and_keeps_the_newest() {
+    fn carries_a_watermark_past_rows_that_are_filtered_out() {
+        let mut noise: Vec<serde_json::Value> = (1..=499)
+            .map(|seq| {
+                let mut line = entry(seq);
+                line["text"] = json!(format!("IPC custom protocol failed {seq}"));
+                line
+            })
+            .collect();
+        noise.push(entry(500));
+        let first = answer_of(
+            &answer_with("k3x9", noise[..499].to_vec()),
+            &Cursor::of(None, 0),
+        )
+        .expect("reads");
+        assert!(first.entries.is_empty());
+        assert_eq!(first.watermark, 499);
+        let next = answer_of(
+            &answer_with("k3x9", noise),
+            &Cursor::of(Some("k3x9"), first.watermark),
+        )
+        .expect("reads");
+        assert_eq!(seqs_of(&next), vec![500]);
+        assert_eq!(next.watermark, 500);
+    }
+
+    #[test]
+    fn ignores_a_forged_sequence_beyond_the_safe_range_in_the_watermark() {
+        let mut forged = entry(2);
+        forged["seq"] = json!(u64::MAX);
+        let read = answer_of(
+            &answer_with("k3x9", vec![entry(1), forged]),
+            &Cursor::of(None, 0),
+        )
+        .expect("reads");
+        assert_eq!(read.watermark, 1);
+    }
+
+    #[test]
+    fn caps_the_console_at_its_ring_size_and_keeps_the_newest() {
         let cursor = Cursor::of(None, 0);
         let read = answer_of(&page_answer("k3x9", 1..=700), &cursor).expect("reads");
-        assert_eq!(read.entries.len(), RING_SIZE);
+        assert_eq!(read.entries.len(), CONSOLE_RING_SIZE);
         assert_eq!(read.entries.first().map(|entry| entry.seq), Some(201));
         assert_eq!(read.entries.last().map(|entry| entry.seq), Some(700));
+    }
+
+    #[test]
+    fn one_kind_cannot_push_another_out_of_the_answer() {
+        let mut entries = vec![entry(1), failure(2)];
+        entries.extend((3..=702).map(|seq| request(seq, &format!("r{seq}"))));
+        let read = answer_of(&answer_with("k3x9", entries), &Cursor::of(None, 0)).expect("reads");
+        let count = |kind: EntryKind| read.entries.iter().filter(|e| e.kind == kind).count();
+        assert_eq!(count(EntryKind::Console), 1);
+        assert_eq!(count(EntryKind::Error), 1);
+        assert_eq!(count(EntryKind::Network), NETWORK_RING_SIZE);
+        assert_eq!(seqs_of(&read)[..3], [1, 2, 403]);
+        let errors: Vec<serde_json::Value> = (1..=150).map(failure).collect();
+        let read = answer_of(&answer_with("k3x9", errors), &Cursor::of(None, 0)).expect("reads");
+        assert_eq!(read.entries.len(), ERROR_RING_SIZE);
+        assert_eq!(read.entries.first().map(|entry| entry.seq), Some(51));
+    }
+
+    #[test]
+    fn keeps_only_the_newest_record_of_a_request() {
+        let mut done = request(9, "r3");
+        done["network"]["responseBody"] = json!("{\"ok\":true}");
+        let answer = answer_with("k3x9", vec![request(4, "r3"), request(5, "r4"), done]);
+        let read = answer_of(&answer, &Cursor::of(None, 0)).expect("reads");
+        assert_eq!(seqs_of(&read), vec![5, 9]);
+        let body = read.entries[1]
+            .network
+            .as_ref()
+            .and_then(|facts| facts.response_body.as_deref());
+        assert_eq!(body, Some("{\"ok\":true}"));
+    }
+
+    #[test]
+    fn drops_sensitive_and_malformed_headers_whatever_the_page_sent() {
+        let mut value = request(1, "r1");
+        let mut headers = vec![
+            json!({ "name": "Authorization", "value": "Bearer abc" }),
+            json!({ "name": "cookie", "value": "sid=1" }),
+            json!({ "name": "Set-Cookie", "value": "sid=2" }),
+            json!({ "name": "x-api-key", "value": "k" }),
+            json!({ "name": "bad name", "value": "x" }),
+            json!({ "name": "Content-Type", "value": "application/json" }),
+            json!({ "name": "x-trace", "value": "v".repeat(MAX_HEADER_VALUE_CHARS + 9) }),
+        ];
+        headers.extend((0..80).map(|n| json!({ "name": format!("x-h{n}"), "value": "1" })));
+        value["network"]["requestHeaders"] = json!(headers);
+        value["network"]["responseHeaders"] = json!([{ "name": "set-cookie", "value": "sid=3" }]);
+        let facts = only_entry(value)
+            .and_then(|e| e.network)
+            .expect("a request");
+        let names: Vec<&str> = facts
+            .request_headers
+            .iter()
+            .map(|h| h.name.as_str())
+            .collect();
+        assert_eq!(names[..2], ["content-type", "x-trace"]);
+        assert_eq!(facts.request_headers.len(), MAX_HEADERS);
+        assert_eq!(
+            facts.request_headers[1].value.chars().count(),
+            MAX_HEADER_VALUE_CHARS
+        );
+        assert!(facts.response_headers.is_empty());
+        for name in SENSITIVE_HEADERS {
+            assert!(!names.contains(&name), "{name}");
+        }
+    }
+
+    #[test]
+    fn clips_bodies_and_stacks_and_drops_facts_that_do_not_fit_the_kind() {
+        let mut value = request(1, "r1");
+        value["network"]["responseBody"] = json!("b".repeat(MAX_BODY_CHARS + 10));
+        value["network"]["socket"] =
+            json!({ "phase": "open", "sent": 1, "received": 2, "code": null });
+        let facts = only_entry(value)
+            .and_then(|e| e.network)
+            .expect("a request");
+        assert_eq!(
+            facts.response_body.map(|body| body.chars().count()),
+            Some(MAX_BODY_CHARS)
+        );
+        assert_eq!(facts.socket, None);
+
+        let mut socket = request(2, "r2");
+        socket["network"]["type"] = json!("ws");
+        socket["network"]["socket"] =
+            json!({ "phase": "closed", "sent": 3, "received": 4, "code": 1000 });
+        let facts = only_entry(socket)
+            .and_then(|e| e.network)
+            .expect("a socket");
+        assert_eq!(facts.socket.map(|s| (s.sent, s.received)), Some((3, 4)));
+
+        let mut thrown = failure(3);
+        thrown["error"]["stack"] = json!("s".repeat(MAX_STACK_CHARS + 1));
+        thrown["error"]["requestId"] = json!("r1");
+        let facts = only_entry(thrown).and_then(|e| e.error).expect("an error");
+        assert_eq!(
+            facts.stack.map(|stack| stack.chars().count()),
+            Some(MAX_STACK_CHARS)
+        );
+        assert_eq!(facts.request_id, None);
+
+        let mut bad_id = request(4, "r4");
+        bad_id["network"]["id"] = json!("r4\");alert(1)");
+        assert_eq!(only_entry(bad_id), None);
+
+        let mut stray = entry(5);
+        stray["network"] = request(5, "r5")["network"].clone();
+        stray["error"] = failure(5)["error"].clone();
+        let line = only_entry(stray).expect("a console line");
+        assert_eq!((line.network, line.error), (None, None));
     }
 
     #[test]
@@ -417,17 +927,19 @@ mod tests {
                 },
                 {
                     "seq": 2,
-                    "kind": "console",
+                    "kind": "error",
                     "level": "error",
                     "text": "Unhandled rejection: notification.is_permission_granted not allowed on window \"main\"",
                     "source": null,
+                    "error": { "origin": "rejection", "stack": null, "requestId": null },
                 },
                 {
                     "seq": 3,
-                    "kind": "console",
+                    "kind": "error",
                     "level": "error",
                     "text": "Unhandled rejection: Error: checkout failed",
                     "source": "checkout.js:12",
+                    "error": { "origin": "rejection", "stack": null, "requestId": null },
                 },
                 {
                     "seq": 4,
@@ -440,14 +952,14 @@ mod tests {
                 },
                 {
                     "seq": 5,
-                    "kind": "console",
+                    "kind": "error",
                     "level": "error",
                     "text": "Unhandled rejection: Command plugin:notification|is_permission_granted not allowed by ACL",
                     "source": null,
                 },
                 {
                     "seq": 6,
-                    "kind": "console",
+                    "kind": "error",
                     "level": "error",
                     "text": "Unhandled rejection: Acme document update not allowed by ACL",
                     "source": null,
@@ -462,11 +974,44 @@ mod tests {
     }
 
     #[test]
-    fn the_hook_records_every_request_and_drops_the_oldest_of_the_same_kind_first() {
-        assert!(HOOK.contains("recordNetwork(method, response.status, address)"));
-        assert!(HOOK.contains("recordNetwork(request.method, xhr.status, request.address)"));
-        assert!(HOOK.contains("ring[index].kind === entry.kind"));
-        assert!(HOOK.contains("type: 'resource'"));
+    fn the_runtime_joins_its_modules_in_order_inside_one_top_frame_closure() {
+        let modules = [
+            include_str!("page_runtime/prelude.js"),
+            include_str!("page_runtime/console.js"),
+            include_str!("page_runtime/errors.js"),
+            include_str!("page_runtime/network.js"),
+            include_str!("page_runtime/pick.js"),
+            include_str!("page_runtime/reader.js"),
+        ];
+        let head = "(() => {\n  if (window.top !== window) {\n    return;\n  }\n";
+        assert_eq!(RUNTIME, format!("{head}{}}})();\n", modules.concat()));
+        assert!(RUNTIME.contains(READ_NAME_SLOT));
+        assert!(include_str!("page_runtime/pick.js").is_empty());
+    }
+
+    #[test]
+    fn the_runtime_keeps_a_ring_per_kind_of_the_same_sizes_as_rust() {
+        assert!(RUNTIME.contains(&format!(
+            "const RING_SIZES = {{ console: {CONSOLE_RING_SIZE}, network: {NETWORK_RING_SIZE}, error: {ERROR_RING_SIZE} }};"
+        )));
+        assert!(RUNTIME.contains("const ring = rings[entry.kind];"));
+        assert!(RUNTIME.contains(&format!("const MAX_BODY = {MAX_BODY_CHARS};")));
+        assert!(RUNTIME.contains(&format!("const MAX_STACK = {MAX_STACK_CHARS};")));
+        assert!(RUNTIME.contains(&format!("const MAX_HEADERS = {MAX_HEADERS};")));
+        for name in SENSITIVE_HEADERS {
+            assert!(RUNTIME.contains(&format!("  '{name}',\n")), "{name}");
+        }
+    }
+
+    #[test]
+    fn the_runtime_records_every_request_kind() {
+        assert!(RUNTIME.contains("answerFetch(request, response)"));
+        assert!(RUNTIME.contains("saveRequest(request, statusOf(xhr.status), xhrAnswerOf(xhr))"));
+        assert!(RUNTIME.contains("watchTimings('resource');"));
+        assert!(RUNTIME.contains("watchTimings('navigation');"));
+        assert!(RUNTIME.contains("openRequest('ws', 'GET', address)"));
+        assert!(RUNTIME.contains("openRequest('sse', 'GET', address)"));
+        assert!(RUNTIME.contains("storeError(\n      'request',"));
     }
 
     #[test]
@@ -494,7 +1039,7 @@ mod tests {
     }
 
     #[test]
-    fn the_hook_holds_nothing_on_window_and_opens_no_channel() {
+    fn the_runtime_holds_nothing_on_window_and_opens_no_channel() {
         for banned in [
             "globalThis",
             "self.",
@@ -506,7 +1051,9 @@ mod tests {
             "webkit",
             "messageHandlers",
             "ipc",
-            "WebSocket",
+            "new WebSocket",
+            "new EventSource",
+            "new Native",
             "sendBeacon",
             "localStorage",
             "sessionStorage",
@@ -514,10 +1061,12 @@ mod tests {
             "eval(",
             "Function(",
         ] {
-            assert!(!HOOK.contains(banned), "the hook names {banned}");
+            assert!(!RUNTIME.contains(banned), "the runtime names {banned}");
         }
+        assert_eq!(RUNTIME.matches("reflect.construct(").count(), 1);
+        assert!(RUNTIME.contains("reflect.construct(Native, arguments, new.target)"));
         let mut assigned = Vec::new();
-        let mut rest = HOOK;
+        let mut rest = RUNTIME;
         while let Some(at) = rest.find("window.") {
             let tail = &rest[at + "window.".len()..];
             let name: String = tail
@@ -530,23 +1079,15 @@ mod tests {
             }
             rest = tail;
         }
-        assert_eq!(assigned, vec!["fetch".to_string()]);
+        assert_eq!(assigned, vec!["fetch", "WebSocket", "EventSource"]);
     }
 
     #[test]
-    fn the_hook_runs_in_the_top_frame_only_and_keeps_a_ring_of_five_hundred() {
-        assert!(HOOK.starts_with("(() => {\n  if (window.top !== window) {\n    return;\n  }"));
-        assert!(HOOK.contains("const RING_SIZE = 500;"));
-        assert_eq!(RING_SIZE, 500);
-        assert!(HOOK.contains(READ_NAME_SLOT));
-    }
-
-    #[test]
-    fn one_tab_script_holds_the_hook_with_its_read_name() {
+    fn one_tab_script_holds_the_runtime_with_its_read_name() {
         let script = tab_script();
         assert!(!script.contains(READ_NAME_SLOT));
         assert!(script.contains(READ_NAME.as_str()));
-        assert!(script.contains("const RING_SIZE = 500;"));
+        assert!(script.starts_with("(() => {\n  if (window.top !== window) {"));
     }
 
     #[cfg(target_os = "macos")]
