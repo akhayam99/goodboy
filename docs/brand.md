@@ -57,7 +57,7 @@ concept tile (`ConceptTile`), the stage chips or the kind chip. A ratchet
 and `BrandTile`, and pins the importers of `BrandTile` to `BootBrand.tsx`,
 `RailSignature/index.tsx`, `WizardHeader.tsx` and `WorkspaceLauncher/index.tsx`.
 
-The tile has one shape everywhere, and no other shape exists:
+The tile has one shape everywhere except the two exceptions below:
 
 | Ratio       | Value   | Meaning                             |
 | ----------- | ------- | ----------------------------------- |
@@ -74,8 +74,14 @@ surface.
 which is a smaller `0.66`. The dock shows the icon between 32 and 64px, and at
 that size the dog's outline needs space around it to stay readable. Nothing
 else changes: the badge, the site logo and the favicon all use the shared
-`0.76`, and the inset is still calculated on both axes. A second exception
-needs a reason as concrete as that one.
+`0.76`, and the inset is still calculated on both axes.
+
+**The favicon is the second deliberate exception.** It uses
+`FAVICON_TILE_RADIUS_EXCEPTION`, a radius of `0`, so the tile fills its whole
+square. Google search results crop the favicon into a circle on a white plate:
+a rounded tile left a white ring around a small dog, while a full square
+becomes a black disc with the dog at full size. The mark scale stays `0.76`.
+A third exception needs a reason as concrete as these two.
 
 The word is always **Goodboy**: one word, capital G. Never `GoodBoy`, never
 `goodboy` in running text, never an abbreviation. `GB` is not a short form of

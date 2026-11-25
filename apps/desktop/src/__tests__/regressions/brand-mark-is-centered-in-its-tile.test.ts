@@ -370,6 +370,10 @@ const ICON_FILES = readdirSync(DESKTOP_ICONS).filter((name) => name.endsWith('.p
 const GENERATOR_SOURCE = readFileSync(BRAND_GENERATOR, 'utf8');
 const MARK_SCALE = ratioOf({ source: GENERATOR_SOURCE, name: 'MARK_SCALE' });
 const TILE_RADIUS = ratioOf({ source: GENERATOR_SOURCE, name: 'TILE_RADIUS_RATIO' });
+const FAVICON_TILE_RADIUS = ratioOf({
+  source: GENERATOR_SOURCE,
+  name: 'FAVICON_TILE_RADIUS_EXCEPTION',
+});
 const APP_ICON_SCALE = ratioOf({
   source: GENERATOR_SOURCE,
   name: 'APP_ICON_MARK_SCALE_EXCEPTION',
@@ -544,7 +548,7 @@ describe('brand mark is centered in its tile', () => {
     expect(markSize / canvas).toBeCloseTo(MARK_SCALE, 10);
     expect(
       numberAttribute({ source: FAVICON_SOURCE, tag: 'rect', attribute: 'rx' }) / canvas,
-    ).toBeCloseTo(TILE_RADIUS, 10);
+    ).toBeCloseTo(FAVICON_TILE_RADIUS, 10);
     expect(left).toBeCloseTo((canvas - markSize) / 2, 10);
     expect(top).toBeCloseTo((canvas - markHeight) / 2, 10);
   });
