@@ -17,6 +17,7 @@ import { agentPlace, useAppStore } from '../../../../../store';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import { castAutoScene } from '../../demo/director/castAutoScene';
 import { AUTO_STORY, GUARD_BRANCH } from '../../demo/director/autoStory';
+import { writeInboxFilters } from '../../../../../features/inbox/kindFilterStorage';
 import { writeTaskListView } from '../../../../../features/inbox/taskListViewStorage';
 import { storyBindingsOf } from './storyBindings';
 import { storyKnownTaskKeys } from './storyTasks';
@@ -267,6 +268,7 @@ export const seedStoryWorld = ({ stage }: SeedParams): void => {
   const workspaceProjects = projectsOf({ projects: base.projects });
   if (workspace !== undefined) {
     writeTaskListView({ workspaceId: workspace.id, view: { scope: 'all', groupBy: 'source' } });
+    writeInboxFilters({ workspaceId: workspace.id, kind: 'all', source: null });
   }
   useAppStore.setState({
     navigate,

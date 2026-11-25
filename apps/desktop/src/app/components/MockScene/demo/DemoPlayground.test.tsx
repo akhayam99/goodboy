@@ -701,17 +701,30 @@ describe('demo playground', () => {
     expect(screen.queryByRole('note')).not.toBeNull();
   });
 
-  it('lifts the coach once the visitor presses the control, so it never covers what opens', () => {
+  it('keeps the coach of a step with an offer when the visitor presses its field', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
     const first = chapterOf({ id: 'bring' }).hints[0]?.id ?? '';
     hint({ frame, hintId: first });
-    expect(screen.queryByRole('note')).not.toBeNull();
     hint({ frame, hintId: first, isClicked: true, isPressed: true });
+    expect(screen.getByRole('button', { name: 'Paste example key' })).not.toBeNull();
+    expect(instruction()).toBe(plain(chapterOf({ id: 'bring' }).hints[0]?.instruction));
+  });
+
+  it('lifts the coach once the visitor presses the control, so it never covers what opens', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const [firstHint, second] = chapterOf({ id: 'bring' }).hints;
+    tried({ frame, hintId: firstHint?.id ?? '' });
+    elapse({ ms: firstHint === undefined ? RESULT_DWELL_MS : dwellOf({ hint: firstHint }) });
+    hint({ frame, hintId: second?.id ?? '' });
+    expect(screen.queryByRole('note')).not.toBeNull();
+    hint({ frame, hintId: second?.id ?? '', isClicked: true, isPressed: true });
     expect(screen.queryByRole('note')).toBeNull();
     expect(screen.queryByTestId('demo-spotlight')).toBeNull();
-    expect(instruction()).toBe(plain(chapterOf({ id: 'bring' }).hints[0]?.instruction));
+    expect(instruction()).toBe(plain(second?.instruction));
   });
 
   describe('while the pressed step is running', () => {

@@ -273,7 +273,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     if (!isOpen || activeHint === undefined || current === null || current.rect === null) {
       return undefined;
     }
-    if (current.isPressed) {
+    if (current.isPressed && activeHint.offer === undefined) {
       return undefined;
     }
     return {

@@ -43,6 +43,17 @@ const isTaskRowSelected = ({ root }: RootParams): boolean =>
 const isOffPath = ({ target }: BlockParams): boolean =>
   isAnyControl({ target }) || target.closest(OPTION) !== null;
 
+const REOPEN = {
+  copy: 'Reopen HBL-412',
+  instruction: 'Press HBL-412 to open it again and go on.',
+  side: 'right',
+} as const satisfies DemoHint['recovery'];
+
+const startSessionAnchorOf = ({ root }: RootParams): string | null =>
+  isTaskRowSelected({ root }) && hasElement({ root, selector: START_SESSION })
+    ? START_SESSION
+    : null;
+
 export const BRING_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'bring-connect',
@@ -100,9 +111,12 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     instruction: 'Press **Start session** to hand HBL-412 to your agents.',
     result: 'A new session opens, and the brief is written from HBL-412.',
     beat: 0,
-    anchor: START_SESSION,
+    anchor: ({ root }) => startSessionAnchorOf({ root }),
+    recoveryAnchor: TASK_ROW,
+    recovery: REOPEN,
     isBlocked: isOffPath,
-    revealWhen: ({ root }) => hasElement({ root, selector: START_SESSION }),
+    revealWhen: ({ root }) =>
+      hasElement({ root, selector: START_SESSION }) || hasElement({ root, selector: TASK_ROW }),
     doneWhen: ({ state }) => state.openSessionDraftWorkspaceId !== null,
   },
   {

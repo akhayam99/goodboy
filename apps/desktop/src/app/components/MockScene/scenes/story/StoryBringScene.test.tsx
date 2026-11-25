@@ -20,6 +20,11 @@ import { ToastProvider } from '../../../../../shared/components/Toast';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { BRING_HINTS } from '../../demo/hints/bringHints';
 import { StoryBringScene } from './StoryBringScene';
+import {
+  readInboxFilters,
+  writeInboxFilters,
+} from '../../../../../features/inbox/kindFilterStorage';
+import { BRAND_WORKSPACE_ID } from '../brand/canon';
 import { installStoryDirection } from '../../demo/director/installStoryDirection';
 import { STORY_QUESTION } from './storyContent';
 import { STORY_EXAMPLE_KEY } from './storyTasks';
@@ -161,6 +166,14 @@ describe('the bring your work scene', () => {
     ).toEqual(['HBL-412']);
     expect(await screen.findByText(STORY_QUESTION.text, {}, { timeout: 8000 })).toBeDefined();
   }, 60000);
+
+  it('resets a saved kind and source filter so HBL-412 is never hidden after a restart', async () => {
+    const workspaceId = BRAND_WORKSPACE_ID;
+    writeInboxFilters({ workspaceId, kind: 'thread', source: 'slack' });
+    await mount();
+    await screen.findByLabelText('API key', {}, { timeout: 5000 });
+    expect(readInboxFilters({ workspaceId })).toEqual({ kind: 'all', source: null });
+  });
 
   it('never shows acme-web or Cascadia', async () => {
     await mount();

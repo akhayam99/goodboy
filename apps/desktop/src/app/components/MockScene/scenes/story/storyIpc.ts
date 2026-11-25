@@ -1,4 +1,5 @@
 import type { InvokeArgs } from '@tauri-apps/api/core';
+import { demoIpcRejection } from '../../demo/director/demoIpcRejection';
 import {
   STORY_EXAMPLE_KEY,
   STORY_SLACK_CHANNELS,
@@ -77,7 +78,7 @@ export const storyIpcAnswer = ({ command, payload }: AnswerParams): unknown => {
   switch (command) {
     case 'linear_validate_connection':
       if (!isAcceptedKey({ payload })) {
-        throw new Error('Linear did not accept that API key');
+        throw demoIpcRejection({ message: 'Linear did not accept that API key' });
       }
       return STORY_VIEWER;
     case 'linear_connect':

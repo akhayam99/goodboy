@@ -69,3 +69,42 @@ describe('the demo hints on a way back', () => {
     expect(result.current.coach).toMatchObject({ copy: 'Add the prepared comment' });
   });
 });
+
+describe('the demo hints on a step with an offer', () => {
+  it('keeps the coach and its button after the visitor pressed the highlighted field', () => {
+    const chapter = DEMO_CHAPTERS[0];
+    if (chapter === undefined) {
+      throw new Error('no first chapter');
+    }
+    const progress: HintProgress = {};
+    const { result } = renderHook(() =>
+      useDemoHints({
+        chapter,
+        progressControls: {
+          progress,
+          markTried: () => undefined,
+          reset: () => undefined,
+          settle: () => undefined,
+          resetAll: () => undefined,
+        },
+      }),
+    );
+    act(() => {
+      result.current.onHintReport({
+        key: 'bring',
+        report: {
+          channel: DEMO_PROTOCOL.channel,
+          version: DEMO_PROTOCOL.version,
+          generation: 0,
+          type: 'anchor',
+          hintId: 'bring-connect',
+          rect: { x: 10, y: 20, width: 40, height: 24 },
+          isOffscreen: false,
+          isClicked: true,
+          isPressed: true,
+        },
+      });
+    });
+    expect(result.current.coach?.offer?.label).toBe('Paste example key');
+  });
+});

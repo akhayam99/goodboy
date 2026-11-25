@@ -147,3 +147,72 @@ describe('walking the bring your work group', () => {
     expect(store.getState().currentSessionId).toBe(STORY_SESSION_ID);
   }, 90000);
 });
+
+describe('getting back to HBL-412 after the pane moved away', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('points at the HBL-412 row, blocks the other Start session and accepts the row again', async () => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(100, 200, 40, 24),
+    );
+    render(
+      <ToastProvider>
+        <StoryBringScene />
+      </ToastProvider>,
+    );
+    await screen.findByLabelText('API key', {}, { timeout: 5000 });
+    installStoryDirection({ store });
+    const reports: Array<DemoHintReport> = [];
+    engine = createHintEngine({
+      store,
+      view: window,
+      generation: () => 0,
+      hintsOf: () => BRING_HINTS,
+      onReport: ({ report }) => reports.push(report),
+    });
+    engine.setTrack({ chapterId: 'bring', settledIds: [], isGuarding: true });
+    const tried = (): ReadonlyArray<string> =>
+      reports.flatMap((report) => (report.type === 'tried' ? [report.hintId] : []));
+    act(() => engine?.offer({ hintId: 'bring-connect' }));
+    await waitFor(() => expect(tried()).toContain('bring-connect'), { timeout: 8000 });
+    await visitorClick({ element: await found({ selector: '[data-shell-rail-item="inbox"]' }) });
+    await waitFor(() => expect(tried()).toContain('bring-tasks'), { timeout: 8000 });
+    await visitorClick({
+      element: await found({ selector: '[role="option"][aria-label^="HBL-412 "]' }),
+    });
+    await waitFor(() => expect(tried()).toContain('bring-open'), { timeout: 8000 });
+
+    const other = await found({ selector: '[role="option"][aria-label^="HBL-409 "]' });
+    act(() => {
+      if (other instanceof HTMLElement) {
+        other.click();
+      }
+    });
+    await waitFor(() => expect(other.getAttribute('aria-selected')).toBe('true'), {
+      timeout: 8000,
+    });
+    const startOther = await found({ selector: '[data-demo-anchor="task-start"]' });
+    expect(await visitorClick({ element: startOther })).toBe(true);
+    expect(tried()).not.toContain('bring-session');
+    await waitFor(
+      () =>
+        expect(
+          reports.some(
+            (report) =>
+              report.type === 'anchor' &&
+              report.hintId === 'bring-session' &&
+              report.isRecovering === true,
+          ),
+        ).toBe(true),
+      { timeout: 8000 },
+    );
+
+    await visitorClick({
+      element: await found({ selector: '[role="option"][aria-label^="HBL-412 "]' }),
+    });
+    await visitorClick({ element: await found({ selector: '[data-demo-anchor="task-start"]' }) });
+    await waitFor(() => expect(tried()).toContain('bring-session'), { timeout: 8000 });
+  }, 90000);
+});
