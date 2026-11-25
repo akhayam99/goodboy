@@ -227,12 +227,15 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 
 - **Browser** at the foot of the right rail, or Go › **Show or Hide Browser**, shows or hides the browser beside the work, on any page. Its tooltip counts the open tabs.
 - In a narrow window the right rail keeps its icons only, with the names in the tooltips. The Browser then lies over the page, behind a veil. A click on the veil or **⌘⇧W** closes it.
-- **Open full page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Dock**, last in the address row, puts it back. The page never reloads, so a half-typed form stays.
+- **Open full page** makes it full size on the Browser page. Its row holds the pins of each project, then every session's tabs behind the session's name. Click a name to fold its tabs; the name keeps their count. **Dock**, last in the row, puts it back. The page never reloads, so a half-typed form stays.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session.
 
 #### The address bar
 
-- The address bar shows the page, not its address: the icon, the title and the host. Click it, or press **⌘L**, to see the full address selected and type a new one. **Esc** puts the title back.
+- The tabs sit in one row with Back, Forward and Reload, and the page sits right under it, edge to edge.
+- Pins come first as square icons. The other tabs show their icon and title, narrow down to the icon when the row fills, then the row scrolls.
+- The shown tab is the address bar. It shows the page, not its address: the icon, the title and the host. Click it, or press **⌘L**, to see the full address selected and type a new one. **Esc** puts the title back.
+- In a pane under 560 pixels wide, Pin and Open full page move into **More**.
 - Type an address and press **Enter** to open it beside the session, or **⌘Enter** to open it in your browser. A localhost address opens your dev server.
 - Type a word to find a tab of any session, a project pin or a page this session visited. Words are never searched on the web.
 - Type the path of a local page, image or PDF, like `~/harborline/plan.html`, to open it in a tab. Reload reads the file again. The page reads only the files in its folder and the folders under it. A missing file, a folder or another kind of file says why under the address. A link or a page never opens a local file.
