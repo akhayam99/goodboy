@@ -122,7 +122,7 @@ export const StageColumn = ({
       aria-busy={isLoading}
       data-lane={view.key}
       className={cn(
-        'flex max-h-full min-h-0 min-w-0 flex-col self-start',
+        'flex max-h-full min-h-0 w-full min-w-0 flex-col self-start',
         PANE_RHYTHM.board.lane,
         isHalf && (isEmpty || isCollapsed ? 'flex-none' : 'flex-initial'),
       )}

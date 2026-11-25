@@ -180,7 +180,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   );
 
   const signalNode = (
-    <span className="flex shrink-0">
+    <span className="flex min-w-0 max-w-[55%] shrink overflow-hidden">
       <CardSignal
         signal={signal}
         action={signalAction}
