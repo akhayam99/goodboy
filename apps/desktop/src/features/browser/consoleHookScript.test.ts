@@ -68,6 +68,7 @@ type Entry = {
     readonly origin: string;
     readonly stack: string | null;
     readonly requestId: string | null;
+    readonly at: number | null;
   } | null;
 };
 
