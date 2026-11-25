@@ -20,11 +20,13 @@ type Props = {
   readonly onStop: () => void;
   readonly isAutoFocused?: boolean;
   readonly hasTurns?: boolean;
+  readonly placeholder?: string;
 };
 
 export const AskComposer = ({
   sessionId,
   hasTurns = false,
+  placeholder,
   isStreaming,
   isStopping,
   onSend,
@@ -60,7 +62,8 @@ export const AskComposer = ({
     <MessageComposer
       label="Ask about this session"
       placeholder={
-        hasTurns ? 'Ask a follow up' : 'Ask about this session. Read only, it starts nothing.'
+        placeholder ??
+        (hasTurns ? 'Ask a follow up' : 'Ask about this session. Read only, it starts nothing.')
       }
       text={text}
       onTextChange={setText}
