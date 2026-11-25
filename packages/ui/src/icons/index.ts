@@ -227,6 +227,7 @@ export { Mobile as Smartphone } from './generated/Mobile';
 export { Stop as Square } from './generated/Stop';
 export { Launch as SquareArrowOutUpRight } from './generated/Launch';
 export { CheckboxChecked as SquareCheck } from './generated/CheckboxChecked';
+export { SelectWindow as SquareDashedMousePointer } from './generated/SelectWindow';
 export { Code as SquareCode } from './generated/Code';
 export { TableSplit as SquareKanban } from './generated/TableSplit';
 export { CheckboxIndeterminate as SquareMinus } from './generated/CheckboxIndeterminate';
