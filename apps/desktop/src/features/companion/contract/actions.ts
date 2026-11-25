@@ -1,0 +1,158 @@
+import type { ActionId, Digest, Int, ObjectVersion } from './primitives';
+import type { MergeMethod, SessionAccess, TaskProvider } from './vocabulary';
+import type { AgentState, RunState } from './projections';
+
+export type ActionBase = {
+  readonly actionId: ActionId;
+  readonly workspaceId: string;
+};
+
+export type SessionActionBase = ActionBase & {
+  readonly sessionId: string;
+};
+
+export type AnswerQuestionAction = SessionActionBase & {
+  readonly kind: 'answerQuestion';
+  readonly questionId: string;
+  readonly seenVersion: ObjectVersion;
+  readonly text: string;
+};
+
+export type ApprovePlanAction = SessionActionBase & {
+  readonly kind: 'approvePlan';
+  readonly planId: string;
+  readonly seenPlanVersion: Int;
+};
+
+export type RequestPlanChangesAction = SessionActionBase & {
+  readonly kind: 'requestPlanChanges';
+  readonly planId: string;
+  readonly seenPlanVersion: Int;
+  readonly text: string;
+};
+
+export type PermissionVerdict = 'allow' | 'deny';
+
+export type AnswerPermissionAction = SessionActionBase & {
+  readonly kind: 'answerPermission';
+  readonly agentId: string;
+  readonly requestId: string;
+  readonly seenInputHash: Digest;
+  readonly verdict: PermissionVerdict;
+};
+
+export type RaiseLimitAction = SessionActionBase & {
+  readonly kind: 'raiseLimit';
+  readonly runId: string;
+  readonly seenLimit: number;
+  readonly offeredAmount: number;
+};
+
+export type StopRunAction = SessionActionBase & {
+  readonly kind: 'stopRun';
+  readonly runId: string;
+  readonly seenState: RunState;
+};
+
+export type ContinueRunAction = SessionActionBase & {
+  readonly kind: 'continueRun';
+  readonly runId: string;
+  readonly seenState: RunState;
+};
+
+export type StopAgentAction = SessionActionBase & {
+  readonly kind: 'stopAgent';
+  readonly agentId: string;
+  readonly seenState: AgentState;
+};
+
+export type ContinueAgentAction = SessionActionBase & {
+  readonly kind: 'continueAgent';
+  readonly agentId: string;
+  readonly seenState: AgentState;
+};
+
+export type AnswerSlackReplyAction = SessionActionBase & {
+  readonly kind: 'answerSlackReply';
+  readonly draftId: string;
+  readonly seenVersion: ObjectVersion;
+  readonly text: string;
+};
+
+export type MergePrAction = SessionActionBase & {
+  readonly kind: 'mergePr';
+  readonly prNumber: Int;
+  readonly expectedHeadSha: string;
+  readonly method: MergeMethod;
+};
+
+export type StartSessionTask = {
+  readonly provider: TaskProvider;
+  readonly key: string;
+};
+
+export type StartSessionAction = ActionBase & {
+  readonly kind: 'startSession';
+  readonly projectId: string;
+  readonly goal: string;
+  readonly task: StartSessionTask | null;
+  readonly access: SessionAccess;
+};
+
+export type TrainRequestEntry = {
+  readonly sessionId: string;
+  readonly prNumber: Int;
+  readonly expectedHeadSha: string;
+};
+
+export type MergeTrainAction = ActionBase & {
+  readonly kind: 'mergeTrain';
+  readonly method: MergeMethod;
+  readonly entries: ReadonlyArray<TrainRequestEntry>;
+};
+
+export type MobileAction =
+  | AnswerQuestionAction
+  | ApprovePlanAction
+  | RequestPlanChangesAction
+  | AnswerPermissionAction
+  | RaiseLimitAction
+  | StopRunAction
+  | ContinueRunAction
+  | StopAgentAction
+  | ContinueAgentAction
+  | AnswerSlackReplyAction
+  | MergePrAction
+  | StartSessionAction
+  | MergeTrainAction;
+
+export type ActionResult = 'done' | 'refused' | 'failed';
+
+export type RefusalCode =
+  | 'version-changed'
+  | 'already-decided'
+  | 'duplicate-in-flight'
+  | 'not-permitted'
+  | 'rate-limited'
+  | 'busy'
+  | 'unknown-target'
+  | 'mac-closed';
+
+export type ChangedFact = {
+  readonly label: string;
+  readonly was: string;
+  readonly now: string;
+};
+
+export type Refusal = {
+  readonly code: RefusalCode;
+  readonly message: string;
+  readonly changes: ReadonlyArray<ChangedFact>;
+};
+
+export type ActionOutcome = {
+  readonly actionId: ActionId;
+  readonly result: ActionResult;
+  readonly isReplay: boolean;
+  readonly refusal: Refusal | null;
+};
