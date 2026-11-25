@@ -9,6 +9,8 @@ use super::host::{self, OpenTab, SessionClosed, TabBounds};
 use super::lifecycle;
 use super::local::{self, LocalFile};
 use super::page_keys::PageKeys;
+use super::pick::{self, PickOp, PickRead, PickRect};
+use super::snapshot;
 use super::profile::{self, ClearOutcome, Isolation, ProfileId};
 use super::reason::{
     self, BROWSER_CALLER, HOST_UNKNOWN, INVALID_ADDRESS, INVALID_PRESET, NOT_WEB_ADDRESS,
@@ -100,6 +102,24 @@ pub(crate) struct ConsoleReadArgs {
     pub(super) session_id: String,
     pub(super) doc: Option<String>,
     pub(super) after: u64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct PickArgs {
+    tab_id: String,
+    session_id: String,
+    op: PickOp,
+    round: u64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SnapshotArgs {
+    tab_id: String,
+    session_id: String,
+    doc: String,
+    rect: PickRect,
 }
 
 #[derive(Debug, Deserialize)]
@@ -374,20 +394,51 @@ fn check_capture(
     Ok(())
 }
 
+fn session_tab<R: Runtime>(
+    caller: &Webview<R>,
+    tab_id: &str,
+    session_id: &str,
+) -> Result<Webview<R>, MessageError> {
+    let tab = owned_tab(caller, tab_id)?;
+    let owner_session = caller
+        .state::<BrowserRegistry>()
+        .facts(tab_id)
+        .map(|facts| facts.session_id)
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
+    if owner_session != session_id {
+        return Err(reason::refused(OTHER_SESSION));
+    }
+    Ok(tab)
+}
+
 pub(super) fn console_tab<R: Runtime>(
     caller: &Webview<R>,
     args: &ConsoleReadArgs,
 ) -> Result<Webview<R>, MessageError> {
-    let tab = owned_tab(caller, &args.tab_id)?;
-    let owner_session = caller
-        .state::<BrowserRegistry>()
-        .facts(&args.tab_id)
-        .map(|facts| facts.session_id)
-        .ok_or_else(|| reason::failed(TAB_GONE))?;
-    if owner_session != args.session_id {
-        return Err(reason::refused(OTHER_SESSION));
+    session_tab(caller, &args.tab_id, &args.session_id)
+}
+
+#[tauri::command]
+pub async fn browser_pick(webview: Webview, args: PickArgs) -> Result<PickRead, MessageError> {
+    let tab = session_tab(&webview, &args.tab_id, &args.session_id)?;
+    let read = pick::drive_pick(&tab, args.op)?;
+    if pick::has_new_pick(&read, args.round) {
+        let _ = webview.set_focus();
     }
-    Ok(tab)
+    Ok(read)
+}
+
+#[tauri::command]
+pub async fn browser_element_snapshot(
+    webview: Webview,
+    args: SnapshotArgs,
+) -> Result<Option<String>, MessageError> {
+    let tab = session_tab(&webview, &args.tab_id, &args.session_id)?;
+    let read = pick::drive_pick(&tab, PickOp::Read)?;
+    if read.doc.as_deref() != Some(args.doc.as_str()) {
+        return Err(reason::refused(PAGE_MOVED));
+    }
+    snapshot::snapshot_element(&tab, args.rect)
 }
 
 #[tauri::command]
