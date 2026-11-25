@@ -125,8 +125,8 @@ const chipOf = ({ entry, identity, isCardOpen }: ChipParams) => {
   }
   return (
     <span className="inline-flex shrink-0 items-center gap-1 self-center">
-      <CONCEPT_ICONS.chain size={ICON_SIZE.mark} aria-hidden className="text-faint-foreground" />
       {glyph}
+      <CONCEPT_ICONS.chain size={ICON_SIZE.mark} aria-hidden className="text-faint-foreground" />
     </span>
   );
 };
@@ -232,10 +232,14 @@ export const TimelineRowLabel = ({
       density="feed"
       tone={tone}
       textSize={isStep ? 'ui' : 'body'}
-      ordinal={item.ordinal == null ? null : <span data-timeline-ordinal="">{item.ordinal}</span>}
       glyph={chipOf({ entry, identity, isCardOpen })}
       text={
         <span className="flex min-w-0 items-center gap-2">
+          {item.ordinal == null ? null : (
+            <span data-timeline-ordinal="" className="sr-only">
+              {item.ordinal}
+            </span>
+          )}
           {titleNode}
           {diffStat == null ? null : (
             <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />

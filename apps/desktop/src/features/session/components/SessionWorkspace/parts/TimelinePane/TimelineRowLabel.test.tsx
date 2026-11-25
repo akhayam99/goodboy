@@ -427,13 +427,10 @@ describe('TimelineRowLabel, the quiet ledger', () => {
     rowState,
   });
 
-  it('reads ordinal, role glyph and task in that order on one feed line', () => {
+  it('reads the role glyph then the task on one feed line, with the ordinal for screen readers only', () => {
     render(<TimelineRowLabel item={stepOf()} />);
     const row = screen.getByTestId('activity-row');
     const slots = Array.from(row.children).map((slot) => {
-      if (slot.querySelector('[data-timeline-ordinal]') !== null) {
-        return 'ordinal';
-      }
       if (slot.querySelector('[role="img"]') !== null) {
         return 'glyph';
       }
@@ -441,7 +438,8 @@ describe('TimelineRowLabel, the quiet ledger', () => {
     });
 
     expect(row.getAttribute('data-activity-density')).toBe('feed');
-    expect(slots).toEqual(['ordinal', 'glyph', 'activity-row-text']);
+    expect(slots).toEqual(['glyph', 'activity-row-text']);
+    expect(row.querySelector('[data-timeline-ordinal]')?.textContent).toBe('4.2');
   });
 
   it('mutes a queued task and a stopped one, and keeps a done one at full contrast', () => {

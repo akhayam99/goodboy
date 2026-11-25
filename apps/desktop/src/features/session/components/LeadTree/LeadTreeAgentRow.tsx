@@ -1,14 +1,16 @@
 import { memo } from 'react';
 import type { AgentId } from '@goodboy/types';
-import { Tooltip, WorkNode, cn, formatUsd, type WorkNodeState } from '@goodboy/ui';
+import { WorkNode, cn, formatUsd, tintClasses, type WorkNodeState } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import type { AgentKind } from '../../agent-kind';
-import type { RailRow } from '../../../workTreeModel/railGeometry';
 import { DelegationClock } from '../../../auto/chat/DelegationClock';
-import { SpawnedRailCell } from '../SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
+import { LeadTreeBrief } from './LeadTreeBrief';
+import { LeadTreeGuide } from './LeadTreeGuide';
+import { LeadTreeSelectedMark } from './LeadTreeSelectedMark';
 import { LEAD_TREE_CURSOR } from './leadTreeCursor';
+import type { LeadTreeGuide as Guide } from './leadTreeGuidesOf';
 import { LEAD_TREE_METER } from './leadTreeMeter';
-import { LEAD_TREE_QUIET_NODES } from './leadTreeQuietNodes';
+import { LEAD_TREE_MUTED_NODES, LEAD_TREE_QUIET_NODES } from './leadTreeQuietNodes';
 import { LEAD_TREE_ROW } from './leadTreeRow';
 
 type Props = {
@@ -22,12 +24,23 @@ type Props = {
   readonly word: string;
   readonly isSettled: boolean;
   readonly spendUsd: number;
-  readonly rail: RailRow;
-  readonly railWidth: number;
+  readonly guide: Guide;
   readonly isSelected: boolean;
   readonly isActive: boolean;
   readonly isCompact: boolean;
   readonly onSelect: (agentId: AgentId) => void;
+};
+
+type TitleToneParams = {
+  readonly node: WorkNodeState;
+  readonly isSettled: boolean;
+};
+
+const titleToneOf = ({ node, isSettled }: TitleToneParams): string => {
+  if (LEAD_TREE_MUTED_NODES.has(node)) {
+    return 'text-faint-foreground';
+  }
+  return isSettled ? 'text-muted-foreground' : 'text-foreground';
 };
 
 export const LeadTreeAgentRow = memo(
@@ -42,20 +55,23 @@ export const LeadTreeAgentRow = memo(
     word,
     isSettled,
     spendUsd,
-    rail,
-    railWidth,
+    guide,
     isSelected,
     isActive,
     isCompact,
     onSelect,
   }: Props) => {
     const isWordShown = !LEAD_TREE_QUIET_NODES.has(node);
+    const isMuted = LEAD_TREE_MUTED_NODES.has(node);
+    const hasTitle = !isCompact && title !== '';
     return (
       <div
         role="treeitem"
         tabIndex={-1}
         aria-selected={isSelected}
+        aria-current={isSelected ? 'true' : undefined}
         aria-label={`${number} ${role}${title === '' ? '' : `, ${title}`}, ${word}`}
+        data-selected={isSelected}
         data-lead-tree-id={id}
         data-lead-tree-agent={agentId}
         data-lead-tree-node={node}
@@ -63,44 +79,53 @@ export const LeadTreeAgentRow = memo(
         className={cn(
           LEAD_TREE_ROW,
           'cursor-pointer hover:bg-hover',
-          isSelected && 'bg-selected',
+          isSelected && 'bg-selected hover:bg-selected',
           isActive && LEAD_TREE_CURSOR,
         )}
         onClick={() => onSelect(agentId)}
       >
-        <SpawnedRailCell
-          rail={rail}
-          width={railWidth}
-          marker={<WorkNode state={node} label={word} mark={{ kind: 'dot' }} size="sm" />}
+        {isSelected ? <LeadTreeSelectedMark /> : null}
+        <LeadTreeGuide
+          guide={guide}
+          marker={
+            <WorkNode look="quiet" state={node} label={word} mark={{ kind: 'dot' }} size="sm" />
+          }
         />
-        {isCompact ? null : (
+        <AgentKindChip
+          kind={kind}
+          density="glyph"
+          title={role}
+          className={cn(isMuted && 'text-faint-foreground', isSelected && 'ring-1 ring-primary')}
+        />
+        {hasTitle ? (
+          <LeadTreeBrief text={title} className={titleToneOf({ node, isSettled })} />
+        ) : (
           <span
-            data-lead-tree-number=""
-            className="w-6 shrink-0 text-right text-chip tabular-nums text-faint-foreground"
+            className={cn(
+              'min-w-0 flex-1 truncate text-ui',
+              isMuted ? 'text-faint-foreground' : 'text-foreground',
+            )}
           >
-            {number}
+            {isCompact ? role : ''}
           </span>
         )}
-        <AgentKindChip kind={kind} density="glyph" isDecorative />
-        <span className="shrink-0 text-ui text-foreground">{role}</span>
-        {isCompact || title === '' ? (
-          <span className="flex-1" />
-        ) : (
-          <Tooltip content={title} anchorClassName="flex min-w-0 flex-1">
-            <span
-              data-lead-tree-title=""
-              className="min-w-0 flex-1 truncate text-meta text-muted-foreground"
-            >
-              {title}
-            </span>
-          </Tooltip>
-        )}
         {isWordShown ? (
-          <span className="shrink-0 text-meta text-muted-foreground">{word}</span>
+          <span
+            className={cn(
+              'shrink-0 text-meta',
+              node === 'failed' ? tintClasses('danger').text : 'text-muted-foreground',
+            )}
+          >
+            {word}
+          </span>
         ) : null}
         <span
           data-lead-tree-meter=""
-          className={cn(LEAD_TREE_METER, 'text-meta tabular-nums text-faint-foreground')}
+          className={cn(
+            LEAD_TREE_METER,
+            'text-meta tabular-nums',
+            isMuted ? 'text-faint-foreground' : 'text-muted-foreground',
+          )}
         >
           {isSettled ? formatUsd(spendUsd) : <DelegationClock agentId={agentId} isLive />}
         </span>

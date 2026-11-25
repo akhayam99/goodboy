@@ -7,6 +7,7 @@ import { agentPlace } from '../../../../store/slices/navigation/place';
 import { leadAgentCountOf } from '../../../auto/tree/leadAgentCountOf';
 import type { LeadTreeItem } from '../../../auto/tree/leadTreeItemsOf';
 import { LeadTree } from '../LeadTree';
+import { LeadTreeFolded } from '../LeadTree/LeadTreeFolded';
 import { RunAgentsRailHead } from './RunAgentsRailHead';
 import { useKeepTreeFocus } from './useKeepTreeFocus';
 import type { LeadTreeRootState } from '../../../auto/tree/leadTreeRootState';
@@ -81,6 +82,16 @@ export const RunAgentsRail = ({
         isCollapsed={fold.isCollapsed}
         onCollapsedChange={setFolded}
         hasPageOutside
+        foldedActions={
+          <ScrollFade className="min-h-0 w-full flex-1" viewportClassName="flex flex-col">
+            <LeadTreeFolded
+              items={items}
+              root={root}
+              selectedAgentId={shownAgentId}
+              onSelect={onSelect}
+            />
+          </ScrollFade>
+        }
         railHeader={<RunAgentsRailHead count={leadAgentCountOf({ items })} />}
         rail={
           <ScrollFade className="min-h-0 flex-1" viewportClassName="flex flex-col px-2 pb-3">

@@ -36,6 +36,10 @@ agent-brief-door-transcript
 agent-brief-question
 agent-finished-model
 agent-running-stop
+agent-tree-lead
+agent-tree-lead-folded
+agent-tree-lead-folded-light
+agent-tree-lead-light
 agentlead
 archived-work-merged-dark
 archived-work-merged-light

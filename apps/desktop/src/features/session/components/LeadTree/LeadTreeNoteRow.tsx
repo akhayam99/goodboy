@@ -1,8 +1,8 @@
 import { memo } from 'react';
 import { MessageSquare } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE } from '@goodboy/ui';
-import { SpawnedRailCell } from '../SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
-import type { RailRow } from '../../../workTreeModel/railGeometry';
+import { LeadTreeGuide } from './LeadTreeGuide';
+import type { LeadTreeGuide as Guide } from './leadTreeGuidesOf';
 import { LEAD_TREE_CURSOR } from './leadTreeCursor';
 import { LEAD_TREE_ROW } from './leadTreeRow';
 
@@ -13,14 +13,13 @@ type Props = {
   readonly canEdit: boolean;
   readonly canRemove: boolean;
   readonly isActive: boolean;
-  readonly rail: RailRow;
-  readonly railWidth: number;
+  readonly guide: Guide;
   readonly onEdit: (id: string) => void;
   readonly onRemove: (id: string) => void;
 };
 
 export const LeadTreeNoteRow = memo(
-  ({ id, text, word, canEdit, canRemove, isActive, rail, railWidth, onEdit, onRemove }: Props) => (
+  ({ id, text, word, canEdit, canRemove, isActive, guide, onEdit, onRemove }: Props) => (
     <div
       role="treeitem"
       tabIndex={-1}
@@ -30,9 +29,8 @@ export const LeadTreeNoteRow = memo(
       data-active={isActive}
       className={cn(LEAD_TREE_ROW, isActive && LEAD_TREE_CURSOR)}
     >
-      <SpawnedRailCell
-        rail={rail}
-        width={railWidth}
+      <LeadTreeGuide
+        guide={guide}
         marker={
           <span className="flex size-4 items-center justify-center rounded-full bg-background text-faint-foreground">
             <MessageSquare size={ICON_SIZE.mark} aria-hidden="true" />
