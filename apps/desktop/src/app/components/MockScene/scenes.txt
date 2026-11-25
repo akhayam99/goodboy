@@ -59,12 +59,16 @@ artifacts-lens-shell
 artifacts-loading
 artifacts-no-match
 artifacts-rows
+ask-foot
+ask-foot-light
 ask-pane-answer
 ask-pane-answer-light
 ask-pane-empty
 ask-pane-empty-light
 ask-pane-followup
 ask-pane-followup-light
+ask-pane-rich
+ask-pane-rich-light
 ask-pane-runs
 ask-pane-runs-light
 ask-pane-streaming

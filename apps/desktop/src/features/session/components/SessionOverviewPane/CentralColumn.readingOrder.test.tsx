@@ -88,10 +88,11 @@ const READING_ORDER = [
   '[data-overview-section="next"]',
   '[data-slot="project-blocks"]',
   '[data-overview-section="activity"]',
+  '[data-overview-ask]',
 ];
 
 describe('the reading order of the Overview', () => {
-  it('reads the facts, Needs you, Now, Next, Projects, then Activity, with no Ask line in the column', async () => {
+  it('reads the facts, Needs you, Now, Next, Projects, Activity, then the Ask foot', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
     const column = document.querySelector('[data-central-column]');
@@ -105,12 +106,13 @@ describe('the reading order of the Overview', () => {
       '[data-overview-facts]',
       '[data-slot="project-blocks"]',
       '[data-overview-section="activity"]',
+      '[data-overview-ask]',
     ]) {
       expect(shown.map((entry) => entry.selector)).toContain(required);
     }
     const positions = shown.map((entry) => entry.at);
     expect(positions).toEqual([...positions].sort((first, second) => first - second));
-    expect(column?.querySelector('[data-testid="ask-line"]')).toBeNull();
+    expect(column?.lastElementChild?.matches('[data-overview-ask]')).toBe(true);
   });
 
   it.each([
