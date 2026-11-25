@@ -171,7 +171,7 @@ import {
 } from './commandExecutor';
 import { invoke } from '@tauri-apps/api/core';
 import { clearMobileCreateRateState } from './mobileConfinement';
-import { clearActionState } from './actions/clearActionState';
+import { clearActionState } from './actions/testing/clearActionState';
 import { WorkflowGateError } from '../../store/slices/workflows/workflowActivationGate';
 
 const invokeMock = vi.mocked(invoke);
