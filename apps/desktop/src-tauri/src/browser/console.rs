@@ -173,6 +173,7 @@ pub(crate) struct ConsoleEntry {
 pub(crate) struct ConsoleRead {
     pub(crate) doc: Option<String>,
     pub(crate) entries: Vec<ConsoleEntry>,
+    pub(crate) watermark: u64,
     pub(crate) is_heard: bool,
 }
 
@@ -433,6 +434,7 @@ fn unheard() -> ConsoleRead {
     ConsoleRead {
         doc: None,
         entries: Vec::new(),
+        watermark: 0,
         is_heard: false,
     }
 }
@@ -459,6 +461,12 @@ pub(crate) fn answer_of(raw: &str, cursor: &Cursor) -> Option<ConsoleRead> {
         return None;
     }
     let after = after_of(cursor, &answer.doc);
+    let watermark = answer
+        .entries
+        .iter()
+        .filter_map(|value| value.get("seq").and_then(serde_json::Value::as_u64))
+        .max()
+        .map_or(after, |last| last.max(after));
     let mut entries: Vec<ConsoleEntry> = answer
         .entries
         .into_iter()
@@ -470,6 +478,7 @@ pub(crate) fn answer_of(raw: &str, cursor: &Cursor) -> Option<ConsoleRead> {
     Some(ConsoleRead {
         doc: Some(answer.doc),
         entries: newest_of_each_ring(entries),
+        watermark,
         is_heard: true,
     })
 }
@@ -619,6 +628,7 @@ mod tests {
                         }),
                     },
                 ],
+                watermark: 5,
                 is_heard: true,
             },
             json!({
@@ -658,6 +668,7 @@ mod tests {
                         "error": { "origin": "request", "stack": null, "requestId": "r4" },
                     },
                 ],
+                "watermark": 5,
                 "isHeard": true,
             }),
         );
@@ -678,6 +689,32 @@ mod tests {
         let read = answer_of(&page_answer("p2m7", 1..=3), &cursor).expect("reads");
         assert_eq!(seqs_of(&read), vec![1, 2, 3]);
         assert_eq!(read.doc.as_deref(), Some("p2m7"));
+    }
+
+    #[test]
+    fn carries_a_watermark_past_rows_that_are_filtered_out() {
+        let mut noise: Vec<serde_json::Value> = (1..=499)
+            .map(|seq| {
+                let mut line = entry(seq);
+                line["text"] = json!(format!("IPC custom protocol failed {seq}"));
+                line
+            })
+            .collect();
+        noise.push(entry(500));
+        let first = answer_of(
+            &answer_with("k3x9", noise[..499].to_vec()),
+            &Cursor::of(None, 0),
+        )
+        .expect("reads");
+        assert!(first.entries.is_empty());
+        assert_eq!(first.watermark, 499);
+        let next = answer_of(
+            &answer_with("k3x9", noise),
+            &Cursor::of(Some("k3x9"), first.watermark),
+        )
+        .expect("reads");
+        assert_eq!(seqs_of(&next), vec![500]);
+        assert_eq!(next.watermark, 500);
     }
 
     #[test]

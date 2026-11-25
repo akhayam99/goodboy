@@ -90,7 +90,7 @@ export const applyConsoleRead = ({ current, sent, answer }: Params): TabConsole 
   const fresh = answer.entries.filter((entry) => isNewLoad || entry.seq > current.after);
   const after = fresh.reduce(
     (last, entry) => Math.max(last, entry.seq),
-    isNewLoad ? 0 : current.after,
+    Math.max(answer.watermark, isNewLoad ? 0 : current.after),
   );
   return {
     doc: answer.doc,

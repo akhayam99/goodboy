@@ -83,6 +83,7 @@ export type BrowserConsoleEntry = {
 export type BrowserConsoleRead = {
   readonly doc: string | null;
   readonly entries: ReadonlyArray<BrowserConsoleEntry>;
+  readonly watermark: number;
   readonly isHeard: boolean;
 };
 

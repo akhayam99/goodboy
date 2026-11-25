@@ -21,6 +21,10 @@ type Params = {
   readonly url: string;
 };
 
+type LineParams = {
+  readonly line: string;
+};
+
 type EntryParams = {
   readonly entry: BrowserConsoleEntry;
 };
@@ -39,18 +43,24 @@ type Tail = {
   readonly isCut: boolean;
 };
 
+const LOCAL_LIVE_PATTERN =
+  /\b(?:gblocal:[/][/]localhost|https?:[/][/]gblocal\.localhost)[/][0-9a-f-]+[/]/gi;
+
+const withoutGrantOf = ({ line }: LineParams): string =>
+  line.replace(LOCAL_LIVE_PATTERN, 'file:///');
+
 const stackLinesOf = ({ entry }: EntryParams): ReadonlyArray<string> =>
   (entry.error?.stack ?? '')
     .split('\n')
     .filter((line) => line.trim() !== '')
     .slice(0, STACK_LINES_KEPT)
-    .map((line) => `    ${line.trim()}`);
+    .map((line) => `    ${withoutGrantOf({ line: line.trim() })}`);
 
 const consoleLineOf = ({ entry }: EntryParams): string =>
   [
     entry.source === null
-      ? `- ${entry.level}: ${entry.text}`
-      : `- ${entry.level}: ${entry.text} (${entry.source})`,
+      ? `- ${entry.level}: ${withoutGrantOf({ line: entry.text })}`
+      : `- ${entry.level}: ${withoutGrantOf({ line: entry.text })} (${withoutGrantOf({ line: entry.source })})`,
     ...stackLinesOf({ entry }),
   ].join('\n');
 

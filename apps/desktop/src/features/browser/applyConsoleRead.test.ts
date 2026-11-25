@@ -72,18 +72,34 @@ describe('applying a console read', () => {
     const next = applyConsoleRead({
       current: READ,
       sent: { doc: 'k3x9', after: 2 },
-      answer: { doc: 'k3x9', entries: [line({ seq: 3 }), line({ seq: 4 })], isHeard: true },
+      answer: {
+        doc: 'k3x9',
+        entries: [line({ seq: 3 }), line({ seq: 4 })],
+        watermark: 0,
+        isHeard: true,
+      },
     });
 
     expect(next?.entries.map((entry) => entry.seq)).toEqual([1, 2, 3, 4]);
     expect(next?.after).toBe(4);
   });
 
+  it('moves the cursor to the watermark when every row of a batch was filtered out', () => {
+    const next = applyConsoleRead({
+      current: READ,
+      sent: { doc: 'k3x9', after: 2 },
+      answer: { doc: 'k3x9', entries: [], watermark: 501, isHeard: true },
+    });
+
+    expect(next?.after).toBe(501);
+    expect(next?.entries.map((entry) => entry.seq)).toEqual([1, 2]);
+  });
+
   it('drops an answer for an older cursor', () => {
     const next = applyConsoleRead({
       current: READ,
       sent: { doc: 'k3x9', after: 0 },
-      answer: { doc: 'k3x9', entries: [line({ seq: 1 })], isHeard: true },
+      answer: { doc: 'k3x9', entries: [line({ seq: 1 })], watermark: 0, isHeard: true },
     });
 
     expect(next).toBeNull();
@@ -93,7 +109,7 @@ describe('applying a console read', () => {
     const next = applyConsoleRead({
       current: READ,
       sent: { doc: 'k3x9', after: 2 },
-      answer: { doc: 'p2m7', entries: [line({ seq: 1 })], isHeard: true },
+      answer: { doc: 'p2m7', entries: [line({ seq: 1 })], watermark: 0, isHeard: true },
     });
 
     expect(next?.doc).toBe('p2m7');
@@ -105,7 +121,7 @@ describe('applying a console read', () => {
     const once = applyConsoleRead({
       current: READ,
       sent: { doc: 'k3x9', after: 2 },
-      answer: { doc: null, entries: [], isHeard: false },
+      answer: { doc: null, entries: [], watermark: 0, isHeard: false },
     });
     const twice =
       once === null
@@ -113,7 +129,7 @@ describe('applying a console read', () => {
         : applyConsoleRead({
             current: once,
             sent: { doc: 'k3x9', after: 2 },
-            answer: { doc: null, entries: [], isHeard: false },
+            answer: { doc: null, entries: [], watermark: 0, isHeard: false },
           });
 
     expect(once?.failure).toBeNull();
@@ -125,7 +141,7 @@ describe('applying a console read', () => {
     const quiet = applyConsoleRead({
       current: { ...EMPTY_TAB_CONSOLE, misses: 1 },
       sent: { doc: null, after: 0 },
-      answer: { doc: null, entries: [], isHeard: false },
+      answer: { doc: null, entries: [], watermark: 0, isHeard: false },
     });
 
     expect(quiet?.failure).toBeNull();
@@ -138,7 +154,7 @@ describe('applying a console read', () => {
     const next = applyConsoleRead({
       current: READ,
       sent: { doc: 'k3x9', after: 2 },
-      answer: { doc: 'k3x9', entries: many, isHeard: true },
+      answer: { doc: 'k3x9', entries: many, watermark: 0, isHeard: true },
     });
 
     expect(next?.entries).toHaveLength(CONSOLE_KEPT_ROWS.console);
@@ -152,7 +168,7 @@ describe('applying a console read', () => {
     const next = applyConsoleRead({
       current: { ...READ, entries: [...READ.entries, failure({ seq: 3 })], after: 3 },
       sent: { doc: 'k3x9', after: 3 },
-      answer: { doc: 'k3x9', entries: flood, isHeard: true },
+      answer: { doc: 'k3x9', entries: flood, watermark: 0, isHeard: true },
     });
 
     const kinds = next?.entries.map((entry) => entry.kind) ?? [];
@@ -174,6 +190,7 @@ describe('applying a console read', () => {
       answer: {
         doc: 'k3x9',
         entries: [line({ seq: 5 }), request({ seq: 6, id: 'r1', status: 201 })],
+        watermark: 0,
         isHeard: true,
       },
     });

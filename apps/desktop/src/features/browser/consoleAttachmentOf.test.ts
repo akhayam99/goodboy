@@ -119,6 +119,34 @@ describe('the console attachment', () => {
     );
   });
 
+  it('turns the internal address of a local page into a token-free file address', () => {
+    const handoff = consoleAttachmentOf({
+      entries: [
+        entryOf({
+          seq: 1,
+          kind: 'error',
+          level: 'error',
+          text: 'TypeError: x',
+          source: 'gblocal://localhost/0f1e-2a/work/harborline/plan.js:3',
+          error: {
+            origin: 'uncaught',
+            stack:
+              'at a (gblocal://localhost/0f1e-2a/work/harborline/plan.js:3:1)\nat b (http://gblocal.localhost/0f1e-2a/work/harborline/plan.js:9:2)\nat c (https://gblocal.localhost/0f1e-2a/C:/work/harborline/plan.js:9:2)',
+            requestId: null,
+          },
+        }),
+      ],
+      title: 'Plan',
+      url: 'file:///work/harborline/plan.html',
+    });
+
+    expect(handoff.text).not.toContain('0f1e-2a');
+    expect(handoff.text).not.toContain('gblocal');
+    expect(handoff.text).toContain('at a (file:///work/harborline/plan.js:3:1)');
+    expect(handoff.text).toContain('at b (file:///work/harborline/plan.js:9:2)');
+    expect(handoff.text).toContain('at c (file:///C:/work/harborline/plan.js:9:2)');
+  });
+
   it('never carries the headers or bodies of a request', () => {
     const handoff = consoleAttachmentOf({
       entries: ENTRIES,

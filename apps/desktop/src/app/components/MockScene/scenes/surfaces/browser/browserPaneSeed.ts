@@ -35,6 +35,7 @@ export type BrowserPaneSceneState =
 
 const CONSOLE_READ: BrowserConsoleRead = {
   doc: 'mockload',
+  watermark: 0,
   isHeard: true,
   entries: [
     {
@@ -117,7 +118,7 @@ const CONSOLE_READ: BrowserConsoleRead = {
   ],
 };
 
-const UNHEARD_READ: BrowserConsoleRead = { doc: null, entries: [], isHeard: false };
+const UNHEARD_READ: BrowserConsoleRead = { doc: null, entries: [], watermark: 0, isHeard: false };
 
 const DEVICE_PRESETS_OF: Readonly<
   Partial<Record<BrowserPaneSceneState, Readonly<Record<string, DevicePresetId>>>>

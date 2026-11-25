@@ -114,10 +114,11 @@ const ENTRIES: ReadonlyArray<BrowserConsoleEntry> = [
 const heard = ({ doc = 'k3x9', entries }: ReadParams): BrowserConsoleRead => ({
   doc,
   entries,
+  watermark: 0,
   isHeard: true,
 });
 
-const UNHEARD: BrowserConsoleRead = { doc: null, entries: [], isHeard: false };
+const UNHEARD: BrowserConsoleRead = { doc: null, entries: [], watermark: 0, isHeard: false };
 
 const argsOf = ({ payload }: PayloadParams): Readonly<Record<string, unknown>> => {
   const args: unknown =
