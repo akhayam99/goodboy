@@ -34,7 +34,7 @@ export const NetworkChoice = ({ interfaces, isBusy, onToggle }: Props) => {
           ariaLabel={`Offer ${net.name}`}
           checked={net.isSelected}
           disabled={isBusy}
-          onChange={(next) => void onToggle({ name: net.name, isSelected: next })}
+          onChange={(isOn) => void onToggle({ name: net.name, isSelected: isOn })}
         />
       ))}
     </div>

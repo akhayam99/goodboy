@@ -59,10 +59,10 @@ export const PhoneRow = ({ phone, now, isBusy, onSetPermissions, onRevoke }: Pro
               ariaLabel={`${label} for ${phone.name}`}
               checked={phone.permissions[key]}
               disabled={isBusy}
-              onChange={(next) =>
+              onChange={(isOn) =>
                 void onSetPermissions({
                   phoneId: phone.id,
-                  permissions: { ...phone.permissions, [key]: next },
+                  permissions: { ...phone.permissions, [key]: isOn },
                 })
               }
             />
