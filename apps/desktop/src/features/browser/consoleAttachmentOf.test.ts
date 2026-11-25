@@ -41,6 +41,7 @@ const ENTRIES: ReadonlyArray<BrowserConsoleEntry> = [
       stack:
         'TypeError: retry is not a function\nat retry (checkout.js:214:9)\nat confirm (checkout.js:88:3)',
       requestId: null,
+      at: null,
     },
   }),
   entryOf({
@@ -63,7 +64,7 @@ const ENTRIES: ReadonlyArray<BrowserConsoleEntry> = [
     kind: 'error',
     level: 'error',
     text: 'POST /api/orders/confirm 500',
-    error: { origin: 'request', stack: null, requestId: 'r3' },
+    error: { origin: 'request', stack: null, requestId: 'r3', at: null },
   }),
   entryOf({
     seq: 5,
@@ -133,6 +134,7 @@ describe('the console attachment', () => {
             stack:
               'at a (gblocal://localhost/0f1e-2a/work/harborline/plan.js:3:1)\nat b (http://gblocal.localhost/0f1e-2a/work/harborline/plan.js:9:2)\nat c (https://gblocal.localhost/0f1e-2a/C:/work/harborline/plan.js:9:2)',
             requestId: null,
+            at: null,
           },
         }),
       ],
