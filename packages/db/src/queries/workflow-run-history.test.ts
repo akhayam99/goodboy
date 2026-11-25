@@ -390,6 +390,26 @@ const insertHelper = async ({
   );
 };
 
+type ReservationParams = DbParams & {
+  readonly treeId: string;
+  readonly ownerId: string;
+  readonly actualUsd: number;
+};
+
+const insertReservation = async ({
+  db,
+  treeId,
+  ownerId,
+  actualUsd,
+}: ReservationParams): Promise<void> => {
+  await db.execute(
+    `INSERT INTO auto_reservations
+      (id, tree_id, owner_kind, owner_id, reserved_usd, state, actual_usd, cost_known, created_at, updated_at)
+     VALUES (?, ?, 'auto_turn', ?, ?, 'reconciled', ?, 0, 1, 1)`,
+    [`res-${ownerId}`, treeId, ownerId, actualUsd, actualUsd],
+  );
+};
+
 type RoutesParams = DbParams & {
   readonly sessionId: string;
   readonly value: string;
@@ -434,7 +454,8 @@ describe('listWorkspaceWorkflowRuns with Lead runs', () => {
       status: 'running',
       providerRunId: 'pr-h-impl',
     });
-    await insertCost({ db, providerRunId: 'pr-h-impl', sessionId: 'ses-ledger', costUsd: 0.4 });
+    await insertCost({ db, providerRunId: 'pr-h-impl', sessionId: 'ses-ledger', costUsd: 9 });
+    await insertReservation({ db, treeId: 'tree-ledger', ownerId: 'turn-1', actualUsd: 0.4 });
     await insertRoutes({
       db,
       sessionId: 'ses-ledger',
@@ -497,7 +518,7 @@ describe('listWorkspaceWorkflowRuns with Lead runs', () => {
       'run-nightly',
       'run-acme',
     ]);
-    expect(rows[0]?.orchestrationOutcome).toBe('done');
+    expect(rows[0]?.lead?.phase).toBe('finished');
   });
 
   it('skips a stored route that is not JSON, a plan route and a workflow of another workspace', async () => {
@@ -542,5 +563,72 @@ describe('listWorkspaceWorkflowRuns with Lead runs', () => {
 
     expect(own.map((row) => row.workflowRunId)).toEqual(['run-ledger', 'run-nightly', 'run-acme']);
     expect(other).toEqual([]);
+  });
+
+  it('charges a Lead run what the tree spend charges, a reserved ceiling included', async () => {
+    const db = await seed();
+    await insertLeadRun({
+      db,
+      treeId: 'tree-ledger',
+      sessionId: 'ses-ledger',
+      rootId: 'lead-ledger',
+      createdAt: LEAD_AT,
+    });
+    await insertReservation({ db, treeId: 'tree-ledger', ownerId: 'turn-1', actualUsd: 0.25 });
+    await insertReservation({ db, treeId: 'tree-ledger', ownerId: 'turn-2', actualUsd: 1.5 });
+    await insertRoutes({
+      db,
+      sessionId: 'ses-ledger',
+      value: JSON.stringify({
+        'lead-ledger': leadRoute({ extra: { workflowId: 'wf-flaky' } }),
+      }),
+    });
+
+    const rows = await listWorkspaceWorkflowRuns({ db, workspaceId: WORKSPACE });
+
+    expect(rows[0]?.costUsd).toBeCloseTo(1.75);
+  });
+
+  it('carries the tree phase, the block reason, the budget left and the open asks of a Lead run', async () => {
+    const db = await seed();
+    await insertLeadRun({
+      db,
+      treeId: 'tree-ledger',
+      sessionId: 'ses-ledger',
+      rootId: 'lead-ledger',
+      createdAt: LEAD_AT,
+      phase: 'blocked',
+    });
+    await db.execute(
+      "UPDATE auto_trees SET blocked_reason = 'budget', cap_usd = 2 WHERE id = 'tree-ledger'",
+    );
+    await insertReservation({ db, treeId: 'tree-ledger', ownerId: 'turn-1', actualUsd: 0.5 });
+    await insertHelper({
+      db,
+      treeId: 'tree-ledger',
+      sessionId: 'ses-ledger',
+      helperId: 'h-impl',
+      status: 'completed',
+      providerRunId: 'pr-h-impl',
+    });
+    await db.execute("UPDATE auto_delegations SET state = 'paused' WHERE tree_id = 'tree-ledger'");
+    await insertRoutes({
+      db,
+      sessionId: 'ses-ledger',
+      value: JSON.stringify({
+        'lead-ledger': leadRoute({ extra: { workflowId: 'wf-flaky' } }),
+      }),
+    });
+
+    const rows = await listWorkspaceWorkflowRuns({ db, workspaceId: WORKSPACE });
+
+    expect(rows[0]?.lead).toMatchObject({
+      phase: 'blocked',
+      blockedReason: 'budget',
+      isTurnLive: false,
+      isAsking: true,
+    });
+    expect(rows[0]?.lead?.remainingUsd).toBeCloseTo(1.5);
+    expect(rows[1]?.lead).toBeNull();
   });
 });

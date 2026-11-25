@@ -10,6 +10,16 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import { AUTO_PHASES, type AutoPhase } from './auto-trees';
+import { autoLiveUsdSql, autoRemainingUsdSql, autoSettledUsdSql } from './auto-reservations';
+
+export type WorkflowRunLeadFacts = Readonly<{
+  phase: AutoPhase;
+  blockedReason: string | null;
+  remainingUsd: number | null;
+  isTurnLive: boolean;
+  isAsking: boolean;
+}>;
 
 export type WorkflowRunHistoryRow = {
   readonly workflowRunId: WorkflowRunId;
@@ -28,6 +38,7 @@ export type WorkflowRunHistoryRow = {
   readonly stoppedSteps: number;
   readonly costUsd: number;
   readonly leadAgentId: AgentId | null;
+  readonly lead: WorkflowRunLeadFacts | null;
 };
 
 type Row = {
@@ -47,6 +58,11 @@ type Row = {
   readonly stopped_steps: number;
   readonly cost_usd: number | null;
   readonly lead_agent_id: string | null;
+  readonly lead_phase: string | null;
+  readonly lead_blocked_reason: string | null;
+  readonly lead_remaining_usd: number | null;
+  readonly lead_is_turn_live: number | null;
+  readonly lead_is_asking: number | null;
 };
 
 type Params = {
@@ -57,20 +73,30 @@ type Params = {
 const SQL = `
 WITH plan_runs AS (
   SELECT sw.workflow_run_id, sw.workflow_id, sw.session_id, sw.execution_mode,
-         sw.orchestration_outcome, sw.created_at, s.goal, s.archived_at, NULL AS lead_agent_id
+         sw.orchestration_outcome, sw.created_at, s.goal, s.archived_at, NULL AS lead_agent_id,
+         NULL AS lead_phase, NULL AS lead_blocked_reason, NULL AS lead_remaining_usd,
+         NULL AS lead_spend_usd, NULL AS lead_is_turn_live, NULL AS lead_is_asking
     FROM session_workflows sw
     JOIN sessions s ON s.id = sw.session_id
    WHERE s.workspace_id = ? AND s.deleted_at IS NULL AND sw.discarded_at IS NULL
 ),
 lead_routes AS (
-  SELECT t.id AS tree_id, t.root_agent_id, t.session_id, t.created_at, t.phase, s.goal,
-         s.archived_at, route.value AS route
-    FROM auto_trees t
-    JOIN sessions s ON s.id = t.session_id
-    JOIN live_agents root ON root.id = t.root_agent_id
-    JOIN settings stored ON stored.key = 'runs.routes.' || t.session_id
+  SELECT auto_trees.id AS tree_id, auto_trees.root_agent_id, auto_trees.session_id,
+         auto_trees.created_at, auto_trees.phase, auto_trees.blocked_reason, s.goal,
+         s.archived_at, route.value AS route, root.status AS root_status,
+         IIF(auto_trees.cap_usd IS NULL, NULL, ${autoRemainingUsdSql({ treeRef: 'auto_trees.id' })})
+           AS remaining_usd,
+         ${autoSettledUsdSql({ treeRef: 'auto_trees.id' })}
+           + ${autoLiveUsdSql({ treeRef: 'auto_trees.id' })} AS spend_usd,
+         EXISTS (SELECT 1 FROM auto_delegations d
+                  WHERE d.tree_id = auto_trees.id AND d.is_stopping = 0
+                    AND d.state IN ('paused', 'awaiting_confirm')) AS is_asking
+    FROM auto_trees
+    JOIN sessions s ON s.id = auto_trees.session_id
+    JOIN live_agents root ON root.id = auto_trees.root_agent_id
+    JOIN settings stored ON stored.key = 'runs.routes.' || auto_trees.session_id
     JOIN json_each(IIF(json_valid(stored.value), stored.value, '{}')) route
-      ON route.key = t.root_agent_id
+      ON route.key = auto_trees.root_agent_id
    WHERE s.workspace_id = ? AND s.deleted_at IS NULL
      AND route.type = 'object' AND json_extract(route.value, '$.shape') = 'lead'
 ),
@@ -84,9 +110,12 @@ lead_runs AS (
                        AND w.name = json_extract(lr.route, '$.presetName'))
          END AS workflow_id,
          lr.session_id, 'dynamic' AS execution_mode,
-         CASE WHEN lr.phase IN ('done', 'finished') THEN 'done'
-              WHEN lr.phase = 'blocked' THEN 'blocked' END AS orchestration_outcome,
-         lr.created_at, lr.goal, lr.archived_at, lr.root_agent_id AS lead_agent_id
+         NULL AS orchestration_outcome,
+         lr.created_at, lr.goal, lr.archived_at, lr.root_agent_id AS lead_agent_id,
+         lr.phase AS lead_phase, lr.blocked_reason AS lead_blocked_reason,
+         lr.remaining_usd AS lead_remaining_usd, lr.spend_usd AS lead_spend_usd,
+         IIF(lr.root_status IN ('running', 'starting'), 1, 0) AS lead_is_turn_live,
+         lr.is_asking AS lead_is_asking
     FROM lead_routes lr
 ),
 runs AS (
@@ -134,15 +163,6 @@ run_ids AS (
   SELECT workflow_run_id, provider_run_id AS run_id FROM live_agents
    WHERE provider_run_id IS NOT NULL
      AND workflow_run_id IN (SELECT workflow_run_id FROM plan_runs)
-  UNION
-  SELECT la.workflow_run_id, s.run_id
-    FROM lead_agents la
-    JOIN agent_turn_spans s ON s.agent_id = la.agent_id
-  UNION
-  SELECT la.workflow_run_id, a.provider_run_id AS run_id
-    FROM lead_agents la
-    JOIN live_agents a ON a.id = la.agent_id
-   WHERE a.provider_run_id IS NOT NULL
 ),
 cost_of AS (
   SELECT r.workflow_run_id, SUM(t.estimated_cost_usd) AS cost_usd
@@ -158,13 +178,32 @@ SELECT runs.workflow_run_id, runs.workflow_id, runs.session_id, runs.goal, runs.
        COALESCE(agents_of.running_steps, 0) AS running_steps,
        COALESCE(agents_of.failed_steps, 0) AS failed_steps,
        COALESCE(agents_of.stopped_steps, 0) AS stopped_steps,
-       cost_of.cost_usd, runs.lead_agent_id
+       IIF(runs.lead_agent_id IS NULL, cost_of.cost_usd, runs.lead_spend_usd) AS cost_usd,
+       runs.lead_agent_id, runs.lead_phase, runs.lead_blocked_reason, runs.lead_remaining_usd,
+       runs.lead_is_turn_live, runs.lead_is_asking
   FROM runs
   LEFT JOIN steps_of ON steps_of.workflow_id = runs.workflow_id
   LEFT JOIN agents_of ON agents_of.workflow_run_id = runs.workflow_run_id
   LEFT JOIN cost_of ON cost_of.workflow_run_id = runs.workflow_run_id
  ORDER BY runs.created_at DESC, runs.workflow_run_id DESC
 `;
+
+type LeadFactsParams = {
+  readonly row: Row;
+};
+
+const leadFactsOf = ({ row }: LeadFactsParams): WorkflowRunLeadFacts | null => {
+  if (row.lead_agent_id === null || row.lead_phase === null) {
+    return null;
+  }
+  return {
+    phase: AUTO_PHASES.find((phase) => phase === row.lead_phase) ?? 'blocked',
+    blockedReason: row.lead_blocked_reason,
+    remainingUsd: row.lead_remaining_usd,
+    isTurnLive: row.lead_is_turn_live === 1,
+    isAsking: row.lead_is_asking === 1,
+  };
+};
 
 const toHistoryRow = (row: Row): WorkflowRunHistoryRow => ({
   workflowRunId: brandId<WorkflowRunId>({ value: row.workflow_run_id }),
@@ -186,6 +225,7 @@ const toHistoryRow = (row: Row): WorkflowRunHistoryRow => ({
   stoppedSteps: row.stopped_steps,
   costUsd: row.cost_usd ?? 0,
   leadAgentId: row.lead_agent_id === null ? null : brandId<AgentId>({ value: row.lead_agent_id }),
+  lead: leadFactsOf({ row }),
 });
 
 export const listWorkspaceWorkflowRuns = async ({

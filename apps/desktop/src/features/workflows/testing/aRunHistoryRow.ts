@@ -40,5 +40,6 @@ export const aRunHistoryRow = ({
   stoppedSteps: 0,
   costUsd: 0,
   leadAgentId: null,
+  lead: null,
   ...overrides,
 });

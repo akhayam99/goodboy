@@ -165,6 +165,7 @@ const runOf = ({
         stoppedSteps: 0,
         costUsd,
         leadAgentId: null,
+        lead: null,
       };
 
 const BUG_SESSIONS = [
