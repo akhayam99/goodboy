@@ -228,11 +228,11 @@ its border and corners in view (the card clips with `overflow-clip` too: a
 and the content keeps its final width
 (`--goodboy-drawer-panel` minus its 1px border, in `DrawerDockBox`)
 pinned beside the rail and fades in once there is room (`drawer-content-in`).
-Closing, the card keeps a copy of its content for `DURATION_BASE_MS` (220ms) while the
+Closing, the card keeps a copy of its content for `DURATION_BASE_MS` (200ms) while the
 width eases to 0 and the copy fades (`drawer-content-out`). `drawer-overlay-in`
 slides at most the 8px inset; the overlay card starts that far outside the
 sheet and is clipped by it. `drawer-overlay-out` and `drawer-fade-out` run
-`DRAWER_EXIT_MS` (160ms) while `useDrawerExit` keeps the overlay card mounted
+`DRAWER_EXIT_MS` (120ms) while `useDrawerExit` keeps the overlay card mounted
 after a close. `DrawerColumn.test.tsx` pins the structure that math assumes (the two
 containers as siblings, a 12px `w-3` handle gutter, the overlay container's
 `rounded-l-frame` and `border-l`, the overlay track's min width and the push
@@ -318,8 +318,7 @@ the page (`data-session-head-band`, `z-40`), and `useHeadInset` writes its heigh
 (`relative`, `-top` and a height of 100% plus the inset, the same reach-under a
 `ScrollFade` uses, never a margin) and its `RevealRegion` pads the pinned overlay by it, so
 content scrolls under the title row, the crumbs or tabs and the pinned rows alike, behind
-one opaque `sticky-surface-head`. A page that is not a `PaneShell` starts below the head as
-before. The head breathes through two tokens, never per page: `PANE_RHYTHM.head.rows`
+one opaque `sticky-surface-head`. A page that is not a `PaneShell` starts below the head. The head breathes through two tokens, never per page: `PANE_RHYTHM.head.rows`
 (12px between the title row and the tabs or crumbs) and `PANE_RHYTHM.head.under` (20px under
 the head before the page starts). Inside a page header the blocks (the title with its meta
 line, the tabs, the toolbar) sit `PANE_RHYTHM.block` (12px) apart; a title and its meta line
@@ -390,12 +389,12 @@ column and measure nothing until they are pointed at the rail.
 A page root names its kind (`page="overview"`, `page="terminal"`) and
 `PAGE_MEASURE` in `packages/ui/src/frameGeometry.ts` gives the column it sits on:
 
-| Measure | Pages                                                                                                                                           |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| column  | Overview, Runs, a run, Artifacts, a plan or report, Questions, the worktree pages, Tasks, Workflows, Settings, Monitoring, Notifications, Guide |
-| reading | an agent and an Auto run: session head, transcript and composer                                                                                 |
-| measure | the chat room (header, thread, composer)                                                                                                        |
-| full    | the Board, the Terminal                                                                                                                         |
+| Measure | Pages                                                                                                                                                      |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| column  | Overview, Runs, a run, an Auto run, Artifacts, a plan or report, Questions, the branch pages, Tasks, Workflows, Settings, Monitoring, Notifications, Guide |
+| reading | an agent: session head, transcript and composer                                                                                                            |
+| measure | the chat room (header, thread, composer)                                                                                                                   |
+| full    | the Board, the Terminal, the Browser                                                                                                                       |
 
 A loading page draws `PageSkeleton` with the same kind, so its title bar and
 body start where the page will: `STUDIO_META[kind].skeleton` names the body shape
@@ -412,17 +411,16 @@ the column.
 `packages/ui/src/frameGeometry.ts` holds one typed map, `PAGE_FRAME: Record<FramePage, FrameType>`.
 A page with no entry fails typecheck. Four frame types:
 
-| Type   | Pages                                                                                                                             | Width                               | Title left                         |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------- |
-| column | Overview, Runs, a run, Agents, an agent, Questions, Workflows, Impact, Settings, Scripts, Artifacts, Explore, Storage, Monitoring | 1008, centred                       | column + 24                        |
-| reader | a plan, a report, a wireframe page, a release, a Guide chapter body                                                               | 768, centred in its detail          | reader + 24                        |
-| stage  | Board, Terminal                                                                                                                   | fluid from the sheet inset, to 1856 | 24                                 |
-| split  | Chat, Guide, What's new, Tasks, Notifications, Branch                                                                             | `[rail 288][detail]`                | the detail's column, in its detail |
+| Type   | Pages                                                                                                                                                       | Width                | Title left                         |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------------------- |
+| column | Overview, Activity, Runs, a run, Agents, an agent, an Auto run, Questions, Workflows, Impact, Connections, Scripts, Artifacts, Explore, Storage, Monitoring | 1008, centred        | column + 24                        |
+| reader | a plan, a report, a wireframe page, a release, a Guide chapter body                                                                                         | 1008, centred        | column + 24                        |
+| stage  | Board, Terminal, Browser                                                                                                                                    | fluid                | 24                                 |
+| split  | Chat, Branch, Changes, Guide, What's new, Tasks, Notifications, Settings                                                                                    | `[rail 288][detail]` | the detail's column, in its detail |
 
-`frameGeometryOf({ page })` returns the type, the space above the title (the 12px
-header inset; no page sits under a 40px band now that every Close is on the title row), the title row
-(32px), the title centre (28px), the drawer row (28px) and
-`titleLeft` read from the type.
+`frameGeometryOf({ page })` returns the type, the space above the title (the 8px
+header inset), the title row (32px), the title centre (24px), the drawer row
+(32px) and `titleLeft` read from the type.
 `STUDIO_META[kind].page` names the page of a studio and `frameTierOf` gives the tier its band
 draws at; a test fails when the two disagree.
 
@@ -448,10 +446,6 @@ Five rules:
    inset, 32px row), with one close control.
 5. **First-time states sit at the top left of the page column**, in one `EmptyState`
    layout; only the empty chat stage centres.
-
-The Branch page is one detail on one 960 column; its sections are the tab strip under its title,
-so the page has no rail of its own (`BranchDetail` draws the studio band first
-when a host hands one through `StudioBandContext`).
 
 Centring lives in `PageColumn` alone (`mx-auto` on `column` and `measure`, none
 on `full`). No view centres itself. Sub-pages follow the same tiers as their
@@ -480,14 +474,14 @@ Prose keeps its 720px measure aligned left inside the column, except on an artif
 and past versions fill the column and share one right edge. The drawer copy of
 a plan keeps the reading measure. The `full` tier
 is the only exception to centring and ignores the slide below: its right edge
-follows the drawer exactly as before.
+follows the drawer exactly.
 
 **The drawer slide.** When a right drawer opens (Context, a transcript, an
 artifact document, a plan) the main area gives up the drawer's track and the
 centred column re-centres in the space left of the drawer, keeping its full
 width while that space is wide enough. It shrinks only below its frame, down to
 the column minimum (560px plus gutters); under that the drawer lies over the
-page. Closing the drawer slides the column back. It is one 220ms
+page. Closing the drawer slides the column back. It is one 200ms
 ease-out width transition on the drawer's track (`DURATION_BASE_MS`), so the column's centre follows
 it in the same frames; it is off under `prefers-reduced-motion`. A route change
 never moves the column, with or without a drawer, except into an agent page: its
@@ -508,9 +502,9 @@ session has no trail band, and the panes under it start with their title.
 
 Detail views (an agent, a pull request, an issue from any tracker, a Review
 mode) use `PaneShell` like every other pane. A detail keeps its own header
-through the `header` slot, its sections go in `tabs`, and what used to sit
-under the header (properties, a banner, an approval rail, the agent's next
-action) is the first block of the body. A body that owns its scroll, such as a
+through the `header` slot, its sections go in `tabs`, and what belongs under
+the header (properties, a banner, an approval rail, the agent's next action) is
+the first block of the body. A body that owns its scroll, such as a
 transcript or a diff, asks for `scroll="self"`.
 
 A Session page reads as one centred column: every child, banner, card and
@@ -531,8 +525,10 @@ the turn gap (`TRANSCRIPT_FLOOR_PX`, 24, plus the composer's 8px top), and a sen
 under the top of the view, both in `useScrollPin`.
 
 **The Branch page** is one detail whose header, Ask button and every section body share the 960px
-column, so nothing moves from one section to the next. Its sections are the tab strip under its title; Files opens its file tree on the right of the
-page, outside the column, so the diff keeps the column. The Pull request entry is one column: a label 96 property block in
+column, so nothing moves from one section to the next. Its sections are the tab strip under its
+title, so the page has no rail of its own (`BranchDetail` draws the studio band first when a host
+hands one through `StudioBandContext`). The Changes tab puts its file list in the session
+frame's left slot, outside the column, so the diff keeps the column. The Pull request entry is one column: a label 96 property block in
 three groups, then the description and the activity. Comments is one full-width list; the open comment and its
 properties read in the comment drawer beside it.
 
@@ -671,9 +667,8 @@ Every scroll region is wrapped in `ScrollFade` from `@goodboy/ui`. Raw
 The viewport hides its native scrollbar, and `ScrollFade` draws its own thumb
 in overlay: a track 2px from the edge, a 6px pill that grows to 8px under the
 pointer, in the `scrollbar-thumb` / `scrollbar-thumb-active` tokens. It never
-takes width from the content, so a mouse user can still see how long a list
-is without scrolling first; the fade is not the only sign a region scrolls
-anymore. It shows on scroll or on hover, hides 900ms after the last of either,
+takes width from the content, so a mouse user can see how long a list
+is without scrolling first, and the fade is not the only sign a region scrolls. It shows on scroll or on hover, hides 900ms after the last of either,
 and stays lit permanently under the system's "always show scrollbars" setting
 (read once through the `system_scroller_style` Tauri command, exposed to
 `ScrollFade` through `ScrollerStyleContext`). Pass `scrollbar="none"` to a
@@ -749,7 +744,7 @@ sits inside content does not get its own `<Divider>` either: it gets a `gap`
 or a card.
 
 Folder groups in the Projects card are the one content-level exception, owner
-approved 18/10: `ProjectTree` draws the `Divider` primitive between one folder
+approved: `ProjectTree` draws the `Divider` primitive between one folder
 group and the next (never above the first, never inside a group), so each
 folder reads as its own block next to its branch rows.
 
@@ -872,8 +867,7 @@ rule, so a control you click is a primitive from `@goodboy/ui`:
 `raw-button.test.ts` sorts every raw `<button>` into those families from its
 class string and counts it per file (`raw-button.baseline.json`). It also counts
 the row family alone (`raw-row-button.baseline.json`), the one with a primitive
-that fits today. At the audit, 357 raw buttons stood: 230 control, 57 row, 39
-link, 14 tab, 9 icon, 8 chip. Both counts only fall. A raw row button that sits
+that fits today. Both counts only fall. A raw row button that sits
 beside the hover layer is the first to move to `SelectableRow`.
 
 ## Row actions rest quiet
