@@ -27,10 +27,21 @@ export type FrameReportParams = {
   readonly report: DemoReport;
 };
 
+type Carry = {
+  readonly chapterId: string;
+  readonly frame: StageFrame;
+};
+
 type PlayerState = {
   readonly chapterId: string;
   readonly replayKey: number;
   readonly reports: ReadonlyMap<string, DemoReport>;
+  readonly carried: StageFrame | undefined;
+  readonly carry: Carry | undefined;
+};
+
+type CarryParams = {
+  readonly chapterId: string;
 };
 
 export type BeatPlayer = {
@@ -39,6 +50,7 @@ export type BeatPlayer = {
   readonly preloadFrame: StageFrame | undefined;
   readonly command: FrameCommand | undefined;
   readonly replay: () => void;
+  readonly carry: (params: CarryParams) => void;
   readonly report: (params: FrameReportParams) => void;
 };
 
@@ -47,12 +59,15 @@ const NO_REPORTS: ReadonlyMap<string, DemoReport> = new Map();
 type FreshParams = {
   readonly chapter: DemoChapter;
   readonly reports: ReadonlyMap<string, DemoReport>;
+  readonly carry?: Carry | undefined;
 };
 
-const freshState = ({ chapter, reports }: FreshParams): PlayerState => ({
+const freshState = ({ chapter, reports, carry }: FreshParams): PlayerState => ({
   chapterId: chapter.id,
   replayKey: 0,
   reports,
+  carried: carry?.chapterId === chapter.id ? carry.frame : undefined,
+  carry: undefined,
 });
 
 type KeepParams = {
@@ -77,7 +92,9 @@ export const useBeatPlayer = ({
   );
 
   const current =
-    state.chapterId === chapter.id ? state : freshState({ chapter, reports: state.reports });
+    state.chapterId === chapter.id
+      ? state
+      : freshState({ chapter, reports: state.reports, carry: state.carry });
   if (current !== state) {
     setState(current);
   }
@@ -85,7 +102,10 @@ export const useBeatPlayer = ({
   const beat = chapter.beats[Math.min(beatIndex, chapter.beats.length - 1)];
   const src = beat === undefined ? '' : beatSrc({ beat, theme });
   const key = beat === undefined ? '' : frameKey({ beat, replayKey: current.replayKey });
-  const frame = useMemo(() => ({ key, src }), [key, src]);
+  const ownFrame = useMemo(() => ({ key, src }), [key, src]);
+  const frame = beatIndex === 0 && current.carried !== undefined ? current.carried : ownFrame;
+  const frameRef = useRef(frame);
+  frameRef.current = frame;
   const preloadFrame = useMemo((): StageFrame | undefined => {
     if (preloadBeat === undefined) {
       return undefined;
@@ -129,8 +149,16 @@ export const useBeatPlayer = ({
   }, []);
 
   const replay = useCallback(() => {
-    setState((previous) => ({ ...previous, replayKey: previous.replayKey + 1 }));
+    setState((previous) => ({
+      ...previous,
+      carried: undefined,
+      replayKey: previous.replayKey + 1,
+    }));
   }, []);
 
-  return { isComplete, frame, preloadFrame, command, replay, report };
+  const carry = useCallback(({ chapterId }: CarryParams) => {
+    setState((previous) => ({ ...previous, carry: { chapterId, frame: frameRef.current } }));
+  }, []);
+
+  return { isComplete, frame, preloadFrame, command, replay, carry, report };
 };

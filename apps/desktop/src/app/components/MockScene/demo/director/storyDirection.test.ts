@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
+import type { AgentId, TurnEvent } from '@goodboy/types';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -16,8 +17,17 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { sceneInvoke } from '../../../../../test/sceneInvoke';
-import { STORY_QUESTION } from '../../scenes/story/storyContent';
-import { STORY_PLANNER_ID, STORY_SESSION_ID, seedStoryWorld } from '../../scenes/story/storyWorld';
+import { STORY_PLANNER, STORY_QUESTION } from '../../scenes/story/storyContent';
+import {
+  STORY_BRIEF,
+  STORY_PLANNER_ID,
+  STORY_ROOT_ID,
+  STORY_SESSION_ID,
+  seedStoryWorld,
+} from '../../scenes/story/storyWorld';
+import { selectSessionDraft } from '../../../../../store/slices/sessionDraft/selectSessionDraft';
+import { AUTO_STORY } from './autoStory';
+import { demoRuns } from './demoRunRegistry';
 import { installStoryDirection } from './installStoryDirection';
 
 let store: StoryStore;
@@ -32,13 +42,26 @@ beforeEach(async () => {
     sceneInvoke({ command: String(command), args }),
   );
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+  elapsed = 0;
   seedStoryWorld({ stage: 'bring' });
   installStoryDirection({ store });
 });
 
 afterEach(() => {
+  demoRuns.cancelAll();
   vi.useRealTimers();
 });
+
+let elapsed = 0;
+
+type PlayToParams = {
+  readonly ms: number;
+};
+
+const playTo = ({ ms }: PlayToParams): void => {
+  vi.advanceTimersByTime(ms - elapsed);
+  elapsed = ms;
+};
 
 const startSession = async () => {
   const workspaceId = store.getState().currentWorkspaceId;
@@ -53,8 +76,41 @@ const startSession = async () => {
 
 const plannerEvents = () => store.getState().transcripts[STORY_PLANNER_ID] ?? [];
 
+const rootEvents = () => store.getState().transcripts[STORY_ROOT_ID] ?? [];
+
+type EventsParams = {
+  readonly events: ReadonlyArray<TurnEvent>;
+};
+
+const textOf = ({ events }: EventsParams): string =>
+  events.flatMap((event) => (event.kind === 'assistant_text' ? [event.delta] : [])).join('');
+
+const agentNames = (): ReadonlyArray<string> =>
+  (store.getState().sessionPhaseRuns[STORY_SESSION_ID] ?? []).map((agent) => agent.name);
+
+const plannerDelegation = () =>
+  (store.getState().autoTreeViews[STORY_SESSION_ID] ?? [])
+    .flatMap((view) => view.delegations)
+    .find((entry) => entry.childAgentId === STORY_PLANNER_ID);
+
+const openQuestions = () => store.getState().sessionOpenQuestions[STORY_SESSION_ID] ?? [];
+
+type AgentParams = {
+  readonly agentId: AgentId;
+};
+
+const turnKind = ({ agentId }: AgentParams) => store.getState().agentTurnState[agentId]?.kind;
+
 describe('starting the story workflow', () => {
-  it('opens one session linked to HBL-412 where the planner waits on the repeat question', async () => {
+  it('drops the rest of the start when the Planner is stopped', async () => {
+    await startSession();
+    playTo({ ms: 3000 });
+    demoRuns.stop({ agentId: STORY_PLANNER_ID });
+    playTo({ ms: 12000 });
+    expect(openQuestions()).toHaveLength(0);
+  });
+
+  it('opens one session linked to HBL-412 on the Lead, with the brief and nothing else', async () => {
     const session = await startSession();
     expect(session.id).toBe(STORY_SESSION_ID);
     expect(store.getState().currentSessionId).toBe(STORY_SESSION_ID);
@@ -63,7 +119,55 @@ describe('starting the story workflow', () => {
         (task) => task.identifier,
       ),
     ).toEqual(['HBL-412']);
-    const asked = store.getState().sessionOpenQuestions[STORY_SESSION_ID] ?? [];
+    expect(agentNames()).toEqual(['Lead']);
+    expect(rootEvents()).toMatchObject([{ kind: 'user_text', text: STORY_BRIEF }]);
+    expect(turnKind({ agentId: STORY_ROOT_ID })).toBe('idle');
+    expect(store.getState().selectedAgentId[STORY_SESSION_ID]).toBe(STORY_ROOT_ID);
+    expect(openQuestions()).toHaveLength(0);
+  });
+
+  it('plays the Lead, hands off to the Planner and asks the question last', async () => {
+    await startSession();
+    playTo({ ms: 400 });
+    expect(turnKind({ agentId: STORY_ROOT_ID })).toBe('running');
+    expect(textOf({ events: rootEvents() })).toBe('');
+    playTo({ ms: 1600 });
+    expect(textOf({ events: rootEvents() })).toContain('This touches payments-api');
+    playTo({ ms: 2900 });
+    expect(textOf({ events: rootEvents() })).toBe(AUTO_STORY.first);
+    expect(agentNames()).toEqual(['Lead']);
+    playTo({ ms: 3000 });
+    expect(agentNames()).toEqual(['Lead', 'Planner']);
+    expect(plannerDelegation()?.state).toBe('starting');
+    expect(turnKind({ agentId: STORY_ROOT_ID })).toBe('idle');
+    expect(plannerEvents()).toHaveLength(0);
+    playTo({ ms: 3400 });
+    expect(plannerEvents().map((event) => event.kind)).toEqual(['user_text']);
+    expect(turnKind({ agentId: STORY_PLANNER_ID })).toBe('running');
+    expect(store.getState().selectedAgentId[STORY_SESSION_ID]).toBe(STORY_PLANNER_ID);
+    expect(plannerDelegation()?.state).toBe('running');
+    playTo({ ms: 4500 });
+    expect(plannerEvents().map((event) => event.kind)).toEqual(['user_text']);
+    playTo({ ms: 4600 });
+    expect(plannerEvents().at(-1)).toMatchObject({
+      kind: 'tool_call_start',
+      input: { command: STORY_PLANNER.command },
+    });
+    playTo({ ms: 5400 });
+    expect(plannerEvents().at(-1)).toMatchObject({
+      kind: 'tool_call_end',
+      output: STORY_PLANNER.output,
+    });
+    playTo({ ms: 6200 });
+    expect(textOf({ events: plannerEvents() }).length).toBeGreaterThan(0);
+    expect(textOf({ events: plannerEvents() })).not.toBe(STORY_PLANNER.intro);
+    expect(openQuestions()).toHaveLength(0);
+    expect(turnKind({ agentId: STORY_PLANNER_ID })).toBe('running');
+    playTo({ ms: 8499 });
+    expect(openQuestions()).toHaveLength(0);
+    playTo({ ms: 8500 });
+    expect(textOf({ events: plannerEvents() })).toBe(STORY_PLANNER.intro);
+    const asked = openQuestions();
     expect(asked).toHaveLength(1);
     expect(asked[0]).toMatchObject({
       text: STORY_QUESTION.text,
@@ -71,6 +175,66 @@ describe('starting the story workflow', () => {
       status: 'open',
       createdByAgentId: STORY_PLANNER_ID,
     });
+    expect(turnKind({ agentId: STORY_PLANNER_ID })).toBe('idle');
+    const planner = (store.getState().sessionPhaseRuns[STORY_SESSION_ID] ?? []).find(
+      (agent) => agent.id === STORY_PLANNER_ID,
+    );
+    expect(planner?.status).toBe('completed');
+    expect(plannerDelegation()?.state).toBe('paused');
+  });
+
+  it('stops playing when the visitor leaves the run', async () => {
+    await startSession();
+    playTo({ ms: 1000 });
+    demoRuns.cancelAll();
+    playTo({ ms: 9000 });
+    expect(agentNames()).toEqual(['Lead']);
+    expect(openQuestions()).toHaveLength(0);
+  });
+});
+
+describe('writing the brief of the draft', () => {
+  const workspaceId = () => {
+    const id = store.getState().currentWorkspaceId;
+    if (id === null) {
+      throw new Error('no workspace');
+    }
+    return id;
+  };
+
+  const goalOf = (): string =>
+    selectSessionDraft({ state: store.getState(), workspaceId: workspaceId() }).workflowGoal;
+
+  const openWithBrief = () => {
+    store.getState().patchSessionDraft({
+      workspaceId: workspaceId(),
+      patch: { workflowGoal: STORY_BRIEF },
+    });
+    store.getState().openSessionDraft();
+  };
+
+  it('opens with an empty box, then fills it in step by step until the brief is complete', () => {
+    openWithBrief();
+    expect(goalOf()).toBe('');
+    playTo({ ms: 1299 });
+    expect(goalOf()).toBe('');
+    playTo({ ms: 1300 });
+    expect(STORY_BRIEF.startsWith(goalOf())).toBe(true);
+    expect(goalOf().length).toBeGreaterThan(0);
+    playTo({ ms: 2200 });
+    expect(goalOf().length).toBeGreaterThan(STORY_BRIEF.split('\n')[0]?.length ?? 0);
+    expect(goalOf()).not.toBe(STORY_BRIEF);
+    playTo({ ms: 3400 });
+    expect(goalOf()).toBe(STORY_BRIEF);
+  });
+
+  it('stops writing once the visitor presses Start', async () => {
+    openWithBrief();
+    playTo({ ms: 2200 });
+    const partial = goalOf();
+    await startSession();
+    playTo({ ms: 5000 });
+    expect(goalOf()).toBe(partial);
   });
 });
 
@@ -81,6 +245,7 @@ describe('answering the planner question', () => {
 
   const answer = async ({ choice = STORY_QUESTION.recommended }: AnswerParams = {}) => {
     await startSession();
+    playTo({ ms: 8500 });
     const [question] = store.getState().sessionOpenQuestions[STORY_SESSION_ID] ?? [];
     if (question === undefined) {
       throw new Error('no question');
@@ -105,7 +270,7 @@ describe('answering the planner question', () => {
     ['Return 200 and log a warning', 'a repeated webhook that returns 200 and logs a warning'],
   ])('has the planner speak about the option %s', async (choice, sentence) => {
     await answer({ choice });
-    vi.advanceTimersByTime(5500);
+    vi.advanceTimersByTime(6500);
     expect(plannerSaid()).toContain(sentence);
     for (const other of STORY_QUESTION.options.filter((option) => option !== choice)) {
       expect(plannerSaid()).not.toContain(
@@ -116,7 +281,7 @@ describe('answering the planner question', () => {
 
   it('repeats a typed answer back to the visitor', async () => {
     await answer({ choice: 'Retry with a backoff' });
-    vi.advanceTimersByTime(5500);
+    vi.advanceTimersByTime(6500);
     expect(plannerSaid()).toContain('You said "Retry with a backoff"');
   });
 
@@ -124,6 +289,9 @@ describe('answering the planner question', () => {
     await answer();
     expect(plannerEvents().some((event) => event.kind === 'decision_note')).toBe(false);
     vi.advanceTimersByTime(1000);
+    expect(plannerEvents().some((event) => event.kind === 'decision_note')).toBe(false);
+    expect(store.getState().agentTurnState[STORY_PLANNER_ID]?.kind).toBe('running');
+    vi.advanceTimersByTime(200);
     expect(plannerEvents().some((event) => event.kind === 'decision_note')).toBe(true);
     const planner = (store.getState().sessionPhaseRuns[STORY_SESSION_ID] ?? []).find(
       (agent) => agent.id === STORY_PLANNER_ID,
@@ -134,7 +302,7 @@ describe('answering the planner question', () => {
 
   it('lets Codex finish the same task and return the plan with the answer kept', async () => {
     await answer();
-    vi.advanceTimersByTime(5500);
+    vi.advanceTimersByTime(6500);
     expect(store.getState().agentTurnState[STORY_PLANNER_ID]?.kind).toBe('idle');
     const plans = store.getState().sessionPlans[STORY_SESSION_ID] ?? [];
     expect(plans).toHaveLength(1);
