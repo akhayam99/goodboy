@@ -109,7 +109,7 @@ describe('the terminal drawer scenes', () => {
     expect(within(drawer).getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
       'hl/fix-webhook-idempotency· gb-7k2q9x',
     );
-    expect(within(drawer).queryByRole('heading', { name: 'Terminal' })).toBeNull();
+    expect(within(drawer).getByRole('heading', { name: 'Terminal' })).toBeDefined();
     expect(within(drawer).queryByRole('combobox', { name: 'New terminal in' })).toBeNull();
     expect(within(drawer).queryByRole('button', { name: 'Open full page' })).toBeNull();
     within(drawer).getByRole('button', { name: /^More on / });

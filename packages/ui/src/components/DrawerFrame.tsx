@@ -1,4 +1,5 @@
 import { DrawerBackChipContext } from '../drawerBackChipContext';
+import { DockPanelHead } from './DockPanelHead';
 import { DrawerTitleGrip } from './DrawerTitleGrip';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { IconGlyph } from '../icons';
@@ -6,7 +7,7 @@ import { X } from '../icons';
 import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { useIsNarrow } from '../useIsNarrow';
-import { lastFocusedElement } from '../useLastFocused';
+import { FIELD_SELECTOR, focusableTrigger, hasDraft } from '../drawerFrameFocus';
 import { DrawerBackChip } from './DrawerBackChip';
 import { DrawerBackLink } from './DrawerBackLink';
 import { DrawerHeaderMore } from './DrawerHeaderMore';
@@ -46,6 +47,7 @@ export type DrawerFrameProps = {
   readonly dock?: ReactNode;
   readonly scroll?: 'frame' | 'self';
   readonly isHeaderless?: boolean;
+  readonly isDock?: boolean;
   readonly children: ReactNode;
 };
 
@@ -54,34 +56,6 @@ const HEADER_INSET_PX = 16;
 const NARROW_HEAD_PX = 360;
 
 const META_INSET_WITH_ICON_PX = HEADER_INSET_PX + ICON_SIZE.control + 8;
-
-const FIELD_SELECTOR = 'textarea, input, [contenteditable="true"]';
-
-const TEXT_INPUT_TYPES = new Set(['text', 'search', 'email', 'url', 'tel', 'number', 'password']);
-
-const focusableTrigger = (): HTMLElement | null => {
-  if (typeof document === 'undefined') {
-    return null;
-  }
-  const active = document.activeElement;
-  if (active instanceof HTMLElement && active !== document.body) {
-    return active;
-  }
-  return lastFocusedElement();
-};
-
-const hasDraft = (element: HTMLElement): boolean => {
-  if (element instanceof HTMLTextAreaElement) {
-    return element.value !== '';
-  }
-  if (element instanceof HTMLInputElement) {
-    return TEXT_INPUT_TYPES.has(element.type) && element.value !== '';
-  }
-  if (element.isContentEditable || element.getAttribute('contenteditable') === 'true') {
-    return (element.textContent ?? '') !== '';
-  }
-  return false;
-};
 
 export const DrawerFrame = ({
   title,
@@ -99,6 +73,7 @@ export const DrawerFrame = ({
   dock,
   scroll = 'frame',
   isHeaderless = false,
+  isDock = false,
   children,
 }: DrawerFrameProps) => {
   const [trigger] = useState(focusableTrigger);
@@ -118,7 +93,7 @@ export const DrawerFrame = ({
       active instanceof HTMLElement &&
       section !== null &&
       section.contains(active) &&
-      hasDraft(active)
+      hasDraft({ element: active })
     ) {
       active.blur();
       return;
@@ -201,20 +176,38 @@ export const DrawerFrame = ({
   const header = isHeaderless ? null : (
     <header
       data-drawer-header=""
-      className={cn('flex shrink-0 flex-col', PANE_RHYTHM.headerInset, !hasStepAside && 'pb-2')}
+      className={cn(
+        'flex shrink-0 flex-col',
+        !isDock && PANE_RHYTHM.headerInset,
+        !hasStepAside && 'pb-2',
+      )}
     >
-      <div
-        ref={head.ref}
-        data-drawer-header-row=""
-        data-head-folded={head.isNarrow ? '' : undefined}
-        className={cn(
-          'flex min-w-0 gap-2 pl-4 pr-2',
-          hasToolbar ? 'min-h-8' : PANE_RHYTHM.headerRow,
-          hasToolbar ? 'items-start' : 'items-center',
-        )}
-      >
-        {titleRow}
-      </div>
+      {isDock ? (
+        <DockPanelHead
+          title={title}
+          titleContent={titleContent}
+          icon={Icon}
+          iconClassName={iconClassName}
+          count={count}
+          actions={action}
+          menu={menu}
+          page={page}
+          onClose={onClose}
+        />
+      ) : (
+        <div
+          ref={head.ref}
+          data-drawer-header-row=""
+          data-head-folded={head.isNarrow ? '' : undefined}
+          className={cn(
+            'flex min-w-0 gap-2 pl-4 pr-2',
+            hasToolbar ? 'min-h-8' : PANE_RHYTHM.headerRow,
+            hasToolbar ? 'items-start' : 'items-center',
+          )}
+        >
+          {titleRow}
+        </div>
+      )}
     </header>
   );
 
