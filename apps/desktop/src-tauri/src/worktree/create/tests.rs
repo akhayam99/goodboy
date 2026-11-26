@@ -521,3 +521,80 @@ fn a_folder_tracked_on_this_mac_cuts_session_branches_from_local_main_without_or
     assert!(git_ok(&root, &["status", "--porcelain"]).is_empty());
     std::fs::remove_dir_all(root).unwrap();
 }
+
+fn materialize(root: &Path, branch: &str, dir: &str) -> Result<CreatedWorktree, WorktreeError> {
+    worktree_create_blocking(CreateArgs {
+        repo_path: root.to_string_lossy().into_owned(),
+        branch_name: branch.to_string(),
+        parent_dir: Some(
+            root.join(".goodboy")
+                .join("worktrees")
+                .to_string_lossy()
+                .into_owned(),
+        ),
+        existing_branch: None,
+        fallback_ref: None,
+        base_branch: None,
+        dir_name: Some(dir.to_string()),
+    })
+}
+
+#[test]
+fn a_mount_whose_branch_exists_only_locally_attaches_that_branch() {
+    let root = std::fs::canonicalize(init_repo("reattach-local")).unwrap();
+    commit(&root, "base.txt", "base\n", "base");
+    push_to_new_remote(&root);
+    git_ok(&root, &["switch", "-c", "nw/fix-settlement-replay"]);
+    let tip = commit(&root, "replay.txt", "one\n", "fix the replay");
+    git_ok(&root, &["switch", "main"]);
+
+    let created = materialize(&root, "nw/fix-settlement-replay", "ledger-core").unwrap();
+
+    assert_eq!(created.branch_name, "nw/fix-settlement-replay");
+    assert!(!created.tracked_remote);
+    let path = PathBuf::from(&created.worktree_path);
+    assert_eq!(git_ok(&path, &["rev-parse", "HEAD"]), tip);
+    assert_eq!(
+        git_ok(&path, &["rev-parse", "--abbrev-ref", "HEAD"]),
+        "nw/fix-settlement-replay"
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_mount_whose_branch_exists_only_on_origin_tracks_it() {
+    let root = std::fs::canonicalize(init_repo("reattach-remote")).unwrap();
+    commit(&root, "base.txt", "base\n", "base");
+    push_to_new_remote(&root);
+    git_ok(&root, &["switch", "-c", "nw/fix-settlement-replay"]);
+    let tip = commit(&root, "replay.txt", "one\n", "fix the replay");
+    git_ok(&root, &["push", "origin", "nw/fix-settlement-replay"]);
+    git_ok(&root, &["switch", "main"]);
+    git_ok(&root, &["branch", "-D", "nw/fix-settlement-replay"]);
+
+    let created = materialize(&root, "nw/fix-settlement-replay", "ledger-core").unwrap();
+
+    assert!(created.tracked_remote);
+    let path = PathBuf::from(&created.worktree_path);
+    assert_eq!(git_ok(&path, &["rev-parse", "HEAD"]), tip);
+    assert!(resolve_upstream(&path).is_some());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_mount_whose_branch_exists_nowhere_creates_it_from_the_base() {
+    let root = std::fs::canonicalize(init_repo("reattach-none")).unwrap();
+    let base = commit(&root, "base.txt", "base\n", "base");
+    push_to_new_remote(&root);
+
+    let created = materialize(&root, "nw/fix-settlement-replay", "ledger-core").unwrap();
+
+    assert!(!created.tracked_remote);
+    let path = PathBuf::from(&created.worktree_path);
+    assert_eq!(git_ok(&path, &["rev-parse", "HEAD"]), base);
+    assert_eq!(
+        git_ok(&path, &["rev-parse", "--abbrev-ref", "HEAD"]),
+        "nw/fix-settlement-replay"
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}

@@ -69,6 +69,7 @@ const deliverToAgent = async ({
       sessionId,
       content: wrapOpenQuestionAnswers(buildBatchPrompt(questions)),
       agentId: agentId ?? undefined,
+      rowOrigin: 'answers',
       onStarted: () => {
         void mark();
       },

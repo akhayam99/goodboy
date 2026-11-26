@@ -74,6 +74,7 @@ fn wire_shape_spawn_args_reads_camel_case() {
         "model": "m",
         "workingDir": "/w",
         "writableRoots": ["/w"],
+        "readRoots": ["/r"],
         "prompt": "p",
         "binary": "claude",
         "allowedTools": ["Read"],
@@ -108,6 +109,7 @@ fn wire_shape_spawn_args_reads_camel_case() {
     assert_eq!(args.run_id, "r1");
     assert_eq!(args.working_dir, "/w");
     assert_eq!(args.writable_roots, vec!["/w".to_string()]);
+    assert_eq!(args.read_roots, vec!["/r".to_string()]);
     assert_eq!(args.allowed_tools, vec!["Read".to_string()]);
     assert_eq!(args.disallowed_tools, vec!["Bash".to_string()]);
     assert_eq!(args.permission_mode.as_deref(), Some("plan"));

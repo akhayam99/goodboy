@@ -388,6 +388,7 @@ fn build_chat_cli_args(
         model: &args.model,
         working_dir: &roots.working_dir,
         writable_roots: &[],
+        read_roots: &[],
         query_socket_directory: None,
         prompt: &prompt,
         permission_mode: READ_ONLY_MODE,

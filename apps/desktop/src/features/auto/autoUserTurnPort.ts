@@ -1,3 +1,4 @@
+import type { UserOrigin } from '@goodboy/core/auto';
 import type { AgentId, MessageAttachment, SessionId } from '@goodboy/types';
 import { createPort } from './createPort';
 
@@ -15,6 +16,8 @@ export type AutoUserTurnParams = Readonly<{
   permissionOnceAllows?: ReadonlyArray<string>;
   deliveryId?: string;
   focusArtifactId?: string;
+  origin?: UserOrigin;
+  userText?: string;
   onQueued?: (queued: AutoUserTurnQueued) => void;
 }>;
 

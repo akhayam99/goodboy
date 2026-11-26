@@ -153,6 +153,8 @@ type MountKeyParams = {
 
 const NO_SETTLED_BRANCHES: SettledBranches = { merged: 0, closed: 0 };
 
+const NO_IN_USE_MOUNTS: ReadonlySet<string> = new Set();
+
 const LIVE_AGENT_STATUSES: ReadonlyArray<string> = ['running', 'pending', 'blocked'];
 
 type Params = {
@@ -194,6 +196,7 @@ export const deriveNextSteps = ({ signals }: Params): ReadonlyArray<NextMove> =>
     scriptRuns = [],
     mergedMounts = [],
     idleMounts = [],
+    inUseMountIds = NO_IN_USE_MOUNTS,
   } = signals;
   const suggestions: SessionSuggestion[] = [];
   const settledMountIdSet = new Set<string>(settledMountIds);
@@ -532,7 +535,9 @@ export const deriveNextSteps = ({ signals }: Params): ReadonlyArray<NextMove> =>
   ];
   const cleanup = cleanupSuggestionOf({
     sessionId,
-    proposals: [...cleanupProposals, ...reachedCleanups],
+    proposals: [...cleanupProposals, ...reachedCleanups].filter(
+      (proposal) => !inUseMountIds.has(proposal.mountId),
+    ),
     now,
   });
   if (cleanup !== null) {

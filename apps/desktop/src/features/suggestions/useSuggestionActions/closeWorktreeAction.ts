@@ -29,9 +29,14 @@ type RemoveResult = {
   readonly reason?: string | null;
 };
 
+type InUseParams = {
+  readonly mountId: MountId;
+};
+
 type Params = {
   readonly sessionId: SessionId;
   readonly worktrees: Worktrees;
+  readonly isInUse: (params: InUseParams) => boolean;
   readonly isProposed: (params: RequestParams) => boolean;
   readonly resolveCleanup: (params: ResolveParams) => Promise<unknown>;
   readonly removeWorktree: (params: RemoveParams) => Promise<RemoveResult>;
@@ -40,6 +45,7 @@ type Params = {
 export const closeWorktreeAction = ({
   sessionId,
   worktrees,
+  isInUse,
   isProposed,
   resolveCleanup,
   removeWorktree,
@@ -53,6 +59,9 @@ export const closeWorktreeAction = ({
     failureTitle: isMany ? "Couldn't remove the worktrees" : "Couldn't remove the worktree",
     run: async () => {
       for (const worktree of worktrees) {
+        if (isInUse({ mountId: worktree.mountId })) {
+          throw new Error(`An agent still uses the ${worktree.branch} worktree, so it stayed.`);
+        }
         if (isProposed({ requestId: worktree.requestId })) {
           await resolveCleanup({ sessionId, requestId: worktree.requestId, decision: 'remove' });
           continue;

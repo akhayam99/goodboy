@@ -109,7 +109,7 @@ export const PermissionRequestCard = ({
                 {
                   kind: 'item',
                   key: 'allow-session',
-                  label: 'Allow all commands in this session',
+                  label: ask.sessionLabel,
                   isDisabled: ask.isBusy,
                   shouldStayOpen: true,
                   onSelect: ask.allowSession,

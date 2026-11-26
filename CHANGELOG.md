@@ -12,6 +12,34 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.43.1
+
+The Network tab becomes a request table, tools in the dock merge into tabs by drag, and the Browser clears one site's data.
+
+### Improved
+
+#### Network tab as a request table
+<!-- gb area=app pr=2406 -->
+
+Network lists each request with its method, path, status, type, size, time and a bar. Filter by type or Failed only, search, and open a request to read its headers, payload, response and timing. Send request hands it to the agent you name.
+
+#### Merge dock tools into tabs
+<!-- gb area=app pr=2405 -->
+
+Drag a tool by its head and cards show where it can land: Place left, Place right, Place above, Place below, or Merge to make it a tab of the panel under the pointer. Hold Option over Merge to swap the two. Drag a tab by its name to move that tool alone.
+
+#### Clear site data in the Browser
+<!-- gb area=app pr=2415 -->
+
+On macOS, More has a Clear site data row that removes the cookies and storage of the page you view, then reloads it, and Shift-click Reload or ⌘⇧R reloads without the cache. On Windows and Linux the row reads Clear browser data and clears the whole workspace. Settings, Projects clears the browser data of a workspace.
+
+### Fixed
+
+- Agents answer in the language you write in. <!-- gb area=agents pr=2413 -->
+- The agents list shows only the notes you wrote. <!-- gb area=agents pr=2417 -->
+- Messages reach an agent after its folder was cleaned up, and images you attach to a message reach the agent. <!-- gb area=agents pr=2418 -->
+- Merged branches open in a clean worktree can be deleted. <!-- gb area=sessions pr=2411 -->
+
 ## Goodboy v0.43.0
 
 Pick an element on the page for your agent, keep all five tools in the dock at once, and let a paired phone decide, start and merge with the rights you give it.

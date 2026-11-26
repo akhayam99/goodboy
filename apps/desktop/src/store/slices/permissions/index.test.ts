@@ -5,6 +5,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   type StoryStore,
 } from '../../storyHarness';
 import type {
@@ -185,7 +186,7 @@ describe('store contract', () => {
   });
 
   describe('permissions', () => {
-    it('resolvePermissionRequest(scope=once) adds toolUseId to volatilePermissionAllows', async () => {
+    it('resolvePermissionRequest(scope=once) writes a user allow row and stores no rule', async () => {
       const store = useAppStore;
       store.setState({ sessions: [buildSession()] });
       await store.getState().resolvePermissionRequest({
@@ -196,7 +197,10 @@ describe('store contract', () => {
         runId: RUN_ID,
         scope: 'once',
       });
-      expect(store.getState().volatilePermissionAllows.has('tu-1')).toBe(true);
+      expect(storySpies.invokePermissionRuleUpsert).not.toHaveBeenCalled();
+      expect(storySpies.invokePermissionAuditInsert).toHaveBeenCalledWith(
+        expect.objectContaining({ toolUseId: 'tu-1', decision: 'allow', decidedBy: 'user' }),
+      );
     });
 
     it('resolvePermissionRequest(scope=session) calls invokePermissionRuleUpsert with session scope', async () => {

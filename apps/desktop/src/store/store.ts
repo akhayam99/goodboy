@@ -222,7 +222,6 @@ import { slackDraftsInitialState } from './slices/slack-drafts/state';
 import { startHintsInitialState } from './slices/startHints/state';
 import { rebaseAllInitialState } from './slices/rebaseAll/state';
 import { artifactDraftsInitialState } from './slices/artifactDrafts/state';
-import { permissionsInitialState } from './slices/permissions/state';
 import { attachmentsInitialState } from './slices/attachments/state';
 import { storageInitialState } from './slices/storage/state';
 import { githubInitialState } from './slices/github/state';
@@ -438,7 +437,6 @@ const initialState: AppState = {
   ...mountRequestInitialState,
   ...slackThreadsInitialState,
   ...reviewDraftsInitialState,
-  ...permissionsInitialState,
   ...bootstrapInitialState,
   ...folderPurposeInitialState,
   ...resolveInitialState,

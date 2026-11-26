@@ -86,6 +86,7 @@ export const usePermissionAsk = ({ item, sessionId, agentId, isDocked, onAnswere
     title: permissionAskTitleOf({ asker: askerNoun ?? 'The agent', toolName }),
     modeLabel: session === null ? null : modeCopyOf({ mode: session.permissionMode }).label,
     ruleLabel: rule.label,
+    sessionLabel: rule.sessionLabel,
     alwaysAllowLabel: isFilePathTool({ toolName }) ? place : rule.label,
     neverLabel: `Never allow ${rule.subject} in this session`,
     allow: () => {
@@ -103,7 +104,8 @@ export const usePermissionAsk = ({ item, sessionId, agentId, isDocked, onAnswere
     allowSession: () => {
       if (target !== null) {
         void withBusy({
-          action: () => allowWithRule({ ...target, scope: 'session', pattern: { tool: toolName } }),
+          action: () =>
+            allowWithRule({ ...target, scope: 'session', pattern: rule.sessionPattern }),
         });
       }
     },

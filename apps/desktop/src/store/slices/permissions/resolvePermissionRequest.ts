@@ -2,13 +2,15 @@ import type {
   AgentId,
   IsoDateTime,
   PermissionDecisionKind,
+  PermissionRuleId,
   PermissionRulePattern,
   PermissionScope,
   ProviderRunId,
   SessionId,
 } from '@goodboy/types';
 import { invokePermissionRuleUpsert } from '../../../features/permissions/permissions';
-import type { GetFn, SetFn } from './types';
+import { recordPermissionDecision } from './recordPermissionDecision';
+import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
@@ -21,7 +23,7 @@ type Params = {
   pattern?: PermissionRulePattern;
 };
 
-export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
+export const resolvePermissionRequest = (get: GetFn) => {
   return async ({ sessionId, agentId, toolUseId, toolName, runId, scope, pattern }: Params) => {
     const session = sessionById(get().sessions, sessionId);
     if (!session) {
@@ -29,15 +31,12 @@ export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
     }
     const now = new Date().toISOString() as IsoDateTime;
 
-    if (scope === 'once') {
-      set((state) => ({
-        volatilePermissionAllows: new Set([...state.volatilePermissionAllows, toolUseId]),
-      }));
-    } else {
+    let ruleId: PermissionRuleId | null = null;
+    if (scope !== 'once') {
       const ruleDecision: PermissionDecisionKind = scope === 'deny' ? 'deny' : 'allow';
       const ruleScope = scope === 'deny' ? 'session' : scope;
       const rulePattern = pattern ?? { tool: toolName };
-      await invokePermissionRuleUpsert({
+      const stored = await invokePermissionRuleUpsert({
         scope: ruleScope,
         ...(ruleScope === 'workspace' ? { workspaceId: session.workspaceId } : {}),
         ...(ruleScope === 'session' ? { sessionId } : {}),
@@ -46,6 +45,7 @@ export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
         decision: ruleDecision,
         priority: 100,
       });
+      ruleId = stored.id;
     }
 
     get().appendTurnEvent(agentId, sessionId, {
@@ -57,6 +57,17 @@ export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
       ruleId: null,
       decidedBy: 'user',
       at: now,
+    });
+    void recordPermissionDecision({
+      get,
+      sessionId,
+      agentId,
+      runId,
+      toolUseId,
+      toolName,
+      decision: scope === 'deny' ? 'deny' : 'allow',
+      ruleId,
+      decidedAt: now,
     });
   };
 };

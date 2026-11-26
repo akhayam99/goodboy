@@ -179,6 +179,7 @@ beforeEach(async () => {
     }),
     slack_get_thread: [],
     slack_list_thread_heads: [],
+    permission_audit_insert: ({ input }: { input: unknown }) => input,
   });
 });
 

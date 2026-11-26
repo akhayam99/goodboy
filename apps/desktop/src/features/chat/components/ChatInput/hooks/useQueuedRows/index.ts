@@ -136,7 +136,7 @@ export const useQueuedRows = ({
           if (outcome !== 'withdrawn') {
             return;
           }
-          setValue(message.text);
+          setValue(message.noteText ?? message.text);
           setAttachments(restored);
           focusComposerTextarea(wrapperRef);
         } catch (error) {

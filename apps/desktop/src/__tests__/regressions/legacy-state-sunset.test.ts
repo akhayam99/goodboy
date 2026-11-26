@@ -2,6 +2,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
+import { USER_ORIGIN_LEGACY_READ_UNTIL } from '../../store/slices/auto-view/legacyNoteTextOf';
 import { DOCK_GRID_V1_READ_UNTIL } from '../../store/slices/drawer/dockGridMemory/storedDockGrid';
 
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..', '..');
@@ -74,6 +75,16 @@ describe('an old state shape is read only until the release the doc names', () =
 
     expect(rows.find((row) => row.state === 'Stored session dock grid')?.until).toBe(
       DOCK_GRID_V1_READ_UNTIL,
+    );
+  });
+
+  it('names in the code the release the doc names for a Lead row with no origin', () => {
+    const rows = retiredRows({
+      text: readFileSync(join(REPO_ROOT, 'docs', 'versioning.md'), 'utf8'),
+    });
+
+    expect(rows.find((row) => row.state === 'Lead `user` outbox row with no `origin`')?.until).toBe(
+      USER_ORIGIN_LEGACY_READ_UNTIL,
     );
   });
 

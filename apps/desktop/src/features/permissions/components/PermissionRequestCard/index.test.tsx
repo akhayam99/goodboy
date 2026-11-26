@@ -208,6 +208,58 @@ describe('PermissionRequestCard', () => {
     );
   });
 
+  it('words a Grep ask as reads of its folder and stores a scoped read for the session', async () => {
+    render(
+      <PermissionRequestCard
+        item={makeItem({
+          over: {
+            toolName: 'Grep',
+            input: { pattern: 'refund', path: '/work/ledger-core/apps/billing' },
+          },
+        })}
+        sessionId={SESSION_ID}
+        agentId={AGENT_ID}
+      />,
+    );
+    screen.getByRole('button', { name: 'Always allow reads in apps/billing' });
+    fireEvent.click(screen.getByRole('button', { name: 'More permission actions' }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Allow reads in apps/billing in this session',
+      'Always allow reads in apps/billing everywhere',
+      'Never allow reads in apps/billing in this session',
+      'Deny and tell Implementer why…',
+    ]);
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('menuitem', { name: 'Allow reads in apps/billing in this session' }),
+      );
+    });
+    expect(allowWithRuleMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scope: 'session',
+        pattern: { tool: 'Read', argsMatcher: '//work/ledger-core/apps/billing/**' },
+      }),
+    );
+  });
+
+  it('never says edits or commands on a read tool, and says edits only for an edit tool', () => {
+    render(
+      <PermissionRequestCard
+        item={makeItem({ over: { toolName: 'Glob', input: { pattern: '*.ts' } } })}
+        sessionId={SESSION_ID}
+        agentId={AGENT_ID}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'More permission actions' }));
+    const labels = screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
+    expect(labels.slice(0, 3)).toEqual([
+      'Allow reads in this session',
+      'Always allow reads everywhere',
+      'Never allow reads in this session',
+    ]);
+    expect(labels.join(' ')).not.toMatch(/edits|commands/);
+  });
+
   it('writes the global prefix rule only after its popover confirm, anchored to the overflow', async () => {
     render(<PermissionRequestCard item={makeItem()} sessionId={SESSION_ID} agentId={AGENT_ID} />);
     fireEvent.click(screen.getByRole('button', { name: 'More permission actions' }));

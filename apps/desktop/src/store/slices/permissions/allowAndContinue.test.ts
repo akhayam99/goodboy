@@ -26,6 +26,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   type StoryStore,
 } from '../../storyHarness';
 
@@ -43,6 +44,7 @@ type Resumed = {
 
 let useAppStore: StoryStore;
 let resumed: Resumed[];
+let origins: Array<string | undefined>;
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -51,9 +53,11 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   resumed = [];
+  origins = [];
   useAppStore.setState({
     sessions: [session],
     sendTurn: async (input) => {
+      origins.push(input.rowOrigin);
       resumed.push({
         sessionId: input.sessionId,
         content: input.content,
@@ -212,14 +216,34 @@ describe('allowAndContinue', () => {
       runId: RUN_ID,
     });
 
-    expect(useAppStore.getState().volatilePermissionAllows.has('tu-1')).toBe(true);
-    expect(useAppStore.getState().volatilePermissionAllows.size).toBe(1);
+    expect(storySpies.invokePermissionAuditInsert).toHaveBeenCalledTimes(1);
+    expect(storySpies.invokePermissionAuditInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toolUseId: 'tu-1',
+        toolName: 'Bash',
+        decision: 'allow',
+        decidedBy: 'user',
+      }),
+    );
     expect(resumed).toEqual([
       expect.objectContaining({
         sessionId: SESSION_ID,
         permissionOnceAllows: ['Bash(pnpm test --filter ledger-core)'],
       }),
     ]);
+  });
+
+  it('marks the resumed turn as a permission answer, never as a note', async () => {
+    await useAppStore.getState().allowAndContinue({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      toolUseId: 'tu-origin',
+      toolName: 'Bash',
+      input: { command: 'pnpm test' },
+      runId: RUN_ID,
+    });
+
+    expect(origins).toEqual(['permission']);
   });
 
   it('records a once decision in the transcript before resuming', async () => {
@@ -236,5 +260,70 @@ describe('allowAndContinue', () => {
       decisionsOf().map(({ toolUseId, decision, scope }) => ({ toolUseId, decision, scope })),
     ).toEqual([{ toolUseId: 'tu-2', decision: 'allow', scope: 'once' }]);
     expect(resumed).toHaveLength(1);
+  });
+});
+
+describe('allowAndContinue on a read tool', () => {
+  const GREP_INPUT = { pattern: 'refund', path: '/work/ledger-core/apps/billing' };
+
+  const seedGrepAsk = (): void => {
+    useAppStore.setState({
+      transcripts: {
+        [AGENT_ID]: [
+          {
+            kind: 'permission_request',
+            runId: RUN_ID,
+            toolUseId: 'tu-grep',
+            toolName: 'Grep',
+            input: GREP_INPUT,
+            at: ASKED_AT,
+          },
+        ],
+      },
+      agentTurnState: { [AGENT_ID]: { kind: 'blocked', runId: RUN_ID, blockedAt: ASKED_AT } },
+    });
+  };
+
+  it('grants a scoped read of the searched folder and says read, not command', async () => {
+    seedGrepAsk();
+    await useAppStore.getState().allowAndContinue({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      toolUseId: 'tu-grep',
+      toolName: 'Grep',
+      input: GREP_INPUT,
+      runId: RUN_ID,
+    });
+
+    expect(resumed).toEqual([
+      expect.objectContaining({
+        permissionOnceAllows: ['Read(//work/ledger-core/apps/billing/**)'],
+        content: expect.stringContaining('that read'),
+      }),
+    ]);
+    expect(resumed[0]?.content).not.toContain('command');
+  });
+
+  it('writes the audit row with the input that was asked', async () => {
+    seedGrepAsk();
+    await useAppStore.getState().allowAndContinue({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      toolUseId: 'tu-grep',
+      toolName: 'Grep',
+      input: GREP_INPUT,
+      runId: RUN_ID,
+    });
+
+    expect(storySpies.invokePermissionAuditInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toolUseId: 'tu-grep',
+        toolName: 'Grep',
+        inputJson: JSON.stringify(GREP_INPUT),
+        requestedAt: ASKED_AT,
+        decision: 'allow',
+        decidedBy: 'user',
+      }),
+    );
   });
 });

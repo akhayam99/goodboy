@@ -20,6 +20,7 @@ import { queueTurnInLane } from '../resolve/queueTurnInLane';
 import { resolverLaunchCopy } from '../resolve/resolverLaunchCopy';
 import { resolveWriteDestination } from '../project-mounts/writeDestination';
 import { persistAttachments } from './persistAttachments';
+import { readableAttachmentRefs } from './attachments/readableAttachmentRefs';
 import type { GetFn, SetFn, SendTurnInput, TurnPhaseValue } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { projectById } from '../projects/projectIndex';
@@ -232,6 +233,20 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
 
   const attachmentInputs = attachments ?? [];
   const alreadyPersistedRefs = retry?.attachmentRefs ?? storedAttachments ?? [];
+  const readableRefs =
+    activeMount === undefined || alreadyPersistedRefs.length === 0
+      ? { isReadable: true as const, refs: alreadyPersistedRefs }
+      : await readableAttachmentRefs({
+          get,
+          refs: alreadyPersistedRefs,
+          workingDir,
+          activeAgentId,
+          sessionId,
+          now,
+        });
+  if (!readableRefs.isReadable) {
+    return turnDone({ result: NOT_BLOCKED });
+  }
   const attachmentResult =
     retry != null || storedAttachments !== undefined
       ? {
@@ -240,7 +255,7 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
           resolvedPrompt:
             alreadyPersistedRefs.length > 0
               ? `${resolvedPrompt}\n\n${buildAttachmentPromptBlock(
-                  alreadyPersistedRefs.map((ref) =>
+                  readableRefs.refs.map((ref) =>
                     ref.dir === undefined ? ref : { ...ref, relPath: `${ref.dir}/${ref.relPath}` },
                   ),
                 )}`

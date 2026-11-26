@@ -121,3 +121,46 @@ describe('compiledToolMatcher', () => {
     expect(matcher.matches({ toolName: 'Edit', input: { file_path: '/lib/a.ts' } })).toBe(false);
   });
 });
+
+describe('scoped read rules', () => {
+  const matcher = parseToolPattern({ pattern: 'Read(//work/ledger-core/apps/billing/**)' });
+
+  it('match Read, Grep and Glob inside the folder', () => {
+    expect(
+      matcher.matches({
+        toolName: 'Read',
+        input: { file_path: '/work/ledger-core/apps/billing/a.ts' },
+      }),
+    ).toBe(true);
+    expect(
+      matcher.matches({
+        toolName: 'Grep',
+        input: { pattern: 'x', path: '/work/ledger-core/apps/billing' },
+      }),
+    ).toBe(true);
+    expect(
+      matcher.matches({
+        toolName: 'Glob',
+        input: { pattern: '*', path: '/work/ledger-core/apps/billing/src' },
+      }),
+    ).toBe(true);
+  });
+
+  it('leave other folders, relative paths and other tools alone', () => {
+    expect(
+      matcher.matches({
+        toolName: 'Grep',
+        input: { pattern: 'x', path: '/work/ledger-core/apps' },
+      }),
+    ).toBe(false);
+    expect(
+      matcher.matches({ toolName: 'Grep', input: { pattern: 'x', path: 'apps/billing' } }),
+    ).toBe(false);
+    expect(
+      matcher.matches({
+        toolName: 'Edit',
+        input: { file_path: '/work/ledger-core/apps/billing/a.ts' },
+      }),
+    ).toBe(false);
+  });
+});

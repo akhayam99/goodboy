@@ -47,6 +47,19 @@ export const buildTurnWritableRoots = ({
   return Array.from(new Set([...siblings, ...metadata, ...ownMetadata]));
 };
 
+type ReadRootsParams = {
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+  readonly workingDir: string;
+};
+
+export const buildTurnReadRoots = ({
+  mounts,
+  workingDir,
+}: ReadRootsParams): ReadonlyArray<string> =>
+  Array.from(new Set(mounts.flatMap((mount) => [mount.worktreePath, mount.repoRoot]))).filter(
+    (root) => root !== '' && root !== workingDir,
+  );
+
 export const resolveGitCommonDirs = async ({
   repoRoots,
 }: {

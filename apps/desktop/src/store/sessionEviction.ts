@@ -321,7 +321,6 @@ export const NON_SESSION_STATE_KEYS = [
   'githubStatus',
   'githubWorkspaceStatus',
   'githubCheckedAt',
-  'volatilePermissionAllows',
   'workflowStudioDrafts',
   'workflowGenerations',
   'visibleWorkflowStudioWorkspaceId',

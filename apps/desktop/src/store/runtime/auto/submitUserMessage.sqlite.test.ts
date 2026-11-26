@@ -50,6 +50,30 @@ describe('a user message to Auto', () => {
     });
   });
 
+  it('keeps the origin and the words as typed in the saved row', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+
+    await submitUserMessage({
+      ctx: world.state.ctx,
+      treeId: world.treeId,
+      text: `Denied Read. ${TEXT}`,
+      origin: 'operator',
+      userText: TEXT,
+    });
+
+    const [row] = await userRows(world);
+    expect(row?.payload).toMatchObject({ origin: 'operator', userText: TEXT });
+  });
+
+  it('writes no origin when the sender names none', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+
+    await submitUserMessage({ ctx: world.state.ctx, treeId: world.treeId, text: TEXT });
+
+    const [row] = await userRows(world);
+    expect(row?.payload).not.toHaveProperty('origin');
+  });
+
   it('answers both overlapping sends of one delivery with the row that was saved', async () => {
     const world = await makeRuntimeWorld({ capUsd: 10 });
     const send = () =>

@@ -4,6 +4,7 @@ import {
   storedResultOf,
   waitingPlanChangeOf,
   type UserFacts,
+  type UserOrigin,
 } from '@goodboy/core/auto';
 import {
   getAutoOutboxByJoinKey,
@@ -26,6 +27,8 @@ export type SubmitUserMessageParams = Readonly<{
   images?: ReadonlyArray<MessageAttachment>;
   permissionOnceAllows?: ReadonlyArray<string>;
   deliveryId?: string;
+  origin?: UserOrigin;
+  userText?: string;
 }>;
 
 export type SubmitUserMessageOutcome =
@@ -92,6 +95,8 @@ export const submitUserMessage = async ({
   images = [],
   permissionOnceAllows = [],
   deliveryId,
+  origin,
+  userText,
 }: SubmitUserMessageParams): Promise<SubmitUserMessageOutcome> => {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const tree = await getAutoTree({ db: ctx.db, treeId });
@@ -130,6 +135,8 @@ export const submitUserMessage = async ({
               facts: await factsOf({ ctx, tree, given: facts }),
               ...(images.length > 0 && { images }),
               ...(permissionOnceAllows.length > 0 && { permissionOnceAllows }),
+              ...(origin !== undefined && { origin }),
+              ...(userText !== undefined && { userText }),
             },
             nowMs: ctx.now(),
           },
