@@ -1409,10 +1409,10 @@ live in [DESIGN.md](../../DESIGN.md).
 and a cluster puts its glyphs on the anchored edge (the rules are under "A
 repeated row" below).
 
-**Truncation order is designed, not accidental.** In the top bar, the identity
-column has the only width cap and truncates first. Everything to its right is
-`shrink-0`, so signals and controls keep their click areas while the name gives
-way. In the rail, the label truncates and the count is `shrink-0`, so a long
+**Truncation order is designed, not accidental.** In the top bar, only the left
+column can shrink to nothing (`minmax(0,1fr)` in the `AppTopBar` grid), and the
+right cluster never drops under its content width (`minmax(max-content,1fr)`),
+so signals and controls keep their click areas. In the rail, the label truncates and the count is `shrink-0`, so a long
 label loses characters before a count disappears.
 
 **The top bar's left edge belongs to the window.** Its left zone starts at

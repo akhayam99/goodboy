@@ -21,7 +21,7 @@ Three exports are required, not optional ([docs/styling.md](../../docs/styling.m
 - `Divider` separates regions.
 - `tintClasses(tone)` resolves every semantic tone ([DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md) owns the tone map).
 
-`AppShell` is the app skeleton, and the one exception to "presentational only". It owns the window grid and its slots: the top bar, the left places rail, the main sheet, the detail panel and the tool dock beside it, a studio and the right rail. It saves no width. [docs/navigation.md](../../docs/navigation.md) decides what fills each slot, and [DESIGN.md](../../DESIGN.md) what each surface is for.
+`AppShell` is the app skeleton, and the one exception to "presentational only". It owns the window grid and its slots: the top bar, the left places rail, the main sheet, the detail panel and the tool dock beside it, a studio, the right rail and an optional footer. It saves no width. [docs/navigation.md](../../docs/navigation.md) decides what fills each slot, and [DESIGN.md](../../DESIGN.md) what each surface is for.
 
 ## Design tokens
 

@@ -497,12 +497,13 @@ and the Needs you order follows it, falling back to the last edit. Mark as unrea
 in the mark box, unless the session asks you, failed or runs, which outranks it
 (`sessionMarkOf`), and the switcher and the hover card draw the same mark.
 
-The Board count. The Board item of the places rail, the top bar, the Board's
-Needs you strip (one card per counted session above the stage lanes,
+The Board count. The Board item of the places rail, the top bar, the Needs you
+cards at the top of the Board's Running lane (one card per counted session,
 `needsYouOf`) and the Needs you group of the session order (`sessionOrderOf`)
 say how many sessions need you with one function, `attentionCountOf` (read
 through `useWorkspaceAttention`), over every session of the workspace and never
-the project filter. A session counts when its stage is needs you and one of its
+the project filter. The Running lane's own count adds those cards to its
+running sessions. A session counts when its stage is needs you and one of its
 reasons is `warning` or `danger`; a session waiting only on `unread-reply` or
 `pr-approved` is quiet and does not count. On the places rail the Board item
 wears the count as a `CountBadge` on its glyph (`railMarkOf`), in `warning`, or
