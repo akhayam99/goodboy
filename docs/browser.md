@@ -1087,8 +1087,9 @@ that shadows it, so the chord follows Chrome's J.
   `errors` of `consoleCounts`, capped at 9+ like every count) only while the
   shown load has an error entry: a thrown error, a rejection, a
   `console.error` or a failed request. A warning is a console line and never
-  counts. The count opens the dock on the Errors tab. `errorGroupsOf` makes
-  one group per origin kind, message and top frame (or the source when the
+  counts. The count opens the dock on the Errors tab, and the dock goes back
+  to Console once the shown load has no error left. `errorGroupsOf` makes
+  one group per origin, message and top frame (or the source when the
   stack has none), in the order they first came, with the count and the
   earliest and latest `at`; a request error links the newest record of its
   request id. It reads stack lines in both the Chrome (`at name (url:line:col)`)

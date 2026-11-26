@@ -33,7 +33,7 @@ export const ErrorsGroup = ({
   return (
     <div
       data-error-group={group.origin}
-      className="group/error flex min-w-0 flex-col rounded-sm hover:bg-hover"
+      className="flex min-w-0 flex-col rounded-sm hover:bg-hover"
     >
       <div className="flex min-w-0 items-center gap-1 pr-1">
         <SelectableRow
@@ -71,11 +71,7 @@ export const ErrorsGroup = ({
           aria-label={sendLabel}
           disabled={!canSend}
           onClick={onSend}
-          className={cn(
-            'shrink-0',
-            !isOpen &&
-              'opacity-0 focus-visible:opacity-100 group-focus-within/error:opacity-100 group-hover/error:opacity-100',
-          )}
+          className="shrink-0"
         >
           Send
         </Button>

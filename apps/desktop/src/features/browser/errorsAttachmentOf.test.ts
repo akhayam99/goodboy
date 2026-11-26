@@ -127,6 +127,44 @@ describe('errorsAttachmentOf', () => {
     expect(handoff.text).toContain('file:///work/plan.js');
   });
 
+  it('scrubs the local file grant from the response body and the frame names', () => {
+    const handoff = errorsAttachmentOf({
+      groups: [
+        {
+          ...RETRY,
+          frames: [
+            {
+              name: 'gblocal://localhost/9a8b-7c/work/run.js',
+              url: 'http://localhost:5173/node_modules/dep.js',
+              line: 1,
+              label: 'dep.js:1',
+            },
+          ],
+        },
+        {
+          ...FAILED,
+          request:
+            CHARGE.network === null
+              ? null
+              : {
+                  ...CHARGE,
+                  network: {
+                    ...CHARGE.network,
+                    responseBody: `${'x'.repeat(3_970)} gblocal://localhost/0f1e-2a/work/plan.js`,
+                  },
+                },
+        },
+      ],
+      title: 'Checkout',
+      url: 'http://localhost:5173/checkout',
+      fileOf,
+    });
+
+    expect(handoff.text).not.toContain('9a8b-7c');
+    expect(handoff.text).not.toContain('0f1e');
+    expect(handoff.text).toContain('file:///work/run.js');
+  });
+
   it('keeps the first groups that fit and says it cut the rest', () => {
     const long: ErrorGroup = {
       ...FAILED,

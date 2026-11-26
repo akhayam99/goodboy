@@ -935,6 +935,23 @@ describe('page errors', () => {
     expect(errorsTab.getAttribute('aria-selected')).toBe('false');
   });
 
+  it('stays on Console when errors come back after a load without them', async () => {
+    reader = async () => heard({ entries: [retryOf({ seq: 1 })] });
+    await renderPane();
+    fireEvent.click(await screen.findByRole('button', { name: 'Show 1 error' }));
+    const region = await screen.findByRole('region', { name: 'Console' });
+
+    reader = async () => heard({ doc: 'n8q1', entries: [] });
+    finishLoad();
+    await waitFor(() => expect(within(region).queryByRole('tab', { name: /Errors/ })).toBeNull());
+
+    reader = async () => heard({ doc: 'p2r7', entries: [retryOf({ seq: 1 })] });
+    finishLoad();
+
+    const errorsTab = await within(region).findByRole('tab', { name: /Errors/ });
+    expect(errorsTab.getAttribute('aria-selected')).toBe('false');
+  });
+
   it('adds one group, then all groups, to the message of the agent it names', async () => {
     reader = async () => heard({ entries: [retryOf({ seq: 1 }), retryOf({ seq: 2 }), TIMEOUT] });
     await renderPane();

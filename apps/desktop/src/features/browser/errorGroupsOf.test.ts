@@ -133,6 +133,20 @@ describe('errorGroupsOf', () => {
     expect(groups.map((group) => group.frames[0]?.label)).toEqual(['retry.ts:214', 'retry.ts:230']);
   });
 
+  it('splits the same message and frame that came from another origin', () => {
+    const groups = errorGroupsOf({
+      entries: [
+        errorOf({ seq: 1, text: 'Timeout', origin: 'uncaught' }),
+        errorOf({ seq: 2, text: 'Timeout', origin: 'console' }),
+      ],
+    });
+
+    expect(groups.map((group) => [group.origin, group.count])).toEqual([
+      ['uncaught', 1],
+      ['console', 1],
+    ]);
+  });
+
   it('reads Chrome and WebKit frames alike, names and lines kept, the message line dropped', () => {
     const [chrome] = errorGroupsOf({
       entries: [

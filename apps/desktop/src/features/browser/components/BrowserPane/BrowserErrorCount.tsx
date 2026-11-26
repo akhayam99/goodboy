@@ -18,7 +18,7 @@ export const BrowserErrorCount = ({ errors }: Props) => {
         aria-label={`Show ${errors.count} ${errors.count === 1 ? 'error' : 'errors'}`}
         data-browser-errors=""
         onClick={errors.onShow}
-        className="shrink-0 rounded-full bg-danger-subtle tabular-nums"
+        className="shrink-0 rounded-full tabular-nums"
       >
         <CircleAlert size={ICON_SIZE.row} aria-hidden />
         {countTextOf({ count: errors.count })}

@@ -52,7 +52,7 @@ type NamedLocation = {
 
 const isDigits = ({ line }: LineParams): boolean => /^\d+$/.test(line);
 
-const fileNameOf = ({ url }: UrlParams): string => {
+const frameFileOf = ({ url }: UrlParams): string => {
   const cut = url.search(/[?#]/);
   const path = cut < 0 ? url : url.slice(0, cut);
   return path.slice(path.lastIndexOf('/') + 1);
@@ -83,7 +83,7 @@ const frameOf = ({ line }: LineParams): ErrorFrame | null => {
     return null;
   }
   const url = location.slice(0, lineMark);
-  const file = fileNameOf({ url });
+  const file = frameFileOf({ url });
   if (file === '') {
     return null;
   }
@@ -102,21 +102,21 @@ const framesOf = ({ stack }: StackParams): ReadonlyArray<ErrorFrame> =>
     return frame === null ? [] : [frame];
   });
 
-const earliestOf = ({ known, next }: TimeParams): number | null => {
+const firstTimeOf = ({ known, next }: TimeParams): number | null => {
   if (known === null || next === null) {
     return known ?? next;
   }
   return Math.min(known, next);
 };
 
-const latestOf = ({ known, next }: TimeParams): number | null => {
+const lastTimeOf = ({ known, next }: TimeParams): number | null => {
   if (known === null || next === null) {
     return known ?? next;
   }
   return Math.max(known, next);
 };
 
-const requestOf = ({ entries, requestId }: RequestParams): BrowserConsoleEntry | null =>
+const linkedRequestOf = ({ entries, requestId }: RequestParams): BrowserConsoleEntry | null =>
   requestId === null
     ? null
     : (entries.find((entry) => entry.kind === 'network' && entry.network?.id === requestId) ??
@@ -132,8 +132,8 @@ export const errorGroupsOf = ({ entries }: Params): ReadonlyArray<ErrorGroup> =>
     const frames = framesOf({ stack: error.stack });
     const top = frames[0];
     const place = top === undefined ? (entry.source ?? '') : `${top.url}:${top.line}`;
-    const key = `${error.origin === 'request' ? 'request' : 'page'}\n${entry.text}\n${place}`;
-    const request = requestOf({ entries, requestId: error.requestId });
+    const key = `${error.origin}\n${entry.text}\n${place}`;
+    const request = linkedRequestOf({ entries, requestId: error.requestId });
     const known = groups.get(key);
     if (known === undefined) {
       groups.set(key, {
@@ -152,8 +152,8 @@ export const errorGroupsOf = ({ entries }: Params): ReadonlyArray<ErrorGroup> =>
     groups.set(key, {
       ...known,
       count: known.count + 1,
-      firstAt: earliestOf({ known: known.firstAt, next: error.at }),
-      lastAt: latestOf({ known: known.lastAt, next: error.at }),
+      firstAt: firstTimeOf({ known: known.firstAt, next: error.at }),
+      lastAt: lastTimeOf({ known: known.lastAt, next: error.at }),
       request: request ?? known.request,
     });
   }

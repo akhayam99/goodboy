@@ -56,7 +56,8 @@ export const BrowserToolsDock = ({
   children,
 }: Props) => {
   const counts = consoleCounts({ entries: log.entries });
-  const shownTab = tab === 'errors' && counts.errors === 0 ? 'console' : tab;
+  const isErrorsTabEmpty = tab === 'errors' && counts.errors === 0;
+  const shownTab = isErrorsTabEmpty ? 'console' : tab;
   const stage = useRef<HTMLDivElement | null>(null);
   const [place, setPlace] = useState<BrowserToolsPlace>(() =>
     browserToolsDockPref.read({ surface }),
@@ -82,6 +83,13 @@ export const BrowserToolsDock = ({
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!isErrorsTabEmpty) {
+      return;
+    }
+    onTab({ next: 'console' });
+  }, [isErrorsTabEmpty, onTab]);
 
   const placeWith = ({ size: next }: SizeParams): BrowserToolsPlace =>
     isRight ? { ...place, width: next } : { ...place, height: next };

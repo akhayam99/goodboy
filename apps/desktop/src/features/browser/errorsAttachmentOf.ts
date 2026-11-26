@@ -45,9 +45,7 @@ type NameParams = {
 const frameLineOf = ({ frame, fileOf }: FrameLineParams): string => {
   const own = fileOf({ frame });
   const name = frame.name === '' ? 'anonymous' : frame.name;
-  return own === null
-    ? `- ${name}: ${withoutGrantOf({ line: frame.label })}`
-    : `- ${name}: ${own} (file in this worktree)`;
+  return own === null ? `- ${name}: ${frame.label}` : `- ${name}: ${own} (file in this worktree)`;
 };
 
 const requestLinesOf = ({ group }: RequestParams): ReadonlyArray<string> => {
@@ -59,7 +57,7 @@ const requestLinesOf = ({ group }: RequestParams): ReadonlyArray<string> => {
   const size = facts?.size ?? null;
   const duration = facts?.duration ?? null;
   const parts = [
-    `${request.method ?? 'GET'} ${withoutGrantOf({ line: request.text })}`,
+    `${request.method ?? 'GET'} ${request.text}`,
     `status ${networkStatusWordOf({ status: request.status })}`,
     ...(size === null ? [] : [formatBytes({ bytes: size })]),
     ...(duration === null ? [] : [`${Math.round(duration)} ms`]),
@@ -73,7 +71,7 @@ const requestLinesOf = ({ group }: RequestParams): ReadonlyArray<string> => {
     '',
     `Request: ${parts.join(', ')}`,
     isCut ? `Response body (first ${RESPONSE_MAX_CHARS} characters):` : 'Response body:',
-    ...body
+    ...withoutGrantOf({ line: body })
       .slice(0, RESPONSE_MAX_CHARS)
       .split('\n')
       .map((line) => `    ${line}`),
@@ -82,12 +80,10 @@ const requestLinesOf = ({ group }: RequestParams): ReadonlyArray<string> => {
 
 const groupTextOf = ({ group, fileOf }: GroupParams): string =>
   [
-    `## ${withoutGrantOf({ line: group.text })}${group.count > 1 ? ` (${group.count} times)` : ''}`,
+    `## ${group.text}${group.count > 1 ? ` (${group.count} times)` : ''}`,
     errorMetaOf({ group }),
     ...group.frames.slice(0, FRAMES_KEPT).map((frame) => frameLineOf({ frame, fileOf })),
-    ...(group.frames.length === 0 && group.source !== null
-      ? [`- at ${withoutGrantOf({ line: group.source })}`]
-      : []),
+    ...(group.frames.length === 0 && group.source !== null ? [`- at ${group.source}`] : []),
     ...requestLinesOf({ group }),
   ].join('\n');
 
@@ -102,11 +98,11 @@ const errorsFileNameOf = ({ title, host }: NameParams): string => {
 
 export const errorsAttachmentOf = ({ groups, title, url, fileOf }: Params): OutputHandoff => {
   const host = hostOf({ url });
-  const shownTitle = title.trim() === '' ? host : title.trim();
+  const shownTitle = withoutGrantOf({ line: title.trim() === '' ? host : title.trim() });
   const kept: Array<string> = [];
   let size = 0;
   for (const group of groups) {
-    const text = groupTextOf({ group, fileOf });
+    const text = withoutGrantOf({ line: groupTextOf({ group, fileOf }) });
     if (kept.length > 0 && size + text.length + 2 > ERRORS_MAX_CHARS) {
       break;
     }
@@ -121,7 +117,9 @@ export const errorsAttachmentOf = ({ groups, title, url, fileOf }: Params): Outp
     title: groups.length === 1 ? `Error on ${shownTitle}` : `${total} errors on ${shownTitle}`,
     fileName: errorsFileNameOf({ title: shownTitle, host }),
     text: redactSecrets({
-      text: `${withoutGrantOf({ line: url })}\n\n${ERRORS_NOTE}\n${cutNote}\n${kept.join('\n\n')}\n`,
+      text: withoutGrantOf({
+        line: `${url}\n\n${ERRORS_NOTE}\n${cutNote}\n${kept.join('\n\n')}\n`,
+      }),
     }),
     isTruncated: isCut,
     mimeType: ERRORS_MIME,
