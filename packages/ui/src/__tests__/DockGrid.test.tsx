@@ -109,6 +109,37 @@ describe('a cell with a chosen tab list', () => {
     expect(onFocus).toHaveBeenCalledWith({ key: 'ask' });
   });
 
+  it('keeps the tab the user selected when focus leaves the cell and comes back', () => {
+    const tabs = ['terminal', 'scripts', 'ask'];
+    const view = render(gridOf({ spec: specOf([[tabbed({ active: 'scripts' }), BROWSER]]), tabs }));
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Ask' }));
+    view.rerender(
+      gridOf({
+        spec: { ...specOf([[tabbed({ active: 'scripts' }), BROWSER]]), focus: 'ask' },
+        tabs,
+      }),
+    );
+    view.rerender(
+      gridOf({
+        spec: { ...specOf([[tabbed({ active: 'scripts' }), BROWSER]]), focus: 'browser' },
+        tabs,
+      }),
+    );
+
+    expect(screen.getByTestId('shown').textContent).toBe('ask');
+  });
+
+  it('follows the active tab the spec changes to', () => {
+    const tabs = ['terminal', 'scripts', 'ask'];
+    const view = render(gridOf({ spec: specOf([[tabbed({ active: 'scripts' }), BROWSER]]), tabs }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Ask' }));
+
+    view.rerender(gridOf({ spec: specOf([[tabbed({ active: 'terminal' }), BROWSER]]), tabs }));
+
+    expect(screen.getByTestId('shown').textContent).toBe('terminal');
+  });
+
   it('falls back to a tab that is left when the active one closes', () => {
     const tabs = ['terminal', 'scripts', 'ask'];
     const view = render(gridOf({ spec: specOf([[tabbed({ active: 'scripts' }), BROWSER]]), tabs }));

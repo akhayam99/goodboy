@@ -17,6 +17,7 @@ type HarnessProps = {
   readonly scope?: string;
   readonly keys: ReadonlyArray<string>;
   readonly columns: ReadonlyArray<DockGridColumnBox>;
+  readonly chosen?: Readonly<Record<string, ReadonlyArray<string>>>;
 };
 
 const mount = ({
@@ -100,5 +101,55 @@ describe('the fold report', () => {
     });
 
     expect(onFold).not.toHaveBeenCalled();
+  });
+
+  it('keeps the chosen tabs of a cell out of the report, and reports a cell that folds with them', () => {
+    const onFold = vi.fn();
+    const chosen = { terminal: ['terminal', 'scripts'] };
+    const view = mount({
+      onFold,
+      keys: ['terminal', 'browser'],
+      chosen,
+      columns: [column({ keys: ['terminal', 'scripts'] }), column({ keys: ['browser'] })],
+    });
+
+    view.rerender({
+      keys: ['terminal', 'browser', 'monitoring'],
+      chosen,
+      columns: [
+        column({ keys: ['terminal', 'scripts'] }),
+        column({ keys: ['browser', 'monitoring'] }),
+      ],
+    });
+
+    expect(onFold).toHaveBeenCalledWith({
+      opened: 'monitoring',
+      folds: [{ key: 'monitoring', into: 'browser' }],
+    });
+  });
+
+  it('reports a chosen cell that the solver folds into another cell', () => {
+    const onFold = vi.fn();
+    const chosen = { terminal: ['terminal', 'scripts'] };
+    const view = mount({
+      onFold,
+      keys: ['terminal', 'browser'],
+      chosen,
+      columns: [column({ keys: ['terminal', 'scripts'] }), column({ keys: ['browser'] })],
+    });
+
+    view.rerender({
+      keys: ['terminal', 'browser', 'monitoring'],
+      chosen,
+      columns: [column({ keys: ['browser', 'terminal', 'scripts', 'monitoring'] })],
+    });
+
+    expect(onFold).toHaveBeenCalledWith({
+      opened: 'monitoring',
+      folds: expect.arrayContaining([
+        { key: 'terminal', into: 'browser' },
+        { key: 'monitoring', into: 'browser' },
+      ]),
+    });
   });
 });

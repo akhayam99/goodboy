@@ -46,7 +46,11 @@ export const useDockCellMemory = ({ spec, columns }: Params): DockCellMemory => 
   const focusedCell =
     columns.flatMap((column) => column.panes).find((pane) => (pane.tabs ?? []).includes(focus))
       ?.key ?? null;
-  const cellKeys = columns.flatMap((column) => column.panes.map((pane) => pane.key)).join('/');
+  const storedKeys = spec.columns.flatMap((column) => column.map((cell) => cell.key)).join('/');
+  const chosenActive = spec.columns
+    .flatMap((column) => column.flatMap((cell) => (cell.tabs === undefined ? [] : [cell])))
+    .map((cell) => `${cell.key}=${cell.tabs?.active ?? ''}`)
+    .join('/');
   useEffect(() => {
     if (focusedCell === null) {
       return;
@@ -56,13 +60,25 @@ export const useDockCellMemory = ({ spec, columns }: Params): DockCellMemory => 
     );
   }, [focusedCell, focus]);
   useEffect(() => {
-    const open = new Set(cellKeys.split('/'));
+    const chosen =
+      chosenActive === '' ? [] : chosenActive.split('/').map((item) => item.split('='));
+    setKept((previous) => ({
+      ...previous,
+      ...Object.fromEntries(
+        chosen.flatMap(([key, active]) =>
+          key === undefined || active === undefined ? [] : [[key, active]],
+        ),
+      ),
+    }));
+  }, [chosenActive]);
+  useEffect(() => {
+    const open = new Set(storedKeys.split('/'));
     setKept((previous) => {
       const stale = Object.keys(previous).filter((key) => !open.has(key));
       return stale.length === 0
         ? previous
         : Object.fromEntries(Object.entries(previous).filter(([key]) => open.has(key)));
     });
-  }, [cellKeys]);
+  }, [storedKeys]);
   return { regainFocus, liveKeys, headed, kept, claim, takeFocus };
 };

@@ -526,17 +526,37 @@ export const dockLayoutOf = ({
     };
   }
   const folded = foldedOf({ lanes: intent });
+  const tabbedStates =
+    intent.length > 2
+      ? foldStatesOf({ lanes: intent, order: foldOrderOf({ lanes: intent, foldOrder }) }).slice(1)
+      : [];
   const hasDetail = detailLane !== null;
   const tries: ReadonlyArray<TryParams> = [
     { frame, detail: detailLane, lanes: intent, isStacked: false, isDetailOver: false },
     ...(folded === null
       ? []
       : [{ frame, detail: detailLane, lanes: folded, isStacked: true, isDetailOver: false }]),
+    ...tabbedStates.map((lanes) => ({
+      frame,
+      detail: detailLane,
+      lanes,
+      isStacked: false,
+      isDetailOver: false,
+    })),
     ...(hasDetail
       ? [{ frame, detail: detailLane, lanes: intent, isStacked: false, isDetailOver: true }]
       : []),
     ...(hasDetail && folded !== null
       ? [{ frame, detail: detailLane, lanes: folded, isStacked: true, isDetailOver: true }]
+      : []),
+    ...(hasDetail
+      ? tabbedStates.map((lanes) => ({
+          frame,
+          detail: detailLane,
+          lanes,
+          isStacked: false,
+          isDetailOver: true,
+        }))
       : []),
   ];
   const pushed = canPush
@@ -550,7 +570,7 @@ export const dockLayoutOf = ({
     ...overLayoutOf({
       frame,
       detail: detailLane,
-      lanes: folded ?? intent,
+      lanes: folded ?? tabbedStates.at(-1) ?? intent,
       isStacked: folded !== null,
     }),
     rail,

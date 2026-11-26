@@ -60,8 +60,10 @@ export const DockGrid = ({
     canDrop,
     onMove: canMove ? (spec.onMove ?? null) : null,
   });
-  const chosenKeys = spec.columns.flatMap((column) =>
-    column.flatMap((cell) => cell.tabs?.keys ?? []),
+  const chosenKeys = Object.fromEntries(
+    spec.columns.flatMap((column) =>
+      column.flatMap((cell) => (cell.tabs === undefined ? [] : [[cell.key, cell.tabs.keys]])),
+    ),
   );
   useDockFoldReport({
     ...(spec.scope !== undefined && { scope: spec.scope }),

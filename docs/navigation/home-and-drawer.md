@@ -802,8 +802,10 @@ not wired to a move yet). A cell holds its tab list as state: `DockGridCell.tabs
 carries the keys, the active key and the member cells, `dockMergedCellOf` folds
 them into the one pane the solver places, and `cellTabsOf` is the one function
 that answers the tab count, the strip, the activity dots and the shown tab
-(`data-dock-tab-count` on the pane). A key that left the grid drops out of the
-list and a select for it does nothing. The head of a cell with a chosen tab list
+(`data-dock-tab-count` on the pane). The shown tab is the focused one, then the last
+one picked in the cell, then the cell's `active` key; a new `active` from the spec wins
+over the memory. A key that left the grid drops out of the list and a select for it
+does nothing. The cell's width is the one saved under its own key, never a member's. The head of a cell with a chosen tab list
 moves the whole cell, tabs together; a cell the solver folded for lack of room
 (`isDerived`) still does not move, because a move would take one panel and leave
 its partner. A head that is not a

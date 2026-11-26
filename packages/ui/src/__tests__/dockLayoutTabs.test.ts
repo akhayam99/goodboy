@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { cellTabsOf } from '../dockCellTabsOf';
 import { dockMergedCellOf } from '../dockMergedCellOf';
+import { unmeasuredDockGridOf } from '../unmeasuredDockGridOf';
 import type { DockGridCell, DockGridSpec } from '../dockGridSpec';
 import { dockLayoutOf, type DockColumn, type DockPane } from '../dockLayout';
 import { READER_DRAWER_DEFAULT, RIGHT_DRAWER_DEFAULT } from '../drawerGeometry';
@@ -80,6 +81,16 @@ describe('a cell with a chosen tab list', () => {
       rowMin: 240,
       savedWidth: READER_DRAWER_DEFAULT,
     });
+  });
+
+  it('keeps the width the cell saved, not the width of a member', () => {
+    const wide: DockGridCell = {
+      ...TERMINAL_CELL,
+      savedWidth: 430,
+      tabs: { keys: ['terminal', 'browser'], active: 'terminal', members: [BROWSER_CELL] },
+    };
+
+    expect(dockMergedCellOf({ cell: wide }).savedWidth).toBe(430);
   });
 
   it('adds a fold on top of the chosen tabs, never in place of them', () => {
@@ -196,5 +207,21 @@ describe('cellTabsOf', () => {
     });
 
     expect(view.options.map((option) => option.badge !== undefined)).toEqual([false, true]);
+  });
+});
+
+describe('a grid not measured yet', () => {
+  it('draws the chosen tabs of a cell from the first frame', () => {
+    const frame = unmeasuredDockGridOf({
+      columns: [[dockMergedCellOf({ cell: TABBED })], [BROWSER_CELL]],
+      savedWidthOf: () => 420,
+      detail: { width: 0, dragMax: 0 },
+      placement: 'auto',
+    });
+
+    expect(frame.columns.map((column) => column.panes.map((pane) => pane.tabs))).toEqual([
+      [['terminal', 'scripts']],
+      [undefined],
+    ]);
   });
 });

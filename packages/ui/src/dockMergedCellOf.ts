@@ -16,7 +16,7 @@ export const dockMergedCellOf = ({ cell }: Params): DockGridCell => {
   return {
     ...cell,
     sizing,
-    savedWidth: lead.savedWidth ?? DRAWER_TIERS[sizing].fallback,
+    savedWidth: cell.savedWidth ?? lead.savedWidth ?? DRAWER_TIERS[sizing].fallback,
     rowMin: Math.max(...members.map((member) => member.rowMin ?? 0)),
     hasActivity: members.some((member) => member.hasActivity === true),
   };

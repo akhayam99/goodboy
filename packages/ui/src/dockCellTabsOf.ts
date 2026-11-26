@@ -36,7 +36,7 @@ export const cellTabsOf = ({ spec, pane, focus, kept }: Params): DockCellTabsVie
   const listed = pane.tabs.length > 0 ? pane.tabs : [pane.key];
   const keys = listed.filter((key) => live.has(key) || key === pane.key);
   const chosen = cells.find((cell) => cell.key === pane.key)?.tabs;
-  const shown = [focus, chosen?.active, kept].find(
+  const shown = [focus, kept, chosen?.active].find(
     (key): key is string => key !== undefined && keys.includes(key),
   );
   const resolved = shown ?? pane.key;

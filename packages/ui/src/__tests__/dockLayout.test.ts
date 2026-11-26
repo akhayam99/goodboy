@@ -228,6 +228,31 @@ describe('who gives way', () => {
     expect(layout.columns[0]?.box.width).toBeGreaterThanOrEqual(RIGHT_DRAWER_MIN);
   });
 
+  it('folds three or four columns into tabs on a narrow page, never under a minimum', () => {
+    const layout = layoutAt({
+      width: 1280,
+      columns: [
+        { panes: [BROWSER] },
+        { panes: [TERMINAL] },
+        { panes: [SCRIPTS] },
+        { panes: [ASK] },
+      ],
+    });
+
+    expect(layout.mode).toBe('push');
+    const panes = layout.columns.flatMap((column) => column.panes);
+    expect(panes.flatMap((pane) => pane.tabs).sort()).toEqual([
+      'ask',
+      'browser',
+      'scripts',
+      'terminal',
+    ]);
+    for (const column of layout.columns) {
+      expect(column.box.width).toBeGreaterThanOrEqual(RIGHT_DRAWER_MIN);
+    }
+    expect(layout.page.width).toBeGreaterThan(0);
+  });
+
   it('holds at most four columns of two panes', () => {
     const layout = layoutAt({
       width: 2600,
