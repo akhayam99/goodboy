@@ -6,6 +6,7 @@ import type {
   SessionAccess,
   SessionStage,
   StartKind,
+  StartStops,
   StatusMark,
   TaskProvider,
   Tone,
@@ -301,6 +302,9 @@ export type TaskRow = {
   readonly words: string;
   readonly sessionId: string | null;
   readonly canStart: boolean;
+  readonly description: string | null;
+  readonly assignee: string | null;
+  readonly stateLabel: string | null;
 };
 
 export type StartProject = {
@@ -313,6 +317,13 @@ export type StartKindChoice = {
   readonly presetId: string | null;
   readonly label: string;
   readonly hasLimit: boolean;
+  readonly hasStops: boolean;
+};
+
+export type StartStopsChoice = {
+  readonly stops: StartStops;
+  readonly label: string;
+  readonly promise: string;
 };
 
 export type StartAccessChoice = {
@@ -328,6 +339,8 @@ export type StartOffer = {
   readonly kinds: ReadonlyArray<StartKindChoice>;
   readonly accessChoices: ReadonlyArray<StartAccessChoice>;
   readonly defaultAccess: SessionAccess;
+  readonly stopsChoices: ReadonlyArray<StartStopsChoice>;
+  readonly defaultStops: StartStops;
   readonly limitAmounts: ReadonlyArray<number>;
   readonly defaultLimitUsd: number | null;
   readonly maxGoalLength: Int;

@@ -6,6 +6,9 @@
   "count": 1,
   "rows": [
     {
+      "description": "Back off the webhook retries so payments-api is not flooded.",
+      "assignee": "Ada Northwind",
+      "stateLabel": "In Progress",
       "id": "linear:lin-412",
       "provider": "linear",
       "key": "HBL-412",
@@ -37,13 +40,15 @@
         "startKind": "lead",
         "presetId": null,
         "label": "Lead",
-        "hasLimit": true
+        "hasLimit": true,
+        "hasStops": true
       },
       {
         "startKind": "agentScout",
         "presetId": null,
         "label": "Agent · Scout",
-        "hasLimit": false
+        "hasLimit": false,
+        "hasStops": false
       }
     ],
     "accessChoices": [
@@ -64,6 +69,24 @@
       }
     ],
     "defaultAccess": "askFirst",
+    "stopsChoices": [
+      {
+        "stops": "everyStep",
+        "label": "Every step",
+        "promise": "Stops for your go after every step."
+      },
+      {
+        "stops": "afterPlan",
+        "label": "After the plan",
+        "promise": "Stops once, when the plan is written."
+      },
+      {
+        "stops": "never",
+        "label": "Never",
+        "promise": "Runs to the end without stopping."
+      }
+    ],
+    "defaultStops": "afterPlan",
     "limitAmounts": [
       5,
       10,

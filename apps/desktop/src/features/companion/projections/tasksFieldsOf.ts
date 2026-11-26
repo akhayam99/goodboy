@@ -22,14 +22,19 @@ const taskProviderOf = ({ provider }: ProviderParams): TaskProvider | null =>
 
 type RowParams = {
   readonly task: SessionExternalTask;
+  readonly facts: WorkspaceScope['taskFacts'];
 };
 
-const taskRowOf = ({ task }: RowParams): TaskRow | null => {
+const taskRowOf = ({ task, facts }: RowParams): TaskRow | null => {
   const provider = taskProviderOf({ provider: task.provider });
   if (provider === null) {
     return null;
   }
+  const fact = facts[`${task.provider}:${task.externalId}`];
   return {
+    description: fact?.description ?? null,
+    assignee: fact?.assignee ?? null,
+    stateLabel: fact?.stateLabel ?? null,
     id: `${task.provider}:${task.externalId}`,
     provider,
     key: task.identifier,
@@ -44,7 +49,7 @@ export const tasksFieldsOf = ({ scope, now }: Params): TasksFields => {
   const rows = Object.values(scope.tasks)
     .flat()
     .flatMap((task) => {
-      const row = taskRowOf({ task });
+      const row = taskRowOf({ task, facts: scope.taskFacts });
       return row === null ? [] : [row];
     });
   return {

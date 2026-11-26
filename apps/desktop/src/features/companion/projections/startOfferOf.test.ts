@@ -18,6 +18,7 @@ const scopeOf = (over: Partial<WorkspaceScope> = {}): WorkspaceScope =>
     presets: [{ id: 'preset-layout', name: 'Fix a layout' }],
     projects: [{ id: 'proj-ledger', name: 'ledger-core' }],
     defaultLimitUsd: 8,
+    defaultLevel: 'plan',
     ...over,
   });
 
@@ -53,6 +54,30 @@ describe('the start offer', () => {
     expect(
       startOfferOf({ scope: scopeOf({ defaultLimitUsd: null }), now: 1_000 }).limitAmounts,
     ).toEqual([5, 10, 25]);
+  });
+
+  it('offers the three stops with the desktop words only for the Lead kinds', () => {
+    const offer = startOfferOf({ scope: scopeOf(), now: 1_000 });
+    expect(offer.kinds.map((kind) => [kind.label, kind.hasStops])).toEqual([
+      ['Lead', true],
+      ['Lead · plan Fix a layout', true],
+      ['Agent · Scout', false],
+    ]);
+    expect(offer.stopsChoices.map((choice) => [choice.stops, choice.label])).toEqual([
+      ['everyStep', 'Every step'],
+      ['afterPlan', 'After the plan'],
+      ['never', 'Never'],
+    ]);
+  });
+
+  it('defaults the stops to the level of the workspace', () => {
+    expect(startOfferOf({ scope: scopeOf(), now: 1_000 }).defaultStops).toBe('afterPlan');
+    expect(
+      startOfferOf({ scope: scopeOf({ defaultLevel: 'step' }), now: 1_000 }).defaultStops,
+    ).toBe('everyStep');
+    expect(startOfferOf({ scope: scopeOf({ defaultLevel: 'run' }), now: 1_000 }).defaultStops).toBe(
+      'never',
+    );
   });
 
   it('counts the starts left today and moves its action id after a start', () => {

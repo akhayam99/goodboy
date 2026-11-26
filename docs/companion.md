@@ -115,7 +115,10 @@ Two more actions follow the same five rules, written in
   project, a goal or a task, the Edits choice (Read only, Ask first or Edits
   allowed; Full access is not a value the Mac accepts), the kind (Lead, Lead
   with a plan of the workspace, or Agent · Scout) and, for a Lead, a limit among
-  the amounts the Mac offers. The Mac sets the session's permission mode before
+  the amounts the Mac offers and Stops (Every step, After the plan or Never, the
+  desktop start form's choice, applied as the run's level). A phone that sends
+  no Stops leaves the level to the Mac, and Stops on an Agent · Scout is
+  refused as `invalid-request`. The Mac sets the session's permission mode before
   the first agent starts, so a phone-started session never runs with
   permissions bypassed. It limits starts to 5 a minute and 10 a day across all
   phones and a goal to 2,000 characters. Its id holds a counter of starts, so a
@@ -129,8 +132,15 @@ merge, smallest change first", and, while a train exists, its status (phase,
 index, merged count, the desktop line, one line per pull request, the reason it
 stopped, whether the Lead has the conflict, whether a stop was requested). The
 `pullRequest` projection repeats it for a session that is in the train, and adds
-the changed files count, the commit count and the open review comments. The
-`tasks` projection carries the start offer. The `isPermitted` flag of the offer
+the changed files count, the commit count and the open review comments. It adds
+the lines added and deleted only when every changed file is known to the Mac;
+otherwise both stay absent, never 0. The `session` projection carries the
+summary of the last output, cut to 600 characters. The `tasks` projection
+carries the start offer (the kinds that take Stops, the three Stops with their
+words and the default one, which is the workspace level) and, for each task row,
+the description (400 characters at most), the assignee's display name and the
+tracker state, read from the issue the Mac holds for that task and absent when
+it holds none. The `isPermitted` flag of the offer
 only says the Mac offers the action: the right of the phone that asks comes in
 its hello and is checked in the bridge.
 
@@ -239,8 +249,11 @@ Only what changed is sent: the phone gets one frame per changed projection
 (`0x0E`), and everything again when it
 asks (`0x82`). The other workspaces are read by a read-only loader that never
 writes the store; for them the sessions, agents, open questions and tasks come
-from the database, and the pull request facts, mounts and project names are not
-loaded, so a pull request reason shows for the current workspace only. Plans,
+from the database, with the pull request each session last saw, the summary of
+its last output and the workspace level. A pull request of a workspace that is
+not open shows its state and is never mergeable from the phone (the reason says
+to open the workspace on the Mac); its checks, files and line counts are not
+loaded. Mounts and project names are not loaded either. Plans,
 permission asks, limits and Slack drafts of another workspace are not loaded
 either, so only the current workspace's rows carry those decisions. The Mac
 reads the transcript of a blocked agent in the background, so the permission ask

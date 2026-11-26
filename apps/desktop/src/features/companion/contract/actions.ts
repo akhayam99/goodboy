@@ -1,5 +1,5 @@
 import type { ActionId, Digest, Int, ObjectVersion } from './primitives';
-import type { MergeMethod, SessionAccess, StartKind, TaskProvider } from './vocabulary';
+import type { MergeMethod, SessionAccess, StartKind, StartStops, TaskProvider } from './vocabulary';
 import type { AgentState, RunState } from './projections';
 
 export type ActionBase = {
@@ -123,6 +123,7 @@ export type StartSessionAction = ActionBase & {
   readonly startKind: StartKind;
   readonly presetId: string | null;
   readonly limitUsd: number | null;
+  readonly stops: StartStops | null;
 };
 
 export type TrainRequestEntry = {
