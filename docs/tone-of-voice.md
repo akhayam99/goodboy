@@ -80,9 +80,9 @@ talking to a market. There are two voices:
   cannot select where it is shown. Search or run always shows a verb with its
   object ("Pin session"); a bare verb fits only the menu of its own object (a
   chat's "Pin").
-- **An ellipsis means an input comes next.** "Choose a folder…" and "Send to
-  Lead…" open a picker before anything runs; a label that acts at once has
-  none. A progress word keeps its ellipsis: "Starting…", "Closing…".
+- **An ellipsis means an input comes next.** "Set limit…", "Choose a folder…"
+  and "Send to Lead…" open a field or a picker before anything runs; a label
+  that acts at once has none. A progress word keeps its ellipsis: "Starting…", "Closing…".
 - **In a tab or an app, on a host.** "Open in Terminal", "Open in external
   terminal", "Open on GitHub".
 - **Say panel.** A side region of the window is a panel on screen ("Close the

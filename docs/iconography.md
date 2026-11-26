@@ -146,8 +146,9 @@ accessible label. The tones keep one meaning:
 
 - **Red** (`failed`) is only an agent error, a stopped run, a push that failed
   and failing checks.
-- **Amber** is what you must answer, approve or act on: a question, a tool
-  permission, a held plan, a ready step, a Slack reply, the Lead, changes
+- **Amber** is what you must answer, approve or act on: a question, a comment
+  that needs you or that the fix could not fix, a tool permission, a held plan,
+  a ready step, a run paused at its limit, a Slack reply, the Lead, changes
   requested.
 - **Blue** is moving or new: the running ring, the `merging` ring of a pull
   request in the merge queue, the dot of an unread reply. A queued pull request
@@ -276,6 +277,7 @@ A danger zone takes `danger` (`TriangleAlert`).
 | `folderOpen`   | `FolderOpen`            | neutral | Reveal a path in the OS                                                             |
 | `openExternal` | `SquareArrowOutUpRight` | neutral | Open on the code host                                                               |
 | `terminal`     | `SquareTerminal`        | neutral | Open a terminal                                                                     |
+| `editor`       | `SquareCode`            | neutral | Open in editor                                                                      |
 | `scripts`      | `ListVideo`             | info    | Open scripts                                                                        |
 | `more`         | `Ellipsis`              | neutral | Overflow menu trigger, the only overflow glyph (28 square in a header, 24 in a row) |
 | `search`       | `SearchX`               | info    | Empty search result                                                                 |
@@ -332,8 +334,9 @@ gives every suggestion kind a registry concept: the next workflow step
 `nextSteps` (`ArrowRight`), a ready plan `plans`, threads to resolve `resolve`,
 a rebase `branch`, a merge `merge`, a tool to approve `approval`, a retry
 `retry`. The suggestion row, the actions of a Board card and the Next entries
-of Search or run all read it. A suggestion whose primary starts an agent swaps
-this glyph for the role icon in the role color (`agentKindPalette`).
+of Search or run all read it. A Next card whose primary starts an agent swaps
+this glyph for the role icon in the role color (`agentKindPalette`); everywhere
+else, Search or run included, the map's glyph stays.
 
 ## Scripts and Tasks
 
