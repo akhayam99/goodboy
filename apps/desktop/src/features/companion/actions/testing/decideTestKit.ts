@@ -27,6 +27,8 @@ export const QUESTION = {
 
 export const DRAFT = {
   id: DRAFT_ID,
+  workspaceId: WORKSPACE,
+  target: { channelId: 'C-harborline', threadTs: '1700000000.000100' },
   sessionId: SESSION,
   body: 'Shipping the fix to payments-api today.',
   updatedAt: AT,
@@ -45,7 +47,10 @@ export type FakeActions = {
   readonly allowAndContinue: ReturnType<typeof vi.fn>;
   readonly denyWithReason: ReturnType<typeof vi.fn>;
   readonly setSessionBudget: ReturnType<typeof vi.fn>;
-  readonly closeWorkflowRun: ReturnType<typeof vi.fn>;
+  readonly stopWorkflowRunNow: ReturnType<typeof vi.fn>;
+  readonly setWorkflowRunSpendLimit: ReturnType<typeof vi.fn>;
+  readonly replyToSlackThread: ReturnType<typeof vi.fn>;
+  readonly retryOpenQuestionDelivery: ReturnType<typeof vi.fn>;
   readonly continueWorkflowRun: ReturnType<typeof vi.fn>;
   readonly cancelTurnConfirmed: ReturnType<typeof vi.fn>;
   readonly continueStoppedAgent: ReturnType<typeof vi.fn>;
@@ -59,6 +64,7 @@ export type TestStore = {
   readonly actions: FakeActions;
   readonly ports: DecidePorts;
   readonly approvePlan: ReturnType<typeof vi.fn>;
+  readonly setTreeCap: ReturnType<typeof vi.fn>;
 };
 
 type BuildParams = {
@@ -71,7 +77,10 @@ export const buildTestStore = ({ state = {} }: BuildParams = {}): TestStore => {
     allowAndContinue: vi.fn(async () => undefined),
     denyWithReason: vi.fn(async () => undefined),
     setSessionBudget: vi.fn(async () => undefined),
-    closeWorkflowRun: vi.fn(async () => 'closed'),
+    stopWorkflowRunNow: vi.fn(async () => 'stopped'),
+    setWorkflowRunSpendLimit: vi.fn(async () => undefined),
+    replyToSlackThread: vi.fn(async () => undefined),
+    retryOpenQuestionDelivery: vi.fn(async () => undefined),
     continueWorkflowRun: vi.fn(async () => undefined),
     cancelTurnConfirmed: vi.fn(async () => ({ outcome: 'exited', exitedAt: AT })),
     continueStoppedAgent: vi.fn(async () => undefined),
@@ -83,6 +92,7 @@ export const buildTestStore = ({ state = {} }: BuildParams = {}): TestStore => {
     kind: 'approved',
     revision: 3,
   }));
+  const setTreeCap = vi.fn<DecidePorts['setTreeCap']>(async () => ({ kind: 'applied' }));
   const store: AppStore = Object.assign(blankStore(), {
     ...actions,
     sessions: [
@@ -136,9 +146,10 @@ export const buildTestStore = ({ state = {} }: BuildParams = {}): TestStore => {
     },
     sessionBudgets: { [SESSION]: { softCapUsd: 10, onExceed: 'pause' } },
     sessionSlackDrafts: { [SESSION]: [DRAFT] },
+    pendingOpenQuestionDeliveries: {},
     ...state,
   });
-  return { store, actions, ports: { approvePlan }, approvePlan };
+  return { store, actions, ports: { approvePlan, setTreeCap }, approvePlan, setTreeCap };
 };
 
 type FixtureParams = {

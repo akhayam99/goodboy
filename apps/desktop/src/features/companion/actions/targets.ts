@@ -45,7 +45,11 @@ export const runStateFrom = ({ run, agents }: RunStateFromParams): RunState => {
   if (run.orchestrationStop?.kind === 'failure') {
     return 'failed';
   }
-  if (run.orchestrationStop?.kind === 'operator' || run.orchestrationStop?.kind === 'paused') {
+  if (
+    run.orchestrationStop?.kind === 'operator' ||
+    run.orchestrationStop?.kind === 'paused' ||
+    run.orchestrationStop?.kind === 'budget'
+  ) {
     return 'paused';
   }
   if (agents.some((agent) => agent.status === 'running')) {

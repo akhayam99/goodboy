@@ -21,6 +21,7 @@ import {
   type TestStore,
 } from './testing/decideTestKit';
 import type { DecideKind } from './decideAction';
+import { isReplayableKind } from './replayPolicy';
 import { executeDecideAction } from './executeDecideAction';
 import { clearLimitUndos } from './limitUndos';
 import { clearSendSequences } from './sendSequence';
@@ -99,7 +100,7 @@ const CASES: ReadonlyArray<Case> = [
     kind: 'stopRun',
     fields: { runId: RUN, seenState: 'running' },
     stale: { seenState: 'paused' },
-    called: (kit) => kit.actions.closeWorkflowRun,
+    called: (kit) => kit.actions.stopWorkflowRunNow,
   },
   {
     kind: 'continueRun',
@@ -198,16 +199,17 @@ describe.each(CASES)('$kind', (kase) => {
     expect(kase.called(kit)).not.toHaveBeenCalled();
   });
 
-  it('replays the first outcome for the same action id', async () => {
+  it('answers a repeated action id', async () => {
     const kit = buildTestStore({ state: kase.state ?? {} });
     const first = await run({ kit, kase });
     const second = await run({ kit, kase });
+    const isStored = isReplayableKind({ kind: kase.kind }) && kase.kind !== 'raiseLimit';
     expect(first.isReplay).toBe(false);
     expect({ replay: second.isReplay, result: second.result }).toEqual({
-      replay: true,
+      replay: isStored,
       result: 'done',
     });
-    expect(kase.called(kit)).toHaveBeenCalledTimes(1);
+    expect(kase.called(kit)).toHaveBeenCalledTimes(isStored ? 1 : 2);
   });
 
   it('stops the request that follows the rate limit', async () => {

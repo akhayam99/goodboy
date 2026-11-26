@@ -3,8 +3,32 @@ import type { HandlerParams, HandlerResult } from './handlerTypes';
 import type { DecideActionOf } from './decideAction';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
 import { isAgentOfSession } from './targets';
+import type { AppStore } from '../../../store/store';
+import { redeliverPermission } from './redeliverPermission';
+import {
+  dropUndelivered,
+  saveUndelivered,
+  undeliveredOf,
+  type UndeliveredPermission,
+} from './undeliveredPermissions';
 import { permissionHashOf } from './versions';
 import { sessionIdOf, agentIdOf } from './ids';
+
+type DeliverParams = {
+  readonly store: AppStore;
+  readonly pending: UndeliveredPermission;
+};
+
+const deliverPending = async ({ store, pending }: DeliverParams): Promise<HandlerResult> => {
+  try {
+    await redeliverPermission({ store, pending });
+  } catch (error) {
+    console.error('[bridge] answerPermission redelivery failed', error);
+    return failedResult({ error: "Couldn't answer the request." });
+  }
+  dropUndelivered({ toolUseId: pending.toolUseId });
+  return doneResult();
+};
 
 export const answerPermission = async ({
   action,
@@ -32,6 +56,10 @@ export const answerPermission = async ({
     const isDecided = events.some(
       (event) => event.kind === 'permission_decision' && event.toolUseId === action.requestId,
     );
+    const pending = undeliveredOf({ toolUseId: action.requestId });
+    if (isDecided && pending !== null && pending.verdict === action.verdict) {
+      return deliverPending({ store, pending });
+    }
     return isDecided
       ? refusedResult({ code: 'already-decided', message: 'Decided on your Mac.' })
       : refusedResult({ code: 'unknown-target', message: "This request isn't on your Mac." });
@@ -59,6 +87,12 @@ export const answerPermission = async ({
     await store.denyWithReason({ ...target, reason: '' });
   } catch (error) {
     console.error('[bridge] answerPermission failed', error);
+    const isRecorded = (getStore().transcripts[agentId] ?? []).some(
+      (event) => event.kind === 'permission_decision' && event.toolUseId === ask.toolUseId,
+    );
+    if (isRecorded) {
+      saveUndelivered({ pending: { ...target, input: ask.input, verdict: action.verdict } });
+    }
     return failedResult({ error: "Couldn't answer the request." });
   }
   return doneResult();

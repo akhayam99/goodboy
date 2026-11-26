@@ -3,6 +3,30 @@ import type { DecideActionOf } from './decideAction';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
 import { questionVersionOf } from './versions';
 import { sessionIdOf } from './ids';
+import type { SessionId } from '@goodboy/types';
+import type { AppStore } from '../../../store/store';
+
+type RedeliverParams = {
+  readonly sessionId: SessionId;
+  readonly attemptId: string;
+  readonly getStore: () => AppStore;
+};
+
+const redeliverAnswer = async ({
+  sessionId,
+  attemptId,
+  getStore,
+}: RedeliverParams): Promise<HandlerResult> => {
+  try {
+    await getStore().retryOpenQuestionDelivery({ sessionId, attemptId });
+  } catch (error) {
+    console.error('[bridge] answerQuestion redelivery failed', error);
+    return failedResult({ error: "Couldn't send your answer." });
+  }
+  return getStore().pendingOpenQuestionDeliveries[sessionId]?.attemptId === attemptId
+    ? failedResult({ error: "Couldn't send your answer. The agent isn't reachable." })
+    : doneResult();
+};
 
 export const answerQuestion = async ({
   action,
@@ -14,6 +38,10 @@ export const answerQuestion = async ({
     (question) => question.id === action.questionId && question.status === 'open',
   );
   if (open === undefined) {
+    const pending = store.pendingOpenQuestionDeliveries[sessionId];
+    if (pending?.pairs.some((pair) => pair.id === action.questionId) === true) {
+      return redeliverAnswer({ sessionId, attemptId: pending.attemptId, getStore });
+    }
     const isDecided = [
       ...(store.sessionAnsweredQuestions[sessionId] ?? []),
       ...(store.sessionDismissedQuestions[sessionId] ?? []),
