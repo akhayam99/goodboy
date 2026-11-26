@@ -124,6 +124,9 @@ export const scopeOfState = ({
     sessions: live,
     infos,
     openQuestions: state.sessionOpenQuestions,
+    answeredQuestions: pickForSessions({ ids, record: state.sessionAnsweredQuestions }),
+    artifacts: pickForSessions({ ids, record: state.sessionArtifacts }),
+    artifactComments: pickForSessions({ ids, record: state.artifactComments }),
     agents: pickForSessions({ ids, record: state.sessionPhaseRuns }),
     projectNames: Object.fromEntries(
       live.map((session) => [

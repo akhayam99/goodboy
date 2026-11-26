@@ -7,13 +7,17 @@ import { sessionMarkOf } from '../../session/sessionMarkOf';
 import { sessionNodeOf } from '../../session/sessionNode';
 import type { SessionFact, SessionFields, SessionLine } from '../contract/projections';
 import { agentMarkOf } from './agentMarkOf';
+import { ARTIFACT_LIMIT, artifactRowsOf } from './artifactRowsOf';
 import { agentRoleOf } from './agentRoleOf';
 import { agentStateOf } from './agentStateOf';
 import { isLeadAgentOf } from './isLeadAgentOf';
 import { needsYouFieldsOf } from './needsYouFieldsOf';
 import { nextLinesOf } from './nextLinesOf';
+import { prStateOf } from './prStateOf';
+import { questionRowsOf } from './questionRowsOf';
 import { safeTextOf } from './safeTextOf';
 import { sessionRefOf } from './sessionRefOf';
+import { shortNameOf } from './shortNameOf';
 import type { WorkspaceScope } from './workspaceScope';
 
 export const ACTIVITY_LIMIT = 20;
@@ -92,11 +96,17 @@ export const sessionFieldsOf = ({ scope, session, now }: Params): SessionFields 
     chips: NO_CHIPS,
     now,
   }).rows;
+  const artifacts = artifactRowsOf({ scope, sessionId: session.id });
+  const questions = questionRowsOf({ scope, sessionId: session.id });
+  const runCount = session.workflowRuns.filter((run) => run.discardedAt == null).length;
+  const stats = scope.lineStats[session.id] ?? null;
+  const prWord = prStateOf({ pr });
   return {
     workspaceId: scope.workspace.id,
     sessionId: session.id,
     ref: sessionRefOf({ tasks: scope.tasks[session.id] }),
     goal: session.goal,
+    shortName: shortNameOf({ goal: session.goal }),
     stage: info.stage,
     mark: sessionMarkOf({ node }),
     facts,
@@ -115,6 +125,11 @@ export const sessionFieldsOf = ({ scope, session, now }: Params): SessionFields 
       name,
       branch: pr === null ? null : pr.headBranch,
       prNumber: pr === null ? null : pr.number,
+      prState: prWord.word,
+      prTone: prWord.tone,
+      additions: stats === null ? null : stats.additions,
+      deletions: stats === null ? null : stats.deletions,
+      runCount,
     })),
     activity: agents
       .filter((agent) => !isOpenAgent({ agent }))
@@ -127,5 +142,12 @@ export const sessionFieldsOf = ({ scope, session, now }: Params): SessionFields 
       .slice(0, DECISION_LIMIT)
       .map((decision) => safeTextOf({ text: decision.text, max: 240 })),
     summary: scope.summaries[session.id] ?? null,
+    artifacts: artifacts.slice(0, ARTIFACT_LIMIT),
+    questions,
+    counts: {
+      runs: runCount,
+      artifacts: artifacts.length,
+      openQuestions: questions.filter((question) => question.state === 'open').length,
+    },
   };
 };

@@ -136,7 +136,20 @@ stopped, whether the Lead has the conflict, whether a stop was requested). The
 the changed files count, the commit count and the open review comments. It adds
 the lines added and deleted only when every changed file is known to the Mac;
 otherwise both stay absent, never 0. The `session` projection carries the
-summary of the last output, cut to 600 characters. The `tasks` projection
+summary of the last output, cut to 600 characters. Since contract version 6 it
+also carries a `shortName` for the crumb (the first line of the goal without its
+leading `[KEY]` tags, cut at a word to 32 characters), the `artifacts` of the
+session (title, kind, author role, version, update time, comment count, whether
+a plan waits for approval with the `approvePlan` action id, and the markdown
+body cut to 6000 characters, absent for a wireframe), the `questions` (the open
+ones, then the answered ones, with the options, who asked and the answer) and
+the `counts` the tabs show (runs, artifacts, open questions). Each project row
+adds the pull request word the Mac shows (`No pull request`, `Draft`, `Open`,
+`Merged`) with its tone, the lines added and deleted of the session (absent
+until every changed file is known) and the run count. The Mac loads the
+artifacts, their comments and the answered questions of each live session once,
+in the background, so the phone sees them without the session being opened on
+the Mac. The fields are additive: a 0.2.0 phone ignores them. The `tasks` projection
 carries the start offer (the kinds that take Stops, the three Stops with their
 words and the default one, which is the workspace level) and, for each task row,
 the description (400 characters at most), the assignee's display name and the
@@ -262,7 +275,7 @@ but `main`. The Rust side in `bridge/publish.rs` is the border: it parses each
 projection against a closed schema (`bridge/publish_schema.rs`), drops fields
 the schema does not name, refuses a value outside the vocabulary, a string that
 reads as an absolute path and a projection over 56,000 bytes, and cuts lists to
-a fixed length (60 moves, 30 sessions per lane, 20 lines, 20 runs, 40 tasks).
+a fixed length (60 moves, 30 sessions per lane, 20 lines, 20 runs, 20 artifacts, 12 open and 12 answered questions, 40 tasks).
 A workspace is sent by its name only, a project by its name, never a path.
 Free text that can hold a path (a command, a plan step, a draft) is cut to a
 length and has every absolute path reduced to its file name before it is sent.
