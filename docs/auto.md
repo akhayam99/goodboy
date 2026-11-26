@@ -153,3 +153,12 @@ when a writer starts, with a backstop when its work lands. See
 Auto runs on every provider that can confine a read-only agent
 (`AUTO_OWN_PROVIDERS`), never on the opencode family, and a writing child only on
 Claude and Codex. See [auto/providers.md](auto/providers.md).
+
+## The Lead's model
+
+On Claude a new Lead starts on Sonnet 5.5 at medium effort (the `auto` slot is
+the `standard` rung of the effort ladder). A model set for the Lead role, or
+picked on one Lead, wins, and Opus runs a Lead only that way. The pick is saved
+on the agent row. `startAutoTurn` reads the session's saved picks
+(`loadAgentPicks`) before every Lead turn, so the pick holds after a restart.
+When that read fails no turn is sent and the run stops with the error.

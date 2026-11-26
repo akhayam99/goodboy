@@ -1,4 +1,4 @@
-import { brandId, type ProviderRunId } from '@goodboy/types';
+import { brandId, type ProviderRunId, type SessionId } from '@goodboy/types';
 import { NO_RESOLVED_ASKS } from '../../slices/permissions/noResolvedAsks';
 import { AUTO_CONFINED_ROLE } from '../../slices/turn/confinedRoleOf';
 import type { StartAutoTurnParams, TurnStartOutcome } from './ports';
@@ -6,11 +6,17 @@ import { startDeliveredTurn, type DeliveredTurnDeps } from './startDeliveredTurn
 
 const AUTO_TURN_ACCEPT_TIMEOUT_MS = 20_000;
 
-export type StartAutoTurnDeps = DeliveredTurnDeps;
+export type LoadAgentPicksParams = Readonly<{ sessionId: SessionId }>;
+
+export type StartAutoTurnDeps = DeliveredTurnDeps &
+  Readonly<{
+    loadAgentPicks: (params: LoadAgentPicksParams) => Promise<void>;
+  }>;
 
 export const makeStartAutoTurn =
   (deps: StartAutoTurnDeps) =>
   async (params: StartAutoTurnParams): Promise<TurnStartOutcome> => {
+    await deps.loadAgentPicks({ sessionId: params.sessionId });
     const outcome = await startDeliveredTurn({
       deps,
       input: {
