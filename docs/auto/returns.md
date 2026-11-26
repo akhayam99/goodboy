@@ -164,14 +164,16 @@ No count of helpers refuses one.
 ### Running helpers
 
 A paused parent holds no run slot. At most `AUTO_SUBSTEPS_PER_PARENT` (2)
-helpers of one parent run at once, counted by live attempts; a third waits in
-`accepted` as **Queued** (`queuedStartableOf`, shared by `launchChildren` and
+helpers of one parent run at once, counted by live attempts, so a helper that
+finished or asked a question frees its place before its batch joins. A third
+waits in `accepted` as **Queued** and starts when one of the two ends (`queuedStartableOf`, shared by `launchChildren` and
 `advancePhase`, so a held helper never keeps the tree in `delegating`). The guard
 in `runSlotStatements` also checks the parent still waits on that question.
 
-- A helper not started yet whose parent no longer waits on its question is
-  settled `stopped`, reason `parent_ended`, with a result for the Lead, in one
-  transaction (`dropOrphanHelpers`).
+- A helper not started yet (queued or waiting for your OK) whose parent no
+  longer waits on its question (answered, asked another, finished or stopped) is
+  settled `stopped`, reason `parent_ended`, with a result for the Lead and its
+  reservation released, in one transaction (`dropOrphanHelpers`).
 - The answer to a parent is always admitted; the parent waits in `accepted` for
   the next slot. A paused parent never times out.
 - Cost per ask: one delegation and two attempts from the tree's counters and

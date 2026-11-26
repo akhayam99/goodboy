@@ -99,14 +99,14 @@ and **Open Implementer**. Push, pull request and grant asks are in
 `dockPlanOf` decides the line; the glance, the placeholder and the retry targets
 read it too.
 
-| State     | Line                                                                                                               |
-| --------- | ------------------------------------------------------------------------------------------------------------------ |
-| Waits     | "Plan v1 needs approval": **Approve and start Build** (the page's one primary), **Ask for changes**, **Open plan** |
-| Updating  | "Updating plan v1 to v2" with the planner's state; Approve and Ask for changes disabled                            |
-| Failed    | "Plan v2 failed" with the reason, **Retry plan v2**, **Keep plan v1**                                              |
-| Approved  | "Plan v1 approved" with **Open plan**, artifact colour (`AUTO_STATE_TONE.artifact`), never green                   |
-| Used      | "Plan v1 used"                                                                                                     |
-| **Never** | "Plan v1 · no approval needed" (`planAwaitsYou`)                                                                   |
+| State     | Line                                                                                                                                                              |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Waits     | "Plan v1 needs approval": **Approve and start Build** (the page's one primary), **Ask for changes** (opens the Auto page and focuses the composer), **Open plan** |
+| Updating  | "Updating plan v1 to v2" with the planner's state; Approve and Ask for changes disabled                                                                           |
+| Failed    | "Plan v2 failed" with the reason, **Retry plan v2**, **Keep plan v1**                                                                                             |
+| Approved  | "Plan v1 approved" with **Open plan**, artifact colour (`AUTO_STATE_TONE.artifact`), never green                                                                  |
+| Used      | "Plan v1 used"                                                                                                                                                    |
+| **Never** | "Plan v1 · no approval needed" (`planAwaitsYou`)                                                                                                                  |
 
 - The label is `planApproveLabelOf`, shared with the run plan button. The button
   uses `useAutoPlanApproval`, like the plan view, and tells the Auto root.
@@ -115,17 +115,19 @@ read it too.
 - A discarded or superseded plan never asks; used and no approval are not asks.
 - A planner delegated after a waiting plan replaces it (`planLineOf`): disabled
   buttons say why (`planBlockedReasonOf`), and Approve is left out when the Next
-  step asks for that revision. v1 reads Superseded. A planner still at
-  `awaiting_confirm` does not replace it.
+  step asks for that revision. v1 reads Superseded. An open revise and a change
+  sent for v1 read the same way. A planner still at `awaiting_confirm` does not
+  replace it.
 - **Keep plan v1** stores `request.keptBase` (`keepAutoPlanBase`, refused once v1
-  is not current); only then does v1 ask again. A late failure for an older
-  version says nothing.
+  is not current); only then does v1 ask again. A late failure or change for an
+  older version says nothing.
 - The approved line does not unmount; it leaves once the tree rests. An artifact
   that needs no approval shows only on its result card.
 
 **Comments not sent** reads "2 comments on plan v1 not sent to the Planner" with
 a filled **Send to planner**; **Approve anyway** and **Discard your comments**
-are in its menu (`AutoDockPlanComments`, rule from `planPrimaryOf`). Review
+are in its menu (`AutoDockPlanComments`, rule from `planPrimaryOf`); Discard
+asks first inside the menu and names a failure. Review
 changes stays out while a project ask, a next step or a plan waits
 (`isAutoTreeAtRestOf`). While a plan waits the dock owns the one filled button
 and the next step's **Continue** is secondary.
@@ -136,10 +138,12 @@ Without a plan the dock folds to the live row (`DockLiveLine`): what runs
 (**Implementer running, Tester queued**), its clock and one quiet **Stop run**
 for the Lead and its agents (`autoDockStopOf`). Esc twice presses it.
 
-- It sits outside the dock's scroll, so a long ask never pushes Stop away; at the
-  limit and on a failed tree Stop stays here.
-- Stop shows whenever a delegation is open (`openDelegationCountOf`). A tree
-  stopped while the root was idle reads **Stopped by you** (`AutoDockLive`).
+- It sits outside the dock's scroll, so a long ask never pushes Stop away, with
+  **Esc again to stop** beside it. At the limit and on a failed tree Stop stays
+  here and the limit row keeps only the moves.
+- Stop shows whenever a delegation is open, a plan that waits for approval and a
+  blocked tree included (`openDelegationCountOf`). A tree stopped while the root
+  was idle reads **Stopped by you** (`AutoDockLive`).
 
 ### The state
 
@@ -147,8 +151,9 @@ Auto's state is said once, in the dock (`AutoDock`, `AutoDockAttention`, phrases
 from `autoTreeLive`), never at the end of the chat. It covers what runs,
 **Starting agents**, **Reading the results**, **Deciding what to do next**, a
 refused hand over in the user voice, the limit line with **Raise to $10**,
-**Change limit** and **Stop run** ([limits.md](limits.md#at-the-limit)), and a
-block reason with **Retry** and **View transcript**.
+**Change limit** and **Stop run** ([limits.md](limits.md#at-the-limit)) plus a
+line on the agents still running when there are any, and a block reason with
+**Retry** and **View transcript**.
 
 - The reason wraps to two lines and opens whole in a tooltip on hover and focus
   (`TailLine`, `TruncatedText` `lines={2}`, `isFocusable`).

@@ -87,9 +87,11 @@ Recovery lives in `settledPush/`. `recoverTree` resumes an unclaimed `pushing`
 record under the new owner and turns a claimed one into a retryable failure (the
 retry reads the branch online first). `sweepStalePushing`, run by
 `createPushSweep` from the runtime's first tick without holding it, does the same
-for trees that never recover (done, finished, stopped).
+for trees that never recover (done, finished, stopped); a row that fails to
+settle is reported and the sweep goes on.
 
-A confirmed record carries `startedAt`, and `pushSettledPublish` leaves it alone
+A confirmed record carries `startedAt` (written by the claim and by `pushRow`),
+and `pushSettledPublish` leaves it alone
 for `PUSH_LIVE_WINDOW_MS` (100 minutes: three git network timeouts plus a
 margin), since another window may still push it. The sweep scans
 `auto_attempts` once per boot, and once more after that window only when it met
@@ -142,7 +144,8 @@ not pushed.
   lost lease reads "Origin changed. Check again before force pushing."
 - Any failure is retryable once (`PUBLISH_MAX_TRIES`). **Retry push** plans from
   the record's sha and stored exit, never the head of now. A force retry reads
-  origin again, keeps a new backup and waits for a new **Force push**.
+  origin again, keeps a new backup and waits for a new **Force push**; a plain
+  retry pushes the recorded sha again.
 
 ### publishAct and Undo force push
 

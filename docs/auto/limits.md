@@ -23,8 +23,9 @@ the form is for that run only.
 - A session budget that pauses set under a running Lead's limit lowers it
   (`setSessionBudget` calls `lowerAutoLimitsToSession`): one write per unfinished
   tree, lowering only a cap still above it. Only the write checks cap and phase,
-  so a cap lowered first elsewhere is never raised. The next turn pauses on what
-  is spent.
+  never the earlier read, so a cap lowered first elsewhere is never raised and a
+  cap raised after the read is lowered too. The next turn pauses on what is
+  spent.
 
 ### A limit picked for one Lead
 
@@ -95,7 +96,8 @@ waits (`turnGate`, the budget reason), but nothing running stops.
   and **Stop**.
 
 A raise drives the tree: the waiting results reach Auto in one turn. A raise that
-still does not cover Auto's turn keeps it paused. How it reads is in
+still does not cover Auto's turn keeps it paused with the results kept. How it
+reads is in
 [stops.md](stops.md#a-tree-at-its-limit).
 
 ## One formula for money

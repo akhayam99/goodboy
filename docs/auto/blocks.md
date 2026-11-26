@@ -28,9 +28,9 @@ markers; the delegation lines show what it did.
 
 | Action                      | Fields                                                          | Does                                                                                                     |
 | --------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `delegate`                  | `requestId` (optional), `children`                              | Hands one to four children to agents of a role (`parseDelegateSpec`)                                     |
+| `delegate`                  | `requestId` (optional, derived from the run), `children`        | Hands one to four children to agents of a role (`parseDelegateSpec`)                                     |
 | `propose`                   | `primary`, up to two `alternatives`                             | Offers a child that waits for confirmation; alternatives have a label and a role, no brief and no budget |
-| `answer`                    | `delegation`, `question`, `text`, `artifact`                    | Answers a child's question ([returns.md](returns.md#answering-the-parent))                               |
+| `answer`                    | `delegation`, `question`, `text`, optional `artifact`           | Answers a child's question ([returns.md](returns.md#answering-the-parent))                               |
 | `release`                   | `delegation`, `reason`                                          | Says a returned child is no longer needed ([returns.md](returns.md#auto-must-decide))                    |
 | `message`                   | `delegation`, `text`                                            | Queues a note for a working child                                                                        |
 | `stop`                      | `delegation`, `reason`                                          | Stops a working child                                                                                    |

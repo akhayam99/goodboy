@@ -26,7 +26,8 @@ still deciding) and is dropped once that turn is not current.
 
 Each turn the prompt carries a **Workflow for this run** section from the record
 (`guideSectionOf`, passed to `buildAutoSystemPrompt` as `guide`), read again by
-`autoSystemPromptOf` each turn.
+`autoSystemPromptOf` each turn. The candidates block and the delegation line are
+not part of it.
 
 ### The gate
 
@@ -64,7 +65,8 @@ Each button is busy while it runs; a second click does nothing.
 - **Switch** (`switchHeldRun`): `changeRunRoute` starts a second Lead on the
   suggestion with the first run's findings and guidance (`changeLeadRun`), then
   `endHeldRun` stops the held run. The new run takes no provider, model or effort
-  from the first. A failed start changes nothing and offers Retry; a stop that
+  from the first, so its helpers go through the Lead's pick; the first run's
+  agents keep their stored picks. A failed start changes nothing and offers Retry; a stop that
   fails after it keeps the new run and offers a Retry that only stops the old
   one (`OldRunLeftError`).
 - **Continue** sends one message through the user turn port, lifting the hold.
@@ -100,7 +102,7 @@ next version. The dock shows the newest waiting plan, never a discarded one
 A writer (Implementer, Tester, Docs, Scribe, CI fixer, Rewriter) taking a plan
 needs its current revision approved while Approve the plan reads Ask
 (`isAdmissionPlanGateOn`). **Never** and the global approval switch read Skip.
-The rows read the stored `agents.autoPlanApproval` through
+The admission snapshot reads the rows for every handoff, and the rows read the stored `agents.autoPlanApproval` through
 `isAutoPlanApprovalRequired`; only the exact value `false` turns it off, and no
 screen sets it yet.
 
@@ -111,9 +113,10 @@ reader (Reviewer, Scout) leaves it ready. That SQL write does not reach the
 store by itself, so:
 
 1. `delegate` calls the `refreshSessionArtifacts` port after an accepted or
-   replayed admission, and `landAttemptRevision` after a revise lands.
-2. The port (`store/runtime/auto/makeRefreshSessionArtifacts.ts`) reloads that
-   session's plans and artifacts and reports a failed read without undoing the
+   replayed admission, and `landAttemptRevision` after a revise lands (the
+   revise turn skips the usual capture).
+2. The port (`store/runtime/auto/makeRefreshSessionArtifacts.ts`) reloads the
+   plans and artifacts of the session the grant names and reports a failed read without undoing the
    admission.
 3. It emits `goodboy:auto-artifacts-changed` on the Auto bridge bus; a detached
    window reloads through `followArtifactAnnouncements`.
@@ -126,22 +129,23 @@ refresh cannot undo a saved edit. Without this the Next box keeps offering
 
 ## Confirming
 
-A child that waits for an OK shows one **Next step** card under its line
-(`AutoNextAction`, from `nextActionOf`): the proposed child as the primary tile
+A child that waits for an OK shows one **Next step** card under its line, never a
+Confirm row (`AutoNextAction`, from `nextActionOf`): the proposed child as the primary tile
 ("Start implementer", "Revise Retry-safe credit retries to v3"), the
 alternatives as tiles 2 and 3, and an optional hint field. The button reads
 **Continue** (**Retry** after a failure). Keys 1 to 3 pick a tile while focus is
 in the card; Enter in the hint runs it. The card has the question colour
-(`AUTO_STATE_TONE.waitingOnYou`) with an inner tone bar.
+(`AUTO_STATE_TONE.waitingOnYou`) with an inner tone bar, not a side border.
 
 - **The primary** confirms through `registerDelegationDecisionPort` with the
   hint; no model turn runs.
 - **An alternative** declines the primary, then sends the root one message:
   `Next step: <role>`, then the hint. If the decline lost, nothing is sent. If
   the message fails, the card reads "Declined. Couldn't send it to Lead." with
-  **Resend answer**.
+  **Resend answer**, which sends only the message.
 - **Decline** declines and tells nothing.
-- A failed start keeps the pick and hint, shows the reason and reads **Retry**.
+- A failed start keeps the pick and hint, shows the reason and reads **Retry** on
+  the same delegation.
   A `lost` answer reads "No longer open". Without a port the card says so.
 
 The hint uses the same port in every window.

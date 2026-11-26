@@ -34,7 +34,8 @@ and Codex. `autoChildProviders` gives the list per role; `routeTurn` and
 ## The candidates list
 
 Every Lead turn ends its message with the models list (`leadCandidatesBlock`,
-appended in the auto branch of `buildTurnSpawn`, never the system prompt): one
+appended in the auto branch of `buildTurnSpawn`, so the first turn and every
+turn after a user message carry it too, never the system prompt): one
 line per provider in your order with its room, load and models per rung, the
 Provider priority rule (By order or By load, from `spreadByHeadroom`), and the
 writer, reviewer family and pin lines. One selector feeds it,
@@ -47,7 +48,7 @@ Lead copies `provider`, `model` and `effort` from a row and says why in
 
 `resolveChildRouting` builds the candidates for the child's role and difficulty
 (`buildCandidates`, scope `helper`) and checks the pick (`checkPick`). A pick
-that passes runs as sent. A pick a guard removes moves to the best candidate by
+that passes runs as sent and keeps the Lead's line. A pick a guard removes moves to the best candidate by
 the rule, and the reason says so ("The Lead asked for Cursor Sonnet 5.5: agents
 that write code do not run here yet. Claude: first in your order."). A child with
 no pick takes the best by the rule.

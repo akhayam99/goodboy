@@ -15,9 +15,9 @@ reload draws the same lines. The lines after one reply share one list
 (`mergedBatchesOf`).
 
 - A settled line is bare: role chip, the task Auto gave and **Open**.
-- A line in flight (`AutoChildCard`, facts from `autoChildCardFactsOf`) adds
-  the state word in its meaning's colour (`AUTO_STATE_TONE`) and the active work
-  time.
+- A line in flight (`AutoChildCard`, facts from `autoChildCardFactsOf`, no
+  coloured side border) adds the state word in its meaning's colour
+  (`AUTO_STATE_TONE`) and the active work time.
 - A revision reads "revising v2", then "v2 ready".
 - A child that waits for an OK carries the **Next step** card
   ([workflows-and-plans.md](workflows-and-plans.md#confirming)).
@@ -87,8 +87,8 @@ stays. **Retry** after the child left reloads the trees, sends nothing and says
 
 Each child result Auto read for a turn is a card right after that turn's **What
 the Lead was told** row and before Auto's reply (`AutoDeliveryResults`,
-`AutoResultCards`). The header holds the role glyph, the name, the model with
-its provider and **Open**. The body reads in the order of
+`AutoResultCards`, no coloured side border). The header holds the role glyph,
+the name, the model with its provider and **Open**. The body reads in the order of
 [turns.md](../turns.md):
 
 1. One outcome line, which is the state word: the child's `<<outcome>>` line or
@@ -126,15 +126,16 @@ The title is the task Auto gave, or the brief's first line. Top to bottom:
    checks**, the push state with **Retry push** and **Undo force push**, open
    questions (four, then **+N**), and a closed **Earlier in this reply** with the
    summary, open only when red (`splitArtifactText` drops artifact blocks).
-4. The tail (`autoChildLive`): **Queued**, the live line with **Stop agent**,
+4. The tail (`autoChildLive`): **Queued** only while Auto has accepted it and
+   not started it, the live line with **Stop agent**,
    **Waiting for your OK** with **Confirm** and **Decline**, **Asked a
    question**, **Failed: <sentence>** or **Returned to the Lead**.
 
 A failed child's tail has no recovery: the dock owns **Retry** through Auto
 (`AutoChildEnd`, `ConversationDock/useAutoChildRecovery`,
-`continueStoppedAgent`). A stopped or done child has no tail; for a stopped one
-the dock's **Continue** asks Auto for a `retryOf` on the same agent, never a
-plain turn ([turns.md](../turns.md), resume rules). The end line sits at the
+`continueStoppedAgent`). A stopped child has no tail line: the dock's
+**Continue** asks Auto to continue it, naming its delegation so Auto sends
+`retryOf` on the same agent in its worktree, never a plain turn ([turns.md](../turns.md), resume rules). The end line sits at the
 delegation's `settledAt`, so a later plain turn reads below an older Failed.
 
 ## Why an agent exists
@@ -180,22 +181,31 @@ window's `continueChild`).
 - **Ended child.** A continue of its newest delegation starts at once: same
   agent, role, worktree and routed model, the words as **New instructions**,
   outside Auto's turn (`autoContinueTreeStatement` holds the open, time and money
-  caps). It settles to Auto like any attempt.
+  caps). It settles to Auto like any attempt and shows in Auto's next delivery,
+  so Auto may answer before the child does.
 - **Working child.** The message waits in the agent queue (`agentQueue`, a DB row
   every window reads) and runs as that continue when the turn ends; a send that
   reaches it working is refused "still working for Auto" (`isBusy`). The
   `deliveryId` rides the port, so a resend replays instead of running twice.
 - **Old tree.** A child of a finished, stopped or detached tree, or an older
-  generation, keeps the plain confined turn, files included (`hasFiles`).
+  generation, keeps the plain confined turn, files included: `routeAutoChildTurn`
+  passes `hasFiles`, and `continueChild` refuses files only after that plain
+  answer.
 
 Auto's continue passes the admission's artifact checks (`admissionChildRefusals`,
 `inputArtifactStatementsOf`) and waits as `awaiting_confirm` when its role's
-start row is Ask (`admissionStateOf`); the person's message goes on unless an
-input artifact was discarded. Auto's own `message` uses the same queue with an
-`auto-message:` id (delegation, Auto's run, position), and saved text replays
-(`messageChild`). A queued Auto message never takes the plain turn, and any stop
-drops it; the person's stay. Questions wait for Auto's answer, artifact rewrites
-go through Auto, and files are refused, each with a sentence.
+start row is Ask or on a forced confirm (`admissionStateOf`). The person's
+message goes on whatever the plan's state, refused only when an input artifact
+was discarded. Auto's own `message` uses the same queue with an `auto-message:`
+id (delegation, Auto's run, position), and saved text replays (`messageChild`).
+
+- A queued Auto message never takes the plain turn: when `continueChild` answers
+  plain, or its delegation was stopped or timed out, `routeAutoChildTurn` drops
+  it, so stale Auto text never runs as the person's.
+- Any stop (yours or Auto's) drops the agent's queued Auto messages; the
+  person's stay. The chat keeps the person's words where they were written.
+- Questions wait for Auto's answer, artifact rewrites go through Auto, and files
+  are refused, each with a sentence.
 
 `ChatView` hands its `agentId` to `ChatInput`, which keys draft, queue,
 attachments, routing and send by it and remounts per agent. The store's selected
@@ -207,7 +217,7 @@ Whoever starts a child's turn, `routeTurn` reads its newest stored delegation
 (`resolveChildTurn`, `getLatestAutoDelegationOfChild`) before each spawn, never
 the window's tree view, and keeps that role and route through retries
 (`recoverTurnFailure`, keeping `onSettled`). An adopted agent counts while its
-adoption row stands.
+adoption row stands and runs normally once a detach deleted it.
 
 `claimTurnAdmission` in `startTurnRun` claims it in one transaction before the
 agent runs: the newest delegation must still be the one read, and the agent is
@@ -222,9 +232,11 @@ key, so `claude-sonnet-5-5-xhigh` is on route `sonnet-5.5`) and on a provider
 pins, a fallback, a cooldown or budget move off the route are refused or
 dropped, with a plain sentence for the person (`turnRefusalMessage`). A refused
 retry reaches Auto as a failed end with that sentence (`startDeliveredTurn`
-`failure`), never an empty success. A refused usage-limit continuation keeps its
-stop and **Continue**, and Auto gets a note (`continueAfterLimit`,
-`noticeAutoOfRefusedContinue`).
+`failure`), never an empty success. A usage-limit continuation of a child saves
+its delegation and tree with its stop; refused, it keeps the stop and
+**Continue**, and Auto gets a note with the sentence without reading the
+delegation again (`continueAfterLimit`, `noticeAutoOfRefusedContinue`). A note
+Auto did not take shows in the child's transcript.
 
 A reading role (Scout, Planner, Investigator, Reviewer) cannot write: Read, Grep
 and Glob in plan mode on Claude, the read-only sandbox on Codex (read-only

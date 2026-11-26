@@ -198,8 +198,8 @@ generation and no newer text was asked for the subject, so Stop makes it stale.
 
 `answerAsk` (`store/runtime/auto/asks/answerAsk.ts`) answers an ask by id in the
 main window: a start goes to `confirmDelegation`, a push to the publish act once
-it still waits for that commit, a grant to `answerGrant` (guards the tree, moves
-the row, bumps the phase revision, drives the tree), and a pull request grant on
+it still waits for that commit, a grant to `answerGrant` (guards the tree: not
+stopped, owner lease; moves the row, bumps the phase revision, drives the tree), and a pull request grant on
 to `answerPullRequest` ([publish.md](publish.md#pull-request)).
 
 It returns allowed, declined or settled (dropped). `createAskAnswerer` runs one
@@ -221,9 +221,10 @@ state, one primary, one quiet answer, and "+N more".
 
 - The right end names the row, its value and its source
   (`chat/hooks/useAskPermissionRow/index.ts`).
-- The answer goes through `answerAsk` (`chat/hooks/useAnswerAsk/index.ts`). A
-  failure or a `refused` answer keeps the ask with the reason; an ask answered
-  elsewhere leaves on the next read.
+- The answer goes through `answerAsk` by ask id
+  (`chat/hooks/useAnswerAsk/index.ts`), so a second answer to the same ask is
+  dropped. A failure or a `refused` answer (`CONFIRM_REFUSED_REASON`) keeps the
+  ask with the reason; an ask answered elsewhere leaves on the next read.
 - A pull request ask whose save threw after Open stays while its record waits,
   and Open again claims it once (`answerPullRequest.ts`).
 - `PublishRunRow` draws a held plain push as well as a force push, with Push now

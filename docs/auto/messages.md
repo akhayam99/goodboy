@@ -53,7 +53,8 @@ one turn, while the agents keep running.
 
 The claim stores the turn number (`turns_used + 1`), read back as
 `readMessages`, so a note reads "Not read yet" or "Read at turn n"
-(`noteWordOf`). Remove is the undo until it is read.
+(`noteWordOf`). Remove is the undo until it is read. A note the runtime could
+not deliver keeps "Not read yet" in the tree and stays editable.
 
 ## One queue
 
@@ -117,12 +118,12 @@ new Lead, which starts a run with the item as its ask and no form
 A `user` row is never sent to a tree that cannot run a turn; it reads "Not
 delivered".
 
-| Tree                  | Row action                                                       |
-| --------------------- | ---------------------------------------------------------------- |
-| Blocked by the budget | **Change limit**; a raise delivers it                            |
-| Blocked otherwise     | **Retry** resumes the tree and delivers it (the send tries once) |
-| Stopped or stopping   | None; Edit or Remove still take it back                          |
-| `finished` or `done`  | Taken as a normal follow-up turn                                 |
+| Tree                  | Row action                                                                       |
+| --------------------- | -------------------------------------------------------------------------------- |
+| Blocked by the budget | **Change limit**; a raise delivers it                                            |
+| Blocked otherwise     | **Retry** resumes the tree and delivers it (the send tries once)                 |
+| Stopped or stopping   | None ("The Lead was stopped." in the tooltip); Edit or Remove still take it back |
+| `finished` or `done`  | Taken as a normal follow-up turn                                                 |
 
 Stopping drops pending rows as `stopped`, but `readAutoTreeViews` keeps them in
 `pendingMessages` while the tree is stopping or stopped, so they still show. Rows
@@ -140,7 +141,8 @@ A message may carry what the session chat takes: images, a PDF, other files.
 3. The delivery hands them to Auto's turn by full path (`storedAttachments` on
    `sendTurn`), never written again.
 4. Every child started after the message gets them in its brief
-   (`childImagesOf`), named as chips on its page. The launch reads them once into
+   (`childImagesOf`: the images of the accepted user rows of the tree's
+   generation up to the delegation), named as chips on its page. The launch reads them once into
    the attempt's snapshot ([children.md](children.md#why-an-agent-exists)), so a
    relaunch hands over the same images.
 

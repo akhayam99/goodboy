@@ -46,7 +46,8 @@ Both lineage caps count from the root of the chain down every branch
   of the task (`targetRefusalOf`, else `retry_unavailable`).
 - Children of one block may share a `replaces` to split a task and count as one
   hand over; two `retryOf` of one agent in a block are refused.
-- A propose block waits for you, so the lineage caps do not refuse it.
+- A propose block waits for you, so the lineage caps do not refuse it; its child
+  still names the return.
 - The Lead's messages to a working child have no cap.
 - With a spend cap, the cap stops a costly loop and any number of returns reach
   the Lead. Retry clears the window mark. A tree blocked on its limit whose limit
@@ -78,15 +79,16 @@ has its own text ([blocks.md](blocks.md#refusals)). The text is the stored
 - `isAutoGateBlock` and `isAutoBudgetBlock` read old and new texts alike, so an
   old block survives a restart and an old limit block resumes on a raise
   (`legacyGateTexts.sqlite.test.ts`).
-- The tail shows an old text in current words (`autoBlockShownText`) and keeps
+- The tail and the line under a waiting message show an old text in current
+  words (`autoBlockShownText`) and keep
   the stored one, so its action does not move (`legacyBlockReaders.test.ts`).
 
 ### How a block reads
 
-| Block                 | Word                          | Raises                                     | Action                         |
-| --------------------- | ----------------------------- | ------------------------------------------ | ------------------------------ |
-| Any guard but a limit | **Failed** on every surface   | `agent-error` (`autoFailedRootsOf`)        | **Retry**                      |
-| At its limit          | **Needs you**, reason `limit` | `run-paused-at-limit` (`autoLimitRootsOf`) | Raise the limit, no Retry card |
+| Block                 | Word                                                            | Raises                                     | Action                         |
+| --------------------- | --------------------------------------------------------------- | ------------------------------------------ | ------------------------------ |
+| Any guard but a limit | **Failed** on every surface, never **Blocked** or **Needs you** | `agent-error` (`autoFailedRootsOf`)        | **Retry**                      |
+| At its limit          | **Needs you**, reason `limit`                                   | `run-paused-at-limit` (`autoLimitRootsOf`) | Raise the limit, no Retry card |
 
 A failed tree is not a wait for you: `autoWaitRootsOf` counts a plan, a project
 ask and a stuck child, on the typed `AutoTreeState`, never a display word.
@@ -169,7 +171,7 @@ A running child has no wall clock deadline. It is stopped only after
 - A child paused on a question has no clock at all.
 
 It settles `timed_out`, reason `no_activity`, and reads **Needs you**, never
-**Stopped**, though the cancel marks the agent stopped (`isAgentStopDeliberate`,
+**Stopped** (that word means you stopped it), though the cancel marks the agent stopped (`isAgentStopDeliberate`,
 `settledStatusOf`). Its page offers **Retry** and says its work is kept. A row
 settled `deadline_passed` keeps its sentence.
 
@@ -180,7 +182,8 @@ partial output. Auto continues it with `retryOf`: same agent and mount, a
 kickoff that says to continue, not start over (`retryNoteOf`), and a first
 attempt that carries the stopped one's baseline (`carriedSnapshot`), so the
 result counts the earlier commits. Only a retry of a completed child with no
-`task` starts again from scratch.
+`task` starts again from scratch; with a `task` it keeps the work and follows the
+new instructions.
 
 ## Deleting the root agent
 

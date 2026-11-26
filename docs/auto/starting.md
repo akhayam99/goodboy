@@ -40,8 +40,8 @@ list.
 ## What a start stores
 
 `spawnAgent` writes three workspace values, each a map of the root agent id to
-its entry, with a compare and swap: `run.guidance` before the first turn,
-`run.limit` and `run.locks` before the agent row exists.
+its entry: `run.guidance` (a compare and swap like the level) before the first
+turn, `run.limit` and `run.locks` before the agent row exists.
 
 | Value          | Folder                       | Holds                                                                  |
 | -------------- | ---------------------------- | ---------------------------------------------------------------------- |
