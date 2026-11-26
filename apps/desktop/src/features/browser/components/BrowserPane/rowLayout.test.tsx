@@ -86,7 +86,14 @@ const stubPaneRects = () => {
 
 const pointer = ({ type, x, y }: PointerParams) => {
   act(() => {
-    window.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, button: 0 }));
+    window.dispatchEvent(
+      new MouseEvent(type, {
+        clientX: x,
+        clientY: y,
+        button: 0,
+        buttons: type === 'pointerup' ? 0 : 1,
+      }),
+    );
   });
 };
 
@@ -215,6 +222,7 @@ describe('moving the browser pane in the desk', () => {
 
     expect(onMove).toHaveBeenCalledWith({
       key: 'browser',
+      unit: 'cell',
       target: { at: 'above', key: 'terminal' },
     });
   });
