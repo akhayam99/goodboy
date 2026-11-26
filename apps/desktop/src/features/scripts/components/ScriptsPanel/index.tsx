@@ -655,9 +655,9 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
 
   return (
     <DrawerFrame
+      isDock
       title="Scripts"
       icon={CONCEPT_ICONS.scripts}
-      iconClassName="text-faint-foreground"
       action={newScriptAction}
       toolbar={
         rowCount < FILTER_FROM_ROWS && query === '' ? null : (
