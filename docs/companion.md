@@ -34,7 +34,7 @@ phone with those rights like a second keyboard, not like a viewer.
   A file written by an older version holds a bare list of keys: each becomes a
   record with the default rights and is written back in the new shape. That
   list is read until 0.45.0 (excluded).
-- Settings, iPhone mints a one-time 256-bit token that expires after 60
+- **Settings › This Mac › iPhone** mints a one-time 256-bit token that expires after 60
   seconds and shows it with the desktop's key and addresses as a QR code. The
   payload has `v: 2`, the device name, the key, the token, the endpoints, the
   service name and the rights a new phone gets, so the phone can list them
@@ -229,7 +229,7 @@ stay until the phone ships the start form.
 
 ## Listener lifetime
 
-- Nothing listens at boot. The listener starts when Settings, iPhone opens.
+- Nothing listens at boot. The listener starts when **Settings › This Mac › iPhone** opens.
   Leaving the page with no phone paired stops it; with at least one phone
   paired it stays up so that phone can reconnect, until the app quits or
   Disconnect runs.
@@ -330,8 +330,9 @@ workspace only: opening another workspace replaces them, and a second window
 owns a second workspace. `needsYouOf` itself is a pure function and counts the
 moves of several workspaces as soon as it is given their sessions and stage
 infos. What the other workspaces lack in the store is the facts behind the
-infos (PR checks, resolve threads, live agents, open questions). The sidebar
-reads them from `workspaces_attention`, which keeps only a count, a tone and
+infos (PR checks, resolve threads, live agents, open questions). The workspace
+switcher, the Home rows and the notification center read them from
+`workspaces_attention` (through `attentionByWorkspaceOf`), which keeps only a count, a tone and
 five reasons per workspace and cannot name a session. A projection that
 crosses workspaces needs each workspace's facts in memory, not a second
 computation in Rust.

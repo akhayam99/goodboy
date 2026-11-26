@@ -98,7 +98,7 @@ Each project is one block with its name in the head. Its branches sit inside by 
 
 Each branch is one tile, like a pull request in a list.
 
-- The first line names the branch. One chip on the right sums up where it stands: **Waits for you**, **Checks failing**, **Running**, **Not pushed** or **PR open**. A merged or closed branch has no chip: its second line says **Merged** or **Closed**.
+- The first line names the branch. One chip on the right sums up where it stands: **Asks you**, **Checks failing**, **Running**, **Not pushed** or **PR open**. A merged or closed branch has no chip: its second line says **Merged** or **Closed**.
 - The second line holds a few quiet facts: the pull request, such as **PR #12**, the lines added and removed, the runs and the questions that wait.
 - When a check fails, the chip names it, such as **integration-tests failed**.
 - A tile with something to do carries one button. **Answer** comes first and opens the exact question, then the first waiting step, such as **Rebase**, **Push** or **Open a pull request**. A merged branch offers **Remove worktree** once its cleanup is proposed.

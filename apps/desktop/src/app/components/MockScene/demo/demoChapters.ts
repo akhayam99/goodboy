@@ -13,6 +13,7 @@ export type DemoBeat = {
 export type DemoChapter = DemoGroup & {
   readonly hints: ReadonlyArray<DemoHint>;
   readonly beats: ReadonlyArray<DemoBeat>;
+  readonly isContinuation?: boolean;
 };
 
 export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>] = [
@@ -25,11 +26,13 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
     ...DEMO_GROUPS.direction,
     hints: DIRECTION_HINTS,
     beats: [{ scene: 'story-direction' }],
+    isContinuation: true,
   },
   {
     ...DEMO_GROUPS.guide,
     hints: GUIDE_HINTS,
     beats: [{ scene: 'story-plan' }],
+    isContinuation: true,
   },
   {
     ...DEMO_GROUPS.ship,

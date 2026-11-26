@@ -18,7 +18,7 @@ The other docs link here instead of explaining them again.
 - **Workflow**: a list of steps you can reuse, and each step gets its own agent; a run follows it as written or adapts it as it goes
 - **Run**: one go at a goal inside a session, started as a workflow, an agent or the Lead
 - **Plan**: the steps an agent writes before it builds, kept as an artifact you approve or revise
-- **Lead**: the agent that picks how a run goes and starts helpers, under your limit (it was Auto, a word that now means only an automatic pick of a model or a folder)
+- **Lead**: the agent that picks how a run goes and starts helpers, under your limit (`auto` in code; on screen, Auto means only an automatic pick of a model or a folder)
 - **Scout**: a role that reads the code and answers, and changes nothing
 - **Artifact**: a plan, report or wireframe an agent saves as its own page
 - **Lens**: one view of a session, such as its plans, questions or diff
@@ -157,7 +157,7 @@ left out, and the row says how many files go in (`firstCommitCount` over the
 read only plan). Documents says what agents edit and what stays read only, and
 the trust line under the list says agents edit in place. A folder over 2 GB
 (`largeFolderOf`) says that files over 15 MB keep no versions. A folder inside
-a repository asks **The whole repository** (today's snap to the root) or
+a repository asks **The whole repository** (the repository root) or
 **Only this folder**, which creates the subfolder as a Documents folder and
 names the workspace after it. A scan that fails leaves no preselection and the
 row says it could not look inside. All copy of the faces lives in one table,
@@ -209,10 +209,10 @@ in it.
 every turn running in the one it had, so opening a workspace only switches
 this window in place when nothing is running here. When agents are running,
 the workspace popover asks first and offers a new window, which keeps them
-going; a side door that used to switch silently (a notification, a Tasks
-item, New workspace) now opens that workspace's own window instead of
-touching this one. `⌘Enter` on a workspace row always opens a new window,
-no question asked.
+going. While agents run, a side door (a notification, a Tasks item, New
+workspace) opens that workspace's own window without asking and never touches
+this one. `⌘Enter` on a workspace
+row always opens a new window, no question asked.
 
 **Disconnect** keeps a workspace and its folders in the database with
 everything they hold, it only hides them. Re-adding the same folder through
@@ -324,8 +324,7 @@ settle a session on a mounted project too; any other agent settles it only in a
 folder with no branch, where a pull request cannot come. An active plan reads
 `plan ready`, an active report or wireframe `report ready`. The session returns
 to **running** the moment you write again, and to **needs you** while a reply
-waits to be read. Nothing is stored: the stage is derived on every read, and the
-first launch after the change moves old read-only sessions to **done** at once.
+waits to be read. Nothing is stored: the stage is derived on every read.
 
 The board looks at the pull request or merge request of every mount, GitHub,
 GitLab or Bitbucket, and takes the worst one: failing CI, then changes
@@ -412,9 +411,8 @@ runs before anything is mounted writes to a scratch folder,
 A plain folder (a folder project, no git) is never copied. Its sessions work
 in the folder itself, and one session writes there at a time: a second
 session that wants to write waits for the first one and can still read and
-answer meanwhile. Nothing Goodboy makes lands inside the folder. Sessions made
-before 0.27.3 that already write in a `<project-root>/sessions/<name>` folder
-keep it.
+answer meanwhile. Nothing Goodboy makes lands inside the folder. A session
+that already writes in a `<project-root>/sessions/<name>` folder keeps it.
 
 A repo project joins the session when Goodboy **materializes** it. That means
 it gets its own working copy inside the session, called a **mount**: a git
@@ -516,7 +514,7 @@ It includes:
 - Changes to the decisions
 - Projects materialized, with their reason, and refused ones, with the error
 - Tasks created in other tools from Goodboy
-- History outcomes of Rewrite history and Rebase on main: `history_rewritten`,
+- History outcomes of Edit commits and Rebase on main: `history_rewritten`,
   `history_pushed`, `history_stopped` and `history_restored`
 
 History rows carry no verb and no `⋯`; the verbs live on the job banner of the Branch page (`docs/features/branch-history.md`). They stay in Activity only while no
@@ -683,7 +681,7 @@ whether you clicked it on the board or in the session overview.
   One rule, `isOfferedByActivity` (`features/suggestions/isOfferedByActivity.ts`,
   exhaustive over the kinds), runs in `deriveNextSteps` before
   `dedupeByTargetKey`: the hint that starts a run stays, and the run's
-  follow-ups live only on its row. Today that drops the ready step of a
+  follow-ups live only on its row. That drops the ready step of a
   workflow run (its row has **Start**) and every stage of a CI fix after
   **Analyze** (its row opens the drawer, then has **Start fix** and **Push**).
   **Continue all** after a restart stays, because no row resumes several
@@ -720,71 +718,72 @@ whether you clicked it on the board or in the session overview.
   `drop`, `push`) is written in the terminal prompt of the worktree and waits for
   Enter (**Add to prompt**). A test name from a log is quoted (`shellQuote`).
   Nothing runs without a click.
-- Twenty-six suggestion kinds ship. Five read the work itself and live in the
-  same engine: **Run the failing test** (`run-failing-test`: a GitHub Actions
-  check fails, its log names a test file and the project has a `test` script),
-  the next script after a turn (`next-script`: a changed migration, lockfile or
-  schema, `nextScriptRulesOf`), **Rerun** a check (`rerun-check`: the job log
-  says it timed out; it runs `gh run rerun <run> --failed`, the one rerun shape in
-  `gh-allowlist.json`), **Unmount** for a folder no turn touched for seven days
-  (`unmount-folder`) and **Ask the Implementer what blocks it** (`ask-agent`:
-  quiet from 5 to 30 minutes, then Needs you takes it). Two are extended:
-  `mount-project` says an agent asked more than once (`asked 2 times`) and moves
-  up, and `close-worktree` also reads a merged pull request at once and a clean
-  worktree with nothing to push, no pull request and no change for seven days.
-  `rebase-project` also carries a stopped rebase (`Finish the rebase on …`, with
-  the conflicting files), above **Rerun**. The log of a failed check is read once
-  per check by the `checks-log` slice (`readCheckLog`). The older kinds follow.
-- The kinds that came before these five: the original six (answer open questions,
-  continue a workflow's ready step (derived, then left to its Activity row
-  by `isOfferedByActivity`), fix review conversations, rebase a
-  project, run a ready plan, add a proposed project) plus twelve more that
-  landed on the same engine, not a second one: approve a pending permission,
-  sign back in after `auth_required`, resume every agent a restart stopped
-  (one **Continue all**, band 0, standalone and workflow agents alike), retry
-  the last standalone agent that failed, analyze a pull request's failing checks,
-  push unpushed commits on a clean worktree (counted against the branch's
-  own copy on origin by `branchPushStateOf`; `Push the branch` with `Not
-pushed yet` when origin has no copy, and `Branch diverged from origin`
-  with `Review history` instead of a push when origin moved on its own),
-  open a pull request once a
-  mount is ahead with none yet (one row per session, `openPrSuggestionOf`:
-  its title names the branch, as in **Open a pull request for
-  hl/refund-retry**, because a compact row past the first three hides the
-  why (`payments-api · 5 commits ahead`); it leads with the branch whose Scribe text is under way, then the most commits
-  ahead, then project and branch name, skips a branch put away with **Not
-  now**, and lists every branch without a pull request in **⋯** once there
-  are two; **Create pull request** opens the worktree the payload names, never one looked
-  up at click time), mark a green draft ready, merge an approved
-  and green pull request, review the changes once a standalone implementer
-  finishes clean, close a merged worktree's cleanup proposal, and continue
-  with a workflow once a standalone scout or generic agent finishes clean
-  with a goal set and no workflow attached yet (a discarded run does not
-  count as attached, so the offer comes back) - its "Set up" action attaches
-  the workspace's first library workflow with the session's own goal in one
-  click, no form. Merge and close-worktree arm a
-  confirm on the row before they act; the other new kinds run on one click,
-  like the original six. Push, open-pr, mark-ready and merge-pr act on the
-  mount their suggestion names (`markPrReady` and `mergePr` take a
-  `mountId`), never the session's active mount. One simplification from the
-  design: the demotion window (above) reads the session, not the workspace. A failed
-  workflow step has no suggestion: its own row in Activity carries the one
-  **Retry step**, which opens the step where Continue and
-  Skip live. approve-tool opens the agent's
-  chat rather than the permission card directly; sign-in dispatches the
-  same `goodboy:open-settings` event the "Connect a provider" entry of Search or run
-  uses. continue-with-workflow always offers the workspace's first library
-  workflow, not a goal-aware recommendation - `recommendPreset.ts` (design's
-  name for that ranking) was not built, since nothing else in this pass
-  needed it.
+- Twenty-six kinds ship, listed in `SUGGESTION_KINDS`
+  (`features/suggestions/types.ts`), all on this one engine:
+  - **You and the agents**: answer open questions; approve a pending
+    permission (it opens the agent's chat rather than the permission card);
+    sign back in after `auth_required` (the same `goodboy:open-settings` event
+    the "Connect a provider" entry of Search or run uses); **Continue all**
+    for every agent a restart stopped (band 0, standalone and workflow agents
+    alike); retry the last standalone agent that failed; **Ask the Implementer
+    what blocks it** (`ask-agent`: quiet from 5 to 30 minutes, then Needs you
+    takes it).
+  - **Runs and plans**: continue a workflow's ready step (derived, then left
+    to its Activity row by `isOfferedByActivity`); run a ready plan; continue
+    with a workflow once a standalone scout or generic agent finishes clean
+    with a goal set and no workflow attached (a discarded run does not count
+    as attached, so the offer comes back). Its "Set up" action attaches the
+    workspace's first library workflow with the session's own goal in one
+    click, no form; it is never a goal-aware pick.
+  - **Checks**: analyze a pull request's failing checks; **Run the failing
+    test** (`run-failing-test`: a GitHub Actions check fails, its log names a
+    test file and the project has a `test` script); **Rerun** a check
+    (`rerun-check`: the job log says it timed out; it runs
+    `gh run rerun <run> --failed`, the one rerun shape in `gh-allowlist.json`).
+    The log of a failed check is read once per check by the `checks-log` slice
+    (`readCheckLog`).
+  - **Branches and pull requests**: fix review conversations; rebase a project
+    (`rebase-project` also carries a stopped rebase, `Finish the rebase on …`
+    with the conflicting files, above **Rerun**); push unpushed commits on a
+    clean worktree (counted against the branch's own copy on origin by
+    `branchPushStateOf`: `Push the branch` with `Not pushed yet` when origin
+    has no copy, and `Branch diverged from origin` with `Review history`
+    instead of a push when origin moved on its own); open a pull request once
+    a mount is ahead with none yet; mark a green draft ready; merge an
+    approved and green pull request; **Merge … in order** for a series of two
+    or more open pull requests on hosts that let Goodboy pick the merge method
+    (`merge-series`, `seriesMergeSuggestionOf`); review the changes once a
+    standalone implementer finishes clean; move a tracker item to Done (see
+    [The tracker follows the merge](#the-tracker-follows-the-merge)).
+  - **Folders and upkeep**: add a proposed project (`mount-project`, which
+    says an agent asked more than once, `asked 2 times`, and moves up); the
+    next script after a turn (`next-script`: a changed migration, lockfile or
+    schema, `nextScriptRulesOf`); **Unmount** a folder no turn touched for
+    seven days (`unmount-folder`); close a worktree (`close-worktree`: a
+    merged pull request at once, or a clean worktree with nothing to push, no
+    pull request and no change for seven days); **Archive this session** once
+    its branches are merged or closed and no agent, run or open question is
+    live (`archive-session`, `archiveSuggestionOf`).
+- Open a pull request is one row per session (`openPrSuggestionOf`). Its title
+  names the branch, as in **Open a pull request for hl/refund-retry**, because
+  a compact row past the first three hides the why
+  (`payments-api · 5 commits ahead`). It leads with the branch whose Scribe
+  text is under way, then the most commits ahead, then project and branch
+  name, skips a branch put away with **Not now**, and lists every branch
+  without a pull request in **⋯** once there are two. **Create pull request**
+  opens the worktree the payload names, never one looked up at click time.
+- Merge and close-worktree arm a confirm on the row before they act; every
+  other kind runs on one click. Push, open-pr, mark-ready and merge-pr act on
+  the mount their suggestion names (`markPrReady` and `mergePr` take a
+  `mountId`), never the session's active mount. A failed workflow step has no
+  suggestion: its own row in Activity carries the one **Retry step**, which
+  opens the step where Continue and Skip live.
 - The board card's "Continue" and the Next surface's primary action for a
   ready workflow step both call `activateWorkflowAgent` on the same pending
-  agent; neither one just opens a panel and leaves starting the step to you.
+  agent; neither one opens a panel and leaves starting the step to you.
 - Accepting plan-ready announces the started implementer with the Follow toast
-  every other start uses ("Implementer started", with a `Follow` action, built by
-  `planRunToast`; see `docs/navigation/model.md` Follow toasts) - the toast the
-  standalone PlanReadySuggestion component used to show before the unified
-  resolver replaced it in E7-5, restored here.
+  every other start uses ("Implementer started", with a `Follow` action, built
+  by `planRunToast`; see `docs/navigation/model.md` Follow toasts).
 - The resolve-threads card ("Fix N") never starts an agent: it
   sends a `fix` request (`requestReview`) with the fixable comments and opens
   the **Fix comments** drawer on the Comments tab, with those comments checked.
@@ -865,9 +864,15 @@ pick it when you start the agent.
   **Docs** and **Generalist** are in the menu for new agents
 - **Report** and **Wireframe** run as workflow steps
 - **PR reviewer** opens a session that reviews someone else's pull request
-- **Resolve** starts from the **Review** lens and fixes review comments
+- **Resolve** starts from the **Comments** tab of the Branch page and fixes
+  review comments
+- **Lead** starts from **Start a run** and hands work to the other roles
+  ([Lead](#lead))
+- **CI debugger** starts from **Analyze** on a failing check and proposes a
+  fix; **CI fixer** applies the chosen fix as one local commit and never
+  pushes
 - **History rewriter** is hidden: nobody picks it. Goodboy starts it only
-  when a Rewrite history plan hits a conflict git cannot settle alone and
+  when an Edit commits plan hits a conflict git cannot settle alone and
   you press **Rewrite with an agent**. A rebase on main never starts it: a
   conflict there stops and asks, and **Start new Lead** hands it over. It works in a throwaway
   copy of the branch, never in a mount. Its turn carries a git config that
@@ -989,7 +994,7 @@ An artifact has a status:
 - **superseded**: a newer version replaced it
 - **discarded**: taken out of the session
 
-### Open questions
+### Plans, reports and wireframes
 
 Planner agents write plans. Other agents use them, and Goodboy remembers who
 used which plan. The Artifacts page lists plans, reports and wireframes as one
@@ -1151,9 +1156,10 @@ Agents in the same session do **not** see each other's chats. What they share
 is the **session record** on the **Overview**:
 
 - The goal, the decisions and the summary, in that order, in the **Context**
-  drawer (the overview keeps one `Goal` line under the title when the goal
-  says more than the title). The summary reads as State, Next, Open questions and Learned, one
-  block each, key line first.
+  tab (the overview keeps one `Goal` line under the title when the goal
+  says more than the title). The summary has three sections, Learned, State
+  and Next: State becomes its status line, and Next and Learned follow as
+  blocks (`summaryStatusOf`, `summaryDisplayBlocks`).
 - What the session produces, as sections of the same page: workflows, agents,
   review, questions, diff and plans
 
@@ -1176,8 +1182,9 @@ work on one goal without mixing up their chats.
 A **turn** is one message from you and one answer from the agent, with
 everything that streams in between.
 
-**Ask** is a question about the whole session, asked from the Context tab
-(shortcut ⌘L). It is not an agent: it never lands on the board, in the agent count or in an
+**Ask** is a question about the whole session. ⌘L, **Ask about this
+session** in Search or run, or **Ask** in the right rail opens the Ask pane
+beside the page, and the foot of the Overview keeps one field that opens it. It is not an agent: it never lands on the board, in the agent count or in an
 agent's chat, and it never changes the work. It reads the session record, the
 agents' reports, questions, runs, review comments, branch, pull request and
 the session worktrees, read only, and answers with chips that open what it
@@ -1374,8 +1381,8 @@ with a local commit and never pushes.
 - With the fixup commit style, Goodboy blames the commented line and asks the
   agent for `git commit --fixup=<sha>` of the commit that introduced it. The
   default is a new commit for every fix. Resolve never squashes or
-  force-pushes; history changes only when you press Apply or Push in Rewrite
-  history
+  force-pushes; history changes only when you press Apply or Push in Edit
+  commits
 - Approving a fix fast-forwards the branch to it. When the branch moved on
   since the fix started, the fix is cherry-picked onto the new head and that
   commit becomes the sha on the branch. If it no longer applies, the pick is
@@ -1403,15 +1410,15 @@ with a local commit and never pushes.
   role (every connected provider and a **Suggested** row). Two actions sit at the
   end of the list: `Analyze only`, a resolver run in `propose` mode that edits
   nothing on the branch and keeps its changes as proposals, and `Start fix for
-N`, the `apply` mode of today. The choice is `ResolveLaunchChoice.mode`
+N`, the `apply` mode. The choice is `ResolveLaunchChoice.mode`
   (`apply` when absent, so older batches and callers are unchanged); the
   candidate is captured as a proposal in `recordResolveAttempt` when the batch
   says `propose`. Activity shows each launch as a chain row: the resolver is
   named `Fix comments · N comments`, and a later launch on a comment of an
   earlier batch is spawned with `parentAgentId` of that resolver so it nests under
   it. The commit style has no control in the drawer: it comes from the settings
-  or the last batch. Clicking another comment leaves the drawer open.
-  window event: `requestReview` with a `fix` request writes a pending launch
+  or the last batch. Clicking another comment leaves the drawer open. A start
+  from another page needs no window event: `requestReview` with a `fix` request writes a pending launch
   request into the `review-launch` slice (`reviewLaunchRequests`) and the
   Comments tab consumes it when it mounts, so a request raised from another
   page lands. The choice is saved on the batch and on every attempt
@@ -1549,8 +1556,8 @@ Settings can be set at four levels. The level closest to the work wins:
 - **Settings overrides** (default provider, branch prefix, verbosity, role
   and task models, provider pool, parallel agents, provider bindings) can be
   set on a workspace, a project or a session, on top of the global defaults,
-  except the role and task models, which a project no longer holds: they are
-  set on a workspace or a session. Anything you leave empty comes from the
+  except the role and task models, which only a workspace or a session
+  holds. Anything you leave empty comes from the
   level above. The session engine reads them only through
   `selectResolvedSettings`: session, then the session's active project, then
   workspace, then global (`resolveSettings` in core). Role models, task models
@@ -1560,8 +1567,8 @@ Settings can be set at four levels. The level closest to the work wins:
   project. The provider list stays whole: the closest level that sets one
   replaces the list. A project override sets the branch prefix for that
   project's mounts. The settings screens edit the workspace row and read that
-  row back, since it is what they change. A project that had its own role or
-  task models before 0.24.0 keeps them as saved settings
+  row back, since it is what they change. Role or task models that a project
+  held in an older version stay as saved settings
   (`legacy.projectModels.<projectId>`, written by m228): **Models** says "Model
   settings 2 projects had are saved. They no longer apply." and **Show** lists
   each project with **Apply to this page** and **Discard**, both behind a
@@ -1581,8 +1588,8 @@ Settings can be set at four levels. The level closest to the work wins:
   `workspaces` table and fails when a column is not on the list, the Rust
   settings struct, the Rust bundle struct or the TypeScript bundle type
   disagree with it, or the two lists drift apart. A new override setting adds
-  one column to both lists and fails the build until the bundle carries it too;
-  that is how the backup stopped losing **After merge** on restore.
+  one column to both lists and fails the build until the bundle carries it
+  too, so a restore never drops a setting such as **After merge**.
 - **One writer, one patch.** The override columns are written by one Rust
   command, `patch_workspace_overrides`. A save sends only the keys it changes,
   so a window that holds an older copy of the row cannot overwrite what another
@@ -2095,11 +2102,11 @@ session up again in Goodboy.
   a label only when an input comes before the action runs (**Start a run…**,
   **Set limit…**), and a `NAMES` value never carries it, so aliases and
   retired names keep matching. A progress word ends in one (**Starting…**,
-  **Closing…**). Planned, not wired yet: the optional `menuLabel` (the bare
-  verb for the menu of its own object, **Pin**), `isInputFirst` (the menu
-  draws the ellipsis) and `placement: 'palette'` (Search or run only) are
-  typed on the action, but resolution drops them and every menu shows
-  `label` today.
+  **Closing…**). `menuLabel` names an action inside an Open or Copy submenu
+  (**Overview**); without one the submenu drops the leading Open or Copy of the
+  `label`. `placement: 'palette'` keeps an action in
+  Search or run only (`toMenuEntries`). `isInputFirst` is typed on the action
+  and read by nothing yet.
 - A tool runs **in** a tab or an app (**Open in Terminal**, **Open in external
   terminal**) and a pull request lives **on** a host (**Open on GitHub**).
 - An action label is a verb and an object in the developer's words: **Rebase on
@@ -2111,12 +2118,13 @@ session up again in Goodboy.
   where the content is not already selectable: no **Copy last reply**, since the
   reply is in the chat. `action-labels-say-what-they-do.test.ts` fails on the
   phrases that went away.
-- **Run**, **Plan**, **Preset**, **Lead** and **Scout** each have one sentence in
-  At a glance and in the Guide's Words chapter. A **workflow** is the saved
-  definition in the Workflows library; it is called a **preset** only where a
-  run starts from it (`~` in **Start a run**, the Preset card on New session),
-  and a **plan** is what an agent writes before it builds. The Words chapter
-  test keeps the five defined in one sentence each.
+- **Run**, **Plan**, **Workflow**, **Lead** and **Scout** each have one
+  sentence in At a glance and in the Guide's Words chapter, and the Guide never
+  says preset. A **workflow** is the saved
+  definition in the Workflows library; it is called a **preset** only on a run
+  made from it (**Save as preset** in the run's menu, the **Preset run** glyph),
+  and a **plan** is what an agent writes before it builds.
+  `guideChapters.test.ts` keeps the five defined in one sentence each.
 - **Reply length** is **Short**, **Normal** or **Long**. The stored keys
   (`brief`, `normal`, `verbose`) and the directive sent to the provider do not
   change. **Brief** stays the name of the agent tab and of a text you edit
@@ -2130,39 +2138,34 @@ session up again in Goodboy.
   run: **Stop run**, **Archive run**, **Delete run**. **Start work** is a
   former name of **Start a run** only. The ⌘K section that lists them is
   **Runs**, and **Runs › Running** names that page when it shows only what
-  runs. The **Runs** page
-  of the workspace settings (it was Run defaults) sets what
-  a new run starts with. A renamed label keeps its old name as a ⌘K alias:
+  runs. What a new run starts with lives in Workflows, **Every run**. A
+  renamed label keeps its old name as a ⌘K alias:
   searching the old word finds the new one (`formerNamesOf` in `names.ts`).
-- **Models** is the workspace settings page that sets what each role runs on
-  (it was Defaults). **Limit** is the most a provider, a run or a session may spend,
-  said the same in the provider panel (Monthly limit, Save limit, Remove limit),
-  the alerts and the run defaults (it was Spend cap and cap), **Limits** the
-  backup group that holds them (it was Spend caps). Notifications written before
-  the change keep their stored text, and the `budget-cap` kind id stays, **Copy context** the drawer button, **Context window**
-  the share of a model window a turn filled, and **What's new** the release
-  notes page. The old words are ⌘K aliases or retired names.
-- **This Mac** and the workspace name are the two groups of the Settings rail
-  (they were App and This workspace). **Look and alerts**, **Editor, terminal,
-  git**, **Keyboard shortcuts**, **Storage and search**, **Backup and reset**
-  and **iPhone** are the This Mac pages, one per job you open Settings for
-  (Look and alerts was General, Editor, terminal, git took Open with from
-  General and Git and Built-in terminal from Advanced, Storage and search took
-  the Search band from Advanced; Keyboard shortcuts was Shortcuts, iPhone was
-  Pair device and Companion; Updates is a band at the end of Look and alerts;
-  Security findings is the Secrets in saved scripts band of the workspace's
-  Permissions page). The workspace group has no Runs page: its last row,
-  **Run defaults are in Workflows**, opens Workflows, **Every run**, which holds
-  the run defaults, the edit mode new sessions start in, the Lead and the role
-  models. iPhone
-  stays out of the rail until a phone is paired. **Branches** is a Workspace
-  page that starts with Naming (branch prefix and branch name), then After
-  merge. **Pair an iPhone** is the one verb that opens the iPhone
-  page, and **Edit commits** is the one name for changing the commits of a
-  branch (it was Rewrite history). **Disconnect** is the one verb for a
-  provider or tool (it was Sign out). The old words are Search or run aliases and
-  `RETIRED_NAMES` keeps them out of copy. A dot on a settings row means only
-  that something needs you; a connected, healthy provider or tool shows none.
+- **Models** is the workspace settings page that sets what each role runs on.
+  **Limit** is the most a provider, a run or a session may spend, said the same
+  in the provider panel (Monthly limit, Save limit, Remove limit), the alerts
+  and the run defaults, and **Limits** is the backup group that holds them.
+  Stored notifications keep their text, and the `budget-cap` kind id stays.
+  **Copy context** is the drawer button, **Context window** the share of a
+  model window a turn filled, and **What's new** the release notes page.
+- **This Mac** and the workspace name are the two groups of the Settings
+  rail. **Look and alerts**, **Editor, terminal, git**, **Keyboard
+  shortcuts**, **Storage and search**, **Backup and reset** and **iPhone** are
+  the This Mac pages, one per job you open Settings for (`appSections.ts`).
+  **Updates** is a band at the end of Look and alerts, and **Secrets in saved
+  scripts** is a band of the workspace's Permissions page. iPhone stays out of
+  the rail until a phone is paired.
+- The workspace pages are **Projects**, **About you**, **Models**,
+  **Permissions**, **Branches** and **Replies and commits**
+  (`workspacePages.ts`). The last row, **Run defaults are in Workflows**, opens
+  Workflows, **Every run**, which holds the run defaults, the edit mode new
+  sessions start in, the Lead and the role models. **Branches** starts with
+  Naming (branch prefix and branch name), then After merge.
+- **Pair an iPhone** is the one verb that opens the iPhone page, **Edit
+  commits** the one name for changing the commits of a branch, and
+  **Disconnect** the one verb for a provider or tool. A dot on a settings row
+  means only that something needs you; a connected, healthy provider or tool
+  shows none.
 - **The Guide is one page per chapter**, in the app's voice: at most 60 words
   a point, 7 points a chapter and 4,000 words in all, pinned by
   `guideChapters.test.ts`. **Impact** and **Monitoring** are doors of their own
@@ -2172,18 +2175,17 @@ session up again in Goodboy.
   under a project. **Link** stays for tying a ticket to a session or a pull
   request. Tools connect from Connections.
 - **Asks you** is the setting that decides how often a run stops for you:
-  **Every step**, **After the plan** or **Never** (it was Autonomy with Ask me,
-  Balanced and Autopilot, and before that Autorun, Run on its own and When to
-  ask). An agent's permission mode sits under the same chip on its page, with
-  **Ask first** as its asking word. The session says the same words: its menu
-  row reads **Asks you: Every step** or **Asks you: Never** (it was Autopilot).
+  **Every step**, **After the plan** or **Never**. An agent's permission mode
+  sits under the same chip on its page, with **Ask first** as its asking word.
+  The session says the same words: its menu row reads **Asks you: Every step**
+  or **Asks you: Never**.
 - **Needs you** is the one name for anything that waits on you: the top bar
   group, the board column, the questions list and the Overview section above
   Next.
   The reason follows it ("Needs your answer in step 2"). "Waiting on you" is
   retired.
-- **Your job** is the About you field that lists what you do (it was Your
-  roles). **Role** stays the name for what an agent plays.
+- **Your job** is the About you field that lists what you do. **Role** stays
+  the name for what an agent plays.
 - One verb per intention. A button or menu entry takes its verb from this
   table, and the old verb stays a ⌘K alias:
 
@@ -2218,8 +2220,7 @@ session up again in Goodboy.
 - A word that stays and still needs a sentence (workflow, orchestrated,
   artifact) gets a short tooltip, six words at most, written once. The mode
   switch in the workflow builder sets it as the `tooltip` of an option
-  ("Goodboy picks each next agent"). The desktop glossary and its wrapper
-  component are gone, and so is the term hint component.
+  ("Goodboy picks each next agent").
 - A round that adds a word removes one, and the PR description lists both.
 - Every screen follows the task order: the task, then integrations, then code,
   then chat. A screen that puts chat before the task has the order wrong.
@@ -2256,14 +2257,13 @@ the old phrase, so check there before a change adds a word.
   **Publish 2 replies** sends replies without a push. **Sync and retry** is
   about the remote branch that moved, not the base.
 - **Apply**: accepts the fixes a run made (**Apply 3 fixes**, **Apply fix** for one),
-  in the Branch header and in the selection bar. The old **Apply and resolve** is retired.
+  in the Branch header and in the selection bar, never **Apply and resolve**.
 - **Comment**: the one noun for what a reviewer wrote, in counts too (**3 comments to
   fix**, **Fixing 2 of 4 comments**). **Fix ready** is a comment whose fix waits for
-  you (it was Fix to review).
-- **On origin**: the copy of a branch on the remote (it was Online copy).
-- **Fix with an agent**: the one verb that hands a failed push to an agent (it was
-  Let an agent fix the push and Fix with agent).
-- **The rebase needs you**: a rebase job that stopped (it was History rewriter needs you).
+  you.
+- **On origin**: the copy of a branch on the remote.
+- **Fix with an agent**: the one verb that hands a failed push to an agent.
+- **The rebase needs you**: a rebase job that stopped.
 - **Not ready to merge**: the merge box verdict, then each reason on its own row
   (**3 commits not pushed**), never the word twice.
 - **Rebase on main**: brings the base in, with the base branch's own name.
@@ -2285,19 +2285,17 @@ the old phrase, so check there before a change adds a word.
   (Allow, Deny); only a plan waits for **approval**.
 - **Pin**: **Pin session** and **Unpin session** keep a session at the top of
   the list, the rail and the switcher. They are the `label`, and every menu
-  shows them today; the bare **Pin** and **Unpin** in the session's own menu
-  wait for `menuLabel` to be wired.
+  shows them.
 - **Notes**: the one noun for comments you write on your own diff before they
   become a review draft.
 - **Tasks**: the door that lists issues, pull requests, threads and errors from
-  your tools (it was Inbox). Its stored keys, events and scene ids keep the old
-  name `inbox`.
+  your tools. Its stored keys, events and scene ids say `inbox`.
 - **Notifications**: the bell and its list, capitalised everywhere.
 - **Send**: the one name of the button that sends a message, in the session
-  composer, Ask and Chat (it was Send message in the session composer). Its
+  composer, Ask and Chat. Its
   tooltip shows the `composer.send` shortcut from the registry. While an answer
-  streams the same slot is **Stop**, then **Stopping**, then **Force stop**
-  (it was Stop the answer in Ask and Chat). A refused send puts the message
+  streams the same slot is **Stop**, then **Stopping**, then **Force stop**.
+  A refused send puts the message
   back in the field unless you typed something new meanwhile
   (`restoreDraftOnFailedSend`).
 
@@ -2345,7 +2343,7 @@ Agent kinds, in `AGENT_KIND_ORDER`:
 | `planner`     | Plan             | spawn menu                                        |
 | `scout`       | Scout            | spawn menu                                        |
 | `implementer` | Implement        | spawn menu                                        |
-| `debugger`    | Debug            | spawn menu and failing check Analyze              |
+| `debugger`    | Debug            | spawn menu                                        |
 | `tester`      | Test             | spawn menu                                        |
 | `reviewer`    | Review           | spawn menu                                        |
 | `pr-reviewer` | PR reviewer      | PR review session                                 |
@@ -2355,6 +2353,9 @@ Agent kinds, in `AGENT_KIND_ORDER`:
 | `resolver`    | Resolve          | Fix run on the Branch page, never a workflow step |
 | `rewriter`    | History rewriter | a history replay that conflicts                   |
 | `scribe`      | Scribe           | pull request panel                                |
+| `ci-debugger` | CI debugger      | Analyze on a failing check                        |
+| `ci-fixer`    | CI fixer         | Start fix on a failing check                      |
+| `auto`        | Lead             | Start a run                                       |
 | `generic`     | Generalist       | spawn menu                                        |
 
 Other identifiers:

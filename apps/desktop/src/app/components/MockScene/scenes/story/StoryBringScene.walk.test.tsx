@@ -20,10 +20,11 @@ import { ToastProvider } from '../../../../../shared/components/Toast';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { createHintEngine, type HintEngine } from '../../demo/director/createHintEngine';
 import type { DemoHintReport } from '../../demo/director/demoProtocol';
+import { demoRuns } from '../../demo/director/demoRunRegistry';
 import { installStoryDirection } from '../../demo/director/installStoryDirection';
 import { BRING_HINTS } from '../../demo/hints/bringHints';
 import { StoryBringScene } from './StoryBringScene';
-import { STORY_SESSION_ID } from './storyWorld';
+import { STORY_PLANNER_ID, STORY_SESSION_ID } from './storyWorld';
 
 let engine: HintEngine | null = null;
 
@@ -56,6 +57,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  demoRuns.cancelAll();
   engine?.dispose();
   engine = null;
   cleanup();
@@ -140,7 +142,28 @@ describe('walking the bring your work group', () => {
     await visitorClick({ element: await found({ selector: '[data-demo-anchor="task-start"]' }) });
     await waitFor(() => expect(tried()).toContain('bring-session'), { timeout: 8000 });
 
-    await visitorClick({ element: await found({ selector: '[data-demo-anchor="draft-start"]' }) });
+    await visitorClick({
+      element: await found({ selector: '[data-demo-anchor="draft-start"]:not([disabled])' }),
+    });
+    await waitFor(() => expect(store.getState().currentSessionId).toBe(STORY_SESSION_ID), {
+      timeout: 8000,
+    });
+    const isAsked = (): boolean =>
+      (store.getState().sessionOpenQuestions[STORY_SESSION_ID] ?? []).length > 0;
+    await waitFor(
+      () => expect(store.getState().transcripts[STORY_PLANNER_ID]?.length ?? 0).toBeGreaterThan(0),
+      { timeout: 8000 },
+    );
+    expect(isAsked()).toBe(false);
+    expect(tried()).not.toContain('bring-start');
+    await waitFor(() => expect(isAsked()).toBe(true), { timeout: 12000 });
+    await found({ selector: '[data-oq-anchor] button[role="radio"]' });
+    expect(store.getState().agentTurnState[STORY_PLANNER_ID]?.kind).toBe('idle');
+    expect(
+      (store.getState().autoTreeViews[STORY_SESSION_ID] ?? [])
+        .flatMap((view) => view.delegations)
+        .find((entry) => entry.childAgentId === STORY_PLANNER_ID)?.state,
+    ).toBe('paused');
     await waitFor(() => expect(tried()).toEqual(BRING_HINTS.map((hint) => hint.id)), {
       timeout: 8000,
     });

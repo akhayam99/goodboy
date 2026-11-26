@@ -1,10 +1,11 @@
 # Repo architecture
 
-> **Read this when** you are changing how the app runs things: the environment
-> agents start with, how providers are picked, the boot path, git status reads,
-> or database migrations. **Not for**
-> deciding where new code goes inside `apps/desktop/src/` (see
-> [file-system.md](file-system.md)).
+> **Read this when** you are changing how the app runs things: the boot path,
+> the processes it starts and stops, the environment agents start with, git
+> reads, how providers are picked, database migrations, who writes each table,
+> or the files the app keeps on disk. **Not for** deciding where new code goes
+> inside `apps/desktop/src/` (see [file-system.md](file-system.md)) or a trap
+> that looks like a bug (see [traps.md](traps.md)).
 
 Goodboy has four pieces that work together.
 
@@ -25,14 +26,173 @@ the whole repo, see [CONVENTIONS.md](../CONVENTIONS.md).
 
 ## Under the hood
 
-### Code highlighter
+### Boot path
 
-`apps/desktop/src/shared/lib/highlight` is the one syntax highlighter. Shiki
-runs in a web worker behind `highlightCode`, with an in-process fallback; the
-caps (5,000 lines, 1,000 characters a line) live in `caps.ts` so a view can
-read them without loading Shiki. The diff (`SyntaxText`, `useDiffTokens`), the
-chat code blocks (`APP_CODE_HIGHLIGHTER`) and the Explore file view
-(`shared/components/SourceView`) all read it from there.
+- **No command on the boot path blocks the UI thread.** Every Tauri command
+  the boot sequence reaches that touches the database, the file system, a lock
+  or a subprocess is async where it is declared
+  ([ADR 002](adr/002-boot-path-leaves-the-ui-thread.md)).
+- **The boot path starts no provider process, and `ready` says nothing about
+  providers.** Providers start as `unknown` and are detected after boot,
+  through one refresh entry point
+  ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
+- **Launch order.** `hydrate` (`store/slices/boot/hydrate.ts`) awaits six steps
+  in a row (`BOOT_BUDGETS.awaitedStepsBeforeHydrated`), and the app shows after
+  three of them (`BOOT_BUDGETS.awaitedStepsBeforeShell`). Migrations come first:
+  `runDbMigrations` (`shared/lib/dbBoot.ts`) also purges the step agents a
+  deleted workflow left behind, with their slot questions, and seeds missing
+  built-in workflows. Then one group runs together: the boot settings with the
+  onboarding and the four settings hydrations, provider credentials,
+  workspaces with their projects, the integration keys, staged file version
+  recovery, the ghost reconcile and the QA preview. Then the workspace and
+  session restore, then `ready`. The ghost reconcile reads `turn_list_live`
+  once; that set and the projects reach `setCurrentWorkspace` as `LaunchReads`,
+  so the first workspace load reads neither again. A failed member names its
+  own phase in `bootFailedPhase` on the launch error screen.
+- **Shell before data.** The launch opens its workspace through
+  `openLaunchWorkspace` (`store/slices/boot/openLaunchWorkspace.ts`), for the
+  reload intent, the saved window layout, the window hash and the last
+  workspace alike. It first commits the shell (`showLaunchShell`: that
+  workspace id, `boardReady` false, `isShellReady` true), so `App` mounts with
+  skeletons; then `setCurrentWorkspace` loads the snapshot and commits rows,
+  cards and counts with `boardReady` in one set. The id is passed down, never
+  read back after an await. A switch made during the load claims the latest
+  (`switchEpoch`): the launch load drops and the last session is not restored.
+  When that switch fails, its error stays in `workspaceSwitchError` and the
+  launch shell is put back as below, never left on skeletons; while the switch
+  still runs, the shell stays on its skeletons.
+  A launch load that fails or does not commit puts the shell back (id null,
+  `isShellReady` false); `openWorkspaceOrFail` then throws to the launch error
+  screen. Each window runs its own chain. `isShellReady` is reset at the start
+  of `hydrate` and set again on `ready`, so a launch with no workspace shows
+  the launcher at `ready`. `hydrated` still means the launch is done: the
+  window layout save, the onboarding decision, the artifact mirror and the
+  port signal wait for it.
+- **What launch loads of the agents.** `loadLaunchAgents`
+  (`store/slices/workspaces/loadLaunchAgents.ts`) reads a light row for every
+  agent of the workspace (`listAgentSummariesForSessions` in
+  `packages/db/src/queries/agent-summary.ts`): id, status, kind, parent, run,
+  step, timestamps and the other plain columns, with no summary text and no
+  JSON column (domains, thread ids, routing). A session with live work (an
+  agent pending, running, blocked or stopped by the restart, as
+  `needsFullAgentRows` decides) gets its full rows at launch. Every other
+  session is marked in `lightAgentSessions` and carries the summary text of
+  its newest unread agent only, the one the sidebar label shows
+  (`BOOT_BUDGETS.summaryTextsPerUnopenedSessionAtLaunch`). Opening the session
+  replaces the light rows with full rows (`openSessionAgents`); a turn, a
+  workflow advance and an orchestration step load them first
+  (`ensureFullAgents`). The stage, the "needs you" reasons and the unread
+  label read only light fields, so they are the same before and after the
+  open (`store.sqlite-light-agents.test.ts`).
+- **After ready, on idle.** `runEachOnIdle` starts one task per idle slot
+  (`waitForIdle`): ended work, orphan worktrees, provider limits and their
+  probe, the audit retry drain, stale browser tabs, then `runDbHygiene`
+  (retention pruning and orphan attachments), so neither holds the one
+  database connection before the first paint. A hygiene failure is a warning
+  notification, never the launch error screen. The shell's first pull request
+  sweep (`sweepRequests({ isCurrentFirst: true })` from `useGithubPolling`)
+  refreshes the open session at once and the other sessions on idle.
+  `bootBudgets.test.ts` holds the store commits before idle work starts.
+
+### Where commands run
+
+A Tauri command declared as a plain `fn` runs on the main thread, the same
+thread that draws the window and handles input. While it works, nothing else in
+the app moves. So the split is by what the command does.
+
+- **A command that touches the file system, git, a subprocess or the keychain
+  is `async fn`, and its blocking work runs inside
+  `tauri::async_runtime::spawn_blocking`.** The command keeps its name,
+  arguments and result. A join error becomes the command's own error type
+  (`restart_prepare` and `history_git_supported` follow the same shape).
+  Worktree, history, config export and import, the git and `gh` wrappers and
+  `explore_read` already work this way.
+- **A short SQLite call may run inline in an `async fn`.** An async command
+  runs on the worker pool, not on the main thread, so a query under the `Db`
+  lock does not freeze the window. Anything that can take long still goes
+  through `spawn_blocking`.
+- **A command that only reads or writes memory stays a plain `fn`.** That
+  covers registry lookups, lease bookkeeping and the answers to the frontend
+  (`mount_command_result`, `worktree_writer_*`, `frame_stage`).
+- **Terminal and provider-login input stays a plain `fn` on purpose.**
+  `terminal_write` and `provider_lifecycle_write` send keystrokes, and the main
+  thread keeps them in the order they were typed. Two async calls could
+  finish out of order. The command never writes to the pty itself: it queues
+  the bytes for the session's writer thread (`proc::pty::PtyInput`, 256 chunks
+  deep), so a child that never reads cannot hold the main thread, the session
+  lock, a close or a cancel. A full queue answers `backlogged`, a session whose
+  writer died answers `input_closed`, and a session already gone is a quiet
+  no-op.
+- **Do not hold a `std::sync::Mutex` guard across an `.await`.** Take the
+  lock, copy out what you need and drop it before the next `.await`, or do the
+  whole locked section inside `spawn_blocking`.
+
+`command_threading` (a Rust test) scans every `#[tauri::command]` and fails when
+a plain `fn` command is not on its short list of in-memory commands. A new
+command that does I/O has to be async, or the list has to change in review.
+
+### Logging
+
+Every build, debug and release, starts the log plugin first in `setup`
+(`src-tauri/src/logging.rs`), before the query bridge and anything else that
+can warn. It writes to one place: a local file, `goodboy.log`, in the system
+log folder of the app. That folder is `~/Library/Logs/com.goodboy.desktop/` on
+macOS, `~/.local/share/com.goodboy.desktop/logs/` on Linux and
+`%LOCALAPPDATA%\com.goodboy.desktop\logs\` on Windows. Nothing is sent
+anywhere; a debug build also prints to stdout.
+
+- **Level.** `info` and above. The frontend has no channel into the file: the
+  `log` permission is not granted, so a window cannot write to it.
+- **Size.** A file rotates at 512 KiB. The plugin keeps the active file and
+  the 3 most recent dated archives (`goodboy_<date>_<time>.log`). When two
+  rotations land in the same second the plugin renames the older archive to
+  `.log.bak`, and its own cleanup never removes those. So `logging::init`
+  sweeps them at every start and keeps only the newest. That needs more than
+  512 KiB logged in one second, and the one message a stranger could trigger
+  on demand, a network peer that connects to the phone listener and fails the
+  handshake, is logged at `debug` and never reaches the file. Normal size:
+  under about 2.5 MiB. `logging::tests` floods the logger and pins the cap.
+- **Access.** The folder is narrowed to the owner (`0700`) on macOS and Linux.
+- **Content.** Log a fixed label and a short reason, never a token, a prompt,
+  a file's content or a command line. `logging::detail` is the one way to
+  print an error: it keeps the first line, hides credentials inside URLs and
+  cuts the text at 200 characters.
+- **Slow operations.** `logging::slow(label, started)` writes one `info` line,
+  `[slow] <label> took <n>ms`, when an operation took 250 ms or more
+  (`logging::SLOW_THRESHOLD`); `logging::timed(label, run)` wraps a closure the
+  same way. The label is fixed: `git <verb>` in the `Git` runner (the
+  subcommand only, never an argument or a path, and `git` alone when the word
+  is not a plain subcommand name), `db_exec`, `db_execute`, `db_select` and
+  `db_transaction` for the webview's SQL commands, each with a second
+  `<command> lock wait` line when waiting for the connection lock took that
+  long, and `db_vacuum` for the vacuum command. Nothing is exported or
+  sent; the line lands in the same file and rotation as every other line.
+  Spawn and the provider probes do not write one.
+- **Dropped errors.** `logging::note_failure` and `note_kill_failure` replace
+  `let _ =` in process teardown (killing a terminal, script, provider login or
+  live child) and in git cleanup (removing scratch and copy worktrees,
+  `worktree prune`, `cherry-pick --abort` and the resets after it). A child that
+  already exited is not reported. Other `let _ =` are still silent by design:
+  event emits to a closed window and best-effort file cleanup.
+- **A step that ended silently leaves a line.** `step_end_log::log_step_end`
+  (`step_end_log.rs`) writes `[turns] step ended without a result agent <id>:
+<reason>` when the step end watch finds a workflow step still running after
+  its turn settled with nothing to continue it
+  ([workflows.md](workflows.md) → When a step stops without its done marker).
+  The agent id and a fixed reason, nothing from the conversation; control
+  characters become spaces and each field is cut at 200 characters.
+- **A frozen window leaves a record.** `window_heartbeat.rs` is a watchdog
+  with no network and no kill: it notes a freeze in `last-crash.json` (see
+  [navigation/shell.md](navigation/shell.md), After a crash the app could not show) and
+  logs nothing else. It does not run in debug builds, where a paused debugger
+  would read as a freeze.
+- **Logging never blocks startup.** `logging::init` builds the logger itself
+  and does not register the plugin. If the folder or file cannot be created or
+  opened (a `goodboy.log` owned by root after a `sudo` run, a read-only data
+  folder), it prints one line to stderr and the app starts with logging off.
+- **Before the logger exists.** `db::open` runs before the app, so its
+  messages go through `logging::early`: printed to stderr at once, and written
+  to the file when `setup` starts the logger (at most 16 lines).
 
 ### Subprocess environment
 
@@ -134,7 +294,7 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   `LiveTerminal` carry the leader `pid`; a terminal also carries
   `foregroundPid`, the leader of its foreground process group when the
   platform reports it. A script's exit code is the real one: a signal reads as
-  128 plus its number (a SIGKILL is 137), where it used to collapse to 1.
+  128 plus its number (a SIGKILL is 137).
 - **The monitor snapshot.** `monitor/mod.rs` answers `monitor_snapshot` (an optional `ports` list narrows the listener scan) with
   `{ listeners, processes, taken_at, platform_supported }` (the last one is `isPlatformSupported` on the wire) from one read of the
   machine: on macOS `lsof -nP -iTCP -sTCP:LISTEN -Fpn`, one `ps -axo`, one
@@ -198,7 +358,7 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   `Arc<str>`, so the backlog and the window event share one copy.
 - **Locks never hide a child.** A child registry, a slot and the turn backlog
   open through `util::lock_or_recover`. A panic elsewhere that poisoned the
-  registry no longer skips the insert, the kill or the shutdown, so the
+  registry does not skip the insert, the kill or the shutdown, so the
   process stays tracked and dies with its run. The turn backlog keeps at most
   50,000 events and 16 MiB per run, and every event weighs 64 bytes of
   overhead, so a flood of blank lines is bounded too.
@@ -394,20 +554,71 @@ the lifetime.
 ### Worktree module
 
 The Rust side of worktrees and branch reads is one module,
-`apps/desktop/src-tauri/src/worktree/`. Each file owns one job: `create`,
-`remove`, `folder` and `orphans` for the folders on disk, `inspect` and
-`detach` for what a folder holds, `base`, `branches` and `merge_state` for
-base and branch resolution, `status`, `diff`, `changed_files`, `commits` and
-`fast_forward` for reads and updates, `candidates` for agent fixes, `scratch`
-and `exclude` for the goodboy directory, `git` for the shared runner, and
-`error`, `types` and `slug` for what they share. `mod.rs` only declares the
-files and re-exports their items, so callers keep writing
-`crate::worktree::git` and lib.rs registers `worktree::worktree_create`. A
-helper another file needs is `pub(super)`; nothing else leaves its file. Tests
-sit in a `tests.rs` beside the file they cover. `worktree_list_registered`
+`apps/desktop/src-tauri/src/worktree/`. Each file owns one job:
+
+- the folders on disk: `create`, `remove`, `restore`, `folder` and `orphans`;
+- what a folder holds: `inspect`, `detach` and `snapshot`;
+- base and branch resolution: `base`, `base_divergence`, `update_base`,
+  `branches`, `branch_name`, `foreign` and `merge_state`;
+- reads and updates: `status`, `diff`, `changed_files`, `commits`,
+  `file_sides`, `grep`, `turn_files` and `fast_forward`;
+- a new worktree's setup: `carry` (ignored files copied over), `deps_check`
+  and `setup_proposal`;
+- agent fixes: `candidates`;
+- the goodboy directory: `scratch` and `exclude`;
+- what they share: `git` (the runner), `error`, `types` and `slug`.
+
+`mod.rs` only declares the files and re-exports their items, so callers keep
+writing `crate::worktree::git` and lib.rs registers
+`worktree::worktree_create`. A helper another file needs is `pub(super)`;
+nothing else leaves its file. Tests sit in `<file>/tests.rs` next to the file
+they cover; `scratch`, `snapshot` and `setup_proposal` keep theirs inline.
+`worktree_list_registered`
 inspects many folders of one repo with a single `git worktree list`; opening a
 workspace calls it once per repo, in the background after the first paint, and a
 turn start waits for that verdict for at most five seconds.
+
+### Git status reads
+
+- **A git read fails closed.** Distances and the working tree are `known` or
+  `unknown` with a named reason. A zero never stands in for a failed read. An
+  unknown never shows as a claim about the repository and never enables a
+  change. A command that changes git passes its own safety config where it is
+  called, and `git()` stays unaware of config
+  ([ADR 004](adr/004-git-reads-fail-closed.md)).
+
+- **The remote probe is a git read like the others.** `project_remote_probe`
+  asks `ls-remote --symref origin HEAD` with a 15 second timeout, fetches the
+  default branch only on a hit and sets `origin/HEAD`. Its four answers
+  (`no-remote`, `unreachable`, `reachable-no-main`, `main-present`) fail closed:
+  a timeout or a failed step is `unreachable`, never `main-present`. It runs on
+  window focus and every 60 seconds (five minutes after three unreachable
+  answers) only while a project is in its first lap, from `useBootstrapWatch`.
+  That pace is `hostPollDelayMs`, the one backoff the host reachability state
+  below reuses.
+
+- **A host that does not answer is one state, not a message per poll.**
+  `hostReachability` holds, per host (GitLab and Bitbucket), the first time of
+  the outage and a count of `network` or `timeout` answers from the typed host
+  failures. Every refresh of a request goes through `refreshMountRequest`, which
+  feeds the state and holds a silent refresh back once a host has failed three
+  times, until five minutes pass. A refresh the person asked for (`force`, or
+  from a screen) always asks. Any other answer, even a refused sign-in, means
+  the host is there. The top bar shows one quiet line per host with Retry, and
+  Retry asks again for every session that already holds a request of that host.
+- **A silent refresh that finds nothing new writes nothing.** For a mount that
+  already holds an entry, `refreshMountRequest` skips the pending write and
+  writes the result only when the data differs from the stored entry, the
+  `fetchedAt` time aside. A second silent refresh of the same mount while one
+  runs is dropped. A refresh from a screen or a first read still writes both.
+  `noteHostAnswer` writes only when the host state changes. Its late-answer
+  guard sits in a record the slice owns, which an unchanged answer advances in
+  place, so an older answer is still dropped.
+- **Stage info is derived once per session.** `cachedStageInfoOf` keeps one
+  derivation per session and the reads it made, and every caller (the board,
+  the top bar, the sidebar, the rows) shares it. A write re-derives only the
+  sessions whose reads changed. The rule and its trap live in
+  [typescript/state-writes.md](typescript/state-writes.md#7-derived-facts-are-kept-per-session).
 
 ### Diff file sides
 
@@ -479,22 +690,32 @@ definition the popover hides all uses. The command lives in `apps/desktop/src-ta
 ### History module
 
 Rewrite history and Rebase on main run in one Rust module,
-`apps/desktop/src-tauri/src/history/`. Each file owns one job: `plan` orders
-the steps and resolves the revisions, `merge_tree` and `predict` build the
-in-memory prediction, `reservation` and `copies` own the throwaway copies
-under the app folder, `trial` and `check` replay a plan in a copy and verify
-the result, `journal`, `preflight` and `apply` move the branch safely,
-`backups` keeps the restore refs, `reason` holds the codes Rust returns when it
-cannot read the worktree (`status-unreadable`, `changed-unreadable` and the
-like; the sentence for each lives in `features/history/historyReasonCopy.ts`,
-and `invokeHistory` swaps a code for its sentence at the bridge), `run` chains preflight and trial, `rebase`
-and `remote` read origin, `rewriter` collects an agent rewrite, and `runner`,
-`commits` and `types` hold what they share. `mod.rs` only declares the files
-and re-exports the items lib.rs, `turn.rs` and the worktree module use, so
-lib.rs still registers `history::history_plan_run` and the other commands by
-name. A helper another file needs is `pub(super)`. Tests sit in a `tests.rs`
-beside the file they cover; the repository builders more than one group needs
-live in the test-only `fixtures.rs`.
+`apps/desktop/src-tauri/src/history/`. Each file owns one job:
+
+- `plan` orders the steps and resolves the revisions; `merge_tree` and
+  `predict` build the in-memory prediction.
+- `reservation` and `copies` own the throwaway copies under the app folder;
+  `trial` and `check` replay a plan in a copy and verify the result; `run`
+  chains preflight and trial.
+- `journal`, `preflight` and `apply` move the branch safely; `backups` keeps
+  the restore refs; `dirty` holds the uncommitted work a run sets aside (the
+  shared stash, see
+  [traps.md](traps.md#history-stashes-are-shared-across-worktrees)).
+- `live` is the edit that runs in the worktree under its writer lease
+  (`history_live_edit`); `rewriter` collects an agent rewrite; `rebase` and
+  `remote` read origin.
+- `reason` holds the codes Rust returns when it cannot read the worktree
+  (`status-unreadable`, `changed-unreadable` and the like). The sentence for
+  each lives in `features/history/historyReasonCopy.ts`, and `invokeHistory`
+  swaps a code for its sentence at the bridge.
+- `runner`, `commits` and `types` hold what they share.
+
+`mod.rs` only declares the files and re-exports the items lib.rs, `turn.rs`
+and the worktree module use, so lib.rs still registers
+`history::history_plan_run` and the other commands by name. A helper another
+file needs is `pub(super)`. Tests sit in `<file>/tests.rs` next to the file
+they cover; the repository builders more than one group needs live in the
+test-only `fixtures.rs`.
 
 ### Config export module
 
@@ -508,383 +729,32 @@ matches a bundle to what exists, `convert` holds the time, slug and project
 helpers, `error` the error enum, and `commands` the four Tauri commands.
 `mod.rs` only declares the files and re-exports the commands, so lib.rs still
 registers `config_export::config_export_preview` and the others by name. A
-helper another file needs is `pub(super)`. Tests sit in a `tests.rs` beside the
-file they cover; the connection and project builders more than one group needs
+helper another file needs is `pub(super)`. Tests sit in `<file>/tests.rs` next
+to the file they cover; the connection and project builders more than one group needs
 live in the test-only `fixtures.rs`, and `wire_shape_tests.rs` pins the json of
 every bundle struct. The writer map below counts Rust writes per file, so the
 baseline names `config_export/apply.rs`.
+
+### Dependency and build folders
+
+One table, `REPRODUCIBLE_DIRS` in `apps/desktop/src-tauri/src/reproducible_dirs.rs`,
+names the folders a tool can rebuild, each with a scope. `Dependency`
+(`node_modules`, `__pycache__`, `.venv`, `venv`, `Pods`, `vendor`) counts at
+any depth. `Output` (`dist`, `build`, `out`, `target`, `DerivedData`, `.next`,
+`.turbo`, `.gradle`) counts at the top of a project and, for the version walk,
+at any depth. `TopOnly` (`coverage`) counts at the top of a project only. Four
+readers ask it and none keeps a list of its own: the folder signals and the
+saved-versions walk (`is_skipped_in_walk`: dependency and output at any depth),
+the first-commit plan (`is_dependency` for any parent folder, `is_output_at_top`
+for the first one), the detach assessment (`is_reproducible_at_top`: an ignored
+folder like these is not at risk) and the script finder (`is_dependency`, plus
+`.git`). Add a name there, with a test, and all four follow.
 
 ### Provider routing
 
 - The list of models is built into the app, not saved in the database. Each model's id, family, cost tier, effort levels, context window, routing weight and price are written in the provider catalogs under `packages/core/src/providers/`. Every model the app can run ships with the app. When the list changes, there is no row to edit and no migration to write.
 - SQLite only stores your choices on top of that list, per workspace, project or session. A saved value points at a model. It never defines one.
 - The app checks each saved choice against the built-in list when it reads it. If a provider or model id is no longer in the list, the app uses the built-in default instead of trying to start it. So removing a model from a catalog never breaks a workspace that picked it.
-
-### Boot path
-
-- **No command on the boot path blocks the UI thread.** Every Tauri command
-  the boot sequence reaches that touches the database, the file system, a lock
-  or a subprocess is async where it is declared
-  ([ADR 002](adr/002-boot-path-leaves-the-ui-thread.md)).
-- **The boot path starts no provider process, and `ready` says nothing about
-  providers.** Providers start as `unknown` and are detected after boot,
-  through one refresh entry point
-  ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
-- **Launch order.** `hydrate` (`store/slices/boot/hydrate.ts`) awaits six steps
-  in a row (`BOOT_BUDGETS.awaitedStepsBeforeHydrated`), and the app shows after
-  three of them (`BOOT_BUDGETS.awaitedStepsBeforeShell`). Migrations come first:
-  `runDbMigrations` (`shared/lib/dbBoot.ts`) also purges the step agents a
-  deleted workflow left behind, with their slot questions, and seeds missing
-  built-in workflows. Then one group runs together: the boot settings with the
-  onboarding and the four settings hydrations, provider credentials,
-  workspaces with their projects, the integration keys, staged file version
-  recovery, the ghost reconcile and the QA preview. Then the workspace and
-  session restore, then `ready`. The ghost reconcile reads `turn_list_live`
-  once; that set and the projects reach `setCurrentWorkspace` as `LaunchReads`,
-  so the first workspace load reads neither again. A failed member names its
-  own phase in `bootFailedPhase`, and the launch error screen shows as before.
-- **Shell before data.** The launch opens its workspace through
-  `openLaunchWorkspace` (`store/slices/boot/openLaunchWorkspace.ts`), for the
-  reload intent, the saved window layout, the window hash and the last
-  workspace alike. It first commits the shell (`showLaunchShell`: that
-  workspace id, `boardReady` false, `isShellReady` true), so `App` mounts with
-  skeletons; then `setCurrentWorkspace` loads the snapshot and commits rows,
-  cards and counts with `boardReady` in one set. The id is passed down, never
-  read back after an await. A switch made during the load claims the latest
-  (`switchEpoch`): the launch load drops and the last session is not restored.
-  When that switch fails, its error stays in `workspaceSwitchError` and the
-  launch shell is put back as below, never left on skeletons; while the switch
-  still runs, the shell stays on its skeletons.
-  A launch load that fails or does not commit puts the shell back (id null,
-  `isShellReady` false); `openWorkspaceOrFail` then throws to the launch error
-  screen. Each window runs its own chain. `isShellReady` is reset at the start
-  of `hydrate` and set again on `ready`, so a launch with no workspace shows
-  the launcher at `ready`. `hydrated` still means the launch is done: the
-  window layout save, the onboarding decision, the artifact mirror and the
-  port signal wait for it.
-- **What launch loads of the agents.** `loadLaunchAgents`
-  (`store/slices/workspaces/loadLaunchAgents.ts`) reads a light row for every
-  agent of the workspace (`listAgentSummariesForSessions` in
-  `packages/db/src/queries/agent-summary.ts`): id, status, kind, parent, run,
-  step, timestamps and the other plain columns, with no summary text and no
-  JSON column (domains, thread ids, routing). A session with live work (an
-  agent pending, running, blocked or stopped by the restart, as
-  `needsFullAgentRows` decides) gets its full rows at launch. Every other
-  session is marked in `lightAgentSessions` and carries the summary text of
-  its newest unread agent only, the one the sidebar label shows
-  (`BOOT_BUDGETS.summaryTextsPerUnopenedSessionAtLaunch`). Opening the session
-  replaces the light rows with full rows (`openSessionAgents`); a turn, a
-  workflow advance and an orchestration step load them first
-  (`ensureFullAgents`). The stage, the "needs you" reasons and the unread
-  label read only light fields, so they are the same before and after the
-  open (`store.sqlite-light-agents.test.ts`).
-- **After ready, on idle.** `runEachOnIdle` starts one task per idle slot
-  (`waitForIdle`): ended work, orphan worktrees, provider limits and their
-  probe, the audit retry drain, stale browser tabs, then `runDbHygiene`
-  (retention pruning and orphan attachments, which used to hold the one
-  database connection before the first paint). A hygiene failure is a warning
-  notification, never the launch error screen. The shell's first pull request
-  sweep (`sweepRequests({ isCurrentFirst: true })` from `useGithubPolling`)
-  refreshes the open session at once and the other sessions on idle.
-  `bootBudgets.test.ts` holds the store commits before idle work starts.
-
-### Where commands run
-
-A Tauri command declared as a plain `fn` runs on the main thread, the same
-thread that draws the window and handles input. While it works, nothing else in
-the app moves. So the split is by what the command does.
-
-- **A command that touches the file system, git, a subprocess or the keychain
-  is `async fn`, and its blocking work runs inside
-  `tauri::async_runtime::spawn_blocking`.** The command keeps its name,
-  arguments and result. A join error becomes the command's own error type
-  (`restart_prepare` and `history_git_supported` follow the same shape).
-  Worktree, history, config export and import, the git and `gh` wrappers and
-  `explore_read` already work this way.
-- **A short SQLite call may run inline in an `async fn`.** An async command
-  runs on the worker pool, not on the main thread, so a query under the `Db`
-  lock does not freeze the window. Anything that can take long still goes
-  through `spawn_blocking`.
-- **A command that only reads or writes memory stays a plain `fn`.** That
-  covers registry lookups, lease bookkeeping and the answers to the frontend
-  (`mount_command_result`, `worktree_writer_*`, `frame_stage`).
-- **Terminal and provider-login input stays a plain `fn` on purpose.**
-  `terminal_write` and `provider_lifecycle_write` send keystrokes, and the main
-  thread keeps them in the order they were typed. Two async calls could
-  finish out of order. The command never writes to the pty itself: it queues
-  the bytes for the session's writer thread (`proc::pty::PtyInput`, 256 chunks
-  deep), so a child that never reads cannot hold the main thread, the session
-  lock, a close or a cancel. A full queue answers `backlogged`, a session whose
-  writer died answers `input_closed`, and a session already gone is a quiet
-  no-op.
-- **Do not hold a `std::sync::Mutex` guard across an `.await`.** Take the
-  lock, copy out what you need and drop it before the next `.await`, or do the
-  whole locked section inside `spawn_blocking`.
-
-`command_threading` (a Rust test) scans every `#[tauri::command]` and fails when
-a plain `fn` command is not on its short list of in-memory commands. A new
-command that does I/O has to be async, or the list has to change in review.
-
-### Logging
-
-Every build, debug and release, starts the log plugin first in `setup`
-(`src-tauri/src/logging.rs`), before the query bridge and anything else that
-can warn. It writes to one place: a local file, `goodboy.log`, in the system
-log folder of the app. That folder is `~/Library/Logs/com.goodboy.desktop/` on
-macOS, `~/.local/share/com.goodboy.desktop/logs/` on Linux and
-`%LOCALAPPDATA%\com.goodboy.desktop\logs\` on Windows. Nothing is sent
-anywhere; a debug build also prints to stdout.
-
-- **Level.** `info` and above. The frontend has no channel into the file: the
-  `log` permission is not granted, so a window cannot write to it.
-- **Size.** A file rotates at 512 KiB. The plugin keeps the active file and
-  the 3 most recent dated archives (`goodboy_<date>_<time>.log`). When two
-  rotations land in the same second the plugin renames the older archive to
-  `.log.bak`, and its own cleanup never removes those. So `logging::init`
-  sweeps them at every start and keeps only the newest. That needs more than
-  512 KiB logged in one second, and the one message a stranger could trigger
-  on demand, a network peer that connects to the phone listener and fails the
-  handshake, is logged at `debug` and never reaches the file. Normal size:
-  under about 2.5 MiB. `logging::tests` floods the logger and pins the cap.
-- **Access.** The folder is narrowed to the owner (`0700`) on macOS and Linux.
-- **Content.** Log a fixed label and a short reason, never a token, a prompt,
-  a file's content or a command line. `logging::detail` is the one way to
-  print an error: it keeps the first line, hides credentials inside URLs and
-  cuts the text at 200 characters.
-- **Slow operations.** `logging::slow(label, started)` writes one `info` line,
-  `[slow] <label> took <n>ms`, when an operation took 250 ms or more
-  (`logging::SLOW_THRESHOLD`); `logging::timed(label, run)` wraps a closure the
-  same way. The label is fixed: `git <verb>` in the `Git` runner (the
-  subcommand only, never an argument or a path, and `git` alone when the word
-  is not a plain subcommand name), and `db_exec`, `db_execute`, `db_select` and
-  `db_transaction` for the webview's SQL commands, each with a second
-  `<command> lock wait` line when waiting for the connection lock took that
-  long. Nothing is exported or sent; the line lands in the same file and
-  rotation as every other line. Spawn and the provider probes do not write one
-  yet.
-- **Dropped errors.** `logging::note_failure` and `note_kill_failure` replace
-  `let _ =` in process teardown (killing a terminal, script, provider login or
-  live child) and in git cleanup (removing scratch and copy worktrees,
-  `worktree prune`, `cherry-pick --abort` and the resets after it). A child that
-  already exited is not reported. Other `let _ =` are still silent by design:
-  event emits to a closed window and best-effort file cleanup.
-- **A step that ended silently leaves a line.** `step_end_log::log_step_end`
-  (`step_end_log.rs`) writes `[turns] step ended without a result agent <id>:
-<reason>` when the step end watch finds a workflow step still running after
-  its turn settled with nothing to continue it
-  ([workflows.md](workflows.md) → When a step stops without its done marker).
-  The agent id and a fixed reason, nothing from the conversation; control
-  characters become spaces and each field is cut at 200 characters.
-- **A frozen window leaves a record.** `window_heartbeat.rs` is a watchdog
-  with no network and no kill: it notes a freeze in `last-crash.json` (see
-  [navigation/shell.md](navigation/shell.md), After a crash the app could not show) and
-  logs nothing else. It does not run in debug builds, where a paused debugger
-  would read as a freeze.
-- **Logging never blocks startup.** `logging::init` builds the logger itself
-  and does not register the plugin. If the folder or file cannot be created or
-  opened (a `goodboy.log` owned by root after a `sudo` run, a read-only data
-  folder), it prints one line to stderr and the app starts with logging off.
-- **Before the logger exists.** `db::open` runs before the app, so its
-  messages go through `logging::early`: printed to stderr at once, and written
-  to the file when `setup` starts the logger (at most 16 lines).
-
-### Opening an artifact outside the app
-
-- **There is no reader window and no print window.** A plan, a report and a
-  wireframe render in the app through `ArtifactDocument` (`medium="screen"`,
-  themed) and on disk through the same component (`medium="file"`, always
-  light). `Open in browser` follows the Links setting: beside the session it
-  takes the path from `artifact_mirror_path` and opens a local tab, and
-  outside (`artifact_mirror_open`) it opens that file with the browser chosen
-  in Settings (`chosen_browser_launch`) or, without one, the
-  OS default web browser, never with a `.html` file's default app: macOS asks
-  Launch Services directly (`LSCopyDefaultApplicationURLForURL`, via
-  `core-foundation-sys`), Windows asks the shell's association API directly
-  (`AssocQueryStringW`, via `windows-sys`), both native calls rather than
-  shelling out to `defaults`/`reg`, and both fall back to the platform opener
-  (`proc::open::open_path`) if resolution fails. Linux always uses that opener, which
-  already resolves the default browser through `xdg-open` on its own. `⌘P`
-  from there prints, with the browser's own print dialog.
-- **The file is never stale.** `meta.json` carries `rendererVersion`
-  (`ARTIFACT_RENDERER_VERSION`) beside `revision` and `updatedAt`. Rust's
-  `is_current` compares all three, so a restyle that bumps the version alone,
-  with no artifact change, marks every mirrored file pending and the
-  post-boot backfill rewrites the whole archive.
-- **The document carries no runtime style.** No `<style>` element and no
-  `style` string built at runtime: Tauri adds a nonce to the CSP and the
-  webview then drops `unsafe-inline`. The styles live in `artifactDocument.css`,
-  keyed on `data-medium` (`screen` in the app, `file` on disk; `@media print`
-  inside `file` covers paper). Every file on disk also carries its own
-  `Content-Security-Policy` meta tag (`default-src 'none'; …`), so opening it
-  in a browser makes no network call.
-- **The artifacts folder is one command away.** The lens header's `Show in
-Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file manager
-  (`artifact_mirror_open_root`), since `~/.goodboy` itself is hidden.
-
-### Untrusted text
-
-- **Text a stranger wrote reaches a prompt only through `untrustedBlock`.**
-  Issue and ticket text, check names, check logs, file paths and PR text
-  go through `untrustedBlock({ source, text })` in `packages/core`. It prints
-  a line naming the source and saying the text is evidence only, then the text
-  in a fence longer than any backtick run inside it, so the text cannot close
-  its own block. The issue brief and the check analysis builders use it, and
-  a test per builder fails when a host word lands outside a block. A new
-  builder that puts host text in a prompt calls it too. It frames the text; it
-  is not the boundary, which stays the permission mode.
-- **Text a stranger wrote renders with a depth cap and linear patterns.**
-  `parseMarkdown` opens at most six nested `<<tag>>` callouts
-  (`MAX_CALLOUT_DEPTH`); a seventh opener stays plain text, so
-  `'<<note>>'.repeat(2500)` cannot overflow the stack. The table divider is
-  checked cell by cell, not with a regex that backtracks. If a parse or a render
-  step still throws, `Markdown` logs it and shows the raw text in a `<pre>` for
-  that block of text only; the rest of the window stays alive, and the next text
-  parses again. The patterns in `redactReport` that match a stranger's text
-  (URL scheme, scp remote, email) bound every repeat. A new pattern over
-  untrusted text bounds its repeats and gets a pathological-input case in a
-  perf test (`MarkdownDepth.test.tsx`, `redactReport.perf.test.ts`).
-- **A key a model or a host controls is looked up with `ownValue`.**
-  `ownValue({ table, key })` in `packages/core` reads a table through
-  `Object.hasOwn`, so `constructor`, `__proto__` and `toString` answer
-  `undefined` instead of an inherited function. The wireframe near tables
-  (the enum gate the frame trusts), the GitLab job conclusions, the GitHub
-  review decisions and the Claude rate limit status and window tables use it,
-  each with a test that feeds the inherited names. Pattern expansion copies
-  keys with `Object.fromEntries`, so a `__proto__` key stays data and never
-  rewires a node. A new table keyed by a string from outside uses `ownValue`
-  or a `Map`.
-- **A remote image never reaches a reserved address.** `remote_image.rs`
-  refuses, for IPv4, `0.0.0.0/8`, loopback, private, link-local, `100.64.0.0/10`,
-  `192.0.0.0/24`, `192.88.99.0/24`, `198.18.0.0/15`, documentation, multicast
-  and `240.0.0.0/4`; for IPv6, unique local, link-local, the deprecated
-  site-local `fec0::/10`, loopback, multicast,
-  NAT64 (`64:ff9b::/32`), 6to4 (`2002::/16`), Teredo (`2001::/32`),
-  documentation (`2001:db8::/32`), discard (`100::/64`) and the `::/96`
-  IPv4-compatible block. An IPv4-mapped address takes the IPv4 rules. The same
-  rules vet every address a DNS answer gives, before the client is pinned to
-  them. The table tests in `remote_image.rs` pin each range and its public
-  neighbours; a new range changes both lists.
-- **The pinned client never goes through a proxy.** `build_media_client` sets
-  `no_proxy()`, so a proxy named in the environment or the system settings cannot
-  resolve the host again on its own and reach an address the vetting refused.
-  `the_media_client_never_routes_through_a_proxy` pins it.
-- **One deadline covers the whole fetch.** A fetch, a probe and a video
-  (`remote_media.rs`) each take one `Deadline` (15 s, 180 s for a video) that
-  bounds the DNS lookup, the first request, the one GitHub redirect and the
-  streamed body together. A redirect gets what is left, never a fresh budget,
-  and a lookup also stops after 5 s (`DNS_TIMEOUT`).
-- **What a browser tab's page runtime records is page data.** The runtime
-  (`browser/page_runtime/`, joined by `console::tab_script`) keeps console
-  lines, requests and errors in separate rings in the page, and Rust parses
-  every read as untrusted: each entry on its own, every field capped, the
-  sensitive headers dropped again (`console::SENSITIVE_HEADERS`). The elements
-  a user picks are page data too (`pick::pick_answer_of` caps every field), and
-  the note about them is typed in the app, never in the page. The rest is in
-  [browser.md](./browser.md) → Console and Pick an element.
-
-### Hidden pages
-
-- **A page that is not on screen is hidden under React `Activity`, not unmounted
-  and not kept running.** The board, the session frame and the draft are layers
-  of one `PaneSwap` in `App`; the five kept-alive session pages
-  (`KEEP_ALIVE_CAP`) are each wrapped in `Activity` by `KeepAliveWorkSurface`.
-  A hidden page keeps its state, drafts and pending turns, its effects are
-  cleaned up, and it does not re-render on store writes. A hook that must work
-  for a hidden page cannot live in a page effect: `useSessionBranchSync` runs
-  only for the visible session and re-reads the branch when it shows again.
-
-### Render errors
-
-- **A render error ends one panel, not the window.** `PanelBoundary`
-  (`app/components/PanelBoundary`) wraps each studio (`AppStudio`), each
-  drawer (`DrawerHost`, keyed by `drawerKey`) and each session page
-  (`KeepAliveWorkSurface`). A throw inside one shows "This page could not be
-  drawn" in that panel with Retry (remounts the panel), a leave action (Go to
-  the board, Close drawer or Close) and Report this crash (the inline crash report).
-  The rail, the top bar and every other session stay alive.
-- **The root `ErrorBoundary` in `main.tsx` is the last resort.** It only shows
-  when the shell itself throws. Both use `ErrorBoundary` from `packages/ui`;
-  a panel passes `renderFallback`, the root does not.
-- **Every caught render error is written to the app log.** Both boundaries pass
-  `onCatch={logRenderCrash}` (`features/bug-report/logRenderCrash`), which calls
-  `log_render_crash` (`render_crash_log.rs`). It writes three `[render-crash]`
-  lines (name and message, stack, component stack) to the local log only. Home
-  folders become `~`, credentials are hidden and each field is cut to a fixed
-  length.
-
-### Frames
-
-- **A wireframe is shown as its real pages, in an isolated frame.** The app
-  never renders a wireframe in its own DOM. The viewer compiles the spec with
-  the same renderer that writes the folder (`features/wireframes/wireframePages/`),
-  hands the pages to Rust with `frame_stage`, and shows them in an
-  `<iframe sandbox="allow-scripts">` on the custom `gbframe` scheme
-  (`gbframe://localhost/<stage>/<page>`, `http://gbframe.localhost/...` on
-  Windows). `frame_release` drops a stage when the viewer unmounts; stages
-  live in memory, at most 16 MB, least recently used out first.
-- **The frame has no same origin.** Without `allow-same-origin` its origin is
-  opaque: no access to the parent, no cookies, no top navigation, no forms, no
-  popups, and no Tauri capability covers it. Every `gbframe` response carries
-  its own CSP (`default-src 'none'`, styles and scripts only from `gbframe`,
-  `connect-src 'none'`, `form-action 'none'`) and `Cache-Control: no-store`.
-  The app CSP only adds `frame-src gbframe: http://gbframe.localhost`.
-- **One script of ours, only on the stage.** Rust serves the staged pages with
-  one difference from the file on disk: `/_gb/stage.css` and `/_gb/stage.js`
-  (`src-tauri/src/frame_stage.*`) in `<head>`. The file never holds them. The
-  stylesheet hides the page chrome (`.wf-page-chrome`) so the stage shows the
-  screen alone. The script talks to the parent only with `postMessage`:
-  `navigated { path, height }` on load, `picked { nodeId, label }` and
-  `pickEnded` while Pick is on; from the parent, `pick { isOn }`, `reveal { nodeId }`
-  and `variant { variantId }` (sets `data-variant` on the page, which the
-  generated stylesheet uses to hide nodes outside that release cut).
-  The parent accepts a message only when `event.source` is that iframe's
-  `contentWindow` and its shape parses (`frame/frameMessage.ts`). Pages mark
-  each node with `data-node` so the script can find it.
-- **Agent text reaches the page only escaped.** The renderer escapes every
-  string of the spec; no agent string becomes a script, a `style` or an `on*`
-  attribute.
-
-### Git status reads
-
-- **A git read fails closed.** Distances and the working tree are `known` or
-  `unknown` with a named reason. A zero never stands in for a failed read. An
-  unknown never shows as a claim about the repository and never enables a
-  change. A command that changes git passes its own safety config where it is
-  called, and `git()` stays unaware of config
-  ([ADR 004](adr/004-git-reads-fail-closed.md)).
-
-- **The remote probe is a git read like the others.** `project_remote_probe`
-  asks `ls-remote --symref origin HEAD` with a 15 second timeout, fetches the
-  default branch only on a hit and sets `origin/HEAD`. Its four answers
-  (`no-remote`, `unreachable`, `reachable-no-main`, `main-present`) fail closed:
-  a timeout or a failed step is `unreachable`, never `main-present`. It runs on
-  window focus and every 60 seconds (five minutes after three unreachable
-  answers) only while a project is in its first lap, from `useBootstrapWatch`.
-  That pace is `hostPollDelayMs`, the one backoff the host reachability state
-  below reuses.
-
-- **A host that does not answer is one state, not a message per poll.**
-  `hostReachability` holds, per host (GitLab and Bitbucket), the first time of
-  the outage and a count of `network` or `timeout` answers from the typed host
-  failures. Every refresh of a request goes through `refreshMountRequest`, which
-  feeds the state and holds a silent refresh back once a host has failed three
-  times, until five minutes pass. A refresh the person asked for (`force`, or
-  from a screen) always asks. Any other answer, even a refused sign-in, means
-  the host is there. The top bar shows one quiet line per host with Retry, and
-  Retry asks again for every session that already holds a request of that host.
-- **A silent refresh that finds nothing new writes nothing.** For a mount that
-  already holds an entry, `refreshMountRequest` skips the pending write and
-  writes the result only when the data differs from the stored entry, the
-  `fetchedAt` time aside. A second silent refresh of the same mount while one
-  runs is dropped. A refresh from a screen or a first read still writes both.
-  `noteHostAnswer` writes only when the host state changes. Its late-answer
-  guard sits in a record the slice owns, which an unchanged answer advances in
-  place, so an older answer is still dropped.
-- **Stage info is derived once per session.** `cachedStageInfoOf` keeps one
-  derivation per session and the reads it made, and every caller (the board,
-  the top bar, the sidebar, the rows) shares it. A write re-derives only the
-  sessions whose reads changed. The rule and its trap live in
-  [typescript/state-writes.md](typescript/state-writes.md#7-derived-facts-are-kept-per-session).
 
 ### Database migrations
 
@@ -960,8 +830,8 @@ file (no recorded version and no table) gets no copy: there is nothing to keep. 
 `data.db.pre-m<next>-from-m<current>-<timestamp>.bak`. Here `<next>` is the
 lowest version waiting to run, the one the copy protects you from.
 `<current>` is the highest version already applied, the schema the file
-really has. Copies made before 0.3.0 use the older name
-`data.db.pre-m<current>-<timestamp>.bak`. The runner handles both. It finds
+really has. The runner also reads the older name
+`data.db.pre-m<current>-<timestamp>.bak` (`downgradeGuard.ts`). It finds
 copies by the `data.db.pre-m` prefix and reads their age from the timestamp
 at the end. It keeps the two newest and deletes the rest. If saving the copy
 fails, no migration runs.
@@ -987,9 +857,9 @@ in one atomic step with SQLite's own reset (`SQLITE_DBCONFIG_RESET_DATABASE`
 plus `VACUUM`), and the chain replays from m001 on the empty file. It never
 drops tables one by one: that leaves views like `live_agents` behind, and the
 first `ALTER TABLE ... RENAME` of the replay fails on them (see
-[traps](traps.md#traps-in-the-toolchain)). Builds before 0.8.0 did exactly
-that, so `db::open` checks the file at launch. It finishes the wipe only when
-both signs of that old wipe are there: a view reads a table that no longer
+[traps](traps.md#traps-in-the-toolchain)). A file an older build wiped that
+way is healed at launch: `db::open` finishes the wipe only when both signs of
+that wipe are there: a view reads a table that no longer
 exists, and one of `schema_version`, `sessions` or `agents` is missing. It
 first checkpoints the WAL and copies the file (with its `-wal` and `-shm`) to
 `data.db.pre-reset-<unix seconds>.bak`. If the copy fails, nothing is reset.
@@ -1007,7 +877,7 @@ export and import, a project move, the permission audit, integration
 credentials, the budget checks and the work ledger (a script run is born in a
 Rust process, so Rust writes its row once, whatever the number of windows). The
 unit is the command or the transaction,
-not the table. The atomic agent operations moved with the agents: the routing
+not the table. The atomic agent operations live with the agents: the routing
 gate, the fan-out of a delegated batch and the status stamps are guarded
 statements in `packages/db/src/queries/agent-write.ts`, and a workflow save is
 one transaction in `saveWorkflow`.
@@ -1195,8 +1065,11 @@ kept.
   (`DatabaseFromNewerBuildError`, `packages/db/src/migrations/downgradeGuard.ts`)
   and offers the snapshot taken before the migration ran
   (`migrationSnapshotStorage` in `shared/lib/dbBoot.ts`). m246 adds
-  `auto_trees.guide`, NULL or JSON, the record of the workflow a Lead follows;
-  nothing writes it yet. m246 is one-way the same way.
+  `auto_trees.guide`, NULL or JSON, the record of the workflow a Lead follows:
+  `ensureRunGuide` fills it once and `changeRunGuide` writes it only over the
+  value it read, and a user message lifts a held check
+  (`liftRunHoldStatement`), all in `store/runtime/runGuide/`. m246 is one-way
+  the same way.
 - `store/runtime/auto/scheduler.ts` is the one writer of tree state. A window
   writes only while it holds the lease, so a second window reads. Every
   transition names the phase revision, generation and phase it expects, and a
@@ -1455,29 +1328,14 @@ workspace is gone, and the storage scan only ever looks inside
 `<repo>/.goodboy/worktrees/` of those roots. Sizes count allocated blocks,
 the way Finder's "size on disk" does.
 
-A folder project keeps the session folders of sessions made before 0.27.3 in
-`<project-root>/sessions/` next to your code instead of in `~/.goodboy`; newer
-sessions write in the folder itself and add nothing to it.
+A folder project can still hold `<project-root>/sessions/` next to your code,
+with the session folders an older build made there. A new session writes in
+the project folder itself and adds nothing to `sessions/`.
 
 ### How mounts are saved and recovered
 
 The mount table, the operation log, recovery and cleanup are described in
 [mounts.md](mounts.md).
-
-### Dependency and build folders
-
-One table, `REPRODUCIBLE_DIRS` in `apps/desktop/src-tauri/src/reproducible_dirs.rs`,
-names the folders a tool can rebuild, each with a scope. `Dependency`
-(`node_modules`, `__pycache__`, `.venv`, `venv`, `Pods`, `vendor`) counts at
-any depth. `Output` (`dist`, `build`, `out`, `target`, `DerivedData`, `.next`,
-`.turbo`, `.gradle`) counts at the top of a project and, for the version walk,
-at any depth. `TopOnly` (`coverage`) counts at the top of a project only. Four
-readers ask it and none keeps a list of its own: the folder signals and the
-saved-versions walk (`is_skipped_in_walk`: dependency and output at any depth),
-the first-commit plan (`is_dependency` for any parent folder, `is_output_at_top`
-for the first one), the detach assessment (`is_reproducible_at_top`: an ignored
-folder like these is not at risk) and the script finder (`is_dependency`, plus
-`.git`). Add a name there, with a test, and all four follow.
 
 ### Moving a project's folder
 
@@ -1527,7 +1385,7 @@ through `project_relocation_undo`.
 
 ### Backup and setup export
 
-Settings › App › Backup reads and writes a JSON bundle, schema version 3
+Settings > Backup and reset reads and writes a JSON bundle, schema version 3
 (`apps/desktop/src-tauri/src/config_export/`, mirrored in
 `packages/types/src/config-bundle.ts`). What goes in is chosen per group
 (`ExportGroups`): workspaces, projects, folder paths, profile, workflows you
@@ -1538,8 +1396,9 @@ Never included, in any bundle: API keys and tokens, sign-ins, sessions and
 transcripts, artifacts, worktree folders, usage history, notifications.
 A workspace's JSON-shaped overrides (provider bindings, task models, role
 models, provider pool) carry as nested JSON values in the bundle, not
-string-encoded text; a bundle written before this stayed compatible through
-a deserializer that still accepts the old `*Json` string fields.
+string-encoded text. The reader also accepts bundles of schema versions 1
+and 2 and their `*Json` string fields (`LEGACY_SCHEMA_VERSIONS` and the serde
+aliases in `bundle.rs`).
 
 Before a write, `config_export_preview` reports which open security findings
 (`security_findings`, see [SECURITY.md](../SECURITY.md)) fall inside the
@@ -1561,3 +1420,168 @@ bundle row against the local database before any write, so the confirm step
 shows what will change instead of only a post-apply count. Import only
 inserts and updates; it never deletes a row, and a project it cannot resolve
 a folder for is skipped and counted, not dropped from the file.
+
+### Hidden pages
+
+- **A page that is not on screen is hidden under React `Activity`, not unmounted
+  and not kept running.** The board, the session frame and the draft are layers
+  of one `PaneSwap` in `App`; the five kept-alive session pages
+  (`KEEP_ALIVE_CAP`) are each wrapped in `Activity` by `KeepAliveWorkSurface`.
+  A hidden page keeps its state, drafts and pending turns, its effects are
+  cleaned up, and it does not re-render on store writes. A hook that must work
+  for a hidden page cannot live in a page effect: `useSessionBranchSync` runs
+  only for the visible session and re-reads the branch when it shows again.
+
+### Render errors
+
+- **A render error ends one panel, not the window.** `PanelBoundary`
+  (`app/components/PanelBoundary`) wraps each studio (`AppStudio`), each
+  drawer (`DrawerHost`, keyed by `drawerKey`) and each session page
+  (`KeepAliveWorkSurface`). A throw inside one shows "This page couldn't be
+  drawn" in that panel with Retry (remounts the panel), a leave action (Go to
+  the board, Close drawer or Close) and Report this crash (the inline crash report).
+  The rail, the top bar and every other session stay alive.
+- **The root `ErrorBoundary` in `main.tsx` is the last resort.** It only shows
+  when the shell itself throws. Both use `ErrorBoundary` from `packages/ui`;
+  a panel passes `renderFallback`, the root does not.
+- **Every caught render error is written to the app log.** Both boundaries pass
+  `onCatch={logRenderCrash}` (`features/bug-report/logRenderCrash`), which calls
+  `log_render_crash` (`render_crash_log.rs`). It writes three `[render-crash]`
+  lines (name and message, stack, component stack) to the local log only. Home
+  folders become `~`, credentials are hidden and each field is cut to a fixed
+  length.
+
+### Code highlighter
+
+`apps/desktop/src/shared/lib/highlight` is the one syntax highlighter. Shiki
+runs in a web worker behind `highlightCode`, with an in-process fallback; the
+caps (5,000 lines, 1,000 characters a line) live in `caps.ts` so a view can
+read them without loading Shiki. The diff (`SyntaxText`, `useDiffTokens`), the
+chat code blocks (`APP_CODE_HIGHLIGHTER`) and the Explore file view
+(`shared/components/SourceView`) all read it from there.
+
+### Frames
+
+- **A wireframe is shown as its real pages, in an isolated frame.** The app
+  never renders a wireframe in its own DOM. The viewer compiles the spec with
+  the same renderer that writes the folder (`features/wireframes/wireframePages/`),
+  hands the pages to Rust with `frame_stage`, and shows them in an
+  `<iframe sandbox="allow-scripts">` on the custom `gbframe` scheme
+  (`gbframe://localhost/<stage>/<page>`, `http://gbframe.localhost/...` on
+  Windows). `frame_release` drops a stage when the viewer unmounts; stages
+  live in memory, at most 16 MB, least recently used out first.
+- **The frame has no same origin.** Without `allow-same-origin` its origin is
+  opaque: no access to the parent, no cookies, no top navigation, no forms, no
+  popups, and no Tauri capability covers it. Every `gbframe` response carries
+  its own CSP (`default-src 'none'`, styles and scripts only from `gbframe`,
+  `connect-src 'none'`, `form-action 'none'`) and `Cache-Control: no-store`.
+  The app CSP only adds `frame-src gbframe: http://gbframe.localhost`.
+- **One script of ours, only on the stage.** Rust serves the staged pages with
+  one difference from the file on disk: `/_gb/stage.css` and `/_gb/stage.js`
+  (`src-tauri/src/frame_stage.*`) in `<head>`. The file never holds them. The
+  stylesheet hides the page chrome (`.wf-page-chrome`) so the stage shows the
+  screen alone. The script talks to the parent only with `postMessage`:
+  `navigated { path, height }` on load, `picked { nodeId, label }` and
+  `pickEnded` while Pick is on; from the parent, `pick { isOn }`, `reveal { nodeId }`
+  and `variant { variantId }` (sets `data-variant` on the page, which the
+  generated stylesheet uses to hide nodes outside that release cut).
+  The parent accepts a message only when `event.source` is that iframe's
+  `contentWindow` and its shape parses (`frame/frameMessage.ts`). Pages mark
+  each node with `data-node` so the script can find it.
+- **Agent text reaches the page only escaped.** The renderer escapes every
+  string of the spec; no agent string becomes a script, a `style` or an `on*`
+  attribute.
+
+### Opening an artifact outside the app
+
+- **There is no reader window and no print window.** A plan, a report and a
+  wireframe render in the app through `ArtifactDocument` (`medium="screen"`,
+  themed) and on disk through the same component (`medium="file"`, always
+  light). `Open in browser` follows the Links setting: beside the session it
+  takes the path from `artifact_mirror_path` and opens a local tab, and
+  outside (`artifact_mirror_open`) it opens that file with the browser chosen
+  in Settings (`chosen_browser_launch`) or, without one, the
+  OS default web browser, never with a `.html` file's default app: macOS asks
+  Launch Services directly (`LSCopyDefaultApplicationURLForURL`, via
+  `core-foundation-sys`), Windows asks the shell's association API directly
+  (`AssocQueryStringW`, via `windows-sys`), both native calls rather than
+  shelling out to `defaults`/`reg`, and both fall back to the platform opener
+  (`proc::open::open_path`) if resolution fails. Linux always uses that opener, which
+  already resolves the default browser through `xdg-open` on its own. `⌘P`
+  from there prints, with the browser's own print dialog.
+- **The file is never stale.** `meta.json` carries `rendererVersion`
+  (`ARTIFACT_RENDERER_VERSION`) beside `revision` and `updatedAt`. Rust's
+  `is_current` compares all three, so a restyle that bumps the version alone,
+  with no artifact change, marks every mirrored file pending and the
+  post-boot backfill rewrites the whole archive.
+- **The document carries no runtime style.** No `<style>` element and no
+  `style` string built at runtime: Tauri adds a nonce to the CSP and the
+  webview then drops `unsafe-inline`. The styles live in `artifactDocument.css`,
+  keyed on `data-medium` (`screen` in the app, `file` on disk; `@media print`
+  inside `file` covers paper). Every file on disk also carries its own
+  `Content-Security-Policy` meta tag (`default-src 'none'; …`), so opening it
+  in a browser makes no network call.
+- **The artifacts folder is one command away.** The lens header's `Show in
+Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file manager
+  (`artifact_mirror_open_root`), since `~/.goodboy` itself is hidden.
+
+### Untrusted text
+
+- **Text a stranger wrote reaches a prompt only through `untrustedBlock`.**
+  Issue and ticket text, check names, check logs, file paths and PR text
+  go through `untrustedBlock({ source, text })` in `packages/core`. It prints
+  a line naming the source and saying the text is evidence only, then the text
+  in a fence longer than any backtick run inside it, so the text cannot close
+  its own block. The issue brief and the check analysis builders use it, and
+  a test per builder fails when a host word lands outside a block. A new
+  builder that puts host text in a prompt calls it too. It frames the text; it
+  is not the boundary, which stays the permission mode.
+- **Text a stranger wrote renders with a depth cap and linear patterns.**
+  `parseMarkdown` opens at most six nested `<<tag>>` callouts
+  (`MAX_CALLOUT_DEPTH`); a seventh opener stays plain text, so
+  `'<<note>>'.repeat(2500)` cannot overflow the stack. The table divider is
+  checked cell by cell, not with a regex that backtracks. If a parse or a render
+  step still throws, `Markdown` logs it and shows the raw text in a `<pre>` for
+  that block of text only; the rest of the window stays alive, and the next text
+  parses again. The patterns in `redactReport` that match a stranger's text
+  (URL scheme, scp remote, email) bound every repeat. A new pattern over
+  untrusted text bounds its repeats and gets a pathological-input case in a
+  perf test (`MarkdownDepth.test.tsx`, `redactReport.perf.test.ts`).
+- **A key a model or a host controls is looked up with `ownValue`.**
+  `ownValue({ table, key })` in `packages/core` reads a table through
+  `Object.hasOwn`, so `constructor`, `__proto__` and `toString` answer
+  `undefined` instead of an inherited function. The wireframe near tables
+  (the enum gate the frame trusts), the GitLab job conclusions, the GitHub
+  review decisions and the Claude rate limit status and window tables use it,
+  each with a test that feeds the inherited names. Pattern expansion copies
+  keys with `Object.fromEntries`, so a `__proto__` key stays data and never
+  rewires a node. A new table keyed by a string from outside uses `ownValue`
+  or a `Map`.
+- **A remote image never reaches a reserved address.** `remote_image.rs`
+  refuses, for IPv4, `0.0.0.0/8`, loopback, private, link-local, `100.64.0.0/10`,
+  `192.0.0.0/24`, `192.88.99.0/24`, `198.18.0.0/15`, documentation, multicast
+  and `240.0.0.0/4`; for IPv6, unique local, link-local, the deprecated
+  site-local `fec0::/10`, loopback, multicast,
+  NAT64 (`64:ff9b::/32`), 6to4 (`2002::/16`), Teredo (`2001::/32`),
+  documentation (`2001:db8::/32`), discard (`100::/64`) and the `::/96`
+  IPv4-compatible block. An IPv4-mapped address takes the IPv4 rules. The same
+  rules vet every address a DNS answer gives, before the client is pinned to
+  them. The table tests in `remote_image.rs` pin each range and its public
+  neighbours; a new range changes both lists.
+- **The pinned client never goes through a proxy.** `build_media_client` sets
+  `no_proxy()`, so a proxy named in the environment or the system settings cannot
+  resolve the host again on its own and reach an address the vetting refused.
+  `the_media_client_never_routes_through_a_proxy` pins it.
+- **One deadline covers the whole fetch.** A fetch, a probe and a video
+  (`remote_media.rs`) each take one `Deadline` (15 s, 180 s for a video) that
+  bounds the DNS lookup, the first request, the one GitHub redirect and the
+  streamed body together. A redirect gets what is left, never a fresh budget,
+  and a lookup also stops after 5 s (`DNS_TIMEOUT`).
+- **What a browser tab's page runtime records is page data.** The runtime
+  (`browser/page_runtime/`, joined by `console::tab_script`) keeps console
+  lines, requests and errors in separate rings in the page, and Rust parses
+  every read as untrusted: each entry on its own, every field capped, the
+  sensitive headers dropped again (`console::SENSITIVE_HEADERS`). The elements
+  a user picks are page data too (`pick::pick_answer_of` caps every field), and
+  the note about them is typed in the app, never in the page. The rest is in
+  [browser.md](./browser.md) → Console and Pick an element.

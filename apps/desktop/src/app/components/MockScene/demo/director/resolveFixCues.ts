@@ -8,7 +8,6 @@ import { patchResolveThreads } from './patchResolveThreads';
 import { STORY_REVIEW } from '../../scenes/story/storyContent';
 
 const SUMMARY = STORY_REVIEW.summary;
-const TEST_COMMAND = 'pnpm vitest run redelivery';
 const FIX_SHA = 'a4c19e07d2b85f3e61c0d9a7b42e8f15c3d6a90b';
 
 type Params = {
@@ -100,7 +99,7 @@ const bash =
       runId,
       toolUseId,
       toolName: 'Bash',
-      input: { command: TEST_COMMAND },
+      input: { command: STORY_REVIEW.testCommand },
       at,
     },
   ];
@@ -138,7 +137,14 @@ export const resolveFixCues = ({
       atMs: 3300,
       agentId,
       events: ({ at }) => [
-        { kind: 'tool_call_end', runId, toolUseId, output: '7 passed', isError: false, at },
+        {
+          kind: 'tool_call_end',
+          runId,
+          toolUseId,
+          output: STORY_REVIEW.testOutput,
+          isError: false,
+          at,
+        },
       ],
     }),
     eventCue({

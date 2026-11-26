@@ -165,7 +165,7 @@
 - **Reference beside the work opens in the right drawer, not a rail.** Popover
   = pick one thing in ten seconds; drawer = reference next to the work; page =
   the work. The session context and the Explore file preview open there.
-  Creating or configuring stays in a popover, navigating stays in the sidebar,
+  Creating or configuring stays in a popover, navigating stays in the rails and tabs,
   and an object you work on is a child page under the session crumbs, not a studio trail
   ([Crumbs](session-rail.md#crumbs)). See
   [The right drawer](home-and-drawer.md#the-right-drawer).

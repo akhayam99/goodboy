@@ -77,13 +77,12 @@ talking to a market. There are two voices:
 - **A button or menu label is a verb and an object.** Use the developer's
   word: "Rebase on their commits", "Abort rebase", "Restore stashed files",
   not "Bring them in" or "Keep". Offer a copy action only for content the user
-  cannot select where it is shown. Search or run always shows it with its
-  object ("Pin session"). A bare verb in the menu of its own object ("Pin") is
-  planned and not shown yet.
-- **An ellipsis means an input comes next.** "Start a run…" and "Set limit…"
-  open a field before anything runs; a label that acts at once has none. The
-  word in `NAMES` never ends in one; a menu that draws it is planned. A
-  progress word keeps its ellipsis: "Starting…", "Closing…".
+  cannot select where it is shown. Search or run always shows a verb with its
+  object ("Pin session"); a bare verb fits only the menu of its own object (a
+  chat's "Pin").
+- **An ellipsis means an input comes next.** "Set limit…", "Choose a folder…"
+  and "Send to Lead…" open a field or a picker before anything runs; a label
+  that acts at once has none. A progress word keeps its ellipsis: "Starting…", "Closing…".
 - **In a tab or an app, on a host.** "Open in Terminal", "Open in external
   terminal", "Open on GitHub".
 - **Say panel.** A side region of the window is a panel on screen ("Close the
@@ -111,13 +110,13 @@ talking to a market. There are two voices:
   Dismiss, Clear and Retry each mean one thing, and the table is in
   [concepts.md](concepts.md) → Vocabulary rules. A failed action offers
   "Retry", never "Try again". Advice inside a sentence may still say "try
-  again".
-  The scanner follows conditional labels and counts single words in state and
-  copy properties. Option labels also reject "myself".
+  again". The scanner follows conditional labels and counts single words in
+  state and copy properties. Option labels also reject "myself".
   `state-words.test.ts` checks the state maps and tooltip meanings against the
-  table in concepts. `verb-words.test.ts` rejects Open full, View, See, View transcript,
-  Go to chat and See what it did on controls, also when a control takes the label
-  from a copy table; a View facet heading remains a noun.
+  table in concepts. `verb-words.test.ts` rejects Open full, View, See, View
+  transcript, Go to chat, See what it did, Open agent chat and See diff on
+  controls, also when a control
+  takes the label from a copy table; a View facet heading remains a noun.
 - **One scale for "stop and ask".** "Ask first" is the only label for it, in
   Settings, Slack, after-merge cleanup and limits.
 - **One form for a settings path and for a key.** Write a path as

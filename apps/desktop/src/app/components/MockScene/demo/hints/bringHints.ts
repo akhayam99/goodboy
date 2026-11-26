@@ -1,3 +1,4 @@
+import { STORY_SESSION_ID } from '../../scenes/story/storyWorld';
 import type { AppStore } from '../../../../../store/store';
 import type { BlockParams, DemoHint, HintProbe } from './demoHintTypes';
 import { hasElement } from './hasElement';
@@ -36,6 +37,12 @@ const hasNewIssueSession = ({ state, start }: HintProbe): boolean => {
       (state.sessionExternalTasks[session.id] ?? []).some((task) => task.identifier === ISSUE),
   );
 };
+
+const hasStoryQuestion = ({ state }: StateParams): boolean =>
+  (state.sessionOpenQuestions[STORY_SESSION_ID] ?? []).length > 0;
+
+const hasStartedAndAsked = ({ state, start, root, isAnchorClicked }: HintProbe): boolean =>
+  hasNewIssueSession({ state, start, root, isAnchorClicked }) && hasStoryQuestion({ state });
 
 const isTaskRowSelected = ({ root }: RootParams): boolean =>
   root.querySelector(TASK_ROW)?.getAttribute('aria-selected') === 'true';
@@ -124,13 +131,15 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     label: 'Start work',
     copy: 'Start work on this issue',
     instruction: 'Press **Start** to begin work on HBL-412.',
-    result: "Work started. Claude's planner has one question before it writes the plan.",
+    progressCopy: 'The Lead is handing it to a planner',
+    progress: 'The Lead reads HBL-412, hands it to a planner, and the planner reads the code.',
+    result: 'Work started. The Lead hands it to a planner, which has one question first.',
     beat: 0,
     isDimmed: false,
     anchor: START,
     side: 'top',
     isBlocked: isOffPath,
     revealWhen: ({ root }) => hasElement({ root, selector: START }),
-    doneWhen: hasNewIssueSession,
+    doneWhen: hasStartedAndAsked,
   },
 ];

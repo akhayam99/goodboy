@@ -104,6 +104,7 @@ type AnswerParams = {
 
 const answerWith = async ({ answer }: AnswerParams): Promise<void> => {
   await startSession();
+  vi.advanceTimersByTime(9000);
   const [question] = store.getState().sessionOpenQuestions[STORY_SESSION_ID] ?? [];
   if (question === undefined) {
     throw new Error('no question');

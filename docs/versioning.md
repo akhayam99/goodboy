@@ -66,21 +66,19 @@ read in the code, then delete the row.
 | Companion pairing file `~/.goodboy/companion.json` | `allow_list`, a bare list of phone keys | 0.43.0                  | 0.45.0                          |
 | Stored session dock grid                           | version 1 row, three tools              | 0.43.0                  | 0.45.0                          |
 
-Gone already:
+Gone already, listed because their rows or keys stay behind:
 
 - The settings `runs.defaultShape.<workspaceId>` and
   `runs.defaultShape.session.<sessionId>` (Start as in Run defaults, written
   until 0.39.0) are not read since 0.41.0. A saved `lead` or `plan` no longer
   hides the workflow suggestion or sets the session to After the plan; the
   Plan row of the start form chooses per run. The rows stay in the database.
-
 - The local storage keys `goodboy:right-drawer-width:v1`,
   `goodboy:reader-drawer-width:v1` and `goodboy:browser-drawer-width:v1` no
   longer start a dock column or a detail panel since 0.42.0. A column with no
   width saved on the session grid (`session_dock_grids`, written since 0.40.0)
   and a detail kind with no width of its own start at their tier default. The
   keys stay the width of the one dock a page without a session grid shows.
-
 - The sidebar is gone in 0.40.0. The local storage keys
   `goodboy:left-sidebar-width:v3` and `goodboy:sessions-sidebar-collapsed`
   (written by 0.39 and earlier) size and fold nothing since 0.40.0: the places
@@ -90,20 +88,11 @@ Gone already:
 - The Skills feature is removed in 0.31.0, with the `<project-root>/.kay/skills`
   read. Skill files in a project folder are no longer scanned or run. The
   `skills` tables stay in the database so a downgrade still finds them.
-- The local storage key of the reviewed files without a mount id (written until
-  0.18.1) is not read since 0.30.0. A mount reads only its own key, and a file
-  marked in the old key shows as not viewed again.
-
 - The setting `context.roleMap` (introduced in 0.16.0) switched the role map off
   for a person who edited the database by hand; no screen set it. It is not
   read since 0.28.8, a stored `false` changes nothing, and the row stays in
   the database untouched. `store.sqlite-context-items.test.ts` boots from that
   old value.
-
-The skills folder is also a one-way door: a build before 0.28.0 does not read
-`.goodboy/skills`, so a skill written there is invisible to it. The commit that
-made the change carries `One-way-door: new skills are written to
-.goodboy/skills`, and 0.28.0 is a minor release.
 
 A change to derived state that reshuffles what an existing user sees, such as a
 lane or a sort order computed on launch, carries one line in the changelog.

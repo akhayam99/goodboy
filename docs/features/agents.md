@@ -325,7 +325,7 @@ The Lead picks the provider and model of each from the providers you turned on, 
 
 When the provider a role would use is at its usage limit, the work moves to another connected provider on a model you have not hidden. A Scout, a Planner, an Investigator or a Reviewer can run wherever the Lead can, Cursor included. A role that writes code runs only on Claude or Codex.
 
-When no provider can take a role, the Lead hears each provider and why. It reads "Claude: usage limit until 16:10. Cursor: runs only reading roles for Auto." and points to Settings › Models.
+When no provider can take a role, the Lead hears each provider and why. It reads "Claude: usage limit until 16:10. Cursor: runs only reading roles for Auto." and points to **Settings › This workspace › Models**.
 
 A new Implementer child whose task fits a narrower role is refused once, with the role named. The Lead can resend it with a reason, and the child page shows **Why not Tester** under why the Lead chose Implementer.
 

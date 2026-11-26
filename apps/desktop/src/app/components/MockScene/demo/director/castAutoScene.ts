@@ -6,6 +6,7 @@ import {
   TESTER_ID,
   type AutoSceneData,
 } from '../../scenes/u24/autoSceneSeed';
+import { STORY_RUN } from '../../scenes/story/storyContent';
 import { AUTO_STORY } from './autoStory';
 
 type Params = {
@@ -75,7 +76,7 @@ const delegationsOf = ({ delegations }: DelegationsParams) =>
             delegation,
             task: AUTO_STORY.implementerTask,
             summary: AUTO_STORY.implementerSummary,
-            files: ['src/webhooks/eventGuard.ts', 'src/webhooks/applyWebhook.ts'],
+            files: STORY_RUN.changedFiles,
           }),
           routing: { ...delegation.routing, provider: 'codex', model: 'gpt-5.6-sol' },
         },

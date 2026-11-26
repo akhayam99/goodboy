@@ -31,7 +31,7 @@ An image a component draws lives in `src/assets/` and is imported by that compon
   never as hardcoded hex. Theme rules that never change live in [DESIGN.md](../../DESIGN.md).
 - Build conditional classes with `cn()` (`clsx` + `tailwind-merge`). Always merge the `className` prop last, so callers can override:
   ```ts
-  className={cn('rounded px-3 py-2', isActive && 'bg-primary text-white', className)}
+  className={cn('rounded-md px-3 py-2', isActive && 'bg-selected text-foreground', className)}
   ```
 
 ## Testing
@@ -41,5 +41,5 @@ Rules live in [docs/testing.md](../../docs/testing.md). No snapshot tests.
 ## Public API
 
 - The brand marks in `components/brandIcons.tsx` (`ClaudeIcon`, `OpenAIIcon` and the other vendor logos) are the one named-brand exception: a logo is an asset, not domain logic ([docs/brand.md](../../docs/brand.md)).
-- One root `src/index.ts` that re-exports everything. No barrel files inside subfolders.
+- One root `src/index.ts` that re-exports every component and helper, and one `src/icons/index.ts` for the icons (`@goodboy/ui/icons`). No other barrel file inside a subfolder.
 - Every export is a named binding with a stable identifier.

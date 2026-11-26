@@ -6,7 +6,7 @@
 
 `AppShell` takes the desktop's places rail in `leftRail`. Its grid column is
 `auto`, with no resize handle. `app/components/ShellLeft/` fills it
-with `ShellRail`: New, the six places and the foot. The content and signals
+with `ShellRail`: the workspace identity (`WorkspaceIdentityRow`), New, the six places and the foot. The content and signals
 are owned by [docs/navigation/shell.md](../../../docs/navigation/shell.md) → Surfaces.
 
 `ShellRail` reads `useShellRailForm` and `shellRailGeometry`: 64px with words,
@@ -76,7 +76,8 @@ and `Divider`, and the pane frame built from them. `PaneShell` lives at
 header and body share one `PageColumn` with the session trail band above it. It has one `h1` per surface.
 `meta` holds counts and totals in `tabular-nums` on one muted line 4px under the
 title row, never a control. The title row is fixed (`h-8`, centred, no wrap): a long
-title truncates and the actions never drop under it. The pane
+title truncates and the actions never drop under it. A record title passes
+`isWrapping` and wraps instead, on a row of at least 32px (`RecordHeader`). The pane
 owns the gap below the header, and children add no top margins. The root is
 `@container min-w-0 flex-1` in every scroll mode, so inside a flex row such as
 `StudioShell` it fills the pane and `PageColumn` centres the column inside it.
@@ -100,13 +101,11 @@ adds no top padding; outside both, a bare page keeps 12px above.
 
 **One title per page, no studio title band.** The studio band never draws a
 title, a crumb of its own, an icon or a subtitle: the page `h1` is the one
-title. `STUDIO_META[kind].close` says where Close lives. A sidebar door page
-(`none`: Tasks, Chat, Workflows, Terminal, Impact, Monitoring) has no band and no Close; the top bar
-Back and Escape leave it. A closable overlay (`header`: Notifications, Guide, What's new) has no band either: `StudioFrame` hands its Close button
-to the page through `PaneActionsContext`, so `PaneShell` draws it as the last
-action of the title row; until a page header claims it, the band holds it. The other overlays (`band`: Settings over the window,
-Add workspace) keep a 40px band that holds only
-Close. A band also appears when the body hands it a trail (`StudioTrail`, the
+title. `STUDIO_META[kind].close` says whether the studio has a Close. A place
+page (`none`: Workflows, Tasks, Impact, Notifications, Chat, Terminal, Browser,
+Connections, Monitoring) has no band and no Close; the top bar Back and Escape
+leave it. A page opened over the window (`back`: Settings, Guide, Add
+workspace, What's new) keeps a 40px band that holds only Close. A band also appears when the body hands it a trail (`StudioTrail`, the
 workflow editor and the Settings crumbs) or a header accessory, and only then is
 the body `UnderTrailContext`. The bandless pages, the Board and Settings included,
 sit on the 8px header inset in `frameGeometryOf`, like a session page. Optional `tabs` sit on
@@ -289,7 +288,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../../DESIGN.md#act
 - The `tabs` slot of the detail layout keeps the tab strip at its own width. It never stretches across the header.
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 - A region that can start several kinds of work shows one primary, never a row of peer buttons. The less frequent starts sit behind an `OverflowMenu`. Each menu item names the kind and carries a one-line `description` and a concept colour on its icon (`iconClassName`), and `OverflowMenu` renders its `entries` through `MenuList`.
-- The New session page follows the same rule, with one exception: it asks "What kind of run?" with two explained `ChoiceCards` (Workflow, Agent) side by side, then the two kinds of the picked card under them, because the kinds are the doors and they read better side by side. Only the picked kind's form, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
+- The New session page picks who plans the run with one `SegmentedTabs` pair, The Lead plans it or One agent (`StartPlanRow`, words from `START_KIND_COPY.plan`), and keeps one primary. A grid of tiles is not an action zone.
 - The session overview's actions are one secondary `New` button that opens a menu of every start: Start a run, then Report and Wireframe. It is the one control of its kind on the page, so nothing sits beside it.
 - An overflow menu that has to confirm one of its items in place gives the entry a `confirm` (`MenuList` swaps the list for a plain `InlineConfirm` in its own popover) and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". A page header holds no switch: the session's Asks you is a menu verb, Start next steps without asking or Ask before starting each step, in the session `⋯`.
@@ -300,9 +299,9 @@ Which action goes in which zone is decided in [DESIGN.md](../../../DESIGN.md#act
 orchestrated document) shows Pause run or Resume run and Stop run (which
 confirms) as visible header buttons while the run lives, and Restore alone once
 it is archived. The tail never repeats them: it carries a step verb ("Stop step
-2", "Start step 3", "Approve plan", "Raise limit") or none ("Paused by you"). An
-overlay page (Notifications, the guide) ends its header with Close,
-which `StudioFrame` hands it; a sidebar door page has no Close.
+2", "Start step 3", "Approve plan", "Raise limit") or none ("Paused by you"). A
+page opened over the window (Settings, the guide) keeps Close in its band; a
+place page has no Close.
 
 **One filled primary per surface.** A page header region, a drawer, a card and an `InlineConfirm` each hold at most one `Button variant="primary"` (the `data-variant` attribute is how the ratchet counts them, `scene-primaries.test.tsx`). While a header's own confirm is open the header primary turns `secondary` (`BranchHeader` `isPrimaryYielding`, also while an action confirm of the page is armed) and the confirm's button is the one primary. `InlineConfirm` has no card of its own: a host that wants a surface (the push banner) gives it `bg-subtle`, never a tinted fill or border. A card that opens a drawer keeps a ghost Open, and the drawer takes its action in its header. A retry says what it retries, and only one Retry is filled.
 
@@ -317,7 +316,7 @@ which `StudioFrame` hands it; a sidebar door page has no Close.
 
 A verb blocked for a moment stays visible with its reason in the tooltip; a verb the tool refuses is not shown. Merge confirms in a `ConfirmPopover` on its button, and a destructive verb confirms in its menu with a plain menu swap. Properties that can change (state, assignee) change from the control that shows them, never from a button. `RecordHeader` and the `RecordVerbs` type own the contract.
 
-**Row verbs.** The action ladder of a row in a list of objects (the Overview's worktrees) has three rungs, left to right: the verb the state asks for as a quiet text button (Rebase, Push, Create PR, Reopen), the one verb every row can need as a quiet `IconButton` that asks in a `ConfirmPopover` (Close branch; a closed row keeps Unmount in its menu), then the `...` with the rare verbs. The menu does not exist when it would hold fewer than two. Rows nest by one constant: a child row's leading glyph sits under the parent's name, `MOUNT_CHILD_INDENT = 22` (the 14px parent glyph and its 8px gap, `ProjectMountRows/mountGrid.ts`), every row of a band has the same 8px left edge and every trailing control ends 8px from the band's right edge. A "Show finished (n)" toggle and an empty line start on the child rail too.
+**Row verbs.** The action ladder of a row in a list of objects (the Overview's worktrees) has three rungs, left to right: the verb the state asks for as a quiet text button (Rebase, Push, Create PR, Reopen), the one verb every row can need as a quiet `IconButton` that asks in a `ConfirmPopover` (Close branch; a closed row keeps Unmount in its menu), then the `...` with the rare verbs. The menu does not exist when it would hold fewer than two.
 
 A confirm has one placement: anchored. A destructive or one-shot trigger (icon button, sidebar row action, header action, rail row, a text button) opens `ConfirmPopover`, which draws the `plain` surface of `InlineConfirm` in an `AnchoredPopover` beside the trigger, so the page under it never moves. Anything restorable does not ask: it acts at once and offers Undo. Archiving a session is the one exception the owner asked for: it asks (`archiveConfirmOf`) and still offers Undo. A confirmation detached in the body, or a destructive footer dock, is not another zone. Notifications uses it: `Delete all` in the studio header opens it aligned to its end edge, with the scope's count in the title, and the title row never changes height. Push review stays in its banner.
 
@@ -601,8 +600,8 @@ child.
 
 There is no footer bar. A form never pins its actions under the content with a
 `Divider`, a `border-t`, a `<footer>`, `PaneShell` `dock` or
-`PANE_RHYTHM.dock`. `PopoverFooter` and the `Dialog` `footer` slot are gone for
-that reason. The `footer-cta-bar` rule in
+`PANE_RHYTHM.dock`. There is no `PopoverFooter` and no `Dialog` `footer` slot.
+The `footer-cta-bar` rule in
 `apps/desktop/src/__tests__/regressions/forbidden-patterns.test.ts` counts
 those shapes per file and fails on a new one. The only pinned row left is a
 chat composer (`dock={conversation.composer}`). A review surface that lives

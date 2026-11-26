@@ -4,6 +4,7 @@ import { STORY_QUESTION } from '../../scenes/story/storyContent';
 import { STORY_PLANNER_ID } from '../../scenes/story/storyWorld';
 import type { DirectorStore } from './directorTypes';
 import { createSimulatedAnswer } from './createSimulatedAnswer';
+import { patchDelegationState } from './patchDelegationState';
 import { scheduleCues } from './scheduleCues';
 import { storyAnswerCues } from './storyAnswerCues';
 
@@ -17,6 +18,12 @@ export const createStoryAnswer = ({ store }: Params): AppStore['answerOpenQuesti
     const answer =
       (store.getState().sessionAnsweredQuestions[input.sessionId] ?? []).at(-1)?.userAnswer ??
       STORY_QUESTION.recommended;
+    patchDelegationState({
+      store,
+      sessionId: input.sessionId,
+      childAgentId: agentId,
+      state: 'running',
+    });
     input.onStarted?.();
     scheduleCues({
       store,

@@ -59,7 +59,7 @@ Auto also sizes each agent by its step. Open a role to read what a small, a norm
 
 #### Older plan runs
 
-While the workspace has an older plan run, **Older plan runs** under Runs sets its orchestrator's model. **Models in older plan runs** under **Choosing models** is off by default. Turn it on to let that orchestrator name the model of each step. Otherwise it says how hard the step is and Goodboy picks.
+While the workspace has an older plan run, the **Older plan runs** band of **Workflows › Every run** sets its orchestrator's model. **Models in older plan runs** in the same band is off by default. Turn it on to let that orchestrator name the model of each step. Otherwise it says how hard the step is and Goodboy picks.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-dark.webp">

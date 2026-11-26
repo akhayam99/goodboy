@@ -83,4 +83,4 @@ Never spread an untyped object into a component. Spread only a value whose type 
 
 ## Loading and error feedback
 
-This is a design law, not a component convention. See [DESIGN.md](../../DESIGN.md) → Motion (skeletons and spinners are forbidden) and → Status & signals (use toasts, never pinned banners). `Skeleton` and the toast system live in `@goodboy/ui`.
+This is a design law, not a component convention. Loading is a `Skeleton` and spinners are forbidden ([DESIGN.md](../../DESIGN.md) → Motion). A failure lands in the notification log through `reportError`, a toast is only its preview, and a failed load shows an `ErrorStrip` ([DESIGN.md](../../DESIGN.md) → Status & signals). `Skeleton`, `ErrorStrip` and the toast system live in `@goodboy/ui`.

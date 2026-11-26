@@ -9,9 +9,11 @@ style themselves with semantic tokens from the app's theme registry.
 
 ## Primitives
 
-`src/index.ts` lists the package's public primitives. Public props types are
-exported there only when they are meant to be part of the API. Read that barrel
-instead of a list here, because a list here goes stale on the next addition.
+`src/index.ts` lists the package's public primitives, and `src/icons/index.ts`
+(imported as `@goodboy/ui/icons`) lists the icons. Public props types are
+exported there only when they are meant to be part of the API. Read those
+barrels instead of a list here, because a list here goes stale on the next
+addition.
 
 Three exports are required, not optional ([docs/styling.md](../../docs/styling.md) owns the rules):
 
@@ -19,7 +21,7 @@ Three exports are required, not optional ([docs/styling.md](../../docs/styling.m
 - `Divider` separates regions.
 - `tintClasses(tone)` resolves every semantic tone ([DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md) owns the tone map).
 
-`AppShell` is the app skeleton, and the one exception to "presentational only". It owns the column template, the saved column widths, the smaller states a column can shrink to, and the overlay slots. It offers those states. [docs/navigation.md](../../docs/navigation.md) decides which ones the product uses, and why. What each surface is for lives in [DESIGN.md](../../DESIGN.md).
+`AppShell` is the app skeleton, and the one exception to "presentational only". It owns the window grid and its slots: the top bar, the left places rail, the main sheet, the detail panel and the tool dock beside it, a studio, the right rail and an optional footer. It saves no width. [docs/navigation.md](../../docs/navigation.md) decides what fills each slot, and [DESIGN.md](../../DESIGN.md) what each surface is for.
 
 ## Design tokens
 
