@@ -1,8 +1,9 @@
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import { selectSessionDraft } from '../../../../../store/slices/sessionDraft/selectSessionDraft';
 import type { AppStore } from '../../../../../store/store';
-import { STORY_ROOT_ID, seedStoryShell } from '../../scenes/story/storyWorld';
+import { STORY_PLANNER_ID, STORY_ROOT_ID, seedStoryShell } from '../../scenes/story/storyWorld';
 import { createStoryAnswer } from './createStoryAnswer';
+import { demoRuns } from './demoRunRegistry';
 import type { DirectorStore } from './directorTypes';
 import { installDemoWorld } from './installDemoWorld';
 import { scheduleCues } from './scheduleCues';
@@ -59,12 +60,13 @@ export const installStoryDirection = ({ store }: Params): void => {
     if (session === null) {
       throw new Error('The story workspace is missing');
     }
-    scheduleCues({
+    const cancelStart = scheduleCues({
       store,
       now: () => nowIso({}),
       cues: storyStartCues(),
       agentId: STORY_ROOT_ID,
     });
+    demoRuns.track({ agentId: STORY_PLANNER_ID, cancel: cancelStart });
     return session;
   }) satisfies AppStore['startSessionFromDraft'];
   store.setState({

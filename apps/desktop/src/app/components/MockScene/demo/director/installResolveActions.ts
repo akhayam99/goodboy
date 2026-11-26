@@ -363,10 +363,12 @@ export const installResolveActions = ({ store }: Params): void => {
     const accepted = (store.getState().sessionResolveQueueItems[sessionId] ?? []).filter(
       (entry) => entry.item.approvalState === 'accepted' && entry.item.deliveredAt === null,
     );
+    let delivered = 0;
     for (const [index, entry] of accepted.entries()) {
       if (index > 0 && !(await waitDemoMs({ ms: RESOLVE_STEP_MS }))) {
         break;
       }
+      delivered += 1;
       const now = Date.now();
       patchResolveThreads({
         store,
@@ -399,11 +401,11 @@ export const installResolveActions = ({ store }: Params): void => {
       pushed: true,
       pushedHead: null,
       total,
-      replies: total,
-      replied: total,
-      closed: total,
-      resolved: total,
-      leftOpen: 0,
+      replies: delivered,
+      replied: delivered,
+      closed: delivered,
+      resolved: delivered,
+      leftOpen: total - delivered,
       failed: 0,
       error: null,
     };

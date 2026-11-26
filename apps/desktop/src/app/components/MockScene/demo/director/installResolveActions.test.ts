@@ -15,6 +15,7 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { SESSION_ID, seedResolveScene } from '../../scenes/resolveSeed';
+import { demoRuns } from './demoRunRegistry';
 import { installResolveActions } from './installResolveActions';
 
 const THREAD = 'PRRT_thread_retry_constant';
@@ -132,6 +133,26 @@ describe('the simulated review fix', () => {
     expect(result).toMatchObject({ kind: 'done', pushed: true, failed: 0 });
     expect(entryOf()?.thread.replyPostedAt).not.toBeNull();
     expect(entryOf()?.item.deliveredAt).not.toBeNull();
+  });
+
+  it('counts only the replies that landed when the demo stops between two', async () => {
+    store.setState((current) => ({
+      sessionResolveQueueItems: {
+        ...current.sessionResolveQueueItems,
+        [SESSION_ID]: (current.sessionResolveQueueItems[SESSION_ID] ?? []).map((entry, index) =>
+          index < 2
+            ? { ...entry, item: { ...entry.item, approvalState: 'accepted', deliveredAt: null } }
+            : entry,
+        ),
+      },
+    }));
+    const publishing = store
+      .getState()
+      .publishConversations({ sessionId: SESSION_ID, publicationId: 'publication-1' });
+    demoRuns.cancelAll();
+    await vi.advanceTimersByTimeAsync(3000);
+    const result = await publishing;
+    expect(result).toMatchObject({ kind: 'done', total: 3, replied: 1, resolved: 1, leftOpen: 2 });
   });
 
   it('keeps publishing local and says so', async () => {

@@ -113,23 +113,29 @@ describe('approving the revised plan', () => {
   const agentNames = (): ReadonlyArray<string> =>
     (store.getState().sessionPhaseRuns[STORY_SESSION_ID] ?? []).map((agent) => agent.name);
 
-  const eventsOf = ({ agentId }: { readonly agentId: AgentId }) =>
-    store.getState().transcripts[agentId] ?? [];
+  type AgentParams = {
+    readonly agentId: AgentId;
+  };
 
-  const turnOf = ({ agentId }: { readonly agentId: AgentId }) =>
-    store.getState().agentTurnState[agentId]?.kind;
+  type CountParams = AgentParams & {
+    readonly kind: string;
+  };
 
-  const delegationOf = ({ agentId }: { readonly agentId: AgentId }) =>
+  const eventsOf = ({ agentId }: AgentParams) => store.getState().transcripts[agentId] ?? [];
+
+  const turnOf = ({ agentId }: AgentParams) => store.getState().agentTurnState[agentId]?.kind;
+
+  const delegationOf = ({ agentId }: AgentParams) =>
     (store.getState().autoTreeViews[STORY_SESSION_ID] ?? [])
       .flatMap((view) => view.delegations)
       .find((entry) => entry.childAgentId === agentId);
 
-  const textOf = ({ agentId }: { readonly agentId: AgentId }): string =>
+  const textOf = ({ agentId }: AgentParams): string =>
     eventsOf({ agentId })
       .flatMap((event) => (event.kind === 'assistant_text' ? [event.delta] : []))
       .join('');
 
-  const countOf = ({ agentId, kind }: { readonly agentId: AgentId; readonly kind: string }) =>
+  const countOf = ({ agentId, kind }: CountParams) =>
     eventsOf({ agentId }).filter((event) => event.kind === kind).length;
 
   type MilestoneParams = {

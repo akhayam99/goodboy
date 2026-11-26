@@ -54,7 +54,11 @@ afterEach(() => {
 
 let elapsed = 0;
 
-const playTo = (ms: number): void => {
+type PlayToParams = {
+  readonly ms: number;
+};
+
+const playTo = ({ ms }: PlayToParams): void => {
   vi.advanceTimersByTime(ms - elapsed);
   elapsed = ms;
 };
@@ -74,7 +78,11 @@ const plannerEvents = () => store.getState().transcripts[STORY_PLANNER_ID] ?? []
 
 const rootEvents = () => store.getState().transcripts[STORY_ROOT_ID] ?? [];
 
-const textOf = ({ events }: { readonly events: ReadonlyArray<TurnEvent> }): string =>
+type EventsParams = {
+  readonly events: ReadonlyArray<TurnEvent>;
+};
+
+const textOf = ({ events }: EventsParams): string =>
   events.flatMap((event) => (event.kind === 'assistant_text' ? [event.delta] : [])).join('');
 
 const agentNames = (): ReadonlyArray<string> =>
@@ -87,10 +95,21 @@ const plannerDelegation = () =>
 
 const openQuestions = () => store.getState().sessionOpenQuestions[STORY_SESSION_ID] ?? [];
 
-const turnKind = ({ agentId }: { readonly agentId: AgentId }) =>
-  store.getState().agentTurnState[agentId]?.kind;
+type AgentParams = {
+  readonly agentId: AgentId;
+};
+
+const turnKind = ({ agentId }: AgentParams) => store.getState().agentTurnState[agentId]?.kind;
 
 describe('starting the story workflow', () => {
+  it('drops the rest of the start when the Planner is stopped', async () => {
+    await startSession();
+    playTo({ ms: 3000 });
+    demoRuns.stop({ agentId: STORY_PLANNER_ID });
+    playTo({ ms: 12000 });
+    expect(openQuestions()).toHaveLength(0);
+  });
+
   it('opens one session linked to HBL-412 on the Lead, with the brief and nothing else', async () => {
     const session = await startSession();
     expect(session.id).toBe(STORY_SESSION_ID);
@@ -109,44 +128,44 @@ describe('starting the story workflow', () => {
 
   it('plays the Lead, hands off to the Planner and asks the question last', async () => {
     await startSession();
-    playTo(400);
+    playTo({ ms: 400 });
     expect(turnKind({ agentId: STORY_ROOT_ID })).toBe('running');
     expect(textOf({ events: rootEvents() })).toBe('');
-    playTo(1600);
+    playTo({ ms: 1600 });
     expect(textOf({ events: rootEvents() })).toContain('This touches payments-api');
-    playTo(2900);
+    playTo({ ms: 2900 });
     expect(textOf({ events: rootEvents() })).toBe(AUTO_STORY.first);
     expect(agentNames()).toEqual(['Lead']);
-    playTo(3000);
+    playTo({ ms: 3000 });
     expect(agentNames()).toEqual(['Lead', 'Planner']);
     expect(plannerDelegation()?.state).toBe('starting');
     expect(turnKind({ agentId: STORY_ROOT_ID })).toBe('idle');
     expect(plannerEvents()).toHaveLength(0);
-    playTo(3400);
+    playTo({ ms: 3400 });
     expect(plannerEvents().map((event) => event.kind)).toEqual(['user_text']);
     expect(turnKind({ agentId: STORY_PLANNER_ID })).toBe('running');
     expect(store.getState().selectedAgentId[STORY_SESSION_ID]).toBe(STORY_PLANNER_ID);
     expect(plannerDelegation()?.state).toBe('running');
-    playTo(4500);
+    playTo({ ms: 4500 });
     expect(plannerEvents().map((event) => event.kind)).toEqual(['user_text']);
-    playTo(4600);
+    playTo({ ms: 4600 });
     expect(plannerEvents().at(-1)).toMatchObject({
       kind: 'tool_call_start',
       input: { command: STORY_PLANNER.command },
     });
-    playTo(5400);
+    playTo({ ms: 5400 });
     expect(plannerEvents().at(-1)).toMatchObject({
       kind: 'tool_call_end',
       output: STORY_PLANNER.output,
     });
-    playTo(6200);
+    playTo({ ms: 6200 });
     expect(textOf({ events: plannerEvents() }).length).toBeGreaterThan(0);
     expect(textOf({ events: plannerEvents() })).not.toBe(STORY_PLANNER.intro);
     expect(openQuestions()).toHaveLength(0);
     expect(turnKind({ agentId: STORY_PLANNER_ID })).toBe('running');
-    playTo(8499);
+    playTo({ ms: 8499 });
     expect(openQuestions()).toHaveLength(0);
-    playTo(8500);
+    playTo({ ms: 8500 });
     expect(textOf({ events: plannerEvents() })).toBe(STORY_PLANNER.intro);
     const asked = openQuestions();
     expect(asked).toHaveLength(1);
@@ -166,9 +185,9 @@ describe('starting the story workflow', () => {
 
   it('stops playing when the visitor leaves the run', async () => {
     await startSession();
-    playTo(1000);
+    playTo({ ms: 1000 });
     demoRuns.cancelAll();
-    playTo(9000);
+    playTo({ ms: 9000 });
     expect(agentNames()).toEqual(['Lead']);
     expect(openQuestions()).toHaveLength(0);
   });
@@ -197,24 +216,24 @@ describe('writing the brief of the draft', () => {
   it('opens with an empty box, then fills it in step by step until the brief is complete', () => {
     openWithBrief();
     expect(goalOf()).toBe('');
-    playTo(1299);
+    playTo({ ms: 1299 });
     expect(goalOf()).toBe('');
-    playTo(1300);
+    playTo({ ms: 1300 });
     expect(STORY_BRIEF.startsWith(goalOf())).toBe(true);
     expect(goalOf().length).toBeGreaterThan(0);
-    playTo(2200);
+    playTo({ ms: 2200 });
     expect(goalOf().length).toBeGreaterThan(STORY_BRIEF.split('\n')[0]?.length ?? 0);
     expect(goalOf()).not.toBe(STORY_BRIEF);
-    playTo(3400);
+    playTo({ ms: 3400 });
     expect(goalOf()).toBe(STORY_BRIEF);
   });
 
   it('stops writing once the visitor presses Start', async () => {
     openWithBrief();
-    playTo(2200);
+    playTo({ ms: 2200 });
     const partial = goalOf();
     await startSession();
-    playTo(5000);
+    playTo({ ms: 5000 });
     expect(goalOf()).toBe(partial);
   });
 });
@@ -226,7 +245,7 @@ describe('answering the planner question', () => {
 
   const answer = async ({ choice = STORY_QUESTION.recommended }: AnswerParams = {}) => {
     await startSession();
-    playTo(8500);
+    playTo({ ms: 8500 });
     const [question] = store.getState().sessionOpenQuestions[STORY_SESSION_ID] ?? [];
     if (question === undefined) {
       throw new Error('no question');
