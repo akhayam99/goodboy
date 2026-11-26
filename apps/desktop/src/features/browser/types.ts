@@ -62,6 +62,8 @@ export type BrowserRequestFacts = {
   readonly responseHeaders: ReadonlyArray<BrowserHeader>;
   readonly requestBody: string | null;
   readonly responseBody: string | null;
+  readonly isRequestBodyCut?: boolean;
+  readonly isResponseBodyCut?: boolean;
   readonly socket: BrowserSocketFacts | null;
   readonly phases?: BrowserRequestPhases | null;
 };

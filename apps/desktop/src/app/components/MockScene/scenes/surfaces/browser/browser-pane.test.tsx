@@ -235,7 +235,7 @@ describe('the browser pane scenes', () => {
     const table = await within(region).findByRole('list', { name: 'Requests' }, WAIT);
     expect(table.querySelectorAll('[data-row-key]')).toHaveLength(10);
     within(table).getByRole('button', { name: 'POST /api/charge, 500' });
-    within(region).getByRole('tablist', { name: 'Request type' });
+    within(region).getByRole('combobox', { name: 'Request type' });
     within(region).getByRole('button', { name: 'Failed only' });
     within(region).getByText('10 requests · 14 KB · Loaded in 612 ms');
   });

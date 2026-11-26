@@ -294,7 +294,7 @@ The find bar sits under the address row. It says **Found** or **Not found**. **E
 
 #### Network
 
-**Network** is a table of the requests of the load: method, path, status, type, size, time and a waterfall bar. The filters above it keep one kind (Fetch, Doc, JS, CSS, Img, WS), **Failed only** keeps the requests that failed, and the search field matches path, method and status. The line under the table counts the requests you see, their size and how long the page took to load.
+**Network** is a table of the requests of the load: method, path, status, type, size, time and a waterfall bar. The type list above it keeps one kind (Fetch, Doc, JS, CSS, Img, WebSocket and event streams). **Failed only** keeps the requests that failed, and the search field matches path, method and status. The line under the table counts the requests you see, their size and how long the page took to load.
 
 Click a request to open it: its **Response**, its **Payload**, its **Headers** and its **Timing**, with the time spent waiting and downloading when the page reports it. Below the page the request opens beside the table; right of the page it takes the table's place. **Esc** or the back arrow returns to the table where you left it, and **↑** and **↓** step through the requests the filters keep. **Send request** puts the request on the message of the agent the button names, as a file you can remove. Authorization and cookie headers are never read, so they never reach an agent. Nothing goes until you send.
 

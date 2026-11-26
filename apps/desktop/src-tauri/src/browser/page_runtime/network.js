@@ -4,6 +4,10 @@ const MAX_HEADER_NAME = 100;
 const MAX_HEADER_VALUE = 1000;
 const BODY_BUDGET = 2000000;
 const MAX_WAITING = 100;
+const START_SLACK = 2;
+const MAX_START_LAG = 100;
+const LOCAL_PROTOCOL = 'gblocal:';
+const LOCAL_ALIAS = 'gblocal.localhost';
 const WAITING_TYPES = { fetch: 'fetch', xmlhttprequest: 'xhr' };
 const SENSITIVE_HEADERS = [
   'authorization',
@@ -26,11 +30,19 @@ const assign = Object.assign;
 let requestCount = 0;
 const waiting = [];
 
+const withoutGrant = (path) => {
+  const next = path.indexOf('/', 1);
+  return next < 0 ? '/' : path.slice(next);
+};
+
 const pathOf = (address) => {
   try {
     const url = new Url(toText(address), here.href);
     if (url.protocol === 'data:' || url.protocol === 'blob:') {
       return url.protocol;
+    }
+    if (url.protocol === LOCAL_PROTOCOL || url.hostname === LOCAL_ALIAS) {
+      return clip(withoutGrant(url.pathname), MAX_PATH);
     }
     const path = clip(url.pathname, MAX_PATH);
     return url.origin === here.origin ? path : clip(url.host + path, MAX_PATH);
@@ -158,14 +170,23 @@ const isTextType = (type) => {
   );
 };
 
-const requestBodyOf = (body, type) => {
+const requestTextOf = (body, type) => {
   if (typeof body === 'string') {
-    return type === '' || isTextType(type) ? clip(body, MAX_BODY) : null;
+    return type === '' || isTextType(type) ? body : null;
   }
   if (body != null && tagOf.call(body) === '[object URLSearchParams]') {
-    return clip(toText(body), MAX_BODY);
+    return toText(body);
   }
   return null;
+};
+
+const keepRequestBody = (request, body) => {
+  const text = requestTextOf(body, headerValueOf(request.requestHeaders, 'content-type'));
+  if (text === null) {
+    return;
+  }
+  request.requestBody = clip(text, MAX_BODY);
+  request.isRequestBodyCut = text.length > MAX_BODY;
 };
 
 const methodText = (method) => clip(toText(method).toUpperCase(), MAX_METHOD);
@@ -180,6 +201,7 @@ const openRequest = (type, method, address) => {
     start: now(),
     requestHeaders: [],
     requestBody: null,
+    isRequestBodyCut: false,
     phases: null,
     hasFailed: false,
   };
@@ -204,6 +226,41 @@ const awaitPhases = (request) => {
   }
 };
 
+const retireWaiter = (request) => {
+  for (let index = waiting.length - 1; index >= 0; index -= 1) {
+    if (waiting[index].request === request) {
+      waiting.splice(index, 1);
+    }
+  }
+};
+
+const waiterIndexOf = (url, type, startTime) => {
+  let found = -1;
+  let best = Infinity;
+  let runnerUp = Infinity;
+  for (let index = 0; index < waiting.length; index += 1) {
+    const waiter = waiting[index];
+    if (waiter.url !== url || waiter.request.type !== type) {
+      continue;
+    }
+    const lag = startTime - waiter.request.start;
+    if (lag < -START_SLACK || lag > MAX_START_LAG) {
+      continue;
+    }
+    const distance = Math.abs(lag);
+    if (distance < best) {
+      runnerUp = best;
+      best = distance;
+      found = index;
+      continue;
+    }
+    if (distance < runnerUp) {
+      runnerUp = distance;
+    }
+  }
+  return runnerUp - best <= START_SLACK ? -1 : found;
+};
+
 const roundTenth = (value) => Math.round(value * 10) / 10;
 
 const phasesOf = (item) => {
@@ -223,13 +280,17 @@ const phasesOf = (item) => {
   return { wait: roundTenth(first - asked), download: roundTenth(last - first) };
 };
 
-const answerOf = (end, size, responseHeaders, responseBody, socket) => ({
-  end,
-  size,
-  responseHeaders,
-  responseBody,
-  socket,
-});
+const answerOf = (end, size, responseHeaders, text, socket) => {
+  const hasText = typeof text === 'string';
+  return {
+    end,
+    size,
+    responseHeaders,
+    responseBody: hasText ? clip(text, MAX_BODY) : null,
+    isResponseBodyCut: hasText && text.length > MAX_BODY,
+    socket,
+  };
+};
 
 const bodyLengthOf = (request) =>
   (request.requestBody === null ? 0 : request.requestBody.length) +
@@ -244,6 +305,8 @@ const keepBodiesInBudget = () => {
     if (total + size > BODY_BUDGET) {
       request.requestBody = null;
       request.responseBody = null;
+      request.isRequestBodyCut = false;
+      request.isResponseBodyCut = false;
       continue;
     }
     total += size;
@@ -287,6 +350,8 @@ const saveRequest = (request, status, answer) =>
         responseHeaders: answer.responseHeaders,
         requestBody: request.requestBody,
         responseBody: answer.responseBody,
+        isRequestBodyCut: request.isRequestBodyCut,
+        isResponseBodyCut: answer.isResponseBodyCut,
         socket: answer.socket,
         phases: request.phases,
       },
@@ -307,6 +372,11 @@ const saveRequest = (request, status, answer) =>
 
 const statusOf = (value) => (typeof value === 'number' && value >= 0 ? value : 0);
 
+const failRequest = (request) => {
+  quietly(() => retireWaiter(request));
+  saveRequest(request, 0, answerOf(now(), null, [], null, null));
+};
+
 const readCapped = (response, done) =>
   quietly(() => {
     if (typeof Decoder !== 'function' || typeof response.clone !== 'function') {
@@ -324,14 +394,14 @@ const readCapped = (response, done) =>
       reader.read().then(
         (part) => {
           if (part.done) {
-            done(clip(text + decoder.decode(), MAX_BODY), bytes);
+            done(text + decoder.decode(), bytes);
             return undefined;
           }
           bytes += part.value.byteLength;
           text += decoder.decode(part.value, { stream: true });
-          if (text.length >= MAX_BODY) {
+          if (text.length > MAX_BODY) {
             quietly(() => reader.cancel());
-            done(clip(text, MAX_BODY), null);
+            done(text, null);
             return undefined;
           }
           return step();
@@ -387,10 +457,7 @@ const fetchRequestOf = (input, init) => {
     request.requestHeaders = headersOf(
       hasInit ? init.headers : input != null ? input.headers : null,
     );
-    request.requestBody = requestBodyOf(
-      init != null ? init.body : null,
-      headerValueOf(request.requestHeaders, 'content-type'),
-    );
+    keepRequestBody(request, init != null ? init.body : null);
     awaitPhases(request);
   });
   return request;
@@ -415,7 +482,7 @@ if (typeof originalFetch === 'function') {
       },
       (reason) => {
         if (request !== null) {
-          saveRequest(request, 0, answerOf(now(), null, [], null, null));
+          failRequest(request);
         }
         throw reason;
       },
@@ -431,11 +498,11 @@ const xhrBodyOf = (xhr, type) => {
     }
     const kind = xhr.responseType;
     if ((kind === '' || kind === 'text') && typeof xhr.responseText === 'string') {
-      body = clip(xhr.responseText, MAX_BODY);
+      body = xhr.responseText;
       return;
     }
     if (kind === 'json' && xhr.response != null) {
-      body = clip(stringify(xhr.response), MAX_BODY);
+      body = stringify(xhr.response);
     }
   });
   return body;
@@ -485,19 +552,13 @@ if (typeof Request === 'function' && Request.prototype != null) {
         quietly(() => {
           request.start = now();
           awaitPhases(request);
-          request.requestBody = requestBodyOf(
-            body,
-            headerValueOf(request.requestHeaders, 'content-type'),
-          );
+          keepRequestBody(request, body);
           xhr.addEventListener('load', () =>
             saveRequest(request, statusOf(xhr.status), xhrAnswerOf(xhr)),
           );
-          xhr.addEventListener('error', () =>
-            saveRequest(request, 0, answerOf(now(), null, [], null, null)),
-          );
-          xhr.addEventListener('timeout', () =>
-            saveRequest(request, 0, answerOf(now(), null, [], null, null)),
-          );
+          xhr.addEventListener('error', () => failRequest(request));
+          xhr.addEventListener('timeout', () => failRequest(request));
+          xhr.addEventListener('abort', () => quietly(() => retireWaiter(request)));
         });
       }
       return send.apply(this, arguments);
@@ -648,17 +709,14 @@ const timingSizeOf = (item) => {
 };
 
 const fillPhases = (item, type) => {
-  const url = toText(item.name);
-  let found = null;
-  for (let index = 0; index < waiting.length; index += 1) {
-    if (waiting[index].url === url && waiting[index].request.type === type) {
-      found = waiting[index].request;
-      waiting.splice(index, 1);
-      break;
-    }
+  const at = waiterIndexOf(toText(item.name), type, item.startTime);
+  if (at < 0) {
+    return;
   }
+  const found = waiting[at].request;
+  waiting.splice(at, 1);
   const phases = phasesOf(item);
-  if (found === null || phases === null) {
+  if (phases === null) {
     return;
   }
   found.phases = phases;

@@ -2,11 +2,12 @@ import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import {
   Button,
   EmptyLine,
+  Listbox,
   ScrollFade,
   SearchField,
-  SegmentedTabs,
+  SkeletonRow,
   cn,
-  type SegmentedTabOption,
+  type ListboxOption,
 } from '@goodboy/ui';
 import { useHandOutputToAgent } from '../../../../shared/hooks/useHandOutputToAgent';
 import { isTextEntryTarget } from '../../../../shared/keyboard/isTypingTarget';
@@ -50,14 +51,14 @@ type KeyParams = {
   readonly event: KeyboardEvent<HTMLDivElement>;
 };
 
-const TYPE_FILTERS: ReadonlyArray<SegmentedTabOption<NetworkTypeFilter>> = [
-  { value: 'all', label: 'All' },
+const TYPE_FILTERS: ReadonlyArray<ListboxOption<NetworkTypeFilter>> = [
+  { value: 'all', label: 'All types' },
   { value: 'fetch', label: 'Fetch' },
   { value: 'doc', label: 'Doc' },
   { value: 'js', label: 'JS' },
   { value: 'css', label: 'CSS' },
   { value: 'img', label: 'Img' },
-  { value: 'socket', label: 'WS', tooltip: 'WebSocket and event streams' },
+  { value: 'socket', label: 'WebSocket and event streams' },
 ];
 
 const FAILURE_TEXT = {
@@ -212,12 +213,13 @@ export const NetworkTab = ({
         {isDetailAlone ? null : (
           <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
             <div className="flex shrink-0 px-2">
-              <SegmentedTabs
-                size="xs"
+              <Listbox
+                trigger="quiet"
+                size="sm"
                 ariaLabel="Request type"
                 value={type}
-                onChange={setType}
                 options={TYPE_FILTERS}
+                onChange={setType}
               />
             </div>
             <ScrollFade
@@ -226,18 +228,20 @@ export const NetworkTab = ({
               isPageScroller={false}
             >
               <div ref={list} tabIndex={-1} className="flex min-w-0 flex-col outline-none">
-                {rows.length === 0 ? (
+                {log.isLoaded ? null : <SkeletonRow label="Loading requests" />}
+                {log.isLoaded && rows.length === 0 ? (
                   <EmptyLine className="px-2">
                     {isFiltered && all.length > 0 ? NO_MATCH_TEXT : EMPTY_TEXT}
                   </EmptyLine>
-                ) : (
+                ) : null}
+                {rows.length > 0 ? (
                   <NetworkTable
                     rows={rows}
                     opened={opened}
                     isNarrow={opened !== null || side === 'right'}
                     onOpen={openRow}
                   />
-                )}
+                ) : null}
               </div>
             </ScrollFade>
           </div>

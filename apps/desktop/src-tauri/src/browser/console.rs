@@ -150,6 +150,8 @@ pub(crate) struct RequestFacts {
     pub(crate) response_headers: Vec<Header>,
     pub(crate) request_body: Option<String>,
     pub(crate) response_body: Option<String>,
+    pub(crate) is_request_body_cut: bool,
+    pub(crate) is_response_body_cut: bool,
     pub(crate) socket: Option<SocketFacts>,
     pub(crate) phases: Option<RequestPhases>,
 }
@@ -222,6 +224,10 @@ struct RawRequest {
     response_headers: Vec<Header>,
     request_body: Option<String>,
     response_body: Option<String>,
+    #[serde(default)]
+    is_request_body_cut: bool,
+    #[serde(default)]
+    is_response_body_cut: bool,
     socket: Option<SocketFacts>,
     #[serde(default)]
     phases: Option<RequestPhases>,
@@ -301,6 +307,10 @@ fn body_of(raw: Option<String>) -> Option<String> {
     raw.map(|body| clipped(&body, MAX_BODY_CHARS))
 }
 
+fn is_body_cut(is_marked: bool, body: Option<&str>) -> bool {
+    body.is_some_and(|body| is_marked || body.chars().count() > MAX_BODY_CHARS)
+}
+
 fn is_stream(request_type: RequestType) -> bool {
     matches!(request_type, RequestType::Ws | RequestType::Sse)
 }
@@ -325,6 +335,8 @@ fn request_of(raw: RawRequest) -> Option<RequestFacts> {
         size: raw.size,
         request_headers: headers_of(raw.request_headers),
         response_headers: headers_of(raw.response_headers),
+        is_request_body_cut: is_body_cut(raw.is_request_body_cut, raw.request_body.as_deref()),
+        is_response_body_cut: is_body_cut(raw.is_response_body_cut, raw.response_body.as_deref()),
         request_body: body_of(raw.request_body),
         response_body: body_of(raw.response_body),
         socket: raw.socket.filter(|_| is_stream(raw.request_type)),
@@ -641,6 +653,8 @@ mod tests {
                             response_headers: Vec::new(),
                             request_body: Some("{\"cart\":12}".into()),
                             response_body: None,
+                            is_request_body_cut: false,
+                            is_response_body_cut: true,
                             socket: None,
                             phases: Some(RequestPhases {
                                 wait: 24.5,
@@ -690,6 +704,8 @@ mod tests {
                             "responseHeaders": [],
                             "requestBody": "{\"cart\":12}",
                             "responseBody": null,
+                            "isRequestBodyCut": false,
+                            "isResponseBodyCut": true,
                             "socket": null,
                             "phases": { "wait": 24.5, "download": 6.0 },
                         },
@@ -883,7 +899,19 @@ mod tests {
             facts.response_body.map(|body| body.chars().count()),
             Some(MAX_BODY_CHARS)
         );
+        assert!(facts.is_response_body_cut);
+        assert!(!facts.is_request_body_cut);
         assert_eq!(facts.socket, None);
+
+        let mut marked = request(7, "r7");
+        marked["network"]["responseBody"] = json!("b".repeat(MAX_BODY_CHARS));
+        marked["network"]["isResponseBodyCut"] = json!(true);
+        marked["network"]["isRequestBodyCut"] = json!(true);
+        let facts = only_entry(marked)
+            .and_then(|e| e.network)
+            .expect("a request clipped at capture");
+        assert!(facts.is_response_body_cut);
+        assert!(!facts.is_request_body_cut);
 
         let mut socket = request(2, "r2");
         socket["network"]["type"] = json!("ws");

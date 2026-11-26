@@ -57,6 +57,8 @@ type Entry = {
     readonly responseHeaders: ReadonlyArray<Header>;
     readonly requestBody: string | null;
     readonly responseBody: string | null;
+    readonly isRequestBodyCut: boolean;
+    readonly isResponseBodyCut: boolean;
     readonly socket: {
       readonly phase: string;
       readonly sent: number;
@@ -89,6 +91,7 @@ type ReadParams = {
 type PageParams = {
   readonly isFrame?: boolean;
   readonly fetchAnswer?: () => Promise<object>;
+  readonly address?: string;
 };
 
 type FakeXhr = {
@@ -160,7 +163,11 @@ const fakeTargetClass = () =>
     }
   };
 
-const page = ({ isFrame = false, fetchAnswer }: PageParams = {}) => {
+const page = ({
+  isFrame = false,
+  fetchAnswer,
+  address = 'http://localhost:5173/checkout',
+}: PageParams = {}) => {
   const listeners = new Map<string, Array<Listener>>();
   const timings = new Map<string, (list: object) => void>();
   const clock = { at: 100 };
@@ -229,7 +236,7 @@ const page = ({ isFrame = false, fetchAnswer }: PageParams = {}) => {
     URL,
     URLSearchParams,
     performance: { now: () => clock.at },
-    location: { href: 'http://localhost:5173/checkout', origin: 'http://localhost:5173' },
+    location: { href: address, origin: new URL(address).origin },
     addEventListener: (type: string, listener: Listener) => {
       listeners.set(type, [...(listeners.get(type) ?? []), listener]);
     },
@@ -270,6 +277,22 @@ const page = ({ isFrame = false, fetchAnswer }: PageParams = {}) => {
     ownBefore,
   };
 };
+
+type TimingOfParams = {
+  readonly startTime: number;
+  readonly wait: number;
+  readonly initiatorType?: string;
+};
+
+const timingOf = ({ startTime, wait, initiatorType = 'fetch' }: TimingOfParams) => ({
+  name: 'http://localhost:5173/api/cart',
+  initiatorType,
+  startTime,
+  duration: wait + 2,
+  requestStart: startTime + 1,
+  responseStart: startTime + 1 + wait,
+  responseEnd: startTime + 2 + wait,
+});
 
 const namesOf = ({ headers }: { readonly headers: ReadonlyArray<Header> | undefined }) =>
   (headers ?? []).map((header) => header.name);
@@ -507,6 +530,19 @@ describe('the page runtime', () => {
     await vi.waitFor(() =>
       expect(tab.ofKind({ kind: 'network' })[0]?.network?.responseBody?.length).toBe(65_536),
     );
+    expect(tab.ofKind({ kind: 'network' })[0]?.network?.isResponseBodyCut).toBe(true);
+    expect(tab.ofKind({ kind: 'network' })[0]?.network?.isRequestBodyCut).toBe(false);
+
+    const exact = page();
+    const xhr = new exact.window.XMLHttpRequest();
+    xhr.open('POST', '/api/rates');
+    xhr.send('a'.repeat(65_537));
+    xhr.status = 200;
+    xhr.responseHeaderText = 'Content-Type: text/plain\r\n';
+    xhr.responseText = 'a'.repeat(65_536);
+    xhr.listeners.get('load')?.({});
+    expect(exact.ofKind({ kind: 'network' })[0]?.network?.isRequestBodyCut).toBe(true);
+    expect(exact.ofKind({ kind: 'network' })[0]?.network?.isResponseBodyCut).toBe(false);
 
     const image = page({
       fetchAnswer: () =>
@@ -667,7 +703,9 @@ describe('the page runtime', () => {
 
   it('adds waiting and download time to a static file and to the fetch the timing names', async () => {
     const tab = page();
+    tab.clock.at = 10;
     await tab.window.fetch('/api/cart');
+    tab.clock.at = 19.5;
     await tab.window.fetch('/api/rates');
 
     tab.time({
@@ -710,6 +748,90 @@ describe('the page runtime', () => {
       ['/api/rates', { wait: 40, download: 8 }],
       ['/src/main.tsx', { wait: 5, download: 2 }],
       ['/img/ledger.svg', null],
+    ]);
+  });
+
+  it('times two requests to one address by their start, whichever ends first', async () => {
+    const tab = page();
+    tab.clock.at = 10;
+    await tab.window.fetch('/api/cart');
+    tab.clock.at = 30;
+    await tab.window.fetch('/api/cart');
+
+    tab.time({
+      type: 'resource',
+      items: [timingOf({ startTime: 30.5, wait: 4 }), timingOf({ startTime: 10.5, wait: 40 })],
+    });
+
+    const timed = tab
+      .ofKind({ kind: 'network' })
+      .map((entry) => [entry.network?.start, entry.network?.phases?.wait]);
+    expect(timed).toHaveLength(2);
+    expect(timed).toEqual(
+      expect.arrayContaining([
+        [10, 40],
+        [30, 4],
+      ]),
+    );
+  });
+
+  it('leaves two requests that started together without timing', async () => {
+    const tab = page();
+    await tab.window.fetch('/api/cart');
+    await tab.window.fetch('/api/cart');
+
+    tab.time({ type: 'resource', items: [timingOf({ startTime: 100.5, wait: 4 })] });
+
+    expect(tab.ofKind({ kind: 'network' }).map((entry) => entry.network?.phases)).toEqual([
+      null,
+      null,
+    ]);
+  });
+
+  it('gives a retry its own timing after a failed request', async () => {
+    const tab = page();
+    const failed = new tab.window.XMLHttpRequest();
+    tab.clock.at = 10;
+    failed.open('GET', '/api/cart');
+    failed.send();
+    failed.listeners.get('error')?.({});
+    tab.clock.at = 11;
+    await tab.window.fetch('/api/cart');
+    const retry = new tab.window.XMLHttpRequest();
+    tab.clock.at = 12;
+    retry.open('GET', '/api/cart');
+    retry.send();
+    retry.status = 200;
+    retry.listeners.get('load')?.({});
+
+    tab.time({
+      type: 'resource',
+      items: [timingOf({ startTime: 12, wait: 4, initiatorType: 'xmlhttprequest' })],
+    });
+
+    expect(tab.ofKind({ kind: 'network' }).map((entry) => entry.network?.phases?.wait)).toEqual([
+      undefined,
+      undefined,
+      4,
+    ]);
+  });
+
+  it('drops the grant of a local page from the path of its requests', async () => {
+    const tab = page({
+      address: 'gblocal://localhost/0f1e-2a/work/harborline/plan.html',
+      fetchAnswer: () => Promise.resolve({ status: 404 }),
+    });
+
+    await tab.window.fetch('data.json');
+    await tab.window.fetch('http://gblocal.localhost/9a8b-7c/C:/work/harborline/plan.js');
+
+    expect(tab.ofKind({ kind: 'network' }).map((entry) => entry.text)).toEqual([
+      '/work/harborline/data.json',
+      '/C:/work/harborline/plan.js',
+    ]);
+    expect(tab.ofKind({ kind: 'error' }).map((entry) => entry.text)).toEqual([
+      'GET /work/harborline/data.json 404',
+      'GET /C:/work/harborline/plan.js 404',
     ]);
   });
 

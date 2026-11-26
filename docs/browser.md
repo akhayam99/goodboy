@@ -988,15 +988,20 @@ that shadows it, so the chord follows Chrome's J.
   Safari gives none). A request has an id, a type (fetch, xhr, doc, script,
   style, img, ws, sse, other), its start and duration, its size when known,
   its request and response headers and its body when it is text or JSON, cut
-  at 64 kB. A rejected `fetch`, a network error, a timeout and a resource that
+  at 64 kB with a flag per body (`isRequestBodyCut`, `isResponseBodyCut`). A
+  request for a local file drops the grant from its path at capture
+  (`pathOf`). A rejected `fetch`, a network error, a timeout and a resource that
   failed to load are status 0. A fetch is noted when its headers arrive and
   again, under the same id, when its body is read; a socket or a stream is
   noted when it opens and when it closes, with its frame counts. A request
   also carries its waiting and download times (`phases`, from
   `requestStart`, `responseStart` and `responseEnd` of its timing entry): a
   static file reads its own entry, and a `fetch` or `XMLHttpRequest` waits for
-  the next `resource` entry of the same address and kind (at most 100 wait,
-  the oldest dropped) and is noted again with them. An entry that gives no
+  the `resource` entry of the same address and kind whose start is closest to
+  its own (at most 100 wait, the oldest dropped) and is noted again with them.
+  Two requests that started within 2 ms of that distance stay without phases,
+  an entry more than 100 ms after a start is not its own, and a failed, timed
+  out or aborted request stops waiting. An entry that gives no
   `requestStart` (a cross origin file without `Timing-Allow-Origin`) has no
   phases, and Rust keeps phases only when both are finite and not negative. A
   request with status 0 or 400 and up also adds an error linked to its id.
@@ -1087,8 +1092,10 @@ that shadows it, so the chord follows Chrome's J.
   (`NetworkTable`): method, path, status, type, size, time and a waterfall
   bar placed by start and duration over the latest end of the shown rows (an
   open socket runs to that end). The tools are Failed only (`aria-pressed`),
-  a search field and Clear; the type filters (All, Fetch with xhr, Doc, JS,
-  CSS, Img, WS with event streams) sit over the table. `networkRowsOf` keeps a
+  a search field and Clear; a type list (a `Listbox`: All types, Fetch with
+  xhr, Doc, JS, CSS, Img, WebSocket and event streams) sits over the table,
+  and a placeholder row shows until the tab's first read answers
+  (`isLoaded`). `networkRowsOf` keeps a
   request when its type, its failure (status 0 or 400 and up) and every word
   of the search on path, method and status match. The line under the table
   (`networkSummaryOf`) says how many requests show (of how many), their size
@@ -1109,7 +1116,7 @@ that shadows it, so the chord follows Chrome's J.
   you click (`useHandOutputToAgent`): `<method>-<path>-request.md`,
   `text/markdown`, the full address, the page content note, the facts and
   timing, then the request and response headers and bodies, each body cut at
-  64 kB. `isHiddenHeader` drops the sensitive headers again, in the Headers
+  64 kB and marked so when the capture or the file cut it. `isHiddenHeader` drops the sensitive headers again, in the Headers
   pane and in the file, whatever reached it; `redactSecrets` and
   `withoutGrantOf` run over the file.
 - **Errors**: the address row shows a red count (`BrowserErrorCount`, the

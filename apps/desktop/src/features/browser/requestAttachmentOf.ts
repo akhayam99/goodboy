@@ -27,7 +27,10 @@ type HeadersParams = {
 type BodyParams = {
   readonly title: string;
   readonly body: string | null;
+  readonly isCutAtCapture: boolean;
 };
+
+type CutParams = Pick<BodyParams, 'body' | 'isCutAtCapture'>;
 
 type NameParams = {
   readonly method: string;
@@ -42,14 +45,16 @@ const headerLinesOf = ({ title, headers }: HeadersParams): ReadonlyArray<string>
   return ['', `### ${title}`, ...shown.map((header) => `- ${header.name}: ${header.value}`)];
 };
 
-const bodyLinesOf = ({ title, body }: BodyParams): ReadonlyArray<string> => {
+const isBodyCut = ({ body, isCutAtCapture }: CutParams): boolean =>
+  body !== null && (isCutAtCapture || body.length > REQUEST_BODY_MAX_CHARS);
+
+const bodyLinesOf = ({ title, body, isCutAtCapture }: BodyParams): ReadonlyArray<string> => {
   if (body === null || body.trim() === '') {
     return [];
   }
-  const isCut = body.length > REQUEST_BODY_MAX_CHARS;
   return [
     '',
-    isCut ? `### ${title} (first 64 kB)` : `### ${title}`,
+    isBodyCut({ body, isCutAtCapture }) ? `### ${title} (first 64 kB)` : `### ${title}`,
     '```',
     body.slice(0, REQUEST_BODY_MAX_CHARS),
     '```',
@@ -71,6 +76,16 @@ export const requestAttachmentOf = ({ entry, pageUrl }: Params): OutputHandoff =
   const method = entry.method ?? 'GET';
   const path = withoutGrantOf({ line: entry.text });
   const socket = network?.socket ?? null;
+  const requestBody: BodyParams = {
+    title: 'Request body',
+    body: network?.requestBody ?? null,
+    isCutAtCapture: network?.isRequestBodyCut === true,
+  };
+  const responseBody: BodyParams = {
+    title: 'Response body',
+    body: network?.responseBody ?? null,
+    isCutAtCapture: network?.isResponseBodyCut === true,
+  };
   const summary = [
     `status ${facts.status}`,
     ...(network === null ? [] : [network.type]),
@@ -87,9 +102,9 @@ export const requestAttachmentOf = ({ entry, pageUrl }: Params): OutputHandoff =
     ...requestTimingOf({ entry }).map((row) => `- ${row.label}: ${row.value}`),
     ...(socket === null ? [] : [`- Frames: ${socket.sent} sent, ${socket.received} received`]),
     ...headerLinesOf({ title: 'Request headers', headers: network?.requestHeaders ?? [] }),
-    ...bodyLinesOf({ title: 'Request body', body: network?.requestBody ?? null }),
+    ...bodyLinesOf(requestBody),
     ...headerLinesOf({ title: 'Response headers', headers: network?.responseHeaders ?? [] }),
-    ...bodyLinesOf({ title: 'Response body', body: network?.responseBody ?? null }),
+    ...bodyLinesOf(responseBody),
   ];
   const text = redactSecrets({ text: withoutGrantOf({ line: `${lines.join('\n')}\n` }) });
   return {
@@ -97,9 +112,7 @@ export const requestAttachmentOf = ({ entry, pageUrl }: Params): OutputHandoff =
     title: `${method} ${path} ${facts.status}`,
     fileName: requestFileNameOf({ method, path }),
     text,
-    isTruncated: [network?.requestBody, network?.responseBody].some(
-      (body) => body != null && body.length > REQUEST_BODY_MAX_CHARS,
-    ),
+    isTruncated: isBodyCut(requestBody) || isBodyCut(responseBody),
     mimeType: REQUEST_MIME,
   };
 };

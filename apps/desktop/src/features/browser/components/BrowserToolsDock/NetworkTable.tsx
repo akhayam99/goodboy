@@ -54,7 +54,7 @@ const TYPE_WORD = {
 
 type SpanParams = Pick<Props, 'rows'>;
 
-const spanOf = ({ rows }: SpanParams): number =>
+const waterfallSpanOf = ({ rows }: SpanParams): number =>
   rows.reduce((latest, row) => {
     const facts = row.network;
     if (facts === null) {
@@ -64,11 +64,11 @@ const spanOf = ({ rows }: SpanParams): number =>
   }, 0);
 
 export const NetworkTable = ({ rows, opened, isNarrow, onOpen }: Props) => {
-  const span = spanOf({ rows });
+  const span = waterfallSpanOf({ rows });
   const headings = Object.fromEntries(
     Object.entries(HEADINGS).map(([key, label]) => [
       key,
-      <span key={key} className="text-eyebrow text-faint-foreground">
+      <span key={key} className="text-meta text-faint-foreground">
         {label}
       </span>,
     ]),

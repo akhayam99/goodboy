@@ -85,6 +85,24 @@ describe('requestAttachmentOf', () => {
     expect(handoff.isTruncated).toBe(true);
   });
 
+  it('says a body is cut when the page runtime clipped it at capture', () => {
+    const handoff = requestAttachmentOf({
+      entry: {
+        ...CHARGE,
+        network: {
+          ...CHARGE_FACTS,
+          responseBody: 'a'.repeat(REQUEST_BODY_MAX_CHARS),
+          isResponseBodyCut: true,
+        },
+      },
+      pageUrl: PAGE_URL,
+    });
+
+    expect(handoff.text).toContain('### Response body (first 64 kB)');
+    expect(handoff.text).toContain('### Request body\n');
+    expect(handoff.isTruncated).toBe(true);
+  });
+
   it('says how many frames a socket sent and received, and keeps a cross origin address', () => {
     const handoff = requestAttachmentOf({
       entry: {

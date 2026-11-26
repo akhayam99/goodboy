@@ -939,11 +939,8 @@ describe('the network table', () => {
     await renderPane();
     const region = await openNetwork();
 
-    fireEvent.click(
-      within(within(region).getByRole('tablist', { name: 'Request type' })).getByRole('tab', {
-        name: 'Fetch',
-      }),
-    );
+    fireEvent.click(within(region).getByRole('combobox', { name: 'Request type' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Fetch' }));
 
     expect(requestNames()).toEqual(['GET /api/cart, 200', 'POST /api/charge, 500']);
     fireEvent.click(within(region).getByRole('button', { name: 'GET /api/cart, 200' }));
