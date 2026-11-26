@@ -62,7 +62,7 @@ type FolderParams = {
 };
 
 const hasDirtyReason = ({ reason }: { readonly reason: string }): boolean =>
-  reason.split(',').some((part) => DIRTY_REASONS.includes(part.trim()));
+  DIRTY_REASONS.some((dirty) => reason.includes(dirty));
 
 export const keptBecauseFolder = ({ branch, reason }: FolderParams): string => {
   if (reason === null) {

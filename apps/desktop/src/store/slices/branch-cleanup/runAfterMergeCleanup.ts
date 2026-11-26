@@ -100,6 +100,7 @@ export const runAfterMergeCleanup = (set: SetFn, get: GetFn) => {
         mountId,
         requestId: `after-merge:${mountId}:${sha}`,
         isRemovalRequired,
+        ...(isRemovalRequired ? { onKeptFolder: 'refuse' as const } : {}),
       })
       .catch((error: unknown) => ({ kept: true, reason: removalReasonOf({ error }) }));
     if (unmounted.kept) {
