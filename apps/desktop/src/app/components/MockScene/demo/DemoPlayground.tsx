@@ -299,10 +299,12 @@ export const DemoPlayground = () => {
               coach={hints.coach}
               offscreen={hints.acting === undefined ? hints.offscreen : undefined}
               reveal={hints.reveal}
+              offerRequest={hints.offerRequest}
               onHintReport={hints.onHintReport}
               onSpotlightChange={onSpotlightChange}
               onHideHint={hints.dismiss}
               onRevealHint={hints.revealHint}
+              onOffer={hints.pressOffer}
               working={hints.acting?.progressCopy ?? hints.acting?.progress}
             />
           )}

@@ -147,6 +147,20 @@ describe('the agent pages of a run', () => {
     expect(railWordOf({ agentId: 'mock-auto-scout-apply' })).toBe('Done');
   });
 
+  it('lists a child as a tinted glyph, its task and its state, with the role only in the label', async () => {
+    await mount({ name: 'run-page-agent' });
+
+    const lines = [...document.querySelectorAll('li[data-delegation]')];
+    expect(lines.length).toBeGreaterThan(1);
+    for (const line of lines) {
+      const role = (line.getAttribute('aria-label') ?? '').split(',')[0] ?? '';
+      expect(role).not.toBe('');
+      expect(line.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe(role);
+      expect(line.querySelector('[data-node-state]')).toBeNull();
+      expect(line.textContent).not.toContain(role);
+    }
+  });
+
   it('shows one Stop on a running agent page, in the dock', async () => {
     await mount({ name: 'run-page-agent' });
 

@@ -1,5 +1,5 @@
 export type PageSource = {
-  readonly kind: 'page';
+  readonly kind: 'page' | 'element';
   readonly title: string;
   readonly host: string;
   readonly url: string;

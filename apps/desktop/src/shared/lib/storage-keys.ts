@@ -20,6 +20,7 @@ export const STORAGE_KEYS = {
   rowActionsCue: `${PREFIX}row-actions-cue:v1`,
   pushFixes: `${PREFIX}push-fixes:v1`,
   settledRebaseStops: `${PREFIX}settled-rebase-stops:v1`,
+  browserToolsDock: `${PREFIX}browser-tools-dock:v1`,
 } as const;
 
 export const STORAGE_PREFIXES = {

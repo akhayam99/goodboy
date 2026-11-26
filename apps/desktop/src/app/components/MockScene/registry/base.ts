@@ -174,6 +174,7 @@ import { BrandHistoryTrialScene } from '../scenes/brand/HistoryTrialScene';
 import { BrandLimitsScene } from '../scenes/brand/LimitsScene';
 import { BrandCodexScene } from '../scenes/brand/CodexScene';
 import { BrandStorageScene } from '../scenes/brand/StorageScene';
+import { StoryBringScene } from '../scenes/story/StoryBringScene';
 import { StoryDirectionScene } from '../scenes/story/StoryDirectionScene';
 import { StoryPlanScene } from '../scenes/story/StoryPlanScene';
 import { StoryReviewScene } from '../scenes/story/StoryReviewScene';
@@ -502,6 +503,7 @@ export const BASE_SCENES = {
   'brand-limits': BrandLimitsScene,
   'brand-codex': BrandCodexScene,
   'brand-storage': BrandStorageScene,
+  'story-bring': StoryBringScene,
   'story-direction': StoryDirectionScene,
   'story-plan': StoryPlanScene,
   'story-review': StoryReviewScene,

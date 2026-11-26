@@ -24,9 +24,10 @@ import { ASK_PANE_SCENES } from './ask-pane';
 
 type SceneName = keyof typeof ASK_PANE_SCENES;
 
-const SCENE_NAMES = Object.keys(ASK_PANE_SCENES).filter(
+const ALL_NAMES = Object.keys(ASK_PANE_SCENES).filter(
   (name): name is SceneName => name in ASK_PANE_SCENES,
 );
+const SCENE_NAMES = ALL_NAMES.filter((name) => !name.startsWith('ask-foot'));
 
 let useAppStore: StoryStore;
 
@@ -62,7 +63,7 @@ const mount = async (name: SceneName): Promise<HTMLElement> => {
 
 describe('the ask pane scenes', () => {
   it('registers every scene with the mock scene registry', () => {
-    for (const name of SCENE_NAMES) {
+    for (const name of ALL_NAMES) {
       expect(MOCK_SCENES[name], name).toBeDefined();
     }
   });
@@ -78,6 +79,17 @@ describe('the ask pane scenes', () => {
     const pane = await mount('ask-pane-empty-light');
     within(pane).getByRole('group', { name: 'Try asking' });
     within(pane).getByPlaceholderText('Ask about this session. Read only, it starts nothing.');
+  });
+
+  it('shows the Overview with the Ask foot and no pane in the foot scenes', async () => {
+    const Scene = ASK_PANE_SCENES['ask-foot'];
+    render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+    await screen.findByPlaceholderText('Ask about this session');
+    expect(screen.queryByRole('region', { name: 'Ask' })).toBeNull();
   });
 
   it('keeps the pane beside the Runs tab', async () => {

@@ -12,7 +12,7 @@ import { useNativePlacement } from '../../hooks/useNativePlacement';
 import type { BrowserPageGroup } from '../../types';
 import { BrowserAddressRow } from '../BrowserPane/BrowserAddressRow';
 import type { BrowserStripGroups } from '../BrowserPane/BrowserTabStrip';
-import { BrowserConsole } from '../BrowserPane/BrowserConsole';
+import { BrowserToolsDock } from '../BrowserToolsDock';
 import { BrowserNotice } from '../BrowserPane/BrowserNotice';
 import { BrowserPasskeyNotice } from '../BrowserPane/BrowserPasskeyNotice';
 import { BrowserSendLine } from '../BrowserPane/BrowserSendLine';
@@ -101,7 +101,14 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
         <BrowserNotice notice={model.notice} />
         <BrowserSendLine pageSend={model.pageSend} />
         <BrowserPasskeyNotice model={model} />
-        <div data-browser-stage="" className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <BrowserToolsDock
+          surface="page"
+          isOpen={isConsoleOpen && shownTab !== null}
+          model={model}
+          title={title}
+          log={consoleLog}
+          onClose={() => setIsConsoleOpen(false)}
+        >
           <BrowserView
             frame={frame}
             view={view}
@@ -111,10 +118,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
             devicePreset={model.devicePreset}
             onNew={model.startDraft}
           />
-          {isConsoleOpen && shownTab !== null ? (
-            <BrowserConsole model={model} title={title} log={consoleLog} />
-          ) : null}
-        </div>
+        </BrowserToolsDock>
       </div>
     </div>
   );

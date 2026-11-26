@@ -1,8 +1,7 @@
 import { memo } from 'react';
 import { MessageSquare } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE } from '@goodboy/ui';
-import { SpawnedRailCell } from '../SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
-import type { RailRow } from '../../../workTreeModel/railGeometry';
+import { LEAD_TREE_UNIT, LeadTreeGuides } from './LeadTreeGuides';
 import { LEAD_TREE_CURSOR } from './leadTreeCursor';
 import { LEAD_TREE_ROW } from './leadTreeRow';
 
@@ -13,14 +12,13 @@ type Props = {
   readonly canEdit: boolean;
   readonly canRemove: boolean;
   readonly isActive: boolean;
-  readonly rail: RailRow;
-  readonly railWidth: number;
+  readonly depth: number;
   readonly onEdit: (id: string) => void;
   readonly onRemove: (id: string) => void;
 };
 
 export const LeadTreeNoteRow = memo(
-  ({ id, text, word, canEdit, canRemove, isActive, rail, railWidth, onEdit, onRemove }: Props) => (
+  ({ id, text, word, canEdit, canRemove, isActive, depth, onEdit, onRemove }: Props) => (
     <div
       role="treeitem"
       tabIndex={-1}
@@ -30,15 +28,11 @@ export const LeadTreeNoteRow = memo(
       data-active={isActive}
       className={cn(LEAD_TREE_ROW, isActive && LEAD_TREE_CURSOR)}
     >
-      <SpawnedRailCell
-        rail={rail}
-        width={railWidth}
-        marker={
-          <span className="flex size-4 items-center justify-center rounded-full bg-background text-faint-foreground">
-            <MessageSquare size={ICON_SIZE.mark} aria-hidden="true" />
-          </span>
-        }
-      />
+      <LeadTreeGuides depth={depth} />
+      <span aria-hidden className="shrink-0" style={{ width: depth * LEAD_TREE_UNIT }} />
+      <span className="flex size-4 shrink-0 items-center justify-center text-faint-foreground">
+        <MessageSquare size={ICON_SIZE.row} aria-hidden="true" />
+      </span>
       <span className="min-w-0 flex-1 truncate text-ui text-foreground">{text}</span>
       {canEdit ? (
         <Button variant="ghost" size="xs" className="shrink-0" onClick={() => onEdit(id)}>

@@ -1,10 +1,10 @@
 export const STORY_ISSUE = {
   identifier: 'HBL-412',
-  title: 'Retried webhooks credit an account twice',
+  title: 'Retried webhooks post a second credit',
   description: [
-    'When the processor redelivers a webhook that payments-api acknowledged late, the account is credited a second time and ledger-core records a second posting. Support refunded 23 accounts by hand last week.',
+    'When the payment processor retries a webhook, payments-api posts the credit again. The account is credited twice for one delivery.',
     '',
-    'One event id should produce one credit, however many times it arrives. The fix belongs in payments-api, and ledger-core must still show one posting per event id.',
+    'Seen on two accounts since the last release. The retry carries the same delivery id, so the second credit should be refused.',
   ].join('\n'),
 } as const;
 

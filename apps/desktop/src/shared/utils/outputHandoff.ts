@@ -14,6 +14,7 @@ export type OutputHandoff = {
   readonly text: string;
   readonly isTruncated: boolean;
   readonly mimeType?: string;
+  readonly dataBase64?: string;
   readonly source?: PageSource;
 };
 

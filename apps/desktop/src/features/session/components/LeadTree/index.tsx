@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState, type KeyboardEvent } from 'react';
 import type { AgentId } from '@goodboy/types';
-import { spawnedRailOf } from '../../../workTreeModel/spawnedRailOf';
 import { LeadTreeAgentRow } from './LeadTreeAgentRow';
 import { LeadTreeFoldRow } from './LeadTreeFoldRow';
 import { LeadTreeNoteRow } from './LeadTreeNoteRow';
@@ -55,20 +54,6 @@ export const LeadTree = ({
 }: Props) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const hasRoot = root !== null;
-  const rail = useMemo(
-    () =>
-      spawnedRailOf({
-        nodes: [
-          ...(hasRoot ? [{ id: ROOT_ROW_ID, level: 1, isPending: false }] : []),
-          ...items.map((item) => ({
-            id: item.id,
-            level: item.depth + (hasRoot ? 2 : 1),
-            isPending: item.kind === 'agent' && item.node === 'queued',
-          })),
-        ],
-      }),
-    [items, hasRoot],
-  );
   const ids = useMemo(
     () => [...(hasRoot ? [ROOT_ROW_ID] : []), ...items.map((item) => item.id)],
     [hasRoot, items],
@@ -112,7 +97,6 @@ export const LeadTree = ({
     },
     [ids, items, root, cursorId, onSelect, onToggleFold],
   );
-  const rootRail = rail.railById.get(ROOT_ROW_ID);
 
   return (
     <div
@@ -124,23 +108,22 @@ export const LeadTree = ({
       className="group/tree flex min-w-0 flex-col outline-none"
       onKeyDown={onKeyDown}
     >
-      {root === null || rootRail === undefined ? null : (
+      {root === null ? null : (
         <LeadTreeRootRow
           id={ROOT_ROW_ID}
           root={root}
-          rail={rootRail}
-          railWidth={rail.width}
           isSelected={isRootSelected}
           isActive={cursorId === ROOT_ROW_ID}
           onSelect={onSelect}
         />
       )}
+      {root === null || items.length === 0 ? null : (
+        <div aria-hidden data-lead-tree-sep="" className="px-2 pb-1 pt-0.5">
+          <div className="h-px bg-border-soft" />
+        </div>
+      )}
       {items.map((item) => {
         const isActive = item.id === cursorId;
-        const itemRail = rail.railById.get(item.id);
-        if (itemRail === undefined) {
-          return null;
-        }
         if (item.kind === 'agent') {
           return (
             <LeadTreeAgentRow
@@ -155,8 +138,7 @@ export const LeadTree = ({
               word={item.word}
               isSettled={item.isSettled}
               spendUsd={item.spendUsd}
-              rail={itemRail}
-              railWidth={rail.width}
+              depth={item.depth}
               isSelected={item.agentId === selectedAgentId}
               isActive={isActive}
               isCompact={isCompact}
@@ -172,8 +154,7 @@ export const LeadTree = ({
               label={item.label}
               isOpen={item.isOpen}
               isActive={isActive}
-              rail={itemRail}
-              railWidth={rail.width}
+              depth={item.depth}
               onToggle={onToggleFold}
             />
           );
@@ -182,8 +163,7 @@ export const LeadTree = ({
           <LeadTreeNoteRow
             key={item.id}
             id={item.id}
-            rail={itemRail}
-            railWidth={rail.width}
+            depth={item.depth}
             text={item.text}
             word={item.word}
             canEdit={item.canEdit}

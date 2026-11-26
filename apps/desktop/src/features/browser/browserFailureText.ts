@@ -18,6 +18,8 @@ const WORDS: ReadonlyMap<string, string> = new Map([
   ['host-unknown', 'The page moved to another site. Send it again.'],
   ['page-moved', 'The page changed while it was read. Send it again.'],
   ['page-text-unavailable', "Couldn't read the page text. Try again."],
+  ['agent-gone', "The agent isn't in this session anymore. Pick one and try again."],
+  ['pick-unavailable', "Couldn't select on this page. Reload it and try again."],
   ['unsupported-platform', 'Inspect needs macOS 13.3 or later.'],
   ['session-closing', 'This session is closing.'],
   ['tab-row-gone', 'This tab is gone. Reload the session.'],

@@ -153,7 +153,7 @@ describe('TimelineRowLabel', () => {
     expect(container.textContent).toBe('Look into the failing build');
   });
 
-  it('holds one fixed glyph size down the column, whatever the role is', () => {
+  it('holds one fixed uncircled glyph size down the column, whatever the role is', () => {
     const sizes = new Set<string>();
     for (const agentKind of [
       'resolver',
@@ -168,7 +168,7 @@ describe('TimelineRowLabel', () => {
         .filter((token) => token.startsWith('size-'))
         .join(' ');
 
-      expect(size).toBe('size-4.5');
+      expect(size).toBe('size-4');
       sizes.add(size);
       cleanup();
     }
@@ -183,18 +183,18 @@ describe('TimelineRowLabel', () => {
     expect(screen.getByText('Draft the migration')).toBeDefined();
   });
 
-  it('marks the role chip of a chain root with the chain glyph', () => {
+  it('shows one glyph on a chained agent row and no link icon, since the row is the link', () => {
     const { container } = renderKind({
       agentKind: 'planner',
       name: 'Draft the migration',
       isChained: true,
     });
 
-    expect(container.querySelector('svg')).not.toBeNull();
-    expect(container.querySelector('svg')?.classList.contains('absolute')).toBe(false);
+    screen.getByRole('img', { name: AGENT_KIND_META.planner.noun });
+    expect(container.querySelectorAll('svg')).toHaveLength(1);
   });
 
-  it('marks a chained descendant too, on the step row it lives on', () => {
+  it('keeps one glyph on a chained descendant on the step row it lives on', () => {
     const { container } = render(
       <TimelineRowLabel
         item={itemOf({
@@ -208,11 +208,11 @@ describe('TimelineRowLabel', () => {
       />,
     );
 
-    expect(screen.getByRole('img', { name: AGENT_KIND_META.implementer.noun })).toBeDefined();
-    expect(container.querySelector('svg')).not.toBeNull();
+    screen.getByRole('img', { name: AGENT_KIND_META.implementer.noun });
+    expect(container.querySelectorAll('svg')).toHaveLength(1);
   });
 
-  it('leaves the role glyph unmarked when the agent belongs to no chain', () => {
+  it('draws the same single glyph when the agent belongs to no chain', () => {
     const { container } = renderKind({ agentKind: 'planner', name: 'Draft the migration' });
 
     screen.getByRole('img', { name: AGENT_KIND_META.planner.noun });
@@ -427,13 +427,10 @@ describe('TimelineRowLabel, the quiet ledger', () => {
     rowState,
   });
 
-  it('reads ordinal, role glyph and task in that order on one feed line', () => {
+  it('reads the role glyph then the task on one feed line, with the ordinal for screen readers only', () => {
     render(<TimelineRowLabel item={stepOf()} />);
     const row = screen.getByTestId('activity-row');
     const slots = Array.from(row.children).map((slot) => {
-      if (slot.querySelector('[data-timeline-ordinal]') !== null) {
-        return 'ordinal';
-      }
       if (slot.querySelector('[role="img"]') !== null) {
         return 'glyph';
       }
@@ -441,7 +438,8 @@ describe('TimelineRowLabel, the quiet ledger', () => {
     });
 
     expect(row.getAttribute('data-activity-density')).toBe('feed');
-    expect(slots).toEqual(['ordinal', 'glyph', 'activity-row-text']);
+    expect(slots).toEqual(['glyph', 'activity-row-text']);
+    expect(row.querySelector('[data-timeline-ordinal]')?.textContent).toBe('4.2');
   });
 
   it('mutes a queued task and a stopped one, and keeps a done one at full contrast', () => {
