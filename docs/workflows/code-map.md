@@ -40,7 +40,10 @@ All in `apps/desktop/src/store/slices/workflows/` unless named otherwise:
 - `summarizeWorkflowAgentOutput.ts`: the summarizer after each step.
 - `notifyWorkflowGateBlock.ts`: the blocked notification.
 - `apps/desktop/src/features/workflows/runProviderPool.ts`: the provider pool
-  of an agent's run.
+  of an agent's run, which wins. Outside a run, or for a run with none, a
+  caller may pass the workspace pool (`features/auto/workspaceProviderPool.ts`).
+  Only Auto trees pass it, through `autoChildPool`, which keeps only the
+  providers `autoChildProviders` allows for the child's role.
 
 ### Studio
 

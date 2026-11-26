@@ -43,7 +43,9 @@ recovery prompt repeats the scope line (`withStepBoundary`).
 Auto child closing (`parseChildClosing`). It rewrites a known marker to its
 plain form when a provider printed it with escaped brackets, HTML entities, a
 space after `<<`, an upper-case name, curly double quotes around a value, or
-(for `step-done` and `handoff` only) one closing bracket.
+(for `step-done` and `handoff` only) one closing bracket. Backticks, a code
+fence, extra spaces, single quotes, a bare id, a marker followed by more text
+and a marker split across streamed deltas already parse.
 
 Content between a block's open and close tags is never touched, and a
 single-bracket `ctx-decision` stays text. The id check is strict everywhere: a
@@ -59,8 +61,9 @@ When a step or a sub-agent ends a turn without its `step-done` or
   re-kick is spent.
 - **It ends by asking you something in prose.** `extractProseQuestion` in
   `@goodboy/core` takes the asking paragraph from the turn's closing paragraph
-  and Goodboy saves it as a blocking open question owned by that agent. No
-  re-kick is spent.
+  and Goodboy saves it as a blocking open question owned by that agent. It
+  shows with the other open questions and your answer goes back to the same
+  agent. No re-kick is spent.
 
 Only a question or request addressed to you counts. A reply that reports or
 explains what was waiting earlier asks nothing, and an ask followed by a

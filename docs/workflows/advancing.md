@@ -124,8 +124,9 @@ restart with no migration.
 - `pauseWorkflowRun` and `resumeWorkflowRun` write and clear the stop. Resume
   calls `maybeAutoAdvanceWorkflow`, so the run moves only when it runs on its
   own, and `auto_run` is never touched.
-- `continueWorkflowRun` starts the next agent only when every agent is
-  `completed` or `skipped`.
+- `continueWorkflowRun` also takes a static run, through the same auto
+  advance. It starts the next agent only when every agent is `completed` or
+  `skipped`, and a `failed` or `blocked` agent is never either.
 
 The plan hold uses the same admission check ([plans.md](plans.md)).
 
@@ -143,7 +144,8 @@ the running step and holds the run.
 
 The operator stop of a run that went on its own is stored as the kind
 `operator:auto-run` and reads back as `operator` with `wasAutoRun`, so
-Continue turns autorun back on after a reload.
+Continue turns autorun back on after a reload. The fact goes when the stop
+goes.
 
 ### Stopped agents
 
@@ -157,7 +159,8 @@ resume reads "Stopped by restart" and offers Continue; the run shows one
 A stopped agent is neither settled nor failed. Continue sends "Continue from
 where you stopped." as a normal message. The run never passes a stopped step
 (`stopped-step`), a stopped step does not count as needing you, and any later
-status change clears the stop.
+status change clears the stop. A resumed step completes like any other, so
+autorun moves on from it.
 
 ## Closing a run
 
@@ -175,8 +178,8 @@ until the run ends; a queued run has nothing to stop, so archive it instead.
 
 A run you closed through a route change reads **Closed by you**, never
 complete, with no Next action and no autorun. A run chained after it switches
-to a manual start, so closing never starts other work. Adding a step opens it
-again.
+to a manual start, so closing never starts other work. The closure lands in
+the activity feed as its own row. Adding a step opens it again.
 
 ### Archive and delete
 

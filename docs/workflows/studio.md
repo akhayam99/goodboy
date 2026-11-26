@@ -27,7 +27,8 @@ test), **Plan and ship** (scout, plan, implement, review) and **Fix a bug**
 edited or deleted in this workspace. It puts back their name and steps, drops
 the steps you added, and leaves your own workflows alone. A built-in whose name
 one of your workflows now holds is left out, and one you never had is not
-counted as deleted. A new built-in from an update reaches every workspace at
+counted as deleted. With nothing changed the button is not shown. A new
+built-in from an update reaches every workspace at
 the next launch, unless the name is taken. The ids and the seeder are in
 [code-map.md](code-map.md#built-in-rows).
 
@@ -40,8 +41,11 @@ order** and **Models**. A saved workflow autosaves.
   **First, check**. With steps already there it reads **Redraft steps**,
   starts at once, and offers an undo once the new steps land.
 - **New workflow** and **Duplicate workflow** open the page for a workflow
-  that does not exist yet. It asks for a name first and writes once, on
-  **Create workflow**; nothing autosaves before that. **Discard** goes back at
+  that does not exist yet. It starts from **Every run**, asks for a name first
+  and writes once, on **Create workflow**; nothing autosaves before that. A
+  draft stays while you switch sessions and goes once you create or discard
+  it. **Duplicate workflow** fills the page from the source under the name
+  "<name> copy". **Discard** goes back at
   once and the toast's **Undo** reopens the draft.
 - **Models** pins a model on every step of a role, and **Reset** clears it. The
   Lead's per-agent routing reads it as any step pin.
@@ -102,9 +106,11 @@ plus an object in the language of the goal, inside one tag:
 
 Until the title arrives, or when the run has no goal, screens show the workflow
 name. An orchestrated run keeps the name generated for its workflow
-(`generateWorkflowTitle` renames one that started on the fallback name). You
+(`generateWorkflowTitle` renames one that started on the fallback name) and
+gets no second title. You
 rename a run from its title on the run page or its row on Runs
-(`useRunTitleRename`, `useRunRowRename`).
+(`useRunTitleRename`, `useRunRowRename`). That name stays with the run, and
+the preset keeps its own name.
 
 ## When a run starts
 

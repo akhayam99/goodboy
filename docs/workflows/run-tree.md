@@ -111,7 +111,8 @@ agent on its one conversation (`AgentDetailPane`, `ChatView`
 - **Stopped**: no strip. The header offers Continue; a step you stopped is
   never an alarm.
 - **An open question no row shows**: the question with **Answer**, in the
-  workflow detail only.
+  workflow detail only. **Answer** opens the agent that asked at its question,
+  or the questions view when no agent asked.
 - **The summarizer holding the run**: a line with nothing to click.
 
 - The quiet clock is the shared `useNow` tick, no timer per agent. It holds

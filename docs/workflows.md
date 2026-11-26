@@ -9,7 +9,8 @@ A workflow is a reusable list of steps, such as scout, plan, implement and
 test, with a few lines that say when to use it and when to stop. The detail
 lives in [workflows/](workflows/), what a reader of the app sees in
 [features/workflows.md](features/workflows.md), and how the Lead follows a
-workflow in [auto.md](auto.md#following-a-workflow).
+workflow in [auto.md](auto.md#following-a-workflow). Each object in Goodboy is
+explained in [concepts.md](concepts.md).
 
 ## What a workflow is
 

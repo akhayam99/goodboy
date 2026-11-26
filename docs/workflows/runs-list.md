@@ -21,8 +21,10 @@ age leave before the title is cut, then the model and the origin (`yieldsTo`).
 
 - A row is the button. The title and the chips are siblings of it
   (`ListGridRow` `overlays`), so a row never nests a button.
-- **Rename** edits the title in place (`useInlineRename`).
-- The menu is the run's own (the `runRow` kind), never the session's.
+- **Rename** edits the title in place (`useInlineRename`); leaving the box on
+  the same text writes nothing.
+- The menu is the run's own (the `runRow` kind), never the session's. An
+  agent or Auto row also opens the agent's right click menu.
 - **Stop all** and **Continue all** sit in one row at the top.
 
 ### Words and verbs
@@ -51,9 +53,11 @@ so older rows need no migration. New rows record it (`soleTurnMountIdOf` in
 `startRoutedRun`, `createAutoChild`).
 
 A detached mount or a removed worktree moves its branch to
-`SessionRun.goneBranches`, so the run keeps its group. The groups, the count
-behind the switch and the **Also on** chip read both lists
-(`runBranchMembershipOf`).
+`SessionRun.goneBranches`, so the run keeps its group.
+`SessionRun.branches` carries the attached result, which the row chips read.
+The groups, the count behind the switch and the **Also on** chip read both
+lists (`runBranchMembershipOf`), so a removed branch keeps its group even when
+the run also works on an attached one.
 
 ## Grouping
 
@@ -92,7 +96,9 @@ counts what the group header counts (`branchGroupShownCountOf`).
 
 Questions and Artifacts group by the same function (`branchKeyedGroupsOf` in
 `branchGroupsOf.ts`), switch (`useGroupBy`, `GroupBySwitch`) and address
-(`Focus.runGroup`, read by `useGroupArrival`).
+(`Focus.runGroup`, read by `useGroupArrival`). Under By state the Artifacts
+list reads that address too and focuses the first artifact of the branch,
+leaving the switch alone.
 
 - A question finds its branches through its asker and the asker's
   descendants, else its run (`questionBranchesOf`). `questionBranchGroupsOf`
@@ -100,10 +106,15 @@ Questions and Artifacts group by the same function (`branchKeyedGroupsOf` in
 - An artifact finds its branches from `ArtifactProvenance.mountIds`
   (`useArtifactMountIds`), else the agent, else the run
   (`artifactBranchesOf`). `groupArtifactRowsByBranch` runs after
-  `filterArtifactRows` and keeps the trash apart.
+  `filterArtifactRows`, keeps the trash apart and leaves the state groups
+  untouched.
 - A replicated row has one key per group (`artifactBranchRowKeyOf`,
   `questionBranchRowKeyOf`). The open question is marked only in its first
   group.
+- The Runs tab draws the question and artifact groups of the branch the same
+  way. Its **All questions** and **All artifacts** go through
+  `openBranchWork`, and Back from Questions or Artifacts returns to Work
+  (`parentPlace`).
 - The artifacts section of the Runs tab is registered by the artifacts feature
   (`branchWorkArtifactsRegistration`), so no cross feature import grows.
 
@@ -128,7 +139,8 @@ alone.
 The route (`RunRoute`) rides in the run's rules snapshot as `rules.route`,
 parsed by `parseWorkflowRules`. One agent keeps its route in the settings key
 `runs.routes.<sessionId>`, written compare and swap (`writeRunRoute`), so two
-windows starting at once both keep theirs.
+windows starting at once both keep theirs. The route also keeps the ask, so a
+second run can start from it.
 
 The router never adopts a workflow. A typed `~name` or the Workflow pill picks
 one; `suggestedWorkflowOf` only names the best match on the pill
@@ -164,6 +176,7 @@ re-reads and re-applies the patch, so no write drops another.
 
 ## Opening a row
 
-A row opens [its run page](run-pages.md). A saved `orchestrated` lens opens
+A row opens [its run page](run-pages.md); the session rail stays on the
+session and the run's agents are in the Agents column. A saved `orchestrated` lens opens
 Runs (`foldedLensOf`). Esc returns to the list (`leaveRunLevel`), and so does
 going up (`upTo`).

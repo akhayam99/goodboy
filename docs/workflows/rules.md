@@ -21,7 +21,9 @@ opened by `setWorkflowStudioView('every')`). Settings has no Runs page: every
 link to the run defaults (`openRunDefaults`, a search hit, the section id
 `general` or `workflow_orchestrator`) passes `isRunDefaultsFocus` in
 `settingRows.ts` and lands here. Search finds older names through
-`FORMER_NAMES` and `RUN_DEFAULTS_SEARCH_ALIASES`.
+`FORMER_NAMES` and `RUN_DEFAULTS_SEARCH_ALIASES`. The all-pages Restore
+defaults and Copy from in the workspace settings menu still carry the run
+defaults and list them as Every run.
 
 The tab has one row per setting (`FieldRow`). `WorkflowRulesPanel` owns **When
 a run stops for you**, **Spending** and **Guidance**; `EveryRun` passes in
@@ -65,7 +67,8 @@ only** at it, in the same editor as the session's (`SpendLimitFields`).
   and the key is cleared once the Limit is saved; a failed save keeps both and
   reports the error.
 - Every limit field is a text field with a decimal keypad, so `2.50` or `2,50`
-  goes through. `parseSpendLimit` in `features/budget/` is the one rule for an
+  goes through and Enter is never stopped by a browser step rule.
+  `parseSpendLimit` in `features/budget/` is the one rule for an
   amount.
 
 A session has its own limit, from the spend popover or an agent page's
@@ -95,7 +98,7 @@ nothing.
   ([../auto.md](../auto.md)).
 
 Steps whose role got it show a **Guidance** tag (`guidanceSentTo`, the check
-the brief uses). **Polish** uses `polishWorkflowGuidance` in `packages/core`: one rule per
+the brief uses); an orchestrated run tags no step. **Polish** uses `polishWorkflowGuidance` in `packages/core`: one rule per
 line, the input's language, every rule kept and none added. The band
 (`RulesGuidanceBand`) names who gets the text (`guidanceRoleNames`,
 `guidanceLeftOutText`) and which roles never read the profile's working rules
@@ -128,7 +131,8 @@ helpers read the workspace rule, not a run copy.
 - A Reviewer step runs on another model family than the last step that wrote
   code, unless no other family is left (`writerFamilyOf`).
 - The pick is stored as the agent's `routing_decision`, in words an older build
-  reads (`kind_default`, or `role_default` for a pinned role), with a short why
+  reads (`kind_default`, or `role_default` for a pinned role, and an existing
+  `adjustment`), with a short why
   line such as "Codex: most room left".
 - When a waiting step starts, `recheckPendingStepRouting` looks again. If its
   provider went Off, into cooldown, past its budget or out of the run's

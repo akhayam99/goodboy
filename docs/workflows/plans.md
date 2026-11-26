@@ -122,10 +122,12 @@ off, or who wrote this version ("v3 · Revised by planner").
 - `approved-waiting`: the owning run has `planApproved` and the plan has no
   consumption. For an orchestrated run the next step does not exist until the
   orchestrator decides. The chip reads **Approved** with "The run is choosing
-  the next step", with no primary, until the consuming step starts.
+  the next step", with no primary. When the consuming step starts the chip
+  reads **Running**.
 - `auto-approved`: the plan's `auto_artifacts` row is `approved` and no step
   consumed it. The chip reads **Approved** with "The Lead works from this
-  plan", the Artifacts list files it under Used, and there is no Run plan.
+  plan", the Artifacts list files it under Used, and there is no Run plan. A
+  held plan still waiting on approval keeps its state.
 
 ### Comment and re-plan
 
@@ -149,6 +151,7 @@ The planner prompt says to write the whole updated plan as one plan block,
 never a patch. When your message is a change request (`isPlanChangeRequest`: a
 change verb, not a question) and the turn ends with the same plan, the chat
 shows "The planner answered without changing the plan" (`unchangedPlanNote`).
+An ordinary question gets no note.
 
 ## Editing a plan by hand
 
@@ -165,7 +168,8 @@ lists parts twice shows them once (`dropPartsSection`).
 `PlanEditor` with `usePlanEditor` (`features/artifacts/components/PlanEditor`)
 serves the drawer and the Artifacts page (`artifact.edit`). **Edit** swaps the
 body for the markdown editor; the primary becomes **Save** with **Cancel**, and
-**Approve** is hidden.
+**Approve** is hidden. **Save** sends the revision the edit started from, and
+`saved` leaves edit mode.
 
 - `conflict` keeps your text with **Copy your text** and **Discard**. **Save**
   stays off, because the same save would conflict again.

@@ -39,7 +39,8 @@ with its spend on the run.
   fresh context and a run never reports done while it still writes. The wait
   (`waitForSessionSummarizer`, 60s at most, gone when the decision is thrown
   away) starts together with the decision call, so a step costs the longer of
-  the two. A forced skip (`bypassGate`) waits on nothing.
+  the two. `maybeAutoAdvanceWorkflow` waits only when a static run is on
+  autorun. A forced skip (`bypassGate`) waits on nothing.
 - **In memory.** Restart marks, hints being read, deciding runs and queued
   requests live in memory, keyed by run. What a restart needs (outcome, stop,
   summary, hints) is on the run's row.
@@ -50,19 +51,19 @@ Before the call, the orchestrator checks for a session paused by its limit
 (`sessionBudgetBlockAfterLoad`, which reads `session_budgets.on_exceed`
 first), the run's limit in pause mode, and open questions that block the run.
 
-| Stop        | Saved when                                                                                                        |
-| ----------- | ----------------------------------------------------------------------------------------------------------------- |
-| `budget`    | the session or the run is paused at its limit                                                                     |
-| `questions` | an open question blocks the run                                                                                   |
-| `failure`   | the call failed or was unreadable, or the chosen step could not be created (agent row, saved workflow or routing) |
-| `operator`  | **Stop**: autorun turns off and the running steps are skipped, keeping what they wrote                            |
-| `paused`    | **Pause**: the step in flight keeps going and nothing starts                                                      |
-| `closed`    | **Stop run** (`closeWorkflowRun`), next to the `done` outcome, on static runs too                                 |
+| Stop        | Saved when                                                                                                                             |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `budget`    | the session or the run is paused at its limit                                                                                          |
+| `questions` | an open question blocks the run                                                                                                        |
+| `failure`   | the call failed or was unreadable, or the chosen step could not be created (agent row, saved workflow or routing), with a notification |
+| `operator`  | **Stop**: autorun turns off and the running steps are skipped, keeping what they wrote                                                 |
+| `paused`    | **Pause**: the step in flight keeps going and nothing starts                                                                           |
+| `closed`    | **Stop run** (`closeWorkflowRun`), next to the `done` outcome, on static runs too; `isWorkflowRunComplete` reads it as ended           |
 
 So a paid decision never ends with no step and no stop.
 `isWorkflowRunClosedByUser` is the one test for a closed run. A decision in
 flight is thrown away when it returns after an operator stop or a pause.
-Continuing or retrying clears the outcome and the stop; a retry after an
+Nothing decides again until you continue. Continuing or retrying clears the outcome and the stop; a retry after an
 operator stop turns autorun back on.
 
 ### A lost wake is recovered
@@ -80,7 +81,8 @@ operator stop turns autorun back on.
    this run up after three tries", and one notification, with **Retry**.
 
 A run that waits on an answer is never nudged. Answering a question wakes the
-run itself, even when no agent could take the answer (`answerOpenQuestions`).
+run itself, even when no agent could take the answer (`answerOpenQuestions`);
+the next sweep is the backstop.
 
 ## Models
 
@@ -96,6 +98,7 @@ page and the routing pill in its composer. Both write `orchestratorRouting`
   still has it, else on the workflow orchestrator task model.
 - A saved model the catalog dropped is ignored, never started.
 - Its own model is not bound by the run's provider pool.
+- Steps take their role models from the resolved settings.
 
 ### Who picks a step's model
 
@@ -108,11 +111,13 @@ best candidate for the step's role and size by the run's provider priority
 - The prompt tells the orchestrator not to name a provider, model or effort,
   and those fields are dropped when it does.
 - The opt-in rule `canOrchestratorPickModel` (saved in the run's
-  `rulesSnapshot`) lets it pick from a candidates block
+  `rulesSnapshot`) lets it pick from a candidates block, sent in place of the
+  flat model menu and the role defaults
   (`orchestratorCandidatesBlock`, `ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT`). A
   pick from a row runs, with its effort clamped to what the model accepts. A
   pick that is not a row moves to the best candidate, and the why line says so.
-  With fewer than two connected providers there is no block.
+  With fewer than two connected providers there is no block and the flat menu
+  stays.
 - A step lock from a pinned preset step, or a session over its budget, takes
   the older path (`resolveProposedRouting`).
 - A generated step with no pick takes the candidates when it starts. A run has
@@ -159,7 +164,8 @@ come back. The composer is in [run-pages.md](run-pages.md#the-composer).
 - When a decision lands, the hints it read are marked used with the step they
   informed, after the step exists (`consumeReadOrchestratorHints`). A failed
   write of that mark does not stop the step: the hints stay unread and
-  "Couldn't mark the hints as read" shows.
+  "Couldn't mark the hints as read" shows. A hint added while a decision runs
+  stays pending for the next one.
 - `orchestratorReadingHints` holds, per run, the unread hints a decision in
   flight took in, plus a **Read now** hint until its decision starts. A
   decision that ends with no restart behind it clears the entry, so a hint
@@ -198,6 +204,8 @@ pinned mount pins the active mount on its next step.
 live steps in `rules.preset` (`presetSnapshotOf`, pins and `routingLock`
 included). The prompt lists each step's instructions on one line
 (`presetInputOf`, `presetLines` in `packages/core/src/orchestrator/prompt.ts`).
+`presetInputOf` maps `promptPrefix` to `instructions`, so an unpinned step
+keeps its brief too.
 A decision may carry `change` (`added`, `skipped`, `reordered`, with a reason)
 and a step its `presetStep` number.
 
