@@ -316,15 +316,9 @@ describe('a tab with activity', () => {
     renderDesk({ spec, detail: 'Implementer' });
 
     const tabs = screen.getByRole('tablist', { name: 'Panels' });
-    expect(
-      within(tabs)
-        .getByRole('tab', { name: /Terminal/ })
-        .querySelector('[role="img"], [aria-label="Has activity"]'),
-    ).not.toBeNull();
-    expect(
-      within(tabs)
-        .getByRole('tab', { name: /Monitor/ })
-        .querySelector('[aria-label="Has activity"]'),
-    ).toBeNull();
+    const terminalTab = within(tabs).getByRole('tab', { name: /Terminal/ });
+    const monitorTab = within(tabs).getByRole('tab', { name: /Monitor/ });
+    expect(terminalTab.querySelectorAll('[aria-label="Has activity"]')).toHaveLength(1);
+    expect(monitorTab.querySelectorAll('[aria-label="Has activity"]')).toHaveLength(0);
   });
 });
