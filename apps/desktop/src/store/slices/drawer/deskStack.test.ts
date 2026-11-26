@@ -89,6 +89,30 @@ describe('the detail place on the Desk', () => {
     store.getState().openDrawer(PR);
 
     expect(shownDeskStackOf({ state: store.getState() })).toBeNull();
+    expect(store.getState().drawerBack).toBeNull();
+  });
+
+  it('closes the pull request on the Overview without bringing the agent back', () => {
+    store.setState({ sessionFace: { [SESSION_ID]: 'overview' } });
+    store.getState().openDrawer(agentOf({ id: 'implementer' }));
+    store.getState().openDrawer(PR);
+
+    store.getState().closeDrawer();
+
+    expect(store.getState().drawer).toBeNull();
+  });
+
+  it('drops the second reader when the Desk closes, and keeps the top one', () => {
+    store.getState().openDrawer(agentOf({ id: 'implementer' }));
+    store.getState().openDrawer(PR);
+    expect(stack()).toEqual({ agent: 'implementer', pr: 'checks' });
+
+    store.getState().setSessionFace({ sessionId: SESSION_ID, face: 'overview' });
+
+    expect(store.getState().drawer?.kind).toBe('pull-request');
+    expect(store.getState().drawerBack).toBeNull();
+    store.getState().closeDrawer();
+    expect(store.getState().drawer).toBeNull();
   });
 
   it('selects and saves only the agent the detail shows, never one a later reader replaced', () => {
