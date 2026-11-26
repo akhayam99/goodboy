@@ -61,7 +61,13 @@ type GoalParams = {
   readonly state: Parameters<typeof sessionTranscriptOf>[0]['state'];
 };
 
-export const orchestratorGoalOf = ({ run, workflow, session, state }: GoalParams): string =>
-  run.goal ??
-  workflow.goal ??
-  sessionOwnWordsOf({ session, transcript: sessionTranscriptOf({ state, sessionId: session.id }) });
+export const orchestratorGoalFields = ({ run, workflow, session, state }: GoalParams) => ({
+  goal: run.goal ?? workflow.goal ?? session.goal,
+  languageText:
+    run.goal ??
+    workflow.goal ??
+    sessionOwnWordsOf({
+      session,
+      transcript: sessionTranscriptOf({ state, sessionId: session.id }),
+    }),
+});

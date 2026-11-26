@@ -37,15 +37,23 @@ type TranscriptParams = {
     readonly sessionPhaseRuns: Readonly<Record<string, ReadonlyArray<Agent>>>;
   };
   readonly sessionId: SessionId;
+  readonly isLastTextMachine?: boolean;
 };
 
 export const sessionTranscriptOf = ({
   state,
   sessionId,
-}: TranscriptParams): ReadonlyArray<TurnEvent> =>
-  [...(state.sessionPhaseRuns[sessionId] ?? [])]
+  isLastTextMachine = false,
+}: TranscriptParams): ReadonlyArray<TurnEvent> => {
+  const events = [...(state.sessionPhaseRuns[sessionId] ?? [])]
     .sort((left, right) => (left.ordinal ?? 0) - (right.ordinal ?? 0))
     .flatMap((agent) => state.transcripts[agent.id] ?? []);
+  if (!isLastTextMachine) {
+    return events;
+  }
+  const lastText = events.map((event) => event.kind).lastIndexOf('user_text');
+  return events.filter((_event, index) => index !== lastText);
+};
 
 type SourceParams = {
   readonly session: Session;

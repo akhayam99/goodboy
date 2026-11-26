@@ -33,7 +33,6 @@ import {
 } from '../../../features/session/agent-kind';
 import { deriveHandoffSender } from './deriveHandoffSender';
 import { isTurnWritableMount } from './turnWritableRoots';
-import { sessionOwnWordsOf, sessionTranscriptOf } from './sessionLanguage';
 import type { GetFn } from './types';
 
 const GOALLESS_SENDERS: ReadonlySet<HandoffSender['kind']> = new Set([
@@ -221,10 +220,7 @@ export const composeAgentHandoff = ({
   const role = step?.role ?? KIND_TO_ROLE[agentKind];
   const goal = GOALLESS_SENDERS.has(sender.kind)
     ? null
-    : (draft?.goal ??
-      workflowRun?.goal ??
-      template?.goal ??
-      sessionOwnWordsOf({ session, transcript: sessionTranscriptOf({ state: get(), sessionId }) }));
+    : (draft?.goal ?? workflowRun?.goal ?? template?.goal ?? session.goal);
   return buildHandoff({
     agentId,
     provider,

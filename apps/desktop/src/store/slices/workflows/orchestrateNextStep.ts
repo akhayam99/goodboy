@@ -75,7 +75,7 @@ import { sessionById } from '../sessions/sessionIndex';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { orchestratedStepRouting } from '../workflowRouting/orchestratedStepRouting';
 import { orchestratorCandidatesBlock } from '../workflowRouting/orchestratorCandidatesBlock';
-import { orchestratorGoalOf, orchestratorProcessText } from './standingGuidance';
+import { orchestratorGoalFields, orchestratorProcessText } from './standingGuidance';
 import { pinnedStepOf } from './pinnedStepOf';
 import { planChangeVerdictOf } from './planChangeVerdictOf';
 import { PRESET_CHANGE_COPY } from './presetChangeCopy';
@@ -560,7 +560,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const presetInput = presetInputOf({ rules: run.rulesSnapshot });
       const wastedReplies: Array<OrchestratorClientResult> = [];
       const decideInput: OrchestratorInput = {
-        goal: orchestratorGoalOf({ run, workflow, session, state: get() }),
+        ...orchestratorGoalFields({ run, workflow, session, state: get() }),
         processText: orchestratorProcessText({ processText: workflow.processText, run }),
         completedSteps,
         openQuestionCount: openQuestions.length,
