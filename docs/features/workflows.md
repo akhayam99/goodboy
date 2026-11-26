@@ -155,7 +155,7 @@ Set what every new run starts with on the **Every run** tab of Workflows, betwee
 - **Agents** holds the models and **Reply length**. **Runs** holds the Lead, and **Roles** holds each role.
 - **Older plan runs** holds the Orchestrator and **Models in older plan runs**, while the workspace has a plan run that is not discarded.
 - **When a run stops for you** holds **Stops for your OK**, one level for workflows and the Lead.
-- **Spending** holds the **Limit** with **Pause runs** or **Warn only**.
+- **Spending** holds the **Limit** with **Pause** or **Warn only**.
 - **Guidance** is one field for the agents that write code, with **Polish**.
 - **Advanced** stays closed and holds **Parallel agents**. It says so while they are on.
 

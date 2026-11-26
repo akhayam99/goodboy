@@ -68,7 +68,7 @@ Catch up in one place. Everything Goodboy has to tell you, from a pull request o
 
 #### Open the item
 
-The bell, the toast and the Notifications page open the same place, and the button names it: Open agent, Open Questions, Open Comments, Open Checks, Open run, Open the Lead, Open branch, Open pull request (Open merge request on GitLab) or Open session. It opens the notification's own workspace first, in the window that shows it.
+The bell, the toast and the Notifications page open the same place, and the button names it: Open agent, Open Questions, Open Comments, Open Changes, Open Checks, Open run, Open the Lead, Open branch, Open pull request (Open merge request on GitLab) or Open session. It opens the notification's own workspace first, in the window that shows it.
 
 #### When something fails
 

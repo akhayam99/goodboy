@@ -30,7 +30,7 @@ A plain folder is edited in place by one session at a time, and the next one wai
 
 Each plain folder row in **Settings › This workspace › Projects** opens to its face, the saved versions it uses and a switch between Code project and Documents. Office files and PDFs are read, never rewritten, in a documents folder.
 
-What each turn changed stays in the session's file versions (**⌘⌥F**), also after you later track the folder with git. Unlinking a folder waits while an agent is writing in it.
+What each turn changed stays in the session's [file versions](overview.md#changes), also after you later track the folder with git. Unlinking a folder waits while an agent is writing in it.
 
 ### Workspace with several folders
 
