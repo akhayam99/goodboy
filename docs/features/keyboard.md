@@ -240,7 +240,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - Type a word to find a tab of any session, a project pin or a page this session visited. Words are never searched on the web.
 - Type the path of a local page, image or PDF, like `~/harborline/plan.html`, to open it in a tab. Reload reads the file again. The page reads only the files in its folder and the folders under it. A missing file, a folder or another kind of file says why under the address. A link or a page never opens a local file.
 - While a page loads, Reload becomes **Stop**. A page that never finishes says so after 30 seconds. **Back** and **Forward** turn off when there is nothing behind or ahead.
-- **More** holds **Add to message**, Open in your browser, **Open full page**, Copy address, Duplicate, **Clear site data**, Develop and Close tab. Develop holds **Reload without cache**, the widths and, on macOS, **Inspect in Safari**.
+- **More** holds **Add to message**, Open in your browser, **Open full page**, This tab, **Clear site data** and Develop. This tab holds Copy address, Duplicate and Close tab. Develop holds **Reload without cache**, the widths and, on macOS, **Inspect in Safari**.
 
 #### Clear the cache or a site
 

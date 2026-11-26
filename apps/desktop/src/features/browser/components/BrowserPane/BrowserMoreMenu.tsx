@@ -1,14 +1,4 @@
-import {
-  ArrowUpRight,
-  Bot,
-  Code,
-  Copy,
-  CopyPlus,
-  MonitorSmartphone,
-  RefreshCw,
-  Trash2,
-  X,
-} from '@goodboy/ui/icons';
+import { AppWindow, ArrowUpRight, Bot, Code, Trash2 } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   ICON_SIZE,
@@ -24,10 +14,11 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { currentPlatform } from '../../../../shared/platform';
 import type { BrowserPaneModel } from '../../types';
+import { browserDevelopRowsOf } from './browserDevelopRowsOf';
 import { browserMoreOffOf } from './browserMoreRows';
+import { browserTabRowsOf } from './browserTabRowsOf';
 import { siteDataRowOf } from './siteDataRowOf';
-import { widthSelectOf } from './widthSelectOf';
-import { DEVICE_PRESETS, devicePresetOf } from '../../devicePresets';
+import { devicePresetOf } from '../../devicePresets';
 import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
@@ -37,8 +28,6 @@ type Props = {
 };
 
 const MENU_LABEL = 'More';
-
-const RELOAD_FROM_ORIGIN = 'Reload without cache';
 
 const NOTHING_FOLDED: ReadonlyArray<MenuItemEntry> = [];
 
@@ -53,7 +42,7 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
   const isOff = browserMoreOffOf({
     hasAddress: model.address !== '',
     hasTab: shown !== null,
-    hasLivePage: model.shownLiveId !== null,
+    hasView: model.hasShownView,
     hasSite: model.siteHost !== null,
     isPinShown: shown?.isPin === true,
     canOpenOutside: model.canOpenOutside,
@@ -62,40 +51,6 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
     host: model.siteHost,
     isWholeStore: currentPlatform() !== 'darwin',
   });
-  const chooseWidth = widthSelectOf({ onChoose: model.setDevicePreset });
-  const developChildren: ReadonlyArray<MenuItemEntry> = [
-    {
-      kind: 'item',
-      key: 'reloadFromOrigin',
-      label: RELOAD_FROM_ORIGIN,
-      icon: RefreshCw,
-      hint: shortcutGlyphs('app.reload'),
-      isDisabled: isOff.isReloadFromOriginOff,
-      onSelect: model.reloadFromOrigin,
-    },
-    ...(isOff.isWidthOff
-      ? []
-      : DEVICE_PRESETS.map((preset) => ({
-          kind: 'item' as const,
-          key: `width-${preset.id}`,
-          label: preset.label,
-          icon: MonitorSmartphone,
-          isActive: preset.id === model.devicePreset,
-          onSelect: () => chooseWidth(preset.id),
-        }))),
-    ...(currentPlatform() === 'darwin'
-      ? [
-          {
-            kind: 'item' as const,
-            key: 'inspect',
-            label: 'Inspect in Safari',
-            icon: Code,
-            isDisabled: isOff.isInspectOff,
-            onSelect: model.inspect,
-          },
-        ]
-      : []),
-  ];
   const entries: ReadonlyArray<MenuEntry> = [
     ...folded,
     {
@@ -128,19 +83,11 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
         ]),
     {
       kind: 'item',
-      key: 'copyAddress',
-      label: 'Copy address',
-      icon: Copy,
-      isDisabled: isOff.isCopyAddressOff,
-      onSelect: model.copyAddress,
-    },
-    {
-      kind: 'item',
-      key: 'duplicate',
-      label: 'Duplicate',
-      icon: CopyPlus,
-      isDisabled: isOff.isDuplicateOff,
-      onSelect: model.duplicate,
+      key: 'thisTab',
+      label: 'This tab',
+      icon: AppWindow,
+      children: browserTabRowsOf({ model, isOff }),
+      onSelect: () => undefined,
     },
     {
       kind: 'item',
@@ -158,20 +105,8 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
       label: 'Develop',
       icon: Code,
       hint: isOff.isWidthOff ? null : devicePresetOf({ id: model.devicePreset }).label,
-      children: developChildren,
+      children: browserDevelopRowsOf({ model, isOff }),
       onSelect: () => undefined,
-    },
-    {
-      kind: 'item',
-      key: 'closeTab',
-      label: 'Close tab',
-      icon: X,
-      isDisabled: isOff.isCloseTabOff,
-      onSelect: () => {
-        if (shown !== null) {
-          model.close({ tab: shown.tab });
-        }
-      },
     },
   ];
 

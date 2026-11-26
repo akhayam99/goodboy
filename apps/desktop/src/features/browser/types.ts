@@ -243,6 +243,7 @@ export type BrowserPaneModel = {
   readonly reload: () => void;
   readonly reloadFromOrigin: () => void;
   readonly siteHost: string | null;
+  readonly hasShownView: boolean;
   readonly clearSiteData: () => void;
   readonly stop: () => void;
   readonly select: (params: TabParams) => void;

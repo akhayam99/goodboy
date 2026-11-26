@@ -12,7 +12,7 @@ export type BrowserMoreOff = {
 type Params = {
   readonly hasAddress: boolean;
   readonly hasTab: boolean;
-  readonly hasLivePage: boolean;
+  readonly hasView: boolean;
   readonly hasSite: boolean;
   readonly isPinShown: boolean;
   readonly canOpenOutside: boolean;
@@ -21,7 +21,7 @@ type Params = {
 export const browserMoreOffOf = ({
   hasAddress,
   hasTab,
-  hasLivePage,
+  hasView,
   hasSite,
   isPinShown,
   canOpenOutside,
@@ -30,7 +30,7 @@ export const browserMoreOffOf = ({
   isCopyAddressOff: !hasAddress,
   isDuplicateOff: !hasAddress,
   isReloadFromOriginOff: !hasTab,
-  isClearSiteDataOff: !hasLivePage || !hasSite,
+  isClearSiteDataOff: !hasView || !hasSite,
   isInspectOff: !hasTab,
   isWidthOff: !hasTab,
   isCloseTabOff: !hasTab || isPinShown,

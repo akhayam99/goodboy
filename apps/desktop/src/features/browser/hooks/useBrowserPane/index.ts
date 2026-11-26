@@ -117,6 +117,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     const state = liveId === undefined ? undefined : states.get(liveId);
     return state === 'asleep' || state === 'closed';
   };
+  const hasShownView = shownLiveId !== undefined && states.get(shownLiveId) !== 'closed';
   const url = factOf({ liveId: shownLiveId })?.url ?? shown?.tab.url ?? '';
   const address = addressTextOf({ url });
   const canOpenOutside = url !== '' && !isFileAddress({ url });
@@ -267,20 +268,27 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     reload: () => reloadWith({ command: browserHost.reload }),
     reloadFromOrigin: () => reloadWith({ command: browserHost.reloadFromOrigin }),
     siteHost,
+    hasShownView,
     clearSiteData: () => {
-      if (shownLiveId === undefined || isLiveAsleep({ liveId: shownLiveId }) || siteHost === null) {
+      if (shownLiveId === undefined || !hasShownView || siteHost === null) {
         return;
       }
       const tabId = shownLiveId;
-      const host = siteHost;
-      void run({
-        step: async () => {
-          const cleared = await browserHost.clearSiteData({ tabId, host });
+      setError(null);
+      setNotice(null);
+      void browserHost.clearSiteData({ tabId, host: siteHost }).then(
+        (cleared) => {
+          refresh();
           if (shownLiveIdRef.current === tabId) {
             setNotice(siteClearedText({ cleared }));
           }
         },
-      });
+        (failure: unknown) => {
+          if (shownLiveIdRef.current === tabId) {
+            setError(browserFailureText({ error: failure }));
+          }
+        },
+      );
     },
     stop: () => {
       if (shownLiveId === undefined) {

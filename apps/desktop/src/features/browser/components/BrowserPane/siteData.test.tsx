@@ -14,7 +14,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import type { BrowserSiteCleared, BrowserTabFacts } from '../../types';
+import type { BrowserSiteCleared, BrowserTabFacts, BrowserTabState } from '../../types';
 import { BrowserPane } from '.';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -32,6 +32,7 @@ const SESSION_ID = nextSessionId();
 const VIEW_RECT = new DOMRect(480, 96, 640, 720);
 const MAC_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15';
 const LINUX_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15';
+const POLLED = { timeout: 4000 };
 
 type OpenArgs = {
   readonly args: { readonly sessionId: SessionId; readonly url: string };
@@ -40,12 +41,14 @@ type TabArgs = { readonly args: { readonly tabId: string } };
 type SaveArgs = { readonly args: { readonly id: string } };
 type SiteArgs = { readonly args: { readonly tabId: string; readonly host: string } };
 type CommandParams = { readonly command: string };
+type MenuParams = { readonly menu: HTMLElement };
 type ClearParams = {
   readonly clear: (params: SiteArgs) => BrowserSiteCleared | Promise<BrowserSiteCleared>;
 };
 
 let store: StoryStore;
 let live: BrowserTabFacts[];
+let hiddenState: BrowserTabState;
 
 const stubHost = ({ clear }: ClearParams) => {
   stubStoryInvoke({
@@ -76,7 +79,12 @@ const stubHost = ({ clear }: ClearParams) => {
     browser_tab_list: () => live,
     browser_tab_place: null,
     browser_tab_show: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
-    browser_tab_hide: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
+    browser_tab_hide: ({ args }: TabArgs) => {
+      live = live.map((facts) =>
+        facts.id === args.tabId ? { ...facts, state: hiddenState, isShown: false } : facts,
+      );
+      return live.find((facts) => facts.id === args.tabId);
+    },
     browser_tab_reload: null,
     browser_tab_reload_from_origin: null,
     browser_site_data_clear: clear,
@@ -133,6 +141,26 @@ const openMore = () => {
   return screen.getByRole('menu', { name: 'More' });
 };
 
+const coverPage = async ({ menu }: MenuParams) => {
+  const surface = menu.closest('[data-dropdown-portal] > *');
+  if (surface === null) {
+    throw new Error('The menu sits in no dropdown portal.');
+  }
+  Object.defineProperty(surface, 'getBoundingClientRect', {
+    configurable: true,
+    value: () => VIEW_RECT,
+  });
+  await waitFor(() => expect(callsOf({ command: 'browser_tab_hide' })).toHaveLength(1));
+};
+
+const waitForPoll = async () => {
+  const seen = callsOf({ command: 'browser_tab_list' }).length;
+  await waitFor(
+    () => expect(callsOf({ command: 'browser_tab_list' }).length).toBeGreaterThan(seen),
+    POLLED,
+  );
+};
+
 const reloadRow = async () => {
   const menu = openMore();
   fireEvent.click(within(menu).getByRole('menuitem', { name: /^Develop/ }));
@@ -152,6 +180,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   live = [];
+  hiddenState = 'asleep';
   await openStorySqlite();
   await resetStoryStore();
   store.setState({
@@ -234,6 +263,57 @@ describe('clear site data', () => {
     expect(screen.queryByText(/Cleared data/)).toBeNull();
     expect(callsOf({ command: 'browser_tab_reload_from_origin' })).toEqual([]);
     expect(callsOf({ command: 'browser_tab_reload' })).toEqual([]);
+  });
+
+  it('clears the site of a page the open menu has hidden', async () => {
+    renderPane();
+    await openPage();
+    const menu = openMore();
+    await coverPage({ menu });
+    await waitForPoll();
+
+    const row = within(menu).getByRole('menuitem', { name: /Clear site data/ });
+    expect(row.getAttribute('aria-disabled')).toBeNull();
+    fireEvent.click(row);
+    fireEvent.click(await screen.findByRole('button', { name: 'Clear site data' }));
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_site_data_clear' })).toEqual([
+        ['browser_site_data_clear', { args: { tabId: 'live-1', host: 'localhost' } }],
+      ]),
+    );
+  });
+
+  it('turns the clear row off once the page view is closed', async () => {
+    renderPane();
+    await openPage();
+    const menu = openMore();
+    hiddenState = 'closed';
+    await coverPage({ menu });
+
+    const row = within(menu).getByRole('menuitem', { name: /Clear site data/ });
+    await waitFor(() => expect(row.getAttribute('aria-disabled')).toBe('true'), POLLED);
+  });
+
+  it('drops the failure of a clear that answers after the tab changed', async () => {
+    let fail: (reason: unknown) => void = () => undefined;
+    stubHost({
+      clear: () =>
+        new Promise<BrowserSiteCleared>((_, reject) => {
+          fail = reject;
+        }),
+    });
+    renderPane();
+    await openPage();
+    await confirmClear();
+    await waitFor(() => expect(callsOf({ command: 'browser_site_data_clear' })).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole('button', { name: 'New tab' }));
+    await act(async () => {
+      fail({ kind: 'failed', message: 'site-data-unavailable' });
+    });
+
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('drops the line of a clear that answers after the tab changed', async () => {
