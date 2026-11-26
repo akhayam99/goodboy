@@ -53,15 +53,16 @@ These hold for each change that touches a test, and they come from tests that st
 
 A file that fakes the store gets one verdict before anything is deleted: keep (it proves behavior a fake cannot hide), convert (same claims on the real store, call-only assertions replaced by state) or delete (it only checks that a fake was called). A domain moves one at a time and its table lives here. A relative `vi.mock` of an own module is counted for information only and is never banned.
 
-| Domain               | File                                                  | Verdict                                            |
-| -------------------- | ----------------------------------------------------- | -------------------------------------------------- |
-| `features/workspace` | `GoodboyIgnoreCard/index.test.tsx`                    | converted: real save, error and retry              |
-| `features/workspace` | `LocateMovedProjects/index.test.tsx`                  | converted: real row, move, error and retry, cancel |
-| `features/workspace` | `WorkspaceIdentityRow/index.test.tsx`                 | converted: real selectors over seeded workspaces   |
-| `features/workspace` | `WorkspaceSwitcher/CurrentWorkspaceRow.test.tsx`      | converted: real live-work count                    |
-| `features/workspace` | `hooks/useProjectGitStatuses/index.test.ts`           | converted: real store, git status over the invoke  |
-| `features/workspace` | `StageBoard/useBoardNavigation/index.test.ts`         | converted: real navigation stack and editor invoke |
-| `features/workspace` | `StageBoard` (three files), `WorkspaceSwitcher/index` | convert, open                                      |
+| Domain               | File                                                          | Verdict                                            |
+| -------------------- | ------------------------------------------------------------- | -------------------------------------------------- |
+| `features/workspace` | `GoodboyIgnoreCard/index.test.tsx`                            | converted: real save, error and retry              |
+| `features/workspace` | `LocateMovedProjects/index.test.tsx`                          | converted: real row, move, error and retry, cancel |
+| `features/workspace` | `WorkspaceIdentityRow/index.test.tsx`                         | converted: real selectors over seeded workspaces   |
+| `features/workspace` | `WorkspaceSwitcher/CurrentWorkspaceRow.test.tsx`              | converted: real live-work count                    |
+| `features/workspace` | `hooks/useProjectGitStatuses/index.test.ts`                   | converted: real store, git status over the invoke  |
+| `features/workspace` | `StageBoard/useBoardNavigation/index.test.ts`                 | converted: real navigation stack and editor invoke |
+| `features/workspace` | `WorkspaceLauncher/index.test.tsx`, `settingsCorner.test.tsx` | converted: real store through the harness          |
+| `features/workspace` | `StageBoard` (three files), `WorkspaceSwitcher/index`         | convert, open                                      |
 
 ## Preservation tests map onto navigation rows
 

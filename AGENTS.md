@@ -204,8 +204,9 @@ overrides them. They cover TS, TSX, Rust and config files alike, and the
 guards are being widened to match. Today `forbidden-patterns.test.ts` scans
 TypeScript in `apps/desktop/src`, `packages/*/src` and `website/src`, Rust in
 `apps/desktop/src-tauri/src` (comments, em dashes and the `else` chain, caught
-by `rust-else`), CSS and `scripts/` (comments and em dashes), Markdown and JSON
-(em dashes) and YAML or TOML config. The target is every rule on every root;
+by `rust-else`), CSS (comments, em dashes and the margin rules), `scripts/`
+(comments and em dashes), Markdown and JSON (em dashes) and YAML or TOML
+config. The target is every rule on every root;
 [docs/ratchets.md](./docs/ratchets.md) lists which rule reads which tree.
 `apps/desktop/src/__tests__/regressions/forbidden-patterns.test.ts` counts the
 ones a pattern can find (`else`, a second component per file,
