@@ -15,5 +15,62 @@
       "canStart": false
     }
   ],
-  "start": null
+  "start": {
+    "actionId": "act:startSession:workspace-1:0",
+    "isPermitted": true,
+    "projects": [
+      {
+        "id": "project-1",
+        "name": "payments-api"
+      },
+      {
+        "id": "project-2",
+        "name": "ledger-core"
+      },
+      {
+        "id": "project-3",
+        "name": "notify-relay"
+      }
+    ],
+    "kinds": [
+      {
+        "startKind": "lead",
+        "presetId": null,
+        "label": "Lead",
+        "hasLimit": true
+      },
+      {
+        "startKind": "agentScout",
+        "presetId": null,
+        "label": "Agent · Scout",
+        "hasLimit": false
+      }
+    ],
+    "accessChoices": [
+      {
+        "access": "readOnly",
+        "label": "Read only",
+        "promise": "Reads and answers. Changes nothing."
+      },
+      {
+        "access": "askFirst",
+        "label": "Ask first",
+        "promise": "Stops before anything it hasn't been allowed, and asks you."
+      },
+      {
+        "access": "editsAllowed",
+        "label": "Edits allowed",
+        "promise": "Changes files in your folders. Asks before anything else."
+      }
+    ],
+    "defaultAccess": "askFirst",
+    "limitAmounts": [
+      5,
+      10,
+      25
+    ],
+    "defaultLimitUsd": null,
+    "maxGoalLength": 2000,
+    "remainingToday": 10
+  }
 }

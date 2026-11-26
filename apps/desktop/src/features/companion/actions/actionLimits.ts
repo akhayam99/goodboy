@@ -1,5 +1,7 @@
 import type { DecideKind } from './decideAction';
 
+export type PhoneKind = 'mergePr' | 'mergeTrain' | 'stopTrain' | 'startSession';
+
 type Window = {
   readonly max: number;
   readonly windowMs: number;
@@ -21,16 +23,22 @@ export const RATE_WINDOWS = {
   stopAgentTree: { max: 12, windowMs: MINUTE_MS },
   sendToAgent: { max: 30, windowMs: MINUTE_MS },
   answerSlackReply: { max: 10, windowMs: MINUTE_MS },
-} as const satisfies Record<DecideKind, Window>;
+  mergePr: { max: 10, windowMs: MINUTE_MS },
+  mergeTrain: { max: 3, windowMs: MINUTE_MS },
+  stopTrain: { max: 6, windowMs: MINUTE_MS },
+  startSession: { max: 5, windowMs: MINUTE_MS },
+} as const satisfies Record<DecideKind | PhoneKind, Window>;
+
+export type RateKind = keyof typeof RATE_WINDOWS;
 
 export const MAX_TEXT_LENGTH = 4000;
 
 export const MAX_RAISED_LIMIT_USD = 500;
 
-const stamps = new Map<DecideKind, number[]>();
+const stamps = new Map<RateKind, number[]>();
 
 type SlotParams = {
-  readonly kind: DecideKind;
+  readonly kind: RateKind;
   readonly now: number;
 };
 

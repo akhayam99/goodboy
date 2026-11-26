@@ -65,4 +65,6 @@ export type MergeMethod = 'squash' | 'merge' | 'rebase';
 
 export type TaskProvider = 'linear' | 'sentry' | 'gitlab' | 'jira';
 
-export type SessionAccess = 'edits';
+export type SessionAccess = 'readOnly' | 'askFirst' | 'editsAllowed';
+
+export type StartKind = 'lead' | 'leadPlan' | 'agentScout';

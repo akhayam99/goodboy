@@ -19,8 +19,11 @@ phone.** Every paired phone reads sessions. By default it may also reply and
 approve (send a message, advance a step, resolve a comment, set a context
 slot) and merge pull requests. Starting sessions (spawn an agent or a workflow,
 create a session from an issue) is off until you switch it on for that phone.
-A new session runs its agents with permissions bypassed, so a phone that may
-send or start can end in any command the agent chooses to run. Treat a paired
+A session the phone starts with the start action runs with the Edits level it
+chose, Read only, Ask first or Edits allowed, never with permissions bypassed.
+A session started the older way (spawn, create from an issue) runs with
+permissions bypassed, and so does any session a phone may message, so a phone
+that may send or start can end in any command the agent chooses to run. Treat a paired
 phone with those rights like a second keyboard, not like a viewer.
 
 ## Pairing
@@ -57,8 +60,8 @@ phone with those rights like a second keyboard, not like a viewer.
 | ------ | ------------------------------------------------------------------------ | --------- |
 | read   | the projections and the read-only queries (providers, issues, file diff) | always on |
 | decide | send, advance step, resolve comment, set context slot                    | on        |
-| merge  | merge a pull request                                                     | on        |
-| start  | spawn agent, spawn workflow, create session from issue                   | off       |
+| merge  | merge a pull request, merge in order, stop the train after this one      | on        |
+| start  | start a session, spawn agent, spawn workflow, create session from issue  | off       |
 
 The bridge checks the right of the phone that sent the command, read from the
 file at that moment, so a change on Settings, iPhone applies to a connected
@@ -76,13 +79,60 @@ it checks scope and runs the same store actions the desktop UI uses. There is
 no raw or exec action. Merge policy lives in the frontend executor, not in the
 bridge.
 
-A phone merge follows the desktop merge readiness rule and is stricter about
+A phone merge (`mergePr`, opcode 0x9E; the older 0x8A runs the same checked
+path) carries the Mac's action id, the pull request number, the head the phone
+saw, the method and a switch to delete the branch. The Mac refuses a head that
+moved, naming both heads, and refuses a pull request that is not on that
+session. The branch is deleted only after a merge that landed and only when the
+switch is on, through the same after-merge cleanup the desktop runs. A phone
+merge follows the desktop merge readiness rule and is stricter about
 it: what blocks the desktop blocks the phone, and so do the desktop's warnings
 (changes requested, a review still requested, failing or running checks) and a
 mergeability GitHub has not finished computing. The phone shows a fraction of
 the context and a merge cannot be undone, so the phone refuses with the same
 reason the desktop would show. A repository with no required review or no CI
 merges from the phone like it does on the desktop.
+
+### Merge in order and start a session
+
+Two more actions follow the same five rules, written in
+`features/companion/actions/` (`executePhoneAction.ts`):
+
+- `mergeTrain` (0x9F) carries the exact list the phone saw: for each pull
+  request its session, number and head. The Mac checks every entry with the
+  phone merge rule and its head before anything merges, and refuses the whole
+  request on the first entry that fails, naming it. It starts the desktop's
+  train (`startMergeTrain`, squash by default) and answers at once; the train
+  runs for minutes and its progress comes through the projection. One train runs
+  at a time: a second request is refused as `busy`. The train stops at the first
+  pull request it cannot merge and says why, and a conflict goes to the Lead.
+  Its action id holds a digest of the list and a counter of trains already
+  started, so a retry of the same request is replayed and the next train gets a
+  new id.
+- `stopTrain` (0xA1) asks the running train to stop after the pull request in
+  progress (`stopMergeTrainAfterThis`). Both need the merge right.
+- `startSession` (0xA0) needs the start right, off by default. It carries the
+  project, a goal or a task, the Edits choice (Read only, Ask first or Edits
+  allowed; Full access is not a value the Mac accepts), the kind (Lead, Lead
+  with a plan of the workspace, or Agent · Scout) and, for a Lead, a limit among
+  the amounts the Mac offers. The Mac sets the session's permission mode before
+  the first agent starts, so a phone-started session never runs with
+  permissions bypassed. It limits starts to 5 a minute and 10 a day across all
+  phones and a goal to 2,000 characters. Its id holds a counter of starts, so a
+  retry with the same id returns the first outcome and the session it made, and
+  a start that fails after the session exists deletes it. The outcome carries
+  `createdSessionId` so the phone can follow it.
+
+The `sessions` projection carries the train offer: the ready pull requests in
+the desktop order (`mergeOrderOf`) with the head of each, the line "Squash and
+merge, smallest change first", and, while a train exists, its status (phase,
+index, merged count, the desktop line, one line per pull request, the reason it
+stopped, whether the Lead has the conflict, whether a stop was requested). The
+`pullRequest` projection repeats it for a session that is in the train, and adds
+the changed files count, the commit count and the open review comments. The
+`tasks` projection carries the start offer. The `isPermitted` flag of the offer
+only says the Mac offers the action: the right of the phone that asks comes in
+its hello and is checked in the bridge.
 
 ### Decisions from the phone
 
@@ -139,7 +189,7 @@ never an absolute path.
 An action of an older phone that is not in the contract (`advanceStep`,
 `spawnAgent`, `resolveComment`, `setContextSlot`, `spawnWorkflow`) still runs
 for a v1 phone and has no v2 counterpart; `send` and `createSessionFromIssue`
-stay until the start action replaces them.
+stay until the phone ships the start form.
 
 ## Listener lifetime
 

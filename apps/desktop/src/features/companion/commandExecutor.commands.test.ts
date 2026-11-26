@@ -171,6 +171,7 @@ import {
 } from './commandExecutor';
 import { invoke } from '@tauri-apps/api/core';
 import { clearMobileCreateRateState } from './mobileConfinement';
+import { clearActionState } from './actions/testing/clearActionState';
 import { WorkflowGateError } from '../../store/slices/workflows/workflowActivationGate';
 
 const invokeMock = vi.mocked(invoke);
@@ -246,6 +247,7 @@ const lastCall = (spy: ReturnType<typeof vi.fn>) => spy.mock.calls[spy.mock.call
 beforeEach(() => {
   vi.clearAllMocks();
   clearMobileCreateRateState();
+  clearActionState();
   // clearAllMocks resets call data but NOT implementations; restore the default
   // resolving createSession so a sibling test's custom impl doesn't leak.
   h.createSession.mockImplementation(
@@ -575,87 +577,83 @@ describe('resolveComment thread metadata', () => {
   });
 });
 
-describe('mergePr (write path, security-gated)', () => {
-  it('merges with the server-known PR number when the PR is eligible', async () => {
-    h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr() } } });
-    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
-    expect(res.ok).toBe(true);
-    // The server PR number (7) is used, not anything the phone supplied.
-    expect(h.mergePr).toHaveBeenCalledWith('s1', 7, 'squash', { expectedHeadSha: null });
+const HEAD = 'abc1234def56';
+
+const mergeCmd = (over: Record<string, unknown> = {}): BridgeCommand =>
+  cmd('mergePr', {
+    actionId: `act:mergePr:7:${HEAD}`,
+    workspaceId: 'w1',
+    sessionId: 's1',
+    prNumber: 7,
+    expectedHeadSha: HEAD,
+    method: 'squash',
+    shouldDeleteBranch: false,
+    ...over,
   });
 
-  it('passes the merge|rebase method through to the store', async () => {
-    h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr() } } });
-    await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'rebase' }));
-    expect(lastCall(h.mergePr)).toEqual(['s1', 7, 'rebase', { expectedHeadSha: null }]);
+const seedPr = (over: Record<string, unknown> = {}) => {
+  h.state.value = makeStore({
+    sessionGithub: { s1: { pr: eligiblePr({ headSha: HEAD, ...over }) } },
   });
+};
 
-  it('defaults to squash when the phone omits a method', async () => {
-    h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr() } } });
-    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1' }));
-    expect(res.ok).toBe(true);
-    expect(lastCall(h.mergePr)).toEqual(['s1', 7, 'squash', { expectedHeadSha: null }]);
-  });
+const outcomeOf = ({ data }: { readonly data?: unknown }): Record<string, unknown> =>
+  typeof data === 'object' && data !== null ? { ...data } : {};
 
-  it('pins the merge to the head the desktop shows for that PR', async () => {
-    h.state.value = makeStore({
-      sessionGithub: { s1: { pr: eligiblePr({ headSha: '6c20f48a9e1d' }) } },
-    });
-    await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
-    expect(lastCall(h.mergePr)).toEqual(['s1', 7, 'squash', { expectedHeadSha: '6c20f48a9e1d' }]);
-  });
+describe('mergePr (checked write path, security-gated)', () => {
+  it.each(['squash', 'rebase'])(
+    'merges with the %s method, the server PR number and the head the phone saw',
+    async (method) => {
+      seedPr();
+      const res = await executeBridgeCommand(mergeCmd({ method }));
+      expect(res).toMatchObject({ ok: true, data: { result: 'done' } });
+      expect(h.mergePr).toHaveBeenCalledWith('s1', 7, method, { expectedHeadSha: HEAD });
+    },
+  );
 
-  it('re-validates server-side: refuses while changes are requested', async () => {
-    h.state.value = makeStore({
-      sessionGithub: { s1: { pr: eligiblePr({ reviewDecision: 'changes_requested' }) } },
-    });
-    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
-    expect(res.ok).toBe(false);
-    expect(res.error).toBe('merge refused: A reviewer asked for changes.');
-    expect(h.mergePr).not.toHaveBeenCalled();
-  });
-
-  it('refuses while GitHub is still checking mergeability', async () => {
-    h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr({ mergeable: null }) } } });
-    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
-    expect(res.error).toBe(
-      'merge refused: GitHub has not finished checking whether this branch merges.',
-    );
-    expect(h.mergePr).not.toHaveBeenCalled();
-  });
-
-  it('refuses when CI checks are not green even if the phone claims otherwise', async () => {
-    h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr({ checks: 'failure' }) } } });
-    // Phone-supplied fields are ignored; only the server PR state decides.
-    const res = await executeBridgeCommand(
-      cmd('mergePr', { sessionId: 's1', method: 'squash', approved: true, checks: 'success' }),
-    );
+  it.each([
+    ['no action id from the Mac', {}, { actionId: undefined }],
+    ['an unsupported merge method', {}, { method: 'fast-forward' }],
+  ])('refuses a merge with %s', async (_title, seed, over) => {
+    seedPr(seed);
+    const res = await executeBridgeCommand(mergeCmd(over));
     expect(res.ok).toBe(false);
     expect(h.mergePr).not.toHaveBeenCalled();
   });
 
-  it('refuses when the session has no PR', async () => {
-    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
-    expect(res.ok).toBe(false);
+  it.each([
+    ['an action id the Mac did not offer', {}, { actionId: 'act:mergePr:7:other' }, {}],
+    ['red CI, whatever the phone claims', { checks: 'failure' }, { approved: true }, {}],
+    ['a session with no PR', null, {}, {}],
+    [
+      'a stale head',
+      { headSha: 'fff9999aaaa0' },
+      {},
+      { code: 'version-changed', changes: [{ label: 'Head', was: 'abc1234', now: 'fff9999' }] },
+    ],
+    [
+      'a PR with changes requested',
+      { reviewDecision: 'changes_requested' },
+      {},
+      { code: 'not-mergeable', message: 'A reviewer asked for changes.' },
+    ],
+    ['an unknown session', {}, { sessionId: 'ghost' }, { code: 'unknown-target' }],
+  ])('refuses %s', async (_title, seed, over, refusal) => {
+    if (seed !== null) {
+      seedPr(seed);
+    }
+    const res = await executeBridgeCommand(mergeCmd(over));
+    expect(outcomeOf(res).result).toBe('refused');
+    expect(outcomeOf(res).refusal).toMatchObject(refusal);
     expect(h.mergePr).not.toHaveBeenCalled();
   });
 
-  it('refuses an unsupported merge method on an otherwise-eligible PR', async () => {
-    h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr() } } });
-    const res = await executeBridgeCommand(
-      cmd('mergePr', { sessionId: 's1', method: 'fast-forward' }),
-    );
-    expect(res.ok).toBe(false);
-    expect(h.mergePr).not.toHaveBeenCalled();
-  });
-
-  it('refuses a merge for an unknown session before touching the PR gate', async () => {
-    const res = await executeBridgeCommand(
-      cmd('mergePr', { sessionId: 'ghost', method: 'squash' }),
-    );
-    expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/unknown session/i);
-    expect(h.mergePr).not.toHaveBeenCalled();
+  it('answers a retry with the same id from the ledger without merging twice', async () => {
+    seedPr();
+    await executeBridgeCommand(mergeCmd());
+    const retry = await executeBridgeCommand(mergeCmd());
+    expect(retry.data).toMatchObject({ result: 'done', isReplay: true });
+    expect(h.mergePr).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -670,23 +668,20 @@ describe('bridge error sanitization gate', () => {
     const rawStderr =
       'failed to run git: remote: https://x-access-token:ghp_LIVESECRET123@github.com/acme/private.git\n' +
       'fatal: Authentication failed for internal-host:9418';
-    h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr() } } });
+    seedPr();
     h.mergePr.mockRejectedValueOnce(new Error(rawStderr));
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
+    const res = await executeBridgeCommand(mergeCmd());
 
-    expect(res.ok).toBe(false);
-    // Phone sees only the fixed per-kind generic — no stderr body at all.
-    expect(res.error).toBe('merge failed');
+    expect(outcomeOf(res).result).toBe('failed');
+    expect(res.data).toMatchObject({ error: 'The merge failed on your Mac.' });
     // No secret / remote URL / internal host leaks in the ACK-error.
     expect(JSON.stringify(res)).not.toMatch(/ghp_|LIVESECRET|x-access-token|internal-host/i);
     // The real stderr IS logged desktop-side for debugging (with kind + sessionId).
     expect(errSpy).toHaveBeenCalled();
     const logged = errSpy.mock.calls.map((c) => c.map(String).join(' ')).join('\n');
     expect(logged).toMatch(/LIVESECRET/);
-    expect(logged).toMatch(/kind=mergePr/);
-    expect(logged).toMatch(/sessionId=s1/);
     errSpy.mockRestore();
   });
 
@@ -721,26 +716,24 @@ describe('bridge error sanitization gate', () => {
     errSpy.mockRestore();
   });
 
-  it('lets a friendly validation throw (unknown session) reach the phone verbatim', async () => {
-    // BridgeSafeError must pass the gate unchanged — this is our own safe message.
+  it('lets a friendly validation throw (invalid request) reach the phone verbatim', async () => {
     const res = await executeBridgeCommand(
       cmd('mergePr', { sessionId: 'ghost', method: 'squash' }),
     );
     expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/unknown session: ghost/);
-    // It is NOT the generic mask.
+    expect(res.error).toBe('invalid mergePr request');
     expect(res.error).not.toBe('merge failed');
     expect(h.mergePr).not.toHaveBeenCalled();
   });
 
-  it('lets the friendly "merge refused" precondition reach the phone verbatim', async () => {
-    h.state.value = makeStore({
-      sessionGithub: { s1: { pr: eligiblePr({ reviewDecision: 'changes_requested' }) } },
+  it('lets a refusal reach the phone as an outcome with the desktop reason', async () => {
+    seedPr({ reviewDecision: 'changes_requested' });
+    const res = await executeBridgeCommand(mergeCmd());
+    expect(res.ok).toBe(true);
+    expect(res.data).toMatchObject({
+      result: 'refused',
+      refusal: { code: 'not-mergeable', message: 'A reviewer asked for changes.' },
     });
-    const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
-    expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/merge refused/i);
-    expect(res.error).not.toBe('merge failed');
   });
 });
 

@@ -105,9 +105,12 @@ describe('the generated Swift', () => {
     }
   });
 
-  it('tags unions by kind and keeps access at edits', () => {
+  it('tags unions by kind and names the three start accesses', () => {
     assert.match(swift, /public enum MobileAction: Codable/);
-    assert.match(swift, /public enum SessionAccess: String[^\n]*\n    case edits = "edits"\n\}/);
+    assert.match(
+      swift,
+      /public enum SessionAccess: String[^\n]*\n    case readOnly = "readOnly"\n    case askFirst = "askFirst"\n    case editsAllowed = "editsAllowed"\n\}/,
+    );
   });
 
   it('carries the three projection fields on every projection', () => {

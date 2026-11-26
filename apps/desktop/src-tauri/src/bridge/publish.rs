@@ -403,6 +403,46 @@ mod tests {
     }
 
     #[test]
+    fn a_train_with_its_status_and_a_start_offer_with_its_choices_pass_the_schema() {
+        let mut sessions = fixture(SESSIONS);
+        sessions["train"] = json!({
+            "actionId": "act:mergeTrain:ws-harborline:abc.0",
+            "isBusy": true,
+            "method": "squash",
+            "orderLine": "Squash and merge, smallest change first",
+            "entries": [{
+                "sessionId": "ses-one", "prNumber": 11, "headSha": "aaaa111",
+                "title": "Round the ledger", "repo": "ledger-core", "reason": null
+            }],
+            "status": {
+                "trainId": "train-1", "phase": "stopped", "index": 1, "merged": 1, "total": 2,
+                "step": "merging", "line": "Merged 1 of 2 · #12 has conflicts",
+                "cars": [{
+                    "sessionId": "ses-one", "prNumber": 11, "state": "merged",
+                    "mark": { "kind": "state", "state": "merged" }, "line": "#11 ledger-core · Merged"
+                }],
+                "stopReason": "#12 has conflicts. The Lead has it", "isWithLead": true,
+                "isStopRequested": false
+            },
+            "stopActionId": null
+        });
+        let key = format!("sessions:{}", sessions["workspaceId"].as_str().unwrap());
+        let stored = validate(&item(&key, Kind::Sessions, sessions)).expect("valid train");
+        assert!(stored.value.to_string().contains("stopReason"));
+
+        let mut tasks = fixture(TASKS);
+        tasks["start"]["kinds"] = json!([
+            { "startKind": "leadPlan", "presetId": "preset-layout", "label": "Lead", "hasLimit": true }
+        ]);
+        tasks["start"]["defaultAccess"] = json!("editsAllowed");
+        let tasks_key = format!("tasks:{}", tasks["workspaceId"].as_str().unwrap());
+        assert!(validate(&item(&tasks_key, Kind::Tasks, tasks.clone())).is_ok());
+        tasks["start"]["defaultAccess"] = json!("bypassPermissions");
+        let err = validate(&item(&tasks_key, Kind::Tasks, tasks)).unwrap_err();
+        assert!(err.starts_with("schema:"));
+    }
+
+    #[test]
     fn unknown_fields_are_dropped_at_every_depth() {
         let mut needs = fixture(NEEDS_YOU);
         needs["worktreePath"] = json!("/tmp/x");

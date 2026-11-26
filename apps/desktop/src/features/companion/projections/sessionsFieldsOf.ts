@@ -8,6 +8,7 @@ import { sessionNodeOf } from '../../session/sessionNode';
 import type { SessionLane, SessionRow, SessionsFields } from '../contract/projections';
 import { isLiveSession } from './isLiveSession';
 import { sessionRefOf } from './sessionRefOf';
+import { trainOfferOf } from './trainOfferOf';
 import { waitingTextOf } from './waitingTextOf';
 import type { WorkspaceScope } from './workspaceScope';
 
@@ -80,5 +81,5 @@ export const sessionsFieldsOf = ({ scope, now }: Params): SessionsFields => {
     const inLane = rows.filter((row) => row.stage === stage);
     return { stage, title, count: inLane.length, rows: inLane.slice(0, LANE_ROW_LIMIT) };
   });
-  return { workspaceId: scope.workspace.id, lanes };
+  return { workspaceId: scope.workspace.id, lanes, train: trainOfferOf({ scope }) };
 };

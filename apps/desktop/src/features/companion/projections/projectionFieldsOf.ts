@@ -36,10 +36,10 @@ const sessionsDraftOf = ({ scope, now }: ScopeParams): ProjectionDraft => ({
   fields: sessionsFieldsOf({ scope, now }),
 });
 
-const tasksDraftOf = ({ scope }: ScopeParams): ProjectionDraft => ({
+const tasksDraftOf = ({ scope, now }: ScopeParams): ProjectionDraft => ({
   key: `tasks:${scope.workspace.id}`,
   kind: 'tasks',
-  fields: tasksFieldsOf({ scope }),
+  fields: tasksFieldsOf({ scope, now }),
 });
 
 const detailDraftsOf = ({ scope, now }: ScopeParams): ReadonlyArray<ProjectionDraft> =>

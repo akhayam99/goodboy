@@ -1,5 +1,5 @@
 import type { ActionId, Digest, Int, ObjectVersion } from './primitives';
-import type { MergeMethod, SessionAccess, TaskProvider } from './vocabulary';
+import type { MergeMethod, SessionAccess, StartKind, TaskProvider } from './vocabulary';
 import type { AgentState, RunState } from './projections';
 
 export type ActionBase = {
@@ -106,6 +106,7 @@ export type MergePrAction = SessionActionBase & {
   readonly prNumber: Int;
   readonly expectedHeadSha: string;
   readonly method: MergeMethod;
+  readonly shouldDeleteBranch: boolean;
 };
 
 export type StartSessionTask = {
@@ -119,6 +120,9 @@ export type StartSessionAction = ActionBase & {
   readonly goal: string;
   readonly task: StartSessionTask | null;
   readonly access: SessionAccess;
+  readonly startKind: StartKind;
+  readonly presetId: string | null;
+  readonly limitUsd: number | null;
 };
 
 export type TrainRequestEntry = {
@@ -131,6 +135,11 @@ export type MergeTrainAction = ActionBase & {
   readonly kind: 'mergeTrain';
   readonly method: MergeMethod;
   readonly entries: ReadonlyArray<TrainRequestEntry>;
+};
+
+export type StopTrainAction = ActionBase & {
+  readonly kind: 'stopTrain';
+  readonly trainId: string;
 };
 
 export type MobileAction =
@@ -149,7 +158,8 @@ export type MobileAction =
   | AnswerSlackReplyAction
   | MergePrAction
   | StartSessionAction
-  | MergeTrainAction;
+  | MergeTrainAction
+  | StopTrainAction;
 
 export type ActionResult = 'done' | 'refused' | 'failed';
 
@@ -160,6 +170,8 @@ export type RefusalCode =
   | 'not-permitted'
   | 'rate-limited'
   | 'busy'
+  | 'not-mergeable'
+  | 'invalid-request'
   | 'unknown-target'
   | 'mac-closed';
 
@@ -182,4 +194,5 @@ export type ActionOutcome = {
   readonly refusal: Refusal | null;
   readonly error: string | null;
   readonly undoActionId: ActionId | null;
+  readonly createdSessionId: string | null;
 };
