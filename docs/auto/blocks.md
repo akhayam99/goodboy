@@ -9,7 +9,8 @@
 
 ## Auto runs read-only
 
-Claude's Auto lead uses `--permission-mode default` at every session mode, with
+Claude's Auto lead uses `--permission-mode default` at every session mode but
+Full access, where it uses `bypassPermissions`, with
 `--tools Read,Grep,Glob` and explicit shell and write denies
 (`effective_permission_mode` in `providers/cli_args.rs`). Other Claude read-only
 roles keep plan mode; Codex keeps `-s read-only` and Cursor `--mode plan`.

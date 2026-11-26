@@ -219,7 +219,7 @@ Everything that needs you sits in one block joined to the box you type in. The h
 - A question asks there too, with its pager, and the chat keeps "You answered".
 - When two asks wait, the dock shows `1 of 2` and the agent goes on once you answered both.
 - On a Lead, a subagent's permission reaches the same dock and names the agent. **Open Implementer** goes to its page.
-- On a read, **Always allow** names the folder ("Always allow reads in apps/billing") and a session or workspace allow stops the ask. The Lead never asks to read inside your projects, and its Edits chip reads "Full access, Lead reads only".
+- On a read, **Always allow** names the folder ("Always allow reads in apps/billing") and a session or workspace allow stops the ask. The Lead never asks to read inside your projects, and in Full access it runs without asking, still read only.
 - An **Always allow** that could not resume reads **Stopped before your answer** with a filled **Continue**.
 
 #### Failed and stopped

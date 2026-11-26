@@ -64,12 +64,5 @@ type PickerModeParams = {
 export const pickerModeOf = ({ mode }: PickerModeParams): PickerMode =>
   mode === 'dontAsk' ? 'default' : mode;
 
-export const LEAD_READS_ONLY_NOTE = 'The Lead reads your files and never edits or runs commands.';
-
-export const leadLabelOf = ({ mode }: PickerModeParams): string =>
-  pickerModeOf({ mode }) === 'plan'
-    ? MODE_COPY.plan.label
-    : `${MODE_COPY[pickerModeOf({ mode })].label}, Lead reads only`;
-
 export const modeCopyOf = ({ mode }: PickerModeParams): ModeCopy =>
   MODE_COPY[pickerModeOf({ mode })];

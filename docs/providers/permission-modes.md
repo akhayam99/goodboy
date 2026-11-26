@@ -87,10 +87,10 @@ has not been checked.
 - The composer's mode picker offers Read only, Ask first, Edits allowed and Full
   access, and disables with a reason the rows the active provider can't honor.
   `dontAsk` stays in the type for older sessions, reads as Ask first, and is never
-  offered. On the Lead's composer the label reads `<mode>, Lead reads only` at
-  every mode but Read only, since Auto's Claude turn keeps `--permission-mode
-default` with read tools only. It reads project folders through `--add-dir`
-  read roots, and a Grep or Glob grant is kept as `Read(//dir/**)`
+  offered. Auto's Claude turn runs `bypassPermissions` in Full access and
+  `default` in every other mode, with the same read tools and deny list, so it
+  stays read only. It reads project folders through `--add-dir` read roots, and a
+  Grep or Glob grant is kept as `Read(//dir/**)`
 
 ## Default mode
 

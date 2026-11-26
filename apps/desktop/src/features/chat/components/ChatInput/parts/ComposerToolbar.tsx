@@ -18,7 +18,6 @@ type Props = {
   readonly routing: ReturnType<typeof useTurnRouting>;
   readonly isBlocked: boolean;
   readonly hasPermissionPicker: boolean;
-  readonly isLead: boolean;
   readonly controlSlots?: ComposerControlSlots;
   readonly attachmentCount: number;
   readonly fileInputRef: RefObject<HTMLInputElement | null>;
@@ -37,7 +36,6 @@ export const ComposerToolbar = ({
   routing,
   isBlocked,
   hasPermissionPicker,
-  isLead,
   controlSlots,
   attachmentCount,
   fileInputRef,
@@ -51,11 +49,7 @@ export const ComposerToolbar = ({
   onSendNow,
 }: Props) => {
   const asks = hasPermissionPicker ? (
-    <PermissionModePicker
-      session={session}
-      activeProvider={routing.effectiveProvider}
-      isLead={isLead}
-    />
+    <PermissionModePicker session={session} activeProvider={routing.effectiveProvider} />
   ) : null;
   const isInline = controlSlots === undefined;
   return (

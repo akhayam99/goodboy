@@ -537,6 +537,9 @@ fn effective_permission_mode<'a>(
     EffectivePermissionModeParams { cli, args, access }: EffectivePermissionModeParams<'a>,
 ) -> &'a str {
     if cli == Cli::Claude && args.confined_role == Some("auto") {
+        if args.permission_mode == "bypassPermissions" {
+            return "bypassPermissions";
+        }
         return "default";
     }
     if access == Some(RoleAccess::ReadOnly) {
@@ -1704,7 +1707,7 @@ mod tests {
     }
 
     #[test]
-    fn auto_on_claude_leaves_plan_mode_and_keeps_only_read_tools() {
+    fn auto_on_claude_runs_default_but_bypass_only_in_full_access_and_keeps_only_read_tools() {
         let allowed = strings(&["Bash(rm:*)"]);
         let disallowed = strings(&["Read(.env)"]);
         for mode in [
@@ -1723,9 +1726,14 @@ mod tests {
                     value_after(&argv, "--tools").as_deref(),
                     Some("Read,Grep,Glob")
                 );
+                let expected = match mode {
+                    "bypassPermissions" => "bypassPermissions",
+                    _ => "default",
+                };
                 assert_eq!(
                     value_after(&argv, "--permission-mode").as_deref(),
-                    Some("default")
+                    Some(expected),
+                    "{mode}"
                 );
                 assert!(!argv.contains(&"--allowedTools".to_string()));
                 assert!(argv.iter().all(|arg| !arg.contains("Bash(")));
