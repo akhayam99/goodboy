@@ -75,6 +75,18 @@ describe('starting the turn of Auto through the store', () => {
     });
   });
 
+  it('hands the parts of the delivery to the turn, so a resumed Lead gets only what changed', async () => {
+    const state = harness({
+      lookups: [{ runId: 'run-planned', isLive: true }],
+      send: async () => NOT_BLOCKED,
+    });
+    const parts = [{ name: 'user', kind: 'news', text: 'hello' }] as const;
+
+    await state.start({ ...state.params, parts });
+
+    expect(state.inputs[0]?.leadDelivery).toEqual(parts);
+  });
+
   it('sends a delegation turn that carries its run, delivery and tree, and reports the end once', async () => {
     const state = harness({
       lookups: [null, null, { runId: 'run-planned', isLive: true }],
