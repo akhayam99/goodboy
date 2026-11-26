@@ -1,3 +1,4 @@
+import { announceDockFold } from './dockGridMemory/announceDockFold';
 import { clearDrawer } from './clearDrawer';
 import { closeDrawer } from './closeDrawer';
 import { closeDrawerEntry } from './closeDrawerEntry';
@@ -16,6 +17,7 @@ import type { SliceDeps } from '../../slice-types';
 export const createDrawerSlice = ({ set, get }: SliceDeps) => {
   return {
     openDrawer: openDrawer(set),
+    announceDockFold: announceDockFold({ set, get }),
     closeDrawer: closeDrawer(set),
     closeDrawerEntry: closeDrawerEntry({ set }),
     clearDrawer: clearDrawer({ set }),

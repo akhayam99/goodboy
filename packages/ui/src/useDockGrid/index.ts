@@ -25,10 +25,13 @@ type SolvedPane = {
   readonly id: string;
   readonly sizing: DrawerSizing;
   readonly savedWidth: number;
+  readonly rowMin?: number;
 };
 
 export type DockSolveParams = {
   readonly columnWidth: number;
+  readonly columnHeight?: number;
+  readonly foldOrder?: ReadonlyArray<string>;
   readonly railWidth: number;
   readonly canPush: boolean;
   readonly detail: SolvedPane | null;
@@ -50,6 +53,8 @@ type Params = {
   readonly cellCount: number;
   readonly onResize: DockGridSpec['onResize'];
   readonly columnWidth: number | null;
+  readonly columnHeight?: number | null;
+  readonly foldOrder?: ReadonlyArray<string>;
   readonly railWidth: number;
   readonly placement: DrawerPlacement;
   readonly detail: DetailSpec;
@@ -112,6 +117,8 @@ export const useDockGrid = ({
   cellCount,
   onResize,
   columnWidth,
+  columnHeight = null,
+  foldOrder,
   railWidth,
   placement,
   detail,
@@ -134,6 +141,8 @@ export const useDockGrid = ({
       ? null
       : solve({
           columnWidth,
+          ...(columnHeight !== null && { columnHeight }),
+          ...(foldOrder !== undefined && { foldOrder }),
           railWidth,
           canPush: placement !== 'overlay',
           detail: detail.isShown
@@ -144,6 +153,7 @@ export const useDockGrid = ({
               id: cell.key,
               sizing: cell.sizing,
               savedWidth: savedWidthOf({ cell }),
+              ...(cell.rowMin !== undefined && { rowMin: cell.rowMin }),
             })),
             split: splits[dockSplitKeyOf({ keys: column.map((cell) => cell.key) })],
           })),
