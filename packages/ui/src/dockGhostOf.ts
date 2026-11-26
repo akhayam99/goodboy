@@ -44,7 +44,7 @@ type Rows = {
   readonly bottom: number;
 };
 
-const rowsOf = ({ boxes, height }: RowsParams): Rows | null => {
+const ghostRowsOf = ({ boxes, height }: RowsParams): Rows | null => {
   const [top, bottom] = boxes.find((box) => box.panes.length > 1)?.panes ?? [];
   if (top === undefined || bottom === undefined) {
     return null;
@@ -59,7 +59,7 @@ const rowsOf = ({ boxes, height }: RowsParams): Rows | null => {
 };
 
 const rectOf = ({ boxes, dock, key, groups }: Omit<Params, 'was'>): DockRect | null => {
-  const rows = rowsOf({ boxes, height: dock.height });
+  const rows = ghostRowsOf({ boxes, height: dock.height });
   let x = dock.x;
   for (const box of boxes) {
     const at = box.panes.findIndex(
