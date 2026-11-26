@@ -294,6 +294,15 @@ only when your task reaches the case it covers.
   contract.
 - [browser.md](browser.md): when you change how a web page opens inside a
   window, where a tab may navigate, or what a page in a tab may reach.
+  - [browser/host.md](browser/host.md), [local-files.md](browser/local-files.md),
+    [lifecycle.md](browser/lifecycle.md) and [tab-rows.md](browser/tab-rows.md):
+    the host, typed files, tab states and profiles, saved rows.
+  - [pane.md](browser/pane.md), [placement.md](browser/placement.md),
+    [page.md](browser/page.md), [doors.md](browser/doors.md) and
+    [keys.md](browser/keys.md): the dock, the native view, the full page,
+    what opens a tab, the keys.
+  - [console.md](browser/console.md) and [pick.md](browser/pick.md): the page
+    runtime, the console and errors, Select an element.
 - [mounts.md](mounts.md): when you change where a session writes on disk,
   the mount lifecycle, the mount operation log, or recovery.
 - [workflows.md](workflows.md): when you touch the workflow tables, the
