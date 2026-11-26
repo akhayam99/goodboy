@@ -218,7 +218,14 @@ The recipe column links the steps for the change you are about to make: [recipes
 - [dependencies.md](dependencies.md): when you add a new package, or check
   whether one is worth it.
 - [traps.md](traps.md): when something in the code or the tools looks like
-  a bug and you are about to fix it.
+  a bug and you are about to fix it. It indexes one page per area:
+  [rust](traps/rust.md), [providers](traps/providers.md),
+  [git](traps/git.md), [review](traps/review.md),
+  [resolve](traps/resolve.md), [auto](traps/auto.md),
+  [store](traps/store.md), [folders](traps/folders.md),
+  [launch](traps/launch.md), [ui](traps/ui.md),
+  [scroll](traps/scroll.md), [browser](traps/browser.md),
+  [toolchain](traps/toolchain.md) and [database](traps/database.md).
 - [packages/ui/DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md): when
   you need the exact tokens, scales, z-index layers or motion to build with.
   It is the registry. A page per family sits beside it:
