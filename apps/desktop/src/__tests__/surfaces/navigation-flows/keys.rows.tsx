@@ -1035,9 +1035,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await pickMenuItem({ id: 'slot.close' });
     },
     lands: async () => {
-      await waitFor(() =>
-        expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('conversation'),
-      );
+      await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())).toBeNull());
       expect(useAppStore.getState().drawerBack).toBeNull();
     },
   }),

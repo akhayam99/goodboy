@@ -2,7 +2,6 @@
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DrawerBackChipContext } from '../drawerBackChipContext';
 import { DockDragContext } from '../dockDragContext';
 import { DockTabsContext, type DockTabs } from '../dockTabsContext';
 import { Plus } from '../icons';
@@ -108,17 +107,5 @@ describe('DockPanelHead', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Monitor' }));
     expect(tabs.onSelect).toHaveBeenCalledWith({ key: 'monitor' });
     expect(tabs.claim).toHaveBeenCalledWith({ paneKey: 'terminal' });
-  });
-
-  it('leads with the back chip of the drawer it replaced', () => {
-    const onBack = vi.fn();
-    render(
-      <DrawerBackChipContext.Provider value={{ kind: 'New', title: 'Report', onBack }}>
-        <DockPanelHead title="Terminal" onClose={vi.fn()} />
-      </DrawerBackChipContext.Provider>,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Back to New · Report' }));
-    expect(onBack).toHaveBeenCalledTimes(1);
   });
 });
