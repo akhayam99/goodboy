@@ -65,13 +65,18 @@ integrations, workspace profile) then the agent kind's prompt. Claude receives
 it as an appended system prompt. Every other CLI receives it at the top of the
 prompt, with the kind prompt fenced as a role boundary.
 
-The session-language guard quotes the goal or the operator's last message and
-names its language ("Write every reply, question, suggestion and summary in
+The session-language guard quotes the operator's last message and, after a
+reload, the first message the operator wrote (`sessionOwnWordsOf`, read from
+the session's agents by `sessionTranscriptOf`), then the goal slot, then the
+title only when the operator typed or edited it. A generated title never fixes
+the language. It names the language ("Write every reply, question, suggestion and summary in
 Italian.") when `detectSessionLanguage` reads one. It scores stopwords for en,
 es, pt, fr and de after cutting code spans, paths and identifiers. Under 3
 words, under 2 hits, under 15% hits or a winner less than 1.5 times the
 runner-up gives no name, and the rule then names no language. The Auto prompt and the orchestrator brief name it the
-same way.
+same way. The Cursor parser holds a half-read "> Auto routed to ..." line
+until it ends and emits it as its own `decision_note`, keeping the text around
+it as it was.
 
 ### The write-scope guard
 
