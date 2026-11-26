@@ -34,7 +34,11 @@ afterEach(() => {
 describe('closeCurrentLevel', () => {
   it('closes the open drawer of the current session', () => {
     store.setState({ currentSessionId: SESSION_ID });
-    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({
+      kind: 'conversation',
+      sessionId: SESSION_ID,
+      payload: { threadId: 'thread-harborline' },
+    });
 
     closeCurrentLevel({});
 
@@ -43,12 +47,16 @@ describe('closeCurrentLevel', () => {
 
   it('closes an open popover first and keeps the drawer', () => {
     store.setState({ currentSessionId: SESSION_ID });
-    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({
+      kind: 'conversation',
+      sessionId: SESSION_ID,
+      payload: { threadId: 'thread-harborline' },
+    });
     document.body.innerHTML = '<div role="dialog"></div>';
 
     closeCurrentLevel({});
 
-    expect(store.getState().drawer?.kind).toBe('scripts');
+    expect(store.getState().drawer?.kind).toBe('conversation');
   });
 
   it('closes a studio that covers the page', () => {
@@ -61,13 +69,17 @@ describe('closeCurrentLevel', () => {
 
   it('closes the page, never the drawer parked under it', () => {
     store.setState({ currentSessionId: SESSION_ID });
-    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({
+      kind: 'conversation',
+      sessionId: SESSION_ID,
+      payload: { threadId: 'thread-harborline' },
+    });
     store.getState().openStudio({ studio: { kind: 'inbox', focus: null } });
 
     closeCurrentLevel({});
 
     expect(store.getState().appStudio).toBeNull();
-    expect(store.getState().drawer?.kind).toBe('scripts');
+    expect(store.getState().drawer?.kind).toBe('conversation');
   });
 
   it('does nothing on the Sessions page', () => {

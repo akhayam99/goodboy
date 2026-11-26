@@ -1,8 +1,7 @@
 import { Suspense } from 'react';
-import { cn, useShellRailForm } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { selectIsAskOpen } from '../../../../../store/slices/ask/selectIsAskOpen';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { lazyNamed } from '../../../../../shared/lib/lazyNamed';
 
 const AskPaneBody = lazyNamed({
@@ -11,28 +10,18 @@ const AskPaneBody = lazyNamed({
 });
 
 type Props = {
-  readonly session: Session;
+  readonly sessionId: SessionId;
+  readonly onClose: () => void;
 };
 
-export const AskPane = ({ session }: Props) => {
-  const sessionId = session.id;
-  const isOpen = useAppStore((state) => selectIsAskOpen({ state, sessionId }));
-  const closeAsk = useAppStore((state) => state.closeAsk);
-  const isOverlay = useShellRailForm() === 'narrow';
-  if (!isOpen) {
+export const AskPane = ({ sessionId, onClose }: Props) => {
+  const session = useAppStore((state) => sessionById(state.sessions, sessionId));
+  if (session === undefined) {
     return null;
   }
   return (
-    <div
-      data-ask-pane={isOverlay ? 'overlay' : 'push'}
-      className={cn(
-        'panel-on-page flex min-h-0 w-116 max-w-full flex-col border-l border-border-soft bg-background',
-        isOverlay ? 'absolute inset-y-0 right-0 z-30 shadow-xl' : 'relative shrink-0',
-      )}
-    >
-      <Suspense fallback={null}>
-        <AskPaneBody key={sessionId} session={session} onClose={() => closeAsk({ sessionId })} />
-      </Suspense>
-    </div>
+    <Suspense fallback={null}>
+      <AskPaneBody key={sessionId} session={session} onClose={onClose} />
+    </Suspense>
   );
 };

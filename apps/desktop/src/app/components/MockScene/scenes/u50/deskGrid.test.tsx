@@ -110,9 +110,16 @@ describe('the ux50 desk grid scenes', () => {
     expect(lanePanel()).toBeNull();
   });
 
-  it('holds Terminal, Browser and Monitor in the grid with the detail beside them', async () => {
+  it('holds Terminal, Browser, Monitor, Scripts and Ask in the grid with the detail beside them', async () => {
     await mount('u50-desk-grid');
 
+    expect(
+      store
+        .getState()
+        .drawerGrid.columns.flat()
+        .map((panel) => panel.kind)
+        .sort(),
+    ).toEqual(['ask', 'browser', 'monitoring', 'scripts', 'terminal']);
     expect(lanePanel()).not.toBeNull();
     expect(cellKeys().length).toBeGreaterThan(0);
     expect(lanePanel()?.hasAttribute('data-detail-open')).toBe(true);

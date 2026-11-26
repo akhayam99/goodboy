@@ -1,4 +1,6 @@
 // @vitest-environment happy-dom
+import { selectIsAskOpen } from '../../store/slices/ask/selectIsAskOpen';
+import { selectDetailDrawer } from '../../store/slices/drawer/selectDetailDrawer';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import {
@@ -294,8 +296,8 @@ describe('every door to a question', () => {
       state().closeQuestion();
     });
 
-    expect(state().drawer).toBeNull();
-    expect(state().askPaneOpen[SESSION]).toBe(true);
+    expect(selectDetailDrawer({ state: state() })).toBeNull();
+    expect(selectIsAskOpen({ state: state(), sessionId: SESSION })).toBe(true);
   });
 
   it('reopens the question a saved window addressed, by its id', async () => {

@@ -1,12 +1,12 @@
 import { ASK_FOCUS_EVENT } from '../../../features/session/ask/askFocusEvent';
-import type { AskSessionParams, SetFn } from './types';
+import type { AskSessionParams, GetFn } from './types';
 
 const SETTLE_MS = 60;
 
 export const openAsk =
-  (set: SetFn) =>
+  (get: GetFn) =>
   ({ sessionId }: AskSessionParams): void => {
-    set((state) => ({ askPaneOpen: { ...state.askPaneOpen, [sessionId]: true } }));
+    get().openDrawer({ kind: 'ask', sessionId, payload: null });
     setTimeout(() => {
       if (typeof window === 'undefined') {
         return;

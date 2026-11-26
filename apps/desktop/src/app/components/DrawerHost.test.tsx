@@ -333,6 +333,12 @@ const ENTRIES: ReadonlyArray<Entry> = [
     drawer: { kind: 'browser', sessionId: SESSION, payload: null },
   },
   {
+    kind: 'ask',
+    region: 'Ask',
+    seed: seedSession,
+    drawer: { kind: 'ask', sessionId: SESSION, payload: null },
+  },
+  {
     kind: 'monitoring',
     region: 'Monitoring',
     seed: seedSession,

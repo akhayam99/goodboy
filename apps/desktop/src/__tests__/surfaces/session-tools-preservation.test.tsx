@@ -13,6 +13,7 @@ vi.mock('../../shared/lib/db', () => ({
   },
 }));
 
+import { selectIsAskOpen } from '../../store/slices/ask/selectIsAskOpen';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
@@ -81,14 +82,14 @@ const paneToggles = (): ReadonlyArray<Element> =>
 const drawerKind = (): string | null => useAppStore.getState().drawer?.kind ?? null;
 
 describe('session tools rows stay reachable', () => {
-  it('Ask is a side pane: ask.open opens it beside the page and the tools hold no Ask button', async () => {
+  it('Ask is a dock tool: ask.open opens it beside the page and the tools hold no Ask button', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
     act(() => useAppStore.getState().openAsk({ sessionId }));
     await settle();
-    expect(drawerKind()).toBeNull();
-    expect(useAppStore.getState().askPaneOpen[sessionId]).toBe(true);
+    expect(drawerKind()).toBe('ask');
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: sessionId })).toBe(true);
     expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId })).toBe(false);
 
     act(() => {

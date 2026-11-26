@@ -15,10 +15,12 @@ vi.mock('../../../../../shared/lib/db', async () =>
   (await import('../../../../../store/storyHarness')).dbLibModuleMock(),
 );
 
+import { selectIsAskOpen } from '../../../../../store/slices/ask/selectIsAskOpen';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   brandId,
+  type SessionId,
   type ChatId,
   type ChatMessage,
   type ChatMessageId,
@@ -34,6 +36,8 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
+import { selectDetailDrawer } from '../../../../../store/slices/drawer/selectDetailDrawer';
+import { selectGridTool } from '../../../../../store/slices/drawer/selectGridTool';
 import { sessionPlace } from '../../../../../store/slices/navigation/place';
 import { pressShortcut } from '../../../../../__tests__/helpers/pressKey';
 import { SessionHead } from '../../../../../app/components/SessionHead';
@@ -46,9 +50,8 @@ import {
 import { seedShellChrome } from '../../../../../app/components/MockScene/scenes/shellChrome';
 import { seedWorkflowRun } from '../../../../../app/components/MockScene/scenes/flow-audit/seeds';
 import { SessionWorkspace } from '../../../components/SessionWorkspace';
+import { AskPane } from '.';
 import { SessionHeadContext } from '../../../sessionHeadContext';
-
-const NARROW_QUERY = /max-width: 1099/;
 
 const THREAD_ID = brandId<ChatId>({ value: 'thread-pane-credit' });
 
@@ -88,29 +91,22 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-type WidthParams = {
-  readonly isNarrow: boolean;
-};
-
-const stubWindowWidth = ({ isNarrow }: WidthParams): void => {
-  vi.stubGlobal('matchMedia', (query: string) => ({
-    matches: isNarrow && NARROW_QUERY.test(query),
-    media: query,
-    onchange: null,
-    addEventListener: () => undefined,
-    removeEventListener: () => undefined,
-    addListener: () => undefined,
-    removeListener: () => undefined,
-    dispatchEvent: () => false,
-  }));
-};
-
 const renderWorkspace = () =>
   render(
     <ToastProvider>
       <SessionHeadContext.Provider value={SessionHead}>
         <SessionWorkspace session={FLOW_SESSION} />
       </SessionHeadContext.Provider>
+    </ToastProvider>,
+  );
+
+const renderPane = () =>
+  render(
+    <ToastProvider>
+      <AskPane
+        sessionId={FLOW_SESSION_ID}
+        onClose={() => useAppStore.getState().closeAsk({ sessionId: FLOW_SESSION_ID })}
+      />
     </ToastProvider>,
   );
 
@@ -157,24 +153,31 @@ const messageOf = ({ id, role, content, status }: MessageParams): ChatMessage =>
   updatedAt: brandId<IsoDateTime>({ value: '2026-11-23T09:00:06.000Z' }),
 });
 
-describe('the Ask pane beside the session', () => {
-  it('opens from ⌘L beside the Overview with its field focused, and the Overview keeps its face', async () => {
+describe('the Ask panel in the dock', () => {
+  it('opens from ⌘L as a tool of the dock grid, and the Overview keeps its face', async () => {
     renderWorkspace();
-    expect(screen.queryByRole('region', { name: 'Ask' })).toBeNull();
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: FLOW_SESSION_ID })).toBe(
+      false,
+    );
 
     act(() => {
       pressShortcut({ id: 'ask.open' });
     });
+    renderPane();
 
     await waitFor(() => expect(document.activeElement).toBe(field()));
+    expect(selectGridTool({ state: useAppStore.getState(), kind: 'ask' })?.sessionId).toBe(
+      FLOW_SESSION_ID,
+    );
     expect(useAppStore.getState().sessionFace[FLOW_SESSION_ID] ?? 'overview').toBe('overview');
     expect(document.querySelector('[data-session-desk]')).toBeNull();
-    expect(useAppStore.getState().drawer).toBeNull();
+    expect(selectDetailDrawer({ state: useAppStore.getState() })).toBeNull();
   });
 
-  it('stays the same pane, with its draft, while the user moves between the tabs', async () => {
+  it('stays the same panel, with its draft, while the user moves between the tabs', async () => {
     renderWorkspace();
     act(() => useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID }));
+    renderPane();
     const before = pane();
     fireEvent.change(field(), { target: { value: 'Who changed applyCredit?' } });
 
@@ -192,52 +195,33 @@ describe('the Ask pane beside the session', () => {
   it('closes on its Close button and opens again on ask.open', async () => {
     renderWorkspace();
     act(() => useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID }));
+    renderPane();
 
     fireEvent.click(within(pane()).getByRole('button', { name: 'Close' }));
 
-    expect(screen.queryByRole('region', { name: 'Ask' })).toBeNull();
-    expect(useAppStore.getState().askPaneOpen[FLOW_SESSION_ID]).toBe(false);
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: FLOW_SESSION_ID })).toBe(
+      false,
+    );
     act(() => {
       pressShortcut({ id: 'ask.open' });
     });
-    await screen.findByRole('region', { name: 'Ask' });
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: FLOW_SESSION_ID })).toBe(
+      true,
+    );
   });
 
-  it('pushes the page on a wide window', () => {
-    stubWindowWidth({ isNarrow: false });
-    renderWorkspace();
-    act(() => useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID }));
+  it('shows nothing for a session that is gone', () => {
+    const { container } = render(
+      <AskPane
+        sessionId={brandId<SessionId>({ value: 'session-gone' })}
+        onClose={() => undefined}
+      />,
+    );
 
-    const frame = document.querySelector<HTMLElement>('[data-ask-pane]');
-    expect(frame?.getAttribute('data-ask-pane')).toBe('push');
-  });
-
-  it('docks beside the whole page, head included, so the head and the column never part', () => {
-    stubWindowWidth({ isNarrow: false });
-    renderWorkspace();
-    act(() => useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID }));
-
-    const frame = document.querySelector<HTMLElement>('[data-ask-pane]');
-    const row = document.querySelector('[data-session-dock-row]');
-    expect(frame?.parentElement).toBe(row);
-    expect(row?.querySelector('[data-session-head-frame]')).not.toBeNull();
-    expect(document.querySelector('[data-session-body] [data-ask-pane]')).toBeNull();
-  });
-
-  it('lies over the right of the page on a narrow window, never reflowing it, with a clear Close', () => {
-    stubWindowWidth({ isNarrow: true });
-    renderWorkspace();
-    const content = document.querySelector('[data-session-body]')?.firstElementChild;
-    act(() => useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID }));
-
-    const frame = document.querySelector<HTMLElement>('[data-ask-pane]');
-    expect(frame?.getAttribute('data-ask-pane')).toBe('overlay');
-    expect(document.querySelector('[data-session-body]')?.firstElementChild).toBe(content);
-    within(pane()).getByRole('button', { name: 'Close' });
+    expect(container.firstChild).toBeNull();
   });
 
   it('writes a streaming answer as it comes, offers Stop, and settles with its footer', async () => {
-    renderWorkspace();
     act(() => {
       useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID });
       useAppStore.setState({
@@ -263,6 +247,7 @@ describe('the Ask pane beside the session', () => {
       });
     });
 
+    renderPane();
     await within(pane()).findByLabelText('Stop');
     expect(within(pane()).queryByTestId('ask-footer')).toBeNull();
 
@@ -293,8 +278,8 @@ describe('the Ask pane beside the session', () => {
   it('asks a chip at once, with the session it was opened on', async () => {
     const sendAskQuestion = vi.fn(async () => true);
     useAppStore.setState({ sendAskQuestion });
-    renderWorkspace();
     act(() => useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID }));
+    renderPane();
 
     const chips = within(within(pane()).getByRole('group', { name: 'Try asking' })).getAllByRole(
       'button',

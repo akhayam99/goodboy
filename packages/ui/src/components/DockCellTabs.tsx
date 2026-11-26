@@ -1,21 +1,16 @@
-import type { DockGridSpec } from '../dockGridSpec';
-import { dockTabOptionsOf } from '../dockTabOptionsOf';
+import type { DockTabs } from '../dockTabsContext';
 import { SegmentedTabs } from './SegmentedTabs';
 
-type Props = {
-  readonly spec: DockGridSpec;
-  readonly tabs: ReadonlyArray<string>;
-  readonly shown: string;
-};
+type Props = Pick<DockTabs, 'options' | 'shown' | 'onSelect'>;
 
-export const DockCellTabs = ({ spec, tabs, shown }: Props) => (
+export const DockCellTabs = ({ options, shown, onSelect }: Props) => (
   <div data-dock-cell-tabs="" className="flex shrink-0 items-center px-2 pt-2">
     <SegmentedTabs
       size="xs"
       ariaLabel="Panels"
       value={shown}
-      options={dockTabOptionsOf({ spec, tabs })}
-      onChange={(key) => spec.onFocus({ key })}
+      options={options}
+      onChange={(key) => onSelect({ key })}
     />
   </div>
 );

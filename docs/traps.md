@@ -784,6 +784,7 @@ fails silently at runtime.
   unlinks, and `forget_folder` returns `FolderBusy` under the folder lock, so a
   turn started in another window keeps its staging.
 - A fold is a view, never a write. When the Desk has no room, the solver turns a cell into a tab of its neighbor at render time, from the window width and `dockFoldOrderOf`. Nothing about it reaches `drawerGrid` or `session_dock_grids`, so a smaller window never rearranges the saved layout and a wider one brings the columns back. Writing the fold would lose the arrangement on the first laptop that leaves its monitor. The one write near it is the toast's **Undo**, which closes the panel that was just opened (`announceDockFold`).
+- Ask and Scripts are cells of the grid like Terminal, Browser and Monitor, so a layout row holds up to five kinds under version 2 (`storedDockGridOf`). A row of version 1 still reads; a build that only knows version 1 cannot read a row of version 2, and a row no build can parse leaves the default layout and says so once per session (`unreadableDockGrids`). Never read the Ask state from a store key of its own: `selectIsAskOpen` reads the grid, `openAsk` and `closeAsk` write it with the session they name.
 
 ## Not finished is a skip that carries a summary
 

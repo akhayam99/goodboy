@@ -5,6 +5,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
+import { selectIsAskOpen } from '../../../../store/slices/ask/selectIsAskOpen';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../shared/components/Toast';
@@ -92,7 +93,7 @@ describe('the session Ask scene', () => {
     );
   });
 
-  it('stays on the Overview until Ask is opened, then opens it as a pane beside the Overview', async () => {
+  it('stays on the Overview until Ask is opened, then opens it in the dock beside the Overview', async () => {
     window.history.replaceState(null, '', '/?scene=session-ask&state=closed');
     render(
       <ToastProvider>
@@ -104,7 +105,7 @@ describe('the session Ask scene', () => {
     act(() => useAppStore.getState().openAsk({ sessionId: SESSION.id }));
     expect(await screen.findByRole('region', { name: 'Ask' })).toBeDefined();
     expect(useAppStore.getState().activeLens[SESSION.id] ?? null).toBeNull();
-    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().drawer?.kind).toBe('ask');
     screen.getByTestId('overview-title');
   });
 
@@ -156,11 +157,11 @@ describe('the session Ask scene', () => {
       kind: 'question',
       sessionId: SESSION.id,
     });
-    expect(useAppStore.getState().askPaneOpen[SESSION.id]).toBe(true);
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: SESSION.id })).toBe(true);
     act(() => {
       useAppStore.getState().closeQuestion();
     });
-    expect(useAppStore.getState().askPaneOpen[SESSION.id]).toBe(true);
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: SESSION.id })).toBe(true);
     screen.getByTestId('ask-answer');
   });
 

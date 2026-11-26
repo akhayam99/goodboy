@@ -5,6 +5,7 @@ export type DockPane = {
   readonly sizing: DrawerSizing;
   readonly savedWidth: number;
   readonly rowMin?: number;
+  readonly tabs?: ReadonlyArray<string>;
 };
 
 export type DockColumn = {
@@ -13,9 +14,7 @@ export type DockColumn = {
   readonly split?: number;
 };
 
-export type LanePane = DockPane & {
-  readonly tabs?: ReadonlyArray<string>;
-};
+export type LanePane = DockPane;
 
 export type Lane = {
   readonly panes: ReadonlyArray<LanePane>;

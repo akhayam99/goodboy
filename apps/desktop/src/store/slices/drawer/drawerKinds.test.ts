@@ -25,10 +25,16 @@ describe('the drawer kind table', () => {
     expect(Object.keys(DRAWER_KINDS).sort()).toEqual([...writtenKinds()].sort());
   });
 
-  it('gives every tool a pane and no other surface one', () => {
+  it('gives every tool a pane and no other surface one, the Ask having its own rail place', () => {
     for (const [kind, row] of Object.entries(DRAWER_KINDS)) {
-      expect(row.pane !== null, kind).toBe(row.surface === 'tool' && row.openerPane === null);
+      const isPaneTool = row.surface === 'tool' && row.openerPane === null && kind !== 'ask';
+      expect(row.pane !== null, kind).toBe(isPaneTool);
     }
+  });
+
+  it('keeps the Ask taller than every other row', () => {
+    expect(DRAWER_KINDS.ask.rowMin).toBe(260);
+    expect(DRAWER_KINDS.ask.place).toBe('row');
   });
 
   it('lays only forms and wide readers in the reader tier', () => {

@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { selectIsAskOpen } from '../../../../store/slices/ask/selectIsAskOpen';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { brandId, type IsoDateTime, type SessionExternalTask } from '@goodboy/types';
@@ -142,7 +143,7 @@ describe('the Context tab', () => {
     act(() => seedSessionAsk({ state: 'answer', session: session() }));
     act(() => store.getState().openAsk({ sessionId: SESSION_ID }));
     const agentsBefore = store.getState().sessionPhaseRuns[SESSION_ID];
-    const panel = () => render(<AskPane session={session()} />);
+    const panel = () => render(<AskPane sessionId={SESSION_ID} onClose={() => undefined} />);
     const view = panel();
     await screen.findByTestId('ask-answer');
     const turns = screen.getAllByTestId('ask-answer').length;
@@ -155,14 +156,14 @@ describe('the Context tab', () => {
     expect(store.getState().sessionPhaseRuns[SESSION_ID]).toBe(agentsBefore);
   });
 
-  it('opens the Ask pane from ask.open, with its input focused and no drawer', async () => {
+  it('opens the Ask pane from ask.open, with its input focused', async () => {
     const focusAsked = new Promise<void>((resolve) => {
       window.addEventListener(ASK_FOCUS_EVENT, () => resolve(), { once: true });
     });
     act(() => store.getState().openAsk({ sessionId: SESSION_ID }));
-    expect(store.getState().drawer).toBeNull();
+    expect(selectIsAskOpen({ state: store.getState(), sessionId: SESSION_ID })).toBe(true);
 
-    render(<AskPane session={session()} />);
+    render(<AskPane sessionId={SESSION_ID} onClose={() => undefined} />);
     const field = await screen.findByRole('textbox', { name: 'Ask about this session' });
     await focusAsked;
     await waitFor(() => expect(document.activeElement).toBe(field));

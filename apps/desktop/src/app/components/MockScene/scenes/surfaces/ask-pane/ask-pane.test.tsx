@@ -68,9 +68,9 @@ describe('the ask pane scenes', () => {
     }
   });
 
-  it.each(SCENE_NAMES)('%s opens the Ask pane with no drawer and no Desk', async (name) => {
+  it.each(SCENE_NAMES)('%s opens the Ask panel in the dock and no Desk', async (name) => {
     await mount(name);
-    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().drawer?.kind).toBe('ask');
     expect(document.querySelector('[data-session-desk]')).toBeNull();
     expect(screen.queryByText('Something went wrong')).toBeNull();
   });

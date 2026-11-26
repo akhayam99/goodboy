@@ -43,7 +43,7 @@ describe('the agent and the pull request in the stored desk layout', () => {
     const without = storedDockGridOf({ grid: GRID, face: 'desk' });
 
     expect(parseStoredDockGrid({ raw: withDetail })).toEqual(parseStoredDockGrid({ raw: without }));
-    expect(JSON.parse(withDetail)).toMatchObject({ version: 1, columns: GRID.columns });
+    expect(JSON.parse(withDetail)).toMatchObject({ version: 2, columns: GRID.columns });
   });
 
   it('reads a row saved by an older build as no detail', () => {
@@ -54,7 +54,11 @@ describe('the agent and the pull request in the stored desk layout', () => {
   });
 
   it('writes nothing for an empty detail, nor for a reader it does not keep', () => {
-    const scripts: OpenDrawer = { kind: 'scripts', sessionId: SESSION, payload: null };
+    const scripts: OpenDrawer = {
+      kind: 'conversation',
+      sessionId: SESSION,
+      payload: { threadId: 'thread-harborline' },
+    };
 
     expect(JSON.parse(storedDockGridOf({ grid: GRID, detail: [] }))).not.toHaveProperty('detail');
     expect(JSON.parse(storedDockGridOf({ grid: GRID, detail: [scripts] }))).not.toHaveProperty(
@@ -98,7 +102,7 @@ describe('the agent and the pull request in the stored desk layout', () => {
     expect(parseStoredDeskDetail({ raw: '{', sessionId: SESSION })).toEqual([]);
     expect(
       parseStoredDeskDetail({
-        raw: raw({ value: { version: 2, detail: [{ kind: 'transcript', agentId: 'a' }] } }),
+        raw: raw({ value: { version: 3, detail: [{ kind: 'transcript', agentId: 'a' }] } }),
         sessionId: SESSION,
       }),
     ).toEqual([]);

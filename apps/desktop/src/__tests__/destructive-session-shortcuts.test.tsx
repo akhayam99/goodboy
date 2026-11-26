@@ -23,6 +23,8 @@ const { state } = vi.hoisted(() => {
       sessions: [session],
       sessionProjectMounts: {},
       sessionActiveProject: {},
+      askThreads: {},
+      askStreams: {},
       sessionBranches: {} as Record<string, string>,
       openWorkspace: vi.fn(),
       currentWorkspaceId: 'workspace-1' as string | null,

@@ -18,14 +18,22 @@ const pressEscape = async (): Promise<void> => {
 
 const openedKind = (): string | null => selectOpenDrawer(useAppStore.getState())?.kind ?? null;
 
-const openScriptsDrawer = async ({ sessionId }: Ctx): Promise<void> => {
-  useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null });
+const openTranscriptDrawer = async ({ sessionId }: Ctx): Promise<void> => {
+  const agent = (useAppStore.getState().sessionPhaseRuns[sessionId] ?? []).find(
+    (candidate) => candidate.workflowRunId == null && candidate.deletedAt == null,
+  );
+  if (agent === undefined) {
+    throw new Error('the seeded session has no standalone agent');
+  }
+  useAppStore
+    .getState()
+    .openDrawer({ kind: 'transcript', sessionId, payload: { agentId: agent.id } });
   await settle();
-  await waitFor(() => expect(openedKind()).toBe('scripts'), WAIT);
+  await waitFor(() => expect(openedKind()).toBe('transcript'), WAIT);
 };
 
-const openReportOverScripts = async (ctx: Ctx): Promise<void> => {
-  await openScriptsDrawer(ctx);
+const openReportOverTranscript = async (ctx: Ctx): Promise<void> => {
+  await openTranscriptDrawer(ctx);
   useAppStore
     .getState()
     .openDrawer({ kind: 'new', sessionId: ctx.sessionId, payload: { form: 'report' } });
@@ -37,11 +45,13 @@ export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'slot: the drawer it replaced waits in a back chip, the chip swaps, Esc walks back',
     covers: ['openDrawer', 'closeDrawer'],
-    open: openReportOverScripts,
+    open: openReportOverTranscript,
     lands: async () => {
-      await userEvent.setup().click(await screen.findByRole('button', { name: 'Back to Scripts' }));
+      await userEvent
+        .setup()
+        .click(await screen.findByRole('button', { name: 'Back to Transcript' }));
       await settle();
-      await waitFor(() => expect(openedKind()).toBe('scripts'), WAIT);
+      await waitFor(() => expect(openedKind()).toBe('transcript'), WAIT);
       expect(await screen.findByRole('button', { name: 'Back to New · Report' })).toBeDefined();
 
       await pressEscape();
@@ -55,11 +65,11 @@ export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'slot: ⌘⇧W closes the top of the slot, then the drawer from the chip',
     covers: ['key:slot.close', 'closeDrawer'],
-    open: openReportOverScripts,
+    open: openReportOverTranscript,
     lands: async () => {
       pressShortcut({ id: 'slot.close' });
       await settle();
-      await waitFor(() => expect(openedKind()).toBe('scripts'), WAIT);
+      await waitFor(() => expect(openedKind()).toBe('transcript'), WAIT);
 
       pressShortcut({ id: 'slot.close' });
       await settle();
@@ -81,7 +91,7 @@ export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
     lands: async (ctx) => {
       openLens({ sessionId: ctx.sessionId, lens: 'workflows' });
       await settle();
-      expect(openedKind()).toBeNull();
+      expect(openedKind()).toBe('ask');
       expect((await composer()).value).toBe(DRAFT);
 
       await userEvent.setup().click(

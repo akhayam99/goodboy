@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
+import { selectIsAskOpen } from '../../../../../store/slices/ask/selectIsAskOpen';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
@@ -78,10 +79,10 @@ describe('c03 session tools scenes', () => {
     expect(pressed()).toEqual([]);
   });
 
-  it('opens Ask as the side pane of the session, not a drawer', async () => {
+  it('opens Ask as a dock tool of the session', async () => {
     await mount('c03-panes-ask');
-    expect(useAppStore.getState().drawer).toBeNull();
-    expect(useAppStore.getState().askPaneOpen[SESSION_ID]).toBe(true);
+    expect(useAppStore.getState().drawer?.kind).toBe('ask');
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: SESSION_ID })).toBe(true);
     await vi.waitFor(() => screen.getByRole('region', { name: 'Ask' }));
     expect(pressed()).toEqual(['Ask']);
   });

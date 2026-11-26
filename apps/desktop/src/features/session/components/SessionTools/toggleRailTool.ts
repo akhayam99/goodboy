@@ -1,6 +1,5 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { selectIsAskOpen } from '../../../../store/slices/ask/selectIsAskOpen';
 import { toggleBrowserDock } from '../../../browser/toggleBrowserDock';
 import { toggleTerminalDock } from '../../../terminal/toggleTerminalDock';
 import type { RailToolId } from './sessionTools';
@@ -31,9 +30,5 @@ export const toggleRailTool = ({ pane, sessionId }: Params): void => {
     state.toggleDrawer({ kind: 'scripts', sessionId, payload: null });
     return;
   }
-  if (selectIsAskOpen({ state, sessionId })) {
-    state.closeAsk({ sessionId });
-    return;
-  }
-  state.openAsk({ sessionId });
+  state.toggleDrawer({ kind: 'ask', sessionId, payload: null });
 };

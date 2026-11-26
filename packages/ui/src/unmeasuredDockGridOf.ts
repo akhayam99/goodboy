@@ -26,7 +26,11 @@ export const unmeasuredDockGridOf = ({
     return {
       width,
       dragMax: lead === undefined ? width : DRAWER_TIERS[lead.sizing].max,
-      panes: column.map((cell) => ({ key: cell.key, weight: 1 })),
+      panes: column.map((cell) => ({
+        key: cell.key,
+        weight: 1,
+        ...(cell.tabs !== undefined && { tabs: cell.tabs.keys }),
+      })),
     };
   });
   return {
