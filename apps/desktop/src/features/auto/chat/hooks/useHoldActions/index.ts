@@ -129,6 +129,7 @@ export const useHoldActions = ({
           workspaceId: session.workspaceId,
           text: `Continue with ${workflowName}. Go on past the first check.`,
           deliveryId: `hold-continue:${holdKey}`,
+          origin: 'continue',
         });
         if (result === 'lost') {
           throw new Error('This run is no longer here');

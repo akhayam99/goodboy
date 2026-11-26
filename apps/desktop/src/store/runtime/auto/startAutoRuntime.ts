@@ -327,6 +327,8 @@ export const startAutoRuntime = async ({
       permissionOnceAllows,
       deliveryId,
       focusArtifactId,
+      origin,
+      userText,
       onQueued,
     }) => {
       const started = await startAutoTree({
@@ -341,6 +343,8 @@ export const startAutoRuntime = async ({
         ...(permissionOnceAllows !== undefined && { permissionOnceAllows }),
         ...(deliveryId !== undefined && { deliveryId }),
         ...(focusArtifactId !== undefined && { facts: { focusArtifactId } }),
+        ...(origin !== undefined && { origin }),
+        ...(userText !== undefined && { userText }),
       });
       if (outcome.kind !== 'queued') {
         return 'lost';

@@ -870,20 +870,20 @@ The README and feature-area guide docs are captured from these scenes. The
 branch `hl/fix-duplicate-credit`, payments-api #318 and notify-relay #57, with
 ledger-core only read), and `scenes/brand/canon.ts` holds the names and numbers
 every picture shares. Add `&brand=1` to skip onboarding and hide the toasts a
-browser tab raises. The README images live in `docs/readme/`, the
-feature-area guide ones in the public
-[goodboy-media](https://github.com/akhayam99/goodboy-media) repo, both as dark
-and light `.webp` pairs. The website's hero picture is the one capture on the
-site; every other product view there is a React mock. `pnpm readme:hero` shoots
-two scenes from the desktop mock dev server (`http://localhost:5230`, or the URL
-passed as its first argument), in both themes. The README picture is the
-`readme-hero` scene: the
-Harborline session on its Context tab, with its decisions already read and the page
-held at the top so the state, Projects and Linked show above the goal. It is the
-whole app window, 1680x1118 css px at scale 2, so the places rail, the session head and
-the tools rail all show and the columns keep their widths; both themes come from one frozen clock so their times
-match, and it writes `docs/readme/readme-hero-{dark,light}.webp`. The site picture
-is the `hero-diff` scene in `scenes/hero/`: the same Harborline session on its
+browser tab raises. The README images live in `docs/readme/`: a dark banner
+with the board of `board-shell`, then one dark and one light card per feature, a
+tight crop of the real component at twice its size on a rounded panel. The cards
+come from `story-bring` (Tasks), `story-plan` (the Lead, Plans and Providers and
+limits), `story-direction` (Questions), `overview-full` (Projects),
+`branch-pr-github` (Pull requests), `browser-pick`, `monitoring-ports` and
+`demo-storage`, with the `director=1` param so the demo flow plays. The
+feature-area guide images live in the public
+[goodboy-media](https://github.com/akhayam99/goodboy-media) repo, as dark and
+light `.webp` pairs. The website's hero picture is the one capture on the
+site; every other product view there is a React mock. `pnpm site:hero` shoots
+it from the desktop mock dev server (`http://localhost:5230`, or the URL
+passed as its first argument), in both themes. The site picture
+is the `hero-diff` scene in `scenes/hero/`: a Harborline session on its
 Overview, with the diff of the file #318 shares with HBL-415 open on the right. It
 is shot at 1920x1200 and scale 4 and writes
 `website/public/hero/hero-{dark,light}-{1208,2416,3624}.webp`, 1, 2 and 3 times
@@ -937,11 +937,11 @@ Pictures live outside this repo so each reshoot does not grow its history:
 push the new files to goodboy-media first, then the text here. Reusing a name
 replaces the picture in place, within the five minutes GitHub caches it.
 
-Every figure has one caption line under its `<picture>`, after a blank line:
-`<sub>Screenshot from Goodboy <version></sub>`. `docs/figures.json` is the one
+Every guide figure has one caption line under its `<picture>`, after a blank line:
+`<sub>Screenshot from Goodboy <version></sub>`. A README figure has none, so the
+page stays short on a phone, and the check fails if one gets a caption. `docs/figures.json` is the one
 source of that version, keyed `features/<name>` for a guide figure and
-`readme/readme-hero` for the README hero. `pnpm features:shots` and
-`pnpm readme:hero` write the entry when a capture ends, with the shot args as
+`readme/<name>` for a README figure. `pnpm features:shots` writes the entry when a capture ends, with the shot args as
 its `recipe`, quoted so a POSIX shell reruns it as typed, so re-shooting a figure moves its version and a figure left alone
 keeps the version it was shot at. A trial shot under a name no guide uses adds
 an entry no picture uses: delete it, because `pnpm run check:doc-refs` fails on
@@ -964,17 +964,18 @@ pnpm features:reshoot
 ```
 
 It replays the `recipe` of every guide figure in `docs/figures.json` through
-`scripts/feature-shots.mjs`, one after the other, then the README hero through
-`scripts/readme-hero.mjs`. Each finished figure moves to the version of the
+`scripts/feature-shots.mjs`, one after the other. The README figures have no
+recipe and are shot on their own, and the website hero comes from
+`pnpm site:hero`. Each finished figure moves to the version of the
 checkout. A failed figure is named at the end and the exit code is 1; the rest
 still run.
 
 - `--area <guide>` shoots the figures named `<guide>` or `<guide>-*`, such as
-  `--area inbox`. `--area readme` shoots only the hero.
+  `--area inbox`.
 - `--theme dark|light` shoots one theme. A figure with one new theme and one
   old theme would lie about its version, so versions do not move.
-- `--out-dir <folder>` writes under `<folder>/features` and skips the hero.
-  Versions do not move. Use it for a trial run.
+- `--out-dir <folder>` writes under `<folder>/features`. Versions do not move.
+  Use it for a trial run.
 - `--dry-run` lists what would be shot. A figure with no recipe is listed as
   "shoot by hand".
 - `--base`, `--version` and `--wait` pass through to the shot scripts.

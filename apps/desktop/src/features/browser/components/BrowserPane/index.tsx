@@ -55,6 +55,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
     hasNativeView: true,
     root,
     reload: model.reload,
+    reloadFromOrigin: model.reloadFromOrigin,
   });
 
   const pick = useElementPick({

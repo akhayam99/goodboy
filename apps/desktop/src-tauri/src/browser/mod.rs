@@ -14,6 +14,7 @@ mod pick;
 mod profile;
 mod reason;
 mod registry;
+mod site_data;
 mod snapshot;
 pub(crate) mod tab_rows;
 pub(crate) mod visit_rows;

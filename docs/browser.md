@@ -147,7 +147,7 @@ sentence, and the pane owns the words
 `not-web-address`, `invalid-address`, `local-missing`, `local-folder`,
 `local-type`, `tab-gone`, `tab-closed`, `window-gone`, `other-window`,
 `too-many-popups`, `session-closing`, `invalid-workspace`, `profile-busy`,
-`profile-live`, `profile-shared`, `profile-unavailable`,
+`site-moved`, `site-data-unavailable`, `profile-shared`, `profile-unavailable`,
 `history-unavailable`, `invalid-preset`, `console-unavailable`,
 `tab-row-gone`, `tab-row-owner`, `tab-rows-changed`, `tab-rows-failed`.
 

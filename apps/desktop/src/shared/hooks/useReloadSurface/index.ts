@@ -7,6 +7,7 @@ type Params = {
   readonly hasNativeView: boolean;
   readonly root?: RefObject<Element | null>;
   readonly reload: () => void;
+  readonly reloadFromOrigin?: () => void;
 };
 
 export const useReloadSurface = ({
@@ -15,10 +16,14 @@ export const useReloadSurface = ({
   hasNativeView,
   root,
   reload,
+  reloadFromOrigin,
 }: Params): void => {
   const key = useId();
   const reloadRef = useRef(reload);
   reloadRef.current = reload;
+  const fromOriginRef = useRef(reloadFromOrigin);
+  fromOriginRef.current = reloadFromOrigin;
+  const hasFromOrigin = reloadFromOrigin !== undefined;
 
   useEffect(() => {
     if (!isEnabled) {
@@ -31,7 +36,8 @@ export const useReloadSurface = ({
         hasNativeView,
         root: () => root?.current ?? null,
         reload: () => reloadRef.current(),
+        ...(hasFromOrigin && { reloadFromOrigin: () => fromOriginRef.current?.() }),
       },
     });
-  }, [key, isEnabled, isMain, hasNativeView, root]);
+  }, [key, isEnabled, isMain, hasNativeView, root, hasFromOrigin]);
 };

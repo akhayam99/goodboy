@@ -184,7 +184,7 @@ Rules around slices:
 - `keyboard/`: the shortcut registry, its dispatcher, `useShortcut` and `isTypingTarget`.
 - `platform/`: operating system detection.
 - `navigation/`: the one list of destinations every door opens (`destinations.ts`, `openDestination.ts`) and the column, rail and studio place of a page.
-- `shellFocus/`: moving focus between the shell panels, resizing and splitting its columns, and turning a panel pair.
+- `shellFocus/`: moving focus between the shell panels, resizing and splitting its columns, and moving a panel.
 - `detail-fields/`: the field builders the record detail panes render, one file per tracker.
 
 Some jobs have one implementation, and a feature never rewrites them:

@@ -1,5 +1,6 @@
 import { isUserPayload, storedDeliveryOf } from '@goodboy/core/auto';
 import type { AutoDelegation, AutoOutboxRow, AutoTree } from '@goodboy/db';
+import { noteTextOf } from './noteTextOf';
 import type { AutoReadMessage } from './state';
 
 type Params = {
@@ -46,6 +47,10 @@ export const readMessagesOf = ({
     ) {
       return [];
     }
-    return [{ rowId: String(row.id), createdAt: row.createdAt, text: row.payload.text, turn }];
+    const text = noteTextOf({ payload: row.payload, text: row.payload.text });
+    if (text === null) {
+      return [];
+    }
+    return [{ rowId: String(row.id), createdAt: row.createdAt, text, turn }];
   });
 };

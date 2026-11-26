@@ -3,4 +3,5 @@ export type ReloadSurface = {
   readonly hasNativeView: boolean;
   readonly root: () => Element | null;
   readonly reload: () => void;
+  readonly reloadFromOrigin?: () => void;
 };

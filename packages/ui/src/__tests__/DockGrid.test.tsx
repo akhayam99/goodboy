@@ -70,11 +70,11 @@ const gridOf = ({ spec, tabs }: Params): ReactElement => (
     cell={<Probe />}
     columns={boxesOf({ tabs })}
     handles={[]}
-    turn={null}
     isFramed
     isFocusShown
     isFloating={false}
     canDrop={() => true}
+    boxesOf={() => null}
   />
 );
 
@@ -82,7 +82,6 @@ const specOf = (columns: DockGridSpec['columns'], onFocus = vi.fn()): DockGridSp
   columns,
   focus: 'page',
   onFocus,
-  onTurn: () => undefined,
   onMove: () => undefined,
 });
 

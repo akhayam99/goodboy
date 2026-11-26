@@ -1,4 +1,5 @@
 import { dockSplitKeyOf } from '@goodboy/ui';
+import { layoutOf } from './dockTabs/layoutOf';
 import { EMPTY_DRAWER_GRID, type DrawerContent } from './state';
 import type { SetFn } from './types';
 
@@ -17,7 +18,7 @@ export const resizeDockRow = ({ set }: Params) => {
   return ({ kinds, share }: SplitParams): void => {
     set((state) => {
       const grid = state.drawerGrid ?? EMPTY_DRAWER_GRID;
-      const isStacked = grid.columns.some(
+      const isStacked = layoutOf({ columns: grid.columns, tabs: grid.tabs }).columns.some(
         (column) =>
           column.length === kinds.length &&
           column.every((panel, index) => panel.kind === kinds[index]),

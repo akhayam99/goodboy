@@ -83,6 +83,7 @@ const stubHost = () => {
     browser_tab_show: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
     browser_tab_hide: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
     browser_tab_reload: null,
+    browser_tab_reload_from_origin: null,
     browser_history_state: null,
     browser_console_read: { doc: null, entries: [], watermark: 0, isHeard: false },
     browser_favicon: null,
@@ -237,5 +238,64 @@ describe('cmd+R reloads where you are', () => {
 
     await waitFor(() => expect(windowReloads).toBe(1));
     expect(isSessionRefreshed()).toBe(false);
+  });
+
+  it('reloads Goodboy on its shortcut while the session holds the keyboard beside the browser', async () => {
+    renderWorld({ isBrowserOpen: true });
+    await openPage();
+
+    fireEvent.pointerDown(document.body);
+    pressShortcut({ id: 'app.reload', target: document.body });
+
+    await waitFor(() => expect(windowReloads).toBe(1));
+    expect(callsOf({ command: 'browser_tab_reload_from_origin' })).toEqual([]);
+  });
+});
+
+describe('reload without cache', () => {
+  it('reloads the tab without cache on the same shortcut when the browser holds the keyboard', async () => {
+    renderWorld({ isBrowserOpen: true });
+    await openPage();
+
+    screen.getByRole('button', { name: /^Edit address/ }).focus();
+    pressShortcut({ id: 'app.reload' });
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_reload_from_origin' })).toEqual([
+        ['browser_tab_reload_from_origin', { args: { tabId: 'live-1' } }],
+      ]),
+    );
+    expect(callsOf({ command: 'browser_tab_reload' })).toEqual([]);
+    expect(windowReloads).toBe(0);
+  });
+
+  it('reloads the tab without cache from the menu while the page webview has focus', async () => {
+    renderWorld({ isBrowserOpen: true });
+    await openPage();
+    fireEvent.pointerDown(document.body);
+    vi.spyOn(document, 'hasFocus').mockReturnValue(false);
+
+    replayShortcut({ id: 'app.reload' });
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_reload_from_origin' })).toHaveLength(1),
+    );
+    expect(windowReloads).toBe(0);
+  });
+
+  it('reloads without cache on a Shift click and keeps the plain click a plain reload', async () => {
+    renderWorld({ isBrowserOpen: true });
+    await openPage();
+    const reload = screen.getByRole('button', { name: 'Reload' });
+
+    fireEvent.click(reload, { shiftKey: true });
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_reload_from_origin' })).toHaveLength(1),
+    );
+    expect(callsOf({ command: 'browser_tab_reload' })).toEqual([]);
+
+    fireEvent.click(reload);
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_reload' })).toHaveLength(1));
+    expect(callsOf({ command: 'browser_tab_reload_from_origin' })).toHaveLength(1);
   });
 });

@@ -1,6 +1,7 @@
 import { createElement, useMemo, type ReactNode } from 'react';
 import {
   dockFoldOrderOf,
+  type DockGridCell,
   type DockGridSpec,
   type DrawerPlacement,
   type DrawerSizing,
@@ -8,9 +9,8 @@ import {
 import { DRAWER_KINDS } from '../../../store/slices/drawer/drawerKinds';
 import { panelFocusKeyOf } from '../../../store/slices/drawer/panelFocusKeyOf';
 import { shellPanelsOf } from '../../../store/slices/drawer/shellPanelsOf';
-import { EMPTY_DRAWER_GRID } from '../../../store/slices/drawer/state';
+import { EMPTY_DRAWER_GRID, type OpenDrawer } from '../../../store/slices/drawer/state';
 import { focusShellPanel } from '../../../shared/shellFocus/focusShellPanel';
-import { turnShellPair } from '../../../shared/shellFocus/turnShellPair';
 import { resizeShellColumn } from '../../../shared/shellFocus/resizeShellColumn';
 import { splitShellColumn } from '../../../shared/shellFocus/splitShellColumn';
 import { moveShellPanel } from '../../../shared/shellFocus/moveShellPanel';
@@ -30,6 +30,10 @@ import { ShellToolRail } from '../../components/ShellToolRail';
 import { STUDIO_META } from '../../components/StudioFrame/studioMeta';
 
 type Params = Record<never, never>;
+
+type CellParams = {
+  readonly panel: OpenDrawer;
+};
 
 type ShellRight = {
   readonly dockGrid: DockGridSpec;
@@ -86,27 +90,41 @@ export const useShellRight = ({}: Params): ShellRight => {
       state: { drawer, drawerBack, drawerGrid, currentSessionId, appStudio },
     });
     const busy = dockBusyKindsOf({ hasTerminalActivity, hasDownPin, isAskStreaming: isAskBusy });
+    const cellOf = ({ panel }: CellParams): DockGridCell => ({
+      key: panel.kind,
+      sizing: DRAWER_KINDS[panel.kind].sizing,
+      savedWidth: drawerGrid.widths[panel.kind],
+      rowMin: DRAWER_KINDS[panel.kind].rowMin,
+      hasActivity: busy.includes(panel.kind),
+      label: dockToolLabelOf({ key: panel.kind }),
+    });
+    const allPanels = panels.tools.flat();
     return {
-      columns: panels.tools.map((column) =>
-        column.map((panel) => ({
-          key: panel.kind,
-          sizing: DRAWER_KINDS[panel.kind].sizing,
-          savedWidth: drawerGrid.widths[panel.kind],
-          rowMin: DRAWER_KINDS[panel.kind].rowMin,
-          hasActivity: busy.includes(panel.kind),
-          label: dockToolLabelOf({ key: panel.kind }),
-        })),
+      columns: panels.layout.map((column) =>
+        column.map((panel) => {
+          const chosen = (drawerGrid ?? EMPTY_DRAWER_GRID).tabs?.[panel.kind];
+          if (chosen === undefined) {
+            return cellOf({ panel });
+          }
+          const members = chosen.keys
+            .filter((key) => key !== panel.kind)
+            .flatMap((key) => allPanels.find((candidate) => candidate.kind === key) ?? [])
+            .map((member) => cellOf({ panel: member }));
+          return {
+            ...cellOf({ panel }),
+            tabs: { keys: chosen.keys, active: chosen.active, members },
+          };
+        }),
       ),
       focus: panelFocusKeyOf({ panels }),
       scope: currentSessionId ?? '',
       foldOrder: dockFoldOrderOf({
-        keys: panels.tools.flat().map((panel) => panel.kind),
+        keys: panels.layout.flat().map((panel) => panel.kind),
         used: (drawerGrid ?? EMPTY_DRAWER_GRID).used,
         busy,
       }),
       splits: (drawerGrid ?? EMPTY_DRAWER_GRID).splits,
       onFocus: focusShellPanel,
-      onTurn: turnShellPair,
       onResize: resizeShellColumn,
       onSplit: splitShellColumn,
       onMove: moveShellPanel,

@@ -1,89 +1,152 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-hero-dark.webp">
-  <img src="./docs/readme/readme-hero-light.webp" alt="A Harborline session on its Context tab, between the places rail and the tools rail: the state, Projects, Linked, the Goal and Decisions 5">
-</picture>
+<a href="https://goodboy-ai.dev"><img src="./docs/readme/readme-banner.webp" width="100%" alt="Goodboy, give every task a structure to work in. The board of a Harborline workspace, with sessions in Building, Running and In review."></a>
 
-<sub>Screenshot from Goodboy 0.40.1</sub>
+<br>
 
-[![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=ci&labelColor=15181b)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=release&labelColor=15181b&color=0e9aa4)](https://github.com/akhayam99/goodboy/releases/latest)
-[![stars](https://img.shields.io/github/stars/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=%E2%AD%90%20stars&labelColor=15181b&color=3d444d)](https://github.com/akhayam99/goodboy/stargazers)
+Goodboy runs coding agents side by side on your own repositories, one session for each goal.
 
-![Tauri 2](https://img.shields.io/badge/Tauri%202-15181b?style=for-the-badge&logo=tauri&logoColor=24C8DB)
-![React 19](https://img.shields.io/badge/React%2019-15181b?style=for-the-badge&logo=react&logoColor=61DAFB)
-![TypeScript](https://img.shields.io/badge/TypeScript-15181b?style=for-the-badge&logo=typescript&logoColor=3178C6)
-![SQLite](https://img.shields.io/badge/SQLite-15181b?style=for-the-badge&logo=sqlite&logoColor=0F80CC)
+**Download for** [**macOS**](https://github.com/akhayam99/goodboy/releases/latest) &nbsp;&bull;&nbsp; [**Linux**](https://github.com/akhayam99/goodboy/releases/latest)
+
+[Live demo](https://demo.goodboy-ai.dev) &nbsp;&bull;&nbsp; [Features](#features) &nbsp;&bull;&nbsp; [Documentation](#documentation) &nbsp;&bull;&nbsp; [Changelog](./CHANGELOG.md)
+
+[![Stars](https://img.shields.io/github/stars/akhayam99/goodboy?style=flat&logo=github&label=stars&color=0e9aa4)](https://github.com/akhayam99/goodboy/stargazers)
+[![Release](https://img.shields.io/github/v/release/akhayam99/goodboy?style=flat&label=release&color=0e9aa4)](https://github.com/akhayam99/goodboy/releases/latest)
 
 </div>
 
 <br>
 
-Goodboy runs coding agents side by side on your own repositories, one session for each goal. It is a desktop app for **macOS** and **Linux**.
+## From task to pull request
 
-[**Features →**](./FEATURES.md)&emsp;[Privacy](#privacy)&emsp;[Install](#install)&emsp;[Run from source](#run-from-source)&emsp;[Documentation](#documentation)&emsp;[Contributors](#contributors)&emsp;[Support](#support-goodboy)
+### Tasks
+
+Issues, pull requests, Sentry errors and Slack threads from your tools sit in one list. Start a session from any of them, with the issue linked and its goal written in.
+
+[Docs →](./docs/features/inbox.md#tasks)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-tasks-dark.webp">
+  <img src="./docs/readme/readme-tasks-light.webp" alt="Tasks with Linear, GitHub and GitLab issues, and HBL-412 open beside them with its status, priority and Start" width="100%">
+</picture>
+
+### The Lead
+
+A **Lead** plans the run, hands each part to a helper agent and asks you only what your permission rows say. Each helper runs on the provider and model that fit its job, and you can read why the Lead chose it.
+
+[Docs →](./docs/features/agents.md#lead)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-lead-dark.webp">
+  <img src="./docs/readme/readme-lead-light.webp" alt="The Lead keeps out of the code and sends a planner first, then a build of two agents: the implementer done, the tester running" width="100%">
+</picture>
+
+### Questions
+
+When an agent needs a decision, it asks once, with the options and the one it recommends. What waits on you sits on top of the board, and **Let an agent decide** hands the choice back.
+
+[Docs →](./docs/features/board.md#needs-you)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-questions-dark.webp">
+  <img src="./docs/readme/readme-questions-light.webp" alt="The planner asks what a repeated webhook should return, with four options, Return the original credit recommended" width="100%">
+</picture>
+
+### Plans
+
+When the Lead asks you after the plan or at every step, a planner reads the code and writes the plan first. Comment on a line, and the next version says what it did with it.
+
+[Docs →](./docs/features/artifacts.md#comment-on-a-plan)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-plan-dark.webp">
+  <img src="./docs/readme/readme-plan-light.webp" alt="A plan comment marked Addressed, and the concurrent retries test the planner added for it" width="100%">
+</picture>
+
+### Providers and limits
+
+Goodboy runs the agents you already pay for: Claude, Codex, Cursor and five more. When one hits its usage limit, the work moves to the next and keeps what it knew.
+
+[Docs →](./docs/features/providers.md#fallback-when-a-limit-is-hit)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-limits-dark.webp">
+  <img src="./docs/readme/readme-limits-light.webp" alt="The planner hits the Anthropic usage limit, retries on Codex and writes the plan around your answer" width="100%">
+</picture>
+
+### Projects
+
+One session can work across several repositories, each on its own branch and pull request. The overview shows where every branch stands, and **Merge in order** lands them one after the other.
+
+[Docs →](./docs/features/workspace.md#workspace-with-several-folders)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-projects-dark.webp">
+  <img src="./docs/readme/readme-projects-light.webp" alt="A session overview: Merge in order for two parts, then ledger-core with its branches and pull requests #418 and #421" width="100%">
+</picture>
+
+### Pull requests
+
+Every pull request has a page with its state, checks, reviewers and comments, so you see at a glance why it isn't ready to merge. **Fix checks** sends an agent after a red check, and **Fix** turns the review comments you pick into commits in its own copy of the branch.
+
+Nothing leaves your machine until you push, on GitHub, GitLab or Bitbucket.
+
+[Docs →](./docs/features/review.md)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-prs-dark.webp">
+  <img src="./docs/readme/readme-prs-light.webp" alt="Pull request #318 on its Conversation tab: not ready to merge, with 1 check failing, changes requested by omar-t and 3 commits behind main" width="100%">
+</picture>
 
 <br>
 
-## The board
+## Built-in tools
 
-Every task is a session, and the board shows where each one stands in five lanes: **Building**, **Running**, **In review**, **Done** and **Archived**. A session moves to the lane that matches what is happening in it. What waits on you leads **Running**, one card per session, and a click opens it where it waits. **In review** merges the pull requests that are ready, in order.
+### Browser
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board in six lanes: Needs you holds two sessions, each with a question waiting">
-</picture>
+Open your dev server, a port or a link beside the session. Press **⌘⇧C** and click the part of the page you want changed. The agent gets its HTML, styles and a picture, and on your dev server the file and line.
 
-<sub>Screenshot from Goodboy 0.40.1</sub>
-
-## Workflows
-
-A workflow splits a task into steps, such as scout, plan, implement and review. Each step is its own agent with its own role, model and effort, and it starts from a short brief. You choose how much it asks you and how much it may spend. The Lead follows a workflow as a guide: it reports the first check before any agent writes, and stops to ask you when the check fails.
+[Docs →](./docs/features/keyboard.md#point-at-part-of-a-page)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="A finished workflow run, Duplicate credit fix: Done with five steps, two queued hints, a summary of the result and Create report">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-browser-dark.webp">
+  <img src="./docs/readme/readme-browser-light.webp" alt="The browser beside a session, with the PayButton component picked from src/checkout/PayButton.tsx line 42 and What should change?" width="100%">
 </picture>
 
-<sub>Screenshot from Goodboy 0.40.1</sub>
+### Monitoring
 
-## Shared context
+**Monitor** shows which ports are taken and by whom. It lists the agents Goodboy runs, your workspace servers and everything else listening on this Mac, with CPU and memory.
 
-What one agent learns, the next one reads. The goal, decisions and a running summary travel with the session, so a new agent starts informed and nobody tells the story twice.
+[Docs →](./docs/features/workspace.md#monitoring)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-light.webp" alt="The Context tab of a session on Decisions 5: four changes since you last looked, then decisions 6, 4 and 2">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-ports-dark.webp">
+  <img src="./docs/readme/readme-ports-light.webp" alt="Monitoring: two agents run by Goodboy, the web server on port 5005 from the workspace, and what else listens on this Mac" width="100%">
 </picture>
 
-<sub>Screenshot from Goodboy 0.40.1</sub>
+### Storage
 
-## Pull request review
+The worktrees of finished sessions add up. Goodboy lists each folder with its size and removes the safe ones only when you say so, and **Undo** puts them back.
 
-The **Branch** page holds one branch: its pull request, review comments, changed files, commits and checks. Check the comments you want and press **Fix**, and an agent turns them into commits in its own copy of the branch. Nothing leaves your machine until you push. It works on GitHub, GitLab and Bitbucket.
+[Docs →](./docs/features/storage.md#worktree-folders)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Conversation tab of #318: Not ready to merge, 1 check failing, changes requested, then reviewers, checks, description and activity">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-storage-dark.webp">
+  <img src="./docs/readme/readme-storage-light.webp" alt="Storage and search: 4.6 GB in Harborline, three worktrees safe to remove and Remove 3 folders in Harborline, 3.4 GB" width="100%">
 </picture>
 
-<sub>Screenshot from Goodboy 0.40.1</sub>
-
-## Chat
-
-Ask about your repos without starting a session. **Chat** reads every project and never changes a file. When an answer is worth acting on, **Start work from chat** starts a session from it.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline: the chat list and an answer with a table of three source files, Read 4 files and Start work from chat">
-</picture>
-
-<sub>Screenshot from Goodboy 0.40.1</sub>
+<br>
 
 ## Features
 
-The [feature guide](./FEATURES.md) lists the main features of each area, with a page per area for the rest. [goodboy-ai.dev](https://goodboy-ai.dev) tells the same story in a minute.
+- **[Board](./docs/features/board.md)**: every session in five lanes, from **Building** to **Done**, with what waits on you on top
+- **[Shared context](./docs/features/context.md)**: the goal, decisions and a running summary travel with the session, so a new agent starts informed
+- **[Chat](./docs/features/agents.md#workspace-chat)**: ask about your repos without starting a session, then start work from the answer
+- **[Workflows](./docs/features/workflows.md)**: save the steps of a run, each with its role, model and effort
+- **[Cost and limits](./docs/features/providers.md)**: set a monthly cap per provider, and see what Goodboy got done and what it cost in **Impact**
+- **[Terminal and keyboard](./docs/features/keyboard.md)**: a real login shell in any worktree, and a shortcut for every move
+
+The [feature guide](./FEATURES.md) covers every area, and [goodboy-ai.dev](https://goodboy-ai.dev) tells the same story in a minute.
 
 <br>
 
@@ -119,7 +182,7 @@ Goodboy runs the agents you already pay for: Claude, Codex, Cursor and five more
 
 ## Run from source
 
-You need **Node 22** or newer, **pnpm 10.33.4** and a **Rust** toolchain.
+Goodboy is built with **Tauri 2**, **React 19**, **TypeScript** and **SQLite**. You need **Node 22** or newer, **pnpm 10.33.4** and a **Rust** toolchain.
 
 ```bash
 pnpm install
@@ -173,4 +236,4 @@ The best support is using it.
 - Send a pull request
 - Leave a star if it earns one
 
-[![Star Goodboy on GitHub](https://img.shields.io/github/stars/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=%E2%AD%90%20Star%20Goodboy&labelColor=15181b&color=0e9aa4)](https://github.com/akhayam99/goodboy/stargazers)
+[![Star Goodboy on GitHub](https://img.shields.io/github/stars/akhayam99/goodboy?style=flat&logo=github&label=star%20Goodboy&color=0e9aa4)](https://github.com/akhayam99/goodboy/stargazers)

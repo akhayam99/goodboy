@@ -60,7 +60,10 @@ import {
 } from '../../../../store/storyHarness';
 import { BOARD_PLACE, sessionPlace } from '../../../../store/slices/navigation/place';
 import type { DrawerGrid, DrawerRequest } from '../../../../store/slices/drawer/state';
-import { storedDockGridOf } from '../../../../store/slices/drawer/dockGridMemory/storedDockGrid';
+import {
+  parseStoredDockGrid,
+  storedDockGridOf,
+} from '../../../../store/slices/drawer/dockGridMemory/storedDockGrid';
 import { panelFocusKeyOf } from '../../../../store/slices/drawer/panelFocusKeyOf';
 import { shellPanelsOf } from '../../../../store/slices/drawer/shellPanelsOf';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
@@ -433,6 +436,92 @@ describe('moving a panel and resetting the layout', () => {
     expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({
       columns: [[{ kind: 'browser' }, { kind: 'terminal' }]],
     });
+  });
+
+  it('merges a panel into another cell, saves the tab list and focuses the panel', async () => {
+    await openPair();
+
+    const isMoved = await state().moveDockPanel({
+      sessionId: S1,
+      kind: 'browser',
+      target: { at: 'tab', key: 'terminal' },
+    });
+    await settle();
+
+    expect(isMoved).toBe(true);
+    expect(
+      shellPanelsOf({ state: state() }).layout.map((column) => column.map((p) => p.kind)),
+    ).toEqual([['terminal']]);
+    expect(toolKinds().flat().sort()).toEqual(['browser', 'terminal']);
+    expect(state().drawerGrid.tabs).toEqual({
+      terminal: { keys: ['terminal', 'browser'], active: 'browser' },
+    });
+    expect(panelFocusKeyOf({ panels: shellPanelsOf({ state: state() }) })).toBe('browser');
+    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({
+      tabs: { terminal: { keys: ['terminal', 'browser'], active: 'browser' } },
+    });
+  });
+
+  it('tears a tab out of its cell and leaves a plain panel behind', async () => {
+    await openPair();
+    await state().moveDockPanel({
+      sessionId: S1,
+      kind: 'browser',
+      target: { at: 'tab', key: 'terminal' },
+    });
+    await settle();
+
+    const isMoved = await state().moveDockPanel({
+      sessionId: S1,
+      kind: 'browser',
+      unit: 'panel',
+      target: { at: 'beside', key: 'terminal', side: 'after' },
+    });
+    await settle();
+
+    expect(isMoved).toBe(true);
+    expect(toolKinds()).toEqual([['terminal'], ['browser']]);
+    expect(state().drawerGrid.tabs).toBeUndefined();
+  });
+
+  it('hands the cell to the next tab when the first one closes', async () => {
+    await openPair();
+    await state().moveDockPanel({
+      sessionId: S1,
+      kind: 'browser',
+      target: { at: 'tab', key: 'terminal' },
+    });
+    const terminal = state()
+      .drawerGrid.columns.flat()
+      .find((panel) => panel.kind === 'terminal');
+    if (terminal === undefined) {
+      throw new Error('terminal is in the grid');
+    }
+
+    state().closeDrawerEntry({ entry: terminal });
+
+    expect(
+      shellPanelsOf({ state: state() }).layout.map((column) => column.map((p) => p.kind)),
+    ).toEqual([['browser']]);
+    expect(state().drawerGrid.tabs).toBeUndefined();
+  });
+
+  it('reads a saved tab list back', async () => {
+    await openPair();
+    await state().moveDockPanel({
+      sessionId: S1,
+      kind: 'browser',
+      target: { at: 'tab', key: 'terminal' },
+    });
+
+    const saved = storedDockGridOf({ grid: state().drawerGrid });
+
+    expect(parseStoredDockGrid({ raw: saved })?.tabs).toEqual(state().drawerGrid.tabs);
+    expect(
+      parseStoredDockGrid({
+        raw: saved.replace('"keys":["terminal","browser"]', '"keys":["terminal","files"]'),
+      })?.tabs,
+    ).toBeUndefined();
   });
 
   it.each(['scripts', 'ask'] as const)(

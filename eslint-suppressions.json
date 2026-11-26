@@ -12588,11 +12588,6 @@
       "count": 2
     }
   },
-  "packages/ui/src/__tests__/DrawerFrame.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "packages/ui/src/__tests__/ErrorBoundary.test.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2

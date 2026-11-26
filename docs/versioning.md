@@ -65,6 +65,7 @@ read in the code, then delete the row.
 | -------------------------------------------------- | --------------------------------------- | ----------------------- | ------------------------------- |
 | Companion pairing file `~/.goodboy/companion.json` | `allow_list`, a bare list of phone keys | 0.43.0                  | 0.45.0                          |
 | Stored session dock grid                           | version 1 row, three tools              | 0.43.0                  | 0.45.0                          |
+| Lead `user` outbox row with no `origin`            | text only, no `origin` and `userText`   | 0.43.1                  | 0.45.0                          |
 
 Gone already, listed because their rows or keys stay behind:
 

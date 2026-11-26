@@ -143,7 +143,6 @@
   "apps/desktop/src/app/components/MockScene/scenes/u25/r4-report-bug.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u25/r4-repos.test.tsx": 5,
   "apps/desktop/src/app/components/MockScene/scenes/u25/r4-workspace.test.tsx": 4,
-  "apps/desktop/src/app/components/MockScene/scenes/u25/readme-hero.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u25/terminal-page.test.tsx": 2,
   "apps/desktop/src/app/components/MockScene/scenes/u26/branches.test.tsx": 3,
   "apps/desktop/src/app/components/MockScene/scenes/u26/intros.test.tsx": 3,

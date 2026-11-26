@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { brandId, type AgentId } from '@goodboy/types';
 import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
 import { LeadTree } from '../../../../../../features/session/components/LeadTree';
+import { noteTextOf } from '../../../../../../store/slices/auto-view/noteTextOf';
 import type { LeadTreeItem } from '../../../../../../features/auto/tree/leadTreeItemsOf';
 
 type Theme = 'dark' | 'light';
@@ -16,6 +17,64 @@ const IMPLEMENTER_ID = brandId<AgentId>({ value: 'mock-lead-implementer' });
 const SCOUT_ID = brandId<AgentId>({ value: 'mock-lead-scout' });
 
 const TESTER_ID = brandId<AgentId>({ value: 'mock-lead-tester' });
+
+type StoredMessage = Readonly<{
+  id: string;
+  text: string;
+  payload: unknown;
+}>;
+
+const STORED_MESSAGES: ReadonlyArray<StoredMessage> = [
+  {
+    id: 'm1',
+    text: 'Denied Read. Also cover the batch endpoint',
+    payload: { origin: 'operator', userText: 'Also cover the batch endpoint' },
+  },
+  {
+    id: 'm2',
+    text: 'Permission for Grep is now granted.\nRetry the tool call that was blocked.',
+    payload: { origin: 'permission' },
+  },
+  {
+    id: 'm3',
+    text: 'Continue the Implementer that stopped (delegation d4) from where it left off.',
+    payload: { origin: 'continue' },
+  },
+  {
+    id: 'm4',
+    text: '<<oq-answers>>\nQ: scope\nA: all\n<</oq-answers>>',
+    payload: { origin: 'answers' },
+  },
+  {
+    id: 'm5',
+    text: 'Denied Bash. Keep the ledger export as it is',
+    payload: {},
+  },
+  {
+    id: 'm6',
+    text: 'Permission for that exact command is granted for this one call. Continue where you stopped.',
+    payload: {},
+  },
+];
+
+const NOTES: ReadonlyArray<LeadTreeItem> = STORED_MESSAGES.flatMap(
+  (message): ReadonlyArray<LeadTreeItem> => {
+    const text = noteTextOf({ payload: message.payload, text: message.text });
+    return text === null
+      ? []
+      : [
+          {
+            kind: 'note',
+            id: message.id,
+            depth: 0,
+            text,
+            word: 'Read at turn 3',
+            canEdit: false,
+            canRemove: false,
+          },
+        ];
+  },
+);
 
 const ITEMS: ReadonlyArray<LeadTreeItem> = [
   {
@@ -69,11 +128,12 @@ const ITEMS: ReadonlyArray<LeadTreeItem> = [
     isSettled: false,
     spendUsd: 0,
   },
+  ...NOTES,
   {
     kind: 'note',
-    id: 'n1',
+    id: 'n-queued',
     depth: 0,
-    text: 'Also cover the batch endpoint',
+    text: 'Add a retry test for notify-relay',
     word: 'Queued',
     canEdit: true,
     canRemove: true,

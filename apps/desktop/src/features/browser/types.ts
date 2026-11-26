@@ -153,6 +153,15 @@ export type BrowserTabFavicon = {
   readonly src: string | null;
 };
 
+export type BrowserSiteCleared = {
+  readonly host: string;
+  readonly scope: 'site' | 'workspace';
+};
+
+export type BrowserProfileCleared = {
+  readonly shouldRestart: boolean;
+};
+
 export type BrowserTabLoad = {
   readonly tabId: string;
   readonly phase: 'started' | 'finished';
@@ -232,6 +241,10 @@ export type BrowserPaneModel = {
   readonly back: () => void;
   readonly forward: () => void;
   readonly reload: () => void;
+  readonly reloadFromOrigin: () => void;
+  readonly siteHost: string | null;
+  readonly hasShownView: boolean;
+  readonly clearSiteData: () => void;
   readonly stop: () => void;
   readonly select: (params: TabParams) => void;
   readonly close: (params: TabParams) => void;

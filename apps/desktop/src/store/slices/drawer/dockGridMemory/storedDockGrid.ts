@@ -9,12 +9,14 @@ import { isRecord } from '@goodboy/types/helpers';
 import { DOCK_GRID_CAP } from '@goodboy/ui';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
 import type { SessionFace } from '../../session-view/types';
+import { layoutOf } from '../dockTabs/layoutOf';
 import {
   WORKSPACE_TOOL_KINDS,
   type DrawerContent,
   type DrawerFocus,
   type DrawerGrid,
   type DrawerGridSplits,
+  type DrawerGridTabs,
   type DrawerGridWidths,
   type OpenDrawer,
   type PullRequestDrawerTab,
@@ -136,12 +138,12 @@ const panelOf = ({ value }: ValueParams): OpenDrawer | null => {
 };
 
 const columnsOf = ({ value }: ValueParams): DrawerGrid['columns'] | null => {
-  if (!Array.isArray(value) || value.length > DOCK_GRID_CAP.columns) {
+  if (!Array.isArray(value) || value.length > TOOL_KINDS.length) {
     return null;
   }
   const columns: Array<ReadonlyArray<OpenDrawer>> = [];
   for (const column of value) {
-    if (!Array.isArray(column) || column.length === 0 || column.length > DOCK_GRID_CAP.rows) {
+    if (!Array.isArray(column) || column.length === 0 || column.length > TOOL_KINDS.length) {
       return null;
     }
     const panels = column.map((panel) => panelOf({ value: panel }));
@@ -153,6 +155,46 @@ const columnsOf = ({ value }: ValueParams): DrawerGrid['columns'] | null => {
   const kinds = columns.flat().map((panel) => panel.kind);
   return new Set(kinds).size === kinds.length ? columns : null;
 };
+
+type TabsParams = ValueParams & {
+  readonly columns: DrawerGrid['columns'];
+};
+
+const tabsOf = ({ value, columns }: TabsParams): DrawerGridTabs => {
+  if (!isRecord(value)) {
+    return {};
+  }
+  const claimed = new Set<string>();
+  const entries = Object.entries(value).flatMap(([lead, tab]) => {
+    const column = columns.find((candidate) => candidate.some((panel) => panel.kind === lead));
+    if (column === undefined || !isRecord(tab) || !Array.isArray(tab.keys)) {
+      return [];
+    }
+    const listed: ReadonlyArray<unknown> = tab.keys;
+    const keys = listed.filter(
+      (key, at): key is string =>
+        typeof key === 'string' &&
+        listed.indexOf(key) === at &&
+        column.some((panel) => panel.kind === key),
+    );
+    if (
+      keys.length < 2 ||
+      keys.length !== listed.length ||
+      !keys.includes(lead) ||
+      keys.some((key) => claimed.has(key))
+    ) {
+      return [];
+    }
+    keys.forEach((key) => claimed.add(key));
+    const first = keys[0] ?? lead;
+    return [[lead, { keys, active: keys.find((key) => key === tab.active) ?? first }] as const];
+  });
+  return Object.fromEntries(entries);
+};
+
+const isWithinCap = ({ columns }: Pick<TabsParams, 'columns'>): boolean =>
+  columns.length <= DOCK_GRID_CAP.columns &&
+  columns.every((column) => column.length <= DOCK_GRID_CAP.rows);
 
 const usedOf = ({ value, kinds }: KindsParams): DrawerGrid['used'] => {
   const listed: ReadonlyArray<unknown> = Array.isArray(value) ? value : [];
@@ -251,6 +293,7 @@ export const storedDockGridOf = ({ grid, face = 'overview', detail = [] }: GridP
     used: grid.used,
     focus: grid.focus,
     widths: grid.widths,
+    ...(grid.tabs === undefined || Object.keys(grid.tabs).length === 0 ? {} : { tabs: grid.tabs }),
     ...(Object.keys(grid.splits).length === 0 ? {} : { splits: grid.splits }),
     ...(face === 'desk' ? { face } : {}),
     ...(stored.length === 0 ? {} : { detail: stored }),
@@ -297,9 +340,14 @@ export const parseStoredDockGrid = ({ raw }: RawParams): DrawerGrid | null => {
   if (columns === null) {
     return null;
   }
+  const tabs = tabsOf({ value: value.tabs, columns });
+  if (!isWithinCap({ columns: layoutOf({ columns, tabs }).columns })) {
+    return null;
+  }
   const kinds = columns.flat().map((panel) => panel.kind);
   return {
     columns,
+    ...(Object.keys(tabs).length === 0 ? {} : { tabs }),
     used: usedOf({ value: value.used, kinds }),
     focus: storedFocusOf({ value: value.focus, kinds }),
     widths: widthsOf({ value: value.widths }),

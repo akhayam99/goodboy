@@ -1,4 +1,5 @@
 import { CHECK_STATE, READ_FAILED } from '../../slices/notifications/errorRecovery';
+import type { UserOrigin } from '@goodboy/core/auto';
 import { brandId } from '@goodboy/types';
 import type {
   Agent,
@@ -13,7 +14,9 @@ import type {
 } from '@goodboy/types';
 import { askDenialEventOf } from '../../slices/permissions/askDenialEventOf';
 import { deniedPromptOf } from '../../slices/permissions/deniedPromptOf';
+import type { AnsweredAsk } from '../../../features/permissions/askBatchOf';
 import { heldOnceAllowsOf } from '../../slices/permissions/heldOnceAllowsOf';
+import { heldReasonsOf } from '../../slices/permissions/heldReasonsOf';
 import { resolvedAsksAtWrite } from '../../slices/permissions/resolvedAsksAtWrite';
 import { scopedReadGrantsOf } from '../../slices/permissions/scopedReadGrantsOf';
 import { withHeldAnswers } from '../../slices/permissions/withHeldAnswers';
@@ -92,11 +95,32 @@ const askDenialOf = ({ get, input, agentId }: DeniedParams) => {
   const denied = deniedPromptOf({ asks, content: input.content, prompt: input.content });
   return {
     asks,
+    held,
     text: withHeldAnswers({ held, prompt: denied }),
     grants: scopedReadGrantsOf({
       grants: [...(input.permissionOnceAllows ?? []), ...heldOnceAllowsOf({ held })],
     }),
   };
+};
+
+type OriginParams = {
+  readonly input: SendTurnInput;
+};
+
+const rowOriginOf = ({ input }: OriginParams): UserOrigin => input.rowOrigin ?? 'operator';
+
+type UserTextParams = OriginParams & {
+  readonly held: ReadonlyArray<AnsweredAsk>;
+};
+
+const userTextOf = ({ input, held }: UserTextParams): string | undefined => {
+  if (input.userText !== undefined) {
+    return input.userText;
+  }
+  if (rowOriginOf({ input }) !== 'operator') {
+    return undefined;
+  }
+  return [...heldReasonsOf({ held }), input.content].join('\n').trim();
 };
 
 type StoreImages = typeof storeAutoImages;
@@ -162,6 +186,8 @@ export const routeAutoUserTurn = async ({
     isRepeat: false,
   };
   const denial = askDenialOf({ get, input, agentId });
+  const origin = rowOriginOf({ input });
+  const userText = userTextOf({ input, held: denial.held });
   const result = await port({
     agentId,
     sessionId: input.sessionId,
@@ -171,6 +197,8 @@ export const routeAutoUserTurn = async ({
     ...(denial.grants.length > 0 && { permissionOnceAllows: denial.grants }),
     ...(input.deliveryId !== undefined && { deliveryId: input.deliveryId }),
     ...(input.focusArtifactId !== undefined && { focusArtifactId: input.focusArtifactId }),
+    origin,
+    ...(userText !== undefined && { userText }),
     onQueued: ({ rowId, isRepeat = false }) => {
       queued.outboxId = rowId;
       queued.isRepeat = isRepeat;
@@ -200,7 +228,7 @@ export const routeAutoUserTurn = async ({
       sessionId: input.sessionId,
     }),
   );
-  if (!queued.isRepeat) {
+  if (!queued.isRepeat && origin === 'operator') {
     state.appendTurnEvent(agentId, input.sessionId, {
       kind: 'operator_text',
       runId: brandId<ProviderRunId>({ value: `operator-${crypto.randomUUID()}` }),

@@ -96,7 +96,7 @@ Keys on this page are the Mac keys. On Linux, ⌘ reads as Ctrl, and a few chord
 #### Reload
 
 - **⌘R** reloads the place you are on, never the whole app. In the Browser it reloads the tab. In a session it refreshes its projects, branches and pull requests.
-- **⌘⇧R** reloads Goodboy. The window comes back on the same page.
+- **⌘⇧R** reloads Goodboy. The window comes back on the same page. In the Browser, when it has the keyboard, it reloads the tab without cache instead.
 
 #### Keys in a list
 
@@ -240,7 +240,14 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - Type a word to find a tab of any session, a project pin or a page this session visited. Words are never searched on the web.
 - Type the path of a local page, image or PDF, like `~/harborline/plan.html`, to open it in a tab. Reload reads the file again. The page reads only the files in its folder and the folders under it. A missing file, a folder or another kind of file says why under the address. A link or a page never opens a local file.
 - While a page loads, Reload becomes **Stop**. A page that never finishes says so after 30 seconds. **Back** and **Forward** turn off when there is nothing behind or ahead.
-- **More** holds **Add to message**, Open in your browser, **Open full page**, Copy address, Duplicate and Close tab. On macOS it also holds **Inspect in Safari**.
+- **More** holds **Add to message**, Open in your browser, **Open full page**, This tab, **Clear site data** and Develop. This tab holds Copy address, Duplicate and Close tab. Develop holds **Reload without cache**, the widths and, on macOS, **Inspect in Safari**.
+
+#### Clear the cache or a site
+
+- **⇧-click** Reload, or **Reload without cache** under Develop, loads the page again and skips the cache.
+- **Clear site data** asks first, then removes the cookies, storage, cache and service workers of the site of the shown tab, and it signs you out of that site. Other sites keep theirs. The page reloads, and a line under the address says "Cleared data for localhost.". If it fails, the page stays and the line says why.
+- Off macOS the row says **Clear browser data** and clears every site in the browser of this workspace.
+- **Settings › Workspace › Projects › Danger zone › Clear browser data** clears every site of the workspace. Open tabs reload.
 
 #### Links
 

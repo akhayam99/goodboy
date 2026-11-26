@@ -1,4 +1,4 @@
-import { ArrowUpRight, Bot, Code, Copy, CopyPlus, MonitorSmartphone, X } from '@goodboy/ui/icons';
+import { AppWindow, ArrowUpRight, Bot, Code, Trash2 } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   ICON_SIZE,
@@ -9,13 +9,16 @@ import {
   type MenuItemEntry,
 } from '@goodboy/ui';
 import { AppMenuList } from '../../../actions/AppMenuList';
+import { actionIntentOf } from '../../../actions/actionIntentOf';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { currentPlatform } from '../../../../shared/platform';
 import type { BrowserPaneModel } from '../../types';
+import { browserDevelopRowsOf } from './browserDevelopRowsOf';
 import { browserMoreOffOf } from './browserMoreRows';
-import { widthSelectOf } from './widthSelectOf';
-import { DEVICE_PRESETS, devicePresetOf } from '../../devicePresets';
+import { browserTabRowsOf } from './browserTabRowsOf';
+import { siteDataRowOf } from './siteDataRowOf';
+import { devicePresetOf } from '../../devicePresets';
 import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
@@ -39,34 +42,15 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
   const isOff = browserMoreOffOf({
     hasAddress: model.address !== '',
     hasTab: shown !== null,
+    hasView: model.hasShownView,
+    hasSite: model.siteHost !== null,
     isPinShown: shown?.isPin === true,
     canOpenOutside: model.canOpenOutside,
   });
-  const chooseWidth = widthSelectOf({ onChoose: model.setDevicePreset });
-  const developChildren: ReadonlyArray<MenuItemEntry> = [
-    ...(isOff.isWidthOff
-      ? []
-      : DEVICE_PRESETS.map((preset) => ({
-          kind: 'item' as const,
-          key: `width-${preset.id}`,
-          label: preset.label,
-          icon: MonitorSmartphone,
-          isActive: preset.id === model.devicePreset,
-          onSelect: () => chooseWidth(preset.id),
-        }))),
-    ...(currentPlatform() === 'darwin'
-      ? [
-          {
-            kind: 'item' as const,
-            key: 'inspect',
-            label: 'Inspect in Safari',
-            icon: Code,
-            isDisabled: isOff.isInspectOff,
-            onSelect: model.inspect,
-          },
-        ]
-      : []),
-  ];
+  const siteData = siteDataRowOf({
+    host: model.siteHost,
+    isWholeStore: currentPlatform() !== 'darwin',
+  });
   const entries: ReadonlyArray<MenuEntry> = [
     ...folded,
     {
@@ -99,44 +83,30 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
         ]),
     {
       kind: 'item',
-      key: 'copyAddress',
-      label: 'Copy address',
-      icon: Copy,
-      isDisabled: isOff.isCopyAddressOff,
-      onSelect: model.copyAddress,
+      key: 'thisTab',
+      label: 'This tab',
+      icon: AppWindow,
+      children: browserTabRowsOf({ model, isOff }),
+      onSelect: () => undefined,
     },
     {
       kind: 'item',
-      key: 'duplicate',
-      label: 'Duplicate',
-      icon: CopyPlus,
-      isDisabled: isOff.isDuplicateOff,
-      onSelect: model.duplicate,
+      key: 'clearSiteData',
+      label: siteData.label,
+      icon: Trash2,
+      isDestructive: actionIntentOf({ verb: siteData.label }) === 'destructive',
+      isDisabled: isOff.isClearSiteDataOff,
+      confirm: siteData.confirm,
+      onSelect: model.clearSiteData,
     },
-    ...(developChildren.length === 0
-      ? []
-      : [
-          {
-            kind: 'item' as const,
-            key: 'develop',
-            label: 'Develop',
-            icon: Code,
-            hint: isOff.isWidthOff ? null : devicePresetOf({ id: model.devicePreset }).label,
-            children: developChildren,
-            onSelect: () => undefined,
-          },
-        ]),
     {
       kind: 'item',
-      key: 'closeTab',
-      label: 'Close tab',
-      icon: X,
-      isDisabled: isOff.isCloseTabOff,
-      onSelect: () => {
-        if (shown !== null) {
-          model.close({ tab: shown.tab });
-        }
-      },
+      key: 'develop',
+      label: 'Develop',
+      icon: Code,
+      hint: isOff.isWidthOff ? null : devicePresetOf({ id: model.devicePreset }).label,
+      children: browserDevelopRowsOf({ model, isOff }),
+      onSelect: () => undefined,
     },
   ];
 

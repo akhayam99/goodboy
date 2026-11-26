@@ -469,6 +469,18 @@ pub(crate) fn stop_load<R: Runtime>(webview: &Webview<R>) -> Result<(), MessageE
 }
 
 #[cfg(target_os = "macos")]
+pub(crate) fn reload_from_origin<R: Runtime>(webview: &Webview<R>) -> Result<(), MessageError> {
+    webview
+        .with_webview(crate::platform::web_site_data::reload_from_origin)
+        .map_err(failed)
+}
+
+#[cfg(not(target_os = "macos"))]
+pub(crate) fn reload_from_origin<R: Runtime>(webview: &Webview<R>) -> Result<(), MessageError> {
+    webview.reload().map_err(failed)
+}
+
+#[cfg(target_os = "macos")]
 pub(crate) fn history_state<R: Runtime>(
     webview: &Webview<R>,
 ) -> Result<Option<HistoryState>, MessageError> {

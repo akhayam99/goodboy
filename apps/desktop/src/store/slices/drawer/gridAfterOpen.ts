@@ -1,5 +1,6 @@
 import { DOCK_GRID_CAP } from '@goodboy/ui';
 import { DRAWER_KINDS } from './drawerKinds';
+import { layoutOf } from './dockTabs/layoutOf';
 import type { DrawerGrid, OpenDrawer } from './state';
 import { toolsByUseOf } from './toolsByUseOf';
 
@@ -82,8 +83,48 @@ const placed = ({ columns, entry }: ColumnsParams & Pick<Params, 'entry'>): Colu
   return columns.map((column, index) => (index === target ? [...column, entry] : column));
 };
 
+type AttachParams = {
+  readonly columns: Columns;
+  readonly grid: DrawerGrid;
+};
+
+type JoinParams = {
+  readonly grid: DrawerGrid;
+  readonly entry: OpenDrawer;
+  readonly lead: OpenDrawer['kind'];
+};
+
+const attached = ({ columns, grid }: AttachParams): Columns => {
+  const all = grid.columns.flat();
+  return columns.map((column) =>
+    column.flatMap((panel) => {
+      const keys = grid.tabs?.[panel.kind]?.keys ?? [];
+      const members = keys
+        .filter((key) => key !== panel.kind)
+        .flatMap((key) => all.find((candidate) => candidate.kind === key) ?? []);
+      return [panel, ...members];
+    }),
+  );
+};
+
+const joined = ({ grid, entry, lead }: JoinParams): DrawerGrid => {
+  const known = grid.tabs ?? {};
+  const keys = [...(known[lead]?.keys ?? [lead]), entry.kind];
+  return {
+    columns: grid.columns.map((column) =>
+      column.some((panel) => panel.kind === lead) ? [...column, entry] : column,
+    ),
+    used: [...grid.used, entry.kind],
+    focus: { at: 'tool', kind: entry.kind },
+    widths: grid.widths,
+    splits: grid.splits,
+    tabs: { ...known, [lead]: { keys, active: entry.kind } },
+  };
+};
+
 export const gridAfterOpen = ({ grid, entry }: Params): DrawerGrid => {
   const focus = { at: 'tool', kind: entry.kind } as const;
+  const tabs = grid.tabs === undefined ? {} : { tabs: grid.tabs };
   const isOpen = grid.columns.some((column) => column.some((panel) => panel.kind === entry.kind));
   if (isOpen) {
     return {
@@ -92,16 +133,25 @@ export const gridAfterOpen = ({ grid, entry }: Params): DrawerGrid => {
       focus,
       widths: grid.widths,
       splits: grid.splits,
+      ...tabs,
     };
   }
-  if (grid.columns.flat().length < GRID_CAP) {
+  const layout = layoutOf({ columns: grid.columns, tabs: grid.tabs });
+  if (layout.columns.flat().length < GRID_CAP) {
     return {
-      columns: placed({ columns: grid.columns, entry }),
+      columns: attached({ columns: placed({ columns: layout.columns, entry }), grid }),
       used: [...grid.used, entry.kind],
       focus,
       widths: grid.widths,
       splits: grid.splits,
+      ...tabs,
     };
+  }
+  if (grid.tabs !== undefined) {
+    const lead = toolsByUseOf({ grid: { ...grid, columns: layout.columns } })[0]?.kind;
+    if (lead !== undefined) {
+      return joined({ grid, entry, lead });
+    }
   }
   const oldest = toolsByUseOf({ grid })[0]?.kind ?? entry.kind;
   return {

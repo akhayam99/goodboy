@@ -1,4 +1,4 @@
-import type { DockMoveTarget } from './dockMoveTarget';
+import type { DockMoveTarget, DockMoveUnit } from './dockMoveTarget';
 import type { DrawerSizing } from './drawerGeometry';
 import type { DockFold } from './useDockFoldReport';
 
@@ -37,6 +37,7 @@ export type DockGridSplit = {
 
 export type DockGridMove = {
   readonly key: string;
+  readonly unit: DockMoveUnit;
   readonly target: DockMoveTarget;
 };
 
@@ -47,7 +48,6 @@ export type DockGridSpec = {
   readonly foldOrder?: ReadonlyArray<string>;
   readonly scope?: string;
   readonly onFocus: (params: KeyParams) => void;
-  readonly onTurn: (params: KeyParams) => void;
   readonly onResize?: (params: DockGridResize) => void;
   readonly onSplit?: (params: DockGridSplit) => void;
   readonly onMove?: (params: DockGridMove) => void;

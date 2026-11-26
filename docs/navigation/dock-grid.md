@@ -68,11 +68,9 @@ kind and sizing, the focus as a key (`page`, `detail` or the tool's kind,
 - A rail button is pressed while its tool is anywhere in the grid, and a second
   click closes it (`toggleTerminalDock`, `toggleBrowserDock`, `toggleDrawer` read
   `selectGridTool`).
-- **Turning a pair.** With exactly two tools open and both shapes pushing, each head
-  shows a key that turns the pair (`DockPairTurnContext` in `DrawerFrame`,
-  `turnDockPair` with `turnedDockColumnsOf`). The write names its panel and does
-  nothing once that panel left the grid. When side by side would cost the page its
-  minimum, the solver stacks the pair and the key hides.
+- **Arranging panels.** A head carries no key that turns a pair. Panels are arranged by
+  dragging (`moveDockPanel`). When side by side would cost the page its minimum, the
+  solver stacks the pair.
 
 ## Panel heads and moving panels
 
@@ -101,12 +99,14 @@ worktree strip, and Monitor its Pin a port action as a pin icon in the head.
   1. A press becomes a drag after 4px, so a click stays a click; a press on a control
      in the head, or in a layer it portals out (a menu, the address suggestions),
      never starts one.
-  2. While dragging, `DockDropZones` draws zones over every other panel (left, right,
-     above, swap, below) and a strip on the page's edge. A zone that would leave the
-     page worse than now, by the solver with the real widths (`canDrop` from
-     `useDockGrid`, `dockMoveFits`), reads `No room` and drops nothing. The zones
-     redraw from a small store at most once a frame (`dockDragStore`), so panels
-     render only at drag start and end.
+  2. While dragging, the page dims and `DockDropZones` draws one labeled card per
+     target (`Place left` and `Place right` at the dock edges, `Merge`, `Place above`
+     and `Place below` on the panel under the pointer) and one ghost of the landing
+     slot (`dockGhostOf`). A card that would change nothing, or that the solver with
+     the real widths refuses (`canDrop` from `useDockGrid`, `dockMoveFits`), is not
+     drawn. A card is smaller than its hit area, and a target takes 80 ms of hover
+     before the ghost moves. The ghost of a `Merge` is the target panel itself, and the merge keeps the tabs the solver had folded into that panel (`keeps` on the `tab` target), so the result matches the card's words. The overlay redraws from a small store at most once a
+     frame (`dockDragStore`), so panels render only at drag start and end.
   3. The drag sets `SPLIT_DRAG_ATTRIBUTE` to `move`, so the Browser page hides under
      its cover.
   4. Esc cancels through the escape stack; pointer up drops through `moveDockPanel`.
