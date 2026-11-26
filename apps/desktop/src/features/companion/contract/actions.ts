@@ -48,6 +48,12 @@ export type RaiseLimitAction = SessionActionBase & {
   readonly offeredAmount: number;
 };
 
+export type UndoRaiseLimitAction = SessionActionBase & {
+  readonly kind: 'undoRaiseLimit';
+  readonly runId: string;
+  readonly raisedActionId: ActionId;
+};
+
 export type StopRunAction = SessionActionBase & {
   readonly kind: 'stopRun';
   readonly runId: string;
@@ -72,8 +78,11 @@ export type ContinueAgentAction = SessionActionBase & {
   readonly seenState: AgentState;
 };
 
+export type SlackVerdict = 'send' | 'discard';
+
 export type AnswerSlackReplyAction = SessionActionBase & {
   readonly kind: 'answerSlackReply';
+  readonly verdict: SlackVerdict;
   readonly draftId: string;
   readonly seenVersion: ObjectVersion;
   readonly text: string;
@@ -117,6 +126,7 @@ export type MobileAction =
   | RequestPlanChangesAction
   | AnswerPermissionAction
   | RaiseLimitAction
+  | UndoRaiseLimitAction
   | StopRunAction
   | ContinueRunAction
   | StopAgentAction
@@ -155,4 +165,6 @@ export type ActionOutcome = {
   readonly result: ActionResult;
   readonly isReplay: boolean;
   readonly refusal: Refusal | null;
+  readonly error: string | null;
+  readonly undoActionId: ActionId | null;
 };

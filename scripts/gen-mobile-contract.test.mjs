@@ -69,7 +69,7 @@ describe('the mobile contract lock', () => {
       change: ({ root }) => {
         writeFileSync(
           join(root, CONTRACT, 'contractVersion.ts'),
-          'export const CONTRACT_VERSION = 2;\n',
+          'export const CONTRACT_VERSION = 99;\n',
         );
       },
     });

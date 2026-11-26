@@ -52,6 +52,44 @@ the context and a merge cannot be undone, so the phone refuses with the same
 reason the desktop would show. A repository with no required review or no CI
 merges from the phone like it does on the desktop.
 
+### Decisions from the phone
+
+A phone may also answer a question, approve a plan or ask for changes, allow or
+deny one permission request once, raise a limit, stop or continue a run or an
+agent, and send or discard a Slack reply draft. Always allow, permission rules
+and every other setting stay on the Mac. Each of these actions follows five
+rules, kept in `features/companion/actions/`:
+
+- It names its target and the version the phone saw: the question text, the
+  plan version, the hash of the tool and its input, the limit, the run or agent
+  state, the draft. The Mac compares and refuses with a code, a message and the
+  list of what changed. A stop or continue that already holds is a no-op.
+- The action id is `act:<kind>:<objectId>:<version>`, built by the Mac in the
+  projection that offers the action, so a retry reuses it. The executor
+  recomputes it from the action's own fields and refuses an id that differs. It
+  keeps the last 500 finished outcomes and answers a repeated id with the first
+  outcome and `isReplay: true`. An id that is still running is refused as a
+  duplicate. A failed action is not kept, so a retry with the same id runs again.
+- Each action has its own rate limit per minute and a text cap of 4,000
+  characters. A limit is raised only to an amount the Mac offered (the current
+  limit plus 5, plus 10 or doubled, never above $500), and a raise can be undone
+  once while the limit is still the raised one.
+- The phone needs the permission to decide. The check reads one scope function
+  (`phoneScope.ts`) that allows every phone until the pairing settings register
+  their own reader.
+- The same store action runs as on the desktop: a permission goes through
+  Allow and continue or Deny, a plan through the Lead approval, a stop through
+  the confirmed stop of the turn.
+
+The phone reads one agent's conversation on request: words as text, each tool as
+one short line with the file name and the changed line counts, never a diff and
+never an absolute path.
+
+An action of an older phone that is not in the contract (`advanceStep`,
+`spawnAgent`, `resolveComment`, `setContextSlot`, `spawnWorkflow`) still runs
+for a v1 phone and has no v2 counterpart; `send` and `createSessionFromIssue`
+stay until the start action replaces them.
+
 ## Listener lifetime
 
 - Nothing listens at boot. The listener starts when Settings, iPhone opens.
@@ -108,7 +146,10 @@ of the decide, start and merge flows. Each action carries its workspace, its
 session where it has one, an `actionId` the Mac issued in the projection that
 offered it, and the version of the object the user saw. The phone never
 derives a number or a sentence: it draws the text, the mark and the tone the
-projection holds.
+projection holds. An agent's transcript is the one reply the phone pulls
+instead of receiving: a `TranscriptQuery` returns a `TranscriptProjection`,
+with a `generatedAt` and no `epoch` or `seq`. An outcome carries the refusal,
+the error text of a failed action and, after a limit raise, the id of its undo.
 
 `node scripts/gen-mobile-contract.mjs <folder>` writes the Swift `Codable`
 types, `tokens.json` (every `--color-*` token of `styles.css`, dark, light and
