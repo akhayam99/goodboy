@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  actionNounOf,
   commandPrefix,
   isFilePathTool,
   oncePatternText,
   prefixRuleFor,
+  toolClassOf,
 } from './permissionActionPatterns';
 
 describe('commandPrefix', () => {
@@ -48,6 +50,38 @@ describe('oncePatternText', () => {
     );
   });
 
+  it('turns a Grep or Glob into a scoped read of the directory it searches', () => {
+    expect(
+      oncePatternText({
+        toolName: 'Grep',
+        input: { pattern: 'refund', path: '/ledger-core/apps/billing' },
+      }),
+    ).toBe('Read(//ledger-core/apps/billing/**)');
+    expect(
+      oncePatternText({
+        toolName: 'Glob',
+        input: { pattern: '*.ts', path: '/ledger-core/apps/billing/' },
+      }),
+    ).toBe('Read(//ledger-core/apps/billing/**)');
+  });
+
+  it('scopes a Grep aimed at one file to its folder', () => {
+    expect(
+      oncePatternText({
+        toolName: 'Grep',
+        input: { pattern: 'x', path: '/ledger-core/.env.local' },
+      }),
+    ).toBe('Read(//ledger-core/**)');
+  });
+
+  it('keeps the bare tool name for a Grep with no absolute path', () => {
+    expect(oncePatternText({ toolName: 'Grep', input: { pattern: 'x' } })).toBe('Grep');
+    expect(oncePatternText({ toolName: 'Grep', input: { pattern: 'x', path: 'src' } })).toBe(
+      'Grep',
+    );
+    expect(oncePatternText({ toolName: 'Glob', input: { pattern: 'x', path: '/' } })).toBe('Glob');
+  });
+
   it('falls back to the bare tool name when the field is missing', () => {
     expect(oncePatternText({ toolName: 'Bash', input: {} })).toBe('Bash');
     expect(oncePatternText({ toolName: 'Read', input: {} })).toBe('Read');
@@ -70,6 +104,68 @@ describe('prefixRuleFor', () => {
     expect(rule.pattern).toEqual({ tool: 'Edit' });
     expect(rule.label).toBe('Always allow edits');
     expect(rule.subject).toBe('edits');
+  });
+});
+
+describe('prefixRuleFor read tools', () => {
+  it('stores a Grep rule as a read of its folder, in words that say reads', () => {
+    const rule = prefixRuleFor({
+      toolName: 'Grep',
+      input: { pattern: 'refund', path: '/work/ledger-core/apps/billing' },
+    });
+    expect(rule.pattern).toEqual({
+      tool: 'Read',
+      argsMatcher: '//work/ledger-core/apps/billing/**',
+    });
+    expect(rule.sessionPattern).toEqual(rule.pattern);
+    expect(rule.subject).toBe('reads in apps/billing');
+    expect(rule.label).toBe('Always allow reads in apps/billing');
+    expect(rule.sessionLabel).toBe('Allow reads in apps/billing in this session');
+  });
+
+  it('reads the folder of a Read file path', () => {
+    const rule = prefixRuleFor({
+      toolName: 'Read',
+      input: { file_path: '/work/notify-relay/docs/README.md' },
+    });
+    expect(rule.pattern).toEqual({ tool: 'Read', argsMatcher: '//work/notify-relay/docs/**' });
+    expect(rule.label).toBe('Always allow reads in notify-relay/docs');
+  });
+
+  it('keeps a bare read rule when no absolute path is asked', () => {
+    const rule = prefixRuleFor({ toolName: 'Glob', input: { pattern: '*.ts' } });
+    expect(rule.pattern).toEqual({ tool: 'Glob' });
+    expect(rule.label).toBe('Always allow reads');
+    expect(rule.sessionLabel).toBe('Allow reads in this session');
+  });
+});
+
+describe('copy per tool class', () => {
+  it('says commands only for a shell command and edits only for an edit tool', () => {
+    const shell = prefixRuleFor({ toolName: 'Bash', input: { command: 'ls -la' } });
+    expect(shell.sessionLabel).toBe('Allow all commands in this session');
+    const edit = prefixRuleFor({ toolName: 'Write', input: { file_path: '/repo/a.ts' } });
+    expect(edit.label).toBe('Always allow edits');
+    expect(edit.sessionLabel).toBe('Allow all edits in this session');
+    const fetch = prefixRuleFor({ toolName: 'WebFetch', input: { url: 'https://acme.test' } });
+    expect(fetch.label).toBe('Always allow WebFetch');
+    expect(fetch.subject).toBe('WebFetch');
+    expect(fetch.sessionLabel).toBe('Allow WebFetch in this session');
+    for (const rule of [fetch, prefixRuleFor({ toolName: 'Grep', input: {} })]) {
+      expect(rule.label).not.toMatch(/edits|commands/);
+      expect(rule.sessionLabel).not.toMatch(/edits|commands/);
+    }
+  });
+
+  it('names the class of each tool and the noun of its once grant', () => {
+    expect(toolClassOf({ toolName: 'Bash' })).toBe('shell');
+    expect(toolClassOf({ toolName: 'MultiEdit' })).toBe('edit');
+    expect(toolClassOf({ toolName: 'Grep' })).toBe('read');
+    expect(toolClassOf({ toolName: 'WebSearch' })).toBe('other');
+    expect(actionNounOf({ toolName: 'Bash' })).toBe('command');
+    expect(actionNounOf({ toolName: 'Edit' })).toBe('edit');
+    expect(actionNounOf({ toolName: 'Glob' })).toBe('read');
+    expect(actionNounOf({ toolName: 'WebFetch' })).toBe('call');
   });
 });
 

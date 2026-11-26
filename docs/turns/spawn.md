@@ -51,6 +51,10 @@ are read-only:
 | Gemini, Copilot | Lose their bypass flags                                                                                                                                                                                                                                                               |
 | opencode        | Refused before any probe (`ensure_confinement`): `opencode run` without `--dangerously-skip-permissions` is unproven                                                                                                                                                                  |
 
+A read-only Claude role also gets `--add-dir` for the session's project folders
+and each project's main checkout (`readRoots`, built by `buildTurnReadRoots`), so
+reading inside your projects never asks. Isolated copies send none.
+
 Auto has no Bash allow rule and never calls Goodboy from inside its turn; its
 decision is the block it ends its reply with. For `implementer`, `tester` and
 `docs` the session mode stays, and Claude loses `Task` and `Agent`.

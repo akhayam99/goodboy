@@ -7,6 +7,8 @@ const FILE_PATH_TOOLS: ReadonlySet<string> = new Set([
   'NotebookEdit',
 ]);
 
+const READ_TOOLS: ReadonlySet<string> = new Set(['Read', 'Grep', 'Glob']);
+
 const RUNNER_COMMANDS: ReadonlySet<string> = new Set([
   'pnpm',
   'npm',
@@ -82,6 +84,64 @@ export const commandPrefix = ({ command }: FirstSegmentParams): string => {
   return first;
 };
 
+export type ToolClass = 'shell' | 'edit' | 'read' | 'other';
+
+type ToolNameParams = {
+  readonly toolName: string;
+};
+
+export const toolClassOf = ({ toolName }: ToolNameParams): ToolClass => {
+  if (toolName === 'Bash') {
+    return 'shell';
+  }
+  if (FILE_PATH_TOOLS.has(toolName)) {
+    return 'edit';
+  }
+  return READ_TOOLS.has(toolName) ? 'read' : 'other';
+};
+
+export const actionNounOf = ({ toolName }: ToolNameParams): string => {
+  const toolClass = toolClassOf({ toolName });
+  if (toolClass === 'shell') {
+    return 'command';
+  }
+  return toolClass === 'other' ? 'call' : toolClass;
+};
+
+const pathFieldOf = ({ toolName, input }: ActionTarget): string =>
+  toolName === 'Read' ? filePathOf({ input }) : (stringField({ input, key: 'path' }) ?? '');
+
+type PathParams = {
+  readonly path: string;
+};
+
+const trimmedSlashes = ({ path }: PathParams): string => {
+  let end = path.length;
+  while (end > 0 && path[end - 1] === '/') {
+    end -= 1;
+  }
+  return path.slice(0, end);
+};
+
+const hasFileName = ({ path }: PathParams): boolean => {
+  const name = path.slice(path.lastIndexOf('/') + 1);
+  return name.lastIndexOf('.') > 0;
+};
+
+const directoryOf = ({ path }: PathParams): string => {
+  const trimmed = trimmedSlashes({ path });
+  return hasFileName({ path: trimmed }) ? trimmed.slice(0, trimmed.lastIndexOf('/')) : trimmed;
+};
+
+const readScopeOf = ({ toolName, input }: ActionTarget): string | null => {
+  const path = pathFieldOf({ toolName, input });
+  if (!path.startsWith('/')) {
+    return null;
+  }
+  const directory = directoryOf({ path });
+  return directory === '' ? null : `//${directory.slice(1)}/**`;
+};
+
 export const oncePatternText = ({ toolName, input }: ActionTarget): string => {
   if (toolName === 'Read') {
     const path = filePathOf({ input });
@@ -89,6 +149,10 @@ export const oncePatternText = ({ toolName, input }: ActionTarget): string => {
       return toolName;
     }
     return `${toolName}(${path.startsWith('/') ? `/${path}` : path})`;
+  }
+  if (toolName === 'Grep' || toolName === 'Glob') {
+    const scope = readScopeOf({ toolName, input });
+    return scope === null ? toolName : `Read(${scope})`;
   }
   if (toolName === 'Bash') {
     const command = commandOf({ input });
@@ -105,19 +169,64 @@ export type PrefixRule = {
   readonly pattern: PermissionRulePattern;
   readonly subject: string;
   readonly label: string;
+  readonly sessionPattern: PermissionRulePattern;
+  readonly sessionLabel: string;
 };
 
+type ScopeParams = {
+  readonly scope: string;
+};
+
+const shortFolderOf = ({ scope }: ScopeParams): string =>
+  scope
+    .slice(2, -3)
+    .split('/')
+    .filter((segment) => segment !== '')
+    .slice(-2)
+    .join('/');
+
 export const prefixRuleFor = ({ toolName, input }: ActionTarget): PrefixRule => {
-  if (toolName === 'Bash') {
+  const toolClass = toolClassOf({ toolName });
+  if (toolClass === 'shell') {
     const command = commandOf({ input });
     const prefix = commandPrefix({ command });
     return {
       pattern: { tool: 'Bash', argsMatcher: `${prefix} *` },
       subject: `"${prefix}"`,
       label: `Always allow "${prefix}"`,
+      sessionPattern: { tool: 'Bash' },
+      sessionLabel: 'Allow all commands in this session',
     };
   }
-  return { pattern: { tool: toolName }, subject: 'edits', label: 'Always allow edits' };
+  if (toolClass === 'read') {
+    const scope = readScopeOf({ toolName, input });
+    const pattern: PermissionRulePattern =
+      scope === null ? { tool: toolName } : { tool: 'Read', argsMatcher: scope };
+    const subject = scope === null ? 'reads' : `reads in ${shortFolderOf({ scope })}`;
+    return {
+      pattern,
+      subject,
+      label: `Always allow ${subject}`,
+      sessionPattern: pattern,
+      sessionLabel: `Allow ${subject} in this session`,
+    };
+  }
+  if (toolClass === 'edit') {
+    return {
+      pattern: { tool: toolName },
+      subject: 'edits',
+      label: 'Always allow edits',
+      sessionPattern: { tool: toolName },
+      sessionLabel: 'Allow all edits in this session',
+    };
+  }
+  return {
+    pattern: { tool: toolName },
+    subject: toolName,
+    label: `Always allow ${toolName}`,
+    sessionPattern: { tool: toolName },
+    sessionLabel: `Allow ${toolName} in this session`,
+  };
 };
 
 export const isFilePathTool = ({ toolName }: { readonly toolName: string }): boolean =>

@@ -110,6 +110,8 @@ pub struct SpawnArgs {
     pub working_dir: String,
     #[serde(default)]
     pub writable_roots: Vec<String>,
+    #[serde(default)]
+    pub read_roots: Vec<String>,
     pub prompt: String,
     #[serde(default)]
     pub binary: Option<String>,
@@ -214,6 +216,7 @@ pub(crate) struct SpawnOneArgs<'a> {
     pub model: &'a str,
     pub working_dir: &'a str,
     pub writable_roots: &'a [String],
+    pub read_roots: &'a [String],
     pub query_socket_directory: Option<&'a str>,
     pub prompt: &'a str,
     pub permission_mode: &'a str,
@@ -657,6 +660,7 @@ fn spawn_turn(app: &AppHandle, args: SpawnArgs) -> Result<String, TurnError> {
             model: &args.model,
             working_dir: &args.working_dir,
             writable_roots: &args.writable_roots,
+            read_roots: &args.read_roots,
             query_socket_directory: match crate::query_bridge::is_serving() {
                 true => crate::query_bridge::socket_directory().and_then(|path| path.to_str()),
                 false => None,
@@ -1275,6 +1279,7 @@ mod tests {
             model: "claude-3",
             working_dir: "/tmp",
             writable_roots: &[],
+            read_roots: &[],
             query_socket_directory: Some("/tmp/goodboy-query"),
             prompt: "hello",
             permission_mode: "default",
@@ -1315,6 +1320,7 @@ mod tests {
             model: "claude-3",
             working_dir: "/tmp",
             writable_roots: empty,
+            read_roots: empty,
             query_socket_directory: Some("/tmp/goodboy-query"),
             prompt: "hi",
             permission_mode: "bypassPermissions",

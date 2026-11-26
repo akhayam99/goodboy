@@ -16,8 +16,10 @@ import { useAppStore } from '../../../../store';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import {
   DEFAULT_PERMISSION_MODE,
+  LEAD_READS_ONLY_NOTE,
   MODE_COPY,
   PICKER_MODES,
+  leadLabelOf,
   modeCopyOf,
   pickerModeOf,
 } from '../../modeCopy';
@@ -30,9 +32,10 @@ import { useIsSettingFact } from '../../../../shared/components/SettingChip/sett
 type Props = {
   readonly session: Session;
   readonly activeProvider: ProviderId;
+  readonly isLead?: boolean;
 };
 
-export const PermissionModePicker = ({ session, activeProvider }: Props) => {
+export const PermissionModePicker = ({ session, activeProvider, isLead = false }: Props) => {
   const dropdown = useDropdown({
     width: 'w-80',
     expectedHeight: 300,
@@ -60,7 +63,10 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
     currentUnavailable === null
       ? current.promise
       : `${currentUnavailable}. Runs as ${modeCopyOf({ mode: runsAs }).label}`;
-  const tooltipLabel = `${current.label}. ${triggerLabel}`;
+  const currentLabel = isLead ? leadLabelOf({ mode: session.permissionMode }) : current.label;
+  const tooltipLabel = isLead
+    ? `${currentLabel}. ${triggerLabel} ${LEAD_READS_ONLY_NOTE}`
+    : `${current.label}. ${triggerLabel}`;
   const CurrentIcon = current.icon;
   const isFact = useIsSettingFact();
 
@@ -74,10 +80,10 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
       <FactButton
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={`${NAMES.edits}: ${current.label}`}
+        aria-label={`${NAMES.edits}: ${currentLabel}`}
         onClick={toggle}
       >
-        {current.label}
+        {currentLabel}
       </FactButton>
     </Tooltip>
   );
@@ -92,7 +98,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
         onClick={toggle}
         hasPopup="dialog"
         expanded={open}
-        ariaLabel={`${NAMES.edits}: ${current.label}`}
+        ariaLabel={`${NAMES.edits}: ${currentLabel}`}
         className="gap-2 whitespace-nowrap bg-subtle px-3 py-0.5 hover:bg-hover hover:opacity-100 @max-sm:px-2"
         icon={
           <CurrentIcon
@@ -104,7 +110,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
         label={
           <span className="text-foreground @max-sm:hidden">
             <span className="text-faint-foreground">{`${NAMES.edits}: `}</span>
-            {current.label}
+            {currentLabel}
           </span>
         }
         trailing={

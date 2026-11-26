@@ -106,7 +106,9 @@ describe('denyWithReason', () => {
   it('leaves the next call of the same tool free to ask again', async () => {
     await deny({ toolUseId: 'tu-4', reason: '' });
 
-    expect(useAppStore.getState().volatilePermissionAllows.size).toBe(0);
+    expect(storySpies.invokePermissionAuditInsert).toHaveBeenCalledWith(
+      expect.objectContaining({ toolUseId: 'tu-4', decision: 'deny', decidedBy: 'user' }),
+    );
     expect(storySpies.invokePermissionRuleUpsert).not.toHaveBeenCalled();
   });
 });

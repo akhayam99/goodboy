@@ -8,6 +8,8 @@ import { runTurn } from '../../../features/chat/turn';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { applyAgentTurnState } from '../sessions/sessionMutators';
 import { toRelPath } from './turnHelpers';
+import { selectWritableMounts } from '../project-mounts/selectors';
+import { buildTurnReadRoots } from './turnWritableRoots';
 import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { learnFromCliRefusal } from './learnFromCliRefusal';
@@ -75,6 +77,13 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
   if (ctx.hasAdmission) {
     await publishTurnSpawn({ agentId: activeAgentId, runId, nowMs: Date.now() });
   }
+  const readRoots =
+    isolatedCopyPath === null
+      ? buildTurnReadRoots({
+          mounts: selectWritableMounts({ state: get(), sessionId }),
+          workingDir,
+        })
+      : [];
   const childGuard = ctx.childTurn?.guard ?? null;
   const launchGuard = childGuard === null ? null : launchGuardRulesOf({ guard: childGuard });
   for await (const rawEvent of runTurn(
@@ -84,6 +93,7 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
       model: spawnModel,
       workingDir,
       writableRoots,
+      ...(readRoots.length > 0 && { readRoots }),
       prompt: resolvedPrompt,
       binary: providerInfo?.binary,
       workspaceId: session.workspaceId,
@@ -233,7 +243,7 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
     }
 
     if (provider === 'anthropic' && event.kind === 'tool_call_start') {
-      await auditToolCall(set, get, {
+      await auditToolCall({
         event,
         runId,
         sessionId,

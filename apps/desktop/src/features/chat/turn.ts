@@ -100,6 +100,7 @@ type SpawnArgs = {
   readonly model: string;
   readonly workingDir: string;
   readonly writableRoots: ReadonlyArray<string>;
+  readonly readRoots?: ReadonlyArray<string>;
   readonly prompt: string;
   readonly binary?: string;
   readonly allowedTools?: ReadonlyArray<string>;

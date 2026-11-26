@@ -761,6 +761,14 @@ fn build_turn_args(binary: &str, args: &SpawnOneArgs<'_>, is_stdin_allowed: bool
                 v.push("--add-dir".to_string());
                 v.push(root.to_string());
             }
+            if access == Some(RoleAccess::ReadOnly) {
+                for root in args.read_roots {
+                    if !args.writable_roots.contains(root) {
+                        v.push("--add-dir".to_string());
+                        v.push(root.to_string());
+                    }
+                }
+            }
             if let Some(socket_directory) = args.query_socket_directory {
                 v.push("--add-dir".to_string());
                 v.push(socket_directory.to_string());
@@ -1103,6 +1111,7 @@ mod tests {
             model: "model",
             working_dir: "/repo/wt",
             writable_roots: roots,
+            read_roots: &[],
             query_socket_directory: None,
             prompt: "do it",
             permission_mode,
@@ -1159,6 +1168,66 @@ mod tests {
         let denied = value_after(&argv, "--disallowedTools").expect("deny list");
         for tool in ["Read(.env)", "Bash", "Edit", "Write"] {
             assert!(denied.split(',').any(|entry| entry == tool));
+        }
+    }
+
+    #[test]
+    fn a_read_only_claude_role_keeps_a_directory_read_grant_and_drops_a_bare_search_grant() {
+        let allowed = strings(&[
+            "Read(//ledger-core/apps/billing/**)",
+            "Grep",
+            "Glob",
+            "Grep(//ledger-core/apps/billing/**)",
+            "Glob(/ledger-core/**)",
+        ]);
+        let args = spawn_args("bypassPermissions", Some("auto"), &allowed, &[], &[]);
+        let argv = turn_args("claude", &args);
+        assert_eq!(
+            value_after(&argv, "--allowedTools").as_deref(),
+            Some("Read(//ledger-core/apps/billing/**)")
+        );
+        let only_search = strings(&["Grep", "Glob"]);
+        let bare = spawn_args("default", Some("auto"), &only_search, &[], &[]);
+        assert!(!turn_args("claude", &bare).contains(&"--allowedTools".to_string()));
+    }
+
+    #[test]
+    fn a_read_only_claude_role_gets_an_add_dir_per_project_read_root() {
+        let reads = strings(&[
+            "/work/ledger-core",
+            "/work/ledger-core-wt",
+            "/work/payments-api",
+        ]);
+        let writable = strings(&["/work/ledger-core-wt"]);
+        for role in ["auto", "scout", "planner", "investigator", "reviewer"] {
+            let mut args = spawn_args("bypassPermissions", Some(role), &[], &[], &writable);
+            args.read_roots = &reads;
+            let argv = turn_args("claude", &args);
+            let added: Vec<&str> = argv
+                .windows(2)
+                .filter(|pair| pair[0] == "--add-dir")
+                .map(|pair| pair[1].as_str())
+                .collect();
+            assert_eq!(
+                added,
+                vec![
+                    "/work/ledger-core-wt",
+                    "/work/ledger-core",
+                    "/work/payments-api"
+                ],
+                "{role}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_writer_role_and_a_plain_turn_get_no_read_root() {
+        let reads = strings(&["/work/ledger-core"]);
+        for role in [Some("implementer"), None] {
+            let mut args = spawn_args("acceptEdits", role, &[], &[], &[]);
+            args.read_roots = &reads;
+            let argv = turn_args("claude", &args);
+            assert!(!argv.contains(&"--add-dir".to_string()));
         }
     }
 

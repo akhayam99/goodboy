@@ -98,7 +98,6 @@ import type { RebaseAllState } from './slices/rebaseAll/state';
 import type { ArtifactDraftsState } from './slices/artifactDrafts/state';
 import type { WorkflowStudioState } from './slices/workflowStudio/types';
 import type { WorkflowRoutingState } from './slices/workflowRouting/types';
-import type { PermissionsState } from './slices/permissions/state';
 import type { AttachmentsState } from './slices/attachments/state';
 import type { StorageState } from './slices/storage/state';
 import type { ScriptsSliceState } from './slices/scripts/state';
@@ -232,7 +231,6 @@ type AppSliceState = ArtifactsState &
   ArtifactDraftsState &
   WorkflowStudioState &
   WorkflowRoutingState &
-  PermissionsState &
   AttachmentsState &
   StorageState &
   ScriptsSliceState &

@@ -169,6 +169,8 @@ line on the agents still running when there are any, and a block reason with
 "Message Lead" at rest and while the Lead waits, or "Message Lead, or describe
 changes to plan v1", with **Ask first** like any agent composer. The composer of
 Auto and its children hides the session's permission mode picker: a tree member
-runs with its role's access. The settings line (`AgentSettingsLine`) holds the
+runs with its role's access. The Lead's own composer keeps the picker but tells
+the truth: **Full access, Lead reads only** (`leadLabelOf`), since the Lead never
+edits or runs commands at any mode. The settings line (`AgentSettingsLine`) holds the
 level and Limit chips ([permissions.md](permissions.md#the-level-chip),
 [limits.md](limits.md)).

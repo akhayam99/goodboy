@@ -9,9 +9,9 @@ import type { SliceDeps } from '../../slice-types';
 
 export const createPermissionsSlice = ({ set, get }: SliceDeps) => {
   return {
-    resolvePermissionRequest: resolvePermissionRequest(set, get),
+    resolvePermissionRequest: resolvePermissionRequest(get),
     retryBlockedTool: retryBlockedTool(get),
-    allowAndContinue: allowAndContinue(set, get),
+    allowAndContinue: allowAndContinue(get),
     allowWithRule: allowWithRule({ get }),
     denyWithReason: denyWithReason(get),
     neverAllowTool: neverAllowTool({ get }),

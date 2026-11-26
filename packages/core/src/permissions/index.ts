@@ -8,10 +8,13 @@ export {
   type ModeSupportLevel,
 } from './modeSupport';
 export {
+  actionNounOf,
   commandPrefix,
   isFilePathTool,
   oncePatternText,
   prefixRuleFor,
+  toolClassOf,
   type ActionTarget,
   type PrefixRule,
+  type ToolClass,
 } from './permissionActionPatterns';

@@ -50,6 +50,50 @@ describe('PermissionModePicker', () => {
     expect(trigger.querySelector('svg')).not.toBeNull();
   });
 
+  it('tells the truth for the Lead: Full access, but the Lead only reads', () => {
+    render(
+      <PermissionModePicker
+        session={aSession({
+          id: 'sess-1' as SessionId,
+          workspaceId: 'ws-1' as WorkspaceId,
+          permissionMode: 'bypassPermissions',
+        })}
+        activeProvider="anthropic"
+        isLead
+      />,
+    );
+    screen.getByText('Full access, Lead reads only');
+    screen.getByRole('button', { name: 'Edits: Full access, Lead reads only' });
+  });
+
+  it('leaves Read only plain for the Lead and Full access plain for everyone else', () => {
+    const { unmount } = render(
+      <PermissionModePicker
+        session={aSession({
+          id: 'sess-1' as SessionId,
+          workspaceId: 'ws-1' as WorkspaceId,
+          permissionMode: 'plan',
+        })}
+        activeProvider="anthropic"
+        isLead
+      />,
+    );
+    screen.getByText('Read only');
+    unmount();
+    render(
+      <PermissionModePicker
+        session={aSession({
+          id: 'sess-1' as SessionId,
+          workspaceId: 'ws-1' as WorkspaceId,
+          permissionMode: 'bypassPermissions',
+        })}
+        activeProvider="anthropic"
+      />,
+    );
+    screen.getByText('Full access');
+    expect(screen.queryByText(/Lead reads only/)).toBeNull();
+  });
+
   it('offers four modes and leaves out do not ask', () => {
     render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
     openPicker();

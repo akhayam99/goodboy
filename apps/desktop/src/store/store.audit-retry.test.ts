@@ -12,6 +12,7 @@ import type {
   IsoDateTime,
   MountId,
   ProjectId,
+  ProviderRunId,
   Session,
   SessionId,
   TurnEvent,
@@ -194,20 +195,15 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
 
   it('enqueues an explicit user decision when audit insert fails', async () => {
     permissionAuditInsertSpy.mockRejectedValue(new Error('db locked'));
-
-    async function* toolStream(): AsyncIterable<TurnEvent> {
-      yield {
-        kind: 'tool_call_start',
-        toolUseId: 'tu-1',
-        toolName: 'Edit',
-        input: { path: '/tmp/x' },
-        at: NOW,
-      } as TurnEvent;
-    }
-    runTurnSpy.mockImplementation(() => toolStream());
     setupSession(useAppStore);
-    useAppStore.setState({ volatilePermissionAllows: new Set(['tu-1']) });
-    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
+    await useAppStore.getState().resolvePermissionRequest({
+      sessionId: SESSION_ID,
+      agentId: 'agent-1' as AgentId,
+      toolUseId: 'tu-1',
+      toolName: 'Edit',
+      runId: 'run-1' as ProviderRunId,
+      scope: 'once',
+    });
 
     expect(permissionAuditInsertSpy).toHaveBeenCalledTimes(1);
     expect(auditRetryEnqueueSpy).toHaveBeenCalledTimes(1);
@@ -215,7 +211,8 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
     expect(typeof enqueuedId).toBe('string');
     const parsed = JSON.parse(enqueuedPayload) as Record<string, unknown>;
     expect(parsed.toolName).toBe('Edit');
-    expect(typeof parsed.decision).toBe('string');
+    expect(parsed.decision).toBe('allow');
+    expect(parsed.decidedBy).toBe('user');
   });
 
   it('does not write or enqueue a default decision', async () => {

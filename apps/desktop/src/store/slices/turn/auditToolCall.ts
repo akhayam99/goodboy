@@ -11,7 +11,6 @@ import type {
 } from '@goodboy/types';
 import type { PermissionAuditInsertPayload } from '../../../features/permissions/permissions';
 import { persistPermissionAudit } from './persistPermissionAudit';
-import type { GetFn, SetFn } from './types';
 
 type Params = {
   event: Extract<TurnEvent, { kind: 'tool_call_start' }>;
@@ -21,11 +20,13 @@ type Params = {
   effectiveRules: ReadonlyArray<PermissionRule>;
 };
 
-export const auditToolCall = async (
-  set: SetFn,
-  get: GetFn,
-  { event, runId, sessionId, workspaceId, effectiveRules }: Params,
-): Promise<void> => {
+export const auditToolCall = async ({
+  event,
+  runId,
+  sessionId,
+  workspaceId,
+  effectiveRules,
+}: Params): Promise<void> => {
   const engine = new PermissionEngine();
   const auditRequestId = crypto.randomUUID() as PermissionRequestId;
   const request: PermissionRequest = {
@@ -36,24 +37,11 @@ export const auditToolCall = async (
     input: event.input,
     at: event.at,
   };
-  const volatile = get().volatilePermissionAllows;
-  const isVolatileAllow = volatile.has(event.toolUseId);
-  if (isVolatileAllow) {
-    set((state) => {
-      const next = new Set(state.volatilePermissionAllows);
-      next.delete(event.toolUseId);
-      return { volatilePermissionAllows: next };
-    });
-  }
-  const decision: PermissionDecision = isVolatileAllow
-    ? {
-        requestId: auditRequestId,
-        decision: 'allow',
-        ruleId: null,
-        decidedBy: 'user',
-        at: event.at,
-      }
-    : engine.decide({ request, rules: effectiveRules, context: { sessionId, workspaceId } });
+  const decision: PermissionDecision = engine.decide({
+    request,
+    rules: effectiveRules,
+    context: { sessionId, workspaceId },
+  });
   const auditPayload: PermissionAuditInsertPayload = {
     id: auditRequestId,
     runId,

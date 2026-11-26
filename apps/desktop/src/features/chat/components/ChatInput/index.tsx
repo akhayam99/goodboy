@@ -34,7 +34,7 @@ import { PromptField } from '../../../../shared/components/PromptField';
 import { ComposerToolbar } from './parts/ComposerToolbar';
 import { ComposerRoutingHint } from './parts/ComposerRoutingHint';
 import { ComposerTray } from './parts/ComposerTray';
-import { autoTreeOfAgent } from '../../../auto/autoTreeOfAgent';
+import { autoKindOf } from '../../../auto/autoKindOf';
 import { useAutoTreeViews } from '../../../auto/useAutoTreeViews';
 import { useConversationAsks } from '../../../../store/hooks/useConversationAsks';
 
@@ -58,9 +58,8 @@ export const ChatInput = ({
   const { selectedAgentId, activeAgentKind, sessionWorktree, isFirstTurnForAgent, isRunning } =
     useAgentSelection({ session, agentId });
   const autoViews = useAutoTreeViews({ sessionId: session.id });
-  const isAutoChild =
-    selectedAgentId !== null &&
-    autoTreeOfAgent({ views: autoViews, agentId: selectedAgentId })?.kind === 'child';
+  const autoKind = autoKindOf({ views: autoViews, agentId: selectedAgentId });
+  const isAutoChild = autoKind === 'child';
   const { permissions } = useConversationAsks({ sessionId: session.id, agentId: selectedAgentId });
   const deniedAgentId = isRunning ? null : (permissions[0]?.agentId ?? null);
 
@@ -278,6 +277,7 @@ export const ChatInput = ({
             routing={routing}
             isBlocked={isBlocked}
             hasPermissionPicker={!isAutoChild}
+            isLead={autoKind === 'root'}
             {...(controlSlots !== undefined && { controlSlots })}
             attachmentCount={attachments.length}
             fileInputRef={fileInputRef}
