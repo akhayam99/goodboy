@@ -54,6 +54,7 @@ export const continueStoppedAgent = (set: SetFn, get: GetFn) => {
           agentId: autoRoute.rootAgentId,
           content: autoRoute.message,
           origin: 'operator',
+          rowOrigin: 'continue',
         }),
       });
       return;
@@ -78,6 +79,7 @@ export const continueStoppedAgent = (set: SetFn, get: GetFn) => {
       agentId,
       content: withStepBoundary({ agent, text: CONTINUE_STOPPED_MESSAGE }),
       origin: 'operator',
+      rowOrigin: 'continue',
       onStarted: () => {
         void releaseOnce();
       },

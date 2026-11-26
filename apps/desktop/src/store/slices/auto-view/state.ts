@@ -85,6 +85,7 @@ export type AutoPendingMessage = Readonly<{
   text: string;
   images: ReadonlyArray<MessageAttachment>;
   joinKey?: string;
+  noteText?: string | null;
 }>;
 
 export type AutoSentChange = Readonly<{

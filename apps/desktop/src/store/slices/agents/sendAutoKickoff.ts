@@ -26,7 +26,7 @@ export const sendAutoKickoff = ({
   text,
   onKickoffAccepted,
 }: Params): void => {
-  void port({ agentId, sessionId, workspaceId, text })
+  void port({ agentId, sessionId, workspaceId, text, origin: 'system' })
     .then((result) => {
       if (result === 'queued') {
         onKickoffAccepted?.();

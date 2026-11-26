@@ -69,6 +69,7 @@ describe('continueStoppedAgent on an Auto child', () => {
       agentId: FIXTURE_ROOT,
       content: `Continue the Implementer that stopped (delegation ${CHILD.id}) from where it left off: work for implementer`,
       origin: 'operator',
+      rowOrigin: 'continue',
     });
   });
 

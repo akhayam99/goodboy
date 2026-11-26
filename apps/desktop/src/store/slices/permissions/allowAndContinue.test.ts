@@ -43,6 +43,7 @@ type Resumed = {
 
 let useAppStore: StoryStore;
 let resumed: Resumed[];
+let origins: Array<string | undefined>;
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -51,9 +52,11 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   resumed = [];
+  origins = [];
   useAppStore.setState({
     sessions: [session],
     sendTurn: async (input) => {
+      origins.push(input.rowOrigin);
       resumed.push({
         sessionId: input.sessionId,
         content: input.content,
@@ -220,6 +223,19 @@ describe('allowAndContinue', () => {
         permissionOnceAllows: ['Bash(pnpm test --filter ledger-core)'],
       }),
     ]);
+  });
+
+  it('marks the resumed turn as a permission answer, never as a note', async () => {
+    await useAppStore.getState().allowAndContinue({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      toolUseId: 'tu-origin',
+      toolName: 'Bash',
+      input: { command: 'pnpm test' },
+      runId: RUN_ID,
+    });
+
+    expect(origins).toEqual(['permission']);
   });
 
   it('records a once decision in the transcript before resuming', async () => {

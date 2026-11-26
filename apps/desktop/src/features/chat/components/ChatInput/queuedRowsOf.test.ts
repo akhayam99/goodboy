@@ -260,4 +260,18 @@ describe('queuedRowsOf', () => {
 
     expect(rows.map((row) => row.source)).toEqual(['agent']);
   });
+
+  it('draws the words of the user for an Auto row, so Edit gives them back with no prefix', () => {
+    const view = aView({
+      phase: 'deciding',
+      delegations: [RUNNING],
+      pendingMessages: [
+        { ...message('a1', 0, 'Denied Read. rename the guard'), noteText: 'rename the guard' },
+      ],
+    });
+
+    const [row] = queuedRowsOf({ queue: [], view, ...AT_REST });
+
+    expect(row?.content).toBe('rename the guard');
+  });
 });
