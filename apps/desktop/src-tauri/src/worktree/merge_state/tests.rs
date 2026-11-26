@@ -173,7 +173,7 @@ fn branch_merge_state_protects_the_base_branch_itself() {
 }
 
 #[test]
-fn branch_merge_state_protects_a_branch_held_by_another_worktree() {
+fn branch_merge_state_does_not_protect_a_branch_held_by_another_worktree() {
     let root = init_repo("merge-state-held");
     commit(&root, "a.txt", "hello", "init");
     git_ok(&root, &["branch", "goodboy/held"]);
@@ -185,7 +185,7 @@ fn branch_merge_state_protects_a_branch_held_by_another_worktree() {
 
     let state = branch_merge_state(&root, "goodboy/held", Some("main"), None);
 
-    assert_eq!(state, BranchMergeState::Protected);
+    assert_eq!(state, BranchMergeState::NoOwnCommits);
     git_ok(
         &root,
         &["worktree", "remove", "--force", other.to_str().unwrap()],

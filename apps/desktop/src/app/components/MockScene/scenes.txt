@@ -816,7 +816,6 @@ rail-foot-ready
 rail-foot-rest
 rail-foot-running
 rail-ticket-ids
-readme-hero
 rebase-bring-back
 rebase-choosing
 rebase-done-card

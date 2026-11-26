@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { parseCursorStreamLine, type ParseContext } from './parser';
 import { resetTextBoundary } from '../shared/text-boundary';
 
@@ -40,6 +40,78 @@ describe('parseCursorStreamLine', () => {
       }),
     );
     expect(events).toEqual([{ kind: 'assistant_text', runId: ctx.runId, delta: 'hello', at }]);
+  });
+
+  describe('routing notice', () => {
+    const chunk = (text: string) => {
+      resetTextBoundary({ runId: ctx.runId });
+      return parse(
+        JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text }] } }),
+      );
+    };
+    const flush = () =>
+      parse(JSON.stringify({ type: 'result', subtype: 'success', usage: { input_tokens: 1 } }));
+    const reply = (events: ReadonlyArray<TurnEvent>) =>
+      events.filter((event) => event.kind === 'assistant_text' || event.kind === 'decision_note');
+
+    beforeEach(() => {
+      flush();
+      resetTextBoundary({ runId: ctx.runId });
+    });
+
+    it('emits the notice as its own note, never inside the reply text', () => {
+      const events = [
+        ...chunk('Done with ledger-core.> Auto routed to Claude Haiku 5.5'),
+        ...flush(),
+      ];
+      expect(reply(events)).toEqual([
+        { kind: 'assistant_text', runId: ctx.runId, delta: 'Done with ledger-core.', at },
+        { kind: 'decision_note', runId: ctx.runId, message: 'Auto routed to Claude Haiku 5.5', at },
+      ]);
+    });
+
+    it('keeps the text after the notice on its own', () => {
+      const events = [...chunk('> Auto routed to Claude Haiku 5.5\nHere is the plan.'), ...flush()];
+      expect(reply(events)).toEqual([
+        { kind: 'decision_note', runId: ctx.runId, message: 'Auto routed to Claude Haiku 5.5', at },
+        { kind: 'assistant_text', runId: ctx.runId, delta: 'Here is the plan.', at },
+      ]);
+    });
+
+    it('rebuilds a notice split across two chunks', () => {
+      const events = [
+        ...chunk('Done.\n> Auto rou'),
+        ...chunk('ted to Claude Haiku 5.5\nNext step.'),
+        ...flush(),
+      ];
+      expect(reply(events)).toEqual([
+        { kind: 'assistant_text', runId: ctx.runId, delta: 'Done.\n', at },
+        { kind: 'decision_note', runId: ctx.runId, message: 'Auto routed to Claude Haiku 5.5', at },
+        { kind: 'assistant_text', runId: ctx.runId, delta: 'Next step.', at },
+      ]);
+    });
+
+    it('waits for the end of the model name when the name is split', () => {
+      const events = [
+        ...chunk('> Auto routed to Claude Ha'),
+        ...chunk('iku 5.5\nNext step.'),
+        ...flush(),
+      ];
+      expect(reply(events)).toContainEqual({
+        kind: 'decision_note',
+        runId: ctx.runId,
+        message: 'Auto routed to Claude Haiku 5.5',
+        at,
+      });
+    });
+
+    it('keeps the paragraph break around the notice', () => {
+      const events = [...chunk('Done.\n> Auto routed to Claude Haiku 5.5\nNext step.'), ...flush()];
+      const text = reply(events).flatMap((event) =>
+        event.kind === 'assistant_text' ? [event.delta] : [],
+      );
+      expect(text.join('')).toBe('Done.\nNext step.');
+    });
   });
 
   it('inserts a blank line between two text blocks separated by a tool_use, when the first has none', () => {

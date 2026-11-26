@@ -1,6 +1,5 @@
 use super::base::{base_label, resolve_base_ref};
 use super::git::{commit_exists, git, is_ancestor};
-use super::inspect::parse_porcelain;
 use serde::Serialize;
 use std::path::Path;
 
@@ -35,17 +34,8 @@ impl BranchMergeState {
 
 const PROTECTED_BRANCH_NAMES: [&str; 3] = ["main", "master", "develop"];
 
-fn is_protected_branch(cwd: &Path, branch: &str, base_label: &str) -> bool {
-    if branch == base_label || PROTECTED_BRANCH_NAMES.contains(&branch) {
-        return true;
-    }
-    let Ok(raw) = git(cwd, &["worktree", "list", "--porcelain"]) else {
-        return false;
-    };
-    parse_porcelain(&raw)
-        .into_iter()
-        .filter(|entry| !entry.is_main)
-        .any(|entry| entry.branch.as_deref() == Some(branch))
+fn is_protected_branch(branch: &str, base_label: &str) -> bool {
+    branch == base_label || PROTECTED_BRANCH_NAMES.contains(&branch)
 }
 
 fn is_on_first_parent_line(cwd: &Path, base_ref: &str, tip_sha: &str) -> bool {
@@ -108,7 +98,7 @@ pub(crate) fn branch_merge_state(
         return BranchMergeState::Unknown;
     };
     let base = base_label(&base_ref);
-    if is_protected_branch(cwd, branch, &base) {
+    if is_protected_branch(branch, &base) {
         return BranchMergeState::Protected;
     }
     let Ok(tip_raw) = git(cwd, &["rev-parse", branch]) else {

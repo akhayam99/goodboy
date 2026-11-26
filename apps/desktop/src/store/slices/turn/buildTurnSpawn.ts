@@ -12,6 +12,7 @@ import { buildScopeGuard } from '../project-mounts/scopeGuard';
 import {
   buildSessionLanguageGuard,
   resolveSessionLanguageGoal,
+  sessionTranscriptOf,
   type SessionLanguageAnchor,
 } from './sessionLanguage';
 import { beginTurnFileVersionCapture } from '../file-versions/captureTurnFileVersions';
@@ -156,6 +157,11 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
           source: 'goal',
           text: resolveSessionLanguageGoal({
             session,
+            transcript: sessionTranscriptOf({
+              state: get(),
+              sessionId,
+              isLastTextMachine: origin !== 'operator',
+            }),
             workflows: get().phaseTemplates[session.workspaceId] ?? [],
             ...(agentRowEarly?.workflowRunId != null && {
               workflowRunId: agentRowEarly.workflowRunId,
