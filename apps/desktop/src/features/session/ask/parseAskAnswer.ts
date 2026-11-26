@@ -38,6 +38,7 @@ const LIST_ITEM = /^\s*(?:[-*]|\d+[.)])\s+/;
 const NUMBERED_ITEM = /^\s*\d+[.)]\s+/;
 const FENCE = '```';
 const TABLE_ROW = /^\s*\|/;
+const TABLE_BODY_ROW = /\|/;
 const TABLE_RULE_CELL = /^:?-{2,}:?$/;
 
 const withoutOpenMarkers = (text: string): string => {
@@ -179,7 +180,7 @@ export const parseAskAnswer = ({ text, handles }: Params): ParsedAskAnswer => {
     }
     if (TABLE_ROW.test(line) && isTableRule({ line: lines[at] ?? '' })) {
       const rows = [line];
-      while (at < lines.length && TABLE_ROW.test(lines[at] ?? '')) {
+      while (at < lines.length && TABLE_BODY_ROW.test(lines[at] ?? '')) {
         rows.push(lines[at] ?? '');
         at += 1;
       }
