@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { demoChunks } from './vite/demoChunks';
 import { demoPlugins } from './vite/demoHtml';
 import { xtermFrozenPrototype } from './vite/xtermFrozenPrototype';
 
@@ -23,6 +24,7 @@ export default defineConfig(({ mode }) => ({
   envPrefix: ['VITE_', 'TAURI_ENV_*'],
   build: {
     target: 'esnext',
+    rolldownOptions: mode === 'demo' ? { output: { codeSplitting: demoChunks() } } : {},
   },
   worker: {
     format: 'es',
