@@ -52,6 +52,44 @@ the context and a merge cannot be undone, so the phone refuses with the same
 reason the desktop would show. A repository with no required review or no CI
 merges from the phone like it does on the desktop.
 
+### Decisions from the phone
+
+A phone may also answer a question, approve a plan or ask for changes, allow or
+deny one permission request once, raise a limit, stop or continue a run or an
+agent, and send or discard a Slack reply draft. Always allow, permission rules
+and every other setting stay on the Mac. Each of these actions follows five
+rules, kept in `features/companion/actions/`:
+
+- It names its target and the version the phone saw: the question text, the
+  plan version, the hash of the tool and its input, the limit, the run or agent
+  state, the draft. The Mac compares and refuses with a code, a message and the
+  list of what changed. A stop or continue that already holds is a no-op.
+- The action id is `act:<kind>:<objectId>:<version>`, built by the Mac in the
+  projection that offers the action, so a retry reuses it. The executor
+  recomputes it from the action's own fields and refuses an id that differs. It
+  keeps the last 500 finished outcomes and answers a repeated id with the first
+  outcome and `isReplay: true`. An id that is still running is refused as a
+  duplicate. A failed action is not kept, so a retry with the same id runs again.
+- Each action has its own rate limit per minute and a text cap of 4,000
+  characters. A limit is raised only to an amount the Mac offered (the current
+  limit plus 5, plus 10 or doubled, never above $500), and a raise can be undone
+  once while the limit is still the raised one.
+- The phone needs the permission to decide. The check reads one scope function
+  (`phoneScope.ts`) that allows every phone until the pairing settings register
+  their own reader.
+- The same store action runs as on the desktop: a permission goes through
+  Allow and continue or Deny, a plan through the Lead approval, a stop through
+  the confirmed stop of the turn.
+
+The phone reads one agent's conversation on request: words as text, each tool as
+one short line with the file name and the changed line counts, never a diff and
+never an absolute path.
+
+An action of an older phone that is not in the contract (`advanceStep`,
+`spawnAgent`, `resolveComment`, `setContextSlot`, `spawnWorkflow`) still runs
+for a v1 phone and has no v2 counterpart; `send` and `createSessionFromIssue`
+stay until the start action replaces them.
+
 ## Listener lifetime
 
 - Nothing listens at boot. The listener starts when Settings, iPhone opens.
@@ -69,10 +107,30 @@ merges from the phone like it does on the desktop.
 
 ## What the phone sees
 
-The snapshot carries only live sessions: a deleted or archived session sends
-no messages, agents, turn events, context slots, plans, workflows, mounts, PR
-links or external tasks. Messages are capped at the newest 500 per session, and
-a workspace root is sent as its folder name, never the absolute path.
+The phone gets projections, not database rows. The main window of the desktop
+builds them in `features/companion/projections/` with the functions that draw
+the same screens (`needsYouOf`, `sessionMarkOf`, `attentionWordsOf`) and
+publishes them through `bridge_publish`, a command that refuses every window
+but `main`. The Rust side in `bridge/publish.rs` is the border: it parses each
+projection against a closed schema (`bridge/publish_schema.rs`), drops fields
+the schema does not name, refuses a value outside the vocabulary, a string that
+reads as an absolute path and a projection over 56,000 bytes, and cuts lists to
+a fixed length (60 moves, 30 sessions per lane, 20 lines, 20 runs, 40 tasks).
+A workspace is sent by its name only, a project by its name, never a path. A
+projection holds no archived or deleted session, and none of the transcript.
+
+Only what changed is sent: the phone gets one frame per changed projection
+(`0x0B`), a frame when one disappears (`0x0D`), and everything again when it
+asks (`0x82`). The other workspaces are read by a read-only loader that never
+writes the store; for them the sessions, agents, open questions and tasks come
+from the database, and the pull request facts, mounts and project names are not
+loaded, so a pull request reason shows for the current workspace only.
+
+While the main window is open it publishes at least every four seconds. When no
+call reached the bridge for 10 seconds (the window reloaded or closed) the
+phone gets `0x0C` with `isOpen: false` and draws "Goodboy is not open on your
+Mac" instead of old data. A reloaded window starts a new `epoch`: the bridge
+drops what the old one published and refuses a call from the older one.
 
 A `send` that names an `agentId` must name an agent of that session. The
 executor refuses an id longer than 64 characters, a non-string, and an id the
@@ -88,7 +146,10 @@ of the decide, start and merge flows. Each action carries its workspace, its
 session where it has one, an `actionId` the Mac issued in the projection that
 offered it, and the version of the object the user saw. The phone never
 derives a number or a sentence: it draws the text, the mark and the tone the
-projection holds.
+projection holds. An agent's transcript is the one reply the phone pulls
+instead of receiving: a `TranscriptQuery` returns a `TranscriptProjection`,
+with a `generatedAt` and no `epoch` or `seq`. An outcome carries the refusal,
+the error text of a failed action and, after a limit raise, the id of its undo.
 
 `node scripts/gen-mobile-contract.mjs <folder>` writes the Swift `Codable`
 types, `tokens.json` (every `--color-*` token of `styles.css`, dark, light and

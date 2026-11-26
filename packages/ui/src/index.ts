@@ -79,6 +79,10 @@ export {
 } from './drawerGeometry';
 export type { DrawerMode, DrawerPlacement, DrawerSizing, PageTier } from './drawerGeometry';
 export { DrawerFrame } from './components/DrawerFrame';
+export { DockPanelHead } from './components/DockPanelHead';
+export { MidTruncate } from './components/MidTruncate';
+export { midTruncate } from './midTruncate';
+export type { MidTruncated } from './midTruncate';
 export { DrawerBackLink } from './components/DrawerBackLink';
 export { Trail } from './components/Trail';
 export type { TrailSegmentModel } from './components/Trail/types';

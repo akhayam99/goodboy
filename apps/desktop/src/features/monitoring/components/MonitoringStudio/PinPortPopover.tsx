@@ -1,15 +1,16 @@
 import { useState, type FormEvent } from 'react';
 import { Pin } from '@goodboy/ui/icons';
-import { AnchoredPopover, Button, ICON_SIZE, Input, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, ICON_SIZE, IconButton, Input, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { isValidPort } from '../../../../store/slices/monitoring/isValidPort';
 import { PIN_DESCRIPTION_MAX } from '../../../../store/slices/monitoring/pinDescription';
 
 type Props = {
   readonly align?: 'start' | 'end';
+  readonly isIcon?: boolean;
 };
 
-export const PinPortPopover = ({ align = 'end' }: Props) => {
+export const PinPortPopover = ({ align = 'end', isIcon = false }: Props) => {
   const dropdown = useDropdown({ align, width: 'w-80', expectedWidth: 320 });
   const pinPort = useAppStore((state) => state.pinPort);
   const [portText, setPortText] = useState('');
@@ -42,15 +43,25 @@ export const PinPortPopover = ({ align = 'end' }: Props) => {
       hasBackdrop
       className="p-3"
       trigger={
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={dropdown.toggle}
-          aria-expanded={dropdown.open}
-        >
-          <Pin size={ICON_SIZE.row} aria-hidden />
-          Pin a port
-        </Button>
+        isIcon ? (
+          <IconButton
+            icon={Pin}
+            label="Pin a port"
+            variant="ghost"
+            onClick={dropdown.toggle}
+            aria-expanded={dropdown.open}
+          />
+        ) : (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={dropdown.toggle}
+            aria-expanded={dropdown.open}
+          >
+            <Pin size={ICON_SIZE.row} aria-hidden />
+            Pin a port
+          </Button>
+        )
       }
     >
       <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-3">

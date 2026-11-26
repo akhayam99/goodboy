@@ -9,8 +9,12 @@ import { useConsoleEntries } from '../../hooks/useConsoleEntries';
 import { useElementPick } from '../../hooks/useElementPick';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
 import { useParkedTab } from '../../hooks/useParkedTab';
+import { consoleCounts } from '../../consoleCounts';
 import { devicePresetOf } from '../../devicePresets';
+import type { BrowserToolsTab } from '../../types';
 import { promoteBrowserTab } from '../../promoteBrowserTab';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
 import { BrowserAddressRow } from './BrowserAddressRow';
 import { BrowserToolsDock } from '../BrowserToolsDock';
 import { BrowserNotice } from './BrowserNotice';
@@ -37,11 +41,13 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
   );
   const parked = useParkedTab({ sessionId, liveId: boundLiveId });
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+  const [toolsTab, setToolsTab] = useState<BrowserToolsTab>('console');
   const consoleLog = useConsoleEntries({
     sessionId,
     liveId: model.shownLiveId,
-    isOpen: isConsoleOpen && isOnScreen,
+    isOpen: isOnScreen,
   });
+  const errorCount = consoleCounts({ entries: consoleLog.entries }).errors;
 
   useReloadSurface({
     isEnabled: isOnScreen,
@@ -70,7 +76,17 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
   });
 
   return (
-    <DrawerFrame title="Browser" isHeaderless onClose={onClose}>
+    <DrawerFrame
+      isDock
+      title="Browser"
+      icon={CONCEPT_ICONS.browser}
+      page={{
+        label: NAMES.openFullPage,
+        onOpen: () => promoteBrowserTab({ sessionId, tabId: shownTab?.id ?? null }),
+      }}
+      onClose={onClose}
+      scroll="self"
+    >
       <div ref={root} className="flex min-h-0 flex-1 flex-col gap-1">
         <BrowserAddressRow
           model={model}
@@ -79,9 +95,15 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
             isOpen: isConsoleOpen,
             onToggle: () => setIsConsoleOpen(!isConsoleOpen),
           }}
+          errors={{
+            count: errorCount,
+            onShow: () => {
+              setToolsTab('errors');
+              setIsConsoleOpen(true);
+            },
+          }}
           pick={pick}
           onOpenAsPage={() => promoteBrowserTab({ sessionId, tabId: shownTab?.id ?? null })}
-          onClose={onClose}
         />
         {pick.picks.length > 0 ? <BrowserPickNote pick={pick} /> : null}
         {model.error === null ? null : (
@@ -98,6 +120,8 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
           model={model}
           title={title}
           log={consoleLog}
+          tab={toolsTab}
+          onTab={({ next }) => setToolsTab(next)}
           onClose={() => setIsConsoleOpen(false)}
         >
           <BrowserView

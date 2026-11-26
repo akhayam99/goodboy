@@ -26,6 +26,8 @@ export type BrowserFindOutcome = {
 
 export type BrowserConsoleKind = 'console' | 'network';
 
+export type BrowserToolsTab = BrowserConsoleKind | 'errors';
+
 export type BrowserEntryKind = BrowserConsoleKind | 'error';
 
 export type BrowserConsoleLevel = 'log' | 'info' | 'warn' | 'error';
@@ -64,6 +66,7 @@ export type BrowserErrorFacts = {
   readonly origin: BrowserErrorOrigin;
   readonly stack: string | null;
   readonly requestId: string | null;
+  readonly at: number | null;
 };
 
 export type BrowserConsoleEntry = {
@@ -192,6 +195,11 @@ export type FindParams = TextParams & {
 export type BrowserConsoleToggle = {
   readonly isOpen: boolean;
   readonly onToggle: () => void;
+};
+
+export type BrowserErrorsShow = {
+  readonly count: number;
+  readonly onShow: () => void;
 };
 
 export type BrowserPaneModel = {

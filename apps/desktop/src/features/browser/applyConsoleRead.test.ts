@@ -56,7 +56,7 @@ const failure = ({ seq }: LineParams): BrowserConsoleEntry => ({
   ...line({ seq }),
   kind: 'error',
   level: 'error',
-  error: { origin: 'uncaught', stack: null, requestId: null },
+  error: { origin: 'uncaught', stack: null, requestId: null, at: null },
 });
 
 const READ: TabConsole = {

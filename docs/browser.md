@@ -370,14 +370,13 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   the pane because the placement loop measures the placeholder every frame.
 
 - **The address row** is the one row of the pane (`BrowserAddressRow`,
-  `PANE_RHYTHM.firstRow`). It holds a grip mark when the pane sits in the
-  desk grid (the row is the pane's head, so a press on it, never on a
-  control, moves the pane like any other: `useDockGrip`,
-  [home-and-drawer.md](navigation/home-and-drawer.md)), Back, Forward and
-  Reload, the tabs (see Tabs), New tab, Pin to the session's project (Unpin
-  when a pin is shown), Console (see Console), More, Open full page and
-  Close. Under 560px of row (`NARROW_ROW_PX`), Pin and Open full page leave
-  the row (`foldedBrowserRowsOf` puts Pin first in More, which always holds
+  `PANE_RHYTHM.firstRow`). It sits under the pane's head (`DockPanelHead`: the
+  title, Open full page and Close, and the whole head moves the pane like any
+  other, see [home-and-drawer.md](navigation/home-and-drawer.md)). It holds
+  Back, Forward and Reload, the tabs (see Tabs), New tab, Pin to the
+  session's project (Unpin when a pin is shown), Console (see Console) and
+  More. Under 560px of row (`NARROW_ROW_PX`), Pin leaves the row
+  (`foldedBrowserRowsOf` puts Pin first in More, which always holds
   Open full page), so the tabs keep their room and nothing overlaps. The page
   sits flush under the row: no card, no border and no inset (`BrowserView`,
   `data-browser-frame`). It draws no line under the row either: a
@@ -980,8 +979,10 @@ that shadows it, so the chord follows Chrome's J.
   (500), requests (300) and errors (100), so a page busy with requests cannot
   push its one error out. `console.log`, `info`, `debug` and `warn` are
   console lines; `console.error`, a thrown error (`error` in the capture
-  phase) and an `unhandledrejection` are errors, each with its origin and up
-  to 4,000 characters of stack. It wraps `fetch`, `XMLHttpRequest`,
+  phase) and an `unhandledrejection` are errors, each with its origin, up
+  to 4,000 characters of stack and the wall time it happened (`at`, read
+  through the `Date.now` the runtime kept at document start; Rust keeps a
+  finite, positive time and drops any other). It wraps `fetch`, `XMLHttpRequest`,
   `WebSocket` and `EventSource`, and a `PerformanceObserver` on `resource` and
   `navigation` notes the document, images, scripts and styles (no status:
   Safari gives none). A request has an id, a type (fetch, xhr, doc, script,
@@ -1036,7 +1037,10 @@ that shadows it, so the chord follows Chrome's J.
   pane and the page (`browserToolsDockPref`,
   `goodboy:browser-tools-dock:v1`); the first open is below in the pane and
   right on the page. The head holds the Console and Network tabs, each with
-  its count from `consoleCounts`, the side icon and Close tools. The tools
+  its count from `consoleCounts`, an Errors tab only while there is an error
+  (see Errors), the side icon and Close tools. The pane or the page holds
+  the shown tab, so the error count can open the dock on Errors; when the
+  last error goes, the dock shows Console. The tools
   are a level filter menu (All levels, Errors, Warnings, Info and logs; on
   Network All requests, Failed, Succeeded), a search field
   (`consoleRowsOf`, every word must match the text, source, method or
@@ -1057,8 +1061,9 @@ that shadows it, so the chord follows Chrome's J.
   same request keeps it open, and a request that leaves the list (Clear, a
   filter, a new load, another tab) forgets it. Back and Esc focus its row
   again, or the list when the row is gone. The UI
-  pulls every second while the region is open and on screen
-  (`useConsoleEntries`, `usePoll`), and once on each `finished` load. Rows
+  pulls every second while the pane or the page is on screen, the dock open
+  or not, so the error count can show (`useConsoleEntries`, `usePoll`), and
+  once on each `finished` load. Rows
   append only after the read returns; a newer record of a request replaces
   its row where it stands, and each kind keeps its own cap; a new load id
   replaces them. An answer
@@ -1077,6 +1082,37 @@ that shadows it, so the chord follows Chrome's J.
   header or body goes in the file. `redactSecrets` hides keys and tokens, and the file goes through the
   same queue as Add to message (`queueOutputHandoff`): a chip, a remove,
   nothing sent until you send.
+- **Errors**: the address row shows a red count (`BrowserErrorCount`, the
+  `errors` of `consoleCounts`, capped at 9+ like every count) only while the
+  shown load has an error entry: a thrown error, a rejection, a
+  `console.error` or a failed request. A warning is a console line and never
+  counts. The count opens the dock on the Errors tab, and the dock goes back
+  to Console once the shown load has no error left. `errorGroupsOf` makes
+  one group per origin, message and top frame (or the source when the
+  stack has none), in the order they first came, with the count and the
+  earliest and latest `at`; a request error links the newest record of its
+  request id. It reads stack lines in both the Chrome (`at name (url:line:col)`)
+  and the WebKit (`name@url:line:col`) forms with string scans, no regex
+  that backtracks. A group opens inline to its frames, the response body of
+  a failed request and a line with its times and origin (`errorMetaOf`); the
+  first group is open when the tab opens. A frame is the session's own code
+  when `sourceFileOf` maps it: a loopback URL whose port is listening for a
+  process this session owns (the port rows of the monitor, polled while the
+  tab shows), a path without `..`, `.`, `node_modules`, `.vite` or a leading
+  `@`, joined to where the dev server runs inside the worktree. Those frames
+  show the worktree path in the primary color; the others show the file and
+  line, faint. `elementFileOf` uses the same mapping. Send on a group and
+  Send all to the agent (the agent named on the button, read when you click,
+  `useHandOutputToAgent`) queue `errorsAttachmentOf`: `<tab>-errors.md`,
+  `text/markdown`, the address, the page output note, then per group its
+  message, count, times, up to eight frames with the worktree file when
+  known, and the failed request's method, path, status, size, time and up to
+  4,000 characters of its response body. No header and no request body go
+  in. The groups that fit 30,000 characters are kept, with a note when some
+  are cut; `redactSecrets` and the local file grant scrub
+  (`withoutGrantOf`) run over it. Clear on Errors drops the error entries of
+  the shown load (so a `console.error` line leaves the Console tab too) and
+  has no undo.
 - **Trust**: a page can write any line to its own console, answer the event
   itself or replace a console method after the hook; the console then shows
   what the page says, or stops. That is no more than the page can do with

@@ -207,6 +207,8 @@ browser-console
 browser-console-dark
 browser-console-right
 browser-console-right-dark
+browser-errors
+browser-errors-dark
 browser-handoff
 browser-handoff-dark
 browser-network-detail

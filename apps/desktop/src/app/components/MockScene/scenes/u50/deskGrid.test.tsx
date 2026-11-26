@@ -125,4 +125,15 @@ describe('the ux50 desk grid scenes', () => {
     expect(cellKeys()).toContain('terminal');
     expect(lanePanel()?.hasAttribute('data-detail-open')).toBe(true);
   });
+
+  it('opens every panel of the grid with one DockPanelHead and no grip icon', async () => {
+    await mount('u50-desk-grid');
+
+    const panes = Array.from(document.querySelectorAll('[data-dock-pane]'));
+    expect(panes.length).toBeGreaterThan(0);
+    panes.forEach((pane) => {
+      expect(pane.querySelectorAll('[data-dock-panel-head]')).toHaveLength(1);
+      expect(pane.querySelector('[data-dock-grip]')).toBeNull();
+    });
+  });
 });
