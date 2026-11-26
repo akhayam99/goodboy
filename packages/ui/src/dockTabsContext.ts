@@ -18,6 +18,7 @@ export type DockTabs = {
   readonly options: ReadonlyArray<DockTabOption>;
   readonly shown: string;
   readonly onSelect: (params: SelectParams) => void;
+  readonly takeFocus: () => boolean;
   readonly claim: (params: ClaimParams) => () => void;
 };
 

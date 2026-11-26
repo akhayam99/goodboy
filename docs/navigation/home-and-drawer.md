@@ -789,8 +789,9 @@ same place. There is no grip icon. With two panels or more the whole head is
 the drag handle and shows a grab cursor (`DockDragContext` from `DockGrid`,
 read by `useDockGrip` in `DockPanelHead`, `useDockDrag`); the empty area moves
 the whole cell. In a tabbed cell the tab strip takes the title's place in the
-head, and each tab segment is its own handle for that panel alone
-(`DockDragSource.onStartPanel`, not wired to a move yet). A head that is not a
+head (focus follows the selected tab when the head remounts), and each tab
+segment is its own handle for that panel alone (`DockDragSource.onStartPanel`);
+a tabbed cell does not move until the move works on the tabs together. A head that is not a
 `DockPanelHead` fails `panel-head.test.ts`. The Browser keeps Back, Forward,
 Reload, the address and the rest as the first row of its body
 (`BrowserAddressRow`), the Terminal its folder picker and worktree strip, and

@@ -19,6 +19,7 @@ const tabsOf = (overrides: Partial<DockTabs> = {}): DockTabs => ({
   ],
   shown: 'terminal',
   onSelect: vi.fn(),
+  takeFocus: vi.fn(() => false),
   claim: vi.fn(() => vi.fn()),
   ...overrides,
 });

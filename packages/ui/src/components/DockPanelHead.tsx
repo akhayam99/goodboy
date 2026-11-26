@@ -1,4 +1,4 @@
-import { useContext, useLayoutEffect, type PointerEvent, type ReactNode } from 'react';
+import { useContext, useLayoutEffect, useRef, type PointerEvent, type ReactNode } from 'react';
 import { cn } from '../cn';
 import { DrawerBackChipContext } from '../drawerBackChipContext';
 import { DockDragContext } from '../dockDragContext';
@@ -47,6 +47,7 @@ export const DockPanelHead = ({
   const row = useIsNarrow({ below: NARROW_HEAD_PX });
   const source = useContext(DockDragContext);
   const tabs = useContext(DockTabsContext);
+  const strip = useRef<HTMLDivElement | null>(null);
   const backChip = useContext(DrawerBackChipContext);
   const claim = tabs?.claim;
   const paneKey = tabs?.paneKey;
@@ -55,7 +56,11 @@ export const DockPanelHead = ({
     if (claim === undefined || paneKey === undefined) {
       return;
     }
-    return claim({ paneKey });
+    const release = claim({ paneKey });
+    if (tabs?.takeFocus() === true) {
+      strip.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();
+    }
+    return release;
   }, [claim, paneKey]);
 
   const press = ({ event }: PressParams): void => {
@@ -111,7 +116,7 @@ export const DockPanelHead = ({
           ) : null}
         </div>
       ) : (
-        <div data-dock-cell-tabs="" className="flex min-w-0 flex-1 items-center">
+        <div ref={strip} data-dock-cell-tabs="" className="flex min-w-0 flex-1 items-center">
           <SegmentedTabs
             size="xs"
             ariaLabel="Panels"

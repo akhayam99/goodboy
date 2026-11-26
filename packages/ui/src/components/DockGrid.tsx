@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -99,6 +100,7 @@ export const DockGrid = ({
       ),
     [canMove, keyList, startDrag],
   );
+  const regainFocus = useRef<string | null>(null);
   const [headed, setHeaded] = useState<ReadonlySet<string>>(() => new Set());
   const claim = useCallback<DockTabs['claim']>(({ paneKey }) => {
     setHeaded((previous) => new Set([...previous, paneKey]));
@@ -147,7 +149,23 @@ export const DockGrid = ({
                 paneKey: pane.key,
                 options: dockTabOptionsOf({ spec, tabs }),
                 shown,
-                onSelect: spec.onFocus,
+                onSelect: ({ key }) => {
+                  const active = document.activeElement;
+                  if (
+                    active instanceof Element &&
+                    active.closest('[data-dock-cell-tabs]') !== null
+                  ) {
+                    regainFocus.current = pane.key;
+                  }
+                  spec.onFocus({ key });
+                },
+                takeFocus: () => {
+                  const isOwed = regainFocus.current === pane.key;
+                  if (isOwed) {
+                    regainFocus.current = null;
+                  }
+                  return isOwed;
+                },
                 claim,
               }
             : null;
@@ -192,7 +210,7 @@ export const DockGrid = ({
                   turn === null ? null : { ...turn, onTurn: () => spec.onTurn({ key: shown }) }
                 }
               >
-                <DockDragContext.Provider value={sources.get(pane.key) ?? null}>
+                <DockDragContext.Provider value={isTabbed ? null : (sources.get(pane.key) ?? null)}>
                   <DockTabsContext.Provider value={tabsOfCell}>
                     <DockCellContext.Provider value={shown}>{cell}</DockCellContext.Provider>
                   </DockTabsContext.Provider>

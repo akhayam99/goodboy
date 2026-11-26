@@ -11,8 +11,12 @@ export type MidTruncated = {
 };
 
 export const midTruncate = ({ name, keep = MID_TRUNCATE_KEEP }: Params): MidTruncated => {
-  if (name.length <= keep) {
+  const glyphs = Array.from(name);
+  if (glyphs.length <= keep) {
     return { head: name, tail: '' };
   }
-  return { head: name.slice(0, name.length - keep), tail: name.slice(name.length - keep) };
+  return {
+    head: glyphs.slice(0, glyphs.length - keep).join(''),
+    tail: glyphs.slice(glyphs.length - keep).join(''),
+  };
 };

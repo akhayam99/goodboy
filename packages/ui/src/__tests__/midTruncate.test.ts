@@ -15,6 +15,13 @@ describe('midTruncate', () => {
     expect(`${head}${tail}`).toBe(name);
   });
 
+  it('never splits an emoji between the head and the tail', () => {
+    const name = `${'a'.repeat(11)}\u{1F680}${'b'.repeat(11)}`;
+    const { head, tail } = midTruncate({ name });
+    expect(head).toBe('a'.repeat(11));
+    expect(tail).toBe(`\u{1F680}${'b'.repeat(11)}`);
+  });
+
   it('keeps two branches with one long prefix distinct', () => {
     const prefix = 'harborline/payments-api/migrate-invoices-to-';
     const first = midTruncate({ name: `${prefix}ledger-core-v2` });
