@@ -18,7 +18,10 @@ workspace, project or session, and the most specific rule that fits wins.
   agent's row says (`Read only · Ask first isn't available on Codex`).
 - The engine audits a call after Claude ran it. The audit log records what the
   rules would have decided; what blocks a call is the permission mode and the
-  tool flags the CLI receives.
+  tool flags the CLI receives. Your own answer is written when you give it
+  (`recordPermissionDecision`): `decided_by` is `user`, the decision is allow or
+  deny, and a rule you saved is the row's `rule_id`, which carries its scope. A
+  once answer has no rule.
 - A call denied in a run with no one watching stops the turn. The agent's row,
   its session card and the top bar's Needs you read **Needs permission** until
   you answer.
@@ -32,13 +35,20 @@ workspace, project or session, and the most specific rule that fits wins.
 
 - **Allow and continue** grants that exact call once and resumes the turn by
   itself. The "Always allow" actions (this workspace, everywhere, this session)
-  write a rule (a command prefix for Bash, the whole tool for an edit) and resume
-  the same way.
+  write a rule and resume the same way: a command prefix for Bash, the whole tool
+  for an edit, a scoped read of the folder for Read, Grep and Glob
+  (`Read(//dir/**)`, the only form a read-only role keeps).
+- The words follow the tool (`toolClassOf`): "commands" only for Bash, "edits"
+  only for an edit tool, "reads in <folder>" for Read, Grep and Glob, the tool
+  name for the rest.
 - Only when the turn could not resume does the card say "Stopped before your
   answer." and the dock offer a filled **Continue** (`stoppedAnswerOf`), held
   while another ask of the batch is open. A record line keeps **Continue** on an
   always allow whose turn never started (`useIsStoppedBeforeAnswer`).
-- A once allow of a Read is scoped to its file: `Read(//absolute/path)`. On the
+- A once allow of a Read is scoped to its file: `Read(//absolute/path)`; one of a
+  Grep or Glob with an absolute `path` is scoped to that folder
+  (`Read(//absolute/dir/**)`), and without one it stays the bare tool, which a
+  read-only role drops. On the
   Lead it goes through the `permissionOnceAllows` of the `user` outbox row, since
   the Lead's turn starts from the runtime, not the message.
 - **Deny**, and **Deny and tell why**, answer this call only: a once decision, no

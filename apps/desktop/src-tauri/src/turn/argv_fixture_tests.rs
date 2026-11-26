@@ -94,6 +94,7 @@ fn run_scenario(binary: &str, scenario: &Scenario) -> (Run, Vec<String>) {
         model: "fake-model",
         working_dir: &work_dir,
         writable_roots: &empty,
+        read_roots: &empty,
         query_socket_directory: None,
         prompt: PROMPT,
         permission_mode: scenario.permission_mode,

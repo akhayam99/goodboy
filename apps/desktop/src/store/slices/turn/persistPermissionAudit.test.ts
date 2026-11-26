@@ -70,6 +70,15 @@ describe('persistPermissionAudit', () => {
     expect(retries).toEqual([]);
   });
 
+  it('keeps a user decision, allow or deny', async () => {
+    await persistPermissionAudit({ payload: makePayload('user') });
+
+    expect(audited).toEqual([
+      expect.objectContaining({ id: 'audit-1', toolName: 'Read', decidedBy: 'user' }),
+    ]);
+    expect(retries).toEqual([]);
+  });
+
   it('queues the whole decision for a retry when the audit write fails', async () => {
     answerWith({ insertFails: true });
     const payload = makePayload('user');

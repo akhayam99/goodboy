@@ -17,6 +17,7 @@ vi.mock('../../../features/worktree/worktree', () => ({
 }));
 
 import {
+  buildTurnReadRoots,
   buildTurnWritableRoots,
   repoRootsForTurn,
   resolveWorktreeGitDirs,
@@ -196,5 +197,20 @@ describe('repoRootsForTurn', () => {
     });
 
     expect(roots).toEqual(['/repo/api']);
+  });
+});
+
+describe('buildTurnReadRoots', () => {
+  it('names every mount folder and every main checkout once, never the working folder', () => {
+    const roots = buildTurnReadRoots({
+      mounts: [first, second, mount({ repoRoot: '/repo/web', worktreePath: '', branch: '' })],
+      workingDir: first.worktreePath,
+    });
+
+    expect(roots).toEqual(['/repo/api', '/repo/api/.goodboy/worktrees/second', '/repo/web']);
+  });
+
+  it('is empty for a session with no project mount', () => {
+    expect(buildTurnReadRoots({ mounts: [], workingDir: '/somewhere' })).toEqual([]);
   });
 });

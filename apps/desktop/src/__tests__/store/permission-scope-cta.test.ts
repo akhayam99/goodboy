@@ -158,11 +158,13 @@ describe('resolvePermissionRequest', () => {
     expect(arg.workspaceId).toBeUndefined();
   });
 
-  it('approve once, does NOT call upsert, adds toolUseId to volatilePermissionAllows', async () => {
+  it('approve once does not call upsert and writes a user allow row at decision time', async () => {
     await call(useAppStore.getState(), 'once');
     expect(permissionRuleUpsertSpy).not.toHaveBeenCalled();
-    const volatile = useAppStore.getState().volatilePermissionAllows;
-    expect(volatile.has(TOOL_USE_ID)).toBe(true);
+    expect(storySpies.invokePermissionAuditInsert).toHaveBeenCalledOnce();
+    expect(storySpies.invokePermissionAuditInsert).toHaveBeenCalledWith(
+      expect.objectContaining({ toolUseId: TOOL_USE_ID, decision: 'allow', decidedBy: 'user' }),
+    );
   });
 
   it('deny, upserts deny rule with scope task + sessionId', async () => {

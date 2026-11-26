@@ -11,6 +11,7 @@ import { askDenialEventOf } from './askDenialEventOf';
 import { denialNoticeOf } from './denialNoticeOf';
 import { heldOnceAllowsOf } from './heldOnceAllowsOf';
 import { NO_RESOLVED_ASKS } from './noResolvedAsks';
+import { recordPermissionDecision } from './recordPermissionDecision';
 import type { GetFn } from './types';
 import { withHeldAnswers } from './withHeldAnswers';
 import { permissionRowOf } from './permissionRowOf';
@@ -40,6 +41,17 @@ export const denyWithReason = (get: GetFn) => {
       sessionId,
       askDenialEventOf({ runId, toolUseId, reason: trimmed, at: now }),
     );
+    void recordPermissionDecision({
+      get,
+      sessionId,
+      agentId,
+      runId,
+      toolUseId,
+      toolName,
+      decision: 'deny',
+      ruleId: null,
+      decidedAt: now,
+    });
     if (get().agentTurnState[agentId]?.kind === 'running') {
       return;
     }

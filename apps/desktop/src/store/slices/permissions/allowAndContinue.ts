@@ -1,10 +1,11 @@
-import { oncePatternText } from '@goodboy/core/permissions';
+import { actionNounOf, oncePatternText } from '@goodboy/core/permissions';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import { askBatchAfterAnswer } from './askBatchAfterAnswer';
 import { heldOnceAllowsOf } from './heldOnceAllowsOf';
 import { NO_RESOLVED_ASKS } from './noResolvedAsks';
-import type { GetFn, SetFn } from './types';
+import { recordPermissionDecision } from './recordPermissionDecision';
+import type { GetFn } from './types';
 import { withHeldAnswers } from './withHeldAnswers';
 import { permissionRowOf } from './permissionRowOf';
 
@@ -17,10 +18,17 @@ type Params = {
   runId: ProviderRunId;
 };
 
-const CONTINUE_PROMPT =
-  'Permission for that exact command is granted for this one call. Continue where you stopped.';
+type PromptParams = {
+  readonly toolName: string;
+};
 
-export const allowAndContinue = (set: SetFn, get: GetFn) => {
+const continuePromptOf = ({ toolName }: PromptParams): string => {
+  const noun = actionNounOf({ toolName });
+  const what = noun === 'command' ? 'that exact command' : `that ${noun}`;
+  return `Permission for ${what} is granted for this one call. Continue where you stopped.`;
+};
+
+export const allowAndContinue = (get: GetFn) => {
   return async ({
     sessionId,
     agentId,
@@ -30,9 +38,6 @@ export const allowAndContinue = (set: SetFn, get: GetFn) => {
     runId,
   }: Params): Promise<void> => {
     const now = new Date().toISOString() as IsoDateTime;
-    set((state) => ({
-      volatilePermissionAllows: new Set([...state.volatilePermissionAllows, toolUseId]),
-    }));
     get().appendTurnEvent(agentId, sessionId, {
       kind: 'permission_decision',
       runId,
@@ -42,6 +47,17 @@ export const allowAndContinue = (set: SetFn, get: GetFn) => {
       ruleId: null,
       decidedBy: 'user',
       at: now,
+    });
+    void recordPermissionDecision({
+      get,
+      sessionId,
+      agentId,
+      runId,
+      toolUseId,
+      toolName,
+      decision: 'allow',
+      ruleId: null,
+      decidedAt: now,
     });
     const { isWaiting, held } = askBatchAfterAnswer({
       transcripts: get().transcripts,
@@ -55,7 +71,7 @@ export const allowAndContinue = (set: SetFn, get: GetFn) => {
       result: await get().sendTurn({
         sessionId,
         agentId,
-        content: withHeldAnswers({ held, prompt: CONTINUE_PROMPT }),
+        content: withHeldAnswers({ held, prompt: continuePromptOf({ toolName }) }),
         permissionOnceAllows: [...heldOnceAllowsOf({ held }), oncePatternText({ toolName, input })],
         resolvedAsks: NO_RESOLVED_ASKS,
         ...permissionRowOf({ held }),

@@ -7,8 +7,8 @@ import type {
 } from '../../features/worktree/worktree';
 import { attachmentSpies } from './attachmentSpies';
 import { EMPTY_CHANGED_FILES } from './emptyChangedFiles';
-import { createInvokeMock, createInvokeRouter } from '../invokeMock';
-import type { InvokeHandlers } from '../invokeMock';
+import { createInvokeMock, createInvokeRouter, type InvokeHandlers } from '../invokeMock';
+import { storedRuleOf } from './storedRuleOf';
 import type { worktreeBranchHolder } from '../../features/worktree/worktree';
 import { createResolveQueryMocks } from '../../store/slices/resolve/testing/createResolveQueryMocks';
 import { resetWorkflowTurnBreaker } from '../../store/slices/turn/workflowTurnBreaker';
@@ -453,7 +453,7 @@ export const storySpies = {
   ),
   invokeTerminalClose: vi.fn(async () => undefined),
   invokePermissionRuleList: vi.fn<PermissionsModule['invokePermissionRuleList']>(async () => []),
-  invokePermissionRuleUpsert: vi.fn<PermissionsModule['invokePermissionRuleUpsert']>(),
+  invokePermissionRuleUpsert: vi.fn<PermissionsModule['invokePermissionRuleUpsert']>(storedRuleOf),
   invokePermissionRuleDelete: vi.fn(async () => undefined),
   invokePermissionAuditInsert: vi.fn<
     (input: Parameters<PermissionsModule['invokePermissionAuditInsert']>[0]) => Promise<unknown>
