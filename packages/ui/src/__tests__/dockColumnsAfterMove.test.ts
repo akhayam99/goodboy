@@ -20,12 +20,15 @@ const MOVES: ReadonlyArray<readonly [string, DockMoveTarget, Columns]> = [
   ['stacks below', { at: 'below', key: 'terminal' }, [['terminal', 'browser']]],
   ['opens beside the page', { at: 'page' }, [['browser'], ['terminal']]],
   ['swaps places', { at: 'swap', key: 'terminal' }, [['browser'], ['terminal']]],
+  ['merges into the other cell', { at: 'tab', key: 'terminal' }, [['terminal']]],
 ];
 
 const REFUSED: ReadonlyArray<readonly [string, string, DockMoveTarget]> = [
   ['a panel that is not in the dock', 'monitoring', { at: 'page' }],
   ['a target that is not in the dock', 'browser', { at: 'above', key: 'monitoring' }],
   ['a place it already has', 'terminal', { at: 'page' }],
+  ['a merge into itself', 'browser', { at: 'tab', key: 'browser' }],
+  ['a merge into a cell that is not in the dock', 'browser', { at: 'tab', key: 'monitoring' }],
 ];
 
 describe('a panel moved in the dock', () => {
@@ -41,6 +44,17 @@ describe('a panel moved in the dock', () => {
         target: { at: 'beside', key: 'terminal', side: 'before' },
       }),
     ).toEqual([['browser'], ['terminal']]);
+  });
+
+  it('moves a panel that sits in no column when it is detached', () => {
+    expect(
+      dockColumnsAfterMove({
+        columns: PAIR,
+        key: 'scripts',
+        target: { at: 'below', key: 'browser' },
+        isDetached: true,
+      }),
+    ).toEqual([['terminal'], ['browser', 'scripts']]);
   });
 
   it.each(REFUSED)('refuses %s', (_name, key, target) => {

@@ -75,6 +75,7 @@ const gridOf = ({ spec, tabs }: Params): ReactElement => (
     isFocusShown
     isFloating={false}
     canDrop={() => true}
+    boxesOf={() => null}
   />
 );
 

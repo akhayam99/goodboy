@@ -40,7 +40,8 @@ describe('the moves a panel has', () => {
     );
 
     expect(targets).toEqual([
-      { at: 'swap', key: 'browser' },
+      { at: 'tab', key: 'browser' },
+      { at: 'above', key: 'browser' },
       { at: 'beside', key: 'browser', side: 'before' },
       { at: 'beside', key: 'browser', side: 'after' },
     ]);
@@ -50,8 +51,30 @@ describe('the moves a panel has', () => {
     const moves = dockMovesOf({ grid: STACKED, kind: 'terminal', fits: onlyOneColumn });
 
     expect(moves.filter((move) => move.isFitting).map((move) => move.target)).toEqual([
-      { at: 'swap', key: 'browser' },
+      { at: 'tab', key: 'browser' },
+      { at: 'above', key: 'browser' },
     ]);
+  });
+
+  it('offers a tab to tear out its own place and to merge into another cell', () => {
+    const tabbed: DrawerGrid = {
+      ...EMPTY_DRAWER_GRID,
+      columns: [[TERMINAL, SCRIPTS], [BROWSER]],
+      tabs: { terminal: { keys: ['terminal', 'scripts'], active: 'terminal' } },
+    };
+
+    const targets = dockMovesOf({ grid: tabbed, kind: 'scripts', fits: () => true }).map(
+      (move) => move.target,
+    );
+
+    expect(targets).toEqual(
+      expect.arrayContaining([
+        { at: 'tab', key: 'browser' },
+        { at: 'above', key: 'terminal' },
+        { at: 'beside', key: 'terminal', side: 'before' },
+      ]),
+    );
+    expect(targets).not.toContainEqual({ at: 'tab', key: 'terminal' });
   });
 
   it.each(['terminal', 'browser', 'scripts', 'monitoring', 'ask'] as const)(

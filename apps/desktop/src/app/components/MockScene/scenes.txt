@@ -1487,6 +1487,7 @@ u50-desk-face-light
 u50-desk-face-overview-dark
 u50-desk-face-overview-light
 u50-desk-grid
+u50-desk-grid-merged
 u50-desk-grid-narrow
 u50-desk-grid-terminal
 u50-desk-kinds-dark

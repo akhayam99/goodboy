@@ -7,7 +7,12 @@ type Params = {
 };
 
 export const dockZoneAt = ({ zones, x, y }: Params): DockDropZone | null =>
-  zones.find(
-    ({ rect }) =>
-      x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height,
-  ) ?? null;
+  zones
+    .filter(
+      ({ rect }) =>
+        x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height,
+    )
+    .reduce<DockDropZone | null>(
+      (best, zone) => (best === null || zone.layer > best.layer ? zone : best),
+      null,
+    );

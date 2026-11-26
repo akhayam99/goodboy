@@ -39,6 +39,7 @@ const renderStack = ({ stored }: RenderParams) => {
       isFocusShown={false}
       isFloating={false}
       canDrop={() => true}
+      boxesOf={() => null}
     />,
   );
 };

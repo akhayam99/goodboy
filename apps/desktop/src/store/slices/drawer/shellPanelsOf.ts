@@ -1,4 +1,5 @@
 import type { AppState } from '../../types';
+import { layoutOf } from './dockTabs/layoutOf';
 import { panelsOf } from './panelsOf';
 import { selectDetailDrawer } from './selectDetailDrawer';
 import { EMPTY_DRAWER_GRID, type DrawerFocus, type DrawerGrid, type OpenDrawer } from './state';
@@ -13,6 +14,7 @@ type Params = {
 export type ShellPanels = {
   readonly detail: OpenDrawer | null;
   readonly tools: DrawerGrid['columns'];
+  readonly layout: DrawerGrid['columns'];
   readonly focus: DrawerFocus;
 };
 
@@ -29,6 +31,7 @@ export const shellPanelsOf = ({ state }: Params): ShellPanels => {
   return {
     detail: state.appStudio === null ? selectDetailDrawer({ state }) : null,
     tools,
+    layout: layoutOf({ columns: tools, tabs: state.drawerGrid?.tabs }).columns,
     focus: panels.focus,
   };
 };

@@ -798,14 +798,20 @@ read by `useDockGrip` in `DockPanelHead`, `useDockDrag`); the empty area moves
 the whole cell. In a tabbed cell the tab strip takes the title's place in the
 head (focus follows the selected tab when the head remounts), and each tab
 segment is its own handle for that panel alone (`DockDragSource.onStartPanel`,
-not wired to a move yet). A cell holds its tab list as state: `DockGridCell.tabs`
+a move with `unit: 'panel'`; the empty head moves with `unit: 'cell'`). A cell holds its tab list as state: `DockGridCell.tabs`
 carries the keys, the active key and the member cells, `dockMergedCellOf` folds
 them into the one pane the solver places, and `cellTabsOf` is the one function
 that answers the tab count, the strip, the activity dots and the shown tab
 (`data-dock-tab-count` on the pane). The shown tab is the focused one, then the last
 one picked in the cell, then the cell's `active` key; a new `active` from the spec wins
 over the memory. A key that left the grid drops out of the list and a select for it
-does nothing. The cell's width is the one saved under its own key, never a member's. The head of a cell with a chosen tab list
+does nothing. The cell's width is the one saved under its own key, never a member's. The chosen list is written by Merge: `DrawerGrid.tabs`
+(lead key, keys, active) sits next to `columns`, where every open panel stays,
+a member right behind its lead. `layoutOf` hides the members from the layout
+(`shellPanelsOf().layout` feeds `useShellRight`), `gridWithLayout` writes a
+moved layout back, and `gridWithout` hands a closed lead's cell to its next tab.
+The saved shape keeps `tabs` under the same version and drops a list that does
+not match its columns. The head of a cell with a chosen tab list
 moves the whole cell, tabs together; a cell the solver folded for lack of room
 (`isDerived`) still does not move, because a move would take one panel and leave
 its partner. A head that is not a
@@ -818,16 +824,31 @@ share a prefix cut in the middle and keep their last 12 characters
 press becomes a drag after 4px, so a click stays a click, and a press on a
 control inside the head, or inside a layer the head portals out (a menu, the
 address suggestions), never starts one; Esc cancels through the escape stack and the
-pointer up drops. While it drags, `DockDropZones` draws the zones over every
-other panel (left, right, above, swap, below) and a strip on the page's edge
-(beside the page); a zone that would leave the page worse than now, by the
-solver with the real widths (`canDrop` from `useDockGrid`, `dockMoveFits`),
-reads `No room` and drops nothing. The zones redraw from a small store at most
+pointer up drops. The press calls `preventDefault`, takes the pointer with a
+best effort `setPointerCapture`, and its window listeners run in the capture
+phase and match the pointer id; a move with no button held, a blur and
+`pointercancel` cancel. While it drags, the page dims (`DockDropZones`) and the
+cards show only for moves that change the layout (`dockLayoutAfterMove` run by
+`dockDropZonesOf`, then the solver's `canDrop`): `Place left` and `Place right`
+at the dock's edges, and on the panel under the pointer `Merge` in the middle
+with `Place above` and `Place below` as bands that grow when the pointer enters
+them. Those five words are the only labels. A cell's own place offers nothing,
+except tearing a tab out of a cell with tabs, and a card whose result equals an
+earlier one is dropped. Hit areas are the full quarters of a panel and the
+dock's edge strips (`dockZoneAt` takes the topmost layer), and a hover moves to
+another card only after 80 ms. One ghost (`dockGhostOf`, the solver's boxes for
+the moved layout) is the only filled area; a chip under it names the panels the
+move newly folds, and only then. Option held over Merge swaps the two cells
+(`target.at: 'swap'`). The live line (`data-dock-status`, `dockStatusOf`) reads
+the card and clears to `Drop on a highlighted area, Esc to cancel.` off target.
+The arrows walk the cards in screen order, Enter drops on the chosen card and
+chooses nothing when none is (`useDockDragKeys`, bound on the grid, which takes
+the focus for the drag). The zones redraw from a small store at most
 once a frame (`dockDragStore`), so the panels themselves render only when the
 drag starts and ends. The drag sets `SPLIT_DRAG_ATTRIBUTE` to
 `move`, so the Browser page hides under its cover like under a handle drag,
 and a drop goes through `moveDockPanel`. From the keyboard, ⌘K lists
-`Move Terminal panel…` for each tool when two or more are open
+`Move Terminal panel…` (with `Merge … into …` among the places) for each tool when two or more are open
 (`dockPanelEntries`); its step holds only the moves that never leave the page
 worse than now (`dockMovesOf`, asking the mounted grid's `canDrop` through
 `dockFitProbe`: no new float, no new fold, no detail newly over the page). `Reset panel layout` sits in ⌘K while
