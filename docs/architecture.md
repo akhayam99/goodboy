@@ -572,7 +572,8 @@ The Rust side of worktrees and branch reads is one module,
 writing `crate::worktree::git` and lib.rs registers
 `worktree::worktree_create`. A helper another file needs is `pub(super)`;
 nothing else leaves its file. Tests sit in `<file>/tests.rs` next to the file
-they cover. `worktree_list_registered`
+they cover; `scratch`, `snapshot` and `setup_proposal` keep theirs inline.
+`worktree_list_registered`
 inspects many folders of one repo with a single `git worktree list`; opening a
 workspace calls it once per repo, in the background after the first paint, and a
 turn start waits for that verdict for at most five seconds.
@@ -1066,7 +1067,9 @@ kept.
   (`migrationSnapshotStorage` in `shared/lib/dbBoot.ts`). m246 adds
   `auto_trees.guide`, NULL or JSON, the record of the workflow a Lead follows:
   `ensureRunGuide` fills it once and `changeRunGuide` writes it only over the
-  value it read (`store/runtime/runGuide/`). m246 is one-way the same way.
+  value it read, and a user message lifts a held check
+  (`liftRunHoldStatement`), all in `store/runtime/runGuide/`. m246 is one-way
+  the same way.
 - `store/runtime/auto/scheduler.ts` is the one writer of tree state. A window
   writes only while it holds the lease, so a second window reads. Every
   transition names the phase revision, generation and phase it expects, and a
@@ -1326,8 +1329,8 @@ workspace is gone, and the storage scan only ever looks inside
 the way Finder's "size on disk" does.
 
 A folder project can still hold `<project-root>/sessions/` next to your code,
-with the session folders an older build made there. Sessions write in the
-folder itself and add nothing to it.
+with the session folders an older build made there. A new session writes in
+the project folder itself and adds nothing to `sessions/`.
 
 ### How mounts are saved and recovered
 
