@@ -479,8 +479,8 @@ threadIds? })`), a hint on one comment (`continueResolveThreads`) and a
   (**Still stopping** with **Force stop**, the same call again). A request for
   an earlier run never counts. A refused cancel for a run that is already
   gone counts as `exited`. `cancelCurrentTurn` with
-  reason `user` calls it; `handoff` and `teardown` cancel and go idle without
-  waiting for the exit.
+  reason `user` or `leave` calls it; `handoff`, `teardown` and `auto` cancel
+  and go idle without waiting for the exit.
 - **Write scope is explicit.** The writable mounts and their git common
   directories are handed to the CLIs that accept extra directories, plus the
   bridge socket directory only while the bridge is serving. Claude loads only
@@ -965,8 +965,8 @@ The terminal has no tail by design (its output is its tail), and dependency
 setup has no adapter until its state exists. The run tails (`RunTail`,
 `OrchestratedTail`), the Auto child end (`AutoChildEnd`) and the Auto dock
 (`AutoDockLive`) draw from the adapters; the agent chat keeps its own thinking
-line (`ThinkingIndicator`), so `agentTurnLive` has no host outside the scenes
-yet. Scenes `c01-tail-*` show every state.
+line (`ThinkingIndicator`), so `agentTurnLive` has no host of its own outside
+the scenes: it feeds `autoChildLive` and `autoTreeLive`. Scenes `c01-tail-*` show every state.
 
 ### Live work read
 

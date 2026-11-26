@@ -209,8 +209,9 @@ in it.
 every turn running in the one it had, so opening a workspace only switches
 this window in place when nothing is running here. When agents are running,
 the workspace popover asks first and offers a new window, which keeps them
-going. A side door (a notification, a Tasks item, New workspace) opens that
-workspace's own window and never touches this one. `⌘Enter` on a workspace
+going. While agents run, a side door (a notification, a Tasks item, New
+workspace) opens that workspace's own window without asking and never touches
+this one. `⌘Enter` on a workspace
 row always opens a new window, no question asked.
 
 **Disconnect** keeps a workspace and its folders in the database with
@@ -753,7 +754,7 @@ whether you clicked it on the board or in the session overview.
     or more open pull requests on hosts that let Goodboy pick the merge method
     (`merge-series`, `seriesMergeSuggestionOf`); review the changes once a
     standalone implementer finishes clean; move a tracker item to Done (see
-    The tracker follows the merge).
+    [The tracker follows the merge](#the-tracker-follows-the-merge)).
   - **Folders and upkeep**: add a proposed project (`mount-project`, which
     says an agent asked more than once, `asked 2 times`, and moves up); the
     next script after a turn (`next-script`: a changed migration, lockfile or
@@ -863,7 +864,8 @@ pick it when you start the agent.
   **Docs** and **Generalist** are in the menu for new agents
 - **Report** and **Wireframe** run as workflow steps
 - **PR reviewer** opens a session that reviews someone else's pull request
-- **Resolve** starts from the **Review** lens and fixes review comments
+- **Resolve** starts from the **Comments** tab of the Branch page and fixes
+  review comments
 - **Lead** starts from **Start a run** and hands work to the other roles
   ([Lead](#lead))
 - **CI debugger** starts from **Analyze** on a failing check and proposes a
@@ -1157,7 +1159,7 @@ is the **session record** on the **Overview**:
   tab (the overview keeps one `Goal` line under the title when the goal
   says more than the title). The summary has three sections, Learned, State
   and Next: State becomes its status line, and Next and Learned follow as
-  blocks (`summaryDisplayBlocks`).
+  blocks (`summaryStatusOf`, `summaryDisplayBlocks`).
 - What the session produces, as sections of the same page: workflows, agents,
   review, questions, diff and plans
 
@@ -1180,9 +1182,9 @@ work on one goal without mixing up their chats.
 A **turn** is one message from you and one answer from the agent, with
 everything that streams in between.
 
-**Ask** is a question about the whole session. **Ask about this session** in
-the session's **⋯**, or ⌘L, opens the Ask pane beside the page, and the foot
-of the Overview keeps one field that opens it. It is not an agent: it never lands on the board, in the agent count or in an
+**Ask** is a question about the whole session. ⌘L, **Ask about this
+session** in Search or run, or **Ask** in the right rail opens the Ask pane
+beside the page, and the foot of the Overview keeps one field that opens it. It is not an agent: it never lands on the board, in the agent count or in an
 agent's chat, and it never changes the work. It reads the session record, the
 agents' reports, questions, runs, review comments, branch, pull request and
 the session worktrees, read only, and answers with chips that open what it
@@ -2101,7 +2103,8 @@ session up again in Goodboy.
   **Set limit…**), and a `NAMES` value never carries it, so aliases and
   retired names keep matching. A progress word ends in one (**Starting…**,
   **Closing…**). `menuLabel` names an action inside an Open or Copy submenu
-  (**Overview**, **Terminal**), and `placement: 'palette'` keeps an action in
+  (**Overview**); without one the submenu drops the leading Open or Copy of the
+  `label`. `placement: 'palette'` keeps an action in
   Search or run only (`toMenuEntries`). `isInputFirst` is typed on the action
   and read by nothing yet.
 - A tool runs **in** a tab or an app (**Open in Terminal**, **Open in external
@@ -2118,8 +2121,8 @@ session up again in Goodboy.
 - **Run**, **Plan**, **Workflow**, **Lead** and **Scout** each have one
   sentence in At a glance and in the Guide's Words chapter, and the Guide never
   says preset. A **workflow** is the saved
-  definition in the Workflows library; it is called a **preset** only where a
-  run starts from it (`~` in **Start a run**, the Preset card on New session),
+  definition in the Workflows library; it is called a **preset** only on a run
+  made from it (**Save as preset** in the run's menu, the **Preset run** glyph),
   and a **plan** is what an agent writes before it builds.
   `guideChapters.test.ts` keeps the five defined in one sentence each.
 - **Reply length** is **Short**, **Normal** or **Long**. The stored keys
