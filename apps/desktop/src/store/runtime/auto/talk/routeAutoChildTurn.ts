@@ -4,6 +4,7 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  MountId,
   ProviderRunId,
   SessionId,
   TurnEvent,
@@ -17,6 +18,7 @@ import {
   type AutoChildTurnResult,
 } from '../../../../features/auto/autoChildTurnPort';
 import { QUEUE_DELIVERY_PREFIX } from '../../../slices/agentQueue/QUEUE_DELIVERY_PREFIX';
+import type { AttachMountInput } from '../../../slices/project-mounts/types';
 import type { ReportErrorParams } from '../../../slices/notifications/reportError';
 import { ReportedError } from '../../../slices/notifications/reportedError';
 import { AUTO_CONFINED_ROLE } from '../../../slices/turn/confinedRoleOf';
@@ -28,6 +30,7 @@ type ChildTurnState = Readonly<{
   >;
   agentTurnState: Readonly<Record<AgentId, TurnState>>;
   reportError: (params: ReportErrorParams) => Promise<void>;
+  attachMount: (input: AttachMountInput) => Promise<unknown>;
   appendTurnEvent: (agentId: AgentId, sessionId: SessionId, event: TurnEvent) => void;
 }>;
 
@@ -47,12 +50,39 @@ const WORKING_MESSAGE =
 
 const LOST_MESSAGE = 'Goodboy could not reach Auto to continue this agent. Send it again.';
 
+type RestoreRetryParams = {
+  readonly get: () => ChildTurnState;
+  readonly sessionId: SessionId;
+  readonly restore: Readonly<{ mountId: string; mountName: string }>;
+};
+
+const restoreMountRetry =
+  ({ get, sessionId, restore }: RestoreRetryParams) =>
+  async (): Promise<boolean> => {
+    try {
+      await get().attachMount({
+        sessionId,
+        mountId: brandId<MountId>({ value: restore.mountId }),
+      });
+      return true;
+    } catch (cause) {
+      await get().reportError({
+        recovery: CHECK_STATE,
+        title: `The ${restore.mountName} folder is still missing`,
+        error: cause,
+        sessionId,
+      });
+      return false;
+    }
+  };
+
 type RefuseChildTurnParams = {
   readonly get: () => ChildTurnState;
   readonly input: SendTurnInput;
   readonly name: string;
   readonly message: string;
   readonly cause?: unknown;
+  readonly restore?: Readonly<{ mountId: string; mountName: string }>;
 };
 
 const refuseChildTurn = async ({
@@ -61,6 +91,7 @@ const refuseChildTurn = async ({
   name,
   message,
   cause,
+  restore,
 }: RefuseChildTurnParams): Promise<never> => {
   const error = new ReportedError(message);
   await get().reportError({
@@ -68,6 +99,13 @@ const refuseChildTurn = async ({
     title: `Your message did not reach ${name}`,
     error: cause ?? error,
     sessionId: input.sessionId,
+    ...(restore === undefined
+      ? {}
+      : {
+          retryLabel: `Restore ${restore.mountName}`,
+          stays: 'Your message is kept. Restore the folder, then send it again.',
+          retry: restoreMountRetry({ get, sessionId: input.sessionId, restore }),
+        }),
   });
   throw error;
 };
@@ -129,7 +167,11 @@ export const routeAutoChildTurn = async ({
     return refuseChildTurn({ ...refusal, message: WORKING_MESSAGE });
   }
   if (result.kind === 'refused') {
-    return refuseChildTurn({ ...refusal, message: result.message });
+    return refuseChildTurn({
+      ...refusal,
+      message: result.message,
+      ...(result.restore === undefined ? {} : { restore: result.restore }),
+    });
   }
   if (from === 'user') {
     get().appendTurnEvent(agentId, input.sessionId, {

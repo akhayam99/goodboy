@@ -22,6 +22,7 @@ import type {
   StartChildTurnParams,
 } from './ports';
 import { listAutoChecks } from './listAutoChecks';
+import { attachAutoMount } from './mount/attachAutoMount';
 import { mountAutoProject } from './mount/mountAutoProject';
 import { mountAutoTaskFolders } from './mountAutoTaskFolders';
 import {
@@ -156,6 +157,8 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
     loadMounts: async ({ sessionId }) =>
       (await deps.loadSessionMounts({ sessionId })).map((view) => pickableOf({ view })),
     mountTaskFolders: (params) => mountAutoTaskFolders({ get: deps.getState, params }),
+    attachMount: ({ sessionId, mountId }) =>
+      attachAutoMount({ get: deps.getState, params: { sessionId, mountId } }),
     mountProject: ({ sessionId, name, branch, reason, mode }) =>
       mountAutoProject({
         get: deps.getState,

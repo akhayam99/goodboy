@@ -164,6 +164,9 @@ A message may carry what the session chat takes: images, a PDF, other files.
    generation up to the delegation), named as chips on its page. The launch reads them once into
    the attempt's snapshot ([children.md](children.md#why-an-agent-exists)), so a
    relaunch hands over the same images.
+   When the turn runs in a worktree, `prepareTurn` copies each stored file into it
+   (`readableAttachmentRefs`, under `.goodboy/attachments`) and the prompt names the copy by its
+   relative path, so a confined agent can Read it. A failed copy starts no turn.
 
 A file that cannot be written refuses the message with "The Lead couldn't keep
 the files. Attach them again.": nothing is dropped silently.

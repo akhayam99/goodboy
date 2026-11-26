@@ -206,6 +206,12 @@ id (delegation, Auto's run, position), and saved text replays (`messageChild`).
   person's stay. The chat keeps the person's words where they were written.
 - Questions wait for Auto's answer, artifact rewrites go through Auto, and files
   are refused, each with a sentence.
+- A continue whose worktree was removed brings that mount back first
+  (`pickChildMount` asks the `attachMount` port, so the retained path or the local branch comes
+  back as it was). When it cannot, the refusal names the folder and the cause, and the notice
+  offers **Restore <project>** (`routeAutoChildTurn`), which attaches the mount again. The queued
+  message stays and **Retry** works once the folder is back. New work the Lead starts never
+  recreates a removed folder.
 
 `ChatView` hands its `agentId` to `ChatInput`, which keys draft, queue,
 attachments, routing and send by it and remounts per agent. The store's selected

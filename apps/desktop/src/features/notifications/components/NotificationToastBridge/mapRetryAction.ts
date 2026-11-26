@@ -24,7 +24,7 @@ export const mapRetryAction = ({
   }
   const { coalesceKey } = notification;
   return {
-    label: NAMES.retry,
+    label: action.label ?? NAMES.retry,
     onClick: () => {
       void runActionRetry({ retryId }).then((isDone) => {
         if (!isDone || coalesceKey == null) {

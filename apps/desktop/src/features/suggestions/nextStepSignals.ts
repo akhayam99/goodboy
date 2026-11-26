@@ -111,4 +111,5 @@ export type NextStepSignals = {
   readonly scriptRuns?: ReadonlyArray<SignalScriptRun>;
   readonly mergedMounts?: ReadonlyArray<SignalMergedMount>;
   readonly idleMounts?: ReadonlyArray<SignalIdleMount>;
+  readonly inUseMountIds?: ReadonlySet<string>;
 };

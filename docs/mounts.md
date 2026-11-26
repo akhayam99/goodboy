@@ -445,7 +445,10 @@ and the size (`#418 merged · 412 MB`, or `Session archived`), or one row
 normal unmount for each proposal in turn (`resolveMountCleanup` passes
 `isRemovalRequired`, so a removal git refuses fails the `unmount` operation,
 leaves the mount attached and the proposal pending, and reports the error;
-pressing `Remove worktree` again retries); `Not now` hides the row with Undo
+pressing `Remove worktree` again retries); the row never offers a worktree that a running agent
+or a live Auto tree still uses (`isMountInUse`, shared with Delete local branch: a tree that is not finished or stopped keeps its
+primary mount and the mounts of its delegations, so an agent that can still be continued counts);
+`Not now` hides the row with Undo
 (the proposal stays pending, keyed by its request ids). Paths that
 outlive their row move to `retained_worktree_paths` and are probed later;
 anything a worktree scan finds that no row, retained path or unsettled
@@ -502,7 +505,10 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   and answers with the mount id and path. Agents are told never to run
   `git worktree add` or `git checkout -b` for session work.
   `--existing` attaches a branch that already exists, checked out as it is and
-  never renamed.
+  never renamed. Creating a mount for a branch name that already exists locally
+  attaches that branch (`worktree add <path> <branch>`), a branch only on origin is
+  tracked, and `-b` cuts a new branch only when neither exists
+  (`attachable_source`).
   The answer asks for a new turn: the current one stops, and Goodboy queues
   one continuation turn bound to the new mount, told that uncommitted source
   files are absent so it cherry-picks what it needs.

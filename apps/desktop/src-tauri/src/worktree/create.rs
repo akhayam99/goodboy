@@ -2,7 +2,7 @@ use super::base::{base_candidates_with, default_base_name, resolve_origin_head};
 use super::branch_name::branch_name_problem;
 use super::error::WorktreeError;
 use super::exclude::ensure_goodboy_excluded;
-use super::foreign::{add_remote_backed_worktree, remote_backed_source};
+use super::foreign::{add_remote_backed_worktree, attachable_source, BranchSource};
 use super::git::{git, git_english, RunGit};
 use super::inspect::parse_porcelain;
 use super::slug::sanitize_slug;
@@ -239,9 +239,9 @@ pub(super) fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktr
                 },
             }
         }
-    } else if let Some(source) = remote_backed_source(&repo_path, &branch_name)? {
+    } else if let Some(source) = attachable_source(&repo_path, &branch_name)? {
         add_remote_backed_worktree(&repo_path, &worktree_path, &branch_name, &source)?;
-        tracked_remote = true;
+        tracked_remote = source != BranchSource::LocalOnly;
     } else {
         let configured_base = args
             .base_branch

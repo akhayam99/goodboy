@@ -43,15 +43,17 @@ type HarnessParams = {
 };
 
 const harness = ({ isChildRunning = false }: HarnessParams = {}) => {
-  const reportError = vi.fn(async () => undefined);
+  const reportError = vi.fn<ChildState['reportError']>(async () => undefined);
   const appendTurnEvent = vi.fn();
+  const attachMount = vi.fn<ChildState['attachMount']>(async () => undefined);
   const state: ChildState = {
+    attachMount,
     sessionPhaseRuns: { [SESSION]: ROWS },
     agentTurnState: isChildRunning ? { [CHILD_AGENT]: RUNNING } : {},
     reportError,
     appendTurnEvent,
   };
-  return { reportError, appendTurnEvent, get: () => state };
+  return { reportError, appendTurnEvent, attachMount, get: () => state };
 };
 
 type InputParams = {
@@ -235,6 +237,53 @@ describe('a message typed to a child Auto started', () => {
     await expect(
       routeAutoChildTurn({ get, input: inputOf({ agentId: CHILD_AGENT }) }),
     ).rejects.toThrow('that agent came back too many times');
+  });
+
+  it('offers to restore the folder when it was removed and could not come back', async () => {
+    registerAutoChildTurnPort({
+      port: async () => ({
+        kind: 'refused',
+        message: 'The ledger-core folder was removed and could not be brought back',
+        restore: { mountId: 'mount-ledger', mountName: 'ledger-core' },
+      }),
+    });
+    const { get, reportError, attachMount } = harness();
+
+    await expect(
+      routeAutoChildTurn({ get, input: inputOf({ agentId: CHILD_AGENT }) }),
+    ).rejects.toThrow('ledger-core folder was removed');
+
+    const report = reportError.mock.calls[0]?.[0];
+    expect(report?.retryLabel).toBe('Restore ledger-core');
+    expect(report?.stays).toContain('Your message is kept');
+    expect(attachMount).not.toHaveBeenCalled();
+
+    expect(await report?.retry?.()).toBe(true);
+    expect(attachMount).toHaveBeenCalledWith({ sessionId: SESSION, mountId: 'mount-ledger' });
+  });
+
+  it('keeps the restore offered and says why when the folder still cannot come back', async () => {
+    registerAutoChildTurnPort({
+      port: async () => ({
+        kind: 'refused',
+        message: 'The ledger-core folder was removed',
+        restore: { mountId: 'mount-ledger', mountName: 'ledger-core' },
+      }),
+    });
+    const { get, reportError, attachMount } = harness();
+    attachMount.mockRejectedValueOnce(
+      new Error('branch no longer exists: nw/fix-settlement-replay'),
+    );
+
+    await expect(
+      routeAutoChildTurn({ get, input: inputOf({ agentId: CHILD_AGENT }) }),
+    ).rejects.toThrow();
+    const report = reportError.mock.calls[0]?.[0];
+
+    expect(await report?.retry?.()).toBe(false);
+    expect(reportError).toHaveBeenLastCalledWith(
+      expect.objectContaining({ title: 'The ledger-core folder is still missing' }),
+    );
   });
 
   it('leaves Auto itself, a child of a plain agent and a delegation turn alone', async () => {

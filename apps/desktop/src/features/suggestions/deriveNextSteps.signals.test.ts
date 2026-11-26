@@ -363,6 +363,29 @@ describe('unmount-folder and close-worktree', () => {
     expect(move?.completesWhen).toEqual({ kind: 'worktree-removed', mountId: LEDGER_MOUNT });
   });
 
+  it('never offers a worktree an agent or the conversation still uses', () => {
+    const merged = {
+      mountId: LEDGER_MOUNT,
+      projectName: 'ledger-core',
+      branch: 'nw/fix-settlement-replay',
+      prNumber: 418,
+      mergedAt: new Date(NOW - 3 * DAY).toISOString(),
+      requestId: 'cleanup:merge_cleanup:mount-ledger-core:nw/fix-settlement-replay',
+      isProposed: false,
+    };
+    const inUse = new Set<string>([LEDGER_MOUNT]);
+
+    expect(kindsOf({ ...BASE, mergedMounts: [merged] })).toEqual(['close-worktree']);
+    expect(kindsOf({ ...BASE, mergedMounts: [merged], inUseMountIds: inUse })).toEqual([]);
+    expect(
+      kindsOf({
+        ...BASE,
+        mergedMounts: [merged, { ...merged, mountId: NOTIFY_MOUNT, projectName: 'notify-relay' }],
+        inUseMountIds: inUse,
+      }),
+    ).toEqual(['close-worktree']);
+  });
+
   it('shows one maintenance move, and only when nothing else is left', () => {
     const maintenance = {
       ...BASE,

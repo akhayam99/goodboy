@@ -36,6 +36,7 @@ import { admissionStateOf } from '../admission/admissionStateOf';
 import { inputArtifactStatementsOf } from '../admission/inputArtifactStatementsOf';
 import { readAdmissionSnapshot } from '../admission/readAdmissionSnapshot';
 import { prepareRetry } from '../prepareRetry';
+import type { RestorableMount } from '../mount/restoreRefusalOf';
 import { resolveDelegateChild } from '../resolveDelegateChild';
 import type { SleepParams } from '../startDeliveredTurn';
 import type { AgentVerbContext } from '../verbContext';
@@ -57,7 +58,12 @@ export type ContinueChildOutcome =
   | Readonly<{ kind: 'continued'; treeId: AutoTreeId; delegationId: AutoDelegationId }>
   | Readonly<{ kind: 'working'; delegationId: AutoDelegationId }>
   | Readonly<{ kind: 'plain' }>
-  | Readonly<{ kind: 'refused'; code: string; message: string }>;
+  | Readonly<{
+      kind: 'refused';
+      code: string;
+      message: string;
+      restore?: RestorableMount;
+    }>;
 
 const SETTLE_WAIT_MS = 30_000;
 const SETTLE_POLL_MS = 250;
@@ -101,12 +107,14 @@ const REASON_OF = {
 type RefusedParams = {
   readonly code: string;
   readonly message: string;
+  readonly restore?: RestorableMount;
 };
 
-const continueRefused = ({ code, message }: RefusedParams): ContinueChildOutcome => ({
+const continueRefused = ({ code, message, restore }: RefusedParams): ContinueChildOutcome => ({
   kind: 'refused',
   code,
   message,
+  ...(restore === undefined ? {} : { restore }),
 });
 
 type SettledParams = {
@@ -302,7 +310,10 @@ export const continueChild = async ({
     continueWith: prepared.continueWith,
   });
   if (resolved.kind !== 'ok') {
-    const { code, message } = resolved.refusal;
+    const { code, message, restore } = resolved.refusal;
+    if (restore !== undefined) {
+      return continueRefused({ code, message, restore });
+    }
     return continueRefused({
       code,
       message: code === 'no_provider' ? message : autoRefusalUserReason({ code }),
