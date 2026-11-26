@@ -128,7 +128,7 @@ const hasFileName = ({ path }: PathParams): boolean => {
   return name.lastIndexOf('.') > 0;
 };
 
-const parentOf = ({ path }: PathParams): string => {
+const parentFolderOf = ({ path }: PathParams): string => {
   const trimmed = trimmedSlashes({ path });
   return trimmed.slice(0, trimmed.lastIndexOf('/'));
 };
@@ -141,7 +141,7 @@ const readScopeOf = ({ toolName, input }: ActionTarget): string | null => {
     return null;
   }
   if (toolName === 'Read') {
-    const parent = parentOf({ path });
+    const parent = parentFolderOf({ path });
     return parent === '' ? null : `${scopeText({ path: parent })}/**`;
   }
   const trimmed = trimmedSlashes({ path });
