@@ -130,14 +130,14 @@ const renderDesk = () => {
   return { onMove };
 };
 
-const browserRowOf = (): HTMLElement => {
-  const row = document.querySelector<HTMLElement>(
-    '[data-dock-pane="browser"] [data-dock-drag-source]',
+const browserHeadOf = (): HTMLElement => {
+  const head = document.querySelector<HTMLElement>(
+    '[data-dock-pane="browser"] [data-dock-panel-head][data-dock-drag-source]',
   );
-  if (row === null) {
-    throw new Error('The browser address row is not a drag source.');
+  if (head === null) {
+    throw new Error('The browser head is not a drag source.');
   }
-  return row;
+  return head;
 };
 
 beforeAll(async () => {
@@ -156,6 +156,7 @@ beforeEach(async () => {
     browser_tab_list: [],
     browser_visits_list: [],
     browser_history_state: null,
+    browser_console_read: { doc: null, entries: [], watermark: 0, isHeard: false },
     browser_favicon: null,
   });
 });
@@ -167,7 +168,7 @@ afterEach(() => {
 });
 
 describe('the browser address row at a narrow pane width', () => {
-  it('keeps Pin, Console and Open full page in the row while it is wide', () => {
+  it('keeps Pin and Console in the row and Open full page in the head while it is wide', () => {
     stubWidths({ rowWidth: 760 });
     render(
       <ToastProvider>
@@ -180,7 +181,7 @@ describe('the browser address row at a narrow pane width', () => {
     screen.getByRole('button', { name: 'Open full page' });
   });
 
-  it('folds Open full page into More under 560px and keeps the address, Console, More and Close', () => {
+  it('keeps the address, Console and More in the row under 560px and Open full page and Close in the head', () => {
     stubWidths({ rowWidth: 540 });
     render(
       <ToastProvider>
@@ -189,7 +190,7 @@ describe('the browser address row at a narrow pane width', () => {
     );
 
     expect(document.querySelector('[data-row-folded]')).not.toBeNull();
-    expect(screen.queryByRole('button', { name: 'Open full page' })).toBeNull();
+    screen.getByRole('button', { name: 'Open full page' });
     screen.getByRole('button', { name: 'Console' });
     screen.getByRole('combobox', { name: 'Address or search' });
     screen.getByRole('button', { name: 'Close' });
@@ -201,13 +202,13 @@ describe('the browser address row at a narrow pane width', () => {
 });
 
 describe('moving the browser pane in the desk', () => {
-  it('drags the pane by its address row like any other pane and drops it above the terminal', async () => {
+  it('drags the pane by its head like any other pane and drops it above the terminal', async () => {
     stubWidths({ rowWidth: 600 });
     stubPaneRects();
     const { onMove } = renderDesk();
 
-    expect(document.querySelector('[data-dock-pane="browser"] [data-dock-grip]')).not.toBeNull();
-    fireEvent.pointerDown(browserRowOf(), { clientX: 700, clientY: 20, button: 0 });
+    expect(document.querySelector('[data-dock-pane="browser"] [data-dock-grip]')).toBeNull();
+    fireEvent.pointerDown(browserHeadOf(), { clientX: 700, clientY: 20, button: 0 });
     pointer({ type: 'pointermove', x: 200, y: 50 });
     await nextFrame();
     pointer({ type: 'pointerup', x: 200, y: 50 });
@@ -218,13 +219,13 @@ describe('moving the browser pane in the desk', () => {
     });
   });
 
-  it('starts no drag from a control of the row', async () => {
+  it('starts no drag from a control of the head', async () => {
     stubWidths({ rowWidth: 600 });
     stubPaneRects();
     const { onMove } = renderDesk();
 
-    const back = within(browserRowOf()).getByRole('button', { name: 'Back' });
-    fireEvent.pointerDown(back, { clientX: 700, clientY: 20, button: 0 });
+    const close = within(browserHeadOf()).getByRole('button', { name: 'Close' });
+    fireEvent.pointerDown(close, { clientX: 700, clientY: 20, button: 0 });
     pointer({ type: 'pointermove', x: 200, y: 50 });
     await nextFrame();
     pointer({ type: 'pointerup', x: 200, y: 50 });

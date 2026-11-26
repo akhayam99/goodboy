@@ -183,7 +183,7 @@ describe('demo rail', () => {
       chapterOf({ id: 'direction' }).hints.map((entry) => entry.label),
     );
     expect(within(railOf()).getAllByRole('list')).toHaveLength(1);
-    expect(rowOf({ title: 'Bring your repositories' }).textContent).toContain(
+    expect(rowOf({ title: 'Bring your work' }).textContent).toContain(
       `${chapterOf({ id: 'bring' }).hints.length} of ${chapterOf({ id: 'bring' }).hints.length}`,
     );
     expect(rowOf({ title: 'Guide the work' }).textContent).toContain('Guide the work');
@@ -230,7 +230,7 @@ describe('demo rail', () => {
       fireEvent.click(row);
       expect(window.location.hash).not.toBe(`#${title}`);
     }
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your work');
     expect(document.querySelectorAll('iframe')).toHaveLength(1);
     within(rowOf({ title: 'Guide the work' })).getByText('Finish Set the direction first.');
   });
@@ -262,24 +262,22 @@ describe('demo rail', () => {
     render(<DemoPlayground />);
     fireEvent.pointerMove(railOf());
     expect(railOf().getAttribute('data-settled')).toBe('true');
-    fireEvent.click(rowOf({ title: 'Bring your repositories' }));
+    fireEvent.click(rowOf({ title: 'Bring your work' }));
     expect(railOf().getAttribute('data-settled')).toBe('false');
   });
 
   it('names a group by its full title on hover when the row has to truncate it', () => {
     render(<DemoPlayground />);
-    expect(rowOf({ title: 'Bring your repositories' }).getAttribute('title')).toBe(
-      'Bring your repositories',
-    );
+    expect(rowOf({ title: 'Bring your work' }).getAttribute('title')).toBe('Bring your work');
     expect(rowOf({ title: 'Guide the work' }).hasAttribute('title')).toBe(false);
   });
 
   it('opens the first group and keeps the later ones locked until it is done', () => {
     render(<DemoPlayground />);
-    expect(isLockedRow(rowOf({ title: 'Bring your repositories' }))).toBe(false);
+    expect(isLockedRow(rowOf({ title: 'Bring your work' }))).toBe(false);
     expect(isLockedRow(rowOf({ title: 'Set the direction' }))).toBe(true);
     fireEvent.click(rowOf({ title: 'Set the direction' }));
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your work');
   });
 
   it('keeps a finished group open to replay and unlocks the next one only when it is done', () => {
@@ -293,7 +291,7 @@ describe('demo rail', () => {
     fireEvent.click(rowOf({ title: 'Set the direction' }));
     expect(window.location.hash).toBe('#direction');
     expect(stepRows().some((step) => step.getAttribute('data-state') === 'done')).toBe(false);
-    expect(rowOf({ title: 'Bring your repositories' }).getAttribute('data-access')).toBe('done');
+    expect(rowOf({ title: 'Bring your work' }).getAttribute('data-access')).toBe('done');
     expect(rowOf({ title: 'Guide the work' }).getAttribute('data-access')).toBe('locked');
   });
 
@@ -301,7 +299,7 @@ describe('demo rail', () => {
     seedDone({ ids: ['bring'] });
     window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
-    const anchor = rowOf({ title: 'Bring your repositories' }).parentElement;
+    const anchor = rowOf({ title: 'Bring your work' }).parentElement;
     if (anchor === null) {
       throw new Error('no tooltip anchor');
     }
@@ -399,7 +397,7 @@ describe('demo rail', () => {
     expect(stepRows().map((row) => toneOf({ row }))).toEqual(
       chapterOf({ id: 'bring' }).hints.map((_, index) => (index === 0 ? 'live' : 'pending')),
     );
-    expect(toneOf({ row: rowOf({ title: 'Bring your repositories' }) })).toBe('quiet');
+    expect(toneOf({ row: rowOf({ title: 'Bring your work' }) })).toBe('quiet');
     expect(toneOf({ row: rowOf({ title: 'Guide the work' }) })).toBe('pending');
     expect(
       railOf().querySelectorAll('[data-activity-tone="attention"], [data-activity-tone="failed"]'),

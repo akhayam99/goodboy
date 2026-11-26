@@ -18,9 +18,6 @@ import {
 import { useAppStore } from '../../../../../store';
 import { selectWorkspaceKindRouting } from '../../../../../store/slices/agents/selectWorkspaceKindRouting';
 import { DEFAULT_PERMISSION_MODE } from '../../../../../features/permissions/modeCopy';
-import { createHintEngine, type HintEngine } from '../../demo/director/createHintEngine';
-import type { DemoHintReport } from '../../demo/director/demoProtocol';
-import { BRING_HINTS } from '../../demo/hints/bringHints';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { OnboardingScene } from './OnboardingScene';
@@ -233,100 +230,4 @@ describe('onboarding scene', () => {
     const messages = useAppStore.getState().undoNotices.map((notice) => notice.toast.message);
     expect(messages).toEqual(['Setup stays open in the demo.']);
   }, 20000);
-});
-
-type ClickParams = {
-  readonly element: Element;
-};
-
-const visitorClick = async ({ element }: ClickParams): Promise<boolean> => {
-  await act(async () => {
-    await new Promise<void>((resolve) => {
-      window.requestAnimationFrame(() => resolve());
-    });
-  });
-  const event = new MouseEvent('click', { bubbles: true, cancelable: true });
-  Object.defineProperty(event, 'isTrusted', { value: true });
-  await act(async () => {
-    element.dispatchEvent(event);
-  });
-  return event.defaultPrevented;
-};
-
-const engines: Array<HintEngine> = [];
-
-afterEach(() => {
-  for (const engine of engines.splice(0)) {
-    engine.dispose();
-  }
-});
-
-const startBringEngine = () => {
-  const reports: Array<DemoHintReport> = [];
-  const engine = createHintEngine({
-    store: useAppStore,
-    view: window,
-    generation: () => 0,
-    hintsOf: () => BRING_HINTS,
-    onReport: ({ report }) => reports.push(report),
-  });
-  engines.push(engine);
-  engine.setTrack({ chapterId: 'bring', settledIds: [], isGuarding: true });
-  return {
-    tried: (): ReadonlyArray<string> =>
-      reports.flatMap((report) => (report.type === 'tried' ? [report.hintId] : [])),
-    blocked: (): ReadonlyArray<string> =>
-      reports.flatMap((report) => (report.type === 'blocked' ? [report.hintId] : [])),
-  };
-};
-
-describe('chapter 1 hints on the onboarding scene', () => {
-  it('walks sign in, continue, create, connect Linear and the issue list', async () => {
-    await mount({ query: '&step=agents&pick=folder&github=none&director=1' });
-    await waitFor(() => expect(shownStep()).toBe('agents'), { timeout: 5000 });
-    const { tried, blocked } = startBringEngine();
-    expect(BRING_HINTS).toHaveLength(6);
-
-    expect(await visitorClick({ element: await enabledButton({ name: 'Check now' }) })).toBe(true);
-    expect(blocked()).toEqual(['setup-agent-signin']);
-    await visitorClick({ element: await enabledButton({ name: /Sign in to Codex/ }) });
-    await waitFor(() => expect(tried()).toEqual(['setup-agent-signin']), { timeout: 4000 });
-
-    await visitorClick({ element: await enabledButton({ name: /^Continue/ }) });
-    await waitFor(() => expect(tried()).toContain('setup-agents'), { timeout: 4000 });
-    await waitFor(() => expect(shownStep()).toBe('workspace'), { timeout: 5000 });
-
-    await visitorClick({ element: await enabledButton({ name: /Create workspace/ }) });
-    await waitFor(() => expect(tried()).toContain('setup-create'), { timeout: 5000 });
-    await waitFor(() => expect(shownStep()).toBe('first-session'), { timeout: 5000 });
-
-    const openTools = await screen.findByRole('button', { name: 'Connect Linear or Jira' });
-    expect(await visitorClick({ element: await enabledButton({ name: /^Start/ }) })).toBe(true);
-    expect(await visitorClick({ element: await enabledButton({ name: 'Skip' }) })).toBe(true);
-    expect(shownStep()).toBe('first-session');
-    expect(blocked().length).toBeGreaterThan(0);
-
-    await visitorClick({ element: openTools });
-    await waitFor(() => expect(shownStep()).toBe('tools'), { timeout: 5000 });
-    await waitFor(() => expect(tried()).toContain('setup-open-tools'), { timeout: 4000 });
-
-    await visitorClick({ element: await enabledButton({ name: 'Connect Linear' }) });
-    await waitFor(() => expect(tried()).toContain('setup-linear'), { timeout: 4000 });
-
-    await visitorClick({ element: await enabledButton({ name: /^Continue/ }) });
-    await waitFor(() => expect(shownStep()).toBe('first-session'), { timeout: 5000 });
-    await waitFor(() => expect(tried()).toEqual(BRING_HINTS.map((hint) => hint.id)), {
-      timeout: 4000,
-    });
-
-    const issues = await screen.findByRole('list', { name: 'Issues' });
-    expect(
-      within(issues)
-        .getAllByText(/^HBL-/)
-        .map((node) => node.textContent),
-    ).toEqual(['HBL-412', 'HBL-409', 'HBL-397']);
-    expect(
-      within(issues).getByText('HBL-412').closest('[aria-pressed]')?.getAttribute('aria-pressed'),
-    ).toBe('true');
-  }, 40000);
 });

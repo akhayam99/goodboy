@@ -110,9 +110,9 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
   if (isRemoved) {
     return (
       <DrawerFrame
+        isDock
         title="Terminal"
         icon={CONCEPT_ICONS.terminal}
-        iconClassName="text-faint-foreground"
         onClose={onClose}
         scroll="self"
       >
@@ -155,23 +155,9 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
 
   return (
     <DrawerFrame
+      isDock
       title="Terminal"
       icon={CONCEPT_ICONS.terminal}
-      iconClassName="text-faint-foreground"
-      titleContent={
-        <span className="flex w-full min-w-0 items-center overflow-hidden">
-          <TerminalScopePicker
-            worktree={worktree}
-            targets={targets}
-            isBranchless={isBranchless}
-            hasTrackTabs={tracks.tabs.length > 1}
-            busyPaths={busyPaths}
-            onPickTarget={pickTarget}
-            onPickSessionFolder={pickSessionFolder}
-            onPickAll={() => openTerminalOnPage({ terminalId: selected.id, sessionId })}
-          />
-        </span>
-      }
       menu={
         <TerminalStripActions
           worktree={worktree}
@@ -188,6 +174,18 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
         onKeyDown={handleKeyDown}
         className="flex h-full min-h-0 flex-1 flex-col gap-2 pb-2 pt-1"
       >
+        <div className="flex min-w-0 items-center overflow-hidden px-2">
+          <TerminalScopePicker
+            worktree={worktree}
+            targets={targets}
+            isBranchless={isBranchless}
+            hasTrackTabs={tracks.tabs.length > 1}
+            busyPaths={busyPaths}
+            onPickTarget={pickTarget}
+            onPickSessionFolder={pickSessionFolder}
+            onPickAll={() => openTerminalOnPage({ terminalId: selected.id, sessionId })}
+          />
+        </div>
         {tracks.tabs.length < 2 ? null : (
           <TerminalWorktreeTabs
             tabs={tracks.tabs}

@@ -1,22 +1,22 @@
 import {
   ArrowLeft,
   ArrowRight,
-  ArrowUpRight,
   CodeXml,
-  GripVertical,
   Pin,
   RotateCw,
   Square,
-  X,
+  SquareDashedMousePointer,
 } from '@goodboy/ui/icons';
-import { ICON_SIZE, IconButton, PANE_RHYTHM, cn, useDockGrip } from '@goodboy/ui';
+import { IconButton, PANE_RHYTHM, cn } from '@goodboy/ui';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useBrowserKeys } from '../../hooks/useBrowserKeys';
 import { useCommandField } from '../../hooks/useCommandField';
+import type { ElementPick } from '../../hooks/useElementPick';
 import { useFindInPage } from '../../hooks/useFindInPage';
-import type { BrowserConsoleToggle, BrowserPaneModel } from '../../types';
+import type { BrowserConsoleToggle, BrowserErrorsShow, BrowserPaneModel } from '../../types';
 import { BrowserCommandPanel } from './BrowserCommandPanel';
+import { BrowserErrorCount } from './BrowserErrorCount';
 import { BrowserFindBar } from './BrowserFindBar';
 import { BrowserLoadLine } from './BrowserLoadLine';
 import { BrowserMoreMenu } from './BrowserMoreMenu';
@@ -31,25 +31,26 @@ type Props = {
   readonly model: BrowserPaneModel;
   readonly isAddressShortcutOn: boolean;
   readonly consoleToggle?: BrowserConsoleToggle;
+  readonly errors?: BrowserErrorsShow;
+  readonly pick?: ElementPick;
   readonly page?: BrowserStripGroups;
   readonly onOpenAsPage?: () => void;
   readonly onDock?: () => void;
-  readonly onClose?: () => void;
 };
 
 export const BrowserAddressRow = ({
   model,
   isAddressShortcutOn,
   consoleToggle,
+  errors,
+  pick,
   page,
   onOpenAsPage,
   onDock,
-  onClose,
 }: Props) => {
   const canStep = model.shown !== null;
   const field = useCommandField({ model });
   const find = useFindInPage({ model });
-  const grip = useDockGrip();
   const { ref: rowRef, width } = useElementWidth();
   const isFolded = width !== null && width > 0 && width < NARROW_ROW_PX;
   const folded = isFolded ? foldedBrowserRowsOf({ model }) : [];
@@ -67,29 +68,27 @@ export const BrowserAddressRow = ({
     isAddressShortcutOn && consoleToggle !== undefined,
     { canDecline: true },
   );
+  useShortcut(
+    'browser.pick',
+    () => {
+      if (pick === undefined || (!pick.canPick && !pick.isPicking)) {
+        return false;
+      }
+      pick.toggle();
+      return true;
+    },
+    isAddressShortcutOn && pick !== undefined,
+    { canDecline: true },
+  );
   return (
     <>
       <div
         ref={rowRef}
         data-grid-row="1"
         data-browser-row=""
-        data-dock-drag-source={grip.canDrag ? '' : undefined}
         data-row-folded={isFolded ? '' : undefined}
-        onPointerDown={grip.canDrag ? (event) => grip.press({ event }) : undefined}
-        className={cn(
-          'relative flex shrink-0 items-center gap-0.5 px-2',
-          PANE_RHYTHM.firstRow,
-          grip.canDrag && 'cursor-grab',
-        )}
+        className={cn('relative flex shrink-0 items-center gap-0.5 px-2', PANE_RHYTHM.firstRow)}
       >
-        {grip.canDrag ? (
-          <GripVertical
-            size={ICON_SIZE.row}
-            aria-hidden
-            data-dock-grip=""
-            className="shrink-0 text-faint-foreground"
-          />
-        ) : null}
         <IconButton
           icon={ArrowLeft}
           label="Back"
@@ -128,6 +127,20 @@ export const BrowserAddressRow = ({
             onClick={model.togglePin}
           />
         )}
+        {errors === undefined || model.shown === null ? null : (
+          <BrowserErrorCount errors={errors} />
+        )}
+        {pick === undefined ? null : (
+          <IconButton
+            icon={SquareDashedMousePointer}
+            label="Select an element"
+            aria-pressed={pick.isPicking}
+            shortcut="browser.pick"
+            tooltipSide="top"
+            disabled={!pick.canPick && !pick.isPicking}
+            onClick={pick.toggle}
+          />
+        )}
         {consoleToggle === undefined ? null : (
           <IconButton
             icon={CodeXml}
@@ -140,19 +153,8 @@ export const BrowserAddressRow = ({
           />
         )}
         <BrowserMoreMenu model={model} folded={folded} onOpenAsPage={onOpenAsPage} />
-        {isFolded || onOpenAsPage === undefined ? null : (
-          <IconButton
-            icon={ArrowUpRight}
-            label={NAMES.openFullPage}
-            tooltipSide="top"
-            onClick={onOpenAsPage}
-          />
-        )}
         {onDock === undefined ? null : (
           <DockButton tooltip={NAMES.dockBesideThePage} onDock={onDock} />
-        )}
-        {onClose === undefined ? null : (
-          <IconButton icon={X} label="Close" tooltipSide="top" onClick={onClose} />
         )}
         {model.isLoading ? <BrowserLoadLine /> : null}
         {field.isOpen ? <BrowserCommandPanel model={model} field={field} /> : null}

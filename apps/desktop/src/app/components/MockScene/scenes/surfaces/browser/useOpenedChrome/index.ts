@@ -24,10 +24,27 @@ const SELECTORS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   more: `${PANE} button[aria-label="More"]`,
   handoff: `${PANE} button[aria-label="More"]`,
   console: `${PANE} button[aria-label="Console"]`,
+  pick: `${PANE} button[aria-label="Select an element"]`,
+  'console-right': `${PANE} button[aria-label="Console"]`,
+  'network-detail': `${PANE} button[aria-label="Console"]`,
+  errors: `${PANE} button[data-browser-errors]`,
 };
 
+const TOOLS = `${PANE} section[aria-label="Console"]`;
+
 const OPENED: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
-  console: `${PANE} section[aria-label="Console"]`,
+  console: TOOLS,
+  'console-right': TOOLS,
+  'network-detail': TOOLS,
+  errors: TOOLS,
+  pick: `${PANE} [aria-label="Note for the picked element"]`,
+};
+
+const NEXT_CLICKS: Readonly<Partial<Record<BrowserPaneSceneState, ReadonlyArray<string>>>> = {
+  'network-detail': [
+    `${TOOLS} [role="tablist"][aria-label="Tools"] [role="tab"][aria-selected="false"]`,
+    `${TOOLS} button[aria-label="error: /api/orders/confirm"]`,
+  ],
 };
 
 const FIELDS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
@@ -77,6 +94,19 @@ export const useOpenedChrome = ({ isOn, state }: Params): void => {
     const opened = OPENED[state];
     const fieldSelector = FIELDS[state] ?? FIELD;
     let frame = 0;
+    let clicks = NEXT_CLICKS[state] ?? [];
+    const clickNext = () => {
+      const [next, ...rest] = clicks;
+      if (next === undefined) {
+        return;
+      }
+      const target = document.querySelector<HTMLElement>(next);
+      if (target !== null) {
+        target.click();
+        clicks = rest;
+      }
+      frame = window.requestAnimationFrame(clickNext);
+    };
     const typeText = () => {
       const field = document.querySelector<HTMLInputElement>(fieldSelector);
       if (field === null) {
@@ -108,9 +138,9 @@ export const useOpenedChrome = ({ isOn, state }: Params): void => {
         ) {
           button.click();
         }
-        if (document.querySelector(opened) === null) {
-          frame = window.requestAnimationFrame(look);
-        }
+        frame = window.requestAnimationFrame(
+          document.querySelector(opened) === null ? look : clickNext,
+        );
         return;
       }
       button.click();

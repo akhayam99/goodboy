@@ -146,7 +146,7 @@ Each turn ends with a quiet footer with its time. It shows the provider mark and
 
 The agent's name is the last crumb of the session head. Its state, spend and settings sit on the line under it, with the one action and the menu at its end.
 
-A Lead's **Agents** column stands beside them. Each agent is one line on the trace, with its state as the node, its role and its task. A child hangs under the agent that started it, and no group folds.
+A Lead's **Agents** column stands beside them. It is an indented list. The Lead is the header row. Each agent is one line with its role glyph, tinted by its state, and its task as the title. A child is indented under the agent that started it, and no group folds. Rest on a glyph to read the role.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-dark.webp">
@@ -185,12 +185,15 @@ Write to an agent the same way everywhere.
 
 See every agent of a run beside its page. A Lead run and every agent under it share one page. It keeps one session head and an **Agents** column on the left, like the files of the Changes page.
 
-The header reads **Agents** with a count that includes every agent. The first row is the run itself. Under it is one row per agent with its role, task, state and cost, and the activity trace on its left edge. Each row shows the model by name with the effort, muted, and hides it when the panel is too narrow to keep the title whole.
+The header reads **Agents** with a count that includes every agent. The first row is the run itself. Under it is one row per agent with its role glyph, task, state and cost, and the tree on its left edge. Each row shows the model by name with the effort, muted, and hides it when the panel is too narrow to keep the title whole.
 
 #### Using the column
 
 - The column opens wide, can be resized and remembers its width. On a narrow window it folds to **Show agents**.
-- Picking a row shows that agent's conversation in the middle and marks the row. Picking the run row shows the run again.
+- Picking a row shows that agent's conversation in the middle. The row you are viewing stands out with a lit surface and an accent on its edge.
+- Folded, the column keeps the list as a slim strip of glyphs, one per agent, in the same order. Each is tinted by its state. Pick one to open that agent.
+- In an agent's conversation, the agents it started list the same way: a glyph tinted by state, the task, the state word and **Open**. The role is the glyph's tooltip.
+- A task too long for the row is cut at a word with an ellipsis, and rest on it to read it whole.
 - **↑** and **↓** move through the rows, **Enter** opens one.
 - A note you queued in the composer shows as a row of the tree, with **Edit** and **Remove**.
 - A page has one **Stop**. On a running agent it sits in the box you type in. **Esc** goes one crumb up.
@@ -471,6 +474,7 @@ Get agents and summaries in the language of your goal.
 
 This part is for contributors and agents who change the feature.
 
+- Agents column: `LeadTree` draws the open tree and `LeadTreeFolded` the folded strip, both from the same `LeadTreeItem` list; the strip sits in the `foldedActions` slot of `StudioRailLayout`. The Activity agent row puts the role glyph first and keeps its ordinal for screen readers only (`TimelineRowLabel`). Details in `docs/auto.md`.
 - Chat archive and rename: every archive in `features/workspace-chat` goes through `offerArchiveUndo`, the `undoable` toast that restores the chats and opens the open one again in Chat, from any studio. The undo drops itself once the chats left Archived, and selects only a chat that came back (`offerArchiveUndo.test.ts`). `nextChatAfter` picks the chat below, then above, in the list order of `chatOrderOf`, or in the Archived order for an archived chat (`ChatStudio.test.tsx`). A row renames through `useInlineRename` and `TitleField`. The first visit autofocuses only when `isUserActivated` says a click or a key opened it, so a restore at launch leaves the focus alone (`ChatStudio.test.tsx`).
 - Lead: the screens say Lead, the code keeps the engine name auto (role `auto`, `auto_trees`, `features/auto/`); [docs/auto.md](../auto.md#names) maps one to the other. The five words come from `leadStopOf` in `packages/core/src/auto/leadStopOf.ts`, through `autoTreeWordOf`. The ⌘K rows are `leadEntries` over `workRowsOf`, read by `loadWorkLeads` from `listAutoWorkTreesOfWorkspace` in `packages/db/src/queries/auto-work-trees.ts`. A saved `work` studio folds to the Board in `withoutRemovedPages`. Asks are listed by `leadAsksOf`, answered by `answerAsk` and drawn in `AutoDockAsk`.
 - Desk pair: the pull request is the drawer kind `pull-request` (mount, tab, check). `slotAfterOpen` keeps a `transcript` and a `pull-request` of one session as the pair (`deskStackOf`). The tool stays in the grid beside them. `shownDeskStackOf` draws the pair only on the Desk face. There `DrawerHost` draws it with `DeskDetailStack`, and `selectSlotBack` draws no back chip for it.

@@ -95,6 +95,21 @@ describe('DrawerFrame head', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
+  it('leads a dock head with the back chip too', () => {
+    const onBack = vi.fn();
+    render(
+      <DrawerBackChipContext.Provider value={{ kind: 'Plan', title: 'Add tax', onBack }}>
+        <DrawerFrame isDock title="Scripts" onClose={vi.fn()}>
+          body
+        </DrawerFrame>
+      </DrawerBackChipContext.Provider>,
+    );
+
+    expect(headButtons()).toEqual(['Back to Plan · Add tax', 'Close']);
+    fireEvent.click(screen.getByRole('button', { name: /^Back to Plan/ }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps a subview back row and lets Escape step back before the chip', () => {
     const onBack = vi.fn();
     const onClose = vi.fn();

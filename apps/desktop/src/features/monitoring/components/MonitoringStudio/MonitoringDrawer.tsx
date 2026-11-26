@@ -26,9 +26,9 @@ export const MonitoringDrawer = ({ onClose }: Props) => {
 
   return (
     <DrawerFrame
+      isDock
       title={NAMES.monitoring}
       icon={CONCEPT_ICONS.monitoring}
-      iconClassName="text-faint-foreground"
       meta={monitoringMetaOf({
         isReady,
         isEmpty,
@@ -36,7 +36,7 @@ export const MonitoringDrawer = ({ onClose }: Props) => {
         takenAt: model.takenAt,
         now,
       })}
-      action={hasRows ? <PinPortPopover /> : null}
+      action={hasRows ? <PinPortPopover isIcon /> : null}
       toolbar={
         hasRows ? (
           <SearchField

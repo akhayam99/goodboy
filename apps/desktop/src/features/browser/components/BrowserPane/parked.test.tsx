@@ -123,6 +123,7 @@ beforeEach(async () => {
       return [factsOf({ state })];
     },
     browser_history_state: null,
+    browser_console_read: { doc: null, entries: [], watermark: 0, isHeard: false },
     browser_favicon: null,
     browser_tab_place: null,
     browser_tab_open: () => ({ ...factsOf({ state: 'live' }), id: 'live-notify-relay' }),

@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from 'react';
 import { ChevronRight, RefreshCw } from '@goodboy/ui/icons';
-import { cn, ICON_SIZE, IconButton, FOCUS_RING } from '@goodboy/ui';
+import { cn, ICON_SIZE, IconButton, FOCUS_RING, MidTruncate } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { SessionScriptGroup } from '../../buildSessionScripts';
 
@@ -59,7 +59,7 @@ export const ScriptGroupSection = ({
           {group.branch === '' ? null : (
             <span className="flex min-w-0 items-center gap-1 text-meta text-faint-foreground">
               <BranchIcon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-              <span className="truncate">{group.branch}</span>
+              <MidTruncate name={group.branch} />
             </span>
           )}
         </button>
