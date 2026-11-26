@@ -3,28 +3,21 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { appVersionOf, chromePathOf, DEFAULT_SHOT_URL, recordFigure } from './lib/figures.mjs';
-import { FROZEN_AT, frozenClockSource } from './lib/frozenClock.mjs';
+import { chromePathOf, DEFAULT_SHOT_URL } from './lib/figures.mjs';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT_DIRECTORY = resolve(ROOT_DIRECTORY, 'docs/readme');
 const SITE_DIRECTORY = resolve(ROOT_DIRECTORY, 'website/public/hero');
 
 const THEMES = ['dark', 'light'];
 const WIDTH = 1920;
 const HEIGHT = 1200;
-const README_WIDTH = 1680;
-const README_HEIGHT = 1118;
-const README_SCALE = 2;
 const SCALE = 4;
 const SETTLE_MS = 12000;
 const SITE_WIDTH = 1208;
 const SITE_CROP_HEIGHT = 840;
 const SITE_DENSITIES = [1, 2, 3];
-const README_SCENE = 'readme-hero&brand=1';
 const SITE_SCENE = 'hero-diff&brand=1';
 const APP = process.argv[2]?.startsWith('http') === true ? process.argv[2] : DEFAULT_SHOT_URL;
-const VERSION_ARGUMENT = process.argv.indexOf('--version');
 
 const pause = (ms) => new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
 
@@ -67,7 +60,7 @@ const connect = async ({ port }) => {
 
 const openBrowser = async () => {
   const port = 9300 + Math.floor(Math.random() * 300);
-  const profile = mkdtempSync(join(tmpdir(), 'readme-hero-'));
+  const profile = mkdtempSync(join(tmpdir(), 'site-hero-'));
   const chrome = spawn(
     chromePathOf(),
     [
@@ -103,7 +96,7 @@ const webp = ({ input, output, width, cropHeight }) => {
   execFileSync('cwebp', ['-quiet', '-q', '82', '-m', '6', ...crop, ...resize, input, '-o', output]);
 };
 
-const capture = async ({ theme, workDirectory, scene, width, height, scale, name, frozenAt }) => {
+const capture = async ({ theme, workDirectory, scene, width, height, scale, name }) => {
   const { send, close } = await openBrowser();
   try {
     await send('Emulation.setDeviceMetricsOverride', {
@@ -119,11 +112,6 @@ const capture = async ({ theme, workDirectory, scene, width, height, scale, name
       ],
     });
     await send('Page.enable');
-    if (frozenAt !== undefined) {
-      await send('Page.addScriptToEvaluateOnNewDocument', {
-        source: frozenClockSource({ at: frozenAt }),
-      });
-    }
     await send('Page.navigate', { url: `${APP}/?scene=${scene}&theme=${theme}` });
     await pause(SETTLE_MS);
     const shot = await send('Page.captureScreenshot', {
@@ -141,18 +129,6 @@ const capture = async ({ theme, workDirectory, scene, width, height, scale, name
 };
 
 const shoot = async ({ theme, workDirectory }) => {
-  const readmePng = await capture({
-    theme,
-    workDirectory,
-    scene: README_SCENE,
-    width: README_WIDTH,
-    height: README_HEIGHT,
-    scale: README_SCALE,
-    name: 'readme',
-    frozenAt: FROZEN_AT,
-  });
-  const outPath = join(OUT_DIRECTORY, `readme-hero-${theme}.webp`);
-  webp({ input: readmePng, output: outPath });
   const pngPath = await capture({
     theme,
     workDirectory,
@@ -169,25 +145,15 @@ const shoot = async ({ theme, workDirectory }) => {
     webp({ input: pngPath, output, width, cropHeight: SITE_CROP_HEIGHT });
     return output;
   });
-  return {
-    outPath,
-    sitePaths,
-    pixels: `${README_WIDTH * README_SCALE}x${README_HEIGHT * README_SCALE}`,
-  };
+  return { sitePaths };
 };
 
-const workDirectory = mkdtempSync(join(tmpdir(), 'readme-hero-png-'));
+const workDirectory = mkdtempSync(join(tmpdir(), 'site-hero-png-'));
 try {
   for (const theme of THEMES) {
-    const { outPath, sitePaths, pixels } = await shoot({ theme, workDirectory });
-    console.log(`wrote ${outPath} (${pixels})`);
+    const { sitePaths } = await shoot({ theme, workDirectory });
     sitePaths.forEach((path) => console.log(`wrote ${path}`));
   }
-  const version = appVersionOf({
-    override: VERSION_ARGUMENT === -1 ? undefined : process.argv[VERSION_ARGUMENT + 1],
-  });
-  recordFigure({ key: 'readme/readme-hero', version, recipe: 'pnpm readme:hero' });
-  console.log(`figures.json: readme/readme-hero is Goodboy ${version}`);
 } finally {
   rmSync(workDirectory, { recursive: true, force: true });
 }

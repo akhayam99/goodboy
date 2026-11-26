@@ -43,7 +43,7 @@
     "features:reshoot": "node scripts/features-reshoot.mjs",
     "fidelity:shots": "node scripts/fidelity-shots.mjs",
     "validate:scenes": "node scripts/validate-scenes.mjs",
-    "readme:hero": "node scripts/readme-hero.mjs",
+    "site:hero": "node scripts/site-hero.mjs",
     "demo:walk": "node scripts/demo-walk.mjs",
     "features:check": "node scripts/split-features.mjs --check",
     "features:snapshot": "node scripts/snapshot-features.mjs",

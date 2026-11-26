@@ -80,7 +80,7 @@ Below, `X` is the new version and `X-1` is the current latest.
      text updated in the same PR, or a new entry when none tells it yet. The
      website's product views are React mocks, so edit the mock when the
      feature changes how the app looks. Its one capture is the hero, which
-     `pnpm readme:hero` writes together with the README hero. Re-shoot every figure the
+     `pnpm site:hero` writes. Re-shoot every figure the
      change made stale in `docs/readme/`, from the mock scenes as
      [mock-screenshots.md](mock-screenshots.md) describes, at a scale of 4 or
      more, in both themes. Feature-area guide figures go to goodboy-media through
