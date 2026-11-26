@@ -42,43 +42,17 @@
 
 ## Segment menus
 
-`CrumbMenu` stays in `Trail` and comes back per segment where a switch is missed.
-Its menu lists the siblings of what the segment names, plus at most two actions
-of that thing. A segment whose menu would hold fewer than two entries is a plain
-crumb with no chevron.
+`Trail` can still give a segment a menu (`menu`, a `CrumbMenuModel` drawn by
+`CrumbMenuTrigger`), but no trail in the app passes one today. Session crumbs
+carry no segment menu ([session-rail.md](session-rail.md#crumbs)), and the
+session page counts live with the page tabs
+([session-rail.md](session-rail.md#counts-and-the-current-sign)).
 
-- **The page segment** (depth one, or `Session` when alone) lists the session's
-  pages, grouped as pages, Tools and Linked, each with a count from one pure
-  table, `pageCountWordOf` (`features/session/pageCountWord.ts`), noun last and
-  empty at zero:
-  - Branch: `3 branches` with more than one mount and no diff, else `5 need you`,
-    else the one mount's branch name with its `+x -y` diff on the open session's
-    row only (a review note is not a branch fact);
-  - Runs `2 running` in the info tone (else `4 runs`), Agents `1 running` (else
-    `3 agents`), Artifacts `4 artifacts`, Questions `2 open`.
-  - The page tabs and the menu read it through `pageSlotOf`
-    (`features/session/pageSlot.ts`). `Session` has no menu once it has children.
-- **Siblings.** A run lists the session's runs (Running, Finished, a chained run
-  indented with `after ...`); a step lists every step of its run, the ones not
-  started switched off; an agent lists the agents of the same home grouped Needs
-  you, Running, Done, newest first; an artifact lists the artifacts by kind.
-- **Actions** exist only where a real action backs them: `Start a run` and `New
-artifact` (the kind picker) on their pages, `Stop this step` while a step runs,
-  `Retry step` when it failed or is blocked (`recoverStuckStep`), `Show saved
-copy` and `Copy folder path` on the open artifact, and `Resolve again` on an
-  attempt once none on that comment is queued or running (`useResolveAgain`, as
-  on the Comments tab).
-- **Five slots per row**: lead, label with a faint second part, meta, a state
-  that is always a word (the reading the Runs list makes in `sessionRunsOf`), and
-  a check on the current row, even when it is the only row.
-- **Chevrons.** The last segment opens its menu from the whole segment and always
-  shows the chevron. An ancestor goes up by its name and opens its menu from a
-  faint, always visible chevron that doubles as the separator, so the gaps are
-  equal. Name and chevron light up as one chip on hover.
-- Page icons take the tone of their concept (linked tools keep their brand
-  colour). Widths are 300 (pages, scopes, sections), 380 (runs, steps, agents,
-  artifacts, conversations, attempts) and 460 (branches); a filter appears from
-  nine rows up.
-- An action that breaks something (Stop this step) confirms inside the menu's
-  action band with `InlineConfirm`; Escape cancels the confirm first. Shortcuts
-  live in the segment tooltip and the palette, never in the rows.
+When a segment gets a menu, the primitive keeps these rules:
+
+- A menu with fewer than two entries (rows plus actions) is dropped, and the
+  segment stays a plain crumb with no chevron (`crumbMenuWithChoice`).
+- A filter appears from nine rows up when the menu names a filter placeholder.
+- Widths are 320 (`narrow`), 380 (`regular`) and 460 (`wide`).
+- An action that breaks something confirms inside the menu's action band with
+  `InlineConfirm`.

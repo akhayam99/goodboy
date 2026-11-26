@@ -42,7 +42,8 @@ with or without a branch, from one list (`pagesOf` in
   count beside the 6px info dot while something runs; the warning dot first with
   its own count for a run that waits on you or failed (the dot of
   `runRowFactsOf`); the warning dot on Questions while a question waits.
-- Every number comes from `pageSlotOf` over `usePageCountFacts`, so the label, the
+- Every number comes from `pageSlotOf` over `usePageCountFacts` (its count word
+  from `pageCountWordOf`, `features/session/pageCountWord.ts`), so the label, the
   count and the dot never differ between tabs and tooltips. A tooltip holds the
   label, the count word ("1 running") and the shortcut (⌘⌥O, W, P, Q, F).
 - The Runs count is `sessionRunCountsOf` over the `sessionRunsOf` rows the page
