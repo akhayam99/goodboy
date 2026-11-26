@@ -1,6 +1,6 @@
 import { ActivityRow, WorkNode, type ActivityRowTone } from '@goodboy/ui';
 import type { RailRow } from '../../../../features/workTreeModel/railGeometry';
-import { SpawnedRailCell } from '../../../../features/session/components/SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
+import { SpawnedRailCell } from './SpawnedRailCell';
 import { STEP_ROW_HEIGHT } from './demoRailOf';
 
 export type StepState = 'done' | 'current' | 'todo';

@@ -72,21 +72,21 @@ describe('consoleRowsOf', () => {
         kind: 'error',
         level: 'error',
         text: 'Uncaught TypeError: total is undefined',
-        error: { origin: 'uncaught', stack: 'at checkout.js:40:3', requestId: null },
+        error: { origin: 'uncaught', stack: 'at checkout.js:40:3', requestId: null, at: null },
       }),
       entry({
         seq: 8,
         kind: 'error',
         level: 'error',
         text: 'POST /api/payments 502',
-        error: { origin: 'request', stack: null, requestId: 'r6' },
+        error: { origin: 'request', stack: null, requestId: 'r6', at: null },
       }),
       entry({
         seq: 9,
         kind: 'error',
         level: 'error',
         text: 'Unhandled rejection: payment declined',
-        error: { origin: 'rejection', stack: null, requestId: null },
+        error: { origin: 'rejection', stack: null, requestId: null, at: null },
       }),
     ];
 

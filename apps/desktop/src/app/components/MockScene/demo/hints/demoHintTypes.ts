@@ -21,6 +21,18 @@ type HintAnchor = string | ((probe: HintProbe) => string | null);
 
 export type HintSide = 'top' | 'bottom' | 'left' | 'right';
 
+type OfferRunParams = {
+  readonly root: Document;
+};
+
+export type HintOffer = {
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly note: string;
+  readonly label: string;
+  readonly run: (params: OfferRunParams) => void;
+};
+
 export type HintAlign = 'center' | 'end';
 
 type HintRecovery = {
@@ -42,6 +54,7 @@ export type DemoHint = {
   readonly recoveryAnchor?: HintAnchor;
   readonly recovery?: HintRecovery;
   readonly press?: string;
+  readonly offer?: HintOffer;
   readonly focus?: HintAnchor;
   readonly side?: HintSide;
   readonly isSideLocked?: boolean;

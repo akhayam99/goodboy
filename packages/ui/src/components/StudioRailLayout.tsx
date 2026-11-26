@@ -154,7 +154,10 @@ export const StudioRailLayout = ({
       onCollapsedChange === undefined ||
       !canUnfold ||
       rail === null ? null : (
-        <div data-studio-rail-unfold="" className="flex w-11 shrink-0 flex-col items-center">
+        <div
+          data-studio-rail-unfold=""
+          className="flex min-h-0 w-11 shrink-0 flex-col items-center"
+        >
           <div data-grid-row="1" className={cn('flex shrink-0 items-center', PANE_RHYTHM.firstRow)}>
             <IconButton
               icon={PanelLeftOpen}

@@ -28,6 +28,7 @@ import {
 } from '../demoProtocol';
 import { readDemoCommand } from '../readDemoCommand';
 import { readDemoHintsCommand } from '../readDemoHintsCommand';
+import { readDemoOfferCommand } from '../readDemoOfferCommand';
 import { readDemoRevealCommand } from '../readDemoRevealCommand';
 import { readDemoThemeMessage } from '../readDemoThemeMessage';
 import { readDemoShortcutCommand } from '../readDemoShortcutCommand';
@@ -150,6 +151,13 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
         if (reveal !== null) {
           if (reveal.generation === director.generation()) {
             hints?.reveal({ hintId: reveal.hintId });
+          }
+          return;
+        }
+        const offer = readDemoOfferCommand({ data: event.data });
+        if (offer !== null) {
+          if (offer.generation === director.generation()) {
+            hints?.offer({ hintId: offer.hintId });
           }
           return;
         }

@@ -1410,6 +1410,14 @@ with Sessions, the workspace identity and Repositories. It holds no sidebar togg
 control. `ShellRail` owns its width through `shellRailGeometry`, 64px or 44px
 under 1100px (see [The left column](design/layout.md#the-left-column)).
 
+**Every dock panel starts with one head.** `DockPanelHead` is 40px (`h-10 px-2 pt-2`):
+title or tab strip, at most two icon actions, a menu, and Close last. The whole head
+is the drag handle with a grab cursor and there is no grip icon. A panel opens
+`DrawerFrame` with `isDock` instead of drawing its own head, and keeps its own
+tools as the first row of its body. A name that may share a prefix with another
+(a worktree or branch) cuts in the middle and keeps its last 12 characters
+(`MidTruncate`, `midTruncate`), with the full name as its tooltip and accessible name.
+
 **An inline trigger inside `AnchoredPopover` passes `anchorClassName="flex"`.**
 The anchor is a block `div`, so an `inline-flex` trigger (a `Chip`, a pill)
 sits on a line box as tall as the inherited body line height and lands on its

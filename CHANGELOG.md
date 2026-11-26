@@ -12,6 +12,48 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.42.1
+
+The Board and the Overview read cleaner, the Browser keeps its tabs in one row, and Console and Network open in a dock you place.
+
+### Improved
+
+#### Browser tabs in one row
+<!-- gb area=app pr=2385 -->
+
+The Browser head is one row: Back, Forward, Reload, your project pins, the session's tabs, New tab, then Pin, Console, More, Open full page and Close. The tab you view is the address. Click it or press ⌘L to type a new one.
+
+On the Browser page, the session groups are labels in the same row, and a click folds a group.
+
+#### Console and Network in a dock
+<!-- gb area=app pr=2388 -->
+
+Console and Network open in one dock under the page or beside it. The icon in the dock head moves it to the other side, and its edge resizes it. Side and size are kept for the Browser pane and the Browser page separately.
+
+A click on a Network row opens the request, with its method, path and status, and a back arrow to the list.
+
+#### The Board puts Needs you in Running
+<!-- gb area=sessions pr=2362 -->
+
+A session that needs you sits at the top of Running, the oldest wait first, with a yellow line at its left edge and its wait on the card. Sessions that only run follow with a blue line. The Board badge in the rail still counts what needs you.
+
+The top bar no longer says Needs you, and Sessions shows a small yellow dot while one needs you.
+
+#### Needs you reads like the rest of the Overview
+<!-- gb area=sessions pr=2379 -->
+
+Needs you is a section head like Next, Projects and Activity. Each item is one row: the reason, who and where and how long ago, and its verbs at the right end. The first row keeps the one filled button.
+
+#### The Agents column marks who you view
+<!-- gb area=agents pr=2383 -->
+
+The Agents column of the Lead page is an indented list: the Lead first, then one line per agent with a role mark tinted by its state, its brief, its state and its cost. The agent you view is marked on its row. Folded, the column shows the same list as a strip of marks, each one opening its agent.
+
+### Fixed
+
+- Ask sits again at the foot of the Overview and opens beside the whole page, and its answers show code blocks and tables. <!-- gb area=sessions pr=2381 -->
+- A branch row on the Overview opens its own page, and its run count includes every run that worked there. <!-- gb area=sessions pr=2380 -->
+
 ## Goodboy v0.42.0
 
 The Lead follows a workflow as a guide and stops on a failed first check, and New session and Start run share one launcher.

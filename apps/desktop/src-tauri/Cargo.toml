@@ -1,6 +1,6 @@
 [package]
 name = "goodboy-desktop"
-version = "0.42.0"
+version = "0.42.1"
 description = "Goodboy desktop app"
 authors = ["Amin Khayam"]
 license = "FSL-1.1-MIT"
@@ -53,6 +53,9 @@ tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "net", "
 snow = "0.9"
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 rand = "0.10"
+
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.31", default-features = false, features = ["net"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"

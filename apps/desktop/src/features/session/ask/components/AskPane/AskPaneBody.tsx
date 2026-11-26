@@ -171,7 +171,7 @@ export const AskPaneBody = ({ session, onClose }: Props) => {
   );
 
   return (
-    <DrawerFrame title="Ask" onClose={onClose} action={actions} dock={composer}>
+    <DrawerFrame isDock title="Ask" onClose={onClose} action={actions} dock={composer}>
       <div data-testid="ask-thread" className="flex min-w-0 flex-col gap-4">
         {turns.map((turn, index) => {
           const isLast = index === turns.length - 1;

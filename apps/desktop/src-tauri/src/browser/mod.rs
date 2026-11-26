@@ -10,9 +10,11 @@ pub(crate) mod local;
 mod page_keys;
 #[cfg(any(target_os = "macos", test))]
 mod passkey;
+mod pick;
 mod profile;
 mod reason;
 mod registry;
+mod snapshot;
 pub(crate) mod tab_rows;
 pub(crate) mod visit_rows;
 

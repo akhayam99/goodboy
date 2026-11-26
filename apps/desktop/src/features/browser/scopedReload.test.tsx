@@ -84,6 +84,7 @@ const stubHost = () => {
     browser_tab_hide: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
     browser_tab_reload: null,
     browser_history_state: null,
+    browser_console_read: { doc: null, entries: [], watermark: 0, isHeard: false },
     browser_favicon: null,
   });
 };

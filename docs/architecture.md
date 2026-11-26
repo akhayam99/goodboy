@@ -777,8 +777,10 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
   (`browser/page_runtime/`, joined by `console::tab_script`) keeps console
   lines, requests and errors in separate rings in the page, and Rust parses
   every read as untrusted: each entry on its own, every field capped, the
-  sensitive headers dropped again (`console::SENSITIVE_HEADERS`). The rest is
-  in [browser.md](./browser.md) → Console.
+  sensitive headers dropped again (`console::SENSITIVE_HEADERS`). The elements
+  a user picks are page data too (`pick::pick_answer_of` caps every field), and
+  the note about them is typed in the app, never in the page. The rest is in
+  [browser.md](./browser.md) → Console and Pick an element.
 
 ### Hidden pages
 

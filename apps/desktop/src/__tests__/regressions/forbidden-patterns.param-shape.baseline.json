@@ -2087,7 +2087,6 @@
     "packages/ui/src/components/ContextMenu/menuKeys.ts": 4,
     "packages/ui/src/components/ContextMenu/MenuList.tsx": 4,
     "packages/ui/src/components/Dialog.tsx": 2,
-    "packages/ui/src/components/DrawerFrame.tsx": 1,
     "packages/ui/src/components/ErrorBoundary.tsx": 2,
     "packages/ui/src/components/FactCard/index.tsx": 6,
     "packages/ui/src/components/FieldRow.tsx": 1,
