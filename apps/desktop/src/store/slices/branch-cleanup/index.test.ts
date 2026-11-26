@@ -257,13 +257,12 @@ describe('runAfterMergeCleanup', () => {
 
   it('keeps the branch and says to remove the worktree first when the worktree holds changes', async () => {
     const context = makeStore();
-    context.store.state = {
-      ...context.store.state,
+    Object.assign(context.store.state, {
       unmountMount: vi.fn(async () => ({
         kept: true,
         reason: 'unstaged-changes, untracked-files',
       })),
-    } as unknown as AppStore;
+    });
 
     expect(await run(context)).toEqual({
       kind: 'ask',
