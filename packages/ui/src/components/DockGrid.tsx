@@ -13,6 +13,7 @@ import { useDockDrag } from '../useDockDrag';
 import { useDockCellMemory } from '../useDockCellMemory';
 import { useDockFoldReport } from '../useDockFoldReport';
 import { DockCellTabs } from './DockCellTabs';
+import { DockDragNote } from './DockDragNote';
 import { DockDropZones } from './DockDropZones';
 import { DockRowHandle } from './DockRowHandle';
 import { SplitHandle, type SplitHandleProps } from './SplitHandle';
@@ -248,9 +249,7 @@ export const DockGrid = ({
         ];
       })}
       {drag.liftedKey === null ? null : <DockDropZones store={drag.store} />}
-      <p data-dock-note="" role="status" aria-live="polite" className="sr-only">
-        {drag.note}
-      </p>
+      <DockDragNote text={drag.note} />
     </div>
   );
 };
