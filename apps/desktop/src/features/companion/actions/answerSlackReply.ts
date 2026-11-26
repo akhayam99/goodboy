@@ -1,6 +1,7 @@
 import type { HandlerParams, HandlerResult } from './handlerTypes';
 import type { DecideActionOf } from './decideAction';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
+import { dropPosted, markPosted, postedBodyOf } from './postedSlackDrafts';
 import { slackDraftVersionOf } from './versions';
 import { sessionIdOf } from './ids';
 
@@ -24,11 +25,29 @@ export const answerSlackReply = async ({
     });
   }
   try {
-    await store.decideSessionSlackDraft({
-      sessionId,
-      draftId: draft.id,
-      status: action.verdict === 'send' ? 'sent' : 'discarded',
-    });
+    if (action.verdict === 'discard') {
+      await store.decideSessionSlackDraft({ sessionId, draftId: draft.id, status: 'discarded' });
+      return doneResult();
+    }
+    const channelId = draft.target.channelId ?? '';
+    const threadTs = draft.target.threadTs ?? '';
+    if (channelId === '' || threadTs === '') {
+      return refusedResult({ code: 'unknown-target', message: 'This draft has no Slack thread.' });
+    }
+    const alreadyPosted = postedBodyOf({ draftId: draft.id });
+    const typed = action.text.trim();
+    const body = alreadyPosted ?? (typed === '' ? draft.body : typed);
+    if (alreadyPosted === null) {
+      await store.replyToSlackThread({
+        workspaceId: draft.workspaceId,
+        channelId,
+        threadTs,
+        text: body,
+      });
+      markPosted({ draftId: draft.id, body });
+    }
+    await store.decideSessionSlackDraft({ sessionId, draftId: draft.id, status: 'sent', body });
+    dropPosted({ draftId: draft.id });
   } catch (error) {
     console.error('[bridge] answerSlackReply failed', error);
     return failedResult({ error: "Couldn't answer the draft. Reconnect Slack on your Mac." });

@@ -162,3 +162,18 @@ fn wire_shape_bridge_status() {
         json!({ "running": true, "port": 4000, "enrolledCount": 2 }),
     );
 }
+
+#[test]
+fn a_network_change_after_the_bind_means_the_listener_is_rebuilt() {
+    let bound: Vec<std::net::IpAddr> = vec!["192.168.1.20".parse().unwrap()];
+    let same = [raw("en0", "192.168.1.20")];
+    let moved = [raw("en0", "192.168.1.31")];
+    let joined = [raw("en0", "192.168.1.20"), raw("utun4", "100.101.102.103")];
+
+    assert!(same_addresses(&bound, &same));
+    assert!(!same_addresses(&bound, &moved));
+    assert!(!same_addresses(&bound, &joined));
+    let endpoints = bound_endpoints(&bound, 4000);
+    assert_eq!(endpoints.len(), 1);
+    assert_eq!(endpoints[0].host, "192.168.1.20");
+}

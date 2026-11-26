@@ -12,6 +12,7 @@ import { projectionFieldsOf } from './projectionFieldsOf';
 import { publishToBridge } from './publishToBridge';
 import { scopeOfState } from './scopeOfState';
 import type { WorkspaceScope } from './workspaceScope';
+import { setSendGeneration } from '../actions/sendSequence';
 
 export const PUBLISH_DEBOUNCE_MS = 400;
 export const HEARTBEAT_MS = 4000;
@@ -22,6 +23,7 @@ export const startCompanionProjections = async (): Promise<UnlistenFn> => {
     return () => undefined;
   }
   const epoch = Date.now();
+  setSendGeneration({ value: epoch.toString(36) });
   let seq = 0;
   let others: ReadonlyArray<WorkspaceScope> = [];
   let isPublishing = false;

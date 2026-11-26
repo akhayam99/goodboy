@@ -128,6 +128,7 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
           {changeError === null ? null : (
             <Notice tone="danger" placement="inline" title={changeError} />
           )}
+          {error === null ? null : <Notice tone="danger" placement="inline" title={error} />}
           <Band inset="content" label="Paired iPhones" ariaLabel="Paired iPhones" headingLevel={2}>
             <PairedDevices
               enrolled={enrolled}

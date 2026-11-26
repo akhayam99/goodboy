@@ -269,6 +269,6 @@ describe('the transcript a phone reads', () => {
       addedLines: 2,
       removedLines: 1,
     });
-    expect(entries[3]).toMatchObject({ summary: 'cat .../notes.md' });
+    expect(entries[3]).toMatchObject({ summary: 'cat notes.md' });
   });
 });

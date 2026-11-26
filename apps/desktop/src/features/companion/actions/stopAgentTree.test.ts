@@ -4,6 +4,7 @@ import { AGENT, LEAD, RUN, SESSION, WORKSPACE, buildTestStore } from './testing/
 import { stopAgentTree } from './stopAgentTree';
 
 const RUNNING = {
+  autoTreeViews: {},
   agentTurnState: {
     [AGENT]: { kind: 'running', runId: 'provider-run-1' },
     [LEAD]: { kind: 'running', runId: 'provider-run-2' },
@@ -65,5 +66,29 @@ describe('stopAgentTree', () => {
     });
 
     expect(result).toEqual({ kind: 'failed', error: 'Stopped 1 of 2. Try again.' });
+  });
+
+  it('finishes the tree on a retry after the Lead already stopped', async () => {
+    const kit = buildTestStore({
+      state: {
+        ...RUNNING,
+        agentTurnState: { [AGENT]: { kind: 'running', runId: 'provider-run-1' } },
+        sessionPhaseRuns: {
+          [SESSION]: [
+            { id: LEAD, name: 'Lead', status: 'stopped', workflowRunId: RUN },
+            { id: AGENT, name: 'Builder', status: 'running', workflowRunId: RUN },
+          ],
+        },
+      },
+    });
+
+    const result = await stopAgentTree({
+      action: actionOf('running'),
+      getStore: () => kit.store,
+      ports: kit.ports,
+    });
+
+    expect(result.kind).toBe('done');
+    expect(kit.actions.cancelTurnConfirmed).toHaveBeenCalledTimes(1);
   });
 });

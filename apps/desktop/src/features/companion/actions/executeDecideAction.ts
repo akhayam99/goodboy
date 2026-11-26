@@ -12,6 +12,7 @@ import { continueRun } from './continueRun';
 import type { DecideAction } from './decideAction';
 import type { DecidePorts, HandlerResult } from './handlerTypes';
 import { isRecordedRefusal, outcomeOf, plainRefusal } from './guardedOutcome';
+import { isReplayableKind, isStaleReplay } from './replayPolicy';
 import { mayDecideFromPhone } from './phoneScope';
 import { raiseLimit } from './raiseLimit';
 import { requestPlanChanges } from './requestPlanChanges';
@@ -78,17 +79,6 @@ export const executeDecideAction = async ({
   ports,
   now = Date.now(),
 }: ExecuteParams): Promise<ActionOutcome> => {
-  const replay = replayOf({ actionId: action.actionId });
-  if (replay !== null) {
-    return replay;
-  }
-  if (isInFlight({ actionId: action.actionId })) {
-    return plainRefusal({
-      action,
-      code: 'duplicate-in-flight',
-      message: 'This action is already running on your Mac.',
-    });
-  }
   if (expectedActionIdOf({ action }) !== action.actionId) {
     return plainRefusal({
       action,
@@ -116,6 +106,17 @@ export const executeDecideAction = async ({
       message: "This session isn't on your Mac.",
     });
   }
+  const replay = replayOf({ actionId: action.actionId });
+  if (replay !== null && !isStaleReplay({ action, store: getStore() })) {
+    return replay;
+  }
+  if (isInFlight({ actionId: action.actionId })) {
+    return plainRefusal({
+      action,
+      code: 'duplicate-in-flight',
+      message: 'This action is already running on your Mac.',
+    });
+  }
   if (!takeRateSlot({ kind: action.kind, now })) {
     return plainRefusal({
       action,
@@ -128,7 +129,7 @@ export const executeDecideAction = async ({
     const outcome = outcomeOf({ action, result: await runHandler({ action, getStore, ports }) });
     const isFinal =
       outcome.result === 'done' || (outcome.refusal !== null && isRecordedRefusal(outcome.refusal));
-    if (isFinal) {
+    if (isFinal && isReplayableKind({ kind: action.kind })) {
       recordOutcome({ outcome });
     }
     return outcome;

@@ -85,13 +85,13 @@ pub fn action_id_of(action: MobileAction, data: &Value) -> Result<Option<String>
         return Ok(None);
     }
     let cmd_id = correlation_of(data).unwrap_or_default();
-    let id = match data.get("actionId").and_then(Value::as_str) {
-        Some(id) => id.to_string(),
-        None => cmd_id.clone(),
-    };
-    let is_well_formed = id.starts_with(ACTION_ID_PREFIX)
-        && id.len() <= ACTION_ID_MAX
-        && (cmd_id.is_empty() || cmd_id == id);
+    let id = data
+        .get("actionId")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let is_well_formed =
+        id.starts_with(ACTION_ID_PREFIX) && id.len() <= ACTION_ID_MAX && cmd_id == id;
     match is_well_formed {
         true => Ok(Some(id)),
         false => Err(Refusal::BadActionId { cmd_id }),
@@ -150,6 +150,14 @@ mod tests {
         assert!(action_id_of(MobileAction::StopRun, &phone_minted).is_err());
         assert!(action_id_of(MobileAction::StopRun, &split).is_err());
         assert!(action_id_of(MobileAction::StopRun, &json!({})).is_err());
+        let only_cmd_id = json!({ "cmdId": "act:stopRun:r1:running" });
+        let only_action_id = json!({ "actionId": "act:stopRun:r1:running" });
+        let empty_cmd_id = json!({ "cmdId": "", "actionId": "act:stopRun:r1:running" });
+        let long = format!("act:{}", "x".repeat(ACTION_ID_MAX));
+        let overlong = json!({ "cmdId": long, "actionId": long });
+        for bad in [only_cmd_id, only_action_id, empty_cmd_id, overlong] {
+            assert!(action_id_of(MobileAction::StopRun, &bad).is_err());
+        }
     }
 
     #[test]

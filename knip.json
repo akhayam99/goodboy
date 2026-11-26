@@ -37,6 +37,8 @@
         "src/features/companion/actions/phonePermissionScope.ts": ["exports"],
         "src/features/companion/actions/startState.ts": ["exports"],
         "src/features/companion/actions/sendSequence.ts": ["exports"],
+        "src/features/companion/actions/postedSlackDrafts.ts": ["exports"],
+        "src/features/companion/actions/undeliveredPermissions.ts": ["exports"],
         "src/features/companion/contract/actions.ts": ["files"],
         "src/features/companion/contract/contractVersion.ts": ["files"],
         "src/features/companion/contract/decisions.ts": ["files"],

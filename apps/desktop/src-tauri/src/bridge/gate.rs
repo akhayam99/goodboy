@@ -44,6 +44,12 @@ pub struct HandshakeGate {
     state: Arc<Mutex<State>>,
 }
 
+enum Settle {
+    Success,
+    Neutral,
+    Failure(Instant),
+}
+
 pub struct HandshakePermit {
     state: Arc<Mutex<State>>,
     ip: IpAddr,
@@ -119,15 +125,19 @@ fn forget_idle(state: &mut State, now: Instant) {
 
 impl HandshakePermit {
     pub fn succeed(mut self) {
-        self.settle(None);
+        self.settle(Settle::Success);
+    }
+
+    pub fn release(mut self) {
+        self.settle(Settle::Neutral);
     }
 
     #[cfg(test)]
     pub fn fail_at(mut self, now: Instant) {
-        self.settle(Some(now));
+        self.settle(Settle::Failure(now));
     }
 
-    fn settle(&mut self, failed_at: Option<Instant>) {
+    fn settle(&mut self, outcome: Settle) {
         if self.is_settled {
             return;
         }
@@ -140,11 +150,15 @@ impl HandshakePermit {
             return;
         };
         source.in_flight = source.in_flight.saturating_sub(1);
-        let Some(now) = failed_at else {
-            source.failures = 0;
-            source.blocked_until = None;
-            source.last_failure = None;
-            return;
+        let now = match outcome {
+            Settle::Neutral => return,
+            Settle::Success => {
+                source.failures = 0;
+                source.blocked_until = None;
+                source.last_failure = None;
+                return;
+            }
+            Settle::Failure(now) => now,
         };
         source.failures = source.failures.saturating_add(1);
         source.last_failure = Some(now);
@@ -170,13 +184,24 @@ impl HandshakePermit {
 
 impl Drop for HandshakePermit {
     fn drop(&mut self) {
-        self.settle(Some(Instant::now()));
+        self.settle(Settle::Failure(Instant::now()));
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_polite_release_keeps_the_history_of_the_source() {
+        let gate = HandshakeGate::new(MAX_UNAUTHENTICATED);
+        let last = fail_spaced(&gate, ip(9), FREE_FAILURES + 1, Instant::now());
+        let later = last + BACKOFF_MAX + secs(1);
+        gate.try_enter_at(ip(9), later).unwrap().release();
+        gate.try_enter_at(ip(9), later).unwrap().fail_at(later);
+
+        assert!(gate.try_enter_at(ip(9), later + secs(1)).is_err());
+    }
 
     fn ip(last: u8) -> IpAddr {
         IpAddr::from([192, 168, 1, last])

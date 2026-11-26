@@ -1,8 +1,10 @@
 import type { AutoLevel } from '@goodboy/core/auto';
+import type { SetAutoTreeCapOutcome } from '@goodboy/db';
 import type { AutoPlanApproval } from '../../auto/plan/approveAutoPlan';
 import type {
   AgentId,
   ArtifactId,
+  AutoTreeId,
   ClaudePermissionMode,
   SessionId,
   Workflow,
@@ -30,8 +32,16 @@ export type ApprovePlanPortParams = {
   readonly expectedRevision: number;
 };
 
+export type SetTreeCapPortParams = {
+  readonly sessionId: SessionId;
+  readonly treeId: AutoTreeId;
+  readonly expectedCapUsd: number | null;
+  readonly capUsd: number;
+};
+
 export type DecidePorts = {
   readonly approvePlan: (params: ApprovePlanPortParams) => Promise<AutoPlanApproval>;
+  readonly setTreeCap: (params: SetTreeCapPortParams) => Promise<SetAutoTreeCapOutcome>;
 };
 
 export type HandlerParams<Action> = {

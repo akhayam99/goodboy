@@ -21,7 +21,7 @@ export const preloadAskTranscripts = ({ state }: Params): void => {
         continue;
       }
       void state
-        .loadAgentTranscript(session.id, agent.id, { isSelecting: false })
+        .loadAgentTranscript(session.id, agent.id, { isSelecting: false, isMarkingViewed: false })
         .catch((error: unknown) => console.error('[companion] ask transcript failed', error))
         .finally(() => loading.delete(agent.id));
     }

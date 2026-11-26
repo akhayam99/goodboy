@@ -160,14 +160,39 @@ rules, kept in `features/companion/actions/`:
   list of what changed. A stop or continue that already holds is a no-op.
 - The action id is `act:<kind>:<objectId>:<version>`, built by the Mac in the
   projection that offers the action, so a retry reuses it. The executor
-  recomputes it from the action's own fields and refuses an id that differs. It
+  recomputes it from the action's own fields and refuses an id that differs, and
+  checks the phone's scope and the session before it looks at stored outcomes. It
   keeps the last 500 finished outcomes and answers a repeated id with the first
   outcome and `isReplay: true`. An id that is still running is refused as a
   duplicate. A failed action is not kept, so a retry with the same id runs again.
+  A stop or continue is never kept: its id repeats whenever the state repeats, so
+  it runs again and a no-op answers `done`. A raise or an undo is replayed only
+  while the limit still shows its result.
 - Each action has its own rate limit per minute and a text cap of 4,000
   characters. A limit is raised only to an amount the Mac offered (the current
   limit plus 5, plus 10 or doubled, never above $500), and a raise can be undone
-  once while the limit is still the raised one.
+  once while the limit is still the raised one. The limit is the one the named
+  target hit: the run's own spend limit, an Auto tree's cap, or the session
+  budget, whichever is lowest. A raise and an undo of one session never run at
+  the same time. A run stopped at its spending limit reads as paused.
+- A stop of a run keeps its steps: it is the desktop Stop (`stopWorkflowRunNow`),
+  so Continue resumes it. Sending a Slack reply posts it to the draft's thread
+  first and marks it sent only after Slack accepted it; a retry after a failed
+  save does not post twice. An answer, a permission or a plan approval whose
+  delivery to the agent failed after the decision was saved is delivered again by
+  the retry, without saving it twice. A transcript page is cut from the whole
+  history, and absolute paths in any text, quoted, in a flag or in JSON too, are
+  reduced to the file name by one function (`pathText.ts`) shared with the
+  projections.
+- A tree stop of an Auto Lead goes through the same tree stop as the desktop
+  Stop; for a plain Lead it stops the running agents one by one, and a retry
+  after the Lead already stopped finishes the rest. A message to an agent counts
+  as sent once its turn has started, and its id carries a generation that
+  changes at every launch, so a reload never reissues an old id.
+- A run reads as waiting when a finished step waits for Continue, and as paused
+  at its spending limit. Agent and run spend include the earlier turns of an
+  agent, and the time of a stopped agent ends at its stop. Reading the ask
+  transcripts of blocked agents does not mark them viewed.
 - The bridge guards the same id before the frontend sees it. A decide action
   must carry an id in the Mac format, its correlation id is the action id, and
   an id already running is refused as `action_in_flight`. The Mac stamps the

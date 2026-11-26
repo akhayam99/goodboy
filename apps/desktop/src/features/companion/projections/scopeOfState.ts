@@ -147,6 +147,13 @@ export const scopeOfState = ({
       Object.entries(telemetry).map(([id, records]) => [id, totalUsd({ records })]),
     ),
     telemetry,
+    agentRunHistory: state.agentRunHistory,
+    stepCounts: Object.fromEntries(
+      [
+        ...(state.phaseTemplates[workspace.id] ?? []),
+        ...ids.flatMap((id) => state.sessionWorkflows[id] ?? []),
+      ].map((workflow) => [workflow.id, workflow.steps.length]),
+    ),
     budgets: pickForSessions({ ids, record: state.sessionBudgets }),
     slackDrafts: pickForSessions({ ids, record: state.sessionSlackDrafts }),
     trees: pickForSessions({ ids, record: state.autoTreeViews }),

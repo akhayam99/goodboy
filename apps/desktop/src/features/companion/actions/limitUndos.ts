@@ -1,4 +1,7 @@
+import type { LimitKind } from './limitTargets';
+
 export type LimitUndo = {
+  readonly kind: LimitKind;
   readonly sessionId: string;
   readonly runId: string;
   readonly previousLimit: number;
