@@ -11,6 +11,8 @@ export const DECIDE_KINDS = [
   'continueRun',
   'stopAgent',
   'continueAgent',
+  'stopAgentTree',
+  'sendToAgent',
   'answerSlackReply',
 ] as const satisfies ReadonlyArray<MobileAction['kind']>;
 

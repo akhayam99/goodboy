@@ -4,7 +4,9 @@ import { stageInfosOf } from '../../../store/slices/session-view/stageInfosOf';
 import { projectById } from '../../../store/slices/projects/projectIndex';
 import { unpushedCommitsOf } from '../../branch/unpushedCommitsOf';
 import { mobileMergeFactsOf } from '../mobileConfinement';
+import { totalUsd } from '../../budget/spendFigures';
 import { isLiveSession } from './isLiveSession';
+import { pickForSessions } from './pickForSessions';
 import type { WorkspaceScope } from './workspaceScope';
 
 export type ScopeState = AppState;
@@ -36,12 +38,16 @@ export const scopeOfState = ({
       }),
     ]),
   );
+  const ids = live.map((session) => session.id);
+  const telemetry = pickForSessions({ ids, record: state.sessionTelemetry });
+  const agents = Object.values(pickForSessions({ ids, record: state.sessionPhaseRuns })).flat();
+  const agentIds = agents.map((agent) => agent.id);
   return {
     workspace: { id: workspace.id, name: workspace.name },
     sessions: live,
     infos,
     openQuestions: state.sessionOpenQuestions,
-    agents: state.sessionPhaseRuns,
+    agents: pickForSessions({ ids, record: state.sessionPhaseRuns }),
     projectNames: Object.fromEntries(
       live.map((session) => [
         session.id,
@@ -60,6 +66,15 @@ export const scopeOfState = ({
       live.map((session) => [session.id, state.sessionGithub[session.id]?.pr ?? null]),
     ),
     pullRequestFacts: facts,
-    spendUsd: {},
+    spendUsd: Object.fromEntries(
+      Object.entries(telemetry).map(([id, records]) => [id, totalUsd({ records })]),
+    ),
+    telemetry,
+    budgets: pickForSessions({ ids, record: state.sessionBudgets }),
+    slackDrafts: pickForSessions({ ids, record: state.sessionSlackDrafts }),
+    trees: pickForSessions({ ids, record: state.autoTreeViews }),
+    transcripts: pickForSessions({ ids: agentIds, record: state.transcripts }),
+    turnStates: pickForSessions({ ids: agentIds, record: state.agentTurnState }),
+    decisions: pickForSessions({ ids, record: state.sessionDecisions }),
   };
 };

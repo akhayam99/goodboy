@@ -43,7 +43,9 @@
         "actionId": "act:answerQuestion:question-session-1:2026-10-05T09:00:00.000Z",
         "questionId": "question-session-1",
         "version": "2026-10-05T09:00:00.000Z",
-        "text": "Which retry window should the webhook use?"
+        "text": "Which retry window should the webhook use?",
+        "options": [],
+        "recommended": null
       }
     }
   ],
@@ -57,5 +59,7 @@
     }
   ],
   "activity": [],
-  "pullRequestNumber": 304
+  "pullRequestNumber": 304,
+  "decisions": [],
+  "summary": null
 }

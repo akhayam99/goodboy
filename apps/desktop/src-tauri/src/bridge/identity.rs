@@ -4,16 +4,35 @@ use base64::Engine as _;
 use serde::{Deserialize, Serialize};
 
 use super::noise_params;
+use super::permissions::Permissions;
 use super::BridgeError;
 
 const IDENTITY_FILE: &str = "companion.json";
+const DEFAULT_PHONE_NAME: &str = "iPhone";
+const NAME_MAX_CHARS: usize = 48;
+const SEEN_WRITE_EVERY_MS: i64 = 60_000;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PairedPhone {
+    pub key: String,
+    pub name: String,
+    pub paired_at: String,
+    #[serde(default)]
+    pub last_seen: Option<String>,
+    #[serde(default)]
+    pub permissions: Permissions,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Identity {
     pub static_priv_b64: String,
     pub static_pub_b64: String,
     #[serde(default)]
-    pub allow_list: Vec<String>,
+    pub phones: Vec<PairedPhone>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interfaces: Option<Vec<String>>,
+    #[serde(default, skip_serializing, rename = "allow_list")]
+    legacy_allow_list: Vec<String>,
     #[serde(skip)]
     store: PathBuf,
 }
@@ -27,6 +46,19 @@ fn identity_path() -> Result<PathBuf, BridgeError> {
     Ok(home.join(".goodboy").join(IDENTITY_FILE))
 }
 
+pub fn clean_phone_name(raw: &str) -> String {
+    let cleaned: String = raw
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(NAME_MAX_CHARS)
+        .collect();
+    let trimmed = cleaned.trim();
+    match trimmed.is_empty() {
+        true => DEFAULT_PHONE_NAME.to_string(),
+        false => trimmed.to_string(),
+    }
+}
+
 impl Identity {
     pub fn load_or_create() -> Result<Self, BridgeError> {
         Self::load_or_create_at(&identity_path()?)
@@ -36,6 +68,7 @@ impl Identity {
         if let Ok(bytes) = std::fs::read(path) {
             if let Ok(mut id) = serde_json::from_slice::<Identity>(&bytes) {
                 id.store = path.to_path_buf();
+                id.adopt_legacy_allow_list()?;
                 return Ok(id);
             }
         }
@@ -45,11 +78,32 @@ impl Identity {
         let id = Identity {
             static_priv_b64: b64().encode(keypair.private),
             static_pub_b64: b64().encode(keypair.public),
-            allow_list: Vec::new(),
+            phones: Vec::new(),
+            interfaces: None,
+            legacy_allow_list: Vec::new(),
             store: path.to_path_buf(),
         };
         id.persist()?;
         Ok(id)
+    }
+
+    fn adopt_legacy_allow_list(&mut self) -> Result<(), BridgeError> {
+        if self.legacy_allow_list.is_empty() {
+            return Ok(());
+        }
+        let now = crate::util::iso_now_whole_seconds();
+        for key in std::mem::take(&mut self.legacy_allow_list) {
+            if self.phones.iter().all(|p| p.key != key) {
+                self.phones.push(PairedPhone {
+                    key,
+                    name: DEFAULT_PHONE_NAME.to_string(),
+                    paired_at: now.clone(),
+                    last_seen: None,
+                    permissions: Permissions::default(),
+                });
+            }
+        }
+        self.persist()
     }
 
     pub fn static_priv(&self) -> Result<Vec<u8>, BridgeError> {
@@ -60,23 +114,89 @@ impl Identity {
 
     pub fn is_enrolled(&self, phone_static_pub: &[u8]) -> bool {
         let enc = b64().encode(phone_static_pub);
-        self.allow_list.iter().any(|k| k == &enc)
+        self.phones.iter().any(|p| p.key == enc)
     }
 
-    pub fn enroll(&mut self, phone_static_pub: &[u8]) -> Result<(), BridgeError> {
+    pub fn permissions_of(&self, phone_static_pub: &[u8]) -> Option<Permissions> {
         let enc = b64().encode(phone_static_pub);
-        if !self.allow_list.contains(&enc) {
-            self.allow_list.push(enc);
-            self.persist()?;
+        self.phones
+            .iter()
+            .find(|p| p.key == enc)
+            .map(|p| p.permissions)
+    }
+
+    pub fn enroll(&mut self, phone_static_pub: &[u8], name: &str) -> Result<(), BridgeError> {
+        let enc = b64().encode(phone_static_pub);
+        let name = clean_phone_name(name);
+        let now = crate::util::iso_now_whole_seconds();
+        match self.phones.iter_mut().find(|p| p.key == enc) {
+            Some(existing) => {
+                existing.name = name;
+                existing.last_seen = Some(now);
+            }
+            None => self.phones.push(PairedPhone {
+                key: enc,
+                name,
+                paired_at: now.clone(),
+                last_seen: Some(now),
+                permissions: Permissions::default(),
+            }),
         }
-        Ok(())
+        self.persist()
+    }
+
+    pub fn touch_seen(&mut self, phone_static_pub: &[u8]) -> Result<(), BridgeError> {
+        let enc = b64().encode(phone_static_pub);
+        let now = crate::util::iso_now_whole_seconds();
+        let Some(phone) = self.phones.iter_mut().find(|p| p.key == enc) else {
+            return Ok(());
+        };
+        let is_fresh = phone
+            .last_seen
+            .as_deref()
+            .and_then(crate::util::iso_to_ms)
+            .zip(crate::util::iso_to_ms(&now))
+            .is_some_and(|(seen, at)| at - seen < SEEN_WRITE_EVERY_MS);
+        if is_fresh {
+            return Ok(());
+        }
+        phone.last_seen = Some(now);
+        self.persist()
+    }
+
+    pub fn set_permissions(
+        &mut self,
+        phone_id: &str,
+        permissions: Permissions,
+    ) -> Result<bool, BridgeError> {
+        let Some(phone) = self.phones.iter_mut().find(|p| p.key == phone_id) else {
+            return Ok(false);
+        };
+        phone.permissions = permissions;
+        self.persist()?;
+        Ok(true)
+    }
+
+    pub fn set_interfaces(&mut self, interfaces: Option<Vec<String>>) -> Result<(), BridgeError> {
+        self.interfaces = interfaces;
+        self.persist()
+    }
+
+    pub fn revoke_one(&mut self, phone_id: &str) -> Result<bool, BridgeError> {
+        let before = self.phones.len();
+        self.phones.retain(|p| p.key != phone_id);
+        if self.phones.len() == before {
+            return Ok(false);
+        }
+        self.persist()?;
+        Ok(true)
     }
 
     pub fn revoke_all(&mut self) -> Result<(), BridgeError> {
-        if self.allow_list.is_empty() {
+        if self.phones.is_empty() {
             return Ok(());
         }
-        self.allow_list.clear();
+        self.phones.clear();
         self.persist()
     }
 
@@ -133,7 +253,7 @@ mod tests {
         assert_eq!(id.static_priv().unwrap().len(), 32);
         assert_eq!(b64().decode(&id.static_pub_b64).unwrap().len(), 32);
         assert_ne!(id.static_priv_b64, id.static_pub_b64);
-        assert!(id.allow_list.is_empty());
+        assert!(id.phones.is_empty());
         assert!(scratch.file().is_file());
     }
 
@@ -141,7 +261,7 @@ mod tests {
     fn a_second_load_returns_the_same_identity_and_enrolled_phones() {
         let scratch = Scratch::new("reload");
         let mut first = Identity::load_or_create_at(&scratch.file()).unwrap();
-        first.enroll(&PHONE_A).unwrap();
+        first.enroll(&PHONE_A, "Harborline iPhone").unwrap();
 
         let second = Identity::load_or_create_at(&scratch.file()).unwrap();
 
@@ -166,7 +286,7 @@ mod tests {
         let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
         assert!(!id.is_enrolled(&PHONE_A));
 
-        id.enroll(&PHONE_A).unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
 
         assert!(id.is_enrolled(&PHONE_A));
         assert!(!id.is_enrolled(&PHONE_B));
@@ -178,19 +298,19 @@ mod tests {
         let scratch = Scratch::new("enroll-twice");
         let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
 
-        id.enroll(&PHONE_A).unwrap();
-        id.enroll(&PHONE_A).unwrap();
-        id.enroll(&PHONE_B).unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
+        id.enroll(&PHONE_B, "Harborline iPhone").unwrap();
 
-        assert_eq!(id.allow_list.len(), 2);
+        assert_eq!(id.phones.len(), 2);
     }
 
     #[test]
     fn revoke_all_forgets_every_phone_and_the_disk_agrees() {
         let scratch = Scratch::new("revoke");
         let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
-        id.enroll(&PHONE_A).unwrap();
-        id.enroll(&PHONE_B).unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
+        id.enroll(&PHONE_B, "Harborline iPhone").unwrap();
 
         id.revoke_all().unwrap();
 
@@ -206,19 +326,19 @@ mod tests {
     fn a_revoked_phone_can_be_enrolled_again_by_a_fresh_pairing() {
         let scratch = Scratch::new("re-enroll");
         let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
-        id.enroll(&PHONE_A).unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
         id.revoke_all().unwrap();
 
-        id.enroll(&PHONE_A).unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
 
         assert!(id.is_enrolled(&PHONE_A));
     }
 
     #[test]
-    fn the_file_on_disk_holds_exactly_the_keys_and_the_allow_list() {
+    fn the_file_on_disk_holds_the_keys_and_one_record_per_phone() {
         let scratch = Scratch::new("file-shape");
         let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
-        id.enroll(&PHONE_A).unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
 
         let raw: serde_json::Value =
             serde_json::from_slice(&std::fs::read(scratch.file()).unwrap()).unwrap();
@@ -230,8 +350,184 @@ mod tests {
             .map(String::as_str)
             .collect();
         keys.sort_unstable();
-        assert_eq!(keys, ["allow_list", "static_priv_b64", "static_pub_b64"]);
-        assert_eq!(raw["allow_list"][0], b64().encode(PHONE_A));
+        assert_eq!(keys, ["phones", "static_priv_b64", "static_pub_b64"]);
+        assert_eq!(raw["phones"][0]["key"], b64().encode(PHONE_A));
+        assert_eq!(raw["phones"][0]["name"], "Harborline iPhone");
+        assert_eq!(raw["phones"][0]["permissions"]["canStart"], false);
+    }
+
+    #[test]
+    fn a_new_phone_starts_with_the_default_permissions() {
+        let scratch = Scratch::new("default-permissions");
+        let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
+
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
+
+        assert_eq!(id.permissions_of(&PHONE_A), Some(Permissions::default()));
+        assert_eq!(id.permissions_of(&PHONE_B), None);
+    }
+
+    #[test]
+    fn permissions_set_for_one_phone_persist_and_leave_the_other_alone() {
+        let scratch = Scratch::new("permissions");
+        let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
+        id.enroll(&PHONE_B, "Northwind iPhone").unwrap();
+        let wide = Permissions {
+            can_decide: false,
+            can_merge: false,
+            can_start: true,
+        };
+
+        let did = id.set_permissions(&b64().encode(PHONE_A), wide).unwrap();
+
+        assert!(did);
+        let reloaded = Identity::load_or_create_at(&scratch.file()).unwrap();
+        assert_eq!(reloaded.permissions_of(&PHONE_A), Some(wide));
+        assert_eq!(
+            reloaded.permissions_of(&PHONE_B),
+            Some(Permissions::default())
+        );
+    }
+
+    #[test]
+    fn setting_permissions_for_an_unknown_phone_changes_nothing() {
+        let scratch = Scratch::new("permissions-unknown");
+        let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
+
+        let did = id
+            .set_permissions("nobody", Permissions::default())
+            .unwrap();
+
+        assert!(!did);
+    }
+
+    #[test]
+    fn re_pairing_a_known_phone_keeps_its_permissions() {
+        let scratch = Scratch::new("re-pair-permissions");
+        let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
+        let wide = Permissions {
+            can_decide: true,
+            can_merge: false,
+            can_start: true,
+        };
+        id.set_permissions(&b64().encode(PHONE_A), wide).unwrap();
+
+        id.enroll(&PHONE_A, "Harborline iPhone 2").unwrap();
+
+        assert_eq!(id.permissions_of(&PHONE_A), Some(wide));
+        assert_eq!(id.phones[0].name, "Harborline iPhone 2");
+    }
+
+    #[test]
+    fn revoking_one_phone_keeps_the_others_and_the_disk_agrees() {
+        let scratch = Scratch::new("revoke-one");
+        let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
+        id.enroll(&PHONE_B, "Northwind iPhone").unwrap();
+
+        let did = id.revoke_one(&b64().encode(PHONE_A)).unwrap();
+
+        assert!(did);
+        assert!(!id.is_enrolled(&PHONE_A));
+        assert!(id.is_enrolled(&PHONE_B));
+        let reloaded = Identity::load_or_create_at(&scratch.file()).unwrap();
+        assert!(!reloaded.is_enrolled(&PHONE_A));
+        assert!(reloaded.is_enrolled(&PHONE_B));
+        assert_eq!(reloaded.static_priv_b64, id.static_priv_b64);
+    }
+
+    #[test]
+    fn revoking_a_phone_that_is_not_paired_reports_it_and_changes_nothing() {
+        let scratch = Scratch::new("revoke-one-missing");
+        let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
+
+        let did = id.revoke_one(&b64().encode(PHONE_B)).unwrap();
+
+        assert!(!did);
+        assert!(id.is_enrolled(&PHONE_A));
+    }
+
+    #[test]
+    fn a_phone_revoked_alone_pairs_again_with_default_permissions() {
+        let scratch = Scratch::new("revoke-one-repair");
+        let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
+        id.set_permissions(
+            &b64().encode(PHONE_A),
+            Permissions {
+                can_decide: false,
+                can_merge: false,
+                can_start: true,
+            },
+        )
+        .unwrap();
+        id.revoke_one(&b64().encode(PHONE_A)).unwrap();
+
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
+
+        assert_eq!(id.permissions_of(&PHONE_A), Some(Permissions::default()));
+    }
+
+    #[test]
+    fn a_v1_allow_list_is_adopted_as_phones_with_default_permissions() {
+        let scratch = Scratch::new("legacy");
+        let file = scratch.file();
+        let fresh = Identity::load_or_create_at(&file).unwrap();
+        let legacy = serde_json::json!({
+            "static_priv_b64": fresh.static_priv_b64,
+            "static_pub_b64": fresh.static_pub_b64,
+            "allow_list": [b64().encode(PHONE_A), b64().encode(PHONE_B)],
+        });
+        std::fs::write(&file, serde_json::to_vec(&legacy).unwrap()).unwrap();
+
+        let id = Identity::load_or_create_at(&file).unwrap();
+
+        assert!(id.is_enrolled(&PHONE_A));
+        assert!(id.is_enrolled(&PHONE_B));
+        assert_eq!(id.permissions_of(&PHONE_A), Some(Permissions::default()));
+        let raw: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&file).unwrap()).unwrap();
+        assert!(raw.get("allow_list").is_none());
+        assert_eq!(raw["phones"].as_array().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn a_phone_name_is_trimmed_stripped_of_control_characters_and_capped() {
+        assert_eq!(
+            clean_phone_name("  Harborline iPhone \n"),
+            "Harborline iPhone"
+        );
+        assert_eq!(clean_phone_name(""), "iPhone");
+        assert_eq!(clean_phone_name("\u{7}\u{0}"), "iPhone");
+        assert_eq!(clean_phone_name(&"x".repeat(200)).chars().count(), 48);
+    }
+
+    #[test]
+    fn the_chosen_interfaces_persist_and_an_unset_choice_stays_unset() {
+        let scratch = Scratch::new("interfaces");
+        let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
+        assert_eq!(id.interfaces, None);
+
+        id.set_interfaces(Some(vec!["en0".to_string()])).unwrap();
+
+        let reloaded = Identity::load_or_create_at(&scratch.file()).unwrap();
+        assert_eq!(reloaded.interfaces, Some(vec!["en0".to_string()]));
+    }
+
+    #[test]
+    fn touching_a_phone_that_just_connected_does_not_rewrite_the_file() {
+        let scratch = Scratch::new("touch");
+        let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
+        let seen = id.phones[0].last_seen.clone();
+
+        id.touch_seen(&PHONE_A).unwrap();
+
+        assert_eq!(id.phones[0].last_seen, seen);
+        assert!(seen.is_some());
     }
 
     #[cfg(unix)]
@@ -243,7 +539,7 @@ mod tests {
         let mode = |path: &Path| std::fs::metadata(path).unwrap().permissions().mode() & 0o777;
         assert_eq!(mode(&scratch.file()), 0o600);
 
-        id.enroll(&PHONE_A).unwrap();
+        id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
         id.revoke_all().unwrap();
 
         assert_eq!(mode(&scratch.file()), 0o600);

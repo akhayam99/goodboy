@@ -15,6 +15,8 @@
       "state": "running",
       "words": "Running",
       "spendText": null,
+      "stopActionId": "act:stopRun:run-1:running",
+      "continueActionId": null,
       "limit": {
         "amount": 5,
         "text": "$5.00"
@@ -25,6 +27,15 @@
         {
           "agentId": "agent-1",
           "name": "Builder",
+          "role": "Agent",
+          "isLead": false,
+          "model": null,
+          "spendText": null,
+          "timeText": null,
+          "stopActionId": "act:stopAgent:agent-1:running",
+          "stopTreeActionId": null,
+          "continueActionId": null,
+          "sendActionId": "act:sendToAgent:agent-1:0",
           "mark": {
             "kind": "state",
             "state": "running"

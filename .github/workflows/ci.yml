@@ -66,6 +66,8 @@ jobs:
             turbo-${{ runner.os }}-
 
       - name: typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
         run: pnpm turbo run typecheck
 
       - name: website deps

@@ -14,7 +14,9 @@ import type { DecidePorts, HandlerResult } from './handlerTypes';
 import { mayDecideFromPhone } from './phoneScope';
 import { raiseLimit } from './raiseLimit';
 import { requestPlanChanges } from './requestPlanChanges';
+import { sendToAgent } from './sendToAgent';
 import { stopAgent } from './stopAgent';
+import { stopAgentTree } from './stopAgentTree';
 import { stopRun } from './stopRun';
 import { sessionOfAction } from './targets';
 import { undoRaiseLimit } from './undoRaiseLimit';
@@ -47,6 +49,10 @@ const runHandler = ({ action, getStore, ports }: RunParams): Promise<HandlerResu
       return stopAgent({ action, getStore, ports });
     case 'continueAgent':
       return continueAgent({ action, getStore, ports });
+    case 'stopAgentTree':
+      return stopAgentTree({ action, getStore, ports });
+    case 'sendToAgent':
+      return sendToAgent({ action, getStore, ports });
     case 'answerSlackReply':
       return answerSlackReply({ action, getStore, ports });
     default: {
