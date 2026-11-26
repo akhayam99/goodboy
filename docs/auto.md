@@ -161,7 +161,10 @@ the `standard` rung of the effort ladder). A model set for the Lead role in
 Settings, or picked on one Lead, wins. The pick is saved on the agent row.
 `startAutoTurn` reads the session's saved picks (`loadAgentPicks`) before every
 Lead turn, so the pick holds after a restart. When that read fails no turn is
-sent and the run is blocked with the error.
+sent and the run is blocked with the error. The read counts toward the 20 second
+start deadline: a read that is still out then refuses the turn before anything
+is sent, and its late answer starts nothing. A read that began before a pick was
+saved is dropped (`sessionReads.picks`), so a cleared pick never comes back.
 
 The Lead does not read code. Its prompt (`packages/core/src/auto/prompt.ts`)
 lets it open attached files only, and a question that needs the code goes to a

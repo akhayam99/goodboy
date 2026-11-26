@@ -19,6 +19,8 @@ type Harness = Readonly<{
   params: StartAutoTurnParams;
 }>;
 
+const START_DEADLINE_MS = 20_000;
+
 const harness = ({ send, lookups, loadPicks = async () => undefined }: Script): Harness => {
   const inputs: Array<SendTurnInput> = [];
   const ended: Array<AutoTurnEnded> = [];
@@ -106,6 +108,30 @@ describe('starting the turn of Auto through the store', () => {
     });
 
     await expect(state.start(state.params)).rejects.toThrow('database is locked');
+    expect(state.inputs).toHaveLength(0);
+    expect(state.ended).toHaveLength(0);
+  });
+
+  it('refuses the turn when the agent picks are not read before the start deadline, and a late read sends nothing', async () => {
+    let finishRead: () => void = () => undefined;
+    const state = harness({
+      lookups: [{ runId: 'run-planned', isLive: true }],
+      loadPicks: () =>
+        new Promise<void>((resolve) => {
+          finishRead = resolve;
+        }),
+      send: async () => NOT_BLOCKED,
+    });
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+    const started = state.start(state.params);
+    await vi.advanceTimersByTimeAsync(START_DEADLINE_MS);
+    const outcome = await started;
+    vi.useRealTimers();
+    finishRead();
+    await Promise.resolve();
+
+    expect(outcome).toEqual({ kind: 'refused', message: 'The turn did not start in time.' });
     expect(state.inputs).toHaveLength(0);
     expect(state.ended).toHaveLength(0);
   });

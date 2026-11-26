@@ -5,6 +5,7 @@ import type { StartAutoTurnParams, TurnStartOutcome } from './ports';
 import { startDeliveredTurn, type DeliveredTurnDeps } from './startDeliveredTurn';
 
 const AUTO_TURN_ACCEPT_TIMEOUT_MS = 20_000;
+const LATE_START_MESSAGE = 'The turn did not start in time.';
 
 export type LoadAgentPicksParams = Readonly<{ sessionId: SessionId }>;
 
@@ -16,7 +17,21 @@ export type StartAutoTurnDeps = DeliveredTurnDeps &
 export const makeStartAutoTurn =
   (deps: StartAutoTurnDeps) =>
   async (params: StartAutoTurnParams): Promise<TurnStartOutcome> => {
-    await deps.loadAgentPicks({ sessionId: params.sessionId });
+    const startedAt = deps.nowMs();
+    let deadline: ReturnType<typeof setTimeout> | undefined;
+    const late = new Promise<'late'>((resolve) => {
+      deadline = setTimeout(() => resolve('late'), AUTO_TURN_ACCEPT_TIMEOUT_MS);
+    });
+    const read = await Promise.race([
+      deps.loadAgentPicks({ sessionId: params.sessionId }).then(() => 'read' as const),
+      late,
+    ]).finally(() => {
+      clearTimeout(deadline);
+    });
+    const remainingMs = AUTO_TURN_ACCEPT_TIMEOUT_MS - (deps.nowMs() - startedAt);
+    if (read === 'late' || remainingMs <= 0) {
+      return { kind: 'refused', message: LATE_START_MESSAGE };
+    }
     const outcome = await startDeliveredTurn({
       deps,
       input: {
@@ -36,7 +51,7 @@ export const makeStartAutoTurn =
       },
       runId: brandId<ProviderRunId>({ value: params.runId }),
       deliveryId: params.deliveryId,
-      acceptTimeoutMs: AUTO_TURN_ACCEPT_TIMEOUT_MS,
+      acceptTimeoutMs: remainingMs,
       onEnded: (ended) => {
         params.onEnded({
           treeId: params.treeId,
