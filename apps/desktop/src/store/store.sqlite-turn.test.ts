@@ -840,7 +840,7 @@ describe('sendTurn on sqlite: stored images of a session with a worktree', () =>
     storySpies.writeAttachment.mockResolvedValue(
       '.goodboy/attachments/attachment-banner-banner.png',
     );
-    storySpies.readAttachment.mockResolvedValue('aGFyYm9ybGluZQ==');
+    storySpies.readAttachment.mockResolvedValue('data:image/png;base64,aGFyYm9ybGluZQ==');
     useAppStore.setState({
       sessionProjectMounts: {
         [sessionId]: [

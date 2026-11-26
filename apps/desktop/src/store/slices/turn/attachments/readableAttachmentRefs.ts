@@ -7,6 +7,7 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
+import { dataUrlToBase64 } from '../../../../features/attachments/pendingAttachment';
 import { readAttachment, writeAttachment } from '../../../../features/chat/turn';
 import type { GetFn } from '../types';
 
@@ -37,7 +38,7 @@ export const readableAttachmentRefs = async ({
         if (ref.dir === undefined || ref.dir === workingDir) {
           return ref;
         }
-        const dataBase64 = await readAttachment(ref.dir, ref.relPath);
+        const dataBase64 = dataUrlToBase64(await readAttachment(ref.dir, ref.relPath));
         const relPath = await writeAttachment({
           worktreeDir: workingDir,
           attachmentId: ref.id,

@@ -1,3 +1,4 @@
+import { isMountInUse } from '../../../store/slices/branch-cleanup/mountInUse';
 import { NAMES } from '../../../shared/utils/names';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
@@ -519,6 +520,8 @@ export const useSuggestionActions = ({
         primary: closeWorktreeAction({
           sessionId,
           worktrees: suggestion.payload.worktrees,
+          isInUse: ({ mountId }) =>
+            isMountInUse({ state: useAppStore.getState(), sessionId, mountId }),
           isProposed: ({ requestId }) =>
             (useAppStore.getState().mountCleanupProposals[sessionId] ?? EMPTY_ARRAY).some(
               (proposal) => proposal.requestId === requestId,
