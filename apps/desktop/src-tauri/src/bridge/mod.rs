@@ -384,6 +384,7 @@ fn bound_endpoints(bound: &[std::net::IpAddr], port: u16) -> Vec<Endpoint> {
         .collect()
 }
 
+#[cfg(test)]
 pub(crate) fn endpoints_for(
     raw: &[RawAddress],
     selected: Option<&[String]>,
