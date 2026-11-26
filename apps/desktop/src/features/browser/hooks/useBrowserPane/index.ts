@@ -17,6 +17,8 @@ import { isTabGone } from '../../isTabGone';
 import { openPage } from '../../openPage';
 import { pinProjectOf } from '../../pinProjectOf';
 import { shownTabOf } from '../../shownTabOf';
+import { siteClearedText } from '../../siteClearedText';
+import { siteHostOf } from '../../siteHostOf';
 import type { BrowserPaneModel, BrowserTarget } from '../../types';
 import { useFavicon } from '../useFavicon';
 import { useHistoryState } from '../useHistoryState';
@@ -118,6 +120,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const url = factOf({ liveId: shownLiveId })?.url ?? shown?.tab.url ?? '';
   const address = addressTextOf({ url });
   const canOpenOutside = url !== '' && !isFileAddress({ url });
+  const siteHost = siteHostOf({ url });
   const titleOfTab = ({ tab }: TitleParams): string => {
     const fact = factOf({ liveId: live?.[tab.id] });
     if (fact !== undefined && fact.title !== '') {
@@ -192,6 +195,15 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     void run({ step: () => command({ tabId: shownLiveId }) });
   };
 
+  const reloadWith = ({ command }: CommandParams): void => {
+    if (shown !== null && shownLiveId === undefined) {
+      setError(null);
+      setWakeAttempt((count) => count + 1);
+      return;
+    }
+    onShown({ command });
+  };
+
   const openNew = async ({ target }: TargetParams): Promise<void> => {
     const outcome = await openPage({ sessionId, target, bounds: FALLBACK_BOUNDS });
     mustBeDone({ isDone: outcome !== 'failed' });
@@ -252,13 +264,21 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     },
     back: () => onShown({ command: browserHost.back }),
     forward: () => onShown({ command: browserHost.forward }),
-    reload: () => {
-      if (shown !== null && shownLiveId === undefined) {
-        setError(null);
-        setWakeAttempt((count) => count + 1);
+    reload: () => reloadWith({ command: browserHost.reload }),
+    reloadFromOrigin: () => reloadWith({ command: browserHost.reloadFromOrigin }),
+    siteHost,
+    clearSiteData: () => {
+      if (shownLiveId === undefined || isLiveAsleep({ liveId: shownLiveId }) || siteHost === null) {
         return;
       }
-      onShown({ command: browserHost.reload });
+      const tabId = shownLiveId;
+      const host = siteHost;
+      void run({
+        step: async () => {
+          const cleared = await browserHost.clearSiteData({ tabId, host });
+          setNotice(siteClearedText({ cleared }));
+        },
+      });
     },
     stop: () => {
       if (shownLiveId === undefined) {

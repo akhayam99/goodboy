@@ -1,4 +1,14 @@
-import { ArrowUpRight, Bot, Code, Copy, CopyPlus, MonitorSmartphone, X } from '@goodboy/ui/icons';
+import {
+  ArrowUpRight,
+  Bot,
+  Code,
+  Copy,
+  CopyPlus,
+  MonitorSmartphone,
+  RefreshCw,
+  Trash2,
+  X,
+} from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   ICON_SIZE,
@@ -9,11 +19,13 @@ import {
   type MenuItemEntry,
 } from '@goodboy/ui';
 import { AppMenuList } from '../../../actions/AppMenuList';
+import { actionIntentOf } from '../../../actions/actionIntentOf';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { currentPlatform } from '../../../../shared/platform';
 import type { BrowserPaneModel } from '../../types';
 import { browserMoreOffOf } from './browserMoreRows';
+import { siteDataRowOf } from './siteDataRowOf';
 import { widthSelectOf } from './widthSelectOf';
 import { DEVICE_PRESETS, devicePresetOf } from '../../devicePresets';
 import { NAMES } from '../../../../shared/utils/names';
@@ -25,6 +37,8 @@ type Props = {
 };
 
 const MENU_LABEL = 'More';
+
+const RELOAD_FROM_ORIGIN = 'Reload without cache';
 
 const NOTHING_FOLDED: ReadonlyArray<MenuItemEntry> = [];
 
@@ -39,8 +53,14 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
   const isOff = browserMoreOffOf({
     hasAddress: model.address !== '',
     hasTab: shown !== null,
+    hasLivePage: model.shownLiveId !== null,
+    hasSite: model.siteHost !== null,
     isPinShown: shown?.isPin === true,
     canOpenOutside: model.canOpenOutside,
+  });
+  const siteData = siteDataRowOf({
+    host: model.siteHost,
+    isWholeStore: currentPlatform() !== 'darwin',
   });
   const chooseWidth = widthSelectOf({ onChoose: model.setDevicePreset });
   const developChildren: ReadonlyArray<MenuItemEntry> = [
@@ -112,6 +132,25 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
       icon: CopyPlus,
       isDisabled: isOff.isDuplicateOff,
       onSelect: model.duplicate,
+    },
+    {
+      kind: 'item',
+      key: 'reloadFromOrigin',
+      label: RELOAD_FROM_ORIGIN,
+      icon: RefreshCw,
+      hint: shortcutGlyphs('app.reload'),
+      isDisabled: isOff.isReloadFromOriginOff,
+      onSelect: model.reloadFromOrigin,
+    },
+    {
+      kind: 'item',
+      key: 'clearSiteData',
+      label: siteData.label,
+      icon: Trash2,
+      isDestructive: actionIntentOf({ verb: siteData.label }) === 'destructive',
+      isDisabled: isOff.isClearSiteDataOff,
+      confirm: siteData.confirm,
+      onSelect: model.clearSiteData,
     },
     ...(developChildren.length === 0
       ? []

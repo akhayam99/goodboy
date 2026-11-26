@@ -17,6 +17,13 @@ const WORDS: ReadonlyMap<string, string> = new Map([
   ['other-session', 'This tab belongs to another session.'],
   ['host-unknown', 'The page moved to another site. Send it again.'],
   ['page-moved', 'The page changed while it was read. Send it again.'],
+  ['site-moved', 'The page moved to another site. Its data stays. Try again.'],
+  ['site-data-unavailable', "Couldn't clear the site data. The page stays as it was."],
+  ['profile-busy', 'Browser data is already clearing. Try again in a moment.'],
+  [
+    'profile-shared',
+    'This Mac keeps one browser store for every workspace. Clear site data from the browser menu.',
+  ],
   ['page-text-unavailable', "Couldn't read the page text. Try again."],
   ['agent-gone', "The agent isn't in this session anymore. Pick one and try again."],
   ['pick-unavailable', "Couldn't select on this page. Reload it and try again."],

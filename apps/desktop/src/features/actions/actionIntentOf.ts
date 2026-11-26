@@ -49,6 +49,8 @@ const DESTRUCTIVE_VERBS: ReadonlySet<string> = new Set([
   'discard draft',
   'archive and remove',
   'delete all data',
+  'clear site data',
+  'clear browser data',
 ]);
 
 const PRIMARY_VERBS: ReadonlySet<string> = new Set([
