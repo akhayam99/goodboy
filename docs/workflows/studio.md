@@ -95,6 +95,7 @@ plus an object in the language of the goal, inside one tag:
   reads as the model talking, or a text about the title, role, task or routing
   is discarded. Only the leading phrase of a talk reply is matched, so "Fix
   title generation crash" stays.
+- A title the detector reads in another language than the request is discarded too.
 - A discarded title falls back to `heuristicAgentTitle` in `@goodboy/db`: the
   first clause of the goal, at most ten words and 60 characters, cut on a word.
 - One parser serves run, agent and session titles (`parseGeneratedTitle`, then
