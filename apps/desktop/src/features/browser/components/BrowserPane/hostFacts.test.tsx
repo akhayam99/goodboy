@@ -130,6 +130,7 @@ beforeEach(async () => {
     browser_tab_forward: null,
     browser_tab_stop: null,
     browser_history_state: () => history,
+    browser_console_read: { doc: null, entries: [], watermark: 0, isHeard: false },
     browser_favicon: () => favicon,
   });
 });

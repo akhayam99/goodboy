@@ -27,6 +27,18 @@ pub enum MobileAction {
     CreateSessionFromIssue,
     SpawnWorkflow,
     QueryFileDiff,
+    AnswerQuestion,
+    ApprovePlan,
+    RequestPlanChanges,
+    AnswerPermission,
+    RaiseLimit,
+    UndoRaiseLimit,
+    StopRun,
+    ContinueRun,
+    StopAgent,
+    ContinueAgent,
+    AnswerSlackReply,
+    QueryTranscript,
 }
 
 impl MobileAction {
@@ -43,6 +55,18 @@ impl MobileAction {
             0x8C => Some(Self::CreateSessionFromIssue),
             0x8D => Some(Self::SpawnWorkflow),
             0x8E => Some(Self::QueryFileDiff),
+            0x90 => Some(Self::AnswerQuestion),
+            0x91 => Some(Self::ApprovePlan),
+            0x92 => Some(Self::RequestPlanChanges),
+            0x93 => Some(Self::AnswerPermission),
+            0x94 => Some(Self::RaiseLimit),
+            0x95 => Some(Self::UndoRaiseLimit),
+            0x96 => Some(Self::StopRun),
+            0x97 => Some(Self::ContinueRun),
+            0x98 => Some(Self::StopAgent),
+            0x99 => Some(Self::ContinueAgent),
+            0x9A => Some(Self::AnswerSlackReply),
+            0x9B => Some(Self::QueryTranscript),
             _ => None,
         }
     }
@@ -60,13 +84,25 @@ impl MobileAction {
             Self::CreateSessionFromIssue => "createSessionFromIssue",
             Self::SpawnWorkflow => "spawnWorkflow",
             Self::QueryFileDiff => "queryFileDiff",
+            Self::AnswerQuestion => "answerQuestion",
+            Self::ApprovePlan => "approvePlan",
+            Self::RequestPlanChanges => "requestPlanChanges",
+            Self::AnswerPermission => "answerPermission",
+            Self::RaiseLimit => "raiseLimit",
+            Self::UndoRaiseLimit => "undoRaiseLimit",
+            Self::StopRun => "stopRun",
+            Self::ContinueRun => "continueRun",
+            Self::StopAgent => "stopAgent",
+            Self::ContinueAgent => "continueAgent",
+            Self::AnswerSlackReply => "answerSlackReply",
+            Self::QueryTranscript => "queryTranscript",
         }
     }
 
     pub fn is_query(self) -> bool {
         matches!(
             self,
-            Self::QueryProviders | Self::QueryIssues | Self::QueryFileDiff
+            Self::QueryProviders | Self::QueryIssues | Self::QueryFileDiff | Self::QueryTranscript
         )
     }
 }
@@ -154,7 +190,7 @@ mod tests {
     #[test]
     fn rejects_read_server_and_unknown_opcodes() {
         for op in [
-            0x00u8, 0x01, 0x05, 0x07, 0x08, 0x09, 0x80, 0x81, 0x82, 0x89, 0x8F, 0xFF,
+            0x00u8, 0x01, 0x05, 0x07, 0x08, 0x09, 0x80, 0x81, 0x82, 0x89, 0x8F, 0x9C, 0xFF,
         ] {
             assert!(
                 MobileAction::from_opcode(op).is_none(),
@@ -186,7 +222,11 @@ mod tests {
         assert!(MobileAction::QueryProviders.is_query());
         assert!(MobileAction::QueryIssues.is_query());
         assert!(MobileAction::QueryFileDiff.is_query());
-        for op in [0x83u8, 0x84, 0x85, 0x86, 0x88, 0x8A, 0x8C, 0x8D] {
+        assert!(MobileAction::QueryTranscript.is_query());
+        for op in [
+            0x83u8, 0x84, 0x85, 0x86, 0x88, 0x8A, 0x8C, 0x8D, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95,
+            0x96, 0x97, 0x98, 0x99, 0x9A,
+        ] {
             let action = MobileAction::from_opcode(op).expect("opcode is a write command");
             assert!(
                 !action.is_query(),
@@ -194,6 +234,28 @@ mod tests {
                 action.kind()
             );
             assert!(!action.kind().is_empty());
+        }
+    }
+
+    #[test]
+    fn maps_the_decide_opcodes_to_the_contract_kinds() {
+        let expected = [
+            (0x90u8, "answerQuestion"),
+            (0x91, "approvePlan"),
+            (0x92, "requestPlanChanges"),
+            (0x93, "answerPermission"),
+            (0x94, "raiseLimit"),
+            (0x95, "undoRaiseLimit"),
+            (0x96, "stopRun"),
+            (0x97, "continueRun"),
+            (0x98, "stopAgent"),
+            (0x99, "continueAgent"),
+            (0x9A, "answerSlackReply"),
+            (0x9B, "queryTranscript"),
+        ];
+        for (op, kind) in expected {
+            let action = MobileAction::from_opcode(op).expect("decide opcode maps");
+            assert_eq!(action.kind(), kind);
         }
     }
 }

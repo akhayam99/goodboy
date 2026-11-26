@@ -1,0 +1,28 @@
+{
+  "epoch": 1,
+  "seq": 1,
+  "generatedAt": "2026-10-05T09:05:00.000Z",
+  "workspaceId": "workspace-1",
+  "sessionId": "session-1",
+  "number": 304,
+  "title": "Paginate the payments list",
+  "url": "https://github.com/harborline/payments-api/pull/304",
+  "phase": "merged",
+  "headSha": "",
+  "baseBranch": "main",
+  "headBranch": "goodboy/pagination",
+  "checks": [],
+  "reviews": [],
+  "readiness": {
+    "isMergeable": false,
+    "reason": "This pull request is already merged.",
+    "caveats": []
+  },
+  "methods": [
+    "squash",
+    "merge",
+    "rebase"
+  ],
+  "mergeActionId": null,
+  "train": null
+}

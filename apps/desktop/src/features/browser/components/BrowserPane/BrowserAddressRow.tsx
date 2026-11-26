@@ -14,8 +14,9 @@ import { useBrowserKeys } from '../../hooks/useBrowserKeys';
 import { useCommandField } from '../../hooks/useCommandField';
 import type { ElementPick } from '../../hooks/useElementPick';
 import { useFindInPage } from '../../hooks/useFindInPage';
-import type { BrowserConsoleToggle, BrowserPaneModel } from '../../types';
+import type { BrowserConsoleToggle, BrowserErrorsShow, BrowserPaneModel } from '../../types';
 import { BrowserCommandPanel } from './BrowserCommandPanel';
+import { BrowserErrorCount } from './BrowserErrorCount';
 import { BrowserFindBar } from './BrowserFindBar';
 import { BrowserLoadLine } from './BrowserLoadLine';
 import { BrowserMoreMenu } from './BrowserMoreMenu';
@@ -30,6 +31,7 @@ type Props = {
   readonly model: BrowserPaneModel;
   readonly isAddressShortcutOn: boolean;
   readonly consoleToggle?: BrowserConsoleToggle;
+  readonly errors?: BrowserErrorsShow;
   readonly pick?: ElementPick;
   readonly page?: BrowserStripGroups;
   readonly onOpenAsPage?: () => void;
@@ -40,6 +42,7 @@ export const BrowserAddressRow = ({
   model,
   isAddressShortcutOn,
   consoleToggle,
+  errors,
   pick,
   page,
   onOpenAsPage,
@@ -123,6 +126,9 @@ export const BrowserAddressRow = ({
             tooltipSide="top"
             onClick={model.togglePin}
           />
+        )}
+        {errors === undefined || model.shown === null ? null : (
+          <BrowserErrorCount errors={errors} />
         )}
         {pick === undefined ? null : (
           <IconButton

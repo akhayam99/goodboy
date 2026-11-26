@@ -9,7 +9,8 @@ import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useBrowserStudioTab } from '../../hooks/useBrowserStudioTab';
 import { useConsoleEntries } from '../../hooks/useConsoleEntries';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
-import type { BrowserPageGroup } from '../../types';
+import { consoleCounts } from '../../consoleCounts';
+import type { BrowserPageGroup, BrowserToolsTab } from '../../types';
 import { BrowserAddressRow } from '../BrowserPane/BrowserAddressRow';
 import type { BrowserStripGroups } from '../BrowserPane/BrowserTabStrip';
 import { BrowserToolsDock } from '../BrowserToolsDock';
@@ -41,11 +42,13 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
   const title = shownTab === null ? '' : model.titleOf({ tab: shownTab });
   const isOnScreen = useAppStore((state) => state.appStudio?.kind === 'browser');
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+  const [toolsTab, setToolsTab] = useState<BrowserToolsTab>('console');
   const consoleLog = useConsoleEntries({
     sessionId,
     liveId: model.shownLiveId,
-    isOpen: isConsoleOpen && isOnScreen,
+    isOpen: isOnScreen,
   });
+  const errorCount = consoleCounts({ entries: consoleLog.entries }).errors;
 
   useBrowserStudioTab({ sessionId, tabId, model });
   useReloadSurface({
@@ -90,6 +93,13 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
             isOpen: isConsoleOpen,
             onToggle: () => setIsConsoleOpen(!isConsoleOpen),
           }}
+          errors={{
+            count: errorCount,
+            onShow: () => {
+              setToolsTab('errors');
+              setIsConsoleOpen(true);
+            },
+          }}
           page={{ groups, onPick: pick, folded, onFoldedChange }}
           onDock={() => demoteBrowserTab({ sessionId })}
         />
@@ -107,6 +117,8 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
           model={model}
           title={title}
           log={consoleLog}
+          tab={toolsTab}
+          onTab={({ next }) => setToolsTab(next)}
           onClose={() => setIsConsoleOpen(false)}
         >
           <BrowserView

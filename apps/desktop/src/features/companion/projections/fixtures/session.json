@@ -1,0 +1,61 @@
+{
+  "epoch": 1,
+  "seq": 1,
+  "generatedAt": "2026-10-05T09:05:00.000Z",
+  "workspaceId": "workspace-1",
+  "sessionId": "session-1",
+  "ref": "HBL-412",
+  "goal": "Retry window for the webhook",
+  "stage": "attention",
+  "mark": {
+    "kind": "state",
+    "state": "question"
+  },
+  "facts": [
+    {
+      "label": "Stage",
+      "value": "needs you"
+    },
+    {
+      "label": "Pull request",
+      "value": "#304"
+    }
+  ],
+  "notices": [],
+  "needsYou": [
+    {
+      "id": "session-1:question:question-session-1",
+      "workspaceId": "workspace-1",
+      "sessionId": "session-1",
+      "sessionRef": "HBL-412",
+      "goal": "Retry window for the webhook",
+      "reason": "open-question",
+      "tone": "warning",
+      "mark": {
+        "kind": "state",
+        "state": "question"
+      },
+      "words": "Which retry window should the webhook use?",
+      "waitingText": "Waiting 5m",
+      "since": "2026-10-05T09:00:00.000Z",
+      "decision": {
+        "kind": "question",
+        "actionId": "act:answerQuestion:question-session-1:2026-10-05T09:00:00.000Z",
+        "questionId": "question-session-1",
+        "version": "2026-10-05T09:00:00.000Z",
+        "text": "Which retry window should the webhook use?"
+      }
+    }
+  ],
+  "now": [],
+  "next": [],
+  "projects": [
+    {
+      "name": "payments-api",
+      "branch": "goodboy/pagination",
+      "prNumber": 304
+    }
+  ],
+  "activity": [],
+  "pullRequestNumber": 304
+}
