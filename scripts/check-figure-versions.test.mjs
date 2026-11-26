@@ -106,6 +106,35 @@ describe('findProblems', () => {
   });
 });
 
+describe('README figures', () => {
+  const figures = { 'readme/readme-tasks': { version: '0.43.0' } };
+  const readme = ({ caption }) =>
+    [
+      '<picture>',
+      '  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-tasks-dark.webp">',
+      '  <img src="./docs/readme/readme-tasks-light.webp" alt="Tasks">',
+      '</picture>',
+      '',
+      ...(caption === undefined ? [] : [caption, '']),
+      '### Next',
+    ].join('\n');
+  const check = ({ markdown }) =>
+    findProblems({ documents: [{ path: 'README.md', markdown }], figures, repoVersion: '0.43.0' });
+
+  it('passes without a caption and fails with one', () => {
+    assert.deepEqual(check({ markdown: readme({}) }), []);
+    const problems = check({
+      markdown: readme({ caption: '<sub>Screenshot from Goodboy 0.43.0</sub>' }),
+    });
+    assert.match(problems[0], /README figure: remove its caption/);
+  });
+
+  it('gets no caption written', () => {
+    const markdown = readme({});
+    assert.equal(writeCaptions({ markdown, figures }), markdown);
+  });
+});
+
 describe('writeCaptions', () => {
   const figures = { 'features/inbox-list': { version: '0.23.0' } };
 

@@ -937,8 +937,9 @@ Pictures live outside this repo so each reshoot does not grow its history:
 push the new files to goodboy-media first, then the text here. Reusing a name
 replaces the picture in place, within the five minutes GitHub caches it.
 
-Every figure has one caption line under its `<picture>`, after a blank line:
-`<sub>Screenshot from Goodboy <version></sub>`. `docs/figures.json` is the one
+Every guide figure has one caption line under its `<picture>`, after a blank line:
+`<sub>Screenshot from Goodboy <version></sub>`. A README figure has none, so the
+page stays short on a phone, and the check fails if one gets a caption. `docs/figures.json` is the one
 source of that version, keyed `features/<name>` for a guide figure and
 `readme/<name>` for a README figure. `pnpm features:shots` writes the entry when a capture ends, with the shot args as
 its `recipe`, quoted so a POSIX shell reruns it as typed, so re-shooting a figure moves its version and a figure left alone
