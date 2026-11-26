@@ -54,6 +54,9 @@ snow = "0.9"
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 rand = "0.10"
 
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.31", default-features = false, features = ["net"] }
+
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"
 block2 = "0.6"
