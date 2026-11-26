@@ -10,6 +10,7 @@ import type { ConsoleEntries } from '../../hooks/useConsoleEntries';
 import type { BrowserPaneModel, BrowserToolsTab } from '../../types';
 import { BrowserConsole } from './BrowserConsole';
 import { ErrorsTab } from './ErrorsTab';
+import { NetworkTab } from './NetworkTab';
 import { toolsDockBoundsOf } from './toolsDockBoundsOf';
 
 type Props = {
@@ -147,10 +148,22 @@ export const BrowserToolsDock = ({
               onSide={moveSide}
               onClose={onClose}
             />
-          ) : (
+          ) : null}
+          {shownTab === 'network' ? (
+            <NetworkTab
+              model={model}
+              counts={counts}
+              log={log}
+              side={place.side}
+              isToolsInHead={isToolsInHead}
+              onTab={onTab}
+              onSide={moveSide}
+              onClose={onClose}
+            />
+          ) : null}
+          {shownTab === 'console' ? (
             <BrowserConsole
               model={model}
-              kind={shownTab}
               counts={counts}
               title={title}
               log={log}
@@ -160,7 +173,7 @@ export const BrowserToolsDock = ({
               onSide={moveSide}
               onClose={onClose}
             />
-          )}
+          ) : null}
         </section>
       ) : null}
     </div>

@@ -1,50 +1,67 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ChevronDown, ChevronUp } from '@goodboy/ui/icons';
-import { IconButton, ScrollFade, TruncatedText, cn, useEscapeLayer } from '@goodboy/ui';
+import {
+  Button,
+  IconButton,
+  OptionalTooltip,
+  ScrollFade,
+  SegmentedTabs,
+  TruncatedText,
+  cn,
+  useEscapeLayer,
+  type SegmentedTabOption,
+} from '@goodboy/ui';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { isFailedRequest } from '../../networkStatusWordOf';
 import type { BrowserConsoleEntry } from '../../types';
+import { NetworkBody } from './NetworkBody';
+import { NetworkHeaders } from './NetworkHeaders';
+import { NetworkTiming } from './NetworkTiming';
 import { requestFactsOf } from './requestFactsOf';
 
 type StepParams = {
   readonly direction: -1 | 1;
 };
 
+type Pane = 'headers' | 'payload' | 'response' | 'timing';
+
 type Props = {
   readonly entry: BrowserConsoleEntry;
+  readonly pageUrl: string;
   readonly isAlone: boolean;
   readonly canStepBack: boolean;
   readonly canStepOn: boolean;
+  readonly agentName: string;
+  readonly canSend: boolean;
   readonly onBack: () => void;
   readonly onStep: (params: StepParams) => void;
+  readonly onSend: () => void;
 };
 
-type Fact = {
-  readonly label: string;
-  readonly value: string;
-};
+const PANES: ReadonlyArray<SegmentedTabOption<Pane>> = [
+  { value: 'headers', label: 'Headers' },
+  { value: 'payload', label: 'Payload' },
+  { value: 'response', label: 'Response' },
+  { value: 'timing', label: 'Timing' },
+];
 
-export const BrowserRequestDetail = ({
+export const NetworkDetail = ({
   entry,
+  pageUrl,
   isAlone,
   canStepBack,
   canStepOn,
+  agentName,
+  canSend,
   onBack,
   onStep,
+  onSend,
 }: Props) => {
   const root = useRef<HTMLDivElement | null>(null);
+  const [pane, setPane] = useState<Pane>('response');
   const facts = requestFactsOf({ entry });
   const method = entry.method ?? 'GET';
   const isFailed = isFailedRequest({ status: entry.status });
-  const rows: ReadonlyArray<Fact> = [
-    { label: 'Method', value: method },
-    { label: 'Path', value: entry.text },
-    { label: 'Status', value: facts.status },
-    { label: 'Type', value: entry.network?.type ?? 'other' },
-    { label: 'Time', value: facts.time },
-    ...(facts.size === null ? [] : [{ label: 'Size', value: facts.size }]),
-    ...(entry.source === null ? [] : [{ label: 'Source', value: entry.source }]),
-  ];
 
   useEscapeLayer(onBack);
 
@@ -59,7 +76,7 @@ export const BrowserRequestDetail = ({
       aria-label="Request"
       tabIndex={-1}
       className={cn(
-        'flex min-h-0 min-w-0 flex-col outline-none',
+        'flex min-h-0 min-w-0 flex-col gap-1 outline-none',
         isAlone ? 'flex-1' : 'w-1/2 shrink-0 border-l border-border-soft',
       )}
     >
@@ -87,16 +104,34 @@ export const BrowserRequestDetail = ({
           disabled={!canStepOn}
           onClick={() => onStep({ direction: 1 })}
         />
+        <OptionalTooltip content={`Send to ${agentName}`}>
+          <Button
+            variant="secondary"
+            size="xs"
+            aria-label={`Send request to ${agentName}`}
+            disabled={!canSend}
+            onClick={onSend}
+          >
+            Send request
+          </Button>
+        </OptionalTooltip>
+      </div>
+      <div className="flex shrink-0 px-2">
+        <SegmentedTabs
+          size="xs"
+          ariaLabel="Request part"
+          value={pane}
+          onChange={setPane}
+          options={PANES}
+        />
       </div>
       <ScrollFade className="min-h-0 flex-1" isPageScroller={false}>
-        <dl className="flex flex-col gap-0.5 px-3 text-code">
-          {rows.map((row) => (
-            <div key={row.label} className="flex min-w-0 gap-3">
-              <dt className="w-16 shrink-0 text-faint-foreground">{row.label}</dt>
-              <dd className="min-w-0 break-words text-foreground">{row.value}</dd>
-            </div>
-          ))}
-        </dl>
+        <div className="flex min-w-0 flex-col px-3 pb-2">
+          {pane === 'headers' ? <NetworkHeaders entry={entry} pageUrl={pageUrl} /> : null}
+          {pane === 'payload' ? <NetworkBody entry={entry} part="request" /> : null}
+          {pane === 'response' ? <NetworkBody entry={entry} part="response" /> : null}
+          {pane === 'timing' ? <NetworkTiming entry={entry} /> : null}
+        </div>
       </ScrollFade>
     </div>
   );
