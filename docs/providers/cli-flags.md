@@ -94,10 +94,12 @@ copilot -p <PROMPT> --model <MODEL> -C <DIR> --output-format=json --disable-clie
 
 ### Stream
 
-`copilot/parser.ts` maps the JSON lines to text, tool calls, file edits, token
-counts and the `result` (session id, premium requests). It drops the
-`assistant.message` that repeats the deltas. A denied tool's `error.message`
-becomes its output. An unmapped event is dropped when `ephemeral`, else kept as
+`copilot/parser.ts` maps the JSON lines: `assistant.message_delta` to partial
+text, `tool.execution_start` and `tool.execution_complete` to a tool call (with
+`fileEdits` as file edits), `session.usage_checkpoint` to the token counts and
+the last request's size, and `result` to the session id and the premium
+requests. It drops the `assistant.message` that repeats the deltas. A denied
+tool has `success: false`, and its `error.message` becomes its output. An unmapped event is dropped when `ephemeral`, else kept as
 `unknown_payload`, so a new event type shows up.
 
 Copilot resumes natively with `--resume=<session id>` from `result.sessionId`
@@ -128,7 +130,8 @@ host token unless the user's token is fine-grained.
 
 Not yet confirmed by a real run: the error event shape (a failed turn shows the
 exit code and stderr), whether the deny rules always hold, any context window but
-Sonnet 5.5 (200k), and the reasoning levels beyond low, medium and high.
+Sonnet 5.5 (200k, the `context_token_limit` of the recorded run), and the
+reasoning levels beyond low, medium and high.
 
 ## opencode runtime
 

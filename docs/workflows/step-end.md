@@ -81,7 +81,8 @@ reason, so no done marker after the retry is stuck as well.
    finished: status `skipped` with the reason in `outputSummary`, and the run
    goes on through `skipStuckStepAndAdvance`. A paused run or a plan held for
    approval starts nothing.
-3. A sub-agent that comes after it does not start (`skipDependentsOfStuck`).
+3. A sub-agent that comes after it does not start (`Did not start:`,
+   `skipDependentsOfStuck`).
 4. The second not finished agent in a row blocks instead
    (`isAfterStuckAgent`).
 

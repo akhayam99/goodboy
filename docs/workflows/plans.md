@@ -59,7 +59,8 @@ the run as a start of yours on `approved`. The button reads **Approving** and
 stays off until the call resolves.
 
 - `approved`: the drawer closes and one `useFollowToast` toast says **Plan
-  approved**, keyed `follow:<run id>`, with **Follow the run** unless the run
+  approved**, keyed `follow:<run id>`, with "The run goes on" or "<Step>
+  started" and **Follow the run** unless the run
   page is open and uncovered. `planApprovedFollowOf` owns the toast.
 - `noop`: the drawer closes and nothing shows.
 - `failed`: `reportError` files "Couldn't approve the plan" and the drawer
@@ -111,7 +112,8 @@ opens over the current page (`openArtifactAnywhere`); from another page it
 opens on its Artifacts page.
 
 The header primary (`PlanPrimaryButton`) is the only **Approve** on either
-surface; the comment bar holds **Send to planner**. A line under the header
+surface; the comment bar holds **Send to planner** and, with no comment, the
+hint "Select text or click a block to comment". A line under the header
 says one thing at a time: the inline question, why the primary or **Edit** is
 off, or who wrote this version ("v3 · Revised by planner").
 
@@ -149,7 +151,7 @@ already ran is not active and gets no layer.
 
 The planner prompt says to write the whole updated plan as one plan block,
 never a patch. When your message is a change request (`isPlanChangeRequest`: a
-change verb, not a question) and the turn ends with the same plan, the chat
+change verb such as add, drop, replace or split, not a question) and the turn ends with the same plan, the chat
 shows "The planner answered without changing the plan" (`unchangedPlanNote`).
 An ordinary question gets no note.
 
@@ -161,7 +163,9 @@ meanwhile the answer is `conflict` and nothing is written. A save bumps the
 revision as author `user` and refreshes the session's plans and artifacts.
 
 `planEditBlockOf` gives the reason **Edit** is off: the planner is revising,
-comments are unsent, or the plan runs as two or more parallel parts, because
+comments are unsent ("Send or discard your 3 comments first"), or the plan runs
+as two or more parallel parts ("This plan runs as 3 parts. Ask the planner to
+change it."), because
 the parts live in the plan's metadata and a hand edit keeps them. A body that
 lists parts twice shows them once (`dropPartsSection`).
 
@@ -169,15 +173,17 @@ lists parts twice shows them once (`dropPartsSection`).
 serves the drawer and the Artifacts page (`artifact.edit`). **Edit** swaps the
 body for the markdown editor; the primary becomes **Save** with **Cancel**, and
 **Approve** is hidden. **Save** sends the revision the edit started from, and
-`saved` leaves edit mode.
+`saved` leaves edit mode with the line "v3 · Edited by you".
 
-- `conflict` keeps your text with **Copy your text** and **Discard**. **Save**
-  stays off, because the same save would conflict again.
-- A failed write keeps your text, says so inline and files the detail through
-  `reportError`.
+- `conflict` keeps your text, says "The planner wrote v3 meanwhile" and offers
+  **Copy your text** and **Discard**. **Save** stays off, because the same save
+  would conflict again, with the reason "A newer version exists. Copy your
+  text, discard, then edit again." The version reads "v2 · v3".
+- A failed write keeps your text, says "Couldn't save the plan. Your text is
+  still here." inline and files the detail through `reportError`.
 - **Esc** leaves edit mode and never closes the drawer: the editor registers
   its own escape layer above the drawer's. A changed edit asks "Discard your
-  edit?" first.
+  edit?" first, and **Esc** again keeps editing.
 
 ## Tests
 

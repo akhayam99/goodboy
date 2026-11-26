@@ -166,5 +166,6 @@ default browser, and the tab's workspace profile stays signed out.
   headless; it also fails on a scheme `lib.rs` registers that the rule misses),
   `browser::tests` on the mock runtime (it also fails on a window lookup
   through `webview_windows` or `get_webview_window`), `csp-img-src.test.ts`,
-  `passkey::tests` and `passkeyWatchScript.test.ts`. The native back step and
-  the passkey handler cannot run headless.
+  `passkey::tests` and `passkeyWatchScript.test.ts`. The passkey scenes are
+  `browser-pane-passkey` and `browser-pane-passkey-dark`. The native back step
+  and the passkey handler cannot run headless.

@@ -165,8 +165,17 @@ older claude reads `auth status` as a prompt.
 ### Reasons are typed
 
 `AuthState.reason` is a typed `AuthReason` (`providers/auth_reason.rs`), never a
-sentence: a kind with its data, such as `timed_out` with the `secs` the check ran
-under or `cli_too_old` with the `version` found (or null) and the `minimum`.
+sentence. The kinds are closed:
+
+- `timed_out` with its `secs` (the budget the check ran under)
+- `not_installed`
+- `spawn_failed` and `cli_said` with a `detail` (the OS or CLI words)
+- `printed_nothing`
+- `exited_with_code` with its `code`
+- `no_exit_code`, `empty_command`, `no_access_token`, `not_confirmed_by_server`,
+  `no_status`, `unknown_provider` and `check_unfinished`
+- `cli_too_old` with the `version` found (or null) and the `minimum`
+
 `authReasonSentence` in `features/providers` writes one sentence per kind, and
 `probeOutcomeOf` hands it to the connection history. A chat that cannot run
 read-only fails with `not_read_only`, which `chatStartError` turns into

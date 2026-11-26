@@ -105,9 +105,10 @@ agent on its one conversation (`AgentDetailPane`, `ChatView`
   inline first; the error sits behind **Show details**.
 - **Blocked** (stopped without finishing or asking): the same verbs, on the
   warning rail. Writing to the agent also resumes it.
-- **Quiet** for 15 minutes: "No output for 20 min" with the last event.
-  **Continue** stops the silent turn and asks the agent to check where it
-  stands.
+- **Quiet**: once a running step has said nothing for 15 minutes, the strip
+  reads how long it has been quiet, such as "No output for 20 min", with the
+  last event. **Continue** stops the silent turn and asks the agent to check
+  where it stands; **Skip** skips it.
 - **Stopped**: no strip. The header offers Continue; a step you stopped is
   never an alarm.
 - **An open question no row shows**: the question with **Answer**, in the

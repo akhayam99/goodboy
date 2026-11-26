@@ -17,11 +17,14 @@ caller asked for.
 ## The Every run tab
 
 The rules are the **Every run** tab of the Workflows studio (`EveryRun`,
-opened by `setWorkflowStudioView('every')`). Settings has no Runs page: every
-link to the run defaults (`openRunDefaults`, a search hit, the section id
+opened by `setWorkflowStudioView('every')`). Settings has no Runs page: its
+workspace rail ends on the link row **Run defaults are in Workflows**, and
+every link to the run defaults (`openRunDefaults`, a search hit, the section id
 `general` or `workflow_orchestrator`) passes `isRunDefaultsFocus` in
-`settingRows.ts` and lands here. Search finds older names through
-`FORMER_NAMES` and `RUN_DEFAULTS_SEARCH_ALIASES`. The all-pages Restore
+`settingRows.ts` and lands here. Search settings and `⌘K` find the link by its
+earlier names too (Runs, Run defaults, Rules, Workflow rules, Start as;
+`FORMER_NAMES`, `RUN_DEFAULTS_SEARCH_ALIASES` in `workspacePages.ts`). The
+all-pages Restore
 defaults and Copy from in the workspace settings menu still carry the run
 defaults and list them as Every run.
 
@@ -30,7 +33,8 @@ a run stops for you**, **Spending** and **Guidance**; `EveryRun` passes in
 **Edits** (`DefaultModeCards`), **Agents**, the Lead (`RunsSection`), the
 roles (`RoleRow`), **Older plan runs** (`OlderPlanRunsBand`, only while
 `useHasPlanRuns`) and, last and closed, **Advanced** with **Parallel agents**
-(`RunsAdvancedBand`). A failed save keeps the old value and shows the error
+(`RunsAdvancedBand`). Advanced says **Parallel agents on** beside its title
+while the switch is on. A failed save keeps the old value and shows the error
 under its row.
 
 ### Stops for your OK
@@ -58,6 +62,7 @@ only** at it, in the same editor as the session's (`SpendLimitFields`).
 
 - The run limit starts at the **Limit** of Every run, and at no limit when that
   is blank (`runLimitOf`). You change it on the run or in Start a run.
+- The orchestrator decides how many steps to plan based on the goal.
 - **Limit** on Every run (`DefaultLimitSetting`) applies on Enter or when the
   field loses focus (`useLimitAmountDraft` in `shared/hooks`).
 - One limit covers every run, the Lead included: Start a run, `moveToAuto` and
@@ -75,10 +80,12 @@ A session has its own limit, from the spend popover or an agent page's
 **Limit** chip.
 
 - **Pause runs** (the default): every workflow of the session stops at the
-  limit, and its strip offers **Raise limit**.
+  limit, and its strip says `Paused at the $10.00 limit for this session.`
+  with **Raise limit**, which opens the spend popover on the editor.
 - **Warn only**: nothing stops; one notification says the session passed its
   limit.
-- A run that pauses at its own limit notifies "Run is over its limit"
+- A run that pauses at its own limit says `Paused at the $3.00 limit for this
+run.` and notifies "Run is over its limit"
   (`budgetBlock.ts`, `orchestrateNextStep.ts`).
 - Single agents are never stopped by it.
 

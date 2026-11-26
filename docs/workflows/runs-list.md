@@ -47,10 +47,11 @@ list, from one place.
 `workBranchesOf` (`features/session`) names a row's work from the run's agents
 (`Agent.mountId`), the mount a step inherits from the step before
 (`inheritedMountIdOf`, shared with `selectRunStepMountId`), and the Auto tree
-(`placedAgentsOf`, which the Overview board reads too). In a session with one
+(`placedAgentsOf`: the Lead takes the tree's `primaryMountId`, a child its
+delegation target; the Overview board reads it too). In a session with one
 mount on a branch, an agent that recorded none files there (`soleMountIdOf`),
 so older rows need no migration. New rows record it (`soleTurnMountIdOf` in
-`startRoutedRun`, `createAutoChild`).
+`startRoutedRun`, `createAutoChild`). A read only agent counts.
 
 A detached mount or a removed worktree moves its branch to
 `SessionRun.goneBranches`, so the run keeps its group.
@@ -164,7 +165,9 @@ blocked, **Start a new run as** once it finished.
 - A change after work started refuses while a step is going, else calls
   `startRoutedRun` with the findings (`runFindingsOf`).
 - On a stopped run the first run is then closed (`closeWorkflowRun`), so two
-  runs never edit one branch. A finished run is left as it was.
+  runs never edit one branch. On a finished run, or an agent that finished,
+  nothing is written to the first (`route.changedTo` is only parsed, for older
+  runs).
 
 ### Writing a run's rules
 

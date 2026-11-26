@@ -43,12 +43,15 @@ The right click on the title lists the run `⋯` items.
 state word, one sentence from `runGlanceOf`, the spend of the limit and the run
 settings. Every run kind uses it.
 
-While the run lives, each setting is one word (`RunSettingsLine`) that opens
-its own popover (`AnchoredPopover`): the control, one line of help, and where
-the value comes from (`runSettingsOf`).
+While the run lives, each setting is one word (`RunSettingsLine`), such as
+"Stops after the plan", "Limit $5.00" or "Auto on Claude". Its accessible name
+holds its label and where it comes from. A word opens its own popover
+(`AnchoredPopover`): the control, one line of help, and where the value comes
+from (`runSettingsOf`).
 
 - The limit word reads the limit that comes first, never the spend, so a number
-  shows once.
+  shows once: "Limit $20.00", named "Limit: $20.00, from session", the popover
+  explaining "$17.00 spent, $2.00 of it this run".
 - There is no Save: a choice applies on click, the limit on Enter or on close.
   A failed write keeps the old value and shows the error, in the log when the
   popover already closed.
@@ -56,9 +59,13 @@ the value comes from (`runSettingsOf`).
   (`setWorkflowRunProviderPool`, latest answer wins, Undo puts the old
   providers back). A change applies from the next step.
 
+Under the line sit the preset the run came from and the time left while the
+run lives (`useRunTimeLeft`).
+
 **Show guidance** holds the one text the orchestrator reads
-(`orchestratorProcessText`). The write destination shows while 2 or more
-worktrees can be written (`RunWriteDestination`).
+(`orchestratorProcessText`), so guidance saved in both the workflow and the run
+shows once. The goal attachments follow. The write destination shows while 2 or
+more worktrees can be written (`RunWriteDestination`).
 
 ## Plan and progress
 
@@ -69,20 +76,26 @@ levels (`RUN_TREE_SLOT_WIDTH`), so nesting shows only on the tracks and in the
 top (`stepReasonOf`).
 
 - While no step runs and the orchestrator chooses (`isBetweenStepsPhase`), one
-  row after the last step shows the running node (`OrchestratedNowRow`). The
-  tail then draws no line of its own.
+  row after the last step shows the running node and the phrase
+  (`OrchestratedNowRow`, `Choosing the next step` or `Continuing
+automatically`). The tail then draws no line of its own.
 - The recap's **Left** items that name a role follow as dashed rows, so plan
   and progress are one list (`orchestratedChecklistOf`). A role comes from
-  `leftRoles`; an unknown role is dropped.
+  `{"text": ..., "role": "tester"}` in the run summary, kept in `leftRoles`; an
+  unknown role is dropped. A plain string entry leaves the role column empty.
 - A Left entry with no role is not a step. It sits in a folded **Left open**
   list (`OrchestratedNotes`).
-- An entry that repeats a step already listed shows once (`isSameIntent`: same
+- An entry that repeats a step already listed, or one listed before it, shows
+  once (`isSameIntent`: same
   text apart from case, spacing and punctuation). A reworded entry is never
   hidden.
 
 Each read hint is one row (`OrchestratedHintRow`) before the step whose
-decision read it, with "read at step 4" linking to that step. While that step
-has no row, or the hint has no recorded step, the hint sits after the steps.
+decision read it: the text in a bubble on one line, **Show more** when the line
+is cut or the hint has a second line, image thumbnails, and "You · read at step
+4". "read at step 4" focuses that step, or opens it in the drawer when its row
+is not on screen. While that step has no row, or the hint has no recorded step,
+the hint sits after the steps.
 
 ## The tail
 
@@ -90,8 +103,12 @@ The tail (`OrchestratedTail`, phrases in `orchestratedTailOf`) speaks the phase
 of `resolveOrchestratorState` once, at the end. The move each phase waits for
 is the header primary, never a second button on the tail.
 
-- A running step reads as working; "Waiting" is kept for a run that waits on
-  you. The one Stop is in the dock.
+- "Step 3 is running: Tester" with the step's active time. A running step reads
+  as working; "Waiting" is kept for a run that waits on you. The one Stop is in
+  the dock, and **Continue** brings the cut step back.
+- "Step 4 starts next: Tester" for a pending step.
+- "Waiting for your go", "Waiting for your answer on step 4" and "Paused at the
+  limit".
 - A failed decision shows the stop message, or "no reason was recorded."
   (`decisionFailureOf`), with model ids as display names (`modelNamesIn`) and
   **Open transcript**.
@@ -121,14 +138,20 @@ asks the agent to repeat a question it had asked.
 A real open question (phase `needs-answer`, a preset run's tail too) shows the
 transcript's card (`RunOpenQuestion` renders `OpenQuestionCluster`).
 
-- Several open questions from one agent page in creation order
-  (`askingAgentBatch`, `questionsLeft`). **Answer** keeps each pick, and the
+- **Something else** keeps the option row when it opens: the field grows under
+  its label.
+- An answered or resolved card shows the answer on one line (cut, full text on
+  hover), then the quiet status and **Undo** (`QuestionAnswerDone`).
+- Several open questions from one agent page as "1 of 3" in creation order
+  (`askingAgentBatch`). **Answer** keeps each pick, the pager says how many are
+  left ("2 left" jumps to the next unanswered one, `questionsLeft`), and the
   last **Answer** sends every pick in one call, so the agent resumes once.
   Another agent's questions wait for the next batch.
 - A question an agent is already answering for you shows as waiting and never
   counts toward the send (`partitionDelegatedQuestions`).
-- A send that fails before the answers are saved keeps every pick and reports
-  "Couldn't send your answers"; **Answer** sends the same batch again
+- A send that fails before the answers are saved keeps every pick, unstages
+  the card you pressed and reports "Couldn't send your answers"; **Answer**
+  sends the same batch again
   (`useAnswerQuestion`).
 - A send that fails after they are saved keeps the batch in the store
   (`pendingOpenQuestionDeliveries`), and the tail shows **Retry**
@@ -200,18 +223,39 @@ What Stop run, Archive run and Delete run do is in
 
 ## Only on a preset run
 
-- **Overview** (`RunOverviewPage`): the head, the goal, the step list with
-  **Add step**, the result, then the run tail.
+- **Overview** (`RunOverviewPage`): the head, the goal, the write destination
+  ("Writes to ...") while 2 or more worktrees can be written
+  (`RunWriteDestination`), the step list with **Add step**, the result, then
+  the run tail. An archived run shows **Restore** as its one header primary and
+  reads dimmed.
 - **A step** (`RunStepPage`): the step's conversation, embedded
-  (`AgentDetailPane` with a `runStep` frame), for every run kind. The step `⋯`
-  (`RunStepActions`) holds Open transcript and Skip step N; on a helper's page
-  Skip skips the step the helper belongs to. The thinking line ends in **Stop
-  step 2** (`stepStopLabelOf`, through `RunStepFrame.stopLabel`).
-- On a step page the run's next move reads on the quiet line at the end. There
-  is no next action card and no Start chip.
+  (`AgentDetailPane` with a `runStep` frame), for every run kind. The header
+  reads "Step 2 · Implementer" with the provider mark.
+- The step `⋯` (`RunStepActions`) holds Open transcript and Skip step N. Open
+  transcript opens the agent's page and closes the drawer; a helper's page has
+  the helper's own. On a helper's page Skip skips the step the helper belongs
+  to.
+- The thinking line ends in **Stop step 2** (`stepStopLabelOf`, through
+  `RunStepFrame.stopLabel`).
+- On a step page the run's next move reads on the quiet line at the end, such
+  as "Step 2 done" with **Start step 3**. There is no next action card and no
+  Start chip. The agent's own menu stays on the right click of the title.
 
 `RunTail` (phrases in `runTailOf`) speaks for a preset run once, at the end,
-and says nothing while the step on screen runs. On the overview the header holds the primary (with `StartStepPrimary` and its
+and says nothing while the step on screen runs. Else it reads one of:
+
+- "Step 2 · Implementer is working" with **Open step 2**.
+- "No output for 15 min" with **Continue**.
+- The open question.
+- A halted step with **Open step N** and the word **Needs you**. On its step
+  page a blocked one reads **Not finished** with **Retry**: its reason is on
+  its step page.
+- "Paused at the limit". A step that never started also reads "Not started,
+  the run paused at the limit."
+- The step that is ready.
+- A stopped step with **Continue**, or "Stopped by you" with no verb.
+
+On the overview the header holds the primary (with `StartStepPrimary` and its
 Start anyway confirm, and `WorkflowRunStartButton`). On a step page the same
 verb sits on the tail as a secondary button.
 

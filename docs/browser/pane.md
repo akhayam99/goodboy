@@ -22,7 +22,8 @@ The pane opens at 720 and drags from 480 to the room the session column leaves
 (it keeps 560 and the gutters), past the reader tier's 1000 cap. It keeps its
 own width (`goodboy:browser-drawer-width:v1`). When a resize leaves less room,
 the pane shrinks to the room and keeps pushing while 720 fits; below that it
-lies over the page. A resize never rewrites the saved width.
+lies over the page. A resize never rewrites the saved width, and the saved
+width comes back when the window grows.
 
 ## The address row
 
