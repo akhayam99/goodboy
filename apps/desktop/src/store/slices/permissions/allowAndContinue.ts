@@ -47,7 +47,7 @@ export const allowAndContinue = (get: GetFn) => {
       decidedBy: 'user',
       at: now,
     });
-    await recordPermissionDecision({
+    void recordPermissionDecision({
       get,
       sessionId,
       agentId,

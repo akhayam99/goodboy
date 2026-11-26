@@ -127,6 +127,19 @@ const stringifyInput = ({ toolName, input }: MatchParams): string => {
   return JSON.stringify(input);
 };
 
+const readTargetOf = ({ toolName, input }: MatchParams): string | null => {
+  if (input === null || typeof input !== 'object') {
+    return null;
+  }
+  const path =
+    toolName === 'Read'
+      ? stringField({ input, key: 'file_path' })
+      : toolName === 'Grep' || toolName === 'Glob'
+        ? stringField({ input, key: 'path' })
+        : null;
+  return path !== null && path.startsWith('/') ? path : null;
+};
+
 type PatternTextParams = {
   readonly pattern: string;
 };
@@ -142,6 +155,18 @@ export const parseToolPattern = ({ pattern }: PatternTextParams): ToolMatcher =>
   }
   const tool = pattern.slice(0, parenIdx).trim();
   const tokens = tokenizeGlob({ glob: pattern.slice(parenIdx + 1, pattern.lastIndexOf(')')) });
+  if (tool === 'Read') {
+    return {
+      matches: ({ toolName, input }) => {
+        const path = readTargetOf({ toolName, input });
+        if (path === null) {
+          return false;
+        }
+        const text = `//${path.slice(1)}`;
+        return globTest({ tokens, text }) || globTest({ tokens, text: `${text}/` });
+      },
+    };
+  }
   return {
     matches: ({ toolName, input }) =>
       toolName === tool && globTest({ tokens, text: stringifyInput({ toolName, input }) }),

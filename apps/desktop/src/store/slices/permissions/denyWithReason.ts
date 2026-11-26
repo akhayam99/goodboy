@@ -40,7 +40,7 @@ export const denyWithReason = (get: GetFn) => {
       sessionId,
       askDenialEventOf({ runId, toolUseId, reason: trimmed, at: now }),
     );
-    await recordPermissionDecision({
+    void recordPermissionDecision({
       get,
       sessionId,
       agentId,

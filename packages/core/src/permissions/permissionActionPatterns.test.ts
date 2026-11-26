@@ -71,7 +71,29 @@ describe('oncePatternText', () => {
         toolName: 'Grep',
         input: { pattern: 'x', path: '/ledger-core/.env.local' },
       }),
-    ).toBe('Read(//ledger-core/**)');
+    ).toBe('Read(//ledger-core/.env.local)');
+  });
+
+  it('keeps a Glob of a dotted folder inside that folder', () => {
+    expect(
+      oncePatternText({
+        toolName: 'Glob',
+        input: { pattern: '*', path: '/work/ledger-core/release.v2/' },
+      }),
+    ).toBe('Read(//work/ledger-core/release.v2/**)');
+    expect(
+      oncePatternText({
+        toolName: 'Glob',
+        input: { pattern: '*', path: '/work/ledger-core/release.v2' },
+      }),
+    ).toBe('Read(//work/ledger-core/release.v2/**)');
+  });
+
+  it('scopes a saved Read of an extensionless file to its parent folder', () => {
+    expect(
+      prefixRuleFor({ toolName: 'Read', input: { file_path: '/work/ledger-core/LICENSE' } })
+        .pattern,
+    ).toEqual({ tool: 'Read', argsMatcher: '//work/ledger-core/**' });
   });
 
   it('keeps the bare tool name for a Grep with no absolute path', () => {

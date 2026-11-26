@@ -128,18 +128,28 @@ const hasFileName = ({ path }: PathParams): boolean => {
   return name.lastIndexOf('.') > 0;
 };
 
-const directoryOf = ({ path }: PathParams): string => {
+const parentOf = ({ path }: PathParams): string => {
   const trimmed = trimmedSlashes({ path });
-  return hasFileName({ path: trimmed }) ? trimmed.slice(0, trimmed.lastIndexOf('/')) : trimmed;
+  return trimmed.slice(0, trimmed.lastIndexOf('/'));
 };
+
+const scopeText = ({ path }: PathParams): string => `//${path.slice(1)}`;
 
 const readScopeOf = ({ toolName, input }: ActionTarget): string | null => {
   const path = pathFieldOf({ toolName, input });
   if (!path.startsWith('/')) {
     return null;
   }
-  const directory = directoryOf({ path });
-  return directory === '' ? null : `//${directory.slice(1)}/**`;
+  if (toolName === 'Read') {
+    const parent = parentOf({ path });
+    return parent === '' ? null : `${scopeText({ path: parent })}/**`;
+  }
+  const trimmed = trimmedSlashes({ path });
+  if (trimmed === '') {
+    return null;
+  }
+  const isFile = !path.endsWith('/') && toolName === 'Grep' && hasFileName({ path: trimmed });
+  return isFile ? scopeText({ path: trimmed }) : `${scopeText({ path: trimmed })}/**`;
 };
 
 export const oncePatternText = ({ toolName, input }: ActionTarget): string => {
@@ -178,8 +188,7 @@ type ScopeParams = {
 };
 
 const shortFolderOf = ({ scope }: ScopeParams): string =>
-  scope
-    .slice(2, -3)
+  (scope.endsWith('/**') ? scope.slice(2, -3) : scope.slice(2))
     .split('/')
     .filter((segment) => segment !== '')
     .slice(-2)
