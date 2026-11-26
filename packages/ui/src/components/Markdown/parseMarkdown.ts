@@ -46,7 +46,6 @@ const ULIST_RE = /^(\s*)[-*+]\s+(.*)$/;
 const OLIST_RE = /^(\s*)(\d+)\.\s+(.*)$/;
 const QUOTE_RE = /^>\s?(.*)$/;
 const TABLE_ROW_RE = /^\s*\|/;
-const TABLE_BODY_ROW_RE = /\|/;
 const TABLE_DIVIDER_CELL_RE = /^:?-{2,}:?$/;
 const MAX_CALLOUT_DEPTH = 6;
 const CALLOUT_OPEN_RE = /^<<([a-zA-Z][a-zA-Z0-9_-]*)>>(.*)$/;
@@ -411,7 +410,7 @@ const parseBlocks = ({ input, depth }: BlocksParams): ReadonlyArray<Block> => {
       const align = parseAlign(lines[i + 1] ?? '');
       i += 2;
       const rows: string[][] = [];
-      while (i < lines.length && TABLE_BODY_ROW_RE.test(lines[i] ?? '')) {
+      while (i < lines.length && TABLE_ROW_RE.test(lines[i] ?? '')) {
         rows.push([...splitTableCells(lines[i] ?? '')]);
         i++;
       }

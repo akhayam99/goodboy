@@ -1,9 +1,11 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
-}));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -28,8 +30,8 @@ import { askDigestOf, collectAskPackInput } from './collectAskPackInput';
 import { RESOLVE_WORD_LABEL } from '../../resolve/commentProjection';
 import { askSuggestions } from './askRightNow';
 
-const SESSION = 'session-harborline' as SessionId;
-const PROJECT = 'project-payments-api' as ProjectId;
+const SESSION = brandId<SessionId>({ value: 'session-harborline' });
+const PROJECT = brandId<ProjectId>({ value: 'project-payments-api' });
 const AT = brandId<IsoDateTime>({ value: '2026-10-06T14:56:25Z' });
 
 let useAppStore: StoryStore;
@@ -92,7 +94,7 @@ describe('the Ask suggestions only offer what the pack can answer', () => {
       sessionPhaseRuns: {
         [SESSION]: [
           anAgent({
-            id: 'agent-tester' as AgentId,
+            id: brandId<AgentId>({ value: 'agent-tester' }),
             sessionId: SESSION,
             name: 'Tester',
             status: 'failed',
@@ -133,7 +135,11 @@ describe('the Ask suggestions only offer what the pack can answer', () => {
   });
 });
 
-const comment = (word: AskPackComment['word']): AskPackComment => ({
+type CommentParams = {
+  readonly word: AskPackComment['word'];
+};
+
+const comment = ({ word }: CommentParams): AskPackComment => ({
   threadId: `thread-${word}`,
   word,
   author: 'Northwind',
@@ -141,7 +147,11 @@ const comment = (word: AskPackComment['word']): AskPackComment => ({
   body: 'Keep the retry count.',
 });
 
-const packInput = (comments: ReadonlyArray<AskPackComment>): AskPackInput => ({
+type PackInputParams = {
+  readonly comments: ReadonlyArray<AskPackComment>;
+};
+
+const packInput = ({ comments }: PackInputParams): AskPackInput => ({
   title: 'Fix webhook retries',
   rightNow: [],
   live: { calls: [], checks: [], worktrees: [], scripts: [] },
@@ -167,7 +177,7 @@ describe('the comment suggestions', () => {
       openQuestionsFrom: [],
       prNumber: null,
     });
-    const text = buildAskPack(packInput(words.map(comment))).text;
+    const text = buildAskPack(packInput({ comments: words.map((word) => comment({ word })) })).text;
 
     expect(suggestions).toContain('What needs me?');
     expect(suggestions).toContain('Why did a comment fix fail?');
