@@ -69,10 +69,30 @@ merges from the phone like it does on the desktop.
 
 ## What the phone sees
 
-The snapshot carries only live sessions: a deleted or archived session sends
-no messages, agents, turn events, context slots, plans, workflows, mounts, PR
-links or external tasks. Messages are capped at the newest 500 per session, and
-a workspace root is sent as its folder name, never the absolute path.
+The phone gets projections, not database rows. The main window of the desktop
+builds them in `features/companion/projections/` with the functions that draw
+the same screens (`needsYouOf`, `sessionMarkOf`, `attentionWordsOf`) and
+publishes them through `bridge_publish`, a command that refuses every window
+but `main`. The Rust side in `bridge/publish.rs` is the border: it parses each
+projection against a closed schema (`bridge/publish_schema.rs`), drops fields
+the schema does not name, refuses a value outside the vocabulary, a string that
+reads as an absolute path and a projection over 56,000 bytes, and cuts lists to
+a fixed length (60 moves, 30 sessions per lane, 20 lines, 20 runs, 40 tasks).
+A workspace is sent by its name only, a project by its name, never a path. A
+projection holds no archived or deleted session, and none of the transcript.
+
+Only what changed is sent: the phone gets one frame per changed projection
+(`0x0B`), a frame when one disappears (`0x0D`), and everything again when it
+asks (`0x82`). The other workspaces are read by a read-only loader that never
+writes the store; for them the sessions, agents, open questions and tasks come
+from the database, and the pull request facts, mounts and project names are not
+loaded, so a pull request reason shows for the current workspace only.
+
+While the main window is open it publishes at least every four seconds. When no
+call reached the bridge for 10 seconds (the window reloaded or closed) the
+phone gets `0x0C` with `isOpen: false` and draws "Goodboy is not open on your
+Mac" instead of old data. A reloaded window starts a new `epoch`: the bridge
+drops what the old one published and refuses a call from the older one.
 
 A `send` that names an `agentId` must name an agent of that session. The
 executor refuses an id longer than 64 characters, a non-string, and an id the

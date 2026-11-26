@@ -2,8 +2,9 @@ mod commands;
 mod frame;
 mod gate;
 mod identity;
+pub mod publish;
+mod publish_schema;
 mod server;
-mod snapshot;
 mod tokens;
 #[cfg(test)]
 mod wire_shape;
@@ -22,6 +23,7 @@ use tokio::sync::{watch, Mutex};
 
 use commands::{CmdResult, PendingMap};
 use identity::Identity;
+use publish::PublishHub;
 use server::{serve, ServerCtx};
 use tokens::TokenStore;
 
@@ -46,8 +48,6 @@ pub enum BridgeError {
     Io(#[from] std::io::Error),
     #[error("json error: {0}")]
     Json(#[from] serde_json::Error),
-    #[error("db error: {0}")]
-    Db(String),
     #[error("protocol error: {0}")]
     Protocol(String),
     #[error("unauthorized: {0}")]
@@ -62,7 +62,6 @@ impl BridgeError {
             BridgeError::Decode(_) => "decode",
             BridgeError::Io(_) => "io",
             BridgeError::Json(_) => "json",
-            BridgeError::Db(_) => "db",
             BridgeError::Protocol(_) => "protocol",
             BridgeError::Unauthorized(_) => "unauthorized",
         }
@@ -76,6 +75,7 @@ pub struct BridgeState {
     identity: Arc<Mutex<Identity>>,
     tokens: Arc<TokenStore>,
     pending: PendingMap,
+    pub(crate) hub: Arc<PublishHub>,
     inner: Mutex<Inner>,
 }
 
@@ -94,6 +94,7 @@ impl BridgeState {
             identity: Arc::new(Mutex::new(identity)),
             tokens: Arc::new(TokenStore::new()),
             pending: Arc::new(Mutex::new(HashMap::new())),
+            hub: Arc::new(PublishHub::new()),
             inner: Mutex::new(Inner::default()),
         })
     }
@@ -112,6 +113,7 @@ impl BridgeState {
             device_name: device_name(),
             app,
             pending: self.pending.clone(),
+            hub: self.hub.clone(),
             shutdown: shutdown_rx,
         });
         let task = tauri::async_runtime::spawn(async move {

@@ -83,11 +83,6 @@ const TOMBSTONE_READ_ALLOWLIST: ReadonlyArray<TombstoneAllowance> = [
       'point lookup by id: the routing gate answers not found for an id it cannot resolve, and lets a tombstone through to the status check, so it has to see it',
   },
   {
-    file: 'snapshot.rs',
-    contains: ['FROM agents WHERE deleted_at IS NULL'],
-    reason: 'carries its own tombstone filter and projects deleted_at into the snapshot',
-  },
-  {
     file: 'agent-turn-span.ts',
     contains: ['LEFT JOIN agents a ON a.id = s.agent_id'],
     reason:
