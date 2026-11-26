@@ -6,6 +6,7 @@ import {
   storySpies,
   type StoryStore,
 } from './storyHarness';
+import { brandId } from '@goodboy/types';
 import type {
   Agent,
   AgentId,
@@ -198,10 +199,10 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
     setupSession(useAppStore);
     await useAppStore.getState().resolvePermissionRequest({
       sessionId: SESSION_ID,
-      agentId: 'agent-1' as AgentId,
+      agentId: brandId<AgentId>({ value: 'agent-1' }),
       toolUseId: 'tu-1',
       toolName: 'Edit',
-      runId: 'run-1' as ProviderRunId,
+      runId: brandId<ProviderRunId>({ value: 'run-1' }),
       scope: 'once',
     });
 

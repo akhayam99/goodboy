@@ -1,11 +1,12 @@
-import type {
-  AgentId,
-  IsoDateTime,
-  PermissionDecisionOutcome,
-  PermissionRuleId,
-  PermissionRequestId,
-  ProviderRunId,
-  SessionId,
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type PermissionDecisionOutcome,
+  type PermissionRuleId,
+  type PermissionRequestId,
+  type ProviderRunId,
+  type SessionId,
 } from '@goodboy/types';
 import { persistPermissionAudit } from '../turn/persistPermissionAudit';
 import { askedCallOf } from './askedCallOf';
@@ -37,7 +38,7 @@ export const recordPermissionDecision = async ({
   const asked = askedCallOf({ events: get().transcripts[agentId] ?? [], toolUseId });
   await persistPermissionAudit({
     payload: {
-      id: crypto.randomUUID() as PermissionRequestId,
+      id: brandId<PermissionRequestId>({ value: crypto.randomUUID() }),
       runId,
       sessionId,
       toolUseId,

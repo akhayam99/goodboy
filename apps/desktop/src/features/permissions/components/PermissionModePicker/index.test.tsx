@@ -53,11 +53,7 @@ describe('PermissionModePicker', () => {
   it('tells the truth for the Lead: Full access, but the Lead only reads', () => {
     render(
       <PermissionModePicker
-        session={aSession({
-          id: 'sess-1' as SessionId,
-          workspaceId: 'ws-1' as WorkspaceId,
-          permissionMode: 'bypassPermissions',
-        })}
+        session={aSession({ permissionMode: 'bypassPermissions' })}
         activeProvider="anthropic"
         isLead
       />,
@@ -69,11 +65,7 @@ describe('PermissionModePicker', () => {
   it('leaves Read only plain for the Lead and Full access plain for everyone else', () => {
     const { unmount } = render(
       <PermissionModePicker
-        session={aSession({
-          id: 'sess-1' as SessionId,
-          workspaceId: 'ws-1' as WorkspaceId,
-          permissionMode: 'plan',
-        })}
+        session={aSession({ permissionMode: 'plan' })}
         activeProvider="anthropic"
         isLead
       />,
@@ -82,11 +74,7 @@ describe('PermissionModePicker', () => {
     unmount();
     render(
       <PermissionModePicker
-        session={aSession({
-          id: 'sess-1' as SessionId,
-          workspaceId: 'ws-1' as WorkspaceId,
-          permissionMode: 'bypassPermissions',
-        })}
+        session={aSession({ permissionMode: 'bypassPermissions' })}
         activeProvider="anthropic"
       />,
     );
