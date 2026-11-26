@@ -48,9 +48,9 @@ const reachesEntry = ({ moduleId, graph, seen }: WalkParams): boolean => {
 };
 
 const isLoadedAtBoot = ({ moduleId, graph, seen }: ReachParams): boolean => {
-  const known = seen.get(moduleId);
-  if (known !== undefined) {
-    return known;
+  const isBootModule = seen.get(moduleId);
+  if (isBootModule !== undefined) {
+    return isBootModule;
   }
   const isReached = reachesEntry({ moduleId, graph, seen });
   seen.set(moduleId, isReached);
