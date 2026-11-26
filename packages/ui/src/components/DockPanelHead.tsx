@@ -1,5 +1,6 @@
 import { useContext, useLayoutEffect, type PointerEvent, type ReactNode } from 'react';
 import { cn } from '../cn';
+import { DrawerBackChipContext } from '../drawerBackChipContext';
 import { DockDragContext } from '../dockDragContext';
 import { DockTabsContext } from '../dockTabsContext';
 import { X } from '../icons';
@@ -9,6 +10,7 @@ import { useDockGrip } from '../useDockGrip';
 import { useIsNarrow } from '../useIsNarrow';
 import type { DrawerPage } from './DrawerFrame';
 import { DrawerHeadKeys } from './DrawerHeadKeys';
+import { DrawerBackChip } from './DrawerBackChip';
 import { IconButton } from './IconButton';
 import { SegmentedTabs } from './SegmentedTabs';
 
@@ -45,6 +47,7 @@ export const DockPanelHead = ({
   const row = useIsNarrow({ below: NARROW_HEAD_PX });
   const source = useContext(DockDragContext);
   const tabs = useContext(DockTabsContext);
+  const backChip = useContext(DrawerBackChipContext);
   const claim = tabs?.claim;
   const paneKey = tabs?.paneKey;
 
@@ -84,6 +87,7 @@ export const DockPanelHead = ({
         grip.canDrag && 'cursor-grab',
       )}
     >
+      {backChip === null ? null : <DrawerBackChip chip={backChip} />}
       {tabs === null ? (
         <div className="flex min-w-0 flex-1 items-center gap-2 pl-2">
           {Icon == null ? null : (
