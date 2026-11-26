@@ -29,7 +29,10 @@ export const pageChipTextOf = ({ source, now }: Params): PageChipText => {
   const isStale = now - source.readAt > FRESH_MS;
   return {
     title: source.title,
-    detail: `${source.host} · ${wordsLabelOf({ wordCount: source.wordCount })}`,
+    detail:
+      source.kind === 'element'
+        ? source.host
+        : `${source.host} · ${wordsLabelOf({ wordCount: source.wordCount })}`,
     hover: isStale ? `${source.url}. Read at ${formatClock({ at: source.readAt })}.` : source.url,
   };
 };

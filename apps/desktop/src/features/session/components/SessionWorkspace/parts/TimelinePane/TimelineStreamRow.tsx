@@ -46,6 +46,21 @@ type Props = {
   readonly identity?: TimelineRowIdentity | null;
 };
 
+type QuietParams = {
+  readonly rail: RailRow;
+};
+
+const quietRailOf = ({ rail }: QuietParams): RailRow => ({
+  ...rail,
+  joins: [],
+  segments: rail.segments.map((segment) => ({
+    ...segment,
+    identityIndex: null,
+    isMuted: false,
+    dash: 'solid',
+  })),
+});
+
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
   item.entry.kind === 'agent' ? item.entry.agent.id : null;
 
@@ -75,6 +90,7 @@ export const TimelineStreamRow = ({
     hasUnread: item.hasUnread,
   });
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
+  const isAgentRow = item.entry.kind === 'agent';
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     card.handlers.onKeyDown(event);
     if (event.defaultPrevented) {
@@ -138,8 +154,12 @@ export const TimelineStreamRow = ({
         </span>
       </span>
       <span className="relative shrink-0" style={{ width: railWidth }}>
-        <TimelineRail rail={rail} width={railWidth} lanes={lanes} />
-        {rail.markerY == null ? null : (
+        <TimelineRail
+          rail={isAgentRow ? quietRailOf({ rail }) : rail}
+          width={railWidth}
+          lanes={lanes}
+        />
+        {rail.markerY == null || isAgentRow ? null : (
           <span
             className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
             style={{

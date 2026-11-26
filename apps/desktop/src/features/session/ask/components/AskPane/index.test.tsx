@@ -212,6 +212,18 @@ describe('the Ask pane beside the session', () => {
     expect(frame?.getAttribute('data-ask-pane')).toBe('push');
   });
 
+  it('docks beside the whole page, head included, so the head and the column never part', () => {
+    stubWindowWidth({ isNarrow: false });
+    renderWorkspace();
+    act(() => useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID }));
+
+    const frame = document.querySelector<HTMLElement>('[data-ask-pane]');
+    const row = document.querySelector('[data-session-dock-row]');
+    expect(frame?.parentElement).toBe(row);
+    expect(row?.querySelector('[data-session-head-frame]')).not.toBeNull();
+    expect(document.querySelector('[data-session-body] [data-ask-pane]')).toBeNull();
+  });
+
   it('lies over the right of the page on a narrow window, never reflowing it, with a clear Close', () => {
     stubWindowWidth({ isNarrow: true });
     renderWorkspace();

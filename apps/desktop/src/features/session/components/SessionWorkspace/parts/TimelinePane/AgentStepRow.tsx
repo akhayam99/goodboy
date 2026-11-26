@@ -8,6 +8,8 @@ import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { AgentRowMeta } from './AgentRowMeta';
 import { agentRowIdentity } from './AgentRowIdentity';
 import { TimelineRoleGlyph } from './TimelineRoleGlyph';
+import { leadTreeInkOf } from '../../../LeadTree/leadTreeInkOf';
+import { rowStateNode } from '../../../../../workTreeModel/rowStateCopy';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { useAgentRowModels } from './useAgentRowModels';
 import { useRowCard, type RowCard } from './useRowCard';
@@ -72,7 +74,12 @@ export const AgentStepRow = ({
     work,
     glyph: identity.hasGlyph ? (
       <span className={WORK_ROW.pointerLayer} onClick={onOpen}>
-        <TimelineRoleGlyph kind={entry.agentKind} identity={identity} isCardOpen={card.isOpen} />
+        <TimelineRoleGlyph
+          kind={entry.agentKind}
+          identity={identity}
+          isCardOpen={card.isOpen}
+          className={leadTreeInkOf({ node: rowStateNode({ state: item.rowState }).state }).glyph}
+        />
       </span>
     ) : null,
     state: <TimelineRowStateLine state={item.rowState} />,

@@ -177,7 +177,7 @@ describe('demo playground chrome', () => {
     render(<DemoPlayground />);
     fireEvent.click(screen.getByRole('button', { name: 'Replay the demo' }));
     expect(window.location.hash).toBe('#bring');
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your work');
     const rail = screen.getByRole('navigation', { name: 'Playground groups' });
     const rows = Array.from(rail.querySelectorAll('button[data-access]'));
     expect(rows.map((row) => row.getAttribute('data-access'))).toEqual([
@@ -388,7 +388,7 @@ describe('demo playground chrome', () => {
     fireEvent.keyDown(rootOf(), { key: 'k', code: 'KeyK', metaKey: isMac, ctrlKey: !isMac });
     fireEvent.click(
       within(screen.getByRole('navigation', { name: 'Playground groups' })).getByRole('button', {
-        name: /^Bring your repositories/,
+        name: /^Bring your work/,
       }),
     );
     const frames = Array.from(document.querySelectorAll('iframe')).filter(

@@ -32,7 +32,8 @@ type Props = {
   readonly minRows: number;
   readonly maxRows: number;
   readonly footerStart?: ReactNode;
-  readonly model: ReactNode;
+  readonly isInline?: boolean;
+  readonly model?: ReactNode;
   readonly fieldRef?: RefObject<HTMLDivElement | null>;
   readonly testId?: string;
   readonly onSend: (message: MessageComposerMessage) => Promise<boolean>;
@@ -62,6 +63,7 @@ export const MessageComposer = ({
   minRows,
   maxRows,
   footerStart,
+  isInline = false,
   model,
   fieldRef,
   testId,
@@ -136,6 +138,7 @@ export const MessageComposer = ({
           ) : null}
         </>
       }
+      isInline={isInline}
       model={model}
       actions={
         <SendStopControl

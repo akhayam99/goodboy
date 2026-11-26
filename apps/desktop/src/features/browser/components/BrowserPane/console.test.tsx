@@ -16,7 +16,13 @@ import {
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import type { BrowserConsoleEntry, BrowserConsoleRead, BrowserTabFacts } from '../../types';
+import type {
+  BrowserConsoleEntry,
+  BrowserConsoleRead,
+  BrowserRequestFacts,
+  BrowserTabFacts,
+} from '../../types';
+import { BrowserStudio } from '../BrowserStudio';
 import { BrowserPane } from './index';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -38,15 +44,88 @@ const LOAD_EVENT = 'browser://tab-load';
 type Reader = (args: Readonly<Record<string, unknown>>) => Promise<BrowserConsoleRead>;
 type PayloadParams = { readonly payload: unknown };
 type EntryParams = Pick<BrowserConsoleEntry, 'seq' | 'level' | 'text'> &
-  Partial<Pick<BrowserConsoleEntry, 'kind' | 'method' | 'status' | 'source'>>;
+  Partial<Pick<BrowserConsoleEntry, 'kind' | 'method' | 'status' | 'source' | 'network'>>;
 type ReadParams = {
   readonly doc?: string;
   readonly entries: ReadonlyArray<BrowserConsoleEntry>;
 };
+type RoomParams = {
+  readonly width: number;
+  readonly height: number;
+};
+type PressParams = {
+  readonly key: string;
+  readonly times?: number;
+  readonly isShift?: boolean;
+};
+type RequestParams = {
+  readonly id: string;
+  readonly duration: number;
+  readonly size: number;
+};
+
+type SurfaceParams = {
+  readonly surface: 'pane' | 'page';
+};
+
+const DOCK_KEY = 'goodboy:browser-tools-dock:v1';
 
 let store: StoryStore;
 let reader: Reader;
 let handlers: Map<string, Array<EventCallback<unknown>>>;
+let stages: Map<ResizeObserverCallback, Element>;
+
+class StageObserver {
+  private readonly callback: ResizeObserverCallback;
+
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+  }
+
+  observe = (target: Element): void => {
+    if (target.hasAttribute('data-browser-stage')) {
+      stages.set(this.callback, target);
+    }
+  };
+
+  unobserve = (): void => undefined;
+
+  disconnect = (): void => {
+    stages.delete(this.callback);
+  };
+}
+
+const sizeStage = ({ width, height }: RoomParams) => {
+  act(() => {
+    stages.forEach((target, callback) =>
+      callback(
+        [
+          {
+            target,
+            contentRect: new DOMRect(0, 0, width, height),
+            borderBoxSize: [],
+            contentBoxSize: [],
+            devicePixelContentBoxSize: [],
+          },
+        ],
+        new StageObserver(callback),
+      ),
+    );
+  });
+};
+
+const requestOf = ({ id, duration, size }: RequestParams): BrowserRequestFacts => ({
+  id,
+  type: 'fetch',
+  start: 0,
+  duration,
+  size,
+  requestHeaders: [],
+  responseHeaders: [],
+  requestBody: null,
+  responseBody: null,
+  socket: null,
+});
 
 const row: BrowserTab = {
   id: 'row-1',
@@ -79,6 +158,7 @@ const entryOf = ({
   method = null,
   status = null,
   source = null,
+  network = null,
 }: EntryParams): BrowserConsoleEntry => ({
   seq,
   level,
@@ -87,7 +167,7 @@ const entryOf = ({
   method,
   status,
   source,
-  network: null,
+  network,
   error: null,
 });
 
@@ -167,6 +247,61 @@ const openConsole = async () => {
   return screen.findByRole('region', { name: 'Console' });
 };
 
+const renderPage = async () => {
+  store.getState().switchStudio({
+    studio: { kind: 'browser', sessionId: SESSION_ID, tabId: row.id },
+  });
+  render(
+    <ToastProvider>
+      <BrowserStudio sessionId={SESSION_ID} tabId={row.id} onClose={() => undefined} />
+    </ToastProvider>,
+  );
+  await screen.findByRole('button', { name: 'Edit address, Checkout, localhost:5173' });
+};
+
+const openTools = async () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Console' }));
+  return screen.findByRole('region', { name: 'Console' });
+};
+
+const press = ({ key, times = 1, isShift = false }: PressParams) => {
+  const handle = screen.getByRole('separator');
+  Array.from({ length: times }).forEach(() =>
+    fireEvent.keyDown(handle, { key, shiftKey: isShift }),
+  );
+  return Number(handle.getAttribute('aria-valuenow'));
+};
+
+const savedDock = (): unknown => JSON.parse(localStorage.getItem(DOCK_KEY) ?? 'null');
+
+const CART = entryOf({
+  seq: 1,
+  level: 'info',
+  text: '/api/cart',
+  kind: 'network',
+  method: 'GET',
+  status: 200,
+  network: requestOf({ id: 'r1', duration: 42, size: 2048 }),
+});
+
+const CHARGE = entryOf({
+  seq: 1,
+  level: 'error',
+  text: '/api/charge',
+  kind: 'network',
+  method: 'POST',
+  status: 500,
+  network: requestOf({ id: 'r1', duration: 380, size: 38 }),
+});
+
+const openCart = async ({ surface }: SurfaceParams) => {
+  await (surface === 'pane' ? renderPane() : renderPage());
+  const region = await openTools();
+  fireEvent.click(within(region).getByRole('tab', { name: /Network/ }));
+  fireEvent.click(await within(region).findByRole('button', { name: 'info: /api/cart' }));
+  return region;
+};
+
 const shownLevels = () =>
   Array.from(
     screen.getByRole('log').querySelectorAll('[data-console-level]'),
@@ -179,6 +314,9 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   handlers = new Map();
+  stages = new Map();
+  vi.stubGlobal('ResizeObserver', StageObserver);
+  localStorage.removeItem(DOCK_KEY);
   reader = async () => heard({ entries: ENTRIES });
   Object.defineProperty(window, '__TAURI_INTERNALS__', { configurable: true, value: {} });
   vi.mocked(listen).mockImplementation(async (event, handler) => {
@@ -222,6 +360,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
 });
 
@@ -430,6 +569,229 @@ describe('the browser console', () => {
     );
     expect(storySpies.tauriInvoke.mock.calls.map(([name]) => name)).not.toContain('turn_send');
   });
+
+  it('opens below the page in the pane the first time, its tools in its head', async () => {
+    await renderPane();
+
+    const region = await openTools();
+
+    expect(region.getAttribute('data-tools-side')).toBe('bottom');
+    expect(region.style.height).toBe('210px');
+    within(region).getByRole('button', { name: 'Dock right of the page' });
+    within(region).getByRole('separator', { name: 'Resize the tools height' });
+    within(region).getByRole('searchbox', { name: 'Search messages' });
+  });
+
+  it('opens right of the page on the full page the first time', async () => {
+    await renderPage();
+
+    const region = await openTools();
+
+    expect(region.getAttribute('data-tools-side')).toBe('right');
+    expect(region.style.width).toBe('360px');
+    within(region).getByRole('button', { name: 'Dock under the page' });
+    within(region).getByRole('separator', { name: 'Resize the tools width' });
+  });
+
+  it('moves between below and right, and each surface keeps its own side', async () => {
+    await renderPane();
+    const region = await openTools();
+
+    fireEvent.click(within(region).getByRole('button', { name: 'Dock right of the page' }));
+
+    expect(region.getAttribute('data-tools-side')).toBe('right');
+    expect(savedDock()).toEqual({
+      pane: { side: 'right', height: 210, width: 360 },
+      page: { side: 'right', height: 210, width: 360 },
+    });
+
+    fireEvent.click(within(region).getByRole('button', { name: 'Dock under the page' }));
+    expect(region.getAttribute('data-tools-side')).toBe('bottom');
+    fireEvent.click(within(region).getByRole('button', { name: 'Dock right of the page' }));
+    cleanup();
+
+    await renderPage();
+    const page = await openTools();
+    fireEvent.click(within(page).getByRole('button', { name: 'Dock under the page' }));
+    expect(page.getAttribute('data-tools-side')).toBe('bottom');
+    cleanup();
+
+    await renderPane();
+    expect((await openTools()).getAttribute('data-tools-side')).toBe('right');
+  });
+
+  it('resizes both ways and stays within the room the page keeps', async () => {
+    await renderPane();
+    await openTools();
+    sizeStage({ width: 800, height: 500 });
+
+    expect(press({ key: 'ArrowUp' })).toBe(218);
+    expect(press({ key: 'ArrowDown', times: 2 })).toBe(202);
+    expect(press({ key: 'ArrowDown', times: 10, isShift: true })).toBe(110);
+    expect(press({ key: 'ArrowUp', times: 20, isShift: true })).toBe(360);
+    expect(savedDock()).toEqual({
+      pane: { side: 'bottom', height: 360, width: 360 },
+      page: { side: 'right', height: 210, width: 360 },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dock right of the page' }));
+
+    expect(press({ key: 'ArrowLeft' })).toBe(368);
+    expect(press({ key: 'ArrowRight', times: 10, isShift: true })).toBe(260);
+    expect(press({ key: 'ArrowLeft', times: 20, isShift: true })).toBe(520);
+
+    sizeStage({ width: 700, height: 500 });
+    expect(screen.getByRole('region', { name: 'Console' }).style.width).toBe('420px');
+  });
+
+  it('opens a request in a detail beside the list, steps through it and goes back on Esc', async () => {
+    reader = async () =>
+      heard({
+        entries: [
+          entryOf({
+            seq: 1,
+            level: 'info',
+            text: '/api/cart',
+            kind: 'network',
+            method: 'GET',
+            status: 200,
+            network: requestOf({ id: 'r1', duration: 42, size: 2048 }),
+          }),
+          entryOf({
+            seq: 2,
+            level: 'error',
+            text: '/api/charge',
+            kind: 'network',
+            method: 'POST',
+            status: 500,
+            network: requestOf({ id: 'r2', duration: 380, size: 38 }),
+          }),
+        ],
+      });
+    await renderPane();
+    const region = await openTools();
+    fireEvent.click(within(region).getByRole('tab', { name: /Network/ }));
+    fireEvent.click(await within(region).findByRole('button', { name: 'info: /api/cart' }));
+
+    const detail = within(region).getByRole('region', { name: 'Request' });
+    within(detail).getByText('GET /api/cart');
+    within(detail).getByText('200 · 42 ms · 2.0 KB');
+    within(region).getByRole('log', { name: 'Requests' });
+    expect(
+      within(detail).getByRole('button', { name: 'Previous request' }).hasAttribute('disabled'),
+    ).toBe(true);
+
+    fireEvent.keyDown(detail, { key: 'ArrowDown' });
+    within(detail).getByText('POST /api/charge');
+    within(detail).getByText('500 · 380 ms · 38 B');
+
+    fireEvent.keyDown(detail, { key: 'Escape' });
+
+    expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
+    within(region).getByRole('button', { name: 'info: /api/cart' });
+  });
+
+  it('replaces the list with the request detail when the dock sits right', async () => {
+    reader = async () =>
+      heard({
+        entries: [
+          entryOf({
+            seq: 1,
+            level: 'info',
+            text: '/api/cart',
+            kind: 'network',
+            method: 'GET',
+            status: 200,
+            network: requestOf({ id: 'r1', duration: 42, size: 2048 }),
+          }),
+        ],
+      });
+    await renderPage();
+    const region = await openTools();
+    fireEvent.click(within(region).getByRole('tab', { name: /Network/ }));
+    fireEvent.click(await within(region).findByRole('button', { name: 'info: /api/cart' }));
+
+    const detail = within(region).getByRole('region', { name: 'Request' });
+    expect(within(region).queryByRole('log')).toBeNull();
+    expect(within(region).queryByRole('searchbox')).toBeNull();
+
+    fireEvent.click(within(detail).getByRole('button', { name: 'Back to requests' }));
+
+    within(region).getByRole('log', { name: 'Requests' });
+    within(region).getByRole('searchbox', { name: 'Search requests' });
+  });
+
+  it('closes the detail on a reload that reuses the request id', async () => {
+    reader = async () => heard({ entries: [CART] });
+    const region = await openCart({ surface: 'page' });
+    reader = async () => heard({ doc: 'm4p2', entries: [CHARGE] });
+
+    finishLoad();
+
+    await within(region).findByRole('button', { name: 'error: /api/charge' });
+    expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
+  });
+
+  it('keeps the detail open while the same document updates the request', async () => {
+    reader = async () => heard({ entries: [CART] });
+    const region = await openCart({ surface: 'page' });
+    reader = async () => heard({ entries: [{ ...CART, seq: 3, status: 304 }] });
+
+    finishLoad();
+
+    const detail = within(region).getByRole('region', { name: 'Request' });
+    await within(detail).findByText('304 · 42 ms · 2.0 KB');
+  });
+
+  it('closes the detail on a tab switch and keeps it closed on the way back', async () => {
+    reader = async ({ tabId }) =>
+      heard({ entries: [tabId === facts.id ? CART : { ...CART, text: '/api/other' }] });
+    const region = await openCart({ surface: 'pane' });
+    const show = (liveId: string) =>
+      act(() => {
+        store.setState({ browserLiveTabs: { [SESSION_ID]: { [row.id]: liveId } } });
+      });
+
+    show('live-2');
+
+    await within(region).findByRole('button', { name: 'info: /api/other' });
+    expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
+
+    show(facts.id);
+
+    await within(region).findByRole('button', { name: 'info: /api/cart' });
+    expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
+  });
+
+  it('forgets the opened request once a filter leaves it out', async () => {
+    reader = async () => heard({ entries: [CART] });
+    const region = await openCart({ surface: 'pane' });
+    const search = within(region).getByRole('searchbox', { name: 'Search requests' });
+    search.focus();
+
+    fireEvent.change(search, { target: { value: 'zzz' } });
+    fireEvent.change(search, { target: { value: '' } });
+
+    within(region).getByRole('button', { name: 'info: /api/cart' });
+    expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
+    expect(document.activeElement).toBe(search);
+  });
+
+  it.each(['pane', 'page'] as const)(
+    'returns focus to the request row on Back and on Esc in the %s',
+    async (surface) => {
+      reader = async () => heard({ entries: [CART] });
+      const region = await openCart({ surface });
+      const cartRow = () => within(region).getByRole('button', { name: 'info: /api/cart' });
+
+      fireEvent.click(within(region).getByRole('button', { name: 'Back to requests' }));
+      expect(document.activeElement).toBe(cartRow());
+
+      fireEvent.click(cartRow());
+      fireEvent.keyDown(within(region).getByRole('region', { name: 'Request' }), { key: 'Escape' });
+      expect(document.activeElement).toBe(cartRow());
+    },
+  );
 
   it('opens and closes on the console chord', async () => {
     await renderPane();

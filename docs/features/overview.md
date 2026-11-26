@@ -12,7 +12,7 @@ Every page of a session shares one head. The title row holds the session name, w
 
 Under the title sit the tabs **Overview**, **Runs**, **Artifacts**, **Questions** and **Context**. Runs, Artifacts and Questions carry a count. There is no Changes tab: changes belong to a branch and its pull request, so they open from the pull request row under **Projects**.
 
-**New** in the header starts an agent, a workflow or a write-up. **Ask about this session** in the **⋯**, or ⌘L, opens the Ask pane beside the page. A branch, a pull request, an artifact or a run opens under the same head, and crumbs such as **Overview › Artifacts › Plan** replace the tabs. Each crumb is a link, and Esc goes one crumb up.
+**New** in the header starts an agent, a workflow or a write-up. **Ask about this session** in the **⋯**, or ⌘L, opens the Ask pane beside the page. While the pane is closed, the foot of the Overview keeps a few suggestions and one field: pick one or send a question and the pane opens and answers there. A branch, a pull request, an artifact or a run opens under the same head, and crumbs such as **Overview › Artifacts › Plan** replace the tabs. Each crumb is a link, and Esc goes one crumb up.
 
 #### What the Overview shows
 
@@ -68,7 +68,7 @@ Follow what happened in a session in one list. **Activity** on the Overview show
 
 #### What a row shows
 
-- One row per agent, workflow run or fix run reads on one line: its role, its task, then a state, model and time column. The cost sits in the card on the time.
+- One row per agent, workflow run or fix run reads on one line: its time, its role glyph, its task, then a state and model column. The glyph is tinted by the state and is the row's only marker: no node, no connector and no link icon. The role is the glyph's tooltip, and its number is for screen readers only. The cost sits in the card on the time.
 - Plain facts get a row too, such as context changes, branch events and links.
 - A script you ran gets a row with its result, such as `test:integration failed (exit 2) in payments-api`.
 - Done is a small green check. Only a row that waits on you or failed stands out.
@@ -206,7 +206,7 @@ Each writing turn in the chat ends in a card with **Open in Changes** and **Undo
 
 This part is for contributors and agents who change the feature.
 
-- Session head: `SessionHead` (`app/components/SessionHead`) is drawn once by `SessionWorkspace` through `SessionHeadContext`. It draws the tabs on a tab view (`isTabView`) and the crumbs from `crumbsOf` otherwise. On the Desk face it spans the page at the Desk gutter, so the head, the Desk column and the tools share one left edge. Esc goes up through `parentPlace`. The `session.ask` verb in More session actions (`sessionMenuOf`) opens the Ask pane.
+- Session head: `SessionHead` (`app/components/SessionHead`) is drawn once by `SessionWorkspace` through `SessionHeadContext`. It draws the tabs on a tab view (`isTabView`) and the crumbs from `crumbsOf` otherwise. On the Desk face it spans the page at the Desk gutter, so the head, the Desk column and the tools share one left edge. Esc goes up through `parentPlace`. The `session.ask` verb in More session actions (`sessionMenuOf`) opens the Ask pane. `AskFoot` ends `CentralColumn` while `selectIsAskOpen` is false, draws `AskStarters` and `AskComposer`, and sends through `openAsk` then `sendAskQuestion`; `CentralColumn.askFoot.test.tsx` proves it.
 - Reading order: `CentralColumn` draws `OverviewFacts`, the notices, `NeedsYouSection`, `NowSection`, `NextSection`, `ProjectBlocks` and `OverviewLog`, spaced with `PANE_RHYTHM.groups`. `CentralColumn.readingOrder.test.tsx` pins the order.
 - Facts: `OverviewFacts` leads with `OverviewTicket`. It reads `sessionExternalTasks` with no fetch and no tracker state, and names the first session part-of task. Its menu verb is `task.openInTracker`, and `+N` opens the `context` lens (`OverviewFacts/index.test.tsx`, u50 overview scene). Then `SessionCostChip` (the one spend number), the agent time from `sessionKpisOf`, and the summary age from `summarizerStatus`. The head draws no project state; the pull request state lives on the `ProjectBlocks` rows.
 - Goal: `GoalTeaser` reads the goal as flat text (`inlineMarkdownText`), so a goal of only spaces or markup that renders to nothing offers **Add a goal** instead of an empty row.

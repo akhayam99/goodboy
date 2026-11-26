@@ -12,7 +12,7 @@ import {
   type WorkNodeMark,
 } from '@goodboy/ui';
 import type { RailRow } from '../../../../features/workTreeModel/railGeometry';
-import { SpawnedRailCell } from '../../../../features/session/components/SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
+import { SpawnedRailCell } from './SpawnedRailCell';
 import type { GroupAccess } from './hints/groupAccessOf';
 import type { HintTally } from './hints/hintTally';
 import { GROUP_ROW_HEIGHT } from './demoRailOf';

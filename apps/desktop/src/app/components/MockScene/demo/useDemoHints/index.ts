@@ -55,6 +55,11 @@ export type OffscreenHint = {
   readonly copy: string;
 };
 
+export type HintOfferRequest = {
+  readonly hintId: string;
+  readonly count: number;
+};
+
 export type HintReveal = {
   readonly hintId: string;
   readonly count: number;
@@ -70,6 +75,7 @@ export type DemoHints = Steps & {
   readonly beatIndex: number;
   readonly nextBeatIndex: number | undefined;
   readonly reveal: HintReveal | undefined;
+  readonly offerRequest: HintOfferRequest | undefined;
   readonly tally: HintTally;
   readonly isHidden: boolean;
   readonly isDismissed: boolean;
@@ -80,6 +86,7 @@ export type DemoHints = Steps & {
   readonly dismiss: () => void;
   readonly show: () => void;
   readonly revealHint: () => void;
+  readonly pressOffer: () => void;
   readonly reset: () => void;
   readonly restart: () => void;
 };
@@ -102,6 +109,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
   const { isEnabled, setEnabled } = useHintsEnabled();
   const [anchor, setAnchor] = useState<AnchorState | null>(null);
   const [reveal, setReveal] = useState<HintReveal | undefined>(undefined);
+  const [offerRequest, setOfferRequest] = useState<HintOfferRequest | undefined>(undefined);
   const [hold, setHold] = useState<Hold | null>(null);
   const [actingId, setActingId] = useState<string | null>(null);
   const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(() => new Set());
@@ -265,7 +273,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     if (!isOpen || activeHint === undefined || current === null || current.rect === null) {
       return undefined;
     }
-    if (current.isPressed) {
+    if (current.isPressed && activeHint.offer === undefined) {
       return undefined;
     }
     return {
@@ -282,6 +290,15 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
       isDimmed: activeHint.isDimmed !== false,
       pulse,
       isWarning: warning?.hintId === activeHint.id,
+      offer:
+        recovery === undefined && activeHint.offer !== undefined
+          ? {
+              eyebrow: activeHint.offer.eyebrow,
+              title: activeHint.offer.title,
+              note: activeHint.offer.note,
+              label: activeHint.offer.label,
+            }
+          : undefined,
     };
   }, [isOpen, activeHint, acting, recovery, current, pulse, warning]);
 
@@ -312,6 +329,14 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
       return;
     }
     setReveal((previous) => ({ hintId: activeHint.id, count: (previous?.count ?? 0) + 1 }));
+  }, [activeHint]);
+
+  const pressOffer = useCallback(() => {
+    if (activeHint?.offer === undefined) {
+      return;
+    }
+    const { id } = activeHint;
+    setOfferRequest((previous) => ({ hintId: id, count: (previous?.count ?? 0) + 1 }));
   }, [activeHint]);
 
   const reset = useCallback(() => {
@@ -348,6 +373,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     beatIndex,
     nextBeatIndex,
     reveal,
+    offerRequest,
     tally: hintTally({ chapter, progress }),
     isHidden: !isEnabled,
     isDismissed,
@@ -358,6 +384,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     dismiss,
     show,
     revealHint,
+    pressOffer,
     reset,
     restart,
   };

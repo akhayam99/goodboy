@@ -39,6 +39,7 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/chat/components/DeskAgent/index.tsx': ['message'],
   'features/permissions/components/PermissionRequestCard/index.tsx': ['document'],
   'features/integrations/components/LaunchSessionPanel/index.tsx': ['document'],
+  'features/browser/components/BrowserPane/BrowserPickNote.tsx': ['message'],
 };
 
 const NOT_AGENT: Readonly<Record<string, string>> = {
