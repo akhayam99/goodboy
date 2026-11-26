@@ -148,3 +148,33 @@ describe('a tab torn out of a cell', () => {
     ).toEqual({ columns: [['browser'], ['terminal']], groups: TABBED });
   });
 });
+
+describe('a merge that keeps the tabs the solver folded into its target', () => {
+  it('lands the dragged cell in the target cell with the folded tabs, and nowhere else', () => {
+    const after = dockLayoutAfterMove({
+      columns: [['browser'], ['monitoring'], ['terminal']],
+      groups: {},
+      key: 'terminal',
+      unit: 'cell',
+      target: { at: 'tab', key: 'monitoring', keeps: ['browser'] },
+    });
+
+    expect(after).toEqual({
+      columns: [['monitoring']],
+      groups: { monitoring: ['monitoring', 'browser', 'terminal'] },
+    });
+  });
+
+  it('is the plain merge when nothing is folded into the target', () => {
+    const after = dockLayoutAfterMove({
+      columns: [['browser'], ['monitoring'], ['terminal']],
+      groups: {},
+      key: 'terminal',
+      unit: 'cell',
+      target: { at: 'tab', key: 'monitoring' },
+    });
+
+    expect(after?.columns).toEqual([['browser'], ['monitoring']]);
+    expect(after?.groups).toEqual({ monitoring: ['monitoring', 'terminal'] });
+  });
+});

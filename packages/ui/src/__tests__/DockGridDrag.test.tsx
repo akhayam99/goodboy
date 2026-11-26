@@ -27,9 +27,10 @@ const GridCell = () => {
 
 type RenderParams = {
   readonly isRoomy?: boolean;
+  readonly isWide?: boolean;
 };
 
-const renderGrid = ({ isRoomy = true }: RenderParams = {}) => {
+const renderGrid = ({ isRoomy = true, isWide = false }: RenderParams = {}) => {
   const original = Element.prototype.getBoundingClientRect;
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function rectOf(
     this: Element,
@@ -61,7 +62,17 @@ const renderGrid = ({ isRoomy = true }: RenderParams = {}) => {
       isFocusShown={false}
       isFloating={false}
       canDrop={() => isRoomy}
-      boxesOf={() => null}
+      boxesOf={() =>
+        isWide
+          ? [
+              {
+                width: 900,
+                dragMax: 900,
+                panes: [{ key: 'browser', weight: 1, tabs: ['browser', 'terminal'] }],
+              },
+            ]
+          : null
+      }
     />,
   );
   return { onMove };
@@ -137,6 +148,16 @@ describe('dragging a panel by its head', () => {
       target: { at: 'tab', key: 'browser' },
     });
     expect(document.body.hasAttribute(SPLIT_DRAG_ATTRIBUTE)).toBe(false);
+  });
+
+  it('draws the ghost of a merge over the panel it merges into', async () => {
+    renderGrid({ isWide: true });
+
+    await dragTo({ x: 600, y: 300 });
+
+    const ghost = document.querySelector<HTMLElement>('[data-dock-ghost]');
+    expect(ghost?.style.left).toBe(`${RECTS.browser?.x}px`);
+    expect(ghost?.style.width).toBe(`${RECTS.browser?.width}px`);
   });
 
   it('places the panel above another one from its top quarter', async () => {

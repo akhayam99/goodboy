@@ -105,7 +105,7 @@ worktree strip, and Monitor its Pin a port action as a pin icon in the head.
      slot (`dockGhostOf`). A card that would change nothing, or that the solver with
      the real widths refuses (`canDrop` from `useDockGrid`, `dockMoveFits`), is not
      drawn. A card is smaller than its hit area, and a target takes 80 ms of hover
-     before the ghost moves. The overlay redraws from a small store at most once a
+     before the ghost moves. The ghost of a `Merge` is the target panel itself, and the merge keeps the tabs the solver had folded into that panel (`keeps` on the `tab` target), so the result matches the card's words. The overlay redraws from a small store at most once a
      frame (`dockDragStore`), so panels render only at drag start and end.
   3. The drag sets `SPLIT_DRAG_ATTRIBUTE` to `move`, so the Browser page hides under
      its cover.

@@ -72,6 +72,30 @@ const cellMoveOf = ({ columns, groups, key, target }: Params): DockLayout | null
   };
 };
 
+type KeepsParams = {
+  readonly layout: DockLayout;
+  readonly lead: string;
+  readonly keeps: ReadonlyArray<string>;
+};
+
+const layoutKeeping = ({ layout, lead, keeps }: KeepsParams): DockLayout => {
+  const own = layout.groups[lead] ?? [lead];
+  const extra = keeps.filter((keep) => keep !== lead && !own.includes(keep));
+  if (extra.length === 0) {
+    return layout;
+  }
+  const columns = layout.columns
+    .map((column) => column.filter((at) => !extra.includes(at)))
+    .filter((column) => column.length > 0);
+  const kept = Object.fromEntries(
+    Object.entries(layout.groups).filter(([known]) => !extra.includes(known)),
+  );
+  return {
+    columns,
+    groups: { ...kept, [lead]: [lead, ...extra, ...own.filter((at) => at !== lead)] },
+  };
+};
+
 type TearParams = Params & {
   readonly lead: string;
 };
@@ -119,7 +143,11 @@ export const dockLayoutAfterMove = ({
 }: Params): DockLayout | null => {
   const lead = dockGroupLeadOf({ groups, key });
   const params = { columns, groups, key, unit, target };
-  const after =
+  const moved =
     unit === 'panel' && lead !== null ? tearOutOf({ ...params, lead }) : cellMoveOf(params);
+  const after =
+    moved === null || target.at !== 'tab' || target.keeps === undefined
+      ? moved
+      : layoutKeeping({ layout: moved, lead: target.key, keeps: target.keeps });
   return after === null ? null : changed({ before: { columns, groups }, after });
 };

@@ -47,10 +47,11 @@ type Params = DockLayout & {
   readonly unit: DockMoveUnit;
   readonly panes: ReadonlyArray<PaneRect>;
   readonly dock: DockRect | null;
+  readonly folded?: Readonly<Record<string, ReadonlyArray<string>>>;
   readonly canDrop: (params: CanDropParams) => boolean;
 };
 
-type Shared = Pick<Params, 'dragKey' | 'unit' | 'columns' | 'groups' | 'canDrop'>;
+type Shared = Pick<Params, 'dragKey' | 'unit' | 'columns' | 'groups' | 'canDrop' | 'folded'>;
 
 type CandidateParams = {
   readonly id: string;
@@ -117,6 +118,16 @@ type SideCardParams = {
 const sideCardOf = ({ rect, side, x }: SideCardParams): DockRect => {
   const band = rect.height * BAND_SHARE;
   return { x, y: rect.y + band, width: side, height: roomOf({ value: rect.height - band * 2 }) };
+};
+
+type TabTargetParams = {
+  readonly key: string;
+  readonly folded: Shared['folded'];
+};
+
+const tabTargetOf = ({ key, folded }: TabTargetParams): DockMoveTarget => {
+  const keeps = folded?.[key] ?? [];
+  return keeps.length === 0 ? { at: 'tab', key } : { at: 'tab', key, keeps };
 };
 
 const zoneOf = ({ shared, candidate }: ZoneParams): DockDropZone | null => {
@@ -257,7 +268,7 @@ const paneZonesOf = ({ shared, pane, isOwn }: PaneParams): ReadonlyArray<DockDro
     candidate: {
       ...full,
       id: `merge:${key}`,
-      target: { at: 'tab', key },
+      target: tabTargetOf({ key, folded: shared.folded }),
       placement: 'merge',
       layer: LAYER_MERGE,
       rect: middle,
@@ -307,9 +318,10 @@ export const dockDropZonesOf = ({
   groups,
   panes,
   dock,
+  folded,
   canDrop,
 }: Params): ReadonlyArray<DockDropZone> => {
-  const shared: Shared = { dragKey, unit, columns, groups, canDrop };
+  const shared: Shared = { dragKey, unit, columns, groups, canDrop, folded };
   const edges = dockZonesOf({ shared, dock });
   const taken = new Set(edges.map((zone) => zoneShapeOf({ zone })));
   const lead = dockGroupLeadOf({ groups, key: dragKey });

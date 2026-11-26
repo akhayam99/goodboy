@@ -169,4 +169,33 @@ describe('the ghost of the landing slot', () => {
 
     expect(bottom.rect?.height).toBe(DOCK_ROW_MIN_PX);
   });
+
+  it('is the target cell when a merge keeps the tabs the solver folded into it', () => {
+    const panes = [
+      { key: 'monitoring', rect: { x: 100, y: 50, width: 400, height: 600 } },
+      { key: 'terminal', rect: { x: 512, y: 50, width: 400, height: 600 } },
+    ];
+    const zones = dockDropZonesOf({
+      dragKey: 'terminal',
+      unit: 'cell',
+      columns: [['browser'], ['monitoring'], ['terminal']],
+      groups: {},
+      folded: { monitoring: ['browser'] },
+      panes,
+      dock: DOCK,
+      canDrop: () => true,
+    });
+    const merge = zones.find((zone) => zone.id === 'merge:monitoring');
+
+    expect(merge?.layout.groups).toEqual({ monitoring: ['monitoring', 'browser', 'terminal'] });
+    const ghost = dockGhostOf({
+      boxes: boxesOf({ layout: merge?.layout ?? TODAY }),
+      dock: DOCK,
+      key: 'terminal',
+      groups: merge?.layout.groups ?? {},
+      was: [],
+    });
+    expect(ghost.rect?.x).toBe(panes[0]?.rect.x);
+    expect(ghost.rect?.width).toBe(panes[0]?.rect.width);
+  });
 });

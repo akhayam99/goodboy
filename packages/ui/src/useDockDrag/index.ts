@@ -13,7 +13,7 @@ import {
   type DockRect,
 } from '../dockDropZonesOf';
 import type { DockGridColumnBox } from '../dockGridColumnBox';
-import { dockFoldedOf, dockGhostOf, type DockGhost } from '../dockGhostOf';
+import { dockFoldedOf, dockGhostOf, type DockGhost, type DockGhostFold } from '../dockGhostOf';
 import type { DockGridMove } from '../dockGridSpec';
 import type { DockGroups } from '../dockLayoutAfterMove';
 import type { DockMoveTarget, DockMoveUnit } from '../dockMoveTarget';
@@ -102,6 +102,41 @@ const rectOf = ({ element }: ElementParams): DockRect => {
   return { x: box.left, y: box.top, width: box.width, height: box.height };
 };
 
+type FoldedByPaneParams = {
+  readonly folded: ReadonlyArray<DockGhostFold>;
+};
+
+const foldedByPaneOf = ({ folded }: FoldedByPaneParams): Record<string, ReadonlyArray<string>> => {
+  const byPane: Record<string, string[]> = {};
+  folded.forEach((fold) => {
+    byPane[fold.into] = [...(byPane[fold.into] ?? []), fold.key];
+  });
+  return byPane;
+};
+
+type MergeParams = {
+  readonly zone: DockDropZone;
+  readonly isSwap: boolean;
+};
+
+const isMerge = ({ zone, isSwap }: MergeParams): boolean =>
+  zone.placement === 'merge' && !isSwap && zone.paneKey !== null;
+
+type PaneRectParams = {
+  readonly grid: HTMLElement | null;
+  readonly key: string | null;
+};
+
+const paneRectOf = ({ grid, key }: PaneRectParams): DockRect | null => {
+  if (grid === null || key === null) {
+    return null;
+  }
+  const element = Array.from(grid.querySelectorAll<HTMLElement>('[data-dock-pane]')).find(
+    (candidate) => candidate.dataset.dockPane === key,
+  );
+  return element === undefined ? null : rectOf({ element });
+};
+
 export const useDockDrag = ({
   gridRef,
   columns,
@@ -156,24 +191,31 @@ export const useDockDrag = ({
 
   useEffect(() => finish, [finish]);
 
-  const ghostOf = useCallback(({ zone, isSwap }: DropParams): DockGhost | null => {
-    const press = pressRef.current;
-    if (zone === null || press === null || press.dock === null) {
-      return null;
-    }
-    const layout = isSwap && zone.swap !== null ? zone.swap : zone.layout;
-    const moved = latest.current.boxesOf(layout);
-    if (moved === null) {
-      return null;
-    }
-    return dockGhostOf({
-      boxes: moved,
-      dock: press.dock,
-      key: press.key,
-      groups: layout.groups,
-      was: dockFoldedOf({ boxes: latest.current.boxes, groups: latest.current.groups }),
-    });
-  }, []);
+  const ghostOf = useCallback(
+    ({ zone, isSwap }: DropParams): DockGhost | null => {
+      const press = pressRef.current;
+      if (zone === null || press === null || press.dock === null) {
+        return null;
+      }
+      const layout = isSwap && zone.swap !== null ? zone.swap : zone.layout;
+      const moved = latest.current.boxesOf(layout);
+      if (moved === null) {
+        return null;
+      }
+      const ghost = dockGhostOf({
+        boxes: moved,
+        dock: press.dock,
+        key: press.key,
+        groups: layout.groups,
+        was: dockFoldedOf({ boxes: latest.current.boxes, groups: latest.current.groups }),
+      });
+      const target = isMerge({ zone, isSwap })
+        ? paneRectOf({ grid: gridRef.current, key: zone.paneKey })
+        : null;
+      return target === null ? ghost : { ...ghost, rect: target };
+    },
+    [gridRef],
+  );
 
   const render = useCallback(
     ({ x, y, hoverId, isSwap, position }: ViewParams): void => {
@@ -292,6 +334,12 @@ export const useDockDrag = ({
             rect: rectOf({ element }),
           })),
           dock: rectOf({ element: grid }),
+          folded: foldedByPaneOf({
+            folded: dockFoldedOf({
+              boxes: latest.current.boxes,
+              groups: latest.current.groups,
+            }),
+          }),
           canDrop: latest.current.canDrop,
         });
       const namesOf = (): Readonly<Record<string, string>> =>

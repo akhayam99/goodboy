@@ -25,6 +25,17 @@ export const DockDropZones = ({ store }: Props) => {
   const fold = dockFoldLineOf({ names: view.names, folds: view.ghost?.folds ?? [] });
   const ghost = view.ghost?.rect ?? null;
   const isOverTarget = view.hoverId !== null;
+  const hovered = view.zones.find((zone) => zone.id === view.hoverId) ?? null;
+  const chipAt =
+    hovered === null
+      ? { left: view.x - CHIP_OFFSET_PX, top: view.y - CHIP_OFFSET_PX }
+      : {
+          left: hovered.card.x + hovered.card.width,
+          top: Math.min(
+            hovered.card.y + hovered.card.height + FOLD_CHIP_GAP_PX,
+            document.documentElement.clientHeight - FOLD_CHIP_ROOM_PX,
+          ),
+        };
   return createPortal(
     <div data-dock-drop="" className="pointer-events-none fixed inset-0 z-drag">
       <div data-dock-dim="" className="absolute inset-0 bg-scrim/25" />
@@ -32,7 +43,7 @@ export const DockDropZones = ({ store }: Props) => {
         <div
           data-dock-ghost=""
           style={{ left: ghost.x, top: ghost.y, width: ghost.width, height: ghost.height }}
-          className="absolute rounded-frame bg-primary-subtle/70 ring-2 ring-inset ring-primary-edge"
+          className="absolute rounded-frame bg-primary-subtle/90 ring-2 ring-inset ring-primary-edge"
         />
       )}
       {view.zones.map((zone) => {
@@ -70,14 +81,10 @@ export const DockDropZones = ({ store }: Props) => {
       )}
       <div
         data-dock-chip=""
-        style={
-          isOverTarget
-            ? { left: view.x + CHIP_OFFSET_PX, top: view.y + CHIP_OFFSET_PX }
-            : { left: view.x - CHIP_OFFSET_PX, top: view.y - CHIP_OFFSET_PX }
-        }
+        style={chipAt}
         className={cn(
-          'absolute rounded-md bg-elevated px-3 py-1 text-body text-foreground shadow-lg',
-          !isOverTarget && '-translate-x-full -translate-y-full',
+          'absolute -translate-x-full rounded-md bg-elevated px-3 py-1 text-body text-foreground shadow-lg',
+          hovered === null && '-translate-y-full',
         )}
       >
         {isOverTarget ? <GripVertical size={ICON_SIZE.control} aria-hidden /> : view.title}

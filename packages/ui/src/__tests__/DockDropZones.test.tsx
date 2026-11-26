@@ -61,13 +61,14 @@ describe('the drag overlay', () => {
     expect([...labels].sort()).toEqual(Object.values(DOCK_ZONE_LABELS).sort());
   });
 
-  it('keeps the chip off the label of the card under the pointer', () => {
-    const id = ZONES.find((zone) => zone.placement === 'merge')?.id ?? null;
-    shown(viewOf({ hoverId: id, x: 500, y: 300 }));
+  it('parks the chip under the right edge of the card under the pointer, off its text', () => {
+    const zone = ZONES.find((candidate) => candidate.placement === 'merge');
+    shown(viewOf({ hoverId: zone?.id ?? null, x: 500, y: 300 }));
 
     const chip = document.querySelector<HTMLElement>('[data-dock-chip]');
-    expect(chip?.style.left).toBe('514px');
-    expect(chip?.style.top).toBe('314px');
+    const card = zone?.card;
+    expect(chip?.style.left).toBe(`${(card?.x ?? 0) + (card?.width ?? 0)}px`);
+    expect(chip?.className).not.toContain('-translate-y-full');
   });
 
   it('puts the chip above and left of the pointer while no card is under it', () => {
