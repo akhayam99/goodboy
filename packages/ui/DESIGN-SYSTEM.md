@@ -747,6 +747,8 @@ fails on any tsx file that writes `bg-floating` without importing it, bar a
 fixed list that only falls: the inline rename
 field, the `Dialog` surface table and the mock scenes.
 
+**Drop pill.** A drag target in the dock is a floating pill, not a card: `rounded-full`, 32px tall, a 16px glyph and a verb and object in `text-eyebrow`, on the `drop-chip` utility (`floating` at 76% over `blur(14px) saturate(1.5)`, opaque and unblurred under reduced transparency, a `CanvasText` hairline under forced colors) with `shadow-lg` and `floating-edge`. The pill under the pointer is solid `primary-solid` with `on-primary` text at 106%; the others fall to 55%. The landing is one `drop-ghost` outline (2px primary at 62%, a 5% wash, 14px radius, 5px inside the cell) and nothing is dimmed. A pill never straddles that outline.
+
 **One width scale.** A floating surface is 240px wide when it is a menu (never
 under 200), 320 or 384 when it is a popover, 500 when it is a studio panel (a
 form in a popover), 360 when it is a toast, 320 when it is the hover card and
