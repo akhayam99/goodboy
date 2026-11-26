@@ -194,7 +194,7 @@ describe('clear site data', () => {
     const menu = openMore();
     fireEvent.click(within(menu).getByRole('menuitem', { name: /Clear browser data/ }));
 
-    expect(await screen.findByText('Clear browser data for this workspace?')).toBeTruthy();
+    await screen.findByText('Clear browser data for this workspace?');
     expect(within(menu).queryByRole('menuitem', { name: /Clear site data/ })).toBeNull();
   });
 
@@ -204,7 +204,7 @@ describe('clear site data', () => {
 
     const menu = openMore();
     fireEvent.click(within(menu).getByRole('menuitem', { name: /Clear site data/ }));
-    expect(await screen.findByText('Clear data for localhost?')).toBeTruthy();
+    await screen.findByText('Clear data for localhost?');
     expect(callsOf({ command: 'browser_site_data_clear' })).toEqual([]);
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear site data' }));

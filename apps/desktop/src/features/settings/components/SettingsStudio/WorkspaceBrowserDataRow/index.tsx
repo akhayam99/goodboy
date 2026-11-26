@@ -1,13 +1,12 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { Button, ConfirmPopover, ICON_SIZE, cn } from '@goodboy/ui';
 import { Trash2 } from '@goodboy/ui/icons';
-import { useClearBrowserData } from '../../../browser/hooks/useClearBrowserData';
-import { actionIntentOf } from '../../../actions/actionIntentOf';
-import { SettingRow } from './SettingRow';
+import { useClearBrowserData } from '../../../hooks/useClearBrowserData';
+import { actionIntentOf } from '../../../../actions/actionIntentOf';
+import { SettingRow } from '../SettingRow';
 
 const LABEL = 'Clear browser data';
-const HELP =
-  'Cookies, storage and cache of every site in the browser of this workspace. It signs you out of them. Open tabs reload.';
+const HELP = 'Cookies, storage and cache of every site in this workspace.';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -33,7 +32,7 @@ export const WorkspaceBrowserDataRow = ({ workspaceId }: Props) => {
           role="danger"
           icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
           title="Clear browser data for this workspace?"
-          description="Every site loses its cookies, storage and cache, and signs you out. Other workspaces keep theirs."
+          description="Signs you out of every site in this workspace."
           confirmLabel={LABEL}
           isBusy={wipe.phase === 'clearing'}
           isOpen={wipe.phase === 'confirm' || wipe.phase === 'clearing'}

@@ -9,17 +9,17 @@ import {
   storySpies,
   stubStoryInvoke,
   STORE_IMPORT_TIMEOUT_MS,
-} from '../../../../store/storyHarness';
-import { WorkspaceBrowserDataRow } from './WorkspaceBrowserDataRow';
+} from '../../../../../store/storyHarness';
+import { WorkspaceBrowserDataRow } from '.';
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('../../../../shared/lib/db', async () =>
-  (await import('../../../../store/storyHarness')).sqliteDbLibModuleMock(),
+vi.mock('../../../../../shared/lib/db', async () =>
+  (await import('../../../../../store/storyHarness')).sqliteDbLibModuleMock(),
 );
 
 const NORTHWIND = nextWorkspaceId();
@@ -88,7 +88,7 @@ describe('WorkspaceBrowserDataRow', () => {
       'Browser data is already clearing. Try again in a moment.',
     );
     expect(screen.queryByRole('status')).toBeNull();
-    expect(screen.getByRole('button', { name: LABEL })).toBeTruthy();
+    screen.getByRole('button', { name: LABEL });
   });
 
   it('drops the answer of a clear that started for another workspace', async () => {

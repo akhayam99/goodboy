@@ -20,8 +20,7 @@ export const siteDataRowOf = ({ host, isWholeStore }: Params): SiteDataRow => {
       confirm: {
         role: 'danger',
         title: 'Clear browser data for this workspace?',
-        description:
-          'Every site open here loses its cookies, storage and cache, and signs you out. The page reloads after.',
+        description: 'Signs you out of every site in this workspace.',
         confirmLabel: STORE_LABEL,
       },
     };
@@ -31,8 +30,7 @@ export const siteDataRowOf = ({ host, isWholeStore }: Params): SiteDataRow => {
     confirm: {
       role: 'danger',
       title: `Clear data for ${host ?? 'this site'}?`,
-      description:
-        'Its cookies, storage, cache and service workers go, and it signs you out. Other sites keep theirs. The page reloads after.',
+      description: 'Signs you out of this site. Other sites keep their data.',
       confirmLabel: SITE_LABEL,
     },
   };

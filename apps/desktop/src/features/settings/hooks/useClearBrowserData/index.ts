@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { browserFailureText } from '../../browserFailureText';
-import { browserHost } from '../../browserHost';
+import { browserFailureText } from '../../../browser/browserFailureText';
+import { browserHost } from '../../../browser/browserHost';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
