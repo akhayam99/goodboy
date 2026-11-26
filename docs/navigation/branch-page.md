@@ -1,813 +1,331 @@
 # The Branch page
 
-> **Read this when** you change the Branch page: its header, its pages, its banner or its actions. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
+> **Read this when** you change the Branch page: its frame, its address, its header and its one step, its tabs and landing, or the counts on its tabs. **Not for** one tab in detail (the pages listed below).
 
 ## The Branch page
 
-One page per branch (`features/branch`) replaces the PR, Review and Diff
-pages. Every diff in the app is still one `DiffView` (`features/diff`): the
-Changes tab, Write review, the Bitbucket pull request changes and the
-`file-diff` drawer. Each one lists its files through `orderLikeTree`
-(`features/diff/lib/changeTree.ts`), so the order is the tree's everywhere. The
-Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
-quoted headers, so a name with accents is its own file.
+One page per branch (`features/branch`) replaces the PR, Review and Diff pages.
+Every diff in the app is still one `DiffView` (`features/diff`): the Changes tab,
+Write review, the Bitbucket pull request changes and the `file-diff` drawer, each
+listing its files through `orderLikeTree` (`features/diff/lib/changeTree.ts`), so
+the order is the tree's everywhere. The Rust side runs git with
+`core.quotepath=false` and `parseUnifiedDiff` reads quoted headers, so a name with
+accents is its own file.
 
-**Frame.** The Branch page is the center of the Projects tree (Context tab): one detail with no rail of its own. Its sections are the underlined page tabs
-under its title (`BranchTabStrip`, built on `PageTabs`); the page computes its counts once
-(`branchTabFactsOf`, built on `worktreeEntryFactsOf`). The tree row of the branch has no rows under it, only
-one pill. **One tab row per page.** Inside a session the session head sits above the page
-with the crumbs `Overview › {branch name}` in place of the session tabs (see
-[session-rail.md](session-rail.md#crumbs)), so the pull request page shows only its own row.
-Every door to the session's changes (a branch row of the Overview's project blocks, the board
-row's Changes door, the palette, the chord) opens this page on its Changes tab, addressed by the
-mount id so a moved worktree still resolves (`branchTabPlaceOf`). A move on a branch opens the
-tab the fact names, by one function (`tabForFactOf`): a failing or
-running check opens Checks, requested changes and open threads Comments, a diff to check Changes,
-a conflict, a rebase or commits not pushed Commits, and anything else Conversation. Search,
-Activity and Tasks open Conversation. A host with no
-session (a scene, a test) shows the page alone. The
-header and every section body sit on the 960px column of the
-detail; nothing moves from one section to the next. The header holds three things,
-100px at rest with a pull request: the title row (48), one meta line (16) and the tab row (36).
-The running line, the work lines, the notices and the base branch row are the top of the body
-(`BranchBodyTop`, `BranchNotices`), above the section and out of the pinned header. The header steps aside
-while you read (`PaneShell`, `revealKey` the tab): 24px of
-scroll down keeps only the session head pinned, and 8px up, the top of the
-section, keyboard focus in the header or
-another tab brings the title, the line and the tabs back. On a
-section whose scroller does not start its body (Changes, with its toolbar above
-the diff) the toolbar rides up with
-the content and stays under the session head. Comments has one 36 toolbar (`ReviewToolbar`): Open and
-Resolved, the source switch when notes and host threads both exist, and the fix run on the same row.
+| Tab          | Page                                                                      |
+| ------------ | ------------------------------------------------------------------------- |
+| Conversation | [branch-conversation.md](branch-conversation.md)                          |
+| Changes      | [branch-changes.md](branch-changes.md) and [diff-notes.md](diff-notes.md) |
+| Commits      | [branch-commits.md](branch-commits.md)                                    |
+| Checks, Work | [branch-work.md](branch-work.md)                                          |
+| Comments     | [branch-comments.md](branch-comments.md)                                  |
 
-A comment reads the same in the diff, the review pane and the page: `CommentBody` (`shared/components/CommentBody`) draws every body at `text-comment`, 14/22, and the diff sets `font-sans` once on the container that holds its threads (`DiffFile`), so a thread and a composer inside a mono row never undo it. The `diff-font-sans` guard counts `font-sans` written under `features/diff` and only falls. The review pane (`ReviewCommentDrawer`) has a 40 header, `Comment · 4 of 8`, with the menu and close; the author row (`CommentDrawerAuthor`: picture, name, age, state chip) is content, with the file and line as a mono line under it. The proposed change is a file card (`FileChangeCard`) that reuses `FileHeader` at its compact 32 height, and the verbs sit in one 32 row with one primary.
+Pushing, the push fix agent and stale dependencies are in
+[branch-push.md](branch-push.md).
 
-**Header.** One row: the title, the one h1 (the pull request's title, or the branch name
-without a pull request; on a pull request you can edit, click it or press `E` on
-the Conversation entry and it becomes an input in the same 32px row, `Enter` saves
-to the host, `Esc` cancels, a failure is an inline notice with Retry), the state chip (20 high,
-the state word and its icon, `BranchStateChip`), three icon buttons (`BranchTools`: **Start a run on
-this branch**, hidden once the branch is merged or closed, **Open a terminal here** in the branch
-folder and **Open the browser here**; the Overview tile sends you here for them), one primary and `⋯`. The
-line under the title is the same on every tab: the number and the branch in mono, `into` the base,
-and the author's picture and name with `opened it` and the age (`PullRequestHeaderLine`); without a pull
-request it says `Not pushed`, `Pushed` or `Rebasing` and the distance to the base. **There is no branch switcher in the header or
-the rail**: the branches of the session are the rows of the Projects tree
-(`SessionLevel/ProjectTree`), and choosing one makes it the active mount and
-replaces the address with the landing tab of that branch (`switchBranchMount`,
-run by the tree row `SessionLevel/WorktreeRow`), so the crumb, the header
-and the body follow together and nothing of the branch it leaves carries over.
-A new branch is the `+` on its folder row (`project.newBranch`), which opens
-the new branch form (`forkMount` lands on the new worktree on its landing tab);
-a folder project cannot fork and shows none.
+## Frame
 
-The header holds at most one secondary and one primary (`branchActionsOf`), and the primary is never
-disabled. One function picks the step, the same on every tab (`branchStepOf`), in this order: a push
-already going up; `Answer` when a fix asks something, which opens that comment; no fill while an
-agent works on the branch; `Apply N fixes`; `Retry push`; `Fix N comments`, which opens the Fix
-comments drawer; `Push fix` for a check fix not yet on origin; `Push N commits`; `Publish N
-replies`; `Rebase on main` when the host says the request conflicts and the base moved; `Apply fix`
-once the Debugger proposed one; `Fix checks` while a check fails; then the pull request's own step.
-Comments come before the push so the branch is pushed once, a conflict is rebased before the checks
-(a host may not re-run a conflicting request), and the checks still red come last, but not while a
-pushed fix waits for the new run (`isAwaitingRun`: no check step until the check reports on the push).
-Every verb does the work where you stand and never just opens a tab: `Fix
-checks`, `Apply fix` and `Push fix` run the same chain as the Overview row (`checkChainActionOf`),
-and `Fix checks` starts one Debugger at the first press, its tooltip naming the model and effort.
-No line under the tabs says what runs. A comment fix works on its comment row (`CommentWorkLine`)
-and the Comments tab carries a live dot on every tab (`commentTabLiveOf`). Before any agent, a
-failing GitHub Actions row reads its log in place (`CheckLogInline` over the `readCheckLog` store
-action), the first failing check open on arrival, with Open on GitHub for the full log; a check of
-another service still opens on its host. A check agent works on its check row (`AnalyzedCheckWork`), its result stays there with one button (`Review fix`,
-`Push`, `Retry` or `Analyze again`, from `checkRowResultOf`), and the Checks tab carries a live dot on every tab
-(`checkTabLiveOf`). One agent works per branch: a check
-agent live on any check of the mount (`liveCheckWorkOf`, read from the agent rows, so a second window
-sees it too; a fixer that ended never counts, even while its commit is unread) draws the dot and no fill, and the other doors that start an agent (row Analyze,
-the Overview card, the Fix comments launch, the Debugger and Implementer runners) stay disabled with
-the name of what runs. The `Push` row of `Branch actions` takes the same route as the header push
-(`pushFromMenu`): with an accepted fix waiting it is the review push, so the replies go with the commit.
-A push that runs, a stop that is open or a queued request keeps the push
-(and a `Retry push` there) in the secondary alone, with no primary beside it; `Publish N replies`
-stays reachable in the queue. On someone else's open request the step is `Review`
-(`pullRequest.writeReview`). A merged request ends the walk: `Remove worktree` while the folder is
-there (`diff.removeWorktree`, its confirm shares `mountCleanUpWordsOf` with Clean up: the folder and
-the local branch go, the pull request stays, and the branch on origin stays unless the after-merge
-setting removes it). Its toast offers Undo: the branch comes back from the keep ref, on origin too
-if it was there, and `attachMount` rebuilds the worktree in a fresh folder, so ignored files do
-not return. A blocker such as an open terminal draws it disabled in the secondary with the
-reason, and a refusal keeps the step, so it never jumps to the session wide archive; `Archive
-session` then waits in `⋯`. Once the last folder is gone the page has no diff target: the step is
-`Archive session` on the session itself (`session.archive`, `hasRemovedMergedMountOf`, every host),
-and another open branch of the session keeps it away. `diff.archiveSession` confirms only while
-agents run, with an Undo toast otherwise. While the new pull request form leads
-before a request exists, the header draws no push: it waits in `⋯`, so the unpushed count is said once,
-in the line under the title. A selection of comments takes the one fill and the header step steps
-down to secondary until the selection is cleared. A closed
-request has no push, and `Force push` never sits there: while origin moved it waits
-in `⋯` behind its confirm. Commits not on origin block the merge (`unpushed` in
-`MergeReadinessFacts`, read from the same status as the push): the merge box reads
-`3 commits not pushed` under `Not ready to merge` and `⋯` shows the reason. `useSessionDiff` follows the status cache
-(`subscribe`), so a push opens the merge again without a reload. The companion merge reads the same
-count. The pull request's own step (`pullRequestNextStepOf`) is `Mark ready for review` on a draft,
-`Request review` while nobody was asked or once changes were requested and nothing is left to fix,
-the merge method (`Squash and merge`) once the pull request
-is ready, `Rebase on main` when only the base moved, `Reopen` on a closed one, and none while a
-reviewer, a check or a comment that needs you is still on it (the comments are counted for the shown
-request only, `pullRequestThreadsOf`, so another mount's threads never hold the merge), on a queued or merged one, or while a banner holds the next
-action (a stopped rebase, someone pushed). One predicate says when a stop is open for the shown branch
-(`hasOpenRebaseStopOf`: the stop the rebase panel shows, read through `rebaseStopOf`, live or
-rebuilt from the session events after a restart, or the worktree is mid rebase, read from the live status or, for the action registry and the
-palette, from the status cache of the mount: a palette target that names no mount reads the write
-destination's); while it holds
-the header draws no primary and no push, with or without a pull request, so nothing sits next
-to the stop panel. Without a pull request the comment steps come first (notes to answer, apply or
-fix), then the branch's next step decides (`branchNextStepOf`):
-`Push N commits` while commits are not on origin, `Rebase on main` while the branch is behind, and
-none once it is pushed and up to date, where the create form's `Create pull request` is the one
-primary. A step whose action is blocked draws no primary: a blocked `Merge`, `Mark ready` or
-`Reopen` waits in `⋯`, disabled with its reason, and runs through the header's own confirm and
-failure line from there; the header never repeats its primary in `⋯`. A stopped rebase shows no
-primary, with `Abort rebase` in the rebase banner only. While the branch is behind and another step
-leads (`Fix checks`, say), `Rebase on main` waits in `⋯`, its one home. The merge
-box says the blocker once (`Not ready to merge`, then the failing check as its first row).
-One rule decides all three (`evaluatePrMergeReadiness`, `features/review`): its
-blockers are a merged, closed, queued or draft pull request, conflicts, checks
-unknown, failing or running, changes requested, a review required and a write
-already running; its caveats are comments that need you and a live fix run. The
-companion's `mergePr` asks the same function and refuses on a caveat too. Its
-confirm is an inline panel with a method picker (`ActionConfirm.choice`,
-`ChoiceCards`): `Squash and merge` (`One commit on main`), `Merge commit` and
-`Rebase and merge`, the default squash when the repository allows it, and a
-method the repository forbids shown disabled with its reason
-(`Turned off in payments-api`). Merging raises one plain `info` toast with no
-Follow. Push, Publish and Retry go through the existing publish
-machinery: a frozen preview pinned under the session head, above the title
-(`PushBanner`, the only push one, in the page's `lead`, so it never scrolls or
-steps away), drift and the result per thread. Under it sits the rebase job banner
-(`JobBanner`, `features/history/JobBanner`): one strip for a rebase
-on main, on every tab of the page. It reads the stop of the branch (`rebaseStopOf`, through `useRebaseStop` and
-`selectRebaseStop`): the run in `historyRuns` while this window has it, else one rebuilt from the
-latest open saved `history_stopped` event and a git read requested after that stop (an older read
-is ignored). The run is never saved, so after a restart, a reload or in a second window the banner,
-the rail prompt and the mount actions read the same rebuilt stop. Never local state,
-and a stopped rebase is one panel (`RebaseStopPanel`, a `Notice` banner): what stopped, the files
-or the new online commits, and one row of verbs with one filled primary and no Dismiss while the
-stop blocks the branch (`useJobBannerActions`, a failed verb keeps the panel with its error and
-Retry, kept per branch and named with the branch when the session has more than one, and a verb
-running on one branch never locks another). A rebase that is in progress in the worktree with no
-Goodboy stop (started in a terminal) draws one minimal row, `GitRebaseRow`: Continue rebase, Open
-terminal, Abort rebase. The other states keep the strip (Stash and rebase, Restore stashed files, Undo rewrite, Retry
-with a note, Open providers, Open transcript). A failed push after
-a rebase offers `Fix with an agent` (the primary: an Implementer on that worktree briefed with the
-command and git output, `fixPushWithAgent`; it commits the fix and never pushes, Goodboy then
-pushes again with the same lease, `settlePushFix`), `Open in Terminal` (the session terminal
-drawer at the worktree with the exact push typed at the prompt and not run, `openSessionTerminal`
-with `prefill`) and `Retry push`. While the agent works the same panel stays (`fixing-push` is a
-stop panel state) and holds the push fix line with Stop and Open transcript, and no Retry push.
-The same two actions sit beside Retry on the inline failure line of the header Push and Force
-push (`PushFailureActions`, shown when the failed action's error is a push failure (`pushFailedError`)): the
-agent is `fixBranchPushWithAgent`, its finish runs `settleBranchPushFix` (plain push, or force push
-with the lease read before the agent started and the commits the confirm named), and the terminal
-is `prefillBranchPushTerminal` (`git push`, or `--force-with-lease` pinned to the remote sha the
-confirm showed, `PushFailedError.confirmedRemoteSha`; when origin moved since, nothing is
-typed and the header says `Origin changed. Check again before force pushing.`, and a
-prefill always opens a new terminal tab). A retry that pushed clears the failure line
-(`settledBranchPushes`).
-A push failure keeps its cause. `git_push` returns stdout and stderr with credentials and home
-paths masked (`redact_output`), `pushOutputOf` joins both and bounds them (head plus the git
-verdict), and `pushFailureDigest` reads the failing hook or command and the first findings that
-`PushFailureBlock` shows on the failure card, the Comments banner (`PushBanner`) and the create
-form. The label is `Fix with an agent` (`PushFixAgentAction`): it calls
-`fixBranchPushWithAgent` with `pending`, the work that waits on the push (the replies of a failed
-publication, `pendingPublicationBrief`, or the text of the pull request being created), which the
-brief tells the agent not to do itself and never to skip a hook. The action tracks the agent
-and hands the store its continuation (`onSettled`, kept in `pushContinuations` by mount). When
-the fix pushed, `settleBranchPushFix` runs it from the store, once, wherever the user is: the
-banner re-arms the publication (`retryAfterFix`) and the create form runs its create again, with
-the latest text of the screen that registered it. A continuation may return what it did
-(`PushFixFollowUp`: `Pull request #318 is open.`, `The fix is pushed. Nothing else is waiting.`,
-or the reason it failed). A retry that finds nothing new while the last publication failed on its
-push shows that failure, never `Nothing is waiting for the push` (`failedPushPublication`).
-The card does not depend on staying mounted. The fix of a branch is kept in the store
-(`branchPushFixes`) and its result in `pushFixOutcomes` by mount (`pushed`, `agent_failed`,
-`agent_stopped` when you stopped it, or `push_failed`, with the reason and the follow up), both
-written through to browser storage (`pushFixMemory`, six hours, read when the store starts) so a
-window reload keeps them. `pushFixStateOf` reads one answer from them and from the saved agents,
-so a running `Fix the push` agent of the branch is found again even when the window forgot the
-fix: `working`, `pushed`, `stopped`, `failed` or `none`. Every push surface draws it with
-`usePushFix` and one line, `PushFixStatusLine` (in `features/history/pushFix/`, on
-`ItemWorkLine`): Fixing with the agent's step and active time, Stop and Open transcript while it
-works; then Pushed with the follow up, Stopped ("Nothing was pushed; its edits stay on the
-branch."), or Failed with the reason, each with Open transcript. On the push failure card of the
-Branch header (`usePushFailureSlots`) the line sits under the Push failed title, above the hook
-output; while the agent works the card has no Retry, no hint box and no Fix with an agent, and
-after Failed or Stopped the agent button reads Retry and is the only Retry. The Comments failure
-card and the create form (`PushFixAgentAction`) show the same line with Retry. The Comments banner
-(`PushFixIdle`), the header (`PushFixStatus`) and the create form (`CreateNotices`) show the line
-when no failure is on screen, so leaving the page and coming back shows the agent, its progress
-and its result. A
-result nobody took (the fix pushed while no continuation was registered) is claimed once by the
-first surface that mounts with a continuation (`claimPushFixOutcome`) and run there. The claim is held
-in memory (`pushFixClaims`) while it runs. `completePushFixOutcome` marks the result taken and records
-the follow up only after the continuation returned, so a reload mid-flight resumes it again, and a
-continuation that throws releases the claim (`releasePushFixClaim`) and reports the error. A new fix on
-the branch clears the old result, and the line can be dismissed (`dismissPushFixOutcome`).
-Stale dependencies are caught before the push. `worktree_deps_check` and `worktree_deps_unlink`
-take the repository path and the worktree path, and refuse a folder the repository does not list as
-a worktree. `worktree_deps_check` reads the lockfile to pick
-the package manager (`worktree_setup_proposal` tables), and reports a worktree whose install
-folder is missing (`missing`) or whose install folder, a nested one or a workspace package link
-resolves outside the worktree (`outside`; the usual case is `node_modules` linked to another
-checkout, so the push hook and the checks read that checkout's code). `StaleDepsNotice` shows it
-above the push surfaces (the Comments page through `LaneNotices`, the Branch header when Push is
-next, the create form) and `StaleDepsAction` sits beside Retry on the push failure cards.
-The Branch header also holds the worktree setup line (`BranchSetupOffer` around
-`WorktreeSetupOffer`): **Run** and **Not now** while it is offered, **Running** while it
-works and, on a failure, the last line of the error with **Retry**. A setup that ran fine
-shows no line.
-**Reinstall dependencies** (`reinstallWorktreeDeps`, `ReinstallDepsAction`) runs the install of
-the lockfile in that worktree as the script `deps-install:<mount>` (progress and result stay on
-`scriptRuns`, so a card that comes back still shows the install running), checks again, and then
-retries the push (`retryAfterDeps`, the header Retry, the create again). When the whole install
-folder is a link to another folder, `worktree_deps_unlink` removes only that link before the
-install and never the folder it points to; nothing else is deleted.
-Only the header pushes everything: a thread has no
-Push, Push again or Sync button. The header reads `Push N fixes` (N counts every
-accepted thread, the opened one never narrows it) and one click prepares the
-preview. A clean preview (no blocker, no drift, a publication, no earlier commit
-that is not a fix) pushes at once: the button shows `Pushing N fixes` and the
-outcome is one dismissible line under the header (`Pushed 6 commits to origin and
-posted 6 replies on GitHub.`). Any other preview opens the panel (`PushBanner`),
-which holds the only `Push`; the header button stays as its toggle
-(`aria-expanded`, a second click closes the panel and cancels the prepared
-publication) and never pushes while the panel is open. A `stale` answer reopens
-the panel with one line above it saying what changed (`driftSentence`). An accepted
-thread opened in Comments offers `Push only this one` in its action bar
-(`preparePublication` with `isolated`, `isolatedPushOf` unchanged); the panel
-lists every commit that goes out, oldest first, with `Not a fix` on the earlier
-ones, under a title that counts them all (`pushCommitCount`). `Push only this
-one` is not shown while the panel is open, so one Push is visible at a time. A preview that is
-left (page unmounted, navigation, Cancel, a `missing` answer) is closed as
-cancelled in the database; `missing` says `The push was already handled or
-cancelled. Nothing changed.` in the outcome line. `Publish N replies` and `Retry N` stay the header primary of their state. A blocked primary stays visible, disabled, with its
-reason. `⋯` holds the rare lifecycle (Edit title and description, Request
-review, Convert to draft, Close or Reopen, Open with the host logo, named Open on GitHub, Copy link) and the
-branch actions (Change base branch…, only before a pull request exists, Copy patch, and `Archive session`
-on a merged request); a queued request with auto-merge adds `Cancel auto-merge`, and an open GitHub request with checks still running adds `Merge when green`, which asks for the method and hands the merge of the reviewed head to the host (`pullRequest.mergeWhenGreen`). It lists the push
-whenever the header does not draw one (`branchShownIdsOf`), and it never holds more than five rows
-(`branchMenuRowsOf`): the rows with another home drop first (Edit title and description, Copy link,
-Copy patch, and Rebase and Request review have their own place on Commits and Conversation).
+- The page is the centre of the Projects tree (Context tab): one detail with no
+  rail of its own. The branch's tree row has no rows under it, only one pill
+  ([projects-card.md](projects-card.md#the-current-branch)).
+- **One tab row per page**: its sections are the page tabs under its title
+  (`BranchTabStrip`, on `PageTabs`). In a session the head sits above with
+  `Overview › {branch name}` in place of the session tabs
+  ([session-rail.md](session-rail.md#crumbs)). A host with no session (a scene, a
+  test) shows the page alone.
+- The header and every section body sit on the 960px column (`PaneShell
+width="column"`, bodies in `PageColumn width="column"`), so nothing moves between
+  sections: the session title, its crumbs, the Branch header, the tabs and the diff
+  share one left edge.
+- **The header holds three things**, 100px at rest with a pull request: the title
+  row (48), one meta line (16) and the tab row (36). The running line, the work
+  lines, the notices and the base branch row are the top of the body
+  (`BranchBodyTop`, `BranchNotices`), out of the pinned header.
+- **The header steps aside while you read** (`PaneShell`, `revealKey` the tab):
+  24px of scroll down keeps only the session head pinned; 8px up, the top of the
+  section, focus in the header or another tab brings it back. On Changes, whose
+  toolbar sits above the diff, the toolbar rides up and stays under the session
+  head.
 
-**Sections and landing.** The tab strip lists the sections the state has, in this order
-(`branchTabsOf({ state, hasComments })`, `features/branch/branchTabs.ts`): with no
-pull request and no comment `Conversation`, `Changes`, `Commits`, `Work`; with a local note or a thread
-and still no pull request `Comments` joins them at the end; Draft, Open, Approved, Queued, Merged and
-Closed show all six, `Conversation`, `Changes`, `Commits`, `Checks`, `Work`, `Comments`. Comments
-stays its own tab after Work instead of folding into Conversation: it holds the review flow
-(pick threads, fix them with an agent, resolve, push) and the local notes of a branch with no
-pull request, where Conversation is the start page. Conversation shows the threads in its
-activity and links to Comments. The first is
-called `Conversation` on every host, so `Overview` names only the session overview (its key is ⌥⌘1,
-Comments ⌥⌘R, Changes ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
-request. A pick replaces the address. Every tab carries its count in faint ink, and color only for what wants you; the counts and their scope are written once, under the entry slots below. Merged and
-Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
-branch" lands through one pure rule (`branchLandingTabOf`,
-`features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
-`Conversation` when the active mount has a pull request, else `Changes`; then the door resolver
-above drops a section the state lacks. A
-branch row of the Projects tree, the Branch crumb, `⌥⌘1`, a mount's `Open PR`, the Board's
-pull request chip, an approved or changes-requested mark and a mount's
-`Create PR` land on `Conversation`; a comment, a thread, a fix run, a note, ⌥⌘R
-(`Open Comments`) and a draft comments chip name `Comments` themselves (with no pull
-request and no comment they land on `Changes`), `Changes`
-and `Commits` doors name theirs, and a CI failure names `Checks` (with no pull request,
-`Conversation`). The chosen section
-is stored per session and is read through `branchTabOf` (`useBranchTab` in a
-component), never from `branchTab[sessionId]` directly, so a section is only
-remembered once the person has chosen one; the page shows the section the state has
-when the stored one is gone, without writing history.
+### Every door to the changes lands here
 
-**One mount, one answer.** The page resolves one shown mount (`useBranchIdentity`: the address'
-mount, else the active one) and every widget reads it: the host word and the new-request link
-(`useBitbucketRemote({ mountId })`), the readiness and merge word (`usePullRequestReadiness`, the
-view of that mount through `pullRequestViewOf`), the checks, the Comments tab and its count
-(`branchScopeOf` keeps the notes and review threads of that branch), the review entries and the
-`Push N fixes` primary (`useReviewEntries`, `useReviewPush` with the mount). A workspace with a
-GitHub repository and a GitLab one therefore shows the nouns, links and checks of the repository on
-screen, whichever one chat writes to. The write destination is a separate fact: opening a branch,
-Back and a reload leave it where it was, and the push confirm names the repository when the session
-has more than one.
+Every door to the session's changes (a branch row of the Overview's project blocks,
+the board row's Changes door, the palette, the chord) opens this page on Changes,
+addressed by mount id so a moved worktree still resolves (`branchTabPlaceOf`).
+Changes opened without naming a branch lands on the active mount's page. Every door
+to a pull request lands here too: the worktree row chip, the board card badge, the
+context strip and the Checks chip.
 
-**Conversation.** The pull request itself, on the 960px column
-(`features/branch/components/PullRequestTab`): the merge box first, then two columns, the
-reading column (the description and the Activity, at most a prose measure, `max-w-prose`) and the 224px side column;
-below an 880px page container the side column moves above the reading column as one wrapping
-row. The merge box (`MergeBox`, every word and count from `mergeBoxOf`) answers "can this merge?"
-from the same readiness result as the merge action (`evaluatePrMergeReadiness`): it waits only when
-checks running or a required review are the sole blockers, a blocker readiness names (`Checks
-unknown.`) always outranks waiting, and the checks it knows (failing, running) stay visible while
-the runs load. A reviewer who is asked but not required, with no `review_required` decision from the
-host, shows as `Waiting on dana-r` with `Not required to merge` and never as the verdict. The verdict is: `Not ready to merge` with the next two steps in the order the header takes them
-(`Answer omar-t, then fix the failing check.`: the first two entries of `branchStepsOf`, the list
-whose first entry is the header's step, worded by `verdictStepTextOf`; a draft whose first step is
-not `markReady` names them too), `Waiting for checks`, `Waiting for a review`, `Checking`, `Ready to merge` with what the
-header button does (`Squash and merge into main. Nothing is waiting.`), `Draft`, `Queued to merge`
-with the queue line, `Merged into main` or `Closed without merging`. Under it one row per thing
-that holds the merge, worst first (danger, warning, info, neutral): checks (`1 check failing` with
-the failing names, `Checks running, 2 of 3 done`, counted by `checksCountsOf` as the rail is,
-`Checks unknown`), conflicts with the base, commits not pushed, the review (`Changes requested by
-omar-t` with the threads line from `openThreadsLineOf`, `Waiting on dana-r`, `No approval yet`),
-the threads that need you (`2 threads need you`, then `5 open threads · 1 unread`), and the branch
-(`Rebasing onto main`, `Diverged from the online branch`, `3 commits behind main`). Each row opens
-where it is fixed: Checks, Comments, Changes on conflicts, Commits for the branch and the push, and
-the reviewer picker when nobody was asked and the host can ask. The box never holds a button that
-acts; the header keeps the page's one primary. Everything that passes (`7 checks passed`, `No
-conflicts`, `Approved by kenji-w`, `Up to date with main`) folds into one quiet line that opens in
-place. A merged or closed pull request keeps the verdict alone. While the view loads the Activity holds three rows of `PullRequestActivitySkeleton` behind `SkeletonSwap` (nothing for 120 ms, then at least 160 ms). The side column (`PullRequestProperties`) holds `Reviewers` (people only,
-the asked ones first, each verdict right after the name: `Asked`, `Changes`, `Approved`; `+`
-requests another; a short skeleton until the reviewers are read, never `Nobody asked yet` before), `Bots` (every bot apart, whatever its verdict,
-`pullRequestReviewerGroupsOf` in core, each with one word from `botWordOf`: `1 issue` for the open
-threads it started among the queue's threads, the host thread heads only until the queue loads, `2 resolved`, or its review state), `Linked issues` and `Author`, all read from the branch on
-screen. A bot is known by the host's author type (`isBotLogin`, see [hosts.md](../hosts.md)); the
-`[bot]`, `-bot` or `_bot` login suffix applies only when the host gave no type, so a GitHub user
-named `northwind-bot` stays a reviewer. There is no Rebase in it. The description renders as markdown with `Edit` beside its heading
-and folds after five lines of prose behind `Show all` (`DescriptionFold`; focus on a link under the fold opens it);
-the body's own headings read as bold lead-ins and a first heading that repeats `Description` is
-dropped (`demoteBodyHeadings`; a code fence closes only on the same character, at least as
-long and with nothing after it, as CommonMark says, and an unclosed fence runs to the end, so
-a heading inside code stays literal), while the edit preview keeps them as written
-(a click on the text also opens it; the editor is a textarea with Write and
-Preview, `Save` and `Cancel` at its end, a failure keeps the draft and offers
-Retry; an empty description reads `No description yet` with `Add description`)
-and the Activity, oldest first: who opened it, the pushes (the pushes of one author in a row fold into one row with the commit count, `foldPushes`), the
-reviews, one line `4 open threads on files, 2 need you` (or `All threads on files resolved`) that opens Comments (its open and need-you counts, and the merge box's are one number each, read once in `PullRequestPage` from `pullRequestThreadCountsOf`, and each review app's `issue` count in `botWordOf` reads the same entries: `commentStateCountsOf` over the queue's threads on the host, the same numbers the Comments tab reads, and only until the queue loads the unresolved host thread heads, so a thread left open on the host counts as open, a host thread outside the queue never adds one and a local note never does; the merge box row reads `6 open threads · 1 needs you · 2 unread` under a review that asked for changes, each part after the first hidden at 0, from `openThreadsLineOf`; the unread part comes from `unreadThreadsOf` over the threads of the selected source, the ones not yet seen in Comments, and stays hidden until the reads and your name on the host are loaded), one line
-for the checks that opens Checks, your edits of this session and the merge. A review app
-(a bot by the host's author type, the `[bot]`, `-bot` and `_bot` suffix when the host does not say; one author is one kind in every row, its approvals and its inline findings included, through `isBotLogin`) gets one
-row with its one-word verdict from `botWordOf`, `1 issue` or `3 resolved`, and its summaries
-fold behind `Show summary` (`groupBotActivity`); a bot's approval stays its own review row.
-`All`, `People`, `Bots`, `Pushes` and `Checks` in the Activity header filter the rows, each
-with the count `activityFilterOptionsOf` gives, and hide a filter with nothing in it; the comments line sits under `People` when a person left a finding and never under `Bots`, which lists and counts only the review apps' own rows; on GitLab and Bitbucket with no pull request detail loaded, the line is built from the loaded host thread entries (`hostCommentsOf`) and sits under `People`, while GitHub shows no comments line until its detail loads. The choice belongs to the pull request: it survives a visit to Comments and a reload of the view, and another pull request starts on `All` (`activityFilter` on the `pullRequestViews` entry). The faces and the quiet nodes (`ActivityLeadMark`, `WorkNode look="quiet"`: failing checks on the solid danger node, threads that need you on the solid amber one, passing checks a bare check, the rest a neutral node) sit on a spine, a 1px `border-soft` line from
-one event to the next, and each age sits in the `ActivityMeta` time column. Rows that open something carry `ROW_INTERACTIVE`. Reviewers draw a glyph and a word each (`+`
-opens the picker that searches the host's collaborators), Checks reads `4 passed · 1 failing`
-(`Checks unknown` when the read failed), Linked issues carry their relation (`Closes #412`;
-`Link issue` opens the popover). Without a pull request the section is the branch
-page (`BranchStartPage`): no merge box and no summary, since the header and the tabs already say all of it. The line under the title (`branchStartLineOf`) names the branch with `3 not pushed`, `Up to date with origin`,
-`Diverged` (warning, when origin also has commits the branch lacks) or `Rebasing`, adds `3 behind main` only when the base moved, and adds what the pre-push hook answered, `Pre-push hook passed` or `Pre-push hook declined` with its age, once this machine pushed, a pass only while nothing waits to be pushed, since it does not cover those commits: read from the push
-result since the repo's pre-push hook is the one local gate, kept in memory per mount
-(`local-checks` slice, `mountLocalChecks`), so after a restart the line says nothing until the
-next push; a push that went through counts as passed whether or not the repo has a hook,
-and a failure that does not name `pre-push` leaves the last result, a remote
-`pre-receive hook declined` included (`localCheckOf`). Then the create
-form, prefilled from the branch (`pullRequestPrefillOf`: one commit gives its
-headline, several give the linked issue and the first headline, the description
-lists the other commits, never a `fixup!`, `squash!` or `amend!` one and never the one the
-headline already says, and `Closes HL-1372` for a Linear issue). `Into` starts on the base of the mount (`defaultBase`) and the host's default only fills it when that is empty. The form works on the branch on screen: it
-reads that mount's status and base branches and opens the pull request from it,
-never from the session's write destination; on GitLab `CreateMrForm` takes the same mount
-and prefill and hands the mount to `createMrForSession`. Its submit is the one primary of the tab, also as `Push and create pull request` while commits are not on origin, and while it leads the header's push waits in `⋯` and any other header step steps down to secondary (`isFormLeading`); on every other tab the header's push stays primary. While the branch is behind, the header's Rebase leads and the submit is secondary. On a diverged branch the submit reads `Force push and create pull request`: it opens
-the same confirm as the Push action (`forcePushConfirm`, which also lists the commits that
-exist only online) and only then force pushes with lease and opens the request
-(`createPrForSession` with `forcePush`); a plain push is never tried on a diverged branch. While a rebase is stopped the form waits and the
-conflicting files are listed; a branch with no commit of its own shows `No commits on
-this branch yet`. The form fills the same grid: one input card (the title as a large
-borderless field, the description growing from 6 to 16 lines, and in the card's
-bottom row `Write with Scribe` with its routing and a faint `Markdown`), then
-the settings as labelled properties in the side column (`Into`; `Opens as` with
-`Ready for review | Draft` only where the host can set a draft; `Reviewers` only
-where it can request them, requested right after creation; `Closes` with the
-linked issues as chips; the changelog entry under `More options` when Scribe
-wrote one) and the actions inline at the end, right aligned, with no bar:
-`Discard text` (with Undo) and `Create pull request`, which reads `Create draft
-pull request` with Draft. Scribe's job shows inside the card (skeleton lines
-while it writes, a running dot with the seconds and `Stop`, a danger notice with
-`Retry` when it failed); creating shows `Pushed <branch>` and `Opening the pull
-request` in the same row, and a failure keeps the text under a danger notice
-with `Details`. Creating it raises a `Follow` toast ("Pull request #318 opened")
-only when the page is not already on screen. Every write goes through the
-host-neutral `PullRequestPort` (`packages/core/src/review-source`), a facet of
-the review source built per host in
-`store/slices/review-source/pullRequestPortFor.ts`; the page reads the
-capability table (`REVIEW_SOURCE_CAPABILITIES`) and never the host. A control
-the host forbids on an object that exists is shown disabled with its reason
-(`Bitbucket has no draft pull requests`, `Turned off in payments-api`, `Set by the
-project`), and a concept the host does not have is left out. GitLab uses the same
-page with its own calls and words (the chip and the form read `merge request`, the header
-`MR !42`, `Open on GitLab`): `gitlabPullRequestPort` reads and writes through
-Tauri commands that hold the stored token, `Mark ready` and `Convert to draft`
-change the `Draft:` prefix of the title, Merge lists the ways the project
-allows, and a token without the `api` scope reads `Goodboy can't read this merge
-request` with `Open GitLab in Connections`. A branch with no merge request shows the
-same create form with `Create merge request`, the same Scribe job and no
-reviewers. Bitbucket uses the same page through its own adapter
-(`bitbucketPullRequestPort`, built by `bitbucketPortOf` from the mount's
-request): merge offers its three strategies, `Close` declines, and the draft and
-reopen controls are left out. `E` edits the title in scope
-`pullRequest`, live only on this section.
+A move on a branch opens the tab the fact names (`tabForFactOf`):
 
-**Comments.** The section header holds a segmented control `All 9 · Notes 3 · On GitHub 6`
-(only while both notes and host threads exist) and `Open 5 · Resolved 12` (from the first thread on, the Open count warm while a thread needs you), with `Fix N comments` at its right, the one fix action. The list (`Needs you`,
-`Working`, `Ready to push`, `Open`, `Left open on GitHub`; `Done` shows under
-`Resolved`) lists your notes and the pull request threads together, each row with
-the author and its age, its `path:line`, the first line of the body (`commentPreviewOf` drops headings' hashes, HTML comments, severity badges, images and bot boilerplate) and a `Note` chip only
-while the list mixes sources. A note keeps `Post to GitHub` (it moves the note into
-the pull request's review draft and closes it) and `Delete` under its thread, and a
-note shows even while the host is still loading or failed to load. The open thread has the code
-around the commented line above it (`hunkAround`, linking to Changes), all inside the comment drawer. Comments exists when a pull
-request exists or at least one comment exists, a local note or a thread open or resolved; its count is
-the notes alone while there is no pull request. The
-properties (Origin, Attempts, Fix commit) sit inline under the thread at every width, never in a margin rail. The
-actions of the comment sit at the end of the drawer content through `FormActions` (`CommentDrawerActions`), never in a bar pinned to the page bottom; the `⋯` in the drawer header holds the transcript, Resolve without a reply, Open on the host and Copy link, and shows only with two or more of them (one rare verb shows as a quiet button instead).
-Every Branch section sits on the 960px column (`PaneShell width="column"`, bodies in
-`PageColumn width="column"`), the header and Ask included, so nothing
-moves from one section to the next, Changes included: the session title, its crumbs, the
-Branch header, the tabs and the diff share one left edge. The Comments section is one full-width
-list at every pane width, with no back link; the open comment is the drawer, and the last row
-opened stays marked after the drawer closes. The entry slots read nothing until the data for the current branch arrives and nothing at zero (`branchTabFactsOf`, one function for the tab and the head of its page). After a branch or mount switch a count read for the previous target is never shown: `useSessionDiff` keys its commits and status by worktree path and base, so the count stays unknown, and a failed read shows the error with no count. Pull request: `Draft`, `Merged` or `Closed`. Comments: the open ones of the branch scope, the same entries the Comments page lists (host threads and local notes, `useBranchReview().branchEntries`), in warning tone when some need you. Changes: the file count and `+added -removed` of the branch; inside Changes the rail head and `Viewed N of M` count the files and lines of the loaded diff (`filesHeadFactOf`), the same snapshot as the listed files, while the tab keeps the polled branch summary. Commits: the branch's commit total (the ahead count), `↑N` (tooltip `N not pushed`) only when no total is known and some are unpushed; the diff selector says `All N commits` with the same total, and its list is cut against the same base as that total (`listBranchCommits` passes the mount's `baseBranch` to `worktree_commits`), `All commits` when a capped list has no total, and the picker lists `Showing latest 100` whenever the list is capped (`branchCommitsLabel`). The unpushed count is `branchPushFactsOf(...).toPush`: the history draft's unpushed commits once the branch has an upstream, else the status: the upstream's ahead count, a diverged branch included, so `2 ahead, 3 behind` reads `↑2`, and for a branch never pushed its commits over main. `branchPushFactsOf` in `shared/lib/branchPushState.ts` is the one owner of `{ state, toPush, canForce }`: the strip, the form, the header step, the action registry facts and the rail all read it, so a diverged branch never reads `Pushed`. Checks: the failing (danger) or running (info) count, else the passed count. Work: the runs that need you, the questions that wait for you and the artifacts that need you, each wait counted once (a question or artifact whose agent belongs to a run that needs you, or whose asker already counts, is the same wait, and the tooltip names it: `1 run needs you with 1 question`, from `held`), in warning, else the runs working (info), else the runs, questions and artifacts of the branch together, all from the session pages' branch group of the mount (`branchWorkCountsOf`, read once the questions and artifacts loaded, so the badge never climbs while they arrive). All three arrive without a visit: `BranchPage` loads
-the mount's history draft (`loadHistoryDraft`) once when the page opens and the
-draft is not there yet, so the Commits count is a number on the Comments section too. `Fix N comments`, in the Branch header on the Comments section, is the one fix launch.
+| Fact                                      | Tab          |
+| ----------------------------------------- | ------------ |
+| a failing or running check                | Checks       |
+| requested changes, open threads           | Comments     |
+| a diff to check                           | Changes      |
+| a conflict, a rebase, commits not pushed  | Commits      |
+| anything else; Search, Activity and Tasks | Conversation |
 
-**Changes.** The branch against its base as one two-column page under the Branch header
-(`ChangesPage` in `features/diff/components`, mounted by `BranchFiles`, the one entry for the
-pull request page and the pull request row of the session's Projects block). On Changes the header and the diff stay on
-the 960 column of every other section (`PAGE_MEASURE.branchChanges` is `column`), and the file
-list is its own full height column on the left of the page, the mirror of the Agents column of a
-run page: `BranchPaneRoot` reads the frame's left slot through `useBranchRailSlot`
-(`data-session-lead` of `SessionHeadFrame`, or the Branch page's own `data-branch-lead` outside a
-session frame) and hands it to `ChangesPage` (`BranchRailSlotContext`). The rail, a page
-`StudioRailLayout` (`surface` `changes-files`), is portaled there only while the page is on
-screen (`HeadSlotsGate` gives a hidden layer no left slot), with a border on its right. Its first row (Hide files, then `Changed N | All files` with
-the diff totals, `ModeControl`) sits on the session title line, and the rail and the diff scroll
-on their own. The diff column keeps the toolbar's own inset (`ToolbarRow`, 40 high), so the scope
-pill, the file headers and the Branch title start on one x. The toolbar reads the scope
-pill, `Compared with main · All 5 commits ⌄`, then `Display ⌄`, `Viewed N of M`, `Next` and
-the keyboard button (`ReviewProgress`, the viewed count from `viewedCountOf`, the same function
-the filter's Unviewed count reads); file headers stick under it. The worktree setup offer of
-the branch is a slim row under the toolbar (`WorktreeSetupOffer layout="row"`), never a card
-above the page; every other branch notice stays above the diff. The rail opens at 340px,
-resizes from 220 to 560 and remembers its width and fold per surface like every page rail (see
-Studios); Hide files folds it to the Show files strip, and `F` or `/` open it again. Under a
-frame of 1060px (the session frame, rail included) it folds without writing the saved choice, `F`, `/` or Show files open it beside
-the diff and a pick folds it again. The tree and the diff share one `useReviewState` and the
-keys stay in `useDiffKeys`. The rail lists rows in a window (`useRowWindow`), the diff mounts
-files in batches of 20 and draws a body only once it scrolls near (`content-visibility`,
-`useRequestSeenBodies`), with skeletons in both columns while the diff loads. Under the first
-row the rail holds the filter field (`/`) with the filter menu beside it (scope and grouping),
-then the tree; a viewed file row shows a check, and the one control for Viewed is the file
-header. `All files`
-swaps the list for `AllFilesTree` (`features/diff/components/ChangeTree`): the worktree in the same
-tree, 28 high rows, a changed file with its counts and status letter, an unchanged one muted with no
-counts, a deleted one struck through, a closed folder with changes its muted sum
-(`folderSumsOf`). Folders load when opened (`useExploreListing`), the switch lists only the
-root, and a deleted file or a folder that exists only in the diff comes from `allFilesListingOf`.
-A click on a changed or deleted file scrolls to its diff; a click on an unchanged file opens
-`FileReader` in place of the diff (`Unchanged against main`, the line count, `Open in editor`,
-`Back to the changes`), and a failed read says `Couldn't read this file` with Retry in place.
-The filter searches the loaded and changed files in `All files`; viewed, next and the keys count
-changed files only. The mode is kept per session and folder in `exploreChangedView` and
-`PLACE_ROWS.changesMode` opens it on `All files`. The scope pill first in the toolbar
-(`ChangesScopePill`, the project and branch chip) picks the branch on the session's Changes page and is
-a label on a pull request page. With no change, `No changes against main` offers `All files`.
-Folders first, then files, alphabetical,
-and the diff follows the same order. A chain of folders with one child is one
-row (`src/ledger/export`). A folder row holds a progress ring (empty, partial,
-or filled with a check once every file in it is viewed, tooltip `3 of 5
-viewed`), the path and, only while it is collapsed, its file count and its
-`+N −N` in one muted tone (no green or red; an open folder shows none, its files
-carry them); a file row (28 high, 8 per level with a 1px guide) leads with the viewed
-toggle (a checkbox button, `Viewed: <name>`; an amber dot when the file changed after
-it was viewed; none on a merged or closed pull request), then the name (a rename shows
-`from <old path>` under it, a deleted file is struck through), a comment count chip whose
-tooltip names the kinds (`2 notes, 1 on GitHub`), `+N −N` only at a rail of 280 or more, and
-the status letter. `+N` and `−N` sit in two fixed right-aligned columns (`Delta`), and a closed
-folder keeps the status letter's slot empty, so every count lines up down the list. The
-status letter is one mark (`FileStatusMark`) in the tree, in All files (which leaves M out)
-and in the file header: one letter in one 12px slot, A in success, D in danger, M and R
-muted, so amber stays for what needs you and blue for what runs. A name too long for the rail keeps its first six characters and its last
-six with the extension chain (`Statem…ceCard.test.tsx`, `cutFileName`), and a name too short for
-that keeps its first three characters (`ind…dule.css`): a name is cut in the middle, never at its
-start. The full name stays for a screen reader. A file or folder row has no tooltip: the full path is in the file header of the diff. The tree is a `tree`: Up and Down move
-its cursor, Home and End go to the ends, Right and Left open, close and climb, `Enter` jumps
-the diff and keeps focus in the tree, `Space` toggles viewed (or folds a folder) and `Esc`
-returns to the diff (and folds a rail opened on a narrow pane). A keyboard button beside
-`Next` in the diff toolbar carries the key hint in its tooltip and opens the full list.
-Under the head a filter field (`/` and `T` focus it, `Esc` clears it) matches a
-subsequence of the path, and one filter menu beside the field (`Filter and group files`,
-with a count of 1 in its corner while a scope is on) holds `Show: All | Unviewed N | Commented N`, which narrows it
-further, and `Group by: Folders | Kind`, which regroups the tree under Source, Tests, Config and
-Docs (each file then shows its folder beside the name). The filter narrows the
-diff as well as the tree, `Showing n of N` with `Clear` says so, and a filter
-that hides everything leaves `No files match.` in both panes, with `Clear` on the tree and `Clear filter` on the page
-(`filterFiles` in `changeTree.ts`). Generated files (lockfiles, `dist`, `build`,
-`vendor`, minified and map files) sit in a closed `Generated` row at the bottom
-in both groupings and at the end of the diff. Viewed marks are stored per session, mount and view, so two repos in one session
-keep their own; marks saved before that are read until the mount saves its own.
-Click a file and the
-diff scrolls to it; scroll the diff and the tree highlights the file in view but
-never opens a folder: when that file sits in a closed folder, the outermost
-closed folder shows a small primary dot (`contains the file in view`). The tree scrolls
-only when the file in view changes, and only far enough to show its row; a refresh of the
-diff data never moves it again. Folds are
-remembered per session and project in `localStorage`
-(`goodboy:diff-folds:v1:<session>:<mount>`, only your changes from the default,
-at most 500 entries, in `useFoldState`), so closing and reopening the page, a
-new file or another view never undoes them. A click in the tree, next unviewed,
-`Viewed` and a link from another page open the folders above their file; `J`/`K`
-walk every file in diff order, also those in closed folders, and leave the folds
-as they are. A click, `J`/`K`, next unviewed and `Viewed` call the diff's
-scroller directly (`registerScroller` on `DiffView`); `focusPath` is only for a
-link from another page such as `Open in Changes`. A refresh keeps the tree and
-the diff on screen (`isRefreshing` on `useSessionDiff`); skeletons show only
-on the first load and when the scope changes. On the branch scope the tree and
-the file counts come first from one cheap call, `worktree_diff_files`: a list of
-`{ path, oldPath, status, additions, deletions, isBinary, isUntracked }` read from
-`git diff --numstat` and `--name-status` plus `ls-files --others`, so an untracked
-file shows as new with its line count. With that list the page is ready at once: the
-tree, the file headers and every count come from the list and never change when a
-body arrives. A file body loads when its card scrolls into view (`worktree_diff_file`
-with the old path of a rename, parsed in a worker through `parseDiffAsync`; without a
-worker the parse runs on the main thread). Until then the card holds a 96px
-`Loading diff` skeleton, and a body that fails says so with `Retry`. A binary file asks
-for nothing. `useDiffBodies` owns the bodies: a body that answers after the view or
-the branch changed is dropped, and a refresh keeps the bodies on screen while the new
-list and the visible bodies load again. A list that arrives after the full diff is
-dropped, and an empty or failed list falls back to the full diff, parsed as before. The
-full diff still loads in the background for `patch` (Copy patch) but is never parsed
-when the list answered. The Comments tab asks for the body of a thread's file before it
-draws the code around the comment. A viewed mark is read from status and counts alone
-(`fileSignature`), so it holds with or without the hunks loaded. The diff resets its mounted
-batch, its observer and its place only when the list of paths changes, never on
-a new array with the same paths, so marking a file viewed or a note changing
-neither shortens the page nor drops an open composer. Folder row ids start with
-`dir:`, so a folder and a file with the same path never share a key. The tree and the diff share one `useReviewState` (active
-file, open folders, notes, `Viewed`), and a model in `features/diff/lib/changeTree.ts`
-builds the rows. The file cards sit 8 apart on the 960 column (never the pane's width); a
-card header is 44 high on the panel surface and holds the fold chevron, the status square,
-the path (folders faint, the name whole, cut from the left, with a real tooltip) and
-`+N −N`, then `Viewed` (a checkbox with the word; checked folds the file, tooltip
-`Changed since you viewed it` when it went stale), the `Comment` word (tooltip with the count
-of both kinds) and one `⋯` from the `diffFile` kind of the action registry with `Open in editor`,
-`Show whole file` and `Copy path`. When only one of them applies (a peek with no editor and no
-whole file) the header draws that one as a quiet word instead of a `⋯` of one item
-(`ObjectMenuOrVerb`). A right click on the header lists the same actions.
-`Show whole file` opens a right drawer (`FileWholeDrawer`) with the full file and the change
-marked, loaded for the same view as the page (branch, working tree or commit). The drawer starts
-in the page's Display layout and has its own Unified and Split toggle in its header: it is local
-state and never changes the page's Display setting. A merged or closed pull request hides Viewed, Comment, Reply and
-the other writes. Split needs a column content of 880 or more, otherwise the `Split` segment under `Display`
-is disabled with the tooltip `Needs 880px`. The write review form is not on this toolbar: it opens from the
-pull request's `Write review` action and swaps the tab body for the review form with line
-drafts. The section carries no Fix, Push, Rewrite or `PR #N` control of its own.
+## The Branch address
 
-**Commits.** The branch graph updates immediately when a commit is moved,
-folded, renamed or removed. Undo and Redo icon buttons sit in the Commits
-header. The same actions use ⌘Z and ⌘⇧Z while the page is open;
-text fields keep their own undo. Leaving the page clears the edit stack but
-keeps its backup refs. The graph fills the page column at every width.
-There is no preview column, saved edit plan or Apply step for manual edits.
-The existing Force push action updates the online branch separately. While the branch is behind its base, `Rebase on main` takes the secondary slot and Force push moves to `Branch actions`.
+`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`.
 
-Each live edit takes the shown mount, branch, worktree and expected head
-(`changeLiveHistory`). The Git command (`history_live_edit`) holds a writer
-lease across replay and branch movement, saves a backup before replay and
-checks the result on a temporary copy. An agent reservation blocks inline,
-and a busy row disables further edits without a queue. A conflict leaves the
-branch, index and files unchanged, names the error inline and offers Rewrite
-with an agent or Undo to dismiss the failed edit. Dirty files use the stash
-consent and recovery flow. Undo and Redo restore a backup with an expected
-head check; failures retain the stack and the captured retry target. None
-of these operations pushes to GitHub, GitLab or Bitbucket.
+- A section switch and a thread selection replace the entry, so Back never walks
+  them. Esc on a thread or a file goes to its section, then to the Overview.
+- The crumbs read `Overview › {branch name}` from every door.
+- `pr`, `review` and `files` (a mount present) are rewritten to this address by
+  `canonicalLocation`, on a move and on a restore
+  ([addresses.md](addresses.md#aliases-live-in-canonicallocation)).
+- A GitLab or Bitbucket merge request keeps the `pr` page (the old studio stays
+  reachable from its strip until the host cleanup); a session without a branch
+  keeps its file versions (page id `files`).
+- The page shows one branch, chosen in the Projects tree; there are no worktree
+  tabs. Every rewrite takes the shown mount's `mountId`, never the active mount.
 
-Previous versions (`Previous versions n` under the graph, the `Previous versions` drawer, `Reset branch to this version`) live here. There is no
-Rewrite history page: the old history address, the palette verb and Activity
-history rows land on `branch/commits`. **Checks.** The checks of the pull request. A GitLab or Bitbucket
-session reads them through the same five states once its host's
-`canReadChecks` is on (GitLab: the jobs of the head pipeline, a job allowed to
-fail counts as skipped; Bitbucket: its commit statuses; a token that cannot read pipelines gets the denied
-notice with `Open GitLab in Connections`); while it is off the tab says Goodboy does
-not show that host's checks yet (`checksViewOf`).
+## One mount, one answer
 
-**Work.** On a branch with an Auto run the tab opens with a story line and a `Leads` block
-(`BranchWorkLeads`, over `branchLeadsOf`): one line per Lead (glyph, `Auto`, title, state word, spend
-on this branch, and `also on` naming each other branch it worked on), with the compact `LeadTree` of the
-agents it ran here. The line opens the Lead page and has no button of its own; its `Back` leads to this tab.
-The Lead leaves the `Runs` group, which is then headed `Earlier runs`; a branch with no Auto run
-renders as before. The tab count reads `branchWorkCountsOf`, which still counts the Lead as a run, so it
-equals what the board cell of the same branch reads. The last tab holds what Goodboy did on the branch: `Runs`, `Questions` and `Artifacts`,
-each the branch group the session page draws for this mount (`branchGroupKeyOfMount`), with the same
-rows, folds (`N finished`, `N answered`, `N used`) and counts, so the two can never disagree. A fold
-owns its count: while a group folds, its header summary leaves the finished out, so `1 finished`
-reads once. The three sections are groups of one `ListGrid` with the runs' columns
-(`RUNS_GRID_COLUMNS`): question rows and artifact rows (`ArtifactWorkRow`, `ArtifactWorkGroup`)
-fill the same keys through `cells.byKey`, so the section icons, the row titles, the state words
-(`Needs you`, `Ready`) and the times share one x and the gaps between sections are the grid's
-`gap-y-8`. Runs and questions reuse the session page's group (`RunsByBranch`,
-`QuestionsByBranch`), all three with a `heading` in place of the branch name: its icon, its name and
-`All runs`, `All questions` or `All artifacts`, which open the session page on that group without
-touching its By branch or By state switch (`openBranchWork`). A section with nothing for the branch
-is left out; with nothing at all the tab says so. The tab body comes from one registration module of the session feature,
-`branchWorkTabRegistration` (`useWork` and `render`, typed by `BranchWorkTabRegistration` in
-`features/branch/branchWorkTab.ts`), which `useBranchTabFacts` and `BranchWorkBody` import
-directly; the artifacts section comes the same way from `branchWorkArtifactsRegistration`. The tab is
-always available: a missing registration is a build error, not a state the page handles. Past that
-module the Runs tab adds no import of the session feature's components or hooks.
-`useBranchTabFacts` reads it once per page for the badge and the body; until the questions and the
-artifacts are read the body is a skeleton, and for artifacts also until every provenance read has
-answered (`useArtifactBranchItems` `isSettled`). A run, an agent or an artifact opened from Work, by a
-row or by a row menu action, marks the new history entry with `Focus.runGroup`
-(`useMarkBranchWorkLeave`, written on the entry as it lands, not through `amendFocus`, which would
-sync that entry to the page still showing), so its parent crumb and Esc lead to this tab (`parentPlace`) even
-after Back from a child agent, and under By state the Artifacts page reveals the arrived branch only
-once every provenance read has answered (`useGroupArrival` waits for `isSettled`). A
-question opens its drawer over the Questions page, whose `Close` goes back here. Back also reopens the
-fold that held the row you left and scrolls to it (`useRowReturn`: `N finished`, `N archived`,
-`N answered`, `N used`). `Also on` on a row
-opens the Runs tab of the other branch. `Open branch` on Runs, Questions and Artifacts, and a run's
-branch chip, land on Runs (`openBranchWorkTab`), on the path the Branch page knows for that mount id
-(`sessionProjectMounts`), so a row with no worktree path never opens the fallback branch; a group, chip or series
-row whose mount the page does not know draws no `Open branch` (`useCanOpenBranchWork`, `branchPageMountOf`). The Projects tree draws no Work mark yet (`worktreeEntryFactsOf`
-gives Work no fact): the tree reads no runs or questions per row. The Monitoring entry for the branch has no slot yet:
-it joins as a fourth section once Monitoring takes a branch target.
+The page resolves one shown mount (`useBranchIdentity`: the address' mount, else
+the active one), and every widget reads it: the host word and new-request link
+(`useBitbucketRemote({ mountId })`), the readiness (`usePullRequestReadiness`,
+through `pullRequestViewOf`), the checks, the Comments tab and its count
+(`branchScopeOf`), the review entries and `Push N fixes` (`useReviewEntries`,
+`useReviewPush`). So a workspace with a GitHub and a GitLab repository shows the
+nouns, links and checks of the repository on screen. The write destination is a
+separate fact: opening a branch, Back and a reload leave it, and the push confirm
+names the repository when the session has several.
 
-The Branch page shows one branch. The trail carries the choice (see Segment
-menus); there are no worktree tabs. Every rewrite takes the shown
-mount's `mountId`, never the active mount. `Rebase on main` replays the
-branch on origin with the history engine and runs no agent. The engine first
-predicts the replay in memory; when it conflicts, the button reads
-`Rebase on main · N conflicts`. A conflict stops the rebase with the branch as
-it was and asks in the panel (`RebaseConflictPrompt` inside `RebaseStopPanel`): **Resolve with
-the Lead**, **Resolve in terminal** (`resolveRebaseMyself`: `worktree_start_rebase` in the worktree, then the
-terminal; `worktree_rebase_conflicts` reads each file's markers and `worktree_continue_rebase` finishes
-it) or **Abort rebase** (`keepRebaseStop`: it records `history_restored`
-with `reason: 'kept'`, which settles the stop in every window, and only then drops the run; a
-failed save changes nothing and offers Retry); no agent starts by itself. A clean rebase
-moves the branch only after the engine checks the result, with a backup ref and
-a push with lease.
+## Header
 
-The Commits tab draws the branch as a graph (`history_graph`): a grey main
-trunk, your branch leaving it at the real fork point, one
-row per commit newest first, and the base row at the fork. There
-is no row of fact chips over it: the graph already says how many commits are
-yours, how far main moved and what is online. At rest the section is one
-column (`grid-cols-1`) on a 72px lane (trunk at x 20, lane at x 52): one row
-per commit (title, then sha, author and age in
-`text-meta`, a faint `Not pushed` chip only on a commit that is not on
-origin, the grip a faint mark of a row that drags), then the base row.
+1. **The title**, the one h1: the pull request's title, or the branch name. On a
+   pull request you can edit, a click or `E` on Conversation (scope `pullRequest`)
+   makes it an input in the same 32px row; `Enter` saves to the host, `Esc`
+   cancels, a failure is an inline notice with Retry.
+2. **The state chip** (20 high, word and icon, `BranchStateChip`).
+3. **Three icon buttons** (`BranchTools`): **Start a run on this branch** (hidden
+   once merged or closed), **Open a terminal here** and **Open the browser here**.
+4. **One primary and `⋯`**, both 28px, `⋯` last. A blocked primary's reason (`1
+check still running.` on Merge) reads in the meta line and the tooltip.
 
-**The base row** (`HistoryBaseRow`) only says where the branch starts: `Based on main 9d4b1f7`, the
-merge base subject and its age. The rebase lives in the Commits head (`HistoryRebaseHead`), a split:
-`Rebase on main` while the branch is behind, and a chevron listbox of the repository's branches
-(`Rebase on another branch`) that retargets the button to `Rebase on <branch>`. The button asks
-in a `ConfirmPopover` anchored to it and runs the rebase command (`rebaseBranch`, with `ontoBranch`
-for another base) with a version of the current history kept. The Activity rebase suggestion
-(`Open rebase`) opens this page on the mount it names, scrolled to the base row with the head
-button focused (`HISTORY_FOCUS_BASE_EVENT`).
-The page header has one `?` button (`HistoryKeysHint`, an anchored popover)
-with `How to edit commits` (the Guide chapter Commits) and the keys of the
-focused row (`useHistoryKeys/historyKeys.ts`); no teaching line sits under the
-list. Each row's `...` menu lives in a fixed cell that shows on hover and
-focus (`row-actions`, `HistoryRowActions`), and `Previous versions` is a fold
-row with its count at the end (`HistoryVersionsLink`). The registry verb for
-`mount.rewriteHistory` and `diff.rewriteHistory` reads `Edit commits`. There is no
-preview or Apply step. The graph shows the live branch. Drag a row between
-two others to move it, or onto another to fixup into it. Focused-row keys are
-Alt with arrows to move, C for Fixup down, S for Squash down, R or Enter to
-reword, and Delete or Backspace to drop. Row titles and accessible names
-read the refreshed commits after each successful edit.
+The line under the title is the same on every tab: the number and the branch in
+mono, `into` the base, the author's picture and name with `opened it` and the age
+(`PullRequestHeaderLine`); without a pull request, `Not pushed`, `Pushed` or
+`Rebasing` and the distance to the base.
 
-The move refuses to overwrite local or untracked work. Files move with a
-two-way read-tree, then the branch ref moves with compare-and-swap. Undo
-and Redo use the same guarded move, writing a reciprocal backup first.
-A changed branch or head stops the operation. Resolve-thread commit
-references follow successful edits and return with Undo and Redo. A failed
-metadata update leaves the recovery refs available and shows an error.
-Empty commits stay; only removed or folded commits disappear. Commits before
-the first edit keep their shas.
+**There is no branch switcher in the header.** Choosing a branch in the Projects
+tree (`SessionLevel/WorktreeRow`) makes it the active mount and replaces the address
+with its landing tab (`switchBranchMount`), so the crumb, header and body follow and
+nothing of the old branch carries over. A new branch is the `+` on its folder row
+(`project.newBranch`), opening the new branch form (`forkMount` lands on the new
+worktree); a folder project cannot fork.
 
-Every move leaves a backup under `refs/goodboy/backup/`, in a namespace made
-from the full branch name. Live edits, Undo and Redo keep their backups for 30 days; they do not count
-toward the retained-backup cap. Restoring an older version
-uses the retained policy: the newest 20 per branch are kept, and an older one
-is dropped only while another retained ref contains its commit. The newest backup is
-never pruned. Older backups from the former naming remain read-only.
+### A branch reads one state word
 
-`Previous versions n` under the graph (and `Previous versions…` in the page menu) opens the `Previous versions` drawer (kind `history-versions`, side tier). Each version shows when, why (`Before a rebase`, `Before a fixup, squash or drop`, `Before a reword or edit`, worked out by `history_backup_facts`), the commit count, the difference with now and an expandable commit list. `Reset branch to this version` (danger, anchored confirm) moves the branch back and the drawer offers `Undo` right after.
+The first that applies of `Rebase stopped` (`Rebasing on main` while the rewriter
+works), `Merged`, `Gone on origin`, `Local only`, `Diverged from origin`, `Behind
+main by N` and `On origin` (`branchPriorityOf`).
 
-History rewriter's writable directories
-are its copy, that copy's own git admin folder, the object store and the
-packed-refs lock file git takes when it clears a rebase marker. They confine
-it only under an OS sandbox or permission check (Codex in `workspace-write`,
-Claude outside `bypassPermissions`); in `bypassPermissions`, the default, the
-kickoff's rules are what keep it inside the copy. Temporary copies left by a crash are removed when the
-app starts. Each copy lives in a folder Goodboy reserves atomically under
-`~/.goodboy/history-copies`, never in a temp folder a sandboxed agent can write, with an
-owner file and a lock it holds while the copy is in use, and nothing deletes a
-copy without both, so a second window never removes a copy in use. The owner
-file records the copy's git admin folder when the copy is made; the rewriter's
-roots and the cleanup use it only while it is `<common>/worktrees/<name>` and
-its `gitdir` names exactly that reserved copy, never the copy's own `.git`.
-Codex rewriter turns also lose write access to the temp folders. One line sits
-above the code and replaces the old toolbar and its counts: `Compared with <base> ·
-All N commits ⌄` on the left (the base is the mount's own base branch,
-never a fixed `main`; a commit view reads `Commit abc1234`, the working tree
-`Working tree`, `Staged only` or `Unstaged only`), and `Display ⌄`
-on the right, because the view decides which files you see,
-not what you do to the branch. `Display` holds `Unified | Split` and `Wrap long
-lines` (on by default, saved as `goodboy:diff-wrap`; split always wraps). The
-file count and the `+N -M` sums live in the change tree only. The diff scope has its own
-keys, wired by `useDiffKeys` in `ChangesPage`, all in tree order (folders
-first) and never while typing in a field: `J` and `K` go to the next and
-previous file and skip the files of a closed folder, `[` and `]` are aliases;
-`H` closes and `L` opens the folder of the file in view; `V` marks that file
-viewed and goes to the next unviewed one; `N` goes to the next unviewed file,
-wrapping to the first; `F` puts focus on the tree; `/` and `T` are one action
-(`diff.focusFilter`, `T` is its alias) and focus the filter field, the one input
-in the tree rail that carries `data-diff-filter` (it opens the rail first when
-it is folded). ⌥⌘B folds and opens the rail like every page rail. The keyboard button in the toolbar lists them once, from the registry (`keyHelp.ts`).
+- `Local only` and `Diverged from origin` read the branch's own remote copy
+  (`branchPushStateOf`), never its base.
+- The header reads the same word, so a stopped rebase never reads `On origin` next
+  to Abort rebase.
+- A branch whose pull request merged reads `Merged` even with no git ancestry (a
+  squash merge), everywhere (`isMountRequestMerged`).
 
-Big and folded cases (`shared/utils/windowRows.ts`).
-Past 120 visible rows the tree draws only the rows in view plus a margin (fixed
-28px rows, 44px for a rename), so 512 files scroll as light as 20. A change
-over 300 files starts with its deepest folders over 50 files closed (a parent of
-a big folder stays open), and starts that way again when a different set of
-files arrives, not on a reload of the same files. The diff keeps its own
-progressive mounting; the patch parse stays on the main thread because a
-512-file patch parses and becomes a tree in about 2ms (`largeChange.test.ts`
-fails over 100ms, the point where a worker earns its cost). While the diff loads the rail shows skeleton rows, named Loading files for
-screen readers, and no word on screen. An empty scope drops the tree and the toolbar and shows one centred empty state on the page column
-(`DiffEmptyState`): what is empty in plain words, the scope picker inline and,
-when the other scope has files, one button that switches to it (`Show branch vs
-main (6 files)`, `Show working tree (2 files)`; `alternate` on `useSessionDiff`
-counts them). Changes opens on the branch against its base when the working tree
-is clean and the branch has commits ahead, unless the scope was picked in the
-picker. The `brand-diff-large` scene is the 512-file case, `brand-diff-many`
-the 40-file one, `brand-diff-empty` the clean branch and `brand-diff-edits-only`
-the one that matches its base but has edits.
+## The one step
 
-A jump is instant, not smooth: file bodies keep
-`content-visibility` with a height estimated from their rows
-(`bodyEstimatePx`, see docs/traps.md "Diff file body height"), so for a few frames the view
-measures the picked header and snaps it back to the top until the heights
-settle. While you read, `useScrollAnchor` keeps the file under you still when
-a body above it renders and changes height; it stands down during that snap.
-The picked file stays the active one until you scroll, so `J` and `K`
-start from it. Each file has a sticky header (status letter, path, `from <old path>` on a rename,
-changes, comment count, a visible `Comment on file` button, `Viewed`, `⋯` with
-Open in editor, Copy path, Comment on file); a viewed file collapses and opens again when you unmark it, from the
-header or from anywhere else, and generated or binary files start collapsed.
-`Comment` (the header button, with the count of both kinds; the tree rows carry no comment
-button) opens a composer under the header and scrolls to it. It always saves a local note on the file (the same note a line
-gets, without an anchor), with a pull request or without one; the composer reads
-`Note on this file` and `Add note` in both cases. The note sits under the file
-header, counts in the header and the tree row, and lists in Comments
-with the file path and no line. Reaching the pull request is explicit: `Post to GitHub` under the note
-in Comments turns a file note into a `pr_review_drafts` row
-with `line` 0 (no migration), sent with the next review as a GitHub `FILE`
-thread (pending review, `addPullRequestReviewThread` with `subjectType: FILE`,
-then submit) or a GitLab discussion with `position_type: file`. A file draft
-written before 0.23 stays in the review draft, shows under its file header, and
-is stale, and skipped on submit, only when its file leaves the pull request.
-Rows are a CSS grid with `role="grid"`, never a table. Click a line
-number to comment, drag or shift-click to cover a range; the composer and the
-threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
-`+ Add note` on a line saves the note with the project and branch of the active
-mount (`diff_comments.project_id` and `branch`, m223). A note shows `Edit`,
-`Close note` and `Delete` in the diff (`Edit` rewrites the text through
-`updateDiffCommentBody`; Delete acts at once and offers Undo, which posts the same note again); the one fix action is `Fix comments` in the toolbar. While a fixer
-works on a note, Edit, Close note and Delete are disabled with "A fixer is working on
-this note". Close note goes through `closeResolvedNote`, the same path
-Comments uses. The Changes tab shows only the notes of its own branch; a note
-written before m223 is assigned to a branch only when a resolver run on a known
-mount used it, and the rest wait in `Unassigned notes` on the Session overview,
-each with `Move to` and `Discard`. `Move to` names the branch when the session
-has one, and opens an inline row of branches (the active one first, one per
-project and branch, no dialog) when it has several; the move goes through
-`assignDiffComment(sessionId, noteId, mountId)`. `Discard` goes through
-`discardDiffComments`: it deletes the rows at once and registers one
-`undoable` ("Note discarded" or "N notes discarded"), whose Undo and ⌘Z
-re-insert the same rows with the same ids (`restoreDiffComment`); a status
-`discarded` would need a migration because `diff_comments.status` is a CHECK
-list. With two or more notes the section header has `Discard all`. Write review puts
-its form under the last file: the line comments with Edit and Delete visible at rest (Delete offers Undo), the verdict,
-the summary, and one primary that says the verdict (`Approve`,
-`Request changes`, `Submit comments`), ⌘↵ from the summary. The form's `⋯`
-in the diff toolbar holds Discard review, which confirms. The actions are
-the `writeReview` kind of the action registry. Changes mount in batches of 20 as the
-browser idles, so a large diff stays responsive.
+At most one secondary and one primary (`branchActionsOf`), and the primary is never
+disabled. One function picks the step, the same on every tab (`branchStepOf`), first
+match wins:
 
-**Notes and host threads in Changes.** The diff draws both kinds of thread under their line, in one
-card shell (`CommentThread`), told apart by words and glyph, never by colour alone. A
-note is the `You` tile, the chip `Note`, its state and its age, with `Edit`, `Close note` and
-`Delete`; a host thread is the host's glyph, the author's avatar and name, the chip `On GitHub`
-(`On GitLab`, `On Bitbucket`), `Open` or `Resolved`, `3 replies` with the replies listed, and
-`Reply` (an inline composer posting through the reply verb, only where the host can
-take a reply), `Resolve` (only where it can resolve) and `Open in Comments`. A thread
-carries an outcome slot after its kind chip, which `Fix comments` fills with the state of a fix.
-Outdated host threads stay out of the diff and read `Outdated` in Comments. Threads of every host
-with threads show, not only GitHub's (`useDiffReviewThreads`). There is no
-Notes drawer: a note's home is its line, and Comments lists every thread. A door to a
-note lands on the note: Changes at its card (the card scrolls into view and takes focus) when
-the branch has no pull request, its thread in Comments when it has one (`openReviewTarget` for a
-`notes` destination, `reviewRequest` for a compose request, `Open in Changes` from a thread).
-Opening the run transcript of a note keeps its drawer beside Changes.
+1. a push already going up;
+2. `Answer` when a fix asks something, opening that comment;
+3. no fill while an agent works on the branch;
+4. `Apply N fixes`;
+5. `Retry push`;
+6. `Fix N comments`, opening the Fix comments drawer;
+7. `Push fix` for a check fix not yet on origin;
+8. `Push N commits`;
+9. `Publish N replies`;
+10. `Rebase on main` when the host says the request conflicts and the base moved;
+11. `Apply fix` once the Debugger proposed one;
+12. `Fix checks` while a check fails, but not while a pushed fix waits for its run
+    (`isAwaitingRun`);
+13. the pull request's own step.
 
-The numbers on the Comments surfaces each count one thing, and each comes from one function. `commentStateCountsOf` counts threads: `open` is every thread that is not done or replied, a thread left open on the host included, and `need you` is the asking, proposed, failed and fixable ones. The Comments tab count is those two over every thread on the branch, notes included, read by `pullRequestThreadCountsOf`, the function the merge box reads too, so until the queue loads both show the unresolved host thread heads, and its open count is the `Open` count of the switch on the Comments page, so the tab and the switch agree under `All`; under `Notes` or `On GitHub` the switch counts only that source while the tab keeps every branch thread. The pull request page counts the `On GitHub` source: the merge box, the Activity line and the review apps read it. `commentsCountOf` counts the same open threads for the merge label and the merge actions, with a thread left open on the host unresolved too. While a fix of two or more comments works, the count in the comments bar reads `Fixing · 2 of 3` (`fixRunCountOf`): the place of the comment in work, after the ones the fix already finished, and the tooltip of the Comments tab dot reads `Fixing 2 of 3 comments` (`fixRunPhraseOf`) from the same function. The drawer position reads `1 of 8 comments`: the length of the list being walked, which includes every thread of the branch, notes and the thread left open on the host.
+Comments come before the push so the branch is pushed once; a conflict is rebased
+before the checks, since a host may not re-run a conflicting request.
+
+### Every verb does the work where you stand
+
+- A verb never just opens a tab. `Fix checks`, `Apply fix` and `Push fix` run the
+  Overview row's chain (`checkChainActionOf`); `Fix checks` starts one Debugger, its
+  tooltip naming the model and effort.
+- No line under the tabs says what runs. A comment fix works on its comment row
+  (`CommentWorkLine`) and a check agent on its check row
+  ([branch-work.md](branch-work.md#checks)); the Comments and Checks tabs carry a
+  live dot on every tab (`commentTabLiveOf`, `checkTabLiveOf`).
+- **One agent works per branch.** A check agent live on any check of the mount
+  (`liveCheckWorkOf`, from the agent rows, so a second window sees it; a fixer that
+  ended never counts) draws the dot and no fill, and the other doors that start an
+  agent (row Analyze, the Overview card, the Fix comments launch, the Debugger and
+  Implementer runners) stay disabled with the name of what runs.
+
+### When the step steps down
+
+- A running push, an open stop or a queued request keeps the push (and `Retry
+push`) in the secondary alone, no primary beside it; `Publish N replies` stays in
+  the queue.
+- While the new pull request form leads, the header draws no push (it waits in
+  `⋯`), so the unpushed count is said once, under the title.
+- A comment selection takes the fill, and the step steps down until it clears.
+- A closed request has no push, and `Force push` never sits there: while origin
+  moved it waits in `⋯` behind its confirm.
+- **An open stop** (`hasOpenRebaseStopOf`: the stop the rebase panel shows, through
+  `rebaseStopOf`, live or rebuilt from session events after a restart, or a
+  worktree mid rebase, from the live status or, for the registry and the palette,
+  the mount's status cache, the write destination's when no mount is named) leaves
+  the header with no primary and no push; `Abort rebase` sits in the rebase banner
+  only.
+- A blocked `Merge`, `Mark ready` or `Reopen` draws no primary: it waits in `⋯`,
+  disabled with its reason, and runs through the header's own confirm and failure
+  line. The header never repeats its primary in `⋯`.
+- While the branch is behind and another step leads, `Rebase on main` waits in
+  `⋯`, its one home.
+
+### The pull request's own step
+
+`pullRequestNextStepOf`: `Mark ready for review` on a draft; `Request review` while
+nobody was asked, or once changes were requested and nothing is left to fix; the
+merge method (`Squash and merge`) once ready; `Rebase on main` when only the base
+moved; `Reopen` when closed. None while a reviewer, a check or a comment that needs
+you is on it (counted for the shown request only, `pullRequestThreadsOf`), on a
+queued or merged one, or while a banner holds the next action. On someone else's
+open request the step is `Review` (`pullRequest.writeReview`).
+
+Without a pull request the comment steps come first, then `branchNextStepOf`: `Push
+N commits` while commits are not on origin, `Rebase on main` while behind, and none
+once pushed and up to date, where the create form's `Create pull request` is the
+one primary.
+
+### After the merge
+
+1. `Remove worktree` while the folder is there (`diff.removeWorktree`); its confirm
+   shares `mountCleanUpWordsOf` with Clean up: the folder and local branch go, the
+   pull request stays, and the branch on origin stays unless the after-merge setting
+   removes it.
+2. Undo on its toast brings the branch back from the keep ref (on origin too if it
+   was there), and `attachMount` rebuilds the worktree in a fresh folder, so ignored
+   files do not return.
+3. A blocker such as an open terminal draws it disabled in the secondary with the
+   reason, and a refusal keeps the step; `Archive session` then waits in `⋯`.
+4. Once the last folder is gone the step is `Archive session` on the session
+   (`session.archive`, `hasRemovedMergedMountOf`, every host), unless another open
+   branch keeps it away. `diff.archiveSession` confirms only while agents run, else
+   it offers Undo.
+
+### Merge readiness
+
+One rule decides the step, the merge box and the merge action
+(`evaluatePrMergeReadiness`, `features/review`).
+
+- Blockers: a merged, closed, queued or draft pull request, conflicts, checks
+  unknown, failing or running, changes requested, a required review, a write
+  already running, and commits not on origin (`unpushed` in `MergeReadinessFacts`,
+  from the push's status: the merge box reads `3 commits not pushed` and `⋯` shows
+  the reason). `useSessionDiff` follows the status cache (`subscribe`), so a push
+  reopens the merge without a reload.
+- Caveats: comments that need you and a live fix run. The companion's `mergePr`
+  asks the same function and refuses on a caveat too, with the same unpushed count.
+- The merge confirm is an inline panel with a method picker (`ActionConfirm.choice`,
+  `ChoiceCards`): `Squash and merge` (`One commit on main`), `Merge commit`,
+  `Rebase and merge`; squash by default when allowed, and a forbidden method
+  disabled with its reason (`Turned off in payments-api`). Merging raises one plain
+  `info` toast with no Follow. The box is in
+  [branch-conversation.md](branch-conversation.md#the-merge-box).
+
+### The `⋯` menu
+
+Never more than five rows (`branchMenuRowsOf`):
+
+- the lifecycle: Edit title and description, Request review, Convert to draft,
+  Close or Reopen, Open with the host logo (named Open on GitHub), Copy link;
+- branch actions: Change base branch… (before a pull request exists), Copy patch,
+  `Archive session` on a merged request;
+- `Cancel auto-merge` on a queued request with auto-merge; `Merge when green` on an
+  open GitHub request with checks running, which asks for the method and hands the
+  merge of the reviewed head to the host (`pullRequest.mergeWhenGreen`);
+- the push whenever the header does not draw one (`branchShownIdsOf`).
+
+Rows with another home drop first: Edit title and description, Copy link, Copy
+patch, and Rebase and Request review, which live on Commits and Conversation.
+
+## Sections and landing
+
+`branchTabsOf({ state, hasComments })` (`features/branch/branchTabs.ts`):
+
+| State                                         | Tabs                                                   |
+| --------------------------------------------- | ------------------------------------------------------ |
+| no pull request, no comment                   | Conversation, Changes, Commits, Work                   |
+| no pull request, a local note or a thread     | Conversation, Changes, Commits, Work, Comments         |
+| Draft, Open, Approved, Queued, Merged, Closed | Conversation, Changes, Commits, Checks, Work, Comments |
+
+- Comments stays its own tab: it holds the review flow (pick threads, fix them,
+  resolve, push) and the notes of a branch with no pull request. Conversation shows
+  the threads in its activity and links there.
+- The first tab is `Conversation` on every host, so `Overview` names only the
+  session overview. Keys: ⌥⌘1, Comments ⌥⌘R, Changes ⌥⌘F, in the row's tooltip.
+  Checks never appears without a pull request. A pick replaces the address.
+- Merged and Closed make the page read only (`isBranchReadOnly`).
+
+Every "go to the branch" door lands through `branchLandingTabOf`
+(`features/branch/branchLandingTab.ts`): an explicit section wins, else
+`Conversation` when the active mount has a pull request, else `Changes`; then the
+door resolver drops a section the state lacks.
+
+- A Projects tree row, the Branch crumb, `⌥⌘1`, a mount's `Open PR`, the Board's
+  pull request chip, an approved or changes-requested mark and `Create PR` land on
+  `Conversation`.
+- A comment, a thread, a fix run, a note, ⌥⌘R and a draft comments chip name
+  `Comments` (with no pull request and no comment, `Changes`); `Changes` and
+  `Commits` doors name theirs; a CI failure names `Checks` (with no pull request,
+  `Conversation`).
+- The chosen section is stored per session and read through `branchTabOf`
+  (`useBranchTab`), never `branchTab[sessionId]` directly, so a section is only
+  remembered once chosen. When the stored one is gone the page shows one the state
+  has, without writing history.
+
+## The counts on the tabs
+
+Each tab carries its count in faint ink, colour only for what wants you, computed
+once (`branchTabFactsOf`, on `worktreeEntryFactsOf`, for the tab and its page head).
+
+- A slot reads nothing until the current branch's data arrives, and nothing at
+  zero. After a switch a count read for the previous target never shows:
+  `useSessionDiff` keys commits and status by worktree path and base, and a failed
+  read shows the error with no count.
+- `BranchPage` loads the mount's history draft (`loadHistoryDraft`) once on open,
+  so Commits has a number on every section.
+
+| Tab          | Count                                                                                                                                        |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pull request | `Draft`, `Merged` or `Closed`                                                                                                                |
+| Comments     | the open entries of the branch scope (`useBranchReview().branchEntries`), warning when some need you; the notes alone without a pull request |
+| Changes      | the file count and `+added -removed` of the branch                                                                                           |
+| Commits      | the commit total (the ahead count); `↑N` (`N not pushed`) only when no total is known                                                        |
+| Checks       | failing (danger) or running (info), else passed                                                                                              |
+| Work         | [branch-work.md](branch-work.md#the-count)                                                                                                   |
+
+- Inside Changes the rail head and `Viewed N of M` count the loaded diff
+  (`filesHeadFactOf`), while the tab keeps the polled summary.
+- The diff selector says `All N commits` with the Commits total and cuts its list
+  at the same base (`listBranchCommits` passes `baseBranch` to `worktree_commits`);
+  `All commits` when a capped list has no total, and `Showing latest 100` whenever
+  capped (`branchCommitsLabel`).
+- **The unpushed count** is `branchPushFactsOf(...).toPush`: the history draft's
+  unpushed commits once the branch has an upstream, else the upstream's ahead count
+  (a diverged `2 ahead, 3 behind` reads `↑2`), and for a branch never pushed its
+  commits over main. `branchPushFactsOf` in `shared/lib/branchPushState.ts` is the
+  one owner of `{ state, toPush, canForce }`, read by the strip, the form, the step,
+  the registry and the rail, so a diverged branch never reads `Pushed`.
+- The Comments counts are in
+  [branch-comments.md](branch-comments.md#one-function-per-number).

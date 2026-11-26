@@ -446,7 +446,7 @@ normal unmount for each proposal in turn (`resolveMountCleanup` passes
 `isRemovalRequired`, so a removal git refuses fails the `unmount` operation,
 leaves the mount attached and the proposal pending, and reports the error;
 pressing `Remove worktree` again retries); the row never offers a worktree that a running agent
-or a live Auto tree still uses (`mountsInUseOf`: a tree that is not finished or stopped keeps its
+or a live Auto tree still uses (`isMountInUse`, shared with Delete local branch: a tree that is not finished or stopped keeps its
 primary mount and the mounts of its delegations, so an agent that can still be continued counts);
 `Not now` hides the row with Undo
 (the proposal stays pending, keyed by its request ids). Paths that

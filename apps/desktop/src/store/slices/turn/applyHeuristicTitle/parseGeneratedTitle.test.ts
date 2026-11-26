@@ -17,6 +17,22 @@ describe('parseGeneratedTitle', () => {
     expect(parse('Sure.\n<title>Block double credits</title>\nDone.')).toBe('Block double credits');
   });
 
+  it('keeps the goal title when the model answers in another language than the request', () => {
+    const ask = 'Guardando payments-api, sviluppare le convenzioni sulla pagina di onboarding';
+
+    expect(parse('<title>Responder pregunta sobre el contexto</title>', ask)).toBe(
+      'Guardando payments-api',
+    );
+  });
+
+  it('keeps a model title written in the language of the request', () => {
+    const ask = 'Guardando payments-api, sviluppare le convenzioni sulla pagina di onboarding';
+
+    expect(parse('<title>Sviluppa le convenzioni della pagina onboarding</title>', ask)).toBe(
+      'Sviluppa le convenzioni della pagina onboarding',
+    );
+  });
+
   it('rejects a tagged title over six words and uses the goal', () => {
     expect(parse('<title>Fix the flaky summarizer parser regression now</title>')).toBe(DERIVED);
   });

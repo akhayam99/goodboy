@@ -1,4 +1,5 @@
-import type { AgentRole, WorkflowRun } from '@goodboy/types';
+import type { AgentRole, Session, Workflow, WorkflowRun } from '@goodboy/types';
+import { sessionOwnWordsOf, sessionTranscriptOf } from '../turn/sessionLanguage';
 import { NAMES } from '../../../shared/utils/names';
 
 type SectionParams = {
@@ -52,3 +53,21 @@ export const orchestratorProcessText = ({ processText, run }: ProcessParams): st
   }
   return process === '' ? standing : `${process}\n\n${standing}`;
 };
+
+type GoalParams = {
+  readonly run: Pick<WorkflowRun, 'goal'>;
+  readonly workflow: Pick<Workflow, 'goal'>;
+  readonly session: Session;
+  readonly state: Parameters<typeof sessionTranscriptOf>[0]['state'];
+};
+
+export const orchestratorGoalFields = ({ run, workflow, session, state }: GoalParams) => ({
+  goal: run.goal ?? workflow.goal ?? session.goal,
+  languageText:
+    run.goal ??
+    workflow.goal ??
+    sessionOwnWordsOf({
+      session,
+      transcript: sessionTranscriptOf({ state, sessionId: session.id }),
+    }),
+});

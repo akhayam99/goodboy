@@ -119,6 +119,26 @@ describe('deleteMergedBranches', () => {
     );
   });
 
+  it('deletes and names a branch once when two suggestions point at the same mount', async () => {
+    const runAfterMergeCleanup = vi.fn(async () => {
+      throw new Error('Kept goodboy/ledger-export: its worktree has uncommitted changes.');
+    });
+    useAppStore.setState({
+      runAfterMergeCleanup,
+      settleMountCleanup: vi.fn(async () => undefined),
+    });
+    const first = proposalOf({ branch: LEDGER });
+
+    await deleteMergedBranches({
+      sessionId: SESSION_ID,
+      proposals: [first, { ...first, requestId: 'request-other', reason: 'session_delete' }],
+    });
+
+    expect(runAfterMergeCleanup).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(failureRows()).toHaveLength(1));
+    expect(failureRows()[0]?.title).toBe(`Couldn't delete the local branch ${LEDGER}`);
+  });
+
   it('keeps one row as retries go: a retry that fixes one of two leaves one row for the other', async () => {
     const outcomes = new Map<string, Array<'fail' | 'delete'>>([
       [LEDGER, ['fail', 'delete']],

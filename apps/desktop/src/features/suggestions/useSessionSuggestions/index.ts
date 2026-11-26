@@ -31,7 +31,7 @@ import { idleMountsOf } from '../signals/idleMountsOf';
 import { nextScriptRulesOf } from '../signals/nextScriptRulesOf';
 import { mergedAtOf } from '../signals/mergedAtOf';
 import { mergedMountsOf } from '../signals/mergedMountsOf';
-import { mountsInUseOf } from '../signals/mountsInUseOf';
+import { isMountInUse } from '../../../store/slices/branch-cleanup/mountInUse';
 import type { NextStepSignals, SignalQuietAgent } from '../nextStepSignals';
 import { deriveNextSteps } from '../deriveNextSteps';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
@@ -168,6 +168,12 @@ export const useNextStepSignalsFrom = ({
   const mounts = useAppStore(
     (state) =>
       state.sessionProjectMounts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionProjectMount>),
+  );
+  const inUseMountKey = useAppStore((state) =>
+    mounts
+      .filter((mount) => isMountInUse({ state, sessionId, mountId: mount.mountId }))
+      .map((mount) => mount.mountId)
+      .join(','),
   );
   const recommendedWorkflow = useAppStore(
     useShallow((state) => {
@@ -493,7 +499,7 @@ export const useNextStepSignalsFrom = ({
         });
         return [{ agentId: agent.id, label: AGENT_KIND_META[kind].noun, quietMs }];
       }),
-      inUseMountIds: mountsInUseOf({ agents: effectiveAgents, trees: autoTreeViews }),
+      inUseMountIds: new Set<string>(inUseMountKey === '' ? [] : inUseMountKey.split(',')),
       mergedMounts: mergedMountsOf({
         mounts,
         merged: mergedFacts,
@@ -532,6 +538,7 @@ export const useNextStepSignalsFrom = ({
     advanceByRunId,
     agentKindOverride,
     autoTreeViews,
+    inUseMountKey,
     agentsByRunId,
     attachedRuns,
     blockedTranscripts,

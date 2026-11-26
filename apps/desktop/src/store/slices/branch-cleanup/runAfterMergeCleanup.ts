@@ -11,10 +11,12 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { loadMountViews } from '../project-mounts/mountViews';
 import {
   keptBecauseFolder,
+  keptBecauseInUse,
   keptBecauseNotCreated,
   keptBecauseOfError,
   keptBecauseOfMerge,
 } from './keptBecause';
+import { isMountInUse } from './mountInUse';
 import { repoDeletesMergedBranches } from './repoDeletesMergedBranches';
 import { resolveAfterMergeRule } from './resolveAfterMergeRule';
 import type { AfterMergeOutcome, GetFn, RunAfterMergeCleanupParams, SetFn } from './types';
@@ -89,12 +91,16 @@ export const runAfterMergeCleanup = (set: SetFn, get: GetFn) => {
     if (mergeReason !== null) {
       return ask(mergeReason);
     }
+    if (isRequested && isMountInUse({ state: get(), sessionId, mountId })) {
+      return ask(keptBecauseInUse({ branch }));
+    }
     const unmounted = await get()
       .unmountMount({
         sessionId,
         mountId,
         requestId: `after-merge:${mountId}:${sha}`,
         isRemovalRequired,
+        ...(isRemovalRequired ? { onKeptFolder: 'refuse' as const } : {}),
       })
       .catch((error: unknown) => ({ kept: true, reason: removalReasonOf({ error }) }));
     if (unmounted.kept) {

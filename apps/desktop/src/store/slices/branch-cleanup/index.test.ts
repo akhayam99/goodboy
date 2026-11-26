@@ -255,6 +255,89 @@ describe('runAfterMergeCleanup', () => {
     expect(h.deleteBranchChecked).not.toHaveBeenCalled();
   });
 
+  it('keeps the branch and says to remove the worktree first when the worktree holds changes', async () => {
+    const context = makeStore();
+    Object.assign(context.store.state, {
+      unmountMount: vi.fn(async () => ({
+        kept: true,
+        reason: 'unstaged-changes, untracked-files',
+      })),
+    });
+
+    expect(await run(context)).toEqual({
+      kind: 'ask',
+      keptBecause: `Kept ${BRANCH}: its worktree has uncommitted changes. Remove the worktree first.`,
+    });
+    expect(h.deleteBranchChecked).not.toHaveBeenCalled();
+  });
+
+  it('removes a clean worktree that holds a merged branch, then deletes the branch, and Undo brings it back', async () => {
+    const context = makeStore();
+    const order: string[] = [];
+    const unmountMount = vi.fn(async () => {
+      order.push('unmount');
+      return { kept: false, reason: null };
+    });
+    Object.assign(context.store.state, { unmountMount });
+    h.deleteBranchChecked.mockImplementationOnce(async () => {
+      order.push('delete');
+      return {
+        keepRef: `refs/goodboy/deleted/${BRANCH}`,
+        deletedOnOrigin: false,
+        originError: null,
+      };
+    });
+
+    const outcome = await run(context);
+
+    expect(order).toEqual(['unmount', 'delete']);
+    if (outcome.kind !== 'deleted') {
+      throw new Error('the branch was not deleted');
+    }
+    h.getDeletedBranch.mockResolvedValueOnce(outcome.deleted);
+    await restoreDeletedBranch(context.set, context.get)({ id: outcome.deleted.id });
+    expect(h.restoreDeletedBranch).toHaveBeenCalledWith(
+      expect.objectContaining({ branch: BRANCH, sha: 'sha-tip', projectId: PROJECT_ID }),
+    );
+    expect(h.markDeletedBranchRestored).toHaveBeenCalled();
+  });
+
+  it('keeps the branch when an agent is running or waiting in the mount', async () => {
+    const context = makeStore();
+    Object.assign(context.store.state, {
+      sessionPhaseRuns: { [SESSION_ID]: [{ id: 'agent-lead', status: 'blocked' }] },
+      agentTurnDestination: { 'agent-lead': { kind: 'mount', mountId: MOUNT_ID } },
+    });
+
+    const outcome = await runAfterMergeCleanup(
+      context.set,
+      context.get,
+    )({ sessionId: SESSION_ID, mountId: MOUNT_ID, expectedBranch: BRANCH, isRequested: true });
+
+    expect(outcome).toEqual({
+      kind: 'ask',
+      keptBecause: `Kept ${BRANCH}: an agent still works in its folder.`,
+    });
+    expect(context.store.state.unmountMount).not.toHaveBeenCalled();
+    expect(h.deleteBranchChecked).not.toHaveBeenCalled();
+  });
+
+  it('deletes the branch of a mount whose agent already finished', async () => {
+    const context = makeStore();
+    Object.assign(context.store.state, {
+      sessionPhaseRuns: { [SESSION_ID]: [{ id: 'agent-lead', status: 'completed' }] },
+      agentTurnDestination: { 'agent-lead': { kind: 'mount', mountId: MOUNT_ID } },
+    });
+
+    const outcome = await runAfterMergeCleanup(
+      context.set,
+      context.get,
+    )({ sessionId: SESSION_ID, mountId: MOUNT_ID, expectedBranch: BRANCH, isRequested: true });
+
+    expect(outcome.kind).toBe('deleted');
+    expect(context.store.state.unmountMount).toHaveBeenCalled();
+  });
+
   it('stops when the folder refuses to go', async () => {
     const context = makeStore();
     context.store.state = {
@@ -518,7 +601,9 @@ describe('deleteBranches', () => {
 
     expect(outcome.deleted).toHaveLength(1);
     expect(outcome.deleted[0]?.onOrigin).toBe(true);
-    expect(outcome.kept).toEqual(['Kept goodboy/held: another folder has it checked out.']);
+    expect(outcome.kept).toEqual([
+      'Kept goodboy/held: another worktree has it checked out. Remove that worktree first.',
+    ]);
     expect(context.store.state.deletedBranches[WORKSPACE_ID]).toHaveLength(1);
     expect(context.store.state.recordSessionEvent).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'branch_deleted' }),
