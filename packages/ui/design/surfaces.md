@@ -105,8 +105,8 @@ loads as a `SkeletonRow`, a failed read is an inline danger `Notice` with Retry.
 ## Workspace chat
 
 The chat page (`features/workspace-chat/components/ChatStudio`) is a studio
-on `StudioRailLayout`: the chat list is the rail on `chrome`, one
-conversation is the wrapped sheet, and "Start work from chat" is the
+on `StudioRailLayout` with `placement="page"`: the chat list is the rail on
+the page `background`, one conversation is the detail beside it, and "Start work from chat" is the
 `DrawerColumn` drawer beside it, never a dialog.
 
 - **List rows** are `InteractiveRow`s: title `text-meta`, the last answer

@@ -38,20 +38,16 @@ Use `cond && <X/>` for one element. Use a ternary only when both branches render
 
 ```tsx
 // good
-{
-  isRunning && <CostBadge />;
-}
-{
-  items.length === 0 ? <Empty /> : <List items={items} />;
-}
+<>
+  {isRunning && <CostBadge />}
+  {items.length === 0 ? <Empty /> : <List items={items} />}
+</>
 
 // bad
-{
-  isRunning ? <CostBadge /> : null;
-}
+<>{isRunning ? <CostBadge /> : null}</>
 ```
 
-Never gate on a raw number: `{count && <X/>}` renders the text `0` when `count` is `0`. Gate on a boolean: `count > 0 && <X/>` or `!!count && <X/>`.
+Never gate on a raw number: `{count && <X/>}` renders the text `0` when `count` is `0`. Gate on a comparison: `count > 0 && <X/>`.
 
 ## Compare explicitly, never coerce
 

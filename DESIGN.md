@@ -121,7 +121,7 @@ Six rules, written so you can check a diff against them directly.
   one trailing control stays on the row, only when it is the row's own toggle
   and differs from opening it (Run or Stop on a script, Viewed on a diff file,
   the selection box), in a fixed cell at the same x on every row. Nothing
-  appears only on hover (G17, guarded by `no-hover-only-actions.test.ts`): a
+  appears only on hover (`no-hover-only-actions.test.ts`): a
   hover reveal is allowed when focus, the right click menu or the palette
   reaches the same verb. The cue is taught three times and never drawn at rest:
   the first time the pointer enters a list every row shows its cell until the
@@ -161,9 +161,8 @@ list.
 
 ## One frame for every page
 
-Fourteen rules for how a page is built and how the user moves between pages. They
-came from reviewing the running app page by page; a screen that breaks one reads
-as a different product. Tokens are in
+How a page is built and how the user moves between pages. A screen that breaks
+one of these rules reads as a different product. Tokens are in
 [packages/ui/DESIGN-SYSTEM.md](./packages/ui/DESIGN-SYSTEM.md), the navigation
 model in [docs/navigation/model.md](./docs/navigation/model.md).
 
@@ -247,8 +246,8 @@ model in [docs/navigation/model.md](./docs/navigation/model.md).
 
 ## The contract of an action
 
-Eight rules. Each one exists because a shipped defect broke it. They cover what
-a surface promises and what it then does. A screen that reads well but lies
+What a surface promises and what it then does. Each rule exists because a
+shipped defect broke it. A screen that reads well but lies
 about its effect is a worse defect than one that reads badly.
 
 - **Show the destination beside anything that writes.** When a surface sends a
@@ -313,23 +312,21 @@ about its effect is a worse defect than one that reads badly.
 
 ## Color & theme
 
-- **Dark by default**, light fully supported, and Match system as a third
-  choice that follows the OS. The choice is saved. Settings > App > General
-  holds the choice; the palette toggle sets the opposite of what is showing.
+- **Dark by default**, light fully supported, and System as a third choice
+  that follows the OS. The choice is saved in **Settings › This Mac › Look and
+  alerts**, and Search or run offers **Theme: dark**, **Theme: light** and
+  **Theme: system** ([docs/navigation/shell.md](docs/navigation/shell.md)).
 - **More contrast is one switch, not a slider.** `data-contrast="more"` on the
-  root, set by `prefers-contrast: more` or by Settings > App > General > More
-  contrast, moves the soft border to the control border value, lifts the hover and
+  root, set by `prefers-contrast: more` or by the More contrast switch on the
+  same Settings page, moves the soft border to the control border value, lifts the hover and
   selected washes one step, draws idle marks and disabled text at the faint
   text color and the frame edge at 2:1. It overrides tokens only, in both
   themes; `more-contrast-tokens.test.ts` holds the floors for each.
-- **The brand mark in the chrome is one quiet signature**: a 24px `BrandTile`
-  at the foot of the places rail, below Report, on the rail axis, its bottom on
-  the bottom of the content sheet. Black tile, white dog, the same in both themes,
-  with no ring, border, glow or gradient. It is the door to What's new: a quiet
-  button with the tooltip "What's new", and a small unread dot while a release
-  has notes you have not read.
-  The top bar and the sidebar draw no mark. Splash 84, Home 40, setup 24
-  ([docs/brand.md](docs/brand.md)).
+- **The brand mark in the chrome is one quiet signature**: a 32px `BrandTile`
+  at the foot of the places rail, black tile and white dog in both themes. It
+  is the door to What's new. The top bar draws no mark. Its rules are in
+  [docs/brand.md](docs/brand.md), its place in
+  [docs/navigation/shell.md](docs/navigation/shell.md#the-rail-foot).
 - Color comes from **semantic tokens**: `success`, `warning`, `danger`, `info`,
   `merged`, the elevation ramp, per-provider accents. A raw hex or `oklch` in a
   component is a bug. Raw colors are allowed in one place only, because it
@@ -463,9 +460,9 @@ one word under it (Board, Tasks, Workflows, Chat, Connect, Impact), under New.
 A tool you open beside your work is an icon on the tools rail and opens the
 dock, with Open full page (Terminal, Browser, Monitor). Scripts and Ask also
 open panels from the rail. Chat and Impact are places. Monitoring is a tool you
-glance at beside Terminal: it left the places rail, Monitor on the tools rail
-(`toggleRailTool`) opens `MonitoringDrawer` beside the page, and its Open full
-page opens the Monitoring page, also reachable from the Go menu and the palette
+glance at beside Terminal: Monitor on the tools rail (`toggleRailTool`) opens
+`MonitoringDrawer` beside the page, and its Open full page opens the Monitoring
+page, also reachable from the Go menu and Search or run
 ([docs/navigation/model.md](docs/navigation/model.md)).
 
 A face is neither a door nor a tool. The Desk is the working face of a
@@ -475,8 +472,8 @@ session. You move between sessions from Sessions in the top bar, where each row
 says what waits on you, and Desk when the session opens there.
 
 An object the app connects to has one home, and Settings is not it. Providers
-and integrations live in Connections; Settings keeps only preferences (App and
-This workspace, workspace Models included). Every link to a provider or a tool
+and integrations live in Connections; Settings keeps only preferences (This
+Mac and the workspace, workspace Models included). Every link to a provider or a tool
 opens its Connections page, never a Settings scope.
 
 Every session row ends on one trailing column: one `StatusMark` per row, 16px,
@@ -599,6 +596,8 @@ second home for them.
 - A new announcement replaces the last one; a sentence is short enough to hear
   whole. Not yet tried with a screen reader: the policy is held by
   `useTurnEndAnnouncement.test.tsx` and `useNeedsYouAnnouncement.test.tsx`.
+
+## Scales
 
 Every pixel is intentional: if it carries no meaning, cut it.
 

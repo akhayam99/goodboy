@@ -47,10 +47,9 @@ one shape for a failed load, an inline danger `Notice` with Retry and Details
 (Empty states, state 4). It takes `labels`, so two failed reads of one view share one strip. Budget alerts
 and the unpriced-turns warning are banners. Guide tips, the partial brief after a step,
 the branch switch confirmation and merge conflicts are `inline`. So are three
-failures that used to print one red line: the wireframe viewer ("Couldn't show
+failures with the raw message behind Details: the wireframe viewer ("Couldn't show
 the pages", with Retry), the Scribe's pull request text ("Couldn't write the
-pull request text", with Retry) and the first-lap publish steps, each with the
-raw message behind Details. The publish panel's missing GitHub tool is an
+pull request text", with Retry) and the first-lap publish steps. The publish panel's missing GitHub tool is an
 `inline` `warning` Notice that holds the install command with `CopyButton` as
 its children and **Check again** as its action. A page that
 cannot load its list is an `inline` `danger` Notice with `role="alert"`
@@ -168,7 +167,7 @@ the place of its work from the click to the result.
   agent; it says what you can do next. A result you read before acting opens
   under the item, not in a drawer: Review fix shows a check's proposal with
   Apply fix and Dismiss below its row, and the drawer keeps the full detail.
-  Failing checks do this today (`checkRowResultOf`, `CheckProposalInline`),
+  Failing checks do this (`checkRowResultOf`, `CheckProposalInline`),
   and so do review comments (`commentRowResultOf`, `CommentFixReview`:
   Review shows the diff with Apply, Retry with a hint and Discard). Retry
   starts a new attempt; the row reads the newest one, and while it starts the
@@ -185,7 +184,7 @@ the place of its work from the click to the result.
   place, Fix ready) and one quiet count in the list's header, with Stop all in
   its `⋯`. The tab that holds live work carries a breathing dot on every
   tab, its tooltip the word and the item ("Analyzing payments-api / test").
-  Review comments do this today: `commentWorkOf` gives each comment Fixing,
+  Review comments do this: `commentWorkOf` gives each comment Fixing,
   or Queued with "2nd in this fix", and `FixRunCount` draws the count as one
   `ItemWorkLine` (Fixing · 2 of 3, with the time). One agent fixes the whole
   batch, so Stop on any of its rows stops all of it, behind a confirm and a
@@ -193,7 +192,7 @@ the place of its work from the click to the result.
 - **The place.** While you are on the tab, an item that changes state keeps
   its group and its place; the groups sort again when you come back to the
   tab. The list component holds the order, never the store. Failing checks
-  and review comments do this today (`useHeldCheckGroups`,
+  and review comments do this (`useHeldCheckGroups`,
   `useHeldReviewGroups`).
 - **The words.** Every word and verb comes from `ITEM_WORK_WORDS`
   (`itemWork/itemWorkWords.ts`): Starting, Queued, Analyzing, Fixing,
@@ -257,16 +256,15 @@ drawn as an empty list.
 
 ### The primitives
 
-`EmptyState` takes `size: 'page' | 'section'`. Retired sizes are removed. A
-`bordered` state with no size still maps to `page` without a border. The glyph
+`EmptyState` takes `size: 'page' | 'section'`. A `bordered` state with no size
+maps to `page` without a border. The glyph
 is muted, without a tinted circle. A `page` state sits at the top left of the
 content column (18px glyph, title, one sentence, then its one action), never
 centred in the pane; the empty chat stage (`ChatEmpty`) is the one centred
 stage. A `page` state is an `h2` unless
 `headingLevel` chooses another level; a `section` state has no heading.
-`FilledEmptyState` remains a thin section wrapper only for host callers awaiting
-integration. Owned callers name the section size directly. A caller passes only
-layout or an inset, never a fill, border or circle.
+`FilledEmptyState` is `EmptyState size="section"`; a new caller names the size
+directly. A caller passes only layout or an inset, never a fill, border or circle.
 
 An empty line inside a section ("No scripts match "tset".") is `EmptyLine`: one
 faint sentence, an optional glyph before it and an optional action after it. It
@@ -299,18 +297,11 @@ defect to fix when the page is touched, and its test moves with it.
 | Chat           | Header, three messages and composer   | No rail and no empty page: the new chat, its message box reads Message an agent                     | `EmptyLine`: No chats match this filter, Clear filter    | `ErrorStrip`: Couldn't load chats, Retry and Details                | N/A                                                |
 | Workflows      | Three skeleton rows                   | `page`: No workflows yet, Restore built-in workflows                                                | `EmptyLine`: No workflows match, Clear search            | `ErrorStrip`: Couldn't load workflows, Retry and Details            | N/A                                                |
 | Monitoring     | Skeleton rows                         | `page`: No ports in use                                                                             | `EmptyLine`: No ports match, Clear search                | `ErrorStrip`: Couldn't load ports, Retry and Details                | N/A                                                |
-| Terminal       | N/A, a tab opens on its click         | `page`: No terminals yet, New terminal                                                              | `EmptyLine` in the New terminal picker                   | `ErrorStrip`: Couldn't open the terminal, Retry and Details         | N/A                                                |
+| Terminal       | A status line, Starting the shell     | `page`: No terminal yet, New terminal                                                               | `EmptyLine` in the New terminal picker                   | `ErrorStrip`: Couldn't open the terminal, Retry and Details         | N/A                                                |
 | Connections    | Skeleton rows                         | `page`: No providers connected, Connect a provider                                                  | `EmptyLine`: No tools match, Clear search                | `ErrorStrip`: Couldn't load connections, Retry and Details          | `IntegrationConnectPanel` on the page of each tool |
 | Search         | Skeleton rows, the query stays        | N/A                                                                                                 | `EmptyLine`: No results, Clear search                    | `ErrorStrip`: Couldn't search, Retry and Details                    | N/A                                                |
 | Palette        | `PaletteSkeleton`                     | N/A                                                                                                 | `EmptyLine`: No commands match                           | N/A                                                                 | N/A                                                |
-| Settings lists | Skeleton rows                         | `section` in the first-time words above, with the action that adds one                              | `EmptyLine`: No settings match, Clear search             | `ErrorStrip` that names the list, Retry and Details                 | N/A                                                |
-
-The new session draft is the kickoff. It asks "How do you want to
-start?" and answers with a single-select list of three rows, each a concept
-glyph, a title and one line: Pick up a task, Run a workflow, Not sure yet. The
-selected row reveals its fields and its one primary under the list. Arrow keys
-move between rows and Enter moves into the selected row's fields. There is no
-example run and no grid of tiles.
+| Settings lists | Skeleton rows                         | `section` that says when rows are added (No rules yet, No decisions yet)                            | `EmptyLine`: No settings match, Clear search             | `ErrorStrip` that names the list, Retry and Details                 | N/A                                                |
 
 Inline empty states belong to a lens or a compact collection surface, and they
 are `section` states. `inline-empty-states-use-the-wrappers.test.ts` fails on any

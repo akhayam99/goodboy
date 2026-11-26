@@ -2,8 +2,8 @@
 
 > **Read this when** you change what ⌘F finds, how the local search index is
 > kept, or how a hit lands in its view. **Not for** ⌘K Search or run (see
-> [navigation.md](navigation.md)) or code search inside a repository (the
-> editor and the Explore pane).
+> [navigation/model.md](navigation/model.md#the-k-palette)) or code search
+> inside a repository (the editor and the Explore pane).
 
 Search reads one local index in the app's own database. Nothing leaves the
 machine: the index holds only text the database already holds, lives in the
@@ -139,7 +139,7 @@ it takes 15 MB. `readSearchIndexStatus` reads the real size from `dbstat`.
 
 ⌘F (`search.open`, app plane) opens the Search or run overlay in its Search mode,
 the second entry of `PALETTE_MODES` (`features/palette/paletteModes.ts`).
-The overlay shell owns the scrim, the width (920px for search), the text and
+The overlay shell owns the scrim, the width (720px for search, 640px for Commands), the text and
 the mode; ⇥ or the mode switch moves between Commands and Search and keeps
 the text. `SearchMode` (`features/search/components/SearchMode`) is the
 mode body: it takes `PaletteModeProps`, draws the shared `PaletteInputRow`
@@ -223,11 +223,13 @@ and opens `TerminalFindBar` over the scrollback through
 back, Escape closes and gives the terminal its focus back. The matches are
 amber, read from the opaque amber scale steps in `resolveTerminalFindColors`
 because xterm only parses an opaque decoration color. Terminal output is
-never indexed, so this is the one view global search cannot reach.
+never indexed, so this is the one view global search cannot reach. A focused
+browser tab keeps ⌘F for its own find bar too ([browser.md](browser.md), Find
+in page).
 
 ## Settings
 
-Settings, This Mac, Storage and search ends with a Search band: the size of the index (from
-`dbstat`) and its item count, the backfill progress while it runs, Rebuild,
+**Settings › This Mac › Storage and search** ends with a Search band
+(`SearchIndexBand`): the size of the index (from `dbstat`) and its item count, the backfill progress while it runs, Rebuild,
 and the projects search leaves out. There is no switch to turn search off:
 the index costs little and holds nothing new.

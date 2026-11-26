@@ -618,7 +618,7 @@
         },
         {
           "title": "Limit",
-          "text": "Cap what a run or a session can spend, and choose Pause workflows or Warn only.",
+          "text": "Cap what a run or a session can spend, and choose Pause runs or Warn only.",
           "group": "Workflows",
           "main": true
         },

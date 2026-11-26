@@ -291,7 +291,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   keeps its own width
   (`goodboy:studio-rail-width:<studio>:v1`), and the rail skeleton opens at
   that width. `useResizableWidth` (`@goodboy/ui`) owns read, clamp and save
-  for these rails, the session sidebar and the drawer: while the pointer
+  for these rails and the drawer: while the pointer
   moves the width lives in a CSS variable (the drawer writes its own style),
   so nothing renders and nothing is saved until the drag ends. Precedent: VS
   Code, Zed and Linear sidebars.
@@ -312,11 +312,10 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
   no count and no identity. A row that needs something shows a 6px dot at its
-  end, named for assistive tech by the sentence that used to sit under it
+  end, named for assistive tech by its sentence
   (Update needed, Signed out, Can't check, Not confirmed, Refused your runs, Error, Claude is about to run out); a quiet
   row shows nothing. The sentence lives on the page: a provider about to run
-  out or out opens on a notice at the top of its page (`ProviderAttentionNotice`,
-  the usage notice that used to close the Usage band). Every page is also an entry in Search or run
+  out or out opens on a notice at the top of its page (`ProviderAttentionNotice`). Every page is also an entry in Search or run
   (`settingsPaletteEntries`, `Settings: Storage and search`, `Providers: Claude`, `Workspace settings: Models`), built from
   the same list, so ⌘K and the rail cannot disagree. Every setting row has a
   key in one registry (`settingRows.ts`: label, help, page, band, former names),

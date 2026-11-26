@@ -1,6 +1,6 @@
 # Recipe: add a provider
 
-> **Read this when** a new agent CLI or API provider joins the app next to Claude, Cursor, Codex, Gemini, Copilot and OpenCode.
+> **Read this when** a new agent CLI or API provider joins the app next to Claude, Cursor, Codex, Gemini, Copilot, OpenCode, OpenRouter and Moonshot.
 > **Not for** a new model of an existing provider ([providers.md](../providers.md) → Models and effort owns that), or a new host for pull requests ([host-adapter](host-adapter.md)).
 
 A provider is one row of two tables that a test keeps equal, plus the catalog, the commands and the screens that name it. Do the steps in this order; each one has a guard that fails when it is skipped.

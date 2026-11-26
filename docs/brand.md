@@ -6,8 +6,8 @@
 > or the words inside any of it (see [tone-of-voice.md](./tone-of-voice.md)).
 
 This file covers the identity: the mascot, the lockup, and how both hold up on
-screens nobody here controls. `DESIGN.md` covers how the product looks while
-you use it. This file covers how people recognise it before they have used it.
+screens nobody here controls. It is how people recognise Goodboy before they
+have used it; `DESIGN.md` covers how the product looks while you use it.
 
 ## The mascot
 
@@ -44,18 +44,21 @@ never a new file.
 tile, then the word `Goodboy`. It has no tagline, no registered mark and no
 second line.
 
-In the working chrome the mark is the same black tile, small and still: the
-rail signature below. It opens What's new and never turns into a bare glyph.
+The app draws the mark as the same black tile in four places, all through
+`BrandTile` (`shared/components/BrandTile.tsx`) with the shared ratios and
+`--color-brand`:
 
-The app shows the mark in four places: the rail signature (24px, at the foot of
-the places rail, under Report), the boot splash (84px, the same black tile,
-drawn by `BootBrand`), the launcher on Home (40px) and the setup header (24px).
-All of them use `BrandTile` (`shared/components/BrandTile.tsx`), with the shared
-ratios and `--color-brand`. Empty states inside a workspace and agent kinds still draw no dog. They use a
-concept tile (`ConceptTile`), the stage chips or the kind chip. A ratchet
-(`dog-mascot-only-marks-the-brand.test.ts`) keeps `DogMascot` to `BootBrand`
-and `BrandTile`, and pins the importers of `BrandTile` to `BootBrand.tsx`,
-`RailSignature/index.tsx`, `WizardHeader.tsx` and `WorkspaceLauncher/index.tsx`.
+- the rail signature, 32px at the foot of the places rail;
+- the boot splash, 84px, drawn by `BootBrand`;
+- the launcher on Home, 40px;
+- the setup header, 24px.
+
+It never turns into a bare glyph. Empty states inside a workspace and agent
+kinds draw no dog: they use a concept tile (`ConceptTile`), the stage chips or
+the kind chip. `dog-mascot-only-marks-the-brand.test.ts` keeps `DogMascot`
+inside `BrandTile` alone and pins the importers of `BrandTile` to
+`BootBrand.tsx`, `RailSignature/index.tsx`, `WizardHeader.tsx` and
+`WorkspaceLauncher/index.tsx`.
 
 The tile has one shape everywhere except the two exceptions below:
 
@@ -65,9 +68,8 @@ The tile has one shape everywhere except the two exceptions below:
 | Tile radius | `0.28`  | Corner radius against the tile side |
 | Mark inset  | derived | `(1 - 0.76) / 2` on **both** axes   |
 
-The inset is calculated, never typed in. If the offset differs between the two
-axes, that is a bug. It happened once, and it put the mark 3% too low on every
-surface.
+The inset is calculated, never typed in. An offset that differs between the
+two axes is a bug: it puts the mark off centre on every surface.
 
 **The app icon is the one deliberate exception.** It uses
 `APP_ICON_MARK_SCALE_EXCEPTION` in `website/scripts/brand-assets/tileMetrics.mjs`,
@@ -98,18 +100,19 @@ value on the site, in the favicon and in the app icon: `--brand-tile` in
 The generator refuses to run when those two disagree.
 
 **The rail signature is the one place the working chrome shows the tile.** It
-is a `BrandTile` at 24px, `#0b0b0d` with the white dog, at the foot of the places
-rail on the rail axis. It has no ring, plate, border, glow or gradient, it is
-never inverted and it is identical in the dark and the light theme. On the dark
-theme the black tile sits close to the charcoal rail (1.09:1) and the white dog
-carries the mark, on purpose: no lighter variant, no outline to rescue it. It is
-a quiet button with the tooltip "What's new" that opens the changelog, and a
-small unread dot on its corner while a release has notes you have not read. The
-Guide is not behind it; it lives in the Help menu and in Search or run. The mark does not use the teal accent. The top bar and the sidebar draw no
-mark. The setup header and Home are not working chrome: they sit alone on the
+is the same `#0b0b0d` tile with the white dog, identical in the dark and the
+light theme: no ring, plate, border, glow or gradient, never inverted, and no
+teal accent. On the dark theme the black tile sits close to the charcoal rail
+(1.09:1) and the white dog carries the mark, on purpose: no lighter variant and
+no outline to rescue it. The top bar and the sidebar draw no mark. Where it
+sits and what it opens (What's new) is
+[navigation/shell.md → The rail foot](./navigation/shell.md#the-rail-foot).
+
+The setup header and Home are not working chrome: they sit alone on the
 background, where the tile reads as the app icon, and they keep the same tile.
-On the site, the favicon and the dock the tile stands alone and does its job.
-`brand-mark-is-centered-in-its-tile.test.ts` checks the centring and the tile ratios.
+On the site, the favicon and the dock the tile stands alone.
+`brand-mark-is-centered-in-its-tile.test.ts` checks the centring and the tile
+ratios.
 
 The background is white on the site and charcoal in the app, and both are
 correct. An asset made for one does not automatically work on the other. So a
@@ -137,9 +140,11 @@ from a designer's memory. The agents come from `PROVIDER_IDS` in
 `packages/types/src/provider-registry.ts`. The rest come from the integration
 union in `packages/types/src/workspace.ts`. The glyphs themselves live in
 `packages/ui/src/components/brandIcons.tsx`, and the colours in the
-`--color-provider-*` tokens. `CopilotIcon` is the 24 pixel mark of the MIT-licensed
-Primer Octicons (`@primer/octicons` 19.42.0, copyright GitHub Inc.), copied path for
-path, and its token is the neutral of the GitHub mark in both themes.
+`--color-provider-*` tokens in `apps/desktop/src/styles.css`. `CopilotIcon`
+(`packages/ui/src/components/CopilotIcon.tsx`) is the 24 pixel mark of the
+MIT-licensed Primer Octicons (`@primer/octicons` 19.42.0, copyright GitHub
+Inc.), copied path for path, and its token is the neutral of the GitHub mark in
+both themes.
 
 Two rules stop a row of logos from looking like a partner page:
 
@@ -169,9 +174,9 @@ The og-image is the one card drawn on the website's dark theme tokens, on the
 stage gradient of the site's Stop re-explaining yourself band, so a link preview
 reads as dark on X, LinkedIn and Slack. It carries the logo, the free desktop
 ADE pill, the headline, the providers in their colours and the tools in white,
-and no domain or date. Its URL in the page heads carries
-a `?v=` suffix. Bump it whenever the PNG changes, because scrapers cache by URL:
-X kept showing the old light card under an unchanged suffix.
+and no domain or date. Its URL in the page heads
+(`website/src/prerender/pageHead.ts`) carries a `?v=` suffix. Bump it whenever
+the PNG changes, because scrapers cache by URL.
 
 A banner shows up much smaller than it is made. 1500 px wide becomes about 600
 on desktop and 440 on mobile. Anything under about 40 px in the source can't be
@@ -194,7 +199,7 @@ imagemagick or rsvg, and none will be added for this.
 Chrome renders `oklch()` and CSS masks exactly, so the card uses the same
 colour space the product ships in. Some surfaces compress images hard. For
 those, render at `--force-device-scale-factor=2` and let the platform scale it
-down. So far every LinkedIn cover needs this.
+down. The LinkedIn cover needs this.
 
 `website/scripts/build-brand-assets.mjs` owns every generated surface (its modules sit in `website/scripts/brand-assets/`): the
 five social formats above, plus `favicon` and `app-icon`. To rebuild one

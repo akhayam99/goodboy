@@ -2,6 +2,8 @@
 
 Free disk space and clean up branches, with what is safe to remove spelled out. Goodboy tells you why each folder or branch exists and what removing it costs, so you can clear space without guessing. **Transcripts and app data** at the foot of the page covers the rest, with one **Saved versions** row for the files agents changed in your folders. Those versions go by themselves 30 days after each session ends.
 
+Open the page at **Settings › This Mac › Storage and search**, or from **Clean up in Storage** on a project's worktrees.
+
 ### Worktrees of a project
 
 Manage the worktrees of a project from its block on the session overview. **3 worktrees · 1.1 GB** on the block opens a sheet with one row per worktree, from every session.

@@ -8,7 +8,7 @@
 
 The query bridge lets an agent working in a Goodboy session use the tools your workspace is connected to. The agent asks Goodboy, Goodboy makes the call with your connection, and the answer comes back to the agent.
 
-Your provider keys and the bridge's own credentials stay inside Goodboy. The agent never sees them. One exception holds today: a turn you start by hand gets your GitHub connection's token in its environment as `GH_TOKEN` and `GITHUB_TOKEN`, so `gh` and `git push` work in it. Auto children never get it.
+Your provider keys and the bridge's own credentials stay inside Goodboy. The agent never sees them, with one exception: a turn you start by hand gets your GitHub connection's token in its environment as `GH_TOKEN` and `GITHUB_TOKEN`, so `gh` and `git push` work in it. Auto children never get it (see **Design rules**).
 
 Auto hands work to other agents with a block at the end of its turn, not through the bridge; [auto.md](auto.md) says how and what a person sees of it.
 
@@ -21,7 +21,7 @@ While they work, agents can read from your tools:
 - Errors with stack frames, tags and breadcrumbs
 - Slack channels, threads and members
 
-They can also act on them, the same way you can from Goodboy. The bridge refuses agents that Auto started when they ask to approve, request changes, mark ready, merge, decline, push or open a pull request (see **What you control**):
+They can also act on them, the same way you can from Goodboy. **What you control** says which of these an agent that Auto started may not do:
 
 - Comment, reply in a review thread, resolve a thread
 - Update an issue description or move it through a transition
@@ -60,7 +60,7 @@ They can also act on them, the same way you can from Goodboy. The bridge refuses
 
 ## Where it runs
 
-The bridge runs on macOS and Linux, and only while Goodboy is open. When you quit, agents started by that instance get a clear error instead of waiting.
+The bridge runs on macOS and Linux, over a Unix socket, and only while Goodboy is open. When you quit, agents started by that instance get a clear error instead of waiting.
 
 Each running copy of Goodboy has its own bridge, so an installed build and a development build side by side never answer each other's agents.
 
@@ -159,7 +159,7 @@ Start by reading the mounts:
   "sessionId": "<uuid>",
   "projectId": "<uuid>",
   "mountName": "api",
-  "branch": "ak/eng-3240-auth",
+  "branch": "hl/eng-3240-auth",
   "baseBranch": "origin/main",
   "mountPath": "/path/to/.goodboy/worktrees/gb-7k2q9x",
   "isAttached": true,
@@ -177,7 +177,7 @@ Fork when both lines of work need to stay. The new branch starts from the base y
 ```
 "$GOODBOY_BIN" query mount fork \
   --mount <source-mount-id> \
-  --branch ak/eng-3240-auth \
+  --branch hl/eng-3240-auth \
   --base origin/main \
   --reason "split authentication into its own request" \
   --request-id eng-3240-auth-fork \
@@ -191,7 +191,7 @@ Switch only when the current mount is the same line of work on a different branc
 ```
 "$GOODBOY_BIN" query mount switch \
   --mount <mount-id> \
-  --branch ak/eng-3240-follow-up \
+  --branch hl/eng-3240-follow-up \
   --create \
   --reason "continue this mount on the follow-up branch" \
   --request-id eng-3240-follow-up-switch \
@@ -332,15 +332,15 @@ Goodboy attaches a pull request to a mount only when two things are true. First,
 
 ### Socket lifecycle
 
-Goodboy creates the socket when the app starts and removes it when the app stops. The socket belongs to the current OS user and stays on one machine. It answers only while the process that owns it is running. The bridge uses Unix domain sockets, so it works on macOS and Linux. Unix socket paths have a length limit set by the platform. A very long state directory path can stop the listener from binding.
+Goodboy creates the socket when the app starts and removes it when the app stops. The socket belongs to the current OS user and stays on one machine. It answers only while the process that owns it is running. Unix socket paths have a length limit set by the platform, so a very long state directory path can stop the listener from binding.
 
 **One socket per running instance.** The file is `query-<pid>.sock` in `~/.goodboy/query`, named after the process that opens it. That folder holds only sockets and is owner-only (`0700`). It is the only part of `~/.goodboy` Goodboy names as a writable directory (`--add-dir`) for a turn. That scoping confines only turns with an OS sandbox or a permission check: Codex in `workspace-write` and Claude outside `bypassPermissions`. Claude in `bypassPermissions` (the default mode), Cursor (`--force`), OpenCode and Antigravity (`--dangerously-skip-permissions`) run without an OS sandbox and can write anywhere your user can, including the database. With a fixed name, the file would belong to whichever instance started last, and nobody would notice. Agents of the first instance would talk to a bridge that answers from another database with other credentials. Naming the file after its owner makes that clash impossible, so there is nothing to detect.
 
-**No manual cleanup.** A crash can leave old socket files behind. Before it binds, a starting instance removes every socket in that folder, and in `~/.goodboy` where earlier versions put them, whose owner pid no longer exists. It never touches a socket whose owner is still alive, and that includes another running instance. Earlier versions used the fixed name `query.sock`. Goodboy removes that file only when nothing answers on it, so an older build that is still running keeps working.
+**No manual cleanup.** A crash can leave old socket files behind. Before it binds, a starting instance removes every socket whose owner pid no longer exists, in that folder and directly in `~/.goodboy`. It never touches a socket whose owner is still alive, and that includes another running instance. A socket with the fixed name `query.sock` (`LEGACY_SOCKET_FILE`) in either folder is removed only when nothing answers on it, so a running build that still uses that fixed name keeps working.
 
 **The prompt and the env follow the same check.** A connected integration does not mean the bridge is reachable. If the prompt names a command the agent cannot run, the agent reads a shell error instead of an answer. So credentials alone do not decide whether the block appears. The env injection and the prompt both use one check. It passes when this process owns a bound listener and its socket file still exists. The frontend asks through `query_bridge_serving` and treats a failed call as false. The agent gets the path this process bound, so it never inherits another instance's address.
 
-Because of this check, the block does not appear on Windows, where nothing binds. It also does not appear before the listener is up or after it is gone.
+Because of this check, the block does not appear before the listener is up or after it is gone, or on a platform where nothing binds.
 
 ### Code map
 
@@ -352,6 +352,8 @@ Because of this check, the block does not appear on Windows, where nothing binds
 - `apps/desktop/src-tauri/src/query_bridge/project.rs`: `project materialize`, passed to the frontend on `query-bridge://project-materialize`
 - `apps/desktop/src-tauri/src/query_bridge/cli.rs`: the `query` entry point that `run_cli` runs
 - `apps/desktop/src-tauri/src/query_bridge/mod.rs`: socket path, sweep of stale sockets, listener, `query_bridge_serving`, `apply_turn_env`
+- `apps/desktop/src-tauri/src/query_bridge/auto_child.rs`: the record of every turn process and the caller checks (`caller_unknown`, `auto_child_act`, `scope_mismatch`)
+- `apps/desktop/src-tauri/src/query_bridge/limits.rs`: the line, connection and timeout limits of the socket
 - `apps/desktop/src-tauri/src/lib.rs`: runs the CLI before any window opens, and starts and stops the listener
 - `apps/desktop/src-tauri/src/turn.rs`: adds the bridge env to each turn Goodboy starts
 - `apps/desktop/src/store/slices/turn/integrationsGuard.ts`: `QUERY_BRIDGE_VERBS` and the `[integrations]` guard block, tested against `protocol.rs`

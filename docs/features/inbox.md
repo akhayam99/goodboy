@@ -4,7 +4,7 @@ Connect your trackers, code hosts and Slack once. Their work lands in one list c
 
 ### Supported tools
 
-Connect GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack in **Settings › Integrations**. Each one feeds Tasks and can start a session with its brief drafted.
+Connect GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack in **Connections**, the **Connect** place of the rail. Each one feeds Tasks and can start a session with its brief drafted.
 
 ### Agents use your tools
 

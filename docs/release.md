@@ -163,8 +163,8 @@ margin, and a download shows as a ring with the percent on the mark and a bar in
 card. The card
 also opens by itself once an update is ready, runs into agents or fails. Later
 and Esc close it and snooze that version for three days (`updateSnoozeGate`);
-the pill stays. The Updates band of **Settings > This Mac > Look and alerts** is the
-manual home (the old `updates` section id opens Look and alerts scrolled to it): the installed
+the pill stays. The Updates band of **Settings › This Mac › Look and alerts** is the
+manual home (the `updates` section id opens Look and alerts scrolled to it): the installed
 version, the last check, **Check for updates** (also in the Goodboy menu of the
 macOS menu bar), the same verbs while an update is pending, the background
 download switch and What's new. A failed check shows there only, never as a card

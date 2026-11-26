@@ -4,16 +4,25 @@
 > operation owns a chord. **Not for** the user-facing shortcut overview
 > ([features/keyboard.md](features/keyboard.md)).
 
-Shortcuts register through the shared dispatcher. A contextual handler takes
+Every chord is an entry of the shortcut registry (`shared/keyboard/registry.ts`,
+with the window keys in `windowShortcuts.ts`) and runs through the shared
+dispatcher.
+
+## Contextual handlers
+
+A contextual handler takes
 precedence over the global handler for the same chord while its surface is
 mounted, and unregistering it restores global handling. Undo and Redo yield
 while a text field, editable surface or terminal owns input.
+
+## Close and focus keys
 
 ⌘W (Close or go back) closes one level and never quits the app (⌘Q quits). On macOS the
 File menu item Close (`app.close`) owns the chord and emits `goodboy://menu`
 with that id (`app_menu.rs`); `useMenuCommands` replays it as the registry
 shortcut, so the same dispatcher runs the press; elsewhere the chord is
 Ctrl+Shift+W.
+
 Each press closes one level: a popover or dialog, then the terminal tab (a
 running process asks first), then the open drawer, then a studio, then the
 session view back to the previous place. It closes what you see: under a studio
@@ -33,6 +42,8 @@ grid's panels and back to the page (`stepPanelFocus`). On macOS the
 File menu item Close the panel owns the chord, so the press reaches the app
 even when a terminal or a web page has the keyboard.
 
+## New in place
+
 A key means the new thing of the place you are in. ⌘N is a new session
 (`session.new`), except on the Chat page (`chat.newHere`, a new chat), on the
 Terminal page and the session terminal drawer (`terminal.newHere`, the New
@@ -44,6 +55,8 @@ registry binds a chord once per place, and a contextual handler that declines
 (focus outside the Ask pane) hands the chord back to the global one. ⌘K is
 the way to go anywhere: every global new and go-to is an entry in Search or run, and the
 Shortcuts page says so once.
+
+## Undo
 
 **Not now** on a Next suggestion adds no chord of its own: it is an `undoable` operation, so the global `app.undo` (⌘Z) restores it in stack order, and it yields to text fields like every undo.
 
