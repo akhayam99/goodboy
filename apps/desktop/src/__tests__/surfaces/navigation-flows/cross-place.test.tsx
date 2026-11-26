@@ -9,6 +9,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
+import { selectIsAskOpen } from '../../../store/slices/ask/selectIsAskOpen';
 import { brandId } from '@goodboy/types';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
@@ -665,8 +666,10 @@ describe('moving across every place keeps one frame', () => {
   it('parks a session drawer under a page, and Esc brings it back with its page', async () => {
     const { sessionId } = await boot({ seed: 'pr' });
 
-    act(() => useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null }));
-    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts'));
+    act(() =>
+      useAppStore.getState().openDrawer({ kind: 'new', sessionId, payload: { form: 'report' } }),
+    );
+    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('new'));
 
     await click(door('inbox'));
     expect(studio()).toBe('inbox');
@@ -680,7 +683,7 @@ describe('moving across every place keeps one frame', () => {
 
     expect(studio()).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBe(sessionId);
-    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts');
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('new');
     await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
     expect(parked?.hasAttribute('inert')).toBe(false);
     expectHealthy();
@@ -721,15 +724,17 @@ describe('moving across every place keeps one frame', () => {
   it('closes the page with ⌘W, never the drawer parked under it, and Back brings the drawer back', async () => {
     const { sessionId } = await boot({ seed: 'pr' });
 
-    act(() => useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null }));
-    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts'));
+    act(() =>
+      useAppStore.getState().openDrawer({ kind: 'new', sessionId, payload: { form: 'report' } }),
+    );
+    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('new'));
 
     await click(door('inbox'));
     expect(studio()).toBe('inbox');
     await press('app.close');
 
     expect(studio()).toBeNull();
-    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts');
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('new');
 
     await click(door('workflows'));
     expect(studio()).toBe('workflow');
@@ -923,13 +928,13 @@ describe('moving across every place keeps one frame', () => {
 
       act(() => seedSessionAsk({ state: 'answer', session: currentSession(sessionId) }));
       await settle();
-      expect(useAppStore.getState().askPaneOpen[sessionId]).toBe(true);
-      expect(openDrawerKind()).toBeNull();
+      expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: sessionId })).toBe(true);
+      expect(openDrawerKind()).toBe('ask');
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: ['board'] });
       const chip = await askChipAwayFrom({ lens: 'branch' });
       await click(chip.button);
       expect(lensOf()).toBe(chip.lens);
-      expect(useAppStore.getState().askPaneOpen[sessionId]).toBe(true);
+      expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: sessionId })).toBe(true);
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: ['board'] });
       await escape();

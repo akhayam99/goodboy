@@ -14,7 +14,10 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
+import { openBranchTerminal } from '../../terminal/openBranchTerminal';
 import { togglePane } from './togglePane';
+
+vi.mock('../../terminal/openBranchTerminal', () => ({ openBranchTerminal: vi.fn() }));
 
 const SESSION_ID: SessionId = nextSessionId();
 
@@ -31,39 +34,29 @@ beforeEach(async () => {
 
 const shownKind = (): string | null => selectDrawerPanel(store.getState())?.kind ?? null;
 
-const openScripts = (): void => {
-  store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
-};
-
-describe('togglePane under a page', () => {
-  it('closes the page and shows the parked pane instead of closing it unseen', () => {
-    openScripts();
-    store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
-    expect(shownKind()).toBeNull();
-
-    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
-
-    expect(store.getState().appStudio).toBeNull();
-    expect(shownKind()).toBe('scripts');
-  });
-
-  it('leaves Impact opened from Guide in one press and shows the parked pane', () => {
-    openScripts();
-    store.getState().openStudio({ studio: { kind: 'guide' } });
+describe('togglePane', () => {
+  it('opens the branch terminal for the Scripts chord, and leaves the page it was pressed on', () => {
     store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
 
     togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
 
     expect(store.getState().appStudio).toBeNull();
-    expect(shownKind()).toBe('scripts');
+    expect(openBranchTerminal).toHaveBeenCalledWith({ sessionId: SESSION_ID, mountPath: null });
   });
 
-  it('still closes a shown pane on a session', () => {
-    openScripts();
+  it('keeps a panel of the grid beside a page that is not its own', () => {
+    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
+
     expect(shownKind()).toBe('scripts');
+    expect(store.getState().appStudio?.kind).toBe('impact');
+  });
 
-    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
+  it('toggles Monitor in the dock', () => {
+    togglePane({ sessionId: SESSION_ID, pane: 'monitoring' });
+    expect(shownKind()).toBe('monitoring');
 
+    togglePane({ sessionId: SESSION_ID, pane: 'monitoring' });
     expect(shownKind()).toBeNull();
   });
 });

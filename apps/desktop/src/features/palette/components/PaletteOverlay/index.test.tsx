@@ -8,6 +8,8 @@ vi.mock('../../hooks/useSessionsEverywhere', () => ({
   useSessionsEverywhere: () => elsewhere.refs,
 }));
 
+import { selectDetailDrawer } from '../../../../store/slices/drawer/selectDetailDrawer';
+import { selectIsAskOpen } from '../../../../store/slices/ask/selectIsAskOpen';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
@@ -800,8 +802,8 @@ describe('PaletteOverlay, Ask in chat', () => {
     });
 
     expect(onClose).toHaveBeenCalled();
-    expect(useAppStore.getState().askPaneOpen[PAYOUT]).toBe(true);
-    expect(useAppStore.getState().drawer).toBeNull();
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: PAYOUT })).toBe(true);
+    expect(selectDetailDrawer({ state: useAppStore.getState() })).toBeNull();
     expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId: PAYOUT })).toBe(
       false,
     );

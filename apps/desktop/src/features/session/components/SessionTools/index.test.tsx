@@ -1,3 +1,4 @@
+import { selectIsAskOpen } from '../../../../store/slices/ask/selectIsAskOpen';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
@@ -139,16 +140,16 @@ describe('SessionTools', () => {
     expect(stateOf('scripts')).toBe('rest');
   });
 
-  it('opens the Ask pane of its session, lights the door, and closes it on a second press', () => {
+  it('opens the Ask panel of its session in the dock, lights the door, and closes it on a second press', () => {
     render(<SessionTools sessionId={SESSION_ID} />);
 
     fireEvent.click(toggle('ask'));
-    expect(useAppStore.getState().askPaneOpen[SESSION_ID]).toBe(true);
-    expect(drawerKind()).toBeNull();
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: SESSION_ID })).toBe(true);
+    expect(drawerKind()).toBe('ask');
     expect(stateOf('ask')).toBe('pressed');
 
     fireEvent.click(toggle('ask'));
-    expect(useAppStore.getState().askPaneOpen[SESSION_ID]).toBe(false);
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: SESSION_ID })).toBe(false);
     expect(stateOf('ask')).toBe('rest');
   });
 

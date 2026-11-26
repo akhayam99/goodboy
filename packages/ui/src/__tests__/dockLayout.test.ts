@@ -228,13 +228,19 @@ describe('who gives way', () => {
     expect(layout.columns[0]?.box.width).toBeGreaterThanOrEqual(RIGHT_DRAWER_MIN);
   });
 
-  it('holds at most two columns of two panes', () => {
+  it('holds at most four columns of two panes', () => {
     const layout = layoutAt({
       width: 2600,
-      columns: [{ panes: [BROWSER] }, { panes: [TERMINAL, SCRIPTS, ASK] }, { panes: [ASK] }],
+      columns: [
+        { panes: [BROWSER] },
+        { panes: [TERMINAL, SCRIPTS, ASK] },
+        { panes: [ASK] },
+        { panes: [ASK] },
+        { panes: [ASK] },
+      ],
     });
 
-    expect(layout.columns.map((column) => column.panes.length)).toEqual([1, 2]);
+    expect(layout.columns.map((column) => column.panes.length)).toEqual([1, 2, 1, 1]);
   });
 
   const SHAPES: ReadonlyArray<{

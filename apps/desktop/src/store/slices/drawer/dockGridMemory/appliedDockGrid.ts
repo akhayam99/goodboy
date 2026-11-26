@@ -9,6 +9,8 @@ import { slotWithGrid } from '../slotWithGrid';
 import { EMPTY_DRAWER_GRID, type DrawerGrid, type DrawerSliceState } from '../state';
 import { parseStoredDeskDetail, parseStoredDockGrid, storedDockGridOf } from './storedDockGrid';
 import { UNSAVED_DRAWER_KINDS } from '../unsavedDrawerKinds';
+import { NOTHING_CHANGED } from '../../notifications/errorRecovery';
+import { unreadableDockGrids } from './unreadableDockGrids';
 
 type ApplyParams = SliceDeps & {
   readonly sessionId: SessionId;
@@ -33,6 +35,20 @@ export const appliedDockGrid = ({
 }: ApplyParams): string | null => {
   const record = raw === null ? null : parseStoredDockGrid({ raw });
   const state = get();
+  if (raw !== null && record === null && claim.isCurrent()) {
+    if (unreadableDockGrids.takeNotice({ sessionId })) {
+      void state.reportError({
+        recovery: NOTHING_CHANGED,
+        title: "Couldn't read the saved panels of this session",
+        error: new Error('The saved layout is in a shape this version does not read.'),
+        severity: 'warning',
+        sessionId,
+        stays: 'The default layout is shown.',
+        coalesceKey: `dock-grid-unreadable:${sessionId}`,
+      });
+    }
+    return null;
+  }
   if (record === null || !claim.isCurrent() || (state.drawerGrid ?? EMPTY_DRAWER_GRID) !== before) {
     return null;
   }

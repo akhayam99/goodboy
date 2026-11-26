@@ -13,6 +13,13 @@ export type DockGridCell = {
   readonly rowMin?: number;
   readonly hasActivity?: boolean;
   readonly label?: string;
+  readonly tabs?: DockCellTabList;
+};
+
+export type DockCellTabList = {
+  readonly keys: ReadonlyArray<string>;
+  readonly active: string;
+  readonly members: ReadonlyArray<DockGridCell>;
 };
 
 type KeyParams = {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { brandId } from '@goodboy/types';
+import { brandId, type SessionId } from '@goodboy/types';
 import type { TerminalTabId } from '../../../shared/types/terminal';
 import { dockMovesOf } from './dockMovesOf';
 import { EMPTY_DRAWER_GRID, type DrawerGrid, type OpenDrawer } from './state';
@@ -11,6 +11,19 @@ const TERMINAL: OpenDrawer = {
 };
 
 const BROWSER: OpenDrawer = { kind: 'browser', sessionId: null, payload: null };
+
+const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
+
+const SCRIPTS: OpenDrawer = { kind: 'scripts', sessionId: SESSION, payload: null };
+
+const MONITOR: OpenDrawer = { kind: 'monitoring', sessionId: null, payload: null };
+
+const ASK: OpenDrawer = { kind: 'ask', sessionId: SESSION, payload: null };
+
+const FIVE: DrawerGrid = {
+  ...EMPTY_DRAWER_GRID,
+  columns: [[TERMINAL], [BROWSER], [SCRIPTS, MONITOR], [ASK]],
+};
 
 const STACKED: DrawerGrid = { ...EMPTY_DRAWER_GRID, columns: [[BROWSER, TERMINAL]] };
 
@@ -40,4 +53,20 @@ describe('the moves a panel has', () => {
       { at: 'swap', key: 'browser' },
     ]);
   });
+
+  it.each(['terminal', 'browser', 'scripts', 'monitoring', 'ask'] as const)(
+    'offers the %s panel moves that name a panel of the grid',
+    (kind) => {
+      const moves = dockMovesOf({ grid: FIVE, kind, fits: () => true });
+      const others = FIVE.columns.flat().map((panel) => panel.kind);
+
+      expect(moves.length).toBeGreaterThan(0);
+      for (const { target } of moves) {
+        if (target.at !== 'page') {
+          expect(others).toContain(target.key);
+          expect(target.key).not.toBe(kind);
+        }
+      }
+    },
+  );
 });

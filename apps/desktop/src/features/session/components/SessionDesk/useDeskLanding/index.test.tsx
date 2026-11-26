@@ -16,6 +16,7 @@ vi.mock('../../../../../shared/lib/db', async () =>
   (await import('../../../../../store/storyHarness')).dbLibModuleMock(),
 );
 
+import { selectIsAskOpen } from '../../../../../store/slices/ask/selectIsAskOpen';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
@@ -271,12 +272,12 @@ describe('closing the last tool', () => {
 
     expect(face()).toBe('overview');
     expect(tools()).toEqual([]);
-    expect(store.getState().askPaneOpen[session.id]).toBe(true);
+    expect(selectIsAskOpen({ state: store.getState(), sessionId: session.id })).toBe(true);
     expect(entries()).toBe(before);
 
     await clickRail({ pane: 'ask' });
 
-    expect(store.getState().askPaneOpen[session.id]).toBe(false);
+    expect(selectIsAskOpen({ state: store.getState(), sessionId: session.id })).toBe(false);
     expect(screen.queryByText('Desk closed')).toBeNull();
   });
 

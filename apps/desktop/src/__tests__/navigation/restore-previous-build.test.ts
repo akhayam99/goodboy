@@ -156,7 +156,11 @@ describe('layouts saved by the previous build', () => {
     const kinds = PREVIOUS_BUILD_BLOBS.drawers.map((entry) => entry.kind);
     expect(kinds.filter((kind) => !RETIRED_DRAWER_KINDS.includes(kind)).sort()).toEqual(
       Object.keys(DRAWER_KINDS)
-        .filter((kind) => ![...UNSAVED_DRAWER_KINDS].some((unsaved) => unsaved === kind))
+        .filter(
+          (kind) =>
+            !RETIRED_DRAWER_KINDS.includes(kind) &&
+            ![...UNSAVED_DRAWER_KINDS].some((unsaved) => unsaved === kind),
+        )
         .sort(),
     );
     expect(kinds.filter((kind) => RETIRED_DRAWER_KINDS.includes(kind)).sort()).toEqual(

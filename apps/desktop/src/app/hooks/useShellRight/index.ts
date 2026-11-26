@@ -21,6 +21,7 @@ import { dockBusyKindsOf } from './dockBusyKindsOf';
 import { dockToolLabelOf } from './dockToolLabelOf';
 import { selectDrawerPlacement } from '../../../store/slices/drawer/selectDrawerPlacement';
 import { useAppStore } from '../../../store';
+import { isAskStreaming } from '../../../store/slices/ask/isAskStreaming';
 import { detailWidthIdOf } from '../../../store/slices/drawer/detailWidthIdOf';
 import { drawerSizingOf } from '../../../store/slices/drawer/drawerSizingOf';
 import { selectDetailDrawer } from '../../../store/slices/drawer/selectDetailDrawer';
@@ -75,11 +76,16 @@ export const useShellRight = ({}: Params): ShellRight => {
     (state) =>
       state.monitorSnapshot != null && (monitoringSignalOf({ state })?.downPins.length ?? 0) > 0,
   );
+  const isAskBusy = useAppStore(
+    (state) =>
+      state.currentSessionId !== null &&
+      isAskStreaming({ state, sessionId: state.currentSessionId }),
+  );
   const dockGrid = useMemo<DockGridSpec>(() => {
     const panels = shellPanelsOf({
       state: { drawer, drawerBack, drawerGrid, currentSessionId, appStudio },
     });
-    const busy = dockBusyKindsOf({ hasTerminalActivity, hasDownPin });
+    const busy = dockBusyKindsOf({ hasTerminalActivity, hasDownPin, isAskStreaming: isAskBusy });
     return {
       columns: panels.tools.map((column) =>
         column.map((panel) => ({
@@ -115,6 +121,7 @@ export const useShellRight = ({}: Params): ShellRight => {
     appStudio,
     hasTerminalActivity,
     hasDownPin,
+    isAskBusy,
   ]);
   return {
     dockGrid,

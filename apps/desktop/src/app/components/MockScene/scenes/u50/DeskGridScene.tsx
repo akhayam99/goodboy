@@ -76,6 +76,8 @@ const seedDesk = ({ tools, isBusy }: SeedParams): void => {
       monitorPinned: [{ port: 9000, description: 'Mock API' }],
     });
     state.openDrawer({ kind: 'monitoring', sessionId: null, payload: null });
+    state.openDrawer({ kind: 'scripts', sessionId, payload: null });
+    state.openDrawer({ kind: 'ask', sessionId, payload: null });
   }
   state.openDrawer({ kind: 'terminal', sessionId: null, payload: { terminalId: DEV_SERVER } });
   if (tools === 'all') {

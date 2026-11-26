@@ -305,11 +305,15 @@ A tool keeps its state while it waits: Terminal keeps its shell, Explore its
 open folders. A second window has its own store, so its own slot.
 
 **The slice holds a grid of tools beside the slot.** `drawerGrid` keeps every
-open tool in at most two columns of two (`DOCK_GRID_CAP` in `packages/ui`, the
+open tool in at most four columns of two (`DOCK_GRID_CAP` in `packages/ui`, the
 dock solver's own cap), the order of use, and the focus: the page, the detail
-or one tool. A new tool opens in a new column next to the rail while one is
-free, otherwise under the column with fewer panels, the one without Browser
-first; a fifth takes the place of the least recently used (`gridAfterOpen`).
+or one tool. The tools are Terminal, Browser, Monitor, Scripts and Ask
+(`WORKSPACE_TOOL_KINDS`), so all five fit at once. A tool of the column kind
+(Terminal, Browser) opens in a new column next to the rail; a tool of the row
+kind (Monitor, Scripts, Ask) stacks in one shared tool column, and takes a new
+column when that one is full. When the columns are full a tool opens under the
+column with fewer panels, the one without Browser first; a ninth takes the
+place of the least recently used (`gridAfterOpen`).
 There is one panel per kind, so a second Terminal takes the first one's place.
 The dock in the slot is always the latest tool of the grid (`settledSlot`): a
 tool the slot dropped waits in the grid and comes back when the panel beside
@@ -497,8 +501,10 @@ and Close; the second row holds the state chip, `vN`, the parts, **Edit** and
 Escape closes it. While the planner
 revises the plan the body is dimmed and Run plan waits.
 
-Ask is no drawer kind: it is the Ask pane of the session
-([session-rail.md](session-rail.md)). The thread on screen lives in the `ask`
+Ask is a dock tool of the session (drawer kind `ask`, payload `null`, a row
+tool with a 260px row minimum), drawn by `AskPane`
+([session-rail.md](session-rail.md)). `openAsk` and `closeAsk` open and close
+that grid entry, and `selectIsAskOpen` reads it. The thread on screen lives in the `ask`
 slice (`askThreadId` per session, `null` for a fresh thread). `AskPaneBody`
 (`features/session/ask/components/AskPane/`) puts the thread in the frame's
 `ScrollFade` and the composer in its `dock`. The question bubble
@@ -719,8 +725,9 @@ without a branch sits in `Unassigned comments` on the Session overview.
 
 Each session remembers its dock grid: the panels, the columns, the width of
 each tool's column, the height of two stacked panels and the focus. The
-heights sit in an optional `splits` field of version 1: a row without it
-reads, and an older build reads a row with it and leaves it out. It lives in `session_dock_grids` (m244), one
+heights sit in an optional `splits` field. The row has version 2 since Scripts
+and Ask joined the grid; a row of version 1 still reads, and a build that only
+knows version 1 shows the default layout. It lives in `session_dock_grids` (m244), one
 row per session, deleted with it. The Board and the draft keep a grid of
 their own in the window; they save nothing.
 
@@ -748,7 +755,7 @@ their own in the window; they save nothing.
   ([versioning.md](../versioning.md#retired-state)). A detail keeps its width
   per kind, so a drag on Ask never changes where a Terminal starts.
 - The face of the session (Overview or Desk) rides in the same row as an
-  optional `face` field of version 1, written only for the Desk. A change of
+  optional `face` field, written only for the Desk. A change of
   face waits 300ms and saves the row like a change of grid. Entering a session
   reads it back (`recallSessionFace`), a face picked while that read was out
   wins, even one picked away and back (`faceSelections` counts every pick),
@@ -790,8 +797,16 @@ the drag handle and shows a grab cursor (`DockDragContext` from `DockGrid`,
 read by `useDockGrip` in `DockPanelHead`, `useDockDrag`); the empty area moves
 the whole cell. In a tabbed cell the tab strip takes the title's place in the
 head (focus follows the selected tab when the head remounts), and each tab
-segment is its own handle for that panel alone (`DockDragSource.onStartPanel`);
-a tabbed cell does not move until the move works on the tabs together. A head that is not a
+segment is its own handle for that panel alone (`DockDragSource.onStartPanel`,
+not wired to a move yet). A cell holds its tab list as state: `DockGridCell.tabs`
+carries the keys, the active key and the member cells, `dockMergedCellOf` folds
+them into the one pane the solver places, and `cellTabsOf` is the one function
+that answers the tab count, the strip, the activity dots and the shown tab
+(`data-dock-tab-count` on the pane). A key that left the grid drops out of the
+list and a select for it does nothing. The head of a cell with a chosen tab list
+moves the whole cell, tabs together; a cell the solver folded for lack of room
+(`isDerived`) still does not move, because a move would take one panel and leave
+its partner. A head that is not a
 `DockPanelHead` fails `panel-head.test.ts`. The Browser keeps Back, Forward,
 Reload, the address and the rest as the first row of its body
 (`BrowserAddressRow`), the Terminal its folder picker and worktree strip, and

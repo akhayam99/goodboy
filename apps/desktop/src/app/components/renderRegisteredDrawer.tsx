@@ -12,6 +12,7 @@ import { leadDetailsDrawerRegistration } from '../../features/auto/permissions/l
 import { monitoringDrawerRegistration } from '../../features/monitoring/monitoringDrawerRegistration';
 import { planPartDrawerRegistration } from '../../features/plans/planPartDrawerRegistration';
 import { terminalDrawerRegistration } from '../../features/terminal/terminalDrawerRegistration';
+import { askDrawerRegistration } from '../../features/session/ask/askDrawerRegistration';
 import { scriptsDrawerRegistration } from '../../features/scripts/scriptsDrawerRegistration';
 import { DeskPr } from '../../features/branch/components/DeskPr';
 import { renderPrChecks } from './renderPrChecks';
@@ -30,6 +31,7 @@ type RegisteredDrawer = Extract<
   DrawerRequest,
   {
     readonly kind:
+      | 'ask'
       | 'browser'
       | 'check-analysis'
       | 'file-diff'
@@ -56,6 +58,8 @@ export const renderRegisteredDrawer = ({
   openDrawer,
 }: RenderParams): ReactNode => {
   switch (drawer.kind) {
+    case 'ask':
+      return askDrawerRegistration.render({ drawer, closeDrawer, openDrawer });
     case 'browser':
       return browserDrawerRegistration.render({ drawer, closeDrawer, openDrawer });
     case 'check-analysis':

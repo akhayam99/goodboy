@@ -47,14 +47,14 @@ describe('a panel moved in the dock', () => {
     expect(move({ columns: PAIR, key, target })).toBeNull();
   });
 
-  it('refuses a third row and a third column', () => {
-    const full: Columns = [['terminal', 'browser'], ['monitoring']];
+  it('refuses a third row and a fifth column', () => {
+    const full: Columns = [['terminal', 'browser'], ['monitoring'], ['scripts'], ['ask']];
     expect(
       move({ columns: full, key: 'monitoring', target: { at: 'above', key: 'terminal' } }),
     ).toBeNull();
     expect(
       move({
-        columns: full,
+        columns: [...full, ['files']],
         key: 'browser',
         target: { at: 'beside', key: 'monitoring', side: 'after' },
       }),

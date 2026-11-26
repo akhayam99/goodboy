@@ -1,5 +1,5 @@
 import { brandId } from '@goodboy/types';
-import type { SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { describe, expect, it } from 'vitest';
 import type { TerminalTabId } from '../../../shared/types/terminal';
 import { gridAfterOpen } from './gridAfterOpen';
@@ -19,6 +19,8 @@ const BROWSER: OpenDrawer = { kind: 'browser', sessionId: null, payload: null };
 const SCRIPTS: OpenDrawer = { kind: 'scripts', sessionId: SESSION_ID, payload: null };
 
 const MONITORING: OpenDrawer = { kind: 'monitoring', sessionId: null, payload: null };
+
+const ASK: OpenDrawer = { kind: 'ask', sessionId: SESSION_ID, payload: null };
 
 const CONVERSATION: OpenDrawer = {
   kind: 'conversation',
@@ -48,13 +50,22 @@ describe('the natural place of each kind', () => {
     expect(kindsOf({ grid })).toEqual([['scripts', 'monitoring']]);
   });
 
-  it('keeps the tool column beside the Terminal, and the Browser joins the Terminal at the cap', () => {
+  it('keeps the tool column beside the Terminal, and the Browser takes a column of its own', () => {
     const grid = opened({ entries: [SCRIPTS, TERMINAL, MONITORING, BROWSER] });
 
+    expect(kindsOf({ grid })).toEqual([['scripts', 'monitoring'], ['terminal'], ['browser']]);
+  });
+
+  it('holds all five tools in four columns', () => {
+    const grid = opened({ entries: [TERMINAL, BROWSER, SCRIPTS, MONITORING, ASK] });
+
     expect(kindsOf({ grid })).toEqual([
+      ['terminal'],
+      ['browser'],
       ['scripts', 'monitoring'],
-      ['terminal', 'browser'],
+      ['ask'],
     ]);
+    expect(grid.used).toEqual(['terminal', 'browser', 'scripts', 'monitoring', 'ask']);
   });
 
   it('keeps a row kind off a column that holds a Terminal or a Browser while a column is free', () => {
@@ -64,9 +75,14 @@ describe('the natural place of each kind', () => {
   });
 
   it('puts a row kind under the roomier column once the columns are full', () => {
-    const grid = opened({ entries: [BROWSER, TERMINAL, MONITORING] });
+    const grid = opened({ entries: [BROWSER, TERMINAL, SCRIPTS, MONITORING, ASK, CONVERSATION] });
 
-    expect(kindsOf({ grid })).toEqual([['browser'], ['terminal', 'monitoring']]);
+    expect(kindsOf({ grid })).toEqual([
+      ['browser'],
+      ['terminal'],
+      ['scripts', 'monitoring'],
+      ['ask', 'conversation'],
+    ]);
   });
 });
 
@@ -78,41 +94,61 @@ describe('the dock grid', () => {
     expect(grid.focus).toEqual({ at: 'tool', kind: 'terminal' });
   });
 
-  it('opens the third under the column without the Browser', () => {
+  it('opens a row kind in its own column while a column is free', () => {
     const grid = opened({ entries: [TERMINAL, BROWSER, SCRIPTS] });
 
-    expect(kindsOf({ grid })).toEqual([['terminal', 'scripts'], ['browser']]);
+    expect(kindsOf({ grid })).toEqual([['terminal'], ['browser'], ['scripts']]);
   });
 
-  it('opens the fourth under the column that still has room', () => {
+  it('opens the next row kind under the one before it', () => {
     const grid = opened({ entries: [BROWSER, TERMINAL, SCRIPTS, MONITORING] });
 
-    expect(kindsOf({ grid })).toEqual([
-      ['browser', 'monitoring'],
-      ['terminal', 'scripts'],
-    ]);
+    expect(kindsOf({ grid })).toEqual([['browser'], ['terminal'], ['scripts', 'monitoring']]);
   });
 
-  it('gives the fifth the place of the least recently used, which leaves the grid', () => {
-    const grid = opened({ entries: [BROWSER, TERMINAL, SCRIPTS, MONITORING, CONVERSATION] });
+  const FULL: ReadonlyArray<OpenDrawer> = [
+    BROWSER,
+    TERMINAL,
+    SCRIPTS,
+    MONITORING,
+    ASK,
+    CONVERSATION,
+    {
+      kind: 'transcript',
+      sessionId: SESSION_ID,
+      payload: { agentId: brandId<AgentId>({ value: 'agent-1' }) },
+    },
+    { kind: 'new', sessionId: SESSION_ID, payload: { form: 'report' } },
+  ];
 
-    expect(kindsOf({ grid })).toEqual([
-      ['conversation', 'monitoring'],
-      ['terminal', 'scripts'],
-    ]);
-    expect(grid.used).toEqual(['terminal', 'scripts', 'monitoring', 'conversation']);
-    expect(grid.focus).toEqual({ at: 'tool', kind: 'conversation' });
+  it('gives the ninth the place of the least recently used, which leaves the grid', () => {
+    const next: OpenDrawer = {
+      kind: 'fix-comments',
+      sessionId: SESSION_ID,
+      payload: { mountId: null },
+    };
+
+    const grid = opened({ entries: [...FULL, next] });
+
+    expect(grid.columns.flat()).toHaveLength(8);
+    expect(grid.columns.flat().some((panel) => panel.kind === 'browser')).toBe(false);
+    expect(grid.columns.flat().some((panel) => panel.kind === 'fix-comments')).toBe(true);
+    expect(grid.used).not.toContain('browser');
+    expect(grid.focus).toEqual({ at: 'tool', kind: 'fix-comments' });
   });
 
-  it('counts a reopen as a use, so the fifth takes the next oldest', () => {
-    const four = opened({ entries: [BROWSER, TERMINAL, SCRIPTS, MONITORING] });
+  it('counts a reopen as a use, so the ninth takes the next oldest', () => {
+    const next: OpenDrawer = {
+      kind: 'fix-comments',
+      sessionId: SESSION_ID,
+      payload: { mountId: null },
+    };
+    const full = opened({ entries: FULL });
 
-    const grid = opened({ grid: four, entries: [BROWSER, CONVERSATION] });
+    const grid = opened({ grid: full, entries: [BROWSER, next] });
 
-    expect(kindsOf({ grid })).toEqual([
-      ['browser', 'monitoring'],
-      ['conversation', 'scripts'],
-    ]);
+    expect(grid.columns.flat().some((panel) => panel.kind === 'browser')).toBe(true);
+    expect(grid.columns.flat().some((panel) => panel.kind === 'terminal')).toBe(false);
   });
 
   it('replaces a tool of the same kind in its own place', () => {
@@ -133,7 +169,7 @@ describe('the dock grid', () => {
       kinds: ['browser'],
     });
 
-    expect(kindsOf({ grid })).toEqual([['terminal', 'scripts']]);
+    expect(kindsOf({ grid })).toEqual([['terminal'], ['scripts']]);
     expect(grid.used).toEqual(['terminal', 'scripts']);
   });
 });

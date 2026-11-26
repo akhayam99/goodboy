@@ -43,12 +43,12 @@ in `features/session/pageRegistry.ts`).
   it. A tab draws no back button. The first crumb reads `Overview`,
   never the session title, which the title row above it already shows. The session title in
   the title row is the h1 on a tab and plain text on a detail, whose own title row holds the h1.
-- **Ask** in the right rail opens the Ask pane of the session (`askPaneOpen`, written by
-  `openAsk` and `closeAsk` with the session they name, never a drawer), pressed while open; a
-  second press closes it. `SessionWorkspace` draws `AskPane` beside the tab content, so the
-  pane stays while the tabs change and the Overview never switches to the Desk. It pushes the
-  page at 400px; under the 1100px window of `useShellRailForm` it lies over the right of the
-  page with a shadow and never reflows it. ⌘L (`ask.open`) opens it too and focuses its box.
+- **Ask** in the right rail opens the Ask panel of the session in the dock grid (drawer kind
+  `ask`, written by `openAsk` and `closeAsk` with the session they name), pressed while open; a
+  second press closes it. The dock draws `AskPane` as a cell like Terminal or Browser, so the
+  panel stays while the tabs change and the Overview never switches to the Desk
+  (`deskToolsOf` leaves Ask out). The dock folds it and lays it over the page by the same rules
+  as every tool. ⌘L (`ask.open`) opens it too and focuses its box.
   Close or Esc hides it. Ask keeps its conversation and starts no agent. The Context tab holds
   no Ask.
 - **The tab is the stored place.** The selected tab is read from the open lens
@@ -712,7 +712,7 @@ header grows it into its page (`openTerminalOnPage`, `promoteBrowserTab`, a
 push); while that page is open the dock stays in the store but is not mounted,
 so Back brings it again on the same tab, and Dock on the page header moves it
 back (`dockTerminalPage`, `demoteBrowserTab`).
-`waitingPaneOf`reads the same`selectSlotBack` the drawer head's back chip
+The rail rings a tool from the same `selectSlotBack` the drawer head's back chip
 reads, so the two never disagree: a reader or form in the chip rings nothing,
 and a tool that is pressed never rings. The signal dot keeps its meaning and
 sits with any state, on the other corner of the icon.
@@ -757,9 +757,9 @@ Folding the rail leaves the column in place.
   `isPairedSlot`). `toggleRailTool` closes the selected panel when clicked
   again, and choosing another panel in the same slot replaces it. Esc closes
   through `DrawerFrame`.
-- **Scripts uses the detail slot, Ask its own pane.** Their rail buttons name the
-  session (`toggleRailTool`); `DrawerHost` renders `ScriptsPanel` in a
-  `DrawerFrame`, and Ask opens the pane `SessionWorkspace` draws beside the page. The Scripts chord,
+- **Scripts and Ask are dock tools.** Their rail buttons name the
+  session (`toggleRailTool`); `DrawerHost` renders `ScriptsPanel` and `AskPane` in a
+  `DrawerFrame` cell of the dock grid like Terminal, Browser and Monitor. The Scripts chord,
   palette's Open Scripts, toasts and stored notifications (`open-lens`
   scripts) still open Terminal through `openToolPane`. Explore is **All files**
   on Changes, and Context is its tab.

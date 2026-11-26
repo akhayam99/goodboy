@@ -290,29 +290,25 @@ describe('a grid tool belongs to the session it was opened in', () => {
     expect(state().drawer).toBeNull();
   });
 
-  it('parks a session tool under a page and keeps Terminal in its chip', () => {
-    const explore: DrawerRequest = { kind: 'scripts', sessionId: S1, payload: null };
+  it('keeps Scripts and Terminal beside a page in the dock grid', () => {
+    const scripts: DrawerRequest = { kind: 'scripts', sessionId: S1, payload: null };
     state().openDrawer(TERMINAL);
-    state().openDrawer(explore);
+    state().openDrawer(scripts);
 
     state().openStudio({ studio: { kind: 'inbox', focus: null } });
-    expect(selectDrawerPanel(state())).toBeNull();
 
-    state().closeStudio();
-    expect(selectDrawerPanel(state())).toEqual(explore);
-    expect(state().drawerBack).toEqual(TERMINAL);
+    expect(selectDrawerPanel(state())).toEqual(scripts);
+    expect(toolKinds().flat()).toEqual(expect.arrayContaining(['terminal', 'scripts']));
   });
 
-  it('parks Terminal and a session tool together on the Board, and Back brings both', () => {
+  it('parks Terminal and Scripts together on the Board, and Back brings both', () => {
     state().openDrawer(TERMINAL);
     state().openDrawer({ kind: 'scripts', sessionId: S1, payload: null });
 
     state().navigate({ to: BOARD_PLACE });
 
-    expect(state().drawer).toBeNull();
-    expect(state().drawerBack).toBeNull();
+    expect(toolKinds().flat()).not.toContain('scripts');
     state().back();
-    expect(state().drawer?.kind).toBe('scripts');
-    expect(state().drawerBack).toEqual(TERMINAL);
+    expect(toolKinds().flat()).toEqual(expect.arrayContaining(['terminal', 'scripts']));
   });
 });

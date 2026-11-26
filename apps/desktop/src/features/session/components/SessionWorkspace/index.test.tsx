@@ -99,7 +99,6 @@ const { store, hooks } = vi.hoisted(() => {
       resolveAgentReturn: {},
       navigation: {},
       pullRequestModes: {},
-      askPaneOpen: {},
       appStudio: null,
       closeAsk: vi.fn(),
       setPullRequestMode: vi.fn(),

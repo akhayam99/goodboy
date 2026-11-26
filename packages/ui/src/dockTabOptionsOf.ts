@@ -10,7 +10,12 @@ type Params = {
 };
 
 export const dockTabOptionsOf = ({ spec, tabs, shown }: Params): ReadonlyArray<DockTabOption> => {
-  const cells = new Map(spec.columns.flat().map((cell) => [cell.key, cell] as const));
+  const cells = new Map(
+    spec.columns
+      .flat()
+      .flatMap((cell) => [cell, ...(cell.tabs?.members ?? [])])
+      .map((cell) => [cell.key, cell] as const),
+  );
   return tabs.map((key) => {
     const cell = cells.get(key);
     const option = { value: key, label: cell?.label ?? key };

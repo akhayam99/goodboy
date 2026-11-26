@@ -9,6 +9,7 @@ import {
   type Session,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { EMPTY_DRAWER_GRID } from '../../../../store/slices/drawer/state';
 import type { AskHandle } from '../../../../features/session/ask/askHandles';
 import { buildAskPack } from '../../../../features/session/ask/buildAskPack';
 import { collectAskPackInput } from '../../../../features/session/ask/collectAskPackInput';
@@ -147,7 +148,11 @@ export const seedSessionAsk = ({ state, session = SESSION }: SeedParams): void =
   useAppStore.setState({ navigate: useAppStore.getInitialState().navigate });
   const store = useAppStore.getState();
   if (state === 'closed') {
-    useAppStore.setState({ askThreadId: { [session.id]: null }, askPaneOpen: {}, drawer: null });
+    useAppStore.setState({
+      askThreadId: { [session.id]: null },
+      drawer: null,
+      drawerGrid: EMPTY_DRAWER_GRID,
+    });
     return;
   }
   store.openAsk({ sessionId: session.id });

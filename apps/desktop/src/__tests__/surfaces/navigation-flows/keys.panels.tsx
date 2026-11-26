@@ -15,10 +15,14 @@ export const PANEL_KEY_ROWS: ReadonlyArray<Row> = [
     name: 'key panel.focusNext steps the focus from the open drawer to the page, panel.focusPrevious steps it back',
     covers: ['key:panel.focusNext', 'key:panel.focusPrevious'],
     open: async ({ sessionId }: Ctx) => {
-      useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null });
+      useAppStore.getState().openDrawer({
+        kind: 'conversation',
+        sessionId,
+        payload: { threadId: 'thread-harborline' },
+      });
       await settle();
       await waitFor(
-        () => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts'),
+        () => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('conversation'),
         WAIT,
       );
       await waitFor(

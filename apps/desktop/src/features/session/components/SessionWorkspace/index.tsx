@@ -5,7 +5,6 @@ import { useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { FirstLapBanner } from '../../../bootstrap/FirstLapBanner';
 import { useAskOpenShortcut } from '../../ask/useAskOpenShortcut';
-import { AskPane } from '../../ask/components/AskPane';
 import { AgentOverlay } from './parts/AgentOverlay';
 import { SessionLensPane } from './parts/SessionLensPane';
 import { useSessionBranchSync } from '../../hooks/useSessionBranchSync';
@@ -125,7 +124,6 @@ export const SessionWorkspace = ({ session }: Props) => {
   return (
     <div data-session-dock-row="" className="relative flex h-full w-full min-w-0">
       <div className="relative isolate flex h-full min-w-0 flex-1 flex-col">{page}</div>
-      <AskPane session={session} />
     </div>
   );
 };

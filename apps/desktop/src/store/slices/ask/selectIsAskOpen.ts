@@ -1,11 +1,10 @@
 import type { SessionId } from '@goodboy/types';
-import type { AppState } from '../../types';
-import type { AskState } from './state';
+import { selectGridTool } from '../drawer/selectGridTool';
 
 type Params = {
-  readonly state: Pick<AppState, 'appStudio'> & Pick<AskState, 'askPaneOpen'>;
+  readonly state: Parameters<typeof selectGridTool>[0]['state'];
   readonly sessionId: SessionId;
 };
 
 export const selectIsAskOpen = ({ state, sessionId }: Params): boolean =>
-  state.askPaneOpen[sessionId] === true && state.appStudio === null;
+  selectGridTool({ state, kind: 'ask' })?.sessionId === sessionId;

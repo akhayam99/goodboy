@@ -43,6 +43,7 @@ export const DRAWER_KINDS = {
   terminal: { ...TOOL, place: 'column', rowMin: 200, pane: 'terminal' },
   browser: { ...TOOL, sizing: 'browser', place: 'column', rowMin: 240, pane: 'browser' },
   monitoring: { ...TOOL, pane: 'monitoring' },
+  ask: { ...TOOL, rowMin: 260, pane: null },
   'explore-file': WIDE_READER,
   scriptRun: { ...READER, surface: 'tool', openerPane: 'scripts' },
   question: { ...READER, surface: 'item', openerPane: null },

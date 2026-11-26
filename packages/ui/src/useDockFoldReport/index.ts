@@ -15,6 +15,7 @@ type Params = {
   readonly scope?: string;
   readonly keys: ReadonlyArray<string>;
   readonly columns: ReadonlyArray<DockGridColumnBox>;
+  readonly chosen?: ReadonlyArray<string>;
   readonly onFold: ((fold: DockFold) => void) | undefined;
 };
 
@@ -24,12 +25,14 @@ type Memory = {
   readonly folded: ReadonlySet<string>;
 };
 
-export const useDockFoldReport = ({ scope, keys, columns, onFold }: Params): void => {
+export const useDockFoldReport = ({ scope, keys, columns, chosen = [], onFold }: Params): void => {
   const memory = useRef<Memory | null>(null);
   const folds = columns
     .flatMap((column) => column.panes)
     .flatMap((pane) =>
-      (pane.tabs ?? []).filter((tab) => tab !== pane.key).map((key) => ({ key, into: pane.key })),
+      (pane.tabs ?? [])
+        .filter((tab) => tab !== pane.key && !chosen.includes(tab))
+        .map((key) => ({ key, into: pane.key })),
     );
   const latest = useRef({ scope, keys, folds, onFold });
   latest.current = { scope, keys, folds, onFold };

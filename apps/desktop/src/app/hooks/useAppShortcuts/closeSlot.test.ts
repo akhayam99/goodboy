@@ -36,7 +36,11 @@ afterEach(() => {
 
 describe('closeSlot', () => {
   it('closes the top of the slot and brings the chip back', () => {
-    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({
+      kind: 'conversation',
+      sessionId: SESSION_ID,
+      payload: { threadId: 'thread-harborline' },
+    });
     store.getState().openDrawer({
       kind: 'question',
       sessionId: SESSION_ID,
@@ -45,7 +49,7 @@ describe('closeSlot', () => {
 
     closeSlot({});
 
-    expect(store.getState().drawer?.kind).toBe('scripts');
+    expect(store.getState().drawer?.kind).toBe('conversation');
     expect(store.getState().drawerBack).toBeNull();
   });
 
@@ -83,7 +87,11 @@ describe('closeSlot', () => {
       sessionId: SESSION_ID,
       payload: { questionId: QUESTION_ID, from: 'ask' },
     });
-    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({
+      kind: 'conversation',
+      sessionId: SESSION_ID,
+      payload: { threadId: 'thread-harborline' },
+    });
     store.getState().openDrawer({
       kind: 'question',
       sessionId: SESSION_ID,
@@ -91,7 +99,7 @@ describe('closeSlot', () => {
     });
 
     store.getState().closeQuestion();
-    expect(store.getState().drawer?.kind).toBe('scripts');
+    expect(store.getState().drawer?.kind).toBe('conversation');
     expect(store.getState().drawerBack).toBeNull();
 
     closeSlot({});
@@ -99,21 +107,29 @@ describe('closeSlot', () => {
   });
 
   it('leaves a drawer parked under a page alone', () => {
-    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({
+      kind: 'conversation',
+      sessionId: SESSION_ID,
+      payload: { threadId: 'thread-harborline' },
+    });
     store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
 
     closeSlot({});
 
-    expect(store.getState().drawer?.kind).toBe('scripts');
+    expect(store.getState().drawer?.kind).toBe('conversation');
     expect(store.getState().appStudio?.kind).toBe('impact');
   });
 
   it('leaves the drawer alone while a dialog is open over it', () => {
-    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({
+      kind: 'conversation',
+      sessionId: SESSION_ID,
+      payload: { threadId: 'thread-harborline' },
+    });
     document.body.innerHTML = '<div role="dialog"></div>';
 
     closeSlot({});
 
-    expect(store.getState().drawer?.kind).toBe('scripts');
+    expect(store.getState().drawer?.kind).toBe('conversation');
   });
 });
