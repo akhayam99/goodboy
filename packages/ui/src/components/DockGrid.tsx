@@ -55,15 +55,16 @@ export const DockGrid = ({
 }: Props) => {
   const tracks = dockGridTracksOf({ columns });
   const keys = columns.map((column) => column.panes.map((pane) => pane.key));
-  const canMove = isFramed && spec.onMove !== undefined;
+  const layoutKeys = spec.columns.map((column) => column.map((cell) => cell.key));
   const chosenKeys = Object.fromEntries(
     spec.columns.flatMap((column) =>
       column.flatMap((cell) => (cell.tabs === undefined ? [] : [[cell.key, cell.tabs.keys]])),
     ),
   );
+  const canMove = spec.onMove !== undefined && (isFramed || Object.keys(chosenKeys).length > 0);
   const drag = useDockDrag({
     gridRef,
-    columns: keys,
+    columns: layoutKeys,
     groups: chosenKeys,
     boxes: columns,
     canDrop,

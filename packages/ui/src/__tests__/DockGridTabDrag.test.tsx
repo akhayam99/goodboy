@@ -26,7 +26,11 @@ const TERMINAL: DockGridCell = {
 
 const BROWSER: DockGridCell = { key: 'browser', sizing: 'browser', label: 'Browser' };
 
-const renderGrid = () => {
+type RenderParams = {
+  readonly isFramed?: boolean;
+};
+
+const renderGrid = ({ isFramed = true }: RenderParams = {}) => {
   const original = Element.prototype.getBoundingClientRect;
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function rectOf(
     this: Element,
@@ -60,7 +64,7 @@ const renderGrid = () => {
       ]}
       handles={[]}
       turn={null}
-      isFramed
+      isFramed={isFramed}
       isFocusShown={false}
       isFloating={false}
       canDrop={() => true}
@@ -158,5 +162,21 @@ describe('dragging from the head of a cell with tabs', () => {
     await nextFrame();
 
     expect(document.querySelector('[data-dock-chip]')?.textContent).toBe('2 panels');
+  });
+
+  it('keeps every tab a handle when the last two cells merged into one unframed cell', async () => {
+    const { onMove } = renderGrid({ isFramed: false });
+    const tab = document.querySelector<HTMLElement>('[data-dock-tab="scripts"]');
+    expect(tab?.closest('[data-dock-drag-source]')).not.toBeNull();
+    if (tab === null) {
+      throw new Error('the Scripts tab is drawn');
+    }
+
+    fireEvent.pointerDown(tab, { clientX: 100, clientY: 20, button: 0, buttons: 1 });
+    pointer({ type: 'pointermove', x: 790, y: 300 });
+    await nextFrame();
+    pointer({ type: 'pointerup', x: 790, y: 300 });
+
+    expect(onMove).toHaveBeenCalledWith(expect.objectContaining({ key: 'scripts', unit: 'panel' }));
   });
 });

@@ -42,7 +42,7 @@ const renderGrid = ({ isRoomy = true }: RenderParams = {}) => {
   });
   const onMove = vi.fn();
   const spec: DockGridSpec = {
-    columns: [],
+    columns: [[{ key: 'terminal', sizing: 'side' }], [{ key: 'browser', sizing: 'browser' }]],
     focus: 'page',
     onFocus: () => undefined,
     onTurn: () => undefined,

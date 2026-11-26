@@ -3,6 +3,7 @@ import { dockDropZonesOf } from '../dockDropZonesOf';
 import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockFoldedOf, dockGhostOf } from '../dockGhostOf';
 import type { DockLayout } from '../dockLayoutAfterMove';
+import { DOCK_ROW_MIN_PX } from '../dockRowMin';
 import { DRAWER_GUTTER } from '../drawerGeometry';
 
 const DOCK = { x: 100, y: 50, width: 1212, height: 600 };
@@ -121,5 +122,51 @@ describe('the ghost of the landing slot', () => {
         was: [],
       }).rect,
     ).toBeNull();
+  });
+
+  it('takes the rows of the first stacked column for every stacked column', () => {
+    const boxes: ReadonlyArray<DockGridColumnBox> = [
+      {
+        width: 400,
+        dragMax: 600,
+        panes: [
+          { key: 'terminal', weight: 2 },
+          { key: 'browser', weight: 1 },
+        ],
+      },
+      {
+        width: 400,
+        dragMax: 600,
+        panes: [
+          { key: 'monitoring', weight: 1 },
+          { key: 'scripts', weight: 5 },
+        ],
+      },
+    ];
+    const room = DOCK.height - DRAWER_GUTTER;
+
+    const top = dockGhostOf({ boxes, dock: DOCK, key: 'monitoring', groups: {}, was: [] });
+    const bottom = dockGhostOf({ boxes, dock: DOCK, key: 'scripts', groups: {}, was: [] });
+
+    expect(top.rect?.height).toBe((room * 2) / 3);
+    expect(bottom.rect?.height).toBe(room / 3);
+    expect(bottom.rect?.y).toBe(DOCK.y + (room * 2) / 3 + DRAWER_GUTTER);
+  });
+
+  it('keeps a row at its minimum height', () => {
+    const boxes: ReadonlyArray<DockGridColumnBox> = [
+      {
+        width: 400,
+        dragMax: 600,
+        panes: [
+          { key: 'terminal', weight: 20 },
+          { key: 'browser', weight: 1 },
+        ],
+      },
+    ];
+
+    const bottom = dockGhostOf({ boxes, dock: DOCK, key: 'browser', groups: {}, was: [] });
+
+    expect(bottom.rect?.height).toBe(DOCK_ROW_MIN_PX);
   });
 });

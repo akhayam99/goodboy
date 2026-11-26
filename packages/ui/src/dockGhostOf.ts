@@ -1,6 +1,7 @@
 import type { DockRect } from './dockDropZonesOf';
 import type { DockGridColumnBox } from './dockGridColumnBox';
 import type { DockGroups } from './dockLayoutAfterMove';
+import { DOCK_ROW_MIN_PX } from './dockRowMin';
 import { DRAWER_GUTTER } from './drawerGeometry';
 
 export type DockGhostFold = {
@@ -33,11 +34,32 @@ export const dockFoldedOf = ({ boxes, groups }: BoxesParams): ReadonlyArray<Dock
     ),
   );
 
+type RowsParams = {
+  readonly boxes: ReadonlyArray<DockGridColumnBox>;
+  readonly height: number;
+};
+
+type Rows = {
+  readonly top: number;
+  readonly bottom: number;
+};
+
+const rowsOf = ({ boxes, height }: RowsParams): Rows | null => {
+  const [top, bottom] = boxes.find((box) => box.panes.length > 1)?.panes ?? [];
+  if (top === undefined || bottom === undefined) {
+    return null;
+  }
+  const room = Math.max(0, height - DRAWER_GUTTER);
+  const share = (room * top.weight) / (top.weight + bottom.weight);
+  const first = Math.min(
+    Math.max(share, DOCK_ROW_MIN_PX),
+    Math.max(DOCK_ROW_MIN_PX, room - DOCK_ROW_MIN_PX),
+  );
+  return { top: first, bottom: Math.max(0, room - first) };
+};
+
 const rectOf = ({ boxes, dock, key, groups }: Omit<Params, 'was'>): DockRect | null => {
-  const split = boxes.find((box) => box.panes.length > 1);
-  const [top, bottom] = split?.panes ?? [];
-  const total = top === undefined || bottom === undefined ? 0 : top.weight + bottom.weight;
-  const room = Math.max(0, dock.height - DRAWER_GUTTER);
+  const rows = rowsOf({ boxes, height: dock.height });
   let x = dock.x;
   for (const box of boxes) {
     const at = box.panes.findIndex(
@@ -48,12 +70,12 @@ const rectOf = ({ boxes, dock, key, groups }: Omit<Params, 'was'>): DockRect | n
     );
     if (at >= 0) {
       const pane = box.panes[at];
-      if (pane === undefined || box.panes.length < 2 || total === 0) {
+      if (pane === undefined || box.panes.length < 2 || rows === null) {
         return { x, y: dock.y, width: box.width, height: dock.height };
       }
-      const height = (room * pane.weight) / total;
-      const y = at === 0 ? dock.y : dock.y + (room * (top?.weight ?? 0)) / total + DRAWER_GUTTER;
-      return { x, y, width: box.width, height };
+      return at === 0
+        ? { x, y: dock.y, width: box.width, height: rows.top }
+        : { x, y: dock.y + rows.top + DRAWER_GUTTER, width: box.width, height: rows.bottom };
     }
     x += box.width + DRAWER_GUTTER;
   }

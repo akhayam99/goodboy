@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { brandId, type SessionId } from '@goodboy/types';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
 import { gridAfterOpen } from '../gridAfterOpen';
+import { shellPanelsOf } from '../shellPanelsOf';
 import { gridWithout } from '../gridWithout';
 import { EMPTY_DRAWER_GRID, type DrawerGrid, type OpenDrawer } from '../state';
 import { gridWithLayout } from './gridWithLayout';
@@ -94,5 +95,26 @@ describe('the tab lists of the dock grid', () => {
       ['monitoring'],
     ]);
     expect(next.tabs).toEqual(MERGED.tabs);
+  });
+
+  it('hands a cell to its next tab while a Studio of the lead is the page', () => {
+    const panels = shellPanelsOf({
+      state: {
+        drawer: null,
+        drawerBack: null,
+        drawerGrid: MERGED,
+        currentSessionId: null,
+        appStudio: { kind: 'terminal', terminalId: null, sessionId: null },
+      },
+    });
+
+    expect(panels.layout.map((column) => column.map((panel) => panel.kind))).toEqual([
+      ['scripts'],
+      ['browser'],
+    ]);
+    expect(panels.tools.flat().map((panel) => panel.kind)).toEqual(['scripts', 'ask', 'browser']);
+    expect(MERGED.tabs).toEqual({
+      terminal: { keys: ['terminal', 'scripts', 'ask'], active: 'scripts' },
+    });
   });
 });
