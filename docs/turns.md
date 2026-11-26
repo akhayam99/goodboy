@@ -3,8 +3,9 @@
 > **Read this when** changing what happens between a sent message and its
 > recorded outcome: where a turn runs, which provider and model it runs on,
 > how the CLI is spawned and read, what a turn event means, how a failure
-> falls back, the session summarizer that follows, or a read-only workspace
-> chat turn. **Not for** installing or
+> falls back, the session summarizer that follows, how the chat reveals,
+> scrolls and composes, or a read-only workspace chat or session Ask turn.
+> **Not for** installing or
 > connecting a provider CLI ([providers.md](providers.md)), how a workflow run
 > advances ([workflows.md](workflows.md)), or mount lifecycle
 > ([mounts.md](mounts.md)).
@@ -56,8 +57,8 @@ after its result (`stopLingeringTurn`, through the run registered by
 `lingeringTurns`), then waits for that agent's previous turn to settle
 (`waitTurnSettledFor`, at most 30 s) before its own turn starts. The `done`
 event already flips the agent to idle, so without this a message typed in
-the seconds or minutes between a result and the end of its stream started a
-second CLI on the same session while the first still ran. Only
+the seconds or minutes between a result and the end of its stream would start
+a second CLI on the same session while the first still runs. Only
 `origin: 'operator'` does this: a turn sent from inside the agent's own
 finalize (a question delegate, a workflow continue) would wait for itself.
 `store.send-after-result.test.ts` pins the order and the stop.
@@ -89,10 +90,10 @@ database.
   lease queues it as a resolve attempt rather than running two writers in one
   worktree. The lease is bound to the child process in Rust and released when
   that process exits.
-- **Auto writers hold their write set; today's agents do not.** A turn sent
-  with a writer `confinedRole` (implementer, tester, docs, scribe, ci-fixer,
-  rewriter: the turns of an Auto
-  tree, set by the Auto units) takes one lease over its write set before it
+- **The Lead's writers hold their write set; other agents do not.** A turn
+  sent with a writer `confinedRole` (implementer, tester, docs, scribe,
+  ci-fixer, rewriter: the turns of a Lead tree, which is Auto in code) takes
+  one lease over its write set before it
   spawns: its working folder, the sibling mounts of the session, the common
   metadata folder of each repo and the own git folder of each linked worktree
   (`.git/worktrees/<name>`, from `worktree_git_dir`), the same list `turnWriteSet` hands to the CLI as
@@ -108,8 +109,8 @@ database.
   when this window releases, and after 30 minutes the turn answers
   `isWriterLeaseDenied` like a resolver does. Two Auto writers on different
   worktrees of one repo serialize on the metadata folder on purpose. A turn with
-  no `confinedRole` (every agent started by hand, in a Run or by the experiment
-  off) takes no write set lease: only the resolver lease above exists, the roots
+  no `confinedRole` (an agent started by hand or as a workflow step) takes no
+  write set lease: only the resolver lease above exists, the roots
   it gets are the ones it always got, and two generalists in two worktrees of
   one repo run together.
 - A resolver turn proposes only while another agent in the session is running.
@@ -200,7 +201,11 @@ record a live turn already wrote wins.
 
 ## What the prompt carries
 
-- **History for a provider that keeps none.** Cursor, Codex and Gemini get the
+- **History for a provider that keeps none.** Claude and the opencode family
+  resume the provider's own session when the agent's stored session belongs
+  to the same provider; a mount continuation never resumes, because it runs in
+  another directory. Cursor, Codex and Gemini
+  (`shouldReplayHistoryAsText` in `providerFlags.ts`) get the
   conversation as a block of prior turns (`buildPriorTurnsBlock`), capped at
   `PRIOR_TURNS_BUDGET_TOKENS` (8,000 estimated tokens, `preamble.ts`). It walks
   newest first. The original request (the first user message) is always
@@ -219,8 +224,8 @@ isShortened }`, never an empty block with nothing said. When a turn moves to
   in Italian.") when `detectSessionLanguage` reads one off that text: stopword
   scoring over it, en, es, pt, fr and de, after code spans, paths and
   identifiers are cut out. Under 3 words, under 2 hits, under 15% hits or a
-  winner less than 1.5 times the runner-up gives no name, and the rule reads
-  as before. The Auto prompt and the orchestrator brief name it the same way.
+  winner less than 1.5 times the runner-up gives no name, and the rule names
+  no language. The Auto prompt and the orchestrator brief name it the same way.
   Claude receives it as an appended system prompt; every other CLI receives it
   at the top of the prompt, with the kind prompt fenced as a role boundary.
 - The write-scope guard (`buildScopeGuard`) is where every agent, in a chat or
@@ -256,16 +261,15 @@ isShortened }`, never an empty block with nothing said. When a turn moves to
   slots, so the decisions, open questions, files touched and session summary
   never reach it, while the profile, role instructions, scope rules, images
   and "notes for your role" stay. A turn without the version (a hand started
-  agent, a delegation made before the upgrade and its retries and resumes)
-  keeps the role's slots as before.
+  agent, an older delegation and its retries and resumes) keeps the role's
+  slots.
 - A turn estimated at 85% or more of the model's context window raises a
   warning before it spawns.
 - `renderHandoff` (`@goodboy/core`) owns that stacking: from the composed
   message out it adds the context slots, the child routing menu, the cluster
   boundary, the goal attachments, the prior turns and the verbosity line, then
-  places the guards and the kind prompt per provider. The text it returns is
-  byte for byte what the CLI received before it existed;
-  `store.handoff-sent-text.test.ts` pins it for Claude and Codex.
+  places the guards and the kind prompt per provider.
+  `store.handoff-sent-text.test.ts` pins the exact text for Claude and Codex.
 
 ## What each agent is handed
 
@@ -414,8 +418,7 @@ threadIds? })`), a hint on one comment (`continueResolveThreads`) and a
   the `handoff` item and `TranscriptRows` counts it as the first user turn.
 - The transcript drawer is the record and the agent page is one conversation.
   What the agent received lives only in the handoff block at the top of the
-  conversation ("Sent by Orchestrator · step 4", opened in place). The old
-  kickoff cards and their text parsers are gone.
+  conversation ("Sent by Orchestrator · step 4", opened in place).
 - The conversation (`ChatView` `mode="conversation"`, rows from
   `conversationRows`) keeps per turn the user message, one summary line for the
   turn's tools (`turnSummary`, steps open inline), the final answer, app
@@ -424,14 +427,9 @@ threadIds? })`), a hint on one comment (`continueResolveThreads`) and a
   the dock (`isAskInDock`), and stays inline only where no dock can show it, and an
   answer you gave leaves one quiet line (`PermissionRecordLine`). The task list a `TodoWrite`, `update_plan` or `write_todos` call
   writes is one checklist (`planChecklist`) in the turn that first wrote it.
-  `mode="record"` (the transcript drawer) keeps today's full rows.
+  `mode="record"` (the transcript drawer) keeps the full rows.
   Steps keeps error explanations after a later reply succeeds, without recovery
   buttons (`TranscriptRows`, `TranscriptErrorRow` `isReadOnly`).
-
-Claude and the opencode family resume the provider's own session when the
-agent's stored session belongs to the same provider. Cursor, Codex and
-Antigravity instead receive a bounded block of prior turns. A mount
-continuation never resumes, because it runs in another directory.
 
 ## Spawning the CLI
 
@@ -481,8 +479,8 @@ continuation never resumes, because it runs in another directory.
   (**Still stopping** with **Force stop**, the same call again). A request for
   an earlier run never counts. A refused cancel for a run that is already
   gone counts as `exited`. `cancelCurrentTurn` with
-  reason `user` calls it; `handoff` and `teardown` keep the old fire-and-idle
-  path.
+  reason `user` calls it; `handoff` and `teardown` cancel and go idle without
+  waiting for the exit.
 - **Write scope is explicit.** The writable mounts and their git common
   directories are handed to the CLIs that accept extra directories, plus the
   bridge socket directory only while the bridge is serving. Claude loads only
@@ -505,9 +503,10 @@ continuation never resumes, because it runs in another directory.
   a CLI whose help does not list the flags the role depends on is refused with
   `confinement_unproven`. `turn_spawn`, `chat_turn` and `ask_turn` run the
   probe, the keychain read and the spawn on the blocking pool, never on the
-  async runtime. Nothing sends `confinedRole` for today's agents; the
-  Auto children do, and so does every turn of an Auto agent
-  (`confinedRoleOf.ts`: the role `auto`). `auto` is in the same read-only list
+  async runtime. An agent started by hand sends no `confinedRole`; the
+  Lead's children do, and so does every turn of the Lead itself
+  (`confinedRoleOf.ts`: the role `auto`), and **Answer without editing** sends
+  `scout`. `auto` is in the same read-only list
   as `scout`, `planner`, `investigator` and `reviewer`: Auto runs read-only like
   a scout on every provider, with the argv a scout gets (Claude `--tools
 Read,Grep,Glob` in plan mode, Codex `-s read-only`, Cursor and Agy `--mode
@@ -546,16 +545,14 @@ provider turns each line into `TurnEvent`s. A payload no parser models becomes
 - **A result ends the turn even when the process stays alive.** Claude and
   Cursor print a `result` line (the `done` event) and normally exit. When the
   agent moved a tool to the background (a Bash that hit its timeout), Claude
-  keeps the process alive for that task and the stream never closed, so the
-  turn end was never processed: no span, no message, no step completion, and
-  the run sat silent. In real usage about 3 percent of runs printed more than
-  one `done`, and a new turn started up to 15 minutes after the first.
-  `createTurnResultWatch` (`features/chat/turnResultWatch.ts`) arms a timer on
+  keeps the process alive for that task and the stream stays open, so without
+  a watch the turn end is never processed: no span, no message, no step
+  completion. A process can print more than one `done`, and a new turn can
+  start up to 15 minutes after the first. `createTurnResultWatch` (`features/chat/turnResultWatch.ts`) arms a timer on
   every `done`:
   - **5 s** (`TURN_END_MS.grace`) when the turn closed its work (a step-done
     or cluster-done marker, or a blocking question), or when no tool was moved
-    to the background. This is the owner's lost turn: the marker was there, the
-    process stayed.
+    to the background: the marker is there and the process stayed.
   - **12 min** (`TURN_END_MS.background`) when a tool was moved to the
     background and the turn did not close its work. The agent may be waiting
     for that task, and Claude wakes it with a new turn when the task ends (it
@@ -636,8 +633,8 @@ The engine lives in `features/chat/reveal/`; the hosts are listed below.
   renders the revealed prefix with its newest characters in `<span data-fresh>`
   (`freshenNode`), one span per piece, each fading from 0 to 1 opacity for 220 ms
   (`[data-fresh]` in `styles.css`, only under no-preference reduced motion). No
-  span per word and no component per word; a block that is not the last one is
-  the cached element of PR 1, untouched. It also finishes the reveal on a
+  span per word and no component per word; a block that is not the last one
+  stays the cached element, untouched. It also finishes the reveal on a
   pointer down in the row, on a non empty selection in it and when find in view
   starts, so selection and copy always get the full text.
 - Hosts: `AssistantText` (the agent chat, run step page and drawer, agent
@@ -768,8 +765,8 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   answers `isAlreadySent` without a second user message. When the backend
   still refuses the spawn with `delivery_duplicate` (another window won), the
   transcript says "This message was already sent." and no fallback starts. No
-  outbox table: a crash ends as "Stopped by restart" with Continue. Auto sends
-  its own ids, and Auto is switched off. A queued message to Auto hands its
+  outbox table for a hand-sent turn: a crash ends as "Stopped by restart" with
+  Continue. Auto sends its own ids. A queued message to Auto hands its
   `queue:<id>` to the Auto outbox as the join key (`user:<delivery id>`,
   unique per tree), so a resend after a crash finds the row already there and
   writes no second echo.
@@ -806,7 +803,7 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   the agent as it was and puts a `blocked` turn state back, so Needs you, the
   door count and the ask card read as they did before the reload, the
   relaunch or the workspace switch. A decided ask, or one the load cannot
-  read, stops the agent as before.
+  read, stops the agent.
 - **A clean exit marks what it cut.** On app exit, and in `restart_prepare`
   before the updater relaunches, Rust writes the live run ids to
   `restart.interrupted_runs` in the settings table and stops sending end and
@@ -820,7 +817,7 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   or overlapping loads read the same marker, each run is claimed and resumed
   by exactly one of them. `planRestartResume` picks how:
   Claude and the opencode family resume their own session with a short
-  "check before you run it again" prompt; Codex, Cursor and Antigravity get
+  "check before you run it again" prompt; Codex, Cursor and Gemini get
   the same prompt plus the prior turns block; a turn cut before Claude opened
   a session is sent again as it was. A `decision_note` goes first ("Resumed
   after Goodboy restarted." or "updated."), and it names any tool call that
@@ -965,9 +962,11 @@ Rules the adapters hold, each with a test in `adapters.test.ts`:
 - A finished turn draws no tail: it is read from its summary line.
 
 The terminal has no tail by design (its output is its tail), and dependency
-setup has no adapter until its state exists. Hosts move onto the adapters one
-by one; until then today's thinking line and Auto waiting line stay. Scenes
-`c01-tail-*` show every state.
+setup has no adapter until its state exists. The run tails (`RunTail`,
+`OrchestratedTail`), the Auto child end (`AutoChildEnd`) and the Auto dock
+(`AutoDockLive`) draw from the adapters; the agent chat keeps its own thinking
+line (`ThinkingIndicator`), so `agentTurnLive` has no host outside the scenes
+yet. Scenes `c01-tail-*` show every state.
 
 ### Live work read
 
@@ -1033,7 +1032,7 @@ alphabet the timeline's `WorkNode` uses at its `sm` size:
 - `failed`: ended with `isError`.
 - `approval`: a `permission_request` for the same `toolUseId` has no
   `permission_decision` yet. `permissionFor` scans the surrounding items for
-  this, since `cluster-operations.ts` now absorbs `permission_request` and
+  this, since `cluster-operations.ts` absorbs `permission_request` and
   `permission_decision` into the same operations cluster as the tool call
   they gate, instead of splitting the cluster around them.
 - `stopped`: never ended, and the run it belongs to is no longer the active
@@ -1072,7 +1071,7 @@ cards, 4 chips, an answer clamped at 12 lines).
   types it whole. A turn with an `error` item keeps its notes open. A live reply
   that ends is never folded under the reader's eyes: `useReadingOrder` keeps it
   open (`unfoldedKeys`) and folds it only once every held text has scrolled above
-  the top of the chat viewport (`scrollerRef` of `ChatView`), or on error as before.
+  the top of the chat viewport (`scrollerRef` of `ChatView`), or on error.
 - The first message of an agent keeps one shape whether or not an answer exists
   (there is no collapsed **Asked:** pill). When an agent is still named by its role,
   the page title is its brief (first line); clicking it opens the full text
@@ -1099,8 +1098,9 @@ cards, 4 chips, an answer clamped at 12 lines).
 
 ## Turn footer
 
-`usage` transcript items no longer cluster with operations
-(`cluster-operations.ts`'s `ABSORBED_KINDS` dropped it): a `TurnFooter`
+`usage` transcript items stay out of the operations cluster
+(`ABSORBED_KINDS` in `cluster-operations.ts` holds only the permission
+events): a `TurnFooter`
 (`features/chat/components/TurnFooter/`) always renders on its own row,
 right under the run's last assistant message. A `usage` item merges every
 `usage` event for the same `runId` into one (`sumUsage` in
@@ -1221,8 +1221,8 @@ view, `onRevealOverflow` finishes the reveal (`revealPacer.flush`), so what is
 below the fold is simply there, not animated. When the reveal ends the view
 stays where it is. The hold ends at once for a reader who scrolls, and "Scroll to
 latest" or a manual scroll to the bottom during the reveal goes back to
-following the bottom until the reveal ends. The old rule, always stick to the
-bottom while pinned, still holds for everything that is not a revealing answer.
+following the bottom until the reveal ends. Everything that is not a
+revealing answer sticks to the bottom while pinned.
 
 "Scroll to latest" (`JumpToLatest`) is mounted all the time. It shows when the
 content (not the spacer) ends 32 px or more under the view, `isBehind` in
@@ -1314,8 +1314,9 @@ Any other failure leaves the agent in `error` with a retryable error event.
 - Spans outlive their session and agent (`ON DELETE SET NULL`) so duration history stays with the workspace.
 - m184 rebuilt spans once for the succeeded runs from before spans existed, so estimates start from real history. It ties a run to its agent through the run's `done` turn event, or the agent's last `provider_run_id` when the events were pruned, and takes the provider run's own `created_at` to `finishedAt`, the machine time of that run. A backfilled span has `effort` null, because runs never stored the effort flag, so its row shows the planned effort in faint and it only counts toward the tiers without effort. The migration fills a helper table in one pass over `turn_events`, then inserts in 17 chunks by the last character of the run id, each committed on its own, and never overwrites a span the app recorded.
 - `touched_mount_ids` lists the session mounts the turn changed, as a JSON array (null on spans from before it was recorded). `collectTouchedMounts` joins two signals. Every `file_edit` path the CLI reported maps to the innermost mount that holds it. On top of that, `snapshotMountChanges` reads each writable mount's numstat (`worktreeChangedFiles`) right before the CLI starts and again at the end, and a mount whose numstat moved counts too, which catches edits made through the shell. The numstat signal is dropped when another agent of the session was running at the end of the turn or closed a turn during it (`hasOtherSessionTurnSince`), because the change could be theirs. Gemini reports no `file_edit`, so its turns rely on the numstat signal alone. A failure never fails the turn; it falls back to the reported edits.
-- `turn_file_sets` holds the files a turn wrote, one row per run and mount (migration 237), kept for a later screen to say what a turn did on a branch; no screen reads it today, because the Done row holds only the facts it draws. `beginTurnFileSets` reads `worktree_snapshot` (head and the hash of every dirty file) of each writable mount right before the CLI starts, and `recordTurnFileSets` asks `worktree_turn_files` for the set when the turn ends, in the finished and the failed path, without holding the turn back. The set is the files committed or edited since that snapshot, minus the ones only the base branch changed (the branch's own diff from its merge base decides), plus any file whose hash moved while it was dirty; a file that was dirty and unchanged is left out. Counts come from the numstat against the head at the start. Files that only the base changed are kept as `fromBase`, so a row can say how many it hid. Nothing is recorded for a turn that ran beside another agent (`isTurnShared`), and a failure is reported, never fatal.
+- `turn_file_sets` holds the files a turn wrote, one row per run and mount (migration 237). Next steps read it through `loadTurnFiles` (the `turn-files` slice): the next script after a turn and the files of the last turn in a move's evidence. `beginTurnFileSets` reads `worktree_snapshot` (head and the hash of every dirty file) of each writable mount right before the CLI starts, and `recordTurnFileSets` asks `worktree_turn_files` for the set when the turn ends, in the finished and the failed path, without holding the turn back. The set is the files committed or edited since that snapshot, minus the ones only the base branch changed (the branch's own diff from its merge base decides), plus any file whose hash moved while it was dirty; a file that was dirty and unchanged is left out. Counts come from the numstat against the head at the start. Files that only the base changed are kept as `fromBase`, so a row can say how many it hid. Nothing is recorded for a turn that ran beside another agent (`isTurnShared`), and a failure is reported, never fatal.
 - The activity feed shows these mounts on an agent row (`useAgentTouchedWorktrees`, union over the agent's spans) only when the session has two or more mounts. The row shows the worktree icon and a count, never a name that the title would have to share space with; the tooltip and accessible name list the mounts. A mount that left the session drops out of the row.
+- After the span, `recordTurnPick` (`store/slices/turn/recordTurnPick/`) writes one `agent_turn_picks` row (m246) when the turn's model has a known cause: `lead`, `fallback`, `pinned` or `best`. Impact reads it to say which turns were pinned; [architecture.md](architecture.md) owns the table.
 - After a span is written, `recordTurnSpan` calls `refreshTurnSpans`, which reloads the session spans and the workspace history only where a pane already loaded them.
 - `listAgentTurnSpanRoutes` reads a session's spans back as routes (run, agent, provider, model, effort) when the session opens. That is where the observed effort in the activity meta, the run tree and the agent header comes from after a reload.
 
@@ -1410,8 +1411,7 @@ budget`).
 - A summarizer CLI that exits non-zero reports why. The error carries the
   provider's own message: the `error` or `result` text of a failed stream-json
   result event on stdout, else the last three lines of stderr (ANSI stripped, 400
-  characters at most), as `summarizer cli exited with code 1: <detail>`. Without
-  it a Cursor quota or sign-in failure read as a bare exit code.
+  characters at most), as `summarizer cli exited with code 1: <detail>`.
 - **Summarizer failed** raises only when every allowed model failed. It names
   the cause in plain words (`Cursor reached the usage limit for this account.`,
   `Cursor isn't signed in.`, a generic line for anything unclassified), never
@@ -1476,10 +1476,9 @@ snapshot keep reading one string.
 ## Composer
 
 `ChatInput` is one shell: field, then a 32px action row, no divider between
-them. Focus shows as a stronger border plus a soft shadow, never a full ring:
-the ring the box carried at every focus wrapped the whole thing in a color
-loud enough to compete with the transcript, and the same anti-pattern is
-avoided on `SendControl`'s own buttons.
+them. Focus shows as a stronger border plus a soft shadow, never a full ring,
+which would compete with the transcript; `SendControl`'s own buttons follow
+the same rule.
 
 - The action row's left side is `ComposerPlusMenu` (`+`, `parts/`): the menu
   is where the prefix syntax (`$` script, `~` workflow, `@` agent) is learned,
@@ -1530,8 +1529,8 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   selection, draft, queue, send, suggestions), its sections in `parts/`, and
   its derived flags in `composerView.ts`. It stays one component so the draft
   and pending nudges survive a re-render.
-- `composerPlaceholder` (`ChatInput/lib.ts`) replaces the old placeholder that
-  advertised every prefix inline: a role's first turn gets its
+- `composerPlaceholder` (`ChatInput/lib.ts`) words the placeholder: a role's
+  first turn gets its
   `firstMessagePrompt`, otherwise `Message <role>` (`Message Implementer`),
   idle or running, and `Message the agent` when the role is unknown. While a
   turn runs, Queue (Enter) is the primary and Send now (⌘Enter) a quiet word
@@ -1847,7 +1846,8 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
 
 ## Session Ask turns
 
-Ask answers a question about one session from the Context tab (`ask.open`). It reuses the
+Ask answers a question about one session from the Ask pane beside the page
+(`ask.open`, ⌘L) or the field at the foot of the Overview. It reuses the
 workspace chat pipeline (same hardening, same `chat_event` channel, same
 stream reader) with a session scope: `ask_turn` in
 `apps/desktop/src-tauri/src/chat.rs`.
