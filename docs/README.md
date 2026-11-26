@@ -22,7 +22,7 @@ private `goodboy-atlas` repository. Ask the owner if you need access.
 - [workflows.md](./workflows.md): how steps, providers and models work
   together in one run
 - [providers.md](./providers.md): how to install, connect or manage a
-  provider CLI
+  provider CLI, with its detail pages in [providers/](./providers/)
 - [auto.md](./auto.md): how the Lead (the Auto agent in code) starts, hands
   work to other roles and shows it, and its release gate
   - [auto/starting.md](./auto/starting.md), [auto/messages.md](./auto/messages.md),
@@ -199,6 +199,24 @@ The recipe column links the steps for the change you are about to make: [recipes
   check the landing page.
 - [providers.md](providers.md): when you install, connect or manage a
   provider CLI.
+  - [providers/connect.md](providers/connect.md): when you connect,
+    disconnect or switch a provider account, or one does not connect.
+  - [providers/provider-page.md](providers/provider-page.md): when you change a
+    provider's page in Connections.
+  - [providers/models-settings.md](providers/models-settings.md): when you
+    change the Models or Every run settings rows.
+  - [providers/routing.md](providers/routing.md): when you change how a
+    provider, model and effort are picked.
+  - [providers/models-and-effort.md](providers/models-and-effort.md): when a
+    model ships or retires, or a price, effort or CLI floor changes.
+  - [providers/sign-in-checks.md](providers/sign-in-checks.md): when you change
+    the provider tables, Connect, the commands or the sign-in checks.
+  - [providers/cli-flags.md](providers/cli-flags.md): when you change how a CLI
+    starts or how its output is read.
+  - [providers/permission-modes.md](providers/permission-modes.md): when you
+    change what a permission mode becomes on a CLI.
+  - [providers/usage-limits.md](providers/usage-limits.md): when you change how
+    usage, resets, spend or room are read.
 - [typescript/data.md](typescript/data.md): when you declare a type or a
   data shape.
 - [typescript/components.md](typescript/components.md): when you write a
