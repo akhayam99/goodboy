@@ -497,7 +497,7 @@ and the Needs you order follows it, falling back to the last edit. Mark as unrea
 in the mark box, unless the session asks you, failed or runs, which outranks it
 (`sessionMarkOf`), and the switcher and the hover card draw the same mark.
 
-The Board count. The Board item of the places rail, the top bar, the Needs you
+The Board count. The Board item of the places rail, the Needs you
 cards at the top of the Board's Running lane (one card per counted session,
 `needsYouOf`) and the Needs you group of the session order (`sessionOrderOf`)
 say how many sessions need you with one function, `attentionCountOf` (read
@@ -510,15 +510,15 @@ wears the count as a `CountBadge` on its glyph (`railMarkOf`), in `warning`, or
 `danger` as soon as one counted session has a danger reason (`agent-error`,
 `run-stopped`, `push-failed`, `ci-failed`); with only quiet sessions it wears no
 mark. The tooltip and the label keep the
-reasons ("3 need you: Checks failing, 1 question for you"). The top bar holds
-no target of its own for it, because the chrome is capped at 24: the Now chip
-leads with the same count as its first segment (a dot in the worst tone, the
-number, the word "need you", hidden at zero), its tooltip carries the
-`session.nextNeedsYou` key, and its list opens with a Needs you group and a
-**Next that needs you** button that runs `goToNextNeedsYou`. `NeedsYouFeedback` is the inline status line beside
-the chip: the key says
-"Nothing needs you in <workspace>", "This is the only one" or "Opened <session>,
-outside your project filter" there for two seconds, never in a toast.
+reasons ("3 need you: Checks failing, 1 question for you"). The top bar has no count of its own. The Sessions door wears a `warning`
+`StatusDot` when any session of the workspace needs you, and its tooltip says
+how many ("Sessions, 2 sessions need you"). The Now chip holds only running sessions and
+scripts: no needs you segment, group or Next button (`NowChip/index.test.tsx`).
+The next session that needs you is the `session.nextNeedsYou` shortcut
+(`goToNextNeedsYou`). `NeedsYouFeedback` is the inline status line in the top
+bar: it says "Nothing needs you in <workspace>", "This is the only one" or
+"Opened <session>, outside your project filter" for two seconds, never in a
+toast.
 
 A branch and its pull request follow one state table on every surface: the
 Now card branch rows (`BRANCH_STATE_TONE` in

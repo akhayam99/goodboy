@@ -37,8 +37,9 @@ chips, Spend and the bell all take `TOP_BAR_CONTROL` (height `h-7`, square
 The bar container stays `h-9`.
 
 - The left cluster holds Sessions and Repositories, the centre the history
-  arrows and the command centre, the right cluster Now (with the needs you
-  count first), Limits, Spend and the bell.
+  arrows and the command centre, the right cluster Now (running sessions and
+  scripts), Limits, Spend and the bell. The Sessions door carries a warning
+  dot when a session needs you.
 - Spend opens Impact on its Spend tab (`Spend today. Open Impact`): Impact is a
   place on the rail, and the bar has no Impact icon and no theme toggle.
 - The command centre says `Search or run` with its chord as bare text; the
