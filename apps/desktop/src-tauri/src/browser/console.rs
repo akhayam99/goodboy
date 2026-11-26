@@ -152,6 +152,7 @@ pub(crate) struct ErrorFacts {
     pub(crate) origin: ErrorOrigin,
     pub(crate) stack: Option<String>,
     pub(crate) request_id: Option<String>,
+    pub(crate) at: Option<u64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -222,6 +223,8 @@ struct RawError {
     origin: ErrorOrigin,
     stack: Option<String>,
     request_id: Option<String>,
+    #[serde(default)]
+    at: Option<f64>,
 }
 
 #[derive(Deserialize)]
@@ -320,6 +323,10 @@ fn error_of(raw: RawError) -> ErrorFacts {
         request_id: raw
             .request_id
             .filter(|id| raw.origin == ErrorOrigin::Request && is_request_id(id)),
+        at: raw
+            .at
+            .filter(|at| at.is_finite() && *at >= 0.0 && *at <= MAX_SAFE_SEQ as f64)
+            .map(|at| at as u64),
     }
 }
 
@@ -632,6 +639,7 @@ mod tests {
                             origin: ErrorOrigin::Request,
                             stack: None,
                             request_id: Some("r4".into()),
+                            at: Some(1_700_000_000_000),
                         }),
                     },
                 ],
@@ -672,7 +680,7 @@ mod tests {
                         "method": null,
                         "status": null,
                         "network": null,
-                        "error": { "origin": "request", "stack": null, "requestId": "r4" },
+                        "error": { "origin": "request", "stack": null, "requestId": "r4", "at": 1_700_000_000_000_u64 },
                     },
                 ],
                 "watermark": 5,
@@ -843,6 +851,21 @@ mod tests {
             Some(MAX_STACK_CHARS)
         );
         assert_eq!(facts.request_id, None);
+        assert_eq!(facts.at, None);
+
+        let mut timed = failure(5);
+        timed["error"]["at"] = json!(1_700_000_000_123.9);
+        let facts = only_entry(timed)
+            .and_then(|e| e.error)
+            .expect("a timed error");
+        assert_eq!(facts.at, Some(1_700_000_000_123));
+
+        let mut skewed = failure(6);
+        skewed["error"]["at"] = json!(-4);
+        let facts = only_entry(skewed)
+            .and_then(|e| e.error)
+            .expect("an error kept");
+        assert_eq!(facts.at, None);
 
         let mut bad_id = request(4, "r4");
         bad_id["network"]["id"] = json!("r4\");alert(1)");

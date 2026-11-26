@@ -12,7 +12,7 @@ import {
 import { browserHost } from '../../browserHost';
 import { consoleTabOf } from '../../consoleTabOf';
 import { listenTabLoad } from '../../listenTabLoad';
-import type { BrowserConsoleEntry, BrowserConsoleKind } from '../../types';
+import type { BrowserConsoleEntry, BrowserToolsTab } from '../../types';
 
 const CONSOLE_PULL_MS = 1_000;
 
@@ -29,7 +29,7 @@ type TabParams = {
 };
 
 type ClearParams = {
-  readonly kind: BrowserConsoleKind;
+  readonly kind: BrowserToolsTab;
 };
 
 export type ConsoleEntries = {
@@ -46,6 +46,9 @@ type ClearedParams = ClearParams & {
 };
 
 const isClearedBy = ({ entry, kind }: ClearedParams): boolean => {
+  if (kind === 'errors') {
+    return entry.kind === 'error';
+  }
   const tab = consoleTabOf({ entry });
   return tab === kind || (tab === null && kind === 'network');
 };

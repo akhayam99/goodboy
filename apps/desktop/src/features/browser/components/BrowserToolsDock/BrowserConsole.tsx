@@ -5,11 +5,10 @@ import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
 import { isTextEntryTarget } from '../../../../shared/keyboard/isTypingTarget';
 import type { BrowserToolsSide } from '../../browserToolsDockPref';
 import { consoleAttachmentOf } from '../../consoleAttachmentOf';
-import { consoleCounts } from '../../consoleCounts';
 import { consoleRowsOf, type ConsoleLevelFilter } from '../../consoleRowsOf';
 import { queueConsoleHandoff } from '../../queueConsoleHandoff';
 import type { ConsoleEntries } from '../../hooks/useConsoleEntries';
-import type { BrowserConsoleKind, BrowserPaneModel } from '../../types';
+import type { BrowserConsoleKind, BrowserPaneModel, BrowserToolsTab } from '../../types';
 import { BrowserConsoleLevelMenu } from './BrowserConsoleLevelMenu';
 import { BrowserConsoleRow } from './BrowserConsoleRow';
 import { BrowserConsoleSendMenu } from './BrowserConsoleSendMenu';
@@ -18,18 +17,21 @@ import { BrowserToolsHead } from './BrowserToolsHead';
 import { useRequestSelection } from './useRequestSelection';
 import { NAMES } from '../../../../shared/utils/names';
 
+type TabParams = {
+  readonly next: BrowserToolsTab;
+};
+
 type Props = {
   readonly model: BrowserPaneModel;
+  readonly kind: BrowserConsoleKind;
+  readonly counts: Readonly<Record<BrowserToolsTab, number>>;
   readonly title: string;
   readonly log: ConsoleEntries;
   readonly side: BrowserToolsSide;
   readonly isToolsInHead: boolean;
+  readonly onTab: (params: TabParams) => void;
   readonly onSide: () => void;
   readonly onClose: () => void;
-};
-
-type KindParams = {
-  readonly next: BrowserConsoleKind;
 };
 
 type LevelParams = {
@@ -71,14 +73,16 @@ const AGENT_GONE_TEXT = "The agent isn't in this session anymore. Pick one and t
 
 export const BrowserConsole = ({
   model,
+  kind,
+  counts,
   title,
   log,
   side,
   isToolsInHead,
+  onTab,
   onSide,
   onClose,
 }: Props) => {
-  const [kind, setKind] = useState<BrowserConsoleKind>('console');
   const [level, setLevel] = useState<ConsoleLevelFilter>('all');
   const [query, setQuery] = useState('');
   const [sendNote, setSendNote] = useState<string | null>(null);
@@ -86,7 +90,6 @@ export const BrowserConsole = ({
   const list = useRef<HTMLDivElement | null>(null);
   const isFollowing = useRef(true);
   const openSession = useOpenSession();
-  const counts = consoleCounts({ entries: log.entries });
   const rows = consoleRowsOf({ entries: log.entries, kind, level, query });
   const isFiltered = level !== 'all' || query.trim() !== '';
   const { openedAt, open, back } = useRequestSelection({
@@ -113,8 +116,8 @@ export const BrowserConsole = ({
     }
   };
 
-  const changeKind = ({ next }: KindParams): void => {
-    setKind(next);
+  const changeTab = ({ next }: TabParams): void => {
+    onTab({ next });
     setLevel('all');
   };
 
@@ -187,7 +190,7 @@ export const BrowserConsole = ({
         counts={counts}
         side={side}
         tools={isToolsInHead ? tools : null}
-        onKind={changeKind}
+        onKind={changeTab}
         onSide={onSide}
         onClose={onClose}
       />
