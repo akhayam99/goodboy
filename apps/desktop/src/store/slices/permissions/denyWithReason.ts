@@ -57,6 +57,8 @@ export const denyWithReason = (get: GetFn) => {
         agentId,
         content: withHeldAnswers({ held, prompt }),
         resolvedAsks: NO_RESOLVED_ASKS,
+        rowOrigin: 'permission',
+        userText: trimmed,
         ...(held.length > 0 && { permissionOnceAllows: heldOnceAllowsOf({ held }) }),
       }),
     });

@@ -1,3 +1,4 @@
+import { isUserOrigin } from '@goodboy/core/auto';
 import type { AutoBridgeCall, AutoBridgeRequest } from './autoBridgeProtocol';
 import { isRecord } from '@goodboy/types/helpers';
 
@@ -14,7 +15,9 @@ const isTurn = (value: unknown): boolean =>
   (value['images'] === undefined || Array.isArray(value['images'])) &&
   (value['permissionOnceAllows'] === undefined || Array.isArray(value['permissionOnceAllows'])) &&
   (value['deliveryId'] === undefined || isText(value['deliveryId'])) &&
-  (value['focusArtifactId'] === undefined || isText(value['focusArtifactId']));
+  (value['focusArtifactId'] === undefined || isText(value['focusArtifactId'])) &&
+  (value['origin'] === undefined || isUserOrigin({ value: value['origin'] })) &&
+  (value['userText'] === undefined || typeof value['userText'] === 'string');
 
 const isCall = (value: unknown): value is AutoBridgeCall => {
   if (!isRecord(value)) {

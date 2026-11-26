@@ -258,6 +258,8 @@ describe('a message typed to an Auto agent', () => {
       sessionId: SESSION,
       workspaceId: WORKSPACE,
       text: 'Also cover the notify-relay retries',
+      origin: 'operator',
+      userText: 'Also cover the notify-relay retries',
       onQueued: expect.any(Function),
     });
     expect(onStarted).toHaveBeenCalledTimes(1);
@@ -340,6 +342,63 @@ describe('a message typed to an Auto agent', () => {
         text: 'Also cover the notify-relay retries',
       }),
     );
+  });
+
+  it('keeps the words as typed on the row while the held answers lead the text', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    const { get } = harness({
+      agents: [autoRow],
+      transcripts: { [AUTO_AGENT]: [AUTO_ASK] },
+      agentTurnState: { [AUTO_AGENT]: HELD },
+    });
+
+    await routeAutoUserTurn({ get, input: inputOf({ origin: 'operator' }) });
+
+    const turn = port.mock.calls[0]?.[0];
+    expect(turn?.text).toBe('Denied Read. Also cover the notify-relay retries');
+    expect(turn?.userText).toBe('Also cover the notify-relay retries');
+    expect(turn?.origin).toBe('operator');
+  });
+
+  it.each(['permission', 'continue', 'answers', 'system'] as const)(
+    'sends a %s row with its origin, no user words and no bubble',
+    async (rowOrigin) => {
+      const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+      registerAutoUserTurnPort({ port });
+      const { get, appendTurnEvent } = harness({ agents: [autoRow] });
+
+      await routeAutoUserTurn({
+        get,
+        input: inputOf({ content: 'Continue where you stopped.', rowOrigin }),
+      });
+
+      const turn = port.mock.calls[0]?.[0];
+      expect(turn?.origin).toBe(rowOrigin);
+      expect(turn).not.toHaveProperty('userText');
+      expect(appendTurnEvent).not.toHaveBeenCalled();
+    },
+  );
+
+  it('sends the reason of a denial as the user words, with no bubble of its own', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    const { get, appendTurnEvent } = harness({ agents: [autoRow] });
+
+    await routeAutoUserTurn({
+      get,
+      input: inputOf({
+        content: 'Denied Read. rename the guard',
+        rowOrigin: 'permission',
+        userText: 'rename the guard',
+      }),
+    });
+
+    expect(port.mock.calls[0]?.[0]).toMatchObject({
+      origin: 'permission',
+      userText: 'rename the guard',
+    });
+    expect(appendTurnEvent).not.toHaveBeenCalled();
   });
 
   it('is refused out loud when Auto lost it, and no turn is started', async () => {

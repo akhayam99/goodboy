@@ -344,6 +344,24 @@ describe('Auto in a window without the runtime', () => {
     );
   });
 
+  it('accepts a user turn with a known origin and rejects an unknown one', () => {
+    const call = {
+      kind: 'userTurn',
+      messageId: 'message-1',
+      turn: { ...TURN, origin: 'permission' },
+    };
+    expect(isAutoBridgeRequest({ id: 'request-1', call })).toBe(true);
+    expect(
+      isAutoBridgeRequest({
+        id: 'request-1',
+        call: { ...call, turn: { ...TURN, origin: 'robot' } },
+      }),
+    ).toBe(false);
+    expect(
+      isAutoBridgeRequest({ id: 'request-1', call: { ...call, turn: { ...TURN, userText: 4 } } }),
+    ).toBe(false);
+  });
+
   it('turns a failure in the main window into an error the tail can show', async () => {
     const main = mainPorts();
     main.stop.mockRejectedValueOnce(new Error('Auto is not running in the main window.'));

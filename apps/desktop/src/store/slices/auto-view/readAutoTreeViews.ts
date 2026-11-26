@@ -28,6 +28,7 @@ import { userImagesOf } from '../../runtime/auto/userImagesOf';
 import { deliveredResultsOf } from './deliveredResultsOf';
 import { hiddenChildIdsOf } from './hiddenChildIdsOf';
 import { presentDelegationsOf } from './presentDelegationsOf';
+import { noteTextOf } from './noteTextOf';
 import { readMessagesOf } from './readMessagesOf';
 import { sentChangeOf } from './sentChangeOf';
 import type { AutoPendingMessage, AutoPendingRefusal, AutoTreeView } from './state';
@@ -87,6 +88,9 @@ const pendingMessagesOf = ({
       text: isUserPayload(row.payload) ? row.payload.text : '',
       images: userImagesOf({ rows: [row] }),
       joinKey: row.joinKey,
+      noteText: isUserPayload(row.payload)
+        ? noteTextOf({ payload: row.payload, text: row.payload.text })
+        : null,
     }));
 
 const droppedMessageIdsOf = ({ tree, pending }: PendingRefusalParams): ReadonlyArray<string> =>

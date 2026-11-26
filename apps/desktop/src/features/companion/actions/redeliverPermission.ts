@@ -39,6 +39,7 @@ export const redeliverPermission = async ({ store, pending }: Params): Promise<v
         prompt: verdict === 'allow' ? ALLOW_PROMPT : denialNoticeOf({ toolName, reason: '' }),
       }),
       resolvedAsks: NO_RESOLVED_ASKS,
+      rowOrigin: 'permission',
       ...(verdict === 'allow'
         ? { permissionOnceAllows: [...heldAllows, oncePatternText({ toolName, input })] }
         : held.length > 0 && { permissionOnceAllows: heldAllows }),

@@ -289,6 +289,7 @@ export const adoptAgent = async ({
             payload: {
               kind: 'user',
               text: kickoff,
+              origin: 'system',
               facts: {
                 ...EMPTY_USER_FACTS,
                 lastResultArtifactIds: resultArtifacts.map((artifact) => artifact.id),

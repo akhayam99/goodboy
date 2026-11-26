@@ -1,3 +1,4 @@
+import type { UserOrigin } from '@goodboy/core/auto';
 import type {
   AgentId,
   AttachmentInput,
@@ -63,6 +64,8 @@ export type SendTurnInput = Readonly<{
   override?: TurnProviderOverride;
   force?: boolean;
   origin?: 'operator' | 'workflow' | 'mount-continuation' | 'delegation';
+  rowOrigin?: UserOrigin;
+  userText?: string;
   handoff?: HandoffDraft;
   sentVia?: UserTurnSentVia;
   permissionOnceAllows?: ReadonlyArray<string>;

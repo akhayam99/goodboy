@@ -1,4 +1,5 @@
 import { CHECK_STATE, READ_FAILED } from '../../slices/notifications/errorRecovery';
+import type { UserOrigin } from '@goodboy/core/auto';
 import { brandId } from '@goodboy/types';
 import type {
   Agent,
@@ -99,6 +100,19 @@ const askDenialOf = ({ get, input, agentId }: DeniedParams) => {
   };
 };
 
+type OriginParams = {
+  readonly input: SendTurnInput;
+};
+
+const rowOriginOf = ({ input }: OriginParams): UserOrigin => input.rowOrigin ?? 'operator';
+
+const userTextOf = ({ input }: OriginParams): string | undefined => {
+  if (input.userText !== undefined) {
+    return input.userText;
+  }
+  return rowOriginOf({ input }) === 'operator' ? input.content : undefined;
+};
+
 type StoreImages = typeof storeAutoImages;
 
 type KeepParams = {
@@ -162,6 +176,8 @@ export const routeAutoUserTurn = async ({
     isRepeat: false,
   };
   const denial = askDenialOf({ get, input, agentId });
+  const origin = rowOriginOf({ input });
+  const userText = userTextOf({ input });
   const result = await port({
     agentId,
     sessionId: input.sessionId,
@@ -171,6 +187,8 @@ export const routeAutoUserTurn = async ({
     ...(denial.grants.length > 0 && { permissionOnceAllows: denial.grants }),
     ...(input.deliveryId !== undefined && { deliveryId: input.deliveryId }),
     ...(input.focusArtifactId !== undefined && { focusArtifactId: input.focusArtifactId }),
+    origin,
+    ...(userText !== undefined && { userText }),
     onQueued: ({ rowId, isRepeat = false }) => {
       queued.outboxId = rowId;
       queued.isRepeat = isRepeat;
@@ -200,7 +218,7 @@ export const routeAutoUserTurn = async ({
       sessionId: input.sessionId,
     }),
   );
-  if (!queued.isRepeat) {
+  if (!queued.isRepeat && origin === 'operator') {
     state.appendTurnEvent(agentId, input.sessionId, {
       kind: 'operator_text',
       runId: brandId<ProviderRunId>({ value: `operator-${crypto.randomUUID()}` }),

@@ -13,6 +13,7 @@ import { leadTreeDelegationsOf } from '../../tree/leadTreeDelegationsOf';
 import { leadTreeItemsOf, type LeadTreeItem } from '../../tree/leadTreeItemsOf';
 import { leadTreeOf, type LeadTree } from '../../tree/leadTreeOf';
 import { noteNodesOf, type NoteSource } from '../../tree/noteNodesOf';
+import { shownNoteRowsOf } from '../../tree/shownNoteRowsOf';
 import { useAutoTreeViews } from '../../useAutoTreeViews';
 
 type Params = {
@@ -84,7 +85,7 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
       createdAtById.set(turn.id, Date.parse(turn.createdAt));
     }
     const notes = noteNodesOf({
-      rows,
+      rows: shownNoteRowsOf({ rows, pending: view.pendingMessages }),
       createdAtById,
       read: view.readMessages ?? NO_READ,
     });

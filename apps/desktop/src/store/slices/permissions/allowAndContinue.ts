@@ -57,6 +57,7 @@ export const allowAndContinue = (set: SetFn, get: GetFn) => {
         content: withHeldAnswers({ held, prompt: CONTINUE_PROMPT }),
         permissionOnceAllows: [...heldOnceAllowsOf({ held }), oncePatternText({ toolName, input })],
         resolvedAsks: NO_RESOLVED_ASKS,
+        rowOrigin: 'permission',
       }),
     });
   };

@@ -43,6 +43,7 @@ export const retryBlockedTool = (get: GetFn) => {
         agentId,
         content: withHeldAnswers({ held, prompt: composeRetryPrompt({ toolName }) }),
         resolvedAsks: NO_RESOLVED_ASKS,
+        rowOrigin: 'permission',
         ...(held.length > 0 && { permissionOnceAllows: heldOnceAllowsOf({ held }) }),
       }),
     });

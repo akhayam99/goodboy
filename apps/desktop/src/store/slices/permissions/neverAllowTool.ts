@@ -57,6 +57,7 @@ export const neverAllowTool = ({ get }: Deps) => {
         content: withHeldAnswers({ held, prompt: denialNoticeOf({ toolName, reason: '' }) }),
         permissionOnceAllows: heldOnceAllowsOf({ held }),
         resolvedAsks: NO_RESOLVED_ASKS,
+        rowOrigin: 'permission',
       }),
     });
   };

@@ -51,6 +51,8 @@ export const resumeAfterRestart = async ({
   });
   const content =
     plan.mode === 'resend' ? plan.prompt : withStepBoundary({ agent, text: plan.prompt });
-  throwIfRefused({ result: await get().sendTurn({ sessionId, agentId, content }) });
+  throwIfRefused({
+    result: await get().sendTurn({ sessionId, agentId, content, rowOrigin: 'continue' }),
+  });
   return 'resumed';
 };

@@ -37,12 +37,18 @@ export type QuestionPayload = Readonly<{
   needs?: AutoSubstepRole;
 }>;
 
+export const USER_ORIGINS = ['operator', 'permission', 'continue', 'answers', 'system'] as const;
+
+export type UserOrigin = (typeof USER_ORIGINS)[number];
+
 export type UserPayload = Readonly<{
   kind: 'user';
   text: string;
   facts: UserFacts;
   images?: ReadonlyArray<MessageAttachment>;
   permissionOnceAllows?: ReadonlyArray<string>;
+  origin?: UserOrigin;
+  userText?: string;
 }>;
 
 export type MountNote = Readonly<{
@@ -119,6 +125,27 @@ export const isUserPayload = (value: unknown): value is UserPayload =>
   value['kind'] === 'user' &&
   typeof value['text'] === 'string' &&
   isRecord(value['facts']);
+
+export const isUserOrigin = ({ value }: ValueParams): boolean =>
+  USER_ORIGINS.some((origin) => origin === value);
+
+export type StoredUserOrigin = UserOrigin | 'unknown' | null;
+
+export const storedUserOriginOf = ({ value }: ValueParams): StoredUserOrigin => {
+  if (!isRecord(value) || value['origin'] === undefined) {
+    return null;
+  }
+  const origin = value['origin'];
+  return USER_ORIGINS.find((candidate) => candidate === origin) ?? 'unknown';
+};
+
+export const storedUserTextOf = ({ value }: ValueParams): string | null => {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const userText = value['userText'];
+  return typeof userText === 'string' ? userText : null;
+};
 
 export const isRefusalPayload = (value: unknown): value is RefusalPayload =>
   isRecord(value) &&
