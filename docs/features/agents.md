@@ -312,7 +312,7 @@ Run a plan part by part. An implementer given a plan splits into one sub-agent p
 
 ### Lead
 
-A Lead plans a run, hands the work to helpers and asks you only for what your [permission rows](start.md#permission-rows) say. It answers a question itself.
+A Lead plans a run, hands the work to helpers and asks you only for what your [permission rows](start.md#permission-rows) say. It answers a question from what it already has. When the answer needs the code, it asks a Scout.
 
 When there is something to make, it hands the work to the narrowest role that fits:
 

@@ -77,6 +77,14 @@ describe('roleNeedsSection', () => {
     expect(orchestrator).not.toContain('a reviewer always joins');
   });
 
+  it('lets only the Orchestrator skip a scout for what it can read itself', () => {
+    const auto = roleNeedsSection({ driver: 'auto' });
+
+    expect(auto).toContain('Do not add it when: What you already have answers it.');
+    expect(auto).not.toContain('Your own reads');
+    expect(roleNeedsSection({ driver: 'orchestrator' })).toContain('Your own reads answer it.');
+  });
+
   it('adds the ticked checks clause for Auto only', () => {
     expect(roleNeedsSection({ driver: 'auto' })).toContain('No Auto checks are ticked');
     expect(roleNeedsSection({ driver: 'orchestrator' })).not.toContain('Auto checks');
