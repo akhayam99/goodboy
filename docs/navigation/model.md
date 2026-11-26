@@ -9,67 +9,21 @@
   (needs you / running / in review / building / done). You reach chat, diff,
   terminal and open-in-IDE from the cards. You never land on them. Every
   capability stays one step away.
-- **The Board frame.** The header is one 44px row, no band above it,
-  with the pane title grade (`Sessions` alone, no total: each lane carries its
-  own count), then the tool row under it: **Filter sessions**
-  (`SessionFilterPopover`, a `FilterButton`), then "N hidden · Clear" while a
-  filter hides sessions (`HiddenByFilters`). The page is the Board only: there
-  is no List view, no switch and no stored page view, and the column is the
-  list. A stored `pageView` in an older prefs record is ignored. The filter
-  button shows how many filters are on as a count. The page filter holds Sort and Projects;
-  the column filter holds Sort, Project, Status and Show archived (Group stays
-  in the column). Both are the one `SessionFilterPopover` over the one
-  `SessionViewPrefs` record, so a choice made in one is the choice in the other,
-  and a view menu never changes data. **Mark all as read** is the foot button of
-  the filter popover and the palette command **Mark all sessions as read**.
-  Repository state is not here: it lives on the Repositories entry of the top
-  bar (`RepoEntry`). New session is not
-  here: it is the first row of the column. Nothing else sits on that line, and
-  no row sits under it. Header and lanes share one frame centred in the pane, so the
-  title's left edge is the first lane's left edge and the actions' right edge is
-  the last lane's right edge.
-  There are five lanes in pipeline order (building, running, in review, done,
-  archived), each from 12.25rem to 20rem wide (`BOARD_LANE_MAX_REM`) with
-  0.75rem gaps, so a wide or zoomed-out window never stretches a lane.
-  `boardLanesOf` decides by the frame's width in those rem values times the
-  root font size (`BOARD_LANE_MIN_REM` and `BOARD_LANE_GAP_REM` in
-  `paneRhythm.ts`; 15px root): five lanes from 964px; from 769px four lanes
-  with Done above Archived in the fourth, each half with its own header, count,
-  empty line and scroll; below that the four lanes scroll sideways, the title
-  row stays, and the scroller opens at its end so Done and Archived are on
-  screen. While scrolling, the lanes narrow down to 11rem (`scrollLaneRemOf`,
-  `BOARD_LANE_SCROLL_MIN_REM`) so the last three lanes and the 32px edge fade
-  (`BOARD_LANE_FADE_PX`) fit. `laneWidthOf` is the one lane width; the Needs
-  you cards above the lanes read it too, so a card is always one lane wide. Every lane always renders
-  its header and, when empty, one line naming what is missing; Archived shows
-  Loading until its list answers, and it is the list the sidebar shows under
-  Show archived. There is no dock and no collapse: Done and Archived are never
-  folded, and no lane caps its cards. Selection covers every lane in lane order:
-  Select all, Shift ranges and the lasso run across Done and Archived too. Lane
-  labels are sentence case in the neutral grade with the count in gray, never
-  the stage color. Cards are a fixed 96px with the stage track inside their
-  left padding (`ToneBar` card density, tone from `stageTrackOf`, the one
-  function the List rows read too: building neutral, running info and
-  breathing, needs you warning, in review success, done merged, archived
-  neutral and still; it steps under the selection box while one shows): a goal
-  of up to two lines (the full goal in the
-  tooltip) is the card's one button, the quick action sits at its right (or,
-  when it answers the reason the signal names, `signalActionOf`, the signal
-  itself is the button and no icon shows), the
-  lifecycle menu is the right click and Shift F10, and the bottom line holds the project
-  in gray (`projectLineOf`, "payments-api +1" for several) and one signal at the
-  right (`boardSignalOf`, the same one the List row shows): an open question,
-  else a failed check, else the pull request token in its state color (a click
-  opens the pull request), else a running dot with the count of running agents
-  (`runningAgentCountOf`), else nothing while GitHub has not answered (no
-  skeleton per card) and the offline cloud when it could not be reached. The question and
-  running glyphs carry their number from two on; one is the glyph alone, since
-  the state node already says it. An archived card shows
-  only its pull request. Age, issue chips, agent count, cost, the pin, Auto and
-  draft review comments live in the session hover card, which opens on the
-  board with facts only (no buttons). Restoring an archived card uses the
-  `restore` glyph. The Board door works from every place, the New session
-  draft included.
+- **The Board frame.** The Board is the one list across sessions: there is no
+  List view, no switch and no stored page view. Its title row, the tool row
+  with **Filter** (`SessionFilterPopover`, with "N hidden · Clear" while a
+  filter hides sessions, `HiddenByFilters`), the five lanes, the Needs you
+  cards at the top of Running and the cards themselves are in
+  [features/board.md](../features/board.md). The filter writes the one
+  `SessionViewPrefs` record, and a view menu never changes data. Repository state is not on the
+  Board: it lives on the Repositories entry of the top bar (`RepoEntry`). New
+  session is not on the Board header: it is New on the places rail. Header and lanes
+  share one frame centred in the pane, so the title's left edge is the first
+  lane's left edge. `boardLanesOf` picks how many lanes fit from the frame's
+  width, and `laneWidthOf` is the one lane width, which the Needs you cards
+  read too, so a card is always one lane wide. The stage track of a card comes
+  from `stageTrackOf` and its one signal from `boardSignalOf`. The Board door works from every place, the New
+  session draft included.
 - **An archived session is read-only until Restore.** Its Overview header holds
   Restore alone (no Archived chip, no New), and the notices, unassigned comments and
   Next are not drawn. The composer, new agents, workflows and
@@ -99,9 +53,10 @@
   a dot for new tasks; the reasons are in the accessible name. Board is named "Board, 2
   sessions need you: Checks failing, 1 question for you" (`doorSignalOf`). It reads `useNowSessions().attention`, which
   is `useWorkspaceAttention` over every session of the workspace, whatever the
-  project filter. The Now chip does not show it. The palette's
-  Needs you rows, the Now chip's idle word and the screen reader line read the
-  same counted sessions (`useNowSessions().needsYou`), longest waiting first.
+  project filter. The Now chip does not show it; the Sessions control of the
+  top bar carries a warning dot instead. The palette's Needs you rows and the
+  screen reader line read the same counted sessions
+  (`useNowSessions().needsYou`), longest waiting first.
   Connections, after Chat at full weight, is the page of the providers on this Mac and the
   integrations of the workspace (`features/connections`); it has no shortcut and answers to
   Providers and Integrations in ⌘K. Its index shows a tile per set up provider and integration
@@ -530,7 +485,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   finds that workspace's history again.
 - **Back restores the entry as it was; a forward move arrives clean.** Before a
   push, the live view is captured into the current entry, so Back finds the
-  same run, artifact or diff focus. A forward move (crumb, sidebar, palette,
+  same run, artifact or diff focus. A forward move (crumb, Sessions, palette,
   notification, Board) starts with an empty focus. A page tab navigates first
   and clears the run and artifact focus after, so the clear never reaches the
   entry it leaves (`openSessionPage`).

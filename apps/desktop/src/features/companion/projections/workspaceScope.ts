@@ -51,6 +51,8 @@ export type WorkspaceScope = Readonly<{
   pullRequestFacts: Readonly<Record<string, PullRequestFacts | null>>;
   spendUsd: Readonly<Record<string, number>>;
   telemetry: Readonly<Record<string, ReadonlyArray<TelemetryRecord>>>;
+  stepCounts?: Readonly<Record<string, number>>;
+  agentRunHistory?: Readonly<Record<string, ReadonlyArray<string>>>;
   budgets: Readonly<Record<string, SessionBudget | undefined>>;
   slackDrafts: Readonly<Record<string, ReadonlyArray<IntegrationDraft>>>;
   trees: Readonly<Record<string, ReadonlyArray<AutoTreeView>>>;

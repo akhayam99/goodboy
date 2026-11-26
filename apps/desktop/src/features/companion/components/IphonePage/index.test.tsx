@@ -237,6 +237,17 @@ describe('IphonePage', () => {
     expect(await screen.findByTestId('pairing-qr')).toBeTruthy();
   });
 
+  it('keeps the paired iPhones and their rights in reach when no code can be made', async () => {
+    mocks.phones = [harborline];
+    mocks.enrolledCount = 1;
+    mocks.startError = 'no private network';
+    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
+
+    expect(await screen.findByRole('group', { name: 'Harborline iPhone' })).toBeTruthy();
+    expect(await screen.findByText("Couldn't make a pairing code.")).toBeTruthy();
+    screen.getByRole('switch', { name: 'Start sessions for Harborline iPhone' });
+  });
+
   const harborline: MockPhone = {
     id: 'key-harborline',
     name: 'Harborline iPhone',

@@ -21,11 +21,13 @@ const TRANSCRIPT_READS = createLatestOnly();
 
 type SelectOptions = {
   readonly isSelecting?: boolean;
+  readonly isMarkingViewed?: boolean;
 };
 
 export const selectAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId, options: SelectOptions = {}) => {
     const isSelecting = options.isSelecting ?? true;
+    const canMarkViewed = options.isMarkingViewed ?? true;
     const stampedAt = new Date().toISOString() as IsoDateTime;
     const prevAgentId = get().selectedAgentId[sessionId] ?? null;
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
@@ -88,7 +90,7 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
       if (import.meta.env.DEV) {
         console.log(`[perf] selectAgent:${agentId} cached`);
       }
-      isSeen = isWindowInFront();
+      isSeen = canMarkViewed && isWindowInFront();
       set((state) => {
         const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
         return {
@@ -135,7 +137,7 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
           `[perf] selectAgent:initial ${(performance.now() - tInitial).toFixed(0)}ms (${events.length} events)`,
         );
       }
-      isSeen = isWindowInFront();
+      isSeen = canMarkViewed && isWindowInFront();
       set((state) => {
         const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
         const hasLiveAppend =

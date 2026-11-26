@@ -1,4 +1,5 @@
 import type { Agent, Session } from '@goodboy/types';
+import { agentEndOf } from './agentEndOf';
 import { formatUsd } from '@goodboy/ui';
 import { formatSpan } from '../../../shared/utils/time/formatSpan';
 import { otherAttentionLinesOf, SESSION_STAGE_META } from '../../session/session-stage';
@@ -76,8 +77,7 @@ export const sessionFieldsOf = ({ scope, session, now }: Params): SessionFields 
     if (agent.startedAt === undefined) {
       return sum;
     }
-    const span =
-      Date.parse(agent.completedAt ?? new Date(now).toISOString()) - Date.parse(agent.startedAt);
+    const span = Date.parse(agentEndOf({ agent, now })) - Date.parse(agent.startedAt);
     return Number.isNaN(span) ? sum : sum + Math.max(0, span);
   }, 0);
   const agentTime = agentMillis === 0 ? '' : formatSpan({ from: 0, to: agentMillis });

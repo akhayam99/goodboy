@@ -117,7 +117,7 @@ registries:
   transitive npm package. `pnpm audit` is clean.
 
 `@carbon/icons` 11.92.0 (npm, pinned exactly, a root dev dependency) is the
-source of every app glyph, in place of `@phosphor-icons/react`. The app never
+source of every app glyph. The app never
 imports it: `scripts/generate-glyphs.mjs` reads its 32 unit icon descriptors
 through `scripts/lib/carbonPathOf.mjs` and writes one small component per
 glyph into `packages/ui/src/icons/generated/`, which `@goodboy/ui/icons`
@@ -159,4 +159,4 @@ Follow the stable release most people use, not the latest tag.
 
 ## Enforcement
 
-`pnpm audit` runs on CI. Someone reviews the `pnpm-lock.yaml` diff by hand on every PR.
+`pnpm audit --prod` runs in CI on every pull request that changes `pnpm-lock.yaml`, and nightly on `main` ([CONVENTIONS.md](../CONVENTIONS.md#ci-pipeline), `audit`). Someone reviews the `pnpm-lock.yaml` diff by hand on every PR.

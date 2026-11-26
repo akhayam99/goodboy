@@ -24,6 +24,7 @@ import {
   openStoryFixDrawer,
   seedStoryReview,
 } from '../../scenes/story/storyReviewSeed';
+import { demoRuns } from './demoRunRegistry';
 import { installStoryReview } from './installStoryReview';
 
 let store: StoryStore;
@@ -45,6 +46,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  demoRuns.cancelAll();
   vi.useRealTimers();
 });
 
@@ -122,14 +124,20 @@ describe('the review checkpoint', () => {
 });
 
 describe('rebasing and pushing the reviewed fix', () => {
-  it('rebases on main and records a run that still sits ahead of origin', async () => {
-    await fixAndApply();
-    expect(store.getState().historyRuns[STORY_REVIEW_MOUNT_ID]).toBeUndefined();
-    const outcome = await store.getState().rebaseBranch({
+  const rebase = () =>
+    store.getState().rebaseBranch({
       sessionId: STORY_REVIEW_SESSION_ID,
       mountId: STORY_REVIEW_MOUNT_ID,
     });
-    expect(outcome).toBe('rebased');
+
+  it('works on the rebase for 1.5 s, then records a run that still sits ahead of origin', async () => {
+    await fixAndApply();
+    expect(store.getState().historyRuns[STORY_REVIEW_MOUNT_ID]).toBeUndefined();
+    const pending = rebase();
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(store.getState().historyRuns[STORY_REVIEW_MOUNT_ID]).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await pending).toBe('rebased');
     expect(store.getState().historyRuns[STORY_REVIEW_MOUNT_ID]).toMatchObject({
       origin: 'rebase',
       phase: 'applied',
@@ -139,17 +147,64 @@ describe('rebasing and pushing the reviewed fix', () => {
     expect(entryOf()?.thread.state).not.toBe('closed');
   });
 
-  it('closes the thread only when the force push lands, publishing the drafted reply', async () => {
+  it('drops the rebase when the demo restarts while it works', async () => {
     await fixAndApply();
-    await store.getState().rebaseBranch({
-      sessionId: STORY_REVIEW_SESSION_ID,
-      mountId: STORY_REVIEW_MOUNT_ID,
-    });
+    const pending = rebase();
+    await vi.advanceTimersByTimeAsync(700);
+    demoRuns.cancelAll();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(await pending).toBe('stopped');
+    expect(store.getState().historyRuns[STORY_REVIEW_MOUNT_ID]).toBeUndefined();
+  });
+
+  it('closes the thread only when the force push lands after 1.5 s, publishing the drafted reply', async () => {
+    await fixAndApply();
+    const rebased = rebase();
+    await vi.advanceTimersByTimeAsync(1500);
+    await rebased;
     expect(entryOf()?.thread.replyPostedAt).toBeNull();
-    const result = await forcePush();
+    const pushed = forcePush();
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(entryOf()?.thread.state).not.toBe('closed');
+    await vi.advanceTimersByTimeAsync(1);
+    const result = await pushed;
     expect(result.ok).toBe(true);
     expect(entryOf()?.thread).toMatchObject({ state: 'closed', stage: 'resolved' });
     expect(entryOf()?.thread.replyPostedAt).not.toBeNull();
     expect(entryOf()?.item.deliveredAt).not.toBeNull();
+  });
+
+  it('resolves the accepted threads one by one, 300 ms apart', async () => {
+    await fixAndApply();
+    const first = entryOf();
+    if (first === undefined) {
+      throw new Error('no comment');
+    }
+    store.setState((current) => ({
+      sessionResolveQueueItems: {
+        ...current.sessionResolveQueueItems,
+        [STORY_REVIEW_SESSION_ID]: [
+          ...(current.sessionResolveQueueItems[STORY_REVIEW_SESSION_ID] ?? []),
+          {
+            item: { ...first.item, id: 'demo-second-item' },
+            thread: { ...first.thread, threadId: 'demo-second-thread' },
+          },
+        ],
+      },
+    }));
+    const closedCount = (): number =>
+      (store.getState().sessionResolveQueueItems[STORY_REVIEW_SESSION_ID] ?? []).filter(
+        (entry) => entry.thread.state === 'closed',
+      ).length;
+    const pushed = forcePush();
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(closedCount()).toBe(0);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(closedCount()).toBe(1);
+    await vi.advanceTimersByTimeAsync(299);
+    expect(closedCount()).toBe(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(closedCount()).toBe(2);
+    expect((await pushed).ok).toBe(true);
   });
 });

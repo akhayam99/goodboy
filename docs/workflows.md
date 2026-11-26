@@ -5,174 +5,175 @@
 > moves a run to its next step, or the summarizer that runs after each step.
 > **Not for** the workflow header and back row ([navigation/session-rail.md](navigation/session-rail.md)).
 
-A workflow splits a task into steps and runs each step as its own agent. This
-page covers how you pick or build one, what the orchestrator does and how a
-run moves from step to step. The code details come at the end.
+A workflow is a reusable list of steps, such as scout, plan, implement and
+test, with a few lines that say when to use it and when to stop. This page
+covers how workflows are kept and edited, how a run moves from step to step,
+and the code behind both. What a reader of the app sees is in
+[features/workflows.md](features/workflows.md). How the Lead follows a
+workflow is in [auto.md](auto.md#following-a-workflow).
 
 Each object in Goodboy is explained in [concepts.md](concepts.md). The
 header and back row are covered in [navigation/session-rail.md](navigation/session-rail.md).
 
 ## What a workflow is
 
-A workflow is a list of steps you can use again and again, for example scout,
-plan, implement, test. Each step starts a new agent with a short brief. When
-that agent is done, it hands a summary to the next one.
+A workflow holds:
 
-- A workflow can have a goal, and you can change it for each run
-- Adding a workflow to a session starts a **run**
-- The same workflow can run as many times as you like in one session, and each run is separate
-- A session does not need a workflow. You can always add free agents next to a run
+- its steps, each one agent with a role, an instruction, an expected output
+  and a model (see [What a step carries](#what-a-step-carries))
+- its guide fields: **Use it when**, **First, check**, **Stop and ask when**,
+  **Then suggest** and **Keep steps in order**
 
-## Picking or building one
+A workflow reaches a session in one of two ways:
 
-Open the workflow builder in a session. The plan draws with the same nodes,
-lane and meta as the run. A recipe reads top down and a run reads up from NOW,
-so the builder lists step 1 first and the workflow detail grows upward from
-it. From the top:
+- Picked in **Start a run** (the **Workflow** pill, or `~` and its name), it
+  starts a Lead that follows it
+  ([auto.md](auto.md#following-a-workflow)).
+- Picked with `~` in a chat composer, from the **Set up** action of a
+  workflow suggestion, or from the phone, it is attached as a preset run
+  (`attachWorkflowToSession`): every step agent is created at once and the
+  run walks the steps. The phone attaches it queued, with a manual start.
 
-- **Name**: a large inline field that wraps a long name instead of cutting
-  it, and never takes a line break. It stays empty and shows a name as its
-  placeholder. An empty field starts with the planner title, the preset name,
-  "Custom workflow" or
-  "Orchestrated workflow", so the name never blocks the start. If you rename a
-  preset, you get a new workflow of your own and the shared preset keeps its
-  name.
-- **Goal**: what the run should do. **Add files**, **Use session goal**
-  (never on the New session page: a new session has no goal yet),
-  **Undo** and **Polish** sit inside the field.
-- **Mode**, with one line under it that says what the mode does, and the
-  mode's own control on the right of the same row.
-- **Plan**: the steps as a tree that reads top down, step 1 first and **Add step** last.
-- **Launch bar**: when it starts, when it asks you (**Every step** or
-  **Never**), the limit or **Save as preset**, and **Start
-  workflow**. The reason Start is off shows under it.
+The same workflow can run as many times as you like in one session, and each
+run is separate. A session does not need a workflow: you can always add free
+agents next to a run.
 
-The three modes:
+## Keeping and editing workflows
 
-1. **Orchestrated**: give a goal and let the orchestrator choose each step as the work goes. The plan shows the orchestrator with its model first, then **Add guidance for the orchestrator** and three example steps under it that grow in once when the tab opens, top to bottom. They are marked as an example and carry no model, because the real steps are picked one at a time. The guidance link opens **Guidance (optional)**: what the orchestrator should respect or avoid, and when to stop. An emptied field folds back. **Can use**, next to the tabs, sets the providers this run may put agents on. It starts on every connected provider and keeps at least one. The goal alone is enough to start.
-2. **Custom**: write the steps yourself, or open **Draft with planner**, describe what you want and Goodboy drafts the steps for you to edit.
-3. **Preset**: pick a ready workflow from the **Preset** picker. Goodboy comes with three: **Refactor** (scout, plan, implement, test), **Plan and ship** (scout, plan, implement, review) and **Fix a bug** (investigate, implement, test). The last two are built from the built-in steps. A preset is a source: editing a step marks it, the name shows "Edited from" the preset, and switching to **Custom** keeps the steps.
+The Workflows studio keeps the workflows of a workspace. Its tabs are
+**Workflows**, **Every run** and **Saved steps** (`StudioHomeTabs`).
+
+- **The list.** **New workflow**, then a page `⋯` with **Import workflows…**
+  and **Restore built-in workflows…** (the `workflowList` kind of the action
+  registry; with nothing to restore, **Import** stays a plain button). Each
+  row opens its workflow. Its last cell is a link, "3 runs" or "No runs",
+  that opens the runs pane. The role column names the roles in gray
+  ("Scout, Implementer +1"). Built-in rows say **Built in**, and **Edited**
+  once you change them.
+- **Import** lists the custom presets of every other workspace, grouped by
+  workspace, and copies all the checked ones at once. A copy whose name is
+  taken here gets its workspace name added, for example
+  `Settlement replay (Northwind)`.
+- **Restore built-in workflows** asks first and names only the built-ins you
+  edited or deleted in this workspace. It puts back their name and steps,
+  drops the steps you added to them, and leaves your own workflows alone.
+  With nothing changed the button is not shown. A built-in whose name one of
+  your own workflows now holds is left out. When an update brings a new
+  built-in, every workspace gets it at the next launch, unless one of your
+  workflows already has that name. A built-in you never had is not counted
+  as deleted.
+
+Goodboy comes with three built-ins: **Refactor** (scout, plan, implement,
+test), **Plan and ship** (scout, plan, implement, review) and **Fix a bug**
+(investigate, implement, test).
+
+### The workflow page
+
+A row opens the workflow page: a breadcrumb back to the list, then the
+fields **Use it when**, **First, check**, **Stop and ask when**, **Then
+suggest**, the step tree, **Keep steps in order** and **Models**. A saved
+workflow autosaves. The breadcrumb stays at the top; the name field steps
+aside while you read the steps.
+
+- **Draft steps** asks an agent to write the steps from **Use it when** and
+  **First, check**. With steps already there it reads **Redraft steps**,
+  starts at once, and offers an undo once the new steps land.
+- **New workflow** and **Duplicate workflow** open the same page for a
+  workflow that does not exist yet: it starts from **Every run**, asks for a
+  name first, and writes once, on **Create workflow**. Nothing autosaves
+  before that. A draft stays while you switch sessions and goes once you
+  create or discard it.
+- **Duplicate workflow** (the page menu and a button on each list row) fills
+  the page from the source under the name "<name> copy". **Discard** goes
+  back to the list at once and the toast offers **Undo**, which reopens the
+  draft.
+- **Models** shows each role of the steps muted while it follows Every run. A
+  pick pins that model on every step of the role and **Reset** clears it, so
+  the Lead's per-agent routing reads it as any step pin.
+- If you rename a preset, you get a new workflow of your own and the shared
+  preset keeps its name.
+- **Delete** on a workflow and **Remove** on a saved step act at once and the
+  toast offers **Undo**.
+
+### Editing a step
 
 Click a step to edit it in place: title, role, instruction and expected
 output on the left, the model on the right. Instruction and expected output
 are document fields (markdown with **Write** and **Preview**, Cmd+Enter
 closes the editor), each with **Polish** and, after a polish, **Undo
 polish**. The model block has two choices: **Follow role** (the default,
-which says what Auto picks for the role from the providers you can use now)
-or **Pin a model** (the same compact provider row as the model picker, then
-model, version and effort), and **Reply verbosity** under both. A pinned step carries a dot on
-its row, like an edited one. The footer has one primary, **Done**, and a ⋯
-menu with **Duplicate**, **Save as step**, **Move up**, **Move down** and
-**Delete step**. Delete acts at once and the toast offers **Undo**. Escape
-closes the editor too. The grip on the row drags a step, and the arrow keys on
-the grip move it: up runs it earlier, down runs it later. A step added to a
-running run opens the same editor, with **Add step** as its primary.
+which says what Auto picks for the role from the providers you can use now) or **Pin
+a model** (the same compact provider row as the model picker, then model,
+version and effort), and **Reply length** under both. A pinned step carries
+a dot on its row, like an edited one.
 
-Once the workspace has measured 10 finished steps, every step row shows how
-long steps like it usually take and what they usually cost, as a range
-("12-20m", "$0.90-1.60"), and the name row carries the plan's total
-("≈ 35-55m · $2.10-3.40"). A range with `~` leans on a broader history than
-this exact model and effort, a dash means there is not enough history for that
-step, and the tooltip always names the basis. When no step in the plan has an
-estimate yet, the rows show no time or cost columns at all. When the run asks before each step the total
-adds "+ your reviews", because your time between steps is not estimated. An
-orchestrated run shows a total only once the workspace has 5 finished
-orchestrated runs. The open editor repeats the step's estimate in its footer.
-Steps drafted with the planner carry the planner's size (small, medium or
-large), and the range narrows to the faster or slower half of past runs; the
-tooltip and the editor footer say so. The planner never gives minutes, and the
-agents never see the size.
-Every estimate is machine time only ([turns.md](turns.md#measured-time-and-estimates)).
+The footer has one primary, **Done**, and a `⋯` menu with **Duplicate**,
+**Save as step**, **Move up**, **Move down** and **Delete step**. Delete acts
+at once and the toast offers **Undo**. Escape closes the editor too. The grip
+on the row drags a step, and the arrow keys on the grip move it: up runs it
+earlier, down runs it later. A step added to a running run opens the same
+editor (`RunStepDraft`), with **Add step** as its primary and **Discard
+step** in place of Delete.
 
-The builder opens on the mode of the last workflow you started in that
-workspace, and on **Orchestrated** the first time. Only starting a workflow
-changes it, so looking at another tab does not. A remembered **Preset** falls
-back to **Orchestrated** once the workspace has no presets left.
+**Add step** opens a menu: a search field, **Blank step**, then the built-in
+steps and the steps saved in this workspace. The pick lands at the end of the
+tree, under the last step, with its editor open. **Save as step** in a step's
+editor saves it to the workspace. The **Saved steps** tab is where you manage
+them. Built-in steps, one per role that works in the repo, cannot be edited or
+removed: **Save a copy** makes a workspace copy that says what it is based on.
+A saved step saves once, when you press **Done** or move to another row, never
+on every field.
 
-Each run also gets a title of its own, at most six words, written from the run
-goal by the `agent_naming` task model when the run starts. The prompt asks for a
-verb plus an object in the language of the goal, inside one closed tag:
+### Run titles
+
+Each run gets a title of its own, at most six words, written from the run
+goal by the `agent_naming` task model when the run starts. The prompt asks for
+a verb plus an object in the language of the goal, inside one closed tag:
 `<title>Block double credits</title>`. Only the tag is read (`titleInTag` in
-`@goodboy/db`, plain `indexOf`, no regex). No tag, an empty or unclosed tag, a
-sentence that reads as the model talking, or a text that talks about the title,
-the role, the task or the routing ("Title generation", "Auto routed to ...")
-is discarded, as is a tagged title over six words, and the title becomes the
-one derived from the goal (`heuristicAgentTitle` in `@goodboy/db`: the first
-clause of the goal in the user's own words, first letter capitalised, at most
-ten words and 60 characters, cut on a word, in any language). Only the leading
-phrase of a talk reply is matched, so "Fix title generation crash" stays. One parser serves run, agent and session titles (`parseGeneratedTitle`,
-then `cleanWorkflowRunTitle`). A title stored before this reads through the same
-check when the run rows load: one that fails shows the goal derived title, the
-database row is not written, and one that passes stays. Neither the generated
-write of a run (`updateGeneratedWorkflowRunTitle`) nor that of a session
-(`renameSession` with `titleUserEdited` false) can replace a name you chose: both
-carry `title_user_edited = 0` in the `WHERE` clause. The activity feed,
-the workflow detail and the run page show that title, so
+`@goodboy/db`, plain `indexOf`, no regex).
+
+- A missing, empty or unclosed tag, a tagged title over six words, a sentence
+  that reads as the model talking, or a text about the title, the role, the
+  task or the routing ("Title generation", "Auto routed to ...") is
+  discarded. Only the leading phrase of a talk reply is matched, so "Fix
+  title generation crash" stays.
+- A discarded title becomes the one derived from the goal
+  (`heuristicAgentTitle` in `@goodboy/db`: the first clause of the goal in the
+  user's own words, first letter capitalised, at most ten words and 60
+  characters, cut on a word, in any language).
+- One parser serves run, agent and session titles (`parseGeneratedTitle`,
+  then `cleanWorkflowRunTitle`). A stored title reads through the same check
+  when the run rows load: one that fails shows the goal derived title and the
+  database row is not written.
+- Neither the generated write of a run (`updateGeneratedWorkflowRunTitle`)
+  nor that of a session (`renameSession` with `titleUserEdited` false) can
+  replace a name you chose: both carry `title_user_edited = 0` in the
+  `WHERE` clause.
+
+The activity feed, the workflow detail and the run page show that title, so
 two runs of the same preset read apart. Until the title arrives, or when the
 run has no goal, they show the workflow name. An orchestrated run keeps the
 name generated for its workflow and gets no second title. You rename a run
-only from the header of its workflow detail. That name stays with the run, a
-later generated title never replaces it, and the preset keeps its own name.
-
-A workflow you are still building stays there when you switch sessions. It
-goes away once you create it or discard it. **Workflow Studio** is where you
-keep presets. Its home is one list: **New workflow**, then a page `⋯` with
-**Import workflows…** and **Restore built-in workflows…** (the `workflowList`
-kind of the action registry; with nothing to restore, **Import** stays a plain button). Each row opens its workflow; its
-last cell is a link, "3 runs" or "No runs", that opens the runs pane. The role
-column names the roles in gray ("Scout, Implementer +1"). **Import** lists the custom presets of every
-other workspace, grouped by workspace, and copies all the checked ones at once.
-A copy whose name is taken here gets its workspace name added, for example
-`Settlement replay (Northwind)`. Built-in rows say **Built in**, and **Edited** once you change them.
-**Restore built-in workflows** asks first and names only the built-ins you
-edited or deleted in this workspace. It puts back their name and steps, drops
-the steps you added to them, and leaves your own workflows alone. With nothing
-changed the button is not shown. A built-in whose name one of your
-own workflows now holds is left out. When an update brings a new built-in,
-every workspace gets it at the next launch, unless one of your workflows
-already has that name. A built-in you never had is not counted as deleted.
-A row opens the workflow page: the builder without its launch bar, with a
-breadcrumb back to the list, and autosave. Its fields run **Use it when**,
-**First, check**, **Stop and ask when**, **Then suggest**, the step tree,
-**Keep steps in order** and **Models**. The breadcrumb stays at the top; the
-name field steps aside while you read the steps. **Draft steps** asks an agent
-to write the steps from **Use it when** and **First, check**. With steps
-already there it reads **Redraft steps**, starts at once, and offers an undo
-once the new steps land.
-**New workflow** and **Duplicate workflow** open the same page for a workflow
-that does not exist yet: it starts from **Every run**, asks for a name first,
-and writes once, on **Create workflow**. Nothing autosaves before that.
-**Duplicate workflow** (the page menu and a button on each list row) fills the
-page from the source under the name "<name> copy". **Discard** goes back to the
-list at once and the toast offers **Undo**, which reopens the draft. **Models**
-shows each role of the steps muted while it follows Every run; a pick pins that
-model on every step of the role and **Reset** clears it, so the Lead's
-per-agent routing and the step pins of ux53 read it as any step pin.
-**Delete** on a workflow, **Delete** on a preset in the launch picker and
-**Remove** on a saved step act at once and the toast offers **Undo**.
-
-**Add step**, in the Studio and in the builder, opens a menu: a search field,
-**Blank step**, then the built-in steps and the steps saved in this workspace.
-The pick lands at the end of the tree, under the last step, with its editor open. **Save as step** in
-a step's editor saves it to the workspace. The **Saved steps** tab next to
-**Workflows** is where you manage them. Built-in steps, one per role that works
-in the repo, cannot be edited or removed: **Save a copy** makes a workspace copy
-that says what it is based on. A saved step saves once, when you press **Done**
-or move to another row, never on every field.
+from its title on the run page or its row on Runs (`useRunTitleRename`,
+`useRunRowRename`). That name stays with the run, and the preset keeps its own
+name.
 
 ### When a run starts
 
-A run starts as soon as you add it. A run can also be queued to wait for your go: **Start run** on it starts it, and the phone queues runs this way. A run an older release saved with **After** another run keeps working: it starts by itself once the run it follows completes, its tail reads "Starts after" that run, and **Start run** starts it by hand. Nothing in the desktop creates a new one.
+A preset run starts as soon as it is attached, unless it was attached
+queued: then it waits for **Start run** (the phone attaches runs this way). A
+run saved to start **After** another run starts by itself once the run it
+follows completes, its tail reads "Starts after" that run, and **Start run**
+starts it by hand. Nothing in the desktop creates a new chained run.
 
-**Asks you** (it was Autonomy) comes from the workspace rules, **Every step**
-until you change them: the run waits for your go after each step so you can
-review it. **After the plan** (it was Balanced) runs on its own but holds once
-when the plan is written, until you approve it. **Never** (it was
-Autopilot for a run) starts each next step by itself. The words live in
-`NAMES` (`asksYou`, `everyStep`, `afterThePlan`, `asksNever`) and the old ones
-stay findable through `FORMER_NAMES`. The choice is stored as the run's autorun
-flag plus the run's copy of the rules, and can change later from the run's
-**Asks you** chip.
+**Asks you** comes from the workspace rules, **Every step** until you change
+them: the run waits for your go after each step so you can review it.
+**After the plan** runs on its own but holds once when the plan is written,
+until you approve it. **Never** starts each next step by itself. The words
+live in `NAMES` (`asksYou`, `everyStep`, `afterThePlan`, `asksNever`), and
+search still finds the earlier names (Autonomy, Balanced, Autopilot) through
+`FORMER_NAMES`. The choice is stored as the run's autorun flag plus the run's
+copy of the rules, and can change later from the run's **Asks you** chip.
 
 ## Workflow rules
 
@@ -180,11 +181,11 @@ Rules are the workspace defaults every new run starts from. They live on the
 **Every run** tab of the Workflows studio (`EveryRun`, `studioHomeView`
 `every`, opened by `setWorkflowStudioView('every')`). Settings has no Runs page:
 its workspace rail ends on the link row **Run defaults are in Workflows**, and
-every old door (`openRunDefaults`, a search hit on a run row, the section id
+every link to the run defaults (`openRunDefaults`, a search hit on a run row, the section id
 `general` or `workflow_orchestrator`) passes `isRunDefaultsFocus` in
 `settingRows.ts`, so the Settings studio switches to Every run in its place.
-The old names (Runs, Run defaults, Rules, Workflow rules, Start as) find the
-link in Search settings and in `⌘K` (`FORMER_NAMES`,
+Search settings and `⌘K` find the link by its earlier names too (Runs, Run
+defaults, Rules, Workflow rules, Start as; `FORMER_NAMES`,
 `RUN_DEFAULTS_SEARCH_ALIASES` in `workspacePages.ts`). The all-pages Restore
 defaults and Copy from in the workspace settings menu still carry the run
 defaults and list them as Every run in the preview.
@@ -216,23 +217,19 @@ save keeps the old value and shows the error under its row.
   blank amount is no limit) or when the field loses focus, and what happens at
   the limit, Pause or Warn only, applied on click (`useLimitAmountDraft` in
   `shared/hooks`)
-- No separate Auto limit: a limit stored under the old Auto limit
-  (`auto.treeLimitUsd`) is folded into the **Limit** above once at boot, for
-  every workspace (`foldAutoLimitsAtBoot`, `foldAutoLimitIntoRunDefaults`). The
-  smaller of the two stays when both were set, the old key is cleared once the
-  Limit is saved, and a failed save leaves the old value in place and reports
-  the error. After the fold every reader and writer of a run limit (the start
-  form, the Auto start, `moveToAuto`, the Auto runtime) uses the Limit of this
-  page, and nothing reads the old key
+- One limit for every run, the Lead included: every reader and writer of a
+  run limit (Start a run, `moveToAuto`, the Auto runtime) uses the **Limit**
+  above. A value left under the key `auto.treeLimitUsd` is folded into it once
+  at boot, for every workspace (`foldAutoLimitsAtBoot`,
+  `foldAutoLimitIntoRunDefaults`): the smaller of the two stays, the key is
+  cleared once the Limit is saved, and a failed save keeps both and reports
+  the error
 - **Guidance**: text every run starts with, one plain field with its own
   **Polish** and no Write or Preview tabs
 
 ### Guidance
 
-The rules carry a markdown text every new run starts with. The builder's
-guidance field opens filled with it in all three modes, with **From your
-rules**, and once you edit it **Edited for this run**, **Reset** and **Save as
-default**. Where it goes:
+The rules carry a markdown text every new run starts with. Where it goes:
 
 - an orchestrated run sends it to the orchestrator, merged once with the
   workflow's own process text (`orchestratorProcessText`)
@@ -253,10 +250,10 @@ the first line. An orchestrated run tags no step.
 
 **Polish** on guidance uses `polishWorkflowGuidance` in `packages/core`, its own
 prompt next to the goal polish: one rule per line as a list, the language of the
-input, every rule kept and none added. The builder has no "Also sent to" line:
-the guidance box says only where it goes, and the Runs page keeps the
-line about the profile field. The names there come from `PROFILE_ACCESS`: the
-roles that never read the working rules.
+input, every rule kept and none added. The Guidance band (`RulesGuidanceBand`)
+names who gets the text (`guidanceRoleNames`, `guidanceLeftOutText`) and which
+roles never read the profile's working rules (`workingRulesSkippedText`, from
+`PROFILE_ACCESS`).
 
 ### Provider priority for steps
 
@@ -291,16 +288,14 @@ with the most room left wins. A run with no copy is By order.
   providers nothing is read: the one provider's rung wins.
 - The session's composer model does not steer steps. A role pin does.
 
-Workspaces that existed before 0.16.0 start with it off (m217), and so does a
-workspace with no saved rules. The rule is **Provider priority** in Settings >
-This workspace > Models, **By order** (off) or **By load** (on); see
+The rule starts on **By order** (`DEFAULT_WORKFLOW_RULES.spreadByHeadroom` is
+`false`). It is **Provider priority** on the **Models** page, **By order** (off)
+or **By load** (on); see
 [providers.md](./providers.md#defaults-and-task-models).
 The Lead's helpers read the workspace rule, not a run copy (see
 [auto.md](./auto.md#providers)). The Runs page shows nothing of it.
 
-The builder opens filled from the rules and shows them in one **From your
-rules** line with **Edit**. A launch control that leaves the rules shows a dot
-whose tooltip names the rule, and its menu offers **Reset**. A run copies the
+A run copies the
 rules when it is attached (`session_workflows.rules_snapshot`), so changing them
 later never touches a run that already started, even after a restart. The
 workspace rules are one JSON column, `workspaces.workflow_rules`; `null` means
@@ -311,21 +306,24 @@ rules with the autonomy their caller asked for.
 
 Each step is one agent with its own brief and its own model.
 
-- **Name** and **role**: scout, investigator, planner, implementer, reviewer, tester, docs, report, wireframe or custom. Resolve is not a workflow role: a step that fixes review findings is Implement work (see "Resolve inside a workflow")
+- **Name** and **role**: scout, investigator, planner, implementer, reviewer, tester, docs, report, wireframe or custom. Resolve is not a workflow role: a step that fixes review findings is Implement work (see [Resolve inside a workflow](#resolve-inside-a-workflow))
 - **Prompt**: the instruction the agent starts from
 - **Expected output**: what this step promised the next one. It goes at the top of the handoff
 - **Provider**, **model** and **effort**: for example scout on a cheap model, plan on a strong one
 
-If you leave the model on auto, Goodboy picks one based on the role, the model
-tier and the cost. A model you set on the step wins over that choice.
+A step that follows its role starts on the best candidate for that role
+([Provider priority for steps](#provider-priority-for-steps)). A model you pin
+on the step wins over that choice.
 
 Steps run one after another. Parallel work happens inside a step, where a
 scout step can split into several agents.
 
 ## The orchestrator
 
-The orchestrator is an agent that plans the run for you. In an
-**Orchestrated** run there is no fixed list of steps. After each step
+The orchestrator is an agent that plans an **Orchestrated** run, which has
+no fixed list of steps. It serves older runs only: Start a run never starts
+one, and an open orchestrated run finishes on it
+([features/workflows.md](features/workflows.md#older-runs)). After each step
 finishes, the orchestrator reads the goal, your guidance when you gave any,
 and what the steps so far produced. Then it decides one thing: the next step, done, or
 blocked.
@@ -336,14 +334,15 @@ blocked.
 - It keeps a running recap of what is done and what is left
 - It ends the run when the goal is met, or stops and asks you when a decision needs you
 
-The model of the orchestrator has three homes. The workspace default is the
+The model of the orchestrator has two homes. The workspace default is the
 **Orchestrator** row of **Workflows › Every run › Older plan runs**, shown only while the
-workspace has a plan run that is not discarded (`useHasPlanRuns`). A run takes it from the
-**Model** chip of Start a run, and the run page shows it as the **Orchestrator**
-chip in the settings line, the composer row beside the hint box changes the same
-value. The chips write `orchestratorRouting` of the run (`useOrchestratorModel`
-through `setWorkflowOrchestratorRouting`), and a run with none follows the
-default. The providers it may pick from are set with **Can use**.
+workspace has a plan run that is not discarded (`useHasPlanRuns`). The run page
+shows the run's own pick as the **Orchestrator** chip in the settings line, and
+the composer row beside the hint box changes the same value. Both write
+`orchestratorRouting` of the run (`useOrchestratorModel` through
+`setWorkflowOrchestratorRouting`), and a run with none follows the default. The
+providers it may pick from are the run's **Models** setting (see
+[Its provider pool](#orchestrated-runs)).
 
 ### The orchestrated document
 
@@ -378,7 +377,7 @@ read top to bottom at the conversation measure:
   popover explaining "$17.00 spent, $2.00 of it this run"); the run's own spend
   stays on the glance line above, so a number shows once. There is no Save
   or Done: a choice applies on click, the limit on Enter or when the popover
-  closes. Every limit field (the run, the session, the Runs page and Auto) is a
+  closes. Every limit field (the run, the session, Every run and the Lead) is a
   text field with a decimal keypad, so cents such as `2.50` (or `2,50`) go
   through and Enter is never stopped by a browser step rule; `parseSpendLimit`
   in `features/budget/` is the one rule for what counts as an amount. A failed write keeps the old value with the error under the
@@ -389,7 +388,7 @@ read top to bottom at the conversation measure:
   the run lives (`useRunTimeLeft`). The workflow's
   process text and the run's standing guidance sit behind **Show guidance** as
   the one text the orchestrator reads (`orchestratorProcessText`), so guidance
-  the builder saved in both shows once;
+  saved in both shows once;
   the goal attachments follow. The write destination shows under it while 2 or
   more worktrees can be written.
 - **Plan and progress** (`OrchestratedChecklist`). One checklist: the decided
@@ -484,7 +483,7 @@ read top to bottom at the conversation measure:
   refused all leave the queued hints unread). The reason for a step reads on
   the step's page, never on the run page. While the
   plan pane is open, **Review plan** in the header goes quiet. The verbs of `runPrimaryOf` go through
-  today's `RunPrimaryAction`, so their gates and confirms are the same.
+  `RunPrimaryAction`, so their gates and confirms are the same.
 - **Result** (`OrchestratedResult`), on a finished run of any kind: the closing reason (markdown),
   the recap's **Done** and **Left** lists, or the last finished step's summary on a preset run
   (`runOutcomeTextOf`), **Create report**, **Create wireframe** and **Open branch** when the run
@@ -511,7 +510,7 @@ read top to bottom at the conversation measure:
   queue is out of view (`useIsQueueOutOfView`) one line, **3 hints queued** with
   **View**, floats over the input without moving it, and it counts from
   `hintQueueOf`, a hint being read left out. Enter queues,
-  **Send now** (⌘Enter) reads it now, with today's `readNowCopy` tooltips. The
+  **Send now** (⌘Enter) reads it now, with the `readNowCopy` tooltips. The
   routing pill for the orchestrator's model and effort sits in the composer's
   footer, its only place (`OrchestratorRoutingRow`).
 - **The run header** holds one primary. With no move waiting it shows **Pause
@@ -551,7 +550,7 @@ the step where the orchestrator first read it.
 - The help sits in each button's tooltip, not in a sentence under the field. Send now says what it does in the state the run is in
 - The field is a message box: Enter queues, Shift+Enter adds a line, ⌘Enter sends now. **Preview** shows it as markdown
 - Paste, drop or attach images. They are saved as files of the run and the hint keeps their ids. The orchestrator opens them with file reading only, Read, Glob and Grep on every provider (the Rust planner args deny Bash, Edit, Write, web and sub-agent tools; its tools stay off when no hint has an image), under a system prompt that allows the reads before the decision (`orchestratorSystemPromptFor`), and writes into the step brief what they show and what to change. The step that starts from that decision gets a block, "Images from the user's hint", with absolute paths to those images only, apart from the general run files (`hintImagesForStep`, matched by the hint's `consumedAtStep`)
-- The orchestrator also gets the session's active numbered decisions (the `decisions` slot, cut to its budget) so a step brief can name the number. A step the hint was read for carries the image block on its first turn, and a restarted run loads its attachments before either lookup. A branch an unfinished run still uses is refused by `forgetMount` (`pinnedRunsOf`), and asks first on Close branch and Unmount, and a run started before pins existed pins the active mount on its next step.
+- The orchestrator also gets the session's active numbered decisions (the `decisions` slot, cut to its budget) so a step brief can name the number. A step the hint was read for carries the image block on its first turn, and a restarted run loads its attachments before either lookup. A branch an unfinished run still uses is refused by `forgetMount` (`pinnedRunsOf`), and asks first on Close branch and Unmount, and a run with no pinned mount pins the active mount on its next step.
 - The field stays open while the orchestrator decides, and it empties as soon as you send. If the hint can't be saved, your text and your images come back
 - You can remove a hint, except while a decision is reading it
 
@@ -560,13 +559,16 @@ Asking for a certain provider or model on a step is a hint too.
 ### Limit
 
 Each run can have a limit in dollars. You set it on the run (the limit
-in the Agents column of a run or the **Limit** chip of the run page) or in the creation form. You also choose what happens when
-the run reaches it: **Pause workflows** or **Warn only**, the same editor
-and words as the session's limit. The limit starts at unlimited. The
-orchestrator decides how many steps to plan based on the goal.
+in the Agents column of a run or the **Limit** chip of the run page) or in
+Start a run. You also choose what happens when the run reaches it: **Pause
+runs** or **Warn only**, the same editor and words as the session's limit
+(`SpendLimitFields`). The Every run default names the same choice **Pause**.
+The limit starts at the **Limit** of Every run, and at no limit when that is
+blank (`runLimitOf`). The orchestrator decides how many steps to plan based on
+the goal.
 
 A session has its own limit, set from the session spend popover or an agent page's **Limit** chip. With
-**Pause workflows** (the default) every workflow of the session stops at the
+**Pause runs** (the default) every workflow of the session stops at the
 limit and its strip says `Paused at the $10.00 limit for this session.`
 with **Raise limit**, which opens the spend popover on the editor. With **Warn only**
 nothing stops: one notification says the session passed its limit. A run that
@@ -589,7 +591,7 @@ when the run has no known total), cost and age, every row the same columns. A ro
 (`inheritedMountIdOf`, shared with `selectRunStepMountId`), the Auto tree
 (`placedAgentsOf`: the Lead takes the tree's `primaryMountId`, a child its
 delegation target) and, in a session with one mount on a branch, that mount for
-an agent that recorded none (`soleMountIdOf`), so rows from before 0.38 file
+an agent that recorded none (`soleMountIdOf`), so rows with no mount file
 there with no migration. The Overview board reads the same `placedAgentsOf`
 (`useBranchBoard`). New rows record it: a Lead started in a one mount session
 (`soleTurnMountIdOf` in `startRoutedRun`) and every child (`createAutoChild`).
@@ -676,8 +678,12 @@ of the Agents column reads. `runRowFactsOf` computes no word of its own: it read
 [Start a run](features/start.md#start-a-run)) above the list through `startRunEventName`, and
 **Esc** closes it; a session with no run shows the field alone.
 
-A routed start (`startRoutedRun` in `features/session/startRun/`) uses today's
-engines. `runRouteOf` picks the row; a plan creates an `origin: 'orchestrated'`
+A routed start (`startRoutedRun` in `features/session/startRun/`) goes one of
+two ways. **Start a run** always routes to the `lead` shape (`runRouteOf`,
+through `leadRouteOf`, `presetRouteOf` and `roleRouteOf`): one agent goes to
+`spawnAgent`, as below, the Lead or, for a role named with `@`, that role
+(`kindOverride`). The `plan` shape is reached only when `changeRunRoute`
+restarts an older run as a plan (`olderPlanRouteOf`): a plan creates an `origin: 'orchestrated'`
 workflow with no steps and attaches it with `executionMode: 'dynamic'`; a
 preset does the same with the name "Plan from <preset>", the preset's own
 process as `processText`, and a snapshot of its live steps in
@@ -734,14 +740,14 @@ only parsed, for older runs). The router never adopts a workflow: a typed
 `~name` or the Workflow pill picks one, and `suggestedWorkflowOf` only names the
 best match on the pill, as "Auto · likely Fix a bug" (`StartWorkflowPill`).
 The settings keys `runs.defaultShape.session.<sessionId>` and
-`runs.defaultShape.<workspaceId>`, once written by **Start as**, are not read
-since 0.41.0 ([versioning.md](versioning.md), Retired state). Opening a preset run shows its page; the session rail stays
+`runs.defaultShape.<workspaceId>` are never read
+([versioning.md](versioning.md#retired-state)). Opening a preset run shows its page; the session rail stays
 on the session and the run's agents are in the Agents column.
 
-Orchestrated runs have no page of their own since ux27 one flow unit 1: they
+Orchestrated runs have no page of their own: they
 are rows of the one Runs page, beside preset runs, Auto conversations and the
 agents you started (`sessionRunsOf`, read by `RunsGrid`), each with its shape
-glyph and "Workflow · Orchestrated" or "Workflow · Preset <preset>". The old
+glyph and "Workflow · Orchestrated" or "Workflow · Preset <preset>". A saved
 `orchestrated` lens opens Runs (`foldedLensOf`). Opening a row shows
 [the orchestrated document](#the-orchestrated-document); Esc returns
 to the list (`leaveRunLevel`), and so does going up (`upTo`).
@@ -781,7 +787,7 @@ what only that kind has. A step opens one way for every kind, as its page.
   step with **Continue**, or "Stopped by you" with no verb. A finished run and an
   archived run have no tail. On the overview the header holds the one primary
   (`runHeaderPrimaryOf`: **Answer**, **Raise limit**, the `runPrimaryOf` verb
-  with today's gates, `StartStepPrimary` and its Start anyway confirm,
+  with its gates, `StartStepPrimary` and its Start anyway confirm,
   `WorkflowRunStartButton`, **Review plan**, **Approve and continue**, or else **Pause
   run** and **Continue**); on a step page the same verb sits on the tail, as a
   secondary button. The moves of an orchestrated run (**Continue**, **Retry**,
@@ -1033,8 +1039,8 @@ hands-free with **Asks you** set to **Never**; the whole session does with
 (the registry verbs `session.asksNever` "Start next steps without asking" and
 `session.asksEveryStep` "Ask before starting each step" in
 `features/actions/kinds/session.ts`, also in the right click and the palette;
-the Runs page header has no switch; the old Turn on Autopilot and Turn off
-Autopilot find them in the palette). A run without its own setting follows
+the Runs page header has no switch; the palette also finds them as Turn on
+Autopilot and Turn off Autopilot, `FORMER_NAMES`). A run without its own setting follows
 the session.
 
 - The session's autorun also covers agents running outside a workflow
@@ -1072,7 +1078,7 @@ Everything below is the code behind the sections above.
 - `apps/desktop/src/store/slices/workflows/nextRunMove.ts`: `nextRunMove`, the one rule for what a run owes next (start a pending step, decide, or nothing). `maybeAutoAdvanceWorkflow` and the watchdog both read it
 - `apps/desktop/src/store/slices/workflows/findIdleRuns.ts` and `sweepIdleRuns.ts`: the watchdog over orchestrated runs. `apps/desktop/src/features/workflows/hooks/useRunWatchdog/` drives it from `App`
 - `apps/desktop/src/store/slices/workflows/summarizerGate.ts`: `waitForSessionSummarizer`, the 60s wait on the session summarizer
-- `apps/desktop/src/features/workflows/runProviderPool.ts`: reads the provider pool of the run an agent belongs to. The run pool wins; outside a run, or for a run with none, a caller may pass the workspace pool (`features/auto/workspaceProviderPool.ts`: the providers the workspace policy does not turn off). Only Auto trees pass it today, through `autoChildPool`, which keeps Claude and Codex and never Cursor or Gemini
+- `apps/desktop/src/features/workflows/runProviderPool.ts`: reads the provider pool of the run an agent belongs to. The run pool wins; outside a run, or for a run with none, a caller may pass the workspace pool (`features/auto/workspaceProviderPool.ts`: the providers the workspace policy does not turn off). Only Auto trees pass it, through `autoChildPool`, which then keeps only the providers `autoChildProviders` allows for the child's role ([auto.md](./auto.md#providers))
 - `apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowEditor/`: the Studio editor. It draws the plan with the shared step tree; `GuideFields` (`NameField`, `UseItWhenField` on `GoalField`, `GuideTextField`, `ThenSuggestField`), `WorkflowStepRow`, `KeepOrderField`, `WorkflowModels`, `CreateActions`, `BuilderTitleField` and `PlanDraftingBanner` sit beside it. `presetEdits.ts` marks the steps edited from their preset and `providerPool.ts` toggles the provider pool of a run, both in `features/workflows/`
 - `apps/desktop/src/features/workflows/components/StepTree/`: the step tree (`StepTree`, `StepRow`, `StepEditor`). It draws steps with `WorkNode` and `WorkMeta`, and `StepEditor` mounts `RoutingPicker` with `presentation="inline"`. Polish and the estimate note are optional, so a host without a session leaves them out
 - `apps/desktop/src/features/workflows/components/WorkflowsPanel/`: the Studio. `useWorkflowEditor` owns the open workflow, autosave and Draft steps; `WorkflowStudio/WorkflowList` is the home and `WorkflowStudio/WorkflowEditor` the editor on the step tree. The Studio leaves the time and cost columns empty: a preset has no run to estimate from
@@ -1087,13 +1093,10 @@ Everything below is the code behind the sections above.
 
 ### `phaseTemplate*` means workflow
 
-There is no phase template anymore, and no `phase_templates` table. That
-table was removed in `packages/db/src/migrations/m014-rename-domain.ts`,
-together with `phase_definitions`, `session_phase_runs` and
-`parallel_phase_groups`.
-
-Any `phase*` name still in the store, the workflow slices and `workflows.rs`
-is an old name for a workflow. There is no second system to look for.
+Any `phase*` name in the store, the workflow slices and `workflows.rs`
+(`phaseTemplates`, `savePhaseTemplate`, `sessionPhaseRuns`) names a workflow
+or its run. There is no `phase_templates` table and no second system to look
+for: `packages/db/src/migrations/m014-rename-domain.ts` dropped it.
 
 ### The tables
 
@@ -1121,9 +1124,7 @@ cannot see.
 The Resolve agent answers one review comment per thread. Its prompt asks for a
 `comment-resolved` or `comment-wontfix` marker per thread id and says nothing
 about the step-done marker a workflow waits for, and a step has no thread ids.
-A workflow step that ran it ended with no marker of either kind, the lane
-recorded a failed attempt with no thread, and the row read "Couldn't fix"
-while the run waited. So a workflow never runs it.
+So a workflow never runs it.
 
 - `ROLE_REGISTRY.resolver.workflowEligible` is `false`. The planner, the
   orchestrator and the natural-language formatter never offer the role, and
@@ -1135,9 +1136,9 @@ while the run waited. So a workflow never runs it.
   them as `implementer`, and the next save writes the new role
 - `classifyStep` maps a step to the Implement kind when its role or its name
   says resolve, and `classifyAgent` does the same for an agent row that has both
-  a `workflowRunId` and a `stepId`. A run created before this change takes the
+  a `workflowRunId` and a `stepId`, so a stored `resolver` step takes the
   Implement prompt, the Implement model and the step-done boundary on its next
-  turn. `withoutWorkflowStepAttempts` keeps the old failed attempts of such rows
+  turn. `withoutWorkflowStepAttempts` keeps the failed attempts of such rows
   out of the review facts, so the run tree shows the step state
 - A step that ends without its step-done marker keeps the same path as any
   other role: one automatic continue, then a blocked step with a notification and
@@ -1329,7 +1330,7 @@ the Artifacts page is its own **Open full page**.
   the chip reads "Revising to v3", with the reason beside the off primary and no
   third copy in the body (the "Writing a new version" line stays for a plan that
   already ran, where the chip says Ran). A new version shows "v3 · Revised by planner" and
-  settles the comments as before. `unchanged` shows "The planner answered
+  settles the comments. `unchanged` shows "The planner answered
   without changing the plan" with **Open the reply** (the planner's page) and
   leaves the comments open. A question the planner asked is the existing
   question card at the top of the body with **Answer**, and the bar waits
@@ -1386,8 +1387,7 @@ edit?" first, and **Esc** again keeps editing.
 
 A pause is a saved stop, `orchestrationStop { kind: 'paused' }`, in the
 existing `orchestration_stop_kind` and `orchestration_error` columns, so it
-needs no migration and survives a restart. An older build reads it as a stop
-it does not recognize. `isRunPaused` is the one admission check:
+needs no migration and survives a restart. `isRunPaused` is the one admission check:
 `activateWorkflowAgent` throws a `WorkflowGateError` with reason `paused`
 before it starts, before it consumes a plan and again right before the turn,
 so a pause that lands while an activation is in flight starts nothing. The
@@ -1407,7 +1407,7 @@ static run, through the same auto advance. It only starts the next agent when ev
 `skipped`, and a `failed` or `blocked` agent is never either.
 
 One check decides when a run is finished: `isWorkflowRunComplete`. The chain
-trigger, attach and the builder all use it. A run is not finished while any
+trigger, attach, the run menu and the timeline all use it. A run is not finished while any
 agent with a parent is still neither `completed` nor `skipped`. This is checked
 first, so a dynamic run marked `done` still waits for a running child. After
 that, a dynamic run finishes on its `done` outcome. A static run needs its
@@ -1485,11 +1485,8 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   fresh context and a run never reports done while the summarizer still writes.
   The wait (`waitForSessionSummarizer`, 60s at most, gone when the decision is
   thrown away) starts together with the decision call and the result is held
-  until it ends, so a step costs the longer of the two, not their sum. Before
-  this a step end waited on the summarizer twice (in `maybeAutoAdvanceWorkflow`
-  and again in `orchestrateNextStep`) and then asked, so a slow or retrying
-  summarizer put two minutes in front of a call that takes 20s.
-  `maybeAutoAdvanceWorkflow` now waits only when a static run is on autorun. A
+  until it ends, so a step costs the longer of the two, not their sum.
+  `maybeAutoAdvanceWorkflow` waits only when a static run is on autorun. A
   forced skip (`bypassGate`) waits on nothing.
 - **A lost wake is recovered.** `sweepIdleRuns` runs every 15s and when the
   window comes back to the front (`useRunWatchdog`). It looks for an orchestrated
@@ -1511,8 +1508,8 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   questions that block the run. Each one saves a `budget` or `questions` stop.
   A failed or unreadable call saves `failure`, and so does a decision whose
   step cannot be created (the agent row, the saved workflow or the routing
-  failed), with a notification: that error used to leave the run with no step,
-  no stop and a decision that cost money and showed nowhere. **Stop** saves `operator`,
+  failed), with a notification, so a paid decision never ends with no step
+  and no stop. **Stop** saves `operator`,
   turns autorun off and skips the running steps, keeping what they wrote.
   **Pause** saves `paused`, which keeps the step in flight and starts nothing.
   **Stop run** (`closeWorkflowRun`) saves `closed` next to the `done`
@@ -1547,7 +1544,7 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   older path (`resolveProposedRouting`). A generated step with no pick carries no
   routing and takes the candidates when its run starts
 - **Its provider pool.** `provider_pool` on `session_workflows` (m170) holds
-  the providers picked in **Can use**, as a JSON list. Empty means every
+  the providers picked in the run's **Models** setting, as a JSON list. Empty means every
   connected provider. `workflowAvailabilitySnapshot` drops the providers
   outside the pool, so the model menu, the routing of each decision, the
   children a step fans out (`childRoutingBatch` with the run id) and the child
@@ -1578,8 +1575,8 @@ the queued requests live in memory, keyed by run and removed with it. Everything
 (outcome, stop, summary, hints) is on the run's row.
 
 Expected output belongs to a workflow's own steps and to saved steps
-(`step_library.expected_output`, `m181`). Rows written before the field existed
-have none, except the seeded example steps that the backfill filled in.
+(`step_library.expected_output`, `m181`). A row can have none: only the
+seeded example steps were backfilled.
 
 ### The post-step summarizer
 
@@ -1606,8 +1603,8 @@ next step starts from.
 
 ### Step sequencing
 
-Steps run one after another. Parallel work happens inside a step. The
-`parallel_agents` setting decides whether a scout step can split into several agents.
+The `parallel_agents` setting (**Parallel agents** under **Advanced** on Every
+run) decides whether a scout step can split into several agents.
 
 The orchestrator prompt carries **WHEN TO ADD A ROLE**, the table Auto also reads
 (`packages/core/src/roleNeeds.ts`, driver `orchestrator`, only roles the orchestrator may pick,

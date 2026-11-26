@@ -89,7 +89,7 @@ Every **Change the default** link opens Every run.
 
 #### Where it runs
 
-Under the settings a line reads "Lead on Claude · Sonnet 5.5 · Medium · the Lead picks helpers, by load". It names the model of the Lead, or of the one agent, for this run. **Change** opens the model for this run only. It reads **Auto** until you pick one. The way helpers are shared follows **Provider priority** in **Settings › Models**. The launcher adds no provider choice.
+Under the settings a line reads "Lead on Claude · Sonnet 5.5 · Medium · the Lead picks helpers, by load". It names the model of the Lead, or of the one agent, for this run. **Change** opens the model for this run only. It reads **Auto** until you pick one. The way helpers are shared follows **Provider priority** in **Settings › This workspace › Models**. The launcher adds no provider choice.
 
 #### Guidance
 
@@ -139,7 +139,7 @@ A Lead's autonomy is nine rows you can read and change.
 - A run never changes the workspace default.
 - A row saves the moment you change it. A failed save keeps the old value and shows the error under the row.
 
-The spend limit shows under Finish, read only. Four rules never change, listed under Always on: a force push asks and takes a backup, you merge, agents never push, and the Lead never writes code.
+The limit shows under Finish, read only. Four rules never change, listed under Always on: a force push asks and takes a backup, you merge, agents never push, and the Lead never writes code.
 
 ### The Kind chip
 
@@ -159,8 +159,6 @@ Its last line says what a pick does, and it depends on the state of the run:
 - While the run is going, the popover is read-only. It says "Fixed while the run is going. Stop it to restart as something else."
 - When the run is stopped, failed or blocked, the list reads **Restart as**. A last line reads "Ends this run and starts a new one with what it did so far." The new run gets the same ask and what the first found, then the first run closes. If the new run fails to start, the popover stays open with the reason and the first run is left as it was.
 - Once the run is finished, the list reads **Start a new run as**. A last line reads "Starts a new run with the same goal." and the new run gets what the first found. The finished run stays in the list.
-
-The session default is not on the chip: set it with **New runs in this session start as** in Settings.
 
 ### The model of a run
 

@@ -19,7 +19,6 @@ repo root, one entry each: `{ "rule", "file", "count", "reason", "release" }`.
 `rule` is the baseline name (`store-mocks`) or the rule id inside it
 (`else-branch`), `file` is the key that grew, `count` is the most it may reach,
 `release` is the release that lists it. The release PR lists every entry.
-The file starts as `[]`.
 
 ## The two checks
 
@@ -34,17 +33,17 @@ The file starts as `[]`.
   `--base <ref>`). It prints `baselines ok`, or fails on any entry that grew,
   any new key above zero that `baseline-exceptions.json` does not list and any
   key that names a file that does not exist.
+
   A baseline file that does not exist on the base starts at zero. One that
   holds a count above zero fails as `new baseline file` unless the owner lists
   it in `baseline-exceptions.json` with rule `new`, the file path and a `count`
-  that caps the file's total (today's debt, so the ledger cannot grow before it
-  ships), or it is
-  a rename or split of a removed baseline that carries no more than the
-  removed ones did. A baseline that disappears while it still held debt fails
-  as `baseline removed` the same way (rule `removed`). A new rule key in an
-  existing baseline (`forbidden-patterns.baseline.json` gaining `my-rule`) is
-  still read as a new ratchet at its first measured count: the key is absent
-  on the base, not zero.
+  that caps the file's total, or it is a rename or split of a removed baseline
+  that carries no more than the removed ones did. A baseline that disappears
+  while it still held debt fails as `baseline removed` the same way (rule
+  `removed`). A new rule key in an existing baseline
+  (`forbidden-patterns.baseline.json` gaining `my-rule`) is read as a new
+  ratchet at its first measured count: the key is absent on the base, not
+  zero.
 
 ### What `check:baselines` forgives
 
@@ -102,12 +101,9 @@ and `forbidden-patterns.raw-color.baseline.json` (a line rule in
 `scripts/rules/rawColor.mjs`: it reads `apps/desktop/src` and
 `packages/ui/src`, skips the mock scenes, and leaves `styles.css` alone because
 the palette lives there).
-Each was created once at the measured count, so `check:baselines` read it as a new ratchet. They replace
-`unbraced-if`, `inline-object-param`, `positional-param` and `boolean-prefix`,
-retired once every file counted at least as high under the syntax tree. The
-prefixes `boolean-name` accepts and the lint accepts are one constant,
-`scripts/rules/ast/booleanPrefixes.mjs`. The two baselines at zero stay as files:
-a new hit fails at once.
+The prefixes `boolean-name` accepts and the lint accepts are one constant,
+`scripts/rules/ast/booleanPrefixes.mjs`. The two baselines at zero
+(`if-without-braces`, `unused-import`) stay as files: a new hit fails at once.
 
 Tests are scanned only by `comment` and `em-dash`. Every other rule skips a
 test file, unless its row above says otherwise.
@@ -199,6 +195,8 @@ test file, unless its row above says otherwise.
 | `red-alert-text.baseline.json`                           | a `role="alert"` painted `text-danger`, where `FieldError`, `reportError` or `ErrorStrip` belongs    |
 | `pane-head-rows.baseline.json`                           | a search, filter or group control in the title row of a page head                                    |
 | `menu-shape.baseline.json`                               | a menu off the rule: over five rows, a repair verb, early dividers, mixed icons, rows out of order   |
+| `reading-order.baseline.json`                            | a raw `<Markdown` in chat or Auto, where the reading order renderer draws agent prose                |
+| `settings-section-titles-are-bands.baseline.json`        | an `Eyebrow` naming a group on a settings page, where a `Band` belongs                               |
 
 All sit in `apps/desktop/src/__tests__/regressions/`, except `menu-shape.baseline.json` in `apps/desktop/src/__tests__/actions/`. `no-skipped-tests.test.ts` has no baseline: its count is zero and stays zero.
 

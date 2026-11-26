@@ -23,7 +23,7 @@ Move your setup to another Mac, or keep a copy.
 
 #### Export
 
-**Backup** exports in groups such as workspaces, workflows and saved scripts. **Never included** lists what always stays behind, keys and sign-ins first.
+**Settings › This Mac › Backup and reset** exports in groups such as workspaces, workflows and saved scripts. **Never included** lists what always stays behind, keys and sign-ins first.
 
 A finished export says **Saved** with the file name and a button to show the file.
 

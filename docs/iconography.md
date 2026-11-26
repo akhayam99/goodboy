@@ -51,24 +51,23 @@ Five tokens, exported from `@goodboy/ui`:
 A glyph with no weight draws regular. `iconWeightOf({ size })` gives the weight
 of a size; `IconButton` and the folded rail's buttons draw with it. A check mark
 takes `ICON_WEIGHT.check` (bold) at any size, a starred star the fill weight.
-The generator reads the 32 unit Carbon artboard and scales it to the 256 grid,
-so a Carbon line (2 units of 32) is 16 units, and joins every shape of a glyph
-into one path. Bold is the regular outline widened by a round 8 unit stroke (24
-units on the 256 grid instead of 16). Only `Star` carries fill (Carbon
-`star--filled`); any other glyph asked for fill draws regular. Carbon has no
-duotone, so the emphasized timeline marker (plan, report, wireframe) draws
-bold. A new fill use adds the glyph and its Carbon filled icon to
-`FILL_SOURCES` in `scripts/generate-glyphs.mjs`. Paths are rounded to whole
-units of the 256 grid, under 0.04px at 18px.
-A test asks `findGlyph` (`@goodboy/ui/icons/testing/findGlyph`) whether an svg
-draws a glyph at any weight, since a generated svg carries no class.
-Import one spelling per
-glyph: `TriangleAlert`, `CircleAlert`, `CircleX`, `CircleCheck` and
-`SquareArrowOutUpRight` (the older aliases of those glyphs and the plain external-link glyph are
-banned by `lucide-one-spelling-per-glyph.test.ts`). Failure has three glyphs, one place
-each: `CircleAlert` in a `Notice` of tone danger, `TriangleAlert` in a danger
-zone, `CircleX` for a failed run. `ArrowUpRight` means open in a larger view and
-never an external link.
+
+The generator reads the 32 unit Carbon artboard, scales it to the 256 grid (a
+Carbon line of 2 units becomes 16) and joins every shape of a glyph into one
+path, rounded to whole units. Bold is the regular outline widened by a round 8
+unit stroke. Only `Star` carries fill (Carbon `star--filled`); any other glyph
+asked for fill draws regular, and a new fill use adds its Carbon filled icon to
+`FILL_SOURCES` in `scripts/generate-glyphs.mjs`. Carbon has no duotone, so the
+emphasized timeline marker (plan, report, wireframe) draws bold. A generated
+svg carries no class, so a test asks `findGlyph`
+(`@goodboy/ui/icons/testing/findGlyph`) whether an svg draws a glyph.
+
+Import one spelling per glyph: `TriangleAlert`, `CircleAlert`, `CircleX`,
+`CircleCheck` and `SquareArrowOutUpRight`. Their older aliases and the plain
+external-link glyph fail `lucide-one-spelling-per-glyph.test.ts`. Failure has
+three glyphs, one place each: `CircleAlert` in a `Notice` of tone danger,
+`TriangleAlert` in a danger zone, `CircleX` for a failed run. `ArrowUpRight`
+means open in a larger view and never an external link.
 
 Every token is even. Badges and icon boxes are even (`size-5`, `size-9`,
 `WorkNode` at 20 px), so an odd glyph lands on a half pixel and looks off
@@ -87,34 +86,35 @@ in its allowlist entry, never a waiver for a whole directory.
 
 ## Navigation lenses
 
-`LENS_ICON` in `features/session/lens-labels.ts` reads straight from the
-registry, so a lens never picks its own glyph, and `LENS_LABEL` in the same
-file names it. Size is `control` in the lens switcher. `lensDestinations` in
-`features/session/lens-destinations.ts` decides which lenses a session lists.
+A session page (a lens in code) never picks its own glyph. `LENS_ICON` in
+`features/session/lens-labels.ts` reads it from the registry and `LENS_LABEL`
+in the same file names it. `pageRegistry.ts` draws both on the session pages.
+`lensDestinations` in `features/session/lens-destinations.ts` decides which
+destinations a session lists in Search or run, and `destinationIconOf` gives
+each one its glyph.
 
-| Lens (`LENS_LABEL`)         | Concept        | Glyph                   | Tone    | Listed                                     |
-| --------------------------- | -------------- | ----------------------- | ------- | ------------------------------------------ |
-| Context                     | `context`      | `Library`               | info    | always                                     |
-| Runs                        | `runs`         | `Route`                 | primary | always                                     |
-| Agents                      | `agents`       | `Bot`                   | primary | always                                     |
-| Questions                   | `questions`    | `CircleHelp`            | warning | always                                     |
-| Artifacts                   | `plans`        | `ClipboardList`         | draft   | always                                     |
-| Review                      | `review`       | `MessageSquareQuote`    | primary | with a branch                              |
-| Diff                        | `diff`         | `FileDiff`              | info    | with a branch                              |
-| Explore                     | `explore`      | `FolderSearch`          | info    | always                                     |
-| Scripts                     | `scripts`      | `ListVideo`             | info    | with a branch                              |
-| Terminal                    | `terminal`     | `SquareTerminal`        | neutral | with a branch                              |
-| Pull request                | `pr`           | `GitPullRequest`        | primary | with a branch, when the host is not GitHub |
-| Linear, GitLab, Jira, Slack | brand concepts | `@goodboy/ui` brand set | primary | with a branch, when that tool is connected |
+| Destination                                       | Concept        | Glyph                   | Tone    | Listed                                                                   |
+| ------------------------------------------------- | -------------- | ----------------------- | ------- | ------------------------------------------------------------------------ |
+| Overview                                          | `sessions`     | `SquareKanban`          | primary | always                                                                   |
+| Runs                                              | `runs`         | `Route`                 | primary | always                                                                   |
+| Runs › Running (the Agents pane)                  | `agents`       | `Bot`                   | primary | always                                                                   |
+| Questions                                         | `questions`    | `CircleHelp`            | warning | always                                                                   |
+| Artifacts                                         | `plans`        | `ClipboardList`         | draft   | always                                                                   |
+| Comments                                          | `review`       | `MessageSquareQuote`    | primary | with a branch                                                            |
+| Changes                                           | `diff`         | `FileDiff`              | info    | always                                                                   |
+| Explore                                           | `explore`      | `FolderSearch`          | info    | always                                                                   |
+| Context                                           | `context`      | `Library`               | info    | always                                                                   |
+| Scripts                                           | `scripts`      | `ListVideo`             | info    | with a branch                                                            |
+| Pull request                                      | `pr`           | `GitPullRequest`        | primary | with a branch                                                            |
+| Linear, GitLab issues, Jira issues, Slack threads | brand concepts | `@goodboy/ui` brand set | primary | with a branch, when that tool is connected, never in an archived session |
 
-Runs reads `CONCEPT_ICONS.runs` (`Route`), so the switcher, the column and
-Search or run draw one glyph for it. `Waypoints` stays the glyph of a workflow run
-row in the feed. Artifacts keeps `CONCEPT_ICONS.plans` (`ClipboardList`).
+`Waypoints` stays the glyph of a workflow run row in the feed. Orchestrated runs
+(`orchestrator`, `Network`) share the Runs page.
 
 Goal (`goal`, `Target`), Decisions (`decisions`, `CheckCheck`) and Session
-summary (`sessionSummary`, `NotebookText`) are parts of the Context region:
-their shortcuts open it, and they have no menu entry of their own. GitHub issue
-(`issues`, `CircleDot`) opens from an issue link, never from the switcher.
+summary (`sessionSummary`, `NotebookText`) have no destination of their own.
+GitHub issue (`issues`, `CircleDot`) opens from an issue link, never from
+Search or run.
 
 ## Session stages
 
@@ -131,36 +131,36 @@ The stage board section of the guide uses it.
 | `building`  | `Hammer`                      | neutral |
 | `done`      | `CircleCheck`                 | merged  |
 
-The left column draws a session's state as one `StatusMark` (`sessionMarkOf`):
-a bare glyph for what asks you (`MessageCircleQuestionMark`, `Hand`,
-`TriangleAlert`), a ring for what moves, a circled glyph for what settled,
-never a glyph inside a ring; packages/ui/DESIGN-SYSTEM.md → Status marks has the
-table. The folded rail, the pinned rows, the switcher, the hover card, the
-Board card signal, the Now chip rows, the palette's Needs you rows and the
-Guide legend draw the same `StatusMark`, never a concept icon and never a
-`WorkNode`: a state has one glyph and one tone. Sessions in the bar is the one
-exception: a row that needs you draws an amber `dot` mark and a running row a
-blue one, with the same sentence as label, while a red `failed` mark stays
-(`switcherDotOf`). The mark follows the reason that
-holds the session, from `ATTENTION_REASON_META` in
-`features/session/session-stage.ts` through `attentionMarkOf`, which gives each
-reason one mark, one tone and one sentence. Red
-`failed` is only an agent error, a stopped run, a push that failed (`push-failed`, "1 comment didn't go out") and failing checks. Amber is what you must
-answer, approve or act on: `question` for a question or a comment that needs you, the
-hand for a tool permission (Needs permission), a held plan (the plan needs approval), a ready step, a Slack reply and the Lead (Lead needs you), and `alert` for changes
-requested and comments the fix could not fix. A solid green disc with a white
-check (`approved`) is a pull request ready to merge. A Bitbucket session wears
-the same marks: its commit statuses and its reviewers feed the same table, so a
-failed status is red, a reviewer's changes request is amber and an approval beside
-a failed status never reads ready. A pull request in the merge
-queue (`pr-queued`) is the `merging` mark: a ring in the `primary` blue around a
-half-filled core, calm and in progress, because nothing is left for you to do.
-It ranks below the needs-you reasons and above approved, and the session stays
-in review, so it never enters Needs you, the Now chip or the Needs you
-rows of Search or run. A finished session is the `merged` check in violet; a
-session whose pull request closed unmerged keeps the faint slash (`closed`).
-Blue is moving or new: the running ring, and the small dot of an unread reply.
-The sentence is the mark's accessible label. DESIGN-SYSTEM.md owns the full table.
+Everywhere else a session's state is one `StatusMark` (`sessionMarkOf`): a
+bare glyph for what asks you, a ring for what moves, a circled glyph for what
+settled, never a glyph inside a ring. Every surface that shows a session's
+state draws that same mark, never a concept icon and never a `WorkNode`, so a
+state has one glyph and one tone. The marks, their drawings and their tones are
+the table in
+[DESIGN-SYSTEM.md → Status marks](../packages/ui/DESIGN-SYSTEM.md#status-marks).
+
+The mark follows the reason that holds the session: `attentionMarkOf` reads
+`ATTENTION_REASON_META` in `features/session/session-stage.ts` and gives each
+reason one mark, one tone and one sentence, and the sentence is the mark's
+accessible label. The tones keep one meaning:
+
+- **Red** (`failed`) is only an agent error, a stopped run, a push that failed
+  and failing checks.
+- **Amber** is what you must answer, approve or act on: a question, a comment
+  that needs you or that the fix could not fix, a tool permission, a held plan,
+  a ready step, a run paused at its limit, a Slack reply, the Lead, changes
+  requested.
+- **Blue** is moving or new: the running ring, the `merging` ring of a pull
+  request in the merge queue, the dot of an unread reply. A queued pull request
+  never enters Needs you.
+- **Green** (`approved`) is a pull request ready to merge, and **violet**
+  (`merged`) a finished session. A pull request closed unmerged keeps the faint
+  slash (`closed`).
+
+A Bitbucket session wears the same marks: its commit statuses and reviewers
+feed the same table. Sessions in the top bar is the one exception to the mark:
+a row that needs you draws an amber `dot` and a running row a blue one, while a
+red `failed` mark stays (`switcherDotOf`).
 
 ## Agent kinds
 
@@ -168,12 +168,13 @@ Each agent kind has one glyph and one color, both on its entry in
 `AGENT_KIND_PALETTE` (`icon`, `fg`, `bg`) in `features/session/agent-kind.ts`,
 read through `agentKindPalette({ kind })`. A kind the app does not know falls
 back to `Bot` in the muted tone. Where a kind means the same thing as a concept,
-it reuses the concept glyph: report, wireframe, resolver (`resolve`) and
-rewriter (`history`) and Auto (`auto`, `Orbit`, in the `agent-auto` color). The rest are their own: scout `Telescope`, planner
-`MapIcon`, implementer `CodeXml`, debugger `BugPlay`, tester `FlaskConical`,
-reviewer `ScanEye`, PR reviewer `GitPullRequestArrow`, docs `BookOpen`, scribe
-`Feather`, generalist `Bot`. Kinds have no mascot drawing and no bare colored
-dot.
+it reuses the concept glyph: report, wireframe, resolver (`resolve`), history
+rewriter (`history`) and the Lead (`auto`, `Orbit`, in the `agent-auto`
+color). The rest are their own: scout `Telescope`, planner `MapIcon`,
+implementer `CodeXml`, debugger `BugPlay`, tester `FlaskConical`, reviewer
+`ScanEye`, PR reviewer `GitPullRequestArrow`, docs `BookOpen`, scribe
+`Feather`, CI debugger `ScanSearch`, CI fixer `Wrench`, generalist `Bot`.
+Kinds have no mascot drawing and no bare colored dot.
 
 A kind always renders through `AgentKindChip`
 (`shared/components/AgentKindChip`), one tinted recipe at two densities:
@@ -246,20 +247,23 @@ color when the integration is connected, muted when it is not. `providers`
 
 ## Settings
 
-The settings rail and the panel sections read these, so an item and its
-section share one glyph.
+Every Settings page names its concept: `APP_SECTIONS` in
+`features/settings/components/SettingsStudio/appSections.ts` for This Mac,
+`WORKSPACE_PAGES` in `workspacePages.ts` beside it for the workspace. The
+Settings rail draws no glyph. A setting in Search or run draws the glyph of its
+group: `settings` (`Settings`) for This Mac, `workspace` (`LayoutGrid`) for the
+workspace.
 
-| Concept      | Glyph                       | Tone    | Meaning                                     |
-| ------------ | --------------------------- | ------- | ------------------------------------------- |
-| `appearance` | `Palette`                   | neutral | Settings > Look and alerts, and Appearance  |
-| `updates`    | `CircleFadingArrowUp`       | info    | App updates                                 |
-| `editor`     | `SquareCode`                | neutral | The default editor                          |
-| `shortcuts`  | `Keyboard`                  | neutral | Keyboard shortcuts                          |
-| `backup`     | `DatabaseBackup`            | neutral | Config export and import                    |
-| `storage`    | `Database`                  | neutral | Local database and archived sessions        |
-| `sessions`   | `SquareKanban`              | primary | A session: the Board door and Search or run |
-| `help`       | `MessageCircleQuestionMark` | neutral | Guides, the phone and feedback              |
-| `danger`     | `TriangleAlert`             | danger  | A danger zone                               |
+| This Mac page         | Concept      | Glyph            |
+| --------------------- | ------------ | ---------------- |
+| Look and alerts       | `appearance` | `Palette`        |
+| Editor, terminal, git | `terminal`   | `SquareTerminal` |
+| Keyboard shortcuts    | `shortcuts`  | `Keyboard`       |
+| Storage and search    | `storage`    | `Database`       |
+| Backup and reset      | `backup`     | `DatabaseBackup` |
+| iPhone                | `iphone`     | `Smartphone`     |
+
+A danger zone takes `danger` (`TriangleAlert`).
 
 ## Actions
 
@@ -273,12 +277,10 @@ section share one glyph.
 | `folderOpen`   | `FolderOpen`            | neutral | Reveal a path in the OS                                                             |
 | `openExternal` | `SquareArrowOutUpRight` | neutral | Open on the code host                                                               |
 | `terminal`     | `SquareTerminal`        | neutral | Open a terminal                                                                     |
+| `editor`       | `SquareCode`            | neutral | Open in editor                                                                      |
 | `scripts`      | `ListVideo`             | info    | Open scripts                                                                        |
 | `more`         | `Ellipsis`              | neutral | Overflow menu trigger, the only overflow glyph (28 square in a header, 24 in a row) |
 | `search`       | `SearchX`               | info    | Empty search result                                                                 |
-
-`Ellipsis` replaced the deprecated `MoreHorizontal` alias on every overflow
-trigger in the migrated areas.
 
 ## Timeline markers
 
@@ -327,27 +329,21 @@ ask you or report trouble stay words and have no icon.
 
 ## Suggestions
 
-One map, `SUGGESTION_ICONS` in `features/suggestions/suggestionIcons.ts`.
-The suggestion row and the verb of a board row above Activity
-both use it. They used to disagree on four of six kinds. A Next card whose
-primary starts an agent swaps this glyph for the role icon in the role color
-(`agentKindPalette`); the map stays the glyph of every other
-suggestion and of Search or run.
-
-| Kind                 | Concept     | Glyph                |
-| -------------------- | ----------- | -------------------- |
-| `workflow-next-step` | `nextSteps` | `ArrowRight`         |
-| `plan-ready`         | `plans`     | `ClipboardList`      |
-| `resolve-threads`    | `resolve`   | `MessageSquareReply` |
-| `rebase-project`     | `branch`    | `GitBranch`          |
-| `answer-questions`   | `questions` | `CircleHelp`         |
-| `mount-project`      | `mount`     | `Layers2`            |
+One map, `SUGGESTION_ICONS` in `features/suggestions/suggestionIcons.ts`,
+gives every suggestion kind a registry concept: the next workflow step
+`nextSteps` (`ArrowRight`), a ready plan `plans`, threads to resolve `resolve`,
+a rebase `branch`, a merge `merge`, a tool to approve `approval`, a retry
+`retry`. The suggestion row, the actions of a Board card and the Next entries
+of Search or run all read it. A Next card whose primary starts an agent swaps
+this glyph for the role icon in the role color (`agentKindPalette`); everywhere
+else, Search or run included, the map's glyph stays.
 
 ## Scripts and Tasks
 
-Script rows carry no category glyph. Their actions use `Play` to run, `Square`
-to stop and `RotateCw` to restart a service (`features/scripts/components/ScriptRow/`);
-a suggested script offers `Pin`.
+Script rows carry no category glyph. The row toggle uses `Play` to run and
+`Square` to stop (`features/scripts/components/ScriptRow/RunToggle.tsx`), the
+restart action uses `RotateCw` (`features/actions/kinds/script.ts`), and a
+suggested script offers `Pin`.
 
 Tasks rows lead with the tool's brand glyph, never a kind icon. The kind icons
 live on the Type facets in `InboxFacetRail.tsx`: `issue` `CircleDot`, pull

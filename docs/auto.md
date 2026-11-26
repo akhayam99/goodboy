@@ -7,23 +7,22 @@
 > tree registry) or
 > what a role is ([concepts.md](concepts.md)).
 
-Auto is an agent that answers questions itself and hands the work it cannot do
-alone to agents of the right role, with a model it picks for each. It waits for
-their results, reads them and goes on. It is always on, and there is no switch
-to turn it off. Since ux27 one flow unit 1 an Auto conversation is a row of the one **Runs** entry of
-the session rail ("Lead", or "Lead · plan X" when it follows a preset), so the rail has no Auto entry
-to mark. Auto starts agents of the role it picks (`AUTO_ROLE_WHEN`), and
-agents started by hand keep working.
+Auto is the agent the screens call the Lead. It answers questions itself and
+hands the work it cannot do alone to agents of the right role, with a model it
+picks for each. It waits for their results, reads them and goes on. It is
+always on, and there is no switch to turn it off. An Auto conversation is a
+row of the session's one **Runs** entry ("Lead", or "Lead · plan X" when it
+follows a preset). Auto starts agents of the role it picks (`AUTO_ROLE_WHEN`),
+and agents started by hand keep working.
 
-The Work switch is gone: the rules it turned on are the rules for everyone.
-The engine reads the permission rows on every launch, publish, admission and
-finish (`readLaunchPermissions`, `readPublishPermissions`,
-`readAdmissionPermissions`, `readIsLeadClosing`), a message reaches the Lead
-while its agents work, and the screen calls the Auto root the Lead. The old
-`work.enabled` row may stay in the settings table and is never read;
-`upgradeFromSwitchOff.sqlite.test.ts` pins that pending asks survive the upgrade,
-and `upgradeFromSwitchOn.sqlite.test.ts` that the rows a Lead set for itself
-stay and a new Lead takes the workspace default.
+The permission rows are the rules for everyone. The engine reads them on every
+launch, publish, admission and finish (`readLaunchPermissions`,
+`readPublishPermissions`, `readAdmissionPermissions`, `readIsLeadClosing`),
+and a message reaches the Lead while its agents work. A `work.enabled` row
+left in the settings table is never read:
+`upgradeFromSwitchOff.sqlite.test.ts` pins that pending asks survive, and
+`upgradeFromSwitchOn.sqlite.test.ts` that the rows a Lead set for itself stay
+and a new Lead takes the workspace default.
 
 ## Names
 
@@ -45,53 +44,37 @@ moves a row between the two engines.
 
 ## Status
 
-The feature is on: `AUTO_GATES.isDelegationEnabled` is `true` and is the only gate. Settings has
-no Auto switch and no Experiments band. The runtime (`startAutoRuntime`) runs in the main window,
-ticks every 15 seconds from its start and drives the trees that exist. Another
-window has no runtime of its own: it hands Stop, Retry, a message to Auto and a
-confirm answer to the main window over a Tauri event
+The feature is on: `AUTO_GATES.isDelegationEnabled` is `true` and is the only
+gate. It reaches the screens through `AutoReleaseContext`, and `useIsAutoOn`,
+the agent menu facts and `moveToAuto` read only the gate. A build with the gate
+false hides the Auto start and every Auto control and keeps the role start, and
+`autoUnavailableReason` says "The Lead isn't available in this build."
+
+The runtime (`startAutoRuntime`) runs in the main window, ticks every 15
+seconds from its start (`AUTO_TICK_MS`) and drives the trees that exist.
+Another window has no runtime of its own: it hands Stop, Retry, a message to
+the Lead and a confirm answer to the main window over a Tauri event
 (`features/auto/bridge/`: `createAutoBridgeClient` in the other window,
-`serveAutoBridge` in the main one) and waits up to 30 seconds for the answer. No
-answer reads "The main window did not answer. Do it from the main window." on the
-tail, and a message counts as not taken. Each forwarded message carries a
-message id that stays the same while it is not taken, so sending the same
+`serveAutoBridge` in the main one) and waits up to 30 seconds for the answer.
+No answer reads "The main window did not answer. Do it from the main window."
+on the tail, and a message counts as not taken. Each forwarded message carries
+a message id that stays the same while it is not taken, so sending the same
 words again reuses it; the main window remembers each id for 10 minutes and
 answers a repeat with the first answer instead of queuing the message twice
-(a message main itself lost is sent again). An old
-`agents.autoExperiment` row left in the database is never read, so a stored `false` hides nothing:
-`useIsAutoOn`, the agent menu facts and `moveToAuto` read only the gate.
-
-**Live proof before the flip.** The real CLIs were launched with the exact argv and prompt
-Goodboy builds for an Auto turn:
-
-| CLI    | Version               | Model             | Posture                             |
-| ------ | --------------------- | ----------------- | ----------------------------------- |
-| claude | 2.1.296 (Claude Code) | claude-sonnet-5-5 | plan mode, `--tools Read,Grep,Glob` |
-| codex  | codex-cli 0.162.1     | gpt-5.6-sol       | `-s read-only`                      |
-
-Both ended with a valid `<<auto>>` delegate block that `parseAutoBlock` and `parseDelegateSpec`
-accept. Neither tried to write a file or run a shell command, and the work tree stayed clean.
-
-## The release gate
-
-- `AUTO_GATES.isDelegationEnabled` is `true` in this build and reaches the
-  screens through `AutoReleaseContext`; `useIsAutoOn` returns it. A build with
-  the gate false hides the Auto start and every Auto control and keeps the role
-  start of before.
-- Settings, This Mac, Look and alerts has no Experiments band. The **Experimental** marker
-  stays on the Auto start (`NewDrawerBody`, `SessionKickoff`).
+(a message main itself lost is sent again).
 
 ## Starting
 
-Auto is always available and has no start of its own since ux27 one flow unit
-5: the **Start a run** field is the one door (the New menu's **Start a run**,
+Auto is always available and has no start of its own: the **Start a run**
+field is the one door (the New menu's **Start a run**,
 ⌘K, the Runs page and the New session page all open it). Every Auto
 conversation is a row of the session's **Runs** page (`sessionRunsOf`), which
 opens it in the Auto chat. There is no role list, no project field and no
 guidance: Auto picks the mount and asks when it is ambiguous. A conversation
 with no folder attached still delegates a writer: the delivery says "MOUNTS:
 none attached yet" with the way forward, never that nothing can start, and the
-app attaches the project the task names or asks (see Mounts below). A role is named
+app attaches the project the task names or asks (see the `mount` block in
+[How Auto decides](#how-auto-decides)). A role is named
 with `@` in the field, which starts that role at once with no Auto turn first.
 
 - The **Start a run** field (`StartRun`) starts Auto when its router picks one
@@ -99,7 +82,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   [Start a run](features/start.md#start-a-run)): `spawnAgent` with the `auto`
   kind and the ask as its first message, or the role named with `@`. The field
   carries the same **Limit** chip (`useAutoTreeLimit`), which starts from the
-  Limit of the Runs settings page and applies to this run only. The route is kept per agent in `runs.routes.<sessionId>`.
+  Limit of Workflows › **Every run** and applies to this run only. The route is kept per agent in `runs.routes.<sessionId>`.
 - A start never rereads a setting at the click: there is no mode another window
   can change, so the form on screen is the mode that starts.
 - The goal is the first message of the Auto agent. It is not a plain turn: the
@@ -114,7 +97,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   limit pauses Auto, as for runs. A session budget that only warns caps no
   Auto run: every path reads the session cap through `pausingSessionCapOf`
   (`apps/desktop/src/features/budget/`), which gives `null` for one. A new tree
-  starts on the smaller of that cap and the Limit of the Runs settings page of the workspace
+  starts on the smaller of that cap and the Limit of Every run of the workspace
   (`autoTreeLimitOf` in `packages/core/src/auto/`, which also names the winner;
   `startAutoRuntime`, `moveToAuto`, `useAutoTreeLimit` and `setSessionBudget`
   read the session cap this way), and
@@ -125,9 +108,9 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   read, so a cap another window lowered first still ends at the smaller one
   and is never raised, and a cap raised after the read is lowered too), so the next turn pauses on what is
   already spent. A limit exists only when a person sets one. The workspace default is the Limit
-  of the Runs settings page (see [Workflows](workflows.md)), and a start never
+  of Every run (see [workflows.md](workflows.md#workflow-rules)), and a start never
   stores a limit: an amount typed on the form is for that run only.
-- A Next card that starts a role gets **Discuss with Auto** as the last
+- A Next card that starts a role gets **Discuss with the Lead** as the last
   entry of its more menu. It is the registry verb `suggestion.talkWithAuto`
   (`features/actions/kinds/suggestion.ts`), shown whenever the card starts a
   role. It opens **Start a run** on Runs with the card as its text
@@ -137,8 +120,8 @@ with `@` in the field, which starts that role at once with no Auto turn first.
 
 ## Moving an agent to Auto
 
-**Let the Lead take it from here** (once Move to Auto) hands an agent you started
-yourself to Auto. It shows on old rows only: an agent that **Start a run**
+**Let the Lead take it from here** hands an agent you started yourself to
+Auto. It shows on old rows only: an agent that **Start a run**
 started keeps a route in `runs.routes.<sessionId>` and never offers it. It is in the menu
 of an Implementer, Tester, Scout, Planner, Reviewer, Debugger or docs agent and
 of an old Generalist (the registry verbs `agent.moveToAuto` and
@@ -147,9 +130,9 @@ the right click and Search or run agree). It is blocked with "Wait for the turn 
 end first." while the agent works.
 
 - The verb opens the chat of the agent and replaces its composer with a panel,
-  **What should Auto do next?** (`MoveToAutoPanel`). The field may stay empty. A
+  **What should the Lead do next?** (`MoveToAutoPanel`). The field may stay empty. A
   handoff marker with `kind=auto` shows the same panel from the chip **Agent
-  suggests: Auto**, which does not start an agent of its own.
+  suggests: the Lead**, which does not start an agent of its own.
 - `moveToAuto` (`features/auto/moveToAuto.ts`) checks the release gate, then
   `adoptAgent` (`store/runtime/auto/adoptAgent.ts`) writes the
   whole transfer in one guarded transaction: a new Auto agent, its tree, one
@@ -167,9 +150,9 @@ end first." while the agent works.
   whose parent or child chain holds an Auto agent. A failure writes nothing and
   leaves the source as it was.
 - The source keeps its row and its chat. Its composer is replaced by the notice
-  **Moved to Auto** (`AdoptedNotice`) with **Open Auto** and **Detach from Auto**.
+  **Moved to the Lead** (`AdoptedNotice`) with **Open the Lead** and **Detach from the Lead**.
   Inside a tree the Continue buttons and the handoff chip are hidden.
-- **Detach from Auto** (`detachAdopted`) is the undo, also offered in the toast of
+- **Detach from the Lead** (`detachAdopted`) is the undo, also offered in the toast of
   the move. It removes the adopted delegation, its artifacts and the words about it
   Auto has not read yet, and bumps the tree revision. It waits for the turn of the
   agent to end. The Auto agent stays in the session.
@@ -179,8 +162,9 @@ end first." while the agent works.
 A rebase on main is plain git and never starts Auto. When it stops on a
 conflict or a commit hook, the run keeps `rebaseConflict` (the onto ref, the
 base, the head before the rebase) and the stop keeps the files
-(`store/slices/history/rebaseBranch.ts`); the prompt asks the person. **Resolve
-with Auto** (`mount.resolveRebaseWithAuto`) calls `resolveRebaseWithAuto`
+(`store/slices/history/rebaseBranch.ts`); the prompt asks the person. **Start new
+Lead** (`mount.resolveRebaseWithAuto`, "Start new Lead for the rebase
+conflicts" in Search or run) calls `resolveRebaseWithAuto`
 (`store/slices/rebaseAll/resolveRebaseWithAuto.ts`): it starts one Auto agent
 with `spawnAgent` and `kindOverride: 'auto'`, the route the workspace picks for
 the role, and the goal `rebaseAutoGoal` writes, so the goal goes through the
@@ -193,9 +177,10 @@ run is marked as handed (`autoAgentId`) only once Auto took the goal and only
 when the run is still the one that was asked, so an answer that lands after
 **Abort rebase** changes nothing. **Rebase all** (`store/slices/rebaseAll/rebaseAll.ts`)
 rebases each branch with git first and hands every conflicted branch to the
-same single Auto run; with **Also tidy commits with Auto** on, the goal also
-lists every rebased branch to tidy, locally, after its rebase. **Start new Lead** on a stopped rebase
-reads why when no provider can run Auto (`autoUnavailableReason`).
+same single Auto run. With `shouldTidy` the goal also lists every rebased
+branch to tidy, locally, after its rebase; every caller (`session.rebaseAll`,
+`updateAll`) passes `false`, so no screen asks for it. **Start new Lead** on a
+stopped rebase reads why when no provider can run Auto (`autoUnavailableReason`).
 
 ## Talking to Auto
 
@@ -211,9 +196,8 @@ own agent (the ledger, the budget line, the results, "MESSAGES FROM THE USER")
 is stored with `deliveredBy: 'auto'` on its `user_text` event, set in
 `startTurnRun` when the turn's origin is `delegation` (the root's deliveries
 and a child's first brief). The transcript draws such an event as one collapsed
-row, **What Auto was told**, never as a user bubble; opening it shows the text
-as sent. A transcript written before this change has no origin on its events, so
-its delivery text still renders as a bubble: there is no text sniffing. A
+row, **What the Lead was told**, never as a user bubble; opening it shows the text
+as sent. An event with no origin renders as a bubble: there is no text sniffing. A
 message the runtime
 cannot take, or one with a file that is not an image, is refused with "The Lead didn't get your
 message" and the composer keeps its text.
@@ -279,9 +263,9 @@ it starts stops that tree.
 
 **A message the tree cannot take.** A `user` row is never sent to a tree that cannot run a turn,
 and its row says "Not delivered". A tree blocked by the budget shows **Change limit** (raising it
-delivers the row, as before). A tree blocked for any other reason shows
+delivers the row). A tree blocked for any other reason shows
 **Retry**, which resumes the tree and delivers the row (the send itself already tries one Retry).
-A stopped or stopping tree has no action ("Auto was stopped." in the tooltip): the row stays unsent, and Edit or Remove still take it
+A stopped or stopping tree has no action ("The Lead was stopped." in the tooltip): the row stays unsent, and Edit or Remove still take it
 back. Stopping drops the pending rows with the reason `stopped`; `readAutoTreeViews` keeps those user
 rows in `pendingMessages` while the tree is stopping or stopped, so the row still shows. A
 `finished` or `done` tree takes the message as a normal follow-up turn. Rows left from old trees
@@ -304,7 +288,7 @@ cannot be written refuses the message with "The Lead couldn't keep the files. At
 nothing is dropped silently. A turn that is not an operator message or
 a child is left to the plain turn. A message to the root of an Auto tree is never a
 plain turn: with no Auto door registered at all (the runtime has not started yet)
-`routeAutoUserTurn` refuses it with "Auto is still starting. Retry in a
+`routeAutoUserTurn` refuses it with "The Lead is still starting. Retry in a
 moment." (one constant, `AUTO_STARTING_SENTENCE`, shared by every Auto action that finds no door) and the composer keeps its text.
 
 ## Overview
@@ -327,7 +311,7 @@ phase `done`) reads **Idle** in the row and the rail root, never Done. **Mark fi
 (`agent.markAutoFinished`, undoable) moves a resting tree to the stored phase
 `finished` (m231) through `moveRestingAutoTree`: one write that needs a resting
 phase, no stop, no running turn and no open delegation, so a tree that started
-working again refuses with "Auto is working again. Mark it finished once it
+working again refuses with "The Lead is working again. Mark it finished once it
 rests." A finished tree is left out of recovery and takes only user messages:
 writing to it reopens it to **Deciding**.
 
@@ -340,21 +324,21 @@ writing to it reopens it to **Deciding**.
   has to load. The ask is the root's first `operator_text`, else its first
   `user_text` not marked `deliveredBy: 'auto'`, never the delivery Auto builds
   (whose first line is the artifact ledger header); then the transcript brief,
-  then "Auto". Every state word is gray beside its toned node and comes from
+  then the agent's own heading (`agentHeadingOf`). Every state word is gray beside its toned node and comes from
   one word map (`autoTreeWordOf` for Auto, `delegationCardOf` for a child):
   **Needs you**, **Running**, **Idle** (gray dot), **Done** (green check),
   **Stopped**; the Auto agents list reads the same words.
 - **Changing the limit.** The Auto page's settings line (`AgentSettingsLine`)
   holds **Limit** "$5.00 from Harborline" (`autoLimitWordsOf`: the
-  source names the winner, "this Auto" once you set its own, and the popover's
-  last line reads the chain, "This Auto $5.00, then session $8.00, then
+  source names the winner, "this Lead" once you set its own, and the popover's
+  last line reads the chain, "This Lead $5.00, then session $8.00, then
   Harborline $5.00. $5.00 comes first."). Its popover takes an amount and applies
   it on Enter or when it closes (`AutoLimitSetting`), also while the tree runs,
   with **Undo** in the toast; **Raise limit** on the tail opens it
   (`autoLimitOpenEvent`). An amount over a session budget that pauses, or a
   blank field while one exists, says the session limit comes first. A session
   budget that only warns does not count here (`AgentSettingsLine` reads it
-  through `pausingSessionCapOf`), so the source and the chain name this Auto or
+  through `pausingSessionCapOf`), so the source and the chain name this Lead or
   the workspace and a raise over it goes through. An amount under spent
   plus reserved is refused by the write.
   `setAutoTreeCap` (`store/runtime/auto/setAutoTreeCap.ts`) writes it in one
@@ -375,7 +359,7 @@ writing to it reopens it to **Deciding**.
   refused: the session limit comes first. A tree is only created with a number; NULL
   comes only from this choice.
 - **The page.** The header is the goal as the title and the provider mark, with
-  no role, Experimental or state chip; its menu holds **Rename** and
+  no role or state chip; its menu holds **Rename** and
   **Mark finished** while Auto rests and its own turn is not running
   (`agent.markAutoFinished`). Steps open from a turn's summary line.
 - **Delegation lines.** Each delegation is in the conversation
@@ -401,7 +385,7 @@ writing to it reopens it to **Deciding**.
   approving sends the approval to the Auto root, so the run stays inside Auto.
   If the approval is saved but Auto was not told, the plan view keeps open with
   **Resend approval**, and the dock that approved it reads "Plan v1 approved.
-  Couldn't send it to Auto." with the same **Resend approval**: it sends
+  Couldn't send it to Lead." with the same **Resend approval**: it sends
   "Approved plan v1." again.
   One selector decides the dock line (`dockPlanOf`): waiting, updating,
   failed or settled. A plan whose planner the Lead discarded, or whose
@@ -464,8 +448,7 @@ writing to it reopens it to **Deciding**.
   `autoStuckKindOf` and `autoStuckVerbOf`; a child that returned to Auto is
   not stuck and has no card), then the sentence its reason code maps to
   (`delegationReasonTextOf`), never a child's own words, which can be in
-  another language, until the agent text plan gives
-  each child a one-line summary in your language. Its verb reads **Retry**
+  another language. Its verb reads **Retry**
   with the accessible name `Retry "<name>"`.
 - **Why a child stopped, and what a done child said.** The second line of a
   stuck child on the rail and in the Running card is its reason in
@@ -501,7 +484,7 @@ writing to it reopens it to **Deciding**.
   shows "This agent is no longer in this session. It was deleted or moved." on
   the card (`useActionCardActions`).
 - **What the agents reported.** Each child result Auto read for a turn is that
-  child's card, right after the **What Auto was told** row of that turn and
+  child's card, right after the **What the Lead was told** row of that turn and
   before Auto's reply (`AutoDeliveryResults` under the delivery row, drawing
   `AutoResultCards`): the role glyph, the name, the model
   with its provider and **Open**, which opens the child page. Under that header the card
@@ -545,7 +528,7 @@ writing to it reopens it to **Deciding**.
   `claimsReply` receives the replies `claimedRepliesOf` gives it (the first card
   that settles after the reply, the open one last), and the approval text comes
   from `approvedPlanReply`. A message you write yourself stays a bubble.
-  **What Auto was told** shows once, on the first delivery.
+  **What the Lead was told** shows once, on the first delivery.
 - **The state.** Auto's state is said once, in the dock (`AutoDock`,
   `AutoDockAttention`, phrases from `autoTreeLive`), never at the end of the chat:
   **Implementer running, Tester queued**, **Starting agents**, **Reading the results**, **Deciding what to do
@@ -561,8 +544,8 @@ writing to it reopens it to **Deciding**.
   **Deciding what to do next**: a resting tree (`answering`, `done`, `finished`)
   whose turn ended draws no tail and no Stop, the rail says Idle or Done and
   **Mark finished** is in the header menu. A Stop that fails says why in the dock and a Retry on the
-  tail itself, in an inline danger notice under the line ("Couldn't stop the Auto
-  agents", "Couldn't retry Auto"), never only in the notifications. While Auto's own turn runs, the
+  tail itself, in an inline danger notice under the line ("Couldn't stop the run",
+  "Couldn't retry the Lead"), never only in the notifications. While Auto's own turn runs, the
   thinking line of the conversation speaks instead. There is no separate strip
   of running children: the running rows of the cards, the rail and the dock
   already say it. The glance line under the title holds the state word, the
@@ -579,8 +562,8 @@ writing to it reopens it to **Deciding**.
   first** like any agent composer.
 - **A child opens on its page, from every door** (`useAutoChildChat`, `AgentDetailPane`):
   a tree row, a delegation line, the Overview, a notification and Search or run land on one
-  page with one box, and the back row reads **Back to Auto**. A saved window that held the
-  old panel opens this page (`withoutRemovedPages`). The page title is the task
+  page with one box. A saved window that held a removed panel opens this page
+  (`withoutRemovedPages`). The page title is the task
   Auto gave it (the first line of the brief when the task is missing); on top, the line
   "The Lead started this agent and reads your messages to it.", why the Lead chose that role, the model it runs on with its
   provider (no dollar amount: a child holds no money) and the note when the app changed
@@ -594,7 +577,7 @@ writing to it reopens it to **Deciding**.
   `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
   accepted it and not started it, its live line with **Stop agent**, **Waiting for
   your OK** with **Confirm** and **Decline**, **Asked a question** (the question is in the
-  conversation above), **Failed: <sentence>** or **Returned to Auto**). A failed child's
+  conversation above), **Failed: <sentence>** or **Returned to the Lead**). A failed child's
   end line has no recovery action: the conversation dock owns **Retry**
   through Auto, even without a closing result
   (`AutoChildEnd`, `ConversationDock/useAutoChildRecovery`, `continueStoppedAgent`). A stopped child has no tail line:
@@ -772,8 +755,8 @@ its own snapshot, and a resumed attempt after a question writes none.
 `childWentInOf` (`features/auto/child/childWentInOf.ts`) reads the one of the
 agent's latest delegation through `launchSnapshotOf`. A recorded snapshot with
 nothing in it reads "Nothing was given to the agent." An agent without a
-snapshot, for one started before the column existed, has no Went in line: a
-state, not an error, and nothing is recomputed from today's images; the images
+snapshot (`launch_snapshot` is null) has no Went in line: a
+state, not an error, and nothing is recomputed from the tree's images of now; the images
 of its brief show as chips instead, and they are not repeated when a snapshot
 lists them.
 
@@ -943,7 +926,7 @@ until the session is reopened.
 
 A child that waits for an OK shows one **Next step** card under its line, never a
 Confirm row (`AutoNextAction`, built by `nextActionOf`). The proposed child is the
-primary tile ("Spawn implementer", or "Revise Retry-safe credit retries to v3"),
+primary tile ("Start implementer", or "Revise Retry-safe credit retries to v3"),
 the alternatives of the proposal follow as tiles 2 and 3, and an optional hint
 field sits under them. The button reads **Continue** whichever tile is picked
 (**Retry** after a failure). The keys 1 to 3 pick a tile while focus is
@@ -955,11 +938,11 @@ colour (`AUTO_STATE_TONE.waitingOnYou`) with an inner tone bar, not a side borde
 - An alternative declines the primary first, then sends the Auto root one
   structured message: `Next step: <role>` on the first line, the hint after it.
   If the decline lost, no message is sent. If the message fails, the card stays as
-  "Declined. Couldn't send it to Auto." with **Resend answer**, which sends only the message.
+  "Declined. Couldn't send it to Lead." with **Resend answer**, which sends only the message.
 - **Decline** declines and tells nothing.
 - A failed start keeps the pick and the hint, shows the reason in the card and
   reads **Retry** on the same delegation. A `lost` answer reads "No longer open".
-- Without a port the card says Auto can't take the answer in this window yet.
+- Without a port the card says "The Lead can't take this answer in this window yet."
 
 The hint travels through the same port in every window (the multi-window bridge
 carries it).
@@ -976,15 +959,14 @@ before it replied. Retry sends your message again." and puts the message back.
 The block texts live in `turnGate.ts` and say Lead: "The Lead replied 3 times
 with no next step.", "The run reached its limit." and "Agents came
 back to the Lead 6 times in 30 minutes with no limit set.". The text is the
-stored `blocked_reason`, so every text an older build wrote stays in
+stored `blocked_reason`, so every earlier wording stays in
 `LEGACY_GATE_TEXTS` (`packages/core/src/auto/legacyGateTexts.ts`).
 `isAutoGateBlock` and `isAutoBudgetBlock` read old and new texts alike: a tree
 blocked by an old text survives a restart without a retry, and one blocked at
 the old spend limit text still resumes once the limit is raised
 (`legacyGateTexts.sqlite.test.ts`). The tail and the line under a waiting message
 show an old text in the current words (`autoBlockShownText`) and keep the stored one as
-it is, so its action does not move (`legacyBlockReaders.test.ts`). A build older than this one does not know
-the new texts, and retries such a tree at its first start.
+it is, so its action does not move (`legacyBlockReaders.test.ts`).
 
 A tree blocked by a guard other than a limit reads **Failed** on every surface
 (glance, row, card, tail), never **Blocked** or **Needs you**: it ended on an error
@@ -1002,7 +984,7 @@ Its row sits under Needs you, and it raises `run-paused-at-limit` (`autoLimitRoo
 A child that returned (outcome `blocked`, reasons `needs_shell`, `needs_writer`,
 `needs_role`, `needs_decision` and `needs_user`, or `declared_blocked` and
 `missing_tool` on rows from before the return) is not an error and not yours to
-move. It reads **Idle**, with "Returned to Auto: <its request>" on its tail (the
+move. It reads **Idle**, with "Returned to the Lead: <its request>" on its tail (the
 one line it wrote, `returnedRequestOf`, else its summary), while Auto decides, and **Done**
 only once Auto decided about it: continued it (`retryOf`), replaced it (`replaces`) or released it
 with a reason (`isAutoDelegationReplaced`, which reads `isAutoReturnDecided` for a returned child). A
@@ -1030,9 +1012,8 @@ with the reason on the tail. A message from the user to
 a blocked tree is a Retry too, and the first recovery after a restart retries a
 block that no limit caused.
 
-No clock blocks a tree, however long it runs. Older builds blocked a tree 24 hours
-after it began ("This conversation reached its time limit."). A tree stored with
-that reason reads **Failed** like any other block: Retry or a message resumes it,
+No clock blocks a tree, however long it runs. A tree stored with the reason
+"This conversation reached its time limit." reads **Failed** like any other block: Retry or a message resumes it,
 and the recovery after a restart leaves it for the user (`isAutoGateBlock`). The
 `hard_deadline_at` column stays in `auto_trees`, written and never read.
 
@@ -1050,11 +1031,11 @@ stops it is a guard that protects the user:
   holds `AUTO_TURN_CEILING_USD` (and an aux job `AUTO_AUX_RESERVATION_USD`), so
   Auto's turn never starts with less than that left. A child that reports no cost
   settles at 0 with its cost marked unknown, never at a ceiling; its result says
-  "cost unknown". Old attempt reservations from before this rule are read as
-  holding nothing;
+  "cost unknown". A reservation stored on an attempt row is read as holding
+  nothing;
 - `AUTO_TREE_LIMITS`: question cycles per delegation and the no progress streak. No count
   of delegate calls in a turn and no count of refused calls in a conversation refuses
-  anything; the old `turn_delegate_calls`, `refusals_used` and `last_refusal_key` columns stay
+  anything; the `turn_delegate_calls`, `refusals_used` and `last_refusal_key` columns stay
   and are never written or read;
 - the caps on returns, in the same table. Both count the whole lineage, from the root of the chain
   down every branch (`lineageOf`). A `retryOf` or `replaces` may name only a return no one decided
@@ -1070,7 +1051,7 @@ stops it is a guard that protects the user:
   the fourth is refused with `task_rebrief_limit` and
   the delivery tells Auto to ask with a propose block. The Lead's messages to a working child
   have no cap: talking to an agent is the work. `message_limit` stays a known refusal code only
-  so a refusal stored by an older build still reads. `returnsPerTreeWindow` (6 in `AUTO_RETURNS_WINDOW_MS`, 30 minutes) is a health check for a
+  so a stored refusal with that code still reads. `returnsPerTreeWindow` (6 in `AUTO_RETURNS_WINDOW_MS`, 30 minutes) is a health check for a
   run with no limit only: the sixth return row carries `isOverWindow`, and `deliverNext` blocks the
   tree with `AUTO_BLOCK_TEXT.limit_returns` only when the tree has no spend cap. With a cap, the cap
   is what stops a loop that costs too much, and any number of returns reaches the Lead. **Retry**
@@ -1106,7 +1087,7 @@ Auto is not running or another window owns the tree, the delete fails with the r
 stays and the tree stays unconfirmed; deleting again resumes the stop. The purge itself
 (`agentPurgeStatements`) never touches the tree. The lists read only trees whose root agent is
 still in the session (`liveAutoViewsOf`, through `useAutoTreeViews`): a tree
-left open on an agent that was deleted or moved raises no **Needs you** card, no **Auto needs you**
+left open on an agent that was deleted or moved raises no **Needs you** card, no **Lead needs you**
 line and no count. A child whose agent is gone is not stuck (`isAutoChildStuck`); a child Auto
 accepted and has not started has no agent yet and still counts, and so does one whose agent could
 not be created (reason `agent_not_created`, `launchChildren`): its failure and retry card stay. Plans stay readable in the plan
@@ -1147,13 +1128,13 @@ head and the tail read the word from `settledStatusOf`). Its page says "No outpu
 **Retry**, and the Lead can continue it with `retryOf` as above. A child paused on
 a question has no clock at all: it waits for you or the Lead, however long. The
 `deadline_at` column stays in `auto_delegations` (it is `NOT NULL`), written and
-never read; a row an older build settled with `deadline_passed` keeps its sentence.
+never read; a row settled with `deadline_passed` keeps its sentence.
 
 At the spend cap the tail reads **Paused at the limit** with **Raise to ...**,
 **Change limit** and **Stop**; raising it drives the tree again, nothing else to do. The counters
 `delegations_used`, `attempts_used`, `turns_used` and `grants` stay in `auto_trees`
-(no migration): the first three only count and show, `grants` is no longer written
-or read. An old tree with its counts at the old cap resumes as it is. The prompt
+(no migration): the first three only count and show, and `grants` is never
+written or read. A tree with high counts resumes as it is. The prompt
 tells Auto the spend left (`autoBudgetPromptLine`), never a count of agents left.
 
 ## How Auto decides
@@ -1197,7 +1178,7 @@ It decides by ending its final reply with at most one block:
   counting it twice.
 - `stop` stops a working child (`delegation`, `reason`) with the same cancel as the dock Stop
   (`stopChild`, the `cancelRun` port with `by: 'auto'`). The agent is marked stopped by `auto`,
-  so the dock, the glance and the child row read **Stopped by Auto** (`stoppedPhraseOf`, the one
+  so the dock, the glance and the child row read **Stopped by the Lead** (`stoppedPhraseOf`, the one
   owner of every "Stopped by" label). It settles `stopped` with the reason "Stopped by Auto:
   ..." and its work stays. The agent is marked stopped by `auto` as soon as the cancel answers,
   whatever it answers, and its queued `auto-message:` items are dropped (`cancelTurnConfirmed`,
@@ -1338,7 +1319,7 @@ with `changeAutoLevel`.
 
 The chip lives in the settings line of an Auto agent (`AutoLevelSetting`, next
 to the Limit chip). The workspace default is the **Stops for your OK** row of
-the Runs settings page, shared with workflows: `changeStopsLevel` writes it with the
+Workflows › **Every run**, shared with workflows: `changeStopsLevel` writes it with the
 workflow level, see [workflows.md](./workflows.md). The chip goes through `useAutoLevel` in `shared/hooks/`,
 which reads `auto.level`, writes through the `changeAutoLevel` store action
 (`writeAutoLevel` on a named session or workspace, then a reload of the value
@@ -1369,7 +1350,7 @@ locked rows are not stored and not editable: force push asks with a backup,
 merge is you, agents never push, the Lead never writes.
 
 The three levels are the three presets in `LEAD_PERMISSION_PRESETS`, value for
-value with what each level does today: Every step asks for the plan, every
+value with what each level does: Every step asks for the plan, every
 child and every project; After the plan asks for the plan, lets readers start
 and adds a project through the materialization allowance (`applyMountBlock`);
 Never skips the plan and starts and adds freely. No preset holds a new ask:
@@ -1382,12 +1363,12 @@ m243), the workspace default (workspace value `auto.permissions`), the
 session's level, the workspace level, then
 **After the plan**. The hidden `agents.autoPlanApproval` setting stands in for
 the default's Approve the plan row while no Lead row and no default row holds
-it, so a workspace that never opens the panel behaves as today; once a row
+it, so a workspace that never opens the panel keeps that setting's answer; once a row
 holds it, the row owns it, and a stored Ask is never overridden by the setting.
 Start agents that write at After the plan with Approve the plan at Skip cannot
 both hold: when either comes from a stored row it reads as Ask and carries a
 `LeadPermissionNote` that says why; when the skip comes from the hidden setting and the writer
-row from a level, it reads as free, which is what that pair does today. The
+row from a level, it reads as free, which is what that pair does with no stored rows. The
 preset reads Custom as soon as the effective rows match none of the three.
 
 `store/runtime/auto/level/readLeadPermissions.ts` reads a tree, a session or a
@@ -1400,7 +1381,7 @@ then fails with "changed in another window"; a failed write keeps the old value.
 The panel for these rows is `features/auto/permissions/`: `LeadPermissionsPanel`
 shows the nine rows in three groups and the four locked rows as one line. The
 level and **Custom** sit above it in `LeadLevelRow` (the drawer) or on the
-**Stops for your OK** row (the Runs settings page). `LeadPermissions.level` is the
+**Stops for your OK** row (Every run). `LeadPermissions.level` is the
 level the rows fall back to, and `leadDetailsDifferOf` counts the rows that
 differ from it: that count is the only source of "Custom, 2 details". A row
 saves when you change it; there is no draft. A failed write keeps the old
@@ -1422,9 +1403,9 @@ page. It holds the three levels, **Reset to** the level when the rows differ,
 and **Fine-tune this run**, which opens the `lead-details` drawer
 (`LeadDetailsDrawer`) beside the chat. With no Lead yet it reads the session,
 a level writes that session's level only, and the last row is **Fine-tune in
-Settings**. A run never writes the workspace default. A new session draft has
+Settings**, which opens Every run (`openRunDefaults`). A run never writes the workspace default. A new session draft has
 no session to name, so it keeps the level chip, applied to the session once it
-exists. On the Runs settings page the **Stops for your OK** row shows Custom and
+exists. On Every run the **Stops for your OK** row shows Custom and
 Reset for the workspace default rows, and **Fine-tune what the Lead does
 alone** opens them in the page (`LeadDetailsDisclosure`); a level pick there
 writes both level keys, then clears the default rows. The `lead-details`
@@ -1520,7 +1501,7 @@ publishes.
 
 - **Push.** `planPublish` takes the push value. `isPublishAskedOf`
   (`packages/core/src/auto/publish.ts`) is true for a force push at every value
-  (it keeps its backup, as before) and for a plain push at Ask. A plain push at
+  (it keeps its backup) and for a plain push at Ask. A plain push at
   Ask is written `awaiting_confirm` instead of `pushing`, bound to its branch and
   the checked commit, so nothing reaches the host and the commits stay local. It
   lists as `push:<delegation>:<commit>` and reads "Waiting for you to confirm
@@ -1530,7 +1511,7 @@ publishes.
   now. A retry of an allowed push pushes the recorded commit once; a retry of a
   push that was never confirmed plans again and asks again at Ask. A new attempt
   plans its own commit and asks again; an answer for an older commit is dropped.
-  At When checks pass the path is today's, value for value.
+  At When checks pass a plain push is never held.
 - **Pull request.** The gate sits at publication, not at the Scribe's start.
   When a Scribe ends completed with text and the row says Ask, `finishAttempt`
   calls `holdScribePullRequest`: it inserts the `auto_grants` row
@@ -1558,7 +1539,7 @@ publishes.
   second Open while one runs is settled. Not yet writes `declined` and keeps the
   text. A newer text on the same mount (an update) asks again, and the answer
   for the older text is dropped because its grant is no longer current. At Allow
-  the Scribe's text goes to the port as today. The port carries the extracted
+  the Scribe's text goes straight to the port. The port carries the extracted
   `output`, so the title and body the ask shows are the ones handed to the host
   call; the host path still adds its closing references and the hidden Scribe
   signature to the body, as on the Branch page.
@@ -1593,7 +1574,7 @@ publishes.
 - `publishGates.sqlite.test.ts` covers the held push, Push, Don't push and Push
   now, a retry that pushes once, a newer commit, the workspace default, force at
   both values, the held text, Open twice, Not yet, a refused host and Open
-  again, an update, Allow as today, the pull request behind the push row (push
+  again, an update, Allow, the pull request behind the push row (push
   Ask with pull request Allow, push Ask with pull request Ask and Don't push then
   Push now, a reused writer push ask, a commit already online), the pinned
   commit, a refused host change at both push values, a row turned to Ask while
@@ -1664,7 +1645,7 @@ and the row's help line says so.
   tree is blocked or at its limit), the agent goes back to the Lead's decisions
   and the allowance waits for the next retry of that agent.
 - `launchGuard.test.ts` (one case per package manager), `launchGuard.sqlite.test.ts`
-  (Allow as today, the stored guard, a later row change, Allow once, Do it
+  (Allow, the stored guard, a later row change, Allow once, Do it
   without, one protected path) and the Rust spawn tests in
   `turn/fake_cli_tests.rs` (rules, settings and network at Ask, byte-equal at
   Allow, an allowance that lifts one) cover it.
@@ -1694,7 +1675,7 @@ A line it cannot attribute holds the lockfile, as do a binary lockfile, a
 manifest or lockfile with no patch (not committed) and a patch that cannot be
 read. A protected file is
 refused while its row asks and no allowed path names it. With both rows at Allow nothing is read
-and the result goes on as before. A row tightened while the agent runs applies
+and the result goes on unchecked. A row tightened while the agent runs applies
 to its result here.
 
 - **At the end of an attempt.** `finishAttempt.ts` reads the changed files
@@ -1724,7 +1705,7 @@ to its result here.
   covers it.
 - `changeGate.test.ts`, `launchGuard/readHostChanges.test.ts`,
   `launchGuard/changeGate.sqlite.test.ts` (a lockfile around the deny rule, a
-  protected file, an unread list, a covered change, Allow as today, a row
+  protected file, an unread list, a covered change, Allow, a row
   tightened before a retry, an allowed package landed and pushed, another
   package beside the allowed one, a refused lockfile behind a clean retry, an
   unreadable host list) and the Rust
@@ -1737,7 +1718,7 @@ like the level). `spawnAgent` writes it before the first turn. `buildTurnSpawn`
 passes the agent id to `autoSystemPromptOf`, so `buildAutoSystemPrompt` adds a
 **GUIDANCE FOR THIS RUN** block to every turn, and `resolveDelegateChild` reads
 the root's text into each child brief as a `**Guidance**` section before the
-`**Task**`. A run without guidance builds the same prompt and briefs as before.
+`**Task**`. A run without guidance gets neither.
 
 A limit picked for one Lead lives the same way in `run.limit`, a map of the root
 agent id to dollars, or to `null` when the person chose No limit
@@ -1746,7 +1727,7 @@ inherited (no entry), capped and uncapped. `spawnAgent` writes it before the
 agent row exists, and `startAutoTree` reads it in place of the workspace default
 when it creates the tree, in whichever window creates it. An uncapped Lead ignores
 the workspace default. A lower session cap still wins. A Lead started without its
-own entry gets the workspace default as before.
+own entry gets the workspace default.
 
 A preset Lead with a pinned step keeps its locked steps in `run.locks`, a map of
 the root agent id to each step's role and lock (`store/runtime/runLocks/`),
@@ -1858,7 +1839,7 @@ The request line is followed by the head commit the host holds (`headSha` of the
 example "2 failing", "1 running" or "none reported"; "not read" when the host did not answer for the
 checks). The checks line says it is not matched to that commit: a check run carries no commit, GitLab
 may report an older pipeline and GitHub reads the head and the checks apart, so a push between the
-reads can mix commits. A question about the state of a pull request is answered by a scout, never by a writer. about the state of a pull request is answered by a scout, never by a writer.
+reads can mix commits. A question about the state of a pull request is answered by a scout, never by a writer.
 `composeBranchFacts` in core renders them as a `**Facts**` section of the brief, capped by
 `AUTO_FACTS_CHARS` (6,000, split across the mounts) with per-list caps in `limits.ts`. A part the
 host could not read becomes "Facts not available: reason" and the scout still starts; a read slower
@@ -1884,7 +1865,7 @@ as such in that section and the child still starts; a bare id in the task text i
 The ids are stored in `request_json.decisions`, so a retry writes them again from the ledger of that
 moment. A retry or a resume keeps the version of its delegation: a delegation made before the
 upgrade has no `briefVersion`, so its retries and answers keep the full slots. The Context
-drawer says "Auto children read only their brief".
+drawer says "Agents the Lead starts read only their brief".
 
 **The child returns, never blocks.** The kickoff's Return section (`returnContract` in
 `core/auto/kickoff.ts`) has a child end done, or do what it can, write its report and end with
@@ -1928,7 +1909,7 @@ between the release and the turn settle, is applied again without a write, never
 the turn settle and the Done word (`isAutoDelegationReplaced`) read it. A turn that leaves a delivered
 return undecided copies it again, one row per return (`undecided:<generation>:<row>:<delegation>`,
 `isRepeat`, kept out of the results block), and counts as a turn without progress, so three such turns
-block the tree with the no progress guard. A return saved before this rule sits inside its batch
+block the tree with the no progress guard. A return stored without `returnOf` sits inside its batch
 row with no `returnOf`: `returnIdsOfRow` reads the `blocked` results of such a row as returns, and when
 that batch was delivered by an earlier turn, `joinReady` writes the missing return row
 (`hasUnheardReturn`), so Auto is woken to decide about it. A blocked child with no `returned` in
@@ -2133,7 +2114,7 @@ no migration, outcome still `completed`:
   recovers (done, finished, stopped) goes through the same `pushSettledPublish` to the same
   retryable failure. A row that fails to settle is reported and the sweep goes on. A confirmed
   record carries `startedAt` (the claim writes it, and so does `pushRow`), and
-  `pushSettledPublish` leaves it alone for `PUSH_LIVE_WINDOW_MS` (15 minutes), because another
+  `pushSettledPublish` leaves it alone for `PUSH_LIVE_WINDOW_MS` (100 minutes: three git network timeouts plus a margin), because another
   window may still be pushing it; the sweep runs once more after that window when it met such a
   record, and a record with no `startedAt` counts as old. It scans `auto_attempts` once per boot
   and once more only in that case.
@@ -2267,11 +2248,11 @@ refuses to its children for the acts above.
 Auto itself runs on Claude, Codex, Cursor, Gemini and Copilot (`AUTO_OWN_PROVIDERS`), because it only reads
 there. It never runs on the opencode family (opencode, OpenRouter, Moonshot,
 `AUTO_UNCONFINED_PROVIDERS`): the `plan` agent of opencode denies edits but asks before a shell
-command. A read-only role no longer gets `--dangerously-skip-permissions`, the flag that approves
+command. A read-only role does not get `--dangerously-skip-permissions`, the flag that approves
 the ask, but whether `opencode run` then denies the ask instead of waiting is unproven, so Auto is
 kept off it instead. Three layers hold the line: the
-composer lists only `AUTO_OWN_PROVIDERS` and shows "Auto needs a connected provider" when nothing
-else is connected; `kindRouting` for Auto never resolves to the family (the role default, a stored
+composer lists only `AUTO_OWN_PROVIDERS`, and with none connected `autoUnavailableReason` says
+"Connect Claude, Codex, Cursor or Gemini to use the Lead."; `kindRouting` for Auto never resolves to the family (the role default, a stored
 role pick and the model of the chat are all skipped) and `spawnAgent` refuses an Auto agent on it;
 and `turn_spawn` refuses `auto` and every reading role on an opencode binary (`ensure_confinement`).
 A reading child (scout, planner, investigator, reviewer) runs wherever Auto itself runs, under the
@@ -2315,8 +2296,8 @@ instead of starting there. The routing a helper keeps
 `source` (lead, pin, rule, fallback, lock), the cause of a moved pick, the Lead's own words in
 `modelReason` and up to 18 candidates it weighed, without rates, the struck rows last. A role pin
 reads `source` pin whether the Lead's pick matched it or moved to it. Tell a pin from a Lead pick
-by `source`, never by `requested`, which holds what the Lead asked for. An older
-row has none of these keys and reads as before, and the receipt the Lead gets keeps its keys.
+by `source`, never by `requested`, which holds what the Lead asked for. A
+row without these keys still reads, and the receipt the Lead gets keeps its keys.
 When no candidate passes, `childRoutingRefusal` names each connected provider with its reason (usage limit until a
 time, budget reached, no visible model, reading roles only) and points to Settings › Models.
 
@@ -2340,8 +2321,10 @@ policy on the Models page does not turn off), else every allowed provider
 ## What the screens read
 
 The screens read the registry through the `auto-view` slice
-(`loadAutoTrees`), which polls every 2 seconds while a session has an Auto
-agent or a tree that is not finished. Nothing pushes tree changes to a window
+(`loadAutoTrees`). `useAutoTrees` polls while a session has a live Auto agent
+or a tree that is not finished, through one shared poll per session
+(`startSharedPoll` in `features/auto/useAutoTrees/sharedPoll.ts`): every 2
+seconds, and every fifth tick (10 seconds) while the window is hidden. Nothing pushes tree changes to a window
 yet. The numbers on screen come from the budget function the prompt and the
 admission use, so they agree. What is left has one SQL formula
 (`autoRemainingUsdSql`, read by `readAutoTreeSpend` and by every admission
@@ -2364,15 +2347,14 @@ from the prose, and `outcomeLineOf` decides the line shown. Both read the marker
 tolerantly, because models mistype the close: any `outcome` word led by `<` or `/`
 runs (up to six) and closed by up to three `>` is a marker, a slash makes it a close, a
 second open ends the block like a close, a stray close is dropped, and an open with
-nothing after it hides the rest of the text as before. The scan is one linear walk over
+nothing after it hides the rest of the text. The scan is one linear walk over
 the word, with no regular expression, so `</<<outcome>>` never reaches the line or eats
 the body below it. `AssistantText` strips the outcome before the other control markers. The model's words
 never override the facts: red checks give "Checks failed: n", a failed,
 declined or put back push gives the "Not pushed" text of `publishTextOf`. A
 missing line falls back to the outcome word ("Done", "Failed: reason"), and a
 message with neither shows no line. The tone of the line is data
-(`success`, `danger`, `warning`, `neutral`); the screens that draw it come with
-the reading order work.
+(`success`, `danger`, `warning`, `neutral`).
 
 ### Action bar asks
 

@@ -17,7 +17,7 @@ export const nextLinesOf = ({ scope, session }: Params): ReadonlyArray<SessionLi
   const runLines = session.workflowRuns
     .filter((run) => run.discardedAt == null)
     .flatMap((run): ReadonlyArray<SessionLine> => {
-      const state = runStateOf({ run, agents });
+      const state = runStateOf({ run, agents, stepCount: scope.stepCounts?.[run.workflowId] });
       if (state !== 'waiting' && state !== 'paused' && state !== 'stopped') {
         return [];
       }

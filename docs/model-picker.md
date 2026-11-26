@@ -37,15 +37,15 @@ The row above the provider chips is one component with two meanings.
   (`Now: Claude · Sonnet 5.5 · Medium`). A pinned trigger shows the model then
   "· pinned" in gray, in the same chip style as any other trigger (no tint, no
   bare x); going back to Auto is the reset row inside the popover, labelled by
-  the caller's `resetLabel` ("Back to Auto", "Use default"). The row under a Models page label and the run page and builder
-  orchestrator pills read that answer from `useResolution`, so they name the same
-  model; when a pin is skipped, the row's muted line says why through
-  `explainResolution` (see `docs/providers.md`, Defaults internals). Auto names a
-  model line, so a new catalog entry takes over on its own: Scout and the Haiku
-  background tasks moved to Haiku 5.5 with no routing change, and a Claude CLI below
-  2.1.293 keeps them on Haiku 4.5. The background
-  rows are named for the agent they drive: **History rewriter** (history
-  clean-up) and **Scribe** (the title and body of a pull or merge request)
+  the caller's `resetLabel` ("Back to Auto", "Use automatic selection"). The row
+  under a Models page label and the run page and builder orchestrator pills read
+  that answer from `useResolution`, so they name the same model. When a pin is
+  skipped, the row's muted line says why through `explainResolution`
+  ([providers.md](providers.md#defaults-internals)). Auto names a model line, so a
+  new catalog entry takes over on its own: Scout and the Haiku background tasks run
+  on Haiku 5.5, and a Claude CLI below 2.1.293 keeps them on Haiku 4.5. The
+  background rows are named for the agent they drive: **History rewriter**
+  (history clean-up) and **Scribe** (the title and body of a pull or merge request)
 - **Launching popovers** (Resolve) call it **Suggested**. It fixes a
   concrete model at launch and says why in one line, from the ladder step that
   decided (`resolveSlot`): the role default on the default provider, a pin
@@ -67,9 +67,8 @@ escape), the orchestrator model menu (`orchestratorModelPool`), routing availabi
 (`workflowRoutingAvailability` answers `hidden` unless the pick is explicit), turn and
 task fallback, and the Ask and Chat defaults. An explicit choice bypasses it: a role
 or task model set in Settings, a step or agent lock, and a hand pick for one agent.
-A hand pick for one turn or one agent also bypasses the provider list: on a provider
-that is Off it still runs, and the transcript says "Running on Cursor because you
-picked it for this turn. Cursor is Off in Settings." once.
+A hand pick also runs on a provider that is Off
+([providers.md](providers.md#defaults-and-task-models), Provider order).
 When no allowed model is left for a role, `resolveRoleRouting` sets
 `noAllowedModel` and the spawn refuses inline instead of running a hidden model. The
 current value always shows in the picker, marked `Hidden in the picker`. The settings
@@ -114,12 +113,11 @@ A missing axis is `null` in `modelAxes` and renders no row. A model whose
 has no variant axis. A model or provider with no effort control has no effort
 axis. That is why Opus 5 renders no Variant row.
 
-No shipped model has variants today. Codex was the last provider that did. Its
-Sol, Terra and Luna checkpoints became separate catalog keys. The reason: one
-key covering three prices let a routing slot spawn the wrong one. The axis
-stays in the shape for the next provider that ships a real variant list. A
-variant list is a tuning choice inside one billable model, never a set of
-models that bill differently.
+No shipped model has variants. Codex Sol, Terra and Luna are separate catalog
+keys, because one key covering three prices let a routing slot spawn the wrong
+one ([providers.md](providers.md#models-and-effort)). The axis stays in the shape
+for a provider that ships a real variant list. A variant list is a tuning choice
+inside one billable model, never a set of models that bill differently.
 
 A present axis stays mounted when the current selection makes some or all of
 its choices unreachable. Those choices render disabled. A partly reachable

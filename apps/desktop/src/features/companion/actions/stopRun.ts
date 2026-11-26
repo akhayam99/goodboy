@@ -20,7 +20,7 @@ export const stopRun = async ({
     return refusedResult({ code: 'unknown-target', message: "This run isn't on your Mac." });
   }
   const state = runStateOf({ store, sessionId, run });
-  if (state === 'stopped') {
+  if (state === 'stopped' || run.orchestrationStop?.kind === 'operator') {
     return doneResult();
   }
   if (state !== action.seenState) {
@@ -30,8 +30,13 @@ export const stopRun = async ({
       changes: [{ label: 'Run', was: action.seenState, now: state }],
     });
   }
-  const outcome = await store.closeWorkflowRun(sessionId, run.id);
-  return outcome === 'closed'
-    ? doneResult()
-    : failedResult({ error: 'A step did not stop. Press Stop run again.' });
+  try {
+    const outcome = await store.stopWorkflowRunNow(sessionId, run.id);
+    return outcome === 'stopped'
+      ? doneResult()
+      : failedResult({ error: 'A step did not stop. Press Stop run again.' });
+  } catch (error) {
+    console.error('[bridge] stopRun failed', error);
+    return failedResult({ error: "Couldn't stop the run." });
+  }
 };

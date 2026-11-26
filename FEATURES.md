@@ -63,7 +63,7 @@ Open a session to see what it is for, what needs you and what happened so far.
 
 ## The board
 
-The board shows every session of a workspace in lanes by stage, with what waits on you as cards above them, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes.
+The board shows every session of a workspace in lanes by stage, with what waits on you at the top of Running, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes.
 
 - **Needs you**: See what waits on you at the top of the Running lane.
 - **Merge train**: Merge several pull requests, across sessions and repositories, with one gesture.
@@ -121,7 +121,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 - **Older runs**: A run started before every run had a Lead stays as it was.
 - **Every run**: Set what every new run starts with on the Every run tab of Workflows, between Workflows and Saved steps.
 - **Workflow run**: Follow a run step by step, with its sub-agents under their agent and one button that moves it on.
-- **Limit**: Cap what a run or a session can spend, and choose Pause workflows or Warn only.
+- **Limit**: Cap what a run or a session can spend, and choose Pause runs or Warn only.
 
 [More on workflows](docs/features/workflows.md)
 

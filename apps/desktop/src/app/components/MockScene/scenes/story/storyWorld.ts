@@ -1,6 +1,7 @@
 import {
   brandId,
   type Agent,
+  type AgentId,
   type IsoDateTime,
   type MountId,
   type OpenQuestion,
@@ -39,7 +40,8 @@ export const STORY_PLAN_ID = AUTO_PLAN_ID;
 export const STORY_ROOT_ID = AUTO_ROOT_ID;
 
 const QUESTION_ID = brandId<OpenQuestionId>({ value: 'demo-story-question-repeat' });
-const PLANNER_RUN = brandId<ProviderRunId>({ value: 'demo-story-planner-run-claude' });
+export const STORY_PLANNER_RUN = brandId<ProviderRunId>({ value: 'demo-story-planner-run-claude' });
+export const STORY_ROOT_RUN = brandId<ProviderRunId>({ value: 'demo-story-root-run' });
 
 export const STORY_BRIEF = [STORY_ISSUE.title, '', STORY_ISSUE.description].join('\n');
 
@@ -133,25 +135,24 @@ type EventsParams = {
 const plannerEventsOf = ({ at }: EventsParams): ReadonlyArray<TurnEvent> => [
   {
     kind: 'user_text',
-    runId: PLANNER_RUN,
+    runId: STORY_PLANNER_RUN,
     text: STORY_BRIEF,
     provider: 'anthropic',
     model: 'claude-opus-5-5',
     at,
   },
-  { kind: 'assistant_text', runId: PLANNER_RUN, delta: STORY_PLANNER.intro, at },
-  { kind: 'done', runId: PLANNER_RUN, at },
+  { kind: 'assistant_text', runId: STORY_PLANNER_RUN, delta: STORY_PLANNER.intro, at },
+  { kind: 'done', runId: STORY_PLANNER_RUN, at },
 ];
 
 const rootEventsOf = ({ at }: EventsParams): ReadonlyArray<TurnEvent> => {
-  const run = brandId<ProviderRunId>({ value: 'demo-story-root-run' });
   return [
-    { kind: 'user_text', runId: run, text: STORY_BRIEF, at },
-    { kind: 'assistant_text', runId: run, delta: AUTO_STORY.first, at },
+    { kind: 'user_text', runId: STORY_ROOT_RUN, text: STORY_BRIEF, at },
+    { kind: 'assistant_text', runId: STORY_ROOT_RUN, delta: AUTO_STORY.first, at },
   ];
 };
 
-const questionOf = ({ at }: EventsParams): OpenQuestion => ({
+export const storyQuestionOf = ({ at }: EventsParams): OpenQuestion => ({
   id: QUESTION_ID,
   sessionId: STORY_SESSION_ID,
   createdByAgentId: PLANNER_ID,
@@ -182,7 +183,21 @@ const plannerAgentsOf = ({ agents }: AgentsParams): ReadonlyArray<Agent> =>
       : agent,
   );
 
-export const seedStoryAsking = (): Session | null => {
+type ShellParams = {
+  readonly agents: ReadonlyArray<Agent>;
+  readonly selectedId: AgentId;
+  readonly transcripts: Readonly<Record<AgentId, ReadonlyArray<TurnEvent>>>;
+  readonly questions: ReadonlyArray<OpenQuestion>;
+  readonly hasDelegation: boolean;
+};
+
+const seedSession = ({
+  agents,
+  selectedId,
+  transcripts,
+  questions,
+  hasDelegation,
+}: ShellParams): Session | null => {
   const workspaceProjects = useAppStore.getState().projects;
   const at = nowIso({});
   const payments = workspaceProjects[0];
@@ -201,23 +216,29 @@ export const seedStoryAsking = (): Session | null => {
     navigate,
     sessions: [session],
     currentSessionId: STORY_SESSION_ID,
-    selectedAgentId: { [STORY_SESSION_ID]: PLANNER_ID },
+    selectedAgentId: { [STORY_SESSION_ID]: selectedId },
     activeLens: { [STORY_SESSION_ID]: null },
-    sessionPhaseRuns: { [STORY_SESSION_ID]: plannerAgentsOf({ agents: scene.agents }) },
+    sessionPhaseRuns: { [STORY_SESSION_ID]: agents },
     autoTreeViews: {
       [STORY_SESSION_ID]: [
-        { ...scene.view, tree: { ...scene.view.tree, turnsUsed: 1 }, artifacts: [] },
+        {
+          ...scene.view,
+          tree: { ...scene.view.tree, turnsUsed: 1 },
+          delegations: hasDelegation
+            ? scene.view.delegations.map((delegation) => ({
+                ...delegation,
+                state: 'paused' as const,
+              }))
+            : [],
+          artifacts: [],
+        },
       ],
     },
-    agentTurnState: {
-      [AUTO_ROOT_ID]: { kind: 'idle', lastActivityAt: at },
-      [PLANNER_ID]: { kind: 'idle', lastActivityAt: at },
-    },
-    transcripts: {
-      [AUTO_ROOT_ID]: rootEventsOf({ at }),
-      [PLANNER_ID]: plannerEventsOf({ at }),
-    },
-    sessionOpenQuestions: { [STORY_SESSION_ID]: [questionOf({ at })] },
+    agentTurnState: Object.fromEntries(
+      Object.keys(transcripts).map((id) => [id, { kind: 'idle', lastActivityAt: at }]),
+    ),
+    transcripts,
+    sessionOpenQuestions: { [STORY_SESSION_ID]: questions },
     sessionAnsweredQuestions: { [STORY_SESSION_ID]: [] },
     sessionDismissedQuestions: { [STORY_SESSION_ID]: [] },
     sessionPlans: { [STORY_SESSION_ID]: [] },
@@ -240,10 +261,39 @@ export const seedStoryAsking = (): Session | null => {
     openSessionDraftWorkspaceId: null,
   });
   useAppStore.getState().navigate({
-    to: agentPlace({ sessionId: STORY_SESSION_ID, agentId: PLANNER_ID }),
+    to: agentPlace({ sessionId: STORY_SESSION_ID, agentId: selectedId }),
     drawer: null,
   });
   return session;
+};
+
+export const seedStoryAsking = (): Session | null => {
+  const at = nowIso({});
+  const scene = castAutoScene({ scene: autoSceneOf({ state: 'delegating' }) });
+  return seedSession({
+    agents: plannerAgentsOf({ agents: scene.agents }),
+    selectedId: PLANNER_ID,
+    transcripts: {
+      [AUTO_ROOT_ID]: rootEventsOf({ at }),
+      [PLANNER_ID]: plannerEventsOf({ at }),
+    },
+    questions: [storyQuestionOf({ at })],
+    hasDelegation: true,
+  });
+};
+
+export const seedStoryShell = (): Session | null => {
+  const at = nowIso({});
+  const scene = castAutoScene({ scene: autoSceneOf({ state: 'delegating' }) });
+  return seedSession({
+    agents: scene.agents.filter((agent) => agent.id === AUTO_ROOT_ID),
+    selectedId: AUTO_ROOT_ID,
+    transcripts: {
+      [AUTO_ROOT_ID]: [{ kind: 'user_text', runId: STORY_ROOT_RUN, text: STORY_BRIEF, at }],
+    },
+    questions: [],
+    hasDelegation: false,
+  });
 };
 
 type SeedParams = {

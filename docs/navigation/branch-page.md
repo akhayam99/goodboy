@@ -55,7 +55,7 @@ request it says `Not pushed`, `Pushed` or `Rebasing` and the distance to the bas
 the rail**: the branches of the session are the rows of the Projects tree
 (`SessionLevel/ProjectTree`), and choosing one makes it the active mount and
 replaces the address with the landing tab of that branch (`switchBranchMount`,
-also what the trail menu and the sidebar rows run), so the crumb, the header
+run by the tree row `SessionLevel/WorktreeRow`), so the crumb, the header
 and the body follow together and nothing of the branch it leaves carries over.
 A new branch is the `+` on its folder row (`project.newBranch`), which opens
 the new branch form (`forkMount` lands on the new worktree on its landing tab);
@@ -145,8 +145,7 @@ machinery: a frozen preview pinned under the session head, above the title
 (`PushBanner`, the only push one, in the page's `lead`, so it never scrolls or
 steps away), drift and the result per thread. Under it sits the rebase job banner
 (`JobBanner`, `features/history/JobBanner`): one strip for a rebase
-on main, on every tab of the page, which replaces the red line that used to
-tell a stop. It reads the stop of the branch (`rebaseStopOf`, through `useRebaseStop` and
+on main, on every tab of the page. It reads the stop of the branch (`rebaseStopOf`, through `useRebaseStop` and
 `selectRebaseStop`): the run in `historyRuns` while this window has it, else one rebuilt from the
 latest open saved `history_stopped` event and a git read requested after that stop (an older read
 is ignored). The run is never saved, so after a restart, a reload or in a second window the banner,
@@ -275,8 +274,8 @@ Closed make the page read only (`isBranchReadOnly`): Commits shows its list with
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
 `Conversation` when the active mount has a pull request, else `Changes`; then the door resolver
-above drops a section the state lacks. The
-sidebar's Branch row, the Branch crumb, `⌥⌘1`, a mount's `Open PR`, the Board's
+above drops a section the state lacks. A
+branch row of the Projects tree, the Branch crumb, `⌥⌘1`, a mount's `Open PR`, the Board's
 pull request chip, an approved or changes-requested mark and a mount's
 `Create PR` land on `Conversation`; a comment, a thread, a fix run, a note, ⌥⌘R
 (`Open Comments`) and a draft comments chip name `Comments` themselves (with no pull
@@ -805,8 +804,8 @@ take a reply), `Resolve` (only where it can resolve) and `Open in Comments`. A t
 carries an outcome slot after its kind chip, which `Fix comments` fills with the state of a fix.
 Outdated host threads stay out of the diff and read `Outdated` in Comments. Threads of every host
 with threads show, not only GitHub's (`useDiffReviewThreads`). There is no
-Notes drawer: a note's home is its line, and Comments lists every thread. The doors that used to land
-a note in a drawer land on the note: Changes at its card (the card scrolls into view and takes focus) when
+Notes drawer: a note's home is its line, and Comments lists every thread. A door to a
+note lands on the note: Changes at its card (the card scrolls into view and takes focus) when
 the branch has no pull request, its thread in Comments when it has one (`openReviewTarget` for a
 `notes` destination, `reviewRequest` for a compose request, `Open in Changes` from a thread).
 Opening the run transcript of a note keeps its drawer beside Changes.

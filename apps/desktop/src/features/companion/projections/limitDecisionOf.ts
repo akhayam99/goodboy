@@ -1,6 +1,7 @@
 import { formatUsd } from '@goodboy/ui';
 import type { LimitDecision } from '../contract/decisions';
 import { limitOffersOf } from '../actions/actionLimits';
+import { limitTargetOf } from '../actions/limitTargets';
 import { actionIdOf } from './actionIdOf';
 import type { WorkspaceScope } from './workspaceScope';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
@@ -11,15 +12,16 @@ type Params = {
 };
 
 export const limitDecisionOf = ({ scope, sessionId }: Params): LimitDecision | null => {
-  const budget = scope.budgets[sessionId];
   const session = sessionById(scope.sessions, sessionId);
-  if (budget === undefined || session === undefined) {
+  if (session === undefined) {
     return null;
   }
   const paused = session.workflowRuns.find(
     (run) =>
       run.discardedAt == null &&
-      (run.orchestrationStop?.kind === 'paused' || run.orchestrationStop?.kind === 'operator'),
+      (run.orchestrationStop?.kind === 'paused' ||
+        run.orchestrationStop?.kind === 'operator' ||
+        run.orchestrationStop?.kind === 'budget'),
   );
   const runId =
     paused?.id ??
@@ -28,7 +30,11 @@ export const limitDecisionOf = ({ scope, sessionId }: Params): LimitDecision | n
   if (runId === undefined) {
     return null;
   }
-  const offers = limitOffersOf({ currentLimit: budget.softCapUsd });
+  const target = limitTargetOf({ scope, sessionId, runId });
+  if (target === null) {
+    return null;
+  }
+  const offers = limitOffersOf({ currentLimit: target.limit });
   if (offers.length === 0) {
     return null;
   }
@@ -37,11 +43,11 @@ export const limitDecisionOf = ({ scope, sessionId }: Params): LimitDecision | n
     actionId: actionIdOf({
       kind: 'raiseLimit',
       objectId: runId,
-      version: String(budget.softCapUsd),
+      version: String(target.limit),
     }),
     runId,
-    currentLimit: budget.softCapUsd,
-    currentLimitText: formatUsd(budget.softCapUsd),
+    currentLimit: target.limit,
+    currentLimitText: formatUsd(target.limit),
     offers: offers.map((amount) => ({ amount, text: formatUsd(amount) })),
   };
 };

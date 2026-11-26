@@ -169,26 +169,28 @@ impl Identity {
         phone_id: &str,
         permissions: Permissions,
     ) -> Result<bool, BridgeError> {
-        let Some(phone) = self.phones.iter_mut().find(|p| p.key == phone_id) else {
+        let mut next = self.clone();
+        let Some(phone) = next.phones.iter_mut().find(|p| p.key == phone_id) else {
             return Ok(false);
         };
         phone.permissions = permissions;
-        self.persist()?;
+        self.commit(next)?;
         Ok(true)
     }
 
     pub fn set_interfaces(&mut self, interfaces: Option<Vec<String>>) -> Result<(), BridgeError> {
-        self.interfaces = interfaces;
-        self.persist()
+        let mut next = self.clone();
+        next.interfaces = interfaces;
+        self.commit(next)
     }
 
     pub fn revoke_one(&mut self, phone_id: &str) -> Result<bool, BridgeError> {
-        let before = self.phones.len();
-        self.phones.retain(|p| p.key != phone_id);
-        if self.phones.len() == before {
+        let mut next = self.clone();
+        next.phones.retain(|p| p.key != phone_id);
+        if next.phones.len() == self.phones.len() {
             return Ok(false);
         }
-        self.persist()?;
+        self.commit(next)?;
         Ok(true)
     }
 
@@ -196,8 +198,15 @@ impl Identity {
         if self.phones.is_empty() {
             return Ok(());
         }
-        self.phones.clear();
-        self.persist()
+        let mut next = self.clone();
+        next.phones.clear();
+        self.commit(next)
+    }
+
+    fn commit(&mut self, next: Identity) -> Result<(), BridgeError> {
+        next.persist()?;
+        *self = next;
+        Ok(())
     }
 
     fn persist(&self) -> Result<(), BridgeError> {
@@ -543,5 +552,24 @@ mod tests {
         id.revoke_all().unwrap();
 
         assert_eq!(mode(&scratch.file()), 0o600);
+    }
+
+    #[test]
+    fn a_failed_save_leaves_the_live_identity_as_it_was() {
+        let scratch = Scratch::new("failed-save");
+        let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
+        id.enroll(b"phone-key", "Harborline phone").unwrap();
+        let key = b64().encode(b"phone-key");
+        let blocker = scratch.0.join("blocker");
+        std::fs::write(&blocker, b"file").unwrap();
+        id.store = blocker.join(IDENTITY_FILE);
+
+        assert!(id.set_permissions(&key, Permissions::default()).is_err());
+        assert!(id.set_interfaces(Some(vec!["en0".to_string()])).is_err());
+        assert!(id.revoke_one(&key).is_err());
+        assert!(id.revoke_all().is_err());
+
+        assert!(id.interfaces.is_none());
+        assert_eq!(id.phones.len(), 1);
     }
 }

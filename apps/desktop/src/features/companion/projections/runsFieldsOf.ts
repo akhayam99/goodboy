@@ -4,6 +4,7 @@ import type { RunRow, RunsFields } from '../contract/projections';
 import { actionIdOf } from './actionIdOf';
 import { agentRowOf } from './agentRowOf';
 import { runMarkOf } from './runMarkOf';
+import { agentRunIdsOf } from './agentRunIdsOf';
 import { runStateOf } from './runStateOf';
 import type { WorkspaceScope } from './workspaceScope';
 
@@ -36,13 +37,15 @@ const runRowOf = ({ scope, session, run, now }: RunParams): RunRow => {
   const agents = sessionAgents.filter(
     (agent) => agent.workflowRunId === run.id && agent.deletedAt == null,
   );
-  const state = runStateOf({ run, agents: sessionAgents });
+  const state = runStateOf({
+    run,
+    agents: sessionAgents,
+    stepCount: scope.stepCounts?.[run.workflowId],
+  });
   const canStop = state === 'running';
   const canContinue = state === 'waiting' || state === 'paused' || state === 'stopped';
   const records = scope.telemetry[session.id] ?? [];
-  const runIds = new Set(
-    agents.flatMap((agent) => (agent.runId === undefined ? [] : [agent.runId])),
-  );
+  const runIds = new Set(agents.flatMap((agent) => [...agentRunIdsOf({ scope, agent })]));
   const spend = records
     .filter((record) => runIds.has(record.runId))
     .reduce((sum, record) => sum + record.estimatedCostUsd, 0);

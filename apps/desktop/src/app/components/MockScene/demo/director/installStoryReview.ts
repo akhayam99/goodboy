@@ -12,8 +12,10 @@ import type { DirectorStore } from './directorTypes';
 import { installResolveActions } from './installResolveActions';
 import { openStoryPushConfirm } from './openStoryPushConfirm';
 import { storyRebasedRunOf, storyStatusOf, type StoryGitPhase } from './storyReviewGit';
+import { waitDemoMs } from './waitDemoMs';
 
 const REFRESH_DELAYS_MS = [0, 600, 1800] as const;
+const GIT_WORK_MS = 1500;
 
 type Params = {
   readonly store: DirectorStore;
@@ -50,6 +52,9 @@ export const installStoryReview = ({ store }: Params): void => {
     window.setTimeout(refresh, delayMs);
   }
   const rebaseBranch = (async () => {
+    if (!(await waitDemoMs({ ms: GIT_WORK_MS }))) {
+      return 'stopped';
+    }
     phase = 'rebased';
     store.setState((current) => ({
       historyRuns: {
@@ -64,6 +69,9 @@ export const installStoryReview = ({ store }: Params): void => {
     return 'rebased';
   }) satisfies AppStore['rebaseBranch'];
   const pushBranch = (async ({ sessionId }) => {
+    if (!(await waitDemoMs({ ms: GIT_WORK_MS }))) {
+      return { ok: false, error: 'The demo was restarted.', reason: 'failed' };
+    }
     phase = 'pushed';
     const { publicationId } = await store
       .getState()

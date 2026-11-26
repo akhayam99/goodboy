@@ -1,23 +1,23 @@
+import { listTurnEventEntriesForAgent } from '@goodboy/db';
 import type { TurnEvent } from '@goodboy/types';
+import { tauriDatabase } from '../../../shared/lib/db';
+import { mergeTranscript } from '../../../store/slices/transcripts/mergeTranscript';
+import { STREAM_BUDGETS } from '../../../store/slices/transcripts/streamBudgets';
 import type { AppStore } from '../../../store/store';
 import type {
   TranscriptEntry,
   TranscriptProjection,
   TranscriptQuery,
 } from '../contract/transcript';
+import { withoutAbsolutePaths } from '../pathText';
 import { isAgentOfSession, sessionOfAction } from './targets';
 import { sessionIdOf, agentIdOf } from './ids';
 
 const MAX_PAGE = 500;
 const MAX_SUMMARY_LENGTH = 160;
-const PATH_PATTERN = /(?:\/[^\s/'"]+){2,}/g;
-
 type TextParams = {
   readonly text: string;
 };
-
-const withoutAbsolutePaths = ({ text }: TextParams): string =>
-  text.replace(PATH_PATTERN, (path) => `.../${path.slice(path.lastIndexOf('/') + 1)}`);
 
 const baseNameOf = ({ text }: TextParams): string => text.slice(text.lastIndexOf('/') + 1);
 
@@ -105,7 +105,13 @@ export const transcriptEntriesOf = ({ events }: EventsParams): ReadonlyArray<Tra
     }
     open = null;
     if (event.kind === 'user_text' || event.kind === 'operator_text') {
-      entries.push({ kind: 'words', id: `e${index}`, who: 'you', text: event.text, at: event.at });
+      entries.push({
+        kind: 'words',
+        id: `e${index}`,
+        who: 'you',
+        text: event.text,
+        at: event.at,
+      });
       return;
     }
     if (event.kind === 'tool_call_start') {
@@ -131,7 +137,9 @@ export const transcriptEntriesOf = ({ events }: EventsParams): ReadonlyArray<Tra
       }
     }
   });
-  return entries;
+  return entries.map((entry) =>
+    entry.kind === 'words' ? { ...entry, text: withoutAbsolutePaths({ text: entry.text }) } : entry,
+  );
 };
 
 type PageParams = {
@@ -173,7 +181,14 @@ export const transcriptOf = async ({
   if (first.transcripts[agentId] === undefined) {
     await first.loadAgentTranscript(sessionId, agentId, { isSelecting: false });
   }
-  const events = getStore().transcripts[agentId] ?? [];
+  const loaded = getStore().transcripts[agentId] ?? [];
+  const events =
+    loaded.length < STREAM_BUDGETS.initialTranscriptRows
+      ? loaded
+      : mergeTranscript({
+          stored: await listTurnEventEntriesForAgent({ db: tauriDatabase, agentId }),
+          live: loaded,
+        });
   const limit = Math.min(Math.max(1, Math.trunc(query.limit)), MAX_PAGE);
   const page = pageOf({
     entries: transcriptEntriesOf({ events }),

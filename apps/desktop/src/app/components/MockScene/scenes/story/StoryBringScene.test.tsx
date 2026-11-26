@@ -25,6 +25,7 @@ import {
   writeInboxFilters,
 } from '../../../../../features/inbox/kindFilterStorage';
 import { BRAND_WORKSPACE_ID } from '../brand/canon';
+import { demoRuns } from '../../demo/director/demoRunRegistry';
 import { installStoryDirection } from '../../demo/director/installStoryDirection';
 import { STORY_QUESTION } from './storyContent';
 import { STORY_EXAMPLE_KEY } from './storyTasks';
@@ -59,6 +60,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  demoRuns.cancelAll();
   cleanup();
   clearSceneInvoke();
 });
@@ -154,6 +156,13 @@ describe('the bring your work scene', () => {
     fireEvent.click(screen.getByRole('option', { name: /^HBL-412 / }));
     fireEvent.click(await waitFor(() => anchorOf({ name: 'task-start' }), { timeout: 8000 }));
     const start = await waitFor(() => anchorOf({ name: 'draft-start' }), { timeout: 8000 });
+    await waitFor(
+      () =>
+        expect(document.body.textContent).toContain(
+          'The retry carries the same delivery id, so the second credit should be refused.',
+        ),
+      { timeout: 8000 },
+    );
     expect(document.body.textContent).toContain('[HBL-412] Retried webhooks post a second credit');
     fireEvent.click(start);
     await waitFor(() => expect(store.getState().currentSessionId).toBe(STORY_SESSION_ID), {
@@ -164,8 +173,9 @@ describe('the bring your work scene', () => {
         (task) => task.identifier,
       ),
     ).toEqual(['HBL-412']);
-    expect(await screen.findByText(STORY_QUESTION.text, {}, { timeout: 8000 })).toBeDefined();
-  }, 60000);
+    expect(screen.queryByText(STORY_QUESTION.text)).toBeNull();
+    expect(await screen.findByText(STORY_QUESTION.text, {}, { timeout: 14000 })).toBeDefined();
+  }, 90000);
 
   it('resets a saved kind and source filter so HBL-412 is never hidden after a restart', async () => {
     const workspaceId = BRAND_WORKSPACE_ID;

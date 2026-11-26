@@ -17,7 +17,7 @@ The rail holds no session list and never folds. In a window narrower than 1100 p
 
 #### Find a session
 
-Open **Sessions** in the top bar, or press **⌘B**, to find a session by title or project. Pinned sessions come first. **Open Board** shows finished sessions too.
+Open **Sessions** in the top bar, or press **⌘B**, to find a session by title or project. [Switch between tasks](switching.md#sessions) covers the list.
 
 #### Session pages
 
@@ -63,7 +63,7 @@ Reach any screen without the mouse. **⌘K** opens a window where a few letters 
 
 ### Search or run
 
-Press **⌘K**, or click **Search or run** in the top bar, to act on what you are looking at. Inside a session it opens on **Next**, the step Goodboy would take now, then the actions that fit the session, ranked by how often you use them. Any text you type can also go to **Ask in Chat** as a new question. Delete stays out of the default list; typing its name finds it.
+Press **⌘K**, or click **Search or run** in the top bar, to act on what you are looking at. Inside a session it opens on **Next**, the step Goodboy would take now, then the actions that fit the session, ranked by how often you use them. Any text you type can also go to **Ask in chat** as a new question. Delete stays out of the default list; typing its name finds it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-command-palette-dark.webp">

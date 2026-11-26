@@ -52,6 +52,15 @@ Below is the full index. Other docs and agents use it to find their way.
   want the short recap and the install steps.
 - [FEATURES.md](../FEATURES.md): when you want the main features in task order.
   Each entry links to its focused page in [features](features/).
+- [DESIGN.md](../DESIGN.md): when you are judging whether a screen or flow
+  is right, against the three questions and the north star.
+- [AGENTS.md](../AGENTS.md): when you are an agent about to write code here.
+  It has the minimum you need to remember and the list of patterns you
+  must not use.
+- [CONVENTIONS.md](../CONVENTIONS.md): when you need the process rules for
+  the whole repo, for pnpm, git, commits or CI.
+- [SECURITY.md](../SECURITY.md): when you want to report a vulnerability, or
+  check what Goodboy does with your data before a change ships.
 
 ## Code-area ownership
 
@@ -82,8 +91,10 @@ The recipe column links the steps for the change you are about to make: [recipes
 | keyboard       | `apps/desktop/src/features/terminal/**`                        | [features/keyboard.md](features/keyboard.md)                       | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | actions        | `apps/desktop/src/features/actions/**`                         | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | attachments    | `apps/desktop/src/features/attachments/**`                     | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
+| auto           | `apps/desktop/src/features/auto/**`                            | [auto.md](auto.md)                                                 | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | bootstrap      | `apps/desktop/src/features/bootstrap/**`                       | [architecture.md](architecture.md)                                 | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | branch         | `apps/desktop/src/features/branch/**`                          | [hosts.md](hosts.md)                                               | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
+| browser        | `apps/desktop/src/features/browser/**`                         | [browser.md](browser.md)                                           | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | budget         | `apps/desktop/src/features/budget/**`                          | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | changelog      | `apps/desktop/src/features/changelog/**`                       | [release.md](release.md)                                           | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | chat           | `apps/desktop/src/features/chat/**`                            | [turns.md](turns.md)                                               | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
@@ -118,28 +129,18 @@ The recipe column links the steps for the change you are about to make: [recipes
 | tauri          | `apps/desktop/src-tauri/src/**`                                | [rust.md](rust.md), [architecture.md](architecture.md)             | [tauri-command](recipes/tauri-command.md), [host-adapter](recipes/host-adapter.md)                                                    | cargo test, check-tauri-commands |
 | website        | `website/src/**`                                               | [release.md](release.md)                                           | [website-page](recipes/website-page.md)                                                                                               | doc-refs                         |
 
-- [concepts.md](./concepts.md): when you need to know what something in the
-  app is, or how far an integration goes.
-- [DESIGN.md](../DESIGN.md): when you are judging whether a screen or flow
-  is right, against the three questions and the north star.
-- [AGENTS.md](../AGENTS.md): when you are an agent about to write code here.
-  It has the minimum you need to remember and the list of patterns you
-  must not use.
-- [CONVENTIONS.md](../CONVENTIONS.md): when you need the process rules for
-  the whole repo, for pnpm, git, commits or CI.
-- [SECURITY.md](../SECURITY.md): when you want to report a vulnerability, or
-  check what Goodboy does with your data before a change ships.
-
 ## Task docs
 
+- [concepts.md](./concepts.md): when you need to know what something in the
+  app is, or how far an integration goes.
 - [file-system.md](file-system.md): when you decide where a new file or
   folder goes inside `apps/desktop/src/`.
 - [navigation.md](navigation.md): when you decide which parts of the screen
-  exist and where they sit, like a pane, the left column, a strip or the
-  breadcrumb. It is the index of seven pages in
+  exist and where they sit, like a pane, a rail, the top bar or the
+  crumbs. It is the index of seven pages in
   [navigation/](navigation/): [the model](navigation/model.md),
   [the shell](navigation/shell.md),
-  [the session rail](navigation/session-rail.md),
+  [the session page tabs and tools](navigation/session-rail.md),
   [studios](navigation/studios.md),
   [lens surfaces](navigation/lens-surfaces.md),
   [home and the right drawer](navigation/home-and-drawer.md) and
@@ -201,8 +202,6 @@ The recipe column links the steps for the change you are about to make: [recipes
 
 ## Read on demand
 
-- [keyboard.md](keyboard.md): when a contextual shortcut takes precedence over a global action.
-
 These docs are kept on purpose. Nobody reads them ahead of time. Open one
 only when your task reaches the case it covers.
 
@@ -211,6 +210,8 @@ only when your task reaches the case it covers.
   picked, the boot path, git status reads, or DB migrations.
 - [rust.md](rust.md): when you write or review Rust under `src-tauri`, like
   command errors, the one clock, or the shape of a wire struct.
+- [keyboard.md](keyboard.md): when you add a contextual shortcut, or change
+  which action owns a chord.
 - [search.md](search.md): when you change what ⌘F finds, the local search
   index and its triggers, or how a hit lands in its view.
 - [model-picker.md](model-picker.md): when you change how a user picks a
@@ -223,7 +224,8 @@ only when your task reaches the case it covers.
   or Bitbucket, or add a host, like merge methods, link shapes or draft
   support.
 - [companion.md](companion.md): when you change how a phone pairs, what a
-  paired phone may ask for, or when the pairing listener runs.
+  paired phone may ask for, when the pairing listener runs, or the mobile
+  contract.
 - [browser.md](browser.md): when you change how a web page opens inside a
   window, where a tab may navigate, or what a page in a tab may reach.
 - [mounts.md](mounts.md): when you change where a session writes on disk,
@@ -247,8 +249,8 @@ only when your task reaches the case it covers.
 - [release.md](release.md): when you need the technical detail of a
   release, like signing, notarization, the updater or Homebrew.
 - [release-command.md](release-command.md): when an agent is running a
-  release and needs the steps in order, plus the problems that hit past
-  releases.
+  release and needs the steps in order, the release notes format and the
+  Guide alignment.
 - [versioning.md](versioning.md): when you pick the next version number or
   wonder why a pull request with a migration waits for a minor release.
 - [styling.md](styling.md): when you write spacing, radius, scroll,
