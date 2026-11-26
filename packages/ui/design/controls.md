@@ -31,18 +31,24 @@ One ladder of control heights runs through every register: **24** (`xs`),
 | `Switch`                             | 16 by 28 track inside a 24 target                                                                               | The label names the setting and never says On or Off: the setting goes in `ariaLabel`.                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 A bar has one control height. Every control in the top bar is 28 and
-`rounded-md`: the history arrows, Board, Chat, the command centre, the bell,
-Spend, the Limits chips and the Now chip all take
-`TOP_BAR_CONTROL` (height `h-7`, square `size-7`, radius `rounded-md`) and
-`FOCUS_RING`. The bar container stays `h-9`. The right cluster reads Now (with the needs you count first), Limits,
-Spend, the bell, and Spend opens Impact on its Spend tab (`Spend today. Open
-Impact`): Impact is a sidebar door, and the bar has no Impact icon and no theme
-toggle. The command
-centre says `Search` with its chord as bare text; the workspace name lives in its
-tooltip. The Limits overflow chip prints a word, `+2 providers`, never a bare
-number. The trail keeps the first crumb's word until every other ancestor has
-shrunk to an icon and folded (`compactTrail`). A fold holds two crumbs or more: a lone ancestor stays an icon, which is as wide as the fold. `Trail` has no lead slot: nothing sits before the first segment, and no crumb carries a back glyph. The bell's count badge sits 2px
-inside the bell's box. The session trail band keeps its 24 controls, and trail,
+`rounded-md`: the history arrows, the command centre, the Now chip, the Limits
+chips, Spend and the bell all take `TOP_BAR_CONTROL` (height `h-7`, square
+`size-7`, radius `rounded-md`) and `FOCUS_RING` (`topBarControls.test.ts`).
+The bar container stays `h-9`.
+
+- The left cluster holds Sessions and Repositories, the centre the history
+  arrows and the command centre, the right cluster Now (with the needs you
+  count first), Limits, Spend and the bell.
+- Spend opens Impact on its Spend tab (`Spend today. Open Impact`): Impact is a
+  place on the rail, and the bar has no Impact icon and no theme toggle.
+- The command centre says `Search or run` with its chord as bare text; the
+  workspace name lives in its tooltip.
+- The Limits overflow chip prints a word, `+2 providers`, never a bare number.
+- The bell's unread count sits beside the bell, one toned number with no dot,
+  and never covers the icon.
+
+The trail keeps the first crumb's word until every other ancestor has
+shrunk to an icon and folded (`compactTrail`). A fold holds two crumbs or more: a lone ancestor stays an icon, which is as wide as the fold. `Trail` has no lead slot: nothing sits before the first segment, and no crumb carries a back glyph. The session trail band keeps its 24 controls, and trail,
 rail and tree-row buttons are 24.
 
 A task chip reserves a 16px trailing slot that shows the unlink on hover, so
@@ -56,7 +62,7 @@ each card has a soft border and draws its facts under the hint. Once one is
 picked every card folds back to the one-line card, so the form under it has
 the room. A focus ring appears on keyboard focus (`focus-visible`) only.
 
-Rules for new and changed code (the migration of old code is the sweep's):
+Rules for new and changed code:
 icons use `ICON_SIZE` (mark 10, row 12, control 14, notice 16, hero 18), on the icon and
 on an `iconSize` override alike, and a file never keeps its own alias of a step
 (`const KIND_ICON_SIZE = 10`): `scale-rules.test.ts` counts all three; mono is for

@@ -128,12 +128,12 @@ no run row, no NOW and no time column on the run page. Its one count row is the
 fold row of a settled set of sub-agents (`RunTreeFoldRow`): it sits under its
 parent step, one column in, and opens the set downward, oldest first.
 
-Never delete a rail element without the defect it fixes. 0.17 had a head node
-with a grey stub for a folded group; the stub landed on the lane and not on the
-step's marker, and the count row replaces it. The 0.17 elbow that rejoined a
-queued child lane into its parent lane is not back: the dash up to NOW says
-what it said. The lane hover wash and the thicker hover stroke are gone: they
-lit a whole run for a pointer that was only passing.
+Never delete a rail element without the defect it fixes, and never add one the
+grammar already says. The count row is the one mark of a folded group: a head
+node with a stub would land on the lane and not on the step's marker. No elbow
+rejoins a queued child lane into its parent lane, because the dash up to NOW
+says it. The lane has no hover wash and no thicker hover stroke, because they
+would light a whole run for a pointer that is only passing.
 
 Geometry is computed in
 `apps/desktop/src/features/workTreeModel/railGeometry.ts`. Rows are laid out
@@ -427,8 +427,8 @@ each case.
 
 ## Session row, hover card and switcher
 
-A session row in Sessions is one line: the title and one trailing
-`StatusMark`. It has no second line, no `ToneBar`, no age and no cost.
+A session row in Sessions is one line led by one `StatusMark` (the full row is
+below). It has no second line, no `ToneBar`, no age and no cost.
 `sessionNodeOf` picks the node (kind, tone, words, unread) from the stage and,
 under needs you, from the winning reason, and every surface that says why a
 session waits reads the same table, `ATTENTION_REASON_META` in
@@ -480,8 +480,7 @@ chip and the palette's Needs you rows never list it. With several mounts, a moun
 session ahead of a mount in the queue, and failing checks speak ahead of both.
 
 `plan-approval` names the plan's version when it is known and says "The plan
-waits for your approval" otherwise. The five waits that used to look idle are
-reasons of the same table, each read from the predicate that already draws it
+waits for your approval" otherwise. Five waits are reasons of the same table, each read from the predicate that already draws it
 elsewhere, so the number is computed once: `run-stopped`, `run-paused-at-limit`
 and `run-waits-for-go` come from the `wait` of `runRowFactsOf` (the run row's
 Failed, Paused at the limit and Waits for you), `auto-needs-you` from
@@ -498,13 +497,12 @@ and the Needs you order follows it, falling back to the last edit. Mark as unrea
 in the mark box, unless the session asks you, failed or runs, which outranks it
 (`sessionMarkOf`), and the switcher and the hover card draw the same mark.
 
-The Board count. The Board item of the places rail, the top bar, the number on the
-Board's Needs you lane and the Needs you group of the session order
-(`sessionOrderOf`) say how many sessions need you with one function,
-`attentionCountOf` (read through `useWorkspaceAttention`), over every session
-of the workspace and never the project filter. The lane keeps that number
-while the filter hides some of its cards or a quiet card sits in it; with only
-quiet cards it draws no number. A session counts when its stage is needs you and one of its
+The Board count. The Board item of the places rail, the top bar, the Board's
+Needs you strip (one card per counted session above the stage lanes,
+`needsYouOf`) and the Needs you group of the session order (`sessionOrderOf`)
+say how many sessions need you with one function, `attentionCountOf` (read
+through `useWorkspaceAttention`), over every session of the workspace and never
+the project filter. A session counts when its stage is needs you and one of its
 reasons is `warning` or `danger`; a session waiting only on `unread-reply` or
 `pr-approved` is quiet and does not count. On the places rail the Board item
 wears the count as a `CountBadge` on its glyph (`railMarkOf`), in `warning`, or
@@ -516,9 +514,7 @@ no target of its own for it, because the chrome is capped at 24: the Now chip
 leads with the same count as its first segment (a dot in the worst tone, the
 number, the word "need you", hidden at zero), its tooltip carries the
 `session.nextNeedsYou` key, and its list opens with a Needs you group and a
-**Next that needs you** button that runs `goToNextNeedsYou`. The Needs you lane
-header keeps the lane's own count, which also holds the quiet sessions, and its
-tooltip carries the same key. `NeedsYouFeedback` is the inline status line beside
+**Next that needs you** button that runs `goToNextNeedsYou`. `NeedsYouFeedback` is the inline status line beside
 the chip: the key says
 "Nothing needs you in <workspace>", "This is the only one" or "Opened <session>,
 outside your project filter" there for two seconds, never in a toast.
@@ -580,9 +576,12 @@ adds a line with what the agent is doing, such as "Running pnpm test in payments
 Failing checks, changes requested, comments it couldn't fix, approved and unread
 rank below running, because an agent may be working on exactly that.
 
-A Sessions row (`SessionsRow`) is a 32px `SelectableRow` option: the mark, the
-title in `text-ui`, the project in `faint-foreground` and a pin toggle, quiet at
-rest and `muted-foreground` while pinned. Its hover wash and focus ring come from
+A Sessions row (`SessionsRow`) is a 32px `SelectableRow` option, in this
+order: the mark; the title in `text-ui`, a ticket key before it in muted
+`text-code` on its baseline (`SessionRowTitle`); what its agent is doing in
+muted `text-meta`, or else the project in `faint-foreground`; a warning
+`CountBadge` of the items that need you; the word Desk when the session opens
+on its desk; and a pin toggle, quiet at rest and `muted-foreground` while pinned. Its hover wash and focus ring come from
 `ROW_INTERACTIVE` through `SelectableRow`, never a copy.
 
 The hover card is `bg-floating`, `floating-edge`, `shadow-lg`, 320px wide and `p-3`,
@@ -646,7 +645,7 @@ running or done, and so does every surface that reads `formatActiveTime`.
 | model      | 136px | `ModelBlock`: a 24px provider glyph cell, then model and version on line 1 (meta size), variant and effort on line 2 (chip size, faint), left aligned | lines hide under 640px, glyphs stay            |
 | stack      | 72px  | Activity and Runs: duration on top (meta size, muted), cost under it (chip size, faint)                                                               | cost leaves under 620px, all of it under 500px |
 | action     | 80px  | the one verb of the row (`ROW_ACTION_LABEL`, at most nine characters), right aligned; present only in a feed that has an actionable row               | never drops                                    |
-| menu       | 24px  | the row menu, like Stop run on a run row                                                                                                              | never drops                                    |
+| menu       | 24px  | the reorder grip of a workflow builder row                                                                                                            | never drops                                    |
 
 The state slot of a work row (`WORK_ROW.stateSlot`) is not a column: it is
 `min-w-28 max-w-64` (112 to 256px), so a long state such as "3 ready · 4
