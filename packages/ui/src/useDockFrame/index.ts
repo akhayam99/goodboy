@@ -21,6 +21,7 @@ type Params = {
   readonly isDetailOpen: boolean;
   readonly isDetailParked: boolean;
   readonly columnWidth: number | null;
+  readonly columnHeight?: number | null;
   readonly railWidth: number;
   readonly placement: DrawerPlacement;
   readonly sizing: DrawerSizing;
@@ -65,6 +66,7 @@ export const useDockFrame = ({
   isDetailOpen,
   isDetailParked,
   columnWidth,
+  columnHeight = null,
   railWidth,
   placement,
   sizing,
@@ -97,6 +99,8 @@ export const useDockFrame = ({
     cellCount: cells.length,
     onResize: isLone ? undefined : dockGrid?.onResize,
     columnWidth,
+    columnHeight,
+    ...(dockGrid?.foldOrder !== undefined && { foldOrder: dockGrid.foldOrder }),
     railWidth,
     placement,
     detail: { isShown: isDetailShown, sizing: detailSizing, savedWidth: detailWidths.width },

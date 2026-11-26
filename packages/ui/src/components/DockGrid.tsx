@@ -19,6 +19,7 @@ import { dockTabOptionsOf } from '../dockTabOptionsOf';
 import { DockTabsContext, type DockTabs } from '../dockTabsContext';
 import type { CanDropParams } from '../dockDropZonesOf';
 import { useDockDrag } from '../useDockDrag';
+import { useDockFoldReport } from '../useDockFoldReport';
 import { DockCellTabs } from './DockCellTabs';
 import { DockDropZones } from './DockDropZones';
 import { DockRowHandle } from './DockRowHandle';
@@ -83,6 +84,12 @@ export const DockGrid = ({
     columns: keys,
     canDrop,
     onMove: canMove ? (spec.onMove ?? null) : null,
+  });
+  useDockFoldReport({
+    ...(spec.scope !== undefined && { scope: spec.scope }),
+    keys: spec.columns.flatMap((column) => column.map((cell) => cell.key)),
+    columns,
+    onFold: spec.onFold,
   });
   const storedStacks = new Set(
     spec.columns.map((column) => column.map((cell) => cell.key).join('/')),
@@ -154,7 +161,7 @@ export const DockGrid = ({
           const tabsOfCell: DockTabs | null = isTabbed
             ? {
                 paneKey: pane.key,
-                options: dockTabOptionsOf({ spec, tabs }),
+                options: dockTabOptionsOf({ spec, tabs, shown }),
                 shown,
                 onSelect: ({ key }) => {
                   const active = document.activeElement;

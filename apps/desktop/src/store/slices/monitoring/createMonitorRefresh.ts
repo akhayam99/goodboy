@@ -27,9 +27,12 @@ type ScanParams = {
 
 const fetchBoth = async ({ ports }: ScanParams): Promise<Fetched> => {
   const [snapshot, ledger] = await Promise.all([
-    invokeCommand<MonitorSnapshot>('monitor_snapshot', ports === undefined ? {} : { ports }),
-    invokeCommand<ReadonlyArray<LedgerRow>>('process_ledger_list'),
+    invokeCommand<MonitorSnapshot | null>('monitor_snapshot', ports === undefined ? {} : { ports }),
+    invokeCommand<ReadonlyArray<LedgerRow> | null>('process_ledger_list'),
   ]);
+  if (snapshot === null || ledger === null) {
+    throw new Error('The scan returned no ports');
+  }
   return { snapshot, ledger };
 };
 

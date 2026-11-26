@@ -151,6 +151,24 @@ describe('refreshMonitorSnapshot', () => {
     expect(useAppStore.getState().monitorError).toContain('lsof timed out');
   });
 
+  it('keeps the old snapshot and shows one error when a scan answers nothing', async () => {
+    stubStoryInvoke({ monitor_snapshot: snapshotAt({ takenAt: 5 }), process_ledger_list: [] });
+    await useAppStore.getState().refreshMonitorSnapshot();
+    stubStoryInvoke({ monitor_snapshot: null, process_ledger_list: [] });
+    await useAppStore.getState().refreshMonitorSnapshot();
+
+    expect(useAppStore.getState().monitorSnapshot?.takenAt).toBe(5);
+    expect(useAppStore.getState().monitorError).toBe('The scan returned no ports');
+  });
+
+  it('shows the error when the first scan answers nothing, with no snapshot to keep', async () => {
+    stubStoryInvoke({ monitor_snapshot: snapshotAt({ takenAt: 5 }), process_ledger_list: null });
+    await useAppStore.getState().refreshMonitorSnapshot();
+
+    expect(useAppStore.getState().monitorSnapshot).toBeNull();
+    expect(useAppStore.getState().monitorError).toBe('The scan returned no ports');
+  });
+
   it('learns a port a Goodboy script held, per project, and persists it', async () => {
     stubStoryInvoke({
       monitor_snapshot: snapshotAt({

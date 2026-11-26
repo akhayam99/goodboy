@@ -783,6 +783,7 @@ fails silently at runtime.
   a turn is open on the folder: `removeProject` reads `isTurnOpen` before it
   unlinks, and `forget_folder` returns `FolderBusy` under the folder lock, so a
   turn started in another window keeps its staging.
+- A fold is a view, never a write. When the Desk has no room, the solver turns a cell into a tab of its neighbor at render time, from the window width and `dockFoldOrderOf`. Nothing about it reaches `drawerGrid` or `session_dock_grids`, so a smaller window never rearranges the saved layout and a wider one brings the columns back. Writing the fold would lose the arrangement on the first laptop that leaves its monitor. The one write near it is the toast's **Undo**, which closes the panel that was just opened (`announceDockFold`).
 
 ## Not finished is a skip that carries a summary
 

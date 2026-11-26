@@ -8,8 +8,10 @@ import { portListText } from '../../portListText';
 import type { PortLayer } from '../../../actions/kinds/port';
 import { MetricCells } from './MetricCells';
 import { OwnerCell } from './OwnerCell';
-import { PORT_GRID } from './portGrid';
+import { isPortColumnShown } from './isPortColumnShown';
+import { PORT_GRIDS } from './portGrid';
 import { ProcessCell } from './ProcessCell';
+import { usePortColumns } from './usePortColumns';
 import { SharedProcessActions } from './SharedProcessActions';
 
 type RenderParams = {
@@ -32,6 +34,7 @@ export const SharedProcessRow = ({ layer, pid, rows, process, now, renderRow }: 
   const { isOpen, toggle } = useMonitoringFold({
     foldKey: processFoldKey({ process, rest: `shared:${layer}:${pid}` }),
   });
+  const columns = usePortColumns({});
   const first = rows[0];
   if (first === undefined) {
     return null;
@@ -42,7 +45,7 @@ export const SharedProcessRow = ({ layer, pid, rows, process, now, renderRow }: 
   return (
     <li data-shared-pid={pid} className="flex flex-col">
       <div className={cn('group/row relative rounded-md', ROW_HOVER)}>
-        <div className={cn(PORT_GRID, 'min-h-8 text-meta')}>
+        <div className={cn(PORT_GRIDS[columns], 'min-h-8 text-meta')}>
           <ChevronRight
             size={ICON_SIZE.row}
             aria-hidden
@@ -51,7 +54,12 @@ export const SharedProcessRow = ({ layer, pid, rows, process, now, renderRow }: 
               isOpen && 'rotate-90',
             )}
           />
-          <span className="col-span-2 min-w-0 truncate tabular-nums text-foreground">
+          <span
+            className={cn(
+              'min-w-0 truncate tabular-nums text-foreground',
+              isPortColumnShown({ columns, column: 'label' }) && 'col-span-2',
+            )}
+          >
             {portListText({ ports: rows.map((row) => row.port), max: PORTS_SHOWN })}
           </span>
           <OwnerCell row={first} />

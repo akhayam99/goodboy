@@ -8,11 +8,14 @@ import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useMonitoringFold } from '../../hooks/useMonitoringFold';
 import { usePortTarget } from '../../hooks/usePortTarget';
 import { CommandLine } from './CommandLine';
+import { MetricBlanks } from './MetricBlanks';
 import { MetricCells } from './MetricCells';
+import { isPortColumnShown } from './isPortColumnShown';
 import { OwnerCell } from './OwnerCell';
-import { PORT_GRID } from './portGrid';
+import { PORT_GRIDS } from './portGrid';
 import { PortRowActions } from './PortRowActions';
 import { ProcessCell } from './ProcessCell';
+import { usePortColumns } from './usePortColumns';
 
 type Props = {
   readonly row: PortRow;
@@ -40,6 +43,8 @@ export const PortRowView = ({
   const menu = useObjectMenuTrigger({ target, anchorKey: portAnchorKey({ target }) });
   const hasCollision = row.collision !== undefined;
   const canOpen = process !== null && !isNested;
+  const columns = usePortColumns({});
+  const isLabelShown = isPortColumnShown({ columns, column: 'label' });
 
   return (
     <li
@@ -48,7 +53,7 @@ export const PortRowView = ({
       onKeyDown={menu.onKeyDown}
       className={cn('group/row relative flex flex-col rounded-md', canOpen && ROW_HOVER)}
     >
-      <div className={cn(PORT_GRID, 'min-h-8 text-meta')}>
+      <div className={cn(PORT_GRIDS[columns], 'min-h-8 text-meta')}>
         {isNested ? null : hasCollision ? (
           <StatusDot tone="warning" size="md" role="status" ariaLabel="Collision" />
         ) : (
@@ -62,8 +67,16 @@ export const PortRowView = ({
         >
           :{row.port}
         </span>
-        {nameSlot ?? <span className="min-w-0 truncate text-muted-foreground">{name}</span>}
-        {isNested ? <span /> : <OwnerCell row={row} />}
+        {isLabelShown
+          ? (nameSlot ?? <span className="min-w-0 truncate text-muted-foreground">{name}</span>)
+          : null}
+        {!isLabelShown && nameSlot !== undefined ? (
+          nameSlot
+        ) : isNested ? (
+          <span />
+        ) : (
+          <OwnerCell row={row} />
+        )}
         {isNested ? (
           <span />
         ) : (
@@ -77,15 +90,7 @@ export const PortRowView = ({
             onToggle={canOpen ? command.toggle : undefined}
           />
         )}
-        {isNested ? (
-          <>
-            <span />
-            <span />
-            <span />
-          </>
-        ) : (
-          <MetricCells process={process} now={now} />
-        )}
+        {isNested ? <MetricBlanks /> : <MetricCells process={process} now={now} />}
         <PortRowActions target={target} hasStop={!isNested} hasMenu />
         {command.isOpen && canOpen && process !== null ? (
           <CommandLine args={process.argsMasked} />

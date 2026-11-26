@@ -62,6 +62,7 @@ export const DrawerColumn = ({
     isDetailOpen,
     isDetailParked,
     columnWidth: laneBox === null ? column.width : laneBox.width,
+    columnHeight: laneBox === null ? null : laneBox.height,
     railWidth,
     placement: isLane ? 'auto' : placement,
     sizing,
@@ -77,6 +78,7 @@ export const DrawerColumn = ({
   const mode: DrawerMode = isOpen || isDetailOpen ? layout.mode : 'closed';
   const isOverlay = mode === 'overlay' && !isLane;
   const isDetailOver = layout.isDetailOver && !isOverlay && !isLane;
+  const isDockOverDetail = isLane && layout.mode === 'overlay' && isDetailOpen && isOpen;
   const dockPanel = useDrawerPanel({ isOpen, layoutMode: layout.mode, isParked });
   const detailPanel = useDrawerPanel({
     isOpen: isDetailOpen,
@@ -180,7 +182,7 @@ export const DrawerColumn = ({
             className={cn(
               'flex min-h-0 min-w-0 flex-1',
               !isFloating && !isSheet && 'py-3',
-              isDetailOverPage && 'relative',
+              (isDetailOverPage || isDockOverDetail) && 'relative',
             )}
             ref={trackRef}
             style={{ minWidth: isFloating ? asideWidth : 0 }}
@@ -235,6 +237,7 @@ export const DrawerColumn = ({
               isParked={isParked}
               isOverlay={isOverlay}
               isFloating={isFloating}
+              isOverDetail={isDockOverDetail}
               isIdle={isContainerIdle}
               parkedWidth={layout.dock.width}
               setEdgeHost={edge.setHost}

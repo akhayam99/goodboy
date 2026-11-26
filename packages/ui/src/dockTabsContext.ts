@@ -1,8 +1,9 @@
-import { createContext } from 'react';
+import { createContext, type ReactNode } from 'react';
 
 export type DockTabOption = {
   readonly value: string;
   readonly label: string;
+  readonly badge?: ReactNode;
 };
 
 type SelectParams = {

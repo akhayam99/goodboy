@@ -1,6 +1,7 @@
 import { DrawerFrame, SearchField } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useMonitorPolling } from '../../../../shared/hooks/useMonitorPolling';
+import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
@@ -9,6 +10,8 @@ import { isMonitoringEmpty } from './isMonitoringEmpty';
 import { monitoringMetaOf } from './monitoringMetaOf';
 import { MonitoringSections } from './MonitoringSections';
 import { PinPortPopover } from './PinPortPopover';
+import { PortColumnsContext } from './PortColumnsContext';
+import { portColumnsOf } from './portColumnsOf';
 
 type Props = {
   readonly onClose: () => void;
@@ -20,6 +23,7 @@ export const MonitoringDrawer = ({ onClose }: Props) => {
   const setMonitoringQuery = useAppStore((state) => state.setMonitoringQuery);
   const openStudio = useAppStore((state) => state.openStudio);
   const now = useNow(5_000);
+  const body = useElementWidth();
   const isReady = model.status === 'ready';
   const isEmpty = isMonitoringEmpty({ model });
   const hasRows = isReady && !isEmpty;
@@ -54,8 +58,14 @@ export const MonitoringDrawer = ({ onClose }: Props) => {
       onClose={onClose}
       scroll="self"
     >
-      <div data-testid="monitoring-panel" className="flex min-h-0 flex-1 flex-col px-2">
-        <MonitoringSections model={model} memoryPrefix="monitoring-panel" />
+      <div
+        ref={body.ref}
+        data-testid="monitoring-panel"
+        className="flex min-h-0 flex-1 flex-col px-2"
+      >
+        <PortColumnsContext.Provider value={portColumnsOf({ width: body.width })}>
+          <MonitoringSections model={model} memoryPrefix="monitoring-panel" />
+        </PortColumnsContext.Provider>
       </div>
     </DrawerFrame>
   );
