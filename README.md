@@ -19,16 +19,28 @@ Goodboy runs coding agents side by side on your own repositories, one session fo
 
 ## From task to pull request
 
+<table>
+<tr>
+<td width="44%" valign="middle">
+
 ### Tasks
 
 Issues, pull requests, Sentry errors and Slack threads from your tools sit in one list. Start a session from any of them, with the issue linked and its goal written in.
 
 [Docs →](./docs/features/inbox.md#tasks)
 
+</td>
+<td width="56%">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-tasks-dark.webp">
   <img src="./docs/readme/readme-tasks-light.webp" alt="Tasks with Linear, GitHub and GitLab issues, and HBL-412 open beside them with its status, priority and Start" width="100%">
 </picture>
+
+</td>
+</tr>
+<tr>
+<td width="44%" valign="middle">
 
 ### The Lead
 
@@ -36,10 +48,18 @@ A **Lead** plans the run, hands each part to a helper agent and asks you only wh
 
 [Docs →](./docs/features/agents.md#lead)
 
+</td>
+<td width="56%">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-lead-dark.webp">
   <img src="./docs/readme/readme-lead-light.webp" alt="The Lead keeps out of the code and sends a planner first, then a build of two agents: the implementer done, the tester running" width="100%">
 </picture>
+
+</td>
+</tr>
+<tr>
+<td width="44%" valign="middle">
 
 ### Questions
 
@@ -47,10 +67,18 @@ When an agent needs a decision, it asks once, with the options and the one it re
 
 [Docs →](./docs/features/board.md#needs-you)
 
+</td>
+<td width="56%">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-questions-dark.webp">
   <img src="./docs/readme/readme-questions-light.webp" alt="The planner asks what a repeated webhook should return, with four options, Return the original credit recommended" width="100%">
 </picture>
+
+</td>
+</tr>
+<tr>
+<td width="44%" valign="middle">
 
 ### Plans
 
@@ -58,10 +86,18 @@ When the Lead asks you after the plan or at every step, a planner reads the code
 
 [Docs →](./docs/features/artifacts.md#comment-on-a-plan)
 
+</td>
+<td width="56%">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-plan-dark.webp">
   <img src="./docs/readme/readme-plan-light.webp" alt="A plan comment marked Addressed, and the concurrent retries test the planner added for it" width="100%">
 </picture>
+
+</td>
+</tr>
+<tr>
+<td width="44%" valign="middle">
 
 ### Providers and limits
 
@@ -69,10 +105,18 @@ Goodboy runs the agents you already pay for: Claude, Codex, Cursor and five more
 
 [Docs →](./docs/features/providers.md#fallback-when-a-limit-is-hit)
 
+</td>
+<td width="56%">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-limits-dark.webp">
   <img src="./docs/readme/readme-limits-light.webp" alt="The planner hits the Anthropic usage limit, retries on Codex and writes the plan around your answer" width="100%">
 </picture>
+
+</td>
+</tr>
+<tr>
+<td width="44%" valign="middle">
 
 ### Projects
 
@@ -80,10 +124,18 @@ One session can work across several repositories, each on its own branch and pul
 
 [Docs →](./docs/features/workspace.md#workspace-with-several-folders)
 
+</td>
+<td width="56%">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-projects-dark.webp">
   <img src="./docs/readme/readme-projects-light.webp" alt="A session overview: Merge in order for two parts, then ledger-core with its branches and pull requests #418 and #421" width="100%">
 </picture>
+
+</td>
+</tr>
+<tr>
+<td width="44%" valign="middle">
 
 ### Pull requests
 
@@ -93,14 +145,25 @@ Nothing leaves your machine until you push, on GitHub, GitLab or Bitbucket.
 
 [Docs →](./docs/features/review.md)
 
+</td>
+<td width="56%">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-prs-dark.webp">
   <img src="./docs/readme/readme-prs-light.webp" alt="Pull request #318 on its Conversation tab: not ready to merge, with 1 check failing, changes requested by omar-t and 3 commits behind main" width="100%">
 </picture>
 
+</td>
+</tr>
+</table>
+
 <br>
 
 ## Built-in tools
+
+<table>
+<tr>
+<td width="44%" valign="middle">
 
 ### Browser
 
@@ -108,10 +171,18 @@ Open your dev server, a port or a link beside the session. Press **⌘⇧C** and
 
 [Docs →](./docs/features/keyboard.md#point-at-part-of-a-page)
 
+</td>
+<td width="56%">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-browser-dark.webp">
   <img src="./docs/readme/readme-browser-light.webp" alt="The browser beside a session, with the PayButton component picked from src/checkout/PayButton.tsx line 42 and What should change?" width="100%">
 </picture>
+
+</td>
+</tr>
+<tr>
+<td width="44%" valign="middle">
 
 ### Monitoring
 
@@ -119,10 +190,18 @@ Open your dev server, a port or a link beside the session. Press **⌘⇧C** and
 
 [Docs →](./docs/features/workspace.md#monitoring)
 
+</td>
+<td width="56%">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-ports-dark.webp">
   <img src="./docs/readme/readme-ports-light.webp" alt="Monitoring: two agents run by Goodboy, the web server on port 5005 from the workspace, and what else listens on this Mac" width="100%">
 </picture>
+
+</td>
+</tr>
+<tr>
+<td width="44%" valign="middle">
 
 ### Storage
 
@@ -130,10 +209,17 @@ The worktrees of finished sessions add up. Goodboy lists each folder with its si
 
 [Docs →](./docs/features/storage.md#worktree-folders)
 
+</td>
+<td width="56%">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-storage-dark.webp">
   <img src="./docs/readme/readme-storage-light.webp" alt="Storage and search: 4.6 GB in Harborline, three worktrees safe to remove and Remove 3 folders in Harborline, 3.4 GB" width="100%">
 </picture>
+
+</td>
+</tr>
+</table>
 
 <br>
 
