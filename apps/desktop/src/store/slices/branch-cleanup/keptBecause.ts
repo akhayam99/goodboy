@@ -73,3 +73,10 @@ export const keptBecauseFolder = ({ branch, reason }: FolderParams): string => {
   }
   return `Kept ${branch}: ${reason}`;
 };
+
+type InUseParams = {
+  readonly branch: string;
+};
+
+export const keptBecauseInUse = ({ branch }: InUseParams): string =>
+  `Kept ${branch}: an agent still works in its folder.`;

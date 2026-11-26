@@ -302,6 +302,47 @@ describe('runAfterMergeCleanup', () => {
     expect(h.markDeletedBranchRestored).toHaveBeenCalled();
   });
 
+  it('keeps the branch when an agent that can be continued works in the mount', async () => {
+    const context = makeStore();
+    Object.assign(context.store.state, {
+      sessions: [],
+      sessionActiveMount: {},
+      sessionPhaseRuns: { [SESSION_ID]: [{ id: 'agent-lead', status: 'done' }] },
+      agentTurnDestination: { 'agent-lead': { kind: 'mount', mountId: MOUNT_ID } },
+    });
+
+    const outcome = await runAfterMergeCleanup(
+      context.set,
+      context.get,
+    )({ sessionId: SESSION_ID, mountId: MOUNT_ID, expectedBranch: BRANCH, isRequested: true });
+
+    expect(outcome).toEqual({
+      kind: 'ask',
+      keptBecause: `Kept ${BRANCH}: an agent still works in its folder.`,
+    });
+    expect(context.store.state.unmountMount).not.toHaveBeenCalled();
+    expect(h.deleteBranchChecked).not.toHaveBeenCalled();
+  });
+
+  it('keeps the branch when its mount is the session current one', async () => {
+    const context = makeStore();
+    Object.assign(context.store.state, {
+      sessions: [],
+      sessionActiveMount: { [SESSION_ID]: MOUNT_ID },
+    });
+
+    const outcome = await runAfterMergeCleanup(
+      context.set,
+      context.get,
+    )({ sessionId: SESSION_ID, mountId: MOUNT_ID, expectedBranch: BRANCH, isRequested: true });
+
+    expect(outcome).toEqual({
+      kind: 'ask',
+      keptBecause: `Kept ${BRANCH}: an agent still works in its folder.`,
+    });
+    expect(h.deleteBranchChecked).not.toHaveBeenCalled();
+  });
+
   it('stops when the folder refuses to go', async () => {
     const context = makeStore();
     context.store.state = {
