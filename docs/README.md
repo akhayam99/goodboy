@@ -132,7 +132,35 @@ The recipe column links the steps for the change you are about to make: [recipes
 ## Task docs
 
 - [concepts.md](./concepts.md): when you need to know what something in the
-  app is, or how far an integration goes.
+  app is, or how far an integration goes. It is the hub of the pages in
+  [concepts/](concepts/):
+  - [workspaces](concepts/workspaces.md): creating, naming and switching a
+    workspace, and a plain folder's face
+  - [sessions](concepts/sessions.md): stages, Running, Needs you and Done
+  - [lazy-sessions](concepts/lazy-sessions.md): when a session gets a worktree,
+    mounts and Storage
+  - [activity](concepts/activity.md): the Activity and Log feeds and history
+    rows
+  - [next-steps](concepts/next-steps.md): suggestion kinds, ranking and
+    dismissal
+  - [agents](concepts/agents.md): agents, the queue, the Lead, kinds and open
+    questions
+  - [artifacts](concepts/artifacts.md): plans, parts, comments and wireframes
+  - [shared-context](concepts/shared-context.md): the session record, lenses
+    and Ask
+  - [review-comments](concepts/review-comments.md): notes, review
+    conversations and comment states
+  - [fix-runs](concepts/fix-runs.md): fix runs, pushing and reply wording
+  - [settings](concepts/settings.md): setting levels, saves, the profile and
+    Open with
+  - [permissions](concepts/permissions.md): permission rules and asks
+  - [integrations](concepts/integrations.md): bindings, sources and the
+    tracker after a merge
+  - [tasks](concepts/tasks.md): the Tasks list and what Start mounts
+  - [spend](concepts/spend.md): provider routing, spend, limits and Impact
+  - [vocabulary](concepts/vocabulary.md): words and labels on screen
+  - [identifiers](concepts/identifiers.md): code names and where each concept
+    lives
 - [file-system.md](file-system.md): when you decide where a new file or
   folder goes inside `apps/desktop/src/`.
 - [navigation.md](navigation.md): when you decide which parts of the screen
