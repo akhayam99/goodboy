@@ -235,7 +235,26 @@ only when your task reaches the case it covers.
   each step.
 - [turns.md](turns.md): when you change how a turn picks its route, starts
   and reads a CLI, falls back on failure, or hands off to the session
-  summarizer, or how a read-only workspace chat turn runs.
+  summarizer, or how a read-only workspace chat turn runs. The hub maps its
+  sub-pages in [turns/](turns/):
+  - [turns/pipeline.md](turns/pipeline.md),
+    [turns/routing-and-prompt.md](turns/routing-and-prompt.md),
+    [turns/write-destination.md](turns/write-destination.md),
+    [turns/handoffs.md](turns/handoffs.md): before and around the spawn.
+  - [turns/spawn.md](turns/spawn.md), [turns/stream.md](turns/stream.md),
+    [turns/recovery.md](turns/recovery.md),
+    [turns/failure-and-fallback.md](turns/failure-and-fallback.md): the CLI
+    run, its events, reloads and restarts, and failures.
+  - [turns/text-reveal.md](turns/text-reveal.md),
+    [turns/live-state.md](turns/live-state.md),
+    [turns/chat-view.md](turns/chat-view.md),
+    [turns/composer.md](turns/composer.md): what the chat shows and sends.
+  - [turns/spans-and-estimates.md](turns/spans-and-estimates.md),
+    [turns/context-updates.md](turns/context-updates.md): what a turn records
+    and the context passes after it.
+  - [turns/workspace-chat.md](turns/workspace-chat.md),
+    [turns/session-ask.md](turns/session-ask.md): the read-only chat and Ask
+    turns.
 - [adr/001-workspace-project-rename.md](adr/001-workspace-project-rename.md):
   when you need to know why the schema calls the old workspaces table
   `projects`, or what the 0.2.0 migrations did to existing data.
