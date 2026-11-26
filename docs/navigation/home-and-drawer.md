@@ -726,7 +726,7 @@ without a branch sits in `Unassigned comments` on the Session overview.
 Each session remembers its dock grid: the panels, the columns, the width of
 each tool's column, the height of two stacked panels and the focus. The
 heights sit in an optional `splits` field. The row has version 2 since Scripts
-and Ask joined the grid; a row of version 1 still reads, and a build that only
+and Ask joined the grid; a row of version 1 still reads until 0.45.0 (excluded), and a build that only
 knows version 1 shows the default layout. It lives in `session_dock_grids` (m244), one
 row per session, deleted with it. The Board and the draft keep a grid of
 their own in the window; they save nothing.

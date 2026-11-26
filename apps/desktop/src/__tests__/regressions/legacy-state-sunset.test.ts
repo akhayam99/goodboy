@@ -2,6 +2,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
+import { DOCK_GRID_V1_READ_UNTIL } from '../../store/slices/drawer/dockGridMemory/storedDockGrid';
 
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..', '..');
 const VERSION_PART = /^(\d+)\.(\d+)\.(\d+)/;
@@ -64,6 +65,16 @@ describe('an old state shape is read only until the release the doc names', () =
     expect(compareVersions({ left: '0.28.8', right: '0.30.0' })).toBeLessThan(0);
     expect(compareVersions({ left: '0.30.0', right: '0.30.0' })).toBe(0);
     expect(compareVersions({ left: '0.100.0', right: '0.30.0' })).toBeGreaterThan(0);
+  });
+
+  it('names in the code the release the doc names for the dock grid', () => {
+    const rows = retiredRows({
+      text: readFileSync(join(REPO_ROOT, 'docs', 'versioning.md'), 'utf8'),
+    });
+
+    expect(rows.find((row) => row.state === 'Stored session dock grid')?.until).toBe(
+      DOCK_GRID_V1_READ_UNTIL,
+    );
   });
 
   it('keeps no row past the release that stops reading its old shape', () => {

@@ -276,7 +276,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Tools rail',
-        desc: 'Terminal, Browser, Scripts, Ask and Monitor, at the right edge of every screen. In a session, Ask opens beside the page and the others build the Desk: the overview as a column, the tools beside it. Open full page makes one a page.',
+        desc: "Terminal, Browser, Scripts, Ask and Monitor, at the right edge of every screen. In a session, all five build the Desk beside the overview, and one folds into a neighboring tab when they don't fit. Open full page makes one a page.",
       },
     ],
     links: [],
