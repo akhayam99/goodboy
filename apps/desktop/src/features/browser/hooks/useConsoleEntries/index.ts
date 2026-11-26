@@ -36,6 +36,7 @@ export type ConsoleEntries = {
   readonly doc: string | null;
   readonly entries: ReadonlyArray<BrowserConsoleEntry>;
   readonly failure: ConsoleFailure | null;
+  readonly isLoaded: boolean;
   readonly clear: (params: ClearParams) => void;
 };
 
@@ -169,5 +170,6 @@ export const useConsoleEntries = ({ sessionId, liveId, isOpen }: Params): Consol
   );
 
   const shown = liveId === null ? EMPTY_TAB_CONSOLE : (byTab[liveId] ?? EMPTY_TAB_CONSOLE);
-  return { doc: shown.doc, entries: shown.entries, failure: shown.failure, clear };
+  const isLoaded = liveId === null || byTab[liveId] !== undefined;
+  return { doc: shown.doc, entries: shown.entries, failure: shown.failure, isLoaded, clear };
 };

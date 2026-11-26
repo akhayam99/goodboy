@@ -26,6 +26,7 @@ const SELECTORS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   console: `${PANE} button[aria-label="Console"]`,
   pick: `${PANE} button[aria-label="Select an element"]`,
   'console-right': `${PANE} button[aria-label="Console"]`,
+  network: `${PANE} button[aria-label="Console"]`,
   'network-detail': `${PANE} button[aria-label="Console"]`,
   errors: `${PANE} button[data-browser-errors]`,
 };
@@ -35,16 +36,17 @@ const TOOLS = `${PANE} section[aria-label="Console"]`;
 const OPENED: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   console: TOOLS,
   'console-right': TOOLS,
+  network: TOOLS,
   'network-detail': TOOLS,
   errors: TOOLS,
   pick: `${PANE} [aria-label="Note for the picked element"]`,
 };
 
+const NETWORK_TAB = `${TOOLS} [role="tablist"][aria-label="Tools"] [role="tab"][aria-selected="false"]`;
+
 const NEXT_CLICKS: Readonly<Partial<Record<BrowserPaneSceneState, ReadonlyArray<string>>>> = {
-  'network-detail': [
-    `${TOOLS} [role="tablist"][aria-label="Tools"] [role="tab"][aria-selected="false"]`,
-    `${TOOLS} button[aria-label="error: /api/orders/confirm"]`,
-  ],
+  network: [NETWORK_TAB],
+  'network-detail': [NETWORK_TAB, `${TOOLS} button[aria-label="POST /api/charge, 500"]`],
 };
 
 const FIELDS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
