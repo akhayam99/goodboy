@@ -893,7 +893,7 @@ describe('the browser pane', () => {
     screen.getByRole('listbox', { name: 'Suggestions' });
   });
 
-  it('lists the page hand-off first and six more rows in the More menu', async () => {
+  it('lists the page hand-off first and seven more rows in the More menu', async () => {
     await openFirstPage();
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
@@ -905,12 +905,13 @@ describe('the browser pane', () => {
       'Open full page',
       'Copy address',
       'Duplicate',
+      'Clear browser data',
       'DevelopDesktop',
       'Close tab',
     ]);
   });
 
-  it('keeps the More menu at seven rows and puts Inspect in Safari under Develop on macOS', async () => {
+  it('keeps the More menu at eight rows and puts reload without cache and Inspect in Safari under Develop on macOS', async () => {
     const agent = vi.spyOn(window.navigator, 'userAgent', 'get');
     agent.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
     await openFirstPage();
@@ -924,11 +925,13 @@ describe('the browser pane', () => {
       'Open full page',
       'Copy address',
       'Duplicate',
+      'Clear site data',
       'DevelopDesktop',
       'Close tab',
     ]);
-    expect(rows).toHaveLength(7);
+    expect(rows).toHaveLength(8);
     fireEvent.click(screen.getByRole('menuitem', { name: /^Develop/ }));
+    await screen.findByRole('menuitem', { name: /^Reload without cache/ });
     await screen.findByRole('menuitem', { name: 'Inspect in Safari' });
     agent.mockRestore();
   });

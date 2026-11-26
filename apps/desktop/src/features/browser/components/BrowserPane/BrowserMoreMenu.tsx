@@ -64,6 +64,15 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
   });
   const chooseWidth = widthSelectOf({ onChoose: model.setDevicePreset });
   const developChildren: ReadonlyArray<MenuItemEntry> = [
+    {
+      kind: 'item',
+      key: 'reloadFromOrigin',
+      label: RELOAD_FROM_ORIGIN,
+      icon: RefreshCw,
+      hint: shortcutGlyphs('app.reload'),
+      isDisabled: isOff.isReloadFromOriginOff,
+      onSelect: model.reloadFromOrigin,
+    },
     ...(isOff.isWidthOff
       ? []
       : DEVICE_PRESETS.map((preset) => ({
@@ -135,15 +144,6 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
     },
     {
       kind: 'item',
-      key: 'reloadFromOrigin',
-      label: RELOAD_FROM_ORIGIN,
-      icon: RefreshCw,
-      hint: shortcutGlyphs('app.reload'),
-      isDisabled: isOff.isReloadFromOriginOff,
-      onSelect: model.reloadFromOrigin,
-    },
-    {
-      kind: 'item',
       key: 'clearSiteData',
       label: siteData.label,
       icon: Trash2,
@@ -152,19 +152,15 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
       confirm: siteData.confirm,
       onSelect: model.clearSiteData,
     },
-    ...(developChildren.length === 0
-      ? []
-      : [
-          {
-            kind: 'item' as const,
-            key: 'develop',
-            label: 'Develop',
-            icon: Code,
-            hint: isOff.isWidthOff ? null : devicePresetOf({ id: model.devicePreset }).label,
-            children: developChildren,
-            onSelect: () => undefined,
-          },
-        ]),
+    {
+      kind: 'item',
+      key: 'develop',
+      label: 'Develop',
+      icon: Code,
+      hint: isOff.isWidthOff ? null : devicePresetOf({ id: model.devicePreset }).label,
+      children: developChildren,
+      onSelect: () => undefined,
+    },
     {
       kind: 'item',
       key: 'closeTab',
