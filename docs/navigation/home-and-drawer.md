@@ -119,14 +119,19 @@ chord is new chat, new terminal and New question ([keyboard.md](../keyboard.md))
 - **What it asks.** No question first (`SessionKickoff`): **Projects** (`WhereChip`)
   is optional in the task field, **Start blank** in the header. Where is a searchable
   multiple `Listbox` in three groups (`projectPickerOptions`, `projectPickerGroups`):
-  "Starred" by name, "Recent" with at most five (the issue's matched folder first
-  with its reason, then the active folders of the latest sessions,
-  `recentProjectIdsOf`), "All projects" by name. `Project.lastAccessedAt` moves only
-  when a folder is added or reconnected, so it never orders the picker. Each row has
-  a `ListboxStar` (the star or ⌘S calls `setProjectStarred`, the row changing after
-  the save, a failure in the list status, `useProjectStarToggle`); with nothing
-  starred the list ends on one hint (`ProjectStarHint`). The picks are `projectIds`:
-  the first is the session's project, the rest are added (`additionalProjectIds`).
+  - "Starred" by name;
+  - "Recent" with at most five: the issue's matched folder first with its reason,
+    then the active folders of the latest sessions (`recentProjectIdsOf`).
+    `Project.lastAccessedAt` moves only when a folder is added or reconnected, so it
+    never orders the picker;
+  - "All projects" by name.
+
+  Each row has a `ListboxStar` (the star or ⌘S calls `setProjectStarred`, the row
+  changing after the save, a failure in the list status, `useProjectStarToggle`);
+  with nothing starred the list ends on one hint (`ProjectStarHint`). The picks are
+  `projectIds`: the first is the session's project, the rest are added
+  (`additionalProjectIds`).
+
 - **From Tasks**: **Start** on an issue calls `pickIssue`, putting it in
   `pickedIssues` and filling the field with its goal (`issueGoalOf`, the title when
   the goal is empty; the `goodboy:start-run:new` event). Setup's handoff

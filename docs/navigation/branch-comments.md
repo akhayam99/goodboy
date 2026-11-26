@@ -100,19 +100,24 @@ The saved drawer width, like Ask, and two tabs under the title, a `SegmentedTabs
 Fix and Transcript (`FixRunTranscriptDrawer` in `app/components`, handing
 `AgentTranscriptDrawer` a `lead`; no `lead`, no tabs). Only the shown tab mounts.
 
-- **Fix** is the run summary at full height (`FixRunSummary`): one status line
-  saying each shared fact once (`Working · 2m 48s · Opus 5.5 · High`, then `Done ·
-8m · 8 fix ready · Opus 5.5 · High`) and a question the run waits on; the comments
-  it covers, each with author, file, line and first sentence, a link that keeps the
-  drawer open on it, and the comments fixed together, opened filtered in Comments (a
-  state chip per row only while states differ, else in the status line); after it
-  ends, What it did (never while working) and its commits as `sha message` rows, with
-  a note when a rewrite folded one, nothing while working with none, `No commits yet`
-  once ended without any (`fixRunCommitsViewOf`). Covers is the one filled section.
+- **Fix** is the run summary at full height (`FixRunSummary`), in this order:
+  - one status line saying each shared fact once
+    (`Working · 2m 48s · Opus 5.5 · High`, then
+    `Done · 8m · 8 fix ready · Opus 5.5 · High`) and a question the run waits on;
+  - Covers, the one filled section: the comments it covers, each with author,
+    file, line and first sentence, a link that keeps the drawer open on it, and the
+    comments fixed together, opened filtered in Comments (a state chip per row only
+    while states differ, else in the status line);
+  - after it ends, What it did (never while working) and its commits as
+    `sha message` rows, both quiet labels, with a note when a rewrite folded one,
+    nothing while working with none, `No commits yet` once ended without any
+    (`fixRunCommitsViewOf`).
+
   Drawer and run banner count comments with `fixRunThreadIdsOf`.
+
 - **Transcript** is one stream plus the field to write to the agent (never on Fix).
-  The raw brief is one closed card (`BriefCard`, `FIX_RUN_COPY.briefCard`, `4
-comments from #318`).
+  The raw brief is one closed card (`BriefCard`, `FIX_RUN_COPY.briefCard`,
+  `4 comments from #318`).
 - The drawer reads **Steps** (tool rows only) while the agent's conversation is the
   page beside it; otherwise it holds the whole record, never repeating the page.
 - **The tab follows the run** until picked (`useDrawerTabs`): Transcript while it

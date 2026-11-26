@@ -328,12 +328,15 @@ it too.
   (and Delete local branch on a merged row with a cleanup proposal) asks, then runs
   `runAfterMergeCleanup` for each branch with `isLocalOnly` and
   `isRemovalRequired`: the folder and the local branch go, never the branch on
-  origin, and a folder that refuses keeps its mount attached. One toast offers Undo
-  for all (`deleteMergedBranches`), and a second Undo finishes one that stopped
-  halfway. Branches that stay fold into one log row ("Couldn't delete 2 local
-  branches", `reportErrors`, keyed by the delete) whose Retry runs only those. A
-  branch deleted before its cleanup suggestion failed to clear stays in Undo, and
-  its Retry only clears the suggestion. The board draws no error line.
+  origin, and a folder that refuses keeps its mount attached.
+  - One toast offers Undo for all (`deleteMergedBranches`), and a second Undo
+    finishes one that stopped halfway.
+  - Branches that stay fold into one log row ("Couldn't delete 2 local branches",
+    `reportErrors`, keyed by the delete) whose Retry runs only those and replaces
+    the row with what is still left.
+  - A branch deleted before its cleanup suggestion failed to clear stays in Undo,
+    and its Retry only clears the suggestion.
+  - The board draws no error line.
 - **A row's stage comes from that branch only** (`branchFactsFor`, worded by
   `deriveSessionStage`); the session's error state and unread mark never reach a
   row.

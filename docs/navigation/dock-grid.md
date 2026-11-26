@@ -86,13 +86,14 @@ worktree strip, and Monitor its Pin a port action as a pin icon in the head.
 - **Tabbed cells.** The tab strip takes the title's place (focus follows the
   selected tab when the head remounts), and each tab segment is its own handle for
   that panel (`DockDragSource.onStartPanel`, not wired to a move yet).
-  `DockGridCell.tabs` carries the keys, the active key and the member cells;
-  `dockMergedCellOf` folds them into the one pane the solver places; `cellTabsOf` is
-  the one function for the tab count, the strip, the activity dots and the shown tab
-  (`data-dock-tab-count`). The shown tab is the focused one, then the last picked,
-  then the cell's `active` key; a new `active` from the spec wins. A key that left
-  the grid drops out, and a select for it does nothing. The cell's width is saved
-  under its own key, never a member's.
+  - `DockGridCell.tabs` carries the keys, the active key and the member cells;
+    `dockMergedCellOf` folds them into the one pane the solver places.
+  - `cellTabsOf` is the one function for the tab count, the strip, the activity
+    dots and the shown tab (`data-dock-tab-count`).
+  - The shown tab is the focused one, then the last picked, then the cell's
+    `active` key; a new `active` from the spec wins. A key that left the grid drops
+    out, and a select for it does nothing.
+  - The cell's width is saved under its own key, never a member's.
 - **Dragging.** With two panels or more the whole head is the handle, with a grab
   cursor (`DockDragContext` from `DockGrid`, `useDockGrip`, `useDockDrag`); the empty
   area moves the whole cell, tabs together. A cell the solver folded for lack of room
