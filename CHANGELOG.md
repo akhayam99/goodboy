@@ -12,6 +12,48 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.43.0
+
+Pick an element on the page for your agent, keep all five tools in the dock at once, and let a paired phone decide, start and merge with the rights you give it.
+
+### New
+
+#### Pick an element and add it to your message
+<!-- gb area=app pr=2389 -->
+
+Select an element in the Browser address row, or press ⌘⇧C, then click the element you mean. A note asks what should change, and Add to message puts the element's file line and its picture into the draft for the agent you name. Shift-click adds up to four.
+
+#### Page errors in their own tab
+<!-- gb area=app image=page-errors pr=2398 -->
+
+A red count shows in the Browser address row only while the page has an error. A click opens an Errors tab that groups the same error once, with its count, its first and last time and its stack. Send one group or all of them to an agent.
+
+#### Scripts and Ask dock like every tool
+<!-- gb area=app image=desk-grid pr=2404,2399 -->
+
+Scripts and Ask open as cells of the dock beside Terminal, Browser and Monitor. They fold, stack and drag by their head like the others, and the dock holds four columns of two, so all five tools can be open at once. Every panel opens with the same head.
+
+Going back to 0.42.1 shows the default dock layout.
+
+#### Phones with their own rights
+<!-- gb area=settings pr=2390,2391,2392,2394,2396,2397,2403 -->
+
+A paired phone can answer questions, approve plans, answer permission asks, raise limits, and stop or continue a run. With the right switched on it can also start a session and merge a pull request or a list of them in order. Settings, iPhone sets the networks and the rights of each phone.
+
+Going back to 0.42.1 shows no paired phones, so pair them again.
+
+### Improved
+
+#### The dock folds a tool instead of squeezing it
+<!-- gb area=app pr=2402 -->
+
+Open more tools than fit and the one you used least folds into a tab of its neighbor. A toast says what folded and offers Undo, and a wider window brings the columns back. On a very narrow window one tool lies over the agent.
+
+### Fixed
+
+- Monitor keeps its columns apart in a narrow panel and keeps its last data when a scan fails. <!-- gb area=app pr=2402 -->
+- Long branch names in the Scripts groups cut in the middle, so two branches with the same start read differently. <!-- gb area=scripts pr=2399 -->
+
 ## Goodboy v0.42.1
 
 The Board and the Overview read cleaner, the Browser keeps its tabs in one row, and Console and Network open in a dock you place.

@@ -1,20 +1,17 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { Button, EmptyLine, ScrollFade, SearchField, cn } from '@goodboy/ui';
 import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
-import { isTextEntryTarget } from '../../../../shared/keyboard/isTypingTarget';
 import type { BrowserToolsSide } from '../../browserToolsDockPref';
 import { consoleAttachmentOf } from '../../consoleAttachmentOf';
 import { consoleRowsOf, type ConsoleLevelFilter } from '../../consoleRowsOf';
 import { queueConsoleHandoff } from '../../queueConsoleHandoff';
 import type { ConsoleEntries } from '../../hooks/useConsoleEntries';
-import type { BrowserConsoleKind, BrowserPaneModel, BrowserToolsTab } from '../../types';
+import type { BrowserPaneModel, BrowserToolsTab } from '../../types';
 import { BrowserConsoleLevelMenu } from './BrowserConsoleLevelMenu';
 import { BrowserConsoleRow } from './BrowserConsoleRow';
 import { BrowserConsoleSendMenu } from './BrowserConsoleSendMenu';
-import { BrowserRequestDetail } from './BrowserRequestDetail';
 import { BrowserToolsHead } from './BrowserToolsHead';
-import { useRequestSelection } from './useRequestSelection';
 import { NAMES } from '../../../../shared/utils/names';
 
 type TabParams = {
@@ -23,7 +20,6 @@ type TabParams = {
 
 type Props = {
   readonly model: BrowserPaneModel;
-  readonly kind: BrowserConsoleKind;
   readonly counts: Readonly<Record<BrowserToolsTab, number>>;
   readonly title: string;
   readonly log: ConsoleEntries;
@@ -42,30 +38,14 @@ type SendParams = {
   readonly sessionId: SessionId;
 };
 
-type StepParams = {
-  readonly direction: -1 | 1;
-};
-
-type KeyParams = {
-  readonly event: KeyboardEvent<HTMLDivElement>;
-};
-
 const FOLLOW_SLACK_PX = 24;
-
-const SEARCH_LABEL = {
-  console: NAMES.searchMessages,
-  network: NAMES.searchRequests,
-} as const satisfies Record<BrowserConsoleKind, string>;
 
 const FAILURE_TEXT = {
   read: "Couldn't read the console",
   silent: 'Console stopped reporting',
 } as const;
 
-const EMPTY_TEXT = {
-  console: 'Nothing logged since the last load',
-  network: 'No request since the last load',
-} as const satisfies Record<BrowserConsoleKind, string>;
+const EMPTY_TEXT = 'Nothing logged since the last load';
 
 const NO_MATCH_TEXT = 'Nothing matches the filter';
 
@@ -73,7 +53,6 @@ const AGENT_GONE_TEXT = "The agent isn't in this session anymore. Pick one and t
 
 export const BrowserConsole = ({
   model,
-  kind,
   counts,
   title,
   log,
@@ -87,26 +66,17 @@ export const BrowserConsole = ({
   const [query, setQuery] = useState('');
   const [sendNote, setSendNote] = useState<string | null>(null);
   const viewport = useRef<HTMLDivElement | null>(null);
-  const list = useRef<HTMLDivElement | null>(null);
   const isFollowing = useRef(true);
   const openSession = useOpenSession();
-  const rows = consoleRowsOf({ entries: log.entries, kind, level, query });
+  const rows = consoleRowsOf({ entries: log.entries, kind: 'console', level, query });
   const isFiltered = level !== 'all' || query.trim() !== '';
-  const { openedAt, open, back } = useRequestSelection({
-    rows,
-    liveId: model.shownLiveId,
-    doc: log.doc,
-    list,
-  });
-  const opened = openedAt < 0 ? null : (rows[openedAt] ?? null);
-  const isDetailAlone = opened !== null && side === 'right';
 
   useLayoutEffect(() => {
     const node = viewport.current;
     if (node !== null && isFollowing.current) {
       node.scrollTop = node.scrollHeight;
     }
-  }, [rows.length, kind, isDetailAlone]);
+  }, [rows.length]);
 
   const follow = (): void => {
     const node = viewport.current;
@@ -114,11 +84,6 @@ export const BrowserConsole = ({
       isFollowing.current =
         node.scrollHeight - node.scrollTop - node.clientHeight < FOLLOW_SLACK_PX;
     }
-  };
-
-  const changeTab = ({ next }: TabParams): void => {
-    onTab({ next });
-    setLevel('all');
   };
 
   const changeLevel = ({ next }: LevelParams): void => setLevel(next);
@@ -137,39 +102,21 @@ export const BrowserConsole = ({
   };
 
   const clear = (): void => {
-    log.clear({ kind });
+    log.clear({ kind: 'console' });
     setSendNote(null);
-  };
-
-  const step = ({ direction }: StepParams): void => {
-    const next = rows[openedAt + direction];
-    if (next === undefined) {
-      return;
-    }
-    open({ entry: next });
-  };
-
-  const keys = ({ event }: KeyParams): void => {
-    if (opened === null || event.defaultPrevented || isTextEntryTarget(event.target)) {
-      return;
-    }
-    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-      event.preventDefault();
-      step({ direction: event.key === 'ArrowUp' ? -1 : 1 });
-    }
   };
 
   const tools = (
     <>
-      <BrowserConsoleLevelMenu kind={kind} level={level} onChange={changeLevel} />
+      <BrowserConsoleLevelMenu level={level} onChange={changeLevel} />
       <SearchField
-        ariaLabel={SEARCH_LABEL[kind]}
-        placeholder={SEARCH_LABEL[kind]}
+        ariaLabel={NAMES.searchMessages}
+        placeholder={NAMES.searchMessages}
         value={query}
         onChange={setQuery}
         className={cn('flex-1', isToolsInHead ? 'min-w-0 max-w-56' : 'min-w-32')}
       />
-      <Button variant="quiet" size="xs" disabled={counts[kind] === 0} onClick={clear}>
+      <Button variant="quiet" size="xs" disabled={counts.console === 0} onClick={clear}>
         Clear
       </Button>
       <BrowserConsoleSendMenu
@@ -181,20 +128,17 @@ export const BrowserConsole = ({
   );
 
   return (
-    <div
-      className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 pb-1"
-      onKeyDown={(event) => keys({ event })}
-    >
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 pb-1">
       <BrowserToolsHead
-        kind={kind}
+        kind="console"
         counts={counts}
         side={side}
         tools={isToolsInHead ? tools : null}
-        onKind={changeTab}
+        onKind={onTab}
         onSide={onSide}
         onClose={onClose}
       />
-      {isToolsInHead || isDetailAlone ? null : (
+      {isToolsInHead ? null : (
         <div className="flex shrink-0 flex-wrap items-center gap-2 px-2">{tools}</div>
       )}
       {log.failure === null ? null : (
@@ -207,49 +151,22 @@ export const BrowserConsole = ({
           {sendNote}
         </p>
       )}
-      <div className="flex min-h-0 min-w-0 flex-1">
-        {isDetailAlone ? null : (
-          <ScrollFade
-            className="min-h-0 min-w-0 flex-1"
-            viewportRef={viewport}
-            onViewportScroll={follow}
-            isPageScroller={false}
-          >
-            <div
-              ref={list}
-              tabIndex={-1}
-              role="log"
-              aria-label={kind === 'console' ? 'Console messages' : 'Requests'}
-              className="flex flex-col gap-px px-1"
-            >
-              {rows.length === 0 ? (
-                <EmptyLine className="px-2">
-                  {isFiltered && counts[kind] > 0 ? NO_MATCH_TEXT : EMPTY_TEXT[kind]}
-                </EmptyLine>
-              ) : (
-                rows.map((entry) => (
-                  <BrowserConsoleRow
-                    key={entry.seq}
-                    entry={entry}
-                    isOpened={entry === opened}
-                    onOpen={kind === 'network' ? () => open({ entry }) : undefined}
-                  />
-                ))
-              )}
-            </div>
-          </ScrollFade>
-        )}
-        {opened === null ? null : (
-          <BrowserRequestDetail
-            entry={opened}
-            isAlone={isDetailAlone}
-            canStepBack={openedAt > 0}
-            canStepOn={openedAt < rows.length - 1}
-            onBack={back}
-            onStep={step}
-          />
-        )}
-      </div>
+      <ScrollFade
+        className="min-h-0 min-w-0 flex-1"
+        viewportRef={viewport}
+        onViewportScroll={follow}
+        isPageScroller={false}
+      >
+        <div role="log" aria-label="Console messages" className="flex flex-col gap-px px-1">
+          {rows.length === 0 ? (
+            <EmptyLine className="px-2">
+              {isFiltered && counts.console > 0 ? NO_MATCH_TEXT : EMPTY_TEXT}
+            </EmptyLine>
+          ) : (
+            rows.map((entry) => <BrowserConsoleRow key={entry.seq} entry={entry} />)
+          )}
+        </div>
+      </ScrollFade>
     </div>
   );
 };

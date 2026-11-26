@@ -9,6 +9,8 @@ use super::BridgeError;
 
 const IDENTITY_FILE: &str = "companion.json";
 const DEFAULT_PHONE_NAME: &str = "iPhone";
+#[cfg(test)]
+const LEGACY_ALLOW_LIST_READ_UNTIL: &str = "0.45.0";
 const NAME_MAX_CHARS: usize = 48;
 const SEEN_WRITE_EVERY_MS: i64 = 60_000;
 
@@ -501,6 +503,15 @@ mod tests {
             serde_json::from_slice(&std::fs::read(&file).unwrap()).unwrap();
         assert!(raw.get("allow_list").is_none());
         assert_eq!(raw["phones"].as_array().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn the_legacy_allow_list_sunset_matches_the_versioning_doc() {
+        let doc = include_str!("../../../../../docs/versioning.md");
+        assert!(doc
+            .lines()
+            .any(|line| line.contains("companion.json")
+                && line.contains(LEGACY_ALLOW_LIST_READ_UNTIL)));
     }
 
     #[test]

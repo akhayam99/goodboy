@@ -17,6 +17,7 @@ import type { BrowserVisit } from '../../../../../../store/slices/browser-visits
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
 import { sceneClock } from '../../../sceneClock';
+import { NETWORK_READ } from './browserNetworkRead';
 
 export type BrowserPaneSceneState =
   | 'pane'
@@ -38,6 +39,7 @@ export type BrowserPaneSceneState =
   | 'width-tablet'
   | 'console'
   | 'console-right'
+  | 'network'
   | 'network-detail'
   | 'pick'
   | 'errors';
@@ -78,9 +80,12 @@ const IDLE_PICK: BrowserPickRead = {
 const CONSOLE_STATES: ReadonlyArray<BrowserPaneSceneState> = [
   'console',
   'console-right',
+  'network',
   'network-detail',
   'errors',
 ];
+
+const NETWORK_STATES: ReadonlyArray<BrowserPaneSceneState> = ['network', 'network-detail'];
 
 const DOCK_SIDE_OF: Readonly<Partial<Record<BrowserPaneSceneState, BrowserToolsSide>>> = {
   'console-right': 'right',
@@ -339,11 +344,18 @@ type ConsoleReadParams = PayloadParams & {
   readonly state: BrowserPaneSceneState;
 };
 
+const readOfState = ({ state }: SeedParams): BrowserConsoleRead => {
+  if (NETWORK_STATES.includes(state)) {
+    return NETWORK_READ;
+  }
+  return state === 'errors' ? ERRORS_READ : CONSOLE_READ;
+};
+
 const consoleReadOf = ({ state, payload }: ConsoleReadParams): BrowserConsoleRead => {
   if (!CONSOLE_STATES.includes(state)) {
     return UNHEARD_READ;
   }
-  const read = state === 'errors' ? ERRORS_READ : CONSOLE_READ;
+  const read = readOfState({ state });
   if (fieldOf({ payload, field: 'doc' }) === read.doc) {
     return { ...read, entries: [] };
   }

@@ -38,11 +38,10 @@ export const useRequestSelection = ({ rows, liveId, doc, list }: Params) => {
       return;
     }
     returnKey.current = null;
-    const row = Array.from(node.querySelectorAll<HTMLElement>('[data-request-key]')).find(
-      (candidate) => candidate.dataset.requestKey === key,
+    const row = Array.from(node.querySelectorAll<HTMLElement>('[data-row-key]')).find(
+      (candidate) => candidate.dataset.rowKey === key,
     );
-    const target = row?.querySelector('button') ?? node;
-    target.focus();
+    (row ?? node).focus();
   }, [selection, list]);
 
   const open = ({ entry }: OpenParams): void =>

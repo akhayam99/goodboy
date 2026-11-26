@@ -211,6 +211,8 @@ browser-errors
 browser-errors-dark
 browser-handoff
 browser-handoff-dark
+browser-network
+browser-network-dark
 browser-network-detail
 browser-network-detail-dark
 browser-page

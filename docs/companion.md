@@ -32,7 +32,8 @@ phone with those rights like a second keyboard, not like a viewer.
   phone in `~/.goodboy/companion.json`: its key, the name it gave, when it
   paired, when it was last seen and its rights. It never leaves the machine.
   A file written by an older version holds a bare list of keys: each becomes a
-  record with the default rights and is written back in the new shape.
+  record with the default rights and is written back in the new shape. That
+  list is read until 0.45.0 (excluded).
 - **Settings › This Mac › iPhone** mints a one-time 256-bit token that expires after 60
   seconds and shows it with the desktop's key and addresses as a QR code. The
   payload has `v: 2`, the device name, the key, the token, the endpoints, the
