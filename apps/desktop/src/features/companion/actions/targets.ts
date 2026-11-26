@@ -1,3 +1,4 @@
+import { isAgentStatusSettled } from '@goodboy/core/workflows';
 import type { Agent, Session, SessionId, TurnState, WorkflowRun } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
@@ -33,13 +34,36 @@ export const workflowRunOf = ({ session, runId }: RunParams): WorkflowRun | null
 type RunStateFromParams = {
   readonly run: WorkflowRun;
   readonly agents: ReadonlyArray<Agent>;
+  readonly stepCount?: number | undefined;
 };
 
-export const runStateFrom = ({ run, agents }: RunStateFromParams): RunState => {
+const isRunWaitingForGo = ({ run, agents, stepCount }: RunStateFromParams): boolean => {
+  if (run.executionMode !== 'dynamic' && stepCount === undefined) {
+    return false;
+  }
+  const steps = agents.filter((agent) => agent.parentAgentId == null);
+  return (
+    steps.some((agent) => agent.status !== 'pending') &&
+    steps.every((agent) => agent.status !== 'running')
+  );
+};
+
+const isStaticRunDone = ({ run, agents, stepCount }: RunStateFromParams): boolean => {
+  if (run.executionMode === 'dynamic' || stepCount === undefined || stepCount === 0) {
+    return false;
+  }
+  const settled = agents.filter(
+    (agent) => agent.parentAgentId == null && isAgentStatusSettled({ status: agent.status }),
+  );
+  return settled.length >= stepCount;
+};
+
+export const runStateFrom = ({ run, agents, stepCount }: RunStateFromParams): RunState => {
+  const params = { run, agents, stepCount };
   if (run.orchestrationStop?.kind === 'closed') {
     return 'stopped';
   }
-  if (run.orchestrationOutcome === 'done') {
+  if (run.orchestrationOutcome === 'done' || isStaticRunDone(params)) {
     return 'done';
   }
   if (run.orchestrationStop?.kind === 'failure') {
@@ -61,7 +85,7 @@ export const runStateFrom = ({ run, agents }: RunStateFromParams): RunState => {
   ) {
     return 'waiting';
   }
-  return 'running';
+  return isRunWaitingForGo(params) ? 'waiting' : 'running';
 };
 
 type RunStateParams = {
@@ -70,12 +94,28 @@ type RunStateParams = {
   readonly run: WorkflowRun;
 };
 
+type StepCountParams = {
+  readonly store: AppStore;
+  readonly sessionId: SessionId;
+  readonly run: WorkflowRun;
+};
+
+const stepCountOf = ({ store, sessionId, run }: StepCountParams): number | undefined => {
+  const session = sessionById(store.sessions, sessionId);
+  const workflows = [
+    ...(store.sessionWorkflows?.[sessionId] ?? []),
+    ...(session === undefined ? [] : (store.phaseTemplates?.[session.workspaceId] ?? [])),
+  ];
+  return workflows.find((workflow) => workflow.id === run.workflowId)?.steps.length;
+};
+
 export const runStateOf = ({ store, sessionId, run }: RunStateParams): RunState =>
   runStateFrom({
     run,
     agents: (store.sessionPhaseRuns[sessionId] ?? []).filter(
       (agent) => agent.workflowRunId === run.id,
     ),
+    stepCount: stepCountOf({ store, sessionId, run }),
   });
 
 type AgentParams = {

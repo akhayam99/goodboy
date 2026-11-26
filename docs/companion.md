@@ -181,7 +181,18 @@ rules, kept in `features/companion/actions/`:
   save does not post twice. An answer, a permission or a plan approval whose
   delivery to the agent failed after the decision was saved is delivered again by
   the retry, without saving it twice. A transcript page is cut from the whole
-  history, and absolute paths in any text are reduced to the file name.
+  history, and absolute paths in any text, quoted, in a flag or in JSON too, are
+  reduced to the file name by one function (`pathText.ts`) shared with the
+  projections.
+- A tree stop of an Auto Lead goes through the same tree stop as the desktop
+  Stop; for a plain Lead it stops the running agents one by one, and a retry
+  after the Lead already stopped finishes the rest. A message to an agent counts
+  as sent once its turn has started, and its id carries a generation that
+  changes at every launch, so a reload never reissues an old id.
+- A run reads as waiting when a finished step waits for Continue, and as paused
+  at its spending limit. Agent and run spend include the earlier turns of an
+  agent, and the time of a stopped agent ends at its stop. Reading the ask
+  transcripts of blocked agents does not mark them viewed.
 - The bridge guards the same id before the frontend sees it. A decide action
   must carry an id in the Mac format, its correlation id is the action id, and
   an id already running is refused as `action_in_flight`. The Mac stamps the

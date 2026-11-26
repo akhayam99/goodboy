@@ -19,6 +19,7 @@ export const runDecisionOf = ({ scope, sessionId }: Params): RunDecision | null 
     const state = runStateFrom({
       run,
       agents: agents.filter((agent) => agent.workflowRunId === run.id),
+      stepCount: scope.stepCounts?.[run.workflowId],
     });
     if (state !== 'stopped' && state !== 'waiting' && state !== 'paused') {
       continue;

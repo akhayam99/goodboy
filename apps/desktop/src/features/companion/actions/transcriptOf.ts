@@ -9,19 +9,15 @@ import type {
   TranscriptProjection,
   TranscriptQuery,
 } from '../contract/transcript';
+import { withoutAbsolutePaths } from '../pathText';
 import { isAgentOfSession, sessionOfAction } from './targets';
 import { sessionIdOf, agentIdOf } from './ids';
 
 const MAX_PAGE = 500;
 const MAX_SUMMARY_LENGTH = 160;
-const PATH_PATTERN = /(?<![\w.)\]])(?:\/[^\s/'"]+){2,}/g;
-
 type TextParams = {
   readonly text: string;
 };
-
-const withoutAbsolutePaths = ({ text }: TextParams): string =>
-  text.replace(PATH_PATTERN, (path) => `.../${path.slice(path.lastIndexOf('/') + 1)}`);
 
 const baseNameOf = ({ text }: TextParams): string => text.slice(text.lastIndexOf('/') + 1);
 

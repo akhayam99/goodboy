@@ -82,7 +82,7 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
   const enrolled = status?.enrolledCount ?? 0;
   enrolledRef.current = enrolled;
   const isPaired = enrolled > 0;
-  const isShowingCode = !isPaired || isPairing || error !== null;
+  const isShowingCode = !isPaired || isPairing;
   const total = totalRef.current > 0 ? totalRef.current : 1;
 
   const refreshStatus = useCallback(async (): Promise<BridgeStatus | null> => {
@@ -233,6 +233,8 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
   useEffect(() => {
     isMountedRef.current = true;
     void refreshInterfaces();
+    void refreshStatus();
+    void refreshPhones();
     void mint();
     return () => {
       isMountedRef.current = false;
@@ -242,7 +244,7 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
         );
       }
     };
-  }, [mint, refreshInterfaces]);
+  }, [mint, refreshInterfaces, refreshStatus, refreshPhones]);
 
   useEffect(() => {
     if (info === null) {

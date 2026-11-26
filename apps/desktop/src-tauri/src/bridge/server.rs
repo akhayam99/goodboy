@@ -95,7 +95,7 @@ async fn handle_conn(
             Ok(authorized) => authorized,
             Err(e) => {
                 if e.is_polite_refusal() {
-                    permit.succeed();
+                    permit.release();
                 }
                 return Err(e);
             }

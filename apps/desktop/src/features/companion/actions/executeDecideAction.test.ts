@@ -20,6 +20,7 @@ import {
   buildTestStore,
   type TestStore,
 } from './testing/decideTestKit';
+import { registerTreeStopPort } from '../../auto/treeStopPort';
 import type { DecideKind } from './decideAction';
 import { isReplayableKind } from './replayPolicy';
 import { executeDecideAction } from './executeDecideAction';
@@ -127,7 +128,7 @@ const CASES: ReadonlyArray<Case> = [
     fields: { agentId: LEAD, seenState: 'running' },
     stale: { seenState: 'waiting' },
     state: RUNNING_TREE,
-    called: (kit) => kit.actions.cancelTurnConfirmed,
+    called: () => treeStop,
   },
   {
     kind: 'sendToAgent',
@@ -175,7 +176,11 @@ const run = ({ kit, kase, overrides = {}, actionId, phoneId = 'phone-1', now }: 
   });
 };
 
+const treeStop = vi.fn(async () => 'stopped' as const);
+
 beforeEach(() => {
+  treeStop.mockClear();
+  registerTreeStopPort({ port: treeStop });
   clearActionLedger();
   clearRateSlots();
   clearLimitUndos();

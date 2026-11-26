@@ -32,6 +32,8 @@ import {
   type OpenQuestion,
   type OpenQuestionId,
   type SessionId,
+  type TelemetryRecord,
+  type TelemetryRecordId,
   type WorkflowRunId,
 } from '@goodboy/types';
 import { listTurnEventEntriesForAgent } from '@goodboy/db';
@@ -44,7 +46,7 @@ import {
   type StoryStore,
 } from '../../../store/storyHarness';
 import { workspaceIdOf } from './ids';
-import { FIXTURE_TREE as TREE, aView } from '../../auto/testing/autoViewFixtures';
+import { FIXTURE_ROOT, FIXTURE_TREE as TREE, aView } from '../../auto/testing/autoViewFixtures';
 import { clearActionLedger } from './actionLedger';
 import { clearRateSlots } from './actionLimits';
 import { expectedActionIdOf } from './actionIds';
@@ -55,6 +57,11 @@ import { clearLimitUndos } from './limitUndos';
 import { parseDecideAction } from './parseDecideAction';
 import { clearPosted } from './postedSlackDrafts';
 import { registerDecideScope, resetDecideScope } from './phoneScope';
+import { registerTreeStopPort } from '../../auto/treeStopPort';
+import { agentFactsOf } from '../projections/agentFactsOf';
+import { preloadAskTranscripts } from '../projections/preloadAskTranscripts';
+import { clearSendSequences, sendSequenceOf, setSendGeneration } from './sendSequence';
+import { safeTextOf } from '../projections/safeTextOf';
 import { transcriptEntriesOf, transcriptOf } from './transcriptOf';
 import { clearUndelivered } from './undeliveredPermissions';
 import { limitScopeOfStore, limitTargetOf } from './limitTargets';
@@ -159,6 +166,7 @@ beforeEach(async () => {
   clearActionLedger();
   clearRateSlots();
   clearLimitUndos();
+  clearSendSequences();
   clearPosted();
   clearUndelivered();
   resetDecideScope();
@@ -554,7 +562,7 @@ describe('transcript text', () => {
     const text = entries.map((entry) => (entry.kind === 'words' ? entry.text : '')).join('|');
     expect(text).not.toContain('/Users');
     expect(text).not.toContain('/home');
-    expect(text).toContain('.../index.ts');
+    expect(text).toContain('index.ts');
     expect(text).toContain('Yes/no and notify-relay/src stay.');
   });
 });
@@ -642,5 +650,137 @@ describe('a message to an agent', () => {
       isReplay: false,
     });
     expect(sendTurn).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('text that reaches the phone', () => {
+  it('reduces quoted, flag and JSON paths to the file name', () => {
+    const text = safeTextOf({
+      text: 'cat "/var/private/notes.md" --output=/var/private/result.txt {"path":"/var/x/y.json"} `/opt/a/b.sh` ~/ledger-core/README.md',
+      max: 400,
+    });
+    expect(text).toBe('cat "notes.md" --output=result.txt {"path":"y.json"} `b.sh` README.md');
+  });
+});
+
+describe('an Auto Lead tree', () => {
+  it('stops through the tree port and not agent by agent', async () => {
+    seed();
+    useAppStore.setState({ autoTreeViews: { [SESSION]: [aView({ capUsd: 10 })] } });
+    const cancel = vi.fn(async () => ({ outcome: 'exited' as const, exitedAt: AT }));
+    useAppStore.setState({ cancelTurnConfirmed: cancel });
+    const stop = vi
+      .fn<(params: { treeId: string }) => Promise<'stopped' | 'stuck' | 'not_owner'>>()
+      .mockResolvedValueOnce('stuck')
+      .mockResolvedValue('stopped');
+    registerTreeStopPort({ port: stop });
+    const fields = { agentId: FIXTURE_ROOT, seenState: 'done' };
+    expect((await act({ kind: 'stopAgentTree', fields })).result).toBe('failed');
+    expect((await act({ kind: 'stopAgentTree', fields })).result).toBe('done');
+    expect(stop).toHaveBeenCalledWith({ treeId: TREE });
+    expect(cancel).not.toHaveBeenCalled();
+    registerTreeStopPort({ port: null });
+  });
+});
+
+describe('ids and text that survive a reload', () => {
+  it('does not reissue a send id after the generation changes', () => {
+    const before = sendSequenceOf({ agentId: AGENT });
+    setSendGeneration({ value: 'k1abc' });
+    expect(sendSequenceOf({ agentId: AGENT })).toBe('k1abc.0');
+    expect(sendSequenceOf({ agentId: AGENT })).not.toBe(before);
+    setSendGeneration({ value: '' });
+  });
+
+  it('accepts a message as soon as its turn starts, even when the turn runs on', async () => {
+    seed();
+    const sendTurn = vi.fn(async (input: { onStarted?: () => void }) => {
+      input.onStarted?.();
+      return new Promise<never>(() => undefined);
+    });
+    useAppStore.setState({ sendTurn });
+    const outcome = await act({
+      kind: 'sendToAgent',
+      fields: { agentId: AGENT, seenVersion: sendSequenceOf({ agentId: AGENT }), text: 'Go on' },
+    });
+    expect(outcome.result).toBe('done');
+  });
+
+  it('keeps spend of earlier turns and stops the clock of a stopped agent', () => {
+    const agent = anAgent({
+      id: AGENT,
+      sessionId: SESSION,
+      runId: brandId<ProviderRunId>({ value: 'run-2' }),
+      startedAt: brandId<IsoDateTime>({ value: '2026-11-25T10:00:00.000Z' }),
+      stoppedAt: brandId<IsoDateTime>({ value: '2026-11-25T10:05:00.000Z' }),
+    });
+    const record = (runId: string, usd: number): TelemetryRecord => ({
+      id: brandId<TelemetryRecordId>({ value: `rec-${runId}` }),
+      runId: brandId<ProviderRunId>({ value: runId }),
+      sessionId: SESSION,
+      kind: 'turn',
+      provider: 'anthropic',
+      model: 'opus',
+      inputTokens: 1,
+      outputTokens: 1,
+      estimatedCostUsd: usd,
+      recordedAt: AT,
+    });
+    const scope = {
+      telemetry: { [SESSION]: [record('run-1', 1.5), record('run-2', 2)] },
+      agentRunHistory: { [AGENT]: ['run-1'] },
+    };
+    const early = agentFactsOf({ scope, sessionId: SESSION, agent, now: Date.parse(AT) + 6e5 });
+    const late = agentFactsOf({ scope, sessionId: SESSION, agent, now: Date.parse(AT) + 9e6 });
+    expect(early.spendText).toBe('$3.50');
+    expect(late.timeText).toBe(early.timeText);
+  });
+});
+
+describe('a run that waits for Continue', () => {
+  it('reads as waiting so Continue runs', async () => {
+    seed({ run: { executionMode: 'dynamic' } });
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [SESSION]: [
+          anAgent({ id: AGENT, sessionId: SESSION, workflowRunId: RUN, status: 'completed' }),
+        ],
+      },
+    });
+    const state = runStateOf({
+      store: useAppStore.getState(),
+      sessionId: SESSION,
+      run: runOf()!,
+    });
+    expect(state).toBe('waiting');
+    const continueRun = vi.fn(async () => undefined);
+    useAppStore.setState({ continueWorkflowRun: continueRun });
+    const outcome = await act({
+      kind: 'continueRun',
+      fields: { runId: RUN, seenState: 'waiting' },
+    });
+    expect(outcome.result).toBe('done');
+    expect(continueRun).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the ask preloader', () => {
+  it('reads a blocked agent without marking it viewed', () => {
+    seed();
+    const load = vi.fn(async () => undefined);
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [SESSION]: [anAgent({ id: AGENT, sessionId: SESSION, status: 'blocked' })],
+      },
+      agentTurnState: {
+        [AGENT]: { kind: 'blocked', runId: PROVIDER_RUN, blockedAt: AT },
+      },
+      loadAgentTranscript: load,
+    });
+    preloadAskTranscripts({ state: useAppStore.getState() });
+    expect(load).toHaveBeenCalledWith(SESSION, AGENT, {
+      isSelecting: false,
+      isMarkingViewed: false,
+    });
   });
 });

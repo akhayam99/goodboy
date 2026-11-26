@@ -101,6 +101,7 @@ struct Inner {
     port: Option<u16>,
     task: Option<JoinHandle<()>>,
     shutdown: Option<watch::Sender<bool>>,
+    bound: Vec<std::net::IpAddr>,
 }
 
 impl BridgeState {
@@ -116,13 +117,25 @@ impl BridgeState {
         })
     }
 
-    async fn ensure_running(&self, app: AppHandle) -> Result<u16, BridgeError> {
+    async fn ensure_running(
+        &self,
+        app: AppHandle,
+    ) -> Result<(u16, Vec<std::net::IpAddr>), BridgeError> {
         let mut inner = self.inner.lock().await;
-        if let Some(port) = inner.port {
-            return Ok(port);
-        }
         let selected = self.identity.lock().await.interfaces.clone();
         let offered = offered_addresses(&raw_addresses(), selected.as_deref());
+        if let Some(port) = inner.port {
+            if same_addresses(&inner.bound, &offered) {
+                return Ok((port, inner.bound.clone()));
+            }
+            if let Some(shutdown) = inner.shutdown.take() {
+                let _ = shutdown.send(true);
+            }
+            if let Some(task) = inner.task.take() {
+                task.abort();
+            }
+            inner.port = None;
+        }
         let (listeners, port) = bind_offered(&offered).await?;
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
         let ctx = Arc::new(ServerCtx {
@@ -141,7 +154,8 @@ impl BridgeState {
         inner.port = Some(port);
         inner.task = Some(task);
         inner.shutdown = Some(shutdown_tx);
-        Ok(port)
+        inner.bound = offered.iter().map(|a| a.ip).collect();
+        Ok((port, inner.bound.clone()))
     }
 
     async fn stop(&self) {
@@ -200,9 +214,8 @@ pub async fn bridge_start(
     app: AppHandle,
     state: State<'_, BridgeState>,
 ) -> Result<QrInfo, BridgeError> {
-    let port = state.ensure_running(app).await?;
-    let selected = state.identity.lock().await.interfaces.clone();
-    let endpoints = endpoints_for(&raw_addresses(), selected.as_deref(), port);
+    let (port, bound) = state.ensure_running(app).await?;
+    let endpoints = bound_endpoints(&bound, port);
     if endpoints.is_empty() {
         state.stop().await;
         return Err(BridgeError::NoPrivateNetwork);
@@ -350,6 +363,25 @@ fn render_qr_svg(data: &str) -> Result<String, BridgeError> {
         .min_dimensions(240, 240)
         .quiet_zone(true)
         .build())
+}
+
+fn same_addresses(bound: &[std::net::IpAddr], offered: &[RawAddress]) -> bool {
+    let mut left: Vec<_> = bound.to_vec();
+    let mut right: Vec<_> = offered.iter().map(|a| a.ip).collect();
+    left.sort();
+    right.sort();
+    left == right
+}
+
+fn bound_endpoints(bound: &[std::net::IpAddr], port: u16) -> Vec<Endpoint> {
+    bound
+        .iter()
+        .filter(|ip| network::is_private(**ip))
+        .map(|ip| Endpoint {
+            host: ip.to_string(),
+            port,
+        })
+        .collect()
 }
 
 pub(crate) fn endpoints_for(
