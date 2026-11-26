@@ -10,8 +10,7 @@ pub fn interface_addresses() -> Vec<(String, IpAddr)> {
     }
     let mut out = Vec::new();
     let mut cursor = head;
-    while !cursor.is_null() {
-        let entry = unsafe { &*cursor };
+    while let Some(entry) = unsafe { cursor.as_ref() } {
         cursor = entry.ifa_next;
         let is_up = entry.ifa_flags & (libc::IFF_UP as u32) != 0
             && entry.ifa_flags & (libc::IFF_RUNNING as u32) != 0;
