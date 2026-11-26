@@ -175,8 +175,6 @@ export const WORKSPACE_TOOL_KINDS: ReadonlyArray<WorkspaceToolKind> = [
 
 type SessionlessToolKind = 'terminal' | 'browser' | 'monitoring';
 
-export type WorkspaceToolContent = Extract<DrawerContent, { readonly kind: WorkspaceToolKind }>;
-
 export type DrawerRequest =
   | (DrawerContent & { readonly sessionId: SessionId })
   | (Extract<DrawerContent, { readonly kind: SessionlessToolKind }> & {
