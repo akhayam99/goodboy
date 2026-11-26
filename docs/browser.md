@@ -246,23 +246,53 @@ they sit in the profile's store. If a view will not close, it is put back as it
 was, the open fails with `profile-busy`, and the views that did close stay
 closed.
 
-**Not registered.** `browser_profile_isolation` and `browser_profile_clear` live
-in `browser/commands.rs` but stay out of `generate_handler!` in `lib.rs` and out
-of `window-commands.json`: no page calls them, and a destructive command with no
-caller stays out of the webview's reach. Register them together with the pane's
-shared profile warning and its Clear button.
+**Not registered.** `browser_profile_isolation` lives in `browser/commands.rs`
+but stays out of `generate_handler!` in `lib.rs` and out of
+`window-commands.json`: no page calls it. Register it together with the pane's
+shared profile warning.
 
-**Clearing a profile.** `browser_profile_clear` takes a `workspaceId`, refuses
-with `profile-live` while any of the workspace's tabs is live or asleep (switch
-to another workspace or close them first), and refuses with `profile-busy` when
-the same profile is already being cleared. While it runs, opening or showing a
-tab of that workspace is refused with `profile-busy`, so a view never opens on a
-store being wiped. On macOS it removes the WebKit store; on Windows and Linux it
-deletes the folder. A webview that is still shutting down can hold the store, so
-the clear tries up to three times, 400 ms apart, and only then fails with the
-platform's error; the user can try again. It answers `{ shouldRestart }`: Linux keeps its WebKit
-context for the life of the app, so cookies already in memory outlive the
-deleted folder and the answer is `true`; elsewhere it is `false`.
+**Clearing a profile.** `browser_profile_clear` is the **Clear browser data**
+row of the workspace Danger zone (`WorkspaceBrowserDataRow`, through
+`useClearBrowserData`). It takes a `workspaceId` and refuses with `profile-busy`
+when the same profile is already being cleared. While it runs, opening or
+showing a closed tab of that workspace is refused with `profile-busy`, so a view
+never opens on a store being wiped. The lease (`profile::begin_clear`) names the
+live and asleep tabs of the workspace:
+
+- **With open tabs** the store is emptied in place through the first of them
+  (`site_data::clear_store`: every data record on macOS, `clear_all_browsing_data`
+  elsewhere), then each open tab reloads from origin. The answer is
+  `shouldRestart: false`.
+- **With none** the whole store goes: on macOS the WebKit store is removed, on
+  Windows and Linux the folder is deleted. A webview that is still shutting down
+  can hold the store, so this tries up to three times, 400 ms apart, and only
+  then fails with the platform's error; the user can try again. Linux keeps its
+  WebKit context for the life of the app, so cookies already in memory outlive
+  the deleted folder and the answer is `shouldRestart: true`; elsewhere it is
+  `false`.
+
+The row drops an answer that comes back after it moved to another workspace.
+
+**Clearing one site.** `browser_site_data_clear` takes `{ tabId, host }`, the
+host the menu row showed when the user confirmed. It refuses `not-web-address`
+for a page that is not http or https, and `site-moved` when the live page is on
+another host by then. On macOS it fetches every data record of the tab's store
+and removes those whose display name is the site (`site_data::is_site_record`):
+`localhost`, `*.localhost` and an IP match only themselves, any other host
+matches its registrable domain (WebKit names a record by it). Ports share one
+record, so clearing `localhost:5005` clears every localhost port. Then the tab
+reloads from origin. It answers `{ host, scope }`; off macOS it clears the whole
+store of the workspace through `clear_all_browsing_data` and answers
+`scope: workspace`, which is why the row there is called **Clear browser data**.
+A record removal that does not answer within 10 s fails with
+`site-data-unavailable`, and the page is not reloaded.
+
+**Reload without cache.** `browser_tab_reload_from_origin` calls
+`reloadFromOrigin` on the WKWebView (`platform/web_site_data.rs`). Windows and
+Linux have no such call in wry, so it is a plain reload there. ⇧-click on
+Reload, the Develop row and ⌘⇧R reach it: `app.reload` goes through
+`reloadAppOrPage`, which picks the reload surface like ⌘R does and calls its
+`reloadFromOrigin`, else reloads Goodboy.
 
 Windows and Linux are written against the Tauri and wry sources and have not
 been run: the first run on each of them is the check.
@@ -441,10 +471,12 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   after any row the narrow row folded in, Send to agent (see Doors), Open in
   your browser, Open full page (see Moves, absent when the dock has no page to
   open), Copy address, Duplicate (`model.duplicate` opens the shown address in a
-  new tab of the session), Develop and Close tab (off for a pin). Develop is a
-  submenu with the width presets (absent when no tab is shown, see Width
-  presets) and, on macOS only, Inspect in Safari (see Inspect in Safari); its
-  hint names the current preset.
+  new tab of the session), Clear site data (`siteDataRowOf`, an inline confirm,
+  off without a live web page; see Clearing one site), Develop and Close tab
+  (off for a pin). Develop is a submenu with Reload without cache (off with no
+  tab), the width presets (absent when no tab is shown, see Width presets) and,
+  on macOS only, Inspect in Safari (see Inspect in Safari); its hint names the
+  current preset.
 - **Width presets** show the shown tab as Desktop, Tablet 768 or Phone 390.
   The table lives in `features/browser/devicePresets.ts` (one source for the
   menu, the frame and the note). The preset is kept per tab id in
@@ -1262,8 +1294,8 @@ A `browser_*` command fails with a reason code from `browser/reason.rs`
 (`browser-caller`, `not-web-address`, `invalid-address`, `local-missing`,
 `local-folder`, `local-type`, `tab-gone`,
 `tab-closed`, `window-gone`, `other-window`, `too-many-popups`,
-`session-closing`, `invalid-workspace`, `profile-busy`, `profile-live`,
-`profile-shared`, `profile-unavailable`, `history-unavailable`, `invalid-preset`, `console-unavailable`, `tab-row-gone`, `tab-row-owner`,
+`session-closing`, `invalid-workspace`, `profile-busy`, `site-moved`,
+`site-data-unavailable`, `profile-shared`, `profile-unavailable`, `history-unavailable`, `invalid-preset`, `console-unavailable`, `tab-row-gone`, `tab-row-owner`,
 `tab-rows-changed`, `tab-rows-failed`), never a sentence. The pane owns the
 words (`features/browser/browserFailureText.ts`).
 
@@ -1396,7 +1428,9 @@ words (`features/browser/browserFailureText.ts`).
   call, navigation and history by live id, a refused navigation, close before
   the row delete, pin, the pill (title and host, the host alone, the selected
   address on click, Esc and blur back, the field kept on a refusal), the More
-  rows with Copy, Duplicate and Close tab, Inspect in Safari on macOS only with
+  rows with Copy, Duplicate, Clear site data and Close tab (`siteData.test.tsx`
+  covers the confirm, the line after it, a failed clear and the rows off with no
+  tab; `scopedReload.test.tsx` covers ⌘⇧R and ⇧-click), Inspect in Safari on macOS only with
   its line and its refusal, an overlay over the view and one elsewhere, a late open
   closed, a failed hide tried again, a late wake never shown, a failed wake
   woken again by Reload, a revisited address saved, a failed save tried again

@@ -381,7 +381,8 @@ matches "x".` and points to ⌘K for actions. `settingRows.test.tsx` renders
   plain code folder open. The workspace is renamed from the `Name` row of the
   `Workspace` band that opens the Projects page, and its name is written once
   on that page, in the top bar. The page ends in a `Danger zone` band whose
-  row says `Disconnect this workspace`, confirmed in place.
+  rows say `Clear browser data` and `Disconnect this workspace`, each
+  confirmed in place.
   Replies and commits is one column: `How replies read` (the voice, the
   preview right under it, `Sign replies`, then `Reply wording`, a closed
   disclosure with the two templates and an `Insert` popover per template

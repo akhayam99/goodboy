@@ -753,7 +753,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Menu bar and reload',
-        desc: `The macOS menu bar carries every key. ${shortcutGlyphs('view.reload')} reloads where you are: the Browser tab when it has the keyboard, else the session. ${shortcutGlyphs('app.reload')} reloads Goodboy.`,
+        desc: `The macOS menu bar carries every key. ${shortcutGlyphs('view.reload')} reloads where you are: the Browser tab when it has the keyboard, else the session. ${shortcutGlyphs('app.reload')} reloads Goodboy, or the Browser tab without cache when the Browser has the keyboard.`,
       },
       {
         term: 'Rail and panes',
