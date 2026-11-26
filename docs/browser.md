@@ -959,7 +959,7 @@ workspace profile stays signed out.
 
 ## Console
 
-The console is a region under the page, in the pane and on the Browser page.
+The console is a dock beside the page, in the pane and on the Browser page.
 The Console button in the address row, after the pin and before More, opens it
 with its own `CodeXml` icon, never the Terminal one (its log rows mark a plain
 log with `MessageSquareText`), and
@@ -972,7 +972,7 @@ that shadows it, so the chord follows Chrome's J.
 
 - **The page runtime**: every tab runs one script at document start, joined
   at build time from the modules in `browser/page_runtime/` (console, errors,
-  network, an empty pick slot and the reader) inside one closure, with the
+  network, the picker and the reader) inside one closure, with the
   passkey probe appended on macOS (`console::tab_script`). `builder_for` adds
   it once, for every frame, and it returns at once in any frame that is not
   the top one. It keeps three rings in its closure, every entry with one
@@ -980,8 +980,10 @@ that shadows it, so the chord follows Chrome's J.
   (500), requests (300) and errors (100), so a page busy with requests cannot
   push its one error out. `console.log`, `info`, `debug` and `warn` are
   console lines; `console.error`, a thrown error (`error` in the capture
-  phase) and an `unhandledrejection` are errors, each with its origin and up
-  to 4,000 characters of stack. It wraps `fetch`, `XMLHttpRequest`,
+  phase) and an `unhandledrejection` are errors, each with its origin, up
+  to 4,000 characters of stack and the wall time it happened (`at`, read
+  through the `Date.now` the runtime kept at document start; Rust keeps a
+  finite, positive time and drops any other). It wraps `fetch`, `XMLHttpRequest`,
   `WebSocket` and `EventSource`, and a `PerformanceObserver` on `resource` and
   `navigation` notes the document, images, scripts and styles (no status:
   Safari gives none). A request has an id, a type (fetch, xhr, doc, script,
@@ -1028,18 +1030,41 @@ that shadows it, so the chord follows Chrome's J.
   most 500 console lines, 300 requests and 100 errors. A runtime that does not answer reads as
   `isHeard: false`; a read that fails or times out after a second is
   `console-unavailable`.
-- **The region**: one toolbar row: Console and Network tabs, each with its
-  count from `consoleCounts`, a level filter menu (All levels, Errors,
-  Warnings, Info and logs; on Network All requests, Failed, Succeeded), a
-  search field (`consoleRowsOf`, every word must match the text, source,
-  method or status), Clear and a Send to session menu (the session chosen in
-  the menu, at most five live sessions of the project, this one first;
-  `consoleSendTargetsOf`, `queueConsoleHandoff`). A row is a level icon, the
-  message and its source at the right; a click expands the whole message. The
-  Console tab shows console lines and errors; an error linked to a request
-  shows only as that request's Network row (`consoleTabOf`). The UI
-  pulls every second while the region is open and on screen
-  (`useConsoleEntries`, `usePoll`), and once on each `finished` load. Rows
+- **The dock**: it sits below the page or right of it
+  (`BrowserToolsDock`). The icon in its head moves it to the other side, and
+  its edge (`SplitHandle`) drags its height from 110 pixels to the height
+  less 140, or its width from 260 to the width less 280
+  (`toolsDockBoundsOf`). Side, height and width are kept per surface, the
+  pane and the page (`browserToolsDockPref`,
+  `goodboy:browser-tools-dock:v1`); the first open is below in the pane and
+  right on the page. The head holds the Console and Network tabs, each with
+  its count from `consoleCounts`, an Errors tab only while there is an error
+  (see Errors), the side icon and Close tools. The pane or the page holds
+  the shown tab, so the error count can open the dock on Errors; when the
+  last error goes, the dock shows Console. The tools
+  are a level filter menu (All levels, Errors, Warnings, Info and logs; on
+  Network All requests, Failed, Succeeded), a search field
+  (`consoleRowsOf`, every word must match the text, source, method or
+  status), Clear and a Send to session menu (the session chosen in the menu,
+  at most five live sessions of the project, this one first;
+  `consoleSendTargetsOf`, `queueConsoleHandoff`). Docked below a dock at
+  least 640 pixels wide they sit at the right of the head, otherwise in a row
+  under it, which wraps when narrow. A row is a level icon, the message and its source at the right; a
+  click expands the whole message. The Console tab shows console lines and
+  errors; an error linked to a request shows only as that request's Network
+  row (`consoleTabOf`). A click on a Network row opens its detail
+  (`BrowserRequestDetail`): a back arrow, the method and path, the status,
+  time and size (`requestFactsOf`), and up and down arrows for the previous
+  and next request of the filtered list. Esc goes back to the list and the
+  arrow keys step. Docked below, the detail sits beside the list; docked
+  right, it replaces the list and its tools. The detail follows the request
+  id within one tab and load (`useRequestSelection`), so a newer record of the
+  same request keeps it open, and a request that leaves the list (Clear, a
+  filter, a new load, another tab) forgets it. Back and Esc focus its row
+  again, or the list when the row is gone. The UI
+  pulls every second while the pane or the page is on screen, the dock open
+  or not, so the error count can show (`useConsoleEntries`, `usePoll`), and
+  once on each `finished` load. Rows
   append only after the read returns; a newer record of a request replaces
   its row where it stands, and each kind keeps its own cap; a new load id
   replaces them. An answer
@@ -1058,10 +1083,110 @@ that shadows it, so the chord follows Chrome's J.
   header or body goes in the file. `redactSecrets` hides keys and tokens, and the file goes through the
   same queue as Add to message (`queueOutputHandoff`): a chip, a remove,
   nothing sent until you send.
+- **Errors**: the address row shows a red count (`BrowserErrorCount`, the
+  `errors` of `consoleCounts`, capped at 9+ like every count) only while the
+  shown load has an error entry: a thrown error, a rejection, a
+  `console.error` or a failed request. A warning is a console line and never
+  counts. The count opens the dock on the Errors tab, and the dock goes back
+  to Console once the shown load has no error left. `errorGroupsOf` makes
+  one group per origin, message and top frame (or the source when the
+  stack has none), in the order they first came, with the count and the
+  earliest and latest `at`; a request error links the newest record of its
+  request id. It reads stack lines in both the Chrome (`at name (url:line:col)`)
+  and the WebKit (`name@url:line:col`) forms with string scans, no regex
+  that backtracks. A group opens inline to its frames, the response body of
+  a failed request and a line with its times and origin (`errorMetaOf`); the
+  first group is open when the tab opens. A frame is the session's own code
+  when `sourceFileOf` maps it: a loopback URL whose port is listening for a
+  process this session owns (the port rows of the monitor, polled while the
+  tab shows), a path without `..`, `.`, `node_modules`, `.vite` or a leading
+  `@`, joined to where the dev server runs inside the worktree. Those frames
+  show the worktree path in the primary color; the others show the file and
+  line, faint. `elementFileOf` uses the same mapping. Send on a group and
+  Send all to the agent (the agent named on the button, read when you click,
+  `useHandOutputToAgent`) queue `errorsAttachmentOf`: `<tab>-errors.md`,
+  `text/markdown`, the address, the page output note, then per group its
+  message, count, times, up to eight frames with the worktree file when
+  known, and the failed request's method, path, status, size, time and up to
+  4,000 characters of its response body. No header and no request body go
+  in. The groups that fit 30,000 characters are kept, with a note when some
+  are cut; `redactSecrets` and the local file grant scrub
+  (`withoutGrantOf`) run over it. Clear on Errors drops the error entries of
+  the shown load (so a `console.error` line leaves the Console tab too) and
+  has no undo.
 - **Trust**: a page can write any line to its own console, answer the event
   itself or replace a console method after the hook; the console then shows
   what the page says, or stops. That is no more than the page can do with
   `console.log`, and the wall above does not move.
+
+## Pick an element
+
+The Select an element button sits in the pane's address row before Console,
+with the `SquareDashedMousePointer` glyph, and `browser.pick` (⌘⇧C, Chrome's
+inspect key) toggles it while a tab is shown and the session has a live agent.
+It is a page key, so it works with the focus inside the page. The full Browser
+page has no pick yet.
+
+- **In the page**: `page_runtime/pick.js` waits for a second event under the
+  read name plus `:pick` (`console::pick_event_name`) with `start`, `stop` or
+  `read`. On `start` it adds one host element with every style inline and
+  `!important`, a closed shadow root and a layer over the whole view, so page
+  CSS cannot hide or restyle it and no pointer event reaches the page (its
+  capture listeners run before the page's and stop the event). It draws the
+  hint, an outline and a label under the pointer (the React component when
+  the element's fiber has a `_debugOwner`, else tag and class, and the size),
+  and a filled outline on each picked element. A click picks one element,
+  ⇧-click adds or removes one, up to four (`MAX_PICKS`); Esc in the page stops
+  and marks the pick as left. For each pick it notes the tag, a label, a
+  selector (an id or `data-testid` anchor, else up to five steps with
+  `nth-of-type`), the visible text (1,000 characters), the outer HTML (4,000),
+  fifteen computed styles, the rect in view points and the address. On a
+  loopback page it also reads the fiber's `_debugStack`, takes the first
+  same-origin frame outside `node_modules`, `.vite` and `/@`, fetches that
+  module with the page's original `fetch` and maps the line through its inline
+  or same-origin source map; the answer then carries the original source line
+  and the path the map's `sources` and `sourceRoot` give for it. A source on
+  another origin, under `node_modules` or climbing above the served root gives
+  no file. React before 19 or a production build gives no component and no
+  line, and the rest works the same.
+- **The read**: `browser_pick` takes the tab id, the session id, the op and
+  the round the app has seen. It refuses like the console read
+  (`session_tab`), runs the script with `eval_with_callback` and parses the
+  answer as page data (`pick::pick_answer_of`: 200 kB, a load id, four picks,
+  each field capped, a rect only when finite and at least one point wide and
+  high, a source only with an absolute path and a line). When a later round
+  brings picks it gives the focus back to the app window, so the note takes
+  the keys. `useElementPick` sends `start` on the gesture and turns on only
+  after the page answers, then reads every 150 ms; an answer for an older
+  gesture is dropped, and a new load, an unheard runtime, `isOn: false`, a
+  failed read or another shown tab ends the pick. A failed read, another tab, a
+  hidden pane and an unmount send `stop`, also for a start the page has not
+  answered yet.
+- **The note**: `BrowserPickNote` sits under the address row, not over the
+  page, because anything over the native view covers the page. The note is
+  typed in the app, so a page never writes into the draft. Its head is the
+  component and `path:line`, or the count of elements; the target is the agent
+  `useHandOutputToAgent` names, a menu of the session's agents when it has
+  more than one. Enter adds, ⇧Enter is a new line, Esc leaves and stops the
+  page.
+- **Add**: `addPickedElements` captures the tab, the load id, the agent, the
+  picks and the note at the gesture. It sends `stop` (the overlay goes, the
+  answer has fresh rects) and asks `browser_element_snapshot` for each rect,
+  which refuses a load id that changed or a tab that navigated during the
+  picture, and on macOS crops the view with a
+  `WKSnapshotConfiguration` after screen updates, at the view's scale; an
+  empty image or one over 5 MB is none, and other systems give none. A crop
+  that comes back after the shown tab changed is dropped.
+  `elementAttachmentOf` makes one markdown file per element (address, the page
+  content note, heading, file line, selector, size, text, styles, HTML cut at
+  4,000 characters with a note, through `redactSecrets`) with a source of kind
+  `element` for the chip, and a PNG when there is a crop (`dataBase64`).
+  `elementFileOf` maps the served path into the session worktree only when the
+  page's loopback port is listening for a process this session owns: the
+  worktree, the process folder inside it, then the path; a path that climbs
+  gives none. The files go through `queueOutputHandoff` and the note is
+  appended to the agent's draft. Nothing is sent. The app stops reading the
+  page while it adds; a failed add keeps the picks and the note for a retry.
 
 ## Known limits
 
@@ -1114,9 +1239,10 @@ words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  twenty-five `browser_*` commands (`browser_page_keys` sets the page keys);
+  twenty-eight `browser_*` commands (`browser_page_keys` sets the page keys);
   `console.rs` holds the tab script, the reader and the answer parse, and
-  `page_runtime/` the runtime modules it joins;
+  `page_runtime/` the runtime modules it joins; `pick.rs` drives the picker
+  and parses its answer, and `snapshot.rs` crops a picked element;
   `local.rs` holds the `gblocal` scheme, the path rule and the grant check; `page_keys.rs`
   holds the chord parse, the key codes, the `PageKeys` state and
   `route_page_key`; `load.rs` maps the page load callback to

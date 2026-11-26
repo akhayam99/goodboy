@@ -22,6 +22,7 @@ export const ASK_SCENE_STATES = [
   'answer',
   'followup',
   'plan',
+  'rich',
 ] as const;
 
 export type AskSceneState = (typeof ASK_SCENE_STATES)[number];
@@ -30,6 +31,25 @@ const THREAD_ID = 'mock-ask-thread-webhooks' as ChatId;
 const FIRST_QUESTION = 'What needs me?';
 const FOLLOW_UP = 'Which comments are ready?';
 const MINUTE = 60_000;
+const RICH_ANSWER = [
+  '**Two checks block the merge: `notify-relay` is still running and `payments-api` failed.**',
+  '- `payments-api` fails on `src/webhook.ts:88`, the retry guard posts a second credit.',
+  '- `notify-relay` waits on the queue and should finish in about 4 minutes.',
+  '- `ledger-core` is green.',
+  'The failing guard reads the attempt count like this:',
+  '```ts',
+  'const isRetry = delivery.attempts > 1;',
+  'if (isRetry && ledger.has(delivery.id)) {',
+  '  return;',
+  '}',
+  '```',
+  '| Project | Check | State |',
+  '| --- | --- | --- |',
+  '| payments-api | unit | failed |',
+  '| notify-relay | integration | running |',
+  '| ledger-core | unit | passed |',
+  'Run `pnpm test retry` in `payments-api` to see it fail.',
+].join('\n');
 
 const isoAgo = ({ minutes }: { readonly minutes: number }): IsoDateTime =>
   new Date(Date.now() - minutes * MINUTE).toISOString() as IsoDateTime;
@@ -141,7 +161,8 @@ export const seedSessionAsk = ({ state, session = SESSION }: SeedParams): void =
   const pack = buildAskPack(
     collectAskPackInput({ state: store, sessionId: session.id, rightNow: [] }),
   );
-  const first = mockAskAnswer({ question: FIRST_QUESTION, pack: pack.text });
+  const first =
+    state === 'rich' ? RICH_ANSWER : mockAskAnswer({ question: FIRST_QUESTION, pack: pack.text });
   const second = mockAskAnswer({ question: FOLLOW_UP, pack: pack.text });
   const isStreaming = state === 'streaming';
   const messages = [

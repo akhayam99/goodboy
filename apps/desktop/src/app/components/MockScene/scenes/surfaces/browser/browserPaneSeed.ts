@@ -1,11 +1,22 @@
 import { brandId, type ProjectId, type SessionId } from '@goodboy/types';
+import {
+  browserToolsDockPref,
+  type BrowserToolsSide,
+} from '../../../../../../features/browser/browserToolsDockPref';
 import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
-import type { BrowserConsoleRead, BrowserTabFacts } from '../../../../../../features/browser/types';
+import type {
+  BrowserConsoleEntry,
+  BrowserConsoleRead,
+  BrowserPickRead,
+  BrowserRequestFacts,
+  BrowserTabFacts,
+} from '../../../../../../features/browser/types';
 import { useAppStore } from '../../../../../../store';
 import type { BrowserTab, DevicePresetId } from '../../../../../../store/slices/browser/types';
 import type { BrowserVisit } from '../../../../../../store/slices/browser-visits/types';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
+import { sceneClock } from '../../../sceneClock';
 
 export type BrowserPaneSceneState =
   | 'pane'
@@ -25,7 +36,74 @@ export type BrowserPaneSceneState =
   | 'saved-copy'
   | 'width-phone'
   | 'width-tablet'
-  | 'console';
+  | 'console'
+  | 'console-right'
+  | 'network-detail'
+  | 'pick'
+  | 'errors';
+
+const PICK_READ: BrowserPickRead = {
+  doc: 'mockload',
+  isHeard: true,
+  isOn: true,
+  isLeft: false,
+  round: 2,
+  scale: 2,
+  picks: [
+    {
+      tag: 'button',
+      label: 'button.pay',
+      selector: '#root > main > button.pay',
+      text: 'Pay $85.00',
+      html: '<button class="pay">Pay $85.00</button>',
+      isHtmlCut: false,
+      styles: [{ name: 'display', value: 'inline-flex' }],
+      component: 'PayButton',
+      source: { path: '/src/checkout/PayButton.tsx', line: 42 },
+      isSourceSettled: true,
+      rect: { x: 312, y: 388, width: 101, height: 34 },
+      url: 'http://localhost:5173/checkout',
+    },
+  ],
+};
+
+const IDLE_PICK: BrowserPickRead = {
+  ...PICK_READ,
+  doc: null,
+  isHeard: false,
+  isOn: false,
+  picks: [],
+};
+
+const CONSOLE_STATES: ReadonlyArray<BrowserPaneSceneState> = [
+  'console',
+  'console-right',
+  'network-detail',
+  'errors',
+];
+
+const DOCK_SIDE_OF: Readonly<Partial<Record<BrowserPaneSceneState, BrowserToolsSide>>> = {
+  'console-right': 'right',
+};
+
+type RequestParams = {
+  readonly id: string;
+  readonly duration: number;
+  readonly size: number;
+};
+
+const requestFactsOf = ({ id, duration, size }: RequestParams): BrowserRequestFacts => ({
+  id,
+  type: 'fetch',
+  start: 0,
+  duration,
+  size,
+  requestHeaders: [],
+  responseHeaders: [],
+  requestBody: null,
+  responseBody: null,
+  socket: null,
+});
 
 const CONSOLE_READ: BrowserConsoleRead = {
   doc: 'mockload',
@@ -84,7 +162,7 @@ const CONSOLE_READ: BrowserConsoleRead = {
       source: null,
       method: 'POST',
       status: 500,
-      network: null,
+      network: requestFactsOf({ id: 'mock-request-confirm', duration: 380, size: 38 }),
       error: null,
     },
     {
@@ -95,7 +173,7 @@ const CONSOLE_READ: BrowserConsoleRead = {
       source: null,
       method: 'GET',
       status: 200,
-      network: null,
+      network: requestFactsOf({ id: 'mock-request-cart', duration: 42, size: 2048 }),
       error: null,
     },
     {
@@ -108,6 +186,93 @@ const CONSOLE_READ: BrowserConsoleRead = {
       status: null,
       network: null,
       error: null,
+    },
+  ],
+};
+
+const RETRY_STACK = [
+  'TypeError: retry is not a function',
+  '    at chargeCard (http://localhost:5173/src/checkout/retry.ts?t=1764075731000:214:9)',
+  '    at onPay (http://localhost:5173/src/checkout/PayButton.tsx:51:5)',
+  '    at dispatchEvent (http://localhost:5173/node_modules/.vite/deps/react-dom.js?v=4f2a:4213:14)',
+].join('\n');
+
+const TIMEOUT_STACK = [
+  'Error: Timeout after 8000 ms',
+  '    at waitForCharge (http://localhost:5173/src/lib/poll.ts:31:11)',
+  '    at onPay (http://localhost:5173/src/checkout/PayButton.tsx:55:7)',
+].join('\n');
+
+const PAY_AT = sceneClock({ anchor: '2026-11-25T13:03:00.000Z' }).ms({
+  at: '2026-11-25T13:02:11.000Z',
+});
+
+type RetryParams = {
+  readonly seq: number;
+  readonly at: number;
+};
+
+const retryEntryOf = ({ seq, at }: RetryParams): BrowserConsoleEntry => ({
+  seq,
+  kind: 'error',
+  level: 'error',
+  text: 'TypeError: retry is not a function',
+  source: 'retry.ts:214',
+  method: null,
+  status: null,
+  network: null,
+  error: { origin: 'uncaught', stack: RETRY_STACK, requestId: null, at },
+});
+
+const ERRORS_READ: BrowserConsoleRead = {
+  doc: 'mockload',
+  watermark: 0,
+  isHeard: true,
+  entries: [
+    retryEntryOf({ seq: 1, at: PAY_AT }),
+    retryEntryOf({ seq: 2, at: PAY_AT + 2_000 }),
+    retryEntryOf({ seq: 3, at: PAY_AT + 5_000 }),
+    {
+      seq: 4,
+      kind: 'network',
+      level: 'error',
+      text: '/api/charge',
+      source: null,
+      method: 'POST',
+      status: 500,
+      network: {
+        ...requestFactsOf({ id: 'mock-request-charge', duration: 380, size: 38 }),
+        responseBody: '{"error":"idempotency key reused"}',
+      },
+      error: null,
+    },
+    {
+      seq: 5,
+      kind: 'error',
+      level: 'error',
+      text: 'POST /api/charge 500',
+      source: null,
+      method: null,
+      status: null,
+      network: null,
+      error: {
+        origin: 'request',
+        stack: null,
+        requestId: 'mock-request-charge',
+        at: PAY_AT + 8_000,
+      },
+    },
+    retryEntryOf({ seq: 6, at: PAY_AT + 8_000 }),
+    {
+      seq: 7,
+      kind: 'error',
+      level: 'error',
+      text: 'Unhandled rejection: Timeout after 8000 ms',
+      source: 'poll.ts:31',
+      method: null,
+      status: null,
+      network: null,
+      error: { origin: 'rejection', stack: TIMEOUT_STACK, requestId: null, at: PAY_AT + 16_000 },
     },
   ],
 };
@@ -175,13 +340,14 @@ type ConsoleReadParams = PayloadParams & {
 };
 
 const consoleReadOf = ({ state, payload }: ConsoleReadParams): BrowserConsoleRead => {
-  if (state !== 'console') {
+  if (!CONSOLE_STATES.includes(state)) {
     return UNHEARD_READ;
   }
-  if (fieldOf({ payload, field: 'doc' }) === CONSOLE_READ.doc) {
-    return { ...CONSOLE_READ, entries: [] };
+  const read = state === 'errors' ? ERRORS_READ : CONSOLE_READ;
+  if (fieldOf({ payload, field: 'doc' }) === read.doc) {
+    return { ...read, entries: [] };
   }
-  return CONSOLE_READ;
+  return read;
 };
 
 const isProjectOwner = ({ payload }: PayloadParams): boolean => {
@@ -328,6 +494,10 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
     .map(factsOf)
     .map((facts, index) => ({ ...facts, isPasskeyBlocked: isPasskey && index === 0 }));
   let opened = 0;
+  browserToolsDockPref.write({
+    surface: 'pane',
+    place: { side: DOCK_SIDE_OF[state] ?? 'bottom', height: 210, width: 360 },
+  });
   if (state === 'peek') {
     seedPeek({ tabs });
     return;
@@ -353,6 +523,13 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
         return { isFound: textOf({ payload, field: 'needle' }) === 'retry' };
       case 'browser_console_read':
         return consoleReadOf({ state, payload });
+      case 'browser_pick':
+        return state === 'pick' ? PICK_READ : IDLE_PICK;
+      case 'monitor_snapshot':
+        return { listeners: [], processes: [], takenAt: 1, isPlatformSupported: true };
+      case 'process_ledger_list':
+      case 'monitor_watched_ports':
+        return [];
       case 'browser_visits_list':
         return VISITS;
       case 'browser_tab_open':

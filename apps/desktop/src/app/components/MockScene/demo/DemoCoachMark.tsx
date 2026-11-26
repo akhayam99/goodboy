@@ -1,11 +1,18 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { X } from '@goodboy/ui/icons';
-import { FLOATING_SURFACE, IconButton, canAnimate, cn } from '@goodboy/ui';
+import { Button, FLOATING_SURFACE, IconButton, canAnimate, cn } from '@goodboy/ui';
 import type { DemoRect } from './director/demoProtocol';
 import type { HintAlign, HintSide } from './hints/demoHintTypes';
 import { holeOf } from './hints/holeOf';
 import { placeCallout } from './hints/placeCallout';
 import { DemoSpotlight } from './DemoSpotlight';
+
+export type CoachOffer = {
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly note: string;
+  readonly label: string;
+};
 
 export type CoachMark = {
   readonly hintId: string;
@@ -20,6 +27,7 @@ export type CoachMark = {
   readonly isDimmed: boolean;
   readonly pulse: number;
   readonly isWarning: boolean;
+  readonly offer?: CoachOffer;
 };
 
 type Size = {
@@ -33,6 +41,7 @@ type Props = {
   readonly bounds: Size;
   readonly isSpotlit: boolean;
   readonly onHide: () => void;
+  readonly onOffer: () => void;
 };
 
 const RING_OUTSET = 4;
@@ -107,7 +116,7 @@ type KeptSide = {
   readonly side: HintSide;
 };
 
-export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props) => {
+export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide, onOffer }: Props) => {
   const ringRef = useRef<HTMLDivElement>(null);
   const calloutRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
@@ -143,7 +152,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
 
   useLayoutEffect(() => {
     setHeight(calloutRef.current?.offsetHeight ?? null);
-  }, [coach.hintId, coach.copy, isWarning]);
+  }, [coach.hintId, coach.copy, coach.offer, isWarning]);
 
   const kept = keptRef.current;
 
@@ -260,9 +269,22 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
           />
         )}
         <div className="flex items-start justify-between gap-2">
-          <p className="text-row text-foreground">{coach.copy}</p>
+          {coach.offer === undefined ? (
+            <p className="text-row text-foreground">{coach.copy}</p>
+          ) : (
+            <div className="flex min-w-0 flex-col gap-1">
+              <p className="text-meta text-muted-foreground">{coach.offer.eyebrow}</p>
+              <p className="text-row text-foreground">{coach.offer.title}</p>
+              <p className="text-meta text-muted-foreground">{coach.offer.note}</p>
+            </div>
+          )}
           <IconButton icon={X} label="Dismiss hint" shortcut="Esc" size="xs" onClick={onHide} />
         </div>
+        {coach.offer === undefined ? null : (
+          <Button size="sm" variant="primary" onClick={onOffer}>
+            {coach.offer.label}
+          </Button>
+        )}
         {isWarning ? (
           <p className="text-meta text-muted-foreground">Follow the outlined control first.</p>
         ) : null}

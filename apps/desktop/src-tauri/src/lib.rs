@@ -800,6 +800,8 @@ pub fn run() {
             browser::commands::browser_favicon,
             browser::commands::browser_page_text,
             browser::commands::browser_console_read,
+            browser::commands::browser_pick,
+            browser::commands::browser_element_snapshot,
             browser::commands::browser_tab_back,
             browser::commands::browser_tab_forward,
             browser::commands::browser_tab_passkey_dismiss,

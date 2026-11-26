@@ -9,10 +9,11 @@ import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useBrowserStudioTab } from '../../hooks/useBrowserStudioTab';
 import { useConsoleEntries } from '../../hooks/useConsoleEntries';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
-import type { BrowserPageGroup } from '../../types';
+import { consoleCounts } from '../../consoleCounts';
+import type { BrowserPageGroup, BrowserToolsTab } from '../../types';
 import { BrowserAddressRow } from '../BrowserPane/BrowserAddressRow';
 import type { BrowserStripGroups } from '../BrowserPane/BrowserTabStrip';
-import { BrowserConsole } from '../BrowserPane/BrowserConsole';
+import { BrowserToolsDock } from '../BrowserToolsDock';
 import { BrowserNotice } from '../BrowserPane/BrowserNotice';
 import { BrowserPasskeyNotice } from '../BrowserPane/BrowserPasskeyNotice';
 import { BrowserSendLine } from '../BrowserPane/BrowserSendLine';
@@ -41,11 +42,13 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
   const title = shownTab === null ? '' : model.titleOf({ tab: shownTab });
   const isOnScreen = useAppStore((state) => state.appStudio?.kind === 'browser');
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+  const [toolsTab, setToolsTab] = useState<BrowserToolsTab>('console');
   const consoleLog = useConsoleEntries({
     sessionId,
     liveId: model.shownLiveId,
-    isOpen: isConsoleOpen && isOnScreen,
+    isOpen: isOnScreen,
   });
+  const errorCount = consoleCounts({ entries: consoleLog.entries }).errors;
 
   useBrowserStudioTab({ sessionId, tabId, model });
   useReloadSurface({
@@ -90,6 +93,13 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
             isOpen: isConsoleOpen,
             onToggle: () => setIsConsoleOpen(!isConsoleOpen),
           }}
+          errors={{
+            count: errorCount,
+            onShow: () => {
+              setToolsTab('errors');
+              setIsConsoleOpen(true);
+            },
+          }}
           page={{ groups, onPick: pick, folded, onFoldedChange }}
           onDock={() => demoteBrowserTab({ sessionId })}
         />
@@ -101,7 +111,16 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
         <BrowserNotice notice={model.notice} />
         <BrowserSendLine pageSend={model.pageSend} />
         <BrowserPasskeyNotice model={model} />
-        <div data-browser-stage="" className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <BrowserToolsDock
+          surface="page"
+          isOpen={isConsoleOpen && shownTab !== null}
+          model={model}
+          title={title}
+          log={consoleLog}
+          tab={toolsTab}
+          onTab={({ next }) => setToolsTab(next)}
+          onClose={() => setIsConsoleOpen(false)}
+        >
           <BrowserView
             frame={frame}
             view={view}
@@ -111,10 +130,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
             devicePreset={model.devicePreset}
             onNew={model.startDraft}
           />
-          {isConsoleOpen && shownTab !== null ? (
-            <BrowserConsole model={model} title={title} log={consoleLog} />
-          ) : null}
-        </div>
+        </BrowserToolsDock>
       </div>
     </div>
   );

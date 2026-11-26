@@ -237,7 +237,7 @@ describe('demo playground stage states', () => {
     window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     report({ frame: visibleFrame(), type: 'ready' });
-    fireEvent.click(rowOf({ title: 'Bring your repositories' }));
+    fireEvent.click(rowOf({ title: 'Bring your work' }));
     const next = frameOf({ scene: chapterOf({ id: 'bring' }).beats[0]?.scene ?? '' });
     report({ frame: next, type: 'ready' });
     expect(visibleFrame()).toBe(next);
@@ -291,7 +291,7 @@ describe('demo playground stage states', () => {
       expect(frame.hasAttribute('inert')).toBe(false);
       expect(within(screen.getByTestId('demo-stage')).queryAllByRole('button')).toHaveLength(0);
       elapse({ ms: dwellOfLast({ id: 'bring' }) - 1 });
-      expect(heading()).toBe('Bring your repositories');
+      expect(heading()).toBe('Bring your work');
       expect(instruction()).toBe(result);
     });
 
@@ -303,7 +303,7 @@ describe('demo playground stage states', () => {
       expect(window.history.length).toBe(historyLength + 1);
       expect(heading()).toBe('Set the direction');
       expect(rowOf({ title: 'Set the direction' }).getAttribute('aria-current')).toBe('page');
-      expect(rowOf({ title: 'Bring your repositories' }).getAttribute('data-access')).toBe('done');
+      expect(rowOf({ title: 'Bring your work' }).getAttribute('data-access')).toBe('done');
       expect(document.activeElement).toBe(playgroundRoot());
       expect(
         frameOf({ scene: chapterOf({ id: 'direction' }).beats[0]?.scene ?? '' }),
@@ -331,10 +331,10 @@ describe('demo playground stage states', () => {
 
     it('stays on the group when the visitor replays it from the rail during the dwell', () => {
       finishBring();
-      fireEvent.click(rowOf({ title: 'Bring your repositories' }));
+      fireEvent.click(rowOf({ title: 'Bring your work' }));
       expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
       elapse({ ms: dwellOfLast({ id: 'bring' }) * 2 });
-      expect(heading()).toBe('Bring your repositories');
+      expect(heading()).toBe('Bring your work');
     });
 
     it('replays a finished group the rail jumps back to, and only that group', () => {
@@ -342,14 +342,14 @@ describe('demo playground stage states', () => {
       window.history.replaceState(null, '', '/?scene=demo#guide');
       render(<DemoPlayground />);
       const before = visibleFrame();
-      fireEvent.click(rowOf({ title: 'Bring your repositories' }));
+      fireEvent.click(rowOf({ title: 'Bring your work' }));
       expect(window.location.hash).toBe('#bring');
-      expect(heading()).toBe('Bring your repositories');
+      expect(heading()).toBe('Bring your work');
       expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
       expect(rowOf({ title: 'Set the direction' }).getAttribute('data-access')).toBe('done');
       expect(visibleFrame()).not.toBe(before);
       elapse({ ms: dwellOfLast({ id: 'bring' }) * 2 });
-      expect(heading()).toBe('Bring your repositories');
+      expect(heading()).toBe('Bring your work');
       expect(document.activeElement).toBe(playgroundRoot());
     });
 
@@ -359,14 +359,12 @@ describe('demo playground stage states', () => {
       render(<DemoPlayground />);
       const direction = visibleFrame();
       report({ frame: direction, type: 'ready' });
-      const [draft, start] = chapterOf({ id: 'direction' }).hints;
-      for (const entry of [draft, start]) {
-        tried({ frame: direction, hintId: entry?.id ?? '' });
-        elapse({ ms: entry === undefined ? RESULT_DWELL_MS : dwellOf({ hint: entry }) });
-      }
-      expect(stepStates().filter((state) => state === 'done')).toHaveLength(2);
+      const [draft] = chapterOf({ id: 'direction' }).hints;
+      tried({ frame: direction, hintId: draft?.id ?? '' });
+      elapse({ ms: draft === undefined ? RESULT_DWELL_MS : dwellOf({ hint: draft }) });
+      expect(stepStates().filter((state) => state === 'done')).toHaveLength(1);
 
-      fireEvent.click(rowOf({ title: 'Bring your repositories' }));
+      fireEvent.click(rowOf({ title: 'Bring your work' }));
       expect(JSON.parse(window.sessionStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toMatchObject({
         direction: { tried: [] },
       });
@@ -381,7 +379,7 @@ describe('demo playground stage states', () => {
       elapse({ ms: dwellOfLast({ id: 'bring' }) });
 
       expect(heading()).toBe('Set the direction');
-      expect(rowOf({ title: 'Bring your repositories' }).getAttribute('data-access')).toBe('done');
+      expect(rowOf({ title: 'Bring your work' }).getAttribute('data-access')).toBe('done');
       expect(stepStates()[0]).toBe('current');
       expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
       expect(instruction()).toBe(draft?.instruction.replaceAll('**', ''));
@@ -401,7 +399,7 @@ describe('demo playground stage states', () => {
         bring: { tried: idsOf({ id: 'bring' }) },
         guide: { tried: [] },
       });
-      expect(rowOf({ title: 'Bring your repositories' }).getAttribute('data-access')).toBe('done');
+      expect(rowOf({ title: 'Bring your work' }).getAttribute('data-access')).toBe('done');
     });
 
     it('opens the group where the story stands when a page load names a finished one', () => {
@@ -412,7 +410,7 @@ describe('demo playground stage states', () => {
       expect(window.location.hash).toBe('#ship');
       expect(window.history.length).toBe(historyLength);
       expect(heading()).toBe('Review and ship');
-      expect(rowOf({ title: 'Bring your repositories' }).getAttribute('data-access')).toBe('done');
+      expect(rowOf({ title: 'Bring your work' }).getAttribute('data-access')).toBe('done');
     });
 
     it('opens Get Goodboy when a page load names a group and every group is done', () => {

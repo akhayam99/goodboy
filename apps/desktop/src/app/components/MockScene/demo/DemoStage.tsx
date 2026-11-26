@@ -17,7 +17,13 @@ import { DemoCoachMark, type CoachMark } from './DemoCoachMark';
 import { DemoHintSlot } from './DemoHintSlot';
 import { DemoWorkingPill } from './DemoWorkingPill';
 import type { FrameCommand, FrameReportParams, StageFrame } from './useBeatPlayer';
-import type { HintReportParams, HintReveal, HintTrack, OffscreenHint } from './useDemoHints';
+import type {
+  HintOfferRequest,
+  HintReportParams,
+  HintReveal,
+  HintTrack,
+  OffscreenHint,
+} from './useDemoHints';
 
 const SILENT_LIMIT_MS = 20000;
 const FADE_MS = 320;
@@ -58,10 +64,12 @@ type Props = {
   readonly coach: CoachMark | undefined;
   readonly offscreen: OffscreenHint | undefined;
   readonly reveal: HintReveal | undefined;
+  readonly offerRequest: HintOfferRequest | undefined;
   readonly onHintReport: (params: HintReportParams) => void;
   readonly onSpotlightChange: (params: SpotlightParams) => void;
   readonly onHideHint: () => void;
   readonly onRevealHint: () => void;
+  readonly onOffer: () => void;
   readonly working: string | undefined;
 };
 
@@ -115,10 +123,12 @@ export const DemoStage = ({
   coach,
   offscreen,
   reveal,
+  offerRequest,
   onHintReport,
   onSpotlightChange,
   onHideHint,
   onRevealHint,
+  onOffer,
   working,
 }: Props) => {
   const { ref, box, hasRoom } = useStageBox();
@@ -145,6 +155,7 @@ export const DemoStage = ({
   const hintsSent = useRef(new Map<string, string>());
   const themeSent = useRef(new Map<string, DemoTheme>());
   const revealSent = useRef(0);
+  const offerSent = useRef(0);
   const shortcutSeen = useRef(0);
   const pendingShortcut = useRef<PendingShortcut | null>(null);
   const [loadEpoch, setLoadEpoch] = useState(0);
@@ -369,6 +380,22 @@ export const DemoStage = ({
     postToFrame({ frame: element, message: { generation, type: 'reveal', hintId: reveal.hintId } });
   }, [reveal, currentKey]);
 
+  useEffect(() => {
+    if (offerRequest === undefined || offerRequest.count === offerSent.current) {
+      return;
+    }
+    const element = elements.current.get(currentKey);
+    const generation = sent.current.get(currentKey)?.generation;
+    if (element === undefined || generation === undefined) {
+      return;
+    }
+    offerSent.current = offerRequest.count;
+    postToFrame({
+      frame: element,
+      message: { generation, type: 'offer', hintId: offerRequest.hintId },
+    });
+  }, [offerRequest, currentKey]);
+
   const visibleKey = shownKey ?? currentKey;
   const visibleKeyRef = useRef(visibleKey);
   visibleKeyRef.current = visibleKey;
@@ -448,6 +475,7 @@ export const DemoStage = ({
               bounds={{ width: box.width, height: box.height }}
               isSpotlit={isSpotlit}
               onHide={onHideHint}
+              onOffer={onOffer}
             />
           )}
           {offscreen !== undefined && isLanded ? (

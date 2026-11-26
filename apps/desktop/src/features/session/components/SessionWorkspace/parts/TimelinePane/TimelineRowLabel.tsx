@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import { ActivityRow, cn, ICON_SIZE, Tooltip, ValueToken, WORK_ROW } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
+import { ActivityRow, cn, Tooltip, ValueToken, WORK_ROW } from '@goodboy/ui';
 import type { MountDiffStat } from '../../../../../../store';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../../../../artifacts/artifactPresentation';
@@ -17,9 +16,11 @@ import type {
   TimelineRowItem,
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
-import type { RowStateReason } from '../../../../../workTreeModel/rowState';
+import type { RowState, RowStateReason } from '../../../../../workTreeModel/rowState';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
 import { TimelineRoleGlyph } from './TimelineRoleGlyph';
+import { leadTreeInkOf } from '../../../LeadTree/leadTreeInkOf';
+import { rowStateNode } from '../../../../../workTreeModel/rowStateCopy';
 import type { TimelineRowIdentity } from './timelineRowIdentity';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { TimelineRunLabel } from './TimelineRunLabel';
@@ -108,9 +109,10 @@ const titleOf = ({ entry, segments }: TitleParams): string => {
 type ChipParams = EntryParams & {
   readonly identity: TimelineRowIdentity | null;
   readonly isCardOpen: boolean;
+  readonly rowState: RowState;
 };
 
-const chipOf = ({ entry, identity, isCardOpen }: ChipParams) => {
+const chipOf = ({ entry, identity, isCardOpen, rowState }: ChipParams) => {
   if (entry.kind !== 'agent') {
     return null;
   }
@@ -118,17 +120,14 @@ const chipOf = ({ entry, identity, isCardOpen }: ChipParams) => {
     return null;
   }
   const glyph = (
-    <TimelineRoleGlyph kind={entry.agentKind} identity={identity} isCardOpen={isCardOpen} />
+    <TimelineRoleGlyph
+      kind={entry.agentKind}
+      identity={identity}
+      isCardOpen={isCardOpen}
+      className={leadTreeInkOf({ node: rowStateNode({ state: rowState }).state }).glyph}
+    />
   );
-  if (entry.chain == null) {
-    return glyph;
-  }
-  return (
-    <span className="inline-flex shrink-0 items-center gap-1 self-center">
-      <CONCEPT_ICONS.chain size={ICON_SIZE.mark} aria-hidden className="text-faint-foreground" />
-      {glyph}
-    </span>
-  );
+  return glyph;
 };
 
 type ReasonTitleOfParams = {
@@ -232,10 +231,14 @@ export const TimelineRowLabel = ({
       density="feed"
       tone={tone}
       textSize={isStep ? 'ui' : 'body'}
-      ordinal={item.ordinal == null ? null : <span data-timeline-ordinal="">{item.ordinal}</span>}
-      glyph={chipOf({ entry, identity, isCardOpen })}
+      glyph={chipOf({ entry, identity, isCardOpen, rowState: item.rowState })}
       text={
         <span className="flex min-w-0 items-center gap-2">
+          {item.ordinal == null ? null : (
+            <span data-timeline-ordinal="" className="sr-only">
+              {item.ordinal}
+            </span>
+          )}
           {titleNode}
           {diffStat == null ? null : (
             <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />

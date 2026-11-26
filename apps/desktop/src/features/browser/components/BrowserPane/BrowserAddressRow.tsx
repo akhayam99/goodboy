@@ -7,6 +7,7 @@ import {
   Pin,
   RotateCw,
   Square,
+  SquareDashedMousePointer,
   X,
 } from '@goodboy/ui/icons';
 import { ICON_SIZE, IconButton, PANE_RHYTHM, cn, useDockGrip } from '@goodboy/ui';
@@ -14,9 +15,11 @@ import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useBrowserKeys } from '../../hooks/useBrowserKeys';
 import { useCommandField } from '../../hooks/useCommandField';
+import type { ElementPick } from '../../hooks/useElementPick';
 import { useFindInPage } from '../../hooks/useFindInPage';
-import type { BrowserConsoleToggle, BrowserPaneModel } from '../../types';
+import type { BrowserConsoleToggle, BrowserErrorsShow, BrowserPaneModel } from '../../types';
 import { BrowserCommandPanel } from './BrowserCommandPanel';
+import { BrowserErrorCount } from './BrowserErrorCount';
 import { BrowserFindBar } from './BrowserFindBar';
 import { BrowserLoadLine } from './BrowserLoadLine';
 import { BrowserMoreMenu } from './BrowserMoreMenu';
@@ -31,6 +34,8 @@ type Props = {
   readonly model: BrowserPaneModel;
   readonly isAddressShortcutOn: boolean;
   readonly consoleToggle?: BrowserConsoleToggle;
+  readonly errors?: BrowserErrorsShow;
+  readonly pick?: ElementPick;
   readonly page?: BrowserStripGroups;
   readonly onOpenAsPage?: () => void;
   readonly onDock?: () => void;
@@ -41,6 +46,8 @@ export const BrowserAddressRow = ({
   model,
   isAddressShortcutOn,
   consoleToggle,
+  errors,
+  pick,
   page,
   onOpenAsPage,
   onDock,
@@ -65,6 +72,18 @@ export const BrowserAddressRow = ({
       return true;
     },
     isAddressShortcutOn && consoleToggle !== undefined,
+    { canDecline: true },
+  );
+  useShortcut(
+    'browser.pick',
+    () => {
+      if (pick === undefined || (!pick.canPick && !pick.isPicking)) {
+        return false;
+      }
+      pick.toggle();
+      return true;
+    },
+    isAddressShortcutOn && pick !== undefined,
     { canDecline: true },
   );
   return (
@@ -126,6 +145,20 @@ export const BrowserAddressRow = ({
             shortcut="browser.pin"
             tooltipSide="top"
             onClick={model.togglePin}
+          />
+        )}
+        {errors === undefined || model.shown === null ? null : (
+          <BrowserErrorCount errors={errors} />
+        )}
+        {pick === undefined ? null : (
+          <IconButton
+            icon={SquareDashedMousePointer}
+            label="Select an element"
+            aria-pressed={pick.isPicking}
+            shortcut="browser.pick"
+            tooltipSide="top"
+            disabled={!pick.canPick && !pick.isPicking}
+            onClick={pick.toggle}
           />
         )}
         {consoleToggle === undefined ? null : (

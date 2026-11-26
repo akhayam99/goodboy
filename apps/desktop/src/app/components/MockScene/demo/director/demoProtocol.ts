@@ -47,6 +47,14 @@ export type DemoRevealCommand = {
   readonly hintId: string;
 };
 
+export type DemoOfferCommand = {
+  readonly channel: typeof DEMO_PROTOCOL.channel;
+  readonly version: typeof DEMO_PROTOCOL.version;
+  readonly generation: number;
+  readonly type: 'offer';
+  readonly hintId: string;
+};
+
 type DemoAnchorReport = {
   readonly channel: typeof DEMO_PROTOCOL.channel;
   readonly version: typeof DEMO_PROTOCOL.version;

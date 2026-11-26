@@ -37,6 +37,7 @@ type SetTrackParams = {
 export type HintEngine = {
   readonly setTrack: (params: SetTrackParams) => void;
   readonly reveal: (params: RevealParams) => void;
+  readonly offer: (params: RevealParams) => void;
   readonly reset: () => void;
   readonly dispose: () => void;
 };
@@ -656,6 +657,10 @@ export const createHintEngine = ({
         probe: probeOf({ hint, state: store.getState() }),
       });
       anchor?.scrollIntoView({ block: 'center', inline: 'nearest' });
+      schedule();
+    },
+    offer: ({ hintId }) => {
+      hints.find((entry) => entry.id === hintId)?.offer?.run({ root });
       schedule();
     },
     reset: () => {

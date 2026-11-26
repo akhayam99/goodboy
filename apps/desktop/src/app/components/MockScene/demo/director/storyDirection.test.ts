@@ -32,7 +32,7 @@ beforeEach(async () => {
     sceneInvoke({ command: String(command), args }),
   );
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
-  seedStoryWorld({ stage: 'draft' });
+  seedStoryWorld({ stage: 'bring' });
   installStoryDirection({ store });
 });
 
