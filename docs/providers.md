@@ -243,9 +243,9 @@ roles and the older plan run rows live on Workflows, **Every run**
 - **Background tasks**: one row per side job, grouped as Writing for you, Running
   workflows, and Git
 
-A notice under the page header (`SavedModelsNotice`) appears when a project of the
-workspace still holds role or task models an older build saved: "Model settings 2
-projects had are saved. They no longer apply." **Show** lists each project with what it had, **Apply
+A notice under the page header (`SavedModelsNotice`) appears when role or task models
+that a project of the workspace once had are still saved: "Saved model settings from 2
+folders no longer apply." **Show** lists each folder with what it had, **Apply
 to this page** and **Discard**, each behind a confirm anchored to its button. A failed
 write shows its reason under the confirm and leaves both buttons live, and the saved
 settings stay until one of the two succeeds.
@@ -878,8 +878,6 @@ The Rust tests run codex against a scripted fake binary, not the real one. See
 [Fake CLI binaries](testing.md#fake-cli-binaries-for-the-rust-spawn-tests).
 
 ### Antigravity CLI
-
-`agy` replaces the Gemini CLI.
 
 - `agy` (v1.1.9) has no sign-in commands. Its subcommands are `agent, agents, changelog,
 help, install, models, plugin, plugins, update`. `agy login` does not exist

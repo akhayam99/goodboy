@@ -694,6 +694,7 @@ new bounds or a new window. A form half typed and the scroll stay.
   address row, and the view stays with the pane, which shows it again on
   Dock. A page show that answers after the tab went back
   is hidden again, and the pane takes the view.
+- **Another window**: a tab cannot move to another window.
 
 ## Doors
 
@@ -956,7 +957,7 @@ workspace profile stays signed out.
 ## Console
 
 The console is a dock beside the page, in the pane and on the Browser page.
-The Console button in the address row, after the pin and before More, opens it
+The Console button in the address row, after Select an element and before More, opens it
 with its own `CodeXml` icon, never the Terminal one (its log rows mark a plain
 log with `MessageSquareText`), and
 `browser.console` (⌘⇧J) toggles it while a tab is shown. It is a button with a
@@ -1234,7 +1235,7 @@ words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  live tab `browser_*` commands (`browser_page_keys` sets the page keys);
+  tab and profile `browser_*` commands (`browser_page_keys` sets the page keys);
   `console.rs` holds the tab script, the reader and the answer parse, and
   `page_runtime/` the runtime modules it joins; `pick.rs` drives the picker
   and parses its answer, and `snapshot.rs` crops a picked element;

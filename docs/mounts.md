@@ -37,7 +37,7 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   nothing is left. `slugify` in `@goodboy/core` and `slugify` in `worktree/slug.rs`
   give the same result for the same input.
 - The branch name comes from one builder, `buildBranchName` in `@goodboy/core`,
-  and the workspace template (Settings > Workspace > New sessions > Branch
+  and the workspace template (Settings > This workspace > Branches > Branch
   name). The default is `{prefix}/{task-id}-{slug}`. The placeholders are `{prefix}`,
   `{task-id}`, `{slug}` and `{user}` (the GitHub login). A placeholder with no
   value disappears with the separator next to it, so a session without a task
@@ -562,11 +562,12 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   regains focus (`useSessionFocusRecheck`, debounced 400ms, current session
   only). It makes at most one refresh per mount, skips a mount that is loading
   or whose request merged or closed, and skips a mount fetched in the last 5s
-  (turn end) or 60s (focus). The five-minute sweep and the PR watch are
-  [hosts.md](./hosts.md#how-the-store-keeps-every-host-fresh)'s. When a sweep holds two or more GitHub mounts of one repo, it reads every branch
+  (turn end) or 60s (focus). The five-minute sweep (`sweepRequests`,
+  run by `useGithubPolling`) and the PR watch are described in
+  [hosts.md](./hosts.md#how-the-store-keeps-every-host-fresh). When a sweep holds two or more GitHub mounts of one repo, it reads every branch
   of that repo with one batched `gh api graphql` request (`listPrsForBranches`,
   20 branches per request, behind the `gh_run` allowlist) and hands each mount
-  its answer; if that request fails, each mount asks on its own. Its timer and its visibility sweep
+  its answer; if that request fails, each mount asks on its own. The sweep's timer and its visibility sweep
   skip mounts already fetched with no request, so only the recheck finds a PR
   opened outside the app. There is no faster global poll.
 - **The push count re-reads with the request.** Every push surface (the
