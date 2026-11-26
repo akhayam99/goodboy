@@ -290,7 +290,15 @@ The find bar sits under the address row. It says **Found** or **Not found**. **E
 
 **Console**, the button after More, or **⌘⇧J**, opens the console in a dock beside the page: below it in the Browser pane, right of it on the Browser page. The icon in the dock's head moves it to the other side, and its edge drags to resize it. Each place keeps its own side and size.
 
-**Console** lists what the page logged, with its errors, and **Network** the requests. Click a request to see it on its own. **Esc** or the back arrow returns to the list, and **↑** and **↓** step through the requests. It starts over at every load. **Clear** empties the list you see, and **Send to** the agent puts both lists on the message box as one file you can remove.
+**Console** lists what the page logged, with its errors, and **Network** the requests. It starts over at every load. **Clear** empties the list you see, and **Send to** the agent puts the log and the failed requests on the message box as one file you can remove.
+
+#### Network
+
+**Network** is a table of the requests of the load: method, path, status, type, size, time and a waterfall bar. The filters above it keep one kind (Fetch, Doc, JS, CSS, Img, WS), **Failed only** keeps the requests that failed, and the search field matches path, method and status. The line under the table counts the requests you see, their size and how long the page took to load.
+
+Click a request to open it: its **Response**, its **Payload**, its **Headers** and its **Timing**, with the time spent waiting and downloading when the page reports it. Below the page the request opens beside the table; right of the page it takes the table's place. **Esc** or the back arrow returns to the table where you left it, and **↑** and **↓** step through the requests the filters keep. **Send request** puts the request on the message of the agent the button names, as a file you can remove. Authorization and cookie headers are never read, so they never reach an agent. Nothing goes until you send.
+
+The page's own address has no status: the browser does not report it.
 
 #### Errors
 
@@ -325,7 +333,7 @@ This part is for contributors and agents who change the feature.
 - Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule. The page is the `browser` studio kind (`BrowserStudio`), and [browser.md](../browser.md#the-page) owns its groups, its route and the view owner rule. `promoteBrowserTab` and `demoteBrowserTab` move a tab between them ([browser.md](../browser.md#moves)).
 - Browser doors: [browser.md](../browser.md#doors) owns `openInBrowser`, the click rule, the peek and the `browser.address` scope beside `ask.open`.
 - Add to message: `sendPageToAgent` reads through `browser_page_text` and queues the file for the agent `useHandOutputToAgent` names; [browser.md](../browser.md#doors) owns the rule and `browser.sendToAgent` is the key.
-- Browser console: `useConsoleEntries` pulls `browser_console_read`, and `applyConsoleRead` keeps the latest cursor. `BrowserToolsDock` places the dock, and `browserToolsDockPref` keeps its side and size per surface. `BrowserConsole` draws its tabs and lists, and `consoleAttachmentOf` the file. `consoleCounts` owns every count, the red one in the row (`BrowserErrorCount`) included. `errorGroupsOf` groups the errors, `sourceFileOf` maps a frame to a worktree file, `ErrorsTab` draws them and `errorsAttachmentOf` writes the file. [browser.md](../browser.md#console) owns the hook, the read and the caps. `browser.console` is the key.
+- Browser console: `useConsoleEntries` pulls `browser_console_read`, and `applyConsoleRead` keeps the latest cursor. `BrowserToolsDock` places the dock, and `browserToolsDockPref` keeps its side and size per surface. `BrowserConsole` draws the console list, and `consoleAttachmentOf` the file. `NetworkTab` draws the request table (`networkRowsOf` filters it, `networkSummaryOf` writes the line under it) and `NetworkDetail` one request; `requestAttachmentOf` writes its file and `isHiddenHeader` keeps sensitive headers out of both. `consoleCounts` owns every count, the red one in the row (`BrowserErrorCount`) included. `errorGroupsOf` groups the errors, `sourceFileOf` maps a frame to a worktree file, `ErrorsTab` draws them and `errorsAttachmentOf` writes the file. [browser.md](../browser.md#console) owns the hook, the read and the caps. `browser.console` is the key.
 - Pick an element: `useElementPick` drives `browser_pick` (`page_runtime/pick.js`), `BrowserPickNote` draws the note and `addPickedElements` queues `elementAttachmentOf` files with the `browser_element_snapshot` picture. [browser.md](../browser.md#pick-an-element) owns the runtime, the read and the caps. `browser.pick` is the key; `pick.test.tsx` covers the flow.
 - Files: the Changes page switches between **Changed** and **All files** (`useChangesMode`); the file chord opens it on All files.
 
