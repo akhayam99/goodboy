@@ -39,7 +39,8 @@ one home. No Activity row has a `⋯`.
 
 A **Needs you** block sits on top of Activity only while something waits on you,
 with one row per owner, never per child: a pull request's fix runs ("#318 · 1
-question · 5 fixes ready", counted in comments), a run ("Retry policy · 1
+question · 5 fixes ready", counted in comments, in the words of the rows:
+**fixes ready**, **questions**, **push failed**, **failed**), a run ("Retry policy · 1
 question"), a stopped rebase (a short cause, never the engine sentence). Each
 row's **Open** goes to whoever owns the action: the first comment that waits,
 the exact question, the branch. Push is never offered there, and the block

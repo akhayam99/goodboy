@@ -57,9 +57,10 @@ a send that never starts leaves the ask open.
   it readable while that wait shows `starting`).
 - On the Lead's own ask `routeAutoUserTurn` does the same, since its confined
   turns run in default mode and a read outside its folder can ask.
-- A queued message never denies. `drainAgentQueue` holds while an ask is open,
-  after asking the database (`refreshAgentAsks`), so an answer or a stop from
-  another window counts. Every decision and settled turn sends `agent-turn` on
+- A queued message never denies. `drainAgentQueue` holds while an ask is open
+  and goes on once it is answered or lapses. Before it holds it asks the
+  database (`refreshAgentAsks`), so an answer or a stop from another window
+  counts. Every decision and settled turn sends `agent-turn` on
   `goodboy:data-changed`, and the other windows refresh and drain.
 
 ### Several asks and owed answers

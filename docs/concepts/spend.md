@@ -19,6 +19,10 @@ where each piece of work goes.
 - Each workflow step picks its model by role, level and cost, and a model you pin
   beats the automatic choice.
 
+You pick a model with the same control everywhere, a picker built from the model
+list by provider, model, version, variant and effort
+([../model-picker.md](../model-picker.md)).
+
 ## What is measured
 
 Goodboy measures every turn on your machine and sends nothing anywhere: token

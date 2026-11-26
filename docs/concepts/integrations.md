@@ -90,8 +90,8 @@ suggestion, never silent, owned by the `tracker-moves` slice.
 - The target is the team's completed workflow state in Linear (the one named
   Done, else the first by position) and, in Jira, the transition that lands on
   Done, Closed, Resolved or Completed. No target, no row.
-- A _Part of_ link, a GitHub or GitLab issue (the host closes those from `Closes
-#N`), a Slack thread and a Sentry item never get a row.
+- A _Part of_ link, a GitHub or GitLab issue (the host closes those from
+  `Closes #N`), a Slack thread and a Sentry item never get a row.
 
 **Move to Done** re-reads the item first: if another window or the tool already
 moved it, nothing is written and the row goes. Otherwise it writes with the

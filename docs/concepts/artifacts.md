@@ -29,7 +29,8 @@ chat with the agent that wrote it.
 - **Open in browser** opens the file in the system's default web browser, never
   an editor, where `⌘P` prints a PDF.
 - Every write keeps its own row in `artifact_revisions`. The Details panel lists
-  them once there is more than one, with who wrote each, and **Restore** on an
+  them newest first once there is more than one, with who wrote each, and
+  **Restore** on an
   older one writes it back as a new revision, never over the history. The
   wireframe version pill is a richer view of the same table, not a second one.
 
@@ -147,7 +148,7 @@ You change a wireframe from **Screens**, not from a chat:
    again** resends it.
 
 The version pill opens every version with **View**, **Compare** and **Restore**.
-Restore writes the old version back as `Restored vN`, with its own title, text
+Viewing an older one says so above the stage. Restore writes the old version back as `Restored vN`, with its own title, text
 and metadata, and only on top of the version you were viewing: if a newer one
 arrived meanwhile, nothing is written and the message says "A newer version
 arrived. Review it before restoring."

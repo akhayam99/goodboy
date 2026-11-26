@@ -105,7 +105,8 @@ other source). It reads `sourceThreadIds`, which a light agent row leaves out
 (the light rows trap in [../traps.md](../traps.md)), so call it on a session
 whose agents are full.
 
-**Send to Lead** on a review comment adds it to the Lead's threads
+A Lead can take one message from a review comment or a failed check (**Send to
+Lead**). A comment sent this way joins the Lead's threads
 (`addAgentSourceThread`), so it reads In a run. Taking the queued message back
 before the Lead reads it frees the comment. A stopped or deleted run frees only
 its own threads, and a fix or a re-check is never read as a run.
@@ -181,7 +182,8 @@ Accept.
 
 The drawer ends in the comment's verbs (`CommentDrawerActions` in
 `FormActions`), the primary last on the right, each with its single key. A verb
-that fails says why there, and its button reads Retry.
+that fails says why there, and its button reads Retry. `Retry push` shows on a
+comment whose push failed.
 
 | Verb         | Key | Notes                                                                                                                   |
 | ------------ | --- | ----------------------------------------------------------------------------------------------------------------------- |

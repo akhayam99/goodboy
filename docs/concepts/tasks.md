@@ -23,7 +23,9 @@ and scene ids say `inbox`.
   `taskNewKeys`, filled by every `useInboxRecords` caller, so nothing is fetched
   for it.
 - `taskGroupsOf` groups by source, by source and status word, by project or not
-  at all, largest group first and newest first inside. A group shows five rows
+  at all, largest group first and newest first inside. A status group heads
+  with the tool's mark and the status word, and its list is named by both
+  (`TaskGroup.name`). A group shows five rows
   and a Show all row (`TaskGroupFoot`); an expanded group of 60 rows or more
   draws only a window (`useVirtualRows`) and names the cursor position.
 - A row's name is its key, title, status and priority (`taskRowLabelOf`), and its

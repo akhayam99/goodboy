@@ -110,8 +110,8 @@ Each bulk action on the Comments tab is a single store action.
   `bulkRunOf` hands it that run's entries.
 - `Use the recommended answers (N)`, for two or more open questions with a
   recommended answer, opens the `Answer N questions` panel with each
-  recommendation chosen. `Continue with N answers` calls `answerQuestions` once
-  for the launch, on the same agent.
+  recommendation chosen. `Drop` leaves one in Needs you, and `Continue with N
+answers` calls `answerQuestions` once for the launch, on the same agent.
 - `Retry N failed` calls `retryCouldntFix` with every could-not-fix comment of
   the launch.
 - `Apply N fixes` calls `acceptReviewComments` (`review-bulk` slice). It walks

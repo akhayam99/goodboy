@@ -45,6 +45,7 @@ now. The Lead shows its unread messages in the same list
   step agent, a refused lease) puts it back at the head.
 - When the queue cannot be saved, an error says so and the messages stay for
   this session.
+- Once sent, the bubble in the chat says "Queued" or "Sent now".
 
 ## Lead
 

@@ -253,6 +253,7 @@ A button or menu entry takes its verb from this table, and the old verb stays a
   ready** is a comment whose fix waits for you. **Notes** are comments you write
   on your own diff before they become a review draft.
 - **On origin**: the copy of a branch on the remote.
+- **Fix with an agent**: the one verb that hands a failed push to an agent.
 - **The rebase needs you**: a rebase job that stopped.
 - **Not ready to merge**: the merge box verdict, then each reason on its own row,
   never the word twice.

@@ -104,8 +104,8 @@ Documents.
 - A folder over 2 GB (`largeFolderOf`) says that files over 15 MB keep no
   versions.
 - A folder inside a repository asks **The whole repository** or **Only this
-  folder**, which creates the subfolder as a Documents folder named for the
-  workspace.
+  folder**, which creates the subfolder as a Documents folder and names the
+  workspace after it.
 - A failed scan preselects nothing, and the row says it could not look inside.
 
 All face copy lives in `features/workspace/folderFaceCopy.ts`, and
@@ -128,7 +128,8 @@ Documents copy free of git words.
   each writing turn in a card with Open in Changes and Undo changes from this
   reply (`features/chat/components/TurnChangesCard/`).
 - The git verbs are not registered for a session without a branch: Comments
-  (`session.review`) and Files (`session.diff`) leave the menus, and **Changes**
+  (`session.review`) and Files (`session.diff`) leave the menus and Search or
+  run, and **Changes**
   (`session.changes`) takes their place.
 
 ## Stars and descriptions
@@ -145,16 +146,18 @@ mount or write.
 
 Switching a window to another workspace cancels every turn running in it, so a
 window switches in place only when nothing runs. When agents run, the workspace
-popover asks first and offers a new window instead. A side door (a
-notification, a Tasks item, New workspace) opens that workspace's own window
-without asking, and `⌘Enter` on a workspace row always opens a new window.
+popover asks first and offers a new window instead. While agents run, a side
+door (a notification, a Tasks item, New workspace) opens that workspace's own
+window without asking and never touches this one. `⌘Enter` on a workspace row
+always opens a new window.
 
 ## Disconnect and moved folders
 
 **Disconnect** keeps a workspace and its folders in the database with all they
 hold and only hides them. Re-adding the same folder through New workspace or Add
-project reconnects it and its sessions instead of making a duplicate, and a
-folder that moved meanwhile is recognized by repository identity.
+project reconnects it and its sessions instead of making a duplicate. A folder
+that moved meanwhile is recognized by repository identity, and Goodboy offers to
+locate it the same way as a moved connected folder.
 
 Moving a folder on disk loses nothing either. The rows stay but point at the old
 path, so the project reads `Folder not found` until you **locate** it (the new

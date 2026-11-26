@@ -207,8 +207,8 @@ diverged from origin` with `Review history` instead of a push when origin
 - **Open a pull request** is one row per session (`openPrSuggestionOf`), titled
   with the branch because a compact row hides the why. It leads with the branch
   whose Scribe text is under way, then the most commits ahead, then project and
-  branch name, skips a branch put away with **Not now**, and lists the other
-  branches in **⋯**. **Create pull request** opens the worktree the payload
+  branch name, skips a branch put away with **Not now**, and lists every branch
+  without a pull request in **⋯** once there are two. **Create pull request** opens the worktree the payload
   names, never one looked up at click time.
 - Merge and close-worktree arm a confirm on the row; every other kind runs on one
   click.
