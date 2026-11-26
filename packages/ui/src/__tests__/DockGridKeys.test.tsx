@@ -21,9 +21,16 @@ const BROWSER: DockGridCell = { key: 'browser', sizing: 'browser', label: 'Brows
 type RenderParams = {
   readonly isFolded?: boolean;
   readonly isStill?: boolean;
+  readonly isRefused?: boolean;
+  readonly scope?: string;
 };
 
-const renderGrid = ({ isFolded = false, isStill = false }: RenderParams = {}) => {
+const renderGrid = ({
+  isFolded = false,
+  isStill = false,
+  isRefused = false,
+  scope = 'session-a',
+}: RenderParams = {}) => {
   const original = Element.prototype.getBoundingClientRect;
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function rectOf(
     this: Element,
@@ -34,10 +41,11 @@ const renderGrid = ({ isFolded = false, isStill = false }: RenderParams = {}) =>
     const key = this.getAttribute('data-dock-pane');
     return key === null ? original.call(this) : (RECTS[key] ?? original.call(this));
   });
-  const onMove = vi.fn();
+  const onMove = vi.fn(() => (isRefused ? Promise.resolve(false) : Promise.resolve(true)));
   const spec: DockGridSpec = {
     columns: isFolded ? [[TERMINAL, SCRIPTS, ASK], [BROWSER]] : [[TERMINAL], [BROWSER]],
     focus: 'terminal',
+    scope,
     onFocus: () => undefined,
     onMove,
   };
@@ -55,10 +63,11 @@ const renderGrid = ({ isFolded = false, isStill = false }: RenderParams = {}) =>
     },
     { width: 400, dragMax: 600, panes: [{ key: 'browser', weight: 1 }] },
   ];
-  render(
+  const ref = createRef<HTMLDivElement>();
+  const gridOf = ({ next }: { readonly next: string }) => (
     <DockGrid
-      gridRef={createRef<HTMLDivElement>()}
-      spec={spec}
+      gridRef={ref}
+      spec={{ ...spec, scope: next }}
       cell={<DockPanelHead title="Panel" onClose={() => undefined} />}
       columns={[
         {
@@ -80,9 +89,13 @@ const renderGrid = ({ isFolded = false, isStill = false }: RenderParams = {}) =>
       isFloating={false}
       canDrop={() => true}
       boxesOf={() => (isStill ? boxes : null)}
-    />,
+    />
   );
-  return { onMove };
+  const view = render(gridOf({ next: scope }));
+  return {
+    onMove,
+    changeScope: ({ next }: { readonly next: string }) => view.rerender(gridOf({ next })),
+  };
 };
 
 const headOf = (key: string): HTMLElement => {
@@ -142,7 +155,7 @@ describe('moving a panel with the keyboard', () => {
     expect(statusOf()).toMatch(/, 2 of \d+/);
   });
 
-  it('drops on Enter on the chosen card and says where it went', () => {
+  it('drops on Enter on the chosen card and says where it went', async () => {
     const { onMove } = renderGrid();
     const head = headOf('browser');
     head.focus();
@@ -152,6 +165,9 @@ describe('moving a panel with the keyboard', () => {
     keyOnFocus('ArrowRight');
 
     keyOnFocus('Enter');
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     expect(onMove).toHaveBeenCalledWith({
       key: 'browser',
@@ -227,6 +243,79 @@ describe('moving a panel with the keyboard', () => {
     });
 
     expect(document.querySelector('[data-dock-drop]')).toBeNull();
+  });
+});
+
+describe('a lift that outlives its context', () => {
+  it('cancels when the session scope of the grid changes', () => {
+    const { onMove, changeScope } = renderGrid();
+    const head = headOf('browser');
+    head.focus();
+    act(() => {
+      fireEvent.keyDown(head, { key: 'Enter' });
+    });
+    keyOnFocus('ArrowRight');
+
+    act(() => {
+      changeScope({ next: 'session-b' });
+    });
+
+    expect(document.querySelector('[data-dock-drop]')).toBeNull();
+    keyOnFocus('Enter');
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it('says the panel did not move when the move is refused', async () => {
+    renderGrid({ isRefused: true });
+    const head = headOf('browser');
+    head.focus();
+    act(() => {
+      fireEvent.keyDown(head, { key: 'Enter' });
+    });
+    keyOnFocus('ArrowRight');
+
+    keyOnFocus('Enter');
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(noteOf()).toContain('did not move');
+    expect(noteOf()).not.toContain('Moved');
+  });
+
+  it('keeps where the user went when the focus leaves the grid', () => {
+    renderGrid();
+    const head = headOf('browser');
+    head.focus();
+    act(() => {
+      fireEvent.keyDown(head, { key: 'Enter' });
+    });
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+
+    act(() => {
+      outside.focus();
+    });
+
+    expect(document.activeElement).toBe(outside);
+    outside.remove();
+  });
+});
+
+describe('the names of a folded cell', () => {
+  it('names a tab by its own label, not by the label of the panel that is shown', () => {
+    renderGrid({ isFolded: true });
+    const tab = document.querySelector<HTMLElement>('[data-dock-tab="scripts"]');
+    if (tab === null) {
+      throw new Error('the Scripts tab is drawn');
+    }
+    tab.focus();
+
+    act(() => {
+      fireEvent.keyDown(tab, { key: 'Enter', shiftKey: true });
+    });
+
+    expect(noteOf()).toContain('Scripts lifted');
   });
 });
 

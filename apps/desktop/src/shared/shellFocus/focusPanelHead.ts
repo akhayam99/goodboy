@@ -1,9 +1,13 @@
 type Params = {
   readonly key: string;
+  readonly isCurrent: () => boolean;
   readonly frames?: number;
 };
 
-export const focusPanelHead = ({ key, frames = 12 }: Params): void => {
+export const focusPanelHead = ({ key, isCurrent, frames = 12 }: Params): void => {
+  if (!isCurrent()) {
+    return;
+  }
   const pane = Array.from(document.querySelectorAll<HTMLElement>('[data-dock-focus]')).find(
     (element) => element.dataset.dockFocus === key,
   );
@@ -14,6 +18,6 @@ export const focusPanelHead = ({ key, frames = 12 }: Params): void => {
     return;
   }
   if (frames > 0) {
-    requestAnimationFrame(() => focusPanelHead({ key, frames: frames - 1 }));
+    requestAnimationFrame(() => focusPanelHead({ key, isCurrent, frames: frames - 1 }));
   }
 };

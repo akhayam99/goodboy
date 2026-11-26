@@ -26,15 +26,15 @@ export const dockPaneElementsOf = ({ grid }: GridParams): ReadonlyArray<HTMLElem
 const panelNamesOf = ({ grid }: GridParams): Readonly<Record<string, string>> =>
   Object.fromEntries(
     [
-      ...Array.from(grid.querySelectorAll<HTMLElement>('[data-dock-tab]')).map(
-        (tab) => [tab.dataset.dockTab ?? '', tab.textContent ?? ''] as const,
-      ),
       ...dockPaneElementsOf({ grid }).map(
         (element) =>
           [
             element.dataset.dockPane ?? '',
             element.querySelector('section')?.getAttribute('aria-label') ?? '',
           ] as const,
+      ),
+      ...Array.from(grid.querySelectorAll<HTMLElement>('[data-dock-tab]')).map(
+        (tab) => [tab.dataset.dockTab ?? '', tab.textContent ?? ''] as const,
       ),
     ].filter(([name, label]) => name !== '' && label !== ''),
   );

@@ -32,7 +32,8 @@ type Params = {
   readonly boxes: ReadonlyArray<DockGridColumnBox>;
   readonly canDrop: (params: CanDropParams) => boolean;
   readonly boxesOf: (params: CanDropParams) => ReadonlyArray<DockGridColumnBox> | null;
-  readonly onMove: ((params: DockGridMove) => void) | null;
+  readonly onMove: ((params: DockGridMove) => void | Promise<boolean>) | null;
+  readonly scope?: string;
 };
 
 type StartParams = DockDragStart & {
@@ -152,6 +153,7 @@ export const useDockDrag = ({
   canDrop,
   boxesOf,
   onMove,
+  scope,
 }: Params): DockDrag => {
   const [store] = useState(createDockDragStore);
   const [lifted, setLifted] = useState<{ key: string; unit: DockMoveUnit } | null>(null);
@@ -219,6 +221,12 @@ export const useDockDrag = ({
   }, [store, clearPending]);
 
   useEffect(() => finish, [finish]);
+
+  useEffect(() => {
+    if (pressRef.current !== null) {
+      finish();
+    }
+  }, [scope, finish]);
 
   const ghostOf = useCallback(
     ({ zone, isSwap }: DropParams): DockGhost | null => {
@@ -296,24 +304,29 @@ export const useDockDrag = ({
         return;
       }
       const isSwapped = isSwap && zone.swap !== null && zone.paneKey !== null;
-      if (press.isKeyboard) {
-        announce({
-          text: `Moved ${press.title}. ${dockStatusOf({
-            zone,
-            names: press.names,
-            isSwap,
-            folds: folds ?? [],
-            position: null,
-          })}`,
-        });
-      }
-      latest.current.onMove?.({
+      const moved = latest.current.onMove?.({
         key: press.key,
         unit: isSwapped ? 'cell' : press.unit,
         target: isSwapped
           ? ({ at: 'swap', key: zone.paneKey ?? '' } satisfies DockMoveTarget)
           : zone.target,
         ...(press.isKeyboard && { isKeyboard: true }),
+      });
+      if (!press.isKeyboard) {
+        return;
+      }
+      const place = dockStatusOf({
+        zone,
+        names: press.names,
+        isSwap,
+        folds: folds ?? [],
+        position: null,
+      });
+      void Promise.resolve(moved).then((isMoved) => {
+        announce({
+          text:
+            isMoved === false ? `${press.title} did not move.` : `Moved ${press.title}. ${place}`,
+        });
       });
     },
     [announce, finish, store],
@@ -429,6 +442,7 @@ export const useDockDrag = ({
         (event) => {
           if (!(event.target instanceof Node) || !grid.contains(event.target)) {
             announce({ text: `Move of ${press.title} cancelled.` });
+            restoreRef.current = null;
             finish();
           }
         },

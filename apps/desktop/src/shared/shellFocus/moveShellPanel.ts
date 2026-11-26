@@ -5,17 +5,27 @@ import { toolKindOf } from './toolKindOf';
 
 type Params = DockGridMove;
 
-export const moveShellPanel = ({ key, unit, target, isKeyboard = false }: Params): void => {
+export const moveShellPanel = ({
+  key,
+  unit,
+  target,
+  isKeyboard = false,
+}: Params): Promise<boolean> => {
   const kind = toolKindOf({ key });
   if (kind === undefined) {
-    return;
+    return Promise.resolve(false);
   }
   const state = useAppStore.getState();
-  void state
-    .moveDockPanel({ sessionId: state.currentSessionId, kind, target, unit })
-    .then((isMoved) => {
-      if (isMoved && isKeyboard) {
-        requestAnimationFrame(() => focusPanelHead({ key }));
-      }
-    });
+  const sessionId = state.currentSessionId;
+  return state.moveDockPanel({ sessionId, kind, target, unit }).then((isMoved) => {
+    if (isMoved && isKeyboard) {
+      requestAnimationFrame(() =>
+        focusPanelHead({
+          key,
+          isCurrent: () => useAppStore.getState().currentSessionId === sessionId,
+        }),
+      );
+    }
+    return isMoved;
+  });
 };

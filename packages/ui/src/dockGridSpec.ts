@@ -51,6 +51,6 @@ export type DockGridSpec = {
   readonly onFocus: (params: KeyParams) => void;
   readonly onResize?: (params: DockGridResize) => void;
   readonly onSplit?: (params: DockGridSplit) => void;
-  readonly onMove?: (params: DockGridMove) => void;
+  readonly onMove?: (params: DockGridMove) => void | Promise<boolean>;
   readonly onFold?: (params: DockFold) => void;
 };

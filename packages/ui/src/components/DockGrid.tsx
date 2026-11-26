@@ -68,6 +68,7 @@ export const DockGrid = ({
     canDrop,
     boxesOf,
     onMove: canMove ? (spec.onMove ?? null) : null,
+    ...(spec.scope !== undefined && { scope: spec.scope }),
   });
   useDockFoldReport({
     ...(spec.scope !== undefined && { scope: spec.scope }),
