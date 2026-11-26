@@ -35,7 +35,7 @@ A session worktree keeps its index, `HEAD` and `rebase-merge` in `<repo>/.git/wo
 
 ### A read-only Cursor run takes the trust flag, never the force flag
 
-`cursor-agent` 2026.10.22 and later ends a headless turn with "Workspace Trust Required" unless it gets `--force` or `--trust`. `workspace_trust_args` adds `--trust` after the probe, like `partial_output_args`, so `turn_args` and `side_job_args` stay pure. A fake Cursor CLI lists `--trust` in its `--help`, and a new Cursor spawn site calls it.
+`cursor-agent` 2026.10.22 and later ends a headless turn with "Workspace Trust Required" unless it gets `--force` or `--trust`. `workspace_trust_args` adds `--trust` after the probe, like `partial_output_args`, so `turn_args` and `side_job_args` stay pure. A fake Cursor CLI lists `--trust` in its `--help`, and a new Cursor spawn site calls it. Never replace `--trust` with `--force` on a read-only job: `--force` grants shell and write rights.
 
 Never use `--force` for a read-only job: it grants shell and write rights.
 
@@ -87,9 +87,9 @@ A CLI's Bash tool runs each command as its own session leader (measured under a 
 
 ### macOS hides the tag of Apple-signed binaries
 
-System Integrity Protection hides the environment of `sh`, `bash` and `sleep` from `ps -E` and `KERN_PROCARGS2`, so the tag finds only third-party programs (node, bun, vite, the CLIs). Those binaries are covered by the tree and the group while the run lives, and the end-of-turn reap signals the leader's whole group.
+System Integrity Protection hides the environment of `sh`, `bash` and `sleep` from `ps -E` and `KERN_PROCARGS2`, so the tag finds only third-party programs (node, bun, vite, the CLIs), not those Apple binaries. They are covered by the tree and the group while the run lives, and the end-of-turn reap signals the leader's whole group, so a restricted child in the group dies there.
 
-One that left the group and whose parent is gone is found by nothing: a known limit, not a bug for a broader match. A reap test with `sleep` as the straggler fails on macOS, so the tests use the test executable as the child.
+A restricted child that left the group (its own session) and whose parent is gone is found by nothing: a known limit, not a bug for a broader match. A reap test with `sleep` as the straggler fails on macOS, so the tests use the test executable as the child.
 
 ### A pid is checked again before every signal
 

@@ -46,7 +46,7 @@ Then `worktree_repo_default_base_branch` returns nothing and the base branch pic
 
 ### A new branch is cut from `origin/<base>`
 
-`worktree/create.rs` prefers the remote base, so a stale local `main` never leaks commits, then `origin/master` when the base is `main` and only `master` exists, then the local branch. "origin has no such branch" and "origin could not be reached" are told apart: only the first lets a caller cut the branch itself, since an outage turned fresh branch would diverge from the real one.
+`worktree/create.rs` prefers the remote base, so a stale local `main` never leaks commits, then `origin/master` when the base is `main` and only `master` exists, then the local branch. "origin has no such branch" and "origin could not be reached" are told apart: only the first lets a caller cut the branch itself, because an outage that silently became a fresh branch would diverge from the real one.
 
 ### There is one push verb
 

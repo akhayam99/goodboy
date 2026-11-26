@@ -74,7 +74,7 @@ A branch switch in between, or a refused ref update, moves the files back unless
 
 A resolver from `startBatch` (`resolve_attempts.batch_id` set) runs in a detached copy made by `drainResolveQueue` through `resolve_copy_prepare`, at the branch head or the note's working tree snapshot, under the history copy reservations with slug `resolve-<attemptId>`. `sendTurn` gets it as `resolveCopyPath`. The turn takes no writer lease, gets the copy and its git admin folder as writable roots, and cannot push.
 
-The copy mirrors every `node_modules` of the main tree to depth 3: real folders, symlinks for `.pnpm` and other real entries, and pnpm's relative links recreated so a workspace package resolves to the copy's code. Nothing is written into the main tree.
+The copy mirrors every `node_modules` of the main tree to depth 3: real folders, symlinks for `.pnpm` and other real entries, and pnpm's relative links recreated so a workspace package resolves to the copy's code. A main tree without dependencies yields a copy without them. Nothing is written into the main tree.
 
 Resolvers without a batch work on the real branch under the writer lease, one at a time. A copy is never reused: a later turn without one (an operator message) runs on the real branch with the lease.
 

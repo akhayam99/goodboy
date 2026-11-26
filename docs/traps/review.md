@@ -61,7 +61,7 @@ A quiet commit (`commit -qam ... && log --oneline -1`) prints no `[branch sha]`,
 
 ### A CI fix chain survives the new run a push starts
 
-A chain is keyed by the analyzed check URL, and a push starts a run with a new URL. `checkTargetOf` keeps the mount's latest analysis (same URL or check name), so the chain does not fall to `none`, and `checkOutcomeOf` reads the new run by name: the old URL is "running", never "still fails". It ties an analyst to its mount through `selectCheckMount`, which matches the URL against each mount's pull requests and check runs; agents since m233 also store `agents.mount_id`, NULL once the worktree row goes.
+A chain is keyed by the analyzed check URL, and a push starts a run with a new URL. `checkTargetOf` keeps the mount's latest analysis (same URL or check name), so the chain does not fall to `none`, and `checkOutcomeOf` reads the new run by name: the old URL is "running", never "still fails". An agent carries no mount id, so `checkTargetOf` ties an analyst to its mount through `selectCheckMount`, which matches the URL against each mount's pull requests and check runs; agents since m233 also store `agents.mount_id`, NULL once the worktree row goes.
 
 A CI fix agent's Activity row finds its mount through `ciFixMountOf`:
 
