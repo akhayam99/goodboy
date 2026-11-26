@@ -22,6 +22,7 @@ export type SegmentedTabOption<T extends string = string> = {
   readonly disabled?: boolean;
   readonly accent?: string;
   readonly tone?: Tone;
+  readonly handleKey?: string;
 };
 
 export type SegmentedTabsSize = 'xs' | 'sm' | 'md';
@@ -175,6 +176,7 @@ export const SegmentedTabs = <T extends string>({
             <button
               type="button"
               role="tab"
+              data-dock-tab={option.handleKey}
               aria-selected={isActive}
               tabIndex={index === focusIndex ? 0 : -1}
               disabled={option.disabled}

@@ -782,10 +782,21 @@ toast `Panel layout reset` has Undo, which writes the layout before it back
 and changes nothing once the panels moved again. On the Board, with no
 session, the grid changes and nothing is saved.
 
-With two panels or more, a panel's head title is a drag source
-(`DockDragContext` from `DockGrid`, read by `useDockGrip` in `DrawerTitleGrip`,
-`useDockDrag`). The Browser has no frame head, so its address row is the drag
-source, with a grip mark first (`BrowserAddressRow`, `rowLayout.test.tsx`). A
+Every panel of the dock (Terminal, Browser, Scripts, Ask, Monitor) opens with
+the same 40px head (`DockPanelHead` from `@goodboy/ui`, drawn by `DrawerFrame`
+with `isDock`): title or tab strip, at most two actions, a menu, Close in the
+same place. There is no grip icon. With two panels or more the whole head is
+the drag handle and shows a grab cursor (`DockDragContext` from `DockGrid`,
+read by `useDockGrip` in `DockPanelHead`, `useDockDrag`); the empty area moves
+the whole cell. In a tabbed cell the tab strip takes the title's place in the
+head, and each tab segment is its own handle for that panel alone
+(`DockDragSource.onStartPanel`, not wired to a move yet). A head that is not a
+`DockPanelHead` fails `panel-head.test.ts`. The Browser keeps Back, Forward,
+Reload, the address and the rest as the first row of its body
+(`BrowserAddressRow`), the Terminal its folder picker and worktree strip, and
+Monitor its Pin a port action as a pin icon in the head. Branch names that may
+share a prefix cut in the middle and keep their last 12 characters
+(`midTruncate`, `MidTruncate` in the Scripts groups). A
 press becomes a drag after 4px, so a click stays a click, and a press on a
 control inside the head, or inside a layer the head portals out (a menu, the
 address suggestions), never starts one; Esc cancels through the escape stack and the

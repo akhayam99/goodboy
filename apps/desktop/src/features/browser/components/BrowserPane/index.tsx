@@ -11,6 +11,8 @@ import { useNativePlacement } from '../../hooks/useNativePlacement';
 import { useParkedTab } from '../../hooks/useParkedTab';
 import { devicePresetOf } from '../../devicePresets';
 import { promoteBrowserTab } from '../../promoteBrowserTab';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
 import { BrowserAddressRow } from './BrowserAddressRow';
 import { BrowserToolsDock } from '../BrowserToolsDock';
 import { BrowserNotice } from './BrowserNotice';
@@ -70,7 +72,17 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
   });
 
   return (
-    <DrawerFrame title="Browser" isHeaderless onClose={onClose}>
+    <DrawerFrame
+      isDock
+      title="Browser"
+      icon={CONCEPT_ICONS.browser}
+      page={{
+        label: NAMES.openFullPage,
+        onOpen: () => promoteBrowserTab({ sessionId, tabId: shownTab?.id ?? null }),
+      }}
+      onClose={onClose}
+      scroll="self"
+    >
       <div ref={root} className="flex min-h-0 flex-1 flex-col gap-1">
         <BrowserAddressRow
           model={model}
@@ -81,7 +93,6 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
           }}
           pick={pick}
           onOpenAsPage={() => promoteBrowserTab({ sessionId, tabId: shownTab?.id ?? null })}
-          onClose={onClose}
         />
         {pick.picks.length > 0 ? <BrowserPickNote pick={pick} /> : null}
         {model.error === null ? null : (

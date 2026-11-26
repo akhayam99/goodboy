@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -13,6 +14,8 @@ import { dockGridTracksOf } from '../dockGridTracksOf';
 import { DockPairTurnContext, type DockPairTurn } from '../dockPairTurnContext';
 import type { DockGridSpec } from '../dockGridSpec';
 import { DockDragContext, type DockDragSource } from '../dockDragContext';
+import { dockTabOptionsOf } from '../dockTabOptionsOf';
+import { DockTabsContext, type DockTabs } from '../dockTabsContext';
 import type { CanDropParams } from '../dockDropZonesOf';
 import { useDockDrag } from '../useDockDrag';
 import { DockCellTabs } from './DockCellTabs';
@@ -96,6 +99,12 @@ export const DockGrid = ({
       ),
     [canMove, keyList, startDrag],
   );
+  const [headed, setHeaded] = useState<ReadonlySet<string>>(() => new Set());
+  const claim = useCallback<DockTabs['claim']>(({ paneKey }) => {
+    setHeaded((previous) => new Set([...previous, paneKey]));
+    return () =>
+      setHeaded((previous) => new Set([...previous].filter((candidate) => candidate !== paneKey)));
+  }, []);
   const [kept, setKept] = useState<Readonly<Record<string, string>>>({});
   const focus = spec.focus;
   const focusedCell =
@@ -133,6 +142,15 @@ export const DockGrid = ({
           const isTabbed = tabs.length > 1;
           const isFocused = isFocusShown && spec.focus === shown;
           const isAlone = column.panes.length === 1;
+          const tabsOfCell: DockTabs | null = isTabbed
+            ? {
+                paneKey: pane.key,
+                options: dockTabOptionsOf({ spec, tabs }),
+                shown,
+                onSelect: spec.onFocus,
+                claim,
+              }
+            : null;
           return (
             <div
               key={pane.key}
@@ -166,14 +184,18 @@ export const DockGrid = ({
                 drag.liftedKey === pane.key && 'opacity-50',
               )}
             >
-              {isTabbed ? <DockCellTabs spec={spec} tabs={tabs} shown={shown} /> : null}
+              {isTabbed && !headed.has(pane.key) ? (
+                <DockCellTabs spec={spec} tabs={tabs} shown={shown} />
+              ) : null}
               <DockPairTurnContext.Provider
                 value={
                   turn === null ? null : { ...turn, onTurn: () => spec.onTurn({ key: shown }) }
                 }
               >
-                <DockDragContext.Provider value={isTabbed ? null : (sources.get(pane.key) ?? null)}>
-                  <DockCellContext.Provider value={shown}>{cell}</DockCellContext.Provider>
+                <DockDragContext.Provider value={sources.get(pane.key) ?? null}>
+                  <DockTabsContext.Provider value={tabsOfCell}>
+                    <DockCellContext.Provider value={shown}>{cell}</DockCellContext.Provider>
+                  </DockTabsContext.Provider>
                 </DockDragContext.Provider>
               </DockPairTurnContext.Provider>
             </div>
