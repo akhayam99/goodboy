@@ -125,7 +125,7 @@ const autoRowsOf = ({ view }: AutoRowsParams): ReadonlyArray<QueuedRow> => {
     .map((message): QueuedRow => ({
       id: message.rowId,
       source: 'auto',
-      content: message.text,
+      content: message.noteText ?? message.text,
       images: message.images
         .filter((image) => image.kind === 'image')
         .map((image) => autoImageOf({ image })),

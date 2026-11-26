@@ -12,6 +12,11 @@ describe('legacyNoteTextOf', () => {
     'Continue the Implementer that stopped (delegation d-1) from where it left off.',
     'Continue the Implementer that stopped (delegation d-1) from where it left off: patch ledger-core',
     '<<oq-answers>>\nAnswers to open questions:\n<</oq-answers>>',
+    'Goodboy restarted while you were working on the last message, so your previous turn was cut off. Check the current state of the files and of any command you had started before you run it again, then carry on from where you stopped.',
+    'Continue with Cascadia import. Go on past the first check.',
+    "The Implementer you started stopped at its usage limit, and its continuation didn't start: no budget left",
+    'Permission for Read is granted for this one call.\n<<oq-answers>>\nQ: scope\n<</oq-answers>>',
+    'Permission for Read is granted for this one call.\nContinue the Reviewer that stopped (delegation d-3) from where it left off: review ledger-core',
   ])('reads %j as no note', (text) => {
     expect(legacyNoteTextOf({ text })).toBeNull();
   });
@@ -24,6 +29,13 @@ describe('legacyNoteTextOf', () => {
     ].join('\n');
 
     expect(legacyNoteTextOf({ text })).toBe('Rename the guard in notify-relay');
+  });
+
+  it('keeps a denial reason that leads a system block', () => {
+    const text =
+      'Denied Read. use the Northwind fixtures\n<<oq-answers>>\nQ: scope\n<</oq-answers>>';
+
+    expect(legacyNoteTextOf({ text })).toBe('use the Northwind fixtures');
   });
 
   it('keeps the reason after Denied and nothing before it', () => {

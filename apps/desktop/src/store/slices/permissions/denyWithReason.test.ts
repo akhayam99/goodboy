@@ -88,7 +88,7 @@ describe('denyWithReason', () => {
 
     expect(rowsOf).toEqual([
       { rowOrigin: 'permission', userText: 'rename the guard' },
-      { rowOrigin: 'permission', userText: '' },
+      { rowOrigin: 'permission', userText: undefined },
     ]);
   });
 

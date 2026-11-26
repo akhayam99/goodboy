@@ -42,6 +42,7 @@ export const noticeAutoOfRefusedContinue = async ({
       sessionId: stop.sessionId,
       workspaceId: session.workspaceId,
       text: `The ${child?.name ?? 'agent'} you started stopped at its usage limit, and its continuation didn't start: ${message}`,
+      origin: 'system',
     });
     return result === 'queued';
   };

@@ -361,6 +361,34 @@ describe('a message typed to an Auto agent', () => {
     expect(turn?.origin).toBe('operator');
   });
 
+  it('puts the reasons of held denials before the typed words in the user words', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    const { get } = harness({
+      agents: [autoRow],
+      transcripts: {
+        [AUTO_AGENT]: [
+          AUTO_ASK,
+          {
+            kind: 'permission_decision',
+            runId: ASK_RUN,
+            toolUseId: 'read-outside',
+            decision: 'deny',
+            scope: 'once',
+            ruleId: null,
+            decidedBy: 'user',
+            reason: 'not that file',
+            at: ASKED_AT,
+          },
+        ],
+      },
+    });
+
+    await routeAutoUserTurn({ get, input: inputOf({ origin: 'operator', content: 'Go on.' }) });
+
+    expect(port.mock.calls[0]?.[0]?.userText).toBe('not that file\nGo on.');
+  });
+
   it.each(['permission', 'continue', 'answers', 'system'] as const)(
     'sends a %s row with its origin, no user words and no bubble',
     async (rowOrigin) => {

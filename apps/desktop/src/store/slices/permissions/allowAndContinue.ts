@@ -6,6 +6,7 @@ import { heldOnceAllowsOf } from './heldOnceAllowsOf';
 import { NO_RESOLVED_ASKS } from './noResolvedAsks';
 import type { GetFn, SetFn } from './types';
 import { withHeldAnswers } from './withHeldAnswers';
+import { permissionRowOf } from './permissionRowOf';
 
 type Params = {
   sessionId: SessionId;
@@ -57,7 +58,7 @@ export const allowAndContinue = (set: SetFn, get: GetFn) => {
         content: withHeldAnswers({ held, prompt: CONTINUE_PROMPT }),
         permissionOnceAllows: [...heldOnceAllowsOf({ held }), oncePatternText({ toolName, input })],
         resolvedAsks: NO_RESOLVED_ASKS,
-        rowOrigin: 'permission',
+        ...permissionRowOf({ held }),
       }),
     });
   };

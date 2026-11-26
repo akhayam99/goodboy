@@ -14,7 +14,9 @@ import type {
 } from '@goodboy/types';
 import { askDenialEventOf } from '../../slices/permissions/askDenialEventOf';
 import { deniedPromptOf } from '../../slices/permissions/deniedPromptOf';
+import type { AnsweredAsk } from '../../../features/permissions/askBatchOf';
 import { heldOnceAllowsOf } from '../../slices/permissions/heldOnceAllowsOf';
+import { heldReasonsOf } from '../../slices/permissions/heldReasonsOf';
 import { resolvedAsksAtWrite } from '../../slices/permissions/resolvedAsksAtWrite';
 import { scopedReadGrantsOf } from '../../slices/permissions/scopedReadGrantsOf';
 import { withHeldAnswers } from '../../slices/permissions/withHeldAnswers';
@@ -93,6 +95,7 @@ const askDenialOf = ({ get, input, agentId }: DeniedParams) => {
   const denied = deniedPromptOf({ asks, content: input.content, prompt: input.content });
   return {
     asks,
+    held,
     text: withHeldAnswers({ held, prompt: denied }),
     grants: scopedReadGrantsOf({
       grants: [...(input.permissionOnceAllows ?? []), ...heldOnceAllowsOf({ held })],
@@ -106,11 +109,18 @@ type OriginParams = {
 
 const rowOriginOf = ({ input }: OriginParams): UserOrigin => input.rowOrigin ?? 'operator';
 
-const userTextOf = ({ input }: OriginParams): string | undefined => {
+type UserTextParams = OriginParams & {
+  readonly held: ReadonlyArray<AnsweredAsk>;
+};
+
+const userTextOf = ({ input, held }: UserTextParams): string | undefined => {
   if (input.userText !== undefined) {
     return input.userText;
   }
-  return rowOriginOf({ input }) === 'operator' ? input.content : undefined;
+  if (rowOriginOf({ input }) !== 'operator') {
+    return undefined;
+  }
+  return [...heldReasonsOf({ held }), input.content].join('\n').trim();
 };
 
 type StoreImages = typeof storeAutoImages;
@@ -177,7 +187,7 @@ export const routeAutoUserTurn = async ({
   };
   const denial = askDenialOf({ get, input, agentId });
   const origin = rowOriginOf({ input });
-  const userText = userTextOf({ input });
+  const userText = userTextOf({ input, held: denial.held });
   const result = await port({
     agentId,
     sessionId: input.sessionId,
