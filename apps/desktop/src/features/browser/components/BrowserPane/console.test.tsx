@@ -299,7 +299,7 @@ const openCart = async ({ surface }: SurfaceParams) => {
   await (surface === 'pane' ? renderPane() : renderPage());
   const region = await openTools();
   fireEvent.click(within(region).getByRole('tab', { name: /Network/ }));
-  fireEvent.click(await within(region).findByRole('button', { name: 'info: /api/cart' }));
+  fireEvent.click(await within(region).findByRole('button', { name: 'GET /api/cart, 200' }));
   return region;
 };
 
@@ -356,6 +356,12 @@ const shownLevels = () =>
   Array.from(
     screen.getByRole('log').querySelectorAll('[data-console-level]'),
     (node) => `${node.getAttribute('data-console-level')} ${node.textContent ?? ''}`,
+  );
+
+const requestNames = () =>
+  Array.from(
+    screen.getByRole('list', { name: 'Requests' }).querySelectorAll('[data-row-key]'),
+    (node) => node.getAttribute('aria-label') ?? '',
   );
 
 beforeAll(async () => {
@@ -453,7 +459,7 @@ describe('the browser console', () => {
 
     fireEvent.click(within(region).getByRole('tab', { name: /Network/ }));
 
-    expect(shownLevels()).toEqual(['error POST 500/api/orders/confirm']);
+    expect(requestNames()).toEqual(['POST /api/orders/confirm, 500']);
   });
 
   it('filters the console by level and by search, and says when nothing matches', async () => {
@@ -512,13 +518,12 @@ describe('the browser console', () => {
 
     fireEvent.click(within(region).getByRole('tab', { name: /Network/ }));
 
-    expect(shownLevels()).toEqual([
-      'error POST 500/api/orders/confirm',
-      'info GET loaded/assets/app.js',
-    ]);
-    fireEvent.click(within(region).getByRole('button', { name: 'Filter by level' }));
-    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'Failed' }));
-    expect(shownLevels()).toEqual(['error POST 500/api/orders/confirm']);
+    expect(requestNames()).toEqual(['POST /api/orders/confirm, 500', 'GET /assets/app.js, loaded']);
+    const failedOnly = within(region).getByRole('button', { name: 'Failed only' });
+    fireEvent.click(failedOnly);
+    expect(failedOnly.getAttribute('aria-pressed')).toBe('true');
+    expect(requestNames()).toEqual(['POST /api/orders/confirm, 500']);
+    within(region).getByText('1 of 2 requests');
   });
 
   it('reads with the session, the tab and the cursor, and appends after the answer', async () => {
@@ -731,12 +736,12 @@ describe('the browser console', () => {
     await renderPane();
     const region = await openTools();
     fireEvent.click(within(region).getByRole('tab', { name: /Network/ }));
-    fireEvent.click(await within(region).findByRole('button', { name: 'info: /api/cart' }));
+    fireEvent.click(await within(region).findByRole('button', { name: 'GET /api/cart, 200' }));
 
     const detail = within(region).getByRole('region', { name: 'Request' });
     within(detail).getByText('GET /api/cart');
     within(detail).getByText('200 · 42 ms · 2.0 KB');
-    within(region).getByRole('log', { name: 'Requests' });
+    within(region).getByRole('list', { name: 'Requests' });
     expect(
       within(detail).getByRole('button', { name: 'Previous request' }).hasAttribute('disabled'),
     ).toBe(true);
@@ -748,7 +753,7 @@ describe('the browser console', () => {
     fireEvent.keyDown(detail, { key: 'Escape' });
 
     expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
-    within(region).getByRole('button', { name: 'info: /api/cart' });
+    within(region).getByRole('button', { name: 'GET /api/cart, 200' });
   });
 
   it('replaces the list with the request detail when the dock sits right', async () => {
@@ -769,15 +774,15 @@ describe('the browser console', () => {
     await renderPage();
     const region = await openTools();
     fireEvent.click(within(region).getByRole('tab', { name: /Network/ }));
-    fireEvent.click(await within(region).findByRole('button', { name: 'info: /api/cart' }));
+    fireEvent.click(await within(region).findByRole('button', { name: 'GET /api/cart, 200' }));
 
     const detail = within(region).getByRole('region', { name: 'Request' });
-    expect(within(region).queryByRole('log')).toBeNull();
+    expect(within(region).queryByRole('list', { name: 'Requests' })).toBeNull();
     expect(within(region).queryByRole('searchbox')).toBeNull();
 
     fireEvent.click(within(detail).getByRole('button', { name: 'Back to requests' }));
 
-    within(region).getByRole('log', { name: 'Requests' });
+    within(region).getByRole('list', { name: 'Requests' });
     within(region).getByRole('searchbox', { name: 'Search requests' });
   });
 
@@ -788,7 +793,7 @@ describe('the browser console', () => {
 
     finishLoad();
 
-    await within(region).findByRole('button', { name: 'error: /api/charge' });
+    await within(region).findByRole('button', { name: 'POST /api/charge, 500' });
     expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
   });
 
@@ -814,12 +819,12 @@ describe('the browser console', () => {
 
     show('live-2');
 
-    await within(region).findByRole('button', { name: 'info: /api/other' });
+    await within(region).findByRole('button', { name: 'GET /api/other, 200' });
     expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
 
     show(facts.id);
 
-    await within(region).findByRole('button', { name: 'info: /api/cart' });
+    await within(region).findByRole('button', { name: 'GET /api/cart, 200' });
     expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
   });
 
@@ -832,7 +837,7 @@ describe('the browser console', () => {
     fireEvent.change(search, { target: { value: 'zzz' } });
     fireEvent.change(search, { target: { value: '' } });
 
-    within(region).getByRole('button', { name: 'info: /api/cart' });
+    within(region).getByRole('button', { name: 'GET /api/cart, 200' });
     expect(within(region).queryByRole('region', { name: 'Request' })).toBeNull();
     expect(document.activeElement).toBe(search);
   });
@@ -842,7 +847,7 @@ describe('the browser console', () => {
     async (surface) => {
       reader = async () => heard({ entries: [CART] });
       const region = await openCart({ surface });
-      const cartRow = () => within(region).getByRole('button', { name: 'info: /api/cart' });
+      const cartRow = () => within(region).getByRole('button', { name: 'GET /api/cart, 200' });
 
       fireEvent.click(within(region).getByRole('button', { name: 'Back to requests' }));
       expect(document.activeElement).toBe(cartRow());
@@ -865,6 +870,160 @@ describe('the browser console', () => {
       pressShortcut({ id: 'browser.console' });
     });
     expect(screen.queryByRole('region', { name: 'Console' })).toBeNull();
+  });
+});
+
+type PartParams = {
+  readonly name: string;
+};
+
+type TypedRequestParams = {
+  readonly seq: number;
+  readonly text: string;
+  readonly type: BrowserRequestFacts['type'];
+  readonly method?: string;
+  readonly status?: number | null;
+};
+
+const typedRequestOf = ({
+  seq,
+  text,
+  type,
+  method = 'GET',
+  status = 200,
+}: TypedRequestParams): BrowserConsoleEntry =>
+  entryOf({
+    seq,
+    level: status !== null && status >= 400 ? 'error' : 'info',
+    text,
+    kind: 'network',
+    method,
+    status,
+    network: { ...requestOf({ id: `r${seq}`, duration: 20, size: 100 }), type, start: seq * 10 },
+  });
+
+const LOAD: ReadonlyArray<BrowserConsoleEntry> = [
+  typedRequestOf({ seq: 1, text: '/checkout', type: 'doc', status: null }),
+  typedRequestOf({ seq: 2, text: '/src/main.tsx', type: 'script' }),
+  typedRequestOf({ seq: 3, text: '/api/cart', type: 'fetch' }),
+  typedRequestOf({ seq: 4, text: '/src/app.tsx', type: 'script' }),
+  typedRequestOf({ seq: 5, text: '/api/charge', type: 'fetch', method: 'POST', status: 500 }),
+];
+
+const FULL_CHARGE = entryOf({
+  ...CHARGE,
+  network: {
+    ...requestOf({ id: 'r1', duration: 380, size: 38 }),
+    requestHeaders: [
+      { name: 'content-type', value: 'application/json' },
+      { name: 'idempotency-key', value: 'ik_7f3a' },
+      { name: 'cookie', value: 'sid=harborline-1' },
+    ],
+    responseHeaders: [{ name: 'content-type', value: 'application/json' }],
+    requestBody: '{"amount":8500}',
+    responseBody: '{"error":"idempotency key reused"}',
+    phases: { wait: 300, download: 80 },
+  },
+});
+
+const openNetwork = async () => {
+  const region = await openTools();
+  fireEvent.click(within(region).getByRole('tab', { name: /Network/ }));
+  await waitFor(() => expect(requestNames().length).toBeGreaterThan(0));
+  return region;
+};
+
+describe('the network table', () => {
+  it('filters by type and steps up and down through the filtered rows only', async () => {
+    reader = async () => heard({ entries: LOAD });
+    await renderPane();
+    const region = await openNetwork();
+
+    fireEvent.click(
+      within(within(region).getByRole('tablist', { name: 'Request type' })).getByRole('tab', {
+        name: 'Fetch',
+      }),
+    );
+
+    expect(requestNames()).toEqual(['GET /api/cart, 200', 'POST /api/charge, 500']);
+    fireEvent.click(within(region).getByRole('button', { name: 'GET /api/cart, 200' }));
+    const detail = within(region).getByRole('region', { name: 'Request' });
+    fireEvent.keyDown(detail, { key: 'ArrowDown' });
+    within(detail).getByText('POST /api/charge');
+    expect(
+      within(detail).getByRole('button', { name: 'Next request' }).hasAttribute('disabled'),
+    ).toBe(true);
+    fireEvent.keyDown(detail, { key: 'ArrowUp' });
+    within(detail).getByText('GET /api/cart');
+  });
+
+  it('shows the response, payload, headers and timing of a request, never a cookie', async () => {
+    reader = async () => heard({ entries: [FULL_CHARGE] });
+    await renderPane();
+    const region = await openNetwork();
+
+    fireEvent.click(within(region).getByRole('button', { name: 'POST /api/charge, 500' }));
+    const detail = within(region).getByRole('region', { name: 'Request' });
+    const part = ({ name }: PartParams) =>
+      fireEvent.click(
+        within(within(detail).getByRole('tablist', { name: 'Request part' })).getByRole('tab', {
+          name,
+        }),
+      );
+
+    expect(within(detail).getByLabelText('Response body').textContent).toBe(
+      '{\n  "error": "idempotency key reused"\n}',
+    );
+    part({ name: 'Payload' });
+    expect(within(detail).getByLabelText('Request body').textContent).toBe(
+      '{\n  "amount": 8500\n}',
+    );
+    part({ name: 'Headers' });
+    within(detail).getByText('http://localhost:5173/api/charge');
+    within(detail).getByText('ik_7f3a');
+    expect(within(detail).queryByText('sid=harborline-1')).toBeNull();
+    part({ name: 'Timing' });
+    const timing = within(detail).getByLabelText('Timing');
+    expect(timing.textContent).toBe(
+      'Started0 ms after the page started loadingWaiting300 msDownload80 msTotal380 ms',
+    );
+  });
+
+  it('comes back to the same scroll position after a request covered the list', async () => {
+    reader = async () => heard({ entries: LOAD });
+    await renderPage();
+    const region = await openNetwork();
+    const scroller = () =>
+      within(region).getByRole('list', { name: 'Requests' }).parentElement?.parentElement ?? null;
+    const before = scroller();
+    if (before === null) {
+      throw new Error('no scroller');
+    }
+    before.scrollTop = 120;
+
+    fireEvent.click(within(region).getByRole('button', { name: 'GET /api/cart, 200' }));
+    expect(within(region).queryByRole('list', { name: 'Requests' })).toBeNull();
+    fireEvent.click(within(region).getByRole('button', { name: 'Back to requests' }));
+
+    expect(scroller()?.scrollTop).toBe(120);
+  });
+
+  it('adds the request to the message of the agent it names and sends nothing', async () => {
+    reader = async () => heard({ entries: [FULL_CHARGE] });
+    await renderPane();
+    const region = await openNetwork();
+
+    fireEvent.click(within(region).getByRole('button', { name: 'POST /api/charge, 500' }));
+    fireEvent.click(within(region).getByRole('button', { name: 'Send request to Implementer' }));
+
+    const [handoff] = store.getState().outputHandoffs[IMPLEMENTER] ?? [];
+    expect(handoff?.fileName).toBe('post-api-charge-request.md');
+    expect(handoff?.text).toContain('- idempotency-key: ik_7f3a');
+    expect(handoff?.text).not.toContain('harborline-1');
+    within(region).getByText(
+      'Added to your message to Implementer as post-api-charge-request.md. Nothing goes until you send.',
+    );
+    expect(storySpies.tauriInvoke.mock.calls.map(([name]) => name)).not.toContain('turn_send');
   });
 });
 

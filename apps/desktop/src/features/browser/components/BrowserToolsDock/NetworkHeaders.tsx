@@ -1,3 +1,4 @@
+import { isHiddenHeader } from '../../isHiddenHeader';
 import { requestUrlOf } from '../../requestUrlOf';
 import type { BrowserConsoleEntry } from '../../types';
 import { NetworkFactList } from './NetworkFactList';
@@ -20,7 +21,12 @@ export const NetworkHeaders = ({ entry, pageUrl }: Props) => {
   const sections = [
     { label: 'Response headers', headers: facts?.responseHeaders ?? [] },
     { label: 'Request headers', headers: facts?.requestHeaders ?? [] },
-  ].filter((section) => section.headers.length > 0);
+  ]
+    .map((section) => ({
+      ...section,
+      headers: section.headers.filter((header) => !isHiddenHeader({ name: header.name })),
+    }))
+    .filter((section) => section.headers.length > 0);
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <NetworkFactList label="General" facts={general} />
