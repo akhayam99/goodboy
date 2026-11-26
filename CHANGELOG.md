@@ -31,7 +31,7 @@ Drag a tool by its head and cards show where it can land: Place left, Place righ
 #### Clear site data in the Browser
 <!-- gb area=app pr=2415 -->
 
-More has a Clear site data row that removes the cookies and storage of the page you view, then reloads it. Shift-click Reload or press ⌘⇧R to reload without the cache. Settings, Projects clears the browser data of a whole workspace.
+On macOS, More has a Clear site data row that removes the cookies and storage of the page you view, then reloads it, and Shift-click Reload or ⌘⇧R reloads without the cache. On Windows and Linux the row reads Clear browser data and clears the whole workspace. Settings, Projects clears the browser data of a workspace.
 
 ### Fixed
 
