@@ -1,13 +1,13 @@
 import { brandId, type IsoDateTime, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { describe, expect, it } from 'vitest';
-import { sessionFixture, WORKSPACE } from '../../../__tests__/helpers/actionFixtures';
-import type { TerminalTabId } from '../../../shared/types/terminal';
-import { BOARD_PLACE, sessionPlace } from '../navigation/place';
-import { workspaceTerminalOwner } from '../terminal/terminalOwner';
-import { dockAfterPlace } from './dockAfterPlace';
-import { gridAfterOpen } from './gridAfterOpen';
-import { dockScopeInitialState, type DockScopeState } from './dockScopeState';
-import { EMPTY_DRAWER_GRID, type DrawerGrid, type OpenDrawer } from './state';
+import { sessionFixture, WORKSPACE } from '../../../../__tests__/helpers/actionFixtures';
+import type { TerminalTabId } from '../../../../shared/types/terminal';
+import { BOARD_PLACE, sessionPlace } from '../../navigation/place';
+import { workspaceTerminalOwner } from '../../terminal/terminalOwner';
+import { dockAfterPlace } from '../dockAfterPlace';
+import { gridAfterOpen } from '../gridAfterOpen';
+import { dockScopeInitialState, type DockScopeState } from '../dockScopeState';
+import { EMPTY_DRAWER_GRID, type DrawerGrid, type OpenDrawer } from '../state';
 
 const LEDGER = brandId<SessionId>({ value: 'session-ledger-core' });
 const NOTIFY = brandId<SessionId>({ value: 'session-notify-relay' });

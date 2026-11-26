@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
-import type { AppState } from '../../types';
-import { sessionById } from '../sessions/sessionIndex';
+import type { AppState } from '../../../types';
+import { sessionById } from '../../sessions/sessionIndex';
 
 export const NEW_SESSION_WINDOW_MS = 120_000;
 

@@ -1,6 +1,6 @@
 import type { AppState } from '../../types';
-import { carriedDockGrid } from './carriedDockGrid';
-import { isNewSession } from './isNewSession';
+import { carriedDockGrid } from './dockCarry/carriedDockGrid';
+import { isNewSession } from './dockCarry/isNewSession';
 import type { Place } from '../navigation/types';
 import { dockScopeOf } from './dockScopeOf';
 import type { DockScope, DockScopeState } from './dockScopeState';

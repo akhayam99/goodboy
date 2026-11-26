@@ -1,9 +1,9 @@
 import type { SessionId } from '@goodboy/types';
-import type { AppState } from '../../types';
-import { sessionById } from '../sessions/sessionIndex';
-import { gridWithout } from './gridWithout';
-import { parseTerminalId, terminalOwnerKey } from '../terminal/terminalOwner';
-import type { DrawerGrid, OpenDrawer } from './state';
+import type { AppState } from '../../../types';
+import { sessionById } from '../../sessions/sessionIndex';
+import { gridWithout } from '../gridWithout';
+import { parseTerminalId, terminalOwnerKey } from '../../terminal/terminalOwner';
+import type { DrawerGrid, OpenDrawer } from '../state';
 
 type StateParams = {
   readonly state: Pick<AppState, 'sessions' | 'terminalTabs'>;
