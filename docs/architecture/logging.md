@@ -33,7 +33,8 @@ only, credentials inside URLs hidden, cut at 200 characters.
 - **Slow operations.** `logging::slow(label, started)` and `logging::timed`
   write `[slow] <label> took <n>ms` at 250 ms or more
   (`logging::SLOW_THRESHOLD`). The labels are fixed: `git <verb>` in the `Git`
-  runner (the subcommand only, `git` alone when it is not a plain name),
+  runner (the subcommand only, never an argument or a path, and `git` alone
+  when it is not a plain name),
   `db_exec`, `db_execute`, `db_select` and `db_transaction` (each with a
   `<command> lock wait` line when the lock wait was that long) and `db_vacuum`.
   Spawn and the provider probes do not write one.
@@ -46,12 +47,14 @@ only, credentials inside URLs hidden, cut at 200 characters.
   `[turns] step ended without a result agent <id>: <reason>` when a workflow
   step still runs after its turn settled with nothing to continue it
   ([workflows.md](../workflows.md) → When a step stops without its done
-  marker). Control characters become spaces, and each field is cut at 200
+  marker). It holds the agent id and a fixed reason, nothing from the
+  conversation. Control characters become spaces, and each field is cut at 200
   characters.
 
 ## Startup
 
-- **Logging never blocks startup.** `logging::init` builds the logger itself.
+- **Logging never blocks startup.** `logging::init` builds the logger itself and
+  does not register the plugin.
   If the folder or file cannot be opened (a `goodboy.log` owned by root after a
   `sudo` run, a read-only folder), it prints one line to stderr and the app
   starts with logging off.

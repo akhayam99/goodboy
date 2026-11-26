@@ -39,7 +39,8 @@ Every process starts and stops through `src-tauri/src/proc/`.
   (terminal, provider login, script). `wait_for_exit` holds the session lock
   only for each `try_wait` poll, so a close or cancel is never queued behind a
   running child. A live script `run_id` is refused (`duplicate`), and a
-  finished run removes only its own registry entry.
+  finished run removes only its own registry entry, never a newer run under a
+  reused id.
 - **Signals and opens.** `proc/signal.rs` holds the only `kill`, `killpg`,
   liveness and session lookups (R7 in `docs/rust.md`), and `proc/open.rs` the
   only OS open (`open_target`, `open_path`, refused for an executable, and
@@ -70,7 +71,7 @@ The window never names a binary, a command or an app.
 - **External terminals.** `open_in_external_terminal` takes an existing folder
   and an optional id from `KNOWN_TERMINALS` (`external_terminal.rs`: terminal,
   iterm, warp, ghostty). Without an id it reads `terminal.app` from `settings`
-  and falls back to Terminal.app. On macOS it runs `open -a <app> <folder>`
+  and falls back to Terminal.app when that app is gone. On macOS it runs `open -a <app> <folder>`
   with separate arguments; a provider command runs through AppleScript in
   Terminal.app or iTerm only. `detect_terminals` lists the installed ones.
 - **Open never runs a file.** `util/open_guard.rs` refuses a file or bundle
@@ -120,7 +121,8 @@ one: a signal reads as 128 plus its number (a SIGKILL is 137).
 1. It reads one `ps` table with the start time the kernel reports per row
    (`proc/kernel.rs`), through `proc::probe::run` with a 5 second deadline.
    Only processes that began after this app are asked for their environment
-   (the startup sweep reads all).
+   (the startup sweep reads all). A table that does not answer counts as
+   unreadable.
 2. It signals the tree below the leader (read while the leader is still ours),
    then the leader's group, then every straggler whose environment carries this
    spawn id, app pid and app start.
@@ -143,7 +145,8 @@ this app's child and its own group leader gets its group terminated anyway.
   kills the leader, so Cancel on a login leaves no descendant.
 - **What it never touches.** A pid without this spawn id or with another app
   pid or start, pid 1, this app, another user's process, a pid whose start time
-  or tag changed, and a leader that is not this app's child.
+  or tag changed, and a leader that is not this app's child. Only a leader
+  this app still holds brings its tree and group.
 - **What the user sees.** A turn whose reap stopped something emits a `reaped`
   envelope before its end, and the transcript shows "Stopped 2 processes this
   turn left running: next-server, 1 more." The CLI's own helpers (an
@@ -156,14 +159,15 @@ this app's child and its own group leader gets its group terminated anyway.
 A side job is stopped after 10 minutes with no output and no CPU used by any
 process in its tree (`SIDE_JOB_IDLE`, checked every 15 seconds). Output alone
 is not enough: the Claude CLI prints its whole answer at the end, so a long
-healthy call is silent. A stopped job returns `isTimedOut: true` and the caller
-throws `AuxTimedOutError`.
+healthy call is silent. A stopped job returns `isTimedOut: true` (`exitCode` stays
+null) and the caller throws `AuxTimedOutError`.
 
 Turns have no cap. `turn_quiet` answers, per live run, the smaller of the
 output silence (`LiveChild.activity`) and the CPU stillness of its tree, from
 one table read (`proc::reap::trees_cpu`); a run whose CPU cannot be read gets
 no answer. The window asks every 30 seconds (`WorkTimeProvider`), and the row
-says "Quiet for 12 min" after `QUIET_TURN_AFTER_MS` (5 minutes).
+says "Quiet for 12 min" after `QUIET_TURN_AFTER_MS` (5 minutes,
+`workTime.ts`). Nothing is stopped.
 
 ## Launch and quit
 

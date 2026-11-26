@@ -78,6 +78,8 @@ rules this layer adds:
   while silent refreshes are held back.
 - Retry asks again for every session that already holds a request of that
   host.
+- A silent refresh of a mount that already holds an entry writes the result
+  only when the data differs from the stored entry, the `fetchedAt` time aside.
 - A second silent refresh of the same mount while one runs is dropped. A
   refresh from a screen or a first read still writes both the pending state and
   the result.

@@ -14,7 +14,7 @@ These columns store absolute paths: `projects.root_path`,
 `resolve_candidates`/`resolve_attempts`/`resolve_publications`,
 `skills.file_path` and `mount_operations`.
 
-Moving a project's folder on disk (a new drive, `~/nerd` to `~/github`) does
+Moving a project's folder on disk (a new drive, `~/code` to `~/github`) does
 not touch the database. Every saved path still points at the old location, so
 the project reads as `missing` and its sessions read as `unavailable`, the same
 non-destructive state as a disconnected disk. Nothing is lost. Git's own

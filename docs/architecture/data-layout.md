@@ -46,7 +46,8 @@ is already current, and deleting a folder breaks nothing.
   `v2/`, ...: `index.html`, a page per screen and state under `screens/`,
   `wireframe.css`, `wireframe.json`), a root `index.html` listing every
   version, one `wireframe.schema.json`, a `README.md` and `meta.json`.
-  Versions come from `artifact_revisions` and are never pruned.
+  Versions come from `artifact_revisions` and are never pruned; only Storage
+  deletes the folder.
 - **Name.** Keyed by the last 6 characters of the artifact id; it keeps its
   name when the title changes. `meta.json` holds the id, kind, title, status,
   revision, session, workspace and dates.

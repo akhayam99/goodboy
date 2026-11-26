@@ -124,9 +124,9 @@ The rules:
 - No query reaches a table before the migrations of this build are applied
   (the schema gate). A migration that throws records no version, and the
   launch error screen offers Retry.
-- A copy of the database is taken before a migration runs. Restoring it is how
-  you roll back a migration that cannot be undone; installing an older build
-  on top does not work.
+- A copy of a database that holds data is taken before a migration runs.
+  Restoring it is how you roll back a migration that cannot be undone;
+  installing an older build on top does not work.
 
 ### Who writes each table
 

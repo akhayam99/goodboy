@@ -76,9 +76,19 @@ Traps:
   statement in `packages/db/src/queries/auto-admission.ts` is the rule: phase,
   run, lease, remaining budget, plan approval and revision. A substep also
   needs its parent paused on that question in this generation with fewer than
-  two helpers (`autoSubstepStatements`). No count of agents refuses a batch: a
-  child starts only through `autoTakeRunSlotStatement`, and money has one
-  source, `treeSpend` ([auto.md](../auto.md) → What stops an Auto tree).
+  two helpers (`autoSubstepStatements`). `core/auto/admission.ts` only names
+  the refusal for the caller. No count of agents refuses a batch:
+  the cap of four running children is a start rule, and a child starts only
+  through `autoTakeRunSlotStatement` ([auto.md](../auto.md) → What stops an
+  Auto tree). Admission only asks that the limit has money left
+  (`autoBudgetLeftSql`).
+- **Money.** `treeSpend` is the one source: settled, live (what running
+  children spent, from their telemetry), reserved and remaining. It feeds
+  admission, the prompt line and the screen through `autoBudgetOf`; remaining
+  is `autoRemainingUsdSql` in SQL and `autoTreeSpendOf` in JS, and the delivery
+  line counts the turn reservation it is delivered with. An attempt keeps a
+  reservation row at 0 USD and is reconciled to the actual cost, or to 0 with
+  the cost marked unknown.
 - **Move to Auto.** `adoptAgentStatements`
   (`packages/db/src/queries/auto-adoption.ts`) guards against a vanished
   source, a Run step, a running status, an existing delegation or tree, and a
@@ -113,23 +123,29 @@ exists before.
 
 A refused start gives back the rows, the reservation and the turn count and
 blocks the tree with the reason; a claim that dies in between is found again by
-the delivery id. The text (`buildDeliveryMessage.ts`) carries each result's
-artifact text, cut when long, because a provider may not resume the session.
-When the turn ends, `settleAutoTurn.ts` picks the next phase, puts the batch
-back on failure, and counts a turn with no answer and no work, or whose block
+the delivery id. The text (`buildDeliveryMessage.ts`) starts with a digest of
+the tree (open agents with role, state and age, questions waiting, the budget)
+and carries each result's artifact text, cut when long, because a provider may
+not resume the session. When the turn ends, `settleAutoTurn.ts` picks the next
+phase (delegating, waiting, merging, done or answering), puts the batch back on
+failure, and counts a turn with no answer and no work, or whose block
 was refused.
 
 ### A child's attempt
 
 1. `launchChildren.ts` starts children only once the Auto turn is over, each
-   with its preallocated agent row and Auto's routing (`createAutoChild.ts`), a
+   with its preallocated agent row and the provider, model and effort Auto
+   chose (`createAutoChild.ts`, `autoChildRoutingOf`), so its composer names
+   that model, a
    baseline `worktree_snapshot` of its mount, and a turn with
    `origin: 'delegation'`, its `confinedRole`, the frozen mount target and its
    attempt id as delivery id.
-2. `finishAttempt.ts` reads the closing line (`core/auto/closing.ts`),
-   registers the artifacts, attributes changed files by comparing snapshots,
-   and settles with a `DelegationResultV1`. A revise's new version lands
-   through `landRevision`.
+2. `finishAttempt.ts` reads the closing line (`core/auto/closing.ts`: the
+   `step-done` line of its own agent id, a return with its `needs` and
+   request, a blocking question), registers the artifacts, attributes changed
+   files by comparing snapshots, and settles with a `DelegationResultV1`. A
+   revise turn captures nothing in the old slot: its new version is parsed
+   (`core/auto/revisionParse.ts`) and lands through `landRevision`.
 3. `join.ts` settles a batch only when every member ended, under a unique key,
    and `advancePhase.ts` moves the tree on. `createAutoRuntime.ts` runs this
    one tree at a time.
@@ -138,11 +154,14 @@ was refused.
   row for Auto. `answerQuestion.ts` resumes it in one transaction: a new
   attempt on the same agent with question and answer stored, checked against
   the money left, the attempt limit and the running slots
-  (`core/auto/resumeAdmission.ts`). The same question answered twice is one
+  (`core/auto/resumeAdmission.ts`), and it moves the delegation from `paused`
+  to `starting`. The same question answered twice is one
   resume; a different text is refused. A child's question never reaches the
-  session's open questions (`routeQuestions.ts`).
+  session's open questions (`routeQuestions.ts`, read by
+  `finalizeTurnStream.ts`), so the user never answers a hidden child.
 - **No split.** The kickoff forbids `<<fan-out>>`, and a child's split is
-  turned down with a note (`isFanOutRejected.ts`), so every process of the tree
+  turned down with a note (`isFanOutRejected.ts`, read by
+  `completeResolvedAgent.ts`), so every process of the tree
   has a delegation.
 - **Retry.** A delegate entry with `retryOf` and a reason only
   (`prepareRetry.ts`): a new delegation on the same agent and mount, with the

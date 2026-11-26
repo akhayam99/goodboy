@@ -59,7 +59,7 @@ A script run leaves a row in `work_events`
 ([architecture.md](../architecture.md#who-writes-each-table)). `scripts.rs`
 writes it at start, with the mount's branch in the payload, and stamps the end
 and exit code before `script-exit` fires. A run stopped through
-`workspace_script_cancel` is stamped 143, so reloaded history reads it as
+`workspace_script_cancel` is stamped 143, whatever the wait returned, so reloaded history reads it as
 `cancelled`.
 
 `listScriptLedger` reads the last run of each script per mount; no screen reads
