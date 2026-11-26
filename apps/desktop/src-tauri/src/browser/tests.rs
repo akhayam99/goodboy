@@ -26,7 +26,7 @@ use super::page_keys::{route_page_key, PageKeys, PAGE_KEY_EVENT};
 use super::profile::{begin_clear, ProfileId};
 use super::reason::{
     BROWSER_CALLER, INVALID_ADDRESS, NEEDLE_TOO_LONG, NOT_WEB_ADDRESS, OTHER_WINDOW, PROFILE_BUSY,
-    PROFILE_LIVE, SESSION_CLOSING, TAB_CLOSED, TAB_GONE, TOO_MANY_POPUPS,
+    SESSION_CLOSING, TAB_CLOSED, TAB_GONE, TOO_MANY_POPUPS,
 };
 use super::registry::{NewTab, TabState};
 use super::{
@@ -338,12 +338,21 @@ fn registers_every_app_command_behind_the_browser_wall() {
 }
 
 #[test]
-fn keeps_the_profile_commands_away_from_the_webview_until_a_page_calls_them() {
+fn keeps_the_isolation_command_away_from_the_webview_until_a_page_calls_it() {
     let walled = walled_commands();
     let ledger = ledger_commands();
-    for name in ["browser_profile_clear", "browser_profile_isolation"] {
-        assert!(!walled.contains(name), "{name} is registered");
-        assert!(!ledger.contains(name), "{name} is in window-commands.json");
+    assert!(!walled.contains("browser_profile_isolation"));
+    assert!(!ledger.contains("browser_profile_isolation"));
+    for name in [
+        "browser_profile_clear",
+        "browser_site_data_clear",
+        "browser_tab_reload_from_origin",
+    ] {
+        assert!(walled.contains(name), "{name} is not registered");
+        assert!(
+            ledger.contains(name),
+            "{name} is not in window-commands.json"
+        );
     }
 }
 
@@ -1239,28 +1248,44 @@ fn a_popup_opens_in_the_workspace_of_its_opener() {
 }
 
 #[test]
-fn refuses_to_clear_a_workspace_that_has_a_live_view() {
+fn a_clear_names_the_live_views_it_clears_in_place() {
     let app = app_with_windows(&["main"]);
     let id = open_for(&app, "main", northwind(), "harborline");
-    assert!(matches!(
-        begin_clear(app.handle(), "northwind"),
-        Err(MessageError::Refused(code)) if code == PROFILE_LIVE
-    ));
+    let lease = begin_clear(app.handle(), "northwind").expect("a live view clears in place");
+    assert_eq!(lease.open, vec![id.clone()]);
+    drop(lease);
     hide_tab(app.handle(), &id, now_ms()).expect("hides");
-    assert!(matches!(
-        begin_clear(app.handle(), "northwind"),
-        Err(MessageError::Refused(code)) if code == PROFILE_LIVE
-    ));
+    let lease = begin_clear(app.handle(), "northwind").expect("a hidden view clears in place");
+    assert_eq!(lease.open, vec![id]);
 }
 
 #[test]
-fn clears_a_workspace_once_its_views_are_closed() {
+fn a_workspace_with_closed_views_clears_its_whole_store() {
     let app = app_with_windows(&["main"]);
     let id = open_for(&app, "main", northwind(), "harborline");
-    open_for(&app, "main", acme(), "cascadia");
+    let other = open_for(&app, "main", acme(), "cascadia");
     assert_eq!(state_of(&app, &id), Some(TabState::Closed));
+    assert!(begin_clear(app.handle(), "northwind")
+        .expect("closed")
+        .open
+        .is_empty());
+    assert_eq!(
+        begin_clear(app.handle(), "acme").expect("live").open,
+        vec![other]
+    );
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn a_clear_in_place_that_fails_says_why_and_frees_the_workspace() {
+    let app = app_with_windows(&["main"]);
+    open_for(&app, "main", northwind(), "harborline");
+    let outcome = tauri::async_runtime::block_on(super::profile::clear(app.handle(), "northwind"));
+    assert!(matches!(
+        outcome,
+        Err(MessageError::Failed(code)) if code == super::reason::SITE_DATA_UNAVAILABLE
+    ));
     assert!(begin_clear(app.handle(), "northwind").is_ok());
-    assert!(begin_clear(app.handle(), "acme").is_err());
 }
 
 #[test]

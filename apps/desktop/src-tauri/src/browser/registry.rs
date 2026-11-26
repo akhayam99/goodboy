@@ -119,7 +119,6 @@ pub(crate) enum SeatRefusal {
 
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum ClearRefusal {
-    Live,
     Clearing,
 }
 
@@ -283,20 +282,20 @@ impl BrowserRegistry {
         lock_or_recover(&self.tabs).clearing.contains(profile)
     }
 
-    pub(crate) fn begin_clear(&self, profile: &ProfileId) -> Result<(), ClearRefusal> {
+    pub(crate) fn begin_clear(&self, profile: &ProfileId) -> Result<Vec<String>, ClearRefusal> {
         let mut tabs = lock_or_recover(&self.tabs);
         if tabs.clearing.contains(profile) {
             return Err(ClearRefusal::Clearing);
         }
-        if tabs
+        let mut open: Vec<&Tab> = tabs
             .by_id
             .values()
-            .any(|tab| tab.profile == *profile && !tab.is_closed())
-        {
-            return Err(ClearRefusal::Live);
-        }
+            .filter(|tab| tab.profile == *profile && !tab.is_closed())
+            .collect();
+        open.sort_by_key(|tab| tab.opened);
+        let open = open.into_iter().map(|tab| tab.facts.id.clone()).collect();
         tabs.clearing.insert(*profile);
-        Ok(())
+        Ok(open)
     }
 
     pub(crate) fn end_clear(&self, profile: &ProfileId) {
@@ -698,12 +697,20 @@ mod tests {
     }
 
     #[test]
-    fn clears_only_a_profile_with_no_open_tab_and_one_clear_at_a_time() {
+    fn a_clear_names_the_open_tabs_of_its_profile_and_runs_one_at_a_time() {
         let registry = BrowserRegistry::default();
+        let acme = ProfileId::of_workspace("acme").expect("workspace id is valid");
+        open(&registry, "b", "harborline", false);
         open(&registry, "a", "harborline", false);
-        assert_eq!(registry.begin_clear(&profile()), Err(ClearRefusal::Live));
+        assert_eq!(
+            registry.begin_clear(&profile()),
+            Ok(vec!["b".into(), "a".into()])
+        );
+        assert_eq!(registry.begin_clear(&acme), Ok(Vec::new()));
+        registry.end_clear(&profile());
         registry.mark_closed("a");
-        assert_eq!(registry.begin_clear(&profile()), Ok(()));
+        registry.mark_closed("b");
+        assert_eq!(registry.begin_clear(&profile()), Ok(Vec::new()));
         assert!(registry.is_clearing(&profile()));
         assert_eq!(
             registry.begin_clear(&profile()),

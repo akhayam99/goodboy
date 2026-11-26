@@ -16,6 +16,7 @@ use super::reason::{
     OTHER_SESSION, OTHER_WINDOW, PAGE_MOVED, PAGE_TEXT_UNAVAILABLE, TAB_CLOSED, TAB_GONE,
 };
 use super::registry::{BrowserRegistry, TabFacts, TabState};
+use super::site_data::{self, SiteCleared};
 use super::snapshot;
 use crate::platform::web_history::{HistoryState, HistoryStep};
 use crate::platform::web_text::{self, PageText};
@@ -70,6 +71,13 @@ pub(crate) struct TabNavigateArgs {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct TabArgs {
     tab_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SiteDataArgs {
+    tab_id: String,
+    host: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -230,7 +238,6 @@ pub async fn browser_tab_navigate_local(
     host::load_local(webview.app_handle(), &args.tab_id, &file).map(|_| ())
 }
 
-#[allow(dead_code)]
 #[tauri::command]
 pub async fn browser_profile_clear(
     webview: Webview,
@@ -278,6 +285,27 @@ pub async fn browser_tab_navigate(
 #[tauri::command]
 pub async fn browser_tab_reload(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
     owned_tab(&webview, &args.tab_id)?.reload().map_err(failed)
+}
+
+#[tauri::command]
+pub async fn browser_tab_reload_from_origin(
+    webview: Webview,
+    args: TabArgs,
+) -> Result<(), MessageError> {
+    host::reload_from_origin(&owned_tab(&webview, &args.tab_id)?)
+}
+
+#[tauri::command]
+pub async fn browser_site_data_clear(
+    webview: Webview,
+    args: SiteDataArgs,
+) -> Result<SiteCleared, MessageError> {
+    let tab = owned_tab(&webview, &args.tab_id)?;
+    let live = web_url::live_url_of(&tab).ok_or_else(|| reason::failed(TAB_GONE))?;
+    site_data::check_site(&live, &args.host, &AppOrigins::of_app(webview.app_handle()))?;
+    let cleared = site_data::clear_site(&tab, &args.host).await?;
+    host::reload_from_origin(&tab)?;
+    Ok(cleared)
 }
 
 #[tauri::command]
@@ -789,6 +817,27 @@ mod tests {
         let taken = body.find("snapshot_element(&tab").expect("picture");
         let bound = body.find("check_navigation(").expect("bound");
         assert!(checked < read && read < taken && taken < bound, "{body}");
+    }
+
+    #[test]
+    fn wire_shape_site_data_args() {
+        assert_wire_reads::<SiteDataArgs>(json!({
+            "tabId": "0f1e",
+            "host": "localhost",
+        }));
+    }
+
+    #[test]
+    fn site_data_is_cleared_after_the_site_check_and_the_page_reloads_after() {
+        let command = include_str!("commands.rs");
+        let start = command
+            .find("pub async fn browser_site_data_clear")
+            .expect("the command");
+        let body = &command[start..start + command[start..].find("\n}\n").expect("end")];
+        let checked = body.find("check_site(").expect("check");
+        let cleared = body.find("clear_site(&tab").expect("clear");
+        let reloaded = body.find("reload_from_origin(&tab)").expect("reload");
+        assert!(checked < cleared && cleared < reloaded, "{body}");
     }
 
     #[test]

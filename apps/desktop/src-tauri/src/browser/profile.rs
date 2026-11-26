@@ -6,11 +6,11 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Manager, Runtime, WebviewBuilder};
 
+use super::host;
 use super::lifecycle::{self, Gate};
-use super::reason::{
-    self, INVALID_WORKSPACE, PROFILE_BUSY, PROFILE_LIVE, PROFILE_SHARED, PROFILE_UNAVAILABLE,
-};
+use super::reason::{self, INVALID_WORKSPACE, PROFILE_BUSY, PROFILE_SHARED, PROFILE_UNAVAILABLE};
 use super::registry::{BrowserRegistry, ClearRefusal};
+use super::site_data;
 use crate::util::MessageError;
 
 const PROFILE_SALT: &str = "goodboy-browser-profile:";
@@ -192,6 +192,7 @@ pub(crate) struct ClearOutcome {
 pub(crate) struct ClearLease<R: Runtime> {
     app: AppHandle<R>,
     profile: ProfileId,
+    pub(crate) open: Vec<String>,
 }
 
 impl<R: Runtime> Drop for ClearLease<R> {
@@ -210,15 +211,15 @@ pub(crate) fn begin_clear<R: Runtime>(
     }
     let registry = app.state::<BrowserRegistry>();
     let _gate = registry.gate();
-    registry
+    let open = registry
         .begin_clear(&profile)
         .map_err(|refusal| match refusal {
-            ClearRefusal::Live => reason::refused(PROFILE_LIVE),
             ClearRefusal::Clearing => reason::refused(PROFILE_BUSY),
         })?;
     Ok(ClearLease {
         app: app.clone(),
         profile,
+        open,
     })
 }
 
@@ -284,7 +285,18 @@ pub(crate) async fn clear<R: Runtime>(
     workspace_id: &str,
 ) -> Result<ClearOutcome, MessageError> {
     let lease = begin_clear(app, workspace_id)?;
-    wipe(&lease).await
+    let Some(first) = lease.open.first() else {
+        return wipe(&lease).await;
+    };
+    site_data::clear_store(&host::webview_of(app, first)?).await?;
+    for id in &lease.open {
+        if let Ok(tab) = host::webview_of(app, id) {
+            let _ = host::reload_from_origin(&tab);
+        }
+    }
+    Ok(ClearOutcome {
+        should_restart: false,
+    })
 }
 
 #[cfg(test)]
