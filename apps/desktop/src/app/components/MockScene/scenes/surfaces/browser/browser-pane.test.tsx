@@ -83,6 +83,8 @@ describe('the browser pane scenes', () => {
       'browser-errors-dark',
       'browser-handoff',
       'browser-handoff-dark',
+      'browser-network',
+      'browser-network-dark',
       'browser-network-detail',
       'browser-network-detail-dark',
       'browser-page',
@@ -226,14 +228,30 @@ describe('the browser pane scenes', () => {
     within(region).getByRole('button', { name: 'Dock under the page' });
   });
 
+  it('lists the requests of the load in a table with type filters and a summary', async () => {
+    mount({ id: 'browser-network' });
+
+    const region = await screen.findByRole('region', { name: 'Console' }, WAIT);
+    const table = await within(region).findByRole('list', { name: 'Requests' }, WAIT);
+    expect(table.querySelectorAll('[data-row-key]')).toHaveLength(10);
+    within(table).getByRole('button', { name: 'POST /api/charge, 500' });
+    within(region).getByRole('tablist', { name: 'Request type' });
+    within(region).getByRole('button', { name: 'Failed only' });
+    within(region).getByText('10 requests · 14 KB · Loaded in 612 ms');
+  });
+
   it('opens the failed request in a detail beside the requests', async () => {
     mount({ id: 'browser-network-detail' });
 
     const region = await screen.findByRole('region', { name: 'Console' }, WAIT);
     const detail = await within(region).findByRole('region', { name: 'Request' }, WAIT);
-    within(detail).getByText('POST /api/orders/confirm');
+    within(detail).getByText('POST /api/charge');
     within(detail).getByText('500 · 380 ms · 38 B');
-    within(region).getByRole('log', { name: 'Requests' });
+    expect(within(detail).getByLabelText('Response body').textContent).toBe(
+      '{\n  "error": "idempotency key reused"\n}',
+    );
+    within(detail).getByRole('button', { name: /^Send request to / });
+    within(region).getByRole('list', { name: 'Requests' });
   });
 
   it('frames the page at the width of the phone and tablet presets', async () => {
