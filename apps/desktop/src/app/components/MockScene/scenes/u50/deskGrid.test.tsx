@@ -22,7 +22,8 @@ import { U50_DESK_GRID_SCENES } from './deskGrid';
 
 const SETTLE_MS = 2_000;
 
-type SceneName = 'u50-desk-grid' | 'u50-desk-grid-terminal' | 'u50-desk-grid-narrow';
+type SceneName =
+  'u50-desk-grid' | 'u50-desk-grid-merged' | 'u50-desk-grid-terminal' | 'u50-desk-grid-narrow';
 
 let store: StoryStore;
 
@@ -123,6 +124,16 @@ describe('the ux50 desk grid scenes', () => {
     expect(lanePanel()).not.toBeNull();
     expect(cellKeys().length).toBeGreaterThan(0);
     expect(lanePanel()?.hasAttribute('data-detail-open')).toBe(true);
+  });
+
+  it('holds Scripts and Ask as tabs of the Terminal cell in the merged scene', async () => {
+    await mount('u50-desk-grid-merged');
+
+    expect(store.getState().drawerGrid.tabs).toEqual({
+      terminal: { keys: ['terminal', 'scripts', 'ask'], active: 'scripts' },
+    });
+    expect(cellKeys()).not.toContain('scripts');
+    expect(cellKeys()).not.toContain('ask');
   });
 
   it('keeps the Terminal in view in the narrow scene while it has activity', async () => {

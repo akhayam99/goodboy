@@ -35,7 +35,6 @@ const specOf = (columns: DockGridSpec['columns']): DockGridSpec => ({
   columns,
   focus: 'page',
   onFocus: () => undefined,
-  onTurn: () => undefined,
 });
 
 const paneOf = (cell: DockGridCell): DockPane => ({

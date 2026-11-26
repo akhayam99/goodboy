@@ -73,14 +73,12 @@ type SpecParams = {
 
 const specOf = ({ columns, focus }: SpecParams) => {
   const onFocus = vi.fn();
-  const onTurn = vi.fn();
   const spec: DockGridSpec = {
     columns,
     focus,
     onFocus,
-    onTurn,
   };
-  return { spec, onFocus, onTurn };
+  return { spec, onFocus };
 };
 
 type RenderParams = {
@@ -144,8 +142,6 @@ describe('DrawerColumn dock grid', () => {
     expect(grid()?.style.gridTemplateColumns).toBe('632px');
     expect(grid()?.style.gridTemplateRows).toContain('12px');
     expect(panes().map((pane) => pane.style.gridRow)).toEqual(['1', '3']);
-    expect(screen.queryByRole('button', { name: 'Stack the panels' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Put the panels side by side' })).toBeNull();
   });
 
   it('tints the border of the focused panel only', () => {
@@ -175,27 +171,7 @@ describe('DrawerColumn dock grid', () => {
     ]);
   });
 
-  it('turns the pair from its head when both shapes fit, naming the panel it came from', () => {
-    stubColumn({ column: 2600 });
-    const { spec, onTurn } = specOf({ columns: [[TERMINAL], [BROWSER]], focus: 'browser' });
-    renderGrid({ spec });
-
-    const turns = screen.getAllByRole('button', { name: 'Stack the panels' });
-    expect(turns).toHaveLength(2);
-    fireEvent.click(turns[0]!);
-
-    expect(onTurn).toHaveBeenCalledWith({ key: 'terminal' });
-  });
-
-  it('offers side by side for a stacked pair with room for both', () => {
-    stubColumn({ column: 2600 });
-    const { spec } = specOf({ columns: [[TERMINAL, BROWSER]], focus: 'terminal' });
-    renderGrid({ spec });
-
-    expect(screen.getAllByRole('button', { name: 'Put the panels side by side' })).toHaveLength(2);
-  });
-
-  it('draws one tool as before, in the dock card, with no tint and no turn', () => {
+  it('draws one tool as before, in the dock card, with no tint', () => {
     stubColumn({ column: 2600 });
     const { spec } = specOf({ columns: [[TERMINAL]], focus: 'terminal' });
     renderGrid({ spec });
@@ -203,7 +179,6 @@ describe('DrawerColumn dock grid', () => {
     const [terminal] = panes();
     expect(terminal?.className).not.toContain('border');
     expect(document.querySelector('[data-panel-focused]')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Stack the panels' })).toBeNull();
   });
 
   it('tints the detail when it and a tool share the frame and the detail has focus', () => {

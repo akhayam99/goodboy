@@ -1,4 +1,10 @@
 import type { DockDropZone } from './dockDropZonesOf';
+import type { DockGhost } from './dockGhostOf';
+
+export type DockDragPosition = {
+  readonly index: number;
+  readonly total: number;
+};
 
 export type DockDragView = {
   readonly key: string;
@@ -7,6 +13,11 @@ export type DockDragView = {
   readonly y: number;
   readonly zones: ReadonlyArray<DockDropZone>;
   readonly hoverId: string | null;
+  readonly names: Readonly<Record<string, string>>;
+  readonly ghost: DockGhost | null;
+  readonly isSwap: boolean;
+  readonly position: DockDragPosition | null;
+  readonly status: string;
 };
 
 type Listener = () => void;

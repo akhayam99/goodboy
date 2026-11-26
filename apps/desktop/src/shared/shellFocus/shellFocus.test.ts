@@ -11,6 +11,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
+import { gridWithLayout } from '../../store/slices/drawer/dockTabs/gridWithLayout';
 import { panelFocusKeyOf } from '../../store/slices/drawer/panelFocusKeyOf';
 import { shellPanelsOf } from '../../store/slices/drawer/shellPanelsOf';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
@@ -29,7 +30,6 @@ import { toggleTerminalDock } from '../../features/terminal/toggleTerminalDock';
 import { focusShellPanel } from './focusShellPanel';
 import { splitShellColumn } from './splitShellColumn';
 import { stepPanelFocus } from './stepPanelFocus';
-import { turnShellPair } from './turnShellPair';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-harborline' });
 
@@ -72,6 +72,16 @@ const tools = (): ReadonlyArray<ReadonlyArray<string>> =>
   shellPanelsOf({ state: store.getState() }).tools.map((column) =>
     column.map((panel) => panel.kind),
   );
+
+const stackPair = (): void => {
+  store.setState({
+    drawerGrid: gridWithLayout({
+      grid: store.getState().drawerGrid,
+      layout: { columns: [['terminal', 'browser']], groups: {} },
+      active: null,
+    }),
+  });
+};
 
 type KeysParams = {
   readonly keys: ReadonlyArray<string>;
@@ -171,39 +181,10 @@ describe('the frame focus', () => {
     expect(tools()).toEqual([['browser']]);
   });
 
-  it('turns the pair between side by side and stacked, and focuses the panel it came from', () => {
-    store.getState().openDrawer(TERMINAL);
-    store.getState().openDrawer(BROWSER);
-
-    turnShellPair({ key: 'terminal' });
-    expect([tools(), focusKey()]).toEqual([[['terminal', 'browser']], 'terminal']);
-
-    turnShellPair({ key: 'browser' });
-    expect([tools(), focusKey()]).toEqual([[['terminal'], ['browser']], 'browser']);
-  });
-
-  it('turns nothing once the named panel has closed', () => {
-    store.getState().openDrawer(TERMINAL);
-    store.getState().openDrawer(BROWSER);
-    const terminal = store
-      .getState()
-      .drawerGrid.columns.flat()
-      .find((panel) => panel.kind === 'terminal');
-    if (terminal === undefined) {
-      throw new Error('terminal is in the grid');
-    }
-    store.getState().closeDrawerEntry({ entry: terminal });
-    const before = store.getState().drawerGrid;
-
-    store.getState().turnDockPair({ entry: terminal });
-
-    expect(store.getState().drawerGrid).toBe(before);
-  });
-
   it('keeps the height of two stacked panels and goes back to the start on a reset', () => {
     store.getState().openDrawer(TERMINAL);
     store.getState().openDrawer(BROWSER);
-    turnShellPair({ key: 'terminal' });
+    stackPair();
 
     splitShellColumn({ keys: ['terminal', 'browser'], share: 0.7234 });
     expect(store.getState().drawerGrid.splits).toEqual({ 'terminal/browser': 0.723 });

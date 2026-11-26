@@ -11,7 +11,6 @@ import { rememberDockGrid } from './dockGridMemory/rememberDockGrid';
 import { resizeDockColumn } from './resizeDockColumn';
 import { resizeDockRow } from './resizeDockRow';
 import { toggleDrawer } from './toggleDrawer';
-import { turnDockPair } from './turnDockPair';
 import type { SliceDeps } from '../../slice-types';
 
 export const createDrawerSlice = ({ set, get }: SliceDeps) => {
@@ -23,7 +22,6 @@ export const createDrawerSlice = ({ set, get }: SliceDeps) => {
     clearDrawer: clearDrawer({ set }),
     focusDrawerPanel: focusDrawerPanel({ set }),
     toggleDrawer: toggleDrawer(get),
-    turnDockPair: turnDockPair({ set }),
     resizeDockColumn: resizeDockColumn({ set }),
     resizeDockRow: resizeDockRow({ set }),
     moveDockPanel: moveDockPanel({ set, get }),

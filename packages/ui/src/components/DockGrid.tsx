@@ -3,7 +3,6 @@ import { DockCellContext } from '../dockCellContext';
 import { cn } from '../cn';
 import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockGridTracksOf } from '../dockGridTracksOf';
-import { DockPairTurnContext, type DockPairTurn } from '../dockPairTurnContext';
 import type { DockGridSpec } from '../dockGridSpec';
 import { DockDragContext, type DockDragSource } from '../dockDragContext';
 import { cellTabsOf } from '../dockCellTabsOf';
@@ -23,11 +22,11 @@ type Props = {
   readonly cell: ReactNode;
   readonly columns: ReadonlyArray<DockGridColumnBox>;
   readonly handles: ReadonlyArray<SplitHandleProps | null>;
-  readonly turn: Omit<DockPairTurn, 'onTurn'> | null;
   readonly isFramed: boolean;
   readonly isFocusShown: boolean;
   readonly isFloating: boolean;
   readonly canDrop: (params: CanDropParams) => boolean;
+  readonly boxesOf: (params: CanDropParams) => ReadonlyArray<DockGridColumnBox> | null;
 };
 
 const SINGLE_TRACK = 'minmax(0,1fr)';
@@ -45,26 +44,30 @@ export const DockGrid = ({
   cell,
   columns,
   handles,
-  turn,
   isFramed,
   isFocusShown,
   isFloating,
   canDrop,
+  boxesOf,
 }: Props) => {
   const tracks = dockGridTracksOf({ columns });
   const keys = columns.map((column) => column.panes.map((pane) => pane.key));
-  const canMove = isFramed && spec.onMove !== undefined;
-  const drag = useDockDrag({
-    gridRef,
-    columns: keys,
-    canDrop,
-    onMove: canMove ? (spec.onMove ?? null) : null,
-  });
+  const layoutKeys = spec.columns.map((column) => column.map((cell) => cell.key));
   const chosenKeys = Object.fromEntries(
     spec.columns.flatMap((column) =>
       column.flatMap((cell) => (cell.tabs === undefined ? [] : [[cell.key, cell.tabs.keys]])),
     ),
   );
+  const canMove = spec.onMove !== undefined && (isFramed || Object.keys(chosenKeys).length > 0);
+  const drag = useDockDrag({
+    gridRef,
+    columns: layoutKeys,
+    groups: chosenKeys,
+    boxes: columns,
+    canDrop,
+    boxesOf,
+    onMove: canMove ? (spec.onMove ?? null) : null,
+  });
   useDockFoldReport({
     ...(spec.scope !== undefined && { scope: spec.scope }),
     keys: spec.columns.flatMap((column) => column.map((cell) => cell.key)),
@@ -81,9 +84,14 @@ export const DockGrid = ({
     () =>
       new Map<string, DockDragSource>(
         canMove
-          ? keyList
-              .split('/')
-              .map((key) => [key, { onStart: ({ event }) => startDrag({ key, event }) }])
+          ? keyList.split('/').map((key) => [
+              key,
+              {
+                onStart: ({ event }) => startDrag({ key, unit: 'cell', event }),
+                onStartPanel: ({ key: panel, event }) =>
+                  startDrag({ key: panel, unit: 'panel', event }),
+              },
+            ])
           : [],
       ),
     [canMove, keyList, startDrag],
@@ -97,7 +105,14 @@ export const DockGrid = ({
     ? { gridTemplateColumns: tracks.columns, gridTemplateRows: tracks.rows }
     : { gridTemplateColumns: SINGLE_TRACK, gridTemplateRows: SINGLE_TRACK };
   return (
-    <div ref={gridRef} data-dock-grid="" style={style} className="grid min-h-0 min-w-0 flex-1">
+    <div
+      ref={gridRef}
+      data-dock-grid=""
+      tabIndex={-1}
+      onKeyDownCapture={(event) => drag.onKeyDown({ event })}
+      style={style}
+      className="grid min-h-0 min-w-0 flex-1 focus-visible:outline-none"
+    >
       {columns.flatMap((column, index) => {
         const handle = handles[index] ?? null;
         const gutter =
@@ -120,6 +135,10 @@ export const DockGrid = ({
           });
           const { shown, isTabbed } = cellTabs;
           const isFocused = isFocusShown && spec.focus === shown;
+          const isLifted =
+            drag.liftedKey !== null &&
+            cellTabs.keys.includes(drag.liftedKey) &&
+            (drag.liftedUnit === 'cell' || cellTabs.count === 1);
           const isAlone = column.panes.length === 1;
           const tabsOfCell: DockTabs | null = isTabbed
             ? {
@@ -150,7 +169,7 @@ export const DockGrid = ({
               data-dock-focus={shown}
               data-dock-tab-count={cellTabs.count}
               data-panel-focused={isFocused ? '' : undefined}
-              data-dock-lifted={drag.liftedKey === pane.key ? '' : undefined}
+              data-dock-lifted={isLifted ? '' : undefined}
               tabIndex={-1}
               onFocusCapture={(event) => {
                 if (isInTabStrip({ target: event.target })) {
@@ -172,9 +191,9 @@ export const DockGrid = ({
               className={cn(
                 'relative flex min-h-0 min-w-0 flex-col overflow-clip focus-visible:outline-none',
                 isFramed && 'rounded-frame border bg-drawer',
-                isFramed && (isFocused ? 'border-focus-ring' : 'border-frame-edge'),
+                isFramed && (isFocused && !isLifted ? 'border-focus-ring' : 'border-frame-edge'),
                 isFramed && isFloating && 'shadow-xl',
-                drag.liftedKey === pane.key && 'opacity-50',
+                isLifted && 'opacity-30',
               )}
             >
               {tabsOfCell !== null && !headed.has(pane.key) ? (
@@ -184,19 +203,13 @@ export const DockGrid = ({
                   onSelect={tabsOfCell.onSelect}
                 />
               ) : null}
-              <DockPairTurnContext.Provider
-                value={
-                  turn === null ? null : { ...turn, onTurn: () => spec.onTurn({ key: shown }) }
-                }
+              <DockDragContext.Provider
+                value={cellTabs.isDerived ? null : (sources.get(pane.key) ?? null)}
               >
-                <DockDragContext.Provider
-                  value={cellTabs.isDerived ? null : (sources.get(pane.key) ?? null)}
-                >
-                  <DockTabsContext.Provider value={tabsOfCell}>
-                    <DockCellContext.Provider value={shown}>{cell}</DockCellContext.Provider>
-                  </DockTabsContext.Provider>
-                </DockDragContext.Provider>
-              </DockPairTurnContext.Provider>
+                <DockTabsContext.Provider value={tabsOfCell}>
+                  <DockCellContext.Provider value={shown}>{cell}</DockCellContext.Provider>
+                </DockTabsContext.Provider>
+              </DockDragContext.Provider>
             </div>
           );
         });

@@ -7,6 +7,7 @@ import { ActivityRunScene } from '../ActivityRunScene';
 import { SESSION_ID } from '../activityRunSeed';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { shellPromptLines, terminalSnapshotAnswer } from '../terminalSceneOutput';
+import { gridWithLayout } from '../../../../../store/slices/drawer/dockTabs/gridWithLayout';
 
 export type DockPanelsShape = 'pair' | 'stack' | 'three';
 
@@ -55,13 +56,13 @@ const seedDock = ({ shape }: SeedParams): void => {
     return;
   }
   if (shape === 'stack') {
-    const entry = useAppStore
-      .getState()
-      .drawerGrid.columns.flat()
-      .find((panel) => panel.kind === 'terminal');
-    if (entry !== undefined) {
-      useAppStore.getState().turnDockPair({ entry });
-    }
+    useAppStore.setState((state) => ({
+      drawerGrid: gridWithLayout({
+        grid: state.drawerGrid,
+        layout: { columns: [['terminal', 'monitoring']], groups: {} },
+        active: null,
+      }),
+    }));
   }
 };
 

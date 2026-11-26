@@ -59,6 +59,9 @@ const moveLabelOf = ({ name, target }: LabelParams): string => {
   if (target.at === 'swap') {
     return `Swap ${name} and ${other} panels`;
   }
+  if (target.at === 'tab') {
+    return `Merge ${name} panel into ${other}`;
+  }
   if (target.at === 'beside') {
     return `Move ${name} panel ${target.side === 'before' ? 'left' : 'right'} of ${other}`;
   }

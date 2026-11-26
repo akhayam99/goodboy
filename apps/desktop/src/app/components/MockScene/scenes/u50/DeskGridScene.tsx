@@ -13,8 +13,10 @@ import { devServerLines, terminalSnapshotAnswer } from '../terminalSceneOutput';
 import { seedBrowserTab } from '../u39/seedBrowserTab';
 import { seedArtifactDetail } from '../u42/seedArtifactDetail';
 import { PORTS_SNAPSHOT } from '../u25/portsSeed';
+import { gridWithLayout } from '../../../../../store/slices/drawer/dockTabs/gridWithLayout';
+import { EMPTY_DRAWER_GRID } from '../../../../../store/slices/drawer/state';
 
-export type DeskTools = 'terminal' | 'all';
+export type DeskTools = 'terminal' | 'all' | 'merged';
 
 const DEV_SERVER = brandedId<TerminalTabId>({ value: 'ux50-harborline-dev' });
 
@@ -68,7 +70,7 @@ const seedDesk = ({ tools, isBusy }: SeedParams): void => {
     },
     activeTerminalTab: { [key]: DEV_SERVER },
   });
-  if (tools === 'all') {
+  if (tools !== 'terminal') {
     seedBrowserTab({ sessionId, otherAnswers: SCENE_ANSWERS });
     state.openDrawer({ kind: 'browser', sessionId, payload: null });
     useAppStore.setState({
@@ -80,7 +82,26 @@ const seedDesk = ({ tools, isBusy }: SeedParams): void => {
     state.openDrawer({ kind: 'ask', sessionId, payload: null });
   }
   state.openDrawer({ kind: 'terminal', sessionId: null, payload: { terminalId: DEV_SERVER } });
-  if (tools === 'all') {
+  if (tools === 'merged') {
+    const grid = useAppStore.getState().drawerGrid ?? EMPTY_DRAWER_GRID;
+    useAppStore.setState({
+      drawerGrid: gridWithLayout({
+        grid,
+        layout: {
+          columns: grid.columns
+            .map((column) =>
+              column
+                .map((panel) => panel.kind)
+                .filter((kind) => kind !== 'scripts' && kind !== 'ask'),
+            )
+            .filter((column) => column.length > 0),
+          groups: { terminal: ['terminal', 'scripts', 'ask'] },
+        },
+        active: 'scripts',
+      }),
+    });
+  }
+  if (tools !== 'terminal') {
     seedArtifactDetail({ sessionId, workspaceId });
   }
 };
