@@ -624,3 +624,23 @@ describe('plan approval delivery', () => {
     expect(sendTurn).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('a message to an agent', () => {
+  it('reports a refused turn as failed and keeps the same id for the retry', async () => {
+    seed();
+    const sendTurn = vi
+      .fn()
+      .mockResolvedValueOnce({ blockedOverBudget: false, isTurnRunning: true })
+      .mockResolvedValue({ blockedOverBudget: false });
+    useAppStore.setState({ sendTurn });
+    const fields = { agentId: AGENT, seenVersion: '0', text: 'Use the retry window' };
+    const first = await act({ kind: 'sendToAgent', fields });
+    expect(first.result).toBe('failed');
+    const retry = await act({ kind: 'sendToAgent', fields });
+    expect({ result: retry.result, isReplay: retry.isReplay }).toEqual({
+      result: 'done',
+      isReplay: false,
+    });
+    expect(sendTurn).toHaveBeenCalledTimes(2);
+  });
+});

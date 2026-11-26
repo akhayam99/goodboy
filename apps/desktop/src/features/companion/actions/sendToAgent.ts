@@ -1,5 +1,6 @@
 import type { HandlerParams, HandlerResult } from './handlerTypes';
 import type { DecideActionOf } from './decideAction';
+import { turnRefusalOf } from '../../../store/slices/turn/refusal/turnRefusalOf';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
 import { bumpSendSequence, sendSequenceOf } from './sendSequence';
 import { isAgentOfSession } from './targets';
@@ -31,6 +32,9 @@ export const sendToAgent = async ({
     const sent = await store.sendTurn({ sessionId, agentId, content, origin: 'operator' });
     if (sent?.blockedOverBudget === true) {
       return failedResult({ error: 'The session is over its limit. Raise it first.' });
+    }
+    if (sent !== undefined && turnRefusalOf({ result: sent }) !== null) {
+      return failedResult({ error: "The agent can't take a message right now. Try again." });
     }
   } catch (error) {
     console.error('[bridge] sendToAgent failed', error);
