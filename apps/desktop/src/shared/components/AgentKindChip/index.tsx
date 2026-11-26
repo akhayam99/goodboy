@@ -1,7 +1,7 @@
 import { Chip, ICON_SIZE, Tooltip, cn } from '@goodboy/ui';
 import { agentKindPalette, type AgentKind } from '../../../features/session/agent-kind';
 
-type AgentKindChipDensity = 'label' | 'glyph';
+type AgentKindChipDensity = 'label' | 'glyph' | 'bare';
 
 type Props = {
   readonly kind: AgentKind;
@@ -25,6 +25,31 @@ export const AgentKindChip = ({
   const palette = agentKindPalette({ kind });
   const text = label ?? palette.label;
   const Icon = palette.icon;
+
+  if (density === 'bare') {
+    const bare = (
+      <span
+        role={isDecorative ? undefined : 'img'}
+        aria-label={isDecorative ? undefined : (title ?? text)}
+        aria-hidden={isDecorative ? true : undefined}
+        className={cn(
+          'inline-flex size-4 shrink-0 items-center justify-center',
+          palette.fg,
+          className,
+        )}
+      >
+        <Icon size={ICON_SIZE.control} aria-hidden />
+      </span>
+    );
+    if (isDecorative) {
+      return bare;
+    }
+    return (
+      <Tooltip content={title ?? text} anchorClassName="inline-flex shrink-0">
+        {bare}
+      </Tooltip>
+    );
+  }
 
   if (density === 'glyph') {
     const glyph = (

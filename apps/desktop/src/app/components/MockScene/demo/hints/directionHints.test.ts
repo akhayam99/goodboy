@@ -16,7 +16,6 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { sceneInvoke } from '../../../../../test/sceneInvoke';
-import { NAMES } from '../../../../../shared/utils/names';
 import { STORY_QUESTION } from '../../scenes/story/storyContent';
 import { STORY_PLANNER_ID, STORY_SESSION_ID, seedStoryWorld } from '../../scenes/story/storyWorld';
 import { createHintEngine } from '../director/createHintEngine';
@@ -42,7 +41,7 @@ beforeEach(async () => {
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(
     new DOMRect(100, 200, 40, 24),
   );
-  seedStoryWorld({ stage: 'draft' });
+  seedStoryWorld({ stage: 'bring' });
   installStoryDirection({ store });
 });
 
@@ -124,7 +123,7 @@ describe('the direction chapter when the question is answered another way', () =
     'completes the choose and answer steps when the answer is %s',
     async (answer) => {
       await answerWith({ answer });
-      const { engine, tried, lit } = run({ settledIds: ['story-draft', 'story-start'] });
+      const { engine, tried, lit } = run({ settledIds: [] });
       settle();
       expect(tried()).toEqual(['story-choose', 'story-answer']);
       expect(lit()).toBeNull();
@@ -135,7 +134,7 @@ describe('the direction chapter when the question is answered another way', () =
   it('keeps the choose step open until the recommended answer is picked or the question is answered', async () => {
     await startSession();
     document.body.innerHTML = questionOf({ isChecked: false });
-    const { engine, tried, lit } = run({ settledIds: ['story-draft', 'story-start'] });
+    const { engine, tried, lit } = run({ settledIds: [] });
     settle();
     expect(lit()).toBe('story-choose');
     expect(tried()).toEqual([]);
@@ -148,12 +147,6 @@ describe('the direction chapter when the question is answered another way', () =
 });
 
 describe('the step copy', () => {
-  it('names the Start button the way the draft form does', () => {
-    const start = DIRECTION_HINTS.find((hint) => hint.id === 'story-start');
-    expect(start?.instruction).toContain(`**${NAMES.start}**`);
-    expect(start?.instruction).not.toContain('Start workflow');
-  });
-
   it('asks for the recommended answer in one short line', () => {
     const choose = DIRECTION_HINTS.find((hint) => hint.id === 'story-choose');
     expect(choose?.copy).toBe('Pick the recommended answer');

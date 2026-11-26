@@ -4,10 +4,16 @@ export type AskInline =
   | { readonly kind: 'text'; readonly text: string; readonly isBold: boolean }
   | { readonly kind: 'chip'; readonly handle: AskHandle };
 
-export type AskBlock = {
-  readonly kind: 'paragraph' | 'item' | 'number';
-  readonly inlines: ReadonlyArray<AskInline>;
-};
+export type AskBlock =
+  | {
+      readonly kind: 'paragraph' | 'item' | 'number';
+      readonly inlines: ReadonlyArray<AskInline>;
+    }
+  | {
+      readonly kind: 'markdown';
+      readonly text: string;
+      readonly inlines: ReadonlyArray<AskInline>;
+    };
 
 type AskSuggestion = {
   readonly handle: AskHandle;
@@ -30,13 +36,22 @@ const SUGGEST_START = '<<suggest';
 const CHIP = /\[\[([^\]\n]{1,200})\]\]/g;
 const LIST_ITEM = /^\s*(?:[-*]|\d+[.)])\s+/;
 const NUMBERED_ITEM = /^\s*\d+[.)]\s+/;
+const FENCE = '```';
+const TABLE_ROW = /^\s*\|/;
+const TABLE_RULE_CELL = /^:?-{2,}:?$/;
 
 const withoutOpenMarkers = (text: string): string => {
   const suggestAt = text.indexOf(SUGGEST_START);
   const closed = suggestAt === -1 || SUGGEST.test(text.slice(suggestAt));
   const trimmed = closed ? text : text.slice(0, suggestAt);
+  const fenceCount = trimmed.split('\n').filter((line) => line.trim().startsWith(FENCE)).length;
+  if (fenceCount % 2 === 1) {
+    return trimmed;
+  }
+  const proseStart =
+    trimmed.lastIndexOf(FENCE) === -1 ? 0 : trimmed.lastIndexOf(FENCE) + FENCE.length;
   const lastOpen = trimmed.lastIndexOf('[[');
-  if (lastOpen === -1 || trimmed.indexOf(']]', lastOpen) !== -1) {
+  if (lastOpen < proseStart || trimmed.indexOf(']]', lastOpen) !== -1) {
     return trimmed;
   }
   return trimmed.slice(0, lastOpen);
@@ -70,6 +85,19 @@ export const stabilizeAskAnswer = ({ text, handles }: StabilizeParams): string =
       const ref = encodeAskHandle(handle).slice(2).split('|')[0] ?? key;
       return `<<suggest target="${ref}">>${words}<</suggest>>`;
     });
+};
+
+type RuleParams = {
+  readonly line: string;
+};
+
+const isTableRule = ({ line }: RuleParams): boolean => {
+  const cells = line
+    .trim()
+    .split('|')
+    .map((cell) => cell.trim())
+    .filter((cell) => cell !== '');
+  return cells.length > 0 && cells.every((cell) => TABLE_RULE_CELL.test(cell));
 };
 
 type InlineParams = {
@@ -129,8 +157,41 @@ export const parseAskAnswer = ({ text, handles }: Params): ParsedAskAnswer => {
   const body = visible.replace(SUGGEST, '').trim();
   const cited = new Map<string, AskHandle>();
   const blocks: Array<AskBlock> = [];
-  for (const line of body.split('\n')) {
+  const lines = body.split('\n');
+  let at = 0;
+  while (at < lines.length) {
+    const line = lines[at] ?? '';
+    at += 1;
     if (line.trim() === '') {
+      continue;
+    }
+    if (line.trim().startsWith(FENCE)) {
+      const fenced = [line];
+      let isClosed = false;
+      while (at < lines.length && !isClosed) {
+        const next = lines[at] ?? '';
+        fenced.push(next);
+        isClosed = next.trim().startsWith(FENCE);
+        at += 1;
+      }
+      blocks.push({ kind: 'markdown', text: fenced.join('\n'), inlines: [] });
+      continue;
+    }
+    if (TABLE_ROW.test(line) && isTableRule({ line: lines[at] ?? '' })) {
+      const rows = [line];
+      while (at < lines.length && TABLE_ROW.test(lines[at] ?? '')) {
+        rows.push(lines[at] ?? '');
+        at += 1;
+      }
+      const cellText = rows.join('\n').replace(CHIP, (whole, raw: string) => {
+        const handle = resolveHandle({ raw, byKey });
+        if (handle === null) {
+          return raw;
+        }
+        cited.set(handle.key, handle);
+        return handle.label;
+      });
+      blocks.push({ kind: 'markdown', text: cellText, inlines: [] });
       continue;
     }
     const isItem = LIST_ITEM.test(line);

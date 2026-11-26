@@ -1,6 +1,15 @@
 import { brandId, type ProjectId, type SessionId } from '@goodboy/types';
+import {
+  browserToolsDockPref,
+  type BrowserToolsSide,
+} from '../../../../../../features/browser/browserToolsDockPref';
 import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
-import type { BrowserConsoleRead, BrowserTabFacts } from '../../../../../../features/browser/types';
+import type {
+  BrowserConsoleRead,
+  BrowserPickRead,
+  BrowserRequestFacts,
+  BrowserTabFacts,
+} from '../../../../../../features/browser/types';
 import { useAppStore } from '../../../../../../store';
 import type { BrowserTab, DevicePresetId } from '../../../../../../store/slices/browser/types';
 import type { BrowserVisit } from '../../../../../../store/slices/browser-visits/types';
@@ -25,7 +34,72 @@ export type BrowserPaneSceneState =
   | 'saved-copy'
   | 'width-phone'
   | 'width-tablet'
-  | 'console';
+  | 'console'
+  | 'console-right'
+  | 'network-detail'
+  | 'pick';
+
+const PICK_READ: BrowserPickRead = {
+  doc: 'mockload',
+  isHeard: true,
+  isOn: true,
+  isLeft: false,
+  round: 2,
+  scale: 2,
+  picks: [
+    {
+      tag: 'button',
+      label: 'button.pay',
+      selector: '#root > main > button.pay',
+      text: 'Pay $85.00',
+      html: '<button class="pay">Pay $85.00</button>',
+      isHtmlCut: false,
+      styles: [{ name: 'display', value: 'inline-flex' }],
+      component: 'PayButton',
+      source: { path: '/src/checkout/PayButton.tsx', line: 42 },
+      isSourceSettled: true,
+      rect: { x: 312, y: 388, width: 101, height: 34 },
+      url: 'http://localhost:5173/checkout',
+    },
+  ],
+};
+
+const IDLE_PICK: BrowserPickRead = {
+  ...PICK_READ,
+  doc: null,
+  isHeard: false,
+  isOn: false,
+  picks: [],
+};
+
+const CONSOLE_STATES: ReadonlyArray<BrowserPaneSceneState> = [
+  'console',
+  'console-right',
+  'network-detail',
+];
+
+const DOCK_SIDE_OF: Readonly<Partial<Record<BrowserPaneSceneState, BrowserToolsSide>>> = {
+  'console-right': 'right',
+};
+
+type RequestParams = {
+  readonly id: string;
+  readonly duration: number;
+  readonly size: number;
+};
+
+const requestFactsOf = ({ id, duration, size }: RequestParams): BrowserRequestFacts => ({
+  id,
+  type: 'fetch',
+  start: 0,
+  duration,
+  size,
+  requestHeaders: [],
+  responseHeaders: [],
+  requestBody: null,
+  responseBody: null,
+  socket: null,
+});
 
 const CONSOLE_READ: BrowserConsoleRead = {
   doc: 'mockload',
@@ -84,7 +158,7 @@ const CONSOLE_READ: BrowserConsoleRead = {
       source: null,
       method: 'POST',
       status: 500,
-      network: null,
+      network: requestFactsOf({ id: 'mock-request-confirm', duration: 380, size: 38 }),
       error: null,
     },
     {
@@ -95,7 +169,7 @@ const CONSOLE_READ: BrowserConsoleRead = {
       source: null,
       method: 'GET',
       status: 200,
-      network: null,
+      network: requestFactsOf({ id: 'mock-request-cart', duration: 42, size: 2048 }),
       error: null,
     },
     {
@@ -175,7 +249,7 @@ type ConsoleReadParams = PayloadParams & {
 };
 
 const consoleReadOf = ({ state, payload }: ConsoleReadParams): BrowserConsoleRead => {
-  if (state !== 'console') {
+  if (!CONSOLE_STATES.includes(state)) {
     return UNHEARD_READ;
   }
   if (fieldOf({ payload, field: 'doc' }) === CONSOLE_READ.doc) {
@@ -328,6 +402,10 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
     .map(factsOf)
     .map((facts, index) => ({ ...facts, isPasskeyBlocked: isPasskey && index === 0 }));
   let opened = 0;
+  browserToolsDockPref.write({
+    surface: 'pane',
+    place: { side: DOCK_SIDE_OF[state] ?? 'bottom', height: 210, width: 360 },
+  });
   if (state === 'peek') {
     seedPeek({ tabs });
     return;
@@ -353,6 +431,13 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
         return { isFound: textOf({ payload, field: 'needle' }) === 'retry' };
       case 'browser_console_read':
         return consoleReadOf({ state, payload });
+      case 'browser_pick':
+        return state === 'pick' ? PICK_READ : IDLE_PICK;
+      case 'monitor_snapshot':
+        return { listeners: [], processes: [], takenAt: 1, isPlatformSupported: true };
+      case 'process_ledger_list':
+      case 'monitor_watched_ports':
+        return [];
       case 'browser_visits_list':
         return VISITS;
       case 'browser_tab_open':
