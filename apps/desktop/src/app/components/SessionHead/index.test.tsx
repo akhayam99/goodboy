@@ -15,11 +15,13 @@ vi.mock('../../../shared/lib/db', async () =>
   (await import('../../../store/storyHarness')).dbLibModuleMock(),
 );
 
+import { selectIsAskOpen } from '../../../store/slices/ask/selectIsAskOpen';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { brandId } from '@goodboy/types';
 import type { LensKind } from '../../../store';
 import type { TerminalTabId } from '../../../shared/types/terminal';
+import { selectGridTool } from '../../../store/slices/drawer/selectGridTool';
 import { selectDetailDrawer } from '../../../store/slices/drawer/selectDetailDrawer';
 import { selectDockDrawer } from '../../../store/slices/drawer/selectDockDrawer';
 import { ToastProvider } from '../../../shared/components/Toast';
@@ -208,7 +210,7 @@ describe('the session head', () => {
     expect(rows.some((row) => row.includes('Refresh session'))).toBe(false);
   });
 
-  it('opens the Ask pane beside the page, leaves the dock as it was and keeps Ask out of the Context tab', () => {
+  it('opens the Ask panel in the dock, leaves the Terminal as it was and keeps Ask out of the Context tab', () => {
     go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID, lens: 'context' }) });
     renderWorkspace();
     act(() =>
@@ -222,9 +224,11 @@ describe('the session head', () => {
     expect(document.querySelector('[data-testid="context-ask"]')).toBeNull();
     act(() => useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID }));
 
-    expect(useAppStore.getState().askPaneOpen[FLOW_SESSION_ID]).toBe(true);
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: FLOW_SESSION_ID })).toBe(
+      true,
+    );
     expect(selectDetailDrawer({ state: useAppStore.getState() })).toBeNull();
-    expect(selectDockDrawer({ state: useAppStore.getState() })?.kind).toBe('terminal');
+    expect(selectGridTool({ state: useAppStore.getState(), kind: 'terminal' })).not.toBeNull();
   });
 
   it('keeps one menu on a detail page: the title row holds New and no session menu', async () => {

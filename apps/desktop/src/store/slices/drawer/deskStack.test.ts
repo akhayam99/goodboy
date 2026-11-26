@@ -50,7 +50,11 @@ const PR: DrawerRequest = {
   payload: { mountId: MOUNT_ID, tab: 'checks', check: 'integration-tests' },
 };
 
-const SCRIPTS: DrawerRequest = { kind: 'scripts', sessionId: SESSION_ID, payload: null };
+const SCRIPTS: DrawerRequest = {
+  kind: 'conversation',
+  sessionId: SESSION_ID,
+  payload: { threadId: 'thread-harborline' },
+};
 
 let store: StoryStore;
 
@@ -188,7 +192,7 @@ describe('the detail place on the Desk', () => {
     store.getState().openDrawer(SCRIPTS);
 
     expect(stack()).toBeNull();
-    expect(selectDetailDrawer({ state: store.getState() })?.kind).toBe('scripts');
+    expect(selectDetailDrawer({ state: store.getState() })?.kind).toBe('conversation');
     expect(selectSlotBack({ state: store.getState() })?.kind).toBe('pull-request');
   });
 });

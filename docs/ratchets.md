@@ -136,6 +136,7 @@ test file, unless its row above says otherwise.
 | `former-names-guard.baseline.json`                       | former names that the retired names guard cannot catch                                               |
 | `cross-feature-imports.baseline.json`                    | imports across features                                                                              |
 | `control-heights.baseline.json`                          | a height class on a control                                                                          |
+| `panel-head.baseline.json`                               | a dock panel off `DockPanelHead` or drawing its own grip                                             |
 | `popover-widths.baseline.json`                           | popover widths off the scale                                                                         |
 | `row-hover-copies.baseline.json`                         | hand-copied row hover styles                                                                         |
 | `scale-rules.baseline.json`                              | type, icon and spacing scale violations                                                              |

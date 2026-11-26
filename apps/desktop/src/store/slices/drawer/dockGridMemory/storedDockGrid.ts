@@ -1,22 +1,31 @@
-import { brandId, type AgentId, type MountId, type SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type MountId,
+  type ProjectId,
+  type SessionId,
+} from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 import { DOCK_GRID_CAP } from '@goodboy/ui';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
 import type { SessionFace } from '../../session-view/types';
-import type {
-  DrawerContent,
-  DrawerFocus,
-  DrawerGrid,
-  DrawerGridSplits,
-  DrawerGridWidths,
-  OpenDrawer,
-  PullRequestDrawerTab,
-  WorkspaceToolKind,
+import {
+  WORKSPACE_TOOL_KINDS,
+  type DrawerContent,
+  type DrawerFocus,
+  type DrawerGrid,
+  type DrawerGridSplits,
+  type DrawerGridWidths,
+  type OpenDrawer,
+  type PullRequestDrawerTab,
+  type WorkspaceToolKind,
 } from '../state';
 
-const STORED_DOCK_GRID_VERSION = 1;
+const STORED_DOCK_GRID_VERSION = 2;
 
-const TOOL_KINDS: ReadonlyArray<WorkspaceToolKind> = ['terminal', 'browser', 'monitoring'];
+const READABLE_VERSIONS: ReadonlyArray<number> = [1, STORED_DOCK_GRID_VERSION];
+
+const TOOL_KINDS = WORKSPACE_TOOL_KINDS;
 
 const PR_TABS: ReadonlyArray<PullRequestDrawerTab> = ['checks', 'conversation'];
 
@@ -70,6 +79,9 @@ type KindsParams = ValueParams & {
   readonly kinds: ReadonlyArray<DrawerContent['kind']>;
 };
 
+const isReadableVersion = ({ value }: ValueParams): boolean =>
+  READABLE_VERSIONS.some((version) => version === value);
+
 const toolKindOf = ({ value }: ValueParams): WorkspaceToolKind | null =>
   TOOL_KINDS.find((kind) => kind === value) ?? null;
 
@@ -90,8 +102,21 @@ const storedEntryOf = ({ kind, sessionId, payload }: EntryParams): OpenDrawer | 
       ? { kind, sessionId, payload: { terminalId } }
       : { kind, sessionId, payload: { terminalId } };
   }
+  if (kind === 'scripts') {
+    if (sessionId === null) {
+      return null;
+    }
+    if (isRecord(payload) && typeof payload.projectId === 'string' && payload.projectId !== '') {
+      const projectId = brandId<ProjectId>({ value: payload.projectId });
+      return { kind, sessionId, payload: { projectId } };
+    }
+    return payload === null ? { kind, sessionId, payload } : null;
+  }
   if (payload !== null) {
     return null;
+  }
+  if (kind === 'ask') {
+    return sessionId === null ? null : { kind, sessionId, payload };
   }
   return sessionId === null ? { kind, sessionId, payload } : { kind, sessionId, payload };
 };
@@ -242,7 +267,7 @@ export const parseStoredDeskDetail = ({
   }
   if (
     !isRecord(value) ||
-    value.version !== STORED_DOCK_GRID_VERSION ||
+    !isReadableVersion({ value: value.version }) ||
     !Array.isArray(value.detail)
   ) {
     return [];
@@ -263,7 +288,7 @@ export const parseStoredDockGrid = ({ raw }: RawParams): DrawerGrid | null => {
   } catch {
     value = null;
   }
-  if (!isRecord(value) || value.version !== STORED_DOCK_GRID_VERSION) {
+  if (!isRecord(value) || !isReadableVersion({ value: value.version })) {
     return null;
   }
   const columns = columnsOf({ value: value.columns });

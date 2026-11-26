@@ -93,6 +93,8 @@ export const slotChipLabelOf = ({ drawer, artifacts }: Params): SlotChipLabel =>
       return { kind: 'Changes', title: fileName({ path: drawer.payload.path }) };
     case 'identifier-peek':
       return { kind: 'Definition', title: drawer.payload.word };
+    case 'ask':
+      return { kind: 'Ask', title: null };
     case 'browser':
       return { kind: 'Browser', title: null };
     case 'monitoring':

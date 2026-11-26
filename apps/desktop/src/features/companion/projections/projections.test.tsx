@@ -30,6 +30,7 @@ import {
   seedColumn,
   sessionOf,
 } from '../../workspace/testing/sessionColumn';
+import type { InboxRecord } from '../../inbox/types';
 import { projectionFieldsOf, type ProjectionDraft } from './projectionFieldsOf';
 import { projectionMetaOf } from './projectionMetaOf';
 import { scopeOfState } from './scopeOfState';
@@ -89,6 +90,35 @@ const linearTask: SessionExternalTask = {
   createdAt: at('2026-10-01T09:00:00.000Z'),
 };
 
+const linearRecord: InboxRecord = {
+  key: 'linear:lin-412',
+  provider: 'linear',
+  kind: 'issue',
+  identifier: 'HBL-412',
+  title: 'Retry window for the webhook',
+  state: 'active',
+  stateLabel: 'In Progress',
+  updatedAt: '2026-10-04T09:00:00.000Z',
+  url: 'https://linear.app/harborline/issue/HBL-412',
+  context: 'Harborline',
+  payload: {
+    provider: 'linear',
+    kind: 'issue',
+    sessionId: asking.id,
+    issue: {
+      id: 'lin-412',
+      identifier: 'HBL-412',
+      title: 'Retry window for the webhook',
+      description: 'Back off the webhook retries so payments-api is not flooded.',
+      url: 'https://linear.app/harborline/issue/HBL-412',
+      state: { name: 'In Progress', type: 'started' },
+      team: { key: 'HBL' },
+      assignee: { name: 'Ada Northwind' },
+      updatedAt: '2026-10-04T09:00:00.000Z',
+    },
+  },
+};
+
 const seed = (): void => {
   seedColumn({
     store: useAppStore,
@@ -98,6 +128,16 @@ const seed = (): void => {
     mounts: [[asking, paymentsApi]],
   });
   useAppStore.setState((state) => ({
+    starredRecords: { [harborline.id]: { 'linear:lin-412': linearRecord } },
+    sessionSlots: {
+      [asking.id]: [
+        {
+          key: 'last_output_summary',
+          value: 'The retry window now backs off in three steps.',
+          enabled: true,
+        },
+      ],
+    },
     workspaces: [harborline, northwind],
     sessionPhaseRuns: { [building.id]: [worker] },
     sessionExternalTasks: { [asking.id]: [linearTask] },
@@ -126,6 +166,10 @@ const draftsOf = (): ReadonlyArray<ProjectionDraft> => {
   return projectionFieldsOf({
     scopes: [current, other],
     detailWorkspaceId: harborline.id,
+    chips: {
+      spendToday: '$4.18',
+      limits: [{ providerLabel: 'Claude', leftText: '62% left', tone: 'neutral' }],
+    },
     now: NOW,
   });
 };
@@ -216,8 +260,10 @@ describe('companion projections, one builder per contract projection', () => {
     const fields = fieldsOf<{
       needsYou: ReadonlyArray<unknown>;
       projects: ReadonlyArray<{ name: string }>;
+      summary: string | null;
     }>(key);
 
+    expect(fields.summary).toBe('The retry window now backs off in three steps.');
     expect(fields.needsYou).toHaveLength(1);
     expect(fields.projects.map((project) => project.name)).toEqual(['payments-api']);
     await expect(fixtureOf(draftOf(key))).toMatchFileSnapshot(`${FIXTURES}/session.json`);
@@ -265,6 +311,11 @@ describe('companion projections, one builder per contract projection', () => {
 
     expect(fields.count).toBe(1);
     expect(fields.rows[0]?.key).toBe('HBL-412');
+    expect(fields.rows[0]).toMatchObject({
+      description: 'Back off the webhook retries so payments-api is not flooded.',
+      assignee: 'Ada Northwind',
+      stateLabel: 'In Progress',
+    });
     await expect(fixtureOf(draftOf(key))).toMatchFileSnapshot(`${FIXTURES}/tasks.json`);
   });
 

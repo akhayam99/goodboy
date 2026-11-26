@@ -1,14 +1,10 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { selectDetailDrawer } from '../../../store/slices/drawer/selectDetailDrawer';
-import { selectSlotBack } from '../../../store/slices/drawer/selectSlotBack';
 import { leaveStudio } from '../../../store/slices/navigation/leaveStudio';
 import { openBranchTerminal } from '../../terminal/openBranchTerminal';
 import { toggleBrowserDock } from '../../browser/toggleBrowserDock';
 import { toggleTerminalDock } from '../../terminal/toggleTerminalDock';
 import type { ClusterPane } from './clusterPane';
-import { openPaneOf } from './openPaneOf';
-import { waitingPaneOf } from './waitingPaneOf';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -16,41 +12,23 @@ type Params = {
 };
 
 export const togglePane = ({ sessionId, pane }: Params): void => {
-  if (pane === 'terminal') {
-    toggleTerminalDock({ isToggle: true });
-    return;
-  }
-  if (pane === 'browser') {
-    toggleBrowserDock({ isToggle: true });
-    return;
-  }
-  if (pane === 'monitoring') {
-    useAppStore.getState().toggleDrawer({ kind: 'monitoring', sessionId: null, payload: null });
-    return;
-  }
-  const isOnPage = useAppStore.getState().appStudio !== null;
-  if (isOnPage) {
-    leaveStudio({ get: useAppStore.getState });
-  }
-  const state = useAppStore.getState();
-  const isShown = openPaneOf({ state, sessionId }) === pane;
-  if (isShown && isOnPage) {
-    return;
-  }
-  const detail = selectDetailDrawer({ state });
-  if (isShown && detail !== null) {
-    state.closeDrawerEntry({ entry: detail });
-    return;
-  }
-  const back = selectSlotBack({ state });
-  if (back !== null && waitingPaneOf({ state, sessionId }) === pane) {
-    state.openDrawer(back);
-    return;
-  }
   switch (pane) {
-    case 'scripts':
+    case 'terminal':
+      toggleTerminalDock({ isToggle: true });
+      return;
+    case 'browser':
+      toggleBrowserDock({ isToggle: true });
+      return;
+    case 'monitoring':
+      useAppStore.getState().toggleDrawer({ kind: 'monitoring', sessionId: null, payload: null });
+      return;
+    case 'scripts': {
+      if (useAppStore.getState().appStudio !== null) {
+        leaveStudio({ get: useAppStore.getState });
+      }
       openBranchTerminal({ sessionId, mountPath: null });
       return;
+    }
     default: {
       const exhaustive: never = pane;
       return exhaustive;

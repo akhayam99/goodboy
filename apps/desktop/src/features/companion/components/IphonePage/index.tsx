@@ -1,24 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { Band, Button, Notice, PaneShell } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
-import { startPoll } from '../../../../shared/lib/usePoll/startPoll';
-import {
-  bridgeRevoke,
-  bridgeStart,
-  bridgeStatus,
-  bridgeStop,
-  type BridgeStatus,
-  type QrInfo,
-} from '../../bridge';
+import type { BridgeStatus } from '../../bridge';
+import { NetworkChoice } from './NetworkChoice';
 import { PairedDevices } from './PairedDevices';
 import { PairingCode } from './PairingCode';
-
-const STATUS_POLL_MS = 3_000;
+import { useIphonePairing } from './useIphonePairing';
 
 const PAIRING_STEPS = ['Open Goodboy on your iPhone.', 'Point the camera at this code.'];
 
-const PAIRING_CODE_FAILED = "Couldn't make a pairing code.";
-const DISCONNECT_FAILED = "Couldn't disconnect the paired devices.";
+const NEW_PHONE_NOTE =
+  'A new iPhone can read, reply, approve and merge. Starting sessions stays off. Change it per iPhone after it pairs.';
 
 type StopFailure = {
   readonly title: string;
@@ -46,136 +37,29 @@ const metaOf = ({ status, isShowingCode }: MetaParams): string | undefined => {
 };
 
 export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
-  const [info, setInfo] = useState<QrInfo | null>(null);
-  const [status, setStatus] = useState<BridgeStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRevoking, setIsRevoking] = useState(false);
-  const [isPairing, setIsPairing] = useState(false);
-  const [remaining, setRemaining] = useState(0);
-  const totalRef = useRef(0);
-  const enrolledRef = useRef(0);
-  const isMountedRef = useRef(true);
-  const pairedAtStartRef = useRef(0);
-  const onStopFailedRef = useRef(onStopFailed);
-  onStopFailedRef.current = onStopFailed;
-
-  const enrolled = status?.enrolledCount ?? 0;
-  enrolledRef.current = enrolled;
-  const isPaired = enrolled > 0;
-  const isShowingCode = !isPaired || isPairing || error !== null;
-  const total = totalRef.current > 0 ? totalRef.current : 1;
-
-  const refreshStatus = useCallback(async () => {
-    try {
-      const next = await bridgeStatus();
-      if (isMountedRef.current) {
-        setStatus(next);
-      }
-    } catch {
-      if (isMountedRef.current) {
-        setStatus(null);
-      }
-    }
-  }, []);
-
-  const mint = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const next = await bridgeStart();
-      if (!isMountedRef.current) {
-        return;
-      }
-      totalRef.current = next.expiresInSecs;
-      setRemaining(next.expiresInSecs);
-      setInfo(next);
-      await refreshStatus();
-    } catch {
-      if (isMountedRef.current) {
-        setError(PAIRING_CODE_FAILED);
-        setInfo(null);
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setIsLoading(false);
-      }
-    }
-  }, [refreshStatus]);
-
-  const revoke = useCallback(async () => {
-    setIsRevoking(true);
-    setError(null);
-    try {
-      await bridgeRevoke();
-      setIsPairing(false);
-      await mint();
-    } catch {
-      setError(DISCONNECT_FAILED);
-    } finally {
-      setIsRevoking(false);
-    }
-  }, [mint]);
-
-  const pair = () => {
-    setIsPairing(true);
-    void mint();
-  };
-
-  const cancel = () => {
-    setIsPairing(false);
-    setError(null);
-  };
-
-  useEffect(() => {
-    isMountedRef.current = true;
-    void mint();
-    return () => {
-      isMountedRef.current = false;
-      if (enrolledRef.current === 0) {
-        void bridgeStop().catch((error: unknown) =>
-          onStopFailedRef.current({ title: "Couldn't stop listening for iPhones", error }),
-        );
-      }
-    };
-  }, [mint]);
-
-  useEffect(() => {
-    if (info === null) {
-      return;
-    }
-    return startPoll({
-      run: () => setRemaining((left) => Math.max(0, left - 1)),
-      everyMs: 1000,
-      gate: 'always',
-      isImmediate: false,
-    });
-  }, [info]);
-
-  useEffect(() => {
-    if (isShowingCode && info !== null && remaining === 0 && !isLoading) {
-      void mint();
-    }
-  }, [isShowingCode, remaining, info, isLoading, mint]);
-
-  useEffect(() => {
-    if (!isShowingCode) {
-      return;
-    }
-    pairedAtStartRef.current = enrolledRef.current;
-    return startPoll({
-      run: () => void refreshStatus(),
-      everyMs: STATUS_POLL_MS,
-      gate: 'visible',
-      isImmediate: false,
-    });
-  }, [isShowingCode, refreshStatus]);
-
-  useEffect(() => {
-    if (isPairing && enrolled > pairedAtStartRef.current) {
-      setIsPairing(false);
-    }
-  }, [enrolled, isPairing]);
+  const {
+    info,
+    status,
+    error,
+    isLoading,
+    isRevoking,
+    phones,
+    interfaces,
+    isChanging,
+    changeError,
+    remaining,
+    total,
+    enrolled,
+    isPaired,
+    isShowingCode,
+    mint,
+    revoke,
+    revokeOne,
+    setPermissions,
+    toggleInterface,
+    pair,
+    cancel,
+  } = useIphonePairing({ onStopFailed });
 
   const pairButton = (
     <Button variant="secondary" size="sm" onClick={pair}>
@@ -215,12 +99,22 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
                   onMint={() => void mint()}
                 />
               </div>
-              <ol className="flex list-inside list-decimal flex-col gap-2 text-ui text-muted-foreground">
-                {PAIRING_STEPS.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
+              <div className="flex max-w-[22rem] flex-col gap-3">
+                <ol className="flex list-inside list-decimal flex-col gap-2 text-ui text-muted-foreground">
+                  {PAIRING_STEPS.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+                <p className="text-meta text-muted-foreground">{NEW_PHONE_NOTE}</p>
+              </div>
             </div>
+          </Band>
+          <Band inset="content" label="Networks" ariaLabel="Networks" headingLevel={2}>
+            <NetworkChoice
+              interfaces={interfaces}
+              isBusy={isChanging || isLoading}
+              onToggle={toggleInterface}
+            />
           </Band>
           <Notice
             tone="info"
@@ -230,9 +124,29 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
           />
         </>
       ) : (
-        <Band inset="content" label="Paired iPhones" ariaLabel="Paired iPhones" headingLevel={2}>
-          <PairedDevices enrolled={enrolled} isRevoking={isRevoking} onRevoke={revoke} />
-        </Band>
+        <>
+          {changeError === null ? null : (
+            <Notice tone="danger" placement="inline" title={changeError} />
+          )}
+          <Band inset="content" label="Paired iPhones" ariaLabel="Paired iPhones" headingLevel={2}>
+            <PairedDevices
+              enrolled={enrolled}
+              phones={phones}
+              now={Date.now()}
+              isBusy={isRevoking || isChanging}
+              onSetPermissions={setPermissions}
+              onRevokeOne={revokeOne}
+              onRevokeAll={revoke}
+            />
+          </Band>
+          <Band inset="content" label="Networks" ariaLabel="Networks" headingLevel={2}>
+            <NetworkChoice
+              interfaces={interfaces}
+              isBusy={isChanging || isLoading}
+              onToggle={toggleInterface}
+            />
+          </Band>
+        </>
       )}
     </PaneShell>
   );

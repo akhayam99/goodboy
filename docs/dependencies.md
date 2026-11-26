@@ -81,6 +81,13 @@ Neither is new to the dependency tree: both already resolved as transitive
 deps of `tauri`/`objc2` at the exact versions now pinned directly, so this
 added zero new crates and a two-line `Cargo.lock` diff.
 
+`nix` 0.31 (unix) is a direct platform-gated dependency of `goodboy-desktop`
+with only the `net` feature, for listing network interfaces safely
+(`platform/interface_addresses.rs`, `getifaddrs`) instead of raw `libc` pointers.
+It already resolved as a transitive dep of `zip` at 0.31.3, and `memoffset`
+0.9.1 was already in the tree, so this adds zero new crates and a two-line
+`Cargo.lock` diff.
+
 `block2` 0.6 (macOS) is a direct platform-gated dependency of `goodboy-desktop`
 for the native key monitor (`platform/key_monitor.rs`): `NSEvent`'s local
 monitor takes an Objective-C block, and `block2` builds one from a Rust

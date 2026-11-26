@@ -1,3 +1,4 @@
+import { selectIsAskOpen } from '../../../store/slices/ask/selectIsAskOpen';
 import { expect } from 'vitest';
 import { StrictMode } from 'react';
 import { invoke } from '@tauri-apps/api/core';
@@ -707,8 +708,10 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'ask.open',
     lands: async (ctx) => {
-      expect(useAppStore.getState().askPaneOpen[ctx.sessionId]).toBe(true);
-      expect(selectOpenDrawer(useAppStore.getState())).toBeNull();
+      expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: ctx.sessionId })).toBe(
+        true,
+      );
+      expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('ask');
       const composer = await screen.findByRole('textbox', { name: 'Ask about this session' });
       await waitFor(() => expect(document.activeElement).toBe(composer));
     },
@@ -1019,9 +1022,11 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       useAppStore.getState().navigate({ to: sessionPlace({ sessionId: ctx.sessionId }) });
       await settle();
       useAppStore.getState().clearDrawer();
-      useAppStore
-        .getState()
-        .openDrawer({ kind: 'scripts', sessionId: ctx.sessionId, payload: null });
+      useAppStore.getState().openDrawer({
+        kind: 'conversation',
+        sessionId: ctx.sessionId,
+        payload: { threadId: 'thread-harborline' },
+      });
       await settle();
       useAppStore
         .getState()
@@ -1030,7 +1035,9 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await pickMenuItem({ id: 'slot.close' });
     },
     lands: async () => {
-      await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts'));
+      await waitFor(() =>
+        expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('conversation'),
+      );
       expect(useAppStore.getState().drawerBack).toBeNull();
     },
   }),
@@ -1244,14 +1251,18 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await settle();
       expect(armed.defaultPrevented).toBe(true);
       await screen.findByText('Esc again to stop', undefined);
-      expect(useAppStore.getState().askPaneOpen[ctx.sessionId]).toBe(true);
+      expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: ctx.sessionId })).toBe(
+        true,
+      );
       expect(askStops).toEqual([]);
       pressShortcut({ id: 'agent.stop', target: composer });
       await settle();
     },
     lands: async (ctx) => {
       expect(askStops).toEqual([ctx.sessionId]);
-      expect(useAppStore.getState().askPaneOpen[ctx.sessionId]).toBe(true);
+      expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: ctx.sessionId })).toBe(
+        true,
+      );
     },
   }),
   keyRow({
@@ -1266,7 +1277,11 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async (ctx) => {
-      await waitFor(() => expect(useAppStore.getState().askPaneOpen[ctx.sessionId]).toBe(false));
+      await waitFor(() =>
+        expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: ctx.sessionId })).toBe(
+          false,
+        ),
+      );
       expect(screen.queryByText('Esc again to stop')).toBeNull();
     },
   }),

@@ -22,6 +22,6 @@ export const createAskSlice = ({ set, get }: SliceDeps): AskSlice => ({
   setAskRouting: setAskRouting(set, get),
   setAskDraft: setAskDraft(set),
   clearAskDraft: clearAskDraft(set),
-  openAsk: openAsk(set),
-  closeAsk: closeAsk({ set }),
+  openAsk: openAsk(get),
+  closeAsk: closeAsk({ get }),
 });

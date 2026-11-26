@@ -121,24 +121,32 @@ beforeEach(async () => {
   });
 });
 
-describe('the Ask pane of a session', () => {
+describe('the Ask panel of a session', () => {
   it('opens and closes for the session it names and leaves another session as it was', () => {
     useAppStore.getState().openAsk({ sessionId: SESSION });
 
     expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: SESSION })).toBe(true);
     expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: OTHER })).toBe(false);
-    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().drawer?.kind).toBe('ask');
 
     useAppStore.getState().closeAsk({ sessionId: SESSION });
 
     expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: SESSION })).toBe(false);
   });
 
-  it('reads as closed while a studio covers the session', () => {
+  it('stays open beside a page, in the dock grid', () => {
     useAppStore.getState().openAsk({ sessionId: SESSION });
     useAppStore.getState().openStudio({ studio: { kind: 'notifications' } });
 
-    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: SESSION })).toBe(false);
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: SESSION })).toBe(true);
+  });
+
+  it('closes the entry of the session it names and no other', () => {
+    useAppStore.getState().openAsk({ sessionId: SESSION });
+
+    useAppStore.getState().closeAsk({ sessionId: OTHER });
+
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: SESSION })).toBe(true);
   });
 
   it('keeps the thread the user picked when the thread of an older question is saved late', async () => {

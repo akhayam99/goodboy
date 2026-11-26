@@ -5,6 +5,7 @@ import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockGridSpanOf } from '../dockGridSpanOf';
 import { dockGridTracksOf } from '../dockGridTracksOf';
 import { dockLeadSizingOf } from '../dockLeadSizingOf';
+import { dockMergedCellOf } from '../dockMergedCellOf';
 import { dockSplitKeyOf } from '../dockSplitKeyOf';
 import type { CanDropParams } from '../dockDropZonesOf';
 import { dockMoveFits } from '../dockMoveFits';
@@ -25,10 +26,14 @@ type SolvedPane = {
   readonly id: string;
   readonly sizing: DrawerSizing;
   readonly savedWidth: number;
+  readonly rowMin?: number;
+  readonly tabs?: ReadonlyArray<string>;
 };
 
 export type DockSolveParams = {
   readonly columnWidth: number;
+  readonly columnHeight?: number;
+  readonly foldOrder?: ReadonlyArray<string>;
   readonly railWidth: number;
   readonly canPush: boolean;
   readonly detail: SolvedPane | null;
@@ -50,6 +55,8 @@ type Params = {
   readonly cellCount: number;
   readonly onResize: DockGridSpec['onResize'];
   readonly columnWidth: number | null;
+  readonly columnHeight?: number | null;
+  readonly foldOrder?: ReadonlyArray<string>;
   readonly railWidth: number;
   readonly placement: DrawerPlacement;
   readonly detail: DetailSpec;
@@ -107,11 +114,13 @@ const SIDE_TURN: Omit<DockPairTurn, 'onTurn'> = {
 };
 
 export const useDockGrid = ({
-  columns,
+  columns: stored,
   splits,
   cellCount,
   onResize,
   columnWidth,
+  columnHeight = null,
+  foldOrder,
   railWidth,
   placement,
   detail,
@@ -123,6 +132,7 @@ export const useDockGrid = ({
   isLane = false,
 }: Params): DockGridLayout => {
   const gridRef = useRef<HTMLDivElement | null>(null);
+  const columns = stored.map((column) => column.map((cell) => dockMergedCellOf({ cell })));
   const savedWidthOf = ({ cell }: CellParams): number =>
     cell.savedWidth ?? DRAWER_TIERS[cell.sizing].fallback;
   const sizingOf = new Map(columns.flat().map((cell) => [cell.key, cell.sizing] as const));
@@ -134,6 +144,8 @@ export const useDockGrid = ({
       ? null
       : solve({
           columnWidth,
+          ...(columnHeight !== null && { columnHeight }),
+          ...(foldOrder !== undefined && { foldOrder }),
           railWidth,
           canPush: placement !== 'overlay',
           detail: detail.isShown
@@ -144,6 +156,8 @@ export const useDockGrid = ({
               id: cell.key,
               sizing: cell.sizing,
               savedWidth: savedWidthOf({ cell }),
+              ...(cell.rowMin !== undefined && { rowMin: cell.rowMin }),
+              ...(cell.tabs !== undefined && { tabs: cell.tabs.keys }),
             })),
             split: splits[dockSplitKeyOf({ keys: column.map((cell) => cell.key) })],
           })),

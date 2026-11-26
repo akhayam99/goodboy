@@ -1,5 +1,5 @@
 import type { ActionId, Digest, Int, ObjectVersion } from './primitives';
-import type { MergeMethod, SessionAccess, TaskProvider } from './vocabulary';
+import type { MergeMethod, SessionAccess, StartKind, StartStops, TaskProvider } from './vocabulary';
 import type { AgentState, RunState } from './projections';
 
 export type ActionBase = {
@@ -48,6 +48,12 @@ export type RaiseLimitAction = SessionActionBase & {
   readonly offeredAmount: number;
 };
 
+export type UndoRaiseLimitAction = SessionActionBase & {
+  readonly kind: 'undoRaiseLimit';
+  readonly runId: string;
+  readonly raisedActionId: ActionId;
+};
+
 export type StopRunAction = SessionActionBase & {
   readonly kind: 'stopRun';
   readonly runId: string;
@@ -72,8 +78,24 @@ export type ContinueAgentAction = SessionActionBase & {
   readonly seenState: AgentState;
 };
 
+export type StopAgentTreeAction = SessionActionBase & {
+  readonly kind: 'stopAgentTree';
+  readonly agentId: string;
+  readonly seenState: AgentState;
+};
+
+export type SendToAgentAction = SessionActionBase & {
+  readonly kind: 'sendToAgent';
+  readonly agentId: string;
+  readonly seenVersion: ObjectVersion;
+  readonly text: string;
+};
+
+export type SlackVerdict = 'send' | 'discard';
+
 export type AnswerSlackReplyAction = SessionActionBase & {
   readonly kind: 'answerSlackReply';
+  readonly verdict: SlackVerdict;
   readonly draftId: string;
   readonly seenVersion: ObjectVersion;
   readonly text: string;
@@ -84,6 +106,7 @@ export type MergePrAction = SessionActionBase & {
   readonly prNumber: Int;
   readonly expectedHeadSha: string;
   readonly method: MergeMethod;
+  readonly shouldDeleteBranch: boolean;
 };
 
 export type StartSessionTask = {
@@ -97,6 +120,10 @@ export type StartSessionAction = ActionBase & {
   readonly goal: string;
   readonly task: StartSessionTask | null;
   readonly access: SessionAccess;
+  readonly startKind: StartKind;
+  readonly presetId: string | null;
+  readonly limitUsd: number | null;
+  readonly stops: StartStops | null;
 };
 
 export type TrainRequestEntry = {
@@ -111,20 +138,29 @@ export type MergeTrainAction = ActionBase & {
   readonly entries: ReadonlyArray<TrainRequestEntry>;
 };
 
+export type StopTrainAction = ActionBase & {
+  readonly kind: 'stopTrain';
+  readonly trainId: string;
+};
+
 export type MobileAction =
   | AnswerQuestionAction
   | ApprovePlanAction
   | RequestPlanChangesAction
   | AnswerPermissionAction
   | RaiseLimitAction
+  | UndoRaiseLimitAction
   | StopRunAction
   | ContinueRunAction
   | StopAgentAction
   | ContinueAgentAction
+  | StopAgentTreeAction
+  | SendToAgentAction
   | AnswerSlackReplyAction
   | MergePrAction
   | StartSessionAction
-  | MergeTrainAction;
+  | MergeTrainAction
+  | StopTrainAction;
 
 export type ActionResult = 'done' | 'refused' | 'failed';
 
@@ -135,6 +171,8 @@ export type RefusalCode =
   | 'not-permitted'
   | 'rate-limited'
   | 'busy'
+  | 'not-mergeable'
+  | 'invalid-request'
   | 'unknown-target'
   | 'mac-closed';
 
@@ -155,4 +193,7 @@ export type ActionOutcome = {
   readonly result: ActionResult;
   readonly isReplay: boolean;
   readonly refusal: Refusal | null;
+  readonly error: string | null;
+  readonly undoActionId: ActionId | null;
+  readonly createdSessionId: string | null;
 };

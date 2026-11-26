@@ -1,5 +1,7 @@
 import { Button, StatusDot, cn } from '@goodboy/ui';
-import { PORT_GRID } from './portGrid';
+import { isPortColumnShown } from './isPortColumnShown';
+import { PORT_GRIDS } from './portGrid';
+import { usePortColumns } from './usePortColumns';
 import { useAppStore } from '../../../../store';
 import { formatUptime } from '../../formatUptime';
 import type { LeftoverRow } from '../../leftoverRows';
@@ -12,6 +14,8 @@ type Props = {
 export const LeftoversList = ({ rows, now }: Props) => {
   const stopLeftovers = useAppStore((state) => state.stopLeftovers);
   const stopping = useAppStore((state) => state.monitorStopping);
+  const columns = usePortColumns({});
+  const isLabelShown = isPortColumnShown({ columns, column: 'label' });
   const pids = rows.flatMap((row) => row.pids);
   const isStopping = pids.some((pid) => stopping[pid] === 'stopping');
 
@@ -38,18 +42,26 @@ export const LeftoversList = ({ rows, now }: Props) => {
           <li
             key={row.spawnId}
             data-leftover-row={row.spawnId}
-            className={cn(PORT_GRID, 'min-h-8 text-meta')}
+            className={cn(PORT_GRIDS[columns], 'min-h-8 text-meta')}
           >
             <StatusDot tone="warning" size="md" />
-            <span />
-            <span className="min-w-0 truncate text-foreground">{row.name}</span>
+            {isLabelShown ? (
+              <>
+                <span />
+                <span className="min-w-0 truncate text-foreground">{row.name}</span>
+              </>
+            ) : (
+              <span className="col-span-2 min-w-0 truncate text-foreground">{row.name}</span>
+            )}
             <span className="min-w-0 truncate text-muted-foreground">{row.startedBy}</span>
-            <span />
-            <span className="text-right tabular-nums text-muted-foreground">
-              {formatUptime({ startedAt: row.startedAt, now })}
-            </span>
-            <span />
-            <span />
+            {isLabelShown ? <span /> : null}
+            {isPortColumnShown({ columns, column: 'up' }) ? (
+              <span className="text-right tabular-nums text-muted-foreground">
+                {formatUptime({ startedAt: row.startedAt, now })}
+              </span>
+            ) : null}
+            {isPortColumnShown({ columns, column: 'cpu' }) ? <span /> : null}
+            {isPortColumnShown({ columns, column: 'memory' }) ? <span /> : null}
             <span />
           </li>
         ))}

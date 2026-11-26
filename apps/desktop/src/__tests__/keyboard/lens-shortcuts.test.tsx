@@ -38,6 +38,8 @@ const { sessionList, stateOrder, state } = vi.hoisted(() => {
     sessions,
     sessionProjectMounts: {},
     sessionActiveProject: {},
+    askThreads: {},
+    askStreams: {},
     sessionBranches: { 'session-1': 'feature/branch' },
     settings: {},
     loadSetting: vi.fn(async () => null),

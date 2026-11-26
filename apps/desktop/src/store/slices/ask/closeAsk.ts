@@ -1,11 +1,17 @@
-import type { AskSessionParams, SetFn } from './types';
+import { selectGridTool } from '../drawer/selectGridTool';
+import type { AskSessionParams, GetFn } from './types';
 
 type Params = {
-  readonly set: SetFn;
+  readonly get: GetFn;
 };
 
 export const closeAsk =
-  ({ set }: Params) =>
+  ({ get }: Params) =>
   ({ sessionId }: AskSessionParams): void => {
-    set((state) => ({ askPaneOpen: { ...state.askPaneOpen, [sessionId]: false } }));
+    const state = get();
+    const shown = selectGridTool({ state, kind: 'ask' });
+    if (shown === null || shown.sessionId !== sessionId) {
+      return;
+    }
+    state.closeDrawerEntry({ entry: shown });
   };

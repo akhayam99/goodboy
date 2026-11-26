@@ -126,12 +126,16 @@ describe('the Esc ladder', () => {
 
   it('leaves a drawer parked under a page alone', () => {
     useAppStore.getState().navigate({ to: RUNS });
-    useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION, payload: null });
+    useAppStore.getState().openDrawer({
+      kind: 'conversation',
+      sessionId: SESSION,
+      payload: { threadId: 'thread-harborline' },
+    });
     useAppStore.getState().openStudio({ studio: { kind: 'workflow' } });
 
     escapeLadder({});
 
-    expect(useAppStore.getState().drawer?.kind).toBe('scripts');
+    expect(useAppStore.getState().drawer?.kind).toBe('conversation');
     expect(useAppStore.getState().appStudio?.kind).toBe('workflow');
   });
 

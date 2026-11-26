@@ -10,7 +10,7 @@ type Params = {
 
 export const deskToolsOf = ({ state }: Params): ReadonlyArray<OpenDrawer> => {
   const { tools, detail } = shellPanelsOf({ state });
-  const grid = tools.flat();
+  const grid = tools.flat().filter((panel) => panel.kind !== 'ask');
   const sessionId = state.currentSessionId;
   if (detail !== null && DRAWER_KINDS[detail.kind].surface === 'tool') {
     return [...grid, detail];

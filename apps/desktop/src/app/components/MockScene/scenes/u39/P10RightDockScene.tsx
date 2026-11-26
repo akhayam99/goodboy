@@ -48,7 +48,7 @@ const seedDock = ({ context, view, held, hasDetail }: SeedParams): void => {
     }));
   }
   if (held === 'browser' || view === 'browser') {
-    seedBrowserTab({ sessionId });
+    seedBrowserTab({ sessionId, otherAnswers: PORT_ANSWERS });
   }
   if (held === 'terminal' && workspaceId !== null) {
     mockSceneIpc((command) => {

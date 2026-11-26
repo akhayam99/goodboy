@@ -69,7 +69,7 @@ describe('the mobile contract lock', () => {
       change: ({ root }) => {
         writeFileSync(
           join(root, CONTRACT, 'contractVersion.ts'),
-          'export const CONTRACT_VERSION = 2;\n',
+          'export const CONTRACT_VERSION = 99;\n',
         );
       },
     });
@@ -105,9 +105,28 @@ describe('the generated Swift', () => {
     }
   });
 
-  it('tags unions by kind and keeps access at edits', () => {
+  it('tags unions by kind and names the three start accesses', () => {
     assert.match(swift, /public enum MobileAction: Codable/);
-    assert.match(swift, /public enum SessionAccess: String[^\n]*\n    case edits = "edits"\n\}/);
+    assert.match(
+      swift,
+      /public enum SessionAccess: String[^\n]*\n    case readOnly = "readOnly"\n    case askFirst = "askFirst"\n    case editsAllowed = "editsAllowed"\n\}/,
+    );
+  });
+
+  it('names the three stops, the optional stops of a start and the task row facts', () => {
+    assert.match(
+      swift,
+      /public enum StartStops: String[^\n]*\n    case everyStep = "everyStep"\n    case afterPlan = "afterPlan"\n    case never = "never"\n\}/,
+    );
+    assert.match(swift, /public let stops: StartStops\?/);
+    assert.match(swift, /public let hasStops: Bool/);
+    for (const field of ['description: String?', 'assignee: String?', 'stateLabel: String?']) {
+      assert.ok(swift.includes(`public let ${field}`), field);
+    }
+  });
+
+  it('pins the contract version at 5', () => {
+    assert.equal(contract.version, 5);
   });
 
   it('carries the three projection fields on every projection', () => {

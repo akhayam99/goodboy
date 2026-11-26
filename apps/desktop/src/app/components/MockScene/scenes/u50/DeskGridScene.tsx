@@ -24,11 +24,17 @@ const PORT_ANSWERS: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ['monitor_watched_ports', []],
 ]);
 
+const SCENE_ANSWERS: ReadonlyMap<string, unknown> = new Map<string, unknown>([
+  ...PORT_ANSWERS,
+  ['terminal_snapshot', terminalSnapshotAnswer({ lines: devServerLines })],
+]);
+
 type SeedParams = {
   readonly tools: DeskTools;
+  readonly isBusy: boolean;
 };
 
-const seedDesk = ({ tools }: SeedParams): void => {
+const seedDesk = ({ tools, isBusy }: SeedParams): void => {
   seedFrame({ context: 'session' });
   const state = useAppStore.getState();
   const workspaceId = state.currentWorkspaceId;
@@ -55,7 +61,7 @@ const seedDesk = ({ tools }: SeedParams): void => {
           owner,
           title: 'pnpm dev',
           cwd: '~/code/harborline',
-          status: 'running',
+          status: isBusy ? 'attention' : 'running',
           createdAt: 0,
         },
       ],
@@ -63,13 +69,15 @@ const seedDesk = ({ tools }: SeedParams): void => {
     activeTerminalTab: { [key]: DEV_SERVER },
   });
   if (tools === 'all') {
-    seedBrowserTab({ sessionId });
+    seedBrowserTab({ sessionId, otherAnswers: SCENE_ANSWERS });
     state.openDrawer({ kind: 'browser', sessionId, payload: null });
     useAppStore.setState({
       monitorSnapshot: PORTS_SNAPSHOT,
       monitorPinned: [{ port: 9000, description: 'Mock API' }],
     });
     state.openDrawer({ kind: 'monitoring', sessionId: null, payload: null });
+    state.openDrawer({ kind: 'scripts', sessionId, payload: null });
+    state.openDrawer({ kind: 'ask', sessionId, payload: null });
   }
   state.openDrawer({ kind: 'terminal', sessionId: null, payload: { terminalId: DEV_SERVER } });
   if (tools === 'all') {
@@ -79,16 +87,25 @@ const seedDesk = ({ tools }: SeedParams): void => {
 
 type Props = {
   readonly tools: DeskTools;
+  readonly width?: number;
+  readonly isBusy?: boolean;
 };
 
-export const DeskGridScene = ({ tools }: Props) => {
+export const DeskGridScene = ({ tools, width, isBusy = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
-    seedDesk({ tools });
+    seedDesk({ tools, isBusy });
     setIsReady(true);
-  }, [tools]);
+  }, [tools, isBusy]);
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="session" hasPane />;
+  const frame = <AppFrame view="session" hasPane />;
+  return width === undefined ? (
+    frame
+  ) : (
+    <div data-scene-width={width} className="h-full" style={{ width }}>
+      {frame}
+    </div>
+  );
 };

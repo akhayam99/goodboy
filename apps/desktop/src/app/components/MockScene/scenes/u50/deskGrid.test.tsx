@@ -22,7 +22,7 @@ import { U50_DESK_GRID_SCENES } from './deskGrid';
 
 const SETTLE_MS = 2_000;
 
-type SceneName = 'u50-desk-grid' | 'u50-desk-grid-terminal';
+type SceneName = 'u50-desk-grid' | 'u50-desk-grid-terminal' | 'u50-desk-grid-narrow';
 
 let store: StoryStore;
 
@@ -110,11 +110,37 @@ describe('the ux50 desk grid scenes', () => {
     expect(lanePanel()).toBeNull();
   });
 
-  it('holds Terminal, Browser and Monitor in the grid with the detail beside them', async () => {
+  it('holds Terminal, Browser, Monitor, Scripts and Ask in the grid with the detail beside them', async () => {
     await mount('u50-desk-grid');
 
+    expect(
+      store
+        .getState()
+        .drawerGrid.columns.flat()
+        .map((panel) => panel.kind)
+        .sort(),
+    ).toEqual(['ask', 'browser', 'monitoring', 'scripts', 'terminal']);
     expect(lanePanel()).not.toBeNull();
     expect(cellKeys().length).toBeGreaterThan(0);
     expect(lanePanel()?.hasAttribute('data-detail-open')).toBe(true);
+  });
+
+  it('keeps the Terminal in view in the narrow scene while it has activity', async () => {
+    await mount('u50-desk-grid-narrow');
+
+    expect(document.querySelector('[data-scene-width="1100"]')).not.toBeNull();
+    expect(cellKeys()).toContain('terminal');
+    expect(lanePanel()?.hasAttribute('data-detail-open')).toBe(true);
+  });
+
+  it('opens every panel of the grid with one DockPanelHead and no grip icon', async () => {
+    await mount('u50-desk-grid');
+
+    const panes = Array.from(document.querySelectorAll('[data-dock-pane]'));
+    expect(panes.length).toBeGreaterThan(0);
+    panes.forEach((pane) => {
+      expect(pane.querySelectorAll('[data-dock-panel-head]')).toHaveLength(1);
+      expect(pane.querySelector('[data-dock-grip]')).toBeNull();
+    });
   });
 });

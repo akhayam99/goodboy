@@ -365,14 +365,13 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   the pane because the placement loop measures the placeholder every frame.
 
 - **The address row** is the one row of the pane (`BrowserAddressRow`,
-  `PANE_RHYTHM.firstRow`). It holds a grip mark when the pane sits in the
-  desk grid (the row is the pane's head, so a press on it, never on a
-  control, moves the pane like any other: `useDockGrip`,
-  [home-and-drawer.md](navigation/home-and-drawer.md)), Back, Forward and
-  Reload, the tabs (see Tabs), New tab, Pin to the session's project (Unpin
-  when a pin is shown), Select an element (see Pick an element), Console (see
-  Console), More, Open full page and Close. Under 560px of row (`NARROW_ROW_PX`), Pin and Open full page leave
-  the row (`foldedBrowserRowsOf` puts Pin first in More, which always holds
+  `PANE_RHYTHM.firstRow`). It sits under the pane's head (`DockPanelHead`: the
+  title, Open full page and Close, and the whole head moves the pane like any
+  other, see [home-and-drawer.md](navigation/home-and-drawer.md)). It holds
+  Back, Forward and Reload, the tabs (see Tabs), New tab, Pin to the
+  session's project (Unpin when a pin is shown), Select an element (see
+  Pick an element), Console (see Console) and More. Under 560px of row (`NARROW_ROW_PX`), Pin leaves the row
+  (`foldedBrowserRowsOf` puts Pin first in More, which always holds
   Open full page), so the tabs keep their room and nothing overlaps. The page
   sits flush under the row: no card, no border and no inset (`BrowserView`,
   `data-browser-frame`). It draws no line under the row either: a

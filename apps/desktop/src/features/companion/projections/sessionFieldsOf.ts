@@ -1,16 +1,24 @@
 import type { Agent, Session } from '@goodboy/types';
 import { formatUsd } from '@goodboy/ui';
+import { formatSpan } from '../../../shared/utils/time/formatSpan';
 import { otherAttentionLinesOf, SESSION_STAGE_META } from '../../session/session-stage';
 import { sessionMarkOf } from '../../session/sessionMarkOf';
 import { sessionNodeOf } from '../../session/sessionNode';
 import type { SessionFact, SessionFields, SessionLine } from '../contract/projections';
 import { agentMarkOf } from './agentMarkOf';
+import { agentRoleOf } from './agentRoleOf';
 import { agentStateOf } from './agentStateOf';
+import { isLeadAgentOf } from './isLeadAgentOf';
 import { needsYouFieldsOf } from './needsYouFieldsOf';
+import { nextLinesOf } from './nextLinesOf';
+import { safeTextOf } from './safeTextOf';
 import { sessionRefOf } from './sessionRefOf';
 import type { WorkspaceScope } from './workspaceScope';
 
 export const ACTIVITY_LIMIT = 20;
+export const DECISION_LIMIT = 12;
+
+const NO_CHIPS = { spendToday: null, limits: [] } as const;
 
 type Params = {
   readonly scope: WorkspaceScope;
@@ -19,17 +27,29 @@ type Params = {
 };
 
 type LineParams = {
+  readonly scope: WorkspaceScope;
+  readonly sessionId: string;
   readonly agent: Agent;
 };
 
-const lineOf = ({ agent }: LineParams): SessionLine => ({
-  id: agent.id,
-  mark: agentMarkOf({ state: agentStateOf({ status: agent.status }) }),
-  text: agent.outputSummary === undefined ? agent.name : `${agent.name}: ${agent.outputSummary}`,
-  at: agent.completedAt ?? agent.startedAt ?? null,
-});
+const lineOf = ({ scope, sessionId, agent }: LineParams): SessionLine => {
+  const state = agentStateOf({ agent, turn: scope.turnStates[agent.id] });
+  const isLead = isLeadAgentOf({ scope, sessionId, agent });
+  return {
+    id: agent.id,
+    mark: agentMarkOf({ state }),
+    text: agent.outputSummary === undefined ? agent.name : `${agent.name}: ${agent.outputSummary}`,
+    at: agent.completedAt ?? agent.startedAt ?? null,
+    role: agentRoleOf({ agent, isLead }),
+    target: { kind: 'agent', id: agent.id },
+  };
+};
 
-const isOpenAgent = ({ agent }: LineParams): boolean =>
+type OpenParams = {
+  readonly agent: Agent;
+};
+
+const isOpenAgent = ({ agent }: OpenParams): boolean =>
   agent.status === 'running' || agent.status === 'blocked';
 
 type RecentParams = {
@@ -52,13 +72,24 @@ export const sessionFieldsOf = ({ scope, session, now }: Params): SessionFields 
   const agents = scope.agents[session.id] ?? [];
   const spend = scope.spendUsd[session.id];
   const pr = scope.pullRequests[session.id] ?? null;
+  const agentMillis = agents.reduce((sum, agent) => {
+    if (agent.startedAt === undefined) {
+      return sum;
+    }
+    const span =
+      Date.parse(agent.completedAt ?? new Date(now).toISOString()) - Date.parse(agent.startedAt);
+    return Number.isNaN(span) ? sum : sum + Math.max(0, span);
+  }, 0);
+  const agentTime = agentMillis === 0 ? '' : formatSpan({ from: 0, to: agentMillis });
   const facts: ReadonlyArray<SessionFact> = [
     { label: 'Stage', value: SESSION_STAGE_META[info.stage].label },
     ...(spend === undefined ? [] : [{ label: 'Spend', value: formatUsd(spend) }]),
+    ...(agentTime === '' ? [] : [{ label: 'Agent time', value: agentTime }]),
     ...(pr === null ? [] : [{ label: 'Pull request', value: `#${pr.number}` }]),
   ];
   const needsYou = needsYouFieldsOf({
     scopes: [{ ...scope, sessions: [session] }],
+    chips: NO_CHIPS,
     now,
   }).rows;
   return {
@@ -76,8 +107,10 @@ export const sessionFieldsOf = ({ scope, session, now }: Params): SessionFields 
       isMacOnly: true,
     })),
     needsYou,
-    now: agents.filter((agent) => isOpenAgent({ agent })).map((agent) => lineOf({ agent })),
-    next: [],
+    now: agents
+      .filter((agent) => isOpenAgent({ agent }))
+      .map((agent) => lineOf({ scope, sessionId: session.id, agent })),
+    next: nextLinesOf({ scope, session }),
     projects: (scope.projectNames[session.id] ?? []).map((name) => ({
       name,
       branch: pr === null ? null : pr.headBranch,
@@ -85,9 +118,14 @@ export const sessionFieldsOf = ({ scope, session, now }: Params): SessionFields 
     })),
     activity: agents
       .filter((agent) => !isOpenAgent({ agent }))
-      .map((agent) => lineOf({ agent }))
+      .map((agent) => lineOf({ scope, sessionId: session.id, agent }))
       .sort((left, right) => byRecent({ left, right }))
       .slice(0, ACTIVITY_LIMIT),
     pullRequestNumber: pr === null ? null : pr.number,
+    decisions: (scope.decisions[session.id] ?? [])
+      .filter((decision) => decision.status === 'active')
+      .slice(0, DECISION_LIMIT)
+      .map((decision) => safeTextOf({ text: decision.text, max: 240 })),
+    summary: scope.summaries[session.id] ?? null,
   };
 };

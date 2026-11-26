@@ -3,6 +3,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 import { nextSessionId } from '@goodboy/types/testing';
+import { selectGridTool } from '../../../store/slices/drawer/selectGridTool';
 import { selectDrawerPanel } from '../../../store/slices/drawer/selectDrawerPanel';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
 import type { StoryStore } from '../../../store/storyHarness';
@@ -31,39 +32,32 @@ beforeEach(async () => {
 
 const shownKind = (): string | null => selectDrawerPanel(store.getState())?.kind ?? null;
 
-const openScripts = (): void => {
-  store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
-};
-
-describe('togglePane under a page', () => {
-  it('closes the page and shows the parked pane instead of closing it unseen', () => {
-    openScripts();
-    store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
-    expect(shownKind()).toBeNull();
-
-    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
-
-    expect(store.getState().appStudio).toBeNull();
-    expect(shownKind()).toBe('scripts');
-  });
-
-  it('leaves Impact opened from Guide in one press and shows the parked pane', () => {
-    openScripts();
-    store.getState().openStudio({ studio: { kind: 'guide' } });
+describe('togglePane', () => {
+  it('opens the terminal of the branch for the Scripts chord, and leaves the page it was pressed on', async () => {
     store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
 
     togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
 
     expect(store.getState().appStudio).toBeNull();
-    expect(shownKind()).toBe('scripts');
+    await vi.waitFor(() =>
+      expect(selectGridTool({ state: store.getState(), kind: 'terminal' })).not.toBeNull(),
+    );
+    expect(shownKind()).toBe('terminal');
   });
 
-  it('still closes a shown pane on a session', () => {
-    openScripts();
+  it('keeps a panel of the grid beside a page that is not its own', () => {
+    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
+
     expect(shownKind()).toBe('scripts');
+    expect(store.getState().appStudio?.kind).toBe('impact');
+  });
 
-    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
+  it('toggles Monitor in the dock', () => {
+    togglePane({ sessionId: SESSION_ID, pane: 'monitoring' });
+    expect(shownKind()).toBe('monitoring');
 
+    togglePane({ sessionId: SESSION_ID, pane: 'monitoring' });
     expect(shownKind()).toBeNull();
   });
 });

@@ -160,6 +160,64 @@ describe('the dock grid saved on the session', () => {
     expect(panelFocusKeyOf({ panels: shellPanelsOf({ state: state() }) })).toBe('browser');
   });
 
+  it('still loads a row saved before Scripts and Ask joined the grid', async () => {
+    db.rows.set(S1, {
+      grid: JSON.stringify({
+        version: 1,
+        columns: [[BROWSER], [TERMINAL]],
+        used: ['browser', 'terminal'],
+        focus: { at: 'tool', kind: 'browser' },
+        widths: { browser: 760 },
+      }),
+      savedAt: 1,
+    });
+    watch();
+
+    await goTo({ sessionId: S1 });
+
+    expect(toolKinds()).toEqual([['browser'], ['terminal']]);
+    expect(state().drawerGrid.widths).toEqual({ browser: 760 });
+  });
+
+  it('brings back Scripts and Ask in their own cells', async () => {
+    const scripts: DrawerRequest = { kind: 'scripts', sessionId: S1, payload: null };
+    const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
+    saveRow({
+      sessionId: S1,
+      grid: {
+        columns: [[BROWSER], [TERMINAL], [scripts, ask]],
+        used: ['browser', 'terminal', 'scripts', 'ask'],
+        focus: { at: 'tool', kind: 'ask' },
+        widths: {},
+        splits: {},
+      },
+    });
+    watch();
+
+    await goTo({ sessionId: S1 });
+
+    expect(toolKinds()).toEqual([['browser'], ['terminal'], ['scripts', 'ask']]);
+  });
+
+  it('shows the default layout and says so once when the row does not parse', async () => {
+    db.rows.set(S1, { grid: '{"version":9,"columns":"?"}', savedAt: 1 });
+    watch();
+
+    await goTo({ sessionId: S1 });
+    await goTo({ sessionId: S2 });
+    await goTo({ sessionId: S1 });
+
+    expect(toolKinds()).toEqual([]);
+    expect(reportError).toHaveBeenCalledTimes(1);
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: S1,
+        severity: 'warning',
+        title: "Couldn't read the saved panels of this session",
+      }),
+    );
+  });
+
   it('saves a change on the session it was made on, even after a move', async () => {
     watch();
     await goTo({ sessionId: S1 });
@@ -377,6 +435,29 @@ describe('moving a panel and resetting the layout', () => {
     });
   });
 
+  it.each(['scripts', 'ask'] as const)(
+    'moves the %s panel and saves the grid on the session the move named',
+    async (kind) => {
+      await openPair();
+      state().openDrawer({ kind, sessionId: S1, payload: null });
+      await settle();
+
+      const isMoved = await state().moveDockPanel({
+        sessionId: S1,
+        kind,
+        target: { at: 'beside', key: 'terminal', side: 'before' },
+      });
+      await settle();
+
+      expect(isMoved).toBe(true);
+      expect(toolKinds()[0]).toEqual([kind]);
+      const saved: { readonly columns: ReadonlyArray<unknown> } = JSON.parse(
+        db.rows.get(S1)?.grid ?? '{"columns":[]}',
+      );
+      expect(saved.columns[0]).toMatchObject([{ kind, sessionId: S1 }]);
+    },
+  );
+
   it('does nothing for a panel that already left the grid', async () => {
     await openPair();
     const terminal = state()
@@ -545,7 +626,7 @@ describe('the face saved with the grid', () => {
     state().setSessionFace({ sessionId: S1, face: 'desk' });
     await settle();
 
-    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ version: 1, face: 'desk' });
+    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ version: 2, face: 'desk' });
     expect(db.rows.has(S2)).toBe(false);
   });
 

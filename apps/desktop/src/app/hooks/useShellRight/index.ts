@@ -1,5 +1,10 @@
 import { createElement, useMemo, type ReactNode } from 'react';
-import type { DockGridSpec, DrawerPlacement, DrawerSizing } from '@goodboy/ui';
+import {
+  dockFoldOrderOf,
+  type DockGridSpec,
+  type DrawerPlacement,
+  type DrawerSizing,
+} from '@goodboy/ui';
 import { DRAWER_KINDS } from '../../../store/slices/drawer/drawerKinds';
 import { panelFocusKeyOf } from '../../../store/slices/drawer/panelFocusKeyOf';
 import { shellPanelsOf } from '../../../store/slices/drawer/shellPanelsOf';
@@ -9,14 +14,19 @@ import { turnShellPair } from '../../../shared/shellFocus/turnShellPair';
 import { resizeShellColumn } from '../../../shared/shellFocus/resizeShellColumn';
 import { splitShellColumn } from '../../../shared/shellFocus/splitShellColumn';
 import { moveShellPanel } from '../../../shared/shellFocus/moveShellPanel';
+import { announceShellFold } from '../../../shared/shellFocus/announceShellFold';
+import { monitoringSignalOf } from '../../../features/monitoring/monitoringSignalOf';
+import { hasTerminalActivityOf } from './hasTerminalActivityOf';
+import { dockBusyKindsOf } from './dockBusyKindsOf';
+import { dockToolLabelOf } from './dockToolLabelOf';
 import { selectDrawerPlacement } from '../../../store/slices/drawer/selectDrawerPlacement';
 import { useAppStore } from '../../../store';
+import { isAskStreaming } from '../../../store/slices/ask/isAskStreaming';
 import { detailWidthIdOf } from '../../../store/slices/drawer/detailWidthIdOf';
 import { drawerSizingOf } from '../../../store/slices/drawer/drawerSizingOf';
 import { selectDetailDrawer } from '../../../store/slices/drawer/selectDetailDrawer';
 import { selectDockDrawer } from '../../../store/slices/drawer/selectDockDrawer';
 import { ShellToolRail } from '../../components/ShellToolRail';
-import { RAIL_TOOLS } from '../../../features/session/components/SessionTools/sessionTools';
 import { STUDIO_META } from '../../components/StudioFrame/studioMeta';
 
 type Params = Record<never, never>;
@@ -61,28 +71,58 @@ export const useShellRight = ({}: Params): ShellRight => {
   const drawerGrid = useAppStore((state) => state.drawerGrid);
   const currentSessionId = useAppStore((state) => state.currentSessionId);
   const appStudio = useAppStore((state) => state.appStudio);
+  const hasTerminalActivity = useAppStore((state) => hasTerminalActivityOf({ state }));
+  const hasDownPin = useAppStore(
+    (state) =>
+      state.monitorSnapshot != null && (monitoringSignalOf({ state })?.downPins.length ?? 0) > 0,
+  );
+  const isAskBusy = useAppStore(
+    (state) =>
+      state.currentSessionId !== null &&
+      isAskStreaming({ state, sessionId: state.currentSessionId }),
+  );
   const dockGrid = useMemo<DockGridSpec>(() => {
     const panels = shellPanelsOf({
       state: { drawer, drawerBack, drawerGrid, currentSessionId, appStudio },
     });
+    const busy = dockBusyKindsOf({ hasTerminalActivity, hasDownPin, isAskStreaming: isAskBusy });
     return {
       columns: panels.tools.map((column) =>
         column.map((panel) => ({
           key: panel.kind,
           sizing: DRAWER_KINDS[panel.kind].sizing,
           savedWidth: drawerGrid.widths[panel.kind],
-          label: RAIL_TOOLS.find((tool) => tool.pane === panel.kind)?.label ?? panel.kind,
+          rowMin: DRAWER_KINDS[panel.kind].rowMin,
+          hasActivity: busy.includes(panel.kind),
+          label: dockToolLabelOf({ key: panel.kind }),
         })),
       ),
       focus: panelFocusKeyOf({ panels }),
+      scope: currentSessionId ?? '',
+      foldOrder: dockFoldOrderOf({
+        keys: panels.tools.flat().map((panel) => panel.kind),
+        used: (drawerGrid ?? EMPTY_DRAWER_GRID).used,
+        busy,
+      }),
       splits: (drawerGrid ?? EMPTY_DRAWER_GRID).splits,
       onFocus: focusShellPanel,
       onTurn: turnShellPair,
       onResize: resizeShellColumn,
       onSplit: splitShellColumn,
       onMove: moveShellPanel,
+      onFold: ({ opened, folds }) =>
+        announceShellFold({ fold: { opened, folds }, labelOf: dockToolLabelOf }),
     };
-  }, [drawer, drawerBack, drawerGrid, currentSessionId, appStudio]);
+  }, [
+    drawer,
+    drawerBack,
+    drawerGrid,
+    currentSessionId,
+    appStudio,
+    hasTerminalActivity,
+    hasDownPin,
+    isAskBusy,
+  ]);
   return {
     dockGrid,
     placement,

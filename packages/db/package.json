@@ -8,6 +8,10 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./mount-pr-link": {
+      "types": "./src/queries/mount-pr-link.ts",
+      "default": "./src/queries/mount-pr-link.ts"
+    },
     "./turn-role-insight": {
       "types": "./src/queries/turn-role-insight.ts",
       "default": "./src/queries/turn-role-insight.ts"

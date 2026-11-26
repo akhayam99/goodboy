@@ -6,7 +6,8 @@ import type {
   PullRequestPhase,
   ReviewRow,
 } from '../contract/projections';
-import { actionIdOf } from './actionIdOf';
+import { mergePrActionIdOf } from '../actions/phoneActionIds';
+import { trainOfferOf } from './trainOfferOf';
 import type { WorkspaceScope } from './workspaceScope';
 
 type Params = {
@@ -29,6 +30,14 @@ const pullRequestPhaseOf = ({ state, isDraft, review }: PhaseParams): PullReques
   }
   return review === 'approved' ? 'approved' : 'open';
 };
+
+type ReasonParams = {
+  readonly scope: WorkspaceScope;
+  readonly reason: string | null;
+};
+
+const closedReasonOf = ({ scope, reason }: ReasonParams): string | null =>
+  scope.isOpen ? reason : 'Open this workspace on your Mac to merge.';
 
 export const pullRequestFieldsOf = ({ scope, session }: Params): PullRequestFields | null => {
   const facts = scope.pullRequestFacts[session.id];
@@ -64,7 +73,12 @@ export const pullRequestFieldsOf = ({ scope, session }: Params): PullRequestFiel
     words: 'Requested changes',
     mark: { kind: 'state', state: 'alert' },
   }));
-  const isMergeable = mergeIsClear({ readiness }) && phase !== 'merged' && phase !== 'closed';
+  const isInTrain =
+    scope.readyLines.some((line) => line.sessionId === session.id) ||
+    (scope.mergeTrain?.cars.some((car) => car.sessionId === session.id) ?? false);
+  const isMergeable =
+    scope.isOpen && mergeIsClear({ readiness }) && phase !== 'merged' && phase !== 'closed';
+  const stats = scope.lineStats[session.id] ?? null;
   return {
     workspaceId: scope.workspace.id,
     sessionId: session.id,
@@ -79,13 +93,16 @@ export const pullRequestFieldsOf = ({ scope, session }: Params): PullRequestFiel
     reviews,
     readiness: {
       isMergeable,
-      reason: isMergeable ? null : readiness.reason,
+      reason: isMergeable ? null : closedReasonOf({ scope, reason: readiness.reason }),
       caveats: readiness.caveats,
     },
     methods: facts.mergeMethods,
-    mergeActionId: isMergeable
-      ? actionIdOf({ kind: 'mergePr', objectId: String(pr.number), version: headSha })
-      : null,
-    train: null,
+    mergeActionId: isMergeable ? mergePrActionIdOf({ prNumber: pr.number, headSha }) : null,
+    changedFiles: scope.fileCounts[session.id] ?? null,
+    additions: stats === null ? null : stats.additions,
+    deletions: stats === null ? null : stats.deletions,
+    commitCount: facts.commitCount,
+    reviewComments: facts.openComments,
+    train: isInTrain ? trainOfferOf({ scope }) : null,
   };
 };

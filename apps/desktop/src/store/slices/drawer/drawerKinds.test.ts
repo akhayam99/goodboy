@@ -25,27 +25,42 @@ describe('the drawer kind table', () => {
     expect(Object.keys(DRAWER_KINDS).sort()).toEqual([...writtenKinds()].sort());
   });
 
-  it('gives every tool a pane and no other surface one', () => {
+  it('gives every tool a pane and no other surface one, the Ask having its own rail place', () => {
     for (const [kind, row] of Object.entries(DRAWER_KINDS)) {
-      expect(row.pane !== null, kind).toBe(row.surface === 'tool' && row.openerPane === null);
+      const isPaneTool = row.surface === 'tool' && row.openerPane === null && kind !== 'ask';
+      expect(row.pane !== null, kind).toBe(isPaneTool);
     }
   });
 
-  it('lays only forms, wide readers and the Monitor port table in the reader tier', () => {
+  it('keeps the Ask taller than every other row', () => {
+    expect(DRAWER_KINDS.ask.rowMin).toBe(260);
+    expect(DRAWER_KINDS.ask.place).toBe('row');
+  });
+
+  it('lays only forms and wide readers in the reader tier', () => {
     const wide = Object.entries(DRAWER_KINDS)
       .filter(([, row]) => row.sizing === 'reader')
       .map(([kind]) => kind)
       .sort();
     expect(wide).toEqual(
-      [
-        'artifact-document',
-        'explore-file',
-        'file-diff',
-        'identifier-peek',
-        'monitoring',
-        'new',
-      ].sort(),
+      ['artifact-document', 'explore-file', 'file-diff', 'identifier-peek', 'new'].sort(),
     );
+  });
+
+  it('puts the Terminal and the Browser in a column and every other kind in a row', () => {
+    const columns = Object.entries(DRAWER_KINDS)
+      .filter(([, row]) => row.place === 'column')
+      .map(([kind]) => kind)
+      .sort();
+    expect(columns).toEqual(['browser', 'terminal']);
+  });
+
+  it('lays the Monitor as a side panel and keeps a row minimum for every kind', () => {
+    expect(DRAWER_KINDS.monitoring.sizing).toBe('side');
+    expect(DRAWER_KINDS.browser.rowMin).toBe(240);
+    for (const [kind, row] of Object.entries(DRAWER_KINDS)) {
+      expect(row.rowMin, kind).toBeGreaterThanOrEqual(180);
+    }
   });
 
   it('gives the browser a tier of its own', () => {

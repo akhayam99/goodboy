@@ -1,3 +1,4 @@
+import type { NeedsYouChips } from '../contract/projections';
 import { isLiveSession } from './isLiveSession';
 import { needsYouFieldsOf } from './needsYouFieldsOf';
 import { pullRequestFieldsOf } from './pullRequestFieldsOf';
@@ -20,6 +21,7 @@ export type ProjectionDraft = Readonly<{
 type Params = {
   readonly scopes: ReadonlyArray<WorkspaceScope>;
   readonly detailWorkspaceId: string | null;
+  readonly chips: NeedsYouChips;
   readonly now: number;
 };
 
@@ -28,16 +30,16 @@ type ScopeParams = {
   readonly now: number;
 };
 
-const sessionsDraftOf = ({ scope }: ScopeParams): ProjectionDraft => ({
+const sessionsDraftOf = ({ scope, now }: ScopeParams): ProjectionDraft => ({
   key: `sessions:${scope.workspace.id}`,
   kind: 'sessions',
-  fields: sessionsFieldsOf({ scope }),
+  fields: sessionsFieldsOf({ scope, now }),
 });
 
-const tasksDraftOf = ({ scope }: ScopeParams): ProjectionDraft => ({
+const tasksDraftOf = ({ scope, now }: ScopeParams): ProjectionDraft => ({
   key: `tasks:${scope.workspace.id}`,
   kind: 'tasks',
-  fields: tasksFieldsOf({ scope }),
+  fields: tasksFieldsOf({ scope, now }),
 });
 
 const detailDraftsOf = ({ scope, now }: ScopeParams): ReadonlyArray<ProjectionDraft> =>
@@ -61,7 +63,7 @@ const detailDraftsOf = ({ scope, now }: ScopeParams): ReadonlyArray<ProjectionDr
         {
           key: `runs:${scope.workspace.id}:${session.id}`,
           kind: 'runs',
-          fields: runsFieldsOf({ scope, session }),
+          fields: runsFieldsOf({ scope, session, now }),
         } satisfies ProjectionDraft,
         ...(pullRequest === null
           ? []
@@ -78,9 +80,10 @@ const detailDraftsOf = ({ scope, now }: ScopeParams): ReadonlyArray<ProjectionDr
 export const projectionFieldsOf = ({
   scopes,
   detailWorkspaceId,
+  chips,
   now,
 }: Params): ReadonlyArray<ProjectionDraft> => [
-  { key: 'needsYou', kind: 'needsYou', fields: needsYouFieldsOf({ scopes, now }) },
+  { key: 'needsYou', kind: 'needsYou', fields: needsYouFieldsOf({ scopes, chips, now }) },
   ...scopes.flatMap((scope) => [
     sessionsDraftOf({ scope, now }),
     tasksDraftOf({ scope, now }),

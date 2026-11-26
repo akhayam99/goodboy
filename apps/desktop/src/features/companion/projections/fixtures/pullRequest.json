@@ -24,5 +24,10 @@
     "rebase"
   ],
   "mergeActionId": null,
+  "changedFiles": null,
+  "additions": null,
+  "deletions": null,
+  "commitCount": null,
+  "reviewComments": 0,
   "train": null
 }

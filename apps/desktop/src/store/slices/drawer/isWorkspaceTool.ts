@@ -1,8 +1,8 @@
-import type { DrawerContent } from './state';
+import { WORKSPACE_TOOL_KINDS, type DrawerContent } from './state';
 
 type Params = {
   readonly content: DrawerContent;
 };
 
 export const isWorkspaceTool = ({ content }: Params): boolean =>
-  content.kind === 'terminal' || content.kind === 'browser' || content.kind === 'monitoring';
+  WORKSPACE_TOOL_KINDS.some((kind) => kind === content.kind);

@@ -1,12 +1,17 @@
 import type { SessionExternalTask, SessionId, Workspace } from '@goodboy/types';
 import {
+  getWorkspaceValue,
   listAgentsForSessions,
+  listContextSlotsForSession,
   listExternalTasksForWorkspace,
   listOpenQuestionsForSessions,
   listProjectsForWorkspace,
   listSessionsForWorkspace,
   type Database,
 } from '@goodboy/db';
+import { listWorkspacePullRequestLinks } from '@goodboy/db/mount-pr-link';
+import { isLiveSession } from './isLiveSession';
+import { sessionGithubOf } from './sessionGithubOf';
 import { scopeOfState, type ScopeState } from './scopeOfState';
 import type { WorkspaceScope } from './workspaceScope';
 
@@ -37,11 +42,15 @@ export const loadOtherWorkspaceScope = async ({
 }: Params): Promise<WorkspaceScope> => {
   const sessions = await listSessionsForWorkspace(db, workspace.id);
   const sessionIds = sessions.map((session) => session.id);
-  const [questions, agents, projects, tasks] = await Promise.all([
+  const live = sessions.filter((session) => isLiveSession({ session }));
+  const [questions, agents, projects, tasks, links, slots, levelRaw] = await Promise.all([
     listOpenQuestionsForSessions({ db, sessionIds }),
     listAgentsForSessions(db, sessionIds),
     listProjectsForWorkspace({ db, workspaceId: workspace.id }),
     listExternalTasksForWorkspace({ db, workspaceId: workspace.id }),
+    listWorkspacePullRequestLinks({ db, workspaceId: workspace.id }),
+    Promise.all(live.map((session) => listContextSlotsForSession(db, session.id))),
+    getWorkspaceValue({ db, workspaceId: workspace.id, key: 'auto.level' }),
   ]);
   const state: ScopeState = {
     ...base,
@@ -51,8 +60,15 @@ export const loadOtherWorkspaceScope = async ({
     sessionPhaseRuns: Object.fromEntries(agents),
     sessionExternalTasks: groupBySession<SessionExternalTask>({ items: tasks }),
     sessionProjectMounts: {},
-    sessionGithub: {},
+    sessionGithub: sessionGithubOf({ links }),
     sessionResolveThreads: {},
+    sessionSlots: Object.fromEntries(
+      live.map((session, index) => [session.id, slots[index] ?? []]),
+    ),
+    workspaceValues: {
+      ...base.workspaceValues,
+      [workspace.id]: levelRaw === null ? {} : { 'auto.level': levelRaw },
+    },
   };
   return scopeOfState({ workspace, state, sessions, isFullyLoaded: false });
 };

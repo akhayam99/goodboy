@@ -1,7 +1,7 @@
 import { SHELL_GUTTER_PX } from './frameGeometry';
 import { STUDIO_RAIL_FOLD_BELOW } from './useStudioRailFold';
 
-const DESK_COLUMN_PX = 300;
+export const DESK_COLUMN_PX = 300;
 
 type Params = {
   readonly bodyWidth: number;

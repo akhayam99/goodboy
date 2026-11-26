@@ -6,6 +6,7 @@ import { mockSceneIpc } from '../mockSceneIpc';
 
 type Params = {
   readonly sessionId: SessionId | null;
+  readonly otherAnswers?: ReadonlyMap<string, unknown>;
 };
 
 const TAB_ID = 'ux39-harborline-checkout';
@@ -13,7 +14,7 @@ const LIVE_ID = 'ux39-live-harborline-checkout';
 const TAB_URL = 'http://localhost:5173/checkout';
 const TAB_TITLE = 'Checkout';
 
-export const seedBrowserTab = ({ sessionId }: Params): void => {
+export const seedBrowserTab = ({ sessionId, otherAnswers }: Params): void => {
   if (sessionId === null) {
     return;
   }
@@ -50,7 +51,7 @@ export const seedBrowserTab = ({ sessionId }: Params): void => {
       case 'browser_tab_hide':
         return facts;
       default:
-        return null;
+        return otherAnswers?.get(command) ?? null;
     }
   });
   useAppStore.setState({

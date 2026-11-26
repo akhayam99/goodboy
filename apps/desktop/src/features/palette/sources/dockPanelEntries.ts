@@ -4,7 +4,11 @@ import { LayoutGrid, RotateCcw } from '@goodboy/ui/icons';
 import { useAppStore } from '../../../store';
 import { dockMovesOf } from '../../../store/slices/drawer/dockMovesOf';
 import { gridAtRest } from '../../../store/slices/drawer/gridAtRest';
-import type { DrawerGrid, WorkspaceToolKind } from '../../../store/slices/drawer/state';
+import {
+  WORKSPACE_TOOL_KINDS,
+  type DrawerGrid,
+  type WorkspaceToolKind,
+} from '../../../store/slices/drawer/state';
 import { storedDockGridOf } from '../../../store/slices/drawer/dockGridMemory/storedDockGrid';
 import { NAMES } from '../../../shared/utils/names';
 import type { PaletteEntry, PaletteStep } from '../types';
@@ -35,12 +39,12 @@ const PANEL_NAMES: Readonly<Record<WorkspaceToolKind, string>> = {
   terminal: NAMES.terminal,
   browser: NAMES.browser,
   monitoring: NAMES.monitor,
+  scripts: NAMES.scripts,
+  ask: 'Ask',
 };
 
-const TOOL_KINDS: ReadonlyArray<WorkspaceToolKind> = ['terminal', 'browser', 'monitoring'];
-
 const toolOf = ({ kind }: KindParams): WorkspaceToolKind | null =>
-  TOOL_KINDS.find((known) => known === kind) ?? null;
+  WORKSPACE_TOOL_KINDS.find((known) => known === kind) ?? null;
 
 const panelNameOf = ({ kind }: KindParams): string => {
   const tool = toolOf({ kind });

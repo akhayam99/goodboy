@@ -34,6 +34,8 @@ export const drawerKey = (content: DrawerContent): string => {
       return 'browser';
     case 'monitoring':
       return 'monitoring';
+    case 'ask':
+      return 'ask';
     case 'history-versions':
       return `history-versions:${content.payload.mountId}`;
     case 'file-diff':

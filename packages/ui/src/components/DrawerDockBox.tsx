@@ -16,6 +16,7 @@ type Props = {
   readonly isOverlay: boolean;
   readonly isFloating: boolean;
   readonly isIdle: boolean;
+  readonly isOverDetail?: boolean;
   readonly parkedWidth: number;
   readonly setEdgeHost: (node: HTMLDivElement | null) => void;
   readonly isGrid?: boolean;
@@ -31,6 +32,7 @@ export const DrawerDockBox = ({
   isOverlay,
   isFloating,
   isIdle,
+  isOverDetail = false,
   parkedWidth,
   setEdgeHost,
   isGrid = false,
@@ -42,8 +44,11 @@ export const DrawerDockBox = ({
       data-container="drawer"
       data-panel-focused={isFocused ? '' : undefined}
       data-panel-over-page={isFloating ? '' : undefined}
+      data-dock-over-detail={isOverDetail ? '' : undefined}
+      style={isOverDetail ? { width: parkedWidth } : undefined}
       className={cn(
-        'panel-on-rail relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-l-frame border-y border-l',
+        isOverDetail ? 'absolute inset-y-3 right-0 z-20 shadow-xl' : 'relative',
+        'panel-on-rail flex min-h-0 min-w-0 flex-1 overflow-clip rounded-l-frame border-y border-l',
         isFocused ? 'border-focus-ring' : 'border-frame-edge',
         isGrid ? 'border-0 bg-transparent' : 'bg-drawer',
         isFloating && 'pointer-events-auto',

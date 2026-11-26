@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { brandId, type SessionId } from '@goodboy/types';
+import { brandId, type ProjectId, type SessionId } from '@goodboy/types';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
 import { EMPTY_DRAWER_GRID, type DrawerGrid } from '../state';
 import { parseStoredDockGrid, storedDockGridOf } from './storedDockGrid';
@@ -39,10 +39,74 @@ describe('the dock grid as the session stores it', () => {
     );
   });
 
+  it('reads and writes all five tools, Scripts and Ask included', () => {
+    const grid: DrawerGrid = {
+      columns: [
+        [
+          {
+            kind: 'terminal',
+            sessionId: null,
+            payload: { terminalId: brandId<TerminalTabId>({ value: 'tab-1' }) },
+          },
+        ],
+        [{ kind: 'browser', sessionId: null, payload: null }],
+        [
+          { kind: 'scripts', sessionId: SESSION, payload: null },
+          { kind: 'monitoring', sessionId: null, payload: null },
+        ],
+        [{ kind: 'ask', sessionId: SESSION, payload: null }],
+      ],
+      used: ['terminal', 'browser', 'scripts', 'monitoring', 'ask'],
+      focus: { at: 'tool', kind: 'ask' },
+      widths: { ask: 480 },
+      splits: { 'scripts/monitoring': 0.4 },
+    };
+
+    expect(parseStoredDockGrid({ raw: storedDockGridOf({ grid }) })).toEqual(grid);
+  });
+
+  it('keeps the project of a Scripts panel', () => {
+    const grid: DrawerGrid = {
+      ...EMPTY_DRAWER_GRID,
+      columns: [
+        [
+          {
+            kind: 'scripts',
+            sessionId: SESSION,
+            payload: { projectId: brandId<ProjectId>({ value: 'project-payments-api' }) },
+          },
+        ],
+      ],
+      used: ['scripts'],
+    };
+
+    expect(parseStoredDockGrid({ raw: storedDockGridOf({ grid }) })?.columns).toEqual(grid.columns);
+  });
+
+  it('still reads a row saved before Scripts and Ask joined the grid', () => {
+    const parsed = parseStoredDockGrid({
+      raw: raw({
+        value: {
+          version: 1,
+          columns: [
+            [{ kind: 'browser', sessionId: null, payload: null }],
+            [{ kind: 'monitoring', sessionId: null, payload: null }],
+          ],
+          used: ['browser', 'monitoring'],
+          focus: { at: 'tool', kind: 'monitoring' },
+          widths: { browser: 700 },
+        },
+      }),
+    });
+
+    expect(parsed?.columns.flat().map((panel) => panel.kind)).toEqual(['browser', 'monitoring']);
+    expect(parsed?.widths).toEqual({ browser: 700 });
+  });
+
   it('keeps the face beside the grid, so a build that never knew it still reads the grid', () => {
     const stored = storedDockGridOf({ grid: GRID, face: 'desk' });
 
-    expect(JSON.parse(stored)).toMatchObject({ version: 1, face: 'desk' });
+    expect(JSON.parse(stored)).toMatchObject({ version: 2, face: 'desk' });
     expect(parseStoredDockGrid({ raw: stored })).toEqual(GRID);
     expect(storedFaceOf({ raw: stored })).toBe('desk');
   });
@@ -56,8 +120,15 @@ describe('the dock grid as the session stores it', () => {
 
   it.each([
     ['text that is not JSON', 'terminal'],
-    ['a version it does not know', raw({ value: { version: 2, columns: [] } })],
-    ['a panel that is not a tool', raw({ value: { version: 1, columns: [[{ kind: 'ask' }]] } })],
+    ['a version it does not know', raw({ value: { version: 3, columns: [] } })],
+    [
+      'a panel that is not a tool',
+      raw({ value: { version: 2, columns: [[{ kind: 'conversation' }]] } }),
+    ],
+    [
+      'an Ask without its session',
+      raw({ value: { version: 2, columns: [[{ kind: 'ask', sessionId: null, payload: null }]] } }),
+    ],
     [
       'a Terminal without its tab',
       raw({ value: { version: 1, columns: [[{ kind: 'terminal', sessionId: null }]] } }),
@@ -93,9 +164,9 @@ describe('the dock grid as the session stores it', () => {
         value: {
           version: 1,
           columns: [[{ kind: 'browser', sessionId: null, payload: null }]],
-          used: ['ask', 'browser', 'browser'],
+          used: ['conversation', 'browser', 'browser'],
           focus: { at: 'tool', kind: 'terminal' },
-          widths: { browser: 'wide', terminal: 400, ask: 300 },
+          widths: { browser: 'wide', terminal: 400, conversation: 300 },
         },
       }),
     });
@@ -109,11 +180,11 @@ describe('the dock grid as the session stores it', () => {
     });
   });
 
-  it('writes the row heights under version 1, beside the fields an older build reads', () => {
+  it('writes the row heights under version 2, beside the fields an older build reads', () => {
     const stored: unknown = JSON.parse(storedDockGridOf({ grid: GRID }));
     const plain: unknown = JSON.parse(storedDockGridOf({ grid: { ...GRID, splits: {} } }));
 
-    expect(stored).toMatchObject({ version: 1, splits: { 'browser/terminal': 0.64 } });
+    expect(stored).toMatchObject({ version: 2, splits: { 'browser/terminal': 0.64 } });
     expect(plain).not.toHaveProperty('splits');
     expect({ ...Object(stored), splits: undefined }).toEqual({
       ...Object(plain),
@@ -129,7 +200,7 @@ describe('the dock grid as the session stores it', () => {
           columns: [[{ kind: 'browser', sessionId: null, payload: null }]],
           splits: {
             'browser/terminal': 0.3,
-            'browser/ask': 0.4,
+            'browser/conversation': 0.4,
             'terminal/monitoring': 1.2,
             monitoring: 0.5,
           },

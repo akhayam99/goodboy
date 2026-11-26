@@ -11,6 +11,7 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
+import { selectIsAskOpen } from '../../../../store/slices/ask/selectIsAskOpen';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../shared/components/Toast';
@@ -141,7 +142,9 @@ describe('the Ask foot of the Overview', () => {
     }
     fireEvent.click(chip);
 
-    expect(useAppStore.getState().askPaneOpen[COLUMN_SESSION_ID]).toBe(true);
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: COLUMN_SESSION_ID })).toBe(
+      true,
+    );
     expect(sendAskQuestion).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: COLUMN_SESSION_ID, question: chip.textContent }),
     );
@@ -157,7 +160,9 @@ describe('the Ask foot of the Overview', () => {
       fireEvent.click(within(askFoot()).getByRole('button', { name: 'Send' }));
     });
 
-    expect(useAppStore.getState().askPaneOpen[COLUMN_SESSION_ID]).toBe(true);
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: COLUMN_SESSION_ID })).toBe(
+      true,
+    );
     expect(sendAskQuestion).toHaveBeenCalledWith(
       expect.objectContaining({
         sessionId: COLUMN_SESSION_ID,

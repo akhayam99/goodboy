@@ -184,12 +184,16 @@ describe('the agent and the pull request saved with the desk', () => {
     db.holdLoads = true;
 
     await goTo({ sessionId: S1 });
-    state().openDrawer({ kind: 'scripts', sessionId: S1, payload: null });
+    state().openDrawer({
+      kind: 'conversation',
+      sessionId: S1,
+      payload: { threadId: 'thread-harborline' },
+    });
     db.heldLoads.splice(0).forEach((release) => release());
     await settle();
 
     expect(stack()).toBeNull();
-    expect(state().drawer?.kind).toBe('scripts');
+    expect(state().drawer?.kind).toBe('conversation');
   });
 
   it('opens no agent or pull request when the user picks the overview during the read', async () => {
@@ -213,7 +217,11 @@ describe('the agent and the pull request saved with the desk', () => {
     await goTo({ sessionId: S1 });
     state().setSessionFace({ sessionId: S1, face: 'desk' });
     state().openDrawer(AGENT);
-    state().openDrawer({ kind: 'scripts', sessionId: S1, payload: null });
+    state().openDrawer({
+      kind: 'conversation',
+      sessionId: S1,
+      payload: { threadId: 'thread-harborline' },
+    });
     await settle();
 
     expect(state().drawerBack?.kind).toBe('transcript');
