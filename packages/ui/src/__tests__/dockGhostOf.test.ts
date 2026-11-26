@@ -199,3 +199,48 @@ describe('the ghost of the landing slot', () => {
     expect(ghost.rect?.width).toBe(panes[0]?.rect.width);
   });
 });
+
+describe('the fold chip of a tab torn out of a folded cell', () => {
+  it('names the fold when the tab lands folded in another cell than before', () => {
+    const boxes: ReadonlyArray<DockGridColumnBox> = [
+      {
+        width: 400,
+        dragMax: 600,
+        panes: [
+          { key: 'terminal', weight: 1, tabs: ['terminal'] },
+          { key: 'monitoring', weight: 1, tabs: ['monitoring', 'browser'] },
+        ],
+      },
+    ];
+
+    const ghost = dockGhostOf({
+      boxes,
+      dock: DOCK,
+      key: 'browser',
+      groups: {},
+      was: [{ key: 'browser', into: 'terminal' }],
+    });
+
+    expect(ghost.folds).toEqual([{ key: 'browser', into: 'monitoring' }]);
+  });
+
+  it('names nothing when the tab stays folded in the same cell', () => {
+    const boxes: ReadonlyArray<DockGridColumnBox> = [
+      {
+        width: 400,
+        dragMax: 600,
+        panes: [{ key: 'terminal', weight: 1, tabs: ['terminal', 'browser'] }],
+      },
+    ];
+
+    const ghost = dockGhostOf({
+      boxes,
+      dock: DOCK,
+      key: 'browser',
+      groups: {},
+      was: [{ key: 'browser', into: 'terminal' }],
+    });
+
+    expect(ghost.folds).toEqual([]);
+  });
+});

@@ -1,5 +1,6 @@
 import { DRAWER_TIERS, pushReserveOf, type DrawerSizing } from './drawerGeometry';
 import { DOCK_GRID_CAP } from './dockGridCap';
+import { DOCK_TILE_ROOM_PX } from './dockTileRoom';
 import { foldStatesOf } from './dockFoldStates';
 import { laneOf } from './dockLaneOf';
 import type { DockColumn, DockPane, Lane } from './dockLaneTypes';
@@ -431,6 +432,9 @@ const deskOverOf = ({ frame, detail, lanes }: OverDeskParams): FrameLayout => {
 
 const deskLayoutOf = ({ frame, detail, lanes, foldOrder }: DeskParams): FrameLayout => {
   const states = foldStatesOf({ lanes, order: foldOrderOf({ lanes, foldOrder }) });
+  if (frame.mainWidth < DOCK_TILE_ROOM_PX) {
+    return deskOverOf({ frame, detail, lanes: states[states.length - 1] ?? lanes });
+  }
   const attempts = states.flatMap((state) => {
     const stacked = foldedOf({ lanes: state });
     return [

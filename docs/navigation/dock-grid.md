@@ -18,6 +18,10 @@ focus (the page, the detail or one tool).
 - The dock in the slot is always the grid's latest tool (`settledSlot`): a tool the
   slot dropped waits in the grid and returns when the panel beside it closes, and
   closing a tool removes it from the grid.
+- Below `DOCK_TILE_ROOM_PX` (700) of room beside the page, the desk stops tiling: the
+  solver folds every tool into one cell and that cell lies over the page (`deskLayoutOf`,
+  mode `over`), with the rail live and a second click closing it. A fold is a view, never
+  a write: widening the window brings the saved columns back.
 - `focusDrawerPanel` names the page or a panel's entry; a replaced or closed entry
   changes nothing.
 - Archiving or deleting a session removes its tools, and `clearDrawer` empties the
@@ -83,7 +87,7 @@ worktree strip, and Monitor its Pin a port action as a pin icon in the head.
 
 - **Tabbed cells.** The tab strip takes the title's place (focus follows the
   selected tab when the head remounts), and each tab segment is its own handle for
-  that panel (`DockDragSource.onStartPanel`, not wired to a move yet).
+  that panel (`DockDragSource.onStartPanel`).
   - `DockGridCell.tabs` carries the keys, the active key and the member cells;
     `dockMergedCellOf` folds them into the one pane the solver places.
   - `cellTabsOf` is the one function for the tab count, the strip, the activity
@@ -95,14 +99,18 @@ worktree strip, and Monitor its Pin a port action as a pin icon in the head.
 - **Dragging.** With two panels or more the whole head is the handle, with a grab
   cursor (`DockDragContext` from `DockGrid`, `useDockGrip`, `useDockDrag`); the empty
   area moves the whole cell, tabs together. A cell the solver folded for lack of room
-  (`isDerived`) does not move, since a move would split it from its partner.
+  (`isDerived`) drags too, but only the tab you grab: a tab segment moves that tool, and
+  the empty head moves the tab shown. The tab leaves the cell as one panel, the solver
+  solves the rest again, and a `Merge` on its own cell is never drawn. The ghost and the
+  committed move read the same layout (`dockLayoutAfterMove`), so a torn tab lands where
+  its card says (`dockFoldedTear.test.ts`).
   1. A press becomes a drag after 4px, so a click stays a click; a press on a control
      in the head, or in a layer it portals out (a menu, the address suggestions),
      never starts one.
   2. While dragging, the page dims and `DockDropZones` draws one labeled card per
      target (`Place left` and `Place right` at the dock edges, `Merge`, `Place above`
      and `Place below` on the panel under the pointer) and one ghost of the landing
-     slot (`dockGhostOf`). A card that would change nothing, or that the solver with
+     slot (`dockGhostOf`). A card is drawn only when the committed layout does what its words say (`dockCardHonestOf`: a Place card leaves the panel alone in that spot, a Merge card makes it a tab there), and no two cards overlap (`dockCardsClipOf`). A card that would change nothing, or that the solver with
      the real widths refuses (`canDrop` from `useDockGrid`, `dockMoveFits`), is not
      drawn. A card is smaller than its hit area, and a target takes 80 ms of hover
      before the ghost moves. The ghost of a `Merge` is the target panel itself, and the merge keeps the tabs the solver had folded into that panel (`keeps` on the `tab` target), so the result matches the card's words. The overlay redraws from a small store at most once a
@@ -110,7 +118,16 @@ worktree strip, and Monitor its Pin a port action as a pin icon in the head.
   3. The drag sets `SPLIT_DRAG_ATTRIBUTE` to `move`, so the Browser page hides under
      its cover.
   4. Esc cancels through the escape stack; pointer up drops through `moveDockPanel`.
-- **From the keyboard**, ⌘K lists `Move Terminal panel…` per tool when two or more
+- **Lifting with the keyboard.** Tab reaches a head (`Move {title}`, a focusable group). Enter or
+  Space lifts the cell, or the shown tab of a folded cell; Shift Enter on a tab segment lifts
+  that tool alone (`DockDragSource.onLift`, `useDockDrag.lift`). The page dims as in a pointer
+  drag, the arrows walk the cards in screen order (`dockZoneStepOf`), Enter drops on the chosen
+  card and chooses nothing before one is chosen, Esc cancels (`registerEscapeLayer`), and so
+  does the focus leaving the grid. A polite live region says the lift, each card with its place
+  in the list and what folds, the drop and the cancel (`data-dock-status`, `data-dock-note`).
+  After a drop the focus goes to the head of the moved panel (`focusPanelHead`, through
+  `DockGridMove.isKeyboard`).
+- **From the palette**, ⌘K lists `Move Terminal panel…` per tool when two or more
   are open (`dockPanelEntries`), with only the moves that never leave the page worse
   (`dockMovesOf`, asking the mounted grid's `canDrop` through `dockFitProbe`: no new
   float, no new fold, no detail newly over the page). `Reset panel layout` is in ⌘K
@@ -128,6 +145,14 @@ version 1 shows the default layout.
 
 - `useSessionDockGrid` (started by `useWindowLayout`) runs `watchSessionDockGrid`,
   keyed on `currentSessionId`.
+- **A new session** (opened within two minutes of its creation, with no layout parked in
+  this window, `isNewSession`) starts from the last layout of the window
+  (`lastDockGrid`, set by `dockAfterPlace` when a session is left, the Board included): the
+  same columns, tab lists and splits, with the panels bound to the new session, Scripts
+  without its project and a Terminal kept only when its tab belongs to the new session's
+  workspace (`carriedDockGrid`). An older session keeps opening empty until its row answers, and one the user emptied stays
+  empty when it comes back. Its own row, when it has one, replaces that start. The last layout lives in the window and
+  is not saved.
 - **Entering a session** reads its row (`recallDockGrid`), whose grid replaces the
   open tools (`slotWithGrid`); a tool of a session that no longer exists drops out.
   Until the row answers, the session shows the grid it was left with in this window

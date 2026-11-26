@@ -204,7 +204,7 @@ describe('a cell with a chosen tab list', () => {
     expect(counted).toBe(3);
   });
 
-  it('moves with its head, tabs and all, unlike a cell the solver folded', () => {
+  it('moves with its head, tabs and all, and a cell the solver folded still drags', () => {
     const tabs = ['terminal', 'scripts', 'ask'];
     const view = render(
       gridOf({ spec: specOf([[tabbed({ active: 'terminal' }), BROWSER]]), tabs }),
@@ -216,6 +216,6 @@ describe('a cell with a chosen tab list', () => {
       gridOf({ spec: specOf([[TERMINAL, SCRIPTS, BROWSER]]), tabs: ['terminal', 'scripts'] }),
     );
 
-    expect(seen.isDragSource).toBe(false);
+    expect(seen.isDragSource).toBe(true);
   });
 });

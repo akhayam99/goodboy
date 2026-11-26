@@ -5,6 +5,7 @@ import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockGridTracksOf } from '../dockGridTracksOf';
 import type { DockGridSpec } from '../dockGridSpec';
 import { DockDragContext, type DockDragSource } from '../dockDragContext';
+import { dockFoldedSourceOf } from '../dockFoldedSourceOf';
 import { cellTabsOf } from '../dockCellTabsOf';
 import { DockTabsContext, type DockTabs } from '../dockTabsContext';
 import type { CanDropParams } from '../dockDropZonesOf';
@@ -12,6 +13,7 @@ import { useDockDrag } from '../useDockDrag';
 import { useDockCellMemory } from '../useDockCellMemory';
 import { useDockFoldReport } from '../useDockFoldReport';
 import { DockCellTabs } from './DockCellTabs';
+import { DockDragNote } from './DockDragNote';
 import { DockDropZones } from './DockDropZones';
 import { DockRowHandle } from './DockRowHandle';
 import { SplitHandle, type SplitHandleProps } from './SplitHandle';
@@ -67,6 +69,7 @@ export const DockGrid = ({
     canDrop,
     boxesOf,
     onMove: canMove ? (spec.onMove ?? null) : null,
+    ...(spec.scope !== undefined && { scope: spec.scope }),
   });
   useDockFoldReport({
     ...(spec.scope !== undefined && { scope: spec.scope }),
@@ -80,6 +83,7 @@ export const DockGrid = ({
   );
   const keyList = keys.flat().join('/');
   const startDrag = drag.start;
+  const liftDrag = drag.lift;
   const sources = useMemo(
     () =>
       new Map<string, DockDragSource>(
@@ -90,11 +94,17 @@ export const DockGrid = ({
                 onStart: ({ event }) => startDrag({ key, unit: 'cell', event }),
                 onStartPanel: ({ key: panel, event }) =>
                   startDrag({ key: panel, unit: 'panel', event }),
+                onLift: ({ element, key: panel }) =>
+                  liftDrag({
+                    key: panel ?? key,
+                    unit: panel === undefined ? 'cell' : 'panel',
+                    element,
+                  }),
               },
             ])
           : [],
       ),
-    [canMove, keyList, startDrag],
+    [canMove, keyList, startDrag, liftDrag],
   );
   const { regainFocus, liveKeys, headed, kept, claim, takeFocus } = useDockCellMemory({
     spec,
@@ -140,6 +150,10 @@ export const DockGrid = ({
             cellTabs.keys.includes(drag.liftedKey) &&
             (drag.liftedUnit === 'cell' || cellTabs.count === 1);
           const isAlone = column.panes.length === 1;
+          const foldedSource = canMove
+            ? dockFoldedSourceOf({ shown, start: startDrag, lift: liftDrag })
+            : null;
+          const source = cellTabs.isDerived ? foldedSource : (sources.get(pane.key) ?? null);
           const tabsOfCell: DockTabs | null = isTabbed
             ? {
                 paneKey: pane.key,
@@ -203,9 +217,7 @@ export const DockGrid = ({
                   onSelect={tabsOfCell.onSelect}
                 />
               ) : null}
-              <DockDragContext.Provider
-                value={cellTabs.isDerived ? null : (sources.get(pane.key) ?? null)}
-              >
+              <DockDragContext.Provider value={source}>
                 <DockTabsContext.Provider value={tabsOfCell}>
                   <DockCellContext.Provider value={shown}>{cell}</DockCellContext.Provider>
                 </DockTabsContext.Provider>
@@ -237,6 +249,7 @@ export const DockGrid = ({
         ];
       })}
       {drag.liftedKey === null ? null : <DockDropZones store={drag.store} />}
+      <DockDragNote text={drag.note} />
     </div>
   );
 };

@@ -1,5 +1,13 @@
-import { useContext, useLayoutEffect, useRef, type PointerEvent, type ReactNode } from 'react';
+import {
+  useContext,
+  useLayoutEffect,
+  useRef,
+  type KeyboardEvent,
+  type PointerEvent,
+  type ReactNode,
+} from 'react';
 import { cn } from '../cn';
+import { FOCUS_RING } from '../focusRing';
 import { DrawerBackChipContext } from '../drawerBackChipContext';
 import { DockDragContext } from '../dockDragContext';
 import { DockTabsContext } from '../dockTabsContext';
@@ -19,6 +27,12 @@ const NARROW_HEAD_PX = 360;
 type PressParams = {
   readonly event: PointerEvent<HTMLElement>;
 };
+
+type LiftKeyParams = {
+  readonly event: KeyboardEvent<HTMLElement>;
+};
+
+const LIFT_KEYS: ReadonlyArray<string> = ['Enter', ' '];
 
 type Props = {
   readonly title: string;
@@ -80,6 +94,25 @@ export const DockPanelHead = ({
     grip.press({ event });
   };
 
+  const liftOnKey = ({ event }: LiftKeyParams): void => {
+    const { target } = event;
+    if (source?.onLift === undefined || event.repeat || !LIFT_KEYS.includes(event.key)) {
+      return;
+    }
+    if (target === event.currentTarget) {
+      event.preventDefault();
+      source.onLift({ element: event.currentTarget });
+      return;
+    }
+    const tab =
+      target instanceof Element && event.shiftKey ? target.closest('[data-dock-tab]') : null;
+    const key = tab?.getAttribute('data-dock-tab') ?? null;
+    if (key !== null) {
+      event.preventDefault();
+      source.onLift({ element: event.currentTarget, key });
+    }
+  };
+
   return (
     <div
       ref={row.ref}
@@ -87,10 +120,18 @@ export const DockPanelHead = ({
       data-drawer-header-row=""
       data-head-folded={row.isNarrow ? '' : undefined}
       data-dock-drag-source={grip.canDrag ? '' : undefined}
+      role={grip.canDrag ? 'group' : undefined}
+      aria-label={grip.canDrag ? `Move ${title}` : undefined}
+      tabIndex={grip.canDrag ? 0 : undefined}
       onPointerDown={grip.canDrag ? (event) => press({ event }) : undefined}
+      onKeyDown={grip.canDrag ? (event) => liftOnKey({ event }) : undefined}
       className={cn(
         'flex h-10 min-w-0 shrink-0 items-center gap-2 px-2 pt-2',
-        grip.canDrag && 'cursor-grab touch-none select-none',
+        grip.canDrag &&
+          cn(
+            'cursor-grab touch-none select-none rounded-frame focus-visible:ring-inset',
+            FOCUS_RING,
+          ),
       )}
     >
       {backChip === null ? null : <DrawerBackChip chip={backChip} />}

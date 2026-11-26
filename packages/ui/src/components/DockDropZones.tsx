@@ -38,7 +38,7 @@ export const DockDropZones = ({ store }: Props) => {
         };
   return createPortal(
     <div data-dock-drop="" className="pointer-events-none fixed inset-0 z-drag">
-      <div data-dock-dim="" className="absolute inset-0 bg-scrim/25" />
+      <div data-dock-dim="" className="absolute inset-0 bg-scrim/45" />
       {ghost === null ? null : (
         <div
           data-dock-ghost=""
