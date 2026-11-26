@@ -251,15 +251,25 @@ describe('demo playground stage states', () => {
   });
 
   it('warms the next group as soon as the first step of this one is done', () => {
+    seedProgress({ ids: ['bring', 'direction'] });
+    window.history.replaceState(null, '', '/?scene=demo#guide');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
-    const nextScene = chapterOf({ id: 'direction' }).beats[0]?.scene ?? '';
+    const nextScene = chapterOf({ id: 'ship' }).beats[0]?.scene ?? '';
     expect(document.querySelectorAll('iframe')).toHaveLength(1);
-    tried({ frame, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
+    tried({ frame, hintId: chapterOf({ id: 'guide' }).hints[0]?.id ?? '' });
     expect(document.querySelectorAll('iframe')).toHaveLength(2);
     expect(frameOf({ scene: nextScene }).hasAttribute('inert')).toBe(true);
     expect(visibleFrame()).toBe(frame);
+  });
+
+  it('does not warm a group that continues the same run', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    tried({ frame, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
+    expect(document.querySelectorAll('iframe')).toHaveLength(1);
   });
 
   describe('when a group is done', () => {
@@ -305,9 +315,8 @@ describe('demo playground stage states', () => {
       expect(rowOf({ title: 'Set the direction' }).getAttribute('aria-current')).toBe('page');
       expect(rowOf({ title: 'Bring your work' }).getAttribute('data-access')).toBe('done');
       expect(document.activeElement).toBe(playgroundRoot());
-      expect(
-        frameOf({ scene: chapterOf({ id: 'direction' }).beats[0]?.scene ?? '' }),
-      ).toBeDefined();
+      expect(document.querySelectorAll('iframe')).toHaveLength(1);
+      expect(visibleFrame().getAttribute('src')).toContain('scene=story-bring&');
     });
 
     it('flows from the last group into Get Goodboy', () => {

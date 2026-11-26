@@ -111,7 +111,7 @@ export const DemoPlayground = () => {
   const preloadBeat =
     intentChapter?.beats[0] ??
     (hints.nextBeatIndex === undefined ? undefined : chapter.beats[hints.nextBeatIndex]) ??
-    (isNextWarm ? nextChapter?.beats[0] : undefined);
+    (isNextWarm && nextChapter?.isContinuation !== true ? nextChapter?.beats[0] : undefined);
   const player = useBeatPlayer({
     chapter,
     beatIndex: hints.beatIndex,
@@ -128,13 +128,17 @@ export const DemoPlayground = () => {
     focusFrame();
   }, [focusFrame]);
 
+  const { carry } = player;
   const goToChapter = useCallback(
     ({ id }: ChapterParams) => {
+      if (id === nextChapter?.id && nextChapter.isContinuation === true && isGroupDone) {
+        carry({ chapterId: id });
+      }
       selectChapter({ id });
       setIntentId(undefined);
       focusFrame();
     },
-    [selectChapter, focusFrame],
+    [selectChapter, focusFrame, carry, nextChapter, isGroupDone],
   );
 
   const onIntent = useCallback(({ id }: ChapterParams) => setIntentId(id), []);

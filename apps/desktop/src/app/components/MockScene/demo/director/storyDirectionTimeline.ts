@@ -1,8 +1,8 @@
 import type { DemoTimeline } from './directorTypes';
-import { installStoryDirection } from './installStoryDirection';
+import { installStoryFlow } from './installStoryFlow';
 
 export const storyDirectionTimeline = (): DemoTimeline => ({
-  setup: installStoryDirection,
+  setup: installStoryFlow,
   prepare: () => undefined,
   cues: [],
 });

@@ -504,7 +504,7 @@ The frame still answers `pause` and `restart` (a restart carries a higher
 generation, restores the store it had before the first cue and drops every
 report from an older generation), but the shell no longer sends them. The
 stage shows a frame only once it reports `ready`, keeping the previous one on
-screen until then. Inside a group nothing moves on by itself: the visitor
+screen until then. A step counts as done only when its played run has written its final state (Start: the open question exists), so a group never finishes mid-run. A group that continues the same story (`isContinuation` in `demoChapters.ts`: Set the direction and Guide the work) keeps the live frame when the visitor moves on right after finishing the one before (`carry` in `useBeatPlayer`), so the run just watched is not reseeded; a direct entry, a replay or Review and ship loads the scene's own seed. The story-bring and story-direction frames install both the direction and the plan flows (`installStoryFlow.ts`) for that reason. Inside a group nothing moves on by itself: the visitor
 drives, and the frame changes only when the next step lives in another frame,
 after the result of the step before it was shown; only a finished group hands
 over to the next one by itself. The frame shown is the one named by the step in
