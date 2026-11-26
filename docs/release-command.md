@@ -88,9 +88,10 @@ Below, `X` is the new version and `X-1` is the current latest.
      release that only fixes bugs changes no figure. A release that skips
      the re-shoots leaves them to a docs pass right after it, so no picture
      stays wrong for long.
-   - Every figure in `README.md` and `docs/features/` has a caption under its
-     `<picture>`, `<sub>Screenshot from Goodboy X</sub>`, so a reader sees how
-     old it is. `docs/figures.json` holds the version of each figure. The shot
+   - Every figure in `docs/features/` has a caption under its `<picture>`,
+     `<sub>Screenshot from Goodboy X</sub>`, so a reader sees how old it is.
+     README figures carry none. `docs/figures.json` holds the version of each
+     figure. The shot
      scripts write it when they run, and a figure left as it is keeps its
      version. `pnpm run check:doc-refs` fails when a figure has no entry, when
      a caption does not match its entry, or when an entry names no figure.

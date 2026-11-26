@@ -21,6 +21,8 @@ export const figureKeyOf = ({ srcset }) => {
   return srcset.includes('/docs/readme/') ? `readme/${name}` : `features/${name}`;
 };
 
+const isUncaptioned = ({ key }) => key.startsWith('readme/');
+
 export const collectPictures = ({ markdown }) => {
   const lines = markdown.split('\n');
   const pictures = [];
@@ -80,6 +82,12 @@ export const findProblems = ({ documents, figures, repoVersion }) => {
         problems.push(`${location} ${picture.key} has no x.y.z version in docs/figures.json`);
         continue;
       }
+      if (isUncaptioned({ key: picture.key })) {
+        if (picture.caption !== null && CAPTION_LINE.test(picture.caption)) {
+          problems.push(`${location} ${picture.key} is a README figure and carries no caption`);
+        }
+        continue;
+      }
       if (picture.caption !== captionOf({ version })) {
         problems.push(`${location} caption under ${picture.key} must be ${captionOf({ version })}`);
       }
@@ -106,7 +114,7 @@ export const writeCaptions = ({ markdown, figures }) => {
   const pictures = collectPictures({ markdown });
   for (const picture of [...pictures].reverse()) {
     const version = picture.key === null ? undefined : figures[picture.key]?.version;
-    if (version === undefined) {
+    if (version === undefined || isUncaptioned({ key: picture.key })) {
       continue;
     }
     const caption = captionOf({ version });
