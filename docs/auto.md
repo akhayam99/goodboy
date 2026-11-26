@@ -162,8 +162,9 @@ end first." while the agent works.
 A rebase on main is plain git and never starts Auto. When it stops on a
 conflict or a commit hook, the run keeps `rebaseConflict` (the onto ref, the
 base, the head before the rebase) and the stop keeps the files
-(`store/slices/history/rebaseBranch.ts`); the prompt asks the person. **Resolve
-with the Lead** (`mount.resolveRebaseWithAuto`) calls `resolveRebaseWithAuto`
+(`store/slices/history/rebaseBranch.ts`); the prompt asks the person. **Start new
+Lead** (`mount.resolveRebaseWithAuto`, "Start new Lead for the rebase
+conflicts" in Search or run) calls `resolveRebaseWithAuto`
 (`store/slices/rebaseAll/resolveRebaseWithAuto.ts`): it starts one Auto agent
 with `spawnAgent` and `kindOverride: 'auto'`, the route the workspace picks for
 the role, and the goal `rebaseAutoGoal` writes, so the goal goes through the
@@ -176,9 +177,10 @@ run is marked as handed (`autoAgentId`) only once Auto took the goal and only
 when the run is still the one that was asked, so an answer that lands after
 **Abort rebase** changes nothing. **Rebase all** (`store/slices/rebaseAll/rebaseAll.ts`)
 rebases each branch with git first and hands every conflicted branch to the
-same single Auto run; with **Also tidy commits with the Lead** on, the goal also
-lists every rebased branch to tidy, locally, after its rebase. **Start new Lead** on a stopped rebase
-reads why when no provider can run Auto (`autoUnavailableReason`).
+same single Auto run. With `shouldTidy` the goal also lists every rebased
+branch to tidy, locally, after its rebase; every caller (`session.rebaseAll`,
+`updateAll`) passes `false`, so no screen asks for it. **Start new Lead** on a
+stopped rebase reads why when no provider can run Auto (`autoUnavailableReason`).
 
 ## Talking to Auto
 

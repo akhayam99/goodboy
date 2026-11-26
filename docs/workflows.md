@@ -102,7 +102,7 @@ output on the left, the model on the right. Instruction and expected output
 are document fields (markdown with **Write** and **Preview**, Cmd+Enter
 closes the editor), each with **Polish** and, after a polish, **Undo
 polish**. The model block has two choices: **Follow role** (the default,
-which says what Goodboy picks for the role from the providers you can use now) or **Pin
+which says what Auto picks for the role from the providers you can use now) or **Pin
 a model** (the same compact provider row as the model picker, then model,
 version and effort), and **Reply length** under both. A pinned step carries
 a dot on its row, like an edited one.
@@ -153,8 +153,10 @@ a verb plus an object in the language of the goal, inside one closed tag:
 The activity feed, the workflow detail and the run page show that title, so
 two runs of the same preset read apart. Until the title arrives, or when the
 run has no goal, they show the workflow name. An orchestrated run keeps the
-name generated for its workflow and gets no second title. A name you give a
-run stays with it, and the preset keeps its own name.
+name generated for its workflow and gets no second title. You rename a run
+from its title on the run page or its row on Runs (`useRunTitleRename`,
+`useRunRowRename`). That name stays with the run, and the preset keeps its own
+name.
 
 ### When a run starts
 
@@ -558,10 +560,12 @@ Asking for a certain provider or model on a step is a hint too.
 
 Each run can have a limit in dollars. You set it on the run (the limit
 in the Agents column of a run or the **Limit** chip of the run page) or in
-Start a run. You also choose what happens when the run reaches it: **Pause**
-or **Warn only**. The limit starts at the **Limit** of Every run, and at no
-limit when that is blank. The
-orchestrator decides how many steps to plan based on the goal.
+Start a run. You also choose what happens when the run reaches it: **Pause
+runs** or **Warn only**, the same editor and words as the session's limit
+(`SpendLimitFields`). The Every run default names the same choice **Pause**.
+The limit starts at the **Limit** of Every run, and at no limit when that is
+blank (`runLimitOf`). The orchestrator decides how many steps to plan based on
+the goal.
 
 A session has its own limit, set from the session spend popover or an agent page's **Limit** chip. With
 **Pause runs** (the default) every workflow of the session stops at the
@@ -675,9 +679,10 @@ of the Agents column reads. `runRowFactsOf` computes no word of its own: it read
 **Esc** closes it; a session with no run shows the field alone.
 
 A routed start (`startRoutedRun` in `features/session/startRun/`) goes one of
-two ways. **Start a run** always routes to a Lead (`runRouteOf`, through
-`leadRouteOf`, `presetRouteOf` and `roleRouteOf`): one agent goes to
-`spawnAgent`, as below. The `plan` shape is reached only when `changeRunRoute`
+two ways. **Start a run** always routes to the `lead` shape (`runRouteOf`,
+through `leadRouteOf`, `presetRouteOf` and `roleRouteOf`): one agent goes to
+`spawnAgent`, as below, the Lead or, for a role named with `@`, that role
+(`kindOverride`). The `plan` shape is reached only when `changeRunRoute`
 restarts an older run as a plan (`olderPlanRouteOf`): a plan creates an `origin: 'orchestrated'`
 workflow with no steps and attaches it with `executionMode: 'dynamic'`; a
 preset does the same with the name "Plan from <preset>", the preset's own
