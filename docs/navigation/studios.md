@@ -497,7 +497,7 @@ workspaces` (folders whose owning workspace is gone or was never linked),
   unit separator, so a branch name with a `|` still lists, and a git without
   the batched distance counts per branch), with the merge test cached by both
   tips (4096 entries at most) and fed each branch's merged pull request head
-  (`listMergedRequestHeads`); protected branches never show. One select
+  (`listMergedRequestHeads`); protected branches (the base, `main`, `master`, `develop`) never show; a branch held by a worktree lists and a delete keeps it until that worktree is removed. One select
   (`Safe to delete`, the default, `Check first`, `All`) filters the list.
   Safe to delete means merged by merge commit or rebase, merged by its pull
   request with nothing after the merged head, or never used. Check first

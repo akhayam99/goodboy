@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import type { MountCleanupProposal, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { formatBytes } from '../../../../../shared/utils/formatBytes';
+import { uniqueByMount } from '../uniqueByMount';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -24,7 +25,7 @@ export const useRemoveWorktrees = ({ sessionId, mergedMountIds }: Params): Remov
   const [busyMountIds, setBusyMountIds] = useState<ReadonlySet<string>>(new Set());
   const inFlight = useRef(false);
   const targets = useMemo(
-    () => proposals.filter((proposal) => mergedMountIds.has(proposal.mountId)),
+    () => uniqueByMount({ proposals: proposals.filter((p) => mergedMountIds.has(p.mountId)) }),
     [mergedMountIds, proposals],
   );
   const sizeLabel = useMemo(() => {
