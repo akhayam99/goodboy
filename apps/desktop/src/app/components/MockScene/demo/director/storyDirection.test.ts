@@ -144,9 +144,9 @@ describe('starting the story workflow', () => {
     expect(textOf({ events: plannerEvents() })).not.toBe(STORY_PLANNER.intro);
     expect(openQuestions()).toHaveLength(0);
     expect(turnKind({ agentId: STORY_PLANNER_ID })).toBe('running');
-    playTo(7499);
+    playTo(8499);
     expect(openQuestions()).toHaveLength(0);
-    playTo(7500);
+    playTo(8500);
     expect(textOf({ events: plannerEvents() })).toBe(STORY_PLANNER.intro);
     const asked = openQuestions();
     expect(asked).toHaveLength(1);
@@ -168,7 +168,7 @@ describe('starting the story workflow', () => {
     await startSession();
     playTo(1000);
     demoRuns.cancelAll();
-    playTo(8000);
+    playTo(9000);
     expect(agentNames()).toEqual(['Lead']);
     expect(openQuestions()).toHaveLength(0);
   });
@@ -226,7 +226,7 @@ describe('answering the planner question', () => {
 
   const answer = async ({ choice = STORY_QUESTION.recommended }: AnswerParams = {}) => {
     await startSession();
-    playTo(7500);
+    playTo(8500);
     const [question] = store.getState().sessionOpenQuestions[STORY_SESSION_ID] ?? [];
     if (question === undefined) {
       throw new Error('no question');

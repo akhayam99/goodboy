@@ -31,7 +31,7 @@ const PLANNER_GAP_MS = 400;
 const PLANNER_THINK_MS = 1200;
 const TOOL_MS = 800;
 const INTRO_GAP_MS = 100;
-const QUESTION_GAP_MS = 200;
+const QUESTION_GAP_MS = 1200;
 
 const PLANNER_MODEL = { provider: 'anthropic', model: 'claude-opus-5-5' } as const;
 

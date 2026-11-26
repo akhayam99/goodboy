@@ -82,9 +82,9 @@ describe('the agent scripts a visitor waits on', () => {
     ).toBeLessThanOrEqual(MAX_RUN_MS);
   });
 
-  it('plays the start of the session within 8 s, question last', () => {
+  it('plays the start of the session within 9 s, question last', () => {
     const cues = storyStartCues();
-    expect(endOf({ cues })).toBeLessThanOrEqual(8000);
+    expect(endOf({ cues })).toBeLessThanOrEqual(9000);
     expect(cues.filter((cue) => cue.atMs === endOf({ cues }))).toHaveLength(1);
   });
 
