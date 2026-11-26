@@ -79,7 +79,8 @@ half typed form and the scroll stay. A tab cannot move to another window.
 
 A host failure while the page places the view shows under the page's address
 row and leaves the view with the pane, which shows it again on Dock. A page
-show that answers after the tab went back is hidden again.
+show that answers after the tab went back is hidden again, and the pane takes
+the view.
 
 ## Under the hood
 

@@ -5,7 +5,8 @@
 
 The console is a dock beside the page, in the pane and on the Browser page,
 opened by the Console button (`CodeXml`, a pressed toggle that a narrow row
-keeps, never a More row) or `browser.console` (⌘⇧J). Safari's ⌘⌥C is Context
+keeps, never a More row) or `browser.console` (⌘⇧J), which toggles it while a tab is
+shown. Safari's ⌘⌥C is Context
 (`lens.context`), which the registry refuses to shadow, so the chord follows
 Chrome.
 
@@ -128,8 +129,9 @@ shows only as its Network row (`consoleTabOf`).
 A Network row opens its detail (`BrowserRequestDetail`, `requestFactsOf`),
 with arrows through the filtered list; Esc returns focus to the row or the
 list. It sits beside the list docked below and replaces it docked right. It
-follows the request id within one tab and load (`useRequestSelection`) and
-forgets a request that leaves the list.
+follows the request id within one tab and load (`useRequestSelection`), so a
+newer record of the same request keeps it open, and forgets a request that
+leaves the list (Clear, a filter, a new load, another tab).
 
 ## Send
 

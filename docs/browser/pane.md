@@ -183,7 +183,7 @@ lists it (`docs/testing.md` → Manual release gate: inspect in Safari).
 While the browser has the keyboard (focus in the pane or the page webview),
 ⌘R reloads the shown tab. The pane and the page register `model.reload` with
 `useReloadSurface`, and the menu bar brings ⌘R to the window even when the page
-has focus. ⌘⇧R reloads Goodboy ([shell.md](../navigation/shell.md)).
+has focus, since a menu command never goes to a browser tab. ⌘⇧R reloads Goodboy ([shell.md](../navigation/shell.md)).
 
 ## Tabs
 

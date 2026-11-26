@@ -41,7 +41,8 @@ The doors:
   what a click does, in words from `webLinkPeekWords.ts`, which reads the same
   place `openPlaceOf` picks. It never creates a tab.
 
-All of them call `openWebLink`, which hands the address to the click rule. The
+Chips, session links, a Service's port and a terminal's printed addresses call
+`openWebLink`, which hands the address to the click rule. The
 ⌘-click listener runs after the page's own handlers and skips a click they
 handled, so an anchor with its own `onClick` opens your browser once. ⌘-click
 on a terminal file path still opens your editor.

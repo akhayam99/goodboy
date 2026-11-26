@@ -72,7 +72,9 @@ of the id, so no id can reach another path.
   (`perWorkspace` elsewhere) so the pane can warn, and `browser_profile_clear`
   refuses with `profile-shared`, because it would wipe every workspace.
 - On Windows and Linux the folder is made before another workspace's views are
-  closed, so a failure leaves the running workspace as it was. These two
+  closed, so a failure leaves the running workspace as it was. Linux needs no
+  window of its own for this; its limit that child webviews do not take their
+  bounds is about placement ([placement.md](placement.md)). These two
   platforms are written against the Tauri and wry sources and have not been
   run: the first run is the check.
 
