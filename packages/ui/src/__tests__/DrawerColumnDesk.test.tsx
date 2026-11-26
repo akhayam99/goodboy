@@ -235,13 +235,13 @@ describe('the dock on the desk', () => {
     expect(screen.queryByText('terminal body')).toBeNull();
   });
 
-  it('gives a tabbed cell no title drag, so the shown tool never moves another', () => {
+  it('lets a tabbed cell drag too, as the shown tool alone', () => {
     stubLane({ width: 880 });
     render(<TabbedDesk onMove={vi.fn()} />);
 
     const tabbed = document.querySelector<HTMLElement>('[data-dock-pane="terminal"]');
     const browser = document.querySelector<HTMLElement>('[data-dock-pane="browser"]');
-    expect(tabbed?.querySelector('[data-dock-drag-source]')).toBeNull();
+    expect(tabbed?.querySelector('[data-dock-drag-source]')).not.toBeNull();
     expect(browser?.querySelector('[data-dock-drag-source]')).not.toBeNull();
   });
 

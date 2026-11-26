@@ -1,4 +1,5 @@
 import type { AppState } from '../../types';
+import { carriedDockGrid } from './carriedDockGrid';
 import type { Place } from '../navigation/types';
 import { dockScopeOf } from './dockScopeOf';
 import type { DockScope, DockScopeState } from './dockScopeState';
@@ -8,7 +9,10 @@ import { slotWithGrid } from './slotWithGrid';
 import { EMPTY_DRAWER_GRID, type DrawerSliceState, type OpenDrawer } from './state';
 
 type Params = {
-  readonly state: Pick<AppState, 'drawerGrid' | 'dockScope' | 'parkedDockGrids' | 'sessions'>;
+  readonly state: Pick<
+    AppState,
+    'drawerGrid' | 'dockScope' | 'parkedDockGrids' | 'lastDockGrid' | 'sessions' | 'terminalTabs'
+  >;
   readonly place: Place;
   readonly drawer: OpenDrawer | null;
   readonly back: OpenDrawer | null;
@@ -28,12 +32,25 @@ export const dockAfterPlace = ({ state, place, drawer, back }: Params): DockAfte
   const to = dockScopeOf({ place });
   const from = state.dockScope;
   const parked = state.parkedDockGrids ?? {};
+  const last = state.lastDockGrid ?? null;
   if (from === undefined || from === to) {
-    return { drawer, drawerBack: back, dockScope: to, parkedDockGrids: parked };
+    return {
+      drawer,
+      drawerBack: back,
+      dockScope: to,
+      parkedDockGrids: parked,
+      lastDockGrid: last,
+    };
   }
   const leaving = state.drawerGrid ?? EMPTY_DRAWER_GRID;
   const toKey = parkKeyOf({ scope: to });
-  const { [toKey]: restored = EMPTY_DRAWER_GRID, ...rest } = parked;
+  const { [toKey]: parkedGrid, ...rest } = parked;
+  const nextLast = from === null ? last : leaving;
+  const inherited =
+    to === null || nextLast === null
+      ? EMPTY_DRAWER_GRID
+      : carriedDockGrid({ state, grid: nextLast, sessionId: to });
+  const restored = parkedGrid ?? inherited;
   const grid = [drawer, back].reduce(
     (current, entry) =>
       entry !== null && isWorkspaceTool({ content: entry })
@@ -50,6 +67,9 @@ export const dockAfterPlace = ({ state, place, drawer, back }: Params): DockAfte
     }),
     dockScope: to,
     parkedDockGrids:
-      leaving.columns.length === 0 ? rest : { ...rest, [parkKeyOf({ scope: from })]: leaving },
+      from === null && leaving.columns.length === 0
+        ? rest
+        : { ...rest, [parkKeyOf({ scope: from })]: leaving },
+    lastDockGrid: nextLast,
   };
 };

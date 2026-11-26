@@ -126,11 +126,13 @@ A column at the left keeps the session in view: its state, Needs you, Now, the f
 - The agent or a pull request opens beside them.
 - On a narrow Desk the column folds into one status line.
 - A tool never shrinks under its own width. When a new one does not fit, the tool you used least folds into a tab of its neighbor. A tool with something going on stays in view. A toast says what folded, with **Undo**. A wider window brings the columns back.
-- On a very narrow window one tool lies over the agent.
+- Below about 700 pixels of room the tools stop tiling: one tool lies over the page and the others are its tabs. The rail stays live, and a second click closes it. A wider window brings the columns back.
 - Drag a tool by its head to place it anywhere on the Desk. The page dims and shows only the places that change the layout.
 - **Place left** and **Place right** sit at the edges of the Desk. On the panel under the pointer, **Merge** turns the tool into a tab there, and **Place above** and **Place below** stack it.
 - Hold Option over **Merge** to swap the two tools instead. A ghost shows where the tool lands, and a chip names what folds, only when something does.
-- Drag one tab out of a cell by its name to move that tool alone. The empty part of the head moves the whole cell.
+- Drag one tab out of a cell by its name to move that tool alone. The empty part of the head moves the whole cell. In a cell the window folded for lack of room, every tab drags the same way and only the one you grab leaves.
+- With the keyboard, Tab reaches a head, **Enter** lifts the tool, the arrows walk the places, **Enter** drops and **Esc** cancels. Each place is read aloud.
+- A new session starts from the last layout you left, and you can still change it.
 - A tool that fails to load shows an error with **Retry** inside that tool.
 
 #### Terminal on the Desk

@@ -72,6 +72,7 @@ type PaneParams = {
   readonly shared: Shared;
   readonly pane: PaneRect;
   readonly isOwn: boolean;
+  readonly isFoldedHere: boolean;
 };
 
 type DockEdgeParams = {
@@ -223,7 +224,12 @@ const dockZonesOf = ({ shared, dock }: DockEdgeParams): ReadonlyArray<DockDropZo
   ].filter((zone): zone is DockDropZone => zone !== null);
 };
 
-const paneZonesOf = ({ shared, pane, isOwn }: PaneParams): ReadonlyArray<DockDropZone | null> => {
+const paneZonesOf = ({
+  shared,
+  pane,
+  isOwn,
+  isFoldedHere,
+}: PaneParams): ReadonlyArray<DockDropZone | null> => {
   const { key, rect } = pane;
   const band = rect.height * BAND_SHARE;
   const side = Math.min(SIDE_PX, rect.width / 4);
@@ -263,23 +269,25 @@ const paneZonesOf = ({ shared, pane, isOwn }: PaneParams): ReadonlyArray<DockDro
     width: rect.width,
     height: roomOf({ value: bottom - top }),
   };
-  const merge = zoneOf({
-    shared,
-    candidate: {
-      ...full,
-      id: `merge:${key}`,
-      target: tabTargetOf({ key, folded: shared.folded }),
-      placement: 'merge',
-      layer: LAYER_MERGE,
-      rect: middle,
-      card: {
-        x: middle.x + (middle.width - Math.min(MERGE_CARD_WIDTH_PX, middle.width - 32)) / 2,
-        y: middle.y + (middle.height - Math.min(MERGE_CARD_HEIGHT_PX, middle.height - 16)) / 2,
-        width: roomOf({ value: Math.min(MERGE_CARD_WIDTH_PX, middle.width - 32) }),
-        height: roomOf({ value: Math.min(MERGE_CARD_HEIGHT_PX, middle.height - 16) }),
-      },
-    },
-  });
+  const merge = isFoldedHere
+    ? null
+    : zoneOf({
+        shared,
+        candidate: {
+          ...full,
+          id: `merge:${key}`,
+          target: tabTargetOf({ key, folded: shared.folded }),
+          placement: 'merge',
+          layer: LAYER_MERGE,
+          rect: middle,
+          card: {
+            x: middle.x + (middle.width - Math.min(MERGE_CARD_WIDTH_PX, middle.width - 32)) / 2,
+            y: middle.y + (middle.height - Math.min(MERGE_CARD_HEIGHT_PX, middle.height - 16)) / 2,
+            width: roomOf({ value: Math.min(MERGE_CARD_WIDTH_PX, middle.width - 32) }),
+            height: roomOf({ value: Math.min(MERGE_CARD_HEIGHT_PX, middle.height - 16) }),
+          },
+        },
+      });
   const tear = isOwn
     ? [
         zoneOf({
@@ -329,7 +337,15 @@ export const dockDropZonesOf = ({
     a.rect.x === b.rect.x ? a.rect.y - b.rect.y : a.rect.x - b.rect.x,
   );
   const inPanes = ordered
-    .flatMap((pane) => paneZonesOf({ shared, pane, isOwn: unit === 'panel' && lead === pane.key }))
+    .flatMap((pane) => {
+      const isFoldedHere = unit === 'panel' && folded?.[pane.key]?.includes(dragKey) === true;
+      return paneZonesOf({
+        shared,
+        pane,
+        isOwn: unit === 'panel' && (lead === pane.key || isFoldedHere),
+        isFoldedHere,
+      });
+    })
     .filter((zone): zone is DockDropZone => zone !== null)
     .filter((zone) => zone.layer !== LAYER_SIDE || !taken.has(zoneShapeOf({ zone })));
   const left = edges.find((zone) => zone.id === 'dock-left');

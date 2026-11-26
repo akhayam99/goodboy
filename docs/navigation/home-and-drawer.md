@@ -170,6 +170,6 @@ inside a pane. Containers, tiers, the push rule, the slot store, focus and Esc a
 ## The grid saved on the session
 
 Each session remembers its dock grid (panels, columns, widths, the split of two
-stacked panels, the focus, the face) in `session_dock_grids`, one row per session;
-the rules and the failure table are in
-[dock-grid.md](dock-grid.md#the-grid-saved-on-the-session).
+stacked panels, the focus, the face) in `session_dock_grids`, one row per session.
+A session with no row starts from the last layout of the window. The rules and the
+failure table are in [dock-grid.md](dock-grid.md#the-grid-saved-on-the-session).

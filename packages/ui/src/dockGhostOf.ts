@@ -83,9 +83,9 @@ const rectOf = ({ boxes, dock, key, groups }: Omit<Params, 'was'>): DockRect | n
 };
 
 export const dockGhostOf = ({ boxes, dock, key, groups, was }: Params): DockGhost => {
-  const known = new Set(was.map((fold) => fold.key));
+  const known = new Set(was.map((fold) => `${fold.key}>${fold.into}`));
   return {
     rect: rectOf({ boxes, dock, key, groups }),
-    folds: dockFoldedOf({ boxes, groups }).filter((fold) => !known.has(fold.key)),
+    folds: dockFoldedOf({ boxes, groups }).filter((fold) => !known.has(`${fold.key}>${fold.into}`)),
   };
 };

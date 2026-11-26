@@ -363,6 +363,7 @@ export const NON_SESSION_STATE_KEYS = [
   'drawerBack',
   'drawerGrid',
   'dockScope',
+  'lastDockGrid',
   'navigation',
   'appStudio',
   'lastSettingsFocus',

@@ -39,6 +39,7 @@ export type DockGridMove = {
   readonly key: string;
   readonly unit: DockMoveUnit;
   readonly target: DockMoveTarget;
+  readonly isKeyboard?: boolean;
 };
 
 export type DockGridSpec = {
