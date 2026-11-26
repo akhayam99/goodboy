@@ -282,7 +282,12 @@ only when your task reaches the case it covers.
   the mount lifecycle, the mount operation log, or recovery.
 - [workflows.md](workflows.md): when you touch the workflow tables, the
   logic that moves a run to its next step, or the summary written after
-  each step.
+  each step. Its pages in [workflows/](workflows/):
+  [studio](workflows/studio.md), [rules](workflows/rules.md),
+  [runs-list](workflows/runs-list.md), [run-pages](workflows/run-pages.md),
+  [run-tree](workflows/run-tree.md), [advancing](workflows/advancing.md),
+  [plans](workflows/plans.md), [orchestrator](workflows/orchestrator.md),
+  [step-end](workflows/step-end.md) and [code-map](workflows/code-map.md).
 - [turns.md](turns.md): when you change how a turn picks its route, starts
   and reads a CLI, falls back on failure, or hands off to the session
   summarizer, or how a read-only workspace chat turn runs. The hub maps its
