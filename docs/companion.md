@@ -78,3 +78,40 @@ A `send` that names an `agentId` must name an agent of that session. The
 executor refuses an id longer than 64 characters, a non-string, and an id the
 session does not hold, before any turn starts. Resolver agents are not in the
 session's agent list, so the phone cannot address them.
+
+## The mobile contract
+
+`apps/desktop/src/features/companion/contract/` holds the types of protocol v2:
+the six projections (`needsYou`, `sessions`, `session`, `runs`, `pullRequest`,
+`tasks`), each with an `epoch`, a `seq` and a `generatedAt`, and every action
+of the decide, start and merge flows. Each action carries its workspace, its
+session where it has one, an `actionId` the Mac issued in the projection that
+offered it, and the version of the object the user saw. The phone never
+derives a number or a sentence: it draws the text, the mark and the tone the
+projection holds.
+
+`node scripts/gen-mobile-contract.mjs <folder>` writes the Swift `Codable`
+types, `tokens.json` (every `--color-*` token of `styles.css`, dark, light and
+both increased contrast sets, as CSS and as sRGB) and `manifest.json` into the
+folder. The contract is limited to what that script reads: aliases of object
+types, intersections, string unions, unions of objects tagged by `kind`, arrays
+and `T | null`. It stops with the file and line on anything else.
+
+`contract.lock.json` pins the contract version and the hash of the generated
+files. A test in `scripts/gen-mobile-contract.test.mjs` fails when a type or a
+token changes and `CONTRACT_VERSION` does not: bump it, then run
+`node scripts/gen-mobile-contract.mjs --lock`. A vocabulary test fails when the
+contract names an attention reason, stage, tone or mark the app does not.
+
+### Needs you across workspaces
+
+The store holds the sessions, open questions and PR facts of the current
+workspace only: opening another workspace replaces them, and a second window
+owns a second workspace. `needsYouOf` itself is a pure function and counts the
+moves of several workspaces as soon as it is given their sessions and stage
+infos. What the other workspaces lack in the store is the facts behind the
+infos (PR checks, resolve threads, live agents, open questions). The sidebar
+reads them from `workspaces_attention`, which keeps only a count, a tone and
+five reasons per workspace and cannot name a session. A projection that
+crosses workspaces needs each workspace's facts in memory, not a second
+computation in Rust.
