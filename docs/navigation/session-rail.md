@@ -337,6 +337,13 @@ it too.
     the row with what is still left.
   - A branch deleted before its cleanup suggestion failed to clear stays in Undo,
     and its Retry only clears the suggestion.
+  - A merged branch held only by a clean worktree is not protected: the worktree
+    goes first, then the branch, and Undo restores it (`restoreDeletedBranch`).
+    A worktree with uncommitted changes keeps the branch ("Kept nw/x: its
+    worktree has uncommitted changes. Remove the worktree first."). A worktree an
+    agent is running or waiting on right now keeps it too ("Kept nw/x: an agent
+    still works in its folder."); a finished agent or the current mount does not
+    block. Suggestions count once per mount (`uniqueByMount`).
   - The board draws no error line.
 - **A row's stage comes from that branch only** (`branchFactsFor`, worded by
   `deriveSessionStage`); the session's error state and unread mark never reach a

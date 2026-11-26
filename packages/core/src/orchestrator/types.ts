@@ -99,6 +99,7 @@ type OrchestratorMount = {
 export type OrchestratorInput = {
   readonly mounts?: ReadonlyArray<OrchestratorMount>;
   readonly goal: string;
+  readonly languageText?: string;
   readonly processText: string;
   readonly completedSteps: ReadonlyArray<OrchestratorCompletedStep>;
   readonly openQuestionCount: number;

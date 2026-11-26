@@ -355,6 +355,7 @@ const mountLines = ({ mounts }: MountLinesParams): ReadonlyArray<string> => {
 export const buildOrchestratorUserPrompt = ({
   mounts,
   goal,
+  languageText,
   processText,
   completedSteps,
   openQuestionCount,
@@ -376,7 +377,7 @@ export const buildOrchestratorUserPrompt = ({
     'Goal (the session language is the language this is written in):',
     goal.trim(),
     '',
-    ...namedLanguageLines({ goal }),
+    ...namedLanguageLines({ goal: languageText ?? goal }),
     ...(process.length > 0 ? ['Operator process:', process, ''] : []),
     ...(preset === undefined ? [] : presetLines({ preset })),
     `Open questions: ${openQuestionCount}`,

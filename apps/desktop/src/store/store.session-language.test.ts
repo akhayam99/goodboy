@@ -127,6 +127,7 @@ describe('sendTurn session language guard', () => {
 
   const setup = ({ runGoal, workflowGoal }: { runGoal: string; workflowGoal?: string }) => {
     useAppStore.setState({
+      transcripts: {},
       sessions: [buildSession(runGoal)],
       projects: [],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },

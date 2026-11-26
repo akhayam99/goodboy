@@ -1,3 +1,4 @@
+import { detectSessionLanguage } from '@goodboy/core/language';
 import { extractAuxOutput } from '@goodboy/core/providers';
 import { cleanWorkflowRunTitle, titleInTag } from '@goodboy/db';
 import type { ProviderId } from '@goodboy/types';
@@ -16,5 +17,11 @@ export const parseGeneratedTitle = ({ providerId, stdout, ask }: Params): string
     .split(/\s+/)
     .filter((word) => word.length > 0);
   const title = words.length > MAX_TITLE_WORDS ? '' : words.join(' ');
-  return cleanWorkflowRunTitle({ title, goal: ask });
+  const cleaned = cleanWorkflowRunTitle({ title, goal: ask });
+  const titleLanguage = detectSessionLanguage({ text: cleaned });
+  const askLanguage = detectSessionLanguage({ text: ask });
+  if (titleLanguage !== null && askLanguage !== null && titleLanguage !== askLanguage) {
+    return cleanWorkflowRunTitle({ title: '', goal: ask });
+  }
+  return cleaned;
 };
