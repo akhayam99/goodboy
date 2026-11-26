@@ -35,12 +35,28 @@ so a busy network cannot push the one error out:
   images, scripts and styles, with no status (Safari gives none).
 - A request has an id, a type (fetch, xhr, doc, script, style, img, ws, sse,
   other), start, duration, size when known, request and response headers, and
-  a text or JSON body cut at 64 kB. All bodies together stay under 2 million
-  characters, oldest dropped first.
+  a text or JSON body cut at 64 kB, with a flag per body (`isRequestBodyCut`,
+  `isResponseBodyCut`). A request for a local file drops the grant from its path
+  at capture (`pathOf`). All bodies together stay under 2 million characters,
+  oldest dropped first.
 - A rejected `fetch`, a network error, a timeout and a failed resource are
   status 0. Status 0 or 400 and up also adds an error linked to the request id.
 - A fetch is noted at its headers and again, same id, when its body is read. A
   socket or stream is noted at open and close, with its frame counts.
+- A request carries its waiting and download times (`phases`, from
+  `requestStart`, `responseStart` and `responseEnd` of its timing entry). A
+  static file reads its own entry; a `fetch` or `XMLHttpRequest` waits for the
+  `resource` entry of the same address and kind whose start is closest to its
+  own (at most 100 wait, the oldest dropped) and is noted again with them.
+- Two requests that started within 2 ms of that distance stay without phases,
+  an entry more than 100 ms after a start is not its own, and a failed, timed
+  out or aborted request stops waiting. An entry with no `requestStart` (a
+  cross origin file without `Timing-Allow-Origin`) has no phases, and Rust
+  keeps phases only when both are finite and not negative.
+- The document's own status is not read: wry 0.57 owns
+  `webView:decidePolicyForNavigationResponse:decisionHandler:` on its navigation
+  delegate, so reading it would mean replacing that method. The document row
+  shows "loaded" unless the engine gives `responseStatus`.
 - A row shows method, status and path, no query or fragment, and the host only
   for another origin.
 
@@ -114,7 +130,9 @@ tab only while there is an error, the side icon and Close tools. The error
 count can open the dock on Errors, and the dock returns to Console when the
 last error goes.
 
-- **Filter**: a level menu, or Failed and Succeeded on Network.
+The Console tools:
+
+- **Filter**: a level menu (All levels, Errors, Warnings, Info and logs).
 - **Search** (`consoleRowsOf`): every word must match text, source, method or
   status.
 - **Clear** empties the shown dock tab only, with no undo. The page keeps its
@@ -126,12 +144,44 @@ A row is a level icon, the message and its source; a click expands it. The
 Console tab shows console lines and errors, but an error linked to a request
 shows only as its Network row (`consoleTabOf`).
 
-A Network row opens its detail (`BrowserRequestDetail`, `requestFactsOf`),
-with arrows through the filtered list; Esc returns focus to the row or the
-list. It sits beside the list docked below and replaces it docked right. It
-follows the request id within one tab and load (`useRequestSelection`), so a
-newer record of the same request keeps it open, and forgets a request that
-leaves the list (Clear, a filter, a new load, another tab).
+### Network
+
+`NetworkTab` draws the requests as one `ListGrid` (`NetworkTable`): method,
+path, status, type, size, time and a waterfall bar placed by start and duration
+over the latest end of the shown rows (an open socket runs to that end).
+
+- **Tools**: Failed only (`aria-pressed`), a search field and Clear. A type list
+  (a `Listbox`: All types, Fetch with xhr, Doc, JS, CSS, Img, WebSocket and
+  event streams) sits over the table.
+- A placeholder row shows until the tab's first read answers (`isLoaded`).
+- `networkRowsOf` keeps a request when its type, its failure (status 0 or 400
+  and up) and every word of the search on path, method and status match.
+- The line under the table (`networkSummaryOf`) says how many requests show (of
+  how many), their size and the duration of the document entry.
+
+A click opens the detail (`NetworkDetail`): a back arrow, the method and path,
+the status, time and size (`requestFactsOf`), up and down arrows for the
+previous and next row of the filtered table, Send request, and Headers,
+Payload, Response and Timing.
+
+- A JSON body is shown indented (`networkBodyTextOf`); a socket shows its frame
+  counts and close code; Timing is `requestTimingOf`.
+- Esc goes back and the arrow keys step. Docked below, the detail sits beside
+  the table, which keeps method, path and status; docked right, it replaces the
+  table and its tools, and Back puts the table back at the scroll it had.
+- The detail follows the request id within one tab and load
+  (`useRequestSelection`), so a newer record of the same request keeps it open,
+  and a request that leaves the table (Clear, a filter, a new load, another tab)
+  forgets it. Back and Esc focus its row again, or the table when the row is
+  gone.
+- Send request queues `requestAttachmentOf` for the agent named on the button,
+  read when you click (`useHandOutputToAgent`): `<method>-<path>-request.md`,
+  `text/markdown`, the full address, the page content note, the facts and
+  timing, then the request and response headers and bodies, each body cut at
+  64 kB and marked so when the capture or the file cut it.
+- `isHiddenHeader` drops the sensitive headers again, in the Headers pane and
+  in the file, whatever reached it; `redactSecrets` and `withoutGrantOf` run
+  over the file.
 
 ## Send
 

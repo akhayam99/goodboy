@@ -47,6 +47,11 @@ export type BrowserSocketFacts = {
   readonly code: number | null;
 };
 
+export type BrowserRequestPhases = {
+  readonly wait: number;
+  readonly download: number;
+};
+
 export type BrowserRequestFacts = {
   readonly id: string;
   readonly type: BrowserRequestType;
@@ -57,7 +62,10 @@ export type BrowserRequestFacts = {
   readonly responseHeaders: ReadonlyArray<BrowserHeader>;
   readonly requestBody: string | null;
   readonly responseBody: string | null;
+  readonly isRequestBodyCut?: boolean;
+  readonly isResponseBodyCut?: boolean;
   readonly socket: BrowserSocketFacts | null;
+  readonly phases?: BrowserRequestPhases | null;
 };
 
 export type BrowserErrorOrigin = 'uncaught' | 'rejection' | 'console' | 'request';
