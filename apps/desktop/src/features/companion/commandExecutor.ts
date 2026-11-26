@@ -25,13 +25,10 @@ import { WorkflowGateError } from '../../store/slices/workflows/workflowActivati
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import { isMainWindow } from '../workspace/window';
 import { worktreeDiffFile } from '../worktree/worktree';
-import {
-  evaluateMobileCreateSession,
-  evaluateMobileMerge,
-  mobileMergeFacts,
-  evaluateMobileSpawnWorkflow,
-} from './mobileConfinement';
+import { evaluateMobileCreateSession, evaluateMobileSpawnWorkflow } from './mobileConfinement';
+import { decideKindOf } from './actions/decideAction';
 import { decideCommand } from './actions/decideCommand';
+import { phoneCommand } from './actions/phoneCommand';
 import { queryTranscriptCommand } from './actions/queryTranscriptCommand';
 import { asString } from './asString';
 import { BridgeSafeError } from './bridgeSafeError';
@@ -691,22 +688,6 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       return undefined;
     }
 
-    case 'mergePr': {
-      const sessionId = requireSession(data);
-      const method = asString({ value: data.method }) ?? 'squash';
-      const gate = evaluateMobileMerge({
-        facts: mobileMergeFacts({ state: store, sessionId }),
-        method,
-      });
-      if (!gate.ok) {
-        throw new BridgeSafeError(`merge refused: ${gate.reason}`);
-      }
-      await store.mergePr(sessionId, gate.pr.number, gate.method, {
-        expectedHeadSha: gate.pr.headSha ?? null,
-      });
-      return undefined;
-    }
-
     case 'spawnWorkflow': {
       const workflowId = asString({ value: data.workflowId });
       const session = sessionById(store.sessions, asString({ value: data.sessionId }));
@@ -727,8 +708,20 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       return undefined;
     }
 
-    default:
-      return decideCommand({ kind: cmd.kind, data });
+    default: {
+      if (decideKindOf({ kind: cmd.kind }) !== null) {
+        return decideCommand({
+          kind: cmd.kind,
+          data,
+        });
+      }
+      return phoneCommand({
+        kind: cmd.kind,
+        data,
+        resolveTask: ({ workspaceId, provider, key }) =>
+          resolveIssueForSessionSafe(workspaceId, provider, key),
+      });
+    }
   }
 }
 
@@ -736,6 +729,12 @@ function genericMaskFor(kind: string): string {
   switch (kind) {
     case 'mergePr':
       return 'merge failed';
+    case 'mergeTrain':
+      return "couldn't start the train";
+    case 'startSession':
+      return "couldn't start the session";
+    case 'stopTrain':
+      return "couldn't stop the train";
     case 'spawnAgent':
     case 'resolveComment':
       return 'could not spawn agent';

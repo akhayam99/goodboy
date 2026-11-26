@@ -1,8 +1,6 @@
 import type { AgentState, RunState } from '../contract/projections';
-import { MAX_TEXT_LENGTH } from './actionLimits';
+import { readerOf } from './actionReader';
 import type { DecideAction } from './decideAction';
-
-const MAX_ID_LENGTH = 128;
 
 const RUN_STATES: ReadonlyArray<RunState> = [
   'running',
@@ -14,49 +12,6 @@ const RUN_STATES: ReadonlyArray<RunState> = [
 ];
 
 const AGENT_STATES: ReadonlyArray<AgentState> = ['running', 'waiting', 'stopped', 'done', 'failed'];
-
-type NameParams = {
-  readonly name: string;
-};
-
-type PickParams<Option extends string> = {
-  readonly name: string;
-  readonly options: ReadonlyArray<Option>;
-};
-
-type Reader = {
-  readonly id: (params: NameParams) => string | null;
-  readonly text: (params: NameParams) => string | null;
-  readonly int: (params: NameParams) => number | null;
-  readonly number: (params: NameParams) => number | null;
-  readonly pick: <Option extends string>(params: PickParams<Option>) => Option | null;
-};
-
-type ReaderParams = {
-  readonly record: Readonly<Record<string, unknown>>;
-};
-
-const readerOf = ({ record }: ReaderParams): Reader => ({
-  id: ({ name }) => {
-    const value = record[name];
-    return typeof value === 'string' && value.length > 0 && value.length <= MAX_ID_LENGTH
-      ? value
-      : null;
-  },
-  text: ({ name }) => {
-    const value = record[name];
-    return typeof value === 'string' && value.length <= MAX_TEXT_LENGTH ? value : null;
-  },
-  int: ({ name }) => {
-    const value = record[name];
-    return typeof value === 'number' && Number.isInteger(value) ? value : null;
-  },
-  number: ({ name }) => {
-    const value = record[name];
-    return typeof value === 'number' && Number.isFinite(value) ? value : null;
-  },
-  pick: ({ name, options }) => options.find((option) => option === record[name]) ?? null,
-});
 
 type ParseParams = {
   readonly raw: unknown;
@@ -146,6 +101,23 @@ export const parseDecideAction = ({ raw }: ParseParams): DecideAction | null => 
         return null;
       }
       return { kind: record.kind, ...base, agentId, seenState };
+    }
+    case 'stopAgentTree': {
+      const agentId = read.id({ name: 'agentId' });
+      const seenState = read.pick({ name: 'seenState', options: AGENT_STATES });
+      if (agentId === null || seenState === null) {
+        return null;
+      }
+      return { kind: 'stopAgentTree', ...base, agentId, seenState };
+    }
+    case 'sendToAgent': {
+      const agentId = read.id({ name: 'agentId' });
+      const seenVersion = read.id({ name: 'seenVersion' });
+      const text = read.text({ name: 'text' });
+      if (agentId === null || seenVersion === null || text === null) {
+        return null;
+      }
+      return { kind: 'sendToAgent', ...base, agentId, seenVersion, text };
     }
     case 'answerSlackReply': {
       const verdict = read.pick({ name: 'verdict', options: ['send', 'discard'] });

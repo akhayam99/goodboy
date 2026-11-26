@@ -1,4 +1,5 @@
 import type { ActionId, Int, ObjectVersion } from './primitives';
+import type { RunState } from './projections';
 
 export type OfferedAmount = {
   readonly amount: number;
@@ -11,6 +12,8 @@ export type QuestionDecision = {
   readonly questionId: string;
   readonly version: ObjectVersion;
   readonly text: string;
+  readonly options: ReadonlyArray<string>;
+  readonly recommended: string | null;
 };
 
 export type PlanDecision = {
@@ -19,6 +22,9 @@ export type PlanDecision = {
   readonly planId: string;
   readonly planVersion: Int;
   readonly summary: string;
+  readonly steps: ReadonlyArray<string>;
+  readonly touches: ReadonlyArray<string>;
+  readonly requestChangesActionId: ActionId;
 };
 
 export type PermissionDecision = {
@@ -29,6 +35,7 @@ export type PermissionDecision = {
   readonly inputHash: string;
   readonly toolName: string;
   readonly inputSummary: string;
+  readonly command: string;
 };
 
 export type LimitDecision = {
@@ -48,5 +55,18 @@ export type SlackDecision = {
   readonly draft: string;
 };
 
+export type RunDecision = {
+  readonly kind: 'run';
+  readonly actionId: ActionId;
+  readonly runId: string;
+  readonly seenState: RunState;
+  readonly stopActionId: ActionId | null;
+};
+
 export type Decision =
-  QuestionDecision | PlanDecision | PermissionDecision | LimitDecision | SlackDecision;
+  | QuestionDecision
+  | PlanDecision
+  | PermissionDecision
+  | LimitDecision
+  | SlackDecision
+  | RunDecision;

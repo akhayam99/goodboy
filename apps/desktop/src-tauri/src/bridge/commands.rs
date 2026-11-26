@@ -39,6 +39,12 @@ pub enum MobileAction {
     ContinueAgent,
     AnswerSlackReply,
     QueryTranscript,
+    SendToAgent,
+    StopAgentTree,
+    MergePrChecked,
+    MergeTrain,
+    StartSession,
+    StopTrain,
 }
 
 impl MobileAction {
@@ -67,6 +73,12 @@ impl MobileAction {
             0x99 => Some(Self::ContinueAgent),
             0x9A => Some(Self::AnswerSlackReply),
             0x9B => Some(Self::QueryTranscript),
+            0x9C => Some(Self::SendToAgent),
+            0x9D => Some(Self::StopAgentTree),
+            0x9E => Some(Self::MergePrChecked),
+            0x9F => Some(Self::MergeTrain),
+            0xA0 => Some(Self::StartSession),
+            0xA1 => Some(Self::StopTrain),
             _ => None,
         }
     }
@@ -96,7 +108,44 @@ impl MobileAction {
             Self::ContinueAgent => "continueAgent",
             Self::AnswerSlackReply => "answerSlackReply",
             Self::QueryTranscript => "queryTranscript",
+            Self::SendToAgent => "sendToAgent",
+            Self::StopAgentTree => "stopAgentTree",
+            Self::MergePrChecked => "mergePr",
+            Self::MergeTrain => "mergeTrain",
+            Self::StartSession => "startSession",
+            Self::StopTrain => "stopTrain",
         }
+    }
+
+    pub fn is_decide(self) -> bool {
+        matches!(
+            self,
+            Self::AnswerQuestion
+                | Self::ApprovePlan
+                | Self::RequestPlanChanges
+                | Self::AnswerPermission
+                | Self::RaiseLimit
+                | Self::UndoRaiseLimit
+                | Self::StopRun
+                | Self::ContinueRun
+                | Self::StopAgent
+                | Self::ContinueAgent
+                | Self::SendToAgent
+                | Self::StopAgentTree
+                | Self::AnswerSlackReply
+        )
+    }
+
+    pub fn needs_action_id(self) -> bool {
+        self.is_decide()
+            || matches!(
+                self,
+                Self::MergePr
+                    | Self::MergePrChecked
+                    | Self::MergeTrain
+                    | Self::StartSession
+                    | Self::StopTrain
+            )
     }
 
     pub fn is_query(self) -> bool {
@@ -190,7 +239,7 @@ mod tests {
     #[test]
     fn rejects_read_server_and_unknown_opcodes() {
         for op in [
-            0x00u8, 0x01, 0x05, 0x07, 0x08, 0x09, 0x80, 0x81, 0x82, 0x89, 0x8F, 0x9C, 0xFF,
+            0x00u8, 0x01, 0x05, 0x07, 0x08, 0x09, 0x80, 0x81, 0x82, 0x89, 0x8F, 0xA2, 0xFF,
         ] {
             assert!(
                 MobileAction::from_opcode(op).is_none(),
@@ -225,7 +274,7 @@ mod tests {
         assert!(MobileAction::QueryTranscript.is_query());
         for op in [
             0x83u8, 0x84, 0x85, 0x86, 0x88, 0x8A, 0x8C, 0x8D, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95,
-            0x96, 0x97, 0x98, 0x99, 0x9A,
+            0x96, 0x97, 0x98, 0x99, 0x9A, 0x9C, 0x9D, 0x9E, 0x9F, 0xA0, 0xA1,
         ] {
             let action = MobileAction::from_opcode(op).expect("opcode is a write command");
             assert!(
@@ -252,6 +301,8 @@ mod tests {
             (0x99, "continueAgent"),
             (0x9A, "answerSlackReply"),
             (0x9B, "queryTranscript"),
+            (0x9C, "sendToAgent"),
+            (0x9D, "stopAgentTree"),
         ];
         for (op, kind) in expected {
             let action = MobileAction::from_opcode(op).expect("decide opcode maps");

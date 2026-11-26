@@ -8,6 +8,7 @@ import {
   DRAFT,
   DRAFT_ID,
   DRAFT_VERSION,
+  LEAD,
   PERMISSION_HASH,
   PLAN,
   QUESTION_ID,
@@ -22,6 +23,7 @@ import {
 import type { DecideKind } from './decideAction';
 import { executeDecideAction } from './executeDecideAction';
 import { clearLimitUndos } from './limitUndos';
+import { clearSendSequences } from './sendSequence';
 import { parseDecideAction } from './parseDecideAction';
 import { registerDecideScope, resetDecideScope } from './phoneScope';
 
@@ -48,6 +50,13 @@ const PAUSED_RUN = {
 const STOPPED_AGENT = {
   agentTurnState: {},
   sessionPhaseRuns: { [SESSION]: [{ id: AGENT, status: 'stopped', workflowRunId: RUN }] },
+};
+
+const RUNNING_TREE = {
+  agentTurnState: {
+    [AGENT]: { kind: 'running', runId: 'provider-run-1' },
+    [LEAD]: { kind: 'running', runId: 'provider-run-2' },
+  },
 };
 
 const CASES: ReadonlyArray<Case> = [
@@ -113,6 +122,19 @@ const CASES: ReadonlyArray<Case> = [
     called: (kit) => kit.actions.continueStoppedAgent,
   },
   {
+    kind: 'stopAgentTree',
+    fields: { agentId: LEAD, seenState: 'running' },
+    stale: { seenState: 'waiting' },
+    state: RUNNING_TREE,
+    called: (kit) => kit.actions.cancelTurnConfirmed,
+  },
+  {
+    kind: 'sendToAgent',
+    fields: { agentId: AGENT, seenVersion: '0', text: 'Use the retry window' },
+    stale: { seenVersion: '9' },
+    called: (kit) => kit.actions.sendTurn,
+  },
+  {
     kind: 'answerSlackReply',
     fields: { verdict: 'send', draftId: DRAFT_ID, seenVersion: DRAFT_VERSION, text: DRAFT.body },
     stale: { seenVersion: 'old' },
@@ -156,6 +178,7 @@ beforeEach(() => {
   clearActionLedger();
   clearRateSlots();
   clearLimitUndos();
+  clearSendSequences();
   resetDecideScope();
 });
 

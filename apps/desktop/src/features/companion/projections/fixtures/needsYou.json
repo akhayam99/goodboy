@@ -2,6 +2,16 @@
   "epoch": 1,
   "seq": 1,
   "generatedAt": "2026-10-05T09:05:00.000Z",
+  "chips": {
+    "spendToday": "$4.18",
+    "limits": [
+      {
+        "providerLabel": "Claude",
+        "leftText": "62% left",
+        "tone": "neutral"
+      }
+    ]
+  },
   "moveCount": 2,
   "sessionCount": 2,
   "workspaces": [
@@ -39,7 +49,9 @@
         "actionId": "act:answerQuestion:question-session-1:2026-10-05T09:00:00.000Z",
         "questionId": "question-session-1",
         "version": "2026-10-05T09:00:00.000Z",
-        "text": "Which retry window should the webhook use?"
+        "text": "Which retry window should the webhook use?",
+        "options": [],
+        "recommended": null
       }
     },
     {
@@ -62,7 +74,9 @@
         "actionId": "act:answerQuestion:question-session-4:2026-10-05T09:00:00.000Z",
         "questionId": "question-session-4",
         "version": "2026-10-05T09:00:00.000Z",
-        "text": "Which retry window should the webhook use?"
+        "text": "Which retry window should the webhook use?",
+        "options": [],
+        "recommended": null
       }
     }
   ]

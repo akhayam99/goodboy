@@ -1,3 +1,4 @@
+pub(crate) mod interface_addresses;
 #[cfg(target_os = "macos")]
 pub(crate) mod key_monitor;
 #[cfg(target_os = "macos")]

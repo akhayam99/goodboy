@@ -126,6 +126,10 @@ const draftsOf = (): ReadonlyArray<ProjectionDraft> => {
   return projectionFieldsOf({
     scopes: [current, other],
     detailWorkspaceId: harborline.id,
+    chips: {
+      spendToday: '$4.18',
+      limits: [{ providerLabel: 'Claude', leftText: '62% left', tone: 'neutral' }],
+    },
     now: NOW,
   });
 };

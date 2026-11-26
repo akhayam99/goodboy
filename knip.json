@@ -34,6 +34,8 @@
         "src/features/companion/actions/actionLimits.ts": ["exports"],
         "src/features/companion/actions/limitUndos.ts": ["exports"],
         "src/features/companion/actions/phoneScope.ts": ["exports"],
+        "src/features/companion/actions/phonePermissionScope.ts": ["exports"],
+        "src/features/companion/actions/startState.ts": ["exports"],
         "src/features/companion/actions/sendSequence.ts": ["exports"],
         "src/features/companion/contract/actions.ts": ["files"],
         "src/features/companion/contract/contractVersion.ts": ["files"],

@@ -3,7 +3,9 @@ import type { Decision } from './decisions';
 import type {
   AttentionReason,
   MergeMethod,
+  SessionAccess,
   SessionStage,
+  StartKind,
   StatusMark,
   TaskProvider,
   Tone,
@@ -37,7 +39,19 @@ export type NeedsYouWorkspace = {
   readonly sessionCount: Int;
 };
 
+export type LimitChip = {
+  readonly providerLabel: string;
+  readonly leftText: string;
+  readonly tone: Tone;
+};
+
+export type NeedsYouChips = {
+  readonly spendToday: string | null;
+  readonly limits: ReadonlyArray<LimitChip>;
+};
+
 export type NeedsYouFields = {
+  readonly chips: NeedsYouChips;
   readonly moveCount: Int;
   readonly sessionCount: Int;
   readonly workspaces: ReadonlyArray<NeedsYouWorkspace>;
@@ -54,6 +68,10 @@ export type SessionRow = {
   readonly stage: SessionStage;
   readonly mark: StatusMark;
   readonly words: string | null;
+  readonly tone: Tone | null;
+  readonly reason: AttentionReason | null;
+  readonly waitingText: string | null;
+  readonly branch: string | null;
   readonly projectNames: ReadonlyArray<string>;
   readonly prNumber: Int | null;
   readonly costText: string | null;
@@ -70,6 +88,7 @@ export type SessionLane = {
 export type SessionsFields = {
   readonly workspaceId: string;
   readonly lanes: ReadonlyArray<SessionLane>;
+  readonly train: TrainOffer | null;
 };
 
 export type SessionsProjection = ProjectionMeta & SessionsFields;
@@ -86,11 +105,20 @@ export type SessionNotice = {
   readonly isMacOnly: boolean;
 };
 
+export type LineTargetKind = 'agent' | 'run' | 'pullRequest' | 'decision';
+
+export type LineTarget = {
+  readonly kind: LineTargetKind;
+  readonly id: string;
+};
+
 export type SessionLine = {
   readonly id: string;
   readonly mark: StatusMark;
   readonly text: string;
   readonly at: IsoTimestamp | null;
+  readonly role: string | null;
+  readonly target: LineTarget | null;
 };
 
 export type SessionProject = {
@@ -114,6 +142,8 @@ export type SessionFields = {
   readonly projects: ReadonlyArray<SessionProject>;
   readonly activity: ReadonlyArray<SessionLine>;
   readonly pullRequestNumber: Int | null;
+  readonly decisions: ReadonlyArray<string>;
+  readonly summary: string | null;
 };
 
 export type SessionProjection = ProjectionMeta & SessionFields;
@@ -130,6 +160,15 @@ export type RunLimit = {
 export type AgentRow = {
   readonly agentId: string;
   readonly name: string;
+  readonly role: string;
+  readonly isLead: boolean;
+  readonly model: string | null;
+  readonly spendText: string | null;
+  readonly timeText: string | null;
+  readonly stopActionId: ActionId | null;
+  readonly stopTreeActionId: ActionId | null;
+  readonly continueActionId: ActionId | null;
+  readonly sendActionId: ActionId;
   readonly mark: StatusMark;
   readonly state: AgentState;
   readonly words: string;
@@ -144,6 +183,8 @@ export type RunRow = {
   readonly state: RunState;
   readonly words: string;
   readonly spendText: string | null;
+  readonly stopActionId: ActionId | null;
+  readonly continueActionId: ActionId | null;
   readonly limit: RunLimit | null;
   readonly canStop: boolean;
   readonly canContinue: boolean;
@@ -185,12 +226,46 @@ export type TrainEntry = {
   readonly prNumber: Int;
   readonly headSha: string;
   readonly title: string;
+  readonly repo: string;
+  readonly reason: string | null;
+};
+
+export type TrainPhase = 'running' | 'done' | 'halted' | 'stopped';
+
+export type TrainStep = 'merging' | 'updating' | 'waiting';
+
+export type TrainCarState = 'queued' | 'merging' | 'updating' | 'waiting' | 'merged' | 'stopped';
+
+export type TrainCar = {
+  readonly sessionId: string;
+  readonly prNumber: Int;
+  readonly state: TrainCarState;
+  readonly mark: StatusMark;
+  readonly line: string;
+};
+
+export type TrainStatus = {
+  readonly trainId: string;
+  readonly phase: TrainPhase;
+  readonly index: Int;
+  readonly merged: Int;
+  readonly total: Int;
+  readonly step: TrainStep;
+  readonly line: string;
+  readonly cars: ReadonlyArray<TrainCar>;
+  readonly stopReason: string | null;
+  readonly isWithLead: boolean;
+  readonly isStopRequested: boolean;
 };
 
 export type TrainOffer = {
   readonly actionId: ActionId;
   readonly isBusy: boolean;
+  readonly method: MergeMethod;
+  readonly orderLine: string;
   readonly entries: ReadonlyArray<TrainEntry>;
+  readonly status: TrainStatus | null;
+  readonly stopActionId: ActionId | null;
 };
 
 export type PullRequestFields = {
@@ -208,6 +283,11 @@ export type PullRequestFields = {
   readonly readiness: MergeReadiness;
   readonly methods: ReadonlyArray<MergeMethod>;
   readonly mergeActionId: ActionId | null;
+  readonly changedFiles: Int | null;
+  readonly additions: Int | null;
+  readonly deletions: Int | null;
+  readonly commitCount: Int | null;
+  readonly reviewComments: Int;
   readonly train: TrainOffer | null;
 };
 
@@ -228,10 +308,28 @@ export type StartProject = {
   readonly name: string;
 };
 
+export type StartKindChoice = {
+  readonly startKind: StartKind;
+  readonly presetId: string | null;
+  readonly label: string;
+  readonly hasLimit: boolean;
+};
+
+export type StartAccessChoice = {
+  readonly access: SessionAccess;
+  readonly label: string;
+  readonly promise: string;
+};
+
 export type StartOffer = {
   readonly actionId: ActionId;
   readonly isPermitted: boolean;
   readonly projects: ReadonlyArray<StartProject>;
+  readonly kinds: ReadonlyArray<StartKindChoice>;
+  readonly accessChoices: ReadonlyArray<StartAccessChoice>;
+  readonly defaultAccess: SessionAccess;
+  readonly limitAmounts: ReadonlyArray<number>;
+  readonly defaultLimitUsd: number | null;
   readonly maxGoalLength: Int;
   readonly remainingToday: Int;
 };

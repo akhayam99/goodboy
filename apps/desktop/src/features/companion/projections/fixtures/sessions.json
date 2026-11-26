@@ -20,6 +20,10 @@
             "state": "question"
           },
           "words": "1 question for you",
+          "tone": "warning",
+          "reason": "open-question",
+          "waitingText": "Waiting 5m",
+          "branch": "goodboy/pagination",
           "projectNames": [
             "payments-api"
           ],
@@ -45,6 +49,10 @@
             "state": "running"
           },
           "words": null,
+          "tone": null,
+          "reason": null,
+          "waitingText": null,
+          "branch": null,
           "projectNames": [],
           "prNumber": null,
           "costText": null,
@@ -70,5 +78,6 @@
       "count": 0,
       "rows": []
     }
-  ]
+  ],
+  "train": null
 }
