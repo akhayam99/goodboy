@@ -257,7 +257,23 @@ only when your task reaches the case it covers.
 
 - [architecture.md](architecture.md): when you change the systems that run
   behind the app, like the environment agents run in, how a provider gets
-  picked, the boot path, git status reads, or DB migrations.
+  picked, the boot path, git status reads, or DB migrations. It is the index
+  of the pages in [architecture/](architecture/):
+  [boot](architecture/boot.md), [commands](architecture/commands.md),
+  [frontend](architecture/frontend.md), [logging](architecture/logging.md),
+  [environment](architecture/environment.md),
+  [processes](architecture/processes.md), [monitor](architecture/monitor.md),
+  [terminal output](architecture/terminal-output.md),
+  [git](architecture/git.md), [Rust modules](architecture/rust-modules.md),
+  [file access](architecture/file-access.md),
+  [migrations](architecture/migrations.md),
+  [table writers](architecture/table-writers.md),
+  [Auto tree registry](architecture/auto-tree-registry.md),
+  [data layout](architecture/data-layout.md),
+  [project move](architecture/project-move.md),
+  [backup](architecture/backup.md),
+  [artifact frames](architecture/artifact-frames.md) and
+  [untrusted text](architecture/untrusted-text.md).
 - [rust.md](rust.md): when you write or review Rust under `src-tauri`, like
   command errors, the one clock, or the shape of a wire struct.
 - [keyboard.md](keyboard.md): when you add a contextual shortcut, or change
