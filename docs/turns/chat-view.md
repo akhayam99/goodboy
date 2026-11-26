@@ -127,7 +127,7 @@ The chat scrolls inside the `ScrollFade` viewport of `ChatView`.
 
 `useScrollAnchor` keeps the line under the reader in place, because WKWebView
 and WebKitGTK have no CSS scroll anchoring
-([../traps.md](../traps.md#scroll-anchoring-in-the-webview)).
+([../traps.md](../traps/scroll.md#scroll-anchoring-in-the-webview)).
 
 1. On every scroll it picks the first row whose bottom is below the top edge
    (`pickAnchor`, a binary search) and keeps its offset.
