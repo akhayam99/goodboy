@@ -23,7 +23,7 @@ use super::lifecycle::{
 use super::load::{report_load, LoadPhase, TAB_LOAD_EVENT};
 use super::local::{self, LocalFile};
 use super::page_keys::{route_page_key, PageKeys, PAGE_KEY_EVENT};
-use super::profile::{begin_clear, ProfileId};
+use super::profile::{begin_clear, begin_site_clear, ProfileId};
 use super::reason::{
     BROWSER_CALLER, INVALID_ADDRESS, NEEDLE_TOO_LONG, NOT_WEB_ADDRESS, OTHER_WINDOW, PROFILE_BUSY,
     SESSION_CLOSING, TAB_CLOSED, TAB_GONE, TOO_MANY_POPUPS,
@@ -1333,6 +1333,38 @@ fn clearing_twice_at_once_is_refused() {
         Err(MessageError::Refused(code)) if code == PROFILE_BUSY
     ));
     drop(lease);
+}
+
+#[test]
+fn a_site_clear_and_a_workspace_clear_never_run_together() {
+    let app = app_with_windows(&["main"]);
+    let id = open_for(&app, "main", northwind(), "harborline");
+    let workspace = begin_clear(app.handle(), "northwind").expect("first");
+    assert!(matches!(
+        begin_site_clear(app.handle(), &id),
+        Err(MessageError::Refused(code)) if code == PROFILE_BUSY
+    ));
+    drop(workspace);
+    let site = begin_site_clear(app.handle(), &id).expect("free again");
+    assert!(matches!(
+        begin_clear(app.handle(), "northwind"),
+        Err(MessageError::Refused(code)) if code == PROFILE_BUSY
+    ));
+    assert!(matches!(
+        begin_site_clear(app.handle(), &id),
+        Err(MessageError::Refused(code)) if code == PROFILE_BUSY
+    ));
+    drop(site);
+    assert!(begin_clear(app.handle(), "northwind").is_ok());
+}
+
+#[test]
+fn refuses_to_clear_the_site_of_a_tab_that_is_gone() {
+    let app = app_with_windows(&["main"]);
+    assert!(matches!(
+        begin_site_clear(app.handle(), "gone"),
+        Err(MessageError::Failed(code)) if code == TAB_GONE
+    ));
 }
 
 #[test]

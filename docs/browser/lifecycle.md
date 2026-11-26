@@ -121,6 +121,9 @@ when the user confirmed.
 
 - It refuses `not-web-address` for a page that is not http or https, and
   `site-moved` when the live page is on another host by then.
+- It holds the same lease as the workspace clear, on the tab's profile, until
+  the reload is sent. A second clear of either kind answers `profile-busy`,
+  also on a Mac with one shared store.
 - On macOS it fetches every data record of the tab's store and removes those
   whose display name is the site: `localhost`, `*.localhost` and an IP match
   only themselves, any other host matches its registrable domain (WebKit names

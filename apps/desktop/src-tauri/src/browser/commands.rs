@@ -303,6 +303,7 @@ pub async fn browser_site_data_clear(
     let tab = owned_tab(&webview, &args.tab_id)?;
     let live = web_url::live_url_of(&tab).ok_or_else(|| reason::failed(TAB_GONE))?;
     site_data::check_site(&live, &args.host, &AppOrigins::of_app(webview.app_handle()))?;
+    let _lease = profile::begin_site_clear(webview.app_handle(), &args.tab_id)?;
     let cleared = site_data::clear_site(&tab, &args.host).await?;
     host::reload_from_origin(&tab)?;
     Ok(cleared)
@@ -835,9 +836,15 @@ mod tests {
             .expect("the command");
         let body = &command[start..start + command[start..].find("\n}\n").expect("end")];
         let checked = body.find("check_site(").expect("check");
+        let leased = body
+            .find("let _lease = profile::begin_site_clear(")
+            .expect("lease");
         let cleared = body.find("clear_site(&tab").expect("clear");
         let reloaded = body.find("reload_from_origin(&tab)").expect("reload");
-        assert!(checked < cleared && cleared < reloaded, "{body}");
+        assert!(
+            checked < leased && leased < cleared && cleared < reloaded,
+            "{body}"
+        );
     }
 
     #[test]

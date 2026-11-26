@@ -8,7 +8,9 @@ use tauri::{AppHandle, Manager, Runtime, WebviewBuilder};
 
 use super::host;
 use super::lifecycle::{self, Gate};
-use super::reason::{self, INVALID_WORKSPACE, PROFILE_BUSY, PROFILE_SHARED, PROFILE_UNAVAILABLE};
+use super::reason::{
+    self, INVALID_WORKSPACE, PROFILE_BUSY, PROFILE_SHARED, PROFILE_UNAVAILABLE, TAB_GONE,
+};
 use super::registry::{BrowserRegistry, ClearRefusal};
 use super::site_data;
 use crate::util::MessageError;
@@ -209,6 +211,24 @@ pub(crate) fn begin_clear<R: Runtime>(
     if isolation() == Isolation::Shared {
         return Err(reason::refused(PROFILE_SHARED));
     }
+    lease_of(app, profile)
+}
+
+pub(crate) fn begin_site_clear<R: Runtime>(
+    app: &AppHandle<R>,
+    tab_id: &str,
+) -> Result<ClearLease<R>, MessageError> {
+    let profile = app
+        .state::<BrowserRegistry>()
+        .profile_of(tab_id)
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
+    lease_of(app, profile)
+}
+
+fn lease_of<R: Runtime>(
+    app: &AppHandle<R>,
+    profile: ProfileId,
+) -> Result<ClearLease<R>, MessageError> {
     let registry = app.state::<BrowserRegistry>();
     let _gate = registry.gate();
     let open = registry
