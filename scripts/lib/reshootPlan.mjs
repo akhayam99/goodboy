@@ -30,8 +30,3 @@ export const reshootPlanOf = ({ figures, area, theme }) => {
   }
   return { steps, skipped };
 };
-
-export const includesHeroOf = ({ figures, area, theme }) =>
-  figures['readme/readme-hero'] !== undefined &&
-  theme === undefined &&
-  (area === undefined || area === 'readme');

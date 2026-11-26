@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import { reportStale } from './check-figure-versions.mjs';
 import { parseReshootArgs } from './features-reshoot.mjs';
 import { recipeOf, shellSplitOf } from './lib/figures.mjs';
-import { includesHeroOf, reshootPlanOf } from './lib/reshootPlan.mjs';
+import { reshootPlanOf } from './lib/reshootPlan.mjs';
 import { newestChangeByGuide } from './lib/staleFigures.mjs';
 
 const MEDIA = 'https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features';
@@ -18,7 +18,6 @@ const figures = {
     recipe: "--scene 'inbox-reply&brand=1' --click 'Reply to Northwind' --wait 8000",
   },
   'features/board-card': { version: '0.13.1' },
-  'readme/readme-hero': { version: '0.13.1', recipe: 'pnpm readme:hero' },
 };
 
 const changelog = [
@@ -88,13 +87,6 @@ describe('reshootPlanOf', () => {
   it('rejects an unknown theme', () => {
     assert.throws(() => reshootPlanOf({ figures, theme: 'sepia' }), /dark or light/);
   });
-
-  it('shoots the hero only on a full or readme run', () => {
-    assert.equal(includesHeroOf({ figures }), true);
-    assert.equal(includesHeroOf({ figures, area: 'readme' }), true);
-    assert.equal(includesHeroOf({ figures, area: 'inbox' }), false);
-    assert.equal(includesHeroOf({ figures, theme: 'light' }), false);
-  });
 });
 
 describe('parseReshootArgs', () => {
@@ -129,7 +121,7 @@ describe('reportStale', () => {
     });
     assert.deepEqual(lines, [
       'features/inbox-list (inbox.md) is 0.13.1, inbox changed in 0.20.0',
-      '1 of 4 figures older than their guide',
+      '1 of 3 figures older than their guide',
     ]);
   });
 
