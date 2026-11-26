@@ -51,6 +51,8 @@ import { readAdmissionPermissions } from './admission/readAdmissionPermissions';
 import { refusalMountNote } from './mount/refusalMountNote';
 import { leadRunFactsOf } from '../runLocks/leadRunFactsOf';
 import { pickChildMount } from './pickChildMount';
+import { movedMountRefusalOf } from './mount/movedMountRefusalOf';
+import { restoreRefusalOf, type RestorableMount } from './mount/restoreRefusalOf';
 import type { AgentGrant } from './ports';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
 import { storedPickOf } from './childRouting/storedPickOf';
@@ -66,6 +68,7 @@ export type ChildRefusal = Readonly<{
   message: string;
   latestRevision?: number | null;
   mount?: MountNote;
+  restore?: RestorableMount;
 }>;
 
 export type ResolvedDelegateChild =
@@ -444,6 +447,7 @@ export const resolveDelegateChild = async ({
   }
   const { addProject } = await readAdmissionPermissions({ db: ctx.db, treeId: tree.id });
   const picked = await pickChildMount({
+    canRestore: retry !== null,
     ports: ctx.ports,
     addProject,
     sessionId: grant.sessionId,
@@ -453,6 +457,9 @@ export const resolveDelegateChild = async ({
     primaryMountId: tree.primaryMountId,
     task: child.task,
   });
+  if (picked.kind === 'restore_failed') {
+    return { kind: 'refused', refusal: restoreRefusalOf({ slot, picked }) };
+  }
   if (picked.kind === 'refused') {
     const mount =
       picked.code === 'mount_missing'
@@ -465,15 +472,9 @@ export const resolveDelegateChild = async ({
         : null;
     return refuse({ slot, code: picked.code, message: picked.message, mount });
   }
-  const capturedPath =
-    retry === null ? null : textFieldOf({ source: retry.target, key: 'worktreePath' });
-  if (capturedPath !== null && picked.mount.worktreePath !== capturedPath) {
-    return refuse({
-      slot,
-      code: 'mount_missing',
-      message:
-        'the mount of the earlier attempt moved, so "retryOf" cannot repeat the work on it. Drop "retryOf" and send new work on the mount you want',
-    });
+  const moved = movedMountRefusalOf({ slot, retry, mount: picked.mount });
+  if (moved !== null) {
+    return { kind: 'refused', refusal: moved };
   }
   const gathered =
     child.facts.length === 0

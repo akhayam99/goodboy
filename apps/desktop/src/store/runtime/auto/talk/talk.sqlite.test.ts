@@ -12,6 +12,7 @@ import { delegationContinueOf } from '../../../../features/auto/delegationContin
 import { writeAutoLevel } from '../level/writeAutoLevel';
 import { continueChild } from './continueChild';
 import { registerPlan } from '../testing/autoWorld';
+import { LEDGER_MOUNT, NOTIFY_MOUNT } from '../testing/fakePorts';
 import {
   autoCommand,
   autoDelegates,
@@ -290,6 +291,57 @@ describe('a person writes to a child Auto started', () => {
         settleWaitMs: 0,
       }),
     ).toMatchObject({ kind: 'working' });
+    expect(world.state.ports.childTurns).toHaveLength(1);
+  });
+
+  it('brings the folder back when the person removed it, and continues there', async () => {
+    const world = await settledScout();
+    const original = await onlyDelegation(world);
+    world.state.ports.setMounts([
+      { ...LEDGER_MOUNT, isAttached: false, diskState: 'removed', worktreePath: null },
+      NOTIFY_MOUNT,
+    ]);
+
+    const outcome = await world.runtime.continueChild({
+      childAgentId: original.childAgentId,
+      text: 'Why did you skip the tests folder?',
+      from: 'user',
+    });
+    await world.runtime.settled();
+
+    expect(outcome).toMatchObject({ kind: 'continued' });
+    expect(world.state.ports.attachMountCalls).toEqual([
+      { sessionId: AUTO_SEED_SESSION, mountId: LEDGER_MOUNT.id },
+    ]);
+    expect(world.state.ports.childTurns).toHaveLength(2);
+  });
+
+  it('names the folder and offers to restore it when it cannot come back', async () => {
+    const world = await settledScout();
+    const original = await onlyDelegation(world);
+    world.state.ports.setMounts([
+      { ...LEDGER_MOUNT, isAttached: false, diskState: 'removed', worktreePath: null },
+      NOTIFY_MOUNT,
+    ]);
+    world.state.ports.setAttachMountOutcome({
+      kind: 'failed',
+      error: 'branch no longer exists: nw/fix-settlement-replay',
+    });
+
+    const outcome = await world.runtime.continueChild({
+      childAgentId: original.childAgentId,
+      text: 'Why did you skip the tests folder?',
+      from: 'user',
+    });
+
+    expect(outcome).toMatchObject({
+      kind: 'refused',
+      code: 'mount_missing',
+      restore: { mountId: LEDGER_MOUNT.id, mountName: 'ledger-core' },
+    });
+    expect(outcome.kind === 'refused' ? outcome.message : '').toContain(
+      'The ledger-core folder was removed',
+    );
     expect(world.state.ports.childTurns).toHaveLength(1);
   });
 

@@ -15,7 +15,11 @@ export type AutoChildTurnResult =
   | Readonly<{ kind: 'continued' }>
   | Readonly<{ kind: 'working' }>
   | Readonly<{ kind: 'plain' }>
-  | Readonly<{ kind: 'refused'; message: string }>;
+  | Readonly<{
+      kind: 'refused';
+      message: string;
+      restore?: Readonly<{ mountId: string; mountName: string }>;
+    }>;
 
 export type AutoChildTurnPort = (params: AutoChildTurnParams) => Promise<AutoChildTurnResult>;
 

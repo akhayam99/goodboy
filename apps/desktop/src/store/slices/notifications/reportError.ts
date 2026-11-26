@@ -16,6 +16,7 @@ export type ReportErrorParams = {
   recovery: ErrorRecovery;
   coalesceKey?: string;
   retry?: ActionRetry;
+  retryLabel?: string;
   stays?: string;
 };
 
@@ -50,6 +51,7 @@ export const reportError = ({ get }: FactoryParams) => {
     severity = 'error',
     recovery,
     retry,
+    retryLabel,
     stays,
     coalesceKey,
     ...target
@@ -64,6 +66,7 @@ export const reportError = ({ get }: FactoryParams) => {
               retry,
               ...(coalesceKey === undefined ? {} : { retryId: coalesceKey }),
             }),
+            ...(retryLabel === undefined ? {} : { label: retryLabel }),
           };
     await get().emitNotification({
       kind: 'error',

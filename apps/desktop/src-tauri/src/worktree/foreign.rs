@@ -77,6 +77,19 @@ pub(super) fn remote_backed_source(
     }
 }
 
+pub(super) fn attachable_source(
+    repo_path: &Path,
+    name: &str,
+) -> Result<Option<BranchSource>, WorktreeError> {
+    match fetched_branch_source(repo_path, name)? {
+        BranchSource::Differs => Err(WorktreeError::LocalBranchDiffers {
+            branch: name.to_string(),
+        }),
+        BranchSource::Absent => Ok(None),
+        source => Ok(Some(source)),
+    }
+}
+
 pub(super) fn add_remote_backed_worktree(
     repo_path: &Path,
     worktree_path: &Path,
@@ -84,7 +97,7 @@ pub(super) fn add_remote_backed_worktree(
     source: &BranchSource,
 ) -> Result<(), WorktreeError> {
     let target = worktree_path.to_string_lossy();
-    if *source == BranchSource::Same {
+    if matches!(source, BranchSource::Same | BranchSource::LocalOnly) {
         if let Some(holder) =
             branch_checkout_path_with(repo_path, name, &mut |cwd, args| git(cwd, args))
         {

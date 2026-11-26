@@ -14,6 +14,8 @@ import type {
   MountProjectOutcome,
   MountProjectParams,
   MountTaskFoldersParams,
+  AttachMountParams,
+  AttachMountOutcome,
   ListChecksParams,
   PublishScribeParams,
   PushBranchOutcome,
@@ -136,6 +138,8 @@ export type FakePorts = AutoPorts &
     refreshes: Array<RefreshSessionArtifactsParams>;
     mountProjectCalls: Array<MountProjectParams>;
     taskFolderCalls: Array<MountTaskFoldersParams>;
+    attachMountCalls: Array<AttachMountParams>;
+    setAttachMountOutcome: (outcome: AttachMountOutcome) => void;
     setMountProjectOutcome: (outcome: MountProjectOutcome) => void;
     cancels: Array<CancelRunParams>;
     childMessages: Array<QueueChildMessageParams>;
@@ -214,6 +218,8 @@ export const makeFakePorts = ({
   let mountProjectOutcome: MountProjectOutcome = { kind: 'unknown' };
   const mountProjectCalls: Array<MountProjectParams> = [];
   const taskFolderCalls: Array<MountTaskFoldersParams> = [];
+  const attachMountCalls: Array<AttachMountParams> = [];
+  let attachMountOutcome: AttachMountOutcome = { kind: 'attached' };
   let cancelOutcome: CancelRunOutcome = { outcome: 'exited' };
   const cancelOutcomes = new Map<string, CancelRunOutcome>();
   const snapshots = new Map<string, Array<MountSnapshot | null>>();
@@ -255,6 +261,7 @@ export const makeFakePorts = ({
     refreshes,
     mountProjectCalls,
     taskFolderCalls,
+    attachMountCalls,
     cancels,
     childMessages,
     setChildMessageSink: (next) => {
@@ -345,6 +352,25 @@ export const makeFakePorts = ({
     mountTaskFolders: async (params) => {
       taskFolderCalls.push(params);
       return { mounted: [], asked: [], failed: [] };
+    },
+    attachMount: async (params) => {
+      attachMountCalls.push(params);
+      if (attachMountOutcome.kind === 'attached') {
+        mounts = mounts.map((mount) =>
+          mount.id === params.mountId
+            ? {
+                ...mount,
+                isAttached: true,
+                diskState: 'present',
+                worktreePath: mount.worktreePath ?? LEDGER_MOUNT.worktreePath,
+              }
+            : mount,
+        );
+      }
+      return attachMountOutcome;
+    },
+    setAttachMountOutcome: (next) => {
+      attachMountOutcome = next;
     },
     mountProject: async (params) => {
       mountProjectCalls.push(params);

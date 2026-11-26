@@ -308,7 +308,11 @@ export const startAutoRuntime = async ({
         ...(deliveryId !== null && { deliveryId }),
       });
       if (outcome.kind === 'refused') {
-        return { kind: 'refused', message: outcome.message };
+        return {
+          kind: 'refused',
+          message: outcome.message,
+          ...(outcome.restore === undefined ? {} : { restore: outcome.restore }),
+        };
       }
       return { kind: outcome.kind };
     },

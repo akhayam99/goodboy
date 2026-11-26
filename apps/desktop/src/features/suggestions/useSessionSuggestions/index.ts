@@ -31,6 +31,7 @@ import { idleMountsOf } from '../signals/idleMountsOf';
 import { nextScriptRulesOf } from '../signals/nextScriptRulesOf';
 import { mergedAtOf } from '../signals/mergedAtOf';
 import { mergedMountsOf } from '../signals/mergedMountsOf';
+import { mountsInUseOf } from '../signals/mountsInUseOf';
 import type { NextStepSignals, SignalQuietAgent } from '../nextStepSignals';
 import { deriveNextSteps } from '../deriveNextSteps';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
@@ -492,6 +493,7 @@ export const useNextStepSignalsFrom = ({
         });
         return [{ agentId: agent.id, label: AGENT_KIND_META[kind].noun, quietMs }];
       }),
+      inUseMountIds: mountsInUseOf({ agents: effectiveAgents, trees: autoTreeViews }),
       mergedMounts: mergedMountsOf({
         mounts,
         merged: mergedFacts,

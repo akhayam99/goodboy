@@ -283,7 +283,10 @@ after that message gets them in its brief (`childImagesOf`: the images of the ac
 of the tree's generation up to the delegation); the child page names them as chips. The launch
 reads those images once, into the launch snapshot of the attempt (see Why an agent exists), and
 starts the child with the stored list, so a relaunch after a crash hands over the same images
-even when the tree got more since. A file that
+even when the tree got more since. When the turn runs in a worktree, `prepareTurn` copies each stored file
+into that worktree (`readableAttachmentRefs`, under `.goodboy/attachments`) and the prompt names the copy by its
+relative path, so a confined agent can Read it: the scratch folder is outside what it may read. The transcript keeps
+the original refs. A copy that fails starts no turn and writes an error row. A file that
 cannot be written refuses the message with "The Lead couldn't keep the files. Attach them again.":
 nothing is dropped silently. A turn that is not an operator message or
 a child is left to the plain turn. A message to the root of an Auto tree is never a
@@ -607,7 +610,13 @@ writing to it reopens it to **Deciding**.
   Auto's run and the message's position in that run; a message whose text that run already
   saved replays instead of queueing again (`messageChild`). The chat keeps the person's words
   where they were written. A child that asked a question waits for Auto's answer, a child that
-  rewrites an artifact goes through Auto, and files are refused: each with a sentence. A child
+  rewrites an artifact goes through Auto, and files are refused: each with a sentence. A continue
+  whose worktree was removed brings that mount back first (`pickChildMount` asks the `attachMount`
+  port, so the retained path or the local branch comes back as it was, never a new branch). When
+  it cannot, the refusal names the folder and the cause, and the notice offers **Restore
+  <project>** (`restore` on the refusal, `routeAutoChildTurn`), which attaches the mount again;
+  the queued message stays and **Retry** works once the folder is back. New work the Lead starts
+  never recreates a removed folder. A child
   of a finished, stopped or detached tree, or of an older generation, keeps the plain confined
   turn, files included: `routeAutoChildTurn` passes `hasFiles` and `continueChild` refuses
   files only after that plain answer. A queued Auto message never takes that plain turn: when

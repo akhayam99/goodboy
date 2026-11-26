@@ -87,7 +87,7 @@ export type NotificationAction =
     }
   | { readonly kind: 'reveal-path'; readonly path: string }
   | { readonly kind: 'retry-push'; readonly sessionId: SessionId; readonly mountId: MountId }
-  | { readonly kind: 'retry-action'; readonly retryId: string };
+  | { readonly kind: 'retry-action'; readonly retryId: string; readonly label?: string };
 
 type NotificationSettingsTool =
   'bitbucket' | 'github' | 'gitlab' | 'jira' | 'linear' | 'sentry' | 'slack';
