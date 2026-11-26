@@ -132,7 +132,7 @@ A column at the left keeps the session in view: its state, Needs you, Now, the f
 - Hold Option over **Merge** to swap the two tools instead. A ghost shows where the tool lands, and a chip names what folds, only when something does.
 - Drag one tab out of a cell by its name to move that tool alone. The empty part of the head moves the whole cell. In a cell the window folded for lack of room, every tab drags the same way and only the one you grab leaves.
 - With the keyboard, Tab reaches a head, **Enter** lifts the tool, the arrows walk the places, **Enter** drops and **Esc** cancels. Each place is read aloud.
-- A new session starts from the last layout you left, and you can still change it.
+- A new session opens with the layout you left in the last one, and you can still change it.
 - A tool that fails to load shows an error with **Retry** inside that tool.
 
 #### Terminal on the Desk

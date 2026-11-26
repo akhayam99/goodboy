@@ -1,5 +1,6 @@
 import type { AppState } from '../../types';
 import { carriedDockGrid } from './carriedDockGrid';
+import { isNewSession } from './isNewSession';
 import type { Place } from '../navigation/types';
 import { dockScopeOf } from './dockScopeOf';
 import type { DockScope, DockScopeState } from './dockScopeState';
@@ -16,6 +17,7 @@ type Params = {
   readonly place: Place;
   readonly drawer: OpenDrawer | null;
   readonly back: OpenDrawer | null;
+  readonly now?: number;
 };
 
 type KeyParams = {
@@ -28,7 +30,13 @@ const OUTSIDE_KEY = '';
 
 const parkKeyOf = ({ scope }: KeyParams): string => scope ?? OUTSIDE_KEY;
 
-export const dockAfterPlace = ({ state, place, drawer, back }: Params): DockAfterPlace => {
+export const dockAfterPlace = ({
+  state,
+  place,
+  drawer,
+  back,
+  now = Date.now(),
+}: Params): DockAfterPlace => {
   const to = dockScopeOf({ place });
   const from = state.dockScope;
   const parked = state.parkedDockGrids ?? {};
@@ -47,7 +55,7 @@ export const dockAfterPlace = ({ state, place, drawer, back }: Params): DockAfte
   const { [toKey]: parkedGrid, ...rest } = parked;
   const nextLast = from === null ? last : leaving;
   const inherited =
-    to === null || nextLast === null
+    to === null || nextLast === null || !isNewSession({ state, sessionId: to, now })
       ? EMPTY_DRAWER_GRID
       : carriedDockGrid({ state, grid: nextLast, sessionId: to });
   const restored = parkedGrid ?? inherited;

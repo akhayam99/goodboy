@@ -1,4 +1,4 @@
-import { brandId, type SessionId, type WorkspaceId } from '@goodboy/types';
+import { brandId, type IsoDateTime, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { describe, expect, it } from 'vitest';
 import { sessionFixture, WORKSPACE } from '../../../__tests__/helpers/actionFixtures';
 import type { TerminalTabId } from '../../../shared/types/terminal';
@@ -14,10 +14,15 @@ const NOTIFY = brandId<SessionId>({ value: 'session-notify-relay' });
 const PAYMENTS = brandId<SessionId>({ value: 'session-payments-api' });
 const OTHER_WORKSPACE = brandId<WorkspaceId>({ value: 'ws-northwind' });
 
+const NOW = Date.parse('2026-11-26T10:00:00.000Z');
+
+const justNow = (): IsoDateTime =>
+  brandId<IsoDateTime>({ value: new Date(NOW - 10_000).toISOString() });
+
 const SESSIONS = [
   sessionFixture({ id: LEDGER }),
-  sessionFixture({ id: NOTIFY }),
-  sessionFixture({ id: PAYMENTS, workspaceId: OTHER_WORKSPACE }),
+  sessionFixture({ id: NOTIFY, createdAt: justNow() }),
+  sessionFixture({ id: PAYMENTS, workspaceId: OTHER_WORKSPACE, createdAt: justNow() }),
 ];
 
 const TERMINAL_ID = brandId<TerminalTabId>({ value: `ws:${WORKSPACE}::t1` });
@@ -71,6 +76,7 @@ describe('a session that has no layout of its own starts from the last layout of
       place: sessionPlace({ sessionId: NOTIFY }),
       drawer: null,
       back: null,
+      now: NOW,
     });
 
     expect(left.lastDockGrid).toBe(LEDGER_GRID);
@@ -97,6 +103,7 @@ describe('a session that has no layout of its own starts from the last layout of
       place: sessionPlace({ sessionId: NOTIFY }),
       drawer: null,
       back: null,
+      now: NOW,
     }).drawerGrid;
 
     expect(next?.columns.map((column) => column.map((panel) => panel.kind))).toEqual(
@@ -112,6 +119,7 @@ describe('a session that has no layout of its own starts from the last layout of
       place: sessionPlace({ sessionId: PAYMENTS }),
       drawer: null,
       back: null,
+      now: NOW,
     }).drawerGrid;
 
     expect([...kindsOf({ grid: next })].sort()).toEqual(['ask', 'browser', 'scripts']);
@@ -123,6 +131,7 @@ describe('a session that has no layout of its own starts from the last layout of
       place: sessionPlace({ sessionId: NOTIFY }),
       drawer: null,
       back: null,
+      now: NOW,
     }).drawerGrid;
 
     expect(kindsOf({ grid: next })).not.toContain('terminal');
@@ -134,6 +143,7 @@ describe('a session that has no layout of its own starts from the last layout of
       place: BOARD_PLACE,
       drawer: null,
       back: null,
+      now: NOW,
     });
     const boardState = {
       ...stateOf({ scope: null, grid: toBoard.drawerGrid ?? EMPTY_DRAWER_GRID }),
@@ -146,6 +156,7 @@ describe('a session that has no layout of its own starts from the last layout of
       place: sessionPlace({ sessionId: NOTIFY }),
       drawer: null,
       back: null,
+      now: NOW,
     });
 
     expect([...kindsOf({ grid: next.drawerGrid })].sort()).toEqual([
@@ -172,6 +183,7 @@ describe('a session that has no layout of its own starts from the last layout of
       place: sessionPlace({ sessionId: NOTIFY }),
       drawer: null,
       back: null,
+      now: NOW,
     });
 
     expect(next.drawerGrid).toEqual(own);
@@ -183,6 +195,7 @@ describe('a session that has no layout of its own starts from the last layout of
       place: sessionPlace({ sessionId: LEDGER }),
       drawer: null,
       back: null,
+      now: NOW,
     });
 
     expect(leaving.parkedDockGrids?.[NOTIFY]).toBe(EMPTY_DRAWER_GRID);
@@ -195,9 +208,23 @@ describe('a session that has no layout of its own starts from the last layout of
       place: sessionPlace({ sessionId: NOTIFY }),
       drawer: null,
       back: null,
+      now: NOW,
     });
 
     expect(kindsOf({ grid: back.drawerGrid })).toEqual([]);
+  });
+
+  it('leaves a session that is not new empty, as before', () => {
+    const next = dockAfterPlace({
+      state: stateOf({ scope: NOTIFY, grid: LEDGER_GRID }),
+      place: sessionPlace({ sessionId: LEDGER }),
+      drawer: null,
+      back: null,
+      now: NOW,
+    });
+
+    expect(kindsOf({ grid: next.drawerGrid })).toEqual([]);
+    expect(next.lastDockGrid).toBe(LEDGER_GRID);
   });
 
   it('starts empty when no session has been laid out yet', () => {
@@ -206,6 +233,7 @@ describe('a session that has no layout of its own starts from the last layout of
       place: sessionPlace({ sessionId: NOTIFY }),
       drawer: null,
       back: null,
+      now: NOW,
     });
 
     expect(kindsOf({ grid: next.drawerGrid })).toEqual([]);
@@ -217,6 +245,7 @@ describe('a session that has no layout of its own starts from the last layout of
       place: sessionPlace({ sessionId: LEDGER }),
       drawer: null,
       back: null,
+      now: NOW,
     });
 
     expect(next.lastDockGrid).toBe(EMPTY_DRAWER_GRID);

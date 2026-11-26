@@ -145,12 +145,13 @@ version 1 shows the default layout.
 
 - `useSessionDockGrid` (started by `useWindowLayout`) runs `watchSessionDockGrid`,
   keyed on `currentSessionId`.
-- **A session with no layout of its own** starts from the last layout of the window
+- **A new session** (opened within two minutes of its creation, with no layout parked in
+  this window, `isNewSession`) starts from the last layout of the window
   (`lastDockGrid`, set by `dockAfterPlace` when a session is left, the Board included): the
   same columns, tab lists and splits, with the panels bound to the new session, Scripts
   without its project and a Terminal kept only when its tab belongs to the new session's
-  workspace (`carriedDockGrid`). A session the user emptied stays empty when it comes back.
-  Its own row, when it has one, replaces that start. The last layout lives in the window and
+  workspace (`carriedDockGrid`). An older session keeps opening empty until its row answers, and one the user emptied stays
+  empty when it comes back. Its own row, when it has one, replaces that start. The last layout lives in the window and
   is not saved.
 - **Entering a session** reads its row (`recallDockGrid`), whose grid replaces the
   open tools (`slotWithGrid`); a tool of a session that no longer exists drops out.
