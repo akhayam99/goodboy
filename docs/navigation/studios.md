@@ -1,654 +1,287 @@
 # Studios
 
-> **Read this when** you add or change a studio: a place of its own such as Workflows, Settings or the Guide. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
-
-## Studios
+> **Read this when** you add or change a studio (Tasks, Chat, Workflows, Notifications, the Guide), its band, its page rail or a record page. **Not for** Settings ([settings.md](settings.md)), the Terminal page ([terminal.md](terminal.md)) or studio trails ([trails.md](trails.md)).
 
 Every studio (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Settings,
-Changelog, the guide, Add workspace) is a page in the one main slot: it renders
-inside the content sheet, over the page it replaces, beside the places rail. The
-page under it stays mounted and inert. Every drawer belongs to a session today,
-so every drawer parks (mounted, hidden and inert) until the studio closes, and
-the sheet takes its width. The places rail
-stays live beside every studio, with the same places and no fold control
-(`App.tsx` supplies `AppShell.leftRail`; see [The places rail](shell.md#surfaces)). **Settings is a page with
-its own scopes rail**: the 40px band holds `‹ Back to app` (with its Esc hint)
-and no crumb, since the scopes rail already shows where you are, and below it `SettingsScopesLayout` draws a
-`StudioRailLayout` named Settings scopes (`placement="page"` beside the column,
-`chrome` on Home) with the fold control and `Search settings` in its first row,
-the groups or the matching settings under it, and the page as the detail
-(`data-settings-detail`). The scopes rail folds like every page rail
-(`goodboy:studio-rail-folded:settings:v1`) and folds by itself under 880px of
-page like every inner list; its folded strip keeps Show and a
-Search icon that opens the rail on the field. With no saved choice, the rail
-starts folded in a window under 1200px (`foldedByDefaultBelow`), so the page keeps
-room for its dense rows, and a saved choice wins either way: a docked rail stays
-docked in the sheet of a 1100px window beside the places rail. The detail wrapper
-is a container (`detailClassName="@container"`): under 600px a Models row drops its
-description and keeps the model, the effort and the Auto or Pinned chip. The Settings row in the column
-foot is lit while it is open. Back to app, Esc and Back land alike. A session
-key (⌃Tab, ⌥⌘↓, ⌘⇧[) is a forward move and closes Settings on its way, and so
-does any column row. On close, `StudioFrame` gives focus back to what opened
-the studio, or to the studio's door when that is gone (Search or run), unless
-focus already sits outside the studio (`restoreStudioOpener`). On Home, which
-has no column, New workspace swaps the list for the form in place, and the app
-studios take the whole window: Settings (its corner gear, ⌘, or ⌘/ for
-shortcuts) and the guide. Search or run opens there too.
-Studios are not part of the breadcrumb IA. They exit on Esc, and only one is
-open at a time. There is no Close button: a door page leaves by another door or
-Esc, and an app page (Settings, Help, New workspace) shows `Back to app` with
-the Esc chip at the top left of its band (`StudioBackButton`, `close: 'back'`
-in `studioMeta.ts`).
+Changelog, the guide, Add workspace) is a page in the one main slot, drawn inside
+the content sheet over the page it replaces.
 
-- **An open studio is a history entry.** Opening a studio, or switching from
-  one studio to another, pushes an entry over the page underneath
-  (`openStudio`). Reopening the same studio, a Settings scope change and the
-  Tasks' provider and record update that entry (`amendStudio`). Back from
-  Workflows reopens Tasks with its record. Close and Esc fold every studio
-  entry stacked on the same page into that page (`closeStudio`): closing means
-  the side trip is over, Back means one step.
-- **Navigating closes the studio.** A forward move to a place (another
-  session, a lens, an agent, the board) arrives with no studio, whether it came
-  from Search or run, a needs-you row, a shortcut or a link inside the studio, so
-  the destination always lands in front. Switching workspace closes it too.
+- The page under it stays mounted and inert, and every session drawer parks until
+  the studio closes ([surfaces.md](surfaces.md#the-dock-follows-the-page)). The
+  places rail stays live beside it (`App.tsx` supplies `AppShell.leftRail`).
+- One studio is open at a time. Studios are not part of the breadcrumb IA.
+- There is no Close button. A door page leaves by another door, Back or Esc; an
+  app page (Settings, Help, New workspace) shows `Back to app` with the Esc chip
+  at the top left of its band (`StudioBackButton`, `close: 'back'` in
+  `studioMeta.ts`).
+- On close, `StudioFrame` gives focus back to what opened the studio, or to its
+  door when that is gone (Search or run), unless focus already sits outside the
+  studio (`restoreStudioOpener`).
+- On Home, which has no column, the app studios take the whole window: Settings
+  (its corner gear, ⌘, or ⌘/ for shortcuts) and the guide. Search or run opens
+  there too.
+
+## History and frame
+
+- **An open studio is a history entry.** Opening a studio, or switching to
+  another, pushes an entry over the page underneath (`openStudio`). Reopening the
+  same studio, a Settings scope change and the Tasks' provider and record amend it
+  (`amendStudio`), so Back from Workflows reopens Tasks with its record. Close and
+  Esc fold every studio entry stacked on the same page into that page
+  (`closeStudio`): closing ends the side trip, Back is one step.
+- **Navigating closes the studio.** A forward move to a place (another session, a
+  lens, an agent, the board) arrives with no studio, from Search or run, a
+  needs-you row, a shortcut or a link inside the studio. Switching workspace, a
+  session key (⌃Tab, ⌥⌘↓, ⌘⇧[) and any column row close it too.
 - **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
-  mounts only while a studio is open and stays mounted from Tasks to Workflows
-  to Settings. It owns the 40px band (the studio's icon and name, the body's
-  subtitle, Back to app), the Esc layer and the motion: `studio-in` when
-  it opens, `studio-out` when it closes, and on a switch only the band's name
-  fades while the new body enters in 160ms. A studio body still renders
-  `StudioShell`; inside the frame it only hands its chrome to the band. Until a
-  body's chunk arrives, the frame shows the opaque skeleton of that page
-  (`STUDIO_META[kind].skeleton`, drawn through `PageSkeleton` on the page's header
-  inset and measure): `rows` (Tasks, Work, Workflows, Monitoring, Notifications, Settings,
-  Add workspace), `prose` (the guide, What's new), `room` (Chat), `terminal` and
-  `cards` (Impact), with a rail skeleton where the page has a rail. With no
-  studio open, no frame node exists, so nothing covers the page.
-- **One title per page; the band holds no title.** `StudioBand` never draws a
-  crumb title, an icon or a subtitle; the page `h1` is the one title.
-  `STUDIO_META[kind].close` places the exit: `none` for the studios beside the
-  column (Tasks, Chat, Workflows, Terminal, Impact, Monitoring, Notifications:
-  no band, no Close, the door or Escape leaves them), `back` for the app pages
-  (Settings, Help, Add workspace), whose 40px band holds only `Back to app` with the Esc chip at the left
-  inside a `PageColumn` of the studio's tier. A band also appears when the body
-  claims it with a `StudioTrail` or passes a header accessory. While it draws a
-  band, the frame hands its body `UnderTrailContext`, so a studio title does not
-  add the 8px a bare page adds; a bandless page sits on the 8px header inset
-  (`frameGeometryOf`), like a session page. The provider wraps the body whether
-  or not the band is drawn, only its value changes: a trail that claims the
-  band must not remount the page that drew it (Tasks Open lost its record
-  that way). The frame root carries
-  `data-studio-title` for the journey tests.
-- **Every studio draws the grid's title row.** Each studio has one
-  `h1` in the same 32px row as every page (`PaneTitleRow`, fixed `h-8`, the actions
-  at its right, a long title truncates and never wraps the row): Tasks the view's name,
-  Workflows `Workflows` with its tab strip under the title and `New workflow` as the
-  one primary at the right end of the tab row, Impact `Impact` with the period selector in the row and a meta line
-  under it (the band keeps the crumb and Back to app only), Help's two tabs and
-  Notifications through `PaneShell`, and the Chat thread's title as the same `h1`
-  (`ChatHeader`). Exactly one `h1` per studio scene.
-- **One Terminal studio for every terminal.** Terminal lives in the dock (see
-  the session terminal below); its page is the large size of the same object,
-  opened from the dock's `Open full page` (`openTerminalOnPage`, a push, so ⌘[
-  brings the dock back on the same tab) and left by `Dock` in its header
-  (`dockTerminalPage`). With no terminal yet, `Dock` stays and opens one in the
-  dock (`dockEmptyTerminalPage`), as the empty Browser page does. The page is `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId; worktree }`in`TerminalStudio`:
-  `StudioShell`plus`StudioRailLayout surface="terminal"`. The rail does not fold, and its first
-  child is `New terminal`, a split secondary control: the button opens a tab in the selected
-  worktree, the chevron opens the picker. The picker (`NewTerminalMenu`, `terminalPickerClusters`)
-  opens to the right of the chevron (`useDropdown` `side: 'right'`) in clusters: `Workspace folder`first, then one cluster per session with attached worktrees, headed by the session title alone
-  (issue chips and diff stat stay off this page, cut C3); a row is the project, the branch, the short
-  worktree chip and the path on one line, and`Open project`opens the project settings. The
-  `Workspace folder` row is named by the folder (`harborline`), since the cluster title says the
-  rest; a worktree path keeps its project folder and its `gb-` folder whole (`pathTail`), and the
-  head of the path truncates first.
-  With no terminal at all the page has no rail: the empty state owns the single`New terminal`.
-  The rail is one `ListGrid`named`Terminals`with one`ListGridGroup`per session that has
-  terminals: the session title, a visible arrow button (`Open session`) beside it and the number of terminals in
-  the last column; the`Workspace folder` group comes last and has no action. Inside a group, one
-  28px row per worktree (`terminalWorktrees.ts`, key `<sessionId>#m:<mountId>`, or `#p:<cwd>`when
-  no mount matches) on the shared columns: branch or folder icon, project and branch, the first
-  port (hidden on the selected row, whose ports sit at the tab strip's right edge) and a running
-  dot while a shell runs a process; the folder path and every port live in the row tooltip, never
-  on screen (`TerminalWorktreeRow`). Selecting a row shows its terminals as tabs
-  (`TerminalTabStrip`) with a `+`that adds a tab in that worktree. There is no terminal header:
-  the tab strip's right end carries `TerminalStripActions`, a `⋯`with`Open session`and`Copy worktree path`(or`Copy folder path`) from the `terminalTab` kind of the action registry, a single word when only one applies. A new terminal is
-  always a tab of its worktree, titled`shell`, then `shell 2` (`nextTerminalTitle`); a tab is
-  renamed by double click, Enter saves, Esc cancels. When the shell exits, whatever the code, the
-  tab closes and the studio selects a neighbour of the same worktree: the watch lives in the
-  terminal slice (`watchTerminalExits`, started by `reattachTerminalTabs`), so it works with the
-  page closed. Only a terminal that failed to start stays, as a `failed`chip with a restart
-  button, and it is never opened again on its own. The close x is 28px, always visible: an idle
-  shell closes at once, a busy one asks in a`ConfirmPopover` (`Keep`, danger `Close`). The detail
-  is a location row (the cwd trimmed to the workspace folder, middle truncated, and the `cd`menu, only while the shell is idle), the tab strip, then the shell. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace
-  (`terminalOwner.ts`). A session has no Terminal page of its own: the session terminal lens is
-  gone, and a saved location that still names it lands on the session overview
-  (`withoutRemovedPages`). `⌘T` (`terminal.newTab`) adds a tab to the selected worktree while one
-  has focus. ⌘K has `Terminal` (`goto:terminal`, opens the dock), `New terminal` (`action:new-terminal`, a
-  fresh tab in the dock) and, in a session with worktrees, `Open <repo · branch> in terminal`
-  (`session.openWorktreeTerminal`, one choice per worktree).
-- **Terminal opens in the right dock.** ⌃` (`terminal.studio`), ⌘⌥T (`session.terminal`), the
-right rail's Terminal button, the Go menu and Search or run all run `toggleTerminalDock`: on a
-session page it opens the session's terminal on its worktree, anywhere else the workspace
-folder terminal (`openWorkspaceTerminal`, owner `ws:<workspaceId>`, drawer `sessionId: null`).
-The dock stays open across every move. File > New Terminal adds a fresh tab there, or on the Terminal page while it is open. A dock request that waits for the home folder is dropped when the dock, the page or the session changed meanwhile.
-`openSessionTerminal` adds a session terminal at
-the worktree (or reuses a running one there, never when it carries a`prefill`) and opens the `terminal` drawer over the session
-(`DrawerContent` `{ kind: 'terminal'; payload: { terminalId } }`, `TerminalDrawer`in`DrawerHost`, side sizing, resizable like the others). **Run in terminal** (the command tool card and a shell block in a message,
-`useRunInTerminal`) is that same path with a `prefill`from`typedCommandOf`: one line as typed,
-several lines as one bracketed paste, every control character dropped, no line end. It never
-presses Enter; the session must be live, so an archived session hides the verb. The mount row and diff `Open in Terminal`,
-the rebase banners (`openMountTerminal`), the session row menu, ⌘K `Open <repo · branch> in
-  terminal`and`⌘⌥T` (`session.terminal`, toggles the dock on the active worktree) all go
-through it. The header holds the project name, the short worktree chip (it truncates before the
-buttons), two icon buttons (`Open full page`and`Close`)
-and the same tab strip as the page: drawer and page show the same tabs of the same
-worktree. The head repeats no name: the folder picker stands where the title would be. Closing
-the drawer never kills the shell: the tabs stay in the Terminal list under the
-session's group, and the drawer closes by itself when its worktree has no terminal left.
-`Open full page` closes the drawer and selects the same tab on the page; the pane
-remounts on the same pty and replays its scrollback. The page group title is the session title,
-cut at the end, never in the middle; the group's`aria-label` keeps the full
-  title.
-- **One Esc stack.** The frame, a body that holds Esc (Tasks with a record
-  open), the agent overlay and the delete confirm all register with
-  `useEscapeLayer`, so Esc closes the topmost layer only. So does every
-  popover built on `useDropdown` (`AnchoredPopover`, the pickers, the bell):
-  it holds a layer while open, so Esc inside a studio closes the popover and
-  the studio stays, and it gives focus back to its trigger. The image
-  lightbox, a history drag, the quick actions popover and the
-  artifact page's back-to-list Esc register the same way. A layer registered
-  later sits above one registered earlier. A layer inside a parked drawer is
-  suspended while the studio is open and keeps its place for the trip back. A
-  key handler on a focused field may
-  claim Esc first with `preventDefault`, and the stack then leaves it alone.
-  `useKeepFullScreenOnEscape` is the one raw Esc listener left, because it must
-  see the key when no layer is open. A ratchet
-  (`__tests__/regressions/escape-and-keys-use-the-stack.test.ts`) counts
-  `'Escape'` literals and window key listeners per file and fails on growth.
+  mounts only while a studio is open and stays mounted across switches. It owns
+  the 40px band, the Esc layer and the motion: `studio-in` on open, `studio-out`
+  on close, and on a switch only the band's name fades while the new body enters
+  in 160ms. With no studio open, no frame node exists.
+- A studio body still renders `StudioShell`, which hands its chrome to the band.
+  Until a body's chunk arrives, the frame shows the opaque skeleton of that page
+  (`STUDIO_META[kind].skeleton`, through `PageSkeleton`): `rows` (Tasks, Work,
+  Workflows, Monitoring, Notifications, Settings, Add workspace), `prose` (the
+  guide, What's new), `room` (Chat), `terminal` and `cards` (Impact), plus a rail
+  skeleton where the page has a rail.
 
-- **Not every studio earns a door.** Notifications opens from the bell
-  popover (its footer's Open all notifications, a door: `door: true`, so it
-  replaces an open studio) and from the Go to group of Search or run, never from the
-  column, since the bell already shows the unread count. While the page is open
-  the bell is its one lit control (`bg-selected`, `aria-current="page"`, read
-  from the column place through `AppTopBar`) and the page has no exit control:
-  Esc, Back or another door leaves it.
-  The popover never deletes history. That lives in the studio, behind its
-  confirm. Reporting a bug is not a studio: it is the report sheet above.
-- **Notifications have one row and one scope.** `NotificationRow` draws a
-  group in the popover (`compact`, one line, eight rows at most, Unread or
-  All) and in the studio (`cozy`, opens in place with the body, the older
-  members and Report this error). Opening the popover marks nothing: a row is read once
-  it has been on screen for one second with the popover open
-  (`useSeenNotifications`, one timer per row, cleared when the row, the
-  popover or the window visibility goes: a hidden document restarts every second
-  when it is visible again), so a row beyond the eight shown stays unread, and the header's
-  ghost `Mark all as read` (only while something is unread) is the explicit way to
-  clear the rest. Both lead with the severity on the quiet node alone
-  (`NotificationSeverityNode`, `WorkNode look="quiet"`: an error on the solid
-  danger node, a warning on the solid amber one, a success a bare check, an
-  info a neutral node with its glyph): unread is
-  the title weight (500 in foreground), read rows recede, and no second leading
-  dot. The age is the `ActivityMeta` time column in both. In the studio the time owns the third column and a fixed fourth column
-  holds the hover controls (`NotificationRowActions`): the registry's hover
-  action (Mark as read, one click) and the `⋯` menu of the `notification` kind
-  (Open, Mark as read or unread, Report this error, Copy text, Delete), also opened by
-  right click. They show on hover and keyboard focus, never change the row's
-  width, and the opened row keeps only the notification's own action (Retry) as
-  a button under it. A failed write shows a "Couldn't finish that" toast and
-  leaves the row as it was (`runVerb`). The facets (view, severity,
-  source and, with more than one workspace, the workspace scope) are a page rail docked beside the list, in
-  Chat's frame (`StudioRailLayout`, `placement="page"`, surface `notifications`,
-  288px), with counts that come from SQL (`countNotifications`), so they stay
-  true past the loaded page; a facet count shows from two, a zero facet is dimmed
-  with no number. The rail holds no key legend: the keys are in the tooltips and
-  the Keyboard chapter of the Guide. Load older pages with a cursor. The page has
-  no subtitle and the day groups no count. The title is
-  Notifications whichever view is picked. Both surfaces default to this workspace: a row belongs to
-  its own workspace, or its session's, and a row with neither is app-wide and
-  shows in every workspace. Mark all as read and Delete all act on that same scope.
-  A scope switch keeps the shown list until the new one is read, then changes
+### The band holds no title
+
+`StudioBand` never draws a crumb title, an icon or a subtitle; the page `h1` is
+the one title. `STUDIO_META[kind].close` places the exit:
+
+| `close` | Studios                                                             | Band                                                         |
+| ------- | ------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `none`  | Tasks, Chat, Workflows, Terminal, Impact, Monitoring, Notifications | none; the door or Escape leaves                              |
+| `back`  | Settings, Help, Add workspace                                       | 40px, only `Back to app` and the Esc chip, in a `PageColumn` |
+
+- A band also appears when the body claims it with a `StudioTrail` or passes a
+  header accessory. While a band shows, the frame hands its body
+  `UnderTrailContext`, so the title adds no 8px; a bandless page sits on the 8px
+  header inset (`frameGeometryOf`), like a session page.
+- The provider wraps the body whether or not the band is drawn, so a trail that
+  claims the band never remounts the page (Tasks Open lost its record that way).
+- The frame root carries `data-studio-title` for the journey tests.
+- Each studio has one `h1` in the 32px title row (`PaneTitleRow`, fixed `h-8`,
+  actions at its right, a long title truncates): Tasks the view's name;
+  Workflows with its tab strip under it and `New workflow` as the one primary at
+  the end of the tab row; Impact with the period selector in the row and a meta
+  line under it; Help and Notifications through `PaneShell`; the Chat thread's
+  title (`ChatHeader`). Exactly one `h1` per studio scene.
+
+## One Esc stack
+
+The frame, a body that holds Esc (Tasks with a record open), the agent overlay and
+the delete confirm all register with `useEscapeLayer`, so Esc closes the topmost
+layer only.
+
+- Every popover built on `useDropdown` (`AnchoredPopover`, the pickers, the bell)
+  holds a layer while open, so Esc inside a studio closes the popover, keeps the
+  studio and gives focus back to the trigger. The image lightbox, a history drag,
+  the quick actions popover and the artifact page's back-to-list Esc register the
+  same way.
+- A later layer sits above an earlier one. A layer inside a parked drawer is
+  suspended while the studio is open and keeps its place.
+- A focused field may claim Esc first with `preventDefault`, and the stack leaves
+  it alone.
+- `useKeepFullScreenOnEscape` is the one raw Esc listener left, because it must
+  see the key when no layer is open ([shortcuts.md](shortcuts.md)).
+- `__tests__/regressions/escape-and-keys-use-the-stack.test.ts` counts `'Escape'`
+  literals and window key listeners per file and fails on growth.
+
+## Notifications
+
+**Not every studio earns a door.** Notifications opens from the bell popover's
+footer (Open all notifications, a door: `door: true`) and from Go to in Search or
+run, never from the column, since the bell shows the unread count. While it is
+open the bell is its one lit control (read from the column place through
+`AppTopBar`), and the page has no exit control. The popover never deletes
+history: that lives in the studio, behind its confirm.
+
+### One row, two densities
+
+`NotificationRow` draws a group in the popover (`compact`, one line, eight rows at
+most, Unread or All) and in the studio (`cozy`, opens in place with the body, the
+older members and Report this error).
+
+- **Reading.** Opening the popover marks nothing. A row is read once it has been
+  on screen for one second with the popover open (`useSeenNotifications`, one
+  timer per row, cleared when the row, the popover or the window visibility goes; a hidden
+  document restarts the second when it is visible again),
+  so a row beyond the eight stays unread. The ghost `Mark all as read` (only while
+  something is unread) clears the rest.
+- **Severity** leads on the quiet node alone (`NotificationSeverityNode`,
+  `WorkNode look="quiet"`): error on the solid danger node, warning on the solid
+  amber one, success a bare check, info a neutral node with its glyph. Unread is
+  the title weight (500 in foreground), read rows recede, and there is no second
+  dot. The age is the `ActivityMeta` time column.
+- **Studio row controls.** A fixed fourth column holds the hover controls
+  (`NotificationRowActions`): Mark as read and the `⋯` of the `notification` kind
+  (Open, Mark as read or unread, Report this error, Copy text, Delete), also on
+  right click. They never change the row's width. The opened row keeps only the
+  notification's own action (Retry) as a button. A failed write shows "Couldn't
+  finish that" and leaves the row as it was (`runVerb`).
+
+### Scope and facets
+
+- The facets (view, severity, source and, with several workspaces, the workspace
+  scope) are a page rail beside the list (`StudioRailLayout`, `placement="page"`,
+  surface `notifications`, 288px), with counts from SQL (`countNotifications`), so
+  they stay true past the loaded page. A count shows from two; a zero facet is
+  dimmed. The rail holds no key legend.
+- Both surfaces default to this workspace: a row belongs to its workspace, or its
+  session's, and a row with neither shows in every workspace. Mark all as read and
+  Delete all act on that scope.
+- A scope switch keeps the shown list until the new one is read, then changes
   scope, list and counts in one write (`setNotificationScope`). A failed read keeps
-  all three and logs "Couldn't load notifications" with Retry; of two quick
-  switches the last one wins. A refresh asked during a switch waits for it and
-  then reads the scope it left, so opening the studio never cancels the pick.
-  Once a scope is shown, its failed-switch row is deleted, so a Retry never
-  stays behind in Needs action. The bell's Unread view keeps its snapshot until
-  the scope changes.
-  The studio header draws them through `NotificationsHeaderActions`: the shared `FilterButton`
-  only while the rail is folded, then the ghost `Mark all as read` (only while something is unread), then the `⋯` menu of the
-  `notifications` kind of the action registry (Mark all as read, which names the scope, and Delete all). Delete all
-  opens a `ConfirmPopover` anchored to the `⋯`, aligned to its end edge, titled with the scope's count ("Delete 7 notifications?") and naming the
-  workspace or "every workspace"; it never swaps the title row. The title row's meta reads the
-  count and the unread count ("6 notifications · 4 unread"). A row's Delete acts
-  at once and pushes "Notification deleted" with Undo (`dismissNotificationGroup`
-  re-inserts the rows through `insertNotification`; ⌘Z works too).
-  In the studio, rows are grouped by day (Today, Yesterday, This week, Older),
-  J and K or the arrow keys move, Enter runs the row's action and E deletes. The
-  cursor never marks a row read: a group is read when it opens (a click or
-  Enter) or from its own Mark as read.
-  The rail rows (`packages/ui` `FacetRail`), the list keys
+  all three and logs "Couldn't load notifications" with Retry, and of two quick
+  switches the last wins. A refresh asked during a switch waits, then reads the
+  scope it left. Once a scope is shown, its failed-switch row is deleted. The
+  bell's Unread view keeps its snapshot until the scope changes.
+- Older pages load with a cursor. No subtitle, no day group counts, and the title
+  is Notifications in every view.
+
+### Header and keys
+
+- `NotificationsHeaderActions`: the shared `FilterButton` only while the rail is
+  folded, the ghost `Mark all as read`, then the `⋯` of the `notifications` kind
+  (Mark all as read, naming the scope, and Delete all).
+- Delete all opens a `ConfirmPopover` anchored to the `⋯`, titled with the count
+  ("Delete 7 notifications?") and naming the workspace or "every workspace".
+- The meta reads "6 notifications · 4 unread".
+- A row's Delete acts at once with "Notification deleted" and Undo
+  (`dismissNotificationGroup` re-inserts through `insertNotification`; ⌘Z too).
+- Rows group by day (Today, Yesterday, This week, Older). J and K or the arrows
+  move, Enter runs the row's action and E deletes. The cursor never marks a row
+  read: a group is read when it opens or from its own Mark as read.
+- The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
-  are shared primitives. Tasks uses the rows and the list keys but not the day
-  grouping or a rail: its facets (source, show, type, project) sit in one Filter
-  menu of the tool row, after the search and the For you and All switch and before the grouping button (`Group by: Source`);
-  `⋯` sits in the title row (Refresh, Manage tools: the `taskList` kind of the action registry), and its rows are one `ListGrid` with a group per
-  source, status or project (`taskGroupsOf`), the total on the label (`taskGroupTotalsOf`, starred rows included), five rows each until Show all, and
-  each group is its own listbox of options. J and K move a cursor through the
-  rows on screen, and the record follows in the pane only once one is open.
-  Tasks opens with a quiet cursor on its first row (`data-cursor`,
-  `aria-selected="false"`) and no pane, so those keys act at once and nothing
-  opens by itself; a click, Enter or a record asked for on open
-  (`initialRecordKey`) opens the pane (`aria-selected="true"`, `bg-selected`).
-  Enter on the row the pane already shows opens its launch popover (⌘↵ in the
-  panel launches) or the session once one is linked, O opens the record in its
-  tool, R opens the record and focuses the reply box when the record has one (a
-  Sentry issue has none, so R does nothing there, `recordCanReply`), S stars or
-  unstars, / focuses the search, and Escape in the search leaves the field.
-  Escape closes the pane, or the full page, first and keeps the cursor; a second
-  Escape closes the studio.
-- **A list that belongs to the page sits in the page.** Chat's list of chats,
-  Changelog's releases and the guide's chapters are content beside their
-  detail, not a second navigation column: `StudioRailLayout` with
-  `placement="page"` draws the list on the page background with the resize
-  edge as the only line. Tasks' and Notifications' filters are the same frame. Every page rail opens at
-  288px (`standard`); the skeleton reads the same constant.
-- **A page rail folds, and folds itself when there is no room.** A page may pass
-  `onCollapsedChange`: the rail's first row then starts with a fold control
-  ("Hide <rail name>", ⌥⌘B, pressed while the rail shows), a folded rail leaves
-  a 44px strip with "Show <rail name>" at the same x and height, plus any
-  `foldedActions` the page passes under it, and `useStudioRailFold` remembers
-  the choice per surface (`goodboy:studio-rail-folded:<studio>:v1`).
-  `StudioRailLayout` measures its own root and publishes the width per surface
-  (`studioRailPaneStore`), so no page hands it a ref: under 880px of page every
-  list folds, Show opens it over the page (`data-rail-over-page`, Esc or Hide
-  folds it again, nothing saved), and it docks again once there is room. A rail
-  portaled out of its page (the Agents rail of a run, the framed file list of
-  Changes) passes the page element as `pane` instead, and `hasPageOutside`, so
-  Show opens it over that page and Esc folds it there too. Chat, Terminal, the
-  Guide, the changelog, Settings, Notifications and the file list of Changes
-  fold this way; `regressions/studio-rail-folds.test.tsx` renders each at 800px
-  and expects its Show button.
-  **⌥⌘B** (`innerColumn.toggle`) folds the inner column of the page you are
-  on: each foldable column registers with `useInnerColumn` while its page
-  shows (the session pages while no studio covers it, a page rail through
-  `StudioRailLayout`), the key toggles the last one registered
-  (`innerColumnStore.toggleCurrent`), Search or run lists it under that
-  column's name (Hide chat list, Show session pages) and leaves it out
-  on a page with none, where the key does nothing. Under a pane of 880px the rail
-  folds without saving anything and docks again when the pane widens; Show on
-  that narrow pane opens it until the pane widens, and saves nothing either. A folded
-  rail leaves the shared `FilterButton` (28px tall, the lines icon with the
-  count of active filters; docking the rail again is the Show strip at the
-  rail edge or ⌥⌘B, never a header button) in the title row, opening the same facets in a popover. The search field of
-  Tasks moves into the title row with it.
-- **Every studio list resizes.** `StudioRailLayout` (Settings, Guide, Chat,
-  Changelog, Bitbucket, Tasks, Notifications) drags from
-  its right edge between 220 and 420px (a page may pass `min` and `max`), step
-  8px (32 with Shift) with the arrow keys, and goes
-  back to its default (256 narrow, 288 standard) on a double click. Each studio
-  keeps its own width
-  (`goodboy:studio-rail-width:<studio>:v1`), and the rail skeleton opens at
-  that width. `useResizableWidth` (`@goodboy/ui`) owns read, clamp and save
-  for these rails and the drawer: while the pointer
-  moves the width lives in a CSS variable (the drawer writes its own style),
-  so nothing renders and nothing is saved until the drag ends. Precedent: VS
-  Code, Zed and Linear sidebars.
-- **Settings opens on a page, never on a grid.** The Settings door, ⌘, and the
-  the Settings entry of Search or run land on the page opened last, held in memory only
-  (`lastSettingsFocus`, slice `settings-last-page`): the first open after the
-  app starts lands on Look and alerts (id `general`), and a remembered page
-  that no longer exists (a workspace page with no workspace, a provider that
-  was removed, the old Runs page) falls back to it (`resolveSettingsFocus`). A link that names a page (a scope,
-  a section, a provider or a tool) opens that page. `scope: 'home'` stays as
-  the alias for "the last page" and `SettingsStudio` resolves it once, then
-  amends the history entry to the concrete page. The scopes rail is the only
-  index, drawn beside the page (its fold control and `Search settings` first,
-  then the groups): its two groups, named by scope (This Mac with the caption
-  every workspace, then the workspace name with the caption this workspace),
-  come from `settingsDirectory`, and nothing but settings pages sits in it.
-  Every row is one 28px
-  line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
-  row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
-  no count and no identity. A row that needs something shows a 6px dot at its
-  end, named for assistive tech by its sentence
-  (Update needed, Signed out, Can't check, Not confirmed, Refused your runs, Error, Claude is about to run out); a quiet
-  row shows nothing. The sentence lives on the page: a provider about to run
-  out or out opens on a notice at the top of its page (`ProviderAttentionNotice`). Every page is also an entry in Search or run
-  (`settingsPaletteEntries`, `Settings: Storage and search`, `Providers: Claude`, `Workspace settings: Models`), built from
-  the same list, so ⌘K and the rail cannot disagree. Every setting row has a
-  key in one registry (`settingRows.ts`: label, help, page, band, former names),
-  and ⌘K lists those rows too, tagged `Setting`, with "Page · Band" as detail.
-  `Search settings` in the rail (`settingsSearchHits`, `SettingsSearchResults`)
-  lists the matching pages, then the matching rows (label before former name
-  before help), in place of the groups; the arrows move, Return opens, Esc
-  clears (`useSettingsSearch`). A row pick opens its page on the same history
-  entry with `row` in the focus; the row scrolls into view and lights for a
-  moment (`useSettingRowAnchor`, fed by `SettingRowFocusContext`, inside
-  `SettingRow` through its `rowKey`; `FieldRow` takes the `anchor` and
-  `isHighlighted`), then the focus drops `row`. A workspace field row finds its
-  key by field (`settingRowKeyOfField`). ⌘K leaves out the row of Pair an
-  iPhone, which is already a command. With no match it says `No setting
-matches "x".` and points to ⌘K for actions. `settingRows.test.tsx` renders
-  every page and fails when a registry label no longer renders, a rendered
-  `data-anchor` key is not in the registry, or a registry row renders without
-  its anchor (the profile fields of `ProfileForm` and Pair an iPhone are the
-  named exceptions). The status lines are read
-  once per studio (`useSettingsStatus`, on the minute clock of `useNow`);
-  opening Settings starts no loading of its own beyond one `bridge_status`
-  read (no storage scan, no branch scan, no provider refresh). Without a workspace the
-  workspace group is one line that asks you to open one. Precedent: the VS Code
-  settings editor and Linear's settings sidebar.
-- **Settings nests items in its rail, one page per job.** The This Mac pages
-  (Look and alerts, Editor, terminal, git, Keyboard shortcuts, Storage and
-  search, Backup and reset) always sit under their heading, whichever scope is
-  active, so switching scope never moves a row above the pointer
-  (`appSections.ts`). The workspace pages (Projects, About you, Models,
-  Permissions, Branches, Replies and commits) sit the same way under the
-  workspace name (`workspacePages.ts`, `SettingsRailPageGroup`), and the group
-  ends on one quiet link row, **Run defaults are in Workflows**
-  (`SettingsRailLink`, a page with `isLink`), that opens Workflows, Every run.
-  Look and alerts (id `general`) holds Appearance, Notifications and the
-  Updates band (version row, What's new, background download) and carries the
-  update dot; the old `updates` id opens it scrolled to that band, and a
-  remembered `updates` page reopens it plain (`resolveSettingsFocus`). Editor,
-  terminal, git (id `devtools`, the old `advanced` id is its alias) holds Open
-  with, Built-in terminal and Git. Storage and search (id `storage`) ends with
-  the Search band. The This Mac pages carry their old names as search aliases
-  (General, Advanced, Git, Search index), and every band keeps its name, so
-  old words still find the rows. Models is the workspace page `models`:
-  `workspacePageOf` maps it and every model row id to it, and `PlanPage`
-  leaves it out of copy and restore. iPhone stays out of the rail
-  until `useIsIphonePaired` reads a paired phone (or while its page is open);
-  Search settings and Search or run still list it. The panel shows one item at
-  a time and enters with `nav-step-in` (`SETTINGS_PANE_ENTRY`), so no scope
-  adds a second rail column. Every scope panel keeps the reading width.
-  Precedent: the VS Code settings table of contents and Linear's settings
-  sidebar.
-- **Models names its workspace in the page header.** The Models page of This
-  workspace carries the workspace name as the meta line of its title
-  (`DefaultsPanel` takes `scopeLabel`). Provider pages live in Connections.
-- **Workspace settings is one page per area, each part in a card.** A
-  workspace page carries the page title and one line of
-  help; every part is a `Band` with one heading style (eyebrow, icon, hint
-  under it) and help written under each field, never in a tooltip. Only the
-  page on screen mounts, so Permissions and Replies and commits compute nothing
-  while another page is open. The old anchors (`projects`, `profile`,
-  `after-merge`, `review-replies`, `permissions`, `danger`) now pick a page
-  (`workspacePageOf`), and `general` hands off to Every run; `track-with-git` (and the old
-  `dev-project`) lands on Projects with the first commit review of the first
-  plain code folder open. The workspace is renamed from the `Name` row of the
-  `Workspace` band that opens the Projects page, and its name is written once
-  on that page, in the top bar. The page ends in a `Danger zone` band whose
-  row says `Disconnect this workspace`, confirmed in place.
-  Replies and commits is one column: `How replies read` (the voice, the
-  preview right under it, `Sign replies`, then `Reply wording`, a closed
-  disclosure with the two templates and an `Insert` popover per template
-  that puts a placeholder at the caret, `ReplyTemplatesBand`), `After a
-reply` (`Resolve the thread`, `Update the reply after a squash`) and
-  `Commits` (`review-replies` stays its page id and anchor; a search hit on a
-  template opens the disclosure). The run defaults have no Settings page:
-  they live on Workflows, Every run, and every door that named the old Runs
-  page (`general`, `workflow_orchestrator`, a run row) passes
-  `isRunDefaultsFocus` (`settingRows.ts`), so `SettingsStudio` switches the
-  studio to Every run in its place and remembers nothing. A searched row rides
-  along in `everyRunFocusRow`, so Every run scrolls to it, opens Advanced for
-  Parallel agents and clears it once shown. `general` stays a
-  `PlanPage` (labelled Every run) so the all-pages Restore defaults and Copy
-  from still carry those fields. Branches opens on a Naming
-  band (`WorkspaceBranchNamingBand`: Branch prefix and Branch name), then
-  After merge. Each field's page is `FIELD_PAGE` in
-  `features/settings/pageKeys.ts`, so Restore defaults, Copy from and the
-  changed count follow a field when it moves; override keys never change.
-  The Projects page lists each folder once, under a `Projects` heading. The
-  count is written once, in the page meta line (`3 projects, 1 plain folder`,
-  `projectsCountLine`). A row opens in place; there is no second card for the
-  same folder. Tracking a plain folder with git is an inline flow in its own
-  row (`TrackWithGitFlow`, `FolderGitCard`), never a dialog: the
-  first commit review, then `Publish to GitHub` through the same publish form
-  as the first lap (`PublishPanel`). Creating a workspace never opens this
-  row by itself: the pick row already offers **Track it with git** for a Code
-  folder. A documents folder shows no git line in its row. A row opens by
-  itself when its git line has a notice or when the page is opened on
-  `track-with-git` or `folder-options`.
-  The row of a plain folder (`PlainFolderOptions`) holds the
-  switch Code project or Documents (`setFolderPurpose`; when the write
-  fails the old face stays, with the error beside it), one line of what the
-  face means, and its saved versions: the size against the cap
-  (`folderHistorySize`) with Review in Storage, or a failed first copy with
-  Retry. Every window reads the faces again on focus (`useFolderFacesOnFocus`,
-  in the top bar watch and on Home). Precedent: GitHub repository settings and
-  Linear's settings pages.
-- **Restore defaults and copy from another workspace share one inline
-  flow.** The page menu (⋯ in the title row) of every page that owns settings
-  offers `Restore defaults` and `Copy from…`; under a separator, the menu of
-  every workspace page (Projects included) offers `Copy all pages from…` and
-  `Restore all workspace defaults` for every page at once. The flow opens under the title as a band, never as a
-  popover: pick the workspace, then a preview grouped by page with a
-  checkbox per page and the from and to values, then the action row (`Copy N
-settings`, `Back`, `Cancel`). It ends on a status line with `Undo`. The
-  preview is computed when the flow opens (`loadFlowSources`), not on every
-  render. Which keys a page owns comes from `pageKeys` (`features/settings/
-pageKeys.ts`), typed so a new override key does not compile until it has
-  an owner; provider defaults belong to Providers and are never
-  copied, and neither are projects, folders, integration accounts,
-  permission history or `bootstrap.*` keys. Restoring writes `null`; every
-  override change of one copy or restore is one `patchWorkspaceOverrides`
-  through the queued workspace writer. Every settings row, This Mac and
-  workspace alike, has one shape (`SettingRow`): label, one help line, the
-  control on the right. A row whose value differs from the default shows a
-  small Reset button on the label line (tooltip `Reset to default`, hidden
-  while the value is the default), after the `N folders use their own` chip
-  of a workspace row (`WorkspaceFieldRow`). Precedent: JetBrains Copy to
-  Project and VS Code's Modified marker with Reset Setting.
-- **Storage is the one place for disk space, scoped by a picker.** App >
-  Storage lists every worktree folder Goodboy made, grouped by repository,
-  under three filters: To review, In use and Kept. Each part is a card
-  (`Band`) under a plain section title: Worktrees (with `Scan
-another repository` at its foot), Branches with `Recently deleted`,
-  Artifacts of deleted sessions, and Transcripts and app data. There is no summary band: the page meta line
-  reads `<total> on this Mac`, or `<total> in <workspace>` under a scope (the
-  shared transcripts and app data stay out of a scoped total), from
-  one function (`storageTotalBytes` and `storageMetaOf` through
-  `useStorageMeta`), and adds `Low space: N GB free on this disk` under 10 GB
-  free. The Worktrees header holds the three filters and `Remove N safe
-folders · size` (`WorktreeRemoveButton`), with the sentence on idle days as
-  its help line, and the folder `...` menu shows on hover and focus. `Prune`
-  is a secondary button that confirms. The branch list sits under
-  Worktrees (`BranchesPage` in `StoragePage`), in the same scope, and is
-  hidden under `Removed workspaces`: one select (`Safe to delete`, `Check
-first`, `All`), then a `Recently deleted` fold row (restore or delete for
-  good, loaded from `deleted_branches` on open, which also releases the refs
-  of deletions older than 14 days). Its header reads `N safe to delete · M
-need a look` (`branchesMetaOf` in `BranchesHeader`). The Workspace page
-  Branches holds settings only: the Naming band and the After merge rule. A
-  scope picker (`StorageScopePicker`, `Listbox`) sits in the page header row
-  next to `Check again` (`StorageHeaderActions`), which rereads the sizes and
-  the branches of the scope (`StorageCheckAgain`); `Suggest cleanup after` is
-  the last row of the Worktrees band (`StorageSuggestAfterRow`), and a failed
-  save keeps the old number of days. `openStorage` and the
-  cleanup notifications always land on Storage. The picker lists the current
-  window's workspace, every other workspace with its own weight, `Removed
-workspaces` (folders whose owning workspace is gone or was never linked),
-  and `All workspaces` with the machine total. The scope drives the total, the
-  worktree list and the artifact list together
-  (`storageScope`, `resolveStorageScope`); it defaults to the current
-  window's workspace, or to all workspaces without one. A scope other than
-  all leaves App data out of the total (`state.storageScope`
-  never splits app data by workspace). The
-  workspace page's own Notice, and the `open-orphan-worktrees` notification
-  action, both open Storage already scoped to that workspace
-  (`openStorage({ scope })`); the machine-wide `open-storage` nudge opens it
-  scoped to all. The only bulk action removes clean folders idle past
-  "Suggest cleanup after"; a folder with changes, an operation in progress, a
-  writer lease or no git registration never joins it and says why on its row.
-  Outside Settings there is one nudge and never a modal: `evaluateStorageNudge`
-  sends a `storage-reclaimable` notification (action `open-storage`) when that
-  amount passes 10 GB, then stays quiet for 14 days and speaks again only after
-  it grew by another 10 GB. The thresholds and the last nudge live in the
-  settings table (`storage.suggestAfterDays`, `storage.lastNudgeAt`,
-  `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
-  boot, never on the boot path. The worktree scan itself sends nothing.
-  On Storage, `BranchesSection` lists local branches
-  only, in the same scope, in one list. It scans only when it opens:
-  `git for-each-ref` over the local branches, one more over `origin` and one
-  for the distance behind the base (`project_branches`; fields are split on a
-  unit separator, so a branch name with a `|` still lists, and a git without
-  the batched distance counts per branch), with the merge test cached by both
-  tips (4096 entries at most) and fed each branch's merged pull request head
-  (`listMergedRequestHeads`); protected branches never show. One select
-  (`Safe to delete`, the default, `Check first`, `All`) filters the list.
-  Safe to delete means merged by merge commit or rebase, merged by its pull
-  request with nothing after the merged head, or never used. Check first
-  means `Merged, then N new commits`, unmerged and gone on origin, local only
-  for over 30 days, or older than 90 days; never preselected. Every branch
-  row and every Recently deleted row sit on one grid (`BRANCH_TABLE_GRID`,
-  each cell marked with its `data-cell` name): select, branch with its
-  session title under it, folder, state chip (`Merged`, `No commits` or the
-  full verdict, with how it merged and where it lives in its tooltip), the
-  last commit's age and the action cell (`row-actions`, shown on hover and
-  focus). Delete reads the `branch` kind (`branch.delete`), from the cell and
-  from right click. A Recently deleted row shows the sha under the branch,
-  the days left as the chip and Restore plus delete for good in the action
-  cell. Delete on a merged branch acts at once
-  and a toast carries `Undo`; an unmerged one confirms in a popover beside its button, and the bulk bar
-  counts the commits it takes. `Also delete N on origin` sits above
-  the bar only for Goodboy's own pushed branches in repos where GitHub does
-  not already delete merged branches. Deletes use the same
-  compare-and-delete and 14-day restore as the after-merge rule. A branch another worktree
-  holds reads Protected, so its folder goes first from Worktrees.
-  In the space cluster, under Worktrees, "Artifacts from deleted sessions" lists plans, reports
-  and wireframes whose session is gone, under To review and Kept, with Open,
-  Keep (30 days or always) and Delete, which asks in a `ConfirmPopover` beside its button. Its one bulk
-  action deletes the unused ones. Artifacts never trigger a nudge on their own.
-- **Security findings are the `Secrets in saved scripts` band of the
-  workspace's Permissions page**, after Rules (`SecurityFindingsSection`,
-  passed to `PermissionsSettings` as `afterRules`; the old
-  `security-findings` address lands on Permissions, and its warning dot sits
-  on Permissions). It scans the
-  text Goodboy keeps for a workspace (saved scripts today; workflow steps,
-  the profile, reply templates and permission rules are named in the design
-  but not wired to a scan call yet) for known token shapes
-  (`scanTextForSecrets`, packages/core), fingerprints each hit with sha256,
-  and never stores the value (`security_findings` table,
-  `recordSecurityFindings`). A save reconciles that subject's findings: new
-  fingerprints open, missing ones resolve, and a finding marked "Not a
-  secret" (`dismissSecurityFinding`) stays dismissed even if the exact same
-  value is scanned again, until "Flag again" clears it. The page needs a
-  workspace; without one it says so instead of scanning anything.
-- **Settings rail tone is state, never decoration.** Each row carries its
-  concept icon from `CONCEPT_ICONS`. One reader, `railSubtitles({ state,
-workspaceId, nowMs })`, owns every row's attention sentence and tone (it replaced three
-  separate selectors read straight from `SettingsRail`). `useSettingsStatus`
-  calls it once per studio and hands the result to the rail and the home, and
-  a test mounts the home on the strict `invoke` mock to keep it free of
-  commands and loads at render. A dot appears only
-  when something needs doing: info on
-  Updates while an app update is ready (`updatesText`), info on Storage with "N GB can go" as
-  its label once clean idle folders pass 10 GB (warning when the disk has
-  under 10 GB free and at least 1 GB can go, `storageAttention`),
-  warning on Storage with "N open" once the current workspace has
-  an undismissed finding (`selectSecurityFindingsAttention`; Storage shows the
-  worse of its two dots, `appAttention`), and warning on
-  Workspace with "N folders not found" once one of its projects reads
-  `missing` in `projectGitStatus` (otherwise the row just names the
-  workspace). A dot means only "needs you", never "connected"; provider and
-  tool health lives on their Connections tiles and the Connections door. No rail row is red: the destructive actions close
-  their page in a `Danger zone` band, Delete all data at the end of Backup
-  and reset and Disconnect at the end of Projects, and turn red only in their
-  inline confirm. Every group on a settings page is a named band (`Band`,
-  eyebrow outside) with gap between them and no `Divider`; a band name never
-  repeats its only row, and no page titles a group with a bare `Eyebrow`
-  (`settings-section-titles-are-bands`). The workspace page is the exception: one
-  column of eyebrow sections 24px apart. Its title is the workspace name,
-  renamed in place. One `Terminal folder` row sits above the projects: the
-  computed folder (`workspaceFolder`) with `Change` (the folder dialog) and,
-  when overridden, `Use the default` (`setTerminalWorkspaceFolder`). Folders
-  group `Starred` ahead of `Other folders` (never in both; one `Folders`
-  heading with `Star the ones you use most.` while nothing is starred), 16px
-  apart with no divider, each a `SectionHeader` with its count and, for
-  Starred, `Agents and pickers list these first.`; Starred is never folded and
-  `Show N more` stays under Other folders. Each project is a 32px row on the
-  group grid (star, kind, name, description, a base-branch chip only when set
-  by hand, a Folder-not-found flag) with Open in editor, Copy path and Remove
-  link in a reserved column, dim at rest. The star shows at rest only on
-  starred rows (filled, warning tone) and stays visible at rest in
-  `text-faint-foreground` on the others, in the same 24px slot (`StarToggle`). Clicking the name
-  opens an inline editor card below the row for the rest (description, base
-  branch, After merge for repos, folder, scripts, facts, footer actions); the
-  card starts at the name column (`grid-cols-subgrid`) so its content sits 12px
-  right of the name. `starredProjectsFirst({ projects, inside })` is the one
-  order: starred first, then the rest, by `name` in Settings and by `recency`
-  in pickers (`groupProjects` calls it). The Sessions folder filter with a
-  starred project and six or more projects shows the same two headings and a
-  small filled star on starred rows (`shouldGroupStarred`); a search flattens
-  them. The session Add folder list and the New session picker share
-  `projectPickerGroups` instead: Starred, Recent (folders the latest sessions
-  worked in, at most five), then the rest by name. New session defaults sit in a
-  two-column grid with each help behind an info mark, followed by the
-  `After a pull request merges` segmented control, and disconnecting is a
-  ghost row at the bottom that asks in a `ConfirmPopover` beside its button. Onboarding keeps the
-  comfortable rows.
-- **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
-  beside a detail panel is fine. "no left panel and right panel at once" is
-  about two sidebars on either side of the content, which the app does not do:
-  the column and the session rail both sit on the left.
-- **Disconnecting is scoped.** A connected integration studio can disconnect
-  from its own header. That clears the workspace credential, never a
-  system-level session. A workspace running on the system `gh` CLI has nothing
-  workspace-scoped to clear, so it offers no disconnect and points to
-  `gh auth logout`. The control depends on credential state alone, not on the
-  git remote. So a leftover scoped personal API key on a non-GitHub workspace
+  are shared primitives.
+
+## Tasks
+
+Tasks uses the rows and the list keys, but no day grouping and no rail.
+
+- Its facets (source, show, type, project) sit in one Filter menu of the tool
+  row, after the search and the For you and All switch and before `Group by:
+Source`. `⋯` in the title row holds Refresh and Manage tools (the `taskList`
+  kind).
+- Its rows are one `ListGrid` with a group per source, status or project
+  (`taskGroupsOf`), the total on the label (`taskGroupTotalsOf`, starred rows
+  included), five rows each until Show all; each group is its own listbox.
+- Tasks opens with a quiet cursor on its first row (`data-cursor`,
+  `aria-selected="false"`) and no pane, so nothing opens by itself. A click, Enter
+  or a record asked for on open (`initialRecordKey`) opens the pane
+  (`aria-selected="true"`, `bg-selected`).
+
+| Key    | Does                                                                                     |
+| ------ | ---------------------------------------------------------------------------------------- |
+| J, K   | move the cursor; the record follows only once one is open                                |
+| Enter  | on the shown row, the launch popover (⌘↵ in the panel launches), or the linked session   |
+| O      | the record in its tool                                                                   |
+| R      | the record with its reply box focused, when it has one (`recordCanReply`)                |
+| S      | star or unstar                                                                           |
+| /      | the search; Escape leaves the field                                                      |
+| Escape | closes the pane or the full page and keeps the cursor; a second Escape closes the studio |
+
+## Page rails
+
+- **A list that belongs to the page sits in the page.** Chat's chats,
+  Changelog's releases, the guide's chapters and the Tasks and Notifications
+  filters are content beside their detail: `StudioRailLayout` with
+  `placement="page"` draws the list on the page background with the resize edge
+  as the only line. Every page rail opens at 288px (`standard`). A narrow list
+  beside a detail is not two sidebars: the app never puts a panel on each side of
+  the content.
+- **A page rail folds.** With `onCollapsedChange` the rail's first row starts
+  with "Hide <rail name>" (⌥⌘B). A folded rail leaves a 44px strip with "Show
+  <rail name>" at the same x, plus any `foldedActions`. `useStudioRailFold`
+  remembers the choice per surface (`goodboy:studio-rail-folded:<studio>:v1`).
+- **It folds itself when there is no room.** `StudioRailLayout` measures its root
+  and publishes the width per surface (`studioRailPaneStore`). Under 880px of page
+  every list folds without saving; Show opens it over the page
+  (`data-rail-over-page`, Esc or Hide folds it, nothing saved), and it docks again
+  once there is room. A rail portaled out of its page (the Agents rail of a run,
+  the file list of Changes) passes the page as `pane` with `hasPageOutside`.
+- A folded rail leaves the `FilterButton` (28px, the count of active filters) in
+  the title row, opening the same facets in a popover; docking again is the Show
+  strip or ⌥⌘B, never a header button. Tasks' search moves into the title row too.
+- **⌥⌘B** (`innerColumn.toggle`) folds the inner column of the page you are on:
+  each foldable column registers with `useInnerColumn` while its page shows, and
+  the key toggles the last one (`innerColumnStore.toggleCurrent`). Search or run
+  lists it by the column's name (Hide chat list, Show session pages); on a page
+  with none, the key does nothing.
+- **Every studio list resizes** (`StudioRailLayout` in Settings, Guide, Chat,
+  Changelog, Bitbucket, Tasks, Notifications) from its right edge between 220 and
+  420px (a page may pass `min` and `max`), 8px per arrow key (32 with Shift), back
+  to its default (256 narrow, 288 standard) on a double click. Each studio keeps
+  its width (`goodboy:studio-rail-width:<studio>:v1`), and the skeleton opens at
+  it. `useResizableWidth` (`@goodboy/ui`) owns read, clamp and save for these
+  rails and the drawer: during a drag the width lives in a CSS variable, so
+  nothing renders or saves until the drag ends.
+
+## Records
+
+- **Disconnecting is scoped.** An integration studio disconnects from its own
+  header, which clears the workspace credential, never a system-level session. A
+  workspace on the system `gh` CLI has nothing to clear, so it offers no
+  disconnect and points to `gh auth logout`. The control reads credential state
+  alone, not the git remote, so a leftover scoped key on a non-GitHub workspace
   can still be cleared.
-- **A code-host record keeps its verbs outside a session.** A GitLab merge
-  request opened from Tasks approves, merges, closes and reopens through
-  the workspace's GitLab host. A Bitbucket pull request shows its verbs too,
-  blocked with the reason until Goodboy has resolved it for a session. A GitHub
-  pull request opens read only: description, review state, branches and its
-  comments, with Start from #318 as the primary (Review pull request when its
-  review is requested of you) and Open in GitHub for the rest.
-  Merge
-  always asks first, and so does every destructive verb. The mount reads
-  through the workspace's first repo project, so a workspace with no repo
-  project stops at an empty state.
-- **Every record header has the same four places.** `RecordHeader` puts the
-  tool glyph, the identifier and the state on the identity line, with Open in
-  the tool, the `⋯` menu and, in Tasks, close at its end. Under the title
-  sits one action row: one primary (Start session, Review pull request, or
-  Open session once one is linked) and at most two tool verbs picked by state.
-  Before a session is linked, Tasks adds Link to a session under the properties
-  (`RecordFrame.link`): a searchable list of the workspace's sessions that links
-  the record to the one you pick. Everything else lives in
-  `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Unlink,
-  then destructive verbs after a separator. Editable properties change from the
-  control that shows them (the Jira state opens its transitions). Start has
-  one verb and the result follows the record (`startFromRecord`): an issue or
-  an error opens the New session draft with the issue picked and its brief
-  being written; a pull request waiting on you starts a PR reviewer and lands
-  on the Conversation tab; a Slack thread, a merge request, a Bitbucket pull
-  request or a pull request of yours opens a popover with the goal and the
-  brief. Enter from the Tasks list does the same, or opens the linked session.
-- **Every record body has one order.** Under the header, facts sit as pills in
-  fixed slots (person, weight, place, labels, measure, links, time), each with
-  its field name in the tooltip and time as a relative age with the date in the
-  tooltip; a fact the tool does not have leaves no pill. The body is one scroll
-  with no tabs: Description (ten lines, then Show more), then the tool's own
-  sections closed behind a one-line summary (Checks, Changes and Approvals on
-  merge and pull requests, Stack trace open and Breadcrumbs on Sentry), then
+- **A code-host record keeps its verbs outside a session.** A GitLab merge request
+  from Tasks approves, merges, closes and reopens through the workspace's GitLab
+  host. A Bitbucket pull request shows its verbs blocked with the reason until
+  Goodboy resolved it for a session. A GitHub pull request opens read only, with
+  Start from #318 as the primary (Review pull request when your review is
+  requested) and Open in GitHub for the rest. Merge and every destructive verb ask
+  first. The mount reads through the workspace's first repo project, so a
+  workspace with none stops at an empty state.
+
+### The record header
+
+`RecordHeader` puts the tool glyph, the identifier and the state on the identity
+line, with Open in the tool, the `⋯` and, in Tasks, close at its end.
+
+- Under the title, one action row: one primary (Start session, Review pull
+  request, or Open session once linked) and at most two tool verbs by state.
+- Before a session is linked, Tasks adds Link to a session under the properties
+  (`RecordFrame.link`), a searchable list of the workspace's sessions.
+- `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Unlink, then
+  destructive verbs after a separator.
+- Editable properties change from the control that shows them (the Jira state
+  opens its transitions).
+- Start has one verb and the result follows the record (`startFromRecord`): an
+  issue or an error opens the New session draft with the issue picked and its
+  brief being written; a pull request waiting on you starts a PR reviewer on the
+  Conversation tab; a Slack thread, a merge request, a Bitbucket pull request or a
+  pull request of yours opens a popover with the goal and the brief. Enter from the
+  Tasks list does the same, or opens the linked session.
+
+### The record body
+
+- Facts sit as pills in fixed slots (person, weight, place, labels, measure,
+  links, time), the field name in the tooltip and time as a relative age with the
+  date in the tooltip. A missing fact leaves no pill.
+- One scroll with no tabs: Description (ten lines, then Show more), the tool's own
+  sections closed behind a one-line summary (Checks, Changes and Approvals on merge
+  and pull requests, Stack trace open and Breadcrumbs on Sentry), then
   Conversation with its count. `RecordSections` owns the order, the fact
-  registries in `shared/detail-fields` own the slots. A changed file opens its
-  diff in a full-screen dialog.
-- **One conversation, one composer, what the tool can do.** Every record's
-  Conversation is `shared/components/Conversation`: messages without cards, a
-  thread's replies under a neutral rail (the last three open, the rest behind
-  Show earlier replies), a code anchor chip on review threads, and a resolved
-  thread folded into one row. Each tool has a pure adapter next to its client
-  that turns its comments into threads and declares its capabilities: Reply
-  where the tool has threads, Quote where it is flat (the post quotes the
-  message, and mentions the author on GitHub), Resolve only where the tool
-  resolves, reactions only on Slack. The composer sits in the drawer's dock,
-  only when the tool lets Goodboy write. Reply (or `r` on a focused message)
-  puts a Replying to bar above it, Escape clears it, ⌘↵ sends. A sent message
-  shows Sending in place, and a refused one stays with its text, Retry, Copy
-  text and Discard.
+  registries in `shared/detail-fields` own the slots. A changed file opens its diff
+  in a full-screen dialog.
+- **Conversation** is `shared/components/Conversation`: messages without cards,
+  replies under a neutral rail (the last three open, the rest behind Show earlier
+  replies), a code anchor chip on review threads, a resolved thread folded into
+  one row. Each tool has a pure adapter next to its client that turns its comments
+  into threads and declares what it can do: Reply where it has threads, Quote where
+  it is flat (mentioning the author on GitHub), Resolve only where it resolves,
+  reactions only on Slack.
+- The composer sits in the drawer's dock, only when the tool lets Goodboy write.
+  Reply (or `r` on a focused message) puts a Replying to bar above it, Escape
+  clears it, ⌘↵ sends. A sent message shows Sending in place; a refused one stays
+  with its text, Retry, Copy text and Discard.
+
+## Tests
+
+- `regressions/studio-rail-folds.test.tsx` renders Chat, Terminal, the Guide, the
+  changelog, Settings, Notifications and the file list of Changes at 800px and
+  expects each Show button.

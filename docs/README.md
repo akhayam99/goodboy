@@ -114,8 +114,8 @@ The recipe column links the steps for the change you are about to make: [recipes
 | changelog      | `apps/desktop/src/features/changelog/**`                       | [release.md](release.md)                                           | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | chat           | `apps/desktop/src/features/chat/**`                            | [turns.md](turns.md)                                               | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | companion      | `apps/desktop/src/features/companion/**`                       | [companion.md](companion.md)                                       | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
-| connections    | `apps/desktop/src/features/connections/**`                     | [navigation/model.md](navigation/model.md)                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
-| diff           | `apps/desktop/src/features/diff/**`                            | [navigation/branch-page.md](navigation/branch-page.md)             | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
+| connections    | `apps/desktop/src/features/connections/**`                     | [navigation/connections.md](navigation/connections.md)             | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
+| diff           | `apps/desktop/src/features/diff/**`                            | [navigation/branch-changes.md](navigation/branch-changes.md)       | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | explore        | `apps/desktop/src/features/explore/**`                         | [navigation/lens-surfaces.md](navigation/lens-surfaces.md)         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | impact         | `apps/desktop/src/features/impact/**`                          | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | integrations   | `apps/desktop/src/features/integrations/**`                    | [hosts.md](hosts.md)                                               | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
@@ -123,10 +123,10 @@ The recipe column links the steps for the change you are about to make: [recipes
 | live-state     | `apps/desktop/src/features/live-state/**`                      | [turns.md](turns.md)                                               | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | monitoring     | `apps/desktop/src/features/monitoring/**`                      | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | open           | `apps/desktop/src/features/open/**`                            | [browser.md](browser.md)                                           | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
-| palette        | `apps/desktop/src/features/palette/**`                         | [navigation/shell.md](navigation/shell.md)                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
+| palette        | `apps/desktop/src/features/palette/**`                         | [navigation/palette.md](navigation/palette.md)                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | permissions    | `apps/desktop/src/features/permissions/**`                     | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | plans          | `apps/desktop/src/features/plans/**`                           | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
-| quick-actions  | `apps/desktop/src/features/quick-actions/**`                   | [navigation/model.md](navigation/model.md)                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
+| quick-actions  | `apps/desktop/src/features/quick-actions/**`                   | [navigation/palette.md](navigation/palette.md)                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | reports        | `apps/desktop/src/features/reports/**`                         | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | resolve        | `apps/desktop/src/features/resolve/**`                         | [hosts.md](hosts.md)                                               | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | scripts        | `apps/desktop/src/features/scripts/**`                         | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
@@ -180,14 +180,35 @@ The recipe column links the steps for the change you are about to make: [recipes
   folder goes inside `apps/desktop/src/`.
 - [navigation.md](navigation.md): when you decide which parts of the screen
   exist and where they sit, like a pane, a rail, the top bar or the
-  crumbs. It is the index of seven pages in
-  [navigation/](navigation/): [the model](navigation/model.md),
-  [the shell](navigation/shell.md),
-  [the session page tabs and tools](navigation/session-rail.md),
-  [studios](navigation/studios.md),
-  [lens surfaces](navigation/lens-surfaces.md),
-  [home and the right drawer](navigation/home-and-drawer.md) and
-  [the Branch page](navigation/branch-page.md).
+  crumbs. It is the hub of the pages in [navigation/](navigation/):
+  - rules and shell: [the model](navigation/model.md),
+    [addresses and history](navigation/addresses.md),
+    [the palette](navigation/palette.md),
+    [context menus](navigation/context-menus.md),
+    [the shell](navigation/shell.md), [surfaces](navigation/surfaces.md),
+    [shortcuts](navigation/shortcuts.md),
+    [Help](navigation/help.md),
+    [the bug sheet, setup and boot](navigation/setup-and-crash.md) and
+    [Connections](navigation/connections.md);
+  - session: [the page tabs, head and crumbs](navigation/session-rail.md),
+    [the Projects and Linked cards](navigation/projects-card.md),
+    [lens surfaces](navigation/lens-surfaces.md),
+    [the session tools](navigation/session-tools.md) and
+    [the terminal](navigation/terminal.md);
+  - drawer and dock: [the right drawer](navigation/right-drawer.md),
+    [the dock grid](navigation/dock-grid.md) and
+    [drawer kinds](navigation/drawer-kinds.md);
+  - home and studios: [home and creation](navigation/home-and-drawer.md),
+    [studios](navigation/studios.md), [trails](navigation/trails.md) and
+    [Settings](navigation/settings.md);
+  - the Branch page: [the page](navigation/branch-page.md),
+    [pushing](navigation/branch-push.md),
+    [Conversation](navigation/branch-conversation.md),
+    [Changes](navigation/branch-changes.md),
+    [notes in the diff](navigation/diff-notes.md),
+    [Comments](navigation/branch-comments.md),
+    [Commits](navigation/branch-commits.md) and
+    [Checks and Work](navigation/branch-work.md).
 - [tone-of-voice.md](tone-of-voice.md): when you write any text a user
   reads, like the README, the website, release notes, in-app copy or error
   messages.
