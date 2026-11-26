@@ -124,7 +124,7 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     label: 'Start work',
     copy: 'Start work on this issue',
     instruction: 'Press **Start** to begin work on HBL-412.',
-    result: "Work started. Claude's planner has one question before it writes the plan.",
+    result: 'Work started. The Lead hands it to a planner, which has one question first.',
     beat: 0,
     isDimmed: false,
     anchor: START,

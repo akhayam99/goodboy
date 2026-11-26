@@ -24,6 +24,9 @@ import { installDemoWorld } from './installDemoWorld';
 import { STORY_REVIEW } from '../../scenes/story/storyContent';
 import { addDemoOverlay } from './addDemoOverlay';
 import { demoPublicationPreview } from './demoPublicationPreview';
+import { waitDemoMs } from './waitDemoMs';
+
+const RESOLVE_STEP_MS = 300;
 
 const PUBLISH_NOTICE =
   'Publishing posts the reply on your pull request in the app. Here the reply stays drafted, ready to publish.';
@@ -357,36 +360,39 @@ export const installResolveActions = ({ store }: Params): void => {
     });
   };
   const publishConversations: AppStore['publishConversations'] = async ({ sessionId }) => {
-    const now = Date.now();
     const accepted = (store.getState().sessionResolveQueueItems[sessionId] ?? []).filter(
       (entry) => entry.item.approvalState === 'accepted' && entry.item.deliveredAt === null,
     );
-    const acceptedIds = new Set(accepted.map((entry) => entry.item.id));
-    const threadIds = accepted.map((entry) => entry.thread.threadId);
-    patchResolveThreads({
-      store,
-      sessionId,
-      threadIds,
-      patch: ({ thread }) => ({
-        ...thread,
-        state: 'closed',
-        stage: 'resolved',
-        replyPostedAt: now,
-        closedAt: now,
-        closedSource: 'goodboy',
-        updatedAt: now,
-      }),
-    });
-    store.setState((current) => ({
-      sessionResolveQueueItems: {
-        ...current.sessionResolveQueueItems,
-        [sessionId]: (current.sessionResolveQueueItems[sessionId] ?? []).map((entry) =>
-          acceptedIds.has(entry.item.id)
-            ? { ...entry, item: { ...entry.item, deliveredAt: now, updatedAt: now } }
-            : entry,
-        ),
-      },
-    }));
+    for (const [index, entry] of accepted.entries()) {
+      if (index > 0 && !(await waitDemoMs({ ms: RESOLVE_STEP_MS }))) {
+        break;
+      }
+      const now = Date.now();
+      patchResolveThreads({
+        store,
+        sessionId,
+        threadIds: [entry.thread.threadId],
+        patch: ({ thread }) => ({
+          ...thread,
+          state: 'closed',
+          stage: 'resolved',
+          replyPostedAt: now,
+          closedAt: now,
+          closedSource: 'goodboy',
+          updatedAt: now,
+        }),
+      });
+      store.setState((current) => ({
+        sessionResolveQueueItems: {
+          ...current.sessionResolveQueueItems,
+          [sessionId]: (current.sessionResolveQueueItems[sessionId] ?? []).map((candidate) =>
+            candidate.item.id === entry.item.id
+              ? { ...candidate, item: { ...candidate.item, deliveredAt: now, updatedAt: now } }
+              : candidate,
+          ),
+        },
+      }));
+    }
     const total = accepted.length;
     return {
       kind: 'done',

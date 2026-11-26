@@ -124,9 +124,11 @@ describe('the simulated review fix', () => {
     if (publicationId === null) {
       throw new Error('no publication');
     }
-    const result = await store
+    const publishing = store
       .getState()
       .publishConversations({ sessionId: SESSION_ID, publicationId });
+    await vi.advanceTimersByTimeAsync(3000);
+    const result = await publishing;
     expect(result).toMatchObject({ kind: 'done', pushed: true, failed: 0 });
     expect(entryOf()?.thread.replyPostedAt).not.toBeNull();
     expect(entryOf()?.item.deliveredAt).not.toBeNull();

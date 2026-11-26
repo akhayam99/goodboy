@@ -20,6 +20,7 @@ import { ToastProvider } from '../../../../../shared/components/Toast';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { createHintEngine, type HintEngine } from '../../demo/director/createHintEngine';
 import type { DemoHintReport } from '../../demo/director/demoProtocol';
+import { demoRuns } from '../../demo/director/demoRunRegistry';
 import { installStoryDirection } from '../../demo/director/installStoryDirection';
 import { BRING_HINTS } from '../../demo/hints/bringHints';
 import { StoryBringScene } from './StoryBringScene';
@@ -56,6 +57,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  demoRuns.cancelAll();
   engine?.dispose();
   engine = null;
   cleanup();
@@ -140,7 +142,9 @@ describe('walking the bring your work group', () => {
     await visitorClick({ element: await found({ selector: '[data-demo-anchor="task-start"]' }) });
     await waitFor(() => expect(tried()).toContain('bring-session'), { timeout: 8000 });
 
-    await visitorClick({ element: await found({ selector: '[data-demo-anchor="draft-start"]' }) });
+    await visitorClick({
+      element: await found({ selector: '[data-demo-anchor="draft-start"]:not([disabled])' }),
+    });
     await waitFor(() => expect(tried()).toEqual(BRING_HINTS.map((hint) => hint.id)), {
       timeout: 8000,
     });

@@ -59,6 +59,8 @@ export const STORY_REVIEW = {
   summary:
     'redelivery.test.ts now restarts the worker between two deliveries of the same event id and expects one credit. The suite passes, and a reply is drafted for nadia-p.',
   narration: 'Adding a test that restarts the worker between two deliveries of the same event id.',
+  testCommand: 'pnpm vitest run redelivery',
+  testOutput: '7 passed',
   reply:
     'Added a regression test that restarts the worker between two deliveries of the same event id. It expects one credit.',
   diff: [
@@ -85,6 +87,7 @@ export const STORY_RUN = {
   implementerSummary:
     'A repeated event id returns the original credit. One credit is posted per event.',
   testerTask: 'Check the behavior against ledger-core without changing its files.',
+  changedFiles: ['src/webhooks/eventGuard.ts', 'src/webhooks/applyWebhook.ts'],
   testerSummary:
     'ledger-core shows one posting per event id. The existing checks pass and nothing changed there.',
   lead: 'Plan v2 approved. A Codex implementer guards the credit in payments-api, and a tester checks the behavior against ledger-core without changing its files.',
