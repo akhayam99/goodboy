@@ -185,7 +185,7 @@ Write to an agent the same way everywhere.
 
 See every agent of a run beside its page. A Lead run and every agent under it share one page. It keeps one session head and an **Agents** column on the left, like the files of the Changes page.
 
-The header reads **Agents** with a count that includes every agent. The first row is the run itself. Under it is one row per agent with its role glyph, task, state and cost, and the tree on its left edge. Each row shows the model by name with the effort, muted, and hides it when the panel is too narrow to keep the title whole.
+The header reads **Agents** with a count that includes every agent. The first row is the run itself. Under it is one row per agent with its role glyph, task, state and cost, and the tree on its left edge. That cost covers every run of that agent, and not the agents it started. Each row shows the model by name with the effort, muted, and hides it when the panel is too narrow to keep the title whole.
 
 #### Using the column
 
@@ -389,6 +389,8 @@ The plan waits in the dock joined to the message field with **Approve and start 
 - Change, raise or remove the **Limit** of a running conversation from its word under the title, such as "Limit $5.00". Clear the amount to remove it. **Undo** is there. When the limit comes from the workspace, the "from Harborline" tag in the popover is a link to Workflows, Every run.
 - The smallest limit pauses the Lead. A session limit under the Lead's own lowers it, and the chip says which one wins.
 - An agent's page, a run's page and a Lead page have the same one line under their title: the state, one sentence, what that agent spent and its settings. A Lead reads "Stops after the plan · Ask first · Limit $10.00", an agent "Ask first · No limit". Each word opens one choice, and its tooltip says what it changes.
+- A Lead that started agents shows two amounts there. **Lead** is what its own conversation cost. **Run total** adds every agent under it.
+- The **Limit** popover shows **Counted to limit**, the amount the limit is checked against. It can differ from **Run total**.
 - The model is picked in the message box, beside **Send**.
 - A Lead page shows **Asks you** in that line, which opens its permission rows. It starts on the workspace default, a pick changes this Lead only, and it applies to what the Lead starts next. An agent already waiting for your go keeps waiting.
 

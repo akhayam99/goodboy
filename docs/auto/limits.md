@@ -102,6 +102,25 @@ still does not cover Auto's turn keeps it paused with the results kept. How it
 reads is in
 [stops.md](stops.md#a-tree-at-its-limit).
 
+## Spend on screen
+
+Spend on screen is worked out from the telemetry rows of each agent's runs,
+background summaries left out. One function owns each number.
+
+- `agentOwnSpendById` (`features/session/timeline/`) is an agent's own spend:
+  every run in its history and its current run. Tree rows, branch lines and the
+  phone read it, so a helper of a helper counts once.
+- `agentSpendById` adds every agent under it. Timeline rows and run costs read it.
+- `leadSpendOf` gives one agent both, and `leadSpendTextsOf` words the head of its
+  page: **Lead** $x and **Run total** $y for a Lead that has helpers, one amount
+  otherwise.
+- The earlier runs load with the session (`loadSessionRunHistory`, merged by
+  `mergeRunHistory`). A failed load keeps what is there and says so, and the next
+  open tries again. An answer that arrives after a workspace switch is dropped.
+
+The limit popover reads the limit's own ledger instead, as **Counted to limit**
+beside **Reserved**. It can differ from **Run total**.
+
 ## One formula for money
 
 What is left has one SQL formula (`autoRemainingUsdSql`, read by

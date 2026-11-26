@@ -20,6 +20,8 @@ import {
   type StoryStore,
 } from '../../../store/storyHarness';
 import { sumSessionCost } from '../../../store/slices/sessions/sumSessionCost';
+import { useLeadTree } from '../../auto/hooks/useLeadTree';
+import { aDelegation, aView } from '../../auto/testing/autoViewFixtures';
 import { useAgentSpendById } from '../../workflows/hooks/useAgentSpendById';
 import { agentSpendById } from '../timeline/agentSpendById';
 import { useAgentMetrics } from './useAgentMetrics';
@@ -63,6 +65,26 @@ const RECORDS: ReadonlyArray<TelemetryRecord> = [
 
 const LEAD_AND_SCOUT_USD = 0.875;
 
+const NESTED = brandId<AgentId>({ value: 'agent-nested' });
+const NESTED_RUN = brandId<ProviderRunId>({ value: 'run-nested' });
+
+const BASE_VIEW = aView({
+  delegations: [
+    aDelegation({ key: 'scout', role: 'scout', state: 'running' }),
+    aDelegation({ key: 'nested', role: 'tester', state: 'running' }),
+  ],
+});
+
+const LEAD_VIEW = { ...BASE_VIEW, tree: { ...BASE_VIEW.tree, rootAgentId: LEAD } };
+
+const NO_QUEUE: Parameters<typeof useLeadTree>[0]['queue'] = [];
+
+const QUEUED: Parameters<typeof useLeadTree>[0]['queued'] = {
+  rows: [],
+  onEdit: () => undefined,
+  onRemove: () => undefined,
+};
+
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
@@ -93,18 +115,68 @@ describe('what an agent has spent', () => {
   it('reads the same in the header and in the run rows', () => {
     const header = renderHook(() => useAgentSpend({ sessionId: SESSION, agentId: LEAD }));
     const rows = renderHook(() => useAgentSpendById({ sessionId: SESSION }));
-    expect(header.result.current).toBe(LEAD_AND_SCOUT_USD);
-    expect(rows.result.current.get(LEAD)).toBe(header.result.current);
+    expect(header.result.current.runUsd).toBe(LEAD_AND_SCOUT_USD);
+    expect(rows.result.current.get(LEAD)).toBe(header.result.current.runUsd);
     expect(rows.result.current.get(SCOUT)).toBe(0.125);
+  });
+
+  it('keeps the spend of the Lead apart from the total of the run', () => {
+    const header = renderHook(() => useAgentSpend({ sessionId: SESSION, agentId: LEAD }));
+    const scout = renderHook(() => useAgentSpend({ sessionId: SESSION, agentId: SCOUT }));
+    expect(header.result.current).toEqual({
+      ownUsd: 0.75,
+      runUsd: LEAD_AND_SCOUT_USD,
+      hasHelpers: true,
+    });
+    expect(scout.result.current).toEqual({ ownUsd: 0.125, runUsd: 0.125, hasHelpers: false });
   });
 
   it('reads the same in the transcript footer, without the summarizer cost', () => {
     const header = renderHook(() => useAgentSpend({ sessionId: SESSION, agentId: LEAD }));
     const footer = renderHook(() => useAgentMetrics({ sessionId: SESSION }));
     expect(footer.result.current.aggregatesByAgentId.get(LEAD)?.estimatedCostUsd).toBe(
-      header.result.current,
+      header.result.current.runUsd,
     );
     expect(footer.result.current.aggregatesByAgentId.get(SCOUT)?.estimatedCostUsd).toBe(0.125);
+  });
+
+  it('counts a helper of a helper once across the rows of the Lead tree', () => {
+    useAppStore.setState((state) => ({
+      sessionPhaseRuns: {
+        [SESSION]: [
+          ...(state.sessionPhaseRuns[SESSION] ?? []),
+          anAgent({
+            id: NESTED,
+            sessionId: SESSION,
+            name: 'Tester',
+            runId: NESTED_RUN,
+            parentAgentId: SCOUT,
+          }),
+        ],
+      },
+      sessionTelemetry: {
+        [SESSION]: [
+          ...RECORDS,
+          recordOf({ id: 't6', runId: NESTED_RUN, kind: 'turn', costUsd: 0.0625 }),
+        ],
+      },
+      autoTreeViews: { [SESSION]: [LEAD_VIEW] },
+    }));
+
+    const tree = renderHook(() =>
+      useLeadTree({ sessionId: SESSION, rootAgentId: LEAD, queue: NO_QUEUE, queued: QUEUED }),
+    );
+    const header = renderHook(() => useAgentSpend({ sessionId: SESSION, agentId: LEAD }));
+
+    const rows = tree.result.current.items.flatMap((item) =>
+      item.kind === 'agent' ? [[item.agentId, item.spendUsd]] : [],
+    );
+    expect(rows).toEqual([
+      [SCOUT, 0.125],
+      [NESTED, 0.0625],
+    ]);
+    expect(tree.result.current.tree?.totalSpendUsd).toBe(header.result.current.runUsd);
+    expect(header.result.current.runUsd).toBe(LEAD_AND_SCOUT_USD + 0.0625);
   });
 
   it('keeps the session total equal to the runs plus the context work and the rest', () => {
