@@ -40,7 +40,9 @@ type TabArgs = { readonly args: { readonly tabId: string } };
 type SaveArgs = { readonly args: { readonly id: string } };
 type SiteArgs = { readonly args: { readonly tabId: string; readonly host: string } };
 type CommandParams = { readonly command: string };
-type ClearParams = { readonly clear: (params: SiteArgs) => BrowserSiteCleared };
+type ClearParams = {
+  readonly clear: (params: SiteArgs) => BrowserSiteCleared | Promise<BrowserSiteCleared>;
+};
 
 let store: StoryStore;
 let live: BrowserTabFacts[];
@@ -232,6 +234,27 @@ describe('clear site data', () => {
     expect(screen.queryByText(/Cleared data/)).toBeNull();
     expect(callsOf({ command: 'browser_tab_reload_from_origin' })).toEqual([]);
     expect(callsOf({ command: 'browser_tab_reload' })).toEqual([]);
+  });
+
+  it('drops the line of a clear that answers after the tab changed', async () => {
+    let finish: (value: BrowserSiteCleared) => void = () => undefined;
+    stubHost({
+      clear: () =>
+        new Promise<BrowserSiteCleared>((resolve) => {
+          finish = resolve;
+        }),
+    });
+    renderPane();
+    await openPage();
+    await confirmClear();
+    await waitFor(() => expect(callsOf({ command: 'browser_site_data_clear' })).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole('button', { name: 'New tab' }));
+    await act(async () => {
+      finish({ host: 'localhost', scope: 'site' });
+    });
+
+    expect(screen.queryByText(/Cleared data/)).toBeNull();
   });
 
   it('reloads without cache from its menu row', async () => {

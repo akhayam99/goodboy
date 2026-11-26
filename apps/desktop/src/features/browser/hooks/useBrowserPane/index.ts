@@ -276,7 +276,9 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       void run({
         step: async () => {
           const cleared = await browserHost.clearSiteData({ tabId, host });
-          setNotice(siteClearedText({ cleared }));
+          if (shownLiveIdRef.current === tabId) {
+            setNotice(siteClearedText({ cleared }));
+          }
         },
       });
     },
