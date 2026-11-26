@@ -1,6 +1,5 @@
 import type { AgentRole, Session, Workflow, WorkflowRun } from '@goodboy/types';
-import type { TranscriptsState } from '../transcripts/state';
-import { sessionOwnWordsOf } from '../turn/sessionLanguage';
+import { sessionOwnWordsOf, sessionTranscriptOf } from '../turn/sessionLanguage';
 import { NAMES } from '../../../shared/utils/names';
 
 type SectionParams = {
@@ -59,10 +58,10 @@ type GoalParams = {
   readonly run: Pick<WorkflowRun, 'goal'>;
   readonly workflow: Pick<Workflow, 'goal'>;
   readonly session: Session;
-  readonly state: Pick<TranscriptsState, 'transcripts'>;
+  readonly state: Parameters<typeof sessionTranscriptOf>[0]['state'];
 };
 
 export const orchestratorGoalOf = ({ run, workflow, session, state }: GoalParams): string =>
   run.goal ??
   workflow.goal ??
-  sessionOwnWordsOf({ session, transcript: state.transcripts[session.id] ?? [] });
+  sessionOwnWordsOf({ session, transcript: sessionTranscriptOf({ state, sessionId: session.id }) });

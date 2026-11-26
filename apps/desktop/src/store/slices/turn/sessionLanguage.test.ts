@@ -11,8 +11,12 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { TurnEvent } from '@goodboy/types';
-import { nextProviderRunId } from '@goodboy/types/testing';
-import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from './sessionLanguage';
+import { anAgent, nextProviderRunId } from '@goodboy/types/testing';
+import {
+  buildSessionLanguageGuard,
+  resolveSessionLanguageGoal,
+  sessionTranscriptOf,
+} from './sessionLanguage';
 
 const NOW = '2026-01-01T00:00:00.000Z' as IsoDateTime;
 const RUN_ID = 'run-1' as WorkflowRunId;
@@ -162,6 +166,48 @@ describe('a generated title never fixes the session language', () => {
     });
 
     expect(resolved).toBe(ITALIAN_REQUEST);
+  });
+
+  it('reads the first request from an auto operator_text event', () => {
+    const resolved = resolveSessionLanguageGoal({
+      session: titled,
+      transcript: [
+        { kind: 'operator_text', runId: nextProviderRunId(), text: ITALIAN_REQUEST, at: NOW },
+      ],
+      workflows: [],
+    });
+
+    expect(resolved).toBe(ITALIAN_REQUEST);
+  });
+
+  it('falls back to the goal slot the operator wrote when the transcript is empty', () => {
+    const resolved = resolveSessionLanguageGoal({
+      session: session({
+        goal: SPANISH_TITLE,
+        workflowRuns: [],
+        contextSlots: [{ key: 'goal', value: ITALIAN_REQUEST, enabled: true }],
+      }),
+      transcript: [],
+      workflows: [],
+    });
+
+    expect(resolved).toBe(ITALIAN_REQUEST);
+  });
+
+  it('collects the transcript of the founding agent first, keyed by agent', () => {
+    const founding = userText({ text: ITALIAN_REQUEST });
+    const later = userText({ text: 'later message' });
+    const first = anAgent({ ordinal: 0 });
+    const second = anAgent({ ordinal: 1 });
+    const events = sessionTranscriptOf({
+      sessionId: titled.id,
+      state: {
+        sessionPhaseRuns: { [titled.id]: [second, first] },
+        transcripts: { [first.id]: [founding], [second.id]: [later] },
+      },
+    });
+
+    expect(events).toEqual([founding, later]);
   });
 
   it('trusts the title when the operator typed or edited it', () => {

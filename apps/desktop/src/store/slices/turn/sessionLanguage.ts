@@ -1,4 +1,4 @@
-import type { Session, TurnEvent, Workflow, WorkflowRunId } from '@goodboy/types';
+import type { Agent, Session, SessionId, TurnEvent, Workflow, WorkflowRunId } from '@goodboy/types';
 import { sessionLanguageTurnRule } from '@goodboy/core/language';
 
 const FIRST_MESSAGE_MAX_LENGTH = 280;
@@ -13,7 +13,9 @@ export const sessionOwnWordsOf = ({ session, transcript = [] }: OwnWordsParams):
     return session.goal.trim();
   }
   for (const event of transcript) {
-    if (event.kind !== 'user_text' || event.handoffId != null || event.deliveredBy != null) {
+    const isOperatorText =
+      (event.kind === 'user_text' && event.deliveredBy == null) || event.kind === 'operator_text';
+    if (!isOperatorText) {
       continue;
     }
     const written = event.text.trim();
@@ -21,8 +23,29 @@ export const sessionOwnWordsOf = ({ session, transcript = [] }: OwnWordsParams):
       return written.slice(0, FIRST_MESSAGE_MAX_LENGTH);
     }
   }
+  const goalSlot = session.contextSlots.find((slot) => slot.key === 'goal' && slot.enabled);
+  const slotText = goalSlot?.value.trim() ?? '';
+  if (slotText.length > 0) {
+    return slotText.slice(0, FIRST_MESSAGE_MAX_LENGTH);
+  }
   return session.goal.trim();
 };
+
+type TranscriptParams = {
+  readonly state: {
+    readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
+    readonly sessionPhaseRuns: Readonly<Record<string, ReadonlyArray<Agent>>>;
+  };
+  readonly sessionId: SessionId;
+};
+
+export const sessionTranscriptOf = ({
+  state,
+  sessionId,
+}: TranscriptParams): ReadonlyArray<TurnEvent> =>
+  [...(state.sessionPhaseRuns[sessionId] ?? [])]
+    .sort((left, right) => (left.ordinal ?? 0) - (right.ordinal ?? 0))
+    .flatMap((agent) => state.transcripts[agent.id] ?? []);
 
 type SourceParams = {
   readonly session: Session;

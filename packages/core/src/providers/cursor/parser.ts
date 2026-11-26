@@ -61,6 +61,7 @@ export const parseCursorStreamLine = (
   }
   const events = splitRoutingNotice({
     events: parseAnthropicEnvelopeValue({ value: parsed.value, ctx, opts: CURSOR_ENVELOPE }),
+    runId: ctx.runId,
   });
   if (type !== 'result') {
     return events;
