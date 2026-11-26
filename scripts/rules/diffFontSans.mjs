@@ -9,5 +9,5 @@ export const DIFF_FONT_SANS_RULE = {
     file.path.startsWith(DIFF_FEATURE_PATH)
       ? file.lines.filter((line) => FONT_SANS.test(line)).length
       : 0,
-  hint: 'the diff sets font-sans once on the container that holds its comment threads and its children stop undoing mono; do not write it again under features/diff (docs/navigation/branch-page.md)',
+  hint: 'the diff sets font-sans once on the container that holds its comment threads and its children stop undoing mono; do not write it again under features/diff (docs/navigation/diff-notes.md)',
 };
