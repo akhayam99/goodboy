@@ -88,7 +88,7 @@ When an agent needs a decision, it asks once, with the options and the one it re
 
 ### Plans
 
-Before anything is written, a planner reads the code and writes the plan. Comment on a line and the plan comes back revised, with your comment marked **Addressed**.
+When the Lead asks you after the plan or at every step, a planner reads the code and writes the plan first. Comment on a line, and the next version says what it did with it.
 
 [Docs →](./docs/features/artifacts.md#comment-on-a-plan)
 

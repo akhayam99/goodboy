@@ -963,16 +963,18 @@ pnpm features:reshoot
 ```
 
 It replays the `recipe` of every guide figure in `docs/figures.json` through
-`scripts/feature-shots.mjs`, one after the other. Each finished figure moves to the version of the
+`scripts/feature-shots.mjs`, one after the other. The README figures have no
+recipe and are shot on their own, and the website hero comes from
+`pnpm site:hero`. Each finished figure moves to the version of the
 checkout. A failed figure is named at the end and the exit code is 1; the rest
 still run.
 
 - `--area <guide>` shoots the figures named `<guide>` or `<guide>-*`, such as
-  `--area inbox`. `--area readme` shoots only the hero.
+  `--area inbox`.
 - `--theme dark|light` shoots one theme. A figure with one new theme and one
   old theme would lie about its version, so versions do not move.
-- `--out-dir <folder>` writes under `<folder>/features` and skips the hero.
-  Versions do not move. Use it for a trial run.
+- `--out-dir <folder>` writes under `<folder>/features`. Versions do not move.
+  Use it for a trial run.
 - `--dry-run` lists what would be shot. A figure with no recipe is listed as
   "shoot by hand".
 - `--base`, `--version` and `--wait` pass through to the shot scripts.
