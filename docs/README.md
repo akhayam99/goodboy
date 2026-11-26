@@ -25,6 +25,21 @@ private `goodboy-atlas` repository. Ask the owner if you need access.
   provider CLI
 - [auto.md](./auto.md): how the Lead (the Auto agent in code) starts, hands
   work to other roles and shows it, and its release gate
+  - [auto/starting.md](./auto/starting.md), [auto/messages.md](./auto/messages.md),
+    [auto/limits.md](./auto/limits.md): starting a Lead, messages to it, its spend limit
+  - [auto/chat.md](./auto/chat.md), [auto/children.md](./auto/children.md),
+    [auto/lead-page.md](./auto/lead-page.md): the Lead chat, its children on screen,
+    the Lead page and its tree
+  - [auto/workflows-and-plans.md](./auto/workflows-and-plans.md),
+    [auto/stops.md](./auto/stops.md): workflows, plans and confirming; what stops a Lead
+  - [auto/blocks.md](./auto/blocks.md), [auto/projects.md](./auto/projects.md),
+    [auto/roles.md](./auto/roles.md), [auto/returns.md](./auto/returns.md),
+    [auto/results.md](./auto/results.md): how the Lead decides, mounts projects,
+    picks roles, briefs children, and what a child result holds
+  - [auto/permissions.md](./auto/permissions.md), [auto/publish.md](./auto/publish.md),
+    [auto/pushing.md](./auto/pushing.md), [auto/launch-guard.md](./auto/launch-guard.md):
+    permission rows and asks, publish gates, pushing, the launch guard
+  - [auto/providers.md](./auto/providers.md): where the Lead and its children run
 - [query-bridge.md](./query-bridge.md): what agents can ask your connected
   tools
 - [SECURITY.md](../SECURITY.md): how to report a vulnerability, and what
