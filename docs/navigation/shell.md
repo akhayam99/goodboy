@@ -251,7 +251,7 @@ The signature (`app/components/ShellLeft/RailSignature/index.tsx`) is a 32px
 - The rail shows no version line: it is in the Update card, Settings and What's
   new.
 - At the 700px minimum window the foot fits with the Update mark above the
-  signature: the wide rail needs 662px of the 664px under the 36px top bar. A
+  signature: the wide rail needs 662px of the 664px under the 36px top bar (`u50-logo-foot-*` scenes). A
   GitLab or Bitbucket reachability line (`HostReachabilityLine`) under the top bar
   takes its height from the rail.
 - `useRailFootEffects` (`app/components/ShellLeft/useRailFootEffects`) holds the

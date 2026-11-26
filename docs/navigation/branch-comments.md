@@ -125,7 +125,9 @@ Fix and Transcript (`FixRunTranscriptDrawer` in `app/components`, handing
   (`fixRunAskingOf`). A pick holds for that drawer instance; a new drawer starts
   unpicked. A dot marks the hidden tab: Transcript when its event count grew (`New
 activity`), Fix in warning when waiting questions grew (`Question waiting`). Arrow
-  keys move between tabs; no global shortcut. The question card also stays in its
+  keys move between tabs; no global shortcut. The scenes
+  `resolve-transcript-drawer-multi` and `resolve-transcript-drawer-multi-done` show
+  one run over four comments, working and finished. The question card also stays in its
   thread.
 
 ### Other agents and destinations

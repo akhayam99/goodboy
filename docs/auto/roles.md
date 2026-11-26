@@ -156,7 +156,8 @@ request number).
 - No request reads "none is open". A request or detail not read reads "Facts not
   available: reason", never "none", and the scout still starts.
 - The request line carries the host's head commit (`headSha` of the live
-  `PullRequestView`) and the checks in the Branch page's words (`checksWordOf`).
+  `PullRequestView`) and the checks in the Branch page's words (`checksWordOf`: "2 failing", "1 running", "none reported", or "not read" when
+  the host did not answer).
   The checks line says it is not matched to that commit, since a push between
   the reads can mix commits.
 - `composeBranchFacts` renders a `**Facts**` section capped by

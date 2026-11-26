@@ -127,7 +127,7 @@ The chat scrolls inside the `ScrollFade` viewport of `ChatView`.
 
 `useScrollAnchor` keeps the line under the reader in place, because WKWebView
 and WebKitGTK have no CSS scroll anchoring
-([../traps.md](../traps/scroll.md#scroll-anchoring-in-the-webview)).
+([../traps/scroll.md](../traps/scroll.md#scroll-anchoring-in-the-webview)).
 
 1. On every scroll it picks the first row whose bottom is below the top edge
    (`pickAnchor`, a binary search) and keeps its offset.
@@ -171,7 +171,8 @@ bottom, follows the bottom again until the reveal ends.
 ### A sent message
 
 A sent message moves to 40 px under the view top, or to the scroller's top
-padding when that is larger, and the reply grows downward from it. Under a
+padding when that is larger, and the reply grows downward from it. Content starts at the top and grows
+down; it is never piled against the composer. Under a
 pinned header the padding includes `--reveal-inset`, and `anchorTopOf` reads
 it, so the message rests below the header.
 

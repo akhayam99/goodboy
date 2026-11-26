@@ -176,7 +176,8 @@ model.
 into the top bar mark: "1 chat running" while any reply streams, else "New
 reply" while any chat is unread. Each chat row leads with a `StateNode`
 (`chatNodeOf`), which gives its slot to the selection checkbox on hover, focus
-and while any chat is selected (`isCheckboxSlot`).
+and while any chat is selected (`isCheckboxSlot`). Space on a focused row
+toggles it (Shift extends the range).
 
 A chat becomes unread when its reply ends, done or failed, while the studio is
 not showing it; a reply the user stopped never does. Opening or archiving it
@@ -207,8 +208,9 @@ keyboard with cmd or ctrl plus Enter.
 **Add to a session** sends no turn: it records an `add` link and opens the same
 field in that session with the title and brief.
 
-The Project field (`ProjectField.tsx`) starts with the projects the answer
-named files in; the first pick is `createSession`'s `projectId`, the others
+The Project field (`ProjectField.tsx`) is a searchable multiple `Listbox` with
+removable chips and a "No folder" state, and hides in "Add to a session" mode.
+It starts with the projects the answer named files in, or none; the first pick is `createSession`'s `projectId`, the others
 `additionalProjectIds`. The Session field (`SessionField.tsx`) lists Active,
 then Recent sessions.
 
@@ -218,5 +220,6 @@ then Recent sessions.
 - `ChatThread.redraw.test.tsx` (50 images) proves a streaming answer redraws
   only itself.
 - `VITE_GOODBOY_MOCK=1` runs the slice on an in-memory backend with Harborline
-  chats and a fake responder; `?scene=chat-room` takes `work`, `chat` and
-  `activity` options, and `r4-chatlist-*` scenes show the row nodes.
+  chats and a fake responder; `?scene=chat-room` takes
+  `work=drawer|project|add|session`, `chat=<key>` (`retry` drafts two projects)
+  and `activity=running|unread|mixed`, and `r4-chatlist-*` scenes show the row nodes.

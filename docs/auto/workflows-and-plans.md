@@ -41,10 +41,13 @@ the Lead at its next turn like any other, so it reports the check.
 Handled by `applyGuideBlock` (`store/runtime/auto/guide/`); `applyAutoBlock`
 runs a turn's earlier `follow` and `deviate` blocks first.
 
-- `follow` turns `pending` into `passed` and keeps its note.
-- `hold` turns any state into `held`, keeps the reason and resolves `suggest`
+- `follow` (`check`) reports the first check once: it turns `pending` into
+  `passed` and keeps its note.
+- `hold` (`reason`, an optional `suggest`) stops the run: it turns any state
+  into `held`, keeps the reason and resolves `suggest`
   against the stored list (a name outside it gives no suggestion).
-- `deviate` adds one line to the record, once.
+- `deviate` (`change`: added, skipped or moved; `step`; `reason`) adds one line
+  to the record, once.
 - On a run with no record they are refused `spec_invalid` with a sentence.
 
 ### A held run

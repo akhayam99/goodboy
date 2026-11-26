@@ -135,7 +135,7 @@ A failed child's tail has no recovery: the dock owns **Retry** through Auto
 (`AutoChildEnd`, `ConversationDock/useAutoChildRecovery`,
 `continueStoppedAgent`). A stopped child has no tail line: the dock's
 **Continue** asks Auto to continue it, naming its delegation so Auto sends
-`retryOf` on the same agent in its worktree, never a plain turn ([turns.md](../turns.md), resume rules). The end line sits at the
+`retryOf` on the same agent in its worktree, never a plain turn ([turns/recovery.md](../turns/recovery.md#an-auto-child-never-gets-a-plain-turn)). The end line sits at the
 delegation's `settledAt`, so a later plain turn reads below an older Failed.
 
 ## Why an agent exists
@@ -224,7 +224,7 @@ agent runs: the newest delegation must still be the one read, and the agent is
 set running on the turn's run id. An adoption or detach from another window lands
 first and refuses the turn, or comes after and is refused as a running turn. A
 startup failure gives the claim back (`revertAgentStart`). A `turn_admissions`
-row (m242) lives until the spawn ([turns.md](../turns.md#turn-admission)).
+row (m242) lives until the spawn ([turns/recovery.md](../turns/recovery.md#turn-admission)).
 
 The turn runs only on the routed model (`isOnChildRoute` compares the catalog
 key, so `claude-sonnet-5-5-xhigh` is on route `sonnet-5.5`) and on a provider

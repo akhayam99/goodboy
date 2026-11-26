@@ -19,7 +19,7 @@ A workflow starts one agent per step, next to any you added yourself.
   no open question, no turn is starting or running and no child still works.
   A new message opens it again. There is no "mark done".
 - **Close**: only for an agent outside a workflow that is stuck on a failed turn
-  or on its own question. It reads "Closed by you" with a neutral check, and
+  or on its own question; it means "stop waiting on this agent". It reads "Closed by you" with a neutral check, and
   **Reopen** takes it back. A workflow step never has Close: closing it would
   leave the run blocked, so a stuck step is passed with Skip step.
   `isAgentClosable` and `isAgentClosedByUser` in

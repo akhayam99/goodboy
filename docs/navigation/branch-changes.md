@@ -4,7 +4,7 @@
 
 Changes is the branch against its base as one two-column page under the Branch
 header (`ChangesPage` in `features/diff/components`, mounted by `BranchFiles`, the
-one entry for the pull request page and the Projects block's pull request row).
+one entry for the pull request page and the Projects block's pull request row, `BoardTile`).
 The header and the diff stay on the 960 column (`PAGE_MEASURE.branchChanges` is
 `column`), and the file list is its own full-height column on the left, the mirror
 of a run page's Agents column. A merged or closed pull request hides Viewed,
@@ -200,7 +200,10 @@ page column (`DiffEmptyState`): what is empty in plain words, the scope picker
 inline and, when the other scope has files, one button to it (`Show branch vs main
 (6 files)`, `Show working tree (2 files)`; `alternate` on `useSessionDiff` counts
 them). Changes opens on the branch against its base when the working tree is clean
-and the branch has commits ahead, unless a scope was picked.
+and the branch has commits ahead, unless a scope was picked. The `brand-diff-large`
+scene is the 512-file case, `brand-diff-many` the 40-file one, `brand-diff-empty`
+the clean branch and `brand-diff-edits-only` the one that matches its base but has
+edits.
 
 ### A jump is instant
 

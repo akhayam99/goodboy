@@ -1,4 +1,4 @@
-# Home, creation and the right drawer
+# Home and creation
 
 > **Read this when** you change Home, the way a workspace, a project or a session is created, or the New session draft. **Not for** the right drawer ([right-drawer.md](right-drawer.md)), the dock grid ([dock-grid.md](dock-grid.md)) or what each drawer kind shows ([drawer-kinds.md](drawer-kinds.md)).
 
@@ -167,7 +167,7 @@ inside a pane. Containers, tiers, the push rule, the slot store, focus and Esc a
 [right-drawer.md](right-drawer.md); each kind's content in
 [drawer-kinds.md](drawer-kinds.md).
 
-### The grid saved on the session
+## The grid saved on the session
 
 Each session remembers its dock grid (panels, columns, widths, the split of two
 stacked panels, the focus, the face) in `session_dock_grids`, one row per session;

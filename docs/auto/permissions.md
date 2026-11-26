@@ -98,7 +98,7 @@ from a level, it reads free.
 `writeLeadPermission.ts` writes one row on the workspace default or one Lead
 (`setAutoTreePermissionsIfUnchanged`), each a compare and swap. A null value is
 Reset. A lost swap re-reads and retries once, then fails "changed in another
-window". A row tightened while an agent runs applies to its next start.
+window"; a failed write keeps the old value. A row tightened while an agent runs applies to its next start.
 
 ### The panel and the Stops menu
 

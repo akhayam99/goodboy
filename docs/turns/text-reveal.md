@@ -87,12 +87,17 @@ Keys:
 - Agent key: the Debugger's proposed fix.
 - Workflow run id, marked by `persistRunSummary`: `OrchestratedResult`.
 - One key per write from `landingLiveKey`
-  (`features/chat/reveal/landingLiveKey.ts`): `resolve-thread` and
-  `resolve-agent` (`persistResolveTurn`), `decisions`
-  (`noteDecisionChanges`; a decision the user wrote never fades), `questions`
-  (`finalizeTurnStream`), `handoff` (`recordAgentHandoff`) and
-  `transcript-event` keyed by the event `at` (`orchestrateNextStep`,
-  `startTurnRun`).
+  (`features/chat/reveal/landingLiveKey.ts`), each with the host that fades:
+  - `resolve-thread` and `resolve-agent` (`persistResolveTurn`):
+    `ReviewComment`, `ResolverQuestionCard`, `AnswerCard`, `FixRunSummary`.
+  - `decisions` (`noteDecisionChanges`; a decision the user wrote never fades):
+    `DecisionRowItem`.
+  - `questions` (`finalizeTurnStream`): `AgentAnsweringFor`.
+  - `handoff` (`recordAgentHandoff`): `HandoffBlock`; `ClampedText` still
+    measures the final text, only opacity moves.
+  - `transcript-event` keyed by the event `at` (`orchestrateNextStep`,
+    `startTurnRun`): the orchestrator decision card and the step transition
+    card.
 
 A key per write, not the agent key, so opening a page while the agent still
 streams shows its older rows whole. `ScribeTextCard` wraps the shared

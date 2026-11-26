@@ -148,7 +148,7 @@ the first still loading and never steps back.
 - A launch with no workspace mounts the launcher or the setup on `ready`. A failed
   launch, before or after the shell shows, puts the error screen back
   (`AppBootSplash`, on `bootPhase === 'error'`), and Retry hides the shell until the
-  next workspace is known.
+  next workspace is known. The `boot-shell` scenes show the three states.
 - `BootSplashExit` crossfades the splash out over 200 ms on top of the shell (same
   `BootStage`, so the tile stays put), with no fixed wait; reduced motion removes it
   at once.

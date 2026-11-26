@@ -14,15 +14,16 @@
 - **A lens you leave stays alive.** `SessionWorkspace` gives the lens panes to one
   `PaneSwap`, keyed by surface, and keeps the last three visited
   (`LENS_KEEP_ALIVE_CAP`) mounted under `Activity`, so scroll, filters and open
-  threads come back, and the panes cross-fade. `useScrollMemory` (`packages/ui`, 50
+  threads come back, and the panes cross-fade. A lens older than three loses its
+  state. `useScrollMemory` (`packages/ui`, 50
   keys, LRU, `<sessionId>|<slot>`) restores the Branch page's scroll only once its
-  data is loaded, and `evictSession` clears it on delete. After a swap the user
+  data is loaded, never into the short skeleton, and `evictSession` clears it on delete. After a swap the user
   caused, focus moves to the new pane's `h1`.
 - **A lens shows one level; a studio is a rail plus a detail.** Selecting a card
   swaps the list for the detail, and the back row or Back returns. No lens keeps a
   rail beside its detail, except Review, whose open comment sits in the drawer
-  beside the list. Completed and discarded groups sit behind header toggles that
-  hide at zero, so a session whose runs are all done shows an empty state.
+  beside the list. A studio has no back link. Completed and discarded groups sit behind header toggles that
+  hide at zero, so a session whose runs are all done shows an empty state, instead of opening the last completed run.
 - **A lens is reached from the Overview or Search or run, never from a rail**, and
   its page has the session crumbs, no trail. Overview rows and chips route to it by
   expanding in place or opening a side panel. Lifecycle actions are not navigation

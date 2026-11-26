@@ -34,7 +34,10 @@ is refused `caller_unknown`. An Implementer's default done-when ends "Nothing is
 pushed." Scope: Auto children on Claude and Codex.
 
 No child env holds a git host token: `apply_git_host_access` in `turn.rs` removes
-every name in `HOST_TOKEN_ENV` and never adds the workspace token, and Bitbucket
+every name in `HOST_TOKEN_ENV` (`GH_TOKEN`, `GITHUB_TOKEN`, the GitHub
+Enterprise pair, `GITLAB_TOKEN`, `GITLAB_ACCESS_TOKEN`) and never adds the
+workspace token, so the publish step runs in Goodboy with Goodboy's
+credentials. Bitbucket
 credentials never leave Goodboy's store. Reads go through the bridge.
 
 Two backstops sit behind the boundary and are not the boundary:

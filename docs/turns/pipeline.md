@@ -19,18 +19,22 @@ finalize (a question delegate, a workflow continue) would wait for itself.
 
 ## When the provider run row closes
 
-| Path                                                                             | Run status                    |
-| -------------------------------------------------------------------------------- | ----------------------------- |
-| The stream and its finalize step complete                                        | `succeeded`                   |
-| The same, but a stop landed                                                      | `failed`, "cancelled by user" |
-| A stop lands before the spawn (`claimTurnStart`)                                 | `cancelled`                   |
-| The step's agent cannot be resolved                                              | `failed`                      |
-| A throw inside the stream or finalize step, or the run a fallback rerun replaces | `failed`                      |
+| Path                                                                             | Run status                                       |
+| -------------------------------------------------------------------------------- | ------------------------------------------------ |
+| The stream and its finalize step complete                                        | `succeeded`                                      |
+| The same, but a stop landed                                                      | `failed`, "cancelled by user"                    |
+| A stop lands before the spawn (`claimTurnStart`)                                 | `cancelled`                                      |
+| The step's agent cannot be resolved                                              | `failed`                                         |
+| A throw inside the stream or finalize step, or the run a fallback rerun replaces | `failed`                                         |
+| Turn admission refused (`claimTurnAdmission`)                                    | `failed`, with the `turnRefusalMessage` sentence |
 
 A throw before the run row exists (the user message write) leaves no run. A
-throw between the run row and the stream (the agent status write, the session
-state write, the prompt and spawn phases) leaves the run `streaming` and the
-agent `running`; nothing in the turn closes them.
+throw in the prompt or spawn build closes the run `failed` (`cancelled` when a
+Stop was pending), reverts the agent row and writes the session state
+(`closeUnspawnedRun`, [recovery.md](recovery.md#exits-before-the-start)). A
+throw in the agent status or session state write inside `startTurnRun` frees a
+claimed agent (`revertAgentStart`) but leaves the run `streaming`; nothing in
+the turn closes it.
 
 ## After a turn succeeds
 

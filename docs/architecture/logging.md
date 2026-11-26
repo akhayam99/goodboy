@@ -63,6 +63,5 @@ only, credentials inside URLs hidden, cut at 200 characters.
   the logger (at most 16 lines).
 - **A frozen window.** `window_heartbeat.rs` is a watchdog with no network and
   no kill: it notes a freeze in `last-crash.json`
-  ([navigation/shell.md](../navigation/shell.md), After a crash the app could
-  not show) and logs nothing else. It does not run in debug builds, where a
+  ([navigation/setup-and-crash.md](../navigation/setup-and-crash.md#after-a-crash-the-app-could-not-show)) and logs nothing else. It does not run in debug builds, where a
   paused debugger would read as a freeze.

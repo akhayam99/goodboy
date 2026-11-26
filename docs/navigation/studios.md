@@ -128,7 +128,8 @@ older members and Report this error).
   scope) are a page rail beside the list (`StudioRailLayout`, `placement="page"`,
   surface `notifications`, 288px), with counts from SQL (`countNotifications`), so
   they stay true past the loaded page. A count shows from two; a zero facet is
-  dimmed. The rail holds no key legend.
+  dimmed. The rail holds no key legend: the keys are in the tooltips and the Keyboard
+  chapter of the Guide.
 - Both surfaces default to this workspace: a row belongs to its workspace, or its
   session's, and a row with neither shows in every workspace. Mark all as read and
   Delete all act on that scope.
@@ -136,7 +137,8 @@ older members and Report this error).
   scope, list and counts in one write (`setNotificationScope`). A failed read keeps
   all three and logs "Couldn't load notifications" with Retry, and of two quick
   switches the last wins. A refresh asked during a switch waits, then reads the
-  scope it left. Once a scope is shown, its failed-switch row is deleted. The
+  scope it left, so opening the studio never cancels the pick. Once a scope is shown, its failed-switch row is deleted, so a Retry never stays
+  behind in Needs action. The
   bell's Unread view keeps its snapshot until the scope changes.
 - Older pages load with a cursor. No subtitle, no day group counts, and the title
   is Notifications in every view.

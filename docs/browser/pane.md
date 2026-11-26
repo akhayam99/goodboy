@@ -28,7 +28,7 @@ lies over the page. A resize never rewrites the saved width.
 
 The one row of the pane (`BrowserAddressRow`, `PANE_RHYTHM.firstRow`), under
 its head (`DockPanelHead`: title, Open full page, Close; the head moves the
-pane, [home-and-drawer.md](../navigation/home-and-drawer.md)). It holds Back,
+pane, [dock-grid.md](../navigation/dock-grid.md)). It holds Back,
 Forward, Reload, the tabs, New tab, Pin to the session's project (Unpin for a
 shown pin), Select an element ([pick.md](pick.md)), Console
 ([console.md](console.md)) and More.
@@ -183,7 +183,7 @@ lists it (`docs/testing.md` → Manual release gate: inspect in Safari).
 While the browser has the keyboard (focus in the pane or the page webview),
 ⌘R reloads the shown tab. The pane and the page register `model.reload` with
 `useReloadSurface`, and the menu bar brings ⌘R to the window even when the page
-has focus, since a menu command never goes to a browser tab. ⌘⇧R reloads Goodboy ([shell.md](../navigation/shell.md)).
+has focus, since a menu command never goes to a browser tab. ⌘⇧R reloads Goodboy ([shortcuts.md](../navigation/shortcuts.md)).
 
 ## Tabs
 

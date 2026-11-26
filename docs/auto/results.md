@@ -6,8 +6,9 @@
 > the result card draws them ([children.md](children.md#what-the-agents-reported))
 > or the push that may follow ([pushing.md](pushing.md)).
 
-A writer's verified facts live in `result_json.verified`. Read-only roles carry
-none of them.
+A writer's verified facts live in `result_json.verified`. A read-only role gets
+no committed diff, no checks and no `remote`; its changed files are
+`unattributed`, and any change is the `role_read_only_violation`.
 
 ## Changed files
 

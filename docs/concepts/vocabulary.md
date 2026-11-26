@@ -56,7 +56,7 @@ folder` as labels.
   in At a glance and in the Guide's Words chapter; `guideChapters.test.ts` keeps
   them that way.
 - **Needs you** is the one name for anything that waits on you, followed by its
-  reason ("Needs your answer in step 2"). A tool asks for **permission** (Allow,
+  reason ("Needs your answer in step 2"). "Waiting on you" is retired. A tool asks for **permission** (Allow,
   Deny); only a plan waits for **approval**.
 - **Asks you** decides how often a run stops for you: **Every step**, **After
   the plan** or **Never**. An agent's permission mode sits under the same chip,
