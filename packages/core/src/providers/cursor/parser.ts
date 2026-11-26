@@ -4,6 +4,7 @@ import {
   parseAnthropicEnvelopeValue,
   type ParseContext,
 } from '../shared/anthropic-envelope-parser';
+import { splitRoutingNotice } from './splitRoutingNotice';
 import { parseJsonAllowingControlChars } from '../shared/parseJsonAllowingControlChars';
 
 export type { ParseContext };
@@ -58,7 +59,9 @@ export const parseCursorStreamLine = (
   if (type === 'tool_call') {
     MULTI_REQUEST_TURNS.add(ctx);
   }
-  const events = parseAnthropicEnvelopeValue({ value: parsed.value, ctx, opts: CURSOR_ENVELOPE });
+  const events = splitRoutingNotice({
+    events: parseAnthropicEnvelopeValue({ value: parsed.value, ctx, opts: CURSOR_ENVELOPE }),
+  });
   if (type !== 'result') {
     return events;
   }

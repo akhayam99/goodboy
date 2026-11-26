@@ -1,3 +1,4 @@
+export { detectSessionLanguage } from './detectSessionLanguage';
 export {
   sessionLanguageRule,
   sessionLanguageTurnRule,

@@ -137,6 +137,7 @@ a verb plus an object in the language of the goal, inside one closed tag:
   task or the routing ("Title generation", "Auto routed to ...") is
   discarded. Only the leading phrase of a talk reply is matched, so "Fix
   title generation crash" stays.
+- A title the detector reads in another language than the request is discarded too.
 - A discarded title becomes the one derived from the goal
   (`heuristicAgentTitle` in `@goodboy/db`: the first clause of the goal in the
   user's own words, first letter capitalised, at most ten words and 60

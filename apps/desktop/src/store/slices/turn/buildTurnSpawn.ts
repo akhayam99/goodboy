@@ -156,6 +156,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
           source: 'goal',
           text: resolveSessionLanguageGoal({
             session,
+            transcript: get().transcripts[sessionId] ?? [],
             workflows: get().phaseTemplates[session.workspaceId] ?? [],
             ...(agentRowEarly?.workflowRunId != null && {
               workflowRunId: agentRowEarly.workflowRunId,

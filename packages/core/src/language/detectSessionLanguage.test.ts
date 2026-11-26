@@ -101,4 +101,21 @@ describe('detectSessionLanguage', () => {
 
     expect(detect(`${filler} the page and`)).toBe('en');
   });
+
+  it.each([
+    [
+      'it',
+      'Guardando payments-api, sviluppare le convenzioni sulla pagina di onboarding quando un utente ne ha una attiva',
+    ],
+    ['it', 'Aggiungi il retry al webhook di notify-relay'],
+    ['it', 'Controlla il deploy di ledger-core e dimmi cosa manca'],
+    ['fr', 'Ajoute le retry au webhook de notify-relay et vérifie le deploy'],
+    ['fr', 'Regarde payments-api et explique les conventions de la page onboarding'],
+    ['pt', 'Adiciona o retry ao webhook do notify-relay e verifica o deploy'],
+    ['pt', 'Olha o payments-api e explica as convenções da página de onboarding'],
+    ['es', 'Añade el retry al webhook de notify-relay y revisa el deploy'],
+    ['es', 'Mira payments-api y explica las convenciones de la página de onboarding'],
+  ] as const)('reads a short %s request that mixes in product words: %s', (language, text) => {
+    expect(detect(text)).toBe(language);
+  });
 });

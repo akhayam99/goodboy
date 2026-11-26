@@ -219,13 +219,17 @@ isShortened }`, never an empty block with nothing said. When a turn moves to
   14 older turns." (`handoffNoticeMessage`).
 - The system prompt is the guards (write scope, session language, connected
   integrations, workspace profile) followed by the agent kind's own prompt.
-  The session-language guard quotes the goal or the operator's last message
-  and names its language ("Write every reply, question, suggestion and summary
+  The session-language guard quotes the operator's last message and, after a
+  reload, the first message the operator wrote (`sessionOwnWordsOf`), or the
+  title only when the operator typed or edited it. A generated title never
+  fixes the language. It names the language ("Write every reply, question, suggestion and summary
   in Italian.") when `detectSessionLanguage` reads one off that text: stopword
   scoring over it, en, es, pt, fr and de, after code spans, paths and
   identifiers are cut out. Under 3 words, under 2 hits, under 15% hits or a
   winner less than 1.5 times the runner-up gives no name, and the rule names
-  no language. The Auto prompt and the orchestrator brief name it the same way.
+  no language. The Auto prompt, the orchestrator brief and the handoff goal read the same words.
+  The Cursor parser splits a "> Auto routed to ..." line out of the reply text into its own
+  `decision_note`.
   Claude receives it as an appended system prompt; every other CLI receives it
   at the top of the prompt, with the kind prompt fenced as a role boundary.
 - The write-scope guard (`buildScopeGuard`) is where every agent, in a chat or

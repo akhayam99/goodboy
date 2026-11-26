@@ -1,14 +1,39 @@
-import type { Session, Workflow, WorkflowRunId } from '@goodboy/types';
+import type { Session, TurnEvent, Workflow, WorkflowRunId } from '@goodboy/types';
 import { sessionLanguageTurnRule } from '@goodboy/core/language';
+
+const FIRST_MESSAGE_MAX_LENGTH = 280;
+
+type OwnWordsParams = {
+  readonly session: Session;
+  readonly transcript?: ReadonlyArray<TurnEvent>;
+};
+
+export const sessionOwnWordsOf = ({ session, transcript = [] }: OwnWordsParams): string => {
+  if (session.titleUserEdited) {
+    return session.goal.trim();
+  }
+  for (const event of transcript) {
+    if (event.kind !== 'user_text' || event.handoffId != null || event.deliveredBy != null) {
+      continue;
+    }
+    const written = event.text.trim();
+    if (written.length > 0) {
+      return written.slice(0, FIRST_MESSAGE_MAX_LENGTH);
+    }
+  }
+  return session.goal.trim();
+};
 
 type SourceParams = {
   readonly session: Session;
+  readonly transcript?: ReadonlyArray<TurnEvent>;
   readonly workflows: ReadonlyArray<Workflow>;
   readonly workflowRunId?: WorkflowRunId;
 };
 
 export const resolveSessionLanguageGoal = ({
   session,
+  transcript,
   workflows,
   workflowRunId,
 }: SourceParams): string => {
@@ -26,7 +51,7 @@ export const resolveSessionLanguageGoal = ({
   if (templateGoal.length > 0) {
     return templateGoal;
   }
-  return session.goal.trim();
+  return sessionOwnWordsOf({ session, ...(transcript != null && { transcript }) });
 };
 
 export type SessionLanguageAnchor = {

@@ -15,7 +15,7 @@ export const LANGUAGE_STOPWORDS = {
   }),
   es: setOf({
     words:
-      'el la los las un unos unas de del al en con sin por para que es está están son fue ser tiene tienen tengo tenemos usted como más muy también pero si esto eso este esta ese esa estos esos aquí ya entonces cuando donde dónde porque sobre entre hasta mi tu su nuestro hacer necesita necesito puede puedo antes después todavía solo lo se le cómo qué cuál según hay nos otro otra todo todos todas mejor siempre nunca quiero debe debes deberías',
+      'el la los las un unos unas y de del al en con sin por para que es está están son fue ser tiene tienen tengo tenemos usted como más muy también pero si esto eso este esta ese esa estos esos aquí ya entonces cuando donde dónde porque sobre entre hasta mi tu su nuestro hacer necesita necesito puede puedo antes después todavía solo lo se le cómo qué cuál según hay nos otro otra todo todos todas mejor siempre nunca quiero debe debes deberías',
   }),
   pt: setOf({
     words:

@@ -42,6 +42,40 @@ describe('parseCursorStreamLine', () => {
     expect(events).toEqual([{ kind: 'assistant_text', runId: ctx.runId, delta: 'hello', at }]);
   });
 
+  it('emits the routing notice as its own note, never inside the reply text', () => {
+    resetTextBoundary({ runId: ctx.runId });
+    const events = parse(
+      JSON.stringify({
+        type: 'assistant',
+        message: {
+          content: [
+            { type: 'text', text: 'Done with ledger-core.> Auto routed to Claude Haiku 5.5' },
+          ],
+        },
+      }),
+    );
+    expect(events).toEqual([
+      { kind: 'assistant_text', runId: ctx.runId, delta: 'Done with ledger-core.', at },
+      { kind: 'decision_note', runId: ctx.runId, message: 'Auto routed to Claude Haiku 5.5', at },
+    ]);
+  });
+
+  it('keeps the text after a routing notice on its own', () => {
+    resetTextBoundary({ runId: ctx.runId });
+    const events = parse(
+      JSON.stringify({
+        type: 'assistant',
+        message: {
+          content: [{ type: 'text', text: '> Auto routed to Claude Haiku 5.5\nHere is the plan.' }],
+        },
+      }),
+    );
+    expect(events).toEqual([
+      { kind: 'decision_note', runId: ctx.runId, message: 'Auto routed to Claude Haiku 5.5', at },
+      { kind: 'assistant_text', runId: ctx.runId, delta: 'Here is the plan.', at },
+    ]);
+  });
+
   it('inserts a blank line between two text blocks separated by a tool_use, when the first has none', () => {
     resetTextBoundary({ runId: ctx.runId });
     parse(

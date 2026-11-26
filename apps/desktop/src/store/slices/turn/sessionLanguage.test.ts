@@ -10,6 +10,8 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import type { TurnEvent } from '@goodboy/types';
+import { nextProviderRunId } from '@goodboy/types/testing';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from './sessionLanguage';
 
 const NOW = '2026-01-01T00:00:00.000Z' as IsoDateTime;
@@ -104,6 +106,72 @@ describe('resolveSessionLanguageGoal', () => {
         workflows: [],
       }),
     ).toBe('');
+  });
+});
+
+const ITALIAN_REQUEST =
+  'Guardando payments-api, sviluppare le convenzioni sulla pagina di onboarding quando un utente ne ha una attiva';
+const SPANISH_TITLE = 'Responder pregunta sobre el contexto';
+
+type UserTextParams = {
+  readonly text: string;
+  readonly deliveredBy?: 'auto';
+};
+
+const userText = ({ text, deliveredBy }: UserTextParams): TurnEvent => ({
+  kind: 'user_text',
+  runId: nextProviderRunId(),
+  text,
+  at: NOW,
+  ...(deliveredBy != null && { deliveredBy }),
+});
+
+describe('a generated title never fixes the session language', () => {
+  const titled = session({ goal: SPANISH_TITLE, titleUserEdited: false, workflowRuns: [] });
+
+  it('reads the first message the operator wrote, not the generated title', () => {
+    const resolved = resolveSessionLanguageGoal({
+      session: titled,
+      transcript: [userText({ text: ITALIAN_REQUEST })],
+      workflows: [],
+    });
+
+    expect(resolved).toBe(ITALIAN_REQUEST);
+  });
+
+  it('makes the turn rule name Italian even when the title reads Spanish', () => {
+    const resolved = resolveSessionLanguageGoal({
+      session: titled,
+      transcript: [userText({ text: ITALIAN_REQUEST })],
+      workflows: [],
+    });
+    const guard = buildSessionLanguageGuard({ anchor: { source: 'goal', text: resolved } });
+
+    expect(guard).toContain('in Italian');
+    expect(guard).not.toContain('in Spanish');
+  });
+
+  it('skips a handed-off or auto-delivered message and keeps the operator one', () => {
+    const resolved = resolveSessionLanguageGoal({
+      session: titled,
+      transcript: [
+        userText({ text: 'Write the summary in English please', deliveredBy: 'auto' }),
+        userText({ text: ITALIAN_REQUEST }),
+      ],
+      workflows: [],
+    });
+
+    expect(resolved).toBe(ITALIAN_REQUEST);
+  });
+
+  it('trusts the title when the operator typed or edited it', () => {
+    const resolved = resolveSessionLanguageGoal({
+      session: session({ goal: ITALIAN_GOAL, titleUserEdited: true, workflowRuns: [] }),
+      transcript: [userText({ text: 'Fix the ledger export' })],
+      workflows: [],
+    });
+
+    expect(resolved).toBe(ITALIAN_GOAL);
   });
 });
 
