@@ -6,6 +6,8 @@ pub(crate) mod passkey_handler;
 pub(crate) mod web_history;
 pub(crate) mod web_inspect;
 #[cfg(target_os = "macos")]
+pub(crate) mod web_site_data;
+#[cfg(target_os = "macos")]
 pub(crate) mod web_snapshot;
 pub(crate) mod web_text;
 pub(crate) mod web_url;

@@ -10,9 +10,20 @@ import type {
   BrowserPickOp,
   BrowserPickRead,
   BrowserPickRect,
+  BrowserProfileCleared,
+  BrowserSiteCleared,
   BrowserTabFacts,
   BrowserTabFavicon,
 } from './types';
+
+type SiteParams = {
+  readonly tabId: string;
+  readonly host: string;
+};
+
+type WorkspaceParams = {
+  readonly workspaceId: WorkspaceId;
+};
 
 type OpenParams = {
   readonly sessionId: SessionId;
@@ -102,6 +113,12 @@ export const browserHost = {
   navigateLocal: ({ tabId, path }: NavigateLocalParams) =>
     invokeCommand<null>('browser_tab_navigate_local', { args: { tabId, path } }),
   reload: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_reload', { args: { tabId } }),
+  reloadFromOrigin: ({ tabId }: TabParams) =>
+    invokeCommand<null>('browser_tab_reload_from_origin', { args: { tabId } }),
+  clearSiteData: ({ tabId, host }: SiteParams) =>
+    invokeCommand<BrowserSiteCleared>('browser_site_data_clear', { args: { tabId, host } }),
+  clearProfile: ({ workspaceId }: WorkspaceParams) =>
+    invokeCommand<BrowserProfileCleared>('browser_profile_clear', { args: { workspaceId } }),
   stop: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_stop', { args: { tabId } }),
   find: ({ tabId, needle, isBackwards }: FindParams) =>
     invokeCommand<BrowserFindOutcome>('browser_find', { args: { tabId, needle, isBackwards } }),

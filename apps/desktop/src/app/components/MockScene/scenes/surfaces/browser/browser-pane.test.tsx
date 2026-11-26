@@ -401,11 +401,11 @@ describe('the browser pane scenes', () => {
     expect(within(pane).getByRole('button', { name: 'Back' }).hasAttribute('disabled')).toBe(false);
   });
 
-  it('opens the More menu with its seven rows', async () => {
+  it('opens the More menu with its six rows', async () => {
     mount({ id: 'browser-pane-more' });
 
     const menu = await screen.findByRole('menu', undefined, WAIT);
-    expect(within(menu).getAllByRole('menuitem')).toHaveLength(7);
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(6);
   });
 
   it('opens the More menu on the Add to message row first', async () => {

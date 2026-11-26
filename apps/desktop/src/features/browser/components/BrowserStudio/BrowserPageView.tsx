@@ -57,6 +57,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
     hasNativeView: true,
     root,
     reload: model.reload,
+    reloadFromOrigin: model.reloadFromOrigin,
   });
   const cover = useNativePlacement({
     sessionId,

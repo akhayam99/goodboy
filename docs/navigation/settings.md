@@ -134,8 +134,8 @@ Restore defaults and Copy from still carry those fields.
 ### Projects
 
 - The `Workspace` band's `Name` row renames the workspace; the page writes the
-  name once, in the top bar. The page ends in a `Danger zone` with `Disconnect this
-workspace`, confirmed in place.
+  name once, in the top bar. The page ends in a `Danger zone` with `Clear browser
+data` and `Disconnect this workspace`, each confirmed in place.
 - A `Terminal folder` row sits above the projects: the computed folder
   (`workspaceFolder`), `Change`, and `Use the default` when overridden
   (`setTerminalWorkspaceFolder`).
