@@ -19,6 +19,8 @@ const tagOf = Object.prototype.toString;
 const Url = window.URL;
 const here = window.location;
 const clock = window.performance;
+const Wall = Date;
+const wallNow = Wall.now;
 const rings = { console: [], network: [], error: [] };
 const doc = Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
 let seq = 0;
@@ -213,6 +215,11 @@ const guarded = (work) => {
   isBusy = false;
 };
 
+const wallMs = () => {
+  const value = wallNow.call(Wall);
+  return typeof value === 'number' && value >= 0 ? Math.floor(value) : null;
+};
+
 const storeError = (origin, text, source, stack, requestId) =>
   store({
     kind: 'error',
@@ -222,7 +229,7 @@ const storeError = (origin, text, source, stack, requestId) =>
     method: null,
     status: null,
     network: null,
-    error: { origin, stack, requestId },
+    error: { origin, stack, requestId, at: wallMs() },
   });
 
 const recordError = (origin, textOf, sourceOf, stackOfError) =>

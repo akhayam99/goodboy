@@ -5,6 +5,7 @@ import { consoleTabOf } from './consoleTabOf';
 import { hostOf } from './hostOf';
 import { isFailedRequest, networkStatusWordOf } from './networkStatusWordOf';
 import type { BrowserConsoleEntry } from './types';
+import { withoutGrantOf } from './withoutGrantOf';
 
 const CONSOLE_MIME = 'text/markdown';
 
@@ -19,10 +20,6 @@ type Params = {
   readonly entries: ReadonlyArray<BrowserConsoleEntry>;
   readonly title: string;
   readonly url: string;
-};
-
-type LineParams = {
-  readonly line: string;
 };
 
 type EntryParams = {
@@ -42,12 +39,6 @@ type Tail = {
   readonly lines: ReadonlyArray<string>;
   readonly isCut: boolean;
 };
-
-const LOCAL_LIVE_PATTERN =
-  /\b(?:gblocal:[/][/]localhost|https?:[/][/]gblocal\.localhost)[/][0-9a-f-]+[/]/gi;
-
-const withoutGrantOf = ({ line }: LineParams): string =>
-  line.replace(LOCAL_LIVE_PATTERN, 'file:///');
 
 const stackLinesOf = ({ entry }: EntryParams): ReadonlyArray<string> =>
   (entry.error?.stack ?? '')

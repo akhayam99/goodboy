@@ -9,7 +9,9 @@ import { useConsoleEntries } from '../../hooks/useConsoleEntries';
 import { useElementPick } from '../../hooks/useElementPick';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
 import { useParkedTab } from '../../hooks/useParkedTab';
+import { consoleCounts } from '../../consoleCounts';
 import { devicePresetOf } from '../../devicePresets';
+import type { BrowserToolsTab } from '../../types';
 import { promoteBrowserTab } from '../../promoteBrowserTab';
 import { BrowserAddressRow } from './BrowserAddressRow';
 import { BrowserToolsDock } from '../BrowserToolsDock';
@@ -37,11 +39,13 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
   );
   const parked = useParkedTab({ sessionId, liveId: boundLiveId });
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+  const [toolsTab, setToolsTab] = useState<BrowserToolsTab>('console');
   const consoleLog = useConsoleEntries({
     sessionId,
     liveId: model.shownLiveId,
-    isOpen: isConsoleOpen && isOnScreen,
+    isOpen: isOnScreen,
   });
+  const errorCount = consoleCounts({ entries: consoleLog.entries }).errors;
 
   useReloadSurface({
     isEnabled: isOnScreen,
@@ -79,6 +83,13 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
             isOpen: isConsoleOpen,
             onToggle: () => setIsConsoleOpen(!isConsoleOpen),
           }}
+          errors={{
+            count: errorCount,
+            onShow: () => {
+              setToolsTab('errors');
+              setIsConsoleOpen(true);
+            },
+          }}
           pick={pick}
           onOpenAsPage={() => promoteBrowserTab({ sessionId, tabId: shownTab?.id ?? null })}
           onClose={onClose}
@@ -98,6 +109,8 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
           model={model}
           title={title}
           log={consoleLog}
+          tab={toolsTab}
+          onTab={({ next }) => setToolsTab(next)}
           onClose={() => setIsConsoleOpen(false)}
         >
           <BrowserView

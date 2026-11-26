@@ -1,0 +1,19 @@
+{
+  "epoch": 1,
+  "seq": 1,
+  "generatedAt": "2026-10-05T09:05:00.000Z",
+  "workspaceId": "workspace-1",
+  "count": 1,
+  "rows": [
+    {
+      "id": "linear:lin-412",
+      "provider": "linear",
+      "key": "HBL-412",
+      "title": "Retry window for the webhook",
+      "words": "In a session",
+      "sessionId": "session-1",
+      "canStart": false
+    }
+  ],
+  "start": null
+}

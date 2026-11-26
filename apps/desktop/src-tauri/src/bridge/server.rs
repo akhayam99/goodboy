@@ -4,23 +4,24 @@ use std::time::Duration;
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::{oneshot, watch, Mutex};
+use tokio::sync::{broadcast, oneshot, watch, Mutex};
 
 use super::commands::{CmdResult, CommandEvent, MobileAction, Origin, PendingMap, ACK_TIMEOUT};
 use super::frame::{read_frame, write_frame, NOISE_MAX};
 use super::gate::{HandshakeGate, HandshakePermit, MAX_UNAUTHENTICATED};
 use super::identity::Identity;
-use super::snapshot::{self, Snapshot};
+use super::publish::{PublishHub, Stored, Update};
 use super::tokens::TokenStore;
 use super::{noise_params, BridgeError};
 
 const OP_HELLO: u8 = 0x01;
-const OP_SNAPSHOT_BEGIN: u8 = 0x02;
-const OP_SNAPSHOT_CHUNK: u8 = 0x03;
-const OP_SNAPSHOT_END: u8 = 0x04;
 const OP_PING: u8 = 0x07;
 const OP_ACK: u8 = 0x08;
 const OP_QUERY_RESULT: u8 = 0x0A;
+const OP_PROJECTION: u8 = 0x0B;
+const OP_DESKTOP_STATE: u8 = 0x0C;
+const OP_PROJECTION_GONE: u8 = 0x0D;
+const PROTOCOL_VERSION: u8 = 2;
 const OP_PONG: u8 = 0x80;
 const OP_SUBSCRIBE: u8 = 0x81;
 const OP_RESNAPSHOT: u8 = 0x82;
@@ -28,7 +29,7 @@ const OP_RESNAPSHOT: u8 = 0x82;
 const PING_INTERVAL: Duration = Duration::from_secs(20);
 const SILENCE_LIMIT: Duration = Duration::from_secs(60);
 const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(10);
-const SYNC_POLL_INTERVAL: Duration = Duration::from_secs(2);
+const FRESHNESS_INTERVAL: Duration = Duration::from_secs(1);
 
 pub struct ServerCtx {
     pub identity: Arc<Mutex<Identity>>,
@@ -36,6 +37,7 @@ pub struct ServerCtx {
     pub device_name: String,
     pub app: AppHandle,
     pub pending: PendingMap,
+    pub hub: Arc<PublishHub>,
     pub shutdown: watch::Receiver<bool>,
 }
 
@@ -72,21 +74,22 @@ async fn handle_conn(
         authorize_within(&mut stream, &ctx.identity, &ctx.tokens, HANDSHAKE_TIMEOUT).await?;
     drop(permit);
 
-    let snap = snapshot::build()?;
+    let mut updates = ctx.hub.subscribe();
     send_app(
         &mut stream,
         &mut transport,
         OP_HELLO,
         &json!({
-            "protocol": 1,
+            "protocol": PROTOCOL_VERSION,
             "deviceName": ctx.device_name,
-            "headMigration": snap.head_migration,
             "serverTime": crate::util::iso_now_whole_seconds(),
         }),
     )
     .await?;
-    stream_snapshot(&mut stream, &mut transport, &snap).await?;
-    log::info!("[bridge] phone synced; head {}", snap.head_migration);
+    let mut was_open = ctx.hub.is_fresh();
+    send_desktop_state(&mut stream, &mut transport, was_open).await?;
+    send_all(&mut stream, &mut transport, &ctx.hub).await?;
+    log::info!("[bridge] phone synced");
 
     let mut shutdown = ctx.shutdown.clone();
     if *shutdown.borrow() {
@@ -95,9 +98,8 @@ async fn handle_conn(
 
     let mut ping = tokio::time::interval(PING_INTERVAL);
     ping.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-    let mut probe = snapshot::ChangeProbe::new().ok();
-    let mut sync = tokio::time::interval(SYNC_POLL_INTERVAL);
-    sync.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    let mut freshness = tokio::time::interval(FRESHNESS_INTERVAL);
+    freshness.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     let mut last_heard = tokio::time::Instant::now();
     loop {
         tokio::select! {
@@ -111,9 +113,25 @@ async fn handle_conn(
                 }
                 send_app(&mut stream, &mut transport, OP_PING, &json!({ "at": crate::util::iso_now_whole_seconds() })).await?;
             }
-            _ = sync.tick() => {
-                if probe.as_mut().is_some_and(snapshot::ChangeProbe::changed) {
-                    send_snapshot(&mut stream, &mut transport).await?;
+            _ = freshness.tick() => {
+                let is_open = ctx.hub.is_fresh();
+                if is_open != was_open {
+                    was_open = is_open;
+                    send_desktop_state(&mut stream, &mut transport, is_open).await?;
+                }
+            }
+            update = updates.recv() => {
+                match update {
+                    Ok(Update::Projection(stored)) => {
+                        send_projection(&mut stream, &mut transport, &stored).await?;
+                    }
+                    Ok(Update::Removed(key)) => {
+                        send_app(&mut stream, &mut transport, OP_PROJECTION_GONE, &json!({ "key": key })).await?;
+                    }
+                    Err(broadcast::error::RecvError::Lagged(_)) => {
+                        send_all(&mut stream, &mut transport, &ctx.hub).await?;
+                    }
+                    Err(broadcast::error::RecvError::Closed) => return Ok(()),
                 }
             }
             frame = read_frame(&mut stream) => {
@@ -128,7 +146,7 @@ async fn handle_conn(
                 match opcode {
                     OP_PONG | OP_SUBSCRIBE => {}
                     OP_RESNAPSHOT => {
-                        send_snapshot(&mut stream, &mut transport).await?;
+                        send_all(&mut stream, &mut transport, &ctx.hub).await?;
                     }
                     op => match MobileAction::from_opcode(op) {
                         Some(action) => {
@@ -273,57 +291,43 @@ async fn send_app(
     write_frame(stream, &ct[..len]).await
 }
 
-async fn send_snapshot(
+async fn send_projection(
     stream: &mut TcpStream,
     transport: &mut snow::TransportState,
+    stored: &Stored,
 ) -> Result<(), BridgeError> {
-    let snap = snapshot::build()?;
-    stream_snapshot(stream, transport, &snap).await
+    send_app(
+        stream,
+        transport,
+        OP_PROJECTION,
+        &json!({ "key": stored.key, "kind": stored.kind, "projection": stored.value }),
+    )
+    .await
 }
 
-async fn stream_snapshot(
+async fn send_all(
     stream: &mut TcpStream,
     transport: &mut snow::TransportState,
-    snap: &Snapshot,
+    hub: &PublishHub,
 ) -> Result<(), BridgeError> {
-    let total = snap.total_chunks();
-
-    send_app(
-        stream,
-        transport,
-        OP_SNAPSHOT_BEGIN,
-        &json!({
-            "snapshotId": snap.snapshot_id,
-            "headMigration": snap.head_migration,
-            "totalChunks": total,
-            "transcriptWindow": { "perSessionMaxEvents": 500, "maxAgeHours": 24 },
-        }),
-    )
-    .await?;
-
-    for index in 0..total {
-        send_app(
-            stream,
-            transport,
-            OP_SNAPSHOT_CHUNK,
-            &json!({
-                "snapshotId": snap.snapshot_id,
-                "index": index,
-                "bytesB64": snap.chunk_b64(index),
-            }),
-        )
-        .await?;
+    for stored in hub.all() {
+        send_projection(stream, transport, &stored).await?;
     }
+    Ok(())
+}
 
+async fn send_desktop_state(
+    stream: &mut TcpStream,
+    transport: &mut snow::TransportState,
+    is_open: bool,
+) -> Result<(), BridgeError> {
     send_app(
         stream,
         transport,
-        OP_SNAPSHOT_END,
-        &json!({ "snapshotId": snap.snapshot_id, "sha256": snap.sha256_hex }),
+        OP_DESKTOP_STATE,
+        &json!({ "isOpen": is_open, "at": crate::util::iso_now_whole_seconds() }),
     )
-    .await?;
-
-    Ok(())
+    .await
 }
 
 #[cfg(test)]
