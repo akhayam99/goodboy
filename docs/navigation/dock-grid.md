@@ -110,7 +110,7 @@ worktree strip, and Monitor its Pin a port action as a pin icon in the head.
   2. While dragging, the page dims and `DockDropZones` draws one labeled card per
      target (`Place left` and `Place right` at the dock edges, `Merge`, `Place above`
      and `Place below` on the panel under the pointer) and one ghost of the landing
-     slot (`dockGhostOf`). A card that would change nothing, or that the solver with
+     slot (`dockGhostOf`). A card is drawn only when the committed layout does what its words say (`dockCardHonestOf`: a Place card leaves the panel alone in that spot, a Merge card makes it a tab there), and no two cards overlap (`dockCardsClipOf`). A card that would change nothing, or that the solver with
      the real widths refuses (`canDrop` from `useDockGrid`, `dockMoveFits`), is not
      drawn. A card is smaller than its hit area, and a target takes 80 ms of hover
      before the ghost moves. The ghost of a `Merge` is the target panel itself, and the merge keeps the tabs the solver had folded into that panel (`keeps` on the `tab` target), so the result matches the card's words. The overlay redraws from a small store at most once a

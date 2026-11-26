@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { dockCardHonestOf } from '../dockCardHonestOf';
+import { dockCardsClipOf } from '../dockCardsClipOf';
 import { dockDropZonesOf, type DockRect, type PaneRect } from '../dockDropZonesOf';
 import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockGridFrameOf } from '../dockGridFrameOf';
@@ -221,5 +223,64 @@ describe('tearing a tab out of a cell the solver folded', () => {
 
     expect(zone.layout.columns[zone.layout.columns.length - 1]).toContain('browser');
     expect(reachable).toEqual(['ask', 'browser', 'monitoring', 'scripts', 'terminal']);
+  });
+});
+
+describe('a card says only what the committed layout does', () => {
+  const keys = ['scripts', 'ask', 'browser', 'terminal', 'monitoring'] as const;
+
+  it.each(keys)('commits the layout of every card of %s with the card target', (key) => {
+    const zones = zonesOf({ key });
+
+    expect(zones.length).toBeGreaterThan(0);
+    zones.forEach((zone) => {
+      expect(dockLayoutAfterMove({ ...NOW, key, unit: 'panel', target: zone.target })).toEqual(
+        zone.layout,
+      );
+    });
+  });
+
+  it.each(keys)('keeps only the honest cards of %s once the solver has spoken', (key) => {
+    const honest = zonesOf({ key }).filter((zone) =>
+      dockCardHonestOf({ zone, dragKey: key, boxes: boxesOf(zone.layout) }),
+    );
+
+    honest.forEach((zone) => {
+      const after = boxesOf(zone.layout);
+      const pane = after
+        .flatMap((box) => box.panes)
+        .find((candidate) => candidate.key === zone.paneKey);
+      if (zone.placement === 'merge') {
+        expect(pane?.tabs).toContain(key);
+        return;
+      }
+      expect(after.flatMap((box) => box.panes).some((candidate) => candidate.key === key)).toBe(
+        true,
+      );
+    });
+  });
+
+  it('drops Place right for a tab the solver would fold back into another cell', () => {
+    const zone = zonesOf({ key: 'browser' }).find((candidate) => candidate.id === 'dock-right');
+    if (zone === undefined) {
+      return;
+    }
+
+    expect(dockCardHonestOf({ zone, dragKey: 'browser', boxes: boxesOf(zone.layout) })).toBe(false);
+  });
+
+  it.each(keys)('never lets two cards of %s overlap', (key) => {
+    const cards = dockCardsClipOf({ zones: zonesOf({ key }) }).map((zone) => zone.card);
+
+    cards.forEach((card, at) => {
+      cards.slice(at + 1).forEach((other) => {
+        const isOverlap =
+          card.x < other.x + other.width &&
+          other.x < card.x + card.width &&
+          card.y < other.y + other.height &&
+          other.y < card.y + card.height;
+        expect(isOverlap).toBe(false);
+      });
+    });
   });
 });

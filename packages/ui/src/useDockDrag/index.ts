@@ -17,6 +17,8 @@ import { dockFoldedOf, dockGhostOf, type DockGhost, type DockGhostFold } from '.
 import type { DockGridMove } from '../dockGridSpec';
 import type { DockGroups } from '../dockLayoutAfterMove';
 import type { DockMoveTarget, DockMoveUnit } from '../dockMoveTarget';
+import { dockCardHonestOf } from '../dockCardHonestOf';
+import { dockCardsClipOf } from '../dockCardsClipOf';
 import { dockBoxShapeOf } from '../dockBoxShapeOf';
 import { dockPaneElementsOf, dockPressOf, type DockPress } from '../dockPressOf';
 import { dockStatusOf } from '../dockStatusOf';
@@ -365,29 +367,33 @@ export const useDockDrag = ({
       pressRef.current = {
         ...press,
         isActive: true,
-        zones: dockDropZonesOf({
-          dragKey: press.key,
-          unit: press.unit,
-          columns: latest.current.columns,
-          groups: latest.current.groups,
-          panes: dockPaneElementsOf({ grid }).map((element) => ({
-            key: element.dataset.dockPane ?? '',
-            rect: rectOf({ element }),
-          })),
-          dock: rectOf({ element: grid }),
-          folded: foldedByPaneOf({
-            folded: dockFoldedOf({
-              boxes: latest.current.boxes,
-              groups: latest.current.groups,
+        zones: dockCardsClipOf({
+          zones: dockDropZonesOf({
+            dragKey: press.key,
+            unit: press.unit,
+            columns: latest.current.columns,
+            groups: latest.current.groups,
+            panes: dockPaneElementsOf({ grid }).map((element) => ({
+              key: element.dataset.dockPane ?? '',
+              rect: rectOf({ element }),
+            })),
+            dock: rectOf({ element: grid }),
+            folded: foldedByPaneOf({
+              folded: dockFoldedOf({
+                boxes: latest.current.boxes,
+                groups: latest.current.groups,
+              }),
             }),
+            canDrop: latest.current.canDrop,
+          }).filter((zone) => {
+            const after = latest.current.boxesOf(zone.layout);
+            return (
+              after === null ||
+              (dockBoxShapeOf({ boxes: after }) !==
+                dockBoxShapeOf({ boxes: latest.current.boxes }) &&
+                dockCardHonestOf({ zone, dragKey: press.key, boxes: after }))
+            );
           }),
-          canDrop: latest.current.canDrop,
-        }).filter((zone) => {
-          const after = latest.current.boxesOf(zone.layout);
-          return (
-            after === null ||
-            dockBoxShapeOf({ boxes: after }) !== dockBoxShapeOf({ boxes: latest.current.boxes })
-          );
         }),
         dock: rectOf({ element: grid }),
       };
