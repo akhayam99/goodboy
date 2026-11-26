@@ -15,10 +15,10 @@ under [auto/](auto/) that hold the detail.
 Auto is the agent the screens call the Lead. It answers from what it already
 has, sends a Scout when an answer needs the code, and hands the rest of the work
 to agents of the right role, with a model it picks for each. It waits for their
-results, reads them and goes on. It is always on, with no switch to turn it off. An Auto conversation is a row of the session's
-one **Runs** entry ("Lead", or "Lead · plan X" when it follows a preset). Auto
-starts agents of the role it picks (`AUTO_ROLE_WHEN`), and agents started by
-hand keep working.
+results, reads them and goes on. It is always on, with no switch to turn it off.
+An Auto conversation is a row of the session's one **Runs** entry ("Lead", or
+"Lead · plan X" when it follows a preset). Auto starts agents of the role it
+picks (`AUTO_ROLE_WHEN`), and agents started by hand keep working.
 
 Each Lead is an Auto tree: the root agent (role `auto`) and the children it
 delegated, created at the start. Its phase, generation, spend cap and permission
