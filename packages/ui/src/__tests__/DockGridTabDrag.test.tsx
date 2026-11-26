@@ -46,7 +46,6 @@ const renderGrid = ({ isFramed = true }: RenderParams = {}) => {
     columns: [[TERMINAL], [BROWSER]],
     focus: 'terminal',
     onFocus: () => undefined,
-    onTurn: () => undefined,
     onMove,
   };
   render(
@@ -63,7 +62,6 @@ const renderGrid = ({ isFramed = true }: RenderParams = {}) => {
         { width: 400, dragMax: 600, panes: [{ key: 'browser', weight: 1 }] },
       ]}
       handles={[]}
-      turn={null}
       isFramed={isFramed}
       isFocusShown={false}
       isFloating={false}

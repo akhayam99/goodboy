@@ -114,7 +114,6 @@ describe('the page panel and the tool dock on Tasks', () => {
       columns: [[{ key: 'terminal', sizing: 'side' }], [{ key: 'browser', sizing: 'browser' }]],
       focus: 'terminal',
       onFocus: () => undefined,
-      onTurn: () => undefined,
     };
     render(shell({ hasDock: true, onClosePanel, dockGrid }));
 

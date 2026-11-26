@@ -15,7 +15,6 @@ const renderStack = ({ stored }: RenderParams) => {
     columns: stored,
     focus: 'page',
     onFocus: () => undefined,
-    onTurn: () => undefined,
     onSplit: () => undefined,
   };
   render(
@@ -34,7 +33,6 @@ const renderStack = ({ stored }: RenderParams) => {
         },
       ]}
       handles={[]}
-      turn={null}
       isFramed
       isFocusShown={false}
       isFloating={false}

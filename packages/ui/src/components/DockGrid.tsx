@@ -3,7 +3,6 @@ import { DockCellContext } from '../dockCellContext';
 import { cn } from '../cn';
 import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockGridTracksOf } from '../dockGridTracksOf';
-import { DockPairTurnContext, type DockPairTurn } from '../dockPairTurnContext';
 import type { DockGridSpec } from '../dockGridSpec';
 import { DockDragContext, type DockDragSource } from '../dockDragContext';
 import { cellTabsOf } from '../dockCellTabsOf';
@@ -23,7 +22,6 @@ type Props = {
   readonly cell: ReactNode;
   readonly columns: ReadonlyArray<DockGridColumnBox>;
   readonly handles: ReadonlyArray<SplitHandleProps | null>;
-  readonly turn: Omit<DockPairTurn, 'onTurn'> | null;
   readonly isFramed: boolean;
   readonly isFocusShown: boolean;
   readonly isFloating: boolean;
@@ -46,7 +44,6 @@ export const DockGrid = ({
   cell,
   columns,
   handles,
-  turn,
   isFramed,
   isFocusShown,
   isFloating,
@@ -196,7 +193,7 @@ export const DockGrid = ({
                 isFramed && 'rounded-frame border bg-drawer',
                 isFramed && (isFocused && !isLifted ? 'border-focus-ring' : 'border-frame-edge'),
                 isFramed && isFloating && 'shadow-xl',
-                isLifted && 'opacity-55',
+                isLifted && 'opacity-30',
               )}
             >
               {tabsOfCell !== null && !headed.has(pane.key) ? (
@@ -206,19 +203,13 @@ export const DockGrid = ({
                   onSelect={tabsOfCell.onSelect}
                 />
               ) : null}
-              <DockPairTurnContext.Provider
-                value={
-                  turn === null ? null : { ...turn, onTurn: () => spec.onTurn({ key: shown }) }
-                }
+              <DockDragContext.Provider
+                value={cellTabs.isDerived ? null : (sources.get(pane.key) ?? null)}
               >
-                <DockDragContext.Provider
-                  value={cellTabs.isDerived ? null : (sources.get(pane.key) ?? null)}
-                >
-                  <DockTabsContext.Provider value={tabsOfCell}>
-                    <DockCellContext.Provider value={shown}>{cell}</DockCellContext.Provider>
-                  </DockTabsContext.Provider>
-                </DockDragContext.Provider>
-              </DockPairTurnContext.Provider>
+                <DockTabsContext.Provider value={tabsOfCell}>
+                  <DockCellContext.Provider value={shown}>{cell}</DockCellContext.Provider>
+                </DockTabsContext.Provider>
+              </DockDragContext.Provider>
             </div>
           );
         });

@@ -45,7 +45,6 @@ const renderGrid = ({ isRoomy = true }: RenderParams = {}) => {
     columns: [[{ key: 'terminal', sizing: 'side' }], [{ key: 'browser', sizing: 'browser' }]],
     focus: 'page',
     onFocus: () => undefined,
-    onTurn: () => undefined,
     onMove,
   };
   render(
@@ -58,7 +57,6 @@ const renderGrid = ({ isRoomy = true }: RenderParams = {}) => {
         { width: 400, dragMax: 600, panes: [{ key: 'browser', weight: 1 }] },
       ]}
       handles={[]}
-      turn={null}
       isFramed
       isFocusShown={false}
       isFloating={false}

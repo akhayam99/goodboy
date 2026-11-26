@@ -88,7 +88,7 @@ type SizeParams = {
 };
 
 const DOCK_EDGE_PX = 96;
-const SIDE_PX = 48;
+const SIDE_PX = 104;
 const BAND_SHARE = 0.25;
 const CARD_INSET_PX = 8;
 const MERGE_CARD_WIDTH_PX = 220;

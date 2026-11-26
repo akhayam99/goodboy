@@ -22,7 +22,6 @@ export const DrawerDockNode = ({ dockGrid, frame, drawer, isFloating }: Props) =
       cell={drawer}
       columns={grid.frame.columns}
       handles={grid.handles}
-      turn={grid.turn}
       isFramed={grid.isGrid}
       isFocusShown={frame.isFocusShown}
       isFloating={isFloating}

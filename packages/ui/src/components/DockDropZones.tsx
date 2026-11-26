@@ -4,6 +4,7 @@ import type { DockDragStore } from '../dockDragStore';
 import { dockFoldLineOf, dockNameOf } from '../dockStatusOf';
 import { GripVertical } from '../icons';
 import { ICON_SIZE } from '../iconSize';
+import { cn } from '../cn';
 import { DockDropCard } from './DockDropCard';
 
 type Props = {
@@ -31,7 +32,7 @@ export const DockDropZones = ({ store }: Props) => {
         <div
           data-dock-ghost=""
           style={{ left: ghost.x, top: ghost.y, width: ghost.width, height: ghost.height }}
-          className="absolute rounded-frame bg-primary-subtle opacity-70 ring-1 ring-inset ring-primary-edge"
+          className="absolute rounded-frame bg-primary-subtle/70 ring-2 ring-inset ring-primary-edge"
         />
       )}
       {view.zones.map((zone) => {
@@ -69,8 +70,15 @@ export const DockDropZones = ({ store }: Props) => {
       )}
       <div
         data-dock-chip=""
-        style={{ left: view.x - CHIP_OFFSET_PX, top: view.y - CHIP_OFFSET_PX }}
-        className="absolute -translate-x-full -translate-y-full rounded-md bg-elevated px-3 py-1 text-body text-foreground shadow-lg"
+        style={
+          isOverTarget
+            ? { left: view.x + CHIP_OFFSET_PX, top: view.y + CHIP_OFFSET_PX }
+            : { left: view.x - CHIP_OFFSET_PX, top: view.y - CHIP_OFFSET_PX }
+        }
+        className={cn(
+          'absolute rounded-md bg-elevated px-3 py-1 text-body text-foreground shadow-lg',
+          !isOverTarget && '-translate-x-full -translate-y-full',
+        )}
       >
         {isOverTarget ? <GripVertical size={ICON_SIZE.control} aria-hidden /> : view.title}
       </div>

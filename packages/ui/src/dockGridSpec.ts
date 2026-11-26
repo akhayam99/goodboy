@@ -48,7 +48,6 @@ export type DockGridSpec = {
   readonly foldOrder?: ReadonlyArray<string>;
   readonly scope?: string;
   readonly onFocus: (params: KeyParams) => void;
-  readonly onTurn: (params: KeyParams) => void;
   readonly onResize?: (params: DockGridResize) => void;
   readonly onSplit?: (params: DockGridSplit) => void;
   readonly onMove?: (params: DockGridMove) => void;

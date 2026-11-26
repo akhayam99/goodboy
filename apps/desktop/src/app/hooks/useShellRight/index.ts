@@ -11,7 +11,6 @@ import { panelFocusKeyOf } from '../../../store/slices/drawer/panelFocusKeyOf';
 import { shellPanelsOf } from '../../../store/slices/drawer/shellPanelsOf';
 import { EMPTY_DRAWER_GRID, type OpenDrawer } from '../../../store/slices/drawer/state';
 import { focusShellPanel } from '../../../shared/shellFocus/focusShellPanel';
-import { turnShellPair } from '../../../shared/shellFocus/turnShellPair';
 import { resizeShellColumn } from '../../../shared/shellFocus/resizeShellColumn';
 import { splitShellColumn } from '../../../shared/shellFocus/splitShellColumn';
 import { moveShellPanel } from '../../../shared/shellFocus/moveShellPanel';
@@ -126,7 +125,6 @@ export const useShellRight = ({}: Params): ShellRight => {
       }),
       splits: (drawerGrid ?? EMPTY_DRAWER_GRID).splits,
       onFocus: focusShellPanel,
-      onTurn: turnShellPair,
       onResize: resizeShellColumn,
       onSplit: splitShellColumn,
       onMove: moveShellPanel,

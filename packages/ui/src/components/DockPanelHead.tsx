@@ -130,7 +130,7 @@ export const DockPanelHead = ({
       <div className="flex shrink-0 items-center gap-1">
         {actions}
         {menu}
-        <DrawerHeadKeys page={page} title={title} isFolded={row.isNarrow} hasMenu={menu != null} />
+        <DrawerHeadKeys page={page} />
         <IconButton icon={X} label="Close" variant="ghost" onClick={onClose} />
       </div>
     </div>

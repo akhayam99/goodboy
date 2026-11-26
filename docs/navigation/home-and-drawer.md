@@ -353,12 +353,9 @@ the page focused it closes the top of the slot as before. ``⌃` `` focuses an
 open Terminal that is not focused and closes a focused one; the rail button
 still opens and closes. A rail button is pressed while its tool is anywhere in
 the grid, and a second click closes it (`toggleTerminalDock`,
-`toggleBrowserDock`, `toggleDrawer` read `selectGridTool`). When exactly two
-tools are open and both shapes push (side by side and stacked), each head
-shows a key that turns the pair (`DockPairTurnContext` in `DrawerFrame`,
-`turnDockPair` with `turnedDockColumnsOf`); the write names the panel it came
-from and does nothing once that panel left the grid. When the page would lose
-its minimum side by side the solver stacks the pair and the key hides.
+`toggleBrowserDock`, `toggleDrawer` read `selectGridTool`). Panels are arranged by dragging a head or a tab onto a labeled card (`moveDockPanel`);
+no head carries a key that turns a pair. When the page would lose
+its minimum side by side the solver stacks the pair.
 Browser and Terminal share the grid like any tool: a handle drag hides the
 Browser page under its cover and places it once at the release
 ([browser.md](../browser.md#the-pane)), and a Terminal sends only its newest

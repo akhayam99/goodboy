@@ -121,7 +121,6 @@ const renderDesk = () => {
     columns: [[{ key: 'terminal', sizing: 'side' }], [{ key: 'browser', sizing: 'browser' }]],
     focus: 'browser',
     onFocus: () => undefined,
-    onTurn: () => undefined,
     onMove,
   };
   render(

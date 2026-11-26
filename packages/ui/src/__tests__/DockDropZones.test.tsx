@@ -61,6 +61,23 @@ describe('the drag overlay', () => {
     expect([...labels].sort()).toEqual(Object.values(DOCK_ZONE_LABELS).sort());
   });
 
+  it('keeps the chip off the label of the card under the pointer', () => {
+    const id = ZONES.find((zone) => zone.placement === 'merge')?.id ?? null;
+    shown(viewOf({ hoverId: id, x: 500, y: 300 }));
+
+    const chip = document.querySelector<HTMLElement>('[data-dock-chip]');
+    expect(chip?.style.left).toBe('514px');
+    expect(chip?.style.top).toBe('314px');
+  });
+
+  it('puts the chip above and left of the pointer while no card is under it', () => {
+    shown(viewOf({ x: 500, y: 300 }));
+
+    const chip = document.querySelector<HTMLElement>('[data-dock-chip]');
+    expect(chip?.style.left).toBe('486px');
+    expect(chip?.style.top).toBe('286px');
+  });
+
   it('dims the page behind the cards', () => {
     shown(viewOf());
 
@@ -112,8 +129,8 @@ describe('the drag overlay', () => {
     const resting = document.querySelector<HTMLElement>('[data-dock-zone="below:terminal"]');
     const hovered = document.querySelector<HTMLElement>('[data-dock-zone="above:terminal"]');
 
-    expect(resting?.style.height).toBe('6px');
-    expect(hovered?.style.height).not.toBe('6px');
+    expect(resting?.style.height).toBe('14px');
+    expect(hovered?.style.height).not.toBe('14px');
   });
 
   it('reads the live line off the store and clears it off target', () => {

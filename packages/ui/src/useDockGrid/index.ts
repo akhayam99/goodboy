@@ -9,13 +9,10 @@ import { dockMergedCellOf } from '../dockMergedCellOf';
 import { dockSplitKeyOf } from '../dockSplitKeyOf';
 import type { CanDropParams } from '../dockDropZonesOf';
 import { dockMoveFits } from '../dockMoveFits';
-import type { DockPairTurn } from '../dockPairTurnContext';
 import { DOCK_FOCUS_DETAIL, type DockGridCell, type DockGridSpec } from '../dockGridSpec';
 import { DRAWER_TIERS, type DrawerPlacement, type DrawerSizing } from '../drawerGeometry';
-import { ArrowLeftRight, ArrowUpDown } from '../icons';
 import { routedHandleOf } from '../routedHandleOf';
 import { savedHandleOf } from '../savedHandleOf';
-import { turnedDockColumnsOf } from '../turnedDockColumnsOf';
 import { unmeasuredDockGridOf } from '../unmeasuredDockGridOf';
 import type { DrawerTierWidthSet } from '../useDrawerTierWidthSet';
 import type { SplitHandleProps } from '../components/SplitHandle';
@@ -76,7 +73,6 @@ type DockGridLayout = {
   readonly handles: ReadonlyArray<SplitHandleProps | null>;
   readonly canDrop: (params: CanDropParams) => boolean;
   readonly boxesOf: (params: CanDropParams) => ReadonlyArray<DockGridColumnBox> | null;
-  readonly turn: Omit<DockPairTurn, 'onTurn'> | null;
 };
 
 type ColumnsParams = {
@@ -95,23 +91,6 @@ type ColumnPreviewParams = {
 
 type CellParams = {
   readonly cell: DockGridCell;
-};
-
-type FitParams = {
-  readonly solved: SolvedDockFrame | null;
-};
-
-const fitsAsDrawn = ({ solved }: FitParams): boolean =>
-  solved !== null && solved.mode === 'push' && !solved.isStacked && !solved.isDetailOver;
-
-const STACK_TURN: Omit<DockPairTurn, 'onTurn'> = {
-  label: 'Stack the panels',
-  icon: ArrowUpDown,
-};
-
-const SIDE_TURN: Omit<DockPairTurn, 'onTurn'> = {
-  label: 'Put the panels side by side',
-  icon: ArrowLeftRight,
 };
 
 export const useDockGrid = ({
@@ -173,11 +152,6 @@ export const useDockGrid = ({
       ? unmeasuredDockGridOf({ columns, savedWidthOf, detail: detailFallback, placement })
       : dockGridFrameOf({ solved, detailFallback });
   const isGrid = cellCount > 1 || (isLane && cellCount > 0);
-  const turned = isGrid ? turnedDockColumnsOf({ columns }) : null;
-  const canTurn =
-    turned !== null &&
-    fitsAsDrawn({ solved }) &&
-    fitsAsDrawn({ solved: solveColumns({ columns: turned }) });
   const baseOf = new Map(
     stored
       .flat()
@@ -276,6 +250,5 @@ export const useDockGrid = ({
     handles,
     canDrop,
     boxesOf,
-    turn: canTurn ? (columns.length === 2 ? STACK_TURN : SIDE_TURN) : null,
   };
 };

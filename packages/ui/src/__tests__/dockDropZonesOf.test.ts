@@ -181,4 +181,19 @@ describe('the hit areas of a panel', () => {
     expect(zones.every((zone) => zone.card.width <= zone.rect.width)).toBe(true);
     expect(zones.every((zone) => zone.card.height <= zone.rect.height)).toBe(true);
   });
+
+  it('gives a side card room for its label', () => {
+    const zones = zonesOf({
+      columns: THREE,
+      groups: { browser: ['browser', 'scripts'] },
+      dragKey: 'scripts',
+      unit: 'panel',
+    });
+    const sides = zones.filter(
+      (zone) => zone.paneKey !== null && (zone.placement === 'left' || zone.placement === 'right'),
+    );
+
+    expect(sides.length).toBeGreaterThan(0);
+    expect(sides.every((zone) => zone.card.width >= 80)).toBe(true);
+  });
 });

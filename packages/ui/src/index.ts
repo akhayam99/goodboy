@@ -16,7 +16,6 @@ export type { DockGroups, DockLayout } from './dockLayoutAfterMove';
 export type { DockMoveTarget, DockMoveUnit } from './dockMoveTarget';
 export { dockFitProbe } from './dockFitProbe';
 export { useDockGrip } from './useDockGrip';
-export { turnedDockColumnsOf } from './turnedDockColumnsOf';
 export { ShellRailContext } from './shellRailContext';
 export { UnderHeadContext } from './underHeadContext';
 export { HEAD_INSET_VAR } from './headInsetVar';
