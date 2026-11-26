@@ -50,18 +50,19 @@ export const DockPanelHead = ({
   const strip = useRef<HTMLDivElement | null>(null);
   const backChip = useContext(DrawerBackChipContext);
   const claim = tabs?.claim;
+  const takeFocus = tabs?.takeFocus;
   const paneKey = tabs?.paneKey;
 
   useLayoutEffect(() => {
-    if (claim === undefined || paneKey === undefined) {
+    if (claim === undefined || takeFocus === undefined || paneKey === undefined) {
       return;
     }
     const release = claim({ paneKey });
-    if (tabs?.takeFocus() === true) {
+    if (takeFocus({ paneKey })) {
       strip.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();
     }
     return release;
-  }, [claim, paneKey]);
+  }, [claim, takeFocus, paneKey]);
 
   const press = ({ event }: PressParams): void => {
     const { target } = event;

@@ -107,6 +107,13 @@ export const DockGrid = ({
     return () =>
       setHeaded((previous) => new Set([...previous].filter((candidate) => candidate !== paneKey)));
   }, []);
+  const takeFocus = useCallback<DockTabs['takeFocus']>(({ paneKey }) => {
+    const isOwed = regainFocus.current === paneKey;
+    if (isOwed) {
+      regainFocus.current = null;
+    }
+    return isOwed;
+  }, []);
   const [kept, setKept] = useState<Readonly<Record<string, string>>>({});
   const focus = spec.focus;
   const focusedCell =
@@ -159,13 +166,7 @@ export const DockGrid = ({
                   }
                   spec.onFocus({ key });
                 },
-                takeFocus: () => {
-                  const isOwed = regainFocus.current === pane.key;
-                  if (isOwed) {
-                    regainFocus.current = null;
-                  }
-                  return isOwed;
-                },
+                takeFocus,
                 claim,
               }
             : null;
