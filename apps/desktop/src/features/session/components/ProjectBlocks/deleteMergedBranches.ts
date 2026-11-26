@@ -4,6 +4,7 @@ import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecover
 import type { ActionFailure } from '../../../../store/slices/notifications/reportErrors';
 import { cleanUpRefusalOf } from '../../../actions/kinds/cleanUpRefusalOf';
 import { mergedMountsOf } from '../../../actions/kinds/mergedMountsOf';
+import { uniqueByMount } from './uniqueByMount';
 
 type BusyParams = {
   readonly mountId: MountId;
@@ -218,6 +219,6 @@ export const deleteMergedBranches = ({ sessionId, proposals, onBusy }: Params): 
   runDeletes({
     sessionId,
     operationKey: `delete-local-branches:${crypto.randomUUID()}`,
-    pending: proposals.map((proposal) => ({ proposal, step: 'delete' })),
+    pending: uniqueByMount({ proposals }).map((proposal) => ({ proposal, step: 'delete' })),
     ...(onBusy === undefined ? {} : { onBusy }),
   });
