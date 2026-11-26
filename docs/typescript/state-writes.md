@@ -4,7 +4,7 @@
 > an undo or a retry. **Not for** how to declare a type
 > ([data.md](data.md)) or how to write a test ([../testing.md](../testing.md)).
 
-Six rules cover the review findings that come back most often. Each has a
+Seven rules cover the review findings that come back most often. Each has a
 helper or a pattern, and a test that shows it working. The rules card in
 [AGENTS.md](../../AGENTS.md) (rules 12 to 16) points here.
 
@@ -29,9 +29,8 @@ target than the one the user clicked.
   writes go where the write destination says, and a confirm names its repo.
 - Guard: the `ambient-target` ratchet counts those reads inside
   `store/slices/**` and `store/runtime/**` and only falls. `ambient-target-session`
-  does the same for `currentSessionId`, `selectedAgentId` and `activeProjectId`
-  (89 reads in 40 files today). `optional-mount-param` counts every `mountId?:`
-  in a store file (45 in 43 files today): a write verb takes the mount it acts
+  does the same for `currentSessionId`, `selectedAgentId` and `activeProjectId`.
+  `optional-mount-param` counts every `mountId?:` in a store file: a write verb takes the mount it acts
   on as a required `mountId`, and a helper that reads may keep an optional one
   until its caller names the mount. All of them live in
   `store-writes-hold-the-line.test.ts` and only fall.
@@ -53,9 +52,9 @@ state and shows the error.
   the control.
 - A bare `.catch(() => undefined)`, `null` or `{}` hides the failure. The
   `catch-swallow` ratchet counts them and only falls; `catch-return` counts
-  a `catch` block that only returns (49 today), and `set-before-await` counts
-  the store files whose first `set(` comes before their first `await` (111
-  today, a file-level heuristic). Both only fall.
+  a `catch` block that only returns, and `set-before-await` counts the store
+  files whose first `set(` comes before their first `await` (a file-level
+  heuristic). Both only fall.
 - In use: `pinPort`, `unpinPort`, `hidePort` and `unhidePort` in `store/slices/monitoring/`.
 - Test: `commitAfterConfirm.sqlite.test.ts` (nothing committed while pending,
   nothing committed on failure, the error stored on the target).

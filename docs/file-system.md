@@ -38,7 +38,7 @@ disk and split in two on Linux.
 - `store/`: the Zustand store and its slice packages.
 - `assets/`: app-level images.
 - `__tests__/`: integration and regression suites that span features.
-- `test/`: test infrastructure that tests and mock scenes share: `storyHarness/` (`spies.ts`, `dbStubs.ts`, `moduleMocks.ts`, `builders.ts`, with an `index.ts`; `store/storyHarness.ts` re-exports it for one release), `dbMock`, `invokeMock`, `sceneInvoke`, the in-memory chat and ask backends. No product file imports it: `__tests__/regressions/production-graph-has-no-mock-code.test.ts` walks the static imports from `main.tsx` and fails when any reach `test/` or `app/components/MockScene/`.
+- `test/`: test infrastructure that tests and mock scenes share: `storyHarness/` (`spies.ts`, `dbStubs.ts`, `moduleMocks.ts`, `builders.ts`, with an `index.ts`; `store/storyHarness.ts` re-exports it), `dbMock`, `invokeMock`, `sceneInvoke`, the in-memory chat and ask backends. No product file imports it: `__tests__/regressions/production-graph-has-no-mock-code.test.ts` walks the static imports from `main.tsx` and fails when any reach `test/` or `app/components/MockScene/`.
 
 `App.tsx`, `main.tsx` and `styles.css` sit at the root.
 
@@ -128,7 +128,7 @@ Some files predate the folder rule. New code never adds one. A mechanical move f
 - A module folder holding only `index.ts` and its test becomes a flat pair.
 - A component folder that holds only `index.tsx` is a flat `Name.tsx`; `index-only-folders.baseline.json` is at zero and stays there.
 - A kebab-case module (`turn-errors.ts`) is renamed to camelCase when you touch it; `kebab-modules.baseline.json` lists them. Store slice folders are kebab-case on purpose, package files follow the camelCase module rule, and a rename on touch is the only rename.
-- `shared/lib/` files that are pure functions move to `shared/utils/` when you touch them (`branchPresence`, `concurrency` and `remoteHost` already did).
+- `shared/lib/` files that are pure functions move to `shared/utils/` when you touch them.
 
 ## Store slices (`store/slices/<name>/`)
 
@@ -141,13 +141,13 @@ Each slice is a **package folder**:
 - One `select<Thing>.ts` per pure selector.
 - `selectors.ts`: the slice's React selector hooks (`use*`), each reading the keys the slice owns in `state.ts`. A hook that reads several slices sits in the slice that owns its primary key. A slice whose `selectors.ts` already holds pure selectors that action files import keeps its hooks in `use<Thing>.ts` files instead (`project-mounts`), so the actions never import the store. Callers get the hooks through `store/index.ts`, which re-exports each one from its source file.
 - `types.ts`: types used only inside the slice. It re-exports `SetFn`/`GetFn` from `../../slice-types` when its files use them.
-- Domain helpers only the slice's actions use sit in the slice as one file each, next to their test (`turn/turnHelpers.ts`, `turn/kickoff.ts`, `project-mounts/scopeGuard.ts`, `workflows/summarizeAgentOutput.ts`). The store root keeps `store.ts`, `createTrackedStore.ts` (wraps the vanilla store in the `useAppStore` hook), `hooks/useTrackedSelector` (the hook that skips a selector whose read keys did not change), `types.ts`, `slice-types.ts`, `index.ts`, `sessionEviction.ts`, `sessionReplySettings.ts`, `mock-data.ts`, `storyHarness.ts` and the cross-slice `store.*.test.ts` files.
+- Domain helpers only the slice's actions use sit in the slice as one file each, next to their test (`turn/turnHelpers.ts`, `turn/kickoff.ts`, `project-mounts/scopeGuard.ts`, `workflows/summarizeAgentOutput.ts`). The store root keeps `store.ts`, `createTrackedStore.ts` (wraps the vanilla store in the `useAppStore` hook), `hooks/useTrackedSelector` (the hook that skips a selector whose read keys did not change), `types.ts`, `slice-types.ts`, `index.ts`, `sessionEviction.ts`, `sessionReplySettings.ts`, `storyHarness.ts`, the cross-slice `store.*.test.ts` files and `__prompts__/`, the prompt files those tests pin with `toMatchFileSnapshot`.
 
 A slice that grows past about 60 flat files groups the files of one concern in a folder inside the slice (`resolve/publication/`). The folder holds files only, one level deep, and the slice `index.ts` stays the only registration point: nothing outside the slice imports a concern folder by deep path when `index.ts` already exports it. `__tests__/regressions/store-folders-stay-small.test.ts` fails on a new folder past 60 and holds the five that are past it today (`resolve`, `turn`, `workflows`, `project-mounts`, `runtime/auto`) to an allowlist that only shrinks.
 
 ## Store runtime (`store/runtime/<name>/`)
 
-A folder under `store/slices/` is a slice: it owns state keys, has a slice factory and is composed in `store.ts`. Code that keeps no state and is composed nowhere is not a slice, and lives in `store/runtime/<name>/` as flat files with their tests: `auto` (the Auto runtime), `live-work` (the running-work selectors), `models` (model resolution from settings), `state-writes` (`latestOnly`, `commitAfterConfirm`, `sessionReads`) and `worktreeStatuses` (the git status cache). A runtime folder has no `index.ts`, no `state.ts` and no registration; importers name the file they use. A folder that gains state moves back to `store/slices/` with the three files above.
+A folder under `store/slices/` is a slice: it owns state keys, has a slice factory and is composed in `store.ts`. Code that keeps no state and is composed nowhere is not a slice, and lives in `store/runtime/<name>/` as flat files with their tests: `auto` (the Auto runtime), `live-work` (the running-work selectors), `models` (model resolution from settings), `state-writes` (`latestOnly`, `commitAfterConfirm`, `sessionReads`), `worktreeStatuses` (the git status cache), and `runGuidance`, `runGuide`, `runLimit` and `runLocks`, which read and write those facts of a run on the database. A runtime folder has no `index.ts`, no `state.ts` and no registration; importers name the file they use. A folder that gains state moves back to `store/slices/` with the three files above.
 
 Rules around slices:
 
@@ -183,6 +183,8 @@ Rules around slices:
 - `lib/`: code that touches the runtime boundary: Tauri wrappers (`invokeCommand`, `db`, `dbBoot`, `editor`, `reveal`), the folder dialog (`pickFolder`), browser storage (`storage-keys`, `zoom` and the factor it last applied, `appliedZoom`), theme and the feature flags. A pure function does not belong here: put it in `utils/`.
 - `keyboard/`: the shortcut registry, its dispatcher, `useShortcut` and `isTypingTarget`.
 - `platform/`: operating system detection.
+- `navigation/`: the one list of destinations every door opens (`destinations.ts`, `openDestination.ts`) and the column, rail and studio place of a page.
+- `shellFocus/`: moving focus between the shell panels, resizing and splitting its columns, and turning a panel pair.
 - `detail-fields/`: the field builders the record detail panes render, one file per tracker.
 
 Some jobs have one implementation, and a feature never rewrites them:

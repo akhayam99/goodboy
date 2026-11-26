@@ -3,7 +3,9 @@
 > **Read this when** writing or reviewing tests: what to cover and how to
 > assert. **Not for** where test files live (`docs/file-system.md`).
 
-This file says what to test and how. Where test files go: [file-system.md](file-system.md).
+## The golden rule
+
+If a test fails because the component, store or hook does the wrong thing, **fix the code, not the test**. Never weaken a test to make it pass.
 
 ## Content and rules
 
@@ -30,8 +32,6 @@ This file says what to test and how. Where test files go: [file-system.md](file-
 - `__tests__/regressions/class-assertions.test.ts` counts `toHaveClass`, `classList.contains` and `className` or `class` attribute checks in `apps/desktop` test files, per file, against `class-assertions.baseline.json`. A class pins the look, not the behavior, and the class contract belongs to `packages/ui`. A count may fall and never grow, and a new file starts at zero. Regenerate it the same way with `src/__tests__/regressions/class-assertions.test.ts` when a change removes assertions.
 - `__tests__/regressions/rust-spawn-sites.test.ts` counts `.spawn()` and `.kill()` in the Rust sources under `apps/desktop/src-tauri/src`, outside `proc/`, per file, against `rust-spawn-sites.baseline.json`. Comment lines and the trailing test module of a file are not counted. A count may fall and never grow, and a new file starts at zero. A process is started and stopped through `proc/` (`docs/architecture.md`, Processes Goodboy starts). Regenerate the baseline when a change removes call sites: `GOODBOY_UPDATE_BASELINE=1 pnpm --filter @goodboy/desktop exec vitest run src/__tests__/regressions/rust-spawn-sites.test.ts`.
 
-Rust history tests reserve copies in their isolated temporary test root, so a real-Git test never touches the application's live reservations.
-
 ## Rules for every change
 
 These hold for each change that touches a test, and they come from tests that stayed green while the app was wrong.
@@ -53,35 +53,25 @@ These hold for each change that touches a test, and they come from tests that st
 
 A file that fakes the store gets one verdict before anything is deleted: keep (it proves behavior a fake cannot hide), convert (same claims on the real store, call-only assertions replaced by state) or delete (it only checks that a fake was called). A domain moves one at a time and its table lives here. A relative `vi.mock` of an own module is counted for information only and is never banned.
 
-| Domain               | File                                                                       | Verdict                                            |
-| -------------------- | -------------------------------------------------------------------------- | -------------------------------------------------- |
-| `features/workspace` | `GoodboyIgnoreCard/index.test.tsx`                                         | converted: real save, error and retry              |
-| `features/workspace` | `LocateMovedProjects/index.test.tsx`                                       | converted: real row, move, error and retry, cancel |
-| `features/workspace` | `WorkspaceIdentityRow/index.test.tsx`                                      | converted: real selectors over seeded workspaces   |
-| `features/workspace` | `WorkspaceSwitcher/CurrentWorkspaceRow.test.tsx`                           | converted: real live-work count                    |
-| `features/workspace` | `hooks/useProjectGitStatuses/index.test.ts`                                | converted: real store, git status over the invoke  |
-| `features/workspace` | `StageBoard/useBoardNavigation/index.test.ts`                              | converted: real navigation stack and editor invoke |
-| `features/workspace` | `StageBoard` (three files), `WorkspaceLauncher`, `WorkspaceSwitcher/index` | convert, open                                      |
+| Domain               | File                                                  | Verdict                                            |
+| -------------------- | ----------------------------------------------------- | -------------------------------------------------- |
+| `features/workspace` | `GoodboyIgnoreCard/index.test.tsx`                    | converted: real save, error and retry              |
+| `features/workspace` | `LocateMovedProjects/index.test.tsx`                  | converted: real row, move, error and retry, cancel |
+| `features/workspace` | `WorkspaceIdentityRow/index.test.tsx`                 | converted: real selectors over seeded workspaces   |
+| `features/workspace` | `WorkspaceSwitcher/CurrentWorkspaceRow.test.tsx`      | converted: real live-work count                    |
+| `features/workspace` | `hooks/useProjectGitStatuses/index.test.ts`           | converted: real store, git status over the invoke  |
+| `features/workspace` | `StageBoard/useBoardNavigation/index.test.ts`         | converted: real navigation stack and editor invoke |
+| `features/workspace` | `StageBoard` (three files), `WorkspaceSwitcher/index` | convert, open                                      |
 
 ## Preservation tests map onto navigation rows
 
-Twelve files kept a claim from a release migration: each `it()` says a capability still has a home. A file that lists capabilities has no source document in the repository, so each `it()` is judged against `__tests__/surfaces/navigation-flows` (`*.rows.tsx`, with `harness tests` as the other home). An `it()` that a row proves on the same control is deleted. One that a row only reaches, without asserting what the `it()` asserts, stays under a title that names the domain, never a release or a sprint. The first pass removed 7 tests, replaced by 7 rows:
-
-| Removed `it()`                                            | Row that proves it                                                                                          |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| session tools: the Context row opens the Context drawer   | `palette-destinations`: context drawer from the session tools                                               |
-| Board: Archived lane keeps Restore                        | `board-lanes`: Archived folds to its count, Show all opens it and Restore sends its first card to its stage |
-| Tasks issue pane: Start session on an issue nobody linked | `start-paths`: Tasks issue Start opens the New session draft with the issue above                           |
-| New session: Start a run from the Overview New menu       | `create-and-search`: overview New opens its menu, and Start a run opens the field                           |
-| New session: Report and Wireframe drawer forms            | `create-and-search`: new drawer, write report and write wireframe                                           |
-| Agent page: the menu holds no transcript door             | `headers`: agent page, the menu holds no transcript door                                                    |
-| Branch page: Comments entry keeps its groups              | `branch-page`: the Comments tab opens the Branch on its Comments                                            |
+A preservation test keeps a claim from a release migration: each `it()` says a capability still has a home. Such a file has no source document in the repository, so each `it()` is judged against `__tests__/surfaces/navigation-flows` (`*.rows.tsx`, with `harness tests` as the other home). An `it()` that a row proves on the same control is deleted. One that a row only reaches, without asserting what the `it()` asserts, stays under a title that names the domain, never a release or a sprint.
 
 A file name or a baseline key that still says `preservation` moves with its baseline in the PR that owns the ratchet, never here.
 
 ## Desktop unit tests run in six shards
 
-CI splits the desktop `unit` project with `vitest run --project unit --shard=i/6`, and each job stops at 20 minutes. That is the full run, on every push to `main`, in the merge queue and on a pull request that touches shared config. A narrow pull request runs only the tests its changed files reach through the import graph, plus the regression guards and the tests that read files from disk, in as few shards as that work fills ([CONVENTIONS.md](../CONVENTIONS.md#ci-pipeline), `changes`). Vitest sorts the files by the hash of their path and cuts the list into six equal slices, so adding or removing a test file can move other files to a different shard. To reproduce one CI job locally: `pnpm --filter @goodboy/desktop exec vitest run --project unit --shard=2/6`. `node scripts/check-test-shards.mjs` runs in the `checks` job. Coverage holds by construction, so it guards an empty shard and a custom sequencer that drops or repeats a file.
+CI splits the desktop `unit` project with `vitest run --project unit --shard=i/6`, and each job stops at 20 minutes. That is the full run, on every push to `main`, in the merge queue and on a pull request that touches shared config. A narrow pull request runs only the tests its changed files reach through the import graph, plus the regression guards and the tests that read files from disk, in as few shards as that work fills ([CONVENTIONS.md](../CONVENTIONS.md#ci-pipeline), `changes`). Vitest sorts the files by the hash of their path and cuts the list into six equal slices, so adding or removing a test file can move other files to a different shard. To reproduce one CI job locally: `pnpm --filter @goodboy/desktop exec vitest run --project unit --shard=2/6`. `node scripts/check-test-shards.mjs` proves the shards list every file once ([CONVENTIONS.md](../CONVENTIONS.md#ci-pipeline), `checks`).
 
 ## Test environment
 
@@ -97,17 +87,17 @@ Vitest runs with `silent: 'passed-only'`: the stdout of a passing test is droppe
 
 An unexpected `console.error` or `console.warn` fails the test that produced it. `apps/desktop/src/test/failOnConsole.ts` is a vitest setup file. At import it replaces both channels with a recorder, and `afterEach` throws unless every recorded message is in `apps/desktop/src/test/console-baseline.json`. An `afterAll` does the same for output from `beforeAll`, `afterAll` or a timer that fires after the last test. A test that spies on the console itself (`vi.spyOn(console, 'error')`) handles its own output. A spy that only counts or collects must forward the lines it does not expect to the original it captured (`const logError = console.error`), or it silences the guard.
 
-- The baseline lists what the suite already printed when the guard landed: one entry per test file and message, with uuids and digits collapsed to `#` (an HTTP status code before a status word stays). The message is its first line, or its first two lines for a React format-string warning, so a new "unique key" warning in a baselined file does not hide under the old one. It is a ratchet, like `forbidden-patterns.baseline.json`: `__tests__/regressions/console-baseline.test.ts` pins the entry count in `BASELINE_CEILING` and a hash of the entries in `BASELINE_SHA256`, so swapping an entry fails too. Never add an entry to silence output you introduced. Fix the cause: complete the mock, stabilize the hook input, fix the invalid DOM nesting.
+- The baseline lists known output: one entry per test file and message, with uuids and digits collapsed to `#` (an HTTP status code before a status word stays). The message is its first line, or its first two lines for a React format-string warning, so a new "unique key" warning in a baselined file does not hide under the old one. It is a ratchet, like `forbidden-patterns.baseline.json`: `__tests__/regressions/console-baseline.test.ts` pins the entry count in `BASELINE_CEILING` and a hash of the entries in `BASELINE_SHA256`, so swapping an entry fails too. Never add an entry to silence output you introduced. Fix the cause: complete the mock, stabilize the hook input, fix the invalid DOM nesting.
 - A test that exercises an error path on purpose spies on the console and asserts the message. That is the alternative to a baseline entry. `packages/core` tests do this for every expected `console.warn`.
 - Output that arrives from a timer after its test ended lands in the next test of the same file, or in the `afterAll` for the last one. A late timer can therefore fail an innocent neighbour: stop the timer in the test that starts it.
 - To shrink it, fix the cause, then run the affected files with `GOODBOY_UPDATE_CONSOLE_BASELINE=1 pnpm --filter @goodboy/desktop exec vitest run <path> --maxWorkers=2`. The run rewrites the entries of the files it ran and refuses to add a new one. Update the two constants in `console-baseline.test.ts` in the same commit. Three traps: an update run with `-t` (a test name filter) runs part of a file and drops the entries of the tests it skipped; two update runs in parallel overwrite each other; `GOODBOY_CONSOLE_REPORT` alone is refused, the guard would be off. `GOODBOY_SEED_CONSOLE_BASELINE=1` is the one switch that lets an update run add entries, and it never removes any: use it only to seed.
-- A mock that throws inside code that catches it prints through `console.error` and lands on this guard. The catch swallows the throw, the console line does not. The shared db and invoke mocks below no longer throw: they record the call and fail the test in `afterEach`.
+- A mock that throws inside code that catches it prints through `console.error` and lands on this guard. The catch swallows the throw, the console line does not. The shared db and invoke mocks below do not throw: they record the call and fail the test in `afterEach`.
 - `__tests__/regressions/console-guard.test.ts` runs fixtures through the real setup file. `console-guard-wiring.test.ts` (unit project) and `a11y/console-guard-wiring.test.ts` check that `console.error` carries the guard marker, so dropping `setupFiles` or `extends: true` from `vitest.config.ts` goes red.
 - `packages/ui` and `packages/core` load their own strict `src/test/failOnConsole.ts` (no baseline: any console output fails). Their vitest config lists it in `setupFiles`.
 
 ## Store tests share one harness
 
-Every desktop test that loads the real store goes through `apps/desktop/src/test/storyHarness/` (`store/storyHarness.ts` re-exports it for one release). `spies.ts` is the only file allowed to `import()` the store module; the factories live in `moduleMocks.ts`, the db stubs in `dbStubs.ts` and the builders in `builders.ts`.
+Every desktop test that loads the real store goes through `apps/desktop/src/test/storyHarness/` (`store/storyHarness.ts` re-exports it). `spies.ts` is the only file allowed to `import()` the store module; the factories live in `moduleMocks.ts`, the db stubs in `dbStubs.ts` and the builders in `builders.ts`.
 
 - Mock the Tauri boundary; a module mock of our own packages comes only from the harness factories, one per mocked module: `vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock())`. A test that needs a different default overrides it on the spy for that test, or passes its own stubs: `dbModuleMock({ listContextSlotsForSession: mine })` adds them over `storyDbStubs()`. It never keeps a private copy of the whole mock. The permission and plan modules are in the same set: `storySpies.invokePermissionRuleList`, `storySpies.invokeAuditRetryDrain`, `storySpies.upsertPlan` and the rest are the spies behind `permissionsModuleMock()` and `plansModuleMock()`. `tauriInvoke` answers the commands in `storyInvokeHandlers`; `stubStoryInvoke` adds or replaces one for a test.
 - Spies live in `storySpies`, named after the function they stand in for (`storySpies.invokeBudgetRuleList`). `resetStorySpies()` restores every default.
@@ -141,7 +131,7 @@ A test that needs a `Session`, `Agent`, `Project`, `Workspace` or `WorkflowRun` 
 
 `createInvokeMock({ handlers, unknownResult })` in `src/test/invokeMock.ts` does the same for Tauri commands: a command with no handler records its name and payload and resolves to `unknownResult`. It never throws, because a throw becomes an unhandled rejection in the fire-and-forget code that calls `invoke`.
 
-`src/test/failOnUnexpectedCalls.ts` is a setup file. It clears the record before each test and throws in `afterEach` when the record is not empty, naming every call. The record exists because the product code often catches the error a missing stub used to raise, so the console alone cannot see it.
+`src/test/failOnUnexpectedCalls.ts` is a setup file. It clears the record before each test and throws in `afterEach` when the record is not empty, naming every call. The record exists because the product code often catches the error a missing stub would raise, so the console alone cannot see it.
 
 - Fix a hit by stubbing the call with the value the real code returns: `storyDbStubs()` in `test/storyHarness/` for a db function every store test needs, `stubStoryInvoke({ command: value })` for a command one test needs, a local stub for one test. Do not stub it with `undefined` to make the message go away.
 - A test that makes the call on purpose reads the record with `drainUnexpectedCalls()` and asserts it. That empties it, so the guard passes.
@@ -177,11 +167,6 @@ A `packages/db` test that needs a migrated schema calls `await makeMigratedTestD
 
 For speed, `packages/db/src/migrations/registry.test.ts` tests a sample of the intermediate versions instead of all of them. That sample does not replace the per-version sql hash manifest checked into the same file. The manifest is what really stops anyone from editing a migration after release. The sample has its own minimum number of intermediate points it must reach. So if someone cuts the sample size, the test fails, instead of quietly shrinking to the first and last version. No test pins the sampled versions or the total number of migrations. Both change every release. A test that goes red for that reason teaches people to edit the expected values, and that is exactly how a hash manifest gets regenerated without anyone looking.
 
-Rust repository fixtures reserve a unique directory before Git initialization.
-Timestamp-only names can collide in parallel tests. The helper in
-`apps/desktop/src-tauri/src/worktree/file_sides/tests.rs` combines a per-process
-counter with a timestamp and uses `create_dir` to reject reuse.
-
 ## Fake CLI binaries for the Rust spawn tests
 
 `apps/desktop/src-tauri/tests/fixtures/fake-cli/` holds POSIX `sh` scripts named `claude`, `codex`, `cursor-agent`, `agy`, `copilot` and `opencode`, plus `streams/` with one recorded output per provider. The Rust tests copy the folder to a temp dir with `FakeCli::stage(mode)` (`src/fake_cli.rs`) and start the copy through the real code: `spawn_one` in `turn.rs` for a turn, `run_planner` and `run_summarize` for the side jobs, `detect_binary_within` and the `check_*_auth_with` functions in `providers.rs` for detection and sign-in. The tests live in `src/turn/fake_cli_tests.rs`, `src/providers/fake_cli_tests.rs` and `src/providers/cli_args/fake_cli_tests.rs`, and run under plain `cargo test --locked`.
@@ -195,6 +180,11 @@ counter with a timestamp and uses `create_dir` to reject reuse.
 - To refresh the files after a vendor release, run `GOODBOY_RECORD_ARGV=1 cargo test --locked --lib argv_fixture` by hand, check each diff against the vendor's `--help`, and commit them with the new version in the fake script. The recorder refuses to run when `CI` is set.
 - Adding a provider or a stream shape ([add-a-provider](recipes/add-a-provider.md)): add a script and a `streams/` file, then a test that asserts the argv and the lines. Prove it can fail: break the code it covers, see the test go red, restore it.
 
+## Rust repository fixtures
+
+- A repository fixture reserves a unique directory before Git initialization, because timestamp-only names collide in parallel tests. The helper in `apps/desktop/src-tauri/src/worktree/file_sides/tests.rs` combines a per-process counter with a timestamp and uses `create_dir` to reject reuse.
+- History tests reserve copies in their isolated temporary test root, so a real-Git test never touches the application's live reservations.
+
 ## A table rebuild proves that the rows survive
 
 A migration that rebuilds a table (`PRAGMA foreign_keys = OFF`, a new table, a copy, `DROP TABLE`, a rename) can lose or scramble rows and still converge to the right schema, which is all `registry.test.ts` checks. Such a migration gets `packages/db/src/migrations/mNNN-<slug>.test.ts` in the same commit. The test opens `makeMigratedTestDatabase({ throughVersion: N - 1 })`, seeds rows with `insertRow` from `test-helpers/migration-rows.ts`, reads them with `selectRows`, runs the migration with `migrateThrough`, and compares every column of every rebuilt table with what it read before. A column the migration renames or remaps is remapped in the expectation, so every other column must be equal. Also seed the child tables that point at the rebuilt one (with `foreign_keys` off in the rebuild they must survive), a row with a null or dangling reference, and check `PRAGMA foreign_key_check` and the new constraints.
@@ -203,8 +193,12 @@ A migration that rebuilds a table (`PRAGMA foreign_keys = OFF`, a new table, a c
 
 ## No stopwatch in the gate
 
-A test that reads the clock (`performance.now()`, `Date.now()`) and asserts a budget in milliseconds fails when the runner is loaded, not when the code is slow. The required `unit` project has none. A real benchmark is named `*.perf.test.ts` and lives in the `perf` vitest project of `apps/desktop`, `packages/core` or `packages/db`. Run it with `pnpm test:perf` (or `pnpm --filter <pkg> test:perf`). It never blocks a merge: `.github/workflows/perf.yml` runs it on push to main, nightly and on demand, a push or nightly failure opens one issue labeled `perf` or rewrites the body of the open one with the latest run, the first failure and a count (`scripts/report-ci-issue.mjs`, never a comment per failure), and the concurrency group includes the event name so a push never cancels the nightly run. The same workflow has a `bundle` job that runs on every pull request touching `apps/desktop`, `packages`, `pnpm-lock.yaml` or `bundle-budget.json`, nightly and on demand. It builds the desktop app and `scripts/check-bundle-budget.mjs` sums the js and css that index.html loads up front, raw and gzip, against `bundle-budget.json` (the measured weight plus 5 percent). It fails when a weight is over the budget and when it counted zero files, so a changed asset path cannot print 0.00 MB. The budget only falls: the pull request that shrinks the bundle lowers it (`node scripts/check-bundle-budget.mjs --suggest` prints the value for the current build). A render that must not happen is proved by a count, not by time: `features/session/components/SessionOverviewPane/CentralColumn.renders.test.tsx` mounts `CentralColumn` under a React `Profiler` and expects zero commits when a pull request of another session's mount is written and when 15 seconds pass with no Auto tree, and `shared/hooks/useSessionMountHosts/index.test.ts` does the same for the hook that picks a session's mounts out of the three cross-workspace host maps. A hook that reads one session must take its keys from `useSessionMountHosts` (or `pickKeys` with `useShallow`), never `state.mountGithub` whole. A nightly `audit` job runs `scripts/audit-gate.mjs` and opens or updates one issue labeled `security` (see CONVENTIONS.md, CI pipeline).
+A test that reads the clock (`performance.now()`, `Date.now()`) and asserts a budget in milliseconds fails when the runner is loaded, not when the code is slow. The required `unit` project has none.
 
+- A real benchmark is named `*.perf.test.ts` and lives in the `perf` vitest project of `apps/desktop`, `packages/core` or `packages/db`. Run it with `pnpm test:perf` (or `pnpm --filter <pkg> test:perf`).
+- A benchmark never blocks a merge. `.github/workflows/perf.yml` runs it on push to main, nightly and on demand. A push or nightly failure opens one issue labeled `perf`, or rewrites the body of the open one with the latest run, the first failure and a count (`scripts/report-ci-issue.mjs`, never a comment per failure). The concurrency group includes the event name, so a push never cancels the nightly run.
+- The `bundle` job of the same workflow runs on every pull request touching `apps/desktop`, `packages`, `pnpm-lock.yaml` or `bundle-budget.json`, nightly and on demand. It builds the desktop app, and `scripts/check-bundle-budget.mjs` sums the js and css that index.html loads up front, raw and gzip, against `bundle-budget.json` (the measured weight plus 5 percent). It fails when a weight is over the budget and when it counted zero files, so a changed asset path cannot print 0.00 MB. The budget only falls: the pull request that shrinks the bundle lowers it (`node scripts/check-bundle-budget.mjs --suggest` prints the value for the current build).
+- A render that must not happen is proved by a count, not by time. `features/session/components/SessionOverviewPane/CentralColumn.renders.test.tsx` mounts `CentralColumn` under a React `Profiler` and expects zero commits when a pull request of another session's mount is written and when 15 seconds pass with no Auto tree. `shared/hooks/useSessionMountHosts/index.test.ts` does the same for the hook that picks a session's mounts out of the three cross-workspace host maps. A hook that reads one session takes its keys from `useSessionMountHosts` (or `pickKeys` with `useShallow`), never `state.mountGithub` whole.
 - A guard against a slow regex or a quadratic loop asserts the result on the pathological input in the `unit` file, and keeps its time budget in the package's perf file (for example `packages/core/src/pathological-input.perf.test.ts`). Where the code reads its input by index, count the reads instead of timing them (`packages/core/src/artifacts/grammar.test.ts`).
 - The search query is guarded by `packages/db/src/queries/search.plan.test.ts`, which runs `EXPLAIN QUERY PLAN` on the query `searchIndex` really sends and checks that it walks the FTS index, reads documents by rowid or index, and never scans a table. `search.perf.test.ts` keeps the 100k message timing for the perf project.
 - Never assert a duration on an array copy or another operation with no I/O.
@@ -218,12 +212,96 @@ A speed claim about the launch or the always-on shell cites a number from this h
 - The fixture: `node scripts/make-perf-fixture.mjs --out <path>` writes a database through the real migrations, with mock names only. It has 4 workspaces (Harborline, Northwind, Acme, Cascadia), 7 active sessions, 150 agents each, one agent with 5,000 events including large tool results, 60 worktree rows and merged pull request links. It refuses a path that exists and writes nowhere else. `--through <version>` stops the migrations early, so an older build can open the file. The app opens it through `GOODBOY_DB_FILE`. Keep the file outside the repo and outside the app's data folder.
 - The marks: `shared/lib/bootMarks.ts` takes a `performance.mark` at the start of the script (`shared/lib/markScriptStart.ts`), at each launch phase, at `hydrated`, at the first Board commit that holds sessions (`StageBoard/useMarkBoardShown`) and when the splash is removed (`BootSplashExit`). It sends one `marks` line to `boot-breadcrumbs.log`, beside the other launch lines, once the splash and the Board are both marked or 10 seconds after the splash. Each value is a millisecond count since the webview started. The line leaves nothing the file did not already hold, and nothing leaves the machine. Rust accepts only the names in `MARK_KEYS`, and `rust-twin-constants.test.ts` keeps that list equal to `BOOT_MARK_NAMES`.
 - The counts: `shared/lib/perfSeam.ts` holds a counter that is null in production. `countPerf` does nothing until a test installs one, so no log line and no allocation reach a user. The seam counts boot steps, boot marks, stage derivations and the agents of each derived session (`cachedStageInfoOf`), the recorded reads compared to keep a derivation (`areStageReadsCurrent`) and calls to `browserTabCount`.
-- The budgets: `store/slices/boot/bootBudgets.ts` (`BOOT_BUDGETS`) and `app/shellBudgets.ts` (`SHELL_BUDGETS`) pin today's value of each count. A budget only falls: the change that makes a path cheaper lowers its number in the same commit. `store/slices/boot/bootBudgets.test.ts` runs `hydrate` on the story database and counts the awaited steps before the shell shows (`isShellReady`) and before `hydrated`, the `turn_list_live` calls, the project reads for one workspace, the store commits before idle work starts (idle callbacks held) and the fixed splash wait. `store/slices/boot/launchOrder.test.ts` holds the launch invariants on the same database: migrations before any read, the ghost reconcile before the agents read, a restart that puts the window back, and a failed read that lands on the launch error screen with its phase. `store/slices/boot/shellFirst.test.ts` holds the shell order: the shell is up with the workspace known and no sessions while the sessions read is held, rows and cards land in one commit, a switch during the load keeps only the last, a second window (window hash) opens its own workspace, and a failed sessions read takes the shell down to the launch error screen. `app/shellBudgets.test.tsx` mounts the shell over a store with 1,050 agents and counts the derivations, agents scanned and reads compared when an agent changes state, the derivations for an unrelated write, the `SessionTools` trees with the drawer edge shown, the tab recounts (`workspaceTabCount`) for one session write, the `browser_tab_list` calls and host hops in a minute with a parked pane at 1 and 4 tabs, the commands to read the tab rows of 7 sessions, and the numbers shown before their data. A host hop is one live tab read per list call. The shell test lives under `app/` because a store test may not import the UI.
+- The budgets: `store/slices/boot/bootBudgets.ts` (`BOOT_BUDGETS`) and `app/shellBudgets.ts` (`SHELL_BUDGETS`) pin the current value of each count. A budget only falls: the change that makes a path cheaper lowers its number in the same commit. `store/slices/boot/bootBudgets.test.ts` runs `hydrate` on the story database and counts the awaited steps before the shell shows (`isShellReady`) and before `hydrated`, the `turn_list_live` calls, the project reads for one workspace, the store commits before idle work starts (idle callbacks held) and the fixed splash wait. `store/slices/boot/launchOrder.test.ts` holds the launch invariants on the same database: migrations before any read, the ghost reconcile before the agents read, a restart that puts the window back, and a failed read that lands on the launch error screen with its phase. `store/slices/boot/shellFirst.test.ts` holds the shell order: the shell is up with the workspace known and no sessions while the sessions read is held, rows and cards land in one commit, a switch during the load keeps only the last, a second window (window hash) opens its own workspace, and a failed sessions read takes the shell down to the launch error screen. `app/shellBudgets.test.tsx` mounts the shell over a store with 1,050 agents and counts the derivations, agents scanned and reads compared when an agent changes state, the derivations for an unrelated write, the `SessionTools` trees with the drawer edge shown, the tab recounts (`workspaceTabCount`) for one session write, the `browser_tab_list` calls and host hops in a minute with a parked pane at 1 and 4 tabs, the commands to read the tab rows of 7 sessions, and the numbers shown before their data. A host hop is one live tab read per list call. The shell test lives under `app/` because a store test may not import the UI.
 - The timed run: `node scripts/boot-timing.mjs --app <binary or .app> --db <fixture> --runs 10` copies the fixture for each cold launch, reads the launch lines from `~/.goodboy/boot-breadcrumbs.log` and prints the median and the 95th percentile of each metric. A build without marks still reports the launch phases and the time to ready. Run it on each build to compare, with the same fixture. The count tests run on every pull request. The timed run stays out of the gate.
 
-## The golden rule
+## Tests do not depend on the hour
 
-If a test fails because the component / store / hook does the wrong thing, **fix the code, not the test**. Never weaken a test to make it pass.
+A test that reads the clock, or that builds a seed with `sceneClock` (it shifts every seed time to the moment the module loaded), must give the same answer at any hour and in any time zone. Pin the instant before the seed module loads, with the local wall clock and not a UTC string: `vi.hoisted(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 9, 18, 10, 31)); })` (see `archiveOffer.test.tsx`, `activityRunSeed.test.ts`). Build a fixed instant from local parts (`new Date(2026, 8, 28, 15, 0)`) when the code under test compares local days, and compute the expected day label with `Intl.DateTimeFormat` in the test, never as a literal that holds only in one zone. A UTC string such as `2026-10-03T12:00:00Z` is a different local day somewhere between -11 and +14. The `test-time-zones` job of `ci.yml` runs the scene-backed tests in four clocks (`Pacific/Kiritimati`, `Pacific/Pago_Pago`, and the zones that put the local time just before and just after midnight right now), so a new hour-dependent test fails on the pull request. Run it by hand with `TZ=Pacific/Kiritimati pnpm --filter @goodboy/desktop exec vitest run --project unit <files>`, or `TZ="$(node scripts/test-time-zone.mjs before-midnight)"`.
+
+## Keys are pressed on the real app
+
+A shortcut test presses the key on the element that has the focus, not on
+`window`. `pressShortcut` and `pressKey` (`apps/desktop/src/__tests__/helpers/pressKey.ts`)
+build the event from the registry entry, with its physical `code`, and fire it on
+a focused button, field or row. `__tests__/surfaces/navigation-flows/keys.test.tsx`
+mounts the whole app on the real store, presses every id of `SHORTCUTS` and checks
+an effect: the page, the store, an open popover or a write at the database boundary.
+An id that cannot reach its context sits in the exemption list of that file with its
+reason, and the list can only get shorter. Review and activity keys run on a seeded
+world of the same app (`bootWorld`).
+
+## Scenes
+
+### Scene registry
+
+The registry smoke test renders every scene through the story store harness and
+checks the committed sorted scene list. Regenerate that list with
+`GOODBOY_UPDATE_BASELINE=1` when adding or removing scenes. Duplicate ids fail at
+module load with both file names; unknown ids render an alert instead of silently
+opening the workspace. The accessibility suite remains the owner of violation
+baselines.
+
+### Scene measures
+
+The scene measures workflow has two kinds of step. `chrome ready` (the mock
+preview answers, Chrome starts, the warm-up scene renders; `--ready-only` runs
+just this) is a normal step: when it fails the job is red, so an infrastructure
+fault never looks like a pass. A Chrome start gets 30 s and three tries with a
+fresh profile, stops early when Chrome exits, and a failure prints the tail of
+Chrome's stderr. `scene measures` is advisory
+(`continue-on-error` on the step) and must never be configured as a required
+check. Its findings reach the pull request three ways: one `::error`
+annotation per failure (the first ten, then a count), the failing scene ids and
+the run time in the run summary, and a final `::error` when the step failed or
+timed out. A crash that names no scene prints `scene measures: crashed`.
+
+A measure that saw nothing is a failure. `open` throws `scene <id>: did not
+become ready` after three tries, and the run records it as a failure of that
+scene and goes on. Each probe fails with `measured 0 <subject>` when it found no
+rows, cells or triggers, and the menu sweep fails when no scene in it had a
+single trigger. An empty `VALIDATE_CHROME` falls back to the default path.
+Probes and their ready selectors must follow the markup: a selector the app no
+longer renders is reported by the next run, never skipped. `--only core` runs
+the activity and inbox probes without the menu sweep, and `--skip menus` runs every
+probe but the sweep. The sweep opens every scene of `scenes.txt` and needs about
+25 minutes on its own, so a pull request runs with `--skip menus` inside a 22
+minute step, and the nightly and manual runs keep the sweep with a 65 minute
+step. After two stable weeks the
+cheap probes (`frames`, `columns`, `header-line`) can become a required job of
+their own; the menu sweep stays advisory.
+
+### Frame probe
+
+A layout claim is proved by geometry, here, and by no class or attribute in a unit test. `scripts/validateScenesFrame.mjs` exports `FRAME_SCENES`, the one list of about thirty scenes, and the scene job measures each at 1100, 1440 and 1920 wide with the default frame and its legacy rail query (one viewport change and one reload per pair). A failure names the scene, the width, the variant and the rule. Frames using `AppShell.leftRail` keep the same places rail for both variants. The rules, with a tolerance of 1px:
+
+- the h1, the trail's first crumb when the page draws one (only studio pages under a trail still do) and the first body column share one left edge, and a scene with no h1 fails this rule instead of skipping it; an h1 under an overlay drawer is still measured (an entry marked `isBare: true` is a pane mounted without its studio frame or a drawer with no page title, so it is held to the sheet rules only);
+- every `[data-slot]` inside the page container lies inside it (a slot under a scroller may sit below the fold, and one a horizontal scroller moved out sideways, like a Board lane, is not counted);
+- no rect of the session pages or of a page rail overlaps the trail;
+- the crumb row centre equals the drawer header centre when a drawer is open;
+- a composer's bottom is at or above the sheet bottom;
+- a `data-container="drawer"` is a sibling of its `data-container="page"`, never inside one;
+- on the empty chat scene, the stage centre is on the detail centre in x and at 40 to 52 percent of the detail height in y.
+
+To add a scene, add its id to `scenes.txt` through the scene registry, then one entry to `FRAME_SCENES`: `{ scene, rail }`, where `rail` is the legacy folded-sidebar query (`&rail=1` for a scene on `WorkspaceFrame` or `BoardShellScene`, `&ctx=rail` for `frame&view=...`) or `null` when no second variant is needed. A scene with no `data-container="page"` fails the probe (wrap a bare scene in `PageSheet`, which is the real `DrawerColumn`), and a crumb that sits outside the detail column is not measured, and an id missing from `scenes.txt` fails before any measure, because an unknown id would silently render the workspace scene. Run one scene with `pnpm validate:scenes --only frames:<text>` against `vite preview` of a mock build; the rule functions have fixtures in `scripts/validate-scenes.test.mjs`.
+
+### Layer probe
+
+Stacked layers are proved in a real browser, because a unit test cannot tell what is on top at a point or where Tab goes. `scripts/validateScenesLayers.mjs` exports `LAYER_SCENES`, four scenes: a drawer over the page (`drawer-overlay-narrow`), the notifications popover (`notifications&view=center`), the command palette (`command-palette`) and the image lightbox (`image-lightbox`). For each, the scene job checks:
+
+- `document.elementFromPoint` at the centre of the layer returns the layer or a descendant, so nothing paints or hit-tests above it;
+- a modal layer (drawer, palette, lightbox) holds focus: the probe focuses its first control, presses Tab up to its control count plus two times through the DevTools key events, and fails the press that lands on a page element outside the layer (focus handed to the browser chrome, a `body`, is not an escape);
+- a wheel turned on the backdrop (4px from the top left corner of the viewport) leaves every scroller outside the layer, the document included, at the `scrollTop` it had.
+
+The probe is advisory: in the full run a finding prints as `layers advisory: ...` and never fails the job. `pnpm validate:scenes --only layers` makes the same findings fail, which is how to prove a fix. To add a layer, add a scene that opens it by itself and one entry `{ scene, label, layer, isModal, isWheelChecked }`, where `layer` is the selector of the layer's own box. A popover is not modal and its backdrop is not held to the wheel rule. The pure rule `layerFailures` has fixtures in `scripts/validate-scenes.test.mjs`.
+
+### Reading probe
+
+A probe proves that nothing scrolls under a reader, in a real browser, because happy-dom has no layout. `reading-hold` (`scripts/validateScenesReadingHold.mjs`) opens `u27-breadcrumbs-after-agent-light` at 1100 by 640, scrolls the transcript, opens and closes the first setting word of the status line and fails when the text under the reader moves by more than a pixel either way. Run it with `pnpm validate:scenes --only reading-hold` against `pnpm dev` in mock mode on port 5230; the failure rules have fixtures in `scripts/validate-scenes.test.mjs`.
+
+### Popover scroll probe
+
+`popover-scroll` (`scripts/validateScenesPopoverScroll.mjs`) opens `popover-long-menu`, a 30 row menu, in a 1024 by 400 window. It fails when the popover leaves the window, holds more or fewer than one scroller, does not overflow, draws no bottom fade, or cannot scroll its last row fully into view with a top fade. Run it with `pnpm validate:scenes --only popover-scroll` against `pnpm dev` in mock mode on port 5230; `popoverScrollFailures` has fixtures in `scripts/validate-scenes.test.mjs`.
 
 ## Manual release gate: the window must appear
 
@@ -320,89 +398,3 @@ non-empty `orchestration_error` carries the message. Empty means no stop at all
 while its decision remains in flight (`runStateOf` and `orchestratorState` in
 `features/workflows/`). Nothing is written back. Relaunch without the variable and it
 shows **Stopped** again. Never persist the in-flight flag.
-
-## Keys are pressed on the real app
-
-A shortcut test presses the key on the element that has the focus, not on
-`window`. `pressShortcut` and `pressKey` (`apps/desktop/src/__tests__/helpers/pressKey.ts`)
-build the event from the registry entry, with its physical `code`, and fire it on
-a focused button, field or row. `__tests__/surfaces/navigation-flows/keys.test.tsx`
-mounts the whole app on the real store, presses every id of `SHORTCUTS` and checks
-an effect: the page, the store, an open popover or a write at the database boundary.
-An id that cannot reach its context sits in the exemption list of that file with its
-reason, and the list can only get shorter. Review and activity keys run on a seeded
-world of the same app (`bootWorld`).
-
-### Scene registry
-
-The registry smoke test renders every scene through the story store harness and
-checks the committed sorted scene list. Regenerate that list with
-`GOODBOY_UPDATE_BASELINE=1` when adding or removing scenes. Duplicate ids fail at
-module load with both file names; unknown ids render an alert instead of silently
-opening the workspace. The accessibility suite remains the owner of violation
-baselines.
-
-### Tests do not depend on the hour
-
-A test that reads the clock, or that builds a seed with `sceneClock` (it shifts every seed time to the moment the module loaded), must give the same answer at any hour and in any time zone. Pin the instant before the seed module loads, with the local wall clock and not a UTC string: `vi.hoisted(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 9, 18, 10, 31)); })` (see `archiveOffer.test.tsx`, `activityRunSeed.test.ts`). Build a fixed instant from local parts (`new Date(2026, 8, 28, 15, 0)`) when the code under test compares local days, and compute the expected day label with `Intl.DateTimeFormat` in the test, never as a literal that holds only in one zone. A UTC string such as `2026-10-03T12:00:00Z` is a different local day somewhere between -11 and +14. The `test-time-zones` job of `ci.yml` runs the scene-backed tests in four clocks (`Pacific/Kiritimati`, `Pacific/Pago_Pago`, and the zones that put the local time just before and just after midnight right now), so a new hour-dependent test fails on the pull request. Run it by hand with `TZ=Pacific/Kiritimati pnpm --filter @goodboy/desktop exec vitest run --project unit <files>`, or `TZ="$(node scripts/test-time-zone.mjs before-midnight)"`.
-
-### Scene measures
-
-The scene measures workflow has two kinds of step. `chrome ready` (the mock
-preview answers, Chrome starts, the warm-up scene renders; `--ready-only` runs
-just this) is a normal step: when it fails the job is red, so an infrastructure
-fault never looks like a pass. A Chrome start gets 30 s and three tries with a
-fresh profile, stops early when Chrome exits, and a failure prints the tail of
-Chrome's stderr. `scene measures` is advisory
-(`continue-on-error` on the step) and must never be configured as a required
-check. Its findings reach the pull request three ways: one `::error`
-annotation per failure (the first ten, then a count), the failing scene ids and
-the run time in the run summary, and a final `::error` when the step failed or
-timed out. A crash that names no scene prints `scene measures: crashed`.
-
-A measure that saw nothing is a failure. `open` throws `scene <id>: did not
-become ready` after three tries, and the run records it as a failure of that
-scene and goes on. Each probe fails with `measured 0 <subject>` when it found no
-rows, cells or triggers, and the menu sweep fails when no scene in it had a
-single trigger. An empty `VALIDATE_CHROME` falls back to the default path.
-Probes and their ready selectors must follow the markup: a selector the app no
-longer renders is reported by the next run, never skipped. `--only core` runs
-the activity and inbox probes without the menu sweep, and `--skip menus` runs every
-probe but the sweep. The sweep opens every scene of `scenes.txt` and needs about
-25 minutes on its own, so a pull request runs with `--skip menus` inside a 22
-minute step, and the nightly and manual runs keep the sweep with a 65 minute
-step. After two stable weeks the
-cheap probes (`frames`, `columns`, `header-line`) can become a required job of
-their own; the menu sweep stays advisory.
-
-### Frame probe
-
-A layout claim is proved by geometry, here, and by no class or attribute in a unit test. `scripts/validateScenesFrame.mjs` exports `FRAME_SCENES`, the one list of about thirty scenes, and the scene job measures each at 1100, 1440 and 1920 wide with the default frame and its legacy rail query (one viewport change and one reload per pair). A failure names the scene, the width, the variant and the rule. Frames using `AppShell.leftRail` keep the same places rail for both variants. The rules, with a tolerance of 1px:
-
-- the h1, the trail's first crumb when the page draws one (only studio pages under a trail still do) and the first body column share one left edge, and a scene with no h1 fails this rule instead of skipping it; an h1 under an overlay drawer is still measured (an entry marked `isBare: true` is a pane mounted without its studio frame or a drawer with no page title, so it is held to the sheet rules only);
-- every `[data-slot]` inside the page container lies inside it (a slot under a scroller may sit below the fold, and one a horizontal scroller moved out sideways, like a Board lane, is not counted);
-- no rect of the session pages or of a page rail overlaps the trail;
-- the crumb row centre equals the drawer header centre when a drawer is open;
-- a composer's bottom is at or above the sheet bottom;
-- a `data-container="drawer"` is a sibling of its `data-container="page"`, never inside one;
-- on the empty chat scene, the stage centre is on the detail centre in x and at 40 to 52 percent of the detail height in y.
-
-To add a scene, add its id to `scenes.txt` through the scene registry, then one entry to `FRAME_SCENES`: `{ scene, rail }`, where `rail` is the legacy folded-sidebar query (`&rail=1` for a scene on `WorkspaceFrame` or `BoardShellScene`, `&ctx=rail` for `frame&view=...`) or `null` when no second variant is needed. A scene with no `data-container="page"` fails the probe (wrap a bare scene in `PageSheet`, which is the real `DrawerColumn`), and a crumb that sits outside the detail column is not measured, and an id missing from `scenes.txt` fails before any measure, because an unknown id would silently render the workspace scene. Run one scene with `pnpm validate:scenes --only frames:<text>` against `vite preview` of a mock build; the rule functions have fixtures in `scripts/validate-scenes.test.mjs`.
-
-### Layer probe
-
-Stacked layers are proved in a real browser, because a unit test cannot tell what is on top at a point or where Tab goes. `scripts/validateScenesLayers.mjs` exports `LAYER_SCENES`, four scenes: a drawer over the page (`drawer-overlay-narrow`), the notifications popover (`notifications&view=center`), the command palette (`command-palette`) and the image lightbox (`image-lightbox`). For each, the scene job checks:
-
-- `document.elementFromPoint` at the centre of the layer returns the layer or a descendant, so nothing paints or hit-tests above it;
-- a modal layer (drawer, palette, lightbox) holds focus: the probe focuses its first control, presses Tab up to its control count plus two times through the DevTools key events, and fails the press that lands on a page element outside the layer (focus handed to the browser chrome, a `body`, is not an escape);
-- a wheel turned on the backdrop (4px from the top left corner of the viewport) leaves every scroller outside the layer, the document included, at the `scrollTop` it had.
-
-The probe is advisory: in the full run a finding prints as `layers advisory: ...` and never fails the job. `pnpm validate:scenes --only layers` makes the same findings fail, which is how to prove a fix. To add a layer, add a scene that opens it by itself and one entry `{ scene, label, layer, isModal, isWheelChecked }`, where `layer` is the selector of the layer's own box. A popover is not modal and its backdrop is not held to the wheel rule. The pure rule `layerFailures` has fixtures in `scripts/validate-scenes.test.mjs`.
-
-### Reading probe
-
-A probe proves that nothing scrolls under a reader, in a real browser, because happy-dom has no layout. `reading-hold` (`scripts/validateScenesReadingHold.mjs`) opens `u27-breadcrumbs-after-agent-light` at 1100 by 640, scrolls the transcript, opens and closes the first setting word of the status line and fails when the text under the reader moves by more than a pixel either way. Run it with `pnpm validate:scenes --only reading-hold` against `pnpm dev` in mock mode on port 5230; the failure rules have fixtures in `scripts/validate-scenes.test.mjs`.
-
-### Popover scroll probe
-
-`popover-scroll` (`scripts/validateScenesPopoverScroll.mjs`) opens `popover-long-menu`, a 30 row menu, in a 1024 by 400 window. It fails when the popover leaves the window, holds more or fewer than one scroller, does not overflow, draws no bottom fade, or cannot scroll its last row fully into view with a top fade. Run it with `pnpm validate:scenes --only popover-scroll` against `pnpm dev` in mock mode on port 5230; `popoverScrollFailures` has fixtures in `scripts/validate-scenes.test.mjs`.

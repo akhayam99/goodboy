@@ -32,7 +32,7 @@ The folder rule, stated once in [docs/file-system.md](../../docs/file-system.md)
 - `tauri.conf.json` capabilities: as few as possible, allowlist style. No wildcard `**`. `capabilities/default.json` is the list. It grants no shell permission at all, so the frontend cannot start any process.
 - API keys: **never** in `tauri.conf.json`, the SQL DB, env files, or `localStorage`. Use the OS keychain through the `keyring` crate behind `secrets.rs`. There is no store plugin.
 - No `dangerousDisableAssetCspModification`. Strict CSP.
-- **Starting processes happens in Rust, behind a `#[tauri::command]`.** There is no `plugin-shell` and no binary allowlist to rely on. So the safety line is what the caller is allowed to pass. Some commands do take a binary or a shell string (`turn_spawn`'s `binary`, `provider_lifecycle_run`'s `command`). That value comes from a constant table (the provider registry, `PROVIDER_LIFECYCLE_COMMANDS` in `@goodboy/core`), never built from user or model text. A new command that starts a process reads its binary and flags from a table, or builds argv in Rust.
+- **Starting processes happens in Rust, behind a `#[tauri::command]`.** There is no `plugin-shell` and no binary allowlist to rely on. So the safety line is what the caller is allowed to pass. `turn_spawn` takes a `binary`, and that value comes from the provider registry, never from user or model text. `provider_lifecycle_run` takes only a provider and an action, and Rust looks the shell string up in its own table (`provider_commands.rs`), which `provider-commands-table-parity.test.ts` keeps equal to `PROVIDER_LIFECYCLE_COMMANDS` in `@goodboy/core`. A new command that starts a process reads its binary and flags from a table, or builds argv in Rust.
 - **Agent turns never go through a shell.** `turn.rs` builds argv with `cli_args::turn_args` and calls the binary directly. The side calls (`summarize.rs`, `planner.rs`) build theirs with `cli_args::side_job_args`, which rejects any write or permission-bypass flag. So a shell never splits anything a model writes into words. Where a shell does run, its body is the user's own text or a table constant:
   - `scripts.rs`: `bash -c` on a workspace script the user wrote.
   - `terminal.rs`: the user's login shell.
@@ -68,7 +68,7 @@ General rules live in [AGENTS.md](../../AGENTS.md) → Naming. For desktop only:
 
 ## Testing
 
-Rules live in [docs/testing.md](../../docs/testing.md). For this package: in component tests, mock the Tauri boundary (`invoke`). Module mocks of our own packages (`@goodboy/db` and the like) come only from the `storyHarness` factories, never from a private `vi.mock` body. Store tests create a fresh store, call actions, and check the state.
+Rules live in [docs/testing.md](../../docs/testing.md). For this package: in component tests, mock the Tauri boundary (`invoke`). Module mocks of our own packages (`@goodboy/db` and the like) come only from the `storyHarness` factories, never from a private `vi.mock` body. Store tests load the real store once through `storyHarness`, reset it before each test, call actions, and check the state.
 
 ## Code rules
 
