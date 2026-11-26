@@ -199,7 +199,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   folded, so a state that needs you never hides in a fold. Cards sit 12px
   apart (`PANE_RHYTHM.block`), like every block of the tab.
 - **Projects is one tree**, holding every branch of the session, so there is no
-  second sidebar to go back from. A folder row (`SessionLevel/ProjectTree`) is
+  second list to go back from. A folder row (`SessionLevel/ProjectTree`) is
   its name and its `+`; the name toggles the folder and a chevron shows only
   while it is folded. Its accessible name keeps the count and the host ("payments-api, 3
   branches, on GitHub"), never as visible text. A folder's branches sit one
@@ -393,8 +393,8 @@ session tools), never from a page header.
 The linked records keep their lenses and stay in the palette.
 
 **A session row says the name and the state, and the hover card and the board
-card say the rest.** The sidebar list is gone (the places rail has no session
-rows): the sessions live on the Board and in Sessions (⌘B, `SessionsPopover`).
+card say the rest.** The places rail has no session
+rows: the sessions live on the Board and in Sessions (⌘B, `SessionsPopover`).
 A Sessions row is one line: the title and one trailing `StatusMark`, with the
 ticket key of a linked task in front of it when the goal starts with `[KEY]`
 (`sessionRowTitle` strips the key from the title and returns it;

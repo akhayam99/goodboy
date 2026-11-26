@@ -21,11 +21,23 @@ caught earlier runs.
 - Before a release that touches the activity timeline or Workflows, run
   `pnpm validate:scenes --app <scene server>` against the mock scene server
   (`VITE_GOODBOY_MOCK=1`). It opens the scenes in Chrome and fails on a
-  measure, not a picture: layout, folds, menus of one row, reachable page
-  ends. Every failure prints its scene, its check and its details after the
-  `scene measures:` line, and `--only <check>` or `--only <scene>,<scene>`
-  runs a part. Set `VALIDATE_CHROME` when Chrome is not at the default macOS
-  path. The probes and how to add one are in [testing.md](testing.md).
+  measure, not a picture:
+  - `activity-log` and `activity-kinds-light` at 100% and 110% zoom: a row
+    that keeps a transform after its groups open, a group row that moves
+    while it opens or folds, a rail stroke that breaks between rows, a time
+    wider than its column (`--only core`);
+  - `inbox` at five widths: a task age that wraps or is clipped (`--only core`);
+  - the plan drawer scenes in a 400px card: a toolbar that wraps or runs past
+    its edge, a title over two lines (`--only plan-drawer`);
+  - Workflows, direct and through the app frame: the bottom of the page must
+    be reachable (`--only workflow`);
+  - every scene in `scenes.txt`: a menu trigger that opens to fewer than two
+    rows (`--only menus`, or `--only <scene>,<scene>`).
+
+  Every failure prints its scene, its check and its details after the
+  `scene measures:` line. Set `VALIDATE_CHROME` when Chrome is not at the
+  default macOS path. The frame, layer and scroll probes are in
+  [testing.md](testing.md).
 
 ## Figure out the version yourself
 

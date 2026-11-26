@@ -1,6 +1,6 @@
 # The shell
 
-> **Read this when** you change the frame of the window: a context menu, a surface, the top bar, the column foot, the menu bar, the report sheet, the column doors or a shortcut. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
+> **Read this when** you change the frame of the window: a context menu, a surface, the top bar, the rail foot, the menu bar, the report sheet, the column doors or a shortcut. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
 
 ## Skeleton
 
@@ -32,7 +32,7 @@ unit that changes the skeleton edits this section first.
 5. **The top bar is identity, movement and live state. Target.** The bar holds
    no control for another container. Every chip opening the home of its
    number is target.
-6. **The bottom-left is the app's corner. Target.** Owned by The column foot.
+6. **The bottom-left is the app's corner. Target.** Owned by The rail foot.
 7. **A menu shows five rows at most. Target.** Right-click menus are exempt:
    they mirror the action catalog (Context menus).
 8. **The places rail never folds. Holds.** It has no toggle, no peek and no
@@ -1014,7 +1014,7 @@ Models row Provider order, writing through the same
 `setProviderPolicy`, then Connect for each CLI provider that is not connected,
 then Manage providers. It reads the cached providers and never refreshes them
 on open. What's new is a tab of Help and a palette row, so it earns no
-door here. The connected tools have no glyph strip any more: Tasks' Source
+door here. The connected tools have no glyph strip: Tasks' Source
 filter is the tool door, and Connect a tool lives in Connections.
 
 - **The release notice answers "have you read the notes for what you're

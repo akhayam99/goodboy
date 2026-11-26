@@ -77,7 +77,6 @@ Gone already, listed because their rows or keys stay behind:
   width saved on the session grid (`session_dock_grids`, written since 0.40.0)
   and a detail kind with no width of its own start at their tier default. The
   keys stay the width of the one dock a page without a session grid shows.
-
 - The sidebar is gone in 0.40.0. The local storage keys
   `goodboy:left-sidebar-width:v3` and `goodboy:sessions-sidebar-collapsed`
   (written by 0.39 and earlier) size and fold nothing since 0.40.0: the places
