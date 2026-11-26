@@ -24,7 +24,7 @@ Open a real login shell in the workspace folder or any linked worktree.
 - Each worktree shows its terminals as tabs with a **+** to add one.
 - A session you archive keeps its shells, in an **Archived sessions** group under the live ones. **Close all** asks first.
 
-The exit status comes from a small hook a zsh terminal adds when it starts. Your own shell files and hooks are never changed, and other shells show no status. **Settings › Editor, terminal, git › Built-in terminal › Command status** turns the hook off for the terminals you open next.
+The exit status comes from a small hook a zsh terminal adds when it starts. Your own shell files and hooks are never changed, and other shells show no status. **Settings › This Mac › Editor, terminal, git › Built-in terminal › Command status** turns the hook off for the terminals you open next.
 
 #### The tab strip
 
@@ -120,7 +120,7 @@ The Desk has no key. A tool opened on the Overview, by its key or from the right
 
 #### Change a shortcut
 
-1. Open **Settings › Keyboard shortcuts**.
+1. Open **Settings › This Mac › Keyboard shortcuts**.
 2. Press **Change** on a row, then the new keys. **Esc** cancels.
 3. **Reset** puts one row back. Recording the default chord does the same.
 
@@ -176,8 +176,8 @@ Pin the scripts you use and run them from the session.
 - Open the Scripts pane from **Scripts** on the right rail, or with ⌘⌥S.
 - Scripts are listed per branch, headed by the project and the branch they run on. Services (dev servers and watchers) come first, then the scripts that run and end.
 - Each row shows the script's name and its command. A click on a row opens its output.
-- The row's one control is **Run** or **Stop**. **Pin**, **Restart**, **Open in terminal** and the rest live in the right click menu.
-- A script runs on the branch you are on: the branch page, or the agent or run you opened. **Open in terminal** opens a terminal in that branch's worktree with the command typed in, not run.
+- The row's one control is **Run** or **Stop**. **Pin**, **Restart**, **Open in Terminal** and the rest live in the right click menu.
+- A script runs on the branch you are on: the branch page, or the agent or run you opened. **Open in Terminal** opens a terminal in that branch's worktree with the command typed in, not run.
 - From ⌘K, a script runs at once when its project has one branch in the session. With more than one and no branch on screen, a second step asks **Run Replay settlement batch on which branch?**.
 
 #### Services
@@ -206,7 +206,7 @@ Pin the scripts you use and run them from the session.
 
 Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim, at the worktree or the file.
 
-- **Open with**, in **Settings › Editor, terminal, git**, picks the editor, the terminal app and the browser that links and artifacts open in.
+- **Open with**, in **Settings › This Mac › Editor, terminal, git**, picks the editor, the terminal app and the browser that links and artifacts open in.
 - **Open in external terminal** sits in the menus of a session, a branch folder, a worktree and a folder in Files. It opens the folder in Terminal.app, iTerm, Warp or Ghostty, whichever are installed. Linux uses the system terminal.
 - A file path with a line number in a terminal opens at that line in your editor. `code -g`, `zed` and `subl` take `file:line:col`. The JetBrains IDEs take `--line` and `--column`.
 
@@ -246,7 +246,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 
 - A port chip, a running Service's port, a link in a conversation, a decision or an artifact and a web address in a terminal open beside the session. The tab already on that page is shown when there is one. Sign-in and connect links keep opening your own browser.
 - **⌘-click** opens your own browser instead.
-- **Settings → This Mac → Editor, terminal, git → Open with → Links in a session** picks where a plain click goes: **In Goodboy** or **In your browser**.
+- **Settings › This Mac › Editor, terminal, git › Open with › Links in a session** picks where a plain click goes: **In Goodboy** or **In your browser**.
 - A terminal with no session sends its links to your own browser.
 
 #### Send a page to the agent

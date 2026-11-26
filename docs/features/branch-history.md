@@ -194,8 +194,6 @@ A branch that conflicts goes to one Lead run. The Lead resolves the conflicts on
 | **Rebased by the Lead** | shown until every branch the Lead took is clean, then nothing |
 | **Failed**              | the cause is in its tooltip                                   |
 
-**Update all** in the Update group of Next runs the same batch with git only. It rebases behind and stopped branches, brings origin in where someone pushed and leaves every conflict to its own row.
-
 The **Rebase N branches** step in Next opens the same flow as an inline picker.
 
 - Every behind branch is checked. The button reads **Rebase all**, or **Rebase 2** after you uncheck one.
@@ -252,7 +250,7 @@ This part is for contributors and agents who change the feature.
 - Origin moved before a force push: `pushMount` marks the failure `isOriginMoved`. `PushFailureActions` runs `checkBranchOrigin`, which drops a late answer, and `forcePushCheckedBranch`, which leases the checked sha. `branchPushPlan` reads origin again for the agent and the terminal. All three live in `apps/desktop/src/store/slices/history/pushFix/`.
 - Rebase started elsewhere: `apps/desktop/src/features/history/JobBanner/GitRebaseRow.tsx` draws the row.
 - Open stop: `hasOpenRebaseStopOf` in `apps/desktop/src/features/branch/hasOpenRebaseStopOf.ts` is the one test for a Goodboy stop in the phase `stopped` or a rebase in progress. `apps/desktop/src/features/history/historyRecovery.ts` and `apps/desktop/src/features/history/rebaseStopOf.ts` bring a stop back after a restart, a reload or in a second window.
-- Rebase all: `apps/desktop/src/features/history/RebaseAllCard/index.tsx` draws the card. **Update all** calls `bringOriginInAndPush` with `canStartRewriter: false` in `apps/desktop/src/store/slices/rebaseAll/updateAll.ts`.
+- Rebase all: `apps/desktop/src/features/history/RebaseAllCard/index.tsx` draws the card.
 - Settled stops: `apps/desktop/src/features/history/isRebaseStopRelevant.ts` is the one judge per stop reason, and `apps/desktop/src/store/slices/rebaseAll/settleStaleRebases.ts` clears a stop once a newer git read shows its cause gone. `useRebaseStop` and `useRebaseStatuses` run it on every status read, upstream distance and dirty count included.
 - One card per branch: `setHistoryRun` settles every older stop event of the mount when a rebase run reaches applied or pushed. `dismissRebaseCard` drops the run and settles its stop events. Settled stops live per window in sessionStorage (`apps/desktop/src/store/slices/rebaseAll/settledStopsMemory.ts`).
 - The card sits in the Branch page header column above `BranchHeader`, not in the `PaneShell` lead (`apps/desktop/src/features/branch/components/BranchPage/index.tsx`).

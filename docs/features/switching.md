@@ -6,20 +6,20 @@ Move between the tasks of a workspace without losing your place, and see from an
 
 Sessions in the top bar opens the list of the workspace's sessions, from any screen. **⌘B** opens and closes it.
 
-The list is a search field, then the sessions in groups: **Pinned** first, then one group per state. A session with an agent at work says what it does in place of its project, the same line as its Board card.
+The list is a search field, then the sessions in groups: **Pinned** first, then **Needs you**, **Running**, **In review** and **Building**.
 
-Type to narrow by title or project, move with the arrows and press **Enter** to open a row on its Overview. **Open Board** at the foot opens the Board.
+- A row that needs you carries a yellow dot, a running row a blue one, and a broken row keeps its red mark. **Sessions** itself carries the yellow dot while any session needs you.
+- A row counts what waits on you in that session.
+- A session with an agent at work says what it does in place of its project, the same line as its Board card.
 
-#### Where each row of the old sidebar went
+Type to narrow by title or project, move with the arrows and press **Enter** to open a row on its Overview. Click a pin to move a row in or out of **Pinned**. **Open Board** at the foot opens the Board, with the finished sessions too.
 
-| In the sidebar                                     | Now                                                                  |
-| -------------------------------------------------- | -------------------------------------------------------------------- |
-| New session                                        | Top of the places rail, **⌘N**                                       |
-| Board, Tasks, Workflows, Chat, Connections, Impact | The places rail, in that order (**⌘⇧H** opens Board)                 |
-| Monitoring                                         | The right rail, as **Monitor**                                       |
-| The session list, Pinned and Done                  | Sessions in the top bar (**⌘B**) and the Board                       |
-| The workspace name                                 | The workspace mark at the top of the rail (**⌘O**, **⌘1** to **⌘9**) |
-| Settings, the bug icon                             | The foot of the rail (**⌘,**, **⌘I**)                                |
+#### Keys for places
+
+- **⌘N** opens New session, at the top of the places rail.
+- **⌘⇧H** opens the Board.
+- **⌘O** opens the workspace switcher, and **⌘1** to **⌘9** switch workspaces.
+- **⌘,** opens Settings and **⌘I** reports a bug, both at the foot of the rail.
 
 #### Move between sessions
 
@@ -41,9 +41,9 @@ A click opens a list where each row jumps to its session and says what its agent
 #### Sessions that need you
 
 - An amber number on **Board** in the places rail counts them, red when one of them is broken, 9+ above nine. The top bar does not repeat the number.
-- **⌥⌘↓** goes to the next one. Click the number for the board, where **Needs you** comes first.
+- **⌥⌘↓** goes to the next one. Click the number for the board, where what needs you leads **Running**.
 - The count ignores the project filter, so a session in another project is still counted.
-- A run that stopped, paused at its limit or waits for you to continue, an Auto agent waiting for your OK and a Slack reply waiting for approval count like a question does.
+- A run that stopped, paused at its limit or waits for you to continue, a Lead waiting for your OK and a Slack reply waiting for approval count like a question does.
 - A reply to read or an approval to merge shows only a quiet gray dot, not a number.
 
 <picture>
@@ -68,7 +68,7 @@ Catch up in one place. Everything Goodboy has to tell you, from a pull request o
 
 #### Open the item
 
-The bell, the toast and the Notifications page open the same place, and the button names it: Open Comments, Open Files, Open Checks, Open branch, Open pull request (Open merge request on GitLab) or Open session. It opens the notification's own workspace first, in the window that shows it.
+The bell, the toast and the Notifications page open the same place, and the button names it: Open agent, Open Questions, Open Comments, Open Checks, Open run, Open the Lead, Open branch, Open pull request (Open merge request on GitLab) or Open session. It opens the notification's own workspace first, in the window that shows it.
 
 #### When something fails
 
@@ -85,7 +85,7 @@ Leave agents working and look away. While no Goodboy window is in front, the app
 
 A system banner also appears when a session starts to wait on a question, a permission, a plan approval, an agent error, a failed push or failing checks. It is one per session and reason, titled with the session, and a click on it opens that session. Three or more within 30 seconds become one banner for the workspace.
 
-The first time something waits while you are away, a toast asks once whether to turn banners on. **Settings › Look and alerts › Notifications** holds two switches, **Banner when away** and **Dock badge**. Both are local to this Mac: nothing is sent anywhere.
+The first time something waits while you are away, a toast asks once whether to turn banners on. **Settings › This Mac › Look and alerts › Notifications** holds two switches, **Banner when away** and **Dock badge**. Both are local to this Mac: nothing is sent anywhere.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-dark.webp">
@@ -98,6 +98,6 @@ The first time something waits while you are away, a toast asks once whether to 
 
 Give each workspace its own window, so switching does not interrupt running agents. After a reload or an update, every window comes back on the screen it showed.
 
-Closing a window while its agents work asks once: **Stop 2 agents**, or **Cancel**. An agent that does not stop says so, with **Close anyway**. On a Mac the main window hides instead of closing, so Auto keeps working; the dock icon brings it back.
+Closing a window while its agents work asks once: **Stop 2 agents**, or **Cancel**. An agent that does not stop says so, with **Close anyway**. On a Mac the main window hides instead of closing, so agents keep working; the dock icon brings it back.
 
 Switching workspace or disconnecting one stops its agents the way **Stop** does. On return each reads **Stopped by you** with **Continue**, and nothing half done reads Done. An agent that does not stop keeps you where you are: nothing is switched or disconnected, a warning says so, and you can stop it and try again.

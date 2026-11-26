@@ -36,8 +36,6 @@ When the check fails, the run stops and the Lead page shows one card:
 
 On the Board the stopped run is one card, and its click lands on this choice. **Usual steps**, under the Lead page header, marks each step done, running, skipped, added or moved.
 
-A run started before 0.38 keeps its own line, such as "Workflow · Preset Fix a layout · Keep steps", and runs on as an older run.
-
 ### Preset and Custom
 
 A preset is a ready sequence of steps, each with its role and model, kept in the Workflows studio. A run started from it follows it as a plan, as above. A run you like can be saved as a preset from its page with **Save as preset**.
@@ -50,18 +48,18 @@ Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you dele
 
 The Workflows list is one grid. Each row shows:
 
-- the name, with **Built in** or **Edited** in gray;
+- the name, with its **Use it when** line, and **Built in** or **Edited** in gray;
 - the roles of its steps in gray ("Scout, Implementer +1");
 - the step count and when it last ran;
 - a link with its run count ("3 runs", "No runs").
 
-The row opens the workflow. A workflow with no runs offers **Start from this preset**, which opens the New session page on the Preset form with that preset picked.
+The row opens the workflow.
 
 The run count link opens the runs of that workflow beside the list, newest first. Each shows a state dot, its session, its spend and its age, and a row opens that run in its session. A run where the Lead followed the workflow counts too, and its row opens the Lead. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
 
 **Import workflows…** and **Restore built-in workflows…** sit in the page menu.
 
-A run puts its session in **Needs you** on the board and in Sessions when it stopped on a failure or paused at its limit. It does the same when it finished a step and waits to continue. It uses the same words as the run's row.
+A run puts its session at the top of **Running** on the board, and under **Needs you** in Sessions, when it stopped on a failure or paused at its limit. It does the same when it finished a step and waits to continue. It uses the same words as the run's row.
 
 ### Create and edit a workflow
 
@@ -80,7 +78,7 @@ Nothing is written until **Create workflow**. The button says why it is off: "Na
 
 **Duplicate workflow** sits in the menu of a workflow page and as a button on each list row. It fills the same page with a copy, "Fix a bug copy", and writes nothing until **Create workflow**.
 
-After **Create workflow** the page is that workflow's page, and it saves as you type. On it, **Models** shows each role in use: muted when it follows Every run, in full with **Reset** when this workflow pins a model. A row in the list says when to use that workflow.
+After **Create workflow** the page is that workflow's page, and it saves as you type. On it, **Models** shows each role in use: muted when it follows Every run, in full with **Reset** when this workflow pins a model.
 
 ### Saved steps
 
@@ -157,17 +155,17 @@ Set what every new run starts with on the **Every run** tab of Workflows, betwee
 - **Agents** holds the models and **Reply length**. **Runs** holds the Lead, and **Roles** holds each role.
 - **Older plan runs** holds the Orchestrator and **Models in older plan runs**, while the workspace has a plan run that is not discarded.
 - **When a run stops for you** holds **Stops for your OK**, one level for workflows and the Lead.
-- **Spending** holds the **Limit** with **Pause** or **Warn only**.
+- **Spending** holds the **Limit** with **Pause runs** or **Warn only**.
 - **Guidance** is one field for the agents that write code, with **Polish**.
 - **Advanced** stays closed and holds **Parallel agents**. It says so while they are on.
 
 Providers and their priority stay on the **Models** page. A change reaches new runs only. Searching Runs, Run defaults or Start as in Settings finds the link here.
 
-The limit here applies to a run started from a chat prefix or a suggestion, and the run page names it **default**. Every kind starts from this one limit. A new run starts from these rules, and a **From your rules** line shows where one run differs, with a **Reset** on that control.
+The limit here applies to a run started from a chat prefix or a suggestion, and the run page names it **default**. Every kind starts from this one limit.
 
 ### Limit
 
-Cap what a run or a session can spend, and choose **Pause workflows** or **Warn only**. Amounts take cents, such as `2.50`, and Enter applies them. A paused run offers **Raise limit**.
+Cap what a run or a session can spend, and choose **Pause runs** or **Warn only**. Amounts take cents, such as `2.50`, and Enter applies them. A paused run offers **Raise limit**.
 
 ### Workflow run
 
@@ -256,7 +254,7 @@ Steer a run while it goes with a markdown hint, images included. A run that only
 - **Send now** stops the step in flight, keeps what it wrote and decides again.
 - A complete orchestrated run keeps a field at its end, **Continue with a hint**. Send one and the run reopens, and the orchestrator picks the next step from the goal and your hint.
 
-The orchestrator picks the steps, so an orchestrated run has no **Add step**. When the project has more than one mount, it sees each one and sends a step to the mount whose repository the step changes. It also says how hard each step is, and Goodboy picks the model for that role and difficulty on your preferred provider. **Models in older plan runs** in Models, shown while such a run exists, lets the orchestrator name the model itself.
+The orchestrator picks the steps, so an orchestrated run has no **Add step**. When the project has more than one mount, it sees each one and sends a step to the mount whose repository the step changes. It also says how hard each step is, and Goodboy picks the model for that role and difficulty on your preferred provider. **Models in older plan runs** in **Every run**, shown while such a run exists, lets the orchestrator name the model itself.
 
 #### How a hint reads
 

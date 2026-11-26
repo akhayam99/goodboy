@@ -8,11 +8,11 @@ Begin with an empty folder and no repository. **Start from scratch**, inside **N
 
 ### Track a folder with git later
 
-Start in a plain code folder and add git when you want it. When you pick a folder, Goodboy asks whether it is a **Code project** or **Documents**, preselected from what it holds. You can change it later in **Settings › Folders**.
+Start in a plain code folder and add git when you want it. When you pick a folder, Goodboy asks whether it is a **Code project** or **Documents**, preselected from what it holds. You can change it later in **Settings › This workspace › Projects**.
 
 #### Track with git
 
-**Track with git** in **Settings › Folders** shows the first commit before it happens.
+**Track with git** in **Settings › This workspace › Projects** shows the first commit before it happens.
 
 - What goes in.
 - Dependency and build folders, left out until you tick them back in.
@@ -28,9 +28,9 @@ Git you set up outside the app is noticed when the window comes back. A code fol
 
 A plain folder is edited in place by one session at a time, and the next one waits its turn. Reading is never blocked.
 
-Each plain folder row in **Settings › Projects** opens to its face, the saved versions it uses and a switch between Code project and Documents. Office files and PDFs are read, never rewritten, in a documents folder.
+Each plain folder row in **Settings › This workspace › Projects** opens to its face, the saved versions it uses and a switch between Code project and Documents. Office files and PDFs are read, never rewritten, in a documents folder.
 
-What each turn changed is under **Changes** in the Session pages list, and it stays there when you later track the folder with git. Unlinking a folder waits while an agent is writing in it.
+What each turn changed stays in the session's file versions (**⌘⌥F**), also after you later track the folder with git. Unlinking a folder waits while an agent is writing in it.
 
 ### Workspace with several folders
 
@@ -94,9 +94,9 @@ Work on several branches of one repo in the same session, each in its own worktr
 
 ### Workspace switcher and Reconnect
 
-Jump between workspaces and folders from one search. The current workspace sits on top with its folder count, **Add folder**, **Manage folders** and its settings.
+Jump between workspaces and folders from one search. The current workspace sits on top with its folder count, **Add project**, **Manage folders** and its settings.
 
-- **Add folder** opens the folder picker for a repository or a plain folder, then shows an undo toast.
+- **Add project** opens the folder picker for a repository or a plain folder, then shows an undo toast.
 - **Move it here** moves a folder into the open workspace, or merges it, and adds the moved sessions without stopping any running agent. It is refused, with the number of agents running in the source, until you stop them.
 - The other workspaces follow in one list. A click switches once the new workspace has loaded, and a failed load keeps the workspace you were in. The window icon opens one in a new window.
 - A disconnected workspace keeps its place with **Reconnect**. Disconnecting keeps its history, and adding its folder again offers **Reconnect** too.
@@ -110,14 +110,7 @@ The same count shows on the workspace mark at the top of the left rail, and the 
 
 ### Sessions in the bar
 
-Open any session from one list. **Sessions**, at the top left of the bar, or **⌘B** from any screen, lists them: Pinned first, then Needs you, Running, In review and Building.
-
-- Type to filter by title or project, and press **Enter** to open one.
-- Click a pin to move a row in or out of Pinned.
-- A small yellow dot sits on **Sessions** while any session needs you.
-- A row that needs you carries the same yellow dot, a running row a blue one, and a broken one keeps its red mark.
-- A row counts what waits on you in that session.
-- **Open Board** at the foot shows the finished ones too.
+Open any session from one list. **Sessions**, at the top left of the bar, or **⌘B** from any screen, lists them. [Switch between tasks](switching.md#sessions) says how the list works.
 
 ### Overview and Desk
 
@@ -175,7 +168,7 @@ The entry opens a header row with when origin was last checked, **Pull all** onc
 
 A pull leaves a checkout on a feature branch where it is. A base branch with uncommitted files says so instead of offering **Pull**, and one that would not fast-forward is skipped.
 
-**Settings › Editor, terminal, git › Git** sets how often it checks (Off, 5, 15 or 30 minutes).
+**Settings › This Mac › Editor, terminal, git › Git** sets how often it checks (Off, 5, 15 or 30 minutes).
 
 ⌘K **Pull main in all linked repos** and **Pull <branch> in <repo>** run the same pull. A toast lists each repo with its branch, and the title counts updated, skipped and failed.
 
