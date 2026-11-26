@@ -122,6 +122,7 @@ describe('resumeInterruptedAgents', () => {
       sessionId: SESSION,
       agentId: 'agent-a',
       content: RESTART_RESUME_PROMPT,
+      rowOrigin: 'continue',
     });
     expect(JSON.parse(h.settings.get(INTERRUPTED_RUNS_KEY) ?? '{}').runIds).toEqual([
       'run-elsewhere',
@@ -145,6 +146,7 @@ describe('resumeInterruptedAgents', () => {
       sessionId: SESSION,
       agentId: 'agent-a',
       content: expect.stringContaining('<<step-done id="agent-a">>'),
+      rowOrigin: 'continue',
     });
     expect(store.sendTurn.mock.calls[0]?.[0]).toMatchObject({
       content: expect.stringContaining(RESTART_RESUME_PROMPT),
