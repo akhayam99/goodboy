@@ -9,9 +9,9 @@ Comments are forbidden in the whole repo. So a deliberate dead end (code that
 looks wrong but is right on purpose) cannot explain itself where it sits. This
 file holds those explanations. Everything below has been "fixed" at least once and had to be put back.
 
-## Rust facts that used to be comments
+## Rust facts the code cannot say
 
-The Rust files with the most comments lost them in one pass. What a reader would break without knowing it is here.
+What a reader of the Rust side would break without knowing it.
 
 - **A lifecycle exit ships the truth.** `provider_lifecycle_run` re-detects the binary and re-checks auth when the pty ends, on a non-zero exit too, and sends both with the exit code in `provider-lifecycle-exit`. A half-installed CLI or a partial logout still changes what is on disk, so the UI never guesses. Cancel and shutdown stop the whole pty session, not the leader alone.
 - **The bridge socket wire.** Server to client opcodes are 0x01 to 0x0D, client read opcodes 0x80 to 0x82, and the write opcodes (0x83 to 0x86, plus 0x8C and 0x8D) decode through `MobileAction::from_opcode`, whose closed set lives in `bridge/commands.rs`. None of the first two groups may resolve to an action. The action strings are switched on in `commandExecutor.ts`: change both together. A read-only action (`QueryProviders`) answers with `OP_QUERY_RESULT` and a `data` field, every write answers with an ACK, and a command the frontend does not acknowledge in time is reported to the phone as failed. The phone may send a correlation id; the bridge mints one otherwise. It is the only phone-controlled field read there.
@@ -22,7 +22,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
 - **A landed branch reads as clean.** `changed_files.rs` diffs the worktree against the merge-base so a push does not shrink the count. Once the base carries every file the branch touched (a squash or a rebase rewrites commits, so ancestry says nothing), it diffs against `HEAD` instead, and only uncommitted work counts. The numstat lines mirror git's own, with `-` for binary files and a synthesised line for an untracked one. Every list is read with `-z`, so a non-ASCII name is spelled as it is, and an untracked file over 1 MiB is not read (its line is `-\t-`). A git failure is returned as an error, never as "no changes".
 - **A turn drains stderr on its own thread.** `turn.rs` reads a CLI's stderr beside its stdout. Reading stderr only after stdout ended deadlocked: a CLI that writes more than the pipe buffer (about 64 KiB) to stderr mid-stream blocks on the write and stops producing stdout.
 - **A spawned Claude never thinks it is nested.** `aux_spawn.rs` strips the variables that mark a run inside another Claude Code or Agent SDK session. Goodboy started from such a session passes them on, and the claude CLI then refuses with a nested-session error or falls through to a failed sign-in.
-- **Provider auth checks never run on the main IPC thread.** The auth check command is async and does its process work on a blocking thread. Four parallel provider refreshes on the main thread used to freeze every other IPC call.
+- **Provider auth checks never run on the main IPC thread.** The auth check command is async and does its process work on a blocking thread. Four parallel provider refreshes on the main thread freeze every other IPC call.
 - **A new branch is cut from `origin/<base>`.** `worktree/create.rs` prefers the remote base so a stale local `main` never leaks commits into the branch, then `origin/master` when the base is `main` and only `master` exists, then the local branch. "origin has no such branch" and "origin could not be reached" are told apart: only the first lets a caller cut the branch itself, because an outage that silently became a fresh branch would diverge from the real one.
 - **Attachments are checked twice.** The size ceiling and the type whitelist run in the composer and again in `attachment.rs`, because paths also arrive from persisted turn events and an OS drag and drop skips the picker. A stored name is reduced to `[A-Za-z0-9._-]` with no folder part, which guards against traversal and shell-hostile names.
 - **The phone pairing identity is owner-only.** `bridge/identity.rs` holds the desktop's long-term Noise private key, so the file is written with owner-only permissions. Forgetting devices empties the allow list; a phone then needs a fresh QR, which only the desktop can show. A pairing token is single-use and burned on its first match.
@@ -218,9 +218,8 @@ The Rust files with the most comments lost them in one pass. What a reader would
   "Resolve" and the push confirm says the thread stays open.
   Read `sessionRequests` (through `gitlabSessionOf` or `bitbucketSessionOf`) and `reviewSourceThreads` through the selectors, not
   by hand: picking a source in another project calls `setSessionActiveMount`.
-- `resolve_threads` is the only verdict history. Migration `m140` moved every
-  `pending_resolutions` row into it, and `m143` dropped that table. Nothing
-  reads a separate queue any more. What the user sees comes from one column,
+- `resolve_threads` is the only verdict history; there is no separate queue
+  table. What the user sees comes from one column,
   `resolve_threads.stage` (nine stages shown as eight states through
   `resolveRowState`). Only `nextStage` computes it: thread writes go through
   `saveResolveThread`, queue decisions through `advanceResolveStage`. A write
@@ -360,9 +359,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
   mount moved on meanwhile (a branch switch while the batch was created), and
   that refusal sets the fixes back to `ready` without a Retry entry. Only the
   broken fixes that hold a comment of the source being refreshed are
-  discarded: a second pull request on the same mount keeps its own. That is also how fixes the old parallel runs left
-  side by side migrate: the first ready one stays, the rest are rebuilt, with
-  no schema migration. Refusing or deferring a link drops its candidate and
+  discarded: a second pull request on the same mount keeps its own. Refusing or deferring a link drops its candidate and
   rebuilds the ones after it; taking a deferred fix back up rebuilds it.
   Accept of a link fast-forwards the branch through that link, accepting the
   earlier links with it (`acceptResolveQueueItem`); an earlier link that is
@@ -379,16 +376,13 @@ The Rust files with the most comments lost them in one pass. What a reader would
   releases the copies of ended attempts, and app start removes every
   `resolve-` copy no process holds. A copy is never reused across turns: a
   later turn of the same agent without a copy (an operator message) runs on
-  the real branch with the lease. `resolve_session_settings` is no longer
-  read; the parallel limit it held is gone.
+  the real branch with the lease. Nothing reads `resolve_session_settings`:
+  the lane has no parallel limit.
 - `RoutingPicker.onChange(route)` carries the whole route (provider, model and
-  effort) in one call. It used to be three callbacks fired in one event, and a
-  mount that built the second patch from
-  props captured by the render before the first wrote the old provider back:
-  picking Cursor then Opus 5.5 on a workflow step left the step on its old
-  provider. The same bug was patched at the call site again and again with
-  refs and microtask queues (#1307 and others) before the contract changed. A
-  mount applies the route in one patch. It never splits it back into a
+  effort) in one call. Split into several callbacks fired in one event, a mount
+  builds the second patch from props captured before the first landed and
+  writes the old provider back: picking Cursor then Opus 5.5 on a workflow step
+  leaves the step on its old provider. A mount applies the route in one patch. It never splits it back into a
   provider write and a model write, never reads the provider from a ref, and
   never infers the provider from the model id (`getModelProvider` answers for
   one provider when several share an id). This matters most when the consumer
@@ -529,8 +523,8 @@ fails silently at runtime.
   out of every list a person sees on purpose: `SELECTABLE_AGENT_ROLES` (all its
   flags in `ROLE_REGISTRY` are `false`), `DEFAULT_GROUPS`, `GUIDANCE_ROLES`, and
   the visibility chips of the Context drawer (`ALL_ROLES` in `roleVisibility.ts`
-  drops it). Do not add it to one of them to make a list complete. Showing Auto
-  is the release that turns the experiment on.
+  drops it). Do not add it to one of them to make a list complete: Auto is
+  offered through its own gate ([Auto gate and screens](#auto-gate-and-screens)).
 - `AUTO_DELEGATION_ROLES` (`packages/core/src/auto/roles.ts`) and the
   `READ_ONLY_ROLES` and `WRITER_ROLES` of `providers/cli_args.rs` name the same
   ten roles in two languages. `the_writer_roles_match_the_auto_writer_roles_of_core`
@@ -542,9 +536,8 @@ fails silently at runtime.
   A role id outside the TypeScript list is rejected by
   `parseAutoDelegationRole`, never passed through `normalizeAgentRole`, which
   would turn it into the Generalist.
-- Auto's glyph is `CONCEPT_ICONS.auto` (`Orbit`), not a sparkle: the AI glyph
-  ratchet bans `Sparkles` everywhere. Its color token `agent-auto` is its own
-  green-teal and not `primary`, so it does not move if the primary color changes.
+
+## Impact reads
 
 - Impact counts deleted sessions on purpose. Deleting a session is a soft
   delete: `purgeSessionForDelete` frees the transcript, file versions, slots,
@@ -593,8 +586,11 @@ fails silently at runtime.
   Subscribing to one of those objects re-renders forever and crashes with
   React #185. Select a primitive field (`?.mountName`), wrap the selector in
   `useShallow`, or read `useAppStore.getState()` inside the handler that needs
-  it. `apps/desktop/src/__tests__/surfaces/primary-surfaces.test.tsx` mounts
-  the main surfaces on the real store to catch this, and
+  it. The same holds for any selector that builds an object
+  (`{ project, stage }`): select the fields separately. A unit test with a
+  mocked store misses it; the mock scenes and
+  `apps/desktop/src/__tests__/surfaces/primary-surfaces.test.tsx`, which mounts
+  the main surfaces on the real store, catch it, and
   the `navigation-flows/` folder next to it clicks into every page of the app.
 - Every path stored for a project or a session (`projects.root_path`,
   `session_worktrees.worktree_path`, `retained_worktree_paths`,
@@ -749,7 +745,7 @@ fails silently at runtime.
   folder; older sessions may still hold `.goodboy` as one file. Only
   `marker_read` in `session_dir.rs` knows both shapes, and `file_versions.rs`
   must read the marker through it. A second reader that tests `.goodboy.is_file()`
-  broke file versions in every plain-folder turn from #1533 until it was fixed. Build
+  breaks file versions in every plain-folder turn. Build
   test session folders with `session_dir_create_blocking`, never by hand. It
   lives in `session_dir/testing.rs`, a module that only exists for tests, so no
   creation code ships in the app.
@@ -790,13 +786,12 @@ A step that did not finish is `skipped` with a reason in `outputSummary`; there 
 
 ## Traps in the toolchain
 
-- A new worktree needs `pnpm install`. In this checkout that install exits 1
-  at the `prepare` step. `prepare` runs `lefthook install`, which refuses
-  while `core.hooksPath` points at the shared `.git/hooks`. This does no harm.
-  Dependencies and native bindings install before `prepare`. So check that
-  `node_modules` and `better_sqlite3.node` exist and carry on. Do not repoint
-  `core.hooksPath`. The hooks find their tools through the common git
-  directory on purpose.
+- A new worktree needs `pnpm install`. Its `prepare` step runs
+  `lefthook install`, which refuses while `core.hooksPath` points at the shared
+  `.git/hooks`, and the install then exits 1. This does no harm: dependencies
+  and native bindings install before `prepare`. Check that `node_modules` and
+  `better_sqlite3.node` exist and carry on. Do not repoint `core.hooksPath`.
+  The hooks find their tools through the common git directory on purpose.
 - The pre-commit hook in `lefthook.yml` finds `prettier` and `commitlint` in
   the main checkout's `node_modules` (through the common git directory),
   because a worktree does not always have its own install. It still runs the
@@ -862,10 +857,6 @@ A step that did not finish is `skipped` with a reason in `outputSummary`; there 
   `worktree_repo_default_base_branch` returns nothing and the base branch
   picker is empty. `remote set-head origin <branch>` after the push fixes it;
   the publish and the probe both do it.
-- A selector passed to `useAppStore` must return a stable value. A selector
-  that builds an object (`{ project, stage }`) loops the render; select the
-  project and the stage separately. The mock scenes catch this, unit tests with
-  a mocked store do not.
 - A terminal or script view subscribes to the output events before it asks
   for the snapshot, and writes an event only when its `offset` plus length is
   past the snapshot's end (the first bytes of a partly covered chunk are cut).
@@ -892,7 +883,7 @@ A step that did not finish is `skipped` with a reason in `outputSummary`; there 
   pins the rule; widen no other directive for an image.
 - Three frames paint before the splash: the native window, the `index.html`
   shell, then React. Each must paint the same chrome, so `backgroundColor` in
-  `tauri.conf.json` is the dark chrome (`#0d0e10`, never the old gray) and the
+  `tauri.conf.json` is the dark chrome (`#0d0e10`) and the
   shell restates the `styles.css` chrome as a literal, because the stylesheet
   is not loaded yet. Change a token and
   `boot-shell-paints-the-chrome.test.ts` fails until `index.html` follows. The
@@ -987,10 +978,10 @@ The hint a person types before a fix is plain text carried as a field, never re-
 
 ## Session overview cards
 
-- There is one overview: the cards of `CentralColumn`, in the order `overviewCardsOf` returns. An `overview.layout` row left by an older version is never read, so a stored Classic shows the cards; do not bring back a reader or a switch. The timeline of earlier versions is the Activity page (the `activity` lens, `ActivityPage` around `LogPane`, view `all`); the Overview keeps its last three rows, and `session.openLog` opens the page. There is no Log drawer: a stored `session-log` panel of an older build opens the session Overview (`withoutRemovedPages`).
+- There is one overview: the cards of `CentralColumn`, in the order `overviewCardsOf` returns. An `overview.layout` row left by an older version is never read, so a stored Classic shows the cards; do not bring back a reader or a switch. The timeline is the Activity page (the `activity` lens, `ActivityPage` around `LogPane`, view `all`); the Overview keeps its last three rows, and `session.openLog` opens the page. There is no Log drawer: a stored `session-log` panel of an older build opens the session Overview (`withoutRemovedPages`).
 - `buildTimelineStream` is a folder (`features/session/timeline/buildTimelineStream/`), and its callers still import `from '.../buildTimelineStream'`. `index.ts` holds the entry points (`buildTimelineStream`, `buildRunTreeStream`) and re-exports the stream types, `countRowIdOf` and `liveFoldRootIds`; `streamTypes.ts` the items and drafts, `mergeRows.ts` the folding of consecutive decision, project, stopped and history rows, `agentRows.ts` the agent and subagent rows, `runRows.ts` the run row and its lane shape, `laneFolds.ts` the lane and run folds, `ordering.ts` the order (newest first, then the execution order of a run), and `decorate.ts` the count, day and more rows. The tests sit beside them. A new rule about one kind of row goes in its piece, never back into `index.ts`.
 - A large session (171 agents, 15,937 turn events in a real database) froze the Overview. Opening a session reads summaries, never every turn event: `listAgentRunIdsForSession` returns one row per agent run from SQL, and its test bounds the rows read. The Log mounts after the frame (`useDeferredValue` in `LogPane`) and draws `LOG_PAGE_ROWS` at a time. The 100 ms long-task target is guarded by deterministic work bounds in `CentralColumn.bigSession.test.tsx`: no log rows in the first frame, one full page after settling, at most six React commits and 30 IPC calls on open. Wall-clock assertions vary with runner load. `timelineFullGutterOf` takes one stream built with `shouldExpandEveryGroup`; never go back to rebuilding the stream once per newly found group. The test and the `u47-big-session-*` scenes hold the size; measure there before adding work to the Overview's first render.
-- Three shared pieces keep their old defaults for the other callers: `buildTimelineStream` folds a batch of rebase events only with `shouldFoldHistoryBatches` (the Overview log, view `all`), `deriveNextSteps` drops a check fix follow-up and a run's next step only with `isActivityShown` (the palette's Next group, the default; the cards pass `false` through `useNextCards`, so the Fix card offers **Push** and **Start fix**, as the branch header does through `checkChainActionOf`; no log row offers them any more), and `useSessionSuggestionsFrom` takes the runs the column already holds. Do not flip those defaults to fix one surface.
+- Three shared pieces keep their old defaults for the other callers: `buildTimelineStream` folds a batch of rebase events only with `shouldFoldHistoryBatches` (the Overview log, view `all`), `deriveNextSteps` drops a check fix follow-up and a run's next step only with `isActivityShown` (the palette's Next group, the default; the cards pass `false` through `useNextCards`, so the Fix card offers **Push** and **Start fix**, as the branch header does through `checkChainActionOf`; no log row offers them), and `useSessionSuggestionsFrom` takes the runs the column already holds. Do not flip those defaults to fix one surface.
 - `batchId` is a payload key and must also sit in the whitelist of `packages/db/src/queries/session-event.ts`, or it is dropped when events are read back. It is written only for `origin` rebase while the history run is a rebase of the same session. Events recorded before it existed fold by origin and a 2 minute gap (`HISTORY_BATCH_WINDOW_MS`).
 - The branch story has one reader of the facts: `branchStoryOf`. Never compute a step word, a tone or a rank in `BranchRow`. A row is named by the branch (`mount.branch`), never by the folder. The per branch card gate (`isMountBusyOf`) and the branch in card titles (`mountLabelOf`) are one rule for every overview; never add a second gate keyed on `isActivityShown`.
 - A null `checks` or `reviewDecision` does not mean "not needed": it also means not read or unreadable. `branchStoryOf` skips a step only from `isChecksAbsent` and `isReviewOptional` on a fresh read, projected per host in `mountRequestOf`. Do not skip on `checks === null` alone, and a new host must set the flags only when its data proves it (see docs/mounts.md).
@@ -1002,15 +993,17 @@ The hint a person types before a fix is plain text carried as a field, never re-
 
 Auto has one gate and the legacy role grid never lists it. `AUTO_GATES.isDelegationEnabled` (compile time, read through `AutoReleaseContext` by `useIsAutoOn`) decides whether Auto exists and whether a start is Auto; there is no per person setting. An old `agents.autoExperiment` row can still sit in a database: never read it, a stored `false` must not hide Auto. `visibleAgentKinds()` stays static, so do not add `auto` to a role list to make a menu complete. A test of the role start renders under `AutoReleaseContext` false (or `SessionDraftPane isAuto={false}`).
 
+- Auto's glyph is `CONCEPT_ICONS.auto` (`Orbit`), not a sparkle: the AI glyph
+  ratchet bans `Sparkles` everywhere. Its color token `agent-auto` is its own
+  green-teal and not `primary`, so it does not move if the primary color changes.
 - Delegation cards are inserted into the transcript by time: before the first user or handoff row at or after the last settle of their batch. Do not anchor them on a run id; the delegation row does not keep the run that created it.
 - The approval of a plan tells Auto once. `approveAutoArtifact` writes only from `needs_approval` or another version's approval and answers `already_approved` without a write when that version already is, so `approveAutoPlan` sends nothing on a second press, a second surface or a second window. Never put a read before the write as the guard: two presses both pass it.
 - The approval turn names the plan (`focusArtifactId`, carried by `sendTurn`, the user turn port and the bridge into the outbox facts). Without it, a tree with two live artifacts marks "Approved plan vN." ambiguous and the delivery tells Auto to ask the user which one, so Build never starts.
-- `useAutoTreeActions.stop` stops the live children and the root agent turn by turn. The tree phase is written by the scheduler, not by this button; once the tree stop of the runtime exists, replace the body and keep the name.
 - Only a `plan` artifact waits on approval: a reviewer report is stored as `needs_approval` too and is never approved, so any reader of `approvalState` checks `kind === 'plan'` first (`isAutoPlanAwaitingApproval`). Auto never writes `plan_consumptions` and its agents have no run, so a plan with an `auto_artifacts` row is owned by its tree (`isPlanHeldByAuto`), never "Ready to implement" and never Run plan. A child whose delegation settled, or whose tree is at rest or stopped, is not resumable: Auto retried it with a new agent (`isStoppedByRestart` takes the views).
 - A prompt line must never say an action is impossible when the app has a path for it. "MOUNTS: none. No agent that changes files can start" made Auto believe it, so it never delegated, no refusal existed and the "Where should the Implementer work?" card never appeared: the user got prose. State the fact and the way forward (`NO_MOUNTS_LINE`, `describeMounts`), and pin it with a test that the line has no "cannot".
 - A mock scene that shows an Auto chat must give every agent a `lastViewedAt` after its `lastFinishedAt`; otherwise the chat marks it viewed on every render of the real store.
 - An agent page's composer never reads the session's `selectedAgentId`. In an Auto session that id is often the Auto root, so a `ChatInput` that reads it shows the root's draft, queue and "running" state on a child and sends the child's message to Auto. `AgentDetailPane` gives `ChatView` the `agentId`, which remounts the input per agent so a late failure dies with its page, and `ChatInput` threads it through `useAgentSelection`, `useTurnRouting` and `cleanupSentAttachments`; any new hook in the composer takes the agent id from there, never from the store. The pin is `ChatInput/childComposer.test.tsx`.
-- History: Claude refuses a Bash command holding a variable, even if the allow list names it ("A variable in this command can't be checked before it runs"). That is why the old Auto bridge confinement used an absolute path and not `$GOODBOY_BIN`. Auto no longer holds any Bash rule, but the lesson stands for any future allow rule: a read-only command such as `ls` proves nothing about confinement, because Claude allows it without a rule, so probe with a command that writes.
+- Claude refuses a Bash command holding a variable, even if the allow list names it ("A variable in this command can't be checked before it runs"), so an allow rule names an absolute path, never a variable such as `$GOODBOY_BIN`. To test a confinement, probe with a command that writes: a read-only command such as `ls` proves nothing, because Claude allows it without a rule.
 - An Auto child that fails to start must say why. `launchChildren` settles it with `code: message` (`kickoff_failed: <the error>`, or `agent_not_created: <the error>` when the child agent itself could not be created), never the bare code; the row and Auto's next message read that text. Do not drop `outcome.message` when you add a refusal. A `rewriter` agent needs a `historyRewriters` copy binding, so a delegated one always throws in `leaseTurnWriter`: admission refuses it instead of creating a child that can never start.
 - Whether a turn runs as an Auto child is read from the stored delegation in `routeTurn` (`resolveChildTurn`), never from `autoTreeViews`, which another window or a slow poll leaves stale. Pass the resolved `childTurn` on; a new turn path that skips `routeTurn` or rebuilds the input without it starts a child with no role, no route and no `isAutoChild`. A new path that marks an agent running must go through `claimTurnAdmission`, or an adoption from another window can slip in between the read and the launch. Its spawn must carry `hasAdmission`, and the turn must release the admission once the spawn returns or fails (`releaseTurnAdmission`); a failure path that writes the agent or the session must name the failing run (`failOwnedRun`, `writeOwnedSessionState`), never a write by agent id alone, or a window whose claim expired marks the next window's live run failed; a code path that stops running agents must go through `stopGhostAgent` or `stopGhostAgents`, never a plain status write, or it stops a claim another window has not spawned yet. Never decide a stop from a `turn_list_live` read alone: the stop statement must keep `NOT turn_is_live(provider_run_id)`, or a run that spawned after the read is marked stopped while its process runs. A test database gets the function from `@goodboy/db/test-helpers` (`liveTestRuns`).
 - A bridge act that publishes work (push, open or merge a request, approve, decline) must be declared `Access::Publish` in its `VerbSpec` in `query_bridge/protocol.rs`, or an Auto child can call it; there is no second list, and a test in `query_bridge/auto_child.rs` names the 14 publishing verbs, so a new one fails it until it is added there on purpose. The refusal keys on the socket peer's pid and its parent chain, never on the run id the request carries. Only `spawn_one` records turn pids (`spawn_turn`, with the workspace and session the turn was started for): a new spawn path that hands a process the bridge env without `spawn_turn` makes every verb from it `caller_unknown`, and one that records an Auto child as `HandStarted` leaves the bridge open to it. A request whose `--workspace` or `--session` is not the turn's own is refused `scope_mismatch`, so a verb never takes its workspace from the caller's word.
@@ -1062,7 +1055,7 @@ A session worktree keeps its index, `HEAD` and `rebase-merge` in `<repo>/.git/wo
 
 ## Theme switch is an instant swap
 
-A view transition repaints the whole window for every frame of a 420ms fade. Chrome measured 44 style recalcs, 22 paints and 225ms of main-thread work against 16, 7 and 114ms for the instant swap; WebKit dropped to 28 frames with a 500ms freeze on a large diff, against 80 frames with the swap alone. A window that repaints for a fade reads as the UI flickering, worst on the busiest pages. A circular reveal and a cross-fade were tried and dropped for that reason. A fixed full-window cover (`opacity` only, 100ms in, 200ms out) was gated on a WebKit frame-gap spike (no gap above 50ms on Settings, an Overview of 30 sessions and a 3,000 line diff) that was never measured, so it did not ship.
+A view transition repaints the whole window for every frame of a 420ms fade. Chrome measured 44 style recalcs, 22 paints and 225ms of main-thread work against 16, 7 and 114ms for the instant swap; WebKit dropped to 28 frames with a 500ms freeze on a large diff, against 80 frames with the swap alone. A window that repaints for a fade reads as the UI flickering, worst on the busiest pages. Do not bring back a circular reveal or a cross-fade. A fixed full-window cover (`opacity` only, 100ms in, 200ms out) waits on a WebKit frame-gap check that was never run: no gap above 50ms on Settings, an Overview of 30 sessions and a 3,000 line diff.
 
 ## Banner clicks reach every window, and the badge has one writer
 
@@ -1116,11 +1109,11 @@ The placement loop runs on every animation frame while the pane is on screen, so
 
 A browser profile is not the same thing on every platform (`docs/browser.md` → Profiles). `WebviewBuilder::data_store_identifier` does nothing on macOS 13 and older, and wry then uses the app's one store without an error, so a build that reads "I set the identifier" as "the stores are apart" shares sign-ins across workspaces there: ask `browser::profile::isolation()`, never assume. On Windows and Linux the isolation is the data directory, so a webview built without `profile::scope` lands in the app's default store, which is why every webview a tab gets goes through `spawn_webview`. Linux keeps a WebKit context alive for the whole app after its last webview closes, so deleting a profile folder there does not empty the cookies already in memory; `browser_profile_clear` answers `shouldRestart: true` for that. Only one profile runs at a time because each WebView2 profile is its own process group, so a new open closes the other profiles' views first under the registry lock, and a clear holds a lease so no view opens on the store being wiped.
 
-Once a window holds a tab, Tauri's `webview_windows()` and `get_webview_window()` stop returning that window, because they only see a window whose every webview shares its label. The menu event, the close fallback, `reveal_main`, the heartbeat and the last-window teardown went blind that way. Look a window up with `get_window` or `windows()`, send to its page with `EventTarget::webview_window(<window label>)`, and keep `webview_windows()` for boot only (`browser::tests` scans for it).
+Once a window holds a tab, Tauri's `webview_windows()` and `get_webview_window()` stop returning that window, because they only see a window whose every webview shares its label. The menu event, the close fallback, `reveal_main`, the heartbeat and the last-window teardown go blind that way. Look a window up with `get_window` or `windows()`, send to its page with `EventTarget::webview_window(<window label>)`, and keep `webview_windows()` for boot only (`browser::tests` scans for it).
 
 Tauri builds a tab's webview with its own initialization scripts, as it does a window's. Every page a tab loads carries `__TAURI_INTERNALS__`, with the invoke key and the window and webview labels (spike S2 saw it on `example.com`), and Tauri 2.12 has no option to leave that script out of a child webview. Tauri adds the `freezePrototype` script from `tauri.conf.json` the same way, to every tab, and real sites broke under it: a site that assigns `toString` or `constructor` on a plain object fails, so a search URL built that way read `[object Object]` and menus and sign-in pages died. That is why `freezePrototype` is off in the config and the app document freezes itself with `public/freeze-prototype.js`, the first script of `index.html`. Do not switch the config option back on, and keep the freeze script first in `index.html` (`csp-img-src.test.ts` pins both). Do not treat the missing labels as the guard either: the command wall (`refuse_browser_pages`, the `webviews` grant) is the guarantee.
 
-On macOS, `Webview::url()` on a tab panics the whole app when the page has no URL yet: wry 0.57 unwraps `WKWebView.URL`, which is nil until a first navigation commits (a first load that was cancelled or is still provisional). A tab restored at launch and read by the facts poll crashed Goodboy on every start. Read a tab's address with `platform::web_url::live_url_of`, which asks the view through `with_webview`, returns `None` on nil and gives up after 500ms; never call `url()` on a tab webview. The favicon command and the title handler still did, so opening a tab crashed the app again; `no_tab_reads_its_address_through_the_panicking_getter` in `platform/web_url.rs` now fails on any `webview.url()` left in `src/`. From an event handler on the main thread, read it on a blocking task, since `with_webview` runs only after the handler returns.
+On macOS, `Webview::url()` on a tab panics the whole app when the page has no URL yet: wry 0.57 unwraps `WKWebView.URL`, which is nil until a first navigation commits (a first load that was cancelled or is still provisional). A tab restored at launch and read by the facts poll crashed Goodboy on every start. Read a tab's address with `platform::web_url::live_url_of`, which asks the view through `with_webview`, returns `None` on nil and gives up after 500ms; never call `url()` on a tab webview, the favicon command and the title handler included. `no_tab_reads_its_address_through_the_panicking_getter` in `platform/web_url.rs` fails on any `webview.url()` left in `src/`. From an event handler on the main thread, read it on a blocking task, since `with_webview` runs only after the handler returns.
 
 Plugin initialization scripts reach every tab too. `tauri_plugin_notification::init()` takes no options and replaces `window.Notification` in every webview with a stand-in that calls the plugin's commands; capabilities gate those commands, not the script, so a site in a tab sees the stand-in and its calls are refused by the command wall. A site that asks for notification permission gets no prompt and no notification. There is no per-webview opt-out in Tauri 2.12; a new plugin with an initialization script lands in tabs the same way, so check what it replaces on `window` before adding it.
 
@@ -1130,19 +1123,19 @@ Every local page shares one origin, `gblocal://localhost` (`http://gblocal.local
 
 ## A board fact read after the first paint moves cards
 
-`stageInfoOf` reads only what is in memory. A fact that loads when a session opens (open questions, Not now, Auto trees) used to be empty at launch, so a session jumped lanes when you opened it. `loadWorkspaceFacts` now reads those facts for every session inside `loadWorkspaceSnapshot`, in the same `set` as `boardReady`. A new input of `stageInfoOf` that only a session open loads moves cards again: read it there too, one query for all sessions (`listOpenQuestionsForSessions` is the pattern), and count it in `loadWorkspaceFacts.sqlite.test.ts`. Resolve threads, Slack drafts and session artifacts still load on open. A session whose Auto trees all rest gets no view at load (only `listAutoTreesToRecover` sessions do), because `autoWaitRootsOf` never waits on a resting tree; a board input that needs a resting tree's view must be read there too.
+`stageInfoOf` reads only what is in memory. A fact that loads only when a session opens is empty at launch, so the session jumps lanes when you open it. `loadWorkspaceFacts` therefore reads the open questions, Not now and Auto trees of every session inside `loadWorkspaceSnapshot`, in the same `set` as `boardReady`. A new input of `stageInfoOf` that only a session open loads moves cards again: read it there too, one query for all sessions (`listOpenQuestionsForSessions` is the pattern), and count it in `loadWorkspaceFacts.sqlite.test.ts`. Resolve threads, Slack drafts and session artifacts still load on open. A session whose Auto trees all rest gets no view at load (only `listAutoTreesToRecover` sessions do), because `autoWaitRootsOf` never waits on a resting tree; a board input that needs a resting tree's view must be read there too.
 
 ## The launch reads once and hands the answers down
 
-`hydrate` runs its independent reads together, then opens the workspace with `setCurrentWorkspace({ id, launch })`. `launch` (`LaunchReads`) carries the projects of every workspace and the `turn_list_live` answer the ghost reconcile used, so the first workspace load reads neither again (`bootBudgets.test.ts` holds both at 1). Pass it only from the launch chain: a later switch that reused it would cancel or keep runs on a stale live set. Two orders must hold inside the group's `Promise.all`: the ghost reconcile finishes before `setCurrentWorkspace` reads the agents, and `runDbMigrations` (which also purges step agents a deleted workflow left behind) finishes before any member starts. `launchOrder.test.ts` pins both, with the restart restore and the error screen. A new launch step that reads agents or projects goes after the group, not into it; one that writes what the workspace load reads goes into `runDbMigrations` or the group, never after ready. Hygiene that only prunes goes to `runEachOnIdle` after ready.
+The launch order and `LaunchReads` are in [architecture.md](architecture.md) → Boot path; `bootBudgets.test.ts` holds each read at 1. Pass `launch` to `setCurrentWorkspace` only from the launch chain: a later switch that reused it would cancel or keep runs on a stale live set. Two orders must hold inside the group's `Promise.all`: the ghost reconcile finishes before `setCurrentWorkspace` reads the agents, and `runDbMigrations` (which also purges step agents a deleted workflow left behind) finishes before any member starts. `launchOrder.test.ts` pins both, with the restart restore and the error screen. A new launch step that reads agents or projects goes after the group, not into it; one that writes what the workspace load reads goes into `runDbMigrations` or the group, never after ready. Hygiene that only prunes goes to `runEachOnIdle` after ready.
 
 ## No query runs before the migrations of this build
 
-`App` starts its subscriptions (the resolve drain, the Auto runtime, the polls) in the same render that calls `hydrate`, before the migrations finish. Before the schema gate, the resolve drain read `resolve_attempts` on the old schema at the first launch after an update, crash capture saved the unhandled rejection, and the next launch said "Goodboy hit an error last time" with "no such table" or "no such column". Now `tauriDatabase` waits on `schemaGate` (`shared/lib/schemaGate.ts`) before every statement. `main.tsx` closes it before the first render, `runDbMigrations` opens it once the runner returned, a failed migration leaves it closed behind the launch error screen, and `wipeDb` closes it while it replays the schema. Only the migration runner and its version probe use `migrationDatabase`, which never waits: a query on it from anywhere else can see the old schema, and a query on `tauriDatabase` inside the migration path never returns. Tests and the mock entry run with the gate open; a test of the gate closes it and opens it again in `afterEach` (`dbBoot.test.ts`). The gate covers SQL from the window only: a Rust command that reads a table runs whenever it is invoked.
+`App` starts its subscriptions (the resolve drain, the Auto runtime, the polls) in the same render that calls `hydrate`, before the migrations finish. Without the schema gate ([architecture.md](architecture.md) → Database migrations), the first launch after an update reads the old schema, crash capture saves the "no such table" or "no such column" rejection, and the next launch says "Goodboy hit an error last time". Only the migration runner and its version probe use `migrationDatabase`, which never waits: a query on it from anywhere else can see the old schema, and a query on `tauriDatabase` inside the migration path never returns. Tests and the mock entry run with the gate open; a test of the gate closes it and opens it again in `afterEach` (`dbBoot.test.ts`). The gate covers SQL from the window only: a Rust command that reads a table runs whenever it is invoked.
 
 ## A session you did not open holds light agent rows
 
-At launch a session with no live work holds light rows in `sessionPhaseRuns` (marked in `lightAgentSessions`): no `outputSummary` (but the newest unread one), no `domains`, no `sourceThreadIds`, no routing fields. The `Agent` type keeps those fields optional, so the compiler does not tell a light row from a full one. A shell number reads only light fields, and `store.sqlite-light-agents.test.ts` checks the stage, the unread state and the label are the same with either. Code that reads one of the heavy fields of a session that may not be open (a turn, a workflow advance, an orchestration step, anything an engine runs in the background) awaits `ensureFullAgents` first, as `sendTurn`, `maybeAutoAdvanceWorkflow` and `orchestrateNextStep` do. A new shell input that reads a heavy field must be added to the light row and to `agent-summary.test.ts` instead.
+At launch a session with no live work holds light rows in `sessionPhaseRuns` ([architecture.md](architecture.md) → Boot path): no `outputSummary` (but the newest unread one), no `domains`, no `sourceThreadIds`, no routing fields. The `Agent` type keeps those fields optional, so the compiler does not tell a light row from a full one. Code that reads one of the heavy fields of a session that may not be open (a turn, a workflow advance, an orchestration step, anything an engine runs in the background) awaits `ensureFullAgents` first, as `sendTurn`, `maybeAutoAdvanceWorkflow` and `orchestrateNextStep` do. A new shell input that reads a heavy field must be added to the light row and to `agent-summary.test.ts` instead.
 
 ## Some drawers load on first open
 
