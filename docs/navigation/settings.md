@@ -264,7 +264,7 @@ Worktrees, in the same scope, hidden under `Removed workspaces`. Its header read
   Fields split on a unit separator, so a name with `|` still lists; a git without
   the batched distance counts per branch. The merge test is cached by both tips
   (4096 entries) and fed each branch's merged pull request head
-  (`listMergedRequestHeads`). Protected branches never show.
+  (`listMergedRequestHeads`). Protected branches (the base, `main`, `master`, `develop`) never show; a branch held by a worktree lists, and a delete keeps it until that worktree is removed.
 - One select filters: `Safe to delete` (default: merged by merge commit or rebase,
   merged by its pull request with nothing after the merged head, or never used),
   `Check first` (`Merged, then N new commits`, unmerged and gone on origin, local

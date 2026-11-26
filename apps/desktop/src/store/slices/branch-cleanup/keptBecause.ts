@@ -37,7 +37,7 @@ export const keptBecauseOfError = ({ branch, error }: ErrorParams): string => {
     case 'sha-moved':
       return `Kept ${branch}: it moved while Goodboy checked it.`;
     case 'held-by-worktree':
-      return `Kept ${branch}: another folder has it checked out.`;
+      return `Kept ${branch}: another worktree has it checked out. Remove that worktree first.`;
     case 'branch-missing':
       return `Kept ${branch}: it is already gone on this Mac.`;
     default:
@@ -48,11 +48,35 @@ export const keptBecauseOfError = ({ branch, error }: ErrorParams): string => {
 export const keptBecauseNotCreated = ({ branch }: { readonly branch: string }): string =>
   `Kept ${branch}: Goodboy didn't create it.`;
 
-export const keptBecauseFolder = ({
-  branch,
-  reason,
-}: {
+const DIRTY_REASONS: ReadonlyArray<string> = [
+  'staged-changes',
+  'unstaged-changes',
+  'untracked-files',
+  'unmerged-conflicts',
+  'operation-in-progress',
+];
+
+type FolderParams = {
   readonly branch: string;
   readonly reason: string | null;
-}): string =>
-  reason === null ? `Kept ${branch}: its folder couldn't be removed.` : `Kept ${branch}: ${reason}`;
+};
+
+const hasDirtyReason = ({ reason }: { readonly reason: string }): boolean =>
+  DIRTY_REASONS.some((dirty) => reason.includes(dirty));
+
+export const keptBecauseFolder = ({ branch, reason }: FolderParams): string => {
+  if (reason === null) {
+    return `Kept ${branch}: its folder couldn't be removed.`;
+  }
+  if (hasDirtyReason({ reason })) {
+    return `Kept ${branch}: its worktree has uncommitted changes. Remove the worktree first.`;
+  }
+  return `Kept ${branch}: ${reason}`;
+};
+
+type InUseParams = {
+  readonly branch: string;
+};
+
+export const keptBecauseInUse = ({ branch }: InUseParams): string =>
+  `Kept ${branch}: an agent still works in its folder.`;
