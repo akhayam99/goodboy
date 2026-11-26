@@ -126,7 +126,7 @@ describe('README figures', () => {
     const problems = check({
       markdown: readme({ caption: '<sub>Screenshot from Goodboy 0.43.0</sub>' }),
     });
-    assert.match(problems[0], /carries no caption/);
+    assert.match(problems[0], /README figure: remove its caption/);
   });
 
   it('gets no caption written', () => {

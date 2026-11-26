@@ -84,7 +84,7 @@ export const findProblems = ({ documents, figures, repoVersion }) => {
       }
       if (isUncaptioned({ key: picture.key })) {
         if (picture.caption !== null && CAPTION_LINE.test(picture.caption)) {
-          problems.push(`${location} ${picture.key} is a README figure and carries no caption`);
+          problems.push(`${location} ${picture.key} is a README figure: remove its caption`);
         }
         continue;
       }
