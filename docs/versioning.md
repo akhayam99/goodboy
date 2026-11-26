@@ -61,8 +61,10 @@ stops reading the old one. `legacy-state-sunset.test.ts` fails when the
 running version reaches that release while the row is still listed: remove the
 read in the code, then delete the row.
 
-| State | Old shape | New shape written since | Old shape read until (excluded) |
-| ----- | --------- | ----------------------- | ------------------------------- |
+| State                                              | Old shape                               | New shape written since | Old shape read until (excluded) |
+| -------------------------------------------------- | --------------------------------------- | ----------------------- | ------------------------------- |
+| Companion pairing file `~/.goodboy/companion.json` | `allow_list`, a bare list of phone keys | 0.43.0                  | 0.45.0                          |
+| Stored session dock grid                           | version 1 row, three tools              | 0.43.0                  | 0.45.0                          |
 
 Gone already:
 

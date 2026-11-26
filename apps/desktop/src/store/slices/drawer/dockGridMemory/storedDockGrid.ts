@@ -23,6 +23,8 @@ import {
 
 const STORED_DOCK_GRID_VERSION = 2;
 
+export const DOCK_GRID_V1_READ_UNTIL = '0.45.0';
+
 const READABLE_VERSIONS: ReadonlyArray<number> = [1, STORED_DOCK_GRID_VERSION];
 
 const TOOL_KINDS = WORKSPACE_TOOL_KINDS;
