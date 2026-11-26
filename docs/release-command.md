@@ -1,9 +1,5 @@
 # How to release Goodboy
 
-Before release screenshots, run `node scripts/fidelity-shots.mjs` with the website and app scene servers available. It writes paired mock and real-scene PNGs plus measured values for both themes and desktop and phone sizes.
-
-Before a release that touches the activity timeline or Workflows, run `pnpm validate:scenes --app <scene server>` against the mock scene server (`VITE_GOODBOY_MOCK=1`). It opens `activity-log` and `activity-kinds-light` in Chrome at 100% and 110% zoom and fails on a measure, not a picture: a timeline row that keeps a transform 500ms after its groups open, a group row that moves more than 1px while it opens or folds, a rail stroke that does not continue at the same x into the next row, a gap over 80px between the model and the time, and a time wider than its column, at five widths. It also opens `inbox` at the same five widths and fails when a task age wraps to a second line or is clipped. It also opens the plan drawer scenes in a 400px card and fails when the toolbar row wraps, runs past its edge or the title takes more than two lines (`--only plan-drawer` runs just these). It also opens Workflows directly and through the app frame, selects Rules through the real control, sends wheel input, and requires the bottom of the page to be reachable. It then opens every scene in `scenes.txt` and opens a sample of its menu triggers (`aria-haspopup="menu"`, a few per kind, each closed before the next) and fails when one opens to fewer than two rows, which is the rule that a menu of one is a quiet button instead (`--only menus` runs just this, `--only <scene>,<scene>` runs it on those scenes). Every failure prints its scene, its check and its details after the `scene measures:` line. Set `VALIDATE_CHROME` when Chrome is not at the default macOS path.
-
 > **Read this when** an agent is executing a release and needs the step
 > order plus the gotchas that bit previous runs. **Not for** signing,
 > notarization or updater detail (`docs/release.md`).
@@ -15,6 +11,21 @@ similar, follow this file from start to end. You need no other instructions.
 [release.md](release.md) is the technical runbook (signing, notarization,
 updater, homebrew). This file has the steps in order, plus the gotchas that
 caught earlier runs.
+
+## Checks before the pictures
+
+- Before release screenshots, run `node scripts/fidelity-shots.mjs` with the
+  website and app scene servers available. It writes paired mock and
+  real-scene PNGs plus measured values for both themes and desktop and phone
+  sizes.
+- Before a release that touches the activity timeline or Workflows, run
+  `pnpm validate:scenes --app <scene server>` against the mock scene server
+  (`VITE_GOODBOY_MOCK=1`). It opens the scenes in Chrome and fails on a
+  measure, not a picture: layout, folds, menus of one row, reachable page
+  ends. Every failure prints its scene, its check and its details after the
+  `scene measures:` line, and `--only <check>` or `--only <scene>,<scene>`
+  runs a part. Set `VALIDATE_CHROME` when Chrome is not at the default macOS
+  path. The probes and how to add one are in [testing.md](testing.md).
 
 ## Figure out the version yourself
 
@@ -186,7 +197,8 @@ One pass, in this order. Do not write a line of the notes before steps 1 and 2.
    the changelog. Before and after share frame, crop, seed, scroll and the
    highlighted element. Only the change differs.
 6. **Verify inside What's new.** Run the app on the release branch, open
-   Settings, Updates, What's new on the version, and for each picture check:
+   What's new on the version (the Goodboy mark at the foot of the places
+   rail, or the Updates band of **Settings › This Mac › Look and alerts**), and for each picture check:
    - the After frame shows the change; on an `Improved` entry the Before frame
      shows the same frame without it (a `New` entry has After only);
    - on an `Improved` entry, the selection, highlight or open row that the

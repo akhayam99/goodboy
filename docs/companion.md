@@ -25,12 +25,12 @@ a paired phone like a second keyboard, not like a viewer.
 
 - The desktop keeps a long-term Noise static key and an allow list of paired
   phone keys in `~/.goodboy/companion.json`. It never leaves the machine.
-- Settings, iPhone mints a one-time 256-bit token that expires after 60
+- **Settings › This Mac › iPhone** mints a one-time 256-bit token that expires after 60
   seconds and shows it with the desktop's key and address as a QR code. A
   phone that completes the Noise XK handshake with a live token is added to
   the allow list and the token is burned. A known key reconnects without a
   token.
-- The allow list holds any number of phones. Disconnect on Settings, iPhone
+- The allow list holds any number of phones. **Disconnect** on the iPhone page
   clears all of them and drops every live connection; each phone must scan a
   new code to come back. A phone can never re-pair itself.
 
@@ -54,7 +54,7 @@ merges from the phone like it does on the desktop.
 
 ## Listener lifetime
 
-- Nothing listens at boot. The listener starts when Settings, iPhone opens.
+- Nothing listens at boot. The listener starts when **Settings › This Mac › iPhone** opens.
   Leaving the page with no phone paired stops it; with at least one phone
   paired it stays up so that phone can reconnect, until the app quits or
   Disconnect runs.
@@ -130,8 +130,9 @@ workspace only: opening another workspace replaces them, and a second window
 owns a second workspace. `needsYouOf` itself is a pure function and counts the
 moves of several workspaces as soon as it is given their sessions and stage
 infos. What the other workspaces lack in the store is the facts behind the
-infos (PR checks, resolve threads, live agents, open questions). The sidebar
-reads them from `workspaces_attention`, which keeps only a count, a tone and
+infos (PR checks, resolve threads, live agents, open questions). The workspace
+switcher, the Home rows and the notification center read them from
+`workspaces_attention` (through `attentionByWorkspaceOf`), which keeps only a count, a tone and
 five reasons per workspace and cannot name a session. A projection that
 crosses workspaces needs each workspace's facts in memory, not a second
 computation in Rust.

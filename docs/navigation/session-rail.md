@@ -23,8 +23,7 @@ in `features/session/pageRegistry.ts`).
   strip, whose bottom rule spans the column like the branch page tabs. A detail page drops More
   session actions from the title row (`SessionHeadActions` `isDetail`), so a page shows one `⋯`,
   the menu of what it shows (the run, the artifact, the pull request); the session menu is one
-  crumb up. Every tab shows the same head at the same top, the title row on the sidebar's first
-  row line; no tab draws a title of its own ("Runs", "Questions", "Context" are the tab
+  crumb up. Every tab shows the same head at the same top; no tab draws a title of its own ("Runs", "Questions", "Context" are the tab
   names), and a page intro, when kept, sits under the tabs in the muted role (the Runs lede).
   The pages below sit under the head (`UnderTrailContext`), so their own header adds no top
   inset and an empty one draws nothing. `SessionHead/index.test.tsx` pins one head at the
@@ -73,18 +72,17 @@ in `features/session/pageRegistry.ts`).
 
 ## The Projects and Linked cards
 
-The text below was written for the rail. The cards it names (`SessionLevel/LevelProjects`,
-`LevelLinked`, `LevelFolder`) keep their behavior and move into the Context tab.
+The Projects and Linked cards (`SessionLevel/LevelProjects`, `LevelLinked`,
+`LevelFolder`) sit in the Context tab.
 
-- **Level 1 reads top to bottom:** the pages, then the Projects card and the
-  Linked card, then the foot. The session level has no identity row: the
-  Overview title is the session's identity. The Overview h1 is the session title, the linked key in gray mono
+- **The cards come first.** The Context tab draws the Projects card and the
+  Linked card above its sections (`ContextPageFrame`). The cards have no
+  identity row: the Overview title is the session's identity. The Overview h1 is the session title, the linked key in gray mono
   before it (`SessionOverviewPane/OverviewTitle`); a single click, or Enter or
   F2 on the focused title, renames it in place with the same rename as the
   board card (an archived session's title stays read only), and "Overview" is only the
-  rail entry's label. The rail's top row holds the rail
-  toggle at the left (with ⌥⌘B in its tooltip) and one button at the right
-  (`SessionLevel/SessionLevelActions`): **More session actions** (`⋯`,
+  tab's label. The title row of the session head holds one button at the right
+  (`SessionActions/SessionLevelActions`): **More session actions** (`⋯`,
   `ObjectOverflowMenu` over the `session` registry kind), which holds five rows:
   **Ask about this session** (`session.ask`, ⌘L), **Pin session** or **Unpin
   session** (`session.pin` / `unpin`), **Refresh session** (`session.refresh`,
@@ -224,7 +222,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   rows, the `n branches behind` line and the Next rebase row show no count
   (the list is `aria-busy`) until every branch is read, and a refresh keeps
   the last complete set until the new one has landed whole; a branch whose
-  base changed shows no count until its new read lands (`loadThenShow.test.tsx`). The check counts come from the runs read
+  base changed shows no count until its new read lands. The check counts come from the runs read
   for the request on any host, skipped kept apart from passed. The number, the
   state word and the branch are not on the line: they sit in the row's fact
   card (`branchRowCardOf`: the branch as title, `#318` beside it, the state,
@@ -392,7 +390,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
 The tools (Terminal and Browser) are panes, not pages:
 they open from the right rail at the right of the content (see The
 session tools), never from a page header.
-The linked records keep their lenses for now and stay in the palette.
+The linked records keep their lenses and stay in the palette.
 
 **A session row says the name and the state, and the hover card and the board
 card say the rest.** The sidebar list is gone (the places rail has no session
@@ -1020,7 +1018,7 @@ runs from the worktree root. Clicking a row opens its output in the
 and Edit open the same inline `ScriptEditor` card, at the top of the active
 mount's group or in place of the edited row. Saved scripts of workspace
 projects that are not in the session are named in one line under the groups.
-The session sidebar has no scripts section: `$` launches, the Now chip
+The session has no scripts section: `$` launches, the Now chip
 watches.
 
 A pin belongs to the project, not

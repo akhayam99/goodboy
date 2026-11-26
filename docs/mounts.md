@@ -486,7 +486,7 @@ reads as "no processes" and would delete a worktree something still runs in.
 A turn drives its mounts through the bridge's `mount` and `series` verbs and
 the two request-create verbs. The transport, the refusal codes and the rule
 that a mount is named, never guessed, are
-[query-bridge.md](query-bridge.md#a-mount-is-named-never-guessed)'s. A spawned
+[query-bridge.md](query-bridge.md#mounts)'s. A spawned
 turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
 `GOODBOY_MOUNT_ID` and `GOODBOY_RUN_ID`; `--mount` addresses any other mount.
 
@@ -734,7 +734,7 @@ Close branch instead (`altActionId`), and Close branch is hidden on a merged
 branch (`placement`); a closed one has Reopen, Copy and Unmount. Close branch
 is a danger row. Its Keep the folder outcome is `mount.closeKeepFolder`, kept
 out of menus (`placement: 'palette'`) and reached as the confirm's alternative.
-The navigation rules live in [navigation/session-rail.md](navigation/session-rail.md#session-rail).
+The navigation rules live in [navigation/session-rail.md](navigation/session-rail.md#session-page-tabs).
 
 What a worktree asks the user to decide shows once, in the Overview notices
 slot (`OverviewNotices`, one `MountNotices` per open mount, the first lap

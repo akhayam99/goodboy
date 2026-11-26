@@ -30,8 +30,8 @@ unit that changes the skeleton edits this section first.
 3. **One home, one name. Target.** Owned by Column doors.
 4. **A page replaces the page. Target.** Owned by Surfaces.
 5. **The top bar is identity, movement and live state. Target.** The bar holds
-   no control for another container: the sidebar toggle left with the column.
-   Every chip opening the home of its number is target.
+   no control for another container. Every chip opening the home of its
+   number is target.
 6. **The bottom-left is the app's corner. Target.** Owned by The column foot.
 7. **A menu shows five rows at most. Target.** Right-click menus are exempt:
    they mirror the action catalog (Context menus).
@@ -57,7 +57,7 @@ What holds today and is guarded:
 - **One door for moves.** Only `navigate`, `back`, `forward`, `up` and
   `amendFocus` move the user outside the navigation slice. Same test.
 - **Saved layouts load without loss.** A window layout and the fold choices
-  written by 0.32.0 restore: every studio kind, every drawer kind, the board,
+  written by the previous build restore: every studio kind, every drawer kind, the board,
   a session, and a Terminal dock without a session.
   `__tests__/navigation/restore-previous-build.test.ts`.
 - **Every route has a row.** `__tests__/surfaces/navigation-flows/`.
@@ -222,7 +222,7 @@ never exists on one surface only.
   action that lacks either word. `__tests__/actions/stateMatrix.test.ts`
   pins, per kind and per state, which verbs show, in which slot, and why a
   verb is blocked, and runs them on the real store; `kinds/*.matrix.test.ts`
-  pins the same for the three UX5 kinds against the plan's state table.
+  pins the same per kind against its state table.
 - **Preview, tint and held rows.** A verb may carry a `preview` (a role
   today): a menu that is given `onPreview` calls it with the descriptor while
   the row is hovered or focused and with `null` when it leaves or the menu
@@ -281,8 +281,8 @@ never exists on one surface only.
   covers the last row.
 - **Confirm and undo.** A confirm is one placement, anchored to its trigger
   (`ConfirmPopover`): Cancel has focus on a danger confirm, `Cmd+Enter` confirms,
-  and no card confirm exists any more (`inline-confirm-placement.baseline.json`
-  is empty). A verb that loses work confirms in a `ConfirmPopover` on its button
+  and there is no card confirm (`inline-confirm-placement.baseline.json` is
+  empty). A verb that loses work confirms in a `ConfirmPopover` on its button
   (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
   Delete script, Close branch, Unmount, Abort rebase, Restore a
   backup). The Branch header's Merge asks "Merge #318 into main?" and Close
@@ -383,10 +383,10 @@ menu, popover or field takes it first, then the top of the slot closes, then
 the drawer from the chip, then the page goes up. A face is not a step of the
 ladder: Esc never changes Overview and Desk (model.md, A face is not an
 entry). ⌘⇧W (Ctrl+F4 off macOS,
-File > Close the Drawer) closes the top of the slot from anywhere, a focused
+File › Close the panel) closes the top of the slot from anywhere, a focused
 terminal or web page included; an open menu or dialog takes it first, and a
-parked drawer is never closed. The right rail stays at 44px
-and says the same thing: the tool in the slot is pressed, the tool in the chip
+parked drawer is never closed. The right rail keeps its width (56px, or 44px
+under a 1100px window) and says the same thing: the tool in the slot is pressed, the tool in the chip
 wears a small ring and is named waiting, and a signal dot sits with either (see
 [session-rail.md](./session-rail.md), The session tools). The rules, the store and the navigation cases are in
 [home-and-drawer.md](./home-and-drawer.md) (One drawer at a time).
@@ -448,12 +448,11 @@ and Goodboy-run ports every 30 seconds (`monitor_snapshot` with a port list,
 merged into the snapshot), only while the window is visible and the snapshot
 is older than 15 seconds, and never beside another scan. Under a 1100px window
 the rail drops to 44px icons and each word moves into its tooltip. The rail
-never folds, never resizes and saves no width. The sidebar list, its fold, its
-peek and its flyout are gone, and ⇧⌘B has no command: the sessions live on the
-Board and in Sessions (⌘B). A 0.39 build saved `goodboy:left-sidebar-width:v3`
-and `goodboy:sessions-sidebar-collapsed`; neither sizes or folds anything,
-and neither is deleted, so a return to 0.39 finds its sidebar (`restore-previous-build.test.ts`
-boots from a folded sidebar 320 wide). Before any workspace exists the rail keeps only its foot.
+never folds, never resizes and saves no width, and no key folds it: the
+sessions live on the Board and in Sessions (⌘B). The storage keys an older
+build kept for its sidebar are listed in
+[versioning.md](../versioning.md#retired-state). Before any workspace exists the
+rail keeps only its foot.
 
 **Header actions.** One grammar draws the actions of every page header and
 drawer header (`HeaderActions`): secondary controls, at most one secondary
@@ -558,8 +557,10 @@ covered.
   write fails. Each row says the state of its session: the status mark, the
   live line or the project, the count of what waits on you from the Board's
   `needsYouOf`, and **Desk** when the session opens again on its Desk. So you
-  move from one session to another without going through the Board.
-  After an update from a build that had the sidebar list, a one-time card
+  move from one session to another without going through the Board. While a
+  session needs you, the Sessions control carries a warning dot and its
+  tooltip says how many (`SessionsTrigger`).
+  After an update from a build that had a session list in a sidebar, a one-time card
   under the Sessions control (`SessionsCard`, 320px wide, the same placement
   rule) reads "Your sessions moved here" with **Show sessions**. It is not a
   dialog and blocks nothing. Opening Sessions in any way, the key included,
@@ -599,7 +600,7 @@ covered.
 - Right, in this order: the Now chip (running, scripts, each
   only when above zero, from `deriveSessionStage` through `useNowSessions`, so a running
   session that needs you is not counted as running; its dots are static, and its tooltip
-  names the unit: "2 sessions running, 1 script running"; at zero one muted slot is drawn so the chips beside it never move: "Idle" with the neutral ring, or "Needs you" with the warning dot while a session waits on you), Usage,
+  names the unit: "2 sessions running, 1 script running"; at zero one muted slot, "Idle" with the neutral ring, is drawn so the chips beside it never move), Usage,
   today's spend (hidden until the first cent today) and the bell (its unread count beside
   the icon, drawn like a door or tab count: one number, capped at 9+, in the quiet unread
   tone, or warning when an unread item carries an action). There is no storage chip:
@@ -608,14 +609,15 @@ covered.
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
   two, and a group with no rows is not drawn. The popover ends on **Open Monitoring**,
   the page that owns those counts. Sessions that need you are not in the
-  bar, in the chip or in its panel: the Board door carries the count. Needs you counts three
+  Now chip or its panel: the Board door carries the count, and the Sessions
+  control a dot. Needs you counts three
   units, and each tooltip names its own: sessions ("2 sessions need you") on the Board
   door, the dock badge and Search or run; questions ("3 questions") on the
   Questions tab of the session; items ("4 items need you") on the Overview card and
   the Runs group. The bell is unchanged. A script row moves to its
   session and opens that run's output in the right drawer. A running session
   row opens the session hover card (facts only) after the pointer rests, the
-  same card the sidebar shows. `Usage`: one chip per connected plan provider (Claude, Codex,
+  same card the Board shows. `Usage`: one chip per connected plan provider (Claude, Codex,
   Gemini, Cursor), in the provider order, with providers that report nothing
   last. The order never follows state. At rest a chip is its glyph and one bar of
   the provider's tighter window; the percent shows in tabular gray above 70%, `Out` with the
@@ -634,7 +636,7 @@ covered.
   A bar in the chrome is always a provider window; money is always a figure.
   Then Spend: the figure with `today`, named `Spend
 today. Open Impact`, opening the Impact studio on its Spend tab (it is never
-  merged with a count). Impact itself is the last sidebar door, a page like
+  merged with a count). Impact itself is the last place of the rail, a page like
   Tasks with no band and no Close, and ⌘K reaches every tab. The bar holds no
   Impact icon. Last the bell, which opens the
   notification popover and stays pressed while the Notifications page is open.
@@ -724,8 +726,8 @@ the top bar, the foot fits with the Update mark above the signature: the wide ra
 needs 662px of the 664px under the 36px top bar (`u50-logo-foot-*` scenes). A GitLab or Bitbucket reachability line
 (`HostReachabilityLine`) sits under the top bar and takes its height from the rail.
 
-`useRailFootEffects` (`app/components/ShellLeft/useRailFootEffects`) keeps what the
-logo used to carry: the restart when idle (`useRestartWhenIdle`), the anchor the
+`useRailFootEffects` (`app/components/ShellLeft/useRailFootEffects`) holds the
+effects of the foot: the restart when idle (`useRestartWhenIdle`), the anchor the
 update card opens beside, and the onboarding re-read when a secondary window takes
 focus.
 
@@ -804,13 +806,14 @@ its own.
 ## Menu bar
 
 On macOS the app has seven menus: the Goodboy menu (About, Check for Updates,
-Settings, Services, Hide, Quit), File (New Session, New Chat, New Terminal,
-New Workspace, Close), Edit, View (sidebar, Search or Run, zoom, Reload, full
-screen), Go (Back, Forward, then the destinations in the order of
-`DESTINATIONS`: Board, Tasks, Workflows, Chat, Impact, Monitoring,
-Notifications, then after a separator the two right rail tools, Show or Hide
-Terminal and Browser, which open the dock), Window and Help (Guide, What's New,
-Keyboard Shortcuts, Report a Bug). One table lays all of them out
+Settings, Services, Hide, Hide Others, Show All, Quit), File (New Session, New
+Chat, New Terminal, New Workspace, Close, Close the panel), Edit (the native
+rows, then Search), View (Show or Hide Sessions, Search or Run, Reset Panel
+Layout, zoom, Reload, Reload Goodboy, Full Screen), Go (Back, Forward, then the
+destinations in the order of `DESTINATIONS`: Board, Tasks, Workflows, Chat,
+Connections, Impact, Monitoring, Notifications, then after a separator the two
+right rail tools, Show or Hide Terminal and Browser, which open the dock),
+Window and Help (Guide, What's New, Keyboard Shortcuts, Report a Bug). One table lays all of them out
 (`SECTIONS` in `src-tauri/src/app_menu.rs`); a row is either a native item
 (About, Quit, Undo, Cut, Copy, Paste, Select All, Full Screen, Minimize, Zoom)
 or a command with an id, a title-case label and an optional combo. The native
@@ -937,7 +940,7 @@ that sets `boardReady`; no session empty state ("No sessions yet", "Add a folder
 first") draws before it (`empty-before-loaded.test.ts`). The last session then
 opens in place and its parts swap from their own skeletons; the idle loads come
 last. A launch with no workspace to open mounts the launcher or the setup on
-`ready`, as before. A failed launch, before or after the shell shows, puts the
+`ready`. A failed launch, before or after the shell shows, puts the
 launch error screen back (`AppBootSplash`, on `bootPhase === 'error'`), and Retry
 hides the shell until the next workspace is known. The `boot-shell` scenes show
 the three states. `BootSplashExit` crossfades the splash out over 200 ms on
@@ -985,8 +988,7 @@ Welcome step at Agents, and a stored tools entry counts for nothing.
 ## Auto in the shell
 
 Auto is described in [auto.md](../auto.md); this is where it sits. Auto is always
-on: Settings has no Auto switch, and the **Experimental** marker sits on the
-Auto start of the New menu. An Auto conversation is a row of the one **Runs**
+on: Settings has no Auto switch. An Auto conversation is a row of the one **Runs**
 tab of the session. The tree of an Auto agent, and of each
 child of an Auto tree, is the Agents column of the run page (see The Lead page
 in auto.md), never a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its

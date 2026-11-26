@@ -61,7 +61,7 @@ the workspace they name by id). The form owns its action row.
 - **A folder another workspace holds** asks Move it here or Leave it out; Create
   stays off until one is chosen, and Move is off while agents run there. The
   move happens on Create, never on the click.
-- **Start from scratch** (the old Start a new project) asks a folder name and a
+- **Start from scratch** asks a folder name and a
   location (the last parent folder, else the home folder, changed with the
   system picker). Create makes the folder, a repository on `main` with a first
   commit that holds `.gitignore` and nothing else, and the workspace named
