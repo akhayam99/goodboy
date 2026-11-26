@@ -13,13 +13,13 @@ keyed by its run id. `sendTurn` writes it through `recordTurnSpan` when the
 stream ends and in the failure path before any fallback retry. The first write
 wins, so a failure after a finished stream keeps the finished span.
 
-| Field                          | Holds                                                                       |
-| ------------------------------ | --------------------------------------------------------------------------- |
-| `started_at`, `ended_at`       | Right before the CLI starts, and when its stream ends                       |
-| `provider`, `model`, `effort`  | What the CLI was started with, after routing and clamping; `effort` null when no flag was passed |
-| `cost_usd`                     | The sum of the run's telemetry, null when it recorded none                  |
-| `end_reason`                   | `cancelled` (stopped), `failed` (thrown or no answer), `awaiting_user` (ends on a blocking question), else `succeeded` |
-| `touched_mount_ids`            | The session mounts the turn changed, as a JSON array                        |
+| Field                         | Holds                                                                                                                  |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `started_at`, `ended_at`      | Right before the CLI starts, and when its stream ends                                                                  |
+| `provider`, `model`, `effort` | What the CLI was started with, after routing and clamping; `effort` null when no flag was passed                       |
+| `cost_usd`                    | The sum of the run's telemetry, null when it recorded none                                                             |
+| `end_reason`                  | `cancelled` (stopped), `failed` (thrown or no answer), `awaiting_user` (ends on a blocking question), else `succeeded` |
+| `touched_mount_ids`           | The session mounts the turn changed, as a JSON array                                                                   |
 
 A span holds machine time only. Waiting on a question, a review or a retry
 never falls inside one, so an agent's execution time is the sum of its spans.
@@ -58,12 +58,14 @@ the turn; it falls back to the reported edits.
 
 The activity feed shows these mounts on an agent row
 (`useAgentTouchedWorktrees`, union over its spans) only when the session has
-two or more mounts: a worktree icon and a count, the names in the tooltip.
+two or more mounts: a worktree icon and a count, the names in the tooltip. A
+mount that left the session drops out of the row.
 
 ### Turn file sets
 
 `turn_file_sets` holds the files a turn wrote, one row per run and mount. Next
-steps read it through `loadTurnFiles` (the `turn-files` slice).
+steps read it through `loadTurnFiles` (the `turn-files` slice): the next
+script after a turn and the files of the last turn in a move's evidence.
 
 1. `beginTurnFileSets` reads `worktree_snapshot` (head and the hash of every
    dirty file) of each writable mount right before the CLI starts.
@@ -72,7 +74,8 @@ steps read it through `loadTurnFiles` (the `turn-files` slice).
 
 The set is the files committed or edited since the snapshot, minus those only
 the base branch changed (kept as `fromBase` so a row can say how many it hid),
-plus any file whose hash moved while dirty. Counts come from the numstat
+plus any file whose hash moved while dirty; a file that was dirty and
+unchanged is left out. Counts come from the numstat
 against the starting head. Nothing is recorded for a turn that ran beside
 another agent (`isTurnShared`), and a failure is reported, never fatal.
 
@@ -90,7 +93,7 @@ An agent's active time is the union of its own spans, its subagents' spans and
 the turn running now. Parallel subagents count once, and a run's active time
 is the union over its agents. `familyActiveTime`
 (`features/workTreeModel/workTimeSource.ts`) computes it, and `agentActiveTime`
-picks it for one agent. The row (`agentWorkTime`) and the run tail clock
+picks it for one agent (only the turn running now for a running turn row). The row (`agentWorkTime`) and the run tail clock
 (`agentActiveClock`) both read `agentActiveTime`.
 
 ### The estimate
@@ -104,13 +107,13 @@ agents included). It adds one sample per finished orchestrated run.
 any other agent row. A running turn row measures only the turn running now. It
 picks the first tier with enough samples:
 
-| Tier                                                                | Minimum |
-| ------------------------------------------------------------------- | ------- |
-| Role, provider, model and effort                                    | 5       |
-| Role, provider and model                                            | 5       |
-| Same model and effort in every workspace (`modelAnyWorkspace`)      | 5       |
-| Role and provider                                                   | 8       |
-| Role alone                                                          | 8       |
+| Tier                                                           | Minimum |
+| -------------------------------------------------------------- | ------- |
+| Role, provider, model and effort                               | 5       |
+| Role, provider and model                                       | 5       |
+| Same model and effort in every workspace (`modelAnyWorkspace`) | 5       |
+| Role and provider                                              | 8       |
+| Role alone                                                     | 8       |
 
 - These minimums are the only gate.
 - It keeps the newest 50, caps them at the 95th percentile, and returns a band
@@ -128,7 +131,7 @@ picks the first tier with enough samples:
 
 - Queued: the band with `~`.
 - Running: the time left (`timeLeftLabel`), or elapsed time with `Longer than
-  usual` past the band, and `isMuchLonger` at twice its top.
+usual` past the band, and `isMuchLonger` at twice its top.
 - Waiting: elapsed time, frozen.
 - Done: active time, with the same note when it ran past the band. A step row
   shows the note only while it runs.

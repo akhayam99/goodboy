@@ -21,11 +21,13 @@ block. The engine lives in `features/chat/reveal/`.
   loop throws, every live text is shown whole.
 - `healMarkdownPrefix.ts` snaps a cut to what can render: word ends, whole
   lines inside a fence, never inside `**`, a backtick span or a link.
-- A table stays out until its end is in the text, then every row lands at
-  once, so the columns are sized once. Pipe lines without a divider are prose.
+- A table stays out until its end is in the text (a line that is not a row
+  follows it, or the text is complete), then every row lands at once, so the
+  columns are sized once. Pipe lines without a divider are prose.
   A table piece lives for the fade plus 40 ms per body row, capped at 8
   (`pieceLifetimeMs.ts`), and the pacer holds the words after it for that
-  time. `freshenNode` gives each body `tr` a `--reveal-delay`; only opacity
+  time. The lag cap is not held: the whole message still lands about 1.5 s
+  after it arrived. `freshenNode` gives each body `tr` a `--reveal-delay`; only opacity
   animates.
 
 ## What counts as live
@@ -53,14 +55,15 @@ host mounts more than 1.5 s after the last mark shows whole.
 
 ### Hosts
 
-| Host                   | Where                                                                    | Key        |
-| ---------------------- | ------------------------------------------------------------------------ | ---------- |
-| `AssistantText`        | Agent chat, run step page, agent overlay, Auto, the transcript drawer    | Run id     |
-| `ChatAssistantMessage` | Workspace chat (`sendChatMessage` marks and flushes)                     | Message id |
-| `AskTurn`              | Ask, feeding `InlineMarkdown` per text run through `sliceFreshTail`      | Message id |
-| `RevealedMarkdown`     | `DelegationResult`, `AgentConversationEnd`, `CheckAnalysisDrawer`        | Agent key  |
+| Host                   | Where                                                                 | Key        |
+| ---------------------- | --------------------------------------------------------------------- | ---------- |
+| `AssistantText`        | Agent chat, run step page, agent overlay, Auto, the transcript drawer | Run id     |
+| `ChatAssistantMessage` | Workspace chat (`sendChatMessage` marks and flushes)                  | Message id |
+| `AskTurn`              | Ask, feeding `InlineMarkdown` per text run through `sliceFreshTail`   | Message id |
+| `RevealedMarkdown`     | `DelegationResult`, `AgentConversationEnd`, `CheckAnalysisDrawer`     | Agent key  |
 
-In the conversation the final answer row is added when `activeRunId` goes
+The `assistant_text` item carries its `runId`, which with the item key is the
+pacer key. In the conversation the final answer row is added when `activeRunId` goes
 null, inside the 1.5 s live window of the run's last delta, so it reveals as
 the turn ends; later than that it shows whole. The chips and the copy button
 of an answer wait until the reveal ends.
@@ -70,7 +73,8 @@ of an answer wait until the reveal ends.
 `useFreshLanding` is the entry point for a block that lands or is replaced
 whole. When its live key was marked inside the landing window, it returns a new
 React key and `data-fresh`, so the block fades in once and is never typed out.
-A null key never fades.
+A null key never fades, and reduced motion drops the fade through the
+`[data-fresh]` media rule.
 
 The landing window (`liveTextRegistry.isLanding`) is about 2 s: the lag cap,
 one frame and the longest piece. That is the latest a live reveal can end, so a
@@ -104,4 +108,5 @@ text).
 
 The revealing row carries `aria-busy="true"` inside the polite list, and the
 final text is read once when the flag clears. The flag derives from the reveal
-state, so it clears on finish, flush, error, stop and unmount.
+state, so it clears on finish, flush, error, stop and unmount, and a text shown
+whole never has it.

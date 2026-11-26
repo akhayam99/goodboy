@@ -75,7 +75,7 @@ string.
   others `replaced` by it.
 - What you withdrew is a tomb: a marker with the same text does not bring it
   back. What you wrote or edited the summarizer can only replace with a
-  reason.
+  reason, never reword, merge or withdraw.
 - A session made before the ledger is seeded from its slot on first read, in
   the slot's order.
 

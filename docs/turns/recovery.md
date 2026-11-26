@@ -92,7 +92,8 @@ reload (Cmd+Shift+R), so a cursor means "this window was streaming this run".
 1. When a workspace loads, `reconcileLoadedAgent` keeps a running agent whose
    run has a cursor here (or a stream still open in this window).
 2. `reattachLiveTurn` asks Rust for what came after the cursor, skips the
-   events it already stored and stores the rest.
+   events it already stored, drops live lines it already replayed and stores
+   the rest.
 3. When the run ends it settles like `sendTurn`: span, provider run, step
    completion, message, summary, artifacts, materialize requests and autorun.
 
@@ -128,15 +129,16 @@ When a workspace loads, `resumeInterruptedAgents` resumes every
 compare-and-swap (`replaceSettingIfUnchanged`), so each run is resumed by
 exactly one window or load. `planRestartResume` picks how:
 
-| Provider                        | Resume                                                      |
-| ------------------------------- | ----------------------------------------------------------- |
-| Claude, the opencode family     | Its own session, with a short "check before you run it again" prompt |
-| Codex, Cursor, Gemini           | The same prompt plus the prior turns block                  |
-| A turn cut before Claude opened a session | Sent again as it was                              |
+| Provider                                  | Resume                                                               |
+| ----------------------------------------- | -------------------------------------------------------------------- |
+| Claude, the opencode family               | Its own session, with a short "check before you run it again" prompt |
+| Codex, Cursor, Gemini                     | The same prompt plus the prior turns block                           |
+| A turn cut before Claude opened a session | Sent again as it was                                                 |
 
 A `decision_note` goes first ("Resumed after Goodboy restarted." or
 "updated."), naming any tool call that had started and not ended. The turn goes
-through `sendTurn`, so budgets, limits and pins apply.
+through `sendTurn`, so budgets, limits and pins apply, and a resumed step
+completes like any other.
 
 ### Anything else stays Stopped by restart
 
@@ -205,7 +207,8 @@ that agent.
 ### The spawn checks it
 
 1. Right before `turn_spawn`, `readTurnStream` publishes `spawned_at` on the
-   row (`publishTurnSpawn`), which renews the hold.
+   row (`publishTurnSpawn`), which renews the hold, so expiry cannot clear it
+   between that write and the spawn.
 2. A spawn from a claimed turn carries `hasAdmission`. `turn_spawn` refuses it
    with `admission_lost` when the row is gone or names another run.
 3. The check and the mark that makes the run read as spawning happen under the
@@ -226,4 +229,5 @@ state while another run holds the agent, and never plans a fallback.
 Every failure write that targets the agent or the session is conditioned on
 the failing run (`runOwnership/failOwnedRun`,
 `runOwnership/writeOwnedSessionState`). A window that wakes after its claim
-expired never marks another window's live run failed.
+expired never marks another window's live run failed, and the next claim
+still sees `turn_running`.

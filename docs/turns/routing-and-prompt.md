@@ -70,7 +70,7 @@ names its language ("Write every reply, question, suggestion and summary in
 Italian.") when `detectSessionLanguage` reads one. It scores stopwords for en,
 es, pt, fr and de after cutting code spans, paths and identifiers. Under 3
 words, under 2 hits, under 15% hits or a winner less than 1.5 times the
-runner-up gives no name. The Auto prompt and the orchestrator brief name it the
+runner-up gives no name, and the rule then names no language. The Auto prompt and the orchestrator brief name it the
 same way.
 
 ### The write-scope guard
@@ -105,7 +105,8 @@ An Auto child of brief version 2 (`briefVersion` in the turn input, from
 reads only the goal slot. `briefSlotsOf` replaces the role's slots, so the
 decisions, open questions, files touched and session summary never reach it;
 the profile, role instructions, scope rules, images and role notes stay. A turn
-without the version keeps the role's slots.
+without the version (a hand started agent, an older delegation and its
+retries and resumes) keeps the role's slots.
 
 ### Steps and size
 

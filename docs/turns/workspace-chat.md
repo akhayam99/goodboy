@@ -116,8 +116,7 @@ session sees it. There is no reload backlog: a reply still streaming when the
 window closes is marked stopped at the next load, and a load whose pass fails
 leaves it to the next one.
 
-A reply is done only when the stream reports no failure and the CLI exits with
-0. Anything else keeps the partial text and marks the reply failed, with the
+A reply is done only when the stream reports no failure and the CLI exits with 0. Anything else keeps the partial text and marks the reply failed, with the
 error under it.
 
 ## What it carries
@@ -158,7 +157,8 @@ chat.
 A saved default (provider, model, effort) lives per workspace in `settings`
 under `chat.default_model.<workspaceId>` (JSON; an empty string means
 cleared). It is set from Providers, Models, Chat, or with Make default in the
-chat model picker.
+chat model picker. Picking Claude in Providers, Models, Chat proposes the same
+model.
 
 - `defaultChatRouting` applies it to the draft in `ChatRoom`; `askInChat`
   applies it to Ask in Chat.
@@ -200,10 +200,12 @@ with no tools and no working folder (`summarizeChatForWork.ts`).
 **Start session** creates the session with the title, the goal (the brief
 goal, then "What we know" and "Files" as short lists) and the picked projects,
 with no first agent and no kickoff. It records a `new` link and opens **Start a
-run** on the session's Runs with the brief as its text (`openStartRun`).
+run** on the session's Runs with the brief as its text (`openStartRun`),
+routed like any ask; there is no Runs on choice. The panel starts on the
+keyboard with cmd or ctrl plus Enter.
 
 **Add to a session** sends no turn: it records an `add` link and opens the same
-field in that session.
+field in that session with the title and brief.
 
 The Project field (`ProjectField.tsx`) starts with the projects the answer
 named files in; the first pick is `createSession`'s `projectId`, the others

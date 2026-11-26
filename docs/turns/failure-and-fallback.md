@@ -12,14 +12,14 @@
 cooldown until its reset. `planTurnFallback` then plans at most two fallback
 attempts. An unclassified failure or a cancelled turn never falls back.
 
-| Failure                                  | Fallback                                         |
-| ---------------------------------------- | ------------------------------------------------ |
-| Any, on the first attempt                | The role's configured fallback, unless the failure is a usage limit on that same provider |
-| Usage limit, authentication failure      | Another provider at the same cost tier           |
-| Unreachable provider                     | Retried once on the same model                   |
-| Rate limit                               | A tier down on the same provider                 |
-| Unavailable model, outdated CLI          | A sibling model on the same provider             |
-| Anything else                            | Another provider                                 |
+| Failure                             | Fallback                                                                                  |
+| ----------------------------------- | ----------------------------------------------------------------------------------------- |
+| Any, on the first attempt           | The role's configured fallback, unless the failure is a usage limit on that same provider |
+| Usage limit, authentication failure | Another provider at the same cost tier                                                    |
+| Unreachable provider                | Retried once on the same model                                                            |
+| Rate limit                          | A tier down on the same provider                                                          |
+| Unavailable model, outdated CLI     | A sibling model on the same provider                                                      |
+| Anything else                       | Another provider                                                                          |
 
 Candidates are connected, enabled for the session and not cooling down.
 
@@ -27,7 +27,7 @@ A fallback marks the failed run, posts the original error plus a notice naming
 the move, and reruns the same input on the same mount target. An agent pinned
 to a signed-out provider tries it on every turn, so the transcript keeps the
 first error banner and notice and drops a later identical pair (same provider,
-same move).
+same move). A different move shows again.
 
 ### Usage limit with no fallback
 

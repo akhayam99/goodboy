@@ -26,13 +26,13 @@ so the place the user sees is the place the turn writes.
 Every lease is bound to the child process in Rust and freed by its exit,
 whatever the window does, and released again when the turn ends.
 
-| Turn                                     | Lease                       | When it is busy                  |
-| ---------------------------------------- | --------------------------- | -------------------------------- |
-| Resolver                                 | Worktree writer lease       | Queued as a resolve attempt      |
-| Writer `confinedRole`                    | Write set lease             | Waits in `acquireTurnWriteSet`   |
-| Writing turn in a plain folder           | Write set lease             | Waits in `acquireTurnWriteSet`   |
-| No `confinedRole`, on a mount            | None                        | Runs beside others               |
-| Read-only kind in a plain folder         | None                        | Never waits                      |
+| Turn                             | Lease                 | When it is busy                |
+| -------------------------------- | --------------------- | ------------------------------ |
+| Resolver                         | Worktree writer lease | Queued as a resolve attempt    |
+| Writer `confinedRole`            | Write set lease       | Waits in `acquireTurnWriteSet` |
+| Writing turn in a plain folder   | Write set lease       | Waits in `acquireTurnWriteSet` |
+| No `confinedRole`, on a mount    | None                  | Runs beside others             |
+| Read-only kind in a plain folder | None                  | Never waits                    |
 
 ### The Lead's writers
 
@@ -123,6 +123,6 @@ The before snapshot is the hook for saved versions. The data layout is in
 The chat ends each writing turn of a plain folder in `TurnChangesCard`, under
 the usage row: "Changed 2 files in acme-notes · saved before this reply", the
 files with their line counts (`textChangesOf`), **Open in Changes**
-(`sessionFileVersionSelectedPath`) and **Undo changes from this reply**, which
+(on the turn's first file, `sessionFileVersionSelectedPath`) and **Undo changes from this reply**, which
 asks in the card when a file changed since. A failed capture shows "Changes
 from this reply couldn't be saved" with Retry in its place.

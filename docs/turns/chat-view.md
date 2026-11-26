@@ -110,6 +110,8 @@ requests and duration.
 - A `done` footer's glyph is the provider's. Clicking it (or `ⓘ`) opens
   `TurnFooterDetail`, an `AnchoredPopover` with tokens, cache share and context
   window.
+- The transcript pane's agent total (`AgentUsageFooter`) keeps the full
+  `UsageStatsRow`.
 - The detail's `useDropdown` sets `width: 'w-max'` and
   `maxWidth: USAGE_CARD_MAX_WIDTH`. Without a `width` the dropdown takes the
   narrow trigger's width and the `Popover` surface (`overflow-x-hidden`) clips
@@ -117,8 +119,9 @@ requests and duration.
 
 ## Chat scroll
 
-The chat scrolls inside the `ScrollFade` viewport of `ChatView`. Three hooks
-share it, and only one writes `scrollTop` at a time.
+The chat scrolls inside the `ScrollFade` viewport of `ChatView`.
+`useScrollAnchor` and `useScrollPin` share it, and only one of them writes
+`scrollTop` at a time.
 
 ### The anchor
 
@@ -147,7 +150,8 @@ pointer press.
 
 `useScrollPin` follows the latest line only while the reader is within 32 px of
 the bottom. The first wheel, touch, pointer or key event stops its settle loop,
-and a reader who scrolled up is never pulled down by new rows. A
+and a reader who scrolled up is never pulled down by new rows; "Scroll to
+latest" pins again. A
 `ResizeObserver` on the content runs the same follow step, so text that grows
 frame by frame stays in view.
 
@@ -175,7 +179,8 @@ it, so the message rests below the header.
   (`anchorKeyOf`), only once the transcript is loaded. The first key after an
   agent opens is never anchored, so opening a session lands on the bottom.
 - A later key anchors the last `[data-turn]` (`applyFollow`, held through
-  `isHolding`) until the reader's first scroll.
+  `isHolding`) until the reader's first scroll. The reader is then pinned only
+  on reaching the bottom again.
 - `[data-transcript-tail]` is the one floor, 24 px (`TRANSCRIPT_FLOOR_PX`)
   under the last line. After a send it gets a spacer,
   `clientHeight - anchor line - last turn - 24`, never below zero, which

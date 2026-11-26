@@ -66,7 +66,14 @@ Esc twice presses it (`useEscapeStop`, id `agent.stop`): the first press shows
 "Esc again to stop" for 3 s. Any open menu, drawer or dialog
 (`transientEscapeLayerCount`, `isOverlayOpen`) takes the key first. The
 session's Esc ladder (`escapeLadder`) is a base layer the escape stack asks
-last, whatever order the layers mounted in.
+last, whatever order the layers mounted in. The chat has no live tail where a
+composer stands, and no global Esc while a drawer covers the page.
+
+### The text box
+
+The text box is a `PromptField` of kind `message` in its `bare` variant
+inside `ComposerSurface`, with the dock and the gates above it and the toolbar
+in a `ComposerFooter` below.
 
 ### The tray
 
@@ -108,14 +115,17 @@ A refusal the caller must see is raised with `throwIfRefused` (`TurnRefused`).
 Every field that talks to an agent is a `PromptField`
 (`shared/components/PromptField`) of one of two kinds:
 
-| Kind     | Fields                                                                    | Keys                                                  |
-| -------- | ------------------------------------------------------------------------- | ----------------------------------------------------- |
-| message  | Agent chat, workspace Chat, orchestrator hint, kickoff boxes              | `Enter` sends, `Shift+Enter` new line, `⌘Enter` sends now |
-| document | Diff comment, review reply and hint, goals, guidance, step instruction, brief, change request, answers | `Enter` new line, `⌘Enter` saves or sends |
+| Kind     | Fields                                                                                                 | Keys                                                      |
+| -------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| message  | Agent chat, workspace Chat, orchestrator hint, kickoff boxes                                           | `Enter` sends, `Shift+Enter` new line, `⌘Enter` sends now |
+| document | Diff comment, review reply and hint, goals, guidance, step instruction, brief, change request, answers | `Enter` new line, `⌘Enter` saves or sends                 |
 
 - The keys come from the registry (`composer.send`, `composer.newLine`,
   `composer.submit` through `isSubmitChord`); `promptKeyAction` decides one
-  press. The Start a run field starts on `Enter`.
+  press. The Start a run field starts on `Enter`, and the review reply boxes
+  (Edit, Answer and Reply) send on `⌘Enter`.
+- The workspace Chat bubble and the hint log read what you wrote as
+  markdown.
 - A document can offer **Write** and **Preview**, rendered when you switch
   (never per key) and loaded through a dynamic import.
 
@@ -127,11 +137,13 @@ count on the left; model picker and Send on the right). `PromptField` in its
 (`drop`, `isJoinedAbove`, the `model` slot), never a second box.
 
 Files ride on `usePendingAttachments` (`shared/hooks`): paste, drop and
-**Attach files**, up to 10 files of 10 MB each.
+**Attach files**, up to 10 files of 10 MB each, refused with a note in the
+field.
 
 - A drop that cannot be read gets one notice with a sentence per cause
   (`dropFailureCauseOf`, `dropFailureNotice`), each ending on **Attach files**.
-- A staged file stays a `Blob` with an object url thumbnail, read into base64
+- A staged file stays a `Blob` with an object url thumbnail freed when its
+  chip unmounts, read into base64
   only when the message leaves.
 - The agent queue keeps its stored data url format (`StoredAttachment`).
 

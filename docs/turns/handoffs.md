@@ -126,7 +126,8 @@ are 1 agent. Each turn is bounded, the agent is not.
    in the same copy.
 4. It stops when the run failed, the owner stopped it or a turn was refused.
 
-A comment in a chunk not yet fed reads Fixing (`heldLaunchIdOf`). Held chunks
+A comment in a chunk not yet fed reads Fixing and counts in the fix run
+(`heldLaunchIdOf`), so a run of 13 or more comments shows every comment. Held chunks
 live in memory, so a restart leaves the unfed comments Open.
 
 `startFixAttempt` mints `resolve_attempts.launch_id` once per call, and
@@ -139,13 +140,14 @@ the agent's latest attempt).
 
 - Answering a Needs you (`answerQuestions`), retrying what could not be fixed
   (`retryCouldntFix`), a hint on one comment (`continueResolveThreads`) and a
-  typed message all send a turn to the same agent. Several answers make one
-  turn.
+  typed message all send a turn to the same agent. Several answers or retries
+  make one turn.
 - An answer counts as delivered only when its turn has started (`onStarted` on
   `sendTurn`). If the turn does not start, the error shows on the comment's
-  card and the question stays open.
+  card and the question stays open under Needs you.
 - `prepareTurn` hands any turn of a resolver with a batch the copy of its run
-  (`resolverLaunchCopy`), so a typed message never lands on the live branch.
+  (`resolverLaunchCopy`: the copy it already works in, else a fresh one on the
+  same mount), so a typed message never lands on the live branch.
 - The turn names the comments it claims (`resolveThreadIds`); others are not
   touched.
 - The copy is kept while the agent waits or works and released when every
@@ -153,7 +155,8 @@ the agent's latest attempt).
 - A new agent starts only with an explicit start over: `startBatch` again, or
   Retry after the owner picked another model.
 
-A turn's commits are split into one candidate per fixed comment, each
+A turn's candidate covers only the comments that turn claimed. Its commits
+are split into one candidate per fixed comment, each
 cherry-picked on the same base (`worktree_split_candidates`, ids
 `<attempt>-<n>`), so accept, refuse and retry act on one comment. A fix that
 builds on an earlier one stays in the attempt's candidate, and reply-only
@@ -167,9 +170,13 @@ The transcript draws the first message as one handoff block
 
 - It starts closed: who sent it, the ask in one line and the why.
 - Opening the header shows a chip per section and **All**. One chip opens one
-  section below; a second chip replaces it.
-- **View as sent** shows the exact text in mono, in two parts for Claude.
-- The plan is a title and Open plan, never its body.
+  section below and closes it again; a second chip replaces it. Closing the
+  block hides the chips.
+- **All** shows every section as a closed summary, **View as sent** included.
+- **View as sent** shows the exact text in mono, in two parts for Claude and
+  one for the others with a line that says why.
+- Earlier steps open their agent. The plan is a title and Open plan, never
+  its body. Long text uses one eight-line clamp with **Show all**.
 - When you wrote the first message yourself, your bubble stays and a one-line
   **Also received** strip sits above it.
 
@@ -180,8 +187,9 @@ to 8 lines, read by no parser. `reduceTranscript` makes the `handoff` item and
 
 ## The conversation and the record
 
-The transcript drawer is the record (`mode="record"`, every row). The agent
-page is one conversation (`ChatView` `mode="conversation"`, rows from
+The transcript drawer is the record (`mode="record"`, every row). What the
+agent received lives only in the handoff block at the top of the conversation,
+opened in place. The agent page is one conversation (`ChatView` `mode="conversation"`, rows from
 `conversationRows`), which keeps per turn:
 
 - The user message, or the handoff block for a first turn.

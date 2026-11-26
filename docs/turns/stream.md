@@ -38,12 +38,13 @@ minutes after the first. `createTurnResultWatch`
   ([pipeline.md](pipeline.md#a-message-sent-after-a-result)).
 - Any line that starts new work (`isTurnActivity`: anything but usage, done,
   unknown payload, stopped processes and notes) cancels the timer and starts a
-  new segment.
+  new segment, so a process that starts another turn keeps streaming.
 
 When the timer fires, `turn_cancel` stops the process (the normal reap, so the
 stopped processes are still listed) and the stream ends normally, or after
 `TURN_END_MS.force` (2 s) without the end envelope. Other providers end by
-exiting, so the timer only applies to `done`.
+exiting, so the timer only applies to `done`. The next turn resumes the
+session and may mention the background task.
 
 ## Partial output
 
@@ -68,6 +69,7 @@ CLI, a failed probe and every other provider keep whole text blocks.
 - `queueTurnEventInsert` holds `isPartial` deltas up to 250 ms per agent and
   run and stores one `assistant_text` row for them without the flag, before the
   next event of that agent. The store and the reveal still get every delta.
+  Text without the flag is inserted at once.
 
 ## Into the store
 
@@ -83,7 +85,9 @@ CLI, a failed probe and every other provider keep whole text blocks.
 - **Opening an agent reads twice and merges by id.** `selectAgent` shows the
   last 50 stored events (`STREAM_BUDGETS.initialTranscriptRows`), then the whole
   history. Every event through `appendTurnEvent` carries the id of the
-  `turn_events` row that stores it (`turnEventIds`), and `mergeTranscript`
+  `turn_events` row that stores it (`turnEventIds`); the deltas held by
+  `queueTurnEventInsert` share the id of the row that absorbs them.
+  `mergeTranscript`
   adds the live events whose id is not stored yet. A live event is never
   dropped or shown twice. `createLatestOnly` drops an older open's answer once
   a newer one started.
@@ -143,14 +147,14 @@ reload. `toolStatus` (`apps/desktop/src/features/chat/utils/toolStatus.ts`)
 turns a tool call plus its context into one of six states, the alphabet of
 `WorkNode` at its `sm` size:
 
-| State      | When                                                                           |
-| ---------- | ------------------------------------------------------------------------------ |
-| `running`  | Started, not ended, and `activeRunId` matches or is not given                  |
-| `done`     | Ended without error                                                            |
-| `failed`   | Ended with `isError`                                                           |
-| `approval` | A `permission_request` for the same `toolUseId` has no decision yet            |
-| `stopped`  | Never ended, and its run is no longer active                                   |
-| `denied`   | `permission_decision` was `deny`, ended or not                                 |
+| State      | When                                                                |
+| ---------- | ------------------------------------------------------------------- |
+| `running`  | Started, not ended, and `activeRunId` matches or is not given       |
+| `done`     | Ended without error                                                 |
+| `failed`   | Ended with `isError`                                                |
+| `approval` | A `permission_request` for the same `toolUseId` has no decision yet |
+| `stopped`  | Never ended, and its run is no longer active                        |
+| `denied`   | `permission_decision` was `deny`, ended or not                      |
 
 `permissionFor` scans the surrounding items for `approval`, because
 `cluster-operations.ts` absorbs both permission events into the cluster of the
