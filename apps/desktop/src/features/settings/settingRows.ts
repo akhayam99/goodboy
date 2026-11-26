@@ -217,6 +217,14 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     formerNames: ['Workspace name', 'Rename workspace'],
   }),
   row({
+    key: 'clear-browser-data',
+    label: 'Clear browser data',
+    help: 'Cookies, storage and cache of every site in the browser of this workspace.',
+    page: PROJECTS,
+    band: 'Danger zone',
+    formerNames: ['Clear cookies', 'Clear cache', 'Browser cookies'],
+  }),
+  row({
     key: 'disconnect-workspace',
     label: 'Disconnect this workspace',
     help: 'Files stay on disk. Open the folder again to bring it back.',

@@ -15,10 +15,11 @@ const worktree = {
 
 type Setup = {
   readonly isProposed: boolean;
+  readonly isInUse?: boolean;
   readonly kind?: string;
 };
 
-const setup = ({ isProposed, kind = 'removed' }: Setup) => {
+const setup = ({ isProposed, isInUse = false, kind = 'removed' }: Setup) => {
   const resolveCleanup = vi.fn(async (_params: unknown) => undefined);
   const removeWorktree = vi.fn(async (_params: unknown) => ({
     kind,
@@ -27,6 +28,7 @@ const setup = ({ isProposed, kind = 'removed' }: Setup) => {
   const action = closeWorktreeAction({
     sessionId,
     worktrees: [worktree],
+    isInUse: () => isInUse,
     isProposed: () => isProposed,
     resolveCleanup,
     removeWorktree,
@@ -35,6 +37,15 @@ const setup = ({ isProposed, kind = 'removed' }: Setup) => {
 };
 
 describe('closeWorktreeAction', () => {
+  it('removes nothing when an agent took the worktree after the row was shown', async () => {
+    const { action, resolveCleanup, removeWorktree } = setup({ isProposed: true, isInUse: true });
+
+    await expect(action?.run()).rejects.toThrow('still uses');
+
+    expect(resolveCleanup).not.toHaveBeenCalled();
+    expect(removeWorktree).not.toHaveBeenCalled();
+  });
+
   it('resolves the saved proposal when one exists', async () => {
     const { action, resolveCleanup, removeWorktree } = setup({ isProposed: true });
     await action?.run();
@@ -73,6 +84,7 @@ describe('closeWorktreeAction for a row with several worktrees', () => {
     const action = closeWorktreeAction({
       sessionId,
       worktrees: [worktree, second],
+      isInUse: () => false,
       isProposed: () => true,
       resolveCleanup,
       removeWorktree: vi.fn(async (_params: unknown) => ({ kind: 'removed' })),

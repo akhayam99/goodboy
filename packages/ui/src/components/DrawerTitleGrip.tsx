@@ -16,7 +16,7 @@ export const DrawerTitleGrip = ({ isTop, children }: Props) => {
       className={cn(
         'flex min-w-0 flex-1 gap-2',
         isTop ? 'items-start' : 'items-center',
-        grip.canDrag && 'cursor-grab',
+        grip.canDrag && 'cursor-grab touch-none select-none',
       )}
     >
       {children}

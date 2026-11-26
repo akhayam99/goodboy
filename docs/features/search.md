@@ -39,7 +39,7 @@ The tools rail sits at the right edge of every page: **Terminal**, **Browser**, 
 
 - **Open full page** in a tool's header makes it a page, and **Dock**, last in the page's first row, puts it back.
 - Open more tools and they share the space, up to four in two columns of two, each in its own card.
-- With two tools open, a button in their heads stacks them or puts them side by side.
+- Drag a tool by its head onto a labeled card to place it above, below, left or right, or to merge it as a tab.
 - **F6** moves between the page and the panels, and **⌘⇧W** closes the one with the focus.
 
 In a window narrower than 1100 pixels the tools rail shows icons only. A narrow tool still sits beside the page, and the Browser lies over it.

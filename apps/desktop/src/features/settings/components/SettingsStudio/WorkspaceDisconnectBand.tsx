@@ -8,6 +8,7 @@ import { useAppStore } from '../../../../store';
 import { selectLiveWork } from '../../../../store/runtime/live-work/selectLiveWork';
 import { DANGER_ZONE } from './dangerZone';
 import { SettingRow } from './SettingRow';
+import { WorkspaceBrowserDataRow } from './WorkspaceBrowserDataRow';
 
 const DISCONNECT_NOTE =
   'Files stay on disk. Open the folder again to bring it back with its sessions.';
@@ -59,6 +60,7 @@ export const WorkspaceDisconnectBand = ({ workspaceId, requestClose }: Props) =>
 
   return (
     <Band inset="content" label={DANGER_ZONE} ariaLabel={DANGER_ZONE} headingLevel={2}>
+      <WorkspaceBrowserDataRow workspaceId={workspaceId} />
       <SettingRow
         label="Disconnect this workspace"
         rowKey="disconnect-workspace"

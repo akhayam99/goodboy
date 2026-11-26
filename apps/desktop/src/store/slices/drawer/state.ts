@@ -192,8 +192,16 @@ export type DrawerGridWidths = Readonly<Partial<Record<DrawerContent['kind'], nu
 
 export type DrawerGridSplits = Readonly<Record<string, number>>;
 
+export type DrawerGridTab = {
+  readonly keys: ReadonlyArray<string>;
+  readonly active: string;
+};
+
+export type DrawerGridTabs = Readonly<Record<string, DrawerGridTab>>;
+
 export type DrawerGrid = {
   readonly columns: ReadonlyArray<ReadonlyArray<OpenDrawer>>;
+  readonly tabs?: DrawerGridTabs;
   readonly used: ReadonlyArray<DrawerContent['kind']>;
   readonly focus: DrawerFocus;
   readonly widths: DrawerGridWidths;

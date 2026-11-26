@@ -205,6 +205,16 @@ const holdOpens = () => {
   return { release: () => release() };
 };
 
+type RowName = {
+  readonly name: string;
+};
+
+const chooseTabRow = async ({ name }: RowName) => {
+  fireEvent.click(screen.getByRole('button', { name: 'More' }));
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'This tab' }));
+  fireEvent.click(await screen.findByRole('menuitem', { name }));
+};
+
 const storedRow = (): BrowserTab => ({
   id: 'row-1',
   sessionId: SESSION_ID,
@@ -893,7 +903,7 @@ describe('the browser pane', () => {
     screen.getByRole('listbox', { name: 'Suggestions' });
   });
 
-  it('lists the page hand-off first and six more rows in the More menu', async () => {
+  it('lists the page hand-off first and five more rows in the More menu', async () => {
     await openFirstPage();
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
@@ -903,14 +913,13 @@ describe('the browser pane', () => {
       sendRow(),
       'Open in your browser',
       'Open full page',
-      'Copy address',
-      'Duplicate',
+      'This tab',
+      'Clear browser data',
       'DevelopDesktop',
-      'Close tab',
     ]);
   });
 
-  it('keeps the More menu at seven rows and puts Inspect in Safari under Develop on macOS', async () => {
+  it('keeps the More menu at six rows and puts reload without cache and Inspect in Safari under Develop on macOS', async () => {
     const agent = vi.spyOn(window.navigator, 'userAgent', 'get');
     agent.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
     await openFirstPage();
@@ -922,13 +931,13 @@ describe('the browser pane', () => {
       sendRow(),
       'Open in your browser',
       'Open full page',
-      'Copy address',
-      'Duplicate',
+      'This tab',
+      'Clear site data',
       'DevelopDesktop',
-      'Close tab',
     ]);
-    expect(rows).toHaveLength(7);
+    expect(rows).toHaveLength(6);
     fireEvent.click(screen.getByRole('menuitem', { name: /^Develop/ }));
+    await screen.findByRole('menuitem', { name: /^Reload without cache/ });
     await screen.findByRole('menuitem', { name: 'Inspect in Safari' });
     agent.mockRestore();
   });
@@ -982,8 +991,7 @@ describe('the browser pane', () => {
     const writeText = vi.fn(() => Promise.resolve());
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Copy address' }));
+    await chooseTabRow({ name: 'Copy address' });
 
     expect(writeText).toHaveBeenCalledWith('http://localhost:5173/checkout');
   });
@@ -994,8 +1002,7 @@ describe('the browser pane', () => {
     const execCommand = vi.fn(() => false);
     Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand });
 
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Copy address' }));
+    await chooseTabRow({ name: 'Copy address' });
 
     await screen.findByRole('alert');
     expect(execCommand).toHaveBeenCalledWith('copy');
@@ -1005,8 +1012,7 @@ describe('the browser pane', () => {
   it('duplicates the shown address into a second tab from the More menu', async () => {
     await openFirstPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Duplicate' }));
+    await chooseTabRow({ name: 'Duplicate' });
 
     await waitFor(() => expect(callsOf({ command: 'browser_tab_open' })).toHaveLength(2));
     expect(callsOf({ command: 'browser_tab_open' }).map((args) => args['url'])).toEqual([
@@ -1024,8 +1030,7 @@ describe('the browser pane', () => {
   it('closes the shown tab from the More menu', async () => {
     await openFirstPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Close tab' }));
+    await chooseTabRow({ name: 'Close tab' });
 
     await waitFor(() => expect(store.getState().browserSessionTabs[SESSION_ID]).toEqual([]));
     expect(callsOf({ command: 'browser_tab_close' })).toEqual([{ tabId: 'live-1' }]);

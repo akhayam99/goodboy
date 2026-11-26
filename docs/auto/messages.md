@@ -56,6 +56,25 @@ The claim stores the turn number (`turns_used + 1`), read back as
 (`noteWordOf`). Remove is the undo until it is read. A note the runtime could
 not deliver keeps "Not read yet" in the tree and stays editable.
 
+## What a note is
+
+A `user` outbox row carries `origin` (`operator`, `permission`, `continue`,
+`answers` or `system`) and `userText`, the words as typed. The caller that knows
+why it sends sets the origin through `rowOrigin` on `SendTurnInput`; with none,
+the row is `operator`. `routeAutoUserTurn` passes both to the Auto door, over the
+bridge too, and writes the bubble only for an `operator` row. `payload.text`
+stays what the Lead reads, held answer lines included.
+
+`readMessagesOf` and the pending rows go through `noteTextOf`: a note is the
+trimmed `userText` of an `operator` row, or of a `permission` row that carries a
+denial reason. Every other origin, an unknown one and an empty text are no note.
+The tree and the queued rows show the note text, never `payload.text`.
+
+A row written before 0.43.1 has no origin. `legacyNoteTextOf` reads it: whole
+known system lines are no note, leading permission lines are cut, and the words
+after them stay. It is read until 0.45.0 (`USER_ORIGIN_LEGACY_READ_UNTIL`, the
+row in `docs/versioning.md`), then removed with its test.
+
 ## One queue
 
 The chat holds only what Auto has read. Everything not delivered sits above the
@@ -145,6 +164,9 @@ A message may carry what the session chat takes: images, a PDF, other files.
    generation up to the delegation), named as chips on its page. The launch reads them once into
    the attempt's snapshot ([children.md](children.md#why-an-agent-exists)), so a
    relaunch hands over the same images.
+   When the turn runs in a worktree, `prepareTurn` copies each stored file into it
+   (`readableAttachmentRefs`, under `.goodboy/attachments`) and the prompt names the copy by its
+   relative path, so a confined agent can Read it. A failed copy starts no turn.
 
 A file that cannot be written refuses the message with "The Lead couldn't keep
 the files. Attach them again.": nothing is dropped silently.

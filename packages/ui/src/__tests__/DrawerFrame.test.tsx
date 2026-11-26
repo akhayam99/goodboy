@@ -5,9 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { DrawerColumn } from '../components/DrawerColumn';
 import { DrawerFrame } from '../components/DrawerFrame';
-import { DockPairTurnContext } from '../dockPairTurnContext';
 import { dismissTopEscapeLayer } from '../escape';
-import { RotateCw } from '../icons';
 import { PANE_RHYTHM } from '../paneRhythm';
 
 afterEach(cleanup);
@@ -315,18 +313,14 @@ const stubHeadWidth = ({ width }: WidthParams) => {
   vi.stubGlobal('ResizeObserver', FixedResizeObserver);
 };
 
-type PairParams = { readonly onTurn: () => void };
-
-const PairFrame = ({ onTurn }: PairParams) => (
-  <DockPairTurnContext.Provider value={{ label: 'Stack the panels', icon: RotateCw, onTurn }}>
-    <DrawerFrame
-      title="Monitor for payments-api"
-      page={{ label: 'Open full page', onOpen: vi.fn() }}
-      onClose={vi.fn()}
-    >
-      <p>body</p>
-    </DrawerFrame>
-  </DockPairTurnContext.Provider>
+const PageFrame = () => (
+  <DrawerFrame
+    title="Monitor for payments-api"
+    page={{ label: 'Open full page', onOpen: vi.fn() }}
+    onClose={vi.fn()}
+  >
+    <p>body</p>
+  </DrawerFrame>
 );
 
 describe('DrawerFrame at a narrow width', () => {
@@ -334,176 +328,24 @@ describe('DrawerFrame at a narrow width', () => {
     vi.unstubAllGlobals();
   });
 
-  it('keeps the turn and full page keys in the head while it is wide', () => {
+  it('keeps the full page key in the head while it is wide', () => {
     stubHeadWidth({ width: 520 });
-    render(<PairFrame onTurn={vi.fn()} />);
+    render(<PageFrame />);
 
-    screen.getByRole('button', { name: 'Stack the panels' });
     screen.getByRole('button', { name: 'Open full page' });
     expect(document.querySelector('[data-head-folded]')).toBeNull();
   });
 
-  it('folds the secondary keys into one more menu and keeps the title and Close', () => {
-    const onTurn = vi.fn();
+  it('folds the head at a narrow width and keeps the title, the full page key and Close', () => {
     stubHeadWidth({ width: 280 });
-    render(<PairFrame onTurn={onTurn} />);
+    render(<PageFrame />);
 
     expect(document.querySelector('[data-head-folded]')).not.toBeNull();
-    expect(screen.queryByRole('button', { name: 'Stack the panels' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Open full page' })).toBeNull();
     expect(screen.getByRole('heading', { name: 'Monitor for payments-api' }).className).toContain(
       'truncate',
     );
+    screen.getByRole('button', { name: 'Open full page' });
     screen.getByRole('button', { name: 'Close' });
-    fireEvent.click(screen.getByRole('button', { name: 'More on Monitor for payments-api' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Stack the panels' }));
-
-    expect(onTurn).toHaveBeenCalledTimes(1);
-  });
-
-  it('leaves the pane menu as the only more menu and drops the turn key there', () => {
-    stubHeadWidth({ width: 280 });
-    render(
-      <DockPairTurnContext.Provider
-        value={{ label: 'Stack the panels', icon: RotateCw, onTurn: vi.fn() }}
-      >
-        <DrawerFrame
-          title="Terminal"
-          menu={<button type="button">More on ledger-core</button>}
-          onClose={vi.fn()}
-        >
-          <p>body</p>
-        </DrawerFrame>
-      </DockPairTurnContext.Provider>,
-    );
-
-    expect(screen.queryByRole('button', { name: 'Stack the panels' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^More on Terminal/ })).toBeNull();
-    screen.getByRole('button', { name: 'More on ledger-core' });
-  });
-});
-
-type ComposerProps = { readonly onClose: () => void; readonly initial: string };
-
-const Composer = ({ onClose, initial }: ComposerProps) => (
-  <DrawerFrame
-    title="Ask"
-    dock={<textarea aria-label="Question" defaultValue={initial} />}
-    onClose={onClose}
-  >
-    <p>body</p>
-  </DrawerFrame>
-);
-
-describe('DrawerFrame parked under a page', () => {
-  it('leaves Escape to the page while parked and answers it again once shown', () => {
-    const onClose = vi.fn();
-    const frame = (
-      <DrawerFrame title="Context" onClose={onClose}>
-        <p>ledger-core</p>
-      </DrawerFrame>
-    );
-    const { rerender } = render(
-      <DrawerColumn
-        main={<div>page</div>}
-        drawer={frame}
-        isParked
-        ariaLabel="Side panel"
-        resizeLabel="Resize"
-      />,
-    );
-
-    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
-    expect(onClose).not.toHaveBeenCalled();
-
-    rerender(
-      <DrawerColumn
-        main={<div>page</div>}
-        drawer={frame}
-        ariaLabel="Side panel"
-        resizeLabel="Resize"
-      />,
-    );
-    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('DrawerFrame Escape order', () => {
-  it('blurs a non-empty field first and closes on the second press', () => {
-    const onClose = vi.fn();
-    render(<Composer onClose={onClose} initial="why is the build red" />);
-    const field = screen.getByRole('textbox', { name: 'Question' });
-    expect(document.activeElement).toBe(field);
-
-    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
-    expect(onClose).not.toHaveBeenCalled();
-    expect(document.activeElement).not.toBe(field);
-    expect((field as HTMLTextAreaElement).value).toBe('why is the build red');
-
-    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('closes on the first press when the focused field is empty', () => {
-    const onClose = vi.fn();
-    render(<Composer onClose={onClose} initial="" />);
-
-    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
-
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('closes on the first press when no field is focused', () => {
-    const onClose = vi.fn();
-    render(<Composer onClose={onClose} initial="draft" />);
-    screen.getByRole('button', { name: 'Close' }).focus();
-
-    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
-
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('answers a scrim click the same way, through the escape stack', () => {
-    const onClose = vi.fn();
-    render(<Composer onClose={onClose} initial="draft" />);
-
-    dismissTopEscapeLayer();
-    expect(onClose).not.toHaveBeenCalled();
-
-    dismissTopEscapeLayer();
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('ignores a field outside the drawer', () => {
-    const onClose = vi.fn();
-    render(
-      <div>
-        <input aria-label="Search" defaultValue="hello" />
-        <DrawerFrame title="Ask" onClose={onClose}>
-          <p>body</p>
-        </DrawerFrame>
-      </div>,
-    );
-    screen.getByRole('textbox', { name: 'Search' }).focus();
-
-    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
-
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('draws one close control in the page title row geometry', () => {
-    const { container } = render(
-      <DrawerFrame title="Drafts" count={3} onClose={vi.fn()}>
-        <p>payout.ts:13</p>
-      </DrawerFrame>,
-    );
-
-    expect(screen.getAllByRole('button', { name: 'Close' })).toHaveLength(1);
-    const header = container.querySelector<HTMLElement>('[data-drawer-header]');
-    const row = container.querySelector<HTMLElement>('[data-drawer-header-row]');
-    expect(header?.className.split(' ')).toContain(PANE_RHYTHM.headerInset);
-    expect(row?.className.split(' ')).toContain(PANE_RHYTHM.headerRow);
-    expect(header?.getAttribute('style')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^More on / })).toBeNull();
   });
 });

@@ -15,6 +15,7 @@ vi.mock('../../../features/permissions/permissions', async () =>
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
+import type { SendTurnInput } from '../turn/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   STORY_NOW,
@@ -33,6 +34,7 @@ type FollowUp = { readonly agentId?: AgentId; readonly content: string };
 
 let useAppStore: StoryStore;
 let followUps: FollowUp[];
+let rowsOf: Array<Pick<SendTurnInput, 'rowOrigin' | 'userText'>>;
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -41,10 +43,12 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   followUps = [];
+  rowsOf = [];
   useAppStore.setState({
     sessions: [session],
     sendTurn: async (input) => {
       followUps.push({ agentId: input.agentId, content: input.content });
+      rowsOf.push({ rowOrigin: input.rowOrigin, userText: input.userText });
       return { blockedOverBudget: false };
     },
   });
@@ -75,6 +79,16 @@ describe('denyWithReason', () => {
     expect(storySpies.invokePermissionRuleUpsert).not.toHaveBeenCalled();
     expect(followUps).toEqual([
       { agentId: AGENT_ID, content: 'Denied Bash. this would touch production data' },
+    ]);
+  });
+
+  it('marks the row as a permission answer that carries only the words of the user', async () => {
+    await deny({ toolUseId: 'tu-5', reason: ' rename the guard ' });
+    await deny({ toolUseId: 'tu-6', reason: '' });
+
+    expect(rowsOf).toEqual([
+      { rowOrigin: 'permission', userText: 'rename the guard' },
+      { rowOrigin: 'permission', userText: undefined },
     ]);
   });
 

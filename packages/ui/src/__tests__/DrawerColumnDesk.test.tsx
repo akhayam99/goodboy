@@ -79,7 +79,7 @@ type SpecParams = {
 
 const specOf = ({ columns, focus }: SpecParams) => {
   const onFocus = vi.fn();
-  const spec: DockGridSpec = { columns, focus, onFocus, onTurn: vi.fn() };
+  const spec: DockGridSpec = { columns, focus, onFocus };
   return { spec, onFocus };
 };
 
@@ -119,7 +119,6 @@ const TabbedDesk = ({ onMove }: TabbedProps) => {
     columns: [[BROWSER], [TERMINAL, MONITOR]],
     focus,
     onFocus: ({ key }) => setFocus(key),
-    onTurn: () => undefined,
     ...(onMove === undefined ? {} : { onMove }),
   };
   return (
@@ -311,7 +310,6 @@ describe('a tab with activity', () => {
       columns: [[BROWSER], [{ ...TERMINAL, hasActivity: true }, MONITOR]],
       focus: 'monitoring',
       onFocus: vi.fn(),
-      onTurn: vi.fn(),
     };
     renderDesk({ spec, detail: 'Implementer' });
 

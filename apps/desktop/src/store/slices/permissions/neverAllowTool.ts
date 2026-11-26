@@ -1,3 +1,4 @@
+import { permissionRowOf } from './permissionRowOf';
 import type { AgentId, PermissionRulePattern, ProviderRunId, SessionId } from '@goodboy/types';
 import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import { askBatchAfterAnswer } from './askBatchAfterAnswer';
@@ -57,6 +58,7 @@ export const neverAllowTool = ({ get }: Deps) => {
         content: withHeldAnswers({ held, prompt: denialNoticeOf({ toolName, reason: '' }) }),
         permissionOnceAllows: heldOnceAllowsOf({ held }),
         resolvedAsks: NO_RESOLVED_ASKS,
+        ...permissionRowOf({ held }),
       }),
     });
   };

@@ -4,15 +4,14 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFigures, ROOT_DIRECTORY } from './lib/figures.mjs';
-import { includesHeroOf, reshootPlanOf } from './lib/reshootPlan.mjs';
+import { reshootPlanOf } from './lib/reshootPlan.mjs';
 
 const USAGE = `usage: pnpm features:reshoot [--area <guide>] [--theme dark|light]
   [--out-dir <folder>] [--base <url>] [--version x.y.z] [--wait <ms>] [--dry-run]
-  replays every recipe of docs/figures.json through scripts/feature-shots.mjs
-  (and the README hero through scripts/readme-hero.mjs).
+  replays every recipe of docs/figures.json through scripts/feature-shots.mjs.
   --area    only the figures whose name is <guide> or starts with <guide>-
   --theme   only that theme; versions in docs/figures.json do not move
-  --out-dir write under <folder>/features, versions do not move, hero skipped
+  --out-dir write under <folder>/features, versions do not move
   --dry-run list what would be shot`;
 
 const VALUE_FLAGS = new Set(['area', 'theme', 'out-dir', 'base', 'version', 'wait']);
@@ -48,9 +47,6 @@ const main = () => {
   const options = parseReshootArgs({ argv: process.argv.slice(2) });
   const figures = readFigures();
   const plan = reshootPlanOf({ figures, area: options.area, theme: options.theme });
-  const isHeroIncluded =
-    options['out-dir'] === undefined &&
-    includesHeroOf({ figures, area: options.area, theme: options.theme });
   const shared = [];
   if (options.base !== undefined) {
     shared.push('--base', options.base);
@@ -64,7 +60,6 @@ const main = () => {
   if (options.isDryRun) {
     plan.steps.forEach(({ key }) => console.log(`would shoot ${key}`));
     plan.skipped.forEach((key) => console.log(`no recipe, shoot by hand: ${key}`));
-    console.log(isHeroIncluded ? 'would shoot readme/readme-hero' : 'readme hero left alone');
     return;
   }
   const env = { ...process.env };
@@ -89,22 +84,8 @@ const main = () => {
       failed.push(key);
     }
   }
-  if (isHeroIncluded) {
-    try {
-      runStep({
-        script: 'readme-hero.mjs',
-        args: [
-          ...(options.base === undefined ? [] : [options.base]),
-          ...(options.version === undefined ? [] : ['--version', options.version]),
-        ],
-        env,
-      });
-    } catch {
-      failed.push('readme/readme-hero');
-    }
-  }
   plan.skipped.forEach((key) => console.log(`no recipe, shoot by hand: ${key}`));
-  const shot = plan.steps.length - failed.filter((key) => key !== 'readme/readme-hero').length;
+  const shot = plan.steps.length - failed.length;
   console.log(`reshoot done: ${shot} of ${plan.steps.length} figures, ${failed.length} failed`);
   failed.forEach((key) => console.error(`failed: ${key}`));
   if (failed.length > 0) {

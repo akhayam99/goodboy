@@ -963,6 +963,7 @@ describe('spawnAgent for an Auto agent', () => {
       sessionId: SESSION_ID,
       workspaceId: WS_ID,
       text: GOAL,
+      origin: 'system',
     });
     expect(sendTurn).not.toHaveBeenCalled();
     expect(onKickoffAccepted).toHaveBeenCalledTimes(1);

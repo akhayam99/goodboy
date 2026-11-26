@@ -1,8 +1,11 @@
-import { dockColumnsAfterMove, type DockMoveTarget } from '@goodboy/ui';
+import { dockLayoutAfterMove, type DockGroups, type DockMoveTarget } from '@goodboy/ui';
+import { layoutOf } from './dockTabs/layoutOf';
 import type { DrawerGrid, WorkspaceToolKind } from './state';
+import { tabGroupsOf } from './dockTabs/tabGroupsOf';
 
 type FitParams = {
   readonly columns: ReadonlyArray<ReadonlyArray<string>>;
+  readonly groups: DockGroups;
 };
 
 type Params = {
@@ -22,7 +25,7 @@ type TargetsParams = {
 
 const moveTargetsOf = ({ others }: TargetsParams): ReadonlyArray<DockMoveTarget> => [
   ...others.flatMap((key): ReadonlyArray<DockMoveTarget> => [
-    { at: 'swap', key },
+    { at: 'tab', key },
     { at: 'above', key },
     { at: 'below', key },
     { at: 'beside', key, side: 'before' },
@@ -32,17 +35,18 @@ const moveTargetsOf = ({ others }: TargetsParams): ReadonlyArray<DockMoveTarget>
 ];
 
 export const dockMovesOf = ({ grid, kind, fits }: Params): ReadonlyArray<DockMove> => {
-  const columns = grid.columns.map((column) => column.map((panel) => panel.kind));
-  const seen = new Set<string>();
-  return moveTargetsOf({ others: columns.flat().filter((key) => key !== kind) }).flatMap(
-    (target) => {
-      const moved = dockColumnsAfterMove({ columns, key: kind, target });
-      const shape = JSON.stringify(moved);
-      if (moved === null || seen.has(shape)) {
-        return [];
-      }
-      seen.add(shape);
-      return [{ target, isFitting: fits({ columns: moved }) }];
-    },
+  const columns = layoutOf({ columns: grid.columns, tabs: grid.tabs }).columns.map((column) =>
+    column.map((panel) => panel.kind),
   );
+  const groups = tabGroupsOf({ tabs: grid.tabs });
+  const seen = new Set<string>();
+  return moveTargetsOf({ others: columns.flat() }).flatMap((target) => {
+    const moved = dockLayoutAfterMove({ columns, groups, key: kind, unit: 'panel', target });
+    const shape = JSON.stringify(moved);
+    if (moved === null || seen.has(shape)) {
+      return [];
+    }
+    seen.add(shape);
+    return [{ target, isFitting: fits(moved) }];
+  });
 };

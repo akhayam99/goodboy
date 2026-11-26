@@ -7,6 +7,7 @@ import { NO_RESOLVED_ASKS } from './noResolvedAsks';
 import { recordPermissionDecision } from './recordPermissionDecision';
 import type { GetFn } from './types';
 import { withHeldAnswers } from './withHeldAnswers';
+import { permissionRowOf } from './permissionRowOf';
 
 type Params = {
   sessionId: SessionId;
@@ -73,6 +74,7 @@ export const allowAndContinue = (get: GetFn) => {
         content: withHeldAnswers({ held, prompt: continuePromptOf({ toolName }) }),
         permissionOnceAllows: [...heldOnceAllowsOf({ held }), oncePatternText({ toolName, input })],
         resolvedAsks: NO_RESOLVED_ASKS,
+        ...permissionRowOf({ held }),
       }),
     });
   };

@@ -14,6 +14,7 @@ import { NO_RESOLVED_ASKS } from './noResolvedAsks';
 import { recordPermissionDecision } from './recordPermissionDecision';
 import type { GetFn } from './types';
 import { withHeldAnswers } from './withHeldAnswers';
+import { permissionRowOf } from './permissionRowOf';
 
 type Params = {
   sessionId: SessionId;
@@ -69,6 +70,7 @@ export const denyWithReason = (get: GetFn) => {
         agentId,
         content: withHeldAnswers({ held, prompt }),
         resolvedAsks: NO_RESOLVED_ASKS,
+        ...permissionRowOf({ held, reason: trimmed }),
         ...(held.length > 0 && { permissionOnceAllows: heldOnceAllowsOf({ held }) }),
       }),
     });

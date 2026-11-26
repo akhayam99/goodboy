@@ -75,6 +75,7 @@ export const turnModuleMock = () => ({
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
   writeAttachment: storySpies.writeAttachment,
+  readAttachment: storySpies.readAttachment,
   deleteAttachment: () => storySpies.deleteAttachment(),
 });
 

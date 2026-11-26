@@ -9,13 +9,10 @@ import { dockMergedCellOf } from '../dockMergedCellOf';
 import { dockSplitKeyOf } from '../dockSplitKeyOf';
 import type { CanDropParams } from '../dockDropZonesOf';
 import { dockMoveFits } from '../dockMoveFits';
-import type { DockPairTurn } from '../dockPairTurnContext';
 import { DOCK_FOCUS_DETAIL, type DockGridCell, type DockGridSpec } from '../dockGridSpec';
 import { DRAWER_TIERS, type DrawerPlacement, type DrawerSizing } from '../drawerGeometry';
-import { ArrowLeftRight, ArrowUpDown } from '../icons';
 import { routedHandleOf } from '../routedHandleOf';
 import { savedHandleOf } from '../savedHandleOf';
-import { turnedDockColumnsOf } from '../turnedDockColumnsOf';
 import { unmeasuredDockGridOf } from '../unmeasuredDockGridOf';
 import type { DrawerTierWidthSet } from '../useDrawerTierWidthSet';
 import type { SplitHandleProps } from '../components/SplitHandle';
@@ -75,7 +72,7 @@ type DockGridLayout = {
   readonly gridRef: RefObject<HTMLDivElement | null>;
   readonly handles: ReadonlyArray<SplitHandleProps | null>;
   readonly canDrop: (params: CanDropParams) => boolean;
-  readonly turn: Omit<DockPairTurn, 'onTurn'> | null;
+  readonly boxesOf: (params: CanDropParams) => ReadonlyArray<DockGridColumnBox> | null;
 };
 
 type ColumnsParams = {
@@ -94,23 +91,6 @@ type ColumnPreviewParams = {
 
 type CellParams = {
   readonly cell: DockGridCell;
-};
-
-type FitParams = {
-  readonly solved: SolvedDockFrame | null;
-};
-
-const fitsAsDrawn = ({ solved }: FitParams): boolean =>
-  solved !== null && solved.mode === 'push' && !solved.isStacked && !solved.isDetailOver;
-
-const STACK_TURN: Omit<DockPairTurn, 'onTurn'> = {
-  label: 'Stack the panels',
-  icon: ArrowUpDown,
-};
-
-const SIDE_TURN: Omit<DockPairTurn, 'onTurn'> = {
-  label: 'Put the panels side by side',
-  icon: ArrowLeftRight,
 };
 
 export const useDockGrid = ({
@@ -172,17 +152,48 @@ export const useDockGrid = ({
       ? unmeasuredDockGridOf({ columns, savedWidthOf, detail: detailFallback, placement })
       : dockGridFrameOf({ solved, detailFallback });
   const isGrid = cellCount > 1 || (isLane && cellCount > 0);
-  const turned = isGrid ? turnedDockColumnsOf({ columns }) : null;
-  const canTurn =
-    turned !== null &&
-    fitsAsDrawn({ solved }) &&
-    fitsAsDrawn({ solved: solveColumns({ columns: turned }) });
-  const cellOf = new Map(columns.flat().map((cell) => [cell.key, cell] as const));
-  const canDrop = ({ columns: keys }: CanDropParams): boolean => {
-    const next = solveColumns({
-      columns: keys.map((column) => column.flatMap((key) => cellOf.get(key) ?? [])),
-    });
+  const baseOf = new Map(
+    stored
+      .flat()
+      .flatMap((cell) => [
+        [cell.key, { ...cell, tabs: undefined }] as const,
+        ...(cell.tabs?.members ?? []).map((member) => [member.key, member] as const),
+      ]),
+  );
+  const layoutCellsOf = ({
+    columns: keys,
+    groups,
+  }: CanDropParams): ReadonlyArray<ReadonlyArray<DockGridCell>> =>
+    keys.map((column) =>
+      column.flatMap((key) => {
+        const base = baseOf.get(key);
+        if (base === undefined) {
+          return [];
+        }
+        const chosen = groups[key];
+        if (chosen === undefined || chosen.length < 2) {
+          return [dockMergedCellOf({ cell: base })];
+        }
+        const members = chosen.flatMap((member) =>
+          member === key ? [] : (baseOf.get(member) ?? []),
+        );
+        return [
+          dockMergedCellOf({
+            cell: { ...base, tabs: { keys: chosen, active: chosen[0] ?? key, members } },
+          }),
+        ];
+      }),
+    );
+  const canDrop = ({ columns: keys, groups }: CanDropParams): boolean => {
+    const next = solveColumns({ columns: layoutCellsOf({ columns: keys, groups }) });
     return solved === null || next === null || dockMoveFits({ now: solved, next });
+  };
+  const boxesOf = ({
+    columns: keys,
+    groups,
+  }: CanDropParams): ReadonlyArray<DockGridColumnBox> | null => {
+    const next = solveColumns({ columns: layoutCellsOf({ columns: keys, groups }) });
+    return next === null ? null : dockGridFrameOf({ solved: next, detailFallback }).columns;
   };
   const dropRef = useRef(canDrop);
   dropRef.current = canDrop;
@@ -191,7 +202,7 @@ export const useDockGrid = ({
       return undefined;
     }
     return dockFitProbe.publish({
-      probe: ({ columns: keys }) => dropRef.current({ columns: keys }),
+      probe: ({ columns: keys, groups }) => dropRef.current({ columns: keys, groups }),
     });
   }, [isGrid]);
   const boxes = frame.columns;
@@ -238,6 +249,6 @@ export const useDockGrid = ({
     gridRef,
     handles,
     canDrop,
-    turn: canTurn ? (columns.length === 2 ? STACK_TURN : SIDE_TURN) : null,
+    boxesOf,
   };
 };

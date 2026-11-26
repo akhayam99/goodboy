@@ -90,33 +90,74 @@ the views that did close stay closed.
 
 ### Not registered
 
-`browser_profile_isolation` and `browser_profile_clear` live in
-`browser/commands.rs` but stay out of `generate_handler!` and
-`window-commands.json`: no page calls them, and a destructive command with no
-caller stays out of reach. Register them together with the pane's shared
-profile warning and its Clear button.
+`browser_profile_isolation` lives in `browser/commands.rs` but stays out of
+`generate_handler!` and `window-commands.json`: no page calls it. Register it
+together with the pane's shared profile warning.
 
 ### Clearing a profile
 
-`browser_profile_clear` takes a `workspaceId`.
+`browser_profile_clear` is the **Clear browser data** row of the workspace
+Danger zone. It takes a `workspaceId`.
 
-- It refuses with `profile-live` while a tab of the workspace is live or
-  asleep, and with `profile-busy` while the same profile is being cleared.
-- While it runs, opening or showing a tab of that workspace fails with
+- It refuses with `profile-busy` while the same profile is being cleared.
+  While it runs, opening or showing a closed tab of that workspace fails with
   `profile-busy`.
-- It removes the WebKit store on macOS and the folder elsewhere, up to three
-  tries 400 ms apart for a webview still shutting down, then fails with the
-  platform's error.
-- It answers `{ shouldRestart }`: `true` on Linux, which keeps its WebKit
-  context and its cookies in memory for the life of the app, `false`
-  elsewhere.
+- The lease names the live and asleep tabs of the workspace. With open tabs,
+  the store is emptied in place through the first of them (every data record
+  on macOS, `clear_all_browsing_data` elsewhere), then each open tab reloads
+  from origin, and the answer is `shouldRestart: false`.
+- With no open tab, it removes the WebKit store on macOS and the folder
+  elsewhere, up to three tries 400 ms apart for a webview still shutting down,
+  then fails with the platform's error. It answers `{ shouldRestart }`: `true`
+  on Linux, which keeps its WebKit context and its cookies in memory for the
+  life of the app, `false` elsewhere.
+- The row drops an answer that comes back after it moved to another
+  workspace.
+
+### Clearing one site
+
+`browser_site_data_clear` takes `{ tabId, host }`, the host the menu row showed
+when the user confirmed.
+
+- It refuses `not-web-address` for a page that is not http or https, and
+  `site-moved` when the live page is on another host by then.
+- It holds the same lease as the workspace clear, on the tab's profile, until
+  the reload is sent. A second clear of either kind answers `profile-busy`,
+  also on a Mac with one shared store.
+- On macOS it fetches every data record of the tab's store and removes those
+  whose display name is the site: `localhost`, `*.localhost` and an IP match
+  only themselves, any other host matches its registrable domain (WebKit names
+  a record by it). Ports share one record, so clearing `localhost:5005` clears
+  every localhost port. Then the tab reloads from origin, and the answer is
+  `{ host, scope: site }`.
+- Off macOS it clears the whole store of the workspace and answers
+  `scope: workspace`, which is why the row there says **Clear browser data**.
+- A removal that does not answer within 10 s fails with
+  `site-data-unavailable`, and the page is not reloaded.
+
+### Reload without cache
+
+`browser_tab_reload_from_origin` calls `reloadFromOrigin` on the WKWebView.
+Windows and Linux have no such call in wry, so it is a plain reload there.
+⇧-click on Reload, the Develop row and ⌘⇧R reach it: `app.reload` goes through
+`reloadAppOrPage`, which picks the reload surface like ⌘R does and calls its
+`reloadFromOrigin`, else reloads Goodboy.
 
 ## Under the hood
 
 - `browser/lifecycle.rs` holds the limits (`SLEEP_LIMIT_MS`, `MAX_LIVE_TABS`),
   the sweep, show, hide, place and `browser://tab-state`.
   `browser/profile.rs` holds the profile id, the per-platform store, the
-  switch and the clear.
+  switch and the clear. `browser/site_data.rs` holds the site match
+  (`is_site_record`), the site check and the in-place clears;
+  `platform/web_site_data.rs` the WebKit calls. The settings row is
+  `WorkspaceBrowserDataRow` through `useClearBrowserData`; the menu row is
+  `siteDataRowOf`.
+- Tests: `site_data.rs` covers the host match and the site check;
+  `browser::tests` the lease and a failed clear in place;
+  `BrowserPane/siteData.test.tsx` the confirm, the line, a failure and a late
+  answer; `scopedReload.test.tsx` ⌘⇧R and ⇧-click;
+  `WorkspaceBrowserDataRow.test.tsx` the busy refusal and a late answer.
 - Tests: the lifecycle and profile tests in `browser::tests` pass the clock
   in. The macOS store and the Windows and Linux folders are not reachable from
   the mock runtime.

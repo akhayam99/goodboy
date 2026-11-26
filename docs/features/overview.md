@@ -149,7 +149,7 @@ Know the moves that unblock the task, such as answering a question, fixing a fai
 #### Pull requests and cleanup
 
 - **Open a pull request** names the branch it opens. With several branches still without one, the row of the branch furthest ahead offers it.
-- Once a pull request merges, **Remove the payments-api worktree** is offered with the reason and its size (`#418 merged · 412 MB`).
+- Once a pull request merges, **Remove the payments-api worktree** is offered with the reason and its size (`#418 merged · 412 MB`). A worktree a running agent or a live Lead still works in is never offered.
 - When the last branch is merged or closed and a linked Linear or Jira item is not done, **Move HBL-412 to Done** is offered. The toast has **Undo**.
 - **Archive this session** shows with the reason "All branches merged". It needs every branch merged or closed and nothing running, waiting or asking. The toast offers **Undo**.
 - A folder no turn touched for 7 days offers **Unmount**. A clean worktree with nothing to push, no pull request and no change for 7 days offers **Remove the ledger-core worktree**.

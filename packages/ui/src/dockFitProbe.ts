@@ -6,6 +6,8 @@ type ProbeParams = {
   readonly probe: Probe;
 };
 
+type FitParams = Pick<CanDropParams, 'columns'> & Partial<Pick<CanDropParams, 'groups'>>;
+
 let current: Probe | null = null;
 
 export const dockFitProbe = {
@@ -17,5 +19,6 @@ export const dockFitProbe = {
       }
     };
   },
-  fits: ({ columns }: CanDropParams): boolean => current === null || current({ columns }),
+  fits: ({ columns, groups = {} }: FitParams): boolean =>
+    current === null || current({ columns, groups }),
 };

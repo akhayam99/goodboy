@@ -303,8 +303,34 @@
     "version": "0.40.1",
     "recipe": "--scene 'mounts&brand=1' --window 1280x900 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
-  "readme/readme-hero": {
-    "version": "0.40.1",
-    "recipe": "pnpm readme:hero"
+  "readme/readme-browser": {
+    "version": "0.43.0"
+  },
+  "readme/readme-lead": {
+    "version": "0.43.0"
+  },
+  "readme/readme-limits": {
+    "version": "0.43.0"
+  },
+  "readme/readme-plan": {
+    "version": "0.43.0"
+  },
+  "readme/readme-ports": {
+    "version": "0.43.0"
+  },
+  "readme/readme-projects": {
+    "version": "0.43.0"
+  },
+  "readme/readme-prs": {
+    "version": "0.43.0"
+  },
+  "readme/readme-questions": {
+    "version": "0.43.0"
+  },
+  "readme/readme-storage": {
+    "version": "0.43.0"
+  },
+  "readme/readme-tasks": {
+    "version": "0.43.0"
   }
 }

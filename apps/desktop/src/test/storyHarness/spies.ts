@@ -5,10 +5,10 @@ import type {
   WorktreeWriterLease,
   WriteSetLease,
 } from '../../features/worktree/worktree';
+import { attachmentSpies } from './attachmentSpies';
 import { EMPTY_CHANGED_FILES } from './emptyChangedFiles';
 import { createInvokeMock, createInvokeRouter, type InvokeHandlers } from '../invokeMock';
 import { storedRuleOf } from './storedRuleOf';
-import type { writeAttachment } from '../../features/chat/turn';
 import type { worktreeBranchHolder } from '../../features/worktree/worktree';
 import { createResolveQueryMocks } from '../../store/slices/resolve/testing/createResolveQueryMocks';
 import { resetWorkflowTurnBreaker } from '../../store/slices/turn/workflowTurnBreaker';
@@ -467,7 +467,7 @@ export const storySpies = {
   runTurn: vi.fn(),
   turnSpawn: vi.fn(async (_args: unknown): Promise<unknown> => 'started'),
   cancelTurn: vi.fn(async (_runId: unknown) => undefined),
-  writeAttachment: vi.fn<typeof writeAttachment>(async () => '.goodboy/attachments/spec.pdf'),
+  ...attachmentSpies,
   deleteAttachment: vi.fn(async () => undefined),
   tauriInvoke: createInvokeMock({ handlers: storyInvokeHandlers, unknownResult: null }),
   invokeAgentList: vi.fn(async (_sessionId?: unknown) => [] as ReadonlyArray<Agent>),

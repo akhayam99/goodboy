@@ -1,3 +1,4 @@
+import { permissionRowOf } from '../../../store/slices/permissions/permissionRowOf';
 import { oncePatternText } from '@goodboy/core/permissions';
 import type { AppStore } from '../../../store/store';
 import { askBatchAfterAnswer } from '../../../store/slices/permissions/askBatchAfterAnswer';
@@ -39,6 +40,7 @@ export const redeliverPermission = async ({ store, pending }: Params): Promise<v
         prompt: verdict === 'allow' ? ALLOW_PROMPT : denialNoticeOf({ toolName, reason: '' }),
       }),
       resolvedAsks: NO_RESOLVED_ASKS,
+      ...permissionRowOf({ held }),
       ...(verdict === 'allow'
         ? { permissionOnceAllows: [...heldAllows, oncePatternText({ toolName, input })] }
         : held.length > 0 && { permissionOnceAllows: heldAllows }),

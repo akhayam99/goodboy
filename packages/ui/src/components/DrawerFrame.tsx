@@ -151,7 +151,7 @@ export const DrawerFrame = ({
       <div className={cn('flex shrink-0 items-center gap-1', hasToolbar && 'h-5')}>
         {action}
         {menu}
-        <DrawerHeadKeys page={page} title={title} isFolded={head.isNarrow} hasMenu={menu != null} />
+        <DrawerHeadKeys page={page} />
         <IconButton icon={X} label="Close" variant="ghost" onClick={onClose} />
       </div>
     </>

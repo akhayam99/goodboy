@@ -27,6 +27,8 @@ import { DockButton } from '../../../../shared/components/DockButton';
 
 const NARROW_ROW_PX = 560;
 
+const RELOAD_TOOLTIP = 'Reload. Shift click reloads without cache';
+
 type Props = {
   readonly model: BrowserPaneModel;
   readonly isAddressShortcutOn: boolean;
@@ -109,9 +111,16 @@ export const BrowserAddressRow = ({
           <IconButton
             icon={RotateCw}
             label="Reload"
+            tooltip={RELOAD_TOOLTIP}
             tooltipSide="top"
             disabled={!canStep}
-            onClick={model.reload}
+            onClick={(event) => {
+              if (event.shiftKey) {
+                model.reloadFromOrigin();
+                return;
+              }
+              model.reload();
+            }}
           />
         )}
         <BrowserTabStrip model={model} field={field} page={page} />

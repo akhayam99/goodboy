@@ -314,6 +314,14 @@ export type MountTaskFoldersParams = Readonly<{
   text: string;
 }>;
 
+export type AttachMountParams = Readonly<{
+  sessionId: SessionId;
+  mountId: string;
+}>;
+
+export type AttachMountOutcome =
+  Readonly<{ kind: 'attached' }> | Readonly<{ kind: 'failed'; error: string }>;
+
 export type TaskFoldersAdded = Readonly<{
   mounted: ReadonlyArray<string>;
   asked: ReadonlyArray<string>;
@@ -348,6 +356,7 @@ export type AutoPorts = Readonly<{
   refreshSessionArtifacts: (params: RefreshSessionArtifactsParams) => Promise<void>;
   loadMounts: (params: LoadMountsParams) => Promise<ReadonlyArray<PickableMount>>;
   mountTaskFolders: (params: MountTaskFoldersParams) => Promise<TaskFoldersAdded>;
+  attachMount: (params: AttachMountParams) => Promise<AttachMountOutcome>;
   mountProject: (params: MountProjectParams) => Promise<MountProjectOutcome>;
   resolveRouting: (params: RoutingRequest) => Promise<RoutingOutcome>;
   isPlanApprovalRequired: () => boolean;
