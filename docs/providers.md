@@ -20,12 +20,10 @@ what each provider needs and how to connect it, then how it works under the hood
 | OpenRouter | An OpenRouter API key | Paste the key          |
 | Moonshot   | A Moonshot API key    | Paste the key          |
 
-Every provider lives in the same place:
+Every provider has a page in **Connections**: open it with **Go to Connections**
+in ⌘K, then pick the provider's tile.
 
-1. Open **Settings** (`⌘,` on macOS)
-2. Pick the provider under **Providers**
-
-The card shows whether the provider is installed, which account is signed in, and
+The page shows whether the provider is installed, which account is signed in, and
 its **API keys**. Goodboy runs the provider's own sign-in, so your credentials never
 pass through Goodboy.
 
@@ -168,7 +166,7 @@ Goodboy stores keys in your system keychain, not in its own database.
 
 ## Defaults and task models
 
-Go to **Settings** → **Providers** → **Models** to choose what a workspace
+Open **Settings** › This workspace › **Models** to choose what a workspace
 uses when you leave a model on **Auto**. A first line says that accounts, usage
 and which models show in the picker live in **Connections**, with **Open
 Connections** beside it (`DefaultsPanel/ConnectionsPointer`). Below it each group
@@ -246,15 +244,16 @@ roles and the older plan run rows live on Workflows, **Every run**
   workflows, and Git
 
 A notice under the page header (`SavedModelsNotice`) appears when a project of the
-workspace had its own role or task models before 0.24.0: "Model settings 2 projects had
-are saved. They no longer apply." **Show** lists each project with what it had, **Apply
+workspace still holds role or task models an older build saved: "Model settings 2
+projects had are saved. They no longer apply." **Show** lists each project with what it had, **Apply
 to this page** and **Discard**, each behind a confirm anchored to its button. A failed
 write shows its reason under the confirm and leaves both buttons live, and the saved
 settings stay until one of the two succeeds.
 
 Each task row says what the job does and ends in a model picker. A row you have not
 pinned reads **Auto**. Open the picker to see what Auto picks right now. Pick a model to
-pin it: the picker then shows that model and an **x** that goes back to Auto. **Reset
+pin it: the trigger then reads the model and `· pinned`, and **Back to Auto** inside the
+picker clears the pin. **Reset
 all to Auto**, at the top right, clears the pins the page shows (new chats and the
 background tasks) after a confirm that says how many; the Lead, role and Orchestrator
 pins of Every run stay. The page header carries no count. Each provider page counts its own pins in
@@ -280,8 +279,8 @@ muted line under the label says so, printed by `explainResolution` through
 row (`TaskModelRow`) carries the same chip and the same line from the same hook. The
 two background rows that name an agent say which one: **History rewriter** (task
 `rebase`, "Merges the conflicts of a history clean-up in a copy.") and **Scribe** (task
-`pr_draft`, "Writes the title and body of a pull or merge request."). Their ids did
-not change. When some agents pin only
+`pr_draft`, "Writes the title and body of a pull or merge request."). When some agents
+pin only
 models that cannot run, a line under the page title counts them (`With Codex as the only
 provider, 7 of 11 agents use a pin that can't run. Auto picks apply.`) and **Back to
 Auto for those 7** removes those pins after a confirm anchored to it; it is hidden when
@@ -348,7 +347,7 @@ and an arrow.
   (or a large step) it takes the first model that can run; a medium step takes the
   first one at mid cost or cheaper, a small step the first cheap one, and when none
   fits, the cheapest. A provider that is Off or not connected is skipped, and so is a
-  model that left the catalog. A role without a set runs on Auto, exactly as before
+  model that left the catalog. A role without a set runs on Auto
 - **Workflow steps** follow their role's set unless the step pins a model. The step
   editor says so (`Follows the role: Planning models · Opus 5.5`). The orchestrator's
   prompt lists each role's set, and a pick outside the set falls back to the set by
@@ -389,8 +388,7 @@ header says how many show (`Showing 6 of 11`) next to **Show all**.
 
 A provider tile in **Connections** opens its page there, under the trail
 `Connections > Claude` (Esc goes back up). A provider in the Not set up row opens the
-same page on its install or sign in step. Settings has no provider pages; its rail ends
-with a row that opens Connections. The page has four groups, in the same order
+same page on its install or sign in step. Settings has no provider pages. The page has four groups, in the same order
 for every provider: **Usage**, **Models in the picker**, **Account** and a closed
 **What works with Claude** row that holds the permissions table and says how many
 modes work fully (`4 of 6 work fully`). The head carries the glyph, the name, one
@@ -508,11 +506,11 @@ pays for every turn.
   Settings, Open with, when it can take a command: iTerm does, Warp and Ghostty
   do not) runs the same command in your own terminal, and the failure hint shows
   it with **Copy command** at once. Goodboy notices when it finishes
-- **How close am I to a limit?** Each Usage chip in the top bar stacks two bars:
-  the 5-hour window above, the week below. A bar turns amber from 80%, red and
-  full when the window is used up, and fades when the figures are old; the chip
-  shows no number. Hover one for every window with its percentage and reset,
-  click it for the provider page. A provider with no figures yet sits under `+N`. Claude's numbers update at boot,
+- **How close am I to a limit?** Each provider's chip in the top bar shows one
+  bar for its tightest window (the 5-hour window or the week) and its percent
+  once it passes 70%. The bar turns amber from 80%, red and full when the window
+  is used up, and fades when the figures are old. Hover one for every window with
+  its percentage and reset, click it for the providers menu. A provider with no figures yet sits under `+N`. Claude's numbers update at boot,
   every 15 minutes, and during a turn
 - **Rate limit reached**: every turn counts against your plan's limit. Wait for the
   reset (about 5 hours on Claude Max), or let the fallback order send the next turn to
@@ -549,7 +547,7 @@ This part is for contributors and agents who change how providers work.
 One row per provider says what the app knows about it, in two places that a test keeps equal.
 
 - Rust: `PROVIDER_SPECS` in `src-tauri/src/providers/spec.rs`. A row holds the id, the CLI family (`Cli`), the binary to run, the read-only chat shape (only Claude and Codex have one) and the sign-in check. Finding a CLI (`detect_provider`), checking sign-in (`check_provider_auth_blocking`), the lifecycle exit status, the chat shape and `Cli::of_provider` all read it. `Cli::of_binary` answers `None` for a name that is no row's binary, so a mistyped binary gets no arguments instead of Claude's.
-- TypeScript: `PROVIDER_FLAGS` in `packages/core/src/providers/providerFlags.ts`. A row holds the binary, the store slot that keeps the last status (`statusSlot`), whether the transcript is replayed as text (`shouldReplayHistoryAsText`) whether an account test exists (`hasAccountTest`) and whether the provider follows Allow and Deny rules (`canFollowRules`, read by the "What works with" table of the provider page). A flag exists only when code branches on it, and a test per flag pins its value.
+- TypeScript: `PROVIDER_FLAGS` in `packages/core/src/providers/providerFlags.ts`. A row holds the binary, the store slot that keeps the last status (`statusSlot`), whether the transcript is replayed as text (`shouldReplayHistoryAsText`), whether an account test exists (`hasAccountTest`) and whether the provider follows Allow and Deny rules (`canFollowRules`, read by the "What works with" table of the provider page). A flag exists only when code branches on it, and a test per flag pins its value.
 
 `provider-spec-parity.test.ts` reads `spec.rs` and fails when the ids, their order or a binary drift from the TypeScript table. `provider-id-comparisons.test.ts` counts the places that still compare with a provider id (`=== 'cursor'`); the count only falls. To branch on what a provider can do, add a flag, read it, and leave the comparison out. The steps for a whole new provider are in [add-a-provider](recipes/add-a-provider.md).
 
@@ -600,7 +598,7 @@ Each provider's connect options live in one table, not in UI code. The table is
   appears so you can pick. Goodboy still checks the sign-in at the end
 - `manual`: the card shows `manualReason` and a docs link. It has no **Connect** and
   no **Sign in again** button
-- `isApiProvider` reads `PROVIDER_KIND` in `packages/types/src/provider-catalog.ts`.
+- `isApiProvider` reads `PROVIDER_KIND` in `packages/core/src/providers/provider-catalog.ts`.
   It marks openrouter and moonshot as `api`. Their page keeps the same four groups;
   Account shows the OpenCode runtime with **Detect** and lists keys, instead of the
   CLI connect card
@@ -881,7 +879,7 @@ The Rust tests run codex against a scripted fake binary, not the real one. See
 
 ### Antigravity CLI
 
-Google deprecated the Gemini CLI's sign-in with Google on 2026-06-18. `agy` replaces it.
+`agy` replaces the Gemini CLI.
 
 - `agy` (v1.1.9) has no sign-in commands. Its subcommands are `agent, agents, changelog,
 help, install, models, plugin, plugins, update`. `agy login` does not exist
@@ -1103,7 +1101,7 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
 
 ### API keys
 
-- `PROVIDER_API_KEY_ENV` in `packages/types/src/provider-registry.ts` maps each
+- `PROVIDER_API_KEY_ENV` in `packages/core/src/providers/provider-api-key-env.ts` maps each
   provider to its env var: `ANTHROPIC_API_KEY`, `CURSOR_API_KEY`, `OPENAI_API_KEY`,
   `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `MOONSHOT_API_KEY`
 - `probe_for` in `apps/desktop/src-tauri/src/provider_credentials.rs` tests each key
@@ -1245,8 +1243,8 @@ When a provider ships or retires a model, update these together:
   `slot` is `{ kind: 'role' | 'task', id }`. `layers` are the workspace, project and
   session override objects. Role and task models merge per key by `mergeLayers` over
   the workspace and the session only (the session wins each role or task;
-  `resolveSettings` uses the same merge), because the project layer no longer holds
-  models (m228). The project layer still supplies the provider list and the default
+  `resolveSettings` uses the same merge), because the project layer holds no
+  models (m228 moved them out). The project layer still supplies the provider list and the default
   provider. `context` holds what the
   machine knows: the provider policy, the connected and at-limit providers, hidden
   models, installed CLI versions, learned CLI requirements. `pins` are the per-turn,
@@ -1341,7 +1339,7 @@ When a provider ships or retires a model, update these together:
   after a question; it drops the rates, then the facts, then the last providers to stay
   under 2,400 characters, never throws, and is left out when the table and the valid
   pins name fewer than two providers or one provider still does not fit
-- **Provider policy.** `workspaces.provider_pool` holds the policy, either the 0.15.4
+- **Provider policy.** `workspaces.provider_pool` holds the policy, either the older
   list of names (`["anthropic","codex"]`: those On in that order, the rest Off, the
   saved default moved first) or the list of entries
   (`[{ "id": "codex", "state": "on", "keepAfterLimit": true }, ...]`). `null` means
@@ -1364,7 +1362,7 @@ When a provider ships or retires a model, update these together:
   `availability.providerOrder`. `workspacePolicyAvailability` hands every snapshot the
   policy of the workspace that owns the session (the current workspace only when
   no session is known) and the providers at their limit
-- `ROLE_REGISTRY` holds no routing any more: the Claude column of `AUTO_DEFAULTS` is
+- `ROLE_REGISTRY` holds no routing: the Claude column of `AUTO_DEFAULTS` is
   the reference. `kindRouting` maps an agent kind to its role and reads the same
   ladder; there is no separate cheap tier for Scout, Docs or Generalist
 - **One calculation for "what runs here".** Every agent launch asks
@@ -1381,18 +1379,16 @@ When a provider ships or retires a model, update these together:
   instead ([workflows.md](./workflows.md#provider-priority-for-steps)). A provider set to Off is never
   offered or estimated there, even when it is the session default; the test also
   fails on a step routing call without its scope. Resolve, its next-step card,
-  and Start work from chat now follow the workspace default provider
-- **Re-checks** are the `recheck` task in Models, Review group. A re-check no
-  longer pins the cheapest model of the draft's provider by hand
-- **Project model settings** no longer apply. Before 0.24.0 a project could pin its
-  own role and task models; m228 copied them to the settings keys
-  `legacy.projectModels.<projectId>` (`{ taskModels, roleModels }`) and cleared the two
-  project columns. `resolveSettings` and `mergeLayers` ignore the project for the two
-  maps. The Models page says "Model settings 2 projects had are saved. They no longer
-  apply." with **Show**: each project lists what it had, **Apply to this page** merges
-  it into the workspace (the saved value wins a role or task both set) after a confirm
-  anchored to the button, and **Discard** deletes the key after one. The
-  `saved-project-models` slice reads and writes the keys.
+  and Start work from chat follow the workspace default provider
+- **Re-checks** are the `recheck` task in Models, Review group
+- **Project model settings** do not apply. m228 copied the role and task models a
+  project held to the settings keys `legacy.projectModels.<projectId>`
+  (`{ taskModels, roleModels }`) and cleared the two project columns.
+  `resolveSettings` and `mergeLayers` ignore the project for the two maps. The
+  `SavedModelsNotice` on the Models page shows the keys: **Apply to this page**
+  merges a project into the workspace (the saved value wins a role or task both
+  set) and **Discard** deletes its key. The `saved-project-models` slice reads and
+  writes the keys.
 - **Task models** are saved in `workspaces.task_models` and read through
   `resolveTaskModel` in `@goodboy/core`. A pin may carry an effort and a `fallback`.
   A pin without an effort runs at `medium`, clamped to the model's ladder. Models
@@ -1400,7 +1396,7 @@ When a provider ships or retires a model, update these together:
   model and carry no automatic effort. Task models never affect chat turns. Given
   `connectedProviders`, a pin on a disconnected provider moves to its fallback, then
   to Auto
-- **Agent roles** are the union `AgentRole` in `@goodboy/types`. `auto` is the newest member: it has a registry entry, a model slot in `AUTO_DEFAULTS` (Sonnet 5.5 at medium, like the Generalist) and a place in `ROLE_SLOTS` and `PROFILE_ACCESS`, but every eligibility flag is off and `DEFAULT_GROUPS` does not list it, so the Models page shows no row for it. They are saved in
+- **Agent roles** are the union `AgentRole` in `@goodboy/types`. `auto` has a registry entry, a model slot in `AUTO_DEFAULTS` (Sonnet 5.5 at medium, like the Generalist) and a place in `ROLE_SLOTS` and `PROFILE_ACCESS`, but every eligibility flag is off and `DEFAULT_GROUPS` does not list it, so the Models page shows no row for it. They are saved in
   `workspaces.role_models` and read through `resolveRoleRouting`, which takes an
   optional `auto` context (default provider, fallback order, connected providers,
   CLI versions) and an optional step `size`. Without a context it answers for Claude.

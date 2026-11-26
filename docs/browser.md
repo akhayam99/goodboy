@@ -55,11 +55,7 @@ address.
   is refused with `too-many-popups` in the log. Showing a popup frees its
   seat, and so does closing it, by hand, by the sweep or by the cap.
   Otherwise nothing opens.
-- Every download is refused. Asking before a download is not built yet.
-
-Phase 0 spike S2 proved the wall: a page in a tab got none of six probe
-commands, and got all six once it navigated itself to the dev origin or to
-`tauri://localhost`, until this rule refused those navigations.
+- Every download is refused.
 
 ## Local files
 
@@ -169,7 +165,7 @@ A tab is in one of three states, shown as `state` in its facts.
   last address, its title and the last place it was given, so the tab is still
   listed.
 
-Hiding frees nothing, because a hidden webview keeps its memory (spike S8).
+Hiding frees nothing, because a hidden webview keeps its memory.
 Only closing frees it, so two rules close a tab:
 
 - **Ten minutes hidden.** A background thread sweeps every 30 seconds and
@@ -250,12 +246,11 @@ they sit in the profile's store. If a view will not close, it is put back as it
 was, the open fails with `profile-busy`, and the views that did close stay
 closed.
 
-**Ready, not exposed (2026-11-20).** `browser_profile_isolation` and
-`browser_profile_clear` live in `browser/commands.rs` but stay out of
-`generate_handler!` in `lib.rs` and out of `window-commands.json`: no page calls
-them yet, and a destructive command with no caller stays out of the webview's
-reach. They come back registered with the pane's shared profile warning and its
-Clear button.
+**Not registered.** `browser_profile_isolation` and `browser_profile_clear` live
+in `browser/commands.rs` but stay out of `generate_handler!` in `lib.rs` and out
+of `window-commands.json`: no page calls them, and a destructive command with no
+caller stays out of the webview's reach. Register them together with the pane's
+shared profile warning and its Clear button.
 
 **Clearing a profile.** `browser_profile_clear` takes a `workspaceId`, refuses
 with `profile-live` while any of the workspace's tabs is live or asleep (switch
@@ -270,7 +265,7 @@ context for the life of the app, so cookies already in memory outlive the
 deleted folder and the answer is `true`; elsewhere it is `false`.
 
 Windows and Linux are written against the Tauri and wry sources and have not
-been run: the first run on each of them is the check (spike S3 was never run).
+been run: the first run on each of them is the check.
 
 ## Tab rows
 
@@ -375,8 +370,8 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   control, moves the pane like any other: `useDockGrip`,
   [home-and-drawer.md](navigation/home-and-drawer.md)), Back, Forward and
   Reload, the tabs (see Tabs), New tab, Pin to the session's project (Unpin
-  when a pin is shown), Console (see Console), More, Open full page and
-  Close. Under 560px of row (`NARROW_ROW_PX`), Pin and Open full page leave
+  when a pin is shown), Select an element (see Pick an element), Console (see
+  Console), More, Open full page and Close. Under 560px of row (`NARROW_ROW_PX`), Pin and Open full page leave
   the row (`foldedBrowserRowsOf` puts Pin first in More, which always holds
   Open full page), so the tabs keep their room and nothing overlaps. The page
   sits flush under the row: no card, no border and no inset (`BrowserView`,
@@ -443,12 +438,14 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   the result. A needle over 200 characters is refused by the host
   (`needle-too-long`) and the field stops at 200. An asleep tab has no view to
   search and reads the failure line.
-- **More** (`BrowserMoreMenu`, rows in `browserMoreRows.ts`) holds Open in your
-  browser, Open full page (see Moves, absent when the dock has no page to open),
-  Copy address, Duplicate (`model.duplicate` opens the shown address in a new
-  tab of the session), Width (absent when no tab is shown, see Width
-  presets), Inspect in Safari (macOS only, see Inspect in Safari)
-  and Close tab (off for a pin).
+- **More** (`BrowserMoreMenu`, the off rules in `browserMoreRows.ts`) holds,
+  after any row the narrow row folded in, Send to agent (see Doors), Open in
+  your browser, Open full page (see Moves, absent when the dock has no page to
+  open), Copy address, Duplicate (`model.duplicate` opens the shown address in a
+  new tab of the session), Develop and Close tab (off for a pin). Develop is a
+  submenu with the width presets (absent when no tab is shown, see Width
+  presets) and, on macOS only, Inspect in Safari (see Inspect in Safari); its
+  hint names the current preset.
 - **Width presets** show the shown tab as Desktop, Tablet 768 or Phone 390.
   The table lives in `features/browser/devicePresets.ts` (one source for the
   menu, the frame and the note). The preset is kept per tab id in
@@ -480,7 +477,7 @@ the others: ⌘W closes it, and when it was the last tool the Desk closes with
   (`platform/web_inspect.rs`). It works on macOS 13.3 and later; the host
   checks that the class answers the selector and refuses with
   `unsupported-platform` otherwise, and on every other platform. The row is
-  absent off macOS and off when no tab is shown. A line under the row says to
+  absent off macOS and disabled when no tab is shown. A line under the row says to
   open Safari's Develop menu and pick the tab (Safari shows Develop once it is
   turned on in its settings). The property stays on until the tab closes. The
   `devtools` cargo feature stays off and no private selector is used, so there
@@ -697,7 +694,6 @@ new bounds or a new window. A form half typed and the scroll stay.
   address row, and the view stays with the pane, which shows it again on
   Dock. A page show that answers after the tab went back
   is hidden again, and the pane takes the view.
-- **Another window**: moving a tab to another window comes later.
 
 ## Doors
 
@@ -905,7 +901,7 @@ test or a release checks.
   hidden tabs cost as much as shown ones on macOS, so only closing frees
   memory. Four tabs stay under 450 MB over the no tab state. A person
   measures it at each release (`docs/testing.md` → Manual release gate:
-  browser memory); the phase 0 numbers are in the plan's spike S8.
+  browser memory).
 
 ## Capabilities
 
@@ -963,10 +959,9 @@ The console is a dock beside the page, in the pane and on the Browser page.
 The Console button in the address row, after the pin and before More, opens it
 with its own `CodeXml` icon, never the Terminal one (its log rows mark a plain
 log with `MessageSquareText`), and
-`browser.console` (⌘⇧J) toggles it while a tab is shown. It is a button, not
-a More row, while the row has room: More already holds eight rows against the
-five-row budget, and a toggle with a pressed state belongs beside the page it
-watches. A narrow row folds it into More as Show console or Hide console. Safari's
+`browser.console` (⌘⇧J) toggles it while a tab is shown. It is a button with a
+pressed state, never a More row, because a toggle belongs beside the page it
+watches; a narrow row keeps it. Safari's
 ⌘⌥C is Context (`lens.context`), and the registry refuses a browser key
 that shadows it, so the chord follows Chrome's J.
 
@@ -1124,8 +1119,8 @@ that shadows it, so the chord follows Chrome's J.
 The Select an element button sits in the pane's address row before Console,
 with the `SquareDashedMousePointer` glyph, and `browser.pick` (⌘⇧C, Chrome's
 inspect key) toggles it while a tab is shown and the session has a live agent.
-It is a page key, so it works with the focus inside the page. The full Browser
-page has no pick yet.
+It is a page key, so it works with the focus inside the page. The Browser page
+has no Select an element button.
 
 - **In the page**: `page_runtime/pick.js` waits for a second event under the
   read name plus `:pick` (`console::pick_event_name`) with `start`, `stop` or
@@ -1239,7 +1234,7 @@ words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  twenty-eight `browser_*` commands (`browser_page_keys` sets the page keys);
+  live tab `browser_*` commands (`browser_page_keys` sets the page keys);
   `console.rs` holds the tab script, the reader and the answer parse, and
   `page_runtime/` the runtime modules it joins; `pick.rs` drives the picker
   and parses its answer, and `snapshot.rs` crops a picked element;
@@ -1363,9 +1358,9 @@ words (`features/browser/browserFailureText.ts`).
   fake host: open and show at the placeholder, refused words with no host
   call, navigation and history by live id, a refused navigation, close before
   the row delete, pin, the pill (title and host, the host alone, the selected
-  address on click, Esc and blur back, the field kept on a refusal), the five
-  More rows with Copy, Duplicate and Close tab, the sixth row Inspect in Safari
-  on macOS only with its line and its refusal, an overlay over the view and one elsewhere, a late open
+  address on click, Esc and blur back, the field kept on a refusal), the More
+  rows with Copy, Duplicate and Close tab, Inspect in Safari on macOS only with
+  its line and its refusal, an overlay over the view and one elsewhere, a late open
   closed, a failed hide tried again, a late wake never shown, a failed wake
   woken again by Reload, a revisited address saved, a failed save tried again
   and the view hidden when the pane closes. It also opens a typed local file

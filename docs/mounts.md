@@ -27,8 +27,8 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   are shown next to it. `allocateMountDirName` draws the name from a source
   seeded with the mount id, so a retried request lands in the same folder. If
   the folder exists and is not a worktree of the repository, it draws again, up
-  to eight times, then takes a 12 character name. Worktrees made before 0.26.0
-  keep their old `<session-slug>-<mount-id>` folder: the path is stored in
+  to eight times, then takes a 12 character name. An older worktree keeps its
+  `<session-slug>-<mount-id>` folder: the path is stored in
   `session_worktrees.worktree_path` and in the mount row, and nothing
   recomputes it. Re-attaching a removed mount reuses the folder name of its
   last stored path. The local branch outlives the worktree.
@@ -38,8 +38,7 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   give the same result for the same input.
 - The branch name comes from one builder, `buildBranchName` in `@goodboy/core`,
   and the workspace template (Settings > Workspace > New sessions > Branch
-  name). The default is `{prefix}/{task-id}-{slug}`, the shape from before 0.16.0
-  without the session id at the end. The placeholders are `{prefix}`,
+  name). The default is `{prefix}/{task-id}-{slug}`. The placeholders are `{prefix}`,
   `{task-id}`, `{slug}` and `{user}` (the GitHub login). A placeholder with no
   value disappears with the separator next to it, so a session without a task
   gets `<prefix>/<slug>`. The task id only enters when the session starts from a
@@ -94,7 +93,7 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   and the guard keeps every write inside it ([turns.md](turns.md#where-a-turn-writes)).
   `ensureProjectMounted` answers `in-place` for a folder project and
   `createProjectMount` refuses one, so no path cuts a `sessions/` folder.
-- A session made before 0.27.3 that already has a folder mount at
+- A session an older build gave a folder mount at
   `<project-root>/sessions/<name>` keeps it and keeps writing there: moving an
   agent's earlier output into the user's files would be a write nobody asked
   for. Folder projects always keep that directory; no Goodboy action deletes it.
@@ -139,7 +138,7 @@ A new worktree is a clean checkout, so it lacks what git ignores: the `.env`, th
 
 When a session cuts a worktree for a project (`createProjectMount`, `forkMount`; reattaching a removed one carries nothing), `prepareNewWorktree` runs `worktree_carry_into` with exactly the ticked paths and never for a reused worktree. The command only works on a registered worktree of that repository that is not the main checkout, and each path obeys these rules (`worktree/carry.rs`): git must ignore it; a file or folder already there is never overwritten or merged into; a link is never followed; a path that is absolute, climbs with `..` or enters `.git` or `.goodboy` is refused; a file over 5 MiB, a dependency folder, and a folder holding a dependency folder, more than 500 files or more than 10 MiB are never byte copied and are left to the setup step; inside a ticked folder, files with a secret name stay behind unless their own path is ticked. Each path comes back `copied` or `skipped` with its reason, and a failure never fails the mount.
 
-The result is saved as `worktree.setup-offer.<mount-id>` and shows at the top of the Branch page, beside the stale dependencies notice (`WorktreeSetupOffer` in `features/worktree`, placed by `BranchSetupOffer`), and no longer on the session overview: **Worktree payments-api/retry-webhook is ready.** with what was copied and **Setup proposed: pnpm install.**, then **Run** and **Not now**. Nothing runs until **Run**; it starts the command as the script `setup:<mount-id>` in the worktree (`runDiscoveredScript`), reads **Running pnpm install...** while it works, says nothing once it exits 0 (the offer is saved as done and a finished line shows nowhere), and offers **Retry** with the last line of the error when it does not.
+The result is saved as `worktree.setup-offer.<mount-id>` and shows at the top of the Branch page, beside the stale dependencies notice (`WorktreeSetupOffer` in `features/worktree`, placed by `BranchSetupOffer`): **Worktree payments-api/retry-webhook is ready.** with what was copied and **Setup proposed: pnpm install.**, then **Run** and **Not now**. Nothing runs until **Run**; it starts the command as the script `setup:<mount-id>` in the worktree (`runDiscoveredScript`), reads **Running pnpm install...** while it works, says nothing once it exits 0 (the offer is saved as done and a finished line shows nowhere), and offers **Retry** with the last line of the error when it does not.
 
 ## The first lap and the bootstrap move
 
@@ -563,10 +562,8 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   regains focus (`useSessionFocusRecheck`, debounced 400ms, current session
   only). It makes at most one refresh per mount, skips a mount that is loading
   or whose request merged or closed, and skips a mount fetched in the last 5s
-  (turn end) or 60s (focus). `useGithubPolling` still sweeps on boot, on a
-  branch change and every 5 minutes, through `sweepRequests`, which asks the
-  host each mount lives on (GitHub, GitLab or Bitbucket, [hosts.md](./hosts.md)).
-  When a sweep holds two or more GitHub mounts of one repo, it reads every branch
+  (turn end) or 60s (focus). The five-minute sweep and the PR watch are
+  [hosts.md](./hosts.md#how-the-store-keeps-every-host-fresh)'s. When a sweep holds two or more GitHub mounts of one repo, it reads every branch
   of that repo with one batched `gh api graphql` request (`listPrsForBranches`,
   20 branches per request, behind the `gh_run` allowlist) and hands each mount
   its answer; if that request fails, each mount asks on its own. Its timer and its visibility sweep
@@ -623,9 +620,9 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   `After a pull request merges` (`workspaces.after_merge`): `Ask first`,
   `Delete folder and branch on this Mac` or `Also delete the branch on
 origin`. A repo project can override it from its row editor
-  (`projects.after_merge`, `Same as workspace · …` first). Workspaces from
-  before the rule stay on `Ask first`; a workspace that never chose deletes on
-  this Mac. When polling sees the merge and the rule is not `Ask first`,
+  (`projects.after_merge`, `Same as workspace · …` first). A workspace that
+  existed when the rule shipped was migrated to `Ask first`; a workspace with no
+  saved choice deletes on this Mac. When polling sees the merge and the rule is not `Ask first`,
   `runAfterMergeCleanup` deletes only a branch Goodboy created
   (`session_worktrees.branch_origin = 'created'`; older rows read `unknown`
   and are never deleted by the rule), only if `branch_merge_state` says it
@@ -824,8 +821,6 @@ The Now block closes with the branch facts, read by `useBranchFacts`
   on the last push" and "A reviewer asked for changes"; a read detail says the
   check names ("static-analysis failed") or the threads ("2 threads to
   answer").
-- `useBranchLabels({ sessionId })` gives the project and branch of a mount when
-  the session has two or more, for the branch chips on the board.
 - PR cards are gated per branch in every overview: `deriveNextSteps` skips fix
   checks, mark ready, merge, open PR and push on a mount only while an agent
   runs on that mount (`isMountBusyOf`, see Next steps in
@@ -834,9 +829,9 @@ The Now block closes with the branch facts, read by `useBranchFacts`
 - Host nouns: `#` for GitHub and Bitbucket, `!` for GitLab. Both read through
   `mountRequestOf`, so `#309` and `!42` sit side by side.
 - Behind is `distanceBehind` on `useWorktreeStatuses`, the number the rebase card
-  uses (`features/suggestions/useSessionSuggestions/index.ts:403`).
-- A stale read is one `isFresh` calls old (`features/suggestions/nextStepGates.ts:11`,
-  5 minutes). Checks is the current stage, the word is Open or Draft and the
+  uses (`features/suggestions/useSessionSuggestions/`).
+- A stale read is one `isFresh` calls old (`features/suggestions/nextStepGates.ts`,
+  8 minutes). Checks is the current stage, the word is Open or Draft and the
   blocker says "Checked 12m ago" (`branchFactsOf`, `branchStoryOf`).
 - A step that cannot apply is a short dash (`skipped`) in its slot, never a
   pending circle, so the six slots still line up. Only a fresh read can skip
@@ -859,16 +854,13 @@ The Now block closes with the branch facts, read by `useBranchFacts`
     skipped" for a dash), the track's accessible name lists every stage with
     its state, and the skipped steps (`BranchStep.name`) are named in the row's
     accessible name.
-- Only GitHub gets a PR card today. `useSessionSuggestions` reads
-  `mountGithub` alone for the PR verbs
-  (`features/suggestions/useSessionSuggestions/index.ts:447`), so a GitLab or
-  Bitbucket branch shows its state in the list and has no Mark ready, Merge or
-  Fix checks card yet.
+- Only GitHub gets a PR card. `useSessionSuggestions` reads `mountGithub` alone
+  for the PR verbs, so a GitLab or Bitbucket branch shows its state in the list
+  and has no Mark ready, Merge or Fix checks card.
 
 ## One port per worktree
 
-Two worktrees of one repo used to start their dev servers on the same port. Now
-every live mount (attached, with a folder, in a session that is not deleted) owns
+Every live mount (attached, with a folder, in a session that is not deleted) owns
 a block of ten ports from 41000, and every new terminal and script opened in its
 folder gets the first one as `PORT`. A mount keeps its block while it lives: the
 block comes from a hash of the mount id, and an older mount claims first when two
