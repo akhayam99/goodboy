@@ -34,11 +34,9 @@
   `shared/utils`).
 - **An integration page hangs off its own tool**, with its crumb named after the
   tool (GitHub, GitLab, Jira, Linear, Slack).
-- **Settings claims its band** with Back to app, then Settings, the scope and the
-  App section, beside the column and on Home. The scope segment lists App, the
-  workspace, Providers and Integrations; the section segment lists the App
-  sections. Neither carries an action, and a segment without one is plain text
-  with no hover state. The first segment of a studio has no menu, since studios
+- **Settings** picks its scope from its own scopes rail, not from a crumb
+  ([settings.md](settings.md#a-page-with-its-own-scopes-rail)); providers and
+  integrations live in Connections ([connections.md](connections.md)). The first segment of a studio has no menu, since studios
   change from the column, and is a button only when the studio has a start to
   return to.
 

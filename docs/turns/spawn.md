@@ -42,14 +42,14 @@ none. The Lead's children send their role, every turn of the Lead sends `auto`
 `scout`, `planner`, `investigator`, `reviewer`, `auto` and any unknown role
 are read-only:
 
-| CLI             | Read-only shape                                                                                                                                                                           |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude          | `--tools Read,Grep,Glob` in plan mode, `--allowedTools` with scoped `Read(...)` grants only (`is_scoped_read_grant`), a deny list with Bash, the edit tools and the native subagent tools |
-| Codex           | `-s read-only`, no extra roots: no writes, read-only commands still run                                                                                                                   |
-| Cursor          | Loses its bypass flags, runs `--mode plan`                                                                                                                                                |
-| Agy             | `--mode plan`                                                                                                                                                                             |
-| Gemini, Copilot | Lose their bypass flags                                                                                                                                                                   |
-| opencode        | Refused before any probe (`ensure_confinement`): `opencode run` without `--dangerously-skip-permissions` is unproven                                                                      |
+| CLI             | Read-only shape                                                                                                                                                                                                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude          | `--tools Read,Grep,Glob` in plan mode (Auto, `confinedRole: 'auto'`, runs in `default` mode instead: `effective_permission_mode`), `--allowedTools` with scoped `Read(...)` grants only (`is_scoped_read_grant`), a deny list with Bash, the edit tools and the native subagent tools |
+| Codex           | `-s read-only`, no extra roots: no writes, read-only commands still run                                                                                                                                                                                                               |
+| Cursor          | Loses its bypass flags, runs `--mode plan`                                                                                                                                                                                                                                            |
+| Agy             | `--mode plan`                                                                                                                                                                                                                                                                         |
+| Gemini, Copilot | Lose their bypass flags                                                                                                                                                                                                                                                               |
+| opencode        | Refused before any probe (`ensure_confinement`): `opencode run` without `--dangerously-skip-permissions` is unproven                                                                                                                                                                  |
 
 Auto has no Bash allow rule and never calls Goodboy from inside its turn; its
 decision is the block it ends its reply with. For `implementer`, `tester` and

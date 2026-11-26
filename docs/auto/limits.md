@@ -12,9 +12,10 @@ A limit exists only when a person sets one. The workspace default is the Limit o
 Workflows › **Every run**, and a start never stores a limit: an amount typed on
 the form is for that run only.
 
-- The **Limit** chip of **Start a run** (`useAutoTreeLimit`) starts on No limit,
-  or on the session budget when it pauses ("Limit for this run", with **No
-  limit**). The smallest limit pauses Auto.
+- The **Limit** chip of **Start a run** (`useAutoTreeLimit`) starts on the
+  workspace's **Every run** default (`runDefaultLimitOf`), or on the session
+  budget when it pauses and is smaller ("Limit for this run", with **No
+  limit**), and on No limit when neither is set (`autoLimitOf`). The smallest limit pauses Auto.
 - A new tree starts on the smaller of the session cap and the workspace Limit
   (`autoTreeLimitOf` in `packages/core/src/auto/`, which names the winner).
 - A session budget that only warns caps nothing: every path reads the session cap
@@ -60,8 +61,9 @@ resumes after a raise.
 ## No limit
 
 A blank amount is **No limit**, a NULL `cap_usd` (m231), never a sentinel. A tree
-is only created with a number; NULL comes only from this choice, and it is
-refused while a session budget exists.
+is created with NULL when the run picks No limit, or when neither a session
+budget that pauses nor a workspace Limit applies (`autoTreeCapUsd`). No limit is
+refused while a session budget that pauses exists.
 
 - The chip reads what is spent; the prompt says "no cap" and prints no left.
 - The root turn claim and child admission pass a NULL cap
