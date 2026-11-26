@@ -19,13 +19,13 @@ finalize (a question delegate, a workflow continue) would wait for itself.
 
 ## When the provider run row closes
 
-| Path                                                       | Run status                    |
-| ---------------------------------------------------------- | ----------------------------- |
-| The stream and its finalize step complete                  | `succeeded`                   |
-| The same, but a stop landed                                | `failed`, "cancelled by user" |
-| A stop lands before the spawn (`claimTurnStart`)           | `cancelled`                   |
-| The step's agent cannot be resolved                        | `failed`                      |
-| A throw inside the stream or finalize step, or the run a fallback rerun replaces | `failed` |
+| Path                                                                             | Run status                    |
+| -------------------------------------------------------------------------------- | ----------------------------- |
+| The stream and its finalize step complete                                        | `succeeded`                   |
+| The same, but a stop landed                                                      | `failed`, "cancelled by user" |
+| A stop lands before the spawn (`claimTurnStart`)                                 | `cancelled`                   |
+| The step's agent cannot be resolved                                              | `failed`                      |
+| A throw inside the stream or finalize step, or the run a fallback rerun replaces | `failed`                      |
 
 A throw before the run row exists (the user message write) leaves no run. A
 throw between the run row and the stream (the agent status write, the session

@@ -67,24 +67,24 @@ resolve queue, opens the mount continuation and drains the agent queue.
 
 ## Pages in this folder
 
-| Page | Open it when you change |
-| ---- | ----------------------- |
-| [turns/pipeline.md](turns/pipeline.md) | A message sent after a result, which path closes the provider run row, what runs after a turn succeeds |
-| [turns/routing-and-prompt.md](turns/routing-and-prompt.md) | Which provider and model a turn runs on, the prior turns block, the system prompt and its guards, context slots |
-| [turns/write-destination.md](turns/write-destination.md) | Where a turn writes, the writer and write set leases, resolver candidates, saved versions in a plain folder |
-| [turns/handoffs.md](turns/handoffs.md) | An agent's first turn, the handoff record and block, the kickoff, fan-out children, resolver fix runs |
-| [turns/spawn.md](turns/spawn.md) | How `turn_spawn` starts a CLI, confined roles, how Stop is confirmed, the end-of-turn cleanup |
-| [turns/stream.md](turns/stream.md) | Reading the stream, when a turn ends, partial output, turn events, tool call states, context measurement |
-| [turns/text-reveal.md](turns/text-reveal.md) | The pace live text is written in, its hosts, blocks that fade in when they land |
-| [turns/recovery.md](turns/recovery.md) | Reload, quit, update and crash: the backlog, delivery ids, re-attach, resume, turn admission |
-| [turns/live-state.md](turns/live-state.md) | The tail line, its adapters, clock and glyphs, the thinking line, the `live_work` read |
-| [turns/chat-view.md](turns/chat-view.md) | The reading order, the turn footer and usage card, chat scroll and row heights |
-| [turns/failure-and-fallback.md](turns/failure-and-fallback.md) | Failure classes, the fallback plan, the usage-limit stop, the helper retry chain |
-| [turns/spans-and-estimates.md](turns/spans-and-estimates.md) | Turn spans, touched mounts, turn file sets, active time, estimates and time left |
-| [turns/context-updates.md](turns/context-updates.md) | The session summarizer, the decisions ledger, the learnings pass |
-| [turns/composer.md](turns/composer.md) | The agent composer, Send, Queue and Stop, the durable send, One composer (`PromptField`) and attachments |
-| [turns/workspace-chat.md](turns/workspace-chat.md) | A read-only workspace chat turn, its images, storage, default model and Start work from chat |
-| [turns/session-ask.md](turns/session-ask.md) | A session Ask turn, its scope, staged files, pack and answer format |
+| Page                                                           | Open it when you change                                                                                         |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| [turns/pipeline.md](turns/pipeline.md)                         | A message sent after a result, which path closes the provider run row, what runs after a turn succeeds          |
+| [turns/routing-and-prompt.md](turns/routing-and-prompt.md)     | Which provider and model a turn runs on, the prior turns block, the system prompt and its guards, context slots |
+| [turns/write-destination.md](turns/write-destination.md)       | Where a turn writes, the writer and write set leases, resolver candidates, saved versions in a plain folder     |
+| [turns/handoffs.md](turns/handoffs.md)                         | An agent's first turn, the handoff record and block, the kickoff, fan-out children, resolver fix runs           |
+| [turns/spawn.md](turns/spawn.md)                               | How `turn_spawn` starts a CLI, confined roles, how Stop is confirmed, the end-of-turn cleanup                   |
+| [turns/stream.md](turns/stream.md)                             | Reading the stream, when a turn ends, partial output, turn events, tool call states, context measurement        |
+| [turns/text-reveal.md](turns/text-reveal.md)                   | The pace live text is written in, its hosts, blocks that fade in when they land                                 |
+| [turns/recovery.md](turns/recovery.md)                         | Reload, quit, update and crash: the backlog, delivery ids, re-attach, resume, turn admission                    |
+| [turns/live-state.md](turns/live-state.md)                     | The tail line, its adapters, clock and glyphs, the thinking line, the `live_work` read                          |
+| [turns/chat-view.md](turns/chat-view.md)                       | The reading order, the turn footer and usage card, chat scroll and row heights                                  |
+| [turns/failure-and-fallback.md](turns/failure-and-fallback.md) | Failure classes, the fallback plan, the usage-limit stop, the helper retry chain                                |
+| [turns/spans-and-estimates.md](turns/spans-and-estimates.md)   | Turn spans, touched mounts, turn file sets, active time, estimates and time left                                |
+| [turns/context-updates.md](turns/context-updates.md)           | The session summarizer, the decisions ledger, the learnings pass                                                |
+| [turns/composer.md](turns/composer.md)                         | The agent composer, Send, Queue and Stop, the durable send, One composer (`PromptField`) and attachments        |
+| [turns/workspace-chat.md](turns/workspace-chat.md)             | A read-only workspace chat turn, its images, storage, default model and Start work from chat                    |
+| [turns/session-ask.md](turns/session-ask.md)                   | A session Ask turn, its scope, staged files, pack and answer format                                             |
 
 ## Where a turn writes
 

@@ -37,11 +37,11 @@ tails).
 
 ## Per provider
 
-| Provider              | Working folder                            | Reads                                                          |
-| --------------------- | ----------------------------------------- | -------------------------------------------------------------- |
-| Claude                | The first worktree                        | The other worktrees and the staged folder as `--add-dir` roots |
-| Codex 0.160.0 and up  | The first worktree                        | The worktrees and the staged folder as its permission profile's read roots |
-| Older Codex           | The staged folder, with `-s read-only`    | The worktrees by the absolute paths in the prompt (the known limit described for Chat) |
+| Provider             | Working folder                         | Reads                                                                                  |
+| -------------------- | -------------------------------------- | -------------------------------------------------------------------------------------- |
+| Claude               | The first worktree                     | The other worktrees and the staged folder as `--add-dir` roots                         |
+| Codex 0.160.0 and up | The first worktree                     | The worktrees and the staged folder as its permission profile's read roots             |
+| Older Codex          | The staged folder, with `-s read-only` | The worktrees by the absolute paths in the prompt (the known limit described for Chat) |
 
 A session with no worktree runs inside the staged folder with either provider,
 so Ask works without a connected project. Both pass the same argument check as

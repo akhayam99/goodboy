@@ -244,15 +244,13 @@ branch.
   `Scroll to latest`. Error lines carry a danger bar and an `err` prefix; a long
   token wraps at the edge. Under the log: `Following output` while running, then the
   exit, time and Copy output.
-- **Add to message**, also while live, queues a text attachment titled `Output of
-  <script>, <exit>, <project> on <branch>` (`outputHandoffOf`), opens the session if
-  needed, and the composer takes it as a chip and focuses, sending nothing, so a
+- **Add to message**, also while live, queues a text attachment titled
+  `Output of <script>, <exit>, <project> on <branch>` (`outputHandoffOf`), opens the
+  session if needed, and the composer takes it as a chip and focuses, sending nothing, so a
   running agent is never interrupted. The text is redacted (`redactSecrets`) and
   capped to its last 24,000 characters under a `[truncated: ...]` line.
-  
-
-- The same verb sits on a Task or Service row's right click (disabled with `No
-output yet`), in the terminal's `⋯` as `Send last output`, and on a terminal
+- The same verb sits on a Task or Service row's right click (disabled with
+  `No output yet`), in the terminal's `⋯` as `Send last output`, and on a terminal
   selection. An archived session or one with no agent hides it. The queue is the
   `outputHandoffs` store key, per agent; a handoff that lands after the composer
   moved to another agent stays queued for the right one.
