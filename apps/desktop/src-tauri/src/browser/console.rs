@@ -130,6 +130,13 @@ pub(crate) struct SocketFacts {
     pub(crate) code: Option<u16>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RequestPhases {
+    pub(crate) wait: f64,
+    pub(crate) download: f64,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RequestFacts {
@@ -144,6 +151,7 @@ pub(crate) struct RequestFacts {
     pub(crate) request_body: Option<String>,
     pub(crate) response_body: Option<String>,
     pub(crate) socket: Option<SocketFacts>,
+    pub(crate) phases: Option<RequestPhases>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -215,6 +223,8 @@ struct RawRequest {
     request_body: Option<String>,
     response_body: Option<String>,
     socket: Option<SocketFacts>,
+    #[serde(default)]
+    phases: Option<RequestPhases>,
 }
 
 #[derive(Deserialize)]
@@ -295,6 +305,14 @@ fn is_stream(request_type: RequestType) -> bool {
     matches!(request_type, RequestType::Ws | RequestType::Sse)
 }
 
+fn is_span(value: f64) -> bool {
+    value.is_finite() && value >= 0.0
+}
+
+fn phases_of(raw: Option<RequestPhases>) -> Option<RequestPhases> {
+    raw.filter(|phases| is_span(phases.wait) && is_span(phases.download))
+}
+
 fn request_of(raw: RawRequest) -> Option<RequestFacts> {
     if !is_request_id(&raw.id) {
         return None;
@@ -310,6 +328,7 @@ fn request_of(raw: RawRequest) -> Option<RequestFacts> {
         request_body: body_of(raw.request_body),
         response_body: body_of(raw.response_body),
         socket: raw.socket.filter(|_| is_stream(raw.request_type)),
+        phases: phases_of(raw.phases),
     })
 }
 
@@ -623,6 +642,10 @@ mod tests {
                             request_body: Some("{\"cart\":12}".into()),
                             response_body: None,
                             socket: None,
+                            phases: Some(RequestPhases {
+                                wait: 24.5,
+                                download: 6.0,
+                            }),
                         }),
                         error: None,
                     },
@@ -668,6 +691,7 @@ mod tests {
                             "requestBody": "{\"cart\":12}",
                             "responseBody": null,
                             "socket": null,
+                            "phases": { "wait": 24.5, "download": 6.0 },
                         },
                         "error": null,
                     },
@@ -816,6 +840,34 @@ mod tests {
         for name in SENSITIVE_HEADERS {
             assert!(!names.contains(&name), "{name}");
         }
+    }
+
+    #[test]
+    fn keeps_request_phases_only_when_both_spans_are_real() {
+        let mut timed = request(1, "r1");
+        timed["network"]["phases"] = json!({ "wait": 24.5, "download": 6.0 });
+        let phases = only_entry(timed)
+            .and_then(|e| e.network)
+            .and_then(|facts| facts.phases);
+        assert_eq!(
+            phases,
+            Some(RequestPhases {
+                wait: 24.5,
+                download: 6.0
+            })
+        );
+
+        let mut negative = request(2, "r2");
+        negative["network"]["phases"] = json!({ "wait": -1.0, "download": 6.0 });
+        let facts = only_entry(negative)
+            .and_then(|e| e.network)
+            .expect("a request");
+        assert_eq!(facts.phases, None);
+
+        let facts = only_entry(request(3, "r3"))
+            .and_then(|e| e.network)
+            .expect("a request without phases");
+        assert_eq!(facts.phases, None);
     }
 
     #[test]

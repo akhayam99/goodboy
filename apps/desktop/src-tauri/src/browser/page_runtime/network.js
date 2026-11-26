@@ -3,6 +3,8 @@ const MAX_HEADERS = 50;
 const MAX_HEADER_NAME = 100;
 const MAX_HEADER_VALUE = 1000;
 const BODY_BUDGET = 2000000;
+const MAX_WAITING = 100;
+const WAITING_TYPES = { fetch: 'fetch', xmlhttprequest: 'xhr' };
 const SENSITIVE_HEADERS = [
   'authorization',
   'proxy-authorization',
@@ -20,7 +22,9 @@ const ELEMENT_TYPES = { IMG: 'img', SCRIPT: 'script', LINK: 'style', IFRAME: 'do
 const Decoder = window.TextDecoder;
 const reflect = Reflect;
 const protoOf = Object.setPrototypeOf;
+const assign = Object.assign;
 let requestCount = 0;
+const waiting = [];
 
 const pathOf = (address) => {
   try {
@@ -176,8 +180,47 @@ const openRequest = (type, method, address) => {
     start: now(),
     requestHeaders: [],
     requestBody: null,
+    phases: null,
     hasFailed: false,
   };
+};
+
+const absoluteOf = (address) => {
+  try {
+    return new Url(toText(address), here.href).href;
+  } catch {
+    return '';
+  }
+};
+
+const awaitPhases = (request) => {
+  const url = absoluteOf(request.address);
+  if (url === '') {
+    return;
+  }
+  waiting[waiting.length] = { url, request };
+  if (waiting.length > MAX_WAITING) {
+    waiting.shift();
+  }
+};
+
+const roundTenth = (value) => Math.round(value * 10) / 10;
+
+const phasesOf = (item) => {
+  const asked = item.requestStart;
+  const first = item.responseStart;
+  const last = item.responseEnd;
+  if (
+    typeof asked !== 'number' ||
+    typeof first !== 'number' ||
+    typeof last !== 'number' ||
+    asked <= 0 ||
+    first < asked ||
+    last < first
+  ) {
+    return null;
+  }
+  return { wait: roundTenth(first - asked), download: roundTenth(last - first) };
 };
 
 const answerOf = (end, size, responseHeaders, responseBody, socket) => ({
@@ -238,16 +281,14 @@ const saveRequest = (request, status, answer) =>
         id: request.id,
         type: request.type,
         start: request.start,
-        duration:
-          answer.end === null
-            ? null
-            : Math.max(0, Math.round((answer.end - request.start) * 10) / 10),
+        duration: answer.end === null ? null : Math.max(0, roundTenth(answer.end - request.start)),
         size: answer.size,
         requestHeaders: request.requestHeaders,
         responseHeaders: answer.responseHeaders,
         requestBody: request.requestBody,
         responseBody: answer.responseBody,
         socket: answer.socket,
+        phases: request.phases,
       },
       error: null,
     });
@@ -350,6 +391,7 @@ const fetchRequestOf = (input, init) => {
       init != null ? init.body : null,
       headerValueOf(request.requestHeaders, 'content-type'),
     );
+    awaitPhases(request);
   });
   return request;
 };
@@ -442,6 +484,7 @@ if (typeof Request === 'function' && Request.prototype != null) {
         requests.delete(xhr);
         quietly(() => {
           request.start = now();
+          awaitPhases(request);
           request.requestBody = requestBodyOf(
             body,
             headerValueOf(request.requestHeaders, 'content-type'),
@@ -604,15 +647,46 @@ const timingSizeOf = (item) => {
   return typeof item.transferSize === 'number' && item.transferSize > 0 ? item.transferSize : null;
 };
 
+const fillPhases = (item, type) => {
+  const url = toText(item.name);
+  let found = null;
+  for (let index = 0; index < waiting.length; index += 1) {
+    if (waiting[index].url === url && waiting[index].request.type === type) {
+      found = waiting[index].request;
+      waiting.splice(index, 1);
+      break;
+    }
+  }
+  const phases = phasesOf(item);
+  if (found === null || phases === null) {
+    return;
+  }
+  found.phases = phases;
+  const ring = rings.network;
+  for (let index = 0; index < ring.length; index += 1) {
+    const entry = ring[index];
+    if (entry.network.id === found.id) {
+      const network = assign({}, entry.network, { phases });
+      storeRequest(assign({}, entry, { network }));
+      return;
+    }
+  }
+};
+
 const saveTiming = (item) => {
-  const kind = item.initiatorType;
-  if (kind === 'fetch' || kind === 'xmlhttprequest' || kind === 'beacon') {
+  const kind = toText(item.initiatorType);
+  if (kind === 'beacon') {
+    return;
+  }
+  if (Object.prototype.hasOwnProperty.call(WAITING_TYPES, kind)) {
+    fillPhases(item, WAITING_TYPES[kind]);
     return;
   }
   const request = openRequest(typeOfTiming(item), 'GET', item.name);
-  const start = typeof item.startTime === 'number' ? Math.round(item.startTime * 10) / 10 : 0;
+  const start = typeof item.startTime === 'number' ? roundTenth(item.startTime) : 0;
   const duration = typeof item.duration === 'number' ? item.duration : 0;
   request.start = start;
+  request.phases = phasesOf(item);
   saveRequest(
     request,
     timingStatusOf(item),

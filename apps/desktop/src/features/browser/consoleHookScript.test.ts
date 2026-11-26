@@ -63,6 +63,10 @@ type Entry = {
       readonly received: number;
       readonly code: number | null;
     } | null;
+    readonly phases: {
+      readonly wait: number;
+      readonly download: number;
+    } | null;
   } | null;
   readonly error: {
     readonly origin: string;
@@ -658,6 +662,54 @@ describe('the page runtime', () => {
       ['/src/main.tsx', null, 'script', 12, 8, 900],
       ['/assets/app.css', null, 'style', 14, 3, null],
       ['/checkout', null, 'doc', 0, 40, null],
+    ]);
+  });
+
+  it('adds waiting and download time to a static file and to the fetch the timing names', async () => {
+    const tab = page();
+    await tab.window.fetch('/api/cart');
+    await tab.window.fetch('/api/rates');
+
+    tab.time({
+      type: 'resource',
+      items: [
+        {
+          name: 'http://localhost:5173/api/rates',
+          initiatorType: 'fetch',
+          startTime: 20,
+          duration: 50,
+          requestStart: 22,
+          responseStart: 62,
+          responseEnd: 70,
+        },
+        {
+          name: 'http://localhost:5173/src/main.tsx',
+          initiatorType: 'script',
+          startTime: 12,
+          duration: 8,
+          requestStart: 13,
+          responseStart: 18,
+          responseEnd: 20,
+        },
+        {
+          name: 'http://localhost:5173/img/ledger.svg',
+          initiatorType: 'img',
+          startTime: 30,
+          duration: 4,
+          requestStart: 0,
+          responseStart: 0,
+          responseEnd: 34,
+        },
+      ],
+    });
+
+    expect(
+      tab.ofKind({ kind: 'network' }).map((entry) => [entry.text, entry.network?.phases]),
+    ).toEqual([
+      ['/api/cart', null],
+      ['/api/rates', { wait: 40, download: 8 }],
+      ['/src/main.tsx', { wait: 5, download: 2 }],
+      ['/img/ledger.svg', null],
     ]);
   });
 
