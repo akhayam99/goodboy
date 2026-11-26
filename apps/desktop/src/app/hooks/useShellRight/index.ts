@@ -79,6 +79,7 @@ export const useShellRight = ({}: Params): ShellRight => {
     const panels = shellPanelsOf({
       state: { drawer, drawerBack, drawerGrid, currentSessionId, appStudio },
     });
+    const busy = dockBusyKindsOf({ hasTerminalActivity, hasDownPin });
     return {
       columns: panels.tools.map((column) =>
         column.map((panel) => ({
@@ -86,6 +87,7 @@ export const useShellRight = ({}: Params): ShellRight => {
           sizing: DRAWER_KINDS[panel.kind].sizing,
           savedWidth: drawerGrid.widths[panel.kind],
           rowMin: DRAWER_KINDS[panel.kind].rowMin,
+          hasActivity: busy.includes(panel.kind),
           label: dockToolLabelOf({ key: panel.kind }),
         })),
       ),
@@ -94,7 +96,7 @@ export const useShellRight = ({}: Params): ShellRight => {
       foldOrder: dockFoldOrderOf({
         keys: panels.tools.flat().map((panel) => panel.kind),
         used: (drawerGrid ?? EMPTY_DRAWER_GRID).used,
-        busy: dockBusyKindsOf({ hasTerminalActivity, hasDownPin }),
+        busy,
       }),
       splits: (drawerGrid ?? EMPTY_DRAWER_GRID).splits,
       onFocus: focusShellPanel,

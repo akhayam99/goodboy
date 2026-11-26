@@ -47,8 +47,8 @@ export const DrawerDockBox = ({
       data-dock-over-detail={isOverDetail ? '' : undefined}
       style={isOverDetail ? { width: parkedWidth } : undefined}
       className={cn(
-        isOverDetail && 'absolute inset-y-3 right-0 z-20 shadow-xl',
-        'panel-on-rail relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-l-frame border-y border-l',
+        isOverDetail ? 'absolute inset-y-3 right-0 z-20 shadow-xl' : 'relative',
+        'panel-on-rail flex min-h-0 min-w-0 flex-1 overflow-clip rounded-l-frame border-y border-l',
         isFocused ? 'border-focus-ring' : 'border-frame-edge',
         isGrid ? 'border-0 bg-transparent' : 'bg-drawer',
         isFloating && 'pointer-events-auto',

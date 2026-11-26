@@ -303,3 +303,28 @@ describe('the dock on the desk', () => {
     expect(aside().contains(screen.getByRole('toolbar', { name: 'Tools' }))).toBe(true);
   });
 });
+
+describe('a tab with activity', () => {
+  it('carries a dot while another tab of its cell is shown', () => {
+    stubLane({ width: 880 });
+    const spec: DockGridSpec = {
+      columns: [[BROWSER], [{ ...TERMINAL, hasActivity: true }, MONITOR]],
+      focus: 'monitoring',
+      onFocus: vi.fn(),
+      onTurn: vi.fn(),
+    };
+    renderDesk({ spec, detail: 'Implementer' });
+
+    const tabs = screen.getByRole('tablist', { name: 'Panels' });
+    expect(
+      within(tabs)
+        .getByRole('tab', { name: /Terminal/ })
+        .querySelector('[role="img"], [aria-label="Has activity"]'),
+    ).not.toBeNull();
+    expect(
+      within(tabs)
+        .getByRole('tab', { name: /Monitor/ })
+        .querySelector('[aria-label="Has activity"]'),
+    ).toBeNull();
+  });
+});

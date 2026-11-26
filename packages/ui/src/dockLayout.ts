@@ -321,6 +321,11 @@ type FillParams = {
   readonly height: number;
 };
 
+type LaneHeightParams = {
+  readonly lane: Lane;
+  readonly height: number;
+};
+
 type GrowParams = {
   readonly wanted: ReadonlyArray<number>;
   readonly room: number;
@@ -333,12 +338,18 @@ const grownOf = ({ wanted, room }: GrowParams): ReadonlyArray<number> => {
   return scaled.map((width, index) => (index === scaled.length - 1 ? width + rest : width));
 };
 
+const isLaneRowFit = ({ lane, height }: LaneHeightParams): boolean => {
+  const [top, bottom] = lane.panes;
+  if (top === undefined || bottom === undefined) {
+    return true;
+  }
+  const shared = Math.max(0, height - SHELL_GUTTER_PX);
+  const topHeight = Math.round(shared * lane.split);
+  return topHeight >= (top.rowMin ?? 0) && shared - topHeight >= (bottom.rowMin ?? 0);
+};
+
 const isHeightFit = ({ lanes, height }: Pick<FillParams, 'lanes' | 'height'>): boolean =>
-  lanes.every(
-    (lane) =>
-      lane.panes.length < 2 ||
-      sumOf({ values: lane.panes.map((pane) => pane.rowMin ?? 0) }) + SHELL_GUTTER_PX <= height,
-  );
+  lanes.every((lane) => isLaneRowFit({ lane, height }));
 
 const deskFillOf = ({ lanes, room, height }: FillParams): ReadonlyArray<number> | null => {
   const space = Math.max(0, room - SHELL_GUTTER_PX * Math.max(0, lanes.length - 1));

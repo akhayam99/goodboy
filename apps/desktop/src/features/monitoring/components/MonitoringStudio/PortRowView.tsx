@@ -70,10 +70,10 @@ export const PortRowView = ({
         {isLabelShown
           ? (nameSlot ?? <span className="min-w-0 truncate text-muted-foreground">{name}</span>)
           : null}
-        {isNested ? (
-          <span />
-        ) : !isLabelShown && nameSlot !== undefined ? (
+        {!isLabelShown && nameSlot !== undefined ? (
           nameSlot
+        ) : isNested ? (
+          <span />
         ) : (
           <OwnerCell row={row} />
         )}

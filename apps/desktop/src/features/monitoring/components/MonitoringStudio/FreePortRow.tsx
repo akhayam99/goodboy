@@ -44,7 +44,11 @@ export const FreePortRow = ({ row, layer, name, nameSlot }: Props) => {
       <span aria-hidden />
       <span className="tabular-nums">:{row.port}</span>
       {isLabelShown ? (nameSlot ?? <span className="min-w-0 truncate">{name}</span>) : null}
-      <span className="min-w-0 truncate">Free</span>
+      {!isLabelShown && nameSlot !== undefined ? (
+        nameSlot
+      ) : (
+        <span className="min-w-0 truncate">Free</span>
+      )}
       <span className={REST_SPAN[columns]} />
       <PortRowActions target={target} hasStop={false} hasMenu />
     </li>

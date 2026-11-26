@@ -92,6 +92,21 @@ describe('the fold toast', () => {
     expect(openKinds()).toEqual(['browser']);
   });
 
+  it('forgets the Undo once the panel was closed and opened again', async () => {
+    announce();
+    const first = (store.getState().drawerGrid?.columns ?? [])
+      .flat()
+      .find((panel) => panel.kind === 'monitoring');
+    if (first === undefined) {
+      throw new Error('The Monitor is open');
+    }
+    store.getState().closeDrawerEntry({ entry: first });
+    store.getState().openDrawer({ kind: 'monitoring', sessionId: null, payload: null });
+
+    expect(await store.getState().undoLastOperation()).toBe(false);
+    expect(openKinds()).toContain('monitoring');
+  });
+
   it('forgets the Undo once another session owns the grid', async () => {
     announce();
     dockGridOwner.take({ sessionId: null });

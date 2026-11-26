@@ -11,6 +11,7 @@ export type DockGridCell = {
   readonly sizing: DrawerSizing;
   readonly savedWidth?: number;
   readonly rowMin?: number;
+  readonly hasActivity?: boolean;
   readonly label?: string;
 };
 

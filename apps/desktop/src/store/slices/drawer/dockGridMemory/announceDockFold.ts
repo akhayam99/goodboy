@@ -11,18 +11,19 @@ type Params = {
 
 export const announceDockFold = ({ get }: SliceDeps) => {
   return ({ sessionId, opened, message }: Params): void => {
-    const isShown = (): boolean =>
-      (get().drawerGrid ?? EMPTY_DRAWER_GRID).columns.some((column) =>
-        column.some((panel) => panel.kind === opened),
-      );
+    const gridOf = () => get().drawerGrid ?? EMPTY_DRAWER_GRID;
+    const entry = gridOf()
+      .columns.flat()
+      .find((panel) => panel.kind === opened);
+    if (entry === undefined) {
+      return;
+    }
+    const isShown = (): boolean => gridOf().columns.some((column) => column.includes(entry));
     get().undoable({
       message,
       isCurrent: () => dockGridOwner.read() === sessionId && isShown(),
       undo: async () => {
-        const entry = (get().drawerGrid ?? EMPTY_DRAWER_GRID).columns
-          .flat()
-          .find((panel) => panel.kind === opened);
-        if (entry === undefined) {
+        if (!isShown()) {
           return false;
         }
         get().closeDrawerEntry({ entry });
