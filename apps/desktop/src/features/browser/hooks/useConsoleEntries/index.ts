@@ -33,6 +33,7 @@ type ClearParams = {
 };
 
 export type ConsoleEntries = {
+  readonly doc: string | null;
   readonly entries: ReadonlyArray<BrowserConsoleEntry>;
   readonly failure: ConsoleFailure | null;
   readonly clear: (params: ClearParams) => void;
@@ -165,5 +166,5 @@ export const useConsoleEntries = ({ sessionId, liveId, isOpen }: Params): Consol
   );
 
   const shown = liveId === null ? EMPTY_TAB_CONSOLE : (byTab[liveId] ?? EMPTY_TAB_CONSOLE);
-  return { entries: shown.entries, failure: shown.failure, clear };
+  return { doc: shown.doc, entries: shown.entries, failure: shown.failure, clear };
 };

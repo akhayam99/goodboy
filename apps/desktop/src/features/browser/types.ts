@@ -85,6 +85,40 @@ export type BrowserConsoleRead = {
   readonly isHeard: boolean;
 };
 
+export type BrowserPickRect = {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+};
+
+export type BrowserPickedElement = {
+  readonly tag: string;
+  readonly label: string;
+  readonly selector: string;
+  readonly text: string;
+  readonly html: string;
+  readonly isHtmlCut: boolean;
+  readonly styles: ReadonlyArray<{ readonly name: string; readonly value: string }>;
+  readonly component: string | null;
+  readonly source: { readonly path: string; readonly line: number } | null;
+  readonly isSourceSettled: boolean;
+  readonly rect: BrowserPickRect | null;
+  readonly url: string;
+};
+
+export type BrowserPickRead = {
+  readonly doc: string | null;
+  readonly isHeard: boolean;
+  readonly isOn: boolean;
+  readonly isLeft: boolean;
+  readonly round: number;
+  readonly scale: number;
+  readonly picks: ReadonlyArray<BrowserPickedElement>;
+};
+
+export type BrowserPickOp = 'start' | 'stop' | 'read';
+
 export type BrowserPageText = {
   readonly title: string;
   readonly url: string;

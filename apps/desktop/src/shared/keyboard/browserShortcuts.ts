@@ -79,4 +79,12 @@ export const BROWSER_SHORTCUTS = {
     group: 'session',
     scope: 'browser',
   },
+  'browser.pick': {
+    combo: 'cmd+shift+KeyC',
+    offMacCombo: 'ctrl+alt+shift+KeyC',
+    label: 'Select an element on the page',
+    plane: 'session',
+    group: 'session',
+    scope: 'browser',
+  },
 } as const satisfies Record<string, ShortcutEntry>;

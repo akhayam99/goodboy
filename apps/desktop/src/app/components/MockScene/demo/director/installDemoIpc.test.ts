@@ -9,6 +9,8 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
+import { storyIpcAnswer } from '../../scenes/story/storyIpc';
+import { STORY_EXAMPLE_KEY } from '../../scenes/story/storyTasks';
 import { installDemoIpc } from './installDemoIpc';
 
 type Internals = {
@@ -121,5 +123,21 @@ describe('the demo IPC boundary', () => {
     ).resolves.toMatchObject({
       rowsAffected: 1,
     });
+  });
+
+  it('lets a scene validation failure reach the caller while the example key goes through', async () => {
+    Reflect.set(
+      Reflect.get(window, '__TAURI_INTERNALS__'),
+      'invoke',
+      async (command: string, args?: Readonly<Record<string, unknown>>) =>
+        storyIpcAnswer({ command, payload: args }),
+    );
+    const { invoke } = internals();
+    await expect(
+      invoke('linear_validate_connection', { credentialId: 'demo', token: 'lin_api_nope' }),
+    ).rejects.toThrow('Linear did not accept that API key');
+    await expect(
+      invoke('linear_validate_connection', { credentialId: 'demo', token: STORY_EXAMPLE_KEY }),
+    ).resolves.toMatchObject({ email: 'dana@harborline.dev' });
   });
 });

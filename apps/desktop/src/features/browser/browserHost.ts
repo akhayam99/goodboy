@@ -7,6 +7,9 @@ import type {
   BrowserFindOutcome,
   BrowserHistoryState,
   BrowserPageText,
+  BrowserPickOp,
+  BrowserPickRead,
+  BrowserPickRect,
   BrowserTabFacts,
   BrowserTabFavicon,
 } from './types';
@@ -63,6 +66,18 @@ type ConsoleReadParams = TabParams &
     readonly after: number;
   };
 
+type PickParams = TabParams &
+  SessionParams & {
+    readonly op: BrowserPickOp;
+    readonly round: number;
+  };
+
+type SnapshotParams = TabParams &
+  SessionParams & {
+    readonly doc: string;
+    readonly rect: BrowserPickRect;
+  };
+
 type PageKeysParams = {
   readonly combos: ReadonlyArray<string>;
 };
@@ -95,6 +110,12 @@ export const browserHost = {
   consoleRead: ({ tabId, sessionId, doc, after }: ConsoleReadParams) =>
     invokeCommand<BrowserConsoleRead>('browser_console_read', {
       args: { tabId, sessionId, doc, after },
+    }),
+  pick: ({ tabId, sessionId, op, round }: PickParams) =>
+    invokeCommand<BrowserPickRead>('browser_pick', { args: { tabId, sessionId, op, round } }),
+  elementSnapshot: ({ tabId, sessionId, doc, rect }: SnapshotParams) =>
+    invokeCommand<string | null>('browser_element_snapshot', {
+      args: { tabId, sessionId, doc, rect },
     }),
   historyState: ({ tabId }: TabParams) =>
     invokeCommand<BrowserHistoryState | null>('browser_history_state', { args: { tabId } }),

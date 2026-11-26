@@ -239,7 +239,7 @@ struct RawEntry {
     error: Option<RawError>,
 }
 
-fn is_doc_id(doc: &str) -> bool {
+pub(super) fn is_doc_id(doc: &str) -> bool {
     !doc.is_empty()
         && doc.len() <= MAX_DOC_CHARS
         && doc
@@ -411,6 +411,10 @@ fn with_passkey_probe(hook: String) -> String {
 #[cfg(not(target_os = "macos"))]
 fn with_passkey_probe(hook: String) -> String {
     hook
+}
+
+pub(super) fn pick_event_name() -> String {
+    format!("{}:pick", READ_NAME.as_str())
 }
 
 pub(crate) fn tab_script() -> String {
@@ -986,7 +990,7 @@ mod tests {
         let head = "(() => {\n  if (window.top !== window) {\n    return;\n  }\n";
         assert_eq!(RUNTIME, format!("{head}{}}})();\n", modules.concat()));
         assert!(RUNTIME.contains(READ_NAME_SLOT));
-        assert!(include_str!("page_runtime/pick.js").is_empty());
+        assert!(RUNTIME.contains("const PICK_EVENT = READ_EVENT + ':pick';"));
     }
 
     #[test]

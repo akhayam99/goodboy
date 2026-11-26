@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { HeightMotion, PANE_GROUPS_GAP_REM, PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
+import { AskFoot } from '../../ask/components/AskFoot';
 import { useMoveKeys } from '../../hooks/useMoveKeys';
 import { ProjectBlocks } from '../ProjectBlocks';
 import { EmptySessionStart } from './EmptySessionStart';
@@ -92,6 +93,7 @@ export const CentralColumn = ({ session }: Props) => {
       )}
       {isArchived || isEmpty ? null : <FolderCard sessionId={sessionId} />}
       {isEmpty ? null : <OverviewLog session={session} />}
+      {isArchived || isEmpty ? null : <AskFoot session={session} />}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { DEMO_PARK, recordDemoMiss } from './recordDemoMiss';
+import { isDemoIpcRejection } from './demoIpcRejection';
 import { DEMO_IPC_HANDLERS, type DemoIpcArgs } from './demoIpcHandlers';
 
 type Invoke = (command: string, args?: DemoIpcArgs, options?: unknown) => unknown;
@@ -42,6 +43,7 @@ type Parked = {
   readonly args: DemoIpcArgs;
   readonly options: unknown;
   readonly resolve: (answer: unknown) => void;
+  readonly reject: (error: unknown) => void;
 };
 
 type AskParams = {
@@ -99,7 +101,10 @@ export const installDemoIpc = (): void => {
         return { isAnswered: true, answer };
       }
       return { isAnswered: answer === null && !DEMO_IPC_HANDLERS.has(command), answer };
-    } catch {
+    } catch (error) {
+      if (isDemoIpcRejection({ error })) {
+        throw error;
+      }
       return { isAnswered: false, answer: undefined };
     }
   };
@@ -115,8 +120,8 @@ export const installDemoIpc = (): void => {
     if (answer !== DEMO_PARK) {
       return answer;
     }
-    return new Promise((resolve) => {
-      parked.push({ command, args, options, resolve });
+    return new Promise((resolve, reject) => {
+      parked.push({ command, args, options, resolve, reject });
     });
   }) satisfies Invoke;
 
@@ -130,6 +135,13 @@ export const installDemoIpc = (): void => {
           }
           parked.splice(parked.indexOf(call), 1);
           call.resolve(reply.answer);
+        },
+        (error: unknown) => {
+          if (!parked.includes(call)) {
+            return;
+          }
+          parked.splice(parked.indexOf(call), 1);
+          call.reject(error);
         },
       );
     }

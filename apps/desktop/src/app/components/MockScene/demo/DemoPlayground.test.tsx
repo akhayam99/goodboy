@@ -242,8 +242,8 @@ describe('demo playground', () => {
 
   it('opens the first group on a fresh visit, with its steps listed and the other groups held back', () => {
     render(<DemoPlayground />);
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
-    expect(visibleFrame().getAttribute('src')).toContain('scene=onboarding');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your work');
+    expect(visibleFrame().getAttribute('src')).toContain('scene=story-bring');
     expect(visibleFrame().getAttribute('src')).toContain('theme=dark');
     const steps = within(railOf()).getByRole('list', { name: 'Steps in this group' });
     expect(
@@ -276,12 +276,12 @@ describe('demo playground', () => {
   it('falls back to the first group when the hash names a group that is still locked', () => {
     window.history.replaceState(null, '', '/?scene=demo#ship');
     render(<DemoPlayground />);
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your work');
     expect(window.location.hash).toBe('#bring');
     window.history.replaceState(null, '', '/?scene=demo#get');
     cleanup();
     render(<DemoPlayground />);
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your work');
     expect(window.location.hash).toBe('#bring');
   });
 
@@ -309,8 +309,8 @@ describe('demo playground', () => {
     seedProgress({ ids: ['bring'] });
     window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
-    fireEvent.click(rowOf({ title: 'Bring your repositories' }));
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    fireEvent.click(rowOf({ title: 'Bring your work' }));
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your work');
     expect(window.location.hash).toBe('#bring');
   });
 
@@ -671,9 +671,25 @@ describe('demo playground', () => {
     const first = chapterOf({ id: 'bring' }).hints[0];
     hint({ frame, hintId: first?.id ?? '' });
     const note = screen.getByRole('note');
-    expect(note.textContent).toContain(first?.copy ?? '');
+    expect(note.textContent).toContain(first?.offer?.title ?? first?.copy ?? '');
     expect(screen.getByTestId('demo-coach-mark').contains(note)).toBe(true);
     expect(within(note).queryByRole('button', { name: 'Skip hint' })).toBeNull();
+  });
+
+  it('lets the visitor press the demo button of the first step once per click', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
+    report({ frame, type: 'ready' });
+    const first = chapterOf({ id: 'bring' }).hints[0];
+    hint({ frame, hintId: first?.id ?? '' });
+    fireEvent.click(screen.getByRole('button', { name: 'Paste example key' }));
+    expect(post).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: 'offer', hintId: first?.id, generation: 0 }),
+      window.location.origin,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Paste example key' }));
+    expect(post.mock.calls.filter(([message]) => message?.type === 'offer')).toHaveLength(2);
   });
 
   it('keeps the coach when the visitor clicks a control that opens nothing new, as the composer', () => {
@@ -685,17 +701,30 @@ describe('demo playground', () => {
     expect(screen.queryByRole('note')).not.toBeNull();
   });
 
-  it('lifts the coach once the visitor presses the control, so it never covers what opens', () => {
+  it('keeps the coach of a step with an offer when the visitor presses its field', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
     const first = chapterOf({ id: 'bring' }).hints[0]?.id ?? '';
     hint({ frame, hintId: first });
-    expect(screen.queryByRole('note')).not.toBeNull();
     hint({ frame, hintId: first, isClicked: true, isPressed: true });
+    screen.getByRole('button', { name: 'Paste example key' });
+    expect(instruction()).toBe(plain(chapterOf({ id: 'bring' }).hints[0]?.instruction));
+  });
+
+  it('lifts the coach once the visitor presses the control, so it never covers what opens', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const [firstHint, second] = chapterOf({ id: 'bring' }).hints;
+    tried({ frame, hintId: firstHint?.id ?? '' });
+    elapse({ ms: firstHint === undefined ? RESULT_DWELL_MS : dwellOf({ hint: firstHint }) });
+    hint({ frame, hintId: second?.id ?? '' });
+    expect(screen.queryByRole('note')).not.toBeNull();
+    hint({ frame, hintId: second?.id ?? '', isClicked: true, isPressed: true });
     expect(screen.queryByRole('note')).toBeNull();
     expect(screen.queryByTestId('demo-spotlight')).toBeNull();
-    expect(instruction()).toBe(plain(chapterOf({ id: 'bring' }).hints[0]?.instruction));
+    expect(instruction()).toBe(plain(second?.instruction));
   });
 
   describe('while the pressed step is running', () => {
@@ -720,7 +749,7 @@ describe('demo playground', () => {
     };
 
     it('says what the work is doing once the visitor has pressed the control', () => {
-      const frame = openDirection({ doneCount: 3 });
+      const frame = openDirection({ doneCount: 1 });
       hint({ frame, hintId: answerStep?.id ?? '' });
       expect(instruction()).toBe(plain(answerStep?.instruction));
       hint({ frame, hintId: answerStep?.id ?? '', isClicked: true, isPressed: true });
@@ -730,7 +759,7 @@ describe('demo playground', () => {
     });
 
     it('shows the working pill with the short progress line while the step runs, never a stale slot', () => {
-      const frame = openDirection({ doneCount: 3 });
+      const frame = openDirection({ doneCount: 1 });
       hint({ frame, hintId: answerStep?.id ?? '' });
       expect(screen.queryByTestId('demo-working-pill')).toBeNull();
       hint({
@@ -751,7 +780,7 @@ describe('demo playground', () => {
     });
 
     it('drops the result of the earlier step as soon as the next control is pressed', () => {
-      const frame = openDirection({ doneCount: 2 });
+      const frame = openDirection({ doneCount: 0 });
       tried({ frame, hintId: choose?.id ?? '' });
       expect(instruction()).toBe(plain(choose?.result));
       hint({ frame, hintId: answerStep?.id ?? '', isClicked: true, isPressed: true });
@@ -786,25 +815,14 @@ describe('demo playground', () => {
   });
 
   it('quiets only the secondary chrome while the spotlight is on', () => {
-    const agentHints = chapterOf({ id: 'direction' }).hints;
-    window.sessionStorage.setItem(
-      HINT_PROGRESS_KEY,
-      JSON.stringify({
-        bring: { tried: idsOf({ id: 'bring' }), epoch: 0 },
-        direction: { tried: [], epoch: 0 },
-      }),
-    );
-    window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
     const title = screen.getByRole('heading', { level: 1 });
     const back = screen.getAllByRole('link', { name: /goodboy-ai.dev/ });
-    hint({ frame, hintId: agentHints[0]?.id ?? '' });
+    hint({ frame, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
     expect(
-      rowOf({ title: 'Bring your repositories' })
-        .closest('[data-quiet]')
-        ?.getAttribute('data-quiet'),
+      rowOf({ title: 'Set the direction' }).closest('[data-quiet]')?.getAttribute('data-quiet'),
     ).toBe('true');
     expect(back.some((link) => link.closest('[data-quiet="true"]') !== null)).toBe(true);
     for (const element of [
@@ -815,7 +833,7 @@ describe('demo playground', () => {
       expect(element.closest('[data-quiet="true"]')).toBeNull();
     }
     expect(
-      rowOf({ title: 'Set the direction' }).closest('[data-quiet]')?.getAttribute('data-quiet'),
+      rowOf({ title: 'Bring your work' }).closest('[data-quiet]')?.getAttribute('data-quiet'),
     ).toBe('false');
     fireEvent.keyDown(playgroundRoot(), { key: 'Escape' });
     expect(document.querySelector('[data-quiet="true"]')).toBeNull();
@@ -949,14 +967,14 @@ describe('demo playground', () => {
     window.sessionStorage.setItem(
       HINT_PROGRESS_KEY,
       JSON.stringify({
-        direction: { tried: idsOf({ id: 'direction' }).slice(0, 2), epoch: 3 },
+        direction: { tried: idsOf({ id: 'direction' }).slice(0, 1), epoch: 3 },
         bring: { tried: idsOf({ id: 'bring' }), epoch: 0 },
       }),
     );
     window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
-    expect(rowOf({ title: 'Bring your repositories' }).textContent).toContain(
+    expect(rowOf({ title: 'Bring your work' }).textContent).toContain(
       `${chapterOf({ id: 'bring' }).hints.length} of ${chapterOf({ id: 'bring' }).hints.length}`,
     );
     expect(JSON.parse(window.sessionStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
@@ -988,7 +1006,7 @@ describe('demo playground', () => {
     expect(stepStates().filter((state) => state === 'done')).toHaveLength(2);
     fireEvent.keyDown(playgroundRoot(), { key: 'r' });
     expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
-    expect(rowOf({ title: 'Bring your repositories' }).textContent).toContain(
+    expect(rowOf({ title: 'Bring your work' }).textContent).toContain(
       `${chapterOf({ id: 'bring' }).hints.length} of ${chapterOf({ id: 'bring' }).hints.length}`,
     );
   });
@@ -998,12 +1016,12 @@ describe('demo playground', () => {
     window.history.replaceState(null, '', '/?scene=demo#guide');
     render(<DemoPlayground />);
     fireEvent.click(screen.getByRole('button', { name: 'Restart' }));
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your work');
     expect(window.location.hash).toBe('#bring');
     expect(stepStates()[0]).toBe('current');
     expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
     expect(rowOf({ title: 'Guide the work' }).getAttribute('data-access')).toBe('locked');
-    expect(rowOf({ title: 'Bring your repositories' }).textContent).toContain(
+    expect(rowOf({ title: 'Bring your work' }).textContent).toContain(
       `0 of ${chapterOf({ id: 'bring' }).hints.length}`,
     );
   });
