@@ -313,7 +313,9 @@ export const dockDropZonesOf = ({
   const edges = dockZonesOf({ shared, dock });
   const taken = new Set(edges.map((zone) => zoneShapeOf({ zone })));
   const lead = dockGroupLeadOf({ groups, key: dragKey });
-  const ordered = [...panes].sort((a, b) => a.rect.x - b.rect.x || a.rect.y - b.rect.y);
+  const ordered = [...panes].sort((a, b) =>
+    a.rect.x === b.rect.x ? a.rect.y - b.rect.y : a.rect.x - b.rect.x,
+  );
   const inPanes = ordered
     .flatMap((pane) => paneZonesOf({ shared, pane, isOwn: unit === 'panel' && lead === pane.key }))
     .filter((zone): zone is DockDropZone => zone !== null)
