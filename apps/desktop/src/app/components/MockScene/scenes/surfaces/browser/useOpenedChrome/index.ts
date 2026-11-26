@@ -27,6 +27,7 @@ const SELECTORS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   pick: `${PANE} button[aria-label="Select an element"]`,
   'console-right': `${PANE} button[aria-label="Console"]`,
   'network-detail': `${PANE} button[aria-label="Console"]`,
+  errors: `${PANE} button[data-browser-errors]`,
 };
 
 const TOOLS = `${PANE} section[aria-label="Console"]`;
@@ -35,12 +36,13 @@ const OPENED: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   console: TOOLS,
   'console-right': TOOLS,
   'network-detail': TOOLS,
+  errors: TOOLS,
   pick: `${PANE} [aria-label="Note for the picked element"]`,
 };
 
 const NEXT_CLICKS: Readonly<Partial<Record<BrowserPaneSceneState, ReadonlyArray<string>>>> = {
   'network-detail': [
-    `${TOOLS} [role="tablist"][aria-label="Console or Network"] [role="tab"][aria-selected="false"]`,
+    `${TOOLS} [role="tablist"][aria-label="Tools"] [role="tab"][aria-selected="false"]`,
     `${TOOLS} button[aria-label="error: /api/orders/confirm"]`,
   ],
 };

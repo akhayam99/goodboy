@@ -5,6 +5,7 @@ import {
 } from '../../../../../../features/browser/browserToolsDockPref';
 import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
 import type {
+  BrowserConsoleEntry,
   BrowserConsoleRead,
   BrowserPickRead,
   BrowserRequestFacts,
@@ -15,6 +16,7 @@ import type { BrowserTab, DevicePresetId } from '../../../../../../store/slices/
 import type { BrowserVisit } from '../../../../../../store/slices/browser-visits/types';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
+import { sceneClock } from '../../../sceneClock';
 
 export type BrowserPaneSceneState =
   | 'pane'
@@ -37,7 +39,8 @@ export type BrowserPaneSceneState =
   | 'console'
   | 'console-right'
   | 'network-detail'
-  | 'pick';
+  | 'pick'
+  | 'errors';
 
 const PICK_READ: BrowserPickRead = {
   doc: 'mockload',
@@ -76,6 +79,7 @@ const CONSOLE_STATES: ReadonlyArray<BrowserPaneSceneState> = [
   'console',
   'console-right',
   'network-detail',
+  'errors',
 ];
 
 const DOCK_SIDE_OF: Readonly<Partial<Record<BrowserPaneSceneState, BrowserToolsSide>>> = {
@@ -186,6 +190,93 @@ const CONSOLE_READ: BrowserConsoleRead = {
   ],
 };
 
+const RETRY_STACK = [
+  'TypeError: retry is not a function',
+  '    at chargeCard (http://localhost:5173/src/checkout/retry.ts?t=1764075731000:214:9)',
+  '    at onPay (http://localhost:5173/src/checkout/PayButton.tsx:51:5)',
+  '    at dispatchEvent (http://localhost:5173/node_modules/.vite/deps/react-dom.js?v=4f2a:4213:14)',
+].join('\n');
+
+const TIMEOUT_STACK = [
+  'Error: Timeout after 8000 ms',
+  '    at waitForCharge (http://localhost:5173/src/lib/poll.ts:31:11)',
+  '    at onPay (http://localhost:5173/src/checkout/PayButton.tsx:55:7)',
+].join('\n');
+
+const PAY_AT = sceneClock({ anchor: '2026-11-25T13:03:00.000Z' }).ms({
+  at: '2026-11-25T13:02:11.000Z',
+});
+
+type RetryParams = {
+  readonly seq: number;
+  readonly at: number;
+};
+
+const retryEntryOf = ({ seq, at }: RetryParams): BrowserConsoleEntry => ({
+  seq,
+  kind: 'error',
+  level: 'error',
+  text: 'TypeError: retry is not a function',
+  source: 'retry.ts:214',
+  method: null,
+  status: null,
+  network: null,
+  error: { origin: 'uncaught', stack: RETRY_STACK, requestId: null, at },
+});
+
+const ERRORS_READ: BrowserConsoleRead = {
+  doc: 'mockload',
+  watermark: 0,
+  isHeard: true,
+  entries: [
+    retryEntryOf({ seq: 1, at: PAY_AT }),
+    retryEntryOf({ seq: 2, at: PAY_AT + 2_000 }),
+    retryEntryOf({ seq: 3, at: PAY_AT + 5_000 }),
+    {
+      seq: 4,
+      kind: 'network',
+      level: 'error',
+      text: '/api/charge',
+      source: null,
+      method: 'POST',
+      status: 500,
+      network: {
+        ...requestFactsOf({ id: 'mock-request-charge', duration: 380, size: 38 }),
+        responseBody: '{"error":"idempotency key reused"}',
+      },
+      error: null,
+    },
+    {
+      seq: 5,
+      kind: 'error',
+      level: 'error',
+      text: 'POST /api/charge 500',
+      source: null,
+      method: null,
+      status: null,
+      network: null,
+      error: {
+        origin: 'request',
+        stack: null,
+        requestId: 'mock-request-charge',
+        at: PAY_AT + 8_000,
+      },
+    },
+    retryEntryOf({ seq: 6, at: PAY_AT + 8_000 }),
+    {
+      seq: 7,
+      kind: 'error',
+      level: 'error',
+      text: 'Unhandled rejection: Timeout after 8000 ms',
+      source: 'poll.ts:31',
+      method: null,
+      status: null,
+      network: null,
+      error: { origin: 'rejection', stack: TIMEOUT_STACK, requestId: null, at: PAY_AT + 16_000 },
+    },
+  ],
+};
+
 const UNHEARD_READ: BrowserConsoleRead = { doc: null, entries: [], watermark: 0, isHeard: false };
 
 const DEVICE_PRESETS_OF: Readonly<
@@ -252,10 +343,11 @@ const consoleReadOf = ({ state, payload }: ConsoleReadParams): BrowserConsoleRea
   if (!CONSOLE_STATES.includes(state)) {
     return UNHEARD_READ;
   }
-  if (fieldOf({ payload, field: 'doc' }) === CONSOLE_READ.doc) {
-    return { ...CONSOLE_READ, entries: [] };
+  const read = state === 'errors' ? ERRORS_READ : CONSOLE_READ;
+  if (fieldOf({ payload, field: 'doc' }) === read.doc) {
+    return { ...read, entries: [] };
   }
-  return CONSOLE_READ;
+  return read;
 };
 
 const isProjectOwner = ({ payload }: PayloadParams): boolean => {

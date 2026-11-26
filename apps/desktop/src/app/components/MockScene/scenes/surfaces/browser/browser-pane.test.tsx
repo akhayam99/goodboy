@@ -79,6 +79,8 @@ describe('the browser pane scenes', () => {
       'browser-console-dark',
       'browser-console-right',
       'browser-console-right-dark',
+      'browser-errors',
+      'browser-errors-dark',
       'browser-handoff',
       'browser-handoff-dark',
       'browser-network-detail',
@@ -197,6 +199,23 @@ describe('the browser pane scenes', () => {
     expect(
       screen.getByRole('button', { name: 'Select an element' }).getAttribute('aria-pressed'),
     ).toBe('true');
+  });
+
+  it('opens the errors from the red counter, the repeated one grouped and expanded', async () => {
+    mount({ id: 'browser-errors' });
+
+    const region = await screen.findByRole('region', { name: 'Console' }, WAIT);
+    const tab = await within(region).findByRole('tab', { name: /Errors/ }, WAIT);
+    expect(tab.getAttribute('aria-selected')).toBe('true');
+    expect(tab.textContent).toBe('Errors6');
+    screen.getByRole('button', { name: 'Show 6 errors' });
+    const list = within(region).getByRole('list', { name: 'Errors' });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(3);
+    const stack = within(region).getByRole('group', { name: 'Stack' });
+    within(stack).getByText(
+      /^First at \d\d:\d\d:\d\d, last at \d\d:\d\d:\d\d\. Uncaught exception\.$/,
+    );
+    within(region).getByRole('button', { name: /^Send all to / });
   });
 
   it('docks the tools right of the page when the pane chose the right', async () => {
