@@ -246,6 +246,27 @@ describe('the dock on the desk', () => {
     expect(browser?.querySelector('[data-dock-drag-source]')).not.toBeNull();
   });
 
+  it('lays the Browser over the detail when the lane holds only one of them, and squeezes neither', () => {
+    stubLane({ width: 800 });
+    const { spec } = specOf({ columns: [[BROWSER]], focus: 'browser' });
+    renderDesk({ spec, detail: 'Implementer' });
+
+    const over = document.querySelector<HTMLElement>('[data-dock-over-detail]');
+    expect(over).not.toBeNull();
+    expect(Number.parseFloat(over?.style.width ?? '0')).toBeGreaterThanOrEqual(480);
+    expect(
+      Number.parseFloat(aside().style.getPropertyValue(DRAWER_PANEL_VARS.detail)),
+    ).toBeGreaterThanOrEqual(384);
+  });
+
+  it('keeps the grid beside the detail while the lane holds both', () => {
+    stubLane({ width: 900 });
+    const { spec } = specOf({ columns: [[BROWSER]], focus: 'browser' });
+    renderDesk({ spec, detail: 'Implementer' });
+
+    expect(document.querySelector('[data-dock-over-detail]')).toBeNull();
+  });
+
   it('offers no detail resize handle while the grid fills the lane', () => {
     stubLane({ width: LANE.width });
     const { spec } = specOf({ columns: [[BROWSER], [TERMINAL]], focus: 'browser' });

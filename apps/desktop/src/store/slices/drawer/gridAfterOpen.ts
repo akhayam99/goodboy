@@ -64,7 +64,17 @@ const lowerColumnOf = ({ columns }: ColumnsParams): number =>
     .reduce<Candidate | null>((pick, candidate) => roomierOf({ pick, candidate }), null)?.index ??
   -1;
 
+const isRowColumn = ({ column }: ColumnParams): boolean =>
+  column.every((panel) => DRAWER_KINDS[panel.kind].place === 'row');
+
+const rowColumnOf = ({ columns }: ColumnsParams): number =>
+  columns.findIndex((column) => isRowColumn({ column }) && column.length < DOCK_GRID_CAP.rows);
+
 const placed = ({ columns, entry }: ColumnsParams & Pick<Params, 'entry'>): Columns => {
+  const shared = DRAWER_KINDS[entry.kind].place === 'row' ? rowColumnOf({ columns }) : -1;
+  if (shared >= 0) {
+    return columns.map((column, index) => (index === shared ? [...column, entry] : column));
+  }
   if (columns.length < DOCK_GRID_CAP.columns) {
     return [...columns, [entry]];
   }

@@ -41,6 +41,35 @@ type KindsParams = {
 const kindsOf = ({ grid }: KindsParams): ReadonlyArray<ReadonlyArray<string>> =>
   grid.columns.map((column) => column.map((panel) => panel.kind));
 
+describe('the natural place of each kind', () => {
+  it('stacks the row kinds in one tool column', () => {
+    const grid = opened({ entries: [SCRIPTS, MONITORING] });
+
+    expect(kindsOf({ grid })).toEqual([['scripts', 'monitoring']]);
+  });
+
+  it('keeps the tool column beside the Terminal, and the Browser joins the Terminal at the cap', () => {
+    const grid = opened({ entries: [SCRIPTS, TERMINAL, MONITORING, BROWSER] });
+
+    expect(kindsOf({ grid })).toEqual([
+      ['scripts', 'monitoring'],
+      ['terminal', 'browser'],
+    ]);
+  });
+
+  it('keeps a row kind off a column that holds a Terminal or a Browser while a column is free', () => {
+    const grid = opened({ entries: [TERMINAL, MONITORING] });
+
+    expect(kindsOf({ grid })).toEqual([['terminal'], ['monitoring']]);
+  });
+
+  it('puts a row kind under the roomier column once the columns are full', () => {
+    const grid = opened({ entries: [BROWSER, TERMINAL, MONITORING] });
+
+    expect(kindsOf({ grid })).toEqual([['browser'], ['terminal', 'monitoring']]);
+  });
+});
+
 describe('the dock grid', () => {
   it('opens the second tool in a new column next to the rail', () => {
     const grid = opened({ entries: [BROWSER, TERMINAL] });

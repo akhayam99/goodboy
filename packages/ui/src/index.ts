@@ -8,6 +8,8 @@ export { DOCK_FOCUS_DETAIL, DOCK_FOCUS_PAGE } from './dockGridSpec';
 export { DockCellContext } from './dockCellContext';
 export type { DockGridCell, DockGridMove, DockGridSpec, DockGridSplit } from './dockGridSpec';
 export { dockSplitKeyOf } from './dockSplitKeyOf';
+export { dockFoldOrderOf } from './dockFoldOrderOf';
+export type { DockFold, DockFolded } from './useDockFoldReport';
 export { dockColumnsAfterMove } from './dockColumnsAfterMove';
 export type { DockMoveTarget } from './dockMoveTarget';
 export { dockFitProbe } from './dockFitProbe';

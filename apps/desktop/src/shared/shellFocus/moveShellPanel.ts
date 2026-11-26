@@ -1,13 +1,11 @@
 import type { DockGridMove } from '@goodboy/ui';
 import { useAppStore } from '../../store';
-import type { WorkspaceToolKind } from '../../store/slices/drawer/state';
+import { toolKindOf } from './toolKindOf';
 
 type Params = DockGridMove;
 
-const TOOL_KINDS: ReadonlyArray<WorkspaceToolKind> = ['terminal', 'browser', 'monitoring'];
-
 export const moveShellPanel = ({ key, target }: Params): void => {
-  const kind = TOOL_KINDS.find((known) => known === key);
+  const kind = toolKindOf({ key });
   if (kind === undefined) {
     return;
   }
