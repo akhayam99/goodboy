@@ -4,7 +4,9 @@ import { STORY_SESSION_ID } from '../../scenes/story/storyWorld';
 import { autoSceneOf } from '../../scenes/u24/autoSceneSeed';
 import { addAgent } from './addAgent';
 import { appendTurnEvents } from './appendTurnEvents';
+import { storySceneViewOf } from './applyAutoScene';
 import { castAutoScene } from './castAutoScene';
+import { followAgent } from './followAgent';
 import type { DemoCue } from './directorTypes';
 import { eventCue } from './eventCue';
 import { finishAgentTurn } from './finishAgentTurn';
@@ -28,6 +30,7 @@ type ToolParams = {
 
 type Params = {
   readonly atMs: number;
+  readonly from: AgentId;
   readonly agentId: AgentId;
   readonly runId: ProviderRunId;
   readonly task: string;
@@ -53,6 +56,7 @@ const upsertOf = ({ delegations, next }: UpsertParams): ReadonlyArray<AutoDelega
 
 export const storyHelperCues = ({
   atMs,
+  from,
   agentId,
   runId,
   task,
@@ -61,10 +65,13 @@ export const storyHelperCues = ({
   edits,
 }: Params): Result => {
   const working = castAutoScene({ scene: autoSceneOf({ state: 'working' }) });
-  const finished = castAutoScene({ scene: autoSceneOf({ state: 'done' }) });
+  const finished = storySceneViewOf({
+    scene: castAutoScene({ scene: autoSceneOf({ state: 'done' }) }),
+    revision: 2,
+  });
   const agent = working.agents.find((entry) => entry.id === agentId);
   const running = working.view.delegations.find((entry) => entry.childAgentId === agentId);
-  const settled = finished.view.delegations.find((entry) => entry.childAgentId === agentId);
+  const settled = finished.delegations.find((entry) => entry.childAgentId === agentId);
   const noteAt = atMs + THINK_MS;
   const toolAt = textCuesEndMs({ atMs: noteAt, text: note }) + TOOL_GAP_MS;
   const editAt = toolAt + TOOL_MS + EDIT_GAP_MS;
@@ -92,6 +99,7 @@ export const storyHelperCues = ({
           events: [{ kind: 'user_text', runId, text: task, at }],
         });
         startAgentTurn({ store, sessionId: STORY_SESSION_ID, agentId, runId, at });
+        followAgent({ store, from, to: agentId });
       },
     },
     ...textCues({ atMs: noteAt, agentId, runId, text: note }),

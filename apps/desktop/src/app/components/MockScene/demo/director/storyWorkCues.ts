@@ -8,6 +8,7 @@ import { AUTO_STORY } from './autoStory';
 import { castAutoScene } from './castAutoScene';
 import type { DemoCue } from './directorTypes';
 import { finishAgentTurn } from './finishAgentTurn';
+import { followAgent } from './followAgent';
 import { patchAutoView } from './patchAutoView';
 import { startAgentTurn } from './startAgentTurn';
 import { storyHelperCues } from './storyHelperCues';
@@ -40,6 +41,7 @@ export const storyWorkCues = ({ rootRun }: Params): ReadonlyArray<DemoCue> => {
   });
   const implementer = storyHelperCues({
     atMs: textCuesEndMs({ atMs: LEAD_AT_MS, text: AUTO_STORY.third }) + HELPER_GAP_MS,
+    from: STORY_ROOT_ID,
     agentId: IMPLEMENTER_ID,
     runId: implementerRun,
     task: AUTO_STORY.implementerTask,
@@ -49,6 +51,7 @@ export const storyWorkCues = ({ rootRun }: Params): ReadonlyArray<DemoCue> => {
   });
   const tester = storyHelperCues({
     atMs: implementer.endMs + HELPER_GAP_MS,
+    from: IMPLEMENTER_ID,
     agentId: TESTER_ID,
     runId: runOf({ label: 'tester' }),
     task: AUTO_STORY.testerTask,
@@ -95,6 +98,7 @@ export const storyWorkCues = ({ rootRun }: Params): ReadonlyArray<DemoCue> => {
           runId: finalRun,
           at,
         });
+        followAgent({ store, from: TESTER_ID, to: STORY_ROOT_ID });
       },
     },
     ...textCues({

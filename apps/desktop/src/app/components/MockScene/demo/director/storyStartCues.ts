@@ -1,4 +1,3 @@
-import { agentPlace } from '../../../../../store';
 import { STORY_PLANNER } from '../../scenes/story/storyContent';
 import {
   STORY_BRIEF,
@@ -16,8 +15,10 @@ import { AUTO_STORY } from './autoStory';
 import { castAutoScene } from './castAutoScene';
 import type { DemoCue } from './directorTypes';
 import { finishAgentTurn } from './finishAgentTurn';
+import { followAgent } from './followAgent';
 import { idleAgentTurn } from './idleAgentTurn';
 import { patchAutoView } from './patchAutoView';
+import { patchDelegationState } from './patchDelegationState';
 import { startAgentTurn } from './startAgentTurn';
 import { storyToolCues } from './storyToolCues';
 import { textCues } from './textCues';
@@ -118,15 +119,13 @@ export const storyStartCues = (): ReadonlyArray<DemoCue> => {
           runId: STORY_PLANNER_RUN,
           at,
         });
-        const state = store.getState();
-        if (
-          state.currentSessionId === STORY_SESSION_ID &&
-          state.selectedAgentId[STORY_SESSION_ID] === STORY_ROOT_ID
-        ) {
-          state.navigate({
-            to: agentPlace({ sessionId: STORY_SESSION_ID, agentId: STORY_PLANNER_ID }),
-          });
-        }
+        patchDelegationState({
+          store,
+          sessionId: STORY_SESSION_ID,
+          childAgentId: STORY_PLANNER_ID,
+          state: 'running',
+        });
+        followAgent({ store, from: STORY_ROOT_ID, to: STORY_PLANNER_ID });
       },
     },
     ...storyToolCues({
@@ -157,6 +156,12 @@ export const storyStartCues = (): ReadonlyArray<DemoCue> => {
           agentId: STORY_PLANNER_ID,
           at,
           isViewed: true,
+        });
+        patchDelegationState({
+          store,
+          sessionId: STORY_SESSION_ID,
+          childAgentId: STORY_PLANNER_ID,
+          state: 'paused',
         });
         store.setState((current) => ({
           sessionOpenQuestions: {

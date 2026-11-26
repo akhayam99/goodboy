@@ -224,7 +224,12 @@ const seedSession = ({
         {
           ...scene.view,
           tree: { ...scene.view.tree, turnsUsed: 1 },
-          delegations: hasDelegation ? scene.view.delegations : [],
+          delegations: hasDelegation
+            ? scene.view.delegations.map((delegation) => ({
+                ...delegation,
+                state: 'paused' as const,
+              }))
+            : [],
           artifacts: [],
         },
       ],

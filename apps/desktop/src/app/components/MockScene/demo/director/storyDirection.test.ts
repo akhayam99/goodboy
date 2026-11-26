@@ -80,6 +80,11 @@ const textOf = ({ events }: { readonly events: ReadonlyArray<TurnEvent> }): stri
 const agentNames = (): ReadonlyArray<string> =>
   (store.getState().sessionPhaseRuns[STORY_SESSION_ID] ?? []).map((agent) => agent.name);
 
+const plannerDelegation = () =>
+  (store.getState().autoTreeViews[STORY_SESSION_ID] ?? [])
+    .flatMap((view) => view.delegations)
+    .find((entry) => entry.childAgentId === STORY_PLANNER_ID);
+
 const openQuestions = () => store.getState().sessionOpenQuestions[STORY_SESSION_ID] ?? [];
 
 const turnKind = ({ agentId }: { readonly agentId: AgentId }) =>
@@ -114,12 +119,14 @@ describe('starting the story workflow', () => {
     expect(agentNames()).toEqual(['Lead']);
     playTo(3000);
     expect(agentNames()).toEqual(['Lead', 'Planner']);
+    expect(plannerDelegation()?.state).toBe('starting');
     expect(turnKind({ agentId: STORY_ROOT_ID })).toBe('idle');
     expect(plannerEvents()).toHaveLength(0);
     playTo(3400);
     expect(plannerEvents().map((event) => event.kind)).toEqual(['user_text']);
     expect(turnKind({ agentId: STORY_PLANNER_ID })).toBe('running');
     expect(store.getState().selectedAgentId[STORY_SESSION_ID]).toBe(STORY_PLANNER_ID);
+    expect(plannerDelegation()?.state).toBe('running');
     playTo(4500);
     expect(plannerEvents().map((event) => event.kind)).toEqual(['user_text']);
     playTo(4600);
@@ -154,6 +161,7 @@ describe('starting the story workflow', () => {
       (agent) => agent.id === STORY_PLANNER_ID,
     );
     expect(planner?.status).toBe('completed');
+    expect(plannerDelegation()?.state).toBe('paused');
   });
 
   it('stops playing when the visitor leaves the run', async () => {

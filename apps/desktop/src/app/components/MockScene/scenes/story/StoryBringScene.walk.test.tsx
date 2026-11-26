@@ -158,6 +158,12 @@ describe('walking the bring your work group', () => {
     expect(tried()).not.toContain('bring-start');
     await waitFor(() => expect(isAsked()).toBe(true), { timeout: 12000 });
     await found({ selector: '[data-oq-anchor] button[role="radio"]' });
+    expect(store.getState().agentTurnState[STORY_PLANNER_ID]?.kind).toBe('idle');
+    expect(
+      (store.getState().autoTreeViews[STORY_SESSION_ID] ?? [])
+        .flatMap((view) => view.delegations)
+        .find((entry) => entry.childAgentId === STORY_PLANNER_ID)?.state,
+    ).toBe('paused');
     await waitFor(() => expect(tried()).toEqual(BRING_HINTS.map((hint) => hint.id)), {
       timeout: 8000,
     });

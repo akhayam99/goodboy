@@ -159,7 +159,10 @@ describe('approving the revised plan', () => {
     });
     expect(agentNames()).toEqual(['Lead', 'Planner']);
 
+    const selected = () => store.getState().selectedAgentId[STORY_SESSION_ID];
+    expect(selected()).toBe(STORY_ROOT_ID);
     const implementerStarted = reach({ isReached: () => agentNames().includes('Implementer') });
+    expect(selected()).toBe(IMPLEMENTER_ID);
     expect(agentNames()).not.toContain('Tester');
     expect(turnOf({ agentId: IMPLEMENTER_ID })).toBe('running');
     expect(eventsOf({ agentId: IMPLEMENTER_ID }).map((event) => event.kind)).toEqual(['user_text']);
@@ -179,7 +182,11 @@ describe('approving the revised plan', () => {
     });
     expect(agentNames()).not.toContain('Tester');
 
+    expect(JSON.stringify(delegationOf({ agentId: IMPLEMENTER_ID })?.result)).not.toContain(
+      'connection reset',
+    );
     const testerStarted = reach({ isReached: () => agentNames().includes('Tester') });
+    expect(selected()).toBe(TESTER_ID);
     expect(turnOf({ agentId: TESTER_ID })).toBe('running');
     expect(eventsOf({ agentId: TESTER_ID }).map((event) => event.kind)).toEqual(['user_text']);
     expect(delegationOf({ agentId: IMPLEMENTER_ID })?.state).toBe('settled');
@@ -194,10 +201,12 @@ describe('approving the revised plan', () => {
       isReached: () => delegationOf({ agentId: TESTER_ID })?.state === 'settled',
     });
     expect(turnOf({ agentId: STORY_ROOT_ID })).toBe('running');
+    expect(selected()).toBe(TESTER_ID);
     const leadSummarized = reach({
       isReached: () => textOf({ agentId: STORY_ROOT_ID }).includes(AUTO_STORY.final),
     });
     expect(turnOf({ agentId: STORY_ROOT_ID })).toBe('running');
+    expect(selected()).toBe(STORY_ROOT_ID);
     const finished = reach({ isReached: () => turnOf({ agentId: STORY_ROOT_ID }) === 'idle' });
 
     expect([
