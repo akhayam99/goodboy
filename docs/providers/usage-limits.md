@@ -52,7 +52,8 @@ when that reading is missing, invalid or older than five minutes.
   (or `rateLimits`): `primary` is 5 hours, `secondary` the week, `planType` the plan
 - `parseCodexResetCredits` reads `rateLimitResetCredits` (count, first credit's id
   and expiry) into `codexResetCredits`. Background polls pass
-  `excludeResetCreditDetails`, and keep the details they had while the count holds
+  `excludeResetCreditDetails` and keep the details they had while the count holds;
+  a provider page query asks with details
 
 `providerLimitsProbe` keeps, per provider, whether a probe runs, when one last
 worked and how many failed in a row.

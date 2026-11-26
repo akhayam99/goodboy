@@ -51,15 +51,18 @@ band is the one home of the policy and the priority rule.
 The priority rule writes `spreadByHeadroom` in the workspace workflow rules
 through `patchWorkspaceOverrides` (off is By order). A failed write says
 "Couldn't save the provider priority" and keeps the old rule. No saved rules means
-By order (`DEFAULT_WORKFLOW_RULES`), and a saved choice is never rewritten. A run
-started from a workflow keeps its rule (`rulesSnapshot`).
+By order (`DEFAULT_WORKFLOW_RULES`), and a saved choice is never rewritten. The
+rule applies from the next agent, and a run started from a workflow keeps its rule
+(`rulesSnapshot`).
 
 The room, load and candidates come from one snapshot, `useRoutingSnapshot`:
-`selectCandidateInputs` over one shared turns read (`routingTurns`). Turns are
-read again every minute, on a workspace switch and when an agent starts or ends;
-a late read, or one of another workspace, is dropped. The inputs are worked out
-again at once when the policy, limits, cooldowns, budget alerts, strikes, hidden
-models or CLI requirements change.
+`selectCandidateInputs` (the selector the Lead's candidates list reads) over one
+turns read (`routingTurns`) that the rows and every open role share. Turns are
+read again every minute, on a workspace switch and when an agent starts or ends.
+A late read is dropped, and a read of another workspace shows nothing. The inputs
+are worked out again at once when the policy, limits, cooldowns, budget alerts,
+strikes, hidden models or CLI requirements change. The Runs settings page shows
+nothing of the policy or the rule.
 
 ## Rows and columns
 
@@ -73,9 +76,11 @@ models or CLI requirements change.
   **History rewriter** is task `rebase`, **Scribe** task `pr_draft`
 
 Every row sits on one column template (`DefaultsPanel/roleGrid.ts`): name, job,
-model, effort, source chip, chevron. The job column hides under 720 px.
-`node scripts/validate-scenes.mjs --only models-grid` checks the
-`settings-providers-scope` scene at 960 and 1280 px.
+model, effort, source chip, chevron. A task or chat row's picker spans the model
+and effort columns and keeps an empty chevron slot, so the columns line up. The
+job column hides under 720 px. `node scripts/validate-scenes.mjs --only models-grid`
+checks the `settings-providers-scope` scene at 960 and 1280 px: one template, no
+row past its band, no sideways scroll.
 
 ## Task rows
 
@@ -108,7 +113,8 @@ Open, the row shows:
    follows its role says when its size moved the rung (`isSizeMovingRung`)
 3. **Candidates for Scout right now** (`RoleRow/RoleCandidates`), except on the
    Lead: `buildCandidates` at the default size from the same snapshot, struck rows
-   with their cause, and a check on `bestCandidate`
+   with their cause, and a check on `bestCandidate`. A pinned role lists its
+   pinned models
 4. **Models for planning**: the role's set of up to three. **Add** adds the model
    in view once; remove with **x** or Backspace, move with Alt and an arrow
 

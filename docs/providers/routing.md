@@ -95,15 +95,17 @@ The store builds the inputs once (`selectModelContext`, `selectResolution` in
 The Models rows, the run and builder pills, the orchestrator defaults
 (`roleDefaultsFor`), helper tasks (`selectTaskModel`), turn fallbacks
 (`selectModelOnProvider`), the History rewriter (`historyRewriterConfig`) and
-Scribe (`scribeModelConfig`) all read it. Workflow
-picks (`rolePicks`) hand `resolveWorkflowRouting` the resolved model as both
-defaults, so a pin that can't run has no second recovery.
+Scribe (`scribeModelConfig`), the report and wireframe spawns all read it, and a
+session's own layer reaches each of them. Workflow child and node picks
+(`rolePicks`) hand `resolveWorkflowRouting` the resolved model as both defaults,
+so a pin that can't run has no second recovery.
 
 A model a step or an Auto child proposes goes through `resolveProposedRouting`
 (`store/slices/workflows/`): parse, keep it inside the role's set, `rolePicks`,
-`resolveWorkflowRouting`. Only kind and step routing (`kindRouting` behind
-`selectKindRouting`, and `resolveStepRouting`) stay outside, on the same settings
-and scope.
+`resolveWorkflowRouting`. The orchestrator and the Auto delegation verb both call
+it. Only kind and step routing (`kindRouting` behind `selectKindRouting`, and
+`resolveStepRouting`) stay outside, on the same settings and scope, and the parity
+test checks them against the row.
 
 Tests: `resolution.parity.test.tsx` (rows and pills agree),
 `resolution.runtime.parity.test.ts` (the runtime agrees with the row on a
@@ -129,15 +131,17 @@ ladder for roles and tasks.
   `strongestModelForTier`, after every curated provider
 - `defaults.test.ts` checks every cell against the catalogs and that each starts on
   its line's newest model. No Cursor default needs Max Mode
-- `ROLE_REGISTRY` holds no routing. `kindRouting` maps an agent kind to its role
-  and reads the same ladder
+- `ROLE_REGISTRY` holds no routing: the Claude column of `AUTO_DEFAULTS` is the
+  reference. `kindRouting` maps an agent kind to its role and reads the same
+  ladder; there is no separate cheap tier for Scout, Docs or Generalist
 
 ### Providers at their limit
 
 `providerCandidates` keeps a provider that is connected and not at its limit
 (`atLimit`, from `providersAtLimit`: a window is out and has not reset). A pick
-that passed one for its limit carries `skippedAtLimit`, and the Auto rows say which
-provider it left and why.
+that passed one for its limit carries `skippedAtLimit`. The Auto rows of the task
+and orchestrator pickers say which provider it left and why, and a provider's Usage
+notice says where Auto sends new agents.
 
 - The desktop fills `atLimit` through `autoLimitContext` only while some provider
   is out, for agent spawns and every task
@@ -160,9 +164,10 @@ start on, for one role and size, across every On and Backup provider.
 - A role pin lists only its pinned models while one can run. A pin skips the
   hidden check, not the CLI check or the family guard
 
-A guard strikes a row with a cause from `CANDIDATE_CAUSES`: the provider checks,
-the run's providers and budget, a writer off `AUTO_WRITER_CHILD_PROVIDERS`, a
-failed start of the same role in this work (`failedStarts`), hidden, CLI too old,
+A guard strikes a row with a cause from `CANDIDATE_CAUSES`: the provider checks
+(not connected, Off, Backup idle, out of room, cooling down, an open breaker, a
+budget alert), outside the run's providers, a provider the Lead never starts
+helpers on, a writer off `AUTO_WRITER_CHILD_PROVIDERS`, a failed start of the same role in this work (`failedStarts`), hidden, CLI too old,
 outside a role pin, or the writer's family for a review (kept, and said, when no
 other family is left). Each cause maps to an `adjustment` word an older build
 reads, so a stored decision stays a patch.
@@ -191,16 +196,18 @@ every connected provider On, in today's order.
 - One writer, `setProviderPolicy`, patches the policy and the default provider
   together. Writes queue per workspace (`patch_workspace_overrides`) and send only
   changed keys, so two quick edits, even from two windows, keep both. A value of
-  neither shape is refused with `invalid_setting_value`
+  neither shape is refused with `invalid_setting_value`, not stored as null
 - One reader, `providerCandidates` (`autoRouting/providerCandidates.ts`): usable On
   providers in order, then usable Backup only ones. The curated-first rule stays
   only for a `null` policy
 - `providerStanding` names why a provider is out (`not-connected`, `off`,
   `at-limit`, `backup`), so a pin on an Off provider falls back to Auto
-- `workingProviders` filters `workflowAvailabilitySnapshot` for static steps,
-  fan-out children and the orchestrator menu (`availability.providerOrder`).
-  `workspacePolicyAvailability` gives each snapshot the policy of the workspace
-  that owns the session
+- `workingProviders` (On, or Backup only once no On provider can work) filters
+  `workflowAvailabilitySnapshot` for static steps, fan-out children and the
+  orchestrator menu (`availability.providerOrder`)
+- `workspacePolicyAvailability` gives each snapshot the policy of the workspace
+  that owns the session (the current workspace only when no session is known) and
+  the providers at their limit
 
 ## One calculation for "what runs here"
 
@@ -227,6 +234,7 @@ on a step routing call without its scope.
 
 - Saved in `workspaces.task_models`, read through `resolveTaskModel`. A pin may
   carry an effort and a `fallback`; without an effort it runs at `medium`, clamped
+  to the model's ladder. A model without an effort axis gets none
 - PR drafts and rebases preselect the agent's model with no automatic effort.
   Task models never affect chat turns
 - A pin on a disconnected provider moves to its fallback, then to Auto

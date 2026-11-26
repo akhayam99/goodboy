@@ -109,7 +109,8 @@ After a resume `result.usage.premiumRequests` is the CLI session's total, kept a
 `ProviderUsage.sessionPremiumRequests` and `sessionNanoAiu`. `copilotTurnUsage`
 (`store/slices/turn/copilotTurnUsage/`) subtracts the previous total of the same
 provider session, matched by the run's `provider_session_init`, so
-`premiumRequests` and `nanoAiu` hold the turn's share.
+`premiumRequests` and `nanoAiu` hold the turn's share. A new session after a reset
+starts from zero.
 
 - The turn footer shows premium requests in place of a cost. The dollar cost is
   always 0, `costCoverage` is `unpriced`, `getProviderModelPrice` is `null`

@@ -126,8 +126,8 @@ pays for every turn.
   what it last knew and asks again on the next focus or **Check again**
 - **Refused your runs**: three runs in 10 minutes were turned down for
   authentication while the CLI says you are signed in. Auto and the fallbacks leave
-  the provider alone until you **Sign in again**. Picking it yourself still runs,
-  and one accepted run closes the breaker
+  the provider alone. Use **Sign in again**. Picking it yourself still runs, and
+  one accepted run closes the breaker
 - **Browser sign-in stuck**: after 4 seconds the card offers **Open the sign-in
   page again**. After two minutes, **Open in Terminal.app** (or the terminal from
   Settings, Open with, when it can take a command: iTerm does, Warp and Ghostty do

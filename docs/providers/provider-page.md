@@ -105,7 +105,8 @@ names the deadline the command used.
 **History** opens a panel under Account with the newest 20 changes since launch,
 relative times with absolute ones in tooltips. **Hide history**, Escape or History
 again closes it. It reads the health ring through the
-[Account history panel](../../apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/ConnectionHistory/index.tsx).
+[Account history panel](../../apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/ConnectionHistory/index.tsx),
+and each change uses the standing log.
 
 ## Under the hood
 
