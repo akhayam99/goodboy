@@ -182,7 +182,7 @@ describe('escape and window keys go through the stack and the registry', () => {
     if (grown.length > 0) {
       throw new Error(
         `Escape or key handling grew outside the stack and the registry. docs/navigation/studios.md, ` +
-          `One Esc stack, and docs/navigation/shell.md, Shortcuts, explain both. A cleanup that removes handlers ` +
+          `One Esc stack, and docs/navigation/shortcuts.md explain both. A cleanup that removes handlers ` +
           `regenerates the baseline with GOODBOY_UPDATE_BASELINE=1.\n\n${grown.join('\n')}`,
       );
     }

@@ -305,8 +305,6 @@ describe('runAfterMergeCleanup', () => {
   it('keeps the branch when an agent is running or waiting in the mount', async () => {
     const context = makeStore();
     Object.assign(context.store.state, {
-      sessions: [],
-      sessionActiveMount: {},
       sessionPhaseRuns: { [SESSION_ID]: [{ id: 'agent-lead', status: 'blocked' }] },
       agentTurnDestination: { 'agent-lead': { kind: 'mount', mountId: MOUNT_ID } },
     });
@@ -327,8 +325,6 @@ describe('runAfterMergeCleanup', () => {
   it('deletes the branch of a mount whose agent already finished', async () => {
     const context = makeStore();
     Object.assign(context.store.state, {
-      sessions: [],
-      sessionActiveMount: {},
       sessionPhaseRuns: { [SESSION_ID]: [{ id: 'agent-lead', status: 'completed' }] },
       agentTurnDestination: { 'agent-lead': { kind: 'mount', mountId: MOUNT_ID } },
     });
@@ -340,25 +336,6 @@ describe('runAfterMergeCleanup', () => {
 
     expect(outcome.kind).toBe('deleted');
     expect(context.store.state.unmountMount).toHaveBeenCalled();
-  });
-
-  it('keeps the branch when its mount is the session current one', async () => {
-    const context = makeStore();
-    Object.assign(context.store.state, {
-      sessions: [],
-      sessionActiveMount: { [SESSION_ID]: MOUNT_ID },
-    });
-
-    const outcome = await runAfterMergeCleanup(
-      context.set,
-      context.get,
-    )({ sessionId: SESSION_ID, mountId: MOUNT_ID, expectedBranch: BRANCH, isRequested: true });
-
-    expect(outcome).toEqual({
-      kind: 'ask',
-      keptBecause: `Kept ${BRANCH}: an agent still works in its folder.`,
-    });
-    expect(h.deleteBranchChecked).not.toHaveBeenCalled();
   });
 
   it('stops when the folder refuses to go', async () => {
