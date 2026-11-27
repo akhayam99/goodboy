@@ -36,7 +36,7 @@ export const CalendarPage = ({ workspaceId }: Props) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const roles = useAppStore((state) => state.calendarRoles);
   const events = useAppStore((state) => state.calendarDay?.events ?? EMPTY_ARRAY);
-  const { needsYou } = useNowSessions({});
+  const { needsYou, attention } = useNowSessions({});
   const rows = useMemo(() => calendarRowsOf({ events, roles, now }), [events, roles, now]);
   const selectedRow = rows.find((row) => row.id === selectedId) ?? null;
   const selectedEvent = events.find((event) => event.id === selectedId) ?? null;
@@ -83,7 +83,7 @@ export const CalendarPage = ({ workspaceId }: Props) => {
           events={events}
           roles={roles}
           now={now}
-          needsYouCount={needsYou.length}
+          needsYouCount={attention.count}
           selectedId={selectedId}
           onSelect={toggle}
         />
