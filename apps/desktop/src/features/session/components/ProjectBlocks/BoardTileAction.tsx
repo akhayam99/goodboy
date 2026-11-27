@@ -1,4 +1,4 @@
-import { Button } from '@goodboy/ui';
+import { Button, Tooltip } from '@goodboy/ui';
 import { questionPlace, useAppStore } from '../../../../store';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import type { BranchRowAction } from '../../central/board/branchRowOf';
@@ -29,9 +29,11 @@ export const BoardTileAction = ({ rowId, action, caution }: Props) => {
       return caution === null ? (
         <BoardRowAction rowId={rowId} index={action.index} text="" />
       ) : (
-        <span title={caution} className="pointer-events-auto flex shrink-0">
-          <BoardRowAction rowId={rowId} index={action.index} text="" />
-        </span>
+        <Tooltip content={caution}>
+          <span className="pointer-events-auto flex shrink-0">
+            <BoardRowAction rowId={rowId} index={action.index} text="" />
+          </span>
+        </Tooltip>
       );
     case 'remove':
       return removal.targets.every((target) => target.mountId !== action.mountId) ? null : (

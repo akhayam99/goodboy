@@ -176,6 +176,7 @@ describe('branchRowOf', () => {
       word: { word: NAMES.asksYou, tone: 'warning' },
       action: { kind: 'card', index: 1 },
       hoverFacts: [],
+      caution: null,
     });
   });
 
