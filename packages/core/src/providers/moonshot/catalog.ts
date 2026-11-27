@@ -1,6 +1,7 @@
 import type { EffortLevel, MoonshotModel } from '@goodboy/types';
 
-const EFFORTS = [
+const K3_EFFORTS = ['low', 'high', 'max'] satisfies ReadonlyArray<EffortLevel>;
+const K2_EFFORTS = [
   'minimal',
   'low',
   'medium',
@@ -11,8 +12,44 @@ const EFFORTS = [
 
 export const MOONSHOT_CATALOG = [
   {
-    key: 'kimi-k3',
+    key: 'kimi-k3.1-pro',
     defaultTurn: true,
+    label: 'Kimi K3.1 Pro',
+    tier: 'turn',
+    contextWindow: 1_048_576,
+    presentation: {
+      family: 'other',
+      group: 'Kimi',
+      version: 'K3.1',
+      checkpoint: 'Pro',
+      order: 12,
+      costTier: 'mid',
+    },
+    provider: 'moonshot',
+    cliId: 'moonshotai/kimi-k3.1-pro',
+    efforts: K3_EFFORTS,
+    defaultEffort: 'max',
+  },
+  {
+    key: 'kimi-k3.1-pro-highspeed',
+    label: 'Kimi K3.1 Pro HighSpeed',
+    tier: 'turn',
+    contextWindow: 1_048_576,
+    presentation: {
+      family: 'other',
+      group: 'Kimi',
+      version: 'K3.1',
+      checkpoint: 'Pro HighSpeed',
+      order: 11,
+      costTier: 'expensive',
+    },
+    provider: 'moonshot',
+    cliId: 'moonshotai/kimi-k3.1-pro-highspeed',
+    efforts: K3_EFFORTS,
+    defaultEffort: 'max',
+  },
+  {
+    key: 'kimi-k3',
     label: 'Kimi K3',
     tier: 'turn',
     contextWindow: 1_048_576,
@@ -25,11 +62,12 @@ export const MOONSHOT_CATALOG = [
     },
     provider: 'moonshot',
     cliId: 'moonshotai/kimi-k3',
-    efforts: EFFORTS,
-    defaultEffort: 'medium',
+    efforts: K3_EFFORTS,
+    defaultEffort: 'max',
   },
   {
     key: 'kimi-k2.7-code-highspeed',
+    legacy: true,
     label: 'Kimi K2.7 Code HighSpeed',
     tier: 'turn',
     contextWindow: 262_144,
@@ -43,11 +81,12 @@ export const MOONSHOT_CATALOG = [
     },
     provider: 'moonshot',
     cliId: 'moonshotai/kimi-k2.7-code-highspeed',
-    efforts: EFFORTS,
+    efforts: K2_EFFORTS,
     defaultEffort: 'medium',
   },
   {
     key: 'kimi-k2.7-code',
+    legacy: true,
     label: 'Kimi K2.7 Code',
     tier: 'turn',
     contextWindow: 262_144,
@@ -61,11 +100,12 @@ export const MOONSHOT_CATALOG = [
     },
     provider: 'moonshot',
     cliId: 'moonshotai/kimi-k2.7-code',
-    efforts: EFFORTS,
+    efforts: K2_EFFORTS,
     defaultEffort: 'medium',
   },
   {
     key: 'kimi-k2.6',
+    legacy: true,
     label: 'Kimi K2.6',
     tier: 'turn',
     contextWindow: 262_144,
@@ -78,7 +118,7 @@ export const MOONSHOT_CATALOG = [
     },
     provider: 'moonshot',
     cliId: 'moonshotai/kimi-k2.6',
-    efforts: EFFORTS,
+    efforts: K2_EFFORTS,
     defaultEffort: 'medium',
   },
 ] satisfies ReadonlyArray<MoonshotModel>;

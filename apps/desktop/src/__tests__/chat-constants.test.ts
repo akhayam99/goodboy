@@ -15,7 +15,7 @@ const ANTHROPIC = [
 
 const CODEX = ['gpt-5.6-luna', 'gpt-5.2', 'gpt-5.3-codex', 'gpt-5.6-terra', 'gpt-5.5'];
 
-const GEMINI = ['gemini-3.8-flash', 'gemini-3.1-pro'];
+const GEMINI = ['gemini-4-hydrogen', 'gemini-3.1-pro'];
 
 describe('suggestLighterModel', () => {
   it('Opus 4.8 → Sonnet 4.6, strong, about 1.7x cheaper', () => {
@@ -102,7 +102,7 @@ describe('suggestLighterModel', () => {
     });
   });
 
-  it('gemini: Pro has no mid tier, so no suggestion instead of falling to Flash', () => {
+  it('gemini: Pro has no mid tier, so no suggestion instead of falling to Hydrogen', () => {
     expect(
       suggestLighterModel({ provider: 'gemini', current: 'gemini-3.1-pro', candidates: GEMINI }),
     ).toBeNull();
@@ -202,9 +202,9 @@ describe('suggestHeavierModel', () => {
     });
   });
 
-  it('gemini: Flash → Pro', () => {
+  it('gemini: Hydrogen → Pro', () => {
     expect(
-      suggestHeavierModel({ provider: 'gemini', current: 'gemini-3.8-flash', candidates: GEMINI })
+      suggestHeavierModel({ provider: 'gemini', current: 'gemini-4-hydrogen', candidates: GEMINI })
         ?.id,
     ).toBe('gemini-3.1-pro');
   });

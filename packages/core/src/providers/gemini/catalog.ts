@@ -1,8 +1,67 @@
-import type { GeminiModel } from '@goodboy/types';
+import type { EffortLevel, GeminiModel } from '@goodboy/types';
+
+const THREE_EFFORTS = ['low', 'medium', 'high'] satisfies ReadonlyArray<EffortLevel>;
+const FOUR_EFFORTS = ['low', 'medium', 'high', 'xhigh'] satisfies ReadonlyArray<EffortLevel>;
 
 export const GEMINI_CATALOG = [
   {
+    key: 'gemini-4-neon',
+    label: '4 Neon',
+    tier: 'turn',
+    contextWindow: 1_000_000,
+    presentation: {
+      family: 'gemini',
+      group: 'Gemini',
+      version: '4',
+      checkpoint: 'Neon',
+      order: 32,
+      costTier: 'mid',
+    },
+    provider: 'gemini',
+    cliId: 'gemini-4-neon',
+    efforts: FOUR_EFFORTS,
+    defaultEffort: 'medium',
+  },
+  {
+    key: 'gemini-4-carbon',
+    label: '4 Carbon',
+    tier: 'turn',
+    contextWindow: 1_000_000,
+    presentation: {
+      family: 'gemini',
+      group: 'Gemini',
+      version: '4',
+      checkpoint: 'Carbon',
+      order: 31,
+      costTier: 'mid',
+    },
+    provider: 'gemini',
+    cliId: 'gemini-4-carbon',
+    efforts: THREE_EFFORTS,
+    defaultEffort: 'medium',
+  },
+  {
+    key: 'gemini-4-hydrogen',
+    defaultTurn: true,
+    label: '4 Hydrogen',
+    tier: 'cheap',
+    contextWindow: 1_000_000,
+    presentation: {
+      family: 'gemini',
+      group: 'Gemini',
+      version: '4',
+      checkpoint: 'Hydrogen',
+      order: 30,
+      costTier: 'cheap',
+    },
+    provider: 'gemini',
+    cliId: 'gemini-4-hydrogen',
+    efforts: FOUR_EFFORTS,
+    defaultEffort: 'medium',
+  },
+  {
     key: 'gemini-3.1-pro',
+    legacy: true,
     label: '3.1 Pro',
     tier: 'turn',
     contextWindow: 1_000_000,
@@ -20,25 +79,6 @@ export const GEMINI_CATALOG = [
     defaultEffort: 'high',
   },
   {
-    key: 'gemini-3.8-flash',
-    defaultTurn: true,
-    label: '3.8 Flash',
-    tier: 'cheap',
-    contextWindow: 1_000_000,
-    presentation: {
-      family: 'gemini',
-      group: 'Gemini',
-      version: '3.8',
-      checkpoint: 'Flash',
-      order: 13,
-      costTier: 'cheap',
-    },
-    provider: 'gemini',
-    cliId: 'gemini-3.8-flash',
-    efforts: ['low', 'medium', 'high'],
-    defaultEffort: 'medium',
-  },
-  {
     key: 'gemini-3.7-flash',
     legacy: true,
     label: '3.7 Flash',
@@ -54,7 +94,7 @@ export const GEMINI_CATALOG = [
     },
     provider: 'gemini',
     cliId: 'gemini-3.7-flash',
-    efforts: ['low', 'medium', 'high'],
+    efforts: THREE_EFFORTS,
     defaultEffort: 'medium',
   },
   {
@@ -73,7 +113,7 @@ export const GEMINI_CATALOG = [
     },
     provider: 'gemini',
     cliId: 'gemini-3.6-flash',
-    efforts: ['low', 'medium', 'high'],
+    efforts: THREE_EFFORTS,
     defaultEffort: 'medium',
   },
 ] satisfies ReadonlyArray<GeminiModel>;

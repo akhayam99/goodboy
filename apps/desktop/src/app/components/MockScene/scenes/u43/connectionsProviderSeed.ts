@@ -128,7 +128,7 @@ const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
     label: 'Claude',
     binary: 'claude',
     connection: 'connected',
-    version: '2.1.296',
+    version: '2.1.321',
     identity: ACCOUNT,
   }),
   providerInfo({

@@ -251,6 +251,7 @@ describe('resolveTurnModelSelection', () => {
       ...BASE_PARAMS,
       routingDecision: {
         ...ROUTING_DECISION,
+        selectedModel: 'claude-opus-4-8',
         fallbackUsed: true,
         fallbackFrom: 'cursor',
       },
@@ -258,19 +259,20 @@ describe('resolveTurnModelSelection', () => {
       requestedEffort: 'high',
     });
 
-    expect(selection).toEqual({ key: 'sonnet-4.5', effort: 'high' });
+    expect(selection).toEqual({ key: 'opus-4.8', effort: 'high' });
   });
 
   it('carries the discarded override selection effort into the routing default', () => {
     const selection = resolveTurnModelSelection({
       ...BASE_PARAMS,
+      routingDecision: { ...ROUTING_DECISION, selectedModel: 'claude-opus-4-8' },
       turnOverride: {
         providerId: 'cursor',
         selection: { key: 'composer-2.5', effort: 'high' },
       },
     });
 
-    expect(selection).toEqual({ key: 'sonnet-4.5', effort: 'high' });
+    expect(selection).toEqual({ key: 'opus-4.8', effort: 'high' });
   });
 
   it('remaps a foreign phase model id after unknown normalization without throwing', () => {

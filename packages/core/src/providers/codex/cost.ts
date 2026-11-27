@@ -23,6 +23,24 @@ export const CODEX_PRICES: Readonly<Record<string, ModelPrice>> = {
     cachedInputPerMtok: 1,
     aboveLevel: aboveLevel({ inputPerMtok: 20, outputPerMtok: 75, cachedInputPerMtok: 2 }),
   },
+  'gpt-6.2-astra': {
+    inputPerMtok: 8,
+    outputPerMtok: 40,
+    cachedInputPerMtok: 0.4,
+    aboveLevel: aboveLevel({ inputPerMtok: 16, outputPerMtok: 60, cachedInputPerMtok: 0.8 }),
+  },
+  'gpt-6.2-sol': {
+    inputPerMtok: 2,
+    outputPerMtok: 10,
+    cachedInputPerMtok: 0.1,
+    aboveLevel: aboveLevel({ inputPerMtok: 4, outputPerMtok: 15, cachedInputPerMtok: 0.2 }),
+  },
+  'gpt-6.1-terra': {
+    inputPerMtok: 1,
+    outputPerMtok: 5,
+    cachedInputPerMtok: 0.05,
+    aboveLevel: aboveLevel({ inputPerMtok: 2, outputPerMtok: 7.5, cachedInputPerMtok: 0.1 }),
+  },
   'gpt-6.1-sol': {
     inputPerMtok: 2,
     outputPerMtok: 10,
@@ -39,30 +57,31 @@ export const CODEX_PRICES: Readonly<Record<string, ModelPrice>> = {
     inputPerMtok: 0.1,
     outputPerMtok: 0.5,
     cachedInputPerMtok: 0.01,
-    aboveLevel: aboveLevel({ inputPerMtok: 0.2, outputPerMtok: 0.75 }),
+    aboveLevel: aboveLevel({ inputPerMtok: 0.2, outputPerMtok: 0.75, cachedInputPerMtok: 0.02 }),
   },
   'gpt-5.6-sol': {
     inputPerMtok: 4,
     outputPerMtok: 20,
     cachedInputPerMtok: 0.4,
-    aboveLevel: aboveLevel({ inputPerMtok: 8, outputPerMtok: 30 }),
+    aboveLevel: aboveLevel({ inputPerMtok: 8, outputPerMtok: 30, cachedInputPerMtok: 0.8 }),
   },
   'gpt-5.6-terra': {
     inputPerMtok: 2,
     outputPerMtok: 12,
     cachedInputPerMtok: 0.2,
-    aboveLevel: aboveLevel({ inputPerMtok: 4, outputPerMtok: 18 }),
+    aboveLevel: aboveLevel({ inputPerMtok: 4, outputPerMtok: 18, cachedInputPerMtok: 0.4 }),
   },
   'gpt-5.6-luna': {
     inputPerMtok: 0.2,
     outputPerMtok: 1.2,
     cachedInputPerMtok: 0.02,
-    aboveLevel: aboveLevel({ inputPerMtok: 0.4, outputPerMtok: 1.8 }),
+    aboveLevel: aboveLevel({ inputPerMtok: 0.4, outputPerMtok: 1.8, cachedInputPerMtok: 0.04 }),
   },
   'gpt-5.5': {
     inputPerMtok: 5,
     outputPerMtok: 30,
     cachedInputPerMtok: 0.5,
+    aboveLevel: aboveLevel({ inputPerMtok: 10, outputPerMtok: 45, cachedInputPerMtok: 1 }),
   },
 };
 

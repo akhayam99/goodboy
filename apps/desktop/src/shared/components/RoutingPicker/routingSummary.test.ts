@@ -63,14 +63,14 @@ describe('routingSummary', () => {
 
   it('drops the family segment when it repeats the provider name', () => {
     const label = routingTriggerLabel({
-      model: catalogModel({ provider: 'gemini', key: 'gemini-3.8-flash' }),
-      modelId: 'gemini-3.8-flash',
-      selection: { key: 'gemini-3.8-flash' },
+      model: catalogModel({ provider: 'gemini', key: 'gemini-4-hydrogen' }),
+      modelId: 'gemini-4-hydrogen',
+      selection: { key: 'gemini-4-hydrogen' },
       effort: 'medium',
       showEffort: true,
     });
-    expect(label.name).toEqual(['3.8 Flash']);
-    expect(routingSummary({ provider: 'gemini', label })).toBe('Gemini · 3.8 Flash · Medium');
+    expect(label.name).toEqual(['4 Hydrogen']);
+    expect(routingSummary({ provider: 'gemini', label })).toBe('Gemini · 4 Hydrogen · Medium');
   });
 
   it('uses the catalog display name without rebuilding it from picker axes', () => {
