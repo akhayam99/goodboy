@@ -64,7 +64,9 @@ export const calendarRowsOf = ({ events, roles, now }: Params): ReadonlyArray<Ca
   const to = dayStartOf({ at: now, dayOffset: 1 });
   return events
     .filter((event) => event.start < to && event.end > from)
-    .sort((first, second) => first.start - second.start || first.id.localeCompare(second.id))
+    .sort((first, second) =>
+      first.start === second.start ? first.id.localeCompare(second.id) : first.start - second.start,
+    )
     .map((event) => {
       const kind = eventKindOf({ event, roles });
       return {

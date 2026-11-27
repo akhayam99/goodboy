@@ -67,6 +67,17 @@ type RowParams = {
 const row = async ({ name }: RowParams): Promise<HTMLElement> =>
   within(await today()).findByRole('button', { name }, WAIT);
 
+const MERGE = 'Mark done: Merge payments-api #412';
+
+type CheckParams = {
+  readonly name: string;
+};
+
+const isChecked = ({ name }: CheckParams): boolean => {
+  const box = screen.getByRole('checkbox', { name });
+  return box instanceof HTMLInputElement && box.checked;
+};
+
 describe('the Calendar place scenes', () => {
   it('registers every scene for the capture', () => {
     expect(Object.keys(CALENDAR_PLACE_SCENES).sort()).toEqual([
@@ -146,7 +157,11 @@ describe('the Calendar place scenes', () => {
     expect(within(list).queryByText(/Northwind/)).toBeNull();
     expect(within(list).getAllByText('Busy').length).toBeGreaterThanOrEqual(4);
 
-    fireEvent.click(within(list).getAllByRole('button')[1] as HTMLElement);
+    const [, second] = within(list).getAllByRole('button');
+    if (second === undefined) {
+      throw new Error('no second row');
+    }
+    fireEvent.click(second);
     const panel = await screen.findByLabelText('Event', {}, WAIT);
     expect(within(panel).getByText(/Goodboy never reads its title/)).toBeTruthy();
     expect(within(panel).queryByRole('button', { name: 'Join call' })).toBeNull();
@@ -190,28 +205,14 @@ describe('the Calendar place scenes', () => {
   it('marks a reminder done and brings it back from the undo toast', async () => {
     mount({ id: 'calendar-day' });
 
-    const box = await screen.findByRole(
-      'checkbox',
-      { name: 'Mark done: Merge payments-api #412' },
-      WAIT,
-    );
+    const box = await screen.findByRole('checkbox', { name: MERGE }, WAIT);
     fireEvent.click(box);
 
-    await waitFor(() => expect((box as HTMLInputElement).checked).toBe(true), WAIT);
+    await waitFor(() => expect(isChecked({ name: MERGE })).toBe(true), WAIT);
     const undo = await screen.findByRole('button', { name: /Undo/ }, WAIT);
     fireEvent.click(undo);
 
-    await waitFor(
-      () =>
-        expect(
-          (
-            screen.getByRole('checkbox', {
-              name: 'Mark done: Merge payments-api #412',
-            }) as HTMLInputElement
-          ).checked,
-        ).toBe(false),
-      WAIT,
-    );
+    await waitFor(() => expect(isChecked({ name: MERGE })).toBe(false), WAIT);
   });
 
   it('adds a reminder with the time it reads from the text', async () => {

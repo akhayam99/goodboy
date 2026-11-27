@@ -1,5 +1,5 @@
 import { Button, StatusMark, TruncatedText, type StatusMarkSpec } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
+import { brandId, type Session, type SessionId } from '@goodboy/types';
 import { useAppStore, useSessionStageInfo } from '../../../../store';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
@@ -19,7 +19,7 @@ export const BeforeCallRow = ({ session }: Props) => {
   const mark: StatusMarkSpec =
     attention === null ? { kind: 'dot', tone: 'warning' } : attentionMarkOf({ reason: attention });
   const title = sessionTitle({ session });
-  const sessionId = session.id as SessionId;
+  const sessionId = brandId<SessionId>({ value: session.id });
 
   return (
     <li data-before-call={sessionId} className="flex min-h-7 min-w-0 items-center gap-2">

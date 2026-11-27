@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type { CalendarEvent, CalendarRoleEntry, CalendarSourceId } from '@goodboy/types';
+import {
+  brandId,
+  type CalendarEvent,
+  type CalendarRoleEntry,
+  type CalendarSourceId,
+} from '@goodboy/types';
 import { calendarFactsOf } from './calendarFactsOf';
 import { calendarRowsOf } from './calendarRowsOf';
 import { calendarWeekOf } from './calendarWeekOf';
 
-const SOURCE = 'mac' as CalendarSourceId;
+const SOURCE = brandId<CalendarSourceId>({ value: 'mac' });
 const MINUTE = 60_000;
 const NOW = new Date(2026, 10, 26, 10, 18).getTime();
 

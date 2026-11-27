@@ -53,8 +53,8 @@ export const CalendarReminders = ({ workspaceId, now }: Props) => {
                         checked={isDone}
                         disabled={isDone}
                         ariaLabel={`Mark done: ${reminder.text}`}
-                        onChange={(next) => {
-                          if (!next) {
+                        onChange={(isChecked) => {
+                          if (!isChecked) {
                             return;
                           }
                           void markDone({ workspaceId, reminderId: reminder.id });

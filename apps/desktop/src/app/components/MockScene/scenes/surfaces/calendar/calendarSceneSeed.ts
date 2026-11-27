@@ -1,5 +1,5 @@
 import type { InvokeArgs } from '@tauri-apps/api/core';
-import type { CalendarEvent, CalendarSourceId } from '@goodboy/types';
+import { brandId, type CalendarEvent, type CalendarSourceId } from '@goodboy/types';
 import { mockSceneIpc } from '../../mockSceneIpc';
 import { payloadString } from '../../audit/ipcPayload';
 import { WORKSPACE_ID } from '../../BoardScene';
@@ -26,7 +26,7 @@ type Params = {
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
-const SOURCE_ID = 'scene-source-mac' as CalendarSourceId;
+const SOURCE_ID = brandId<CalendarSourceId>({ value: 'scene-source-mac' });
 const WORK = 'scene-calendar-work';
 const FOCUS = 'scene-calendar-focus';
 const PERSONAL = 'scene-calendar-personal';
