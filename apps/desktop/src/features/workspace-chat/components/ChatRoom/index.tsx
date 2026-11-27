@@ -67,6 +67,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
   );
   const createChat = useAppStore((state) => state.createChat);
   const sendChatMessage = useAppStore((state) => state.sendChatMessage);
+  const submitChatMessage = useAppStore((state) => state.submitChatMessage);
   const restoreChats = useAppStore((state) => state.restoreChats);
   const setChatModel = useAppStore((state) => state.setChatModel);
   const navigate = useAppStore((state) => state.navigate);
@@ -101,7 +102,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
       if (chat !== null && chat.archivedAt !== null) {
         await restoreChats({ workspaceId, chatIds: [chatId] });
       }
-      return sendChatMessage({ chatId, content: text, attachments: images });
+      return submitChatMessage({ chatId, content: text, attachments: images });
     }
     const routing =
       draftRouting ??

@@ -7,9 +7,8 @@ import {
   Check,
   GitMerge,
   MessageSquare,
-  PencilLine,
+  Pencil,
   RotateCcw,
-  RotateCw,
   Send,
   Trash2,
   UserPlus,
@@ -301,7 +300,7 @@ const stepPrimaryOf = ({
     case 'retryPush':
       return review.accepted > 0
         ? push()
-        : reviewAction({ label: NAMES.retryPush, icon: RotateCw });
+        : reviewAction({ label: NAMES.retryPush, icon: RotateCcw });
     case 'fixComments':
       return fixCommentsOf({ comments });
     case 'suggestRun':
@@ -334,7 +333,7 @@ const stepPrimaryOf = ({
     case 'merge':
       return requestAction({ id: 'pullRequest.merge', label: mergeLabel, icon: GitMerge });
     case 'review':
-      return requestAction({ id: 'pullRequest.writeReview', label: 'Review', icon: PencilLine });
+      return requestAction({ id: 'pullRequest.writeReview', label: 'Review', icon: Pencil });
     case 'reopen':
       return requestAction({ id: 'pullRequest.reopen', label: 'Reopen', icon: RotateCcw });
     case 'removeWorktree':

@@ -8,7 +8,7 @@ import {
   Pencil,
   Play,
   RotateCcw,
-  RotateCw,
+  RefreshCw,
   Square,
   Trash2,
 } from '@goodboy/ui/icons';
@@ -366,7 +366,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
   {
     id: 'artifact.runAgain',
     label: 'Run again',
-    icon: RotateCw,
+    icon: RefreshCw,
     group: 'act',
     slot: () => 'secondary',
     when: ({ facts }) => planIn({ facts, statuses: ['consumed', 'superseded'] }),

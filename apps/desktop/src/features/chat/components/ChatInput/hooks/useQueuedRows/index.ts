@@ -12,7 +12,8 @@ import { useAutoTreeActions } from '../../../../../auto/chat/useAutoTreeActions'
 import { readAttachment } from '../../../../turn';
 import { focusComposerTextarea } from '../../focusComposerTextarea';
 import { directRevealAtOf } from '../../directRevealAtOf';
-import { queuedRowsOf, type QueuedRow } from '../../queuedRowsOf';
+import type { QueuedRow } from '../../../../queuedMessages/queuedRow';
+import { queuedRowsOf } from '../../queuedRowsOf';
 
 type Failure = Readonly<{
   title: string;
