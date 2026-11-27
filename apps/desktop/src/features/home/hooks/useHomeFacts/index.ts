@@ -1,14 +1,11 @@
 import { useMemo } from 'react';
 import type { Session, WorkspaceId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessions, useStageGroupedSessions } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
+import { useUnfilteredBoardLanes } from '../../../../shared/hooks/useUnfilteredBoardLanes';
 import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
-};
-
-type SizeParams = {
-  readonly key: string;
 };
 
 export type StageCounts = Readonly<{
@@ -30,21 +27,18 @@ export type HomeFacts = Readonly<{
 
 export const useHomeFacts = ({ workspaceId }: Params): HomeFacts => {
   const sessions = useSessions();
-  const groups = useStageGroupedSessions(workspaceId, sessions);
-  const { needsYou, running } = useNowSessions({});
+  const lanes = useUnfilteredBoardLanes({ workspaceId, sessions });
+  const { needsYou } = useNowSessions({});
   const isLoading = useAppStore(
     (state) => !state.boardReady || state.switchingToWorkspaceId != null,
   );
   return useMemo(() => {
-    const groupOf = ({ key }: SizeParams): ReadonlyArray<Session> =>
-      groups.find((group) => group.key === key)?.sessions ?? EMPTY_ARRAY;
-    const counted = new Set<string>(needsYou.map((session) => session.id));
-    const quiet = groupOf({ key: 'attention' }).filter((session) => !counted.has(session.id));
+    const running = lanes.get('running') ?? EMPTY_ARRAY;
     const counts: StageCounts = {
       needsYou: needsYou.length,
       running: running.length,
-      review: groupOf({ key: 'review' }).length,
-      open: groupOf({ key: 'building' }).length + quiet.length,
+      review: (lanes.get('review') ?? EMPTY_ARRAY).length,
+      open: (lanes.get('building') ?? EMPTY_ARRAY).length,
     };
     return {
       isLoading,
@@ -55,5 +49,5 @@ export const useHomeFacts = ({ workspaceId }: Params): HomeFacts => {
       counts,
       toFinish: counts.needsYou + counts.running + counts.review + counts.open,
     };
-  }, [groups, isLoading, needsYou, running, sessions.length, workspaceId]);
+  }, [isLoading, lanes, needsYou, sessions.length, workspaceId]);
 };

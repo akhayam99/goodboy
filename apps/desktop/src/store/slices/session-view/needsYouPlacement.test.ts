@@ -8,9 +8,9 @@ import {
   type SessionStageInfo,
   type SessionViewPrefs,
 } from '@goodboy/types';
-import { sessionFixture } from '../../../../__tests__/helpers/actionFixtures';
-import { ATTENTION_REASON_META } from '../../../session/session-stage';
-import { needsYouOf } from '../../../board/needsYou/needsYouOf';
+import { sessionFixture } from '../../../__tests__/helpers/actionFixtures';
+import { ATTENTION_REASON_META } from '../../../features/session/session-stage';
+import { needsYouOf } from '../../../features/board/needsYou/needsYouOf';
 import { boardByStageOf } from './boardByStageOf';
 
 const AT = brandId<IsoDateTime>({ value: '2026-10-07T09:00:00.000Z' });
