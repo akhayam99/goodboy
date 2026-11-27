@@ -49,7 +49,10 @@ import {
   SEND_AFTER_MS,
   STILL_QUEUED,
 } from '../messageImplementers';
-import { OverlapChip } from './index';
+import { requestOverlapCard } from '../openOverlapCard';
+import { OverlapCard } from './index';
+
+const WORD = { word: 'Running', tone: 'info' } as const;
 
 let useAppStore: StoryStore;
 
@@ -110,7 +113,7 @@ type ChipParams = {
 };
 
 const renderChip = async ({ mountId }: ChipParams) => {
-  render(<OverlapChip mountId={mountId} />);
+  render(<OverlapCard mountId={mountId} word={WORD} facts={[]} />);
   await act(async () => {
     await liveMounts.refresh();
   });
@@ -193,7 +196,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('OverlapChip', () => {
+describe('OverlapCard', () => {
   it('shows nothing when the two branches share no file', async () => {
     stubStoryInvoke({ overlap_read: APART });
 
@@ -202,13 +205,65 @@ describe('OverlapChip', () => {
     expect(screen.queryByRole('button', { name: /Overlaps/ })).toBeNull();
   });
 
+  it('opens when the word takes keyboard focus and lists what else is true', async () => {
+    render(<OverlapCard mountId={BATCH_MOUNT} word={WORD} facts={['2 runs']} />);
+    await act(async () => {
+      await liveMounts.refresh();
+    });
+    const trigger = screen.getByRole('button', { name: 'Running, Overlaps Retry backoff' });
+
+    act(() => {
+      trigger.focus();
+    });
+
+    const dialog = screen.getByRole('dialog', { name: '2 branches change the same files' });
+    within(dialog).getByText('2 runs');
+  });
+
+  it('does not open twice when a pointer press focuses the word', async () => {
+    await renderChip({ mountId: BATCH_MOUNT });
+    const trigger = screen.getByRole('button', { name: 'Running, Overlaps Retry backoff' });
+
+    fireEvent.pointerDown(trigger);
+    act(() => {
+      trigger.focus();
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(trigger);
+
+    screen.getByRole('dialog', { name: '2 branches change the same files' });
+  });
+
+  it('opens when the Merge order item of the row menu asks for it', async () => {
+    await renderChip({ mountId: BATCH_MOUNT });
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    act(() => {
+      requestOverlapCard({ mountId: BATCH_MOUNT });
+    });
+
+    screen.getByRole('dialog', { name: '2 branches change the same files' });
+  });
+
+  it('draws a plain word, and a card for facts alone, when no branch shares a file', async () => {
+    stubStoryInvoke({ overlap_read: APART });
+    render(<OverlapCard mountId={BATCH_MOUNT} word={WORD} facts={['2 runs']} />);
+    await act(async () => {
+      await liveMounts.refresh();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Running' }));
+
+    within(screen.getByRole('dialog', { name: 'Running' })).getByText('2 runs');
+  });
+
   it('says the point, the order with its reasons and the shared file once', async () => {
     await renderChip({ mountId: BATCH_MOUNT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Overlaps Retry backoff' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Running, Overlaps Retry backoff' }));
 
     const dialog = screen.getByRole('dialog', { name: '2 branches change the same files' });
-    within(dialog).getByText('Merge them in this order to avoid conflicts.');
+    within(dialog).getByText('A suggested order: fewest files first, then the oldest.');
     expect(stepTexts()).toEqual([
       '1hl/retry2 filesRetry backoff · fewest files',
       '2hl/batchThis branch3 filesBatch export · most files',
@@ -243,7 +298,7 @@ describe('OverlapChip', () => {
     }));
     await renderChip({ mountId: BATCH_MOUNT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Overlaps HBL-412' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Running, Overlaps HBL-412' }));
 
     expect(stepTexts()[0]).toBe('1hl/retry2 filesRetry backoff · fewest files');
   });
@@ -251,7 +306,7 @@ describe('OverlapChip', () => {
   it('inside a session every overlapping row carries its chip', async () => {
     await renderChip({ mountId: RETRY_MOUNT });
 
-    screen.getByRole('button', { name: 'Overlaps Batch export' });
+    screen.getByRole('button', { name: 'Running, Overlaps Batch export' });
   });
 
   it('queues one message per Implementer and Undo withdraws both', async () => {
@@ -472,11 +527,11 @@ const THREE = [
 
 const openThree = async () => {
   await renderChip({ mountId: BATCH_MOUNT });
-  fireEvent.click(screen.getByRole('button', { name: 'Overlaps Refund statements +1' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Running, Overlaps Refund statements +1' }));
   return screen.getByRole('dialog', { name: '3 branches change the same files' });
 };
 
-describe('OverlapChip with three branches', () => {
+describe('OverlapCard with three branches', () => {
   beforeEach(() => {
     stubStoryInvoke({ overlap_read: THREE });
     useAppStore.setState((state) => ({

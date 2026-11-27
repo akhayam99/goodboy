@@ -177,6 +177,7 @@ describe('branchRowOf', () => {
       word: { word: NAMES.asksYou, tone: 'warning' },
       action: { kind: 'card', index: 1 },
       hoverFacts: [],
+      caution: null,
     });
   });
 
@@ -350,18 +351,20 @@ describe('branchRowOf', () => {
   });
 
   it('keeps what lost the ladder in the hover facts, once each', () => {
-    const overlap = { fileCount: 3, otherName: 'Northwind invoice cleanup' };
     expect(
-      rowFor({
-        branch: branchOf({ checks: 'failure', behind: 2 }),
-        runningCount: 2,
-        overlap,
-      }).hoverFacts,
-    ).toEqual([
-      '2 runs',
-      '2 behind main',
-      '3 shared files. Merge Northwind invoice cleanup first.',
-    ]);
+      rowFor({ branch: branchOf({ checks: 'failure', behind: 2 }), runningCount: 2 }).hoverFacts,
+    ).toEqual(['2 runs', '2 behind main']);
+  });
+
+  it('puts the overlap caution on a ready row only, once, and never on a settled one', () => {
+    const overlap = { fileCount: 3, otherName: 'Northwind invoice cleanup' };
+    const sentence = '3 shared files. Merge Northwind invoice cleanup first.';
+
+    expect(rowFor({ branch: branchOf({ checks: 'success' }), overlap })).toMatchObject({
+      caution: sentence,
+      hoverFacts: [],
+    });
+    expect(rowFor({ branch: branchOf({ checks: 'failure' }), overlap }).caution).toBeNull();
     expect(rowFor({ branch: branchOf({ state: 'merged' }), overlap }).hoverFacts).toEqual([]);
   });
 

@@ -34,7 +34,7 @@ export const overlapWordsOf = ({ group, sessionLabels }: Params): OverlapWords =
   return {
     chip: others.length > 1 ? `${chip} +${others.length - 1}` : chip,
     title: `${group.steps.length} branches change the same files`,
-    lead: 'Merge them in this order to avoid conflicts.',
+    lead: 'A suggested order: fewest files first, then the oldest.',
     shared: countNoun({ count: group.sharedPaths.length, one: 'shared file' }),
     reasons: group.steps.map((step) => MERGE_REASON_WORDS[step.reason]),
   };

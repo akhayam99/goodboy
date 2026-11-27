@@ -10,6 +10,7 @@ const COPY_ROWS: ReadonlyArray<string> = ['mount.copyBranch', 'mount.copyPath'];
 
 const OPEN_BRANCH_ROWS: ReadonlyArray<string> = [
   'mount.openPullRequest',
+  'mount.mergeOrder',
   ...OPEN_ROWS,
   'mount.switchBranch',
   ...COPY_ROWS,

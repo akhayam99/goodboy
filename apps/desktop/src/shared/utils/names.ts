@@ -220,6 +220,7 @@ export const NAMES = {
   messageTheImplementer: 'Message the Implementer',
   messageTheImplementers: 'Message the Implementers',
   overlaps: 'Overlaps',
+  mergeOrder: 'Merge order',
   addToMessage: 'Add to message',
   sendToLead: 'Send to Lead',
   sendToLeadPick: 'Send to Lead…',

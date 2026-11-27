@@ -80,7 +80,7 @@ type RequestParams = {
   readonly isStale: boolean;
 };
 
-const requestFactsOf = ({ request, isStale }: RequestParams): BranchRequestFacts => ({
+export const requestFactsOf = ({ request, isStale }: RequestParams): BranchRequestFacts => ({
   noun: request.provider === 'gitlab' ? '!' : '#',
   number: request.number,
   url: request.url,
