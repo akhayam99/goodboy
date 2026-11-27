@@ -1,4 +1,3 @@
-import type { SessionId } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
 import { isLiveSession } from './isLiveSession';
 
@@ -26,7 +25,7 @@ export const preloadSessionDetail = ({ state }: Params): void => {
     if (!isLiveSession({ session })) {
       continue;
     }
-    const sessionId = session.id as SessionId;
+    const sessionId = session.id;
     if (state.sessionArtifacts[sessionId] === undefined) {
       once({
         key: `artifacts:${sessionId}`,

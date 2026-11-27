@@ -140,8 +140,9 @@ summary of the last output, cut to 600 characters. Since contract version 6 it
 also carries a `shortName` for the crumb (the first line of the goal without its
 leading `[KEY]` tags, cut at a word to 32 characters), the `artifacts` of the
 session (title, kind, author role, version, update time, comment count, whether
-a plan waits for approval with the `approvePlan` action id, and the markdown
-body cut to 6000 characters, absent for a wireframe), the `questions` (the open
+a plan waits for approval with the `approvePlan` action id, and, for a plan,
+the markdown body cut to 4000 characters and 20000 across the list; a report
+and a wireframe carry no body), the `questions` (the open
 ones, then the answered ones, with the options, who asked and the answer) and
 the `counts` the tabs show (runs, artifacts, open questions). Each project row
 adds the pull request word the Mac shows (`No pull request`, `Draft`, `Open`,

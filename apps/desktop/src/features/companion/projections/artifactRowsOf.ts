@@ -9,7 +9,8 @@ import { safeTextOf } from './safeTextOf';
 import type { WorkspaceScope } from './workspaceScope';
 
 export const ARTIFACT_LIMIT = 20;
-export const ARTIFACT_BODY_MAX = 6000;
+export const ARTIFACT_BODY_MAX = 4000;
+export const ARTIFACT_BODY_BUDGET = 20000;
 export const ARTIFACT_TITLE_MAX = 200;
 
 type Params = {
@@ -85,7 +86,7 @@ export const artifactRowsOf = ({ scope, sessionId }: Params): ReadonlyArray<Sess
         approveActionId: isAwaiting
           ? actionIdOf({ kind: 'approvePlan', objectId: id, version: String(row.revision) })
           : null,
-        ...bodyOf({ text: row.sourceText, isMarkdown: row.artifact.kind !== 'wireframe' }),
+        ...bodyOf({ text: row.sourceText, isMarkdown: row.artifact.kind === 'plan' }),
       };
     }),
   );
@@ -107,7 +108,16 @@ export const artifactRowsOf = ({ scope, sessionId }: Params): ReadonlyArray<Sess
       commentCount: countOf({ id: artifact.id }),
       isAwaitingApproval: false,
       approveActionId: null,
-      ...bodyOf({ text: artifact.sourceText, isMarkdown: artifact.sourceFormat === 'markdown' }),
+      ...bodyOf({ text: artifact.sourceText, isMarkdown: artifact.kind === 'plan' }),
     }));
-  return [...ledger, ...stored].sort((left, right) => byRecent({ left, right }));
+  const sorted = [...ledger, ...stored].sort((left, right) => byRecent({ left, right }));
+  let remaining = ARTIFACT_BODY_BUDGET;
+  return sorted.map((row) => {
+    const size = row.body === null ? 0 : row.body.length;
+    if (size === 0 || size <= remaining) {
+      remaining -= size;
+      return row;
+    }
+    return { ...row, body: null, isBodyCut: true };
+  });
 };

@@ -13,13 +13,15 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
-import type {
-  ArtifactComment,
-  ArtifactId,
-  OpenQuestion,
-  PlanArtifact,
-  ReportArtifact,
-  SessionId,
+import {
+  brandId,
+  type AgentId,
+  type ArtifactComment,
+  type ArtifactId,
+  type OpenQuestion,
+  type OpenQuestionId,
+  type PlanArtifact,
+  type ReportArtifact,
 } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -65,9 +67,9 @@ const LEAD = 'agent-lead';
 const BUILDER = 'agent-builder';
 
 const planArtifact = (): PlanArtifact => ({
-  id: 'artifact-plan' as ArtifactId,
-  sessionId: asking.id as SessionId,
-  agentId: LEAD as PlanArtifact['agentId'],
+  id: brandId<ArtifactId>({ value: 'artifact-plan' }),
+  sessionId: asking.id,
+  agentId: brandId<AgentId>({ value: LEAD }),
   workflowRunId: null,
   kind: 'plan',
   schemaVersion: 1,
@@ -85,20 +87,28 @@ const planArtifact = (): PlanArtifact => ({
 
 const reportArtifact = (): ReportArtifact => ({
   ...planArtifact(),
-  id: 'artifact-report' as ArtifactId,
+  id: brandId<ArtifactId>({ value: 'artifact-report' }),
   kind: 'report',
   title: 'Rounding report',
-  sourceText: 'x'.repeat(7000),
+  sourceText: 'A short report',
   metadata: { reportType: 'audit' },
   revision: 1,
-  agentId: BUILDER as ReportArtifact['agentId'],
+  agentId: brandId<AgentId>({ value: BUILDER }),
   updatedAt: at('2026-10-05T08:45:00.000Z'),
+});
+
+const longPlan = (): PlanArtifact => ({
+  ...planArtifact(),
+  id: brandId<ArtifactId>({ value: 'artifact-long' }),
+  title: 'Long plan',
+  sourceText: 'x'.repeat(7000),
+  updatedAt: at('2026-10-05T07:00:00.000Z'),
 });
 
 const commentOn = ({ id }: { readonly id: string }): ArtifactComment => ({
   id: `comment-${id}`,
-  sessionId: asking.id as SessionId,
-  artifactId: id as ArtifactId,
+  sessionId: asking.id,
+  artifactId: brandId<ArtifactId>({ value: id }),
   revision: 1,
   anchor: fixtureOf<ArtifactComment['anchor']>({ value: { kind: 'document' } }),
   body: 'Looks good',
@@ -109,15 +119,15 @@ const commentOn = ({ id }: { readonly id: string }): ArtifactComment => ({
 });
 
 const answered = (): OpenQuestion => ({
-  ...openQuestionFor({ sessionId: asking.id as SessionId }),
-  id: 'question-answered' as OpenQuestion['id'],
+  ...openQuestionFor({ sessionId: asking.id }),
+  id: brandId<OpenQuestionId>({ value: 'question-answered' }),
   text: 'Which currency does the ledger use?',
   suggestedAnswers: ['EUR', 'USD'],
   status: 'answered',
   userAnswer: 'EUR',
   createdAt: at('2026-10-04T09:00:00.000Z'),
   answeredAt: at('2026-10-04T09:10:00.000Z'),
-  createdByAgentId: BUILDER as OpenQuestion['createdByAgentId'],
+  createdByAgentId: brandId<AgentId>({ value: BUILDER }),
 });
 
 const treeWithPlanAwaitingApproval = (): AutoTreeView =>
@@ -172,7 +182,7 @@ const seed = (): void => {
         }),
       ],
     },
-    sessionArtifacts: { [asking.id]: [planArtifact(), reportArtifact()] },
+    sessionArtifacts: { [asking.id]: [planArtifact(), reportArtifact(), longPlan()] },
     artifactComments: {
       [asking.id]: [commentOn({ id: 'artifact-plan' }), commentOn({ id: 'artifact-plan' })],
     },
@@ -238,7 +248,7 @@ describe('session projection v6', () => {
     const plan = rows.find((row) => row.id === 'artifact-plan');
     const report = rows.find((row) => row.id === 'artifact-report');
 
-    expect(rows).toHaveLength(3);
+    expect(rows).toHaveLength(4);
     expect(ledger).toMatchObject({
       kind: 'plan',
       version: 3,
@@ -255,8 +265,11 @@ describe('session projection v6', () => {
       approveActionId: null,
     });
     expect(report?.role).toBe('Implementer');
-    expect(report?.isBodyCut).toBe(true);
-    expect(report?.body?.length).toBe(6000);
+    expect(report?.body).toBeNull();
+    expect(report?.isBodyCut).toBe(false);
+    const long = rows.find((row) => row.id === 'artifact-long');
+    expect(long?.isBodyCut).toBe(true);
+    expect(long?.body?.length).toBe(4000);
   });
 
   it('lists open and answered questions with who asked and the answer', () => {
@@ -279,7 +292,7 @@ describe('session projection v6', () => {
   it('counts runs, artifacts and open questions for the tabs', () => {
     seed();
 
-    expect(fieldsOf().counts).toEqual({ runs: 0, artifacts: 3, openQuestions: 1 });
+    expect(fieldsOf().counts).toEqual({ runs: 0, artifacts: 4, openQuestions: 1 });
   });
 });
 
