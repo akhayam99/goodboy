@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { QueuedRow } from '../queuedRowsOf';
+import type { QueuedRow } from './queuedRow';
 
 type RoutingLabelProps = {
   readonly provider?: string | null;
@@ -12,17 +12,17 @@ type RoutingLabelProps = {
 
 const routingBadgeSpy = vi.hoisted(() => vi.fn(({}: RoutingLabelProps) => null));
 
-vi.mock('../../../../../shared/components/RoutingLabel', () => ({
+vi.mock('../../../shared/components/RoutingLabel', () => ({
   RoutingLabel: routingBadgeSpy,
 }));
 
-vi.mock('../../../../attachments/AttachmentStrip', () => ({
+vi.mock('../../attachments/AttachmentStrip', () => ({
   AttachmentStrip: ({ items, size }: { items: ReadonlyArray<unknown>; size?: string }) => (
     <div data-testid="strip" data-size={size} data-count={items.length} />
   ),
 }));
 
-import { QueuedMessages } from './QueuedMessages';
+import { QueuedMessages } from '.';
 
 const row = (id: string, overrides: Partial<QueuedRow> = {}): QueuedRow => ({
   id,

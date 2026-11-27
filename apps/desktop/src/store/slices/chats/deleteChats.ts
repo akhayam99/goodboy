@@ -47,6 +47,7 @@ export const deleteChats =
         chatMessages: omitChats({ record: state.chatMessages, chatIds }),
         chatLinks: omitChats({ record: state.chatLinks, chatIds }),
         chatStreams: omitChats({ record: state.chatStreams, chatIds }),
+        chatQueues: omitChats({ record: state.chatQueues, chatIds }),
         unreadChatIds,
       };
     });
