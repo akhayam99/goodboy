@@ -67,6 +67,7 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       }),
     );
 
+    void get().settleStaleNotifications();
     void get()
       .loadDormantSpend(workspaceId)
       .catch(() => undefined);

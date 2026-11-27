@@ -17,6 +17,7 @@ import { useAppStore, useAttentionElsewhere } from '../../../../store';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 import { notificationGroupKey, sortNotificationGroupsNewestFirst } from '../../grouping';
 import { isNotificationDebt } from '../../actionClass';
+import { notificationBadgeOf } from '../../notificationBadgeOf';
 import { BellButton } from './BellButton';
 import { BellHeader } from './BellHeader';
 import type { PopoverView, ScopeValue } from './bellTypes';
@@ -66,6 +67,7 @@ type Props = {
 export const NotificationCenter = ({ isCurrent }: Props) => {
   const notifications = useAppStore((s) => s.notifications);
   const notificationsLoading = useAppStore((s) => s.notificationsLoading);
+  const notificationCounts = useAppStore((s) => s.notificationCounts);
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
   const loadNotifications = useAppStore((s) => s.loadNotifications);
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
@@ -128,6 +130,10 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
 
   const groups = sortNotificationGroupsNewestFirst({ notifications });
   const unread = groups.filter((group) => group.some((notification) => !notification.read)).length;
+  const badge = notificationBadgeOf({
+    buckets: notificationCounts,
+    isWorkspaceScoped: notificationScope === 'workspace',
+  });
   const hasUnreadDebt = notifications.some(
     (notification) => !notification.read && isNotificationDebt({ notification }),
   );
@@ -193,7 +199,7 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
           <BellButton
             isOpen={open}
             isCurrent={isCurrent}
-            unread={unread}
+            unread={badge}
             hasUnreadDebt={hasUnreadDebt}
             onClick={handleOpen}
           />

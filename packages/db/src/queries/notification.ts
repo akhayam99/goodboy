@@ -338,8 +338,12 @@ export const markNotificationRead = async ({ db, id }: SingleNotificationParams)
 export const markNotificationUnread = async ({
   db,
   id,
-}: SingleNotificationParams): Promise<void> => {
-  await db.execute('UPDATE notifications SET read = 0 WHERE id = ?', [id]);
+}: SingleNotificationParams): Promise<number> => {
+  const { rowsAffected } = await db.execute(
+    'UPDATE notifications SET read = 0, acted_at = NULL WHERE id = ?',
+    [id],
+  );
+  return rowsAffected;
 };
 
 type ActedParams = {
@@ -384,22 +388,159 @@ export const deleteNotificationsByCoalesceKey = async ({
   await db.execute(`DELETE FROM notifications WHERE coalesce_key IN (${marks})`, [...coalesceKeys]);
 };
 
-export const clearResolvedHelperNotifications = async ({
+type ReplaceByKeyParams = {
+  readonly db: Database;
+  readonly notification: Notification;
+};
+
+export const replaceNotificationByKey = async ({
   db,
-}: Pick<ScopeParams, 'db'>): Promise<void> => {
-  await db.execute(
-    `DELETE FROM notifications WHERE
-       (title = 'Summarizer failed' AND session_id IS NOT NULL AND EXISTS (
+  notification: n,
+}: ReplaceByKeyParams): Promise<boolean> => {
+  if (n.coalesceKey === null) {
+    return false;
+  }
+  const { rowsAffected } = await db.execute(
+    `UPDATE notifications SET
+       id = ?, ts = ?, kind = ?, title = ?, body = ?, severity = ?, session_id = ?,
+       workspace_id = ?, read = ?, action = ?, acted_at = NULL
+     WHERE id = (
+       SELECT id FROM notifications WHERE coalesce_key = ? ORDER BY ts DESC, id DESC LIMIT 1
+     )`,
+    [
+      n.id,
+      Date.parse(n.ts),
+      n.kind,
+      n.title,
+      n.body ?? null,
+      n.severity,
+      n.sessionId ?? null,
+      n.workspaceId ?? null,
+      n.read ? 1 : 0,
+      serializeAction(n.action),
+      n.coalesceKey,
+    ],
+  );
+  return rowsAffected > 0;
+};
+
+type SettleStaleParams = {
+  readonly db: Database;
+  readonly nowMs: number;
+  readonly launchStampMs: number | null;
+  readonly firstPassBeforeMs: number;
+};
+
+type Clause = {
+  readonly sql: string;
+  readonly params: ReadonlyArray<unknown>;
+};
+
+const SUMMARIZER_FAILED: Clause = {
+  sql: `(title = 'Summarizer failed' AND session_id IS NOT NULL AND EXISTS (
          SELECT 1 FROM telemetry_records t
          WHERE t.session_id = notifications.session_id AND t.kind = 'summarizer'
-           AND t.recorded_at > notifications.ts))
-       OR (kind = 'summarizer-degraded' AND coalesce_key LIKE 'step-summary-degraded:%' AND EXISTS (
+           AND t.recorded_at > notifications.ts))`,
+  params: [],
+};
+
+const STEP_SUMMARY_DEGRADED: Clause = {
+  sql: `(kind = 'summarizer-degraded' AND coalesce_key LIKE 'step-summary-degraded:%' AND EXISTS (
          SELECT 1 FROM live_agents a
          WHERE a.id = json_extract(notifications.action, '$.agentId')
-           AND (a.output_summary IS NULL OR a.output_summary NOT LIKE '[unsummarized step output%')))
-       OR (title IN ('Couldn''t read the orchestrator''s reply', 'The orchestrator failed', 'Orchestrated run blocked')
+           AND (a.output_summary IS NULL OR a.output_summary NOT LIKE '[unsummarized step output%')))`,
+  params: [],
+};
+
+const ORCHESTRATOR_NOTICE: Clause = {
+  sql: `(title IN ('Couldn''t read the orchestrator''s reply', 'The orchestrator failed', 'Orchestrated run blocked')
          AND session_id IS NOT NULL AND EXISTS (
            SELECT 1 FROM live_agents a
            WHERE a.session_id = notifications.session_id AND a.started_at > notifications.ts))`,
+  params: [],
+};
+
+const CONTINUE_AGENT_DONE: Clause = {
+  sql: `(json_extract(action, '$.kind') = 'continue-agent' AND EXISTS (
+         SELECT 1 FROM live_agents a
+         WHERE a.id = json_extract(notifications.action, '$.agentId')
+           AND a.status = 'completed' AND a.last_finished_at > notifications.ts))`,
+  params: [],
+};
+
+type DeadRetryParams = {
+  readonly launchStampMs: number | null;
+};
+
+const deadRetryClause = ({ launchStampMs }: DeadRetryParams): Clause =>
+  launchStampMs === null
+    ? { sql: '0', params: [] }
+    : {
+        sql: `(json_extract(action, '$.kind') = 'retry-action' AND ts < ?)`,
+        params: [launchStampMs],
+      };
+
+const ENDED_SESSION: Clause = {
+  sql: `(session_id IS NOT NULL AND EXISTS (
+         SELECT 1 FROM sessions s
+         WHERE s.id = notifications.session_id AND (s.archived_at IS NOT NULL OR s.deleted_at IS NOT NULL)))`,
+  params: [],
+};
+
+const NEWER_DUPLICATE: Clause = {
+  sql: `(read = 0 AND coalesce_key IS NOT NULL AND EXISTS (
+         SELECT 1 FROM notifications newer
+         WHERE newer.coalesce_key = notifications.coalesce_key AND newer.read = 0
+           AND (newer.ts > notifications.ts OR (newer.ts = notifications.ts AND newer.id > notifications.id))))`,
+  params: [],
+};
+
+type FirstPassParams = {
+  readonly firstPassBeforeMs: number;
+  readonly launchStampMs: number | null;
+};
+
+const firstPassClause = ({ firstPassBeforeMs, launchStampMs }: FirstPassParams): Clause =>
+  launchStampMs === null
+    ? { sql: '0', params: [] }
+    : {
+        sql: `(severity IN ('error', 'warning') AND ts < ?)`,
+        params: [Math.min(firstPassBeforeMs, launchStampMs)],
+      };
+
+type AnyOfParams = {
+  readonly clauses: ReadonlyArray<Clause>;
+};
+
+const anyOf = ({ clauses }: AnyOfParams): Clause => ({
+  sql: `(${clauses.map((clause) => clause.sql).join(' OR ')})`,
+  params: clauses.flatMap((clause) => clause.params),
+});
+
+export const settleStaleNotifications = async ({
+  db,
+  nowMs,
+  launchStampMs,
+  firstPassBeforeMs,
+}: SettleStaleParams): Promise<number> => {
+  const owed = anyOf({ clauses: [CONTINUE_AGENT_DONE, deadRetryClause({ launchStampMs })] });
+  const settled = anyOf({
+    clauses: [
+      SUMMARIZER_FAILED,
+      STEP_SUMMARY_DEGRADED,
+      ORCHESTRATOR_NOTICE,
+      owed,
+      ENDED_SESSION,
+      NEWER_DUPLICATE,
+      firstPassClause({ firstPassBeforeMs, launchStampMs }),
+    ],
+  });
+  const { rowsAffected } = await db.execute(
+    `UPDATE notifications SET
+       read = 1,
+       acted_at = CASE WHEN acted_at IS NULL AND ${owed.sql} THEN ? ELSE acted_at END
+     WHERE (read = 0 AND ${settled.sql}) OR (acted_at IS NULL AND ${owed.sql})`,
+    [...owed.params, nowMs, ...settled.params, ...owed.params],
   );
+  return rowsAffected;
 };

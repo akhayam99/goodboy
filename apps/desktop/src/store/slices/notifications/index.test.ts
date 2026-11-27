@@ -8,7 +8,10 @@ import {
   storySpies,
   type StoryStore,
 } from '../../storyHarness';
-import type { Notification } from '@goodboy/db';
+import {
+  settleStaleNotifications as settleStaleNotificationsDb,
+  type Notification,
+} from '@goodboy/db';
 import {
   CHECK_STATE,
   NOTHING_CHANGED,
@@ -312,7 +315,8 @@ describe('store contract', () => {
 
       await store.getState().markNotificationsRead();
       await store.getState().emitNotification(notice);
-      expect(store.getState().notifications).toHaveLength(2);
+      expect(store.getState().notifications).toHaveLength(1);
+      expect(store.getState().notifications[0]?.read).toBe(false);
     });
 
     it('emitNotification with isOnce and no key skips a second unread notice of the same title', async () => {
@@ -374,26 +378,27 @@ describe('store contract', () => {
       expect(storySpies.deleteNotificationsByCoalesceKey).not.toHaveBeenCalled();
     });
 
-    it('loadNotifications clears the helper notices that were resolved since', async () => {
+    it('loadNotifications settles the stale notices before it reads the list', async () => {
       const store = useAppStore;
+      vi.mocked(settleStaleNotificationsDb).mockClear();
       storySpies.listNotifications.mockResolvedValue([]);
       storySpies.countNotifications.mockResolvedValue([]);
 
       await store.getState().loadNotifications();
 
-      expect(storySpies.clearResolvedHelperNotifications).toHaveBeenCalledTimes(1);
-      expect(storySpies.clearResolvedHelperNotifications.mock.invocationCallOrder[0]).toBeLessThan(
+      expect(settleStaleNotificationsDb).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(settleStaleNotificationsDb).mock.invocationCallOrder[0]).toBeLessThan(
         storySpies.listNotifications.mock.invocationCallOrder[0] ?? 0,
       );
     });
 
-    it('emitNotification keeps the row in memory when the insert fails', async () => {
+    it('emitNotification shows no phantom row when the insert fails', async () => {
       const store = useAppStore;
       storySpies.insertNotification.mockRejectedValueOnce(new Error('database is locked'));
       await expect(
         store.getState().emitNotification({ kind: 'error', severity: 'error', title: 'Kept' }),
       ).resolves.toBeUndefined();
-      expect(store.getState().notifications[0]?.title).toBe('Kept');
+      expect(store.getState().notifications).toEqual([]);
       expect(storySpies.countNotifications).not.toHaveBeenCalled();
     });
 

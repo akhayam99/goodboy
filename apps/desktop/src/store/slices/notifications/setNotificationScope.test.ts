@@ -1,7 +1,7 @@
 const dbStubs = vi.hoisted(() => ({
   listNotifications: vi.fn(),
   countNotifications: vi.fn(),
-  clearResolvedHelperNotifications: vi.fn(),
+  settleStaleNotifications: vi.fn(),
   insertNotification: vi.fn(),
 }));
 
@@ -86,7 +86,7 @@ beforeEach(async () => {
   await resetStoryStore();
   dbStubs.listNotifications.mockReset();
   dbStubs.countNotifications.mockReset().mockResolvedValue([BUCKET]);
-  dbStubs.clearResolvedHelperNotifications.mockReset().mockResolvedValue(undefined);
+  dbStubs.settleStaleNotifications.mockReset().mockResolvedValue(0);
   dbStubs.insertNotification.mockReset().mockResolvedValue(undefined);
   useAppStore.setState({
     currentWorkspaceId: brandId<WorkspaceId>({ value: 'ws-harborline' }),
@@ -250,7 +250,7 @@ describe('retrying a failed switch', () => {
 
     await useAppStore.getState().setNotificationScope('all');
 
-    expect(dbStubs.clearResolvedHelperNotifications).toHaveBeenCalledTimes(1);
+    expect(dbStubs.settleStaleNotifications).toHaveBeenCalledTimes(1);
     expect(useAppStore.getState().notificationScope).toBe('workspace');
     expect(useAppStore.getState().notificationCounts).toEqual([BUCKET]);
   });

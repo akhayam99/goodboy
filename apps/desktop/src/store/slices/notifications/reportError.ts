@@ -3,6 +3,8 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { registerActionRetry, type ActionRetry } from './actionRetries';
 import { ERROR_CLAUSE_TEXT, type ErrorRecovery } from './errorRecovery';
+import { isErrorRepeatAllowed } from './errorRepeatLimit';
+import { notificationKeyOf } from './notificationKeyOf';
 import type { GetFn } from './types';
 
 const REPORT_ERROR_BODY_LIMIT = 600;
@@ -56,6 +58,15 @@ export const reportError = ({ get }: FactoryParams) => {
     coalesceKey,
     ...target
   }: ReportErrorParams) => {
+    if (
+      coalesceKey === undefined &&
+      retry === undefined &&
+      !isErrorRepeatAllowed({
+        key: notificationKeyOf({ kind: 'error', severity, title, ...target }),
+      })
+    ) {
+      return;
+    }
     const text = formatError(error).trim();
     const action: NotificationAction | undefined =
       retry === undefined

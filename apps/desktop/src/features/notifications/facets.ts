@@ -5,6 +5,7 @@ import type {
   NotificationSeverity,
 } from '@goodboy/db';
 import { isNotificationDebt, notificationActionClass } from './actionClass';
+import { notificationBadgeOf } from './notificationBadgeOf';
 import { NOTIFICATION_SOURCES, notificationSource, type NotificationSource } from './source';
 
 export type NotificationView = 'all' | 'unread' | 'action';
@@ -172,7 +173,7 @@ export const countNotificationFacets = ({
   const scoped = isWorkspaceScoped ? buckets.filter((bucket) => bucket.inWorkspace) : buckets;
   return {
     total: sum({ buckets: scoped }),
-    unread: sum({ buckets: scoped.filter((bucket) => !bucket.read) }),
+    unread: notificationBadgeOf({ buckets: scoped, isWorkspaceScoped: false }),
     matching: sum({
       buckets: scoped.filter((bucket) =>
         matchesFilters({ facts: bucketFacts({ bucket }), filters }),

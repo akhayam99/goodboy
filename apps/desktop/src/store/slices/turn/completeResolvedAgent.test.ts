@@ -118,6 +118,7 @@ type Harness = {
     sessions: ReadonlyArray<Session>;
     sessionResolveThreads: Record<SessionId, ReadonlyArray<ResolveThread>>;
     refreshUnreadWorkspaces: ReturnType<typeof vi.fn>;
+    settleStaleNotifications: ReturnType<typeof vi.fn>;
     emitNotification: ReturnType<typeof vi.fn>;
     resolveNotifications: ReturnType<typeof vi.fn>;
   };
@@ -156,6 +157,7 @@ const createHarness = ({ sessionOverride }: HarnessParams = {}): Harness => {
     phaseTemplates: {},
     sessionWorkflows: {},
     refreshUnreadWorkspaces: vi.fn(async () => undefined),
+    settleStaleNotifications: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
     resolveNotifications: vi.fn(async () => undefined),
   };

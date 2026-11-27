@@ -142,6 +142,10 @@ Each is a list written by hand beside an exhaustive type. A new type member forc
 | `VALID_SORTS`, `VALID_GROUPS` (saved session-list preferences)   | reads back invalid and is overwritten by the default                                                                                                                                    |
 | `SIMPLE_LENSES` (lenses that work without a branch)              | is hidden or cleared for sessions with no branch                                                                                                                                        |
 
+### The bell sweep names its proof per family
+
+`settleStaleNotifications` marks a row read only by a proof written for its family: the three helper notices, a `continue-agent` row whose agent completed after it, a `retry-action` row older than the process launch stamp, a session archived or deleted, a newer unread duplicate of one key, and one first pass for errors and warnings older than `FIRST_PASS_BEFORE_MS` and than the launch. Never add a rule by session ("a later agent completed") or by a settled branch: a push, a branch clean-up, a sign-in, a budget and any unknown family stay unread, because a clean-up fails after the merge by definition. The first pass has no stored flag, so it runs on every load and reads again a row older than its cutoff that you marked unread; remove `FIRST_PASS_BEFORE_MS` once the release that ships it is two minors old. A standing rule does the same for a dead retry and an archived session: Mark as unread holds until the next load. The bell number counts SQL buckets (`notificationBadgeOf`), which count rows, so it equals the groups only because a key keeps one unread row.
+
 ### The `auto` role stays out of every list a person sees
 
 `auto` is in `AgentRole` and every exhaustive map, and out of `SELECTABLE_AGENT_ROLES` (all its `ROLE_REGISTRY` flags are `false`), `DEFAULT_GROUPS`, `GUIDANCE_ROLES` and the Context drawer chips (`ALL_ROLES` in `roleVisibility.ts`). Never add it to complete a list: Auto has its own gate ([auto.md](auto.md#auto-gate-and-screens)).
