@@ -26,8 +26,7 @@ type Props = {
   readonly side: BrowserToolsSide;
   readonly isToolsInHead: boolean;
   readonly onTab: (params: TabParams) => void;
-  readonly onSide: () => void;
-  readonly onClose: () => void;
+  readonly onSide?: () => void;
 };
 
 type LevelParams = {
@@ -60,7 +59,6 @@ export const BrowserConsole = ({
   isToolsInHead,
   onTab,
   onSide,
-  onClose,
 }: Props) => {
   const [level, setLevel] = useState<ConsoleLevelFilter>('all');
   const [query, setQuery] = useState('');
@@ -136,7 +134,6 @@ export const BrowserConsole = ({
         tools={isToolsInHead ? tools : null}
         onKind={onTab}
         onSide={onSide}
-        onClose={onClose}
       />
       {isToolsInHead ? null : (
         <div className="flex shrink-0 flex-wrap items-center gap-2 px-2">{tools}</div>

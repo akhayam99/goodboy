@@ -1,5 +1,6 @@
 import { Copy, CopyPlus, X } from '@goodboy/ui/icons';
 import type { MenuEntry } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { BrowserPaneModel } from '../../types';
 import type { BrowserMoreOff } from './browserMoreRows';
 
@@ -27,6 +28,14 @@ export const browserTabRowsOf = ({
     icon: CopyPlus,
     isDisabled: isOff.isDuplicateOff,
     onSelect: model.duplicate,
+  },
+  {
+    kind: 'item',
+    key: 'openOutside',
+    label: 'Open in your browser',
+    icon: CONCEPT_ICONS.openExternal,
+    isDisabled: isOff.isOpenOutsideOff,
+    onSelect: model.openOutside,
   },
   {
     kind: 'item',

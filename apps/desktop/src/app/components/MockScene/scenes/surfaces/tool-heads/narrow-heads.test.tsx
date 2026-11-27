@@ -109,7 +109,7 @@ describe('the narrow tool head scenes', () => {
   });
 
   it.each(['tool-heads-narrow', 'tool-heads-narrow-dark'])(
-    'keeps each narrow head to its title, More and Close (%s)',
+    'keeps each narrow head to its title, its menu and Close (%s)',
     async (id) => {
       mount({ id });
 
@@ -129,9 +129,9 @@ describe('the narrow tool head scenes', () => {
 
       const browser = paneOf({ id: 'browser' });
       await within(browser).findByRole('button', { name: /^Edit address/ }, WAIT);
-      expect(browser.querySelector('[data-row-folded]')).not.toBeNull();
+      expect(browser.querySelector('[data-row-narrow]')).not.toBeNull();
       within(browser).getByRole('button', { name: 'Console' });
-      within(browser).getByRole('button', { name: 'More' });
+      within(browser).getByRole('button', { name: 'Page menu' });
       within(browser).getByRole('button', { name: 'Close' });
       expect(screen.queryAllByRole('tooltip')).toHaveLength(0);
     },
