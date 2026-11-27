@@ -1,6 +1,7 @@
 import type { DecideKind } from './decideAction';
 
-export type PhoneKind = 'mergePr' | 'mergeTrain' | 'stopTrain' | 'startSession';
+export type PhoneKind =
+  'mergePr' | 'mergeTrain' | 'stopTrain' | 'startSession' | 'sendChatMessage' | 'createChat';
 
 type Window = {
   readonly max: number;
@@ -27,6 +28,8 @@ export const RATE_WINDOWS = {
   mergeTrain: { max: 3, windowMs: MINUTE_MS },
   stopTrain: { max: 6, windowMs: MINUTE_MS },
   startSession: { max: 5, windowMs: MINUTE_MS },
+  sendChatMessage: { max: 20, windowMs: MINUTE_MS },
+  createChat: { max: 6, windowMs: MINUTE_MS },
 } as const satisfies Record<DecideKind | PhoneKind, Window>;
 
 export type RateKind = keyof typeof RATE_WINDOWS;

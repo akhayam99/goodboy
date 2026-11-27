@@ -126,6 +126,48 @@ export type SessionProject = {
   readonly name: string;
   readonly branch: string | null;
   readonly prNumber: Int | null;
+  readonly prState: string;
+  readonly prTone: Tone;
+  readonly additions: Int | null;
+  readonly deletions: Int | null;
+  readonly runCount: Int;
+};
+
+export type SessionArtifactKind = 'plan' | 'report' | 'wireframe';
+
+export type SessionArtifactRow = {
+  readonly id: string;
+  readonly title: string;
+  readonly kind: SessionArtifactKind;
+  readonly role: string | null;
+  readonly version: Int;
+  readonly updatedAt: IsoTimestamp | null;
+  readonly commentCount: Int;
+  readonly isAwaitingApproval: boolean;
+  readonly approveActionId: ActionId | null;
+  readonly body: string | null;
+  readonly isBodyCut: boolean;
+};
+
+export type SessionQuestionState = 'open' | 'answered';
+
+export type SessionQuestionRow = {
+  readonly id: string;
+  readonly state: SessionQuestionState;
+  readonly text: string;
+  readonly options: ReadonlyArray<string>;
+  readonly recommended: string | null;
+  readonly askedBy: string | null;
+  readonly since: IsoTimestamp;
+  readonly answer: string | null;
+  readonly answeredAt: IsoTimestamp | null;
+  readonly answerActionId: ActionId | null;
+};
+
+export type SessionCounts = {
+  readonly runs: Int;
+  readonly artifacts: Int;
+  readonly openQuestions: Int;
 };
 
 export type SessionFields = {
@@ -133,6 +175,7 @@ export type SessionFields = {
   readonly sessionId: string;
   readonly ref: string | null;
   readonly goal: string;
+  readonly shortName: string;
   readonly stage: SessionStage;
   readonly mark: StatusMark;
   readonly facts: ReadonlyArray<SessionFact>;
@@ -145,6 +188,9 @@ export type SessionFields = {
   readonly pullRequestNumber: Int | null;
   readonly decisions: ReadonlyArray<string>;
   readonly summary: string | null;
+  readonly artifacts: ReadonlyArray<SessionArtifactRow>;
+  readonly questions: ReadonlyArray<SessionQuestionRow>;
+  readonly counts: SessionCounts;
 };
 
 export type SessionProjection = ProjectionMeta & SessionFields;
@@ -355,3 +401,23 @@ export type TasksFields = {
 };
 
 export type TasksProjection = ProjectionMeta & TasksFields;
+
+export type ChatRow = {
+  readonly id: string;
+  readonly title: string;
+  readonly label: string;
+  readonly preview: string | null;
+  readonly updatedAt: IsoTimestamp;
+  readonly messageCount: Int;
+  readonly isBusy: boolean;
+  readonly isPinned: boolean;
+  readonly sendActionId: ActionId;
+};
+
+export type ChatsFields = {
+  readonly workspaceId: string;
+  readonly chats: ReadonlyArray<ChatRow>;
+  readonly createActionId: ActionId;
+};
+
+export type ChatsProjection = ProjectionMeta & ChatsFields;

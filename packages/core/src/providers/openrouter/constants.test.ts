@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { OPENROUTER_MODELS } from './constants';
 import { OPENROUTER_CATALOG } from './catalog';
+import { strongestModelForTier } from '../strongestModelForTier';
 
 describe('OPENROUTER_MODELS', () => {
   it('contains the curated pre-slugged catalog', () => {
@@ -49,6 +50,14 @@ describe('OPENROUTER_MODELS', () => {
       'gpt-6-luna',
       'gemini-4-argon',
       'gemini-3.5-flash-lite',
+      'fable-5.2',
+      'gpt-6.2-astra',
+      'gpt-6.2-sol',
+      'gpt-6.1-terra',
+      'gemini-4-neon',
+      'gemini-4-carbon',
+      'gemini-4-hydrogen',
+      'kimi-k3.1-pro',
     ]);
   });
 
@@ -59,9 +68,19 @@ describe('OPENROUTER_MODELS', () => {
       'gpt',
       'gemini',
     ]);
-    expect(OPENROUTER_MODELS.every((model) => model.effort?.includes('medium') === true)).toBe(
-      true,
-    );
+    const withoutMedium = OPENROUTER_MODELS.filter(
+      (model) => model.effort?.includes('medium') !== true,
+    ).map((model) => model.id);
+    expect(withoutMedium).toEqual(['kimi-k3.1-pro']);
+  });
+
+  it('moves the mid and thinker tier picks to the newest models', () => {
+    expect(
+      strongestModelForTier({ provider: 'openrouter', tier: 'mid', wantsThinker: false })?.id,
+    ).toBe('gpt-6.1-terra');
+    expect(
+      strongestModelForTier({ provider: 'openrouter', tier: 'expensive', wantsThinker: true })?.id,
+    ).toBe('fable-5.2');
   });
 
   it('drops the three vendor ids the openrouter api no longer lists', () => {

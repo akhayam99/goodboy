@@ -2,6 +2,7 @@ import type { EffortLevel, OpencodeModel } from '@goodboy/types';
 
 const NO_EFFORTS = [] satisfies ReadonlyArray<EffortLevel>;
 const LING_EFFORTS = ['low', 'medium', 'high'] satisfies ReadonlyArray<EffortLevel>;
+const DEEPSEEK_EFFORTS = ['low', 'high', 'max'] satisfies ReadonlyArray<EffortLevel>;
 const MUSE_SPARK_EFFORTS = [
   'minimal',
   'low',
@@ -48,7 +49,26 @@ export const OPENCODE_CATALOG = [
     defaultEffort: 'medium',
   },
   {
+    key: 'deepseek-v4.1-flash',
+    label: 'DeepSeek V4.1 Flash',
+    tier: 'cheap',
+    contextWindow: 200_000,
+    presentation: {
+      family: 'other',
+      group: 'DeepSeek',
+      version: 'V4.1',
+      checkpoint: 'Flash',
+      order: 20,
+      costTier: 'cheap',
+    },
+    provider: 'opencode',
+    cliId: 'opencode/deepseek-v4.1-flash-free',
+    efforts: DEEPSEEK_EFFORTS,
+    defaultEffort: 'high',
+  },
+  {
     key: 'nemotron-3-ultra',
+    legacy: true,
     label: 'Nemotron 3 Ultra',
     tier: 'cheap',
     contextWindow: 1_000_000,

@@ -14,7 +14,14 @@ vi.mock('../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { aSession, aWorkspace, anAgent, aWorkflowRun } from '@goodboy/types/testing';
-import type { SessionExternalTask } from '@goodboy/types';
+import {
+  brandId,
+  type ChatId,
+  type ChatMessageId,
+  type ChatSummary,
+  type ProviderRunId,
+  type SessionExternalTask,
+} from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -118,6 +125,36 @@ const linearRecord: InboxRecord = {
     },
   },
 };
+
+type ChatIdParams = {
+  readonly value: string;
+};
+
+const chatIdOf = ({ value }: ChatIdParams): ChatId => brandId<ChatId>({ value });
+
+type ChatOverrides = Partial<Pick<ChatSummary, 'id' | 'title' | 'lastActivityAt' | 'archivedAt'>>;
+
+const chatOf = ({
+  id = chatIdOf({ value: 'chat-ledger' }),
+  title = 'Ledger rounding',
+  lastActivityAt = at('2026-10-05T09:00:00.000Z'),
+  archivedAt = null,
+}: ChatOverrides): ChatSummary => ({
+  id,
+  workspaceId: harborline.id,
+  title,
+  provider: 'anthropic',
+  model: 'claude-opus-5',
+  effort: null,
+  pinnedAt: null,
+  archivedAt,
+  lastActivityAt,
+  createdAt: at('2026-10-04T09:00:00.000Z'),
+  updatedAt: lastActivityAt,
+  preview: 'Round at the edge of the ledger.',
+  modelsUsed: [],
+  messageCount: 4,
+});
 
 const seed = (): void => {
   seedColumn({
@@ -317,6 +354,45 @@ describe('companion projections, one builder per contract projection', () => {
       stateLabel: 'In Progress',
     });
     await expect(fixtureOf(draftOf(key))).toMatchFileSnapshot(`${FIXTURES}/tasks.json`);
+  });
+
+  it('builds the chats of the workspace with the actions that send and create', async () => {
+    seed();
+    useAppStore.setState({
+      chatsByWorkspace: {
+        [harborline.id]: [
+          chatOf({}),
+          chatOf({
+            id: chatIdOf({ value: 'chat-notify' }),
+            title: 'Notify relay retries',
+            lastActivityAt: at('2026-10-05T08:00:00.000Z'),
+          }),
+          chatOf({
+            id: chatIdOf({ value: 'chat-old' }),
+            archivedAt: at('2026-10-01T09:00:00.000Z'),
+          }),
+        ],
+      },
+      chatStreams: {
+        [chatIdOf({ value: 'chat-notify' })]: {
+          runId: brandId<ProviderRunId>({ value: 'run-1' }),
+          messageId: brandId<ChatMessageId>({ value: 'message-1' }),
+          isStopping: false,
+        },
+      },
+    });
+
+    const key = `chats:${harborline.id}`;
+    const fields = fieldsOf<{
+      chats: ReadonlyArray<{ id: string; isBusy: boolean; sendActionId: string }>;
+      createActionId: string;
+    }>(key);
+
+    expect(fields.chats.map((chat) => chat.id)).toEqual(['chat-ledger', 'chat-notify']);
+    expect(fields.chats.map((chat) => chat.isBusy)).toEqual([false, true]);
+    expect(fields.chats[0]?.sendActionId).toBe('act:sendChatMessage:chat-ledger:0');
+    expect(fields.createActionId).toBe(`act:createChat:${harborline.id}:0`);
+    await expect(fixtureOf(draftOf(key))).toMatchFileSnapshot(`${FIXTURES}/chats.json`);
   });
 
   it('never carries an absolute path, an archived session, a token or a mount path', () => {

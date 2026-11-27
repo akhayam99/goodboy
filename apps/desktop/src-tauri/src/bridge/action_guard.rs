@@ -168,6 +168,8 @@ mod tests {
             MobileAction::MergeTrain,
             MobileAction::StartSession,
             MobileAction::StopTrain,
+            MobileAction::SendChatMessage,
+            MobileAction::CreateChat,
         ] {
             let bad = json!({ "cmdId": "c1" });
             assert!(action_id_of(action, &bad).is_err());

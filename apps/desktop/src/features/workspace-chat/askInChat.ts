@@ -1,9 +1,6 @@
 import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import { useAppStore } from '../../store';
-import { chatDefaultModelKey, parseChatDefaultModel } from './chatDefaultModelSetting';
-import { defaultChatRouting } from './defaultChatRouting';
-import { selectWorkspaceResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
-import { selectBlockedModels } from '../../store/slices/providers/selectBlockedModels';
+import { defaultRoutingOfWorkspace } from './defaultRoutingOfWorkspace';
 
 type Params = {
   readonly question: string;
@@ -17,18 +14,7 @@ export const askInChat = async ({ question }: Params): Promise<void> => {
     return;
   }
   try {
-    const connected = state.providers
-      .filter((provider) => provider.connection === 'connected')
-      .map((provider) => provider.id);
-    const key = chatDefaultModelKey({ workspaceId });
-    const raw = state.settings[key] ?? (await state.loadSetting(key).catch(() => null));
-    const { provider, model, effort } = defaultChatRouting({
-      connected,
-      saved: parseChatDefaultModel({ raw }),
-      hidden: selectBlockedModels({ state }),
-      workspaceDefaultProvider: selectWorkspaceResolvedSettings({ state, workspaceId })
-        .defaultProviderOverride,
-    });
+    const { provider, model, effort } = await defaultRoutingOfWorkspace({ state, workspaceId });
     const chatId = await state.createChat({ workspaceId, provider, model });
     if (effort !== null) {
       await state.setChatModel({ chatId, provider, model, effort });

@@ -59,9 +59,9 @@ describe('RoutingLabel', () => {
   });
 
   it('clamps an effort the model does not support', () => {
-    render(<RoutingLabel provider="anthropic" model="claude-sonnet-4-5" effort="max" />);
+    render(<RoutingLabel provider="anthropic" model="claude-opus-4-6" effort="xhigh" />);
 
-    expect(screen.queryByText('Max')).toBeNull();
+    expect(screen.queryByText('Very high')).toBeNull();
     expect(screen.getByText('High')).toBeDefined();
   });
 

@@ -1,6 +1,7 @@
 import type {
   AgentId,
   PermissionRulePattern,
+  PermissionRuleId,
   PermissionRuleScope,
   ProviderRunId,
   SessionId,
@@ -31,8 +32,8 @@ export const allowWithRule = ({ get }: Deps) => {
     runId,
     scope,
     pattern,
-  }: Params): Promise<void> => {
-    await get().resolvePermissionRequest({
+  }: Params): Promise<PermissionRuleId | null> => {
+    const ruleId = await get().resolvePermissionRequest({
       sessionId,
       agentId,
       toolUseId,
@@ -47,8 +48,9 @@ export const allowWithRule = ({ get }: Deps) => {
       toolUseId,
     });
     if (isWaiting) {
-      return;
+      return ruleId;
     }
     await get().retryBlockedTool({ sessionId, agentId, toolName, toolUseId });
+    return ruleId;
   };
 };

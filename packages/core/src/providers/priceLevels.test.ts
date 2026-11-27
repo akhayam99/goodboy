@@ -47,6 +47,13 @@ describe('price levels', () => {
     );
   });
 
+  it('gemini bills cached tokens of a long request at the long cached rate', () => {
+    const large = request({ inputTokens: 300_000, cachedInputTokens: 100_000 });
+    expect(computeGeminiCostUsd({ usage: turnOf(large), model: 'gemini-3.1-pro' })).toBeCloseTo(
+      (200_000 * 4 + 100_000 * 0.4) / 1_000_000,
+    );
+  });
+
   it('gemini keeps the lower rate when the turn carries no large request', () => {
     const usage: ProviderUsage = {
       inputTokens: 250_000,

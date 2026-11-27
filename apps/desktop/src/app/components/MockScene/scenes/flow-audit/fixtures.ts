@@ -279,7 +279,7 @@ export const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
       models: [],
     },
     connection: 'connected',
-    version: '2.1.296',
+    version: '2.1.321',
     identity: 'harborline-platform',
     label: 'Claude',
     error: null,

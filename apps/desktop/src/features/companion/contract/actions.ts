@@ -31,7 +31,7 @@ export type RequestPlanChangesAction = SessionActionBase & {
   readonly text: string;
 };
 
-export type PermissionVerdict = 'allow' | 'deny';
+export type PermissionVerdict = 'allow' | 'allowAlways' | 'deny';
 
 export type AnswerPermissionAction = SessionActionBase & {
   readonly kind: 'answerPermission';
@@ -143,6 +143,17 @@ export type StopTrainAction = ActionBase & {
   readonly trainId: string;
 };
 
+export type SendChatMessageAction = ActionBase & {
+  readonly kind: 'sendChatMessage';
+  readonly chatId: string;
+  readonly seenVersion: ObjectVersion;
+  readonly text: string;
+};
+
+export type CreateChatAction = ActionBase & {
+  readonly kind: 'createChat';
+};
+
 export type MobileAction =
   | AnswerQuestionAction
   | ApprovePlanAction
@@ -160,7 +171,9 @@ export type MobileAction =
   | MergePrAction
   | StartSessionAction
   | MergeTrainAction
-  | StopTrainAction;
+  | StopTrainAction
+  | SendChatMessageAction
+  | CreateChatAction;
 
 export type ActionResult = 'done' | 'refused' | 'failed';
 
@@ -196,4 +209,5 @@ export type ActionOutcome = {
   readonly error: string | null;
   readonly undoActionId: ActionId | null;
   readonly createdSessionId: string | null;
+  readonly createdChatId: string | null;
 };

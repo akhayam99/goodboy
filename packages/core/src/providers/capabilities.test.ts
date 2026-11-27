@@ -39,7 +39,7 @@ describe('getCapabilities', () => {
   });
 
   it('getDefaultTurnModel for gemini returns the flash default', () => {
-    expect(getDefaultTurnModel({ id: 'gemini' })).toBe('gemini-3.8-flash');
+    expect(getDefaultTurnModel({ id: 'gemini' })).toBe('gemini-4-hydrogen');
   });
 
   it('getDefaultTurnModel for openrouter returns the newest sonnet, not the first entry', () => {

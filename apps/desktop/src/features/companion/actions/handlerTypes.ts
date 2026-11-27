@@ -21,6 +21,7 @@ export type HandlerResult =
       readonly kind: 'done';
       readonly undoActionId: ActionId | null;
       readonly createdSessionId: string | null;
+      readonly createdChatId: string | null;
     }
   | { readonly kind: 'refused'; readonly refusal: Refusal }
   | { readonly kind: 'failed'; readonly error: string };
@@ -48,6 +49,7 @@ export type HandlerParams<Action> = {
   readonly action: Action;
   readonly getStore: () => AppStore;
   readonly ports: DecidePorts;
+  readonly phoneId?: string | null;
 };
 
 export type StoreHandlerParams<Action> = {

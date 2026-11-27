@@ -1102,7 +1102,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'anthropic',
-      selectedModel: 'claude-sonnet-4-5',
+      selectedModel: 'claude-sonnet-4-6',
       reason: 'preference',
       fallbackUsed: false,
     });

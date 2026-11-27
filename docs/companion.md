@@ -29,8 +29,16 @@ phone with those rights like a second keyboard, not like a viewer.
 ## Pairing
 
 - The desktop keeps a long-term Noise static key and one record per paired
-  phone in `~/.goodboy/companion.json`: its key, the name it gave, when it
-  paired, when it was last seen and its rights. It never leaves the machine.
+  phone. The private half of the key lives in the macOS Keychain (service
+  `com.goodboy.desktop`, item `bridge.static_key`), never in a file. The public
+  half, the remembered port and one record
+  per phone (its key, the name it gave, when it paired, when it was last seen
+  and its rights) sit in `~/.goodboy/companion.json`. Neither leaves the
+  machine. A file from an older version that still holds the private key moves
+  it into the Keychain once, reads it back, and is rewritten without it. If the
+  Keychain refuses the write, nothing is moved and nothing is created: the page
+  shows the fault below and the move is tried again about every 20 seconds. The
+  key is never kept in a file as a fallback.
   A file written by an older version holds a bare list of keys: each becomes a
   record with the default rights and is written back in the new shape. That
   list is read until 0.45.0 (excluded).
@@ -38,37 +46,72 @@ phone with those rights like a second keyboard, not like a viewer.
   seconds and shows it with the desktop's key and addresses as a QR code. The
   payload has `v: 2`, the device name, the key, the token, the endpoints, the
   service name and the rights a new phone gets, so the phone can list them
-  before it pairs. A phone that completes the Noise XK handshake with a live
-  token is added and the token is burned. A known key reconnects without a
-  token.
+  before it pairs. The device name is the label kept in the identity file, or
+  `Mac`; the machine's host name never goes in the code or the hello.
+  A phone that completes the Noise XK handshake with a live token burns the
+  token and then waits: the page shows "An iPhone wants to pair" with the name
+  the phone gave, Allow and Deny, and a banner is raised when the window is not
+  in front, with a six digit code ("Allow only if your iPhone shows 482 913").
+  Only Allow adds the phone, with the default rights. Deny, no answer
+  within 60 seconds, or a second request while one waits, ends the attempt with
+  a reason. A known key reconnects without a token and without a question.
+- **Verification code.** The Mac and the phone each compute the code from the
+  Noise handshake of that attempt; it is never sent. Take the handshake hash `h`
+  (32 bytes, the final hash of the Noise XK handshake, available once message 3
+  is written or read; every Noise library exposes it). Read its first four bytes as an unsigned big-endian
+  integer, take it modulo 1,000,000, write it with six digits and a space after
+  the third: `code = ((h[0] << 24 | h[1] << 16 | h[2] << 8 | h[3]) % 1000000)`,
+  shown as `482 913`. Someone who copied the QR has a different handshake and so
+  a different code, so the real phone's code is the proof. The phone shows its
+  code while it waits.
+- The identity is never rebuilt in silence. When the file cannot be parsed, it is
+  moved aside as `companion.json.unreadable-<time>`; when the Keychain item cannot
+  be read after three tries, or does not belong to the file, nothing is changed.
+  In each case the page says what is wrong and offers **Reset pairing**, which
+  makes a new key and an empty phone list; every phone must then scan a new code.
+  A Keychain that is locked or refuses the write is tried again every 20 seconds
+  (no key is ever written to a file for that). Setup of a first key follows the
+  same rule: no Keychain, no identity.
 - The phone opens the handshake with a version 2 hello: the version byte, a
   flag for a token, the token when there is one, and its name in a fixed 64
   byte field (66 or 98 bytes, never 0 or 32, which are version 1 payloads).
 - A refusal is a frame the phone can show (opcode `0x0E`): `protocol_unsupported`
   for a hello that is not version 2 (a version 1 phone, or a newer one),
-  `not_paired` for a key the desktop does not know, and `token_invalid` for a
-  token that was used or has expired. A version refusal does not burn the
-  pairing code and does not count against the sender.
+  `not_paired` for a key the desktop does not know, `token_invalid` for a
+  token that was used or has expired, `rate_limited` (with `retryAfterSecs`) for
+  a source the gate is slowing down, and `pairing_denied`, `pairing_expired` or
+  `pairing_busy` for the three ways the Allow question can end. A connected phone
+  whose record was removed hears `not_paired` before its connection closes. A
+  version refusal and the three pairing answers do not count against the sender.
+  A source that is slowed down gets its refusal through a short handshake of its
+  own (3 seconds, 4 at a time); past that, and for a full gate, the socket is
+  closed without a word.
 - Disconnect on Settings, iPhone clears every phone and drops every live
   connection; each phone must scan a new code to come back. Disconnect on one
   phone's row forgets that phone alone, and a live connection of it ends
-  within one ping (20 seconds); its rights go at once. The row shows when the
+  within one ping (20 seconds); its rights go at once. Removing the last phone
+  stops the listener. The row shows when the
   phone was last seen. A phone can never re-pair itself.
 
 ## Rights per phone
 
-| Right  | Allows                                                                   | Default   |
-| ------ | ------------------------------------------------------------------------ | --------- |
-| read   | the projections and the read-only queries (providers, issues, file diff) | always on |
-| decide | send, advance step, resolve comment, set context slot                    | on        |
-| merge  | merge a pull request, merge in order, stop the train after this one      | on        |
-| start  | start a session, spawn agent, spawn workflow, create session from issue  | off       |
+| Right  | Allows                                                                                    | Default   |
+| ------ | ----------------------------------------------------------------------------------------- | --------- |
+| read   | the projections and the read-only queries (providers, issues, file diff)                  | always on |
+| decide | send, advance step, resolve comment, set context slot, send a chat message, create a chat | on        |
+| merge  | merge a pull request, merge in order, stop the train after this one                       | on        |
+| start  | start a session, spawn agent, spawn workflow, create session from issue                   | off       |
 
 The bridge checks the right of the phone that sent the command, read from the
 file at that moment, so a change on Settings, iPhone applies to a connected
 phone at once. A command the phone may not run is answered with
 `permission_denied` and the right it lacks; nothing reaches the executor. The
-hello the desktop sends after the handshake carries the phone's rights.
+hello the desktop sends after the handshake carries the phone's rights and
+`endpoints`, the current private `{host, port}` pairs of the networks you
+switched on (at most 8, no duplicates), so a phone finds the Mac again after its
+address changes. It also carries `contractVersion`, the number in
+`contractVersion.ts` (a test reads the same file), so a phone can tell an older
+Mac from a current one before it asks for a field.
 
 ## What a phone may ask
 
@@ -112,6 +155,20 @@ Two more actions follow the same five rules, written in
   new id.
 - `stopTrain` (0xA1) asks the running train to stop after the pull request in
   progress (`stopMergeTrainAfterThis`). Both need the merge right.
+- `sendChatMessage` (0xA3) and `createChat` (0xA4) need the decide right. A chat
+  is the workspace chat of the Mac, not a session. `sendChatMessage` names its
+  workspace, the chat and the version it saw (the count of messages the Mac
+  accepted from phones for that chat since the window opened); its action id is
+  the `sendActionId` of the chat row in the `chats` projection. The chat must
+  belong to that workspace and not be archived, or the Mac refuses it as
+  `unknown-target`; a chat that is still answering is refused as `busy`; an old
+  version is refused as `version-changed`. The text goes to the provider and the
+  model the chat already uses, nowhere else. The Mac answers `done` as soon as
+  the reply starts, not when it ends. `createChat` takes only the workspace,
+  uses the default provider and model of the desktop chat (the saved default of
+  the workspace, else the first connected provider) and answers with
+  `createdChatId`. Its action id is the `createActionId` of the `chats`
+  projection; a retry of the same id returns the first outcome and one chat.
 - `startSession` (0xA0) needs the start right, off by default. It carries the
   project, a goal or a task, the Edits choice (Read only, Ask first or Edits
   allowed; Full access is not a value the Mac accepts), the kind (Lead, Lead
@@ -136,7 +193,33 @@ stopped, whether the Lead has the conflict, whether a stop was requested). The
 the changed files count, the commit count and the open review comments. It adds
 the lines added and deleted only when every changed file is known to the Mac;
 otherwise both stay absent, never 0. The `session` projection carries the
-summary of the last output, cut to 600 characters. The `tasks` projection
+summary of the last output, cut to 600 characters. Since contract version 6 it
+also carries a `shortName` for the crumb (the first line of the goal without its
+leading `[KEY]` tags, cut at a word to 32 characters), the `artifacts` of the
+session (title, kind, author role, version, update time, comment count, whether
+a plan waits for approval with the `approvePlan` action id, and, for a plan,
+the markdown body cut to 4000 characters and 20000 UTF-8 bytes across the list; a report
+and a wireframe carry no body; a discarded artifact is never listed or counted), the `questions` (the open
+ones, then the answered ones, with the options, who asked and the answer) and
+the `counts` the tabs show (runs, artifacts, open questions: all of them, not
+only the ones sent). Each project row
+adds the pull request word the Mac shows (`No pull request`, `Draft`, `Open`,
+`Merged`) with its tone, the lines added and deleted of the session (absent
+until every changed file is known) and the run count. The Mac loads the
+artifacts, their comments and the answered questions of each live session once,
+in the background, so the phone sees them without the session being opened on
+the Mac. The fields are additive: a 0.2.0 phone ignores them. The `chats` projection (one per workspace, the open one only, key
+`chats:<workspaceId>`) lists up to 30 chats, newest first: id, title, the model
+label, a 160 character preview of the last reply, the last activity time, the
+message count, whether a reply is streaming, whether the chat is pinned and the
+`sendActionId`. It carries the `createActionId` of the workspace. The messages
+of one chat are pulled, never published: `queryChatMessages` (0xA2, read right)
+takes the workspace, the chat, a `limit` (200 at most) and an optional
+`beforeMessageId` and returns the page with `hasEarlier` and `isBusy`; a chat of
+another workspace or an archived one is refused. A reply reaches the phone as the
+chat row changes (`isBusy`, `preview`, `messageCount`): the phone pulls the
+messages again when it sees it. Paths in message text are cut to a file name.
+The `tasks` projection
 carries the start offer (the kinds that take Stops, the three Stops with their
 words and the default one, which is the workspace level) and, for each task row,
 the description (400 characters at most), the assignee's display name and the
@@ -148,10 +231,12 @@ its hello and is checked in the bridge.
 ### Decisions from the phone
 
 A phone may also answer a question, approve a plan or ask for changes, allow or
-deny one permission request once, raise a limit, stop or continue a run or an
+deny one permission request once or allow it always for the workspace (the
+`allowAlways` verdict, the same rule as Always allow on the Mac, checked against
+the same decide right), raise a limit, stop or continue a run or an
 agent, stop a Lead with all its running agents in one action (`stopAgentTree`),
 send a message to one agent (`sendToAgent`), and send or discard a Slack reply
-draft. Always allow, permission rules
+draft. Permission rules beyond that one verdict
 and every other setting stay on the Mac. Each of these actions follows five
 rules, kept in `features/companion/actions/`:
 
@@ -229,25 +314,46 @@ stay until the phone ships the start form.
 
 ## Listener lifetime
 
-- Nothing listens at boot. The listener starts when **Settings › This Mac › iPhone** opens.
-  Leaving the page with no phone paired stops it; with at least one phone
-  paired it stays up so that phone can reconnect, until the app quits or
-  Disconnect runs.
-- It binds a random TCP port on the private addresses of the interfaces you
-  switch on under Networks, and on no other address. A private address is
-  RFC 1918 (10/8, 172.16/12, 192.168/16), 100.64/10 (tailnets) or an IPv6
-  unique local address (fc00::/7). A public IPv4, a global IPv6, a link-local
-  or a loopback address is never offered in the QR and never bound, even on an
-  interface you switched on. Until you choose, every private interface is on.
-  Changing the choice restarts the listener and mints a new code. With no
-  private network on, the code cannot be made and the page says so.
+- The listener starts at launch when at least one phone is paired, and keeps
+  running; it also starts when **Settings › This Mac › iPhone** opens. Leaving the
+  page with no phone paired stops it, and so does removing the last phone. With
+  a phone paired it stays up until the app quits or Disconnect runs.
+- It binds each private address of the networks you switched on under Networks
+  on one TCP port, never a wildcard, so the port is closed on every public
+  address. Every 5 seconds the set is read again: a new address is bound, a gone
+  one is released, and Bonjour follows. A connection is accepted only when the
+  source is a private address and it arrived on one of those addresses (the
+  check reads the destination address, so a private network that was not
+  switched on can still reach an offered address when routing allows it). A private address is RFC 1918
+  (10/8, 172.16/12, 192.168/16), 100.64/10 (tailnets) or an IPv6 unique local
+  address (fc00::/7). Any other source is closed without an answer, before the
+  gate sees it. A public IPv4, a global IPv6, a link-local or a loopback address
+  is never offered in the QR or the hello, even on an interface you switched on.
+  Until you choose, every private interface is on. Changing the choice restarts
+  the listener on the same port. With no private network on, the code cannot be
+  made and the page says so; a phone already paired stays listened for.
+- The port is remembered in the identity file and asked for first at every
+  start; a new one is taken only when it is busy, and is remembered in turn.
+- The Mac advertises `_goodboy._tcp` over Bonjour with the opaque instance id
+  as its name and the port, nothing else. It registers once per private interface you switched on (never on every
+  interface), and the instance id is new at every launch, so it cannot be used
+  to follow the Mac. The service host name the system publishes is the Mac's
+  local host name, which Bonjour sets itself. It uses the system service (DNS-SD in
+  libSystem) on macOS, so no dependency was added; other systems advertise
+  nothing and the phone uses the endpoints of the hello. The advertisement is
+  withdrawn when the listener stops and made again when the set of private
+  addresses changes (checked every 5 seconds).
 - Before a phone is authenticated the listener holds at most 8 connections,
   and at most 2 from one source address, so one holder behind a shared address
   cannot block the rest. After two failed handshakes from a source, its next
   attempts wait 2 seconds, then 4, doubling up to 5 minutes; a good handshake
   clears the wait. When 30 handshakes fail within a minute, from any sources,
   new connections are closed for 30 seconds. A connection that closes before it
-  authenticates counts as a failure. The whole Noise handshake has 10 seconds,
+  authenticates is not counted. Only a failed handshake counts, per source; a
+  handshake that stalls counts for its source alone; only failed handshakes
+  feed the 30 a minute pause. IPv6 sources count per /64. The table of sources
+  evicts the least recently seen instead of refusing new ones. A completed
+  handshake of a known phone clears its source's count. The whole Noise handshake has 10 seconds,
   then the socket is dropped and the slot frees.
 - A connected phone that sends no frame for 60 seconds (three missed pings) is
   dropped; any frame, a PONG included, counts as an answer.
@@ -262,7 +368,7 @@ but `main`. The Rust side in `bridge/publish.rs` is the border: it parses each
 projection against a closed schema (`bridge/publish_schema.rs`), drops fields
 the schema does not name, refuses a value outside the vocabulary, a string that
 reads as an absolute path and a projection over 56,000 bytes, and cuts lists to
-a fixed length (60 moves, 30 sessions per lane, 20 lines, 20 runs, 40 tasks).
+a fixed length (60 moves, 30 sessions per lane, 20 lines, 20 runs, 20 artifacts, 12 open and 12 answered questions, 40 tasks).
 A workspace is sent by its name only, a project by its name, never a path.
 Free text that can hold a path (a command, a plan step, a draft) is cut to a
 length and has every absolute path reduced to its file name before it is sent.
@@ -322,6 +428,14 @@ files. A test in `scripts/gen-mobile-contract.test.mjs` fails when a type or a
 token changes and `CONTRACT_VERSION` does not: bump it, then run
 `node scripts/gen-mobile-contract.mjs --lock`. A vocabulary test fails when the
 contract names an attention reason, stage, tone or mark the app does not.
+
+Contract version 8 adds the `allowAlways` permission verdict; version 9 adds
+`alwaysRule` to the permission decision: `{ scope: 'workspace', label, pattern }`,
+built on the Mac with the same function as the Always allow button, so the
+phone shows the exact rule before the tap. A rule made from a phone is saved
+with the id of that phone in the pairing file; removing the phone (or all
+phones) on Settings, iPhone deletes those rules. A phone on version 7 or 8
+never sends the new field.
 
 ### Needs you across workspaces
 

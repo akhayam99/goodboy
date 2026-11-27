@@ -94,7 +94,7 @@ describe('ModelPickerScene', () => {
     ).toEqual([
       'cursor composer routing: Cursor · Composer 2.5 · Fast',
       'codex sol routing: Codex · GPT-5.6 Sol · High',
-      'codex astra routing: Codex · Astra · High',
+      'codex astra routing: Codex · GPT-6 Astra · High',
       'cursor kimi routing: Cursor · Kimi K3 · High',
       'claude opus routing: Claude · Opus 5.5 · High',
       'claude sonnet routing: Claude · Sonnet 5.5 · Medium',

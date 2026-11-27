@@ -186,7 +186,6 @@ mod tests {
 
     const UNSAFE_OUTSIDE_PROC: &[(&str, usize)] = &[
         ("artifact_mirror.rs", 2),
-        ("bridge/mod.rs", 1),
         ("file_versions/folder_store.rs", 1),
         ("fullscreen_escape.rs", 12),
         ("history/reservation.rs", 1),
