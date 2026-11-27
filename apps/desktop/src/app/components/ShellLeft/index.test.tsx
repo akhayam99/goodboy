@@ -42,6 +42,7 @@ const open = sessionOf({ goal: 'Fix webhook retries', lastOpenedAt: '2026-10-06T
 const OPEN_ID = brandId<SessionId>({ value: open.id });
 
 const actionsOf = (): ColumnActions => ({
+  openHome: vi.fn(),
   openBoard: vi.fn(),
   openInbox: vi.fn(),
   openChat: vi.fn(),
@@ -114,13 +115,14 @@ afterEach(() => {
 });
 
 describe('the places rail', () => {
-  it('draws the workspace, New, the six places with Impact last, then Settings, at 64px with a word under each', () => {
+  it('draws the workspace, New, the seven places with Impact last, then Settings, at 64px with a word under each', () => {
     mount({});
 
     expect(rail().style.width).toBe('64px');
     expect(wordsOf()).toEqual([
       'Harborline',
       'New',
+      'Home',
       'Board',
       'Tasks',
       'Workflows',

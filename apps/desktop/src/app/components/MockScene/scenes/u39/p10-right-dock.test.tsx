@@ -184,7 +184,7 @@ describe('the ux39 right dock scenes', () => {
     );
   });
 
-  it('ux39-p4-column-folded shows the workspace, New, the six places, Settings, Report and the mark, no tool, on the places rail', async () => {
+  it('ux39-p4-column-folded shows the workspace, New, the seven places, Settings, Report and the mark, no tool, on the places rail', async () => {
     await mount('ux39-p4-column-folded');
 
     const places = Array.from(
@@ -193,6 +193,7 @@ describe('the ux39 right dock scenes', () => {
     expect(places).toEqual([
       'workspace',
       'new',
+      'home',
       'board',
       'inbox',
       'workflows',

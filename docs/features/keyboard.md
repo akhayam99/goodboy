@@ -37,7 +37,7 @@ The exit status comes from a small hook a zsh terminal adds when it starts. Your
 #### Close a tab
 
 - Typing `exit` closes the tab. The next New terminal is a new tab with an empty prompt.
-- **⌘W** closes one thing per press and never quits Goodboy. It asks first while a command runs.
+- **⌘W** closes one thing per press and never quits Goodboy. It asks first while a command runs. On a session with nothing left to close, it closes the session and lands on Home.
 - In the drawer, **⌘W** does not close the last idle shell. The drawer closes and the shell keeps running with its scrollback.
 
 #### Keys inside a terminal

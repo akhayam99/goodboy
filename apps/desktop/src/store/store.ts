@@ -170,6 +170,7 @@ import { contextItemsInitialState } from './slices/contextItems/state';
 import { createDecisionsSlice } from './slices/decisions';
 import { decisionsInitialState } from './slices/decisions/state';
 import { sessionDraftInitialState } from './slices/sessionDraft/state';
+import { homeInitialState } from './slices/home/state';
 import { createDrawerSlice } from './slices/drawer';
 import { createNavigationSlice } from './slices/navigation';
 import { navigationInitialState } from './slices/navigation/state';
@@ -364,6 +365,7 @@ const initialState: AppState = {
   ...bugReportDraftInitialState,
   ...orchestratorHintDraftsInitialState,
   ...sessionDraftInitialState,
+  ...homeInitialState,
   ...contextDrawerInitialState,
   ...contextItemsInitialState,
   ...decisionsInitialState,

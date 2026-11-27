@@ -12,7 +12,7 @@ opens its tab and its chapter or release.
 - The band holds `Back to app` with the Esc chip at the top left and there is no
   Close (`close: 'back'`, pinned by `StudioFrame/index.test.tsx`). Its one other
   control is "Sponsor on GitHub", which leaves the app (`SponsorLink`): beside
-  Back to app, or, when Help takes the whole window on Home, at the end of the
+  Back to app, or, when Help takes the whole window on Workspaces, at the end of the
   title row (`DetachedStudio`).
 - Help in the menu bar and the palette open it on the Guide, and the palette
   rows open either tab. No rail mark is lit while a Help tab is open.

@@ -1,10 +1,26 @@
 # Home and creation
 
-> **Read this when** you change Home, the way a workspace, a project or a session is created, or the New session draft. **Not for** the right drawer ([right-drawer.md](right-drawer.md)), the dock grid ([dock-grid.md](dock-grid.md)) or what each drawer kind shows ([drawer-kinds.md](drawer-kinds.md)).
+> **Read this when** you change Home or Workspaces, the way a workspace, a project or a session is created, or the New session draft. **Not for** the right drawer ([right-drawer.md](right-drawer.md)), the dock grid ([dock-grid.md](dock-grid.md)) or what each drawer kind shows ([drawer-kinds.md](drawer-kinds.md)).
 
 ## Home
 
-Home is a window's one page with no workspace open, whether workspaces exist or not.
+Home is a place of a workspace, the first door of the places rail, above the Board. It is where
+the window lands on launch and whenever a workspace opens (`setCurrentWorkspace` marks it with
+`openHomeWorkspaceId`, `selectIsHomeShown` reads it, `captureLocation` prints it as
+`{ at: 'home' }`). **Reopen the last workspace** restores the saved place instead.
+`HomePage` is the page (`features/home/`), its `MainRegion` layer mounts only while Home is shown.
+
+- Home has no parent: ⌘↑, ⌘W and Esc do nothing there. The Board keeps the badge;
+  Home carries none, so no second number competes with it.
+- The door is `openDestination({ id: 'home' })`. From a session, a studio or the draft it
+  pushes the place, so Back returns to where you were.
+- A window layout stores Home as the Board (`savedLocationOf`), so the previous build opens
+  every saved place. A layout that already says `home` is read (`windowLayout.ts`).
+- A workspace with one session no longer opens that session by itself; it opens Home.
+
+## Workspaces
+
+Workspaces is a window's one page with no workspace open, whether workspaces exist or not.
 `App.tsx` renders it whenever `currentWorkspace` is null, in every window. It has no
 app chrome, so it carries the lockup itself: the 40px `BrandTile`, the word and the
 version ([brand.md](../brand.md)). Under it:
@@ -16,9 +32,9 @@ version ([brand.md](../brand.md)). Under it:
   face instead ("Documents", "Code, no git yet": `workspaceFaceLabel`, falling back
   to `folderCountLabel`). A click opens it here, or in a new window while agents run
   here. Search shows from five workspaces on.
-- **New workspace** (⌘N on Home, `home.newWorkspace`) fires `goodboy:add-workspace`
+- **New workspace** (⌘N on Workspaces, `home.newWorkspace`, scope `workspaces`) fires `goodboy:add-workspace`
   through `openNewWorkspace`, like the switcher, Search or run and the menu bar. On
-  Home the `addWorkspace` place swaps the list for `NewWorkspaceForm` in place, the
+  Workspaces the `addWorkspace` place swaps the list for `NewWorkspaceForm` in place, the
   lockup staying put; Cancel or Escape goes back, and Create opens and lands in the
   new workspace whatever its folders.
 - **No workspace yet**: a card on how a workspace starts, with New workspace and,
@@ -26,7 +42,7 @@ version ([brand.md](../brand.md)). Under it:
   done" and **Resume setup** (`useSetupResume`, counted by `setupProgress`).
 - **Reopen the last workspace on launch**, a switch.
 
-Setup mounts over Home, in the main window only
+Setup mounts over Workspaces, in the main window only
 ([setup-and-crash.md](setup-and-crash.md#first-run-setup)). The app layers keep one
 key across Home and the shell, so the wizard is not remounted when the first
 workspace opens under it.

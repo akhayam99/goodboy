@@ -28,6 +28,7 @@ import {
 const noop = () => undefined;
 
 const ACTIONS: ColumnActions = {
+  openHome: noop,
   openBoard: noop,
   openInbox: noop,
   openChat: noop,

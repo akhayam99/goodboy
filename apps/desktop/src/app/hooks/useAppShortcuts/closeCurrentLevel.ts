@@ -3,7 +3,6 @@ import { isOverlayOpen } from '../../../shared/keyboard/isOverlayOpen';
 import { useAppStore } from '../../../store';
 import { selectDrawerPanel } from '../../../store/slices/drawer/selectDrawerPanel';
 import { captureLocation } from '../../../store/slices/navigation/captureLocation';
-import { parentPlace } from '../../../store/slices/navigation/parentPlace';
 
 type Params = Record<never, never>;
 
@@ -27,12 +26,8 @@ export const closeCurrentLevel = ({}: Params): void => {
     state.closeStudio();
     return;
   }
-  if (live.place.at === 'board') {
+  if (live.place.at === 'home' || live.place.at === 'board') {
     return;
   }
-  if (parentPlace({ state, place: live.place }) !== null) {
-    state.up();
-    return;
-  }
-  state.back();
+  state.up();
 };

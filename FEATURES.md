@@ -6,7 +6,7 @@ New here? [Your first task](docs/first-session.md) walks from install to a merge
 
 Most pictures follow one team and one task. Harborline keeps three repos, payments-api, ledger-core and notify-relay, and issue HBL-412 says retried webhooks post a second credit. The pictures show that fix from the first brief to pull request #318.
 
-<a id="welcome-to-goodboy"></a><a id="your-agents"></a><a id="provider-connection"></a><a id="your-first-workspace"></a><a id="home"></a><a id="one-page-per-provider"></a><a id="update-the-provider-cli"></a><a id="permissions-for-each-provider"></a><a id="integrations"></a><a id="about-you"></a><a id="settings-home"></a><a id="settings"></a>
+<a id="welcome-to-goodboy"></a><a id="your-agents"></a><a id="provider-connection"></a><a id="your-first-workspace"></a><a id="workspaces"></a><a id="one-page-per-provider"></a><a id="update-the-provider-cli"></a><a id="permissions-for-each-provider"></a><a id="integrations"></a><a id="about-you"></a><a id="settings-home"></a><a id="settings"></a>
 
 ## Set up
 
@@ -14,7 +14,7 @@ Get from install to a first agent. Check the agents on this Mac, make a workspac
 
 - **Your agents**: Setup opens on your agents, step one of three from install to a first agent reading your code.
 - **Your first workspace**: A workspace is what you work on: one repository, or a folder that holds several.
-- **Home**: A window with no workspace open shows Home, which lists your workspaces with their folder count and where their folders live.
+- **Workspaces**: A window with no workspace open shows Workspaces, which lists your workspaces with their folder count and where their folders live.
 - **Integrations**: Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from Connections, and see the account behind each.
 
 [More on set up](docs/features/setup.md)

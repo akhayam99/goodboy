@@ -285,7 +285,7 @@ The top bar's left zone starts with Sessions, then the workspace identity and
 Repositories. It adds `--titlebar-inset`, which defaults to 0px in
 `styles.css`; on macOS `useTitlebarInset` raises it to 72px so the traffic
 lights, drawn inside the bar by the overlay title bar, never sit on a control,
-and drops it back to 0px in full screen. A window without a top bar (Home)
+and drops it back to 0px in full screen. A window without a top bar (Workspaces)
 keeps a 36px drag strip at its top edge instead.
 
 ## The content column
@@ -491,7 +491,7 @@ reading column is 80px narrower, so the head moves in by 40px. The pure geometry
 No view picks its own width or its own centring. The column changes only when
 the window changes or the right drawer opens, never because you moved from
 Overview to Review to a chat. `app/components/StudioFrame/columnContract.test.ts` fails under `features/` on any
-`max-w-[Nch]`, any `max-w-[Npx]` (Search or run, the onboarding wizard and Home, on one 600px column, are the
+`max-w-[Nch]`, any `max-w-[Npx]` (Search or run, the onboarding wizard and Workspaces, on one 600px column, are the
 listed exceptions), any `max-w-[Nrem]` of 24rem or more, any `mx-auto` outside
 the Board frame and two centred empty states (centring is `PageColumn`'s job,
 and the test asserts it centres `column`, `reading` and `measure` and not `full`), `PANE_RHYTHM.measure`,

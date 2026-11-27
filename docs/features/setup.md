@@ -80,13 +80,13 @@ A repository that is not on this Mac clones from the same step. **Clone it** tak
 
 <sub>Screenshot from Goodboy 0.40.1</sub>
 
-### Home
+### Workspaces
 
-A window with no workspace open shows Home, which lists your workspaces with their folder count and where their folders live. Home also holds the Goodboy tile with the version. **New workspace** (⌘N) opens the same form in place. With no workspace yet, Home says where setup paused and offers **Resume setup**. **Reopen the last workspace on launch** opens your last workspace at launch instead.
+A window with no workspace open shows Workspaces, which lists your workspaces with their folder count and where their folders live. It also holds the Goodboy tile with the version. **New workspace** (⌘N) opens the same form in place. With no workspace yet, the page says where setup paused and offers **Resume setup**. **Reopen the last workspace on launch** opens your last workspace at launch instead.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-home-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-home-light.webp" alt="Home with the Goodboy tile and its version, the Workspaces list with Harborline 3 projects, Northwind 2 projects, Acme web 1 project and Cascadia 4 projects, each with where it lives and when it was last opened, a New workspace button, and the switch Reopen the last workspace on launch">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-home-light.webp" alt="Workspaces with the Goodboy tile and its version, the Workspaces list with Harborline 3 projects, Northwind 2 projects, Acme web 1 project and Cascadia 4 projects, each with where it lives and when it was last opened, a New workspace button, and the switch Reopen the last workspace on launch">
 </picture>
 
 <sub>Screenshot from Goodboy 0.40.1</sub>

@@ -6,6 +6,7 @@ import { branchPlace, sessionPlace } from './place';
 import { PLACE_ROWS } from './placeRows';
 import { opensInPreviousRelease } from './testing/opensInPreviousRelease';
 import { EMPTY_FOCUS, type Location, type Place } from './types';
+import { savedLocationOf } from './savedLocationOf';
 import { withoutRemovedPages } from './withoutRemovedPages';
 
 const S1 = brandId<SessionId>({ value: 'session-ledger-core' });
@@ -298,6 +299,15 @@ const NEW_PLACES: ReadonlyArray<readonly [string, Location]> = [
 ];
 
 describe('the previous release opens every place this build stores', () => {
+  it('stores Home as the Board, which the previous release opens', () => {
+    const home = saved({ place: { at: 'home' } });
+    const written = savedLocationOf({ location: home });
+
+    expect(written.place).toEqual({ at: 'board' });
+    expect(opensInPreviousRelease({ location: written })).toBe(true);
+    expect(opensInPreviousRelease({ location: home })).toBe(false);
+  });
+
   it.each(NEW_PLACES)('opens %s', (_name, location) => {
     expect(opensInPreviousRelease({ location })).toBe(true);
   });

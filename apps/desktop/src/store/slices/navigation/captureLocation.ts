@@ -121,9 +121,10 @@ export const captureLocation = ({ state, focus: base = EMPTY_FOCUS }: Params): L
   const sessionId = state.currentSessionId;
   if (sessionId === null) {
     const isDraft = workspaceId !== null && state.openSessionDraftWorkspaceId === workspaceId;
+    const isHome = workspaceId !== null && state.openHomeWorkspaceId === workspaceId;
     return {
       workspaceId,
-      place: isDraft ? { at: 'session-draft' } : { at: 'board' },
+      place: isDraft ? { at: 'session-draft' } : isHome ? { at: 'home' } : { at: 'board' },
       studio: state.appStudio,
       focus,
     };
