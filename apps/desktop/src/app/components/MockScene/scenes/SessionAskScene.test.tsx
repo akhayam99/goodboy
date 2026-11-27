@@ -308,8 +308,9 @@ describe('the session Ask scene', () => {
     useAppStore.setState({ reportError });
     try {
       await renderState('streaming');
+      const stopButton = await screen.findByLabelText('Stop');
       await act(async () => {
-        fireEvent.click(await screen.findByLabelText('Stop'));
+        fireEvent.click(stopButton);
       });
 
       expect(reportError).toHaveBeenCalledWith(

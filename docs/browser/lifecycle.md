@@ -155,14 +155,17 @@ sign-in provider a login went through.
   tab facts.
 - `browser_tab_trail { tabId }` answers the union of the tab's hosts, its
   opener chain and the popups it opened, five levels deep at most. It takes no
-  lease. A popup that closes hands its hosts to its opener.
+  lease. A popup that closes hands its hosts to its opener, and the popups it
+  opened move under that opener.
 - The trail exists only on macOS with a store per workspace. Elsewhere the
   read answers nothing, and a clear with an extra host is refused.
 - The pane reads it after each finished load of the session and keeps only the
   latest answer for the shown tab. While nothing came back the confirm names
-  the site alone, and the clear sends no extra host. A trail host on the
-  page's own site (`harborline.dev` beside `app.harborline.dev`) is not listed
-  as a sign-in.
+  the site alone, and the clear sends no extra host. The page's host and its
+  parent domains (`harborline.dev` beside `app.harborline.dev`) are not listed
+  as sign-ins, since the site clear removes their records. Every other trail
+  host is listed, a subdomain or a sibling too, because it can keep a record of
+  its own under a shared suffix.
 
 ### Reload without cache
 
@@ -192,8 +195,8 @@ Windows and Linux have no such call in wry, so it is a plain reload there.
   its sign-in notes, the line, a failure, a busy retry, a pending and a late
   trail and a late answer; `scopedReload.test.tsx` ⌘⇧R and ⇧-click;
   `WorkspaceBrowserDataRow.test.tsx` the busy refusal and a late answer.
-- `browser/site_data/native_tests.rs` drives a real WKWebView by hand
-  (`cargo test --lib site_data::native_tests -- --ignored --nocapture`): it
+- `browser/site_data/tests/native.rs` drives a real WKWebView by hand
+  (`cargo test --lib site_data::tests::native -- --ignored --nocapture`): it
   relaunches the test binary so WebKit gets the main thread, serves its own
   127.0.0.1 and ::1 pages, checks that a redirect hop and an iframe stay out of
   the trail, and prints the name and types of every record. CI skips it.

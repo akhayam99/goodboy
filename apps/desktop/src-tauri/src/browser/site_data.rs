@@ -11,9 +11,6 @@ use super::reason::{self, NOT_WEB_ADDRESS, SITE_MOVED};
 use super::registry::BrowserRegistry;
 use crate::util::MessageError;
 
-#[cfg(all(test, target_os = "macos"))]
-mod native_tests;
-
 #[cfg(target_os = "macos")]
 const SITE_DATA_WAIT: std::time::Duration = std::time::Duration::from_secs(10);
 
@@ -182,6 +179,9 @@ pub(crate) async fn clear_store<R: Runtime>(tab: &Webview<R>) -> Result<(), Mess
 
 #[cfg(test)]
 mod tests {
+    #[cfg(target_os = "macos")]
+    mod native;
+
     use serde_json::json;
 
     use super::*;

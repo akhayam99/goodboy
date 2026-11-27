@@ -44,6 +44,7 @@ struct Tab {
     grants: Vec<LocalGrant>,
     navigation: u64,
     hosts: VecDeque<String>,
+    trail_parent: Option<String>,
 }
 
 impl Tab {
@@ -88,7 +89,7 @@ impl Tabs {
     }
 
     fn opener_of(&self, id: &str) -> Option<&str> {
-        self.by_id.get(id)?.facts.opener_id.as_deref()
+        self.by_id.get(id)?.trail_parent.as_deref()
     }
 
     fn reaches(&self, from: &str, target: &str) -> bool {
@@ -274,6 +275,7 @@ impl BrowserRegistry {
                 grants: Vec::new(),
                 navigation: 0,
                 hosts: VecDeque::new(),
+                trail_parent: tab.opener_id.map(str::to_string),
             },
         );
         facts
@@ -359,14 +361,18 @@ impl BrowserRegistry {
         let mut tabs = lock_or_recover(&self.tabs);
         tabs.held_passkeys.remove(id);
         let removed = tabs.by_id.remove(id)?;
-        let opener = removed
-            .facts
-            .opener_id
+        for tab in tabs.by_id.values_mut() {
+            if tab.trail_parent.as_deref() == Some(id) {
+                tab.trail_parent.clone_from(&removed.trail_parent);
+            }
+        }
+        let parent = removed
+            .trail_parent
             .as_deref()
-            .and_then(|opener| tabs.by_id.get_mut(opener));
-        if let Some(opener) = opener {
+            .and_then(|parent| tabs.by_id.get_mut(parent));
+        if let Some(parent) = parent {
             for host in &removed.hosts {
-                opener.remember_host(host);
+                parent.remember_host(host);
             }
         }
         Some(removed.facts)
@@ -1239,6 +1245,33 @@ mod tests {
             registry.trail_of("opener"),
             vec!["app.harborline.dev", "login.cascadia-id.com"]
         );
+    }
+
+    #[test]
+    fn keeps_a_nested_popup_in_the_trail_when_the_middle_one_closes_first() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "root", "harborline", true);
+        registry.remember_host("root", "app.harborline.dev");
+        let seat = registry.reserve_popup("root", 4).expect("seat");
+        popup(&registry, "middle", &seat);
+        registry.remember_host("middle", "login.cascadia-id.com");
+        let seat = registry.reserve_popup("middle", 4).expect("seat");
+        popup(&registry, "leaf", &seat);
+        registry.remember_host("leaf", "auth.northwind.test");
+        registry.remove("middle");
+        let mut expected = vec![
+            "app.harborline.dev",
+            "login.cascadia-id.com",
+            "auth.northwind.test",
+        ];
+        assert_eq!(registry.trail_of("root"), expected);
+        assert!(registry
+            .trail_of("leaf")
+            .contains(&"app.harborline.dev".to_string()));
+        registry.remember_host("leaf", "acme.test");
+        registry.remove("leaf");
+        expected.push("acme.test");
+        assert_eq!(registry.trail_of("root"), expected);
     }
 
     #[test]

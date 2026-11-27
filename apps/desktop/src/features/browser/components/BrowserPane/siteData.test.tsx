@@ -323,6 +323,22 @@ describe('clear site data', () => {
     expect(screen.queryByText(/^harborline\.dev/)).toBeNull();
   });
 
+  it('names a tenant under the page host, which the site clear leaves alone', async () => {
+    stubHost({
+      clear: ({ args }) => cleared(args),
+      trail: () => ['github.io', 'harborline.github.io'],
+    });
+    renderPane();
+    await openPage({ address: 'https://github.io/login', shows: 1 });
+    await waitForTrail();
+
+    const menu = openMore();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: /Clear site data/ }));
+
+    await screen.findByText('github.io, this site');
+    screen.getByText('harborline.github.io, a sign-in this tab went through');
+  });
+
   it('asks about the site alone while the trail is still being read', async () => {
     stubHost({
       clear: ({ args }) => cleared(args),
