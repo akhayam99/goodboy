@@ -22,10 +22,10 @@ const unreadNotification = ({
   action: null,
   coalesceKey: null,
   actedAt: null,
-  kind: 'pr-created',
+  kind: 'error',
   title,
   body: 'payments-api #318',
-  severity: 'success',
+  severity: 'warning',
 });
 
 export const ControlsTopbarScene = () => {
@@ -35,6 +35,19 @@ export const ControlsTopbarScene = () => {
         unreadNotification({ id: 'mock-controls-notification-1', title: 'Pull request opened' }),
         unreadNotification({ id: 'mock-controls-notification-2', title: 'Checks passed' }),
         unreadNotification({ id: 'mock-controls-notification-3', title: 'Review requested' }),
+      ],
+      notificationCounts: [
+        {
+          severity: 'warning',
+          kind: 'error',
+          hasSession: true,
+          hasAction: false,
+          actionKind: null,
+          isActed: false,
+          read: false,
+          inWorkspace: true,
+          count: 3,
+        },
       ],
     });
   }, []);

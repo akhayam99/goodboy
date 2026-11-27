@@ -330,7 +330,9 @@ describe('sendTurn checks the model it ran against the model that was picked', (
     });
 
     expect(storySpies.runTurn.mock.calls[0]?.[0]?.model).toBe('composer-2.5');
-    expect(mismatchWarning()?.body).toContain('not-a-model');
+    await vi.waitFor(() => {
+      expect(mismatchWarning()?.body).toContain('not-a-model');
+    });
   });
 
   it('speaks up when the picked selection names a key no provider offers', async () => {
@@ -348,7 +350,9 @@ describe('sendTurn checks the model it ran against the model that was picked', (
       },
     });
 
-    expect(mismatchWarning()?.body).toContain('not-a-model');
+    await vi.waitFor(() => {
+      expect(mismatchWarning()?.body).toContain('not-a-model');
+    });
   });
 
   it('speaks up when the base model runs instead of the fast combo that was picked', async () => {
@@ -363,6 +367,8 @@ describe('sendTurn checks the model it ran against the model that was picked', (
     });
 
     expect(storySpies.runTurn.mock.calls[0]?.[0]?.model).toBe('composer-2.5');
-    expect(mismatchWarning()?.body).toContain('composer-2.5-fast');
+    await vi.waitFor(() => {
+      expect(mismatchWarning()?.body).toContain('composer-2.5-fast');
+    });
   });
 });

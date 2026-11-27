@@ -5,9 +5,14 @@ import type { GetFn, SetFn } from './types';
 
 export const markNotificationUnread = (set: SetFn, get: GetFn) => {
   return async (id: string) => {
-    await markNotificationUnreadDb({ db: tauriDatabase, id });
+    const changed = await markNotificationUnreadDb({ db: tauriDatabase, id });
     set((state) => ({
-      notifications: state.notifications.map((n) => (n.id === id ? { ...n, read: false } : n)),
+      notifications:
+        changed === 0
+          ? state.notifications.filter((n) => n.id !== id)
+          : state.notifications.map((n) =>
+              n.id === id ? { ...n, read: false, actedAt: null } : n,
+            ),
     }));
     await refreshNotificationCounts({ set, get });
   };

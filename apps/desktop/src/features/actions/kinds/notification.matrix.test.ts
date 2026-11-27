@@ -214,14 +214,14 @@ beforeEach(async () => {
     db,
     workspace: buildStoryWorkspace({ id: WORKSPACE_ID, name: 'Harborline' }),
   });
-  await insertNotification(db, row({ overrides: { id: 'n-1', coalesceKey: 'error:webhook' } }));
+  await insertNotification(db, row({ overrides: { id: 'n-1', coalesceKey: 'error:webhook:a' } }));
   await insertNotification(
     db,
     row({
       overrides: {
         id: 'n-2',
         ts: at({ minute: 5 }),
-        coalesceKey: 'error:webhook',
+        coalesceKey: 'error:webhook:b',
       },
     }),
   );

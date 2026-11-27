@@ -15,6 +15,7 @@ vi.mock('../../store', async () => {
   const buildState = () => ({
     ...sliceInitialStates(),
     notifications: [],
+    notificationCounts: [],
     budgetAlerts: [],
     providers: [],
     settings: {},

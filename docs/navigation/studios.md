@@ -127,7 +127,8 @@ older members and Report this error).
 - The facets (view, severity, source and, with several workspaces, the workspace
   scope) are a page rail beside the list (`StudioRailLayout`, `placement="page"`,
   surface `notifications`, 288px), with counts from SQL (`countNotifications`), so
-  they stay true past the loaded page. A count shows from two; a zero facet is
+  they stay true past the loaded page. The unread count, here and on the bell,
+  is one owner (`notificationBadgeOf`): unread errors and warnings. A count shows from two; a zero facet is
   dimmed. The rail holds no key legend: the keys are in the tooltips and the Keyboard
   chapter of the Guide.
 - Both surfaces default to this workspace: a row belongs to its workspace, or its

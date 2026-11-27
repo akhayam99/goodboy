@@ -45,6 +45,7 @@ mod integration_credentials;
 mod integrations;
 mod jira;
 mod last_crash;
+mod launch_stamp;
 mod linear;
 mod live_child;
 mod live_work;
@@ -174,6 +175,7 @@ pub fn run_query_cli() -> Option<i32> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     last_crash::install_panic_hook();
+    launch_stamp::record();
     boot_breadcrumb::record("process-start", Some("start"));
     #[cfg(target_os = "macos")]
     suppress_webkit_media_remote();
@@ -372,6 +374,7 @@ pub fn run() {
             explore::explore_open,
             boot_breadcrumb::boot_breadcrumb,
             app_platform::app_platform,
+            launch_stamp::process_launch_stamp,
             last_crash::last_crash_write,
             last_crash::last_crash_claim,
             last_crash::last_crash_delete,
