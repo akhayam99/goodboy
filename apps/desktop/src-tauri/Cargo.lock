@@ -1629,6 +1629,7 @@ version = "0.43.2"
 dependencies = [
  "base64 0.22.1",
  "block2",
+ "chrono",
  "core-foundation-sys",
  "dirs",
  "keyring",

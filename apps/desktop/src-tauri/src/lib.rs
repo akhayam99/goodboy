@@ -14,6 +14,7 @@ mod branch_remote;
 mod bridge;
 mod browser;
 mod budget;
+mod calendar;
 mod changelog_images;
 mod chat;
 mod chat_images;
