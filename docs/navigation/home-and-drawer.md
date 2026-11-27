@@ -10,7 +10,7 @@ the window lands on launch and whenever a workspace opens (`setCurrentWorkspace`
 `{ at: 'home' }`). **Reopen the last workspace** restores the saved place instead.
 `HomePage` is the page (`features/home/`), its `MainRegion` layer mounts only while Home is shown.
 
-- Home has no parent: ⌘↑ and Esc do nothing there, ⌘W walks history. The Board keeps the badge;
+- Home has no parent: ⌘↑, ⌘W and Esc do nothing there. The Board keeps the badge;
   Home carries none, so no second number competes with it.
 - The door is `openDestination({ id: 'home' })`. From a session, a studio or the draft it
   pushes the place, so Back returns to where you were.
