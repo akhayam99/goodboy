@@ -57,6 +57,23 @@ const askedLabel = ({ provider, model }: AskedParams): string => {
   return `${PROVIDER_LABEL[provider]} ${label}`;
 };
 
+type NoAccessParams = {
+  readonly asked: AskedParams;
+  readonly candidate: Candidate;
+};
+
+const noAccessLine = ({ asked, candidate }: NoAccessParams): string => {
+  const ran = modelLabel({ candidate });
+  const ranLabel =
+    asked.provider === candidate.provider ? ran : `${PROVIDER_LABEL[candidate.provider]} ${ran}`;
+  if (!isProviderId(asked.provider)) {
+    return `${asked.model} is not on your account, so this ran on ${ranLabel}.`;
+  }
+  const askedModel =
+    catalogModelForId({ provider: asked.provider, modelId: asked.model })?.label ?? asked.model;
+  return `${askedModel} is not on your ${PROVIDER_LABEL[asked.provider]} account, so this ran on ${ranLabel}.`;
+};
+
 export type ChildRoutingWhy =
   | Readonly<{ kind: 'lead'; candidate: Candidate; leadReason: string | null }>
   | Readonly<{ kind: 'rule'; candidate: Candidate; list: CandidateList }>
@@ -80,6 +97,9 @@ export const childRoutingReason = ({ why }: Params): string => {
   const line = ruleLine({ candidate: why.candidate, list: why.list });
   if (why.kind === 'rule') {
     return line;
+  }
+  if (why.cause === 'no-access') {
+    return noAccessLine({ asked: why.asked, candidate: why.candidate });
   }
   return `The Lead asked for ${askedLabel({ ...why.asked })}: ${CANDIDATE_CAUSES[why.cause].text}. ${line}.`;
 };

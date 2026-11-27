@@ -27,10 +27,12 @@ import { readFolderPurposes } from './readFolderPurposes';
 import { collectTouchedMounts, isTurnShared } from './collectTouchedMounts';
 import { beginTurnFileSets, recordTurnFileSets } from './turnFileSets';
 import { composeAgentHandoff } from './composeAgentHandoff';
+import { resumeSessionIdOf } from './leadDelivery/resumeSessionIdOf';
 import { snapshotMountChanges } from './snapshotMountChanges';
 import type { GetFn, SetFn, TurnLease, TurnProgress, WithInput } from './types';
 import { projectById } from '../projects/projectIndex';
 import { accountIdOf } from '../providers/accountIdOf';
+import { accountPlanOf } from '../providers/accountPlanOf';
 import type { PreparedTurn } from './prepareTurn';
 import type { RoutedTurn } from './routeTurn';
 import type { LeasedTurn } from './leaseTurnWriter';
@@ -123,6 +125,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     receivedStreamError: false,
     lastError: null,
     accountId: accountIdOf({ providers: get().providers, providerId: provider }),
+    plan: accountPlanOf({ state: get(), providerId: provider }),
     streamFailure: null,
     failureReason: null,
     turnWasCancelled: false,
@@ -145,9 +148,9 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     },
   });
   const resumeSessionId =
-    origin !== 'mount-continuation' && agentRowEarly?.providerSessionProviderId === provider
-      ? agentRowEarly.providerSessionId
-      : undefined;
+    ctx.leadTurn?.mode === 'fresh'
+      ? undefined
+      : resumeSessionIdOf({ origin, agent: agentRowEarly, provider });
 
   const anchorText = get().sessionLanguageAnchor[sessionId] ?? '';
   const languageAnchor: SessionLanguageAnchor =
@@ -260,13 +263,14 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
   });
   const fullSystemPrompt = renderedHandoff.system;
   const candidatesBlock =
-    earlyAgentKind === 'auto'
+    earlyAgentKind === 'auto' && ctx.leadTurn === null
       ? await leadCandidatesBlock({ state: get(), sessionId, nowMs: Date.now() })
       : null;
-  resolvedPrompt =
+  const handoffPrompt =
     candidatesBlock === null
       ? renderedHandoff.message
       : `${renderedHandoff.message}\n\n${candidatesBlock}`;
+  resolvedPrompt = ctx.leadTurn?.prompt ?? handoffPrompt;
 
   if (isHandoffTurn) {
     try {

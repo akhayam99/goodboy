@@ -9,6 +9,7 @@ import {
   isAutoMountedCode,
   isRefusalPayload,
   isResultsPayload,
+  joinDeliveryParts,
   storedDeliveryOf,
   turnGate,
   type AutoBlockReason,
@@ -328,9 +329,9 @@ export const deliverNext = async ({
     return { kind: 'idle', reason: 'blocked' };
   }
   const stored = storedDeliveryOf({ value: primary.payload });
-  const text =
+  const parts =
     stored !== null && stored.rowIds.length === rows.length
-      ? stored.text
+      ? null
       : await buildDeliveryMessage({
           db: ctx.db,
           tree,
@@ -338,6 +339,7 @@ export const deliverNext = async ({
           mounts: await ctx.ports.loadMounts({ sessionId: tree.sessionId }),
           nowMs: ctx.now(),
         });
+  const text = parts === null ? (stored?.text ?? '') : joinDeliveryParts({ parts });
   const runId = ctx.ports.newId();
   const claims = claimStatements({ ctx, tree, rows, runId, text });
   const claimed = await ctx.db.transaction({ statements: claims });
@@ -358,6 +360,7 @@ export const deliverNext = async ({
       deliveryId: primary.id,
       rowIds: rows.map((row) => String(row.id)),
       text,
+      ...(parts !== null && { parts }),
       images: userImagesOf({ rows }),
       permissionOnceAllows: userOnceAllowsOf({ rows }),
       onEnded,

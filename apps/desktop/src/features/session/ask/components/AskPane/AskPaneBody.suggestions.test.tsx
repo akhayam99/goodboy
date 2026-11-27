@@ -48,7 +48,7 @@ import {
 import { askInitialState } from '../../../../../store/slices/ask/state';
 import { AskPaneBody } from './AskPaneBody';
 
-const SUGGESTION = 'What changed since I last looked?';
+const SUGGESTION = 'Where does this session stand?';
 
 let useAppStore: StoryStore;
 let sessionCount = 0;

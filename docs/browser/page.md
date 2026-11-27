@@ -27,9 +27,10 @@ workspace's session order, behind a label with its title
 ## The view
 
 The view is the pane's: the same address row, model, placement loop and
-overlay rule. The row holds Dock in place of Open full page and Close, the band
-and Esc close the page, and there is no Select an element button. The dock
-stays in the store but is not mounted, so the page alone places the view.
+overlay rule. The row holds Dock in place of Open full page and Close, and the
+band and Esc close the page. Select an element works as in the pane
+([pick.md](pick.md)). The dock stays in the store but is not mounted, so the
+page alone places the view.
 
 ### One view, one place
 

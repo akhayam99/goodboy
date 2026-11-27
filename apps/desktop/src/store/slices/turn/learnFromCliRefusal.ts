@@ -7,16 +7,20 @@ type Params = {
   readonly get: GetFn;
   readonly providerId: ProviderId;
   readonly accountId: string;
+  readonly plan: string | null;
   readonly model: string;
   readonly message: string;
+  readonly nowMs?: number;
 };
 
 export const learnFromCliRefusal = ({
   get,
   providerId,
   accountId,
+  plan,
   model,
   message,
+  nowMs = Date.now(),
 }: Params): void => {
   const failure = classifyProviderError({ message });
   const isUnavailable =
@@ -30,7 +34,14 @@ export const learnFromCliRefusal = ({
   }
   if (failure.kind !== 'cli_too_old') {
     void get()
-      .learnModelUnavailable({ providerId, accountId, modelKey })
+      .learnModelUnavailable({
+        providerId,
+        accountId,
+        modelKey,
+        plan,
+        source: 'refused',
+        checkedAt: nowMs,
+      })
       .catch((error: unknown) => console.warn('remembering an unavailable model failed', error));
     return;
   }

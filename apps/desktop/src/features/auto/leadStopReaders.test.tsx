@@ -106,7 +106,7 @@ const branchBlockWordOf = ({ view }: ViewParams): string | undefined =>
     mounts: [],
     views: [view],
     agents: [ROOT],
-    spendByAgentId: new Map(),
+    ownSpendByAgentId: new Map(),
     openFoldIds: new Set(),
   }).leads[0]?.stateWord;
 

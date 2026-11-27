@@ -48,6 +48,8 @@ export const AUTO_DIGEST_SETTLED_MAX = 12;
 
 export const AUTO_DIGEST_TASK_CHARS = 160;
 
+export const AUTO_LEAD_FRESH_GAP_MS = 55 * 60_000;
+
 export const AUTO_REVISE_ASK_CHARS = 240;
 
 export const AUTO_BRIEF_VERSION = 2;

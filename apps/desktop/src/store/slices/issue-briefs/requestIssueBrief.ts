@@ -13,7 +13,7 @@ import type {
 } from './types';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 import { liveEnabledProviders } from '../../runtime/models/liveEnabledProviders';
 
 const ISSUE_BRIEF_BODY_CAP = 12_000;
@@ -89,7 +89,7 @@ export const requestIssueBrief = ({ set, get }: Params) => {
       connectedProviders,
       enabledProviders: liveEnabledProviders({ state, sessionId, workspaceId }) ?? null,
       cooldowns: state.providerCooldowns,
-      hidden: selectHiddenModels({ state }),
+      hidden: selectBlockedModels({ state }),
       nowMs: Date.now(),
     });
     if (taskModel == null || !connectedProviders.includes(taskModel.providerId)) {

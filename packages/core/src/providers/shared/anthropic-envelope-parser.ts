@@ -8,6 +8,7 @@ import type {
 import { devWarn } from '../../dev-log';
 import { LARGE_REQUEST_MIN_PROMPT_TOKENS, requestPromptTokens } from '../priceLevels';
 import { parseJsonAllowingControlChars } from './parseJsonAllowingControlChars';
+import { longCacheWriteTokensOf } from './longCacheWriteTokensOf';
 import { createPermissionRequestEvent } from '../../permissions/events';
 import { blockBoundaryPrefix, resetTextBoundary } from './text-boundary';
 import {
@@ -55,6 +56,27 @@ type StreamEventParams = {
   readonly payload: Record<string, unknown>;
   readonly ctx: ParseContext;
   readonly at: IsoDateTime;
+};
+
+type ResultEndParams = {
+  readonly payload: Record<string, unknown>;
+  readonly runId: ProviderRunId;
+  readonly at: IsoDateTime;
+};
+
+const RESULT_ERROR_FALLBACK = 'The run ended with an error and no message.';
+
+const resultEndOf = ({ payload, runId, at }: ResultEndParams): TurnEvent => {
+  const errorText = typeof payload.error === 'string' ? payload.error : null;
+  const resultText = typeof payload.result === 'string' ? payload.result.trim() : '';
+  if (payload.is_error === true) {
+    const message = errorText ?? (resultText === '' ? RESULT_ERROR_FALLBACK : resultText);
+    return { kind: 'error', runId, message, at };
+  }
+  if (payload.subtype !== 'success' && errorText !== null) {
+    return { kind: 'error', runId, message: errorText, at };
+  }
+  return { kind: 'done', runId, at };
 };
 
 const streamEventEvents = ({ payload, ctx, at }: StreamEventParams): ReadonlyArray<TurnEvent> => {
@@ -141,11 +163,13 @@ const recordLargeRequest = ({ ctx, messageId, usage }: LargeRequestParams): void
   if (usage == null) {
     return;
   }
+  const longCacheWrite = longCacheWriteTokensOf({ usage });
   const request: RequestUsage = {
     inputTokens: usage.input_tokens ?? usage.inputTokens ?? 0,
     outputTokens: usage.output_tokens ?? usage.outputTokens ?? 0,
     cachedInputTokens: usage.cache_read_input_tokens ?? usage.cacheReadTokens ?? 0,
     cacheCreationInputTokens: cacheCreationTokens({ usage }) ?? 0,
+    ...(longCacheWrite !== undefined && { longCacheWriteInputTokens: longCacheWrite }),
   };
   if (requestPromptTokens({ request, isCacheInInput: false }) <= LARGE_REQUEST_MIN_PROMPT_TOKENS) {
     return;
@@ -305,6 +329,7 @@ export const parseAnthropicEnvelopeValue = ({
       const output = usage.output_tokens ?? usage.outputTokens;
       const cached = usage.cache_read_input_tokens ?? usage.cacheReadTokens;
       const cacheCreation = cacheCreationTokens({ usage });
+      const longCacheWrite = longCacheWriteTokensOf({ usage });
       const contextTokens = ctx.lastAssistantContextTokens;
       delete ctx.lastAssistantContextTokens;
       const largeRequests = [...(ctx.largeRequests?.values() ?? [])];
@@ -325,6 +350,7 @@ export const parseAnthropicEnvelopeValue = ({
             outputTokens: output ?? 0,
             cachedInputTokens: cached ?? 0,
             cacheCreationInputTokens: cacheCreation ?? 0,
+            ...(longCacheWrite !== undefined && { longCacheWriteInputTokens: longCacheWrite }),
             ...(contextTokens != null && { contextTokens }),
             ...(largeRequests.length > 0 && { largeRequests }),
             estimatedCostUsd: 0,
@@ -339,14 +365,7 @@ export const parseAnthropicEnvelopeValue = ({
           at,
         }),
       );
-      const subtype = payload.subtype as string | undefined;
-      if (subtype === 'success') {
-        events.push({ kind: 'done', runId: ctx.runId, at });
-      } else if (typeof payload.error === 'string') {
-        events.push({ kind: 'error', runId: ctx.runId, message: payload.error, at });
-      } else {
-        events.push({ kind: 'done', runId: ctx.runId, at });
-      }
+      events.push(resultEndOf({ payload, runId: ctx.runId, at }));
       resetTextBoundary({ runId: ctx.runId });
       resetStreamedText({ ctx });
       return events;

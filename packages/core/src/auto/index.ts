@@ -14,6 +14,7 @@ export {
   AUTO_FACTS_THREAD_CHARS,
   AUTO_FACTS_THREADS_MAX,
   AUTO_GATES,
+  AUTO_LEAD_FRESH_GAP_MS,
   AUTO_LEDGER_MAX_ARTIFACTS,
   AUTO_LEDGER_OUTLINE_CHARS,
   AUTO_MAX_RUNNING_CHILDREN,
@@ -365,11 +366,33 @@ export {
 export { parseProposeSpec } from './proposeSpec';
 
 export {
+  buildDeliveryParts,
   buildDeliveryText,
   type BuildDeliveryParams,
   type DeliveryRow,
   type WaitingReturn,
 } from './delivery';
+
+export {
+  joinDeliveryParts,
+  type LeadDeliveryBaseline,
+  type LeadDeliveryPart,
+  type LeadDeliveryPartKind,
+  type LeadDeliverySent,
+} from './leadDeliveryPart';
+
+export { deliverySentOf } from './deliverySentOf';
+
+export { LEAD_DELIVERY_HEADER } from './leadDeliveryHeader';
+
+export { leadDeliveryDeltaOf, type LeadDeliveryDeltaParams } from './leadDeliveryDeltaOf';
+
+export {
+  leadDeliveryModeOf,
+  type LeadDeliveryMode,
+  type LeadDeliveryModeParams,
+  type LeadLastTurn,
+} from './leadDeliveryModeOf';
 
 export {
   describeMounts,

@@ -8,7 +8,7 @@ type Params = {
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly views: ReadonlyArray<AutoTreeView>;
   readonly rootTurns: Readonly<Record<string, TurnState | undefined>>;
-  readonly spendByAgentId: ReadonlyMap<AgentId, number>;
+  readonly ownSpendByAgentId: ReadonlyMap<AgentId, number>;
   readonly now: number;
 };
 
@@ -42,23 +42,12 @@ export const boardInputsOf = ({
   questions,
   views,
   rootTurns,
-  spendByAgentId,
+  ownSpendByAgentId,
   now,
 }: Params): BoardInputs => {
   const live = agents.filter((agent) => agent.deletedAt === undefined);
   const agentById = new Map<AgentId, Agent>(live.map((agent) => [agent.id, agent]));
   const rootIds = new Set<AgentId>(views.map((view) => view.tree.rootAgentId));
-  const childrenSpend = new Map<AgentId, number>();
-  for (const agent of live) {
-    if (agent.parentAgentId !== undefined) {
-      childrenSpend.set(
-        agent.parentAgentId,
-        (childrenSpend.get(agent.parentAgentId) ?? 0) + (spendByAgentId.get(agent.id) ?? 0),
-      );
-    }
-  }
-  const ownSpendOf = ({ id }: IdParams): number =>
-    Math.max(0, (spendByAgentId.get(id) ?? 0) - (childrenSpend.get(id) ?? 0));
   const leadIdOf = ({ id }: IdParams): string | null => {
     const seen = new Set<AgentId>();
     let cursor: AgentId | undefined = id;
@@ -82,7 +71,7 @@ export const boardInputsOf = ({
       {
         id: root.id,
         primaryMountId: view.tree.primaryMountId ?? root.mountId ?? null,
-        spendUsd: ownSpendOf({ id: root.id }),
+        spendUsd: ownSpendByAgentId.get(root.id) ?? 0,
         elapsedMs: elapsedOf({ agent: root, now }),
         isRunning: lead.stop === 'working',
         isBlocked: lead.stop === 'waitsForYou' && !isFailed,
@@ -96,7 +85,7 @@ export const boardInputsOf = ({
       id: agent.id,
       leadId: leadIdOf({ id: agent.id }),
       mountId: agent.mountId ?? null,
-      spendUsd: ownSpendOf({ id: agent.id }),
+      spendUsd: ownSpendByAgentId.get(agent.id) ?? 0,
       elapsedMs: elapsedOf({ agent, now }),
       isRunning: agent.status === 'running',
       isBlocked: agent.status === 'blocked',

@@ -17,7 +17,7 @@ import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAv
 import { formatError } from '@goodboy/ui';
 import type { ProviderId, TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import type { GetFn, SetFn, StartWorkflowGenerationParams } from './types';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 
 type GenerationModelParams = {
   readonly state: ReturnType<GetFn>;
@@ -42,7 +42,7 @@ const generationAvailability = ({ state }: MenuParams): WorkflowRoutingAvailabil
     providers: state.providers ?? [],
     cooldowns: state.providerCooldowns ?? {},
     alerts: state.budgetAlerts ?? [],
-    hidden: selectHiddenModels({ state: state }),
+    hidden: selectBlockedModels({ state: state }),
     sessionId: null,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),
@@ -126,7 +126,7 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
       const availability = generationAvailability({ state: get() });
       const modelMenu: ReadonlyArray<OrchestratorModelOption> = orchestratorModelPool({
         availability,
-        hidden: selectHiddenModels({ state: get() }),
+        hidden: selectBlockedModels({ state: get() }),
       });
       const formatted = await formatWorkflowFromNL({
         deps: {

@@ -5,7 +5,7 @@ import { useAppStore } from '../../../../store';
 import type { AgentQueuedTurn } from '../../../../store/slices/agentQueue/types';
 import type { AutoReadMessage } from '../../../../store/slices/auto-view/state';
 import { useSessionRunHistory } from '../../../../shared/hooks/useSessionRunHistory';
-import { agentSpendById } from '../../../session/timeline/agentSpendById';
+import { agentOwnSpendById } from '../../../session/timeline/agentOwnSpendById';
 import { autoTreeOfAgent } from '../../autoTreeOfAgent';
 import { autoTreeWordOf } from '../../autoTreeWordOf';
 import type { LeadTreeRootState } from '../../tree/leadTreeRootState';
@@ -56,8 +56,8 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
   const telemetry = useAppStore((state) => state.sessionTelemetry[sessionId] ?? NO_TELEMETRY);
   const agentRunHistory = useSessionRunHistory({ sessionId });
-  const spendByAgentId = useMemo(
-    () => agentSpendById({ records: telemetry, agents, agentRunHistory }),
+  const ownSpendByAgentId = useMemo(
+    () => agentOwnSpendById({ records: telemetry, agents, agentRunHistory }),
     [agentRunHistory, agents, telemetry],
   );
   const rootTurn = useAppStore((state) => state.agentTurnState[rootAgentId] ?? null);
@@ -92,7 +92,7 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
     const facts = leadTreeDelegationsOf({
       delegations: view.delegations,
       agents,
-      spendByAgentId,
+      ownSpendByAgentId,
       leadAgentId: rootAgentId,
     });
     const tree = leadTreeOf({
@@ -100,7 +100,7 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
       notes: notes.timed,
       plans: [],
       leadAgentId: rootAgentId,
-      leadSpendUsd: spendByAgentId.get(rootAgentId) ?? 0,
+      leadSpendUsd: ownSpendByAgentId.get(rootAgentId) ?? 0,
       primaryMountId: view.tree.primaryMountId,
       openFoldIds: NO_FOLDS,
       canFold: false,
@@ -109,7 +109,7 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
       tree,
       items: leadTreeItemsOf({ tree, agentsById: facts.agentsById, notes: notes.nodes }),
     };
-  }, [view, rows, queue, agents, spendByAgentId, rootAgentId]);
+  }, [view, rows, queue, agents, ownSpendByAgentId, rootAgentId]);
   return {
     items: model.items,
     root,

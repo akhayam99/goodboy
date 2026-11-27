@@ -33,9 +33,9 @@ and Codex. `autoChildProviders` gives the list per role; `routeTurn` and
 
 ## The candidates list
 
-Every Lead turn ends its message with the models list (`leadCandidatesBlock`,
-appended in the auto branch of `buildTurnSpawn`, so the first turn and every
-turn after a user message carry it too, never the system prompt): one
+A Lead turn ends its message with the models list (`leadCandidatesBlock`, never
+the system prompt). A resumed Claude Lead gets it again only when it changed
+([blocks.md](blocks.md#the-delivery-text)); every other Lead turn carries it: one
 line per provider in your order with its room, load and models per rung, the
 Provider priority rule (By order or By load, from `spreadByHeadroom`), and the
 writer, reviewer family and pin lines. One selector feeds it,

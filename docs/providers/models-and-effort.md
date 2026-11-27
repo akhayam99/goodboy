@@ -110,6 +110,22 @@ Flash and `auto` get no effort flag. Every window is
 - Cursor bills by its own list (`cursor.com/docs/models`), not the vendor's. Every
   Haiku 5.5 combo on Cursor needs Max Mode, which Cursor keeps only on legacy plans
 
+### Cache writes
+
+`priceLevels.ts` bills a cache write at 1.25 times the input rate. Claude has a
+second rate: a write kept for one hour bills at 2 times
+(`ONE_HOUR_CACHE_WRITE_FACTOR` in `claude/cost.ts`).
+
+- `longCacheWriteTokensOf` reads
+  `usage.cache_creation.ephemeral_1h_input_tokens` from a stream result, from each
+  assistant message and from a background task's answer. It travels as
+  `longCacheWriteInputTokens`
+- Only that part bills at the one hour rate, capped at the write total. A usage
+  with no split bills every write at 1.25 times
+- Every other provider bills every write at 1.25 times, split or not
+- A telemetry row keeps the price worked out when it was recorded. A later rate
+  change moves no saved amount
+
 ### Gemini Flash price date
 
 Gemini 3.6, 3.7 and 3.8 Flash bill 0.75/3.75 per Mtok (cached 0.075) in
@@ -157,17 +173,44 @@ Gemini 3.1 Pro above 200k. The size is per request and counts cached tokens.
    strike) and writes one error row with Retry. `settleTurn` passes the reason to
    `onSettled` as `failureReason`, so an Auto helper ends `failed` with it, not
    `no_closing_envelope`
-3. `learnFromCliRefusal` stores a `model_not_available` refusal (the ChatGPT and
-   Codex account texts, not Cursor Max Mode) per provider, account and model key
-   in `provider.unavailableModels`. The account is the provider's `identity` at
-   run start (`TurnProgress.accountId`)
-4. `selectModelContext` adds the signed-in account's learned keys to `hidden`, so
-   candidates, `checkPick` and the turn fallback skip them. An explicit pin still
-   runs
+3. `learnFromCliRefusal` stores a `model_not_available` refusal (not Cursor Max
+   Mode) per provider, account and model key in `provider.unavailableModels`. The
+   account is the provider's `identity` at run start (`TurnProgress.accountId`).
+   Each entry carries `source` (`refused`, or `unlisted` from a model list), the
+   account's `plan` and `checkedAt`
+4. `selectBlockedModels` (`store/slices/providers/`) adds the live entries to the
+   Settings `hidden` list, so candidates, `checkPick` and the turn fallback skip
+   them. An explicit pin still runs. An entry is live only for the signed-in
+   account, while the plan it was learned on is still the plan, and for 7 days
+   (`UNAVAILABLE_MODEL_TTL_MS`, `selectRefusedModels`)
 5. An accepted run on the model clears the entry in `finalizeTurnStream`
 
+`classifyProviderError` reads a refusal only from text a CLI printed:
+
+- Codex: the ChatGPT account text and `is not available with this <name>
+account`
+- Claude Code, from its errors page: `There's an issue with the selected model
+(<id>)` and `<Claude line> is not available with the Claude <plan> plan`
+- Copilot: `Model "<id>" from --model flag is not available`
+  (`copilot/parser.recorded.test.ts`)
+- Cursor: `The model "<id>" is not available for this account`
+- A Claude `result` with `is_error: true` is a turn error even when its subtype
+  says success (`anthropic-envelope-parser.ts`), so the refusal never clears the
+  entry as an accepted run
+
+Cursor is the one CLI that lists the account's models. **Test connection**
+(`provider_test_connection`, `test_connection.rs`) returns the ids of
+`cursor-agent models`, and `learnListedModels` marks every Cursor catalog model
+the list lacks as `unlisted` for that account, replacing the earlier list. An
+empty list, a list with no id the catalog knows, more than 1,024 ids or an
+answer that arrives after the account changed changes nothing. No other provider
+gets a list command or a paid probe turn.
+
 - `unavailableModelsWriter` writes the setting one change at a time. Boot reads
-  it, dropping keys the catalog no longer has
+  it, dropping keys the catalog no longer has and entries without `checkedAt`
 - A Lead retry of a helper that ended `model_not_available` or `authentication`
-  drops the earlier provider, model and effort (`prepareRetry`), so it is routed
-  again
+  drops the earlier provider, model and effort (`prepareRetry`), and a retry with
+  a new task does not lock the agent to its refused model
+  (`retryAgentLockOf`), so it is routed again
+- A Lead pick on such a model stays on its provider and moves down its ladder
+  (`no-access`, [routing.md](routing.md#candidates))

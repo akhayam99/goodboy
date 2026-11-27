@@ -32,12 +32,11 @@ import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { feedAuthRefusal } from '../providers/feedAuthRefusal';
 import { learnFromCliRefusal } from './learnFromCliRefusal';
 import { turnFailureReasonOf } from './turnFailure/turnFailureReasonOf';
-import { withUnavailableModels } from '../../runtime/models/withUnavailableModels';
 import { fallbackNoticeMessage } from './fallbackNoticeMessage';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordTurnSpan } from './recordTurnSpan';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 import type { GetFn, SendTurnResult, SetFn, SendTurnInput, TurnLease } from './types';
 import { formatClock } from '../../../shared/utils/time/formatClock';
 import type { TurnContext } from './turnContext';
@@ -72,6 +71,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     onWritingUserText,
     onSettled,
     permissionOnceAllows,
+    leadDelivery,
   } = ctx.input;
   const {
     session,
@@ -132,6 +132,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
       get,
       providerId: provider,
       accountId: progress.accountId,
+      plan: progress.plan,
       model: spawnModel,
       message: rawMessage,
     });
@@ -191,11 +192,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
             cooldowns: get().providerCooldowns,
             nowMs: Date.now(),
           }),
-          hidden: withUnavailableModels({
-            hidden: selectHiddenModels({ state: get() }),
-            unavailable: get().unavailableModels,
-            providers: get().providers,
-          }),
+          hidden: selectBlockedModels({ state: get() }),
           ...(preferredFallback != null && {
             preferred: {
               provider: preferredFallback.provider,
@@ -281,6 +278,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
         ...(onStarted !== undefined && !progress.hasSpawned && { onStarted }),
         ...(onWritingUserText !== undefined && !progress.hasSpawned && { onWritingUserText }),
         ...(onSettled !== undefined && { onSettled }),
+        ...(leadDelivery !== undefined && { leadDelivery }),
         retry: {
           attempt: (retry?.attempt ?? 0) + 1,
           provider: fallbackPlan.provider,
