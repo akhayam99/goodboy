@@ -137,6 +137,29 @@ describe('boardTileChipOf', () => {
     ).toEqual({ word: NAMES.needsApproval, tone: 'warning' });
   });
 
+  it('drops the permission word from the row while the Needs you tile asks for it', () => {
+    const branch = branchOf({ checks: 'pending' });
+    const board = branchBoardOf({ session, branches: [branch], asks: [], agents: [], leads: [] });
+    const [row] = board.rows;
+    if (row === undefined) {
+      throw new Error('no row');
+    }
+    const waiting = {
+      ...row,
+      group: 'needs-you' as const,
+      stage: { ...row.stage, attention: 'needs-approval' as const },
+    };
+    const entry = branchEntriesOf({ facts: [branch], detailByMountId: new Map() }).live[0] ?? null;
+
+    expect(boardTileChipOf({ row: waiting, entry, runningCount: 0 })).toEqual({
+      word: NAMES.waitingForPermission,
+      tone: 'warning',
+    });
+    expect(
+      boardTileChipOf({ row: waiting, entry, runningCount: 0, isPermissionShown: true }),
+    ).toBeNull();
+  });
+
   it('says Checks failing in red over Running', () => {
     expect(chipOf({ branch: branchOf({ checks: 'failure' }), runningCount: 1 })).toEqual({
       word: 'Checks failing',
