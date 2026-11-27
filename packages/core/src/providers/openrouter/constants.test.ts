@@ -49,6 +49,14 @@ describe('OPENROUTER_MODELS', () => {
       'gpt-6-luna',
       'gemini-4-argon',
       'gemini-3.5-flash-lite',
+      'fable-5.2',
+      'gpt-6.2-astra',
+      'gpt-6.2-sol',
+      'gpt-6.1-terra',
+      'gemini-4-neon',
+      'gemini-4-carbon',
+      'gemini-4-hydrogen',
+      'kimi-k3.1-pro',
     ]);
   });
 
@@ -59,9 +67,10 @@ describe('OPENROUTER_MODELS', () => {
       'gpt',
       'gemini',
     ]);
-    expect(OPENROUTER_MODELS.every((model) => model.effort?.includes('medium') === true)).toBe(
-      true,
-    );
+    const withoutMedium = OPENROUTER_MODELS.filter(
+      (model) => model.effort?.includes('medium') !== true,
+    ).map((model) => model.id);
+    expect(withoutMedium).toEqual(['kimi-k3.1-pro']);
   });
 
   it('drops the three vendor ids the openrouter api no longer lists', () => {

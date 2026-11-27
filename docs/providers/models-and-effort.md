@@ -90,6 +90,12 @@ the anthropic catalog is `providers/claude/catalog.ts`.
 - The K2.x models are closed to new Moonshot accounts and retire at the end of
   December 2026, so they are `legacy`
 
+### OpenRouter and opencode models
+
+- Efforts, context windows and ids of the newest OpenRouter and opencode entries
+  come from the models.dev registry that opencode reads
+- A free Zen model that leaves the Zen model page becomes `legacy`
+
 ### Cheap model
 
 Only Cursor's `getCheapModel` is set by hand, to `auto` in `cli-defaults.ts`. The

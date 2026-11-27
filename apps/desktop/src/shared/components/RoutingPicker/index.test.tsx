@@ -177,20 +177,19 @@ describe('RoutingPicker', () => {
       <RoutingPicker
         {...baseProps}
         provider="gemini"
-        model="gemini-4-hydrogen"
+        model="gemini-4-carbon"
         ariaLabel="routing"
       />,
     );
     const trigger = screen.getByRole('button', { name: /^routing:/ });
-    expect(triggerSegments({ element: trigger })).toEqual(['4 Hydrogen', 'High']);
-    expect(trigger.getAttribute('aria-label')).toBe('routing: Gemini · 4 Hydrogen · High');
+    expect(triggerSegments({ element: trigger })).toEqual(['4 Carbon', 'High']);
+    expect(trigger.getAttribute('aria-label')).toBe('routing: Gemini · 4 Carbon · High');
     fireEvent.click(trigger);
     const effort = within(screen.getByRole('group', { name: 'Effort' }));
     expect(effort.getAllByRole('button').map((button) => button.textContent)).toEqual([
       'Low',
       'Medium',
       'High',
-      'Very high',
     ]);
   });
 
@@ -603,13 +602,8 @@ describe('RoutingPicker', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const versions = within(screen.getByRole('group', { name: 'Version' }));
-    expect(versions.getAllByRole('button').map((button) => button.textContent)).toEqual([
-      '5.5',
-      '5.6',
-      '6',
-      '6.1',
-      '6.2',
-    ]);
+    const shown = versions.getAllByRole('button').map((button) => button.textContent);
+    expect(shown.join(' ')).toBe('5.5 5.6 6 6.1 6.2');
     expect(versions.getByRole('button', { name: '5.6' }).getAttribute('aria-pressed')).toBe('true');
     const variants = within(screen.getByRole('group', { name: 'Variant' }));
     expect(variants.getAllByRole('button').map((button) => button.textContent)).toEqual([
