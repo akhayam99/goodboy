@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { brandId, type Agent, type AgentId, type MountId, type SessionId } from '@goodboy/types';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../store';
-import { OverlapChip } from '../../../../../features/overlap/OverlapChip';
+import { OverlapCard } from '../../../../../features/overlap/OverlapCard';
 import { SESSION } from '../activityRunSeed';
 import { mockSceneIpc } from '../mockSceneIpc';
 
@@ -23,6 +23,7 @@ type RowSeed = Readonly<{
   createdAt: number;
 }>;
 
+const RUNNING = { word: 'Running', tone: 'info' } as const;
 const WIDTH = 760;
 const HEIGHT = 560;
 const CLICK_DELAY_MS = 300;
@@ -140,7 +141,7 @@ export const OverlapScene = ({ theme, view }: Props) => {
             {row.title}
           </span>
           <span className="shrink-0 text-code text-faint-foreground">{row.branch}</span>
-          <OverlapChip mountId={row.mountId} />
+          <OverlapCard mountId={row.mountId} word={RUNNING} facts={[]} />
         </div>
       ))}
     </div>

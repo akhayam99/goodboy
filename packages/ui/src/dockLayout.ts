@@ -1,6 +1,5 @@
 import { DRAWER_TIERS, pushReserveOf, type DrawerSizing } from './drawerGeometry';
 import { DOCK_GRID_CAP } from './dockGridCap';
-import { DOCK_TILE_ROOM_PX } from './dockTileRoom';
 import { foldStatesOf } from './dockFoldStates';
 import { laneOf } from './dockLaneOf';
 import type { DockColumn, DockPane, Lane } from './dockLaneTypes';
@@ -316,163 +315,15 @@ const overLayoutOf = ({ frame, detail, lanes, isStacked }: OverParams): FrameLay
   };
 };
 
-type FillParams = {
-  readonly lanes: ReadonlyArray<Lane>;
-  readonly room: number;
-  readonly height: number;
-};
-
-type LaneHeightParams = {
-  readonly lane: Lane;
-  readonly height: number;
-};
-
-type GrowParams = {
-  readonly wanted: ReadonlyArray<number>;
-  readonly room: number;
-};
-
-const grownOf = ({ wanted, room }: GrowParams): ReadonlyArray<number> => {
-  const total = Math.max(1, sumOf({ values: wanted }));
-  const scaled = wanted.map((width) => Math.floor((width * room) / total));
-  const rest = room - sumOf({ values: scaled });
-  return scaled.map((width, index) => (index === scaled.length - 1 ? width + rest : width));
-};
-
-const isLaneRowFit = ({ lane, height }: LaneHeightParams): boolean => {
-  const [top, bottom] = lane.panes;
-  if (top === undefined || bottom === undefined) {
-    return true;
-  }
-  const shared = Math.max(0, height - SHELL_GUTTER_PX);
-  const topHeight = Math.round(shared * lane.split);
-  return topHeight >= (top.rowMin ?? 0) && shared - topHeight >= (bottom.rowMin ?? 0);
-};
-
-const isHeightFit = ({ lanes, height }: Pick<FillParams, 'lanes' | 'height'>): boolean =>
-  lanes.every((lane) => isLaneRowFit({ lane, height }));
-
-const deskFillOf = ({ lanes, room, height }: FillParams): ReadonlyArray<number> | null => {
-  const space = Math.max(0, room - SHELL_GUTTER_PX * Math.max(0, lanes.length - 1));
-  const mins = lanes.map((lane) => DRAWER_TIERS[lane.sizing].min);
-  if (sumOf({ values: mins }) > space || !isHeightFit({ lanes, height })) {
-    return null;
-  }
-  const wanted = lanes.map((lane) => wantedWidthOf({ lane }));
-  return sumOf({ values: wanted }) > space
-    ? shrunkOf({ lanes, wanted, room: space })
-    : grownOf({ wanted, room: space });
-};
-
-type DeskOrderParams = {
+type FoldOrderParams = {
   readonly lanes: ReadonlyArray<Lane>;
   readonly foldOrder: ReadonlyArray<string>;
 };
 
-const foldOrderOf = ({ lanes, foldOrder }: DeskOrderParams): ReadonlyArray<string> => {
+const foldOrderOf = ({ lanes, foldOrder }: FoldOrderParams): ReadonlyArray<string> => {
   const ids = lanes.flatMap((lane) => lane.panes.map((pane) => pane.id));
   const rest = ids.filter((id) => !foldOrder.includes(id)).reverse();
   return [...rest, ...foldOrder.filter((id) => ids.includes(id))];
-};
-
-type DeskParams = {
-  readonly frame: Frame;
-  readonly detail: Lane | null;
-  readonly lanes: ReadonlyArray<Lane>;
-  readonly foldOrder: ReadonlyArray<string>;
-};
-
-type OverDeskParams = {
-  readonly frame: Frame;
-  readonly detail: Lane | null;
-  readonly lanes: ReadonlyArray<Lane>;
-};
-
-const deskOverOf = ({ frame, detail, lanes }: OverDeskParams): FrameLayout => {
-  const detailWidth =
-    detail === null
-      ? 0
-      : Math.max(
-          DRAWER_TIERS[detail.sizing].min,
-          Math.min(wantedWidthOf({ lane: detail }), frame.mainWidth),
-        );
-  const beside =
-    detail === null ? frame.mainWidth : frame.mainWidth - detailWidth - SHELL_GUTTER_PX;
-  const widths = lanes.map((lane) =>
-    Math.max(DRAWER_TIERS[lane.sizing].min, Math.min(wantedWidthOf({ lane }), beside)),
-  );
-  const used = sumOf({ values: widths }) + SHELL_GUTTER_PX * Math.max(0, widths.length - 1);
-  const columns = placedOf({
-    frame,
-    lanes,
-    widths,
-    lefts: leftsOf({ start: frame.mainLeft + frame.mainWidth - used, widths }),
-    slack: 0,
-  });
-  const placedDetail =
-    detail === null
-      ? null
-      : (placedOf({
-          frame,
-          lanes: [detail],
-          widths: [detailWidth],
-          lefts: [frame.mainLeft],
-          slack: 0,
-        })[0] ?? null);
-  const page = { x: frame.mainLeft, y: frame.top, width: frame.mainWidth, height: frame.height };
-  return {
-    mode: 'over',
-    isStacked: false,
-    isDetailOver: false,
-    page,
-    detail: placedDetail,
-    columns,
-  };
-};
-
-const deskLayoutOf = ({ frame, detail, lanes, foldOrder }: DeskParams): FrameLayout => {
-  const states = foldStatesOf({ lanes, order: foldOrderOf({ lanes, foldOrder }) });
-  if (frame.mainWidth < DOCK_TILE_ROOM_PX) {
-    return deskOverOf({ frame, detail, lanes: states[states.length - 1] ?? lanes });
-  }
-  const attempts = states.flatMap((state) => {
-    const stacked = foldedOf({ lanes: state });
-    return [
-      { lanes: state, isStacked: false },
-      ...(stacked === null ? [] : [{ lanes: stacked, isStacked: true }]),
-    ];
-  });
-  const fitted = attempts
-    .map((attempt) => {
-      const placed = detail === null ? attempt.lanes : [detail, ...attempt.lanes];
-      return {
-        ...attempt,
-        placed,
-        widths: deskFillOf({ lanes: placed, room: frame.mainWidth, height: frame.height }),
-      };
-    })
-    .find((attempt) => attempt.widths !== null);
-  if (fitted === undefined || fitted.widths === null) {
-    const last = states[states.length - 1] ?? lanes;
-    return deskOverOf({ frame, detail, lanes: last });
-  }
-  const page = { x: frame.mainLeft, y: frame.top, width: frame.mainWidth, height: frame.height };
-  const placed = placedOf({
-    frame,
-    lanes: fitted.placed,
-    widths: fitted.widths,
-    lefts: leftsOf({ start: frame.mainLeft, widths: fitted.widths }),
-    slack: frame.mainWidth,
-  });
-  const [placedDetail, ...rest] = placed;
-  return {
-    mode: 'push',
-    isStacked: fitted.isStacked,
-    isDetailOver: false,
-    page,
-    detail: detail === null ? null : (placedDetail ?? null),
-    columns: detail === null ? placed : rest,
-  };
 };
 
 type Params = {
@@ -484,7 +335,6 @@ type Params = {
   readonly detail: DockPane | null;
   readonly columns: ReadonlyArray<DockColumn>;
   readonly canPush?: boolean;
-  readonly isDesk?: boolean;
   readonly foldOrder?: ReadonlyArray<string>;
 };
 
@@ -497,7 +347,6 @@ export const dockLayoutOf = ({
   detail,
   columns,
   canPush = true,
-  isDesk = false,
   foldOrder = [],
 }: Params): DockLayout => {
   const railForm = shellRailFormOf({ windowWidth });
@@ -522,13 +371,6 @@ export const dockLayoutOf = ({
     .slice(0, DOCK_MAX_COLUMNS)
     .map((column) => laneOf(column))
     .filter((lane): lane is Lane => lane !== null);
-  if (isDesk) {
-    return {
-      ...deskLayoutOf({ frame, detail: detailLane, lanes: intent, foldOrder }),
-      railForm,
-      rail,
-    };
-  }
   const folded = foldedOf({ lanes: intent });
   const tabbedStates =
     intent.length > 2
@@ -581,32 +423,9 @@ export const dockLayoutOf = ({
   };
 };
 
-type DockSolverParams = {
-  readonly isLane: boolean;
-};
-
 const ROW_WEIGHT_FRAME = 1000;
 
-const solveDesk = ({
-  columnWidth,
-  columnHeight,
-  foldOrder,
-  detail,
-  columns,
-}: DockSolveParams): SolvedDockFrame =>
-  dockLayoutOf({
-    windowWidth: columnWidth,
-    windowHeight: columnHeight ?? ROW_WEIGHT_FRAME,
-    top: 0,
-    leftRailWidth: 0,
-    toolRailWidth: 0,
-    isDesk: true,
-    foldOrder,
-    detail,
-    columns,
-  });
-
-const solveDock = ({
+export const solveDock = ({
   columnWidth,
   railWidth,
   canPush,
@@ -623,8 +442,3 @@ const solveDock = ({
     detail,
     columns,
   });
-
-export const dockSolverOf = ({
-  isLane,
-}: DockSolverParams): ((params: DockSolveParams) => SolvedDockFrame) =>
-  isLane ? solveDesk : solveDock;

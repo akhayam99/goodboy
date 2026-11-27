@@ -36,6 +36,9 @@ const word = ({ title }: TitleParams): PlaceTitle => ({ title, isName: false });
 const name = ({ title }: TitleParams): PlaceTitle => ({ title, isName: true });
 
 export const placeTitleOf = ({ state, place }: Params): PlaceTitle => {
+  if (place.at === 'home') {
+    return word({ title: NAMES.home });
+  }
   if (place.at === 'board') {
     return word({ title: 'Board' });
   }

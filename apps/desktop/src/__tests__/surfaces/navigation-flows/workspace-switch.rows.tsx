@@ -68,7 +68,7 @@ export const WORKSPACE_SWITCH_ROWS: ReadonlyArray<Row> = [
       expect(useAppStore.getState().getSelectedProjectIds({ workspaceId: HARBORLINE_ID })).toEqual([
         HARBORLINE_PROJECT_ID,
       ]);
-      expect(await screen.findAllByText(HARBORLINE_GOAL, undefined, WAIT)).not.toEqual([]);
+      await waitFor(() => expect(goalsOnScreen()).toContain(HARBORLINE_GOAL), WAIT);
     },
   },
   {

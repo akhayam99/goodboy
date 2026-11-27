@@ -20,7 +20,6 @@ export { ShellRailContext } from './shellRailContext';
 export { UnderHeadContext } from './underHeadContext';
 export { HEAD_INSET_VAR } from './headInsetVar';
 export { SPLIT_DRAG_ATTRIBUTE } from './splitDragAttribute';
-export { FACE_SWAP_ATTRIBUTE } from './faceSwapAttribute';
 export { DrawerEdgeContext } from './drawerEdgeContext';
 export type { ResizeActivity, SheetEdge } from './sheet';
 export { DISABLED } from './disabledStyle';

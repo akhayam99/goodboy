@@ -6,7 +6,7 @@ New here? [Your first task](docs/first-session.md) walks from install to a merge
 
 Most pictures follow one team and one task. Harborline keeps three repos, payments-api, ledger-core and notify-relay, and issue HBL-412 says retried webhooks post a second credit. The pictures show that fix from the first brief to pull request #318.
 
-<a id="welcome-to-goodboy"></a><a id="your-agents"></a><a id="provider-connection"></a><a id="your-first-workspace"></a><a id="home"></a><a id="one-page-per-provider"></a><a id="update-the-provider-cli"></a><a id="permissions-for-each-provider"></a><a id="integrations"></a><a id="about-you"></a><a id="settings-home"></a><a id="settings"></a>
+<a id="welcome-to-goodboy"></a><a id="your-agents"></a><a id="provider-connection"></a><a id="your-first-workspace"></a><a id="workspaces"></a><a id="one-page-per-provider"></a><a id="update-the-provider-cli"></a><a id="permissions-for-each-provider"></a><a id="integrations"></a><a id="about-you"></a><a id="settings-home"></a><a id="settings"></a>
 
 ## Set up
 
@@ -14,7 +14,7 @@ Get from install to a first agent. Check the agents on this Mac, make a workspac
 
 - **Your agents**: Setup opens on your agents, step one of three from install to a first agent reading your code.
 - **Your first workspace**: A workspace is what you work on: one repository, or a folder that holds several.
-- **Home**: A window with no workspace open shows Home, which lists your workspaces with their folder count and where their folders live.
+- **Workspaces**: A window with no workspace open shows Workspaces, which lists your workspaces with their folder count and where their folders live.
 - **Integrations**: Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from Connections, and see the account behind each.
 
 [More on set up](docs/features/setup.md)
@@ -59,12 +59,13 @@ Open a session to see what it is for, what needs you and what happened so far.
 
 [More on overview and activity](docs/features/overview.md)
 
-<a id="queue"></a><a id="needs-you"></a><a id="merge-train"></a><a id="stage-board"></a><a id="session-card"></a><a id="list-view"></a><a id="done-and-archived-dock"></a><a id="done-and-archived-lanes"></a><a id="bulk-select"></a>
+<a id="home"></a><a id="queue"></a><a id="needs-you"></a><a id="merge-train"></a><a id="stage-board"></a><a id="session-card"></a><a id="list-view"></a><a id="done-and-archived-dock"></a><a id="done-and-archived-lanes"></a><a id="bulk-select"></a>
 
 ## The board
 
 The board shows every session of a workspace in lanes by stage, with what waits on you at the top of Running, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes.
 
+- **Home**: Home is the first page of a workspace: what needs you, what runs and how much is left, with the usage of your providers.
 - **Needs you**: See what waits on you at the top of the Running lane.
 - **Merge train**: Merge several pull requests, across sessions and repositories, with one gesture.
 - **Stage board**: See where each task stands without moving cards around.

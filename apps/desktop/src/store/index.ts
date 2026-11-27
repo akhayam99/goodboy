@@ -72,6 +72,7 @@ export type { LensKind, DiffFocus } from './slices/session-view';
 export { NO_PROJECT_FILTER_ID } from './slices/sessionFilters';
 export {
   BOARD_PLACE,
+  HOME_PLACE,
   agentPlace,
   branchPlace,
   questionPlace,

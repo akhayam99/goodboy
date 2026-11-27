@@ -73,7 +73,7 @@ export const ShellLeft = ({ arrangement, workspaceId, actions, placeOverride }: 
               mark={railMarkOf({ id: door.id, signal: signals[door.id] })}
               isQuiet={door.isReference === true}
               isCurrent={place === door.id}
-              canReselect={isInSession && door.id === 'board'}
+              canReselect={isInSession && (door.id === 'home' || door.id === 'board')}
               onSelect={() => openColumnDoor({ id: door.id, actions })}
             />
           ))}

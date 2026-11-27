@@ -31,10 +31,10 @@
           "shown": true
         },
         {
-          "title": "Home",
+          "title": "Workspaces",
           "text": "A window with no workspace open lists your workspaces with their folders, and New workspace opens the same form in place.",
           "group": "Set up",
-          "also": "Home",
+          "also": "Workspaces",
           "shown": true
         },
         {

@@ -12,7 +12,7 @@ export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   ask: 'In the Ask panel',
   chatPage: 'On the Chat page',
   terminalPage: 'On the Terminal page and the terminal drawer',
-  home: 'On Home, where no workspace is open',
+  workspaces: 'On Workspaces, where no workspace is open',
   find: 'After a search in the view',
   overview: 'On a session overview',
   row: 'On a focused row',

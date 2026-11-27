@@ -71,7 +71,6 @@ const { store, hooks } = vi.hoisted(() => {
       workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'repo' }],
       projects: [],
       activeLens: {},
-      sessionFace: {},
       selectedAgentId: {},
       sessionWorktrees: {},
       sessionBranches: {},
