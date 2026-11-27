@@ -61,6 +61,7 @@ describe('leadAgentCountOf', () => {
             depth: 1,
             text: 'Keep the retry window at 30 seconds.',
             word: 'Queued',
+            isRead: false,
             canEdit: true,
             canRemove: true,
           },

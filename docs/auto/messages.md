@@ -59,6 +59,10 @@ The claim stores the turn number (`turns_used + 1`), read back as
 (`noteWordOf`). Remove is the undo until it is read. A note the runtime could
 not deliver keeps "Not read yet" in the tree and stays editable.
 
+The tree places a note under the latest agent that started before it (`leadTreeOf`), so
+it reads as a quiet line under that agent. A turn shows two read notes (`NOTES_PER_TURN`);
+the rest become one `more` row, and a queued note is never folded.
+
 ## What a note is
 
 A `user` outbox row carries `origin` (`operator`, `permission`, `continue`,

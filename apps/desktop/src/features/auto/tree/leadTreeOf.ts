@@ -17,6 +17,11 @@ export type LeadTreeTimed = Readonly<{
   createdAt: number;
 }>;
 
+export type LeadTreeNoteTimed = LeadTreeTimed &
+  Readonly<{
+    isQueued: boolean;
+  }>;
+
 export type LeadTreeAttempt = Readonly<{
   delegationId: string;
   agentId: string;
@@ -51,6 +56,12 @@ export type LeadTreeRow =
       id: string;
       depth: number;
       createdAt: number;
+    }>
+  | Readonly<{
+      kind: 'more';
+      id: string;
+      depth: number;
+      count: number;
     }>;
 
 export type LeadTree = Readonly<{
@@ -61,7 +72,7 @@ export type LeadTree = Readonly<{
 
 type Params = {
   readonly delegations: ReadonlyArray<LeadTreeDelegation>;
-  readonly notes: ReadonlyArray<LeadTreeTimed>;
+  readonly notes: ReadonlyArray<LeadTreeNoteTimed>;
   readonly plans: ReadonlyArray<LeadTreeTimed>;
   readonly leadAgentId: string;
   readonly leadSpendUsd: number;
@@ -270,13 +281,52 @@ const emitNodes = ({
   });
 };
 
-const KIND_ORDER = { agent: 0, note: 1, plan: 2 } as const;
+const KIND_ORDER = { agent: 0, plan: 1 } as const;
+
+export const NOTES_PER_TURN = 2;
 
 type Placed = {
   readonly at: number;
   readonly kind: keyof typeof KIND_ORDER;
   readonly rows: ReadonlyArray<LeadTreeRow>;
   readonly id: string;
+};
+
+type NoteRowsParams = {
+  readonly notes: ReadonlyArray<LeadTreeNoteTimed>;
+  readonly depth: number;
+  readonly ownerKey: string;
+};
+
+const noteRowsOf = ({ notes, depth, ownerKey }: NoteRowsParams): ReadonlyArray<LeadTreeRow> => {
+  const sorted = [...notes].sort((left, right) => {
+    const byTime = left.createdAt - right.createdAt;
+    return byTime !== 0 ? byTime : left.id.localeCompare(right.id);
+  });
+  const rows: LeadTreeRow[] = [];
+  let hiddenCount = 0;
+  let lastReadIndex = -1;
+  let readShown = 0;
+  for (const note of sorted) {
+    if (!note.isQueued && readShown >= NOTES_PER_TURN) {
+      hiddenCount += 1;
+      continue;
+    }
+    rows.push({ kind: 'note', id: note.id, depth, createdAt: note.createdAt });
+    if (!note.isQueued) {
+      readShown += 1;
+      lastReadIndex = rows.length - 1;
+    }
+  }
+  if (hiddenCount > 0) {
+    rows.splice(lastReadIndex + 1, 0, {
+      kind: 'more',
+      id: `more:${ownerKey}`,
+      depth,
+      count: hiddenCount,
+    });
+  }
+  return rows;
 };
 
 export const leadTreeOf = ({
@@ -336,14 +386,6 @@ export const leadTreeOf = ({
       });
     }
   }
-  for (const note of notes) {
-    placed.push({
-      at: note.createdAt,
-      kind: 'note',
-      rows: [{ kind: 'note', id: note.id, depth: 0, createdAt: note.createdAt }],
-      id: note.id,
-    });
-  }
   for (const plan of plans) {
     placed.push({
       at: plan.createdAt,
@@ -360,13 +402,35 @@ export const leadTreeOf = ({
     const byKind = KIND_ORDER[left.kind] - KIND_ORDER[right.kind];
     return byKind !== 0 ? byKind : left.id.localeCompare(right.id);
   });
+  const agentEntries = placed.filter((entry) => entry.kind === 'agent');
+  const attached = new Map<string, LeadTreeNoteTimed[]>();
+  const leading: LeadTreeNoteTimed[] = [];
+  for (const note of notes) {
+    const owner = [...agentEntries].reverse().find((entry) => entry.at <= note.createdAt);
+    if (owner === undefined) {
+      leading.push(note);
+      continue;
+    }
+    attached.set(owner.id, [...(attached.get(owner.id) ?? []), note]);
+  }
+  const rows = [
+    ...noteRowsOf({ notes: leading, depth: 0, ownerKey: leadAgentId }),
+    ...placed.flatMap((entry) => [
+      ...entry.rows,
+      ...noteRowsOf({
+        notes: attached.get(entry.id) ?? [],
+        depth: 1,
+        ownerKey: entry.id,
+      }),
+    ]),
+  ];
   const spendAgents = unique.map((delegation) => ({
     agentId: delegation.agentId,
     mountId: delegation.mountId,
     spendUsd: delegation.spendUsd,
   }));
   return {
-    rows: placed.flatMap((entry) => entry.rows),
+    rows,
     totalSpendUsd: unique.reduce((sum, delegation) => sum + delegation.spendUsd, leadSpendUsd),
     spendByBranch: leadSpendByBranchOf({ agents: spendAgents, leadSpendUsd, primaryMountId }),
   };

@@ -1,24 +1,37 @@
 import { memo } from 'react';
-import { NotebookText } from '@goodboy/ui/icons';
-import { Button, cn, ICON_SIZE } from '@goodboy/ui';
+import { Button, Tooltip, cn } from '@goodboy/ui';
 import { LEAD_TREE_UNIT, LeadTreeGuides } from './LeadTreeGuides';
 import { LEAD_TREE_CURSOR } from './leadTreeCursor';
-import { LEAD_TREE_ROW } from './leadTreeRow';
+import { LEAD_TREE_NOTE_ROW } from './leadTreeRow';
 
 type Props = {
   readonly id: string;
   readonly text: string;
   readonly word: string;
+  readonly isRead: boolean;
   readonly canEdit: boolean;
   readonly canRemove: boolean;
   readonly isActive: boolean;
   readonly depth: number;
+  readonly onOpen: () => void;
   readonly onEdit: (id: string) => void;
   readonly onRemove: (id: string) => void;
 };
 
 export const LeadTreeNoteRow = memo(
-  ({ id, text, word, canEdit, canRemove, isActive, depth, onEdit, onRemove }: Props) => (
+  ({
+    id,
+    text,
+    word,
+    isRead,
+    canEdit,
+    canRemove,
+    isActive,
+    depth,
+    onOpen,
+    onEdit,
+    onRemove,
+  }: Props) => (
     <div
       role="treeitem"
       tabIndex={-1}
@@ -26,25 +39,54 @@ export const LeadTreeNoteRow = memo(
       data-lead-tree-id={id}
       data-lead-tree-note=""
       data-active={isActive}
-      className={cn(LEAD_TREE_ROW, isActive && LEAD_TREE_CURSOR)}
+      className={cn(
+        LEAD_TREE_NOTE_ROW,
+        'cursor-pointer hover:bg-hover',
+        isActive && LEAD_TREE_CURSOR,
+      )}
+      onClick={onOpen}
     >
       <LeadTreeGuides depth={depth} />
       <span aria-hidden className="shrink-0" style={{ width: depth * LEAD_TREE_UNIT }} />
-      <span className="flex size-4 shrink-0 items-center justify-center text-faint-foreground">
-        <NotebookText size={ICON_SIZE.row} aria-hidden="true" />
-      </span>
-      <span className="min-w-0 flex-1 truncate text-ui text-foreground">{text}</span>
+      <Tooltip content={word} anchorClassName="flex min-w-0 flex-1">
+        <span
+          data-lead-tree-note-text=""
+          className="line-clamp-2 min-w-0 flex-1 text-meta text-faint-foreground"
+        >
+          {text}
+        </span>
+      </Tooltip>
+      {isRead ? null : (
+        <span data-lead-tree-note-word="" className="shrink-0 text-meta text-faint-foreground">
+          {word}
+        </span>
+      )}
       {canEdit ? (
-        <Button variant="ghost" size="xs" className="shrink-0" onClick={() => onEdit(id)}>
+        <Button
+          variant="ghost"
+          size="xs"
+          className="shrink-0"
+          onClick={(event) => {
+            event.stopPropagation();
+            onEdit(id);
+          }}
+        >
           Edit
         </Button>
       ) : null}
       {canRemove ? (
-        <Button variant="ghost" size="xs" className="shrink-0" onClick={() => onRemove(id)}>
+        <Button
+          variant="ghost"
+          size="xs"
+          className="shrink-0"
+          onClick={(event) => {
+            event.stopPropagation();
+            onRemove(id);
+          }}
+        >
           Remove
         </Button>
       ) : null}
-      <span className="shrink-0 text-meta text-muted-foreground">{word}</span>
     </div>
   ),
 );

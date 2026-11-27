@@ -1,5 +1,5 @@
 import type { AutoReadMessage } from '../../../store/slices/auto-view/state';
-import type { LeadTreeTimed } from './leadTreeOf';
+import type { LeadTreeNoteTimed } from './leadTreeOf';
 import { noteWordOf } from './noteWordOf';
 
 export type NoteSource = Readonly<{
@@ -13,6 +13,7 @@ export type NoteNode = Readonly<{
   createdAt: number;
   text: string;
   word: string;
+  isRead: boolean;
   canEdit: boolean;
   canRemove: boolean;
 }>;
@@ -25,7 +26,7 @@ type Params = {
 
 export type NoteNodes = Readonly<{
   nodes: ReadonlyArray<NoteNode>;
-  timed: ReadonlyArray<LeadTreeTimed>;
+  timed: ReadonlyArray<LeadTreeNoteTimed>;
 }>;
 
 export const noteNodesOf = ({ rows, createdAtById, read }: Params): NoteNodes => {
@@ -36,6 +37,7 @@ export const noteNodesOf = ({ rows, createdAtById, read }: Params): NoteNodes =>
       createdAt: createdAtById.get(row.id) ?? 0,
       text: row.content,
       word: noteWordOf({ turn: null }),
+      isRead: false,
       canEdit: !isSending,
       canRemove: !isSending,
     };
@@ -48,12 +50,17 @@ export const noteNodesOf = ({ rows, createdAtById, read }: Params): NoteNodes =>
       createdAt: message.createdAt,
       text: message.text,
       word: noteWordOf({ turn: message.turn }),
+      isRead: true,
       canEdit: false,
       canRemove: false,
     }));
   const nodes = [...readNodes, ...queued];
   return {
     nodes,
-    timed: nodes.map((node) => ({ id: node.id, createdAt: node.createdAt })),
+    timed: nodes.map((node) => ({
+      id: node.id,
+      createdAt: node.createdAt,
+      isQueued: !node.isRead,
+    })),
   };
 };

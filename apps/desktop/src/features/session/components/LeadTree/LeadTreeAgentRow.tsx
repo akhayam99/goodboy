@@ -93,7 +93,7 @@ export const LeadTreeAgentRow = memo(
         ) : (
           <span
             className={cn(
-              'min-w-0 flex-1 truncate text-ui',
+              'min-w-0 flex-1 truncate text-row',
               isMuted ? 'text-faint-foreground' : 'text-foreground',
             )}
           >
