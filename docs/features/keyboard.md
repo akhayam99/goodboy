@@ -236,16 +236,17 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - The tabs sit in one row with Back, Forward and Reload, and the page sits right under it, edge to edge.
 - Pins come first as square icons. The other tabs show their icon and title, narrow down to the icon when the row fills, then the row scrolls.
 - The shown tab is the address bar. It shows the page, not its address: the icon, the title and the host. Click it, or press **⌘L**, to see the full address selected and type a new one. **Esc** puts the title back.
-- In a pane under 560 pixels wide, Pin and Open full page move into **More**.
+- At the end of the row sit **Select an element** and **Console**, side by side. Each action has one button.
+- In a pane under 560 pixels wide, the row keeps the pins, the shown tab and New tab. The other tabs are listed at the top of the page menu.
 - Type an address and press **Enter** to open it beside the session, or **⌘Enter** to open it in your browser. A localhost address opens your dev server.
 - Type a word to find a tab of any session, a project pin or a page this session visited. Words are never searched on the web.
 - Type the path of a local page, image or PDF, like `~/harborline/plan.html`, to open it in a tab. Reload reads the file again. The page reads only the files in its folder and the folders under it. A missing file, a folder or another kind of file says why under the address. A link or a page never opens a local file.
 - While a page loads, Reload becomes **Stop**. A page that never finishes says so after 30 seconds. **Back** and **Forward** turn off when there is nothing behind or ahead.
-- **More** holds **Add to message**, Open in your browser, **Open full page**, This tab, **Clear site data** and Develop. This tab holds Copy address, Duplicate and Close tab. Develop holds **Reload without cache**, the widths and, on macOS, **Inspect in Safari**.
+- The arrow beside the address opens the page menu: **Add to message**, **Pin** or **Unpin**, **Clear site data**, This tab and Develop. This tab holds Copy address, Duplicate, Open in your browser and Close tab. Develop holds the widths and, on macOS, **Inspect in Safari**. **Open full page** sits in the pane's head.
 
 #### Clear the cache or a site
 
-- **⇧-click** Reload, or **Reload without cache** under Develop, loads the page again and skips the cache.
+- **⇧-click** Reload, or **⌘⇧R** while the browser has the keys, loads the page again and skips the cache.
 - **Clear site data** asks first, then removes the cookies, storage, cache and service workers of the site of the shown tab, and it signs you out of that site. When the tab went through a sign-in on another site, a login popup included, the confirm lists that site too and clears it with the page's own. Other sites keep theirs. The page reloads, and a line under the address names every cleared site and says other tabs on them keep their page until you reload them. If it fails, the page stays and the line says why.
 - Off macOS the row says **Clear browser data** and clears every site in the browser of this workspace.
 - **Settings › Workspace › Projects › Danger zone › Clear browser data** clears every site of the workspace. Open tabs reload.
@@ -287,7 +288,7 @@ While the browser is on screen, its keys are the ones every browser uses.
 | **⌘D**              | Pin or unpin the shown tab.                                                               |
 | **⌘⇧S**             | Send the page to the agent.                                                               |
 | **⌘F**              | Find text in the page.                                                                    |
-| **⌘⇧J**             | Open the console.                                                                         |
+| **⌘⇧J**             | Open or close the console.                                                                |
 | **⌘⇧C**             | Select an element on the page.                                                            |
 
 Elsewhere these keep their other meaning, so ⌘L stays Ask and ⌘F stays Search. Click into the page and the page keeps the keys. Click the address row or a tab to give them back.
@@ -296,7 +297,7 @@ The find bar sits under the address row. It says **Found** or **Not found**. **E
 
 #### Console
 
-**Console**, the button after More, or **⌘⇧J**, opens the console in a dock beside the page: below it in the Browser pane, right of it on the Browser page. The icon in the dock's head moves it to the other side, and its edge drags to resize it. Each place keeps its own side and size.
+**Console** or **⌘⇧J** opens the console in a dock beside the page: below it in the Browser pane, right of it on the Browser page. The same button or key closes it, and so does **Esc** while you are in the dock or on the button. Esc inside the page itself stays with the page. The icon in the dock's head moves it to the other side, and its edge drags to resize it. Each place keeps its own side and size. In a narrow pane the dock always sits below.
 
 **Console** lists what the page logged, with its errors, and **Network** the requests. It starts over at every load. **Clear** empties the list you see, and **Send to** the agent puts the log and the failed requests on the message box as one file you can remove.
 
@@ -310,7 +311,7 @@ The page's own address has no status: the browser does not report it.
 
 #### Errors
 
-When the page fails, a red count shows in the address row: thrown errors, promises without a catch, errors the page logs and failed requests. Warnings never count. With no error there is no count at all. Click it to open the dock on **Errors**, a tab that exists only while there are errors.
+When the page fails, a red count shows on **Console**: thrown errors, promises without a catch, errors the page logs and failed requests. Warnings never count. With no error there is no count at all. The count is for the tab you see. Click **Console** to open the dock on **Errors**, a tab that exists only while there are errors.
 
 Each error shows once, with how many times it happened, when first and when last. Click it to see its stack. Lines from files in the session's worktree, served by a dev server on one of its ports, show their path in color. **Send** puts one error on the message of the agent the button names, **Send all to** puts them all, as a file you can remove. Nothing goes until you send.
 
@@ -342,7 +343,7 @@ This part is for contributors and agents who change the feature.
 - Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule. The page is the `browser` studio kind (`BrowserStudio`), and [browser.md](../browser.md#the-page) owns its groups, its route and the view owner rule. `promoteBrowserTab` and `demoteBrowserTab` move a tab between them ([browser.md](../browser.md#moves)).
 - Browser doors: [browser.md](../browser.md#doors) owns `openInBrowser`, the click rule, the peek and the `browser.address` scope beside `ask.open`.
 - Add to message: `sendPageToAgent` reads through `browser_page_text` and queues the file for the agent `useHandOutputToAgent` names; [browser.md](../browser.md#doors) owns the rule and `browser.sendToAgent` is the key.
-- Browser console: `useConsoleEntries` pulls `browser_console_read`, and `applyConsoleRead` keeps the latest cursor. `BrowserToolsDock` places the dock, and `browserToolsDockPref` keeps its side and size per surface. `BrowserConsole` draws the console list, and `consoleAttachmentOf` the file. `NetworkTab` draws the request table (`networkRowsOf` filters it, `networkSummaryOf` writes the line under it) and `NetworkDetail` one request; `requestAttachmentOf` writes its file and `isHiddenHeader` keeps sensitive headers out of both. `consoleCounts` owns every count, the red one in the row (`BrowserErrorCount`) included. `errorGroupsOf` groups the errors, `sourceFileOf` maps a frame to a worktree file, `ErrorsTab` draws them and `errorsAttachmentOf` writes the file. [browser.md](../browser.md#console) owns the hook, the read and the caps. `browser.console` is the key.
+- Browser console: `useConsoleEntries` pulls `browser_console_read`, and `applyConsoleRead` keeps the latest cursor. `BrowserToolsDock` places the dock, and `browserToolsDockPref` keeps its side and size per surface. `BrowserConsole` draws the console list, and `consoleAttachmentOf` the file. `NetworkTab` draws the request table (`networkRowsOf` filters it, `networkSummaryOf` writes the line under it) and `NetworkDetail` one request; `requestAttachmentOf` writes its file and `isHiddenHeader` keeps sensitive headers out of both. `consoleCounts` owns every count, the red one on Console (`BrowserToolsCapsule`) included, and `useBrowserTools` opens and closes the dock. `errorGroupsOf` groups the errors, `sourceFileOf` maps a frame to a worktree file, `ErrorsTab` draws them and `errorsAttachmentOf` writes the file. [browser.md](../browser.md#console) owns the hook, the read and the caps. `browser.console` is the key.
 - Pick an element: `useElementPick` drives `browser_pick` (`page_runtime/pick.js`), `BrowserPickNote` draws the note and `addPickedElements` queues `elementAttachmentOf` files with the `browser_element_snapshot` picture. [browser.md](../browser.md#pick-an-element) owns the runtime, the read and the caps. `browser.pick` is the key; `pick.test.tsx` covers the flow.
 - Files: the Changes page switches between **Changed** and **All files** (`useChangesMode`); the file chord opens it on All files.
 

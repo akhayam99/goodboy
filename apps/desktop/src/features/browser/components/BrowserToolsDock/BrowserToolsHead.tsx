@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { PanelBottom, PanelRight, X } from '@goodboy/ui/icons';
+import { PanelBottom, PanelRight } from '@goodboy/ui/icons';
 import { IconButton, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import type { BrowserToolsSide } from '../../browserToolsDockPref';
 import type { BrowserToolsTab } from '../../types';
@@ -14,8 +14,7 @@ type Props = {
   readonly side: BrowserToolsSide;
   readonly tools: ReactNode;
   readonly onKind: (params: KindParams) => void;
-  readonly onSide: () => void;
-  readonly onClose: () => void;
+  readonly onSide?: () => void;
 };
 
 const SIDE_LABEL = {
@@ -23,7 +22,7 @@ const SIDE_LABEL = {
   right: 'Dock under the page',
 } as const satisfies Record<BrowserToolsSide, string>;
 
-export const BrowserToolsHead = ({ kind, counts, side, tools, onKind, onSide, onClose }: Props) => {
+export const BrowserToolsHead = ({ kind, counts, side, tools, onKind, onSide }: Props) => {
   const options: ReadonlyArray<SegmentedTabOption<BrowserToolsTab>> = [
     { value: 'console', label: 'Console', badge: counts.console },
     { value: 'network', label: 'Network', badge: counts.network },
@@ -51,13 +50,14 @@ export const BrowserToolsHead = ({ kind, counts, side, tools, onKind, onSide, on
         options={options}
       />
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2">{tools}</div>
-      <IconButton
-        size="xs"
-        icon={side === 'bottom' ? PanelRight : PanelBottom}
-        label={SIDE_LABEL[side]}
-        onClick={onSide}
-      />
-      <IconButton size="xs" icon={X} label="Close tools" onClick={onClose} />
+      {onSide === undefined ? null : (
+        <IconButton
+          size="xs"
+          icon={side === 'bottom' ? PanelRight : PanelBottom}
+          label={SIDE_LABEL[side]}
+          onClick={onSide}
+        />
+      )}
     </div>
   );
 };

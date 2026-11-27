@@ -163,8 +163,8 @@ const waitForTrail = async () => {
 };
 
 const openMore = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'More' }));
-  return screen.getByRole('menu', { name: 'More' });
+  fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
+  return screen.getByRole('menu', { name: 'Page menu' });
 };
 
 const coverPage = async ({ menu }: MenuParams) => {
@@ -187,11 +187,7 @@ const waitForPoll = async () => {
   );
 };
 
-const reloadRow = async () => {
-  const menu = openMore();
-  fireEvent.click(within(menu).getByRole('menuitem', { name: /^Develop/ }));
-  return screen.findByRole('menuitem', { name: /^Reload without cache/ });
-};
+const reloadButton = () => screen.getByRole('button', { name: 'Reload' });
 
 const confirmClear = async () => {
   const menu = openMore();
@@ -224,19 +220,19 @@ afterEach(() => {
 });
 
 describe('clear site data', () => {
-  it('keeps both rows off while no tab is shown', async () => {
+  it('offers no page menu and keeps Reload off while no tab is shown', async () => {
     renderPane();
 
-    expect((await reloadRow()).getAttribute('aria-disabled')).toBe('true');
-    const clear = screen.getByRole('menuitem', { name: /Clear site data/ });
-    expect(clear.getAttribute('aria-disabled')).toBe('true');
+    expect(reloadButton().hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Page menu' })).toBeNull();
   });
 
-  it('turns both rows on once a page is shown', async () => {
+  it('turns Reload and the clear row on once a page is shown', async () => {
     renderPane();
     await openPage();
 
-    expect((await reloadRow()).getAttribute('aria-disabled')).toBeNull();
+    expect(reloadButton().hasAttribute('disabled')).toBe(false);
+    openMore();
     const clear = screen.getByRole('menuitem', { name: /Clear site data/ });
     expect(clear.getAttribute('aria-disabled')).toBeNull();
   });
@@ -523,11 +519,11 @@ describe('clear site data', () => {
     expect(screen.queryByText(/Cleared data/)).toBeNull();
   });
 
-  it('reloads without cache from its menu row', async () => {
+  it('reloads without cache on a shift click of Reload', async () => {
     renderPane();
     await openPage();
 
-    fireEvent.click(await reloadRow());
+    fireEvent.click(reloadButton(), { shiftKey: true });
 
     await waitFor(() =>
       expect(callsOf({ command: 'browser_tab_reload_from_origin' })).toEqual([
