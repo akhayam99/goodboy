@@ -14,7 +14,7 @@ import { isLeadAgentOf } from './isLeadAgentOf';
 import { needsYouFieldsOf } from './needsYouFieldsOf';
 import { nextLinesOf } from './nextLinesOf';
 import { prStateOf } from './prStateOf';
-import { questionRowsOf } from './questionRowsOf';
+import { openQuestionCountOf, questionRowsOf } from './questionRowsOf';
 import { safeTextOf } from './safeTextOf';
 import { sessionRefOf } from './sessionRefOf';
 import { shortNameOf } from './shortNameOf';
@@ -147,7 +147,7 @@ export const sessionFieldsOf = ({ scope, session, now }: Params): SessionFields 
     counts: {
       runs: runCount,
       artifacts: artifacts.length,
-      openQuestions: questions.filter((question) => question.state === 'open').length,
+      openQuestions: openQuestionCountOf({ scope, sessionId: session.id }),
     },
   };
 };

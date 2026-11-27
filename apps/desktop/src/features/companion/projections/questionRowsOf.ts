@@ -20,7 +20,7 @@ type RowParams = {
   readonly question: OpenQuestion;
 };
 
-const rowOf = ({ scope, sessionId, question }: RowParams): SessionQuestionRow => {
+const questionRowOf = ({ scope, sessionId, question }: RowParams): SessionQuestionRow => {
   const asker = (scope.agents[sessionId] ?? []).find(
     (agent) => agent.id === question.createdByAgentId,
   );
@@ -60,6 +60,14 @@ type NewestParams = {
 const byNewest = ({ left, right }: NewestParams): number =>
   left.createdAt < right.createdAt ? 1 : left.createdAt > right.createdAt ? -1 : 0;
 
+type OpenCountParams = {
+  readonly scope: WorkspaceScope;
+  readonly sessionId: string;
+};
+
+export const openQuestionCountOf = ({ scope, sessionId }: OpenCountParams): number =>
+  (scope.openQuestions[sessionId] ?? []).filter((question) => question.status === 'open').length;
+
 export const questionRowsOf = ({ scope, sessionId }: Params): ReadonlyArray<SessionQuestionRow> => {
   const open = (scope.openQuestions[sessionId] ?? []).filter(
     (question) => question.status === 'open',
@@ -70,5 +78,5 @@ export const questionRowsOf = ({ scope, sessionId }: Params): ReadonlyArray<Sess
   return [
     ...[...open].sort((left, right) => byNewest({ left, right })).slice(0, QUESTION_LIMIT),
     ...[...answered].sort((left, right) => byNewest({ left, right })).slice(0, QUESTION_LIMIT),
-  ].map((question) => rowOf({ scope, sessionId, question }));
+  ].map((question) => questionRowOf({ scope, sessionId, question }));
 };
