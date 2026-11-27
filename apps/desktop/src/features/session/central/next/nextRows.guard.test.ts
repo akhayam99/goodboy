@@ -67,6 +67,7 @@ const SHOWN_ELSEWHERE = new Set([
   'u27/nextList/NextListBeforeView.tsx',
   'u27/nextList/nextListBeforeActionsFor.ts',
   'u27/nextList/nextListBeforeCards.ts',
+  'u50/BranchRowsScene.tsx',
 ]);
 
 const SCENES_DIR = join(import.meta.dirname, '../../../../app/components/MockScene/scenes');
