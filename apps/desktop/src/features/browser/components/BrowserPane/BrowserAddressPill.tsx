@@ -14,9 +14,6 @@ const ACTIVE_SLOT = 'flex min-w-40 shrink grow basis-auto';
 const PILL_CHROME =
   'h-7 rounded-md border border-border bg-button-secondary shadow-button-secondary';
 
-const REVEALED =
-  'opacity-0 group-hover/pill:opacity-100 group-focus-within/pill:opacity-100 focus-visible:opacity-100';
-
 const NO_TABS: ReadonlyArray<BrowserMenuTab> = [];
 
 type Props = {
@@ -47,7 +44,7 @@ export const BrowserAddressPill = ({
         className={cn(
           ACTIVE_SLOT,
           PILL_CHROME,
-          'group/pill items-center gap-0.5 pr-0.5',
+          'items-center gap-0.5 pr-0.5',
           hasError && DANGER_BORDER,
         )}
       >
@@ -83,7 +80,6 @@ export const BrowserAddressPill = ({
             shortcut="browser.closeTab"
             tooltipSide="top"
             onClick={onClose}
-            className={REVEALED}
           />
         )}
       </div>

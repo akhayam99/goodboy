@@ -240,8 +240,9 @@ const consoleButton = () => screen.getByRole('button', { name: 'Console' });
 const tools = () => screen.queryByRole('region', { name: 'Console' });
 
 const errorsNote = (): string | null => {
-  const id = consoleButton().getAttribute('aria-describedby');
-  return id === null ? null : (document.getElementById(id)?.textContent ?? null);
+  const ids = consoleButton().getAttribute('aria-describedby');
+  const [id] = (ids ?? '').split(' ');
+  return id === undefined || id === '' ? null : (document.getElementById(id)?.textContent ?? null);
 };
 
 const badge = () =>
