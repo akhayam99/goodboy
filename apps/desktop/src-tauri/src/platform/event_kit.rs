@@ -86,7 +86,10 @@ pub(crate) fn calendars() -> Vec<RawCalendar> {
         };
         let list: *mut AnyObject =
             unsafe { msg_send![&*store, calendarsForEntityType: ENTITY_TYPE_EVENT] };
-        objects_of(list).into_iter().filter_map(calendar_of).collect()
+        objects_of(list)
+            .into_iter()
+            .filter_map(calendar_of)
+            .collect()
     })
 }
 
@@ -138,7 +141,8 @@ pub(crate) fn events(from_ms: i64, to_ms: i64) -> Vec<RawEvent> {
         let Some(predicate) = non_null(predicate) else {
             return Vec::new();
         };
-        let list: *mut AnyObject = unsafe { msg_send![&*store, eventsMatchingPredicate: predicate] };
+        let list: *mut AnyObject =
+            unsafe { msg_send![&*store, eventsMatchingPredicate: predicate] };
         objects_of(list).into_iter().filter_map(event_of).collect()
     })
 }

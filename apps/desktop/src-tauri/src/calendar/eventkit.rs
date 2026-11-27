@@ -253,8 +253,14 @@ mod tests {
     fn the_app_explains_calendar_access_and_holds_the_calendar_entitlement() {
         const WHY: &str = "<string>Goodboy shows your meetings and tells you when a call starts. It never changes an event.</string>";
         let plist = include_str!("../../Info.plist");
-        for key in ["NSCalendarsFullAccessUsageDescription", "NSCalendarsUsageDescription"] {
-            assert!(plist.contains(&format!("<key>{key}</key>\n  {WHY}")), "{key}");
+        for key in [
+            "NSCalendarsFullAccessUsageDescription",
+            "NSCalendarsUsageDescription",
+        ] {
+            assert!(
+                plist.contains(&format!("<key>{key}</key>\n  {WHY}")),
+                "{key}"
+            );
         }
         let entitlements = include_str!("../../Entitlements.plist");
         assert!(entitlements
@@ -330,7 +336,10 @@ mod tests {
         assert_eq!(events[0].status, EventStatus::Tentative);
         assert_eq!(events[0].uid, "e1@northwind");
         assert_eq!(events[0].id, "mac:e1:1000");
-        assert_eq!(events[0].call_link.as_deref(), Some("https://acme.zoom.us/j/42"));
+        assert_eq!(
+            events[0].call_link.as_deref(),
+            Some("https://acme.zoom.us/j/42")
+        );
         assert!(events[0].is_call_link_trusted);
         assert_eq!(events[0].attendees, vec!["Ana Acme"]);
         assert_eq!(events[1].uid, "e3");

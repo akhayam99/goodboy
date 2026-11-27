@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use chrono::{Datelike, Days, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta, TimeZone, Weekday};
+use chrono::{
+    Datelike, Days, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta, TimeZone, Weekday,
+};
 
 use super::lines::{Component, Property};
 
@@ -140,11 +142,18 @@ pub(crate) fn first_of_next_month(year: i32, month: u32) -> Option<NaiveDate> {
     }
 }
 
-pub(crate) fn nth_weekday(year: i32, month: u32, ordinal: i32, weekday: Weekday) -> Option<NaiveDate> {
+pub(crate) fn nth_weekday(
+    year: i32,
+    month: u32,
+    ordinal: i32,
+    weekday: Weekday,
+) -> Option<NaiveDate> {
     let first = NaiveDate::from_ymd_opt(year, month, 1)?;
     if ordinal > 0 {
-        let shift = (7 + weekday.num_days_from_monday() - first.weekday().num_days_from_monday()) % 7;
-        let date = first.checked_add_days(Days::new(u64::from(shift) + 7 * (ordinal as u64 - 1)))?;
+        let shift =
+            (7 + weekday.num_days_from_monday() - first.weekday().num_days_from_monday()) % 7;
+        let date =
+            first.checked_add_days(Days::new(u64::from(shift) + 7 * (ordinal as u64 - 1)))?;
         return (date.month() == month).then_some(date);
     }
     let last = first_of_next_month(year, month)?.pred_opt()?;
@@ -166,7 +175,9 @@ fn parse_offset(text: &str) -> Option<i64> {
     }
     let hours = i64::from(digits(&body[0..2])?);
     let minutes = i64::from(digits(&body[2..4])?);
-    let seconds = body.get(4..6).map_or(Some(0), |part| digits(part).map(i64::from))?;
+    let seconds = body
+        .get(4..6)
+        .map_or(Some(0), |part| digits(part).map(i64::from))?;
     Some(sign * (hours * 3_600 + minutes * 60 + seconds))
 }
 
@@ -236,7 +247,10 @@ fn latest_onset(observance: &Observance, local: NaiveDateTime) -> Option<NaiveDa
         .filter_map(|year| nth_weekday(year, rule.month, rule.ordinal, rule.weekday))
         .map(|date| date.and_time(observance.onset.time()))
         .filter(|onset| *onset >= observance.onset && *onset <= local)
-        .find(|onset| rule.until.is_none_or(|until| *onset <= until + TimeDelta::hours(24)))
+        .find(|onset| {
+            rule.until
+                .is_none_or(|until| *onset <= until + TimeDelta::hours(24))
+        })
 }
 
 #[derive(Debug, Clone, Default)]
@@ -287,10 +301,11 @@ impl Zones {
 }
 
 pub(crate) fn floating_ms(local: NaiveDateTime) -> i64 {
-    let resolved = Local
-        .from_local_datetime(&local)
-        .earliest()
-        .or_else(|| Local.from_local_datetime(&(local + TimeDelta::hours(1))).earliest());
+    let resolved = Local.from_local_datetime(&local).earliest().or_else(|| {
+        Local
+            .from_local_datetime(&(local + TimeDelta::hours(1)))
+            .earliest()
+    });
     match resolved {
         Some(at) => at.timestamp_millis(),
         None => local.and_utc().timestamp_millis(),
@@ -380,7 +395,8 @@ mod tests {
             zones().instant_ms(stamp.local, &stamp.zone),
             utc_ms("20261127T090000")
         );
-        let named = super::super::lines::parse_line("DTSTART;TZID=Etc/UTC:20261127T090000").unwrap();
+        let named =
+            super::super::lines::parse_line("DTSTART;TZID=Etc/UTC:20261127T090000").unwrap();
         assert_eq!(parse_stamp(&named).unwrap().zone, Zone::Utc);
     }
 
@@ -402,7 +418,13 @@ mod tests {
 
     #[test]
     fn broken_values_are_refused() {
-        for broken in ["", "2026", "20261327T100000", "20261127T25", "2026112xT100000Z"] {
+        for broken in [
+            "",
+            "2026",
+            "20261327T100000",
+            "20261127T25",
+            "2026112xT100000Z",
+        ] {
             assert!(parse_local(broken).is_none(), "{broken}");
         }
     }

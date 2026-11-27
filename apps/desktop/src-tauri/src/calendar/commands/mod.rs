@@ -108,7 +108,12 @@ async fn listing<T: Send + 'static>(
 }
 
 pub(crate) async fn calendars_with(sources: Vec<SourceRef>, deps: &Deps) -> Listing<CalendarInfo> {
-    listing(sources, deps, Arc::new(|source: &dyn CalendarSource| source.calendars())).await
+    listing(
+        sources,
+        deps,
+        Arc::new(|source: &dyn CalendarSource| source.calendars()),
+    )
+    .await
 }
 
 pub(crate) async fn events_with(

@@ -108,7 +108,10 @@ mod tests {
     #[test]
     fn a_range_must_run_forward_and_stay_under_a_year() {
         assert!(Range::checked(0, 1).is_ok());
-        assert!(matches!(Range::checked(5, 5), Err(CalendarError::Refused(_))));
+        assert!(matches!(
+            Range::checked(5, 5),
+            Err(CalendarError::Refused(_))
+        ));
         assert!(matches!(
             Range::checked(0, MAX_RANGE_MS + 1),
             Err(CalendarError::Refused(_))

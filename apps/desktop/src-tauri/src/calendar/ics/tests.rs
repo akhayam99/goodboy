@@ -56,7 +56,10 @@ fn an_event_with_a_tzid_lands_on_its_utc_instant() {
     assert_eq!(events[0].start, utc_ms("20261127T090000"));
     assert_eq!(events[0].end, utc_ms("20261127T100000"));
     assert_eq!(events[0].title, "Northwind planning");
-    assert_eq!(events[0].id, format!("src-ics:plan@northwind:{}", utc_ms("20261127T090000")));
+    assert_eq!(
+        events[0].id,
+        format!("src-ics:plan@northwind:{}", utc_ms("20261127T090000"))
+    );
     assert!(!events[0].is_all_day);
 }
 
@@ -103,7 +106,9 @@ fn a_weekly_series_drops_its_exdate_and_keeps_the_rest() {
             utc_ms("20261130T083000"),
         ]
     );
-    assert!(events.iter().all(|event| event.uid == "standup@ledger-core"));
+    assert!(events
+        .iter()
+        .all(|event| event.uid == "standup@ledger-core"));
     assert_eq!(events[0].end - events[0].start, 15 * 60_000);
 }
 
@@ -126,7 +131,10 @@ fn a_cancelled_event_and_a_cancelled_occurrence_are_dropped() {
         "20261130T000000",
     );
     let starts: Vec<i64> = events.iter().map(|event| event.start).collect();
-    assert_eq!(starts, vec![utc_ms("20261126T070000"), utc_ms("20261128T070000")]);
+    assert_eq!(
+        starts,
+        vec![utc_ms("20261126T070000"), utc_ms("20261128T070000")]
+    );
 }
 
 #[test]
@@ -159,7 +167,10 @@ fn tentative_status_attendee_names_and_the_conference_link_are_read() {
     let event = &events[0];
     assert_eq!(event.status, EventStatus::Tentative);
     assert_eq!(event.location.as_deref(), Some("Room Acme, floor 2"));
-    assert_eq!(event.call_link.as_deref(), Some("https://meet.google.com/abc-defg-hij"));
+    assert_eq!(
+        event.call_link.as_deref(),
+        Some("https://meet.google.com/abc-defg-hij")
+    );
     assert!(event.is_call_link_trusted);
     assert_eq!(event.attendees, vec!["Ana Acme", "Bo Northwind"]);
     assert!(!event.is_busy_only);
@@ -172,7 +183,10 @@ fn a_known_host_in_the_description_becomes_the_call_link() {
         "20261127T000000",
         "20261128T000000",
     );
-    assert_eq!(events[0].call_link.as_deref(), Some("https://acme.zoom.us/j/123?pwd=x"));
+    assert_eq!(
+        events[0].call_link.as_deref(),
+        Some("https://acme.zoom.us/j/123?pwd=x")
+    );
 }
 
 #[test]

@@ -58,9 +58,16 @@ mod tests {
         let calendars = named.calendars().unwrap();
         assert_eq!(calendars[0].id, "src-1");
         assert_eq!(calendars[0].title, "Northwind team");
-        assert_eq!(calendars[0].account.as_deref(), Some("calendar.northwind.example"));
-        let bare = IcsSource::parse("src-2", "ics.acme.example", "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n")
-            .unwrap();
+        assert_eq!(
+            calendars[0].account.as_deref(),
+            Some("calendar.northwind.example")
+        );
+        let bare = IcsSource::parse(
+            "src-2",
+            "ics.acme.example",
+            "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n",
+        )
+        .unwrap();
         assert_eq!(bare.calendars().unwrap()[0].title, "ics.acme.example");
     }
 }

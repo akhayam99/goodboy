@@ -52,7 +52,10 @@ pub(crate) async fn fetch_body(url: &reqwest::Url) -> Result<String, CalendarErr
     .map_err(|error| transport_error(error, &host))?;
     let status = response.status();
     if !status.is_success() {
-        log::warn!("[calendar] link fetch for {host} answered {}", status.as_u16());
+        log::warn!(
+            "[calendar] link fetch for {host} answered {}",
+            status.as_u16()
+        );
         return Err(CalendarError::Fetch(format!(
             "{host} answered {}",
             status.as_u16()
@@ -118,7 +121,9 @@ pub(crate) fn forget_body(id: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::integrations::http::test_support::{http_response, serve_once, serve_sequence, within_bound};
+    use crate::integrations::http::test_support::{
+        http_response, serve_once, serve_sequence, within_bound,
+    };
 
     #[test]
     fn a_webcal_link_becomes_https_and_plain_http_is_refused() {
@@ -131,13 +136,17 @@ mod tests {
             "calendar.northwind.example/basic.ics",
             "",
         ] {
-            assert!(matches!(checked_link(refused), Err(CalendarError::Refused(_))), "{refused}");
+            assert!(
+                matches!(checked_link(refused), Err(CalendarError::Refused(_))),
+                "{refused}"
+            );
         }
     }
 
     #[test]
     fn the_refusal_never_repeats_the_secret_link() {
-        let Err(error) = checked_link("http://calendar.northwind.example/private-8f2c/basic.ics") else {
+        let Err(error) = checked_link("http://calendar.northwind.example/private-8f2c/basic.ics")
+        else {
             panic!("plain http must be refused");
         };
         assert!(!error.to_string().contains("private-8f2c"));
@@ -145,7 +154,12 @@ mod tests {
 
     #[tokio::test]
     async fn a_calendar_body_is_read() {
-        let base = serve_once(http_response("200 OK", &[], "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n")).await;
+        let base = serve_once(http_response(
+            "200 OK",
+            &[],
+            "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n",
+        ))
+        .await;
         let url = reqwest::Url::parse(&format!("{base}/private-8f2c/basic.ics")).unwrap();
         let body = within_bound(fetch_body(&url)).await.unwrap();
         assert!(body.starts_with("BEGIN:VCALENDAR"));
@@ -176,7 +190,10 @@ mod tests {
     fn a_fetched_body_stays_fresh_for_fifteen_minutes() {
         let id = "fresh-test-0123456789abcdef";
         remember_body(id, "BODY", 1_000);
-        assert_eq!(fresh_body(id, 1_000 + FRESH_FOR_MS - 1).as_deref(), Some("BODY"));
+        assert_eq!(
+            fresh_body(id, 1_000 + FRESH_FOR_MS - 1).as_deref(),
+            Some("BODY")
+        );
         assert_eq!(fresh_body(id, 1_000 + FRESH_FOR_MS), None);
         forget_body(id);
         assert_eq!(fresh_body(id, 1_001), None);

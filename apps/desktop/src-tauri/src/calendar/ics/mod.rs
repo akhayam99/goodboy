@@ -49,7 +49,11 @@ pub(crate) struct Window<'a> {
 }
 
 fn status_of(event: &Component) -> EventStatus {
-    match event.text("STATUS").map(|status| status.to_ascii_uppercase()).as_deref() {
+    match event
+        .text("STATUS")
+        .map(|status| status.to_ascii_uppercase())
+        .as_deref()
+    {
         Some("CANCELLED") => EventStatus::Cancelled,
         Some("TENTATIVE") => EventStatus::Tentative,
         _ => EventStatus::Confirmed,
@@ -126,13 +130,21 @@ impl ParsedCalendar {
             .collect()
     }
 
-    fn occurrences(&self, event: &Component, timing: &Timing, window: &Window) -> Vec<(NaiveDateTime, i64)> {
+    fn occurrences(
+        &self,
+        event: &Component,
+        timing: &Timing,
+        window: &Window,
+    ) -> Vec<(NaiveDateTime, i64)> {
         let instant = |local: NaiveDateTime| self.instant(local, &timing.start);
         let span = match timing.start.is_date {
             true => i64::try_from(timing.days).unwrap_or(1) * 86_400_000,
             false => timing.duration_ms,
         };
-        let Some(rule) = event.first("RRULE").and_then(|rule| parse_rule(&rule.value)) else {
+        let Some(rule) = event
+            .first("RRULE")
+            .and_then(|rule| parse_rule(&rule.value))
+        else {
             let at = instant(timing.start.local);
             return vec![(timing.start.local, at)];
         };
@@ -146,7 +158,14 @@ impl ParsedCalendar {
         })
     }
 
-    fn event_at(&self, event: &Component, timing: &Timing, local: NaiveDateTime, window: &Window, uid: &str) -> Option<CalendarEvent> {
+    fn event_at(
+        &self,
+        event: &Component,
+        timing: &Timing,
+        local: NaiveDateTime,
+        window: &Window,
+        uid: &str,
+    ) -> Option<CalendarEvent> {
         let at = self.instant(local, &timing.start);
         let end = self.end_of(timing, local, at).max(at);
         let is_visible = at < window.to_ms && (end > window.from_ms || at >= window.from_ms);
@@ -194,7 +213,8 @@ impl ParsedCalendar {
     fn moved_occurrences(&self) -> HashMap<String, HashSet<i64>> {
         let mut moved: HashMap<String, HashSet<i64>> = HashMap::new();
         for event in &self.events {
-            let (Some(uid), Some(recurrence)) = (event.text("UID"), event.first("RECURRENCE-ID")) else {
+            let (Some(uid), Some(recurrence)) = (event.text("UID"), event.first("RECURRENCE-ID"))
+            else {
                 continue;
             };
             let Some(stamp) = parse_stamp(recurrence) else {

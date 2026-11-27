@@ -114,7 +114,9 @@ pub(crate) struct Component {
 
 impl Component {
     pub(crate) fn first(&self, name: &str) -> Option<&Property> {
-        self.properties.iter().find(|property| property.name == name)
+        self.properties
+            .iter()
+            .find(|property| property.name == name)
     }
 
     pub(crate) fn all<'a>(&'a self, name: &'a str) -> impl Iterator<Item = &'a Property> + 'a {
@@ -178,9 +180,10 @@ mod tests {
 
     #[test]
     fn a_quoted_parameter_may_hold_a_colon_and_a_semicolon() {
-        let property =
-            parse_line("ATTENDEE;CN=\"Acme: Ana; Ops\";ROLE=REQ-PARTICIPANT:mailto:ana@acme.example")
-                .unwrap();
+        let property = parse_line(
+            "ATTENDEE;CN=\"Acme: Ana; Ops\";ROLE=REQ-PARTICIPANT:mailto:ana@acme.example",
+        )
+        .unwrap();
         assert_eq!(property.name, "ATTENDEE");
         assert_eq!(property.param("cn"), Some("Acme: Ana; Ops"));
         assert_eq!(property.value, "mailto:ana@acme.example");

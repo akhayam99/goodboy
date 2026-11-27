@@ -136,7 +136,9 @@ fn days_in_period(rule: &Rule, start: NaiveDate, period: u32) -> Vec<NaiveDate> 
                     .iter()
                     .flat_map(|(ordinal, weekday)| match ordinal {
                         0 => every_weekday_in_month(year, month, *weekday),
-                        _ => nth_weekday(year, month, *ordinal, *weekday).into_iter().collect(),
+                        _ => nth_weekday(year, month, *ordinal, *weekday)
+                            .into_iter()
+                            .collect(),
                     })
                     .collect(),
                 (true, false) => rule
@@ -151,7 +153,9 @@ fn days_in_period(rule: &Rule, start: NaiveDate, period: u32) -> Vec<NaiveDate> 
         }
         Freq::Yearly => i32::try_from(step)
             .ok()
-            .and_then(|years| NaiveDate::from_ymd_opt(start.year() + years, start.month(), start.day()))
+            .and_then(|years| {
+                NaiveDate::from_ymd_opt(start.year() + years, start.month(), start.day())
+            })
             .into_iter()
             .collect(),
     };
@@ -173,7 +177,8 @@ fn first_period(rule: &Rule, start: NaiveDate, before_ms: i64) -> u32 {
     if rule.count.is_some() {
         return 0;
     }
-    let Some(before) = chrono::DateTime::from_timestamp_millis(before_ms).map(|at| at.date_naive()) else {
+    let Some(before) = chrono::DateTime::from_timestamp_millis(before_ms).map(|at| at.date_naive())
+    else {
         return 0;
     };
     if before <= start {
@@ -273,8 +278,17 @@ mod tests {
     #[test]
     fn daily_with_a_count_stops_after_the_count() {
         assert_eq!(
-            run("FREQ=DAILY;COUNT=3", "20261123T090000", "20261101T000000", "20261231T000000"),
-            vec![at("20261123T090000"), at("20261124T090000"), at("20261125T090000")]
+            run(
+                "FREQ=DAILY;COUNT=3",
+                "20261123T090000",
+                "20261101T000000",
+                "20261231T000000"
+            ),
+            vec![
+                at("20261123T090000"),
+                at("20261124T090000"),
+                at("20261125T090000")
+            ]
         );
     }
 
@@ -287,7 +301,11 @@ mod tests {
                 "20261123T000000",
                 "20261130T000000"
             ),
-            vec![at("20261123T093000"), at("20261125T093000"), at("20261127T093000")]
+            vec![
+                at("20261123T093000"),
+                at("20261125T093000"),
+                at("20261127T093000")
+            ]
         );
     }
 
@@ -331,7 +349,12 @@ mod tests {
     #[test]
     fn the_count_includes_occurrences_before_the_range() {
         assert_eq!(
-            run("FREQ=DAILY;COUNT=5", "20261120T090000", "20261123T000000", "20261231T000000"),
+            run(
+                "FREQ=DAILY;COUNT=5",
+                "20261120T090000",
+                "20261123T000000",
+                "20261231T000000"
+            ),
             vec![at("20261123T090000"), at("20261124T090000")]
         );
     }
@@ -339,7 +362,12 @@ mod tests {
     #[test]
     fn an_old_daily_series_still_reaches_today() {
         assert_eq!(
-            run("FREQ=DAILY", "20150105T090000", "20261127T000000", "20261128T000000"),
+            run(
+                "FREQ=DAILY",
+                "20150105T090000",
+                "20261127T000000",
+                "20261128T000000"
+            ),
             vec![at("20261127T090000")]
         );
     }
@@ -347,7 +375,12 @@ mod tests {
     #[test]
     fn an_open_series_older_than_the_period_cap_still_reaches_today() {
         assert_eq!(
-            run("FREQ=DAILY", "19000101T090000", "20261127T000000", "20261128T000000"),
+            run(
+                "FREQ=DAILY",
+                "19000101T090000",
+                "20261127T000000",
+                "20261128T000000"
+            ),
             vec![at("20261127T090000")]
         );
         assert_eq!(
@@ -360,7 +393,12 @@ mod tests {
             vec![at("20261106T090000"), at("20261127T090000")]
         );
         assert_eq!(
-            run("FREQ=MONTHLY;BYDAY=-1FR", "19000126T150000", "20261101T000000", "20261201T000000"),
+            run(
+                "FREQ=MONTHLY;BYDAY=-1FR",
+                "19000126T150000",
+                "20261101T000000",
+                "20261201T000000"
+            ),
             vec![at("20261127T150000")]
         );
     }
@@ -368,11 +406,21 @@ mod tests {
     #[test]
     fn monthly_by_ordinal_weekday_and_by_month_day() {
         assert_eq!(
-            run("FREQ=MONTHLY;BYDAY=-1FR", "20261030T150000", "20261101T000000", "20270101T000000"),
+            run(
+                "FREQ=MONTHLY;BYDAY=-1FR",
+                "20261030T150000",
+                "20261101T000000",
+                "20270101T000000"
+            ),
             vec![at("20261127T150000"), at("20261225T150000")]
         );
         assert_eq!(
-            run("FREQ=MONTHLY", "20261031T150000", "20261101T000000", "20270201T000000"),
+            run(
+                "FREQ=MONTHLY",
+                "20261031T150000",
+                "20261101T000000",
+                "20270201T000000"
+            ),
             vec![at("20261231T150000"), at("20270131T150000")]
         );
     }
