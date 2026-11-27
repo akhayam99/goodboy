@@ -55,7 +55,10 @@ Every door draws the same form: the New session page, a session's Runs page (and
 #### From a comment
 
 - The goal comes written from the comment, and you can edit it.
-- The comments sit under it as chips, and the run reads them word for word. Open comments from the same folder can be added with one click.
+- Below the goal the form reads top to bottom in five labeled sections: **What**, **Plan**, **Rules**, **Model** and **Scope**. **Cancel** and **Start** close it, on one row at the end.
+- **What** holds the comments as chips of one look, with the host named once. The run reads them word for word. Open comments from the same folder wait under **Add**, and one click adds one.
+- **Rules** and **Model** each show their words with **Change** on the same row.
+- **Scope** counts one project, the one the comments belong to, whatever else the run's workspace has mounted.
 - The branch is the comment's branch and cannot change.
 - **Cancel** keeps the goal and the chips for the next time you open it.
 
@@ -323,6 +326,8 @@ This part is for contributors and agents who change the feature.
 - Run page: `OrchestratorModelChip` reads `useOrchestratorModel`, which writes `setWorkflowOrchestratorRouting`. An agent page keeps its model in `ComposerToolbar` (`ComposerRoutingPicker`); `AgentSettingsLine` draws no model (`modelInComposer.test.tsx`).
 - Run from comments: `startRoutedRun` takes `sourceThreadIds` and `sourceMountId`. The Lead, or the one agent of a role run, starts on that mount with `sourceKind` `comment_run` and the thread ids once each. A plan start with comments, a mount that left the session and a thread a live comment run already holds all throw before any write (`startRoutedRun.test.ts`). The link is described in [concepts.md](../concepts.md).
 - Comment door: `CommentRunStart` draws `StartRun` through the flat `startRun/StartRunFromSources` (so resolve imports no session component) in the comment drawer while the `comment-run-start` slice names that thread as open. `runGoalOf` writes the goal, `commentRunQuoteOf` the word for word quote passed as `findings`, and `commentRunSourcesOf` picks the chips and blocks a comment in a run or a fix. `useStartRun` takes `seedText`, `seedBranch` and `sources`; `onLaunched` clears the draft even when the drawer moved on (`CommentRunStart.test.tsx`, scenes `u47-comment-run-compose`).
+- Comment form layout: `isFromSources` makes `StartForm` draw `isSectioned`, one `FormSection` per job and `FormActions` at the end; the other doors keep the grid.
+- Comment scope: `useStartRun` counts one mount for the route line whenever `sources` is set, so Scope never reads "across N projects" for one branch's comments.
 - Model pins: `startRoutedRun` takes `routing` for a lead and `orchestratorRouting` for a plan. `attachWorkflowToSession` stores the second as the run's `orchestratorRouting`. A start clears the pins.
 - Prefix menu: `useRunPrefixMenu` reuses `QuickActionsPopover` for `~` and `@`. A pick sets the chip and empties the field. The list floats above the field in `AnchoredLayer`, as wide as the field up to 500px.
 - Attachments: `usePromptFiles` stages them. `startRoutedRun` saves them as goal attachments of the session (an agent) or the run (a plan) before the first agent starts. On New session, `SessionKickoff` hands the files `useStartRun` stages to `StartTaskField` and to `useStartShape`. An agent or preset start sends them and removes them once it went through (`newSessionAttach.test.tsx`).

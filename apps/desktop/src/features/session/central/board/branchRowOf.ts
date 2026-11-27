@@ -83,6 +83,13 @@ const RUNG_OF_STATE: Readonly<Record<BranchState, RungOfState>> = {
   closed: 'settled',
 };
 
+type StateParams2 = {
+  readonly state: BranchState | null;
+};
+
+export const isReadyState = ({ state }: StateParams2): boolean =>
+  state !== null && (RUNG_OF_STATE[state] === 'ready' || state === 'queued');
+
 const ANSWER_KINDS: ReadonlyArray<string> = ['question', 'answer-questions'];
 const PERMISSION_KINDS: ReadonlyArray<string> = ['approve-tool', 'plan-ready'];
 const REBASE_KINDS: ReadonlyArray<string> = ['rebase-project', 'rebase'];
@@ -309,8 +316,7 @@ const hoverFactsOf = ({ ...params }: HoverParams): ReadonlyArray<string> => {
   if (entry !== null && behindOf({ entry }) > 0 && rung !== 'your-move' && !row.isSettled) {
     facts.push(`${behindOf({ entry })} behind ${entry.fact.baseBranch}`);
   }
-  const caution = cautionOf(params);
-  return caution === null ? facts : [...facts, caution];
+  return facts;
 };
 
 export const branchRowOf = ({ ...params }: Params): BranchRow => {

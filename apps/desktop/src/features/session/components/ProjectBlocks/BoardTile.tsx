@@ -1,22 +1,19 @@
 import { memo } from 'react';
-import { brandId, type MountId } from '@goodboy/types';
 import { Button, cn, ROW_HOVER, StatusDot, tintClasses, Tooltip } from '@goodboy/ui';
 import { sessionPlace, useAppStore } from '../../../../store';
-import { hasOpenRebaseStopOf } from '../../../branch/hasOpenRebaseStopOf';
-import { failingChecksOf } from '../../../branch/checks/failingChecksOf';
 import { branchTabPlaceOf } from '../../../branch/branchTabPlaceOf';
 import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
 import { useMountRowMenu } from '../../hooks/useMountRowMenu';
 import { MountRowMenuButton } from '../MountRowMenuButton';
 import { boardRowCellsOf } from '../../central/board/boardRowCellsOf';
-import { branchRowOf } from '../../central/board/branchRowOf';
-import { useOverlapCaution } from './useOverlapCaution';
+import type { ActionCardModel } from '../../central/next/actionCardsOf';
+import { useBranchRow } from './useBranchRow';
 import { BoardBranchName } from './BoardBranchName';
 import { BoardTileAction } from './BoardTileAction';
 import { BoardTileFacts } from './BoardTileFacts';
 import { useBoardContext } from './useBoardContext';
 
-const NO_MOUNT = 'no-mount';
+const NO_CARDS: ReadonlyArray<ActionCardModel> = [];
 
 type Props = {
   readonly rowId: string;
@@ -41,46 +38,20 @@ const BoardTileView = ({ rowId }: Props) => {
     mountId: entry === null ? null : entry.fact.mountId,
     anchorKey: `board-mount-${rowId}`,
   });
-  const failingName = useAppStore((state) =>
-    entry === null || entry.story.state !== 'checks-failing' || entry.fact.request === null
-      ? null
-      : (failingChecksOf({
-          state,
-          sessionId: session.id,
-          mountId: brandId<MountId>({ value: entry.fact.mountId }),
-          prNumber: entry.fact.request.number,
-        })?.checks[0]?.name ?? null),
-  );
-  const isRebaseStopped = useAppStore((state) =>
-    entry === null
-      ? false
-      : hasOpenRebaseStopOf({
-          state,
-          sessionId: session.id,
-          mountId: brandId<MountId>({ value: entry.fact.mountId }),
-        }),
-  );
   const row = rowById.get(rowId);
-  const caution = useOverlapCaution({
-    mountId: brandId<MountId>({ value: entry === null ? NO_MOUNT : entry.fact.mountId }),
-    isSettled: row?.isSettled === true,
-  });
-  if (row === undefined) {
-    return null;
-  }
   const runningCount = runningByRowId.get(rowId) ?? 0;
-  const branchRow = branchRowOf({
+  const branchRow = useBranchRow({
+    sessionId: session.id,
     row,
     entry,
     runningCount,
-    cards: cardsByRowId.get(rowId) ?? [],
+    cards: cardsByRowId.get(rowId) ?? NO_CARDS,
     shownAskIds,
-    isPermissionShown: permissionMount !== null && permissionMount.mountId === row.mountId,
-    isRebaseStopped,
-    failingCheckName: failingName,
-    overlap:
-      caution === null ? null : { fileCount: caution.fileCount, otherName: caution.otherBranch },
+    isPermissionShown: permissionMount !== null && permissionMount.mountId === row?.mountId,
   });
+  if (row === undefined || branchRow === null) {
+    return null;
+  }
   const title =
     row.branch === null
       ? boardRowCellsOf({

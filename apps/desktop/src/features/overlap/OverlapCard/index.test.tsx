@@ -205,19 +205,33 @@ describe('OverlapCard', () => {
     expect(screen.queryByRole('button', { name: /Overlaps/ })).toBeNull();
   });
 
-  it('opens from the keyboard on the word and lists what else is true', async () => {
+  it('opens when the word takes keyboard focus and lists what else is true', async () => {
     render(<OverlapCard mountId={BATCH_MOUNT} word={WORD} facts={['2 runs']} />);
     await act(async () => {
       await liveMounts.refresh();
     });
     const trigger = screen.getByRole('button', { name: 'Running, Overlaps Retry backoff' });
 
-    trigger.focus();
-    expect(document.activeElement).toBe(trigger);
-    fireEvent.click(trigger);
+    act(() => {
+      trigger.focus();
+    });
 
     const dialog = screen.getByRole('dialog', { name: '2 branches change the same files' });
     within(dialog).getByText('2 runs');
+  });
+
+  it('does not open twice when a pointer press focuses the word', async () => {
+    await renderChip({ mountId: BATCH_MOUNT });
+    const trigger = screen.getByRole('button', { name: 'Running, Overlaps Retry backoff' });
+
+    fireEvent.pointerDown(trigger);
+    act(() => {
+      trigger.focus();
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(trigger);
+
+    screen.getByRole('dialog', { name: '2 branches change the same files' });
   });
 
   it('opens when the Merge order item of the row menu asks for it', async () => {

@@ -13,7 +13,12 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
-const threadOf = ({ fix }: { readonly fix: NoteFix }): DiffThread => {
+type ThreadParams = {
+  readonly fix: NoteFix;
+  readonly sessionId: SessionId;
+};
+
+const threadOf = ({ fix, sessionId }: ThreadParams): DiffThread => {
   const { note } = fix;
   const isDone = fix.isClosed || fix.group === 'done';
   return {
@@ -29,6 +34,7 @@ const threadOf = ({ fix }: { readonly fix: NoteFix }): DiffThread => {
     createdAt: note.createdAt,
     statusLabel: fix.word,
     isResolved: isDone,
+    fixTarget: { sessionId, threadId: fix.threadId },
     canEdit: !isDone && !fix.isLocked,
     canRestore: true,
     canClose: !isDone,
@@ -54,7 +60,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffComments => {
   return useMemo<DiffComments>(() => {
     const threadIdOf = new Map(fixes.map((fix) => [fix.note.id, fix.threadId] as const));
     return {
-      threads: fixes.map((fix) => threadOf({ fix })),
+      threads: fixes.map((fix) => threadOf({ fix, sessionId })),
       submitLabel: NAMES.addComment,
       composerLabel: 'Comment',
       allowFileLevel: true,

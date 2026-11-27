@@ -24,7 +24,7 @@ export const StartSettingsRow = ({ items, className }: Props) => {
       aria-label={START_KIND_COPY.settings}
       className={cn('flex min-w-0 flex-col gap-2', className)}
     >
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+      <div className="flex min-w-0 items-center justify-between gap-3">
         <p data-start-settings-line="" className="min-w-0 text-meta text-muted-foreground">
           {words.map((word, index) => (
             <Fragment key={`${word.lead}${word.value}`}>
@@ -37,6 +37,7 @@ export const StartSettingsRow = ({ items, className }: Props) => {
         <Button
           size="xs"
           variant="quiet"
+          className="shrink-0"
           aria-expanded={isOpen}
           data-start-settings-change=""
           onClick={() => setIsOpen(!isOpen)}

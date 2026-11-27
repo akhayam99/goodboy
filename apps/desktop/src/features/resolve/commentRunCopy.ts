@@ -29,7 +29,11 @@ export const COMMENT_RUN_COPY = {
   goalHint: 'Goal, written from the comment. Edit it as you like.',
   goalHintMany: ({ count }: CountParams): string =>
     `Goal, written from the ${count} comments. Edit it as you like.`,
+  what: 'What',
   sources: 'The run reads these comments word for word',
+  sourcesFrom: ({ label }: LabelParams): string =>
+    `The run reads these comments word for word, from ${label}`,
+  addCaption: 'Add',
   more: 'Add another comment from this branch',
   add: ({ place }: PlaceParams): string => `Add ${place} to the run`,
   remove: ({ place }: PlaceParams): string => `Remove ${place} from the run`,

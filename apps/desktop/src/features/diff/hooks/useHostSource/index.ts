@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import {
   activeReviewSourceOf,
@@ -10,9 +10,10 @@ import type { ActiveReviewSource } from '../../../../store/slices/review-source/
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly mountId?: MountId | null;
 };
 
-export const useHostSource = ({ sessionId }: Params): ActiveReviewSource | null => {
+export const useHostSource = ({ sessionId, mountId = null }: Params): ActiveReviewSource | null => {
   const slice = useAppStore(
     useShallow((s): ReviewSourceSelectionState => ({
       sessions: s.sessions,
@@ -29,5 +30,8 @@ export const useHostSource = ({ sessionId }: Params): ActiveReviewSource | null 
       reviewSourceKeys: s.reviewSourceKeys,
     })),
   );
-  return useMemo(() => activeReviewSourceOf({ state: slice, sessionId }), [sessionId, slice]);
+  return useMemo(
+    () => activeReviewSourceOf({ state: slice, sessionId, mountId }),
+    [mountId, sessionId, slice],
+  );
 };

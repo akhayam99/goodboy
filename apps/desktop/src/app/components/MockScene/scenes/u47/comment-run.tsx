@@ -15,6 +15,18 @@ const NEW_TEXT =
 export const U47_COMMENT_RUN_SCENES = {
   'u47-comment-run-compose': () => <CommentRunComposeScene extraThreadIds={TWO_COMMENTS} />,
   'u47-comment-run-compose-one': () => <CommentRunComposeScene extraThreadIds={ONE_COMMENT} />,
+  'u47-comment-run-compose-lead-dark': () => (
+    <CommentRunComposeScene extraThreadIds={ONE_COMMENT} plan="lead" theme="dark" />
+  ),
+  'u47-comment-run-compose-lead-light': () => (
+    <CommentRunComposeScene extraThreadIds={ONE_COMMENT} plan="lead" theme="light" />
+  ),
+  'u47-comment-run-compose-agent-dark': () => (
+    <CommentRunComposeScene extraThreadIds={ONE_COMMENT} plan="agent" theme="dark" />
+  ),
+  'u47-comment-run-compose-agent-light': () => (
+    <CommentRunComposeScene extraThreadIds={ONE_COMMENT} plan="agent" theme="light" />
+  ),
   'u47-comment-run-suggest': () => <CommentRunSuggestScene />,
   'u47-comment-run-working': () => <CommentRunWorkingScene />,
   'u47-comment-run-working-page': () => <CommentRunPageScene theme="dark" />,

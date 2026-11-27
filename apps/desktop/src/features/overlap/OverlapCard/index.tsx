@@ -33,6 +33,9 @@ export const OverlapCard = ({ mountId, word, facts }: Props) => {
   const { labels: sessionLabels, titles: sessionTitles } = useSessionLabels({ sessionIds });
   const toggleRef = useRef(dropdown.toggle);
   toggleRef.current = dropdown.toggle;
+  const isPointerRef = useRef(false);
+  const isOpenRef = useRef(dropdown.open);
+  isOpenRef.current = dropdown.open;
   const handledRef = useRef(requested);
   useEffect(() => {
     if (requested === handledRef.current) {
@@ -68,6 +71,15 @@ export const OverlapCard = ({ mountId, word, facts }: Props) => {
           aria-haspopup="dialog"
           aria-expanded={dropdown.open}
           aria-label={words === null ? word.word : `${word.word}, ${words.chip}`}
+          onPointerDown={() => {
+            isPointerRef.current = true;
+          }}
+          onFocus={() => {
+            if (!isPointerRef.current && !isOpenRef.current) {
+              dropdown.toggle();
+            }
+            isPointerRef.current = false;
+          }}
           onClick={dropdown.toggle}
           className={`h-auto w-auto min-w-0 rounded-sm px-0 py-0 text-meta font-normal ${toneClass}`}
         >

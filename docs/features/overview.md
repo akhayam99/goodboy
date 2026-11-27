@@ -266,7 +266,7 @@ This part is for contributors and agents who change the feature.
 - Next row copy: `planSentenceOf` writes the plan sentence and `rebaseStopRowOf` writes a stopped rebase.
 - Folded rows: `foldDivergedIntoStops` in `actionCardsOf` folds a diverged card into its stopped rebase, `historyStopDetailOf` and `foldedVerbOf` word the folded stops, and `MENU_MAX_WIDTH` caps that menu.
 - Open questions of one Auto run: `askingAutoRootOf` finds the run, from the `rootAgentId` of the answer-questions suggestion.
-- Row opening: `openFor` in `useActionCardActions` and `suggestionPlaceOf` choose where a row opens.
+- Rebase picker: `MoveRebasePicker` lists the branches behind and starts `rebaseAll` for the ones kept checked.
 - Time left card: `workTimeCardOf`.
 - Changes: `otherWritersOf` names the agent that wrote a file after the turn.
 - Files of a turn: no screen reads them. A Done row carries no files, model, cost or full text. The app core still decides the set: `worktree_turn_files`, saved per turn and branch in `turn_file_sets` by `recordTurnFileSets`. It compares the branch with what it held when the turn began and drops what only the base commits changed. A rebase never pours main's work into the turn. A file the turn committed, edited or fixed in a conflict stays. Work that was already uncommitted before the turn is not the turn's. A turn that ran beside another agent in the same branch records nothing, because the files could be theirs.

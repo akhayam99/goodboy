@@ -1,4 +1,3 @@
-import type { MountRequestView } from '../../store/slices/project-mounts/mountRowModel';
 import type { OverlapGroup } from './overlapGroupOf';
 
 export type OverlapCaution = Readonly<{
@@ -11,23 +10,6 @@ type Params = {
   readonly group: OverlapGroup | null;
   readonly readyMountIds: ReadonlySet<string>;
   readonly isSettled: boolean;
-};
-
-type ReadyParams = {
-  readonly request: MountRequestView | null | undefined;
-};
-
-export const isReadyToLand = ({ request }: ReadyParams): boolean => {
-  if (request === null || request === undefined || request.isDraft) {
-    return false;
-  }
-  if (request.state === 'queued') {
-    return true;
-  }
-  if (request.state !== 'open' || request.isMergeable === false) {
-    return false;
-  }
-  return request.reviewDecision === 'approved' || request.checks === 'success';
 };
 
 export const overlapCautionOf = ({

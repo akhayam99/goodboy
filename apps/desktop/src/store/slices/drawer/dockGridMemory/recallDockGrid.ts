@@ -11,11 +11,10 @@ import { storedFaceOf } from '../../session-view/storedFaceOf';
 
 type RecallParams = {
   readonly sessionId: SessionId;
-  readonly isSavedThisRun: boolean;
 };
 
 export const recallDockGrid = ({ set, get }: SliceDeps) => {
-  return async ({ sessionId, isSavedThisRun }: RecallParams): Promise<string | null> => {
+  return async ({ sessionId }: RecallParams): Promise<string | null> => {
     const claim = dockGridRecalls.claim({ key: DOCK_GRID_RECALL_KEY });
     const before = get().drawerGrid ?? EMPTY_DRAWER_GRID;
     const selection = faceSelections.read({ sessionId });
@@ -49,7 +48,6 @@ export const recallDockGrid = ({ set, get }: SliceDeps) => {
       isDeskShown: shownFace === 'desk',
       claim,
       before,
-      isSavedThisRun,
     });
     if (claim.isCurrent() && faceSelections.read({ sessionId }) === selection) {
       set((state) => ({ sessionFace: { ...state.sessionFace, [sessionId]: face } }));

@@ -507,6 +507,7 @@ diff-peek-empty
 diff-peek-library
 diff-peek-more
 diff-peek-open
+diff-threads
 diff-tree-indent
 dock-pair
 dock-stack
@@ -1477,6 +1478,10 @@ u47-comment-needs-run-compose
 u47-comment-needs-run-light
 u47-comment-run-changed
 u47-comment-run-compose
+u47-comment-run-compose-agent-dark
+u47-comment-run-compose-agent-light
+u47-comment-run-compose-lead-dark
+u47-comment-run-compose-lead-light
 u47-comment-run-compose-one
 u47-comment-run-finished
 u47-comment-run-stopped
@@ -1631,6 +1636,7 @@ ux39-p9-impact-parked
 ux39-p9-session-drawer
 ux39-p9-tasks-parked
 ux39-p9-workflows-parked
+window-dock-board-scripts
 wireframe-failed
 work-lead-dependency
 work-lead-plan

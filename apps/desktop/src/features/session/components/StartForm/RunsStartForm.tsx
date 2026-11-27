@@ -43,6 +43,7 @@ type Props = {
   readonly blockedReason?: string | null;
   readonly canDiscard?: boolean;
   readonly isBranchLocked?: boolean;
+  readonly isSectioned?: boolean;
 };
 
 type PickParams = {
@@ -62,6 +63,7 @@ export const RunsStartForm = ({
   blockedReason = null,
   canDiscard = true,
   isBranchLocked = false,
+  isSectioned = false,
 }: Props) => {
   const workspaceName = useAppStore(
     (state) =>
@@ -100,6 +102,13 @@ export const RunsStartForm = ({
     }
     run.setRunAs(runAsOfStartFormKind({ kind: next, presets }));
   };
+  const scopeLine =
+    shownHint ??
+    (kind === 'agent'
+      ? RUN_ROUTE_COPY.scope.agent
+      : workflow === null
+        ? null
+        : RUN_ROUTE_COPY.fromPreset({ name: workflow.name }));
   const note =
     fixedNote !== undefined
       ? fixedNote
@@ -150,6 +159,7 @@ export const RunsStartForm = ({
           <StartPlanRow
             kind={kind ?? 'lead'}
             isDisabled={isStarting}
+            isSectioned={isSectioned}
             onPick={(next) => pickKind({ next })}
             pick={
               runAs.kind === 'role' ? (
@@ -191,8 +201,9 @@ export const RunsStartForm = ({
       runsOn={
         <StartWhereItRuns workspaceId={workspaceId} model={run.model} isDisabled={isStarting} />
       }
-      hint={shownHint}
+      hint={isSectioned ? scopeLine : shownHint}
       isRouteHint={isRouting && hasText}
+      isSectioned={isSectioned}
       settings={settings}
       note={note}
       error={run.error}
