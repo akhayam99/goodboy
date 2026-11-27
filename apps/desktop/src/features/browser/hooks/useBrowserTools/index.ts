@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FocusEvent, type RefObject } from 'react';
-import { useEscapeLayer } from '@goodboy/ui';
+import { registerEscapeLayer } from '@goodboy/ui';
 import type { BrowserToolsTab } from '../../types';
 
 type Params = {
@@ -53,7 +53,7 @@ const openingTabOf = ({ errorCount, tab }: OpeningParams): BrowserToolsTab => {
 export const useBrowserTools = ({ errorCount }: Params): BrowserTools => {
   const [isOpen, setIsOpen] = useState(false);
   const [tab, setToolsTab] = useState<BrowserToolsTab>('console');
-  const [isFocusInTools, setIsFocusInTools] = useState(false);
+  const isFocusInToolsRef = useRef(false);
   const [isFocusWanted, setIsFocusWanted] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const dockRef = useRef<HTMLElement | null>(null);
@@ -62,27 +62,32 @@ export const useBrowserTools = ({ errorCount }: Params): BrowserTools => {
     node instanceof Node &&
     (buttonRef.current === node || dockRef.current?.contains(node) === true);
 
-  const close = (): void => {
+  const close = ({ isByKey }: ToggleParams): void => {
     const isFocusInDock =
       isInTools({ node: document.activeElement }) && buttonRef.current !== document.activeElement;
     setIsOpen(false);
     setIsFocusWanted(false);
-    if (!isFocusInDock) {
+    if (isByKey && !isFocusInDock) {
       return;
     }
-    setIsFocusInTools(false);
     buttonRef.current?.focus();
   };
 
   const toggle = ({ isByKey }: ToggleParams): void => {
     if (isOpen) {
-      close();
+      close({ isByKey });
       return;
     }
     setToolsTab(openingTabOf({ errorCount, tab }));
     setIsOpen(true);
     setIsFocusWanted(isByKey);
+    if (!isByKey) {
+      buttonRef.current?.focus();
+    }
   };
+
+  const closeRef = useRef(close);
+  closeRef.current = close;
 
   useEffect(() => {
     if (!isOpen || !isFocusWanted) {
@@ -92,7 +97,16 @@ export const useBrowserTools = ({ errorCount }: Params): BrowserTools => {
     dockRef.current?.querySelector<HTMLElement>(SELECTED_TOOL)?.focus();
   }, [isOpen, isFocusWanted]);
 
-  useEscapeLayer(close, isOpen && isFocusInTools);
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    return registerEscapeLayer(
+      () => closeRef.current({ isByKey: true }),
+      false,
+      () => !isFocusInToolsRef.current,
+    );
+  }, [isOpen]);
 
   return {
     isOpen,
@@ -101,9 +115,12 @@ export const useBrowserTools = ({ errorCount }: Params): BrowserTools => {
     buttonRef,
     dockRef,
     focusWatch: {
-      onFocus: () => setIsFocusInTools(true),
-      onBlur: ({ relatedTarget }: BlurParams) =>
-        setIsFocusInTools(isInTools({ node: relatedTarget })),
+      onFocus: () => {
+        isFocusInToolsRef.current = true;
+      },
+      onBlur: ({ relatedTarget }: BlurParams) => {
+        isFocusInToolsRef.current = isInTools({ node: relatedTarget });
+      },
     },
     toggle,
     setTab: ({ next }) => setToolsTab(next),

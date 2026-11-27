@@ -14,7 +14,7 @@ import { useNativePlacement } from '../../hooks/useNativePlacement';
 import { consoleCounts } from '../../consoleCounts';
 import type { BrowserPageGroup } from '../../types';
 import { BrowserAddressRow } from '../BrowserPane/BrowserAddressRow';
-import type { BrowserStripGroups } from '../BrowserPane/BrowserTabStrip';
+import type { BrowserStripGroups } from '../BrowserPane/browserStripGroupsOf';
 import { BrowserToolsDock } from '../BrowserToolsDock';
 import { BrowserNotice } from '../BrowserPane/BrowserNotice';
 import { BrowserPasskeyNotice } from '../BrowserPane/BrowserPasskeyNotice';

@@ -270,7 +270,7 @@ describe('send the page to the agent', () => {
     store.setState({ selectedAgentId: { [SESSION_ID]: REVIEWER } });
     await openCheckout();
 
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
     const row = await screen.findByRole('menuitem', { name: /Add to message/ });
     await act(async () => {
       fireEvent.click(row);
@@ -305,7 +305,7 @@ describe('send the page to the agent', () => {
     await sendByKey();
 
     expect(pageTextCalls()).toHaveLength(1);
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
     const row = await screen.findByRole('menuitem', { name: /Reading the page/ });
     expect(row.getAttribute('aria-disabled')).toBe('true');
     await act(async () => {
@@ -359,7 +359,7 @@ describe('send the page to the agent', () => {
     await openCheckout();
 
     await sendByKey();
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
 
     expect(pageTextCalls()).toEqual([]);
     const row = await screen.findByRole('menuitem', { name: /Add to message/ });

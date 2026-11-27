@@ -299,7 +299,7 @@ describe('the browser keymap', () => {
 
   it('never closes a pin with the close key and does not let it fall through', async () => {
     await openTwoPages();
-    fireEvent.click(screen.getByRole('button', { name: 'Pin to payments-api' }));
+    await press({ id: 'browser.pin' });
     await waitFor(() => expect(store.getState().browserShownPin[SESSION_ID]).toBe('live-2'));
     const closePage = vi.fn();
     const stop = registerShortcut('app.close', closePage);
@@ -317,7 +317,8 @@ describe('the browser keymap', () => {
     await press({ id: 'browser.pin' });
     await waitFor(() => expect(store.getState().browserShownPin[SESSION_ID]).toBe('live-2'));
     expect(callsOf({ command: 'browser_tab_row_pin' })).toHaveLength(1);
-    await screen.findByRole('button', { name: 'Unpin from payments-api' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Page menu' }));
+    await screen.findByRole('menuitem', { name: /^Unpin from payments-api/ });
   });
 
   it('is silent while the browser is not on screen', async () => {

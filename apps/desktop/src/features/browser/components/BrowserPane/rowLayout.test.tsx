@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { useContext } from 'react';
 import { AppShell, DockCellContext, DrawerFrame, type DockGridSpec } from '@goodboy/ui';
 import { nextSessionId, nextWorkspaceId } from '@goodboy/types/testing';
@@ -12,7 +13,9 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import type { BrowserTab } from '../../../../store/slices/browser/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import type { BrowserTabFacts } from '../../types';
 import { BrowserPane } from './index';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -173,37 +176,143 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('the browser address row at a narrow pane width', () => {
-  it('keeps Pin and Console in the row and Open full page in the head while it is wide', () => {
-    stubWidths({ rowWidth: 760 });
-    render(
-      <ToastProvider>
-        <BrowserPane sessionId={SESSION_ID} onClose={() => undefined} />
-      </ToastProvider>,
-    );
+const TAB_TITLES = ['Checkout', 'Tax rates', 'Ledger entries'];
 
-    expect(document.querySelector('[data-row-folded]')).toBeNull();
-    screen.getByRole('button', { name: 'Console' });
-    screen.getByRole('button', { name: 'Open full page' });
+type IndexParams = {
+  readonly index: number;
+};
+
+const tabRowOf = ({ index }: IndexParams): BrowserTab => ({
+  id: `row-${index}`,
+  sessionId: SESSION_ID,
+  projectId: null,
+  url: `http://localhost:5173/page-${index}`,
+  title: TAB_TITLES[index] ?? 'Harborline',
+  position: index,
+  createdAt: 1,
+  updatedAt: 1,
+});
+
+const tabFactsOf = ({ index }: IndexParams): BrowserTabFacts => ({
+  id: `live-${index}`,
+  sessionId: SESSION_ID,
+  url: `http://localhost:5173/page-${index}`,
+  title: TAB_TITLES[index] ?? 'Harborline',
+  state: 'live',
+  isShown: index === 0,
+  hiddenSinceMs: null,
+  openerId: null,
+  isPasskeyBlocked: false,
+});
+
+const seedTabs = () => {
+  const rows = TAB_TITLES.map((_, index) => tabRowOf({ index }));
+  const live = TAB_TITLES.map((_, index) => tabFactsOf({ index }));
+  store.setState({
+    browserSessionTabs: { [SESSION_ID]: rows },
+    browserActiveTab: { [SESSION_ID]: 'row-0' },
+    browserShownPin: { [SESSION_ID]: null },
+    browserLiveTabs: {
+      [SESSION_ID]: Object.fromEntries(rows.map((row, index) => [row.id, `live-${index}`])),
+    },
+  });
+  stubStoryInvoke({
+    browser_tab_rows_list: () => rows,
+    browser_workspace_tab_rows_list: () => rows,
+    browser_tab_list: () => live,
+    browser_visits_list: [],
+    browser_history_state: null,
+    browser_console_read: { doc: null, entries: [], watermark: 0, isHeard: false },
+    browser_favicon: null,
+    browser_tab_place: null,
+    browser_tab_show: () => live[0],
+    browser_tab_hide: () => live[0],
+  });
+};
+
+const renderBrowserPane = () =>
+  render(
+    <ToastProvider>
+      <BrowserPane sessionId={SESSION_ID} onClose={() => undefined} />
+    </ToastProvider>,
+  );
+
+const browserRow = (): HTMLElement => {
+  const row = document.querySelector<HTMLElement>('[data-browser-row]');
+  if (row === null) {
+    throw new Error('The pane draws no browser row.');
+  }
+  return row;
+};
+
+describe('the browser address row at a narrow pane width', () => {
+  it('keeps six fixed controls at rest and Open full page in the head only', async () => {
+    stubWidths({ rowWidth: 760 });
+    seedTabs();
+    renderBrowserPane();
+    await screen.findByRole('button', { name: /^Edit address, Checkout/ });
+
+    expect(document.querySelector('[data-row-narrow]')).toBeNull();
+    const row = within(browserRow());
+    ['Back', 'Forward', 'Reload', 'New tab', 'Select an element', 'Console'].forEach((name) =>
+      row.getByRole('button', { name }),
+    );
+    expect(row.queryByRole('button', { name: /^(Pin to|Unpin from) / })).toBeNull();
+    expect(row.queryByRole('button', { name: /^Show \d+ errors?$/ })).toBeNull();
+    expect(row.queryByRole('button', { name: 'More' })).toBeNull();
+    expect(row.queryByRole('button', { name: 'Open full page' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Open full page' })).toHaveLength(1);
+    row.getByRole('button', { name: /^Tax rates/ });
   });
 
-  it('keeps the address, Console and More in the row under 560px and Open full page and Close in the head', () => {
-    stubWidths({ rowWidth: 540 });
-    render(
-      <ToastProvider>
-        <BrowserPane sessionId={SESSION_ID} onClose={() => undefined} />
-      </ToastProvider>,
-    );
+  it('opens the page menu from the keyboard and hides it while the address is edited', async () => {
+    stubWidths({ rowWidth: 760 });
+    seedTabs();
+    renderBrowserPane();
+    const user = userEvent.setup();
+    const chevron = await screen.findByRole('button', { name: 'Page menu' });
 
-    expect(document.querySelector('[data-row-folded]')).not.toBeNull();
-    screen.getByRole('button', { name: 'Open full page' });
-    screen.getByRole('button', { name: 'Console' });
+    expect(chevron.getAttribute('aria-haspopup')).toBe('menu');
+    expect(chevron.getAttribute('aria-expanded')).toBe('false');
+    chevron.focus();
+    await user.keyboard('{Enter}');
+    const menu = await screen.findByRole('menu', { name: 'Page menu' });
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(4);
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('menu', { name: 'Page menu' })).toBeNull());
+
+    fireEvent.click(screen.getByRole('button', { name: /^Edit address, Checkout/ }));
+
     screen.getByRole('combobox', { name: 'Address or search' });
-    screen.getByRole('button', { name: 'Close' });
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    expect(screen.queryByRole('button', { name: 'Page menu' })).toBeNull();
+  });
 
-    const menu = screen.getByRole('menu', { name: 'More' });
-    within(menu).getByRole('menuitem', { name: /Open full page/ });
+  it('keeps the shown tab and New tab in the row under 560px and lists the other tabs in the page menu', async () => {
+    stubWidths({ rowWidth: 540 });
+    seedTabs();
+    renderBrowserPane();
+    await screen.findByRole('button', { name: /^Edit address, Checkout/ });
+
+    expect(document.querySelector('[data-row-narrow]')).not.toBeNull();
+    const row = within(browserRow());
+    row.getByRole('button', { name: 'New tab' });
+    row.getByRole('button', { name: 'Console' });
+    expect(row.queryByRole('button', { name: /^Tax rates/ })).toBeNull();
+    screen.getByRole('button', { name: 'Open full page' });
+    screen.getByRole('button', { name: 'Close' });
+    fireEvent.click(row.getByRole('button', { name: 'Page menu' }));
+
+    const menu = screen.getByRole('menu', { name: 'Page menu' });
+    const tabs = within(menu).getByRole('group', { name: 'Tabs' });
+    expect(
+      within(tabs)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent),
+    ).toEqual(['Tax rates', 'Ledger entries']);
+    expect(within(menu).queryByRole('menuitem', { name: /Open full page/ })).toBeNull();
+    fireEvent.click(within(tabs).getByRole('menuitem', { name: 'Tax rates' }));
+
+    expect(store.getState().browserActiveTab[SESSION_ID]).toBe('row-1');
   });
 });
 
