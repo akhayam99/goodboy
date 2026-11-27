@@ -74,12 +74,12 @@ export const sendPhoneChatMessage = async ({
   if (content.length === 0) {
     return failedResult({ error: 'The message is empty.' });
   }
-  const started = await startedOf({
+  const isStarted = await startedOf({
     sending: store.sendChatMessage({ chatId, content }),
     getStore,
     chatId,
   });
-  if (!started) {
+  if (!isStarted) {
     return failedResult({ error: "Couldn't send the message." });
   }
   bumpSendSequence({ agentId: chatSendKeyOf({ chatId: action.chatId }) });

@@ -25,11 +25,6 @@ const CHAT = 'chat-ledger';
 const OTHER_CHAT = 'chat-notify';
 const NOW = Date.parse('2026-11-27T09:00:00.000Z');
 
-type ChatFake = {
-  readonly id: string;
-  readonly archivedAt: string | null;
-};
-
 type KitOptions = {
   readonly isBusy?: boolean;
 };
@@ -51,8 +46,8 @@ const kitOf = ({ isBusy = false }: KitOptions = {}) => {
       [WORKSPACE]: [
         { id: CHAT, archivedAt: null },
         { id: 'chat-old', archivedAt: 'x' },
-      ] as ReadonlyArray<ChatFake>,
-      [OTHER_WORKSPACE]: [{ id: OTHER_CHAT, archivedAt: null }] as ReadonlyArray<ChatFake>,
+      ],
+      [OTHER_WORKSPACE]: [{ id: OTHER_CHAT, archivedAt: null }],
     },
     chatStreams: isBusy ? { [CHAT]: { runId: 'r', messageId: 'm', isStopping: false } } : {},
     chatMessages: {
@@ -62,7 +57,7 @@ const kitOf = ({ isBusy = false }: KitOptions = {}) => {
         messageOf('m3', 'user', 'Thanks'),
       ],
       [OTHER_CHAT]: [messageOf('x1', 'user', 'Retry window?')],
-    } as Record<string, ReadonlyArray<unknown>>,
+    },
   };
   const sendChatMessage = vi.fn(async () => {
     Reflect.set(store, 'chatStreams', {
