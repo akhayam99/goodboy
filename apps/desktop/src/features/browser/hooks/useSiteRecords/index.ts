@@ -17,6 +17,10 @@ type FailedParams = {
   readonly error: unknown;
 };
 
+type RequestParams = {
+  readonly tabId: string;
+};
+
 type Params = {
   readonly tabId: string | undefined;
   readonly isReadable: boolean;
@@ -45,6 +49,7 @@ export const useSiteRecords = ({
   const [isolation, setIsolation] = useState<BrowserIsolation | null>(null);
   const [read, setRead] = useState<RecordsRead>(NOTHING_READ);
   const latest = useRef(0);
+  const pendingTab = useRef<string | null>(null);
   const shownTab = useRef(tabId);
   shownTab.current = tabId;
 
@@ -65,6 +70,32 @@ export const useSiteRecords = ({
 
   const canList = isReadable && isolation === 'perWorkspace' && tabId !== undefined;
 
+  const request = ({ tabId: askedTab }: RequestParams) => {
+    latest.current += 1;
+    const asked = latest.current;
+    pendingTab.current = askedTab;
+    void browserHost.siteDataList({ tabId: askedTab }).then(
+      (records) => {
+        if (asked !== latest.current) {
+          return;
+        }
+        pendingTab.current = null;
+        if (shownTab.current === askedTab) {
+          setRead({ tabId: askedTab, records: records ?? NO_RECORDS });
+        }
+      },
+      (error: unknown) => {
+        if (asked !== latest.current) {
+          return;
+        }
+        pendingTab.current = null;
+        if (shownTab.current === askedTab) {
+          onFailed({ tabId: askedTab, error });
+        }
+      },
+    );
+  };
+
   return {
     canList,
     records: canList && read.tabId === tabId ? read.records : null,
@@ -72,21 +103,7 @@ export const useSiteRecords = ({
       if (!canList || tabId === undefined) {
         return;
       }
-      latest.current += 1;
-      const asked = latest.current;
-      const askedTab = tabId;
-      void browserHost.siteDataList({ tabId: askedTab }).then(
-        (records) => {
-          if (asked === latest.current && shownTab.current === askedTab) {
-            setRead({ tabId: askedTab, records: records ?? NO_RECORDS });
-          }
-        },
-        (error: unknown) => {
-          if (asked === latest.current && shownTab.current === askedTab) {
-            onFailed({ tabId: askedTab, error });
-          }
-        },
-      );
+      request({ tabId });
     },
     clear: async ({ name }) => {
       if (!canList || tabId === undefined) {
@@ -96,13 +113,15 @@ export const useSiteRecords = ({
       onClearing();
       try {
         const cleared = await browserHost.clearSiteRecords({ tabId: askedTab, names: [name] });
-        latest.current += 1;
         setRead((last) =>
           last.tabId === askedTab
             ? { tabId: askedTab, records: last.records.filter((record) => record.name !== name) }
             : last,
         );
         onCleared({ tabId: askedTab, cleared });
+        if (pendingTab.current === askedTab) {
+          request({ tabId: askedTab });
+        }
       } catch (error: unknown) {
         onFailed({ tabId: askedTab, error });
       }

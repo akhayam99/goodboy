@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { EmptyLine } from '@goodboy/ui';
+import { EmptyLine, SkeletonRow } from '@goodboy/ui';
 import type { BrowserSiteRecords } from '../../../types';
 import { SiteDataRow } from './SiteDataRow';
 
@@ -19,11 +19,11 @@ export const SiteDataPanel = ({ siteRecords, readKey }: Props) => {
   }, [readKey]);
 
   const records = siteRecords.records;
+  const isLoading = records === null;
   const count = records?.length ?? 0;
-  const summary =
-    records === null
-      ? 'Reading the sites of this workspace.'
-      : `${count} ${count === 1 ? 'site keeps' : 'sites keep'} data in this workspace.`;
+  const summary = isLoading
+    ? 'Reading the sites of this workspace.'
+    : `${count} ${count === 1 ? 'site keeps' : 'sites keep'} data in this workspace.`;
 
   return (
     <div data-site-data-panel="" className="flex min-w-0 flex-col gap-1">
@@ -34,6 +34,7 @@ export const SiteDataPanel = ({ siteRecords, readKey }: Props) => {
         </p>
       </div>
       <div className="flex min-w-0 flex-col gap-1 p-2">
+        {isLoading ? <SkeletonRow label="Loading the sites" /> : null}
         {records !== null && records.length === 0 ? (
           <EmptyLine className="px-2">No site keeps data in this workspace.</EmptyLine>
         ) : null}

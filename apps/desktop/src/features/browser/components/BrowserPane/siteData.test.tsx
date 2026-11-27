@@ -65,7 +65,9 @@ type ClearParams = {
   readonly trail?: (params: TabArgs) => TrailAnswer;
   readonly isolation?: BrowserIsolation | null;
   readonly list?: (params: TabArgs) => ListAnswer;
-  readonly clearRecords?: (params: RecordsArgs) => BrowserRecordsCleared;
+  readonly clearRecords?: (
+    params: RecordsArgs,
+  ) => BrowserRecordsCleared | Promise<BrowserRecordsCleared>;
 };
 type PageParams = { readonly address: string; readonly shows: number };
 type HostsParams = { readonly host: string; readonly extraHosts: ReadonlyArray<string> };
@@ -741,6 +743,93 @@ describe('show site data', () => {
     expect(panel.querySelector('[data-site-record="harborline.dev"]')).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(callsOf({ command: 'browser_site_data_clear_records' })).toHaveLength(2);
+  });
+
+  it('keeps the list of another tab when a clear answers first', async () => {
+    let finishClear: (value: BrowserRecordsCleared) => void = () => undefined;
+    let answerList: (records: ReadonlyArray<BrowserSiteRecord>) => void = () => undefined;
+    stubHost({
+      clear: ({ args }) => cleared(args),
+      isolation: 'perWorkspace',
+      list: ({ args }) =>
+        args.tabId === 'live-1'
+          ? STORE_RECORDS
+          : new Promise<ReadonlyArray<BrowserSiteRecord>>((resolve) => {
+              answerList = resolve;
+            }),
+      clearRecords: () =>
+        new Promise<BrowserRecordsCleared>((resolve) => {
+          finishClear = resolve;
+        }),
+    });
+    renderPane();
+    await openPage();
+    const first = await openSiteData();
+    await within(first).findByText('3 sites keep data in this workspace.');
+    const ask = await askToClear({ panel: first, name: 'notify-relay.dev' });
+    fireEvent.click(within(ask).getByRole('button', { name: 'Clear' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'New tab' }));
+    await openPage({ address: '127.0.0.1:5005/home', shows: 2 });
+    const second = await openSiteData();
+    await waitFor(() => expect(callsOf({ command: 'browser_site_data_list' })).toHaveLength(2));
+    await act(async () => {
+      finishClear({ names: ['notify-relay.dev'], wasReloaded: false });
+    });
+    await act(async () => {
+      answerList(STORE_RECORDS);
+    });
+
+    within(second).getByText('3 sites keep data in this workspace.');
+    expect(callsOf({ command: 'browser_site_data_list' })).toHaveLength(2);
+  });
+
+  it('reads again when a clear answers while the same tab is being read', async () => {
+    let finishClear: (value: BrowserRecordsCleared) => void = () => undefined;
+    const answers: Array<(records: ReadonlyArray<BrowserSiteRecord>) => void> = [];
+    let isFirst = true;
+    stubHost({
+      clear: ({ args }) => cleared(args),
+      isolation: 'perWorkspace',
+      list: () => {
+        if (isFirst) {
+          isFirst = false;
+          return STORE_RECORDS;
+        }
+        return new Promise<ReadonlyArray<BrowserSiteRecord>>((resolve) => {
+          answers.push(resolve);
+        });
+      },
+      clearRecords: () =>
+        new Promise<BrowserRecordsCleared>((resolve) => {
+          finishClear = resolve;
+        }),
+    });
+    renderPane();
+    await openPage();
+    const panel = await openSiteData();
+    await within(panel).findByText('3 sites keep data in this workspace.');
+    const ask = await askToClear({ panel, name: 'notify-relay.dev' });
+    fireEvent.click(within(ask).getByRole('button', { name: 'Clear' }));
+
+    fireEvent.keyDown(panel, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Site data' })).toBeNull());
+    const again = await openSiteData();
+    await waitFor(() => expect(answers).toHaveLength(1));
+    await act(async () => {
+      finishClear({ names: ['notify-relay.dev'], wasReloaded: false });
+    });
+    await waitFor(() => expect(answers).toHaveLength(2));
+    await act(async () => {
+      answers[0]?.(STORE_RECORDS);
+    });
+    expect(again.querySelector('[data-site-record="notify-relay.dev"]')).toBeNull();
+
+    await act(async () => {
+      answers[1]?.(STORE_RECORDS.slice(0, 2));
+    });
+
+    within(again).getByText('2 sites keep data in this workspace.');
   });
 
   it('drops a list that answers after another tab took its place', async () => {
