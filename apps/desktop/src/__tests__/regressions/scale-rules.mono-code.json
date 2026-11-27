@@ -51,6 +51,7 @@
   "apps/desktop/src/features/scripts/components/ScriptRunDrawer/ScriptCommandDisclosure.tsx": "command",
   "apps/desktop/src/features/scripts/components/ScriptRunDrawer/ScriptRunLog.tsx": "command",
   "apps/desktop/src/features/scripts/components/ScriptsPanel/ScriptPackageSection.tsx": "command",
+  "apps/desktop/src/features/scripts/components/WorkspaceScriptsDrawer/index.tsx": "command",
   "apps/desktop/src/features/session/ask/components/AskDrawer/AskChip.tsx": "path",
   "apps/desktop/src/features/session/components/ContextDrawer/BlockEditor.tsx": "code",
   "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.tsx": "command",

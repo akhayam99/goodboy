@@ -34,7 +34,7 @@ export const RAIL_TOOLS: ReadonlyArray<SessionTool> = [
     pane: 'scripts',
     icon: CONCEPT_ICONS.scripts,
     label: NAMES.scripts,
-    isSessionOnly: true,
+    isSessionOnly: false,
   },
   {
     pane: 'ask',

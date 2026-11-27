@@ -140,33 +140,30 @@ worktree strip, and Monitor its Pin a port action as a pin icon in the head.
 
 ## The grid saved on the session
 
-Each session remembers its grid (panels, columns, each tool column's width, the
-height of two stacked panels in an optional `splits` field, the focus) in
-`session_dock_grids` (m244), one row per session, deleted with it. The Board and the
-draft keep their own grid in the window and save nothing. The row is version 2 since
+The window owns which tools are open: the grid stays open from Home to the Board
+to a session and back, and no place opens or closes a tool. Each session
+remembers the layout of its grid (columns, each tool column's width, the height of
+two stacked panels in an optional `splits` field, the tab choice, the focus) in
+`session_dock_grids` (m244), one row per session, deleted with it. The Board, Home
+and the draft keep the window's grid and save nothing. The row is version 2 since
 Scripts and Ask joined; a version 1 row still reads until 0.45.0 (excluded), and a build that knows only
 version 1 shows the default layout.
 
 - `useSessionDockGrid` (started by `useWindowLayout`) runs `watchSessionDockGrid`,
   keyed on `currentSessionId`.
-- **A new session** (opened within two minutes of its creation, with no layout parked in
-  this window, `isNewSession`) starts from the last layout of the window
-  (`lastDockGrid`, set by `dockAfterPlace` when a session is left, the Board included): the
-  same columns, tab lists and splits, with the panels bound to the new session, Scripts
-  without its project and a Terminal kept only when its tab belongs to the new session's
-  workspace (`carriedDockGrid`). An older session keeps opening empty until its row answers, and one the user emptied stays
-  empty when it comes back. Its own row, when it has one, replaces that start. The last layout lives in the window and
-  is not saved.
-- **Entering a session** reads its row (`recallDockGrid`), whose grid replaces the
-  open tools (`slotWithGrid`); a tool of a session that no longer exists drops out.
-  Until the row answers, the session shows the grid it was left with in this window
-  (`parkedDockGrids`, dropped on archive), or no tool. That swap is not a change:
-  `watchSessionDockGrid` skips a grid arriving with a new `dockScope`, so a window
-  passing through never writes the row. A Terminal whose tab is gone closes itself
-  (`TerminalDrawer`) and the next save leaves it out.
-- A row this window has not saved since it loaded comes back without the
-  `UNSAVED_DRAWER_KINDS` (`appliedDockGrid`), so Monitor stays closed after a reload;
-  a row saved in this run brings Monitor back (`isSavedThisRun`).
+- **Changing place** keeps the grid (`dockAfterPlace`) and binds each panel to the
+  place entered (`reboundDockGrid`): a session id inside a session, none on Home, the
+  Board and the draft. A Terminal stays when its tab is a shell of the workspace or of
+  the session entered; otherwise it shows the workspace shell, or closes when the
+  workspace has none. A panel of a session that no longer exists drops out
+  (`slotWithGrid`).
+- **Entering a session** reads its row (`recallDockGrid`) and lays the saved sizes,
+  splits, columns and tab choice onto the tools already open (`layoutOntoGrid`). The row
+  never opens a tool and never closes one, so a row saved with other tools changes
+  nothing but the layout. That swap is not a change: `watchSessionDockGrid` skips a
+  grid arriving with a new `dockScope`, so a window passing through never writes the
+  row. A Terminal whose tab is gone closes itself (`TerminalDrawer`) and the next save
+  leaves it out.
 - **A change** waits 300ms, then `rememberDockGrid` writes it, naming the session it
   was made on; leaving the session writes the waiting change at once, still on it.
 - A column handle writes the width on the grid (`resizeDockColumn`), not the old

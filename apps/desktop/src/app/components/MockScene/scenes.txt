@@ -1626,6 +1626,7 @@ ux39-p9-impact-parked
 ux39-p9-session-drawer
 ux39-p9-tasks-parked
 ux39-p9-workflows-parked
+window-dock-board-scripts
 wireframe-failed
 work-lead-dependency
 work-lead-plan
