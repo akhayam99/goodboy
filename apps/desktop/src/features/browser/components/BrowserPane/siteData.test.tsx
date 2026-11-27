@@ -14,7 +14,14 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import type { BrowserSiteCleared, BrowserTabFacts, BrowserTabState } from '../../types';
+import type {
+  BrowserIsolation,
+  BrowserRecordsCleared,
+  BrowserSiteCleared,
+  BrowserSiteRecord,
+  BrowserTabFacts,
+  BrowserTabState,
+} from '../../types';
 import { BrowserPane } from '.';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -49,9 +56,16 @@ type SiteArgs = {
 type CommandParams = { readonly command: string };
 type MenuParams = { readonly menu: HTMLElement };
 type TrailAnswer = ReadonlyArray<string> | Promise<ReadonlyArray<string>>;
+type RecordsArgs = {
+  readonly args: { readonly tabId: string; readonly names: ReadonlyArray<string> };
+};
+type ListAnswer = ReadonlyArray<BrowserSiteRecord> | Promise<ReadonlyArray<BrowserSiteRecord>>;
 type ClearParams = {
   readonly clear: (params: SiteArgs) => BrowserSiteCleared | Promise<BrowserSiteCleared>;
   readonly trail?: (params: TabArgs) => TrailAnswer;
+  readonly isolation?: BrowserIsolation | null;
+  readonly list?: (params: TabArgs) => ListAnswer;
+  readonly clearRecords?: (params: RecordsArgs) => BrowserRecordsCleared;
 };
 type PageParams = { readonly address: string; readonly shows: number };
 type HostsParams = { readonly host: string; readonly extraHosts: ReadonlyArray<string> };
@@ -63,7 +77,13 @@ let store: StoryStore;
 let live: BrowserTabFacts[];
 let hiddenState: BrowserTabState;
 
-const stubHost = ({ clear, trail = NO_TRAIL }: ClearParams) => {
+const stubHost = ({
+  clear,
+  trail = NO_TRAIL,
+  isolation = null,
+  list = () => [],
+  clearRecords = ({ args }) => ({ names: args.names, wasReloaded: false }),
+}: ClearParams) => {
   stubStoryInvoke({
     browser_tab_rows_list: () => [],
     browser_tab_row_save: ({ args }: SaveArgs) => ({
@@ -102,6 +122,9 @@ const stubHost = ({ clear, trail = NO_TRAIL }: ClearParams) => {
     browser_tab_reload_from_origin: null,
     browser_site_data_clear: clear,
     browser_tab_trail: trail,
+    browser_profile_isolation: isolation,
+    browser_site_data_list: list,
+    browser_site_data_clear_records: clearRecords,
     browser_history_state: null,
     browser_console_read: { doc: null, entries: [], watermark: 0, isHeard: false },
     browser_favicon: null,
@@ -518,7 +541,229 @@ describe('clear site data', () => {
 
     expect(screen.queryByText(/Cleared data/)).toBeNull();
   });
+});
 
+const STORE_RECORDS: ReadonlyArray<BrowserSiteRecord> = [
+  { name: 'harborline.dev', kinds: ['cookies', 'localStorage', 'cache'], tie: 'site' },
+  { name: 'cascadia-id.com', kinds: ['cookies'], tie: 'signIn' },
+  { name: 'notify-relay.dev', kinds: ['cache'], tie: null },
+];
+
+const LISTED = (): ReadonlyArray<BrowserSiteRecord> => STORE_RECORDS;
+
+const openDevelop = async () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
+  fireEvent.click(await screen.findByRole('menuitem', { name: /^Develop/ }));
+  await screen.findByRole('menuitem', { name: /^Phone/ });
+};
+
+const openSiteData = async () => {
+  await openDevelop();
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Show site data' }));
+  return screen.findByRole('dialog', { name: 'Site data' });
+};
+
+type RowParams = { readonly panel: HTMLElement; readonly name: string };
+
+const rowOf = ({ panel, name }: RowParams) => {
+  const row = panel.querySelector<HTMLElement>(`[data-site-record="${name}"]`);
+  if (row === null) {
+    throw new Error(`No row for ${name}.`);
+  }
+  return row;
+};
+
+const askToClear = async ({ panel, name }: RowParams) => {
+  fireEvent.click(within(rowOf({ panel, name })).getByRole('button', { name: `Clear ${name}` }));
+  return within(panel).findByRole('group', { name: `Clear ${name}?` });
+};
+
+describe('show site data', () => {
+  it('shows the site data row only on macOS with a store per workspace', async () => {
+    stubHost({ clear: ({ args }) => cleared(args), isolation: 'perWorkspace', list: LISTED });
+    renderPane();
+    await openPage();
+    await waitFor(() => expect(callsOf({ command: 'browser_profile_isolation' })).toHaveLength(1));
+
+    await openDevelop();
+
+    expect(screen.getByRole('menuitem', { name: 'Show site data' })).toBeTruthy();
+  });
+
+  it('leaves the row out on a Mac whose workspaces share one store', async () => {
+    stubHost({ clear: ({ args }) => cleared(args), isolation: 'shared', list: LISTED });
+    renderPane();
+    await openPage();
+    await waitFor(() => expect(callsOf({ command: 'browser_profile_isolation' })).toHaveLength(1));
+
+    await openDevelop();
+
+    expect(screen.queryByRole('menuitem', { name: 'Show site data' })).toBeNull();
+  });
+
+  it('leaves the row out off macOS and never asks for the store', async () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(LINUX_AGENT);
+    stubHost({ clear: ({ args }) => cleared(args), isolation: 'perWorkspace', list: LISTED });
+    renderPane();
+    await openPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /^Develop/ }));
+
+    await screen.findByRole('menuitem', { name: /^Phone/ });
+    expect(screen.queryByRole('menuitem', { name: 'Show site data' })).toBeNull();
+    expect(callsOf({ command: 'browser_profile_isolation' })).toEqual([]);
+  });
+
+  it('lists every site of the workspace with its kinds and its tie to the tab', async () => {
+    stubHost({ clear: ({ args }) => cleared(args), isolation: 'perWorkspace', list: LISTED });
+    renderPane();
+    await openPage();
+
+    const panel = await openSiteData();
+
+    await within(panel).findByText('3 sites keep data in this workspace.');
+    expect(callsOf({ command: 'browser_site_data_list' })).toEqual([
+      ['browser_site_data_list', { args: { tabId: 'live-1' } }],
+    ]);
+    within(rowOf({ panel, name: 'harborline.dev' })).getByText('Cookies, local storage, cache');
+    within(rowOf({ panel, name: 'harborline.dev' })).getByText('This tab');
+    within(rowOf({ panel, name: 'cascadia-id.com' })).getByText('Sign-in for this tab');
+    expect(rowOf({ panel, name: 'notify-relay.dev' }).textContent).not.toMatch(/tab/);
+    within(panel).getByText(
+      'To clear every site, use Clear browser data in the workspace settings.',
+    );
+    expect(within(panel).queryByRole('button', { name: /Clear all/ })).toBeNull();
+  });
+
+  it('asks on the row, then clears that record and says the tab reloaded', async () => {
+    stubHost({
+      clear: ({ args }) => cleared(args),
+      isolation: 'perWorkspace',
+      list: LISTED,
+      clearRecords: ({ args }) => ({ names: args.names, wasReloaded: true }),
+    });
+    renderPane();
+    await openPage();
+    const panel = await openSiteData();
+    await within(panel).findByText('3 sites keep data in this workspace.');
+
+    const ask = await askToClear({ panel, name: 'cascadia-id.com' });
+    within(ask).getByText('Signs you out of every app that uses it.');
+    expect(callsOf({ command: 'browser_site_data_clear_records' })).toEqual([]);
+
+    fireEvent.click(within(ask).getByRole('button', { name: 'Clear' }));
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_site_data_clear_records' })).toEqual([
+        [
+          'browser_site_data_clear_records',
+          { args: { tabId: 'live-1', names: ['cascadia-id.com'] } },
+        ],
+      ]),
+    );
+    await waitFor(() =>
+      expect(panel.querySelector('[data-site-record="cascadia-id.com"]')).toBeNull(),
+    );
+    expect(rowOf({ panel, name: 'harborline.dev' })).toBeTruthy();
+    screen.getByText('Cleared data for cascadia-id.com. This tab reloaded without cache.');
+    expect(callsOf({ command: 'browser_site_data_clear' })).toEqual([]);
+  });
+
+  it('says other tabs keep their page when the cleared site is not the tab one', async () => {
+    stubHost({ clear: ({ args }) => cleared(args), isolation: 'perWorkspace', list: LISTED });
+    renderPane();
+    await openPage();
+    const panel = await openSiteData();
+    await within(panel).findByText('3 sites keep data in this workspace.');
+
+    const ask = await askToClear({ panel, name: 'notify-relay.dev' });
+    fireEvent.click(within(ask).getByRole('button', { name: 'Clear' }));
+
+    await screen.findByText(
+      'Cleared data for notify-relay.dev. Tabs on it keep their page until you reload them.',
+    );
+    expect(callsOf({ command: 'browser_tab_reload_from_origin' })).toEqual([]);
+    expect(callsOf({ command: 'browser_tab_reload' })).toEqual([]);
+  });
+
+  it('keeps the row when the ask is cancelled', async () => {
+    stubHost({ clear: ({ args }) => cleared(args), isolation: 'perWorkspace', list: LISTED });
+    renderPane();
+    await openPage();
+    const panel = await openSiteData();
+    await within(panel).findByText('3 sites keep data in this workspace.');
+
+    const ask = await askToClear({ panel, name: 'harborline.dev' });
+    fireEvent.click(within(ask).getByRole('button', { name: 'Cancel' }));
+
+    expect(within(panel).queryByRole('group', { name: 'Clear harborline.dev?' })).toBeNull();
+    within(rowOf({ panel, name: 'harborline.dev' })).getByText('This tab');
+    expect(callsOf({ command: 'browser_site_data_clear_records' })).toEqual([]);
+  });
+
+  it('keeps the row and shows the error when the clear fails', async () => {
+    stubHost({
+      clear: ({ args }) => cleared(args),
+      isolation: 'perWorkspace',
+      list: LISTED,
+      clearRecords: () => {
+        throw { kind: 'refused', message: 'profile-busy' };
+      },
+    });
+    renderPane();
+    await openPage();
+    const panel = await openSiteData();
+    await within(panel).findByText('3 sites keep data in this workspace.');
+
+    const ask = await askToClear({ panel, name: 'harborline.dev' });
+    fireEvent.click(within(ask).getByRole('button', { name: 'Clear' }));
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Browser data is already clearing. Try again in a moment.',
+    );
+    await waitFor(() =>
+      expect(within(panel).queryByRole('group', { name: 'Clear harborline.dev?' })).toBeNull(),
+    );
+    within(rowOf({ panel, name: 'harborline.dev' })).getByText('This tab');
+    within(panel).getByText('3 sites keep data in this workspace.');
+    expect(screen.queryByText(/Cleared data/)).toBeNull();
+  });
+
+  it('drops a list that answers after another tab took its place', async () => {
+    let answer: (records: ReadonlyArray<BrowserSiteRecord>) => void = () => undefined;
+    stubHost({
+      clear: ({ args }) => cleared(args),
+      isolation: 'perWorkspace',
+      list: ({ args }) =>
+        args.tabId === 'live-1'
+          ? new Promise<ReadonlyArray<BrowserSiteRecord>>((resolve) => {
+              answer = resolve;
+            })
+          : new Promise<ReadonlyArray<BrowserSiteRecord>>(() => undefined),
+    });
+    renderPane();
+    await openPage();
+    await openSiteData();
+    await waitFor(() => expect(callsOf({ command: 'browser_site_data_list' })).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole('button', { name: 'New tab' }));
+    await openPage({ address: '127.0.0.1:5005/home', shows: 2 });
+    await act(async () => {
+      answer(STORE_RECORDS);
+    });
+    const panel = await openSiteData();
+
+    within(panel).getByText('Reading the sites of this workspace.');
+    expect(panel.querySelector('[data-site-record]')).toBeNull();
+    expect(callsOf({ command: 'browser_site_data_list' })).toContainEqual([
+      'browser_site_data_list',
+      { args: { tabId: 'live-2' } },
+    ]);
+  });
+});
+
+describe('reload without cache', () => {
   it('reloads without cache on a shift click of Reload', async () => {
     renderPane();
     await openPage();
