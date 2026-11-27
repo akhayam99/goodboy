@@ -136,7 +136,8 @@ export const BrowserTabStrip = ({ model, field, page, isNarrow }: Props) => {
 
   const groupNode = ({ group, hasSeparator }: GroupNodeParams): ReactNode => {
     const isFolded = folded.has(group.key);
-    const isOnlyShown = isFolded || (isNarrow && !group.isPins);
+    const isNarrowDraft = isNarrow && model.shown === null;
+    const isOnlyShown = !isNarrowDraft && (isFolded || (isNarrow && !group.isPins));
     const canFold = isPaged && !isNarrow && !group.isPins && group.label !== null;
     const shownTabs = isOnlyShown ? group.tabs.filter((item) => item.isShown) : group.tabs;
     if (isNarrow && !group.isPins && shownTabs.length === 0) {

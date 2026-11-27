@@ -314,6 +314,23 @@ describe('the browser address row at a narrow pane width', () => {
 
     expect(store.getState().browserActiveTab[SESSION_ID]).toBe('row-1');
   });
+
+  it('keeps every tab chip in the narrow row while a new tab has no address', async () => {
+    stubWidths({ rowWidth: 540 });
+    seedTabs();
+    renderBrowserPane();
+    await screen.findByRole('button', { name: /^Edit address, Checkout/ });
+    const row = within(browserRow());
+
+    fireEvent.click(row.getByRole('button', { name: 'New tab' }));
+
+    row.getByRole('combobox', { name: 'Address or search' });
+    TAB_TITLES.forEach((title) => row.getByRole('button', { name: new RegExp(`^${title}`) }));
+    fireEvent.click(row.getByRole('button', { name: /^Tax rates/ }));
+
+    await screen.findByRole('button', { name: /^Edit address, Tax rates/ });
+    expect(row.queryByRole('button', { name: /^Checkout/ })).toBeNull();
+  });
 });
 
 describe('moving the browser pane in the desk', () => {

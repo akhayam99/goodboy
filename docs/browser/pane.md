@@ -41,7 +41,8 @@ address.
 - Under 560px of row (`NARROW_ROW_PX`, `data-row-narrow`), the strip keeps the
   pins, the shown tab (icon and title, no host) and New tab. The other tabs
   lead the page menu as a Tabs list, and the tools dock sits under the page
-  with no side button.
+  with no side button. While a new tab has no page, there is no page menu, so
+  the strip shows every tab, folded groups included.
 - The page sits flush under the row (`BrowserView`, `data-browser-frame`) with
   no card, border, inset or line: a `border-t` there is a divider the divider
   guard refuses.
