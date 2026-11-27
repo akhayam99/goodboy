@@ -241,7 +241,7 @@ describe('modelAxes', () => {
       { id: 'Fable', label: 'Fable', modelKey: 'fable-5.2' },
       { id: 'GPT', label: 'GPT', modelKey: 'gpt-5.6' },
       { id: 'Grok', label: 'Grok', modelKey: 'grok-4.7' },
-      { id: 'Gemini', label: 'Gemini', modelKey: 'gemini-4-argon' },
+      { id: 'Gemini', label: 'Gemini', modelKey: 'gemini-4-neon' },
       { id: 'Muse Spark', label: 'Muse Spark', modelKey: 'muse-spark-1.3' },
       { id: 'Kimi', label: 'Kimi', modelKey: 'kimi-k3' },
       { id: 'GLM', label: 'GLM', modelKey: 'glm-5.2' },
@@ -263,7 +263,7 @@ describe('modelAxes', () => {
       { id: '3.6', label: '3.6', modelKey: 'gemini-3.6-flash' },
       { id: '3.7', label: '3.7', modelKey: 'gemini-3.7-flash' },
       { id: '3.8', label: '3.8', modelKey: 'gemini-3.8-flash' },
-      { id: '4', label: '4', modelKey: 'gemini-4-argon' },
+      { id: '4', label: '4', modelKey: 'gemini-4-neon' },
     ]);
     expect(axes.version?.activeId).toBe('3.6');
     expect(axes.checkpoint).toEqual({

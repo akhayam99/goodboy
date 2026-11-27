@@ -30,12 +30,32 @@ const HAIKU55_PRICE: ModelPrice = {
   inputPerMtok: 0.1,
   outputPerMtok: 0.5,
   cachedInputPerMtok: 0.01,
-  assumed: true,
+  aboveLevel: {
+    aboveInputTokens: 100_000,
+    inputPerMtok: 0.5,
+    outputPerMtok: 2.5,
+    cachedInputPerMtok: 0.05,
+  },
 };
 const GEMINI_ARGON_PRICE: ModelPrice = {
   inputPerMtok: 2,
   outputPerMtok: 10,
   cachedInputPerMtok: 0.1,
+};
+const GEMINI_NEON_PRICE: ModelPrice = {
+  inputPerMtok: 3,
+  outputPerMtok: 15,
+  cachedInputPerMtok: 0.15,
+};
+const GEMINI_CARBON_PRICE: ModelPrice = {
+  inputPerMtok: 4,
+  outputPerMtok: 20,
+  cachedInputPerMtok: 0.2,
+};
+const GEMINI_HYDROGEN_PRICE: ModelPrice = {
+  inputPerMtok: 1.5,
+  outputPerMtok: 7.5,
+  cachedInputPerMtok: 0.075,
 };
 const OPUS_PRICE: ModelPrice = {
   inputPerMtok: 5,
@@ -96,6 +116,14 @@ const GROK_FAST_PRICE: ModelPrice = {
   inputPerMtok: 4,
   outputPerMtok: 12,
   cachedInputPerMtok: 1,
+};
+const GROK_47_PRICE: ModelPrice = {
+  ...GROK_PRICE,
+  aboveLevel: { aboveInputTokens: 256_000, inputPerMtok: 4, outputPerMtok: 6 },
+};
+const GROK_47_FAST_PRICE: ModelPrice = {
+  ...GROK_FAST_PRICE,
+  aboveLevel: { aboveInputTokens: 256_000, inputPerMtok: 8, outputPerMtok: 12 },
 };
 const GEMINI_FLASH_PRICE: ModelPrice = {
   inputPerMtok: 0.75,
@@ -204,8 +232,8 @@ export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'gpt-5.5-medium': GPT55_PRICE,
   'gpt-5.3-codex': GPT53_CODEX_PRICE,
 
-  'grok-4.7-medium': GROK_PRICE,
-  'grok-4.7-medium-fast': GROK_FAST_PRICE,
+  'grok-4.7-medium': GROK_47_PRICE,
+  'grok-4.7-medium-fast': GROK_47_FAST_PRICE,
   'cursor-grok-4.6-medium': GROK_PRICE,
   'cursor-grok-4.6-medium-fast': GROK_FAST_PRICE,
 
@@ -213,6 +241,17 @@ export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'gemini-4-argon-low': GEMINI_ARGON_PRICE,
   'gemini-4-argon-medium': GEMINI_ARGON_PRICE,
   'gemini-4-argon-high': GEMINI_ARGON_PRICE,
+  'gemini-4-neon-low': GEMINI_NEON_PRICE,
+  'gemini-4-neon-medium': GEMINI_NEON_PRICE,
+  'gemini-4-neon-high': GEMINI_NEON_PRICE,
+  'gemini-4-neon-xhigh': GEMINI_NEON_PRICE,
+  'gemini-4-carbon-low': GEMINI_CARBON_PRICE,
+  'gemini-4-carbon-medium': GEMINI_CARBON_PRICE,
+  'gemini-4-carbon-high': GEMINI_CARBON_PRICE,
+  'gemini-4-hydrogen-low': GEMINI_HYDROGEN_PRICE,
+  'gemini-4-hydrogen-medium': GEMINI_HYDROGEN_PRICE,
+  'gemini-4-hydrogen-high': GEMINI_HYDROGEN_PRICE,
+  'gemini-4-hydrogen-xhigh': GEMINI_HYDROGEN_PRICE,
   'gemini-3.8-flash-low': GEMINI_FLASH_PRICE,
   'gemini-3.8-flash-medium': GEMINI_FLASH_PRICE,
   'gemini-3.8-flash-high': GEMINI_FLASH_PRICE,

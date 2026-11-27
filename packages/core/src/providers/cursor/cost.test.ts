@@ -79,9 +79,38 @@ describe('computeCursorCostUsd', () => {
     expect(computeCursorCostUsd({ usage, model: 'claude-haiku-5-5-thinking-high' })).toBeCloseTo(
       0.1 + 0.5,
     );
-    expect(CURSOR_PRICES['claude-haiku-5-5-low']?.assumed).toBe(true);
+    expect(CURSOR_PRICES['claude-haiku-5-5-low']).toMatchObject({
+      aboveLevel: {
+        aboveInputTokens: 100_000,
+        inputPerMtok: 0.5,
+        outputPerMtok: 2.5,
+        cachedInputPerMtok: 0.05,
+      },
+    });
     expect(computeCursorCostUsd({ usage, model: 'gemini-4-argon-medium' })).toBeCloseTo(2 + 10);
     expect(CURSOR_PRICES['claude-sonnet-5-5-medium']?.cachedInputPerMtok).toBe(0.1);
+  });
+
+  it.each([
+    { model: 'gemini-4-neon-xhigh', cost: 3 + 15 },
+    { model: 'gemini-4-carbon-medium', cost: 4 + 20 },
+    { model: 'gemini-4-hydrogen-low', cost: 1.5 + 7.5 },
+  ])('bills $model at the rate Cursor lists', ({ model, cost }) => {
+    expect(computeCursorCostUsd({ usage, model })).toBeCloseTo(cost);
+  });
+
+  it('doubles the Grok 4.7 input rate above 256k and leaves Grok 4.6 flat', () => {
+    expect(CURSOR_PRICES['grok-4.7-medium']?.aboveLevel).toEqual({
+      aboveInputTokens: 256_000,
+      inputPerMtok: 4,
+      outputPerMtok: 6,
+    });
+    expect(CURSOR_PRICES['grok-4.7-medium-fast']?.aboveLevel).toEqual({
+      aboveInputTokens: 256_000,
+      inputPerMtok: 8,
+      outputPerMtok: 12,
+    });
+    expect(CURSOR_PRICES['cursor-grok-4.6-medium']?.aboveLevel).toBeUndefined();
   });
 
   it('prices every slug the catalog can emit', () => {

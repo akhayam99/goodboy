@@ -144,8 +144,10 @@ shares the Sol weight and comes first in the array: it is the `mid` tier pick.
 - An unpublished rate is copied from the model it follows with `assumed: true`, so
   `costCoverage` reports its spend as approximate (Cursor `auto`, billed at the
   rate of the model it routes to)
-- Cursor bills by its own list (`cursor.com/docs/models`), not the vendor's. Every
-  Haiku 5.5 combo on Cursor needs Max Mode, which Cursor keeps only on legacy plans
+- Cursor bills by its own list (`cursor.com/docs/models-and-pricing`), not the
+  vendor's. Every Haiku 5.5 combo on Cursor needs Max Mode, which Cursor keeps
+  only on legacy plans
+- Gemini 4 Carbon carries on Cursor the same post launch rate as on Gemini
 
 ### Gemini price dates
 
@@ -161,7 +163,8 @@ Gemini 4 Carbon carries 4/20 (cached 0.20), the rate Google lists from December
 
 A row with a higher rate above a prompt size has an `aboveLevel` (`ModelPrice` in
 `provider-registry.ts`): Haiku 5.5 above 100,000 prompt tokens, Codex above 272k,
-Gemini 3.1 Pro above 200k. The size is per request and counts cached tokens.
+Gemini 3.1 Pro above 200k, Cursor's Grok 4.7 above 256k. The size is per request
+and counts cached tokens.
 
 - `priceLevels.ts` bills each request in `ProviderUsage.largeRequests` at its own
   level and the rest of the turn at the lower one
