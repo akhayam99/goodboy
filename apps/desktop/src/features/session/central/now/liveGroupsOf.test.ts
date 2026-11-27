@@ -159,6 +159,52 @@ describe('liveGroupsOf', () => {
     expect(groups[0]?.children).toHaveLength(1);
   });
 
+  it('keeps one child per agent when the Lead delegates to the same agent again', () => {
+    const root = anAgent({
+      id: FIXTURE_ROOT,
+      sessionId: NOW_SESSION,
+      kind: 'auto',
+      name: 'Check the payout docs',
+      status: 'running',
+      startedAt: NOW_STARTED_AT,
+    });
+    const fixerId = brandId<AgentId>({ value: 'agent-fixer' });
+    const fixer = anAgent({
+      id: fixerId,
+      sessionId: NOW_SESSION,
+      parentAgentId: FIXTURE_ROOT,
+      name: 'Fixer',
+      status: 'running',
+    });
+    const attempt = ({ key, state }: { key: string; state: 'settled' | 'running' }) => ({
+      ...aDelegation({
+        key,
+        role: 'implementer',
+        state,
+        outcome: state === 'settled' ? ('blocked' as const) : null,
+      }),
+      childAgentId: fixerId,
+    });
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        { ...attempt({ key: 'first', state: 'settled' }), slot: 0 },
+        { ...attempt({ key: 'retry-1', state: 'settled' }), slot: 1 },
+        { ...attempt({ key: 'retry-2', state: 'running' }), slot: 2 },
+      ],
+    });
+    const agents = [root, fixer];
+    const groups = liveGroupsOf({
+      model: nowModelOf({ agents, autoTrees: [view] }),
+      agents,
+      now: FIXTURE_NOW,
+    });
+
+    expect(groups[0]?.children).toHaveLength(1);
+    const [child] = groups[0]?.kind === 'auto' ? groups[0].children : [];
+    expect(child?.delegationId).toBe('delegation-retry-2');
+  });
+
   it('leaves finished launches out', () => {
     const attached = aNowRun({
       key: 'done',
