@@ -29,6 +29,7 @@ use tauri::{AppHandle, Emitter, State};
 use thiserror::Error;
 use tokio::sync::{watch, Mutex};
 
+pub(crate) use advertise::Advertiser;
 use advertise::{fresh_instance_id, system_advertiser, Presence};
 use commands::{CmdResult, PendingMap};
 use handshake::RefusalCode;
@@ -43,7 +44,7 @@ use tokens::TokenStore;
 use vault::KeychainVault;
 
 const PROTOCOL_NAME: &str = "Noise_XK_25519_ChaChaPoly_SHA256";
-const SERVICE_NAME: &str = "_goodboy._tcp";
+pub(crate) const SERVICE_NAME: &str = "_goodboy._tcp";
 
 pub(crate) fn noise_params() -> NoiseParams {
     PROTOCOL_NAME

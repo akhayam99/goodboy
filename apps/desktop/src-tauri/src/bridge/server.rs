@@ -228,7 +228,20 @@ pub(super) fn hello_payload(
         "serverTime": crate::util::iso_now_whole_seconds(),
         "permissions": permissions,
         "endpoints": endpoints_of(offered, port),
+        "contractVersion": contract_version(),
     })
+}
+
+const CONTRACT_VERSION_SOURCE: &str =
+    include_str!("../../../src/features/companion/contract/contractVersion.ts");
+
+pub(super) fn contract_version() -> u32 {
+    CONTRACT_VERSION_SOURCE
+        .split('=')
+        .nth(1)
+        .map(|rest| rest.trim().trim_end_matches(';').trim())
+        .and_then(|digits| digits.parse().ok())
+        .unwrap_or(0)
 }
 
 async fn send_removed(stream: &mut TcpStream, transport: &mut snow::TransportState) {
@@ -523,6 +536,8 @@ mod tests {
 
         assert_eq!(hello["protocol"], PROTOCOL_VERSION);
         assert_eq!(hello["deviceName"], "Mac");
+        assert_eq!(hello["contractVersion"], contract_version());
+        assert!(contract_version() >= 9);
         assert_eq!(
             hello["endpoints"],
             json!([

@@ -109,7 +109,9 @@ phone at once. A command the phone may not run is answered with
 hello the desktop sends after the handshake carries the phone's rights and
 `endpoints`, the current private `{host, port}` pairs of the networks you
 switched on (at most 8, no duplicates), so a phone finds the Mac again after its
-address changes.
+address changes. It also carries `contractVersion`, the number in
+`contractVersion.ts` (a test reads the same file), so a phone can tell an older
+Mac from a current one before it asks for a field.
 
 ## What a phone may ask
 

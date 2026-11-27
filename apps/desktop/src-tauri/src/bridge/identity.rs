@@ -169,10 +169,7 @@ fn fresh_keypair() -> Result<(String, String), BridgeError> {
 }
 
 fn set_aside(path: &Path) {
-    let stamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0);
+    let stamp = crate::util::now_secs();
     let name = path
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
