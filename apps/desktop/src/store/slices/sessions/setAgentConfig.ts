@@ -2,6 +2,7 @@ import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { updateAgentConfig as updateAgentConfigInDb } from '@goodboy/db';
 import type { AgentConfigUpdate } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { sessionReads } from '../../runtime/state-writes/sessionReads';
 import type { GetFn, SetFn } from './types';
 
 export const setAgentConfig = (set: SetFn, get: GetFn) => {
@@ -68,9 +69,12 @@ export const setAgentConfig = (set: SetFn, get: GetFn) => {
         agentEffortOverride: nextEffortOverride,
       };
     });
+    sessionReads.picks({ sessionId });
     try {
       await updateAgentConfigInDb(tauriDatabase, agentId, fields);
+      sessionReads.picks({ sessionId });
     } catch (err) {
+      sessionReads.picks({ sessionId });
       set((state) => ({
         sessionPhaseRuns: {
           ...state.sessionPhaseRuns,

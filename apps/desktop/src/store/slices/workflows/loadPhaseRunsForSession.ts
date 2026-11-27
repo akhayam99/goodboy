@@ -1,6 +1,7 @@
 import { PROVIDER_CAPABILITIES } from '@goodboy/core/providers';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { invokeAgentList } from '../../../features/workflows/workflows';
+import { sessionReads } from '../../runtime/state-writes/sessionReads';
 import type { SetFn } from './types';
 
 const PROVIDER_IDS: ReadonlyArray<ProviderId> = Object.keys(PROVIDER_CAPABILITIES).filter(
@@ -9,7 +10,11 @@ const PROVIDER_IDS: ReadonlyArray<ProviderId> = Object.keys(PROVIDER_CAPABILITIE
 
 export const loadPhaseRunsForSession = (set: SetFn) => {
   return async (sessionId: SessionId) => {
+    const claim = sessionReads.picks({ sessionId });
     const runs = await invokeAgentList(sessionId);
+    if (!claim.isCurrent()) {
+      return;
+    }
     set((state) => {
       const modelOverrides = { ...state.agentModelOverride };
       const providerOverrides = { ...state.agentProviderOverride };

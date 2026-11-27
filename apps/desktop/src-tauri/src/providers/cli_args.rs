@@ -471,6 +471,7 @@ const WRITER_ROLES: &[&str] = &[
     "rewriter",
 ];
 const READ_ONLY_CLAUDE_TOOLS: &str = "Read,Grep,Glob";
+const LEAD_CLAUDE_TOOLS: &str = "Read";
 const NATIVE_SUBAGENT_TOOLS: &[&str] = &["Task", "Agent"];
 const READ_ONLY_DENIED_TOOLS: &[&str] = &["Bash", "Edit", "Write", "MultiEdit", "NotebookEdit"];
 const PLANNER_READING_DENIED_TOOLS: &[&str] = &[
@@ -520,6 +521,13 @@ fn claude_allowed_tools(args: &SpawnOneArgs<'_>, access: Option<RoleAccess>) -> 
             .collect();
     }
     args.allowed_tools.to_vec()
+}
+
+fn read_only_claude_tools(confined_role: Option<&str>) -> &'static str {
+    if confined_role == Some("auto") {
+        return LEAD_CLAUDE_TOOLS;
+    }
+    READ_ONLY_CLAUDE_TOOLS
 }
 
 fn confinement_of(args: &SpawnOneArgs<'_>) -> Option<RoleAccess> {
@@ -783,7 +791,7 @@ fn build_turn_args(binary: &str, args: &SpawnOneArgs<'_>, is_stdin_allowed: bool
             v.extend(effort_args(cli, args.effort));
             if access == Some(RoleAccess::ReadOnly) {
                 v.push("--tools".to_string());
-                v.push(READ_ONLY_CLAUDE_TOOLS.to_string());
+                v.push(read_only_claude_tools(args.confined_role).to_string());
             }
             let allowed_tools = claude_allowed_tools(args, access);
             if !allowed_tools.is_empty() {
@@ -1164,10 +1172,7 @@ mod tests {
             value_after(&argv, "--allowedTools").as_deref(),
             Some("Read(//notify-relay/README.md)")
         );
-        assert_eq!(
-            value_after(&argv, "--tools").as_deref(),
-            Some("Read,Grep,Glob")
-        );
+        assert_eq!(value_after(&argv, "--tools").as_deref(), Some("Read"));
         let denied = value_after(&argv, "--disallowedTools").expect("deny list");
         for tool in ["Read(.env)", "Bash", "Edit", "Write"] {
             assert!(denied.split(',').any(|entry| entry == tool));
@@ -1707,7 +1712,7 @@ mod tests {
     }
 
     #[test]
-    fn auto_on_claude_runs_default_but_bypass_only_in_full_access_and_keeps_only_read_tools() {
+    fn auto_on_claude_runs_default_but_bypass_only_in_full_access_and_keeps_only_the_read_tool() {
         let allowed = strings(&["Bash(rm:*)"]);
         let disallowed = strings(&["Read(.env)"]);
         for mode in [
@@ -1722,10 +1727,7 @@ mod tests {
                 turn_args("claude", &args),
                 turn_args_with_prompt("claude", &args),
             ] {
-                assert_eq!(
-                    value_after(&argv, "--tools").as_deref(),
-                    Some("Read,Grep,Glob")
-                );
+                assert_eq!(value_after(&argv, "--tools").as_deref(), Some("Read"));
                 let expected = match mode {
                     "bypassPermissions" => "bypassPermissions",
                     _ => "default",
