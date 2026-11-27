@@ -1,3 +1,4 @@
+import type { PermissionRuleId } from '@goodboy/types';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 
 export type QrInfo = {
@@ -71,8 +72,8 @@ export const NO_PRIVATE_NETWORK_KIND = 'no_private_network';
 
 export const bridgeStart = (): Promise<QrInfo> => invokeCommand<QrInfo>('bridge_start');
 
-export const bridgeRevoke = (): Promise<ReadonlyArray<string>> =>
-  invokeCommand<ReadonlyArray<string>>('bridge_revoke');
+export const bridgeRevoke = (): Promise<ReadonlyArray<PermissionRuleId>> =>
+  invokeCommand<ReadonlyArray<PermissionRuleId>>('bridge_revoke');
 
 export const bridgeStop = (): Promise<void> => invokeCommand<void>('bridge_stop');
 
@@ -94,8 +95,10 @@ export const bridgeSetPermissions = ({
 }: SetPermissionsParams): Promise<void> =>
   invokeCommand<void>('bridge_set_permissions', { phoneId, permissions });
 
-export const bridgeRevokePhone = ({ phoneId }: RevokePhoneParams): Promise<ReadonlyArray<string>> =>
-  invokeCommand<ReadonlyArray<string>>('bridge_revoke_phone', { phoneId });
+export const bridgeRevokePhone = ({
+  phoneId,
+}: RevokePhoneParams): Promise<ReadonlyArray<PermissionRuleId>> =>
+  invokeCommand<ReadonlyArray<PermissionRuleId>>('bridge_revoke_phone', { phoneId });
 
 type NotePhoneRuleParams = {
   readonly phoneId: string;
