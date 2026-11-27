@@ -355,4 +355,12 @@ describe('the start a run form in the comment drawer', () => {
     expect(scope.textContent).not.toMatch(/across/);
     expect(scope.textContent).toMatch(/Starts as Lead/);
   });
+
+  it('keeps the Scope section when the plan changes to One agent', async () => {
+    await mount();
+    await openForm({ threadId: EXPANDED_THREAD_ID });
+    fireEvent.click(within(shownForm()).getByRole('tab', { name: 'One agent' }));
+    const scope = await within(shownForm()).findByRole('group', { name: 'Scope' });
+    expect(scope.textContent).toContain('One agent, on the project the comments belong to');
+  });
 });

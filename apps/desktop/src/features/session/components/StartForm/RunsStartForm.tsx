@@ -102,6 +102,13 @@ export const RunsStartForm = ({
     }
     run.setRunAs(runAsOfStartFormKind({ kind: next, presets }));
   };
+  const scopeLine =
+    shownHint ??
+    (kind === 'agent'
+      ? RUN_ROUTE_COPY.scope.agent
+      : workflow === null
+        ? null
+        : RUN_ROUTE_COPY.fromPreset({ name: workflow.name }));
   const note =
     fixedNote !== undefined
       ? fixedNote
@@ -194,7 +201,7 @@ export const RunsStartForm = ({
       runsOn={
         <StartWhereItRuns workspaceId={workspaceId} model={run.model} isDisabled={isStarting} />
       }
-      hint={shownHint}
+      hint={isSectioned ? scopeLine : shownHint}
       isRouteHint={isRouting && hasText}
       isSectioned={isSectioned}
       settings={settings}

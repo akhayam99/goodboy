@@ -133,10 +133,9 @@ describe('u47 comment run scenes', () => {
       const labels = [...form.querySelectorAll('[data-form-section]')].map((node) =>
         node.getAttribute('data-form-section'),
       );
-      expect(labels).toEqual(
-        plan === 'lead'
-          ? ['What', 'Plan', 'Rules', 'Model', 'Scope']
-          : ['What', 'Plan', 'Rules', 'Model'],
+      expect(labels).toEqual(['What', 'Plan', 'Rules', 'Model', 'Scope']);
+      expect(within(form).getByRole('group', { name: 'Scope' }).textContent).toContain(
+        plan === 'lead' ? 'Starts as Lead' : 'One agent, on the project',
       );
       cleanup();
     }
