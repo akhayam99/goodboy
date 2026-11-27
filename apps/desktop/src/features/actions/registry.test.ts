@@ -46,6 +46,7 @@ import { REVIEW_COMMENT_KIND } from './kinds/reviewComment';
 import { WRITE_REVIEW_KIND } from './kinds/writeReview';
 import { SUGGESTION_KIND } from './kinds/suggestion';
 import { ACTION_CARD_KIND } from './kinds/actionCard';
+import { REMINDER_KIND } from './kinds/reminder';
 import { resolveActions } from './resolveActions';
 import { ACTION_GROUPS, type ActionDefinition } from './types';
 
@@ -98,6 +99,7 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['writeReview', WRITE_REVIEW_KIND.actions],
   ['suggestion', SUGGESTION_KIND.actions],
   ['actionCard', ACTION_CARD_KIND.actions],
+  ['reminder', REMINDER_KIND.actions],
 ];
 
 describe('action registry', () => {

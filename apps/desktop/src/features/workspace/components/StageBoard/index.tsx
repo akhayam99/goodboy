@@ -37,6 +37,8 @@ import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { useClearSessionFilters } from './useClearSessionFilters';
 import { NeedsYouCards } from './NeedsYouCards';
 import { useNeedsYou } from './NeedsYouCards/useNeedsYou';
+import { ReminderNeedsYouCards } from '../../../calendar/reminders/ReminderNeedsYouCards';
+import { useDueReminders } from '../../../calendar/reminders/hooks/useDueReminders';
 import { useBoardByStage } from './useBoardByStage';
 
 type Props = {
@@ -74,6 +76,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
 
   const { byStage, infos } = useBoardByStage({ workspaceId, groups, sessions });
   const { cards: needsYouCards } = useNeedsYou({ sessions, infos });
+  const dueReminders = useDueReminders({ workspaceId });
   const stripIds = useMemo(
     () => new Set<string>(needsYouCards.map((card) => card.sessionId)),
     [needsYouCards],
@@ -198,13 +201,16 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 byStage={byStage}
                 archived={projectArchived}
                 needsYou={
-                  <NeedsYouCards
-                    workspaceId={workspaceId}
-                    sessions={sessions}
-                    cards={needsYouCards}
-                  />
+                  <>
+                    <NeedsYouCards
+                      workspaceId={workspaceId}
+                      sessions={sessions}
+                      cards={needsYouCards}
+                    />
+                    <ReminderNeedsYouCards workspaceId={workspaceId} reminders={dueReminders} />
+                  </>
                 }
-                needsYouCount={needsYouCards.length}
+                needsYouCount={needsYouCards.length + dueReminders.length}
                 isArchivedLoading={archivedList === undefined}
                 nav={nav}
                 selection={selection}

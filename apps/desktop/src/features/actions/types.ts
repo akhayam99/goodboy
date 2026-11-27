@@ -7,9 +7,11 @@ import type {
   OpenQuestionId,
   ProjectId,
   PullRequestHost,
+  ReminderId,
   SessionExternalTaskProvider,
   SessionId,
   WorkflowRunId,
+  WorkspaceId,
   WorktreeStatus,
 } from '@goodboy/types';
 import type { ArtifactGeneration } from '../artifacts/artifactCollection';
@@ -563,6 +565,12 @@ export type SuggestionActionTarget = {
   readonly foldedVerbs?: ReadonlyArray<FoldedVerb>;
 };
 
+export type ReminderActionTarget = {
+  readonly kind: 'reminder';
+  readonly workspaceId: WorkspaceId;
+  readonly reminderId: ReminderId;
+};
+
 export type ActionCardActionTarget = {
   readonly kind: 'actionCard';
   readonly sessionId: SessionId;
@@ -618,7 +626,8 @@ export type ObjectTarget =
   | WriteReviewActionTarget
   | TaskActionTarget
   | SuggestionActionTarget
-  | ActionCardActionTarget;
+  | ActionCardActionTarget
+  | ReminderActionTarget;
 
 export type ObjectMenuTrigger = {
   readonly onContextMenu: (event: MouseEvent<HTMLElement>) => void;

@@ -49,6 +49,7 @@ import { WRITE_REVIEW_KIND } from './kinds/writeReview';
 import { TASK_KIND } from './kinds/task';
 import { SUGGESTION_KIND } from './kinds/suggestion';
 import { ACTION_CARD_KIND } from './kinds/actionCard';
+import { REMINDER_KIND } from './kinds/reminder';
 import type {
   ActionDefinition,
   ActionEnv,
@@ -224,6 +225,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: SUGGESTION_KIND, state, target });
     case 'actionCard':
       return bind({ definition: ACTION_CARD_KIND, state, target });
+    case 'reminder':
+      return bind({ definition: REMINDER_KIND, state, target });
     default: {
       const exhaustive: never = target;
       return exhaustive;
