@@ -129,7 +129,12 @@ describe('a scout with facts', () => {
     const made = await world();
     await autoDelegates({ world: made, spec: { children: [SCOUT] } });
     await autoTurnEnds({ world: made });
-    await childTurnEnds({ world: made, index: 0, text: 'I could not finish this.' });
+    await childTurnEnds({
+      world: made,
+      index: 0,
+      text: 'I could not finish this.',
+      overrides: { exit: 'error' },
+    });
     const [original] = await delegationsOf(made);
     made.state.ports.setBranchFacts(LEDGER_MOUNT.id, {
       ...CLEAN_FACTS,

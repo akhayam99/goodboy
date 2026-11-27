@@ -69,7 +69,7 @@ describe('describeSessionStage', () => {
 
   it('falls back to the stage reason when the caller has none', () => {
     expect(describeSessionStage(info({ stage: 'building' })).reason).toBe(
-      'Work in progress, nothing to review yet',
+      'No agent working, nothing to review yet',
     );
   });
 

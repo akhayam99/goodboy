@@ -47,7 +47,7 @@ const shelveOneSession = ({ sessionId }: Ctx): void => {
 
 export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'Board: Archived folds to its count, Show all opens it and Restore sends its first card to its stage',
+    name: 'Board: Archive folds to its count, Show all opens it and Restore sends its first card to its stage',
     covers: ['navigate', 'board-lanes:archived-restore'],
     open: async (ctx) => {
       shelveOneSession(ctx);
@@ -56,7 +56,7 @@ export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await heading('Board');
-      const archived = await lane('archived');
+      const archived = await lane('archive');
       expect(within(archived).queryByRole('button', { name: ARCHIVED_GOAL })).toBeNull();
       await click(within(archived).getByRole('button', { name: 'Show all' }));
       within(archived).getByRole('button', { name: ARCHIVED_GOAL });
@@ -64,11 +64,11 @@ export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
 
       await click(within(archived).getByRole('button', { name: /^Restore/ }));
 
-      const building = await lane('building');
+      const building = await lane('open');
       expect(
         await within(building).findByRole('button', { name: ARCHIVED_GOAL }, WAIT),
       ).toBeDefined();
-      expect(within(await lane('archived')).getByText('Nothing archived')).toBeDefined();
+      expect(within(await lane('archive')).getByText('Nothing archived')).toBeDefined();
     },
   },
   {
@@ -82,7 +82,7 @@ export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await heading('Board');
-      expect(await lane('archived')).toBeDefined();
+      expect(await lane('archive')).toBeDefined();
       expect(await lane('done')).toBeDefined();
       expect(screen.queryByRole('heading', { name: 'New session' })).toBeNull();
       expect(useAppStore.getState().openSessionDraftWorkspaceId).toBeNull();

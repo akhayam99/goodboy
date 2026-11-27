@@ -141,6 +141,10 @@ default browser, and the tab's workspace profile stays signed out.
 - The host reports a load's start and finish, never a failure. A failed or
   cancelled load sends no `finished`, so its line ends at the 30 second limit
   or on Stop.
+- The start comes when a main-frame page commits, so it already carries the
+  address after any redirect. A host that only redirects and never commits a
+  page is never reported, so it never reaches the tab's sign-in trail
+  ([lifecycle.md](lifecycle.md#the-sign-in-trail)). An iframe reports nothing.
 
 ## Under the hood
 
@@ -148,7 +152,8 @@ default browser, and the tab's workspace profile stays signed out.
   refusal and the tab script; `commands.rs` holds the commands; `registry.rs`
   the tabs, the popup seats (`MAX_HIDDEN_POPUPS`) and the pure close picks.
   `load.rs` sends `browser://tab-load` (`started`, `finished`, tab id,
-  address) to the owning window only and clears the passkey mark on a start.
+  address) to the owning window only, clears the passkey mark on a start and
+  records the page's host on the tab at both (`remember_load`).
 - `src-tauri/src/platform/web_history.rs` holds the native back, forward,
   history state and stop.
 - The passkey watch: `browser/passkey.rs` (handler-to-tab map),

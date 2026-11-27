@@ -338,8 +338,12 @@ export const markNotificationRead = async ({ db, id }: SingleNotificationParams)
 export const markNotificationUnread = async ({
   db,
   id,
-}: SingleNotificationParams): Promise<void> => {
-  await db.execute('UPDATE notifications SET read = 0 WHERE id = ?', [id]);
+}: SingleNotificationParams): Promise<number> => {
+  const { rowsAffected } = await db.execute(
+    'UPDATE notifications SET read = 0, acted_at = NULL WHERE id = ?',
+    [id],
+  );
+  return rowsAffected;
 };
 
 type ActedParams = {
@@ -384,22 +388,147 @@ export const deleteNotificationsByCoalesceKey = async ({
   await db.execute(`DELETE FROM notifications WHERE coalesce_key IN (${marks})`, [...coalesceKeys]);
 };
 
-export const clearResolvedHelperNotifications = async ({
+type OlderOfKeyParams = {
+  readonly db: Database;
+  readonly keepId: string;
+  readonly coalesceKey: string;
+};
+
+export const deleteOlderNotificationsOfKey = async ({
   db,
-}: Pick<ScopeParams, 'db'>): Promise<void> => {
-  await db.execute(
-    `DELETE FROM notifications WHERE
-       (title = 'Summarizer failed' AND session_id IS NOT NULL AND EXISTS (
+  keepId,
+  coalesceKey,
+}: OlderOfKeyParams): Promise<void> => {
+  await db.execute('DELETE FROM notifications WHERE coalesce_key = ? AND id <> ?', [
+    coalesceKey,
+    keepId,
+  ]);
+};
+
+type SettleStaleParams = {
+  readonly db: Database;
+  readonly nowMs: number;
+  readonly launchStampMs: number | null;
+  readonly firstPassBeforeMs: number;
+};
+
+type Clause = {
+  readonly sql: string;
+  readonly params: ReadonlyArray<unknown>;
+};
+
+const SUMMARIZER_FAILED: Clause = {
+  sql: `(title = 'Summarizer failed' AND session_id IS NOT NULL AND EXISTS (
          SELECT 1 FROM telemetry_records t
          WHERE t.session_id = notifications.session_id AND t.kind = 'summarizer'
-           AND t.recorded_at > notifications.ts))
-       OR (kind = 'summarizer-degraded' AND coalesce_key LIKE 'step-summary-degraded:%' AND EXISTS (
+           AND t.recorded_at > notifications.ts))`,
+  params: [],
+};
+
+const STEP_SUMMARY_DEGRADED: Clause = {
+  sql: `(kind = 'summarizer-degraded' AND coalesce_key LIKE 'step-summary-degraded:%' AND EXISTS (
          SELECT 1 FROM live_agents a
          WHERE a.id = json_extract(notifications.action, '$.agentId')
-           AND (a.output_summary IS NULL OR a.output_summary NOT LIKE '[unsummarized step output%')))
-       OR (title IN ('Couldn''t read the orchestrator''s reply', 'The orchestrator failed', 'Orchestrated run blocked')
+           AND (a.output_summary IS NULL OR a.output_summary NOT LIKE '[unsummarized step output%')))`,
+  params: [],
+};
+
+const ORCHESTRATOR_NOTICE: Clause = {
+  sql: `(title IN ('Couldn''t read the orchestrator''s reply', 'The orchestrator failed', 'Orchestrated run blocked')
          AND session_id IS NOT NULL AND EXISTS (
            SELECT 1 FROM live_agents a
            WHERE a.session_id = notifications.session_id AND a.started_at > notifications.ts))`,
+  params: [],
+};
+
+const CONTINUE_AGENT_DONE: Clause = {
+  sql: `(json_extract(action, '$.kind') = 'continue-agent' AND EXISTS (
+         SELECT 1 FROM live_agents a
+         WHERE a.id = json_extract(notifications.action, '$.agentId')
+           AND a.status = 'completed' AND a.last_finished_at > notifications.ts))`,
+  params: [],
+};
+
+type DeadRetryParams = {
+  readonly launchStampMs: number | null;
+};
+
+const deadRetryClause = ({ launchStampMs }: DeadRetryParams): Clause =>
+  launchStampMs === null
+    ? { sql: '0', params: [] }
+    : {
+        sql: `(json_extract(action, '$.kind') = 'retry-action' AND ts < ?)`,
+        params: [launchStampMs],
+      };
+
+const ENDED_SESSION: Clause = {
+  sql: `(session_id IS NOT NULL AND EXISTS (
+         SELECT 1 FROM sessions s
+         WHERE s.id = notifications.session_id AND (s.archived_at IS NOT NULL OR s.deleted_at IS NOT NULL)))`,
+  params: [],
+};
+
+const NEWER_DUPLICATE: Clause = {
+  sql: `(read = 0 AND coalesce_key IS NOT NULL AND EXISTS (
+         SELECT 1 FROM notifications newer
+         WHERE newer.coalesce_key = notifications.coalesce_key AND newer.read = 0
+           AND (newer.ts > notifications.ts OR (newer.ts = notifications.ts AND newer.id > notifications.id))))`,
+  params: [],
+};
+
+type FirstPassParams = {
+  readonly firstPassBeforeMs: number;
+  readonly launchStampMs: number | null;
+};
+
+const firstPassClause = ({ firstPassBeforeMs, launchStampMs }: FirstPassParams): Clause =>
+  launchStampMs === null
+    ? { sql: '0', params: [] }
+    : {
+        sql: `(severity IN ('error', 'warning') AND ts < ?)`,
+        params: [Math.min(firstPassBeforeMs, launchStampMs)],
+      };
+
+type AnyOfParams = {
+  readonly clauses: ReadonlyArray<Clause>;
+};
+
+const anyOf = ({ clauses }: AnyOfParams): Clause => ({
+  sql: `(${clauses.map((clause) => clause.sql).join(' OR ')})`,
+  params: clauses.flatMap((clause) => clause.params),
+});
+
+const DEBT_ACTION: Clause = {
+  sql: `(json_extract(action, '$.kind') IN ('retry-summarizer', 'retry-orchestrator', 'retry-step-summary', 'retry-publication', 'retry-update', 'retry-notification-scope', 'retry-push', 'retry-action', 'continue-agent', 'update-provider-cli'))`,
+  params: [],
+};
+
+export const settleStaleNotifications = async ({
+  db,
+  nowMs,
+  launchStampMs,
+  firstPassBeforeMs,
+}: SettleStaleParams): Promise<number> => {
+  const proven = anyOf({
+    clauses: [
+      SUMMARIZER_FAILED,
+      STEP_SUMMARY_DEGRADED,
+      ORCHESTRATOR_NOTICE,
+      CONTINUE_AGENT_DONE,
+      deadRetryClause({ launchStampMs }),
+      ENDED_SESSION,
+      NEWER_DUPLICATE,
+    ],
+  });
+  const settled = anyOf({
+    clauses: [proven, firstPassClause({ firstPassBeforeMs, launchStampMs })],
+  });
+  const { rowsAffected } = await db.execute(
+    `UPDATE notifications SET
+       read = 1,
+       acted_at = CASE WHEN acted_at IS NULL AND ${DEBT_ACTION.sql} AND ${proven.sql} THEN ? ELSE acted_at END
+     WHERE (read = 0 AND ${settled.sql}) OR (acted_at IS NULL AND ${DEBT_ACTION.sql} AND ${proven.sql})`,
+    [...proven.params, nowMs, ...settled.params, ...proven.params],
   );
+  return rowsAffected;
 };

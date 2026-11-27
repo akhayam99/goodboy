@@ -4,7 +4,7 @@ import { roleNeedsSection } from '../roleNeeds';
 import { AUTO_GATES, AUTO_MAX_RUNNING_CHILDREN, AUTO_TREE_LIMITS } from './limits';
 import { guideSectionOf, type GuideRecord } from './guideSpec';
 import { DEFAULT_AUTO_LEVEL, type AutoLevel } from './level';
-import { canAutoRoleRunCommands } from './roleTools';
+import { autoShellRule, canAutoRoleRunCommands } from './roleTools';
 import { READING_ORDER_RULE } from './readingOrderRule';
 import {
   AUTO_DELEGATION_ROLES,
@@ -127,7 +127,7 @@ const delegationRules = ({ closer }: DelegationRulesParams): string =>
     '- The user sees each result in this chat as the card of the agent that made it: its name, its state and its own report, right above your reply. Never repeat or paste what an agent said. Name the agent as the results name it, by its title, and write only what you add: what the results mean together, where they disagree, what you decide next and what you need from the user.',
     '- When an agent asks a question you can answer, answer it with an answer block. When you cannot, leave the choice to the user as a next step proposal.',
     DONE_RULE[closer],
-    '- A task that runs a command (git log, git ls-remote, a test, a build) goes only to a role that has a shell. Never give it to a read only role. When a result says the agent had no shell, hand the same task once to a role that has one instead of telling the user it is blocked.',
+    autoShellRule(),
     '- Facts about a branch (commits since its base, its pull request, open review threads, checks) are not a command. Add `"facts":["<mount id>"]` to a scout, up to four mounts: Goodboy reads them on every host and puts them in the scout brief. Never give that work to a writer.',
     '- An agent never pushes. When the user wants a branch pushed, add `"publish":"push"` to the implementer or CI fixer that makes the change, or `"publish":{"mode":"force"}` for a history rewrite, with `"changesContent":true` only when the files are meant to change and `"reviewer":"<report id>"` to attach a reviewer report. Goodboy pushes the checked commit after the agent finishes and its checks are not red. A force push waits for the user to confirm and keeps a backup. A result says "Pushed", "Not pushed" or "Waiting for you to confirm"; never say a branch is pushed before it does.',
     '- A child reads only its brief, not the conversation decisions, open questions or earlier summaries. Write the task as a self-contained brief of about 1,500 characters: the goal, the inputs, the constraints (files it owns, what not to touch, nothing pushed), when it is done and what shape the report takes. Write every fact it needs into the task. To hand it a decision, add `"decisions":["D27"]`: Goodboy writes each one in full into the brief. A bare id in the task text means nothing to the child.',

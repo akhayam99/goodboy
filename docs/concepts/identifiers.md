@@ -9,7 +9,7 @@
 ## Session stages
 
 Session stages, in `SessionStage`: `attention` (**needs you**), `running`,
-`review` (**in review**), `building`, `done`.
+`review` (**in review**), `building` (**open**), `done`.
 
 A fix run raises `attention` too:
 

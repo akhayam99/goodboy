@@ -3,6 +3,7 @@ import { cn, tintClasses } from '@goodboy/ui';
 import { FactDot } from '../../../../shared/components/SettingChip/FactDot';
 import { SettingLookContext } from '../../../../shared/components/SettingChip/settingLookContext';
 import type { Glance } from '../../glance/glanceOf';
+import type { LeadShareText } from '../../glance/leadSpendTextsOf';
 import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
 import { HeadSlotPortal } from '../HeadSlotPortal';
 
@@ -10,6 +11,7 @@ type Props = {
   readonly glance: Glance;
   readonly spend: string | null;
   readonly spendTotal?: string | null;
+  readonly share?: LeadShareText | null;
   readonly settings: ReactNode;
   readonly isStateShown?: boolean;
   readonly isInHead?: boolean;
@@ -21,6 +23,7 @@ export const RunGlanceLine = ({
   glance,
   spend,
   spendTotal = null,
+  share = null,
   settings,
   isStateShown = true,
   isInHead = false,
@@ -77,6 +80,19 @@ export const RunGlanceLine = ({
             <span className="shrink-0 tabular-nums text-faint-foreground">{figure}</span>
           </Fragment>
         ),
+      )}
+      {share === null ? null : (
+        <>
+          <FactDot />
+          <span
+            className={cn(
+              'shrink-0 tabular-nums',
+              share.isOverMark ? tintClasses('warning').text : 'text-faint-foreground',
+            )}
+          >
+            {share.text}
+          </span>
+        </>
       )}
       {settings === null ? null : (
         <SettingLookContext.Provider value="fact">{settings}</SettingLookContext.Provider>

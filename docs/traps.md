@@ -173,6 +173,7 @@ Before you change something that looks wrong:
 - [Banner clicks reach every window](traps/store.md#banner-clicks-reach-every-window-and-the-badge-has-one-writer)
 - [Two attention counts per workspace](traps/store.md#two-counts-for-one-workspace-and-the-rust-count-is-a-subset)
 - [Hand-maintained lists the compiler does not check](traps/store.md#hand-maintained-lists-the-compiler-does-not-check)
+- [The bell sweep names its proof per family](traps/store.md#the-bell-sweep-names-its-proof-per-family)
 - [The auto role stays out of visible lists](traps/store.md#the-auto-role-stays-out-of-every-list-a-person-sees)
 - [Auto writer roles are written three times](traps/store.md#the-auto-writer-roles-are-written-three-times)
 

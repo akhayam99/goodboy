@@ -104,21 +104,23 @@ describe('recordUsageTelemetry', () => {
   it('emits one notification for the first session cap breach and none for the next turn', async () => {
     await recordTurn('run-1' as ProviderRunId);
 
-    expect(
-      budgetNotifications().map(({ severity, title, body, sessionId }) => ({
-        severity,
-        title,
-        body,
-        sessionId,
-      })),
-    ).toEqual([
-      {
-        severity: 'error',
-        title: 'Finish the budget path paused its runs at the $10.00 limit.',
-        body: '$12.30 spent so far.',
-        sessionId: SESSION_ID,
-      },
-    ]);
+    await vi.waitFor(() => {
+      expect(
+        budgetNotifications().map(({ severity, title, body, sessionId }) => ({
+          severity,
+          title,
+          body,
+          sessionId,
+        })),
+      ).toEqual([
+        {
+          severity: 'error',
+          title: 'Finish the budget path paused its runs at the $10.00 limit.',
+          body: '$12.30 spent so far.',
+          sessionId: SESSION_ID,
+        },
+      ]);
+    });
 
     await recordTurn('run-2' as ProviderRunId);
 

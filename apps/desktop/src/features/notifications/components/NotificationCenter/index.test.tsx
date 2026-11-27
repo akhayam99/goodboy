@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Notification, NotificationAction } from '@goodboy/db';
+import type { Notification, NotificationAction, NotificationCountBucket } from '@goodboy/db';
 import { brandId, type AgentId, type IsoDateTime, type SessionId } from '@goodboy/types';
 import { isoDateTimeOf } from '../../../../__tests__/helpers/brandedIds';
 import { beforeAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -30,10 +30,36 @@ const defaults = vi.hoisted((): Defaults => ({
   elsewhere: { count: 0, tone: null },
 }));
 
+const noBuckets = vi.hoisted(() => (): ReadonlyArray<NotificationCountBucket> | null => null);
+
 const { state } = vi.hoisted(() => ({
   state: {
     notifications: [] as ReadonlyArray<Notification>,
-    notificationCounts: [],
+    bucketsOverride: noBuckets(),
+    get notificationCounts(): ReadonlyArray<NotificationCountBucket> {
+      return (
+        this.bucketsOverride ??
+        this.notifications
+          .filter(
+            (notification, index) =>
+              notification.coalesceKey === null ||
+              this.notifications.findIndex(
+                (other) => other.coalesceKey === notification.coalesceKey,
+              ) === index,
+          )
+          .map((notification) => ({
+            severity: notification.severity,
+            kind: notification.kind,
+            hasSession: notification.sessionId != null,
+            hasAction: notification.action != null,
+            actionKind: notification.action?.kind ?? null,
+            isActed: notification.actedAt != null,
+            read: notification.read,
+            inWorkspace: true,
+            count: 1,
+          }))
+      );
+    },
     notificationsLoading: false,
     loadNotifications: vi.fn(async () => undefined),
     markNotificationsRead: vi.fn(async () => undefined),
@@ -129,7 +155,7 @@ const openCenter = async () => {
 
 beforeEach(() => {
   state.notifications = [];
-  state.notificationCounts = [];
+  state.bucketsOverride = null;
   state.sessions = [];
   state.currentSessionId = null;
   state.loadNotifications.mockClear();
@@ -864,6 +890,71 @@ describe('NotificationCenter', () => {
     expect(screen.getByRole('button', { name: 'Notifications, 1 unread' })).toBeDefined();
     await openCenter();
     expect(screen.getByRole('tab', { name: /unread/i }).textContent).toContain('1');
+  });
+
+  it('counts the unread rows of every row in the database, not only the loaded list', () => {
+    state.notifications = [buildNotification({ id: 'n1', title: 'one', coalesceKey: 'a' })];
+    state.bucketsOverride = [
+      {
+        severity: 'error',
+        kind: 'error',
+        hasSession: false,
+        hasAction: false,
+        actionKind: null,
+        isActed: false,
+        read: false,
+        inWorkspace: true,
+        count: 3,
+      },
+    ];
+    render(<NotificationCenter isCurrent={false} />);
+
+    screen.getByRole('button', { name: 'Notifications, 3 unread' });
+  });
+
+  it('leaves an unread success row and rows of other workspaces out of the trigger', () => {
+    const bucket = (overrides: Partial<NotificationCountBucket>): NotificationCountBucket => ({
+      severity: 'error',
+      kind: 'error',
+      hasSession: false,
+      hasAction: false,
+      actionKind: null,
+      isActed: false,
+      read: false,
+      inWorkspace: true,
+      count: 1,
+      ...overrides,
+    });
+    state.bucketsOverride = [
+      bucket({ severity: 'success', count: 5 }),
+      bucket({ severity: 'info', count: 2 }),
+      bucket({ read: true, count: 4 }),
+      bucket({ inWorkspace: false, count: 6 }),
+      bucket({ severity: 'warning', count: 2 }),
+    ];
+    render(<NotificationCenter isCurrent={false} />);
+
+    screen.getByRole('button', { name: 'Notifications, 2 unread' });
+  });
+
+  it('counts rows of every workspace when the bell lists them all', () => {
+    state.notificationScope = 'all';
+    state.bucketsOverride = [
+      {
+        severity: 'error',
+        kind: 'error',
+        hasSession: false,
+        hasAction: false,
+        actionKind: null,
+        isActed: false,
+        read: false,
+        inWorkspace: false,
+        count: 2,
+      },
+    ];
+    render(<NotificationCenter isCurrent={false} />);
+
+    screen.getByRole('button', { name: 'Notifications, 2 unread' });
   });
 
   it('writes the unread count beside the bell dot, capped at 9+', () => {

@@ -133,8 +133,10 @@ rows the narrow row folded in: Send to agent
 ([doors.md](doors.md#send-to-agent)), Open in your browser, Open full page
 ([page.md](page.md#moves), absent when the dock has no page), This tab, Clear
 site data (`siteDataRowOf`, an inline confirm, off without a web page view;
-a view the open menu hides still counts;
-[lifecycle.md](lifecycle.md#clearing-one-site)) and Develop. This tab
+a view the open menu hides still counts; the confirm lists the sign-in sites
+of the tab's trail, `model.siteTrail`, and names the site alone until the
+trail is read; [lifecycle.md](lifecycle.md#clearing-one-site)) and Develop.
+This tab
 (`browserTabRowsOf`) holds Copy address, Duplicate (`model.duplicate`, the
 shown address in a new tab) and Close tab (off for a pin). Develop
 (`browserDevelopRowsOf`) holds Reload without cache (off with no tab), the

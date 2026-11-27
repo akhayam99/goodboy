@@ -466,9 +466,11 @@ describe('store on sqlite: a reply to a question that is not an answer', () => {
 
         expect(isSent).toBe(false);
         expect(await openQuestionTexts()).toEqual([question.text]);
-        expect(
-          useAppStore.getState().notifications.some((entry) => entry.body?.includes(reason)),
-        ).toBe(true);
+        await vi.waitFor(() => {
+          expect(
+            useAppStore.getState().notifications.some((entry) => entry.body?.includes(reason)),
+          ).toBe(true);
+        });
       } finally {
         useAppStore.setState({ sendTurn: realSendTurn });
       }

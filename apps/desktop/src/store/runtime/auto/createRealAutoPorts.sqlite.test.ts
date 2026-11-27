@@ -13,6 +13,7 @@ import {
 import { createRealAutoPorts, type RealAutoPortsDeps } from './createRealAutoPorts';
 import type { StartChildTurnParams } from './ports';
 import type { SendTurnInput, SendTurnResult } from '../../slices/turn/types';
+import { markTurnActive, markTurnSettled } from '../../slices/turn/turnSettled';
 import { batchInput, childInput, makeAutoWorld, WORLD_TREE } from './testing/autoWorld';
 
 const NOW = 1_700_000_000_000;
@@ -88,6 +89,7 @@ const childTurn = (
   },
   runId: 'run-impl-1',
   captureMode: 'new',
+  isStillLive: async () => true,
   onEnded,
   ...patch,
 });
@@ -135,6 +137,41 @@ describe('the ports of Auto on the real store', () => {
         },
       }),
     );
+  });
+
+  it('starts a child turn only once the earlier turn of that agent has closed', async () => {
+    const { ports, sendTurn, deps } = await worldWithPorts();
+    vi.mocked(deps.lookupDeliveryRun).mockResolvedValue({ runId: 'run-impl-1', isLive: true });
+    const agentId = brandId<AgentId>({ value: 'agent-implementer' });
+    markTurnActive({ agentId });
+
+    const starting = ports.startChildTurn(childTurn(vi.fn()));
+    await Promise.resolve();
+    const earlyCalls = sendTurn.mock.calls.length;
+    markTurnSettled({ agentId });
+    await starting;
+
+    expect(earlyCalls).toBe(0);
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts nothing when the work was stopped while the earlier turn was closing', async () => {
+    const { ports, sendTurn } = await worldWithPorts();
+    const agentId = brandId<AgentId>({ value: 'agent-implementer' });
+    let isLive = true;
+    markTurnActive({ agentId });
+
+    const starting = ports.startChildTurn(childTurn(vi.fn(), { isStillLive: async () => isLive }));
+    await Promise.resolve();
+    isLive = false;
+    markTurnSettled({ agentId });
+
+    expect(await starting).toEqual({
+      kind: 'refused',
+      reason: 'kickoff_failed',
+      message: 'The work was stopped.',
+    });
+    expect(sendTurn).not.toHaveBeenCalled();
   });
 
   it('forwards the routed model of a child as an explicit override with its role', async () => {

@@ -96,6 +96,9 @@ vi.mock('@goodboy/db', async () =>
     listMountPullRequestLinks: vi.fn(async () => []),
     upsertMountPullRequestLink: vi.fn(async () => true),
     upsertGithubPrCache: vi.fn(async () => undefined),
+    settleStaleNotifications: vi.fn(async () => 0),
+    listNotifications: vi.fn(async () => []),
+    countNotifications: vi.fn(async () => []),
   }),
 );
 

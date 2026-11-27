@@ -27,7 +27,7 @@ export const PARALLEL_AGENTS_GUIDE = {
       paragraphs: [
         'A session is one goal with its own limit and its own shared notes. Write the goal or pick an open issue from Tasks, press Start, and a Lead plans the run and starts the agents it needs.',
         'Sessions stay apart because each branch an agent works on gets its own worktree. Two sessions can work on the same repository at the same time.',
-        'Sessions in the top bar lists them all, with Pinned first and then Needs you, Running, In review and Building. Type to filter, and press Enter to open one.',
+        'Sessions in the top bar lists them all, with Pinned first and then Needs you, Running, In review and Open. Type to filter, and press Enter to open one.',
       ],
       links: [
         { label: 'The New session page', href: `${SITE.doc('start')}#the-new-session-page` },
@@ -38,7 +38,7 @@ export const PARALLEL_AGENTS_GUIDE = {
       id: 'stage-board',
       heading: 'See every session on the stage board',
       paragraphs: [
-        'The board puts every session of a workspace in a lane by stage: Building, Running, In review, Done and Archived. A session moves to the lane that matches what is happening in it, and you never drag a card.',
+        'The board puts every session of a workspace in a lane by stage: Open, Running, In review, Done and Archive. A session moves to the lane that matches what is happening in it, and you never drag a card.',
         'A card shows its title, its project and one signal, such as a failed check, an open question or its pull request. While an agent works, a line says what it does, in words like Running pnpm test in payments-api.',
       ],
       links: [

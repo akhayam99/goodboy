@@ -1,10 +1,13 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import { insertWorkspace } from '@goodboy/db';
 import { nextProjectId, nextSessionId, nextWorkspaceId } from '@goodboy/types/testing';
 import {
   buildStoryProject,
   buildStorySession,
+  buildStoryWorkspace,
   importStore,
+  openStorySqlite,
   resetStoryStore,
   storySpies,
   stubStoryInvoke,
@@ -121,6 +124,10 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  await insertWorkspace({
+    db: await openStorySqlite(),
+    workspace: buildStoryWorkspace({ id: WORKSPACE_ID, name: 'Harborline' }),
+  });
   hostRows = [
     rowOf({ id: 'tab-a', owner: { kind: 'session', sessionId: CHECKOUT } }),
     rowOf({ id: 'tab-b', owner: { kind: 'session', sessionId: CHECKOUT } }),
@@ -254,12 +261,14 @@ describe('the workspace tab rows', () => {
     await store.getState().loadBrowserWorkspaceTabs({ workspaceId: WORKSPACE_ID });
 
     expect(keptCount()).toBe(4);
-    expect(
-      store
-        .getState()
-        .notifications.filter((notification) => notification.kind === 'error')
-        .map((notification) => notification.title),
-    ).toEqual(["Couldn't load the browser tabs"]);
+    await vi.waitFor(() => {
+      expect(
+        store
+          .getState()
+          .notifications.filter((notification) => notification.kind === 'error')
+          .map((notification) => notification.title),
+      ).toEqual(["Couldn't load the browser tabs"]);
+    });
   });
 
   it('keeps no count when the first load fails and counts after a retry', async () => {

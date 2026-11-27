@@ -1,14 +1,12 @@
 import {
   AUTO_BRIEF_VERSION,
   AUTO_DELEGATION_DEADLINE_MINUTES,
-  canAutoRoleRunCommands,
+  autoShellRefusalOf,
   composeBranchFacts,
   composeBriefDecisions,
   composeDelegationKickoff,
   DELEGATE_REVISES_SHAPE,
   delegationDepthOf,
-  commandMentionOf,
-  roleCannotRunCommandsMessage,
   roleFitOf,
   roleNarrowerMessage,
   isAutoSubstepRole,
@@ -432,18 +430,15 @@ export const resolveDelegateChild = async ({
       message: roleNarrowerMessage({ fit, chosen: role }),
     });
   }
-  const commandMention =
-    revise === null && !canAutoRoleRunCommands({ role })
-      ? commandMentionOf({
-          text: [autoWordsOf({ child, continueWith }), child.doneWhen ?? ''].join('\n'),
+  const shellRefusal =
+    revise === null
+      ? autoShellRefusalOf({
+          role,
+          texts: [autoWordsOf({ child, continueWith }), child.doneWhen ?? '', child.expected ?? ''],
         })
       : null;
-  if (commandMention !== null) {
-    return refuse({
-      slot,
-      code: 'role_lacks_shell',
-      message: roleCannotRunCommandsMessage({ role, match: commandMention }),
-    });
+  if (shellRefusal !== null) {
+    return refuse({ slot, code: 'role_lacks_shell', message: shellRefusal });
   }
   const { addProject } = await readAdmissionPermissions({ db: ctx.db, treeId: tree.id });
   const picked = await pickChildMount({

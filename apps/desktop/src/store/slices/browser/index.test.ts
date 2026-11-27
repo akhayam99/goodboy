@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { insertWorkspace } from '@goodboy/db';
+import { insertSession, insertWorkspace } from '@goodboy/db';
 import type { ProjectId, SessionId } from '@goodboy/types';
 import { nextProjectId, nextSessionId, nextWorkspaceId } from '@goodboy/types/testing';
 import {
@@ -224,6 +224,8 @@ beforeEach(async () => {
     db,
     workspace: buildStoryWorkspace({ id: WORKSPACE_ID, name: 'Harborline' }),
   });
+  await insertSession(db, buildStorySession({ id: SESSION_ID, workspaceId: WORKSPACE_ID }));
+  await insertSession(db, buildStorySession({ id: OTHER_SESSION_ID, workspaceId: WORKSPACE_ID }));
   useAppStore.setState({
     currentWorkspaceId: WORKSPACE_ID,
     projects: [PAYMENTS_API],
@@ -385,7 +387,9 @@ describe('a failed host call keeps the old state and shows the error', () => {
     expect(isOk).toBe(false);
     expect(tabIds()).toEqual(['tab-a', 'tab-b', 'tab-c']);
     expect(activeTab()).toBe('tab-c');
-    expect(await storedErrors()).toEqual([{ title: "Couldn't open the tab" }]);
+    await vi.waitFor(async () => {
+      expect(await storedErrors()).toEqual([{ title: "Couldn't open the tab" }]);
+    });
   });
 
   it('close fails: the tab stays, and a retry closes it', async () => {
@@ -398,7 +402,9 @@ describe('a failed host call keeps the old state and shows the error', () => {
 
     expect(wasClosed).toBe(false);
     expect(tabIds()).toEqual(['tab-a', 'tab-b', 'tab-c']);
-    expect(await storedErrors()).toEqual([{ title: "Couldn't close the tab" }]);
+    await vi.waitFor(async () => {
+      expect(await storedErrors()).toEqual([{ title: "Couldn't close the tab" }]);
+    });
 
     stubHost();
     const wasRetried = await useAppStore
@@ -418,7 +424,9 @@ describe('a failed host call keeps the old state and shows the error', () => {
       .reorderBrowserTabs({ sessionId: SESSION_ID, ids: ['tab-c', 'tab-b', 'tab-a'] });
 
     expect(tabIds()).toEqual(['tab-a', 'tab-b', 'tab-c']);
-    expect(await storedErrors()).toEqual([{ title: "Couldn't reorder the tabs" }]);
+    await vi.waitFor(async () => {
+      expect(await storedErrors()).toEqual([{ title: "Couldn't reorder the tabs" }]);
+    });
   });
 
   it('pin fails: the tab stays in the session and no pin appears', async () => {
@@ -431,7 +439,9 @@ describe('a failed host call keeps the old state and shows the error', () => {
 
     expect(tabIds()).toEqual(['tab-a', 'tab-b', 'tab-c']);
     expect(pinIds()).toEqual([]);
-    expect(await storedErrors()).toEqual([{ title: "Couldn't pin the tab" }]);
+    await vi.waitFor(async () => {
+      expect(await storedErrors()).toEqual([{ title: "Couldn't pin the tab" }]);
+    });
   });
 
   it('unpin fails: the pin stays', async () => {
@@ -447,7 +457,9 @@ describe('a failed host call keeps the old state and shows the error', () => {
 
     expect(pinIds()).toEqual(['tab-b']);
     expect(tabIds()).toEqual(['tab-a', 'tab-c']);
-    expect(await storedErrors()).toEqual([{ title: "Couldn't unpin the tab" }]);
+    await vi.waitFor(async () => {
+      expect(await storedErrors()).toEqual([{ title: "Couldn't unpin the tab" }]);
+    });
   });
 
   it('a failed load keeps what was loaded before', async () => {
@@ -457,7 +469,9 @@ describe('a failed host call keeps the old state and shows the error', () => {
     await useAppStore.getState().loadBrowserSessionTabs({ sessionId: SESSION_ID });
 
     expect(tabIds()).toEqual(['tab-a', 'tab-b', 'tab-c']);
-    expect(await storedErrors()).toEqual([{ title: "Couldn't load the browser tabs" }]);
+    await vi.waitFor(async () => {
+      expect(await storedErrors()).toEqual([{ title: "Couldn't load the browser tabs" }]);
+    });
   });
 });
 
@@ -641,7 +655,9 @@ describe('closing a session closes its live tabs and deletes its rows', () => {
 
     expect(hostRows).toHaveLength(3);
     expect(tabIds()).toEqual(['tab-a', 'tab-b', 'tab-c']);
-    expect(await storedErrors()).toEqual([{ title: "Couldn't close the browser tabs" }]);
+    await vi.waitFor(async () => {
+      expect(await storedErrors()).toEqual([{ title: "Couldn't close the browser tabs" }]);
+    });
   });
 
   it('a retry after a partial close finishes the job', async () => {
@@ -690,7 +706,9 @@ describe('a close that failed is retried for sessions that were archived or dele
     await expect(useAppStore.getState().closeStaleBrowserTabs()).resolves.toBeUndefined();
 
     expect(hostRows).toHaveLength(3);
-    expect(await storedErrors()).toEqual([{ title: "Couldn't check the leftover browser tabs" }]);
+    await vi.waitFor(async () => {
+      expect(await storedErrors()).toEqual([{ title: "Couldn't check the leftover browser tabs" }]);
+    });
   });
 
   it('does nothing when no session left tabs behind', async () => {
@@ -710,7 +728,9 @@ describe('a close that failed is retried for sessions that were archived or dele
 
     expect(callsOf({ command: 'browser_session_close' })).toEqual([]);
     expect(hostRows).toHaveLength(3);
-    expect(await storedErrors()).toEqual([]);
+    await vi.waitFor(async () => {
+      expect(await storedErrors()).toEqual([]);
+    });
   });
 
   it('keeps the rows and shows the error when the leftover tab still does not close', async () => {
@@ -724,7 +744,9 @@ describe('a close that failed is retried for sessions that were archived or dele
     await useAppStore.getState().closeStaleBrowserTabs();
 
     expect(hostRows).toHaveLength(3);
-    expect(await storedErrors()).toEqual([{ title: "Couldn't close the browser tabs" }]);
+    await vi.waitFor(async () => {
+      expect(await storedErrors()).toEqual([{ title: "Couldn't close the browser tabs" }]);
+    });
   });
 
   it('finishes the job on the next boot after a failed close', async () => {
