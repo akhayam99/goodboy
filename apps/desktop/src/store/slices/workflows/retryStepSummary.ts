@@ -10,7 +10,7 @@ import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 import { liveEnabledProviders } from '../../runtime/models/liveEnabledProviders';
 
 type Params = {
@@ -46,7 +46,7 @@ const retryOneStepSummary = (set: SetFn, get: GetFn) => {
         connectedProviders: autoRoutableProviders({ providers: get().providers }),
         enabledProviders: liveEnabledProviders({ state: get(), sessionId }) ?? null,
         cooldowns: get().providerCooldowns,
-        hidden: selectHiddenModels({ state: get() }),
+        hidden: selectBlockedModels({ state: get() }),
         nowMs: Date.now(),
       });
 

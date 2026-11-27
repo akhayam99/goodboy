@@ -43,6 +43,9 @@ const matchPick = ({ list, pick }: MatchParams): Match => {
   if (chosen !== null) {
     return { kind: 'found', candidate: chosen };
   }
+  if (list.noAccess?.[provider]?.includes(key) === true) {
+    return { kind: 'failed', cause: 'no-access' };
+  }
   const struck = matches[0]?.cause ?? null;
   if (struck !== null) {
     return { kind: 'failed', cause: struck };
@@ -58,12 +61,26 @@ type Params = MatchParams & {
   readonly batch?: ReadonlyArray<ProviderId>;
 };
 
+type SameProviderParams = MatchParams & {
+  readonly batch: ReadonlyArray<ProviderId>;
+  readonly cause: CandidateCause;
+};
+
+const sameProviderBest = ({ list, pick, batch, cause }: SameProviderParams): Candidate | null =>
+  cause === 'no-access'
+    ? bestCandidate({
+        list: { ...list, rows: list.rows.filter((row) => row.provider === pick.provider) },
+        batch,
+      })
+    : null;
+
 export const checkPick = ({ list, pick, batch = [] }: Params): CheckedPick => {
   const match = matchPick({ list, pick });
   if (match.kind === 'found') {
     return { kind: 'kept', candidate: match.candidate };
   }
-  const best = bestCandidate({ list, batch });
+  const best =
+    sameProviderBest({ list, pick, batch, cause: match.cause }) ?? bestCandidate({ list, batch });
   if (best === null) {
     return { kind: 'refused', cause: match.cause };
   }

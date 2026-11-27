@@ -23,7 +23,7 @@ import { isLearningsOn } from '../../../features/context/contextSwitches';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 import { scheduleIdle } from './turnHelpers';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import type { GetFn, SetFn } from './types';
@@ -92,7 +92,7 @@ const runLearnings = async ({ set, get, sessionId, agentId, entries }: RunParams
     connectedProviders: autoRoutableProviders({ providers: get().providers }),
     enabledProviders: liveEnabledProviders({ state: get(), sessionId }) ?? null,
     cooldowns: get().providerCooldowns,
-    hidden: selectHiddenModels({ state: get() }),
+    hidden: selectBlockedModels({ state: get() }),
     nowMs: Date.now(),
   });
   if (taskModel === null) {

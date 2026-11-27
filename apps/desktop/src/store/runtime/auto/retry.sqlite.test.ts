@@ -243,6 +243,34 @@ describe('retrying a helper whose provider refused its model', () => {
     }
   });
 
+  it('routes a retry with a new task elsewhere instead of locking the refused model', async () => {
+    for (const failure of ['model_not_available', 'authentication']) {
+      const world = await makeRuntimeWorld({ capUsd: 10 });
+      await userSays({ world, id: 'outbox-user-1', text: 'add the ledger export' });
+      await autoDelegates({ world, spec: { children: [IMPLEMENTER] } });
+      await autoTurnEnds({ world });
+      await childTurnEnds({ world, index: 0, text: '', overrides: { exit: 'error', failure } });
+      const before = world.state.ports.routingRequests.length;
+
+      const outcome = await retry(world, { task: 'Use the export helper of ledger-core.' });
+
+      expect(outcome).toMatchObject({ isOk: true, data: { accepted: true } });
+      const request = world.state.ports.routingRequests.slice(before).at(-1);
+      expect(request?.agentLock ?? null).toBeNull();
+      expect(request?.fields).toMatchObject({ provider: undefined, model: undefined });
+    }
+  });
+
+  it('keeps the agent on its model when a new task follows a result', async () => {
+    const world = await failedChild();
+    const before = world.state.ports.routingRequests.length;
+
+    await retry(world, { task: 'Use the export helper of ledger-core.' });
+
+    const request = world.state.ports.routingRequests.slice(before).at(-1);
+    expect(request?.agentLock).toMatchObject({ provider: 'anthropic', model: 'sonnet' });
+  });
+
   it('keeps the earlier model after any other failure', async () => {
     const outcome = await preparedAfter({ failure: 'process_error' });
 

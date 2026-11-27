@@ -8,6 +8,7 @@ import { devicePresetOf } from '../../devicePresets';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useBrowserStudioTab } from '../../hooks/useBrowserStudioTab';
 import { useConsoleEntries } from '../../hooks/useConsoleEntries';
+import { useElementPick } from '../../hooks/useElementPick';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
 import { consoleCounts } from '../../consoleCounts';
 import type { BrowserPageGroup, BrowserToolsTab } from '../../types';
@@ -16,6 +17,7 @@ import type { BrowserStripGroups } from '../BrowserPane/BrowserTabStrip';
 import { BrowserToolsDock } from '../BrowserToolsDock';
 import { BrowserNotice } from '../BrowserPane/BrowserNotice';
 import { BrowserPasskeyNotice } from '../BrowserPane/BrowserPasskeyNotice';
+import { BrowserPickNote } from '../BrowserPane/BrowserPickNote';
 import { BrowserSendLine } from '../BrowserPane/BrowserSendLine';
 import { BrowserView } from '../BrowserPane/BrowserView';
 import { BrowserPageTrail } from './BrowserPageTrail';
@@ -28,7 +30,7 @@ type Props = {
   readonly onFoldedChange: BrowserStripGroups['onFoldedChange'];
 };
 
-type PickParams = {
+type ShowParams = {
   readonly group: BrowserPageGroup;
   readonly tab: BrowserTab;
 };
@@ -49,6 +51,14 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
     isOpen: isOnScreen,
   });
   const errorCount = consoleCounts({ entries: consoleLog.entries }).errors;
+  const pick = useElementPick({
+    sessionId,
+    liveId: model.shownLiveId,
+    pageTitle: title,
+    isShown: isOnScreen,
+    shouldOpenSession: false,
+    onError: model.showError,
+  });
 
   useBrowserStudioTab({ sessionId, tabId, model });
   useReloadSurface({
@@ -69,7 +79,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
     onError: model.showError,
   });
 
-  const pick = ({ group, tab }: PickParams): void => {
+  const showTab = ({ group, tab }: ShowParams): void => {
     const state = useAppStore.getState();
     if (group.sessionId === sessionId) {
       model.select({ tab });
@@ -101,9 +111,11 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
               setIsConsoleOpen(true);
             },
           }}
-          page={{ groups, onPick: pick, folded, onFoldedChange }}
+          pick={pick}
+          page={{ groups, onPick: showTab, folded, onFoldedChange }}
           onDock={() => demoteBrowserTab({ sessionId })}
         />
+        {pick.picks.length > 0 ? <BrowserPickNote pick={pick} /> : null}
         {model.error === null ? null : (
           <p role="alert" className="px-4 text-meta text-danger">
             {model.error}
