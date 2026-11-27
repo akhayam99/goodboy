@@ -42,7 +42,7 @@ export const useReminderTriggers = ({}: Params): void => {
         continue;
       }
       attempted.current.add(reminderId);
-      void useAppStore.getState().fireReminder({ workspaceId, reminderId, firedAt: Date.now() });
+      void useAppStore.getState().fireReminder({ workspaceId, reminderId, firedAt: now });
     }
-  }, [held, workspaceId]);
+  }, [held, workspaceId, now]);
 };

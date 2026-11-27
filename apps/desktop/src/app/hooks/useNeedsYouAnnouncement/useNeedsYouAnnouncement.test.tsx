@@ -6,6 +6,10 @@ vi.mock('@tauri-apps/api/core', async () =>
 vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../store/storyHarness')).tauriEventModuleMock(),
 );
+vi.mock('@goodboy/db', async () => (await import('../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../../store/storyHarness')).dbLibModuleMock(),
+);
 
 const nowSessions = vi.hoisted(() => {
   const state: { needsYou: ReadonlyArray<unknown> } = { needsYou: [] };

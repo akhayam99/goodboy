@@ -30,6 +30,7 @@ export const storyDbStubs = () => ({
   listSessionContextItemsForRole: vi.fn(async () => []),
   listSessionContextItems: vi.fn(async () => []),
   listWorkspaceLearnings: vi.fn(async () => []),
+  listReminders: vi.fn(async () => []),
   listStarredIssues: vi.fn(async () => []),
   starIssue: vi.fn(async () => undefined),
   listProviderLimits: vi.fn(async () => []),
