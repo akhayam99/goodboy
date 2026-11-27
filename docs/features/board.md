@@ -12,6 +12,9 @@ Home is where a workspace opens. It is a short page of cards, each a count with 
 - **Needs you** lists the sessions that wait on you, the oldest first. A row names the reason and how long it waited. A permission wait says **Allow and continue** and answers in place; the row leaves once the answer went through. Any other row opens the place that needs you, as its Board card does.
 - **Running now** lists the sessions that run, with how long each has run.
 - **Usage** shows each window of your connected providers with its meter, its percent and when it resets. Without a connected provider it says so and offers **Connect**.
+- **Spend** shows today with its change from yesterday, the week, a chart of the seven days and the sessions that cost the most. Without spend it says it fills as agents run.
+- **Tasks** counts the new tasks and splits them by the connected tracker. Without a tracker it offers **Connect**.
+- Four more cards are ready but off by default: **Merged this week**, **Long running**, **Every run** and **Workspace setup**. A session counts as long running after a day.
 
 A card with nothing to say is not drawn, and the cards below move up. A list that is cut ends with **+N more**, which opens the Board. The cards sit on a grid of four columns in a wide window, two in a medium one and one in a narrow one. Every row of cards ends on one line.
 
@@ -135,6 +138,7 @@ Then **Archive**, **Restore** or **Delete** them from the bar at the bottom. Arc
 
 This part is for contributors and agents who change the feature.
 
+- Home reads: `dailySpendOf` reads today through `spendFigures`, the top bar's function. `mergedSinceOf`, `longRunningOf`, `setupDiffOf`, `workflowRulesOf` and `tasksFactsOf` are pure and tested on fixed records; the Tasks card counts `taskNewKeys` and calls no host.
 - Home: `HomePage` (`features/home/`) reads `useHomeFacts`, which takes needs you and running from `useNowSessions`, the source of the badge and the Now chip, and the stage groups from `useStageGroupedSessions`. `placeWidgets` puts the cards on the grid and `completeRows` is its closing pass; `holesOf` is what `placeWidgets.test.ts` checks for every layout. `visibleWidgetsOf` leaves out an empty card. `AllowVerb` calls `usePermissionAsk`, the write path of the session page. `usageWindowFactsOf` gives Usage and the provider page one label, tone, percent and reset line.
 - Deleted branch: `sessionStageRequestOf` reads the stored pull request of a branch whose worktree was removed (`historyRequestsOf`, from `mountPrLinks`), so `deriveSessionStage` derives Done from a merged request with nothing live. A closed one alone does not. `loadWorkspaceMountHistory` reads the removed mounts and their links for every session when a workspace opens or reloads, and `mountHistoryPatchOf` seeds `sessionMounts` with them (`listSessionMounts` and `listMountPullRequestLinks` take `sessionIds`). `loadMountHistory` does the same when `loadSessionMounts` hydrates one session. `soleMergedAtOf` gives the merge time of the session's only branch, and `isFailureSettled` drops an Auto failure older than it (`attentionWaitsOf`, `autoRetryTargetsOf`). Tested in `removedMountStage.test.ts`, `sessionStageRequest.test.ts` and the `deleted-branch-merged-light` scene.
 - Done lane menu: `DoneLaneMenu`, the `doneLane` object kind and `doneLaneArchivesOf` give the **Archive all in Done** and **Archive done older than 7 days** actions.

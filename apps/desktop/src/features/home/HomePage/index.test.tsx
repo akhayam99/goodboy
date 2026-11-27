@@ -54,7 +54,7 @@ describe('HomePage', () => {
     screen.getByRole('heading', { name: 'Home' });
   });
 
-  it('shows the start card and the limits with nothing else on an empty workspace', () => {
+  it('shows the start card and the cards that teach what will fill them on an empty workspace', () => {
     mount();
 
     screen.getByRole('region', { name: 'Start your first session' });
@@ -64,13 +64,19 @@ describe('HomePage', () => {
     within(
       document.querySelector<HTMLElement>('[data-home-widget="providerLimits"]') ?? document.body,
     ).getByText('Connect a provider to see what is left');
+    within(
+      document.querySelector<HTMLElement>('[data-home-widget="spend"]') ?? document.body,
+    ).getByText('No spend yet. It fills as agents run.');
+    within(
+      document.querySelector<HTMLElement>('[data-home-widget="tasksInbox"]') ?? document.body,
+    ).getByText('Connect a tracker to see its new issues.');
   });
 
   it('draws a skeleton for every widget while the workspace loads, and no zero', () => {
     store.setState({ boardReady: false });
     mount();
 
-    expect(document.querySelectorAll('[data-home-widget]')).toHaveLength(4);
+    expect(document.querySelectorAll('[data-home-widget]')).toHaveLength(6);
     expect(screen.queryByText('0')).toBeNull();
     expect(screen.queryByRole('region', { name: 'Start your first session' })).toBeNull();
   });
