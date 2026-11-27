@@ -76,7 +76,7 @@ export const NeedsYouPermission = ({ sessionId, agentId, ask, isPrimary }: Props
               variant="quiet"
               className="self-start"
               aria-expanded={isOpen}
-              onClick={() => setIsOpen((current) => !current)}
+              onClick={() => setIsOpen((isShown) => !isShown)}
             >
               {isOpen ? HIDE : SHOW}
             </Button>
