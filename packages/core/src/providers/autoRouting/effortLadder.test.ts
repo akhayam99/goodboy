@@ -29,11 +29,17 @@ describe('EFFORT_LADDER', () => {
     expect(AUTO_RUNG_CHOICES.gemini.light[0]?.key).toBe('gemini-4-hydrogen');
   });
 
-  it('backs every paid Gemini rung with Hydrogen, the model all Google plans run', () => {
+  it('starts Gemini on Hydrogen, the model all Google plans run, up to Standard', () => {
+    for (const rung of ['quick', 'light', 'standard'] as const) {
+      expect(AUTO_RUNG_CHOICES.gemini[rung][0]?.key, rung).toBe('gemini-4-hydrogen');
+    }
     expect(AUTO_RUNG_CHOICES.gemini.standard).toEqual([
-      { key: 'gemini-4-carbon', effort: 'medium' },
       { key: 'gemini-4-hydrogen', effort: 'medium' },
+      { key: 'gemini-4-carbon', effort: 'medium' },
     ]);
+  });
+
+  it('backs the Gemini Hard and Top rungs with Hydrogen behind the paid model', () => {
     expect(AUTO_RUNG_CHOICES.gemini.hard).toEqual([
       { key: 'gemini-4-carbon', effort: 'high' },
       { key: 'gemini-4-hydrogen', effort: 'high' },

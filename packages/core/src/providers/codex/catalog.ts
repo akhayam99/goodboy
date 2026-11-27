@@ -79,6 +79,7 @@ export const CODEX_CATALOG = [
   },
   {
     key: 'gpt-6.1-sol',
+    defaultTurn: true,
     label: 'GPT-6.1 Sol',
     tier: 'turn',
     contextWindow: 500_000,
@@ -174,7 +175,6 @@ export const CODEX_CATALOG = [
   },
   {
     key: 'gpt-6.2-sol',
-    defaultTurn: true,
     label: 'GPT-6.2 Sol',
     tier: 'turn',
     contextWindow: 500_000,

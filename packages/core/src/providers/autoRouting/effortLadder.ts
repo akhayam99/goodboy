@@ -47,7 +47,7 @@ export const EFFORT_LADDER: Readonly<Record<CuratedProviderId, Ladder>> = {
   gemini: {
     quick: [HYDROGEN_LOW],
     light: [HYDROGEN_MEDIUM],
-    standard: [CARBON_MEDIUM, HYDROGEN_MEDIUM],
+    standard: [HYDROGEN_MEDIUM, CARBON_MEDIUM],
     hard: [CARBON_HIGH, HYDROGEN_HIGH],
     top: [NEON_HIGH, HYDROGEN_XHIGH],
   },

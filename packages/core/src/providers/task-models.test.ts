@@ -134,8 +134,8 @@ describe('resolveTaskModel', () => {
     expect(codex.model).not.toBe(getCheapModel('codex'));
   });
 
-  it('picks a mid model for every provider', () => {
-    for (const providerId of PROVIDER_IDS) {
+  it('picks a mid model for every provider except Gemini', () => {
+    for (const providerId of PROVIDER_IDS.filter((id) => id !== 'gemini')) {
       const resolved = resolveTaskModel({
         task: 'workflow_orchestrator',
         preferences: null,
@@ -146,12 +146,12 @@ describe('resolveTaskModel', () => {
         (model) => model.id === resolved.model,
       );
 
-      expect(descriptor?.costTier).toBe('mid');
+      expect(descriptor?.costTier, providerId).toBe('mid');
     }
   });
 
-  it('uses a mid model for delegated question answers', () => {
-    for (const providerId of PROVIDER_IDS) {
+  it('uses a mid model for delegated question answers except on Gemini', () => {
+    for (const providerId of PROVIDER_IDS.filter((id) => id !== 'gemini')) {
       const resolved = resolveTaskModel({
         task: 'question_delegate',
         preferences: null,
@@ -162,9 +162,23 @@ describe('resolveTaskModel', () => {
         (model) => model.id === resolved.model,
       );
 
-      expect(descriptor?.costTier).toBe('mid');
+      expect(descriptor?.costTier, providerId).toBe('mid');
     }
   });
+
+  it.each(['workflow_orchestrator', 'question_delegate'] as const)(
+    'runs %s on Gemini on Hydrogen, the model every Google plan runs',
+    (task) => {
+      expect(
+        resolveTaskModel({
+          task,
+          preferences: null,
+          workspaceDefaultProviderId: 'gemini',
+          sessionDefaultProviderId: 'anthropic',
+        }),
+      ).toEqual({ providerId: 'gemini', model: 'gemini-4-hydrogen', effort: 'medium' });
+    },
+  );
 
   it('prefers the current workspace provider over a captured session provider', () => {
     expect(

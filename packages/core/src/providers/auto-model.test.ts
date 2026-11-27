@@ -50,7 +50,7 @@ describe('autoModelForRole', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
       expect(autoModelForRole({ role: 'totally-made-up', providers: ['gemini'] })).toEqual({
         provider: 'gemini',
-        model: 'gemini-4-carbon',
+        model: 'gemini-4-hydrogen',
       });
       expect(warn).toHaveBeenCalledWith('[roles] unknown role "totally-made-up"; using custom');
       warn.mockRestore();

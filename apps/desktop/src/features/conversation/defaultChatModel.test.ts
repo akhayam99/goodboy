@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { latestInGroup } from '@goodboy/core/providers';
+import { getDefaultTurnModel, latestInGroup } from '@goodboy/core/providers';
 import { chatModelLabel } from '../workspace-chat/chatModelLabel';
 import { defaultChatModel } from './defaultChatModel';
 
@@ -20,18 +20,34 @@ describe('defaultChatModel', () => {
 
   it('keeps a Codex chat on the mid tier line, never on the expensive one', () => {
     const codex = defaultChatModel({ connected: ['codex'] });
-    expect(codex.model).toBe(
-      latestInGroup({ provider: 'codex', group: 'GPT', checkpoint: 'Sol' })[0]?.key,
-    );
+    const sols = latestInGroup({ provider: 'codex', group: 'GPT', checkpoint: 'Sol' });
+    expect(sols.map((model) => model.key)).toContain(codex.model);
+  });
+
+  it('starts a Codex chat on GPT-6.1 Sol, never on a Sol newer than the turn default', () => {
+    expect(defaultChatModel({ connected: ['codex'] }).model).toBe('gpt-6.1-sol');
+    expect(getDefaultTurnModel({ id: 'codex' })).toBe('gpt-6.1-sol');
+  });
+
+  it('goes to an older Codex Sol when the turn default is hidden', () => {
+    expect(
+      defaultChatModel({ connected: ['codex'], hidden: { codex: ['gpt-6.1-sol'] } }).model,
+    ).toBe('gpt-6-sol');
+  });
+
+  it('takes a newer Codex Sol before an older expensive one', () => {
+    expect(
+      defaultChatModel({
+        connected: ['codex'],
+        hidden: { codex: ['gpt-6.1-sol', 'gpt-6-sol'] },
+      }),
+    ).toEqual({ provider: 'codex', model: 'gpt-6.2-sol' });
   });
 
   it('starts on the workspace default provider when a chat can run on it', () => {
     expect(
       defaultChatModel({ connected: ['anthropic', 'codex'], workspaceDefaultProvider: 'codex' }),
-    ).toEqual({
-      provider: 'codex',
-      model: latestInGroup({ provider: 'codex', group: 'GPT', checkpoint: 'Sol' })[0]?.key,
-    });
+    ).toEqual({ provider: 'codex', model: 'gpt-6.1-sol' });
   });
 
   it('never starts a chat on a Cursor default, it falls back to the Sonnet line', () => {

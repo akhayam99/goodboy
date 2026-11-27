@@ -149,10 +149,10 @@ The tables are `chats`, `chat_messages`, `chat_session_links` and
 ## Default model for new chats
 
 Without a saved default, a new chat starts on the newest Sonnet when Claude is
-connected, else the newest GPT Sol when Codex is (`defaultChatModel`, through
-`latestInGroup`), never above the mid cost tier. A connected workspace default
-provider that can run a chat wins; a Cursor or OpenCode default never reaches a
-chat.
+connected, else on the Codex turn default, a GPT Sol, when Codex is
+(`defaultChatModel`, through `latestInGroup`), never above the mid cost tier. A
+connected workspace default provider that can run a chat wins; a Cursor or
+OpenCode default never reaches a chat.
 
 A saved default (provider, model, effort) lives per workspace in `settings`
 under `chat.default_model.<workspaceId>` (JSON; an empty string means

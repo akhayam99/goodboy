@@ -122,7 +122,7 @@ describe('parseLegacyId', () => {
 
   it('defaults and reports an unknown stored id', () => {
     expect(resolveStoredModelSelection({ provider: 'codex', id: 'gpt-99' })).toEqual({
-      selection: { key: 'gpt-6.2-sol', effort: 'low', variant: 'default' },
+      selection: { key: 'gpt-6.1-sol', effort: 'low', variant: 'default' },
       report: { kind: 'unknown', id: 'gpt-99' },
     });
   });

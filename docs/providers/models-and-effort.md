@@ -29,9 +29,10 @@ the anthropic catalog is `providers/claude/catalog.ts`.
    fails
 5. Nothing else. Auto (`autoRouting/effortLadder.ts`) and the chat default
    (`conversation/defaultChatModel.ts`) name a line (`{ group: 'Sonnet' }`) and
-   take its newest model through `latestInGroup`.
-   `model-versions-live-in-the-catalog.test.ts` fails when product code outside
-   the catalog layer writes a versioned id
+   read it through `latestInGroup`: Auto takes the newest model. So does the chat
+   default, unless the provider's turn default sits in that line, which it then
+   starts on. `model-versions-live-in-the-catalog.test.ts` fails when product
+   code outside the catalog layer writes a versioned id
 
 ## Catalog keys
 
@@ -56,32 +57,37 @@ the anthropic catalog is `providers/claude/catalog.ts`.
 
 ### Codex models
 
-- `gpt-6.2-sol` is the Codex turn default and the newest `mid` model; its
-  `minCliVersion: '0.171.0'`, shared with `gpt-6.2-astra`, keeps GPT-6.1 Sol and
-  GPT-6 Astra on an older CLI. `gpt-6.1-terra` needs 0.159.0 and `gpt-6.1-sol`
-  0.160.0. `gpt-6-luna` is the `cheap` newest Luna, `gpt-5.6-terra` and
-  `gpt-5.5` are `legacy` (hidden until shown) and `gpt-5.6-sol` is `expensive`,
-  on Codex and OpenRouter
+- `gpt-6.1-sol` is the Codex turn default and chat default. It needs CLI
+  0.160.0. The two defaults do not read the installed CLI version, so they stay
+  on it while `gpt-6.2-sol` needs a newer CLI
+- `gpt-6.2-sol` is the newest `mid` model. Its `minCliVersion: '0.171.0'`, shared
+  with `gpt-6.2-astra`, makes Auto keep GPT-6.1 Sol and GPT-6 Astra on an older
+  CLI
+- `gpt-6.1-terra` needs 0.159.0. `gpt-6-luna` is the `cheap` newest Luna,
+  `gpt-5.6-terra` and `gpt-5.5` are `legacy` (hidden until shown) and
+  `gpt-5.6-sol` is `expensive`, on Codex and OpenRouter
 - The GPT-6.2 weights do not exceed those of the models before them, so a tier
   fallback after a failure lands on a model an older CLI also runs
 - Context windows: 500k for the Sol models from 6.1 on, 272k for the others, not
   the larger maximum. OpenAI publishes no Codex window for GPT-6.1 Terra, so it
   takes 272k. The orchestrator's context check reads them
-- The Codex model list (`codex debug models`) depends on the signed in account,
-  so an id it omits is checked on OpenAI's Codex model page
+- One install's `codex debug models` need not list every model, so an id it omits
+  is checked on OpenAI's Codex model page
 
 ### Gemini models
 
 - Antigravity's plans decide who runs what. Gemini 4 Hydrogen runs on every
   Google plan, Neon and Carbon need Google AI Pro or Ultra, and 3.1 Pro, 3.7
   Flash and 3.6 Flash are Enterprise only, so they are `legacy`
-- Hydrogen is the turn default and the `cheap` model. Auto takes Carbon on the
-  Standard and Hard rungs and Neon on Top, as for a Google AI Pro account
-- Goodboy cannot read the Google plan. On a plan without Neon or Carbon, hide
-  them in the model list and each rung runs Hydrogen
+- Hydrogen is the turn default and the `cheap` model. Auto takes it up to the
+  Standard rung, Carbon on Hard and Neon on Top
+- Goodboy cannot read the Google plan, and no Antigravity refusal text is
+  recorded for `classifyProviderError`. On a plan without Neon or Carbon, a Hard
+  or Top turn fails until you hide them in the model list; then it runs Hydrogen
 - A `cliId` is the base name; the level goes in `agy --effort`
-- 3.8 Flash left Antigravity on November 30, 2026. `parseLegacyId` moves a saved
-  pick of it to Hydrogen, and its price row stays for recorded spend
+- 3.8 Flash leaves Antigravity on November 30, 2026, and the catalog no longer
+  lists it. `parseLegacyId` moves a saved pick of it to Hydrogen, and its price
+  row stays for recorded spend
 
 ### Moonshot models
 
@@ -104,8 +110,8 @@ first in the array, so a newer cheap model (Haiku 5.5, GPT-6 Luna) wins.
 
 ## Effort
 
-- An unsupported level becomes the model's highest supported one (`clampEffort`),
-  never a failure
+- An unsupported level becomes the nearest lower one the model has, else the
+  nearest higher one (`clampEffort`), never a failure
 - Only `xhigh` has its own label: **Very high**
 - A model with no published levels (Haiku 4.5; on opencode Big Pickle, MiMo and
   both Nemotrons) gets no effort flag. opencode Zen lists variants per model, so
