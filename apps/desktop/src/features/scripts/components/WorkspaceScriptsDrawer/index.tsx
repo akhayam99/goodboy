@@ -66,10 +66,8 @@ export const WorkspaceScriptsDrawer = ({ workspaceId, projectId, onClose }: Prop
                 key={script.key}
                 className="grid h-8 grid-cols-[minmax(0,160px)_minmax(0,1fr)_auto] items-center gap-3 px-2"
               >
-                <span className="truncate font-mono text-code text-foreground">{script.name}</span>
-                <span className="truncate font-mono text-code text-faint-foreground">
-                  {script.body}
-                </span>
+                <span className="truncate text-code text-foreground">{script.name}</span>
+                <span className="truncate text-code text-faint-foreground">{script.body}</span>
                 <IconButton
                   size="xs"
                   variant="ghost"
