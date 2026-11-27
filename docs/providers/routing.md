@@ -21,13 +21,13 @@ and task its rung for a normal step. A line is never a version, so a new model
 reaches Auto on its own, and each rung keeps the older models of its line for a
 CLI that is too old.
 
-| Rung     | Claude                                       | Codex              | Gemini       | Cursor                                        |
-| -------- | -------------------------------------------- | ------------------ | ------------ | --------------------------------------------- |
-| Quick    | Haiku Low                                    | GPT-6 Luna Low     | Flash Low    | Auto                                          |
-| Light    | Haiku Medium                                 | GPT-6 Luna Medium  | Flash Medium | Haiku Medium (Auto without Max Mode)          |
-| Standard | Sonnet Medium                                | GPT-6.1 Sol Medium | Pro Low      | Sonnet Medium                                 |
-| Hard     | Sonnet High                                  | GPT-6.1 Sol High   | Pro High     | Sonnet High                                   |
-| Top      | Opus High (Opus 5.5, Opus 5 on an older CLI) | Astra High         | Pro High     | Opus High (Sonnet Very high without Max Mode) |
+| Rung     | Claude                                       | Codex              | Gemini                                          | Cursor                                        |
+| -------- | -------------------------------------------- | ------------------ | ----------------------------------------------- | --------------------------------------------- |
+| Quick    | Haiku Low                                    | GPT-6 Luna Low     | Hydrogen Low                                    | Auto                                          |
+| Light    | Haiku Medium                                 | GPT-6 Luna Medium  | Hydrogen Medium                                 | Haiku Medium (Auto without Max Mode)          |
+| Standard | Sonnet Medium                                | GPT-6.1 Sol Medium | Carbon Medium (Hydrogen with Carbon hidden)     | Sonnet Medium                                 |
+| Hard     | Sonnet High                                  | GPT-6.1 Sol High   | Carbon High (Hydrogen with Carbon hidden)       | Sonnet High                                   |
+| Top      | Opus High (Opus 5.5, Opus 5 on an older CLI) | Astra High         | Neon High (Hydrogen Very high with Neon hidden) | Opus High (Sonnet Very high without Max Mode) |
 
 The Planner sits on Top, the Debugger and the Reviewer on Hard, Scout, Docs,
 Scribe and re-checks on Light, the five small writing jobs (step summaries,

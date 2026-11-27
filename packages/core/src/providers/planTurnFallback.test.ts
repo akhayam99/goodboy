@@ -133,7 +133,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'gpt-5.6',
     attempt: 1,
     connectedProviders: ['codex', 'gemini'],
-    expected: { provider: 'gemini', model: 'gemini-3.1-pro' },
+    expected: { provider: 'gemini', model: 'gemini-4-neon' },
   },
   {
     name: 'an unclassified failure never retries',
@@ -208,7 +208,7 @@ const ROWS: ReadonlyArray<Row> = [
     attempt: 0,
     connectedProviders: ['codex', 'gemini', 'anthropic'],
     enabledProviders: ['codex', 'gemini'],
-    expected: { provider: 'gemini', model: 'gemini-3.1-pro' },
+    expected: { provider: 'gemini', model: 'gemini-4-neon' },
   },
   {
     name: 'an empty workspace pool leaves every connected provider eligible',
@@ -218,7 +218,7 @@ const ROWS: ReadonlyArray<Row> = [
     attempt: 0,
     connectedProviders: ['codex', 'gemini', 'anthropic'],
     enabledProviders: [],
-    expected: { provider: 'gemini', model: 'gemini-3.1-pro' },
+    expected: { provider: 'gemini', model: 'gemini-4-neon' },
   },
   {
     name: 'the pool order stays the user order even when a later provider is stronger',
@@ -227,7 +227,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'gpt-6',
     attempt: 0,
     connectedProviders: ['codex', 'gemini', 'anthropic'],
-    expected: { provider: 'gemini', model: 'gemini-3.1-pro' },
+    expected: { provider: 'gemini', model: 'gemini-4-neon' },
   },
 ];
 
@@ -428,7 +428,7 @@ describe('planTurnFallback', () => {
         coolingDownProviders: ['anthropic'],
         preferred: { provider: 'anthropic', model: 'opus-5' },
       }),
-    ).toEqual({ provider: 'gemini', model: 'gemini-3.1-pro' });
+    ).toEqual({ provider: 'gemini', model: 'gemini-4-neon' });
   });
 
   it('refuses a role fallback on a provider outside the session pool', () => {

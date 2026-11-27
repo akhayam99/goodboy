@@ -19,10 +19,13 @@ const SOL_MEDIUM: AutoJob = { group: 'GPT', checkpoint: 'Sol', effort: 'medium' 
 const SOL_HIGH: AutoJob = { group: 'GPT', checkpoint: 'Sol', effort: 'high' };
 const ASTRA_HIGH: AutoJob = { group: 'GPT', checkpoint: 'Astra', effort: 'high' };
 
-const FLASH_LOW: AutoJob = { group: 'Gemini', checkpoint: 'Flash', effort: 'low' };
-const FLASH_MEDIUM: AutoJob = { group: 'Gemini', checkpoint: 'Flash', effort: 'medium' };
-const PRO_LOW: AutoJob = { group: 'Gemini', checkpoint: 'Pro', effort: 'low' };
-const PRO_HIGH: AutoJob = { group: 'Gemini', checkpoint: 'Pro', effort: 'high' };
+const HYDROGEN_LOW: AutoJob = { group: 'Gemini', checkpoint: 'Hydrogen', effort: 'low' };
+const HYDROGEN_MEDIUM: AutoJob = { group: 'Gemini', checkpoint: 'Hydrogen', effort: 'medium' };
+const HYDROGEN_HIGH: AutoJob = { group: 'Gemini', checkpoint: 'Hydrogen', effort: 'high' };
+const HYDROGEN_XHIGH: AutoJob = { group: 'Gemini', checkpoint: 'Hydrogen', effort: 'xhigh' };
+const CARBON_MEDIUM: AutoJob = { group: 'Gemini', checkpoint: 'Carbon', effort: 'medium' };
+const CARBON_HIGH: AutoJob = { group: 'Gemini', checkpoint: 'Carbon', effort: 'high' };
+const NEON_HIGH: AutoJob = { group: 'Gemini', checkpoint: 'Neon', effort: 'high' };
 
 const AUTO: AutoJob = { group: 'Auto' };
 
@@ -42,11 +45,11 @@ export const EFFORT_LADDER: Readonly<Record<CuratedProviderId, Ladder>> = {
     top: [ASTRA_HIGH],
   },
   gemini: {
-    quick: [FLASH_LOW],
-    light: [FLASH_MEDIUM],
-    standard: [PRO_LOW],
-    hard: [PRO_HIGH],
-    top: [PRO_HIGH],
+    quick: [HYDROGEN_LOW],
+    light: [HYDROGEN_MEDIUM],
+    standard: [CARBON_MEDIUM, HYDROGEN_MEDIUM],
+    hard: [CARBON_HIGH, HYDROGEN_HIGH],
+    top: [NEON_HIGH, HYDROGEN_XHIGH],
   },
   cursor: {
     quick: [AUTO],

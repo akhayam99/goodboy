@@ -177,19 +177,20 @@ describe('RoutingPicker', () => {
       <RoutingPicker
         {...baseProps}
         provider="gemini"
-        model="gemini-3.8-flash"
+        model="gemini-4-hydrogen"
         ariaLabel="routing"
       />,
     );
     const trigger = screen.getByRole('button', { name: /^routing:/ });
-    expect(triggerSegments({ element: trigger })).toEqual(['3.8 Flash', 'High']);
-    expect(trigger.getAttribute('aria-label')).toBe('routing: Gemini · 3.8 Flash · High');
+    expect(triggerSegments({ element: trigger })).toEqual(['4 Hydrogen', 'High']);
+    expect(trigger.getAttribute('aria-label')).toBe('routing: Gemini · 4 Hydrogen · High');
     fireEvent.click(trigger);
     const effort = within(screen.getByRole('group', { name: 'Effort' }));
     expect(effort.getAllByRole('button').map((button) => button.textContent)).toEqual([
       'Low',
       'Medium',
       'High',
+      'Very high',
     ]);
   });
 

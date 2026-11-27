@@ -22,11 +22,26 @@ describe('EFFORT_LADDER', () => {
     }
   });
 
-  it('puts Haiku 5.5, Luna and Flash on the two lowest rungs, never an agent line', () => {
+  it('puts Haiku 5.5, Luna and Hydrogen on the two lowest rungs, never an agent line', () => {
     expect(AUTO_RUNG_CHOICES.anthropic.quick[0]).toEqual({ key: 'haiku-5.5', effort: 'low' });
     expect(AUTO_RUNG_CHOICES.anthropic.light[0]).toEqual({ key: 'haiku-5.5', effort: 'medium' });
     expect(AUTO_RUNG_CHOICES.codex.quick[0]).toEqual({ key: 'gpt-6-luna', effort: 'low' });
-    expect(AUTO_RUNG_CHOICES.gemini.light[0]?.key).toBe('gemini-3.8-flash');
+    expect(AUTO_RUNG_CHOICES.gemini.light[0]?.key).toBe('gemini-4-hydrogen');
+  });
+
+  it('backs every paid Gemini rung with Hydrogen, the model all Google plans run', () => {
+    expect(AUTO_RUNG_CHOICES.gemini.standard).toEqual([
+      { key: 'gemini-4-carbon', effort: 'medium' },
+      { key: 'gemini-4-hydrogen', effort: 'medium' },
+    ]);
+    expect(AUTO_RUNG_CHOICES.gemini.hard).toEqual([
+      { key: 'gemini-4-carbon', effort: 'high' },
+      { key: 'gemini-4-hydrogen', effort: 'high' },
+    ]);
+    expect(AUTO_RUNG_CHOICES.gemini.top).toEqual([
+      { key: 'gemini-4-neon', effort: 'high' },
+      { key: 'gemini-4-hydrogen', effort: 'xhigh' },
+    ]);
   });
 
   it('refills the Codex mid rungs with GPT-6.1 Sol now that Terra is legacy', () => {

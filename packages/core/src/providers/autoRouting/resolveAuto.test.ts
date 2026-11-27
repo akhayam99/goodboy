@@ -126,7 +126,7 @@ describe('resolveAuto', () => {
       }),
     ).toEqual({
       provider: 'gemini',
-      model: 'gemini-3.8-flash',
+      model: 'gemini-4-hydrogen',
       effort: 'low',
       step: 'next-provider',
     });
@@ -348,12 +348,12 @@ describe('resolveAuto', () => {
     });
   });
 
-  it('never lists the retired Gemini 3.7 Flash in the Flash line', () => {
+  it('runs the Gemini summarizer on Hydrogen and lists no older Gemini line behind it', () => {
     expect(
       resolveAuto({ slot: { kind: 'task', id: 'summarizer' }, defaultProvider: 'gemini' }),
-    ).toEqual({ provider: 'gemini', model: 'gemini-3.8-flash', effort: 'low', step: 'curated' });
+    ).toEqual({ provider: 'gemini', model: 'gemini-4-hydrogen', effort: 'low', step: 'curated' });
     expect(AUTO_DEFAULTS.gemini.summarizer.map((choice) => choice.key)).toEqual([
-      'gemini-3.8-flash',
+      'gemini-4-hydrogen',
     ]);
   });
 

@@ -27,7 +27,7 @@ describe('strongestModelForTier', () => {
   it('falls to the nearest tier when the provider has none of the requested one', () => {
     expect(
       strongestModelForTier({ provider: 'gemini', tier: 'expensive', wantsThinker: false })?.id,
-    ).toBe('gemini-3.1-pro');
+    ).toBe('gemini-4-neon');
   });
 
   it('never answers with a thinker-only model for an implementer', () => {

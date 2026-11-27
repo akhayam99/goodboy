@@ -26,7 +26,7 @@ describe('autoModelForRole', () => {
     it('treats the first provider as the default, even when Claude is also enabled', () => {
       expect(autoModelForRole({ role: 'planner', providers: ['gemini', 'anthropic'] })).toEqual({
         provider: 'gemini',
-        model: 'gemini-3.1-pro',
+        model: 'gemini-4-neon',
       });
     });
   });
@@ -35,14 +35,14 @@ describe('autoModelForRole', () => {
     it('picks the matching expensive-tier model for a high-tier role', () => {
       expect(autoModelForRole({ role: 'planner', providers: ['gemini'] })).toEqual({
         provider: 'gemini',
-        model: 'gemini-3.1-pro',
+        model: 'gemini-4-neon',
       });
     });
 
     it('picks the highest-weight cheap model for a low-tier role', () => {
       expect(autoModelForRole({ role: 'scout', providers: ['gemini'] })).toEqual({
         provider: 'gemini',
-        model: 'gemini-3.8-flash',
+        model: 'gemini-4-hydrogen',
       });
     });
 
@@ -50,7 +50,7 @@ describe('autoModelForRole', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
       expect(autoModelForRole({ role: 'totally-made-up', providers: ['gemini'] })).toEqual({
         provider: 'gemini',
-        model: 'gemini-3.1-pro',
+        model: 'gemini-4-carbon',
       });
       expect(warn).toHaveBeenCalledWith('[roles] unknown role "totally-made-up"; using custom');
       warn.mockRestore();

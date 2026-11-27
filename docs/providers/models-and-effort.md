@@ -56,6 +56,19 @@ the anthropic catalog is `providers/claude/catalog.ts`.
 - Context windows come from `codex debug models`: 500k for GPT-6.1 Sol, 272k for
   the others, not the 872k maximum. The orchestrator's context check reads them
 
+### Gemini models
+
+- Antigravity's plans decide who runs what. Gemini 4 Hydrogen runs on every
+  Google plan, Neon and Carbon need Google AI Pro or Ultra, and 3.1 Pro, 3.7
+  Flash and 3.6 Flash are Enterprise only, so they are `legacy`
+- Hydrogen is the turn default and the `cheap` model. Auto takes Carbon on the
+  Standard and Hard rungs and Neon on Top, as for a Google AI Pro account
+- Goodboy cannot read the Google plan. On a plan without Neon or Carbon, hide
+  them in the model list and each rung runs Hydrogen
+- A `cliId` is the base name; the level goes in `agy --effort`
+- 3.8 Flash left Antigravity on November 30, 2026. `parseLegacyId` moves a saved
+  pick of it to Hydrogen, and its price row stays for recorded spend
+
 ### Cheap model
 
 Only Cursor's `getCheapModel` is set by hand, to `auto` in `cli-defaults.ts`. The
@@ -110,12 +123,15 @@ Flash and `auto` get no effort flag. Every window is
 - Cursor bills by its own list (`cursor.com/docs/models`), not the vendor's. Every
   Haiku 5.5 combo on Cursor needs Max Mode, which Cursor keeps only on legacy plans
 
-### Gemini Flash price date
+### Gemini price dates
 
 Gemini 3.6, 3.7 and 3.8 Flash bill 0.75/3.75 per Mtok (cached 0.075) in
 `gemini/cost.ts` until December 31, 2026. Google lists 1.50/7.50 (cached 0.15)
 from January 1, 2027, so move the three rows then. `priceSources.test.ts` turns
 red on that day so the move cannot be forgotten.
+
+Gemini 4 Carbon carries 4/20 (cached 0.20), the rate Google lists from December
+1, 2026, not the lower launch rate that ends the day before.
 
 ### Prices by prompt size
 
