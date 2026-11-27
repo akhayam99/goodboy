@@ -134,10 +134,18 @@ otherwise it pushes the parent (`upTo({ to })`, called by `up()` and every crumb
 Closing an app studio is Back, so Up from a studio and Close land alike. `crumbsOf`
 walks `parentPlace` up to the session.
 
-| Back               | Follows                                | After a reload                                    |
-| ------------------ | -------------------------------------- | ------------------------------------------------- |
-| Crumbs, Esc and ⌘↑ | `parentPlace`, only inside the session | the same, also in a second window and from a link |
-| History Back (⌘[)  | this window's stack of 50              | empty                                             |
+**Close a session** is Up with Home as the parent (`closeSession`, the Close button at the
+end of the session head, ⌘W as the last rung and ⌘↑ on a session tab). When the entry
+before the session is Home it is Back, so the history stays clean; from the Board or
+another session it pushes Home, and Back reopens the session as it was left. It is
+navigation only: no agent stops, nothing is archived, the Board still lists the session.
+Esc stays inert on a session tab (`escapeLadder` reads `parentPlace`, which has none there).
+
+| Back              | Follows                                | After a reload                                    |
+| ----------------- | -------------------------------------- | ------------------------------------------------- |
+| Crumbs and Esc    | `parentPlace`, only inside the session | the same, also in a second window and from a link |
+| ⌘↑ and Close      | `parentPlace`, then Home from a tab    | the same                                          |
+| History Back (⌘[) | this window's stack of 50              | empty                                             |
 
 - A top agent (a root agent at `s/{session}/workflows/agent/{agent}`, the one page
   `canonicalAgent` resolves for every door) goes back to Runs, crumbs `Overview ›
@@ -153,7 +161,7 @@ Runs › {run}` like a run. When an up lands on the Overview, `upTo` writes the 
   ([dock-grid.md](dock-grid.md#the-grid-saved-on-the-session)). A tool opened on the
   Overview turns it to the Desk in place and closing the last tool turns it back,
   pushing nothing (`switchSessionFace`). Back, Forward, the crumbs and Esc never
-  change a face; ⌘↑ from the Desk goes to the board.
+  change a face; ⌘↑ from the Desk goes to Home.
 - **An Auto run keeps one frame.** The run page and every agent page under it draw
   the Agents rail in the frame's left slot (`LeadPage`, `RunAgentsRail`), marking the
   agent in the address, so a reload, Back and Forward restore it; a row opens that
@@ -164,8 +172,8 @@ Runs › {run}` like a run. When an up lands on the Overview, `upTo` writes the 
 
 - ⌘[ and ⌘] (`nav.back`, `nav.forward`) and the mouse's back and forward buttons
   walk the stack.
-- ⌘↑ (`nav.up`, `goUp`) is Up. On a session tab, with no parent, it goes to the
-  board, while ⌘W there keeps walking history. In a studio it runs the parent crumb
+- ⌘↑ (`nav.up`, `goUp`) is Up. On a session tab, with no parent, it goes to Home
+  (`closePlaceOf`), the same as Close. In a studio it runs the parent crumb
   of the `StudioTrail` on screen (`studioUpSlot`: Impact › Spend › a provider goes to
   Spend, a full Tasks record to the list); a studio with no trail parent closes. It
   yields to a text field.

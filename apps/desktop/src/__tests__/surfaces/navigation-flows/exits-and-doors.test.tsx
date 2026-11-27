@@ -372,7 +372,7 @@ describe('the Help tabs stack under the palette door', () => {
   });
 });
 
-const WAY_BACK = /^(Close\b(?! branch)|Back to )/i;
+const WAY_BACK = /^(Close\b(?! branch| session)|Back to )/i;
 
 const waysBack = (): ReadonlyArray<HTMLElement> =>
   Array.from(document.querySelectorAll<HTMLElement>('button'))

@@ -25,9 +25,10 @@ Ctrl+Shift+W.
 
 Each press closes one level: a popover or dialog, then the terminal tab (a
 running process asks first), then the open drawer, then a studio, then the
-session view back to the previous place. It closes what you see: under a studio
-the session drawer is parked, so the studio closes first and the drawer comes
-back with the session. The Board does nothing.
+session view up one page, and on its first page the session itself, which
+closes to Home. It closes what you see: under a studio the session drawer is
+parked, so the studio closes first and the drawer comes back with the session.
+Home and the Board do nothing.
 `terminal.closeTab` is the scoped entry that declines when a popover is open or
 no tab is selected, so `app.close` takes the press.
 

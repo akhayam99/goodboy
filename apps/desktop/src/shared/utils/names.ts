@@ -70,6 +70,7 @@ export const NAMES = {
   dock: 'Dock',
   dockBesideThePage: 'Dock beside the page',
   close: 'Close',
+  closeSession: 'Close session',
   closeThePanel: 'Close the panel',
   closeOrGoBack: 'Close or go back',
   resetPanelLayout: 'Reset panel layout',
