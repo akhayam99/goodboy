@@ -28,6 +28,7 @@ const scout: LeadTreeItem = {
   word: 'Done',
   isSettled: true,
   spendUsd: 0.31,
+  permissions: [],
 };
 
 const reviewer: LeadTreeItem = {

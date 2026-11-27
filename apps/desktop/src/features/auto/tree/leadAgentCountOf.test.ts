@@ -25,6 +25,7 @@ const agent = ({ id }: AgentParams): LeadTreeItem => ({
   word: 'Done',
   isSettled: true,
   spendUsd: 0.4,
+  permissions: [],
 });
 
 const fold = ({ count, isOpen }: FoldParams): LeadTreeItem => ({

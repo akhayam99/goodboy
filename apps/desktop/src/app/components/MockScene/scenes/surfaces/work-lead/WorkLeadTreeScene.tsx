@@ -10,6 +10,7 @@ import {
   leadTreeOf,
   type LeadTreeDelegation,
 } from '../../../../../../features/auto/tree/leadTreeOf';
+import type { AgentMarks } from '../../../../../../features/auto/tree/markersOf';
 import { noteNodesOf } from '../../../../../../features/auto/tree/noteNodesOf';
 import { noteTextOf } from '../../../../../../store/slices/auto-view/noteTextOf';
 import type { AutoReadMessage } from '../../../../../../store/slices/auto-view/state';
@@ -325,6 +326,41 @@ const factsOf = (): ReadonlyMap<string, LeadTreeAgentFact> =>
     ]),
   );
 
+const MARKS: ReadonlyMap<string, AgentMarks> = new Map([
+  [
+    idOf({ key: 'scout-1' }),
+    { permissions: [{ decision: 'allow', count: 2, tools: ['Grep', 'Read'] }], labelled: [] },
+  ],
+  [
+    idOf({ key: 'planner' }),
+    {
+      permissions: [],
+      labelled: [{ id: 'mark:plan-7', artifactId: 'plan-7', label: 'Plan v7 approved' }],
+    },
+  ],
+  [
+    idOf({ key: 'implementer-1' }),
+    {
+      permissions: [
+        { decision: 'allow', count: 1, tools: ['Bash'] },
+        { decision: 'deny', count: 1, tools: ['Read'] },
+      ],
+      labelled: [],
+    },
+  ],
+  [
+    idOf({ key: 'implementer-2' }),
+    { permissions: [{ decision: 'deny', count: 2, tools: ['Bash'] }], labelled: [] },
+  ],
+  [
+    idOf({ key: 'tester' }),
+    {
+      permissions: [],
+      labelled: [{ id: 'mark:report-2', artifactId: 'report-2', label: 'Report v2' }],
+    },
+  ],
+]);
+
 const itemsOf = () => {
   const notes = noteNodesOf({
     rows: [{ id: 'n-queued', content: 'Add a retry test for notify-relay', status: 'queued' }],
@@ -341,7 +377,7 @@ const itemsOf = () => {
     openFoldIds: new Set(),
     canFold: false,
   });
-  return leadTreeItemsOf({ tree, agentsById: factsOf(), notes: notes.nodes });
+  return leadTreeItemsOf({ tree, agentsById: factsOf(), notes: notes.nodes, marks: MARKS });
 };
 
 export const WorkLeadTreeScene = ({ theme, density }: Props) => {

@@ -1,4 +1,5 @@
 import { invokeCommand } from '../../shared/lib/invokeCommand';
+import { brandId } from '@goodboy/types';
 import type {
   IsoDateTime,
   PermissionAuditEntry,
@@ -62,7 +63,7 @@ function rowToAuditEntry(row: RawPermissionAuditRow): PermissionAuditEntry {
   return {
     request: {
       id: row.id as PermissionRequestId,
-      runId: row.runId as ProviderRunId,
+      runId: brandId<ProviderRunId>({ value: row.runId }),
       toolUseId: row.toolUseId,
       toolName: row.toolName,
       input: JSON.parse(row.inputJson) as unknown,
@@ -143,6 +144,8 @@ export const invokePermissionRuleDelete = async ({
 export type RecentDecision = {
   readonly id: string;
   readonly sessionId: SessionId;
+  readonly runId: ProviderRunId;
+  readonly decidedBy: PermissionDecisionSource;
   readonly toolName: string;
   readonly input: unknown;
   readonly decision: PermissionDecisionOutcome;
@@ -168,6 +171,8 @@ export const invokePermissionAuditList = async ({
   return rows.map((row) => ({
     id: row.id,
     sessionId: row.sessionId as SessionId,
+    runId: brandId<ProviderRunId>({ value: row.runId }),
+    decidedBy: row.decidedBy === 'rule' || row.decidedBy === 'default' ? row.decidedBy : 'user',
     toolName: row.toolName,
     input: parsedInput({ json: row.inputJson }),
     decision: row.decision === 'deny' ? 'deny' : 'allow',

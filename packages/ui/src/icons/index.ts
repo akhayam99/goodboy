@@ -250,6 +250,7 @@ export { TrashCan as Trash2 } from './generated/TrashCan';
 export { Growth as TrendingUp } from './generated/Growth';
 export { WarningAlt as TriangleAlert } from './generated/WarningAlt';
 export { Undo as Undo2 } from './generated/Undo';
+export { Unlocked as Unlock } from './generated/Unlocked';
 export { Unlink } from './generated/Unlink';
 export { Unlink as Unplug } from './generated/Unlink';
 export { Upload } from './generated/Upload';
