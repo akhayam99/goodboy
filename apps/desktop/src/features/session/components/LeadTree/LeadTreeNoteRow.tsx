@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { MessageSquare } from '@goodboy/ui/icons';
+import { NotebookText } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE } from '@goodboy/ui';
 import { LEAD_TREE_UNIT, LeadTreeGuides } from './LeadTreeGuides';
 import { LEAD_TREE_CURSOR } from './leadTreeCursor';
@@ -31,7 +31,7 @@ export const LeadTreeNoteRow = memo(
       <LeadTreeGuides depth={depth} />
       <span aria-hidden className="shrink-0" style={{ width: depth * LEAD_TREE_UNIT }} />
       <span className="flex size-4 shrink-0 items-center justify-center text-faint-foreground">
-        <MessageSquare size={ICON_SIZE.row} aria-hidden="true" />
+        <NotebookText size={ICON_SIZE.row} aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1 truncate text-ui text-foreground">{text}</span>
       {canEdit ? (

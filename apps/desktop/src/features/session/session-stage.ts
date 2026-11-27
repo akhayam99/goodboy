@@ -91,7 +91,7 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     mark: 'approved',
     words: 'Approved, ready to merge',
   }),
-  'unread-reply': entryOf({ icon: 'agents', tone: 'info', mark: 'none', words: 'New reply' }),
+  'unread-reply': entryOf({ icon: 'message', tone: 'info', mark: 'none', words: 'New reply' }),
   'run-stopped': entryOf({
     icon: 'runFailed',
     tone: 'danger',

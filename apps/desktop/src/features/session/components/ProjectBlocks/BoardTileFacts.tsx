@@ -1,7 +1,7 @@
-import { Button, tintClasses } from '@goodboy/ui';
+import { Button } from '@goodboy/ui';
 import { countNoun } from '../../../../shared/utils/countNoun';
-import type { BranchRowWord } from '../../central/board/branchRowOf';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
+import { boardSettledWordOf } from '../../central/board/boardSettledWordOf';
 import { requestShortOf } from '../../central/board/requestShortOf';
 import { branchWorkTabRegistration } from '../../branchWorkTabRegistration';
 import { openLink } from '../../../open/openLink';
@@ -10,13 +10,12 @@ import { useBoardContext } from './useBoardContext';
 type Props = {
   readonly rowId: string;
   readonly title: string;
-  readonly word: BranchRowWord | null;
   readonly onOpenChanges: () => void;
 };
 
 const SEPARATOR = ' · ';
 
-export const BoardTileFacts = ({ rowId, title, word, onOpenChanges }: Props) => {
+export const BoardTileFacts = ({ rowId, title, onOpenChanges }: Props) => {
   const { session, rowById, entryByRowId, diffStatByPath, runningByRowId } = useBoardContext();
   const entry = entryByRowId.get(rowId) ?? null;
   const mountPath = entry === null ? null : entry.fact.mountPath;
@@ -34,10 +33,18 @@ export const BoardTileFacts = ({ rowId, title, word, onOpenChanges }: Props) => 
   const isSettled = rowById.get(rowId)?.isSettled === true;
   const linkUrl = request === null || !isSettled || request.url === '' ? null : request.url;
   const runs = work.counts === null ? 0 : work.counts.runs;
+  const row = rowById.get(rowId);
+  const asked = row?.askIds.length ?? 0;
+  const settled = row === undefined ? null : boardSettledWordOf({ row });
   const words = joinFacts({
-    facts: [runs > 0 && countNoun({ count: runs, one: 'run' })],
+    facts: [
+      settled?.word,
+      runs > 0 && countNoun({ count: runs, one: 'run' }),
+      asked > 0 &&
+        `${countNoun({ count: asked, one: 'question' })} ${asked === 1 ? 'waits' : 'wait'}`,
+    ],
   });
-  if (requestWord === '' && !hasDiff && words === '' && word === null) {
+  if (requestWord === '' && !hasDiff && words === '') {
     return null;
   }
   return (
@@ -59,13 +66,7 @@ export const BoardTileFacts = ({ rowId, title, word, onOpenChanges }: Props) => 
           {requestWord}
         </Button>
       )}
-      {requestWord !== '' && word !== null ? SEPARATOR : null}
-      {word === null ? null : (
-        <span data-board-word="" className={tintClasses(word.tone).text}>
-          {word.word}
-        </span>
-      )}
-      {(requestWord !== '' || word !== null) && (hasDiff || words !== '') ? SEPARATOR : null}
+      {requestWord !== '' && (hasDiff || words !== '') ? SEPARATOR : null}
       {hasDiff ? (
         <Button
           variant="quiet"

@@ -65,7 +65,7 @@ const context: BoardContextValue = {
     run: async () => undefined,
   },
   shownAskIds: new Set(),
-  isPermissionShown: false,
+  permissionMount: null,
 };
 
 describe('the props of a board tile', () => {

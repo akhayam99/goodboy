@@ -22,7 +22,7 @@ export type BoardContextValue = Readonly<{
   openFor: ActionCardActions['openFor'];
   removal: RemoveWorktrees;
   shownAskIds: ReadonlySet<string>;
-  isPermissionShown: boolean;
+  permissionMount: Readonly<{ mountId: string | null }> | null;
 }>;
 
 export const BoardContext = createContext<BoardContextValue | null>(null);
