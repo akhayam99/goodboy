@@ -155,6 +155,7 @@ export type BrowserTabFavicon = {
 
 export type BrowserSiteCleared = {
   readonly host: string;
+  readonly extraHosts: ReadonlyArray<string>;
   readonly scope: 'site' | 'workspace';
 };
 
@@ -243,6 +244,7 @@ export type BrowserPaneModel = {
   readonly reload: () => void;
   readonly reloadFromOrigin: () => void;
   readonly siteHost: string | null;
+  readonly siteTrail: ReadonlyArray<string>;
   readonly hasShownView: boolean;
   readonly clearSiteData: () => void;
   readonly stop: () => void;

@@ -119,10 +119,18 @@ where
         crate::platform::web_site_data::remove_records(platform, keep, sender)
     })
     .map_err(|_| reason::failed(SITE_DATA_UNAVAILABLE))?;
-    let removed =
-        tauri::async_runtime::spawn_blocking(move || receiver.recv_timeout(SITE_DATA_WAIT))
-            .await
-            .map_err(|_| reason::failed(SITE_DATA_UNAVAILABLE))?;
+    removed_within(receiver, SITE_DATA_WAIT).await
+}
+
+#[cfg(target_os = "macos")]
+async fn removed_within(
+    receiver: std::sync::mpsc::Receiver<Option<usize>>,
+    wait: std::time::Duration,
+) -> Result<usize, MessageError> {
+    use super::reason::SITE_DATA_UNAVAILABLE;
+    let removed = tauri::async_runtime::spawn_blocking(move || receiver.recv_timeout(wait))
+        .await
+        .map_err(|_| reason::failed(SITE_DATA_UNAVAILABLE))?;
     removed
         .ok()
         .flatten()
@@ -240,6 +248,29 @@ mod tests {
 
     fn hosts(names: &[&str]) -> Vec<String> {
         names.iter().map(|name| name.to_string()).collect()
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn a_removal_that_never_answers_fails_after_the_wait() {
+        use super::super::reason::SITE_DATA_UNAVAILABLE;
+        let wait = std::time::Duration::from_millis(20);
+        let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+        let silent = tauri::async_runtime::block_on(removed_within(receiver, wait));
+        assert_eq!(
+            silent.map_err(|error| error.to_string()),
+            Err(SITE_DATA_UNAVAILABLE.to_string())
+        );
+        drop(sender);
+        let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+        sender.try_send(None).expect("room");
+        let refused = tauri::async_runtime::block_on(removed_within(receiver, wait));
+        assert!(refused.is_err());
+        let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+        sender.try_send(Some(2)).expect("room");
+        let removed = tauri::async_runtime::block_on(removed_within(receiver, wait));
+        assert_eq!(removed.map_err(|error| error.to_string()), Ok(2));
+        assert_eq!(SITE_DATA_WAIT, std::time::Duration::from_secs(10));
     }
 
     #[test]

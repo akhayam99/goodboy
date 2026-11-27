@@ -49,6 +49,7 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
   });
   const siteData = siteDataRowOf({
     host: model.siteHost,
+    extraHosts: model.siteTrail,
     isWholeStore: currentPlatform() !== 'darwin',
   });
   const entries: ReadonlyArray<MenuEntry> = [
