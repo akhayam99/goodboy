@@ -3,6 +3,7 @@ import type { WorkNodeState } from '@goodboy/ui';
 import type { AgentKind } from '../../session/agent-kind';
 import type { LeadTree } from './leadTreeOf';
 import type { NoteNode } from './noteNodesOf';
+import { NO_MARKS, type AgentMarks, type PermissionMark } from './markersOf';
 import { roleNameOf } from './roleNameOf';
 import { rolePluralOf } from './rolePluralOf';
 
@@ -20,6 +21,14 @@ export type LeadTreeItem =
       word: string;
       isSettled: boolean;
       spendUsd: number;
+      permissions: ReadonlyArray<PermissionMark>;
+    }>
+  | Readonly<{
+      kind: 'mark';
+      id: string;
+      depth: number;
+      artifactId: string;
+      label: string;
     }>
   | Readonly<{
       kind: 'fold';
@@ -59,12 +68,16 @@ type Params = {
   readonly tree: LeadTree;
   readonly agentsById: ReadonlyMap<string, LeadTreeAgentFact>;
   readonly notes: ReadonlyArray<NoteNode>;
+  readonly marks?: ReadonlyMap<string, AgentMarks>;
 };
+
+const NO_MARK_MAP: ReadonlyMap<string, AgentMarks> = new Map();
 
 export const leadTreeItemsOf = ({
   tree,
   agentsById,
   notes,
+  marks = NO_MARK_MAP,
 }: Params): ReadonlyArray<LeadTreeItem> => {
   const noteById = new Map(notes.map((note) => [note.id, note]));
   return tree.rows.flatMap((row): ReadonlyArray<LeadTreeItem> => {
@@ -73,6 +86,7 @@ export const leadTreeItemsOf = ({
       if (fact === undefined) {
         return [];
       }
+      const agentMarks = marks.get(fact.agentId) ?? NO_MARKS;
       return [
         {
           kind: 'agent',
@@ -87,7 +101,15 @@ export const leadTreeItemsOf = ({
           word: fact.word,
           isSettled: row.isSettled,
           spendUsd: row.ownSpendUsd,
+          permissions: agentMarks.permissions,
         },
+        ...agentMarks.labelled.map((mark): LeadTreeItem => ({
+          kind: 'mark',
+          id: `${mark.id}:${row.id}`,
+          depth: row.depth + 1,
+          artifactId: mark.artifactId,
+          label: mark.label,
+        })),
       ];
     }
     if (row.kind === 'fold') {

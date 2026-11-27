@@ -4,6 +4,7 @@ import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types'
 import { useAppStore } from '../../../../store';
 import type { AgentQueuedTurn } from '../../../../store/slices/agentQueue/types';
 import type { AutoReadMessage } from '../../../../store/slices/auto-view/state';
+import { useRecentDecisions } from '../../../../shared/hooks/useRecentDecisions';
 import { useSessionRunHistory } from '../../../../shared/hooks/useSessionRunHistory';
 import { agentOwnSpendById } from '../../../session/timeline/agentOwnSpendById';
 import { autoTreeOfAgent } from '../../autoTreeOfAgent';
@@ -12,6 +13,7 @@ import type { LeadTreeRootState } from '../../tree/leadTreeRootState';
 import { leadTreeDelegationsOf } from '../../tree/leadTreeDelegationsOf';
 import { leadTreeItemsOf, type LeadTreeItem } from '../../tree/leadTreeItemsOf';
 import { leadTreeOf, type LeadTree } from '../../tree/leadTreeOf';
+import { markersOf, type PermissionFact } from '../../tree/markersOf';
 import { noteNodesOf, type NoteSource } from '../../tree/noteNodesOf';
 import { shownNoteRowsOf } from '../../tree/shownNoteRowsOf';
 import { useAutoTreeViews } from '../../useAutoTreeViews';
@@ -60,6 +62,26 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
     () => agentOwnSpendById({ records: telemetry, agents, agentRunHistory }),
     [agentRunHistory, agents, telemetry],
   );
+  const refreshKey = useMemo(
+    () => String(Object.values(agentRunHistory).reduce((sum, runs) => sum + runs.length, 0)),
+    [agentRunHistory],
+  );
+  const { decisions } = useRecentDecisions({ sessionIds: [sessionId], refreshKey });
+  const permissions = useMemo((): ReadonlyArray<PermissionFact> => {
+    const agentByRunId = new Map<string, string>();
+    for (const [agentId, runIds] of Object.entries(agentRunHistory)) {
+      for (const runId of runIds) {
+        agentByRunId.set(runId, agentId);
+      }
+    }
+    return decisions.flatMap((decision): ReadonlyArray<PermissionFact> => {
+      const agentId = agentByRunId.get(decision.runId);
+      if (decision.decidedBy !== 'user' || agentId === undefined) {
+        return [];
+      }
+      return [{ agentId, toolName: decision.toolName, decision: decision.decision }];
+    });
+  }, [decisions, agentRunHistory]);
   const rootTurn = useAppStore((state) => state.agentTurnState[rootAgentId] ?? null);
   const view = useMemo(
     () => autoTreeOfAgent({ views, agentId: rootAgentId })?.view ?? null,
@@ -107,9 +129,14 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
     });
     return {
       tree,
-      items: leadTreeItemsOf({ tree, agentsById: facts.agentsById, notes: notes.nodes }),
+      items: leadTreeItemsOf({
+        tree,
+        agentsById: facts.agentsById,
+        notes: notes.nodes,
+        marks: markersOf({ permissions, artifacts: view.artifacts }),
+      }),
     };
-  }, [view, rows, queue, agents, ownSpendByAgentId, rootAgentId]);
+  }, [view, rows, queue, agents, ownSpendByAgentId, rootAgentId, permissions]);
   return {
     items: model.items,
     root,

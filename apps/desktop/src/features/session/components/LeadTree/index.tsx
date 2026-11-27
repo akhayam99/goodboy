@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState, type KeyboardEvent } from 'react';
 import type { AgentId } from '@goodboy/types';
 import { LeadTreeAgentRow } from './LeadTreeAgentRow';
 import { LeadTreeFoldRow } from './LeadTreeFoldRow';
+import { LeadTreeMarkRow } from './LeadTreeMarkRow';
 import { LeadTreeMoreRow } from './LeadTreeMoreRow';
 import { LeadTreeNoteRow } from './LeadTreeNoteRow';
 import { LeadTreeRootRow } from './LeadTreeRootRow';
@@ -20,11 +21,14 @@ type Props = {
   readonly density?: LeadTreeDensity;
   readonly onSelect: (agentId: AgentId) => void;
   readonly onToggleFold?: (foldId: string) => void;
+  readonly onOpenArtifact?: (artifactId: string) => void;
   readonly onEditNote: (noteId: string) => void;
   readonly onRemoveNote: (noteId: string) => void;
 };
 
 const ignoreFold = (): void => undefined;
+
+const ignoreArtifact = (): void => undefined;
 
 type StepParams = {
   readonly ids: ReadonlyArray<string>;
@@ -50,6 +54,7 @@ export const LeadTree = ({
   density = 'full',
   onSelect,
   onToggleFold = ignoreFold,
+  onOpenArtifact = ignoreArtifact,
   onEditNote,
   onRemoveNote,
 }: Props) => {
@@ -100,11 +105,14 @@ export const LeadTree = ({
       if (item.kind === 'fold') {
         onToggleFold(item.id);
       }
+      if (item.kind === 'mark') {
+        onOpenArtifact(item.artifactId);
+      }
       if ((item.kind === 'note' || item.kind === 'more') && root !== null) {
         onSelect(root.agentId);
       }
     },
-    [ids, items, root, cursorId, onSelect, onToggleFold],
+    [ids, items, root, cursorId, onSelect, onToggleFold, onOpenArtifact],
   );
 
   return (
@@ -147,6 +155,7 @@ export const LeadTree = ({
               word={item.word}
               isSettled={item.isSettled}
               spendUsd={item.spendUsd}
+              permissions={item.permissions}
               depth={item.depth}
               isSelected={item.agentId === selectedAgentId}
               isActive={isActive}
@@ -165,6 +174,19 @@ export const LeadTree = ({
               isActive={isActive}
               depth={item.depth}
               onToggle={onToggleFold}
+            />
+          );
+        }
+        if (item.kind === 'mark') {
+          return (
+            <LeadTreeMarkRow
+              key={item.id}
+              id={item.id}
+              artifactId={item.artifactId}
+              label={item.label}
+              depth={item.depth}
+              isActive={isActive}
+              onOpen={onOpenArtifact}
             />
           );
         }

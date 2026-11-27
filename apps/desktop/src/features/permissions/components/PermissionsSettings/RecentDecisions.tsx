@@ -6,7 +6,7 @@ import { EmptyState, ErrorStrip, STRIPED_LIST, cn, tintClasses } from '@goodboy/
 import { useAppStore } from '../../../../store';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
-import { useRecentDecisions } from '../../hooks/useRecentDecisions';
+import { useRecentDecisions } from '../../../../shared/hooks/useRecentDecisions';
 import type { RecentDecision } from '../../permissions';
 import { useNow } from '../../../../shared/hooks/useNow';
 

@@ -337,6 +337,8 @@ Every new run from **Start a run** has a Lead, unless you named one role. There 
 - A run started from review comments opens with **From N comments**. Each comment is quoted with its source and whether it is still open. **Open comment** opens it on its branch.
 - Write to a Lead while its agents work and the note goes in at once. Its tree row reads **Not read yet**, then **Read at turn 3**, and you can still edit or remove it until it is read. The tree lists only what you wrote. A permission answer, an automatic continue or an answers message is never a note, and a note shows your own words, with nothing in front.
 - A note sits quietly under the agent that was newest when you wrote it, in smaller faint text on two lines, and the agents keep the stronger weight. After two notes on one agent the rest fold into one row, **3 more messages from you**. A queued note is never folded away, so you can still edit it. A note and the fold open the Lead.
+- A permission you allowed or denied is a small icon on the agent that asked, with a count when there are several. Hover it for the tool names. It never adds a line to the list.
+- A plan reads **Plan v7 approved** under the agent that wrote it, and a report reads **Report v2**. One click opens it in Artifacts.
 - An ask to push, open a pull request, add a dependency or change a protected file appears in the action bar. It has one main answer and one quiet one.
 - With **Close the work** at Lead, a Lead that decides the work is done ends in **Finished**, once no agent is open and nothing waits. A message from you opens it again.
 - ⌘K lists one row per open Lead, and the [Board](board.md#session-card) shows which session waits for you. There is no Work page: a window left on it opens on the Board.

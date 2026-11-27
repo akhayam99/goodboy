@@ -63,6 +63,11 @@ The tree places a note under the latest agent that started before it (`leadTreeO
 it reads as a quiet line under that agent. A turn shows two read notes (`NOTES_PER_TURN`);
 the rest become one `more` row, and a queued note is never folded.
 
+Permissions and artifacts are marks, not rows of text. `markersOf` groups the decisions
+you made (`decidedBy` user, matched to an agent by `runId`) into one allowed and one denied
+mark per agent, and turns each artifact the agent owns into a `Plan v7 approved` or
+`Report v2` row (`leadTreeItemsOf`, kind `mark`) that opens it in Artifacts.
+
 ## What a note is
 
 A `user` outbox row carries `origin` (`operator`, `permission`, `continue`,

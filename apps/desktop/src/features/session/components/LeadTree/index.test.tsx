@@ -28,6 +28,7 @@ const scout: LeadTreeItem = {
   word: 'Done',
   isSettled: true,
   spendUsd: 0.31,
+  permissions: [],
 };
 
 const implementer: LeadTreeItem = {
@@ -43,6 +44,7 @@ const implementer: LeadTreeItem = {
   word: 'Running',
   isSettled: false,
   spendUsd: 0,
+  permissions: [],
 };
 
 const fold: LeadTreeItem = {
@@ -273,5 +275,51 @@ describe('LeadTree', () => {
     await user.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{Enter}');
     expect(onSelect).toHaveBeenCalledTimes(3);
     expect(onSelect).toHaveBeenLastCalledWith(leadId);
+  });
+
+  it('draws permissions as icons on the agent that asked, with the tool names in the accessible name and a count', () => {
+    const asked: LeadTreeItem = {
+      ...implementer,
+      permissions: [
+        { decision: 'allow', count: 2, tools: ['Grep', 'Bash'] },
+        { decision: 'deny', count: 1, tools: ['Read'] },
+      ],
+    };
+    const { container } = render(<Harness items={[asked]} />);
+    screen.getByRole('img', { name: 'Allowed Grep, Bash' });
+    screen.getByRole('img', { name: 'Denied Read' });
+    expect(container.querySelector('[data-lead-tree-permission="allow"]')?.textContent).toBe('2');
+    expect(container.querySelector('[data-lead-tree-permission="deny"]')?.textContent).toBe('');
+    expect(screen.getByRole('treeitem', { name: /Implementer/ }).getAttribute('aria-label')).toBe(
+      '2 Implementer, Key the guard on the event id, Running, Allowed Grep, Bash, Denied Read',
+    );
+    expect(container.textContent).not.toMatch(/Denied Read\./);
+  });
+
+  it('opens a plan or report marker with a click and with Enter', async () => {
+    const user = userEvent.setup();
+    const onOpenArtifact = vi.fn();
+    const planMark: LeadTreeItem = {
+      kind: 'mark',
+      id: 'mark:plan-1:d2',
+      depth: 1,
+      artifactId: 'plan-1',
+      label: 'Plan v7 approved',
+    };
+    render(
+      <LeadTree
+        items={[implementer, planMark]}
+        selectedAgentId={null}
+        onSelect={() => undefined}
+        onOpenArtifact={onOpenArtifact}
+        onEditNote={() => undefined}
+        onRemoveNote={() => undefined}
+      />,
+    );
+    await user.click(screen.getByRole('treeitem', { name: 'Plan v7 approved' }));
+    expect(onOpenArtifact).toHaveBeenLastCalledWith('plan-1');
+    screen.getByTestId('lead-tree').focus();
+    await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
+    expect(onOpenArtifact).toHaveBeenCalledTimes(2);
   });
 });

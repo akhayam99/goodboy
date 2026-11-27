@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ScrollFade, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
-import type { AgentId, SessionId } from '@goodboy/types';
+import { brandId, type AgentId, type ArtifactId, type SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { agentPlace } from '../../../../store/slices/navigation/place';
+import { agentPlace, sessionPlace } from '../../../../store/slices/navigation/place';
 import { leadAgentCountOf } from '../../../auto/tree/leadAgentCountOf';
 import type { LeadTreeItem } from '../../../auto/tree/leadTreeItemsOf';
 import { LeadTree } from '../LeadTree';
@@ -65,6 +65,17 @@ export const RunAgentsRail = ({
     },
     [canDock, setFolded, shownAgentId, keepTreeFocus, navigate, sessionId],
   );
+  const onOpenArtifact = useCallback(
+    (artifactId: string) =>
+      navigate({
+        to: sessionPlace({
+          sessionId,
+          lens: 'plans',
+          target: { kind: 'artifact', artifactId: brandId<ArtifactId>({ value: artifactId }) },
+        }),
+      }),
+    [navigate, sessionId],
+  );
   if (host === null) {
     return null;
   }
@@ -100,6 +111,7 @@ export const RunAgentsRail = ({
               root={root}
               selectedAgentId={shownAgentId}
               onSelect={onSelect}
+              onOpenArtifact={onOpenArtifact}
               onEditNote={onEditNote}
               onRemoveNote={onRemoveNote}
             />

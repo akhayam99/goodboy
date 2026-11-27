@@ -143,6 +143,8 @@ export const invokePermissionRuleDelete = async ({
 export type RecentDecision = {
   readonly id: string;
   readonly sessionId: SessionId;
+  readonly runId: ProviderRunId;
+  readonly decidedBy: PermissionDecisionSource;
   readonly toolName: string;
   readonly input: unknown;
   readonly decision: PermissionDecisionOutcome;
@@ -168,6 +170,8 @@ export const invokePermissionAuditList = async ({
   return rows.map((row) => ({
     id: row.id,
     sessionId: row.sessionId as SessionId,
+    runId: row.runId as ProviderRunId,
+    decidedBy: row.decidedBy === 'rule' || row.decidedBy === 'default' ? row.decidedBy : 'user',
     toolName: row.toolName,
     input: parsedInput({ json: row.inputJson }),
     decision: row.decision === 'deny' ? 'deny' : 'allow',

@@ -117,7 +117,7 @@ Overview of one session never shares the Board glyph. Tasks (`inbox`) draw
 permission ask (`approval`) draws `Lock`, and the Needs you section of the
 Overview wears `needsYou` (`CircleUser`) in the warning tone. A new reply from
 an agent draws the `message` bubble, not `Bot`, which means the agent itself.
-Recent permission decisions draw `decisions` (`CheckCheck`). The notes of the
+Recent permission decisions draw `decisions` (`CheckCheck`). On an agent row of the Agents rail, a permission you allowed draws `permissionAllowed` (`Unlock`, success) and one you denied draws `permissionDenied` (`CircleMinus`, danger), each with a count. The notes of the
 Lead tree draw `NotebookText`. A pull request closed unmerged draws
 `GitPullRequest` in the neutral tone, never the circled cross of a failed run.
 

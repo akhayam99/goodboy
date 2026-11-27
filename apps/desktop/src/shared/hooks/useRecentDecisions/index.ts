@@ -1,10 +1,14 @@
 import { formatError } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { invokePermissionAuditList, type RecentDecision } from '../../permissions';
+import {
+  invokePermissionAuditList,
+  type RecentDecision,
+} from '../../../features/permissions/permissions';
 
 type Params = {
   readonly sessionIds: ReadonlyArray<SessionId>;
+  readonly refreshKey?: string;
 };
 
 export type RecentDecisions = {
@@ -16,12 +20,12 @@ export type RecentDecisions = {
 
 const EMPTY: ReadonlyArray<RecentDecision> = [];
 
-export const useRecentDecisions = ({ sessionIds }: Params): RecentDecisions => {
+export const useRecentDecisions = ({ sessionIds, refreshKey = '' }: Params): RecentDecisions => {
   const [decisions, setDecisions] = useState<ReadonlyArray<RecentDecision>>(EMPTY);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const key = sessionIds.join('|');
+  const key = `${sessionIds.join('|')}#${refreshKey}`;
 
   useEffect(() => {
     let isCancelled = false;

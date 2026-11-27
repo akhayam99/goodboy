@@ -5,6 +5,9 @@ import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import type { AgentKind } from '../../agent-kind';
 import { DelegationClock } from '../../../auto/chat/DelegationClock';
 import { LeadTreeBrief } from './LeadTreeBrief';
+import { LeadTreePermissionMarks } from './LeadTreePermissionMarks';
+import { permissionMarkLabelOf } from './permissionMarkLabelOf';
+import type { PermissionMark } from '../../../auto/tree/markersOf';
 import { LEAD_TREE_UNIT, LeadTreeGuides } from './LeadTreeGuides';
 import { LeadTreeSelectedMark } from './LeadTreeSelectedMark';
 import { LEAD_TREE_CURSOR } from './leadTreeCursor';
@@ -24,6 +27,7 @@ type Props = {
   readonly word: string;
   readonly isSettled: boolean;
   readonly spendUsd: number;
+  readonly permissions: ReadonlyArray<PermissionMark>;
   readonly depth: number;
   readonly isSelected: boolean;
   readonly isActive: boolean;
@@ -55,6 +59,7 @@ export const LeadTreeAgentRow = memo(
     word,
     isSettled,
     spendUsd,
+    permissions,
     depth,
     isSelected,
     isActive,
@@ -64,13 +69,14 @@ export const LeadTreeAgentRow = memo(
     const ink = leadTreeInkOf({ node });
     const isMuted = LEAD_TREE_MUTED_NODES.has(node);
     const hasTitle = !isCompact && title !== '';
+    const permissionWords = permissions.map((mark) => permissionMarkLabelOf({ mark }));
     return (
       <div
         role="treeitem"
         tabIndex={-1}
         aria-selected={isSelected}
         aria-current={isSelected ? 'true' : undefined}
-        aria-label={`${number} ${role}${title === '' ? '' : `, ${title}`}, ${word}`}
+        aria-label={`${number} ${role}${title === '' ? '' : `, ${title}`}, ${word}${permissionWords.map((words) => `, ${words}`).join('')}`}
         data-selected={isSelected}
         data-lead-tree-id={id}
         data-lead-tree-agent={agentId}
@@ -100,6 +106,7 @@ export const LeadTreeAgentRow = memo(
             {isCompact ? role : ''}
           </span>
         )}
+        <LeadTreePermissionMarks marks={permissions} />
         {LEAD_TREE_QUIET_NODES.has(node) ? null : (
           <span data-lead-tree-word="" className={cn('shrink-0 text-meta', ink.word)}>
             {word}
