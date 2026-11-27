@@ -676,12 +676,26 @@ describe('demo playground', () => {
     expect(within(note).queryByRole('button', { name: 'Skip hint' })).toBeNull();
   });
 
-  it('lets the visitor press the demo button of the first step once per click', () => {
+  type KeyStepParams = {
+    readonly frame: HTMLIFrameElement;
+  };
+
+  const reachKeyStep = ({ frame }: KeyStepParams) => {
+    const hints = chapterOf({ id: 'bring' }).hints;
+    const index = hints.findIndex((entry) => entry.offer !== undefined);
+    for (const earlier of hints.slice(0, index)) {
+      tried({ frame, hintId: earlier.id });
+      elapse({ ms: dwellOf({ hint: earlier }) });
+    }
+    return hints[index];
+  };
+
+  it('lets the visitor press the demo button of the key step once per click', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
     report({ frame, type: 'ready' });
-    const first = chapterOf({ id: 'bring' }).hints[0];
+    const first = reachKeyStep({ frame });
     hint({ frame, hintId: first?.id ?? '' });
     fireEvent.click(screen.getByRole('button', { name: 'Paste example key' }));
     expect(post).toHaveBeenLastCalledWith(
@@ -705,11 +719,12 @@ describe('demo playground', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
-    const first = chapterOf({ id: 'bring' }).hints[0]?.id ?? '';
+    const keyHint = reachKeyStep({ frame });
+    const first = keyHint?.id ?? '';
     hint({ frame, hintId: first });
     hint({ frame, hintId: first, isClicked: true, isPressed: true });
     screen.getByRole('button', { name: 'Paste example key' });
-    expect(instruction()).toBe(plain(chapterOf({ id: 'bring' }).hints[0]?.instruction));
+    expect(instruction()).toBe(plain(keyHint?.instruction));
   });
 
   it('lifts the coach once the visitor presses the control, so it never covers what opens', () => {

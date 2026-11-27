@@ -41,7 +41,7 @@ beforeEach(async () => {
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(
     new DOMRect(100, 200, 40, 24),
   );
-  seedStoryWorld({ stage: 'bring' });
+  seedStoryWorld({ stage: 'tasks' });
   installStoryDirection({ store });
 });
 

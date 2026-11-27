@@ -32,6 +32,8 @@ type TsParams = {
 
 const slackTs = ({ ms }: TsParams): string => `${Math.floor((STARTED_AT - ms) / 1000)}.000100`;
 
+export const STORY_TASK_COUNT = 11;
+
 export const STORY_EXAMPLE_KEY = 'lin_api_EXAMPLE_demo_key_only_works_in_this_demo';
 
 export const STORY_VIEWER = {

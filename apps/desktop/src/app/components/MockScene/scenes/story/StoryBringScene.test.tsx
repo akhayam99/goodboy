@@ -26,10 +26,7 @@ import {
 } from '../../../../../features/inbox/kindFilterStorage';
 import { BRAND_WORKSPACE_ID } from '../brand/canon';
 import { demoRuns } from '../../demo/director/demoRunRegistry';
-import { installStoryDirection } from '../../demo/director/installStoryDirection';
-import { STORY_QUESTION } from './storyContent';
-import { STORY_EXAMPLE_KEY } from './storyTasks';
-import { STORY_SESSION_ID } from './storyWorld';
+import { STORY_TASK_COUNT } from './storyTasks';
 
 const OPEN_BUDGET = {
   remainingUsd: null,
@@ -51,11 +48,15 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  storySpies.tauriInvoke.mockImplementation((command, args) =>
-    command === 'check_provider_budget'
-      ? Promise.resolve(OPEN_BUDGET)
-      : sceneInvoke({ command: String(command), args }),
-  );
+  storySpies.tauriInvoke.mockImplementation((command, args) => {
+    if (command === 'check_provider_budget') {
+      return Promise.resolve(OPEN_BUDGET);
+    }
+    if (command === 'worktree_remote_url') {
+      return Promise.resolve(null);
+    }
+    return sceneInvoke({ command: String(command), args });
+  });
   store.setState({ loadProjectGitStatus: async () => undefined });
 });
 
@@ -78,43 +79,107 @@ const labels = (): ReadonlyArray<string> =>
   screen.getAllByRole('option').map((row) => row.getAttribute('aria-label') ?? '');
 
 type AnchorParams = {
-  readonly name: string;
+  readonly selector: string;
 };
 
-const anchorOf = ({ name }: AnchorParams): Element => {
-  const element = document.querySelector(`[data-demo-anchor="${name}"]`);
+const anchorOf = ({ selector }: AnchorParams): HTMLElement => {
+  const element = document.querySelector<HTMLElement>(selector);
   if (element === null) {
-    throw new Error(`no ${name}`);
+    throw new Error(`no ${selector}`);
   }
   return element;
 };
+
+const found = async ({ selector }: AnchorParams): Promise<HTMLElement> =>
+  waitFor(() => anchorOf({ selector }), { timeout: 10000 });
+
+type PressParams = AnchorParams & {
+  readonly until?: string;
+};
+
+const press = async ({ selector, until }: PressParams): Promise<void> => {
+  await waitFor(
+    () => {
+      if (until !== undefined && document.querySelector(until) !== null) {
+        return;
+      }
+      const element = anchorOf({ selector });
+      expect(element.hasAttribute('disabled')).toBe(false);
+      fireEvent.click(element);
+      if (until !== undefined) {
+        throw new Error(`waiting for ${until}`);
+      }
+    },
+    { timeout: 15000, interval: 350 },
+  );
+};
+
+const WIZARD = '[aria-label="Goodboy setup"]';
+const KEY_FIELD = '#linear-api-key';
 
 const hasLinear = (): boolean =>
   Object.values(store.getState().workspaceIntegrations)
     .flat()
     .some((binding) => binding.provider === 'linear');
 
+const walkToTheKeyField = async (): Promise<void> => {
+  await mount();
+  await press({ selector: '[data-step="agents"] [data-demo-anchor="setup-agent-signin"]' });
+  await press({
+    selector: '[data-step="agents"] [data-demo-anchor="setup-continue"]',
+    until: '[data-step="workspace"] [data-demo-anchor="setup-create"]',
+  });
+  await press({
+    selector: '[data-step="workspace"] [data-demo-anchor="setup-create"]',
+    until: '[data-step="first-session"] [data-demo-anchor="setup-open-tools"]',
+  });
+  await press({
+    selector: '[data-step="first-session"] [data-demo-anchor="setup-open-tools"]',
+    until: '[data-step="tools"] button[aria-label="Connect Linear"]',
+  });
+  await press({
+    selector: '[data-step="tools"] button[aria-label="Connect Linear"]',
+    until: KEY_FIELD,
+  });
+};
+
+const pasteTheKey = (): void => {
+  const offer = BRING_HINTS.find((hint) => hint.id === 'bring-connect')?.offer;
+  act(() => offer?.run({ root: document }));
+};
+
 describe('the bring your work scene', () => {
-  it('lands on the Linear connection page of Harborline with the other tools connected', async () => {
+  it('opens the setup on the agents step with Codex waiting and no workspace yet', async () => {
     await mount();
-    const field = await screen.findByLabelText('API key', {}, { timeout: 5000 });
-    expect(field.getAttribute('id')).toBe('linear-api-key');
+    const dialog = await found({ selector: WIZARD });
+    expect(dialog.getAttribute('data-step')).toBe('agents');
+    await found({ selector: '[data-step="agents"] [data-demo-anchor="setup-agent-signin"]' });
+    expect(store.getState().workspaces).toEqual([]);
     expect(hasLinear()).toBe(false);
-    const providers = Object.values(store.getState().workspaceIntegrations)
-      .flat()
-      .map((binding) => binding.provider)
-      .sort();
-    expect(providers).toEqual(['gitlab', 'sentry', 'slack']);
-    const names = store.getState().projects.map((project) => project.name);
-    expect(names).toEqual(['payments-api', 'ledger-core', 'notify-relay']);
+    expect(document.querySelector('[role="option"]')).toBeNull();
   });
 
-  it('connects Linear through the real check once the example key is pasted', async () => {
+  it('creates Harborline from the three repositories the setup finds', async () => {
     await mount();
-    await screen.findByLabelText('API key', {}, { timeout: 5000 });
-    act(() => BRING_HINTS[0]?.offer?.run({ root: document }));
-    expect(screen.getByLabelText('API key')).toHaveProperty('value', STORY_EXAMPLE_KEY);
-    await waitFor(() => expect(hasLinear()).toBe(true), { timeout: 8000 });
+    await press({ selector: '[data-step="agents"] [data-demo-anchor="setup-agent-signin"]' });
+    await press({
+      selector: '[data-step="agents"] [data-demo-anchor="setup-continue"]',
+      until: '[data-step="workspace"] [data-demo-anchor="setup-create"]',
+    });
+    await press({
+      selector: '[data-step="workspace"] [data-demo-anchor="setup-create"]',
+      until: '[data-step="first-session"] [data-demo-anchor="setup-open-tools"]',
+    });
+    expect(store.getState().workspaces.map((workspace) => workspace.name)).toEqual(['Harborline']);
+    const names = store.getState().projects.map((project) => project.name);
+    expect(Array.from(new Set(names))).toEqual(['payments-api', 'ledger-core', 'notify-relay']);
+  }, 40000);
+
+  it('connects Linear inside the setup through the real check once the example key is in', async () => {
+    await walkToTheKeyField();
+    expect(hasLinear()).toBe(false);
+    pasteTheKey();
+    await waitFor(() => expect(hasLinear()).toBe(true), { timeout: 12000 });
     const binding = Object.values(store.getState().workspaceIntegrations)
       .flat()
       .find((entry) => entry.provider === 'linear');
@@ -122,72 +187,52 @@ describe('the bring your work scene', () => {
       workspaceUrlKey: 'harborline',
       viewerName: 'Dana R.',
     });
-  }, 20000);
+    expect(anchorOf({ selector: WIZARD }).getAttribute('data-step')).toBe('tools');
+  }, 60000);
 
   it('refuses any other key with the real error', async () => {
-    await mount();
-    const field = await screen.findByLabelText('API key', {}, { timeout: 5000 });
-    fireEvent.change(field, { target: { value: 'lin_api_not_the_example_key' } });
-    expect(await screen.findByRole('alert', {}, { timeout: 8000 })).toBeDefined();
+    await walkToTheKeyField();
+    fireEvent.change(anchorOf({ selector: KEY_FIELD }), {
+      target: { value: 'lin_api_not_the_example_key' },
+    });
+    expect(await screen.findByRole('alert', {}, { timeout: 12000 })).toBeDefined();
     expect(hasLinear()).toBe(false);
-  }, 20000);
+  }, 60000);
 
-  it('opens Tasks from the page menu with five sources and eleven items', async () => {
-    await mount();
-    await screen.findByLabelText('API key', {}, { timeout: 5000 });
-    act(() => BRING_HINTS[0]?.offer?.run({ root: document }));
-    await waitFor(() => expect(hasLinear()).toBe(true), { timeout: 8000 });
-    fireEvent.click(await screen.findByRole('button', { name: /^Tasks/ }));
-    await waitFor(() => expect(labels()).toHaveLength(11), { timeout: 8000 });
+  it('lands on Tasks with every source and no agent started when Continue is pressed', async () => {
+    const workspaceId = BRAND_WORKSPACE_ID;
+    writeInboxFilters({ workspaceId, kind: 'thread', source: 'slack' });
+    await walkToTheKeyField();
+    pasteTheKey();
+    await waitFor(() => expect(hasLinear()).toBe(true), { timeout: 12000 });
+    expect(document.querySelector('[role="option"]')).toBeNull();
+    await press({ selector: '[data-step="tools"] [data-demo-anchor="setup-continue"]' });
+    await waitFor(() => expect(labels()).toHaveLength(STORY_TASK_COUNT), { timeout: 20000 });
+    await waitFor(() => expect(document.querySelector(WIZARD)).toBeNull(), { timeout: 10000 });
     expect(labels()[0]).toContain('HBL-412 Retried webhooks post a second credit, Todo, Urgent');
     expect(labels().filter((label) => label.startsWith('HBL-'))).toHaveLength(3);
     expect(screen.getAllByRole('img', { name: 'New' })).toHaveLength(2);
-    expect(labels().some((label) => label.includes('acme-web'))).toBe(false);
-  }, 40000);
-
-  it('hands HBL-412 from its pane to a new session and starts it', async () => {
-    await mount();
-    await screen.findByLabelText('API key', {}, { timeout: 5000 });
-    act(() => BRING_HINTS[0]?.offer?.run({ root: document }));
-    await waitFor(() => expect(hasLinear()).toBe(true), { timeout: 8000 });
-    fireEvent.click(await screen.findByRole('button', { name: /^Tasks/ }));
-    await waitFor(() => expect(labels()).toHaveLength(11), { timeout: 8000 });
-    installStoryDirection({ store: store });
-    fireEvent.click(screen.getByRole('option', { name: /^HBL-412 / }));
-    fireEvent.click(await waitFor(() => anchorOf({ name: 'task-start' }), { timeout: 8000 }));
-    const start = await waitFor(() => anchorOf({ name: 'draft-start' }), { timeout: 8000 });
-    await waitFor(
-      () =>
-        expect(document.body.textContent).toContain(
-          'The retry carries the same delivery id, so the second credit should be refused.',
-        ),
-      { timeout: 8000 },
-    );
-    expect(document.body.textContent).toContain('[HBL-412] Retried webhooks post a second credit');
-    fireEvent.click(start);
-    await waitFor(() => expect(store.getState().currentSessionId).toBe(STORY_SESSION_ID), {
-      timeout: 8000,
-    });
-    expect(
-      (store.getState().sessionExternalTasks[STORY_SESSION_ID] ?? []).map(
-        (task) => task.identifier,
-      ),
-    ).toEqual(['HBL-412']);
-    expect(screen.queryByText(STORY_QUESTION.text)).toBeNull();
-    expect(await screen.findByText(STORY_QUESTION.text, {}, { timeout: 14000 })).toBeDefined();
+    expect(store.getState().currentWorkspaceId).toBe(workspaceId);
+    expect(store.getState().sessions).toEqual([]);
+    expect(store.getState().currentSessionId).toBeNull();
+    const providers = Object.values(store.getState().workspaceIntegrations)
+      .flat()
+      .map((binding) => binding.provider);
+    expect(providers).toEqual(expect.arrayContaining(['gitlab', 'sentry', 'slack', 'linear']));
+    expect(readInboxFilters({ workspaceId })).toEqual({ kind: 'all', source: null });
   }, 90000);
 
-  it('resets a saved kind and source filter so HBL-412 is never hidden after a restart', async () => {
-    const workspaceId = BRAND_WORKSPACE_ID;
-    writeInboxFilters({ workspaceId, kind: 'thread', source: 'slack' });
+  it('lands on Tasks when the visitor leaves the setup with Set up later', async () => {
     await mount();
-    await screen.findByLabelText('API key', {}, { timeout: 5000 });
-    expect(readInboxFilters({ workspaceId })).toEqual({ kind: 'all', source: null });
-  });
+    fireEvent.click(await screen.findByRole('button', { name: 'Set up later' }));
+    await waitFor(() => expect(labels()).toHaveLength(STORY_TASK_COUNT), { timeout: 20000 });
+    await waitFor(() => expect(document.querySelector(WIZARD)).toBeNull(), { timeout: 10000 });
+    expect(store.getState().sessions).toEqual([]);
+  }, 60000);
 
   it('never shows acme-web or Cascadia', async () => {
     await mount();
-    await screen.findByLabelText('API key', {}, { timeout: 5000 });
+    await found({ selector: WIZARD });
     const text = (document.body.textContent ?? '').toLowerCase();
     expect(text).not.toContain('acme-web');
     expect(text).not.toContain('cascadia');

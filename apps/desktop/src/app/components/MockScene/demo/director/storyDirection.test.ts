@@ -43,7 +43,7 @@ beforeEach(async () => {
   );
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
   elapsed = 0;
-  seedStoryWorld({ stage: 'bring' });
+  seedStoryWorld({ stage: 'tasks' });
   installStoryDirection({ store });
 });
 

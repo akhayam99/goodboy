@@ -21,7 +21,6 @@ import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { createHintEngine, type HintEngine } from '../../demo/director/createHintEngine';
 import type { DemoHintReport } from '../../demo/director/demoProtocol';
 import { demoRuns } from '../../demo/director/demoRunRegistry';
-import { installStoryDirection } from '../../demo/director/installStoryDirection';
 import { BRING_HINTS } from '../../demo/hints/bringHints';
 import { StoryBringScene } from './StoryBringScene';
 import { STORY_PLANNER_ID, STORY_SESSION_ID } from './storyWorld';
@@ -48,11 +47,15 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  storySpies.tauriInvoke.mockImplementation((command, args) =>
-    command === 'check_provider_budget'
-      ? Promise.resolve(OPEN_BUDGET)
-      : sceneInvoke({ command: String(command), args }),
-  );
+  storySpies.tauriInvoke.mockImplementation((command, args) => {
+    if (command === 'check_provider_budget') {
+      return Promise.resolve(OPEN_BUDGET);
+    }
+    if (command === 'worktree_remote_url') {
+      return Promise.resolve(null);
+    }
+    return sceneInvoke({ command: String(command), args });
+  });
   store.setState({ loadProjectGitStatus: async () => undefined });
 });
 
@@ -86,6 +89,26 @@ type FindParams = {
   readonly selector: string;
 };
 
+type StepParams = FindParams & {
+  readonly until: string;
+};
+
+const visitorStep = async ({ selector, until }: StepParams): Promise<void> => {
+  const deadline = Date.now() + 20000;
+  while (document.querySelector(until) === null) {
+    if (Date.now() > deadline) {
+      throw new Error(`waiting for ${until}`);
+    }
+    const element = document.querySelector(selector);
+    if (element !== null) {
+      await visitorClick({ element });
+    }
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 400);
+    });
+  }
+};
+
 const found = async ({ selector }: FindParams): Promise<Element> =>
   waitFor(
     () => {
@@ -98,49 +121,89 @@ const found = async ({ selector }: FindParams): Promise<Element> =>
     { timeout: 8000 },
   );
 
+const SIGN_IN = '[data-step="agents"] [data-demo-anchor="setup-agent-signin"]';
+const AGENTS_CONTINUE = '[data-step="agents"] [data-demo-anchor="setup-continue"]';
+const CREATE = '[data-step="workspace"] [data-demo-anchor="setup-create"]';
+const OPEN_TOOLS = '[data-step="first-session"] [data-demo-anchor="setup-open-tools"]';
+const CONNECT_LINEAR = '[data-step="tools"] button[aria-label="Connect Linear"]';
+const KEY_FIELD = '#linear-api-key';
+const TOOLS_CONTINUE = '[data-step="tools"] [data-demo-anchor="setup-continue"]';
+const WIZARD = '[aria-label="Goodboy setup"]';
+const TASK_ROW = '[role="option"][aria-label^="HBL-412 "]';
+
+const startEngine = ({ reports }: ReportsParams): void => {
+  engine = createHintEngine({
+    store,
+    view: window,
+    generation: () => 0,
+    hintsOf: () => BRING_HINTS,
+    onReport: ({ report }) => reports.push(report),
+  });
+  engine.setTrack({ chapterId: 'bring', settledIds: [], isGuarding: true });
+};
+
+type ReportsParams = {
+  readonly reports: Array<DemoHintReport>;
+};
+
+const triedOf = ({ reports }: ReportsParams): ReadonlyArray<string> =>
+  reports.flatMap((report) => (report.type === 'tried' ? [report.hintId] : []));
+
+const blockedOf = ({ reports }: ReportsParams): ReadonlyArray<string> =>
+  reports.flatMap((report) => (report.type === 'blocked' ? [report.hintId] : []));
+
+const walkSetup = async ({ reports }: ReportsParams): Promise<void> => {
+  await found({ selector: SIGN_IN });
+  const other = await found({
+    selector: '[data-step="agents"] button[type="button"]:not([data-demo-anchor])',
+  });
+  expect(await visitorClick({ element: other })).toBe(true);
+  expect(blockedOf({ reports })).toContain('setup-agent-signin');
+  await visitorClick({ element: await found({ selector: SIGN_IN }) });
+  await waitFor(() => expect(triedOf({ reports })).toContain('setup-agent-signin'), {
+    timeout: 8000,
+  });
+  await visitorStep({ selector: AGENTS_CONTINUE, until: CREATE });
+  await visitorStep({ selector: CREATE, until: OPEN_TOOLS });
+  await visitorStep({ selector: OPEN_TOOLS, until: CONNECT_LINEAR });
+  await visitorStep({ selector: CONNECT_LINEAR, until: KEY_FIELD });
+  act(() => engine?.offer({ hintId: 'bring-connect' }));
+  await waitFor(() => expect(triedOf({ reports })).toContain('bring-connect'), { timeout: 12000 });
+  await found({ selector: `${WIZARD}[data-step="tools"] [data-demo-anchor="setup-continue"]` });
+  await waitFor(
+    () =>
+      expect(
+        Object.values(store.getState().workspaceIntegrations)
+          .flat()
+          .some((binding) => binding.provider === 'linear'),
+      ).toBe(true),
+    { timeout: 12000 },
+  );
+};
+
 describe('walking the bring your work group', () => {
-  it('lets the visitor through the five steps and blocks everything else', async () => {
+  it('lets the visitor through the ten steps and blocks everything else', async () => {
     render(
       <ToastProvider>
         <StoryBringScene />
       </ToastProvider>,
     );
-    await screen.findByLabelText('API key', {}, { timeout: 5000 });
-    installStoryDirection({ store: store });
     const reports: Array<DemoHintReport> = [];
-    engine = createHintEngine({
-      store: store,
-      view: window,
-      generation: () => 0,
-      hintsOf: () => BRING_HINTS,
-      onReport: ({ report }) => reports.push(report),
-    });
-    engine.setTrack({ chapterId: 'bring', settledIds: [], isGuarding: true });
-    const tried = (): ReadonlyArray<string> =>
-      reports.flatMap((report) => (report.type === 'tried' ? [report.hintId] : []));
-    const blocked = (): ReadonlyArray<string> =>
-      reports.flatMap((report) => (report.type === 'blocked' ? [report.hintId] : []));
+    startEngine({ reports });
+    await walkSetup({ reports });
 
-    expect(
-      await visitorClick({ element: await found({ selector: 'button[type="button"]' }) }),
-    ).toBe(true);
-    expect(blocked()).toContain('bring-connect');
-
-    act(() => engine?.offer({ hintId: 'bring-connect' }));
-    await waitFor(() => expect(tried()).toEqual(['bring-connect']), { timeout: 8000 });
-
-    await visitorClick({ element: await found({ selector: '[data-shell-rail-item="inbox"]' }) });
-    await waitFor(() => expect(tried()).toContain('bring-tasks'), { timeout: 8000 });
+    await visitorClick({ element: await found({ selector: TOOLS_CONTINUE }) });
+    await waitFor(() => expect(document.querySelector(WIZARD)).toBeNull(), { timeout: 30000 });
+    await waitFor(() => expect(triedOf({ reports })).toContain('setup-tools'), { timeout: 8000 });
+    expect(store.getState().sessions).toEqual([]);
 
     const other = await found({ selector: '[role="option"][aria-label^="HBL-409 "]' });
     expect(await visitorClick({ element: other })).toBe(true);
-    await visitorClick({
-      element: await found({ selector: '[role="option"][aria-label^="HBL-412 "]' }),
-    });
-    await waitFor(() => expect(tried()).toContain('bring-open'), { timeout: 8000 });
+    await visitorClick({ element: await found({ selector: TASK_ROW }) });
+    await waitFor(() => expect(triedOf({ reports })).toContain('bring-open'), { timeout: 8000 });
 
     await visitorClick({ element: await found({ selector: '[data-demo-anchor="task-start"]' }) });
-    await waitFor(() => expect(tried()).toContain('bring-session'), { timeout: 8000 });
+    await waitFor(() => expect(triedOf({ reports })).toContain('bring-session'), { timeout: 8000 });
 
     await visitorClick({
       element: await found({ selector: '[data-demo-anchor="draft-start"]:not([disabled])' }),
@@ -155,7 +218,7 @@ describe('walking the bring your work group', () => {
       { timeout: 8000 },
     );
     expect(isAsked()).toBe(false);
-    expect(tried()).not.toContain('bring-start');
+    expect(triedOf({ reports })).not.toContain('bring-start');
     await waitFor(() => expect(isAsked()).toBe(true), { timeout: 12000 });
     await found({ selector: '[data-oq-anchor] button[role="radio"]' });
     expect(store.getState().agentTurnState[STORY_PLANNER_ID]?.kind).toBe('idle');
@@ -164,11 +227,11 @@ describe('walking the bring your work group', () => {
         .flatMap((view) => view.delegations)
         .find((entry) => entry.childAgentId === STORY_PLANNER_ID)?.state,
     ).toBe('paused');
-    await waitFor(() => expect(tried()).toEqual(BRING_HINTS.map((hint) => hint.id)), {
+    await waitFor(() => expect(triedOf({ reports })).toEqual(BRING_HINTS.map((hint) => hint.id)), {
       timeout: 8000,
     });
     expect(store.getState().currentSessionId).toBe(STORY_SESSION_ID);
-  }, 90000);
+  }, 150000);
 });
 
 describe('getting back to HBL-412 after the pane moved away', () => {
@@ -185,27 +248,13 @@ describe('getting back to HBL-412 after the pane moved away', () => {
         <StoryBringScene />
       </ToastProvider>,
     );
-    await screen.findByLabelText('API key', {}, { timeout: 5000 });
-    installStoryDirection({ store });
     const reports: Array<DemoHintReport> = [];
-    engine = createHintEngine({
-      store,
-      view: window,
-      generation: () => 0,
-      hintsOf: () => BRING_HINTS,
-      onReport: ({ report }) => reports.push(report),
-    });
-    engine.setTrack({ chapterId: 'bring', settledIds: [], isGuarding: true });
-    const tried = (): ReadonlyArray<string> =>
-      reports.flatMap((report) => (report.type === 'tried' ? [report.hintId] : []));
-    act(() => engine?.offer({ hintId: 'bring-connect' }));
-    await waitFor(() => expect(tried()).toContain('bring-connect'), { timeout: 8000 });
-    await visitorClick({ element: await found({ selector: '[data-shell-rail-item="inbox"]' }) });
-    await waitFor(() => expect(tried()).toContain('bring-tasks'), { timeout: 8000 });
-    await visitorClick({
-      element: await found({ selector: '[role="option"][aria-label^="HBL-412 "]' }),
-    });
-    await waitFor(() => expect(tried()).toContain('bring-open'), { timeout: 8000 });
+    startEngine({ reports });
+    await walkSetup({ reports });
+    await visitorClick({ element: await found({ selector: TOOLS_CONTINUE }) });
+    await waitFor(() => expect(document.querySelector(WIZARD)).toBeNull(), { timeout: 30000 });
+    await visitorClick({ element: await found({ selector: TASK_ROW }) });
+    await waitFor(() => expect(triedOf({ reports })).toContain('bring-open'), { timeout: 8000 });
 
     const other = await found({ selector: '[role="option"][aria-label^="HBL-409 "]' });
     act(() => {
@@ -218,7 +267,7 @@ describe('getting back to HBL-412 after the pane moved away', () => {
     });
     const startOther = await found({ selector: '[data-demo-anchor="task-start"]' });
     expect(await visitorClick({ element: startOther })).toBe(true);
-    expect(tried()).not.toContain('bring-session');
+    expect(triedOf({ reports })).not.toContain('bring-session');
     await waitFor(
       () =>
         expect(
@@ -232,10 +281,8 @@ describe('getting back to HBL-412 after the pane moved away', () => {
       { timeout: 8000 },
     );
 
-    await visitorClick({
-      element: await found({ selector: '[role="option"][aria-label^="HBL-412 "]' }),
-    });
+    await visitorClick({ element: await found({ selector: TASK_ROW }) });
     await visitorClick({ element: await found({ selector: '[data-demo-anchor="task-start"]' }) });
-    await waitFor(() => expect(tried()).toContain('bring-session'), { timeout: 8000 });
-  }, 90000);
+    await waitFor(() => expect(triedOf({ reports })).toContain('bring-session'), { timeout: 8000 });
+  }, 150000);
 });
