@@ -8,7 +8,8 @@ Home is a place of a workspace, the first door of the places rail, above the Boa
 the window lands on launch and whenever a workspace opens (`setCurrentWorkspace` marks it with
 `openHomeWorkspaceId`, `selectIsHomeShown` reads it, `captureLocation` prints it as
 `{ at: 'home' }`). **Reopen the last workspace** restores the saved place instead.
-`HomePage` is the page (`features/home/`), its `MainRegion` layer mounts only while Home is shown.
+`HomePage` is the page (`features/home/`), its `MainRegion` layer mounts only while Home is
+shown. What the cards show and where each number comes from is in [features/board.md](../features/board.md#home).
 
 - Home has no parent: ⌘↑, ⌘W and Esc do nothing there. The Board keeps the badge;
   Home carries none, so no second number competes with it.

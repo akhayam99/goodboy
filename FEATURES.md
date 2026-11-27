@@ -59,12 +59,13 @@ Open a session to see what it is for, what needs you and what happened so far.
 
 [More on overview and activity](docs/features/overview.md)
 
-<a id="queue"></a><a id="needs-you"></a><a id="merge-train"></a><a id="stage-board"></a><a id="session-card"></a><a id="list-view"></a><a id="done-and-archived-dock"></a><a id="done-and-archived-lanes"></a><a id="bulk-select"></a>
+<a id="home"></a><a id="queue"></a><a id="needs-you"></a><a id="merge-train"></a><a id="stage-board"></a><a id="session-card"></a><a id="list-view"></a><a id="done-and-archived-dock"></a><a id="done-and-archived-lanes"></a><a id="bulk-select"></a>
 
 ## The board
 
 The board shows every session of a workspace in lanes by stage, with what waits on you at the top of Running, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes.
 
+- **Home**: Home is the first page of a workspace: what needs you, what runs and how much is left, with the usage of your providers.
 - **Needs you**: See what waits on you at the top of the Running lane.
 - **Merge train**: Merge several pull requests, across sessions and repositories, with one gesture.
 - **Stage board**: See where each task stands without moving cards around.

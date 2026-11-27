@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -54,10 +54,15 @@ describe('the Home place scenes', () => {
         </ToastProvider>,
       );
 
-      await screen.findByRole('main', { name: 'Home' }, WAIT);
+      await screen.findByRole('heading', { name: 'Home' }, WAIT);
       const door = screen.getByRole('button', { name: 'Home' });
 
       expect(door.getAttribute('aria-current')).toBe('page');
+      await waitFor(() =>
+        expect(document.querySelector('[data-home-widget="sessionsToFinish"]')).not.toBeNull(),
+      );
+      expect(document.querySelector('[data-home-widget="needsYou"]')).not.toBeNull();
+      expect(document.querySelector('[data-home-widget="providerLimits"]')).not.toBeNull();
     },
   );
 });
