@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PROVIDER_IDS } from '@goodboy/types';
+import { legacyHiddenModels } from './modelVisibility';
 import { strongestModelForTier } from './strongestModelForTier';
 
 describe('strongestModelForTier', () => {
@@ -27,6 +28,17 @@ describe('strongestModelForTier', () => {
   it('falls to the nearest tier when the provider has none of the requested one', () => {
     expect(
       strongestModelForTier({ provider: 'gemini', tier: 'expensive', wantsThinker: false })?.id,
+    ).toBe('gemini-4-neon');
+  });
+
+  it('answers a Cursor mid tier with Gemini 4 Neon, its heaviest visible mid model', () => {
+    expect(
+      strongestModelForTier({
+        provider: 'cursor',
+        tier: 'mid',
+        wantsThinker: false,
+        hidden: legacyHiddenModels(),
+      })?.id,
     ).toBe('gemini-4-neon');
   });
 
