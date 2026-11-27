@@ -954,11 +954,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/store/slices/turn/preamble.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/turn/prepareTurn.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 7

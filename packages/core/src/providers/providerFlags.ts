@@ -8,6 +8,7 @@ export type ProviderFlags = {
   readonly shouldReplayHistoryAsText: boolean;
   readonly hasAccountTest: boolean;
   readonly canFollowRules: boolean;
+  readonly canTakeLeadDelta: boolean;
 };
 
 export const PROVIDER_FLAGS: Readonly<Record<ProviderId, ProviderFlags>> = {
@@ -17,6 +18,7 @@ export const PROVIDER_FLAGS: Readonly<Record<ProviderId, ProviderFlags>> = {
     shouldReplayHistoryAsText: false,
     hasAccountTest: true,
     canFollowRules: true,
+    canTakeLeadDelta: true,
   },
   cursor: {
     binary: 'cursor-agent',
@@ -24,6 +26,7 @@ export const PROVIDER_FLAGS: Readonly<Record<ProviderId, ProviderFlags>> = {
     shouldReplayHistoryAsText: true,
     hasAccountTest: true,
     canFollowRules: false,
+    canTakeLeadDelta: false,
   },
   codex: {
     binary: 'codex',
@@ -31,6 +34,7 @@ export const PROVIDER_FLAGS: Readonly<Record<ProviderId, ProviderFlags>> = {
     shouldReplayHistoryAsText: true,
     hasAccountTest: true,
     canFollowRules: false,
+    canTakeLeadDelta: false,
   },
   gemini: {
     binary: 'agy',
@@ -38,6 +42,7 @@ export const PROVIDER_FLAGS: Readonly<Record<ProviderId, ProviderFlags>> = {
     shouldReplayHistoryAsText: true,
     hasAccountTest: false,
     canFollowRules: false,
+    canTakeLeadDelta: false,
   },
   copilot: {
     binary: 'copilot',
@@ -45,6 +50,7 @@ export const PROVIDER_FLAGS: Readonly<Record<ProviderId, ProviderFlags>> = {
     shouldReplayHistoryAsText: false,
     hasAccountTest: false,
     canFollowRules: false,
+    canTakeLeadDelta: false,
   },
   opencode: {
     binary: 'opencode',
@@ -52,6 +58,7 @@ export const PROVIDER_FLAGS: Readonly<Record<ProviderId, ProviderFlags>> = {
     shouldReplayHistoryAsText: false,
     hasAccountTest: false,
     canFollowRules: false,
+    canTakeLeadDelta: false,
   },
   openrouter: {
     binary: 'opencode',
@@ -59,6 +66,7 @@ export const PROVIDER_FLAGS: Readonly<Record<ProviderId, ProviderFlags>> = {
     shouldReplayHistoryAsText: false,
     hasAccountTest: false,
     canFollowRules: false,
+    canTakeLeadDelta: false,
   },
   moonshot: {
     binary: 'opencode',
@@ -66,6 +74,7 @@ export const PROVIDER_FLAGS: Readonly<Record<ProviderId, ProviderFlags>> = {
     shouldReplayHistoryAsText: false,
     hasAccountTest: false,
     canFollowRules: false,
+    canTakeLeadDelta: false,
   },
 };
 

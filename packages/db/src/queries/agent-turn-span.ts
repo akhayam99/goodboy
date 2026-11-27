@@ -218,6 +218,34 @@ export const hasOtherSessionTurnSince = async ({
   return rows.length > 0;
 };
 
+export type AgentLastCleanTurn = Readonly<{
+  endedAtMs: number;
+  model: string;
+}>;
+
+type LastCleanTurnParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+};
+
+export const readAgentLastCleanTurn = async ({
+  db,
+  sessionId,
+  agentId,
+}: LastCleanTurnParams): Promise<AgentLastCleanTurn | null> => {
+  const rows = await db.select<{ readonly ended_at: number; readonly model: string }>(
+    `SELECT ended_at, model
+       FROM agent_turn_spans
+      WHERE agent_id = ? AND session_id = ? AND end_reason IN ('succeeded', 'awaiting_user')
+      ORDER BY ended_at DESC
+      LIMIT 1`,
+    [agentId, sessionId],
+  );
+  const row = rows[0];
+  return row === undefined ? null : { endedAtMs: row.ended_at, model: row.model };
+};
+
 type RouteRow = {
   readonly run_id: ProviderRunId;
   readonly agent_id: AgentId;
