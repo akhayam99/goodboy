@@ -25,7 +25,7 @@ export const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   'gpt-6': 29,
   'gpt-6.2-astra': 28,
   'gpt-6.2-sol': 28,
-  'gpt-6.1-terra': 26,
+  'gpt-6.1-terra': 28,
   'gpt-6.1-sol': 28,
   'gpt-6-sol': 28,
   'gpt-6-luna': 19,

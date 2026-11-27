@@ -105,14 +105,17 @@ family.
 
 ### Copilot models
 
-Copilot lists `auto` (the default) and the nine ids the CLI reference names for
-`--model`. Keys are short names (`sonnet-5.5`), so one `WEIGHT_BY_KEY` row serves
-every provider; `cliId` is what the CLI gets. Only models the supported models
-page marks as configurable reasoning (Sonnet 5.5, Opus 5.5, Haiku 5.5, the GPT
-models and Codex 5.3) carry efforts, and only low, medium and high: the CLI
-accepts `xhigh` and `max` but publishes no per-model list. Haiku 4.5, Gemini 3.8
-Flash and `auto` get no effort flag. Every window is
-200k, the one limit read from a real run.
+Copilot lists `auto` (the default) and ids from the CLI reference's supported
+models table that GitHub's supported models page also lists. Keys are short names
+(`sonnet-5.5`), so one `WEIGHT_BY_KEY` row serves every provider; `cliId` is what
+the CLI gets. Only models the supported models page marks as configurable
+reasoning (Sonnet 5.5, Opus 5.5, Haiku 5.5, the GPT models and Codex 5.3) carry
+efforts, and only low, medium and high: the CLI accepts `xhigh` and `max` but
+publishes no per-model list. Haiku 4.5, the two Gemini models and `auto` get no
+effort flag. Every window is 200k, the one limit read from a real run. The Sol
+models are `mid`, at the price of Sonnet 5.5. GitHub's plan table leaves them,
+GPT-6.2 Astra, GPT-6 Astra and Opus 5.5 out of Copilot Pro, so GPT-6.1 Terra
+shares the Sol weight and comes first in the array: it is the `mid` tier pick.
 
 ## Prices
 
