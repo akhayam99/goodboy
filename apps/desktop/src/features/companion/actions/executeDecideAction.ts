@@ -27,9 +27,10 @@ type RunParams = {
   readonly action: DecideAction;
   readonly getStore: () => AppStore;
   readonly ports: DecidePorts;
+  readonly phoneId: string | null;
 };
 
-const runHandler = ({ action, getStore, ports }: RunParams): Promise<HandlerResult> => {
+const runHandler = ({ action, getStore, ports, phoneId }: RunParams): Promise<HandlerResult> => {
   switch (action.kind) {
     case 'answerQuestion':
       return answerQuestion({ action, getStore, ports });
@@ -38,7 +39,7 @@ const runHandler = ({ action, getStore, ports }: RunParams): Promise<HandlerResu
     case 'requestPlanChanges':
       return requestPlanChanges({ action, getStore, ports });
     case 'answerPermission':
-      return answerPermission({ action, getStore, ports });
+      return answerPermission({ action, getStore, ports, phoneId });
     case 'raiseLimit':
       return raiseLimit({ action, getStore, ports });
     case 'undoRaiseLimit':
@@ -126,7 +127,10 @@ export const executeDecideAction = async ({
   }
   beginAction({ actionId: action.actionId });
   try {
-    const outcome = outcomeOf({ action, result: await runHandler({ action, getStore, ports }) });
+    const outcome = outcomeOf({
+      action,
+      result: await runHandler({ action, getStore, ports, phoneId }),
+    });
     const isFinal =
       outcome.result === 'done' || (outcome.refusal !== null && isRecordedRefusal(outcome.refusal));
     if (isFinal && isReplayableKind({ kind: action.kind })) {

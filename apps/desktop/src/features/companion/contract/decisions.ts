@@ -27,6 +27,12 @@ export type PlanDecision = {
   readonly requestChangesActionId: ActionId;
 };
 
+export type AlwaysRule = {
+  readonly scope: 'workspace';
+  readonly label: string;
+  readonly pattern: string;
+};
+
 export type PermissionDecision = {
   readonly kind: 'permission';
   readonly actionId: ActionId;
@@ -36,6 +42,7 @@ export type PermissionDecision = {
   readonly toolName: string;
   readonly inputSummary: string;
   readonly command: string;
+  readonly alwaysRule: AlwaysRule;
 };
 
 export type LimitDecision = {
