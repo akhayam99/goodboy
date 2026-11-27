@@ -28,6 +28,9 @@ export const RUN_ROUTE_COPY = {
     startsAs: 'Starts as',
     emptyPresets: START_KIND_COPY.autoNoPresets,
   },
+  scope: {
+    agent: 'One agent, on the project the comments belong to',
+  },
   attachFiles: 'Files go to the run',
   attached: 'Attached to this run',
   removeFile: ({ name }: NameParams) => `Remove ${name}`,

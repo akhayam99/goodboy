@@ -110,6 +110,21 @@ type FactsParams = {
   readonly fileCount: number;
   readonly hasPickedTask: boolean;
   readonly presets: ReadonlyArray<Workflow>;
+  readonly sources: StartRunSources | null;
+};
+
+type MountCountParams = {
+  readonly sessionId: SessionId | null;
+  readonly sources: StartRunSources | null;
+};
+
+const mountCountOf = ({ sessionId, sources }: MountCountParams): number => {
+  if (sources !== null) {
+    return 1;
+  }
+  return sessionId === null
+    ? 0
+    : (useAppStore.getState().sessionProjectMounts?.[sessionId] ?? []).length;
 };
 
 const factsOf = ({
@@ -118,6 +133,7 @@ const factsOf = ({
   fileCount,
   hasPickedTask,
   presets,
+  sources,
 }: FactsParams): RunRouteFacts => {
   const state = useAppStore.getState();
   const sessionId = session?.id ?? null;
@@ -135,7 +151,7 @@ const factsOf = ({
     hasTask:
       hasPickedTask ||
       (sessionId !== null && (state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY).length > 0),
-    mountCount: sessionId === null ? 0 : (state.sessionProjectMounts?.[sessionId] ?? []).length,
+    mountCount: mountCountOf({ sessionId, sources }),
     pullRequest:
       pr === null || pr.state !== 'open'
         ? null
@@ -279,10 +295,11 @@ export const useStartRun = ({
       fileCount: file === null ? 0 : 1,
       hasPickedTask: pickedCount > 0,
       presets,
+      sources,
     });
     const result = runAsRouteOf({ runAs, facts });
     return { route: result, suggestion: suggestedWorkflowOf({ facts, result }) };
-  }, [file, pickedCount, presets, role, runAs, sessionRow, text]);
+  }, [file, pickedCount, presets, role, runAs, sessionRow, sources, text]);
   const slot = useMemo(
     (): RunModelSlot => (role === null ? runModelSlotOf({ result: route }) : AUTO_AGENT_SLOT),
     [role, route],
@@ -360,6 +377,7 @@ export const useStartRun = ({
                 presets: (state.phaseTemplates[workspaceId] ?? NO_WORKFLOWS).filter(
                   (workflow) => workflow.isPreset === true,
                 ),
+                sources,
               }),
             })
           : roleRunOf({ text: asked, role });
