@@ -15,7 +15,6 @@
     "apps/desktop/src/store/slices/boot/hydrate.ts": 2,
     "apps/desktop/src/store/slices/github/createPrForSession.ts": 1,
     "apps/desktop/src/store/slices/github/mountGithub.ts": 1,
-    "apps/desktop/src/store/slices/permissions/resolvePermissionRequest.ts": 1,
     "apps/desktop/src/store/slices/project-mounts/mountViews.ts": 1,
     "apps/desktop/src/store/slices/project-mounts/writeDestinationPatch.ts": 1,
     "apps/desktop/src/store/slices/resolve/drainResolveQueue.ts": 1,

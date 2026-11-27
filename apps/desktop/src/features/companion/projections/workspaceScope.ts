@@ -4,10 +4,12 @@ import type { MergeTrain } from '../../../store/slices/pr-series/mergeTrain';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import type {
   Agent,
+  ArtifactComment,
   IntegrationDraft,
   OpenQuestion,
   PullRequestState,
   Session,
+  SessionArtifact,
   SessionBudget,
   SessionDecision,
   SessionExternalTask,
@@ -44,6 +46,9 @@ export type WorkspaceScope = Readonly<{
   sessions: ReadonlyArray<Session>;
   infos: Readonly<Record<string, SessionStageInfo>>;
   openQuestions: Readonly<Record<string, ReadonlyArray<OpenQuestion>>>;
+  answeredQuestions: Readonly<Record<string, ReadonlyArray<OpenQuestion>>>;
+  artifacts: Readonly<Record<string, ReadonlyArray<SessionArtifact>>>;
+  artifactComments: Readonly<Record<string, ReadonlyArray<ArtifactComment>>>;
   agents: Readonly<Record<string, ReadonlyArray<Agent>>>;
   projectNames: Readonly<Record<string, ReadonlyArray<string>>>;
   tasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>;
