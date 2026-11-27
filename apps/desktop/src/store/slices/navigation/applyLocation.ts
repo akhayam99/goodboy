@@ -85,7 +85,7 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
   if (get().appStudio !== studio) {
     set({ appStudio: studio });
   }
-  if (place.at === 'board' || place.at === 'session-draft') {
+  if (place.at === 'home' || place.at === 'board' || place.at === 'session-draft') {
     void get().setCurrentSession(null);
     const tool = keptTool({ drawer, place, scope: get().dockScope });
     set((state) => ({
@@ -95,7 +95,8 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
         drawer: tool,
         back: backAfterPlace({ state, place, drawer: tool }),
       }),
-      openSessionDraftWorkspaceId: place.at === 'board' ? null : get().currentWorkspaceId,
+      openSessionDraftWorkspaceId: place.at === 'session-draft' ? get().currentWorkspaceId : null,
+      openHomeWorkspaceId: place.at === 'home' ? get().currentWorkspaceId : null,
     }));
     return;
   }
@@ -120,6 +121,7 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
       back: backAfterPlace({ state, place, drawer }),
     }),
     openSessionDraftWorkspaceId: null,
+    openHomeWorkspaceId: null,
   }));
   if (resolved.agentId !== null) {
     void get()

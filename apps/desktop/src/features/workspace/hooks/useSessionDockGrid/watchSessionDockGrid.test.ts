@@ -49,7 +49,6 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
 import { brandId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import {
@@ -72,7 +71,6 @@ import {
 import { panelFocusKeyOf } from '../../../../store/slices/drawer/panelFocusKeyOf';
 import { shellPanelsOf } from '../../../../store/slices/drawer/shellPanelsOf';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
-import { useDeskFollowsTools } from '../../../session/components/SessionDesk/useDeskFollowsTools';
 import { watchSessionDockGrid } from './watchSessionDockGrid';
 
 const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
@@ -758,169 +756,41 @@ describe('moving a panel and resetting the layout', () => {
   });
 });
 
-describe('the face saved with the grid', () => {
-  it('saves the Desk face of a session inside its grid row', async () => {
-    watch();
-    await goTo({ sessionId: S1 });
-
-    state().setSessionFace({ sessionId: S1, face: 'desk' });
-    await settle();
-
-    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ version: 2, face: 'desk' });
-    expect(db.rows.has(S2)).toBe(false);
-  });
-
-  it('keeps the face on screen when its save fails, says so, and the next switch saves it', async () => {
-    watch();
-    await goTo({ sessionId: S1 });
-    db.failSaves = true;
-
-    state().setSessionFace({ sessionId: S1, face: 'desk' });
-    await settle();
-
-    expect(state().sessionFace[S1]).toBe('desk');
-    expect(db.rows.has(S1)).toBe(false);
-    expect(reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ sessionId: S1, title: "Couldn't save the panels of this session" }),
-    );
-
-    db.failSaves = false;
-    state().setSessionFace({ sessionId: S1, face: 'overview' });
-    await settle();
-    state().setSessionFace({ sessionId: S1, face: 'desk' });
-    await settle();
-
-    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ face: 'desk' });
-  });
-
-  it('reopens each session on the face it was left on', async () => {
-    saveRow({ sessionId: S1, grid: SAVED });
-    db.rows.set(S2, { grid: storedDockGridOf({ grid: SAVED, face: 'desk' }), savedAt: 1 });
+describe('a row saved with a face and a detail by an older build', () => {
+  it('reads the layout and writes the next row without the face', async () => {
+    db.rows.set(S1, {
+      grid: JSON.stringify({
+        version: 2,
+        columns: [[BROWSER]],
+        used: ['browser'],
+        focus: { at: 'page' },
+        widths: { browser: 520 },
+        face: 'desk',
+        detail: [{ kind: 'transcript', agentId: 'agent-implementer' }],
+      }),
+      savedAt: 1,
+    });
+    openTools({ entries: [BROWSER] });
     watch();
 
-    await goTo({ sessionId: S2 });
-    expect(state().sessionFace[S2]).toBe('desk');
     await goTo({ sessionId: S1 });
-    expect(state().sessionFace[S1]).toBe('overview');
+    state().resizeDockColumn({ kind: 'browser', width: 600 });
+    await settle();
+
+    expect(state().drawerGrid.widths).toEqual({ browser: 600 });
+    const written = JSON.parse(db.rows.get(S1)?.grid ?? '{}');
+    expect(written).not.toHaveProperty('face');
+    expect(written).not.toHaveProperty('detail');
+    expect(state().drawer?.kind).not.toBe('transcript');
   });
 
-  it('reads the face of a session that is not open', async () => {
-    db.rows.set(S2, { grid: storedDockGridOf({ grid: SAVED, face: 'desk' }), savedAt: 1 });
-    watch();
-    await goTo({ sessionId: S1 });
-
-    expect(await state().recallSessionFace({ sessionId: S2 })).toBe('desk');
-    expect(state().sessionFace[S2]).toBe('desk');
-    expect(state().currentSessionId).toBe(S1);
-  });
-
-  it('reads a row saved without the face as the overview', async () => {
+  it('opens no tool and no agent when an Overview row names tools', async () => {
     saveRow({ sessionId: S1, grid: SAVED });
     watch();
-
-    await goTo({ sessionId: S1 });
-
-    expect(state().sessionFace[S1]).toBe('overview');
-    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).not.toHaveProperty('face');
-  });
-
-  it('opens no tool and no Desk when an Overview row names tools', async () => {
-    saveRow({ sessionId: S1, grid: SAVED });
-    watch();
-    const follower = renderHook(() => useDeskFollowsTools({ sessionId: S1 }));
 
     await goTo({ sessionId: S1 });
 
     expect(toolKinds()).toEqual([]);
-    expect(state().sessionFace[S1]).toBe('overview');
-    follower.unmount();
-  });
-
-  it('keeps a face picked while the row was still loading', async () => {
-    saveRow({ sessionId: S1, grid: SAVED });
-    db.holdLoads = true;
-    watch();
-    await goTo({ sessionId: S1 });
-
-    state().setSessionFace({ sessionId: S1, face: 'desk' });
-    db.heldLoads.splice(0).forEach((release) => release());
-    await settle();
-
-    expect(state().sessionFace[S1]).toBe('desk');
-  });
-
-  it('keeps the Overview picked while a Desk row was loading, even with no face set before', async () => {
-    db.rows.set(S1, { grid: storedDockGridOf({ grid: SAVED, face: 'desk' }), savedAt: 1 });
-    db.holdLoads = true;
-    watch();
-    await goTo({ sessionId: S1 });
-
-    state().setSessionFace({ sessionId: S1, face: 'overview' });
-    db.heldLoads.splice(0).forEach((release) => release());
-    await settle();
-
-    expect(state().sessionFace[S1] ?? 'overview').toBe('overview');
-  });
-
-  it('keeps a face picked away and back while the row was loading', async () => {
-    db.rows.set(S2, { grid: storedDockGridOf({ grid: SAVED }), savedAt: 1 });
-    watch();
-    await goTo({ sessionId: S1 });
-    state().setSessionFace({ sessionId: S2, face: 'desk' });
-    db.holdLoads = true;
-
-    const read = state().recallSessionFace({ sessionId: S2 });
-    state().setSessionFace({ sessionId: S2, face: 'overview' });
-    state().setSessionFace({ sessionId: S2, face: 'desk' });
-    await settle();
-    db.heldLoads.splice(0).forEach((release) => release());
-
-    expect(await read).toBeNull();
-    expect(state().sessionFace[S2]).toBe('desk');
-  });
-
-  it('saves the Overview picked right after a Desk row came back', async () => {
-    db.rows.set(S1, { grid: storedDockGridOf({ grid: SAVED, face: 'desk' }), savedAt: 1 });
-    stop = watchSessionDockGrid({ store, delayMs: 300 });
-    await goTo({ sessionId: S1 });
-    expect(state().sessionFace[S1]).toBe('desk');
-
-    state().setSessionFace({ sessionId: S1, face: 'overview' });
-    await vi.advanceTimersByTimeAsync(400);
-
-    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).not.toHaveProperty('face');
-  });
-
-  it('keeps the Desk face in the row a move or a reset writes', async () => {
-    watch();
-    await goTo({ sessionId: S1 });
-    state().openDrawer(TERMINAL);
-    state().openDrawer(BROWSER);
-    state().setSessionFace({ sessionId: S1, face: 'desk' });
-    await settle();
-
-    await state().moveDockPanel({ sessionId: S1, kind: 'browser', target: { at: 'page' } });
-    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ face: 'desk' });
-
-    await state().resetDockGrid({ sessionId: S1 });
-    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ face: 'desk' });
-  });
-
-  it('keeps the face it had when the row cannot be read, and says so', async () => {
-    watch();
-    await goTo({ sessionId: S1 });
-    state().setSessionFace({ sessionId: S1, face: 'desk' });
-    db.holdLoads = false;
-    const { getSessionDockGrid } = await import('@goodboy/db');
-    vi.mocked(getSessionDockGrid).mockRejectedValueOnce(new Error('disk gone'));
-
-    expect(await state().recallSessionFace({ sessionId: S1 })).toBeNull();
-    expect(state().sessionFace[S1]).toBe('desk');
-    expect(reportError).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sessionId: S1,
-        title: "Couldn't load the last view of this session",
-      }),
-    );
+    expect(state().drawer).toBeNull();
   });
 });

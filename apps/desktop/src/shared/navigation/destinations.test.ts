@@ -12,6 +12,7 @@ import { destinationOf } from './destinationOf';
 describe('the destination list', () => {
   it('names every destination once, in the order every channel shows', () => {
     expect(DESTINATIONS.map((destination) => destination.label)).toEqual([
+      'Home',
       'Board',
       'Tasks',
       'Workflows',

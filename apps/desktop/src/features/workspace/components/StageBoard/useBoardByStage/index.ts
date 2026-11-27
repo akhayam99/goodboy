@@ -3,7 +3,7 @@ import type { Session, SessionStageInfo, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useSessionViewPrefs } from '../../../../../store';
 import { stageInfosOf } from '../../../../../store/slices/session-view/stageInfosOf';
 import type { GroupedSessions } from '../../../../../store/slices/session-view/types';
-import { boardByStageOf } from '../boardByStageOf';
+import { boardByStageOf } from '../../../../../store/slices/session-view/boardByStageOf';
 
 type Params = {
   readonly workspaceId: WorkspaceId;

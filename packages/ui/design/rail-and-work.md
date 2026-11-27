@@ -581,8 +581,7 @@ A Sessions row (`SessionsRow`) is a 32px `SelectableRow` option, in this
 order: the mark; the title in `text-ui`, a ticket key before it in muted
 `text-code` on its baseline (`SessionRowTitle`); what its agent is doing in
 muted `text-meta`, or else the project in `faint-foreground`; a warning
-`CountBadge` of the items that need you; the word Desk when the session opens
-on its desk; and a pin toggle, quiet at rest and `muted-foreground` while pinned. Its hover wash and focus ring come from
+`CountBadge` of the items that need you; and a pin toggle, quiet at rest and `muted-foreground` while pinned. Its hover wash and focus ring come from
 `ROW_INTERACTIVE` through `SelectableRow`, never a copy.
 
 The hover card is `bg-floating`, `floating-edge`, `shadow-lg`, 320px wide and `p-3`,

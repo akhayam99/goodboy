@@ -163,5 +163,6 @@ describe('the c02 sidebar and session rail scenes', () => {
     expect(screen.getByTestId('overview-title').closest('[data-session-head]')).not.toBeNull();
     expect(screen.getAllByTestId('pane-toggle-terminal').length).toBeGreaterThan(0);
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
+    screen.getByRole('button', { name: 'Close session' });
   });
 });

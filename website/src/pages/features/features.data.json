@@ -31,10 +31,10 @@
           "shown": true
         },
         {
-          "title": "Home",
+          "title": "Workspaces",
           "text": "A window with no workspace open lists your workspaces with their folders, and New workspace opens the same form in place.",
           "group": "Set up",
-          "also": "Home",
+          "also": "Workspaces",
           "shown": true
         },
         {
@@ -512,10 +512,10 @@
           "shown": true
         },
         {
-          "title": "Overview and Desk",
-          "text": "A session has two faces: Overview to read it, Desk to work in it. Open a tool from the right rail and the page splits, with the session's state, Needs you and Now in a column beside your tools.",
+          "title": "Tools beside the page",
+          "text": "Open Terminal, Browser, Scripts, Ask or Monitor from the right rail and the tool opens in the dock beside the page, the same on every screen.",
           "group": "Workspaces and folders",
-          "also": "desk",
+          "also": "tools",
           "shown": true
         },
         {

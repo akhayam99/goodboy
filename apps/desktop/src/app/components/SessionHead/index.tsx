@@ -6,7 +6,6 @@ import { captureLocation } from '../../../store/slices/navigation/captureLocatio
 import { isTabView } from '../../../store/slices/navigation/isTabView';
 import { OverviewTitle } from '../../../features/session/components/SessionOverviewPane/OverviewTitle';
 import { SessionHeadSlotsContext } from '../../../features/session/sessionHeadSlotsContext';
-import { isFaceShown } from '../../../features/session/desk/isFaceShown';
 import { SessionPageTabs } from '../SessionPageTabs';
 import { SessionBackButton } from './SessionBackButton';
 import { SessionCrumbs } from './SessionCrumbs';
@@ -25,13 +24,9 @@ export const SessionHead = ({ session }: Props) => {
       place.at === 'session' && place.sessionId === sessionId && !isTabView({ view: place.view })
     );
   });
-  const isDesk = useAppStore(
-    (state) =>
-      (state.sessionFace[sessionId] ?? 'overview') === 'desk' && isFaceShown({ state, sessionId }),
-  );
   const width = slots?.isReadingClaimed === true ? PAGE_MEASURE.agent : 'column';
   return (
-    <PageColumn width={isDesk ? 'full' : width} className={isDesk ? 'px-4' : undefined}>
+    <PageColumn width={width}>
       <header
         data-session-head=""
         data-head-nav={isDetail ? 'crumbs' : 'tabs'}

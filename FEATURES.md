@@ -6,7 +6,7 @@ New here? [Your first task](docs/first-session.md) walks from install to a merge
 
 Most pictures follow one team and one task. Harborline keeps three repos, payments-api, ledger-core and notify-relay, and issue HBL-412 says retried webhooks post a second credit. The pictures show that fix from the first brief to pull request #318.
 
-<a id="welcome-to-goodboy"></a><a id="your-agents"></a><a id="provider-connection"></a><a id="your-first-workspace"></a><a id="home"></a><a id="one-page-per-provider"></a><a id="update-the-provider-cli"></a><a id="permissions-for-each-provider"></a><a id="integrations"></a><a id="about-you"></a><a id="settings-home"></a><a id="settings"></a>
+<a id="welcome-to-goodboy"></a><a id="your-agents"></a><a id="provider-connection"></a><a id="your-first-workspace"></a><a id="workspaces"></a><a id="one-page-per-provider"></a><a id="update-the-provider-cli"></a><a id="permissions-for-each-provider"></a><a id="integrations"></a><a id="about-you"></a><a id="settings-home"></a><a id="settings"></a>
 
 ## Set up
 
@@ -14,7 +14,7 @@ Get from install to a first agent. Check the agents on this Mac, make a workspac
 
 - **Your agents**: Setup opens on your agents, step one of three from install to a first agent reading your code.
 - **Your first workspace**: A workspace is what you work on: one repository, or a folder that holds several.
-- **Home**: A window with no workspace open shows Home, which lists your workspaces with their folder count and where their folders live.
+- **Workspaces**: A window with no workspace open shows Workspaces, which lists your workspaces with their folder count and where their folders live.
 - **Integrations**: Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from Connections, and see the account behind each.
 
 [More on set up](docs/features/setup.md)
@@ -59,12 +59,13 @@ Open a session to see what it is for, what needs you and what happened so far.
 
 [More on overview and activity](docs/features/overview.md)
 
-<a id="queue"></a><a id="needs-you"></a><a id="merge-train"></a><a id="stage-board"></a><a id="session-card"></a><a id="list-view"></a><a id="done-and-archived-dock"></a><a id="done-and-archived-lanes"></a><a id="bulk-select"></a>
+<a id="home"></a><a id="queue"></a><a id="needs-you"></a><a id="merge-train"></a><a id="stage-board"></a><a id="session-card"></a><a id="list-view"></a><a id="done-and-archived-dock"></a><a id="done-and-archived-lanes"></a><a id="bulk-select"></a>
 
 ## The board
 
 The board shows every session of a workspace in lanes by stage, with what waits on you at the top of Running, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes.
 
+- **Home**: Home is the first page of a workspace: what needs you, what runs and how much is left, with the usage of your providers.
 - **Needs you**: See what waits on you at the top of the Running lane.
 - **Merge train**: Merge several pull requests, across sessions and repositories, with one gesture.
 - **Stage board**: See where each task stands without moving cards around.
@@ -125,7 +126,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 [More on workflows](docs/features/workflows.md)
 
-<a id="workspace-chat"></a><a id="ask-in-a-session"></a><a id="images-in-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="one-page-per-agent"></a><a id="agent-and-pull-request-on-the-desk"></a><a id="what-the-agent-received"></a><a id="transcript"></a><a id="agent-transcript"></a><a id="one-dock"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="message-and-document-fields"></a><a id="stop-and-continue"></a><a id="quiet-agents"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="auto-agent"></a><a id="lead"></a><a id="work-section"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a><a id="agents-column"></a>
+<a id="workspace-chat"></a><a id="ask-in-a-session"></a><a id="images-in-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="one-page-per-agent"></a><a id="agent-and-pull-request-on-the-desk"></a><a id="pull-request-panel"></a><a id="what-the-agent-received"></a><a id="transcript"></a><a id="agent-transcript"></a><a id="one-dock"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="message-and-document-fields"></a><a id="stop-and-continue"></a><a id="quiet-agents"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="auto-agent"></a><a id="lead"></a><a id="work-section"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a><a id="agents-column"></a>
 
 ## Agents
 
@@ -180,7 +181,7 @@ Watch how much of each plan is left, keep work moving when a provider runs out, 
 
 [More on providers, limits and cost](docs/features/providers.md)
 
-<a id="start-from-scratch"></a><a id="start-a-project-from-nothing"></a><a id="track-a-folder-with-git-later"></a><a id="workspace-with-several-folders"></a><a id="workspace-with-several-projects"></a><a id="starred-folders-descriptions-and-base-branch"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-repo"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="sessions-in-the-bar"></a><a id="overview-and-desk"></a><a id="repo-status-across-folders"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-folders"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="new-runs-start-as"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a><a id="workspace-and-projects"></a><a id="new-worktrees-start-usable"></a><a id="auto-asks-you"></a><a id="lead-asks-you"></a><a id="stops-for-your-ok"></a>
+<a id="start-from-scratch"></a><a id="start-a-project-from-nothing"></a><a id="track-a-folder-with-git-later"></a><a id="workspace-with-several-folders"></a><a id="workspace-with-several-projects"></a><a id="starred-folders-descriptions-and-base-branch"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-repo"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="sessions-in-the-bar"></a><a id="overview-and-desk"></a><a id="tools-beside-the-page"></a><a id="repo-status-across-folders"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-folders"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="new-runs-start-as"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a><a id="workspace-and-projects"></a><a id="new-worktrees-start-usable"></a><a id="auto-asks-you"></a><a id="lead-asks-you"></a><a id="stops-for-your-ok"></a>
 
 ## Workspaces and folders
 

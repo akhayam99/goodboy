@@ -305,8 +305,6 @@
 
   --animate-pane-out: pane-out var(--duration-quick) var(--ease-exit) forwards;
 
-  --animate-face-out: face-out var(--duration-quick) var(--ease-exit) forwards;
-
   --animate-item-out: item-out var(--duration-quick) var(--ease-exit) forwards;
 
   --animate-popover-in: popover-in var(--duration-quick) var(--ease-enter);
@@ -722,35 +720,6 @@
       opacity: 1;
       transform: scale(1);
     }
-  }
-
-  @keyframes face-out {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0;
-    }
-  }
-
-  @keyframes face-in {
-    from {
-      opacity: 0;
-      transform: translateX(16px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  [data-face-in]:not(:has([data-face-part])),
-  [data-face-in] [data-face-part] {
-    animation: face-in var(--duration-slow) var(--ease-enter) var(--duration-quick) both;
-  }
-
-  [data-face-in] [data-face-part] ~ [data-face-part] {
-    animation-delay: calc(var(--duration-quick) + var(--delay-step));
   }
 }
 

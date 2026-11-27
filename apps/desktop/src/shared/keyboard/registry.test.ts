@@ -50,7 +50,7 @@ describe('shortcut registry', () => {
       overview: 'overview.newHere',
       chatPage: 'chat.newHere',
       terminalPage: 'terminal.newHere',
-      home: 'home.newWorkspace',
+      workspaces: 'home.newWorkspace',
     });
     expect(SHORTCUTS['ask.reset'].label).toBe('New question');
     expect(SHORTCUTS['chat.newHere'].label).toBe('New chat');

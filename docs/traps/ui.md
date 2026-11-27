@@ -29,7 +29,7 @@ Start sits in a sticky host at the end of the body (`actionsHost` in `NewDrawerB
 
 ### A fold is a view, never a write
 
-When the Desk has no room, the solver turns a cell into a tab of its neighbor at render time, from the window width and `dockFoldOrderOf`. Nothing reaches `drawerGrid` or `session_dock_grids`, so a smaller window never rearranges the saved layout; writing the fold would lose it on the first laptop that leaves its monitor. The one nearby write is the toast's **Undo**, which closes the panel just opened (`announceDockFold`). A tab torn out of a folded cell is the one case where a fold feeds a write: the move names that one tab and re-solves, it never writes the fold the user saw, and the other folded tabs stay a view.
+When the dock has no room, the solver turns a cell into a tab of its neighbor at render time, from the window width and `dockFoldOrderOf`. Nothing reaches `drawerGrid` or `session_dock_grids`, so a smaller window never rearranges the saved layout; writing the fold would lose it on the first laptop that leaves its monitor. The one nearby write is the toast's **Undo**, which closes the panel just opened (`announceDockFold`). A tab torn out of a folded cell is the one case where a fold feeds a write: the move names that one tab and re-solves, it never writes the fold the user saw, and the other folded tabs stay a view.
 
 ### Ask and Scripts are cells of the grid
 

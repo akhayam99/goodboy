@@ -14,10 +14,10 @@ under a 1100px window) at the window's right edge on every workspace screen,
 - It holds Terminal, Browser, Scripts, Ask and Monitor (`RAIL_TOOLS`, each with its
   pane id and optional shortcut), with no heading. All five stay visible on every
   workspace page and belong to the window: a tool open on Home stays open in a
-  session and back ([dock-grid.md](dock-grid.md#the-grid-saved-on-the-session)). Ask is
-  disabled without a session and says "open a session to ask about it" (`ToolRailFrame`,
-  `toolFactOf`); an Ask left open on Home shows that line and closes from its head.
-  `toggleRailTool` toggles each panel to the rail's left. Explore, Agents and Context open from their pages and
+  session and back ([dock-grid.md](dock-grid.md#the-grid-saved-on-the-session)). Ask with no session
+  asks about the workspace: the question starts a Chat thread (`askInWorkspaceChat`,
+  `WorkspaceAskPane`) that shows in Chat and never in a session, and **Open in Chat**
+  goes to it. `toggleRailTool` toggles each panel to the rail's left. Explore, Agents and Context open from their pages and
   keys.
 - Tasks, Chat and Workflows fade their content while the rail stays still
   (`StudioFrame` animates its `data-studio-motion` nodes); a record panel open with
@@ -95,8 +95,7 @@ under a 1100px window) at the window's right edge on every workspace screen,
   stored notifications (`open-lens` scripts) still open Terminal through
   `openToolPane`.
 - **Ask** opens the session's Ask panel (`openAsk` and `closeAsk` name the session);
-  a second press closes it. It stays while the tabs change, and the Overview never
-  becomes the Desk for it (`deskToolsOf` leaves Ask out). ⌘L (`ask.open`) opens it
+  a second press closes it. It stays while the tabs change. ⌘L (`ask.open`) opens it
   and focuses its box; Close or Esc hides it. Ask keeps its conversation and starts
   no agent, and the Context tab holds no Ask ([drawer-kinds.md](drawer-kinds.md#ask)).
 - Outside a session the **Chat** door answers what Ask answers for one session.

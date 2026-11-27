@@ -136,7 +136,7 @@ const verbOf = ({ label }: VerbParams): CardVerb => ({
   isBusy: false,
   confirmRole: null,
   confirm: null,
-  hasPicker: false,
+  picker: null,
   run: () => undefined,
 });
 
@@ -267,7 +267,6 @@ export const BranchRowsScene = ({ theme }: Props) => {
         menu: null,
         foldedTarget: null,
       }),
-      openFor: () => null,
       removal: { targets: [], isBusy: false, sizeLabel: null, run: async () => undefined },
       shownAskIds: new Set(),
       permissionMount: null,

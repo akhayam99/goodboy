@@ -11,7 +11,6 @@ vi.mock('@goodboy/db', async () =>
     listLiveSessionIds: vi.fn(async () => []),
     getSetting: vi.fn(async () => null),
     setSetting: vi.fn(async () => undefined),
-    getSessionDockGrid: vi.fn(async (): Promise<string | null> => null),
   }),
 );
 vi.mock('../../../../shared/lib/db', async () =>
@@ -20,7 +19,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { getSessionDockGrid, getSetting, listLiveSessionIds, setSetting } from '@goodboy/db';
+import { getSetting, listLiveSessionIds, setSetting } from '@goodboy/db';
 import { brandId, type Session, type SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -281,13 +280,6 @@ describe('the Sessions popover in the bar', () => {
 });
 
 describe('what each Sessions row says', () => {
-  const DESK_ROW = JSON.stringify({ version: 1, face: 'desk' });
-
-  beforeEach(() => {
-    vi.mocked(getSessionDockGrid).mockReset();
-    vi.mocked(getSessionDockGrid).mockResolvedValue(null);
-  });
-
   const rowOf = ({ session }: IdParams): HTMLElement => {
     const row = within(dialog())
       .getAllByRole('option')
@@ -339,103 +331,6 @@ describe('what each Sessions row says', () => {
         .querySelector('[data-status-mark]')
         ?.getAttribute('data-status-mark'),
     ).not.toBe('dot');
-  });
-
-  it('says Desk for a session saved on the Desk and nothing for the others', async () => {
-    vi.mocked(getSessionDockGrid).mockImplementation(async ({ sessionId }) =>
-      sessionId === idOf({ session: pinned }) ? DESK_ROW : null,
-    );
-    mount();
-    toggle();
-
-    await waitFor(() =>
-      expect(within(rowOf({ session: pinned })).queryByText('Desk')).not.toBeNull(),
-    );
-    expect(rowOf({ session: quiet }).querySelector('[data-sessions-face]')).toBeNull();
-    expect(useAppStore.getState().sessionFace[idOf({ session: quiet })]).toBe('overview');
-  });
-
-  it('reads no row for a session whose face this window already knows', async () => {
-    useAppStore.setState({ sessionFace: { [idOf({ session: running })]: 'desk' } });
-    mount();
-    toggle();
-
-    expect(within(rowOf({ session: running })).queryByText('Desk')).not.toBeNull();
-    await waitFor(() => expect(getSessionDockGrid).toHaveBeenCalled());
-    expect(
-      vi.mocked(getSessionDockGrid).mock.calls.map(([params]) => params.sessionId),
-    ).not.toContain(idOf({ session: running }));
-  });
-
-  it('shows no face when the read fails, and reads again the next time Sessions opens', async () => {
-    vi.mocked(getSessionDockGrid).mockRejectedValue(new Error('database is locked'));
-    mount();
-    toggle();
-    await waitFor(() => expect(getSessionDockGrid).toHaveBeenCalled());
-    expect(rowOf({ session: pinned }).querySelector('[data-sessions-face]')).toBeNull();
-    toggle();
-
-    vi.mocked(getSessionDockGrid).mockReset();
-    vi.mocked(getSessionDockGrid).mockImplementation(async ({ sessionId }) =>
-      sessionId === idOf({ session: pinned }) ? DESK_ROW : null,
-    );
-    toggle();
-
-    await waitFor(() =>
-      expect(within(rowOf({ session: pinned })).queryByText('Desk')).not.toBeNull(),
-    );
-  });
-
-  it('reads an inactive row again after focus, so a face saved in another window shows', async () => {
-    vi.mocked(getSessionDockGrid).mockImplementation(async ({ sessionId }) =>
-      sessionId === idOf({ session: pinned }) ? DESK_ROW : null,
-    );
-    mount();
-    toggle();
-    await waitFor(() =>
-      expect(within(rowOf({ session: pinned })).queryByText('Desk')).not.toBeNull(),
-    );
-
-    vi.mocked(getSessionDockGrid).mockResolvedValue(null);
-    act(() => {
-      window.dispatchEvent(new Event('focus'));
-    });
-    await waitFor(() =>
-      expect(rowOf({ session: pinned }).querySelector('[data-sessions-face]')).toBeNull(),
-    );
-
-    toggle();
-    vi.mocked(getSessionDockGrid).mockImplementation(async ({ sessionId }) =>
-      sessionId === idOf({ session: pinned }) ? DESK_ROW : null,
-    );
-    act(() => {
-      window.dispatchEvent(new Event('focus'));
-    });
-    toggle();
-    await waitFor(() =>
-      expect(within(rowOf({ session: pinned })).queryByText('Desk')).not.toBeNull(),
-    );
-  });
-
-  it('keeps the face of the open session on focus, so an unsaved switch is not undone', async () => {
-    mount();
-    useAppStore.setState({
-      currentSessionId: idOf({ session: quiet }),
-      sessionFace: { [idOf({ session: quiet })]: 'desk' },
-    });
-    toggle();
-    await waitFor(() => expect(getSessionDockGrid).toHaveBeenCalled());
-    vi.mocked(getSessionDockGrid).mockClear();
-
-    act(() => {
-      window.dispatchEvent(new Event('focus'));
-    });
-
-    await waitFor(() => expect(getSessionDockGrid).toHaveBeenCalled());
-    expect(
-      vi.mocked(getSessionDockGrid).mock.calls.map(([params]) => params.sessionId),
-    ).not.toContain(idOf({ session: quiet }));
-    expect(useAppStore.getState().sessionFace[idOf({ session: quiet })]).toBe('desk');
   });
 });
 

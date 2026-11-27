@@ -168,10 +168,9 @@ model in [docs/navigation/model.md](./docs/navigation/model.md).
 
 - **One session head.** A session page draws one head: the title row (title on
   the left, its actions on the right) and under it the tab strip. No page draws
-  a title of its own; the tab names the page. Overview and Desk are two faces
-  under that same head, with no switch: a tool opened from the right rail
-  splits the page into the Desk, closing the last one brings the Overview
-  back, and nothing in the Desk column repeats the title or a way back.
+  a title of its own; the tab names the page. A tool opened from the right rail
+  opens in the dock beside the page, and nothing in the dock repeats the title
+  or a way back.
 - **A secondary page says so and shows the way out.** Below a tab (an artifact,
   a pull request, a run, an agent) the head keeps its title row, shows a back
   button before the title and swaps the tabs for crumbs. The back button, the
@@ -198,10 +197,7 @@ model in [docs/navigation/model.md](./docs/navigation/model.md).
   at most two columns of two beside the rail, each its own card. When room runs
   out, panes narrow first, then two stack in one column, then the detail lies
   over the page, and only then does everything lie over it. The page never
-  drops under its minimum and the rail never moves (`dockLayoutOf`). On the
-  Desk the same grid fills the room beside the column, with no page minimum:
-  when it runs out the column folds to one status line, and the tools after the
-  second become tabs of one cell. Nothing lies over the column.
+  drops under its minimum and the rail never moves (`dockLayoutOf`).
 - **Nothing floating touches the window edge.** A popover, a menu or a card
   keeps 12px from every window edge (`SHELL_GUTTER_PX`), caps its height at
   the room left and scrolls inside. It can be large, never edge to edge.
@@ -465,11 +461,8 @@ glance at beside Terminal: Monitor on the tools rail (`toggleRailTool`) opens
 page, also reachable from the Go menu and Search or run
 ([docs/navigation/model.md](docs/navigation/model.md)).
 
-A face is neither a door nor a tool. The Desk is the working face of a
-session, so it adds no place to the left rail and the Board stays lit on it. A
-desk without a task would be a terminal app: the Desk always belongs to one
-session. You move between sessions from Sessions in the top bar, where each row
-says what waits on you, and Desk when the session opens there.
+You move between sessions from Sessions in the top bar, where each row says
+what waits on you.
 
 An object the app connects to has one home, and Settings is not it. Providers
 and integrations live in Connections; Settings keeps only preferences (This

@@ -16,8 +16,6 @@ export const coverReasonText = ({ reason }: Params): string | null => {
       return 'Hidden while a page is open';
     case 'drag':
       return 'Hidden while you resize';
-    case 'swap':
-      return null;
     default: {
       const unreachable: never = reason;
       return unreachable;

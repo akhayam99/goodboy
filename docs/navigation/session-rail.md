@@ -16,8 +16,8 @@ with or without a branch, from one list (`pagesOf` in
 - **No Changes tab.** Changes belong to a branch, so they open on the Branch page
   Changes tab ([addresses.md](addresses.md#aliases-live-in-canonicallocation)); a
   branchless session's `files` place shows its file versions as a detail.
-- **No Overview or Desk switch.** A tool from the right rail splits the page into
-  the Desk ([surfaces.md](surfaces.md#the-tools-build-the-desk)).
+- **No face switch.** A tool from the right rail opens in the dock beside the page
+  ([surfaces.md](surfaces.md#the-tools-open-in-the-dock)).
 - **The tab is the stored place.** The selected tab is read from the open lens
   (`currentSignOf` over `useSessionPageLens`), so a reload restores it. A lens the
   tabs do not own (an integration list) selects no tab; a place that no longer
@@ -205,7 +205,7 @@ Esc in a session is one ladder (`escapeLadder`, the base escape layer of
    runs, the composer's Esc arms Stop first.
 3. An open drawer closes: the top of the slot, then the drawer from the chip
    ([surfaces.md](surfaces.md#closing-the-top-of-the-slot)). Esc never changes
-   Overview and Desk.
+   the page.
 4. A page with a back row does what the row does: a step to its run, a run or an
    agent to Runs (through history when the list is below), a list page to the
    Overview.

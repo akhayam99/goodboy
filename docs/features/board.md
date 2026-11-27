@@ -2,6 +2,22 @@
 
 The Board shows every session of a workspace in lanes by stage, so you see where each task stands, with what needs you at the top of **Running**. Sessions in the top bar lists the same sessions, so the page stays a board. Open a session and come back: the board is as you left it, with the same scroll and the same cards selected.
 
+### Home
+
+Home is the first page of a workspace: what needs you, what runs and how much is left, with the usage of your providers.
+
+Home is where a workspace opens. It is a short page of cards, each a count with the rows behind it. Home holds no number of its own: each one is the number the Board and the badge show. A count that is still loading draws a skeleton, never a zero.
+
+- **Sessions to finish** counts what is not done yet and splits it by what needs you, what runs, what is in review and what is open. **Open Board** goes to the list.
+- **Needs you** lists the sessions that wait on you, the oldest first. A row names the reason and how long it waited. A permission wait says **Allow and continue** and answers in place; the row leaves once the answer went through. Any other row opens the place that needs you, as its Board card does.
+- **Running now** lists the sessions that run, with how long each has run.
+- **Usage** shows each window of your connected providers with its meter, its percent and when it resets. Without a connected provider it says so and offers **Connect**.
+- **Spend** shows today with its change from yesterday, the week, a chart of the seven days and the sessions that cost the most. Without spend it says it fills as agents run.
+- **Tasks** counts the new tasks and splits them by the connected tracker. Without a tracker it offers **Connect**.
+- Four more cards are ready but off by default: **Merged this week**, **Long running**, **Every run** and **Workspace setup**. A session counts as long running after a day.
+
+A card with nothing to say is not drawn, and the cards below move up. A list that is cut ends with **+N more**, which opens the Board. The cards sit on a grid of four columns in a wide window, two in a medium one and one in a narrow one. Every row of cards ends on one line.
+
 ### Needs you
 
 See what waits on you at the top of the **Running** lane. A session that needs you sits there, whatever stage it was in, the oldest wait first. Its card has a yellow line at the left edge. The sessions that only run follow below it, with a blue line: blue means working, yellow means it needs you.
@@ -81,7 +97,7 @@ On a narrow window the two lanes share the last lane.
 
 Read a task at a glance: repository and branch, a two-line title, then its state, last move and one signal. The repository and branch sit in gray above the title, and the state, the time and the signal share the line under it. A card is as tall as what it says, and a session with no repository skips the gray line. The meta line never cuts a word: a long state wraps to a second line.
 
-A click on a card, or Enter on its title, always opens the session on its Overview, even when you left it on the Desk. Only the signal with its arrow, the pull request chip and a quick action open a specific place. A modifier click selects the card.
+A click on a card, or Enter on its title, always opens the session on its Overview. Only the signal with its arrow, the pull request chip and a quick action open a specific place. A modifier click selects the card.
 
 The signal is the first of these that applies:
 
@@ -126,10 +142,12 @@ Then **Archive**, **Restore** or **Delete** them from the bar at the bottom. Arc
 
 This part is for contributors and agents who change the feature.
 
+- Home reads: `dailySpendOf` reads today through `spendFigures`, the top bar's function. `mergedSinceOf`, `longRunningOf`, `setupDiffOf`, `workflowRulesOf` and `tasksFactsOf` are pure and tested on fixed records; the Tasks card counts `taskNewKeys` and calls no host.
+- Home: `HomePage` (`features/home/`) reads `useHomeFacts`, which takes needs you and running from `useNowSessions`, the source of the badge and the Now chip, and the stage groups from `useStageGroupedSessions`. `placeWidgets` puts the cards on the grid and `completeRows` is its closing pass; `holesOf` is what `placeWidgets.test.ts` checks for every layout. `visibleWidgetsOf` leaves out an empty card. `AllowVerb` calls `usePermissionAsk`, the write path of the session page. `usageWindowFactsOf` gives Usage and the provider page one label, tone, percent and reset line.
 - Deleted branch: `sessionStageRequestOf` reads the stored pull request of a branch whose worktree was removed (`historyRequestsOf`, from `mountPrLinks`), so `deriveSessionStage` derives Done from a merged request with nothing live. A closed one alone does not. `loadWorkspaceMountHistory` reads the removed mounts and their links for every session when a workspace opens or reloads, and `mountHistoryPatchOf` seeds `sessionMounts` with them (`listSessionMounts` and `listMountPullRequestLinks` take `sessionIds`). `loadMountHistory` does the same when `loadSessionMounts` hydrates one session. `sessionSettleOf` (`session-view/settle/`) reads every mount, removed ones too, through `mountRequestOf` and `mountPrLinks`. It hands them, with the thread states, to `isSettledOf` and `settledAtOf` in `@goodboy/core/attention`, which also holds `isFailureSettled`. Tested in `removedMountStage.test.ts`, `sessionStageRequest.test.ts` and the `deleted-branch-merged-light` scene.
 - Done lane menu: `DoneLaneMenu`, the `doneLane` object kind and `doneLaneArchivesOf` give the **Archive all in Done** and **Archive done older than 7 days** actions.
 - Lane window: `StageColumn` draws 50 cards of the `done` and `archived` lanes (`LANE_WINDOW`); selection reads the whole list, so Select all keeps selecting every session. `loadArchivedSessions({ workspaceId, isForced })` serves its cache, joins an in-flight read and re-reads only when forced on window focus (`useArchivedSessionsLoad`). A read that overlapped an archive, restore or delete is dropped (`archivedCacheVersion`), so the action's cache write is never overwritten by the older read.
-- Card landing: `useBoardNavigation.selectCard` sets the session face to `overview` (`setSessionFace`, which also drops a late saved-face read) and then navigates with `lensPlace`. The signal, the pull request chip and the quick actions navigate without touching the face. `useBoardNavigation/index.test.ts` and `StageBoardCard/index.test.tsx` cover each case; the `board-kept-desk` scene shows it.
+- Card landing: `useBoardNavigation.selectCard` navigates with `lensPlace`. The signal, the pull request chip and the quick actions navigate to their own place. `useBoardNavigation/index.test.ts` and `StageBoardCard/index.test.tsx` cover each case.
 - Card keys: `useBoardArrowKeys` walks the `[data-select-id]` cards of the lane (`role="group"`) the key came from and extends through `BoardSelection.onToggle`.
 - Card rename: `CardRenameField` draws `TitleField` (`density="row"`) over `useSessionTitleRename`. `renameTask` writes first. A failure keeps the old title, leaves the field open and shows `RenameStatus` with Retry.
 - Main region: `App` gives the board (`WorkspaceBoard`, which reads its own sessions), the session frame and the draft to one `PaneSwap`. The layer that leaves stays mounted, inert, for 120 ms while the new one is live, then sits under `Activity`, so the board comes back with the same scroll and selected cards and no new read. `PaneSwap` keeps each scroller's offset, because a hidden layer is `display: none`. `Activity` keeps state but runs effect cleanups, so `useRestHover` drops its target there. `SessionHoverCard` hides on a detached anchor and closes through `useCloseOnOutsidePointer` and `useCloseOnRouteChange` (`SessionHoverCard/closes.test.tsx`).

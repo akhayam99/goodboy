@@ -215,7 +215,10 @@ export const WorkspaceLauncher = ({ isCreating, onCloseCreate }: Props) => {
           onClick={openSettingsHome}
         />
       </div>
-      <main aria-label="Home" className="flex w-full max-w-[600px] flex-col gap-8 pb-10 pt-24">
+      <main
+        aria-label={NAMES.workspaces}
+        className="flex w-full max-w-[600px] flex-col gap-8 pb-10 pt-24"
+      >
         <div className="flex items-center gap-3">
           <BrandTile size={LOCKUP_TILE_PX} />
           <PaneTitleRow title="Goodboy" meta={`v${APP_VERSION}`} />

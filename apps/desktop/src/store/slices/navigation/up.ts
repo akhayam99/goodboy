@@ -1,4 +1,5 @@
 import { captureLocation } from './captureLocation';
+import { closePlaceOf } from './closePlaceOf';
 import { parentPlace } from './parentPlace';
 import type { GetFn, SetFn } from './types';
 
@@ -10,7 +11,7 @@ export const up = (_set: SetFn, get: GetFn) => {
       get().closeStudio();
       return;
     }
-    const parent = parentPlace({ state, place: live.place });
+    const parent = parentPlace({ state, place: live.place }) ?? closePlaceOf({ place: live.place });
     if (parent === null) {
       return;
     }

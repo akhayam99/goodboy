@@ -133,10 +133,10 @@ describe('the tools belong to the window, not to the place', () => {
     expect(kindsOf({ grid: next.drawerGrid })).toEqual([]);
   });
 
-  it('closes a terminal that belongs to another workspace and keeps the rest', () => {
+  it('holds a terminal of another workspace for the terminal to follow, and keeps the rest', () => {
     const next = enter({ from: LEDGER, grid: LEDGER_GRID, to: PAYMENTS }).drawerGrid;
 
-    expect([...kindsOf({ grid: next })].sort()).toEqual(['ask', 'browser', 'scripts']);
+    expect([...kindsOf({ grid: next })].sort()).toEqual(['ask', 'browser', 'scripts', 'terminal']);
   });
 
   it('closes a terminal whose tab is gone', () => {
