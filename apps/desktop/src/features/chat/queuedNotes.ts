@@ -1,4 +1,4 @@
-import type { QueuedRow } from './components/ChatInput/queuedRowsOf';
+import type { QueuedRow } from './queuedMessages/queuedRow';
 
 export type QueuedNotes = Readonly<{
   rows: ReadonlyArray<QueuedRow>;
