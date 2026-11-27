@@ -5,12 +5,15 @@ import { NAMES } from '../../../../shared/utils/names';
 import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import type { ActionCardActions } from '../../central/next/useActionCardActions';
 import { MoveCard } from '../MoveCard';
+import { NeedsYouPermission } from './NeedsYouPermission';
 import { NeedsYouQuestion } from './NeedsYouQuestion';
+import type { SessionPermissionAsk } from './useSessionPermissionAsk';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly cards: ReadonlyArray<ActionCardModel>;
   readonly questions: ReadonlyArray<OpenQuestion>;
+  readonly permission: SessionPermissionAsk | null;
   readonly actionsFor: ActionCardActions['actionsFor'];
   readonly openFor: ActionCardActions['openFor'];
   readonly kickerById: ReadonlyMap<string, string>;
@@ -20,12 +23,13 @@ export const NeedsYouSection = ({
   sessionId,
   cards,
   questions,
+  permission,
   actionsFor,
   openFor,
   kickerById,
 }: Props) => {
   const [move] = cards;
-  if (move === undefined && questions.length === 0) {
+  if (move === undefined && questions.length === 0 && permission === null) {
     return null;
   }
   return (
@@ -63,6 +67,15 @@ export const NeedsYouSection = ({
             isPrimary={move === undefined && index === 0}
           />
         ))}
+        {permission === null ? null : (
+          <NeedsYouPermission
+            key={`${permission.agentId}:${permission.ask.runId}:${permission.ask.toolUseId}`}
+            sessionId={sessionId}
+            agentId={permission.agentId}
+            ask={permission.ask}
+            isPrimary={move === undefined && questions.length === 0}
+          />
+        )}
       </div>
     </section>
   );
