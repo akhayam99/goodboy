@@ -268,3 +268,17 @@ same origin ([architecture/artifact-frames.md](architecture/artifact-frames.md))
 Text a stranger wrote reaches a prompt only through `untrustedBlock` and
 renders with a depth cap and linear patterns
 ([architecture/untrusted-text.md](architecture/untrusted-text.md)).
+
+### Calendar sources
+
+`src-tauri/src/calendar/` reads events and never writes one. Each source sits
+behind the `CalendarSource` trait: `eventkit` reads the calendars already on
+the Mac (its native calls live in `platform/event_kit.rs`, behind the
+`EventStore` trait so tests use a fake and never prompt), and `ics` reads a
+calendar link over https with the shared client and the same-origin redirect
+policy, then parses it in house (VTIMEZONE offsets, RRULE with COUNT, UNTIL
+and EXDATE, moved occurrences). The link lives in the Keychain under
+`goodboy.calendar.ics.<id>`; only `calendar_request_access` may show the macOS
+prompt. One link stays in memory for 15 minutes. A listing returns what every
+healthy source read plus one failure row per source that did not, deduped by
+uid and start. The call link allowlist has one owner, `calendar/links.rs`.
