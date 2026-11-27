@@ -296,9 +296,15 @@ type OncePerAgentParams = {
 };
 
 const oncePerAgentOf = ({ children }: OncePerAgentParams): AutoGroup['children'] => {
-  const last = new Map<string, number>();
-  children.forEach((child, index) => last.set(child.agentId, index));
-  return children.filter((child, index) => last.get(child.agentId) === index);
+  const newest = new Map<string, number>();
+  children.forEach((child, index) => {
+    const at = newest.get(child.agentId);
+    const held = at === undefined ? undefined : children[at];
+    if (held === undefined || (child.createdAt ?? 0) >= (held.createdAt ?? 0)) {
+      newest.set(child.agentId, index);
+    }
+  });
+  return children.filter((child, index) => newest.get(child.agentId) === index);
 };
 
 const autoGroupModelOf = ({ group, agents }: AutoParams): LiveAutoGroup | null => {

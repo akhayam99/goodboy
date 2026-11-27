@@ -188,9 +188,9 @@ describe('liveGroupsOf', () => {
     const view = aView({
       phase: 'waiting',
       delegations: [
-        { ...attempt({ key: 'first', state: 'settled' }), slot: 0 },
-        { ...attempt({ key: 'retry-1', state: 'settled' }), slot: 1 },
-        { ...attempt({ key: 'retry-2', state: 'running' }), slot: 2 },
+        { ...attempt({ key: 'first', state: 'settled' }), slot: 2, createdAt: 1_000 },
+        { ...attempt({ key: 'retry-1', state: 'settled' }), slot: 1, createdAt: 2_000 },
+        { ...attempt({ key: 'retry-2', state: 'running' }), slot: 0, createdAt: 3_000 },
       ],
     });
     const agents = [root, fixer];
