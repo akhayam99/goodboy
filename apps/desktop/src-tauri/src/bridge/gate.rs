@@ -383,4 +383,18 @@ mod tests {
             .try_enter_at(ip(1), last + FORGET_AFTER + secs(1))
             .is_ok());
     }
+
+    #[test]
+    fn a_completed_handshake_clears_the_failure_count_of_its_source() {
+        let gate = HandshakeGate::new(MAX_UNAUTHENTICATED);
+        let last = fail_spaced(&gate, ip(5), FREE_FAILURES + 1, Instant::now());
+        let later = last + BACKOFF_MAX + secs(1);
+
+        gate.try_enter_at(ip(5), later).unwrap().succeed();
+
+        for _ in 0..FREE_FAILURES {
+            gate.try_enter_at(ip(5), later).unwrap().fail_at(later);
+        }
+        assert!(gate.try_enter_at(ip(5), later).is_ok());
+    }
 }

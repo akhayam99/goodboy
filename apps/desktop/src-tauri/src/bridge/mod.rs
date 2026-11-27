@@ -1,41 +1,51 @@
 mod action_guard;
+mod advertise;
 mod commands;
 mod frame;
 mod gate;
 mod handshake;
 mod identity;
+mod listen;
 mod network;
+mod pairing;
 mod permissions;
 pub mod publish;
 mod publish_schema;
 mod server;
 mod tokens;
+mod vault;
 #[cfg(test)]
 mod wire_shape;
 
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::net::IpAddr;
+use std::sync::{Arc, Mutex as StdMutex, OnceLock};
+use std::time::Duration;
 
 use base64::Engine as _;
 use serde::Serialize;
 use snow::params::NoiseParams;
 use tauri::async_runtime::JoinHandle;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Emitter, State};
 use thiserror::Error;
-use tokio::net::TcpListener;
 use tokio::sync::{watch, Mutex};
 
+use advertise::{system_advertiser, Presence};
 use commands::{CmdResult, PendingMap};
 use handshake::RefusalCode;
-use identity::Identity;
-use network::{interfaces_of, offered_addresses, raw_addresses, NetworkInterface, RawAddress};
+use identity::{Identity, IdentityFault};
+use listen::{bind_all, endpoints_of};
+use network::{interfaces_of, offered_addresses, raw_addresses, NetworkInterface};
+use pairing::{PairingHold, PendingPairing};
 use permissions::Permissions;
 use publish::PublishHub;
 use server::{serve, ServerCtx};
 use tokens::TokenStore;
+use vault::KeychainVault;
 
 const PROTOCOL_NAME: &str = "Noise_XK_25519_ChaChaPoly_SHA256";
 const SERVICE_NAME: &str = "_goodboy._tcp";
+const INTERFACE_WATCH: Duration = Duration::from_secs(5);
 
 pub(crate) fn noise_params() -> NoiseParams {
     PROTOCOL_NAME
@@ -63,6 +73,8 @@ pub enum BridgeError {
     Refused(RefusalCode),
     #[error("no private network is offered to phones")]
     NoPrivateNetwork,
+    #[error("the pairing identity is not available")]
+    IdentityUnavailable,
 }
 
 impl BridgeError {
@@ -77,6 +89,7 @@ impl BridgeError {
             BridgeError::Unauthorized(_) => "unauthorized",
             BridgeError::Refused(_) => "refused",
             BridgeError::NoPrivateNetwork => "no_private_network",
+            BridgeError::IdentityUnavailable => "identity_unavailable",
         }
     }
 
@@ -88,10 +101,11 @@ impl BridgeError {
 crate::util::impl_error_serialize!(BridgeError);
 
 pub struct BridgeState {
-    static_pub_b64: String,
     identity: Arc<Mutex<Identity>>,
     tokens: Arc<TokenStore>,
     pending: PendingMap,
+    pairing: Arc<PairingHold>,
+    app: Arc<OnceLock<AppHandle>>,
     pub(crate) hub: Arc<PublishHub>,
     inner: Mutex<Inner>,
 }
@@ -101,77 +115,162 @@ struct Inner {
     port: Option<u16>,
     task: Option<JoinHandle<()>>,
     shutdown: Option<watch::Sender<bool>>,
-    bound: Vec<std::net::IpAddr>,
+    selected: Option<Vec<String>>,
+    presence: Option<Arc<StdMutex<Presence>>>,
+    watcher: Option<JoinHandle<()>>,
+}
+
+fn offered_ips(selected: Option<&[String]>) -> Vec<IpAddr> {
+    offered_addresses(&raw_addresses(), selected)
+        .into_iter()
+        .map(|a| a.ip)
+        .collect()
 }
 
 impl BridgeState {
-    pub fn new() -> Result<Self, BridgeError> {
-        let identity = Identity::load_or_create()?;
-        Ok(Self {
-            static_pub_b64: identity.static_pub_b64.clone(),
+    pub fn new() -> Self {
+        let identity = Identity::load_or_create();
+        let app: Arc<OnceLock<AppHandle>> = Arc::new(OnceLock::new());
+        let heard = app.clone();
+        let pairing = PairingHold::new(Box::new(move |pending| {
+            if let Some(handle) = heard.get() {
+                let _ = handle.emit("bridge://pairing-request", pending);
+            }
+        }));
+        Self {
             identity: Arc::new(Mutex::new(identity)),
             tokens: Arc::new(TokenStore::new()),
             pending: Arc::new(Mutex::new(HashMap::new())),
+            pairing: Arc::new(pairing),
+            app,
             hub: Arc::new(PublishHub::new()),
             inner: Mutex::new(Inner::default()),
-        })
+        }
     }
 
-    async fn ensure_running(
-        &self,
-        app: AppHandle,
-    ) -> Result<(u16, Vec<std::net::IpAddr>), BridgeError> {
+    async fn ensure_running(&self, app: AppHandle) -> Result<(u16, Vec<IpAddr>), BridgeError> {
+        let _ = self.app.set(app.clone());
         let mut inner = self.inner.lock().await;
-        let selected = self.identity.lock().await.interfaces.clone();
-        let offered = offered_addresses(&raw_addresses(), selected.as_deref());
+        let (selected, preferred, device_name, instance) = {
+            let mut id = self.identity.lock().await;
+            id.try_recover(&KeychainVault);
+            if id.fault().is_some() {
+                return Err(BridgeError::IdentityUnavailable);
+            }
+            (
+                id.interfaces.clone(),
+                id.listen_port,
+                id.device_label(),
+                id.instance_id.clone(),
+            )
+        };
         if let Some(port) = inner.port {
-            if same_addresses(&inner.bound, &offered) {
-                return Ok((port, inner.bound.clone()));
+            if inner.selected == selected {
+                return Ok((port, offered_ips(selected.as_deref())));
             }
-            if let Some(shutdown) = inner.shutdown.take() {
-                let _ = shutdown.send(true);
-            }
-            if let Some(task) = inner.task.take() {
-                task.abort();
-            }
-            inner.port = None;
+            stop_inner(&mut inner);
         }
-        let (listeners, port) = bind_offered(&offered).await?;
+        let listening = bind_all(preferred).await?;
+        let port = listening.port;
+        if let Err(error) = self.identity.lock().await.set_listen_port(port) {
+            log::warn!("[bridge] could not remember the port: {error}");
+        }
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
+        let watched = selected.clone();
         let ctx = Arc::new(ServerCtx {
             identity: self.identity.clone(),
             tokens: self.tokens.clone(),
-            device_name: device_name(),
+            device_name,
+            port,
+            offered: Arc::new(move || offered_ips(watched.as_deref())),
+            pairing: self.pairing.clone(),
             app,
             pending: self.pending.clone(),
             hub: self.hub.clone(),
             in_flight: Default::default(),
             shutdown: shutdown_rx,
         });
+        let listeners = listening.listeners;
         let task = tauri::async_runtime::spawn(async move {
             serve(listeners, ctx).await;
         });
+        let presence = Arc::new(StdMutex::new(Presence::start(
+            system_advertiser(),
+            instance,
+            port,
+            offered_ips(selected.as_deref()),
+        )));
+        let watcher =
+            tauri::async_runtime::spawn(watch_interfaces(presence.clone(), selected.clone()));
         inner.port = Some(port);
         inner.task = Some(task);
         inner.shutdown = Some(shutdown_tx);
-        inner.bound = offered.iter().map(|a| a.ip).collect();
-        Ok((port, inner.bound.clone()))
+        inner.selected = selected.clone();
+        inner.presence = Some(presence);
+        inner.watcher = Some(watcher);
+        Ok((port, offered_ips(selected.as_deref())))
     }
 
     async fn stop(&self) {
-        let mut inner = self.inner.lock().await;
-        if let Some(shutdown) = inner.shutdown.take() {
-            let _ = shutdown.send(true);
+        stop_inner(&mut *self.inner.lock().await);
+    }
+
+    async fn has_phones(&self) -> bool {
+        !self.identity.lock().await.phones.is_empty()
+    }
+}
+
+impl Default for BridgeState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+fn stop_inner(inner: &mut Inner) {
+    if let Some(shutdown) = inner.shutdown.take() {
+        let _ = shutdown.send(true);
+    }
+    if let Some(task) = inner.task.take() {
+        task.abort();
+    }
+    if let Some(watcher) = inner.watcher.take() {
+        watcher.abort();
+    }
+    if let Some(presence) = inner.presence.take() {
+        if let Ok(mut presence) = presence.lock() {
+            presence.stop();
         }
-        if let Some(task) = inner.task.take() {
-            task.abort();
+    }
+    inner.port = None;
+    inner.selected = None;
+}
+
+async fn watch_interfaces(presence: Arc<StdMutex<Presence>>, selected: Option<Vec<String>>) {
+    let mut every = tokio::time::interval(INTERFACE_WATCH);
+    every.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    loop {
+        every.tick().await;
+        let offered = offered_ips(selected.as_deref());
+        let Ok(mut presence) = presence.lock() else {
+            return;
+        };
+        if presence.tick(offered) {
+            log::info!("[bridge] the networks changed, advertised again");
         }
-        inner.port = None;
+    }
+}
+
+pub async fn resume(app: AppHandle, state: &BridgeState) {
+    if !state.has_phones().await {
+        return;
+    }
+    match state.ensure_running(app).await {
+        Ok((port, _)) => log::info!("[bridge] listening for paired iPhones on port {port}"),
+        Err(error) => log::warn!("[bridge] could not listen at launch: {error}"),
     }
 }
 
 pub const QR_VERSION: u8 = 2;
-const BIND_ATTEMPTS: usize = 8;
 
 #[derive(Serialize)]
 pub struct Endpoint {
@@ -202,11 +301,27 @@ pub struct QrInfo {
 }
 
 #[derive(Serialize)]
+pub struct BridgeFault {
+    code: &'static str,
+    message: &'static str,
+}
+
+fn fault_view(fault: Option<IdentityFault>) -> Option<BridgeFault> {
+    fault.map(|f| BridgeFault {
+        code: f.wire(),
+        message: f.message(),
+    })
+}
+
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BridgeStatus {
     running: bool,
     port: Option<u16>,
     enrolled_count: usize,
+    is_advertised: bool,
+    pending_pairing: Option<PendingPairing>,
+    fault: Option<BridgeFault>,
 }
 
 #[tauri::command]
@@ -214,19 +329,24 @@ pub async fn bridge_start(
     app: AppHandle,
     state: State<'_, BridgeState>,
 ) -> Result<QrInfo, BridgeError> {
-    let (port, bound) = state.ensure_running(app).await?;
-    let endpoints = bound_endpoints(&bound, port);
+    let (port, offered) = state.ensure_running(app).await?;
+    let endpoints = endpoints_of(&offered, port);
     if endpoints.is_empty() {
-        state.stop().await;
+        if !state.has_phones().await {
+            state.stop().await;
+        }
         return Err(BridgeError::NoPrivateNetwork);
     }
     let token = state.tokens.mint();
-    let device_name = device_name();
+    let (device_name, static_pub) = {
+        let id = state.identity.lock().await;
+        (id.device_label(), id.static_pub_b64.clone())
+    };
 
     let payload = QrPayload {
         v: QR_VERSION,
         device_name: device_name.clone(),
-        static_pub: state.static_pub_b64.clone(),
+        static_pub,
         token: base64::engine::general_purpose::STANDARD.encode(&token),
         endpoints,
         service_name: SERVICE_NAME.to_string(),
@@ -268,7 +388,6 @@ pub async fn bridge_set_interfaces(
     names: Vec<String>,
 ) -> Result<(), BridgeError> {
     state.identity.lock().await.set_interfaces(Some(names))?;
-    state.stop().await;
     Ok(())
 }
 
@@ -313,6 +432,9 @@ pub async fn bridge_revoke_phone(
     phone_id: String,
 ) -> Result<(), BridgeError> {
     state.identity.lock().await.revoke_one(&phone_id)?;
+    if !state.has_phones().await {
+        state.stop().await;
+    }
     Ok(())
 }
 
@@ -325,18 +447,51 @@ pub async fn bridge_revoke(state: State<'_, BridgeState>) -> Result<(), BridgeEr
 
 #[tauri::command]
 pub async fn bridge_stop(state: State<'_, BridgeState>) -> Result<(), BridgeError> {
+    if !state.has_phones().await {
+        state.stop().await;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn bridge_pairing_decide(
+    state: State<'_, BridgeState>,
+    id: String,
+    is_allowed: bool,
+) -> Result<bool, BridgeError> {
+    Ok(state.pairing.decide(&id, is_allowed))
+}
+
+#[tauri::command]
+pub async fn bridge_reset_pairing(state: State<'_, BridgeState>) -> Result<(), BridgeError> {
     state.stop().await;
+    state.identity.lock().await.reset_pairing(&KeychainVault)?;
     Ok(())
 }
 
 #[tauri::command]
 pub async fn bridge_status(state: State<'_, BridgeState>) -> Result<BridgeStatus, BridgeError> {
-    let inner = state.inner.lock().await;
-    let enrolled_count = state.identity.lock().await.phones.len();
+    let (running, port, is_advertised) = {
+        let inner = state.inner.lock().await;
+        let is_advertised = inner
+            .presence
+            .as_ref()
+            .and_then(|p| p.lock().ok().map(|p| p.is_up()))
+            .unwrap_or(false);
+        (inner.port.is_some(), inner.port, is_advertised)
+    };
+    let (enrolled_count, fault) = {
+        let mut id = state.identity.lock().await;
+        id.try_recover(&KeychainVault);
+        (id.phones.len(), id.fault())
+    };
     Ok(BridgeStatus {
-        running: inner.port.is_some(),
-        port: inner.port,
+        running,
+        port,
         enrolled_count,
+        is_advertised,
+        pending_pairing: state.pairing.pending(),
+        fault: fault_view(fault),
     })
 }
 
@@ -365,77 +520,27 @@ fn render_qr_svg(data: &str) -> Result<String, BridgeError> {
         .build())
 }
 
-fn same_addresses(bound: &[std::net::IpAddr], offered: &[RawAddress]) -> bool {
-    let mut left: Vec<_> = bound.to_vec();
-    let mut right: Vec<_> = offered.iter().map(|a| a.ip).collect();
-    left.sort();
-    right.sort();
-    left == right
-}
-
-fn bound_endpoints(bound: &[std::net::IpAddr], port: u16) -> Vec<Endpoint> {
-    bound
-        .iter()
-        .filter(|ip| network::is_private(**ip))
-        .map(|ip| Endpoint {
-            host: ip.to_string(),
-            port,
-        })
-        .collect()
-}
-
 #[cfg(test)]
-pub(crate) fn endpoints_for(
-    raw: &[RawAddress],
-    selected: Option<&[String]>,
-    port: u16,
-) -> Vec<Endpoint> {
-    offered_addresses(raw, selected)
-        .into_iter()
-        .filter(|a| network::is_private(a.ip))
-        .map(|a| Endpoint {
-            host: a.ip.to_string(),
-            port,
-        })
-        .collect()
-}
+mod tests {
+    use super::*;
 
-async fn bind_offered(offered: &[RawAddress]) -> Result<(Vec<TcpListener>, u16), BridgeError> {
-    let Some(first) = offered.first() else {
-        return Err(BridgeError::NoPrivateNetwork);
-    };
-    for _ in 0..BIND_ATTEMPTS {
-        let lead = TcpListener::bind((first.ip, 0)).await?;
-        let port = lead.local_addr()?.port();
-        let mut listeners = vec![lead];
-        let mut is_complete = true;
-        for other in &offered[1..] {
-            match TcpListener::bind((other.ip, port)).await {
-                Ok(listener) => listeners.push(listener),
-                Err(_) => {
-                    is_complete = false;
-                    break;
-                }
-            }
-        }
-        if is_complete {
-            return Ok((listeners, port));
-        }
+    #[test]
+    fn the_mac_hostname_is_never_read_for_the_qr_or_the_hello() {
+        let source = include_str!("mod.rs");
+        assert!(!source.contains(concat!("gethost", "name")));
     }
-    Err(BridgeError::NoPrivateNetwork)
-}
 
-fn device_name() -> String {
-    let mut buf = [0u8; 256];
-    let rc = unsafe { libc::gethostname(buf.as_mut_ptr() as *mut libc::c_char, buf.len()) };
-    if rc == 0 {
-        let end = buf.iter().position(|&b| b == 0).unwrap_or(buf.len());
-        if let Ok(name) = std::str::from_utf8(&buf[..end]) {
-            let trimmed = name.trim_end_matches(".local").trim();
-            if !trimmed.is_empty() {
-                return trimmed.to_string();
-            }
-        }
+    #[test]
+    fn stopping_the_listener_clears_its_running_state() {
+        let mut inner = Inner {
+            port: Some(49160),
+            selected: Some(vec!["en0".into()]),
+            ..Inner::default()
+        };
+
+        stop_inner(&mut inner);
+
+        assert_eq!(inner.port, None);
+        assert_eq!(inner.selected, None);
     }
-    "Goodboy Desktop".to_string()
 }
