@@ -68,6 +68,25 @@ describe('CONCEPT_ICONS', () => {
     expect(CONCEPT_ICONS.needsYou).toBe(CircleUser);
   });
 
+  it('draws the Lead as Orchestrate, one glyph with the orchestrator it replaced', () => {
+    expect(CONCEPT_ICONS.auto).toBe(Network);
+    expect(CONCEPT_ICONS.orchestrator).toBe(Network);
+  });
+
+  it('keeps the Board and the Overview of one session on two glyphs', () => {
+    expect(CONCEPT_ICONS.board).toBe(SquareKanban);
+    expect(CONCEPT_ICONS.sessions).toBe(Dashboard);
+  });
+
+  it('draws each concept with the glyph its convention names', () => {
+    expect(CONCEPT_ICONS.approval).toBe(Lock);
+    expect(CONCEPT_ICONS.timeline).toBe(List);
+    expect(CONCEPT_ICONS.changelog).toBe(Milestone);
+    expect(CONCEPT_ICONS.inbox).toBe(Task);
+    expect(CONCEPT_ICONS.integrations).toBe(Plug);
+    expect(CONCEPT_ICONS.needsYou).toBe(CircleUser);
+  });
+
   it('separates a mounted project from the project itself', () => {
     expect(CONCEPT_ICONS.mount).not.toBe(CONCEPT_ICONS.projectRepo);
     expect(CONCEPT_ICONS.mount).not.toBe(CONCEPT_ICONS.projectFolder);

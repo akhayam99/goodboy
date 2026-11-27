@@ -152,6 +152,7 @@ const stubHost = () => {
     },
     browser_tab_list: () => live,
     browser_tab_trail: [],
+    browser_profile_isolation: null,
     browser_history_state: null,
     browser_console_read: { doc: null, entries: [], watermark: 0, isHeard: false },
     browser_favicon: null,

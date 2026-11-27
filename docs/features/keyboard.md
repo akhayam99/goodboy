@@ -242,13 +242,14 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - Type a word to find a tab of any session, a project pin or a page this session visited. Words are never searched on the web.
 - Type the path of a local page, image or PDF, like `~/harborline/plan.html`, to open it in a tab. Reload reads the file again. The page reads only the files in its folder and the folders under it. A missing file, a folder or another kind of file says why under the address. A link or a page never opens a local file.
 - While a page loads, Reload becomes **Stop**. A page that never finishes says so after 30 seconds. **Back** and **Forward** turn off when there is nothing behind or ahead.
-- The arrow beside the address opens the page menu: **Add to message**, **Pin** or **Unpin**, **Clear site data**, This tab and Develop. This tab holds Copy address, Duplicate, Open in your browser and Close tab. Develop holds the widths and, on macOS, **Inspect in Safari**. **Open full page** sits in the pane's head.
+- The arrow beside the address opens the page menu: **Add to message**, **Pin** or **Unpin**, **Clear site data**, This tab and Develop. This tab holds Copy address, Duplicate, Open in your browser and Close tab. Develop holds the widths and, on macOS, **Inspect in Safari** and **Show site data**. **Open full page** sits in the pane's head.
 
 #### Clear the cache or a site
 
 - **⇧-click** Reload, or **⌘⇧R** while the browser has the keys, loads the page again and skips the cache.
 - **Clear site data** asks first, then removes the cookies, storage, cache and service workers of the site of the shown tab, and it signs you out of that site. When the tab went through a sign-in on another site, a login popup included, the confirm lists that site too and clears it with the page's own. Other sites keep theirs. The page reloads, and a line under the address names every cleared site and says other tabs on them keep their page until you reload them. If it fails, the page stays and the line says why.
 - Off macOS the row says **Clear browser data** and clears every site in the browser of this workspace.
+- **Develop › Show site data** lists every site that keeps data in this workspace and what it keeps. The tab's own site says **This tab** and its sign-in says **Sign-in for this tab**. **Clear** on a site asks on that row, then signs you out of every app that uses it. The tab reloads only when the site is its own or its sign-in. If it fails, the site stays in the list and the line under the address says why. It shows on a Mac where each workspace keeps its own data.
 - **Settings › Workspace › Projects › Danger zone › Clear browser data** clears every site of the workspace. Open tabs reload.
 
 #### Links
