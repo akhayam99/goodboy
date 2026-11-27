@@ -6,7 +6,9 @@ use serde::Serialize;
 use tauri::{Runtime, Url, Webview};
 
 use super::guard::{self, AppOrigins};
+use super::profile::Isolation;
 use super::reason::{self, NOT_WEB_ADDRESS, SITE_MOVED};
+use super::registry::BrowserRegistry;
 use crate::util::MessageError;
 
 #[cfg(target_os = "macos")]
@@ -24,6 +26,7 @@ pub(crate) enum SiteScope {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SiteCleared {
     pub(crate) host: String,
+    pub(crate) extra_hosts: Vec<String>,
     pub(crate) scope: SiteScope,
 }
 
@@ -52,6 +55,40 @@ pub(crate) fn is_site_record(record: &str, host: &str) -> bool {
         return false;
     }
     record.contains('.') && host.ends_with(&format!(".{record}"))
+}
+
+pub(crate) fn is_record_of_any(record: &str, hosts: &[String]) -> bool {
+    hosts.iter().any(|host| is_site_record(record, host))
+}
+
+pub(crate) fn trail_of(
+    registry: &BrowserRegistry,
+    tab_id: &str,
+    isolation: Isolation,
+) -> Vec<String> {
+    if !cfg!(target_os = "macos") || isolation != Isolation::PerWorkspace {
+        return Vec::new();
+    }
+    registry.trail_of(tab_id)
+}
+
+pub(crate) fn check_trail(
+    trail: &[String],
+    host: &str,
+    extra_hosts: &[String],
+) -> Result<Vec<String>, MessageError> {
+    let site = host_key(host);
+    let known: Vec<String> = trail.iter().map(|known| host_key(known)).collect();
+    let mut checked: Vec<String> = Vec::new();
+    for extra in extra_hosts.iter().map(|extra| host_key(extra)) {
+        if extra.is_empty() || !known.contains(&extra) {
+            return Err(reason::refused(SITE_MOVED));
+        }
+        if extra != site && !checked.contains(&extra) {
+            checked.push(extra);
+        }
+    }
+    Ok(checked)
 }
 
 pub(crate) fn check_site(live: &Url, host: &str, origins: &AppOrigins) -> Result<(), MessageError> {
@@ -93,12 +130,15 @@ where
 pub(crate) async fn clear_site<R: Runtime>(
     tab: &Webview<R>,
     host: &str,
+    extra_hosts: Vec<String>,
 ) -> Result<SiteCleared, MessageError> {
     let key = host_key(host);
-    let site = key.clone();
-    remove_where(tab, move |record| is_site_record(record, &site)).await?;
+    let mut sites = vec![key.clone()];
+    sites.extend(extra_hosts.iter().cloned());
+    remove_where(tab, move |record| is_record_of_any(record, &sites)).await?;
     Ok(SiteCleared {
         host: key,
+        extra_hosts,
         scope: SiteScope::Site,
     })
 }
@@ -107,11 +147,13 @@ pub(crate) async fn clear_site<R: Runtime>(
 pub(crate) async fn clear_site<R: Runtime>(
     tab: &Webview<R>,
     host: &str,
+    extra_hosts: Vec<String>,
 ) -> Result<SiteCleared, MessageError> {
     tab.clear_all_browsing_data()
         .map_err(|error| MessageError::Failed(error.to_string()))?;
     Ok(SiteCleared {
         host: host_key(host),
+        extra_hosts,
         scope: SiteScope::Workspace,
     })
 }
@@ -193,14 +235,92 @@ mod tests {
         }
     }
 
+    fn hosts(names: &[&str]) -> Vec<String> {
+        names.iter().map(|name| name.to_string()).collect()
+    }
+
+    #[test]
+    fn a_list_matches_a_record_of_any_of_its_sites() {
+        let sites = hosts(&["app.harborline.dev", "login.cascadia-id.com"]);
+        assert!(is_record_of_any("harborline.dev", &sites));
+        assert!(is_record_of_any("cascadia-id.com", &sites));
+        assert!(!is_record_of_any("northwind.test", &sites));
+        assert!(!is_record_of_any("localhost", &hosts(&["127.0.0.1"])));
+        assert!(!is_record_of_any("harborline.dev", &[]));
+    }
+
+    #[test]
+    fn has_a_trail_only_where_a_workspace_has_its_own_store() {
+        let registry = BrowserRegistry::default();
+        registry.insert(crate::browser::registry::NewTab {
+            id: "a",
+            session_id: "harborline",
+            window_label: "main",
+            profile: crate::browser::profile::ProfileId::of_workspace("harborline")
+                .expect("workspace id"),
+            url: "about:blank",
+            rect: tauri::Rect {
+                position: tauri::LogicalPosition::new(0.0, 0.0).into(),
+                size: tauri::LogicalSize::new(1.0, 1.0).into(),
+            },
+            is_shown: true,
+            opener_id: None,
+            now_ms: 0,
+        });
+        registry.remember_host("a", "login.cascadia-id.com");
+        assert!(trail_of(&registry, "a", Isolation::Shared).is_empty());
+        assert_eq!(
+            trail_of(&registry, "a", Isolation::PerWorkspace).is_empty(),
+            !cfg!(target_os = "macos")
+        );
+    }
+
+    #[test]
+    fn takes_only_extra_hosts_the_tab_went_through() {
+        let trail = hosts(&["app.harborline.dev", "login.cascadia-id.com"]);
+        let checked = check_trail(
+            &trail,
+            "app.harborline.dev",
+            &hosts(&[
+                "Login.Cascadia-ID.com.",
+                "login.cascadia-id.com",
+                "app.harborline.dev",
+            ]),
+        )
+        .map_err(|error| error.to_string());
+        assert_eq!(checked, Ok(hosts(&["login.cascadia-id.com"])));
+        let none =
+            check_trail(&trail, "app.harborline.dev", &[]).map_err(|error| error.to_string());
+        assert_eq!(none, Ok(vec![]));
+    }
+
+    #[test]
+    fn refuses_an_extra_host_the_tab_never_loaded() {
+        let trail = hosts(&["app.harborline.dev", "login.cascadia-id.com"]);
+        for extra in ["northwind.test", "cascadia-id.com", " "] {
+            assert_eq!(
+                check_trail(&trail, "app.harborline.dev", &hosts(&[extra]))
+                    .map_err(|error| error.to_string()),
+                Err(SITE_MOVED.to_string()),
+                "{extra}"
+            );
+        }
+        assert!(check_trail(&[], "localhost", &hosts(&["localhost"])).is_err());
+    }
+
     #[test]
     fn wire_shape_site_cleared() {
         assert_wire_value(
             &SiteCleared {
-                host: "localhost".into(),
+                host: "app.harborline.dev".into(),
+                extra_hosts: hosts(&["login.cascadia-id.com"]),
                 scope: SiteScope::Site,
             },
-            json!({ "host": "localhost", "scope": "site" }),
+            json!({
+                "host": "app.harborline.dev",
+                "extraHosts": ["login.cascadia-id.com"],
+                "scope": "site",
+            }),
         );
         assert_wire_value(&SiteScope::Workspace, json!("workspace"));
     }
