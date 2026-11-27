@@ -202,7 +202,7 @@ export const completeResolvedAgent = async ({
     sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
   }));
   void get().refreshUnreadWorkspaces();
-  void get().settleStaleNotifications();
+  void get().settleAttention({ sessionId });
 
   if (ranKind === 'pr-reviewer') {
     const reviewComments = extractReviewComments(assistantText);

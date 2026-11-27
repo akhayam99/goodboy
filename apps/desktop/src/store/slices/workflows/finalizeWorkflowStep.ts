@@ -126,7 +126,7 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
       completedAt: isoNow(),
     });
     const refreshed = await invokeAgentList(sessionId);
-    void get().settleStaleNotifications();
+    void get().settleAttention({ sessionId });
     const workflowRunId = agent.workflowRunId;
     const ordinal = agent.ordinal;
     set((state) => {

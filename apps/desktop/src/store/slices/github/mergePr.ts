@@ -75,7 +75,7 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
           kind: 'pr_merged',
           payload: mountPrEventPayload({ get, sessionId, mountId, number: num }),
         });
-        void get().settleStaleNotifications();
+        void get().settleAttention({ sessionId });
       },
     });
   };

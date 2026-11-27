@@ -18,7 +18,7 @@ import type { DockGridMove } from '../dockGridSpec';
 import type { DockGroups } from '../dockLayoutAfterMove';
 import type { DockMoveTarget, DockMoveUnit } from '../dockMoveTarget';
 import { dockCardHonestOf } from '../dockCardHonestOf';
-import { dockCardsClipOf } from '../dockCardsClipOf';
+import { dockChipsClipOf } from '../dockChipsClipOf';
 import { dockBoxShapeOf } from '../dockBoxShapeOf';
 import { dockPaneElementsOf, dockPressOf, type DockPress } from '../dockPressOf';
 import { dockStatusOf } from '../dockStatusOf';
@@ -374,7 +374,7 @@ export const useDockDrag = ({
       pressRef.current = {
         ...press,
         isActive: true,
-        zones: dockCardsClipOf({
+        zones: dockChipsClipOf({
           zones: dockDropZonesOf({
             dragKey: press.key,
             unit: press.unit,

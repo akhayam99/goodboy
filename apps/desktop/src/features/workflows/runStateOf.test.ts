@@ -1,9 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import type { Agent, StepId, Workflow, WorkflowId, WorkflowRun } from '@goodboy/types';
+import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import { runGlanceOf } from '../session/glance/runGlanceOf';
 import type { RunPrimaryKind } from './runPrimaryOf';
 import {
   runStateFromKind,
+  runStateOf,
   runStateOfPrimary,
   type RunState,
   type RunStateKind,
@@ -244,4 +247,101 @@ describe('runStateOf', () => {
       }
     },
   );
+
+  describe('a failure stop', () => {
+    const WORKFLOW_ID: WorkflowId = JSON.parse('"workflow-ledger-export"');
+    const STOP = { kind: 'failure', message: 'The step failed' } as const;
+
+    const workflow: Workflow = {
+      id: WORKFLOW_ID,
+      workspaceId: JSON.parse('"workspace-harborline"'),
+      name: 'Export ledger',
+      description: '',
+      steps: [0, 1].map((index) => ({
+        id: JSON.parse(`"step-${index}"`),
+        workflowId: WORKFLOW_ID,
+        ordinal: index,
+        name: `Step ${index + 1}`,
+        promptPrefix: '',
+      })),
+      createdAt: JSON.parse('"2026-10-16T09:00:00.000Z"'),
+      updatedAt: JSON.parse('"2026-10-16T09:00:00.000Z"'),
+    };
+
+    const at = (hour: number) =>
+      JSON.parse(`"2026-10-16T${String(hour).padStart(2, '0')}:00:00.000Z"`);
+
+    type AgentParams = {
+      readonly id: string;
+      readonly step: number;
+      readonly status: Agent['status'];
+      readonly hour: number;
+    };
+
+    const agentOf = ({ id, step, status, hour }: AgentParams): Agent => {
+      const stepId: StepId = JSON.parse(`"step-${step}"`);
+      return anAgent({
+        id: JSON.parse(`"${id}"`),
+        stepId,
+        status,
+        ordinal: hour,
+        completedAt: at(hour),
+      });
+    };
+
+    type StateParams = {
+      readonly run?: Partial<WorkflowRun>;
+      readonly agents: ReadonlyArray<Agent>;
+    };
+
+    const kindOf = ({ run = {}, agents }: StateParams): RunStateKind =>
+      runStateOf({
+        run: aWorkflowRun({ workflowId: WORKFLOW_ID, orchestrationStop: STOP, ...run }),
+        workflow,
+        agents,
+        predecessorName: 'previous',
+        isOrchestrating: false,
+        questions: [],
+        isPlanRevising: false,
+      }).kind;
+
+    const FAILED = agentOf({ id: 'a1', step: 0, status: 'failed', hour: 8 });
+
+    it('stays stopped while the stop is set and the step is not retried', () => {
+      expect(kindOf({ agents: [FAILED] })).toBe('failed-stop');
+    });
+
+    it('ends when the stop clears', () => {
+      expect(kindOf({ run: { orchestrationStop: undefined }, agents: [FAILED] })).toBe(
+        'halted-failed',
+      );
+    });
+
+    it('ends when the same step is retried and completes', () => {
+      const retried = agentOf({ id: 'a2', step: 0, status: 'completed', hour: 9 });
+      expect(kindOf({ agents: [FAILED, retried] })).not.toBe('failed-stop');
+      expect(kindOf({ run: { orchestrationStop: undefined }, agents: [FAILED, retried] })).not.toBe(
+        'halted-failed',
+      );
+    });
+
+    it('stays stopped when another step of the same run completed', () => {
+      const later = agentOf({ id: 'a2', step: 1, status: 'completed', hour: 9 });
+      expect(kindOf({ agents: [FAILED, later] })).toBe('failed-stop');
+    });
+
+    it('stays stopped when a retry of the step has not completed', () => {
+      const pending = agentOf({ id: 'a2', step: 0, status: 'pending', hour: 9 });
+      expect(kindOf({ agents: [FAILED, pending] })).toBe('failed-stop');
+    });
+
+    it('stays stopped in this run when the same step succeeded in another run', () => {
+      const own = anAgent({ ...FAILED, workflowRunId: JSON.parse('"run-ledger-a"') });
+      const other = anAgent({
+        ...agentOf({ id: 'a3', step: 0, status: 'completed', hour: 9 }),
+        workflowRunId: JSON.parse('"run-ledger-b"'),
+      });
+      expect(kindOf({ agents: [own, other] })).toBe('failed-stop');
+    });
+  });
 });

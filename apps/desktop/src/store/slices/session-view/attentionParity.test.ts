@@ -49,6 +49,7 @@ type ParityReason = {
 
 type Parity = {
   readonly reasons: ReadonlyArray<ParityReason>;
+  readonly memoryOnly: ReadonlyArray<SessionAttentionReason>;
   readonly cases: ReadonlyArray<ParityCase>;
 };
 
@@ -139,6 +140,15 @@ describe('the Rust workspace count and attentionCountOf', () => {
       expect(isErrorReason({ reason }), reason).toBe(kind === 'error');
       expect(isHumanInputReason({ reason }), reason).toBe(kind === 'human-input');
     }
+  });
+
+  it('flags every reason as mirrored or memory only, never both, never neither', () => {
+    const mirrored = parity.reasons.map((entry) => entry.reason);
+    const all = Object.keys(ATTENTION_REASON_META).sort();
+
+    expect([...mirrored, ...parity.memoryOnly].sort()).toEqual(all);
+    expect(all).toHaveLength(17);
+    expect(new Set([...mirrored, ...parity.memoryOnly]).size).toBe(all.length);
   });
 
   it('holds a counted case for every reason Rust generates from the source', () => {

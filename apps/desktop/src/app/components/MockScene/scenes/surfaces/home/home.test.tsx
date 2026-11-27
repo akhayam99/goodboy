@@ -123,4 +123,21 @@ describe('the Home place scenes', () => {
     expect(home('open')).toBe(lane('building'));
     expect(home('need you')).toBe(document.querySelectorAll('[data-needs-you-card]').length);
   });
+
+  it('draws a busy Home from its saved layout, with the rest under Hidden and a handle on each card', async () => {
+    const Scene = HOME_PLACE_SCENES['home-busy'];
+
+    render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+
+    await screen.findByRole('button', { name: 'Show workspace setup' }, WAIT);
+    screen.getByRole('button', { name: 'Show long running' });
+    const cells = document.querySelectorAll('[data-home-cell]');
+    expect(cells.length).toBeGreaterThanOrEqual(5);
+    expect(document.querySelectorAll('[data-widget-grip]')).toHaveLength(cells.length);
+    expect(document.querySelectorAll('[data-widget-resize]').length).toBeGreaterThan(0);
+  });
 });

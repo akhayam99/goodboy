@@ -173,6 +173,7 @@ Before you change something that looks wrong:
 - [Banner clicks reach every window](traps/store.md#banner-clicks-reach-every-window-and-the-badge-has-one-writer)
 - [Two attention counts per workspace](traps/store.md#two-counts-for-one-workspace-and-the-rust-count-is-a-subset)
 - [A settled branch hides only what its times prove](traps/store.md#a-settled-branch-hides-only-what-its-times-prove)
+- [The dock number is a lower bound](traps/store.md#the-dock-number-is-a-lower-bound-and-can-differ-with-a-second-window)
 - [Hand-maintained lists the compiler does not check](traps/store.md#hand-maintained-lists-the-compiler-does-not-check)
 - [The bell sweep names its proof per family](traps/store.md#the-bell-sweep-names-its-proof-per-family)
 - [The auto role stays out of visible lists](traps/store.md#the-auto-role-stays-out-of-every-list-a-person-sees)

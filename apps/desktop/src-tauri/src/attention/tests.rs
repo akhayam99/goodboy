@@ -271,6 +271,22 @@ fn the_reason_table_is_the_one_the_front_end_test_reads() {
 }
 
 #[test]
+fn a_memory_only_reason_is_never_one_sql_counts() {
+    let fixture = parity();
+    let memory_only: Vec<&str> = fixture["memoryOnly"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|reason| reason.as_str().unwrap())
+        .collect();
+
+    assert_eq!(memory_only.len(), 12);
+    for reason in REASONS.iter() {
+        assert!(!memory_only.contains(&reason.code), "{}", reason.code);
+    }
+}
+
+#[test]
 fn every_parity_case_counts_what_the_front_end_counts() {
     let fixture = parity();
     for case in fixture["cases"].as_array().unwrap() {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionAttentionReason, SessionStageInfo } from '@goodboy/types';
 import { ATTENTION_REASON_META } from '../../session/session-stage';
+import { attentionCountOf } from '../../../store/slices/session-view/attentionCountOf';
 import { blockingReasonsOf } from './blockingReasonsOf';
 
 const infoOf = (
@@ -35,6 +36,14 @@ describe('the reasons that raise a banner', () => {
       'plan-approval',
       'push-failed',
     ]);
+  });
+
+  it('raises a banner only for a reason the rail counts', () => {
+    for (const reason of ALL.filter((candidate) => ATTENTION_REASON_META[candidate].isBlocking)) {
+      const counted = attentionCountOf({ items: [{ id: 'session-1', info: infoOf(reason) }] });
+
+      expect(counted.count, reason).toBe(1);
+    }
   });
 
   it('leaves a quiet reply, a queued pull request and the other waits to the badge', () => {

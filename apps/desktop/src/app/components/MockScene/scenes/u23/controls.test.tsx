@@ -196,7 +196,7 @@ describe('controls topbar', () => {
   it('mounts the real top bar with the bell badge and the nav arrows', async () => {
     renderScene('controls-topbar');
 
-    await screen.findByRole('button', { name: /^Notifications, 3 unread/ });
+    await screen.findByRole('button', { name: /^Notifications, 3 notices/ });
     expect(document.querySelector('[data-top-bar]')).not.toBeNull();
     expect(document.querySelector('[data-nav-arrow="back"]')).not.toBeNull();
     expect(document.querySelector('[data-nav-arrow="forward"]')).not.toBeNull();

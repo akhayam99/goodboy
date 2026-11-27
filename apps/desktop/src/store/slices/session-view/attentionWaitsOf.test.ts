@@ -15,6 +15,7 @@ import {
 import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import { aSession, aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import {
+  FIXTURE_NOW,
   FIXTURE_ROOT,
   FIXTURE_SESSION,
   aDelegation,
@@ -191,6 +192,34 @@ describe('attentionWaitsOf and Auto', () => {
     expect(waits.hasAutoFailed).toBe(true);
     expect(waits.hasAutoNeedsYou).toBe(false);
     expect(waits.hasLimitPausedRun).toBe(false);
+  });
+
+  it('rests a blocked Lead once a later delegation for the same role completed, and keeps it otherwise', () => {
+    const blocked = aDelegation({
+      key: 'fixer',
+      role: 'implementer',
+      state: 'settled',
+      outcome: 'blocked',
+      settledAt: FIXTURE_NOW + 1,
+    });
+    const retry = {
+      ...aDelegation({
+        key: 'fixer-2',
+        role: 'implementer',
+        state: 'settled',
+        outcome: 'completed',
+        settledAt: FIXTURE_NOW + 20,
+      }),
+      createdAt: FIXTURE_NOW + 10,
+    };
+    const waitsWith = (delegations: ReadonlyArray<typeof blocked>) =>
+      waitsOf({
+        state: stateOf({ views: [aView({ phase: 'blocked', delegations })], agents: [ROOT] }),
+      });
+
+    expect(waitsWith([blocked]).hasAutoFailed).toBe(true);
+    expect(waitsWith([blocked, retry]).hasAutoFailed).toBe(false);
+    expect(waitsWith([blocked, retry]).hasAutoNeedsYou).toBe(false);
   });
 
   it('raises an Auto tree at its limit as a paused run, never as a failure', () => {

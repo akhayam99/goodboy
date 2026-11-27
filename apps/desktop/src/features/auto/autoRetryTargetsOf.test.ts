@@ -88,6 +88,37 @@ describe('autoRetryTargetsOf', () => {
     expect(targetsOf({ view: limited })).toEqual([]);
   });
 
+  it('drops the blocked target of a Lead whose blocked delegation was followed by a completed one', () => {
+    const blocked = aDelegation({
+      key: 'fixer',
+      role: 'implementer',
+      state: 'settled',
+      outcome: 'blocked',
+      settledAt: FIXTURE_NOW + 1,
+    });
+    const retry = {
+      ...aDelegation({
+        key: 'fixer-2',
+        role: 'implementer',
+        state: 'settled',
+        outcome: 'completed',
+        settledAt: FIXTURE_NOW + 20,
+      }),
+      createdAt: FIXTURE_NOW + 10,
+    };
+    const kindsOf = (delegations: ReadonlyArray<typeof blocked>) =>
+      autoRetryTargetsOf({
+        views: [aView({ phase: 'blocked', delegations })],
+        agents: [ROOT],
+        now: FIXTURE_NOW,
+      })
+        .filter((target) => target.rootAgentId === FIXTURE_ROOT && target.role === 'Lead')
+        .map((target) => target.kind);
+
+    expect(kindsOf([blocked])).toContain('blocked');
+    expect(kindsOf([blocked, retry])).not.toContain('blocked');
+  });
+
   it('targets an Auto stored as blocked at the retired time limit, so Retry resumes it', () => {
     const failed = aView({ phase: 'blocked' });
     const retired = {

@@ -49,7 +49,7 @@ export const WidgetCard = ({
     </header>
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">{children}</div>
     {footer === undefined ? null : (
-      <div className="flex h-5 shrink-0 items-center justify-end text-meta">{footer}</div>
+      <div className="flex h-5 shrink-0 items-center justify-end pr-5 text-meta">{footer}</div>
     )}
   </section>
 );
