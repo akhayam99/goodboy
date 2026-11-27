@@ -80,7 +80,6 @@ import type { SettingsLastPageState } from './slices/settings-last-page/state';
 import type { MonitoringViewState } from './slices/monitoring-view/state';
 import type { LocalChecksState } from './slices/local-checks/state';
 import type { ChatLastOpenState } from './slices/chat-last-open/state';
-import type { ChatQueueState } from './slices/chatQueue/state';
 import type { LeadPermissionsState } from './slices/lead-permissions/state';
 import type { SessionGroupingState } from './slices/session-grouping/state';
 import type { NextViewState } from './slices/next-view/state';
@@ -214,7 +213,6 @@ type AppSliceState = ArtifactsState &
   MonitoringViewState &
   LocalChecksState &
   ChatLastOpenState &
-  ChatQueueState &
   LeadPermissionsState &
   SessionGroupingState &
   NextViewState &
