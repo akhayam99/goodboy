@@ -9,7 +9,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/co
 import { lazyNamed } from '../../../../../shared/lib/lazyNamed';
 import { openLens } from '../../../openLens';
 import type { LensSurface } from '../../../lens-surface';
-import { SessionFace } from '../../SessionDesk/SessionFace';
+import { SessionOverviewPane } from '../../SessionOverviewPane';
 import { LinkIssueAction } from '../../SessionOverviewPane/LinkIssueAction';
 import { LensSkeleton } from './LensSkeleton';
 import { SessionOverviewLoading } from './SessionOverviewLoading';
@@ -97,7 +97,9 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
           />
         }
       >
-        <SessionFace session={session} />
+        <div className="flex h-full min-h-0 w-full min-w-0 flex-col">
+          <SessionOverviewPane session={session} />
+        </div>
       </SkeletonSwap>
     );
   }

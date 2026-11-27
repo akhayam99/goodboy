@@ -171,14 +171,9 @@ version 1 shows the default layout.
   ([versioning.md](../versioning.md#retired-state)). A double click writes the tier
   default, and a column with no saved width starts there. A detail keeps its width
   per kind, so a drag on Ask never moves a Terminal.
-- **The face** (Overview or Desk) rides in the same row as an optional `face`,
-  written only for the Desk. A face change waits 300ms and saves like a grid change;
-  a move, a reset or an undo writes it with the grid. Entering reads it back
-  (`recallSessionFace`), and a face picked while that read was out wins, even one
-  picked away and back (`faceSelections` counts picks). Sessions in the top bar reads
-  it per row whose face the window does not know, so a row says Desk only for a
-  session that saved it (`useSavedSessionFace`). A row without the field reads as
-  Overview; an older build leaves it out.
+- **No face is saved.** The row has no `face` and no `detail`: a
+  row an older build wrote with them reads as a plain layout, and the next save leaves
+  them out. An older build reads a row without them as the Overview.
 
 | Write or read   | What happens                                                                                                                                                                                                 |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

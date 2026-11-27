@@ -44,9 +44,6 @@ export const useBoardNavigation = (): BoardNavigation => {
     };
 
     const selectCard = (session: Session): void => {
-      useAppStore
-        .getState()
-        .setSessionFace({ sessionId: sessionIdOf({ session }), face: 'overview' });
       openLens({ session, lens: null });
     };
 

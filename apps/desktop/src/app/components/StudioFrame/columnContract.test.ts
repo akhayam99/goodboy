@@ -65,13 +65,6 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: ['features/session/components/SessionOverviewPane/index.tsx'],
   },
-  SessionFace: {
-    kind: 'bare',
-    files: [
-      'features/session/components/SessionDesk/SessionFace.tsx',
-      'features/session/components/SessionDesk/DeskBody.tsx',
-    ],
-  },
   ContextTab: {
     kind: 'shell',
     files: ['features/session/components/ContextTab/index.tsx'],

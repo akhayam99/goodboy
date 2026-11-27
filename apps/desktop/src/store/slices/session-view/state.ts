@@ -13,8 +13,6 @@ import type {
   SessionCreation,
   FocusedExternalTask,
   ResolveQueueView,
-  SessionFace,
-  DeskToolStart,
 } from './types';
 import type { ResolveItemDraft } from '../../../features/resolve/resolveItemDraft';
 import type { BranchTab } from '../navigation/types';
@@ -24,8 +22,6 @@ export type SessionViewState = {
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
-  readonly sessionFace: Readonly<Record<SessionId, SessionFace>>;
-  readonly deskToolStart: Readonly<Record<SessionId, DeskToolStart>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;

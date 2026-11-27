@@ -40,7 +40,7 @@ export const CentralColumn = ({ session }: Props) => {
     noticesView,
   } = useOverviewModel({ session });
   const columnRef = useRef<HTMLDivElement>(null);
-  useMoveKeys({ sessionId, face: 'overview', containerRef: columnRef, moves, actionsFor });
+  useMoveKeys({ sessionId, containerRef: columnRef, moves, actionsFor });
   return (
     <div ref={columnRef} data-central-column className={PANE_RHYTHM.groups}>
       {isEmpty ? null : <OverviewFacts sessionId={sessionId} elapsedMs={board.kpis.elapsedMs} />}

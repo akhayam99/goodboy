@@ -56,8 +56,6 @@ export { splitErrorMessage } from './splitErrorMessage';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
 export { AppShell, COLLAPSED_RAIL_WIDTH } from './components/AppShell';
 export { DrawerColumn } from './components/DrawerColumn';
-export { DockLane } from './components/DockLane';
-export { isDeskColumnFolded } from './isDeskColumnFolded';
 export { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from './drawerWidthKeys';
 export type { DrawerColumnFrame, DrawerColumnProps } from './components/drawerColumnProps';
 export {

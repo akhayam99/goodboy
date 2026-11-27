@@ -1257,12 +1257,12 @@ states and sit outside the meanings.
 `motion-registry.test.ts` fails on a `@keyframes` in `styles.css` that this
 section does not name, and on a name here that `styles.css` does not define.
 
-**The face swap.** Overview and Desk trade places through `PaneSwap` with
-`motion="face"`, and nothing else in the session moves. The face that leaves
+**The face swap.** Two faces of one page trade places through `PaneSwap` with
+`motion="face"` (no screen uses it today), and nothing else on the page moves. The face that leaves
 fades on `face-out` (`--duration-quick`, opacity only). Then the face that
 arrives slides on `face-in`: opacity and `translateX` from 16px to 0 over
 `--duration-slow`, after one `--duration-quick`. An arriving face that marks
-its parts with `data-face-part` (the Desk column, then its grid) moves them
+its parts with `data-face-part` moves them
 one `--delay-step` apart instead of moving as one block. For the whole move
 `PaneSwap` sets `FACE_SWAP_ATTRIBUTE` on `<body>`, so a native web page stays
 covered and is placed once when the move ends. Under reduced motion the face

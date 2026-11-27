@@ -2463,21 +2463,29 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'terminal.studio',
-    note: 'on the Overview splits the page into the Desk',
+    note: 'on the Overview opens the Terminal in the dock beside the page',
     open: async () => {
       await press('terminal.studio')();
     },
-    lands: async (ctx) => {
-      await screen.findByRole('complementary', { name: 'Desk' });
-      expect(useAppStore.getState().sessionFace[ctx.sessionId]).toBe('desk');
+    lands: async () => {
+      await waitFor(() =>
+        expect(
+          useAppStore
+            .getState()
+            .drawerGrid.columns.flat()
+            .map((panel) => panel.kind),
+        ).toContain('terminal'),
+      );
     },
   }),
   keyRow({
     id: 'nav.up',
-    note: 'on the Desk goes up to the board, as on the Overview',
+    note: 'with the Terminal open in the dock goes up to the board, as on the Overview',
     open: async () => {
       await press('terminal.studio')();
-      await screen.findByRole('complementary', { name: 'Desk' });
+      await waitFor(() =>
+        expect(useAppStore.getState().drawerGrid.columns.length).toBeGreaterThan(0),
+      );
       await press('nav.up')();
     },
     lands: () => heading('Board'),
