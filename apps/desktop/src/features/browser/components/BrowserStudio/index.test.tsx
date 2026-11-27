@@ -243,8 +243,7 @@ const openPane = async () => {
 };
 
 const promote = async () => {
-  fireEvent.click(screen.getByRole('button', { name: 'More' }));
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Open full page' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
   const slot = await waitFor(() => {
     const found = document.querySelector('[data-studio-slot]');
     if (found === null) {

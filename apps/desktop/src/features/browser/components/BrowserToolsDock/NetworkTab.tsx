@@ -35,8 +35,7 @@ type Props = {
   readonly side: BrowserToolsSide;
   readonly isToolsInHead: boolean;
   readonly onTab: (params: TabParams) => void;
-  readonly onSide: () => void;
-  readonly onClose: () => void;
+  readonly onSide?: () => void;
 };
 
 type EntryParams = {
@@ -72,16 +71,7 @@ const NO_MATCH_TEXT = 'Nothing matches the filter';
 
 const AGENT_GONE_TEXT = "The agent isn't in this session anymore. Pick one and try again.";
 
-export const NetworkTab = ({
-  model,
-  counts,
-  log,
-  side,
-  isToolsInHead,
-  onTab,
-  onSide,
-  onClose,
-}: Props) => {
+export const NetworkTab = ({ model, counts, log, side, isToolsInHead, onTab, onSide }: Props) => {
   const [type, setType] = useState<NetworkTypeFilter>('all');
   const [isFailedOnly, setIsFailedOnly] = useState(false);
   const [query, setQuery] = useState('');
@@ -194,7 +184,6 @@ export const NetworkTab = ({
         tools={isToolsInHead ? tools : null}
         onKind={onTab}
         onSide={onSide}
-        onClose={onClose}
       />
       {isToolsInHead || isDetailAlone ? null : (
         <div className="flex shrink-0 flex-wrap items-center gap-2 px-2">{tools}</div>

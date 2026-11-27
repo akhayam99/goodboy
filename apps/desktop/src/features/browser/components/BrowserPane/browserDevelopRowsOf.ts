@@ -1,6 +1,5 @@
-import { Code, MonitorSmartphone, RefreshCw } from '@goodboy/ui/icons';
+import { Code, MonitorSmartphone } from '@goodboy/ui/icons';
 import type { MenuEntry } from '@goodboy/ui';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { currentPlatform } from '../../../../shared/platform';
 import { DEVICE_PRESETS } from '../../devicePresets';
 import type { BrowserPaneModel } from '../../types';
@@ -12,23 +11,12 @@ type Params = {
   readonly isOff: BrowserMoreOff;
 };
 
-const RELOAD_FROM_ORIGIN = 'Reload without cache';
-
 export const browserDevelopRowsOf = ({
   model,
   isOff,
 }: Params): ReadonlyArray<Extract<MenuEntry, { readonly kind: 'item' }>> => {
   const chooseWidth = widthSelectOf({ onChoose: model.setDevicePreset });
   return [
-    {
-      kind: 'item',
-      key: 'reloadFromOrigin',
-      label: RELOAD_FROM_ORIGIN,
-      icon: RefreshCw,
-      hint: shortcutGlyphs('app.reload'),
-      isDisabled: isOff.isReloadFromOriginOff,
-      onSelect: model.reloadFromOrigin,
-    },
     ...(isOff.isWidthOff
       ? []
       : DEVICE_PRESETS.map((preset) => ({

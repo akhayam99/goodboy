@@ -11,6 +11,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { refreshNotificationCounts } from './refreshNotificationCounts';
 import { scopedWorkspaceId } from './notificationScope';
 import { notificationKeyOf } from './notificationKeyOf';
+import { publishTransientNotice } from './transientNotices';
 import { createSerialQueue } from '../../runtime/state-writes/serialQueue';
 import type { GetFn, SetFn } from './types';
 
@@ -65,6 +66,10 @@ export const emitNotification = (set: SetFn, get: GetFn) => {
       coalesceKey: key,
       actedAt: null,
     };
+    if (severity === 'success') {
+      publishTransientNotice({ notification: n });
+      return;
+    }
     const isStored = await keyedWrites.run({
       key,
       task: async () => {

@@ -17,7 +17,8 @@ import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
-import { mapNotificationAction, notificationContext } from '../NotificationToastBridge';
+import { notificationContext } from '../NotificationToastBridge';
+import { mapNotificationAction } from '../NotificationToastBridge/mapNotificationAction';
 import { notificationActionIcon } from '../../actionIcon';
 import { isNotificationDebt } from '../../actionClass';
 import { markPointersActed } from '../../markPointersActed';
@@ -67,9 +68,7 @@ export const NotificationRow = ({
     (notification) => !notification.read && isNotificationDebt({ notification }),
   );
   const action =
-    latest.action != null
-      ? mapNotificationAction(latest.action, useAppStore.getState(), latest)
-      : undefined;
+    latest.action != null ? mapNotificationAction({ notification: latest }) : undefined;
   const otherWorkspaces = workspaces.filter((workspace) => workspace.id !== currentWorkspaceId);
   const context = notificationContext(latest, sessions, otherWorkspaces) ?? null;
   const hasBody = latest.body != null && latest.body !== '';

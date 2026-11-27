@@ -126,9 +126,24 @@ sizes are kept per surface (`browserToolsDockPref`,
 on the page.
 
 The head holds Console and Network, each counted by `consoleCounts`, an Errors
-tab only while there is an error, the side icon and Close tools. The error
-count can open the dock on Errors, and the dock returns to Console when the
-last error goes.
+tab only while there is an error (always the last tab) and the side icon. It
+has no close button: the Console button in the row opens and closes the dock,
+and stays pressed while it shows. Under 560px of stage the dock sits under the
+page and the side icon is gone; the saved side comes back when it widens. The
+dock returns to Console when the last error goes.
+
+The Console button and ⌘⇧J both toggle the dock (`useBrowserTools`). Opening
+it while the shown tab has errors lands on Errors.
+
+- A click leaves focus on the Console button; ⌘⇧J moves focus to the selected
+  dock tab.
+- Esc closes the dock only while focus is on the Console button or in the
+  dock, and puts focus back on the button. The layer is registered when the
+  dock opens and suspended while focus is elsewhere, so a request detail opened
+  later steps back first. On the Browser page the order is request detail,
+  dock, page.
+- Esc pressed inside the native page never reaches the app; there the button
+  and ⌘⇧J close the dock.
 
 The Console tools:
 
@@ -195,10 +210,12 @@ nothing sent until you send.
 
 ## Errors
 
-A red count in the address row (`BrowserErrorCount`, the `errors` of
-`consoleCounts`, capped at 9+) shows only while the shown load has an error
-entry: a thrown error, a rejection, a `console.error` or a failed request. A
-warning never counts. The count opens the dock on Errors.
+The Console button carries the error count of the shown tab (the `errors` of
+`consoleCounts`, capped at 9+) as a danger `CountBadge` in its corner, only
+while the shown load has an error entry: a thrown error, a rejection, a
+`console.error` or a failed request. A warning never counts. The button's name
+stays Console; the count is in its tooltip ("Console, 2 errors") and its
+`aria-describedby`. Another tab carries no count of its own.
 
 `errorGroupsOf` makes one group per origin, message and top frame (or source
 when there is no stack), in first-seen order, with the count and the earliest
@@ -244,4 +261,6 @@ not move.
   groups.
 - Tests: `browser::console::tests`, `browser::tests` and
   `consoleHookScript.test.ts` pin the `window` scan, the caps, the cursor, the
-  refusals and the swallowed host refusal.
+  refusals and the swallowed host refusal. `toolsButton.test.tsx` pins the
+  Console button, its count, the Esc focus rules, the page Esc order and the
+  narrow dock.

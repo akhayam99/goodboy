@@ -25,8 +25,7 @@ type Props = {
   readonly side: BrowserToolsSide;
   readonly isToolsInHead: boolean;
   readonly onTab: (params: TabParams) => void;
-  readonly onSide: () => void;
-  readonly onClose: () => void;
+  readonly onSide?: () => void;
 };
 
 type FrameParams = {
@@ -48,7 +47,6 @@ export const ErrorsTab = ({
   isToolsInHead,
   onTab,
   onSide,
-  onClose,
 }: Props) => {
   const groups = errorGroupsOf({ entries: log.entries });
   const [openKey, setOpenKey] = useState<string | null>(() => groups[0]?.key ?? null);
@@ -117,7 +115,6 @@ export const ErrorsTab = ({
         tools={isToolsInHead ? tools : null}
         onKind={onTab}
         onSide={onSide}
-        onClose={onClose}
       />
       {isToolsInHead ? null : (
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 px-2">{tools}</div>

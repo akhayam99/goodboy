@@ -110,7 +110,9 @@ export const ToastCard = ({ toast, onDismiss }: ToastCardProps) => {
               variant="secondary"
               onClick={() => {
                 action.onClick();
-                onDismiss({ id: toast.id });
+                if (action.isKeptOpen !== true) {
+                  onDismiss({ id: toast.id });
+                }
               }}
             >
               {action.label}
