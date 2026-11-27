@@ -27,6 +27,9 @@ export const loadSessionRunHistory = ({ set, get }: Deps) => {
       if (switchEpoch.value !== epoch) {
         return;
       }
+      if (eventRunIds.size === 0 && routes.length === 0) {
+        return;
+      }
       set((state) => ({
         agentRunHistory: mergeRunHistory({ history: state.agentRunHistory, eventRunIds, routes }),
         runRouting: seedRunRoutingFromSpans({ runRouting: state.runRouting, routes }),

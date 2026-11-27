@@ -9,6 +9,26 @@ type Params = {
   readonly agents?: ReadonlyArray<Agent>;
 };
 
+type InterleaveParams = {
+  readonly fromEvents: ReadonlyArray<ProviderRunId>;
+  readonly fromSpans: ReadonlyArray<ProviderRunId>;
+};
+
+const interleaveRuns = ({ fromEvents, fromSpans }: InterleaveParams): ProviderRunId[] => {
+  const ordered = [...fromEvents];
+  let anchor = -1;
+  for (const runId of fromSpans) {
+    const found = ordered.indexOf(runId);
+    if (found !== -1) {
+      anchor = found;
+      continue;
+    }
+    ordered.splice(anchor + 1, 0, runId);
+    anchor += 1;
+  }
+  return ordered;
+};
+
 export const mergeRunHistory = ({
   history,
   eventRunIds,
@@ -30,13 +50,12 @@ export const mergeRunHistory = ({
     ...spanRunIds.keys(),
     ...currentRunIds.keys(),
   ])) {
-    const fromEvents = eventRunIds.get(agentId) ?? [];
-    const isInEvents = new Set(fromEvents);
-    const onlyInSpans = (spanRunIds.get(agentId) ?? []).filter((runId) => !isInEvents.has(runId));
     const current = currentRunIds.get(agentId);
     const saved = new Set([
-      ...onlyInSpans,
-      ...fromEvents,
+      ...interleaveRuns({
+        fromEvents: eventRunIds.get(agentId) ?? [],
+        fromSpans: spanRunIds.get(agentId) ?? [],
+      }),
       ...(current === undefined ? [] : [current]),
     ]);
     const held = history[agentId] ?? [];
