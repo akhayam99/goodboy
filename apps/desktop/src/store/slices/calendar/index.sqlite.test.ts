@@ -338,6 +338,45 @@ describe('the calendar slice', () => {
     expect(useAppStore.getState().undoStack).toEqual([]);
   });
 
+  it('adopts a done that landed while its answer was lost, and undoes it', async () => {
+    const added = await useAppStore.getState().addReminder({
+      workspaceId,
+      text: 'Ping Teo about notify-relay',
+      trigger: 'time',
+      dueAt: 500,
+      target: null,
+    });
+    if (!added.isOk) {
+      throw new Error('reminder not added');
+    }
+    const db = storySqlite();
+    const original = db.execute.bind(db);
+    const execute = vi.spyOn(db, 'execute');
+    execute.mockImplementationOnce(async (sql, params) => {
+      await original(sql, params);
+      throw new Error('connection lost');
+    });
+
+    const lost = await useAppStore.getState().markReminderDone({
+      workspaceId,
+      reminderId: added.value.id,
+    });
+    expect(lost.isOk).toBe(false);
+    expect(reminderTexts()).toEqual([{ text: 'Ping Teo about notify-relay', isDone: false }]);
+
+    const retried = await useAppStore.getState().markReminderDone({
+      workspaceId,
+      reminderId: added.value.id,
+    });
+    execute.mockRestore();
+
+    expect(retried.isOk).toBe(true);
+    expect(reminderTexts()).toEqual([{ text: 'Ping Teo about notify-relay', isDone: true }]);
+    expect(await useAppStore.getState().undoLastOperation()).toBe(true);
+    await useAppStore.getState().loadReminders({ workspaceId, doneSince: 0 });
+    expect(reminderTexts()).toEqual([{ text: 'Ping Teo about notify-relay', isDone: false }]);
+  });
+
   it('does not reopen a reminder that changed after it was done', async () => {
     const added = await useAppStore.getState().addReminder({
       workspaceId,

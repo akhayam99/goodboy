@@ -441,6 +441,7 @@ export {
   insertReminder,
   listReminders,
   markReminderDone,
+  readReminder,
   reopenReminder,
   snoozeReminder,
 } from './queries/reminder';

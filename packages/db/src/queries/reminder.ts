@@ -89,6 +89,27 @@ export const listReminders = async ({
   });
 };
 
+type ReadParams = {
+  readonly db: Database;
+  readonly workspaceId: WorkspaceId;
+  readonly reminderId: ReminderId;
+};
+
+export const readReminder = async ({
+  db,
+  workspaceId,
+  reminderId,
+}: ReadParams): Promise<Reminder | null> => {
+  const rows = await db.select<ReminderRow>(
+    `SELECT id, workspace_id, text, trigger_kind, due_at, target_kind, target_id,
+       snoozed_until, done_at, created_at
+     FROM reminders
+     WHERE id = ? AND workspace_id = ?`,
+    [reminderId, workspaceId],
+  );
+  return rows[0] === undefined ? null : reminderOf({ row: rows[0] });
+};
+
 type InsertParams = {
   readonly db: Database;
   readonly reminder: Reminder;

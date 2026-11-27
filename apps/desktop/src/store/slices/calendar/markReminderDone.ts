@@ -1,4 +1,4 @@
-import { markReminderDone as storeReminderDone, reopenReminder } from '@goodboy/db';
+import { markReminderDone as storeReminderDone, readReminder, reopenReminder } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import {
   commitAfterConfirm,
@@ -9,35 +9,39 @@ import { calendarWrites } from './calendarWrites';
 import { replaceReminder } from './replaceReminder';
 import type { ReminderParams } from './types';
 
-const ALREADY_DONE = 'This reminder is already done or gone.';
+const GONE = 'This reminder is gone.';
 
 export const markReminderDone = ({ set, get }: SliceDeps) => {
   return async ({ workspaceId, reminderId }: ReminderParams): Promise<CommitResult<number>> => {
-    const doneAt = Date.now();
     calendarWrites.loads.cancel({ key: calendarWrites.remindersKey({ workspaceId }) });
     const result = await commitAfterConfirm({
       get,
       failureTitle: "Couldn't mark the reminder done",
       target: { workspaceId },
       step: async () => {
+        const doneAt = Date.now();
         const isMarked = await storeReminderDone({
           db: tauriDatabase,
           workspaceId,
           reminderId,
           doneAt,
         });
-        if (!isMarked) {
-          throw new Error(ALREADY_DONE);
+        if (isMarked) {
+          return doneAt;
         }
-        return doneAt;
+        const stored = await readReminder({ db: tauriDatabase, workspaceId, reminderId });
+        if (stored?.doneAt == null) {
+          throw new Error(GONE);
+        }
+        return stored.doneAt;
       },
-      commit: () => {
-        replaceReminder({ set, workspaceId, reminderId, patch: { doneAt } });
-      },
+      commit: () => undefined,
     });
     if (!result.isOk) {
       return result;
     }
+    const doneAt = result.value;
+    replaceReminder({ set, workspaceId, reminderId, patch: { doneAt } });
     get().undoable({
       message: 'Reminder done',
       conflictMessage: 'This reminder changed. Nothing changed.',
