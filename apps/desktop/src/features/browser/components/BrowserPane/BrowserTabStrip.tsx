@@ -11,6 +11,7 @@ import type { BrowserPageGroup, BrowserPaneModel } from '../../types';
 import { BrowserAddressPill } from './BrowserAddressPill';
 import { BrowserTabChip } from './BrowserTabChip';
 import { BrowserTabGroupLabel } from './BrowserTabGroupLabel';
+import type { BrowserMenuTab } from './browserMenuTabsOf';
 import { browserTabTargetOf } from './browserTabTargetOf';
 
 type PickParams = {
@@ -33,6 +34,7 @@ type Props = {
   readonly model: BrowserPaneModel;
   readonly field: CommandField;
   readonly page?: BrowserStripGroups;
+  readonly isNarrow: boolean;
 };
 
 type StripTab = {
@@ -85,7 +87,24 @@ type LabelParams = ModelParams & {
   readonly isHere: boolean;
 };
 
+type MenuTabsParams = {
+  readonly groups: ReadonlyArray<StripGroup>;
+};
+
 const NO_GROUPS: ReadonlyArray<BrowserPageGroup> = [];
+
+const NO_MENU_TABS: ReadonlyArray<BrowserMenuTab> = [];
+
+const menuTabsOf = ({ groups }: MenuTabsParams): ReadonlyArray<BrowserMenuTab> =>
+  groups.flatMap((group) =>
+    group.tabs
+      .filter((item) => !item.isShown)
+      .map((item) => ({
+        key: `${group.key}-${item.tab.id}`,
+        label: item.label,
+        onSelect: item.onSelect,
+      })),
+  );
 
 const labelOf = ({ model, tab, isHere }: LabelParams): string => {
   if (isHere) {
@@ -146,7 +165,7 @@ const GROUP_DIVIDER = (
   <span role="separator" aria-orientation="vertical" className="h-4 w-px shrink-0 bg-border-soft" />
 );
 
-export const BrowserTabStrip = ({ model, field, page }: Props) => {
+export const BrowserTabStrip = ({ model, field, page, isNarrow }: Props) => {
   const [paneFolded, setPaneFolded] = useState<ReadonlySet<string>>(() => new Set());
   const folded = page?.folded ?? paneFolded;
   const setFolded = ({ folded: next }: FoldedParams): void => {
@@ -168,6 +187,7 @@ export const BrowserTabStrip = ({ model, field, page }: Props) => {
   const tabGroups = all.filter((group) => !group.isPins);
   const isPaged = page !== undefined;
   const hasTabs = tabGroups.some((group) => isPaged || group.tabs.length > 0);
+  const menuTabs = isNarrow ? menuTabsOf({ groups: tabGroups }) : NO_MENU_TABS;
 
   useEffect(() => {
     const target = field.isFieldShown
@@ -195,7 +215,13 @@ export const BrowserTabStrip = ({ model, field, page }: Props) => {
         anchorKey={`browser-tab:${item.tab.id}`}
       >
         {item.isShown ? (
-          <BrowserAddressPill model={model} field={field} onClose={item.onClose} />
+          <BrowserAddressPill
+            model={model}
+            field={field}
+            isNarrow={isNarrow}
+            menuTabs={menuTabs}
+            onClose={item.onClose}
+          />
         ) : (
           <BrowserTabChip
             label={item.label}
@@ -211,8 +237,12 @@ export const BrowserTabStrip = ({ model, field, page }: Props) => {
 
   const groupNode = ({ group, hasSeparator }: GroupNodeParams): ReactNode => {
     const isFolded = folded.has(group.key);
-    const canFold = isPaged && !group.isPins && group.label !== null;
-    const shownTabs = isFolded ? group.tabs.filter((item) => item.isShown) : group.tabs;
+    const isOnlyShown = isFolded || (isNarrow && !group.isPins);
+    const canFold = isPaged && !isNarrow && !group.isPins && group.label !== null;
+    const shownTabs = isOnlyShown ? group.tabs.filter((item) => item.isShown) : group.tabs;
+    if (isNarrow && !group.isPins && shownTabs.length === 0) {
+      return null;
+    }
     return (
       <div
         key={group.key}
@@ -246,7 +276,10 @@ export const BrowserTabStrip = ({ model, field, page }: Props) => {
         <nav aria-label="Browser tabs" className="contents">
           {pinGroups.map((group) => groupNode({ group, hasSeparator: false }))}
           {tabGroups.map((group, index) =>
-            groupNode({ group, hasSeparator: hasTabs && (index > 0 || pinGroups.length > 0) }),
+            groupNode({
+              group,
+              hasSeparator: hasTabs && ((index > 0 && !isNarrow) || pinGroups.length > 0),
+            }),
           )}
           {model.shown === null ? <BrowserAddressPill model={model} field={field} /> : null}
         </nav>

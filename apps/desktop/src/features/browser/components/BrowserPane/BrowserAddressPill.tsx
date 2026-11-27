@@ -4,44 +4,67 @@ import type { CommandField } from '../../hooks/useCommandField';
 import { hostOf } from '../../hostOf';
 import type { BrowserPaneModel } from '../../types';
 import { BrowserFavicon } from './BrowserFavicon';
+import { BrowserMoreMenu } from './BrowserMoreMenu';
+import type { BrowserMenuTab } from './browserMenuTabsOf';
 
 const DANGER_BORDER = tintClasses('danger').border;
 
 const ACTIVE_SLOT = 'flex min-w-40 shrink grow basis-auto';
 
+const PILL_CHROME =
+  'h-7 rounded-md border border-border bg-button-secondary shadow-button-secondary';
+
+const REVEALED =
+  'opacity-0 group-hover/pill:opacity-100 group-focus-within/pill:opacity-100 focus-visible:opacity-100';
+
+const NO_TABS: ReadonlyArray<BrowserMenuTab> = [];
+
 type Props = {
   readonly model: BrowserPaneModel;
   readonly field: CommandField;
+  readonly isNarrow?: boolean;
+  readonly menuTabs?: ReadonlyArray<BrowserMenuTab>;
   readonly onClose?: () => void;
 };
 
-export const BrowserAddressPill = ({ model, field, onClose }: Props) => {
+export const BrowserAddressPill = ({
+  model,
+  field,
+  isNarrow = false,
+  menuTabs = NO_TABS,
+  onClose,
+}: Props) => {
   const title = model.shown === null ? '' : model.titleOf({ tab: model.shown.tab });
   const host = hostOf({ url: model.address });
   const hasError = model.error !== null;
-  const isHostShown = title !== host;
-  const name = isHostShown ? `${title}, ${host}` : title;
+  const isHostShown = title !== host && !isNarrow;
+  const name = title !== host ? `${title}, ${host}` : title;
 
   if (!field.isFieldShown) {
     return (
-      <div className={cn(ACTIVE_SLOT, 'items-center gap-0.5')}>
+      <div
+        data-browser-pill=""
+        className={cn(
+          ACTIVE_SLOT,
+          PILL_CHROME,
+          'group/pill items-center gap-0.5 pr-0.5',
+          hasError && DANGER_BORDER,
+        )}
+      >
         <Tooltip
           content="Edit address"
           shortcut="browser.address"
           side="top"
-          anchorClassName="flex min-w-0 flex-1"
+          anchorClassName="flex h-full min-w-0 flex-1"
         >
           <Button
             ref={field.pillRef}
-            variant="secondary"
+            variant="ghost"
             data-browser-tab="active"
             aria-current="page"
             aria-label={`Edit address, ${name}`}
             onClick={field.edit}
-            className={cn(
-              'w-full min-w-0 justify-start px-2 text-left font-normal',
-              hasError && DANGER_BORDER,
-            )}
+            className="h-full w-full min-w-0 justify-start rounded-md px-2 text-left font-normal"
           >
             <BrowserFavicon url={model.address} isPin={model.shown?.isPin === true} />
             <span className="min-w-0 truncate text-row text-foreground">{title}</span>
@@ -50,14 +73,17 @@ export const BrowserAddressPill = ({ model, field, onClose }: Props) => {
             ) : null}
           </Button>
         </Tooltip>
+        {model.shown === null ? null : <BrowserMoreMenu model={model} menuTabs={menuTabs} />}
         {onClose === undefined ? null : (
           <IconButton
             icon={X}
             label={`Close ${title}`}
             size="xs"
             variant="ghost"
+            shortcut="browser.closeTab"
             tooltipSide="top"
             onClick={onClose}
+            className={REVEALED}
           />
         )}
       </div>

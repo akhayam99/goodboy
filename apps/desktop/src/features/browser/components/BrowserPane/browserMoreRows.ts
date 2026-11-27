@@ -2,7 +2,6 @@ export type BrowserMoreOff = {
   readonly isOpenOutsideOff: boolean;
   readonly isCopyAddressOff: boolean;
   readonly isDuplicateOff: boolean;
-  readonly isReloadFromOriginOff: boolean;
   readonly isClearSiteDataOff: boolean;
   readonly isInspectOff: boolean;
   readonly isWidthOff: boolean;
@@ -29,7 +28,6 @@ export const browserMoreOffOf = ({
   isOpenOutsideOff: !canOpenOutside,
   isCopyAddressOff: !hasAddress,
   isDuplicateOff: !hasAddress,
-  isReloadFromOriginOff: !hasTab,
   isClearSiteDataOff: !hasView || !hasSite,
   isInspectOff: !hasTab,
   isWidthOff: !hasTab,
