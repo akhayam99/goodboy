@@ -26,7 +26,7 @@ A Lead that started agents shows **Lead** for its own conversation and **Run tot
 #### Select an element on the Browser page
 <!-- gb area=app pr=2437 -->
 
-The Browser page has Select an element, and ⌘⇧C turns it on. Note what should change and Add sends the element to the agent of the shown tab's session.
+The Browser page has Select an element, and ⌘⇧C turns it on. Note what should change and Add puts the element and your note in the message box of the shown tab's session, ready for you to send. The Browser row also has one control per action.
 
 #### Models your account cannot run are skipped
 <!-- gb area=providers pr=2430 -->
