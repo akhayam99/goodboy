@@ -64,7 +64,7 @@ const actionsFor: ActionCardActions['actionsFor'] = () => ({
     run: () => undefined,
     isBusy: false,
     isDisabled: false,
-    hasPicker: false,
+    picker: null,
     ariaLabel: undefined,
     confirmRole: null,
     confirm: null,
@@ -74,7 +74,7 @@ const actionsFor: ActionCardActions['actionsFor'] = () => ({
     run: () => undefined,
     isBusy: false,
     isDisabled: false,
-    hasPicker: false,
+    picker: null,
     ariaLabel: undefined,
     confirmRole: null,
     confirm: null,
@@ -108,7 +108,6 @@ const show = () => {
       cards={cards}
       questions={[]}
       actionsFor={actionsFor}
-      openFor={() => null}
       kickerById={new Map()}
     />,
   );

@@ -20,7 +20,6 @@ type Props = {
   readonly cards: ReadonlyArray<ActionCardModel>;
   readonly cardsByRowId: BoardCards['byRowId'];
   readonly actionsFor: ActionCardActions['actionsFor'];
-  readonly openFor: ActionCardActions['openFor'];
   readonly shownAskIds: ReadonlySet<string>;
 };
 
@@ -40,7 +39,6 @@ export const ProjectBlocks = ({
   cards: allCards,
   cardsByRowId: placedByRowId,
   actionsFor,
-  openFor,
   shownAskIds,
 }: Props) => {
   const cards = session.archivedAt == null ? allCards : NO_CARDS;
@@ -79,7 +77,6 @@ export const ProjectBlocks = ({
     cardsByRowId,
     mergeCard,
     actionsFor,
-    openFor,
     removal,
     shownAskIds,
   };

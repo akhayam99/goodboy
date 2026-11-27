@@ -12,18 +12,10 @@ type Props = {
   readonly cards: ReadonlyArray<ActionCardModel>;
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly actionsFor: ActionCardActions['actionsFor'];
-  readonly openFor: ActionCardActions['openFor'];
   readonly kickerById: ReadonlyMap<string, string>;
 };
 
-export const NeedsYouSection = ({
-  sessionId,
-  cards,
-  questions,
-  actionsFor,
-  openFor,
-  kickerById,
-}: Props) => {
+export const NeedsYouSection = ({ sessionId, cards, questions, actionsFor, kickerById }: Props) => {
   const [move] = cards;
   if (move === undefined && questions.length === 0) {
     return null;
@@ -45,7 +37,6 @@ export const NeedsYouSection = ({
             sessionId={sessionId}
             card={card}
             actionsFor={actionsFor}
-            openFor={openFor}
             density="needs"
             isPrimary={index === 0}
             project={kickerById.get(card.id) ?? null}

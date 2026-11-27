@@ -26,7 +26,6 @@ export const CentralColumn = ({ session }: Props) => {
     isArchived,
     isEmpty,
     actionsFor,
-    openFor,
     moves,
     looseQuestions,
     shownAskIds,
@@ -59,7 +58,6 @@ export const CentralColumn = ({ session }: Props) => {
           cards={moves.needsYou}
           questions={looseQuestions}
           actionsFor={actionsFor}
-          openFor={openFor}
           kickerById={kickerById}
         />
       </HeightMotion>
@@ -70,15 +68,9 @@ export const CentralColumn = ({ session }: Props) => {
         sessionId={sessionId}
         cards={moves.next}
         actionsFor={actionsFor}
-        openFor={openFor}
         hasFilledMove={!hasNeedsYou}
       />
-      <NextOverflow
-        sessionId={sessionId}
-        cards={placed.loose}
-        actionsFor={actionsFor}
-        openFor={openFor}
-      />
+      <NextOverflow sessionId={sessionId} cards={placed.loose} actionsFor={actionsFor} />
       {isEmpty || board.board.rows.length === 0 ? null : (
         <ProjectBlocks
           key={sessionId}
@@ -87,7 +79,6 @@ export const CentralColumn = ({ session }: Props) => {
           cards={moves.rest}
           cardsByRowId={placed.byRowId}
           actionsFor={actionsFor}
-          openFor={openFor}
           shownAskIds={shownAskIds}
         />
       )}

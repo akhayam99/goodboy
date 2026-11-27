@@ -46,7 +46,6 @@ export const DeskColumn = ({ session, model, isInPopover }: Props) => {
             cards={model.moves.needsYou}
             questions={model.looseQuestions}
             actionsFor={model.actionsFor}
-            openFor={model.openFor}
             kickerById={model.kickerById}
           />
         </HeightMotion>
@@ -57,7 +56,6 @@ export const DeskColumn = ({ session, model, isInPopover }: Props) => {
           sessionId={sessionId}
           cards={model.moves.next.slice(0, DESK_NEXT_CAP)}
           actionsFor={model.actionsFor}
-          openFor={model.openFor}
           hasFilledMove={!model.hasNeedsYou}
         />
         <DeskProjects sessionId={sessionId} board={model.board} />

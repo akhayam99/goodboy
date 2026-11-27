@@ -38,7 +38,7 @@ export const useOverviewModel = ({ session }: Params) => {
     () => autoRetryTargetsOf({ views: model.autoTrees, agents, now: clock }),
     [agents, clock, model.autoTrees],
   );
-  const { cards, actionsFor, openFor } = useNextCards({ session, model, autoTargets });
+  const { cards, actionsFor } = useNextCards({ session, model, autoTargets });
   const groups = useLiveGroups({ model, agents, now: clock });
   const moves = useMemo(
     () =>
@@ -108,7 +108,6 @@ export const useOverviewModel = ({ session }: Params) => {
     isArchived,
     isEmpty,
     actionsFor,
-    openFor,
     moves,
     looseQuestions,
     shownAskIds,

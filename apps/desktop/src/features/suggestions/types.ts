@@ -171,6 +171,11 @@ export type RebaseSuggestionTarget = {
   readonly conflictCount?: number;
 };
 
+export type RebasePick = {
+  readonly sessionId: SessionId;
+  readonly targets: ReadonlyArray<RebaseSuggestionTarget>;
+};
+
 export type OpenPrTarget = {
   readonly mountId: MountId;
   readonly projectId: ProjectId;
