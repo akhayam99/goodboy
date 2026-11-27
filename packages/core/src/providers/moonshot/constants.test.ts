@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { MOONSHOT_MODELS } from './constants';
 import { MOONSHOT_CATALOG } from './catalog';
 import { MOONSHOT_AGENT_MODEL_IDS } from './agent-model-ids';
+import { getCheapModel } from '../cli-defaults';
+import { legacyHiddenModels } from '../modelVisibility';
+import { strongestModelForTier } from '../strongestModelForTier';
 
 describe('MOONSHOT_MODELS', () => {
   it('contains the kimi ladder moonshot still serves', () => {
@@ -36,6 +39,18 @@ describe('MOONSHOT_MODELS', () => {
     );
 
     expect(legacy).toEqual(['K2.7', 'K2.7', 'K2.6']);
+  });
+
+  it('runs the cheap jobs on K3.1 Pro while the K2 models are hidden', () => {
+    expect(
+      strongestModelForTier({
+        provider: 'moonshot',
+        tier: 'cheap',
+        wantsThinker: false,
+        hidden: legacyHiddenModels(),
+      })?.id,
+    ).toBe('kimi-k3.1-pro');
+    expect(getCheapModel('moonshot')).toBe('kimi-k3.1-pro');
   });
 
   it('keeps k3 the widest context and the code models the cheaper ones', () => {

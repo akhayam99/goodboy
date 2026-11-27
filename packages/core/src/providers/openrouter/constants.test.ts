@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { OPENROUTER_MODELS } from './constants';
 import { OPENROUTER_CATALOG } from './catalog';
+import { strongestModelForTier } from '../strongestModelForTier';
 
 describe('OPENROUTER_MODELS', () => {
   it('contains the curated pre-slugged catalog', () => {
@@ -71,6 +72,15 @@ describe('OPENROUTER_MODELS', () => {
       (model) => model.effort?.includes('medium') !== true,
     ).map((model) => model.id);
     expect(withoutMedium).toEqual(['kimi-k3.1-pro']);
+  });
+
+  it('moves the mid and thinker tier picks to the newest models', () => {
+    expect(
+      strongestModelForTier({ provider: 'openrouter', tier: 'mid', wantsThinker: false })?.id,
+    ).toBe('gpt-6.1-terra');
+    expect(
+      strongestModelForTier({ provider: 'openrouter', tier: 'expensive', wantsThinker: true })?.id,
+    ).toBe('fable-5.2');
   });
 
   it('drops the three vendor ids the openrouter api no longer lists', () => {
