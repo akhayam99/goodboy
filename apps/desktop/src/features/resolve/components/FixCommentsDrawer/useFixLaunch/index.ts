@@ -80,6 +80,7 @@ export const useFixLaunch = ({
         getState: useAppStore.getState,
         sessionId,
         threadIds,
+        ...(mountId !== null && { mountId }),
         name: fixCommentsAgentName({ count }),
         ...(parentAgentId !== undefined && { parentAgentId }),
         launchChoice: launchChoiceOf({

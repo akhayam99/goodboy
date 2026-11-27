@@ -26,7 +26,8 @@ const BITBUCKET_EXPANDED_THREAD_ID = 'bitbucket:1041';
 
 const PR_URL = 'https://example.invalid/northwind/storefront-web/pull-requests/12';
 const PR_NUMBER = 12;
-const MOUNT_ID = 'mock-resolve-mount-storefront-web' as MountId;
+export const BITBUCKET_MOUNT_ID = 'mock-resolve-mount-storefront-web' as MountId;
+const MOUNT_ID = BITBUCKET_MOUNT_ID;
 const PROJECT_ID = 'mock-resolve-project-storefront-web' as ProjectId;
 const BITBUCKET_KEY = `bitbucket:${MOUNT_ID}:${PR_NUMBER}`;
 const BRANCH = 'nw/checkout-empty-cart';
