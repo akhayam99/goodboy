@@ -11,7 +11,7 @@ import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   NOTIFICATION_LIST_LIMIT,
   clearAllNotifications,
-  replaceNotificationByKey,
+  deleteOlderNotificationsOfKey,
   settleStaleNotifications,
   countNotifications,
   deleteNotification,
@@ -545,12 +545,12 @@ describe('notification queries', () => {
     });
 
     describe('retry-action', () => {
-      const retryRow = (id: string, ts: IsoDateTime) =>
+      const retryRow = (id: string, ts: IsoDateTime, key: string = id) =>
         buildNotification({
           id,
           ts,
-          coalesceKey: id,
-          action: { kind: 'retry-action', retryId: id },
+          coalesceKey: key,
+          action: { kind: 'retry-action', retryId: key },
         });
 
       it('reads a row older than the process launch and stamps acted_at', async () => {
@@ -576,14 +576,12 @@ describe('notification queries', () => {
       it('keeps a keyed replace, whose time moved past the launch stamp', async () => {
         const db = await seed({});
         await insertNotification(db, retryRow('keyed', FAILED_AT));
-        await replaceNotificationByKey({
-          db,
-          notification: retryRow('keyed', tsAtMs(FAILED_MS + 120_000)),
-        });
+        await insertNotification(db, retryRow('keyed-2', tsAtMs(FAILED_MS + 120_000), 'keyed'));
+        await deleteOlderNotificationsOfKey({ db, keepId: 'keyed-2', coalesceKey: 'keyed' });
 
         await settle(db, FAILED_MS + 60_000);
 
-        expect(await unreadIds(db)).toEqual(['keyed']);
+        expect(await unreadIds(db)).toEqual(['keyed-2']);
       });
 
       it('reads nothing when the launch stamp is unknown', async () => {
@@ -768,45 +766,17 @@ describe('notification queries', () => {
     });
   });
 
-  describe('replaceNotificationByKey', () => {
-    it('updates the row of the key in place and makes a read row unread again', async () => {
+  describe('deleteOlderNotificationsOfKey', () => {
+    it('keeps the named row and drops the older rows of the key only', async () => {
       const db = await seed({});
-      await insertNotification(
-        db,
-        buildNotification({
-          id: 'first',
-          coalesceKey: 'k',
-          read: true,
-          actedAt: tsAt({ second: 3 }),
-        }),
-      );
+      await insertNotification(db, buildNotification({ id: 'old', coalesceKey: 'k', read: true }));
+      await insertNotification(db, buildNotification({ id: 'other', coalesceKey: 'other' }));
+      await insertNotification(db, buildNotification({ id: 'new', coalesceKey: 'k' }));
 
-      const isReplaced = await replaceNotificationByKey({
-        db,
-        notification: buildNotification({
-          id: 'second',
-          coalesceKey: 'k',
-          ts: tsAt({ second: 9 }),
-          body: 'again',
-        }),
-      });
+      await deleteOlderNotificationsOfKey({ db, keepId: 'new', coalesceKey: 'k' });
 
       const rows = await listNotifications({ db, workspaceId: null });
-      expect(isReplaced).toBe(true);
-      expect(rows).toHaveLength(1);
-      expect(rows[0]).toMatchObject({ id: 'second', read: false, body: 'again', actedAt: null });
-    });
-
-    it('does nothing when no row has the key', async () => {
-      const db = await seed({});
-
-      const isReplaced = await replaceNotificationByKey({
-        db,
-        notification: buildNotification({ id: 'x', coalesceKey: 'missing' }),
-      });
-
-      expect(isReplaced).toBe(false);
-      expect(await listNotifications({ db, workspaceId: null })).toHaveLength(0);
+      expect(rows.map((row) => row.id).sort()).toEqual(['new', 'other']);
     });
   });
 });

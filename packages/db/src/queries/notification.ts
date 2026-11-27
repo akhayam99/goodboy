@@ -388,40 +388,21 @@ export const deleteNotificationsByCoalesceKey = async ({
   await db.execute(`DELETE FROM notifications WHERE coalesce_key IN (${marks})`, [...coalesceKeys]);
 };
 
-type ReplaceByKeyParams = {
+type OlderOfKeyParams = {
   readonly db: Database;
-  readonly notification: Notification;
+  readonly keepId: string;
+  readonly coalesceKey: string;
 };
 
-export const replaceNotificationByKey = async ({
+export const deleteOlderNotificationsOfKey = async ({
   db,
-  notification: n,
-}: ReplaceByKeyParams): Promise<boolean> => {
-  if (n.coalesceKey === null) {
-    return false;
-  }
-  const { rowsAffected } = await db.execute(
-    `UPDATE notifications SET
-       id = ?, ts = ?, kind = ?, title = ?, body = ?, severity = ?, session_id = ?,
-       workspace_id = ?, read = ?, action = ?, acted_at = NULL
-     WHERE id = (
-       SELECT id FROM notifications WHERE coalesce_key = ? ORDER BY ts DESC, id DESC LIMIT 1
-     )`,
-    [
-      n.id,
-      Date.parse(n.ts),
-      n.kind,
-      n.title,
-      n.body ?? null,
-      n.severity,
-      n.sessionId ?? null,
-      n.workspaceId ?? null,
-      n.read ? 1 : 0,
-      serializeAction(n.action),
-      n.coalesceKey,
-    ],
-  );
-  return rowsAffected > 0;
+  keepId,
+  coalesceKey,
+}: OlderOfKeyParams): Promise<void> => {
+  await db.execute('DELETE FROM notifications WHERE coalesce_key = ? AND id <> ?', [
+    coalesceKey,
+    keepId,
+  ]);
 };
 
 type SettleStaleParams = {

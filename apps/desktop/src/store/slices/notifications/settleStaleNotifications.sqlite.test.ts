@@ -391,6 +391,7 @@ describe('the repeating global errors are limited at the source', () => {
         title: 'Update check failed',
         error: new Error(`attempt ${index}`),
         recovery: CHECK_STATE,
+        isRepeating: true,
       });
     }
     await vi.advanceTimersByTimeAsync(60_000);
@@ -405,9 +406,10 @@ describe('the repeating global errors are limited at the source', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const report = () =>
       useAppStore.getState().reportError({
-        title: 'Update check failed',
+        title: 'Update check offline',
         error: new Error('offline'),
         recovery: CHECK_STATE,
+        isRepeating: true,
       });
 
     await report();

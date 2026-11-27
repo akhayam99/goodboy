@@ -7,14 +7,13 @@ import type { GetFn } from './types';
 
 const SETTLE_FAILED_KEY = 'settle-notifications-failed';
 
-export const writeSettledNotifications = async (): Promise<void> => {
-  await settleStaleNotificationsDb({
+export const writeSettledNotifications = async (): Promise<number> =>
+  settleStaleNotificationsDb({
     db: tauriDatabase,
     nowMs: Date.now(),
     launchStampMs: await processLaunchStampOf(),
     firstPassBeforeMs: FIRST_PASS_BEFORE_MS,
   });
-};
 
 type FactoryParams = {
   readonly get: GetFn;
@@ -23,7 +22,10 @@ type FactoryParams = {
 export const settleStaleNotifications = ({ get }: FactoryParams) => {
   return async (): Promise<void> => {
     try {
-      await get().loadNotifications();
+      const changed = await writeSettledNotifications();
+      if (changed > 0) {
+        await get().loadNotifications();
+      }
     } catch (error) {
       await get().reportError({
         recovery: CHECK_STATE,

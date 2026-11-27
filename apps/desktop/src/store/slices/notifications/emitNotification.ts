@@ -1,6 +1,6 @@
 import {
   insertNotification,
-  replaceNotificationByKey,
+  deleteOlderNotificationsOfKey,
   type Notification,
   type NotificationAction,
   type NotificationKind,
@@ -25,17 +25,6 @@ export type EmitNotificationParams = {
   coalesceKey?: string;
   isOnce?: boolean;
   isRead?: boolean;
-};
-
-type StoreParams = {
-  readonly notification: Notification;
-};
-
-const storeByKey = async ({ notification }: StoreParams): Promise<void> => {
-  const isReplaced = await replaceNotificationByKey({ db: tauriDatabase, notification });
-  if (!isReplaced) {
-    await insertNotification(tauriDatabase, notification);
-  }
 };
 
 export const emitNotification = (set: SetFn, get: GetFn) => {
@@ -73,13 +62,21 @@ export const emitNotification = (set: SetFn, get: GetFn) => {
       coalesceKey: key,
       actedAt: null,
     };
-    const isStored = await storeByKey({ notification: n }).then(
+    const isStored = await insertNotification(tauriDatabase, n).then(
       () => true,
       () => false,
     );
     if (!isStored) {
       return;
     }
+    await deleteOlderNotificationsOfKey({
+      db: tauriDatabase,
+      keepId: n.id,
+      coalesceKey: key,
+    }).then(
+      () => undefined,
+      () => undefined,
+    );
     const state = get();
     const scope = scopedWorkspaceId({ state });
     const owner = workspaceId ?? sessionById(state.sessions, sessionId)?.workspaceId ?? null;

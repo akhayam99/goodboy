@@ -20,6 +20,7 @@ export type ReportErrorParams = {
   retry?: ActionRetry;
   retryLabel?: string;
   stays?: string;
+  isRepeating?: boolean;
 };
 
 type TruncateParams = {
@@ -56,11 +57,11 @@ export const reportError = ({ get }: FactoryParams) => {
     retryLabel,
     stays,
     coalesceKey,
+    isRepeating,
     ...target
   }: ReportErrorParams) => {
     if (
-      coalesceKey === undefined &&
-      retry === undefined &&
+      isRepeating === true &&
       !isErrorRepeatAllowed({
         key: notificationKeyOf({ kind: 'error', severity, title, ...target }),
       })

@@ -419,7 +419,7 @@ export {
   markNotificationsActed,
   deleteNotification,
   clearAllNotifications,
-  replaceNotificationByKey,
+  deleteOlderNotificationsOfKey,
   settleStaleNotifications,
   deleteNotificationsByCoalesceKey,
   NOTIFICATION_LIST_LIMIT,

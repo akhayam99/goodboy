@@ -26,7 +26,3 @@ export const isErrorRepeatAllowed = ({ key }: KeyParams): boolean => {
   suppressedByKey.set(key, suppressed + 1);
   return false;
 };
-
-export const resetErrorRepeatLimit = (): void => {
-  suppressedByKey.clear();
-};

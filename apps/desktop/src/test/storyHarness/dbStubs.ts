@@ -206,7 +206,7 @@ export const storyDbStubs = () => ({
   clearAllNotifications: storySpies.clearAllNotifications,
   deleteNotificationsByCoalesceKey: storySpies.deleteNotificationsByCoalesceKey,
   settleStaleNotifications: vi.fn(async () => 0),
-  replaceNotificationByKey: vi.fn(async () => false),
+  deleteOlderNotificationsOfKey: vi.fn(async () => undefined),
   insertNudgeEvent: storySpies.insertNudgeEvent,
   updateNudgeEventOutcome: storySpies.updateNudgeEventOutcome,
   listDiffCommentsForSession: storySpies.listDiffCommentsForSession,

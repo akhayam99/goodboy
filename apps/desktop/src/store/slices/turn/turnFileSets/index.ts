@@ -105,6 +105,7 @@ export const recordTurnFileSets = async ({
       title: "Couldn't record what this turn changed",
       error: first,
       sessionId,
+      isRepeating: true,
     });
   }
 };
