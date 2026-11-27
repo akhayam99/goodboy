@@ -17,11 +17,13 @@ import { runningSinceOf } from './runningSinceOf';
 type Props = {
   readonly facts: HomeFacts;
   readonly size: WidgetSize;
+  readonly longIds: ReadonlySet<string>;
+  readonly isLongShown: boolean;
 };
 
 const CLOCK_MS = 15_000;
 
-export const RunningNow = ({ facts, size }: Props) => {
+export const RunningNow = ({ facts, size, longIds, isLongShown }: Props) => {
   const nowMs = useNow(CLOCK_MS);
   const shown = rowsFor({ size });
   const longest = useAppStore((state) => {
@@ -31,13 +33,24 @@ export const RunningNow = ({ facts, size }: Props) => {
     });
     return times.length === 0 ? null : Math.min(...times);
   });
-  const extra = Math.max(0, facts.running.length - shown);
+  const listed = isLongShown
+    ? facts.running.filter((session) => !longIds.has(session.id))
+    : facts.running;
+  const hiddenLong = facts.running.length - listed.length;
+  const extra = Math.max(0, listed.length - shown);
   const rows = useMemo(
     () =>
-      facts.running
+      listed
         .slice(0, shown)
-        .map((session) => <RunningRow key={session.id} session={session} nowMs={nowMs} />),
-    [facts.running, nowMs, shown],
+        .map((session) => (
+          <RunningRow
+            key={session.id}
+            session={session}
+            nowMs={nowMs}
+            isLong={longIds.has(session.id)}
+          />
+        )),
+    [listed, longIds, nowMs, shown],
   );
   return (
     <WidgetCard
@@ -67,6 +80,11 @@ export const RunningNow = ({ facts, size }: Props) => {
           }
         >
           {rows}
+          {hiddenLong > 0 ? (
+            <li className="text-meta text-faint-foreground">
+              {hiddenLong} long running, shown in Long running
+            </li>
+          ) : null}
         </ul>
       )}
     </WidgetCard>

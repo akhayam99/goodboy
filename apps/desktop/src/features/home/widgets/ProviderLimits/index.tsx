@@ -4,8 +4,8 @@ import { PROVIDER_IDS, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../shared/hooks/useNow';
-import { openDestination } from '../../../../shared/navigation/openDestination';
 import { usageWindowFactsOf } from '../../../providers/limits/usageWindowFactsOf';
+import { openConnections } from '../../openConnections';
 import { HOME_WIDGETS, type WidgetSize } from '../../grid/homeWidgets';
 import type { HomeFacts } from '../../hooks/useHomeFacts';
 import { HeroNumber } from '../../WidgetCard/HeroNumber';
@@ -27,8 +27,6 @@ type LabelParams = {
 const CLOCK_MS = 60_000;
 
 const WINDOWS_IN_MEDIUM = 4;
-
-const openConnections = (): void => openDestination({ id: 'connections' });
 
 export const ProviderLimits = ({ facts, size }: Props) => {
   const nowMs = useNow(CLOCK_MS);

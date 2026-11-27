@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { columnsOf } from './columnsOf';
 import {
+  ALL_HOME_WIDGETS,
   DEFAULT_HOME_LAYOUT,
   HOME_WIDGETS,
   type HomeWidgetId,
@@ -27,6 +28,7 @@ const SIZES: ReadonlyArray<WidgetSize> = ['S', 'M', 'L'];
 
 const TABLE: ReadonlyArray<readonly [string, ReadonlyArray<WidgetRequest>]> = [
   ['the default four', defaults({ ids: DEFAULT_HOME_LAYOUT })],
+  ['every widget at its default size', defaults({ ids: ALL_HOME_WIDGETS })],
   ['one widget alone', defaults({ ids: ['providerLimits'] })],
   ['two mediums', defaults({ ids: ['needsYou', 'runningNow'] })],
   [
@@ -56,7 +58,7 @@ const TABLE: ReadonlyArray<readonly [string, ReadonlyArray<WidgetRequest>]> = [
   ],
   [
     'every widget at every size, in order',
-    DEFAULT_HOME_LAYOUT.flatMap((id) => SIZES.map((size) => request({ id, size }))),
+    ALL_HOME_WIDGETS.flatMap((id) => SIZES.map((size) => request({ id, size }))),
   ],
 ];
 
@@ -86,14 +88,16 @@ describe('placeWidgets', () => {
     expect(starts).toEqual([...starts].sort((a, b) => a - b));
   });
 
-  it('lays the default four as a full row, two mediums, then a widened limits card', () => {
+  it('lays the default six as a full row, two mediums, then two tall cells and a medium', () => {
     const placed = placeWidgets({ requests: defaults({ ids: DEFAULT_HOME_LAYOUT }), columns: 4 });
 
     expect(placed.map((widget) => [widget.id, widget.cols, widget.rows, widget.size])).toEqual([
       ['sessionsToFinish', 4, 2, 'L'],
       ['needsYou', 2, 3, 'M'],
       ['runningNow', 2, 3, 'M'],
-      ['providerLimits', 4, 4, 'L'],
+      ['providerLimits', 2, 4, 'M'],
+      ['spend', 2, 4, 'M'],
+      ['tasksInbox', 4, 3, 'M'],
     ]);
   });
 
@@ -122,7 +126,7 @@ describe('placeWidgets', () => {
     const placed = placeWidgets({ requests: defaults({ ids: DEFAULT_HOME_LAYOUT }), columns: 1 });
 
     expect(placed.every((widget) => widget.cols === 1)).toBe(true);
-    expect(placed.map((widget) => widget.row)).toEqual([0, 2, 5, 8]);
+    expect(placed.map((widget) => widget.row)).toEqual([0, 2, 5, 8, 12, 16]);
   });
 });
 

@@ -1,4 +1,4 @@
-import { StatusMark } from '@goodboy/ui';
+import { StatusMark, cn, tintClasses } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore, useSessionStageInfo } from '../../../../store';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
@@ -10,9 +10,10 @@ import { runningSinceOf } from './runningSinceOf';
 type Props = {
   readonly session: Session;
   readonly nowMs: number;
+  readonly isLong: boolean;
 };
 
-export const RunningRow = ({ session, nowMs }: Props) => {
+export const RunningRow = ({ session, nowMs, isLong }: Props) => {
   const since = useAppStore((state) => runningSinceOf({ state, sessionId: session.id }));
   const info = useSessionStageInfo(session);
   const title = sessionTitle({ session });
@@ -26,7 +27,14 @@ export const RunningRow = ({ session, nowMs }: Props) => {
       onOpen={() => openSessionPlace({ sessionId: session.id })}
       trailing={
         elapsed === null ? undefined : (
-          <span className="text-meta text-muted-foreground tabular-nums">{elapsed}</span>
+          <span
+            className={cn(
+              'text-meta tabular-nums',
+              isLong ? tintClasses('warning').text : 'text-muted-foreground',
+            )}
+          >
+            {elapsed}
+          </span>
         )
       }
     />
