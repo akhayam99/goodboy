@@ -98,7 +98,7 @@ from and goes back to, then the code it produces, and the chat last.
 ## Sessions
 
 A **session** holds one goal. Goodboy derives its stage on every read, and the
-stages are the columns of the board: **building**, **running**, **needs you**,
+stages are the columns of the board: **open**, **running**, **needs you**,
 **in review** and **done**. "Running" means an agent turn starting or running,
 an agent waiting for a permission, or a workflow run deciding its next step.
 
