@@ -154,6 +154,18 @@ describe('autoRetryTargetsOf', () => {
     ).toEqual(['failed']);
   });
 
+  it('drops a blocked root that predates the merge and keeps one that follows it', () => {
+    const view = aView({ phase: 'blocked' });
+    const options = { views: [view], agents: [ROOT], now: FIXTURE_NOW };
+
+    expect(autoRetryTargetsOf({ ...options, settledAt: view.tree.updatedAt + 1 })).toEqual([]);
+    expect(
+      autoRetryTargetsOf({ ...options, settledAt: view.tree.updatedAt - 1 }).map(
+        (target) => target.kind,
+      ),
+    ).toEqual(['blocked']);
+  });
+
   it('skips a delegation that was retried', () => {
     const first = aDelegation({
       key: 'fixer-1',

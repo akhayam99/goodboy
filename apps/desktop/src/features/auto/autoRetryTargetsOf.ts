@@ -133,7 +133,9 @@ export const autoRetryTargetsOf = ({
     return [
       ...children,
       ...(isAutoPlanAwaitingApproval({ view }) ? [ownTargetOf({ view, kind: 'approve' })] : []),
-      ...(phase === 'blocked' && !isAutoPausedAtLimit({ view })
+      ...(phase === 'blocked' &&
+      !isAutoPausedAtLimit({ view }) &&
+      !isFailureSettled({ at: view.tree.updatedAt, settledAt })
         ? [ownTargetOf({ view, kind: 'blocked' })]
         : []),
     ];
