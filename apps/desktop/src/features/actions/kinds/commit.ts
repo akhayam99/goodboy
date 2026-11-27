@@ -5,7 +5,7 @@ import {
   Copy,
   GitMerge,
   Hash,
-  PenLine,
+  Pencil,
   Trash2,
   Undo2,
 } from '@goodboy/ui/icons';
@@ -45,7 +45,7 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
     {
       id: 'commit.rename',
       label: 'Reword',
-      icon: PenLine,
+      icon: Pencil,
       group: 'act',
       slot: () => 'hover',
       description: () => 'Edit the commit message · R',
