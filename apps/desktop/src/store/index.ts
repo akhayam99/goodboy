@@ -68,7 +68,7 @@ export {
   useWorkspaces,
 } from './slices/workspaces/selectors';
 export { useTranscript } from './slices/transcripts/selectors';
-export type { LensKind, DiffFocus, SessionFace } from './slices/session-view';
+export type { LensKind, DiffFocus } from './slices/session-view';
 export { NO_PROJECT_FILTER_ID } from './slices/sessionFilters';
 export {
   BOARD_PLACE,

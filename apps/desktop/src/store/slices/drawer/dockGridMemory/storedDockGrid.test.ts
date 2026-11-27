@@ -3,7 +3,6 @@ import { brandId, type ProjectId, type SessionId } from '@goodboy/types';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
 import { EMPTY_DRAWER_GRID, type DrawerGrid } from '../state';
 import { parseStoredDockGrid, storedDockGridOf } from './storedDockGrid';
-import { storedFaceOf } from '../../session-view/storedFaceOf';
 
 const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
 
@@ -103,19 +102,11 @@ describe('the dock grid as the session stores it', () => {
     expect(parsed?.widths).toEqual({ browser: 700 });
   });
 
-  it('keeps the face beside the grid, so a build that never knew it still reads the grid', () => {
-    const stored = storedDockGridOf({ grid: GRID, face: 'desk' });
-
-    expect(JSON.parse(stored)).toMatchObject({ version: 2, face: 'desk' });
-    expect(parseStoredDockGrid({ raw: stored })).toEqual(GRID);
-    expect(storedFaceOf({ raw: stored })).toBe('desk');
-  });
-
-  it('reads a row saved without the face, or no row at all, as the overview', () => {
+  it('writes no face and no detail, and still reads a row an older build saved with them', () => {
     expect(JSON.parse(storedDockGridOf({ grid: GRID }))).not.toHaveProperty('face');
-    expect(storedFaceOf({ raw: storedDockGridOf({ grid: GRID }) })).toBe('overview');
-    expect(storedFaceOf({ raw: null })).toBe('overview');
-    expect(storedFaceOf({ raw: 'terminal' })).toBe('overview');
+    const older = JSON.stringify({ ...JSON.parse(storedDockGridOf({ grid: GRID })), face: 'desk' });
+
+    expect(parseStoredDockGrid({ raw: older })).toEqual(GRID);
   });
 
   it.each([

@@ -95,8 +95,7 @@ under a 1100px window) at the window's right edge on every workspace screen,
   stored notifications (`open-lens` scripts) still open Terminal through
   `openToolPane`.
 - **Ask** opens the session's Ask panel (`openAsk` and `closeAsk` name the session);
-  a second press closes it. It stays while the tabs change, and the Overview never
-  becomes the Desk for it (`deskToolsOf` leaves Ask out). ⌘L (`ask.open`) opens it
+  a second press closes it. It stays while the tabs change. ⌘L (`ask.open`) opens it
   and focuses its box; Close or Esc hides it. Ask keeps its conversation and starts
   no agent, and the Context tab holds no Ask ([drawer-kinds.md](drawer-kinds.md#ask)).
 - Outside a session the **Chat** door answers what Ask answers for one session.

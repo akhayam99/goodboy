@@ -155,13 +155,9 @@ Runs › {run}` like a run. When an up lands on the Overview, `upTo` writes the 
   `focus.runGroup`, which the window layout saves.
 - A session tab is the top of its session and has no crumbs. A file open in a
   branchless session's Changes goes back to Changes, then the Overview.
-- **A face is not an entry.** Overview and Desk are two faces of the session
-  Overview, so the address never names a face. It lives per session in
-  `sessionFace`, saved with the dock grid
-  ([dock-grid.md](dock-grid.md#the-grid-saved-on-the-session)). A tool opened on the
-  Overview turns it to the Desk in place and closing the last tool turns it back,
-  pushing nothing (`switchSessionFace`). Back, Forward, the crumbs and Esc never
-  change a face; ⌘↑ from the Desk goes to Home.
+- **A tool is not an entry.** The tools open in the dock and belong to the window,
+  so Back, Forward, the crumbs and Esc never open or close one
+  ([dock-grid.md](dock-grid.md#the-grid-saved-on-the-session)); ⌘↑ goes to Home.
 - **An Auto run keeps one frame.** The run page and every agent page under it draw
   the Agents rail in the frame's left slot (`LeadPage`, `RunAgentsRail`), marking the
   agent in the address, so a reload, Back and Forward restore it; a row opens that

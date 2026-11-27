@@ -9,14 +9,14 @@ vi.mock('@tauri-apps/api/event', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { tintClasses } from '@goodboy/ui';
-import { brandId, type SessionId } from '@goodboy/types';
+import { brandId, type AgentId, type SessionId } from '@goodboy/types';
+import { agentPlace } from '../../../../../store/slices/navigation/place';
 import {
   importStore,
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
   type StoryStore,
 } from '../../../../../store/storyHarness';
-import { deskAgentIdOf } from '../../../../../store/slices/drawer/deskAgentIdOf';
 import type { NowModel, NowRow } from '../../../central/now/nowRowsOf';
 import { STAGE_TONE } from '../../../session-stage';
 
@@ -93,21 +93,16 @@ describe('Now on the Overview', () => {
     expect(wait?.innerHTML).toContain(tintClasses(STAGE_TONE.attention).dot);
   });
 
-  it('on the Desk, a row opens its agent panel and the row of the open panel is selected', () => {
-    store.getState().setSessionFace({ sessionId: SESSION_ID, face: 'desk' });
+  it('opens the agent page of a row', () => {
+    const navigate = vi.fn();
+    store.setState({ navigate });
     render(<NowSection sessionId={SESSION_ID} model={MODEL} />);
 
     fireEvent.click(screen.getByTestId('now-row-impl'));
 
-    expect(deskAgentIdOf({ state: store.getState(), sessionId: SESSION_ID })).toBe('impl');
-    expect(screen.getByTestId('now-row-impl').getAttribute('data-selected')).toBe('true');
-    expect(screen.getByTestId('now-row-lead').getAttribute('data-selected')).toBe('false');
-
-    fireEvent.click(screen.getByTestId('now-row-lead'));
-
-    expect(deskAgentIdOf({ state: store.getState(), sessionId: SESSION_ID })).toBe('lead');
-    expect(screen.getByTestId('now-row-lead').getAttribute('data-selected')).toBe('true');
-    expect(screen.getByTestId('now-row-impl').getAttribute('data-selected')).toBe('false');
+    expect(navigate).toHaveBeenCalledWith({
+      to: agentPlace({ sessionId: SESSION_ID, agentId: brandId<AgentId>({ value: 'impl' }) }),
+    });
   });
 
   it('draws nothing when nothing runs', () => {

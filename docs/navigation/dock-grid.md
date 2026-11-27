@@ -18,10 +18,6 @@ focus (the page, the detail or one tool).
 - The dock in the slot is always the grid's latest tool (`settledSlot`): a tool the
   slot dropped waits in the grid and returns when the panel beside it closes, and
   closing a tool removes it from the grid.
-- Below `DOCK_TILE_ROOM_PX` (700) of room beside the page, the desk stops tiling: the
-  solver folds every tool into one cell and that cell lies over the page (`deskLayoutOf`,
-  mode `over`), with the rail live and a second click closing it. A fold is a view, never
-  a write: widening the window brings the saved columns back.
 - `focusDrawerPanel` names the page or a panel's entry; a replaced or closed entry
   changes nothing.
 - Archiving or deleting a session removes its tools, and `clearDrawer` empties the
@@ -171,14 +167,9 @@ version 1 shows the default layout.
   ([versioning.md](../versioning.md#retired-state)). A double click writes the tier
   default, and a column with no saved width starts there. A detail keeps its width
   per kind, so a drag on Ask never moves a Terminal.
-- **The face** (Overview or Desk) rides in the same row as an optional `face`,
-  written only for the Desk. A face change waits 300ms and saves like a grid change;
-  a move, a reset or an undo writes it with the grid. Entering reads it back
-  (`recallSessionFace`), and a face picked while that read was out wins, even one
-  picked away and back (`faceSelections` counts picks). Sessions in the top bar reads
-  it per row whose face the window does not know, so a row says Desk only for a
-  session that saved it (`useSavedSessionFace`). A row without the field reads as
-  Overview; an older build leaves it out.
+- **No face is saved.** The row has no `face` and no `detail`: a
+  row an older build wrote with them reads as a plain layout, and the next save leaves
+  them out. An older build reads a row without them as the Overview.
 
 | Write or read   | What happens                                                                                                                                                                                                 |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

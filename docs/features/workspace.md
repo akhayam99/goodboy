@@ -112,23 +112,19 @@ The same count shows on the workspace mark at the top of the left rail, and the 
 
 Open any session from one list. **Sessions**, at the top left of the bar, or **⌘B** from any screen, lists them. [Switch between tasks](switching.md#sessions) says how the list works.
 
-### Overview and Desk
+### Tools beside the page
 
-A session has two faces: **Overview** to read it, **Desk** to work in it. You build the Desk yourself: open Terminal, Browser, Scripts, Ask or Monitor from the right rail and the page splits. The Overview narrows to a column at the left, the tools sit at the right.
+Open Terminal, Browser, Scripts, Ask or Monitor from the right rail and the tool opens in the dock beside the page, the same on every screen. The page narrows to make room.
 
-Close the last tool and the whole Overview comes back. There is no switch and no key for the Desk. The tools stay open as you move between the Board and your sessions, and a session remembers how you laid them out.
+Close the last tool and the page is whole again. The tools stay open as you move between the Board and your sessions, and a session remembers how you laid them out.
 
-#### On the Desk
-
-A column at the left keeps the session in view: its state, Needs you, Now, the first two moves of Next, and its projects. Everything to its right, under the head, is work.
+#### In the dock
 
 - Terminal, Browser, Monitor, Scripts and Ask fill it in up to four columns of two, and every one of them drags.
 - The agent or a pull request opens beside them.
-- On a narrow Desk the column folds into one status line.
 - A tool never shrinks under its own width. When a new one does not fit, the tool you used least folds into a tab of its neighbor. A tool with something going on stays in view. A toast says what folded, with **Undo**. A wider window brings the columns back.
-- Below about 700 pixels of room the tools stop tiling: one tool lies over the page and the others are its tabs. The rail stays live, and a second click closes it. A wider window brings the columns back.
-- Drag a tool by its head to place it anywhere on the Desk. Small floating labels show only the places that change the layout, and one outline shows where the tool lands.
-- **Place left** and **Place right** sit at the edges of the Desk. On the panel under the pointer, **Merge** turns the tool into a tab there, and **Place above** and **Place below** stack it.
+- Drag a tool by its head to place it anywhere in the dock. Small floating labels show only the places that change the layout, and one outline shows where the tool lands.
+- **Place left** and **Place right** sit at the edges of the dock. On the panel under the pointer, **Merge** turns the tool into a tab there, and **Place above** and **Place below** stack it.
 - Hold Option over **Merge** to swap the two tools instead. A ghost shows where the tool lands, and a chip names what folds, only when something does.
 - Drag one tab out of a cell by its name to move that tool alone. The empty part of the head moves the whole cell. In a cell the window folded for lack of room, every tab drags the same way and only the one you grab leaves.
 - With the keyboard, Tab reaches a head, **Enter** lifts the tool, the arrows walk the places, **Enter** drops and **Esc** cancels. Each place is read aloud.
@@ -136,9 +132,9 @@ A column at the left keeps the session in view: its state, Needs you, Now, the f
 - With the Terminal open, a session shows its own shell and the Board shows the workspace one. A shell you leave keeps running, and the Terminal counts the ones running in other sessions.
 - A tool that fails to load shows an error with **Retry** inside that tool.
 
-#### Terminal on the Desk
+#### Terminal in the dock
 
-On the Overview, ⌃` opens the terminal like the rail does: the page splits.
+⌃` opens the terminal like the rail does, beside the page.
 
 The terminal has one tab per worktree of the session, named after its project. A shell that ends with an error keeps its output and offers Restart.
 
@@ -261,18 +257,12 @@ This part is for contributors and agents who change the feature.
 
 - Attention count of an open workspace: the window that shows it sends its count to the other windows on `goodboy:attention`.
 
-- Sessions popover: `SessionsPopover` (`features/workspace/components/SessionsPopover/`) reads the groups of `useSessionOrder`, filters them with `sessionsShownOf`, and registers `sessions.toggle` (⌘B). The pin calls `pinSession` or `unpinSession`; `index.test.tsx` covers a failed write. A row's count is `useSessionMoveCount`, the `needsYouOf` of the Board for that one session. Its face is `useSavedSessionFace`: the `sessionFace` this window knows, else one `recallSessionFace` read; a failed read shows no face and the next open reads again. After a focus, a row of a session that is not open reads again; the open one keeps its face. `index.test.tsx` and `u50/navDocs.test.tsx` cover each case.
+- Sessions popover: `SessionsPopover` (`features/workspace/components/SessionsPopover/`) reads the groups of `useSessionOrder`, filters them with `sessionsShownOf`, and registers `sessions.toggle` (⌘B). The pin calls `pinSession` or `unpinSession`; `index.test.tsx` covers a failed write. A row's count is `useSessionMoveCount`, the `needsYouOf` of the Board for that one session. `index.test.tsx` and `u50/navDocs.test.tsx` cover each case.
 - Sessions dots: the trigger's yellow dot reads `useNowSessions` (`attention.count`). A row's dot is `switcherDotOf`: `warning` when `attentionCountOf` counts the session and none of its reasons is `danger`, `info` while it runs. `SessionsRow` draws it as a `StatusMark` dot with the state's words as its label, else the row keeps its own mark (`SessionsPopover/index.test.tsx`, `surfaces/session-marks.test.tsx`, `bitbucket-page.rows.tsx`).
 - Sessions card: `SessionsCard` sits beside the popover, anchored to its trigger. It reads `sessionsCardPhase` from `store/slices/sessions-card/`. `hydrateSessionsCard` runs at boot after `hydrateChangelogSeen`. A saved `shell.sessionsCardClosed` gives `closed`. A fresh install, with no seen release, gives `closed` and saves it best effort. Otherwise the phase is `open`. Opening Sessions calls `closeSessionsCard`, which saves through `commitAfterConfirm` and sets `closed` only after the save. A failed save keeps the card and reports the error, and the next open retries, one save at a time. A read that answers after the close never reopens it. A window that regains focus re-reads the setting, so a close saved elsewhere closes this card too. `SessionsPopover/index.test.tsx` and `store/slices/sessions-card/index.test.ts` cover each case.
 - Monitoring panel: `monitoringDrawerRegistration` renders `LazyMonitoringDrawer`, which loads `MonitoringDrawer` on first open; it shares `MonitoringSections` with `MonitoringPage`. `toggleRailTool` toggles the workspace drawer, and `UNSAVED_DRAWER_KINDS` excludes it from saved layouts. `ToolRailFrame` feeds `toolCountOf` and `portsFactOf` from `monitoringSignalOf`, which uses the same `monitoringSignal` as the left door. The Monitor is a side panel (`DRAWER_KINDS`, `place` row, `rowMin` 180). `MonitoringDrawer` measures its body and `portColumnsOf` picks `full`, `compact` or `narrow` columns, handed to every row through `PortColumnsContext` (`MonitoringPanel.test.tsx` covers 384 and 480). A scan that answers nothing is an error that keeps the old snapshot (`createMonitorRefresh`). `monitorPanel.test.tsx` and `SessionTools/index.test.tsx` cover the panel and rail.
-- Desk grid: `DeskBody` draws a `DockLane` beside the column. `DrawerColumn` measures it (`useDockLaneBox`) and lays the panels over it, solved by `dockLayoutOf` with `isDesk`. The tool rail stays on the page. `isDeskColumnFolded` folds the column when the lane would be under 880. `dockLayoutDesk.test.ts`, `DrawerColumnDesk.test.tsx` and `u50/deskGrid.test.tsx` cover each case.
-- Desk floor: the column keeps `DESK_COLUMN_PX` (300) and every panel keeps its tier minimum. `deskFillOf` answers none instead of scaling, so a layout that does not fit is never squeezed. The solver tries the cells as they are, then two single columns stacked. A stack is refused when the lane is shorter than the `rowMin` of both.
-- Desk fold: next the solver folds one cell at a time into its nearest neighbor (`foldStatesOf`). The order is `dockFoldOrderOf`: least recently focused first, a tool with activity last (`dockBusyKindsOf`: a terminal that needs attention, a pinned port that is down). A fold is derived at render and never written. `dockFoldOrderOf.test.ts` covers the order.
-- Desk over: with one cell and still no room, the layout is `over` and the dock lies over the detail (`data-dock-over-detail`). A fold that follows an open is reported by `useDockFoldReport` to `announceDockFold`, which offers **Undo** and closes the panel that was opened. `DockFoldToast.test.tsx` and `announceDockFold.test.ts` cover it.
-- Overview and Desk: `sessionFace` in the `session-view` slice holds the face per session, `SessionFace` picks `SessionOverviewPane` or `SessionDesk`, and both read one model (`useOverviewModel`). `useDeskFollowsTools`, mounted by `SessionFace`, calls `switchSessionFace` when a tool opens on the Overview (`deskToolsOf` counts the grid without the Ask, and the agent or pull request in the detail); `useDeskLanding` closes the Desk when the last one goes. `switchSessionFace` sets the face first and replaces the history entry when it leaves another page. No shortcut and no menu row switch the face. The face is saved with the dock grid (`storedDockGridOf`, `recallSessionFace`). `SessionDesk/index.test.tsx`, `useDeskLanding/index.test.tsx` and `watchSessionDockGrid.test.ts` cover each case.
-- Desk line: `SessionFace` hands the Desk line to the page banner (`PaneBannerContext`). The page slides under the session head, so anything drawn above it would sit hidden under the head surface and leave an empty band (`useDeskLanding/index.test.tsx`).
-- Desk landing: `useDeskLanding` picks a tool through `landingOf` when a door brings the Desk with none kept, as **Bring it here** does ([shell.md](../navigation/shell.md#surfaces)). A terminal landing calls `startDeskTool`, which opens the session terminal. A session with no branch prepares its folder first, and `deskToolStart` holds the loading state or the error that `DeskToolStatus` shows with Retry.
-- Terminal on the faces: `TerminalDrawerBody` shows `TerminalWorktreeTabs` from `worktreeTabsOf`: one per `mountId`, attached and on disk. A tab opens through `openSessionTerminal`, which reuses the live shell at that folder. `TerminalDrawer/index.test.tsx` and `worktreeTabsOf.test.ts` cover each case.
+- Dock fold: next the solver folds one cell at a time into its nearest neighbor (`foldStatesOf`). The order is `dockFoldOrderOf`: least recently focused first, a tool with activity last (`dockBusyKindsOf`: a terminal that needs attention, a pinned port that is down). A fold is derived at render and never written. `dockFoldOrderOf.test.ts` covers the order.
+- Terminal in the dock: `TerminalDrawerBody` shows `TerminalWorktreeTabs` from `worktreeTabsOf`: one per `mountId`, attached and on disk. A tab opens through `openSessionTerminal`, which reuses the live shell at that folder. `TerminalDrawer/index.test.tsx` and `worktreeTabsOf.test.ts` cover each case.
 - Command strip: `TerminalCommandSuggestion` keeps the first `run-failing-test` or `next-script` move of the track on screen (`terminalCommandMoveOf`). `commandRunOf` decides run or type, and only then it mounts `TerminalCommandRunner`. Typed text comes from `promptTextOf`: a cd to its folder first, never a return at the end. It writes only to the terminal on screen, and Add to prompt is off while that shell is busy or ended. It runs through the same runner as Next, so Not now has Undo. `TerminalCommandSuggestion/index.test.tsx`, `commandRunOf.test.ts` and `terminalCommandMoveOf.test.ts` cover each case.
 - Dock grid per session: `useWindowLayout` starts `useSessionDockGrid`, which saves the layout of the open session and lays it onto the open tools on entry. The rules and the failure table live in [home-and-drawer.md](../navigation/home-and-drawer.md#the-grid-saved-on-the-session). `watchSessionDockGrid.test.ts` covers each case.
 - Page memory: the `monitoring-view` slice (`store/slices/monitoring-view/`) holds the Monitoring search text and open folds (`monitoringViews`) and the Terminal Archived fold (`terminalArchivedOpen`). Both are stored per workspace, and every write names its workspace.

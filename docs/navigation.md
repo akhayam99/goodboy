@@ -26,8 +26,7 @@ find the same text.
 - **A session** is a child of the Board. Its head holds the title row and the page
   tabs (Overview, Runs, Artifacts, Questions, Context); a page below a tab shows
   crumbs and a back button instead. A branch is one Branch page with its own tabs.
-  The right drawer holds reference beside the page, and a tool opened on the
-  Overview splits it into the Desk.
+  The right drawer holds reference and tools beside the page.
 - **Addresses.** Every view has an address in one history per window and
   workspace. Every move goes through one door, aliases resolve in
   `canonicalLocation`, and an older build's stored places fold in
@@ -46,7 +45,7 @@ find the same text.
 | [palette.md](navigation/palette.md)                 | the ⌘K palette: scope, the empty list, ranking, prefixes, `$` scripts        |
 | [context-menus.md](navigation/context-menus.md)     | a verb, a menu, a selection bar, a confirm, the webview menu                 |
 | [shell.md](navigation/shell.md)                     | the skeleton, the top bar, the rail foot, the menu bar, column doors         |
-| [surfaces.md](navigation/surfaces.md)               | the layout slots, the places rail, the Desk, a parked drawer, header actions |
+| [surfaces.md](navigation/surfaces.md)               | the layout slots, the places rail, a parked drawer, header actions           |
 | [shortcuts.md](navigation/shortcuts.md)             | a shortcut, a plain key, a per-OS combo, Esc in full screen                  |
 | [help.md](navigation/help.md)                       | the Help page, the Guide and What's new                                      |
 | [setup-and-crash.md](navigation/setup-and-crash.md) | the bug sheet, crash and freeze records, first-run setup, boot               |

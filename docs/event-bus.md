@@ -112,7 +112,6 @@ Rust sends these to the webview with `AppHandle::emit`. A rename in Rust compile
 | `work-changed`                                         | `{ sessionId, mountId }`, at most one a second per session, to every window  | live_work.rs            | live-state/listenWorkChanged.ts              |
 | `provider-lifecycle-output`, `provider-lifecycle-exit` | output chunk and exit of an install, login or update                         | provider_lifecycle.rs   | shared/lib/createOutputStream.ts             |
 | `orphans-swept`                                        | `{ count }`                                                                  | lib.rs                  | monitoring/listenOrphansSwept.ts             |
-| `desk-holder`                                          | `{ sessionId, holder }` when the window holding a Desk changes, to every one | window_heartbeat.rs     | SessionDesk/useDeskOwner/deskHolder.ts       |
 | `clone-progress`                                       | `{ requestId, phase, percent }` of a running clone                           | repo_clone.rs           | shared/lib/repoClone/onCloneProgress.ts      |
 | `goodboy://menu`                                       | `{ id }`, to the focused window only                                         | app_menu.rs             | app/hooks/useMenuCommands                    |
 | `query-bridge://mount-command`                         | `{ id, ... }`, answered by `mount_command_result`                            | query_bridge/mount.rs   | session/mountQueryBridge                     |
