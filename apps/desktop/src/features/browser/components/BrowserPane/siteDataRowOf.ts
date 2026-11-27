@@ -2,6 +2,7 @@ import type { MenuConfirm } from '@goodboy/ui';
 
 type Params = {
   readonly host: string | null;
+  readonly extraHosts: ReadonlyArray<string>;
   readonly isWholeStore: boolean;
 };
 
@@ -13,7 +14,7 @@ type SiteDataRow = {
 const SITE_LABEL = 'Clear site data';
 const STORE_LABEL = 'Clear browser data';
 
-export const siteDataRowOf = ({ host, isWholeStore }: Params): SiteDataRow => {
+export const siteDataRowOf = ({ host, extraHosts, isWholeStore }: Params): SiteDataRow => {
   if (isWholeStore) {
     return {
       label: STORE_LABEL,
@@ -25,13 +26,29 @@ export const siteDataRowOf = ({ host, isWholeStore }: Params): SiteDataRow => {
       },
     };
   }
+  const site = host ?? 'this site';
+  if (extraHosts.length === 0) {
+    return {
+      label: SITE_LABEL,
+      confirm: {
+        role: 'danger',
+        title: `Clear data for ${site}?`,
+        description: 'Signs you out of this site. Other sites keep their data.',
+        confirmLabel: SITE_LABEL,
+      },
+    };
+  }
   return {
     label: SITE_LABEL,
     confirm: {
       role: 'danger',
-      title: `Clear data for ${host ?? 'this site'}?`,
-      description: 'Signs you out of this site. Other sites keep their data.',
+      title: `Clear data for ${site}?`,
+      description: 'Signs you out of these sites. Other sites keep their data.',
       confirmLabel: SITE_LABEL,
+      notes: [
+        `${site}, this site`,
+        ...extraHosts.map((extra) => `${extra}, a sign-in this tab went through`),
+      ],
     },
   };
 };

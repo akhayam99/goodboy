@@ -15,7 +15,6 @@
     "apps/desktop/src/store/slices/boot/hydrate.ts": 2,
     "apps/desktop/src/store/slices/github/createPrForSession.ts": 1,
     "apps/desktop/src/store/slices/github/mountGithub.ts": 1,
-    "apps/desktop/src/store/slices/permissions/resolvePermissionRequest.ts": 1,
     "apps/desktop/src/store/slices/project-mounts/mountViews.ts": 1,
     "apps/desktop/src/store/slices/project-mounts/writeDestinationPatch.ts": 1,
     "apps/desktop/src/store/slices/resolve/drainResolveQueue.ts": 1,
@@ -30,7 +29,7 @@
     "packages/core/src/github/diff.ts": 7,
     "packages/core/src/orchestrator/prompt.ts": 3,
     "packages/core/src/permissions/claude-flags.ts": 1,
-    "packages/core/src/providers/shared/anthropic-envelope-parser.ts": 3,
+    "packages/core/src/providers/shared/anthropic-envelope-parser.ts": 1,
     "packages/ui/src/components/Tooltip.tsx": 1
   },
   "extra-component-per-file": {

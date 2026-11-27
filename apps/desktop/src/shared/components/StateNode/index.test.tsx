@@ -10,7 +10,7 @@ const IDLE: StateNodeSpec = {
   state: 'marker',
   mark: { kind: 'glyph', glyph: null },
   tone: 'neutral',
-  label: 'Building',
+  label: 'Open',
   isSpinning: false,
   hasUnread: false,
 };
@@ -36,7 +36,7 @@ describe('StateNode', () => {
     render(<StateNode node={IDLE} isNamed />);
 
     expect(screen.queryByTestId('state-node-slot')).toBeNull();
-    expect(screen.getByRole('img').getAttribute('aria-label')).toBe('Building');
+    expect(screen.getByRole('img').getAttribute('aria-label')).toBe('Open');
   });
 
   it('draws one mark on an unread row and leaves the unread dot to the bold title', () => {

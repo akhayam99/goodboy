@@ -5,6 +5,7 @@ import type {
   NotificationSeverity,
 } from '@goodboy/db';
 import { isNotificationDebt, notificationActionClass } from './actionClass';
+import { notificationBadgeOf } from './notificationBadgeOf';
 import { NOTIFICATION_SOURCES, notificationSource, type NotificationSource } from './source';
 
 export type NotificationView = 'all' | 'unread' | 'action';
@@ -65,7 +66,7 @@ const matchesView = ({ facts, view }: ViewMatchParams): boolean => {
     case 'all':
       return true;
     case 'unread':
-      return !facts.read;
+      return !facts.read && (facts.severity === 'error' || facts.severity === 'warning');
     case 'action':
       return facts.isOwed;
     default: {
@@ -172,7 +173,7 @@ export const countNotificationFacets = ({
   const scoped = isWorkspaceScoped ? buckets.filter((bucket) => bucket.inWorkspace) : buckets;
   return {
     total: sum({ buckets: scoped }),
-    unread: sum({ buckets: scoped.filter((bucket) => !bucket.read) }),
+    unread: notificationBadgeOf({ buckets: scoped, isWorkspaceScoped: false }),
     matching: sum({
       buckets: scoped.filter((bucket) =>
         matchesFilters({ facts: bucketFacts({ bucket }), filters }),

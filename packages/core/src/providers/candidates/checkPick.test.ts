@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MODEL_CATALOGS } from '../catalogs';
 import { buildCandidates } from './buildCandidates';
 import { candidateInputsOf } from './candidateFixtures';
 import { checkPick, type CheckedPick } from './checkPick';
@@ -138,5 +139,45 @@ describe('checkPick', () => {
       batch: ['anthropic'],
     });
     expect(checked).toMatchObject({ kind: 'moved', candidate: { provider: 'codex' } });
+  });
+});
+
+describe('a Lead pick the account cannot run', () => {
+  const REFUSED = { anthropic: ['sonnet-5.5'] };
+  const CODEX_FIRST = ['codex', 'anthropic', 'cursor'] as const;
+
+  it('moves down the same provider instead of jumping to the first provider', () => {
+    const checked = check({
+      inputs: candidateInputsOf({ on: CODEX_FIRST, hidden: REFUSED, noAccess: REFUSED }),
+      pick: { provider: 'anthropic', model: 'sonnet-5.5' },
+    });
+
+    expect(checked).toMatchObject({ kind: 'moved', cause: 'no-access' });
+    expect(checked.kind === 'moved' && checked.candidate.provider).toBe('anthropic');
+    expect(checked.kind === 'moved' && checked.candidate.model).not.toBe('sonnet-5.5');
+  });
+
+  it('keeps the provider order for a model hidden in Settings', () => {
+    const checked = check({
+      inputs: candidateInputsOf({ on: CODEX_FIRST, hidden: REFUSED }),
+      pick: { provider: 'anthropic', model: 'sonnet-5.5' },
+    });
+
+    expect(checked).toMatchObject({ kind: 'moved', cause: 'not-listed' });
+    expect(checked.kind === 'moved' && checked.candidate.provider).toBe('codex');
+  });
+
+  it('takes the first provider when the refused provider has nothing left', () => {
+    const everything = { anthropic: MODEL_CATALOGS.anthropic.map((model) => model.key) };
+    const checked = check({
+      inputs: candidateInputsOf({ on: CODEX_FIRST, hidden: everything, noAccess: everything }),
+      pick: { provider: 'anthropic', model: 'sonnet-5.5' },
+    });
+
+    expect(checked).toMatchObject({
+      kind: 'moved',
+      cause: 'no-access',
+      candidate: { provider: 'codex' },
+    });
   });
 });

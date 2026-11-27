@@ -18,7 +18,7 @@ export const NAMES = {
   summaryAge: 'Summary',
   running: 'Running',
   inReview: 'In review',
-  building: 'Building',
+  building: 'Open',
   done: 'Done',
   queued: 'Queued',
   ready: 'Ready',

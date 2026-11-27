@@ -102,7 +102,7 @@ export const NEEDS_YOU_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await heading('Board');
-      expect(await screen.findByRole('group', { name: 'building' }, WAIT)).toBeDefined();
+      expect(await screen.findByRole('group', { name: 'open' }, WAIT)).toBeDefined();
       expect(screen.queryByRole('tab', { name: 'Queue' })).toBeNull();
       expect(screen.queryByRole('group', { name: 'needs you' })).toBeNull();
     },

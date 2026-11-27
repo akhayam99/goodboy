@@ -256,6 +256,7 @@ export {
 export {
   DELEGATION_RESULT_SCHEMA_VERSION,
   DELEGATION_SUMMARY_CHARS,
+  NO_CLOSING_REASON,
   buildDelegationResult,
   renderDelegationResult,
   resolveDelegationOutcome,
@@ -436,12 +437,16 @@ export {
 
 export {
   AUTO_COMMAND_ROLES,
-  canAutoRoleRunCommands,
-  commandMentionOf,
+  autoShellRefusalOf,
   isMissingShellText,
   rerouteHintOf,
-  roleCannotRunCommandsMessage,
 } from './roleTools';
+export {
+  closingAfterNudge,
+  composeCloseNudgeKickoff,
+  isCloseNudgeDue,
+  missedClosingOf,
+} from './closeNudge';
 export { roleFitOf, roleNarrowerMessage } from './roleFit';
 export { AUTO_WITHDRAWN_REASON } from './AUTO_WITHDRAWN_REASON';
 

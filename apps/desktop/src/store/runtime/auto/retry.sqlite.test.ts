@@ -30,7 +30,12 @@ const failedChild = async (): Promise<RuntimeWorld> => {
   await userSays({ world, id: 'outbox-user-1', text: 'add the ledger export' });
   await autoDelegates({ world, spec: { children: [IMPLEMENTER] } });
   await autoTurnEnds({ world });
-  await childTurnEnds({ world, index: 0, text: 'I could not finish this.' });
+  await childTurnEnds({
+    world,
+    index: 0,
+    text: 'I could not finish this.',
+    overrides: { exit: 'error' },
+  });
   return world;
 };
 
@@ -126,9 +131,7 @@ describe('retrying a delegation that ended without a result', () => {
     const turns = world.state.ports.childTurns;
     expect(turns).toHaveLength(2);
     expect(turns[1]?.childAgentId).toBe(turns[0]?.childAgentId);
-    expect(turns[1]?.text).toContain(
-      '**Retry** The earlier attempt ended failed (no_closing_envelope).',
-    );
+    expect(turns[1]?.text).toContain('**Retry** The earlier attempt ended failed (process_error).');
     expect(turns[1]?.text).toContain('**Task** add the export');
     expect(turns[1]?.attemptId).not.toBe(turns[0]?.attemptId);
     expect(turns[1]?.mountTarget).toEqual(turns[0]?.mountTarget);
@@ -166,7 +169,12 @@ describe('retrying a delegation that ended without a result', () => {
       },
     });
     await autoTurnEnds({ world });
-    await childTurnEnds({ world, index: 0, text: 'I could not finish this.' });
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: 'I could not finish this.',
+      overrides: { exit: 'error' },
+    });
 
     await retry(world);
 
@@ -241,6 +249,34 @@ describe('retrying a helper whose provider refused its model', () => {
         child: { provider: null, model: null, effort: null },
       });
     }
+  });
+
+  it('routes a retry with a new task elsewhere instead of locking the refused model', async () => {
+    for (const failure of ['model_not_available', 'authentication']) {
+      const world = await makeRuntimeWorld({ capUsd: 10 });
+      await userSays({ world, id: 'outbox-user-1', text: 'add the ledger export' });
+      await autoDelegates({ world, spec: { children: [IMPLEMENTER] } });
+      await autoTurnEnds({ world });
+      await childTurnEnds({ world, index: 0, text: '', overrides: { exit: 'error', failure } });
+      const before = world.state.ports.routingRequests.length;
+
+      const outcome = await retry(world, { task: 'Use the export helper of ledger-core.' });
+
+      expect(outcome).toMatchObject({ isOk: true, data: { accepted: true } });
+      const request = world.state.ports.routingRequests.slice(before).at(-1);
+      expect(request?.agentLock ?? null).toBeNull();
+      expect(request?.fields).toMatchObject({ provider: undefined, model: undefined });
+    }
+  });
+
+  it('keeps the agent on its model when a new task follows a result', async () => {
+    const world = await failedChild();
+    const before = world.state.ports.routingRequests.length;
+
+    await retry(world, { task: 'Use the export helper of ledger-core.' });
+
+    const request = world.state.ports.routingRequests.slice(before).at(-1);
+    expect(request?.agentLock).toMatchObject({ provider: 'anthropic', model: 'sonnet' });
   });
 
   it('keeps the earlier model after any other failure', async () => {

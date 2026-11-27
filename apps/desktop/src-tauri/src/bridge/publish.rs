@@ -25,6 +25,8 @@ pub const MAX_LINES: usize = 20;
 pub const MAX_RUNS: usize = 20;
 pub const MAX_TASK_ROWS: usize = 40;
 pub const MAX_CHECKS: usize = 50;
+pub const MAX_ARTIFACTS: usize = 20;
+pub const MAX_QUESTIONS_PER_STATE: usize = 12;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -118,6 +120,31 @@ fn truncate_each(value: &mut Value, list: &str, path: &[&str], max: usize) {
     }
 }
 
+fn truncate_by_state(value: &mut Value, path: &[&str], max_each: usize) {
+    let mut node = value;
+    for step in &path[..path.len().saturating_sub(1)] {
+        match node.get_mut(*step) {
+            Some(next) => node = next,
+            None => return,
+        }
+    }
+    let Some(last) = path.last() else { return };
+    if let Some(Value::Array(items)) = node.get_mut(*last) {
+        let mut open = 0;
+        let mut answered = 0;
+        items.retain(|item| {
+            let is_open = item.get("state").and_then(Value::as_str) == Some("open");
+            let seen = &mut answered;
+            if is_open {
+                open += 1;
+                return open <= max_each;
+            }
+            *seen += 1;
+            *seen <= max_each
+        });
+    }
+}
+
 fn apply_limits(kind: Kind, value: &mut Value) {
     match kind {
         Kind::NeedsYou => truncate(value, &["rows"], MAX_NEEDS_YOU_ROWS),
@@ -127,6 +154,8 @@ fn apply_limits(kind: Kind, value: &mut Value) {
             truncate(value, &["next"], MAX_LINES);
             truncate(value, &["activity"], MAX_LINES);
             truncate(value, &["needsYou"], MAX_NEEDS_YOU_ROWS);
+            truncate(value, &["artifacts"], MAX_ARTIFACTS);
+            truncate_by_state(value, &["questions"], MAX_QUESTIONS_PER_STATE);
         }
         Kind::Runs => truncate(value, &["runs"], MAX_RUNS),
         Kind::PullRequest => truncate(value, &["checks"], MAX_CHECKS),
@@ -521,6 +550,39 @@ mod tests {
             stored.value["rows"].as_array().unwrap().len(),
             MAX_NEEDS_YOU_ROWS
         );
+    }
+
+    #[test]
+    fn a_session_cuts_artifacts_and_each_question_state_to_their_limits() {
+        let mut session = fixture(SESSION);
+        let artifact = json!({
+            "id": "artifact-1", "title": "Ledger plan", "kind": "plan", "role": "Lead",
+            "version": 1, "updatedAt": null, "commentCount": 0, "isAwaitingApproval": false,
+            "approveActionId": null, "body": null, "isBodyCut": false
+        });
+        let question = session["questions"][0].clone();
+        let mut answered = question.clone();
+        answered["state"] = json!("answered");
+        let mut open = question.clone();
+        open["state"] = json!("open");
+        session["artifacts"] = json!(vec![artifact; MAX_ARTIFACTS + 7]);
+        let mut questions = vec![open; MAX_QUESTIONS_PER_STATE + 5];
+        questions.extend(vec![answered; MAX_QUESTIONS_PER_STATE + 3]);
+        session["questions"] = json!(questions);
+        let key = format!(
+            "session:{}:{}",
+            session["workspaceId"].as_str().unwrap(),
+            session["sessionId"].as_str().unwrap()
+        );
+        let stored = validate(&item(&key, Kind::Session, session)).expect("valid");
+        assert_eq!(
+            stored.value["artifacts"].as_array().unwrap().len(),
+            MAX_ARTIFACTS
+        );
+        let kept = stored.value["questions"].as_array().unwrap();
+        let open_kept = kept.iter().filter(|q| q["state"] == "open").count();
+        assert_eq!(open_kept, MAX_QUESTIONS_PER_STATE);
+        assert_eq!(kept.len() - open_kept, MAX_QUESTIONS_PER_STATE);
     }
 
     #[test]

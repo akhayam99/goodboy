@@ -1,17 +1,15 @@
 import {
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
-  parseHiddenModels,
   providersAtLimit,
   type ResolveContext,
   type ResolveLayers,
 } from '@goodboy/core/providers';
 import { PROVIDER_IDS, type ProviderId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
-import { SETTING_HIDDEN_MODELS } from '../../../features/settings/settings';
 import type { AppStore } from '../../store';
 import { projectById } from '../../slices/projects/projectIndex';
+import { selectBlockedModels } from '../../slices/providers/selectBlockedModels';
 import { sessionById } from '../../slices/sessions/sessionIndex';
-import { withUnavailableModels } from './withUnavailableModels';
 
 export type ModelState = Pick<
   AppStore,
@@ -20,6 +18,7 @@ export type ModelState = Pick<
   | 'settings'
   | 'cliRequirements'
   | 'unavailableModels'
+  | 'authResults'
   | 'workspaceOverrides'
   | 'sessionOverrides'
   | 'projects'
@@ -62,7 +61,6 @@ export const selectModelContext = ({
       provider.version == null ? [] : [[provider.id, provider.version]],
     ),
   );
-  const hiddenRaw = state.settings?.[SETTING_HIDDEN_MODELS] ?? null;
   return {
     workspaceId: scopeWorkspaceId,
     layers,
@@ -73,11 +71,7 @@ export const selectModelContext = ({
         DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
       connected: autoRoutableProviders({ providers }),
       atLimit: providersAtLimit({ limits: state.providerLimits ?? {}, nowMs }),
-      hidden: withUnavailableModels({
-        hidden: parseHiddenModels(hiddenRaw),
-        unavailable: state.unavailableModels ?? [],
-        providers,
-      }),
+      hidden: selectBlockedModels({ state, nowMs }),
       cliVersions,
       learned: state.cliRequirements ?? [],
     },

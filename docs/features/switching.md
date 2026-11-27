@@ -62,7 +62,11 @@ Catch up in one place. Everything Goodboy has to tell you, from a pull request o
 - **Needs action** shows only what you still owe. A retry or an update stays there until it resolves or you delete it.
 - A link such as Open spend or Open Checks is marked Opened, read and out of that list the moment you use it, from the row or from the toast.
 - Opening the bell marks nothing read. A row is read after a second on screen, and **Mark all as read** clears the rest of the list you are looking at, this workspace or all workspaces.
-- An unread row carries a small dot, amber when a retry waits on it. The bell shows the number of unread rows, 9+ above nine.
+- An unread row carries a small dot, amber when a retry waits on it. The bell shows how many unread errors and warnings wait, over every row and not only the ones loaded, 9+ above nine. A success or an information row arrives read and never counts.
+- The same problem shows once. An error that happens again updates its row and brings it back unread, so a loop never fills the list. The same error on two sessions stays two rows.
+- A notice ends by itself when its cause is gone. A retry that outlived the app, a resume its agent finished, a replaced summary notice and an archived session all end theirs.
+- A push, a branch clean-up, a sign-in or a budget error stays until you retry it or read it. Mark as unread brings any row back.
+- On the first run after the update, errors and warnings older than two weeks are read. They stay under **All**.
 - **Open all notifications** at the foot of the list opens the Notifications page. Esc, Back or any other destination leaves it.
 - With more than one workspace the bell has **This workspace** and **All workspaces**, and the second shows how many sessions need you in the other workspaces.
 

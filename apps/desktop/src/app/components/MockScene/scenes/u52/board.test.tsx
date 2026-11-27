@@ -51,7 +51,7 @@ const show = async ({ name }: Params): Promise<void> => {
       <Scene />
     </ToastProvider>,
   );
-  await screen.findByRole('group', { name: 'building' });
+  await screen.findByRole('group', { name: 'open' });
 };
 
 const cardCount = (): number => document.querySelectorAll('[data-needs-you-card]').length;

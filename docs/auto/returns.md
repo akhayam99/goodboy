@@ -118,6 +118,9 @@ A writer (implementer, tester, docs, ci-fixer) may attach a long report as a
 | No artifact block                | `not_written`         | `report_missing` with a closing line, `no_closing_envelope` without |
 | A block that could not be stored | `failed`              | `artifact_persistence_failed`                                       |
 
+A turn that would settle `no_closing_envelope` gets one reminder first
+([messages.md](messages.md#the-one-reminder-to-a-helper)).
+
 A return with `needs` owes its report too, else `report_missing`. An artifact
 block beside a blocking question is not captured (`captureArtifactsFromTurn`)
 unless the same turn returns, so a scout released with its answer that then

@@ -1,8 +1,8 @@
-import type { UnavailableModel } from './unavailableModelsSetting';
+import type { UnavailableModelKey } from './unavailableModelsSetting';
 
 type Params = {
-  readonly entry: UnavailableModel;
-  readonly model: UnavailableModel;
+  readonly entry: UnavailableModelKey;
+  readonly model: UnavailableModelKey;
 };
 
 export const isSameUnavailableModel = ({ entry, model }: Params): boolean =>

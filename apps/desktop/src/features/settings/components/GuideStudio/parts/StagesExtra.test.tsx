@@ -13,21 +13,14 @@ const termsOf = (): ReadonlyArray<string> =>
     .map((item) => item.children[1]?.firstElementChild?.textContent ?? '');
 
 describe('StagesExtra', () => {
-  it('lists every board lane in the board order, Archived last', () => {
+  it('lists every board lane in the board order, Archive last', () => {
     render(<StagesExtra />);
 
     expect(termsOf()).toEqual([
       ...BOARD_STAGES.map((stage) => SESSION_STAGE_META[stage].label),
       ARCHIVED_LANE.label,
     ]);
-    expect(termsOf()).toEqual([
-      'building',
-      'running',
-      'needs you',
-      'in review',
-      'done',
-      'archived',
-    ]);
+    expect(termsOf()).toEqual(['open', 'running', 'needs you', 'in review', 'done', 'archive']);
   });
 
   it('says what each lane holds, Archived in the words the board uses', () => {

@@ -101,6 +101,7 @@ const stubDevices = () => {
     },
     browser_tab_open: ({ args }: OpenArgs) => liveFacts({ args }),
     browser_tab_list: () => live,
+    browser_tab_trail: [],
     browser_history_state: null,
     browser_console_read: { doc: null, entries: [], watermark: 0, isHeard: false },
     browser_favicon: null,

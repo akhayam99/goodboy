@@ -32,12 +32,11 @@ import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { feedAuthRefusal } from '../providers/feedAuthRefusal';
 import { learnFromCliRefusal } from './learnFromCliRefusal';
 import { turnFailureReasonOf } from './turnFailure/turnFailureReasonOf';
-import { withUnavailableModels } from '../../runtime/models/withUnavailableModels';
 import { fallbackNoticeMessage } from './fallbackNoticeMessage';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordTurnSpan } from './recordTurnSpan';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 import type { GetFn, SendTurnResult, SetFn, SendTurnInput, TurnLease } from './types';
 import { formatClock } from '../../../shared/utils/time/formatClock';
 import type { TurnContext } from './turnContext';
@@ -133,6 +132,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
       get,
       providerId: provider,
       accountId: progress.accountId,
+      plan: progress.plan,
       model: spawnModel,
       message: rawMessage,
     });
@@ -192,11 +192,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
             cooldowns: get().providerCooldowns,
             nowMs: Date.now(),
           }),
-          hidden: withUnavailableModels({
-            hidden: selectHiddenModels({ state: get() }),
-            unavailable: get().unavailableModels,
-            providers: get().providers,
-          }),
+          hidden: selectBlockedModels({ state: get() }),
           cliVersions: Object.fromEntries(
             (get().providers ?? []).flatMap((entry) =>
               entry.version == null ? [] : [[entry.id, entry.version]],

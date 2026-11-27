@@ -215,7 +215,7 @@ describe('run rows stay reachable from the preset run level', () => {
     expect(countOf('Running')).toBe('1');
     expect(countOf('Idle')).toBe('1');
     expect(countOf('Finished')).toBe('1');
-    expect(screen.queryByRole('heading', { name: 'Archived' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Archive' })).toBeNull();
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
   });
 

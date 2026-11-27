@@ -304,6 +304,65 @@ pub struct SessionProject {
     pub name: String,
     pub branch: Option<String>,
     pub pr_number: Option<i64>,
+    pub pr_state: String,
+    pub pr_tone: Tone,
+    pub additions: Option<i64>,
+    pub deletions: Option<i64>,
+    pub run_count: i64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SessionArtifactKind {
+    Plan,
+    Report,
+    Wireframe,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionArtifactRow {
+    pub id: String,
+    pub title: String,
+    pub kind: SessionArtifactKind,
+    pub role: Option<String>,
+    pub version: i64,
+    pub updated_at: Option<String>,
+    pub comment_count: i64,
+    pub is_awaiting_approval: bool,
+    pub approve_action_id: Option<String>,
+    pub body: Option<String>,
+    pub is_body_cut: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SessionQuestionState {
+    Open,
+    Answered,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionQuestionRow {
+    pub id: String,
+    pub state: SessionQuestionState,
+    pub text: String,
+    pub options: Vec<String>,
+    pub recommended: Option<String>,
+    pub asked_by: Option<String>,
+    pub since: String,
+    pub answer: Option<String>,
+    pub answered_at: Option<String>,
+    pub answer_action_id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionCounts {
+    pub runs: i64,
+    pub artifacts: i64,
+    pub open_questions: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -315,6 +374,7 @@ pub struct SessionProjection {
     pub session_id: String,
     pub r#ref: Option<String>,
     pub goal: String,
+    pub short_name: String,
     pub stage: SessionStage,
     pub mark: StatusMark,
     pub facts: Vec<SessionFact>,
@@ -327,6 +387,9 @@ pub struct SessionProjection {
     pub pull_request_number: Option<i64>,
     pub decisions: Vec<String>,
     pub summary: Option<String>,
+    pub artifacts: Vec<SessionArtifactRow>,
+    pub questions: Vec<SessionQuestionRow>,
+    pub counts: SessionCounts,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

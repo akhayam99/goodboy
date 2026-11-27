@@ -716,6 +716,7 @@ describe('every turn on an Auto child runs confined, from the stored delegation'
       },
       runId,
       captureMode: 'new',
+      isStillLive: async () => true,
       onEnded: vi.fn(),
     };
   };

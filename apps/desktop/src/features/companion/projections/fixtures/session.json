@@ -6,6 +6,7 @@
   "sessionId": "session-1",
   "ref": "HBL-412",
   "goal": "Retry window for the webhook",
+  "shortName": "Retry window for the webhook",
   "stage": "attention",
   "mark": {
     "kind": "state",
@@ -55,11 +56,36 @@
     {
       "name": "payments-api",
       "branch": "goodboy/pagination",
-      "prNumber": 304
+      "prNumber": 304,
+      "prState": "Merged",
+      "prTone": "merged",
+      "additions": null,
+      "deletions": null,
+      "runCount": 0
     }
   ],
   "activity": [],
   "pullRequestNumber": 304,
   "decisions": [],
-  "summary": "The retry window now backs off in three steps."
+  "summary": "The retry window now backs off in three steps.",
+  "artifacts": [],
+  "questions": [
+    {
+      "id": "question-session-1",
+      "state": "open",
+      "text": "Which retry window should the webhook use?",
+      "options": [],
+      "recommended": null,
+      "askedBy": null,
+      "since": "2026-10-05T09:00:00.000Z",
+      "answer": null,
+      "answeredAt": null,
+      "answerActionId": "act:answerQuestion:question-session-1:2026-10-05T09:00:00.000Z"
+    }
+  ],
+  "counts": {
+    "runs": 0,
+    "artifacts": 0,
+    "openQuestions": 1
+  }
 }

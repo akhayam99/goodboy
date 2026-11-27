@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::Path;
 use std::sync::{Mutex, MutexGuard};
 
@@ -8,6 +8,9 @@ use tauri::Rect;
 use super::local::{self, LocalFile, LocalGrant};
 use super::profile::ProfileId;
 use crate::util::lock_or_recover;
+
+const TRAIL_HOSTS: usize = 20;
+const TRAIL_DEPTH: usize = 5;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -40,6 +43,8 @@ struct Tab {
     opened: u64,
     grants: Vec<LocalGrant>,
     navigation: u64,
+    hosts: VecDeque<String>,
+    trail_parent: Option<String>,
 }
 
 impl Tab {
@@ -52,6 +57,16 @@ impl Tab {
 
     fn is_closed(&self) -> bool {
         self.facts.state == TabState::Closed
+    }
+
+    fn remember_host(&mut self, host: &str) {
+        if host.is_empty() || self.hosts.iter().any(|known| known == host) {
+            return;
+        }
+        if self.hosts.len() >= TRAIL_HOSTS {
+            self.hosts.pop_front();
+        }
+        self.hosts.push_back(host.to_string());
     }
 }
 
@@ -71,6 +86,24 @@ impl Tabs {
             .get(&(session_id.to_string(), window_label.to_string()))
             .copied()
             .unwrap_or_default()
+    }
+
+    fn opener_of(&self, id: &str) -> Option<&str> {
+        self.by_id.get(id)?.trail_parent.as_deref()
+    }
+
+    fn reaches(&self, from: &str, target: &str) -> bool {
+        let mut opener = self.opener_of(from);
+        for _ in 0..TRAIL_DEPTH {
+            let Some(next) = opener else {
+                return false;
+            };
+            if next == target {
+                return true;
+            }
+            opener = self.opener_of(next);
+        }
+        false
     }
 
     fn ids_of(&self, session_id: &str) -> Vec<String> {
@@ -241,6 +274,8 @@ impl BrowserRegistry {
                 opened,
                 grants: Vec::new(),
                 navigation: 0,
+                hosts: VecDeque::new(),
+                trail_parent: tab.opener_id.map(str::to_string),
             },
         );
         facts
@@ -325,7 +360,62 @@ impl BrowserRegistry {
     pub(crate) fn remove(&self, id: &str) -> Option<TabFacts> {
         let mut tabs = lock_or_recover(&self.tabs);
         tabs.held_passkeys.remove(id);
-        tabs.by_id.remove(id).map(|tab| tab.facts)
+        let removed = tabs.by_id.remove(id)?;
+        for tab in tabs.by_id.values_mut() {
+            if tab.trail_parent.as_deref() == Some(id) {
+                tab.trail_parent.clone_from(&removed.trail_parent);
+            }
+        }
+        let parent = removed
+            .trail_parent
+            .as_deref()
+            .and_then(|parent| tabs.by_id.get_mut(parent));
+        if let Some(parent) = parent {
+            for host in &removed.hosts {
+                parent.remember_host(host);
+            }
+        }
+        Some(removed.facts)
+    }
+
+    pub(crate) fn remember_host(&self, id: &str, host: &str) {
+        if let Some(tab) = lock_or_recover(&self.tabs).by_id.get_mut(id) {
+            tab.remember_host(host);
+        }
+    }
+
+    pub(crate) fn trail_of(&self, id: &str) -> Vec<String> {
+        let tabs = lock_or_recover(&self.tabs);
+        if !tabs.by_id.contains_key(id) {
+            return Vec::new();
+        }
+        let mut members = vec![id];
+        let mut opener = tabs.opener_of(id);
+        for _ in 0..TRAIL_DEPTH {
+            let Some(next) = opener else {
+                break;
+            };
+            members.push(next);
+            opener = tabs.opener_of(next);
+        }
+        let mut popups: Vec<&Tab> = tabs
+            .by_id
+            .values()
+            .filter(|tab| tabs.reaches(&tab.facts.id, id))
+            .collect();
+        popups.sort_by_key(|tab| tab.opened);
+        members.extend(popups.into_iter().map(|tab| tab.facts.id.as_str()));
+        let mut trail: Vec<String> = Vec::new();
+        for host in members
+            .into_iter()
+            .filter_map(|member| tabs.by_id.get(member))
+            .flat_map(|tab| tab.hosts.iter())
+        {
+            if !trail.contains(host) {
+                trail.push(host.clone());
+            }
+        }
+        trail
     }
 
     pub(crate) fn list(&self, session_id: &str, window_label: &str) -> Vec<TabFacts> {
@@ -1074,6 +1164,134 @@ mod tests {
         assert_eq!(revived.hidden_since_ms, None);
         assert_eq!(revived.url, "https://example.com/docs");
         assert_eq!(registry.revive("a", true, 9_500), None);
+    }
+
+    #[test]
+    fn remembers_each_host_once_and_drops_the_oldest_past_twenty() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "a", "harborline", true);
+        registry.remember_host("a", "app.harborline.dev");
+        registry.remember_host("a", "login.cascadia-id.com");
+        registry.remember_host("a", "app.harborline.dev");
+        registry.remember_host("a", "");
+        assert_eq!(
+            registry.trail_of("a"),
+            vec!["app.harborline.dev", "login.cascadia-id.com"]
+        );
+        for index in 0..19 {
+            registry.remember_host("a", &format!("h{index}.northwind.test"));
+        }
+        let trail = registry.trail_of("a");
+        assert_eq!(trail.len(), 20);
+        assert_eq!(trail[0], "login.cascadia-id.com");
+        assert_eq!(trail[19], "h18.northwind.test");
+        assert!(registry.trail_of("gone").is_empty());
+        registry.remember_host("gone", "acme.test");
+        assert!(registry.trail_of("gone").is_empty());
+    }
+
+    #[test]
+    fn keeps_the_trail_of_a_tab_that_sleeps_and_wakes_under_the_same_id() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "a", "harborline", false);
+        registry.remember_host("a", "localhost");
+        registry.remember_host("a", "login.cascadia-id.com");
+        registry.mark_closed("a").expect("tab is asleep");
+        assert_eq!(
+            registry.trail_of("a"),
+            vec!["localhost", "login.cascadia-id.com"]
+        );
+        registry.revive("a", true, 9_000).expect("tab is closed");
+        assert_eq!(
+            registry.trail_of("a"),
+            vec!["localhost", "login.cascadia-id.com"]
+        );
+        let facts = serde_json::to_value(registry.facts("a").expect("facts")).expect("json");
+        assert!(!facts.to_string().contains("cascadia"), "{facts}");
+    }
+
+    #[test]
+    fn unions_a_popup_trail_with_its_opener_both_ways() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "opener", "harborline", true);
+        open(&registry, "other", "harborline", true);
+        registry.remember_host("opener", "app.harborline.dev");
+        registry.remember_host("other", "acme.test");
+        let seat = registry.reserve_popup("opener", 2).expect("seat");
+        popup(&registry, "p1", &seat);
+        registry.remember_host("p1", "login.cascadia-id.com");
+        registry.remember_host("p1", "app.harborline.dev");
+        assert_eq!(
+            registry.trail_of("opener"),
+            vec!["app.harborline.dev", "login.cascadia-id.com"]
+        );
+        assert_eq!(
+            registry.trail_of("p1"),
+            vec!["login.cascadia-id.com", "app.harborline.dev"]
+        );
+        assert_eq!(registry.trail_of("other"), vec!["acme.test"]);
+    }
+
+    #[test]
+    fn hands_a_closed_popup_s_hosts_to_its_opener() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "opener", "harborline", true);
+        registry.remember_host("opener", "app.harborline.dev");
+        let seat = registry.reserve_popup("opener", 1).expect("seat");
+        popup(&registry, "p1", &seat);
+        registry.remember_host("p1", "login.cascadia-id.com");
+        registry.remove("p1");
+        assert_eq!(
+            registry.trail_of("opener"),
+            vec!["app.harborline.dev", "login.cascadia-id.com"]
+        );
+    }
+
+    #[test]
+    fn keeps_a_nested_popup_in_the_trail_when_the_middle_one_closes_first() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "root", "harborline", true);
+        registry.remember_host("root", "app.harborline.dev");
+        let seat = registry.reserve_popup("root", 4).expect("seat");
+        popup(&registry, "middle", &seat);
+        registry.remember_host("middle", "login.cascadia-id.com");
+        let seat = registry.reserve_popup("middle", 4).expect("seat");
+        popup(&registry, "leaf", &seat);
+        registry.remember_host("leaf", "auth.northwind.test");
+        registry.remove("middle");
+        let mut expected = vec![
+            "app.harborline.dev",
+            "login.cascadia-id.com",
+            "auth.northwind.test",
+        ];
+        assert_eq!(registry.trail_of("root"), expected);
+        assert!(registry
+            .trail_of("leaf")
+            .contains(&"app.harborline.dev".to_string()));
+        registry.remember_host("leaf", "acme.test");
+        registry.remove("leaf");
+        expected.push("acme.test");
+        assert_eq!(registry.trail_of("root"), expected);
+    }
+
+    #[test]
+    fn walks_at_most_five_popups_deep() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "t0", "harborline", true);
+        registry.remember_host("t0", "h0.northwind.test");
+        for depth in 1..=6 {
+            let seat = registry
+                .reserve_popup(&format!("t{}", depth - 1), 8)
+                .expect("seat");
+            popup(&registry, &format!("t{depth}"), &seat);
+            registry.remember_host(&format!("t{depth}"), &format!("h{depth}.northwind.test"));
+        }
+        let from_root = registry.trail_of("t0");
+        assert!(from_root.contains(&"h5.northwind.test".to_string()));
+        assert!(!from_root.contains(&"h6.northwind.test".to_string()));
+        let from_leaf = registry.trail_of("t6");
+        assert!(from_leaf.contains(&"h1.northwind.test".to_string()));
+        assert!(!from_leaf.contains(&"h0.northwind.test".to_string()));
     }
 
     #[test]

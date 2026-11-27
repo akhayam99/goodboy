@@ -1,14 +1,12 @@
 import {
   AUTO_BRIEF_VERSION,
   AUTO_DELEGATION_DEADLINE_MINUTES,
-  canAutoRoleRunCommands,
+  autoShellRefusalOf,
   composeBranchFacts,
   composeBriefDecisions,
   composeDelegationKickoff,
   DELEGATE_REVISES_SHAPE,
   delegationDepthOf,
-  commandMentionOf,
-  roleCannotRunCommandsMessage,
   roleFitOf,
   roleNarrowerMessage,
   isAutoSubstepRole,
@@ -55,10 +53,10 @@ import { movedMountRefusalOf } from './mount/movedMountRefusalOf';
 import { restoreRefusalOf, type RestorableMount } from './mount/restoreRefusalOf';
 import type { AgentGrant } from './ports';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
-import { storedPickOf } from './childRouting/storedPickOf';
 import { storedRoutingOf } from './childRouting/storedRoutingOf';
 import { failedStartsOf } from './childRouting/failedStartsOf';
-import { isStartFailure } from './childRouting/isStartFailure';
+import { notedNoAccessOf } from './childRouting/notedNoAccessOf';
+import { retryAgentLockOf } from './childRouting/retryAgentLockOf';
 import { writerFamilyOf } from './childRouting/writerFamilyOf';
 import type { AgentVerbContext } from './verbContext';
 
@@ -432,18 +430,15 @@ export const resolveDelegateChild = async ({
       message: roleNarrowerMessage({ fit, chosen: role }),
     });
   }
-  const commandMention =
-    revise === null && !canAutoRoleRunCommands({ role })
-      ? commandMentionOf({
-          text: [autoWordsOf({ child, continueWith }), child.doneWhen ?? ''].join('\n'),
+  const shellRefusal =
+    revise === null
+      ? autoShellRefusalOf({
+          role,
+          texts: [autoWordsOf({ child, continueWith }), child.doneWhen ?? '', child.expected ?? ''],
         })
       : null;
-  if (commandMention !== null) {
-    return refuse({
-      slot,
-      code: 'role_lacks_shell',
-      message: roleCannotRunCommandsMessage({ role, match: commandMention }),
-    });
+  if (shellRefusal !== null) {
+    return refuse({ slot, code: 'role_lacks_shell', message: shellRefusal });
   }
   const { addProject } = await readAdmissionPermissions({ db: ctx.db, treeId: tree.id });
   const picked = await pickChildMount({
@@ -506,8 +501,7 @@ export const resolveDelegateChild = async ({
   const lead = await leadRunFactsOf({ db: ctx.db, grant, tree, role });
   const writerFamily = await writerFamilyOf({ ctx, tree, role, inputs: inputs.refs });
   const failedStarts = await failedStartsOf({ ctx, tree, role });
-  const retryPick =
-    retry === null || continueWith === null ? null : storedPickOf({ routing: retry.routing });
+  const notedNoAccess = await notedNoAccessOf({ ctx, tree });
   const routing = await ctx.ports.resolveRouting({
     sessionId: grant.sessionId,
     role,
@@ -522,10 +516,10 @@ export const resolveDelegateChild = async ({
     },
     promptText: revise === null ? child.task : [child.task, ...(words?.words ?? [])].join('\n'),
     stepLock: lead.stepLock,
-    agentLock:
-      retryPick === null || isStartFailure({ endReason: retry?.reason ?? null }) ? null : retryPick,
+    agentLock: retryAgentLockOf({ retry, continueWith }),
     writerFamily,
     failedStarts,
+    ...(notedNoAccess.length > 0 && { notedNoAccess }),
   });
   if (routing.kind === 'blocked') {
     return refuse({ slot, code: routing.code, message: routing.message });

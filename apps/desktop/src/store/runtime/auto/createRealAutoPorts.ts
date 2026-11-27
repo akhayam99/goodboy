@@ -12,6 +12,7 @@ import type { WorktreeSnapshot } from '../../../features/worktree/worktree';
 import type { AppStore } from '../../store';
 import type { CancelOutcome } from '../../slices/turn/cancelTurnConfirmed';
 import type { SendTurnInput, SendTurnResult } from '../../slices/turn/types';
+import { waitTurnSettledFor } from '../../slices/turn/turnSettled';
 import { makeEnsureChildAgent, type RefreshAgentsParams } from './makeEnsureChildAgent';
 import type {
   AutoPorts,
@@ -43,6 +44,7 @@ import { makeStartAutoTurn } from './startAutoTurn';
 import { startDeliveredTurn, type ReadRunCostParams, type SleepParams } from './startDeliveredTurn';
 
 const CHILD_TURN_ACCEPT_TIMEOUT_MS = 31 * 60 * 1000;
+const CHILD_TURN_CLOSE_WAIT_MS = 30_000;
 
 export type RealAutoPortsDeps = Readonly<{
   db: Database;
@@ -96,6 +98,10 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
     nowMs: deps.nowMs,
   };
   const startChildTurn = async (params: StartChildTurnParams): Promise<ChildStartOutcome> => {
+    await waitTurnSettledFor({ agentId: params.childAgentId, ms: CHILD_TURN_CLOSE_WAIT_MS });
+    if (!(await params.isStillLive())) {
+      return { kind: 'refused', reason: 'kickoff_failed', message: 'The work was stopped.' };
+    }
     const outcome = await startDeliveredTurn({
       deps: deliveredDeps,
       input: {

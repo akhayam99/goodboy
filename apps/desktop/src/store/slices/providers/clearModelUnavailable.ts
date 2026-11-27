@@ -1,5 +1,5 @@
 import { isSameUnavailableModel } from './isSameUnavailableModel';
-import type { UnavailableModel } from './unavailableModelsSetting';
+import type { UnavailableModelKey } from './unavailableModelsSetting';
 import type { UnavailableModelsWrite } from './unavailableModelsWriter';
 
 type Params = {
@@ -7,7 +7,7 @@ type Params = {
 };
 
 export const clearModelUnavailable = ({ write }: Params) => {
-  return async ({ providerId, accountId, modelKey }: UnavailableModel): Promise<void> => {
+  return async ({ providerId, accountId, modelKey }: UnavailableModelKey): Promise<void> => {
     const model = { providerId, accountId, modelKey };
     await write({
       change: ({ current }) =>

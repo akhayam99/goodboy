@@ -163,6 +163,7 @@ export const DEMO_IPC_HANDLERS: ReadonlyMap<string, Handler> = new Map<string, H
   ...EMPTY_LISTS.map((command): readonly [string, Handler] => [command, () => []]),
   ['gh_status', () => ({ available: true, mode: 'gh-cli', scopes: [] })],
   ['app_platform', () => ({ os: 'macos', osVersion: null, arch: 'aarch64', buildSha: null })],
+  ['process_launch_stamp', () => 0],
   ['plugin:app|version', () => APP_VERSION],
   ['scratch_dir_prepare', () => '/mock/scratch'],
   ['plugin:path|resolve_directory', () => '/mock/home'],

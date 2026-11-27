@@ -22,7 +22,7 @@ import { U25_C11_SESSIONS_SCENES } from './c11-sessions';
 
 const SETTLE_MS = 2_000;
 
-const LANES = ['building', 'running', 'in review', 'done', 'archived'];
+const LANES = ['open', 'running', 'in review', 'done', 'archive'];
 
 type SceneName = keyof typeof U25_C11_SESSIONS_SCENES;
 

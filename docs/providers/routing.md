@@ -167,16 +167,27 @@ start on, for one role and size, across every On and Backup provider.
 A guard strikes a row with a cause from `CANDIDATE_CAUSES`: the provider checks
 (not connected, Off, Backup idle, out of room, cooling down, an open breaker, a
 budget alert), outside the run's providers, a provider the Lead never starts
-helpers on, a writer off `AUTO_WRITER_CHILD_PROVIDERS`, a failed start of the same role in this work (`failedStarts`), hidden, CLI too old,
-outside a role pin, or the writer's family for a review (kept, and said, when no
-other family is left). Each cause maps to an `adjustment` word an older build
-reads, so a stored decision stays a patch.
+helpers on, a writer off `AUTO_WRITER_CHILD_PROVIDERS`, a failed start of the same role in this work (`failedStarts`), hidden, not on your
+account (`no-access`), CLI too old, outside a role pin, or the writer's family
+for a review (kept, and said, when no other family is left). Each cause maps to
+an `adjustment` word an older build reads, so a stored decision stays a patch.
+
+- `hidden` in `CandidateInputs` is `selectBlockedModels`: the models hidden in
+  Settings plus the ones this account refused or does not list
+  ([models-and-effort.md](models-and-effort.md#models-an-account-cannot-use)).
+  `noAccess` carries the account's set alone (`selectNoAccessModels`), so a
+  provider left with no model only because of it reads `no-access`, not hidden
+- Every routing read takes `selectBlockedModels`; `blocked-models-imports.test.ts`
+  fails on another import of `selectHiddenModels`
 
 - `bestCandidate` takes the best valid row. By order: not near its limit, then the
   order, then the rung before the lighter one. By load: room band, then load plus
   picks made in the same batch, then the order. A pin wins over either
 - `checkPick` keeps a pick, moves it to the best row with its cause, or refuses it
-  only when no row is valid. A pick at an effort no row lists is moved
+  only when no row is valid. A pick at an effort no row lists is moved. A pick on
+  a model the account cannot run moves to the best row of the same provider,
+  which the ladder already put on the line's older model or the rung below, and
+  only to another provider when that one has no valid row
 - `formatCandidatesBlock` writes the prompt table, one line per provider, with the
   role guards, the run budget and which providers keep a session after a question.
   It drops rates, then facts, then the last providers to stay under 2,400

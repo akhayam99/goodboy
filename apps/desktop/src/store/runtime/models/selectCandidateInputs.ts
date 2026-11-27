@@ -15,6 +15,7 @@ import {
 } from '@goodboy/types';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import type { AppStore } from '../../store';
+import { selectNoAccessModels } from '../../slices/providers/selectNoAccessModels';
 import { workspaceRulesFor } from '../../slices/workflows/runLimit/workspaceRulesFor';
 import { runningAgentsOf } from './runningAgentsOf';
 import { selectModelContext, type ModelState } from './selectModelContext';
@@ -80,11 +81,13 @@ export const selectCandidateInputs = ({
       ? DEFAULT_WORKFLOW_RULES
       : workspaceRulesFor({ state, workspaceId: scope.workspaceId });
   const { context } = scope;
+  const noAccess = selectNoAccessModels({ state, nowMs });
   return {
     defaultProvider: merged.defaultProviderId ?? context.defaultProvider ?? 'anthropic',
     connected,
     ...(context.atLimit != null && { atLimit: context.atLimit }),
     ...(context.hidden != null && { hidden: context.hidden }),
+    ...(Object.keys(noAccess).length > 0 && { noAccess }),
     ...(context.cliVersions != null && { cliVersions: context.cliVersions }),
     ...(context.learned != null && { learned: context.learned }),
     ...(merged.providerPool !== null && { policy: merged.providerPool }),

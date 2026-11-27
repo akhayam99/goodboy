@@ -30,7 +30,7 @@ import { candidateDecision } from './candidateDecision';
 import { movedDecision } from './movedDecision';
 import { providerCauseOf } from './providerCauseOf';
 import { rolePicks } from './rolePicks';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
   taskType: 'general',
@@ -146,7 +146,7 @@ export const resolveWorkflowChildRouting = ({
     providers: state.providers ?? [],
     cooldowns: state.providerCooldowns ?? {},
     alerts: state.budgetAlerts ?? [],
-    hidden: selectHiddenModels({ state: state }),
+    hidden: selectBlockedModels({ state: state }),
     sessionId,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),

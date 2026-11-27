@@ -11,7 +11,8 @@ import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   NOTIFICATION_LIST_LIMIT,
   clearAllNotifications,
-  clearResolvedHelperNotifications,
+  deleteOlderNotificationsOfKey,
+  settleStaleNotifications,
   countNotifications,
   deleteNotification,
   deleteNotificationsByCoalesceKey,
@@ -51,6 +52,10 @@ type TsParams = {
 
 const tsAt = ({ second }: TsParams) =>
   new Date(Date.UTC(2026, 0, 1, 0, 0, second)).toISOString() as IsoDateTime;
+
+type MsParams = number;
+
+const tsAtMs = (ms: MsParams) => brandId<IsoDateTime>({ value: new Date(ms).toISOString() });
 
 const buildNotification = (overrides: Partial<Notification> = {}): Notification => ({
   id: 'n1',
@@ -374,12 +379,26 @@ describe('notification queries', () => {
     expect(rows.map((row) => row.id).sort()).toEqual(['c', 'd']);
   });
 
-  describe('clearResolvedHelperNotifications', () => {
+  describe('settleStaleNotifications', () => {
     const SESSION = SESSION_B;
     const FAILED_AT = '2026-10-09T10:00:00.000Z' as IsoDateTime;
+    const FAILED_MS = Date.parse(FAILED_AT);
     const LATER_MS = Date.parse('2026-10-09T10:05:00.000Z');
+    const NOW_MS = Date.parse('2026-10-20T10:00:00.000Z');
+    const FIRST_PASS_BEFORE_MS = Date.parse('2026-10-01T00:00:00.000Z');
+    const LAUNCH_MS = Date.parse('2026-10-09T09:00:00.000Z');
 
-    const insertSummarizerRun = async (db: Awaited<ReturnType<typeof seed>>, at: number) => {
+    type Db = Awaited<ReturnType<typeof seed>>;
+
+    const settle = (db: Db, launchStampMs: number | null = LAUNCH_MS) =>
+      settleStaleNotifications({
+        db,
+        nowMs: NOW_MS,
+        launchStampMs,
+        firstPassBeforeMs: FIRST_PASS_BEFORE_MS,
+      });
+
+    const insertSummarizerRun = async (db: Db, at: number) => {
       await db.execute(
         "INSERT INTO provider_runs (id, session_id, provider, model, status_kind, created_at) VALUES ('run-1', ?, 'anthropic', 'claude-sonnet-4-5', 'succeeded', ?)",
         [SESSION, at],
@@ -390,70 +409,61 @@ describe('notification queries', () => {
       );
     };
 
-    const ids = async (db: Awaited<ReturnType<typeof seed>>) =>
-      (await listNotifications({ db, workspaceId: null })).map((row) => row.id).sort();
+    const unreadIds = async (db: Db) =>
+      (await listNotifications({ db, workspaceId: null }))
+        .filter((row) => !row.read)
+        .map((row) => row.id)
+        .sort();
 
-    it('drops a summarizer failure once a later summarizer run landed in the session', async () => {
+    const rowOf = async (db: Db, id: string) =>
+      (await listNotifications({ db, workspaceId: null })).find((row) => row.id === id);
+
+    const failure = (id: string, overrides: Partial<Notification> = {}) =>
+      buildNotification({ id, ts: FAILED_AT, sessionId: SESSION, ...overrides });
+
+    it('reads a summarizer failure once a later summarizer run landed and keeps the row', async () => {
       const db = await seed({});
-      await insertNotification(
-        db,
-        buildNotification({
-          id: 'failed',
-          ts: FAILED_AT,
-          title: 'Summarizer failed',
-          sessionId: SESSION,
-        }),
-      );
+      await insertNotification(db, failure('failed', { title: 'Summarizer failed' }));
       await insertSummarizerRun(db, LATER_MS);
 
-      await clearResolvedHelperNotifications({ db });
+      await settle(db);
 
-      expect(await ids(db)).toEqual([]);
+      expect(await unreadIds(db)).toEqual([]);
+      expect(await rowOf(db, 'failed')).toBeDefined();
     });
 
     it('keeps a summarizer failure while no later summarizer run exists', async () => {
       const db = await seed({});
-      await insertNotification(
-        db,
-        buildNotification({
-          id: 'failed',
-          ts: FAILED_AT,
-          title: 'Summarizer failed',
-          sessionId: SESSION,
-        }),
-      );
-      await insertSummarizerRun(db, Date.parse(FAILED_AT) - 60_000);
+      await insertNotification(db, failure('failed', { title: 'Summarizer failed' }));
+      await insertSummarizerRun(db, FAILED_MS - 60_000);
 
-      await clearResolvedHelperNotifications({ db });
+      await settle(db);
 
-      expect(await ids(db)).toEqual(['failed']);
+      expect(await unreadIds(db)).toEqual(['failed']);
     });
 
-    it('drops a degraded step summary once the agent summary is a real one', async () => {
+    it('reads a degraded step summary once the agent summary is a real one', async () => {
       const db = await seed({});
       await db.execute(
         "INSERT INTO agents (id, session_id, ordinal, name, status, output_summary) VALUES ('fixed', ?, 0, 'Implement', 'completed', 'Wrote the refunds export.'), ('still', ?, 1, 'Verify', 'completed', '[unsummarized step output, carried whole]\nraw')",
         [SESSION, SESSION],
       );
       const degraded = (id: string, agentId: string) =>
-        buildNotification({
-          id,
-          ts: FAILED_AT,
+        failure(id, {
           kind: 'summarizer-degraded',
           title: 'Step summary unavailable',
-          sessionId: SESSION,
           coalesceKey: `step-summary-degraded:${id}`,
           action: { kind: 'retry-step-summary', sessionId: SESSION, agentId: agentId as AgentId },
         });
       await insertNotification(db, degraded('n-fixed', 'fixed'));
       await insertNotification(db, degraded('n-still', 'still'));
 
-      await clearResolvedHelperNotifications({ db });
+      await settle(db);
 
-      expect(await ids(db)).toEqual(['n-still']);
+      expect(await unreadIds(db)).toEqual(['n-still']);
     });
 
-    it('drops an orchestrator notice once an agent of the session started after it', async () => {
+    it('reads an orchestrator notice once an agent of the session started after it', async () => {
       const db = await seed({});
       await db.execute(
         "INSERT INTO agents (id, session_id, ordinal, name, status, started_at) VALUES ('next', ?, 0, 'Implement', 'running', ?)",
@@ -464,36 +474,343 @@ describe('notification queries', () => {
         'The orchestrator failed',
         'Orchestrated run blocked',
       ]) {
-        await insertNotification(
-          db,
-          buildNotification({ id: title, ts: FAILED_AT, title, sessionId: SESSION }),
-        );
+        await insertNotification(db, failure(title, { title }));
       }
       await insertNotification(
         db,
         buildNotification({ id: 'unrelated', ts: FAILED_AT, title: 'Pull request created' }),
       );
 
-      await clearResolvedHelperNotifications({ db });
+      await settle(db);
 
-      expect(await ids(db)).toEqual(['unrelated']);
+      expect(await unreadIds(db)).toEqual(['unrelated']);
     });
 
     it('keeps an orchestrator notice while the session has nothing newer', async () => {
       const db = await seed({});
+      await insertNotification(db, failure('blocked', { title: 'Orchestrated run blocked' }));
+
+      await settle(db);
+
+      expect(await unreadIds(db)).toEqual(['blocked']);
+    });
+
+    describe('continue-agent', () => {
+      const agentRow = (status: string, finishedAt: number) =>
+        [
+          "INSERT INTO agents (id, session_id, ordinal, name, status, last_finished_at) VALUES ('agent-1', ?, 0, 'Implement', ?, ?)",
+          [SESSION, status, finishedAt],
+        ] as const;
+      const resumeFailed = failure('resume', {
+        severity: 'warning',
+        action: {
+          kind: 'continue-agent',
+          sessionId: SESSION,
+          agentId: brandId<AgentId>({ value: 'agent-1' }),
+        },
+        coalesceKey: 'resume-failed:agent-1',
+      });
+
+      it('reads the row and stamps acted_at once the named agent completed after it', async () => {
+        const db = await seed({});
+        await db.execute(...agentRow('completed', LATER_MS));
+        await insertNotification(db, resumeFailed);
+
+        await settle(db);
+
+        const row = await rowOf(db, 'resume');
+        expect(row?.read).toBe(true);
+        expect(row?.actedAt).toBe(new Date(NOW_MS).toISOString());
+      });
+
+      it('keeps the row while the agent has not completed after it', async () => {
+        const db = await seed({});
+        await db.execute(...agentRow('completed', FAILED_MS - 1000));
+        await insertNotification(db, resumeFailed);
+
+        await settle(db);
+
+        expect(await unreadIds(db)).toEqual(['resume']);
+      });
+
+      it('keeps the row when the agent after it is still running or stopped', async () => {
+        const db = await seed({});
+        await db.execute(...agentRow('stopped', LATER_MS));
+        await insertNotification(db, resumeFailed);
+
+        await settle(db);
+
+        expect(await unreadIds(db)).toEqual(['resume']);
+      });
+    });
+
+    describe('retry-action', () => {
+      const retryRow = (id: string, ts: IsoDateTime, key: string = id) =>
+        buildNotification({
+          id,
+          ts,
+          coalesceKey: key,
+          action: { kind: 'retry-action', retryId: key },
+        });
+
+      it('reads a row older than the process launch and stamps acted_at', async () => {
+        const db = await seed({});
+        await insertNotification(db, retryRow('old', FAILED_AT));
+
+        await settle(db, FAILED_MS + 60_000);
+
+        const row = await rowOf(db, 'old');
+        expect(row?.read).toBe(true);
+        expect(row?.actedAt).not.toBeNull();
+      });
+
+      it('keeps the live row of another window, newer than the launch stamp', async () => {
+        const db = await seed({});
+        await insertNotification(db, retryRow('live', FAILED_AT));
+
+        await settle(db, FAILED_MS - 60_000);
+
+        expect(await unreadIds(db)).toEqual(['live']);
+      });
+
+      it('keeps a keyed replace, whose time moved past the launch stamp', async () => {
+        const db = await seed({});
+        await insertNotification(db, retryRow('keyed', FAILED_AT));
+        await insertNotification(db, retryRow('keyed-2', tsAtMs(FAILED_MS + 120_000), 'keyed'));
+        await deleteOlderNotificationsOfKey({ db, keepId: 'keyed-2', coalesceKey: 'keyed' });
+
+        await settle(db, FAILED_MS + 60_000);
+
+        expect(await unreadIds(db)).toEqual(['keyed-2']);
+      });
+
+      it('reads nothing when the launch stamp is unknown', async () => {
+        const db = await seed({});
+        await insertNotification(db, retryRow('old', FAILED_AT));
+
+        await settle(db, null);
+
+        expect(await unreadIds(db)).toEqual(['old']);
+      });
+    });
+
+    it('reads every row of an archived or deleted session and keeps a live session', async () => {
+      const db = await seed({});
+      await db.execute(
+        "INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at, archived_at) VALUES ('archived', ?, 'old work', 'idle', 1, 1, 5)",
+        [WS_B],
+      );
+      await db.execute(
+        "INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at, deleted_at) VALUES ('deleted', ?, 'gone work', 'idle', 1, 1, 5)",
+        [WS_B],
+      );
       await insertNotification(
         db,
-        buildNotification({
-          id: 'blocked',
-          ts: FAILED_AT,
-          title: 'Orchestrated run blocked',
-          sessionId: SESSION,
+        failure('in-archived', {
+          sessionId: brandId<SessionId>({ value: 'archived' }),
+          title: 'Push failed',
         }),
       );
+      await insertNotification(
+        db,
+        failure('in-deleted', {
+          sessionId: brandId<SessionId>({ value: 'deleted' }),
+          title: 'Auth expired',
+        }),
+      );
+      await insertNotification(db, failure('in-live', { title: 'Push failed' }));
 
-      await clearResolvedHelperNotifications({ db });
+      await settle(db);
 
-      expect(await ids(db)).toEqual(['blocked']);
+      expect(await unreadIds(db)).toEqual(['in-live']);
+    });
+
+    it('reads the older of two unread rows with one key and keeps the newer', async () => {
+      const db = await seed({});
+      await insertNotification(db, failure('older', { coalesceKey: 'k', ts: tsAtMs(FAILED_MS) }));
+      await insertNotification(
+        db,
+        failure('newer', { coalesceKey: 'k', ts: tsAtMs(FAILED_MS + 5_000) }),
+      );
+
+      await settle(db);
+      await settle(db);
+
+      expect(await unreadIds(db)).toEqual(['newer']);
+    });
+
+    it('stamps acted_at on a retry of an archived session and on a superseded copy', async () => {
+      const db = await seed({});
+      await db.execute(
+        "INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at, archived_at) VALUES ('archived', ?, 'old work', 'idle', 1, 1, 5)",
+        [WS_B],
+      );
+      const retry = {
+        kind: 'retry-push',
+        sessionId: SESSION,
+        mountId: brandId<MountId>({ value: 'm' }),
+      } as const;
+      await insertNotification(
+        db,
+        failure('in-archived', {
+          sessionId: brandId<SessionId>({ value: 'archived' }),
+          action: retry,
+        }),
+      );
+      await insertNotification(
+        db,
+        failure('older', { coalesceKey: 'k', action: retry, ts: tsAtMs(FAILED_MS) }),
+      );
+      await insertNotification(
+        db,
+        failure('newer', { coalesceKey: 'k', action: retry, ts: tsAtMs(FAILED_MS + 5_000) }),
+      );
+
+      await settle(db);
+
+      expect((await rowOf(db, 'in-archived'))?.actedAt).not.toBeNull();
+      expect((await rowOf(db, 'older'))?.actedAt).not.toBeNull();
+      expect((await rowOf(db, 'newer'))?.actedAt).toBeNull();
+    });
+
+    it('keeps two rows with different keys', async () => {
+      const db = await seed({});
+      await insertNotification(db, failure('a', { coalesceKey: 'k1' }));
+      await insertNotification(db, failure('b', { coalesceKey: 'k2', ts: tsAtMs(FAILED_MS + 1) }));
+
+      await settle(db);
+
+      expect(await unreadIds(db)).toEqual(['a', 'b']);
+    });
+
+    describe('first pass', () => {
+      it('reads errors and warnings older than the cutoff and keeps newer ones', async () => {
+        const db = await seed({});
+        const old = tsAtMs(FIRST_PASS_BEFORE_MS - 86_400_000);
+        await insertNotification(db, buildNotification({ id: 'old-error', ts: old }));
+        await insertNotification(
+          db,
+          buildNotification({ id: 'old-warning', ts: old, severity: 'warning' }),
+        );
+        await insertNotification(db, buildNotification({ id: 'new-error', ts: FAILED_AT }));
+
+        await settle(db);
+
+        expect(await unreadIds(db)).toEqual(['new-error']);
+      });
+
+      it('does nothing while the launch stamp is unknown', async () => {
+        const db = await seed({});
+        await insertNotification(
+          db,
+          buildNotification({ id: 'old-error', ts: tsAtMs(FIRST_PASS_BEFORE_MS - 86_400_000) }),
+        );
+
+        await settle(db, null);
+
+        expect(await unreadIds(db)).toEqual(['old-error']);
+      });
+
+      it('never reads a row newer than the launch stamp, whatever the cutoff', async () => {
+        const db = await seed({});
+        await insertNotification(
+          db,
+          buildNotification({ id: 'after-launch', ts: tsAtMs(FIRST_PASS_BEFORE_MS - 1000) }),
+        );
+
+        await settle(db, FIRST_PASS_BEFORE_MS - 5000);
+
+        expect(await unreadIds(db)).toEqual(['after-launch']);
+      });
+
+      it('leaves a read row read and an old success row alone', async () => {
+        const db = await seed({});
+        const old = tsAtMs(FIRST_PASS_BEFORE_MS - 86_400_000);
+        await insertNotification(
+          db,
+          buildNotification({ id: 'old-success', ts: old, severity: 'success' }),
+        );
+
+        await settle(db);
+
+        expect(await unreadIds(db)).toEqual(['old-success']);
+      });
+    });
+
+    describe('families that are never swept', () => {
+      const NEVER = [
+        {
+          id: 'retry-push',
+          action: {
+            kind: 'retry-push',
+            sessionId: SESSION,
+            mountId: brandId<MountId>({ value: 'mount-1' }),
+          },
+          title: 'Push failed',
+        },
+        {
+          id: 'retry-publication',
+          action: { kind: 'retry-publication', sessionId: SESSION },
+          title: 'Publication failed',
+        },
+        { id: 'cleanup', action: null, title: "Couldn't delete the merged branch" },
+        { id: 'auth', action: null, title: 'GitHub sign-in expired' },
+        { id: 'budget', action: { kind: 'open-budget', sessionId: SESSION }, title: 'Budget cap' },
+        { id: 'global', action: null, title: 'Update check failed', sessionId: null },
+        { id: 'unknown', action: null, title: 'Something no one wrote a proof for' },
+      ] as const;
+
+      it.each(NEVER)(
+        'keeps $id unread with a later completed agent and a newer run',
+        async (entry) => {
+          const db = await seed({});
+          await db.execute(
+            "INSERT INTO agents (id, session_id, ordinal, name, status, started_at, last_finished_at) VALUES ('later', ?, 0, 'Implement', 'completed', ?, ?)",
+            [SESSION, LATER_MS, LATER_MS],
+          );
+          await insertNotification(
+            db,
+            failure(entry.id, {
+              title: entry.title,
+              action: entry.action,
+              coalesceKey: `never:${entry.id}`,
+              ...('sessionId' in entry ? { sessionId: entry.sessionId } : {}),
+            }),
+          );
+
+          await settle(db);
+
+          expect(await unreadIds(db)).toEqual([entry.id]);
+        },
+      );
+    });
+
+    it('is idempotent', async () => {
+      const db = await seed({});
+      await insertNotification(
+        db,
+        buildNotification({ id: 'old', ts: tsAtMs(FIRST_PASS_BEFORE_MS - 1) }),
+      );
+
+      const first = await settle(db);
+      const second = await settle(db);
+
+      expect(first).toBe(1);
+      expect(second).toBe(0);
+    });
+  });
+
+  describe('deleteOlderNotificationsOfKey', () => {
+    it('keeps the named row and drops the older rows of the key only', async () => {
+      const db = await seed({});
+      await insertNotification(db, buildNotification({ id: 'old', coalesceKey: 'k', read: true }));
+      await insertNotification(db, buildNotification({ id: 'other', coalesceKey: 'other' }));
+      await insertNotification(db, buildNotification({ id: 'new', coalesceKey: 'k' }));
+
+      await deleteOlderNotificationsOfKey({ db, keepId: 'new', coalesceKey: 'k' });
+
+      const rows = await listNotifications({ db, workspaceId: null });
+      expect(rows.map((row) => row.id).sort()).toEqual(['new', 'other']);
     });
   });
 });
