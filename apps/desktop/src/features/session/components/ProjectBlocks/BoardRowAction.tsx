@@ -10,7 +10,7 @@ type Props = {
 };
 
 export const BoardRowAction = ({ rowId, index = 0, text }: Props) => {
-  const { cardsByRowId, actionsFor, openFor, rowById } = useBoardContext();
+  const { cardsByRowId, actionsFor, rowById } = useBoardContext();
   const card = cardsByRowId.get(rowId)?.[index];
   const row = rowById.get(rowId);
   if (row === undefined || row.isSettled) {
@@ -40,7 +40,6 @@ export const BoardRowAction = ({ rowId, index = 0, text }: Props) => {
           cardTitle={card.title}
           variant="secondary"
           isMain={false}
-          onOpen={openFor({ card })}
         />
       )}
       {failure === null ? null : (

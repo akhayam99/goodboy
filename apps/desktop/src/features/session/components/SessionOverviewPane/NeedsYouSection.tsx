@@ -15,7 +15,6 @@ type Props = {
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly permission: SessionPermissionAsk | null;
   readonly actionsFor: ActionCardActions['actionsFor'];
-  readonly openFor: ActionCardActions['openFor'];
   readonly kickerById: ReadonlyMap<string, string>;
 };
 
@@ -25,7 +24,6 @@ export const NeedsYouSection = ({
   questions,
   permission,
   actionsFor,
-  openFor,
   kickerById,
 }: Props) => {
   const [move] = cards;
@@ -53,7 +51,6 @@ export const NeedsYouSection = ({
             sessionId={sessionId}
             card={card}
             actionsFor={actionsFor}
-            openFor={openFor}
             density="needs"
             isPrimary={index === 0}
             project={kickerById.get(card.id) ?? null}

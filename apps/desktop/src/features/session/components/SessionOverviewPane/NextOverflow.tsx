@@ -8,10 +8,9 @@ type Props = {
   readonly sessionId: SessionId;
   readonly cards: ReadonlyArray<ActionCardModel>;
   readonly actionsFor: ActionCardActions['actionsFor'];
-  readonly openFor: ActionCardActions['openFor'];
 };
 
-export const NextOverflow = ({ sessionId, cards, actionsFor, openFor }: Props) => {
+export const NextOverflow = ({ sessionId, cards, actionsFor }: Props) => {
   if (cards.length === 0) {
     return null;
   }
@@ -28,7 +27,6 @@ export const NextOverflow = ({ sessionId, cards, actionsFor, openFor }: Props) =
           sessionId={sessionId}
           card={card}
           actionsFor={actionsFor}
-          openFor={openFor}
           density="row"
           isPrimary={false}
           project={null}
