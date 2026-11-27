@@ -23,12 +23,18 @@ export type AttentionWaits = {
 type Params = {
   readonly state: AttentionWaitsState;
   readonly session: Session;
-  readonly settledAt?: number | null;
+  readonly settledAt?: () => number | null;
 };
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
 
-export const attentionWaitsOf = ({ state, session, settledAt = null }: Params): AttentionWaits => {
+const NEVER_SETTLED = (): null => null;
+
+export const attentionWaitsOf = ({
+  state,
+  session,
+  settledAt = NEVER_SETTLED,
+}: Params): AttentionWaits => {
   const sessionId = session.id;
   const agents = state.sessionPhaseRuns[sessionId] ?? NO_AGENTS;
   const runWaits = runWaitEntriesOf({ state, session, agents });

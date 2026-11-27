@@ -94,7 +94,7 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
   const waits = attentionWaitsOf({
     state,
     session,
-    settledAt: soleMergedAtOf({ state, sessionId }),
+    settledAt: () => soleMergedAtOf({ state, sessionId }),
   });
   const requestFetch = sessionRequestFetchOf({ state, sessionId });
   const info = deriveSessionStage({
