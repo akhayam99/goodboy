@@ -575,3 +575,27 @@ describe('mount path guards', () => {
     expect(second).toMatchObject({ worktreePath: '/tmp/wt/second', revision: 0 });
   });
 });
+
+describe('listSessionMounts for removed mounts', () => {
+  it('lists only the mounts whose branch and folder are gone', async () => {
+    const db = await seed();
+    for (const id of ['wt-live', 'wt-gone']) {
+      await insertSessionWorktree(db, {
+        id,
+        sessionId,
+        worktreePath: `/tmp/wt/${id}`,
+        branch: `hl/${id}`,
+        parallelIndex: 0,
+        createdAt: Date.now(),
+      });
+    }
+    await db.execute(
+      "UPDATE session_worktrees SET worktree_path = NULL, is_attached = 0, disk_state = 'removed' WHERE id = 'wt-gone'",
+    );
+
+    const removed = await listSessionMounts({ db, sessionIds: [sessionId, otherSessionId] });
+
+    expect(removed.map((mount) => mount.id)).toEqual(['wt-gone']);
+    expect(await listSessionMounts({ db, sessionIds: [] })).toEqual([]);
+  });
+});

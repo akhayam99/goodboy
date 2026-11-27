@@ -303,7 +303,7 @@ type FallbackParams = {
   readonly sessionId: SessionId;
 };
 
-const viewsFromProjectMounts = ({
+export const viewsFromProjectMounts = ({
   mounts,
   sessionId,
 }: FallbackParams): ReadonlyArray<SessionMountView> =>
