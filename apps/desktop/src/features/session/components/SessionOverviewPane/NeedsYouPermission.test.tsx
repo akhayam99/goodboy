@@ -122,6 +122,46 @@ describe('Needs you for a Lead waiting on a permission', () => {
     expect(document.querySelectorAll('[data-move^="permission:"]')).toHaveLength(0);
   });
 
+  it('shows the full request on demand', () => {
+    waits({ isBlocked: true });
+    render(<Probe />);
+    expect(document.querySelector('pre')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show full request' }));
+    expect(document.querySelector('pre')?.textContent).toContain('pnpm test in payments-api');
+  });
+
+  it('loads the transcript of a blocked agent that has none yet', () => {
+    const loadAgentTranscript = vi.fn(async () => undefined);
+    useAppStore.setState({
+      loadAgentTranscript,
+      sessionPhaseRuns: { [SESSION_ID]: [lead] },
+      transcripts: {},
+      agentTurnState: { [lead.id]: BLOCKED },
+    });
+    render(<Probe />);
+    expect(loadAgentTranscript).toHaveBeenCalledWith(SESSION_ID, lead.id, { isSelecting: false });
+  });
+
+  it('shows the full request on demand', () => {
+    waits({ isBlocked: true });
+    render(<Probe />);
+    expect(document.querySelector('pre')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show full request' }));
+    expect(document.querySelector('pre')?.textContent).toContain('pnpm test in payments-api');
+  });
+
+  it('loads the transcript of a blocked agent that has none yet', () => {
+    const loadAgentTranscript = vi.fn(async () => undefined);
+    useAppStore.setState({
+      loadAgentTranscript,
+      sessionPhaseRuns: { [SESSION_ID]: [lead] },
+      transcripts: {},
+      agentTurnState: { [lead.id]: BLOCKED },
+    });
+    render(<Probe />);
+    expect(loadAgentTranscript).toHaveBeenCalledWith(SESSION_ID, lead.id, { isSelecting: false });
+  });
+
   it('shows no tile when nothing waits', () => {
     waits({ isBlocked: false });
     render(<Probe />);

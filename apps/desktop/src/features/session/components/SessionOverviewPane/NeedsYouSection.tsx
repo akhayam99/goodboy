@@ -65,6 +65,7 @@ export const NeedsYouSection = ({
         ))}
         {permission === null ? null : (
           <NeedsYouPermission
+            key={`${permission.agentId}:${permission.ask.runId}:${permission.ask.toolUseId}`}
             sessionId={sessionId}
             agentId={permission.agentId}
             ask={permission.ask}

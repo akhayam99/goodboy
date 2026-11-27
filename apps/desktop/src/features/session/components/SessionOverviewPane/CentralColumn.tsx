@@ -91,7 +91,7 @@ export const CentralColumn = ({ session }: Props) => {
           actionsFor={actionsFor}
           openFor={openFor}
           shownAskIds={shownAskIds}
-          isPermissionShown={permission !== null}
+          permissionMount={permission === null ? null : { mountId: permission.mountId }}
         />
       )}
       {isArchived || isEmpty ? null : <FolderCard sessionId={sessionId} />}
