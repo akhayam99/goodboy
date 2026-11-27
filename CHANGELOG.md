@@ -55,6 +55,8 @@ Dragging a dock panel shows one small label per place: Place left, Place right, 
 - Clear site data in the Browser also clears the sites a page signs in through. <!-- gb area=app pr=2441 -->
 - Fewer helpers started by the Lead end without a result. <!-- gb area=agents pr=2434 -->
 - The Lead hands code questions to a Scout and runs on the model you saved for it. <!-- gb area=agents pr=2426 -->
+- The Now section lists each agent once. <!-- gb area=sessions pr=2448 -->
+- Other windows show fresh questions, drafts and unread rows without a reload. <!-- gb area=sessions pr=2442 -->
 - Dock panel heads no longer show a leftover back button. <!-- gb area=app pr=2427 -->
 - Ask suggests only questions it can answer. <!-- gb area=sessions pr=2425 -->
 
