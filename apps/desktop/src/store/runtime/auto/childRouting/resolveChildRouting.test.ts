@@ -231,6 +231,20 @@ describe('the model an Auto child runs on', () => {
   });
 });
 
+type RefusalParams = {
+  readonly accountId: string;
+  readonly modelKey: string;
+};
+
+const refusal = ({ accountId, modelKey }: RefusalParams) => ({
+  providerId: 'codex' as const,
+  accountId,
+  modelKey,
+  plan: null,
+  source: 'refused' as const,
+  checkedAt: 0,
+});
+
 describe('a helper on a model the account cannot use', () => {
   const ACCOUNT = 'dev@northwind.test';
 
@@ -261,7 +275,7 @@ describe('a helper on a model the account cannot use', () => {
   it('moves the Lead pick off a model this account was refused', async () => {
     const pick = await codexPick();
     useAppStore.setState({
-      unavailableModels: [{ providerId: 'codex', accountId: ACCOUNT, modelKey: pick.model }],
+      unavailableModels: [refusal({ accountId: ACCOUNT, modelKey: pick.model })],
     });
 
     const outcome = ready({ outcome: await resolve(pick) });
@@ -271,12 +285,54 @@ describe('a helper on a model the account cannot use', () => {
     expect(outcome.candidates?.some((row) => row.model === pick.model)).toBe(false);
   });
 
+  it('stays on the same provider and says the model is not on the account', async () => {
+    const pick = await codexPick();
+    useAppStore.setState({
+      unavailableModels: [refusal({ accountId: ACCOUNT, modelKey: pick.model })],
+    });
+
+    const outcome = ready({ outcome: await resolve(pick) });
+
+    expect(outcome).toMatchObject({ provider: 'codex', cause: 'no-access' });
+    expect(outcome.reason).toMatch(/^.+ is not on your Codex account, so this ran on .+\.$/);
+    expect(outcome.reason).not.toMatch(/better|stronger|upgrade/i);
+  });
+
+  it('says it once per tree for the same model', async () => {
+    const pick = await codexPick();
+    useAppStore.setState({
+      unavailableModels: [refusal({ accountId: ACCOUNT, modelKey: pick.model })],
+    });
+
+    const outcome = ready({
+      outcome: await resolveWith({
+        request: {
+          ...request(pick),
+          notedNoAccess: [{ provider: 'codex', model: pick.model }],
+        },
+      }),
+    });
+
+    expect(outcome).toMatchObject({ provider: 'codex', cause: 'no-access' });
+    expect(outcome.reason).not.toContain('not on your');
+  });
+
+  it('notes a refused model hidden in Settings as hidden, not as missing from the account', async () => {
+    const pick = await codexPick();
+    useAppStore.setState({
+      settings: { [SETTING_HIDDEN_MODELS]: JSON.stringify({ codex: [pick.model] }) },
+    });
+
+    const outcome = ready({ outcome: await resolve(pick) });
+
+    expect(outcome.cause).not.toBe('no-access');
+    expect(outcome.reason).not.toContain('not on your');
+  });
+
   it('keeps the model for another account on the same provider', async () => {
     const pick = await codexPick();
     useAppStore.setState({
-      unavailableModels: [
-        { providerId: 'codex', accountId: 'ops@acme.test', modelKey: pick.model },
-      ],
+      unavailableModels: [refusal({ accountId: 'ops@acme.test', modelKey: pick.model })],
     });
 
     const outcome = ready({ outcome: await resolve(pick) });

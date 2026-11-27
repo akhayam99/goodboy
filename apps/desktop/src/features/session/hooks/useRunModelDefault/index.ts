@@ -38,6 +38,7 @@ export const useRunModelDefault = ({ workspaceId, sessionId, slot }: Params): Ru
   const hiddenRaw = useAppStore((state) => state.settings?.[SETTING_HIDDEN_MODELS]);
   const cliRequirements = useAppStore((state) => state.cliRequirements);
   const unavailableModels = useAppStore((state) => state.unavailableModels);
+  const authResults = useAppStore((state) => state.authResults);
   const workspaceOverride = useAppStore((state) => state.workspaceOverrides?.[workspaceId]);
   const sessionOverride = useAppStore((state) =>
     sessionId === null ? undefined : state.sessionOverrides?.[sessionId],
@@ -58,6 +59,7 @@ export const useRunModelDefault = ({ workspaceId, sessionId, slot }: Params): Ru
             settings: hiddenRaw === undefined ? {} : { [SETTING_HIDDEN_MODELS]: hiddenRaw },
             cliRequirements,
             unavailableModels,
+            authResults,
             workspaceOverrides:
               workspaceOverride === undefined ? {} : { [workspaceId]: workspaceOverride },
             sessionOverrides:
@@ -78,6 +80,7 @@ export const useRunModelDefault = ({ workspaceId, sessionId, slot }: Params): Ru
       }),
     [
       activeProjectId,
+      authResults,
       cliRequirements,
       hiddenRaw,
       projects,

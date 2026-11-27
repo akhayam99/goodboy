@@ -4,8 +4,14 @@ vi.mock('@tauri-apps/api/core', async () =>
 vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../storyHarness')).tauriEventModuleMock(),
 );
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../storyHarness')).dbLibModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock());
 
+import { catalogModelForId } from '@goodboy/core/providers';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ProviderDisplayInfo } from '../../../features/providers/providers';
 import {
   importStore,
   resetStoryStore,
@@ -87,5 +93,154 @@ describe('Test connection evidence', () => {
     await store.getState().testProviderConnection({ providerId: 'cursor' });
     expect(store.getState().providerConnectionTests.cursor?.result?.detail).toBe('CLI unavailable');
     expect(store.getState().providerHealth.codex).toBe(before);
+  });
+});
+
+const ACCOUNT = 'dev@northwind.test';
+
+const cursor: ProviderDisplayInfo = {
+  id: 'cursor',
+  label: 'Cursor',
+  binary: 'cursor-agent',
+  connection: 'connected',
+  version: '2026.11.20',
+  identity: ACCOUNT,
+  error: null,
+  docsUrl: '',
+  capabilities: { models: [] },
+};
+
+type KeyParams = {
+  readonly slug: string;
+};
+
+const keyOf = ({ slug }: KeyParams): string =>
+  catalogModelForId({ provider: 'cursor', modelId: slug })?.key ?? slug;
+
+const OPUS = keyOf({ slug: 'claude-opus-5-5-high' });
+const SONNET = keyOf({ slug: 'claude-sonnet-5-5-high' });
+
+type AnsweredParams = {
+  readonly models: ReadonlyArray<string>;
+};
+
+const answered = ({ models }: AnsweredParams) => ({
+  ok: true,
+  millis: 800,
+  outcome: 'answered',
+  secs: null,
+  detail: '',
+  models,
+});
+
+const unlistedKeys = (): ReadonlyArray<string> =>
+  store
+    .getState()
+    .unavailableModels.filter((entry) => entry.source === 'unlisted')
+    .map((entry) => entry.modelKey);
+
+describe('the models a Cursor account lists', () => {
+  beforeEach(() => {
+    store.setState({ providers: [cursor], unavailableModels: [] });
+  });
+
+  it('marks every model the account does not list as unavailable for that account', async () => {
+    stubStoryInvoke({
+      provider_test_connection: answered({
+        models: ['auto', 'claude-sonnet-5-5-high', 'composer-2.5'],
+      }),
+    });
+
+    await store.getState().testProviderConnection({ providerId: 'cursor' });
+
+    expect(unlistedKeys()).toContain(OPUS);
+    expect(unlistedKeys()).not.toContain(SONNET);
+    expect(store.getState().unavailableModels.every((entry) => entry.accountId === ACCOUNT)).toBe(
+      true,
+    );
+  });
+
+  it('replaces the earlier list on the next check', async () => {
+    stubStoryInvoke({
+      provider_test_connection: answered({ models: ['claude-sonnet-5-5-high'] }),
+    });
+    await store.getState().testProviderConnection({ providerId: 'cursor' });
+    stubStoryInvoke({
+      provider_test_connection: answered({
+        models: ['claude-sonnet-5-5-high', 'claude-opus-5-5-high'],
+      }),
+    });
+
+    await store.getState().testProviderConnection({ providerId: 'cursor' });
+
+    expect(unlistedKeys()).not.toContain(OPUS);
+    expect(new Set(unlistedKeys()).size).toBe(unlistedKeys().length);
+  });
+
+  it.each([
+    ['an empty list', []],
+    ['a list with no model Goodboy knows', ['northwind-model']],
+  ])('changes nothing on %s', async (_label, models) => {
+    stubStoryInvoke({ provider_test_connection: answered({ models }) });
+
+    await store.getState().testProviderConnection({ providerId: 'cursor' });
+
+    expect(store.getState().unavailableModels).toEqual([]);
+  });
+
+  it('learns an unlisted model over a refusal that has expired', async () => {
+    store.setState({
+      unavailableModels: [
+        {
+          providerId: 'cursor',
+          accountId: ACCOUNT,
+          modelKey: OPUS,
+          plan: null,
+          source: 'refused',
+          checkedAt: Date.now() - 8 * 24 * 60 * 60 * 1000,
+        },
+      ],
+    });
+    stubStoryInvoke({
+      provider_test_connection: answered({ models: ['claude-sonnet-5-5-high'] }),
+    });
+
+    await store.getState().testProviderConnection({ providerId: 'cursor' });
+
+    expect(unlistedKeys()).toContain(OPUS);
+    expect(
+      store.getState().unavailableModels.filter((entry) => entry.modelKey === OPUS),
+    ).toHaveLength(1);
+  });
+
+  it('drops a list that arrives after the plan changed', async () => {
+    store.setState({
+      authResults: { cursor: { state: 'connected', identity: ACCOUNT, plan: 'pro' } },
+    });
+    stubStoryInvoke({
+      provider_test_connection: () => {
+        store.setState({
+          authResults: { cursor: { state: 'connected', identity: ACCOUNT, plan: 'ultra' } },
+        });
+        return answered({ models: ['claude-sonnet-5-5-high'] });
+      },
+    });
+
+    await store.getState().testProviderConnection({ providerId: 'cursor' });
+
+    expect(store.getState().unavailableModels).toEqual([]);
+  });
+
+  it('drops a list that arrives after the account changed', async () => {
+    stubStoryInvoke({
+      provider_test_connection: () => {
+        store.setState({ providers: [{ ...cursor, identity: 'ops@acme.test' }] });
+        return answered({ models: ['claude-sonnet-5-5-high'] });
+      },
+    });
+
+    await store.getState().testProviderConnection({ providerId: 'cursor' });
+
+    expect(store.getState().unavailableModels).toEqual([]);
   });
 });

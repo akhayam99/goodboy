@@ -168,11 +168,14 @@ describe('a provider that refuses the model in its stream and then exits cleanly
     expect(statuses).not.toContain('succeeded');
     expect(statuses).toContain('failed');
     await vi.waitFor(() =>
-      expect(useAppStore.getState().unavailableModels).toContainEqual({
-        providerId: 'codex',
-        accountId: ACCOUNT,
-        modelKey: 'gpt-6.1-sol',
-      }),
+      expect(useAppStore.getState().unavailableModels).toContainEqual(
+        expect.objectContaining({
+          providerId: 'codex',
+          accountId: ACCOUNT,
+          modelKey: 'gpt-6.1-sol',
+          source: 'refused',
+        }),
+      ),
     );
     const errors = (useAppStore.getState().transcripts[AGENT_ID] ?? []).filter(
       (event) => event.kind === 'error',
@@ -222,7 +225,16 @@ describe('a provider that refuses the model in its stream and then exits cleanly
 
   it('forgets the model once the provider answers on it again', async () => {
     useAppStore.setState({
-      unavailableModels: [{ providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6.1-sol' }],
+      unavailableModels: [
+        {
+          providerId: 'codex',
+          accountId: ACCOUNT,
+          modelKey: 'gpt-6.1-sol',
+          plan: null,
+          source: 'refused',
+          checkedAt: Date.now(),
+        },
+      ],
     });
     storySpies.runTurn.mockImplementation((value: unknown) =>
       answer({ args: runArgsOf({ value }) }),

@@ -80,4 +80,15 @@ describe('resolveErrorTurnMessage', () => {
       'The model "gpt-5.6" is not available with this Codex account. Choose a model supported by your account.',
     );
   });
+
+  it('names the provider of the account that refused the model', () => {
+    const message =
+      "There's an issue with the selected model (claude-opus-5-5). It may not exist or you may not have access to it.";
+
+    const resolved = resolveErrorTurnMessage({ message, providerId: ANTHROPIC, identity: null });
+
+    expect(resolved).toBe(
+      'The model "claude-opus-5-5" is not available with this Claude account. Choose a model supported by your account.',
+    );
+  });
 });

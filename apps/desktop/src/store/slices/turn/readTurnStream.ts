@@ -180,6 +180,7 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
         get,
         providerId: provider,
         accountId: progress.accountId,
+        plan: progress.plan,
         model: spawnModel,
         message: rawEvent.message,
       });

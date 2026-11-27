@@ -14,6 +14,7 @@ export type CandidateCause =
   | 'writer'
   | 'no-model'
   | 'hidden'
+  | 'no-access'
   | 'cli-too-old'
   | 'off-pin'
   | 'same-family'
@@ -45,6 +46,7 @@ export const CANDIDATE_CAUSES = {
   writer: { text: 'agents that write code do not run here yet', adjustment: 'disconnected' },
   'no-model': { text: 'no model here fits this step', adjustment: 'unknown_model' },
   hidden: { text: 'hidden in Settings', adjustment: 'hidden' },
+  'no-access': { text: 'not on your account', adjustment: 'hidden' },
   'cli-too-old': { text: 'its CLI is too old for this model', adjustment: 'unknown_model' },
   'off-pin': { text: 'this role is pinned to other models', adjustment: 'hidden' },
   'same-family': { text: 'same model family as the writer of the change', adjustment: 'hidden' },

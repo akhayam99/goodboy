@@ -52,7 +52,23 @@ const MODEL_NOT_AVAILABLE_PATTERNS = [
     action: 'choose_supported_model',
   },
   {
-    pattern: /\bmodel ["']?([^\s"']+)["']? is not available with this Codex account/i,
+    pattern: /\bmodel ["']?([^\s"']+)["']? is not available with this [a-z]+ account/i,
+    action: 'choose_supported_model',
+  },
+  {
+    pattern: /There['’]s an issue with the selected model \(([^\s()]+)\)/i,
+    action: 'choose_supported_model',
+  },
+  {
+    pattern: /\b(Claude [a-z]+) is not available with the Claude [a-z]+ plan/i,
+    action: 'choose_supported_model',
+  },
+  {
+    pattern: /\bModel "([^"]+)" from --model flag is not available/i,
+    action: 'choose_supported_model',
+  },
+  {
+    pattern: /\bThe model "([^"]+)" is not available for this account/i,
     action: 'choose_supported_model',
   },
 ] satisfies ReadonlyArray<ModelUnavailablePattern>;
