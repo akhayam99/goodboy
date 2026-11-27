@@ -401,3 +401,23 @@ export type TasksFields = {
 };
 
 export type TasksProjection = ProjectionMeta & TasksFields;
+
+export type ChatRow = {
+  readonly id: string;
+  readonly title: string;
+  readonly label: string;
+  readonly preview: string | null;
+  readonly updatedAt: IsoTimestamp;
+  readonly messageCount: Int;
+  readonly isBusy: boolean;
+  readonly isPinned: boolean;
+  readonly sendActionId: ActionId;
+};
+
+export type ChatsFields = {
+  readonly workspaceId: string;
+  readonly chats: ReadonlyArray<ChatRow>;
+  readonly createActionId: ActionId;
+};
+
+export type ChatsProjection = ProjectionMeta & ChatsFields;

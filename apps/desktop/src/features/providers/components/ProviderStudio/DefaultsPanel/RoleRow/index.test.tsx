@@ -105,15 +105,12 @@ describe('RoleRow', () => {
     const trigger = row({ preference: OPUS_PIN, policy: CODEX_ONLY });
 
     const summary = trigger.querySelector<HTMLElement>('[data-role-summary]');
-    expect(summary?.textContent).toContain('Astra');
+    expect(summary?.textContent).toContain('GPT-6.2 Astra');
     expect(summary?.textContent).not.toContain('Opus');
     expect(trigger.textContent).toContain('Pinned');
-    expect(
-      screen.getByRole('img', { name: 'Pinned Opus 5.5 is skipped: Claude is Off. Using Astra.' }),
-    ).toBeDefined();
-    expect(
-      screen.queryByText('Pinned Opus 5.5 is skipped: Claude is Off. Using Astra.'),
-    ).toBeNull();
+    const skipped = 'Pinned Opus 5.5 is skipped: Claude is Off. Using GPT-6.2 Astra.';
+    expect(screen.getByRole('img', { name: skipped })).toBeDefined();
+    expect(screen.queryByText(skipped)).toBeNull();
   });
 
   it('shows the pinned model and no line while its provider is On', () => {

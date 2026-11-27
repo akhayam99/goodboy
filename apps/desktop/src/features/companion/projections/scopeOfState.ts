@@ -11,6 +11,7 @@ import { readyToMergeOf } from '../../board/mergeTrain/readyToMergeOf';
 import { requestChecksOf } from '../../board/mergeTrain/requestChecksOf';
 import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { pullRequestViewOf } from '../../../store/slices/pull-request-view/pullRequestViewOf';
+import type { ChatsState } from '../../../store/slices/chats/state';
 import type { StarredIssuesState } from '../../../store/slices/starred-issues/state';
 import { DEFAULT_AUTO_LEVEL } from '@goodboy/core/auto';
 import { parseAutoLevelSetting } from '../../../store/runtime/auto/level/parseAutoLevelSetting';
@@ -22,7 +23,9 @@ import { taskFactOf } from './taskFactOf';
 import { pickForSessions } from './pickForSessions';
 import type { WorkspaceScope } from './workspaceScope';
 
-export type ScopeState = AppState & Pick<StarredIssuesState, 'starredRecords'>;
+export type ScopeState = AppState &
+  Pick<StarredIssuesState, 'starredRecords'> &
+  Pick<ChatsState, 'chatsByWorkspace' | 'chatStreams'>;
 
 type Params = {
   readonly workspace: Pick<Workspace, 'id' | 'name'>;
@@ -124,6 +127,10 @@ export const scopeOfState = ({
     sessions: live,
     infos,
     openQuestions: state.sessionOpenQuestions,
+    chats: state.chatsByWorkspace[workspace.id] ?? [],
+    busyChatIds: (state.chatsByWorkspace[workspace.id] ?? [])
+      .filter((chat) => state.chatStreams[chat.id] !== undefined)
+      .map((chat) => chat.id),
     answeredQuestions: pickForSessions({ ids, record: state.sessionAnsweredQuestions }),
     artifacts: pickForSessions({ ids, record: state.sessionArtifacts }),
     artifactComments: pickForSessions({ ids, record: state.artifactComments }),

@@ -2,6 +2,21 @@ import type { ModelPrice, ProviderUsage } from '@goodboy/types';
 import { computeLeveledCostUsd } from '../priceLevels';
 
 export const GEMINI_PRICES: Readonly<Record<string, ModelPrice>> = {
+  'gemini-4-neon': {
+    inputPerMtok: 3,
+    outputPerMtok: 15,
+    cachedInputPerMtok: 0.15,
+  },
+  'gemini-4-carbon': {
+    inputPerMtok: 4,
+    outputPerMtok: 20,
+    cachedInputPerMtok: 0.2,
+  },
+  'gemini-4-hydrogen': {
+    inputPerMtok: 1.5,
+    outputPerMtok: 7.5,
+    cachedInputPerMtok: 0.075,
+  },
   'gemini-3.1-pro': {
     inputPerMtok: 2,
     outputPerMtok: 12,
@@ -10,6 +25,7 @@ export const GEMINI_PRICES: Readonly<Record<string, ModelPrice>> = {
       aboveInputTokens: 200_000,
       inputPerMtok: 4,
       outputPerMtok: 18,
+      cachedInputPerMtok: 0.4,
     },
   },
   'gemini-3.8-flash': {

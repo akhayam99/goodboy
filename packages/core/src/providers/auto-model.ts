@@ -1,4 +1,5 @@
 import type { ProviderId, RoleModelPreferences, StepSize } from '@goodboy/types';
+import type { AutoContext } from './autoRouting/autoTypes';
 import { getDefaultTurnModel } from './capabilities';
 import type { HiddenModels } from './modelVisibility';
 import { resolveRoleRouting } from './role-models';
@@ -8,12 +9,15 @@ export type AutoModelChoice = {
   readonly model: string;
 };
 
+type CliContext = Pick<AutoContext, 'cliVersions' | 'learned'>;
+
 type AutoParams = {
   readonly role: string;
   readonly providers: ReadonlyArray<ProviderId>;
   readonly prefs?: RoleModelPreferences | null;
   readonly size?: StepSize | null;
   readonly hidden?: HiddenModels | null;
+  readonly cli?: CliContext | null;
 };
 
 type Params = {
@@ -22,6 +26,7 @@ type Params = {
   readonly prefs?: RoleModelPreferences | null;
   readonly size?: StepSize | null;
   readonly hidden?: HiddenModels | null;
+  readonly cli?: CliContext | null;
 };
 
 export const autoModelForRole = ({
@@ -30,6 +35,7 @@ export const autoModelForRole = ({
   prefs,
   size = null,
   hidden = null,
+  cli = null,
 }: AutoParams): AutoModelChoice | null => {
   const [defaultProvider] = providers;
   if (defaultProvider == null) {
@@ -43,6 +49,8 @@ export const autoModelForRole = ({
       fallbackOrder: providers,
       connected: providers,
       ...(hidden !== null && { hidden }),
+      ...(cli?.cliVersions != null && { cliVersions: cli.cliVersions }),
+      ...(cli?.learned != null && { learned: cli.learned }),
     },
     size,
   });
@@ -58,9 +66,10 @@ export const recommendedModelForRole = ({
   prefs,
   size = null,
   hidden = null,
+  cli = null,
 }: Params): string => {
   return (
-    autoModelForRole({ role, providers: [provider], prefs, size, hidden })?.model ??
+    autoModelForRole({ role, providers: [provider], prefs, size, hidden, cli })?.model ??
     getDefaultTurnModel({ id: provider })
   );
 };

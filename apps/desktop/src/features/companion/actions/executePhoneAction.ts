@@ -8,12 +8,16 @@ import { mergePrChecked } from './mergePrChecked';
 import { mergeTrainAction } from './mergeTrainAction';
 import { mayFromPhone, type PhonePermission } from './phonePermissionScope';
 import {
+  createChatActionIdOf,
   mergePrActionIdOf,
+  sendChatActionIdOf,
   startActionIdOf,
   stopTrainActionIdOf,
   trainActionIdOf,
 } from './phoneActionIds';
 import type { PhoneAction } from './parsePhoneAction';
+import { createPhoneChat } from './createPhoneChat';
+import { sendPhoneChatMessage } from './sendPhoneChatMessage';
 import { startSession } from './startSession';
 import { stopTrain } from './stopTrain';
 
@@ -43,6 +47,16 @@ const expectationOf = ({ action }: ExpectParams): Expectation => {
       };
     case 'stopTrain':
       return { actionId: stopTrainActionIdOf({ trainId: action.trainId }), permission: 'merge' };
+    case 'sendChatMessage':
+      return {
+        actionId: sendChatActionIdOf({ chatId: action.chatId, version: action.seenVersion }),
+        permission: 'decide',
+      };
+    case 'createChat':
+      return {
+        actionId: createChatActionIdOf({ workspaceId: action.workspaceId }),
+        permission: 'decide',
+      };
     case 'startSession':
       return {
         actionId: startActionIdOf({ workspaceId: action.workspaceId }),
@@ -51,6 +65,25 @@ const expectationOf = ({ action }: ExpectParams): Expectation => {
     default: {
       const unexpected: never = action;
       throw new Error(`unsupported phone action: ${String(unexpected)}`);
+    }
+  }
+};
+
+type DeniedParams = {
+  readonly permission: PhonePermission;
+};
+
+const deniedMessageOf = ({ permission }: DeniedParams): string => {
+  switch (permission) {
+    case 'start':
+      return 'This iPhone may not start sessions. Turn it on in Settings, iPhone on your Mac.';
+    case 'decide':
+      return 'This iPhone may not answer for you. Turn it on in Settings, iPhone on your Mac.';
+    case 'merge':
+      return 'This iPhone may not merge. Turn it on in Settings, iPhone on your Mac.';
+    default: {
+      const unexpected: never = permission;
+      throw new Error(`unsupported phone permission: ${String(unexpected)}`);
     }
   }
 };
@@ -70,6 +103,10 @@ const runHandler = ({ action, getStore, ports, now }: RunParams): Promise<Handle
       return mergeTrainAction({ action, getStore });
     case 'stopTrain':
       return stopTrain({ action, getStore });
+    case 'sendChatMessage':
+      return sendPhoneChatMessage({ action, getStore });
+    case 'createChat':
+      return createPhoneChat({ action, getStore });
     case 'startSession':
       return startSession({ action, getStore, ports, now });
     default: {
@@ -117,10 +154,7 @@ export const executePhoneAction = async ({
     return plainRefusal({
       action,
       code: 'not-permitted',
-      message:
-        expected.permission === 'start'
-          ? 'This iPhone may not start sessions. Turn it on in Settings, iPhone on your Mac.'
-          : 'This iPhone may not merge. Turn it on in Settings, iPhone on your Mac.',
+      message: deniedMessageOf({ permission: expected.permission }),
     });
   }
   if (!takeRateSlot({ kind: action.kind, now })) {

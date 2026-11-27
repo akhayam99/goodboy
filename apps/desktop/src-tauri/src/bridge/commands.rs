@@ -45,6 +45,9 @@ pub enum MobileAction {
     MergeTrain,
     StartSession,
     StopTrain,
+    QueryChatMessages,
+    SendChatMessage,
+    CreateChat,
 }
 
 impl MobileAction {
@@ -79,6 +82,9 @@ impl MobileAction {
             0x9F => Some(Self::MergeTrain),
             0xA0 => Some(Self::StartSession),
             0xA1 => Some(Self::StopTrain),
+            0xA2 => Some(Self::QueryChatMessages),
+            0xA3 => Some(Self::SendChatMessage),
+            0xA4 => Some(Self::CreateChat),
             _ => None,
         }
     }
@@ -114,6 +120,9 @@ impl MobileAction {
             Self::MergeTrain => "mergeTrain",
             Self::StartSession => "startSession",
             Self::StopTrain => "stopTrain",
+            Self::QueryChatMessages => "queryChatMessages",
+            Self::SendChatMessage => "sendChatMessage",
+            Self::CreateChat => "createChat",
         }
     }
 
@@ -145,13 +154,19 @@ impl MobileAction {
                     | Self::MergeTrain
                     | Self::StartSession
                     | Self::StopTrain
+                    | Self::SendChatMessage
+                    | Self::CreateChat
             )
     }
 
     pub fn is_query(self) -> bool {
         matches!(
             self,
-            Self::QueryProviders | Self::QueryIssues | Self::QueryFileDiff | Self::QueryTranscript
+            Self::QueryProviders
+                | Self::QueryIssues
+                | Self::QueryFileDiff
+                | Self::QueryTranscript
+                | Self::QueryChatMessages
         )
     }
 }
@@ -239,7 +254,7 @@ mod tests {
     #[test]
     fn rejects_read_server_and_unknown_opcodes() {
         for op in [
-            0x00u8, 0x01, 0x05, 0x07, 0x08, 0x09, 0x80, 0x81, 0x82, 0x89, 0x8F, 0xA2, 0xFF,
+            0x00u8, 0x01, 0x05, 0x07, 0x08, 0x09, 0x80, 0x81, 0x82, 0x89, 0x8F, 0xA5, 0xFF,
         ] {
             assert!(
                 MobileAction::from_opcode(op).is_none(),
@@ -272,9 +287,10 @@ mod tests {
         assert!(MobileAction::QueryIssues.is_query());
         assert!(MobileAction::QueryFileDiff.is_query());
         assert!(MobileAction::QueryTranscript.is_query());
+        assert!(MobileAction::QueryChatMessages.is_query());
         for op in [
             0x83u8, 0x84, 0x85, 0x86, 0x88, 0x8A, 0x8C, 0x8D, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95,
-            0x96, 0x97, 0x98, 0x99, 0x9A, 0x9C, 0x9D, 0x9E, 0x9F, 0xA0, 0xA1,
+            0x96, 0x97, 0x98, 0x99, 0x9A, 0x9C, 0x9D, 0x9E, 0x9F, 0xA0, 0xA1, 0xA3, 0xA4,
         ] {
             let action = MobileAction::from_opcode(op).expect("opcode is a write command");
             assert!(
@@ -308,5 +324,21 @@ mod tests {
             let action = MobileAction::from_opcode(op).expect("decide opcode maps");
             assert_eq!(action.kind(), kind);
         }
+    }
+
+    #[test]
+    fn maps_the_chat_opcodes_to_the_contract_kinds() {
+        let expected = [
+            (0xA2u8, "queryChatMessages"),
+            (0xA3, "sendChatMessage"),
+            (0xA4, "createChat"),
+        ];
+        for (op, kind) in expected {
+            let action = MobileAction::from_opcode(op).expect("chat opcode maps");
+            assert_eq!(action.kind(), kind);
+        }
+        assert!(MobileAction::SendChatMessage.needs_action_id());
+        assert!(MobileAction::CreateChat.needs_action_id());
+        assert!(!MobileAction::QueryChatMessages.needs_action_id());
     }
 }

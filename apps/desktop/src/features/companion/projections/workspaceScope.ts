@@ -5,6 +5,8 @@ import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import type {
   Agent,
   ArtifactComment,
+  ChatId,
+  ChatSummary,
   IntegrationDraft,
   OpenQuestion,
   PullRequestState,
@@ -46,6 +48,8 @@ export type WorkspaceScope = Readonly<{
   sessions: ReadonlyArray<Session>;
   infos: Readonly<Record<string, SessionStageInfo>>;
   openQuestions: Readonly<Record<string, ReadonlyArray<OpenQuestion>>>;
+  chats: ReadonlyArray<ChatSummary>;
+  busyChatIds: ReadonlyArray<ChatId>;
   answeredQuestions: Readonly<Record<string, ReadonlyArray<OpenQuestion>>>;
   artifacts: Readonly<Record<string, ReadonlyArray<SessionArtifact>>>;
   artifactComments: Readonly<Record<string, ReadonlyArray<ArtifactComment>>>;

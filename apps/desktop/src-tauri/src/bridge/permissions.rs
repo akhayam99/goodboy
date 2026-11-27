@@ -62,7 +62,8 @@ pub fn permission_for(action: MobileAction) -> Option<Permission> {
         MobileAction::QueryProviders
         | MobileAction::QueryIssues
         | MobileAction::QueryFileDiff
-        | MobileAction::QueryTranscript => None,
+        | MobileAction::QueryTranscript
+        | MobileAction::QueryChatMessages => None,
         MobileAction::Send
         | MobileAction::AdvanceStep
         | MobileAction::ResolveComment
@@ -79,7 +80,9 @@ pub fn permission_for(action: MobileAction) -> Option<Permission> {
         | MobileAction::ContinueAgent
         | MobileAction::SendToAgent
         | MobileAction::StopAgentTree
-        | MobileAction::AnswerSlackReply => Some(Permission::Decide),
+        | MobileAction::AnswerSlackReply
+        | MobileAction::SendChatMessage
+        | MobileAction::CreateChat => Some(Permission::Decide),
         MobileAction::MergePr
         | MobileAction::MergePrChecked
         | MobileAction::MergeTrain
@@ -138,6 +141,20 @@ mod tests {
         }
         let transcript = MobileAction::from_opcode(0x9B).unwrap();
         assert_eq!(permission_for(transcript), None);
+    }
+
+    #[test]
+    fn the_chat_writes_need_decide_and_reading_a_chat_needs_nothing() {
+        for op in [0xA3u8, 0xA4] {
+            let action = MobileAction::from_opcode(op).unwrap();
+            assert_eq!(
+                permission_for(action),
+                Some(Permission::Decide),
+                "{op:#04x}"
+            );
+        }
+        let read = MobileAction::from_opcode(0xA2).unwrap();
+        assert_eq!(permission_for(read), None);
     }
 
     #[test]
