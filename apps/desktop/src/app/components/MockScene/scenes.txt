@@ -1109,6 +1109,11 @@ u26-view-archived-dark
 u26-view-archived-light
 u26-view-new-dark
 u26-view-new-light
+u26s-bar-iphone-fault
+u26s-bar-iphone-live
+u26s-bar-iphone-none
+u26s-bar-iphone-offline
+u26s-bar-iphone-open
 u26s-guide-chapter
 u26s-guide-monitoring
 u26s-guide-search
@@ -1137,6 +1142,10 @@ u26s-rows-storage
 u26s-settings-branches
 u26s-settings-general
 u26s-settings-iphone
+u26s-settings-iphone-empty
+u26s-settings-iphone-fault
+u26s-settings-iphone-get
+u26s-settings-iphone-request
 u26s-settings-nows
 u26s-settings-pair
 u26s-settings-storage

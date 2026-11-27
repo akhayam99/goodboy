@@ -33,7 +33,7 @@ describe('the companion scene', () => {
     render(<CompanionScene />);
 
     await screen.findByRole('navigation', { name: 'Settings scopes' }, WAIT);
-    expect(await screen.findByText('1 paired iPhone', undefined, WAIT)).toBeDefined();
+    expect(await screen.findByRole('region', { name: 'Paired iPhones' }, WAIT)).toBeDefined();
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('iPhone');
     expect(screen.queryByRole('button', { name: 'Close pairing' })).toBeNull();
   });

@@ -150,6 +150,7 @@ import { createSearchIndexSlice } from './slices/search-index';
 import { createChatsSlice } from './slices/chats';
 import { createAskSlice } from './slices/ask';
 import { handoffsInitialState } from './slices/handoffs/state';
+import { createCompanionLinkSlice } from './slices/companion-link';
 import { createHostReachabilitySlice } from './slices/host-reachability';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
@@ -186,6 +187,7 @@ import { sessionsInitialState } from './slices/sessions/state';
 import { sessionEventsInitialState } from './slices/session-events/state';
 import { workEventsInitialState } from './slices/work-events/state';
 import { dormantSpendInitialState } from './slices/dormant-spend/state';
+import { companionLinkInitialState } from './slices/companion-link/state';
 import { hostReachabilityInitialState } from './slices/host-reachability/state';
 import { checksLogInitialState } from './slices/checks-log/state';
 import { createChecksLogSlice } from './slices/checks-log';
@@ -296,6 +298,7 @@ export type AppStore = AppState &
   ReturnType<typeof createSettingsSlice> &
   ReturnType<typeof createBootSlice> &
   ReturnType<typeof createPresenceSlice> &
+  ReturnType<typeof createCompanionLinkSlice> &
   ReturnType<typeof createHostReachabilitySlice> &
   ReturnType<typeof createChecksLogSlice> &
   ReturnType<typeof createTurnFilesSlice> &
@@ -393,6 +396,7 @@ const initialState: AppState = {
   ...workEventsInitialState,
   ...dormantSpendInitialState,
   ...presenceInitialState,
+  ...companionLinkInitialState,
   ...hostReachabilityInitialState,
   ...checksLogInitialState,
   ...turnFilesInitialState,
@@ -580,6 +584,7 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createChatsSlice({ set, get }),
   ...createAskSlice({ set, get }),
   ...createPresenceSlice({ set, get }),
+  ...createCompanionLinkSlice({ set, get }),
   ...createHostReachabilitySlice({ set, get }),
   ...createChecksLogSlice({ set, get }),
   ...createTurnFilesSlice({ set, get }),

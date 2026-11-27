@@ -109,6 +109,10 @@ vi.mock('../../../features/notifications/components/NotificationCenter', () => (
   NotificationCenter: () => <span data-testid="notification-center" />,
 }));
 
+vi.mock('../../../features/companion/components/IphoneEntry', () => ({
+  IphoneEntry: () => <span data-testid="iphone-entry" />,
+}));
+
 vi.mock('../../../features/workspace/components/RepoEntry', () => ({
   RepoEntry: () => <span data-testid="repo-entry" />,
 }));
@@ -251,14 +255,16 @@ describe('AppTopBar', () => {
     expect(screen.queryByText(/need you/)).toBeNull();
   });
 
-  it('puts the bell right after spend, with no theme switch between them', () => {
+  it('puts the iPhone entry between spend and the bell, with no theme switch in the way', () => {
     renderBar();
 
     const spend = screen.getByRole('button', { name: 'Spend today. Open Impact' });
+    const iphone = screen.getByTestId('iphone-entry');
     const bell = screen.getByTestId('notification-center');
 
     expect(spend.compareDocumentPosition(bell) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(spend.nextElementSibling).toBe(bell);
+    expect(spend.nextElementSibling).toBe(iphone);
+    expect(iphone.nextElementSibling).toBe(bell);
   });
 
   it('keeps the brand and a workspace gear out of the bar', () => {
