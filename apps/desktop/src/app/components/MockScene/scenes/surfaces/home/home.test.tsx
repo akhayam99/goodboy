@@ -65,4 +65,26 @@ describe('the Home place scenes', () => {
       expect(document.querySelector('[data-home-widget="providerLimits"]')).not.toBeNull();
     },
   );
+
+  it('counts what needs you once: the hero, the badge and the rows agree', async () => {
+    const [, Scene] = Object.entries(HOME_PLACE_SCENES)[0] ?? [];
+    if (Scene === undefined) {
+      throw new Error('no Home scene');
+    }
+    render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+
+    await waitFor(() =>
+      expect(document.querySelector('[data-home-widget="needsYou"]')).not.toBeNull(),
+    );
+    const card = document.querySelector('[data-home-widget="needsYou"]') ?? document.body;
+    const rows = card.querySelectorAll('li').length;
+    const finish = document.querySelector('[data-home-widget="sessionsToFinish"]');
+
+    expect(card.querySelector('[data-count-badge]')?.textContent).toBe(String(rows));
+    expect(finish?.textContent).toContain(`${rows} need you`);
+  });
 });

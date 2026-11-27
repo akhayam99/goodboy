@@ -31,21 +31,20 @@ export type HomeFacts = Readonly<{
 export const useHomeFacts = ({ workspaceId }: Params): HomeFacts => {
   const sessions = useSessions();
   const groups = useStageGroupedSessions(workspaceId, sessions);
-  const { needsYou, running, attention } = useNowSessions({});
+  const { needsYou, running } = useNowSessions({});
   const isLoading = useAppStore(
     (state) => !state.boardReady || state.switchingToWorkspaceId != null,
   );
   return useMemo(() => {
-    const sizeOf = ({ key }: SizeParams): number =>
-      (groups.find((group) => group.key === key)?.sessions ?? EMPTY_ARRAY).length;
-    const toFinish = groups
-      .filter((group) => group.key !== 'done')
-      .reduce((total, group) => total + group.sessions.length, 0);
+    const groupOf = ({ key }: SizeParams): ReadonlyArray<Session> =>
+      groups.find((group) => group.key === key)?.sessions ?? EMPTY_ARRAY;
+    const counted = new Set<string>(needsYou.map((session) => session.id));
+    const quiet = groupOf({ key: 'attention' }).filter((session) => !counted.has(session.id));
     const counts: StageCounts = {
-      needsYou: attention.count,
+      needsYou: needsYou.length,
       running: running.length,
-      review: sizeOf({ key: 'review' }),
-      open: Math.max(0, toFinish - attention.count - running.length - sizeOf({ key: 'review' })),
+      review: groupOf({ key: 'review' }).length,
+      open: groupOf({ key: 'building' }).length + quiet.length,
     };
     return {
       isLoading,
@@ -54,7 +53,7 @@ export const useHomeFacts = ({ workspaceId }: Params): HomeFacts => {
       needsYou,
       running,
       counts,
-      toFinish,
+      toFinish: counts.needsYou + counts.running + counts.review + counts.open,
     };
-  }, [attention.count, groups, isLoading, needsYou, running, sessions.length, workspaceId]);
+  }, [groups, isLoading, needsYou, running, sessions.length, workspaceId]);
 };
