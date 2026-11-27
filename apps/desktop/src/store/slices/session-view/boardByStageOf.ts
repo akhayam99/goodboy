@@ -1,7 +1,7 @@
 import type { Session, SessionStage, SessionStageInfo, SessionViewPrefs } from '@goodboy/types';
-import { attentionCountOf } from '../../../../store/slices/session-view/attentionCountOf';
-import { sortAndGroupSessions } from '../../../../store/slices/session-view/sortAndGroupSessions';
-import type { GroupedSessions } from '../../../../store/slices/session-view/types';
+import { attentionCountOf } from './attentionCountOf';
+import { sortAndGroupSessions } from './sortAndGroupSessions';
+import type { GroupedSessions } from './types';
 
 type Params = {
   readonly groups: ReadonlyArray<GroupedSessions>;

@@ -62,7 +62,7 @@ export const MainRegion = ({
             ),
           },
         ]),
-    ...(isHomeShown ? [{ key: 'home', content: <HomePage /> }] : []),
+    ...(isHomeShown ? [{ key: 'home', content: <HomePage workspaceId={workspaceId} /> }] : []),
     ...(isDraftShown
       ? [{ key: 'draft', content: <SessionDraftPane workspaceId={workspaceId} /> }]
       : []),

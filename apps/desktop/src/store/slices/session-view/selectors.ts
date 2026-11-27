@@ -183,14 +183,20 @@ function groupedSessionsEqual(
   return true;
 }
 
+type GroupedOptions = {
+  readonly isFilterIgnored?: boolean;
+};
+
 export const useStageGroupedSessions = (
   workspaceId: WorkspaceId | null,
   sessions: ReadonlyArray<Session>,
+  { isFilterIgnored = false }: GroupedOptions = {},
 ): ReadonlyArray<GroupedSessions> => {
   const prefs = useSessionViewPrefs(workspaceId);
   const { filteredSessions, stages, infos, sessionGithub } = useStageSources({
     workspaceId,
     sessions,
+    isFilterIgnored,
   });
   const lastTurnBySession = useLastTurnBySession(filteredSessions);
   const attentionSinceBySession = useMemo(() => attentionSinceOfInfos({ infos }), [infos]);
