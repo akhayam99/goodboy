@@ -35,7 +35,7 @@ afterEach(() => {
 });
 
 describe('closeSlot', () => {
-  it('closes the top of the slot and brings the chip back', () => {
+  it('closes the top of the slot and leaves nothing behind', () => {
     store.getState().openDrawer({
       kind: 'conversation',
       sessionId: SESSION_ID,
@@ -49,7 +49,7 @@ describe('closeSlot', () => {
 
     closeSlot({});
 
-    expect(store.getState().drawer?.kind).toBe('conversation');
+    expect(store.getState().drawer).toBeNull();
     expect(store.getState().drawerBack).toBeNull();
   });
 
@@ -81,7 +81,7 @@ describe('closeSlot', () => {
     expect(store.getState().navigation).toEqual(before);
   });
 
-  it('brings a chipped drawer back over a question, then empties the slot', () => {
+  it('reopens Ask when a question opened from Ask closes, then empties the slot', () => {
     store.getState().openDrawer({
       kind: 'question',
       sessionId: SESSION_ID,
@@ -99,7 +99,7 @@ describe('closeSlot', () => {
     });
 
     store.getState().closeQuestion();
-    expect(store.getState().drawer?.kind).toBe('conversation');
+    expect(store.getState().drawer?.kind).toBe('ask');
     expect(store.getState().drawerBack).toBeNull();
 
     closeSlot({});

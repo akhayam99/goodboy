@@ -16,6 +16,7 @@ const zoneOf = (id: string): DockDropZone => ({
   layer: 3,
   rect: { x: 0, y: 0, width: 1, height: 1 },
   card: { x: 0, y: 0, width: 1, height: 1 },
+  anchor: { x: 0, y: 0, align: 'center' },
   label: 'Place left',
   layout: { columns: [], groups: {} },
   swap: null,

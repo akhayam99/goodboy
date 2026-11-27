@@ -17,8 +17,8 @@ equal (ids, order, binaries).
   `Cli::of_provider` read it. `Cli::of_binary` answers `None` for an unknown
   binary, so a typo gets no arguments instead of Claude's
 - TypeScript: `PROVIDER_FLAGS` in `packages/core/src/providers/providerFlags.ts`:
-  the binary, `statusSlot`, `shouldReplayHistoryAsText`, `hasAccountTest` and
-  `canFollowRules`. A flag exists only when code branches on it, and a test per
+  the binary, `statusSlot`, `shouldReplayHistoryAsText`, `hasAccountTest`,
+  `canFollowRules` and `canTakeLeadDelta`. A flag exists only when code branches on it, and a test per
   flag pins its value
 
 Never compare with a provider id (`=== 'cursor'`): add a flag and read it.

@@ -165,4 +165,54 @@ describe('computeCostUsd', () => {
 
     expect(computeCostUsd({ usage: cacheCreationUsage, model: 'claude-opus-5' })).toBeCloseTo(1.25);
   });
+
+  it('bills the one hour part of a cache write at 2 times the input rate', () => {
+    const written: ProviderUsage = {
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 0,
+      cacheCreationInputTokens: 200_000,
+      longCacheWriteInputTokens: 120_000,
+      estimatedCostUsd: 0,
+    };
+    const expected = (80_000 * 5 * 1.25 + 120_000 * 5 * 2) / 1_000_000;
+
+    expect(computeCostUsd({ usage: written, model: 'claude-opus-5' })).toBeCloseTo(expected, 6);
+  });
+
+  it('never bills more one hour writes than the write total', () => {
+    const written: ProviderUsage = {
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 0,
+      cacheCreationInputTokens: 100_000,
+      longCacheWriteInputTokens: 300_000,
+      estimatedCostUsd: 0,
+    };
+
+    expect(computeCostUsd({ usage: written, model: 'claude-opus-5' })).toBeCloseTo(1, 6);
+  });
+
+  it('bills the one hour writes of a large request at its level, and counts them once', () => {
+    const request = {
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 0,
+      cacheCreationInputTokens: 150_000,
+      longCacheWriteInputTokens: 150_000,
+    };
+    const turn: ProviderUsage = {
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 0,
+      cacheCreationInputTokens: 200_000,
+      longCacheWriteInputTokens: 160_000,
+      largeRequests: [request],
+      estimatedCostUsd: 0,
+    };
+    const large = (150_000 * 0.5 * 2) / 1_000_000;
+    const rest = (10_000 * 0.1 * 2 + 40_000 * 0.1 * 1.25) / 1_000_000;
+
+    expect(computeCostUsd({ usage: turn, model: 'claude-haiku-5-5' })).toBeCloseTo(large + rest, 6);
+  });
 });

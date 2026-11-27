@@ -891,7 +891,7 @@
   },
   "apps/desktop/src/store/slices/sessions/setCurrentSession.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 18
+      "count": 17
     }
   },
   "apps/desktop/src/store/slices/sessions/setSessionConfig.ts": {
@@ -952,11 +952,6 @@
   "apps/desktop/src/store/slices/turn/kickoff.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/store/slices/turn/preamble.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
     }
   },
   "apps/desktop/src/store/slices/turn/prepareTurn.ts": {

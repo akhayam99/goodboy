@@ -72,6 +72,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     onWritingUserText,
     onSettled,
     permissionOnceAllows,
+    leadDelivery,
   } = ctx.input;
   const {
     session,
@@ -281,6 +282,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
         ...(onStarted !== undefined && !progress.hasSpawned && { onStarted }),
         ...(onWritingUserText !== undefined && !progress.hasSpawned && { onWritingUserText }),
         ...(onSettled !== undefined && { onSettled }),
+        ...(leadDelivery !== undefined && { leadDelivery }),
         retry: {
           attempt: (retry?.attempt ?? 0) + 1,
           provider: fallbackPlan.provider,

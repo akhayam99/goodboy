@@ -3,12 +3,13 @@ import { AUTO_SEED_ROOT, AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto
 import { brandId, type ProviderRunId } from '@goodboy/types';
 import type { SendTurnInput, SendTurnResult } from '../../slices/turn/types';
 import type { AutoTurnEnded, DeliveryRun, StartAutoTurnParams } from './ports';
-import { makeStartAutoTurn } from './startAutoTurn';
+import { makeStartAutoTurn, type StartAutoTurnDeps } from './startAutoTurn';
 import { WORLD_TREE } from './testing/autoWorld';
 
 type Script = Readonly<{
   send: (input: SendTurnInput) => Promise<SendTurnResult>;
   lookups: ReadonlyArray<DeliveryRun | null>;
+  loadPicks?: StartAutoTurnDeps['loadAgentPicks'];
 }>;
 
 type Harness = Readonly<{
@@ -18,11 +19,14 @@ type Harness = Readonly<{
   params: StartAutoTurnParams;
 }>;
 
-const harness = ({ send, lookups }: Script): Harness => {
+const START_DEADLINE_MS = 20_000;
+
+const harness = ({ send, lookups, loadPicks = async () => undefined }: Script): Harness => {
   const inputs: Array<SendTurnInput> = [];
   const ended: Array<AutoTurnEnded> = [];
   let poll = 0;
   const start = makeStartAutoTurn({
+    loadAgentPicks: loadPicks,
     sendTurn: (input) => {
       inputs.push(input);
       return send(input);
@@ -73,6 +77,75 @@ describe('starting the turn of Auto through the store', () => {
       permissionOnceAllows: ['Read(//notify-relay/README.md)'],
       resolvedAsks: { denied: [], held: [] },
     });
+  });
+
+  it('hands the parts of the delivery to the turn, so a resumed Lead gets only what changed', async () => {
+    const state = harness({
+      lookups: [{ runId: 'run-planned', isLive: true }],
+      send: async () => NOT_BLOCKED,
+    });
+    const parts = [{ name: 'user', kind: 'news', text: 'hello' }] as const;
+
+    await state.start({ ...state.params, parts });
+
+    expect(state.inputs[0]?.leadDelivery).toEqual(parts);
+  });
+
+  it('reads the agent picks of the session before it sends the turn', async () => {
+    const steps: Array<string> = [];
+    const state = harness({
+      lookups: [{ runId: 'run-planned', isLive: true }],
+      loadPicks: async ({ sessionId }) => {
+        await Promise.resolve();
+        steps.push(`read ${sessionId}`);
+      },
+      send: async () => {
+        steps.push('send');
+        return NOT_BLOCKED;
+      },
+    });
+
+    await state.start(state.params);
+
+    expect(steps).toEqual([`read ${AUTO_SEED_SESSION}`, 'send']);
+  });
+
+  it('sends no turn and reports no end when the agent picks cannot be read', async () => {
+    const state = harness({
+      lookups: [null],
+      loadPicks: async () => {
+        throw new Error('database is locked');
+      },
+      send: async () => NOT_BLOCKED,
+    });
+
+    await expect(state.start(state.params)).rejects.toThrow('database is locked');
+    expect(state.inputs).toHaveLength(0);
+    expect(state.ended).toHaveLength(0);
+  });
+
+  it('refuses the turn when the agent picks are not read before the start deadline, and a late read sends nothing', async () => {
+    let finishRead: () => void = () => undefined;
+    const state = harness({
+      lookups: [{ runId: 'run-planned', isLive: true }],
+      loadPicks: () =>
+        new Promise<void>((resolve) => {
+          finishRead = resolve;
+        }),
+      send: async () => NOT_BLOCKED,
+    });
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+    const started = state.start(state.params);
+    await vi.advanceTimersByTimeAsync(START_DEADLINE_MS);
+    const outcome = await started;
+    vi.useRealTimers();
+    finishRead();
+    await Promise.resolve();
+
+    expect(outcome).toEqual({ kind: 'refused', message: 'The turn did not start in time.' });
+    expect(state.inputs).toHaveLength(0);
+    expect(state.ended).toHaveLength(0);
   });
 
   it('sends a delegation turn that carries its run, delivery and tree, and reports the end once', async () => {

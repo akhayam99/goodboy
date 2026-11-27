@@ -76,6 +76,8 @@ export const CLAUDE_PRICES: Record<string, ModelPrice> = {
 
 const FALLBACK: ModelPrice = CLAUDE_PRICES['claude-sonnet-4-6']!;
 
+const ONE_HOUR_CACHE_WRITE_FACTOR = 2;
+
 export const priceFor = (model: string): ModelPrice => {
   return CLAUDE_PRICES[model] ?? FALLBACK;
 };
@@ -86,5 +88,10 @@ type Params = {
 };
 
 export const computeCostUsd = ({ usage, model }: Params): number => {
-  return computeLeveledCostUsd({ usage, price: priceFor(model), isCacheInInput: false });
+  return computeLeveledCostUsd({
+    usage,
+    price: priceFor(model),
+    isCacheInInput: false,
+    longCacheWriteFactor: ONE_HOUR_CACHE_WRITE_FACTOR,
+  });
 };

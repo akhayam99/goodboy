@@ -1,15 +1,16 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertAgent } from '@goodboy/db';
-import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
+import { brandId, type AgentId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
-import { openStorySqlite, storySqlite } from '../../../test/sqliteDb';
+import { faultingSqliteDatabase, openStorySqlite, storySqlite } from '../../../test/sqliteDb';
 import type { SetFn } from './types';
 
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../../test/sqliteDb')).sqliteDbLibModuleMock(),
 );
 
+import { setAgentConfig } from '../sessions/setAgentConfig';
 import { loadPhaseRunsForSession } from './loadPhaseRunsForSession';
 
 const SESSION_ID = 'ses-1' as SessionId;
@@ -41,9 +42,9 @@ beforeEach(async () => {
 });
 
 const makeStore = (initial: Partial<AppStore>) => {
-  let state = initial;
+  let state = initial as AppStore;
   const set: SetFn = (update) => {
-    const patch = typeof update === 'function' ? update(state as AppStore) : update;
+    const patch = typeof update === 'function' ? update(state) : update;
     state = { ...state, ...patch };
   };
   return { set, getState: () => state };
@@ -93,5 +94,54 @@ describe('loadPhaseRunsForSession', () => {
     expect(getState().agentModelOverride).toEqual({ 'agent-new': 'claude-sonnet-4-6' });
     expect(getState().agentProviderOverride).toEqual({ 'agent-new': 'cursor' });
     expect(getState().agentEffortOverride).toEqual({ 'agent-new': 'low' });
+  });
+
+  it('drops a refresh that read the row before a cleared pick was saved', async () => {
+    await insertScout('agent-new');
+    const { set, getState } = makeStore({
+      sessionPhaseRuns: {},
+      agentModelOverride: {},
+      agentProviderOverride: {},
+      agentEffortOverride: {},
+    });
+    await loadPhaseRunsForSession(set)(SESSION_ID);
+    const select = faultingSqliteDatabase.select.bind(faultingSqliteDatabase);
+    let releaseRead: () => void = () => undefined;
+    const heldRead = new Promise<void>((resolve) => {
+      releaseRead = resolve;
+    });
+    let hasReadOldRow: () => void = () => undefined;
+    const readOldRow = new Promise<void>((resolve) => {
+      hasReadOldRow = resolve;
+    });
+    const spy = vi
+      .spyOn(faultingSqliteDatabase, 'select')
+      .mockImplementationOnce(async (sql, params) => {
+        const rows = await select(sql, params);
+        hasReadOldRow();
+        await heldRead;
+        return rows;
+      });
+
+    const lateRefresh = loadPhaseRunsForSession(set)(SESSION_ID);
+    await readOldRow;
+    spy.mockRestore();
+    const saving = setAgentConfig(set, getState)(
+      SESSION_ID,
+      brandId<AgentId>({ value: 'agent-new' }),
+      {
+        modelOverride: null,
+        providerOverride: null,
+        effort: null,
+      },
+    );
+    await saving;
+    releaseRead();
+    await lateRefresh;
+    await loadPhaseRunsForSession(set)(SESSION_ID);
+
+    expect(getState().agentModelOverride).toEqual({});
+    expect(getState().agentProviderOverride).toEqual({});
+    expect(getState().agentEffortOverride).toEqual({});
   });
 });

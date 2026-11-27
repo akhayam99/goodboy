@@ -49,8 +49,9 @@ now. The Lead shows its unread messages in the same list
 
 ## Lead
 
-The **Lead** answers questions itself and hands the rest to agents of the right
-role, with a model it picks for each, then reads their results and goes on.
+The **Lead** answers from what it already has, asks a Scout when an answer
+needs the code, and hands the rest to agents of the right role, with a model it
+picks for each, then reads their results and goes on.
 
 - Its children are Scout, Plan, Investigate, Review, Implement, Test and Docs,
   never more than four at a time. A child that waits on a question can ask for a

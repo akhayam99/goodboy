@@ -1,6 +1,6 @@
 # The dock grid
 
-> **Read this when** you change how open tools are laid out in the dock, how a panel is resized, focused, dragged or turned, or how a session saves and restores its grid. **Not for** the drawer slot and its back chip ([right-drawer.md](right-drawer.md)) or the rail buttons ([session-tools.md](session-tools.md)).
+> **Read this when** you change how open tools are laid out in the dock, how a panel is resized, focused, dragged or turned, or how a session saves and restores its grid. **Not for** the drawer slots ([right-drawer.md](right-drawer.md)) or the rail buttons ([session-tools.md](session-tools.md)).
 
 ## The grid beside the slot
 
@@ -103,25 +103,29 @@ worktree strip, and Monitor its Pin a port action as a pin icon in the head.
   the empty head moves the tab shown. The tab leaves the cell as one panel, the solver
   solves the rest again, and a `Merge` on its own cell is never drawn. The ghost and the
   committed move read the same layout (`dockLayoutAfterMove`), so a torn tab lands where
-  its card says (`dockFoldedTear.test.ts`).
+  its pill says (`dockFoldedTear.test.ts`).
   1. A press becomes a drag after 4px, so a click stays a click; a press on a control
      in the head, or in a layer it portals out (a menu, the address suggestions),
      never starts one.
-  2. While dragging, the page dims and `DockDropZones` draws one labeled card per
-     target (`Place left` and `Place right` at the dock edges, `Merge`, `Place above`
-     and `Place below` on the panel under the pointer) and one ghost of the landing
-     slot (`dockGhostOf`). A card is drawn only when the committed layout does what its words say (`dockCardHonestOf`: a Place card leaves the panel alone in that spot, a Merge card makes it a tab there), and no two cards overlap (`dockCardsClipOf`). A card that would change nothing, or that the solver with
-     the real widths refuses (`canDrop` from `useDockGrid`, `dockMoveFits`), is not
-     drawn. A card is smaller than its hit area, and a target takes 80 ms of hover
-     before the ghost moves. The ghost of a `Merge` is the target panel itself, and the merge keeps the tabs the solver had folded into that panel (`keeps` on the `tab` target), so the result matches the card's words. The overlay redraws from a small store at most once a
+  2. While dragging, `DockDropZones` draws one floating pill per target (`Place left` and
+     `Place right` at the dock edges, `Merge`, `Place above` and `Place below` on the panel under
+     the pointer) and one soft outline of the landing slot (`dockGhostOf`). The page is not dimmed.
+     A pill is drawn only when the committed layout does what its words say (`dockCardHonestOf`: a
+     Place pill leaves the panel alone in that spot, a Merge pill makes it a tab there), and no two
+     hit areas overlap (`dockCardsClipOf`). A pill that would change nothing, or that the solver with
+     the real widths refuses (`canDrop` from `useDockGrid`, `dockMoveFits`), is not drawn. A pill
+     sits at the anchor of its zone (`DockDropZone.anchor`): an above pill sits under the panel head,
+     never over its title, and the side pills move to 34% of the height under 440px. A pill never
+     straddles the outline (`dockPillPlaceOf`). The pill under the pointer turns solid and the others
+     step back; a target takes 80 ms of hover before the outline moves. The outline of a `Merge` is the target panel itself, and the merge keeps the tabs the solver had folded into that panel (`keeps` on the `tab` target), so the result matches the pill's words. The fold line sits inside the outline of the hovered target, and only when something folds. The overlay redraws from a small store at most once a
      frame (`dockDragStore`), so panels render only at drag start and end.
   3. The drag sets `SPLIT_DRAG_ATTRIBUTE` to `move`, so the Browser page hides under
      its cover.
   4. Esc cancels through the escape stack; pointer up drops through `moveDockPanel`.
 - **Lifting with the keyboard.** Tab reaches a head (`Move {title}`, a focusable group). Enter or
   Space lifts the cell, or the shown tab of a folded cell; Shift Enter on a tab segment lifts
-  that tool alone (`DockDragSource.onLift`, `useDockDrag.lift`). The page dims as in a pointer
-  drag, the arrows walk the cards in screen order (`dockZoneStepOf`), Enter drops on the chosen
+  that tool alone (`DockDragSource.onLift`, `useDockDrag.lift`). The pills show as in a pointer
+  drag, the arrows walk the pills in screen order (`dockZoneStepOf`), Enter drops on the chosen
   card and chooses nothing before one is chosen, Esc cancels (`registerEscapeLayer`), and so
   does the focus leaving the grid. A polite live region says the lift, each card with its place
   in the list and what folds, the drop and the cancel (`data-dock-status`, `data-dock-note`).
