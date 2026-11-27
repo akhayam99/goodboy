@@ -72,6 +72,6 @@ describe('the deleted branch scenes', () => {
     await screen.findAllByText(/hl\/tenant-limits/, undefined, WAIT);
     expect(screen.queryByText('Not on a branch')).toBeNull();
     screen.getAllByText(/#309/);
-    screen.getAllByText('Merged');
+    screen.getAllByText(/Merged/);
   });
 });
