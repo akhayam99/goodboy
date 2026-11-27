@@ -13,9 +13,11 @@ under a 1100px window) at the window's right edge on every workspace screen,
   inward of it ([right-drawer.md](right-drawer.md#the-rail-is-the-anchor)).
 - It holds Terminal, Browser, Scripts, Ask and Monitor (`RAIL_TOOLS`, each with its
   pane id and optional shortcut), with no heading. All five stay visible on every
-  workspace page; Scripts and Ask are disabled without a session and say "open a
-  session first" (`ToolRailFrame`, `toolFactOf`). `toggleRailTool` toggles each
-  panel to the rail's left. Explore, Agents and Context open from their pages and
+  workspace page and belong to the window: a tool open on Home stays open in a
+  session and back ([dock-grid.md](dock-grid.md#the-grid-saved-on-the-session)). Ask is
+  disabled without a session and says "open a session to ask about it" (`ToolRailFrame`,
+  `toolFactOf`); an Ask left open on Home shows that line and closes from its head.
+  `toggleRailTool` toggles each panel to the rail's left. Explore, Agents and Context open from their pages and
   keys.
 - Tasks, Chat and Workflows fade their content while the rail stays still
   (`StudioFrame` animates its `data-studio-motion` nodes); a record panel open with
@@ -85,9 +87,11 @@ under a 1100px window) at the window's right edge on every workspace screen,
 - **Browser** opens a page beside the work (kind `browser`, `features/browser/`):
   the session's tabs and the project pins in a reader tier pane
   ([browser.md](../browser.md#the-pane)).
-- **Scripts and Ask are dock tools.** Their buttons name the session
-  (`toggleRailTool`); `DrawerHost` renders `ScriptsPanel` and `AskPane` in a
-  `DrawerFrame` grid cell. The Scripts chord, the palette's Open Scripts, toasts and
+- **Scripts and Ask are dock tools.** `toggleRailTool` names the session when there
+  is one; `DrawerHost` renders `ScriptsPanel` and `AskPane` in a `DrawerFrame` grid
+  cell. With no session Scripts lists the scripts of every project of the workspace,
+  grouped by project (`WorkspaceScriptsDrawer`), and `Run` opens a shell on the
+  project folder with the command typed (`runWorkspaceScript`). The Scripts chord, the palette's Open Scripts, toasts and
   stored notifications (`open-lens` scripts) still open Terminal through
   `openToolPane`.
 - **Ask** opens the session's Ask panel (`openAsk` and `closeAsk` name the session);
