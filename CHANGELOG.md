@@ -12,9 +12,9 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
-## Goodboy v0.43.3
+## Goodboy v0.44.0
 
-See what the Lead costs in a run, select an element on the Browser page, and keep work off models your account cannot run, with newer models on every provider.
+Your iPhone finds your Mac again and needs pairing again if you go back a version, with newer models on every provider and the Lead's cost in each run.
 
 ### Improved
 
@@ -37,6 +37,11 @@ Goodboy remembers which models an account cannot run and sends work to the next 
 <!-- gb area=providers pr=2440 -->
 
 Gemini 4 Neon, Carbon and Hydrogen, GPT-6.2 Sol and Astra, GPT-6.1 Terra, Fable 5.2, Kimi K3.1 Pro and DeepSeek V4.1 Flash join the pickers of the providers that offer them, with their prices. A saved pick of Gemini 3.8 Flash moves to Hydrogen.
+
+#### The iPhone finds your Mac again
+<!-- gb area=settings pr=2435 -->
+
+The iPhone finds your Mac again after a restart, and pairing shows a code to check on both screens. A new phone waits for Allow or Deny on the iPhone page, and Reset pairing starts again.
 
 #### Floating drag targets in the dock
 <!-- gb area=app pr=2428 -->
