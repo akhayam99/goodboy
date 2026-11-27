@@ -1,4 +1,4 @@
-import { useState, type ReactNode, type RefObject } from 'react';
+import { useEffect, useState, type ReactNode, type RefObject } from 'react';
 
 import { PromptField, type PromptFieldFiles } from '../PromptField';
 import { SendStopControl } from '../SendStopControl';
@@ -29,6 +29,9 @@ type Props = {
   readonly isStopping: boolean;
   readonly isImagesOn: boolean;
   readonly isAutoFocused?: boolean;
+  readonly canQueue?: boolean;
+  readonly tray?: ReactNode;
+  readonly restoredImages?: MessageComposerMessage['images'] | null;
   readonly minRows: number;
   readonly maxRows: number;
   readonly footerStart?: ReactNode;
@@ -60,6 +63,9 @@ export const MessageComposer = ({
   isStopping,
   isImagesOn,
   isAutoFocused = false,
+  canQueue = false,
+  tray,
+  restoredImages = null,
   minRows,
   maxRows,
   footerStart,
@@ -73,7 +79,16 @@ export const MessageComposer = ({
   const [sendNotice, setSendNotice] = useState<string | null>(null);
   const images = usePromptFiles({ note: '', isEnabled: isImagesOn, only: CHAT_IMAGES });
   const attached = isImagesOn ? images.attachments : [];
-  const canSend = (text.trim() !== '' || attached.length > 0) && !isStreaming;
+  const { setAttachments } = images;
+  const hasContent = text.trim() !== '' || attached.length > 0;
+  const canSend = hasContent && (canQueue || !isStreaming);
+  const hasTray = tray != null;
+
+  useEffect(() => {
+    if (restoredImages !== null) {
+      setAttachments((current) => [...current, ...restoredImages]);
+    }
+  }, [restoredImages, setAttachments]);
   const escape = useEscapeArm({
     press: isStreaming ? onStop : null,
     isStopping,
@@ -99,7 +114,7 @@ export const MessageComposer = ({
     });
   };
 
-  return (
+  const field = (
     <PromptField
       kind="message"
       label={label}
@@ -141,12 +156,27 @@ export const MessageComposer = ({
       isInline={isInline}
       model={model}
       actions={
-        <SendStopControl
-          canSend={canSend}
-          stop={isStreaming ? { isStopping, onStop } : undefined}
-          onSend={send}
-        />
+        <>
+          {isStreaming && canQueue && canSend ? (
+            <SendStopControl canSend={canSend} onSend={send} />
+          ) : null}
+          <SendStopControl
+            canSend={canSend}
+            stop={isStreaming ? { isStopping, onStop } : undefined}
+            onSend={send}
+          />
+        </>
       }
     />
+  );
+
+  if (!hasTray) {
+    return field;
+  }
+  return (
+    <div className="flex w-full flex-col [&>[data-composer-surface]]:rounded-t-none">
+      {tray}
+      {field}
+    </div>
   );
 };

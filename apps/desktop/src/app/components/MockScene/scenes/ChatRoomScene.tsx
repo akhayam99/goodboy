@@ -42,6 +42,11 @@ const OPENCODE: ProviderDisplayInfo = {
 
 const chatIdOf = (key: string): ChatId => `mock-chat-${WORKSPACE_ID}-${key}` as ChatId;
 
+const QUEUED_MESSAGES: ReadonlyArray<string> = [
+  'And does notify-relay need the same check?',
+  'List the ledger-core migrations that touch it.',
+];
+
 type ChatKeyParams = {
   readonly key: string | null;
 };
@@ -53,14 +58,14 @@ const initialChatId = ({ key }: ChatKeyParams): ChatId | null => {
   return key === null ? CONSENT_CHAT_ID : chatIdOf(key);
 };
 
-type ChatSceneActivity = 'running' | 'unread' | 'mixed';
+type ChatSceneActivity = 'running' | 'unread' | 'mixed' | 'queued';
 
 type ActivityParams = {
   readonly activity: string | null;
 };
 
 const seedChatActivity = ({ activity }: ActivityParams): void => {
-  if (activity === 'running' || activity === 'mixed') {
+  if (activity === 'running' || activity === 'mixed' || activity === 'queued') {
     useAppStore.setState({
       chatStreams: {
         [chatIdOf('release')]: {
@@ -68,6 +73,19 @@ const seedChatActivity = ({ activity }: ActivityParams): void => {
           messageId: 'mock-message-release' as ChatMessageId,
           isStopping: false,
         },
+      },
+    });
+  }
+  if (activity === 'queued') {
+    useAppStore.setState({
+      chatQueues: {
+        [chatIdOf('release')]: QUEUED_MESSAGES.map((content, index) => ({
+          id: `mock-queued-${index}`,
+          content,
+          attachments: [],
+          status: 'queued' as const,
+          failure: null,
+        })),
       },
     });
   }

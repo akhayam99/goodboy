@@ -58,6 +58,7 @@ import { createSettingsLastPageSlice } from './slices/settings-last-page';
 import { createMonitoringViewSlice } from './slices/monitoring-view';
 import { createLocalChecksSlice } from './slices/local-checks';
 import { createChatLastOpenSlice } from './slices/chat-last-open';
+import { createChatQueueSlice } from './slices/chatQueue';
 import { createLeadPermissionsSlice } from './slices/lead-permissions';
 import { createSessionGroupingSlice } from './slices/session-grouping';
 import { createNextViewSlice } from './slices/next-view';
@@ -205,6 +206,7 @@ import { settingsLastPageInitialState } from './slices/settings-last-page/state'
 import { monitoringViewInitialState } from './slices/monitoring-view/state';
 import { localChecksInitialState } from './slices/local-checks/state';
 import { chatLastOpenInitialState } from './slices/chat-last-open/state';
+import { chatQueueInitialState } from './slices/chatQueue/state';
 import { leadPermissionsInitialState } from './slices/lead-permissions/state';
 import { sessionGroupingInitialState } from './slices/session-grouping/state';
 import { nextViewInitialState } from './slices/next-view/state';
@@ -283,6 +285,7 @@ export type AppStore = AppState &
   ReturnType<typeof createMonitoringViewSlice> &
   ReturnType<typeof createLocalChecksSlice> &
   ReturnType<typeof createChatLastOpenSlice> &
+  ReturnType<typeof createChatQueueSlice> &
   ReturnType<typeof createLeadPermissionsSlice> &
   ReturnType<typeof createSessionGroupingSlice> &
   ReturnType<typeof createNextViewSlice> &
@@ -428,6 +431,7 @@ const initialState: AppState = {
   ...monitoringViewInitialState,
   ...localChecksInitialState,
   ...chatLastOpenInitialState,
+  ...chatQueueInitialState,
   ...leadPermissionsInitialState,
   ...sessionGroupingInitialState,
   ...nextViewInitialState,
@@ -504,6 +508,7 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createMonitoringViewSlice({ set, get }),
   ...createLocalChecksSlice({ set, get }),
   ...createChatLastOpenSlice({ set, get }),
+  ...createChatQueueSlice({ set, get }),
   ...createLeadPermissionsSlice({ set, get }),
   ...createSessionGroupingSlice({ set, get }),
   ...createNextViewSlice({ set, get }),

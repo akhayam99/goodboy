@@ -48,6 +48,8 @@ export type CreateChatParams = {
 export type SendChatMessageParams = ChatParams & {
   readonly content: string;
   readonly attachments?: ReadonlyArray<PendingAttachment>;
+  readonly queuedId?: string;
+  readonly onAccepted?: () => void;
 };
 
 export type ArchiveChatsParams = {

@@ -409,6 +409,7 @@ chat-first-run
 chat-image-bubble
 chat-list-idle
 chat-list-loading
+chat-queue
 chat-room
 chat-shell
 checks-fixed-local

@@ -28,6 +28,7 @@ vi.mock('../../../features/workspace-chat/activeChatBackend', () => ({
   ),
 }));
 
+import { createChatQueueSlice } from '../chatQueue';
 import { createChatsSlice } from './index';
 import { selectChatGroups } from './selectChatGroups';
 
@@ -68,9 +69,13 @@ const harness = ({ projects, appStudio = null }: HarnessParams) => {
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
   const get = () => state;
-  const slice = createChatsSlice({ set: set as never, get: get as never });
+  const deps = { set: set as never, get: get as never };
+  const slice = createChatsSlice(deps);
+  const queue = createChatQueueSlice(deps);
   state = {
     ...slice,
+    ...queue,
+    chatQueues: {},
     projects: projects ?? [
       project({}),
       project({

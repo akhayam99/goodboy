@@ -16,6 +16,7 @@ import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry
 import { revealPacer } from '../../../features/chat/reveal/revealPacer';
 import { activeChatBackend } from '../../../features/workspace-chat/activeChatBackend';
 import type { ChatTurnOutcome } from '../../../features/conversation/chatTurnOutcome';
+import { withoutQueuedTurn } from '../chatQueue/queueEdits';
 import { chatTitleFromQuestion, NEW_CHAT_TITLE } from './chatTitleFromQuestion';
 import { findChat } from './findChat';
 import { isChatImagesOn } from './isChatImagesOn';
@@ -40,11 +41,17 @@ type FinishParams = {
   readonly outcome: ChatTurnOutcome;
 };
 
-const finishReply = async ({ set, get, chatId, messageId, outcome }: FinishParams) => {
+const finishReply = async ({
+  set,
+  get,
+  chatId,
+  messageId,
+  outcome,
+}: FinishParams): Promise<ChatMessage['status'] | null> => {
   const isStopping = get().chatStreams[chatId]?.isStopping === true;
   const current = (get().chatMessages[chatId] ?? []).find((message) => message.id === messageId);
   if (current === undefined) {
-    return;
+    return null;
   }
   const at = isoNow();
   const finished = settleChatReply({ reply: current, isStopping, outcome, at });
@@ -74,11 +81,18 @@ const finishReply = async ({ set, get, chatId, messageId, outcome }: FinishParam
     get().markChatUnread({ chatId });
   }
   await activeChatBackend.finishMessage({ message: finished });
+  return status;
 };
 
 export const sendChatMessage =
   (set: SetFn, get: GetFn) =>
-  async ({ chatId, content, attachments = [] }: SendChatMessageParams): Promise<boolean> => {
+  async ({
+    chatId,
+    content,
+    attachments = [],
+    queuedId,
+    onAccepted,
+  }: SendChatMessageParams): Promise<boolean> => {
     const question = content.trim();
     const chat = findChat({ state: get(), chatId });
     const isImagesOn = isChatImagesOn({ state: get() });
@@ -135,6 +149,7 @@ export const sendChatMessage =
         : null;
 
     set((state) => ({
+      ...(queuedId !== undefined && withoutQueuedTurn({ state, chatId, itemId: queuedId })),
       chatMessages: { ...state.chatMessages, [chatId]: [...history, asked, reply] },
       chatStreams: {
         ...state.chatStreams,
@@ -146,6 +161,8 @@ export const sendChatMessage =
         patch: { lastActivityAt: at, updatedAt: at, ...(title !== null && { title }) },
       }),
     }));
+
+    onAccepted?.();
 
     let outcome: ChatTurnOutcome;
     try {
@@ -210,6 +227,9 @@ export const sendChatMessage =
     } catch (error) {
       outcome = { status: 'failed', error: formatError(error) };
     }
-    await finishReply({ set, get, chatId, messageId: reply.id, outcome });
+    const status = await finishReply({ set, get, chatId, messageId: reply.id, outcome });
+    if (status === 'done') {
+      void get().drainChatQueue({ chatId });
+    }
     return true;
   };
