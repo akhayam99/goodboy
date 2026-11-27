@@ -132,6 +132,22 @@ describe('leadShareOf', () => {
     expect(shareOf({ ownUsd: 0.4, runUsd: 0.51 })).toEqual({ percent: 78, isOverMark: true });
   });
 
+  it('never flags a Harborline run whose summed costs land on half a dollar', () => {
+    const spend = leadSpendOf({
+      records: [
+        recordOf({ runId: 'run-lead-3', costUsd: 0.27 }),
+        recordOf({ runId: 'run-scout', costUsd: 0.17 }),
+        recordOf({ runId: 'run-implementer-2', costUsd: 0.01 }),
+        recordOf({ runId: 'run-tester', costUsd: 0.05 }),
+      ],
+      agents: AGENTS,
+      agentRunHistory: RUN_HISTORY,
+      agentId: LEAD,
+    });
+    expect(spend.runUsd).toBeGreaterThan(0.5);
+    expect(leadShareOf({ spend })).toEqual({ percent: 54, isOverMark: false });
+  });
+
   it('has no share for a run that has spent nothing', () => {
     expect(shareOf({ ownUsd: 0, runUsd: 0 })).toBeNull();
   });
