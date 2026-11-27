@@ -3991,11 +3991,6 @@
       "count": 10
     }
   },
-  "apps/desktop/src/features/permissions/hooks/useRecentDecisions/index.ts": {
-    "react-hooks/exhaustive-deps": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/permissions/permissions.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 17
@@ -7142,6 +7137,11 @@
   },
   "apps/desktop/src/shared/hooks/useProviderRefreshOnFocus/index.ts": {
     "@typescript-eslint/naming-convention": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/hooks/useRecentDecisions/index.ts": {
+    "react-hooks/exhaustive-deps": {
       "count": 1
     }
   },
