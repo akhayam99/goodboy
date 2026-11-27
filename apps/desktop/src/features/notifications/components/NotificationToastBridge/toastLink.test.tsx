@@ -192,6 +192,31 @@ describe('Retry on a linked toast', () => {
     expect(useAppStore.getState().notifications).toHaveLength(1);
   });
 
+  it('settles again without repeating the retry after a failed resolve write', async () => {
+    const retry = vi.fn(async () => true);
+    mount();
+    await setRows({ rows: [retryRow({ retry })] });
+    storySpies.deleteNotificationsByCoalesceKey.mockRejectedValueOnce(
+      new Error('database is locked'),
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    });
+    await waitFor(() =>
+      expect(storySpies.deleteNotificationsByCoalesceKey).toHaveBeenCalledTimes(1),
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    });
+
+    await waitFor(() =>
+      expect(storySpies.deleteNotificationsByCoalesceKey).toHaveBeenCalledTimes(2),
+    );
+    expect(retry).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().notifications.some((row) => row.id === 'n1')).toBe(false);
+  });
+
   it('keeps the toast and the row and reports the error when the outcome is uncertain', async () => {
     mount();
     await setRows({

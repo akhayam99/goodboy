@@ -75,6 +75,16 @@ describe('a toast that carries notification ids', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
+  it('merges rows of one key whose details differ and shows the latest', () => {
+    mount();
+    fire(failure({ message: 'First detail', notificationIds: ['n1'] }));
+    fire(failure({ message: 'Second detail', notificationIds: ['n2'] }));
+
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.queryByText('First detail')).toBeNull();
+    screen.getByText('Second detail');
+  });
+
   it('keeps two toasts apart when the coalesce keys differ although the text is the same', () => {
     mount();
     fire(failure({ dedupeKey: 'push-failed:session-1', notificationIds: ['n1'] }));

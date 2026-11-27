@@ -31,20 +31,27 @@ export const mapRetryAction = ({
     }
     await store.resolveNotifications([coalesceKey]);
   };
+  let isRetryDone = false;
+  const run = async (): Promise<void> => {
+    if (!isRetryDone) {
+      isRetryDone = await runActionRetry({ retryId });
+    }
+    if (isRetryDone) {
+      await settle();
+    }
+  };
   return {
     label: action.label ?? NAMES.retry,
     isKeptOpen: true,
     onClick: () => {
-      void runActionRetry({ retryId })
-        .then((isDone) => (isDone ? settle() : undefined))
-        .catch((error: unknown) => {
-          void store.reportError({
-            recovery: CHECK_STATE,
-            title: "Couldn't finish the retry",
-            error,
-            ...(sessionId != null && { sessionId }),
-          });
+      void run().catch((error: unknown) => {
+        void store.reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't finish the retry",
+          error,
+          ...(sessionId != null && { sessionId }),
         });
+      });
     },
   };
 };

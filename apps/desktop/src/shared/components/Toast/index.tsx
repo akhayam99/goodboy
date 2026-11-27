@@ -40,11 +40,25 @@ type ToastProviderProps = {
   readonly children: ReactNode;
 };
 
-const isSameToast = ({ a, b }: { a: ToastItem; b: Omit<ToastItem, 'id' | 'count' | 'revision'> }) =>
-  a.dedupeKey === b.dedupeKey &&
-  a.kind === b.kind &&
-  a.title === b.title &&
-  a.message === b.message;
+const isSameToast = ({
+  a,
+  b,
+}: {
+  a: ToastItem;
+  b: Omit<ToastItem, 'id' | 'count' | 'revision'>;
+}) => {
+  if (a.kind !== b.kind) {
+    return false;
+  }
+  if (
+    a.notificationIds !== undefined &&
+    b.notificationIds !== undefined &&
+    a.dedupeKey !== undefined
+  ) {
+    return a.dedupeKey === b.dedupeKey;
+  }
+  return a.dedupeKey === b.dedupeKey && a.title === b.title && a.message === b.message;
+};
 
 export const ToastProvider = ({ children }: ToastProviderProps) => {
   const [toasts, setToasts] = useState<ReadonlyArray<ToastItem>>([]);
@@ -60,6 +74,14 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
           toast.id === match.id
             ? {
                 ...toast,
+                ...(next.notificationIds === undefined
+                  ? {}
+                  : {
+                      title: next.title,
+                      message: next.message,
+                      context: next.context,
+                      action: next.action,
+                    }),
                 notificationIds: mergedIdsOf({ a: toast.notificationIds, b: next.notificationIds }),
                 onDismiss: mergedDismissOf({ a: toast.onDismiss, b: next.onDismiss }),
                 count: toast.count + 1,
