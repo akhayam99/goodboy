@@ -247,6 +247,8 @@ browser-peek
 browser-peek-dark
 browser-pick
 browser-pick-dark
+browser-site-data
+browser-site-data-dark
 browser-width-phone
 browser-width-tablet
 c01-grid-dots
