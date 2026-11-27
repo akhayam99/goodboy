@@ -1,5 +1,5 @@
 import type { Agent, ProviderId } from '@goodboy/types';
-import type { SendTurnInput } from './types';
+import type { SendTurnInput } from '../types';
 
 type Params = Readonly<{
   origin: SendTurnInput['origin'];

@@ -27,7 +27,7 @@ import { readFolderPurposes } from './readFolderPurposes';
 import { collectTouchedMounts, isTurnShared } from './collectTouchedMounts';
 import { beginTurnFileSets, recordTurnFileSets } from './turnFileSets';
 import { composeAgentHandoff } from './composeAgentHandoff';
-import { resumeSessionIdOf } from './resumeSessionIdOf';
+import { resumeSessionIdOf } from './leadDelivery/resumeSessionIdOf';
 import { snapshotMountChanges } from './snapshotMountChanges';
 import type { GetFn, SetFn, TurnLease, TurnProgress, WithInput } from './types';
 import { projectById } from '../projects/projectIndex';

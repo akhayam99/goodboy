@@ -1,8 +1,9 @@
 import type { LeadDeliveryPart } from '@goodboy/core/auto';
 import type { HandoffBodyLayers } from '@goodboy/core/handoff';
+import { providerFlags } from '@goodboy/core/providers';
 import type { Agent, AgentId, ProviderId } from '@goodboy/types';
 import { leadCandidatesBlock } from '../../../runtime/auto/childRouting/leadCandidatesBlock';
-import { resumeSessionIdOf } from '../resumeSessionIdOf';
+import { resumeSessionIdOf } from './resumeSessionIdOf';
 import type { GetFn, SendTurnInput } from '../types';
 import { planLeadTurn, type LeadTurn } from './planLeadTurn';
 import { readLeadLastTurn } from './readLeadLastTurn';
@@ -35,7 +36,12 @@ export const prepareLeadTurn = async ({
   const delivery = input.leadDelivery;
   const isLayered =
     layers.priorTurns === '' && layers.clusterBoundary === null && layers.currentPlan === '';
-  if (delivery === undefined || provider !== 'anthropic' || !isLeadAgent || !isLayered) {
+  if (
+    delivery === undefined ||
+    !providerFlags({ id: provider }).canTakeLeadDelta ||
+    !isLeadAgent ||
+    !isLayered
+  ) {
     return null;
   }
   const nowMs = Date.now();

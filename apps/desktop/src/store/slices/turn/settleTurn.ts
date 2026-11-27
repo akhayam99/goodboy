@@ -275,7 +275,11 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       sessionId,
       agentId: activeAgentId,
       runId,
-      hasSucceeded: lastError === null && !turnWasCancelled && assistantText.trim() !== '',
+      hasSucceeded:
+        lastError === null &&
+        !turnWasCancelled &&
+        !ctx.progress.receivedStreamError &&
+        assistantText.trim() !== '',
       providerSessionId: ctx.progress.providerThreadId,
     });
   }

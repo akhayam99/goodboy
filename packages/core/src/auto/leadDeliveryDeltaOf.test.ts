@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deliverySentOf } from './deliverySentOf';
 import { leadDeliveryDeltaOf } from './leadDeliveryDeltaOf';
+import { LEAD_DELIVERY_MARK } from './leadDeliveryMark';
 import type { LeadDeliveryPart } from './leadDeliveryPart';
 
 const LEDGER_V1 = [
@@ -54,11 +55,26 @@ describe('the changes a Lead delivery carries', () => {
     expect(text).not.toContain('context handoff protocol');
   });
 
-  it('sends the whole list again when a line left it', () => {
-    const shorter = LEDGER_V1.split('\n').slice(0, 3).join('\n');
-    const next = partsOf({ ledger: shorter, budget: 'Spent 0.40 USD.', user: '' });
+  it('sends the whole list again, marked as the whole list, when a line left it', () => {
+    const [head = '', ...kept] = LEDGER_V1.split('\n').slice(0, 3);
+    const next = partsOf({
+      ledger: [head, ...kept].join('\n'),
+      budget: 'Spent 0.40 USD.',
+      user: '',
+    });
 
-    expect(leadDeliveryDeltaOf({ parts: next, sent })).toBe(shorter);
+    expect(leadDeliveryDeltaOf({ parts: next, sent })).toBe(
+      [head, LEAD_DELIVERY_MARK.wholeList, ...kept].join('\n'),
+    );
+  });
+
+  it('says a part is now empty once, and stays quiet after that', () => {
+    const next = partsOf({ ledger: LEDGER_V1, budget: '', user: '' });
+
+    expect(leadDeliveryDeltaOf({ parts: next, sent })).toBe(
+      `budget: ${LEAD_DELIVERY_MARK.cleared}`,
+    );
+    expect(leadDeliveryDeltaOf({ parts: next, sent: deliverySentOf({ parts: next }) })).toBe('');
   });
 
   it('sends a part the session never got, whole', () => {

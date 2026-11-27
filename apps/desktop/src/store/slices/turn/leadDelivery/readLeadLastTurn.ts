@@ -1,5 +1,5 @@
 import type { LeadLastTurn } from '@goodboy/core/auto';
-import { listSessionTurnSpans } from '@goodboy/db';
+import { readAgentLastCleanTurn } from '@goodboy/db';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
 
@@ -11,19 +11,8 @@ type Params = Readonly<{
 export const readLeadLastTurn = async ({
   sessionId,
   agentId,
-}: Params): Promise<LeadLastTurn | null> => {
-  const spans = await listSessionTurnSpans({ db: tauriDatabase, sessionId }).catch(
-    (error: unknown) => {
-      console.warn('reading the last turn of the Lead failed', error);
-      return [];
-    },
-  );
-  let last: LeadLastTurn | null = null;
-  for (const span of spans) {
-    if (span.agentId !== agentId || (last !== null && span.endedAtMs <= last.endedAtMs)) {
-      continue;
-    }
-    last = { endedAtMs: span.endedAtMs, model: span.model };
-  }
-  return last;
-};
+}: Params): Promise<LeadLastTurn | null> =>
+  readAgentLastCleanTurn({ db: tauriDatabase, sessionId, agentId }).catch((error: unknown) => {
+    console.warn('reading the last turn of the Lead failed', error);
+    return null;
+  });

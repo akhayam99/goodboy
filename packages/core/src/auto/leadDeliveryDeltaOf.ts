@@ -3,6 +3,7 @@ import {
   type LeadDeliveryPart,
   type LeadDeliverySent,
 } from './leadDeliveryPart';
+import { LEAD_DELIVERY_MARK } from './leadDeliveryMark';
 
 type ListItem = Readonly<{
   id: string;
@@ -63,7 +64,9 @@ const changedListText = ({ previous, next }: ChangedListParams): string | null =
     beforeById.size !== before.items.length ||
     afterIds.size !== after.items.length;
   if (isUnkeyed || before.items.some((item) => !afterIds.has(item.id))) {
-    return next;
+    return [after.head, LEAD_DELIVERY_MARK.wholeList, ...after.items.map((item) => item.text)].join(
+      '\n',
+    );
   }
   const changed = after.items.filter((item) => beforeById.get(item.id) !== item.text);
   if (changed.length === 0) {
@@ -81,6 +84,11 @@ const changedPartOf = ({ part, sent }: PartParams): ReadonlyArray<LeadDeliveryPa
   const previous = sent.get(part.name);
   if (part.kind === 'news' || previous === undefined) {
     return [part];
+  }
+  if (part.text === '') {
+    return previous === ''
+      ? []
+      : [{ ...part, text: `${part.name}: ${LEAD_DELIVERY_MARK.cleared}` }];
   }
   if (part.kind === 'state') {
     return previous === part.text ? [] : [part];

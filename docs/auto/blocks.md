@@ -208,9 +208,13 @@ protocol. One function decides what a Claude Lead turn carries
 
 - A part comes again only when its text changed. In the ledger and the digest
   only the changed lines come, each replacing the line with the same id; when a
-  line leaves the list, the whole list comes (`leadDeliveryDeltaOf`).
-- A delivery counts as taken only when its turn ended with an answer
-  (`settleLeadTurn`). A failed turn keeps the last taken one, so the next
+  line leaves the list, the whole list comes, marked **THE WHOLE LIST NOW**. A
+  part that became empty comes once, marked **NOW EMPTY**
+  (`leadDeliveryDeltaOf`, `LEAD_DELIVERY_MARK`).
+- A delivery counts as taken only when its turn ended with an answer and no
+  stream error (`settleLeadTurn`). A fallback retry carries the same delivery.
+  The model and the age come from the Lead's last turn that ended well
+  (`readAgentLastCleanTurn`). A failed turn keeps the last taken one, so the next
   delivery carries again what the failed one did; the end of an older turn
   changes nothing (`leadDeliveryMemory`).
 - A new session's id is written only once its first turn succeeded; a failure

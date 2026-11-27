@@ -6,7 +6,7 @@ import {
   SLOT_LABELS,
   type SlotKey,
 } from '@goodboy/core/context';
-import { joinDeliveryParts, type LeadDeliveryPart } from '@goodboy/core/auto';
+import type { LeadDeliveryPart } from '@goodboy/core/auto';
 import { DECISION_FIRST_RULE } from '@goodboy/core/decisionFirstRule';
 import type { ContextSlot, SessionContextItem, TurnEvent } from '@goodboy/types';
 import { contextWindowFor } from '../../../features/session/contextWindowFor';
@@ -83,19 +83,6 @@ export const contextPreambleParts = ({
     { name: 'markers', kind: 'state', text: CONTEXT_MARKER_HINT },
   ];
 };
-
-export const buildContextPreamble = (
-  sharedSlots: ReadonlyArray<ContextSlot>,
-  slotFilter?: ReadonlyArray<SlotKey>,
-  contextItems: ReadonlyArray<SessionContextItem> = [],
-): string =>
-  joinDeliveryParts({
-    parts: contextPreambleParts({
-      sharedSlots,
-      contextItems,
-      ...(slotFilter !== undefined && { slotFilter }),
-    }),
-  });
 
 const PRIOR_TURNS_HEADER = '## prior turns (this conversation, most recent last)';
 
