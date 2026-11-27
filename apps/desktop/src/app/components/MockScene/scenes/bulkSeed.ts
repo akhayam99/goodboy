@@ -1,16 +1,21 @@
-import type {
-  AgentId,
-  IsoDateTime,
-  OpenQuestion,
-  OpenQuestionId,
-  PrComment,
-  ResolveAttempt,
-  ResolveFailureCause,
-  ResolveQueueApprovalState,
-  ResolveQueueItemWithThread,
-  ResolveStage,
-  ResolveThread,
-  ResolveThreadState,
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type MountId,
+  type ProjectId,
+  type SessionMountView,
+  type IsoDateTime,
+  type OpenQuestion,
+  type OpenQuestionId,
+  type PrComment,
+  type ResolveAttempt,
+  type ResolveFailureCause,
+  type ResolveQueueApprovalState,
+  type ResolveQueueItemWithThread,
+  type ResolveStage,
+  type ResolveThread,
+  type ResolveThreadState,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import {
@@ -452,3 +457,111 @@ export const seedBulkScene = ({ stage }: { readonly stage: BulkStage }): void =>
 export const BULK_LAUNCH_THREAD_IDS: ReadonlyArray<string> = MEMBERS.launch
   .filter((member) => member.word === 'open' || member.word === 'failed')
   .map((member) => threadIdOf({ key: member.key }));
+
+const BRANCH_PROJECT_ID = brandId<ProjectId>({ value: 'mock-bulk-project-payments-api' });
+export const BULK_FIRST_MOUNT_ID = brandId<MountId>({ value: 'mock-bulk-mount-checkout' });
+export const BULK_COMMENT_MOUNT_ID = brandId<MountId>({ value: 'mock-bulk-mount-webhooks' });
+const BULK_ANALYSIS_ID = brandId<AgentId>({ value: 'mock-bulk-analysis' });
+
+type MountViewParams = {
+  readonly id: MountId;
+  readonly branch: string;
+};
+
+const mountViewOf = ({ id, branch }: MountViewParams): SessionMountView => ({
+  id,
+  sessionId: SESSION_ID,
+  projectId: BRANCH_PROJECT_ID,
+  worktreePath: `~/code/harborline/payments-api-${branch}`,
+  lastWorktreePath: null,
+  branch,
+  baseBranch: 'main',
+  parallelIndex: 0,
+  mountName: 'payments-api',
+  repoSlug: 'harborline/payments-api',
+  repoRoot: '~/code/harborline/payments-api',
+  isAttached: true,
+  diskState: 'present',
+  revision: 1,
+  createdAt: brandId<IsoDateTime>({ value: isoAgo({ minutes: 90 }) }),
+  updatedAt: brandId<IsoDateTime>({ value: isoAgo({ minutes: 10 }) }),
+});
+
+export type BulkAnalysis = 'none' | 'completed' | 'running';
+
+type MountStateParams = {
+  readonly view: SessionMountView;
+  readonly pr: typeof RESOLVE_SCENE_PR;
+  readonly comments: ReadonlyArray<PrComment>;
+};
+
+type BranchesParams = {
+  readonly analysis: BulkAnalysis;
+};
+
+export const seedBulkBranches = ({ analysis }: BranchesParams): void => {
+  seedBulkScene({ stage: 'launch' });
+  const state = useAppStore.getState();
+  const github = state.sessionGithub[SESSION_ID];
+  if (github === undefined || github.detail === null) {
+    return;
+  }
+  const first = mountViewOf({ id: BULK_FIRST_MOUNT_ID, branch: 'hl/checkout-copy' });
+  const second = mountViewOf({ id: BULK_COMMENT_MOUNT_ID, branch: RESOLVE_SCENE_PR.headBranch });
+  const firstPr = {
+    ...RESOLVE_SCENE_PR,
+    number: 301,
+    url: 'https://example.invalid/harborline/payments-api/pull/301',
+    headBranch: first.branch,
+  };
+  const mountStateOf = ({ view, pr, comments }: MountStateParams) => ({
+    ...github,
+    pr,
+    prs: [pr],
+    links: [],
+    mountId: view.id,
+    projectId: view.projectId,
+    branch: view.branch,
+    revision: view.revision,
+    repository: 'harborline/payments-api',
+    host: 'github' as const,
+    detail: {
+      prNumber: pr.number,
+      reviews: [],
+      reviewRequests: [],
+      checks: [],
+      comments,
+    },
+  });
+  const analysisAgent: Agent = {
+    id: BULK_ANALYSIS_ID,
+    sessionId: SESSION_ID,
+    ordinal: 1,
+    name: 'Analyze comments',
+    status: analysis === 'running' ? 'running' : 'completed',
+    kind: 'auto',
+    sourceKind: 'comment_run',
+    sourceThreadIds: BULK_LAUNCH_THREAD_IDS.slice(0, 1),
+    mountId: second.id,
+    startedAt: brandId<IsoDateTime>({ value: isoAgo({ minutes: 8 }) }),
+    ...(analysis === 'completed' && {
+      doneAt: brandId<IsoDateTime>({ value: isoAgo({ minutes: 5 }) }),
+    }),
+  };
+  useAppStore.setState({
+    sessionMounts: { [SESSION_ID]: [first, second] },
+    sessionActiveMount: { [SESSION_ID]: first.id },
+    sessionActiveProject: { [SESSION_ID]: BRANCH_PROJECT_ID },
+    reviewSourceKeys: { [SESSION_ID]: null },
+    sessionGithub: { [SESSION_ID]: { ...github, detail: { ...github.detail, comments: [] } } },
+    mountGithub: {
+      [first.id]: mountStateOf({ view: first, pr: firstPr, comments: [] }),
+      [second.id]: mountStateOf({
+        view: second,
+        pr: RESOLVE_SCENE_PR,
+        comments: github.detail.comments,
+      }),
+    },
+    sessionPhaseRuns: { [SESSION_ID]: analysis === 'none' ? [] : [analysisAgent] },
+  });
+};

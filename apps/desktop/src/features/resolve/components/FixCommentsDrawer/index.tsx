@@ -46,7 +46,7 @@ export const FixCommentsDrawer = ({
   onClose,
 }: Props) => {
   const navigate = useAppStore((state) => state.navigate);
-  const { all } = useReviewEntries({ sessionId, scope: 'all' });
+  const { all } = useReviewEntries({ sessionId, scope: 'all', mountId });
   const draft = useDraftRouting({ sessionId });
   const steps = useFixChain({ sessionId });
   const [filter, setFilter] = useState<CommentFilter>('all');
