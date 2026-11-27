@@ -46,6 +46,9 @@
     "android": {
       "debugApplicationIdSuffix": ".debug"
     },
+    "macOS": {
+      "entitlements": "./Entitlements.plist"
+    },
     "linux": {
       "deb": {
         "depends": [

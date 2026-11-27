@@ -88,6 +88,21 @@ It already resolved as a transitive dep of `zip` at 0.31.3, and `memoffset`
 0.9.1 was already in the tree, so this adds zero new crates and a two-line
 `Cargo.lock` diff.
 
+`chrono` 0.4 (features `clock` and `std` only) is a direct dependency of
+`goodboy-desktop` for the calendar reader (`calendar/ics/`): civil dates,
+weekdays and the local offset of a floating event time on every system. The
+lockfile already held it at 0.4.44 as an optional dep of `serde_with`, so the
+`Cargo.lock` diff is one line, but no crate compiled it before: the build now
+also compiles `chrono` and `iana-time-zone`, which `chrono` itself needs for
+the local clock. Both are `MIT OR Apache-2.0`. `chrono` is maintained by the
+chronotope organisation and 0.4.45 is already out above the pinned 0.4.44
+(checked on 27 November 2026).
+The in-house version would need its own reader of the system time zone on
+macOS, Linux and Windows, which is platform code. Time
+zones named in a calendar link come from the link's own VTIMEZONE, so no time
+zone database crate is needed. EventKit is reached with raw `objc2` messages
+(`platform/event_kit.rs`), so `objc2-event-kit` is not added.
+
 `block2` 0.6 (macOS) is a direct platform-gated dependency of `goodboy-desktop`
 for the native key monitor (`platform/key_monitor.rs`): `NSEvent`'s local
 monitor takes an Objective-C block, and `block2` builds one from a Rust
