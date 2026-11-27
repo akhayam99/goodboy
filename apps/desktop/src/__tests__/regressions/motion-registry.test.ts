@@ -2,13 +2,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import {
-  DELAY_STEP_MS,
-  DRAWER_EXIT_MS,
-  DURATION_BASE_MS,
-  DURATION_QUICK_MS,
-  DURATION_SLOW_MS,
-} from '@goodboy/ui';
+import { DRAWER_EXIT_MS, DURATION_BASE_MS, DURATION_QUICK_MS } from '@goodboy/ui';
 
 const DESKTOP_SRC = join(__dirname, '..', '..');
 const CSS = readFileSync(join(DESKTOP_SRC, 'styles.css'), 'utf8');
@@ -113,8 +107,6 @@ describe('time is three durations and two curves', () => {
   it('pins each duration token to its constant in packages/ui', () => {
     expect(tokenMs('--duration-quick')).toBe(DURATION_QUICK_MS);
     expect(tokenMs('--duration-base')).toBe(DURATION_BASE_MS);
-    expect(tokenMs('--duration-slow')).toBe(DURATION_SLOW_MS);
-    expect(tokenMs('--delay-step')).toBe(DELAY_STEP_MS);
     expect(DRAWER_EXIT_MS).toBe(DURATION_QUICK_MS);
   });
 

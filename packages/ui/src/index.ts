@@ -142,7 +142,7 @@ export {
 } from './components/StudioRailLayout';
 export type { StudioRailPlacement } from './components/StudioRailLayout';
 export { readStoredWidth, useResizableWidth } from './useResizableWidth';
-export { STUDIO_RAIL_FOLD_BELOW, studioRailFoldKey, useStudioRailFold } from './useStudioRailFold';
+export { studioRailFoldKey, useStudioRailFold } from './useStudioRailFold';
 export { INNER_COLUMN_SHORTCUT, innerColumnStore } from './innerColumnStore';
 export type { InnerColumn } from './innerColumnStore';
 export { useInnerColumn } from './useInnerColumn';
@@ -278,10 +278,8 @@ export type {
 export { SplitHandle } from './components/SplitHandle';
 export { Reveal } from './components/Reveal';
 export {
-  DELAY_STEP_MS,
   DURATION_BASE_MS,
   DURATION_QUICK_MS,
-  DURATION_SLOW_MS,
   SKELETON_FADE_MS,
   SKELETON_HOLD_MS,
   SKELETON_SHOW_AFTER_MS,

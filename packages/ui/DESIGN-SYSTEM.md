@@ -1279,8 +1279,7 @@ Reduced motion swaps in place at the same times.
 (60ms). Four values sit outside the scale on purpose: the three loop periods
 `--loop-pulse`, `--loop-spin` and `--loop-shimmer`, and `--hold-history-arrive`
 (the 1.4s fade of a landed history row). The fold and level timers are
-`DURATION_BASE_MS`, `DRAWER_EXIT_MS` is `DURATION_QUICK_MS` and the stagger is
-`DELAY_STEP_MS`, in
+`DURATION_BASE_MS`, `DRAWER_EXIT_MS` is `DURATION_QUICK_MS`, in
 `packages/ui/src/motionTimings.ts`; `motion-registry.test.ts` pins each constant
 to its token. A literal duration or `cubic-bezier` in `styles.css` outside the
 token block fails the same test.
