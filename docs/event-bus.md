@@ -123,6 +123,9 @@ Rust sends these to the webview with `AppHandle::emit`. A rename in Rust compile
 | `browser://tab-state`                                  | the facts of a tab gone live, asleep or closed, to its window                | browser/lifecycle.rs    | browser/listenTabState.ts                    |
 | `browser://tab-load`                                   | a tab's load `started` or `finished`, with its id and address, to its window | browser/load.rs         | browser/listenTabLoad.ts (`useTabLoad`)      |
 | `browser://page-key`                                   | `{ tabId, combo }` of an app chord pressed in a focused page, to its window  | browser/page_keys.rs    | browser/hooks/usePageKeys                    |
+| `calendar-alert`                                       | `{ eventId, moment, start, end }` of a call moment, to the main window       | alerts_runner.rs        | calendar/chip/callChipEvents.ts              |
+| `calendar-chip-view`                                   | the view the main window sent, to the `call-chip` window only                | alerts_commands.rs      | calendar/chip/callChipEvents.ts              |
+| `calendar-chip-action`                                 | `{ kind }` of a click in the call chip, to the main window only              | alerts_commands.rs      | calendar/chip/callChipEvents.ts              |
 
 ## Git and request state is not on the bus
 

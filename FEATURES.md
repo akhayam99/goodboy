@@ -246,7 +246,7 @@ Drive Goodboy from the keyboard, run a shell in the session's worktree, and open
 
 [More on keyboard and terminal](docs/features/keyboard.md)
 
-<a id="your-day-and-your-week"></a><a id="before-a-call"></a><a id="reminders"></a>
+<a id="your-day-and-your-week"></a><a id="before-a-call"></a><a id="the-call-chip"></a><a id="reminders"></a>
 
 ## Calendar
 
@@ -254,6 +254,7 @@ See your meetings next to your agents. Goodboy only reads your calendar, and nev
 
 - **Your day and your week**: Calendar in the places rail shows today's meetings as one list, with the start, the length and when each one begins.
 - **Before a call**: Click a meeting to open its panel beside the page, with the time, where it comes from and the host of its call link.
+- **The call chip**: A small window opens at the top of your screen, over every app, five minutes before a meeting with a call link.
 - **Reminders**: Write a reminder under the day and press Enter.
 
 [More on calendar](docs/features/calendar.md)
