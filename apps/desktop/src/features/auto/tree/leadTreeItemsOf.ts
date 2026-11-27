@@ -36,8 +36,15 @@ export type LeadTreeItem =
       depth: number;
       text: string;
       word: string;
+      isRead: boolean;
       canEdit: boolean;
       canRemove: boolean;
+    }>
+  | Readonly<{
+      kind: 'more';
+      id: string;
+      depth: number;
+      count: number;
     }>;
 
 export type LeadTreeAgentFact = Readonly<{
@@ -96,6 +103,9 @@ export const leadTreeItemsOf = ({
         },
       ];
     }
+    if (row.kind === 'more') {
+      return [{ kind: 'more', id: row.id, depth: row.depth, count: row.count }];
+    }
     const note = noteById.get(row.id);
     if (row.kind !== 'note' || note === undefined) {
       return [];
@@ -107,6 +117,7 @@ export const leadTreeItemsOf = ({
         depth: row.depth,
         text: note.text,
         word: note.word,
+        isRead: note.isRead,
         canEdit: note.canEdit,
         canRemove: note.canRemove,
       },

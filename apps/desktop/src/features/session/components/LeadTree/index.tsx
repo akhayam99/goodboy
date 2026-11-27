@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState, type KeyboardEvent } from 'react';
 import type { AgentId } from '@goodboy/types';
 import { LeadTreeAgentRow } from './LeadTreeAgentRow';
 import { LeadTreeFoldRow } from './LeadTreeFoldRow';
+import { LeadTreeMoreRow } from './LeadTreeMoreRow';
 import { LeadTreeNoteRow } from './LeadTreeNoteRow';
 import { LeadTreeRootRow } from './LeadTreeRootRow';
 import type { LeadTreeRoot } from './leadTreeRoot';
@@ -65,6 +66,11 @@ export const LeadTree = ({
   const cursorId =
     activeId !== null && ids.includes(activeId) ? activeId : (selectedRowId ?? ids[0] ?? null);
   const isCompact = density === 'compact';
+  const onOpenLead = useCallback(() => {
+    if (root !== null) {
+      onSelect(root.agentId);
+    }
+  }, [root, onSelect]);
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
@@ -93,6 +99,9 @@ export const LeadTree = ({
       }
       if (item.kind === 'fold') {
         onToggleFold(item.id);
+      }
+      if ((item.kind === 'note' || item.kind === 'more') && root !== null) {
+        onSelect(root.agentId);
       }
     },
     [ids, items, root, cursorId, onSelect, onToggleFold],
@@ -159,6 +168,18 @@ export const LeadTree = ({
             />
           );
         }
+        if (item.kind === 'more') {
+          return (
+            <LeadTreeMoreRow
+              key={item.id}
+              id={item.id}
+              count={item.count}
+              depth={item.depth}
+              isActive={isActive}
+              onOpen={onOpenLead}
+            />
+          );
+        }
         return (
           <LeadTreeNoteRow
             key={item.id}
@@ -166,6 +187,8 @@ export const LeadTree = ({
             depth={item.depth}
             text={item.text}
             word={item.word}
+            isRead={item.isRead}
+            onOpen={onOpenLead}
             canEdit={item.canEdit}
             canRemove={item.canRemove}
             isActive={isActive}

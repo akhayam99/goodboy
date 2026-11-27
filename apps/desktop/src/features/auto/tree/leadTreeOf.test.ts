@@ -29,7 +29,11 @@ const treeOf = ({
   primaryMountId = 'm1',
 }: {
   readonly delegations: ReadonlyArray<LeadTreeDelegation>;
-  readonly notes?: ReadonlyArray<{ readonly id: string; readonly createdAt: number }>;
+  readonly notes?: ReadonlyArray<{
+    readonly id: string;
+    readonly createdAt: number;
+    readonly isQueued?: boolean;
+  }>;
   readonly plans?: ReadonlyArray<{ readonly id: string; readonly createdAt: number }>;
   readonly openFoldIds?: ReadonlySet<string>;
   readonly canFold?: boolean;
@@ -38,7 +42,7 @@ const treeOf = ({
 }) =>
   leadTreeOf({
     delegations,
-    notes,
+    notes: notes.map((note) => ({ ...note, isQueued: note.isQueued ?? false })),
     plans,
     leadAgentId: LEAD,
     leadSpendUsd,
@@ -148,6 +152,55 @@ describe('leadTreeOf', () => {
       'agent:b',
     ]);
     expect(numbersOf(tree.rows)).toEqual(['1', '1.1', '2']);
+  });
+
+  it('puts a note under the latest agent started before it, one step in', () => {
+    const tree = treeOf({
+      delegations: [delegation({ id: 'a', createdAt: 10 }), delegation({ id: 'b', createdAt: 40 })],
+      notes: [
+        { id: 'early', createdAt: 5 },
+        { id: 'n1', createdAt: 45 },
+      ],
+    });
+    expect(tree.rows.map((row) => `${row.kind}:${row.id}:${row.depth}`)).toEqual([
+      'note:early:0',
+      'agent:a:0',
+      'agent:b:0',
+      'note:n1:1',
+    ]);
+  });
+
+  it('keeps two notes per turn and folds the rest into one row, never a queued note', () => {
+    const tree = treeOf({
+      delegations: [delegation({ id: 'a', createdAt: 10 })],
+      notes: [
+        { id: 'n1', createdAt: 11 },
+        { id: 'n2', createdAt: 12 },
+        { id: 'n3', createdAt: 13 },
+        { id: 'n4', createdAt: 14 },
+        { id: 'q', createdAt: 15, isQueued: true },
+      ],
+    });
+    expect(tree.rows.map((row) => `${row.kind}:${row.id}`)).toEqual([
+      'agent:a',
+      'note:n1',
+      'note:n2',
+      'more:more:a',
+      'note:q',
+    ]);
+    const more = tree.rows.find((row) => row.kind === 'more');
+    expect(more?.kind === 'more' ? more.count : 0).toBe(2);
+  });
+
+  it('does not fold two notes or fewer', () => {
+    const tree = treeOf({
+      delegations: [delegation({ id: 'a', createdAt: 10 })],
+      notes: [
+        { id: 'n1', createdAt: 11 },
+        { id: 'n2', createdAt: 12 },
+      ],
+    });
+    expect(tree.rows.some((row) => row.kind === 'more')).toBe(false);
   });
 
   it('sums spend once per agent, per branch and in total', () => {

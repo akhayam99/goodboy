@@ -34,11 +34,12 @@ describe('noteNodesOf', () => {
         createdAt: 50,
         text: 'Also cover the batch endpoint',
         word: 'Not read yet',
+        isRead: false,
         canEdit: true,
         canRemove: true,
       },
     ]);
-    expect(timed).toEqual([{ id: 'q1', createdAt: 50 }]);
+    expect(timed).toEqual([{ id: 'q1', createdAt: 50, isQueued: true }]);
   });
 
   it('names a row that was not delivered Not read yet with both actions', () => {
@@ -61,12 +62,13 @@ describe('noteNodesOf', () => {
       createdAt: 40,
       text: 'Keep the ledger export as it is',
       word: 'Read at turn 3',
+      isRead: true,
       canEdit: false,
       canRemove: false,
     });
     expect(timed).toEqual([
-      { id: 'r1', createdAt: 40 },
-      { id: 'q1', createdAt: 50 },
+      { id: 'r1', createdAt: 40, isQueued: false },
+      { id: 'q1', createdAt: 50, isQueued: true },
     ]);
   });
 

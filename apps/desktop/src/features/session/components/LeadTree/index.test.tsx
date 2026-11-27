@@ -61,11 +61,21 @@ const queuedNote: LeadTreeItem = {
   depth: 0,
   text: 'Also cover the batch endpoint',
   word: 'Queued',
+  isRead: false,
   canEdit: true,
   canRemove: true,
 };
 
-const readNote: LeadTreeItem = { ...queuedNote, id: 'n2', canEdit: false, canRemove: false };
+const readNote: LeadTreeItem = {
+  ...queuedNote,
+  id: 'n2',
+  word: 'Read at turn 3',
+  isRead: true,
+  canEdit: false,
+  canRemove: false,
+};
+
+const moreNotes: LeadTreeItem = { kind: 'more', id: 'more:d2', depth: 1, count: 3 };
 
 type HarnessProps = {
   readonly items: ReadonlyArray<LeadTreeItem>;
@@ -222,5 +232,44 @@ describe('LeadTree', () => {
     render(<Harness items={[readNote]} />);
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+  });
+
+  it('draws a note quieter than an agent, two lines at most, with its turn on hover', () => {
+    const { container } = render(<Harness items={[implementer, { ...readNote, depth: 1 }]} />);
+    const note = container.querySelector('[data-lead-tree-note-text]');
+    expect(note?.className).toContain('line-clamp-2');
+    expect(note?.className).toContain('text-faint-foreground');
+    expect(note?.className).not.toContain('text-foreground ');
+    expect(container.querySelector('[data-lead-tree-note-word]')).toBeNull();
+    expect(container.querySelector('[data-lead-tree-title]')?.className).toContain('text-row');
+  });
+
+  it('says a queued note is not read yet', () => {
+    const { container } = render(<Harness items={[queuedNote]} />);
+    expect(container.querySelector('[data-lead-tree-note-word]')?.textContent).toBe('Queued');
+  });
+
+  it('opens the Lead from a note, a fold of notes and Enter, in arrow order', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const leadId = nextAgentId();
+    render(
+      <LeadTree
+        items={[implementer, { ...readNote, depth: 1 }, moreNotes]}
+        root={{ agentId: leadId, node: 'running', word: 'Running', title: 'Lead' }}
+        selectedAgentId={null}
+        onSelect={onSelect}
+        onEditNote={() => undefined}
+        onRemoveNote={() => undefined}
+      />,
+    );
+    await user.click(screen.getByRole('treeitem', { name: /^Your note/ }));
+    expect(onSelect).toHaveBeenLastCalledWith(leadId);
+    await user.click(screen.getByRole('treeitem', { name: '3 more messages from you' }));
+    expect(onSelect).toHaveBeenCalledTimes(2);
+    screen.getByTestId('lead-tree').focus();
+    await user.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{Enter}');
+    expect(onSelect).toHaveBeenCalledTimes(3);
+    expect(onSelect).toHaveBeenLastCalledWith(leadId);
   });
 });

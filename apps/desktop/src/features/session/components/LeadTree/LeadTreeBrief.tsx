@@ -13,7 +13,7 @@ export const LeadTreeBrief = ({ text, className }: Props) => {
       <span
         ref={ref}
         data-lead-tree-title=""
-        className={cn('min-w-0 flex-1 truncate text-ui', className)}
+        className={cn('min-w-0 flex-1 truncate text-row', className)}
       >
         {shown}
       </span>
