@@ -17,6 +17,7 @@ import {
   mountOf,
   notifyRelay,
   paymentsApi,
+  runningState,
   seedColumn,
   sessionOf,
 } from '../../../../features/workspace/testing/sessionColumn';
@@ -86,11 +87,22 @@ export const replayAgent = ({
 export const replaySessionOf = ({ goal }: { readonly goal: string }): Session =>
   sessionOf({ goal, state: { kind: 'idle', lastActivityAt: at(REPLAY_TIMES.earlier) } });
 
-export const replayErrorState = (): TurnState => ({
+export const replayErrorState = ({
+  failedAt = REPLAY_TIMES.failed,
+}: { readonly failedAt?: string } = {}): TurnState => ({
   kind: 'error',
   message: 'The agent stopped',
-  failedAt: at(REPLAY_TIMES.failed),
+  failedAt: at(failedAt),
 });
+
+export const replayRunningState = ({
+  startedAt = REPLAY_TIMES.failed,
+}: { readonly startedAt?: string } = {}): TurnState => {
+  const running = runningState();
+  return running.kind === 'running'
+    ? { kind: 'running', runId: running.runId, startedAt: at(startedAt) }
+    : running;
+};
 
 export const replayIdleState = (): TurnState => ({
   kind: 'idle',
@@ -223,9 +235,10 @@ const gitlabEntryOf = ({ session, request }: EntryParams): MountGitlabMrState =>
     mrs: mr === null ? [] : [mr],
     links: [],
     mr,
-    fetchedAt: request.fetch === 'never' ? null : at(REPLAY_TIMES.fetched),
+    fetchedAt:
+      request.fetch === 'ok' || request.fetch === undefined ? at(REPLAY_TIMES.fetched) : null,
     loading: false,
-    error: null,
+    error: request.fetch === 'failed' ? 'The host did not answer' : null,
   };
 };
 
@@ -270,9 +283,10 @@ const bitbucketEntryOf = ({ session, request }: EntryParams): MountBitbucketPrSt
     checks: null,
     reviewDecision: null,
     pr,
-    fetchedAt: request.fetch === 'never' ? null : at(REPLAY_TIMES.fetched),
+    fetchedAt:
+      request.fetch === 'ok' || request.fetch === undefined ? at(REPLAY_TIMES.fetched) : null,
     loading: false,
-    error: null,
+    error: request.fetch === 'failed' ? 'The host did not answer' : null,
   };
 };
 

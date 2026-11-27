@@ -39,7 +39,6 @@ import {
   ledgerCore,
   openQuestionFor,
   paymentsApi,
-  runningState,
 } from '../../../features/workspace/testing/sessionColumn';
 import { aDelegation, aView, FIXTURE_ROOT } from '../../../features/auto/testing/autoViewFixtures';
 import { applyAgentTurnState } from '../sessions/sessionMutators';
@@ -50,6 +49,7 @@ import {
   replayAgent,
   replayErrorState,
   replayIdleState,
+  replayRunningState,
   replaySessionOf,
   replayStageOf,
   seedReplayAgents,
@@ -261,6 +261,14 @@ describe('replay: a session with no settled request is never settled', () => {
       requests: [{ host: 'github', project: paymentsApi, state: null, fetch: 'failed' }],
     },
     {
+      name: 'a GitLab request whose fetch failed',
+      requests: [{ host: 'gitlab', project: paymentsApi, state: null, fetch: 'failed' }],
+    },
+    {
+      name: 'a Bitbucket request whose fetch failed',
+      requests: [{ host: 'bitbucket', project: paymentsApi, state: null, fetch: 'failed' }],
+    },
+    {
       name: 'a GitLab request that was never fetched',
       requests: [{ host: 'gitlab', project: paymentsApi, state: null, fetch: 'never' }],
     },
@@ -357,7 +365,11 @@ describe('replay: what happens after the merge stays visible, on every host', ()
     });
     seedReplayAgents({ store: useAppStore, session, agents: [failed] });
 
-    turn({ session, agent: failed, state: replayErrorState() });
+    turn({
+      session,
+      agent: failed,
+      state: replayErrorState({ failedAt: REPLAY_TIMES.afterMerge }),
+    });
 
     expect(stageOf(session)).toMatchObject({ stage: 'attention', attention: 'agent-error' });
   });
@@ -396,7 +408,7 @@ describe('replay: what happens after the merge stays visible, on every host', ()
     turn({
       session,
       agent: running,
-      state: runningState(),
+      state: replayRunningState({ startedAt: REPLAY_TIMES.afterMerge }),
     });
 
     expect(stageOf(session)).toMatchObject({ stage: 'running', isRunning: true });
