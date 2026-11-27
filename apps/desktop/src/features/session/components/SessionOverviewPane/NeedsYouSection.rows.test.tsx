@@ -107,6 +107,7 @@ const show = () => {
       sessionId={SESSION_ID}
       cards={cards}
       questions={[]}
+      permission={null}
       actionsFor={actionsFor}
       kickerById={new Map()}
     />,

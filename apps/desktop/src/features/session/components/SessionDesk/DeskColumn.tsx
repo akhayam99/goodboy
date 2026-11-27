@@ -45,6 +45,7 @@ export const DeskColumn = ({ session, model, isInPopover }: Props) => {
             sessionId={sessionId}
             cards={model.moves.needsYou}
             questions={model.looseQuestions}
+            permission={model.permission}
             actionsFor={model.actionsFor}
             kickerById={model.kickerById}
           />

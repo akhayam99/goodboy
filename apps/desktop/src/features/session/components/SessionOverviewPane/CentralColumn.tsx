@@ -28,6 +28,7 @@ export const CentralColumn = ({ session }: Props) => {
     actionsFor,
     moves,
     looseQuestions,
+    permission,
     shownAskIds,
     hasNeedsYou,
     kickerById,
@@ -57,6 +58,7 @@ export const CentralColumn = ({ session }: Props) => {
           sessionId={sessionId}
           cards={moves.needsYou}
           questions={looseQuestions}
+          permission={permission}
           actionsFor={actionsFor}
           kickerById={kickerById}
         />
@@ -80,6 +82,7 @@ export const CentralColumn = ({ session }: Props) => {
           cardsByRowId={placed.byRowId}
           actionsFor={actionsFor}
           shownAskIds={shownAskIds}
+          permissionMount={permission === null ? null : { mountId: permission.mountId }}
         />
       )}
       {isArchived || isEmpty ? null : <FolderCard sessionId={sessionId} />}

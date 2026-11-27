@@ -20,8 +20,16 @@ type Props = {
 };
 
 const BoardTileView = ({ rowId }: Props) => {
-  const { session, rowById, entryByRowId, runningByRowId, cardsByRowId, newRowIds, now } =
-    useBoardContext();
+  const {
+    session,
+    rowById,
+    entryByRowId,
+    runningByRowId,
+    cardsByRowId,
+    newRowIds,
+    now,
+    permissionMount,
+  } = useBoardContext();
   const navigate = useAppStore((state) => state.navigate);
   const entry = entryByRowId.get(rowId) ?? null;
   const menu = useMountRowMenu({
@@ -44,7 +52,12 @@ const BoardTileView = ({ rowId }: Props) => {
     return null;
   }
   const runningCount = runningByRowId.get(rowId) ?? 0;
-  const stateChip = boardTileChipOf({ row, entry, runningCount });
+  const stateChip = boardTileChipOf({
+    row,
+    entry,
+    runningCount,
+    isPermissionShown: permissionMount !== null && permissionMount.mountId === row.mountId,
+  });
   const isCheckNamed =
     stateChip !== null && failingName !== null && entry?.story.word === stateChip.word;
   const chip =

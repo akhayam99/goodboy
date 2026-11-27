@@ -1,3 +1,4 @@
+import type { ActionTrack } from '../actions/types';
 import type {
   AgentId,
   MountId,
@@ -174,6 +175,7 @@ export type RebaseSuggestionTarget = {
 export type RebasePick = {
   readonly sessionId: SessionId;
   readonly targets: ReadonlyArray<RebaseSuggestionTarget>;
+  readonly track: ActionTrack;
 };
 
 export type OpenPrTarget = {

@@ -21,6 +21,7 @@ type Props = {
   readonly cardsByRowId: BoardCards['byRowId'];
   readonly actionsFor: ActionCardActions['actionsFor'];
   readonly shownAskIds: ReadonlySet<string>;
+  readonly permissionMount: { readonly mountId: string | null } | null;
 };
 
 type ToggleParams = {
@@ -40,6 +41,7 @@ export const ProjectBlocks = ({
   cardsByRowId: placedByRowId,
   actionsFor,
   shownAskIds,
+  permissionMount,
 }: Props) => {
   const cards = session.archivedAt == null ? allCards : NO_CARDS;
   const sessionId = session.id;
@@ -79,6 +81,7 @@ export const ProjectBlocks = ({
     actionsFor,
     removal,
     shownAskIds,
+    permissionMount,
   };
   const toggle = ({ id }: ToggleParams) =>
     setExpandedIds((current) => {

@@ -4,9 +4,9 @@ import {
   Pencil,
   Pin,
   Play,
-  RotateCw,
+  RefreshCw,
   Save,
-  ScrollText,
+  ListVideo,
   Square,
   Trash2,
 } from '@goodboy/ui/icons';
@@ -51,7 +51,7 @@ export const SCRIPT_KIND: ObjectKindDefinition<ScriptActionTarget, ScriptFacts> 
     {
       id: 'script.output',
       label: 'Show output',
-      icon: ScrollText,
+      icon: ListVideo,
       group: 'open',
       when: () => true,
       run: ({ facts }) => facts.onShowOutput(),
@@ -93,7 +93,7 @@ export const SCRIPT_KIND: ObjectKindDefinition<ScriptActionTarget, ScriptFacts> 
     {
       id: 'script.restart',
       label: 'Restart',
-      icon: RotateCw,
+      icon: RefreshCw,
       group: 'act',
       when: ({ facts }) => facts.isRunning && facts.onRestart !== undefined,
       run: ({ facts }) => facts.onRestart?.(),

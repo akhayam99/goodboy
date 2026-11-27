@@ -20,6 +20,7 @@ import { useBranchBoard } from '../../ProjectBlocks/useBranchBoard';
 import { useArchivedWorkRecord } from '../useArchivedWorkRecord';
 import { useIsEmptySession } from '../useIsEmptySession';
 import { useOverviewNotices } from '../useOverviewNotices';
+import { useSessionPermissionAsk } from '../useSessionPermissionAsk';
 
 type Params = {
   readonly session: Session;
@@ -59,7 +60,8 @@ export const useOverviewModel = ({ session }: Params) => {
     () => new Set([...moves.shownAskIds, ...looseQuestions.map((question) => question.id)]),
     [looseQuestions, moves.shownAskIds],
   );
-  const hasNeedsYou = moves.needsYou.length > 0 || looseQuestions.length > 0;
+  const permission = useSessionPermissionAsk({ sessionId, isEnabled: !isArchived });
+  const hasNeedsYou = moves.needsYou.length > 0 || looseQuestions.length > 0 || permission !== null;
   const { facts } = useBranchFacts({ sessionId, groups });
   const detailByMountId = useBranchDetails({ sessionId, facts });
   const branches = useMemo(
@@ -110,6 +112,7 @@ export const useOverviewModel = ({ session }: Params) => {
     actionsFor,
     moves,
     looseQuestions,
+    permission,
     shownAskIds,
     hasNeedsYou,
     kickerById,

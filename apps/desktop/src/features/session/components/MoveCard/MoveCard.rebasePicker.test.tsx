@@ -37,6 +37,12 @@ vi.mock('@goodboy/db', async () =>
   }),
 );
 
+vi.mock('../../../suggestions/useNextStepOutcomes', () => ({
+  recordNextStepOutcome: vi.fn(async () => 'event'),
+  revertNextStepOutcome: vi.fn(async () => undefined),
+}));
+
+import { recordNextStepOutcome } from '../../../suggestions/useNextStepOutcomes';
 import { MoveCard } from './index';
 
 const SESSION = aSession({ id: FIXTURE_SESSION });
@@ -58,12 +64,19 @@ const targetOf = ({ name, branch }: TargetParams): RebaseSuggestionTarget => ({
   dirtyCount: 0,
 });
 
+const STOPPED: RebaseSuggestionTarget = {
+  ...targetOf({ name: 'ledger-core', branch: 'hl/stopped' }),
+  conflictCount: 2,
+};
+
 const TARGETS = [
   targetOf({ name: 'ledger-core', branch: 'hl/postings' }),
   targetOf({ name: 'ledger-core', branch: 'hl/invoices' }),
   targetOf({ name: 'ledger-core', branch: 'hl/refunds' }),
   targetOf({ name: 'ledger-core', branch: 'hl/exports' }),
 ];
+
+const SUGGESTED = [...TARGETS, STOPPED];
 
 const REBASE: SessionSuggestion = {
   id: 'rebase-project:ledger-core',
@@ -74,7 +87,7 @@ const REBASE: SessionSuggestion = {
   sessionId: FIXTURE_SESSION,
   fingerprint: 'rebase-project:ledger-core',
   targetKey: null,
-  payload: { targets: TARGETS },
+  payload: { targets: SUGGESTED },
 };
 
 const wrapper = ({ children }: { readonly children: ReactNode }) => (
@@ -112,6 +125,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   rebaseAll.mockReset();
+  vi.mocked(recordNextStepOutcome).mockClear();
   rebaseAll.mockResolvedValue('done');
   reportError.mockReset();
   useAppStore.setState({ sessions: [SESSION], rebaseAll, reportError });
@@ -132,6 +146,64 @@ describe('Rebase on a session with four branches behind', () => {
     expect(picker.textContent).toContain('hl/postings');
     expect(picker.textContent).toContain('hl/exports');
     expect(rebaseAll).not.toHaveBeenCalled();
+  });
+
+  it('leaves a stopped rebase out of the new rebases', () => {
+    mountCard();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Choose branches to rebase' }));
+
+    const picker = screen.getByRole('dialog', { name: 'Branches to rebase' });
+    expect(picker.textContent).not.toContain('hl/stopped');
+  });
+
+  it('records the accepted outcome when the batch starts, not when the picker opens', async () => {
+    mountCard();
+    fireEvent.click(screen.getByRole('button', { name: 'Choose branches to rebase' }));
+    expect(recordNextStepOutcome).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rebase 4 branches' }));
+
+    await waitFor(() => expect(recordNextStepOutcome).toHaveBeenCalledTimes(1));
+    expect(recordNextStepOutcome).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: 'accepted', kind: 'rebase-project' }),
+    );
+  });
+
+  it('shows a branch that failed inside a batch that resolved done', async () => {
+    rebaseAll.mockImplementation(async () => {
+      useAppStore.setState({
+        rebaseAllRuns: {
+          [FIXTURE_SESSION]: {
+            id: 'run-1',
+            sessionId: FIXTURE_SESSION,
+            startedAt: 0,
+            shouldTidy: false,
+            isAborted: false,
+            phase: 'done',
+            autoAgentId: null,
+            error: null,
+            branches: [
+              {
+                mountId: TARGETS[0]!.mountId,
+                projectName: 'ledger-core',
+                branch: 'hl/postings',
+                state: 'failed',
+                message: 'The worktree is unreadable.',
+              },
+            ],
+          },
+        },
+      });
+      return 'done';
+    });
+    mountCard();
+    fireEvent.click(screen.getByRole('button', { name: 'Choose branches to rebase' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rebase 4 branches' }));
+
+    await waitFor(() => expect(reportError).toHaveBeenCalledTimes(1));
+    expect(String(reportError.mock.calls[0]?.[0]?.error)).toContain('hl/postings');
   });
 
   it('rebases only the branches that stay checked', async () => {

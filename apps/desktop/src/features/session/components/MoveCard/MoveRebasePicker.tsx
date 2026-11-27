@@ -28,10 +28,12 @@ type ToggleParams = {
 };
 
 const FAILURE_TITLE = "Couldn't rebase the branches";
+const REBASE_ACTION_ID = 'rebase-selected';
 const BUSY_MESSAGE = 'Another rebase is already running in this session.';
 
 export const MoveRebasePicker = ({ pick, trigger }: Props) => {
-  const { sessionId, targets } = pick;
+  const { sessionId, track } = pick;
+  const targets = pick.targets.filter((target) => target.conflictCount === undefined);
   const dropdown = useDropdown({
     align: 'start',
     width: POPOVER_WIDTH_CLASS.wide,
@@ -55,15 +57,33 @@ export const MoveRebasePicker = ({ pick, trigger }: Props) => {
     });
   };
 
-  const start = async (): Promise<void> => {
+  const run = async (): Promise<void> => {
     const state = useAppStore.getState();
-    close();
     try {
       const outcome = await state.rebaseAll({
         sessionId,
         mountIds: chosen.map((target) => target.mountId),
         shouldTidy: false,
       });
+      const run = useAppStore.getState().rebaseAllRuns[sessionId];
+      const failures =
+        run === undefined
+          ? []
+          : [
+              ...run.branches
+                .filter((branch) => branch.state === 'failed' && branch.message !== null)
+                .map((branch) => `${branch.branch}: ${branch.message}`),
+              ...(run.error === null ? [] : [run.error]),
+            ];
+      if (failures.length > 0) {
+        void state.reportError({
+          recovery: CHECK_STATE,
+          title: FAILURE_TITLE,
+          error: new Error(failures.join('\n')),
+          sessionId,
+        });
+        return;
+      }
       if (outcome === 'busy') {
         void state.reportError({
           recovery: CHECK_STATE,
@@ -75,6 +95,11 @@ export const MoveRebasePicker = ({ pick, trigger }: Props) => {
     } catch (error: unknown) {
       void state.reportError({ recovery: CHECK_STATE, title: FAILURE_TITLE, error, sessionId });
     }
+  };
+
+  const start = (): void => {
+    close();
+    void track({ actionId: REBASE_ACTION_ID, task: run });
   };
 
   return (
@@ -113,7 +138,7 @@ export const MoveRebasePicker = ({ pick, trigger }: Props) => {
             size="sm"
             variant="primary"
             disabled={chosen.length === 0 || isRunning}
-            onClick={() => void start()}
+            onClick={start}
           >
             {label}
           </Button>

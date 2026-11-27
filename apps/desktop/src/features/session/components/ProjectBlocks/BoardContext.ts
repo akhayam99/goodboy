@@ -21,6 +21,7 @@ export type BoardContextValue = Readonly<{
   actionsFor: ActionCardActions['actionsFor'];
   removal: RemoveWorktrees;
   shownAskIds: ReadonlySet<string>;
+  permissionMount: Readonly<{ mountId: string | null }> | null;
 }>;
 
 export const BoardContext = createContext<BoardContextValue | null>(null);

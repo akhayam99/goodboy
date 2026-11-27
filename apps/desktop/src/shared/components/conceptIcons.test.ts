@@ -44,9 +44,28 @@ describe('CONCEPT_ICONS', () => {
     expect(CONCEPT_ICONS.terminal).toBe(SquareTerminal);
   });
 
-  it('keeps Ask this session apart from the Chat door and from Help', () => {
+  it('keeps Ask this session apart from the Chat door and from Questions', () => {
     expect(CONCEPT_ICONS.ask).not.toBe(CONCEPT_ICONS.chat);
-    expect(CONCEPT_ICONS.ask).not.toBe(CONCEPT_ICONS.help);
+    expect(CONCEPT_ICONS.ask).not.toBe(CONCEPT_ICONS.questions);
+  });
+
+  it('draws the Lead as Orchestrate, one glyph with the orchestrator it replaced', () => {
+    expect(CONCEPT_ICONS.auto).toBe(Network);
+    expect(CONCEPT_ICONS.orchestrator).toBe(Network);
+  });
+
+  it('keeps the Board and the Overview of one session on two glyphs', () => {
+    expect(CONCEPT_ICONS.board).toBe(SquareKanban);
+    expect(CONCEPT_ICONS.sessions).toBe(Dashboard);
+  });
+
+  it('draws each concept with the glyph its convention names', () => {
+    expect(CONCEPT_ICONS.approval).toBe(Lock);
+    expect(CONCEPT_ICONS.timeline).toBe(List);
+    expect(CONCEPT_ICONS.changelog).toBe(Milestone);
+    expect(CONCEPT_ICONS.inbox).toBe(Task);
+    expect(CONCEPT_ICONS.integrations).toBe(Plug);
+    expect(CONCEPT_ICONS.needsYou).toBe(CircleUser);
   });
 
   it('draws the Lead as Orchestrate, one glyph with the orchestrator it replaced', () => {

@@ -514,7 +514,11 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
               confirm: primary.confirm ?? null,
               picker:
                 primary.shouldOpenPicker === true && suggestion.kind === 'rebase-project'
-                  ? { sessionId, targets: suggestion.payload.targets }
+                  ? {
+                      sessionId,
+                      targets: suggestion.payload.targets,
+                      track: runner.trackChoiceFor({ suggestion, actions }),
+                    }
                   : null,
               run: () => {
                 clearFailure({ key: suggestion.id });
