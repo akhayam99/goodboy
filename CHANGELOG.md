@@ -51,7 +51,7 @@ Dragging a dock panel shows one small label per place: Place left, Place right, 
 ### Fixed
 
 - Board lanes read Open, Running, In review, Done and Archive. <!-- gb area=sessions pr=2432 -->
-- The bell shows each problem once and drops what is settled. <!-- gb area=inbox pr=2438 -->
+- The bell and its toasts show each problem once and drop what is settled, and closing a toast keeps its notice in the bell. <!-- gb area=inbox pr=2438,2443 -->
 - Clear site data in the Browser also clears the sites a page signs in through. <!-- gb area=app pr=2441 -->
 - Fewer helpers started by the Lead end without a result. <!-- gb area=agents pr=2434 -->
 - The Lead hands code questions to a Scout and runs on the model you saved for it. <!-- gb area=agents pr=2426 -->
