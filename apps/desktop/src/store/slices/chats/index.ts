@@ -1,3 +1,4 @@
+import { createChatQueueSlice } from '../chatQueue';
 import { archiveChats } from './archiveChats';
 import { archiveIdleChats } from './archiveIdleChats';
 import { createChat } from './createChat';
@@ -22,6 +23,7 @@ import type { SliceDeps } from '../../slice-types';
 
 export const createChatsSlice = ({ set, get }: SliceDeps): ChatsSlice => ({
   ...chatsInitialState,
+  ...createChatQueueSlice({ set, get }),
   unreadChatIds: readUnreadChats(),
   loadChats: loadChats(set, get),
   loadArchivedChats: loadArchivedChats(set),

@@ -50,6 +50,7 @@ export const ChatRoomComposer = ({
       )}
       <ChatComposer
         workspaceId={workspaceId}
+        chatId={chatId}
         placeholder={NAMES.messageAnAgent}
         routing={routing}
         isStreaming={stream !== undefined}

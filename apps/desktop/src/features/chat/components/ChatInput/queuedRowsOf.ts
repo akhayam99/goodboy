@@ -1,28 +1,11 @@
-import type { MessageAttachment, TurnProviderOverride } from '@goodboy/types';
+import type { MessageAttachment } from '@goodboy/types';
 import type { AttachmentStripItem } from '../../../attachments/AttachmentStrip';
-import {
-  pendingMessageLineOf,
-  type PendingMessageAction,
-} from '../../../auto/chat/pendingMessageOf';
+import { pendingMessageLineOf } from '../../../auto/chat/pendingMessageOf';
+import type { QueuedRow } from '../../queuedMessages/queuedRow';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import type { AgentQueuedTurn } from '../../../../store/slices/agentQueue/types';
 import { directRevealAtOf } from './directRevealAtOf';
 import { NAMES } from '../../../../shared/utils/names';
-
-export type QueuedRowStatus = 'queued' | 'sending' | 'waits' | 'notDelivered';
-
-export type QueuedRow = Readonly<{
-  id: string;
-  source: 'agent' | 'auto';
-  content: string;
-  images: ReadonlyArray<AttachmentStripItem>;
-  imageCount: number;
-  override: TurnProviderOverride | undefined;
-  status: QueuedRowStatus;
-  statusText: string;
-  reason: string | null;
-  action: PendingMessageAction | null;
-}>;
 
 type Params = {
   readonly queue: ReadonlyArray<AgentQueuedTurn>;

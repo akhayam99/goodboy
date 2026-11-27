@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Button, ICON_SIZE, Notice, Skeleton, Textarea } from '@goodboy/ui';
-import { RotateCw } from '@goodboy/ui/icons';
+import { RotateCcw } from '@goodboy/ui/icons';
 
 type Props = {
   readonly title: string;
@@ -86,7 +86,7 @@ export const ReviewTextCard = ({
           detail={scribeFailure === NO_TEXT ? null : scribeFailure}
           actions={
             <Button variant="secondary" size="sm" onClick={onRetry}>
-              <RotateCw size={ICON_SIZE.row} aria-hidden />
+              <RotateCcw size={ICON_SIZE.row} aria-hidden />
               Retry
             </Button>
           }
