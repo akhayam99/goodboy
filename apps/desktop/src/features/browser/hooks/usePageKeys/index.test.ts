@@ -208,6 +208,23 @@ describe('usePageKeys', () => {
     stopApp();
   });
 
+  it('hands the host the console chord and runs it from a focused page, so the tools open and close there', async () => {
+    let isOpen = false;
+    const stop = registerShortcut('browser.console', () => {
+      isOpen = !isOpen;
+    });
+    renderHook(() => useWindowKeys());
+    await waitFor(() => expect(pushes).toHaveLength(1));
+    await listened();
+
+    expect(pushes[0]).toContain('cmd+shift+KeyJ');
+    press({ payload: { tabId: TAB_ID, combo: 'cmd+shift+KeyJ' } });
+    expect(isOpen).toBe(true);
+    press({ payload: { tabId: TAB_ID, combo: 'cmd+shift+KeyJ' } });
+    expect(isOpen).toBe(false);
+    stop();
+  });
+
   it('drops a late chord from a tab that is already closed', async () => {
     const runs: Array<string> = [];
     const stop = registerShortcut('browser.closeTab', () => {

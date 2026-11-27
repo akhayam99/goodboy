@@ -1,4 +1,4 @@
-import { AppWindow, ArrowUpRight, Bot, Code, Trash2 } from '@goodboy/ui/icons';
+import { AppWindow, Bot, ChevronDown, Code, Pin, Trash2 } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   ICON_SIZE,
@@ -6,37 +6,32 @@ import {
   MenuTriggerButton,
   useDropdown,
   type MenuEntry,
-  type MenuItemEntry,
 } from '@goodboy/ui';
 import { AppMenuList } from '../../../actions/AppMenuList';
 import { actionIntentOf } from '../../../actions/actionIntentOf';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { currentPlatform } from '../../../../shared/platform';
 import type { BrowserPaneModel } from '../../types';
 import { browserDevelopRowsOf } from './browserDevelopRowsOf';
+import { browserMenuTabsOf, type BrowserMenuTab } from './browserMenuTabsOf';
 import { browserMoreOffOf } from './browserMoreRows';
 import { browserTabRowsOf } from './browserTabRowsOf';
 import { siteDataRowOf } from './siteDataRowOf';
 import { devicePresetOf } from '../../devicePresets';
-import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly model: BrowserPaneModel;
-  readonly folded?: ReadonlyArray<MenuItemEntry>;
-  readonly onOpenAsPage?: () => void;
+  readonly menuTabs: ReadonlyArray<BrowserMenuTab>;
 };
 
-const MENU_LABEL = 'More';
+const MENU_LABEL = 'Page menu';
 
-const NOTHING_FOLDED: ReadonlyArray<MenuItemEntry> = [];
-
-export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }: Props) => {
+export const BrowserMoreMenu = ({ model, menuTabs }: Props) => {
   const dropdown = useDropdown({
     width: 'min-w-[200px]',
     maxWidth: MENU_MAX_WIDTH,
-    expectedHeight: 280,
-    expectedWidth: 220,
+    expectedHeight: 240,
+    expectedWidth: 260,
   });
   const shown = model.shown;
   const isOff = browserMoreOffOf({
@@ -52,8 +47,21 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
     extraHosts: model.siteTrail,
     isWholeStore: currentPlatform() !== 'darwin',
   });
+  const tabs: ReadonlyArray<MenuEntry> =
+    menuTabs.length === 0
+      ? []
+      : [
+          {
+            kind: 'group',
+            key: 'tabs',
+            label: 'Tabs',
+            items: browserMenuTabsOf({ tabs: menuTabs }),
+          },
+          { kind: 'separator', key: 'tabs-end' },
+        ];
+  const projectName = model.projectName;
   const entries: ReadonlyArray<MenuEntry> = [
-    ...folded,
+    ...tabs,
     {
       kind: 'item',
       key: 'sendToAgent',
@@ -63,33 +71,18 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
       isDisabled: model.pageSend.isBusy || !model.pageSend.canSend,
       onSelect: model.pageSend.sendShown,
     },
-    {
-      kind: 'item',
-      key: 'openOutside',
-      label: 'Open in your browser',
-      icon: CONCEPT_ICONS.openExternal,
-      isDisabled: isOff.isOpenOutsideOff,
-      onSelect: model.openOutside,
-    },
-    ...(onOpenAsPage === undefined
+    ...(shown === null || projectName === null
       ? []
       : [
           {
             kind: 'item' as const,
-            key: 'openAsPage',
-            label: NAMES.openFullPage,
-            icon: ArrowUpRight,
-            onSelect: onOpenAsPage,
+            key: 'pin',
+            label: shown.isPin ? `Unpin from ${projectName}` : `Pin to ${projectName}`,
+            icon: Pin,
+            hint: shortcutGlyphs('browser.pin'),
+            onSelect: model.togglePin,
           },
         ]),
-    {
-      kind: 'item',
-      key: 'thisTab',
-      label: 'This tab',
-      icon: AppWindow,
-      children: browserTabRowsOf({ model, isOff }),
-      onSelect: () => undefined,
-    },
     {
       kind: 'item',
       key: 'clearSiteData',
@@ -99,6 +92,15 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
       isDisabled: isOff.isClearSiteDataOff,
       confirm: siteData.confirm,
       onSelect: model.clearSiteData,
+    },
+    { kind: 'separator', key: 'page-end' },
+    {
+      kind: 'item',
+      key: 'thisTab',
+      label: 'This tab',
+      icon: AppWindow,
+      children: browserTabRowsOf({ model, isOff }),
+      onSelect: () => undefined,
     },
     {
       kind: 'item',
@@ -118,12 +120,12 @@ export const BrowserMoreMenu = ({ model, folded = NOTHING_FOLDED, onOpenAsPage }
       trigger={
         <MenuTriggerButton
           label={MENU_LABEL}
-          tooltip="More"
+          tooltip={MENU_LABEL}
           isOpen={dropdown.open}
-          size="control"
+          size="compact"
           onClick={dropdown.toggle}
         >
-          <CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />
+          <ChevronDown size={ICON_SIZE.row} aria-hidden />
         </MenuTriggerButton>
       }
     >

@@ -393,7 +393,7 @@ export const markAgentViewed = async (
   at: IsoDateTime,
 ): Promise<void> => {
   await requireApplied(db, id, {
-    sql: 'UPDATE agents SET last_viewed_at = ? WHERE id = ?',
+    sql: 'UPDATE agents SET last_viewed_at = MAX(COALESCE(last_viewed_at, 0), ?) WHERE id = ?',
     params: [isoToMs(at) ?? Date.now(), id],
   });
 };

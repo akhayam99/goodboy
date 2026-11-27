@@ -8,7 +8,7 @@ import {
   SearchField,
   type ListboxOption,
 } from '@goodboy/ui';
-import type { MountId, Session, SessionId, SessionProjectMount } from '@goodboy/types';
+import type { IsoDateTime, MountId, Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { agentHasUnread } from '../../../../store/slices/agents/agentHasUnread';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
@@ -47,6 +47,14 @@ type Props = {
   readonly session: Session;
 };
 
+type RenderedParams = {
+  readonly upTo: IsoDateTime | null;
+};
+
+type RenderedState = RenderedParams & {
+  readonly sessionId: SessionId;
+};
+
 type NarrowParams = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
 };
@@ -61,6 +69,12 @@ export const LogPane = ({ session }: Props) => {
   const hasUnread = useAppStore((s) =>
     (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).some((agent) => agentHasUnread(agent, false)),
   );
+  const [rendered, setRendered] = useState<RenderedState | null>(null);
+  const onRendered = useCallback(
+    ({ upTo }: RenderedParams) => setRendered({ sessionId, upTo }),
+    [sessionId],
+  );
+  const renderedUpTo = rendered?.sessionId === sessionId ? rendered.upTo : null;
   const mounts = useAppStore((s) => s.sessionProjectMounts[sessionId] ?? NO_MOUNTS);
   const pending = usePendingAction({ sessionId });
   const [query, setQuery] = useState('');
@@ -119,12 +133,15 @@ export const LogPane = ({ session }: Props) => {
           <Button
             variant="quiet"
             size="sm"
-            disabled={pending.pendingKeys.has(MARK_SEEN_KEY)}
+            disabled={pending.pendingKeys.has(MARK_SEEN_KEY) || renderedUpTo === null}
             onClick={() =>
               void pending.run({
                 key: MARK_SEEN_KEY,
                 failureTitle: "Couldn't mark the agents as seen",
-                task: () => markAllAgentsSeen(sessionId),
+                task: () =>
+                  renderedUpTo === null
+                    ? Promise.resolve()
+                    : markAllAgentsSeen({ sessionId, seenUpTo: renderedUpTo }),
               })
             }
           >
@@ -146,6 +163,7 @@ export const LogPane = ({ session }: Props) => {
           onReachEnd={work.loadOlder}
           isFiltered={isFiltered}
           onClearFilters={clearFilters}
+          onRendered={onRendered}
         />
       ) : (
         <TimelineSkeleton />

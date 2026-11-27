@@ -27,8 +27,8 @@ sessions.
 and drops it only once the open succeeded, so a failure leaves it for a retry.
 The stack is per session, in memory, five deep: `closeTab` pushes the row in the
 same commit (`pushClosedTab`), and `closeBrowserSessionTabs` and archive
-eviction clear it. The rail entry, the pin button and New tab teach their chord
-in the tooltip. The console (⌘⇧J) and the picker (⌘⇧C) are on their own pages.
+eviction clear it. The rail entry, the tab close button and New tab teach their
+chord in the tooltip, and the page menu's Pin row shows ⌘D. The console (⌘⇧J) and the picker (⌘⇧C) are on their own pages.
 
 ## A focused page and the app's keys
 

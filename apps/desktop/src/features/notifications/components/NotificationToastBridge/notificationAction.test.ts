@@ -37,7 +37,7 @@ vi.mock('../../openNotificationSession', () => ({
   openNotificationSession: openNotificationSessionSpy,
 }));
 
-import { mapNotificationAction } from './';
+import { mapNotificationAction } from './mapNotificationAction';
 
 const retrySummarizerSpy = vi.fn();
 const retryStepSummarySpy = vi.fn(async () => undefined);
@@ -114,7 +114,7 @@ const notificationOf = (action: NotificationAction): Notification => ({
 });
 
 const mapAction = (action: NotificationAction, store: Store) =>
-  mapNotificationAction(action, store, notificationOf(action));
+  mapNotificationAction({ store, notification: notificationOf(action) });
 
 describe('mapNotificationAction', () => {
   beforeEach(() => {

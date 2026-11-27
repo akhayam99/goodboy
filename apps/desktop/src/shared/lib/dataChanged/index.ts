@@ -8,6 +8,8 @@ const ORIGIN = globalThis.crypto?.randomUUID?.() ?? `window-${Math.random().toSt
 
 type WorkspaceDataKey = 'auto.level' | 'overrides';
 
+export type SessionFactKind = 'open-question' | 'slack-draft' | 'agent-seen';
+
 type DataChange =
   | {
       readonly kind: 'setting';
@@ -29,6 +31,13 @@ type DataChange =
       readonly sessionId?: undefined;
       readonly agentId?: undefined;
       readonly workspaceId: WorkspaceId;
+    }
+  | {
+      readonly kind: SessionFactKind;
+      readonly key?: undefined;
+      readonly sessionId: SessionId;
+      readonly agentId?: undefined;
+      readonly workspaceId?: undefined;
     };
 
 type Announcement = DataChange & {

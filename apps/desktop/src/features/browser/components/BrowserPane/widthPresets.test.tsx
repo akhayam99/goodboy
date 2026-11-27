@@ -188,7 +188,7 @@ const openCheckout = async () => {
 };
 
 const chooseWidth = async ({ label }: LabelParams) => {
-  fireEvent.click(screen.getByRole('button', { name: 'More' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
   fireEvent.click(await screen.findByRole('menuitem', { name: /^Develop/ }));
   fireEvent.click(await screen.findByRole('menuitem', { name: label }));
 };

@@ -8,7 +8,7 @@ import {
   useTransition,
 } from 'react';
 import { Button, EmptyLine } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
+import type { IsoDateTime, Session } from '@goodboy/types';
 import { NAMES } from '../../../../shared/utils/names';
 import type { TimelineTopLevelEntry } from '../../timeline/buildTimelineGroups';
 import { useRowPreload } from '../../../../shared/hooks/useRowPreload';
@@ -25,6 +25,7 @@ import { TimelineSkeleton } from '../../components/SessionWorkspace/parts/Timeli
 import { useTimelineRowProps } from '../../components/SessionWorkspace/parts/TimelinePane/useTimelineRowProps';
 import { useTimelineRows } from '../../components/SessionWorkspace/parts/TimelinePane/useTimelineRows';
 import { LOG_PAGE_ROWS, logPageOf } from './logPageOf';
+import { renderedUpToOf } from './renderedUpToOf';
 
 const LOG_ROW_SELECTOR = '[data-log-row]';
 
@@ -32,6 +33,10 @@ const LOG_ROW_BOX = '[content-visibility:auto] data-row-near:[content-visibility
 
 type NarrowParams = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
+};
+
+type RenderedParams = {
+  readonly upTo: IsoDateTime | null;
 };
 
 type Props = {
@@ -44,6 +49,7 @@ type Props = {
   readonly onClearFilters?: () => void;
   readonly hasOlder?: boolean;
   readonly onReachEnd?: () => void;
+  readonly onRendered?: (params: RenderedParams) => void;
 };
 
 export const LogRows = ({
@@ -56,6 +62,7 @@ export const LogRows = ({
   onClearFilters,
   hasOlder = false,
   onReachEnd,
+  onRendered,
 }: Props) => {
   const sessionId = session.id;
   const rootRef = useRef<HTMLDivElement>(null);
@@ -118,6 +125,15 @@ export const LogRows = ({
     }
     onReachEnd();
   }, [onReachEnd, shouldLoadOlder]);
+
+  const renderedUpTo = useMemo(
+    () => (rows.isLoaded ? renderedUpToOf({ entries: viewEntries }) : null),
+    [rows.isLoaded, viewEntries],
+  );
+  useEffect(() => {
+    onRendered?.({ upTo: renderedUpTo });
+    return () => onRendered?.({ upTo: null });
+  }, [onRendered, renderedUpTo]);
 
   const isLoading = !rows.isLoaded && entries.length === 0;
   const isSearching = query.trim() !== '';

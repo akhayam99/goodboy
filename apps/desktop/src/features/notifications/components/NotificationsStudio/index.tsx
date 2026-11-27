@@ -7,7 +7,7 @@ import { StudioShell } from '../../../../shared/components/StudioShell';
 import { StudioDetail } from '../../../../shared/components/StudioShell/StudioDetail';
 import { FilterButton } from '../../../../shared/components/FilterButton';
 import { useAppStore } from '../../../../store';
-import { mapNotificationAction } from '../NotificationToastBridge';
+import { mapNotificationAction } from '../NotificationToastBridge/mapNotificationAction';
 import { useListKeys } from '../../../../shared/hooks/useListKeys';
 import { groupByDay } from '../../../../shared/utils/groupByDay';
 import { notificationGroupKey, sortNotificationGroupsNewestFirst } from '../../grouping';
@@ -117,7 +117,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
       if (latest?.action == null) {
         return;
       }
-      mapNotificationAction(latest.action, useAppStore.getState(), latest)?.onClick();
+      mapNotificationAction({ notification: latest })?.onClick();
     },
   });
 

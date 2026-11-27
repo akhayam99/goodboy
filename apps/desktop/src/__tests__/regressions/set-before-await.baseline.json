@@ -1,7 +1,6 @@
 {
   "apps/desktop/src/store/slices/agentQueue/queueStore.ts": 1,
   "apps/desktop/src/store/slices/agents/markAgentSeen.ts": 1,
-  "apps/desktop/src/store/slices/agents/markAllAgentsSeen.ts": 1,
   "apps/desktop/src/store/slices/agents/selectAgent.ts": 1,
   "apps/desktop/src/store/slices/artifact-comments/sendArtifactComments.ts": 1,
   "apps/desktop/src/store/slices/artifacts/loadSessionArtifacts.ts": 1,
@@ -42,7 +41,6 @@
   "apps/desktop/src/store/slices/nudges/dismissSessionNudge.ts": 1,
   "apps/desktop/src/store/slices/open-questions/loadSessionAnsweredQuestions.ts": 1,
   "apps/desktop/src/store/slices/open-questions/loadSessionDismissedQuestions.ts": 1,
-  "apps/desktop/src/store/slices/open-questions/loadSessionOpenQuestions.ts": 1,
   "apps/desktop/src/store/slices/overrides/patchWorkspaceOverrides.ts": 1,
   "apps/desktop/src/store/slices/permissions/allowAndContinue.ts": 1,
   "apps/desktop/src/store/slices/permissions/resolvePermissionRequest.ts": 1,
