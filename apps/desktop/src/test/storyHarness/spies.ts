@@ -35,6 +35,7 @@ import type {
   WorkspaceId,
   Session,
 } from '@goodboy/types';
+import { GH_STATUS_ABSENT } from './ghStatusAbsent';
 
 export const STORY_NOW: IsoDateTime = TEST_NOW;
 
@@ -135,14 +136,7 @@ export const storySummarizeSession =
   };
 
 const storyInvokeHandlers = {
-  gh_status: {
-    available: false,
-    mode: 'absent',
-    version: null,
-    user: null,
-    scopes: [],
-    scoped: false,
-  },
+  gh_status: GH_STATUS_ABSENT,
   query_bridge_serving: false,
   bridge_phones: [],
   worktree_deps_check: {
