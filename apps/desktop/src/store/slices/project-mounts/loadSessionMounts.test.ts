@@ -1,12 +1,21 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MountId, MountOperation, ProjectId, SessionId, SessionMount } from '@goodboy/types';
+import {
+  brandId,
+  type MountId,
+  type MountOperation,
+  type MountPullRequestLink,
+  type ProjectId,
+  type SessionId,
+  type SessionMount,
+} from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   mounts: new Map<string, SessionMount>(),
   operations: new Map<string, MountOperation>(),
   inspections: new Map<string, Record<string, unknown>>(),
   listMountOperations: vi.fn(),
+  listMountPullRequestLinks: vi.fn(),
   upsertMountOperation: vi.fn(),
   updateSessionMountLifecycle: vi.fn(),
 }));
@@ -28,6 +37,7 @@ vi.mock('@goodboy/db', async () =>
     updateSessionMountLifecycle: h.updateSessionMountLifecycle,
     insertSessionMount: vi.fn(async () => undefined),
     listMountOperations: h.listMountOperations,
+    listMountPullRequestLinks: h.listMountPullRequestLinks,
     getMountOperation: vi.fn(
       async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
     ),
@@ -86,14 +96,18 @@ const unsettledOperation = (): MountOperation => ({
 
 type State = Record<string, unknown>;
 
-const makeState = (): State => ({
+type StateParams = {
+  readonly kind?: 'repo' | 'folder';
+};
+
+const makeState = ({ kind = 'repo' }: StateParams = {}): State => ({
   projects: [
     {
       id: PROJECT_ID,
       workspaceId: 'workspace-load',
       name: 'API',
       rootPath: '/repo',
-      kind: 'repo',
+      kind,
       baseBranch: 'main',
       overrides: {},
     },
@@ -131,6 +145,7 @@ beforeEach(() => {
     },
   );
   h.updateSessionMountLifecycle.mockImplementation(async () => true);
+  h.listMountPullRequestLinks.mockImplementation(async () => []);
 });
 
 describe('loadSessionMounts', () => {
@@ -204,5 +219,42 @@ describe('loadSessionMounts', () => {
     });
     expect(runnable[SESSION_ID]).toEqual([]);
     expect(h.updateSessionMountLifecycle).not.toHaveBeenCalled();
+  });
+
+  it('keeps the merged request of a deleted branch in the store', async () => {
+    const state = makeState();
+    const link = {
+      id: 'link-gone',
+      mountId: brandId<MountId>({ value: 'mount-gone' }),
+      provider: 'github',
+      host: 'github.com',
+      repoSlug: 'harborline/payments-api',
+      prNumber: 41,
+      headBranch: 'feature/mount-gone',
+      baseBranch: 'main',
+      url: 'https://github.com/harborline/payments-api/pull/41',
+      state: 'merged',
+      snapshot: null,
+      mergedAt: NOW,
+      lastObservedAt: NOW,
+      createdAt: NOW,
+      updatedAt: NOW,
+    } satisfies MountPullRequestLink;
+    h.listMountPullRequestLinks.mockImplementation(async () => [link]);
+
+    await load(state);
+
+    expect(state['mountPrLinks']).toEqual({ 'mount-gone': link });
+  });
+
+  it('reads no request history while every branch is attached', async () => {
+    const state = makeState({ kind: 'folder' });
+    h.mounts.clear();
+    h.mounts.set('mount-live', mountFixture({ id: 'mount-live', worktreePath: GONE_PATH }));
+    h.updateSessionMountLifecycle.mockImplementation(async () => true);
+
+    await load(state);
+
+    expect(h.listMountPullRequestLinks).not.toHaveBeenCalled();
   });
 });
