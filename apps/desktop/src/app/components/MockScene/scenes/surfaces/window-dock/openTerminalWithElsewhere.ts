@@ -1,3 +1,4 @@
+import { brandId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import { workspaceTerminalOwner } from '../../../../../../store/slices/terminal/terminalOwner';
 import type { TerminalTab, TerminalTabId } from '../../../../../../shared/types/terminal';
@@ -13,7 +14,7 @@ export const openTerminalWithElsewhere = (): void => {
   }
   const mount = state.sessionProjectMounts[running.id]?.[0];
   const shell: TerminalTab = {
-    id: `ws:${WORKSPACE_ID}::t1` as TerminalTabId,
+    id: brandId<TerminalTabId>({ value: `ws:${WORKSPACE_ID}::t1` }),
     owner: workspaceTerminalOwner({ workspaceId: WORKSPACE_ID }),
     title: 'shell',
     cwd: '~/code/harborline',
@@ -21,7 +22,7 @@ export const openTerminalWithElsewhere = (): void => {
     createdAt: 0,
   };
   const sessionShell: TerminalTab = {
-    id: `${running.id}::t1` as TerminalTabId,
+    id: brandId<TerminalTabId>({ value: `${running.id}::t1` }),
     owner: { kind: 'session', sessionId: running.id },
     title: 'pnpm dev',
     cwd: mount?.worktreePath ?? null,
