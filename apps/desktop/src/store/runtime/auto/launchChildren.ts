@@ -31,7 +31,7 @@ import {
   snapshotOf,
 } from './attemptBaseline';
 import { carriedSnapshot } from './carriedSnapshot';
-import { isChildStartLive } from './isChildStartLive';
+import { isChildStartLive } from './childRouting/isChildStartLive';
 import { childImagesOf } from './childImagesOf';
 import { delegationRoleOf } from './attemptEnvelope';
 import { failAttempt } from './failAttempt';
