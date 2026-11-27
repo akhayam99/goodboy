@@ -1902,7 +1902,7 @@
         {
           "id": "j",
           "title": "⌘⇧J",
-          "copy": "Open the console.",
+          "copy": "Open or close the console.",
           "image": null,
           "isNew": false
         },

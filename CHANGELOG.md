@@ -48,6 +48,11 @@ The iPhone finds your Mac again after a restart, and pairing shows a code to che
 
 On macOS 14 or later, Show site data in the browser page menu lists every site that keeps data in the workspace and what it keeps, and clears the ones you pick.
 
+#### Board lanes named by what they hold
+<!-- gb area=sessions image=board-lanes pr=2432 -->
+
+The board lanes read Open, Running, In review, Done and Archive, in the board, the session lists, the Sessions popover and the Guide.
+
 #### Floating drag targets in the dock
 <!-- gb area=app pr=2428 -->
 
@@ -55,7 +60,6 @@ Dragging a dock panel shows one small label per place: Place left, Place right, 
 
 ### Fixed
 
-- Board lanes read Open, Running, In review, Done and Archive. <!-- gb area=sessions pr=2432 -->
 - The bell and its toasts show each problem once and drop what is settled, and closing a toast keeps its notice in the bell. <!-- gb area=inbox pr=2438,2443 -->
 - Clear site data in the Browser also clears the sites a page signs in through. <!-- gb area=app pr=2441 -->
 - Fewer helpers started by the Lead end without a result. <!-- gb area=agents pr=2434 -->
