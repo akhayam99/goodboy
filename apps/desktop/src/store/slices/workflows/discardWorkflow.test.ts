@@ -110,4 +110,38 @@ describe('discardWorkflow', () => {
 
     expect(state.decisionRestartMarks).toEqual({ 'run-other': 3 });
   });
+
+  describe('the session state after the discard', () => {
+    const FAILED_ID = 'agent-failed' as AgentId;
+
+    const withSurvivor = ({ status }: { readonly status: 'failed' | 'completed' }) => {
+      const harness = buildHarness();
+      const runs = harness.state.sessionPhaseRuns as Record<string, unknown[]>;
+      runs[SESSION_ID]?.push({ id: FAILED_ID, status });
+      Object.assign(harness.state.agentTurnState, {
+        [FAILED_ID]: {
+          kind: 'error',
+          message: 'The agent stopped',
+          failedAt: '2026-01-01T00:00:00Z',
+        },
+      });
+      return harness;
+    };
+
+    it('keeps the failure of a survivor whose row still says failed', async () => {
+      const { discard, state } = withSurvivor({ status: 'failed' });
+
+      await discard(SESSION_ID, RUN_ID);
+
+      expect(state.sessions[0]).toMatchObject({ state: { kind: 'error' } });
+    });
+
+    it('drops an error whose agent row completed after it', async () => {
+      const { discard, state } = withSurvivor({ status: 'completed' });
+
+      await discard(SESSION_ID, RUN_ID);
+
+      expect(state.sessions[0]).toMatchObject({ state: { kind: 'idle' } });
+    });
+  });
 });

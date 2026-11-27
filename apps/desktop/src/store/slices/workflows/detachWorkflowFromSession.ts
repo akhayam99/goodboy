@@ -6,7 +6,7 @@ import {
 import { removeQuestionsFromSlot } from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
-import { deriveSessionState, purgedAgentIds } from '../sessions/sessionMutators';
+import { deriveSessionState, entriesOf, purgedAgentIds } from '../sessions/sessionMutators';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
 import { storedAgentDraft } from '../agents/storedAgentDraft';
 import { stopAgentForDelete } from '../agents/stopAgentForDelete';
@@ -104,10 +104,14 @@ export const detachWorkflowFromSession = (set: SetFn, get: GetFn) => {
 
     set((s) => {
       const cleared = omitDeletedAgents({ state: s, sessionId, agentIds: ownedIds });
-      const survivorStates = refreshed
-        .map((agent) => cleared.agentTurnState[agent.id])
-        .filter((turn): turn is NonNullable<typeof turn> => turn !== undefined);
-      derived = deriveSessionState(survivorStates, now);
+      derived = deriveSessionState({
+        entries: entriesOf({
+          ids: refreshed.map((agent) => agent.id),
+          turns: cleared.agentTurnState,
+        }),
+        agents: refreshed,
+        now,
+      });
       return {
         ...cleared,
         sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },

@@ -1,4 +1,12 @@
-import type { AgentId, IsoDateTime, ProviderRunId, SessionId, TurnState } from '@goodboy/types';
+import { failureStandingOf } from '@goodboy/core/attention';
+import type {
+  Agent,
+  AgentId,
+  IsoDateTime,
+  ProviderRunId,
+  SessionId,
+  TurnState,
+} from '@goodboy/types';
 import type { SessionLoadingFlags } from './state';
 import type { SetFn } from '../../slice-types';
 import type { AppStore } from '../../store';
@@ -12,10 +20,25 @@ export const EMPTY_LOADING: SessionLoadingFlags = {
   summary: false,
 };
 
-export const deriveSessionState = (
-  agentStates: ReadonlyArray<TurnState>,
-  now: IsoDateTime,
-): TurnState => {
+export type AgentTurnEntry = Readonly<{
+  agentId: AgentId;
+  state: TurnState;
+}>;
+
+type DeriveParams = Readonly<{
+  entries: ReadonlyArray<AgentTurnEntry>;
+  agents: ReadonlyArray<Agent>;
+  now: IsoDateTime;
+  currentAgentId?: AgentId | null;
+}>;
+
+export const deriveSessionState = ({
+  entries,
+  agents,
+  now,
+  currentAgentId = null,
+}: DeriveParams): TurnState => {
+  const agentStates = entries.map((entry) => entry.state);
   const running = agentStates.filter(
     (s): s is Extract<TurnState, { kind: 'running' }> => s.kind === 'running',
   );
@@ -27,9 +50,14 @@ export const deriveSessionState = (
   if (starting) {
     return starting;
   }
-  const errored = agentStates.find((s) => s.kind === 'error');
+  const { endedAgentIds } = failureStandingOf({ agents });
+  const errored = entries.find(
+    (entry) =>
+      entry.state.kind === 'error' &&
+      (entry.agentId === currentAgentId || !endedAgentIds.has(entry.agentId)),
+  );
   if (errored) {
-    return errored;
+    return errored.state;
   }
   return { kind: 'idle', lastActivityAt: now };
 };
@@ -47,6 +75,17 @@ type PlannedAgentTurnState = Readonly<{
   derived: TurnState;
 }>;
 
+type EntriesParams = Readonly<{
+  ids: ReadonlyArray<AgentId>;
+  turns: Readonly<Record<AgentId, TurnState>>;
+}>;
+
+export const entriesOf = ({ ids, turns }: EntriesParams): ReadonlyArray<AgentTurnEntry> =>
+  ids.flatMap((agentId) => {
+    const state = turns[agentId];
+    return state === undefined ? [] : [{ agentId, state }];
+  });
+
 export const planAgentTurnState = ({
   store,
   sessionId,
@@ -58,10 +97,18 @@ export const planAgentTurnState = ({
     ...store.agentTurnState,
     [agentId]: agentState,
   };
-  const sessionAgentIds = (store.sessionPhaseRuns[sessionId] ?? []).map((a) => a.id);
+  const agents = store.sessionPhaseRuns[sessionId] ?? [];
+  const sessionAgentIds = agents.map((a) => a.id);
   const ids = sessionAgentIds.includes(agentId) ? sessionAgentIds : [...sessionAgentIds, agentId];
-  const states = ids.map((id) => nextAgentTurn[id]).filter((s): s is TurnState => s !== undefined);
-  return { nextAgentTurn, derived: deriveSessionState(states, now) };
+  return {
+    nextAgentTurn,
+    derived: deriveSessionState({
+      entries: entriesOf({ ids, turns: nextAgentTurn }),
+      agents,
+      now,
+      currentAgentId: agentId,
+    }),
+  };
 };
 
 export const applyAgentTurnState = (

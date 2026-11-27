@@ -8,6 +8,10 @@
       "types": "./src/artifacts/index.ts",
       "default": "./src/artifacts/index.ts"
     },
+    "./attention": {
+      "types": "./src/attention/index.ts",
+      "default": "./src/attention/index.ts"
+    },
     "./auto": {
       "types": "./src/auto/index.ts",
       "default": "./src/auto/index.ts"
