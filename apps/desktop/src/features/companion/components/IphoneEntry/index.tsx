@@ -31,7 +31,6 @@ export const IphoneEntry = () => {
   const isPageOpen = useAppStore((state) => state.isCompanionPageOpen);
   const readCompanionPhones = useAppStore((state) => state.readCompanionPhones);
   const dropdown = useDropdown({
-    align: 'end',
     width: POPOVER_WIDTH_CLASS.standard,
     expectedWidth: POPOVER_WIDTH_PX.standard,
   });

@@ -28,9 +28,6 @@
   "apps/desktop/src/features/chat/components/TurnFooter/index.tsx": {
     "detail button at the end of the turn footer": 1
   },
-  "apps/desktop/src/features/companion/components/IphoneEntry/index.tsx": {
-    "top bar right cluster: the end edge stays on the trigger": 1
-  },
   "apps/desktop/src/features/diff/components/ChangeTree/KeyHints.tsx": {
     "keys hint at the end of the change tree toolbar": 1
   },
