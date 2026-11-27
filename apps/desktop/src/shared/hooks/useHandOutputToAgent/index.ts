@@ -19,6 +19,7 @@ type HandOffParams = {
 type Params = {
   readonly sessionId: SessionId | null;
   readonly agentId?: AgentId | null;
+  readonly shouldOpenSession?: boolean;
 };
 
 type QueueParams = {
@@ -42,6 +43,7 @@ export const NO_OUTPUT_REASON = 'No output yet';
 export const useHandOutputToAgent = ({
   sessionId,
   agentId: preferredAgentId = null,
+  shouldOpenSession = true,
 }: Params): HandOutputToAgent => {
   const openSession = useOpenSession();
   const queueOutputHandoff = useAppStore((state) => state.queueOutputHandoff);
@@ -85,12 +87,12 @@ export const useHandOutputToAgent = ({
         return false;
       }
       queueOutputHandoff({ agentId: targetId, handoff });
-      if (state.currentSessionId !== sessionId) {
+      if (shouldOpenSession && state.currentSessionId !== sessionId) {
         openSession({ sessionId });
       }
       return true;
     },
-    [openSession, queueOutputHandoff, sessionId],
+    [openSession, queueOutputHandoff, sessionId, shouldOpenSession],
   );
 
   const handOff = useCallback(

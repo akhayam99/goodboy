@@ -3,10 +3,11 @@
 > **Read this when** you change Select an element. **Not for** the console
 > that shares its runtime ([console.md](console.md)).
 
-Select an element sits in the pane's address row before Console, with the
-`SquareDashedMousePointer` glyph. `browser.pick` (⌘⇧C, Chrome's inspect key)
-toggles it while a tab is shown and the session has a live agent, and as a
-page key it works with focus in the page. The Browser page has no such button.
+Select an element sits in the address row before Console, in the pane and on
+the Browser page, with the `SquareDashedMousePointer` glyph. `browser.pick`
+(⌘⇧C, Chrome's inspect key) toggles it while a tab is shown and the session has
+a live agent, and as a page key it works with focus in the page. On the page
+the session is the shown tab's, and Add keeps you on the page.
 
 ## In the page
 
@@ -81,7 +82,8 @@ gesture.
    at 4,000 characters, through `redactSecrets`, with a source of kind
    `element` and a PNG when there is a crop (`dataBase64`).
 4. The files go through `queueOutputHandoff` and the note joins the agent's
-   draft. Nothing is sent.
+   draft. Nothing is sent. The pane opens that session when another one is on
+   screen; the page passes `shouldOpenSession: false` and stays.
 
 `elementFileOf` maps the served path into the worktree only when the page's
 loopback port is listening for a process this session owns (worktree, then the
@@ -93,5 +95,6 @@ for a retry.
 
 - `browser/pick.rs` drives the picker and parses its answer;
   `browser/snapshot.rs` crops an element.
-- Tests: `browser::pick::tests`, `browser::snapshot::tests` and
-  `pick.test.tsx` pin the caps, the refusals and the flow.
+- Tests: `browser::pick::tests`, `browser::snapshot::tests` and the two
+  `pick.test.tsx` (BrowserPane, BrowserStudio) pin the caps, the refusals and
+  the flow in the pane and on the page.
