@@ -318,8 +318,12 @@ stay until the phone ships the start form.
 - The listener starts at launch when at least one phone is paired, and keeps
   running; it also starts when Pair an iPhone is pressed on **Settings › This Mac
   › iPhone**. Opening the page alone starts nothing. Leaving the page with no phone
-  paired stops it, and so does removing the last phone. With a phone paired it
-  stays up until the app quits or Remove all runs.
+  paired stops it when this window opened a code, and so does removing the last
+  phone. With a phone paired it stays up until the app quits or Remove all runs.
+  Cancel on the pairing view drops the live code at once (`bridge_cancel_code`)
+  and stops the listener when no phone is paired; a code that was still being
+  made when Cancel was pressed is dropped the same way, so a phone that scans it
+  later is refused.
 - It binds each private address of the networks you switched on under Networks
   on one TCP port, never a wildcard, so the port is closed on every public
   address. Every 5 seconds the set is read again: a new address is bound, a gone
@@ -370,28 +374,49 @@ stay until the phone ships the start form.
   networks the Mac listens on with the port and whether Bonjour is on, and a
   failure with Reset pairing. Pair an iPhone stays in the header, quiet.
 - **TestFlight block.** The public TestFlight link is the one constant
-  `TESTFLIGHT_LINK` in `features/companion/testflightLink.ts`. While it is empty
-  the block does not render and nothing asks for a code. When it holds a link the
-  block shows a QR made on the Mac by `bridge_link_qr` (a local command, no
-  network), the four steps and Copy link. There is no email field and no call to
-  a server of ours; a test reads the sources of the companion components and
-  fails on `fetch`, a socket or a web address.
+  `TESTFLIGHT_LINK` in `features/companion/testflightLink.ts`: empty, or a
+  `https://testflight.apple.com/join/` link. While it is empty the block does not
+  render and nothing asks for a code. When it holds a link the block shows a QR
+  made on the Mac by `bridge_link_qr` (a local command that accepts only a
+  TestFlight join link and runs in the main window only), the four steps and Copy
+  link; when the code cannot be made the block says so and keeps Copy link. There
+  is no email field and no call to a server of ours; a test reads the sources of
+  the companion components and fails on `fetch`, a socket or a web address. The
+  scene `u26s-settings-iphone-get` draws the block with a link that exists in the
+  scene only.
 - **Live and Offline.** A phone is Live while one authenticated connection of it
   is open. `bridge/live.rs` keeps the set: a second connection of the same phone
   keeps the first connection's time, and the phone is Offline when the last one
   closes. `bridge_phones` returns `liveSince` for a live phone. The last sync of
-  an offline phone is `lastSeen`, written when a connection opens and again when
-  it closes (at most once a minute). Removed is the phone's word for a phone the
-  Mac forgot; the Mac simply no longer lists it.
+  an offline phone is `lastSeen`, written when a connection opens (at most once a
+  minute) and always when it closes. A time of an earlier day reads "yesterday,
+  18:20", then a weekday, then a date. Removed is the phone's word for a phone the
+  Mac forgot; the Mac simply no longer lists it. One function owns each word
+  (`linkWordOf`, `phoneStateTextOf`, `phoneSyncTextOf`): the bar name, its
+  tooltip, the panel and the page rows say the same thing.
+- **One read of the link.** `store/slices/companion-link/` holds the status and
+  the phones that `bridge_status` and `bridge_phones` return; the page and the bar
+  read it, and one poll (3 seconds, `retainCompanionLinkPoll`) fills it while any
+  of them needs it. A late answer for an older read is dropped. A read that fails
+  keeps the last good state: after two misses the page says it could not refresh;
+  the bar keeps its dot. Before any good read the page shows only that it could not
+  read the link, never the before-a-phone moment.
 - **Top bar.** A phone glyph sits just before the bell, with a 6px status dot
   beside it (never on top): green Live, yellow Offline, red when pairing is broken
-  (a fault), no dot when no phone is paired. With no phone a click opens the
-  iPhone page; with one it opens a compact panel with the phone's name, state and
-  since when, rights and Open iPhone settings. With several phones the panel shows
-  the live one, else the one seen last. The icon reads `bridge_status` and
-  `bridge_phones` every 5 seconds while the window is visible. The switch Show
-  iPhone in the top bar on the page hides it; the choice is kept in this window's
-  local storage.
+  (a fault) for a paired phone, no dot when no phone is paired, a fault included.
+  The glyph is a 28 by 28 square without a dot and takes the bell's shape with
+  one. With no phone a click opens the iPhone page; with one it opens a compact
+  panel: the phone's name (or "Pairing is not available" in a fault), State with
+  its dot and since when, Last sync, Rights, and a pinned row Open iPhone
+  settings. With several phones the panel shows the live one, else the one seen
+  last. Only the main window shows the icon and reads the Mac. It reads the phone
+  list once, and starts the 3 second poll only while a phone is paired or the
+  iPhone page is open, so someone who never paired never has the Keychain asked
+  about pairing from the bar. While pairing is broken the page rows say "Can't
+  connect" and the Listener line says the Mac is not listening, in step with the
+  bar. The switch Show iPhone in the top bar, under Top bar on the page, hides the
+  icon in every window: the choice is kept in local storage, which windows share,
+  and each window follows a change through the `storage` event.
 
 ## What the phone sees
 

@@ -288,16 +288,24 @@ async fn handle_conn(
     };
     permit.succeed();
     let phone_key = authorized.phone_key.clone();
-    let live = ctx.live.enter(
-        &base64::engine::general_purpose::STANDARD.encode(&phone_key),
-        crate::util::iso_now_whole_seconds(),
-    );
+    let live = go_live(&ctx.live, &phone_key);
     let outcome = talk(stream, authorized, ctx.clone()).await;
-    drop(live);
-    if let Err(error) = ctx.identity.lock().await.touch_seen(&phone_key) {
-        log::warn!("[bridge] could not note the last sync: {error}");
-    }
+    leave_live(&ctx.identity, live, &phone_key).await;
     outcome
+}
+
+fn go_live(set: &super::live::LiveSet, phone_key: &[u8]) -> super::live::LiveGuard {
+    set.enter(
+        &base64::engine::general_purpose::STANDARD.encode(phone_key),
+        crate::util::iso_now_whole_seconds(),
+    )
+}
+
+async fn leave_live(identity: &Mutex<Identity>, live: super::live::LiveGuard, phone_key: &[u8]) {
+    drop(live);
+    if let Err(error) = identity.lock().await.close_seen(phone_key) {
+        log::warn!("[bridge] last sync not written: {error}");
+    }
 }
 
 async fn talk(
@@ -566,5 +574,36 @@ mod tests {
                 { "host": "10.0.0.7", "port": 49160 },
             ])
         );
+    }
+    #[tokio::test]
+    async fn a_phone_is_live_after_the_handshake_and_its_last_sync_is_written_on_close() {
+        let dir = std::env::temp_dir().join(format!(
+            "goodboy-bridge-server-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let key = [0xb7u8; 32];
+        let mut id = Identity::load_or_create_at(&dir.join("bridge.json")).unwrap();
+        id.enroll(&key, "Harborline iPhone").unwrap();
+        let encoded = base64::engine::general_purpose::STANDARD.encode(key);
+        id.phones[0].last_seen = Some(crate::util::iso_now_whole_seconds());
+        let before = id.phones[0].last_seen.clone();
+        let identity = Mutex::new(id);
+        let set = super::super::live::LiveSet::default();
+
+        let guard = go_live(&set, &key);
+        assert!(set.since(&encoded).is_some());
+
+        tokio::time::sleep(Duration::from_millis(1100)).await;
+        leave_live(&identity, guard, &key).await;
+
+        assert_eq!(set.since(&encoded), None);
+        let after = identity.lock().await.phones[0].last_seen.clone();
+        assert_ne!(after, before);
+        std::fs::remove_dir_all(&dir).ok();
     }
 }

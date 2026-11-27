@@ -10,15 +10,20 @@ type ToggleParams = {
 type Props = {
   readonly status: BridgeStatus | null;
   readonly interfaces: ReadonlyArray<NetworkInterface>;
+  readonly isFaulted: boolean;
   readonly isBusy: boolean;
   readonly onToggle: (params: ToggleParams) => Promise<void>;
 };
 
 type SentenceParams = {
   readonly status: BridgeStatus | null;
+  readonly isFaulted: boolean;
 };
 
-const sentenceOf = ({ status }: SentenceParams): string => {
+const listenerSentenceOf = ({ status, isFaulted }: SentenceParams): string => {
+  if (isFaulted) {
+    return 'Not listening until pairing is reset.';
+  }
   const parts = ['Goodboy listens only on the networks you switch on.'];
   if (status !== null && status.isAdvertised) {
     parts.push('Bonjour is on.');
@@ -26,14 +31,13 @@ const sentenceOf = ({ status }: SentenceParams): string => {
   if (status !== null && status.port !== null) {
     parts.push(`Port ${status.port}.`);
   }
-  parts.push('Public addresses are never offered.');
   return parts.join(' ');
 };
 
-export const ListenerSection = ({ status, interfaces, isBusy, onToggle }: Props) => (
-  <section aria-label="Listener" className="flex flex-col gap-3">
+export const ListenerSection = ({ status, interfaces, isFaulted, isBusy, onToggle }: Props) => (
+  <section aria-label="Listener" className="flex flex-col gap-2">
     <SectionLabel label="Listener" headingLevel={2} />
-    <p className="text-ui text-muted-foreground">{sentenceOf({ status })}</p>
+    <p className="text-meta text-muted-foreground">{listenerSentenceOf({ status, isFaulted })}</p>
     <NetworkChoice interfaces={interfaces} isBusy={isBusy} onToggle={onToggle} />
   </section>
 );

@@ -144,6 +144,7 @@ const storyInvokeHandlers = {
     scoped: false,
   },
   query_bridge_serving: false,
+  bridge_phones: [],
   worktree_deps_check: {
     state: 'not-applicable',
     command: null,

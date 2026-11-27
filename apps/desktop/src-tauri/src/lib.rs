@@ -407,6 +407,7 @@ pub fn run() {
             bridge::bridge_set_permissions,
             bridge::bridge_revoke_phone,
             bridge::bridge_stop,
+            bridge::bridge_cancel_code,
             bridge::bridge_note_phone_rule,
             bridge::bridge_pairing_decide,
             bridge::bridge_reset_pairing,

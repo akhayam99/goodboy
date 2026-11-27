@@ -1,28 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { dropPhoneRules } from '../dropPhoneRules';
 import { startPoll } from '../../../../../shared/lib/usePoll/startPoll';
+import { useAppStore } from '../../../../../store';
+import { useCompanionLinkPoll } from '../../../hooks/useCompanionLinkPoll';
 import { CommandError } from '../../../../../shared/lib/invokeCommand';
 import {
+  bridgeCancelCode,
   bridgeInterfaces,
   bridgePairingDecide,
-  bridgePhones,
   bridgeResetPairing,
   bridgeRevoke,
   bridgeRevokePhone,
   bridgeSetInterfaces,
   bridgeSetPermissions,
   bridgeStart,
-  bridgeStatus,
   bridgeStop,
   NO_PRIVATE_NETWORK_KIND,
-  type BridgeStatus,
   type NetworkInterface,
-  type PairedPhone,
   type PhonePermissions,
   type QrInfo,
 } from '../../../bridge';
-
-const STATUS_POLL_MS = 3_000;
 
 const PAIRING_CODE_FAILED = "Couldn't make a pairing code.";
 const DISCONNECT_FAILED = "Couldn't disconnect the paired devices.";
@@ -31,6 +28,7 @@ const NO_NETWORK =
 const CHANGE_FAILED = "Couldn't save that change.";
 const RESET_FAILED = "Couldn't reset pairing.";
 const DECIDE_FAILED = "Couldn't answer that iPhone.";
+const CANCEL_FAILED = "Couldn't close the pairing code.";
 type SetPermissionsParams = {
   readonly phoneId: string;
   readonly permissions: PhonePermissions;
@@ -72,12 +70,15 @@ type Params = {
 
 export const useIphonePairing = ({ onStopFailed }: Params) => {
   const [info, setInfo] = useState<QrInfo | null>(null);
-  const [status, setStatus] = useState<BridgeStatus | null>(null);
+  const status = useAppStore((state) => state.companionStatus);
+  const phones = useAppStore((state) => state.companionPhones);
+  const readMisses = useAppStore((state) => state.companionReadMisses);
+  const refresh = useAppStore((state) => state.refreshCompanionLink);
+  const setPageOpen = useAppStore((state) => state.setCompanionPageOpen);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRevoking, setIsRevoking] = useState(false);
   const [isPairing, setIsPairing] = useState(false);
-  const [phones, setPhones] = useState<ReadonlyArray<PairedPhone>>([]);
   const [interfaces, setInterfaces] = useState<ReadonlyArray<NetworkInterface>>([]);
   const [isChanging, setIsChanging] = useState(false);
   const [changeError, setChangeError] = useState<string | null>(null);
@@ -86,6 +87,8 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
   const enrolledRef = useRef(0);
   const isMountedRef = useRef(true);
   const pairedAtStartRef = useRef(0);
+  const isPairingRef = useRef(false);
+  const hasMintedRef = useRef(false);
   const onStopFailedRef = useRef(onStopFailed);
   onStopFailedRef.current = onStopFailed;
 
@@ -94,34 +97,6 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
   const isPaired = enrolled > 0;
   const isShowingCode = isPairing;
   const total = totalRef.current > 0 ? totalRef.current : 1;
-
-  const refreshStatus = useCallback(async (): Promise<BridgeStatus | null> => {
-    try {
-      const next = await bridgeStatus();
-      if (isMountedRef.current) {
-        setStatus(next);
-      }
-      return next;
-    } catch {
-      if (isMountedRef.current) {
-        setStatus(null);
-      }
-      return null;
-    }
-  }, []);
-
-  const refreshPhones = useCallback(async () => {
-    try {
-      const next = await bridgePhones();
-      if (isMountedRef.current) {
-        setPhones(Array.isArray(next) ? next : []);
-      }
-    } catch {
-      if (isMountedRef.current) {
-        setPhones([]);
-      }
-    }
-  }, []);
 
   const refreshInterfaces = useCallback(async () => {
     try {
@@ -140,15 +115,19 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
     setIsLoading(true);
     setError(null);
     try {
+      hasMintedRef.current = true;
       const next = await bridgeStart();
       if (!isMountedRef.current) {
+        return;
+      }
+      if (!isPairingRef.current) {
+        await bridgeCancelCode();
         return;
       }
       totalRef.current = next.expiresInSecs;
       setRemaining(next.expiresInSecs);
       setInfo(next);
-      await refreshStatus();
-      await refreshPhones();
+      await refresh();
     } catch (failure: unknown) {
       if (isMountedRef.current) {
         setError(mintErrorOf({ failure }));
@@ -159,7 +138,7 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
         setIsLoading(false);
       }
     }
-  }, [refreshStatus, refreshPhones]);
+  }, [refresh]);
 
   const revoke = useCallback(async () => {
     setIsRevoking(true);
@@ -167,15 +146,15 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
     try {
       const rules = await bridgeRevoke();
       await dropPhoneRules({ ruleIds: rules });
+      isPairingRef.current = false;
       setIsPairing(false);
-      await refreshStatus();
-      await refreshPhones();
+      await refresh();
     } catch {
       setError(DISCONNECT_FAILED);
     } finally {
       setIsRevoking(false);
     }
-  }, [refreshPhones, refreshStatus]);
+  }, [refresh]);
 
   const revokeOne = useCallback(
     async ({ phoneId }: RevokeOneParams) => {
@@ -184,15 +163,14 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
       try {
         const rules = await bridgeRevokePhone({ phoneId });
         await dropPhoneRules({ ruleIds: rules });
-        await refreshStatus();
-        await refreshPhones();
+        await refresh();
       } catch {
         setChangeError(DISCONNECT_FAILED);
       } finally {
         setIsChanging(false);
       }
     },
-    [refreshPhones, refreshStatus],
+    [refresh],
   );
 
   const setPermissions = useCallback(
@@ -204,11 +182,11 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
       } catch {
         setChangeError(CHANGE_FAILED);
       } finally {
-        await refreshPhones();
+        await refresh();
         setIsChanging(false);
       }
     },
-    [refreshPhones],
+    [refresh],
   );
 
   const toggleInterface = useCallback(
@@ -241,12 +219,11 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
       } catch {
         setChangeError(DECIDE_FAILED);
       } finally {
-        await refreshStatus();
-        await refreshPhones();
+        await refresh();
         setIsChanging(false);
       }
     },
-    [refreshPhones, refreshStatus],
+    [refresh],
   );
 
   const resetPairing = useCallback(async () => {
@@ -254,8 +231,7 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
     setChangeError(null);
     try {
       await bridgeResetPairing();
-      await refreshStatus();
-      await refreshPhones();
+      await refresh();
       if (isPairing) {
         await mint();
       }
@@ -264,33 +240,45 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
     } finally {
       setIsChanging(false);
     }
-  }, [isPairing, mint, refreshPhones, refreshStatus]);
+  }, [isPairing, mint, refresh]);
 
   const pair = () => {
     pairedAtStartRef.current = enrolledRef.current;
+    isPairingRef.current = true;
     setIsPairing(true);
     void mint();
   };
 
   const cancel = () => {
+    isPairingRef.current = false;
     setIsPairing(false);
     setError(null);
+    setInfo(null);
+    bridgeCancelCode()
+      .then(() => refresh())
+      .catch(() => {
+        if (isMountedRef.current) {
+          setChangeError(CANCEL_FAILED);
+        }
+      });
   };
 
   useEffect(() => {
     isMountedRef.current = true;
     void refreshInterfaces();
-    void refreshStatus();
-    void refreshPhones();
+    setPageOpen({ isOpen: true });
     return () => {
       isMountedRef.current = false;
-      if (enrolledRef.current === 0) {
+      setPageOpen({ isOpen: false });
+      if (enrolledRef.current === 0 && hasMintedRef.current) {
         void bridgeStop().catch((error: unknown) =>
           onStopFailedRef.current({ title: "Couldn't stop listening for iPhones", error }),
         );
       }
     };
-  }, [refreshInterfaces, refreshStatus, refreshPhones]);
+  }, [refreshInterfaces, setPageOpen]);
+
+  useCompanionLinkPoll({ isOn: true });
 
   useEffect(() => {
     if (info === null) {
@@ -310,22 +298,9 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
     }
   }, [isShowingCode, remaining, info, isLoading, mint]);
 
-  useEffect(
-    () =>
-      startPoll({
-        run: () => {
-          void refreshStatus();
-          void refreshPhones();
-        },
-        everyMs: STATUS_POLL_MS,
-        gate: 'visible',
-        isImmediate: false,
-      }),
-    [refreshStatus, refreshPhones],
-  );
-
   useEffect(() => {
     if (isPairing && enrolled > pairedAtStartRef.current) {
+      isPairingRef.current = false;
       setIsPairing(false);
     }
   }, [enrolled, isPairing]);
@@ -333,6 +308,7 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
   return {
     info,
     status,
+    readMisses,
     error,
     isLoading,
     isRevoking,

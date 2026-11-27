@@ -457,6 +457,15 @@ pub async fn bridge_stop(state: State<'_, BridgeState>) -> Result<(), BridgeErro
 }
 
 #[tauri::command]
+pub async fn bridge_cancel_code(state: State<'_, BridgeState>) -> Result<(), BridgeError> {
+    state.tokens.clear();
+    if !state.has_phones().await {
+        state.stop().await;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn bridge_pairing_decide(
     state: State<'_, BridgeState>,
     id: String,
@@ -512,10 +521,14 @@ pub async fn bridge_command_result(
     Ok(())
 }
 
+const TESTFLIGHT_PREFIX: &str = "https://testflight.apple.com/join/";
+
 #[tauri::command]
-pub fn bridge_link_qr(link: String) -> Result<String, BridgeError> {
-    if link.len() > 512 {
-        return Err(BridgeError::Protocol("that link is too long".into()));
+pub async fn bridge_link_qr(link: String) -> Result<String, BridgeError> {
+    if link.len() > 512 || !link.starts_with(TESTFLIGHT_PREFIX) {
+        return Err(BridgeError::Protocol(
+            "that is not a TestFlight link".into(),
+        ));
     }
     render_qr_svg(&link)
 }
@@ -535,11 +548,16 @@ fn render_qr_svg(data: &str) -> Result<String, BridgeError> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn a_link_becomes_a_qr_and_a_long_one_is_refused() {
-        let svg = bridge_link_qr("https://testflight.apple.com/join/Harborline".into()).unwrap();
+    #[tokio::test]
+    async fn a_link_becomes_a_qr_and_a_long_one_is_refused() {
+        let svg = bridge_link_qr("https://testflight.apple.com/join/Harborline".into())
+            .await
+            .unwrap();
         assert!(svg.starts_with("<?xml") || svg.contains("<svg"));
-        assert!(bridge_link_qr("x".repeat(513)).is_err());
+        assert!(bridge_link_qr("x".repeat(513)).await.is_err());
+        assert!(bridge_link_qr("https://example.com/join/Harborline".into())
+            .await
+            .is_err());
     }
 
     #[test]

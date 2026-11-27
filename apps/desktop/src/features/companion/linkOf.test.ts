@@ -58,9 +58,13 @@ describe('linkOf', () => {
     expect(linkOf({ status: status(null), phones: [other, live] }).phone).toBe(live);
   });
 
-  it('is a fault when the pairing key is unusable, even with a phone paired', () => {
+  it('is a fault when the pairing key is unusable and a phone is paired', () => {
     const fault = { code: 'key_mismatch', message: 'no' } as const;
     expect(linkOf({ status: status(fault), phones: [phone({})] }).state).toBe('fault');
-    expect(linkOf({ status: status(fault), phones: [] }).state).toBe('fault');
+  });
+
+  it('stays without a state and a dot when a fault finds no phone paired', () => {
+    const fault = { code: 'keychain_unavailable', message: 'no' } as const;
+    expect(linkOf({ status: status(fault), phones: [] })).toEqual({ state: 'none', phone: null });
   });
 });

@@ -35,3 +35,11 @@ export const useIphoneBarIconStore = create<State>((set) => ({
     set({ isShown });
   },
 }));
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', ({ key }) => {
+    if (key === STORAGE_KEYS.iphoneBarIcon) {
+      useIphoneBarIconStore.setState({ isShown: readShown() });
+    }
+  });
+}

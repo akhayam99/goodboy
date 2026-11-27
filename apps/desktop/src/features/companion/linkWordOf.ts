@@ -1,10 +1,10 @@
-import type { LinkState } from '../../linkOf';
+import type { LinkState } from './linkOf';
 
 type Params = {
   readonly state: LinkState;
 };
 
-export const entryWordOf = ({ state }: Params): string => {
+export const linkWordOf = ({ state }: Params): string => {
   if (state === 'live') {
     return 'Live';
   }
@@ -12,7 +12,7 @@ export const entryWordOf = ({ state }: Params): string => {
     return 'Offline';
   }
   if (state === 'fault') {
-    return 'Error';
+    return "Pairing isn't available";
   }
   return 'Not paired';
 };

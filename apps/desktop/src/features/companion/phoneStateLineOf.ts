@@ -1,31 +1,12 @@
-import { formatAge } from '../../shared/utils/time/formatAge';
-import { formatClock } from '../../shared/utils/time/formatClock';
 import type { PairedPhone } from './bridge';
-import { phoneStateOf } from './phoneStateOf';
+import { phoneStateTextOf } from './phoneStateTextOf';
+import { phoneSyncTextOf } from './phoneSyncTextOf';
 
 type Params = {
   readonly phone: PairedPhone;
   readonly now: number;
+  readonly isFaulted: boolean;
 };
 
-type SinceParams = {
-  readonly state: string;
-  readonly at: string | null;
-};
-
-const sinceOf = ({ state, at }: SinceParams): string => {
-  if (at === null) {
-    return `${state}.`;
-  }
-  return `${state} since ${formatClock({ at })}.`;
-};
-
-export const phoneStateLineOf = ({ phone, now }: Params): string => {
-  if (phoneStateOf({ phone }) === 'live') {
-    return `${sinceOf({ state: 'Live', at: phone.liveSince })} Last sync just now.`;
-  }
-  if (phone.lastSeen === null) {
-    return 'Offline. Not seen yet.';
-  }
-  return `${sinceOf({ state: 'Offline', at: phone.lastSeen })} Last sync ${formatAge({ from: phone.lastSeen, now })}.`;
-};
+export const phoneStateLineOf = ({ phone, now, isFaulted }: Params): string =>
+  `${phoneStateTextOf({ phone, now, isFaulted })}. Last sync ${phoneSyncTextOf({ phone, now })}.`;

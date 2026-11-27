@@ -30,9 +30,11 @@ describe('the iPhone link makes no network call of its own', () => {
     expect(offenders.map((path) => relative(ROOT, path))).toEqual([]);
   });
 
-  it('keeps the TestFlight link in one constant that is empty until the owner gives it', () => {
-    const source = readFileSync(join(ROOT, 'testflightLink.ts'), 'utf8');
+  it('keeps the TestFlight link in one constant that is empty or a TestFlight join link', () => {
+    const source = readFileSync(join(ROOT, 'testflightLink.ts'), 'utf8').trim();
 
-    expect(source.trim()).toBe("export const TESTFLIGHT_LINK = '';");
+    expect(source).toMatch(
+      /^export const TESTFLIGHT_LINK = '(?:|https:\/\/testflight\.apple\.com\/join\/[A-Za-z0-9]+)';$/,
+    );
   });
 });

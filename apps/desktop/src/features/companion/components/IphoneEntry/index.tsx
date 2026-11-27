@@ -1,8 +1,9 @@
 import { Smartphone } from '@goodboy/ui/icons';
+import { useEffect } from 'react';
 import {
   AnchoredPopover,
+  Button,
   cn,
-  FOCUS_RING,
   ICON_SIZE,
   POPOVER_WIDTH_CLASS,
   POPOVER_WIDTH_PX,
@@ -14,18 +15,21 @@ import {
 import { dispatchWindowEvent } from '../../../../shared/lib/dispatchWindowEvent';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../shared/utils/names';
+import { useAppStore } from '../../../../store';
+import { useCompanionLinkPoll } from '../../hooks/useCompanionLinkPoll';
 import { useIphoneBarIconStore } from '../../iphoneBarIconStore';
 import { linkOf } from '../../linkOf';
+import { linkWordOf } from '../../linkWordOf';
 import { EntryFacts } from './EntryFacts';
 import { entryToneOf } from './entryToneOf';
-import { entryWordOf } from './entryWordOf';
-import { useBridgeLink } from './useBridgeLink';
-
-const TOOLTIP_NONE = 'Pair an iPhone';
+import { tooltipOf } from './tooltipOf';
 
 export const IphoneEntry = () => {
   const isShown = useIphoneBarIconStore((state) => state.isShown);
-  const { status, phones } = useBridgeLink();
+  const status = useAppStore((state) => state.companionStatus);
+  const phones = useAppStore((state) => state.companionPhones);
+  const isPageOpen = useAppStore((state) => state.isCompanionPageOpen);
+  const readCompanionPhones = useAppStore((state) => state.readCompanionPhones);
   const dropdown = useDropdown({
     align: 'end',
     width: POPOVER_WIDTH_CLASS.standard,
@@ -35,9 +39,14 @@ export const IphoneEntry = () => {
   const now = useNow(30_000, isOpen);
   const link = linkOf({ status, phones });
   const tone = entryToneOf({ state: link.state });
-  const word = entryWordOf({ state: link.state });
-  const label = `${NAMES.iphone}, ${word}`;
-  const tooltip = link.state === 'none' ? TOOLTIP_NONE : label;
+  const label = `${NAMES.iphone}, ${linkWordOf({ state: link.state })}`;
+
+  useEffect(() => {
+    if (isShown) {
+      void readCompanionPhones();
+    }
+  }, [isShown, readCompanionPhones]);
+  useCompanionLinkPoll({ isOn: isShown && phones.length > 0 });
 
   const openSettings = () => {
     close();
@@ -55,36 +64,39 @@ export const IphoneEntry = () => {
       ariaLabel="iPhone"
       hasBackdrop
       trigger={
-        <Tooltip content={tooltip} side="bottom">
-          <button
-            type="button"
+        <Tooltip content={tooltipOf({ link, now })} side="top">
+          <Button
+            variant="quiet"
+            size="sm"
             data-iphone-entry={link.state}
             aria-label={label}
-            aria-expanded={link.state === 'none' ? undefined : isOpen}
-            onClick={link.state === 'none' ? openSettings : toggle}
+            aria-expanded={link.phone === null ? undefined : isOpen}
+            aria-current={isPageOpen ? 'page' : undefined}
+            onClick={link.phone === null ? openSettings : toggle}
             className={cn(
               TOP_BAR_CONTROL.height,
+              tone === null ? cn(TOP_BAR_CONTROL.square, 'p-0') : 'min-w-7 gap-1 px-1',
               TOP_BAR_CONTROL.radius,
-              FOCUS_RING,
-              'flex shrink-0 items-center px-1 motion-safe:transition-colors',
-              isOpen ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-hover',
+              'shrink-0 font-normal',
+              isOpen && 'bg-muted text-foreground',
+              !isOpen && isPageOpen && 'bg-selected text-foreground',
             )}
           >
-            <span className="flex size-6 items-center justify-center">
-              <Smartphone size={ICON_SIZE.control} aria-hidden />
-            </span>
+            <Smartphone size={ICON_SIZE.control} aria-hidden />
             {tone === null ? null : <StatusMark mark={{ kind: 'dot', tone }} />}
-          </button>
+          </Button>
         </Tooltip>
       }
     >
-      <EntryFacts
-        state={link.state}
-        phone={link.phone}
-        fault={status?.fault ?? null}
-        now={now}
-        onOpenSettings={openSettings}
-      />
+      {link.phone === null ? null : (
+        <EntryFacts
+          state={link.state}
+          phone={link.phone}
+          fault={status?.fault ?? null}
+          now={now}
+          onOpenSettings={openSettings}
+        />
+      )}
     </AnchoredPopover>
   );
 };

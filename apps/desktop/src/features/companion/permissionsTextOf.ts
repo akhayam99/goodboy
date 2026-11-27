@@ -1,15 +1,9 @@
+import { capitalized } from '../../shared/utils/capitalized';
 import type { PhonePermissions } from './bridge';
 
 type Params = {
   readonly permissions: PhonePermissions;
 };
-
-type CapitalParams = {
-  readonly text: string;
-};
-
-const capitalized = ({ text }: CapitalParams): string =>
-  `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
 export const permissionsTextOf = ({ permissions }: Params): string => {
   const words: Array<string> = [];

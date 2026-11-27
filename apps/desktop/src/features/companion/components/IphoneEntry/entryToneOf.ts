@@ -1,12 +1,12 @@
 import type { LinkState } from '../../linkOf';
 
-type Tone = 'success' | 'warning' | 'danger';
+export type EntryTone = 'success' | 'warning' | 'danger';
 
 type Params = {
   readonly state: LinkState;
 };
 
-export const entryToneOf = ({ state }: Params): Tone | null => {
+export const entryToneOf = ({ state }: Params): EntryTone | null => {
   if (state === 'live') {
     return 'success';
   }

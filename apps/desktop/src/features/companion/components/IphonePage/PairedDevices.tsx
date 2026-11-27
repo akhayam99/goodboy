@@ -19,6 +19,7 @@ type Props = {
   readonly enrolled: number;
   readonly phones: ReadonlyArray<PairedPhone>;
   readonly now: number;
+  readonly isFaulted: boolean;
   readonly isBusy: boolean;
   readonly onSetPermissions: (params: SetPermissionsParams) => Promise<void>;
   readonly onRevokeOne: (params: RevokeParams) => Promise<void>;
@@ -29,6 +30,7 @@ export const PairedDevices = ({
   enrolled,
   phones,
   now,
+  isFaulted,
   isBusy,
   onSetPermissions,
   onRevokeOne,
@@ -46,7 +48,7 @@ export const PairedDevices = ({
             icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
             title="Remove all paired iPhones?"
             description="Each iPhone must scan a new code to reconnect."
-            confirmLabel="Remove all"
+            confirmLabel="Remove all iPhones"
             isBusy={isBusy}
             isOpen={isConfirming}
             onConfirm={async () => {
@@ -61,22 +63,25 @@ export const PairedDevices = ({
                 intent={actionIntentOf({ verb: 'remove iphone' })}
                 onClick={() => setIsConfirming(true)}
               >
-                Remove all
+                Remove all iPhones
               </Button>
             )}
           />
         )}
       </div>
-      {phones.map((phone) => (
-        <PhoneRow
-          key={phone.id}
-          phone={phone}
-          now={now}
-          isBusy={isBusy}
-          onSetPermissions={onSetPermissions}
-          onRevoke={onRevokeOne}
-        />
-      ))}
+      <div className="flex flex-col gap-4">
+        {phones.map((phone) => (
+          <PhoneRow
+            key={phone.id}
+            phone={phone}
+            now={now}
+            isFaulted={isFaulted}
+            isBusy={isBusy}
+            onSetPermissions={onSetPermissions}
+            onRevoke={onRevokeOne}
+          />
+        ))}
+      </div>
     </section>
   );
 };

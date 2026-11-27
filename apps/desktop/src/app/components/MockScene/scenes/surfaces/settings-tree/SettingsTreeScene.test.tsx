@@ -54,6 +54,7 @@ describe('the Settings tree scenes', () => {
       'u26s-settings-iphone',
       'u26s-settings-iphone-empty',
       'u26s-settings-iphone-fault',
+      'u26s-settings-iphone-get',
       'u26s-settings-iphone-request',
       'u26s-settings-nows',
       'u26s-settings-pair',
@@ -118,6 +119,16 @@ describe('the Settings tree scenes', () => {
       screen.getByRole('button', { name: 'Pair an iPhone' }).getAttribute('data-variant'),
     ).toBe('primary');
     expect(screen.queryByRole('region', { name: 'Get Goodboy for iPhone' })).toBeNull();
+  });
+
+  it('u26s-settings-iphone-get draws the TestFlight block with a code, four steps and Copy link', async () => {
+    const Scene = U26S_SETTINGS_TREE_SCENES['u26s-settings-iphone-get'];
+    render(<Scene />);
+
+    const block = await screen.findByRole('region', { name: 'Get Goodboy for iPhone' }, WAIT);
+    await waitFor(() => expect(block.querySelector('[data-testflight-qr]')).not.toBeNull(), WAIT);
+    expect(within(block).getAllByRole('listitem')).toHaveLength(4);
+    within(block).getByRole('button', { name: /Copy link/ });
   });
 
   it('u26s-settings-pair shows the code with its 60 seconds', async () => {

@@ -2,6 +2,7 @@ import { SettingsFrame } from '../../audit/SettingsFrame';
 import { seedStorageScene } from '../../brand/StorageScene';
 import { seedBrandSettings } from '../../brand/settingsBrandSeed';
 import { installIphoneIpc, type IphoneMoment } from './settingsTree/installIphoneIpc';
+import { IphoneGetScene } from './settingsTree/IphoneGetScene';
 import { PressWhenReady } from './settingsTree/PressWhenReady';
 
 type SeedParams = {
@@ -45,6 +46,7 @@ export const U26S_SETTINGS_TREE_SCENES = {
       <SettingsFrame focus={IPHONE_FOCUS} seed={seedRequest} />
     </PressWhenReady>
   ),
+  'u26s-settings-iphone-get': IphoneGetScene,
   'u26s-settings-iphone-fault': () => <SettingsFrame focus={IPHONE_FOCUS} seed={seedFault} />,
   'u26s-bar-iphone-none': () => <SettingsFrame focus={GENERAL_FOCUS} seed={seedEmpty} />,
   'u26s-bar-iphone-live': () => <SettingsFrame focus={GENERAL_FOCUS} seed={seedPaired} />,

@@ -26,11 +26,11 @@ export const linkOf = ({ status, phones }: Params): Link => {
   const sorted = [...phones].sort((a, b) => seenAt({ phone: b }) - seenAt({ phone: a }));
   const live = sorted.find((phone) => phoneStateOf({ phone }) === 'live');
   const phone = live ?? sorted[0] ?? null;
-  if ((status?.fault ?? null) !== null) {
-    return { state: 'fault', phone };
-  }
   if (phone === null) {
     return { state: 'none', phone: null };
+  }
+  if ((status?.fault ?? null) !== null) {
+    return { state: 'fault', phone };
   }
   return { state: live === undefined ? 'offline' : 'live', phone };
 };

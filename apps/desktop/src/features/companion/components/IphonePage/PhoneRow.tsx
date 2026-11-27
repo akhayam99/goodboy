@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Smartphone, Unplug } from '@goodboy/ui/icons';
+import { Smartphone, Unlink, Unplug } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE, StatusMark, Switch } from '@goodboy/ui';
 
 import { actionIntentOf } from '../../../actions/actionIntentOf';
@@ -25,12 +25,13 @@ type RevokeParams = {
 type Props = {
   readonly phone: PairedPhone;
   readonly now: number;
+  readonly isFaulted: boolean;
   readonly isBusy: boolean;
   readonly onSetPermissions: (params: SetPermissionsParams) => Promise<void>;
   readonly onRevoke: (params: RevokeParams) => Promise<void>;
 };
 
-export const PhoneRow = ({ phone, now, isBusy, onSetPermissions, onRevoke }: Props) => {
+export const PhoneRow = ({ phone, now, isFaulted, isBusy, onSetPermissions, onRevoke }: Props) => {
   const [isConfirming, setIsConfirming] = useState(false);
   const state = phoneStateOf({ phone });
 
@@ -42,8 +43,13 @@ export const PhoneRow = ({ phone, now, isBusy, onSetPermissions, onRevoke }: Pro
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="text-row text-foreground">{phone.name}</span>
         <span className="flex items-center gap-1 text-meta text-muted-foreground">
-          <StatusMark mark={{ kind: 'dot', tone: state === 'live' ? 'success' : 'warning' }} />
-          {phoneStateLineOf({ phone, now })}
+          <StatusMark
+            mark={{
+              kind: 'dot',
+              tone: isFaulted ? 'danger' : state === 'live' ? 'success' : 'warning',
+            }}
+          />
+          {phoneStateLineOf({ phone, now, isFaulted })}
         </span>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {PERMISSION_LABELS.map(({ key, label }) => (
@@ -85,6 +91,7 @@ export const PhoneRow = ({ phone, now, isBusy, onSetPermissions, onRevoke }: Pro
               aria-label={`Remove ${phone.name}`}
               onClick={() => setIsConfirming(true)}
             >
+              <Unlink size={ICON_SIZE.row} aria-hidden />
               Remove
             </Button>
           )}

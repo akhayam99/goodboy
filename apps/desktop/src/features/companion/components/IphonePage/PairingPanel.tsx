@@ -1,6 +1,7 @@
 import { Band } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 import type { QrInfo } from '../../bridge';
+import { NumberedSteps } from './NumberedSteps';
 import { PairingCode } from './PairingCode';
 
 const PAIRING_STEPS = [
@@ -35,11 +36,7 @@ export const PairingPanel = ({ info, isLoading, error, remaining, total, onMint 
         />
       </div>
       <div className="flex max-w-[22rem] flex-col gap-3">
-        <ol className="flex list-inside list-decimal flex-col gap-2 text-ui text-muted-foreground">
-          {PAIRING_STEPS.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
+        <NumberedSteps steps={PAIRING_STEPS} className="text-ui text-muted-foreground" />
         <p className="text-meta text-muted-foreground">{NEW_PHONE_NOTE}</p>
       </div>
     </div>

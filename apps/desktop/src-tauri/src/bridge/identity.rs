@@ -448,6 +448,14 @@ impl Identity {
     }
 
     pub fn touch_seen(&mut self, phone_static_pub: &[u8]) -> Result<(), BridgeError> {
+        self.write_seen(phone_static_pub, false)
+    }
+
+    pub fn close_seen(&mut self, phone_static_pub: &[u8]) -> Result<(), BridgeError> {
+        self.write_seen(phone_static_pub, true)
+    }
+
+    fn write_seen(&mut self, phone_static_pub: &[u8], is_forced: bool) -> Result<(), BridgeError> {
         let enc = b64().encode(phone_static_pub);
         let now = crate::util::iso_now_whole_seconds();
         let Some(phone) = self.phones.iter_mut().find(|p| p.key == enc) else {
@@ -459,7 +467,7 @@ impl Identity {
             .and_then(crate::util::iso_to_ms)
             .zip(crate::util::iso_to_ms(&now))
             .is_some_and(|(seen, at)| at - seen < SEEN_WRITE_EVERY_MS);
-        if is_fresh {
+        if is_fresh && !is_forced {
             return Ok(());
         }
         phone.last_seen = Some(now);

@@ -1,16 +1,19 @@
 import { Button, Notice, PaneShell } from '@goodboy/ui';
+import { useNow } from '../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../shared/utils/names';
 import type { BridgeStatus } from '../../bridge';
-import { TESTFLIGHT_LINK } from '../../testflightLink';
-import { BarIconSwitch } from './BarIconSwitch';
-import { IphoneIntro } from './IphoneIntro';
+import { IphoneEmpty } from './IphoneEmpty';
 import { ListenerSection } from './ListenerSection';
 import { PairedDevices } from './PairedDevices';
 import { PairingFault } from './PairingFault';
 import { PairingPanel } from './PairingPanel';
 import { PairingRequest } from './PairingRequest';
-import { TestflightBlock } from './TestflightBlock';
+import { TopBarSection } from './TopBarSection';
 import { useIphonePairing } from './useIphonePairing';
+
+const READ_MISSES_SHOWN = 2;
+const READ_FAILED = "Couldn't refresh the iPhone link. Showing the last state.";
+const FIRST_READ_FAILED = "Couldn't read the iPhone link.";
 
 type StopFailure = {
   readonly title: string;
@@ -44,6 +47,7 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
   const {
     info,
     status,
+    readMisses,
     error,
     isLoading,
     isRevoking,
@@ -66,9 +70,11 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
     pair,
     cancel,
   } = useIphonePairing({ onStopFailed });
+  const now = useNow(30_000, true);
 
   const fault = status?.fault ?? null;
   const pending = status?.pendingPairing ?? null;
+  const isKnown = status !== null;
   const notices = (
     <>
       {fault === null ? null : (
@@ -80,12 +86,19 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
       {changeError === null ? null : (
         <Notice tone="danger" placement="inline" title={changeError} />
       )}
+      {isKnown && readMisses >= READ_MISSES_SHOWN ? (
+        <Notice tone="warning" placement="inline" title={READ_FAILED} />
+      ) : null}
+      {!isKnown && readMisses > 0 ? (
+        <Notice tone="danger" placement="inline" title={FIRST_READ_FAILED} />
+      ) : null}
     </>
   );
   const listener = (
     <ListenerSection
       status={status}
       interfaces={interfaces}
+      isFaulted={fault !== null}
       isBusy={isChanging || isLoading}
       onToggle={toggleInterface}
     />
@@ -128,27 +141,28 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
       ) : (
         <>
           {error === null ? null : <Notice tone="danger" placement="inline" title={error} />}
-          {isPaired ? (
+          {isKnown && isPaired ? (
             <>
               <PairedDevices
                 enrolled={enrolled}
                 phones={phones}
-                now={Date.now()}
+                now={now}
+                isFaulted={fault !== null}
                 isBusy={isRevoking || isChanging}
                 onSetPermissions={setPermissions}
                 onRevokeOne={revokeOne}
                 onRevokeAll={revoke}
               />
               {listener}
-              <BarIconSwitch />
+              <TopBarSection />
             </>
-          ) : (
+          ) : null}
+          {isKnown && !isPaired ? (
             <>
-              <IphoneIntro />
-              <TestflightBlock link={TESTFLIGHT_LINK} />
-              <BarIconSwitch />
+              <IphoneEmpty />
+              <TopBarSection />
             </>
-          )}
+          ) : null}
         </>
       )}
     </PaneShell>

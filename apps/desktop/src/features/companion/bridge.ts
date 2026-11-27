@@ -120,3 +120,5 @@ export const bridgeResetPairing = (): Promise<void> => invokeCommand<void>('brid
 
 export const bridgeLinkQr = ({ link }: LinkQrParams): Promise<string> =>
   invokeCommand<string>('bridge_link_qr', { link });
+
+export const bridgeCancelCode = (): Promise<void> => invokeCommand<void>('bridge_cancel_code');

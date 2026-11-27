@@ -110,6 +110,9 @@ export const installIphoneIpc = ({ moment }: Params): void => {
         expiresInSecs: 60,
       };
     }
+    if (command === 'bridge_link_qr') {
+      return svg;
+    }
     if (command === 'bridge_status') {
       return {
         running: true,
