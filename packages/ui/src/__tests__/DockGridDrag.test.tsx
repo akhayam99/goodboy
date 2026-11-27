@@ -156,8 +156,8 @@ describe('dragging a panel by its head', () => {
     await dragTo({ x: 600, y: 300 });
 
     const ghost = document.querySelector<HTMLElement>('[data-dock-ghost]');
-    expect(ghost?.style.left).toBe(`${RECTS.browser?.x}px`);
-    expect(ghost?.style.width).toBe(`${RECTS.browser?.width}px`);
+    expect(ghost?.style.left).toBe(`${(RECTS.browser?.x ?? 0) + 5}px`);
+    expect(ghost?.style.width).toBe(`${(RECTS.browser?.width ?? 0) - 10}px`);
   });
 
   it('places the panel above another one from its top quarter', async () => {
@@ -218,12 +218,12 @@ describe('dragging a panel by its head', () => {
     expect(onMove).not.toHaveBeenCalled();
   });
 
-  it('dims the page and keeps the Browser cover signal up while dragging', async () => {
+  it('keeps the page undimmed and the Browser cover signal up while dragging', async () => {
     renderGrid();
 
     await dragTo({ x: 600, y: 300 });
 
-    expect(document.querySelector('[data-dock-dim]')).not.toBeNull();
+    expect(document.querySelector('[data-dock-dim]')).toBeNull();
     expect(document.body.getAttribute(SPLIT_DRAG_ATTRIBUTE)).toBe('move');
   });
 
@@ -274,6 +274,9 @@ describe('dragging a panel by its head', () => {
       'Place above Browser, 1 of 4',
     );
     fireEvent.keyDown(grid, { key: 'ArrowRight' });
+    expect(document.querySelector('[data-dock-zone-hovered]')?.getAttribute('data-dock-zone')).toBe(
+      'merge:browser',
+    );
     fireEvent.keyDown(grid, { key: 'Enter' });
 
     expect(onMove).toHaveBeenCalledWith({
@@ -281,6 +284,16 @@ describe('dragging a panel by its head', () => {
       unit: 'cell',
       target: { at: 'tab', key: 'browser' },
     });
+  });
+
+  it('draws every pill with the label of its zone and the target of its drop', async () => {
+    renderGrid();
+
+    await dragTo({ x: 100, y: 300 });
+
+    const pill = document.querySelector('[data-dock-zone="above:browser"]');
+    expect(pill?.getAttribute('data-dock-zone-label')).toBe('Place above');
+    expect(pill?.textContent).toBe('Place above');
   });
 
   it('cancels with Esc', async () => {

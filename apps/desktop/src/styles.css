@@ -311,6 +311,8 @@
 
   --animate-popover-in: popover-in var(--duration-quick) var(--ease-enter);
 
+  --animate-drop-in: popover-in var(--duration-base) var(--ease-enter);
+
   --animate-studio-in: studio-in var(--duration-slow) var(--ease-enter);
 
   @keyframes studio-in {
@@ -1146,6 +1148,46 @@ body {
   @media (prefers-reduced-transparency: reduce) {
     background-color: var(--color-background);
     backdrop-filter: none;
+  }
+}
+
+@utility drop-chip {
+  background-color: color-mix(in oklab, var(--color-floating) 76%, transparent);
+  backdrop-filter: blur(var(--drop-chip-blur, 14px)) saturate(1.5);
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-floating);
+    backdrop-filter: none;
+  }
+  @media screen and (forced-colors: active) {
+    background-color: Canvas;
+    backdrop-filter: none;
+    border: 1px solid CanvasText;
+    &[data-dock-zone-hovered],
+    [data-dock-zone-hovered] > & {
+      background-color: Highlight;
+      color: HighlightText;
+    }
+  }
+}
+
+@utility drop-ghost {
+  border-radius: calc(var(--radius-frame) + 4px);
+  background-color: color-mix(in oklab, var(--color-primary) 5%, transparent);
+  box-shadow:
+    inset 0 0 0 2px color-mix(in oklab, var(--color-primary) 62%, transparent),
+    0 0 0 1px var(--color-background);
+  @media (prefers-reduced-motion: no-preference) {
+    transition:
+      opacity var(--duration-base) var(--ease-enter),
+      left var(--duration-base) var(--ease-enter),
+      top var(--duration-base) var(--ease-enter),
+      width var(--duration-base) var(--ease-enter),
+      height var(--duration-base) var(--ease-enter);
+  }
+  @media screen and (forced-colors: active) {
+    background-color: transparent;
+    box-shadow: none;
+    border: 2px solid Highlight;
   }
 }
 
