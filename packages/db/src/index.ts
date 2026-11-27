@@ -431,6 +431,20 @@ export {
 } from './queries/notification';
 export { listThreadReads, markThreadsRead, type ThreadRead } from './queries/thread-read';
 export {
+  addCalendarSource,
+  listCalendarRoles,
+  listCalendarSources,
+  removeCalendarSource,
+  setCalendarRole,
+} from './queries/calendar-source';
+export {
+  insertReminder,
+  listReminders,
+  markReminderDone,
+  reopenReminder,
+  snoozeReminder,
+} from './queries/reminder';
+export {
   deleteNudgeEvent,
   insertNudgeEvent,
   listDecidedNudgeEventsForSessions,

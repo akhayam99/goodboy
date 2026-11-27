@@ -635,3 +635,26 @@ export type {
   SearchKind,
   SearchQuery,
 } from './search';
+export type {
+  CalendarEvent,
+  CalendarEventStatus,
+  CalendarRange,
+  CalendarRole,
+  CalendarRoleEntry,
+  CalendarSource,
+  CalendarSourceId,
+  CalendarSourceKind,
+  Reminder,
+  ReminderId,
+  ReminderTarget,
+  ReminderTargetKind,
+  ReminderTrigger,
+} from './calendar';
+export {
+  CALENDAR_EVENT_STATUSES,
+  CALENDAR_ROLES,
+  CALENDAR_SOURCE_KINDS,
+  DEFAULT_CALENDAR_ROLE,
+  REMINDER_TARGET_KINDS,
+  REMINDER_TRIGGERS,
+} from './calendar';
