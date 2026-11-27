@@ -288,7 +288,7 @@ export const useElementPick = ({
       note: text,
       pageTitle: title,
       queue,
-      isTabStill: () => liveIdRef.current === asked.liveId,
+      isTabStill: () => tokenRef.current === asked.token && liveIdRef.current === asked.liveId,
     })
       .then((result) => {
         if (result === 'agent-gone') {

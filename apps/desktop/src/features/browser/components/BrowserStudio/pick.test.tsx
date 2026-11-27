@@ -66,6 +66,7 @@ type PickArgs = {
 type PayloadParams = { readonly payload: unknown };
 type AgentParams = { readonly agentId: AgentId };
 type ClickParams = { readonly elements: ReadonlyArray<BrowserPickedElement> };
+type StudioParams = { readonly sessionId: SessionId; readonly tabId: string };
 type CropMode = 'ok' | 'wait';
 
 const TOTAL: BrowserPickedElement = {
@@ -180,17 +181,19 @@ const queued = ({ agentId }: AgentParams) => store.getState().outputHandoffs[age
 
 const draftOf = ({ agentId }: AgentParams) => store.getState().agentDraft[agentId] ?? '';
 
+const studioOf = ({ sessionId, tabId }: StudioParams) => (
+  <ToastProvider>
+    <ObjectMenuProvider>
+      <BrowserStudio sessionId={sessionId} tabId={tabId} onClose={() => undefined} />
+    </ObjectMenuProvider>
+  </ToastProvider>
+);
+
 const openLedgerPage = async () => {
   store.getState().switchStudio({
     studio: { kind: 'browser', sessionId: ROUNDING_SESSION, tabId: 'tab-ledger' },
   });
-  render(
-    <ToastProvider>
-      <ObjectMenuProvider>
-        <BrowserStudio sessionId={ROUNDING_SESSION} tabId="tab-ledger" onClose={() => undefined} />
-      </ObjectMenuProvider>
-    </ToastProvider>,
-  );
+  const { rerender } = render(studioOf({ sessionId: ROUNDING_SESSION, tabId: 'tab-ledger' }));
   const view = await waitFor(() => {
     const found = document.querySelector('[data-browser-view]');
     if (found === null) {
@@ -212,6 +215,7 @@ const openLedgerPage = async () => {
       false,
     ),
   );
+  return { rerender };
 };
 
 const startPicking = async () => {
@@ -376,6 +380,30 @@ describe('select an element on the browser page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'PR #318' }));
     await waitFor(() => expect(store.getState().browserActiveTab[ROUNDING_SESSION]).toBe('tab-pr'));
     await waitFor(() => expect(live.map((facts) => facts.id)).toEqual(['live-1', 'live-2']));
+    await act(async () => {
+      releaseCrop?.();
+    });
+
+    await waitFor(() => expect(queued({ agentId: IMPLEMENTER })).toHaveLength(1));
+    expect(queued({ agentId: IMPLEMENTER })[0]?.mimeType).toBe('text/markdown');
+  });
+
+  it('drops a late picture once a tab of another session is shown', async () => {
+    cropMode = 'wait';
+    const { rerender } = await openLedgerPage();
+    await startPicking();
+    const note = await clickInPage({ elements: [TOTAL] });
+    await act(async () => {
+      fireEvent.keyDown(note, { key: 'Enter' });
+    });
+    await waitFor(() => expect(releaseCrop).not.toBeNull());
+
+    await act(async () => {
+      rerender(studioOf({ sessionId: CHECKOUT_SESSION, tabId: 'tab-checkout' }));
+    });
+    await waitFor(() =>
+      expect(store.getState().browserActiveTab[CHECKOUT_SESSION]).toBe('tab-checkout'),
+    );
     await act(async () => {
       releaseCrop?.();
     });
