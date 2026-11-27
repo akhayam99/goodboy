@@ -1,3 +1,4 @@
+import { prefixRuleFor } from '@goodboy/core/permissions';
 import { openPermissionAsksOf } from '../../permissions/openPermissionAsksOf';
 import type { HandlerParams, HandlerResult } from './handlerTypes';
 import type { DecideActionOf } from './decideAction';
@@ -82,6 +83,14 @@ export const answerPermission = async ({
   try {
     if (action.verdict === 'allow') {
       await store.allowAndContinue({ ...target, input: ask.input });
+      return doneResult();
+    }
+    if (action.verdict === 'allowAlways') {
+      await store.allowWithRule({
+        ...target,
+        scope: 'workspace',
+        pattern: prefixRuleFor({ toolName: ask.toolName, input: ask.input }).pattern,
+      });
       return doneResult();
     }
     await store.denyWithReason({ ...target, reason: '' });

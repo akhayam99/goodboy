@@ -246,3 +246,43 @@ describe.each(CASES)('$kind', (kase) => {
     expect(kase.called(kit)).not.toHaveBeenCalled();
   });
 });
+
+describe('answerPermission with allowAlways', () => {
+  const ALWAYS: Case = {
+    kind: 'answerPermission',
+    fields: {
+      agentId: AGENT,
+      requestId: TOOL_USE,
+      seenInputHash: PERMISSION_HASH,
+      verdict: 'allowAlways',
+    },
+    stale: { seenInputHash: 'old' },
+    called: (kit) => kit.actions.allowWithRule,
+  };
+
+  it('takes the Always allow path of the Mac for this workspace and reports done', async () => {
+    const kit = buildTestStore();
+    const outcome = await run({ kit, kase: ALWAYS });
+    expect(outcome.result).toBe('done');
+    expect(kit.actions.allowWithRule).toHaveBeenCalledTimes(1);
+    expect(kit.actions.allowWithRule).toHaveBeenCalledWith(
+      expect.objectContaining({ scope: 'workspace', toolUseId: TOOL_USE, toolName: 'Bash' }),
+    );
+    expect(kit.actions.allowAndContinue).not.toHaveBeenCalled();
+  });
+
+  it('refuses a request that changed while the phone read it', async () => {
+    const kit = buildTestStore();
+    const outcome = await run({ kit, kase: ALWAYS, overrides: ALWAYS.stale });
+    expect(outcome.refusal?.code).toBe('version-changed');
+    expect(kit.actions.allowWithRule).not.toHaveBeenCalled();
+  });
+
+  it('refuses a phone that may not decide, like an allow', async () => {
+    const kit = buildTestStore();
+    registerDecideScope({ read: () => false });
+    const outcome = await run({ kit, kase: ALWAYS, phoneId: 'phone-7' });
+    expect(outcome.refusal?.code).toBe('not-permitted');
+    expect(kit.actions.allowWithRule).not.toHaveBeenCalled();
+  });
+});
