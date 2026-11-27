@@ -17,6 +17,8 @@ const CHIP_OFFSET_Y_PX = 34;
 
 const CHIP_FLIP_ROOM_PX = 240;
 
+const CHIP_HEIGHT_PX = 28;
+
 const OUTLINE_INSET_PX = 5;
 
 const CROWDED_PILLS = 8;
@@ -48,6 +50,8 @@ export const DockDropZones = ({ store }: Props) => {
   const shownOutline = outline ?? lastOutline.current;
   const fold =
     outline === null ? null : dockFoldLineOf({ names: view.names, folds: view.ghost?.folds ?? [] });
+  const isRaised =
+    view.y + CHIP_OFFSET_Y_PX + CHIP_HEIGHT_PX > document.documentElement.clientHeight;
   const isFlipped = view.x > document.documentElement.clientWidth - CHIP_FLIP_ROOM_PX;
   return createPortal(
     <div
@@ -103,11 +107,12 @@ export const DockDropZones = ({ store }: Props) => {
           data-dock-chip=""
           style={{
             left: isFlipped ? view.x - CHIP_OFFSET_X_PX : view.x + CHIP_OFFSET_X_PX,
-            top: view.y + CHIP_OFFSET_Y_PX,
+            top: isRaised ? view.y - CHIP_OFFSET_Y_PX : view.y + CHIP_OFFSET_Y_PX,
           }}
           className={cn(
             'drop-chip absolute max-w-60 truncate rounded-lg border border-floating-edge px-3 py-1 text-meta text-foreground shadow-lg',
             isFlipped && '-translate-x-full',
+            isRaised && '-translate-y-full',
           )}
         >
           {view.title}

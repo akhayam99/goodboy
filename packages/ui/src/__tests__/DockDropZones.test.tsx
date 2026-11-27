@@ -77,6 +77,7 @@ describe('the drag overlay', () => {
 
   it('puts the pointer chip 18px right and 34px below the pointer while no pill is hovered', () => {
     widen({ width: 1400 });
+    vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(900);
     shown(viewOf({ x: 500, y: 300 }));
 
     const chip = document.querySelector<HTMLElement>('[data-dock-chip]');
@@ -90,6 +91,16 @@ describe('the drag overlay', () => {
     shown(viewOf({ x: 1360, y: 300 }));
 
     expect(document.querySelector('[data-dock-chip]')?.className).toContain('-translate-x-full');
+  });
+
+  it('raises the pointer chip above the pointer near the bottom edge', () => {
+    vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(700);
+    widen({ width: 1400 });
+    shown(viewOf({ x: 500, y: 690 }));
+
+    const chip = document.querySelector<HTMLElement>('[data-dock-chip]');
+    expect(chip?.style.top).toBe('656px');
+    expect(chip?.className).toContain('-translate-y-full');
   });
 
   it('draws no scrim and no dashed card', () => {
