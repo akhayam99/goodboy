@@ -128,6 +128,7 @@ const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
   browser: 'full',
   settings: 'column',
   monitoring: 'column',
+  calendar: 'column',
   connections: 'column',
   notifications: 'column',
   guide: 'column',
