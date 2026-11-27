@@ -14,8 +14,10 @@ type BannerParams = {
 type AwayAlertsState = {
   readonly isBadgeOn: boolean;
   readonly bannerChoice: BannerChoice;
+  readonly isCallChipOn: boolean;
   readonly setBadge: (params: BadgeParams) => boolean;
   readonly setBannerChoice: (params: BannerParams) => boolean;
+  readonly setCallChip: (params: BadgeParams) => boolean;
 };
 
 type KeyParams = {
@@ -60,9 +62,19 @@ const readBadge = (): boolean => badgeOf({ value: readStored({ key: STORAGE_KEYS
 const readChoice = (): BannerChoice =>
   choiceOf({ value: readStored({ key: STORAGE_KEYS.awayBanner }) });
 
+const readCallChip = (): boolean => badgeOf({ value: readStored({ key: STORAGE_KEYS.callChip }) });
+
 export const useAwayAlertsStore = create<AwayAlertsState>((set) => ({
   isBadgeOn: readBadge(),
   bannerChoice: readChoice(),
+  isCallChipOn: readCallChip(),
+  setCallChip: ({ isOn }) => {
+    if (!writeStored({ key: STORAGE_KEYS.callChip, value: isOn ? BADGE_ON : BADGE_OFF })) {
+      return false;
+    }
+    set({ isCallChipOn: isOn });
+    return true;
+  },
   setBadge: ({ isOn }) => {
     if (!writeStored({ key: STORAGE_KEYS.awayBadge, value: isOn ? BADGE_ON : BADGE_OFF })) {
       return false;
@@ -81,8 +93,16 @@ export const useAwayAlertsStore = create<AwayAlertsState>((set) => ({
 
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', ({ key }) => {
-    if (key === STORAGE_KEYS.awayBadge || key === STORAGE_KEYS.awayBanner) {
-      useAwayAlertsStore.setState({ isBadgeOn: readBadge(), bannerChoice: readChoice() });
+    if (
+      key === STORAGE_KEYS.awayBadge ||
+      key === STORAGE_KEYS.awayBanner ||
+      key === STORAGE_KEYS.callChip
+    ) {
+      useAwayAlertsStore.setState({
+        isBadgeOn: readBadge(),
+        bannerChoice: readChoice(),
+        isCallChipOn: readCallChip(),
+      });
     }
   });
 }

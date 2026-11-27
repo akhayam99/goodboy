@@ -1,3 +1,7 @@
+mod alerts;
+pub(crate) mod alerts_commands;
+pub(crate) mod alerts_runner;
+mod alerts_window;
 pub(crate) mod commands;
 mod error;
 mod event;

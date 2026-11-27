@@ -68,7 +68,11 @@ const AREAS = [
     ['Security findings', 'Export and import your setup', 'Updates'],
   ],
   ['agents', 'Agents', ['Workspace chat', 'Roles', 'Agent transcript']],
-  ['calendar', 'Calendar', ['Your day and your week', 'Before a call', 'Reminders']],
+  [
+    'calendar',
+    'Calendar',
+    ['Your day and your week', 'Before a call', 'The call chip', 'Reminders'],
+  ],
   ['support', 'Support Goodboy', ['Report a bug']],
   [
     'keyboard',

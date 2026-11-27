@@ -34,6 +34,17 @@ describe('the Notifications band', () => {
     await waitFor(() => expect(useAwayAlertsStore.getState().bannerChoice).toBe('off'));
   });
 
+  it('shows the call chip on by default and turns it off', async () => {
+    useAwayAlertsStore.setState({ isCallChipOn: true });
+    render(<AwayAlertsBand />);
+
+    expect(stateOf('Show the call chip')).toBe('true');
+    await userEvent.click(screen.getByRole('switch', { name: 'Show the call chip' }));
+
+    await waitFor(() => expect(useAwayAlertsStore.getState().isCallChipOn).toBe(false));
+    expect(localStorage.getItem('goodboy:call-chip:v1')).toBe('0');
+  });
+
   it('turns the dock badge off', async () => {
     render(<AwayAlertsBand />);
 

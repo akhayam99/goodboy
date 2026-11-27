@@ -5,6 +5,7 @@ export const STORAGE_KEYS = {
   contrast: `${PREFIX}contrast`,
   awayBadge: `${PREFIX}away-badge:v1`,
   awayBanner: `${PREFIX}away-banner:v1`,
+  callChip: `${PREFIX}call-chip:v1`,
   pricingSortKey: `${PREFIX}pricing-sort-key`,
   diffLayoutMode: `${PREFIX}diff-layout-mode`,
   diffWrap: `${PREFIX}diff-wrap`,
