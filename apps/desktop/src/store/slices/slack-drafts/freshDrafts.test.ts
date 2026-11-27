@@ -86,6 +86,8 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   vi.clearAllMocks();
+  loadPendingSlackDraftsForSession.mockReset();
+  loadPendingSlackDraftsForSession.mockResolvedValue([]);
   clearPosted();
 });
 
@@ -121,11 +123,26 @@ describe('deciding a draft', () => {
       useAppStore.setState({ sessionSlackDrafts: { [sessionId]: [draftOf('d1'), draftOf('d3')] } });
       return true;
     });
+    loadPendingSlackDraftsForSession.mockResolvedValueOnce([draftOf('d3')]);
 
     await decide();
 
     expect(idsOf()).toEqual(['d3']);
     expect(announced()).toEqual([SLACK_DRAFT_CHANGE]);
+  });
+
+  it('is not undone by a load that started before the decision', async () => {
+    const older = deferred<ReadonlyArray<IntegrationDraft>>();
+    useAppStore.setState({ sessionSlackDrafts: { [sessionId]: [draftOf('d1')] } });
+    loadPendingSlackDraftsForSession.mockReturnValueOnce(older.promise);
+    decideSlackDraft.mockResolvedValueOnce(true);
+    const load = useAppStore.getState().loadSessionSlackDrafts(sessionId);
+
+    await decide();
+    older.resolve([draftOf('d1')]);
+    await load;
+
+    expect(idsOf()).toEqual([]);
   });
 
   it('keeps the draft and announces nothing when the write fails (outcome uncertain)', async () => {

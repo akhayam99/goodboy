@@ -14,7 +14,8 @@ type BusChange = {
   readonly sessionId: SessionId;
 };
 
-const { bus } = vi.hoisted(() => ({
+const { bus, invokeAgentMarkUnviewed } = vi.hoisted(() => ({
+  invokeAgentMarkUnviewed: vi.fn(async (_params: unknown) => undefined),
   bus: {
     handlers: new Set<(change: BusChange) => void>(),
     announced: new Array<BusChange>(),
@@ -27,9 +28,10 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 vi.mock('@goodboy/db', async () => (await import('./storyHarness')).dbModuleMock());
 vi.mock('../shared/lib/db', async () => (await import('./storyHarness')).dbLibModuleMock());
-vi.mock('../features/workflows/workflows', async () =>
-  (await import('./storyHarness')).workflowsModuleMock(),
-);
+vi.mock('../features/workflows/workflows', async () => ({
+  ...(await import('./storyHarness')).workflowsModuleMock(),
+  invokeAgentMarkUnviewed,
+}));
 vi.mock('../shared/lib/dataChanged', () => ({
   announceDataChanged: async ({ change }: { readonly change: BusChange }) => {
     bus.announced.push(change);
@@ -122,6 +124,17 @@ describe('markAllAgentsSeen', () => {
     expect(unreadIds()).toEqual([SECOND_ID]);
     expect(storySpies.invokeAgentMarkViewed).toHaveBeenCalledTimes(1);
     expect(storySpies.invokeAgentMarkViewed).toHaveBeenCalledWith(FIRST_ID, T2);
+  });
+
+  it('keeps a newer read boundary that another window saved meanwhile', async () => {
+    seed([agentOf({ lastFinishedAt: T2 })]);
+    storySpies.invokeAgentMarkViewed.mockImplementationOnce(async () => {
+      seed([agentOf({ lastFinishedAt: T2, lastViewedAt: T3 })]);
+    });
+
+    await useAppStore.getState().markAllAgentsSeen({ sessionId: SESSION_ID, seenUpTo: T2 });
+
+    expect(runsOf()[0]?.lastViewedAt).toBe(T3);
   });
 
   it('keeps a reply that landed while the write ran unread (state changed since)', async () => {
@@ -224,6 +237,24 @@ describe('a fact written in another window', () => {
     bus.handlers.forEach((handler) => handler({ kind: 'agent-seen', sessionId: SESSION_ID }));
 
     await vi.waitFor(() => expect(unreadIds()).toEqual([FIRST_ID]));
+  });
+
+  it('cannot undo a Mark as unread written here while its read was in flight', async () => {
+    let finishRead: (rows: ReadonlyArray<Agent>) => void = () => undefined;
+    seed([agentOf({ lastFinishedAt: T2, lastViewedAt: T3 })]);
+    storySpies.invokeAgentList.mockReturnValueOnce(
+      new Promise<ReadonlyArray<Agent>>((done) => {
+        finishRead = done;
+      }),
+    );
+    await listenSessionFactChanges();
+    bus.handlers.forEach((handler) => handler({ kind: 'agent-seen', sessionId: SESSION_ID }));
+
+    await useAppStore.getState().markAgentUnviewed({ sessionId: SESSION_ID, agentId: FIRST_ID });
+    finishRead([agentOf({ lastFinishedAt: T2, lastViewedAt: T3 })]);
+    await vi.waitFor(() => expect(storySpies.invokeAgentList).toHaveBeenCalled());
+
+    expect(unreadIds()).toEqual([FIRST_ID]);
   });
 
   it('keeps the old rows and reports it when the stored rows cannot be read', async () => {

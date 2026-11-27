@@ -4,6 +4,7 @@ import { announceSessionFact } from '../../../shared/lib/dataChanged/announceSes
 import type { GetFn, SetFn } from './types';
 import { agentHasUnread } from './agentHasUnread';
 import { newestFinishedAtOf } from './newestFinishedAtOf';
+import { seenReads } from './seenReads';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -35,12 +36,19 @@ export const markAllAgentsSeen = (set: SetFn, get: GetFn) => {
         .map((agent) => agent.id),
     );
     if (seenIds.size > 0) {
+      seenReads.cancel({ key: sessionId });
       set((state) => ({
         sessionPhaseRuns: {
           ...state.sessionPhaseRuns,
           [sessionId]: (state.sessionPhaseRuns[sessionId] ?? []).map((agent) =>
             seenIds.has(agent.id) && agent.lastFinishedAt != null && agent.lastFinishedAt <= upTo
-              ? { ...agent, lastViewedAt: upTo }
+              ? {
+                  ...agent,
+                  lastViewedAt:
+                    agent.lastViewedAt === undefined || agent.lastViewedAt < upTo
+                      ? upTo
+                      : agent.lastViewedAt,
+                }
               : agent,
           ),
         },

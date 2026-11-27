@@ -1,7 +1,7 @@
 import type { Agent, SessionId } from '@goodboy/types';
 import { invokeAgentList } from '../../../features/workflows/workflows';
-import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import { READ_FAILED } from '../notifications/errorRecovery';
+import { seenReads } from './seenReads';
 import type { GetFn, SetFn } from './types';
 
 type Deps = {
@@ -18,8 +18,6 @@ type MergeParams = {
   readonly stored: ReadonlyArray<Agent>;
 };
 
-const latest = createLatestOnly();
-
 const withStoredViewedAt = ({ current, stored }: MergeParams): ReadonlyArray<Agent> => {
   const storedById = new Map(stored.map((agent) => [agent.id, agent]));
   return current.map((agent) => {
@@ -34,7 +32,7 @@ const withStoredViewedAt = ({ current, stored }: MergeParams): ReadonlyArray<Age
 
 export const refreshAgentsSeen = ({ set, get }: Deps) => {
   return async ({ sessionId }: Params): Promise<void> => {
-    const claim = latest.claim({ key: sessionId });
+    const claim = seenReads.claim({ key: sessionId });
     try {
       const stored = await invokeAgentList(sessionId);
       if (!claim.isCurrent()) {

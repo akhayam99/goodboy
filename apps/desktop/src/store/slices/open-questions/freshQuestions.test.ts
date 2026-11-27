@@ -92,9 +92,11 @@ const deferred = <Value>() => {
 };
 
 let useAppStore: StoryStore;
+let realOpenLoad: ReturnType<StoryStore['getState']>['loadSessionOpenQuestions'];
 
 beforeAll(async () => {
   useAppStore = await importStore();
+  realOpenLoad = useAppStore.getState().loadSessionOpenQuestions;
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -158,6 +160,27 @@ describe('loadSessionOpenQuestions, two loads that overlap', () => {
       'database is locked',
     );
     expect(idsOf()).toEqual([]);
+  });
+});
+
+describe.each([
+  ['answered', 'loadSessionAnsweredQuestions', 'sessionAnsweredQuestions'],
+  ['dismissed', 'loadSessionDismissedQuestions', 'sessionDismissedQuestions'],
+] as const)('the %s list, two loads that overlap', (_status, loader, field) => {
+  it('keeps the newer answer when the older request settles last', async () => {
+    const older = deferred<ReadonlyArray<OpenQuestion>>();
+    listOpenQuestionsForSession.mockReturnValueOnce(older.promise);
+    listOpenQuestionsForSession.mockResolvedValueOnce([questionOf('new')]);
+    const load = useAppStore.getState()[loader];
+
+    const first = load(sessionId);
+    await load(sessionId);
+    older.resolve([questionOf('old')]);
+    await first;
+
+    expect((useAppStore.getState()[field][sessionId] ?? []).map((question) => question.id)).toEqual(
+      ['new'],
+    );
   });
 });
 
@@ -245,6 +268,23 @@ describe('dismissing and restoring a question', () => {
 
     expect(idsOf()).toEqual(['c']);
     expect(announced()).toEqual([OPEN_QUESTION_CHANGE]);
+  });
+
+  it('is not undone by a load that started before the dismissal', async () => {
+    const older = deferred<ReadonlyArray<OpenQuestion>>();
+    useAppStore.setState({
+      sessionOpenQuestions: { [sessionId]: [questionOf('a')] },
+      loadSessionOpenQuestions: realOpenLoad,
+    });
+    listOpenQuestionsForSession.mockReturnValueOnce(older.promise);
+    listOpenQuestionsForSession.mockResolvedValueOnce([]);
+    const load = useAppStore.getState().loadSessionOpenQuestions(sessionId);
+
+    await dismiss(questionOf('a'));
+    older.resolve([questionOf('a')]);
+    await load;
+
+    expect(idsOf()).toEqual([]);
   });
 
   it('keeps the question and announces nothing when the write fails (outcome uncertain)', async () => {

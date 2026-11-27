@@ -33,6 +33,7 @@ export const settleDismissedQuestion = async ({
       ),
     },
   }));
+  await get().loadSessionOpenQuestions(sessionId);
   await get().loadSessionDismissedQuestions(sessionId);
   await get().recordSessionEvent({
     sessionId,

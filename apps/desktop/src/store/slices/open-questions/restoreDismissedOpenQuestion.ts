@@ -21,6 +21,7 @@ export const restoreDismissedOpenQuestion = (set: SetFn, get: GetFn) => {
         sessionOpenQuestions: { ...state.sessionOpenQuestions, [sessionId]: next },
       };
     });
+    await get().loadSessionOpenQuestions(sessionId);
     await get().loadSessionDismissedQuestions(sessionId);
     await get().recordSessionEvent({
       sessionId,
