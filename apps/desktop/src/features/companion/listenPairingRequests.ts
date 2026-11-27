@@ -4,6 +4,7 @@ import {
   requestPermission,
   sendNotification,
 } from '@tauri-apps/plugin-notification';
+import { isTauriRuntime } from '../../shared/lib/isTauriRuntime';
 import { isMainWindow } from '../workspace/window';
 import type { PendingPairing } from './bridge';
 
@@ -30,7 +31,7 @@ const announcePairingRequest = async (): Promise<void> => {
 };
 
 export const listenPairingRequests = async (): Promise<UnlistenFn> => {
-  if (!isMainWindow()) {
+  if (!isTauriRuntime() || !isMainWindow()) {
     return () => undefined;
   }
   return listen<PendingPairing>(PAIRING_REQUEST_EVENT, () => {
