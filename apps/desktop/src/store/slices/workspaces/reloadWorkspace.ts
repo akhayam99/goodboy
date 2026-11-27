@@ -11,6 +11,10 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMounts';
 import { verifyAvailableWorktrees } from '../project-mounts/verifyAvailableWorktrees';
+import {
+  loadWorkspaceMountHistory,
+  mountHistoryPatchOf,
+} from '../project-mounts/workRecord/loadWorkspaceMountHistory';
 import { switchEpoch } from './switchEpoch';
 import type { GetFn, SetFn } from './types';
 
@@ -33,13 +37,17 @@ export const reloadWorkspace = ({ set, get }: Params) => {
     const known = new Set(get().sessions.map((session) => session.id));
     const added = loaded.filter((session) => !known.has(session.id));
     const addedIds = added.map((session) => session.id);
-    const [worktreesBySession, agentsBySession, externalTasks] = await Promise.all([
+    const [worktreesBySession, agentsBySession, externalTasks, history] = await Promise.all([
       listWorktreesForSessions(
         tauriDatabase,
         loaded.map((session) => session.id),
       ),
       listAgentsForSessions(tauriDatabase, addedIds),
       listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId }),
+      loadWorkspaceMountHistory({
+        projects,
+        sessionIds: loaded.map((session) => session.id),
+      }),
     ]);
     const records: Record<string, ReadonlyArray<SessionWorktree>> = {};
     const mounts: Record<string, ReturnType<typeof buildSessionProjectMounts>> = {};
@@ -73,6 +81,7 @@ export const reloadWorkspace = ({ set, get }: Params) => {
         sessions: [...state.sessions, ...added.filter((session) => !stillKnown.has(session.id))],
         sessionWorktreeRecords: { ...state.sessionWorktreeRecords, ...records },
         sessionProjectMounts: { ...state.sessionProjectMounts, ...mounts },
+        ...mountHistoryPatchOf({ state, mounts, history }),
         sessionPhaseRuns: { ...state.sessionPhaseRuns, ...phaseRuns },
         sessionExternalTasks: { ...state.sessionExternalTasks, ...tasks },
       };
