@@ -6,7 +6,7 @@ import {
   SquareArrowOutUpRight,
   FileCode,
   MessageCircleQuestion,
-  PenLine,
+  Pencil,
   RefreshCw,
   Send,
   SkipForward,
@@ -501,7 +501,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     {
       id: 'reviewComment.rewriteReply',
       label: 'Rewrite reply',
-      icon: PenLine,
+      icon: Pencil,
       group: 'act',
       when: ({ facts }) =>
         facts.isReplyOnly &&

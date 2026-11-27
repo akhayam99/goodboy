@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ArrowDown, ArrowUp, GitMerge, Minus, PenLine } from '@goodboy/ui/icons';
+import { ArrowDown, ArrowUp, GitMerge, Minus, Pencil } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 import { quoted } from '../../historyEditText';
 import type { HistoryRowMark } from '../../historyRowMarks';
@@ -83,7 +83,7 @@ export const HistoryRowMarkList = ({
         label="Reworded on Apply"
         facts={[{ label: 'New message', value: mark.renamedTo }]}
       >
-        <PenLine size={ICON_SIZE.row} aria-hidden />
+        <Pencil size={ICON_SIZE.row} aria-hidden />
       </HistoryChangeMark>,
     );
   }

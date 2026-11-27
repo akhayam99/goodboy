@@ -96,6 +96,7 @@ const factsOf = ({ seed }: FactsParams): BranchFacts => {
       ? {
           noun: '#',
           number: 412,
+          url: 'https://example.test/pull/412',
           isDraft: false,
           state: 'open',
           checksWord: null,

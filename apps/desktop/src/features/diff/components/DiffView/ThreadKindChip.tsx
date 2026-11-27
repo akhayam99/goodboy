@@ -1,4 +1,4 @@
-import { PenLine } from '@goodboy/ui/icons';
+import { Pencil } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE } from '@goodboy/ui';
 
 import { HOST_GLYPH, kindLabelOf } from './threadKind';
@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const ThreadKindChip = ({ thread }: Props) => {
-  const Glyph = thread.source === 'host' ? HOST_GLYPH[thread.host ?? 'github'] : PenLine;
+  const Glyph = thread.source === 'host' ? HOST_GLYPH[thread.host ?? 'github'] : Pencil;
   return (
     <Chip
       tone="neutral"

@@ -3,7 +3,7 @@ import {
   GitBranch,
   GitPullRequestCreate,
   GitPullRequestDraft,
-  PencilLine,
+  Pencil,
   RotateCcw,
   ScrollText,
   Send,
@@ -376,7 +376,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
   {
     id: 'pullRequest.writeReview',
     label: 'Write review',
-    icon: PencilLine,
+    icon: Pencil,
     group: 'act',
     when: ({ facts }) => facts.phase === 'open' && !facts.isOwn,
     slot: () => 'secondary',
@@ -402,7 +402,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
   {
     id: 'pullRequest.editDetails',
     label: 'Edit title and description',
-    icon: PencilLine,
+    icon: Pencil,
     group: 'act',
     when: ({ facts }) =>
       isPullRequestLive({ facts }) &&
