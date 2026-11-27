@@ -13,6 +13,7 @@ import {
 import { createRealAutoPorts, type RealAutoPortsDeps } from './createRealAutoPorts';
 import type { StartChildTurnParams } from './ports';
 import type { SendTurnInput, SendTurnResult } from '../../slices/turn/types';
+import { markTurnActive, markTurnSettled } from '../../slices/turn/turnSettled';
 import { batchInput, childInput, makeAutoWorld, WORLD_TREE } from './testing/autoWorld';
 
 const NOW = 1_700_000_000_000;
@@ -135,6 +136,22 @@ describe('the ports of Auto on the real store', () => {
         },
       }),
     );
+  });
+
+  it('starts a child turn only once the earlier turn of that agent has closed', async () => {
+    const { ports, sendTurn, deps } = await worldWithPorts();
+    vi.mocked(deps.lookupDeliveryRun).mockResolvedValue({ runId: 'run-impl-1', isLive: true });
+    const agentId = brandId<AgentId>({ value: 'agent-implementer' });
+    markTurnActive({ agentId });
+
+    const starting = ports.startChildTurn(childTurn(vi.fn()));
+    await Promise.resolve();
+    const earlyCalls = sendTurn.mock.calls.length;
+    markTurnSettled({ agentId });
+    await starting;
+
+    expect(earlyCalls).toBe(0);
+    expect(sendTurn).toHaveBeenCalledTimes(1);
   });
 
   it('forwards the routed model of a child as an explicit override with its role', async () => {

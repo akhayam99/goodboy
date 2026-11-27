@@ -1,5 +1,7 @@
+import { missedClosingOf } from '@goodboy/core/auto';
 import type { AutoAttempt, AutoDelegation } from '@goodboy/db';
 import { brandId, type ArtifactId } from '@goodboy/types';
+import { closeNudgeOf } from './attemptBaseline';
 import { attemptEnvelope } from './attemptEnvelope';
 import type { SettleAttemptOutcome } from './settleAttempt';
 import type { AgentVerbContext } from './verbContext';
@@ -23,6 +25,7 @@ export const failAttempt = ({
   outcome = 'failed',
   costUsd = 0,
 }: FailAttemptParams): Promise<SettleAttemptOutcome> => {
+  const nudge = closeNudgeOf({ baseline: attempt.baseline });
   const envelope = {
     ...attemptEnvelope({
       delegation,
@@ -30,7 +33,7 @@ export const failAttempt = ({
       generation,
       exit: outcome === 'stopped' ? 'cancelled' : 'error',
       isTimedOut: outcome === 'timed_out',
-      closing: null,
+      closing: nudge === null ? null : missedClosingOf({ summary: nudge.tail }),
       costUsd,
     }),
     outcome,

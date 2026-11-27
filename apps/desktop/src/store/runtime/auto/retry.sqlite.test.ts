@@ -30,7 +30,12 @@ const failedChild = async (): Promise<RuntimeWorld> => {
   await userSays({ world, id: 'outbox-user-1', text: 'add the ledger export' });
   await autoDelegates({ world, spec: { children: [IMPLEMENTER] } });
   await autoTurnEnds({ world });
-  await childTurnEnds({ world, index: 0, text: 'I could not finish this.' });
+  await childTurnEnds({
+    world,
+    index: 0,
+    text: 'I could not finish this.',
+    overrides: { exit: 'error' },
+  });
   return world;
 };
 
@@ -126,9 +131,7 @@ describe('retrying a delegation that ended without a result', () => {
     const turns = world.state.ports.childTurns;
     expect(turns).toHaveLength(2);
     expect(turns[1]?.childAgentId).toBe(turns[0]?.childAgentId);
-    expect(turns[1]?.text).toContain(
-      '**Retry** The earlier attempt ended failed (no_closing_envelope).',
-    );
+    expect(turns[1]?.text).toContain('**Retry** The earlier attempt ended failed (process_error).');
     expect(turns[1]?.text).toContain('**Task** add the export');
     expect(turns[1]?.attemptId).not.toBe(turns[0]?.attemptId);
     expect(turns[1]?.mountTarget).toEqual(turns[0]?.mountTarget);
@@ -166,7 +169,12 @@ describe('retrying a delegation that ended without a result', () => {
       },
     });
     await autoTurnEnds({ world });
-    await childTurnEnds({ world, index: 0, text: 'I could not finish this.' });
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: 'I could not finish this.',
+      overrides: { exit: 'error' },
+    });
 
     await retry(world);
 

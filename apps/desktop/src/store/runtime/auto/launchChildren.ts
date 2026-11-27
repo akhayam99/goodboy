@@ -1,8 +1,10 @@
 import {
   composeAnswerKickoff,
+  composeCloseNudgeKickoff,
   isAutoProviderResuming,
   isAutoWriterRole,
   launchGuardBriefOf,
+  NO_CLOSING_REASON,
   storedLaunchGuardOf,
   type AutoDelegationRole,
 } from '@goodboy/core/auto';
@@ -16,10 +18,18 @@ import {
   type AutoDelegation,
   type AutoTree,
 } from '@goodboy/db';
+import type { MessageAttachment } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { AGENT_NOT_CREATED_REASON } from '../../../features/auto/agentNotCreatedReason';
 import { isStartRowHeld } from './admission/isStartRowHeld';
-import { remoteJson, remoteOf, resumeOf, snapshotJson, snapshotOf } from './attemptBaseline';
+import {
+  closeNudgeOf,
+  remoteJson,
+  remoteOf,
+  resumeOf,
+  snapshotJson,
+  snapshotOf,
+} from './attemptBaseline';
 import { carriedSnapshot } from './carriedSnapshot';
 import { childImagesOf } from './childImagesOf';
 import { delegationRoleOf } from './attemptEnvelope';
@@ -166,26 +176,62 @@ type TextParams = {
   readonly attempt: AutoAttempt;
 };
 
+type SessionParams = {
+  readonly delegation: AutoDelegation;
+};
+
+const isSessionKept = ({ delegation }: SessionParams): boolean => {
+  const provider = delegation.routing['provider'];
+  return typeof provider === 'string' && isAutoProviderResuming({ provider });
+};
+
 const kickoffTextOf = ({ delegation, attempt }: TextParams): string => {
   const resume = resumeOf({ baseline: attempt.baseline });
+  const nudge = closeNudgeOf({ baseline: attempt.baseline });
   const kickoff = delegation.request['kickoff'];
   const guard = storedLaunchGuardOf({ writeSet: attempt.writeSet });
   const guardBrief =
     guard === null ? null : launchGuardBriefOf({ guard, childAgentId: delegation.childAgentId });
   const stored = typeof kickoff === 'string' ? kickoff : '';
   const brief = guardBrief === null ? stored : `${stored}\n\n${guardBrief}`;
+  if (nudge !== null) {
+    return composeCloseNudgeKickoff({
+      role: delegationRoleOf({ delegation }),
+      childAgentId: delegation.childAgentId,
+      memory: isSessionKept({ delegation }) ? null : { brief, tail: nudge.tail },
+    });
+  }
   if (resume !== null) {
-    const provider = delegation.routing['provider'];
-    const isResuming = typeof provider === 'string' && isAutoProviderResuming({ provider });
     return composeAnswerKickoff({
       childAgentId: delegation.childAgentId,
       question: resume.question,
       answer: resume.answer,
-      memory: isResuming ? null : { brief, tail: resume.tail },
+      memory: isSessionKept({ delegation }) ? null : { brief, tail: resume.tail },
       report: resume.report,
     });
   }
   return brief;
+};
+
+type ImagesParams = TextParams & {
+  readonly ctx: AgentVerbContext;
+  readonly tree: AutoTree;
+};
+
+const imagesOf = async ({
+  ctx,
+  tree,
+  delegation,
+  attempt,
+}: ImagesParams): Promise<ReadonlyArray<MessageAttachment>> => {
+  const isReminder = closeNudgeOf({ baseline: attempt.baseline }) !== null;
+  if (isReminder && isSessionKept({ delegation })) {
+    return [];
+  }
+  return (
+    launchImagesOf({ snapshot: attempt.launchSnapshot }) ??
+    (await childImagesOf({ ctx, tree, delegation }))
+  );
 };
 
 type BriefVersionFieldParams = {
@@ -246,9 +292,7 @@ const startTurn = async ({
       role,
       ...routedModelOf({ delegation }),
       text: kickoffTextOf({ delegation, attempt }),
-      images:
-        launchImagesOf({ snapshot: attempt.launchSnapshot }) ??
-        (await childImagesOf({ ctx, tree, delegation })),
+      images: await imagesOf({ ctx, tree, delegation, attempt }),
       mountTarget: target,
       runId: ctx.ports.newId(),
       captureMode: delegation.reviseOf === null ? 'new' : 'revise',
@@ -315,8 +359,15 @@ const launchOne = async ({
     });
     return;
   }
+  const isReminder = closeNudgeOf({ baseline: attempt.baseline }) !== null;
   const fail = (reason: string) =>
-    failAttempt({ ctx, delegation, attempt, generation: tree.generation, reason });
+    failAttempt({
+      ctx,
+      delegation,
+      attempt,
+      generation: tree.generation,
+      reason: isReminder ? NO_CLOSING_REASON : reason,
+    });
   try {
     await ctx.ports.ensureChildAgent({
       delegation,

@@ -188,7 +188,12 @@ describe('a helper that did not start', () => {
     });
     await autoTurnEnds({ world });
     world.state.ports.setChildOutcome(null);
-    await childTurnEnds({ world, index: 0, text: 'Planned the ledger export.' });
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: 'Planned the ledger export.',
+      overrides: { exit: 'error' },
+    });
 
     const { requests } = await retryFirst({ world });
 

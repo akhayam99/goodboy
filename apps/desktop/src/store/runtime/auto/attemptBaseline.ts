@@ -43,6 +43,36 @@ export const resumeOf = ({ baseline }: BaselineParams): ResumeInfo | null => {
   };
 };
 
+export type CloseNudgeInfo = Readonly<{
+  tail: string;
+}>;
+
+export const closeNudgeOf = ({ baseline }: BaselineParams): CloseNudgeInfo | null => {
+  if (!isRecord(baseline)) {
+    return null;
+  }
+  const nudge = baseline['closeNudge'];
+  if (!isRecord(nudge)) {
+    return null;
+  }
+  const tail = nudge['tail'];
+  return typeof tail === 'string' ? { tail } : null;
+};
+
+type CloseNudgeBaselineParams = BaselineParams & {
+  readonly tail: string;
+};
+
+export const closeNudgeBaselineOf = ({
+  baseline,
+  tail,
+}: CloseNudgeBaselineParams): AutoJsonObject => {
+  const kept = isRecord(baseline)
+    ? Object.entries(baseline).filter(([key]) => key !== 'resume')
+    : [];
+  return { ...Object.fromEntries(kept), closeNudge: { tail } };
+};
+
 export const snapshotOf = ({ baseline }: BaselineParams): MountSnapshot | null => {
   if (!isRecord(baseline)) {
     return null;

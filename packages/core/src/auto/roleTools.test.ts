@@ -4,6 +4,8 @@ import { buildAutoSystemPrompt } from './prompt';
 import { buildDelegationResult, renderDelegationResult, type BuildResultParams } from './result';
 import {
   AUTO_COMMAND_ROLES,
+  autoShellRefusalOf,
+  autoShellRule,
   canAutoRoleRunCommands,
   commandMentionOf,
   isMissingShellText,
@@ -92,6 +94,57 @@ describe('a command named inside a prohibition', () => {
   });
 });
 
+describe('commands written in other ways', () => {
+  it.each([
+    'Use git -C ledger-core log to list the commits.',
+    'Compare with pnpm --dir apps/desktop exec what the package holds.',
+    'Check with npx prettier that the files of notify-relay are formatted.',
+    'Call vitest run on the retry file of payments-api.',
+    'Use tsc --noEmit on ledger-core and list the errors.',
+    'Verify the tests pass after reading the change.',
+    'Confirm that the typecheck is green on notify-relay.',
+    'Make sure the build still succeeds before you answer.',
+    'Run the suite of ledger-core.',
+    'Run make test in the mount.',
+  ])('counts as a command: %s', (text) => {
+    expect(commandMentionOf({ text })).not.toBeNull();
+  });
+
+  it.each([
+    'Make sure the plan covers the export.',
+    'Plan how to make the retry limit configurable.',
+    'Find where vitest is configured in payments-api.',
+    'Explain how the build passes the version to the app.',
+    'Check how the build passes the version to the app.',
+    'Report whether the tests cover the retry limit.',
+    'Do not verify that the tests pass.',
+  ])('leaves a reading task: %s', (text) => {
+    expect(commandMentionOf({ text })).toBeNull();
+  });
+});
+
+describe('autoShellRefusalOf', () => {
+  it('lets a role with a shell run any command', () => {
+    expect(autoShellRefusalOf({ role: 'tester', texts: ['Run pnpm test.'] })).toBeNull();
+  });
+
+  it('lets a read only role take a task that only reads', () => {
+    expect(
+      autoShellRefusalOf({ role: 'scout', texts: ['Find the retry limit.', '', 'A report.'] }),
+    ).toBeNull();
+  });
+
+  it('refuses a read only role when any part of the brief asks for a command', () => {
+    const refusal = autoShellRefusalOf({
+      role: 'reviewer',
+      texts: ['Review the retry change.', 'The tests pass.', 'The output of git log.'],
+    });
+    expect(refusal).toContain('reviewer has no shell');
+    expect(refusal).toContain(AUTO_COMMAND_ROLES.join(', '));
+    expect(refusal).toContain('The task matched: `git log`.');
+  });
+});
+
 describe('isMissingShellText', () => {
   it('reads the words a child uses when it has no shell', () => {
     expect(
@@ -152,6 +205,18 @@ describe('the Auto prompt', () => {
     expect(prompt).toContain('It has no shell and cannot run git, tests or any command.');
     expect(prompt).toContain('It has a shell.');
     expect(prompt).toContain('goes only to a role that has a shell');
+  });
+
+  it('names the roles of the admission check in the routing rule', () => {
+    const rule = autoShellRule();
+    const refused = AUTO_DELEGATION_ROLES.filter(
+      (role) => autoShellRefusalOf({ role, texts: ['Run pnpm test.'] }) !== null,
+    );
+    expect(buildAutoSystemPrompt({ isDelegationEnabled: true })).toContain(rule);
+    expect(rule).toContain(
+      `goes only to a role that has a shell: ${AUTO_COMMAND_ROLES.join(', ')}`,
+    );
+    expect(rule).toContain(`Never give it to ${refused.join(', ')}`);
   });
 });
 
