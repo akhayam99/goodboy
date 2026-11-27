@@ -439,19 +439,30 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     },
   }),
   keyRow({
+    id: 'app.close',
+    note: 'on a session tab with nothing left to close, closes the session to Home',
+    open: async () => {
+      await pressed('app.close', document.body);
+    },
+    lands: async () => {
+      await heading('Home');
+      expect(useAppStore.getState().currentSessionId).toBeNull();
+    },
+  }),
+  keyRow({
     id: 'nav.up',
-    note: 'on a session tab goes up to the board, as on the Overview',
+    note: 'on a session tab goes up to Home, as on the Overview',
     open: async () => {
       await openCrumb(/^Artifacts/);
       await press('nav.up')();
     },
-    lands: () => heading('Board'),
+    lands: () => heading('Home'),
   }),
   keyRow({
     id: 'nav.up',
-    note: 'on the Overview goes up to the board',
+    note: 'on the Overview goes up to Home',
     open: press('nav.up'),
-    lands: () => heading('Board'),
+    lands: () => heading('Home'),
   }),
   keyRow({
     id: 'nav.up',
@@ -2474,13 +2485,13 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'nav.up',
-    note: 'on the Desk goes up to the board, as on the Overview',
+    note: 'on the Desk goes up to Home, as on the Overview',
     open: async () => {
       await press('terminal.studio')();
       await screen.findByRole('complementary', { name: 'Desk' });
       await press('nav.up')();
     },
-    lands: () => heading('Board'),
+    lands: () => heading('Home'),
   }),
   ...SELECTION_KEY_ROWS,
 ];
