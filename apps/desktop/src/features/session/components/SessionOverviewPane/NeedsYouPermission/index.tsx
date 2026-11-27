@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Button, ScrollFade, Tooltip } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { joinFacts } from '../../../../shared/utils/joinFacts';
-import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
-import { permissionSubjectOf } from '../../../permissions/permissionSubjectOf';
-import type { OpenPermissionAsk } from '../../../permissions/openPermissionAsksOf';
-import { formatRequestInput } from '../../../permissions/components/PermissionRequestCard/formatRequestInput';
-import { usePermissionAsk } from '../../../permissions/components/PermissionRequestCard/usePermissionAsk';
-import { NeedsYouTile } from '../MoveCard/NeedsYouTile';
+import { joinFacts } from '../../../../../shared/utils/joinFacts';
+import { actionButtonLookOf } from '../../../../actions/actionButtonLookOf';
+import { permissionSubjectOf } from '../../../../permissions/permissionSubjectOf';
+import type { OpenPermissionAsk } from '../../../../permissions/openPermissionAsksOf';
+import { formatRequestInput } from '../../../../permissions/formatRequestInput';
+import { usePermissionAsk } from '../../../../permissions/permissionAsk';
+import { NeedsYouTile } from '../../MoveCard/NeedsYouTile';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -24,15 +24,13 @@ const SHOW = 'Show full request';
 
 const HIDE = 'Hide full request';
 
-const noop = (): void => undefined;
-
 export const NeedsYouPermission = ({ sessionId, agentId, ask, isPrimary }: Props) => {
   const permission = usePermissionAsk({
     item: ask,
     sessionId,
     agentId,
     isDocked: false,
-    onAnswered: noop,
+    onAnswered: () => undefined,
   });
   const [isOpen, setIsOpen] = useState(false);
   const full = formatRequestInput({ input: ask.input });
@@ -72,7 +70,7 @@ export const NeedsYouPermission = ({ sessionId, agentId, ask, isPrimary }: Props
         full === null ? null : (
           <div className="flex min-w-0 flex-col gap-1">
             <Button
-              size="xs"
+              size="sm"
               variant="quiet"
               className="self-start"
               aria-expanded={isOpen}

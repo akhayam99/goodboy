@@ -12,12 +12,12 @@ import {
 import type { AgentId, SessionId } from '@goodboy/types';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';
 import { AppMenuList } from '../../../actions/AppMenuList';
-import { formatRequestInput } from './formatRequestInput';
+import { formatRequestInput } from '../../formatRequestInput';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { OpenPermissionAsk } from '../../openPermissionAsksOf';
 import { PermissionDockAsk } from './PermissionDockAsk';
-import { usePermissionAsk } from './usePermissionAsk';
+import { usePermissionAsk } from '../../hooks/usePermissionAsk';
 
 const warningTint = tintClasses('warning');
 

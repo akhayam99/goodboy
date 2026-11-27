@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,10 +21,10 @@ import {
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../../../store/storyHarness';
-import type { ActionCardActions } from '../../central/next/useActionCardActions';
-import { NeedsYouSection } from './NeedsYouSection';
-import { useSessionPermissionAsk } from './useSessionPermissionAsk';
+} from '../../../../../store/storyHarness';
+import type { ActionCardActions } from '../../../central/next/useActionCardActions';
+import { NeedsYouSection } from '../NeedsYouSection';
+import { useSessionPermissionAsk } from '../useSessionPermissionAsk';
 
 const session = aSession();
 const SESSION_ID = session.id;
