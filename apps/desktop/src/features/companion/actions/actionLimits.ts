@@ -24,6 +24,7 @@ export const RATE_WINDOWS = {
   stopAgentTree: { max: 12, windowMs: MINUTE_MS },
   sendToAgent: { max: 30, windowMs: MINUTE_MS },
   answerSlackReply: { max: 10, windowMs: MINUTE_MS },
+  decideProposal: { max: 10, windowMs: MINUTE_MS },
   mergePr: { max: 10, windowMs: MINUTE_MS },
   mergeTrain: { max: 3, windowMs: MINUTE_MS },
   stopTrain: { max: 6, windowMs: MINUTE_MS },

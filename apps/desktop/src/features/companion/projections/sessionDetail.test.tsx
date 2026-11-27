@@ -201,6 +201,7 @@ const fieldsOf = (): SessionFields => {
   });
   const drafts = projectionFieldsOf({
     scopes: [scope],
+    workspaces: [harborline],
     detailWorkspaceId: harborline.id,
     chips: { spendToday: null, limits: [] },
     now: NOW,

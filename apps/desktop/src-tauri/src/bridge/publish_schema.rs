@@ -178,6 +178,8 @@ pub struct NeedsYouRow {
     pub waiting_text: Option<String>,
     pub since: Option<String>,
     pub decision: Option<Decision>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ask: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -296,6 +298,10 @@ pub struct SessionLine {
     pub at: Option<String>,
     pub role: Option<String>,
     pub target: Option<LineTarget>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

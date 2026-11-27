@@ -48,6 +48,7 @@ pub enum MobileAction {
     QueryChatMessages,
     SendChatMessage,
     CreateChat,
+    DecideProposal,
 }
 
 impl MobileAction {
@@ -85,6 +86,7 @@ impl MobileAction {
             0xA2 => Some(Self::QueryChatMessages),
             0xA3 => Some(Self::SendChatMessage),
             0xA4 => Some(Self::CreateChat),
+            0xA5 => Some(Self::DecideProposal),
             _ => None,
         }
     }
@@ -123,6 +125,7 @@ impl MobileAction {
             Self::QueryChatMessages => "queryChatMessages",
             Self::SendChatMessage => "sendChatMessage",
             Self::CreateChat => "createChat",
+            Self::DecideProposal => "decideProposal",
         }
     }
 
@@ -142,6 +145,7 @@ impl MobileAction {
                 | Self::SendToAgent
                 | Self::StopAgentTree
                 | Self::AnswerSlackReply
+                | Self::DecideProposal
         )
     }
 
@@ -290,7 +294,7 @@ mod tests {
         assert!(MobileAction::QueryChatMessages.is_query());
         for op in [
             0x83u8, 0x84, 0x85, 0x86, 0x88, 0x8A, 0x8C, 0x8D, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95,
-            0x96, 0x97, 0x98, 0x99, 0x9A, 0x9C, 0x9D, 0x9E, 0x9F, 0xA0, 0xA1, 0xA3, 0xA4,
+            0x96, 0x97, 0x98, 0x99, 0x9A, 0x9C, 0x9D, 0x9E, 0x9F, 0xA0, 0xA1, 0xA3, 0xA4, 0xA5,
         ] {
             let action = MobileAction::from_opcode(op).expect("opcode is a write command");
             assert!(
@@ -319,6 +323,7 @@ mod tests {
             (0x9B, "queryTranscript"),
             (0x9C, "sendToAgent"),
             (0x9D, "stopAgentTree"),
+            (0xA5, "decideProposal"),
         ];
         for (op, kind) in expected {
             let action = MobileAction::from_opcode(op).expect("decide opcode maps");

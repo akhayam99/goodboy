@@ -94,6 +94,7 @@ describe('the generated Swift', () => {
       'stopAgent',
       'continueAgent',
       'answerSlackReply',
+      'decideProposal',
       'mergePr',
       'startSession',
       'mergeTrain',
