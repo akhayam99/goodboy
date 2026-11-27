@@ -2,11 +2,13 @@ import type { OpenQuestion, SessionId } from '@goodboy/types';
 import { restoreOpenQuestion } from '@goodboy/db';
 import { addQuestionsToSlot } from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { announceSessionFact } from '../../../shared/lib/dataChanged/announceSessionFact';
 import type { GetFn, SetFn } from './types';
 
 export const restoreDismissedOpenQuestion = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, question: OpenQuestion) => {
     await restoreOpenQuestion(tauriDatabase, question.id);
+    announceSessionFact({ kind: 'open-question', sessionId });
     set((state) => {
       const current = state.sessionOpenQuestions[sessionId] ?? [];
       if (current.some((q) => q.id === question.id)) {

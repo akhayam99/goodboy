@@ -11,6 +11,7 @@ import {
 import type { MountId, Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { agentHasUnread } from '../../../../store/slices/agents/agentHasUnread';
+import { newestFinishedAtOf } from '../../../../store/slices/agents/newestFinishedAtOf';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 import { TimelineSkeleton } from '../../components/SessionWorkspace/parts/TimelinePane/TimelineSkeleton';
 import { NAMES } from '../../../../shared/utils/names';
@@ -60,6 +61,9 @@ export const LogPane = ({ session }: Props) => {
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const hasUnread = useAppStore((s) =>
     (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).some((agent) => agentHasUnread(agent, false)),
+  );
+  const renderedUpTo = useAppStore((s) =>
+    newestFinishedAtOf({ agents: s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY }),
   );
   const mounts = useAppStore((s) => s.sessionProjectMounts[sessionId] ?? NO_MOUNTS);
   const pending = usePendingAction({ sessionId });
@@ -124,7 +128,11 @@ export const LogPane = ({ session }: Props) => {
               void pending.run({
                 key: MARK_SEEN_KEY,
                 failureTitle: "Couldn't mark the agents as seen",
-                task: () => markAllAgentsSeen(sessionId),
+                task: () =>
+                  markAllAgentsSeen({
+                    sessionId,
+                    ...(renderedUpTo === null ? {} : { seenUpTo: renderedUpTo }),
+                  }),
               })
             }
           >

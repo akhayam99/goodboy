@@ -1,5 +1,6 @@
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { invokeAgentMarkUnviewed } from '../../../features/workflows/workflows';
+import { announceSessionFact } from '../../../shared/lib/dataChanged/announceSessionFact';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -28,6 +29,7 @@ export const markAgentUnviewed = ({ set, get }: FactoryParams) => {
       return;
     }
     await invokeAgentMarkUnviewed({ id: agentId });
+    announceSessionFact({ kind: 'agent-seen', sessionId });
     set((state) => ({
       sessionPhaseRuns: {
         ...state.sessionPhaseRuns,

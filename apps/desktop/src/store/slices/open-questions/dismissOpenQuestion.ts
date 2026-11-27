@@ -2,6 +2,7 @@ import type { OpenQuestion, SessionId } from '@goodboy/types';
 import { markOpenQuestionDismissed } from '@goodboy/db';
 import { removeQuestionsFromSlot } from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { announceSessionFact } from '../../../shared/lib/dataChanged/announceSessionFact';
 import { storedQuestionDrafts } from '../../../features/context/storedQuestionDrafts';
 import type { GetFn, SetFn } from './types';
 
@@ -22,6 +23,7 @@ export const settleDismissedQuestion = async ({
   question,
 }: SettleParams): Promise<void> => {
   await markOpenQuestionDismissed(tauriDatabase, question.id);
+  announceSessionFact({ kind: 'open-question', sessionId });
   storedQuestionDrafts.forget({ questionIds: [question.id] });
   set((state) => ({
     sessionOpenQuestions: {

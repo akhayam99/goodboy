@@ -3,7 +3,6 @@ import { formatError } from '@goodboy/ui';
 import {
   listAgentRunIdsForSession,
   listAgentTurnSpanRoutes,
-  listOpenQuestionsForSession,
   listTelemetryForSession,
   setSetting as dbSetSetting,
   summarizeSessionTelemetry,
@@ -138,13 +137,7 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
 
     void get().loadGoalAttachments({ type: 'session', id });
 
-    void listOpenQuestionsForSession(tauriDatabase, id, 'open')
-      .then((qs) => {
-        set((state) => ({
-          sessionOpenQuestions: { ...state.sessionOpenQuestions, [id]: qs },
-        }));
-      })
-      .catch(() => {});
+    void get().loadSessionOpenQuestions(id);
 
     if (!cached?.plans) {
       const endPlans = perf('plans');
