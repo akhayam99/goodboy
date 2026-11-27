@@ -715,3 +715,27 @@ pub struct TasksProjection {
     pub rows: Vec<TaskRow>,
     pub start: Option<StartOffer>,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatRow {
+    pub id: String,
+    pub title: String,
+    pub label: String,
+    pub preview: Option<String>,
+    pub updated_at: String,
+    pub message_count: i64,
+    pub is_busy: bool,
+    pub is_pinned: bool,
+    pub send_action_id: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatsProjection {
+    #[serde(flatten)]
+    pub meta: Meta,
+    pub workspace_id: String,
+    pub chats: Vec<ChatRow>,
+    pub create_action_id: String,
+}

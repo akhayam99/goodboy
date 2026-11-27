@@ -1,7 +1,9 @@
 import type {
+  CreateChatAction,
   MergePrAction,
   MergeTrainAction,
   MobileAction,
+  SendChatMessageAction,
   StartSessionAction,
   StopTrainAction,
   TrainRequestEntry,
@@ -21,9 +23,17 @@ export const PHONE_KINDS = [
   'mergeTrain',
   'startSession',
   'stopTrain',
+  'sendChatMessage',
+  'createChat',
 ] as const satisfies ReadonlyArray<MobileAction['kind'] & PhoneKind>;
 
-export type PhoneAction = MergePrAction | MergeTrainAction | StartSessionAction | StopTrainAction;
+export type PhoneAction =
+  | MergePrAction
+  | MergeTrainAction
+  | StartSessionAction
+  | StopTrainAction
+  | SendChatMessageAction
+  | CreateChatAction;
 
 type KindParams = {
   readonly kind: string;
@@ -138,6 +148,17 @@ export const parsePhoneAction = ({ raw }: ParseParams): PhoneAction | null => {
       const trainId = read.id({ name: 'trainId' });
       return trainId === null ? null : { kind: 'stopTrain', ...base, trainId };
     }
+    case 'sendChatMessage': {
+      const chatId = read.id({ name: 'chatId' });
+      const seenVersion = read.id({ name: 'seenVersion' });
+      const text = read.text({ name: 'text' });
+      if (chatId === null || seenVersion === null || text === null) {
+        return null;
+      }
+      return { kind: 'sendChatMessage', ...base, chatId, seenVersion, text };
+    }
+    case 'createChat':
+      return { kind: 'createChat', ...base };
     case 'startSession': {
       const projectId = read.id({ name: 'projectId' });
       const goal = read.text({ name: 'goal' });

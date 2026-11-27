@@ -5,15 +5,18 @@ import type { HandlerResult } from './handlerTypes';
 type DoneParams = {
   readonly undoActionId?: ActionId | null;
   readonly createdSessionId?: string | null;
+  readonly createdChatId?: string | null;
 };
 
 export const doneResult = ({
   undoActionId = null,
   createdSessionId = null,
+  createdChatId = null,
 }: DoneParams = {}): HandlerResult => ({
   kind: 'done',
   undoActionId,
   createdSessionId,
+  createdChatId,
 });
 
 type RefusedParams = {
