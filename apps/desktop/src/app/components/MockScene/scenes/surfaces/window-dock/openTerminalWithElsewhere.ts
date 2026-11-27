@@ -1,4 +1,4 @@
-import { brandId } from '@goodboy/types';
+import { brandId, type SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import { workspaceTerminalOwner } from '../../../../../../store/slices/terminal/terminalOwner';
 import type { TerminalTab, TerminalTabId } from '../../../../../../shared/types/terminal';
@@ -6,13 +6,12 @@ import { WORKSPACE_ID } from '../../BoardScene';
 
 export const openTerminalWithElsewhere = (): void => {
   const state = useAppStore.getState();
-  const running = state.sessions.find(
-    (session) => (state.sessionProjectMounts[session.id] ?? []).length > 0,
-  );
-  if (running === undefined) {
+  const [key, mounts] = Object.entries(state.sessionProjectMounts)[0] ?? [];
+  const mount = mounts?.[0];
+  if (key === undefined || mount === undefined) {
     return;
   }
-  const mount = state.sessionProjectMounts[running.id]?.[0];
+  const running = { id: brandId<SessionId>({ value: key }) };
   const shell: TerminalTab = {
     id: brandId<TerminalTabId>({ value: `ws:${WORKSPACE_ID}::t1` }),
     owner: workspaceTerminalOwner({ workspaceId: WORKSPACE_ID }),
@@ -25,8 +24,8 @@ export const openTerminalWithElsewhere = (): void => {
     id: brandId<TerminalTabId>({ value: `${running.id}::t1` }),
     owner: { kind: 'session', sessionId: running.id },
     title: 'pnpm dev',
-    cwd: mount?.worktreePath ?? null,
-    ...(mount === undefined ? {} : { mountId: mount.mountId }),
+    cwd: mount.worktreePath,
+    mountId: mount.mountId,
     status: 'running',
     createdAt: 0,
   };
