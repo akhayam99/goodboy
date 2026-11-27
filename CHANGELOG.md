@@ -14,7 +14,7 @@ onto its own paragraph.
 
 ## Goodboy v0.43.3
 
-See what the Lead costs in a run, select an element on the Browser page, and keep work off models your account cannot run.
+See what the Lead costs in a run, select an element on the Browser page, and keep work off models your account cannot run, with newer models on every provider.
 
 ### Improved
 
@@ -32,6 +32,11 @@ The Browser page has Select an element, and ⌘⇧C turns it on. Note what shoul
 <!-- gb area=providers pr=2430 -->
 
 Goodboy remembers which models an account cannot run and sends work to the next model on the same provider. The agent's why line says so, and Cursor's Check again learns the models your account lists.
+
+#### Newer models on every provider
+<!-- gb area=providers pr=2440 -->
+
+Gemini 4 Neon, Carbon and Hydrogen, GPT-6.2 Sol and Astra, GPT-6.1 Terra, Fable 5.2, Kimi K3.1 Pro and DeepSeek V4.1 Flash join the pickers of the providers that offer them, with their prices. A saved pick of Gemini 3.8 Flash moves to Hydrogen.
 
 #### Floating drag targets in the dock
 <!-- gb area=app pr=2428 -->
