@@ -14,7 +14,7 @@ type RowParams = {
   readonly message: ChatMessage;
 };
 
-const rowOf = ({ message }: RowParams): ChatMessageRow => ({
+const chatMessageRowOf = ({ message }: RowParams): ChatMessageRow => ({
   id: message.id,
   role: message.role,
   text: withoutAbsolutePaths({ text: message.content }).slice(0, MAX_TEXT),
@@ -72,7 +72,7 @@ export const chatMessagesOf = async ({
   return {
     workspaceId: query.workspaceId,
     chatId: query.chatId,
-    messages: page.messages.map((message) => rowOf({ message })),
+    messages: page.messages.map((message) => chatMessageRowOf({ message })),
     hasEarlier: page.hasEarlier,
     isBusy: latest.chatStreams[chatId] !== undefined,
     generatedAt: now.toISOString(),
