@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { formatError } from '@goodboy/ui';
 import { useNow } from '../../../shared/hooks/useNow';
 import { CallChip } from './CallChip';
 import { callChipCommands } from './callChipCommands';
@@ -9,10 +8,6 @@ import { chipExpiryOf } from './chipExpiryOf';
 
 type ActParams = {
   readonly action: ChipAction;
-};
-
-type FailParams = {
-  readonly error: unknown;
 };
 
 type ViewParams = {
@@ -26,14 +21,14 @@ type Shown = Readonly<{
 
 export const CallChipWindow = () => {
   const [shown, setShown] = useState<Shown | null>(null);
-  const [failure, setFailure] = useState<string | null>(null);
+  const [hasFailed, setHasFailed] = useState(false);
   const now = useNow(1_000);
   const frame = useRef<HTMLDivElement>(null);
-  const fail = useCallback(({ error }: FailParams) => setFailure(formatError(error)), []);
+  const fail = useCallback(() => setHasFailed(true), []);
   const act = useCallback(
     ({ action }: ActParams): void => {
-      setFailure(null);
-      callChipCommands.act({ action }).catch((error: unknown) => fail({ error }));
+      setHasFailed(false);
+      callChipCommands.act({ action }).catch(fail);
     },
     [fail],
   );
@@ -57,7 +52,7 @@ export const CallChipWindow = () => {
         return callChipCommands.view();
       })
       .then((view) => show({ view }))
-      .catch((error: unknown) => fail({ error }));
+      .catch(fail);
     return () => {
       isLive = false;
       stop();
@@ -70,9 +65,7 @@ export const CallChipWindow = () => {
       return;
     }
     const observer = new ResizeObserver(() => {
-      callChipCommands
-        .resize({ height: node.getBoundingClientRect().height })
-        .catch((error: unknown) => fail({ error }));
+      callChipCommands.resize({ height: node.getBoundingClientRect().height }).catch(fail);
     });
     observer.observe(node);
     return () => observer.disconnect();
@@ -91,7 +84,7 @@ export const CallChipWindow = () => {
   }
   return (
     <div ref={frame} className="flex w-full min-w-0">
-      <CallChip view={shown.view} now={now} failure={failure} onAct={act} />
+      <CallChip view={shown.view} now={now} hasFailed={hasFailed} onAct={act} />
     </div>
   );
 };

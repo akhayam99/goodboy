@@ -38,12 +38,12 @@ const COUNTDOWN: ChipView = {
 type RenderParams = {
   readonly view: ChipView;
   readonly now?: number;
-  readonly failure?: string | null;
+  readonly hasFailed?: boolean;
 };
 
-const renderChip = ({ view, now = START - 42_000, failure = null }: RenderParams) => {
+const renderChip = ({ view, now = START - 42_000, hasFailed = false }: RenderParams) => {
   const onAct = vi.fn();
-  render(<CallChip view={view} now={now} failure={failure} onAct={onAct} />);
+  render(<CallChip view={view} now={now} hasFailed={hasFailed} onAct={onAct} />);
   return onAct;
 };
 
@@ -78,11 +78,9 @@ describe('CallChip', () => {
     expect(onAct).toHaveBeenLastCalledWith({ action: { kind: 'return' } });
   });
 
-  it('says when Goodboy did not answer a click', () => {
-    renderChip({ view: COUNTDOWN, failure: 'The window is gone.' });
-    expect(screen.getByRole('alert').textContent).toBe(
-      'Goodboy did not answer. The window is gone.',
-    );
+  it('says when Goodboy did not answer a click, without the raw error', () => {
+    renderChip({ view: COUNTDOWN, hasFailed: true });
+    expect(screen.getByRole('alert').textContent).toBe('Goodboy did not answer. Try again.');
   });
 });
 

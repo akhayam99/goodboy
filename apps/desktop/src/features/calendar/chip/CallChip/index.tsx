@@ -12,7 +12,7 @@ type ActParams = {
 type Props = {
   readonly view: ChipView;
   readonly now: number;
-  readonly failure: string | null;
+  readonly hasFailed: boolean;
   readonly onAct: (params: ActParams) => void;
 };
 
@@ -21,7 +21,7 @@ const RETURN = actionButtonLookOf({ verb: 'Return to call', variant: 'secondary'
 const SNOOZE = actionButtonLookOf({ verb: 'Remind me in 5m', variant: 'ghost' });
 const JOINS_ON_TOP: ReadonlySet<ChipView['kind']> = new Set(['soon', 'check-link', 'snoozed']);
 
-export const CallChip = ({ view, now, failure, onAct }: Props) => {
+export const CallChip = ({ view, now, hasFailed, onAct }: Props) => {
   const lines = chipLinesOf({ view, now });
   const isLive = view.kind === 'in-call';
   const join = (
@@ -105,11 +105,11 @@ export const CallChip = ({ view, now, failure, onAct }: Props) => {
           onOpen={({ rowKey }) => onAct({ action: { kind: 'open', rowKey } })}
         />
       ) : null}
-      {failure === null ? null : (
+      {hasFailed ? (
         <p role="alert" className="text-meta text-danger">
-          {`Goodboy did not answer. ${failure}`}
+          Goodboy did not answer. Try again.
         </p>
-      )}
+      ) : null}
     </div>
   );
 };

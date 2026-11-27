@@ -105,12 +105,17 @@ const openRow = async ({ rowKey }: RowParams): Promise<void> => {
   state.navigate({ to: attentionPlace({ state, ...target }) });
 };
 
-const bannerOnce = async ({ call }: CallParams): Promise<void> => {
-  await showCallBanner({
+const bannerOnce = ({ call }: CallParams): void => {
+  showCallBanner({
     eventId: call.id,
     title: call.title,
     body: joinFacts({ facts: [formatClock({ at: call.start }), linkHostOf({ link: call.link })] }),
-  });
+  }).catch((error: unknown) => reportChipError({ title: "Couldn't show the call banner", error }));
+};
+
+const openCalendar = async (): Promise<void> => {
+  await focusWindow(MAIN_WINDOW_LABEL);
+  openDestination({ id: 'calendar' });
 };
 
 const release = async ({ held, workspaceId }: ReleaseParams): Promise<void> => {
@@ -173,6 +178,7 @@ export const useCallChipBridge = (): void => {
   const workspaceId = useCurrentWorkspace()?.id ?? null;
   const chip = useCallChipStore((state) => state.state);
   const heldCount = useCallQuietStore((state) => state.held.length);
+  const isChipOn = useAwayAlertsStore((state) => state.isCallChipOn);
   const calls = useRef<ReadonlyMap<string, ChipCall>>(new Map());
   const bannered = useRef<Set<string>>(new Set());
   const isShown = useRef(false);
@@ -249,7 +255,7 @@ export const useCallChipBridge = (): void => {
       if (!useAwayAlertsStore.getState().isCallChipOn) {
         if (!bannered.current.has(call.id)) {
           bannered.current.add(call.id);
-          void bannerOnce({ call });
+          bannerOnce({ call });
         }
         return;
       }
@@ -271,7 +277,9 @@ export const useCallChipBridge = (): void => {
         start: () =>
           listenCallBannerTaps({
             onTap: () => {
-              void focusWindow(MAIN_WINDOW_LABEL).then(() => openDestination({ id: 'calendar' }));
+              openCalendar().catch((error: unknown) =>
+                reportChipError({ title: "Couldn't open the calendar", error }),
+              );
             },
           }),
       }),
@@ -288,7 +296,7 @@ export const useCallChipBridge = (): void => {
       return;
     }
     const waiting = beforeCallRowsOf({ state: useAppStore.getState(), sessions: needsYou });
-    const view = callChipViewOf({ state: chip, waiting, heldCount });
+    const view = isChipOn ? callChipViewOf({ state: chip, waiting, heldCount }) : null;
     if (view === null) {
       if (!isShown.current) {
         return;
@@ -312,7 +320,7 @@ export const useCallChipBridge = (): void => {
         }
         bannered.current.add(chip.call.id);
         reportChipError({ title: "Couldn't show the call chip", error });
-        void bannerOnce({ call: chip.call });
+        bannerOnce({ call: chip.call });
       });
-  }, [chip, needsYou, heldCount]);
+  }, [chip, needsYou, heldCount, isChipOn]);
 };

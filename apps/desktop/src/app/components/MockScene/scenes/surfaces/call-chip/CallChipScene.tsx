@@ -75,7 +75,7 @@ const ignore = (): void => undefined;
 const frameOf = ({ view }: FrameParams) => (
   <div className="flex min-h-screen justify-center bg-background p-6">
     <div className={POPOVER_WIDTH_CLASS.wide}>
-      <CallChip view={view} now={NOW} failure={null} onAct={ignore} />
+      <CallChip view={view} now={NOW} hasFailed={false} onAct={ignore} />
     </div>
   </div>
 );
