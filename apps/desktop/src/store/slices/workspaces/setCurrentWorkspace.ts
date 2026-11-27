@@ -64,6 +64,7 @@ import { workspaceFactsPatchOf } from './workspaceFactsPatchOf';
 import { switchEpoch } from './switchEpoch';
 import type { LaunchReads } from './launchReads';
 import { loadLaunchAgents } from './loadLaunchAgents';
+import * as mountHistory from '../project-mounts/workRecord/loadWorkspaceMountHistory';
 import type { GetFn, SetFn } from './types';
 
 type RepairedDestination = {
@@ -98,6 +99,7 @@ type WorkspaceSnapshot = MountRecords & {
   readonly waitingTurns: Record<string, TurnState>;
   readonly kindOverridesFromDb: Record<string, AgentKind>;
   readonly sessionExternalTasks: Record<string, SessionExternalTask[]>;
+  readonly history: mountHistory.WorkspaceMountHistory;
   readonly facts: WorkspaceFacts | null;
   readonly factsError: string | null;
 };
@@ -291,6 +293,11 @@ const verifyWorkspaceInBackground = async ({
     }
     return {
       ...records,
+      sessionMounts: mountHistory.reseededMountsOf({
+        state,
+        mounts: records.sessionProjectMounts,
+        sessionIds: [...patchBySession.keys()],
+      }),
       sessions: state.sessions.map((session) => {
         const hydration = patchBySession.get(session.id);
         return hydration === undefined ? session : sessionAfterHydration({ session, hydration });
@@ -329,10 +336,11 @@ const loadWorkspaceSnapshot = async ({
     now: recoveryNow,
   });
   const sessionIds = sessions.map((s) => s.id);
-  const [worktreesBySession, launchAgents, externalTasks] = await Promise.all([
+  const [worktreesBySession, launchAgents, externalTasks, history] = await Promise.all([
     listWorktreesForSessions(tauriDatabase, sessionIds),
     loadLaunchAgents({ sessionIds }),
     listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
+    mountHistory.loadWorkspaceMountHistory({ projects, sessionIds }),
   ]);
   if (!isCurrent()) {
     return null;
@@ -405,6 +413,7 @@ const loadWorkspaceSnapshot = async ({
     waitingTurns,
     kindOverridesFromDb,
     sessionExternalTasks,
+    history,
     ...factsRead,
   };
 };
@@ -459,6 +468,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         kindOverridesFromDb,
         sessionExternalTasks,
         worktreesBySession,
+        history,
         facts,
         factsError,
       } = snapshot;
@@ -484,6 +494,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         agentTurnState: waitingTurns,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
         sessionExternalTasks,
+        ...mountHistory.mountHistoryPatchOf({ state, mounts: sessionProjectMounts, history }),
         ...(facts === null ? {} : workspaceFactsPatchOf({ state, facts, now: Date.now() })),
         workspaceFactsError: factsError,
         boardReady: true,

@@ -6,6 +6,7 @@ import type { BranchRowWord } from '../../central/board/branchRowOf';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { requestShortOf } from '../../central/board/requestShortOf';
 import { branchWorkTabRegistration } from '../../branchWorkTabRegistration';
+import { openLink } from '../../../open/openLink';
 import { useBoardContext } from './useBoardContext';
 
 type Props = {
@@ -19,7 +20,7 @@ type Props = {
 const SEPARATOR = ' · ';
 
 export const BoardTileFacts = ({ rowId, title, word, hoverFacts, onOpenChanges }: Props) => {
-  const { session, entryByRowId, diffStatByPath, runningByRowId } = useBoardContext();
+  const { session, rowById, entryByRowId, diffStatByPath, runningByRowId } = useBoardContext();
   const entry = entryByRowId.get(rowId) ?? null;
   const mountPath = entry === null ? null : entry.fact.mountPath;
   const work = branchWorkTabRegistration.useWork({
@@ -33,6 +34,8 @@ export const BoardTileFacts = ({ rowId, title, word, hoverFacts, onOpenChanges }
   const request = entry === null ? null : entry.fact.request;
   const requestWord =
     request === null ? '' : `${requestShortOf({ request })} ${request.noun}${request.number}`;
+  const isSettled = rowById.get(rowId)?.isSettled === true;
+  const linkUrl = request === null || !isSettled || request.url === '' ? null : request.url;
   const runs = work.counts === null ? 0 : work.counts.runs;
   const words = joinFacts({
     facts: [runs > 0 && countNoun({ count: runs, one: 'run' })],
@@ -45,7 +48,20 @@ export const BoardTileFacts = ({ rowId, title, word, hoverFacts, onOpenChanges }
       data-board-facts=""
       className="min-w-0 truncate text-meta tabular-nums text-muted-foreground"
     >
-      {requestWord === '' ? null : <span data-board-request="">{requestWord}</span>}
+      {requestWord === '' ? null : linkUrl === null ? (
+        <span data-board-request="">{requestWord}</span>
+      ) : (
+        <Button
+          variant="quiet"
+          role="link"
+          data-board-request=""
+          aria-label={`Open ${requestWord}`}
+          onClick={(event) => openLink({ url: linkUrl, sessionId: session.id, event })}
+          className="pointer-events-auto relative h-auto w-auto min-w-0 rounded-sm px-0 py-0 text-meta font-normal tabular-nums"
+        >
+          {requestWord}
+        </Button>
+      )}
       {requestWord !== '' && word !== null ? SEPARATOR : null}
       {word === null ? null : entry === null ? (
         <span data-board-word="" className={tintClasses(word.tone).text}>

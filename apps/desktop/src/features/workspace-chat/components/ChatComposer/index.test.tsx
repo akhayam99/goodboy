@@ -49,6 +49,7 @@ const mount = ({ isStreaming = false, isSent = true }: MountParams = {}) => {
   render(
     <ChatComposer
       workspaceId={WORKSPACE_ID}
+      chatId={null}
       placeholder="Ask about Harborline, read-only"
       routing={{ provider: 'anthropic', model: 'sonnet-5.5', effort: null }}
       isStreaming={isStreaming}
@@ -98,14 +99,20 @@ describe('ChatComposer', () => {
     expect(sent).toEqual([]);
   });
 
-  it('offers Stop instead of Send while the answer streams, and holds the draft', () => {
-    const { sent, stops } = mount({ isStreaming: true });
-    fireEvent.change(field(), { target: { value: 'and notify-relay?' } });
-    fireEvent.keyDown(field(), { key: 'Enter' });
-    expect(sent).toEqual([]);
+  it('offers Stop and no Send while the answer streams with nothing typed', () => {
+    const { stops } = mount({ isStreaming: true });
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(stops).toEqual([1]);
+  });
+
+  it('sends what you typed while the answer streams, so the room can queue it', () => {
+    const { sent } = mount({ isStreaming: true });
+    fireEvent.change(field(), { target: { value: 'and notify-relay?' } });
+    screen.getByRole('button', { name: 'Send' });
+    screen.getByRole('button', { name: 'Stop' });
+    fireEvent.keyDown(field(), { key: 'Enter' });
+    expect(sent).toEqual(['and notify-relay?']);
   });
 
   it('turns a pasted image into a chip and sends it, even with no text', async () => {

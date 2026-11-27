@@ -1,4 +1,4 @@
-import { Eye, Hand, PencilLine, Zap, type IconGlyph } from '@goodboy/ui/icons';
+import { Eye, Hand, Pencil, Zap, type IconGlyph } from '@goodboy/ui/icons';
 import type { ClaudePermissionMode } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 
@@ -45,7 +45,7 @@ export const MODE_COPY: Record<PickerMode, ModeCopy> = {
     promise: 'Changes files in your folders. Asks before anything else.',
     short: 'Edits files, asks for the rest.',
     tone: 'warning',
-    icon: PencilLine,
+    icon: Pencil,
   },
   bypassPermissions: {
     mode: 'bypassPermissions',

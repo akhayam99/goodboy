@@ -114,4 +114,23 @@ describe('mount pull request merged head', () => {
     await db.execute("UPDATE sessions SET archived_at = 5 WHERE id = 'session'");
     expect(await listWorkspacePullRequestLinks({ db, workspaceId })).toEqual([]);
   });
+
+  it('lists the links of removed mounts only, whatever the host', async () => {
+    const db = await seed();
+    await upsertMountPullRequestLink({
+      db,
+      sessionId,
+      link: link({ provider: 'gitlab', host: 'gitlab.example.test', state: 'merged' }),
+    });
+
+    expect(await listMountPullRequestLinks({ db, sessionIds: [sessionId] })).toEqual([]);
+
+    await db.execute(
+      "UPDATE session_worktrees SET worktree_path = NULL, is_attached = 0, disk_state = 'removed' WHERE id = 'mount'",
+    );
+    const found = await listMountPullRequestLinks({ db, sessionIds: [sessionId] });
+
+    expect(found.map((entry) => [entry.provider, entry.state])).toEqual([['gitlab', 'merged']]);
+    expect(await listMountPullRequestLinks({ db, sessionIds: [] })).toEqual([]);
+  });
 });

@@ -48,6 +48,7 @@ const branchOf = ({ id, checks, state }: BranchParams): BranchFacts => ({
   request: {
     noun: '#',
     number: 57,
+    url: 'https://example.test/pull/1',
     isDraft: false,
     state,
     checksWord: null,

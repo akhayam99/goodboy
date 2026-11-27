@@ -1,11 +1,15 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { MountId } from '@goodboy/types';
-import { useAppStore } from '../../../store';
-import { mountRequestOf } from '../../../store/slices/project-mounts/mountRowModel';
-import { isReadyToLand, overlapCautionOf, type OverlapCaution } from '../overlapCautionOf';
-import { overlapGroupOf } from '../overlapGroupOf';
-import { useLiveMounts } from '../hooks/useLiveMounts';
+import { useAppStore } from '../../../../../store';
+import { mountRequestOf } from '../../../../../store/slices/project-mounts/mountRowModel';
+import { liveMounts } from '../../../../overlap/liveMounts';
+import {
+  isReadyToLand,
+  overlapCautionOf,
+  type OverlapCaution,
+} from '../../../../overlap/overlapCautionOf';
+import { overlapGroupOf } from '../../../../overlap/overlapGroupOf';
 
 type Params = {
   readonly mountId: MountId;
@@ -13,7 +17,8 @@ type Params = {
 };
 
 export const useOverlapCaution = ({ mountId, isSettled }: Params): OverlapCaution | null => {
-  const { mounts } = useLiveMounts();
+  const subscribe = useCallback((listener: () => void) => liveMounts.subscribe({ listener }), []);
+  const { mounts } = useSyncExternalStore(subscribe, liveMounts.snapshot);
   const group = useMemo(() => overlapGroupOf({ mounts, mountId }), [mounts, mountId]);
   const otherIds = useMemo(
     () =>

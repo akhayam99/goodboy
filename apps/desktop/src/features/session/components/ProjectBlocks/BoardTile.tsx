@@ -10,7 +10,7 @@ import { useMountRowMenu } from '../../hooks/useMountRowMenu';
 import { MountRowMenuButton } from '../MountRowMenuButton';
 import { boardRowCellsOf } from '../../central/board/boardRowCellsOf';
 import { branchRowOf } from '../../central/board/branchRowOf';
-import { useOverlapCaution } from '../../../overlap/useOverlapCaution';
+import { useOverlapCaution } from './useOverlapCaution';
 import { BoardBranchName } from './BoardBranchName';
 import { BoardTileAction } from './BoardTileAction';
 import { BoardTileFacts } from './BoardTileFacts';
