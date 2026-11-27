@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { brandId, type AgentId, type MountId, type ProjectId } from '@goodboy/types';
+import type { HistoryRun } from '../../../../../store/slices/history/types';
+import { useAppStore } from '../../../../../store';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import type { BranchFacts } from '../../../../../features/session/central/branches/branchFactsOf';
 import { branchEntriesOf } from '../../../../../features/session/central/branches/branchStoryOf';
@@ -176,11 +178,36 @@ const cardOf = ({ seed }: CardParams): ActionCardModel | null =>
         evidence: [],
       };
 
+const STOPPED_MOUNT = brandId<MountId>({ value: 'mock-rows-mount-stopped' });
+
+const stoppedRunOf = (): HistoryRun => ({
+  sessionId: SESSION.id,
+  mountId: STOPPED_MOUNT,
+  origin: 'rebase',
+  phase: 'stopped',
+  planId: null,
+  agentId: null,
+  copyPath: null,
+  stop: { reason: 'conflict', message: 'Two files conflict', files: [], sha: null },
+  result: null,
+  backupRef: null,
+  remoteSha: null,
+  holder: null,
+  progress: null,
+  applied: null,
+  identity: null,
+  movedHead: null,
+  threadShas: [],
+  commitCount: null,
+  updatedAt: 0,
+});
+
 export const BranchRowsScene = ({ theme }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     applyDocumentTheme({ theme });
     mockSceneIpc(() => null);
+    useAppStore.setState({ historyRuns: { [STOPPED_MOUNT]: stoppedRunOf() } });
     setIsReady(true);
   }, [theme]);
   const value = useMemo((): BoardContextValue => {

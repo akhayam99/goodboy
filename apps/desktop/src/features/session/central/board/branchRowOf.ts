@@ -33,7 +33,7 @@ export type BranchRowAction =
   | { readonly kind: 'card'; readonly index: number }
   | { readonly kind: 'question'; readonly questionId: OpenQuestionId }
   | { readonly kind: 'remove'; readonly mountId: string }
-  | { readonly kind: 'open'; readonly label: string };
+  | { readonly kind: 'open'; readonly label: string; readonly fact: BranchState | null };
 
 export type BranchRowOverlap = Readonly<{
   fileCount: number;
@@ -54,15 +54,16 @@ type Params = {
   readonly cards: ReadonlyArray<Pick<ActionCardModel, 'kind'>>;
   readonly shownAskIds: ReadonlySet<string>;
   readonly isPermissionShown: boolean;
+  readonly isRebaseStopped: boolean;
   readonly failingCheckName: string | null;
   readonly overlap: BranchRowOverlap | null;
 };
 
-type RungOfState = 'stopped' | 'blocked' | 'waiting' | 'ready' | 'your-move' | 'settled';
+type RungOfState = 'blocked' | 'waiting' | 'ready' | 'your-move' | 'settled';
 
 const RUNG_OF_STATE: Readonly<Record<BranchState, RungOfState>> = {
   unread: 'waiting',
-  rebasing: 'stopped',
+  rebasing: 'waiting',
   gone: 'blocked',
   'nothing-committed': 'waiting',
   'not-pushed': 'your-move',
@@ -102,6 +103,8 @@ const OPEN_LABEL_OF_STATE: Readonly<Partial<Record<BranchState, string>>> = {
 
 const NONE: BranchRowAction = { kind: 'none' };
 
+const SHOWN_PERMISSION: RungResult = { rung: 'permission', word: null, action: NONE };
+
 type KindsParams = {
   readonly cards: ReadonlyArray<Pick<ActionCardModel, 'kind'>>;
   readonly kinds: ReadonlyArray<string>;
@@ -114,11 +117,12 @@ const cardActionOf = ({ cards, kinds }: KindsParams): BranchRowAction => {
 
 type CardOrOpenParams = KindsParams & {
   readonly label: string;
+  readonly fact: BranchState | null;
 };
 
-const cardOrOpenOf = ({ cards, kinds, label }: CardOrOpenParams): BranchRowAction => {
+const cardOrOpenOf = ({ cards, kinds, label, fact }: CardOrOpenParams): BranchRowAction => {
   const action = cardActionOf({ cards, kinds });
-  return action.kind === 'none' ? { kind: 'open', label } : action;
+  return action.kind === 'none' ? { kind: 'open', label, fact } : action;
 };
 
 type CauseParams = {
@@ -173,9 +177,6 @@ const storyWordOf = ({ entry, failingCheckName }: StateParams): BranchRowWord =>
   if (story.state === 'checks-failing' && failingCheckName !== null) {
     return { word: `${failingCheckName} failed`, tone: story.tone };
   }
-  if (story.state === 'rebasing') {
-    return { word: NAMES.rebaseStopped, tone: BRANCH_STATE_TONE.rebasing };
-  }
   if (story.state === 'open' && fact.request !== null) {
     return { word: `${requestShortOf({ request: fact.request })} open`, tone: story.tone };
   }
@@ -195,7 +196,7 @@ type RungResult = Readonly<{
 const entryRungOf = ({ entry, runningCount }: RungParams): RungOfState | 'running' => {
   const state = entry.story.state;
   const rung = RUNG_OF_STATE[state];
-  if (rung === 'stopped' || rung === 'blocked') {
+  if (rung === 'blocked') {
     return rung;
   }
   if (runningCount > 0) {
@@ -216,7 +217,7 @@ const blockedActionOf = ({ entry, cards }: RungParams): BranchRowAction => {
   const label = OPEN_LABEL_OF_STATE[state];
   return label === undefined
     ? cardActionOf({ cards, kinds })
-    : cardOrOpenOf({ cards, kinds, label });
+    : cardOrOpenOf({ cards, kinds, label, fact: state });
 };
 
 const entryResultOf = ({ ...params }: RungParams): RungResult => {
@@ -226,9 +227,6 @@ const entryResultOf = ({ ...params }: RungParams): RungResult => {
   const story = storyWordOf({ entry, failingCheckName });
   if (rung === 'running') {
     return { rung, word: { word: NAMES.running, tone: STAGE_TONE.running }, action: NONE };
-  }
-  if (rung === 'stopped') {
-    return { rung, word: story, action: { kind: 'open', label: NAMES.openRebase } };
   }
   if (rung === 'blocked') {
     return { rung, word: story, action: blockedActionOf(params) };
@@ -246,6 +244,8 @@ const entryResultOf = ({ ...params }: RungParams): RungResult => {
 
 const resultOf = ({ ...params }: Params): RungResult => {
   const { row, entry, cards, shownAskIds, isPermissionShown } = params;
+  const isShownPermission =
+    isPermissionShown && row.group === 'needs-you' && row.stage.attention === 'needs-approval';
   if (row.isSettled) {
     const word = row.isClosed
       ? { word: 'Closed', tone: BRANCH_STATE_TONE.closed }
@@ -261,26 +261,27 @@ const resultOf = ({ ...params }: Params): RungResult => {
       action: askedActionOf({ row, cards, shownAskIds }),
     };
   }
-  if (entry !== null && entry.story.state === 'rebasing') {
-    return entryResultOf({ ...params, entry });
+  if (params.isRebaseStopped) {
+    return {
+      rung: 'stopped',
+      word: { word: NAMES.rebaseStopped, tone: 'warning' },
+      action: { kind: 'open', label: NAMES.openRebase, fact: 'rebasing' },
+    };
   }
   const permission = permissionWordOf({ row, isPermissionShown });
   if (permission !== null) {
     return {
       rung: 'permission',
       word: permission,
-      action: cardOrOpenOf({ cards, kinds: PERMISSION_KINDS, label: NAMES.open }),
+      action: cardOrOpenOf({ cards, kinds: PERMISSION_KINDS, label: NAMES.open, fact: null }),
     };
   }
   if (entry !== null) {
     const result = entryResultOf({ ...params, entry });
-    if (row.group === 'needs-you' && result.rung !== 'blocked') {
-      return { rung: 'permission', word: null, action: NONE };
-    }
-    return result;
+    return isShownPermission && result.rung !== 'blocked' ? SHOWN_PERMISSION : result;
   }
-  if (row.group === 'needs-you') {
-    return { rung: 'permission', word: null, action: NONE };
+  if (isShownPermission) {
+    return SHOWN_PERMISSION;
   }
   return {
     rung: 'unbranched',

@@ -39,6 +39,7 @@ export const DeskProjects = ({ sessionId, board }: Props) => {
           cards: NO_CARDS,
           shownAskIds: NO_ASKS,
           isPermissionShown: false,
+          isRebaseStopped: entry?.story.state === 'rebasing',
           failingCheckName: null,
           overlap: null,
         });

@@ -107,9 +107,10 @@ type RowParams = {
   readonly cards?: ReadonlyArray<CardKind>;
   readonly shownAskIds?: ReadonlySet<string>;
   readonly isPermissionShown?: boolean;
+  readonly isRebaseStopped?: boolean;
   readonly failingCheckName?: string | null;
   readonly overlap?: BranchRowOverlap | null;
-  readonly attention?: 'plan-approval' | 'needs-approval';
+  readonly attention?: 'plan-approval' | 'needs-approval' | 'pr-approved';
 };
 
 const NO_ASKS: ReadonlySet<string> = new Set();
@@ -121,6 +122,7 @@ const rowFor = ({
   cards = [],
   shownAskIds = NO_ASKS,
   isPermissionShown = false,
+  isRebaseStopped = false,
   failingCheckName = null,
   overlap = null,
   attention = undefined,
@@ -142,6 +144,7 @@ const rowFor = ({
     cards: cards.map((kind) => ({ kind })),
     shownAskIds,
     isPermissionShown,
+    isRebaseStopped,
     failingCheckName,
     overlap,
   });
@@ -192,11 +195,11 @@ describe('branchRowOf', () => {
 
   it('rung 3: says Rebase stopped with Open rebase', () => {
     expect(
-      rowFor({ branch: branchOf({ hasRequest: false, isRebasing: true }), runningCount: 1 }),
+      rowFor({ branch: branchOf({}), isRebaseStopped: true, runningCount: 1, cards: ['merge-pr'] }),
     ).toMatchObject({
       rung: 'stopped',
-      word: { word: NAMES.rebaseStopped, tone: 'info' },
-      action: { kind: 'open', label: NAMES.openRebase },
+      word: { word: NAMES.rebaseStopped, tone: 'warning' },
+      action: { kind: 'open', label: NAMES.openRebase, fact: 'rebasing' },
     });
   });
 
@@ -206,7 +209,7 @@ describe('branchRowOf', () => {
     ).toMatchObject({
       rung: 'permission',
       word: { word: NAMES.waitingForPermission, tone: 'warning' },
-      action: { kind: 'open', label: 'Open' },
+      action: { kind: 'open', label: 'Open', fact: null },
     });
     expect(
       rowFor({
@@ -231,11 +234,26 @@ describe('branchRowOf', () => {
     ).toMatchObject({ rung: 'permission', word: null, action: { kind: 'none' } });
   });
 
+  it('keeps Ready to merge and Merge on an approved pull request grouped under Needs you', () => {
+    expect(
+      rowFor({
+        branch: branchOf({ checks: 'success', reviewDecision: 'approved' }),
+        cards: ['merge-pr'],
+        isPermissionShown: true,
+        attention: 'pr-approved',
+      }),
+    ).toMatchObject({
+      rung: 'ready',
+      word: { word: 'Approved' },
+      action: { kind: 'card', index: 0 },
+    });
+  });
+
   it('rung 5: says Checks failing in red, or the named check, over Running', () => {
     expect(rowFor({ branch: branchOf({ checks: 'failure' }), runningCount: 1 })).toMatchObject({
       rung: 'blocked',
       word: { word: 'Checks failing', tone: 'danger' },
-      action: { kind: 'open', label: 'Open check' },
+      action: { kind: 'open', label: 'Open check', fact: 'checks-failing' },
     });
     expect(
       rowFor({
@@ -266,7 +284,7 @@ describe('branchRowOf', () => {
       }),
     ).toMatchObject({
       word: { word: 'Changes requested' },
-      action: { kind: 'open', label: 'Open comments' },
+      action: { kind: 'open', label: 'Open comments', fact: 'changes-requested' },
     });
   });
 
@@ -350,7 +368,7 @@ describe('branchRowOf', () => {
     const cases: ReadonlyArray<RowParams> = [
       { branch: branchOf({ state: 'merged' }) },
       { branch: branchOf({}), asks: [ASK], cards: ['rebase-project'] },
-      { branch: branchOf({ hasRequest: false, isRebasing: true }), cards: ['rebase-project'] },
+      { branch: branchOf({}), isRebaseStopped: true, cards: ['rebase-project'] },
       { branch: branchOf({ checks: 'pending' }), attention: 'needs-approval' },
       { branch: branchOf({ checks: 'failure' }), cards: ['rebase-project', 'fix-checks'] },
       { branch: branchOf({ checks: 'pending' }), runningCount: 1, cards: ['rebase-project'] },

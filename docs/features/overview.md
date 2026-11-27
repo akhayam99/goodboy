@@ -219,7 +219,8 @@ This part is for contributors and agents who change the feature.
 - Branch row: `branchRowOf` owns the word and the button of a tile. It returns the rung, the word with its tone, the action and the hover facts.
 - The first rung that matches wins, so the word and the action never come from two rungs.
 - The rungs, in order: settled, asked, stopped, permission, blocked, running, waiting, ready, your move, and a tile with no branch.
-- Settled says Merged or Closed, with **Remove worktree** on a merged tile. Asked says **Asks you**, with **Answer**. Stopped says **Rebase stopped**, with **Open rebase**.
+- Settled says Merged or Closed, with **Remove worktree** on a merged tile. Asked says **Asks you**, with **Answer**.
+- Stopped says **Rebase stopped**, with **Open rebase**. `BoardTile` reads it from `hasOpenRebaseStopOf`, so a stop with a pull request or a saved stop counts. The button opens the tab its fact names (`tabForFactOf`), as **Open check** and **Open comments** do.
 - Permission says **Needs approval** or **Needs permission**, with **Open**. Blocked says the failing check, **Conflicts**, **Changes requested** or **Branch gone**. Its button is the card of that state, **Open check** or **Open comments**.
 - Waiting says **Checks running**, **In review**, **In merge queue** or **PR open**. Ready says **Ready to merge** or **Approved**, with the merge card. Your move says **Not pushed**, **No pull request**, **Draft** or **N behind main**, with its card.
 - `BoardTile` calls it once. It hands the word to `BoardTileFacts` (`data-board-word`) and the action to `BoardTileAction`. `DeskProjects` reads the same word.

@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { brandId, type MountId } from '@goodboy/types';
 import { Button, cn, ROW_HOVER, StatusDot, Tooltip } from '@goodboy/ui';
 import { sessionPlace, useAppStore } from '../../../../store';
+import { hasOpenRebaseStopOf } from '../../../branch/hasOpenRebaseStopOf';
 import { failingChecksOf } from '../../../branch/checks/failingChecksOf';
 import { branchTabPlaceOf } from '../../../branch/branchTabPlaceOf';
 import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
@@ -48,6 +49,15 @@ const BoardTileView = ({ rowId }: Props) => {
           prNumber: entry.fact.request.number,
         })?.checks[0]?.name ?? null),
   );
+  const isRebaseStopped = useAppStore((state) =>
+    entry === null
+      ? false
+      : hasOpenRebaseStopOf({
+          state,
+          sessionId: session.id,
+          mountId: brandId<MountId>({ value: entry.fact.mountId }),
+        }),
+  );
   const row = rowById.get(rowId);
   if (row === undefined) {
     return null;
@@ -60,6 +70,7 @@ const BoardTileView = ({ rowId }: Props) => {
     cards: cardsByRowId.get(rowId) ?? [],
     shownAskIds,
     isPermissionShown,
+    isRebaseStopped,
     failingCheckName: failingName,
     overlap: null,
   });
