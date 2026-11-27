@@ -9,7 +9,6 @@ import { importStore, resetStoryStore, type StoryStore } from '../../storyHarnes
 import { selectOpenDrawer } from './selectOpenDrawer';
 import { selectDetailDrawer } from './selectDetailDrawer';
 import { selectDockDrawer } from './selectDockDrawer';
-import { selectSlotBack } from './selectSlotBack';
 import type { DrawerRequest } from './state';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -54,7 +53,7 @@ const slot = () => {
   const state = store.getState();
   return {
     top: selectOpenDrawer(state)?.kind ?? null,
-    back: selectSlotBack({ state })?.kind ?? null,
+    back: state.drawerBack?.kind ?? null,
   };
 };
 
@@ -63,7 +62,6 @@ const panels = () => {
   return {
     dock: selectDockDrawer({ state })?.kind ?? null,
     detail: selectDetailDrawer({ state })?.kind ?? null,
-    chip: selectSlotBack({ state })?.kind ?? null,
   };
 };
 
@@ -76,18 +74,18 @@ describe('the side slot', () => {
     });
   });
 
-  it('keeps what the latest open replaced in the chip', () => {
+  it('keeps no history of a reader the latest open replaced', () => {
     store.getState().openDrawer(EXPLORE);
     store.getState().openDrawer(PLAN);
 
-    expect(slot()).toEqual({ top: 'artifact-document', back: 'conversation' });
+    expect(slot()).toEqual({ top: 'artifact-document', back: null });
   });
 
   it('shows a detail panel and the tool dock together, with no chip between them', () => {
     store.getState().openDrawer(TERMINAL);
     store.getState().openDrawer(PLAN);
 
-    expect(panels()).toEqual({ dock: 'terminal', detail: 'artifact-document', chip: null });
+    expect(panels()).toEqual({ dock: 'terminal', detail: 'artifact-document' });
   });
 
   it('replaces only the detail when another detail opens beside the dock', () => {
@@ -95,7 +93,7 @@ describe('the side slot', () => {
     store.getState().openDrawer(PLAN);
     store.getState().openDrawer(EXPLORE);
 
-    expect(panels()).toEqual({ dock: 'terminal', detail: 'conversation', chip: null });
+    expect(panels()).toEqual({ dock: 'terminal', detail: 'conversation' });
   });
 
   it('closes each panel on its own: the dock X leaves the detail, the detail X leaves the dock', () => {
@@ -107,7 +105,7 @@ describe('the side slot', () => {
     }
 
     store.getState().closeDrawerEntry({ entry: dock });
-    expect(panels()).toEqual({ dock: null, detail: 'artifact-document', chip: null });
+    expect(panels()).toEqual({ dock: null, detail: 'artifact-document' });
 
     store.getState().openDrawer(TERMINAL);
     const detail = selectDetailDrawer({ state: store.getState() });
@@ -115,7 +113,7 @@ describe('the side slot', () => {
       throw new Error('the detail is open');
     }
     store.getState().closeDrawerEntry({ entry: detail });
-    expect(panels()).toEqual({ dock: 'terminal', detail: null, chip: null });
+    expect(panels()).toEqual({ dock: 'terminal', detail: null });
   });
 
   it('toggles the dock from the rail without touching the detail', () => {
@@ -124,10 +122,10 @@ describe('the side slot', () => {
 
     store.getState().toggleDrawer(TERMINAL);
 
-    expect(panels()).toEqual({ dock: null, detail: 'artifact-document', chip: null });
+    expect(panels()).toEqual({ dock: null, detail: 'artifact-document' });
   });
 
-  it('swaps the chip and the slot when the chip is opened', () => {
+  it('puts a reopened dock tool on top, with the detail beside it', () => {
     store.getState().openDrawer(TERMINAL);
     store.getState().openDrawer(PLAN);
 
@@ -137,7 +135,7 @@ describe('the side slot', () => {
     expect(store.getState().drawerBack).toEqual(PLAN);
   });
 
-  it('brings the chip back on close, then empties the slot', () => {
+  it('closes the detail, then the dock', () => {
     store.getState().openDrawer(TERMINAL);
     store.getState().openDrawer(PLAN);
 
@@ -148,7 +146,7 @@ describe('the side slot', () => {
     expect(slot()).toEqual({ top: null, back: null });
   });
 
-  it('empties the slot and its chip in one step when the work moved elsewhere', () => {
+  it('empties both panels in one step when the work moved elsewhere', () => {
     store.getState().openDrawer(TERMINAL);
     store.getState().openDrawer(PLAN);
 
@@ -167,7 +165,7 @@ describe('the side slot', () => {
     expect(store.getState().drawerBack).toBeNull();
   });
 
-  it('drops the oldest on a third open', () => {
+  it('keeps nothing behind a third reader', () => {
     store.getState().openDrawer(EXPLORE);
     store.getState().openDrawer(PLAN);
     store.getState().openDrawer({
@@ -176,21 +174,20 @@ describe('the side slot', () => {
       payload: { artifactId: brandId<ArtifactId>({ value: 'report-1' }), tab: 'details' },
     });
 
-    expect(store.getState().drawerBack).toEqual(PLAN);
-    store.getState().closeDrawer();
+    expect(store.getState().drawerBack).toBeNull();
     store.getState().closeDrawer();
     expect(store.getState().drawer).toBeNull();
   });
 
-  it('keeps the chip when the drawer in the slot opens again', () => {
+  it('keeps the slot as it is when the drawer in the slot opens again', () => {
     store.getState().openDrawer(EXPLORE);
     store.getState().openDrawer(PLAN);
     store.getState().openDrawer({ ...PLAN });
 
-    expect(slot()).toEqual({ top: 'artifact-document', back: 'conversation' });
+    expect(slot()).toEqual({ top: 'artifact-document', back: null });
   });
 
-  it('brings the chip back when its trigger closes the slot', () => {
+  it('leaves the dock when the detail trigger closes it', () => {
     store.getState().openDrawer(TERMINAL);
     store.getState().toggleDrawer(PLAN);
 
@@ -199,7 +196,7 @@ describe('the side slot', () => {
     expect(slot()).toEqual({ top: 'terminal', back: null });
   });
 
-  it('never chips an artifact drawer when it only changes tab', () => {
+  it('keeps one artifact drawer when it only changes tab', () => {
     const report = brandId<ArtifactId>({ value: 'report-1' });
     store.getState().openDrawer(TERMINAL);
     store.getState().openDrawer({
@@ -213,10 +210,10 @@ describe('the side slot', () => {
       payload: { artifactId: report, tab: 'chat' },
     });
 
-    expect(panels()).toEqual({ dock: 'terminal', detail: 'artifact', chip: null });
+    expect(panels()).toEqual({ dock: 'terminal', detail: 'artifact' });
   });
 
-  it('brings the chip back when the artifact drawer loses its artifact', () => {
+  it('leaves the dock when the artifact drawer loses its artifact', () => {
     const report = brandId<ArtifactId>({ value: 'report-1' });
     store.getState().setFocusedArtifactId(SESSION_ID, report);
     store.getState().openDrawer(TERMINAL);
@@ -231,7 +228,7 @@ describe('the side slot', () => {
     expect(slot()).toEqual({ top: 'terminal', back: null });
   });
 
-  it('keeps the chip when another session changes its artifact focus', () => {
+  it('keeps the dock when another session changes its artifact focus', () => {
     const report = brandId<ArtifactId>({ value: 'report-1' });
     store.getState().setFocusedArtifactId(SESSION_ID, report);
     store.getState().openDrawer({
@@ -243,7 +240,7 @@ describe('the side slot', () => {
 
     store.getState().setFocusedArtifactId(OTHER_SESSION_ID, null);
 
-    expect(panels()).toEqual({ dock: 'terminal', detail: 'artifact', chip: null });
+    expect(panels()).toEqual({ dock: 'terminal', detail: 'artifact' });
   });
 
   it('keeps the open artifact drawer when another session changes its artifact focus', () => {
@@ -260,14 +257,14 @@ describe('the side slot', () => {
     expect(slot()).toEqual({ top: 'artifact', back: null });
   });
 
-  it('never chips a session drawer of another session', () => {
+  it('keeps no history of a session drawer of another session', () => {
     store.getState().openDrawer(PLAN);
     store.getState().openDrawer({ ...EXPLORE, sessionId: OTHER_SESSION_ID });
 
     expect(store.getState().drawerBack).toBeNull();
   });
 
-  it('chips Terminal over a tool of another session, a workspace tool has no session to leave', () => {
+  it('pairs Terminal with a reader of another session, a workspace tool has no session to leave', () => {
     store.getState().openDrawer(TERMINAL);
     store.getState().openDrawer({ ...EXPLORE, sessionId: OTHER_SESSION_ID });
 
@@ -289,7 +286,7 @@ describe('the side slot', () => {
     expect(store.getState().drawer).toBeNull();
   });
 
-  it('keeps another tool in the chip when a second terminal replaces the first', () => {
+  it('keeps the reader beside the dock when a second terminal replaces the first', () => {
     const second: DrawerRequest = {
       ...TERMINAL,
       payload: { terminalId: brandId<TerminalTabId>({ value: 'term-2' }) },
@@ -312,6 +309,6 @@ describe('the side slot', () => {
 
     expect(second).not.toBe(store);
     expect(second.getState().drawerBack).toBeNull();
-    expect(panels()).toEqual({ dock: 'terminal', detail: 'artifact-document', chip: null });
+    expect(panels()).toEqual({ dock: 'terminal', detail: 'artifact-document' });
   });
 });

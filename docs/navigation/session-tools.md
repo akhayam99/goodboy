@@ -39,16 +39,11 @@ under a 1100px window) at the window's right edge on every workspace screen,
 
 `toolStateOf`:
 
-| State   | When                                             | Drawn                                                       |
-| ------- | ------------------------------------------------ | ----------------------------------------------------------- |
-| at rest | closed                                           | the icon                                                    |
-| pressed | it holds the slot                                | `bg-selected`                                               |
-| waiting | it is the tool in the slot's back chip           | a small ring (`ToolWaitingRing`), named `Terminal, waiting` |
-| current | its page is open (Terminal, Browser, Monitoring) | selected, `aria-current="page"`, a click does nothing       |
-
-The rail rings a tool from the same `selectSlotBack` the drawer's back chip reads,
-so they never disagree: a reader or form in the chip rings nothing, and a pressed
-tool never rings.
+| State   | When                                             | Drawn                                                 |
+| ------- | ------------------------------------------------ | ----------------------------------------------------- |
+| at rest | closed                                           | the icon                                              |
+| pressed | it holds the slot                                | `bg-selected`                                         |
+| current | its page is open (Terminal, Browser, Monitoring) | selected, `aria-current="page"`, a click does nothing |
 
 ### Signals
 
@@ -60,8 +55,8 @@ tool never rings.
   `StatusDot` instead (`tool-warning`), since a zero badge draws nothing. Count and
   fact come from `monitoringSignalOf`, on the same `monitoringSignal` as the left
   door.
-- The signal dot and the waiting ring anchor to the 16px glyph (`tool-glyph`,
-  `TOOL_CORNER_SLOT`), at its top end and top start; the port count sits on the
+- The signal dot anchors to the 16px glyph (`tool-glyph`,
+  `TOOL_CORNER_SLOT`), at its top end; the port count sits on the
   button's corner, never over the label. A dot sits with any state and keeps its
   reason in the accessible name: updating, failed, changed, or a finished script or
   command.

@@ -4,14 +4,12 @@ import type { SessionTool } from './sessionTools';
 import type { ToolCount } from './ToolCount';
 import { ToolCountMark } from './ToolCountMark';
 import { ToolSignalDot } from './ToolSignalDot';
-import { ToolWaitingRing } from './ToolWaitingRing';
 import { toolStateOf } from './toolStateOf';
 import type { ToolSignal } from './ToolSignal';
 
 type Props = {
   readonly tool: SessionTool;
   readonly isOpen: boolean;
-  readonly isWaiting: boolean;
   readonly isCurrent?: boolean;
   readonly isDisabled?: boolean;
   readonly isCaptioned?: boolean;
@@ -29,7 +27,6 @@ const QUIET_TILE =
 export const SessionToolButton = ({
   tool,
   isOpen,
-  isWaiting,
   isCurrent = false,
   isDisabled = false,
   isCaptioned = true,
@@ -41,10 +38,9 @@ export const SessionToolButton = ({
   onToggle,
 }: Props) => {
   const name = tool.fullLabel ?? tool.label;
-  const state = toolStateOf({ isOpen, isWaiting, isCurrent });
+  const state = toolStateOf({ isOpen, isCurrent });
   const named = fact === null ? name : `${name}, ${fact}`;
-  const stateName = state === 'waiting' ? `${named}, waiting` : named;
-  const label = signal === null ? stateName : `${stateName}, ${signal.note}`;
+  const label = signal === null ? named : `${named}, ${signal.note}`;
   const tone = navEntryToneOf({ icon: tool.icon });
   const isLit = isOpen || isCurrent;
   const isInert = isCurrent || isDisabled;
@@ -76,7 +72,6 @@ export const SessionToolButton = ({
           data-slot="tool-glyph"
           className="pointer-events-none absolute left-1/2 top-1/2 size-4 -translate-x-1/2 -translate-y-1/2"
         >
-          {state === 'waiting' ? <ToolWaitingRing /> : null}
           {signal === null ? null : <ToolSignalDot signal={signal} />}
         </span>
         {count === null ? null : <ToolCountMark count={count} />}

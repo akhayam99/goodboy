@@ -2,7 +2,7 @@ import {
   AUTO_TURN_CEILING_USD,
   buildArtifactBodiesBlock,
   buildArtifactLedgerBlock,
-  buildDeliveryText,
+  buildDeliveryParts,
   buildMountsLine,
   buildStateDigest,
   isResultsPayload,
@@ -14,6 +14,7 @@ import {
   type AutoSubstepRole,
   type DeliveryArtifactBody,
   type DigestDelegation,
+  type LeadDeliveryPart,
   type PickableMount,
 } from '@goodboy/core/auto';
 import {
@@ -186,7 +187,7 @@ export const buildDeliveryMessage = async ({
   rows,
   mounts,
   nowMs,
-}: BuildDeliveryMessageParams): Promise<string> => {
+}: BuildDeliveryMessageParams): Promise<ReadonlyArray<LeadDeliveryPart>> => {
   const entries = await treeArtifacts({ db, treeId: tree.id });
   const budget = await treeBudget({
     db,
@@ -197,7 +198,7 @@ export const buildDeliveryMessage = async ({
   const digest = await digestDelegations({ db, delegations, nowMs });
   const bodies = await artifactBodies({ db, tree, rows });
   const waiting = await waitingReturnsOf({ db, tree });
-  return buildDeliveryText({
+  return buildDeliveryParts({
     waiting,
     ledgerBlock: buildArtifactLedgerBlock({ entries, nowMs, generation: tree.generation }),
     budgetLine: budget === null ? '' : budget.promptLine,

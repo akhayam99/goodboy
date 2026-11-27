@@ -14,12 +14,14 @@ import { runProviderPool } from '../../../features/workflows/runProviderPool';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { KIND_TO_ROLE } from '../../../features/session/agent-kind';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
+import { joinDeliveryParts } from '@goodboy/core/auto';
 import {
-  buildContextPreamble,
   buildPriorTurnsBlock,
+  contextPreambleParts,
   getModelContextWindow,
   PRIOR_TURNS_BUDGET_TOKENS,
 } from './preamble';
+import { prepareLeadTurn } from './leadDelivery/prepareLeadTurn';
 import { handoffNoticeMessage } from './handoffNoticeMessage';
 import { movedProviderOf } from './movedProviderOf';
 import { attachmentAbsolutePathOf } from '../attachments/attachmentAbsolutePathOf';
@@ -91,20 +93,22 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
   const earlyAgentKind = turnAgentKind;
   const turnRole = phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind];
   const audience = await resolveTurnAudience({ sessionId, role: turnRole });
-  const contextPreamble = buildContextPreamble(
-    sharedSlots,
-    briefSlotsOf({
+  const slotFilter = briefSlotsOf({
+    input: ctx.input,
+    confinedRole: confinedRoleOf({
       input: ctx.input,
-      confinedRole: confinedRoleOf({
-        input: ctx.input,
-        agent: agentRowEarly,
-        childTurn: ctx.childTurn,
-      }),
+      agent: agentRowEarly,
       childTurn: ctx.childTurn,
-      slots: audience.slots,
     }),
-    audience.items,
-  );
+    childTurn: ctx.childTurn,
+    slots: audience.slots,
+  });
+  const preambleParts = contextPreambleParts({
+    sharedSlots,
+    contextItems: audience.items,
+    ...(slotFilter !== undefined && { slotFilter }),
+  });
+  const contextPreamble = joinDeliveryParts({ parts: preambleParts });
 
   const childRoutingBlock = composeChildRoutingPrompt({
     role: turnRole,
@@ -202,7 +206,19 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
     priorTurns: priorTurns?.text ?? '',
     verbosity: verbosityHint,
   };
-  resolvedPrompt = composeHandoffBody(handoffBodyLayers);
+  const leadTurn = await prepareLeadTurn({
+    get,
+    input: ctx.input,
+    agentId: activeAgentId,
+    agent: agentRowEarly,
+    isLeadAgent: earlyAgentKind === 'auto',
+    provider,
+    model,
+    runId: ctx.runId,
+    layers: handoffBodyLayers,
+    preamble: preambleParts,
+  });
+  resolvedPrompt = leadTurn?.prompt ?? composeHandoffBody(handoffBodyLayers);
 
   const isMovedTurn =
     ctx.isHandoffTurn ||
@@ -261,6 +277,7 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
     goalAttachments,
     verbosityHint,
     handoffBodyLayers,
+    leadTurn,
     resolvedPrompt,
   };
 };

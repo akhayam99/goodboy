@@ -1,5 +1,6 @@
 import type { ChildNeeds } from './closing';
 import { substepNeedsLine } from './digest';
+import { joinDeliveryParts, type LeadDeliveryPart } from './leadDeliveryPart';
 import { AUTO_TREE_LIMITS } from './limits';
 import { oneLine } from './oneLine';
 import {
@@ -264,7 +265,18 @@ const userBlock = ({ users }: UserBlockParams): string | null => {
   return ['MESSAGES FROM THE USER, OLDEST FIRST', ...lines].join('\n');
 };
 
-export const buildDeliveryText = ({
+type NewsPartParams = {
+  readonly name: string;
+  readonly text: string | null;
+};
+
+const newsPart = ({ name, text }: NewsPartParams): LeadDeliveryPart => ({
+  name,
+  kind: 'news',
+  text: text ?? '',
+});
+
+export const buildDeliveryParts = ({
   ledgerBlock,
   budgetLine,
   mountsLine,
@@ -274,7 +286,7 @@ export const buildDeliveryText = ({
   childLabels,
   isRestart,
   waiting = [],
-}: BuildDeliveryParams): string => {
+}: BuildDeliveryParams): ReadonlyArray<LeadDeliveryPart> => {
   const results: ResultsPayload[] = [];
   const questions: QuestionPayload[] = [];
   const refusals: RefusalPayload[] = [];
@@ -299,18 +311,20 @@ export const buildDeliveryText = ({
       users.push({ id: row.id, payload: value });
     }
   }
-  const blocks = [
-    isRestart ? AUTO_RESTART_NOTICE : null,
-    waitingBlock({ waiting, childLabels }),
-    ledgerBlock,
-    budgetLine,
-    mountsLine,
-    digestBlock,
-    refusalsBlock({ payloads: refusals }),
-    resultsBlock({ payloads: results, childLabels }),
-    artifactsBlock,
-    questionsBlock({ payloads: questions }),
-    userBlock({ users }),
+  return [
+    newsPart({ name: 'restart', text: isRestart ? AUTO_RESTART_NOTICE : null }),
+    newsPart({ name: 'waiting', text: waitingBlock({ waiting, childLabels }) }),
+    { name: 'ledger', kind: 'list', text: ledgerBlock },
+    { name: 'budget', kind: 'state', text: budgetLine },
+    { name: 'mounts', kind: 'state', text: mountsLine },
+    { name: 'digest', kind: 'list', text: digestBlock },
+    newsPart({ name: 'refusals', text: refusalsBlock({ payloads: refusals }) }),
+    newsPart({ name: 'results', text: resultsBlock({ payloads: results, childLabels }) }),
+    newsPart({ name: 'artifacts', text: artifactsBlock }),
+    newsPart({ name: 'questions', text: questionsBlock({ payloads: questions }) }),
+    newsPart({ name: 'user', text: userBlock({ users }) }),
   ];
-  return blocks.filter((block): block is string => block !== null && block !== '').join('\n\n');
 };
+
+export const buildDeliveryText = ({ ...params }: BuildDeliveryParams): string =>
+  joinDeliveryParts({ parts: buildDeliveryParts(params) });
