@@ -234,14 +234,16 @@ describe('LeadTree', () => {
     expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
   });
 
-  it('draws a note quieter than an agent, two lines at most, with its turn on hover', () => {
+  it('draws a read note as one quiet line with no right column, and keeps its turn for the hover', () => {
     const { container } = render(<Harness items={[implementer, { ...readNote, depth: 1 }]} />);
-    const note = container.querySelector('[data-lead-tree-note-text]');
-    expect(note?.className).toContain('line-clamp-2');
-    expect(note?.className).toContain('text-faint-foreground');
-    expect(note?.className).not.toContain('text-foreground ');
+    expect(container.querySelector('[data-lead-tree-note-text]')?.textContent).toBe(
+      'Also cover the batch endpoint',
+    );
     expect(container.querySelector('[data-lead-tree-note-word]')).toBeNull();
-    expect(container.querySelector('[data-lead-tree-title]')?.className).toContain('text-row');
+    expect(screen.getByRole('treeitem', { name: /^Your note/ }).getAttribute('aria-label')).toBe(
+      'Your note, Also cover the batch endpoint, Read at turn 3',
+    );
+    expect(container.querySelector('[data-lead-tree-title]')).not.toBeNull();
   });
 
   it('says a queued note is not read yet', () => {
