@@ -8,10 +8,9 @@ import { useHomeFacts } from '../hooks/useHomeFacts';
 import { useLongRunning } from '../hooks/useLongRunning';
 import { useMergedWeek } from '../hooks/useMergedWeek';
 import { HiddenTray } from '../layout/HiddenTray';
-import type { WidgetGesture } from '../layout/layoutTypes';
-import { neighbourOf } from '../layout/neighbourOf';
 import { sizesOf } from '../layout/sizesOf';
 import { useFocusAfterGesture } from '../hooks/useFocusAfterGesture';
+import { useHomeEditing } from '../hooks/useHomeEditing';
 import { useHomeLayout } from '../hooks/useHomeLayout';
 import { useHomeWidgetVerbs } from '../hooks/useHomeWidgetVerbs';
 import { StartFirstSession } from '../StartFirstSession';
@@ -50,14 +49,7 @@ export const HomePage = ({ workspaceId }: Props) => {
   });
   const isLongShown = ids.includes('longRunning');
   const isEmpty = !facts.isLoading && !facts.hasSessions;
-  const hide = ({ id }: WidgetGesture) => {
-    focusAfter({ target: neighbourOf({ ids, id }) ?? 'tray' });
-    layout.hide({ id });
-  };
-  const show = ({ id }: WidgetGesture) => {
-    layout.show({ id });
-    focusAfter({ target: id });
-  };
+  const { editing, hide, show } = useHomeEditing({ layout, ids, focusAfter });
   useHomeWidgetVerbs({ isEnabled: layout.isLoaded, onHide: hide, onShow: show });
   return (
     <PaneShell page="home" scroll="body" title={NAMES.home}>
@@ -72,7 +64,7 @@ export const HomePage = ({ workspaceId }: Props) => {
         <HomeGrid
           ids={ids}
           sizes={sizes}
-          onHide={layout.isLoaded ? hide : undefined}
+          editing={layout.isLoaded ? editing : undefined}
           render={({ id, size }) => {
             switch (id) {
               case 'sessionsToFinish':

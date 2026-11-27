@@ -2,22 +2,27 @@ import { useEffect, useState } from 'react';
 import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../../store';
 import { MainRegion } from '../../../../MainRegion';
-import { mockSceneIpc } from '../../mockSceneIpc';
 import { WORKSPACE_ID, seedBoardScene } from '../../BoardScene';
 import { seedPolicyScene } from '../../providerPolicySeed';
+import { installSceneDatabase } from '../../sceneDatabase';
 import { StudioFrame } from '../../StudioFrame';
 import { seedStudioChrome } from '../../shellChrome';
 
 type Props = {
   readonly theme: 'dark' | 'light';
+  readonly layout?: string;
 };
 
-export const HomePlaceScene = ({ theme }: Props) => {
+export const HomePlaceScene = ({ theme, layout }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     applyDocumentTheme({ theme });
-    mockSceneIpc(() => undefined);
+    installSceneDatabase(
+      layout === undefined
+        ? {}
+        : { workspaceValues: { [WORKSPACE_ID]: { 'home.layout': layout } } },
+    );
     seedBoardScene();
     seedPolicyScene({ workspaceId: WORKSPACE_ID });
     seedStudioChrome();
@@ -26,7 +31,7 @@ export const HomePlaceScene = ({ theme }: Props) => {
       openHomeWorkspaceId: WORKSPACE_ID,
     });
     setIsReady(true);
-  }, [theme]);
+  }, [theme, layout]);
 
   if (!isReady) {
     return null;
