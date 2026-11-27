@@ -1216,6 +1216,13 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
   it('passes the model default effort when no override is set', async () => {
     setup(useAppStore);
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-sonnet-4-6',
+      reason: 'preference',
+      fallbackUsed: false,
+    });
 
     await useAppStore
       .getState()

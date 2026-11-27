@@ -47,6 +47,13 @@ the anthropic catalog is `providers/claude/catalog.ts`.
 - `cursor/agent-model-ids.test.ts` checks the chosen Cursor slugs against
   `cursor/agent-model-ids.ts`
 
+### Claude models
+
+- Floors and default efforts follow Claude Code's model config page. Opus 5.5,
+  Fable 5.2, Sonnet 5.5 and Haiku 5.5 default to `medium`
+- Sonnet 4.5 has no effort levels. Anthropic retires it on November 30, 2026, and
+  it stays `legacy` until it leaves the catalog
+
 ### Codex models
 
 - `gpt-6.2-sol` is the Codex turn default and the newest `mid` model; its

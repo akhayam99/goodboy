@@ -100,6 +100,7 @@ describe('outdatedCliModels', () => {
       learned: [],
     });
     expect(gates.map((gate) => gate.model.key)).toEqual([
+      'fable-5.2',
       'fable-5.1',
       'opus-5.5',
       'sonnet-5.5',
@@ -109,7 +110,7 @@ describe('outdatedCliModels', () => {
 
   it('is empty on a current CLI', () => {
     expect(
-      outdatedCliModels({ provider: 'anthropic', installedVersion: '2.1.300', learned: [] }),
+      outdatedCliModels({ provider: 'anthropic', installedVersion: '2.1.321', learned: [] }),
     ).toEqual([]);
   });
 });
