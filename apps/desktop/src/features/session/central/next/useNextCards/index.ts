@@ -18,7 +18,6 @@ type Params = {
 type Result = {
   readonly cards: ReadonlyArray<ActionCardModel>;
   readonly actionsFor: ActionCardActions['actionsFor'];
-  readonly openFor: ActionCardActions['openFor'];
   readonly settled: ReadonlyArray<SettledRow>;
 };
 
@@ -42,7 +41,7 @@ export const useNextCards = ({ session, model, autoTargets }: Params): Result =>
     () => transcriptOwnedProjectIds({ proposals: transcriptProposals }),
     [transcriptProposals],
   );
-  const { actionsFor, isHidden, openFor } = useActionCardActions({ session });
+  const { actionsFor, isHidden } = useActionCardActions({ session });
 
   const cards = useMemo(
     () =>
@@ -58,5 +57,5 @@ export const useNextCards = ({ session, model, autoTargets }: Params): Result =>
     [autoTargets, isHidden, model.owners, suggestions, transcriptOwned],
   );
 
-  return { cards, actionsFor, openFor, settled };
+  return { cards, actionsFor, settled };
 };

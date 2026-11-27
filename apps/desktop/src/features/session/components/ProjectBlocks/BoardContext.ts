@@ -19,7 +19,6 @@ export type BoardContextValue = Readonly<{
   cardsByRowId: ReadonlyMap<string, ReadonlyArray<ActionCardModel>>;
   mergeCard: ActionCardModel | null;
   actionsFor: ActionCardActions['actionsFor'];
-  openFor: ActionCardActions['openFor'];
   removal: RemoveWorktrees;
   shownAskIds: ReadonlySet<string>;
   permissionMount: Readonly<{ mountId: string | null }> | null;
