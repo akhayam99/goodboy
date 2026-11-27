@@ -12,6 +12,28 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.43.2
+
+Move dock panels with the keyboard, drag any tab out of a folded cell, and read your projects without extra asks.
+
+### Improved
+
+#### Move dock panels by keyboard
+<!-- gb area=app pr=2421 -->
+
+Tab reaches a panel's head. Enter or Space lifts it, the arrows step through the places in screen order, Enter drops it and Esc cancels. Each step is read aloud, and focus lands on the moved panel.
+
+#### Drag any tab from a folded cell
+<!-- gb area=app pr=2421 -->
+
+When a narrow window folds tools into one cell, every tab drags on its own and moves only that tool. On a very narrow window one tool lies over the page and the others become its tabs. A new session starts from the last layout you left.
+
+### Fixed
+
+- The Lead reads your projects without asking, and a permission you allow for the session stays allowed. <!-- gb area=agents pr=2416 -->
+- Full access runs without permission asks. <!-- gb area=agents pr=2416 -->
+- Permission asks name what the agent wants to do: edit, read or run a command. <!-- gb area=agents pr=2416 -->
+
 ## Goodboy v0.43.1
 
 The Network tab becomes a request table, tools in the dock merge into tabs by drag, and the Browser clears one site's data.

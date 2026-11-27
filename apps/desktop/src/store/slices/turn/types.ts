@@ -1,4 +1,4 @@
-import type { UserOrigin } from '@goodboy/core/auto';
+import type { LeadDeliveryPart, UserOrigin } from '@goodboy/core/auto';
 import type {
   AgentId,
   AttachmentInput,
@@ -59,6 +59,7 @@ export type SendTurnInput = Readonly<{
   captureMode?: 'new' | 'revise';
   briefVersion?: number;
   content: string;
+  leadDelivery?: ReadonlyArray<LeadDeliveryPart>;
   attachments?: ReadonlyArray<AttachmentInput>;
   storedAttachments?: ReadonlyArray<MessageAttachment>;
   override?: TurnProviderOverride;

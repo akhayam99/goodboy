@@ -96,6 +96,16 @@ describe('buildAutoSystemPrompt', () => {
     expect(prompt).toContain('never edit files');
   });
 
+  it('sends a question that needs the code to a scout and keeps Auto out of the code', () => {
+    const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true });
+
+    expect(prompt).toContain('When it needs the code, send a scout one narrow question.');
+    expect(prompt).toContain('Never read or search the code, only attached files.');
+    for (const invitation of ['Read the code', 'read tools', 'Your own reads', 'read it fast']) {
+      expect(prompt).not.toContain(invitation);
+    }
+  });
+
   it('speaks of no block while delegation is off', () => {
     const prompt = buildAutoSystemPrompt({ isDelegationEnabled: false });
 

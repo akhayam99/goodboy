@@ -1,6 +1,6 @@
 # The right drawer
 
-> **Read this when** you change the drawer containers, a drawer's width or tier, when it pushes or lies over the page, its two slots and back chip, its header, focus and Esc, or a floating surface near it. **Not for** the grid of open tools ([dock-grid.md](dock-grid.md)), what one kind shows ([drawer-kinds.md](drawer-kinds.md)) or a parked drawer ([surfaces.md](surfaces.md#the-dock-follows-the-page)).
+> **Read this when** you change the drawer containers, a drawer's width or tier, when it pushes or lies over the page, its two slots, its header, focus and Esc, or a floating surface near it. **Not for** the grid of open tools ([dock-grid.md](dock-grid.md)), what one kind shows ([drawer-kinds.md](drawer-kinds.md)) or a parked drawer ([surfaces.md](surfaces.md#the-dock-follows-the-page)).
 
 Every drawer is one primitive, `DrawerColumn` from `@goodboy/ui`, never a split
 inside a pane. `AppShell` puts one beside the page container, and a studio body one
@@ -168,18 +168,16 @@ edge together, and the rail stays live.
   `DRAWER_EXIT_MAX_ELEMENTS` (2000) elements, closes at once with no exit.
 - Reopening during the exit cancels it and shows the drawer as it stands.
 
-## Slots and the back chip
+## Slots
 
-### A drawer's up is its back chip, never a trail
+### A drawer keeps no trail
 
-A drawer is page state, not an address, so it draws no breadcrumb. The drawer it
-replaced waits in a back chip leading the header row (`DrawerFrame` draws
-`DrawerBackChip` from `DrawerHost` through `DrawerBackChipContext`): an arrow, the
-kind and the title (**Plan · Add tax to the checkout total**, **Terminal**), at most
-half the header, the title truncating first (`app/hooks/useSlotBackChip`,
-`slotChipLabelOf`). A click swaps the two. Without a chip, a drawer opened from
-another keeps its quiet back row (`DrawerBackLink`, `DrawerFrame`'s `back`), such
-as **Back to scripts** on a script run.
+A drawer is page state, not an address, so it draws no breadcrumb and no back
+button for the drawer it replaced. A dock head shows its tab strip and Close, never
+a leftover back button. A drawer reached from another keeps its quiet back row
+(`DrawerBackLink`, `DrawerFrame`'s `back`) only when it steps inside one panel or
+opens a named place, such as **Back to answer** inside Ask, **Back to scripts** on a
+script run or **Back to comment** on Fix comments.
 
 ### Two slots per window
 
@@ -187,9 +185,14 @@ The `drawer` slice holds `drawer` and `drawerBack`, each `{ kind, sessionId,
 payload }` or null. Only Terminal and Browser, the workspace tools, may carry
 `sessionId: null`. A second window has its own store and slot.
 
+`drawerBack` holds only the other half of a pair on screen: a workspace tool beside
+a reader, or the agent beside the pull request on the Desk (`heldBack`, applied in
+`settledSlot`). Anything else the slot replaced is gone, and a tool still waits in
+the grid.
+
 **Different classes are both on screen.** When one is a workspace tool and the other
 is not (`isPairedSlot`), the tool shows in the dock (`selectDockDrawer`) and the
-other in the detail (`selectDetailDrawer`, its session only), with no chip.
+other in the detail (`selectDetailDrawer`, its session only).
 
 - An open replaces only the panel of its class (`slotAfterOpen`); each X closes only
   itself (`closeDrawerEntry`); a rail button toggles only its own panel
@@ -200,26 +203,22 @@ other in the detail (`selectDetailDrawer`, its session only), with no chip.
 
 **The same class shares the slot.**
 
-1. `openDrawer` puts the request in the slot and what it replaced in `drawerBack`
-   (`slotAfterOpen`), so a third open drops the oldest (a tool still waits in the
-   grid).
+1. `openDrawer` puts the request in the slot and drops what it replaced.
 2. Reopening the drawer in the slot, an artifact on another tab included
-   (`slotKey`), keeps the chip. A drawer of another session clears it, unless one of
-   the two is a workspace tool (`sharesSlot`).
-3. A second Terminal replaces the first and keeps the chip, so hiding Terminal never
-   brings back an older terminal.
-4. `closeDrawer` brings `drawerBack` back and empties it, so Escape, the X, the
-   trigger again (`toggleDrawer`), a crashed drawer's leave and ⌘⇧W walk the same two
-   steps.
+   (`slotKey`), keeps the slot as it is. A drawer of another session clears the
+   other half, unless one of the two is a workspace tool (`sharesSlot`).
+3. A second Terminal replaces the first, so hiding Terminal never brings back an
+   older terminal.
+4. `closeDrawer` closes the top; the other half of a pair stays shown.
 5. `clearDrawer` empties both, for a caller whose work moved elsewhere (a plan
    approved onto the run page, View transcript, Write title and goal from linked
-   work); the chip does not come back.
+   work).
 
-Archiving or deleting a session drops its Terminal or Browser dock from slot and
-chip (`slotAfterSessionGone`). A waiting tool keeps its state: Terminal its shell,
+Archiving or deleting a session drops its Terminal or Browser dock from the slot
+(`slotAfterSessionGone`). A waiting tool keeps its state: Terminal its shell,
 Explore its open folders.
 
-### The drawer is part of the entry's focus; the chip is not
+### The drawer is part of the entry's focus
 
 - A forward move (crumb, places rail, Sessions, Search or run, a child such as an
   agent) arrives with the drawer closed; Back and Forward bring it back; Escape and
@@ -231,9 +230,8 @@ Explore its open folders.
   ([surfaces.md](surfaces.md#the-dock-follows-the-page)): kept on Back to an entry
   with no drawer (`keptTool`), parked with the grid when you leave, and the Board and
   the draft keep their own (`dockAfterPlace` in `applyLocation`).
-- A tool in the chip stays too: over a reader it comes back into the slot, under a
-  tool it stays in the chip (`backAfterPlace`). Leaving the session empties both of
-  its session tools; Back brings the drawer back.
+- A tool beside a reader stays too (`backAfterPlace`). Leaving the session empties
+  both of its session tools; Back brings the drawer back.
 - A reader, an item or a form never stays. A studio over the session parks a session
   drawer in the detail slot (`isDetailParked` from `useShellRight`).
 

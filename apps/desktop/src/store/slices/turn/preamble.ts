@@ -6,6 +6,7 @@ import {
   SLOT_LABELS,
   type SlotKey,
 } from '@goodboy/core/context';
+import type { LeadDeliveryPart } from '@goodboy/core/auto';
 import { DECISION_FIRST_RULE } from '@goodboy/core/decisionFirstRule';
 import type { ContextSlot, SessionContextItem, TurnEvent } from '@goodboy/types';
 import { contextWindowFor } from '../../../features/session/contextWindowFor';
@@ -17,16 +18,22 @@ const CONTEXT_MARKER_HINT =
   '`<<ctx-question suggestions="a | b | c" recommended="a" select="one">>question<</ctx-question>>` (the opening tag ends with exactly two angle brackets, `>>`, and the block closes with `<</ctx-question>>`) when the user must answer first: self-contained, what and why in one sentence; `suggestions` = 2 to 4 pipe-separated options when bounded; `recommended` always set, verbatim from suggestions when present; `select="one"` (default, radio) when exactly one option applies, `select="many"` (checkbox) when the user can combine several. A free-text answer stays available in both modes. Add `blocking="true"` only when the answer changes WHAT the output says and cannot be settled from the available material, for example when the goal has two readings that produce different results, two sources contradict each other, or something is needed that only a person has. A preference with a defensible default is never blocking: answer it yourself and record the assumption.\n' +
   DECISION_FIRST_RULE;
 
-export const buildContextPreamble = (
-  sharedSlots: ReadonlyArray<ContextSlot>,
-  slotFilter?: ReadonlyArray<SlotKey>,
-  contextItems: ReadonlyArray<SessionContextItem> = [],
-): string => {
-  const parts: string[] = [];
+type PreamblePartsParams = Readonly<{
+  sharedSlots: ReadonlyArray<ContextSlot>;
+  slotFilter?: ReadonlyArray<SlotKey>;
+  contextItems?: ReadonlyArray<SessionContextItem>;
+}>;
+
+export const contextPreambleParts = ({
+  sharedSlots,
+  slotFilter,
+  contextItems = [],
+}: PreamblePartsParams): ReadonlyArray<LeadDeliveryPart> => {
   const enabledSlots = sharedSlots.filter((slot) => slot.enabled !== false);
-  const filtered = slotFilter
-    ? enabledSlots.filter((slot) => (slotFilter as ReadonlyArray<string>).includes(slot.key))
-    : enabledSlots;
+  const filtered =
+    slotFilter === undefined
+      ? enabledSlots
+      : enabledSlots.filter((slot) => (slotFilter as ReadonlyArray<string>).includes(slot.key));
   const rendered = filtered.length > 0 ? serializeSlotsBudgeted({ slots: filtered }) : '';
   if (import.meta.env.DEV && rendered.length > PREAMBLE_SLOT_TOTAL_BUDGET * 0.8) {
     const byKey = new Map<SlotKey, ContextSlot>();
@@ -59,19 +66,22 @@ export const buildContextPreamble = (
       slotChars,
     });
   }
-  if (rendered.length > 0) {
-    parts.push('## shared context (already loaded by orchestrator, do not re-derive)\n' + rendered);
-  }
-  if (contextItems.length > 0) {
-    parts.push(
-      [
-        '## notes for your role',
-        ...contextItems.map((item) => `- ${item.title}: ${item.text}`),
-      ].join('\n'),
-    );
-  }
-  parts.push(CONTEXT_MARKER_HINT);
-  return parts.join('\n\n');
+  const shared =
+    rendered.length > 0
+      ? '## shared context (already loaded by orchestrator, do not re-derive)\n' + rendered
+      : '';
+  const notes =
+    contextItems.length > 0
+      ? [
+          '## notes for your role',
+          ...contextItems.map((item) => `- ${item.title}: ${item.text}`),
+        ].join('\n')
+      : '';
+  return [
+    { name: 'shared', kind: 'state', text: shared },
+    { name: 'notes', kind: 'state', text: notes },
+    { name: 'markers', kind: 'state', text: CONTEXT_MARKER_HINT },
+  ];
 };
 
 const PRIOR_TURNS_HEADER = '## prior turns (this conversation, most recent last)';

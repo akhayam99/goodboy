@@ -3,7 +3,6 @@
 import { Plus } from '../icons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { DrawerBackChipContext } from '../drawerBackChipContext';
 import { DrawerFrame } from './DrawerFrame';
 import { IconButton } from './IconButton';
 
@@ -73,58 +72,13 @@ describe('DrawerFrame head', () => {
     expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();
   });
 
-  it('leads the head with the back chip and drops the back row while the chip holds one', () => {
-    const onBack = vi.fn();
-    render(
-      <DrawerBackChipContext.Provider
-        value={{ kind: 'Plan', title: 'Add tax to the checkout total', onBack }}
-      >
-        <DrawerFrame
-          title="Terminal"
-          back={{ label: 'Back to Explore', onBack: vi.fn() }}
-          onClose={vi.fn()}
-        >
-          body
-        </DrawerFrame>
-      </DrawerBackChipContext.Provider>,
-    );
-
-    expect(headButtons()).toEqual(['Back to Plan · Add tax to the checkout total', 'Close']);
-    expect(screen.queryByRole('button', { name: 'Back to Explore' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /^Back to Plan/ }));
-    expect(onBack).toHaveBeenCalledTimes(1);
-  });
-
-  it('leads a dock head with the back chip too', () => {
-    const onBack = vi.fn();
-    render(
-      <DrawerBackChipContext.Provider value={{ kind: 'Plan', title: 'Add tax', onBack }}>
-        <DrawerFrame isDock title="Scripts" onClose={vi.fn()}>
-          body
-        </DrawerFrame>
-      </DrawerBackChipContext.Provider>,
-    );
-
-    expect(headButtons()).toEqual(['Back to Plan · Add tax', 'Close']);
-    fireEvent.click(screen.getByRole('button', { name: /^Back to Plan/ }));
-    expect(onBack).toHaveBeenCalledTimes(1);
-  });
-
-  it('keeps a subview back row and lets Escape step back before the chip', () => {
+  it('lets Escape step back inside a subview before it closes the drawer', () => {
     const onBack = vi.fn();
     const onClose = vi.fn();
     render(
-      <DrawerBackChipContext.Provider
-        value={{ kind: 'Plan', title: 'Add tax to the checkout total', onBack: vi.fn() }}
-      >
-        <DrawerFrame
-          title="Ask"
-          back={{ label: 'Back to answer', onBack, isSubview: true }}
-          onClose={onClose}
-        >
-          body
-        </DrawerFrame>
-      </DrawerBackChipContext.Provider>,
+      <DrawerFrame title="Ask" back={{ label: 'Back to answer', onBack }} onClose={onClose}>
+        body
+      </DrawerFrame>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to answer' }));

@@ -8,6 +8,7 @@ export type RoleNeed = {
   readonly autoReason?: string;
   readonly doNot: string;
   readonly autoDoNot?: string;
+  readonly autoDoNotInstead?: string;
   readonly drivers: ReadonlyArray<RoleNeedDriver>;
 };
 
@@ -19,6 +20,7 @@ export const ROLE_NEEDS: ReadonlyArray<RoleNeed> = [
     autoReason:
       'The task reads the commits, pull request, review threads or checks of a branch: name the mounts in "facts".',
     doNot: 'The goal names the file. Your own reads answer it.',
+    autoDoNotInstead: 'What you already have answers it.',
     drivers: ['auto', 'orchestrator'],
   },
   {
@@ -111,8 +113,9 @@ const roleNeedLine = ({ row, driver }: RoleNeedLineParams): string => {
   const isAuto = driver === 'auto';
   const reason =
     isAuto && row.autoReason !== undefined ? `${row.reason} Or: ${row.autoReason}` : row.reason;
+  const baseDoNot = isAuto ? (row.autoDoNotInstead ?? row.doNot) : row.doNot;
   const doNot =
-    isAuto && row.autoDoNot !== undefined ? `${row.doNot} Or: ${row.autoDoNot}` : row.doNot;
+    isAuto && row.autoDoNot !== undefined ? `${baseDoNot} Or: ${row.autoDoNot}` : baseDoNot;
   return `- ${row.role}. Add it when: ${reason} Do not add it when: ${doNot}`;
 };
 

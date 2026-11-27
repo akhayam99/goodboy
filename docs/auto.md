@@ -12,13 +12,13 @@ under [auto/](auto/) that hold the detail.
 
 ## How the Lead works
 
-Auto is the agent the screens call the Lead. It answers questions itself and
-hands the work it cannot do alone to agents of the right role, with a model it
-picks for each. It waits for their results, reads them and goes on. It is always
-on, with no switch to turn it off. An Auto conversation is a row of the session's
-one **Runs** entry ("Lead", or "Lead · plan X" when it follows a preset). Auto
-starts agents of the role it picks (`AUTO_ROLE_WHEN`), and agents started by
-hand keep working.
+Auto is the agent the screens call the Lead. It answers from what it already
+has, sends a Scout when an answer needs the code, and hands the rest of the work
+to agents of the right role, with a model it picks for each. It waits for their
+results, reads them and goes on. It is always on, with no switch to turn it off.
+An Auto conversation is a row of the session's one **Runs** entry ("Lead", or
+"Lead · plan X" when it follows a preset). Auto starts agents of the role it
+picks (`AUTO_ROLE_WHEN`), and agents started by hand keep working.
 
 Each Lead is an Auto tree: the root agent (role `auto`) and the children it
 delegated, created at the start. Its phase, generation, spend cap and permission
@@ -153,3 +153,23 @@ when a writer starts, with a backstop when its work lands. See
 Auto runs on every provider that can confine a read-only agent
 (`AUTO_OWN_PROVIDERS`), never on the opencode family, and a writing child only on
 Claude and Codex. See [auto/providers.md](auto/providers.md).
+
+## The Lead's model and tools
+
+On Claude a new Lead starts on Sonnet 5.5 at medium effort (the `auto` slot is
+the `standard` rung of the effort ladder). A model set for the Lead role in
+Settings, or picked on one Lead, wins. The pick is saved on the agent row.
+`startAutoTurn` reads the session's saved picks (`loadAgentPicks`) before every
+Lead turn, so the pick holds after a restart. When that read fails no turn is
+sent and the run is blocked with the error. The read counts toward the 20 second
+start deadline: a read that is still out then refuses the turn before anything
+is sent, and its late answer starts nothing. A read that began before a pick was
+saved is dropped (`sessionReads.picks`), so a cleared pick never comes back.
+
+The Lead does not read code. Its prompt (`packages/core/src/auto/prompt.ts`)
+lets it open attached files only, and a question that needs the code goes to a
+Scout, whose report comes back to the Lead. On Claude its one tool is `Read`
+(`read_only_claude_tools` in `providers/cli_args.rs`), which opens the attached
+files ([auto/messages.md](auto/messages.md)). The other reading roles also get
+Grep and Glob. On the other providers the CLI keeps its read-only mode and the
+prompt is what keeps the Lead out of the code.

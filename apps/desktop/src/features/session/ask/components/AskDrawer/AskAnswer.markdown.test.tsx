@@ -71,6 +71,32 @@ describe('the Ask answer', () => {
     expect(view.container.textContent).not.toContain('| ---');
   });
 
+  it('keeps the body rows of a table whose rows drop the closing pipe', () => {
+    const text = [
+      '| Ticket | Local HEAD | State |',
+      '| --- | --- | --- |',
+      '| ledger-core | a1b2c3 | open',
+      '| notify-relay | d4e5f6 | done',
+    ].join('\n');
+    expect(parseAskAnswer({ text, handles: [] }).blocks.map((block) => block.kind)).toEqual([
+      'markdown',
+    ]);
+    const cells = [...show({ text }).container.querySelectorAll('table td, table th')].map(
+      (cell) => cell.textContent,
+    );
+    expect(cells).toEqual([
+      'Ticket',
+      'Local HEAD',
+      'State',
+      'ledger-core',
+      'a1b2c3',
+      'open',
+      'notify-relay',
+      'd4e5f6',
+      'done',
+    ]);
+  });
+
   it('keeps a bracket pair inside a fence and names a handle cited in a table cell', () => {
     const parsed = parseAskAnswer({
       text: ['```ts', 'const prefix = "[[";', '```', '| Q |', '| --- |', '| [[Q1]] |'].join('\n'),

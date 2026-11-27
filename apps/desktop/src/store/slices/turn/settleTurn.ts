@@ -25,6 +25,7 @@ import { enqueueLearnings } from './learningQueue';
 import { activePlanOf } from './activePlanOf';
 import { unchangedPlanNote } from './unchangedPlanNote';
 import { WORK_KEPT } from '../notifications/errorRecovery';
+import { settleLeadTurn } from './leadDelivery/settleLeadTurn';
 
 const STOPPED_REASON = 'The agent was stopped before it finished.';
 
@@ -265,6 +266,21 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       phase: turnWasCancelled ? 'cancelled' : 'failed',
       error: lastError === null ? null : formatError(lastError),
       failureCause: 'provider_error',
+    });
+  }
+  if (ctx.leadTurn !== null) {
+    await settleLeadTurn({
+      set,
+      get,
+      sessionId,
+      agentId: activeAgentId,
+      runId,
+      hasSucceeded:
+        lastError === null &&
+        !turnWasCancelled &&
+        !ctx.progress.receivedStreamError &&
+        assistantText.trim() !== '',
+      providerSessionId: ctx.progress.providerThreadId,
     });
   }
   ctx.input.onSettled?.({

@@ -301,7 +301,7 @@ export const guideGateOf = ({ guide, roles }: GateParams): GuideGate | null => {
 
 const STATE_LINE = {
   pending:
-    'The first check is not reported. Do it now, with the read tools or a scout. Until you send a follow block, writers are refused. When the check fails, or the stop rule applies, send a hold block instead.',
+    'The first check is not reported. Do it now, from what you have or with a scout. Until you send a follow block, writers are refused. When the check fails, or the stop rule applies, send a hold block instead.',
   passed:
     'The first check passed. Go on with the steps and send a deviate block each time you add, skip or move one.',
   held: 'You stopped this run with a hold block. Start nothing until the user answers.',
