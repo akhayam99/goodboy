@@ -1,7 +1,7 @@
 import type { ChatId } from '@goodboy/types';
 import type { PendingAttachment } from '../../../features/attachments/pendingAttachment';
 
-export type { GetFn, SetFn, SliceDeps } from '../../slice-types';
+export type { SliceDeps } from '../../slice-types';
 
 export type QueuedChatTurnStatus = 'queued' | 'failed';
 
