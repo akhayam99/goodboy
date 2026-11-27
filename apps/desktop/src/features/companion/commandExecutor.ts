@@ -29,6 +29,7 @@ import { evaluateMobileCreateSession, evaluateMobileSpawnWorkflow } from './mobi
 import { decideKindOf } from './actions/decideAction';
 import { decideCommand } from './actions/decideCommand';
 import { phoneCommand } from './actions/phoneCommand';
+import { queryChatMessagesCommand } from './actions/queryChatMessagesCommand';
 import { queryTranscriptCommand } from './actions/queryTranscriptCommand';
 import { asString } from './asString';
 import { BridgeSafeError } from './bridgeSafeError';
@@ -516,6 +517,10 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       return queryTranscriptCommand({ data });
     }
 
+    case 'queryChatMessages': {
+      return queryChatMessagesCommand({ data });
+    }
+
     case 'queryProviders':
       return buildProviderMenu();
 
@@ -725,37 +730,33 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
   }
 }
 
-function genericMaskFor(kind: string): string {
-  switch (kind) {
-    case 'mergePr':
-      return 'merge failed';
-    case 'mergeTrain':
-      return "couldn't start the train";
-    case 'startSession':
-      return "couldn't start the session";
-    case 'stopTrain':
-      return "couldn't stop the train";
-    case 'spawnAgent':
-    case 'resolveComment':
-      return 'could not spawn agent';
-    case 'setContextSlot':
-      return 'could not update context';
-    case 'advanceStep':
-      return 'could not advance workflow';
-    case 'spawnWorkflow':
-      return 'could not attach workflow';
-    case 'send':
-      return 'send failed';
-    case 'createSessionFromIssue':
-      return 'could not create session';
-    case 'queryFileDiff':
-      return 'could not load file diff';
-    case 'queryTranscript':
-      return "couldn't load transcript";
-    default:
-      return 'command failed';
-  }
-}
+const SPAWN_AGENT_MASK = 'could not spawn agent';
+
+const GENERIC_MASKS: ReadonlyMap<string, string> = new Map([
+  ['mergePr', 'merge failed'],
+  ['mergeTrain', "couldn't start the train"],
+  ['startSession', "couldn't start the session"],
+  ['stopTrain', "couldn't stop the train"],
+  ['sendChatMessage', "couldn't send the message"],
+  ['createChat', "couldn't start the chat"],
+  ['queryChatMessages', "couldn't load the chat"],
+  ['spawnAgent', SPAWN_AGENT_MASK],
+  ['resolveComment', SPAWN_AGENT_MASK],
+  ['setContextSlot', 'could not update context'],
+  ['advanceStep', 'could not advance workflow'],
+  ['spawnWorkflow', 'could not attach workflow'],
+  ['send', 'send failed'],
+  ['createSessionFromIssue', 'could not create session'],
+  ['queryFileDiff', 'could not load file diff'],
+  ['queryTranscript', "couldn't load transcript"],
+]);
+
+type GenericMaskParams = {
+  readonly kind: string;
+};
+
+const genericMaskFor = ({ kind }: GenericMaskParams): string =>
+  GENERIC_MASKS.get(kind) ?? 'command failed';
 
 export async function executeBridgeCommand(
   cmd: BridgeCommand,
@@ -775,7 +776,7 @@ export async function executeBridgeCommand(
       `[bridge] command failed (kind=${cmd.kind}, sessionId=${asString({ value: data.sessionId }) ?? '(none)'})`,
       err,
     );
-    return { ok: false, error: genericMaskFor(cmd.kind) };
+    return { ok: false, error: genericMaskFor({ kind: cmd.kind }) };
   }
 }
 
