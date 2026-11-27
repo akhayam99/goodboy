@@ -32,8 +32,8 @@ under a 1100px window) at the window's right edge on every workspace screen,
   column; the open tool is a quiet filled tile (`bg-selected`, no border).
 - Under a 480px tall window all captions hide together. Every tooltip gives the
   name, the shortcut and any signal reason.
-- Ask has its own question glyph (`CONCEPT_ICONS.ask`), distinct from Chat, and
-  reads **Ask this session** with ⌘L on hover.
+- Ask draws the Chat bubble (`CONCEPT_ICONS.ask`), the glyph of `message` and
+  `comments`, and reads **Ask this session** with ⌘L on hover.
 
 ### Tool states
 

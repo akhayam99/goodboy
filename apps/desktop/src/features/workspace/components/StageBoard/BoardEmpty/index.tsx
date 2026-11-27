@@ -22,7 +22,7 @@ const emptyLaneLabelOf = ({ spec }: LabelParams): string =>
 export const BoardEmpty = () => (
   <div data-slot="board-empty" className="flex min-h-0 min-w-0 flex-1 flex-col">
     <EmptyState
-      icon={CONCEPT_ICONS.sessions}
+      icon={CONCEPT_ICONS.board}
       title="No sessions yet"
       description="A session holds one goal, its agents and, for code, a branch."
       size="page"
