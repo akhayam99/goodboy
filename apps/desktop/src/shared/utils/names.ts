@@ -246,6 +246,8 @@ export const NAMES = {
   addComment: 'Add comment',
   tasks: 'Tasks',
   board: 'Board',
+  home: 'Home',
+  workspaces: 'Workspaces',
   mergeInOrder: 'Merge in order',
   mergeWhenGreen: 'Merge when green',
   stopAfterThisOne: 'Stop after this one',

@@ -25,6 +25,7 @@ const SETTLE_MS = 2_000;
 const RAIL_ORDER = [
   'workspace',
   'new',
+  'home',
   'board',
   'inbox',
   'workflows',
@@ -91,7 +92,7 @@ const itemsOf = (): ReadonlyArray<string> =>
 
 describe('the places rail replaces the sidebar column', () => {
   it.each(['r4-column-dark', 'r4-column-light'] as const)(
-    '%s draws New, the six places, Settings, Report and the mark in one 64px rail, with no column, no list and no fold toggle',
+    '%s draws New, the seven places, Settings, Report and the mark in one 64px rail, with no column, no list and no fold toggle',
     async (name) => {
       await mount({ name });
 

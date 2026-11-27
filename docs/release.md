@@ -157,7 +157,7 @@ and one hook gives every surface the same verbs (`useUpdateCard`, state from
 
 The update mark at the foot of the places rail (it sits above the signature while an
 update waits; `UpdateRailMark`, state from `updateMarkOf`), and the version pill in
-the corner of Home (`WorkspaceLauncher`), open and close the card
+the corner of Workspaces (`WorkspaceLauncher`), open and close the card
 (`toggleUpdateCard`). The card opens to the right of the rail mark, inside the window
 margin, and a download shows as a ring with the percent on the mark and a bar in the
 card. The card

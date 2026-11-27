@@ -7,7 +7,7 @@ navigation slice (`store/slices/navigation/`) owns both.
 
 ## A Location
 
-A `Location` is where you are plus how the page was: `place` (the board or a session
+A `Location` is where you are plus how the page was: `place` (Home, the board or a session
 view: lens, open agent and one target, such as an artifact, a run, an issue, a diff
 focus, a Branch section or a thread), `studio` (the app studio over it; a session
 has none of its own) and `focus` (the open drawer and the scroll). It carries only
@@ -15,6 +15,7 @@ what a screen reads. `locationKey` prints the text form for tests and logs:
 
 | Address                                  | Place                                                       |
 | ---------------------------------------- | ----------------------------------------------------------- |
+| `home`                                   | Home                                                        |
 | `board`                                  | the Board                                                   |
 | `s/{session}`                            | the session Overview                                        |
 | `s/{session}/branch/comments`            | a Branch section                                            |
@@ -205,7 +206,7 @@ on its pull request page, and a saved Connections page as its Settings page.
 After an update or restart, and on any launch with **Reopen last** on, the main
 window restores its layout and reopens every other saved window with
 `#restore=<old label>`, one per workspace, each reading and forgetting its layout
-(`restoreLaunchLayout`). With Reopen last off a plain launch opens Home and forgets
+(`restoreLaunchLayout`). With Reopen last off a plain launch opens Workspaces and forgets
 the saved windows. The history stack stays in memory: a restored window starts with
 one entry.
 

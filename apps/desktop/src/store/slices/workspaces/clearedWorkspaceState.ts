@@ -3,6 +3,7 @@ import { EMPTY_DRAWER_GRID } from '../drawer/state';
 
 export const clearedWorkspaceState = () => ({
   currentSessionId: null,
+  openHomeWorkspaceId: null,
   appStudio: null,
   drawer: null,
   drawerBack: null,

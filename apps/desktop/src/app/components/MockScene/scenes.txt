@@ -587,6 +587,8 @@ header-overview-overflow
 header-run
 header-scripts
 hero-diff
+home-place
+home-place-light
 image-lightbox
 impact
 impact-deleted

@@ -3,6 +3,7 @@ import type { ColumnActions } from '../../ShellLeft/columnDoors';
 const noop = () => undefined;
 
 export const SCENE_COLUMN_ACTIONS: ColumnActions = {
+  openHome: noop,
   openBoard: noop,
   openInbox: noop,
   openChat: noop,

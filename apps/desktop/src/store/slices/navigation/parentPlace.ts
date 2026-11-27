@@ -27,7 +27,7 @@ const isBranchWorkItem = ({ view }: ItemParams): boolean =>
   view.agentId !== null || view.target?.kind === 'run' || view.target?.kind === 'artifact';
 
 export const parentPlace = ({ state, place }: Params): Place | null => {
-  if (place.at === 'board') {
+  if (place.at === 'home' || place.at === 'board') {
     return null;
   }
   if (place.at === 'session-draft') {

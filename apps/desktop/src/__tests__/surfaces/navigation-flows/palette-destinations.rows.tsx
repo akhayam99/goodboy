@@ -114,6 +114,12 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
+    name: 'palette: Home',
+    covers: ['navigate', 'palette:Home'],
+    open: () => openPalette(/^Home$/),
+    lands: () => heading('Home'),
+  },
+  {
     name: 'palette: Board',
     covers: ['navigate', 'palette:Board'],
     open: () => openPalette(/^Board$/),

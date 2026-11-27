@@ -50,7 +50,7 @@ Terminal page and the session terminal drawer (`terminal.newHere`, the New
 terminal in picker: type to filter, arrows, Enter opens a tab, Esc closes; ⌘T
 adds a tab in place with no picker), on the session Overview
 (`overview.newHere`, the New menu of runs, agents and write-ups), inside the
-Ask pane (`ask.reset`, New question) and on Home (`home.newWorkspace`, New workspace). Each contextual entry carries a `scope`, so the
+Ask pane (`ask.reset`, New question) and on Workspaces (`home.newWorkspace`, New workspace). Each contextual entry carries a `scope`, so the
 registry binds a chord once per place, and a contextual handler that declines
 (focus outside the Ask pane) hands the chord back to the global one. ⌘K is
 the way to go anywhere: every global new and go-to is an entry in Search or run, and the

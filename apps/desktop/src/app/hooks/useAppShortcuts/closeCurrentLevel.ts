@@ -33,7 +33,7 @@ export const closeCurrentLevel = ({}: Params): void => {
     state.closeStudio();
     return;
   }
-  if (live.place.at === 'board') {
+  if (live.place.at === 'home' || live.place.at === 'board') {
     return;
   }
   if (parentPlace({ state, place: live.place }) !== null) {

@@ -138,7 +138,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('Home', () => {
+describe('Workspaces', () => {
   it('carries the lockup: the brand tile, the word and the version', () => {
     renderHome();
 
@@ -396,7 +396,7 @@ describe('Home', () => {
   });
 });
 
-describe('Home with no workspace yet', () => {
+describe('Workspaces with no workspace yet', () => {
   beforeEach(() => {
     useAppStore.setState({ workspaces: [], projects: [] });
   });

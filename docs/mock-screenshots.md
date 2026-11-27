@@ -337,7 +337,7 @@ every other scene. A scene opens a studio through the same entrance the app
 uses (a store opener or a click on the real control), never by mounting the
 studio itself.
 
-The setup and Home scenes live in `scenes/onboarding/` and sit in one
+The setup and Workspaces scenes live in `scenes/onboarding/` and sit in one
 `ONBOARDING_SCENES` block of `registry/base.ts`, each state once per theme:
 `onboarding-step-<state>-<theme>` for the wizard steps (welcome, four agents
 states, three tools states, two first session states),
@@ -352,7 +352,7 @@ event, with `&step=` a step id (`welcome`, `agents`, `workspace`, `tools`,
 `first-session`), `&agents=` an agents state (`ready`, `signin`, `none`,
 `error`) and `&ws=` a workspace state (`none`, `repo` for Acme web, `folder` for
 Acme docs; `none` up to Workspace, `repo` after it), and
-`onboarding-home&state=` shows Home in `list`, `new` or `empty`.
+`onboarding-home&state=` shows Workspaces in `list`, `new` or `empty`.
 
 `demo` is the playground, a guided path and not a catalog. Its unit is the
 step: one action the visitor does in the app. A group (`demoChapters.ts`, names
