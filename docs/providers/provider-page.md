@@ -100,7 +100,9 @@ breaker; a pass confirms the account.
 The command is `provider_test_connection` (`src-tauri/src/providers/test_connection.rs`).
 It answers with a typed outcome (`answered`, `timed_out` with its seconds, `empty`,
 `unsupported`, `refused` with the CLI's text) and never a sentence, so the row
-names the deadline the command used.
+names the deadline the command used. On Cursor it also returns the model ids the
+account lists, which mark the others as not on the account
+([models-and-effort.md](models-and-effort.md#models-an-account-cannot-use)).
 
 **History** opens a panel under Account with the newest 20 changes since launch,
 relative times with absolute ones in tooltips. **Hide history**, Escape or History

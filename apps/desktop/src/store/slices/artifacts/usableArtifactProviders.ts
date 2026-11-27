@@ -1,7 +1,7 @@
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 import type { GetFn } from './types';
 
 type Params = {
@@ -17,7 +17,7 @@ export const usableArtifactProviders = ({
     providers: state.providers ?? [],
     cooldowns: state.providerCooldowns ?? {},
     alerts: state.budgetAlerts ?? [],
-    hidden: selectHiddenModels({ state }),
+    hidden: selectBlockedModels({ state }),
     sessionId,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),

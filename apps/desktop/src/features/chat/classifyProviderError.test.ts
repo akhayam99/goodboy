@@ -31,6 +31,31 @@ describe('classifyProviderError', () => {
       'gpt-6',
       'choose_supported_model',
     ],
+    [
+      'The model "opus-5.5" is not available with this Claude account. Choose a model supported by your account.',
+      'opus-5.5',
+      'choose_supported_model',
+    ],
+    [
+      "There's an issue with the selected model (claude-opus-5-5). It may not exist or you may not have access to it. Run /model to pick a different model.",
+      'claude-opus-5-5',
+      'choose_supported_model',
+    ],
+    [
+      'Claude Opus is not available with the Claude Pro plan. If you have updated your subscription plan recently, run /logout and /login for the plan to take effect.',
+      'Claude Opus',
+      'choose_supported_model',
+    ],
+    [
+      'Error: Model "gpt-5-mini" from --model flag is not available.',
+      'gpt-5-mini',
+      'choose_supported_model',
+    ],
+    [
+      'The model "composer-2.5" is not available for this account',
+      'composer-2.5',
+      'choose_supported_model',
+    ],
   ])('classifies model availability failures', (message, model, action) => {
     expect(classifyProviderError({ message })).toEqual({
       kind: 'model_not_available',
