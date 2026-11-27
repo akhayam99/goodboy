@@ -294,3 +294,25 @@ describe('cursor partial output', () => {
     expect(textOf(feed(assistantText('Whole.')))).toBe('Whole.');
   });
 });
+
+describe('a result the cli marks as an error', () => {
+  const REFUSAL =
+    "There's an issue with the selected model (claude-opus-5-5). It may not exist or you may not have access to it.";
+
+  it('ends the turn with the error text even when the subtype says success', () => {
+    const { feed } = makeFeed();
+    const events = feed({ type: 'result', subtype: 'success', is_error: true, result: REFUSAL });
+
+    expect(events.filter((event) => event.kind === 'done')).toEqual([]);
+    expect(events.filter((event) => event.kind === 'error')).toEqual([
+      { kind: 'error', runId: RUN_ID, message: REFUSAL, at },
+    ]);
+  });
+
+  it('keeps a result that is not marked as an error done', () => {
+    const { feed } = makeFeed();
+    const events = feed({ type: 'result', subtype: 'success', is_error: false, result: 'Done.' });
+
+    expect(events.map((event) => event.kind)).toEqual(['done']);
+  });
+});

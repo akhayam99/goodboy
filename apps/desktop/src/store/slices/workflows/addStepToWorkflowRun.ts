@@ -32,7 +32,7 @@ import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { stepCandidateInputs } from '../workflowRouting/stepCandidateInputs';
 import { earlierPicksOf } from '../workflowRouting/earlierPicksOf';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 
 export type AddStepToWorkflowRunParams = {
   readonly sessionId: SessionId;
@@ -274,7 +274,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
         providers: get().providers ?? [],
         cooldowns: get().providerCooldowns ?? {},
         alerts: get().budgetAlerts ?? [],
-        hidden: selectHiddenModels({ state: get() }),
+        hidden: selectBlockedModels({ state: get() }),
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),

@@ -33,7 +33,8 @@ import type { AppStore } from '../../../store';
 import { selectResolvedSettings } from '../../../slices/overrides/selectResolvedSettings';
 import { workspacePolicyAvailability } from '../../../slices/providerLimits/workspacePolicyAvailability';
 import { sessionById } from '../../../slices/sessions/sessionIndex';
-import { selectHiddenModels } from '../../../slices/settings/selectHiddenModels';
+import { selectBlockedModels } from '../../../slices/providers/selectBlockedModels';
+import { isSameModelRef } from './isSameModelRef';
 import { resolveProposedRouting } from '../../../slices/workflows/resolveProposedRouting';
 import { readProviderAgentTurns } from '../../models/readProviderAgentTurns';
 import { selectCandidateInputs } from '../../models/selectCandidateInputs';
@@ -96,7 +97,7 @@ const leadHeadroom = ({ state, workspaceId, nowMs }: HeadroomParams): HeadroomMa
 };
 
 const scopeOf = ({ state, request, session, nowMs }: ScopeParams): Scope => {
-  const hidden = selectHiddenModels({ state });
+  const hidden = selectBlockedModels({ state, nowMs });
   const workspacePolicy = workspacePolicyAvailability({
     state,
     sessionId: request.sessionId,
@@ -338,11 +339,16 @@ const resolvePicked = ({ request, list, parsed, scope }: PickedParams): RoutingO
     parsed.kind === 'valid'
       ? { provider: parsed.proposal.pick.provider, model: parsed.proposal.pick.model }
       : { provider: parsed.requested.provider ?? '', model: parsed.requested.model ?? '' };
+  const isNoted =
+    checked.cause === 'no-access' &&
+    (request.notedNoAccess ?? []).some((noted) => isSameModelRef({ left: noted, right: asked }));
   return readyOf({
     candidate: checked.candidate,
     list,
     reason: childRoutingReason({
-      why: { kind: 'fallback', candidate: checked.candidate, list, cause: checked.cause, asked },
+      why: isNoted
+        ? { kind: 'rule', candidate: checked.candidate, list }
+        : { kind: 'fallback', candidate: checked.candidate, list, cause: checked.cause, asked },
     }),
     proposal: 'replaced',
     source: list.isPinned ? 'pin' : 'fallback',

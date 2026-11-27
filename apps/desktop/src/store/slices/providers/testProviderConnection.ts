@@ -3,6 +3,8 @@ import { formatError } from '@goodboy/ui';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { SliceDeps } from '../../slice-types';
+import { accountIdOf } from './accountIdOf';
+import { accountPlanOf } from './accountPlanOf';
 import { takeProbeSeq } from './applyProviderProbe';
 import { logProviderStanding } from './logProviderStanding';
 import { overlayProviderHealth } from './overlayProviderHealth';
@@ -13,6 +15,19 @@ import type { ConnectionTestResult } from './types';
 type Params = {
   readonly providerId: ProviderId;
 };
+
+type ConnectionTestResponse = Readonly<Record<'ok', boolean>> &
+  Omit<ConnectionTestResult, 'isOk'> &
+  Readonly<{ models?: unknown }>;
+
+type ListedParams = {
+  readonly models: unknown;
+};
+
+const listedModelsOf = ({ models }: ListedParams): ReadonlyArray<string> =>
+  Array.isArray(models)
+    ? models.filter((model: unknown): model is string => typeof model === 'string')
+    : [];
 
 export const testProviderConnection =
   ({ set, get }: SliceDeps) =>
@@ -32,13 +47,14 @@ export const testProviderConnection =
       kind: 'test',
       isAutomatic: false,
       run: async () => {
+        const accountId = accountIdOf({ providers: get().providers, providerId });
         let result: ConnectionTestResult;
+        let listed: ReadonlyArray<string> = [];
         try {
-          const response = await invokeCommand<
-            Readonly<Record<'ok', boolean>> & Omit<ConnectionTestResult, 'isOk'>
-          >('provider_test_connection', {
+          const response = await invokeCommand<ConnectionTestResponse>('provider_test_connection', {
             providerId,
           });
+          listed = listedModelsOf({ models: response.models });
           result = {
             isOk: response.ok,
             millis: response.millis,
@@ -102,6 +118,22 @@ export const testProviderConnection =
           providers: overlayProviderHealth({ providers: state.providers, health }),
         });
         logProviderStanding({ providerId, event });
+        const current = get();
+        if (
+          !result.isOk ||
+          accountId !== accountIdOf({ providers: current.providers, providerId })
+        ) {
+          return;
+        }
+        await current
+          .learnListedModels({
+            providerId,
+            accountId,
+            plan: accountPlanOf({ state: current, providerId }),
+            listed,
+            checkedAt: at,
+          })
+          .catch((error: unknown) => console.warn('remembering the listed models failed', error));
       },
     });
   };

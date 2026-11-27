@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { defaultChatModel } from '../../../features/conversation/defaultChatModel';
 import type { AppStore } from '../../store';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import type { AskRouting } from './state';
 
@@ -23,6 +23,6 @@ export const askRoutingOf = ({ state, sessionId }: Params): AskRouting => {
     return chosen;
   }
   const connected = autoRoutableProviders({ providers: state.providers });
-  const choice = defaultChatModel({ connected, hidden: selectHiddenModels({ state }) });
+  const choice = defaultChatModel({ connected, hidden: selectBlockedModels({ state }) });
   return { provider: choice.provider, model: choice.model, effort: ASK_DEFAULT_EFFORT };
 };

@@ -87,7 +87,7 @@ import { summarizerFailureNotice, summarizerNoticeKey } from './summarizerFailur
 import { runHelperTask } from '../providerLimits/runHelperTask';
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 import { liveEnabledProviders } from '../../runtime/models/liveEnabledProviders';
 import { sessionReads } from '../../runtime/state-writes/sessionReads';
 
@@ -426,7 +426,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       connectedProviders,
       enabledProviders,
       cooldowns: get().providerCooldowns,
-      hidden: selectHiddenModels({ state: get() }),
+      hidden: selectBlockedModels({ state: get() }),
       nowMs: Date.now(),
     });
 

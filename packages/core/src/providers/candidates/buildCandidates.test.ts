@@ -166,6 +166,24 @@ describe('buildCandidates', () => {
     expect(causesOf({ list, provider: 'codex' })).toEqual(['hidden']);
   });
 
+  it('says a provider is left out when the account cannot run any fitting model there', () => {
+    const everything = { codex: CODEX_CATALOG.map((model) => model.key) };
+    const list = build({ inputs: candidateInputsOf({ hidden: everything, noAccess: everything }) });
+    expect(causesOf({ list, provider: 'codex' })).toEqual(['no-access']);
+  });
+
+  it('moves a role down its ladder on the same provider when the top model is refused', () => {
+    const top = build({ inputs: candidateInputsOf({}) }).rows.find(
+      (row) => row.provider === 'codex' && !row.isLighter,
+    );
+    const refused = { codex: top === undefined ? [] : [top.model] };
+    const list = build({ inputs: candidateInputsOf({ hidden: refused, noAccess: refused }) });
+    const codex = list.rows.filter((row) => row.provider === 'codex');
+    expect(top).toBeDefined();
+    expect(codex.map((row) => row.cause)).toContain(null);
+    expect(codex.map((row) => row.model)).not.toContain(top?.model);
+  });
+
   it('says a provider is left out when its CLI is too old for every fitting model', () => {
     const list = build({
       inputs: candidateInputsOf({

@@ -38,6 +38,26 @@ const routing = (over: Partial<AutoRouting>): AutoRouting => ({
 });
 
 describe('routingWhyOf', () => {
+  it('says plainly when the asked model is not on the account', () => {
+    const why = routingWhyOf({
+      routing: routing({
+        provider: 'anthropic',
+        model: 'sonnet-5.5',
+        source: 'fallback',
+        proposal: 'replaced',
+        cause: 'no-access',
+        reason: 'Opus 5.5 is not on your Claude account, so this ran on Sonnet 5.5.',
+        requested: { provider: 'anthropic', model: 'opus-5.5', effort: null },
+      }),
+    });
+
+    expect(why).toMatchObject({
+      whyLabel: 'Why Claude: ',
+      why: 'Opus 5.5 is not on your Claude account, so this ran on Sonnet 5.5.',
+      isMoved: true,
+    });
+  });
+
   it("names the provider and gives the Lead's own words for a Lead pick", () => {
     const why = routingWhyOf({ routing: routing({}) });
 
