@@ -89,6 +89,10 @@ The showing window sends the exact count on `goodboy:attention`, and `attentionB
 
 A write refused because another run owns the session (`writeOwnedSessionState`) leaves a stale `error` that the Rust count shows until the next agent end or the next launch repair. The read side still derives from the agent rows.
 
+### The dock number is a lower bound and can differ with a second window
+
+`attentionCountOf` is the one count of the open workspace. The dock adds the Rust mirror for the other workspaces, which sees 5 of the 17 reasons (`parity.json` lists the other 12 under `memoryOnly`). A second window changes the in-memory source, so its dock number can differ until it reloads. The phone has no bell or notice projection. Adding a reason to `ATTENTION_REASON_META` without listing it as mirrored or memory only fails `attentionParity.test.ts`.
+
 ## Session overview cards
 
 ### There is one overview

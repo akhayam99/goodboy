@@ -7,6 +7,7 @@ import { branchEntriesOf } from '../../../central/branches/branchStoryOf';
 import { useBranchDetails } from '../../../central/branches/useBranchDetails';
 import { useBranchFacts } from '../../../central/branches/useBranchFacts';
 import { cardsOutsideRunningOf } from '../../../central/cards/cardsOutsideRunningOf';
+import { cardsOnBoardOf } from '../../../central/next/cardsOnBoardOf';
 import { overviewMovesOf } from '../../../central/next/overviewMovesOf';
 import { useNextCards } from '../../../central/next/useNextCards';
 import { boardCardsOf } from '../../../central/board/boardCardsOf';
@@ -14,6 +15,8 @@ import { useLiveGroups } from '../../../central/now/useLiveGroups';
 import { useNowModel } from '../../../central/now/hooks/useNowModel';
 import { overviewHasContentOf } from '../../../central/overviewHasContentOf';
 import { useSessionWorkModel } from '../../../central/useSessionWorkModel';
+import { attentionReasonsOf } from '../../../../../store/slices/session-view/attentionReasonsOf';
+import { cachedStageInfoOf } from '../../../../../store/slices/session-view/cachedStageInfoOf';
 import { sessionSettleOf } from '../../../../../store/slices/session-view/settle/sessionSettleOf';
 import { inPlaceFoldersOf } from '../../../../../store/slices/project-mounts/inPlaceFoldersOf';
 import { useBranchNotes } from '../../../../resolve/notes/useBranchNotes';
@@ -43,12 +46,19 @@ export const useOverviewModel = ({ session }: Params) => {
   );
   const { cards, actionsFor } = useNextCards({ session, model, autoTargets });
   const groups = useLiveGroups({ model, agents, now: clock });
+  const boardInfo = useAppStore((state) => cachedStageInfoOf({ state, session }));
+  const boardReasons = useMemo(() => attentionReasonsOf({ info: boardInfo }), [boardInfo]);
   const moves = useMemo(
     () =>
       overviewMovesOf({
-        cards: isArchived ? EMPTY_ARRAY : cardsOutsideRunningOf({ cards, groups }),
+        cards: isArchived
+          ? EMPTY_ARRAY
+          : cardsOnBoardOf({
+              cards: cardsOutsideRunningOf({ cards, groups }),
+              reasons: boardReasons,
+            }),
       }),
-    [cards, groups, isArchived],
+    [boardReasons, cards, groups, isArchived],
   );
   const openQuestions = useSessionOpenQuestions(sessionId);
   const looseQuestions = useMemo(

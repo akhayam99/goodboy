@@ -231,6 +231,7 @@ export const useWorkspaceRollup = (
   sessions: ReadonlyArray<Session>,
 ): WorkspaceRollup => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
+  const attention = useWorkspaceAttention({ workspaceId, sessions });
   const sessionTelemetry = useTelemetryForSessions({ sessions });
   const dormant = useDormantSpend();
   return useMemo(() => {
@@ -240,11 +241,11 @@ export const useWorkspaceRollup = (
     );
     const figures = spendFigures({ records, nowMs: Date.now(), sinceMs: null });
     return {
-      attentionCount: countOf('attention'),
+      attentionCount: attention.count,
       runningCount: countOf('running'),
       todaySpend: figures.today.usd,
     };
-  }, [dormant, groups, sessionTelemetry, sessions]);
+  }, [attention.count, dormant, groups, sessionTelemetry, sessions]);
 };
 
 export type WorkspaceAttention = AttentionCount & {

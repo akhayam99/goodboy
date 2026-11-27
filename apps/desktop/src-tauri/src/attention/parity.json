@@ -6,6 +6,20 @@
     { "reason": "fix-needs-you", "tone": "warning", "kind": "human-input" },
     { "reason": "ci-failed", "tone": "danger", "kind": "other" }
   ],
+  "memoryOnly": [
+    "fix-couldnt-fix",
+    "unread-reply",
+    "changes-requested",
+    "pr-queued",
+    "pr-approved",
+    "needs-approval",
+    "plan-approval",
+    "run-stopped",
+    "run-paused-at-limit",
+    "run-waits-for-go",
+    "auto-needs-you",
+    "slack-reply-waiting"
+  ],
   "cases": [
     {
       "name": "a quiet session counts nothing",

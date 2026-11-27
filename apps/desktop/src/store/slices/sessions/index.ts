@@ -11,6 +11,7 @@ import { linkSessionExternalTask } from './linkSessionExternalTask';
 import { moveSessionExternalTask } from './moveSessionExternalTask';
 import { openSessionAgents } from './openSessionAgents';
 import { renameTask } from './renameTask';
+import { settleAttention } from './settleAttention';
 import { setAgentConfig } from './setAgentConfig';
 import { setAgentVerbosity } from './setAgentVerbosity';
 import { setCurrentSession } from './setCurrentSession';
@@ -36,6 +37,7 @@ export const createSessionsSlice = ({ set, get }: SliceDeps) => {
     deleteTask: deleteTask(set, get),
     bulkDeleteTask: bulkDeleteTask(set, get),
     archiveTask: archiveTask(set, get),
+    settleAttention: settleAttention({ set, get }),
     bulkArchiveTask: bulkArchiveTask(set, get),
     unarchiveTask: unarchiveTask(set, get),
     reloadSessionWorkflows: reloadSessionWorkflows({ set }),

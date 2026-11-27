@@ -32,7 +32,8 @@ import { useDoorSignals } from '../app/components/ShellLeft/useDoorSignals';
 import { useNeedsYou } from '../features/workspace/components/StageBoard/NeedsYouCards/useNeedsYou';
 import { stageInfosOf } from '../store/slices/session-view/stageInfosOf';
 import { useNowSessions } from '../shared/hooks/useNowSessions';
-import { useSessionOrder } from '../store/slices/session-view/selectors';
+import { useSessionOrder, useWorkspaceRollup } from '../store/slices/session-view/selectors';
+import { useHomeFacts } from '../features/home/hooks/useHomeFacts';
 
 let useAppStore: StoryStore;
 
@@ -96,11 +97,16 @@ const useSurfaces = () => {
   const strip = useNeedsYou({ sessions, infos });
   const order = useOrder();
   const now = useNowSessions({});
+  const home = useHomeFacts({ workspaceId: harborline.id });
+  const rollup = useWorkspaceRollup(harborline.id, sessions);
   return {
     rail: door.board?.count ?? 0,
     strip: strip.cards.length,
     popover: order.groups.find((group) => group.key === 'attention')?.count ?? 0,
     nowChip: now.needsYou.length,
+    homeHero: home.counts.needsYou,
+    homeRows: home.needsYou.length,
+    rollup: rollup.attentionCount,
   };
 };
 
@@ -109,7 +115,15 @@ describe('one needs you number for the whole workspace', () => {
     seed();
     const { result } = renderHook(useSurfaces);
 
-    expect(result.current).toEqual({ rail: 3, strip: 3, popover: 3, nowChip: 3 });
+    expect(result.current).toEqual({
+      rail: 3,
+      strip: 3,
+      popover: 3,
+      nowChip: 3,
+      homeHero: 3,
+      homeRows: 3,
+      rollup: 3,
+    });
   });
 
   it('moves on every surface at once when a question is answered', () => {
@@ -125,7 +139,26 @@ describe('one needs you number for the whole workspace', () => {
       });
     });
 
-    expect(result.current).toEqual({ rail: 2, strip: 2, popover: 2, nowChip: 2 });
+    expect(result.current).toEqual({
+      rail: 2,
+      strip: 2,
+      popover: 2,
+      nowChip: 2,
+      homeHero: 2,
+      homeRows: 2,
+      rollup: 2,
+    });
+  });
+
+  it('counts every open session once on the Home lanes, a quiet reply sits in a lane and not in Needs you', () => {
+    seed();
+    const { result } = renderHook(() => useHomeFacts({ workspaceId: harborline.id }));
+
+    expect(result.current.counts).toEqual({ needsYou: 3, running: 1, review: 0, open: 1 });
+    expect(result.current.toFinish).toBe(5);
+    expect(result.current.needsYou.map((session) => session.id).sort()).toEqual(
+      [inPayments.id, inLedger.id, pinnedAsk.id].sort(),
+    );
   });
 
   it('lists a quiet reason under Needs you without counting it', () => {

@@ -75,7 +75,7 @@ describe('the bell overflow scene', () => {
   it('shows the real count on the bell and all eleven unread rows in the list', async () => {
     await mount();
 
-    screen.getByRole('button', { name: 'Notifications, 11 unread' });
+    screen.getByRole('button', { name: 'Notifications, 11 notices' });
     expect(document.querySelector('[data-bell-count]')?.textContent).toBe('9+');
     expect(document.querySelector('[data-bell-dot]')?.getAttribute('data-bell-dot')).toBe(
       'warning',
