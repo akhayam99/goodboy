@@ -16,6 +16,7 @@ describe('the destination list', () => {
       'Tasks',
       'Workflows',
       'Chat',
+      'Calendar',
       'Connections',
       'Impact',
       'Monitoring',

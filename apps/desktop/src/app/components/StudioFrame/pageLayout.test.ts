@@ -43,6 +43,10 @@ const DOOR_PAGES: ReadonlyArray<PageRoot> = [
     files: ['features/connections/components/ConnectionsIndex/index.tsx'],
   },
   {
+    page: 'calendar',
+    files: ['features/calendar/components/CalendarPage/index.tsx'],
+  },
+  {
     page: 'notifications',
     files: ['features/notifications/components/NotificationsStudio/index.tsx'],
   },
@@ -124,6 +128,7 @@ const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
   browser: 'full',
   settings: 'column',
   monitoring: 'column',
+  calendar: 'column',
   connections: 'column',
   notifications: 'column',
   guide: 'column',
@@ -187,6 +192,7 @@ const SKELETON_BODY_OF: Readonly<Record<keyof typeof STUDIO_META, string>> = {
   browser: 'rows',
   connections: 'cards',
   monitoring: 'rows',
+  calendar: 'rows',
 };
 
 const BOARD_SKELETON_PAGES: ReadonlySet<string> = new Set(['board']);

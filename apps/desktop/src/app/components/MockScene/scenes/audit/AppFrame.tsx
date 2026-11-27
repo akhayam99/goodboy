@@ -21,6 +21,7 @@ import { useShellRight } from '../../../../hooks/useShellRight';
 import { selectDrawerPlacement } from '../../../../../store/slices/drawer/selectDrawerPlacement';
 import { triggerFrameView } from './frameViews';
 import { useSceneShortcuts } from '../useSceneShortcuts';
+import { openDestination } from '../../../../../shared/navigation/openDestination';
 
 const noop = () => undefined;
 
@@ -58,6 +59,7 @@ export const AppFrame = ({ view, hasPane = false, hasDraft = false, center }: Pr
       openWorkflows: overlays.openWorkflows,
       openNewChat: overlays.openNewChat,
       openConnections: overlays.openConnections,
+      openCalendar: () => openDestination({ id: 'calendar' }),
       openMonitoring: overlays.openMonitoring,
       openImpact: overlays.openImpact,
       openSettings: overlays.openSettings,

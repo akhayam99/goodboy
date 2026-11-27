@@ -23,6 +23,7 @@ export { Book as BookOpen } from './generated/Book';
 export { Bookmark } from './generated/Bookmark';
 export { Bot } from './generated/Bot';
 export { Cube as Boxes } from './generated/Cube';
+export { Calendar } from './generated/Calendar';
 export { Debug as Bug } from './generated/Debug';
 export { Debug as BugPlay } from './generated/Debug';
 export { Checkmark as Check } from './generated/Checkmark';

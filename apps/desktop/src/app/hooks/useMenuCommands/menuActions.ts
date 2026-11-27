@@ -68,6 +68,7 @@ export const MENU_ACTIONS = {
   },
   'menu.tasks': destinationAction({ id: 'inbox' }),
   'menu.chat': destinationAction({ id: 'chat' }),
+  'menu.calendar': destinationAction({ id: 'calendar' }),
   'menu.connections': destinationAction({ id: 'connections' }),
   'menu.workflows': destinationAction({ id: 'workflows' }),
   'menu.impact': destinationAction({ id: 'impact' }),

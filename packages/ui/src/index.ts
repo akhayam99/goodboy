@@ -403,6 +403,8 @@ export type { ListGridGroupProps } from './components/ListGrid/ListGridGroup';
 export { ListGridLine } from './components/ListGrid/ListGridLine';
 export type { ListGridLineProps } from './components/ListGrid/ListGridLine';
 export type { ListGridColumn } from './components/ListGrid/listGridTemplate';
+export { WeekGrid } from './components/WeekGrid';
+export type { WeekGridBlock, WeekGridDay } from './components/WeekGrid/types';
 export { Switch } from './components/Switch';
 export type { SwitchProps } from './components/Switch';
 export { Textarea } from './components/Textarea';

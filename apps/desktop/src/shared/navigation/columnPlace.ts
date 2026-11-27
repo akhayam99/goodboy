@@ -36,6 +36,7 @@ export const columnPlaceOf = ({ hasSession, isDraftShown, studio }: Params): Col
 const STUDIO_OVER_SESSION: ReadonlySet<ColumnPlace> = new Set<ColumnPlace>([
   'inbox',
   'chat',
+  'calendar',
   'connections',
   'workflows',
   'terminal',

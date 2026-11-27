@@ -46,6 +46,10 @@ const ConnectionsStudio = lazyNamed({
   load: () => import('../../../features/connections/components/ConnectionsStudio'),
   pick: ({ ConnectionsStudio }) => ConnectionsStudio,
 });
+const CalendarStudio = lazyNamed({
+  load: () => import('../../../features/calendar/components/CalendarStudio'),
+  pick: ({ CalendarStudio }) => CalendarStudio,
+});
 const MonitoringStudio = lazyNamed({
   load: () => import('../../../features/monitoring/components/MonitoringStudio'),
   pick: ({ MonitoringStudio }) => MonitoringStudio,
@@ -124,6 +128,10 @@ export const renderStudio = ({
     case 'browser':
       return currentWorkspace === null ? null : (
         <BrowserStudio sessionId={overlay.sessionId} tabId={overlay.tabId} onClose={close} />
+      );
+    case 'calendar':
+      return currentWorkspace === null ? null : (
+        <CalendarStudio workspaceId={currentWorkspace.id} onClose={close} />
       );
     case 'connections':
       return (

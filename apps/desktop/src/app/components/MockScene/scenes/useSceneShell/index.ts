@@ -4,6 +4,7 @@ import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
 import { useAppStore, useCurrentSession, useCurrentWorkspace } from '../../../../../store';
 import { useSceneShortcuts } from '../useSceneShortcuts';
+import { openDestination } from '../../../../../shared/navigation/openDestination';
 
 type Params = Record<never, never>;
 
@@ -34,6 +35,7 @@ export const useSceneShell = ({}: Params): SceneShell => {
       openWorkflows: overlays.openWorkflows,
       openNewChat: overlays.openNewChat,
       openConnections: overlays.openConnections,
+      openCalendar: () => openDestination({ id: 'calendar' }),
       openMonitoring: overlays.openMonitoring,
       openImpact: overlays.openImpact,
       openSettings: overlays.openSettings,

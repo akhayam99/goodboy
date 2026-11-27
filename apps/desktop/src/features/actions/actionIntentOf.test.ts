@@ -17,6 +17,7 @@ describe('actionIntentOf', () => {
     ['Review', 'primary'],
     ['Run', 'primary'],
     ['record.launch', 'primary'],
+    ['Join call', 'primary'],
     ['Copy link', 'neutral'],
     ['stop', 'destructive'],
     ['artifact.stop', 'destructive'],

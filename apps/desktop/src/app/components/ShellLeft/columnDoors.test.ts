@@ -1,7 +1,7 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { COLUMN_DOORS } from './columnDoors';
+import { COLUMN_DOORS, openColumnDoor } from './columnDoors';
 
 describe('the column doors', () => {
   it('names the tracker door Tasks and keeps its id', () => {
@@ -23,12 +23,13 @@ describe('the column doors', () => {
     expect(CONCEPT_ICONS.sessions).not.toBe(CONCEPT_ICONS.stageRunning);
   });
 
-  it('lists the six places, no tool, no Monitoring and no Work door', () => {
+  it('lists the seven places, no tool, no Monitoring and no Work door', () => {
     expect(COLUMN_DOORS.map((entry) => entry.label)).toEqual([
       'Board',
       'Tasks',
       'Workflows',
       'Chat',
+      'Calendar',
       'Connections',
       'Impact',
     ]);
@@ -47,16 +48,48 @@ describe('the column doors', () => {
       'Tasks',
       'Workflows',
       'Chat',
+      'Calendar',
       'Connect',
       'Impact',
     ]);
   });
 
-  it('draws Connections at full weight with the plug glyph, right after Chat', () => {
+  it('puts Calendar between Chat and Connections with its own glyph and no mark', () => {
+    const ids = COLUMN_DOORS.map((entry) => entry.id);
+    const door = COLUMN_DOORS.find((entry) => entry.id === 'calendar');
+
+    expect(ids.indexOf('calendar')).toBe(ids.indexOf('chat') + 1);
+    expect(ids.indexOf('connections')).toBe(ids.indexOf('calendar') + 1);
+    expect(door?.icon).toBe(CONCEPT_ICONS.calendar);
+    expect(door?.isReference).toBeUndefined();
+  });
+
+  it('opens the Calendar door through its own action', () => {
+    const actions = {
+      openBoard: vi.fn(),
+      openInbox: vi.fn(),
+      openChat: vi.fn(),
+      openWorkflows: vi.fn(),
+      openNewChat: vi.fn(),
+      openCalendar: vi.fn(),
+      openConnections: vi.fn(),
+      openMonitoring: vi.fn(),
+      openImpact: vi.fn(),
+      openSettings: vi.fn(),
+      openChangelog: vi.fn(),
+      openGuide: vi.fn(),
+    };
+    openColumnDoor({ id: 'calendar', actions });
+
+    expect(actions.openCalendar).toHaveBeenCalledOnce();
+    expect(actions.openConnections).not.toHaveBeenCalled();
+  });
+
+  it('draws Connections at full weight with the plug glyph, right after Calendar', () => {
     const ids = COLUMN_DOORS.map((entry) => entry.id);
     const door = COLUMN_DOORS.find((entry) => entry.id === 'connections');
 
-    expect(ids.indexOf('connections')).toBe(ids.indexOf('chat') + 1);
+    expect(ids.indexOf('connections')).toBe(ids.indexOf('calendar') + 1);
     expect(door?.icon).toBe(CONCEPT_ICONS.connections);
     expect(door?.isReference).toBeUndefined();
     expect(door?.shortcutId).toBeUndefined();

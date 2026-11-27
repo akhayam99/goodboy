@@ -135,6 +135,16 @@ export const STUDIO_META = {
     skeleton: { shape: 'rows', hasRail: true },
     railWidth: 'standard',
   },
+  calendar: {
+    icon: CONCEPT_ICONS.calendar,
+    tone: CONCEPT_TONE.calendar,
+    title: NAMES.calendar,
+    close: 'none',
+    tier: 'column',
+    page: 'calendar',
+    skeleton: { shape: 'rows', hasRail: false },
+    canHostDrawer: true,
+  },
   connections: {
     icon: CONCEPT_ICONS.connections,
     tone: CONCEPT_TONE.connections,

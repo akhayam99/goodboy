@@ -12,7 +12,7 @@ true turns it into **holds** and adds its guard. A unit that changes the skeleto
 edits this section first.
 
 1. **Left is where you go. Holds.** The places rail
-   ([surfaces.md](surfaces.md#the-places-rail)) holds New and the six places and
+   ([surfaces.md](surfaces.md#the-places-rail)) holds New and the seven places and
    no tool. An open session keeps the Board lit, since it is the Board's child; the
    Desk is a face of the session, not a place, and keeps it lit too. Sessions in
    the top bar moves between sessions without the Board

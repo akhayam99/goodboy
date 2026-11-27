@@ -11,6 +11,8 @@ export const studioPlaceOf = ({ studio }: StudioParams): ColumnPlace => {
       return 'inbox';
     case 'chat':
       return 'chat';
+    case 'calendar':
+      return 'calendar';
     case 'connections':
       return 'connections';
     case 'workflow':

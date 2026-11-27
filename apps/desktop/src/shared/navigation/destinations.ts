@@ -10,6 +10,7 @@ export type DestinationId =
   | 'inbox'
   | 'workflows'
   | 'chat'
+  | 'calendar'
   | 'connections'
   | 'impact'
   | 'terminal'
@@ -78,6 +79,15 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     home: 'column',
     scope: 'workspace',
     aliases: [],
+  },
+  {
+    id: 'calendar',
+    label: NAMES.calendar,
+    icon: CONCEPT_ICONS.calendar,
+    menuId: 'menu.calendar',
+    home: 'column',
+    scope: 'workspace',
+    aliases: ['Meetings', 'Reminders'],
   },
   {
     id: 'connections',
