@@ -135,10 +135,15 @@ export const nowRowsOf = ({ groups, work, writerWaits, nounById }: Params): NowM
       placed.add(family.root.agentId);
     }
     const depth = family.root === null ? 0 : 1;
-    const busy = family.children.filter((child) => workByAgent.has(child.agentId));
+    const busy = family.children.filter(
+      (child) => workByAgent.has(child.agentId) && !placed.has(child.agentId),
+    );
     for (const child of busy) {
       const childWork = workByAgent.get(child.agentId);
       if (childWork === undefined) {
+        continue;
+      }
+      if (placed.has(child.agentId)) {
         continue;
       }
       rows.push(nowRowOf({ member: child, work: childWork, depth }));

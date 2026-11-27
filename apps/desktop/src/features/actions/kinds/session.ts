@@ -212,7 +212,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     ...VERBS.markAsRead,
     group: 'act',
     when: ({ facts }) => isUnarchived({ facts }) && facts.hasUnread,
-    run: ({ facts, env }) => env.getState().markAllAgentsSeen(facts.sessionId),
+    run: ({ facts, env }) => env.getState().markAllAgentsSeen({ sessionId: facts.sessionId }),
   },
   {
     id: 'session.select',

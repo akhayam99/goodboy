@@ -2,6 +2,7 @@ import type { OpenQuestionId, SessionId } from '@goodboy/types';
 import { markOpenQuestionAnswered } from '@goodboy/db';
 import { removeQuestionsFromSlot } from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { announceSessionFact } from '../../../shared/lib/dataChanged/announceSessionFact';
 import type { GetFn } from './types';
 
 export type OpenQuestionAnswerPair = {
@@ -21,17 +22,27 @@ export const persistOpenQuestionAnswers = async ({
   sessionId,
   pairs,
 }: PersistOpenQuestionAnswersParams): Promise<void> => {
-  await Promise.all(
+  const outcomes = await Promise.allSettled(
     pairs.map((pair) => markOpenQuestionAnswered(tauriDatabase, pair.id, pair.answer)),
   );
-  const slotChanged = await removeQuestionsFromSlot(
-    tauriDatabase,
-    sessionId,
-    pairs.map((pair) => pair.text),
+  const answered = pairs.filter((_, index) => outcomes[index]?.status === 'fulfilled');
+  if (answered.length > 0) {
+    announceSessionFact({ kind: 'open-question', sessionId });
+    const isSlotChanged = await removeQuestionsFromSlot(
+      tauriDatabase,
+      sessionId,
+      answered.map((pair) => pair.text),
+    );
+    await get().loadSessionOpenQuestions(sessionId);
+    await get().loadSessionAnsweredQuestions(sessionId);
+    if (isSlotChanged) {
+      await get().loadSessionSlots(sessionId);
+    }
+  }
+  const failure = outcomes.find(
+    (outcome): outcome is PromiseRejectedResult => outcome.status === 'rejected',
   );
-  await get().loadSessionOpenQuestions(sessionId);
-  await get().loadSessionAnsweredQuestions(sessionId);
-  if (slotChanged) {
-    await get().loadSessionSlots(sessionId);
+  if (failure !== undefined) {
+    throw failure.reason;
   }
 };

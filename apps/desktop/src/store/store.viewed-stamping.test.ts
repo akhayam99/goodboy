@@ -492,7 +492,7 @@ describe('markAllAgentsSeen', () => {
       sessionOpenQuestions: { [SESSION_ID]: questions },
     });
 
-    await useAppStore.getState().markAllAgentsSeen(SESSION_ID);
+    await useAppStore.getState().markAllAgentsSeen({ sessionId: SESSION_ID });
 
     const state = useAppStore.getState();
     const runs = state.sessionPhaseRuns[SESSION_ID] ?? [];
@@ -513,7 +513,7 @@ describe('markAllAgentsSeen', () => {
       sessionOpenQuestions: { [SESSION_ID]: [openQuestion] },
     });
 
-    await useAppStore.getState().markAllAgentsSeen(SESSION_ID);
+    await useAppStore.getState().markAllAgentsSeen({ sessionId: SESSION_ID });
 
     const state = useAppStore.getState();
     const stage = deriveSessionStage({

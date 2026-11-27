@@ -1,6 +1,16 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Work } from '../../../live-state/workOf';
+import { brandId, type AgentId } from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
+import {
+  aDelegation,
+  aView,
+  FIXTURE_NOW,
+  FIXTURE_ROOT,
+} from '../../../auto/testing/autoViewFixtures';
+import { liveGroupsOf } from './liveGroupsOf';
+import { nowModelOf, NOW_SESSION, NOW_STARTED_AT } from './testing/nowModelOf';
 import { NOW_LIMIT, nowRowsOf } from './nowRowsOf';
 
 type WorkParams = {
@@ -72,5 +82,80 @@ describe('nowRowsOf', () => {
         since: 500,
       },
     ]);
+  });
+
+  describe('a Lead that delegated to the same agent three times', () => {
+    const fixerId = brandId<AgentId>({ value: 'agent-fixer' });
+    const root = anAgent({
+      id: FIXTURE_ROOT,
+      sessionId: NOW_SESSION,
+      kind: 'auto',
+      name: 'Check the payout docs',
+      status: 'running',
+      startedAt: NOW_STARTED_AT,
+    });
+    const fixer = anAgent({
+      id: fixerId,
+      sessionId: NOW_SESSION,
+      parentAgentId: FIXTURE_ROOT,
+      name: 'Fixer',
+      status: 'running',
+    });
+    const attempt = ({ key, slot }: { key: string; slot: number }) => ({
+      ...aDelegation({ key, role: 'implementer', state: 'running' }),
+      childAgentId: fixerId,
+      slot,
+    });
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        attempt({ key: 'first', slot: 0 }),
+        attempt({ key: 'retry-1', slot: 1 }),
+        attempt({ key: 'retry-2', slot: 2 }),
+      ],
+    });
+    const agents = [root, fixer];
+    const groups = liveGroupsOf({
+      model: nowModelOf({ agents, autoTrees: [view] }),
+      agents,
+      now: FIXTURE_NOW,
+    });
+    const work = [
+      workOf({ agentId: 'agent-fixer', phrase: 'Editing retry.ts' }),
+      workOf({ agentId: 'a2', phrase: 'Running tests' }),
+      workOf({ agentId: 'a3', phrase: 'Reading docs' }),
+      workOf({ agentId: 'a4', phrase: 'Checking types' }),
+    ];
+    const nounById = new Map([['agent-fixer', 'Implementer'], ...NOUNS]);
+
+    it('lists the agent once and counts the rest from there', () => {
+      const model = nowRowsOf({ groups, work, writerWaits: [], nounById });
+      expect(model.rows.filter((row) => row.agentId === 'agent-fixer')).toHaveLength(1);
+      expect(model.rows).toHaveLength(4);
+      expect(model.shown).toHaveLength(NOW_LIMIT);
+      expect(model.moreCount).toBe(1);
+    });
+
+    it('lists the agent once even when a group still holds it three times', () => {
+      const [group] = groups;
+      if (group?.kind !== 'auto') {
+        throw new Error('expected an auto group');
+      }
+      const repeated = { ...group, children: [...group.children, ...group.children] };
+      const model = nowRowsOf({ groups: [repeated], work, writerWaits: [], nounById });
+      expect(model.rows.filter((row) => row.agentId === 'agent-fixer')).toHaveLength(1);
+      expect(model.moreCount).toBe(1);
+    });
+
+    it('names the Lead wait on the agent once', () => {
+      const model = nowRowsOf({
+        groups,
+        work: work.slice(0, 1),
+        writerWaits: [],
+        nounById,
+      });
+      expect(model.waits.filter((wait) => wait.id.startsWith('lead:'))).toHaveLength(1);
+      expect(model.rows).toHaveLength(1);
+    });
   });
 });
