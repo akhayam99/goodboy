@@ -154,9 +154,33 @@ names the site alone until the trail is read;
 This tab (`browserTabRowsOf`) holds Copy address, Duplicate
 (`model.duplicate`, the shown address in a new tab), Open in your browser and
 Close tab (off for a pin). Develop (`browserDevelopRowsOf`) holds the width
-presets and, on macOS, Inspect in Safari; its hint names the current preset.
+presets, on macOS Inspect in Safari, and Show site data where the workspace
+has its own store; its hint names the current preset.
 The menu holds no reload row and no Open full page. While it is open the
 native view hides under its cover ([placement.md](placement.md#overlays)).
+
+### Show site data
+
+Show site data opens a panel under the chevron, in place of the menu: every
+site that keeps data in this workspace, with its kinds (cookies, local storage,
+IndexedDB, cache, service workers). The tab's own site reads "This tab" and
+comes first, a site of its sign-in trail reads "Sign-in for this tab" and comes
+next. Sizes are not shown, since WebKit does not give them. `SiteDataPanel`
+draws it from `model.siteRecords` (`hooks/useSiteRecords`); the commands are in
+[lifecycle.md](lifecycle.md#listing-the-sites-that-keep-data).
+
+- The row exists only on macOS with a store per workspace. Elsewhere it is
+  absent and the page menu keeps Clear browser data.
+- Clear on a row asks on that row ("Signs you out of every app that uses it").
+  Cancel keeps the row. A clear that works removes the row and the line under
+  the address names the site; the tab reloads without cache only when the site
+  is its own or in its trail.
+- A clear that fails keeps the list as it was and shows the error under the
+  address. A second window clearing the same workspace gets "already clearing".
+- The panel has no Clear all. Its last line points to the workspace settings,
+  which clear every site.
+- The list is read when the panel opens and again for another shown tab. An
+  answer for a tab that is no longer shown is dropped.
 
 ### Width presets
 

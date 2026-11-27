@@ -1,17 +1,19 @@
-import { Band, Button, Notice, PaneShell } from '@goodboy/ui';
+import { Button, Notice, PaneShell } from '@goodboy/ui';
+import { useNow } from '../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../shared/utils/names';
 import type { BridgeStatus } from '../../bridge';
-import { NetworkChoice } from './NetworkChoice';
+import { IphoneEmpty } from './IphoneEmpty';
+import { ListenerSection } from './ListenerSection';
 import { PairedDevices } from './PairedDevices';
-import { PairingCode } from './PairingCode';
 import { PairingFault } from './PairingFault';
+import { PairingPanel } from './PairingPanel';
 import { PairingRequest } from './PairingRequest';
+import { TopBarSection } from './TopBarSection';
 import { useIphonePairing } from './useIphonePairing';
 
-const PAIRING_STEPS = ['Open Goodboy on your iPhone.', 'Point the camera at this code.'];
-
-const NEW_PHONE_NOTE =
-  'A new iPhone can read, reply, approve and merge. Starting sessions stays off. Change it per iPhone after it pairs.';
+const READ_MISSES_SHOWN = 2;
+const READ_FAILED = "Couldn't refresh the iPhone link. Showing the last state.";
+const FIRST_READ_FAILED = "Couldn't read the iPhone link.";
 
 type StopFailure = {
   readonly title: string;
@@ -35,6 +37,9 @@ const metaOf = ({ status, isShowingCode }: MetaParams): string | undefined => {
   if (isShowingCode) {
     return 'Pairing';
   }
+  if (status.enrolledCount === 0) {
+    return undefined;
+  }
   return `${status.enrolledCount} paired`;
 };
 
@@ -42,6 +47,7 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
   const {
     info,
     status,
+    readMisses,
     error,
     isLoading,
     isRevoking,
@@ -64,20 +70,11 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
     pair,
     cancel,
   } = useIphonePairing({ onStopFailed });
-
-  const pairButton = (
-    <Button variant="secondary" size="sm" onClick={pair}>
-      {NAMES.pairIphone}
-    </Button>
-  );
-  const cancelButton = isPaired ? (
-    <Button variant="ghost" size="sm" onClick={cancel}>
-      Cancel
-    </Button>
-  ) : undefined;
+  const now = useNow(30_000, true);
 
   const fault = status?.fault ?? null;
   const pending = status?.pendingPairing ?? null;
+  const isKnown = status !== null;
   const notices = (
     <>
       {fault === null ? null : (
@@ -86,7 +83,38 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
       {pending === null ? null : (
         <PairingRequest pending={pending} isBusy={isChanging} onDecide={decidePairing} />
       )}
+      {changeError === null ? null : (
+        <Notice tone="danger" placement="inline" title={changeError} />
+      )}
+      {isKnown && readMisses >= READ_MISSES_SHOWN ? (
+        <Notice tone="warning" placement="inline" title={READ_FAILED} />
+      ) : null}
+      {!isKnown && readMisses > 0 ? (
+        <Notice tone="danger" placement="inline" title={FIRST_READ_FAILED} />
+      ) : null}
     </>
+  );
+  const listener = (
+    <ListenerSection
+      status={status}
+      interfaces={interfaces}
+      isFaulted={fault !== null}
+      isBusy={isChanging || isLoading}
+      onToggle={toggleInterface}
+    />
+  );
+  const actions = isShowingCode ? (
+    <Button variant="ghost" size="sm" onClick={cancel}>
+      Cancel
+    </Button>
+  ) : (
+    <Button
+      variant={isPaired || pending !== null ? 'secondary' : 'primary'}
+      size="sm"
+      onClick={pair}
+    >
+      {NAMES.pairIphone}
+    </Button>
   );
 
   return (
@@ -95,77 +123,46 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
       animationClassName={animationClassName}
       title={NAMES.iphone}
       meta={metaOf({ status, isShowingCode })}
-      actions={isShowingCode ? cancelButton : pairButton}
+      actions={actions}
     >
+      {notices}
       {isShowingCode ? (
         <>
-          {notices}
-          <Band
-            inset="content"
-            label={NAMES.pairIphone}
-            ariaLabel={NAMES.pairIphone}
-            headingLevel={2}
-          >
-            <div className="flex flex-wrap items-center gap-8">
-              <div className="flex flex-col items-center gap-3">
-                <PairingCode
-                  info={info}
-                  isLoading={isLoading}
-                  error={error}
-                  remaining={remaining}
-                  total={total}
-                  onMint={() => void mint()}
-                />
-              </div>
-              <div className="flex max-w-[22rem] flex-col gap-3">
-                <ol className="flex list-inside list-decimal flex-col gap-2 text-ui text-muted-foreground">
-                  {PAIRING_STEPS.map((step) => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ol>
-                <p className="text-meta text-muted-foreground">{NEW_PHONE_NOTE}</p>
-              </div>
-            </div>
-          </Band>
-          <Band inset="content" label="Networks" ariaLabel="Networks" headingLevel={2}>
-            <NetworkChoice
-              interfaces={interfaces}
-              isBusy={isChanging || isLoading}
-              onToggle={toggleInterface}
-            />
-          </Band>
-          <Notice
-            tone="info"
-            placement="inline"
-            title="Goodboy for iPhone is in private testing"
-            body="It can't be downloaded yet. Pairing works with a build you already have."
+          <PairingPanel
+            info={info}
+            isLoading={isLoading}
+            error={error}
+            remaining={remaining}
+            total={total}
+            onMint={() => void mint()}
           />
+          {listener}
         </>
       ) : (
         <>
-          {notices}
-          {changeError === null ? null : (
-            <Notice tone="danger" placement="inline" title={changeError} />
-          )}
           {error === null ? null : <Notice tone="danger" placement="inline" title={error} />}
-          <Band inset="content" label="Paired iPhones" ariaLabel="Paired iPhones" headingLevel={2}>
-            <PairedDevices
-              enrolled={enrolled}
-              phones={phones}
-              now={Date.now()}
-              isBusy={isRevoking || isChanging}
-              onSetPermissions={setPermissions}
-              onRevokeOne={revokeOne}
-              onRevokeAll={revoke}
-            />
-          </Band>
-          <Band inset="content" label="Networks" ariaLabel="Networks" headingLevel={2}>
-            <NetworkChoice
-              interfaces={interfaces}
-              isBusy={isChanging || isLoading}
-              onToggle={toggleInterface}
-            />
-          </Band>
+          {isKnown && isPaired ? (
+            <>
+              <PairedDevices
+                enrolled={enrolled}
+                phones={phones}
+                now={now}
+                isFaulted={fault !== null}
+                isBusy={isRevoking || isChanging}
+                onSetPermissions={setPermissions}
+                onRevokeOne={revokeOne}
+                onRevokeAll={revoke}
+              />
+              {listener}
+              <TopBarSection />
+            </>
+          ) : null}
+          {isKnown && !isPaired ? (
+            <>
+              <IphoneEmpty />
+              <TopBarSection />
+            </>
+          ) : null}
         </>
       )}
     </PaneShell>

@@ -16,7 +16,7 @@ use super::reason::{
     OTHER_SESSION, OTHER_WINDOW, PAGE_MOVED, PAGE_TEXT_UNAVAILABLE, TAB_CLOSED, TAB_GONE,
 };
 use super::registry::{BrowserRegistry, TabFacts, TabState};
-use super::site_data::{self, SiteCleared};
+use super::site_data::{self, RecordsCleared, SiteCleared, SiteRecord};
 use super::snapshot;
 use crate::platform::web_history::{HistoryState, HistoryStep};
 use crate::platform::web_text::{self, PageText};
@@ -79,6 +79,13 @@ pub(crate) struct SiteDataArgs {
     tab_id: String,
     host: String,
     extra_hosts: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SiteRecordsArgs {
+    tab_id: String,
+    names: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -248,7 +255,6 @@ pub async fn browser_profile_clear(
     profile::clear(webview.app_handle(), &args.workspace_id).await
 }
 
-#[allow(dead_code)]
 #[tauri::command]
 pub async fn browser_profile_isolation(webview: Webview) -> Result<Isolation, MessageError> {
     refuse_browser_caller(&webview)?;
@@ -314,6 +320,60 @@ pub async fn browser_site_data_clear(
     let cleared = site_data::clear_site(&tab, &args.host, extra_hosts).await?;
     host::reload_from_origin(&tab)?;
     Ok(cleared)
+}
+
+fn sites_of<R: Runtime>(caller: &Webview<R>, tab: &Webview<R>, tab_id: &str) -> TabSites {
+    let site = web_url::live_url_of(tab)
+        .map(|live| guard::host_of(&live))
+        .filter(|host| !site_data::host_key(host).is_empty());
+    let trail = site_data::trail_of(
+        &caller.state::<BrowserRegistry>(),
+        tab_id,
+        profile::isolation(),
+    );
+    TabSites { site, trail }
+}
+
+struct TabSites {
+    site: Option<String>,
+    trail: Vec<String>,
+}
+
+#[tauri::command]
+pub async fn browser_site_data_list(
+    webview: Webview,
+    args: TabArgs,
+) -> Result<Vec<SiteRecord>, MessageError> {
+    let tab = owned_tab(&webview, &args.tab_id)?;
+    site_data::check_listable(profile::isolation())?;
+    let found = site_data::read_records(&tab).await?;
+    let sites = sites_of(&webview, &tab, &args.tab_id);
+    Ok(site_data::listed_records(
+        found,
+        sites.site.as_deref(),
+        &sites.trail,
+    ))
+}
+
+#[tauri::command]
+pub async fn browser_site_data_clear_records(
+    webview: Webview,
+    args: SiteRecordsArgs,
+) -> Result<RecordsCleared, MessageError> {
+    let tab = owned_tab(&webview, &args.tab_id)?;
+    site_data::check_listable(profile::isolation())?;
+    let names = site_data::checked_names(&args.names)?;
+    let _lease = profile::begin_site_clear(webview.app_handle(), &args.tab_id)?;
+    site_data::clear_records(&tab, names.clone()).await?;
+    let sites = sites_of(&webview, &tab, &args.tab_id);
+    let was_reloaded = site_data::touches_tab(&names, sites.site.as_deref(), &sites.trail);
+    if was_reloaded {
+        host::reload_from_origin(&tab)?;
+    }
+    Ok(RecordsCleared {
+        names,
+        was_reloaded,
+    })
 }
 
 #[tauri::command]
@@ -886,6 +946,61 @@ mod tests {
             checked < leased && leased < cleared && cleared < reloaded,
             "{body}"
         );
+    }
+
+    fn command_body(name: &str) -> &'static str {
+        let command = include_str!("commands.rs");
+        let start = command
+            .find(&format!("pub async fn {name}("))
+            .expect("the command");
+        &command[start..start + command[start..].find("\n}\n").expect("end")]
+    }
+
+    #[test]
+    fn wire_shape_site_records_args() {
+        assert_wire_reads::<SiteRecordsArgs>(json!({
+            "tabId": "0f1e",
+            "names": ["harborline.dev", "cascadia-id.com"],
+        }));
+    }
+
+    #[test]
+    fn a_records_clear_needs_no_live_host_and_holds_the_lease_until_the_reload() {
+        let body = command_body("browser_site_data_clear_records");
+        assert!(!body.contains("check_site("), "{body}");
+        assert!(!body.contains("check_trail("), "{body}");
+        let owned = body
+            .find("owned_tab(&webview, &args.tab_id)")
+            .expect("owner");
+        let listable = body.find("check_listable(").expect("store");
+        let named = body.find("checked_names(&args.names)").expect("names");
+        let leased = body
+            .find("let _lease = profile::begin_site_clear(")
+            .expect("lease");
+        let cleared = body.find("clear_records(&tab").expect("clear");
+        let touched = body.find("touches_tab(").expect("touch");
+        let reloaded = body.find("reload_from_origin(&tab)").expect("reload");
+        assert!(
+            owned < listable
+                && listable < named
+                && named < leased
+                && leased < cleared
+                && cleared < touched
+                && touched < reloaded,
+            "{body}"
+        );
+    }
+
+    #[test]
+    fn a_site_list_takes_no_lease() {
+        let body = command_body("browser_site_data_list");
+        assert!(!body.contains("begin_"), "{body}");
+        let owned = body
+            .find("owned_tab(&webview, &args.tab_id)")
+            .expect("owner");
+        let listable = body.find("check_listable(").expect("store");
+        let read = body.find("read_records(&tab)").expect("read");
+        assert!(owned < listable && listable < read, "{body}");
     }
 
     #[test]

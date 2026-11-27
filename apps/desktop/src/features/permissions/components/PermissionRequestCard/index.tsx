@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Hand, ShieldCheck } from '@goodboy/ui/icons';
+import { Lock, ShieldCheck } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Button,
@@ -211,7 +211,7 @@ export const PermissionRequestCard = ({
       className="flex flex-col gap-2 text-meta"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <Hand size={ICON_SIZE.control} aria-hidden className={warningTint.icon} />
+        <Lock size={ICON_SIZE.control} aria-hidden className={warningTint.icon} />
         <span className="text-heading text-foreground">{ask.title}</span>
         {ask.isResolved ? (
           <span className="ml-auto text-meta text-muted-foreground">Resolved</span>

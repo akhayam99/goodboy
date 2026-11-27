@@ -5,6 +5,7 @@ import { AUTO_OWN_PROVIDERS } from '@goodboy/core/auto';
 import { ROLE_REGISTRY } from '@goodboy/core/roles';
 import { PLAN_KIT_GUIDE } from '@goodboy/core/artifacts';
 import type { Agent, AgentId, AgentRole, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
+import { Eye, Network } from '@goodboy/ui/icons';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 import {
   AGENT_KIND_DEFAULTS,
@@ -284,6 +285,11 @@ describe('agentKindPalette', () => {
     for (const kind of ALL_KINDS) {
       expect(agentKindPalette({ kind })).toBe(AGENT_KIND_PALETTE[kind]);
     }
+  });
+
+  it('draws the Lead as Orchestrate and the Reviewer as an eye', () => {
+    expect(AGENT_KIND_PALETTE.auto.icon).toBe(Network);
+    expect(AGENT_KIND_PALETTE.reviewer.icon).toBe(Eye);
   });
 
   it('never returns undefined for a kind outside the union', () => {
