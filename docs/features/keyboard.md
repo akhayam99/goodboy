@@ -266,10 +266,10 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 
 #### Point at part of a page
 
-- **Select an element**, the button before Console, or **⌘⇧C** turns the pointer into a crosshair, and the page says "Select an element".
+- **Select an element**, the button before Console in the pane and on the Browser page, or **⌘⇧C** turns the pointer into a crosshair, and the page says "Select an element".
 - The part under the pointer gets an outline with its name and size. On your dev server the name is the component.
 - Click it and a note opens under the address row: "What should change?". **⇧-click** adds more parts to the same note, up to four.
-- **Enter** puts a chip and a picture for each part on the message box, and your note in the text. **Esc** leaves. Nothing goes until you send.
+- **Enter** puts a chip and a picture for each part on the message box, and your note in the text. **Esc** leaves. Nothing goes until you send. On the Browser page the message box is the one of the tab's session, and you stay on the page.
 - The agent gets the address, the part's text, its HTML up to 4,000 characters, a few styles and its picture. On a dev server this session runs, it also gets the file and line. A key or a token is hidden.
 - The note names the agent it adds to. With more than one agent in the session, it is a menu.
 
