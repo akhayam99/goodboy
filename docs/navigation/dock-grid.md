@@ -18,10 +18,6 @@ focus (the page, the detail or one tool).
 - The dock in the slot is always the grid's latest tool (`settledSlot`): a tool the
   slot dropped waits in the grid and returns when the panel beside it closes, and
   closing a tool removes it from the grid.
-- Below `DOCK_TILE_ROOM_PX` (700) of room beside the page, the desk stops tiling: the
-  solver folds every tool into one cell and that cell lies over the page (`deskLayoutOf`,
-  mode `over`), with the rail live and a second click closing it. A fold is a view, never
-  a write: widening the window brings the saved columns back.
 - `focusDrawerPanel` names the page or a panel's entry; a replaced or closed entry
   changes nothing.
 - Archiving or deleting a session removes its tools, and `clearDrawer` empties the

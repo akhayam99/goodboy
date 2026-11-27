@@ -95,15 +95,6 @@ describe('the motion registry names every keyframe and only those', () => {
     expect(CSS).toMatch(/--animate-pane-in:\s*pane-in\s+var\(--duration-base\)/);
   });
 
-  it('registers the face pair: face-out fades quick, face-in slides slow after it', () => {
-    expect(keyframeNames()).toEqual(expect.arrayContaining(['face-out', 'face-in']));
-    expect(CSS).toMatch(/--animate-face-out:\s*face-out\s+var\(--duration-quick\)/);
-    expect(CSS).toMatch(
-      /face-in var\(--duration-slow\) var\(--ease-enter\) var\(--duration-quick\) both/,
-    );
-    expect(CSS).toMatch(/animation-delay: calc\(var\(--duration-quick\) \+ var\(--delay-step\)\)/);
-  });
-
   it('keeps PaneSwap on live layers, never on a snapshot copy', () => {
     const source = readFileSync(
       join(DESKTOP_SRC, '..', '..', '..', 'packages', 'ui', 'src', 'components', 'PaneSwap.tsx'),

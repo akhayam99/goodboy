@@ -1,9 +1,7 @@
 import { DrawerContentContext } from '../drawerContentContext';
 import { useDrawerColumnWidth } from '../useDrawerColumnWidth';
 import { useRef } from 'react';
-import { DockLaneContext } from '../dockLaneContext';
-import { dockSolverOf } from '../dockLayout';
-import { useDockLaneBox } from '../useDockLaneBox';
+import { solveDock } from '../dockLayout';
 import { useDockFrame } from '../useDockFrame';
 import { pageFocusPropsOf } from '../pageFocusPropsOf';
 import { DrawerDockNode } from './DrawerDockNode';
@@ -21,7 +19,7 @@ import { useDrawerPanel } from '../useDrawerPanel';
 import { useDrawerPreview } from '../useDrawerPreview';
 import { useEdgeHost } from '../useEdgeHost';
 import { useSnapAfterFloat } from '../useSnapAfterFloat';
-import { DRAWER_GUTTER, panelAsideWidthOf, type DrawerMode } from '../drawerGeometry';
+import { panelAsideWidthOf, type DrawerMode } from '../drawerGeometry';
 
 export const DrawerColumn = ({
   main,
@@ -45,40 +43,34 @@ export const DrawerColumn = ({
   className,
 }: DrawerColumnProps) => {
   const column = useDrawerColumnWidth();
-  const lane = useDockLaneBox({ columnRef: column.ref });
   const edge = useEdgeHost();
   const { asideRef, setAside } = useAsideRef({ drawerRef });
   const trackRef = useRef<HTMLDivElement | null>(null);
   const groupRef = useRef<HTMLDivElement | null>(null);
   const isDetailOpen = detail != null;
   const preview = useDrawerPreview({ asideRef, trackRef, groupRef });
-  const hasPanel = drawer != null || (dockGrid?.columns.length ?? 0) > 0 || isDetailOpen;
-  const laneBox = hasPanel ? lane.box : null;
-  const isLane = laneBox !== null;
-  const railWidth = isLane ? 0 : edge.width;
+  const railWidth = edge.width;
   const dock = useDockFrame({
     dockGrid,
     hasDrawer: drawer != null,
     isDetailOpen,
     isDetailParked,
-    columnWidth: laneBox === null ? column.width : laneBox.width,
-    columnHeight: laneBox === null ? null : laneBox.height,
+    columnWidth: column.width,
+    columnHeight: null,
     railWidth,
-    placement: isLane ? 'auto' : placement,
+    placement,
     sizing,
     detailSizing,
     detailKind,
     previewDock: preview.previewDock,
     previewDetail: preview.previewDetail,
-    solve: dockSolverOf({ isLane }),
+    solve: solveDock,
     resizeLabel,
-    isLane,
   });
   const { isOpen, detailWidths, layout } = dock;
   const mode: DrawerMode = isOpen || isDetailOpen ? layout.mode : 'closed';
-  const isOverlay = mode === 'overlay' && !isLane;
-  const isDetailOver = layout.isDetailOver && !isOverlay && !isLane;
-  const isDockOverDetail = isLane && layout.mode === 'overlay' && isDetailOpen && isOpen;
+  const isOverlay = mode === 'overlay';
+  const isDetailOver = layout.isDetailOver && !isOverlay;
   const dockPanel = useDrawerPanel({ isOpen, layoutMode: layout.mode, isParked });
   const detailPanel = useDrawerPanel({
     isOpen: isDetailOpen,
@@ -104,24 +96,19 @@ export const DrawerColumn = ({
     dock: dockPx,
     detail: pushedDetailPx,
     isDetailOver: isDetailOverPage,
-    isPinned: isLane,
   };
-  const asideWidth =
-    laneBox === null
-      ? panelAsideWidthOf({ dockWidth: dockPx, detailWidth: pushedDetailPx, railWidth })
-      : laneBox.width + DRAWER_GUTTER;
+  const asideWidth = panelAsideWidthOf({
+    dockWidth: dockPx,
+    detailWidth: pushedDetailPx,
+    railWidth,
+  });
   const asideStyle: PanelVars = {
     width: asideWidth,
-    ...(laneBox !== null && {
-      left: laneBox.x - DRAWER_GUTTER,
-      top: laneBox.y,
-      height: laneBox.height,
-    }),
     [DRAWER_PANEL_VARS.dock]: `${layout.dock.width}px`,
     [DRAWER_PANEL_VARS.detail]: `${layout.detail.width}px`,
   };
 
-  const isPushed = mode === 'push' && (isDockShown || isDetailShown) && !isLane;
+  const isPushed = mode === 'push' && (isDockShown || isDetailShown);
   const isSheet = frame === 'sheet';
   const isBesideRail = hasRail || isPushed;
   const sheetState: SheetEdge = isBesideRail ? 'pushed' : sheetEdge;
@@ -138,7 +125,7 @@ export const DrawerColumn = ({
       value={{ columnWidth: column.width, savedWidth: dock.savedWidth, mode }}
     >
       <div
-        ref={lane.setColumn}
+        ref={column.ref}
         className={cn(
           'relative flex min-h-0 min-w-0 flex-1 overflow-hidden',
           isSheet && isBesideRail && 'pb-3',
@@ -156,9 +143,7 @@ export const DrawerColumn = ({
             isSheet && SHEET_CLASSES[sheetState],
           )}
         >
-          <DrawerEdgeContext.Provider value={isLane ? null : edge.host}>
-            <DockLaneContext.Provider value={lane.setLane}>{main}</DockLaneContext.Provider>
-          </DrawerEdgeContext.Provider>
+          <DrawerEdgeContext.Provider value={edge.host}>{main}</DrawerEdgeContext.Provider>
         </div>
         {isFloating ? <DrawerSpacer railWidth={railWidth} /> : null}
         <aside
@@ -170,11 +155,10 @@ export const DrawerColumn = ({
           data-drawer-exit={isAnyExiting ? '' : undefined}
           data-drawer-sizing={sizing}
           data-detail-open={isDetailShown ? '' : undefined}
-          data-drawer-lane={isLane ? '' : undefined}
           style={asideStyle}
           className={cn(
             'flex min-h-0 shrink-0 justify-end',
-            isLane ? 'absolute z-10 overflow-clip' : asideFrameClass,
+            asideFrameClass,
             'duration-200 ease-enter',
           )}
         >
@@ -182,7 +166,7 @@ export const DrawerColumn = ({
             className={cn(
               'flex min-h-0 min-w-0 flex-1',
               !isFloating && !isSheet && 'py-3',
-              (isDetailOverPage || isDockOverDetail) && 'relative',
+              isDetailOverPage && 'relative',
             )}
             ref={trackRef}
             style={{ minWidth: isFloating ? asideWidth : 0 }}
@@ -200,7 +184,6 @@ export const DrawerColumn = ({
                 resizeLabel={detailResizeLabel}
                 isOpen={isDetailOpen}
                 isParked={isDetailParked}
-                canResize={!isLane}
                 isOverlay={isOverlay || isDetailOverPage}
                 isFloating={isDetailFloating}
                 isOverPage={isDetailOverPage}
@@ -237,7 +220,6 @@ export const DrawerColumn = ({
               isParked={isParked}
               isOverlay={isOverlay}
               isFloating={isFloating}
-              isOverDetail={isDockOverDetail}
               isIdle={isContainerIdle}
               parkedWidth={layout.dock.width}
               setEdgeHost={edge.setHost}

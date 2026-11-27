@@ -52,7 +52,6 @@ const deskOf = (columns: ReadonlyArray<DockColumn>) =>
     top: 0,
     leftRailWidth: 0,
     toolRailWidth: 0,
-    isDesk: true,
     detail: null,
     columns,
   });
@@ -104,7 +103,6 @@ describe('a cell with a chosen tab list', () => {
       top: 0,
       leftRailWidth: 0,
       toolRailWidth: 0,
-      isDesk: true,
       foldOrder: ['monitoring', 'browser', 'terminal'],
       detail: null,
       columns: [
