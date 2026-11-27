@@ -19,7 +19,7 @@ pub(crate) enum CalendarError {
 }
 
 impl CalendarError {
-    fn kind(&self) -> &'static str {
+    pub(crate) fn kind(&self) -> &'static str {
         match self {
             CalendarError::Refused(_) => "refused",
             CalendarError::NoAccess => "no_access",

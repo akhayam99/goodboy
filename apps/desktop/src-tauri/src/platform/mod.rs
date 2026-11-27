@@ -1,5 +1,7 @@
 #[cfg(target_os = "macos")]
 pub(crate) mod dns_sd;
+#[cfg(target_os = "macos")]
+pub(crate) mod event_kit;
 pub(crate) mod interface_addresses;
 #[cfg(target_os = "macos")]
 pub(crate) mod key_monitor;

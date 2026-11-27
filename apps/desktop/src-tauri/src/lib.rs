@@ -361,6 +361,12 @@ pub fn run() {
         .invoke_handler(browser::refuse_browser_pages(tauri::generate_handler![
             secrets::secret_set,
             secrets::secret_delete,
+            calendar::commands::calendar_access_state,
+            calendar::commands::calendar_request_access,
+            calendar::commands::calendar_list_calendars,
+            calendar::commands::calendar_list_events,
+            calendar::commands::calendar_ics_add,
+            calendar::commands::calendar_ics_remove,
             editor::detect_editors,
             editor::detect_browsers,
             editor::open_in_editor,
