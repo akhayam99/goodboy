@@ -27,8 +27,10 @@ workspace's session order, behind a label with its title
 ## The view
 
 The view is the pane's: the same address row, model, placement loop and
-overlay rule. The row holds Dock in place of Open full page and Close, and the
-band and Esc close the page. Select an element works as in the pane
+overlay rule. The row ends with Dock, and the band closes the page. Esc steps
+back from a request detail first, then closes the tools dock while focus is on
+the Console button or in the dock ([console.md](console.md#the-dock)), then
+closes the page. Select an element works as in the pane
 ([pick.md](pick.md)). The dock stays in the store but is not mounted, so the
 page alone places the view.
 
@@ -67,11 +69,13 @@ half typed form and the scroll stay. A tab cannot move to another window.
   Terminal's folder pill, the Browser's address), its own buttons, then More,
   Open full page and Close. The Terminal keeps its own tab strip
   (`ToolTabStrip`, `toolTabClassName`); the Browser's tabs sit in the address
-  row, which never wraps. On a full page the last control of the first row is
-  **Dock** (`DockButton`, `NAMES.dock`) for both.
+  row, which never wraps, and its head holds only Open full page and Close,
+  with the page actions on the chevron beside the address. On a full page the
+  last control of the first row is **Dock** (`DockButton`, `NAMES.dock`) for
+  both.
 - **Open full page** (`NAMES.openFullPage`, shared with the Terminal dock), in
-  the address row and in More, with or without a tab, pushes the page on the
-  session and the shown tab (`promoteBrowserTab`), so ⌘[ brings the dock back.
+  the pane head only, pushes the page on the session and the shown tab
+  (`promoteBrowserTab`), so ⌘[ brings the dock back.
   The page's placement takes the view by the owner rule.
 - **Dock** closes the page and opens the dock on that session
   (`demoteBrowserTab`), beside the place under the page. The page hides the
