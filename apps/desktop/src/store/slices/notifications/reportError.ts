@@ -68,6 +68,11 @@ export const reportError = ({ get }: FactoryParams) => {
     ) {
       return;
     }
+    const key =
+      coalesceKey ??
+      (retry === undefined
+        ? undefined
+        : notificationKeyOf({ kind: 'error', severity, title, ...target }));
     const text = formatError(error).trim();
     const action: NotificationAction | undefined =
       retry === undefined
@@ -76,7 +81,7 @@ export const reportError = ({ get }: FactoryParams) => {
             kind: 'retry-action',
             retryId: registerActionRetry({
               retry,
-              ...(coalesceKey === undefined ? {} : { retryId: coalesceKey }),
+              ...(key === undefined ? {} : { retryId: key }),
             }),
             ...(retryLabel === undefined ? {} : { label: retryLabel }),
           };
@@ -86,7 +91,7 @@ export const reportError = ({ get }: FactoryParams) => {
       title,
       body: errorBodyOf({ text, recovery, stays }),
       ...(action !== undefined && { action }),
-      ...(coalesceKey === undefined ? {} : { coalesceKey }),
+      ...(key === undefined ? {} : { coalesceKey: key }),
       ...target,
     });
   };

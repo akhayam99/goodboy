@@ -639,6 +639,40 @@ describe('notification queries', () => {
       expect(await unreadIds(db)).toEqual(['newer']);
     });
 
+    it('stamps acted_at on a retry of an archived session and on a superseded copy', async () => {
+      const db = await seed({});
+      await db.execute(
+        "INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at, archived_at) VALUES ('archived', ?, 'old work', 'idle', 1, 1, 5)",
+        [WS_B],
+      );
+      const retry = {
+        kind: 'retry-push',
+        sessionId: SESSION,
+        mountId: brandId<MountId>({ value: 'm' }),
+      } as const;
+      await insertNotification(
+        db,
+        failure('in-archived', {
+          sessionId: brandId<SessionId>({ value: 'archived' }),
+          action: retry,
+        }),
+      );
+      await insertNotification(
+        db,
+        failure('older', { coalesceKey: 'k', action: retry, ts: tsAtMs(FAILED_MS) }),
+      );
+      await insertNotification(
+        db,
+        failure('newer', { coalesceKey: 'k', action: retry, ts: tsAtMs(FAILED_MS + 5_000) }),
+      );
+
+      await settle(db);
+
+      expect((await rowOf(db, 'in-archived'))?.actedAt).not.toBeNull();
+      expect((await rowOf(db, 'older'))?.actedAt).not.toBeNull();
+      expect((await rowOf(db, 'newer'))?.actedAt).toBeNull();
+    });
+
     it('keeps two rows with different keys', async () => {
       const db = await seed({});
       await insertNotification(db, failure('a', { coalesceKey: 'k1' }));

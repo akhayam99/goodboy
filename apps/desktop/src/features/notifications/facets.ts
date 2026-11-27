@@ -66,7 +66,7 @@ const matchesView = ({ facts, view }: ViewMatchParams): boolean => {
     case 'all':
       return true;
     case 'unread':
-      return !facts.read;
+      return !facts.read && (facts.severity === 'error' || facts.severity === 'warning');
     case 'action':
       return facts.isOwed;
     default: {

@@ -149,6 +149,41 @@ describe('emit coalesces by key', () => {
     expect(useAppStore.getState().notifications.map((n) => n.read)).toEqual([false]);
   });
 
+  it('leaves one row when two emits of an absent key overlap', async () => {
+    const emit = (body: string) =>
+      useAppStore.getState().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: 'Update check failed',
+        body,
+      });
+
+    await Promise.all([emit('a'), emit('b'), emit('c')]);
+
+    expect(await storedRows()).toHaveLength(1);
+    expect(useAppStore.getState().notifications).toHaveLength(1);
+  });
+
+  it('keeps one retry for a repeated report with no key', async () => {
+    const report = () =>
+      useAppStore.getState().reportError({
+        title: "Couldn't push the branch",
+        error: new Error('rejected'),
+        recovery: CHECK_STATE,
+        sessionId: SESSION_A,
+        retry: async () => false,
+      });
+    for (let index = 0; index < 5; index += 1) {
+      await report();
+    }
+
+    const rows = await storedRows();
+    expect(rows).toHaveLength(1);
+    expect(useAppStore.getState().notifications[0]?.action).toMatchObject({
+      kind: 'retry-action',
+    });
+  });
+
   it('shows no phantom row when the write fails', async () => {
     injectDbFault({ match: /^INSERT INTO notifications/ });
 

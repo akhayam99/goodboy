@@ -11,7 +11,10 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { refreshNotificationCounts } from './refreshNotificationCounts';
 import { scopedWorkspaceId } from './notificationScope';
 import { notificationKeyOf } from './notificationKeyOf';
+import { createSerialQueue } from '../../runtime/state-writes/serialQueue';
 import type { GetFn, SetFn } from './types';
+
+const keyedWrites = createSerialQueue();
 import { sessionById } from '../sessions/sessionIndex';
 
 export type EmitNotificationParams = {
@@ -62,21 +65,29 @@ export const emitNotification = (set: SetFn, get: GetFn) => {
       coalesceKey: key,
       actedAt: null,
     };
-    const isStored = await insertNotification(tauriDatabase, n).then(
-      () => true,
-      () => false,
-    );
+    const isStored = await keyedWrites.run({
+      key,
+      task: async () => {
+        const isInserted = await insertNotification(tauriDatabase, n).then(
+          () => true,
+          () => false,
+        );
+        if (isInserted) {
+          await deleteOlderNotificationsOfKey({
+            db: tauriDatabase,
+            keepId: n.id,
+            coalesceKey: key,
+          }).then(
+            () => undefined,
+            () => undefined,
+          );
+        }
+        return isInserted;
+      },
+    });
     if (!isStored) {
       return;
     }
-    await deleteOlderNotificationsOfKey({
-      db: tauriDatabase,
-      keepId: n.id,
-      coalesceKey: key,
-    }).then(
-      () => undefined,
-      () => undefined,
-    );
     const state = get();
     const scope = scopedWorkspaceId({ state });
     const owner = workspaceId ?? sessionById(state.sessions, sessionId)?.workspaceId ?? null;

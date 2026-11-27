@@ -498,30 +498,37 @@ const anyOf = ({ clauses }: AnyOfParams): Clause => ({
   params: clauses.flatMap((clause) => clause.params),
 });
 
+const DEBT_ACTION: Clause = {
+  sql: `(json_extract(action, '$.kind') IN ('retry-summarizer', 'retry-orchestrator', 'retry-step-summary', 'retry-publication', 'retry-update', 'retry-notification-scope', 'retry-push', 'retry-action', 'continue-agent', 'update-provider-cli'))`,
+  params: [],
+};
+
 export const settleStaleNotifications = async ({
   db,
   nowMs,
   launchStampMs,
   firstPassBeforeMs,
 }: SettleStaleParams): Promise<number> => {
-  const owed = anyOf({ clauses: [CONTINUE_AGENT_DONE, deadRetryClause({ launchStampMs })] });
-  const settled = anyOf({
+  const proven = anyOf({
     clauses: [
       SUMMARIZER_FAILED,
       STEP_SUMMARY_DEGRADED,
       ORCHESTRATOR_NOTICE,
-      owed,
+      CONTINUE_AGENT_DONE,
+      deadRetryClause({ launchStampMs }),
       ENDED_SESSION,
       NEWER_DUPLICATE,
-      firstPassClause({ firstPassBeforeMs, launchStampMs }),
     ],
+  });
+  const settled = anyOf({
+    clauses: [proven, firstPassClause({ firstPassBeforeMs, launchStampMs })],
   });
   const { rowsAffected } = await db.execute(
     `UPDATE notifications SET
        read = 1,
-       acted_at = CASE WHEN acted_at IS NULL AND ${owed.sql} THEN ? ELSE acted_at END
-     WHERE (read = 0 AND ${settled.sql}) OR (acted_at IS NULL AND ${owed.sql})`,
-    [...owed.params, nowMs, ...settled.params, ...owed.params],
+       acted_at = CASE WHEN acted_at IS NULL AND ${DEBT_ACTION.sql} AND ${proven.sql} THEN ? ELSE acted_at END
+     WHERE (read = 0 AND ${settled.sql}) OR (acted_at IS NULL AND ${DEBT_ACTION.sql} AND ${proven.sql})`,
+    [...proven.params, nowMs, ...settled.params, ...proven.params],
   );
   return rowsAffected;
 };

@@ -44,10 +44,17 @@ type UnreadKeysParams = {
   readonly notifications: ReadonlyArray<Notification>;
 };
 
+const hasUnreadProblem = ({ group }: GroupParams): boolean =>
+  group.some(
+    (notification) =>
+      !notification.read &&
+      (notification.severity === 'error' || notification.severity === 'warning'),
+  );
+
 const unreadGroupKeys = ({ notifications }: UnreadKeysParams): ReadonlySet<string> =>
   new Set(
     sortNotificationGroupsNewestFirst({ notifications })
-      .filter((group) => group.some((notification) => !notification.read))
+      .filter((group) => hasUnreadProblem({ group }))
       .map((group) => notificationGroupKey({ group })),
   );
 
@@ -129,7 +136,7 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
   };
 
   const groups = sortNotificationGroupsNewestFirst({ notifications });
-  const unread = groups.filter((group) => group.some((notification) => !notification.read)).length;
+  const unread = groups.filter((group) => hasUnreadProblem({ group })).length;
   const badge = notificationBadgeOf({
     buckets: notificationCounts,
     isWorkspaceScoped: notificationScope === 'workspace',
