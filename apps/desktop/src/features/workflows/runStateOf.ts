@@ -1,4 +1,5 @@
 import type { Agent, OpenQuestion, Workflow, WorkflowRun } from '@goodboy/types';
+import { failureStandingOf } from '@goodboy/core/attention';
 import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core/workflows';
 import type { DotState } from '@goodboy/ui';
 import { NAMES } from '../../shared/utils/names';
@@ -188,7 +189,10 @@ const runStateKindOf = ({
     return 'done';
   }
   const isRunning = agents.some((agent) => agent.status === 'running');
-  const stop = run.orchestrationStop ?? null;
+  const standing = failureStandingOf({ agents });
+  const isStopRetried = standing.isEnded && !isRunning;
+  const rawStop = run.orchestrationStop ?? null;
+  const stop = rawStop?.kind === 'failure' && isStopRetried ? null : rawStop;
   if (isRunPaused({ run })) {
     return 'paused';
   }
@@ -210,7 +214,10 @@ const runStateKindOf = ({
   if (workflowRunOpenQuestions({ questions, run }).length > 0) {
     return 'question';
   }
-  const halted = agents.find((agent) => isAgentStatusHalted({ status: agent.status }));
+  const halted = agents.find(
+    (agent) =>
+      isAgentStatusHalted({ status: agent.status }) && !standing.endedAgentIds.has(agent.id),
+  );
   if (halted !== undefined) {
     return halted.status === 'blocked' ? 'halted-blocked' : 'halted-failed';
   }

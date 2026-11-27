@@ -6,6 +6,7 @@ import { autoGroupOf, type AutoGroupChild } from './autoGroupOf';
 import { autoStuckKindOf, type AutoStuckKind } from './autoStuckKindOf';
 import { textField } from './chat/readJson';
 import { isFailureSettled } from '@goodboy/core/attention';
+import { isAutoBlockRecovered } from './isAutoBlockRecovered';
 import { isAutoPausedAtLimit } from './isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
 import { NAMES } from '../../shared/utils/names';
@@ -135,6 +136,7 @@ export const autoRetryTargetsOf = ({
       ...(isAutoPlanAwaitingApproval({ view }) ? [ownTargetOf({ view, kind: 'approve' })] : []),
       ...(phase === 'blocked' &&
       !isAutoPausedAtLimit({ view }) &&
+      !isAutoBlockRecovered({ delegations: view.delegations }) &&
       !isFailureSettled({ at: view.tree.updatedAt, settledAt })
         ? [ownTargetOf({ view, kind: 'blocked' })]
         : []),

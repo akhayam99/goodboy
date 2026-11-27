@@ -2,7 +2,7 @@ import type { AutoPhase } from '@goodboy/db';
 
 export type LeadStop = 'working' | 'waitsForYou' | 'resting' | 'stopped' | 'finished';
 
-export type LeadStopReason = 'planReady' | 'ask' | 'limit' | 'failed' | 'stopping';
+export type LeadStopReason = 'planReady' | 'ask' | 'limit' | 'failed' | 'stopping' | 'recovered';
 
 export type LeadStopState = Readonly<{
   stop: LeadStop;
@@ -16,6 +16,7 @@ export type LeadStopFacts = Readonly<{
   isAsking: boolean;
   isPausedAtLimit: boolean;
   isHeld?: boolean;
+  isBlockRecovered?: boolean;
 }>;
 
 type StateParams = {
@@ -35,6 +36,7 @@ export const leadStopOf = ({
   isAsking,
   isPausedAtLimit,
   isHeld = false,
+  isBlockRecovered = false,
 }: LeadStopFacts): LeadStopState => {
   if (phase === 'stopping') {
     return stopStateOf({ stop: 'stopped', reason: 'stopping' });
@@ -46,6 +48,9 @@ export const leadStopOf = ({
     return stopStateOf({ stop: 'finished' });
   }
   if (phase === 'blocked') {
+    if (isBlockRecovered && !isPausedAtLimit) {
+      return stopStateOf({ stop: 'resting', reason: 'recovered' });
+    }
     return stopStateOf({ stop: 'waitsForYou', reason: isPausedAtLimit ? 'limit' : 'failed' });
   }
   if (isHeld && (phase === 'done' || phase === 'answering' || phase === 'waiting')) {

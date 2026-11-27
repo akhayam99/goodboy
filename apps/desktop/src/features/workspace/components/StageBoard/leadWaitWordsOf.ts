@@ -19,6 +19,7 @@ const WAITING = {
   limit: { words: 'Paused at its limit', verb: OPEN_RUN },
   failed: { words: 'Stopped on a failure', verb: OPEN_RUN },
   stopping: null,
+  recovered: null,
 } as const satisfies Readonly<Record<NonNullable<LeadStopState['reason']>, WaitWords | null>>;
 
 export const leadWaitWordsOf = ({ lead, askCount }: Params): WaitWords | null => {
