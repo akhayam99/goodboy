@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
+import { ComposerTray as ComposerTrayFrame } from '../../../../../shared/components/ComposerTray';
 import { NAMES } from '../../../../../shared/utils/names';
+import { QueuedMessages } from '../../../queuedMessages';
 import type { QueuedRows } from '../hooks/useQueuedRows';
-import { QueuedMessages } from './QueuedMessages';
 import { SuggestionStack } from './SuggestionStack';
 
 type Props = {
@@ -12,7 +13,7 @@ type Props = {
 };
 
 export const ComposerTray = ({ queued, suggestions, canEdit, isDenying }: Props) => (
-  <div className="flex flex-col gap-2 rounded-t-lg bg-muted px-2 pb-2 pt-2">
+  <ComposerTrayFrame>
     <QueuedMessages
       items={queued.rows}
       canEdit={canEdit}
@@ -25,5 +26,5 @@ export const ComposerTray = ({ queued, suggestions, canEdit, isDenying }: Props)
       onRaiseLimit={queued.onRaiseLimit}
     />
     <SuggestionStack items={suggestions} />
-  </div>
+  </ComposerTrayFrame>
 );

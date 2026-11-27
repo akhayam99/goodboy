@@ -11,6 +11,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { PendingAttachment } from '../../../features/attachments/pendingAttachment';
+import type { createChatQueueSlice } from '../chatQueue';
 import type { ChatsState } from './state';
 
 export type { GetFn, SetFn } from '../../slice-types';
@@ -48,6 +49,8 @@ export type CreateChatParams = {
 export type SendChatMessageParams = ChatParams & {
   readonly content: string;
   readonly attachments?: ReadonlyArray<PendingAttachment>;
+  readonly queuedId?: string;
+  readonly onAccepted?: () => void;
 };
 
 export type ArchiveChatsParams = {
@@ -73,23 +76,26 @@ export type SetChatModelParams = ChatParams & {
   readonly effort?: EffortLevel | null;
 };
 
-export type ChatsSlice = ChatsState & {
-  loadChats(params: LoadChatsParams): Promise<void>;
-  loadArchivedChats(params: LoadChatsParams): Promise<ReadonlyArray<ChatSummary>>;
-  loadChatMessages(params: ChatParams): Promise<void>;
-  createChat(params: CreateChatParams): Promise<ChatId>;
-  sendChatMessage(params: SendChatMessageParams): Promise<boolean>;
-  stopChatReply(params: ChatParams): Promise<void>;
-  archiveChats(params: ArchiveChatsParams): Promise<void>;
-  archiveIdleChats(params: ArchiveIdleChatsParams): Promise<ReadonlyArray<ChatId>>;
-  restoreChats(params: ArchiveChatsParams): Promise<void>;
-  deleteChats(params: ArchiveChatsParams): Promise<void>;
-  recordChatLink(params: RecordChatLinkParams): Promise<ChatSessionLink>;
-  queueChatLink(params: PendingChatLinkParams): void;
-  flushChatLinks(params: SessionChatLinksParams): Promise<void>;
-  pinChat(params: PinChatParams): Promise<void>;
-  renameChat(params: RenameChatParams): Promise<void>;
-  setChatModel(params: SetChatModelParams): Promise<void>;
-  markChatRead(params: ChatParams): void;
-  markChatUnread(params: ChatParams): void;
-};
+type ChatQueueSlice = ReturnType<typeof createChatQueueSlice>;
+
+export type ChatsSlice = ChatsState &
+  ChatQueueSlice & {
+    loadChats(params: LoadChatsParams): Promise<void>;
+    loadArchivedChats(params: LoadChatsParams): Promise<ReadonlyArray<ChatSummary>>;
+    loadChatMessages(params: ChatParams): Promise<void>;
+    createChat(params: CreateChatParams): Promise<ChatId>;
+    sendChatMessage(params: SendChatMessageParams): Promise<boolean>;
+    stopChatReply(params: ChatParams): Promise<void>;
+    archiveChats(params: ArchiveChatsParams): Promise<void>;
+    archiveIdleChats(params: ArchiveIdleChatsParams): Promise<ReadonlyArray<ChatId>>;
+    restoreChats(params: ArchiveChatsParams): Promise<void>;
+    deleteChats(params: ArchiveChatsParams): Promise<void>;
+    recordChatLink(params: RecordChatLinkParams): Promise<ChatSessionLink>;
+    queueChatLink(params: PendingChatLinkParams): void;
+    flushChatLinks(params: SessionChatLinksParams): Promise<void>;
+    pinChat(params: PinChatParams): Promise<void>;
+    renameChat(params: RenameChatParams): Promise<void>;
+    setChatModel(params: SetChatModelParams): Promise<void>;
+    markChatRead(params: ChatParams): void;
+    markChatUnread(params: ChatParams): void;
+  };
