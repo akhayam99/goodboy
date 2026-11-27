@@ -19,11 +19,11 @@ describe('the empty board', () => {
 
     const lanes = screen.getAllByRole('group');
     expect(lanes.map((lane) => lane.getAttribute('aria-label'))).toEqual([
-      'Building',
+      'Open',
       'Running',
       'In review',
       'Done',
-      'Archived',
+      'Archive',
     ]);
     expect(lanes.map((lane) => lane.querySelectorAll('p').length)).toEqual([1, 1, 1, 1, 1]);
     const sentences = lanes.map((lane) => lane.querySelector('p')?.textContent);

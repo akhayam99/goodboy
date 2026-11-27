@@ -38,13 +38,13 @@ Nothing merges without your gesture: the train starts from the button and stops 
 
 See where each task stands without moving cards around. Five lanes always sit in this order, and each session sits in the lane that matches what is happening in it:
 
-- **Building**
+- **Open**
 - **Running**
 - **In review**
 - **Done**
-- **Archived**
+- **Archive**
 
-A session that waits on you shows once, as a yellow card at the top of **Running**, and in no other lane. One that only waits for a quiet look, such as an approved pull request or an unread reply, stays in **In review** or **Building**.
+A session that waits on you shows once, as a yellow card at the top of **Running**, and in no other lane. One that only waits for a quiet look, such as an approved pull request or an unread reply, stays in **In review** or **Open**.
 
 Each lane is a quiet panel with a dot in its stage color beside its name and count. An empty lane shows one dashed slot. **Filter** sits on the tool row under the **Board** title.
 
@@ -67,8 +67,8 @@ A session whose pull request merged or closed leaves the live groups of Sessions
 
 - The **Done** lane header carries a **⋯** menu with **Archive all in Done** and **Archive done older than 7 days**, by the session's last activity.
 - Each archives at once with **Undo**, or asks first when an agent there is still live.
-- **Done** and **Archived** draw each session as one compact row: its title and its pull request.
-- **Archived** folds to its count. **Show all** opens it and **Hide** folds it again.
+- **Done** and **Archive** draw each session as one compact row: its title and its pull request.
+- **Archive** folds to its count. **Show all** opens it and **Hide** folds it again.
 - **Restore** on an archived row puts the session back where it belongs.
 
 On a narrow window the two lanes share the last lane.
@@ -90,7 +90,7 @@ Rest the pointer on a card, or focus its title with the keyboard, to open the ho
 
 **Mark as read** covers only what you have looked at. A reply that lands after the log you saw stays unread. A save that fails keeps the row unread and says so. A second window, or an answer from your phone, shows the same unread rows, questions and Slack drafts without a reload.
 
-A thin colored line at the card's left edge tells its stage: gray while building, blue while running, yellow when it needs you, green in review, purple when done, and gray again once archived.
+A thin colored line at the card's left edge tells its stage: gray while open, blue while running, yellow when it needs you, green in review, purple when done, and gray again once in the archive.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-card-dark.webp">
@@ -132,7 +132,7 @@ This part is for contributors and agents who change the feature.
 - Card signal: `boardSignalOf` reads `attentionWordsOf`, so a new reason needs no second table.
 - Live line: `useFleetPhrase` reads `live_work` for every session in one call that all its readers share. A `work-changed` event or the poll (`FLEET_EVERY_MS`, 15 s) asks for a read while the window shows. `fleetPhraseOf` keeps the newest run's phrase. A phrase stays `FLEET_MIN_MS` (5 s) after it changed, and only the newest waiting one follows. A failed read keeps the last line, and a late answer is dropped. `StageBoardCard`, `SessionHoverCardBody`, the Now chip rows and `SessionsRow` read it.
 - Waiting run: `waitingRunOf` names the run `attentionPlace` opens for the same reason, and `leadWaitWordsOf` gives a Lead its words and its button.
-- Lanes: `boardByStageOf` drops every session `attentionCountOf` counts from the lanes and files a quiet attention session under `review` when it has a pull request, else `building`. `boardLanesOf` gives five lanes, four with Done over Archived, or four that scroll. `laneColumnsOf` picks the `PANE_RHYTHM` lane tracks for `BoardLanes` and `BoardSkeleton`, and `laneWidthOf` gives the same width in rem to the scrolling tracks (`laneWidthOf.test.ts`). `needsYouPlacement.test.ts` checks that every loud attention reason lands as one Running card and in no other lane, and every quiet one stays a plain card in its own lane.
+- Lanes: `boardByStageOf` drops every session `attentionCountOf` counts from the lanes and files a quiet attention session under `review` when it has a pull request, else `building` (shown as **Open**). `boardLanesOf` gives five lanes, four with Done over Archived, or four that scroll. `laneColumnsOf` picks the `PANE_RHYTHM` lane tracks for `BoardLanes` and `BoardSkeleton`, and `laneWidthOf` gives the same width in rem to the scrolling tracks (`laneWidthOf.test.ts`). `needsYouPlacement.test.ts` checks that every loud attention reason lands as one Running card and in no other lane, and every quiet one stays a plain card in its own lane.
 - Needs you count: `needsYouOf` counts the sessions with `attentionCountOf`, the count the places rail uses, and turns each loud reason into moves, one per open question. Each session then gets one card with its question count. `pr-approved` stays out and lands in `readyToMergeOf`. It also needs `requestChecksOf` to read `success` (`readyToMergeOf.test.ts`). Tested in `needsYouOf.test.ts`.
 - Needs you in Running: `NeedsYouCards` reads `useNeedsYou` and draws one `NeedsYouCard`, an `InteractiveRow` with the `warning` `ToneBar`, per card. `BoardLanes` hands them to the `running` `StageColumn` as its `lead`, above its own cards, and adds their count to the lane head. A click calls `openAttentionTarget` with the card's reason, so the landing is `attentionPlace` and another workspace goes through `attentionTargetChannel`. Tested in `NeedsYouCards/index.test.tsx`, `lanes.test.tsx`, `needs-you.rows.tsx` and the u52 board scenes.
 - Card grammar: `cardContextOf` gives the gray line (`projectLineOf` and the first branch), and `cardFactsOf` the state and age of the meta line. `CardFactsLine` draws them in a wrapping row whose separator hides at a line start, beside the signal. `StageColumn` passes `density="row"` to the `done` and `archived` lanes. Tested in `cardContextOf.test.ts`, `cardFactsOf.test.ts` and `StageBoardCard/index.test.tsx`.

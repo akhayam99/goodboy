@@ -119,7 +119,7 @@ describe('the node of every other session', () => {
 
   it.each<[SessionStage, string]>([
     ['review', 'In review'],
-    ['building', 'Building'],
+    ['building', 'Open'],
   ])('names a %s session by its stage', (stage, label) => {
     expect(nodeOf({ stage })).toMatchObject({ kind: 'idle', label });
   });

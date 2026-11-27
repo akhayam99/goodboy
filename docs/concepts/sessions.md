@@ -98,8 +98,8 @@ holds the item, then the same branch, session and project, then the most recent.
   holds the moves only you can make, **Next** the ones after, and `needsYouOf`
   counts the first, the same number on the Board and in Sessions
   ([next-steps.md](next-steps.md)).
-- The Board puts sessions in lanes by stage (building, running, in review, done,
-  archived), with a row of cards for sessions that need you above them.
+- The Board puts sessions in lanes by stage (open, running, in review, done,
+  archive), with a row of cards for sessions that need you above them.
 
 The files behind stages and live work are in
 [identifiers.md](identifiers.md#where-things-live), and

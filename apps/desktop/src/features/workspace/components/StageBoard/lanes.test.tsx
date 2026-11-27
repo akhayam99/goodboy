@@ -40,7 +40,7 @@ const project = aProject({ workspaceId: workspace.id, name: 'ledger-core', kind:
 
 const NOW = '2026-10-07T09:00:00.000Z' as IsoDateTime;
 
-const LANES = ['building', 'running', 'in review', 'done', 'archived'] as const;
+const LANES = ['open', 'running', 'in review', 'done', 'archive'] as const;
 
 let useAppStore: StoryStore;
 
@@ -124,7 +124,7 @@ const mountBoard = (sessions: ReadonlyArray<Session>) =>
 const lane = (name: (typeof LANES)[number]): HTMLElement => screen.getByRole('group', { name });
 
 const showArchive = (): void => {
-  fireEvent.click(within(lane('archived')).getByRole('button', { name: 'Show all' }));
+  fireEvent.click(within(lane('archive')).getByRole('button', { name: 'Show all' }));
 };
 
 const lanesInOrder = (): ReadonlyArray<string> =>
@@ -181,10 +181,10 @@ describe('StageBoard lanes', () => {
     mountBoard([building]);
 
     expect(within(lane('done')).getByText('Nothing done yet')).toBeDefined();
-    expect(within(lane('archived')).getByText('Nothing archived')).toBeDefined();
+    expect(within(lane('archive')).getByText('Nothing archived')).toBeDefined();
     expect(within(lane('running')).getByText('Nothing running')).toBeDefined();
     expect(within(lane('in review')).getByText('Nothing in review')).toBeDefined();
-    expect(within(lane('building')).queryByText('Nothing in progress')).toBeNull();
+    expect(within(lane('open')).queryByText('Nothing open')).toBeNull();
   });
 
   it('hides a zero count in a lane header and shows a real one', () => {
@@ -193,9 +193,9 @@ describe('StageBoard lanes', () => {
     seed({ active: [building, second] });
     mountBoard([building, second]);
 
-    expect(within(lane('building')).getByText('2')).toBeDefined();
+    expect(within(lane('open')).getByText('2')).toBeDefined();
     expect(within(lane('done')).queryByText('0')).toBeNull();
-    expect(within(lane('archived')).queryByText('0')).toBeNull();
+    expect(within(lane('archive')).queryByText('0')).toBeNull();
   });
 
   it('shows the Done rows in place and folds Archived to its count with Show all', () => {
@@ -207,18 +207,18 @@ describe('StageBoard lanes', () => {
 
     expect(within(lane('done')).getByRole('button', { name: merged.goal })).toBeDefined();
     expect(lane('done').querySelector('article')?.getAttribute('data-density')).toBe('row');
-    expect(within(lane('archived')).getByText('1')).toBeDefined();
-    expect(within(lane('archived')).queryByRole('button', { name: shelved.goal })).toBeNull();
+    expect(within(lane('archive')).getByText('1')).toBeDefined();
+    expect(within(lane('archive')).queryByRole('button', { name: shelved.goal })).toBeNull();
 
     showArchive();
 
-    within(lane('archived')).getByRole('button', { name: shelved.goal });
-    expect(within(lane('archived')).getByRole('button', { name: /Restore/ })).toBeDefined();
-    expect(lane('archived').querySelector('article')?.getAttribute('data-density')).toBe('row');
+    within(lane('archive')).getByRole('button', { name: shelved.goal });
+    expect(within(lane('archive')).getByRole('button', { name: /Restore/ })).toBeDefined();
+    expect(lane('archive').querySelector('article')?.getAttribute('data-density')).toBe('row');
 
-    fireEvent.click(within(lane('archived')).getByRole('button', { name: 'Hide' }));
+    fireEvent.click(within(lane('archive')).getByRole('button', { name: 'Hide' }));
 
-    expect(within(lane('archived')).queryByRole('button', { name: shelved.goal })).toBeNull();
+    expect(within(lane('archive')).queryByRole('button', { name: shelved.goal })).toBeNull();
   });
 
   it('ignores a collapse value an older version stored', () => {
@@ -233,7 +233,7 @@ describe('StageBoard lanes', () => {
     mountBoard([building, merged]);
 
     within(lane('done')).getByRole('button', { name: merged.goal });
-    expect(within(lane('archived')).queryByRole('button', { name: shelved.goal })).toBeNull();
+    expect(within(lane('archive')).queryByRole('button', { name: shelved.goal })).toBeNull();
   });
 
   it('shows a muted Loading line in Archived until the list answers, then its empty line', () => {
@@ -241,16 +241,14 @@ describe('StageBoard lanes', () => {
     seed({ active: [building], archived: null });
     mountBoard([building]);
 
-    expect(
-      within(lane('archived')).getByRole('status', { name: 'Loading sessions' }),
-    ).toBeDefined();
-    expect(within(lane('archived')).queryByText('Nothing archived')).toBeNull();
+    expect(within(lane('archive')).getByRole('status', { name: 'Loading sessions' })).toBeDefined();
+    expect(within(lane('archive')).queryByText('Nothing archived')).toBeNull();
     expect(within(lane('done')).getByText('Nothing done yet')).toBeDefined();
 
     act(() => useAppStore.setState({ archivedSessions: { [workspace.id]: [] } }));
 
-    expect(within(lane('archived')).queryByRole('status', { name: 'Loading sessions' })).toBeNull();
-    expect(within(lane('archived')).getByText('Nothing archived')).toBeDefined();
+    expect(within(lane('archive')).queryByRole('status', { name: 'Loading sessions' })).toBeNull();
+    expect(within(lane('archive')).getByText('Nothing archived')).toBeDefined();
   });
 
   it('shows a running session with an open question as a yellow card at the top of Running, once', () => {
@@ -284,7 +282,7 @@ describe('StageBoard lanes', () => {
     act(() => observers.resizeAll());
 
     const done = lane('done');
-    const archived = lane('archived');
+    const archived = lane('archive');
     expect(done.parentElement).toBe(archived.parentElement);
     expect(Array.from(done.parentElement?.children ?? [])).toEqual([done, archived]);
     expect(lanesInOrder()).toEqual([...LANES]);
@@ -299,8 +297,8 @@ describe('StageBoard lanes', () => {
     mountBoard([building]);
     act(() => observers.resizeAll());
 
-    expect(lane('done').parentElement).toBe(lane('building').parentElement);
-    expect(lane('archived').parentElement).toBe(lane('building').parentElement);
+    expect(lane('done').parentElement).toBe(lane('open').parentElement);
+    expect(lane('archive').parentElement).toBe(lane('open').parentElement);
     expect(lanesInOrder()).toEqual([...LANES]);
   });
 
@@ -311,7 +309,7 @@ describe('StageBoard lanes', () => {
     mountBoard([building]);
     act(() => observers.resizeAll());
 
-    expect(lane('archived').parentElement).toBe(lane('building').parentElement);
+    expect(lane('archive').parentElement).toBe(lane('open').parentElement);
     expect(lanesInOrder()).toEqual([...LANES]);
   });
 
@@ -323,7 +321,7 @@ describe('StageBoard lanes', () => {
     act(() => observers.resizeAll());
 
     expect(lanesInOrder()).toEqual([...LANES]);
-    expect(lane('done').parentElement).toBe(lane('archived').parentElement);
+    expect(lane('done').parentElement).toBe(lane('archive').parentElement);
   });
 });
 
@@ -507,7 +505,7 @@ describe('StageBoard selection over every lane', () => {
     seed({ active: building, done, archived: shelved });
     mountBoard([...building, ...done]);
 
-    fireEvent.click(checkboxesIn('building')[0] as HTMLElement, { altKey: true });
+    fireEvent.click(checkboxesIn('open')[0] as HTMLElement, { altKey: true });
     fireEvent.click(screen.getByRole('button', { name: 'Select all 62' }));
 
     expect(within(toolbar()).getByText('62 selected')).toBeDefined();
@@ -515,7 +513,7 @@ describe('StageBoard selection over every lane', () => {
     expect(
       checkboxesIn('done').filter((box) => box.getAttribute('aria-pressed') === 'true'),
     ).toHaveLength(50);
-    expect(checkboxesIn('archived')[0]?.getAttribute('aria-pressed')).toBe('true');
+    expect(checkboxesIn('archive')[0]?.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('extends a Shift range from the Done half into the Archived half of the stacked lane', () => {
@@ -531,7 +529,7 @@ describe('StageBoard selection over every lane', () => {
     showArchive();
 
     const doneBoxes = checkboxesIn('done');
-    const archivedBoxes = checkboxesIn('archived');
+    const archivedBoxes = checkboxesIn('archive');
     fireEvent.click(doneBoxes[1] as HTMLElement, { altKey: true });
     fireEvent.click(archivedBoxes[0] as HTMLElement, { shiftKey: true });
 
@@ -551,7 +549,7 @@ describe('StageBoard selection over every lane', () => {
     showArchive();
 
     fireEvent.click(checkboxesIn('done')[0] as HTMLElement, { altKey: true });
-    fireEvent.click(checkboxesIn('archived')[0] as HTMLElement, { metaKey: true });
+    fireEvent.click(checkboxesIn('archive')[0] as HTMLElement, { metaKey: true });
 
     expect(within(toolbar()).getByText('2 selected')).toBeDefined();
     expect(within(toolbar()).getByRole('button', { name: 'Archive 1 session' })).toBeDefined();
