@@ -1,3 +1,4 @@
+import { stripControlMarkers } from '@goodboy/core/context';
 import type { ContextSlot } from '@goodboy/types';
 import { safeTextOf } from './safeTextOf';
 
@@ -14,6 +15,6 @@ export const summaryOf = ({ slots }: Params): string | null => {
   if (slot === undefined || !slot.enabled) {
     return null;
   }
-  const clean = safeTextOf({ text: slot.value.trim(), max: SUMMARY_MAX });
+  const clean = safeTextOf({ text: stripControlMarkers(slot.value.trim()), max: SUMMARY_MAX });
   return clean.length === 0 ? null : clean;
 };

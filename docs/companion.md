@@ -509,6 +509,42 @@ with the id of that phone in the pairing file; removing the phone (or all
 phones) on Settings, iPhone deletes those rules. A phone on version 7 or 8
 never sends the new field.
 
+Contract version 10 adds three optional fields and changes one list; a phone
+on version 9 ignores them. `needsYou.workspaces` lists every workspace the Mac
+workspace switcher shows (`state.workspaces`), with its name and a move count
+that may be 0. A chats
+projection is built for every workspace, not only the open one, and chats are
+loaded for each of them. A Needs you row for the Lead (`auto-needs-you`) may
+carry `ask`, an object with two optional parts. `question` is the last message
+of the Lead, the same text the Mac shows when a step ends on a question
+(`blockedQuestionOf`, assistant text only, never a tool call), with the
+`<<auto>>` blocks removed by `stripControlMarkers` as the transcript does,
+secrets hidden, paths cut and a length of 600 characters at most. `proposal` is
+the pending proposal of the Lead, the same one the Mac shows as the next step
+(`awaitingProposalOf`, a delegation waiting for a confirm): its `role`, a
+`title` (the role word), a short `task`, and `options` (Start, then at most two
+alternatives, each with its label, role and a Mac-minted `actionId`) plus
+`notNowActionId`. Both keys are absent when there is nothing to show or the
+Lead transcript is not loaded (a Lead of another workspace than the open one
+has no transcript in memory, but its proposal still comes from the database).
+Action `decideProposal` (`0xA5`, Decide permission, 10 a minute) carries the
+delegation id, the `seenVersion` (a digest of the proposal, in the action id)
+and a `choice`: `primary` confirms the delegation through the same port as the
+Start button, `alternative-0` and `alternative-1` decline it and tell the Lead
+"Next step: <role>" as the Mac does, `notNow` declines. A proposal that changed
+is refused with `version-changed`, one decided on the Mac with
+`already-decided`, and an alternative that is not offered with `invalid-request`
+before anything is declined. If the Lead cannot be told after the decline, the
+next step stays pending on the Mac and a retry of the same choice sends only
+that message. Only the open workspace carries `actionId` and `notNowActionId`:
+the proposal of another workspace is read only. The tree views of every other
+workspace are read again on each refresh. A transcript sent to the phone never holds an `<<auto>>`
+block: a message that was only a block is left out, the activity summary and
+the session summary are cleaned the same way.
+An activity line (`SessionLine`) of an agent carries `title` (its name) and
+`summary` (what it did, absent when it has none) next to the joined `text`,
+which stays for version 9.
+
 ### Needs you across workspaces
 
 The store holds the sessions, open questions and PR facts of the current

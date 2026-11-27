@@ -163,6 +163,39 @@ pub struct Meta {
     pub generated_at: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LeadProposalOption {
+    pub key: String,
+    pub label: String,
+    pub role: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action_id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LeadProposal {
+    pub delegation_id: String,
+    pub version: String,
+    pub role: String,
+    pub title: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub task: Option<String>,
+    pub options: Vec<LeadProposalOption>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub not_now_action_id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LeadAsk {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub question: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub proposal: Option<LeadProposal>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NeedsYouRow {
@@ -178,6 +211,8 @@ pub struct NeedsYouRow {
     pub waiting_text: Option<String>,
     pub since: Option<String>,
     pub decision: Option<Decision>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ask: Option<LeadAsk>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -296,6 +331,10 @@ pub struct SessionLine {
     pub at: Option<String>,
     pub role: Option<String>,
     pub target: Option<LineTarget>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

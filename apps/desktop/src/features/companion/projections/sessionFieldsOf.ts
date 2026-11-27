@@ -1,4 +1,5 @@
 import type { Agent, Session } from '@goodboy/types';
+import { stripControlMarkers } from '@goodboy/core/context';
 import { agentEndOf } from './agentEndOf';
 import { formatUsd } from '@goodboy/ui';
 import { formatSpan } from '../../../shared/utils/time/formatSpan';
@@ -23,6 +24,9 @@ import type { WorkspaceScope } from './workspaceScope';
 export const ACTIVITY_LIMIT = 20;
 export const DECISION_LIMIT = 12;
 
+const LINE_TITLE_MAX = 80;
+const LINE_SUMMARY_MAX = 240;
+
 const NO_CHIPS = { spendToday: null, limits: [] } as const;
 
 type Params = {
@@ -40,13 +44,16 @@ type LineParams = {
 const lineOf = ({ scope, sessionId, agent }: LineParams): SessionLine => {
   const state = agentStateOf({ agent, turn: scope.turnStates[agent.id] });
   const isLead = isLeadAgentOf({ scope, sessionId, agent });
+  const summary = stripControlMarkers(agent.outputSummary ?? '');
   return {
     id: agent.id,
     mark: agentMarkOf({ state }),
-    text: agent.outputSummary === undefined ? agent.name : `${agent.name}: ${agent.outputSummary}`,
+    text: summary === '' ? agent.name : `${agent.name}: ${summary}`,
     at: agent.completedAt ?? agent.startedAt ?? null,
     role: agentRoleOf({ agent, isLead }),
     target: { kind: 'agent', id: agent.id },
+    title: safeTextOf({ text: agent.name, max: LINE_TITLE_MAX }),
+    ...(summary === '' ? {} : { summary: safeTextOf({ text: summary, max: LINE_SUMMARY_MAX }) }),
   };
 };
 
@@ -93,6 +100,7 @@ export const sessionFieldsOf = ({ scope, session, now }: Params): SessionFields 
   ];
   const needsYou = needsYouFieldsOf({
     scopes: [{ ...scope, sessions: [session] }],
+    workspaces: [scope.workspace],
     chips: NO_CHIPS,
     now,
   }).rows;

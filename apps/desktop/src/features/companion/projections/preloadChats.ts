@@ -7,15 +7,14 @@ type Params = {
 };
 
 export const preloadChats = ({ state }: Params): void => {
-  const workspaceId = state.currentWorkspaceId;
-  if (workspaceId === null || attempted.has(workspaceId)) {
-    return;
+  for (const workspace of state.workspaces) {
+    const workspaceId = workspace.id;
+    if (attempted.has(workspaceId) || state.chatsByWorkspace[workspaceId] !== undefined) {
+      continue;
+    }
+    attempted.add(workspaceId);
+    void state
+      .loadChats({ workspaceId })
+      .catch((error: unknown) => console.error('[companion] chats failed', error));
   }
-  if (state.chatsByWorkspace[workspaceId] !== undefined) {
-    return;
-  }
-  attempted.add(workspaceId);
-  void state
-    .loadChats({ workspaceId })
-    .catch((error: unknown) => console.error('[companion] chats failed', error));
 };

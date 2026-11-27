@@ -15,6 +15,7 @@ import {
   listMountPullRequestLinks,
   listWorkspacePullRequestLinks,
 } from '@goodboy/db/mount-pr-link';
+import { readAutoTreeViews } from '../../../store/slices/auto-view/readAutoTreeViews';
 import { mountViewOf } from '../../../store/slices/project-mounts/mountViews';
 import { canonicalPullRequestLinkOf } from '../../../store/slices/project-mounts/workRecord/canonicalPullRequestLinkOf';
 import { isLiveSession } from './isLiveSession';
@@ -75,7 +76,7 @@ export const loadOtherWorkspaceScope = async ({
   const sessions = await listSessionsForWorkspace(db, workspace.id);
   const sessionIds = sessions.map((session) => session.id);
   const live = sessions.filter((session) => isLiveSession({ session }));
-  const [questions, agents, projects, tasks, links, slots, levelRaw] = await Promise.all([
+  const [questions, agents, projects, tasks, links, slots, levelRaw, views] = await Promise.all([
     listOpenQuestionsForSessions({ db, sessionIds }),
     listAgentsForSessions(db, sessionIds),
     listProjectsForWorkspace({ db, workspaceId: workspace.id }),
@@ -83,6 +84,7 @@ export const loadOtherWorkspaceScope = async ({
     listWorkspacePullRequestLinks({ db, workspaceId: workspace.id }),
     Promise.all(live.map((session) => listContextSlotsForSession(db, session.id))),
     getWorkspaceValue({ db, workspaceId: workspace.id, key: 'auto.level' }),
+    Promise.all(live.map((session) => readAutoTreeViews({ db, sessionId: session.id }))),
   ]);
   const settleFacts = await Promise.all(
     live.map((session) => settleFactsOf({ db, session, projects })),
@@ -102,6 +104,9 @@ export const loadOtherWorkspaceScope = async ({
     sessionGithub: sessionGithubOf({ links }),
     sessionResolveThreads: Object.fromEntries(
       settleFacts.map((facts) => [facts.sessionId, facts.threads]),
+    ),
+    autoTreeViews: Object.fromEntries(
+      live.map((session, index) => [session.id, views[index] ?? []]),
     ),
     sessionSlots: Object.fromEntries(
       live.map((session, index) => [session.id, slots[index] ?? []]),

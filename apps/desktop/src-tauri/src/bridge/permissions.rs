@@ -82,7 +82,8 @@ pub fn permission_for(action: MobileAction) -> Option<Permission> {
         | MobileAction::StopAgentTree
         | MobileAction::AnswerSlackReply
         | MobileAction::SendChatMessage
-        | MobileAction::CreateChat => Some(Permission::Decide),
+        | MobileAction::CreateChat
+        | MobileAction::DecideProposal => Some(Permission::Decide),
         MobileAction::MergePr
         | MobileAction::MergePrChecked
         | MobileAction::MergeTrain
@@ -145,7 +146,7 @@ mod tests {
 
     #[test]
     fn the_chat_writes_need_decide_and_reading_a_chat_needs_nothing() {
-        for op in [0xA3u8, 0xA4] {
+        for op in [0xA3u8, 0xA4, 0xA5] {
             let action = MobileAction::from_opcode(op).unwrap();
             assert_eq!(
                 permission_for(action),

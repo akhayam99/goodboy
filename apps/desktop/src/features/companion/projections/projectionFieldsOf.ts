@@ -1,3 +1,4 @@
+import type { Workspace } from '@goodboy/types';
 import type { NeedsYouChips } from '../contract/projections';
 import { chatsFieldsOf } from './chatsFieldsOf';
 import { isLiveSession } from './isLiveSession';
@@ -22,6 +23,7 @@ export type ProjectionDraft = Readonly<{
 
 type Params = {
   readonly scopes: ReadonlyArray<WorkspaceScope>;
+  readonly workspaces: ReadonlyArray<Pick<Workspace, 'id' | 'name'>>;
   readonly detailWorkspaceId: string | null;
   readonly chips: NeedsYouChips;
   readonly now: number;
@@ -87,16 +89,20 @@ const detailDraftsOf = ({ scope, now }: ScopeParams): ReadonlyArray<ProjectionDr
 
 export const projectionFieldsOf = ({
   scopes,
+  workspaces,
   detailWorkspaceId,
   chips,
   now,
 }: Params): ReadonlyArray<ProjectionDraft> => [
-  { key: 'needsYou', kind: 'needsYou', fields: needsYouFieldsOf({ scopes, chips, now }) },
+  {
+    key: 'needsYou',
+    kind: 'needsYou',
+    fields: needsYouFieldsOf({ scopes, workspaces, chips, now }),
+  },
   ...scopes.flatMap((scope) => [
     sessionsDraftOf({ scope, now }),
     tasksDraftOf({ scope, now }),
-    ...(scope.workspace.id === detailWorkspaceId
-      ? [chatsDraftOf({ scope }), ...detailDraftsOf({ scope, now })]
-      : []),
+    chatsDraftOf({ scope }),
+    ...(scope.workspace.id === detailWorkspaceId ? detailDraftsOf({ scope, now }) : []),
   ]),
 ];
