@@ -1,4 +1,5 @@
 import { Listbox, StatusDot, TEXT_ROLE, type ListboxOption } from '@goodboy/ui';
+import type { ElsewhereShell } from '../../elsewhereShellsOf';
 import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
 import type { TerminalTarget } from '../../terminalTargets';
 import type { TerminalWorktree } from '../../terminalWorktrees';
@@ -8,15 +9,19 @@ const SESSION_FOLDER_KEY = 'session-folder';
 
 const ALL_TERMINALS_KEY = 'all-terminals';
 
+const ELSEWHERE_GROUP = 'Elsewhere';
+
 type Props = {
   readonly worktree: TerminalWorktree;
   readonly targets: ReadonlyArray<TerminalTarget>;
   readonly isBranchless: boolean;
   readonly hasTrackTabs: boolean;
   readonly busyPaths: ReadonlySet<string>;
+  readonly elsewhere: ReadonlyArray<ElsewhereShell>;
   readonly onPickTarget: (target: TerminalTarget) => void;
   readonly onPickSessionFolder: () => void;
   readonly onPickAll: () => void;
+  readonly onPickElsewhere: (shell: ElsewhereShell) => void;
 };
 
 const runningDot = <StatusDot tone="info" size="sm" ariaLabel="A shell here runs a process" />;
@@ -27,9 +32,11 @@ export const TerminalScopePicker = ({
   isBranchless,
   hasTrackTabs,
   busyPaths,
+  elsewhere,
   onPickTarget,
   onPickSessionFolder,
   onPickAll,
+  onPickElsewhere,
 }: Props) => {
   const label = scopeLabelOf({ worktree, isBranchless });
   const options: ReadonlyArray<ListboxOption<string>> = [
@@ -40,6 +47,11 @@ export const TerminalScopePicker = ({
     })),
     ...(isBranchless ? [{ value: SESSION_FOLDER_KEY, label: 'Session folder' }] : []),
     { value: ALL_TERMINALS_KEY, label: 'All terminals' },
+    ...elsewhere.map((shell) => ({
+      value: shell.key,
+      label: shell.label,
+      group: ELSEWHERE_GROUP,
+    })),
   ];
   const isOnSessionFolder = isBranchless && worktree.kind === 'path';
   const current = isOnSessionFolder
@@ -82,6 +94,11 @@ export const TerminalScopePicker = ({
         }
         if (key === SESSION_FOLDER_KEY) {
           onPickSessionFolder();
+          return;
+        }
+        const shell = elsewhere.find((candidate) => candidate.key === key);
+        if (shell !== undefined) {
+          onPickElsewhere(shell);
           return;
         }
         const target = targets.find((candidate) => candidate.key === key);

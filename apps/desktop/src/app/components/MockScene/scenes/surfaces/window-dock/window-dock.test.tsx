@@ -7,6 +7,13 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
+vi.mock(
+  '../../../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalPanel',
+  () => ({
+    LazyGenericTerminalPanel: () => <div data-testid="terminal-panel" />,
+  }),
+);
+
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import {
@@ -57,5 +64,13 @@ describe('the window dock scenes', () => {
     screen.getByRole('region', { name: 'notify-relay' });
     screen.getByRole('region', { name: 'ledger-core' });
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'scripts', sessionId: null });
+  });
+
+  it('counts the shell of another session under the Terminal on the Board', async () => {
+    const Scene = WINDOW_DOCK_SCENES['window-dock-board-terminal'];
+    render(<Scene />);
+
+    await screen.findByText('1 shell running in other sessions');
+    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'terminal', sessionId: null });
   });
 });

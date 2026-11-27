@@ -21,6 +21,10 @@ type PanelParams = {
   readonly sessionId: SessionId | null;
 };
 
+type HoldParams = Pick<Params, 'state'> & {
+  readonly panel: Extract<OpenDrawer, { readonly kind: 'terminal' }>;
+};
+
 type TerminalParams = Pick<Params, 'state' | 'sessionId' | 'workspaceId'> & {
   readonly panel: Extract<OpenDrawer, { readonly kind: 'terminal' }>;
 };
@@ -31,6 +35,13 @@ type TabParams = {
 
 const isShownShell = ({ tab }: TabParams): boolean =>
   tab.status !== 'exited' && tab.openError === undefined;
+
+const heldTerminalOf = ({ state, panel }: HoldParams): OpenDrawer | null =>
+  Object.values(state.terminalTabs).some((list) =>
+    list.some((tab) => tab.id === panel.payload.terminalId),
+  )
+    ? panel
+    : null;
 
 const shownTerminalOf = ({
   state,
@@ -57,7 +68,7 @@ const shownTerminalOf = ({
     return panel;
   }
   if (workspaceId === null) {
-    return null;
+    return heldTerminalOf({ state, panel });
   }
   const key = terminalOwnerKey({ owner: workspaceTerminalOwner({ workspaceId }) });
   const tabs = state.terminalTabs[key] ?? [];
@@ -65,9 +76,10 @@ const shownTerminalOf = ({
     (tab) => tab.id === state.activeTerminalTab[key] && isShownShell({ tab }),
   );
   const fallback = active ?? tabs.find((tab) => isShownShell({ tab }));
-  return fallback === undefined
-    ? null
-    : { kind: 'terminal', sessionId: null, payload: { terminalId: fallback.id } };
+  if (fallback !== undefined) {
+    return { kind: 'terminal', sessionId: null, payload: { terminalId: fallback.id } };
+  }
+  return heldTerminalOf({ state, panel });
 };
 
 const reboundOf = ({ panel, sessionId }: PanelParams): OpenDrawer => {
