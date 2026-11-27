@@ -31,10 +31,10 @@ const NOTIFICATIONS: ReadonlyArray<Notification> = [
   ...Array.from({ length: 6 }, (_, offset) =>
     rowOf({
       index: offset + 3,
-      title: `Run ${offset + 1} of the ledger-core suite finished`,
+      title: `Run ${offset + 1} of the ledger-core suite needs a look`,
       body: null,
-      kind: 'pr-created',
-      severity: 'success',
+      kind: 'error',
+      severity: 'warning',
       action: OPEN,
     }),
   ),
