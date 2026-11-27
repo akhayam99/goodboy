@@ -242,7 +242,7 @@ const entryResultOf = ({ ...params }: RungParams): RungResult => {
   return { rung: 'waiting', word: story, action: NONE };
 };
 
-const resultOf = ({ ...params }: Params): RungResult => {
+const branchRungOf = ({ ...params }: Params): RungResult => {
   const { row, entry, cards, shownAskIds, isPermissionShown } = params;
   const isShownPermission =
     isPermissionShown && row.group === 'needs-you' && row.stage.attention === 'needs-approval';
@@ -311,6 +311,6 @@ const hoverFactsOf = ({ row, entry, runningCount, overlap, rung }: HoverParams) 
 };
 
 export const branchRowOf = ({ ...params }: Params): BranchRow => {
-  const { rung, word, action } = resultOf(params);
+  const { rung, word, action } = branchRungOf(params);
   return { rung, word, action, hoverFacts: hoverFactsOf({ ...params, rung }) };
 };
