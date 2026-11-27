@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { Clock } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { useAppStore } from '../../../../store';
 import { calendarConnectionStateOf } from '../../model/calendarConnectionStateOf';
@@ -12,6 +12,7 @@ type Props = {
 };
 
 const NAME = 'Calendar';
+const CalendarGlyph = CONCEPT_ICONS.calendar;
 const SETUP_LINE = 'Your meetings and call links, read only';
 
 export const CalendarTile = ({ onOpen }: Props) => {
@@ -23,7 +24,7 @@ export const CalendarTile = ({ onOpen }: Props) => {
     void loadCalendarSources();
   }, [loadCalendarSources]);
 
-  const glyph = <Clock size={ICON_SIZE.control} aria-hidden className="shrink-0" />;
+  const glyph = <CalendarGlyph size={ICON_SIZE.control} aria-hidden className="shrink-0" />;
   const state = calendarConnectionStateOf({ sourceCount: sources.length, failedCount });
   if (state.setupVerb !== null) {
     return (

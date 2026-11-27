@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, FormPage, ICON_SIZE, PaneShell, tintClasses } from '@goodboy/ui';
-import { Clock, Plus } from '@goodboy/ui/icons';
+import { Plus } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioTrail } from '../../../../shared/components/StudioShell/StudioTrail';
 import { currentPlatform } from '../../../../shared/platform';
@@ -18,6 +18,7 @@ type Props = {
 };
 
 const TITLE = 'Calendar';
+const CalendarGlyph = CONCEPT_ICONS.calendar;
 
 export const CalendarDetail = ({ onUp }: Props) => {
   const sources = useAppStore((state) => state.calendarSources);
@@ -44,7 +45,7 @@ export const CalendarDetail = ({ onUp }: Props) => {
             iconClassName: tintClasses(CONCEPT_TONE.connections).icon,
             onSelect: onUp,
           },
-          { id: 'calendar', label: TITLE, icon: Clock },
+          { id: 'calendar', label: TITLE, icon: CalendarGlyph },
         ]}
       />
       <PaneShell
@@ -52,7 +53,7 @@ export const CalendarDetail = ({ onUp }: Props) => {
         scroll="self"
         title={
           <span className="inline-flex min-w-0 items-center gap-2">
-            <Clock size={ICON_SIZE.control} aria-hidden className="shrink-0" />
+            <CalendarGlyph size={ICON_SIZE.control} aria-hidden className="shrink-0" />
             {TITLE}
           </span>
         }

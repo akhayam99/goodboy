@@ -88,9 +88,12 @@ export type CalendarInfo = Readonly<{
   account: string | null;
 }>;
 
+export type CalendarFailureKind =
+  'refused' | 'no_access' | 'unsupported' | 'fetch' | 'parse' | 'keychain' | 'failed';
+
 export type CalendarSourceFailure = Readonly<{
   sourceId: CalendarSourceId;
-  kind: CalendarSourceKind;
+  kind: CalendarFailureKind;
   message: string;
 }>;
 
