@@ -1,9 +1,5 @@
-import {
-  PILL_HEIGHT_PX,
-  type DockAnchor,
-  type DockDropZone,
-  type DockRect,
-} from './dockDropZonesOf';
+import type { DockAnchor, DockDropZone, DockRect } from './dockDropZonesOf';
+import { dockPillRectOf } from './dockPillRectOf';
 
 type Params = {
   readonly zone: DockDropZone;
@@ -20,19 +16,7 @@ type AxisParams = {
   readonly outline: DockRect;
 };
 
-const PILL_BASE_WIDTH_PX = 36;
-const PILL_CHAR_WIDTH_PX = 7;
 const RING_CLEARANCE_PX = 6;
-
-const widthOf = ({ zone }: Pick<Params, 'zone'>): number =>
-  PILL_BASE_WIDTH_PX + zone.label.length * PILL_CHAR_WIDTH_PX;
-
-const pillOf = ({ zone }: Pick<Params, 'zone'>): DockRect => {
-  const width = widthOf({ zone });
-  const { x, y, align } = zone.anchor;
-  const left = align === 'start' ? x : align === 'end' ? x - width : x - width / 2;
-  return { x: left, y: y - PILL_HEIGHT_PX / 2, width, height: PILL_HEIGHT_PX };
-};
 
 type SpanParams = {
   readonly from: number;
@@ -113,7 +97,7 @@ const clampedOf = ({ value, low, high }: ClampParams): number =>
   high < low ? (low + high) / 2 : Math.min(high, Math.max(low, value));
 
 const withinHitOf = ({ zone, shift }: ShiftParams): DockAnchor => {
-  const pill = pillOf({ zone });
+  const pill = dockPillRectOf({ zone });
   const { rect } = zone;
   const left = clampedOf({
     value: pill.x + shift.x,
@@ -136,7 +120,7 @@ export const dockPillPlaceOf = ({ zone, outline }: Params): DockAnchor => {
   if (outline === null) {
     return withinHitOf({ zone, shift: { x: 0, y: 0 } });
   }
-  const pill = pillOf({ zone });
+  const pill = dockPillRectOf({ zone });
   const dy = verticalShiftOf({ pill, outline });
   const moved = { ...pill, y: pill.y + dy };
   const dx = horizontalShiftOf({ pill: moved, outline });
