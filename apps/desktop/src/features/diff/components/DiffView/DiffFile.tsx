@@ -19,6 +19,7 @@ import { isGeneratedPath } from '../../lib/fileStatus';
 import { lineText } from '../../lib/lineText';
 import { BodyNotice } from './BodyNotice';
 import { CommentComposer } from './CommentComposer';
+import { anchorEnd, spotKey, useFileThreads } from '../../hooks/useFileThreads';
 import { CommentThread } from './CommentThread';
 import { DiffRows, type LineSelection, type LineSpot } from './DiffRows';
 import { FileHeader } from './FileHeader';
@@ -56,10 +57,6 @@ type Drag = {
 
 type Composer =
   { readonly kind: 'line'; readonly anchor: DiffCommentAnchor } | { readonly kind: 'file' };
-
-const anchorEnd = (anchor: DiffCommentAnchor): number => anchor.endLineNumber ?? anchor.lineNumber;
-
-const spotKey = (side: DiffCommentSide, line: number): string => `${side}:${line}`;
 
 const rangeLabel = (anchor: DiffCommentAnchor): string =>
   anchor.endLineNumber && anchor.endLineNumber !== anchor.lineNumber
@@ -175,33 +172,11 @@ const DiffFileView = ({
   });
 
   const canComment = comments !== null && !isReadOnly;
-  const lineThreads = useMemo(() => {
-    const map = new Map<string, DiffThread[]>();
-    for (const thread of threads) {
-      if (thread.anchor === null) {
-        continue;
-      }
-      const key = spotKey(thread.anchor.side, anchorEnd(thread.anchor));
-      const list = map.get(key) ?? [];
-      list.push(thread);
-      map.set(key, list);
-    }
-    return map;
-  }, [threads]);
-  const fileThreads = useMemo(() => threads.filter((thread) => thread.anchor === null), [threads]);
-  const commentedSpots = useMemo(() => {
-    const set = new Set<string>();
-    for (const thread of threads) {
-      if (thread.anchor === null || thread.isResolved) {
-        continue;
-      }
-      for (let line = thread.anchor.lineNumber; line <= anchorEnd(thread.anchor); line += 1) {
-        set.add(spotKey(thread.anchor.side, line));
-      }
-    }
-    return set;
-  }, [threads]);
-  const openCount = threads.filter((thread) => !thread.isResolved).length;
+  const { onLines, onFile, outdated, commentedSpots, openCount } = useFileThreads({
+    threads,
+    hunks: file.hunks,
+    isBodyLoaded,
+  });
 
   useEffect(() => {
     if (drag === null) {
@@ -230,14 +205,14 @@ const DiffFileView = ({
       ? {
           side: composer.anchor.side,
           lo: composer.anchor.lineNumber,
-          hi: anchorEnd(composer.anchor),
+          hi: anchorEnd({ anchor: composer.anchor }),
         }
       : null;
 
   const onPress = (side: DiffCommentSide, line: number, extend: boolean) => {
     if (extend && composer?.kind === 'line' && composer.anchor.side === side) {
       const lo = Math.min(composer.anchor.lineNumber, line);
-      const hi = Math.max(anchorEnd(composer.anchor), line);
+      const hi = Math.max(anchorEnd({ anchor: composer.anchor }), line);
       setComposer({
         kind: 'line',
         anchor: { side, lineNumber: lo, ...(hi > lo ? { endLineNumber: hi } : {}) },
@@ -263,11 +238,11 @@ const DiffFileView = ({
       : list.map((thread) => <CommentThread key={thread.id} thread={thread} comments={comments} />);
 
   const blocksAfter = (spot: LineSpot): ReactNode => {
-    const list = lineThreads.get(spotKey(spot.side, spot.line)) ?? [];
+    const list = onLines.get(spotKey(spot)) ?? [];
     const isComposerHere =
       composer?.kind === 'line' &&
       composer.anchor.side === spot.side &&
-      anchorEnd(composer.anchor) === spot.line;
+      anchorEnd({ anchor: composer.anchor }) === spot.line;
     if (list.length === 0 && !isComposerHere) {
       return null;
     }
@@ -402,9 +377,10 @@ const DiffFileView = ({
           className="flex min-w-0 flex-col gap-2 pb-2 [content-visibility:auto]"
           style={{ containIntrinsicSize: `auto ${bodyPx}px` }}
         >
-          {fileThreads.length > 0 || composer?.kind === 'file' ? (
+          {outdated.length > 0 || onFile.length > 0 || composer?.kind === 'file' ? (
             <div className="flex flex-col gap-2 py-1">
-              {renderThreads(fileThreads)}
+              {renderThreads(outdated)}
+              {renderThreads(onFile)}
               {composer?.kind === 'file' && comments !== null ? (
                 <CommentComposer
                   label={comments.fileComposer?.label ?? `${comments.composerLabel} on this file`}
@@ -448,7 +424,7 @@ const DiffFileView = ({
                 visibleLines={visibleLines}
                 canComment={canComment}
                 selection={selection}
-                isRangeCommented={(side, line) => commentedSpots.has(spotKey(side, line))}
+                isRangeCommented={(side, line) => commentedSpots.has(spotKey({ side, line }))}
                 blocksAfter={blocksAfter}
                 onPress={onPress}
                 onHover={onHover}
