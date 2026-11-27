@@ -1,4 +1,4 @@
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr};
 
 use tokio::net::TcpListener;
 
@@ -9,51 +9,75 @@ pub const HELLO_ENDPOINTS_MAX: usize = 8;
 const BIND_ATTEMPTS: usize = 8;
 
 pub struct Listening {
-    pub listeners: Vec<TcpListener>,
+    pub listeners: Vec<(IpAddr, TcpListener)>,
     pub port: u16,
 }
 
-async fn bind_family(ip: IpAddr, port: u16) -> Option<TcpListener> {
+pub async fn bind_ip(ip: IpAddr, port: u16) -> Option<TcpListener> {
     TcpListener::bind((ip, port)).await.ok()
 }
 
-async fn bind_all_on(port: u16) -> Option<Listening> {
-    let everywhere = [
-        IpAddr::V6(Ipv6Addr::UNSPECIFIED),
-        IpAddr::V4(Ipv4Addr::UNSPECIFIED),
-    ];
-    let mut listeners: Vec<TcpListener> = Vec::new();
-    let mut bound_port = port;
-    for ip in everywhere {
-        let Some(listener) = bind_family(ip, bound_port).await else {
-            continue;
-        };
-        if listeners.is_empty() {
-            bound_port = listener.local_addr().ok()?.port();
+async fn bind_first(offered: &[IpAddr], port: u16) -> Option<Listening> {
+    let (lead, rest) = offered.split_first()?;
+    let listener = bind_ip(*lead, port).await?;
+    let bound = listener.local_addr().ok()?.port();
+    let mut listeners = vec![(*lead, listener)];
+    for ip in rest {
+        if let Some(listener) = bind_ip(*ip, bound).await {
+            listeners.push((*ip, listener));
         }
-        listeners.push(listener);
     }
-    match listeners.is_empty() {
-        true => None,
-        false => Some(Listening {
-            listeners,
-            port: bound_port,
-        }),
-    }
+    Some(Listening {
+        listeners,
+        port: bound,
+    })
 }
 
-pub async fn bind_all(preferred: Option<u16>) -> Result<Listening, BridgeError> {
+async fn spare_port(preferred: Option<u16>) -> Result<u16, BridgeError> {
+    let loopback = IpAddr::V4(Ipv4Addr::LOCALHOST);
+    for port in preferred.into_iter().filter(|p| *p != 0).chain([0]) {
+        if let Some(probe) = bind_ip(loopback, port).await {
+            return Ok(probe.local_addr()?.port());
+        }
+    }
+    Err(BridgeError::NoPrivateNetwork)
+}
+
+pub async fn bind_offered(
+    offered: &[IpAddr],
+    preferred: Option<u16>,
+) -> Result<Listening, BridgeError> {
+    if offered.is_empty() {
+        return Ok(Listening {
+            listeners: Vec::new(),
+            port: spare_port(preferred).await?,
+        });
+    }
     if let Some(port) = preferred.filter(|port| *port != 0) {
-        if let Some(listening) = bind_all_on(port).await {
+        if let Some(listening) = bind_first(offered, port).await {
             return Ok(listening);
         }
     }
     for _ in 0..BIND_ATTEMPTS {
-        if let Some(listening) = bind_all_on(0).await {
+        if let Some(listening) = bind_first(offered, 0).await {
             return Ok(listening);
         }
     }
     Err(BridgeError::NoPrivateNetwork)
+}
+
+pub fn plan(live: &[IpAddr], offered: &[IpAddr]) -> (Vec<IpAddr>, Vec<IpAddr>) {
+    let add = offered
+        .iter()
+        .filter(|ip| !live.contains(ip))
+        .copied()
+        .collect();
+    let remove = live
+        .iter()
+        .filter(|ip| !offered.contains(ip))
+        .copied()
+        .collect();
+    (add, remove)
 }
 
 fn plain(ip: IpAddr) -> IpAddr {
@@ -69,14 +93,6 @@ pub fn is_accepted_source(peer: IpAddr, local: IpAddr, offered: &[IpAddr]) -> bo
     }
     let local = plain(local);
     offered.iter().any(|ip| plain(*ip) == local)
-}
-
-pub fn same_ips(left: &[IpAddr], right: &[IpAddr]) -> bool {
-    let mut left = left.to_vec();
-    let mut right = right.to_vec();
-    left.sort();
-    right.sort();
-    left == right
 }
 
 pub fn endpoints_of(offered: &[IpAddr], port: u16) -> Vec<super::Endpoint> {
@@ -104,46 +120,68 @@ mod tests {
         text.parse().unwrap()
     }
 
+    const LOOPBACK: &str = "127.0.0.1";
+
     async fn free_port() -> u16 {
-        let probe = TcpListener::bind(("0.0.0.0", 0)).await.unwrap();
+        let probe = TcpListener::bind((LOOPBACK, 0)).await.unwrap();
         probe.local_addr().unwrap().port()
     }
 
     #[tokio::test]
     async fn the_remembered_port_is_asked_for_first_and_reused_after_a_restart() {
         let port = free_port().await;
+        let offered = [ip(LOOPBACK)];
 
-        let first = bind_all(Some(port)).await.unwrap();
+        let first = bind_offered(&offered, Some(port)).await.unwrap();
         assert_eq!(first.port, port);
         drop(first);
-        let again = bind_all(Some(port)).await.unwrap();
+        let again = bind_offered(&offered, Some(port)).await.unwrap();
 
         assert_eq!(again.port, port);
     }
 
     #[tokio::test]
     async fn a_taken_port_falls_back_to_a_new_one() {
-        let held = bind_all(None).await.unwrap();
+        let offered = [ip(LOOPBACK)];
+        let held = bind_offered(&offered, None).await.unwrap();
 
-        let next = bind_all(Some(held.port)).await.unwrap();
+        let next = bind_offered(&offered, Some(held.port)).await.unwrap();
 
         assert_ne!(next.port, held.port);
-        assert!(!next.listeners.is_empty());
+        assert_eq!(next.listeners.len(), 1);
     }
 
     #[tokio::test]
-    async fn the_listener_binds_every_interface_not_one_address() {
-        let listening = bind_all(None).await.unwrap();
+    async fn only_the_offered_addresses_are_bound_never_a_wildcard() {
+        let listening = bind_offered(&[ip(LOOPBACK)], None).await.unwrap();
 
-        let reaches_loopback = tokio::net::TcpStream::connect(("127.0.0.1", listening.port))
-            .await
-            .is_ok();
+        assert_eq!(listening.listeners.len(), 1);
+        for (_, listener) in &listening.listeners {
+            let bound = listener.local_addr().unwrap().ip();
+            assert!(!bound.is_unspecified());
+            assert_eq!(bound, ip(LOOPBACK));
+        }
+    }
 
-        assert!(reaches_loopback);
-        assert!(listening
-            .listeners
-            .iter()
-            .any(|l| l.local_addr().unwrap().ip().is_unspecified()));
+    #[tokio::test]
+    async fn with_no_address_yet_a_port_is_still_chosen_and_nothing_is_bound() {
+        let port = free_port().await;
+
+        let listening = bind_offered(&[], Some(port)).await.unwrap();
+
+        assert!(listening.listeners.is_empty());
+        assert_eq!(listening.port, port);
+    }
+
+    #[test]
+    fn a_change_of_networks_adds_the_new_addresses_and_drops_the_gone_ones() {
+        let live = [ip("10.0.0.2"), ip("192.168.1.9")];
+        let offered = [ip("192.168.1.9"), ip("100.64.0.5")];
+
+        let (add, remove) = plan(&live, &offered);
+
+        assert_eq!(add, [ip("100.64.0.5")]);
+        assert_eq!(remove, [ip("10.0.0.2")]);
     }
 
     #[test]
@@ -208,14 +246,5 @@ mod tests {
         let hosts: Vec<_> = endpoints.iter().map(|e| e.host.clone()).collect();
         assert!(!hosts.contains(&"8.8.8.8".to_string()));
         assert!(!hosts.contains(&"127.0.0.1".to_string()));
-    }
-
-    #[test]
-    fn address_sets_compare_without_order() {
-        assert!(same_ips(
-            &[ip("10.0.0.1"), ip("10.0.0.2")],
-            &[ip("10.0.0.2"), ip("10.0.0.1")]
-        ));
-        assert!(!same_ips(&[ip("10.0.0.1")], &[ip("10.0.0.2")]));
     }
 }

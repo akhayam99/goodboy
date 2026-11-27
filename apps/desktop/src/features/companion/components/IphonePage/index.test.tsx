@@ -15,7 +15,8 @@ type MockPhone = {
 
 type BridgeMocks = {
   enrolledCount: number;
-  pendingPairing: { id: string; name: string; askedAt: string } | null;
+  pendingPairing: { id: string; name: string; code: string; askedAt: string } | null;
+  rules: string[];
   fault: { code: string; message: string } | null;
   startError: string | null;
   phones: MockPhone[];
@@ -28,6 +29,7 @@ type BridgeMocks = {
 const mocks: BridgeMocks = vi.hoisted(() => ({
   enrolledCount: 0,
   pendingPairing: null,
+  rules: [],
   fault: null,
   startError: null,
   phones: [],
@@ -84,6 +86,9 @@ const answer = async (cmd: string, args?: Record<string, unknown>): Promise<unkn
   if (cmd === 'bridge_revoke') {
     mocks.enrolledCount = 0;
     mocks.phones = [];
+    return mocks.rules;
+  }
+  if (cmd === 'permission_rule_delete') {
     return null;
   }
   if (cmd === 'bridge_phones') {
@@ -95,7 +100,7 @@ const answer = async (cmd: string, args?: Record<string, unknown>): Promise<unkn
   if (cmd === 'bridge_revoke_phone') {
     mocks.phones = mocks.phones.filter((p) => p.id !== args?.phoneId);
     mocks.enrolledCount = mocks.phones.length;
-    return null;
+    return mocks.rules;
   }
   if (cmd === 'bridge_set_permissions') {
     mocks.phones = mocks.phones.map((p) =>
@@ -119,6 +124,7 @@ const meta = (): string | null =>
 beforeEach(() => {
   mocks.enrolledCount = 0;
   mocks.pendingPairing = null;
+  mocks.rules = [];
   mocks.fault = null;
   mocks.startError = null;
   mocks.phones = [];
@@ -137,12 +143,13 @@ describe('IphonePage', () => {
     mocks.pendingPairing = {
       id: 'a1b2',
       name: 'Harborline iPhone',
+      code: '482 913',
       askedAt: '2026-11-27T10:00:00Z',
     };
     render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
 
     expect(await screen.findByText('An iPhone wants to pair')).toBeTruthy();
-    screen.getByText(/Harborline iPhone scanned your code/);
+    screen.getByText(/Allow only if your iPhone shows 482 913/);
     fireEvent.click(screen.getByRole('button', { name: 'Allow' }));
 
     await waitFor(() =>
@@ -154,8 +161,30 @@ describe('IphonePage', () => {
     await waitFor(() => expect(screen.queryByText('An iPhone wants to pair')).toBeNull());
   });
 
+  it('deletes the rules a revoked iPhone created', async () => {
+    mocks.enrolledCount = 2;
+    mocks.rules = ['rule-1', 'rule-2'];
+    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Disconnect all' }));
+    const dialog = screen.getByRole('dialog', { name: 'Disconnect all paired devices?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Disconnect' }));
+
+    await waitFor(() =>
+      expect(
+        mocks.invoke.mock.calls.filter(([cmd]) => cmd === 'permission_rule_delete'),
+      ).toHaveLength(2),
+    );
+    expect(mocks.invoke).toHaveBeenCalledWith('permission_rule_delete', { id: 'rule-1' });
+  });
+
   it('sends a deny for the same request', async () => {
-    mocks.pendingPairing = { id: 'c3d4', name: 'Northwind iPhone', askedAt: 'now' };
+    mocks.pendingPairing = {
+      id: 'c3d4',
+      name: 'Northwind iPhone',
+      code: '100 200',
+      askedAt: 'now',
+    };
     render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Deny' }));

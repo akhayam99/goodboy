@@ -18,7 +18,7 @@ export const PairingRequest = ({ pending, isBusy, onDecide }: Props) => (
     placement="inline"
     role="alert"
     title="An iPhone wants to pair"
-    body={`${pending.name} scanned your code. Allow it only if it is yours.`}
+    body={`${pending.name} scanned your code. Allow only if your iPhone shows ${pending.code}.`}
     actions={
       <>
         <Button

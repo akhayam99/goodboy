@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { dropPhoneRules } from '../dropPhoneRules';
 import { startPoll } from '../../../../../shared/lib/usePoll/startPoll';
 import { CommandError } from '../../../../../shared/lib/invokeCommand';
 import {
@@ -164,7 +165,8 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
     setIsRevoking(true);
     setError(null);
     try {
-      await bridgeRevoke();
+      const rules = await bridgeRevoke();
+      await dropPhoneRules({ ruleIds: rules });
       setIsPairing(false);
       await mint();
     } catch {
@@ -179,7 +181,8 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
       setIsChanging(true);
       setChangeError(null);
       try {
-        await bridgeRevokePhone({ phoneId });
+        const rules = await bridgeRevokePhone({ phoneId });
+        await dropPhoneRules({ ruleIds: rules });
         const next = await refreshStatus();
         await refreshPhones();
         if (next !== null && next.enrolledCount === 0) {

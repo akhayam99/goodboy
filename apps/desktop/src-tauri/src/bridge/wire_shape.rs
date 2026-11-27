@@ -150,6 +150,7 @@ fn wire_shape_bridge_status() {
             pending_pairing: Some(PendingPairing {
                 id: "a1".to_string(),
                 name: "Harborline iPhone".to_string(),
+                code: "482 913".to_string(),
                 asked_at: "2026-11-27T10:00:00Z".to_string(),
             }),
             fault: Some(BridgeFault {
@@ -162,7 +163,7 @@ fn wire_shape_bridge_status() {
             "port": 4000,
             "enrolledCount": 2,
             "isAdvertised": true,
-            "pendingPairing": { "id": "a1", "name": "Harborline iPhone", "askedAt": "2026-11-27T10:00:00Z" },
+            "pendingPairing": { "id": "a1", "name": "Harborline iPhone", "code": "482 913", "askedAt": "2026-11-27T10:00:00Z" },
             "fault": { "code": "file_unreadable", "message": "m" },
         }),
     );

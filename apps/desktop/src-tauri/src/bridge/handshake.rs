@@ -7,7 +7,7 @@ use tokio::sync::Mutex;
 
 use super::frame::{read_frame, write_frame, NOISE_MAX};
 use super::identity::{clean_phone_name, Identity};
-use super::pairing::{PairingHold, Verdict};
+use super::pairing::{code_of, PairingHold, Verdict};
 use super::permissions::Permissions;
 use super::server::send_app;
 use super::tokens::TokenStore;
@@ -190,6 +190,7 @@ struct Staged {
     refusal: Option<RefusalCode>,
     retry_after: Option<Duration>,
     enroll_as: Option<String>,
+    code: String,
 }
 
 async fn open_handshake(
@@ -241,9 +242,11 @@ async fn open_handshake(
         .ok_or_else(|| BridgeError::Protocol("missing phone static after msg3".into()))?
         .to_vec();
 
+    let code = code_of(hs.get_handshake_hash());
     Ok(Staged {
         hs,
         phone_key,
+        code,
         refusal,
         retry_after: forced.and_then(|f| f.retry_after),
         enroll_as,
@@ -255,6 +258,7 @@ async fn admit(
     pairing: &PairingHold,
     phone_key: &[u8],
     enroll_as: Option<String>,
+    code: &str,
 ) -> Result<(Option<RefusalCode>, Permissions), BridgeError> {
     let Some(name) = enroll_as else {
         let mut id = identity.lock().await;
@@ -266,7 +270,7 @@ async fn admit(
     };
     let is_known = identity.lock().await.is_enrolled(phone_key);
     if !is_known {
-        let code = match pairing.request(&name).await {
+        let code = match pairing.request(&name, code).await {
             Verdict::Allowed => None,
             Verdict::Denied => Some(RefusalCode::PairingDenied),
             Verdict::Expired => Some(RefusalCode::PairingExpired),
@@ -294,11 +298,12 @@ async fn settle_handshake(
         mut refusal,
         retry_after,
         enroll_as,
+        code,
     } = staged;
 
     let mut permissions = Permissions::default();
     if refusal.is_none() {
-        let (code, granted) = admit(identity, pairing, &phone_key, enroll_as).await?;
+        let (code, granted) = admit(identity, pairing, &phone_key, enroll_as, &code).await?;
         refusal = code;
         permissions = granted;
     }
@@ -338,6 +343,10 @@ mod tests {
     use std::path::PathBuf;
     use std::sync::Arc;
     use tokio::net::TcpListener;
+
+    static PHONE_CODES: std::sync::LazyLock<
+        std::sync::Mutex<std::collections::HashMap<Vec<u8>, String>>,
+    > = std::sync::LazyLock::new(Default::default);
 
     struct Phone {
         private: Vec<u8>,
@@ -531,6 +540,10 @@ mod tests {
         hs.read_message(&msg2, &mut buf).ok()?;
         let len = hs.write_message(&[], &mut buf).unwrap();
         write_frame(stream, &buf[..len]).await.ok()?;
+        PHONE_CODES
+            .lock()
+            .unwrap()
+            .insert(phone.public.clone(), code_of(hs.get_handshake_hash()));
         let mut transport = hs.into_transport_mode().unwrap();
         let frame = read_frame(stream).await.ok()?;
         let n = transport.read_message(&frame, &mut buf).ok()?;
@@ -1065,5 +1078,63 @@ mod tests {
             old.refusal_code_heard().as_deref(),
             Some("protocol_unsupported")
         );
+    }
+
+    #[tokio::test]
+    async fn the_mac_and_the_phone_compute_the_same_code_without_sending_it() {
+        let desktop = Desktop::new("code", TokenStore::new());
+        let token = desktop.tokens.mint();
+        let phone = new_phone();
+        let hold = Arc::new(PairingHold::with_window(Duration::from_secs(5)));
+        let reader = {
+            let hold = hold.clone();
+            tokio::spawn(async move {
+                let pending = loop {
+                    if let Some(pending) = hold.pending() {
+                        break pending;
+                    }
+                    tokio::task::yield_now().await;
+                };
+                hold.decide(&pending.id, true);
+                pending.code
+            })
+        };
+
+        dial_with(
+            &desktop,
+            desktop.identity.clone(),
+            &phone,
+            &v2_hello(Some(&token), "Harborline iPhone"),
+            hold,
+            None,
+        )
+        .await;
+
+        let shown = reader.await.unwrap();
+        let phone_sees = PHONE_CODES.lock().unwrap().get(&phone.public).cloned();
+        assert_eq!(phone_sees.as_deref(), Some(shown.as_str()));
+        assert_eq!(shown.len(), 7);
+    }
+
+    #[tokio::test]
+    async fn two_attempts_with_the_same_token_stolen_get_different_codes() {
+        let desktop = Desktop::new("code-differs", TokenStore::new());
+        let first = new_phone();
+        let second = new_phone();
+        for phone in [&first, &second] {
+            let token = desktop.tokens.mint();
+            dial_with(
+                &desktop,
+                desktop.identity.clone(),
+                phone,
+                &v2_hello(Some(&token), "Harborline iPhone"),
+                Arc::new(PairingHold::answering(false)),
+                None,
+            )
+            .await;
+        }
+
+        let codes = PHONE_CODES.lock().unwrap();
+        assert_ne!(codes.get(&first.public), codes.get(&second.public));
     }
 }

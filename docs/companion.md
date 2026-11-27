@@ -31,13 +31,14 @@ phone with those rights like a second keyboard, not like a viewer.
 - The desktop keeps a long-term Noise static key and one record per paired
   phone. The private half of the key lives in the macOS Keychain (service
   `com.goodboy.desktop`, item `bridge.static_key`), never in a file. The public
-  half, a random instance id for Bonjour, the remembered port and one record
+  half, the remembered port and one record
   per phone (its key, the name it gave, when it paired, when it was last seen
   and its rights) sit in `~/.goodboy/companion.json`. Neither leaves the
   machine. A file from an older version that still holds the private key moves
-  it into the Keychain once, reads it back, and is rewritten without it; if the
-  Keychain refuses, the key stays in the file and the move is tried again at
-  the next launch.
+  it into the Keychain once, reads it back, and is rewritten without it. If the
+  Keychain refuses the write, nothing is moved and nothing is created: the page
+  shows the fault below and the move is tried again about every 20 seconds. The
+  key is never kept in a file as a fallback.
   A file written by an older version holds a bare list of keys: each becomes a
   record with the default rights and is written back in the new shape. That
   list is read until 0.45.0 (excluded).
@@ -46,19 +47,31 @@ phone with those rights like a second keyboard, not like a viewer.
   payload has `v: 2`, the device name, the key, the token, the endpoints, the
   service name and the rights a new phone gets, so the phone can list them
   before it pairs. The device name is the label kept in the identity file, or
-  `Mac`; the machine's host name never goes in the code, the hello or Bonjour.
+  `Mac`; the machine's host name never goes in the code or the hello.
   A phone that completes the Noise XK handshake with a live token burns the
   token and then waits: the page shows "An iPhone wants to pair" with the name
   the phone gave, Allow and Deny, and a banner is raised when the window is not
-  in front. Only Allow adds the phone, with the default rights. Deny, no answer
+  in front, with a six digit code ("Allow only if your iPhone shows 482 913").
+  Only Allow adds the phone, with the default rights. Deny, no answer
   within 60 seconds, or a second request while one waits, ends the attempt with
   a reason. A known key reconnects without a token and without a question.
+- **Verification code.** The Mac and the phone each compute the code from the
+  Noise handshake of that attempt; it is never sent. Take the handshake hash `h`
+  (32 bytes, the final hash of the Noise XK handshake, available once message 3
+  is written or read; every Noise library exposes it). Read its first four bytes as an unsigned big-endian
+  integer, take it modulo 1,000,000, write it with six digits and a space after
+  the third: `code = ((h[0] << 24 | h[1] << 16 | h[2] << 8 | h[3]) % 1000000)`,
+  shown as `482 913`. Someone who copied the QR has a different handshake and so
+  a different code, so the real phone's code is the proof. The phone shows its
+  code while it waits.
 - The identity is never rebuilt in silence. When the file cannot be parsed, it is
   moved aside as `companion.json.unreadable-<time>`; when the Keychain item cannot
   be read after three tries, or does not belong to the file, nothing is changed.
   In each case the page says what is wrong and offers **Reset pairing**, which
   makes a new key and an empty phone list; every phone must then scan a new code.
-  A Keychain that is only locked is read again on the next status poll.
+  A Keychain that is locked or refuses the write is tried again every 20 seconds
+  (no key is ever written to a file for that). Setup of a first key follows the
+  same rule: no Keychain, no identity.
 - The phone opens the handshake with a version 2 hello: the version byte, a
   flag for a token, the token when there is one, and its name in a fixed 64
   byte field (66 or 98 bytes, never 0 or 32, which are version 1 payloads).
@@ -302,9 +315,13 @@ stay until the phone ships the start form.
   running; it also starts when **Settings › This Mac › iPhone** opens. Leaving the
   page with no phone paired stops it, and so does removing the last phone. With
   a phone paired it stays up until the app quits or Disconnect runs.
-- It binds every interface on one TCP port and accepts a connection only when the
-  source is a private address and the connection arrived on a private address of
-  a network you switched on under Networks. A private address is RFC 1918
+- It binds each private address of the networks you switched on under Networks
+  on one TCP port, never a wildcard, so the port is closed on every public
+  address. Every 5 seconds the set is read again: a new address is bound, a gone
+  one is released, and Bonjour follows. A connection is accepted only when the
+  source is a private address and it arrived on one of those addresses (the
+  check reads the destination address, so a private network that was not
+  switched on can still reach an offered address when routing allows it). A private address is RFC 1918
   (10/8, 172.16/12, 192.168/16), 100.64/10 (tailnets) or an IPv6 unique local
   address (fc00::/7). Any other source is closed without an answer, before the
   gate sees it. A public IPv4, a global IPv6, a link-local or a loopback address
@@ -315,7 +332,10 @@ stay until the phone ships the start form.
 - The port is remembered in the identity file and asked for first at every
   start; a new one is taken only when it is busy, and is remembered in turn.
 - The Mac advertises `_goodboy._tcp` over Bonjour with the opaque instance id
-  as its name and the port, nothing else. It uses the system service (DNS-SD in
+  as its name and the port, nothing else. It registers once per private interface you switched on (never on every
+  interface), and the instance id is new at every launch, so it cannot be used
+  to follow the Mac. The service host name the system publishes is the Mac's
+  local host name, which Bonjour sets itself. It uses the system service (DNS-SD in
   libSystem) on macOS, so no dependency was added; other systems advertise
   nothing and the phone uses the endpoints of the hello. The advertisement is
   withdrawn when the listener stops and made again when the set of private
@@ -326,8 +346,11 @@ stay until the phone ships the start form.
   attempts wait 2 seconds, then 4, doubling up to 5 minutes; a good handshake
   clears the wait. When 30 handshakes fail within a minute, from any sources,
   new connections are closed for 30 seconds. A connection that closes before it
-  authenticates counts as a failure; a completed handshake of a known phone
-  clears its source's count. The whole Noise handshake has 10 seconds,
+  authenticates is not counted. Only a failed handshake counts, per source; a
+  handshake that stalls counts for its source alone; only failed handshakes
+  feed the 30 a minute pause. IPv6 sources count per /64. The table of sources
+  evicts the least recently seen instead of refusing new ones. A completed
+  handshake of a known phone clears its source's count. The whole Noise handshake has 10 seconds,
   then the socket is dropped and the slot frees.
 - A connected phone that sends no frame for 60 seconds (three missed pings) is
   dropped; any frame, a PONG included, counts as an answer.
@@ -403,8 +426,13 @@ token changes and `CONTRACT_VERSION` does not: bump it, then run
 `node scripts/gen-mobile-contract.mjs --lock`. A vocabulary test fails when the
 contract names an attention reason, stage, tone or mark the app does not.
 
-Contract version 8 adds the `allowAlways` permission verdict. A phone on
-version 7 never sends it.
+Contract version 8 adds the `allowAlways` permission verdict; version 9 adds
+`alwaysRule` to the permission decision: `{ scope: 'workspace', label, pattern }`,
+built on the Mac with the same function as the Always allow button, so the
+phone shows the exact rule before the tap. A rule made from a phone is saved
+with the id of that phone in the pairing file; removing the phone (or all
+phones) on Settings, iPhone deletes those rules. A phone on version 7 or 8
+never sends the new field.
 
 ### Needs you across workspaces
 

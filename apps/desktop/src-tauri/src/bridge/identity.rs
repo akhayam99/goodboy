@@ -18,6 +18,7 @@ const NAME_MAX_CHARS: usize = 48;
 const SEEN_WRITE_EVERY_MS: i64 = 60_000;
 const VAULT_READ_ATTEMPTS: u32 = 3;
 const VAULT_RETRY_PAUSE: Duration = Duration::from_millis(150);
+const RECOVER_EVERY: Duration = Duration::from_secs(20);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IdentityFault {
@@ -59,9 +60,11 @@ pub struct PairedPhone {
     pub last_seen: Option<String>,
     #[serde(default)]
     pub permissions: Permissions,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rules: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Identity {
     #[serde(default, skip_serializing)]
     pub static_priv_b64: String,
@@ -71,8 +74,6 @@ pub struct Identity {
     pub phones: Vec<PairedPhone>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interfaces: Option<Vec<String>>,
-    #[serde(default)]
-    pub instance_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub listen_port: Option<u16>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -80,11 +81,21 @@ pub struct Identity {
     #[serde(default, skip_serializing, rename = "allow_list")]
     legacy_allow_list: Vec<String>,
     #[serde(skip)]
-    is_key_in_file: bool,
+    last_recover: Option<std::time::Instant>,
     #[serde(skip)]
     fault: Option<IdentityFault>,
     #[serde(skip)]
     store: PathBuf,
+}
+
+impl std::fmt::Debug for Identity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Identity")
+            .field("static_pub_b64", &self.static_pub_b64)
+            .field("phones", &self.phones.len())
+            .field("fault", &self.fault)
+            .finish_non_exhaustive()
+    }
 }
 
 fn b64() -> base64::engine::GeneralPurpose {
@@ -96,10 +107,23 @@ fn identity_path() -> Result<PathBuf, BridgeError> {
     Ok(home.join(".goodboy").join(IDENTITY_FILE))
 }
 
+fn is_format_char(c: char) -> bool {
+    matches!(
+        c,
+        '\u{00AD}'
+            | '\u{061C}'
+            | '\u{180E}'
+            | '\u{200B}'..='\u{200F}'
+            | '\u{202A}'..='\u{202E}'
+            | '\u{2060}'..='\u{206F}'
+            | '\u{FEFF}'
+    )
+}
+
 pub fn clean_phone_name(raw: &str) -> String {
     let cleaned: String = raw
         .chars()
-        .filter(|c| !c.is_control())
+        .filter(|c| !c.is_control() && !is_format_char(*c))
         .take(NAME_MAX_CHARS)
         .collect();
     let trimmed = cleaned.trim();
@@ -107,13 +131,6 @@ pub fn clean_phone_name(raw: &str) -> String {
         true => DEFAULT_PHONE_NAME.to_string(),
         false => trimmed.to_string(),
     }
-}
-
-fn random_instance_id() -> String {
-    use rand::Rng;
-    let mut bytes = [0u8; 8];
-    rand::rng().fill_bytes(&mut bytes);
-    bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 fn vault_value_of(private: &str, public: &str) -> String {
@@ -200,11 +217,10 @@ impl Identity {
             static_pub_b64: String::new(),
             phones: Vec::new(),
             interfaces: None,
-            instance_id: String::new(),
             listen_port: None,
             device_label: None,
             legacy_allow_list: Vec::new(),
-            is_key_in_file: false,
+            last_recover: None,
             fault: Some(fault),
             store: path.to_path_buf(),
         }
@@ -214,9 +230,9 @@ impl Identity {
         let Ok(held) = read_vault(vault) else {
             return Self::faulted(path, IdentityFault::KeychainUnavailable);
         };
-        let (private, public, is_stored) = match held.as_deref() {
+        let (private, public) = match held.as_deref() {
             Some(text) => match split_vault_value(text) {
-                Some((private, public)) => (private, public, true),
+                Some(pair) => pair,
                 None => return Self::faulted(path, IdentityFault::KeyMismatch),
             },
             None => match Self::minted(vault) {
@@ -228,8 +244,6 @@ impl Identity {
         id.fault = None;
         id.static_priv_b64 = private;
         id.static_pub_b64 = public;
-        id.instance_id = random_instance_id();
-        id.is_key_in_file = !is_stored;
         match id.persist() {
             Ok(()) => id,
             Err(error) => {
@@ -239,33 +253,29 @@ impl Identity {
         }
     }
 
-    fn minted(vault: &dyn KeyVault) -> Result<(String, String, bool), BridgeError> {
+    fn minted(vault: &dyn KeyVault) -> Result<(String, String), BridgeError> {
         let (private, public) = fresh_keypair()?;
-        let is_stored = match vault.write(&vault_value_of(&private, &public)) {
-            Ok(()) => true,
-            Err(error) => {
-                log::warn!("[bridge] keychain write failed, the key stays in the file: {error}");
-                false
-            }
-        };
-        Ok((private, public, is_stored))
+        vault
+            .write(&vault_value_of(&private, &public))
+            .map_err(|error| {
+                log::warn!("[bridge] keychain write failed: {error}");
+                BridgeError::IdentityUnavailable
+            })?;
+        Ok((private, public))
     }
 
     fn settle(mut self, path: &Path, vault: &dyn KeyVault) -> Self {
         self.store = path.to_path_buf();
-        let mut is_dirty = self.adopt_legacy_allow_list();
-        if self.instance_id.is_empty() {
-            self.instance_id = random_instance_id();
-            is_dirty = true;
-        }
+        let is_adopted = self.adopt_legacy_allow_list();
         if self.static_priv_b64.is_empty() {
-            return self.with_vault_key(vault, is_dirty);
+            return self.with_vault_key(vault, is_adopted);
         }
-        self.is_key_in_file = true;
-        self.migrate_key(vault);
-        match is_dirty && self.persist().is_err() {
-            true => Self::faulted(path, IdentityFault::FileUnreadable),
-            false => self,
+        if !self.migrate_key(vault) {
+            return Self::faulted(path, IdentityFault::KeychainUnavailable);
+        }
+        match self.persist() {
+            Ok(()) => self,
+            Err(_) => Self::faulted(path, IdentityFault::FileUnreadable),
         }
     }
 
@@ -290,41 +300,42 @@ impl Identity {
         }
     }
 
-    fn migrate_key(&mut self, vault: &dyn KeyVault) {
+    fn migrate_key(&self, vault: &dyn KeyVault) -> bool {
         let value = vault_value_of(&self.static_priv_b64, &self.static_pub_b64);
         if let Err(error) = vault.write(&value) {
-            log::warn!("[bridge] key stays in the file, keychain write failed: {error}");
-            return;
+            log::warn!("[bridge] keychain write failed, the file is left as it is: {error}");
+            return false;
         }
-        match vault.read() {
-            Ok(Some(back)) if back == value => {
-                self.is_key_in_file = false;
-                if let Err(error) = self.persist() {
-                    log::warn!("[bridge] could not rewrite the pairing file: {error}");
-                    self.is_key_in_file = true;
-                }
-            }
-            _ => log::warn!("[bridge] keychain did not return the key, it stays in the file"),
-        }
+        matches!(vault.read(), Ok(Some(back)) if back == value)
     }
 
     pub fn try_recover(&mut self, vault: &dyn KeyVault) {
         if self.fault != Some(IdentityFault::KeychainUnavailable) {
             return;
         }
+        if self
+            .last_recover
+            .is_some_and(|at| at.elapsed() < RECOVER_EVERY)
+        {
+            return;
+        }
         let path = self.store.clone();
-        *self = Self::load_with(&path, vault);
+        let mut next = Self::load_with(&path, vault);
+        if next.fault.is_some() {
+            next.last_recover = Some(std::time::Instant::now());
+        }
+        *self = next;
     }
 
     pub fn reset_pairing(&mut self, vault: &dyn KeyVault) -> Result<(), BridgeError> {
         let (private, public) = fresh_keypair()?;
-        let is_stored = vault.write(&vault_value_of(&private, &public)).is_ok();
+        vault
+            .write(&vault_value_of(&private, &public))
+            .map_err(|_| BridgeError::IdentityUnavailable)?;
         let mut next = Self::faulted(&self.store, IdentityFault::FileUnreadable);
         next.fault = None;
         next.static_priv_b64 = private;
         next.static_pub_b64 = public;
-        next.instance_id = random_instance_id();
-        next.is_key_in_file = !is_stored;
         next.interfaces = self.interfaces.clone();
         next.device_label = self.device_label.clone();
         next.persist()?;
@@ -365,6 +376,7 @@ impl Identity {
                     paired_at: now.clone(),
                     last_seen: None,
                     permissions: Permissions::default(),
+                    rules: Vec::new(),
                 });
             }
         }
@@ -408,9 +420,34 @@ impl Identity {
                 paired_at: now.clone(),
                 last_seen: Some(now),
                 permissions: Permissions::default(),
+                rules: Vec::new(),
             }),
         }
         self.persist()
+    }
+
+    pub fn note_rule(&mut self, phone_id: &str, rule_id: &str) -> Result<bool, BridgeError> {
+        let mut next = self.clone();
+        let Some(phone) = next.phones.iter_mut().find(|p| p.key == phone_id) else {
+            return Ok(false);
+        };
+        if !phone.rules.iter().any(|r| r == rule_id) {
+            phone.rules.push(rule_id.to_string());
+        }
+        self.commit(next)?;
+        Ok(true)
+    }
+
+    pub fn rules_of(&self, phone_id: &str) -> Vec<String> {
+        self.phones
+            .iter()
+            .find(|p| p.key == phone_id)
+            .map(|p| p.rules.clone())
+            .unwrap_or_default()
+    }
+
+    pub fn all_rules(&self) -> Vec<String> {
+        self.phones.iter().flat_map(|p| p.rules.clone()).collect()
     }
 
     pub fn touch_seen(&mut self, phone_static_pub: &[u8]) -> Result<(), BridgeError> {
@@ -485,15 +522,7 @@ impl Identity {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).map_err(BridgeError::Io)?;
         }
-        let mut value = serde_json::to_value(self).map_err(BridgeError::Json)?;
-        if self.is_key_in_file {
-            if let Some(object) = value.as_object_mut() {
-                object.insert(
-                    "static_priv_b64".to_string(),
-                    serde_json::Value::String(self.static_priv_b64.clone()),
-                );
-            }
-        }
+        let value = serde_json::to_value(self).map_err(BridgeError::Json)?;
         let json = serde_json::to_vec_pretty(&value).map_err(BridgeError::Json)?;
         crate::util::write_atomic_private(path, &json).map_err(BridgeError::Io)
     }
@@ -652,7 +681,7 @@ mod tests {
             .map(String::as_str)
             .collect();
         keys.sort_unstable();
-        assert_eq!(keys, ["instance_id", "phones", "static_pub_b64"]);
+        assert_eq!(keys, ["phones", "static_pub_b64"]);
         assert_eq!(raw["phones"][0]["key"], b64().encode(PHONE_A));
         assert_eq!(raw["phones"][0]["name"], "Harborline iPhone");
         assert_eq!(raw["phones"][0]["permissions"]["canStart"], false);
@@ -932,21 +961,82 @@ mod tests {
     }
 
     #[test]
-    fn a_key_that_cannot_reach_the_keychain_stays_usable_in_the_file() {
+    fn a_key_that_cannot_reach_the_keychain_is_a_fault_and_the_file_is_untouched() {
         let scratch = Scratch::new("migrate-fails");
         let file = scratch.file();
         let (private, public) = fresh_keypair().unwrap();
         std::fs::create_dir_all(file.parent().unwrap()).unwrap();
         let old = serde_json::json!({ "static_priv_b64": private, "static_pub_b64": public });
         std::fs::write(&file, serde_json::to_vec(&old).unwrap()).unwrap();
-        MemoryVault::for_path(&file).set_mode(VaultMode::WriteFails);
+        let vault = MemoryVault::for_path(&file);
+        vault.set_mode(VaultMode::WriteFails);
 
-        let mut id = Identity::load_or_create_at(&file).unwrap();
+        let id = Identity::load_with(&file, &*vault);
+
+        assert_eq!(id.fault(), Some(IdentityFault::KeychainUnavailable));
+        assert!(id.static_priv().is_err());
+        assert!(std::fs::read_to_string(&file).unwrap().contains(&private));
+    }
+
+    #[test]
+    fn a_new_key_that_cannot_reach_the_keychain_is_never_written_to_a_file() {
+        let scratch = Scratch::new("create-fails");
+        let file = scratch.file();
+        let vault = MemoryVault::for_path(&file);
+        vault.set_mode(VaultMode::WriteFails);
+
+        let id = Identity::load_with(&file, &*vault);
+
+        assert_eq!(id.fault(), Some(IdentityFault::KeychainUnavailable));
+        assert!(!file.exists());
+    }
+
+    #[test]
+    fn debug_output_never_holds_the_private_key() {
+        let scratch = Scratch::new("debug");
+        let id = Identity::load_or_create_at(&scratch.file()).unwrap();
+
+        assert!(!format!("{id:?}").contains(&id.static_priv_b64));
+    }
+
+    #[test]
+    fn a_phone_name_loses_direction_overrides_and_zero_width_characters() {
+        assert_eq!(clean_phone_name("Har\u{202E}bor\u{200B}line"), "Harborline");
+    }
+
+    #[test]
+    fn a_rule_a_phone_made_is_listed_for_it_and_survives_a_reload() {
+        let scratch = Scratch::new("rules");
+        let mut id = Identity::load_or_create_at(&scratch.file()).unwrap();
         id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
+        id.enroll(&PHONE_B, "Northwind iPhone").unwrap();
+        let a = b64().encode(PHONE_A);
 
-        assert_eq!(id.static_priv().unwrap().len(), 32);
-        let raw = std::fs::read_to_string(&file).unwrap();
-        assert!(raw.contains(&private));
+        assert!(id.note_rule(&a, "rule-1").unwrap());
+        assert!(id.note_rule(&a, "rule-1").unwrap());
+        assert!(!id.note_rule("nobody", "rule-2").unwrap());
+
+        let reloaded = Identity::load_or_create_at(&scratch.file()).unwrap();
+        assert_eq!(reloaded.rules_of(&a), ["rule-1"]);
+        assert!(reloaded.rules_of(&b64().encode(PHONE_B)).is_empty());
+        assert_eq!(reloaded.all_rules(), ["rule-1"]);
+    }
+
+    #[test]
+    fn a_locked_keychain_is_not_asked_again_inside_the_pause() {
+        let scratch = Scratch::new("recover-pause");
+        let file = scratch.file();
+        Identity::load_or_create_at(&file).unwrap();
+        let vault = MemoryVault::for_path(&file);
+        vault.set_mode(VaultMode::ReadFails);
+        let mut id = Identity::load_with(&file, &*vault);
+        id.try_recover(&*vault);
+        let reads = vault.reads();
+
+        id.try_recover(&*vault);
+        id.try_recover(&*vault);
+
+        assert_eq!(vault.reads(), reads);
     }
 
     #[test]
@@ -1035,31 +1125,16 @@ mod tests {
         let file = scratch.file();
         let vault = MemoryVault::for_path(&file);
         let mut id = Identity::load_with(&file, &*vault);
-        let first_id = id.instance_id.clone();
 
         id.reset_pairing(&*vault).unwrap();
 
         assert_eq!(id.fault(), None);
         assert_eq!(id.static_priv().unwrap().len(), 32);
         assert!(id.phones.is_empty());
-        assert_ne!(id.instance_id, first_id);
         assert_eq!(aside_files(&scratch).len(), 1);
         let reloaded = Identity::load_with(&file, &*vault);
         assert_eq!(reloaded.fault(), None);
         assert_eq!(reloaded.static_pub_b64, id.static_pub_b64);
-    }
-
-    #[test]
-    fn the_instance_id_is_opaque_random_and_stable() {
-        let scratch = Scratch::new("instance");
-        let first = Identity::load_or_create_at(&scratch.file()).unwrap();
-        let again = Identity::load_or_create_at(&scratch.file()).unwrap();
-        let other = Identity::load_or_create_at(&Scratch::new("instance-other").file()).unwrap();
-
-        assert_eq!(first.instance_id.len(), 16);
-        assert!(first.instance_id.chars().all(|c| c.is_ascii_hexdigit()));
-        assert_eq!(first.instance_id, again.instance_id);
-        assert_ne!(first.instance_id, other.instance_id);
     }
 
     #[test]

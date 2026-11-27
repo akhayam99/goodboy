@@ -20,7 +20,6 @@ mod wire_shape;
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::sync::{Arc, Mutex as StdMutex, OnceLock};
-use std::time::Duration;
 
 use base64::Engine as _;
 use serde::Serialize;
@@ -30,22 +29,21 @@ use tauri::{AppHandle, Emitter, State};
 use thiserror::Error;
 use tokio::sync::{watch, Mutex};
 
-use advertise::{system_advertiser, Presence};
+use advertise::{fresh_instance_id, system_advertiser, Presence};
 use commands::{CmdResult, PendingMap};
 use handshake::RefusalCode;
 use identity::{Identity, IdentityFault};
-use listen::{bind_all, endpoints_of};
+use listen::{bind_offered, endpoints_of};
 use network::{interfaces_of, offered_addresses, raw_addresses, NetworkInterface};
 use pairing::{PairingHold, PendingPairing};
 use permissions::Permissions;
 use publish::PublishHub;
-use server::{serve, ServerCtx};
+use server::{serve, ServerCtx, Serving};
 use tokens::TokenStore;
 use vault::KeychainVault;
 
 const PROTOCOL_NAME: &str = "Noise_XK_25519_ChaChaPoly_SHA256";
 const SERVICE_NAME: &str = "_goodboy._tcp";
-const INTERFACE_WATCH: Duration = Duration::from_secs(5);
 
 pub(crate) fn noise_params() -> NoiseParams {
     PROTOCOL_NAME
@@ -92,10 +90,6 @@ impl BridgeError {
             BridgeError::IdentityUnavailable => "identity_unavailable",
         }
     }
-
-    fn is_polite_refusal(&self) -> bool {
-        matches!(self, BridgeError::Refused(code) if code.is_polite())
-    }
 }
 
 crate::util::impl_error_serialize!(BridgeError);
@@ -106,6 +100,7 @@ pub struct BridgeState {
     pending: PendingMap,
     pairing: Arc<PairingHold>,
     app: Arc<OnceLock<AppHandle>>,
+    instance: String,
     pub(crate) hub: Arc<PublishHub>,
     inner: Mutex<Inner>,
 }
@@ -117,7 +112,6 @@ struct Inner {
     shutdown: Option<watch::Sender<bool>>,
     selected: Option<Vec<String>>,
     presence: Option<Arc<StdMutex<Presence>>>,
-    watcher: Option<JoinHandle<()>>,
 }
 
 fn offered_ips(selected: Option<&[String]>) -> Vec<IpAddr> {
@@ -143,6 +137,7 @@ impl BridgeState {
             pending: Arc::new(Mutex::new(HashMap::new())),
             pairing: Arc::new(pairing),
             app,
+            instance: fresh_instance_id(),
             hub: Arc::new(PublishHub::new()),
             inner: Mutex::new(Inner::default()),
         }
@@ -151,18 +146,13 @@ impl BridgeState {
     async fn ensure_running(&self, app: AppHandle) -> Result<(u16, Vec<IpAddr>), BridgeError> {
         let _ = self.app.set(app.clone());
         let mut inner = self.inner.lock().await;
-        let (selected, preferred, device_name, instance) = {
+        let (selected, preferred, device_name) = {
             let mut id = self.identity.lock().await;
             id.try_recover(&KeychainVault);
             if id.fault().is_some() {
                 return Err(BridgeError::IdentityUnavailable);
             }
-            (
-                id.interfaces.clone(),
-                id.listen_port,
-                id.device_label(),
-                id.instance_id.clone(),
-            )
+            (id.interfaces.clone(), id.listen_port, id.device_label())
         };
         if let Some(port) = inner.port {
             if inner.selected == selected {
@@ -170,19 +160,20 @@ impl BridgeState {
             }
             stop_inner(&mut inner);
         }
-        let listening = bind_all(preferred).await?;
+        let raw = offered_addresses(&raw_addresses(), selected.as_deref());
+        let ips: Vec<IpAddr> = raw.iter().map(|a| a.ip).collect();
+        let listening = bind_offered(&ips, preferred).await?;
         let port = listening.port;
         if let Err(error) = self.identity.lock().await.set_listen_port(port) {
             log::warn!("[bridge] could not remember the port: {error}");
         }
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
-        let watched = selected.clone();
         let ctx = Arc::new(ServerCtx {
             identity: self.identity.clone(),
             tokens: self.tokens.clone(),
             device_name,
             port,
-            offered: Arc::new(move || offered_ips(watched.as_deref())),
+            offered: Arc::new(std::sync::RwLock::new(ips.clone())),
             pairing: self.pairing.clone(),
             app,
             pending: self.pending.clone(),
@@ -190,28 +181,31 @@ impl BridgeState {
             in_flight: Default::default(),
             shutdown: shutdown_rx,
         });
-        let listeners = listening.listeners;
-        let task = tauri::async_runtime::spawn(async move {
-            serve(listeners, ctx).await;
-        });
         let presence = Arc::new(StdMutex::new(Presence::start(
             system_advertiser(),
-            instance,
+            self.instance.clone(),
             port,
-            offered_ips(selected.as_deref()),
+            raw,
         )));
-        let watcher =
-            tauri::async_runtime::spawn(watch_interfaces(presence.clone(), selected.clone()));
+        let serving = Serving {
+            port,
+            first: listening.listeners,
+            selected: selected.clone(),
+            presence: presence.clone(),
+        };
+        let task = tauri::async_runtime::spawn(async move {
+            serve(serving, ctx).await;
+        });
         inner.port = Some(port);
         inner.task = Some(task);
         inner.shutdown = Some(shutdown_tx);
         inner.selected = selected.clone();
         inner.presence = Some(presence);
-        inner.watcher = Some(watcher);
-        Ok((port, offered_ips(selected.as_deref())))
+        Ok((port, ips))
     }
 
     async fn stop(&self) {
+        self.pairing.cancel();
         stop_inner(&mut *self.inner.lock().await);
     }
 
@@ -233,9 +227,6 @@ fn stop_inner(inner: &mut Inner) {
     if let Some(task) = inner.task.take() {
         task.abort();
     }
-    if let Some(watcher) = inner.watcher.take() {
-        watcher.abort();
-    }
     if let Some(presence) = inner.presence.take() {
         if let Ok(mut presence) = presence.lock() {
             presence.stop();
@@ -243,21 +234,6 @@ fn stop_inner(inner: &mut Inner) {
     }
     inner.port = None;
     inner.selected = None;
-}
-
-async fn watch_interfaces(presence: Arc<StdMutex<Presence>>, selected: Option<Vec<String>>) {
-    let mut every = tokio::time::interval(INTERFACE_WATCH);
-    every.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-    loop {
-        every.tick().await;
-        let offered = offered_ips(selected.as_deref());
-        let Ok(mut presence) = presence.lock() else {
-            return;
-        };
-        if presence.tick(offered) {
-            log::info!("[bridge] the networks changed, advertised again");
-        }
-    }
 }
 
 pub async fn resume(app: AppHandle, state: &BridgeState) {
@@ -430,19 +406,38 @@ pub async fn bridge_set_permissions(
 pub async fn bridge_revoke_phone(
     state: State<'_, BridgeState>,
     phone_id: String,
-) -> Result<(), BridgeError> {
-    state.identity.lock().await.revoke_one(&phone_id)?;
+) -> Result<Vec<String>, BridgeError> {
+    let rules = {
+        let mut id = state.identity.lock().await;
+        let rules = id.rules_of(&phone_id);
+        id.revoke_one(&phone_id)?;
+        rules
+    };
     if !state.has_phones().await {
         state.stop().await;
     }
-    Ok(())
+    Ok(rules)
 }
 
 #[tauri::command]
-pub async fn bridge_revoke(state: State<'_, BridgeState>) -> Result<(), BridgeError> {
-    state.identity.lock().await.revoke_all()?;
+pub async fn bridge_note_phone_rule(
+    state: State<'_, BridgeState>,
+    phone_id: String,
+    rule_id: String,
+) -> Result<bool, BridgeError> {
+    state.identity.lock().await.note_rule(&phone_id, &rule_id)
+}
+
+#[tauri::command]
+pub async fn bridge_revoke(state: State<'_, BridgeState>) -> Result<Vec<String>, BridgeError> {
+    let rules = {
+        let mut id = state.identity.lock().await;
+        let rules = id.all_rules();
+        id.revoke_all()?;
+        rules
+    };
     state.stop().await;
-    Ok(())
+    Ok(rules)
 }
 
 #[tauri::command]

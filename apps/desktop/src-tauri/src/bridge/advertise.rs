@@ -1,9 +1,8 @@
-use std::net::IpAddr;
-
-use super::listen::same_ips;
+use super::network::RawAddress;
 
 pub trait Advertiser: Send {
-    fn advertise(&mut self, instance: &str, port: u16) -> Result<(), String>;
+    fn advertise(&mut self, instance: &str, port: u16, interfaces: &[String])
+        -> Result<(), String>;
     fn withdraw(&mut self);
 }
 
@@ -23,7 +22,12 @@ struct Silent;
 
 #[cfg(not(target_os = "macos"))]
 impl Advertiser for Silent {
-    fn advertise(&mut self, _instance: &str, _port: u16) -> Result<(), String> {
+    fn advertise(
+        &mut self,
+        _instance: &str,
+        _port: u16,
+        _interfaces: &[String],
+    ) -> Result<(), String> {
         Ok(())
     }
 
@@ -74,46 +78,71 @@ mod dns_sd {
     unsafe impl Send for Registration {}
 
     pub struct DnsSdAdvertiser {
-        registration: Option<Registration>,
+        registrations: Vec<Registration>,
     }
 
     impl DnsSdAdvertiser {
         pub fn new() -> Self {
-            Self { registration: None }
+            Self {
+                registrations: Vec::new(),
+            }
+        }
+    }
+
+    fn index_of(interface: &str) -> Option<u32> {
+        let name = CString::new(interface).ok()?;
+        match unsafe { libc::if_nametoindex(name.as_ptr()) } {
+            0 => None,
+            index => Some(index),
         }
     }
 
     impl Advertiser for DnsSdAdvertiser {
-        fn advertise(&mut self, instance: &str, port: u16) -> Result<(), String> {
+        fn advertise(
+            &mut self,
+            instance: &str,
+            port: u16,
+            interfaces: &[String],
+        ) -> Result<(), String> {
             self.withdraw();
+            if instance.is_empty() {
+                return Err("an empty instance name would fall back to the computer name".into());
+            }
             let name = CString::new(instance).map_err(|e| e.to_string())?;
             let service_type = CString::new(SERVICE_NAME).map_err(|e| e.to_string())?;
-            let mut reference: Reference = std::ptr::null_mut();
-            let code = unsafe {
-                DNSServiceRegister(
-                    &mut reference,
-                    0,
-                    0,
-                    name.as_ptr(),
-                    service_type.as_ptr(),
-                    std::ptr::null(),
-                    std::ptr::null(),
-                    port.to_be(),
-                    0,
-                    std::ptr::null(),
-                    None,
-                    std::ptr::null_mut(),
-                )
-            };
-            if code != 0 || reference.is_null() {
-                return Err(format!("dns-sd register failed with code {code}"));
+            for interface in interfaces {
+                let Some(index) = index_of(interface) else {
+                    continue;
+                };
+                let mut reference: Reference = std::ptr::null_mut();
+                let code = unsafe {
+                    DNSServiceRegister(
+                        &mut reference,
+                        0,
+                        index,
+                        name.as_ptr(),
+                        service_type.as_ptr(),
+                        std::ptr::null(),
+                        std::ptr::null(),
+                        port.to_be(),
+                        0,
+                        std::ptr::null(),
+                        None,
+                        std::ptr::null_mut(),
+                    )
+                };
+                if code == 0 && !reference.is_null() {
+                    self.registrations.push(Registration(reference));
+                }
             }
-            self.registration = Some(Registration(reference));
-            Ok(())
+            match self.registrations.is_empty() {
+                true => Err("no private interface could be registered".into()),
+                false => Ok(()),
+            }
         }
 
         fn withdraw(&mut self) {
-            if let Some(Registration(reference)) = self.registration.take() {
+            for Registration(reference) in self.registrations.drain(..) {
                 unsafe { DNSServiceRefDeallocate(reference) };
             }
         }
@@ -126,11 +155,34 @@ mod dns_sd {
     }
 }
 
+pub fn fresh_instance_id() -> String {
+    use rand::Rng;
+    let mut bytes = [0u8; 8];
+    rand::rng().fill_bytes(&mut bytes);
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+fn key_of(offered: &[RawAddress]) -> Vec<(String, String)> {
+    let mut key: Vec<(String, String)> = offered
+        .iter()
+        .map(|a| (a.interface.clone(), a.ip.to_string()))
+        .collect();
+    key.sort();
+    key
+}
+
+fn names_of(offered: &[RawAddress]) -> Vec<String> {
+    let mut names: Vec<String> = offered.iter().map(|a| a.interface.clone()).collect();
+    names.sort();
+    names.dedup();
+    names
+}
+
 pub struct Presence {
     advertiser: Box<dyn Advertiser>,
     instance: String,
     port: u16,
-    offered: Vec<IpAddr>,
+    offered: Vec<RawAddress>,
     is_up: bool,
 }
 
@@ -139,7 +191,7 @@ impl Presence {
         advertiser: Box<dyn Advertiser>,
         instance: String,
         port: u16,
-        offered: Vec<IpAddr>,
+        offered: Vec<RawAddress>,
     ) -> Self {
         let mut presence = Self {
             advertiser,
@@ -156,8 +208,8 @@ impl Presence {
         self.is_up
     }
 
-    pub fn tick(&mut self, offered: Vec<IpAddr>) -> bool {
-        if same_ips(&self.offered, &offered) {
+    pub fn tick(&mut self, offered: Vec<RawAddress>) -> bool {
+        if key_of(&self.offered) == key_of(&offered) {
             return false;
         }
         self.sync(offered);
@@ -169,14 +221,18 @@ impl Presence {
         self.is_up = false;
     }
 
-    fn sync(&mut self, offered: Vec<IpAddr>) {
+    fn sync(&mut self, offered: Vec<RawAddress>) {
         self.offered = offered;
         self.advertiser.withdraw();
         self.is_up = false;
-        if self.offered.is_empty() {
+        if self.offered.is_empty() || self.instance.is_empty() {
             return;
         }
-        match self.advertiser.advertise(&self.instance, self.port) {
+        let interfaces = names_of(&self.offered);
+        match self
+            .advertiser
+            .advertise(&self.instance, self.port, &interfaces)
+        {
             Ok(()) => self.is_up = true,
             Err(error) => log::warn!("[bridge] bonjour advertise failed: {error}"),
         }
@@ -209,12 +265,17 @@ mod tests {
     }
 
     impl Advertiser for Recorder {
-        fn advertise(&mut self, instance: &str, port: u16) -> Result<(), String> {
+        fn advertise(
+            &mut self,
+            instance: &str,
+            port: u16,
+            interfaces: &[String],
+        ) -> Result<(), String> {
             self.log
                 .0
                 .lock()
                 .unwrap()
-                .push(format!("up {instance} {port}"));
+                .push(format!("up {instance} {port} {}", interfaces.join(",")));
             match self.is_failing {
                 true => Err("responder down".into()),
                 false => Ok(()),
@@ -237,8 +298,14 @@ mod tests {
         )
     }
 
-    fn ips(list: &[&str]) -> Vec<IpAddr> {
-        list.iter().map(|text| text.parse().unwrap()).collect()
+    fn ips(list: &[&str]) -> Vec<RawAddress> {
+        list.iter()
+            .enumerate()
+            .map(|(n, text)| RawAddress {
+                interface: format!("en{n}"),
+                ip: text.parse().unwrap(),
+            })
+            .collect()
     }
 
     fn ups(log: &Log) -> Vec<String> {
@@ -260,7 +327,7 @@ mod tests {
         );
 
         assert!(presence.is_up());
-        assert_eq!(ups(&log), ["up a1b2c3d4e5f60718 49160"]);
+        assert_eq!(ups(&log), ["up a1b2c3d4e5f60718 49160 en0"]);
     }
 
     #[test]
@@ -313,5 +380,38 @@ mod tests {
     #[test]
     fn the_service_type_is_the_one_the_phone_browses() {
         assert_eq!(crate::bridge::SERVICE_NAME, "_goodboy._tcp");
+    }
+
+    #[test]
+    fn it_registers_on_each_private_interface_by_name_only() {
+        let (advertiser, log) = recorder(false);
+
+        let _presence = Presence::start(
+            advertiser,
+            "id".into(),
+            7,
+            ips(&["192.168.1.9", "100.64.0.5"]),
+        );
+
+        assert_eq!(ups(&log), ["up id 7 en0,en1"]);
+    }
+
+    #[test]
+    fn the_instance_id_is_new_at_every_call_and_never_empty() {
+        let one = fresh_instance_id();
+        let two = fresh_instance_id();
+
+        assert_eq!(one.len(), 16);
+        assert_ne!(one, two);
+    }
+
+    #[test]
+    fn an_empty_instance_is_never_advertised() {
+        let (advertiser, log) = recorder(false);
+
+        let presence = Presence::start(advertiser, String::new(), 7, ips(&["10.0.0.2"]));
+
+        assert!(!presence.is_up());
+        assert!(ups(&log).is_empty());
     }
 }

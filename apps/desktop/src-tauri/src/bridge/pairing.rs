@@ -11,7 +11,17 @@ pub const CONFIRM_WINDOW: Duration = Duration::from_secs(60);
 pub struct PendingPairing {
     pub id: String,
     pub name: String,
+    pub code: String,
     pub asked_at: String,
+}
+
+pub fn code_of(handshake_hash: &[u8]) -> String {
+    let mut head = [0u8; 4];
+    for (slot, byte) in head.iter_mut().zip(handshake_hash.iter()) {
+        *slot = *byte;
+    }
+    let digits = u32::from_be_bytes(head) % 1_000_000;
+    format!("{:03} {:03}", digits / 1000, digits % 1000)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -81,6 +91,15 @@ impl PairingHold {
             .map(|waiting| waiting.pending.clone())
     }
 
+    pub fn cancel(&self) {
+        let Ok(mut guard) = self.waiting.lock() else {
+            return;
+        };
+        if let Some(waiting) = guard.take() {
+            let _ = waiting.answer.send(false);
+        }
+    }
+
     pub fn decide(&self, id: &str, allow: bool) -> bool {
         let Ok(mut guard) = self.waiting.lock() else {
             return false;
@@ -97,7 +116,7 @@ impl PairingHold {
         waiting.answer.send(allow).is_ok()
     }
 
-    pub async fn request(&self, name: &str) -> Verdict {
+    pub async fn request(&self, name: &str, code: &str) -> Verdict {
         if let Some(allow) = self.auto {
             return match allow {
                 true => Verdict::Allowed,
@@ -108,6 +127,7 @@ impl PairingHold {
         let pending = PendingPairing {
             id: random_id(),
             name: name.to_string(),
+            code: code.to_string(),
             asked_at: crate::util::iso_now_whole_seconds(),
         };
         {
@@ -154,12 +174,39 @@ mod tests {
     use super::*;
     use std::sync::Arc;
 
+    #[test]
+    fn the_code_is_six_digits_from_the_first_four_bytes_of_the_handshake_hash() {
+        let mut hash = [0u8; 32];
+        hash[..4].copy_from_slice(&482_913u32.to_be_bytes());
+
+        assert_eq!(code_of(&hash), "482 913");
+        assert_eq!(code_of(&[0u8; 32]), "000 000");
+        assert_eq!(code_of(&[0xFF; 32]), "967 295");
+        assert_eq!(code_of(&[1, 2]), "908 288");
+    }
+
+    #[tokio::test]
+    async fn a_cancel_ends_the_wait_as_a_denial() {
+        let hold = Arc::new(PairingHold::with_window(Duration::from_secs(5)));
+        let asking = {
+            let hold = hold.clone();
+            tokio::spawn(async move { hold.request("Harborline iPhone", "111 222").await })
+        };
+        while hold.pending().is_none() {
+            tokio::task::yield_now().await;
+        }
+
+        hold.cancel();
+
+        assert_eq!(asking.await.unwrap(), Verdict::Denied);
+    }
+
     #[tokio::test]
     async fn a_request_waits_until_the_user_allows_it() {
         let hold = Arc::new(PairingHold::with_window(Duration::from_secs(5)));
         let asking = {
             let hold = hold.clone();
-            tokio::spawn(async move { hold.request("Harborline iPhone").await })
+            tokio::spawn(async move { hold.request("Harborline iPhone", "482 913").await })
         };
         let pending = loop {
             if let Some(pending) = hold.pending() {
@@ -181,7 +228,7 @@ mod tests {
         let hold = Arc::new(PairingHold::with_window(Duration::from_secs(5)));
         let asking = {
             let hold = hold.clone();
-            tokio::spawn(async move { hold.request("Northwind iPhone").await })
+            tokio::spawn(async move { hold.request("Northwind iPhone", "482 913").await })
         };
         let pending = loop {
             if let Some(pending) = hold.pending() {
@@ -201,10 +248,16 @@ mod tests {
     async fn no_answer_expires_and_frees_the_slot() {
         let hold = PairingHold::with_window(Duration::from_millis(30));
 
-        assert_eq!(hold.request("Acme iPhone").await, Verdict::Expired);
+        assert_eq!(
+            hold.request("Acme iPhone", "482 913").await,
+            Verdict::Expired
+        );
 
         assert!(hold.pending().is_none());
-        assert_eq!(hold.request("Acme iPhone").await, Verdict::Expired);
+        assert_eq!(
+            hold.request("Acme iPhone", "482 913").await,
+            Verdict::Expired
+        );
     }
 
     #[tokio::test]
@@ -212,7 +265,7 @@ mod tests {
         let hold = Arc::new(PairingHold::with_window(Duration::from_secs(5)));
         let first = {
             let hold = hold.clone();
-            tokio::spawn(async move { hold.request("Harborline iPhone").await })
+            tokio::spawn(async move { hold.request("Harborline iPhone", "482 913").await })
         };
         let pending = loop {
             if let Some(pending) = hold.pending() {
@@ -221,7 +274,10 @@ mod tests {
             tokio::task::yield_now().await;
         };
 
-        assert_eq!(hold.request("Cascadia iPhone").await, Verdict::Busy);
+        assert_eq!(
+            hold.request("Cascadia iPhone", "482 913").await,
+            Verdict::Busy
+        );
 
         hold.decide(&pending.id, true);
         assert_eq!(first.await.unwrap(), Verdict::Allowed);
@@ -236,7 +292,7 @@ mod tests {
         }));
         hold.window = Duration::from_millis(20);
 
-        hold.request("Harborline iPhone").await;
+        hold.request("Harborline iPhone", "482 913").await;
 
         assert_eq!(*heard.lock().unwrap(), ["Harborline iPhone"]);
     }

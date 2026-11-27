@@ -11,6 +11,7 @@ export type QrInfo = {
 export type PendingPairing = {
   readonly id: string;
   readonly name: string;
+  readonly code: string;
   readonly askedAt: string;
 };
 
@@ -70,7 +71,8 @@ export const NO_PRIVATE_NETWORK_KIND = 'no_private_network';
 
 export const bridgeStart = (): Promise<QrInfo> => invokeCommand<QrInfo>('bridge_start');
 
-export const bridgeRevoke = (): Promise<void> => invokeCommand<void>('bridge_revoke');
+export const bridgeRevoke = (): Promise<ReadonlyArray<string>> =>
+  invokeCommand<ReadonlyArray<string>>('bridge_revoke');
 
 export const bridgeStop = (): Promise<void> => invokeCommand<void>('bridge_stop');
 
@@ -92,8 +94,16 @@ export const bridgeSetPermissions = ({
 }: SetPermissionsParams): Promise<void> =>
   invokeCommand<void>('bridge_set_permissions', { phoneId, permissions });
 
-export const bridgeRevokePhone = ({ phoneId }: RevokePhoneParams): Promise<void> =>
-  invokeCommand<void>('bridge_revoke_phone', { phoneId });
+export const bridgeRevokePhone = ({ phoneId }: RevokePhoneParams): Promise<ReadonlyArray<string>> =>
+  invokeCommand<ReadonlyArray<string>>('bridge_revoke_phone', { phoneId });
+
+type NotePhoneRuleParams = {
+  readonly phoneId: string;
+  readonly ruleId: string;
+};
+
+export const bridgeNotePhoneRule = ({ phoneId, ruleId }: NotePhoneRuleParams): Promise<boolean> =>
+  invokeCommand<boolean>('bridge_note_phone_rule', { phoneId, ruleId });
 
 export const bridgePairingDecide = ({ id, isAllowed }: PairingDecisionParams): Promise<boolean> =>
   invokeCommand<boolean>('bridge_pairing_decide', { id, isAllowed });

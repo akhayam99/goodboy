@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -9,12 +10,14 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{broadcast, oneshot, watch, Mutex, Semaphore};
 
 use super::action_guard::{action_id_of, correlation_of, stamp_phone, InFlight};
+use super::advertise::Presence;
 use super::commands::{CmdResult, CommandEvent, MobileAction, Origin, PendingMap, ACK_TIMEOUT};
 use super::frame::{read_frame, write_frame, NOISE_MAX};
 use super::gate::{HandshakeGate, HandshakePermit, Refusal, MAX_UNAUTHENTICATED};
 use super::handshake::{authorize_within, refuse_within, Forced, RefusalCode, OP_REFUSED};
 use super::identity::Identity;
-use super::listen::{endpoints_of, is_accepted_source};
+use super::listen::{bind_ip, endpoints_of, is_accepted_source, plan};
+use super::network::{offered_addresses, raw_addresses, RawAddress};
 use super::pairing::PairingHold;
 use super::permissions::{denial, permission_for};
 use super::publish::{PublishHub, Stored, Update};
@@ -40,7 +43,10 @@ const FRESHNESS_INTERVAL: Duration = Duration::from_secs(1);
 const REFUSAL_HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(3);
 const REFUSAL_SLOTS: usize = 4;
 
-pub type Offered = Arc<dyn Fn() -> Vec<IpAddr> + Send + Sync>;
+pub type Offered = Arc<std::sync::RwLock<Vec<IpAddr>>>;
+
+const NETWORK_WATCH: Duration = Duration::from_secs(5);
+const ACCEPT_PAUSE: Duration = Duration::from_millis(200);
 
 pub struct ServerCtx {
     pub identity: Arc<Mutex<Identity>>,
@@ -56,26 +62,80 @@ pub struct ServerCtx {
     pub shutdown: watch::Receiver<bool>,
 }
 
-pub async fn serve(listeners: Vec<TcpListener>, ctx: Arc<ServerCtx>) {
+pub struct Serving {
+    pub port: u16,
+    pub first: Vec<(IpAddr, TcpListener)>,
+    pub selected: Option<Vec<String>>,
+    pub presence: Arc<std::sync::Mutex<Presence>>,
+}
+
+fn offered_now(selected: Option<&[String]>) -> Vec<RawAddress> {
+    offered_addresses(&raw_addresses(), selected)
+}
+
+pub async fn serve(serving: Serving, ctx: Arc<ServerCtx>) {
+    let Serving {
+        port,
+        first,
+        selected,
+        presence,
+    } = serving;
     let gate = HandshakeGate::new(MAX_UNAUTHENTICATED);
     let refusals = Arc::new(Semaphore::new(REFUSAL_SLOTS));
     let mut accepting = tokio::task::JoinSet::new();
-    for listener in listeners {
-        accepting.spawn(accept_loop(
+    let mut live: HashMap<IpAddr, tokio::task::AbortHandle> = HashMap::new();
+    for (ip, listener) in first {
+        let handle = accepting.spawn(accept_loop(
             listener,
             ctx.clone(),
             gate.clone(),
             refusals.clone(),
         ));
+        live.insert(ip, handle);
     }
-    while accepting.join_next().await.is_some() {}
+    let mut every = tokio::time::interval(NETWORK_WATCH);
+    every.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    loop {
+        every.tick().await;
+        let raw = offered_now(selected.as_deref());
+        let ips: Vec<IpAddr> = raw.iter().map(|a| a.ip).collect();
+        if let Ok(mut offered) = ctx.offered.write() {
+            *offered = ips.clone();
+        }
+        let current: Vec<IpAddr> = live.keys().copied().collect();
+        let (add, remove) = plan(&current, &ips);
+        for ip in remove {
+            if let Some(handle) = live.remove(&ip) {
+                handle.abort();
+            }
+        }
+        for ip in add {
+            let Some(listener) = bind_ip(ip, port).await else {
+                continue;
+            };
+            let handle = accepting.spawn(accept_loop(
+                listener,
+                ctx.clone(),
+                gate.clone(),
+                refusals.clone(),
+            ));
+            live.insert(ip, handle);
+        }
+        if let Ok(mut presence) = presence.lock() {
+            if presence.tick(raw) {
+                log::info!("[bridge] the networks changed, advertised again");
+            }
+        }
+    }
 }
 
 fn is_expected_source(stream: &TcpStream, peer: IpAddr, ctx: &ServerCtx) -> bool {
     let Ok(local) = stream.local_addr() else {
         return false;
     };
-    is_accepted_source(peer, local.ip(), &(ctx.offered)())
+    ctx.offered
+        .read()
+        .is_ok_and(|offered| is_accepted_source(peer, local.ip(), &offered))
 }
 
 async fn accept_loop(
@@ -115,7 +175,7 @@ async fn accept_loop(
             }
             Err(e) => {
                 log::warn!("[bridge] accept failed: {e}");
-                return;
+                tokio::time::sleep(ACCEPT_PAUSE).await;
             }
         }
     }
@@ -181,6 +241,15 @@ async fn send_removed(stream: &mut TcpStream, transport: &mut snow::TransportSta
     send_app(stream, transport, OP_REFUSED, &body).await.ok();
 }
 
+fn settle_failed(permit: HandshakePermit, error: &BridgeError) {
+    match error {
+        BridgeError::Refused(code) if code.is_polite() => permit.release(),
+        BridgeError::Io(_) => permit.release(),
+        BridgeError::Protocol(reason) if reason == "handshake timed out" => permit.fail_source(),
+        _ => permit.fail(),
+    }
+}
+
 async fn handle_conn(
     mut stream: TcpStream,
     ctx: Arc<ServerCtx>,
@@ -197,9 +266,7 @@ async fn handle_conn(
     {
         Ok(authorized) => authorized,
         Err(e) => {
-            if e.is_polite_refusal() {
-                permit.release();
-            }
+            settle_failed(permit, &e);
             return Err(e);
         }
     };
@@ -215,7 +282,7 @@ async fn handle_conn(
         &hello_payload(
             &ctx.device_name,
             authorized.permissions.wire(),
-            &(ctx.offered)(),
+            &ctx.offered.read().map(|o| o.clone()).unwrap_or_default(),
             ctx.port,
         ),
     )

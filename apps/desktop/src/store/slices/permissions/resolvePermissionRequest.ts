@@ -24,10 +24,18 @@ type Params = {
 };
 
 export const resolvePermissionRequest = (get: GetFn) => {
-  return async ({ sessionId, agentId, toolUseId, toolName, runId, scope, pattern }: Params) => {
+  return async ({
+    sessionId,
+    agentId,
+    toolUseId,
+    toolName,
+    runId,
+    scope,
+    pattern,
+  }: Params): Promise<PermissionRuleId | null> => {
     const session = sessionById(get().sessions, sessionId);
     if (!session) {
-      return;
+      return null;
     }
     const now = new Date().toISOString() as IsoDateTime;
 
@@ -69,5 +77,6 @@ export const resolvePermissionRequest = (get: GetFn) => {
       ruleId,
       decidedAt: now,
     });
+    return ruleId;
   };
 };

@@ -5,6 +5,7 @@ import type { DecideActionOf } from './decideAction';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
 import { isAgentOfSession } from './targets';
 import type { AppStore } from '../../../store/store';
+import { tagPhoneRule } from './tagPhoneRule';
 import { redeliverPermission } from './redeliverPermission';
 import {
   dropUndelivered,
@@ -34,6 +35,7 @@ const deliverPending = async ({ store, pending }: DeliverParams): Promise<Handle
 export const answerPermission = async ({
   action,
   getStore,
+  phoneId = null,
 }: HandlerParams<DecideActionOf<'answerPermission'>>): Promise<HandlerResult> => {
   const sessionId = sessionIdOf({ value: action.sessionId });
   const agentId = agentIdOf({ value: action.agentId });
@@ -86,11 +88,12 @@ export const answerPermission = async ({
       return doneResult();
     }
     if (action.verdict === 'allowAlways') {
-      await store.allowWithRule({
+      const ruleId = await store.allowWithRule({
         ...target,
         scope: 'workspace',
         pattern: prefixRuleFor({ toolName: ask.toolName, input: ask.input }).pattern,
       });
+      await tagPhoneRule({ phoneId, ruleId });
       return doneResult();
     }
     await store.denyWithReason({ ...target, reason: '' });

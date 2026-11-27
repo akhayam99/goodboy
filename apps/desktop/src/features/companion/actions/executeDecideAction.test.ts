@@ -247,7 +247,41 @@ describe.each(CASES)('$kind', (kase) => {
   });
 });
 
+const tagging = vi.hoisted(() => ({
+  note: vi.fn<(params: { phoneId: string; ruleId: string }) => Promise<boolean>>(),
+  drop: vi.fn<(params: { id: string }) => Promise<void>>(),
+}));
+
+vi.mock('../bridge', () => ({ bridgeNotePhoneRule: tagging.note }));
+vi.mock('../../permissions/permissions', () => ({ invokePermissionRuleDelete: tagging.drop }));
+
 describe('answerPermission with allowAlways', () => {
+  beforeEach(() => {
+    tagging.note.mockReset().mockResolvedValue(true);
+    tagging.drop.mockReset().mockResolvedValue(undefined);
+  });
+
+  it('tags the rule with the phone that made it', async () => {
+    const kit = buildTestStore();
+    kit.actions.allowWithRule.mockResolvedValue('rule-9');
+
+    await run({ kit, kase: ALWAYS });
+
+    expect(tagging.note).toHaveBeenCalledWith({ phoneId: 'phone-1', ruleId: 'rule-9' });
+    expect(tagging.drop).not.toHaveBeenCalled();
+  });
+
+  it('removes a rule it could not tag, so no rule outlives its phone', async () => {
+    const kit = buildTestStore();
+    kit.actions.allowWithRule.mockResolvedValue('rule-9');
+    tagging.note.mockResolvedValue(false);
+
+    const outcome = await run({ kit, kase: ALWAYS });
+
+    expect(outcome.result).toBe('done');
+    expect(tagging.drop).toHaveBeenCalledWith({ id: 'rule-9' });
+  });
+
   const ALWAYS: Case = {
     kind: 'answerPermission',
     fields: {
