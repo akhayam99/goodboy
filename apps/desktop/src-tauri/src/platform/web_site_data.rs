@@ -35,6 +35,67 @@ fn store_of(view: *mut AnyObject) -> Option<Retained<AnyObject>> {
     unsafe { msg_send![&*config, websiteDataStore] }
 }
 
+type NamedRecords = Vec<(String, Vec<String>)>;
+
+fn types_of(record: *mut AnyObject) -> Vec<String> {
+    let types: *mut AnyObject = unsafe { msg_send![record, dataTypes] };
+    if types.is_null() {
+        return Vec::new();
+    }
+    let all: *mut AnyObject = unsafe { msg_send![types, allObjects] };
+    if all.is_null() {
+        return Vec::new();
+    }
+    let count: usize = unsafe { msg_send![all, count] };
+    (0..count)
+        .filter_map(|index| text_of(unsafe { msg_send![all, objectAtIndex: index] }))
+        .collect()
+}
+
+fn named_records(records: *mut AnyObject) -> NamedRecords {
+    if records.is_null() {
+        return Vec::new();
+    }
+    let total: usize = unsafe { msg_send![records, count] };
+    (0..total)
+        .filter_map(|index| {
+            let record: *mut AnyObject = unsafe { msg_send![records, objectAtIndex: index] };
+            if record.is_null() {
+                return None;
+            }
+            let name: *mut AnyObject = unsafe { msg_send![record, displayName] };
+            Some((text_of(name)?, types_of(record)))
+        })
+        .collect()
+}
+
+pub(crate) fn read_records(
+    platform: tauri::webview::PlatformWebview,
+    sender: SyncSender<Option<NamedRecords>>,
+) {
+    let view = platform.inner().cast::<AnyObject>();
+    if view.is_null() {
+        let _ = sender.try_send(None);
+        return;
+    }
+    let Some(store) = store_of(view) else {
+        let _ = sender.try_send(None);
+        return;
+    };
+    let types: Option<Retained<AnyObject>> =
+        unsafe { msg_send![class!(WKWebsiteDataStore), allWebsiteDataTypes] };
+    let Some(types) = types else {
+        let _ = sender.try_send(None);
+        return;
+    };
+    let handler = RcBlock::new(move |records: *mut AnyObject| {
+        let _ = sender.try_send(Some(named_records(records)));
+    });
+    let _: () = unsafe {
+        msg_send![&*store, fetchDataRecordsOfTypes: &*types, completionHandler: &*handler]
+    };
+}
+
 fn chosen_records<Keep>(
     records: *mut AnyObject,
     keep: &Keep,

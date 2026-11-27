@@ -167,6 +167,28 @@ sign-in provider a login went through.
   host is listed, a subdomain or a sibling too, because it can keep a record of
   its own under a shared suffix.
 
+### Listing the sites that keep data
+
+Only on macOS with a store per workspace: elsewhere both commands refuse,
+`unsupported-platform` off macOS and `profile-shared` on a Mac with one shared
+store. `browser_profile_isolation` tells the pane which case it is in.
+
+- `browser_site_data_list { tabId }` fetches the data records of the tab's
+  store and answers `{ name, kinds, tie }` for each. It keeps cookies, local
+  storage, IndexedDB, the disk, memory, fetch and offline caches, and service
+  workers; a record with only session storage, a hash salt, media keys or
+  recent searches is left out. `tie` is `site` for the record of the tab's live
+  host, `signIn` for a record of a trail host, and `null` otherwise, matched by
+  `is_site_record`. Tied records come first, then by name. It takes no lease.
+- `browser_site_data_clear_records { tabId, names }` removes every record whose
+  name matches one of the names, all of its types. It does not check the live
+  host, so a site the tab never opened can be cleared. It holds the site clear
+  lease on the tab's profile, so a second clear of either kind answers
+  `profile-busy`. After the removal it reads the tab's live host and trail
+  again: when a cleared name is tied to the tab, the tab reloads from origin.
+  The answer is `{ names, wasReloaded }`. An empty name is refused with
+  `invalid-address`.
+
 ### Reload without cache
 
 `browser_tab_reload_from_origin` calls `reloadFromOrigin` on the WKWebView.
@@ -182,18 +204,24 @@ Windows and Linux have no such call in wry, so it is a plain reload there.
   `browser/profile.rs` holds the profile id, the per-platform store, the
   switch and the clear. `browser/site_data.rs` holds the site match
   (`is_site_record`, and `is_record_of_any` for a list), the site and trail
-  checks (`check_site`, `check_trail`) and the in-place clears;
-  `platform/web_site_data.rs` the WebKit calls. The trail is `hosts` on the
+  checks (`check_site`, `check_trail`), the record list (`listed_records`,
+  `kinds_of`, `tie_of`, `touches_tab`) and the in-place clears;
+  `platform/web_site_data.rs` the WebKit calls (`read_records`,
+  `remove_records`). The trail is `hosts` on the
   registry `Tab` (`remember_host`, `trail_of`), fed by `load::remember_load`
   from `report_load`. The settings row is `WorkspaceBrowserDataRow` through
   `useClearBrowserData`; the menu row is `siteDataRowOf`, its trail
   `hooks/useSiteTrail`.
 - Tests: `site_data.rs` covers the host match, the list match, the site and
-  trail checks and the 10 s wait; `registry.rs` the ring, sleep and wake, the
+  trail checks, the 10 s wait, the type filter, the ties and the reload rule;
+  `commands.rs` the order of the records clear (no live host, lease before the
+  removal) and a list without a lease; `registry.rs` the ring, sleep and wake, the
   popup union, the closed popup and the depth cap; `browser::tests` the lease
   and a failed clear in place; `BrowserPane/siteData.test.tsx` the confirm and
   its sign-in notes, the line, a failure, a busy retry, a pending and a late
-  trail and a late answer; `scopedReload.test.tsx` ⌘⇧R and ⇧-click;
+  trail and a late answer, and the site data panel (the row only with a store
+  per workspace on macOS, the row confirm, cancel, a failed clear and a late
+  list); `scopedReload.test.tsx` ⌘⇧R and ⇧-click;
   `WorkspaceBrowserDataRow.test.tsx` the busy refusal and a late answer.
 - `browser/site_data/tests/native_tests.rs` drives a real WKWebView by hand
   (`cargo test --lib site_data::tests::native_tests -- --ignored --nocapture`): it
