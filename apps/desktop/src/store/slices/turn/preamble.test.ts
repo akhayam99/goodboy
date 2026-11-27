@@ -1,7 +1,11 @@
 // @vitest-environment node
 import type { ContextSlot, IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { describe, expect, it, vi } from 'vitest';
-import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from './preamble';
+import { joinDeliveryParts } from '@goodboy/core/auto';
+import { buildPriorTurnsBlock, contextPreambleParts, getModelContextWindow } from './preamble';
+
+const buildContextPreamble = (params: Parameters<typeof contextPreambleParts>[0]): string =>
+  joinDeliveryParts({ parts: contextPreambleParts(params) });
 
 const NOW = '2026-05-11T00:00:00.000Z' as IsoDateTime;
 const RUN = 'run-1' as ProviderRunId;
@@ -12,24 +16,24 @@ function slot(key: string, value: string): ContextSlot {
 
 describe('buildContextPreamble', () => {
   it('emits marker hint even with no slots', () => {
-    const out = buildContextPreamble([]);
+    const out = buildContextPreamble({ sharedSlots: [] });
     expect(out).toContain('context handoff protocol');
     expect(out).not.toContain('## shared context');
   });
 
   it('tells every agent to follow a settling decision instead of asking', () => {
-    expect(buildContextPreamble([])).toContain('follow it and do not ask');
+    expect(buildContextPreamble({ sharedSlots: [] })).toContain('follow it and do not ask');
   });
 
   it('renders shared context block when slots present', () => {
-    const out = buildContextPreamble([slot('goal', 'ship m4-m6')]);
+    const out = buildContextPreamble({ sharedSlots: [slot('goal', 'ship m4-m6')] });
     expect(out).toContain('## shared context');
     expect(out).toContain('ship m4-m6');
   });
 
   it('slotFilter drops slots not in allow-list', () => {
     const slots = [slot('goal', 'g'), slot('files_touched', 'a.ts'), slot('decisions', 'd')];
-    const out = buildContextPreamble(slots, ['goal', 'decisions']);
+    const out = buildContextPreamble({ sharedSlots: slots, slotFilter: ['goal', 'decisions'] });
     expect(out).toContain('goal');
     expect(out).toContain('## decisions');
     expect(out).not.toContain('a.ts');
@@ -41,14 +45,19 @@ describe('buildContextPreamble', () => {
       value: 'hidden decision',
       enabled: false,
     };
-    const out = buildContextPreamble([slot('goal', 'visible goal'), disabledDecision]);
+    const out = buildContextPreamble({
+      sharedSlots: [slot('goal', 'visible goal'), disabledDecision],
+    });
 
     expect(out).toContain('visible goal');
     expect(out).not.toContain('hidden decision');
   });
 
   it('empty filter result → no shared context block', () => {
-    const out = buildContextPreamble([slot('open_questions', 'q?')], ['goal']);
+    const out = buildContextPreamble({
+      sharedSlots: [slot('open_questions', 'q?')],
+      slotFilter: ['goal'],
+    });
     expect(out).not.toContain('## shared context');
     expect(out).toContain('context handoff protocol');
   });
@@ -58,7 +67,7 @@ describe('buildContextPreamble', () => {
       { length: 20 },
       (_, index) => `- D${20 - index} decision-${19 - index}-${'x'.repeat(80)}`,
     ).join('\n');
-    const out = buildContextPreamble([slot('decisions', decisions)]);
+    const out = buildContextPreamble({ sharedSlots: [slot('decisions', decisions)] });
     expect(out).toContain('- ...');
     expect(out).toContain('decision-19');
     expect(out).not.toContain('decision-0-');
@@ -73,7 +82,7 @@ describe('buildContextPreamble', () => {
       slot('open_questions', 'q'.repeat(800)),
       slot('last_output_summary', 's'.repeat(2_000)),
     ];
-    buildContextPreamble(slots);
+    buildContextPreamble({ sharedSlots: slots });
     expect(debug).toHaveBeenCalledWith(
       '[context-preamble] serialized slot budget usage',
       expect.objectContaining({

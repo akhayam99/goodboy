@@ -79,6 +79,18 @@ describe('starting the turn of Auto through the store', () => {
     });
   });
 
+  it('hands the parts of the delivery to the turn, so a resumed Lead gets only what changed', async () => {
+    const state = harness({
+      lookups: [{ runId: 'run-planned', isLive: true }],
+      send: async () => NOT_BLOCKED,
+    });
+    const parts = [{ name: 'user', kind: 'news', text: 'hello' }] as const;
+
+    await state.start({ ...state.params, parts });
+
+    expect(state.inputs[0]?.leadDelivery).toEqual(parts);
+  });
+
   it('reads the agent picks of the session before it sends the turn', async () => {
     const steps: Array<string> = [];
     const state = harness({
