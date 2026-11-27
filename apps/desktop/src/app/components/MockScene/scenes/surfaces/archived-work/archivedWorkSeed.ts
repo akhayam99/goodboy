@@ -13,7 +13,12 @@ const clock = sceneClock({ anchor: '2026-10-18T10:31:00.000Z' });
 
 const ARCHIVED_AT = clock.iso({ at: '2026-10-18T10:00:00.000Z' });
 
-const seedArchived = (): void => {
+type RemovedParams = {
+  readonly isArchived: boolean;
+  readonly linkState: MountPullRequestLink['state'];
+};
+
+const seedRemoved = ({ isArchived, linkState }: RemovedParams): void => {
   const state = useAppStore.getState();
   const mounts = state.sessionProjectMounts[COLUMN_SESSION_ID] ?? [];
   const views: ReadonlyArray<SessionMountView> = mounts.flatMap((mount) =>
@@ -57,10 +62,10 @@ const seedArchived = (): void => {
         headBranch: view.branch,
         baseBranch: view.baseBranch,
         url: pr.url,
-        state: 'open',
+        state: linkState,
         snapshot: null,
         mergedHeadSha: null,
-        mergedAt: null,
+        mergedAt: linkState === 'merged' ? ARCHIVED_AT : null,
         lastObservedAt: ARCHIVED_AT,
         createdAt: ARCHIVED_AT,
         updatedAt: ARCHIVED_AT,
@@ -68,9 +73,11 @@ const seedArchived = (): void => {
     ];
   });
   useAppStore.setState({
-    sessions: state.sessions.map((session) =>
-      session.id === COLUMN_SESSION_ID ? { ...session, archivedAt: ARCHIVED_AT } : session,
-    ),
+    sessions: isArchived
+      ? state.sessions.map((session) =>
+          session.id === COLUMN_SESSION_ID ? { ...session, archivedAt: ARCHIVED_AT } : session,
+        )
+      : state.sessions,
     sessionMounts: { [COLUMN_SESSION_ID]: views },
     sessionProjectMounts: { [COLUMN_SESSION_ID]: [] },
     sessionWorktrees: { [COLUMN_SESSION_ID]: [] },
@@ -102,10 +109,15 @@ const seedMerged = (): void => {
   }));
 };
 
+export const seedDeletedAfterMerge = (): void => {
+  seedCentralColumn({ kind: 'finished' });
+  seedRemoved({ isArchived: false, linkState: 'merged' });
+};
+
 export const seedArchivedWork = ({ variant }: Params): void => {
   seedCentralColumn({ kind: 'finished' });
   if (variant === 'archived') {
-    seedArchived();
+    seedRemoved({ isArchived: true, linkState: 'open' });
     return;
   }
   seedMerged();

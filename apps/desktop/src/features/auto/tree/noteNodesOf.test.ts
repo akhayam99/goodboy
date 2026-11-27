@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { QueuedRow } from '../../chat/components/ChatInput/queuedRowsOf';
+import type { QueuedRow } from '../../chat/queuedMessages/queuedRow';
 import type { AutoReadMessage } from '../../../store/slices/auto-view/state';
 import { noteNodesOf } from './noteNodesOf';
 

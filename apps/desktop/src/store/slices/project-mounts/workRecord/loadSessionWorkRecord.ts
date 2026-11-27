@@ -1,9 +1,7 @@
-import { listMountPullRequestLinks } from '@goodboy/db';
 import type { MountPullRequestLink, SessionMountView } from '@goodboy/types';
-import { tauriDatabase } from '../../../../shared/lib/db';
 import { createLatestOnly } from '../../../runtime/state-writes/latestOnly';
 import { loadMountViews } from '../mountViews';
-import { canonicalPullRequestLinkOf } from './canonicalPullRequestLinkOf';
+import { loadCanonicalLinks } from './loadCanonicalLinks';
 import type { SliceDeps } from '../../../slice-types';
 import type { SessionKeyInput } from '../types';
 
@@ -19,18 +17,7 @@ export const loadSessionWorkRecord = ({ set, get }: SliceDeps) => {
       key: sessionId,
       request: async (): Promise<WorkRecord> => {
         const views = await loadMountViews({ get, sessionId });
-        const linkLists = await Promise.all(
-          views.map((view) =>
-            listMountPullRequestLinks({ db: tauriDatabase, sessionId, mountId: view.id }),
-          ),
-        );
-        return {
-          views,
-          links: linkLists.flatMap((links) => {
-            const canonical = canonicalPullRequestLinkOf({ links });
-            return canonical === null ? [] : [canonical];
-          }),
-        };
+        return { views, links: await loadCanonicalLinks({ sessionId, views }) };
       },
       apply: ({ views, links }) => {
         set((state) => ({

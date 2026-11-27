@@ -1,5 +1,6 @@
-import { useState, type ReactNode, type RefObject } from 'react';
+import { useEffect, useState, type ReactNode, type RefObject } from 'react';
 
+import { cn } from '@goodboy/ui';
 import { PromptField, type PromptFieldFiles } from '../PromptField';
 import { SendStopControl } from '../SendStopControl';
 import { useEscapeArm } from '../../hooks/useEscapeArm';
@@ -19,6 +20,10 @@ export type RestoreTextParams = {
   readonly sent: string;
 };
 
+export type TrayParams = {
+  readonly isDraftEmpty: boolean;
+};
+
 type Props = {
   readonly label: string;
   readonly placeholder: string;
@@ -29,6 +34,9 @@ type Props = {
   readonly isStopping: boolean;
   readonly isImagesOn: boolean;
   readonly isAutoFocused?: boolean;
+  readonly canQueue?: boolean;
+  readonly renderTray?: (params: TrayParams) => ReactNode;
+  readonly restoredImages?: MessageComposerMessage['images'] | null;
   readonly minRows: number;
   readonly maxRows: number;
   readonly footerStart?: ReactNode;
@@ -60,6 +68,9 @@ export const MessageComposer = ({
   isStopping,
   isImagesOn,
   isAutoFocused = false,
+  canQueue = false,
+  renderTray,
+  restoredImages = null,
   minRows,
   maxRows,
   footerStart,
@@ -73,7 +84,15 @@ export const MessageComposer = ({
   const [sendNotice, setSendNotice] = useState<string | null>(null);
   const images = usePromptFiles({ note: '', isEnabled: isImagesOn, only: CHAT_IMAGES });
   const attached = isImagesOn ? images.attachments : [];
-  const canSend = (text.trim() !== '' || attached.length > 0) && !isStreaming;
+  const { setAttachments } = images;
+  const hasContent = text.trim() !== '' || attached.length > 0;
+  const canSend = hasContent && (canQueue || !isStreaming);
+
+  useEffect(() => {
+    if (restoredImages !== null) {
+      setAttachments((current) => [...current, ...restoredImages]);
+    }
+  }, [restoredImages, setAttachments]);
   const escape = useEscapeArm({
     press: isStreaming ? onStop : null,
     isStopping,
@@ -99,7 +118,7 @@ export const MessageComposer = ({
     });
   };
 
-  return (
+  const field = (
     <PromptField
       kind="message"
       label={label}
@@ -141,12 +160,33 @@ export const MessageComposer = ({
       isInline={isInline}
       model={model}
       actions={
-        <SendStopControl
-          canSend={canSend}
-          stop={isStreaming ? { isStopping, onStop } : undefined}
-          onSend={send}
-        />
+        <>
+          {isStreaming && canQueue && canSend ? (
+            <SendStopControl canSend={canSend} onSend={send} />
+          ) : null}
+          <SendStopControl
+            canSend={canSend}
+            stop={isStreaming ? { isStopping, onStop } : undefined}
+            onSend={send}
+          />
+        </>
       }
     />
+  );
+
+  if (renderTray === undefined) {
+    return field;
+  }
+  const tray = renderTray({ isDraftEmpty: !hasContent });
+  return (
+    <div
+      className={cn(
+        'flex w-full flex-col',
+        tray != null && '[&>[data-composer-surface]]:rounded-t-none',
+      )}
+    >
+      {tray}
+      {field}
+    </div>
   );
 };
