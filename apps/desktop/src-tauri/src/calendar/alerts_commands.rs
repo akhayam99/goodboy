@@ -40,6 +40,9 @@ pub(crate) enum ChipAction {
     Snooze,
     Hide,
     Return,
+    Joined {
+        call: Value,
+    },
     Open {
         #[serde(rename = "rowKey")]
         row_key: String,
@@ -134,6 +137,12 @@ mod tests {
             (json!({ "kind": "snooze" }), ChipAction::Snooze),
             (json!({ "kind": "hide" }), ChipAction::Hide),
             (json!({ "kind": "return" }), ChipAction::Return),
+            (
+                json!({ "kind": "joined", "call": { "id": "northwind-sync" } }),
+                ChipAction::Joined {
+                    call: json!({ "id": "northwind-sync" }),
+                },
+            ),
             (
                 json!({ "kind": "open", "rowKey": "session-1" }),
                 ChipAction::Open {

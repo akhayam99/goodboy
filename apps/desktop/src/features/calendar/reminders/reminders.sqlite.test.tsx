@@ -32,6 +32,7 @@ import {
   openStorySqlite,
   resetStoryStore,
   storySqlite,
+  stubStoryInvoke,
   STORE_IMPORT_TIMEOUT_MS,
   type StoryStore,
 } from '../../../store/storyHarness';
@@ -284,6 +285,91 @@ describe('reminders that land in needs you', () => {
     expect((await stored())[0]?.dueAt).toBeNull();
   });
 
+  it('tries a failed fact reminder again after leaving the workspace and coming back', async () => {
+    setChecks({ checks: 'success' });
+    await add({ text: 'CI is green on #412', trigger: 'ci_green', target: PR_TARGET });
+    const db = storySqlite();
+    const original = db.execute.bind(db);
+    let isDiskGone = true;
+    vi.spyOn(db, 'execute').mockImplementation(async (sql, params) => {
+      if (isDiskGone && sql.includes('due_at IS NULL')) {
+        throw new Error('disk unavailable');
+      }
+      return original(sql, params);
+    });
+    renderHook(() => useReminderTriggers({}));
+    await vi.waitFor(() =>
+      expect(
+        useAppStore.getState().notifications.map((notification) => notification.title),
+      ).toContain("Couldn't bring the reminder to Needs you"),
+    );
+
+    isDiskGone = false;
+    act(() => useAppStore.setState({ currentWorkspaceId: null }));
+    act(() => useAppStore.setState({ currentWorkspaceId: workspaceId }));
+
+    await vi.waitFor(() => expect(dueTexts()).toEqual(['CI is green on #412']));
+  });
+
+  it('fires a call end reminder after a restart, with no calendar page open', async () => {
+    const end = Date.now() - HOUR_MS;
+    stubStoryInvoke({
+      calendar_list_events: () => ({
+        items: [{ ...CALL, start: end - HOUR_MS, end }],
+        failedSources: [],
+      }),
+    });
+    await useAppStore.getState().addCalendarSource({
+      source: {
+        id: CALL.sourceId,
+        kind: 'ics',
+        label: 'Northwind team',
+        host: 'calendar.northwind.example',
+        createdAt: 10,
+      },
+    });
+    await add({
+      text: 'Send the Northwind notes',
+      trigger: 'call_end',
+      target: { kind: 'event', id: CALL.id },
+    });
+
+    renderHook(() => useReminderTriggers({}));
+
+    await vi.waitFor(() => expect(dueTexts()).toEqual(['Send the Northwind notes']));
+    expect(useAppStore.getState().calendarDay).toBeNull();
+  });
+
+  it('keeps an undone reminder open when an older read answers late', async () => {
+    const reminder = await add({
+      text: 'Ping Teo about notify-relay',
+      trigger: 'time',
+      dueAt: Date.now() - 1000,
+    });
+    await useAppStore.getState().markReminderDone({ workspaceId, reminderId: reminder.id });
+    const db = storySqlite();
+    const original = db.select.bind(db);
+    let answer: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      answer = resolve;
+    });
+    let hasRead = false;
+    vi.spyOn(db, 'select').mockImplementationOnce(async (sql, params) => {
+      const rows = await original(sql, params);
+      hasRead = true;
+      await held;
+      return rows;
+    });
+    const late = useAppStore.getState().loadReminders({ workspaceId, doneSince: 0 });
+    await vi.waitFor(() => expect(hasRead).toBe(true));
+
+    expect(await useAppStore.getState().undoLastOperation()).toBe(true);
+    answer();
+    await late;
+
+    expect(dueTexts()).toEqual(['Ping Teo about notify-relay']);
+  });
+
   it('snoozes a due reminder for an hour from its row menu', async () => {
     const reminder = await add({
       text: 'Ping Teo about notify-relay',
@@ -354,7 +440,11 @@ describe('reminders that land in needs you', () => {
     screen.getByRole('button', { name: 'Open CI is green on #412, reminder' }).click();
 
     await vi.waitFor(() => expect(navigate).toHaveBeenCalledTimes(1));
-    expect(navigate.mock.calls[0]?.[0].to).toMatchObject({ at: 'session', sessionId: SESSION });
+    expect(navigate.mock.calls[0]?.[0].to).toMatchObject({
+      at: 'session',
+      sessionId: SESSION,
+      view: { lens: 'branch', target: { kind: 'branch', mountId: null, tab: 'pr' } },
+    });
   });
 
   it('falls back to plain text and opens Calendar when the target is gone', async () => {

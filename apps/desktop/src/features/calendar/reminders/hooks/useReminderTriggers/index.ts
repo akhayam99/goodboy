@@ -5,6 +5,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { useNow } from '../../../../../shared/hooks/useNow';
 import { dayStartOf } from '../../../dayStartOf';
 import { isTriggerHeld } from '../../isTriggerHeld';
+import { useCallEndEvents } from '../useCallEndEvents';
 
 type Params = Record<never, never>;
 
@@ -15,6 +16,11 @@ export const useReminderTriggers = ({}: Params): void => {
   const now = useNow(TRIGGER_CLOCK_MS);
   const today = dayStartOf({ at: now });
   const attempted = useRef(new Set<ReminderId>());
+  const callEvents = useCallEndEvents({ workspaceId, today });
+
+  useEffect(() => {
+    attempted.current.clear();
+  }, [workspaceId]);
 
   useEffect(() => {
     if (workspaceId === null) {
@@ -28,7 +34,7 @@ export const useReminderTriggers = ({}: Params): void => {
       workspaceId === null
         ? EMPTY_ARRAY
         : (state.calendarReminders[workspaceId] ?? EMPTY_ARRAY)
-            .filter((reminder) => isTriggerHeld({ state, reminder, now }))
+            .filter((reminder) => isTriggerHeld({ state, reminder, callEvents, now }))
             .map((reminder) => reminder.id),
     ),
   );

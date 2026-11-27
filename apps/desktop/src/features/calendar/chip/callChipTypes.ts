@@ -38,16 +38,18 @@ export type ChipState =
 
 export type ChipAction =
   | Readonly<{ kind: 'join' | 'snooze' | 'hide' | 'return' }>
+  | Readonly<{ kind: 'joined'; call: ChipCall }>
   | Readonly<{ kind: 'open'; rowKey: string }>;
 
 export type ChipInput =
   | Readonly<{ kind: 'alert'; moment: CallMoment; call: ChipCall }>
   | Readonly<{ kind: 'ended'; call: ChipCall; held: ReadonlyArray<AwayBanner> }>
   | Readonly<{ kind: 'snoozed'; eventId: string; until: number }>
+  | Readonly<{ kind: 'joined'; call: ChipCall }>
   | Readonly<{ kind: 'join' | 'snooze' | 'hide' | 'return' }>;
 
 export type ChipEffect =
-  | Readonly<{ kind: 'open-link'; link: string }>
+  | Readonly<{ kind: 'open-link'; call: ChipCall }>
   | Readonly<{ kind: 'snooze'; eventId: string; at: number }>
   | Readonly<{ kind: 'quiet'; eventId: string; until: number }>;
 

@@ -102,7 +102,7 @@ mod tests {
 
     #[test]
     fn the_allowlist_holds_the_call_hosts_and_nothing_near_them() {
-        for trusted in [
+        for listed in [
             "https://meet.google.com/abc-defg-hij",
             "https://northwind.zoom.us/j/123",
             "https://zoom.us/j/123",
@@ -113,9 +113,9 @@ mod tests {
             "https://app.slack.com/huddle/T1/C1",
             "https://discord.com/channels/1/2",
         ] {
-            assert!(is_trusted_call_url(&url(trusted)), "{trusted}");
+            assert!(is_trusted_call_url(&url(listed)), "{listed}");
         }
-        for untrusted in [
+        for refused in [
             "https://meet.google.com.evil.example/abc",
             "https://notzoom.us/j/1",
             "https://zoom.us.evil.example/j/1",
@@ -123,7 +123,7 @@ mod tests {
             "https://calendar.northwind.example/join",
             "https://evilwebex.com/meet",
         ] {
-            assert!(!is_trusted_call_url(&url(untrusted)), "{untrusted}");
+            assert!(!is_trusted_call_url(&url(refused)), "{refused}");
         }
     }
 

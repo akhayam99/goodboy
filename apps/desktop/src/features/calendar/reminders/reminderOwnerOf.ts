@@ -1,5 +1,5 @@
 import type { Reminder } from '@goodboy/types';
-import { branchPlace, sessionPlace } from '../../../store/slices/navigation/place';
+import { sessionPlace } from '../../../store/slices/navigation/place';
 import type { Place } from '../../../store/slices/navigation/types';
 import type { AppState } from '../../../store/types';
 import { selectSessionById } from '../../../store/slices/sessions/selectSessionById';
@@ -50,7 +50,18 @@ export const reminderOwnerOf = ({ state, reminder }: Params): ReminderOwner => {
     return {
       reminder,
       context: sessionTitle({ session }),
-      place: branchPlace({ sessionId: session.id, tab: 'pr' }),
+      place: sessionPlace({
+        sessionId: session.id,
+        lens: 'branch',
+        target: {
+          kind: 'branch',
+          mountId: pr.mountId,
+          mountPath: null,
+          tab: 'pr',
+          threadId: null,
+          focus: null,
+        },
+      }),
     };
   }
   const event = state.calendarDay?.events.find((candidate) => candidate.id === target.id);

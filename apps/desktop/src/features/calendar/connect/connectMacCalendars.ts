@@ -21,6 +21,8 @@ export type MacConnectOutcome =
   | { readonly kind: 'failed'; readonly message: string };
 
 const STORE_FAILED = "The calendar wasn't saved. Try again.";
+const ROLES_FAILED =
+  "The calendar is connected, but your choices weren't saved. Disconnect it and try again.";
 
 export const connectMacCalendars = async ({ roles, nowMs }: Params): Promise<MacConnectOutcome> => {
   let access: CalendarAccessState;
@@ -46,9 +48,18 @@ export const connectMacCalendars = async ({ roles, nowMs }: Params): Promise<Mac
     return { kind: 'failed', message: STORE_FAILED };
   }
   const sourceId = added.value.id;
+  const isNewSource = !state.calendarSources.some((source) => source.id === sourceId);
   const chosen = Object.entries(roles).filter(([, role]) => role !== DEFAULT_CALENDAR_ROLE);
   for (const [calendarId, role] of chosen) {
-    await state.setCalendarRole({ entry: { sourceId, calendarId, role } });
+    const saved = await state.setCalendarRole({ entry: { sourceId, calendarId, role } });
+    if (saved.isOk) {
+      continue;
+    }
+    if (!isNewSource) {
+      return { kind: 'failed', message: ROLES_FAILED };
+    }
+    const removed = await state.removeCalendarSource({ sourceId });
+    return { kind: 'failed', message: removed.isOk ? STORE_FAILED : ROLES_FAILED };
   }
   return { kind: 'connected' };
 };

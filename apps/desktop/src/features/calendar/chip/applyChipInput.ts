@@ -17,7 +17,12 @@ type EffectParams = {
 
 const runEffect = ({ effect }: EffectParams): void => {
   if (effect.kind === 'open-link') {
-    joinCall({ link: effect.link });
+    const { call } = effect;
+    void joinCall({ link: call.link }).then((isOpened) => {
+      if (isOpened) {
+        applyChipInput({ input: { kind: 'joined', call }, now: Date.now() });
+      }
+    });
     return;
   }
   if (effect.kind === 'quiet') {

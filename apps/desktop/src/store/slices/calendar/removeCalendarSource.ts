@@ -17,6 +17,7 @@ export const removeCalendarSource = ({ set, get }: SliceDeps) => {
       target: {},
       step: () => removeStoredCalendarSource({ db: tauriDatabase, sourceId }),
       commit: () => {
+        calendarWrites.loads.cancel({ key: calendarWrites.dayKey });
         set((state) => ({
           calendarSources: state.calendarSources.filter((source) => source.id !== sourceId),
           calendarRoles: state.calendarRoles.filter((entry) => entry.sourceId !== sourceId),

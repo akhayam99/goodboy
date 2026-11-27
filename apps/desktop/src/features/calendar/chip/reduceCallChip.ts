@@ -1,6 +1,7 @@
 import type { ChipCall, ChipEffect, ChipInput, ChipState } from './callChipTypes';
 
 const SNOOZE_MS = 5 * 60_000;
+const JOIN_LEAD_MS = 5 * 60_000;
 
 type Params = {
   readonly state: ChipState;
@@ -21,8 +22,7 @@ type InCallParams = StateParams & {
   readonly call: ChipCall;
 };
 
-type JoinParams = {
-  readonly call: ChipCall;
+type JoinedParams = InCallParams & {
   readonly now: number;
 };
 
@@ -33,13 +33,16 @@ const stay = ({ state }: StateParams): Reduced => ({ state, effects: [] });
 const isInCallWith = ({ state, call }: InCallParams): boolean =>
   (state.kind === 'in-call' || state.kind === 'after') && state.call.id === call.id;
 
-const join = ({ call, now }: JoinParams): Reduced => ({
-  state: { kind: 'in-call', call, joinedAt: now },
-  effects: [
-    { kind: 'open-link', link: call.link },
-    { kind: 'quiet', eventId: call.id, until: call.end },
-  ],
-});
+const enterCall = ({ state, call, now }: JoinedParams): Reduced => {
+  const isOutsideCall = call.start - now > JOIN_LEAD_MS || now >= call.end;
+  if (isOutsideCall || (state.kind === 'in-call' && state.call.id === call.id)) {
+    return stay({ state });
+  }
+  return {
+    state: { kind: 'in-call', call, joinedAt: now },
+    effects: [{ kind: 'quiet', eventId: call.id, until: call.end }],
+  };
+};
 
 export const reduceCallChip = ({ state, input, now }: Params): Reduced => {
   if (input.kind === 'alert') {
@@ -65,6 +68,9 @@ export const reduceCallChip = ({ state, input, now }: Params): Reduced => {
       state: { kind: 'after', call: state.call, joinedAt: state.joinedAt, held: input.held },
     });
   }
+  if (input.kind === 'joined') {
+    return enterCall({ state, call: input.call, now });
+  }
   if (input.kind === 'hide') {
     return stay({ state: HIDDEN });
   }
@@ -76,7 +82,7 @@ export const reduceCallChip = ({ state, input, now }: Params): Reduced => {
     if (state.kind !== 'in-call') {
       return stay({ state });
     }
-    return { state, effects: [{ kind: 'open-link', link: call.link }] };
+    return { state, effects: [{ kind: 'open-link', call }] };
   }
   if (state.kind === 'in-call') {
     return stay({ state });
@@ -91,7 +97,7 @@ export const reduceCallChip = ({ state, input, now }: Params): Reduced => {
     return stay({ state: { kind: 'snoozed', call, until: input.until } });
   }
   if (call.isLinkTrusted || state.kind === 'check-link') {
-    return join({ call, now });
+    return { state, effects: [{ kind: 'open-link', call }] };
   }
   return stay({ state: { kind: 'check-link', call } });
 };

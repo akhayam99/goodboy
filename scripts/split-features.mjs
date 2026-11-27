@@ -70,7 +70,7 @@ const AREAS = [
   ['agents', 'Agents', ['Workspace chat', 'Roles', 'Agent transcript']],
   [
     'calendar',
-    'Calendar',
+    'Calendar and reminders',
     ['Your day and your week', 'Before a call', 'The call chip', 'Reminders'],
   ],
   ['support', 'Support Goodboy', ['Report a bug']],

@@ -53,6 +53,7 @@ export const markReminderDone = ({ set, get }: SliceDeps) => {
           doneAt,
         });
         if (isReopened) {
+          calendarWrites.loads.cancel({ key: calendarWrites.remindersKey({ workspaceId }) });
           replaceReminder({ set, workspaceId, reminderId, patch: { doneAt: null } });
         }
         return isReopened;

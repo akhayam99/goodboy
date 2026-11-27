@@ -75,6 +75,32 @@ describe('WeekGrid', () => {
     );
   });
 
+  it('puts meetings that overlap side by side and gives a lone one the whole day', () => {
+    const block = { color: 'var(--color-identity-2)', ariaLabel: 'meeting', title: 'meeting' };
+    const days: ReadonlyArray<WeekGridDay> = [
+      {
+        key: 'mon',
+        label: 'Mon',
+        isToday: false,
+        blocks: [
+          { ...block, key: 'standup', startMinute: 540, endMinute: 600 },
+          { ...block, key: 'review', startMinute: 540, endMinute: 570 },
+          { ...block, key: 'lunch', startMinute: 720, endMinute: 780 },
+        ],
+      },
+    ];
+
+    render(<WeekGrid days={days} fromMinute={480} toMinute={1080} ariaLabel="Week" />);
+
+    const placeOf = (key: string) => {
+      const style = document.querySelector<HTMLElement>(`[data-week-block="${key}"]`)?.style;
+      return [style?.left, style?.width];
+    };
+    expect(placeOf('standup')).not.toEqual(placeOf('review'));
+    expect(placeOf('standup')[1]).toBe(placeOf('review')[1]);
+    expect(placeOf('lunch')[1]).not.toBe(placeOf('review')[1]);
+  });
+
   it('draws plain blocks with no button when nothing opens them', () => {
     render(<WeekGrid days={DAYS} fromMinute={480} toMinute={1080} ariaLabel="Week" />);
 

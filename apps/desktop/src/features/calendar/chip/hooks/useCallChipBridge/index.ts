@@ -159,7 +159,8 @@ type CallChipBridge = {
 const endCall = async ({ call, workspaceId, now }: EndParams): Promise<void> => {
   const held = useCallQuietStore.getState().endQuiet({ eventId: call.id });
   applyChipInput({ input: { kind: 'ended', call, held }, now });
-  if (useCallChipStore.getState().state.kind === 'after') {
+  const isSummaryShown = useAwayAlertsStore.getState().isCallChipOn;
+  if (isSummaryShown && useCallChipStore.getState().state.kind === 'after') {
     return;
   }
   await releaseHeldNotices({ held, workspaceId });
@@ -272,7 +273,7 @@ export const useCallChipBridge = (): CallChipBridge => {
         );
         return;
       }
-      applyChipInput({ input: { kind: payload.kind }, now: Date.now() });
+      applyChipInput({ input: payload, now: Date.now() });
     };
     const stops = [
       listenChipEvent({ start: () => callChipEvents.alerts({ onEvent: onAlert }) }),

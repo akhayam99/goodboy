@@ -1,4 +1,4 @@
-import { brandId, type Reminder, type SessionId } from '@goodboy/types';
+import { brandId, type CalendarEvent, type Reminder, type SessionId } from '@goodboy/types';
 import { liveAgentsOf } from '../../../store/runtime/live-work/liveAgentsOf';
 import { sessionPullRequestOf } from '../../../store/slices/review-source/sessionPullRequestOf';
 import type { AppState } from '../../../store/types';
@@ -7,6 +7,7 @@ import { pullRequestOfReminderId } from './pullRequestOfReminderId';
 type Params = {
   readonly state: AppState;
   readonly reminder: Reminder;
+  readonly callEvents: ReadonlyArray<CalendarEvent>;
   readonly now: number;
 };
 
@@ -20,6 +21,7 @@ type AgentParams = TargetParams & {
 };
 
 type EventParams = TargetParams & {
+  readonly callEvents: ReadonlyArray<CalendarEvent>;
   readonly now: number;
 };
 
@@ -49,12 +51,14 @@ const hasAgentFinished = ({ state, id, since }: AgentParams): boolean => {
   });
 };
 
-const hasCallEnded = ({ state, id, now }: EventParams): boolean => {
-  const event = state.calendarDay?.events.find((candidate) => candidate.id === id);
+const hasCallEnded = ({ state, id, callEvents, now }: EventParams): boolean => {
+  const event =
+    callEvents.find((candidate) => candidate.id === id) ??
+    state.calendarDay?.events.find((candidate) => candidate.id === id);
   return event !== undefined && event.end <= now;
 };
 
-export const isTriggerHeld = ({ state, reminder, now }: Params): boolean => {
+export const isTriggerHeld = ({ state, reminder, callEvents, now }: Params): boolean => {
   const { target } = reminder;
   if (reminder.doneAt !== null || reminder.dueAt !== null || target === null) {
     return false;
@@ -70,7 +74,7 @@ export const isTriggerHeld = ({ state, reminder, now }: Params): boolean => {
         hasAgentFinished({ state, id: target.id, since: reminder.createdAt })
       );
     case 'call_end':
-      return target.kind === 'event' && hasCallEnded({ state, id: target.id, now });
+      return target.kind === 'event' && hasCallEnded({ state, id: target.id, callEvents, now });
     default: {
       const unreachable: never = reminder.trigger;
       return unreachable;

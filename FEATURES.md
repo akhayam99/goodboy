@@ -248,7 +248,7 @@ Drive Goodboy from the keyboard, run a shell in the session's worktree, and open
 
 <a id="your-day-and-your-week"></a><a id="before-a-call"></a><a id="the-call-chip"></a><a id="reminders"></a>
 
-## Calendar
+## Calendar and reminders
 
 See your meetings next to your agents. Goodboy only reads your calendar, and never changes an event.
 

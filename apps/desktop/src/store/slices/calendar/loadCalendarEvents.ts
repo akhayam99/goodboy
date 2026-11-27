@@ -34,6 +34,7 @@ export const loadCalendarEvents = ({ set, get }: SliceDeps) => {
         recovery: CHECK_STATE,
         title: "Couldn't load your meetings",
         error,
+        coalesceKey: 'calendar-day',
       });
     }
   };

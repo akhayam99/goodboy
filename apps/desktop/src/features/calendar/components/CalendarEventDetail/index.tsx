@@ -5,6 +5,7 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import type { CalendarRow } from '../../calendarRowsOf';
+import { callsOf } from '../../chip/callsOf';
 import { eventKindOf } from '../../eventKindOf';
 import { eventTitleOf } from '../../eventTitleOf';
 import { linkHostOf } from '../../linkHostOf';
@@ -42,6 +43,7 @@ export const CalendarEventDetail = ({ event, row, roles, needsYou, now, onClose 
   const host = event.callLink === null ? null : linkHostOf({ link: event.callLink });
   const isEnded = event.end <= now;
   const isCallSoon = row?.isCallSoon ?? false;
+  const call = callsOf({ events: [event], roles, now })[0] ?? null;
 
   return (
     <DrawerFrame
@@ -54,7 +56,7 @@ export const CalendarEventDetail = ({ event, row, roles, needsYou, now, onClose 
         {kind === 'busy' ? <p className="text-meta text-muted-foreground">{BUSY_NOTE}</p> : null}
         {kind === 'focus' ? <p className="text-meta text-muted-foreground">{FOCUS_NOTE}</p> : null}
         {kind === 'event' && event.callLink !== null && !isEnded ? (
-          <CallActions link={event.callLink} isTrusted={event.isCallLinkTrusted} />
+          <CallActions link={event.callLink} isTrusted={event.isCallLinkTrusted} call={call} />
         ) : null}
         {kind === 'event' && isCallSoon && needsYou.length > 0 ? (
           <BeforeCallBlock sessions={needsYou} />

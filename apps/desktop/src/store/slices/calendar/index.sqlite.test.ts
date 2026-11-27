@@ -26,9 +26,11 @@ import {
   openStorySqlite,
   resetStoryStore,
   storySqlite,
+  stubStoryInvoke,
   STORE_IMPORT_TIMEOUT_MS,
   type StoryStore,
 } from '../../storyHarness';
+import { connectMacCalendars } from '../../../features/calendar/connect/connectMacCalendars';
 
 const LINK: CalendarSource = {
   id: brandId<CalendarSourceId>({ value: 'src-northwind' }),
@@ -251,6 +253,42 @@ describe('the calendar slice', () => {
     expect(useAppStore.getState().calendarSources).toEqual([]);
     expect(useAppStore.getState().calendarRoles).toEqual([]);
     expect(useAppStore.getState().calendarDay?.events).toEqual([]);
+  });
+
+  it('keeps a disconnected source off the day when its listing answers late', async () => {
+    await useAppStore.getState().addCalendarSource({ source: LINK });
+    let release: (list: CalendarList<CalendarEvent>) => void = () => undefined;
+    const late = useAppStore.getState().loadCalendarEvents({
+      range: TODAY,
+      listEvents: () =>
+        new Promise<CalendarList<CalendarEvent>>((resolve) => {
+          release = resolve;
+        }),
+    });
+
+    await useAppStore.getState().removeCalendarSource({ sourceId: LINK.id });
+    release(listed({ items: [STANDUP] }));
+    await late;
+
+    expect(useAppStore.getState().calendarDay).toBeNull();
+  });
+
+  it('takes the Mac calendar back off when a chosen role is not saved, and retries', async () => {
+    stubStoryInvoke({ calendar_request_access: () => 'granted' });
+    const execute = failNextWrite({ table: 'INTO calendar_roles' });
+
+    const failed = await connectMacCalendars({ roles: { team: 'hide' }, nowMs: 10 });
+    execute.mockRestore();
+
+    expect(failed.kind).toBe('failed');
+    expect(useAppStore.getState().calendarSources).toEqual([]);
+
+    const retried = await connectMacCalendars({ roles: { team: 'hide' }, nowMs: 20 });
+
+    expect(retried.kind).toBe('connected');
+    expect(useAppStore.getState().calendarRoles).toMatchObject([
+      { calendarId: 'team', role: 'hide' },
+    ]);
   });
 
   it('adds a reminder to the workspace it names and refuses empty text', async () => {

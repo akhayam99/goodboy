@@ -3,19 +3,21 @@ import { Button, copyToClipboard, InlineConfirm } from '@goodboy/ui';
 import { Link } from '@goodboy/ui/icons';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
-import { joinCall } from '../../joinCall';
+import type { ChipCall } from '../../chip/callChipTypes';
+import { joinMeeting } from '../../joinMeeting';
 import { linkHostOf } from '../../linkHostOf';
 
 type Props = {
   readonly link: string;
   readonly isTrusted: boolean;
+  readonly call: ChipCall | null;
 };
 
 const JOIN = actionButtonLookOf({ verb: 'Join call', variant: 'primary' });
 const COPY = actionButtonLookOf({ verb: 'Copy link', variant: 'secondary' });
 const COPY_KEY = 'copy-link';
 
-export const CallActions = ({ link, isTrusted }: Props) => {
+export const CallActions = ({ link, isTrusted, call }: Props) => {
   const [isHostShown, setIsHostShown] = useState(false);
   const { pendingKeys, run } = usePendingAction();
   const host = linkHostOf({ link }) ?? link;
@@ -29,7 +31,7 @@ export const CallActions = ({ link, isTrusted }: Props) => {
           size="sm"
           onClick={() => {
             if (isTrusted) {
-              joinCall({ link });
+              void joinMeeting({ link, call });
               return;
             }
             setIsHostShown(true);
@@ -62,7 +64,7 @@ export const CallActions = ({ link, isTrusted }: Props) => {
           confirmLabel="Open link"
           onConfirm={() => {
             setIsHostShown(false);
-            joinCall({ link });
+            void joinMeeting({ link, call });
           }}
           onCancel={() => setIsHostShown(false)}
         />

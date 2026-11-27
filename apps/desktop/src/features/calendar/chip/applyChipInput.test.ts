@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { waitFor } from '@testing-library/react';
 import { clearMocks, mockIPC } from '@tauri-apps/api/mocks';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
 import { createInvokeMock } from '../../../test/invokeMock';
+import { useCallQuietStore } from '../../notifications/away/callQuietStore';
 import { applyChipInput } from './applyChipInput';
 import { useCallChipStore } from './callChipStore';
 import type { ChipCall, ChipState } from './callChipTypes';
@@ -31,10 +32,13 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   useCallChipStore.setState({ state: COUNTDOWN });
+  useCallQuietStore.setState({ quiet: null, held: [] });
+  vi.useFakeTimers({ now: NOW, toFake: ['Date'] });
 });
 
 afterEach(() => {
   clearMocks();
+  vi.useRealTimers();
 });
 
 describe('applyChipInput', () => {
@@ -56,6 +60,36 @@ describe('applyChipInput', () => {
       'calendar_alerts_snooze',
       expect.objectContaining({ eventId: SYNC.id, at: NOW + 5 * MINUTE }),
     );
+  });
+
+  it('keeps Join and banners when the system refuses the link, and joins on retry', async () => {
+    let isRefused = true;
+    const invoke = createInvokeMock({
+      handlers: {
+        open_url: () => {
+          if (isRefused) {
+            throw new Error('no browser is installed');
+          }
+        },
+        db_execute: { rowsAffected: 1 },
+        db_select: [],
+      },
+    });
+    mockIPC(invoke);
+
+    applyChipInput({ input: { kind: 'join' }, now: NOW });
+
+    await waitFor(() =>
+      expect(JSON.stringify(invoke.mock.calls)).toContain("Couldn't open the call link"),
+    );
+    expect(useCallChipStore.getState().state).toBe(COUNTDOWN);
+    expect(useCallQuietStore.getState().quiet).toBeNull();
+
+    isRefused = false;
+    applyChipInput({ input: { kind: 'join' }, now: NOW });
+
+    await waitFor(() => expect(useCallChipStore.getState().state.kind).toBe('in-call'));
+    expect(useCallQuietStore.getState().quiet).toEqual({ eventId: SYNC.id, until: SYNC.end });
   });
 
   it('keeps the countdown and says why when Rust no longer knows the call', async () => {

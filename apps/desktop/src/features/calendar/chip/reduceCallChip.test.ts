@@ -58,13 +58,26 @@ describe('reduceCallChip', () => {
     expect(countdown.effects).toEqual([]);
   });
 
-  it('opens a link from a known call app at once and goes quiet until the end', () => {
-    const joined = run({ state: { kind: 'countdown', call: SYNC }, input: { kind: 'join' } });
-    expect(joined.state).toEqual({ kind: 'in-call', call: SYNC, joinedAt: START - 5 * MINUTE });
-    expect(joined.effects).toEqual([
-      { kind: 'open-link', link: SYNC.link },
-      { kind: 'quiet', eventId: SYNC.id, until: SYNC.end },
-    ]);
+  it('asks to open a link from a known call app at once and changes nothing yet', () => {
+    const countdown: ChipState = { kind: 'countdown', call: SYNC };
+    const asked = run({ state: countdown, input: { kind: 'join' } });
+    expect(asked.state).toBe(countdown);
+    expect(asked.effects).toEqual([{ kind: 'open-link', call: SYNC }]);
+  });
+
+  it('goes quiet until the end once the link opened, from the chip or from the panel', () => {
+    for (const state of [{ kind: 'countdown', call: SYNC } satisfies ChipState, HIDDEN]) {
+      const joined = run({ state, input: { kind: 'joined', call: SYNC } });
+      expect(joined.state).toEqual({ kind: 'in-call', call: SYNC, joinedAt: START - 5 * MINUTE });
+      expect(joined.effects).toEqual([{ kind: 'quiet', eventId: SYNC.id, until: SYNC.end }]);
+    }
+  });
+
+  it('stays loud when the opened call is far ahead or already over', () => {
+    for (const now of [START - 60 * MINUTE, SYNC.end]) {
+      const early = run({ state: HIDDEN, input: { kind: 'joined', call: SYNC }, now });
+      expect(early).toEqual({ state: HIDDEN, effects: [] });
+    }
   });
 
   it('shows the host of an unknown link first and opens it on the second click', () => {
@@ -72,8 +85,7 @@ describe('reduceCallChip', () => {
     expect(first.state).toEqual({ kind: 'check-link', call: UNKNOWN });
     expect(first.effects).toEqual([]);
     const second = run({ state: first.state, input: { kind: 'join' } });
-    expect(second.state.kind).toBe('in-call');
-    expect(second.effects[0]).toEqual({ kind: 'open-link', link: UNKNOWN.link });
+    expect(second.effects).toEqual([{ kind: 'open-link', call: UNKNOWN }]);
   });
 
   it('asks Rust to come back in five minutes and says snoozed only once Rust agreed', () => {
@@ -105,7 +117,7 @@ describe('reduceCallChip', () => {
     const inCall: ChipState = { kind: 'in-call', call: SYNC, joinedAt: START };
     const back = run({ state: inCall, input: { kind: 'return' }, now: START + MINUTE });
     expect(back.state).toBe(inCall);
-    expect(back.effects).toEqual([{ kind: 'open-link', link: SYNC.link }]);
+    expect(back.effects).toEqual([{ kind: 'open-link', call: SYNC }]);
   });
 
   it('keeps the in call chip when a late alert of the same call arrives', () => {

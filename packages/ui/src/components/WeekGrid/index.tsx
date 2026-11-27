@@ -1,4 +1,5 @@
 import { cn } from '../../cn';
+import { blockLanesOf } from './blockLanesOf';
 import type { WeekGridDay } from './types';
 import { WeekGridBlockItem } from './WeekGridBlockItem';
 
@@ -28,31 +29,35 @@ export const WeekGrid = ({
       className="grid min-w-0 gap-2"
       style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}
     >
-      {days.map((day) => (
-        <section
-          key={day.key}
-          aria-label={day.label}
-          data-week-day={day.key}
-          data-today={day.isToday ? '' : undefined}
-          className="flex min-w-0 flex-col gap-2"
-        >
-          <h3 className={cn('text-eyebrow', day.isToday ? 'text-info' : 'text-muted-foreground')}>
-            {day.label}
-          </h3>
-          <ul className="relative h-80 rounded-lg bg-subtle">
-            {day.blocks.map((block) => (
-              <WeekGridBlockItem
-                key={block.key}
-                block={block}
-                fromMinute={fromMinute}
-                spanMinutes={spanMinutes}
-                isSelected={selectedKey === block.key}
-                onSelect={onSelect ?? null}
-              />
-            ))}
-          </ul>
-        </section>
-      ))}
+      {days.map((day) => {
+        const lanes = blockLanesOf({ blocks: day.blocks, spanMinutes });
+        return (
+          <section
+            key={day.key}
+            aria-label={day.label}
+            data-week-day={day.key}
+            data-today={day.isToday ? '' : undefined}
+            className="flex min-w-0 flex-col gap-2"
+          >
+            <h3 className={cn('text-eyebrow', day.isToday ? 'text-info' : 'text-muted-foreground')}>
+              {day.label}
+            </h3>
+            <ul className="relative h-80 rounded-lg bg-subtle">
+              {day.blocks.map((block) => (
+                <WeekGridBlockItem
+                  key={block.key}
+                  block={block}
+                  place={lanes.get(block.key) ?? { lane: 0, laneCount: 1 }}
+                  fromMinute={fromMinute}
+                  spanMinutes={spanMinutes}
+                  isSelected={selectedKey === block.key}
+                  onSelect={onSelect ?? null}
+                />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 };
