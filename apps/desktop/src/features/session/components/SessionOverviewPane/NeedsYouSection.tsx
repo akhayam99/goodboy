@@ -1,16 +1,19 @@
-import { SectionLabel, StatusDot } from '@goodboy/ui';
+import { ICON_SIZE, SectionLabel, tintClasses } from '@goodboy/ui';
 import type { OpenQuestion, SessionId } from '@goodboy/types';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/utils/names';
 import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import type { ActionCardActions } from '../../central/next/useActionCardActions';
-import { STAGE_TONE } from '../../session-stage';
 import { MoveCard } from '../MoveCard';
+import { NeedsYouPermission } from './NeedsYouPermission';
 import { NeedsYouQuestion } from './NeedsYouQuestion';
+import type { SessionPermissionAsk } from './useSessionPermissionAsk';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly cards: ReadonlyArray<ActionCardModel>;
   readonly questions: ReadonlyArray<OpenQuestion>;
+  readonly permission: SessionPermissionAsk | null;
   readonly actionsFor: ActionCardActions['actionsFor'];
   readonly openFor: ActionCardActions['openFor'];
   readonly kickerById: ReadonlyMap<string, string>;
@@ -20,12 +23,13 @@ export const NeedsYouSection = ({
   sessionId,
   cards,
   questions,
+  permission,
   actionsFor,
   openFor,
   kickerById,
 }: Props) => {
   const [move] = cards;
-  if (move === undefined && questions.length === 0) {
+  if (move === undefined && questions.length === 0 && permission === null) {
     return null;
   }
   return (
@@ -35,7 +39,11 @@ export const NeedsYouSection = ({
       className="flex min-w-0 flex-col gap-2"
     >
       <span className="flex h-7 min-w-0 items-center gap-2">
-        <StatusDot tone={STAGE_TONE.attention} size="sm" />
+        <CONCEPT_ICONS.needsYou
+          size={ICON_SIZE.row}
+          aria-hidden
+          className={tintClasses(CONCEPT_TONE.needsYou).icon}
+        />
         <SectionLabel label={NAMES.needsYou} headingLevel={2} />
       </span>
       <div data-needs-you-rows="" className="flex min-w-0 flex-col gap-1 rounded-lg bg-subtle p-2">
@@ -59,6 +67,15 @@ export const NeedsYouSection = ({
             isPrimary={move === undefined && index === 0}
           />
         ))}
+        {permission === null ? null : (
+          <NeedsYouPermission
+            key={`${permission.agentId}:${permission.ask.runId}:${permission.ask.toolUseId}`}
+            sessionId={sessionId}
+            agentId={permission.agentId}
+            ask={permission.ask}
+            isPrimary={move === undefined && questions.length === 0}
+          />
+        )}
       </div>
     </section>
   );

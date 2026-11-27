@@ -51,6 +51,7 @@ const DESTRUCTIVE_VERBS: ReadonlySet<string> = new Set([
   'delete all data',
   'clear site data',
   'clear browser data',
+  'remove iphone',
 ]);
 
 const PRIMARY_VERBS: ReadonlySet<string> = new Set([

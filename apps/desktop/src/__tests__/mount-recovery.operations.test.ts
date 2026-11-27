@@ -59,6 +59,7 @@ vi.mock('@goodboy/db', async () =>
       h.mounts.delete(mountId),
     ),
     listMountOperations: vi.fn(async () => [...h.operations.values()]),
+    listMountPullRequestLinks: vi.fn(async () => []),
     getMountOperation: vi.fn(
       async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
     ),

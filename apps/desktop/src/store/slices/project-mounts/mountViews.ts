@@ -1,5 +1,11 @@
 import { listSessionMounts, type SessionWorktree } from '@goodboy/db';
-import type { MountId, SessionId, SessionMountView, SessionProjectMount } from '@goodboy/types';
+import type {
+  MountId,
+  SessionId,
+  SessionMount,
+  SessionMountView,
+  SessionProjectMount,
+} from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { findMountById } from './findMountById';
 import { mountError } from './mountErrors';
@@ -12,6 +18,28 @@ type LoadParams = {
   readonly sessionId: SessionId;
 };
 
+type MountViewParams = {
+  readonly mount: SessionMount;
+  readonly projects: ReturnType<GetFn>['projects'];
+};
+
+export const mountViewOf = ({ mount, projects }: MountViewParams): SessionMountView | null => {
+  const projectId = mount.projectId;
+  if (projectId === null) {
+    return null;
+  }
+  const project = projectById(projects, projectId);
+  if (project === undefined) {
+    return null;
+  }
+  return {
+    ...mount,
+    projectId,
+    mountName: mount.mountName ?? project.name,
+    repoRoot: project.rootPath,
+  };
+};
+
 export const loadMountViews = async ({
   get,
   sessionId,
@@ -19,22 +47,8 @@ export const loadMountViews = async ({
   const mounts = await listSessionMounts({ db: tauriDatabase, sessionId });
   const projects = get().projects;
   return mounts.flatMap((mount) => {
-    const projectId = mount.projectId;
-    if (projectId === null) {
-      return [];
-    }
-    const project = projectById(projects, projectId);
-    if (project === undefined) {
-      return [];
-    }
-    return [
-      {
-        ...mount,
-        projectId,
-        mountName: mount.mountName ?? project.name,
-        repoRoot: project.rootPath,
-      },
-    ];
+    const view = mountViewOf({ mount, projects });
+    return view === null ? [] : [view];
   });
 };
 

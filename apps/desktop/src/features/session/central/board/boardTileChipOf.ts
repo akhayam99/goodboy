@@ -11,6 +11,7 @@ type Params = {
   readonly row: BoardRow;
   readonly entry: BranchEntry | null;
   readonly runningCount: number;
+  readonly isPermissionShown?: boolean;
 };
 
 type BoardTileChip = Readonly<{
@@ -27,19 +28,25 @@ const BLOCKED_STATES: ReadonlySet<BranchState> = new Set<BranchState>([
 
 type ReasonParams = {
   readonly row: BoardRow;
+  readonly isPermissionShown: boolean;
 };
 
-const needsYouReasonOf = ({ row }: ReasonParams): BoardTileChip | null => {
+const needsYouReasonOf = ({ row, isPermissionShown }: ReasonParams): BoardTileChip | null => {
   if (row.stage.attention === 'plan-approval') {
     return { word: NAMES.needsApproval, tone: STAGE_TONE.attention };
   }
-  if (row.stage.attention === 'needs-approval') {
+  if (row.stage.attention === 'needs-approval' && !isPermissionShown) {
     return { word: NAMES.waitingForPermission, tone: STAGE_TONE.attention };
   }
   return null;
 };
 
-export const boardTileChipOf = ({ row, entry, runningCount }: Params): BoardTileChip | null => {
+export const boardTileChipOf = ({
+  row,
+  entry,
+  runningCount,
+  isPermissionShown = false,
+}: Params): BoardTileChip | null => {
   if (row.isSettled) {
     return null;
   }
@@ -50,7 +57,7 @@ export const boardTileChipOf = ({ row, entry, runningCount }: Params): BoardTile
     return { word: entry.story.word, tone: entry.story.tone };
   }
   if (row.group === 'needs-you') {
-    return needsYouReasonOf({ row });
+    return needsYouReasonOf({ row, isPermissionShown });
   }
   if (runningCount > 0) {
     return { word: NAMES.running, tone: STAGE_TONE.running };

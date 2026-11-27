@@ -95,7 +95,7 @@ each one its glyph.
 
 | Destination                                       | Concept        | Glyph                   | Tone    | Listed                                                                   |
 | ------------------------------------------------- | -------------- | ----------------------- | ------- | ------------------------------------------------------------------------ |
-| Overview                                          | `sessions`     | `SquareKanban`          | primary | always                                                                   |
+| Overview                                          | `sessions`     | `Dashboard`             | primary | always                                                                   |
 | Runs                                              | `runs`         | `Route`                 | primary | always                                                                   |
 | Runs › Running (the Agents pane)                  | `agents`       | `Bot`                   | primary | always                                                                   |
 | Questions                                         | `questions`    | `CircleHelp`            | warning | always                                                                   |
@@ -107,6 +107,33 @@ each one its glyph.
 | Scripts                                           | `scripts`      | `ListVideo`             | info    | with a branch                                                            |
 | Pull request                                      | `pr`           | `GitPullRequest`        | primary | with a branch                                                            |
 | Linear, GitLab issues, Jira issues, Slack threads | brand concepts | `@goodboy/ui` brand set | primary | with a branch, when that tool is connected, never in an archived session |
+
+The Board in the left nav is its own concept, `board` (`SquareKanban`): lanes
+side by side. A session as an object (`sessions`) is a `Dashboard`, so the
+Overview of one session never shares the Board glyph. Tasks (`inbox`) draw
+`Task`, a checked page, never an envelope. The Activity rail (`timeline`) draws
+`List`, because three vertical dots are the overflow menu. What is new
+(`changelog`) draws `Milestone`: `History` is reserved for git. A tool
+permission ask (`approval`) draws `Lock`, and the Needs you section of the
+Overview wears `needsYou` (`CircleUser`) in the warning tone. A new reply from
+an agent draws the `message` bubble, not `Bot`, which means the agent itself.
+Recent permission decisions draw `decisions` (`CheckCheck`). The notes of the
+Lead tree draw `NotebookText`. A pull request closed unmerged draws
+`GitPullRequest` in the neutral tone, never the circled cross of a failed run.
+
+One concept draws one glyph, wherever it appears. Refresh and rerun draw
+`RefreshCw` everywhere except the browser address row, which keeps `RotateCw`
+(`features/browser/`), the arrow every browser draws for reload. Retry draws
+`RotateCcw`. Rename and edit draw `Pencil`, never `PenLine` or `PencilLine`.
+A scripts action draws `ListVideo`; `ScrollText` stays for a check log, a step
+transcript and the open transcript verb. Restore keeps `ArchiveRestore`, the
+arrow out of a box that mail apps draw for unarchive, and its control always
+says Restore in a tooltip or a label. `lucide-one-spelling-per-glyph.test.ts`
+holds those spellings.
+
+`one-glyph-per-concept.test.ts` fails when two concepts, or a concept and an
+agent kind, draw the same glyph without a written reason. Each pair that stays
+is an entry in its `TWINS` list with the reason beside it.
 
 `Waypoints` stays the glyph of a workflow run row in the feed. Orchestrated runs
 (`orchestrator`, `Network`) share the Runs page.
@@ -169,10 +196,10 @@ Each agent kind has one glyph and one color, both on its entry in
 read through `agentKindPalette({ kind })`. A kind the app does not know falls
 back to `Bot` in the muted tone. Where a kind means the same thing as a concept,
 it reuses the concept glyph: report, wireframe, resolver (`resolve`), history
-rewriter (`history`) and the Lead (`auto`, `Orbit`, in the `agent-auto`
+rewriter (`history`) and the Lead (`auto`, `Network`, in the `agent-auto`
 color). The rest are their own: scout `Telescope`, planner `MapIcon`,
 implementer `CodeXml`, debugger `BugPlay`, tester `FlaskConical`, reviewer
-`ScanEye`, PR reviewer `GitPullRequestArrow`, docs `BookOpen`, scribe
+`Eye`, PR reviewer `GitPullRequestArrow`, docs `BookOpen`, scribe
 `Feather`, CI debugger `ScanSearch`, CI fixer `Wrench`, generalist `Bot`.
 Kinds have no mascot drawing and no bare colored dot.
 
@@ -219,20 +246,20 @@ Never build a colored role word or an outlined kind chip by hand.
 
 ## Projects, mounts and git objects
 
-| Concept         | Glyph               | Tone    | Meaning                                     |
-| --------------- | ------------------- | ------- | ------------------------------------------- |
-| `projectRepo`   | `FolderGit2`        | info    | A project whose kind is `repo`              |
-| `projectFolder` | `Folder`            | neutral | A project whose kind is `folder`            |
-| `mount`         | `Layers2`           | info    | A project mounted into a session            |
-| `worktree`      | `FolderTree`        | neutral | The session folder on disk                  |
-| `workspace`     | `LayoutGrid`        | info    | A workspace                                 |
-| `branch`        | `GitBranch`         | info    | A branch, and the branch chip               |
-| `commits`       | `GitCommit`         | info    | Commits                                     |
-| `history`       | `GitGraph`          | info    | Rewrite history of a branch, never a clock  |
-| `timeline`      | `GitCommitVertical` | neutral | The activity rail                           |
-| `pr`            | `GitPullRequest`    | primary | Pull and merge requests                     |
-| `diff`          | `FileDiff`          | info    | A diff, and the changes cell of a mount row |
-| `folderOpen`    | `FolderOpen`        | neutral | Reveal the worktree in the OS               |
+| Concept         | Glyph            | Tone    | Meaning                                     |
+| --------------- | ---------------- | ------- | ------------------------------------------- |
+| `projectRepo`   | `FolderGit2`     | info    | A project whose kind is `repo`              |
+| `projectFolder` | `Folder`         | neutral | A project whose kind is `folder`            |
+| `mount`         | `Layers2`        | info    | A project mounted into a session            |
+| `worktree`      | `FolderTree`     | neutral | The session folder on disk                  |
+| `workspace`     | `LayoutGrid`     | info    | A workspace                                 |
+| `branch`        | `GitBranch`      | info    | A branch, and the branch chip               |
+| `commits`       | `GitCommit`      | info    | Commits                                     |
+| `history`       | `GitGraph`       | info    | Rewrite history of a branch, never a clock  |
+| `timeline`      | `List`           | neutral | The activity rail                           |
+| `pr`            | `GitPullRequest` | primary | Pull and merge requests                     |
+| `diff`          | `FileDiff`       | info    | A diff, and the changes cell of a mount row |
+| `folderOpen`    | `FolderOpen`     | neutral | Reveal the worktree in the OS               |
 
 `projectGlyph({ kind })` in `conceptIcons.ts` is the only place that picks
 between the repo and the folder glyph. Never work it out again inline.
@@ -243,7 +270,7 @@ Brand marks only, never a glyph stand-in. `github`, `gitlab`, `bitbucket`,
 `linear`, `jira`, `sentry`, `slack` map to the `@goodboy/ui` brand
 components. Tasks source facets draw them through `IntegrationGlyph`: in brand
 color when the integration is connected, muted when it is not. `providers`
-(`Blocks`) and `integrations` (`Link2`) name the categories, not a vendor.
+(`Blocks`) and `integrations` (`Plug`) name the categories, not a vendor.
 
 ## Settings
 
@@ -281,6 +308,7 @@ A danger zone takes `danger` (`TriangleAlert`).
 | `scripts`      | `ListVideo`             | info    | Open scripts                                                                        |
 | `more`         | `Ellipsis`              | neutral | Overflow menu trigger, the only overflow glyph (28 square in a header, 24 in a row) |
 | `search`       | `SearchX`               | info    | Empty search result                                                                 |
+| `addComment`   | `MessageSquarePlus`     | info    | Start a comment on a plan, a diff or a pull request                                 |
 
 ## Timeline markers
 
@@ -342,7 +370,8 @@ else, Search or run included, the map's glyph stays.
 
 Script rows carry no category glyph. The row toggle uses `Play` to run and
 `Square` to stop (`features/scripts/components/ScriptRow/RunToggle.tsx`), the
-restart action uses `RotateCw` (`features/actions/kinds/script.ts`), and a
+restart action uses `RefreshCw` (`features/actions/kinds/script.ts`), and its
+"Show output" action draws `ListVideo`, the glyph of `scripts`, and a
 suggested script offers `Pin`.
 
 Tasks rows lead with the tool's brand glyph, never a kind icon. The kind icons

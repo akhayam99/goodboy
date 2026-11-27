@@ -105,6 +105,7 @@ b-monitoring-expanded
 board
 board-delete-confirm
 board-empty-lanes
+board-kept-desk
 board-needs-you-run
 board-needs-you-runs
 board-no-ongoing
@@ -423,6 +424,7 @@ chat-first-run
 chat-image-bubble
 chat-list-idle
 chat-list-loading
+chat-queue
 chat-room
 chat-shell
 checks-fixed-local
@@ -503,6 +505,8 @@ debugger-drawer-hint-filled
 debugger-drawer-options
 debugger-drawer-proposal
 debugger-drawer-running
+deleted-branch-merged-dark
+deleted-branch-merged-light
 demo
 demo-storage
 design-comments
@@ -609,6 +613,7 @@ inbox-source
 inbox-states
 integration-issue-focused
 lead-details-drawer
+lead-permission-wait
 lead-permissions-head
 lead-permissions-level-menu
 lead-permissions-page
@@ -1122,6 +1127,11 @@ u26-view-archived-dark
 u26-view-archived-light
 u26-view-new-dark
 u26-view-new-light
+u26s-bar-iphone-fault
+u26s-bar-iphone-live
+u26s-bar-iphone-none
+u26s-bar-iphone-offline
+u26s-bar-iphone-open
 u26s-guide-chapter
 u26s-guide-monitoring
 u26s-guide-search
@@ -1150,6 +1160,10 @@ u26s-rows-storage
 u26s-settings-branches
 u26s-settings-general
 u26s-settings-iphone
+u26s-settings-iphone-empty
+u26s-settings-iphone-fault
+u26s-settings-iphone-get
+u26s-settings-iphone-request
 u26s-settings-nows
 u26s-settings-pair
 u26s-settings-storage

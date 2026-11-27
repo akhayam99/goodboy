@@ -57,6 +57,7 @@ const branchOf = (id: string, options: BranchOptions = {}): BranchFacts => {
       ? {
           noun: '#',
           number: 10,
+          url: 'https://example.test/pull/1',
           isDraft: false,
           state,
           checksWord: null,

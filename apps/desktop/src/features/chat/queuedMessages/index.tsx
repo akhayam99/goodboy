@@ -9,11 +9,11 @@ import {
   tintClasses,
   Tooltip,
 } from '@goodboy/ui';
-import { RoutingLabel } from '../../../../../shared/components/RoutingLabel';
-import { countNoun } from '../../../../../shared/utils/countNoun';
-import { AttachmentStrip } from '../../../../attachments/AttachmentStrip';
-import type { PendingMessageAction } from '../../../../auto/chat/pendingMessageOf';
-import type { QueuedRow, QueuedRowStatus } from '../queuedRowsOf';
+import { RoutingLabel } from '../../../shared/components/RoutingLabel';
+import { countNoun } from '../../../shared/utils/countNoun';
+import { AttachmentStrip } from '../../attachments/AttachmentStrip';
+import type { PendingMessageAction } from '../../auto/chat/pendingMessageOf';
+import type { QueuedRow, QueuedRowStatus } from './queuedRow';
 
 type Failure = Readonly<{
   title: string;

@@ -3,6 +3,7 @@ const PREFIX = 'goodboy:';
 export const STORAGE_KEYS = {
   theme: `${PREFIX}theme`,
   contrast: `${PREFIX}contrast`,
+  iphoneBarIcon: `${PREFIX}iphone-bar-icon:v1`,
   awayBadge: `${PREFIX}away-badge:v1`,
   awayBanner: `${PREFIX}away-banner:v1`,
   callChip: `${PREFIX}call-chip:v1`,

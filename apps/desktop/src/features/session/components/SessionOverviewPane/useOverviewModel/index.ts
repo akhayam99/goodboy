@@ -14,12 +14,14 @@ import { useLiveGroups } from '../../../central/now/useLiveGroups';
 import { useNowModel } from '../../../central/now/hooks/useNowModel';
 import { overviewHasContentOf } from '../../../central/overviewHasContentOf';
 import { useSessionWorkModel } from '../../../central/useSessionWorkModel';
+import { soleMergedAtOf } from '../../../../../store/slices/project-mounts/workRecord/soleMergedAtOf';
 import { inPlaceFoldersOf } from '../../../../../store/slices/project-mounts/inPlaceFoldersOf';
 import { useBranchNotes } from '../../../../resolve/notes/useBranchNotes';
 import { useBranchBoard } from '../../ProjectBlocks/useBranchBoard';
 import { useArchivedWorkRecord } from '../useArchivedWorkRecord';
 import { useIsEmptySession } from '../useIsEmptySession';
 import { useOverviewNotices } from '../useOverviewNotices';
+import { useSessionPermissionAsk } from '../useSessionPermissionAsk';
 
 type Params = {
   readonly session: Session;
@@ -34,9 +36,10 @@ export const useOverviewModel = ({ session }: Params) => {
   const model = useSessionWorkModel({ session });
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const clock = useNow(AUTO_CLOCK_MS, model.autoTrees.length > 0);
+  const settledAt = useAppStore((state) => soleMergedAtOf({ state, sessionId }));
   const autoTargets = useMemo(
-    () => autoRetryTargetsOf({ views: model.autoTrees, agents, now: clock }),
-    [agents, clock, model.autoTrees],
+    () => autoRetryTargetsOf({ views: model.autoTrees, agents, now: clock, settledAt }),
+    [agents, clock, model.autoTrees, settledAt],
   );
   const { cards, actionsFor, openFor } = useNextCards({ session, model, autoTargets });
   const groups = useLiveGroups({ model, agents, now: clock });
@@ -59,7 +62,8 @@ export const useOverviewModel = ({ session }: Params) => {
     () => new Set([...moves.shownAskIds, ...looseQuestions.map((question) => question.id)]),
     [looseQuestions, moves.shownAskIds],
   );
-  const hasNeedsYou = moves.needsYou.length > 0 || looseQuestions.length > 0;
+  const permission = useSessionPermissionAsk({ sessionId, isEnabled: !isArchived });
+  const hasNeedsYou = moves.needsYou.length > 0 || looseQuestions.length > 0 || permission !== null;
   const { facts } = useBranchFacts({ sessionId, groups });
   const detailByMountId = useBranchDetails({ sessionId, facts });
   const branches = useMemo(
@@ -111,6 +115,7 @@ export const useOverviewModel = ({ session }: Params) => {
     openFor,
     moves,
     looseQuestions,
+    permission,
     shownAskIds,
     hasNeedsYou,
     kickerById,

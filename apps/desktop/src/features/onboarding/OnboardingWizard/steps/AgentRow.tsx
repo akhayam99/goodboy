@@ -1,4 +1,4 @@
-import { RotateCw } from '@goodboy/ui/icons';
+import { RefreshCw } from '@goodboy/ui/icons';
 import { Button, Chip, ICON_SIZE, type Tone } from '@goodboy/ui';
 
 import type { AgentRow as AgentRowModel, AgentRowState } from '../agentRowOf';
@@ -146,7 +146,7 @@ export const AgentRow = ({
               aria-label={`Check ${row.label} again`}
               onClick={onCheck}
             >
-              <RotateCw size={ICON_SIZE.control} aria-hidden />
+              <RefreshCw size={ICON_SIZE.control} aria-hidden />
               Check again
             </Button>
           </>

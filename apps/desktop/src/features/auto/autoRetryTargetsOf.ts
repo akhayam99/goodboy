@@ -5,6 +5,7 @@ import { autoRetryRouteOf } from '../../store/slices/turn/autoRetryRouteOf';
 import { autoGroupOf, type AutoGroupChild } from './autoGroupOf';
 import { autoStuckKindOf, type AutoStuckKind } from './autoStuckKindOf';
 import { textField } from './chat/readJson';
+import { isFailureSettled } from './isFailureSettled';
 import { isAutoPausedAtLimit } from './isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
 import { NAMES } from '../../shared/utils/names';
@@ -34,6 +35,7 @@ type Params = {
   readonly views: ReadonlyArray<AutoTreeView>;
   readonly agents: ReadonlyArray<Agent>;
   readonly now: number;
+  readonly settledAt?: number | null;
 };
 
 type ChildParams = {
@@ -41,6 +43,7 @@ type ChildParams = {
   readonly agents: ReadonlyArray<Agent>;
   readonly rootAgentId: AgentId;
   readonly child: AutoGroupChild;
+  readonly settledAt: number | null;
 };
 
 const targetOfChild = ({
@@ -48,9 +51,14 @@ const targetOfChild = ({
   agents,
   rootAgentId,
   child,
+  settledAt,
 }: ChildParams): AutoRetryTarget | null => {
   const kind = autoStuckKindOf({ state: child.state });
   if (kind === null || child.isGone === true) {
+    return null;
+  }
+  const failedAt = child.finishedAt ?? child.startedAt ?? child.createdAt;
+  if (failedAt !== null && isFailureSettled({ at: failedAt, settledAt })) {
     return null;
   }
   return {
@@ -106,6 +114,7 @@ export const autoRetryTargetsOf = ({
   views,
   agents,
   now,
+  settledAt = null,
 }: Params): ReadonlyArray<AutoRetryTarget> =>
   views.flatMap((view) => {
     const phase = view.tree.phase;
@@ -118,13 +127,15 @@ export const autoRetryTargetsOf = ({
     }
     const group = autoGroupOf({ view, agents, now });
     const children = (group?.children ?? []).flatMap((child) => {
-      const target = targetOfChild({ views, agents, rootAgentId, child });
+      const target = targetOfChild({ views, agents, rootAgentId, child, settledAt });
       return target === null ? [] : [target];
     });
     return [
       ...children,
       ...(isAutoPlanAwaitingApproval({ view }) ? [ownTargetOf({ view, kind: 'approve' })] : []),
-      ...(phase === 'blocked' && !isAutoPausedAtLimit({ view })
+      ...(phase === 'blocked' &&
+      !isAutoPausedAtLimit({ view }) &&
+      !isFailureSettled({ at: view.tree.updatedAt, settledAt })
         ? [ownTargetOf({ view, kind: 'blocked' })]
         : []),
     ];

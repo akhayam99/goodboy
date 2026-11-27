@@ -42,6 +42,7 @@ const mount = () => {
   render(
     <ChatComposer
       workspaceId={WORKSPACE_ID}
+      chatId={null}
       placeholder="Ask about Harborline, read-only"
       routing={{ provider: 'anthropic', model: 'sonnet-5.5', effort: null }}
       isStreaming={false}

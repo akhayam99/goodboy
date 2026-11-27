@@ -60,7 +60,7 @@ export const RecentDecisions = ({ workspaceId }: Props) => {
     return (
       <EmptyState
         size="section"
-        icon={CONCEPT_ICONS.history}
+        icon={CONCEPT_ICONS.decisions}
         title="No decisions yet"
         description="Decisions appear when an agent asks to use a tool."
       />

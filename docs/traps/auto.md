@@ -17,7 +17,7 @@ Auto has one gate, and the legacy role grid never lists it. `AUTO_GATES.isDelega
 
 ### Auto's glyph and color are its own
 
-The glyph is `CONCEPT_ICONS.auto` (`Orbit`): the AI glyph ratchet bans `Sparkles`. The token `agent-auto` is its own green-teal, not `primary`, so it stays put if the primary color changes.
+The glyph is `CONCEPT_ICONS.auto` (`Network`, the Orchestrate glyph, shared with the retired orchestrator key): the AI glyph ratchet bans `Sparkles`. The token `agent-auto` is its own green-teal, not `primary`, so it stays put if the primary color changes.
 
 ### Delegation cards are placed by time
 

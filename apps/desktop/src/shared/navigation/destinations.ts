@@ -46,7 +46,7 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
   {
     id: 'board',
     label: NAMES.board,
-    icon: CONCEPT_ICONS.sessions,
+    icon: CONCEPT_ICONS.board,
     menuId: 'session.board',
     home: 'column',
     scope: 'workspace',

@@ -12,6 +12,68 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.44.0
+
+The iPhone finds your Mac again, the Lead's cost shows in each run, and the bell stops repeating itself.
+
+### Improved
+
+#### Lead cost and share of a run
+<!-- gb area=agents pr=2429,2439 -->
+
+Each run shows the Lead's own cost beside the run total, and warns when the Lead takes too big a share.
+
+#### Select an element on the Browser page
+<!-- gb area=app pr=2437 -->
+
+Select an element on a Browser page (⌘⇧C) and add it, with a note, to the session's message box.
+
+#### Models your account cannot run are skipped
+<!-- gb area=providers pr=2430 -->
+
+Models your account can't run are skipped, and the work moves to the next model of the same provider.
+
+#### Newer models on every provider
+<!-- gb area=providers pr=2440 -->
+
+The latest Gemini, GPT, Fable, Kimi and DeepSeek models join the pickers.
+
+#### The iPhone finds your Mac again
+<!-- gb area=settings pr=2435 -->
+
+The iPhone finds your Mac again after a restart, and pairing shows a code to check on both screens. Going back to 0.43 means pairing the iPhone again.
+
+#### Show the sites that keep data in the Browser
+<!-- gb area=app pr=2451 -->
+
+Show site data lists the sites that keep data in the Browser and clears the ones you pick (macOS 14 or later).
+
+#### The iPhone page in Settings
+<!-- gb area=settings pr=2447 -->
+
+Settings, iPhone walks you through pairing, and a phone icon next to the bell shows whether your iPhone is connected.
+
+#### Board lanes named by what they hold
+<!-- gb area=sessions image=board-lanes pr=2432 -->
+
+Board lanes read Open, Running, In review, Done and Archive.
+
+#### Floating drag targets in the dock
+<!-- gb area=app pr=2428 -->
+
+Dragging a dock panel shows one small floating label per place.
+
+### Fixed
+
+- The bell and its toasts show each problem once and drop what is settled, and closing a toast keeps its notice in the bell. <!-- gb area=inbox pr=2438,2443 -->
+- Clear site data in the Browser also clears the sites a page signs in through. <!-- gb area=app pr=2441 -->
+- Fewer helpers started by the Lead end without a result. <!-- gb area=agents pr=2434 -->
+- The Lead hands code questions to a Scout and runs on the model you saved for it. <!-- gb area=agents pr=2426 -->
+- The Now section lists each agent once. <!-- gb area=sessions pr=2448 -->
+- Other windows show fresh questions, drafts and unread rows without a reload. <!-- gb area=sessions pr=2442 -->
+- Dock panel heads no longer show a leftover back button. <!-- gb area=app pr=2427 -->
+- Ask suggests only questions it can answer. <!-- gb area=sessions pr=2425 -->
+
 ## Goodboy v0.43.2
 
 Move dock panels with the keyboard, drag any tab out of a folded cell, and read your projects without extra asks.
