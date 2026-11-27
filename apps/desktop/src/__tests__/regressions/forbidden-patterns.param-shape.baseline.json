@@ -1658,7 +1658,7 @@
     "apps/desktop/src/store/slices/sessions/selectors.ts": 6,
     "apps/desktop/src/store/slices/sessions/selectSessionById.ts": 1,
     "apps/desktop/src/store/slices/sessions/sessionIndex.ts": 1,
-    "apps/desktop/src/store/slices/sessions/sessionMutators.ts": 2,
+    "apps/desktop/src/store/slices/sessions/sessionMutators.ts": 1,
     "apps/desktop/src/store/slices/sessions/setAgentConfig.ts": 2,
     "apps/desktop/src/store/slices/sessions/setAgentVerbosity.ts": 1,
     "apps/desktop/src/store/slices/sessions/setCurrentSession.ts": 3,

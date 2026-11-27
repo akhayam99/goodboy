@@ -1,17 +1,20 @@
-import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
+import type { Agent, Session, SessionId, SessionStageInfo } from '@goodboy/types';
 import { gitlabSessionOf } from '../mount-request/requestOf';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import type { AppState } from '../../types';
 import { sessionRequestFetchOf } from '../review-source/sessionRequestFetchOf';
 import { liveWorkOfSession } from '../../runtime/live-work/selectLiveWork';
 import { summarizeMountWork } from '../project-mounts/mountCompletion';
-import { soleMergedAtOf } from '../project-mounts/workRecord/soleMergedAtOf';
 import { resolveAttentionOf } from '../resolve/resolveAttention';
 import type { AutoViewState } from '../auto-view/state';
+import { failureStandingOf } from '@goodboy/core/attention';
 import { runAwaitsPlanReview } from '../../../features/plans/runAwaitsPlanReview';
 import { attentionSinceOf } from './attentionSinceOf';
 import { attentionWaitsOf } from './attentionWaitsOf';
 import { deferredReasonsOf } from './deferredReasonsOf';
+import { replacedDelegationsOf } from './settle/replacedDelegationsOf';
+import { sessionSettleOf } from './settle/sessionSettleOf';
+import { settleFactsOf } from './settle/settleFactsOf';
 import { deriveSessionStage } from './deriveSessionStage';
 import { isPrReviewSession } from './isPrReviewSession';
 import { sessionHasUnread } from './sessionHasUnread';
@@ -61,6 +64,8 @@ export type StageInfoState = Pick<
       AutoViewState
   >;
 
+const NO_AGENTS: ReadonlyArray<Agent> = [];
+
 function countOpenQuestions(state: StageInfoState, sessionId: SessionId): number {
   const questions = state.sessionOpenQuestions[sessionId];
   if (!questions) {
@@ -91,10 +96,17 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
     threads: state.sessionResolveThreads?.[sessionId] ?? [],
     attempts: state.sessionResolveAttempts?.[sessionId] ?? [],
   });
+  const agents = state.sessionPhaseRuns[sessionId] ?? NO_AGENTS;
+  const settle = sessionSettleOf({ state, sessionId });
+  const standing = failureStandingOf({
+    agents,
+    delegations: replacedDelegationsOf({ views: state.autoTreeViews?.[sessionId] ?? [] }),
+    settledAt: settle.settledAt,
+  });
   const waits = attentionWaitsOf({
     state,
     session,
-    settledAt: () => soleMergedAtOf({ state, sessionId }),
+    settledAt: () => settle.settledAt,
   });
   const requestFetch = sessionRequestFetchOf({ state, sessionId });
   const info = deriveSessionStage({
@@ -127,6 +139,14 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
       (run) => run.discardedAt == null && runAwaitsPlanReview({ state, sessionId, run }),
     ),
     ...waits,
+    isFailureEnded: standing.isEnded,
+    settle: settleFactsOf({
+      state,
+      session,
+      agents,
+      settle,
+      isRunLive: live.isRunning || live.isBlocked || live.isDeciding,
+    }),
     deferredReasons: deferredReasonsOf({
       dismissed: state.sessionDismissedNextSteps?.[sessionId],
       pr: request.pr,

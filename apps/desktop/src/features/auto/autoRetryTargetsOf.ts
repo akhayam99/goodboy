@@ -5,7 +5,7 @@ import { autoRetryRouteOf } from '../../store/slices/turn/autoRetryRouteOf';
 import { autoGroupOf, type AutoGroupChild } from './autoGroupOf';
 import { autoStuckKindOf, type AutoStuckKind } from './autoStuckKindOf';
 import { textField } from './chat/readJson';
-import { isFailureSettled } from './isFailureSettled';
+import { isFailureSettled } from '@goodboy/core/attention';
 import { isAutoPausedAtLimit } from './isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
 import { NAMES } from '../../shared/utils/names';

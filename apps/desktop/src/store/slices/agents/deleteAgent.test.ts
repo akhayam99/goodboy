@@ -407,6 +407,45 @@ describe('deleteAgent', () => {
     expect(hoisted.emitNotification).not.toHaveBeenCalled();
   });
 
+  describe('the session state after the delete', () => {
+    const SURVIVOR = 'survivor-1' as AgentId;
+    const ERROR_STATE = {
+      kind: 'error',
+      message: 'The agent stopped',
+      failedAt: '2026-07-25T09:00:00.000Z',
+    };
+
+    const seedSurvivor = ({ status }: { readonly status: Agent['status'] }) => {
+      const harness = makeStore();
+      Object.assign(harness.state.agentTurnState as Record<string, unknown>, {
+        [SURVIVOR]: ERROR_STATE,
+      });
+      hoisted.invokeAgentList.mockResolvedValue([resolver({ id: SURVIVOR, status })]);
+      hoisted.listResolveAttempts.mockResolvedValue([]);
+      return harness;
+    };
+
+    it('keeps the failure of a survivor whose row still says failed', async () => {
+      const { state, get, set } = seedSurvivor({ status: 'failed' });
+
+      await deleteAgent(set, get)(SID, DOOMED);
+
+      expect((state.sessions as ReadonlyArray<{ state: { kind: string } }>)[0]?.state.kind).toBe(
+        'error',
+      );
+    });
+
+    it('drops an error whose agent row completed after it', async () => {
+      const { state, get, set } = seedSurvivor({ status: 'completed' });
+
+      await deleteAgent(set, get)(SID, DOOMED);
+
+      expect((state.sessions as ReadonlyArray<{ state: { kind: string } }>)[0]?.state.kind).toBe(
+        'idle',
+      );
+    });
+  });
+
   it('purges anyway and tells the user when the run refuses to stop', async () => {
     const { get, set } = makeStore();
     hoisted.invokeAgentList.mockResolvedValue([]);

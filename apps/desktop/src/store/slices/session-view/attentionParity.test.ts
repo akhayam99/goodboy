@@ -1,8 +1,14 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { PullRequestState, SessionAttentionReason } from '@goodboy/types';
-import { aSession, TEST_NOW } from '@goodboy/types/testing';
+import {
+  failureStandingOf,
+  isSettledOf,
+  settledAtOf,
+  type SettleRequest,
+} from '@goodboy/core/attention';
+import type { IsoDateTime, PullRequestState, SessionAttentionReason } from '@goodboy/types';
+import { anAgent, aSession, TEST_NOW } from '@goodboy/types/testing';
 import { ATTENTION_REASON_META } from '../../../features/session/session-stage';
 import { isErrorReason, isHumanInputReason } from './attentionFactsOf';
 import { attentionCountOf } from './attentionCountOf';
@@ -21,6 +27,14 @@ type ParityCase = {
     readonly fixNeedsYou: number;
     readonly pushFailed: number;
     readonly isCiFailing: boolean;
+  };
+  readonly settle?: {
+    readonly requests: ReadonlyArray<{
+      readonly state: 'open' | 'merged' | 'closed' | null;
+      readonly mergedAt: number | null;
+    }>;
+    readonly failedAt: number | null;
+    readonly agentStartedAt: number | null;
   };
   readonly isCounted: boolean;
   readonly tone: 'danger' | 'warning' | null;
@@ -61,8 +75,44 @@ type CaseParams = {
   readonly parityCase: ParityCase;
 };
 
-const infoOf = ({ parityCase }: CaseParams) =>
-  deriveSessionStage({
+const isoOf = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
+
+const settleOf = ({ parityCase }: CaseParams) => {
+  const settle = parityCase.settle;
+  if (settle === undefined) {
+    return { isFailureEnded: false, facts: undefined };
+  }
+  const requests: ReadonlyArray<SettleRequest> = settle.requests.map((request) => ({
+    state: request.state ?? 'unknown',
+    mergedAt: request.mergedAt,
+  }));
+  const threads = [
+    ...(parityCase.facts.fixNeedsYou > 0 ? [{ state: 'needs_answer' }] : []),
+    ...(parityCase.facts.pushFailed > 0 ? [{ state: 'failed' }] : []),
+  ];
+  const agentStartedAts = settle.agentStartedAt === null ? [] : [settle.agentStartedAt];
+  const isSettled = isSettledOf({ requests, threads, agentStartedAts });
+  const settledAt = isSettled ? settledAtOf({ requests, threads }) : null;
+  const standing = failureStandingOf({
+    agents: parityCase.session.isErrored
+      ? [
+          anAgent({
+            status: 'failed',
+            ...(settle.failedAt === null ? {} : { completedAt: isoOf(settle.failedAt) }),
+          }),
+        ]
+      : [],
+    settledAt,
+  });
+  return {
+    isFailureEnded: standing.isEnded,
+    facts: { isSettled, settledAt, isRunLive: false, unreadAt: null, stoppedRunAt: null },
+  };
+};
+
+const infoOf = ({ parityCase }: CaseParams) => {
+  const { isFailureEnded, facts } = settleOf({ parityCase });
+  return deriveSessionStage({
     session: aSession({
       goal: 'Ship the ledger sync',
       state: parityCase.session.isErrored
@@ -77,7 +127,10 @@ const infoOf = ({ parityCase }: CaseParams) =>
     hasRunningAgent: parityCase.session.isLive,
     isBranchless: parityCase.session.isBranchless,
     prFetchState: 'known',
+    isFailureEnded,
+    ...(facts === undefined ? {} : { settle: facts }),
   });
+};
 
 describe('the Rust workspace count and attentionCountOf', () => {
   it('give every reason Rust counts the tone and the kind the registry gives it', () => {

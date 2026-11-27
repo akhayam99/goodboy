@@ -7,10 +7,12 @@ import {
   type MountPullRequestProvider,
   type ProjectId,
   type SessionId,
+  type ResolveThread,
   type SessionMountView,
 } from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
 import { at } from '../../../../features/workspace/testing/sessionColumn';
-import { soleMergedAtOf } from './soleMergedAtOf';
+import { sessionSettleOf } from './sessionSettleOf';
 
 const SESSION = brandId<SessionId>({ value: 'session-harborline' });
 const PROJECT = brandId<ProjectId>({ value: 'project-payments-api' });
@@ -70,43 +72,110 @@ const linkOf = ({ slug, provider, state }: LinkParams): MountPullRequestLink => 
 type StateParams = {
   readonly views: ReadonlyArray<SessionMountView>;
   readonly links: ReadonlyArray<MountPullRequestLink>;
+  readonly threads?: ReadonlyArray<{ readonly state: ResolveThread['state'] }>;
+  readonly startedAt?: string;
 };
 
-const stateOf = ({ views, links }: StateParams) => ({
+const stateOf = ({ views, links, threads = [], startedAt }: StateParams) => ({
   sessionMounts: { [SESSION]: views },
   sessionProjectMounts: {},
   mountGithub: {},
   mountRequests: {},
   mountPrLinks: Object.fromEntries(links.map((link) => [link.mountId, link])),
+  sessionPhaseRuns:
+    startedAt === undefined
+      ? {}
+      : {
+          [SESSION]: [
+            anAgent({ sessionId: SESSION, status: 'completed', startedAt: at(startedAt) }),
+          ],
+        },
+  sessionResolveThreads: { [SESSION]: threads },
 });
 
 const PROVIDERS: ReadonlyArray<MountPullRequestProvider> = ['github', 'gitlab', 'bitbucket'];
 
-describe('soleMergedAtOf', () => {
+const settleOf = (state: ReturnType<typeof stateOf>) =>
+  sessionSettleOf({ state, sessionId: SESSION });
+
+describe('sessionSettleOf', () => {
   it.each(PROVIDERS)('reads the merge time of a deleted %s branch', (provider) => {
     const state = stateOf({
       views: [viewOf({ slug: 'retry' })],
       links: [linkOf({ slug: 'retry', provider, state: 'merged' })],
     });
 
-    expect(soleMergedAtOf({ state, sessionId: SESSION })).toBe(Date.parse(MERGED_AT));
+    expect(settleOf(state)).toEqual({ isSettled: true, settledAt: Date.parse(MERGED_AT) });
   });
 
-  it('is null for a closed pull request', () => {
+  it('is settled with no time for a closed pull request', () => {
     const state = stateOf({
       views: [viewOf({ slug: 'retry' })],
       links: [linkOf({ slug: 'retry', provider: 'github', state: 'closed' })],
     });
 
-    expect(soleMergedAtOf({ state, sessionId: SESSION })).toBeNull();
+    expect(settleOf(state)).toEqual({ isSettled: true, settledAt: null });
   });
 
-  it('is null while the session holds a second branch', () => {
+  it('is not settled while the session holds a second branch with no request', () => {
     const state = stateOf({
       views: [viewOf({ slug: 'retry' }), viewOf({ slug: 'ledger', isAttached: true })],
       links: [linkOf({ slug: 'retry', provider: 'github', state: 'merged' })],
     });
 
-    expect(soleMergedAtOf({ state, sessionId: SESSION })).toBeNull();
+    expect(settleOf(state)).toEqual({ isSettled: false, settledAt: null });
+  });
+
+  it('is settled when both branches merged and takes the later merge', () => {
+    const state = stateOf({
+      views: [viewOf({ slug: 'retry' }), viewOf({ slug: 'ledger' })],
+      links: [
+        linkOf({ slug: 'retry', provider: 'github', state: 'merged' }),
+        {
+          ...linkOf({ slug: 'ledger', provider: 'gitlab', state: 'merged' }),
+          mergedAt: at('2026-10-09T12:00:00.000Z'),
+        },
+      ],
+    });
+
+    expect(settleOf(state).settledAt).toBe(Date.parse('2026-10-09T12:00:00.000Z'));
+  });
+
+  it('is not settled with an open request on a removed branch history', () => {
+    const state = stateOf({
+      views: [viewOf({ slug: 'retry' })],
+      links: [linkOf({ slug: 'retry', provider: 'github', state: 'open' })],
+    });
+
+    expect(settleOf(state).isSettled).toBe(false);
+  });
+
+  it('is not settled while a review thread waits', () => {
+    const state = stateOf({
+      views: [viewOf({ slug: 'retry' })],
+      links: [linkOf({ slug: 'retry', provider: 'github', state: 'merged' })],
+      threads: [{ state: 'needs_answer' }],
+    });
+
+    expect(settleOf(state).isSettled).toBe(false);
+  });
+
+  it('is not settled once an agent started after the merge', () => {
+    const state = stateOf({
+      views: [viewOf({ slug: 'retry' })],
+      links: [linkOf({ slug: 'retry', provider: 'github', state: 'merged' })],
+      startedAt: '2026-10-08T13:00:00.000Z',
+    });
+
+    expect(settleOf(state).isSettled).toBe(false);
+  });
+
+  it('is not settled for a session with no branch', () => {
+    const state = stateOf({
+      views: [{ ...viewOf({ slug: 'retry' }), branch: '' }],
+      links: [],
+    });
+
+    expect(settleOf(state).isSettled).toBe(false);
   });
 });
