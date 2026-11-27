@@ -121,10 +121,14 @@ export const installIphoneIpc = ({ moment }: Params): void => {
         isAdvertised: true,
         pendingPairing: moment === 'request' ? REQUEST : null,
         fault: moment === 'fault' ? FAULT : null,
+        priorPhoneCount: phones.length,
       };
     }
     if (command === 'bridge_phones') {
       return phones;
+    }
+    if (command === 'bridge_link_hint') {
+      return { priorPhoneCount: phones.length, fault: moment === 'fault' ? FAULT : null };
     }
     if (command === 'bridge_interfaces') {
       return [

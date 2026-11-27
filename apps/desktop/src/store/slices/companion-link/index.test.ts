@@ -38,6 +38,7 @@ const status = (enrolledCount: number) => ({
   isAdvertised: true,
   pendingPairing: null,
   fault: null,
+  priorPhoneCount: enrolledCount,
 });
 
 type Answer = {
@@ -60,6 +61,9 @@ beforeEach(async () => {
   storySpies.tauriInvoke.mockImplementation(async (cmd?: unknown) => {
     if (answer.isFailing) {
       throw new Error('The bridge is busy');
+    }
+    if (cmd === 'bridge_link_hint') {
+      return { priorPhoneCount: 1, fault: null };
     }
     return cmd === 'bridge_status' ? answer.status : answer.phones;
   });
@@ -120,12 +124,44 @@ describe('the companion link slice', () => {
     expect(useAppStore.getState().companionPhones.map((p) => p.name)).toEqual(['New iPhone']);
   });
 
-  it('reads only the phone list for the first look and leaves the status alone', async () => {
+  it('never lets an older phone read overwrite a newer full refresh, whichever order they answer in', async () => {
+    const release: Array<() => void> = [];
+    let phoneReads = 0;
+    storySpies.tauriInvoke.mockImplementation(async (cmd?: unknown) => {
+      if (cmd === 'bridge_link_hint') {
+        await new Promise<void>((resolve) => {
+          release.push(resolve);
+        });
+        return { priorPhoneCount: 1, fault: null };
+      }
+      if (cmd === 'bridge_phones') {
+        phoneReads += 1;
+        return [phone(phoneReads === 1 ? 'Old iPhone' : 'Fresh iPhone')];
+      }
+      return status(1);
+    });
+
+    const older = useAppStore.getState().readCompanionPhones();
+    await Promise.resolve();
+    const newer = useAppStore.getState().refreshCompanionLink();
+    release.forEach((resolve) => resolve());
+    await Promise.all([older, newer]);
+
+    expect(useAppStore.getState().companionStatus?.enrolledCount).toBe(1);
+    expect(useAppStore.getState().companionPhones).toHaveLength(1);
+    expect(useAppStore.getState().companionPhones[0]?.name).toBe('Fresh iPhone');
+  });
+
+  it('reads the phone list and the prior pairing hint for the first look and leaves the status alone', async () => {
     answer.phones = [phone('Harborline iPhone')];
 
     await useAppStore.getState().readCompanionPhones();
 
-    expect(storySpies.tauriInvoke.mock.calls.map(([cmd]) => cmd)).toEqual(['bridge_phones']);
+    expect(storySpies.tauriInvoke.mock.calls.map(([cmd]) => cmd).sort()).toEqual([
+      'bridge_link_hint',
+      'bridge_phones',
+    ]);
+    expect(useAppStore.getState().companionHint).toEqual({ priorPhoneCount: 1, fault: null });
     expect(useAppStore.getState().companionStatus).toBeNull();
     expect(useAppStore.getState().companionPhones).toHaveLength(1);
   });

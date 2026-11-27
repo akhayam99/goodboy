@@ -33,13 +33,14 @@ type Phone = {
 
 type Bridge = {
   phones: Phone[];
+  priorPhones: number | null;
   fault: { code: string; message: string } | null;
   isReadFailing: boolean;
 };
 
 const events = vi.hoisted(() => ({ names: new Array<string>() }));
 
-const bridge: Bridge = { phones: [], fault: null, isReadFailing: false };
+const bridge: Bridge = { phones: [], priorPhones: null, fault: null, isReadFailing: false };
 
 const invoke = storySpies.tauriInvoke;
 
@@ -63,7 +64,10 @@ const northwind: Phone = {
 
 const answer = async (command?: unknown): Promise<unknown> => {
   const cmd = String(command);
-  if ((cmd === 'bridge_status' || cmd === 'bridge_phones') && bridge.isReadFailing) {
+  if (
+    (cmd === 'bridge_status' || cmd === 'bridge_phones' || cmd === 'bridge_link_hint') &&
+    bridge.isReadFailing
+  ) {
     throw new Error('The bridge is busy');
   }
   if (cmd === 'bridge_status') {
@@ -74,7 +78,11 @@ const answer = async (command?: unknown): Promise<unknown> => {
       isAdvertised: true,
       pendingPairing: null,
       fault: bridge.fault,
+      priorPhoneCount: bridge.priorPhones ?? bridge.phones.length,
     };
+  }
+  if (cmd === 'bridge_link_hint') {
+    return { priorPhoneCount: bridge.priorPhones ?? bridge.phones.length, fault: bridge.fault };
   }
   if (cmd === 'bridge_phones') {
     return bridge.phones;
@@ -98,6 +106,7 @@ const commands = (): ReadonlyArray<string> => invoke.mock.calls.map(([cmd]) => S
 beforeEach(async () => {
   await resetStoryStore();
   bridge.phones = [];
+  bridge.priorPhones = null;
   bridge.fault = null;
   bridge.isReadFailing = false;
   events.names = [];
@@ -132,7 +141,7 @@ describe('IphoneEntry', () => {
       await vi.advanceTimersByTimeAsync(20_000);
     });
 
-    expect(commands()).toEqual(['bridge_phones']);
+    expect(new Set(commands())).toEqual(new Set(['bridge_phones', 'bridge_link_hint']));
   });
 
   it('shows no dot and no alarm for someone who never paired when the Keychain is unavailable', async () => {
@@ -142,6 +151,57 @@ describe('IphoneEntry', () => {
 
     expect(button.querySelector('[data-status-mark]')).toBeNull();
     expect(commands()).not.toContain('bridge_status');
+  });
+
+  it('retries a failed first read so a paired user does not stay on Not paired', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    bridge.phones = [harborline];
+    bridge.isReadFailing = true;
+    render(<IphoneEntry />);
+    await entry('none');
+
+    bridge.isReadFailing = false;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_100);
+    });
+
+    await entry('live');
+  });
+
+  it('keeps the clock running so the offline age in the tooltip climbs', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    bridge.phones = [northwind];
+    render(<IphoneEntry />);
+    const button = await entry('offline');
+    fireEvent.focus(button);
+    expect((await screen.findByRole('tooltip')).textContent).toBe('iPhone offline 14m');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2 * 60_000 + 1_000);
+    });
+
+    expect(screen.getByRole('tooltip').textContent).toMatch(/^iPhone offline 1[67]m$/);
+  });
+
+  it('keeps polling the status for someone who had phones when the keys are unreadable, and shows the recovery', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    bridge.phones = [];
+    bridge.priorPhones = 1;
+    bridge.fault = { code: 'keychain_unavailable', message: 'The Keychain is locked.' };
+    render(<IphoneEntry />);
+    const button = await entry('fault');
+    expect(button.querySelector('[data-status-mark="dot"]')?.getAttribute('data-status-tone')).toBe(
+      'danger',
+    );
+
+    bridge.phones = [harborline];
+    bridge.fault = null;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_100);
+    });
+
+    expect(commands()).toContain('bridge_status');
+    await entry('live');
   });
 
   it('shows a green dot beside the glyph while a phone is live', async () => {
@@ -278,7 +338,11 @@ describe('IphoneEntry', () => {
     await entry('live');
 
     expect(fetchSpy).not.toHaveBeenCalled();
-    expect([...new Set(commands())].sort()).toEqual(['bridge_phones', 'bridge_status']);
+    expect([...new Set(commands())].sort()).toEqual([
+      'bridge_link_hint',
+      'bridge_phones',
+      'bridge_status',
+    ]);
     vi.unstubAllGlobals();
   });
 });

@@ -28,6 +28,12 @@ export type BridgeStatus = {
   isAdvertised: boolean;
   pendingPairing: PendingPairing | null;
   fault: BridgeFault | null;
+  priorPhoneCount: number;
+};
+
+export type BridgeHint = {
+  readonly priorPhoneCount: number;
+  readonly fault: BridgeFault | null;
 };
 
 export type PhonePermissions = {
@@ -122,3 +128,6 @@ export const bridgeLinkQr = ({ link }: LinkQrParams): Promise<string> =>
   invokeCommand<string>('bridge_link_qr', { link });
 
 export const bridgeCancelCode = (): Promise<void> => invokeCommand<void>('bridge_cancel_code');
+
+export const bridgeLinkHint = (): Promise<BridgeHint> =>
+  invokeCommand<BridgeHint>('bridge_link_hint');

@@ -321,9 +321,15 @@ stay until the phone ships the start form.
   paired stops it when this window opened a code, and so does removing the last
   phone. With a phone paired it stays up until the app quits or Remove all runs.
   Cancel on the pairing view drops the live code at once (`bridge_cancel_code`)
-  and stops the listener when no phone is paired; a code that was still being
-  made when Cancel was pressed is dropped the same way, so a phone that scans it
-  later is refused.
+  and ends a pairing request that is waiting for Allow (with phones already paired
+  too, whose connections stay up); with no phone paired it also stops the
+  listener. A code that was still being made when Cancel was pressed is dropped
+  the same way, so a phone that scans it later is refused. Each code carries a
+  generation on the page: an older answer after a Cancel and a new Pair an iPhone
+  is discarded and never closes the newer code.
+- Switching a network on or off under Networks reaches the running listener at
+  once (`LiveSelection`): it binds the new address, drops the removed one and
+  advertises again, and no paired phone is disconnected for it.
 - It binds each private address of the networks you switched on under Networks
   on one TCP port, never a wildcard, so the port is closed on every public
   address. Every 5 seconds the set is read again: a new address is bound, a gone
@@ -412,7 +418,13 @@ stay until the phone ships the start form.
   last. Only the main window shows the icon and reads the Mac. It reads the phone
   list once, and starts the 3 second poll only while a phone is paired or the
   iPhone page is open, so someone who never paired never has the Keychain asked
-  about pairing from the bar. While pairing is broken the page rows say "Can't
+  about pairing from the bar. The first read (`bridge_phones` and the cheap
+  `bridge_link_hint`, which never asks the Keychain) is retried every 5 seconds
+  until it answers. When the keys cannot be read, the identity holds no phones;
+  the hint and `bridge_status` carry `priorPhoneCount`, the phones the file held,
+  so a person who had phones keeps the poll and a red dot and sees the recovery,
+  while a person who never paired still gets no dot. The offline age in the
+  tooltip keeps counting while a phone is paired. While pairing is broken the page rows say "Can't
   connect" and the Listener line says the Mac is not listening, in step with the
   bar. The switch Show iPhone in the top bar, under Top bar on the page, hides the
   icon in every window: the choice is kept in local storage, which windows share,

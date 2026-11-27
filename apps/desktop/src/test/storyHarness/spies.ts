@@ -139,6 +139,7 @@ const storyInvokeHandlers = {
   gh_status: GH_STATUS_ABSENT,
   query_bridge_serving: false,
   bridge_phones: [],
+  bridge_link_hint: { priorPhoneCount: 0, fault: null },
   worktree_deps_check: {
     state: 'not-applicable',
     command: null,

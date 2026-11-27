@@ -12,6 +12,7 @@ mod pairing;
 mod permissions;
 pub mod publish;
 mod publish_schema;
+mod selection;
 mod server;
 mod tokens;
 mod vault;
@@ -115,6 +116,7 @@ struct Inner {
     task: Option<JoinHandle<()>>,
     shutdown: Option<watch::Sender<bool>>,
     selected: Option<Vec<String>>,
+    selection: Option<selection::LiveSelection>,
     presence: Option<Arc<StdMutex<Presence>>>,
 }
 
@@ -193,10 +195,11 @@ impl BridgeState {
             port,
             raw,
         )));
+        let selection = selection::LiveSelection::new(selected.clone());
         let serving = Serving {
             port,
             first: listening.listeners,
-            selected: selected.clone(),
+            selected: selection.clone(),
             presence: presence.clone(),
         };
         let task = tauri::async_runtime::spawn(async move {
@@ -206,6 +209,7 @@ impl BridgeState {
         inner.task = Some(task);
         inner.shutdown = Some(shutdown_tx);
         inner.selected = selected.clone();
+        inner.selection = Some(selection);
         inner.presence = Some(presence);
         Ok((port, ips))
     }
@@ -240,6 +244,16 @@ fn stop_inner(inner: &mut Inner) {
     }
     inner.port = None;
     inner.selected = None;
+    inner.selection = None;
+}
+
+fn apply_selection(inner: &mut Inner, names: Vec<String>) -> bool {
+    let Some(selection) = inner.selection.as_ref() else {
+        return false;
+    };
+    selection.set(Some(names.clone()));
+    inner.selected = Some(names);
+    true
 }
 
 pub async fn resume(app: AppHandle, state: &BridgeState) {
@@ -303,6 +317,14 @@ pub struct BridgeStatus {
     enrolled_count: usize,
     is_advertised: bool,
     pending_pairing: Option<PendingPairing>,
+    fault: Option<BridgeFault>,
+    prior_phone_count: usize,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LinkHint {
+    prior_phone_count: usize,
     fault: Option<BridgeFault>,
 }
 
@@ -370,7 +392,12 @@ pub async fn bridge_set_interfaces(
     state: State<'_, BridgeState>,
     names: Vec<String>,
 ) -> Result<(), BridgeError> {
-    state.identity.lock().await.set_interfaces(Some(names))?;
+    state
+        .identity
+        .lock()
+        .await
+        .set_interfaces(Some(names.clone()))?;
+    apply_selection(&mut *state.inner.lock().await, names);
     Ok(())
 }
 
@@ -456,9 +483,14 @@ pub async fn bridge_stop(state: State<'_, BridgeState>) -> Result<(), BridgeErro
     Ok(())
 }
 
+fn drop_open_pairing(tokens: &TokenStore, pairing: &PairingHold) {
+    tokens.clear();
+    pairing.cancel();
+}
+
 #[tauri::command]
 pub async fn bridge_cancel_code(state: State<'_, BridgeState>) -> Result<(), BridgeError> {
-    state.tokens.clear();
+    drop_open_pairing(&state.tokens, &state.pairing);
     if !state.has_phones().await {
         state.stop().await;
     }
@@ -492,10 +524,10 @@ pub async fn bridge_status(state: State<'_, BridgeState>) -> Result<BridgeStatus
             .unwrap_or(false);
         (inner.port.is_some(), inner.port, is_advertised)
     };
-    let (enrolled_count, fault) = {
+    let (enrolled_count, fault, prior_phone_count) = {
         let mut id = state.identity.lock().await;
         id.try_recover(&KeychainVault);
-        (id.phones.len(), id.fault())
+        (id.phones.len(), id.fault(), id.prior_phone_count())
     };
     Ok(BridgeStatus {
         running,
@@ -504,6 +536,16 @@ pub async fn bridge_status(state: State<'_, BridgeState>) -> Result<BridgeStatus
         is_advertised,
         pending_pairing: state.pairing.pending(),
         fault: fault_view(fault),
+        prior_phone_count,
+    })
+}
+
+#[tauri::command]
+pub async fn bridge_link_hint(state: State<'_, BridgeState>) -> Result<LinkHint, BridgeError> {
+    let id = state.identity.lock().await;
+    Ok(LinkHint {
+        prior_phone_count: id.prior_phone_count(),
+        fault: fault_view(id.fault()),
     })
 }
 
@@ -564,6 +606,45 @@ mod tests {
     fn the_mac_hostname_is_never_read_for_the_qr_or_the_hello() {
         let source = include_str!("mod.rs");
         assert!(!source.contains(concat!("gethost", "name")));
+    }
+
+    #[tokio::test]
+    async fn cancelling_a_code_also_ends_a_waiting_request_and_leaves_paired_phones() {
+        let tokens = TokenStore::new();
+        let token = tokens.mint();
+        let hold = Arc::new(PairingHold::with_window(std::time::Duration::from_secs(5)));
+        let asking = {
+            let hold = hold.clone();
+            tokio::spawn(async move { hold.request("Harborline iPhone", "111 222").await })
+        };
+        while hold.pending().is_none() {
+            tokio::task::yield_now().await;
+        }
+
+        drop_open_pairing(&tokens, &hold);
+
+        assert!(hold.pending().is_none());
+        assert!(!tokens.consume(&token));
+        assert_eq!(asking.await.unwrap(), pairing::Verdict::Denied);
+    }
+
+    #[test]
+    fn a_new_network_choice_reaches_a_running_listener_and_nothing_else() {
+        let selection = selection::LiveSelection::new(Some(vec!["en0".into()]));
+        let mut inner = Inner {
+            port: Some(49160),
+            selected: Some(vec!["en0".into()]),
+            selection: Some(selection.clone()),
+            ..Inner::default()
+        };
+
+        assert!(apply_selection(&mut inner, vec!["utun4".into()]));
+
+        assert_eq!(inner.selected, Some(vec!["utun4".to_string()]));
+        assert_eq!(selection.get(), Some(vec!["utun4".to_string()]));
+        let mut idle = Inner::default();
+        assert!(!apply_selection(&mut idle, vec!["en0".into()]));
+        assert_eq!(idle.selected, None);
     }
 
     #[test]

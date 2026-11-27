@@ -15,12 +15,21 @@ export type FactRow = {
 
 type Params = {
   readonly state: LinkState;
-  readonly phone: PairedPhone;
+  readonly phone: PairedPhone | null;
   readonly fault: BridgeFault | null;
   readonly now: number;
 };
 
 export const factRowsOf = ({ state, phone, fault, now }: Params): ReadonlyArray<FactRow> => {
+  if (phone === null) {
+    return [
+      {
+        label: 'State',
+        text: fault === null ? 'Not paired' : faultStateOf({ fault }),
+        tone: entryToneOf({ state }),
+      },
+    ];
+  }
   const stateText =
     state === 'fault' && fault !== null
       ? faultStateOf({ fault })

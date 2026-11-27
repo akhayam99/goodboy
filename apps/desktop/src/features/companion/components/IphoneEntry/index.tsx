@@ -1,5 +1,4 @@
 import { Smartphone } from '@goodboy/ui/icons';
-import { useEffect } from 'react';
 import {
   AnchoredPopover,
   Button,
@@ -16,6 +15,7 @@ import { dispatchWindowEvent } from '../../../../shared/lib/dispatchWindowEvent'
 import { useNow } from '../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
+import { useCompanionInitialRead } from '../../hooks/useCompanionInitialRead';
 import { useCompanionLinkPoll } from '../../hooks/useCompanionLinkPoll';
 import { useIphoneBarIconStore } from '../../iphoneBarIconStore';
 import { linkOf } from '../../linkOf';
@@ -29,23 +29,20 @@ export const IphoneEntry = () => {
   const status = useAppStore((state) => state.companionStatus);
   const phones = useAppStore((state) => state.companionPhones);
   const isPageOpen = useAppStore((state) => state.isCompanionPageOpen);
-  const readCompanionPhones = useAppStore((state) => state.readCompanionPhones);
+  const hint = useAppStore((state) => state.companionHint);
   const dropdown = useDropdown({
     width: POPOVER_WIDTH_CLASS.standard,
     expectedWidth: POPOVER_WIDTH_PX.standard,
   });
   const { open: isOpen, close, toggle } = dropdown;
-  const now = useNow(30_000, isOpen);
-  const link = linkOf({ status, phones });
+  const link = linkOf({ status, phones, hint });
+  const now = useNow(30_000, isOpen || link.phone !== null);
   const tone = entryToneOf({ state: link.state });
   const label = `${NAMES.iphone}, ${linkWordOf({ state: link.state })}`;
 
-  useEffect(() => {
-    if (isShown) {
-      void readCompanionPhones();
-    }
-  }, [isShown, readCompanionPhones]);
-  useCompanionLinkPoll({ isOn: isShown && phones.length > 0 });
+  const hasPrior = (hint?.priorPhoneCount ?? 0) > 0;
+  useCompanionInitialRead({ isOn: isShown });
+  useCompanionLinkPoll({ isOn: isShown && (phones.length > 0 || hasPrior) });
 
   const openSettings = () => {
     close();
@@ -69,9 +66,9 @@ export const IphoneEntry = () => {
             size="sm"
             data-iphone-entry={link.state}
             aria-label={label}
-            aria-expanded={link.phone === null ? undefined : isOpen}
+            aria-expanded={link.state === 'none' ? undefined : isOpen}
             aria-current={isPageOpen ? 'page' : undefined}
-            onClick={link.phone === null ? openSettings : toggle}
+            onClick={link.state === 'none' ? openSettings : toggle}
             className={cn(
               TOP_BAR_CONTROL.height,
               tone === null ? cn(TOP_BAR_CONTROL.square, 'p-0') : 'min-w-7 gap-1 px-1',
@@ -87,15 +84,13 @@ export const IphoneEntry = () => {
         </Tooltip>
       }
     >
-      {link.phone === null ? null : (
-        <EntryFacts
-          state={link.state}
-          phone={link.phone}
-          fault={status?.fault ?? null}
-          now={now}
-          onOpenSettings={openSettings}
-        />
-      )}
+      <EntryFacts
+        state={link.state}
+        phone={link.phone}
+        fault={status?.fault ?? hint?.fault ?? null}
+        now={now}
+        onOpenSettings={openSettings}
+      />
     </AnchoredPopover>
   );
 };

@@ -254,6 +254,91 @@ describe('IphonePage before a phone', () => {
     expect(screen.queryByTestId('pairing-qr')).toBeNull();
   });
 
+  it('discards an older code that answers after a cancel and restart, and never closes the newer one', async () => {
+    const releases: Array<() => void> = [];
+    let starts = 0;
+    invoke.mockImplementation(async (command, rawArgs) => {
+      if (command === 'bridge_start') {
+        starts += 1;
+        const which = starts === 1 ? 'old' : 'new';
+        await new Promise<void>((resolve) => {
+          releases.push(resolve);
+        });
+        return {
+          payload: '{}',
+          svg: `<svg data-testid="qr-${which}"></svg>`,
+          deviceName: 'Harborline MacBook',
+          port: 47821,
+          expiresInSecs: 60,
+        };
+      }
+      return answer(command, rawArgs);
+    });
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'Pair an iPhone' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(invokedCommands()).toContain('bridge_cancel_code'));
+    const cancelsAfterCancel = invokedCommands().filter(
+      (cmd) => cmd === 'bridge_cancel_code',
+    ).length;
+    fireEvent.click(await screen.findByRole('button', { name: 'Pair an iPhone' }));
+    await waitFor(() => expect(releases).toHaveLength(2));
+
+    releases[1]?.();
+    expect(await screen.findByTestId('qr-new')).toBeTruthy();
+    releases[0]?.();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByTestId('qr-old')).toBeNull();
+    screen.getByTestId('qr-new');
+    expect(invokedCommands().filter((cmd) => cmd === 'bridge_cancel_code').length).toBe(
+      cancelsAfterCancel,
+    );
+    expect(screen.queryByRole('status', { name: 'Generating pairing code' })).toBeNull();
+  });
+
+  it('shows the error of the newest code only, not one from an older attempt', async () => {
+    const releases: Array<(failure: boolean) => void> = [];
+    let starts = 0;
+    invoke.mockImplementation(async (command, rawArgs) => {
+      if (command === 'bridge_start') {
+        starts += 1;
+        const isFirst = starts === 1;
+        const isFailing = await new Promise<boolean>((resolve) => {
+          releases.push(resolve);
+        });
+        if (isFailing) {
+          throw new Error('old attempt failed');
+        }
+        return {
+          payload: '{}',
+          svg: `<svg data-testid="qr-${isFirst ? 'old' : 'new'}"></svg>`,
+          deviceName: 'Harborline MacBook',
+          port: 47821,
+          expiresInSecs: 60,
+        };
+      }
+      return answer(command, rawArgs);
+    });
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'Pair an iPhone' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Pair an iPhone' }));
+    await waitFor(() => expect(releases).toHaveLength(2));
+
+    releases[1]?.(false);
+    await screen.findByTestId('qr-new');
+    releases[0]?.(true);
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByRole('alert')).toBeNull();
+    screen.getByTestId('qr-new');
+  });
+
   it('does not stop a listener this window never started when you leave the page', async () => {
     const view = renderPage();
     await screen.findByText('See what needs you');

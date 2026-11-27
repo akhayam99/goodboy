@@ -68,7 +68,7 @@ pub struct ServerCtx {
 pub struct Serving {
     pub port: u16,
     pub first: Vec<(IpAddr, TcpListener)>,
-    pub selected: Option<Vec<String>>,
+    pub selected: super::selection::LiveSelection,
     pub presence: Arc<std::sync::Mutex<Presence>>,
 }
 
@@ -99,8 +99,11 @@ pub async fn serve(serving: Serving, ctx: Arc<ServerCtx>) {
     let mut every = tokio::time::interval(NETWORK_WATCH);
     every.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     loop {
-        every.tick().await;
-        let raw = offered_now(selected.as_deref());
+        tokio::select! {
+            _ = every.tick() => {}
+            _ = selected.changed() => {}
+        }
+        let raw = offered_now(selected.get().as_deref());
         let ips: Vec<IpAddr> = raw.iter().map(|a| a.ip).collect();
         if let Ok(mut offered) = ctx.offered.write() {
             *offered = ips.clone();

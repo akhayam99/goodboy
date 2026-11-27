@@ -412,6 +412,7 @@ pub fn run() {
             bridge::bridge_pairing_decide,
             bridge::bridge_reset_pairing,
             bridge::bridge_link_qr,
+            bridge::bridge_link_hint,
             bridge::publish::bridge_publish,
             artifact_folder::export_artifact_folder,
             artifact_mirror::artifact_mirror_write,

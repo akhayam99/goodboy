@@ -7,7 +7,7 @@ import { factRowsOf } from './factRowsOf';
 
 type Props = {
   readonly state: LinkState;
-  readonly phone: PairedPhone;
+  readonly phone: PairedPhone | null;
   readonly fault: BridgeFault | null;
   readonly now: number;
   readonly onOpenSettings: () => void;
@@ -17,7 +17,7 @@ export const EntryFacts = ({ state, phone, fault, now, onOpenSettings }: Props) 
   <>
     <div className="flex flex-col gap-2 p-3">
       <span className="text-heading text-foreground">
-        {state === 'fault' ? "Pairing isn't available" : phone.name}
+        {state === 'fault' || phone === null ? "Pairing isn't available" : phone.name}
       </span>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-meta">
         {factRowsOf({ state, phone, fault, now }).map(({ label, text, tone }) => (

@@ -88,6 +88,8 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
   const isMountedRef = useRef(true);
   const pairedAtStartRef = useRef(0);
   const isPairingRef = useRef(false);
+  const mintGenerationRef = useRef(0);
+  const cancelRef = useRef<Promise<void> | null>(null);
   const hasMintedRef = useRef(false);
   const onStopFailedRef = useRef(onStopFailed);
   onStopFailedRef.current = onStopFailed;
@@ -112,12 +114,19 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
   }, []);
 
   const mint = useCallback(async () => {
+    mintGenerationRef.current += 1;
+    const generation = mintGenerationRef.current;
+    const isCurrent = () => isMountedRef.current && mintGenerationRef.current === generation;
     setIsLoading(true);
     setError(null);
     try {
       hasMintedRef.current = true;
+      await cancelRef.current;
       const next = await bridgeStart();
-      if (!isMountedRef.current) {
+      if (!isCurrent()) {
+        if (isMountedRef.current && !isPairingRef.current) {
+          await bridgeCancelCode();
+        }
         return;
       }
       if (!isPairingRef.current) {
@@ -129,12 +138,12 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
       setInfo(next);
       await refresh();
     } catch (failure: unknown) {
-      if (isMountedRef.current) {
+      if (isCurrent()) {
         setError(mintErrorOf({ failure }));
         setInfo(null);
       }
     } finally {
-      if (isMountedRef.current) {
+      if (isCurrent()) {
         setIsLoading(false);
       }
     }
@@ -251,16 +260,20 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
 
   const cancel = () => {
     isPairingRef.current = false;
+    mintGenerationRef.current += 1;
     setIsPairing(false);
+    setIsLoading(false);
     setError(null);
     setInfo(null);
-    bridgeCancelCode()
+    const closing = bridgeCancelCode()
       .then(() => refresh())
+      .then(() => undefined)
       .catch(() => {
         if (isMountedRef.current) {
           setChangeError(CANCEL_FAILED);
         }
       });
+    cancelRef.current = closing;
   };
 
   useEffect(() => {

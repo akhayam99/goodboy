@@ -249,6 +249,7 @@ export const NON_SESSION_STATE_KEYS = [
   'windowPresence',
   'companionStatus',
   'companionPhones',
+  'companionHint',
   'companionReadMisses',
   'isCompanionPageOpen',
   'hostReachability',

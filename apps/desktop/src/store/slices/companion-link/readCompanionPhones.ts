@@ -1,20 +1,31 @@
-import { bridgePhones } from '../../../features/companion/bridge';
-import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
-import type { SliceDeps } from '../../slice-types';
+import {
+  bridgeLinkHint,
+  bridgePhones,
+  type BridgeHint,
+  type PairedPhone,
+} from '../../../features/companion/bridge';
+import { COMPANION_READ_KEY } from './companionReadKey';
+import type { CompanionLinkDeps } from './types';
 
-const KEY = 'companion-phones';
+type Read = {
+  readonly phones: ReadonlyArray<PairedPhone>;
+  readonly hint: BridgeHint;
+};
 
-export const readCompanionPhones = ({ set }: SliceDeps) => {
-  const latest = createLatestOnly();
+export const readCompanionPhones = ({ set, latest }: CompanionLinkDeps) => {
   return async (): Promise<void> => {
     try {
-      await latest.run({
-        key: KEY,
+      await latest.run<Read>({
+        key: COMPANION_READ_KEY,
         request: async () => {
-          const phones = await bridgePhones();
-          return { phones: Array.isArray(phones) ? phones : [] };
+          const [phones, hint] = await Promise.all([bridgePhones(), bridgeLinkHint()]);
+          if (typeof hint !== 'object' || hint === null) {
+            throw new Error('The bridge returned no hint.');
+          }
+          return { phones: Array.isArray(phones) ? phones : [], hint };
         },
-        apply: ({ phones }) => set({ companionPhones: phones, companionReadMisses: 0 }),
+        apply: ({ phones, hint }) =>
+          set({ companionPhones: phones, companionHint: hint, companionReadMisses: 0 }),
       });
     } catch {
       set((state) => ({ companionReadMisses: state.companionReadMisses + 1 }));

@@ -50,6 +50,7 @@
     "bridge_cancel_code",
     "bridge_command_result",
     "bridge_interfaces",
+    "bridge_link_hint",
     "bridge_note_phone_rule",
     "bridge_pairing_decide",
     "bridge_phones",

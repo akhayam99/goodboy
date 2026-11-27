@@ -85,6 +85,8 @@ pub struct Identity {
     #[serde(skip)]
     fault: Option<IdentityFault>,
     #[serde(skip)]
+    prior_phone_count: usize,
+    #[serde(skip)]
     store: PathBuf,
 }
 
@@ -219,8 +221,15 @@ impl Identity {
             legacy_allow_list: Vec::new(),
             last_recover: None,
             fault: Some(fault),
+            prior_phone_count: 0,
             store: path.to_path_buf(),
         }
+    }
+
+    fn faulted_after(path: &Path, fault: IdentityFault, prior_phone_count: usize) -> Self {
+        let mut id = Self::faulted(path, fault);
+        id.prior_phone_count = prior_phone_count;
+        id
     }
 
     fn without_file(path: &Path, vault: &dyn KeyVault) -> Self {
@@ -264,35 +273,37 @@ impl Identity {
     fn settle(mut self, path: &Path, vault: &dyn KeyVault) -> Self {
         self.store = path.to_path_buf();
         let is_adopted = self.adopt_legacy_allow_list();
+        let prior = self.phones.len();
         if self.static_priv_b64.is_empty() {
             return self.with_vault_key(vault, is_adopted);
         }
         if !self.migrate_key(vault) {
-            return Self::faulted(path, IdentityFault::KeychainUnavailable);
+            return Self::faulted_after(path, IdentityFault::KeychainUnavailable, prior);
         }
         match self.persist() {
             Ok(()) => self,
-            Err(_) => Self::faulted(path, IdentityFault::FileUnreadable),
+            Err(_) => Self::faulted_after(path, IdentityFault::FileUnreadable, prior),
         }
     }
 
     fn with_vault_key(mut self, vault: &dyn KeyVault, is_dirty: bool) -> Self {
         let path = self.store.clone();
+        let prior = self.phones.len();
         let Ok(held) = read_vault(vault) else {
-            return Self::faulted(&path, IdentityFault::KeychainUnavailable);
+            return Self::faulted_after(&path, IdentityFault::KeychainUnavailable, prior);
         };
         let Some(text) = held.as_deref() else {
-            return Self::faulted(&path, IdentityFault::KeychainUnavailable);
+            return Self::faulted_after(&path, IdentityFault::KeychainUnavailable, prior);
         };
         let Some((private, public)) = split_vault_value(text) else {
-            return Self::faulted(&path, IdentityFault::KeyMismatch);
+            return Self::faulted_after(&path, IdentityFault::KeyMismatch, prior);
         };
         if public != self.static_pub_b64 {
-            return Self::faulted(&path, IdentityFault::KeyMismatch);
+            return Self::faulted_after(&path, IdentityFault::KeyMismatch, prior);
         }
         self.static_priv_b64 = private;
         match is_dirty && self.persist().is_err() {
-            true => Self::faulted(&path, IdentityFault::FileUnreadable),
+            true => Self::faulted_after(&path, IdentityFault::FileUnreadable, prior),
             false => self,
         }
     }
@@ -342,6 +353,13 @@ impl Identity {
 
     pub fn fault(&self) -> Option<IdentityFault> {
         self.fault
+    }
+
+    pub fn prior_phone_count(&self) -> usize {
+        match self.fault {
+            Some(_) => self.prior_phone_count,
+            None => self.phones.len(),
+        }
     }
 
     pub fn device_label(&self) -> String {
@@ -1081,6 +1099,31 @@ mod tests {
         id.try_recover(&*vault);
         assert_eq!(id.fault(), None);
         assert_eq!(id.static_priv_b64, first.static_priv_b64);
+    }
+
+    #[test]
+    fn a_fault_still_remembers_how_many_phones_were_paired_and_a_fresh_one_remembers_none() {
+        let scratch = Scratch::new("prior-phones");
+        let file = scratch.file();
+        let mut first = Identity::load_or_create_at(&file).unwrap();
+        first.enroll(&PHONE_A, "Harborline iPhone").unwrap();
+        let vault = MemoryVault::for_path(&file);
+        vault.set_mode(VaultMode::ReadFails);
+
+        let mut id = Identity::load_with(&file, &*vault);
+
+        assert_eq!(id.fault(), Some(IdentityFault::KeychainUnavailable));
+        assert!(id.phones.is_empty());
+        assert_eq!(id.prior_phone_count(), 1);
+        vault.set_mode(VaultMode::Works);
+        id.try_recover(&*vault);
+        assert_eq!(id.prior_phone_count(), 1);
+        let never = scratch.file().with_file_name("never.json");
+        let blank = MemoryVault::new();
+        blank.set_mode(VaultMode::ReadFails);
+        let unpaired = Identity::load_with(&never, &*blank);
+        assert_eq!(unpaired.fault(), Some(IdentityFault::KeychainUnavailable));
+        assert_eq!(unpaired.prior_phone_count(), 0);
     }
 
     #[test]
