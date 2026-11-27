@@ -1,10 +1,8 @@
 import { Suspense, useContext, type ReactNode } from 'react';
-import { DockCellContext, DrawerBackChipContext, DrawerFrame, SkeletonRows } from '@goodboy/ui';
+import { DockCellContext, DrawerFrame, SkeletonRows } from '@goodboy/ui';
 import { useAppStore } from '../../store';
 import { selectSlotDrawer, type DrawerSlot } from '../../store/slices/drawer/selectSlotDrawer';
-import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 import { selectGridTool } from '../../store/slices/drawer/selectGridTool';
-import { useSlotBackChip } from '../hooks/useSlotBackChip';
 import { LazyExploreFileDrawer } from '../../features/explore/components/LazyExploreFileDrawer';
 import { LazyArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer/LazyArtifactDocumentDrawer';
 import { LazyScriptRunDrawer } from '../../features/scripts/components/LazyScriptRunDrawer';
@@ -207,8 +205,6 @@ export const DrawerHost = ({ slot = 'top' }: Props) => {
   const tool = useContext(DockCellContext);
   const drawer = useAppStore((state) => hostedDrawerOf({ state, slot, tool }));
   const isTop = useAppStore((state) => drawer !== null && state.drawer === drawer);
-  const back = useAppStore((state) => (isTop ? selectSlotBack({ state }) : null));
-  const backChip = useSlotBackChip({ back });
   const closeEntry = useAppStore((s) => s.closeDrawerEntry);
   const closeTopQuestion = useAppStore((s) => s.closeQuestion);
   const openDrawer = useAppStore((s) => s.openDrawer);
@@ -245,11 +241,9 @@ export const DrawerHost = ({ slot = 'top' }: Props) => {
   }
   return (
     <PanelBoundary key={drawerKey(drawer)} leaveLabel="Close drawer" onLeave={closeDrawer}>
-      <DrawerBackChipContext.Provider value={backChip}>
-        <div className="contents" data-browser-session={drawer.sessionId}>
-          {renderDrawer({ drawer, isReading, isDesk, closeDrawer, closeQuestion, openDrawer })}
-        </div>
-      </DrawerBackChipContext.Provider>
+      <div className="contents" data-browser-session={drawer.sessionId}>
+        {renderDrawer({ drawer, isReading, isDesk, closeDrawer, closeQuestion, openDrawer })}
+      </div>
     </PanelBoundary>
   );
 };

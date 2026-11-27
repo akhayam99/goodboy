@@ -1,14 +1,12 @@
-import { DrawerBackChipContext } from '../drawerBackChipContext';
 import { DockPanelHead } from './DockPanelHead';
 import { DrawerTitleGrip } from './DrawerTitleGrip';
-import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { IconGlyph } from '../icons';
 import { X } from '../icons';
 import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { useIsNarrow } from '../useIsNarrow';
 import { FIELD_SELECTOR, focusableTrigger, hasDraft } from '../drawerFrameFocus';
-import { DrawerBackChip } from './DrawerBackChip';
 import { DrawerBackLink } from './DrawerBackLink';
 import { DrawerHeaderMore } from './DrawerHeaderMore';
 import { DrawerHeadKeys } from './DrawerHeadKeys';
@@ -22,7 +20,6 @@ import { ICON_SIZE } from '../iconSize';
 export type DrawerBack = {
   readonly label: string;
   readonly onBack: () => void;
-  readonly isSubview?: boolean;
 };
 
 export type DrawerPage = {
@@ -81,10 +78,7 @@ export const DrawerFrame = ({
   const sectionRef = useRef<HTMLElement | null>(null);
   const dockRef = useRef<HTMLDivElement | null>(null);
   const hasToolbar = toolbar != null;
-  const backChip = useContext(DrawerBackChipContext);
-  const hasBackChip = backChip !== null && !isHeaderless;
-  const isChipYielding = hasBackChip && back?.isSubview !== true;
-  const stepBack = back === undefined || isHeaderless || isChipYielding ? undefined : back.onBack;
+  const stepBack = back === undefined || isHeaderless ? undefined : back.onBack;
 
   useEscapeLayer(() => {
     const active = document.activeElement;
@@ -117,7 +111,6 @@ export const DrawerFrame = ({
 
   const titleRow = (
     <>
-      {hasBackChip ? <DrawerBackChip chip={backChip} /> : null}
       <DrawerTitleGrip isTop={hasToolbar}>
         {Icon == null ? null : (
           <span className="flex h-5 shrink-0 items-center">
@@ -160,15 +153,12 @@ export const DrawerFrame = ({
   const hasStepAside = !isHeaderless && (meta != null || hasToolbar);
   const backLink =
     back === undefined || stepBack === undefined ? null : <DrawerBackLink back={back} />;
-  const content = (
-    <DrawerBackChipContext.Provider value={null}>{children}</DrawerBackChipContext.Provider>
-  );
   const body =
     scroll === 'self' || isHeaderless ? (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">{content}</div>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
     ) : (
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-3" fadeSize={24}>
-        {content}
+        {children}
       </ScrollFade>
     );
 

@@ -8,7 +8,6 @@ import {
 } from 'react';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
-import { DrawerBackChipContext } from '../drawerBackChipContext';
 import { DockDragContext } from '../dockDragContext';
 import { DockTabsContext } from '../dockTabsContext';
 import { X } from '../icons';
@@ -18,7 +17,6 @@ import { useDockGrip } from '../useDockGrip';
 import { useIsNarrow } from '../useIsNarrow';
 import type { DrawerPage } from './DrawerFrame';
 import { DrawerHeadKeys } from './DrawerHeadKeys';
-import { DrawerBackChip } from './DrawerBackChip';
 import { IconButton } from './IconButton';
 import { SegmentedTabs } from './SegmentedTabs';
 
@@ -62,7 +60,6 @@ export const DockPanelHead = ({
   const source = useContext(DockDragContext);
   const tabs = useContext(DockTabsContext);
   const strip = useRef<HTMLDivElement | null>(null);
-  const backChip = useContext(DrawerBackChipContext);
   const claim = tabs?.claim;
   const takeFocus = tabs?.takeFocus;
   const paneKey = tabs?.paneKey;
@@ -134,7 +131,6 @@ export const DockPanelHead = ({
           ),
       )}
     >
-      {backChip === null ? null : <DrawerBackChip chip={backChip} />}
       {tabs === null ? (
         <div className="flex min-w-0 flex-1 items-center gap-2 pl-2">
           {Icon == null ? null : (

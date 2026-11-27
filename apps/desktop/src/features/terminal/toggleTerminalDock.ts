@@ -4,7 +4,6 @@ import { selectGridTool } from '../../store/slices/drawer/selectGridTool';
 import { shellPanelsOf } from '../../store/slices/drawer/shellPanelsOf';
 import { focusPanelElement } from '../../shared/shellFocus/focusPanelElement';
 import { focusShellPanel } from '../../shared/shellFocus/focusShellPanel';
-import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 import { openWorkspaceTerminal } from './openWorkspaceTerminal';
 import { toggleSessionTerminal } from './toggleSessionTerminal';
 
@@ -32,11 +31,6 @@ export const toggleTerminalDock = ({ isToggle, shouldFocusFirst = false }: Param
     if (isToggle) {
       state.closeDrawerEntry({ entry: shown });
     }
-    return;
-  }
-  const back = selectSlotBack({ state });
-  if (back?.kind === 'terminal') {
-    state.openDrawer(back);
     return;
   }
   const sessionId = state.appStudio === null ? state.currentSessionId : null;

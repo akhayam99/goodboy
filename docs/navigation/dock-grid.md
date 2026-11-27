@@ -1,6 +1,6 @@
 # The dock grid
 
-> **Read this when** you change how open tools are laid out in the dock, how a panel is resized, focused, dragged or turned, or how a session saves and restores its grid. **Not for** the drawer slot and its back chip ([right-drawer.md](right-drawer.md)) or the rail buttons ([session-tools.md](session-tools.md)).
+> **Read this when** you change how open tools are laid out in the dock, how a panel is resized, focused, dragged or turned, or how a session saves and restores its grid. **Not for** the drawer slots ([right-drawer.md](right-drawer.md)) or the rail buttons ([session-tools.md](session-tools.md)).
 
 ## The grid beside the slot
 

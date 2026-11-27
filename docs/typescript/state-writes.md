@@ -86,7 +86,10 @@ A response applies only while it is the answer to the newest request.
   session, and the session stays light until it opens again. A row a live
   write changed while the list loaded keeps its live fields
   (`upgradeAgentRows`). A failed list keeps the light rows and shows the error
-  with Retry in the session rail.
+  with Retry in the session rail. `sessionReads.picks` is the sequence of the
+  agent picks of a session: `loadPhaseRunsForSession` claims it before its read,
+  and `setAgentConfig` claims it before and after its save, so a read that saw
+  the old row is dropped (test: `loadPhaseRunsForSession.test.ts`).
   `useAutoPlanApproval` claims one token per plan for an approve and cancels it
   when the shown version moves, so an answer for an older version is dropped.
   `selectAgent` in `store/slices/agents/` claims one token per agent for its
