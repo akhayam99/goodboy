@@ -5,6 +5,7 @@ import type { DockRect } from '../dockDropZonesOf';
 import { dockPillPlaceOf } from '../dockPillPlaceOf';
 import { dockFoldLineOf, dockNameOf } from '../dockStatusOf';
 import { cn } from '../cn';
+import { DROP_CHIP_SURFACE } from '../dropChipSurface';
 import { DockDropPill } from './DockDropPill';
 
 type Props = {
@@ -97,7 +98,10 @@ export const DockDropZones = ({ store }: Props) => {
         <div
           data-dock-fold=""
           style={{ left: outline.x + outline.width / 2, top: outline.y + outline.height - 12 }}
-          className="drop-chip absolute -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-full border border-floating-edge px-3 py-1 text-meta text-foreground shadow-lg"
+          className={cn(
+            DROP_CHIP_SURFACE,
+            'absolute -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-full px-3 py-1 text-meta text-foreground',
+          )}
         >
           {fold}
         </div>
@@ -110,7 +114,8 @@ export const DockDropZones = ({ store }: Props) => {
             top: isRaised ? view.y - CHIP_OFFSET_Y_PX : view.y + CHIP_OFFSET_Y_PX,
           }}
           className={cn(
-            'drop-chip absolute max-w-60 truncate rounded-lg border border-floating-edge px-3 py-1 text-meta text-foreground shadow-lg',
+            DROP_CHIP_SURFACE,
+            'absolute max-w-60 truncate rounded-lg px-3 py-1 text-meta text-foreground',
             isFlipped && '-translate-x-full',
             isRaised && '-translate-y-full',
           )}

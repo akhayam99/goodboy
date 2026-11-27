@@ -1158,7 +1158,7 @@ body {
     background-color: var(--color-floating);
     backdrop-filter: none;
   }
-  @media (forced-colors: active) {
+  @media screen and (forced-colors: active) {
     background-color: Canvas;
     backdrop-filter: none;
     border: 1px solid CanvasText;
@@ -1184,7 +1184,7 @@ body {
       width var(--duration-base) var(--ease-enter),
       height var(--duration-base) var(--ease-enter);
   }
-  @media (forced-colors: active) {
+  @media screen and (forced-colors: active) {
     background-color: transparent;
     box-shadow: none;
     border: 2px solid Highlight;

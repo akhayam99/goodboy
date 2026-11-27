@@ -1,4 +1,5 @@
 import { cn } from '../cn';
+import { DROP_CHIP_SURFACE } from '../dropChipSurface';
 import type { DockAnchor, DockDropZone } from '../dockDropZonesOf';
 import { DockDropGlyphSmall } from './DockDropGlyphSmall';
 
@@ -35,7 +36,8 @@ export const DockDropPill = ({ zone, anchor, isHovered, isDimmed, detail }: Prop
   >
     <div
       className={cn(
-        'drop-chip flex h-8 items-center gap-2 whitespace-nowrap rounded-full border border-floating-edge pl-2 pr-3 text-eyebrow text-foreground shadow-lg motion-safe:animate-drop-in [&>*]:motion-safe:transition-opacity [&>*]:motion-safe:duration-quick motion-safe:transition-[transform,background-color,color] motion-safe:duration-quick motion-safe:ease-enter',
+        DROP_CHIP_SURFACE,
+        'flex h-8 items-center gap-2 whitespace-nowrap rounded-full pl-2 pr-3 text-eyebrow text-foreground motion-safe:animate-drop-in [&>*]:motion-safe:transition-opacity [&>*]:motion-safe:duration-quick motion-safe:transition-[transform,background-color,color] motion-safe:duration-quick motion-safe:ease-enter',
         ORIGIN[anchor.align],
         isHovered && 'scale-[1.06] bg-primary-solid text-on-primary',
         isDimmed && '[&>*]:opacity-55',
@@ -45,7 +47,12 @@ export const DockDropPill = ({ zone, anchor, isHovered, isDimmed, detail }: Prop
       <span>{zone.label}</span>
     </div>
     {isHovered && detail !== null ? (
-      <span className="drop-chip absolute left-1/2 top-[calc(100%+0.5rem)] -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-meta text-foreground shadow-lg">
+      <span
+        className={cn(
+          DROP_CHIP_SURFACE,
+          'absolute left-1/2 top-[calc(100%+0.5rem)] -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-meta text-foreground',
+        )}
+      >
         {detail}
       </span>
     ) : null}
