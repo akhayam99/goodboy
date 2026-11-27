@@ -45,6 +45,21 @@ describe('RunGlanceLine', () => {
     expect(screen.getByText('$1.20 of $5.00').textContent).toBe('$1.20 of $5.00');
   });
 
+  it('draws the run total after the spend, as its own figure', () => {
+    render(
+      <RunGlanceLine
+        glance={glanceOf({ state: 'running', sentence: '' })}
+        spend="Lead $1.20"
+        spendTotal="Run total $4.80"
+        settings={null}
+      />,
+    );
+
+    const own = screen.getByText('Lead $1.20');
+    const total = screen.getByText('Run total $4.80');
+    expect(own.compareDocumentPosition(total)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it('draws the word alone when the sentence is empty', () => {
     render(
       <RunGlanceLine

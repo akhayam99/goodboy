@@ -8,6 +8,7 @@ export type RequestUsage = {
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
   readonly cacheCreationInputTokens: number;
+  readonly longCacheWriteInputTokens?: number;
 };
 
 export type ProviderUsage = {
@@ -15,6 +16,7 @@ export type ProviderUsage = {
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
   readonly cacheCreationInputTokens?: number;
+  readonly longCacheWriteInputTokens?: number;
   readonly contextTokens?: number;
   readonly largeRequests?: ReadonlyArray<RequestUsage>;
   readonly premiumRequests?: number;

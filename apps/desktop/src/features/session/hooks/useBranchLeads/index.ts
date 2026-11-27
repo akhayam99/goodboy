@@ -7,7 +7,7 @@ import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { liveAutoViewsOf } from '../../../auto/liveAutoViewsOf';
 import { branchLeadsOf, type BranchLeads } from '../../branchLeadsOf';
 import type { BranchGroup } from '../../branchGroupsOf';
-import { agentSpendById } from '../../timeline/agentSpendById';
+import { agentOwnSpendById } from '../../timeline/agentOwnSpendById';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -34,13 +34,13 @@ export const useBranchLeads = ({ sessionId, group, mountId, mounts }: Params): B
   const telemetry = useAppStore((state) => state.sessionTelemetry[sessionId] ?? NO_TELEMETRY);
   const agentRunHistory = useSessionRunHistory({ sessionId });
   const [openFoldIds, setOpenFoldIds] = useState<ReadonlySet<string>>(new Set());
-  const spendByAgentId = useMemo(
-    () => agentSpendById({ records: telemetry, agents, agentRunHistory }),
+  const ownSpendByAgentId = useMemo(
+    () => agentOwnSpendById({ records: telemetry, agents, agentRunHistory }),
     [agentRunHistory, agents, telemetry],
   );
   const model = useMemo(
-    () => branchLeadsOf({ group, mountId, mounts, views, agents, spendByAgentId, openFoldIds }),
-    [agents, group, mountId, mounts, openFoldIds, spendByAgentId, views],
+    () => branchLeadsOf({ group, mountId, mounts, views, agents, ownSpendByAgentId, openFoldIds }),
+    [agents, group, mountId, mounts, openFoldIds, ownSpendByAgentId, views],
   );
   const onToggleFold = useCallback((foldId: string) => {
     setOpenFoldIds((current) => {

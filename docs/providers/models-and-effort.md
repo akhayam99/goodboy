@@ -161,6 +161,22 @@ shares the Sol weight and comes first in the array: it is the `mid` tier pick.
   only on legacy plans
 - Gemini 4 Carbon carries on Cursor the same post launch rate as on Gemini
 
+### Cache writes
+
+`priceLevels.ts` bills a cache write at 1.25 times the input rate. Claude has a
+second rate: a write kept for one hour bills at 2 times
+(`ONE_HOUR_CACHE_WRITE_FACTOR` in `claude/cost.ts`).
+
+- `longCacheWriteTokensOf` reads
+  `usage.cache_creation.ephemeral_1h_input_tokens` from a stream result, from each
+  assistant message and from a background task's answer. It travels as
+  `longCacheWriteInputTokens`
+- Only that part bills at the one hour rate, capped at the write total. A usage
+  with no split bills every write at 1.25 times
+- Every other provider bills every write at 1.25 times, split or not
+- A telemetry row keeps the price worked out when it was recorded. A later rate
+  change moves no saved amount
+
 ### Gemini price dates
 
 Gemini 3.6, 3.7 and 3.8 Flash bill 0.75/3.75 per Mtok (cached 0.075) in

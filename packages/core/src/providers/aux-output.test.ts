@@ -29,6 +29,22 @@ describe('extractAuxOutput, anthropic envelope', () => {
     });
   });
 
+  it('reads the one hour part of the cache write', () => {
+    const stdout = JSON.stringify({
+      result: 'ledger-core',
+      subtype: 'success',
+      usage: {
+        cache_creation_input_tokens: 90,
+        cache_creation: { ephemeral_5m_input_tokens: 30, ephemeral_1h_input_tokens: 60 },
+      },
+    });
+
+    expect(extractAuxOutput({ providerId: 'anthropic', stdout }).usage).toMatchObject({
+      cacheCreationInputTokens: 90,
+      longCacheWriteInputTokens: 60,
+    });
+  });
+
   it('flags an error payload that exits zero', () => {
     const stdout = JSON.stringify({
       result: 'partial',

@@ -74,7 +74,7 @@ describe('Auto: every capability keeps a home in Auto', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /^Limit: \$10\.00/ }, WAIT));
     const popover = screen.getByRole('dialog', { name: 'Limit' });
-    expect(within(popover).getByText('Spent')).toBeDefined();
+    expect(within(popover).getByText('Counted to limit')).toBeDefined();
     expect(within(popover).getByText('$0.27')).toBeDefined();
     expect(within(popover).getByText('Reserved')).toBeDefined();
     expect(within(popover).getByText('$4.50')).toBeDefined();

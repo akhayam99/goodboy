@@ -16,7 +16,7 @@ import type { BranchBoard } from '../../../central/board/boardTypes';
 import { sessionKpisOf, type SessionKpis } from '../../../central/board/sessionKpisOf';
 import { useTouchedMountIds } from '../../../hooks/useTouchedMountIds';
 import { placedAgentsOf } from '../../../placedAgentsOf';
-import { agentSpendById } from '../../../timeline/agentSpendById';
+import { agentOwnSpendById } from '../../../timeline/agentOwnSpendById';
 
 type Params = {
   readonly session: Session;
@@ -62,8 +62,8 @@ export const useBranchBoard = ({ session, entries }: Params): BranchBoardView =>
       ),
     ),
   );
-  const spendByAgentId = useMemo(
-    () => agentSpendById({ records: telemetry, agents, agentRunHistory }),
+  const ownSpendByAgentId = useMemo(
+    () => agentOwnSpendById({ records: telemetry, agents, agentRunHistory }),
     [agentRunHistory, agents, telemetry],
   );
   const settledAtByMountId = useMemo(() => {
@@ -83,8 +83,16 @@ export const useBranchBoard = ({ session, entries }: Params): BranchBoardView =>
     [agents, allViews, mounts, touchedMountIds],
   );
   const inputs = useMemo(
-    () => boardInputsOf({ agents: placedAgents, questions, views, rootTurns, spendByAgentId, now }),
-    [now, placedAgents, questions, rootTurns, spendByAgentId, views],
+    () =>
+      boardInputsOf({
+        agents: placedAgents,
+        questions,
+        views,
+        rootTurns,
+        ownSpendByAgentId,
+        now,
+      }),
+    [now, ownSpendByAgentId, placedAgents, questions, rootTurns, views],
   );
   const board = useMemo(
     () =>
