@@ -4,9 +4,12 @@ import {
   ICON_SIZE,
   MENU_MAX_WIDTH,
   MenuTriggerButton,
+  POPOVER_WIDTH_CLASS,
+  POPOVER_WIDTH_PX,
   useDropdown,
   type MenuEntry,
 } from '@goodboy/ui';
+import { useEffect } from 'react';
 import { AppMenuList } from '../../../actions/AppMenuList';
 import { actionIntentOf } from '../../../actions/actionIntentOf';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
@@ -17,6 +20,7 @@ import { browserMenuTabsOf, type BrowserMenuTab } from './browserMenuTabsOf';
 import { browserMoreOffOf } from './browserMoreRows';
 import { browserTabRowsOf } from './browserTabRowsOf';
 import { siteDataRowOf } from './siteDataRowOf';
+import { SiteDataPanel } from './SiteDataPanel';
 import { devicePresetOf } from '../../devicePresets';
 
 type Props = {
@@ -25,6 +29,7 @@ type Props = {
 };
 
 const MENU_LABEL = 'Page menu';
+const PANEL_LABEL = 'Site data';
 
 export const BrowserMoreMenu = ({ model, menuTabs }: Props) => {
   const dropdown = useDropdown({
@@ -33,6 +38,18 @@ export const BrowserMoreMenu = ({ model, menuTabs }: Props) => {
     expectedHeight: 240,
     expectedWidth: 260,
   });
+  const panel = useDropdown({
+    width: POPOVER_WIDTH_CLASS.wide,
+    expectedHeight: 320,
+    expectedWidth: POPOVER_WIDTH_PX.wide,
+  });
+  const panelRef = panel.popupRef;
+  const isPanelOpen = panel.open;
+  useEffect(() => {
+    if (isPanelOpen) {
+      panelRef.current?.focus();
+    }
+  }, [isPanelOpen, panelRef]);
   const shown = model.shown;
   const isOff = browserMoreOffOf({
     hasAddress: model.address !== '',
@@ -108,28 +125,44 @@ export const BrowserMoreMenu = ({ model, menuTabs }: Props) => {
       label: 'Develop',
       icon: Code,
       hint: isOff.isWidthOff ? null : devicePresetOf({ id: model.devicePreset }).label,
-      children: browserDevelopRowsOf({ model, isOff }),
+      children: browserDevelopRowsOf({ model, isOff, onShowSiteData: panel.toggle }),
       onSelect: () => undefined,
     },
   ];
 
   return (
     <AnchoredPopover
-      dropdown={dropdown}
+      dropdown={panel}
+      role="dialog"
+      ariaLabel={PANEL_LABEL}
+      tabIndex={-1}
+      className="py-1"
       anchorClassName="shrink-0"
       trigger={
-        <MenuTriggerButton
-          label={MENU_LABEL}
-          tooltip={MENU_LABEL}
-          isOpen={dropdown.open}
-          size="compact"
-          onClick={dropdown.toggle}
+        <AnchoredPopover
+          dropdown={dropdown}
+          trigger={
+            <MenuTriggerButton
+              label={MENU_LABEL}
+              tooltip={MENU_LABEL}
+              isOpen={dropdown.open}
+              size="compact"
+              onClick={() => {
+                panel.close();
+                dropdown.toggle();
+              }}
+            >
+              <ChevronDown size={ICON_SIZE.row} aria-hidden />
+            </MenuTriggerButton>
+          }
         >
-          <ChevronDown size={ICON_SIZE.row} aria-hidden />
-        </MenuTriggerButton>
+          <AppMenuList label={MENU_LABEL} entries={entries} onClose={dropdown.close} />
+        </AnchoredPopover>
       }
     >
-      <AppMenuList label={MENU_LABEL} entries={entries} onClose={dropdown.close} />
+      {model.siteRecords.canList ? (
+        <SiteDataPanel siteRecords={model.siteRecords} readKey={model.shownLiveId} />
+      ) : null}
     </AnchoredPopover>
   );
 };
