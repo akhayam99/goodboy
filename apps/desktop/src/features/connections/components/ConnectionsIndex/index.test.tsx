@@ -134,6 +134,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  useAppStore.setState({ loadCalendarSources: vi.fn(async () => undefined) });
 });
 
 afterEach(cleanup);

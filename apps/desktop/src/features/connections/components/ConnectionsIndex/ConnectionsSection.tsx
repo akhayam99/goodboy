@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { EmptyLine, Eyebrow, SectionHeader } from '@goodboy/ui';
 
 type Props = {
-  readonly id: 'providers' | 'tools';
+  readonly id: 'providers' | 'tools' | 'calendar';
   readonly label: string;
   readonly place: string;
   readonly action?: ReactNode;

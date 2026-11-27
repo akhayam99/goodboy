@@ -394,6 +394,10 @@ c13-workflows-history-empty
 c13-workflows-history-failed
 c13-workflows-history-filter
 c2-next-step
+calendar-connect-denied
+calendar-connect-done
+calendar-connect-link
+calendar-connect-pick
 card-rails
 changelog
 changes-3-files
