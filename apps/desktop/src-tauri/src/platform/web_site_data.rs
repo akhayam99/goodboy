@@ -14,7 +14,7 @@ pub(crate) fn reload_from_origin(platform: tauri::webview::PlatformWebview) {
     let _: *mut AnyObject = unsafe { msg_send![view, reloadFromOrigin] };
 }
 
-fn text_of(name: *mut AnyObject) -> Option<String> {
+pub(crate) fn text_of(name: *mut AnyObject) -> Option<String> {
     if name.is_null() {
         return None;
     }

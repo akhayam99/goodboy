@@ -246,7 +246,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 #### Clear the cache or a site
 
 - **⇧-click** Reload, or **Reload without cache** under Develop, loads the page again and skips the cache.
-- **Clear site data** asks first, then removes the cookies, storage, cache and service workers of the site of the shown tab, and it signs you out of that site. Other sites keep theirs. The page reloads, and a line under the address says "Cleared data for localhost.". If it fails, the page stays and the line says why.
+- **Clear site data** asks first, then removes the cookies, storage, cache and service workers of the site of the shown tab, and it signs you out of that site. When the tab went through a sign-in on another site, a login popup included, the confirm lists that site too and clears it with the page's own. Other sites keep theirs. The page reloads, and a line under the address names every cleared site and says other tabs on them keep their page until you reload them. If it fails, the page stays and the line says why.
 - Off macOS the row says **Clear browser data** and clears every site in the browser of this workspace.
 - **Settings › Workspace › Projects › Danger zone › Clear browser data** clears every site of the workspace. Open tabs reload.
 

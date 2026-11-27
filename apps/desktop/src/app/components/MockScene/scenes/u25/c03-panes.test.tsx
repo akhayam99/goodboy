@@ -32,6 +32,8 @@ beforeAll(async () => {
   useAppStore = await importStore();
   await import('../../../../../features/terminal/components/TerminalDrawer');
   await import('../../../../../features/session/ask/components/AskPane');
+  await import('../../../../../features/scripts/components/SessionScriptsDrawer');
+  await import('../../../../../features/scripts/components/ScriptRunDrawer');
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
