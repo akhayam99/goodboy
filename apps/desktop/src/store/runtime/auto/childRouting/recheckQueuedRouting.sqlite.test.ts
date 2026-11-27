@@ -111,6 +111,32 @@ describe('a queued helper when its turn comes', () => {
     });
   });
 
+  it('starts on a replacement when the stored model left the account meanwhile', async () => {
+    const world = await started();
+    world.state.ports.setRouting({ ...CODEX_ROUTING, source: 'fallback', cause: 'no-access' });
+
+    await endFirstChild({ world });
+
+    expect(world.state.ports.childTurns[4]?.routedModel).toEqual({
+      provider: 'codex',
+      model: 'gpt-6.1-sol',
+    });
+  });
+
+  it('does not start the stored model when it left the account and nothing else fits', async () => {
+    const world = await started();
+    world.state.ports.setRouting({
+      kind: 'blocked',
+      code: 'no_provider',
+      message: 'No model fits this step.',
+      cause: 'no-access',
+    });
+
+    await endFirstChild({ world });
+
+    expect(world.state.ports.childTurns).toHaveLength(4);
+  });
+
   it('keeps the stored model when the pick moved for a reason that is not the provider', async () => {
     const world = await started();
     world.state.ports.setRouting({ ...CODEX_ROUTING, source: 'fallback', cause: 'not-listed' });

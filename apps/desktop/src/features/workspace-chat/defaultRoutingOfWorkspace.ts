@@ -1,7 +1,7 @@
 import type { WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { selectWorkspaceResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
-import { selectHiddenModels } from '../../store/slices/settings/selectHiddenModels';
+import { selectBlockedModels } from '../../store/slices/providers/selectBlockedModels';
 import type { ChatRouting } from '../conversation/chatRouting';
 import { chatDefaultModelKey, parseChatDefaultModel } from './chatDefaultModelSetting';
 import { defaultChatRouting } from './defaultChatRouting';
@@ -40,7 +40,7 @@ export const defaultRoutingOfWorkspace = async ({
   return defaultChatRouting({
     connected,
     saved: parseChatDefaultModel({ raw }),
-    hidden: selectHiddenModels({ state }),
+    hidden: selectBlockedModels({ state }),
     workspaceDefaultProvider: selectWorkspaceResolvedSettings({ state, workspaceId })
       .defaultProviderOverride,
   });

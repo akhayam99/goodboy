@@ -7,13 +7,20 @@ type Params = {
 };
 
 export const learnModelUnavailable = ({ write }: Params) => {
-  return async ({ providerId, accountId, modelKey }: UnavailableModel): Promise<void> => {
-    const model = { providerId, accountId, modelKey };
+  return async ({
+    providerId,
+    accountId,
+    modelKey,
+    plan,
+    source,
+    checkedAt,
+  }: UnavailableModel): Promise<void> => {
+    const model = { providerId, accountId, modelKey, plan, source, checkedAt };
     await write({
-      change: ({ current }) =>
-        current.some((entry) => isSameUnavailableModel({ entry, model }))
-          ? null
-          : [...current, model],
+      change: ({ current }) => [
+        ...current.filter((entry) => !isSameUnavailableModel({ entry, model })),
+        model,
+      ],
     });
   };
 };

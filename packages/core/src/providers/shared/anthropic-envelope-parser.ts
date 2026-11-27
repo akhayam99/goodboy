@@ -58,6 +58,27 @@ type StreamEventParams = {
   readonly at: IsoDateTime;
 };
 
+type ResultEndParams = {
+  readonly payload: Record<string, unknown>;
+  readonly runId: ProviderRunId;
+  readonly at: IsoDateTime;
+};
+
+const RESULT_ERROR_FALLBACK = 'The run ended with an error and no message.';
+
+const resultEndOf = ({ payload, runId, at }: ResultEndParams): TurnEvent => {
+  const errorText = typeof payload.error === 'string' ? payload.error : null;
+  const resultText = typeof payload.result === 'string' ? payload.result.trim() : '';
+  if (payload.is_error === true) {
+    const message = errorText ?? (resultText === '' ? RESULT_ERROR_FALLBACK : resultText);
+    return { kind: 'error', runId, message, at };
+  }
+  if (payload.subtype !== 'success' && errorText !== null) {
+    return { kind: 'error', runId, message: errorText, at };
+  }
+  return { kind: 'done', runId, at };
+};
+
 const streamEventEvents = ({ payload, ctx, at }: StreamEventParams): ReadonlyArray<TurnEvent> => {
   if (payload.parent_tool_use_id != null) {
     return [];
@@ -344,14 +365,7 @@ export const parseAnthropicEnvelopeValue = ({
           at,
         }),
       );
-      const subtype = payload.subtype as string | undefined;
-      if (subtype === 'success') {
-        events.push({ kind: 'done', runId: ctx.runId, at });
-      } else if (typeof payload.error === 'string') {
-        events.push({ kind: 'error', runId: ctx.runId, message: payload.error, at });
-      } else {
-        events.push({ kind: 'done', runId: ctx.runId, at });
-      }
+      events.push(resultEndOf({ payload, runId: ctx.runId, at }));
       resetTextBoundary({ runId: ctx.runId });
       resetStreamedText({ ctx });
       return events;

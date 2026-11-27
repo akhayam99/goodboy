@@ -8,6 +8,7 @@ import type {
 } from '@goodboy/types';
 import type { AutoContext } from '../autoRouting/autoTypes';
 import type { Rung } from '../autoRouting/effortLadder';
+import type { HiddenModels } from '../modelVisibility';
 import type { CandidateCause } from './candidateCauses';
 import type { ModelFamily } from './modelFamily';
 
@@ -30,6 +31,7 @@ export type CandidateInputs = AutoContext &
     room?: Readonly<Partial<Record<ProviderId, CandidateRoom>>>;
     load?: Readonly<Partial<Record<ProviderId, number>>>;
     rolePins?: RoleModelPreferences | null;
+    noAccess?: HiddenModels | null;
   }>;
 
 export type CandidateNeed = Readonly<{
@@ -65,6 +67,7 @@ export type CandidateList = Readonly<{
   excluded: ReadonlyArray<CandidateExclusion>;
   isPinned: boolean;
   isSameFamilyKept: boolean;
+  noAccess?: HiddenModels | null;
 }>;
 
 export type CandidatePick = Readonly<{

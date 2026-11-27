@@ -39,6 +39,22 @@ const CHATGPT_ACCOUNT =
 
 const CODEX_ACCOUNT = 'model gpt-6.1-sol is not available with this Codex account';
 
+const NOW = Date.UTC(2026, 10, 20, 9, 0, 0);
+
+type RefusedParams = {
+  readonly modelKey: string;
+  readonly checkedAt: number;
+};
+
+const refused = ({ modelKey, checkedAt }: RefusedParams) => ({
+  providerId: 'codex' as const,
+  accountId: ACCOUNT,
+  modelKey,
+  plan: null,
+  source: 'refused' as const,
+  checkedAt,
+});
+
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
@@ -59,13 +75,22 @@ describe('a provider that refuses a model for this account', () => {
       get: useAppStore.getState,
       providerId: 'codex',
       accountId: ACCOUNT,
+      plan: null,
       model: 'gpt-6.1-sol',
       message,
+      nowMs: NOW,
     });
 
     await vi.waitFor(() =>
       expect(useAppStore.getState().unavailableModels).toEqual([
-        { providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6.1-sol' },
+        {
+          providerId: 'codex',
+          accountId: ACCOUNT,
+          modelKey: 'gpt-6.1-sol',
+          plan: null,
+          source: 'refused',
+          checkedAt: NOW,
+        },
       ]),
     );
     expect(storySpies.setSetting).toHaveBeenCalledWith(
@@ -75,21 +100,78 @@ describe('a provider that refuses a model for this account', () => {
     );
   });
 
+  it.each([
+    [
+      'anthropic',
+      'claude-opus-5-5',
+      'opus-5.5',
+      "There's an issue with the selected model (claude-opus-5-5). It may not exist or you may not have access to it.",
+    ],
+    [
+      'anthropic',
+      'claude-opus-5-5',
+      'opus-5.5',
+      'Claude Opus is not available with the Claude Pro plan. If you have updated your subscription plan recently, run /logout and /login for the plan to take effect.',
+    ],
+  ] as const)(
+    'remembers a %s refusal with the plan the run started on',
+    async (providerId, model, modelKey, message) => {
+      useAppStore.setState({
+        providers: [{ ...codex, id: providerId, label: 'Claude', binary: 'claude' }],
+        authResults: { [providerId]: { state: 'connected', identity: ACCOUNT, plan: 'max' } },
+      });
+
+      learnFromCliRefusal({
+        get: useAppStore.getState,
+        providerId,
+        accountId: ACCOUNT,
+        plan: 'Pro',
+        model,
+        message,
+        nowMs: NOW,
+      });
+
+      await vi.waitFor(() =>
+        expect(useAppStore.getState().unavailableModels).toEqual([
+          {
+            providerId,
+            accountId: ACCOUNT,
+            modelKey,
+            plan: 'Pro',
+            source: 'refused',
+            checkedAt: NOW,
+          },
+        ]),
+      );
+    },
+  );
+
+  it('keeps one entry per model and refreshes its check time when it is refused again', async () => {
+    const { learnModelUnavailable } = useAppStore.getState();
+    await learnModelUnavailable(refused({ modelKey: 'gpt-6.1-sol', checkedAt: NOW }));
+
+    await learnModelUnavailable(refused({ modelKey: 'gpt-6.1-sol', checkedAt: NOW + 1_000 }));
+
+    expect(useAppStore.getState().unavailableModels).toEqual([
+      refused({ modelKey: 'gpt-6.1-sol', checkedAt: NOW + 1_000 }),
+    ]);
+  });
+
   it('keeps every refusal and clearing on disk when they land together', async () => {
     useAppStore.setState({
-      unavailableModels: [{ providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6-astra' }],
+      unavailableModels: [refused({ modelKey: 'gpt-6-astra', checkedAt: NOW })],
     });
     const { learnModelUnavailable, clearModelUnavailable } = useAppStore.getState();
 
     await Promise.all([
-      learnModelUnavailable({ providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6.1-sol' }),
-      learnModelUnavailable({ providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6.1-luna' }),
+      learnModelUnavailable(refused({ modelKey: 'gpt-6.1-sol', checkedAt: NOW })),
+      learnModelUnavailable(refused({ modelKey: 'gpt-6.1-luna', checkedAt: NOW })),
       clearModelUnavailable({ providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6-astra' }),
     ]);
 
     const saved = [
-      { providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6.1-sol' },
-      { providerId: 'codex', accountId: ACCOUNT, modelKey: 'gpt-6.1-luna' },
+      refused({ modelKey: 'gpt-6.1-sol', checkedAt: NOW }),
+      refused({ modelKey: 'gpt-6.1-luna', checkedAt: NOW }),
     ];
     expect(useAppStore.getState().unavailableModels).toEqual(saved);
     expect(storySpies.setSetting).toHaveBeenLastCalledWith(
@@ -104,6 +186,7 @@ describe('a provider that refuses a model for this account', () => {
       get: useAppStore.getState,
       providerId: 'codex',
       accountId: ACCOUNT,
+      plan: null,
       model: 'gpt-6.1-sol',
       message: 'connection reset by peer',
     });
