@@ -11,6 +11,23 @@ type Params = {
   readonly workspaceId: WorkspaceId;
 };
 
+type RawParams = {
+  readonly state: AppStore;
+  readonly key: ReturnType<typeof chatDefaultModelKey>;
+};
+
+const savedRawOf = async ({ state, key }: RawParams): Promise<string | null | undefined> => {
+  const known = state.settings[key];
+  if (known !== undefined) {
+    return known;
+  }
+  try {
+    return await state.loadSetting(key);
+  } catch {
+    return null;
+  }
+};
+
 export const defaultRoutingOfWorkspace = async ({
   state,
   workspaceId,
@@ -19,7 +36,7 @@ export const defaultRoutingOfWorkspace = async ({
     .filter((provider) => provider.connection === 'connected')
     .map((provider) => provider.id);
   const key = chatDefaultModelKey({ workspaceId });
-  const raw = state.settings[key] ?? (await state.loadSetting(key).catch(() => null));
+  const raw = await savedRawOf({ state, key });
   return defaultChatRouting({
     connected,
     saved: parseChatDefaultModel({ raw }),

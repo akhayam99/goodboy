@@ -1,4 +1,5 @@
 import { brandId, type ChatId, type WorkspaceId } from '@goodboy/types';
+import { startPoll } from '../../../shared/lib/usePoll/startPoll';
 import type { AppStore } from '../../../store/store';
 import type { SendChatMessageAction } from '../contract/actions';
 import { chatSendKeyOf, chatSendVersionOf } from './phoneActionIds';
@@ -27,15 +28,20 @@ const startedOf = ({ sending, getStore, chatId }: StartParams): Promise<boolean>
         return;
       }
       isSettled = true;
-      clearInterval(poll);
+      stopPoll();
       clearTimeout(limit);
       resolve(isStarted);
     };
-    const poll = setInterval(() => {
-      if (getStore().chatStreams[chatId] !== undefined) {
-        finish({ isStarted: true });
-      }
-    }, CHAT_START_POLL_MS);
+    const stopPoll = startPoll({
+      run: () => {
+        if (getStore().chatStreams[chatId] !== undefined) {
+          finish({ isStarted: true });
+        }
+      },
+      everyMs: CHAT_START_POLL_MS,
+      gate: 'always',
+      isImmediate: false,
+    });
     const limit = setTimeout(() => finish({ isStarted: false }), CHAT_START_WAIT_MS);
     sending.then(
       (isStarted) => finish({ isStarted }),
