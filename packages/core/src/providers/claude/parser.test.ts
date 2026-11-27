@@ -212,6 +212,45 @@ describe('parseStreamJsonLine', () => {
     expect(events[1]).toMatchObject({ kind: 'done' });
   });
 
+  it('reads the one hour part of the cache write from the result and from a large request', () => {
+    const turnContext: ParseContext = { ...ctx };
+    const written = {
+      cache_creation_input_tokens: 120_000,
+      cache_creation: { ephemeral_5m_input_tokens: 20_000, ephemeral_1h_input_tokens: 100_000 },
+    };
+    parseStreamJsonLine(
+      JSON.stringify({ type: 'assistant', message: { id: 'msg_a', content: [], usage: written } }),
+      turnContext,
+    );
+
+    const events = parseStreamJsonLine(
+      JSON.stringify({ type: 'result', subtype: 'success', usage: written }),
+      turnContext,
+    );
+
+    expect(events[0]).toMatchObject({
+      kind: 'usage',
+      usage: {
+        cacheCreationInputTokens: 120_000,
+        longCacheWriteInputTokens: 100_000,
+        largeRequests: [{ cacheCreationInputTokens: 120_000, longCacheWriteInputTokens: 100_000 }],
+      },
+    });
+  });
+
+  it('reports no one hour part when the result has no cache write split', () => {
+    const events = parse(
+      JSON.stringify({
+        type: 'result',
+        subtype: 'success',
+        usage: { cache_creation_input_tokens: 3 },
+      }),
+    );
+
+    expect(events[0]).toMatchObject({ kind: 'usage' });
+    expect(events[0]).not.toHaveProperty('usage.longCacheWriteInputTokens');
+  });
+
   it('uses the last assistant API call for context tokens', () => {
     const turnContext: ParseContext = {
       runId: 'run_context' as ProviderRunId,

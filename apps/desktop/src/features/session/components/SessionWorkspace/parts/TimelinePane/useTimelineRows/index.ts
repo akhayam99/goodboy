@@ -94,7 +94,6 @@ export const useTimelineRows = ({
     worktrees,
     events,
     workflows,
-    autoTrees,
     advanceByRunId,
     decidingRunIds,
     unreadAgentIds,
@@ -131,15 +130,10 @@ export const useTimelineRows = ({
     return steps;
   }, [workflows]);
 
-  const spendByAgentId = useMemo(() => {
-    const spend = new Map(agentSpendById({ records: telemetry, agents, agentRunHistory }));
-    for (const view of autoTrees) {
-      if (view.budget !== null) {
-        spend.set(view.tree.rootAgentId, view.budget.spentUsd);
-      }
-    }
-    return spend;
-  }, [agentRunHistory, agents, autoTrees, telemetry]);
+  const spendByAgentId = useMemo(
+    () => agentSpendById({ records: telemetry, agents, agentRunHistory }),
+    [agentRunHistory, agents, telemetry],
+  );
 
   const spendByRunId = useMemo(() => {
     const spend = new Map<string, number>();

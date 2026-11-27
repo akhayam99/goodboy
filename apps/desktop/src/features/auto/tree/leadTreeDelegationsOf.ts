@@ -10,7 +10,7 @@ import type { LeadTreeDelegation } from './leadTreeOf';
 type Params = {
   readonly delegations: ReadonlyArray<AutoDelegation>;
   readonly agents: ReadonlyArray<Agent>;
-  readonly spendByAgentId: ReadonlyMap<AgentId, number>;
+  readonly ownSpendByAgentId: ReadonlyMap<AgentId, number>;
   readonly leadAgentId: AgentId;
 };
 
@@ -22,7 +22,7 @@ export type LeadTreeFacts = Readonly<{
 export const leadTreeDelegationsOf = ({
   delegations,
   agents,
-  spendByAgentId,
+  ownSpendByAgentId,
   leadAgentId,
 }: Params): LeadTreeFacts => {
   const agentById = new Map(agents.map((agent) => [agent.id, agent]));
@@ -48,7 +48,7 @@ export const leadTreeDelegationsOf = ({
         createdAt: delegation.createdAt,
         isSettled: delegation.state === 'settled',
         mountId: delegationMountIdOf({ delegation }),
-        spendUsd: spendByAgentId.get(delegation.childAgentId) ?? 0,
+        spendUsd: ownSpendByAgentId.get(delegation.childAgentId) ?? 0,
       };
     });
   return { delegations: facts, agentsById };
