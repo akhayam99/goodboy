@@ -71,4 +71,8 @@ describe('PROVIDER_FLAGS', () => {
   it('follows Allow and Deny rules for anthropic only', () => {
     expect(idsWhere((id) => providerFlags({ id }).canFollowRules)).toEqual(['anthropic']);
   });
+
+  it('takes a Lead delivery as changes on a kept session for anthropic only', () => {
+    expect(idsWhere((id) => providerFlags({ id }).canTakeLeadDelta)).toEqual(['anthropic']);
+  });
 });

@@ -35,13 +35,13 @@ describe('backAfterPlace', () => {
     expect(back).toBeNull();
   });
 
-  it('keeps a browser behind a terminal', () => {
+  it('keeps no browser behind a terminal, both stay in the grid', () => {
     const browser: OpenDrawer = { kind: 'browser', sessionId: S1, payload: null };
     const back = backAfterPlace({
       state: { drawer: browser, drawerBack: null, dockScope: null },
       place: BOARD_PLACE,
       drawer: terminal({ sessionId: S1, tab: 'tab-ledger-dev' }),
     });
-    expect(back).toEqual(browser);
+    expect(back).toBeNull();
   });
 });

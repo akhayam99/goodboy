@@ -352,23 +352,6 @@ describe('SessionTools', () => {
       node.getAttribute('data-state'),
     );
     expect(states).toEqual(RAIL_TOOLS.map(() => 'rest'));
-    expect(screen.queryByTestId('tool-waiting')).toBeNull();
-  });
-
-  it('rings the tool waiting in the back chip and swaps them when it is pressed', () => {
-    render(<SessionTools sessionId={SESSION_ID} />);
-    act(() => {
-      useAppStore.setState({ drawer: BROWSER, drawerBack: TERMINAL });
-    });
-    expect(stateOf('browser')).toBe('pressed');
-    expect(stateOf('terminal')).toBe('waiting');
-    expect(screen.getAllByTestId('tool-waiting')).toHaveLength(1);
-    expect(toggle('terminal').getAttribute('aria-label')).toBe('Terminal, waiting');
-
-    fireEvent.click(toggle('terminal'));
-
-    expect(stateOf('terminal')).toBe('pressed');
-    expect(stateOf('browser')).toBe('waiting');
   });
 
   it('keeps the open tool pressed beside a reading panel and after it closes', () => {
@@ -391,25 +374,6 @@ describe('SessionTools', () => {
 
     expect(drawerKind()).toBe('terminal');
     expect(stateOf('terminal')).toBe('pressed');
-  });
-
-  it('rings nothing when the back chip holds a reader, and when it holds the pressed tool', () => {
-    render(<SessionTools sessionId={SESSION_ID} />);
-    act(() => {
-      useAppStore.setState({
-        drawer: TERMINAL,
-        drawerBack: {
-          kind: 'conversation',
-          sessionId: SESSION_ID,
-          payload: { threadId: 'thread-1' },
-        },
-      });
-    });
-    expect(screen.queryByTestId('tool-waiting')).toBeNull();
-    act(() => {
-      useAppStore.setState({ drawerBack: TERMINAL });
-    });
-    expect(screen.queryByTestId('tool-waiting')).toBeNull();
   });
 
   it('keeps focus on the same tool when the rail moves into a page and back', () => {

@@ -38,6 +38,7 @@ export const makeStartAutoTurn =
         sessionId: params.sessionId,
         agentId: params.agentId,
         content: params.text,
+        ...(params.parts !== undefined && { leadDelivery: params.parts }),
         ...(params.images !== undefined &&
           params.images.length > 0 && { storedAttachments: params.images }),
         ...(params.rowIds !== undefined && { outboxIds: params.rowIds }),

@@ -919,8 +919,6 @@ session-hover
 session-marks
 session-marks-bitbucket
 session-pinned
-session-rail-pressed
-session-rail-waiting
 session-start
 session-states
 session-studio-over
@@ -958,9 +956,6 @@ side-signals-running
 side-tiles-dark
 side-tiles-light
 slack-permissions
-slot-back-chip
-slot-back-chip-narrow
-slot-back-chip-swapped
 space-diff-comment
 space-diff-split
 start-from-inbox

@@ -1,10 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { AUTO_BRIEF_VERSION } from '@goodboy/core/auto';
+import { AUTO_BRIEF_VERSION, joinDeliveryParts } from '@goodboy/core/auto';
 import { SLOT_BUDGETS, SLOT_KEYS } from '@goodboy/core/context';
 import type { ContextSlot } from '@goodboy/types';
 import { briefSlotsOf } from '../../../../store/slices/turn/briefSlotsOf';
-import { buildContextPreamble } from '../../../../store/slices/turn/preamble';
+import { contextPreambleParts } from '../../../../store/slices/turn/preamble';
 import { estimateTokens } from '../../../../shared/utils/estimate-tokens';
 import { ROLE_SLOTS } from '../../../context/slotRouting';
 import { ROLE_LABEL } from '../../agent-kind';
@@ -69,7 +69,9 @@ describe('sendRowsOf', () => {
   it('weighs each role by the shared context its preamble carries', () => {
     const { rows } = sendRowsOf({ slots: FULL_SLOTS });
     const scout = rowOf({ rows, label: [ROLE_LABEL.scout, ROLE_LABEL.docs].join(', ') });
-    const preamble = buildContextPreamble(FULL_SLOTS, ROLE_SLOTS.scout);
+    const preamble = joinDeliveryParts({
+      parts: contextPreambleParts({ sharedSlots: FULL_SLOTS, slotFilter: ROLE_SLOTS.scout }),
+    });
 
     expect(scout.tokens).toBeGreaterThan(0);
     expect(estimateTokens(preamble)).toBeGreaterThan(scout.tokens);

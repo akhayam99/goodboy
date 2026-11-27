@@ -10,7 +10,6 @@ import { deskAgentIdOf } from './deskAgentIdOf';
 import { deskDetailOf } from './deskDetailOf';
 import { deskStackOf } from './deskStackOf';
 import { selectDetailDrawer } from './selectDetailDrawer';
-import { selectSlotBack } from './selectSlotBack';
 import { shownDeskStackOf } from './shownDeskStackOf';
 import type { DrawerRequest } from './state';
 
@@ -84,20 +83,42 @@ describe('the detail place on the Desk', () => {
     });
   });
 
-  it('keeps the Overview on one reader with a back chip, never the pair', () => {
+  it('keeps the Overview on one reader, never the pair', () => {
     store.setState({ sessionFace: { [SESSION_ID]: 'overview' } });
     store.getState().openDrawer(agentOf({ id: 'implementer' }));
     store.getState().openDrawer(PR);
 
     expect(shownDeskStackOf({ state: store.getState() })).toBeNull();
-    expect(selectSlotBack({ state: store.getState() })?.kind).toBe('transcript');
+    expect(store.getState().drawerBack).toBeNull();
   });
 
-  it('selects and saves only the agent the detail shows, never one left in the back chip', () => {
+  it('closes the pull request on the Overview without bringing the agent back', () => {
+    store.setState({ sessionFace: { [SESSION_ID]: 'overview' } });
+    store.getState().openDrawer(agentOf({ id: 'implementer' }));
+    store.getState().openDrawer(PR);
+
+    store.getState().closeDrawer();
+
+    expect(store.getState().drawer).toBeNull();
+  });
+
+  it('drops the second reader when the Desk closes, and keeps the top one', () => {
+    store.getState().openDrawer(agentOf({ id: 'implementer' }));
+    store.getState().openDrawer(PR);
+    expect(stack()).toEqual({ agent: 'implementer', pr: 'checks' });
+
+    store.getState().setSessionFace({ sessionId: SESSION_ID, face: 'overview' });
+
+    expect(store.getState().drawer?.kind).toBe('pull-request');
+    expect(store.getState().drawerBack).toBeNull();
+    store.getState().closeDrawer();
+    expect(store.getState().drawer).toBeNull();
+  });
+
+  it('selects and saves only the agent the detail shows, never one a later reader replaced', () => {
     store.getState().openDrawer(agentOf({ id: 'implementer' }));
     store.getState().openDrawer(SCRIPTS);
 
-    expect(selectSlotBack({ state: store.getState() })?.kind).toBe('transcript');
     expect(deskAgentIdOf({ state: store.getState(), sessionId: SESSION_ID })).toBeNull();
     expect(deskDetailOf({ state: store.getState(), sessionId: SESSION_ID })).toEqual([]);
   });
@@ -119,7 +140,6 @@ describe('the detail place on the Desk', () => {
 
     expect(stack()).toEqual({ agent: 'implementer', pr: 'checks' });
     expect(toolKinds()).toEqual(['terminal']);
-    expect(selectSlotBack({ state: store.getState() })).toBeNull();
   });
 
   it('keeps both readers when the pull request opens first', () => {
@@ -186,13 +206,13 @@ describe('the detail place on the Desk', () => {
     expect(selectDetailDrawer({ state: store.getState() })?.kind).toBe('pull-request');
   });
 
-  it('another reader takes the detail place, with the old top in the back chip', () => {
+  it('another reader takes the detail place and the old top leaves', () => {
     store.getState().openDrawer(agentOf({ id: 'implementer' }));
     store.getState().openDrawer(PR);
     store.getState().openDrawer(SCRIPTS);
 
     expect(stack()).toBeNull();
     expect(selectDetailDrawer({ state: store.getState() })?.kind).toBe('conversation');
-    expect(selectSlotBack({ state: store.getState() })?.kind).toBe('pull-request');
+    expect(store.getState().drawerBack).toBeNull();
   });
 });
