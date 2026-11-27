@@ -1,6 +1,4 @@
-use tauri::{
-    AppHandle, LogicalPosition, LogicalSize, Manager, Monitor, WebviewUrl, WebviewWindowBuilder,
-};
+use tauri::{AppHandle, LogicalSize, Manager, Monitor, WebviewUrl, WebviewWindowBuilder};
 
 use super::error::CalendarError;
 
@@ -56,17 +54,12 @@ fn failed(error: tauri::Error) -> CalendarError {
 }
 
 pub(crate) fn show_chip(app: &AppHandle, height: f64) -> Result<bool, CalendarError> {
-    let origin = active_screen(app).map(chip_origin);
-    if let Some(window) = app.get_webview_window(CHIP_LABEL) {
-        if let Some((x, y)) = origin {
-            window
-                .set_position(LogicalPosition::new(x, y))
-                .map_err(failed)?;
-        }
-        window.show().map_err(failed)?;
+    if app.get_webview_window(CHIP_LABEL).is_some() {
         return Ok(false);
     }
-    let (x, y) = origin.unwrap_or((0.0, CHIP_TOP_INSET));
+    let (x, y) = active_screen(app)
+        .map(chip_origin)
+        .unwrap_or((0.0, CHIP_TOP_INSET));
     WebviewWindowBuilder::new(app, CHIP_LABEL, WebviewUrl::App("index.html".into()))
         .title("Goodboy call")
         .inner_size(CHIP_WIDTH, chip_height(height))

@@ -76,15 +76,23 @@ describe('reduceCallChip', () => {
     expect(second.effects[0]).toEqual({ kind: 'open-link', link: UNKNOWN.link });
   });
 
-  it('snoozes for five minutes and asks Rust to come back then', () => {
+  it('asks Rust to come back in five minutes and says snoozed only once Rust agreed', () => {
     const now = START - MINUTE;
+    const countdown: ChipState = { kind: 'countdown', call: SYNC };
+    const asked = run({ state: countdown, input: { kind: 'snooze' }, now });
+    expect(asked.state).toBe(countdown);
+    expect(asked.effects).toEqual([{ kind: 'snooze', eventId: SYNC.id, at: now + 5 * MINUTE }]);
     const snoozed = run({
-      state: { kind: 'countdown', call: SYNC },
-      input: { kind: 'snooze' },
+      state: asked.state,
+      input: { kind: 'snoozed', eventId: SYNC.id, until: now + 5 * MINUTE },
       now,
     });
     expect(snoozed.state).toEqual({ kind: 'snoozed', call: SYNC, until: now + 5 * MINUTE });
-    expect(snoozed.effects).toEqual([{ kind: 'snooze', eventId: SYNC.id, at: now + 5 * MINUTE }]);
+    const other = run({
+      state: countdown,
+      input: { kind: 'snoozed', eventId: 'acme-review', until: now + 5 * MINUTE },
+    });
+    expect(other.state).toBe(countdown);
     const back = run({
       state: HIDDEN,
       input: { kind: 'alert', moment: 'snoozed', call: SYNC },

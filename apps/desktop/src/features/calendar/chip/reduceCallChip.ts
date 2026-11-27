@@ -82,11 +82,13 @@ export const reduceCallChip = ({ state, input, now }: Params): Reduced => {
     return stay({ state });
   }
   if (input.kind === 'snooze') {
-    const at = now + SNOOZE_MS;
-    return {
-      state: { kind: 'snoozed', call, until: at },
-      effects: [{ kind: 'snooze', eventId: call.id, at }],
-    };
+    return { state, effects: [{ kind: 'snooze', eventId: call.id, at: now + SNOOZE_MS }] };
+  }
+  if (input.kind === 'snoozed') {
+    if (input.eventId !== call.id) {
+      return stay({ state });
+    }
+    return stay({ state: { kind: 'snoozed', call, until: input.until } });
   }
   if (call.isLinkTrusted || state.kind === 'check-link') {
     return join({ call, now });

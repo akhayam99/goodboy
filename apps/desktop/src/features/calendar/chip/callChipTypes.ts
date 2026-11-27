@@ -43,6 +43,7 @@ export type ChipAction =
 export type ChipInput =
   | Readonly<{ kind: 'alert'; moment: CallMoment; call: ChipCall }>
   | Readonly<{ kind: 'ended'; call: ChipCall; held: ReadonlyArray<AwayBanner> }>
+  | Readonly<{ kind: 'snoozed'; eventId: string; until: number }>
   | Readonly<{ kind: 'join' | 'snooze' | 'hide' | 'return' }>;
 
 export type ChipEffect =

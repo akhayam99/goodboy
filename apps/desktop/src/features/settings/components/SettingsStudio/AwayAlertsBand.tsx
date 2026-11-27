@@ -9,6 +9,9 @@ import { SettingRow } from './SettingRow';
 
 const BANNER_HELP = 'When an agent needs you and Goodboy is in the background.';
 const BADGE_HELP = 'Sessions that need you, on the app icon.';
+const CALL_CHIP_LABEL = 'Show the call chip';
+const CALL_CHIP_HELP =
+  'A small window over every app before a call with a link. Off sends a banner instead.';
 
 type ValueParams<Value> = {
   readonly value: Value;
@@ -21,6 +24,8 @@ export const AwayAlertsBand = () => {
   const isBadgeOn = useAwayAlertsStore((state) => state.isBadgeOn);
   const setBadge = useAwayAlertsStore((state) => state.setBadge);
   const setBannerChoice = useAwayAlertsStore((state) => state.setBannerChoice);
+  const isCallChipOn = useAwayAlertsStore((state) => state.isCallChipOn);
+  const setCallChip = useAwayAlertsStore((state) => state.setCallChip);
 
   const writeBanner = useCallback(
     async ({ value: isOn }: ValueParams<boolean>) => {
@@ -38,6 +43,14 @@ export const AwayAlertsBand = () => {
     },
     [setBadge],
   );
+  const writeCallChip = useCallback(
+    async ({ value: isOn }: ValueParams<boolean>) => {
+      if (!setCallChip({ isOn })) {
+        throw notStored();
+      }
+    },
+    [setCallChip],
+  );
   const banner = useSettingSave({
     rowKey: settingRowKey({ workspaceId: null, row: 'awayBanner' }),
     saved: bannerChoice === 'on',
@@ -51,6 +64,13 @@ export const AwayAlertsBand = () => {
     write: writeBadge,
     display: SWITCH_SETTING.display,
     failureTitle: "Couldn't save the dock badge",
+  });
+  const callChip = useSettingSave({
+    rowKey: settingRowKey({ workspaceId: null, row: 'callChip' }),
+    saved: isCallChipOn,
+    write: writeCallChip,
+    display: SWITCH_SETTING.display,
+    failureTitle: "Couldn't save the call chip",
   });
 
   return (
@@ -82,6 +102,20 @@ export const AwayAlertsBand = () => {
             ariaLabel="Dock badge"
             checked={badge.value}
             onChange={(isNext) => void badge.save({ value: isNext })}
+          />
+        </SettingRow>
+        <SettingRow
+          label={CALL_CHIP_LABEL}
+          rowKey="call-chip"
+          help={CALL_CHIP_HELP}
+          isChanged={!callChip.value}
+          onReset={() => void callChip.save({ value: true })}
+          save={callChip}
+        >
+          <Switch
+            ariaLabel={CALL_CHIP_LABEL}
+            checked={callChip.value}
+            onChange={(isNext) => void callChip.save({ value: isNext })}
           />
         </SettingRow>
       </div>

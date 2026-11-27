@@ -14,6 +14,8 @@ import {
 import { awayBannersOf, type AwayBanner } from '../../away/awayBannersOf';
 import { useAwayAlertsStore } from '../../away/awayAlertsStore';
 import { bannerCandidatesOf } from '../../away/bannerCandidatesOf';
+import { useCallQuietStore } from '../../away/callQuietStore';
+import { heldDuringCall } from '../../away/heldDuringCall';
 import { listenBannerTaps, type BannerTap } from '../../away/listenBannerTaps';
 import { recentBannersOf } from '../../away/recentBannersOf';
 import { setDockBadge } from '../../away/setDockBadge';
@@ -155,7 +157,14 @@ export const useAwayAlerts = (): void => {
       const stillWaiting = banners.filter((banner) =>
         banner.keys.some((key) => liveKeys.current.has(key)),
       );
-      for (const banner of stillWaiting) {
+      const quiet = useCallQuietStore.getState();
+      const { shown, held } = heldDuringCall({
+        banners: stillWaiting,
+        quiet: quiet.quiet,
+        now: Date.now(),
+      });
+      quiet.hold({ banners: held });
+      for (const banner of shown) {
         const outcome = await showAwayBanner({ banner, workspaceId });
         if (outcome === 'denied') {
           useAwayAlertsStore.getState().setBannerChoice({ choice: 'off' });
