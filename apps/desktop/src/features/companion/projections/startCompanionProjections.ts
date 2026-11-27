@@ -56,7 +56,7 @@ export const startCompanionProjections = async (): Promise<UnlistenFn> => {
       const now = Date.now();
       const state = useAppStore.getState();
       preloadAskTranscripts({ state });
-      preloadSessionDetail({ state });
+      preloadSessionDetail({ state, now });
       const drafts = projectionFieldsOf({
         scopes: scopesNow(),
         detailWorkspaceId: state.currentWorkspaceId,

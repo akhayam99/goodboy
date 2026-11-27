@@ -141,10 +141,11 @@ also carries a `shortName` for the crumb (the first line of the goal without its
 leading `[KEY]` tags, cut at a word to 32 characters), the `artifacts` of the
 session (title, kind, author role, version, update time, comment count, whether
 a plan waits for approval with the `approvePlan` action id, and, for a plan,
-the markdown body cut to 4000 characters and 20000 across the list; a report
-and a wireframe carry no body), the `questions` (the open
+the markdown body cut to 4000 characters and 20000 UTF-8 bytes across the list; a report
+and a wireframe carry no body; a discarded artifact is never listed or counted), the `questions` (the open
 ones, then the answered ones, with the options, who asked and the answer) and
-the `counts` the tabs show (runs, artifacts, open questions). Each project row
+the `counts` the tabs show (runs, artifacts, open questions: all of them, not
+only the ones sent). Each project row
 adds the pull request word the Mac shows (`No pull request`, `Draft`, `Open`,
 `Merged`) with its tone, the lines added and deleted of the session (absent
 until every changed file is known) and the run count. The Mac loads the
