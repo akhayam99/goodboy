@@ -53,6 +53,33 @@ describe('computeCodexCostUsd', () => {
     ).toBeCloseTo(2.1);
   });
 
+  it.each([
+    { model: 'gpt-6.2-astra', cost: 48, cached: 0.4 },
+    { model: 'gpt-6.2-sol', cost: 12, cached: 0.1 },
+    { model: 'gpt-6.1-terra', cost: 6, cached: 0.05 },
+  ])('bills $model at the rate OpenAI lists per million tokens', ({ model, cost, cached }) => {
+    expect(computeCodexCostUsd({ usage, model })).toBeCloseTo(cost);
+    expect(
+      computeCodexCostUsd({
+        usage: { ...usage, cachedInputTokens: 1_000_000, outputTokens: 0 },
+        model,
+      }),
+    ).toBeCloseTo(cached);
+  });
+
+  it.each([
+    { model: 'gpt-6.2-astra', longCached: 0.8 },
+    { model: 'gpt-6.2-sol', longCached: 0.2 },
+    { model: 'gpt-6.1-terra', longCached: 0.1 },
+    { model: 'gpt-6-luna', longCached: 0.02 },
+    { model: 'gpt-5.6-sol', longCached: 0.8 },
+    { model: 'gpt-5.6-terra', longCached: 0.4 },
+    { model: 'gpt-5.6-luna', longCached: 0.04 },
+    { model: 'gpt-5.5', longCached: 1 },
+  ])('carries the long prompt cached rate of $model', ({ model, longCached }) => {
+    expect(CODEX_PRICES[model]?.aboveLevel?.cachedInputPerMtok).toBe(longCached);
+  });
+
   it('prices every catalog cli id', () => {
     const modelIds = CODEX_CATALOG.flatMap((model) =>
       model.variants.map((variant) => variant.cliId),

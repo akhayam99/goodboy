@@ -767,7 +767,7 @@ describe('orchestrateNextStep', () => {
             role: 'implementer',
             promptPrefix: 'Rewrite the resolver.',
             provider: 'codex',
-            model: 'gpt-6.1-sol',
+            model: 'gpt-6.2-sol',
             effort: 'high',
             taskType: 'implementation',
             difficulty: 'heavy',
@@ -789,7 +789,7 @@ describe('orchestrateNextStep', () => {
     expect(prompt).toContain('Models for new agents, by provider in your order:');
     expect(prompt).toContain('Provider priority: by order.');
     expect(prompt).toMatch(/^1\. anthropic, .*standard sonnet-5\.5 medium/m);
-    expect(prompt).toMatch(/^\d\. codex, .*hard gpt-6\.1-sol high/m);
+    expect(prompt).toMatch(/^\d\. codex, .*hard gpt-6\.2-sol high/m);
     expect(prompt).toContain(
       'For the next step, copy "provider", "model" and "effort" from one row',
     );
@@ -800,7 +800,7 @@ describe('orchestrateNextStep', () => {
     expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         providerOverride: 'codex',
-        modelOverride: 'gpt-6.1-sol',
+        modelOverride: 'gpt-6.2-sol',
         effort: 'high',
       }),
     );
@@ -873,7 +873,7 @@ describe('orchestrateNextStep', () => {
         role: 'implementer',
         promptPrefix: 'Implement the change.',
         provider: 'codex',
-        model: 'gpt-6.1-sol',
+        model: 'gpt-6.2-sol',
         effort: 'medium',
         difficulty: 'standard',
         modelReason: 'The refactor spans the whole router.',
@@ -887,12 +887,12 @@ describe('orchestrateNextStep', () => {
     expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         providerOverride: 'codex',
-        modelOverride: 'gpt-6.1-sol',
+        modelOverride: 'gpt-6.2-sol',
         effort: 'medium',
       }),
     );
     expect(savedStep().routingDecision).toMatchObject({
-      selected: { provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' },
+      selected: { provider: 'codex', model: 'gpt-6.2-sol', effort: 'medium' },
       source: 'agent',
       adjustment: 'none',
     });
@@ -963,7 +963,7 @@ describe('orchestrateNextStep', () => {
         role: 'implementer',
         promptPrefix: 'Implement the change.',
         provider: 'codex',
-        model: 'gpt-6.1-sol',
+        model: 'gpt-6.2-sol',
         effort: 'high',
         difficulty: 'standard',
       },
@@ -976,7 +976,7 @@ describe('orchestrateNextStep', () => {
     expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         providerOverride: 'codex',
-        modelOverride: 'gpt-6.1-sol',
+        modelOverride: 'gpt-6.2-sol',
         effort: 'high',
       }),
     );
@@ -1080,7 +1080,7 @@ describe('orchestrateNextStep', () => {
         role: 'implementer',
         promptPrefix: 'Implement the change.',
         provider: 'codex',
-        model: 'gpt-6.1-sol',
+        model: 'gpt-6.2-sol',
         effort: 'minimal',
         difficulty: 'standard',
       },

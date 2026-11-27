@@ -44,13 +44,14 @@ describe('EFFORT_LADDER', () => {
     ]);
   });
 
-  it('refills the Codex mid rungs with GPT-6.1 Sol now that Terra is legacy', () => {
+  it('fills the Codex mid rungs with the newest Sol and never with a Terra', () => {
     const keys = [...AUTO_RUNG_CHOICES.codex.standard, ...AUTO_RUNG_CHOICES.codex.hard].map(
       (choice) => choice.key,
     );
-    expect(keys).not.toContain('gpt-5.6-terra');
-    expect(AUTO_RUNG_CHOICES.codex.standard[0]).toEqual({ key: 'gpt-6.1-sol', effort: 'medium' });
-    expect(AUTO_RUNG_CHOICES.codex.hard[0]).toEqual({ key: 'gpt-6.1-sol', effort: 'high' });
+    expect(keys.filter((key) => key.endsWith('-terra'))).toEqual([]);
+    expect(AUTO_RUNG_CHOICES.codex.standard[0]).toEqual({ key: 'gpt-6.2-sol', effort: 'medium' });
+    expect(AUTO_RUNG_CHOICES.codex.hard[0]).toEqual({ key: 'gpt-6.2-sol', effort: 'high' });
+    expect(AUTO_RUNG_CHOICES.codex.top[0]).toEqual({ key: 'gpt-6.2-astra', effort: 'high' });
   });
 });
 

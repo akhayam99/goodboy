@@ -49,12 +49,19 @@ the anthropic catalog is `providers/claude/catalog.ts`.
 
 ### Codex models
 
-- `gpt-6.1-sol` is the Codex turn default and `mid` model; its
-  `minCliVersion: '0.160.0'` keeps an older Sol on an older CLI. `gpt-6-sol` is
-  `mid` too, `gpt-6-luna` is the `cheap` newest Luna, `gpt-5.6-terra` is `legacy`
-  (hidden until shown) and `gpt-5.6-sol` is `expensive`, on Codex and OpenRouter
-- Context windows come from `codex debug models`: 500k for GPT-6.1 Sol, 272k for
-  the others, not the 872k maximum. The orchestrator's context check reads them
+- `gpt-6.2-sol` is the Codex turn default and the newest `mid` model; its
+  `minCliVersion: '0.171.0'`, shared with `gpt-6.2-astra`, keeps GPT-6.1 Sol and
+  GPT-6 Astra on an older CLI. `gpt-6.1-terra` needs 0.159.0 and `gpt-6.1-sol`
+  0.160.0. `gpt-6-luna` is the `cheap` newest Luna, `gpt-5.6-terra` and
+  `gpt-5.5` are `legacy` (hidden until shown) and `gpt-5.6-sol` is `expensive`,
+  on Codex and OpenRouter
+- The GPT-6.2 weights do not exceed those of the models before them, so a tier
+  fallback after a failure lands on a model an older CLI also runs
+- Context windows: 500k for the Sol models from 6.1 on, 272k for the others, not
+  the larger maximum. OpenAI publishes no Codex window for GPT-6.1 Terra, so it
+  takes 272k. The orchestrator's context check reads them
+- The Codex model list (`codex debug models`) depends on the signed in account,
+  so an id it omits is checked on OpenAI's Codex model page
 
 ### Gemini models
 

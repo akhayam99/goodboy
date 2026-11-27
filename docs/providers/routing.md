@@ -25,7 +25,7 @@ CLI that is too old.
 | -------- | -------------------------------------------- | ------------------ | ----------------------------------------------- | --------------------------------------------- |
 | Quick    | Haiku Low                                    | GPT-6 Luna Low     | Hydrogen Low                                    | Auto                                          |
 | Light    | Haiku Medium                                 | GPT-6 Luna Medium  | Hydrogen Medium                                 | Haiku Medium (Auto without Max Mode)          |
-| Standard | Sonnet Medium                                | GPT-6.1 Sol Medium | Carbon Medium (Hydrogen with Carbon hidden)     | Sonnet Medium                                 |
+| Standard | Sonnet Medium                                | GPT-6.2 Sol Medium | Carbon Medium (Hydrogen with Carbon hidden)     | Sonnet Medium                                 |
 | Hard     | Sonnet High                                  | GPT-6.1 Sol High   | Carbon High (Hydrogen with Carbon hidden)       | Sonnet High                                   |
 | Top      | Opus High (Opus 5.5, Opus 5 on an older CLI) | Astra High         | Neon High (Hydrogen Very high with Neon hidden) | Opus High (Sonnet Very high without Max Mode) |
 

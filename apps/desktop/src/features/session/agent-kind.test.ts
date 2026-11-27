@@ -351,7 +351,7 @@ describe('AGENT_KIND_DEFAULTS', () => {
   it('starts on the workspace default provider when one is given', () => {
     expect(kindRouting({ kind: 'implementer', defaultProvider: 'codex' })).toEqual({
       provider: 'codex',
-      model: 'gpt-6.1-sol',
+      model: 'gpt-6.2-sol',
       effort: 'medium',
     });
   });

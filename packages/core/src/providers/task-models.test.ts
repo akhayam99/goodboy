@@ -79,7 +79,7 @@ describe('resolveTaskModel', () => {
       }),
     ).toEqual({
       providerId: 'codex',
-      model: 'gpt-6.1-sol',
+      model: 'gpt-6.2-sol',
       effort: 'medium',
     });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('invalid plan_generation model'));
@@ -110,7 +110,7 @@ describe('resolveTaskModel', () => {
       }),
     ).toEqual({
       providerId: 'codex',
-      model: 'gpt-6.1-sol',
+      model: 'gpt-6.2-sol',
     });
   });
 
@@ -129,7 +129,7 @@ describe('resolveTaskModel', () => {
     });
 
     expect(anthropic).toEqual({ providerId: 'anthropic', model: 'sonnet-5.5', effort: 'medium' });
-    expect(codex).toEqual({ providerId: 'codex', model: 'gpt-6.1-sol', effort: 'medium' });
+    expect(codex).toEqual({ providerId: 'codex', model: 'gpt-6.2-sol', effort: 'medium' });
     expect(anthropic.model).not.toBe(getCheapModel('anthropic'));
     expect(codex.model).not.toBe(getCheapModel('codex'));
   });

@@ -135,7 +135,7 @@ describe('RoutingPicker', () => {
     {
       provider: 'codex' as ProviderId,
       model: 'gpt-6-astra',
-      summary: 'Codex · Astra · High',
+      summary: 'Codex · GPT-6 Astra · High',
     },
     {
       provider: 'cursor' as ProviderId,
@@ -608,6 +608,7 @@ describe('RoutingPicker', () => {
       '5.6',
       '6',
       '6.1',
+      '6.2',
     ]);
     expect(versions.getByRole('button', { name: '5.6' }).getAttribute('aria-pressed')).toBe('true');
     const variants = within(screen.getByRole('group', { name: 'Variant' }));

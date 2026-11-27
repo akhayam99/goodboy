@@ -16,7 +16,7 @@ describe('modelAxes', () => {
       throw new Error('missing codex Astra');
     }
     const axes = modelAxes({ model, selection: { key: model.key, variant: 'astra' } });
-    expect(axes.model.options).toContainEqual({ id: 'GPT', label: 'GPT', modelKey: 'gpt-6.1-sol' });
+    expect(axes.model.options).toContainEqual({ id: 'GPT', label: 'GPT', modelKey: 'gpt-6.2-sol' });
     expect(axes.version?.options).toContainEqual({ id: '6', label: '6', modelKey: 'gpt-6' });
     expect(axes.checkpoint).toEqual({
       label: 'Variant',
@@ -150,6 +150,7 @@ describe('modelAxes', () => {
       { id: '5.6', label: '5.6', modelKey: 'gpt-5.6-luna' },
       { id: '6', label: '6', modelKey: 'gpt-6-luna' },
       { id: '6.1', label: '6.1', modelKey: 'gpt-6.1-sol' },
+      { id: '6.2', label: '6.2', modelKey: 'gpt-6.2-sol' },
     ]);
     expect(axes.version?.activeId).toBe('5.6');
   });
