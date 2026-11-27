@@ -115,6 +115,13 @@ worktree strip, and Monitor its Pin a port action as a pin icon in the head.
      straddles the outline (`dockPillPlaceOf`). The pill under the pointer turns solid and the others
      step back; a target takes 80 ms of hover before the outline moves. The outline of a `Merge` is the target panel itself, and the merge keeps the tabs the solver had folded into that panel (`keeps` on the `tab` target), so the result matches the pill's words. The fold line sits inside the outline of the hovered target, and only when something folds. The overlay redraws from a small store at most once a
      frame (`dockDragStore`), so panels render only at drag start and end.
+     The pills are `aria-hidden`: the status line (`data-dock-status`) is the one live region and
+     keeps the words. Under forced colors a pill is a Canvas box with a CanvasText hairline, the
+     hovered one is Highlight, and the outline is a 2px Highlight border; under reduced transparency
+     the surface is opaque (`drop-chip`, `drop-ghost` in `styles.css`, `drop-chip.test.ts`). The
+     label holds 4.5:1 over a white and a black page in both themes (`token-contrast-floor.test.ts`).
+     The scenes `dock-dropchips-merge`, `dock-dropchips-below` and `dock-dropchips-edge` run a real
+     pointer drag on the window dock for a capture.
   3. The drag sets `SPLIT_DRAG_ATTRIBUTE` to `move`, so the Browser page hides under
      its cover.
   4. Esc cancels through the escape stack; pointer up drops through `moveDockPanel`.

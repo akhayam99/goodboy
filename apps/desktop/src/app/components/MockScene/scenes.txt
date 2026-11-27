@@ -508,6 +508,9 @@ diff-peek-more
 diff-peek-open
 diff-threads
 diff-tree-indent
+dock-dropchips-below
+dock-dropchips-edge
+dock-dropchips-merge
 dock-pair
 dock-stack
 dock-three

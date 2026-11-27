@@ -183,6 +183,19 @@ describe('the drag overlay', () => {
     expect(hovered?.className).toContain('bg-primary-solid');
   });
 
+  it('marks only the hovered pill for forced colors and hides every pill from screen readers', () => {
+    shown(viewOf({ hoverId: 'merge:terminal' }));
+
+    const marked = Array.from(document.querySelectorAll('[data-dock-zone-hovered]'));
+    const pills = Array.from(document.querySelectorAll('[data-dock-zone]'));
+
+    expect(marked.map((pill) => pill.getAttribute('data-dock-zone'))).toEqual(['merge:terminal']);
+    expect(marked[0]?.firstElementChild?.className).toContain('drop-chip');
+    expect(pills.length).toBeGreaterThan(1);
+    expect(pills.every((pill) => pill.getAttribute('aria-hidden') === 'true')).toBe(true);
+    expect(screen.getByRole('status')).toBeTruthy();
+  });
+
   it('keeps an above pill under the head of its panel', () => {
     const zones = dockDropZonesOf({
       dragKey: 'browser',

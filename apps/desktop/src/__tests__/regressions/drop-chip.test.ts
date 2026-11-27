@@ -32,6 +32,18 @@ describe('drop-chip', () => {
     expect(body).toContain('CanvasText');
     expect(body).toContain('Highlight');
   });
+
+  it('turns the hovered pill to Highlight with HighlightText, on its wrapper and on its surface', () => {
+    expect(body).toMatch(
+      /&\[data-dock-zone-hovered\],\s*\[data-dock-zone-hovered\] > & \{\s*background-color: Highlight;\s*color: HighlightText;/,
+    );
+  });
+
+  it('drops the blur and the translucent fill under forced colors', () => {
+    expect(body).toMatch(
+      /forced-colors: active\) \{\s*background-color: Canvas;\s*backdrop-filter: none;/,
+    );
+  });
 });
 
 describe('drop-ghost', () => {
@@ -41,6 +53,12 @@ describe('drop-ghost', () => {
     expect(body).toContain('var(--color-primary) 62%');
     expect(body).toContain('var(--color-primary) 5%');
     expect(body).toContain('0 0 0 1px var(--color-background)');
+  });
+
+  it('is a 2px Highlight outline with no fill under forced colors', () => {
+    expect(body).toMatch(
+      /forced-colors: active\) \{\s*background-color: transparent;\s*box-shadow: none;\s*border: 2px solid Highlight;/,
+    );
   });
 
   it('moves only when motion is allowed', () => {

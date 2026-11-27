@@ -12,6 +12,7 @@ const LARGE_FLOOR = 3;
 
 const SURFACES = ['chrome', 'background', 'subtle', 'muted', 'elevated', 'floating'] as const;
 const READ_SURFACES = [...SURFACES, 'drawer'] as const;
+const DROP_CHIP_ALPHA = 0.76;
 const STEP_FLOOR = 1.04;
 const DRAWER_STEP_FLOOR = 1.03;
 const FILL_FLOOR = 1.1;
@@ -196,6 +197,24 @@ describe.each(['dark', 'light'] as const)('%s palette', (theme) => {
       }))
       .filter(({ ratio }) => ratio < BODY_FLOOR);
     expect(failures).toEqual([]);
+  });
+
+  it.each([
+    ['a white page', [1, 1, 1]],
+    ['a black page', [0, 0, 0]],
+  ] as const)('keeps the drop chip label at 4.5:1 over %s', (_name, page) => {
+    const chip = composite({
+      foreground: swatch(palette, 'floating'),
+      background: page,
+      alpha: DROP_CHIP_ALPHA,
+    });
+    expect(contrast(swatch(palette, 'foreground'), chip)).toBeGreaterThanOrEqual(BODY_FLOOR);
+  });
+
+  it('keeps the hovered drop chip on the button pair', () => {
+    expect(
+      contrast(swatch(palette, 'on-primary'), swatch(palette, 'primary-solid')),
+    ).toBeGreaterThanOrEqual(BODY_FLOOR);
   });
 
   it.each(READ_SURFACES)('keeps disabled text distinguishable on %s', (surface) => {
