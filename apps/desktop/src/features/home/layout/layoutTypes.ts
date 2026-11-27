@@ -18,3 +18,9 @@ export type WidgetGesture = {
 export type WidgetMenuOpen = {
   readonly opener: HTMLElement;
 };
+
+export type ReorderStepParams = {
+  readonly id: HomeWidgetId;
+  readonly step: 1 | -1;
+  readonly isWrapping: boolean;
+};

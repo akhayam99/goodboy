@@ -589,6 +589,8 @@ header-overview-overflow
 header-run
 header-scripts
 hero-diff
+home-busy
+home-busy-light
 home-place
 home-place-light
 image-lightbox

@@ -6,6 +6,8 @@ import { HOME_WIDGETS, type HomeWidgetId, type WidgetSize } from '../../grid/hom
 import { DEFAULT_HOME_ENTRIES } from '../../layout/defaultHomeLayout';
 import { hideHomeWidget } from '../../layout/hideHomeWidget';
 import { HOME_LAYOUT_KEY, type HomeLayout } from '../../layout/layoutTypes';
+import { moveHomeWidget } from '../../layout/moveHomeWidget';
+import { resizeHomeWidget } from '../../layout/resizeHomeWidget';
 import { parseHomeLayout } from '../../layout/parseHomeLayout';
 import { serializeHomeLayout } from '../../layout/serializeHomeLayout';
 import { showHomeWidget } from '../../layout/showHomeWidget';
@@ -27,18 +29,30 @@ type Gesture = {
   readonly id: HomeWidgetId;
 };
 
+type MoveGesture = {
+  readonly id: HomeWidgetId;
+  readonly beforeId: HomeWidgetId | null;
+};
+
+type ResizeGesture = {
+  readonly id: HomeWidgetId;
+  readonly size: WidgetSize;
+};
+
 type CommitParams = {
   readonly target: WorkspaceId;
   readonly next: HomeLayout;
 };
 
-type HomeLayoutState = {
+export type HomeLayoutState = {
   readonly entries: HomeLayout;
   readonly tray: ReadonlyArray<HomeWidgetId>;
   readonly isLoaded: boolean;
   readonly isSaveFailed: boolean;
   readonly hide: (params: Gesture) => void;
   readonly show: (params: Gesture) => void;
+  readonly move: (params: MoveGesture) => void;
+  readonly resize: (params: ResizeGesture) => void;
   readonly retry: () => void;
 };
 
@@ -180,6 +194,64 @@ export const useHomeLayout = ({ workspaceId }: Params): HomeLayoutState => {
     [commit],
   );
 
+  const move = useCallback(
+    ({ id, beforeId }: MoveGesture): void => {
+      const target = workspaceRef.current;
+      const moved = moveHomeWidget({ entries: entriesRef.current, id, beforeId });
+      if (moved === null) {
+        return;
+      }
+      commit({ target, next: moved.entries });
+      useAppStore.getState().undoable({
+        message: `Moved ${titleOf({ id }).toLowerCase()}`,
+        isSilent: true,
+        isCurrent: () => isMountedRef.current && workspaceRef.current === target,
+        undo: async () => {
+          const back = moveHomeWidget({
+            entries: entriesRef.current,
+            id,
+            beforeId: moved.beforeId,
+          });
+          if (back === null) {
+            return false;
+          }
+          commit({ target, next: back.entries });
+          return true;
+        },
+      });
+    },
+    [commit],
+  );
+
+  const resize = useCallback(
+    ({ id, size }: ResizeGesture): void => {
+      const target = workspaceRef.current;
+      const resized = resizeHomeWidget({ entries: entriesRef.current, id, size });
+      if (resized === null) {
+        return;
+      }
+      commit({ target, next: resized.entries });
+      useAppStore.getState().undoable({
+        message: `Resized ${titleOf({ id }).toLowerCase()}`,
+        isSilent: true,
+        isCurrent: () => isMountedRef.current && workspaceRef.current === target,
+        undo: async () => {
+          const back = resizeHomeWidget({
+            entries: entriesRef.current,
+            id,
+            size: resized.previous,
+          });
+          if (back === null) {
+            return false;
+          }
+          commit({ target, next: back.entries });
+          return true;
+        },
+      });
+    },
+    [commit],
+  );
+
   const retry = useCallback((): void => {
     void flush();
   }, [flush]);
@@ -250,6 +322,8 @@ export const useHomeLayout = ({ workspaceId }: Params): HomeLayoutState => {
     isSaveFailed: failedFor === workspaceId,
     hide,
     show,
+    move,
+    resize,
     retry,
   };
 };
