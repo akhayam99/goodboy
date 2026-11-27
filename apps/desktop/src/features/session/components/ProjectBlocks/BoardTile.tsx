@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { brandId, type MountId } from '@goodboy/types';
-import { Button, cn, ROW_HOVER, StatusDot, Tooltip } from '@goodboy/ui';
+import { Button, cn, ROW_HOVER, StatusDot, tintClasses, Tooltip } from '@goodboy/ui';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { hasOpenRebaseStopOf } from '../../../branch/hasOpenRebaseStopOf';
 import { failingChecksOf } from '../../../branch/checks/failingChecksOf';
@@ -133,12 +133,25 @@ const BoardTileView = ({ rowId }: Props) => {
             <BoardBranchName name={row.branch} />
           )}
         </span>
-        <BoardTileFacts
-          rowId={rowId}
-          title={title}
-          word={branchRow.word}
-          onOpenChanges={openChanges}
-        />
+        {entry === null ? (
+          branchRow.word === null ? null : (
+            <span
+              data-board-facts=""
+              className="min-w-0 truncate text-meta tabular-nums text-muted-foreground"
+            >
+              <span data-board-word="" className={tintClasses(branchRow.word.tone).text}>
+                {branchRow.word.word}
+              </span>
+            </span>
+          )
+        ) : (
+          <BoardTileFacts
+            rowId={rowId}
+            title={title}
+            word={branchRow.word}
+            onOpenChanges={openChanges}
+          />
+        )}
       </span>
       <span className="pointer-events-none relative flex min-w-0 shrink-0 items-center gap-3 text-meta">
         {entry === null ? null : (
