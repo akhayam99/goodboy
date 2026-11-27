@@ -57,6 +57,11 @@ type ListSessionMountsParams = {
   readonly sessionId: SessionId;
 };
 
+type ListRemovedMountsParams = {
+  readonly db: Database;
+  readonly sessionIds: ReadonlyArray<SessionId>;
+};
+
 type InsertSessionMountParams = {
   readonly db: Database;
   readonly mount: SessionMount;
@@ -210,11 +215,24 @@ export const getSessionMount = async ({
 
 export const listSessionMounts = async ({
   db,
-  sessionId,
-}: ListSessionMountsParams): Promise<ReadonlyArray<SessionMount>> => {
+  ...scope
+}: ListSessionMountsParams | ListRemovedMountsParams): Promise<ReadonlyArray<SessionMount>> => {
+  if ('sessionIds' in scope) {
+    if (scope.sessionIds.length === 0) {
+      return [];
+    }
+    const placeholders = scope.sessionIds.map(() => '?').join(', ');
+    const removed = await db.select<SessionWorktreeRow>(
+      `SELECT * FROM session_worktrees
+       WHERE session_id IN (${placeholders}) AND is_attached = 0 AND disk_state = 'removed'
+       ORDER BY session_id, parallel_index, created_at, id`,
+      scope.sessionIds,
+    );
+    return removed.map(toMount);
+  }
   const rows = await db.select<SessionWorktreeRow>(
     'SELECT * FROM session_worktrees WHERE session_id = ? ORDER BY parallel_index, created_at, id',
-    [sessionId],
+    [scope.sessionId],
   );
   return rows.map(toMount);
 };
