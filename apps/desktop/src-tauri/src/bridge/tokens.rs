@@ -40,6 +40,10 @@ impl TokenStore {
         token
     }
 
+    pub fn clear(&self) {
+        self.entries.lock().unwrap().clear();
+    }
+
     pub fn consume(&self, token: &[u8]) -> bool {
         let mut guard = self.entries.lock().unwrap();
         let now = Instant::now();
@@ -142,5 +146,15 @@ mod tests {
         let tokens = [store.mint(), store.mint(), store.mint()];
 
         assert!(tokens.iter().all(|token| !store.consume(token)));
+    }
+
+    #[test]
+    fn clearing_the_store_drops_every_live_code() {
+        let store = TokenStore::new();
+        let token = store.mint();
+
+        store.clear();
+
+        assert!(!store.consume(&token));
     }
 }

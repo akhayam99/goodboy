@@ -6,11 +6,13 @@ mod gate;
 mod handshake;
 mod identity;
 mod listen;
+mod live;
 mod network;
 mod pairing;
 mod permissions;
 pub mod publish;
 mod publish_schema;
+mod selection;
 mod server;
 mod tokens;
 mod vault;
@@ -104,6 +106,7 @@ pub struct BridgeState {
     app: Arc<OnceLock<AppHandle>>,
     instance: String,
     pub(crate) hub: Arc<PublishHub>,
+    live: live::LiveSet,
     inner: Mutex<Inner>,
 }
 
@@ -113,6 +116,7 @@ struct Inner {
     task: Option<JoinHandle<()>>,
     shutdown: Option<watch::Sender<bool>>,
     selected: Option<Vec<String>>,
+    selection: Option<selection::LiveSelection>,
     presence: Option<Arc<StdMutex<Presence>>>,
 }
 
@@ -141,6 +145,7 @@ impl BridgeState {
             app,
             instance: fresh_instance_id(),
             hub: Arc::new(PublishHub::new()),
+            live: live::LiveSet::default(),
             inner: Mutex::new(Inner::default()),
         }
     }
@@ -181,6 +186,7 @@ impl BridgeState {
             pending: self.pending.clone(),
             hub: self.hub.clone(),
             in_flight: Default::default(),
+            live: self.live.clone(),
             shutdown: shutdown_rx,
         });
         let presence = Arc::new(StdMutex::new(Presence::start(
@@ -189,10 +195,11 @@ impl BridgeState {
             port,
             raw,
         )));
+        let selection = selection::LiveSelection::new(selected.clone());
         let serving = Serving {
             port,
             first: listening.listeners,
-            selected: selected.clone(),
+            selected: selection.clone(),
             presence: presence.clone(),
         };
         let task = tauri::async_runtime::spawn(async move {
@@ -202,6 +209,7 @@ impl BridgeState {
         inner.task = Some(task);
         inner.shutdown = Some(shutdown_tx);
         inner.selected = selected.clone();
+        inner.selection = Some(selection);
         inner.presence = Some(presence);
         Ok((port, ips))
     }
@@ -236,6 +244,16 @@ fn stop_inner(inner: &mut Inner) {
     }
     inner.port = None;
     inner.selected = None;
+    inner.selection = None;
+}
+
+fn apply_selection(inner: &mut Inner, names: Vec<String>) -> bool {
+    let Some(selection) = inner.selection.as_ref() else {
+        return false;
+    };
+    selection.set(Some(names.clone()));
+    inner.selected = Some(names);
+    true
 }
 
 pub async fn resume(app: AppHandle, state: &BridgeState) {
@@ -300,6 +318,14 @@ pub struct BridgeStatus {
     is_advertised: bool,
     pending_pairing: Option<PendingPairing>,
     fault: Option<BridgeFault>,
+    prior_phone_count: usize,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LinkHint {
+    prior_phone_count: usize,
+    fault: Option<BridgeFault>,
 }
 
 #[tauri::command]
@@ -349,6 +375,7 @@ pub struct PhoneView {
     name: String,
     paired_at: String,
     last_seen: Option<String>,
+    live_since: Option<String>,
     permissions: Permissions,
 }
 
@@ -365,7 +392,12 @@ pub async fn bridge_set_interfaces(
     state: State<'_, BridgeState>,
     names: Vec<String>,
 ) -> Result<(), BridgeError> {
-    state.identity.lock().await.set_interfaces(Some(names))?;
+    state
+        .identity
+        .lock()
+        .await
+        .set_interfaces(Some(names.clone()))?;
+    apply_selection(&mut *state.inner.lock().await, names);
     Ok(())
 }
 
@@ -380,6 +412,7 @@ pub async fn bridge_phones(state: State<'_, BridgeState>) -> Result<Vec<PhoneVie
             name: p.name.clone(),
             paired_at: p.paired_at.clone(),
             last_seen: p.last_seen.clone(),
+            live_since: state.live.since(&p.key),
             permissions: p.permissions,
         })
         .collect())
@@ -450,6 +483,20 @@ pub async fn bridge_stop(state: State<'_, BridgeState>) -> Result<(), BridgeErro
     Ok(())
 }
 
+fn drop_open_pairing(tokens: &TokenStore, pairing: &PairingHold) {
+    tokens.clear();
+    pairing.cancel();
+}
+
+#[tauri::command]
+pub async fn bridge_cancel_code(state: State<'_, BridgeState>) -> Result<(), BridgeError> {
+    drop_open_pairing(&state.tokens, &state.pairing);
+    if !state.has_phones().await {
+        state.stop().await;
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn bridge_pairing_decide(
     state: State<'_, BridgeState>,
@@ -477,10 +524,10 @@ pub async fn bridge_status(state: State<'_, BridgeState>) -> Result<BridgeStatus
             .unwrap_or(false);
         (inner.port.is_some(), inner.port, is_advertised)
     };
-    let (enrolled_count, fault) = {
+    let (enrolled_count, fault, prior_phone_count) = {
         let mut id = state.identity.lock().await;
         id.try_recover(&KeychainVault);
-        (id.phones.len(), id.fault())
+        (id.phones.len(), id.fault(), id.prior_phone_count())
     };
     Ok(BridgeStatus {
         running,
@@ -489,6 +536,16 @@ pub async fn bridge_status(state: State<'_, BridgeState>) -> Result<BridgeStatus
         is_advertised,
         pending_pairing: state.pairing.pending(),
         fault: fault_view(fault),
+        prior_phone_count,
+    })
+}
+
+#[tauri::command]
+pub async fn bridge_link_hint(state: State<'_, BridgeState>) -> Result<LinkHint, BridgeError> {
+    let id = state.identity.lock().await;
+    Ok(LinkHint {
+        prior_phone_count: id.prior_phone_count(),
+        fault: fault_view(id.fault()),
     })
 }
 
@@ -506,6 +563,18 @@ pub async fn bridge_command_result(
     Ok(())
 }
 
+const TESTFLIGHT_PREFIX: &str = "https://testflight.apple.com/join/";
+
+#[tauri::command]
+pub async fn bridge_link_qr(link: String) -> Result<String, BridgeError> {
+    if link.len() > 512 || !link.starts_with(TESTFLIGHT_PREFIX) {
+        return Err(BridgeError::Protocol(
+            "that is not a TestFlight link".into(),
+        ));
+    }
+    render_qr_svg(&link)
+}
+
 fn render_qr_svg(data: &str) -> Result<String, BridgeError> {
     use qrcode::render::svg;
     use qrcode::QrCode;
@@ -521,10 +590,61 @@ fn render_qr_svg(data: &str) -> Result<String, BridgeError> {
 mod tests {
     use super::*;
 
+    #[tokio::test]
+    async fn a_link_becomes_a_qr_and_a_long_one_is_refused() {
+        let svg = bridge_link_qr("https://testflight.apple.com/join/Harborline".into())
+            .await
+            .unwrap();
+        assert!(svg.starts_with("<?xml") || svg.contains("<svg"));
+        assert!(bridge_link_qr("x".repeat(513)).await.is_err());
+        assert!(bridge_link_qr("https://example.com/join/Harborline".into())
+            .await
+            .is_err());
+    }
+
     #[test]
     fn the_mac_hostname_is_never_read_for_the_qr_or_the_hello() {
         let source = include_str!("mod.rs");
         assert!(!source.contains(concat!("gethost", "name")));
+    }
+
+    #[tokio::test]
+    async fn cancelling_a_code_also_ends_a_waiting_request_and_leaves_paired_phones() {
+        let tokens = TokenStore::new();
+        let token = tokens.mint();
+        let hold = Arc::new(PairingHold::with_window(std::time::Duration::from_secs(5)));
+        let asking = {
+            let hold = hold.clone();
+            tokio::spawn(async move { hold.request("Harborline iPhone", "111 222").await })
+        };
+        while hold.pending().is_none() {
+            tokio::task::yield_now().await;
+        }
+
+        drop_open_pairing(&tokens, &hold);
+
+        assert!(hold.pending().is_none());
+        assert!(!tokens.consume(&token));
+        assert_eq!(asking.await.unwrap(), pairing::Verdict::Denied);
+    }
+
+    #[test]
+    fn a_new_network_choice_reaches_a_running_listener_and_nothing_else() {
+        let selection = selection::LiveSelection::new(Some(vec!["en0".into()]));
+        let mut inner = Inner {
+            port: Some(49160),
+            selected: Some(vec!["en0".into()]),
+            selection: Some(selection.clone()),
+            ..Inner::default()
+        };
+
+        assert!(apply_selection(&mut inner, vec!["utun4".into()]));
+
+        assert_eq!(inner.selected, Some(vec!["utun4".to_string()]));
+        assert_eq!(selection.get(), Some(vec!["utun4".to_string()]));
+        let mut idle = Inner::default();
+        assert!(!apply_selection(&mut idle, vec!["en0".into()]));
+        assert_eq!(idle.selected, None);
     }
 
     #[test]

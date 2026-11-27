@@ -47,8 +47,10 @@
     "branch_forget_deleted",
     "branch_head_sha",
     "branch_restore",
+    "bridge_cancel_code",
     "bridge_command_result",
     "bridge_interfaces",
+    "bridge_link_hint",
     "bridge_note_phone_rule",
     "bridge_pairing_decide",
     "bridge_phones",
@@ -480,5 +482,5 @@
     "worktree_writer_release",
     "worktree_writer_status"
   ],
-  "main-only": ["bridge_publish"]
+  "main-only": ["bridge_link_qr", "bridge_publish"]
 }

@@ -28,6 +28,12 @@ export type BridgeStatus = {
   isAdvertised: boolean;
   pendingPairing: PendingPairing | null;
   fault: BridgeFault | null;
+  priorPhoneCount: number;
+};
+
+export type BridgeHint = {
+  readonly priorPhoneCount: number;
+  readonly fault: BridgeFault | null;
 };
 
 export type PhonePermissions = {
@@ -41,6 +47,7 @@ export type PairedPhone = {
   readonly name: string;
   readonly pairedAt: string;
   readonly lastSeen: string | null;
+  readonly liveSince: string | null;
   readonly permissions: PhonePermissions;
 };
 
@@ -62,6 +69,10 @@ type SetPermissionsParams = {
 type PairingDecisionParams = {
   readonly id: string;
   readonly isAllowed: boolean;
+};
+
+type LinkQrParams = {
+  readonly link: string;
 };
 
 type RevokePhoneParams = {
@@ -112,3 +123,11 @@ export const bridgePairingDecide = ({ id, isAllowed }: PairingDecisionParams): P
   invokeCommand<boolean>('bridge_pairing_decide', { id, isAllowed });
 
 export const bridgeResetPairing = (): Promise<void> => invokeCommand<void>('bridge_reset_pairing');
+
+export const bridgeLinkQr = ({ link }: LinkQrParams): Promise<string> =>
+  invokeCommand<string>('bridge_link_qr', { link });
+
+export const bridgeCancelCode = (): Promise<void> => invokeCommand<void>('bridge_cancel_code');
+
+export const bridgeLinkHint = (): Promise<BridgeHint> =>
+  invokeCommand<BridgeHint>('bridge_link_hint');
