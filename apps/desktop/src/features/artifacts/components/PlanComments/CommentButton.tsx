@@ -7,7 +7,7 @@ type Props = {
   readonly className?: string;
 };
 
-const CommentIcon = CONCEPT_ICONS.comments;
+const CommentIcon = CONCEPT_ICONS.addComment;
 
 export const CommentButton = ({ label, onClick, className }: Props) => (
   <Button

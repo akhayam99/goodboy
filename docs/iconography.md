@@ -121,6 +121,20 @@ Recent permission decisions draw `decisions` (`CheckCheck`). The notes of the
 Lead tree draw `NotebookText`. A pull request closed unmerged draws
 `GitPullRequest` in the neutral tone, never the circled cross of a failed run.
 
+One concept draws one glyph, wherever it appears. Refresh and rerun draw
+`RefreshCw` everywhere except the browser address row, which keeps `RotateCw`
+(`features/browser/`), the arrow every browser draws for reload. Retry draws
+`RotateCcw`. Rename and edit draw `Pencil`, never `PenLine` or `PencilLine`.
+A scripts action draws `ListVideo`; `ScrollText` stays for a check log, a step
+transcript and the open transcript verb. Restore keeps `ArchiveRestore`, the
+arrow out of a box that mail apps draw for unarchive, and its control always
+says Restore in a tooltip or a label. `lucide-one-spelling-per-glyph.test.ts`
+holds those spellings.
+
+`one-glyph-per-concept.test.ts` fails when two concepts, or a concept and an
+agent kind, draw the same glyph without a written reason. Each pair that stays
+is an entry in its `TWINS` list with the reason beside it.
+
 `Waypoints` stays the glyph of a workflow run row in the feed. Orchestrated runs
 (`orchestrator`, `Network`) share the Runs page.
 
@@ -294,6 +308,7 @@ A danger zone takes `danger` (`TriangleAlert`).
 | `scripts`      | `ListVideo`             | info    | Open scripts                                                                        |
 | `more`         | `Ellipsis`              | neutral | Overflow menu trigger, the only overflow glyph (28 square in a header, 24 in a row) |
 | `search`       | `SearchX`               | info    | Empty search result                                                                 |
+| `addComment`   | `MessageSquarePlus`     | info    | Start a comment on a plan, a diff or a pull request                                 |
 
 ## Timeline markers
 
@@ -355,7 +370,8 @@ else, Search or run included, the map's glyph stays.
 
 Script rows carry no category glyph. The row toggle uses `Play` to run and
 `Square` to stop (`features/scripts/components/ScriptRow/RunToggle.tsx`), the
-restart action uses `RotateCw` (`features/actions/kinds/script.ts`), and a
+restart action uses `RefreshCw` (`features/actions/kinds/script.ts`), and its
+"Show output" action draws `ListVideo`, the glyph of `scripts`, and a
 suggested script offers `Pin`.
 
 Tasks rows lead with the tool's brand glyph, never a kind icon. The kind icons

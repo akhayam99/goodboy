@@ -14,10 +14,29 @@ const BANNED_ALIASES: Readonly<Record<string, string>> = {
   XCircle: 'CircleX',
   CheckCircle2: 'CircleCheck',
   ExternalLink: 'SquareArrowOutUpRight',
+  PenLine: 'Pencil',
+  PencilLine: 'Pencil',
 };
 
 const LUCIDE_IMPORT =
   /import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*'(?:@goodboy\/ui\/|(?:\.{1,2}\/)+)icons'/g;
+
+const RESERVED_GLYPHS: Readonly<
+  Record<string, { readonly reason: string; readonly homes: ReadonlyArray<string> }>
+> = {
+  RotateCw: {
+    reason: 'one clockwise arrow is the browser reload, every other refresh draws RefreshCw',
+    homes: ['apps/desktop/src/features/browser/'],
+  },
+  ScrollText: {
+    reason: 'scripts draw ListVideo, a log or a transcript may draw the scroll',
+    homes: [
+      'apps/desktop/src/features/actions/kinds/pullRequest.ts',
+      'apps/desktop/src/features/actions/kinds/workflowRun.ts',
+      'apps/desktop/src/shared/utils/verbs.ts',
+    ],
+  },
+};
 
 type ListParams = {
   readonly dir: string;
@@ -40,6 +59,15 @@ const listSourceFiles = ({ dir, acc = [] }: ListParams): string[] => {
   }
   return acc;
 };
+
+type NamesParams = {
+  readonly source: string;
+};
+
+const importedNamesOf = ({ source }: NamesParams): string[] =>
+  [...source.matchAll(LUCIDE_IMPORT)].flatMap((match) =>
+    (match[1] ?? '').split(',').map((raw) => raw.trim().split(/\s+as\s+/)[0] ?? ''),
+  );
 
 type BannedParams = {
   readonly source: string;
@@ -73,6 +101,22 @@ describe('lucide spellings', () => {
       offenders,
       `A glyph has one import spelling (the one conceptIcons.ts uses). Rename in:\n${offenders.join('\n')}`,
     ).toEqual([]);
+  });
+
+  it('keeps a reserved glyph inside the homes that own its meaning', () => {
+    const offenders: string[] = [];
+    for (const root of SCANNED_ROOTS) {
+      for (const file of listSourceFiles({ dir: root })) {
+        const path = relative(REPO_ROOT, file).split(sep).join('/');
+        for (const name of importedNamesOf({ source: readFileSync(file, 'utf8') })) {
+          const reserved = RESERVED_GLYPHS[name];
+          if (reserved !== undefined && !reserved.homes.some((home) => path.startsWith(home))) {
+            offenders.push(`${path} imports ${name}: ${reserved.reason}`);
+          }
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 
   it('keeps every banned alias pointing at a spelling the registry or a feature really imports', () => {

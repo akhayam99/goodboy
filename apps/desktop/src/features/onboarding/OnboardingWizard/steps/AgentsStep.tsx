@@ -1,5 +1,5 @@
 import { useEffect, useId, useState, type KeyboardEvent } from 'react';
-import { RotateCw } from '@goodboy/ui/icons';
+import { RefreshCw } from '@goodboy/ui/icons';
 import {
   Button,
   FormActions,
@@ -161,7 +161,7 @@ export const AgentsStep = ({ mode, isLocked, onBack, onDone, setBusy }: Props) =
       <FormActions
         leading={
           <span className="flex items-center gap-2 text-meta text-faint-foreground">
-            <RotateCw size={ICON_SIZE.row} aria-hidden />
+            <RefreshCw size={ICON_SIZE.row} aria-hidden />
             <span>{leadOf({ readyCount, isChecking: detection.isChecking })}</span>
             <Button
               size="xs"
