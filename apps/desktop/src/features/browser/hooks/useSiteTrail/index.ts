@@ -25,12 +25,34 @@ type KeyParams = {
   readonly host: string;
 };
 
+type PairParams = {
+  readonly left: string;
+  readonly right: string;
+};
+
+const IPV4 = /^\d+(?:\.\d+){3}$/;
+
 const trailKeyOf = ({ host }: KeyParams): string => host.trim().replace(/\.$/, '').toLowerCase();
+
+const isExactHost = ({ host }: KeyParams): boolean =>
+  host === 'localhost' || host.endsWith('.localhost') || host.includes(':') || IPV4.test(host);
+
+const isSameSite = ({ left, right }: PairParams): boolean => {
+  if (left === right) {
+    return true;
+  }
+  if (isExactHost({ host: left }) || isExactHost({ host: right })) {
+    return false;
+  }
+  return left.endsWith(`.${right}`) || right.endsWith(`.${left}`);
+};
 
 const extraHostsOf = ({ hosts, host }: ExtraParams): ReadonlyArray<string> => {
   const site = trailKeyOf({ host });
   return hosts.filter(
-    (known, index) => trailKeyOf({ host: known }) !== site && hosts.indexOf(known) === index,
+    (known, index) =>
+      !isSameSite({ left: trailKeyOf({ host: known }), right: site }) &&
+      hosts.indexOf(known) === index,
   );
 };
 

@@ -306,6 +306,23 @@ describe('clear site data', () => {
     );
   });
 
+  it('leaves out of the sign-in list a host that shares the page site', async () => {
+    stubHost({
+      clear: ({ args }) => cleared(args),
+      trail: () => ['app.harborline.dev', 'harborline.dev', 'login.cascadia-id.com'],
+    });
+    renderPane();
+    await openPage({ address: 'https://app.harborline.dev/login', shows: 1 });
+    await waitForTrail();
+
+    const menu = openMore();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: /Clear site data/ }));
+
+    await screen.findByText('app.harborline.dev, this site');
+    screen.getByText('login.cascadia-id.com, a sign-in this tab went through');
+    expect(screen.queryByText(/^harborline\.dev/)).toBeNull();
+  });
+
   it('asks about the site alone while the trail is still being read', async () => {
     stubHost({
       clear: ({ args }) => cleared(args),

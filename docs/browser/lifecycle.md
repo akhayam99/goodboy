@@ -160,7 +160,9 @@ sign-in provider a login went through.
   read answers nothing, and a clear with an extra host is refused.
 - The pane reads it after each finished load of the session and keeps only the
   latest answer for the shown tab. While nothing came back the confirm names
-  the site alone, and the clear sends no extra host.
+  the site alone, and the clear sends no extra host. A trail host on the
+  page's own site (`harborline.dev` beside `app.harborline.dev`) is not listed
+  as a sign-in.
 
 ### Reload without cache
 
