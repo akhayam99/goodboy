@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Smartphone, Unplug } from '@goodboy/ui/icons';
-import { Button, ConfirmPopover, ICON_SIZE, Switch } from '@goodboy/ui';
+import { Button, ConfirmPopover, ICON_SIZE, StatusMark, Switch } from '@goodboy/ui';
 
-import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { actionIntentOf } from '../../../actions/actionIntentOf';
 import type { PairedPhone, PhonePermissions } from '../../bridge';
+import { phoneStateLineOf } from '../../phoneStateLineOf';
+import { phoneStateOf } from '../../phoneStateOf';
 
 const PERMISSION_LABELS = [
   { key: 'canDecide', label: 'Reply and approve' },
@@ -28,30 +30,22 @@ type Props = {
   readonly onRevoke: (params: RevokeParams) => Promise<void>;
 };
 
-type SeenParams = {
-  readonly phone: PairedPhone;
-  readonly now: number;
-};
-
-const seenOf = ({ phone, now }: SeenParams): string => {
-  if (phone.lastSeen === null) {
-    return 'Not seen yet';
-  }
-  return `Last seen ${formatAge({ from: phone.lastSeen, now })}`;
-};
-
 export const PhoneRow = ({ phone, now, isBusy, onSetPermissions, onRevoke }: Props) => {
   const [isConfirming, setIsConfirming] = useState(false);
+  const state = phoneStateOf({ phone });
 
   return (
     <div className="flex w-full items-start gap-3" role="group" aria-label={phone.name}>
-      <Smartphone size={ICON_SIZE.control} aria-hidden className="shrink-0 text-muted-foreground" />
+      <span className="flex h-5 shrink-0 items-center text-muted-foreground">
+        <Smartphone size={ICON_SIZE.control} aria-hidden />
+      </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="text-row text-foreground">{phone.name}</span>
-        <span className="text-meta text-muted-foreground">
-          {seenOf({ phone, now })}. Always reads sessions.
+        <span className="flex items-center gap-1 text-meta text-muted-foreground">
+          <StatusMark mark={{ kind: 'dot', tone: state === 'live' ? 'success' : 'warning' }} />
+          {phoneStateLineOf({ phone, now })}
         </span>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {PERMISSION_LABELS.map(({ key, label }) => (
             <Switch
               key={key}
@@ -73,9 +67,9 @@ export const PhoneRow = ({ phone, now, isBusy, onSetPermissions, onRevoke }: Pro
         <ConfirmPopover
           role="danger"
           icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
-          title={`Disconnect ${phone.name}?`}
+          title={`Remove ${phone.name}?`}
           description="It must scan a new code to reconnect. Other iPhones stay paired."
-          confirmLabel="Disconnect"
+          confirmLabel="Remove"
           isBusy={isBusy}
           isOpen={isConfirming}
           onConfirm={async () => {
@@ -85,12 +79,13 @@ export const PhoneRow = ({ phone, now, isBusy, onSetPermissions, onRevoke }: Pro
           onCancel={() => setIsConfirming(false)}
           trigger={() => (
             <Button
-              variant="ghost-danger"
+              variant="quiet"
               size="sm"
-              aria-label={`Disconnect ${phone.name}`}
+              intent={actionIntentOf({ verb: 'remove iphone' })}
+              aria-label={`Remove ${phone.name}`}
               onClick={() => setIsConfirming(true)}
             >
-              <Unplug size={ICON_SIZE.row} aria-hidden /> Disconnect
+              Remove
             </Button>
           )}
         />

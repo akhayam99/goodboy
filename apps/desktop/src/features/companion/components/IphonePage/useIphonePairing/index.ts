@@ -92,7 +92,7 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
   const enrolled = status?.enrolledCount ?? 0;
   enrolledRef.current = enrolled;
   const isPaired = enrolled > 0;
-  const isShowingCode = !isPaired || isPairing;
+  const isShowingCode = isPairing;
   const total = totalRef.current > 0 ? totalRef.current : 1;
 
   const refreshStatus = useCallback(async (): Promise<BridgeStatus | null> => {
@@ -168,13 +168,14 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
       const rules = await bridgeRevoke();
       await dropPhoneRules({ ruleIds: rules });
       setIsPairing(false);
-      await mint();
+      await refreshStatus();
+      await refreshPhones();
     } catch {
       setError(DISCONNECT_FAILED);
     } finally {
       setIsRevoking(false);
     }
-  }, [mint]);
+  }, [refreshPhones, refreshStatus]);
 
   const revokeOne = useCallback(
     async ({ phoneId }: RevokeOneParams) => {
@@ -183,18 +184,15 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
       try {
         const rules = await bridgeRevokePhone({ phoneId });
         await dropPhoneRules({ ruleIds: rules });
-        const next = await refreshStatus();
+        await refreshStatus();
         await refreshPhones();
-        if (next !== null && next.enrolledCount === 0) {
-          await mint();
-        }
       } catch {
         setChangeError(DISCONNECT_FAILED);
       } finally {
         setIsChanging(false);
       }
     },
-    [mint, refreshPhones, refreshStatus],
+    [refreshPhones, refreshStatus],
   );
 
   const setPermissions = useCallback(
@@ -222,14 +220,16 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
       try {
         await bridgeSetInterfaces({ names });
         await refreshInterfaces();
-        await mint();
+        if (isPairing) {
+          await mint();
+        }
       } catch {
         setChangeError(CHANGE_FAILED);
       } finally {
         setIsChanging(false);
       }
     },
-    [interfaces, mint, refreshInterfaces],
+    [interfaces, isPairing, mint, refreshInterfaces],
   );
 
   const decidePairing = useCallback(
@@ -256,15 +256,18 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
       await bridgeResetPairing();
       await refreshStatus();
       await refreshPhones();
-      await mint();
+      if (isPairing) {
+        await mint();
+      }
     } catch {
       setChangeError(RESET_FAILED);
     } finally {
       setIsChanging(false);
     }
-  }, [mint, refreshPhones, refreshStatus]);
+  }, [isPairing, mint, refreshPhones, refreshStatus]);
 
   const pair = () => {
+    pairedAtStartRef.current = enrolledRef.current;
     setIsPairing(true);
     void mint();
   };
@@ -279,7 +282,6 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
     void refreshInterfaces();
     void refreshStatus();
     void refreshPhones();
-    void mint();
     return () => {
       isMountedRef.current = false;
       if (enrolledRef.current === 0) {
@@ -288,7 +290,7 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
         );
       }
     };
-  }, [mint, refreshInterfaces, refreshStatus, refreshPhones]);
+  }, [refreshInterfaces, refreshStatus, refreshPhones]);
 
   useEffect(() => {
     if (info === null) {
@@ -308,21 +310,19 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
     }
   }, [isShowingCode, remaining, info, isLoading, mint]);
 
-  useEffect(() => {
-    if (!isShowingCode) {
-      return;
-    }
-    pairedAtStartRef.current = enrolledRef.current;
-    return startPoll({
-      run: () => {
-        void refreshStatus();
-        void refreshPhones();
-      },
-      everyMs: STATUS_POLL_MS,
-      gate: 'visible',
-      isImmediate: false,
-    });
-  }, [isShowingCode, refreshStatus, refreshPhones]);
+  useEffect(
+    () =>
+      startPoll({
+        run: () => {
+          void refreshStatus();
+          void refreshPhones();
+        },
+        everyMs: STATUS_POLL_MS,
+        gate: 'visible',
+        isImmediate: false,
+      }),
+    [refreshStatus, refreshPhones],
+  );
 
   useEffect(() => {
     if (isPairing && enrolled > pairedAtStartRef.current) {

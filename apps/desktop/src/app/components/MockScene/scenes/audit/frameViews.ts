@@ -75,7 +75,7 @@ export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
       openers.openAddWorkspace();
       return;
     case 'pair':
-      installIphoneIpc({ enrolledCount: 1 });
+      installIphoneIpc({ moment: 'paired' });
       dispatchWindowEvent({ name: 'goodboy:open-pair-device' });
       return;
     case 'palette':

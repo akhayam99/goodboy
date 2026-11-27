@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Unplug } from '@goodboy/ui/icons';
-import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
+import { Button, ConfirmPopover, ICON_SIZE, SectionLabel } from '@goodboy/ui';
 
-import { pluralize } from '../../../../shared/utils/pluralize';
+import { actionIntentOf } from '../../../actions/actionIntentOf';
 import type { PairedPhone, PhonePermissions } from '../../bridge';
 import { PhoneRow } from './PhoneRow';
 
@@ -37,21 +37,16 @@ export const PairedDevices = ({
   const [isConfirming, setIsConfirming] = useState(false);
 
   return (
-    <div className="flex w-full flex-col gap-3">
-      <div className="flex w-full items-center gap-3">
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="text-row text-foreground">{pluralize(enrolled, 'paired iPhone')}</span>
-          <span className="text-meta text-muted-foreground">
-            Each iPhone gets only the rights you switch on.
-          </span>
-        </div>
-        <div className="flex shrink-0 items-center">
+    <section aria-label="Paired iPhones" className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <SectionLabel label="Paired iPhones" count={enrolled} headingLevel={2} />
+        {phones.length < 2 ? null : (
           <ConfirmPopover
             role="danger"
             icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
-            title="Disconnect all paired devices?"
-            description="Each phone must scan a new code to reconnect."
-            confirmLabel="Disconnect"
+            title="Remove all paired iPhones?"
+            description="Each iPhone must scan a new code to reconnect."
+            confirmLabel="Remove all"
             isBusy={isBusy}
             isOpen={isConfirming}
             onConfirm={async () => {
@@ -60,12 +55,17 @@ export const PairedDevices = ({
             }}
             onCancel={() => setIsConfirming(false)}
             trigger={() => (
-              <Button variant="ghost-danger" size="sm" onClick={() => setIsConfirming(true)}>
-                <Unplug size={ICON_SIZE.row} aria-hidden /> Disconnect all
+              <Button
+                variant="quiet"
+                size="sm"
+                intent={actionIntentOf({ verb: 'remove iphone' })}
+                onClick={() => setIsConfirming(true)}
+              >
+                Remove all
               </Button>
             )}
           />
-        </div>
+        )}
       </div>
       {phones.map((phone) => (
         <PhoneRow
@@ -77,6 +77,6 @@ export const PairedDevices = ({
           onRevoke={onRevokeOne}
         />
       ))}
-    </div>
+    </section>
   );
 };

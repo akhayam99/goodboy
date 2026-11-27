@@ -1,4 +1,5 @@
 import type { ProviderId } from '@goodboy/types';
+import { IphoneEntry } from '../../../features/companion/components/IphoneEntry';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
 import { SessionsPopover } from '../../../features/workspace/components/SessionsPopover';
 import { RepoEntry } from '../../../features/workspace/components/RepoEntry';
@@ -53,6 +54,8 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null }: 
           <LimitsStrip openProviderId={openProviderId} />
 
           <SpendButton onOpenSpend={onOpenSpend} />
+
+          <IphoneEntry />
 
           <NotificationCenter isCurrent={place === 'notifications'} />
         </div>

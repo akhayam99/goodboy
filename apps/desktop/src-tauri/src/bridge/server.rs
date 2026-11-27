@@ -14,7 +14,9 @@ use super::advertise::Presence;
 use super::commands::{CmdResult, CommandEvent, MobileAction, Origin, PendingMap, ACK_TIMEOUT};
 use super::frame::{read_frame, write_frame, NOISE_MAX};
 use super::gate::{HandshakeGate, HandshakePermit, Refusal, MAX_UNAUTHENTICATED};
-use super::handshake::{authorize_within, refuse_within, Forced, RefusalCode, OP_REFUSED};
+use super::handshake::{
+    authorize_within, refuse_within, Authorized, Forced, RefusalCode, OP_REFUSED,
+};
 use super::identity::Identity;
 use super::listen::{bind_ip, endpoints_of, is_accepted_source, plan};
 use super::network::{offered_addresses, raw_addresses, RawAddress};
@@ -59,6 +61,7 @@ pub struct ServerCtx {
     pub pending: PendingMap,
     pub hub: Arc<PublishHub>,
     pub in_flight: InFlight,
+    pub live: super::live::LiveSet,
     pub shutdown: watch::Receiver<bool>,
 }
 
@@ -284,6 +287,24 @@ async fn handle_conn(
         }
     };
     permit.succeed();
+    let phone_key = authorized.phone_key.clone();
+    let live = ctx.live.enter(
+        &base64::engine::general_purpose::STANDARD.encode(&phone_key),
+        crate::util::iso_now_whole_seconds(),
+    );
+    let outcome = talk(stream, authorized, ctx.clone()).await;
+    drop(live);
+    if let Err(error) = ctx.identity.lock().await.touch_seen(&phone_key) {
+        log::warn!("[bridge] could not note the last sync: {error}");
+    }
+    outcome
+}
+
+async fn talk(
+    mut stream: TcpStream,
+    authorized: Authorized,
+    ctx: Arc<ServerCtx>,
+) -> Result<(), BridgeError> {
     let mut transport = authorized.transport;
     let phone_key = authorized.phone_key;
 

@@ -6,6 +6,7 @@ mod gate;
 mod handshake;
 mod identity;
 mod listen;
+mod live;
 mod network;
 mod pairing;
 mod permissions;
@@ -104,6 +105,7 @@ pub struct BridgeState {
     app: Arc<OnceLock<AppHandle>>,
     instance: String,
     pub(crate) hub: Arc<PublishHub>,
+    live: live::LiveSet,
     inner: Mutex<Inner>,
 }
 
@@ -141,6 +143,7 @@ impl BridgeState {
             app,
             instance: fresh_instance_id(),
             hub: Arc::new(PublishHub::new()),
+            live: live::LiveSet::default(),
             inner: Mutex::new(Inner::default()),
         }
     }
@@ -181,6 +184,7 @@ impl BridgeState {
             pending: self.pending.clone(),
             hub: self.hub.clone(),
             in_flight: Default::default(),
+            live: self.live.clone(),
             shutdown: shutdown_rx,
         });
         let presence = Arc::new(StdMutex::new(Presence::start(
@@ -349,6 +353,7 @@ pub struct PhoneView {
     name: String,
     paired_at: String,
     last_seen: Option<String>,
+    live_since: Option<String>,
     permissions: Permissions,
 }
 
@@ -380,6 +385,7 @@ pub async fn bridge_phones(state: State<'_, BridgeState>) -> Result<Vec<PhoneVie
             name: p.name.clone(),
             paired_at: p.paired_at.clone(),
             last_seen: p.last_seen.clone(),
+            live_since: state.live.since(&p.key),
             permissions: p.permissions,
         })
         .collect())
@@ -506,6 +512,14 @@ pub async fn bridge_command_result(
     Ok(())
 }
 
+#[tauri::command]
+pub fn bridge_link_qr(link: String) -> Result<String, BridgeError> {
+    if link.len() > 512 {
+        return Err(BridgeError::Protocol("that link is too long".into()));
+    }
+    render_qr_svg(&link)
+}
+
 fn render_qr_svg(data: &str) -> Result<String, BridgeError> {
     use qrcode::render::svg;
     use qrcode::QrCode;
@@ -520,6 +534,13 @@ fn render_qr_svg(data: &str) -> Result<String, BridgeError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_link_becomes_a_qr_and_a_long_one_is_refused() {
+        let svg = bridge_link_qr("https://testflight.apple.com/join/Harborline".into()).unwrap();
+        assert!(svg.starts_with("<?xml") || svg.contains("<svg"));
+        assert!(bridge_link_qr("x".repeat(513)).is_err());
+    }
 
     #[test]
     fn the_mac_hostname_is_never_read_for_the_qr_or_the_hello() {

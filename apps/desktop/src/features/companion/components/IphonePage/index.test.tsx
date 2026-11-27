@@ -10,6 +10,7 @@ type MockPhone = {
   name: string;
   pairedAt: string;
   lastSeen: string | null;
+  liveSince: string | null;
   permissions: { canDecide: boolean; canMerge: boolean; canStart: boolean };
 };
 
@@ -94,6 +95,9 @@ const answer = async (cmd: string, args?: Record<string, unknown>): Promise<unkn
   if (cmd === 'bridge_phones') {
     return mocks.phones;
   }
+  if (cmd === 'bridge_link_qr') {
+    return '<svg data-testid="testflight-qr"></svg>';
+  }
   if (cmd === 'bridge_interfaces') {
     return mocks.interfaces;
   }
@@ -138,18 +142,91 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('IphonePage', () => {
-  it('asks the user to allow a new iPhone and sends the answer for that request', async () => {
+const harborline: MockPhone = {
+  id: 'key-harborline',
+  name: 'Harborline iPhone',
+  pairedAt: '2026-11-20T10:00:00.000Z',
+  lastSeen: '2026-11-27T09:12:00.000Z',
+  liveSince: '2026-11-27T09:12:00.000Z',
+  permissions: { canDecide: true, canMerge: true, canStart: false },
+};
+const northwind: MockPhone = {
+  id: 'key-northwind',
+  name: 'Northwind iPhone',
+  pairedAt: '2026-11-21T10:00:00.000Z',
+  lastSeen: '2026-11-25T09:00:00.000Z',
+  liveSince: null,
+  permissions: { canDecide: true, canMerge: false, canStart: true },
+};
+
+const renderPage = (onStopFailed = vi.fn()) =>
+  render(<IphonePage animationClassName="" onStopFailed={onStopFailed} />);
+
+const startPairing = async () => {
+  fireEvent.click(await screen.findByRole('button', { name: 'Pair an iPhone' }));
+  return screen.findByTestId('pairing-qr');
+};
+
+const pair = (phones: MockPhone[]) => {
+  mocks.phones = phones;
+  mocks.enrolledCount = phones.length;
+};
+
+describe('IphonePage before a phone', () => {
+  it('says what the iPhone does and offers Pair an iPhone as the one filled button', async () => {
+    renderPage();
+
+    expect(await screen.findByText('See what needs you')).toBeTruthy();
+    screen.getByText('Decide from anywhere');
+    screen.getByText('Stays between your devices');
+    const pairButton = screen.getByRole('button', { name: 'Pair an iPhone' });
+    expect(pairButton.getAttribute('data-variant')).toBe('primary');
+    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(1);
+    expect(meta()).toBeNull();
+  });
+
+  it('shows no code and starts no listener until Pair an iPhone is pressed', async () => {
+    renderPage();
+    await screen.findByText('See what needs you');
+
+    expect(screen.queryByTestId('pairing-qr')).toBeNull();
+    expect(invokedCommands()).not.toContain('bridge_start');
+    expect(screen.queryByRole('region', { name: 'Get Goodboy for iPhone' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy link' })).toBeNull();
+    expect(invokedCommands()).not.toContain('bridge_link_qr');
+  });
+
+  it('shows the code with its countdown, then Cancel goes back', async () => {
+    renderPage();
+    await startPairing();
+
+    expect(meta()).toBe('Pairing');
+    screen.getByText('Expires in 60s');
+    screen.getByText('Allow it here when it asks.');
+    expect(screen.queryByRole('button', { name: 'Pair an iPhone' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByTestId('pairing-qr')).toBeNull();
+    screen.getByText('See what needs you');
+  });
+
+  it('asks to allow a new iPhone with its code, and sends the answer for that request', async () => {
     mocks.pendingPairing = {
       id: 'a1b2',
       name: 'Harborline iPhone',
       code: '482 913',
       askedAt: '2026-11-27T10:00:00Z',
     };
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
+    renderPage();
 
     expect(await screen.findByText('An iPhone wants to pair')).toBeTruthy();
     screen.getByText(/Allow only if your iPhone shows 482 913/);
+    expect(screen.getByRole('button', { name: 'Allow' }).getAttribute('data-variant')).toBe(
+      'primary',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Pair an iPhone' }).getAttribute('data-variant'),
+    ).toBe('secondary');
     fireEvent.click(screen.getByRole('button', { name: 'Allow' }));
 
     await waitFor(() =>
@@ -161,23 +238,6 @@ describe('IphonePage', () => {
     await waitFor(() => expect(screen.queryByText('An iPhone wants to pair')).toBeNull());
   });
 
-  it('deletes the rules a revoked iPhone created', async () => {
-    mocks.enrolledCount = 2;
-    mocks.rules = ['rule-1', 'rule-2'];
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Disconnect all' }));
-    const dialog = screen.getByRole('dialog', { name: 'Disconnect all paired devices?' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Disconnect' }));
-
-    await waitFor(() =>
-      expect(
-        mocks.invoke.mock.calls.filter(([cmd]) => cmd === 'permission_rule_delete'),
-      ).toHaveLength(2),
-    );
-    expect(mocks.invoke).toHaveBeenCalledWith('permission_rule_delete', { id: 'rule-1' });
-  });
-
   it('sends a deny for the same request', async () => {
     mocks.pendingPairing = {
       id: 'c3d4',
@@ -185,7 +245,7 @@ describe('IphonePage', () => {
       code: '100 200',
       askedAt: 'now',
     };
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
+    renderPage();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Deny' }));
 
@@ -197,98 +257,67 @@ describe('IphonePage', () => {
     );
   });
 
-  it('says the pairing file is unusable instead of showing a code, and resets only on request', async () => {
+  it('goes to the paired list once the iPhone has been allowed', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    renderPage();
+    await startPairing();
+
+    pair([harborline]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_000);
+    });
+
+    expect(await screen.findByRole('group', { name: 'Harborline iPhone' })).toBeTruthy();
+    expect(screen.queryByTestId('pairing-qr')).toBeNull();
+    expect(meta()).toBe('1 paired');
+  });
+
+  it('says the pairing file is unusable and resets only on request', async () => {
     mocks.fault = { code: 'file_unreadable', message: 'The pairing file could not be read.' };
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
+    renderPage();
 
     expect(await screen.findByText("Pairing isn't available")).toBeTruthy();
     screen.getByText('The pairing file could not be read.');
-    expect(screen.queryByTestId('pairing-qr')).toBeNull();
     expect(invokedCommands()).not.toContain('bridge_reset_pairing');
 
     fireEvent.click(screen.getByRole('button', { name: 'Reset pairing' }));
 
     await waitFor(() => expect(invokedCommands()).toContain('bridge_reset_pairing'));
     await waitFor(() => expect(screen.queryByText("Pairing isn't available")).toBeNull());
-    expect(await screen.findByTestId('pairing-qr')).toBeTruthy();
+    screen.getByText('See what needs you');
   });
 
-  it('shows the code at once when no iPhone is paired, with the testing note under it', async () => {
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
-
-    expect(await screen.findByTestId('pairing-qr')).toBeTruthy();
-    expect(screen.getByRole('heading', { level: 1, name: 'iPhone' })).toBeDefined();
-    expect(meta()).toBe('Pairing');
-    expect(screen.queryByRole('button', { name: 'Pair an iPhone' })).toBeNull();
-    const pairing = screen.getByRole('region', { name: 'Pair an iPhone' });
-    const note = screen.getByText('Goodboy for iPhone is in private testing');
-    expect(pairing.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it('leads with the paired list, swaps in the code from the header and Cancel goes back', async () => {
-    mocks.enrolledCount = 1;
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
-
-    expect(await screen.findByText('1 paired iPhone')).toBeTruthy();
-    expect(meta()).toBe('1 paired');
-    expect(screen.getByRole('region', { name: 'Paired iPhones' })).toBeDefined();
-    expect(screen.queryByTestId('pairing-qr')).toBeNull();
-    expect(screen.queryByRole('button', { name: /Pair another device/ })).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Pair an iPhone' }));
-
-    expect(await screen.findByTestId('pairing-qr')).toBeTruthy();
-    expect(meta()).toBe('Pairing');
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-
-    expect(screen.queryByTestId('pairing-qr')).toBeNull();
-    screen.getByText('1 paired iPhone');
-  });
-
-  it('goes back to the list once the iPhone has scanned the code', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    mocks.enrolledCount = 1;
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
+  it('says a code could not be made in one fixed sentence, never the exception, and retries', async () => {
+    mocks.startError = 'Cannot read properties of undefined';
+    renderPage();
     fireEvent.click(await screen.findByRole('button', { name: 'Pair an iPhone' }));
-    expect(await screen.findByTestId('pairing-qr')).toBeTruthy();
 
-    mocks.enrolledCount = 2;
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(3_000);
+    expect((await screen.findByRole('alert')).textContent).toBe("Couldn't make a pairing code.");
+    expect(screen.queryByText(/Cannot read properties/)).toBeNull();
+    mocks.startError = null;
+    fireEvent.click(screen.getByRole('button', { name: /Retry/ }));
+
+    expect(await screen.findByTestId('pairing-qr')).toBeTruthy();
+  });
+
+  it('says in one sentence that no private network is on', async () => {
+    mocks.invoke.mockImplementation(async (cmd, args) => {
+      if (cmd === 'bridge_start') {
+        throw { kind: 'no_private_network', message: 'no private network is offered to phones' };
+      }
+      return answer(cmd, args);
     });
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'Pair an iPhone' }));
 
-    expect(await screen.findByText('2 paired iPhones')).toBeTruthy();
-    expect(screen.queryByTestId('pairing-qr')).toBeNull();
-  });
-
-  it('disconnects only after the popover confirm, then shows a fresh code', async () => {
-    mocks.enrolledCount = 2;
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Disconnect all' }));
-    expect(invokedCommands()).not.toContain('bridge_revoke');
-    const dialog = screen.getByRole('dialog', { name: 'Disconnect all paired devices?' });
-
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Disconnect' }));
-
-    await waitFor(() => expect(invokedCommands()).toContain('bridge_revoke'));
-    expect(await screen.findByTestId('pairing-qr')).toBeTruthy();
-  });
-
-  it('cancelling the confirm keeps every iPhone paired', async () => {
-    mocks.enrolledCount = 1;
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Disconnect all' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-
-    expect(invokedCommands()).not.toContain('bridge_revoke');
-    screen.getByText('1 paired iPhone');
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'No private network is on. Switch one on under Networks, or connect to Wi-Fi or a VPN.',
+    );
   });
 
   it('stops the listener when you leave the page with no iPhone paired', async () => {
-    const view = render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
-    await screen.findByTestId('pairing-qr');
+    const view = renderPage();
+    await startPairing();
 
     view.unmount();
 
@@ -303,8 +332,8 @@ describe('IphonePage', () => {
       return answer(cmd, args);
     });
     const onStopFailed = vi.fn();
-    const view = render(<IphonePage animationClassName="" onStopFailed={onStopFailed} />);
-    await screen.findByTestId('pairing-qr');
+    const view = renderPage(onStopFailed);
+    await startPairing();
 
     view.unmount();
 
@@ -316,86 +345,65 @@ describe('IphonePage', () => {
     );
   });
 
-  it('keeps the listener when you leave the page with an iPhone paired', async () => {
-    mocks.enrolledCount = 1;
-    const view = render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
-    await screen.findByText('1 paired iPhone');
+  it('never calls the network', async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    renderPage();
+    await startPairing();
 
-    view.unmount();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});
 
-    expect(invokedCommands()).not.toContain('bridge_stop');
+describe('IphonePage with phones paired', () => {
+  it('leads with the paired list and the header Pair an iPhone is quiet', async () => {
+    pair([harborline]);
+    renderPage();
+
+    expect(await screen.findByRole('region', { name: 'Paired iPhones' })).toBeDefined();
+    expect(meta()).toBe('1 paired');
+    expect(screen.queryByText('See what needs you')).toBeNull();
+    expect(screen.queryByTestId('pairing-qr')).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Pair an iPhone' }).getAttribute('data-variant'),
+    ).toBe('secondary');
+    expect(invokedCommands()).not.toContain('bridge_start');
   });
 
-  it('says a code could not be made in one fixed sentence, never the exception, and retries', async () => {
-    mocks.startError = 'Cannot read properties of undefined';
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
-
-    expect((await screen.findByRole('alert')).textContent).toBe("Couldn't make a pairing code.");
-    expect(screen.queryByText(/Cannot read properties/)).toBeNull();
-    mocks.startError = null;
-    fireEvent.click(screen.getByRole('button', { name: /Retry/ }));
-
-    expect(await screen.findByTestId('pairing-qr')).toBeTruthy();
-  });
-
-  it('keeps the paired iPhones and their rights in reach when no code can be made', async () => {
-    mocks.phones = [harborline];
-    mocks.enrolledCount = 1;
-    mocks.startError = 'no private network';
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
-
-    expect(await screen.findByRole('group', { name: 'Harborline iPhone' })).toBeTruthy();
-    expect(await screen.findByText("Couldn't make a pairing code.")).toBeTruthy();
-    screen.getByRole('switch', { name: 'Start sessions for Harborline iPhone' });
-  });
-
-  const harborline: MockPhone = {
-    id: 'key-harborline',
-    name: 'Harborline iPhone',
-    pairedAt: '2026-11-20T10:00:00.000Z',
-    lastSeen: null,
-    permissions: { canDecide: true, canMerge: true, canStart: false },
-  };
-  const northwind: MockPhone = {
-    id: 'key-northwind',
-    name: 'Northwind iPhone',
-    pairedAt: '2026-11-21T10:00:00.000Z',
-    lastSeen: '2026-11-25T09:00:00.000Z',
-    permissions: { canDecide: true, canMerge: false, canStart: true },
-  };
-
-  it('lists each paired iPhone with its own rights and last seen', async () => {
-    mocks.phones = [harborline, northwind];
-    mocks.enrolledCount = 2;
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
+  it('says for each iPhone whether it is live or offline, since when, and its last sync', async () => {
+    pair([harborline, northwind]);
+    renderPage();
 
     const first = await screen.findByRole('group', { name: 'Harborline iPhone' });
     const second = screen.getByRole('group', { name: 'Northwind iPhone' });
 
-    expect(within(first).getByText(/Not seen yet/).textContent).toContain('Not seen yet');
-    expect(
-      within(first)
-        .getByRole('switch', { name: 'Start sessions for Harborline iPhone' })
-        .getAttribute('aria-checked'),
-    ).toBe('false');
-    expect(
-      within(second)
-        .getByRole('switch', { name: 'Start sessions for Northwind iPhone' })
-        .getAttribute('aria-checked'),
-    ).toBe('true');
+    expect(first.textContent).toMatch(/Live since .* Last sync just now\./);
+    expect(second.textContent).toMatch(/Offline since .* Last sync .* ago\./);
+    expect(first.querySelector('[data-status-tone="success"]')).not.toBeNull();
+    expect(second.querySelector('[data-status-tone="warning"]')).not.toBeNull();
+  });
+
+  it('says a phone that never connected has not been seen', async () => {
+    pair([{ ...northwind, lastSeen: null }]);
+    renderPage();
+
+    expect((await screen.findByRole('group', { name: 'Northwind iPhone' })).textContent).toContain(
+      'Offline. Not seen yet.',
+    );
+  });
+
+  it('shows each iPhone its own rights as switches and changes one of them', async () => {
+    pair([harborline, northwind]);
+    renderPage();
+    const first = await screen.findByRole('group', { name: 'Harborline iPhone' });
+    const second = screen.getByRole('group', { name: 'Northwind iPhone' });
+
     expect(
       within(second)
         .getByRole('switch', { name: 'Merge pull requests for Northwind iPhone' })
         .getAttribute('aria-checked'),
     ).toBe('false');
-  });
-
-  it('changes one iPhone rights and reads them back from the Mac', async () => {
-    mocks.phones = [harborline, northwind];
-    mocks.enrolledCount = 2;
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
-    const first = await screen.findByRole('group', { name: 'Harborline iPhone' });
-
     fireEvent.click(
       within(first).getByRole('switch', { name: 'Start sessions for Harborline iPhone' }),
     );
@@ -413,23 +421,19 @@ describe('IphonePage', () => {
           .getAttribute('aria-checked'),
       ).toBe('true'),
     );
-    expect(
-      within(screen.getByRole('group', { name: 'Northwind iPhone' }))
-        .getByRole('switch', { name: 'Start sessions for Northwind iPhone' })
-        .getAttribute('aria-checked'),
-    ).toBe('true');
   });
 
-  it('disconnects one iPhone after its own confirm and keeps the other', async () => {
-    mocks.phones = [harborline, northwind];
-    mocks.enrolledCount = 2;
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
+  it('removes one iPhone only after its own confirm and keeps the other', async () => {
+    pair([harborline, northwind]);
+    renderPage();
     await screen.findByRole('group', { name: 'Harborline iPhone' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect Harborline iPhone' }));
+    const remove = screen.getByRole('button', { name: 'Remove Harborline iPhone' });
+    expect(remove.getAttribute('data-intent')).toBe('destructive');
+    fireEvent.click(remove);
     expect(invokedCommands()).not.toContain('bridge_revoke_phone');
-    const dialog = screen.getByRole('dialog', { name: 'Disconnect Harborline iPhone?' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Disconnect' }));
+    const dialog = screen.getByRole('dialog', { name: 'Remove Harborline iPhone?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Remove' }));
 
     await waitFor(() =>
       expect(mocks.invoke).toHaveBeenCalledWith('bridge_revoke_phone', {
@@ -439,20 +443,67 @@ describe('IphonePage', () => {
     await waitFor(() =>
       expect(screen.queryByRole('group', { name: 'Harborline iPhone' })).toBeNull(),
     );
-    expect(screen.getByRole('group', { name: 'Northwind iPhone' }).textContent).toContain(
-      'Northwind iPhone',
-    );
+    screen.getByRole('group', { name: 'Northwind iPhone' });
     expect(invokedCommands()).not.toContain('bridge_revoke');
   });
 
-  it('shows the networks the code offers and sends the chosen ones only', async () => {
+  it('goes back to the start when the last iPhone is removed, with no code made', async () => {
+    pair([harborline]);
+    renderPage();
+    await screen.findByRole('group', { name: 'Harborline iPhone' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Harborline iPhone' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Remove Harborline iPhone?' })).getByRole(
+        'button',
+        { name: 'Remove' },
+      ),
+    );
+
+    expect(await screen.findByText('See what needs you')).toBeTruthy();
+    expect(invokedCommands()).not.toContain('bridge_start');
+  });
+
+  it('cancelling the confirm keeps the iPhone paired', async () => {
+    pair([harborline]);
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove Harborline iPhone' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(invokedCommands()).not.toContain('bridge_revoke_phone');
+    screen.getByRole('group', { name: 'Harborline iPhone' });
+  });
+
+  it('removes every iPhone from one confirm and deletes the rules they made', async () => {
+    pair([harborline, northwind]);
+    mocks.rules = ['rule-1', 'rule-2'];
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove all' }));
+    const dialog = screen.getByRole('dialog', { name: 'Remove all paired iPhones?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Remove all' }));
+
+    await waitFor(() =>
+      expect(
+        mocks.invoke.mock.calls.filter(([cmd]) => cmd === 'permission_rule_delete'),
+      ).toHaveLength(2),
+    );
+    expect(mocks.invoke).toHaveBeenCalledWith('permission_rule_delete', { id: 'rule-1' });
+    expect(await screen.findByText('See what needs you')).toBeTruthy();
+  });
+
+  it('shows the networks the Mac listens on with Bonjour and the port, and sends the chosen ones only', async () => {
+    pair([harborline]);
     mocks.interfaces = [
       { name: 'en0', addresses: ['192.168.1.20'], isSelected: true },
       { name: 'utun4', addresses: ['100.101.102.103'], isSelected: true },
     ];
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
-    await screen.findByTestId('pairing-qr');
+    renderPage();
 
+    expect((await screen.findByText(/Bonjour is on\. Port 47821\./)).textContent).toContain(
+      'listens only on the networks you switch on',
+    );
     fireEvent.click(await screen.findByRole('switch', { name: 'Offer en0' }));
 
     await waitFor(() =>
@@ -465,25 +516,23 @@ describe('IphonePage', () => {
     );
   });
 
-  it('says in one sentence that no private network is on', async () => {
-    mocks.invoke.mockImplementation(async (cmd, args) => {
-      if (cmd === 'bridge_start') {
-        throw { kind: 'no_private_network', message: 'no private network is offered to phones' };
-      }
-      return answer(cmd, args);
-    });
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
+  it('keeps the listener when you leave the page with an iPhone paired', async () => {
+    pair([harborline]);
+    const view = renderPage();
+    await screen.findByRole('group', { name: 'Harborline iPhone' });
 
-    expect((await screen.findByRole('alert')).textContent).toBe(
-      'No private network is on. Switch one on under Networks, or connect to Wi-Fi or a VPN.',
-    );
+    view.unmount();
+
+    expect(invokedCommands()).not.toContain('bridge_stop');
   });
 
-  it('tells the new iPhone what it may do before it pairs', async () => {
-    render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
+  it('shows a pairing problem on top of the paired list with Reset pairing', async () => {
+    pair([harborline]);
+    mocks.fault = { code: 'key_mismatch', message: 'The pairing file and the Keychain differ.' };
+    renderPage();
 
-    expect((await screen.findByText(/Starting sessions stays off/)).textContent).toContain(
-      'Change it per iPhone',
-    );
+    expect(await screen.findByText("Pairing isn't available")).toBeTruthy();
+    screen.getByRole('button', { name: 'Reset pairing' });
+    screen.getByRole('group', { name: 'Harborline iPhone' });
   });
 });

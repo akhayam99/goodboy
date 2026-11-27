@@ -47,6 +47,7 @@ fn wire_shape_phone_view() {
             name: "Harborline iPhone".to_string(),
             paired_at: "2026-11-25T10:00:00.000Z".to_string(),
             last_seen: None,
+            live_since: None,
             permissions: Permissions::default(),
         },
         json!({
@@ -54,6 +55,7 @@ fn wire_shape_phone_view() {
             "name": "Harborline iPhone",
             "pairedAt": "2026-11-25T10:00:00.000Z",
             "lastSeen": null,
+            "liveSince": null,
             "permissions": { "canDecide": true, "canMerge": true, "canStart": false },
         }),
     );

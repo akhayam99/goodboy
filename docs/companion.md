@@ -42,7 +42,7 @@ phone with those rights like a second keyboard, not like a viewer.
   A file written by an older version holds a bare list of keys: each becomes a
   record with the default rights and is written back in the new shape. That
   list is read until 0.45.0 (excluded).
-- **Settings › This Mac › iPhone** mints a one-time 256-bit token that expires after 60
+- **Pair an iPhone** on **Settings › This Mac › iPhone** mints a one-time 256-bit token that expires after 60
   seconds and shows it with the desktop's key and addresses as a QR code. The
   payload has `v: 2`, the device name, the key, the token, the endpoints, the
   service name and the rights a new phone gets, so the phone can list them
@@ -86,12 +86,13 @@ phone with those rights like a second keyboard, not like a viewer.
   A source that is slowed down gets its refusal through a short handshake of its
   own (3 seconds, 4 at a time); past that, and for a full gate, the socket is
   closed without a word.
-- Disconnect on Settings, iPhone clears every phone and drops every live
-  connection; each phone must scan a new code to come back. Disconnect on one
-  phone's row forgets that phone alone, and a live connection of it ends
-  within one ping (20 seconds); its rights go at once. Removing the last phone
-  stops the listener. The row shows when the
-  phone was last seen. A phone can never re-pair itself.
+- Remove all on Settings, iPhone (shown with two or more phones) clears every
+  phone and drops every live connection; each phone must scan a new code to come
+  back. Remove on one phone's row forgets that phone alone, and a live
+  connection of it ends within one ping (20 seconds); its rights go at once.
+  Removing the last phone stops the listener and returns the page to its start.
+  The row says whether the phone is Live or Offline, since when, and its last
+  sync. A phone can never re-pair itself.
 
 ## Rights per phone
 
@@ -315,9 +316,10 @@ stay until the phone ships the start form.
 ## Listener lifetime
 
 - The listener starts at launch when at least one phone is paired, and keeps
-  running; it also starts when **Settings › This Mac › iPhone** opens. Leaving the
-  page with no phone paired stops it, and so does removing the last phone. With
-  a phone paired it stays up until the app quits or Disconnect runs.
+  running; it also starts when Pair an iPhone is pressed on **Settings › This Mac
+  › iPhone**. Opening the page alone starts nothing. Leaving the page with no phone
+  paired stops it, and so does removing the last phone. With a phone paired it
+  stays up until the app quits or Remove all runs.
 - It binds each private address of the networks you switched on under Networks
   on one TCP port, never a wildcard, so the port is closed on every public
   address. Every 5 seconds the set is read again: a new address is bound, a gone
@@ -357,6 +359,39 @@ stay until the phone ships the start form.
   then the socket is dropped and the slot frees.
 - A connected phone that sends no frame for 60 seconds (three missed pings) is
   dropped; any frame, a PONG included, counts as an answer.
+
+## The iPhone page and the top bar
+
+- **The page has three moments.** Before a phone: three lines on what the iPhone
+  does, a drawn preview of the app, the TestFlight block and Pair an iPhone as the
+  one filled button. Pairing: the code with its 60 seconds, then "An iPhone wants
+  to pair" with the six digit code, Allow filled and Deny. After: each phone with
+  its state, since when, last sync, its rights as switches and Remove, the
+  networks the Mac listens on with the port and whether Bonjour is on, and a
+  failure with Reset pairing. Pair an iPhone stays in the header, quiet.
+- **TestFlight block.** The public TestFlight link is the one constant
+  `TESTFLIGHT_LINK` in `features/companion/testflightLink.ts`. While it is empty
+  the block does not render and nothing asks for a code. When it holds a link the
+  block shows a QR made on the Mac by `bridge_link_qr` (a local command, no
+  network), the four steps and Copy link. There is no email field and no call to
+  a server of ours; a test reads the sources of the companion components and
+  fails on `fetch`, a socket or a web address.
+- **Live and Offline.** A phone is Live while one authenticated connection of it
+  is open. `bridge/live.rs` keeps the set: a second connection of the same phone
+  keeps the first connection's time, and the phone is Offline when the last one
+  closes. `bridge_phones` returns `liveSince` for a live phone. The last sync of
+  an offline phone is `lastSeen`, written when a connection opens and again when
+  it closes (at most once a minute). Removed is the phone's word for a phone the
+  Mac forgot; the Mac simply no longer lists it.
+- **Top bar.** A phone glyph sits just before the bell, with a 6px status dot
+  beside it (never on top): green Live, yellow Offline, red when pairing is broken
+  (a fault), no dot when no phone is paired. With no phone a click opens the
+  iPhone page; with one it opens a compact panel with the phone's name, state and
+  since when, rights and Open iPhone settings. With several phones the panel shows
+  the live one, else the one seen last. The icon reads `bridge_status` and
+  `bridge_phones` every 5 seconds while the window is visible. The switch Show
+  iPhone in the top bar on the page hides it; the choice is kept in this window's
+  local storage.
 
 ## What the phone sees
 
