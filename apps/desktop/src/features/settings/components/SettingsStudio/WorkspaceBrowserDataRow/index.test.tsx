@@ -88,6 +88,7 @@ describe('WorkspaceBrowserDataRow', () => {
       'Browser data is already clearing. Try again in a moment.',
     );
     expect(screen.queryByRole('status')).toBeNull();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     screen.getByRole('button', { name: LABEL });
   });
 

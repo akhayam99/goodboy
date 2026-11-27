@@ -385,6 +385,13 @@ describe('a restart in the middle of a delegation, on the real store', () => {
     const delegations = await listAutoDelegations({ db: first.world.db, treeId: first.treeId });
     expect(delegations.some((delegation) => delegation.state === 'settled')).toBe(false);
 
+    for (const attempt of attempts) {
+      const child = delegations.find((delegation) => delegation.id === attempt.delegationId);
+      turns.texts.set(
+        attempt.runId ?? '',
+        `Looked at ledger-core.\n<<step-done id="${child?.childAgentId}">>`,
+      );
+    }
     for (const runId of [...turns.live]) {
       finishRun(runId);
     }

@@ -2,9 +2,10 @@
 
 > **Read this when** you change what happens to a message typed to the Lead:
 > how it is queued and delivered, the one queue above the composer, Edit,
-> Remove, Send now, Send to Lead, or the files a message carries. **Not for**
-> a message to a child of the tree ([children.md](children.md#talking-to-a-child))
-> or the Lead's chat layout ([chat.md](chat.md)).
+> Remove, Send now, Send to Lead, the files a message carries, or the reminder
+> a helper gets when it did not close its work. **Not for** a message to a child
+> of the tree ([children.md](children.md#talking-to-a-child)) or the Lead's
+> chat layout ([chat.md](chat.md)).
 
 ## A message is an outbox row
 
@@ -172,3 +173,35 @@ A message may carry what the session chat takes: images, a PDF, other files.
 
 A file that cannot be written refuses the message with "The Lead couldn't keep
 the files. Attach them again.": nothing is dropped silently.
+
+## The one reminder to a helper
+
+A helper whose turn ends ok with no closing line gets one more turn before it
+fails. `finishAttempt` asks `nudgeToClose`, and `startCloseNudge` writes in one
+transaction: the old attempt ends `no_closing_envelope`, its cost is
+reconciled, a second attempt of the same delegation is added with its own
+reservation, and the tree counts one more attempt. The delegation keeps its run
+slot and stays open, so the Lead is not woken. `closeNudge.sqlite.test.ts`
+covers each case below.
+
+- The message (`composeCloseNudgeKickoff`) asks for the closing line, only what
+  the report still misses, and no new work. A reading role and a scribe are
+  asked for their output blocks again. A provider that keeps no session also
+  gets the brief, an answered question with its handed over report, and where
+  it stopped.
+- The second attempt keeps the baseline, launch guard and frozen inputs of the
+  first, so changed files, checks, a push and attachments cover both turns. The
+  result joins both reports (`closingAfterNudge`).
+- One reminder per delegation. A second miss fails `no_closing_envelope`. A
+  reminder that cannot start fails the same way, with the first report and the
+  first turn's verified changes (`nudgedEvidenceOf`).
+- No reminder when the turn ended in an error or was cancelled, the limit has
+  nothing left, the tree is blocked, stopping or stopped, the helper is being
+  stopped, a message waits in the helper's queue (that message continues it),
+  or the delegation is a revise.
+- A late end of the first turn finds its attempt ended and is dropped.
+- It starts like any child, so it waits while the Lead's turn runs, and the
+  real port waits for the first turn of that agent to close
+  (`waitTurnSettledFor`), then checks the tree and the attempt again
+  (`isChildStartLive`), so a Stop during the wait starts nothing. After a
+  restart `launchChildren` starts it.

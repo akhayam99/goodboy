@@ -101,7 +101,12 @@ describe('Auto proposal admission and confirmation', () => {
       hint: 'Read payments-api too.',
     });
     await world.runtime.drive(world.treeId);
-    await childTurnEnds({ world, index: 0, text: 'Could not finish.' });
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: 'Could not finish.',
+      overrides: { exit: 'error' },
+    });
     expect(
       await autoDelegates({
         world,
