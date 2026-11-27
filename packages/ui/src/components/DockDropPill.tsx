@@ -26,6 +26,7 @@ const ORIGIN = {
 export const DockDropPill = ({ zone, anchor, isHovered, isDimmed, detail }: Props) => (
   <div
     data-dock-zone={zone.id}
+    aria-hidden="true"
     data-dock-zone-label={zone.label}
     data-dock-zone-hovered={isHovered ? '' : undefined}
     style={{ left: anchor.x, top: anchor.y }}
