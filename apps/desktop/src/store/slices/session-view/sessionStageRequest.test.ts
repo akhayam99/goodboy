@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
   MountId,
+  MountPullRequestLink,
+  MountPullRequestProvider,
   ProjectId,
   PullRequestState,
   SessionId,
@@ -130,5 +132,121 @@ describe('sessionStageRequestOf', () => {
     const failing: Seed = { slug: 'failing', number: 332, over: { checks: 'failure' } };
 
     expect(labelOf([QUEUED, failing])).toBe('PR #332');
+  });
+
+  describe('a removed branch', () => {
+    const REMOVED = 'removed';
+
+    const removedViewOf = (): SessionMountView => ({
+      ...viewOf(REMOVED),
+      worktreePath: null,
+      lastWorktreePath: `/tmp/payments-api/${REMOVED}`,
+      isAttached: false,
+      diskState: 'removed',
+    });
+
+    type LinkParams = {
+      readonly provider: MountPullRequestProvider;
+      readonly state: MountPullRequestLink['state'];
+    };
+
+    const linkOf = ({ provider, state }: LinkParams): MountPullRequestLink => ({
+      id: 'link-removed',
+      mountId: mountIdOf(REMOVED),
+      provider,
+      host: provider === 'github' ? 'github.com' : `${provider}.example.test`,
+      repoSlug: 'harborline/payments-api',
+      prNumber: 41,
+      headBranch: `harborline/${REMOVED}`,
+      baseBranch: 'main',
+      url: 'https://example.test/pull/41',
+      state,
+      snapshot: null,
+      mergedAt: state === 'merged' ? DATE : null,
+      lastObservedAt: DATE,
+      createdAt: DATE,
+      updatedAt: DATE,
+    });
+
+    type HistoryParams = LinkParams & {
+      readonly seeds?: ReadonlyArray<Seed>;
+    };
+
+    const historyOf = ({ provider, state, seeds = [] }: HistoryParams) => {
+      const live = stateOf(seeds);
+      return {
+        ...live,
+        sessionMounts: { [SESSION]: [removedViewOf(), ...seeds.map((seed) => viewOf(seed.slug))] },
+        mountPrLinks: { [mountIdOf(REMOVED)]: linkOf({ provider, state }) },
+      };
+    };
+
+    it.each([
+      ['github', 'PR #41'],
+      ['gitlab', 'MR !41'],
+      ['bitbucket', 'PR #41'],
+    ] as const)('keeps the merged %s request of a deleted branch', (provider, label) => {
+      const request = sessionStageRequestOf({
+        state: historyOf({ provider, state: 'merged' }),
+        sessionId: SESSION,
+      });
+
+      expect(request?.requestLabel).toBe(label);
+      expect(request?.pr.state).toBe('merged');
+    });
+
+    it.each(['github', 'gitlab', 'bitbucket'] as const)(
+      'does not settle a session on a closed %s request',
+      (provider) => {
+        expect(
+          sessionStageRequestOf({
+            state: historyOf({ provider, state: 'closed' }),
+            sessionId: SESSION,
+          }),
+        ).toBeNull();
+      },
+    );
+
+    it('lets a second live branch speak ahead of the merged history', () => {
+      const request = sessionStageRequestOf({
+        state: historyOf({ provider: 'github', state: 'merged', seeds: [IN_REVIEW] }),
+        sessionId: SESSION,
+      });
+
+      expect(request?.requestLabel).toBe('PR #330');
+    });
+
+    it('lets a removed branch whose request is still open keep the session open', () => {
+      const request = sessionStageRequestOf({
+        state: historyOf({ provider: 'github', state: 'open' }),
+        sessionId: SESSION,
+      });
+
+      expect(request?.pr.state).toBe('open');
+    });
+
+    it('brings nothing from history once the branch is attached again', () => {
+      const state = historyOf({ provider: 'github', state: 'merged' });
+      const removed = removedViewOf();
+
+      expect(
+        sessionStageRequestOf({
+          state: {
+            ...state,
+            sessionMounts: {
+              [SESSION]: [
+                {
+                  ...removed,
+                  worktreePath: '/tmp/payments-api/removed',
+                  isAttached: true,
+                  diskState: 'present',
+                },
+              ],
+            },
+          },
+          sessionId: SESSION,
+        }),
+      ).toBeNull();
+    });
   });
 });

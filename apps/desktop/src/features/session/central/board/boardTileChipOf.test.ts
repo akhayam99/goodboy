@@ -57,6 +57,7 @@ const branchOf = ({
     ? {
         noun,
         number: 57,
+        url: 'https://example.test/pull/57',
         isDraft: false,
         state,
         checksWord: null,

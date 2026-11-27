@@ -4,6 +4,7 @@ import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { boardSettledWordOf } from '../../central/board/boardSettledWordOf';
 import { requestShortOf } from '../../central/board/requestShortOf';
 import { branchWorkTabRegistration } from '../../branchWorkTabRegistration';
+import { openLink } from '../../../open/openLink';
 import { useBoardContext } from './useBoardContext';
 
 type Props = {
@@ -29,6 +30,8 @@ export const BoardTileFacts = ({ rowId, title, onOpenChanges }: Props) => {
   const request = entry === null ? null : entry.fact.request;
   const requestWord =
     request === null ? '' : `${requestShortOf({ request })} ${request.noun}${request.number}`;
+  const isSettled = rowById.get(rowId)?.isSettled === true;
+  const linkUrl = request === null || !isSettled || request.url === '' ? null : request.url;
   const runs = work.counts === null ? 0 : work.counts.runs;
   const row = rowById.get(rowId);
   const asked = row?.askIds.length ?? 0;
@@ -49,7 +52,20 @@ export const BoardTileFacts = ({ rowId, title, onOpenChanges }: Props) => {
       data-board-facts=""
       className="min-w-0 truncate text-meta tabular-nums text-muted-foreground"
     >
-      {requestWord === '' ? null : <span data-board-request="">{requestWord}</span>}
+      {requestWord === '' ? null : linkUrl === null ? (
+        <span data-board-request="">{requestWord}</span>
+      ) : (
+        <Button
+          variant="quiet"
+          role="link"
+          data-board-request=""
+          aria-label={`Open ${requestWord}`}
+          onClick={(event) => openLink({ url: linkUrl, sessionId: session.id, event })}
+          className="pointer-events-auto relative h-auto w-auto min-w-0 rounded-sm px-0 py-0 text-meta font-normal tabular-nums"
+        >
+          {requestWord}
+        </Button>
+      )}
       {requestWord !== '' && (hasDiff || words !== '') ? SEPARATOR : null}
       {hasDiff ? (
         <Button

@@ -35,6 +35,11 @@ type ListMountPullRequestLinksParams = {
   readonly mountId: MountId;
 };
 
+type ListRemovedMountLinksParams = {
+  readonly db: Database;
+  readonly sessionIds: ReadonlyArray<SessionId>;
+};
+
 type UpsertMountPullRequestLinkParams = {
   readonly db: Database;
   readonly sessionId: SessionId;
@@ -109,9 +114,27 @@ export const upsertMountPullRequestLink = async ({
 
 export const listMountPullRequestLinks = async ({
   db,
-  sessionId,
-  mountId,
-}: ListMountPullRequestLinksParams): Promise<ReadonlyArray<MountPullRequestLink>> => {
+  ...scope
+}: ListMountPullRequestLinksParams | ListRemovedMountLinksParams): Promise<
+  ReadonlyArray<MountPullRequestLink>
+> => {
+  if ('sessionIds' in scope) {
+    if (scope.sessionIds.length === 0) {
+      return [];
+    }
+    const placeholders = scope.sessionIds.map(() => '?').join(', ');
+    const removed = await db.select<MountPullRequestLinkRow>(
+      `SELECT ${MOUNT_PR_LINK_COLUMNS}
+       FROM mount_pr_links link
+       JOIN session_worktrees mount ON mount.id = link.mount_id
+       WHERE mount.session_id IN (${placeholders}) AND mount.is_attached = 0
+         AND mount.disk_state = 'removed'
+       ORDER BY link.created_at, link.id`,
+      scope.sessionIds,
+    );
+    return removed.map(toMountPullRequestLink);
+  }
+  const { sessionId, mountId } = scope;
   const rows = await db.select<MountPullRequestLinkRow>(
     `SELECT ${MOUNT_PR_LINK_COLUMNS}
      FROM mount_pr_links link
