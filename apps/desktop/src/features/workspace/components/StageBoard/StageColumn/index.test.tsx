@@ -174,12 +174,12 @@ describe('StageColumn', () => {
   });
 
   it.each<[ColumnKey, string, StageColumnProps['spec']]>([
-    ['building', 'building', { kind: 'stage', stage: 'building' }],
+    ['building', 'open', { kind: 'stage', stage: 'building' }],
     ['running', 'running', { kind: 'stage', stage: 'running' }],
     ['attention', 'needs you', { kind: 'stage', stage: 'attention' }],
     ['review', 'in review', { kind: 'stage', stage: 'review' }],
     ['done', 'done', { kind: 'stage', stage: 'done' }],
-    ['archived', 'archived', { kind: 'archived' }],
+    ['archived', 'archive', { kind: 'archived' }],
   ])('keeps the %s lane and its own empty line when it holds no card', (key, label, spec) => {
     renderColumn({ spec });
     const lane = screen.getByRole('group', { name: label });
@@ -189,10 +189,10 @@ describe('StageColumn', () => {
 
   it('renders the count and stage label once the lane has cards', () => {
     renderColumn({ sessions: [makeSession('s-1', 'one')] });
-    const lane = screen.getByRole('group', { name: 'building' });
+    const lane = screen.getByRole('group', { name: 'open' });
     within(lane).getByText('1');
-    within(lane).getByText('Building');
-    expect(within(lane).queryByText('Nothing in progress')).toBeNull();
+    within(lane).getByText('Open');
+    expect(within(lane).queryByText('Nothing open')).toBeNull();
 
     cleanup();
     renderColumn({
@@ -216,7 +216,7 @@ describe('StageColumn', () => {
 
   it('shows a muted Loading line instead of the empty line while its list is unknown', () => {
     renderColumn({ spec: { kind: 'archived' }, isLoading: true });
-    const lane = screen.getByRole('group', { name: 'archived' });
+    const lane = screen.getByRole('group', { name: 'archive' });
 
     within(lane).getByRole('status', { name: 'Loading sessions' });
     expect(within(lane).queryByText('Nothing archived')).toBeNull();
@@ -225,7 +225,7 @@ describe('StageColumn', () => {
 
   it('turns the Loading line into the empty line once the list answers empty', () => {
     renderColumn({ spec: { kind: 'archived' }, isLoading: false });
-    const lane = screen.getByRole('group', { name: 'archived' });
+    const lane = screen.getByRole('group', { name: 'archive' });
 
     expect(within(lane).queryByRole('status', { name: 'Loading sessions' })).toBeNull();
     within(lane).getByText('Nothing archived');
@@ -285,7 +285,7 @@ describe('StageColumn', () => {
       sessions: [makeSession('s1', 'Tune the limiter')],
     });
 
-    fireEvent.mouseEnter(screen.getByText('Building'));
+    fireEvent.mouseEnter(screen.getByText('Open'));
     act(() => {
       vi.advanceTimersByTime(500);
     });
@@ -297,7 +297,7 @@ describe('StageColumn', () => {
 describe('StageColumn finished lanes', () => {
   it('folds Archived to its count, opens it with Show all and closes it with Hide', () => {
     renderColumn({ spec: { kind: 'archived' }, sessions: [makeSession('s-1', 'one')] });
-    const lane = screen.getByRole('group', { name: 'archived' });
+    const lane = screen.getByRole('group', { name: 'archive' });
     const toggle = within(lane).getByRole('button', { name: 'Show all' });
 
     expect(within(lane).queryByRole('button', { name: 'card one' })).toBeNull();
@@ -359,7 +359,7 @@ describe('StageColumn window', () => {
 
   it('draws 50 archived cards, keeps the real total and reveals the rest on one click', () => {
     renderColumn({ spec: { kind: 'archived' }, sessions: many(237) });
-    const lane = screen.getByRole('group', { name: 'archived' });
+    const lane = screen.getByRole('group', { name: 'archive' });
 
     expect(within(lane).queryAllByRole('button', { name: /^card / })).toHaveLength(0);
     expect(within(lane).getByText('237').textContent).toBe('237');
@@ -386,7 +386,7 @@ describe('StageColumn window', () => {
 
   it('draws every card of a live lane, however long', () => {
     renderColumn({ spec: { kind: 'stage', stage: 'building' }, sessions: many(80) });
-    const lane = screen.getByRole('group', { name: 'building' });
+    const lane = screen.getByRole('group', { name: 'open' });
 
     expect(within(lane).getAllByRole('button', { name: /^card / })).toHaveLength(80);
     expect(within(lane).queryByRole('button', { name: /Show \d+ more/ })).toBeNull();

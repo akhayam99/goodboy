@@ -49,7 +49,7 @@ export const GLOSSARY_GUIDE = {
           id: 'board',
           title: 'Board',
           paragraphs: [
-            'The page that shows every session of a workspace in lanes by stage: Building, Running, In review, Done and Archived. Sessions that wait on you sit above the lanes.',
+            'The page that shows every session of a workspace in lanes by stage: Open, Running, In review, Done and Archive. Sessions that wait on you sit above the lanes.',
           ],
           links: [
             { label: 'Stage board', href: `${SITE.doc('board')}#stage-board` },

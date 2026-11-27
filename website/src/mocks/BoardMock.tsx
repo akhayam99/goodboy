@@ -24,7 +24,7 @@ type Column = {
 
 const COLUMNS: readonly Column[] = [
   {
-    name: 'Building',
+    name: 'Open',
     tone: 'neutral',
     cards: [
       { title: 'Draft the payout delay notice', repo: 'notify-relay' },
@@ -65,7 +65,7 @@ const COLUMNS: readonly Column[] = [
     ],
   },
   {
-    name: 'Archived',
+    name: 'Archive',
     tone: 'neutral',
     cards: [
       { title: 'Update the refund policy copy', repo: 'payments-api' },
@@ -75,7 +75,7 @@ const COLUMNS: readonly Column[] = [
 ];
 
 const ARIA_LABEL =
-  'Board with six lanes, two cards each, every card with its title and project. Building: draft the payout delay notice, rotate the processor signing secret. Running: speed up the payout export, nightly reconciliation job. Needs you: two cards, each with an open question. In review: stop retried webhook credits on pull request 318, reconcile export with the ledger on pull request 90. Done: bump the lockfile after the audit on merged pull request 198, retire the legacy export route on merged pull request 205. Archived: update the refund policy copy, fix a flaky retry test in the export.';
+  'Board with six lanes, two cards each, every card with its title and project. Open: draft the payout delay notice, rotate the processor signing secret. Running: speed up the payout export, nightly reconciliation job. Needs you: two cards, each with an open question. In review: stop retried webhook credits on pull request 318, reconcile export with the ledger on pull request 90. Done: bump the lockfile after the audit on merged pull request 198, retire the legacy export route on merged pull request 205. Archive: update the refund policy copy, fix a flaky retry test in the export.';
 
 type SignalParams = {
   readonly card: Card;

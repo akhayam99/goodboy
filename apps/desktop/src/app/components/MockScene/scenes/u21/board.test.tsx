@@ -32,7 +32,7 @@ afterEach(() => {
 
 const SCENE_IDS = ['board-empty-lanes', 'board-stacked', 'board-wide'] as const;
 
-const LANES = ['building', 'running', 'in review', 'done', 'archived'];
+const LANES = ['open', 'running', 'in review', 'done', 'archive'];
 
 const renderScene = (id: (typeof SCENE_IDS)[number]) => {
   const Scene = U21_BOARD_SCENES[id];
@@ -76,8 +76,8 @@ describe('the u21 board scenes', () => {
 
     expect(screen.queryByRole('group', { name: 'needs you' })).toBeNull();
     expect(within(lane('done')).getByText('Nothing done yet')).toBeDefined();
-    expect(within(lane('archived')).getByText('Nothing archived')).toBeDefined();
-    expect(within(lane('building')).queryByText('Nothing in progress')).toBeNull();
+    expect(within(lane('archive')).getByText('Nothing archived')).toBeDefined();
+    expect(within(lane('open')).queryByText('Nothing open')).toBeNull();
     expect(within(lane('running')).queryByText('Nothing running')).toBeNull();
   });
 
@@ -87,7 +87,7 @@ describe('the u21 board scenes', () => {
     act(() => observers.resizeAll());
 
     const done = lane('done');
-    const archived = lane('archived');
+    const archived = lane('archive');
     expect(done.parentElement).toBe(archived.parentElement);
     expect(Array.from(done.parentElement?.children ?? [])).toEqual([done, archived]);
     fireEvent.click(within(archived).getByRole('button', { name: 'Show all' }));
@@ -106,7 +106,7 @@ describe('the u21 board scenes', () => {
       .map((group) => group.getAttribute('aria-label') ?? '')
       .filter((name) => LANES.includes(name));
     expect(names).toEqual(LANES);
-    expect(lane('archived').parentElement).toBe(lane('building').parentElement);
+    expect(lane('archive').parentElement).toBe(lane('open').parentElement);
     expect(screen.getByTestId('board-scene-frame').style.width).toBe('2560px');
   });
 });

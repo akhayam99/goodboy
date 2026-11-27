@@ -7,7 +7,7 @@
 ### Where things live
 
 - **The board is home. Chat is a destination.** A workspace with no session selected
-  shows a board of every session by stage (needs you, running, in review, building,
+  shows a board of every session by stage (needs you, running, in review, open,
   done). Chat, diff, terminal and open in IDE are reached from the cards, never
   landed on; every capability stays one step away.
 - **The Board frame.** The Board is the one list across sessions: no List view, no

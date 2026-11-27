@@ -66,7 +66,7 @@ describe('the u34 t26 scenes', () => {
 
     const lane = await screen.findByRole('group', { name: 'done' });
     expect(lane.querySelectorAll('article[data-select-id]')).toHaveLength(50);
-    const archivedLane = screen.getByRole('group', { name: 'archived' });
+    const archivedLane = screen.getByRole('group', { name: 'archive' });
     expect(archivedLane.querySelectorAll('article[data-select-id]')).toHaveLength(0);
     fireEvent.click(within(archivedLane).getByRole('button', { name: 'Show all' }));
     expect(archivedLane.querySelectorAll('article[data-select-id]')).toHaveLength(50);
