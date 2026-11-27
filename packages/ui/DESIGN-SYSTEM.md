@@ -397,6 +397,18 @@ plain tile. `unit` is the quiet word after the number ("of 4 merged"), and
 fails, `success` for done). A count its tab already shows gets no tile, and
 the session Overview draws none: its spend and time sit in one facts line.
 
+### Week grid
+
+`WeekGrid` draws a week as five or seven day columns, each a named region with
+the day in `text-eyebrow` (today in `text-info`) over one `bg-subtle` column of
+a fixed height. A block sits at its start and spans its length between
+`fromMinute` and `toMinute`, as one line of `text-chip` behind a 6px
+`StatusDot` in the block's identity colour, on `bg-elevated` with a soft border
+on four sides and no side line. `isQuiet` drops the fill for a block that only
+says Busy. With `onSelect` each block is a button named by its `ariaLabel`, and
+`selectedKey` marks the open one. The Calendar Week view is its one reader;
+scenes `week-grid-dark` and `week-grid-light` show it.
+
 ### Counts, fact lines and durations
 
 Three helpers in `apps/desktop/src/shared/utils/` own how a number, a fact line
@@ -586,7 +598,7 @@ row grid of a page follows from it. `paneRhythm.test.ts` holds the edges, the
 gaps and the first row.
 
 The places rail has one icon column: `ShellRail` centers every item, so New,
-the six places and Settings share one axis at either width.
+the seven places and Settings share one axis at either width.
 `places-rail.test.tsx` reads the order and the width in the `r4-column-dark`
 and `r4-column-light` scenes, and with a sidebar fold an older window saved.
 
@@ -1146,7 +1158,7 @@ chroma per theme on eight hues (0.74 and 0.1 in dark, 0.51 and 0.11 in light,
 less chroma where the gamut ends), so no slot weighs more than another. No red
 and no amber, so a lane never reads as failed or waiting
 (`identity-palette-avoids-state-hues.test.ts` keeps every hue 30 degrees or
-more from the danger and warning hues). Two accessors read it, and nothing
+more from the danger and warning hues). Three accessors read it, and nothing
 else does:
 
 - `runIdentity` in `apps/desktop/src/features/session/timeline/runIdentity.ts`
@@ -1159,6 +1171,10 @@ else does:
   index the rail geometry carries back into a stroke.
 - `workspaceAccent` in `apps/desktop/src/features/workspace/color.ts` hashes a
   workspace id onto the same eight slots for its sidebar dot.
+- `calendarIdentity` in `apps/desktop/src/features/session/timeline/calendarIdentity.ts`
+  hashes a calendar (its source and calendar ids) onto the same eight slots
+  through `runIdentitySeed` and `runIdentityStroke`, for the dot of a Calendar
+  row and a `WeekGrid` block. A calendar never takes amber or red.
 
 Three limits keep identity small:
 
@@ -1166,8 +1182,8 @@ Three limits keep identity small:
   identity colour at oklab delta e 4.5 or more from every tone, and at 4.5:1
   as text on every surface. A violet lane is not a plan. A lane colour says
   nothing beyond "these rows are one run".
-- Identity colours the lane, the running border and the workspace dot, nothing
-  else. Stage stays in the marker on top of the lane, which still goes through
+- Identity colours the lane, the running border, the workspace dot and the
+  calendar dot, nothing else. A dot takes it through `StatusDot`'s `color`. Stage stays in the marker on top of the lane, which still goes through
   `tintClasses(tone)` like everything else.
 - `TimelineRunChip` is an 18px glyph circle with the icon of the run's origin
   and no word. It is neutral at rest and fainter on a discarded run, whatever

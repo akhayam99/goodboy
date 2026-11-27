@@ -6,7 +6,7 @@
 
 `AppShell` takes the desktop's places rail in `leftRail`. Its grid column is
 `auto`, with no resize handle. `app/components/ShellLeft/` fills it
-with `ShellRail`: the workspace identity (`WorkspaceIdentityRow`), New, the six places and the foot. The content and signals
+with `ShellRail`: the workspace identity (`WorkspaceIdentityRow`), New, the seven places and the foot. The content and signals
 are owned by [docs/navigation/shell.md](../../../docs/navigation/shell.md) → Surfaces.
 
 `ShellRail` reads `useShellRailForm` and `shellRailGeometry`: 64px with words,

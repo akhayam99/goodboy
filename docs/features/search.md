@@ -4,7 +4,7 @@ Find any session, message, plan or action, and reach it from the keyboard. The p
 
 ### Places rail
 
-Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left.
+Move between Board, Tasks, Workflows, Chat, Calendar, Connect and Impact from the places rail on the left.
 
 #### The rail
 
