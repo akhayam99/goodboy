@@ -91,7 +91,7 @@ describe('the c08 preset run scenes', () => {
     expect(within(grid).getByRole('heading', { name: 'Running' })).toBeDefined();
     within(grid).getByRole('heading', { name: 'Idle' });
     expect(within(grid).getByRole('heading', { name: 'Finished' })).toBeDefined();
-    expect(within(grid).queryByRole('heading', { name: 'Archived' })).toBeNull();
+    expect(within(grid).queryByRole('heading', { name: 'Archive' })).toBeNull();
     expect(
       within(grid).getByRole('button', {
         name: 'Open Fix flaky tests in the ledger export, Workflow, Running',

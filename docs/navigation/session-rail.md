@@ -281,7 +281,7 @@ and the age.
 
 - `⌘⇧[` and `⌘⇧]` walk one order kept in the data (`sessionOrderOf`, read by
   `useSessionOrder`): pinned sessions in pin order, then sessions that need you
-  (longest waiting first), then running, in review and building by last activity.
+  (longest waiting first), then running, in review and open by last activity.
   Done and archived stay out unless pinned. The order covers the whole workspace,
   whatever the filter or sort.
 - `⌃Tab` lists the pinned sessions (up to eight) and then the recent ones in

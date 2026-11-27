@@ -225,7 +225,7 @@ The worktrees of finished sessions add up. Goodboy lists each folder with its si
 
 ## Features
 
-- **[Board](./docs/features/board.md)**: every session in five lanes, from **Building** to **Done**, with what waits on you on top
+- **[Board](./docs/features/board.md)**: every session in five lanes, from **Open** to **Done**, with what waits on you on top
 - **[Shared context](./docs/features/context.md)**: the goal, decisions and a running summary travel with the session, so a new agent starts informed
 - **[Chat](./docs/features/agents.md#workspace-chat)**: ask about your repos without starting a session, then start work from the answer
 - **[Workflows](./docs/features/workflows.md)**: save the steps of a run, each with its role, model and effort

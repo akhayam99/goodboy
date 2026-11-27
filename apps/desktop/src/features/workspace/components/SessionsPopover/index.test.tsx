@@ -182,7 +182,7 @@ describe('the Sessions popover in the bar', () => {
     mount();
     toggle();
 
-    expect(groupNames()).toEqual(['Pinned1', 'Needs you1', 'Running1', 'Building1']);
+    expect(groupNames()).toEqual(['Pinned1', 'Needs you1', 'Running1', 'Open1']);
     expect(titlesIn({ name: /^Pinned/ })).toEqual([
       expect.stringContaining('Stop retried webhooks posting twice'),
     ]);
@@ -251,14 +251,14 @@ describe('the Sessions popover in the bar', () => {
     }
     fireEvent.click(unpin);
 
-    await waitFor(() => expect(titlesIn({ name: /^Building/ })).toHaveLength(1));
+    await waitFor(() => expect(titlesIn({ name: /^Open/ })).toHaveLength(1));
   });
 
   it('leaves the row where it was when the pin cannot be saved', async () => {
     storySpies.replaceWorkspaceValueIfUnchanged.mockResolvedValue(false);
     mount();
     toggle();
-    const pin = within(within(dialog()).getByRole('group', { name: /^Building/ }))
+    const pin = within(within(dialog()).getByRole('group', { name: /^Open/ }))
       .getAllByRole('option')[0]
       ?.querySelector<HTMLElement>('[data-sessions-pin="off"]');
     if (pin == null) {
@@ -273,9 +273,7 @@ describe('the Sessions popover in the bar', () => {
     await waitFor(() =>
       expect(storySpies.replaceWorkspaceValueIfUnchanged).toHaveBeenCalledTimes(2),
     );
-    expect(titlesIn({ name: /^Building/ })).toEqual([
-      expect.stringContaining('Rotate the processor'),
-    ]);
+    expect(titlesIn({ name: /^Open/ })).toEqual([expect.stringContaining('Rotate the processor')]);
     expect(
       (useAppStore.getState().sessionPins[harborline.id] ?? []).map((pinEntry) => pinEntry.id),
     ).not.toContain(idOf({ session: quiet }));
