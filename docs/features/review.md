@@ -237,6 +237,8 @@ A branch row on the Overview opens the tab its state names:
 - A conflict, a rebase or commits not pushed open **Commits**.
 - Anything else opens **Conversation**, and so do Search, Activity and Tasks.
 
+A comment opens on its own branch. This holds from a notification, Needs you, Next, the session and the Comments tab, on GitHub, GitLab and Bitbucket. A sibling branch of the same project never takes its place.
+
 #### Checks tab
 
 On **Checks**, a failing GitHub Actions row shows the end of its log under its name. **Open on GitHub** opens the rest. The first failing check opens with its log, and a click on the row hides or shows it. A check from another service opens on its host.
@@ -394,6 +396,7 @@ The review goes to the pull request of the branch on screen, the one you picked 
 
 This part is for contributors and agents who change the feature.
 
+- Comment door: `threadMountIdOf` is the one owner of the mount a thread sits on. A note matches the mount of its project and branch. A host thread matches the mount that carries its request in `reviewSourceEntriesOf`. A project with a single mount is the last resort. `commentBranchPlaceOf` turns that into the place of every door (`openReviewComment`, `attentionPlace`, `requestReview`, `openReviewTarget`). With no owner it keeps the branch on screen (`commentOpensItsBranch.test.ts`).
 - Comments list: `ReviewList`, `ReviewListRow` and `commentsCountOf` draw the list and the count on **Fix N threads**.
 - Unread threads: `unreadThreadsOf` is the one function. It joins the threads to the comments of the selected source, keeps the threads `rowBelongsToSource` lists, and returns null while the reads or the viewer identity are not loaded. `useUnreadThreads` feeds it to `usePullRequestReadiness` (the line) and to `useThreadVisit` (the dots). `ReviewFlowVisit` mounts `useThreadVisit` above `ReviewFlow` and gives the visit snapshot to `ReviewList` through `ThreadVisitContext`, so it survives the Resolved switch and an empty list. A write is deduped only while it is in flight.
 - Read record: the `thread_reads` table (m239), keyed by session and host thread id, behind the `store/slices/thread-reads` slice. m239 backfills one row per existing `resolve_threads` row at the migration time. `read_at` is the latest time of a comment by someone else among the shown ones, falling back to the fetch time, and the upsert keeps the `MAX`. Memory changes only after the write succeeds and only inside an entry that a load created. A load merges with `max` per thread, so a late load never undoes a mark, and a late `loadThreadReads` answer is dropped.
