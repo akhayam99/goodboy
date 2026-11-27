@@ -142,7 +142,7 @@ export const askSuggestions = ({
     needsYou ? 'What needs me?' : null,
     failed === undefined ? null : `Why did ${failed} fail?`,
     commentWords.includes('couldnt_fix') ? 'Why did a comment fix fail?' : null,
-    'What changed since I last looked?',
+    'Where does this session stand?',
     prNumber === null ? null : `Is #${prNumber} ready to merge?`,
   ].filter((candidate): candidate is string => candidate !== null);
   return candidates.slice(0, 3);

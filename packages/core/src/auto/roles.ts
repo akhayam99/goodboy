@@ -42,8 +42,7 @@ export const AUTO_ROLE_ARTIFACT = {
 } as const satisfies Readonly<Record<AutoDelegationRole, AutoArtifactKind | null>>;
 
 export const AUTO_ROLE_WHEN = {
-  scout:
-    'find where something is in the code or how it works today, when you cannot read it fast yourself',
+  scout: 'find where something is in the code or how it works today',
   planner: 'turn a request into steps with risks and checks before anything changes',
   investigator: 'diagnose a failure, a crash or a wrong result and find its cause',
   reviewer: 'judge a change that already exists and list what is wrong with it',

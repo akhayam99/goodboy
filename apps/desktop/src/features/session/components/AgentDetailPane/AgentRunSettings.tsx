@@ -5,7 +5,7 @@ import { autoChildStatusOf } from '../../../auto/autoChildStatusOf';
 import { delegationGlanceOf } from '../../glance/delegationGlanceOf';
 import type { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { useAgentSpend } from '../../hooks/useAgentSpend';
-import { spendTextOf } from '../../glance/spendTextOf';
+import { leadSpendTextsOf } from '../../glance/leadSpendTextsOf';
 import { useConversationGlance } from '../../../../store/hooks/useConversationGlance';
 import { AgentRunRoute } from '../RunRoute/AgentRunRoute';
 import { AgentSettingsLine } from '../AgentSettingsLine';
@@ -32,7 +32,8 @@ export const AgentRunSettings = ({
   trailing = null,
   state = null,
 }: Props) => {
-  const agentSpendUsd = useAgentSpend({ sessionId: session.id, agentId: agent.id });
+  const agentSpend = useAgentSpend({ sessionId: session.id, agentId: agent.id });
+  const spendTexts = leadSpendTextsOf({ spend: agentSpend, isLead: autoView !== null });
   const line = (
     <AgentSettingsLine
       session={session}
@@ -45,7 +46,6 @@ export const AgentRunSettings = ({
       asksSlotRef={asksSlotRef}
     />
   );
-  const budget = autoView?.budget ?? null;
   const conversationGlance = useConversationGlance({ sessionId: session.id, agent, autoView });
   const views = useAppStore((state) => state.autoTreeViews[session.id]);
   const childStatus = useMemo(
@@ -57,7 +57,8 @@ export const AgentRunSettings = ({
   return (
     <RunGlanceLine
       glance={{ ...glance, sentence: '' }}
-      spend={spendTextOf({ spentUsd: budget === null ? agentSpendUsd : budget.spentUsd })}
+      spend={spendTexts.spend}
+      spendTotal={spendTexts.spendTotal}
       settings={line}
       isInHead={isInHead}
       trailing={trailing}

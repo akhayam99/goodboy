@@ -112,6 +112,13 @@ const rectOf = ({ element }: ElementParams): DockRect => {
   return { x: box.left, y: box.top, width: box.width, height: box.height };
 };
 
+const headHeightOf = ({ element }: ElementParams): number => {
+  const head = element.querySelector('[data-dock-panel-head]');
+  return head === null
+    ? 0
+    : Math.max(0, head.getBoundingClientRect().bottom - element.getBoundingClientRect().top);
+};
+
 type FoldedByPaneParams = {
   readonly folded: ReadonlyArray<DockGhostFold>;
 };
@@ -376,6 +383,7 @@ export const useDockDrag = ({
             panes: dockPaneElementsOf({ grid }).map((element) => ({
               key: element.dataset.dockPane ?? '',
               rect: rectOf({ element }),
+              headHeight: headHeightOf({ element }),
             })),
             dock: rectOf({ element: grid }),
             folded: foldedByPaneOf({

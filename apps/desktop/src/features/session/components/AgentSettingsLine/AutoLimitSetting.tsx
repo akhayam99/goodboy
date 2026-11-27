@@ -86,7 +86,7 @@ export const AutoLimitSetting = ({ sessionId, treeId, facts, sessionCapUsd, word
       onOpenSource={openRunDefaults}
     >
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-meta tabular-nums">
-        <dt className="text-muted-foreground">Spent</dt>
+        <dt className="text-muted-foreground">Counted to limit</dt>
         <dd className="text-right text-foreground">{formatUsd(facts.spentUsd)}</dd>
         <dt className="text-muted-foreground">Reserved</dt>
         <dd className="text-right text-foreground">{formatUsd(facts.reservedUsd)}</dd>

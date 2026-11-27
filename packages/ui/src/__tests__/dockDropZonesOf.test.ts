@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { dockDropZonesOf, type DockDropZone, type DockRect } from '../dockDropZonesOf';
 import type { DockGroups } from '../dockLayoutAfterMove';
 import type { DockMoveUnit } from '../dockMoveTarget';
+import { dockPillPlaceOf } from '../dockPillPlaceOf';
 import { dockZoneAt } from '../dockZoneAt';
 
 type Columns = ReadonlyArray<ReadonlyArray<string>>;
@@ -164,8 +165,8 @@ describe('the hit areas of a panel', () => {
       dragKey: 'browser',
     });
 
-    expect(dockZoneAt({ zones, x: 100, y: 590 })?.id).toBe('below:terminal');
-    expect(dockZoneAt({ zones, x: 100, y: 300 })?.id).toBe('merge:terminal');
+    expect(dockZoneAt({ zones, x: 200, y: 590 })?.id).toBe('below:terminal');
+    expect(dockZoneAt({ zones, x: 200, y: 300 })?.id).toBe('merge:terminal');
   });
 
   it('give the dock edge a card that wins over the panel under it', () => {
@@ -195,5 +196,78 @@ describe('the hit areas of a panel', () => {
 
     expect(sides.length).toBeGreaterThan(0);
     expect(sides.every((zone) => zone.card.width >= 80)).toBe(true);
+  });
+});
+
+describe('where the pills of a panel are anchored', () => {
+  const NARROW_ROWS: Columns = [['terminal', 'browser']];
+
+  const narrowOf = ({ width }: { readonly width: number }) =>
+    dockDropZonesOf({
+      dragKey: 'terminal',
+      unit: 'cell',
+      columns: NARROW_ROWS,
+      groups: {},
+      panes: [{ key: 'browser', rect: { x: 0, y: 0, width, height: 600 } }],
+      dock: { x: 0, y: 0, width, height: 600 },
+      canDrop: () => true,
+    });
+
+  it.each([1440, 400, 360])(
+    'keeps the pills of a %ipx panel 12px apart and off each other',
+    (width) => {
+      const zones = narrowOf({ width });
+      const pills = zones.map((zone) => ({
+        id: zone.id,
+        x: zone.anchor.x,
+        y: zone.anchor.y,
+      }));
+
+      pills.forEach((pill, at) => {
+        pills.slice(at + 1).forEach((other) => {
+          const isSameSpot = Math.abs(pill.y - other.y) < 32 + 12 && Math.abs(pill.x - other.x) < 8;
+          expect(isSameSpot).toBe(false);
+        });
+      });
+    },
+  );
+
+  it('moves the side pills to 34% of the height under 440px and keeps them centred above it', () => {
+    const narrow = narrowOf({ width: 400 }).find((zone) => zone.id === 'dock-right');
+    const wide = narrowOf({ width: 1440 }).find((zone) => zone.id === 'dock-right');
+
+    expect(narrow?.anchor.y).toBeCloseTo(204, 5);
+    expect(wide?.anchor.y).toBe(300);
+    expect(narrow?.anchor.align).toBe('end');
+  });
+});
+
+describe('a visible pill sits inside its own hit area', () => {
+  const rowOf = ({ width, height }: { readonly width: number; readonly height: number }) =>
+    dockDropZonesOf({
+      dragKey: 'terminal',
+      unit: 'cell',
+      columns: [['terminal', 'browser']],
+      groups: {},
+      panes: [{ key: 'browser', rect: { x: 0, y: 0, width, height }, headHeight: 40 }],
+      dock: { x: 0, y: 0, width, height },
+      canDrop: () => true,
+    });
+
+  it.each([
+    [1023, 240],
+    [400, 240],
+    [360, 300],
+    [1440, 742],
+  ])('hovers the placement a pill advertises on a %ix%i panel', (width, height) => {
+    const zones = rowOf({ width, height });
+    const clamped = zones.map((zone) => dockPillPlaceOf({ zone, outline: null }));
+
+    zones.forEach((zone, at) => {
+      const place = clamped[at];
+      const shift = place?.align === 'start' ? 30 : place?.align === 'end' ? -30 : 0;
+      const hit = dockZoneAt({ zones, x: (place?.x ?? 0) + shift, y: place?.y ?? 0 });
+      expect(hit?.id).toBe(zone.id);
+    });
   });
 });

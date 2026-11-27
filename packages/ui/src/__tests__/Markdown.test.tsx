@@ -205,6 +205,25 @@ describe('Markdown document rhythm', () => {
     expect(container.querySelector('table')?.className).not.toMatch(/\btext-(xs|sm|base)\b/);
   });
 
+  it('keeps a table row that drops its closing pipe', () => {
+    const { container } = render(
+      <Markdown
+        text={[
+          '| Ticket | State |',
+          '| --- | --- |',
+          '| ledger-core | open',
+          '| notify-relay | done',
+        ].join('\n')}
+      />,
+    );
+    expect([...container.querySelectorAll('td')].map((cell) => cell.textContent)).toEqual([
+      'ledger-core',
+      'open',
+      'notify-relay',
+      'done',
+    ]);
+  });
+
   it('puts one hairline between rows and none under the last', () => {
     const { container } = render(
       <Markdown
