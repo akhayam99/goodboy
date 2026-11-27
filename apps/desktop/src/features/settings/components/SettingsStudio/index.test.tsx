@@ -7,8 +7,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
   scrollIntoViewMock: vi.fn(),
   state: {
-    companionStatus: null as unknown,
-    companionPhones: [] as ReadonlyArray<unknown>,
+    companionStatus: null,
+    companionPhones: [],
     companionReadMisses: 0,
     refreshCompanionLink: vi.fn(async () => true),
     setCompanionPageOpen: vi.fn(),
