@@ -29,8 +29,15 @@ phone with those rights like a second keyboard, not like a viewer.
 ## Pairing
 
 - The desktop keeps a long-term Noise static key and one record per paired
-  phone in `~/.goodboy/companion.json`: its key, the name it gave, when it
-  paired, when it was last seen and its rights. It never leaves the machine.
+  phone. The private half of the key lives in the macOS Keychain (service
+  `com.goodboy.desktop`, item `bridge.static_key`), never in a file. The public
+  half, a random instance id for Bonjour, the remembered port and one record
+  per phone (its key, the name it gave, when it paired, when it was last seen
+  and its rights) sit in `~/.goodboy/companion.json`. Neither leaves the
+  machine. A file from an older version that still holds the private key moves
+  it into the Keychain once, reads it back, and is rewritten without it; if the
+  Keychain refuses, the key stays in the file and the move is tried again at
+  the next launch.
   A file written by an older version holds a bare list of keys: each becomes a
   record with the default rights and is written back in the new shape. That
   list is read until 0.45.0 (excluded).
@@ -38,21 +45,39 @@ phone with those rights like a second keyboard, not like a viewer.
   seconds and shows it with the desktop's key and addresses as a QR code. The
   payload has `v: 2`, the device name, the key, the token, the endpoints, the
   service name and the rights a new phone gets, so the phone can list them
-  before it pairs. A phone that completes the Noise XK handshake with a live
-  token is added and the token is burned. A known key reconnects without a
-  token.
+  before it pairs. The device name is the label kept in the identity file, or
+  `Mac`; the machine's host name never goes in the code, the hello or Bonjour.
+  A phone that completes the Noise XK handshake with a live token burns the
+  token and then waits: the page shows "An iPhone wants to pair" with the name
+  the phone gave, Allow and Deny, and a banner is raised when the window is not
+  in front. Only Allow adds the phone, with the default rights. Deny, no answer
+  within 60 seconds, or a second request while one waits, ends the attempt with
+  a reason. A known key reconnects without a token and without a question.
+- The identity is never rebuilt in silence. When the file cannot be parsed, it is
+  moved aside as `companion.json.unreadable-<time>`; when the Keychain item cannot
+  be read after three tries, or does not belong to the file, nothing is changed.
+  In each case the page says what is wrong and offers **Reset pairing**, which
+  makes a new key and an empty phone list; every phone must then scan a new code.
+  A Keychain that is only locked is read again on the next status poll.
 - The phone opens the handshake with a version 2 hello: the version byte, a
   flag for a token, the token when there is one, and its name in a fixed 64
   byte field (66 or 98 bytes, never 0 or 32, which are version 1 payloads).
 - A refusal is a frame the phone can show (opcode `0x0E`): `protocol_unsupported`
   for a hello that is not version 2 (a version 1 phone, or a newer one),
-  `not_paired` for a key the desktop does not know, and `token_invalid` for a
-  token that was used or has expired. A version refusal does not burn the
-  pairing code and does not count against the sender.
+  `not_paired` for a key the desktop does not know, `token_invalid` for a
+  token that was used or has expired, `rate_limited` (with `retryAfterSecs`) for
+  a source the gate is slowing down, and `pairing_denied`, `pairing_expired` or
+  `pairing_busy` for the three ways the Allow question can end. A connected phone
+  whose record was removed hears `not_paired` before its connection closes. A
+  version refusal and the three pairing answers do not count against the sender.
+  A source that is slowed down gets its refusal through a short handshake of its
+  own (3 seconds, 4 at a time); past that, and for a full gate, the socket is
+  closed without a word.
 - Disconnect on Settings, iPhone clears every phone and drops every live
   connection; each phone must scan a new code to come back. Disconnect on one
   phone's row forgets that phone alone, and a live connection of it ends
-  within one ping (20 seconds); its rights go at once. The row shows when the
+  within one ping (20 seconds); its rights go at once. Removing the last phone
+  stops the listener. The row shows when the
   phone was last seen. A phone can never re-pair itself.
 
 ## Rights per phone
@@ -68,7 +93,10 @@ The bridge checks the right of the phone that sent the command, read from the
 file at that moment, so a change on Settings, iPhone applies to a connected
 phone at once. A command the phone may not run is answered with
 `permission_denied` and the right it lacks; nothing reaches the executor. The
-hello the desktop sends after the handshake carries the phone's rights.
+hello the desktop sends after the handshake carries the phone's rights and
+`endpoints`, the current private `{host, port}` pairs of the networks you
+switched on (at most 8, no duplicates), so a phone finds the Mac again after its
+address changes.
 
 ## What a phone may ask
 
@@ -187,10 +215,12 @@ its hello and is checked in the bridge.
 ### Decisions from the phone
 
 A phone may also answer a question, approve a plan or ask for changes, allow or
-deny one permission request once, raise a limit, stop or continue a run or an
+deny one permission request once or allow it always for the workspace (the
+`allowAlways` verdict, the same rule as Always allow on the Mac, checked against
+the same decide right), raise a limit, stop or continue a run or an
 agent, stop a Lead with all its running agents in one action (`stopAgentTree`),
 send a message to one agent (`sendToAgent`), and send or discard a Slack reply
-draft. Always allow, permission rules
+draft. Permission rules beyond that one verdict
 and every other setting stay on the Mac. Each of these actions follows five
 rules, kept in `features/companion/actions/`:
 
@@ -268,25 +298,36 @@ stay until the phone ships the start form.
 
 ## Listener lifetime
 
-- Nothing listens at boot. The listener starts when **Settings › This Mac › iPhone** opens.
-  Leaving the page with no phone paired stops it; with at least one phone
-  paired it stays up so that phone can reconnect, until the app quits or
-  Disconnect runs.
-- It binds a random TCP port on the private addresses of the interfaces you
-  switch on under Networks, and on no other address. A private address is
-  RFC 1918 (10/8, 172.16/12, 192.168/16), 100.64/10 (tailnets) or an IPv6
-  unique local address (fc00::/7). A public IPv4, a global IPv6, a link-local
-  or a loopback address is never offered in the QR and never bound, even on an
-  interface you switched on. Until you choose, every private interface is on.
-  Changing the choice restarts the listener and mints a new code. With no
-  private network on, the code cannot be made and the page says so.
+- The listener starts at launch when at least one phone is paired, and keeps
+  running; it also starts when **Settings › This Mac › iPhone** opens. Leaving the
+  page with no phone paired stops it, and so does removing the last phone. With
+  a phone paired it stays up until the app quits or Disconnect runs.
+- It binds every interface on one TCP port and accepts a connection only when the
+  source is a private address and the connection arrived on a private address of
+  a network you switched on under Networks. A private address is RFC 1918
+  (10/8, 172.16/12, 192.168/16), 100.64/10 (tailnets) or an IPv6 unique local
+  address (fc00::/7). Any other source is closed without an answer, before the
+  gate sees it. A public IPv4, a global IPv6, a link-local or a loopback address
+  is never offered in the QR or the hello, even on an interface you switched on.
+  Until you choose, every private interface is on. Changing the choice restarts
+  the listener on the same port. With no private network on, the code cannot be
+  made and the page says so; a phone already paired stays listened for.
+- The port is remembered in the identity file and asked for first at every
+  start; a new one is taken only when it is busy, and is remembered in turn.
+- The Mac advertises `_goodboy._tcp` over Bonjour with the opaque instance id
+  as its name and the port, nothing else. It uses the system service (DNS-SD in
+  libSystem) on macOS, so no dependency was added; other systems advertise
+  nothing and the phone uses the endpoints of the hello. The advertisement is
+  withdrawn when the listener stops and made again when the set of private
+  addresses changes (checked every 5 seconds).
 - Before a phone is authenticated the listener holds at most 8 connections,
   and at most 2 from one source address, so one holder behind a shared address
   cannot block the rest. After two failed handshakes from a source, its next
   attempts wait 2 seconds, then 4, doubling up to 5 minutes; a good handshake
   clears the wait. When 30 handshakes fail within a minute, from any sources,
   new connections are closed for 30 seconds. A connection that closes before it
-  authenticates counts as a failure. The whole Noise handshake has 10 seconds,
+  authenticates counts as a failure; a completed handshake of a known phone
+  clears its source's count. The whole Noise handshake has 10 seconds,
   then the socket is dropped and the slot frees.
 - A connected phone that sends no frame for 60 seconds (three missed pings) is
   dropped; any frame, a PONG included, counts as an answer.
@@ -361,6 +402,9 @@ files. A test in `scripts/gen-mobile-contract.test.mjs` fails when a type or a
 token changes and `CONTRACT_VERSION` does not: bump it, then run
 `node scripts/gen-mobile-contract.mjs --lock`. A vocabulary test fails when the
 contract names an attention reason, stage, tone or mark the app does not.
+
+Contract version 8 adds the `allowAlways` permission verdict. A phone on
+version 7 never sends it.
 
 ### Needs you across workspaces
 

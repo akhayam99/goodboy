@@ -8,10 +8,24 @@ export type QrInfo = {
   expiresInSecs: number;
 };
 
+export type PendingPairing = {
+  readonly id: string;
+  readonly name: string;
+  readonly askedAt: string;
+};
+
+export type BridgeFault = {
+  readonly code: 'file_unreadable' | 'keychain_unavailable' | 'key_mismatch';
+  readonly message: string;
+};
+
 export type BridgeStatus = {
   running: boolean;
   port: number | null;
   enrolledCount: number;
+  isAdvertised: boolean;
+  pendingPairing: PendingPairing | null;
+  fault: BridgeFault | null;
 };
 
 export type PhonePermissions = {
@@ -41,6 +55,11 @@ type SetInterfacesParams = {
 type SetPermissionsParams = {
   readonly phoneId: string;
   readonly permissions: PhonePermissions;
+};
+
+type PairingDecisionParams = {
+  readonly id: string;
+  readonly isAllowed: boolean;
 };
 
 type RevokePhoneParams = {
@@ -75,3 +94,8 @@ export const bridgeSetPermissions = ({
 
 export const bridgeRevokePhone = ({ phoneId }: RevokePhoneParams): Promise<void> =>
   invokeCommand<void>('bridge_revoke_phone', { phoneId });
+
+export const bridgePairingDecide = ({ id, isAllowed }: PairingDecisionParams): Promise<boolean> =>
+  invokeCommand<boolean>('bridge_pairing_decide', { id, isAllowed });
+
+export const bridgeResetPairing = (): Promise<void> => invokeCommand<void>('bridge_reset_pairing');

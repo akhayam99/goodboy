@@ -3,7 +3,9 @@ import { startPoll } from '../../../../../shared/lib/usePoll/startPoll';
 import { CommandError } from '../../../../../shared/lib/invokeCommand';
 import {
   bridgeInterfaces,
+  bridgePairingDecide,
   bridgePhones,
+  bridgeResetPairing,
   bridgeRevoke,
   bridgeRevokePhone,
   bridgeSetInterfaces,
@@ -26,6 +28,8 @@ const DISCONNECT_FAILED = "Couldn't disconnect the paired devices.";
 const NO_NETWORK =
   'No private network is on. Switch one on under Networks, or connect to Wi-Fi or a VPN.';
 const CHANGE_FAILED = "Couldn't save that change.";
+const RESET_FAILED = "Couldn't reset pairing.";
+const DECIDE_FAILED = "Couldn't answer that iPhone.";
 type SetPermissionsParams = {
   readonly phoneId: string;
   readonly permissions: PhonePermissions;
@@ -38,6 +42,11 @@ type RevokeOneParams = {
 type ToggleParams = {
   readonly name: string;
   readonly isSelected: boolean;
+};
+
+type DecidePairingParams = {
+  readonly id: string;
+  readonly isAllowed: boolean;
 };
 
 type MintErrorParams = {
@@ -220,6 +229,38 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
     [interfaces, mint, refreshInterfaces],
   );
 
+  const decidePairing = useCallback(
+    async ({ id, isAllowed }: DecidePairingParams) => {
+      setIsChanging(true);
+      setChangeError(null);
+      try {
+        await bridgePairingDecide({ id, isAllowed });
+      } catch {
+        setChangeError(DECIDE_FAILED);
+      } finally {
+        await refreshStatus();
+        await refreshPhones();
+        setIsChanging(false);
+      }
+    },
+    [refreshPhones, refreshStatus],
+  );
+
+  const resetPairing = useCallback(async () => {
+    setIsChanging(true);
+    setChangeError(null);
+    try {
+      await bridgeResetPairing();
+      await refreshStatus();
+      await refreshPhones();
+      await mint();
+    } catch {
+      setChangeError(RESET_FAILED);
+    } finally {
+      setIsChanging(false);
+    }
+  }, [mint, refreshPhones, refreshStatus]);
+
   const pair = () => {
     setIsPairing(true);
     void mint();
@@ -306,6 +347,8 @@ export const useIphonePairing = ({ onStopFailed }: Params) => {
     revokeOne,
     setPermissions,
     toggleInterface,
+    decidePairing,
+    resetPairing,
     pair,
     cancel,
   };
