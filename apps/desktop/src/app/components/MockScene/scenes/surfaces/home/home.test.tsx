@@ -54,7 +54,7 @@ describe('the Home place scenes', () => {
         </ToastProvider>,
       );
 
-      await screen.findByRole('main', { name: 'Home' }, WAIT);
+      await screen.findByRole('heading', { name: 'Home' }, WAIT);
       const door = screen.getByRole('button', { name: 'Home' });
 
       expect(door.getAttribute('aria-current')).toBe('page');
