@@ -29,6 +29,7 @@ use tauri::{AppHandle, Emitter, State};
 use thiserror::Error;
 use tokio::sync::{watch, Mutex};
 
+#[cfg(target_os = "macos")]
 pub(crate) use advertise::Advertiser;
 use advertise::{fresh_instance_id, system_advertiser, Presence};
 use commands::{CmdResult, PendingMap};
