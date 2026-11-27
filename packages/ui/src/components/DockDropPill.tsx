@@ -35,10 +35,10 @@ export const DockDropPill = ({ zone, anchor, isHovered, isDimmed, detail }: Prop
   >
     <div
       className={cn(
-        'drop-chip flex h-8 items-center gap-2 whitespace-nowrap rounded-full border border-floating-edge pl-2 pr-3 text-eyebrow text-foreground shadow-lg motion-safe:animate-drop-in motion-safe:transition-[transform,background-color,color,opacity] motion-safe:duration-quick motion-safe:ease-enter',
+        'drop-chip flex h-8 items-center gap-2 whitespace-nowrap rounded-full border border-floating-edge pl-2 pr-3 text-eyebrow text-foreground shadow-lg motion-safe:animate-drop-in [&>*]:motion-safe:transition-opacity [&>*]:motion-safe:duration-quick motion-safe:transition-[transform,background-color,color] motion-safe:duration-quick motion-safe:ease-enter',
         ORIGIN[anchor.align],
         isHovered && 'scale-[1.06] bg-primary-solid text-on-primary',
-        isDimmed && 'opacity-55',
+        isDimmed && '[&>*]:opacity-55',
       )}
     >
       <DockDropGlyphSmall placement={zone.placement} />
