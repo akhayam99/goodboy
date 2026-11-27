@@ -136,7 +136,6 @@ export const BrowserMoreMenu = ({ model, menuTabs }: Props) => {
       role="dialog"
       ariaLabel={PANEL_LABEL}
       tabIndex={-1}
-      className="py-1"
       anchorClassName="shrink-0"
       trigger={
         <AnchoredPopover

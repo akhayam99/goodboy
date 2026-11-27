@@ -702,13 +702,18 @@ describe('show site data', () => {
     expect(callsOf({ command: 'browser_site_data_clear_records' })).toEqual([]);
   });
 
-  it('keeps the row and shows the error when the clear fails', async () => {
+  it('keeps the row and shows the error when the clear fails, then clears on a retry', async () => {
+    let isBusy = true;
     stubHost({
       clear: ({ args }) => cleared(args),
       isolation: 'perWorkspace',
       list: LISTED,
-      clearRecords: () => {
-        throw { kind: 'refused', message: 'profile-busy' };
+      clearRecords: ({ args }) => {
+        if (isBusy) {
+          isBusy = false;
+          throw { kind: 'refused', message: 'profile-busy' };
+        }
+        return { names: args.names, wasReloaded: true };
       },
     });
     renderPane();
@@ -728,6 +733,14 @@ describe('show site data', () => {
     within(rowOf({ panel, name: 'harborline.dev' })).getByText('This tab');
     within(panel).getByText('3 sites keep data in this workspace.');
     expect(screen.queryByText(/Cleared data/)).toBeNull();
+
+    const again = await askToClear({ panel, name: 'harborline.dev' });
+    fireEvent.click(within(again).getByRole('button', { name: 'Clear' }));
+
+    await screen.findByText('Cleared data for harborline.dev. This tab reloaded without cache.');
+    expect(panel.querySelector('[data-site-record="harborline.dev"]')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(callsOf({ command: 'browser_site_data_clear_records' })).toHaveLength(2);
   });
 
   it('drops a list that answers after another tab took its place', async () => {
