@@ -223,7 +223,7 @@ This part is for contributors and agents who change the feature.
 - Stopped says **Rebase stopped**, with **Open rebase**. `BoardTile` reads it from `hasOpenRebaseStopOf`, so a stop with a pull request or a saved stop counts. The button opens the tab its fact names (`tabForFactOf`), as **Open check** and **Open comments** do.
 - Permission says **Needs approval** or **Needs permission**, with **Open**. Blocked says the failing check, **Conflicts**, **Changes requested** or **Branch gone**. Its button is the card of that state, **Open check** or **Open comments**.
 - Waiting says **Checks running**, **In review**, **In merge queue** or **PR open**. Ready says **Ready to merge** or **Approved**, with the merge card. Your move says **Not pushed**, **No pull request**, **Draft** or **N behind main**, with its card.
-- `BoardTile` calls it once. It hands the word to `BoardTileFacts` (`data-board-word`) and the action to `BoardTileAction`. `DeskProjects` reads the same word.
+- `BoardTile` calls it once. It hands the word to `BoardTileFacts` (`data-board-word`) and the action to `BoardTileAction`.
 - `branch-row-has-one-owner.test.ts` fails when a second picker of the word or the button comes back. `branchRowOf.test.ts` and the `u50-branch-rows` scene cover the rungs.
 - Activity: `OverviewRecentRows` draws the newest three rows of `useTimelineRows`, deferred like `LogPane`.
   - A long branch name is cut in the middle (`splitMiddleOf`, `BoardBranchName`) so its end stays readable.

@@ -73,4 +73,12 @@ describe('the window dock scenes', () => {
     await screen.findByText('1 shell running in other sessions');
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'terminal', sessionId: null });
   });
+
+  it('asks about the workspace on the Board, with no session open', async () => {
+    const Scene = WINDOW_DOCK_SCENES['window-dock-board-ask'];
+    render(<Scene />);
+
+    await screen.findByLabelText('Ask about the workspace');
+    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: null });
+  });
 });

@@ -126,21 +126,18 @@ export const ToolRailFrame = ({ sessionId, terminalSignal }: Props) => {
     >
       {tools.map((tool, index) => {
         const isOpen = gridKinds.split(' ').includes(tool.pane) || detailKind === tool.pane;
-        const isSessionMissing = tool.isSessionOnly && sessionId === null && !isOpen;
         return (
           <SessionToolButton
             key={tool.pane}
             tool={tool}
             isOpen={isOpen}
             isCurrent={pageKind === tool.pane}
-            isDisabled={isSessionMissing}
             isCaptioned={form === 'wide'}
             fact={toolFactOf({
               pane: tool.pane,
               runningCount,
               tabCount,
               portsFact,
-              isSessionMissing,
             })}
             count={toolCountOf({ pane: tool.pane, portsInUse, hasDownPin })}
             signal={tool.pane === 'terminal' ? terminalSignal : null}
