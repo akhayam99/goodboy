@@ -66,6 +66,20 @@ describe('computeCursorCostUsd', () => {
     ).toBeCloseTo(10);
   });
 
+  it('keeps its own cache write rate when the usage names one hour writes', () => {
+    const written: ProviderUsage = {
+      ...usage,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheCreationInputTokens: 1_000_000,
+      longCacheWriteInputTokens: 1_000_000,
+    };
+
+    expect(computeCursorCostUsd({ usage: written, model: 'claude-fable-5-2-high' })).toBeCloseTo(
+      10,
+    );
+  });
+
   it('gemini-3.7-flash-medium bills at the cursor flash rate', () => {
     expect(computeCursorCostUsd({ usage, model: 'gemini-3.7-flash-medium' })).toBeCloseTo(
       0.75 + 3.75,

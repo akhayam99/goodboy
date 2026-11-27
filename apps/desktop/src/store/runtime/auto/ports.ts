@@ -2,6 +2,7 @@ import type {
   AutoDelegationRole,
   BranchFacts,
   CheckReport,
+  LeadDeliveryPart,
   MountNote,
   MountSnapshot,
   PickableMount,
@@ -106,6 +107,7 @@ export type StartAutoTurnParams = Readonly<{
   deliveryId: string;
   rowIds?: ReadonlyArray<string>;
   text: string;
+  parts?: ReadonlyArray<LeadDeliveryPart>;
   images?: ReadonlyArray<MessageAttachment>;
   permissionOnceAllows?: ReadonlyArray<string>;
   onEnded: (ended: AutoTurnEnded) => void;

@@ -1,4 +1,4 @@
-import type { IsoDateTime, Message, ProviderRunId, SessionId, TurnState } from '@goodboy/types';
+import type { IsoDateTime, Message, SessionId, TurnState } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import {
   listAgentRunIdsForSession,
@@ -16,6 +16,7 @@ import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
 import { EMPTY_LOADING } from './sessionMutators';
 import type { SessionLoadingFlags } from './state';
 import { seedRunRoutingFromSpans } from '../turn/seedRunRoutingFromSpans';
+import { mergeRunHistory } from '../agents/mergeRunHistory';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from './sessionIndex';
 import { sessionReads } from '../../runtime/state-writes/sessionReads';
@@ -163,6 +164,9 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
         });
     }
 
+    if (cached?.agents === true || isLight) {
+      void get().loadSessionRunHistory({ sessionId: id });
+    }
     if (cached?.agents === true) {
       void get().recoverArtifactScouts({ sessionId: id });
       void get()
@@ -187,21 +191,12 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
         }),
       ])
         .then(([agents, agentRunIds, spanRoutes]) => {
-          const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
           const seededTurnState: Record<string, TurnState> = {};
           const session = sessionById(get().sessions, id);
           const sessionState =
             session?.state ??
             ({ kind: 'idle', lastActivityAt: new Date().toISOString() } as TurnState);
           for (const agent of agents) {
-            const historical = agentRunIds.get(agent.id) ?? [];
-            const merged: ProviderRunId[] = [...historical];
-            if (agent.runId && !merged.includes(agent.runId)) {
-              merged.push(agent.runId);
-            }
-            if (merged.length > 0) {
-              seededHistory[agent.id] = merged;
-            }
             if (agent.status === 'running' && agent.runId) {
               seededTurnState[agent.id] = {
                 kind: 'running',
@@ -230,7 +225,12 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
           }
           set((state) => ({
             sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
-            agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
+            agentRunHistory: mergeRunHistory({
+              history: state.agentRunHistory,
+              eventRunIds: agentRunIds,
+              routes: spanRoutes,
+              agents,
+            }),
             runRouting: seedRunRoutingFromSpans({
               runRouting: state.runRouting,
               routes: spanRoutes,

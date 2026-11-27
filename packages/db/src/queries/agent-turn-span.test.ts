@@ -19,6 +19,7 @@ import {
   listSessionTurnSpans,
   listTurnSpans,
   listWorkspaceTurnSpans,
+  readAgentLastCleanTurn,
 } from './agent-turn-span';
 import { insertTelemetry } from './telemetry';
 
@@ -360,6 +361,42 @@ describe('agent turn span queries', () => {
     expect(await listProviderAgentTurns({ db: database, sinceMs: endedMs + 1 })).toEqual([
       { provider: 'anthropic', agentId, cleanTurns: 1, lastEndedAtMs: endedMs + 60_000 },
     ]);
+  });
+
+  it('reads the last clean turn of one agent and skips a failed or cancelled one after it', async () => {
+    const database = await databaseWithRun({});
+    const endedMs = Date.parse(endedAt);
+    const minuteLater = brandId<IsoDateTime>({ value: new Date(endedMs + 60_000).toISOString() });
+    const twoMinutesLater = brandId<IsoDateTime>({
+      value: new Date(endedMs + 120_000).toISOString(),
+    });
+    expect(await readAgentLastCleanTurn({ db: database, sessionId, agentId })).toBeNull();
+    await insertAgentTurnSpan({ db: database, span: SPAN });
+    await insertAgentTurnSpan({
+      db: database,
+      span: {
+        ...SPAN,
+        runId: brandId<ProviderRunId>({ value: 'run-2' }),
+        model: 'claude-opus-5',
+        endedAt: minuteLater,
+        endReason: 'failed',
+      },
+    });
+    await insertAgentTurnSpan({
+      db: database,
+      span: {
+        ...SPAN,
+        runId: brandId<ProviderRunId>({ value: 'run-3' }),
+        model: 'claude-opus-5',
+        endedAt: twoMinutesLater,
+        endReason: 'cancelled',
+      },
+    });
+
+    expect(await readAgentLastCleanTurn({ db: database, sessionId, agentId })).toEqual({
+      endedAtMs: endedMs,
+      model: 'claude-sonnet-5',
+    });
   });
 
   it('lists what each run of the session was started with', async () => {

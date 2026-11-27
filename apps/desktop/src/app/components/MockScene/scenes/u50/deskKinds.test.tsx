@@ -105,7 +105,6 @@ describe('the u50 desk kinds scenes', () => {
     expect(within(pr).queryByRole('button', { name: /rerun/i })).toBeNull();
     expect(within(pr).queryByRole('button', { name: /^send/i })).toBeNull();
     expect(within(pr).queryByRole('button', { name: /more/i })).toBeNull();
-    expect(stack.querySelector('[data-slot-back-chip]')).toBeNull();
   });
 
   it('keeps both panels when the pull request switches to Conversation', async () => {

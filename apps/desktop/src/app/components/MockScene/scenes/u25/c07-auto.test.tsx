@@ -336,7 +336,7 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-limit-popover' });
 
     const popover = await screen.findByRole('dialog', { name: 'Limit' }, WAIT);
-    expect(within(popover).getByText('Spent')).toBeDefined();
+    expect(within(popover).getByText('Counted to limit')).toBeDefined();
     expect(within(popover).getByText('Reserved')).toBeDefined();
     expect(within(popover).getByText('Turns')).toBeDefined();
     expect(within(popover).getByRole('form', { name: 'Limit for this Lead' })).toBeDefined();

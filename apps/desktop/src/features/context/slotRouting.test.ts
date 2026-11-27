@@ -3,7 +3,8 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { SLOT_KEYS, type SlotKey } from '@goodboy/core/context';
 import { ROLE_REGISTRY } from '@goodboy/core/roles';
 import type { AgentRole, ContextSlot } from '@goodboy/types';
-import { buildContextPreamble } from '../../store/slices/turn/preamble';
+import { joinDeliveryParts } from '@goodboy/core/auto';
+import { contextPreambleParts } from '../../store/slices/turn/preamble';
 import { ROLE_SLOTS } from './slotRouting';
 
 const ROLES = Object.keys(ROLE_REGISTRY) as ReadonlyArray<AgentRole>;
@@ -15,7 +16,9 @@ const FULL_SLOTS: ReadonlyArray<ContextSlot> = SLOT_KEYS.map((key) => ({
 }));
 
 const preambleFor = ({ role }: { readonly role: AgentRole }) =>
-  buildContextPreamble(FULL_SLOTS, ROLE_SLOTS[role]);
+  joinDeliveryParts({
+    parts: contextPreambleParts({ sharedSlots: FULL_SLOTS, slotFilter: ROLE_SLOTS[role] }),
+  });
 
 describe('ROLE_SLOTS', () => {
   it('has one explicit entry per role in the registry', () => {

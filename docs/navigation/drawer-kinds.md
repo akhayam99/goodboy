@@ -15,8 +15,7 @@
   selects it.
 
 `DrawerHost` hands a report or a wireframe to `ArtifactReadingDrawer`, with **Open
-full page** as its one header action. Opening another artifact replaces it and
-leaves the back chip; a deleted one opens the gone state (`GoneObject`) with Close.
+full page** as its one header action. Opening another artifact replaces it; a deleted one opens the gone state (`GoneObject`) with Close.
 
 A pull request opens its **Conversation** tab from every entrance; only a search
 hit on a comment opens **Comments**. Labels name the place: **Open in Context**,

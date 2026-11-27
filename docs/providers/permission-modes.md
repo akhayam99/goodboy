@@ -88,9 +88,9 @@ has not been checked.
   access, and disables with a reason the rows the active provider can't honor.
   `dontAsk` stays in the type for older sessions, reads as Ask first, and is never
   offered. Auto's Claude turn runs `bypassPermissions` in Full access and
-  `default` in every other mode, with the same read tools and deny list, so it
-  stays read only. It reads project folders through `--add-dir` read roots, and a
-  Grep or Glob grant is kept as `Read(//dir/**)`
+  `default` in every other mode, with `Read` as its one tool and the same deny
+  list, so it stays read only. It reads project folders through `--add-dir` read
+  roots, and a Grep or Glob grant is kept as `Read(//dir/**)`
 
 ## Default mode
 

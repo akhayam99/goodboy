@@ -213,7 +213,7 @@ describe('the agent and the pull request saved with the desk', () => {
     expect([state().drawer?.kind, state().drawerBack?.kind]).not.toContain('pull-request');
   });
 
-  it('saves no agent that only waits in the back chip', async () => {
+  it('saves no agent a later reader replaced', async () => {
     await goTo({ sessionId: S1 });
     state().setSessionFace({ sessionId: S1, face: 'desk' });
     state().openDrawer(AGENT);
@@ -224,7 +224,7 @@ describe('the agent and the pull request saved with the desk', () => {
     });
     await settle();
 
-    expect(state().drawerBack?.kind).toBe('transcript');
+    expect(state().drawerBack).toBeNull();
     expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}').detail ?? []).toEqual([]);
   });
 
