@@ -167,7 +167,10 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
     resolveRouting: async (request) =>
       resolveChildRouting({ state: deps.getState(), request, nowMs: deps.nowMs() }),
     isPlanApprovalRequired: deps.isPlanApprovalRequired,
-    startAutoTurn: makeStartAutoTurn(deliveredDeps),
+    startAutoTurn: makeStartAutoTurn({
+      ...deliveredDeps,
+      loadAgentPicks: ({ sessionId }) => deps.getState().loadPhaseRunsForSession(sessionId),
+    }),
     lookupDeliveryRun: deps.lookupDeliveryRun,
     ensureChildAgent: makeEnsureChildAgent({ db: deps.db, refreshAgents: deps.refreshAgents }),
     startChildTurn,

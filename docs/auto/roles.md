@@ -22,7 +22,8 @@ role fits, the pull request to a Scribe, a failing check to a CI fixer, the
 branch's commit history to a Rewriter. It names a child's `mount` field and the
 MOUNTS line it comes from.
 
-Auto keeps its read tools and answers questions itself. When it says what
+Auto never reads code: a question that needs it goes to a Scout
+([the Lead's tools](../auto.md#the-leads-model-and-tools)). When it says what
 happens next it names the hand over and the role ("I asked an implementer to
 reinstall the dependencies"), never an action of its own.
 
