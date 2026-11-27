@@ -37,11 +37,11 @@ export const redeliverPermission = async ({ store, pending }: Params): Promise<v
       agentId,
       content: withHeldAnswers({
         held,
-        prompt: verdict === 'allow' ? ALLOW_PROMPT : denialNoticeOf({ toolName, reason: '' }),
+        prompt: verdict !== 'deny' ? ALLOW_PROMPT : denialNoticeOf({ toolName, reason: '' }),
       }),
       resolvedAsks: NO_RESOLVED_ASKS,
       ...permissionRowOf({ held }),
-      ...(verdict === 'allow'
+      ...(verdict !== 'deny'
         ? { permissionOnceAllows: [...heldAllows, oncePatternText({ toolName, input })] }
         : held.length > 0 && { permissionOnceAllows: heldAllows }),
     }),

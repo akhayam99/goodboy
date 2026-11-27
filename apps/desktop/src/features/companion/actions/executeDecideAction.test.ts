@@ -246,3 +246,77 @@ describe.each(CASES)('$kind', (kase) => {
     expect(kase.called(kit)).not.toHaveBeenCalled();
   });
 });
+
+const tagging = vi.hoisted(() => ({
+  note: vi.fn<(params: { phoneId: string; ruleId: string }) => Promise<boolean>>(),
+  drop: vi.fn<(params: { id: string }) => Promise<void>>(),
+}));
+
+vi.mock('../bridge', () => ({ bridgeNotePhoneRule: tagging.note }));
+vi.mock('../../permissions/permissions', () => ({ invokePermissionRuleDelete: tagging.drop }));
+
+describe('answerPermission with allowAlways', () => {
+  beforeEach(() => {
+    tagging.note.mockReset().mockResolvedValue(true);
+    tagging.drop.mockReset().mockResolvedValue(undefined);
+  });
+
+  it('tags the rule with the phone that made it', async () => {
+    const kit = buildTestStore();
+    kit.actions.allowWithRule.mockResolvedValue('rule-9');
+
+    await run({ kit, kase: ALWAYS });
+
+    expect(tagging.note).toHaveBeenCalledWith({ phoneId: 'phone-1', ruleId: 'rule-9' });
+    expect(tagging.drop).not.toHaveBeenCalled();
+  });
+
+  it('removes a rule it could not tag, so no rule outlives its phone', async () => {
+    const kit = buildTestStore();
+    kit.actions.allowWithRule.mockResolvedValue('rule-9');
+    tagging.note.mockResolvedValue(false);
+
+    const outcome = await run({ kit, kase: ALWAYS });
+
+    expect(outcome.result).toBe('done');
+    expect(tagging.drop).toHaveBeenCalledWith({ id: 'rule-9' });
+  });
+
+  const ALWAYS: Case = {
+    kind: 'answerPermission',
+    fields: {
+      agentId: AGENT,
+      requestId: TOOL_USE,
+      seenInputHash: PERMISSION_HASH,
+      verdict: 'allowAlways',
+    },
+    stale: { seenInputHash: 'old' },
+    called: (kit) => kit.actions.allowWithRule,
+  };
+
+  it('takes the Always allow path of the Mac for this workspace and reports done', async () => {
+    const kit = buildTestStore();
+    const outcome = await run({ kit, kase: ALWAYS });
+    expect(outcome.result).toBe('done');
+    expect(kit.actions.allowWithRule).toHaveBeenCalledTimes(1);
+    expect(kit.actions.allowWithRule).toHaveBeenCalledWith(
+      expect.objectContaining({ scope: 'workspace', toolUseId: TOOL_USE, toolName: 'Bash' }),
+    );
+    expect(kit.actions.allowAndContinue).not.toHaveBeenCalled();
+  });
+
+  it('refuses a request that changed while the phone read it', async () => {
+    const kit = buildTestStore();
+    const outcome = await run({ kit, kase: ALWAYS, overrides: ALWAYS.stale });
+    expect(outcome.refusal?.code).toBe('version-changed');
+    expect(kit.actions.allowWithRule).not.toHaveBeenCalled();
+  });
+
+  it('refuses a phone that may not decide, like an allow', async () => {
+    const kit = buildTestStore();
+    registerDecideScope({ read: () => false });
+    const outcome = await run({ kit, kase: ALWAYS, phoneId: 'phone-7' });
+    expect(outcome.refusal?.code).toBe('not-permitted');
+    expect(kit.actions.allowWithRule).not.toHaveBeenCalled();
+  });
+});

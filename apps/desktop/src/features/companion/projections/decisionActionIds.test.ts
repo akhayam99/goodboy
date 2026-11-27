@@ -177,6 +177,21 @@ describe('every decision carries an id the executor accepts', () => {
     );
   });
 
+  it('shows the exact rule Always allow would create, built on the Mac', () => {
+    const decision = decisionOfMove({
+      scope: scopeOf(),
+      move: moveOf('needs-approval', null),
+      question: undefined,
+    });
+
+    if (decision?.kind !== 'permission') {
+      throw new Error('expected a permission decision');
+    }
+    expect(decision.alwaysRule.scope).toBe('workspace');
+    expect(decision.alwaysRule.label).toMatch(/^Always allow/);
+    expect(decision.alwaysRule.pattern).toMatch(/^Bash/);
+  });
+
   it('carries the permission with the line that stopped the agent, without a home path', () => {
     const decision = decisionOfMove({
       scope: scopeOf(),

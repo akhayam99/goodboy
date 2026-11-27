@@ -41,8 +41,8 @@ const AGENT_ID = brandId<AgentId>({ value: 'agent' });
 const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'ws-1' });
 
 const allowAndContinueMock = vi.fn(async () => undefined);
-const allowWithRuleMock = vi.fn(async () => undefined);
-const resolveMock = vi.fn(async () => undefined);
+const allowWithRuleMock = vi.fn(async () => null);
+const resolveMock = vi.fn(async () => null);
 const denyWithReasonMock = vi.fn(async () => undefined);
 const reportErrorMock = vi.fn(async () => undefined);
 
@@ -75,8 +75,8 @@ const makeItem = ({ over = {} }: ItemParams = {}): Extract<
 beforeEach(async () => {
   await resetStoryStore();
   allowAndContinueMock.mockReset().mockResolvedValue(undefined);
-  allowWithRuleMock.mockReset().mockResolvedValue(undefined);
-  resolveMock.mockReset().mockResolvedValue(undefined);
+  allowWithRuleMock.mockReset().mockResolvedValue(null);
+  resolveMock.mockReset().mockResolvedValue(null);
   denyWithReasonMock.mockReset().mockResolvedValue(undefined);
   toastMock.mockReset();
   reportErrorMock.mockClear();
