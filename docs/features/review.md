@@ -355,6 +355,7 @@ Read the branch against its base in **Changes**, unified or split. The changed f
 
 - Drag the list's edge to widen it or hide it. **Show files** brings it back.
 - Quote lines into a note, or choose **Ask agent** to send them to an agent with your question.
+- Your notes and the reviewers' threads sit under their line, with their state, the same one Comments shows. An open thread is open, a resolved one is a single line. A thread whose line left the diff sits at the top of its file as **Outdated**. A file in the list carries the count of its open threads. **Reply**, **Resolve** and **Fix** work from the thread.
 - The Branch header refreshes after a local commit edit. **Force push** waits in **⋯** behind its confirm.
 
 <picture>
@@ -396,6 +397,7 @@ The review goes to the pull request of the branch on screen, the one you picked 
 
 This part is for contributors and agents who change the feature.
 
+- Threads in Changes: `useDiffReviewThreads` reads the host threads of the branch on screen. It asks for them with `refreshSessionPrDetail` when the detail is not loaded. Each state word comes from `hostThreadStatusOf`, which asks `reviewCommentStateOf`. `placeThreads` splits the threads into line, file and outdated ones (`threadPlacement.test.ts`, scene `diff-threads`). A thread draws `ThreadFixVerb`, the `reviewComment.draft` verb of `ObjectActionVerb`.
 - Comment door: `threadMountIdOf` is the one owner of the mount a thread sits on. A note matches the mount of its project and branch. A host thread matches the mount that carries its request in `reviewSourceEntriesOf`. A project with a single mount is the last resort. `commentBranchPlaceOf` turns that into the place of every door (`openReviewComment`, `attentionPlace`, `requestReview`, `openReviewTarget`). With no owner it keeps the branch on screen (`commentOpensItsBranch.test.ts`).
 - Comments list: `ReviewList`, `ReviewListRow` and `commentsCountOf` draw the list and the count on **Fix N threads**.
 - Unread threads: `unreadThreadsOf` is the one function. It joins the threads to the comments of the selected source, keeps the threads `rowBelongsToSource` lists, and returns null while the reads or the viewer identity are not loaded. `useUnreadThreads` feeds it to `usePullRequestReadiness` (the line) and to `useThreadVisit` (the dots). `ReviewFlowVisit` mounts `useThreadVisit` above `ReviewFlow` and gives the visit snapshot to `ReviewList` through `ThreadVisitContext`, so it survives the Resolved switch and an empty list. A write is deduped only while it is in flight.

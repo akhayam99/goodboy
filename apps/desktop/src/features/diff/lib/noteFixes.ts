@@ -16,7 +16,7 @@ import {
 } from '../../resolve/reviewCommentState';
 import { REVIEW_LAUNCH_LABEL } from '../../resolve/reviewLaunchCopy';
 
-type NoteFixGroup = 'open' | 'working' | 'needs' | 'ready' | 'failed' | 'done';
+export type NoteFixGroup = 'open' | 'working' | 'needs' | 'ready' | 'failed' | 'done';
 
 export const NOTE_LOCK_REASON = 'A fixer is working on this comment';
 
@@ -42,7 +42,7 @@ type Params = {
   readonly attempts: ReadonlyArray<ResolveAttempt>;
 };
 
-const GROUP_OF_STATE: Record<ReviewCommentState, NoteFixGroup> = {
+export const FIX_GROUP_OF_STATE: Record<ReviewCommentState, NoteFixGroup> = {
   new: 'open',
   drafting: 'working',
   needs: 'needs',
@@ -118,7 +118,7 @@ export const noteFixesOf = ({ notes, entries, attempts }: Params): ReadonlyArray
     const row = latest.get(note.id);
     const isClosed = note.status === 'resolved';
     const state = row === undefined ? null : reviewCommentStateOf({ row });
-    const group = isClosed ? 'done' : state === null ? 'open' : GROUP_OF_STATE[state];
+    const group = isClosed ? 'done' : state === null ? 'open' : FIX_GROUP_OF_STATE[state];
     return {
       note,
       threadId: row?.thread.threadId ?? noteThreadId({ noteId: note.id }),

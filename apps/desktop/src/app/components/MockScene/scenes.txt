@@ -507,6 +507,7 @@ diff-peek-empty
 diff-peek-library
 diff-peek-more
 diff-peek-open
+diff-threads
 diff-tree-indent
 dock-pair
 dock-stack
