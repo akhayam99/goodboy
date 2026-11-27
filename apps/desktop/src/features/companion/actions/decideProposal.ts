@@ -100,7 +100,7 @@ export const decideProposal = async ({
   if (isAlternative && choice === undefined) {
     return refusedResult({
       code: 'invalid-request',
-      message: 'This option is not offered. The proposal is unchanged.',
+      message: "This option isn't offered. The proposal is unchanged.",
     });
   }
   const port = currentDelegationDecisionPort();
