@@ -33,6 +33,8 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 const sendRow = (): string => `Add to message${shortcutGlyphs('browser.sendToAgent')}`;
 
+const pinRow = (): string => `Pin to payments-api${shortcutGlyphs('browser.pin')}`;
+
 const WORKSPACE_ID = nextWorkspaceId();
 const SESSION_ID = nextSessionId();
 const PAYMENTS_API = buildStoryProject({
@@ -132,6 +134,15 @@ const stubHost = () => {
       rows = rows.map((candidate) => (candidate.id === args.id ? moved : candidate));
       return moved;
     },
+    browser_tab_row_unpin: ({ args }: MoveArgs) => {
+      const row = rows.find((candidate) => candidate.id === args.id);
+      if (row === undefined) {
+        throw { kind: 'failed', message: 'tab-row-gone' };
+      }
+      const moved: BrowserTab = { ...row, sessionId: SESSION_ID, projectId: null };
+      rows = rows.map((candidate) => (candidate.id === args.id ? moved : candidate));
+      return moved;
+    },
     browser_tab_open: ({ args }: OpenArgs) => factsOf({ args }),
     browser_tab_open_local: ({ args }: OpenLocalArgs) =>
       factsOf({ args: { sessionId: args.sessionId, url: LOCAL_PLAN } }),
@@ -211,7 +222,7 @@ type RowName = {
 };
 
 const chooseTabRow = async ({ name }: RowName) => {
-  fireEvent.click(screen.getByRole('button', { name: 'More' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
   fireEvent.click(await screen.findByRole('menuitem', { name: 'This tab' }));
   fireEvent.click(await screen.findByRole('menuitem', { name }));
 };
@@ -433,7 +444,8 @@ describe('the browser pane', () => {
       name: /^Edit address, .*\/work\/harborline\/plan\.html$/,
     });
     screen.getByRole('button', { name: 'Close plan.html' });
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'This tab' }));
     const outside = await screen.findByRole('menuitem', { name: 'Open in your browser' });
     expect(outside.getAttribute('aria-disabled')).toBe('true');
   });
@@ -535,10 +547,13 @@ describe('the browser pane', () => {
   it('pins the shown tab to the project and keeps showing it', async () => {
     await openFirstPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Pin to payments-api' }));
+    expect(screen.queryByRole('button', { name: 'Pin to payments-api' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /^Pin to payments-api/ }));
 
-    const unpin = await screen.findByRole('button', { name: 'Unpin from payments-api' });
-    expect(unpin.getAttribute('aria-pressed')).toBe('true');
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_row_pin' })).toHaveLength(1));
+    fireEvent.click(await screen.findByRole('button', { name: 'Page menu' }));
+    await screen.findByRole('menuitem', { name: /^Unpin from payments-api/ });
     expect(callsOf({ command: 'browser_tab_row_pin' })).toEqual([
       expect.objectContaining({ id: 'live-1', sessionId: SESSION_ID, projectId: PAYMENTS_API.id }),
     ]);
@@ -546,6 +561,11 @@ describe('the browser pane', () => {
       'live-1',
     ]);
     expect(callsOf({ command: 'browser_tab_hide' })).toEqual([]);
+
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Unpin from payments-api/ }));
+
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_row_unpin' })).toHaveLength(1));
+    await waitFor(() => expect(store.getState().browserProjectPins[PAYMENTS_API.id]).toEqual([]));
   });
 
   it('hides the view while an overlay covers it and shows it again after', async () => {
@@ -904,49 +924,58 @@ describe('the browser pane', () => {
     screen.getByRole('listbox', { name: 'Suggestions' });
   });
 
-  it('lists the page hand-off first and five more rows in the More menu', async () => {
+  it('lists the page hand-off first and four more rows in the page menu', async () => {
     await openFirstPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
 
     const rows = await screen.findAllByRole('menuitem');
     expect(rows.map((row) => row.textContent)).toEqual([
       sendRow(),
-      'Open in your browser',
-      'Open full page',
-      'This tab',
+      pinRow(),
       'Clear browser data',
+      'This tab',
       'DevelopDesktop',
     ]);
   });
 
-  it('keeps the More menu at six rows and puts reload without cache and Inspect in Safari under Develop on macOS', async () => {
+  it('keeps the page menu at five rows, with no reload or full page row, and Inspect in Safari under Develop on macOS', async () => {
     const agent = vi.spyOn(window.navigator, 'userAgent', 'get');
     agent.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
     await openFirstPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
 
     const rows = await screen.findAllByRole('menuitem');
     expect(rows.map((row) => row.textContent)).toEqual([
       sendRow(),
-      'Open in your browser',
-      'Open full page',
-      'This tab',
+      pinRow(),
       'Clear site data',
+      'This tab',
       'DevelopDesktop',
     ]);
-    expect(rows).toHaveLength(6);
+    expect(rows).toHaveLength(5);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'This tab' }));
+    const tabRows = await screen.findAllByRole('menuitem', {
+      name: /^(Copy address|Duplicate|Open in your browser|Close tab)$/,
+    });
+    expect(tabRows.map((row) => row.textContent)).toEqual([
+      'Copy address',
+      'Duplicate',
+      'Open in your browser',
+      'Close tab',
+    ]);
     fireEvent.click(screen.getByRole('menuitem', { name: /^Develop/ }));
-    await screen.findByRole('menuitem', { name: /^Reload without cache/ });
     await screen.findByRole('menuitem', { name: 'Inspect in Safari' });
+    expect(screen.queryByRole('menuitem', { name: /^Reload without cache/ })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Open full page' })).toBeNull();
     agent.mockRestore();
   });
 
   it('keeps Inspect in Safari out of the More menu off macOS', async () => {
     await openFirstPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
 
     await screen.findAllByRole('menuitem');
     expect(screen.queryByRole('menuitem', { name: 'Inspect in Safari' })).toBeNull();
@@ -957,7 +986,7 @@ describe('the browser pane', () => {
     agent.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
     await openFirstPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: /^Develop/ }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect in Safari' }));
 
@@ -976,7 +1005,7 @@ describe('the browser pane', () => {
     await openFirstPage();
     failCommand({ command: 'browser_tab_inspectable', reason: 'unsupported-platform' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Page menu' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: /^Develop/ }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect in Safari' }));
 

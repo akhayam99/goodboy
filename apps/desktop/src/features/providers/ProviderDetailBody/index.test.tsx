@@ -58,7 +58,7 @@ const infoOf = ({ id, label, connection = 'connected' }: InfoParams): ProviderDi
   id,
   label,
   binary: id,
-  version: '2.1.296',
+  version: '2.1.321',
   connection,
   identity: 'mara@harborline.dev',
   error: null,
@@ -148,7 +148,7 @@ describe('the provider detail body', () => {
     expect(facts.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
       'Max plan',
       'mara@harborline.dev',
-      'Claude CLI 2.1.296',
+      'Claude CLI 2.1.321',
     ]);
     screen.getByRole('heading', { level: 1, name: 'Claude' });
     screen.getByText('Signed in');

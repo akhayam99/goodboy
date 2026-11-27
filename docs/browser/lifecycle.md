@@ -171,7 +171,7 @@ sign-in provider a login went through.
 
 `browser_tab_reload_from_origin` calls `reloadFromOrigin` on the WKWebView.
 Windows and Linux have no such call in wry, so it is a plain reload there.
-⇧-click on Reload, the Develop row and ⌘⇧R reach it: `app.reload` goes through
+⇧-click on Reload and ⌘⇧R reach it: `app.reload` goes through
 `reloadAppOrPage`, which picks the reload surface like ⌘R does and calls its
 `reloadFromOrigin`, else reloads Goodboy.
 

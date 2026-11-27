@@ -1,9 +1,11 @@
+import { prefixRuleFor } from '@goodboy/core/permissions';
 import { openPermissionAsksOf } from '../../permissions/openPermissionAsksOf';
 import type { HandlerParams, HandlerResult } from './handlerTypes';
 import type { DecideActionOf } from './decideAction';
 import { doneResult, failedResult, refusedResult } from './handlerResults';
 import { isAgentOfSession } from './targets';
 import type { AppStore } from '../../../store/store';
+import { tagPhoneRule } from './tagPhoneRule';
 import { redeliverPermission } from './redeliverPermission';
 import {
   dropUndelivered,
@@ -33,6 +35,7 @@ const deliverPending = async ({ store, pending }: DeliverParams): Promise<Handle
 export const answerPermission = async ({
   action,
   getStore,
+  phoneId = null,
 }: HandlerParams<DecideActionOf<'answerPermission'>>): Promise<HandlerResult> => {
   const sessionId = sessionIdOf({ value: action.sessionId });
   const agentId = agentIdOf({ value: action.agentId });
@@ -82,6 +85,15 @@ export const answerPermission = async ({
   try {
     if (action.verdict === 'allow') {
       await store.allowAndContinue({ ...target, input: ask.input });
+      return doneResult();
+    }
+    if (action.verdict === 'allowAlways') {
+      const ruleId = await store.allowWithRule({
+        ...target,
+        scope: 'workspace',
+        pattern: prefixRuleFor({ toolName: ask.toolName, input: ask.input }).pattern,
+      });
+      await tagPhoneRule({ phoneId, ruleId });
       return doneResult();
     }
     await store.denyWithReason({ ...target, reason: '' });

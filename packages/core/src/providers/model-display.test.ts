@@ -6,7 +6,7 @@ describe('provider model display', () => {
     expect(getModelProvider('gpt-6-astra')).toBe('codex');
     expect(getModelDescriptor({ id: 'gpt-6-astra' })).toMatchObject({
       id: 'gpt-6',
-      label: 'Astra',
+      label: 'GPT-6 Astra',
       family: 'gpt',
       variantLabel: '6 Astra',
       contextWindow: 272_000,

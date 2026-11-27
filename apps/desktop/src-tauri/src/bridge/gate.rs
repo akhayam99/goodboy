@@ -12,7 +12,7 @@ pub const FORGET_AFTER: Duration = Duration::from_secs(900);
 pub const GLOBAL_WINDOW: Duration = Duration::from_secs(60);
 pub const GLOBAL_FAILURES: usize = 30;
 pub const GLOBAL_PAUSE: Duration = Duration::from_secs(30);
-const MAX_SOURCES: usize = 4096;
+pub const MAX_SOURCES: usize = 4096;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Refusal {
@@ -28,6 +28,7 @@ struct Source {
     failures: u32,
     blocked_until: Option<Instant>,
     last_failure: Option<Instant>,
+    last_seen: Option<Instant>,
 }
 
 #[derive(Default)]
@@ -48,6 +49,39 @@ enum Settle {
     Success,
     Neutral,
     Failure(Instant),
+    SourceOnly(Instant),
+}
+
+pub fn source_key(ip: IpAddr) -> IpAddr {
+    match ip {
+        IpAddr::V6(v6) => match v6.to_ipv4_mapped() {
+            Some(v4) => IpAddr::V4(v4),
+            None => {
+                let mut segments = v6.segments();
+                for segment in &mut segments[4..] {
+                    *segment = 0;
+                }
+                IpAddr::V6(segments.into())
+            }
+        },
+        IpAddr::V4(_) => ip,
+    }
+}
+
+fn evict_least_recent(state: &mut State) -> bool {
+    let oldest = state
+        .sources
+        .iter()
+        .filter(|(_, s)| s.in_flight == 0)
+        .min_by_key(|(_, s)| s.last_seen)
+        .map(|(ip, _)| *ip);
+    match oldest {
+        Some(ip) => {
+            state.sources.remove(&ip);
+            true
+        }
+        None => false,
+    }
 }
 
 pub struct HandshakePermit {
@@ -77,6 +111,7 @@ impl HandshakeGate {
     }
 
     pub fn try_enter_at(&self, ip: IpAddr, now: Instant) -> Result<HandshakePermit, Refusal> {
+        let ip = source_key(ip);
         let mut state = self.state.lock().map_err(|_| Refusal::Full)?;
         if let Some(until) = state.paused_until {
             if until > now {
@@ -90,10 +125,14 @@ impl HandshakeGate {
             return Err(Refusal::Full);
         }
         forget_idle(&mut state, now);
-        if !state.sources.contains_key(&ip) && state.sources.len() >= MAX_SOURCES {
+        if !state.sources.contains_key(&ip)
+            && state.sources.len() >= MAX_SOURCES
+            && !evict_least_recent(&mut state)
+        {
             return Err(Refusal::Full);
         }
         let source = state.sources.entry(ip).or_default();
+        source.last_seen = Some(now);
         if let Some(until) = source.blocked_until {
             if until > now {
                 return Err(Refusal::BackedOff {
@@ -132,6 +171,14 @@ impl HandshakePermit {
         self.settle(Settle::Neutral);
     }
 
+    pub fn fail(mut self) {
+        self.settle(Settle::Failure(Instant::now()));
+    }
+
+    pub fn fail_source(mut self) {
+        self.settle(Settle::SourceOnly(Instant::now()));
+    }
+
     #[cfg(test)]
     pub fn fail_at(mut self, now: Instant) {
         self.settle(Settle::Failure(now));
@@ -158,8 +205,9 @@ impl HandshakePermit {
                 source.last_failure = None;
                 return;
             }
-            Settle::Failure(now) => now,
+            Settle::Failure(now) | Settle::SourceOnly(now) => now,
         };
+        let is_global = matches!(outcome, Settle::Failure(_));
         source.failures = source.failures.saturating_add(1);
         source.last_failure = Some(now);
         let wait = backoff_after(source.failures);
@@ -167,6 +215,9 @@ impl HandshakePermit {
             true => None,
             false => Some(now + wait),
         };
+        if !is_global {
+            return;
+        }
         while state
             .recent_failures
             .front()
@@ -184,7 +235,7 @@ impl HandshakePermit {
 
 impl Drop for HandshakePermit {
     fn drop(&mut self) {
-        self.settle(Settle::Failure(Instant::now()));
+        self.settle(Settle::Neutral);
     }
 }
 
@@ -331,16 +382,69 @@ mod tests {
     }
 
     #[test]
-    fn a_dropped_permit_counts_as_a_failure() {
+    fn a_bare_connect_and_close_counts_for_nothing() {
+        let gate = HandshakeGate::new(MAX_UNAUTHENTICATED);
+        for _ in 0..GLOBAL_FAILURES * 3 {
+            drop(gate.try_enter(ip(1)).unwrap());
+        }
+
+        assert!(gate.try_enter(ip(1)).is_ok());
+        assert!(gate.try_enter(ip(2)).is_ok());
+    }
+
+    #[test]
+    fn a_failed_handshake_backs_its_source_off() {
         let gate = HandshakeGate::new(MAX_UNAUTHENTICATED);
         for _ in 0..FREE_FAILURES + 1 {
-            drop(gate.try_enter(ip(1)).unwrap());
+            gate.try_enter(ip(1)).unwrap().fail();
         }
 
         assert!(matches!(
             gate.try_enter(ip(1)).err(),
             Some(Refusal::BackedOff { .. })
         ));
+    }
+
+    #[test]
+    fn a_stalled_handshake_slows_its_source_without_pausing_everyone() {
+        let gate = HandshakeGate::new(MAX_UNAUTHENTICATED);
+        for _ in 0..GLOBAL_FAILURES + FREE_FAILURES as usize {
+            let _ = gate.try_enter(ip(1)).map(|p| p.fail_source());
+        }
+
+        assert!(gate.try_enter(ip(1)).is_err());
+        assert!(gate.try_enter(ip(2)).is_ok());
+    }
+
+    #[test]
+    fn one_ipv6_prefix_is_one_source() {
+        let gate = HandshakeGate::new(MAX_UNAUTHENTICATED);
+        let in_prefix = |n: u16| -> IpAddr { format!("fd00:1:2:3::{n:x}").parse().unwrap() };
+        for n in 0..FREE_FAILURES + 1 {
+            gate.try_enter(in_prefix(n as u16 + 1)).unwrap().fail();
+        }
+
+        assert!(gate.try_enter(in_prefix(999)).is_err());
+        assert!(gate.try_enter("fd00:1:2:4::1".parse().unwrap()).is_ok());
+        assert_eq!(source_key("::ffff:192.168.1.7".parse().unwrap()), ip(7));
+    }
+
+    #[test]
+    fn a_full_source_table_evicts_the_least_recent_instead_of_locking_out() {
+        let gate = HandshakeGate::new(MAX_UNAUTHENTICATED);
+        let base = Instant::now();
+        for n in 0..MAX_SOURCES as u32 {
+            let source: IpAddr = IpAddr::from([10, 1, (n >> 8) as u8, n as u8]);
+            gate.try_enter_at(source, base + Duration::from_millis(u64::from(n)))
+                .unwrap()
+                .release();
+        }
+
+        let newcomer = IpAddr::from([172, 16, 0, 9]);
+
+        assert!(gate
+            .try_enter_at(newcomer, base + Duration::from_secs(60))
+            .is_ok());
     }
 
     #[test]
@@ -382,5 +486,19 @@ mod tests {
         assert!(gate
             .try_enter_at(ip(1), last + FORGET_AFTER + secs(1))
             .is_ok());
+    }
+
+    #[test]
+    fn a_completed_handshake_clears_the_failure_count_of_its_source() {
+        let gate = HandshakeGate::new(MAX_UNAUTHENTICATED);
+        let last = fail_spaced(&gate, ip(5), FREE_FAILURES + 1, Instant::now());
+        let later = last + BACKOFF_MAX + secs(1);
+
+        gate.try_enter_at(ip(5), later).unwrap().succeed();
+
+        for _ in 0..FREE_FAILURES {
+            gate.try_enter_at(ip(5), later).unwrap().fail_at(later);
+        }
+        assert!(gate.try_enter_at(ip(5), later).is_ok());
     }
 }

@@ -203,14 +203,19 @@ describe('the browser pane scenes', () => {
     ).toBe('true');
   });
 
-  it('opens the errors from the red counter, the repeated one grouped and expanded', async () => {
+  it('opens the errors from the Console button with its count, the repeated one grouped and expanded', async () => {
     mount({ id: 'browser-errors' });
 
     const region = await screen.findByRole('region', { name: 'Console' }, WAIT);
     const tab = await within(region).findByRole('tab', { name: /Errors/ }, WAIT);
     expect(tab.getAttribute('aria-selected')).toBe('true');
     expect(tab.textContent).toBe('Errors6');
-    screen.getByRole('button', { name: 'Show 6 errors' });
+    const consoleButton = screen.getByRole('button', { name: 'Console' });
+    expect(consoleButton.getAttribute('aria-pressed')).toBe('true');
+    const notes = (consoleButton.getAttribute('aria-describedby') ?? '')
+      .split(' ')
+      .map((id) => document.getElementById(id)?.textContent);
+    expect(notes).toContain('6 errors');
     const list = within(region).getByRole('list', { name: 'Errors' });
     expect(within(list).getAllByRole('listitem')).toHaveLength(3);
     const stack = within(region).getByRole('group', { name: 'Stack' });
@@ -401,14 +406,14 @@ describe('the browser pane scenes', () => {
     expect(within(pane).getByRole('button', { name: 'Back' }).hasAttribute('disabled')).toBe(false);
   });
 
-  it('opens the More menu with its six rows', async () => {
+  it('opens the page menu with its five rows', async () => {
     mount({ id: 'browser-pane-more' });
 
     const menu = await screen.findByRole('menu', undefined, WAIT);
-    expect(within(menu).getAllByRole('menuitem')).toHaveLength(6);
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(5);
   });
 
-  it('opens the More menu on the Add to message row first', async () => {
+  it('opens the page menu on the Add to message row first', async () => {
     mount({ id: 'browser-handoff' });
 
     const menu = await screen.findByRole('menu', undefined, WAIT);

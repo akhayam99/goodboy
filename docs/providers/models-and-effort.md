@@ -29,9 +29,10 @@ the anthropic catalog is `providers/claude/catalog.ts`.
    fails
 5. Nothing else. Auto (`autoRouting/effortLadder.ts`) and the chat default
    (`conversation/defaultChatModel.ts`) name a line (`{ group: 'Sonnet' }`) and
-   take its newest model through `latestInGroup`.
-   `model-versions-live-in-the-catalog.test.ts` fails when product code outside
-   the catalog layer writes a versioned id
+   read it through `latestInGroup`: Auto takes the newest model. So does the chat
+   default, unless the provider's turn default sits in that line, which it then
+   starts on. `model-versions-live-in-the-catalog.test.ts` fails when product
+   code outside the catalog layer writes a versioned id
 
 ## Catalog keys
 
@@ -47,14 +48,59 @@ the anthropic catalog is `providers/claude/catalog.ts`.
 - `cursor/agent-model-ids.test.ts` checks the chosen Cursor slugs against
   `cursor/agent-model-ids.ts`
 
+### Claude models
+
+- Floors and default efforts follow Claude Code's model config page. Opus 5.5,
+  Fable 5.2, Sonnet 5.5 and Haiku 5.5 default to `medium`
+- Sonnet 4.5 has no effort levels. Anthropic retires it on November 30, 2026, and
+  it stays `legacy` until it leaves the catalog
+
 ### Codex models
 
-- `gpt-6.1-sol` is the Codex turn default and `mid` model; its
-  `minCliVersion: '0.160.0'` keeps an older Sol on an older CLI. `gpt-6-sol` is
-  `mid` too, `gpt-6-luna` is the `cheap` newest Luna, `gpt-5.6-terra` is `legacy`
-  (hidden until shown) and `gpt-5.6-sol` is `expensive`, on Codex and OpenRouter
-- Context windows come from `codex debug models`: 500k for GPT-6.1 Sol, 272k for
-  the others, not the 872k maximum. The orchestrator's context check reads them
+- `gpt-6.1-sol` is the Codex turn default and chat default. It needs CLI
+  0.160.0. The two defaults do not read the installed CLI version, so they stay
+  on it while `gpt-6.2-sol` needs a newer CLI
+- `gpt-6.2-sol` is the newest `mid` model. Its `minCliVersion: '0.171.0'`, shared
+  with `gpt-6.2-astra`, makes Auto keep GPT-6.1 Sol and GPT-6 Astra on an older
+  CLI
+- `gpt-6.1-terra` needs 0.159.0. `gpt-6-luna` is the `cheap` newest Luna,
+  `gpt-5.6-terra` and `gpt-5.5` are `legacy` (hidden until shown) and
+  `gpt-5.6-sol` is `expensive`, on Codex and OpenRouter
+- A fallback after a failure skips every model the installed CLI cannot run
+  (`planTurnFallback` reads `cliGate`)
+- Context windows: 500k for the Sol models from 6.1 on, 272k for the others, not
+  the larger maximum. OpenAI publishes no Codex window for GPT-6.1 Terra, so it
+  takes 272k. The orchestrator's context check reads them
+- One install's `codex debug models` need not list every model, so an id it omits
+  is checked on OpenAI's Codex model page
+
+### Gemini models
+
+- Antigravity's plans decide who runs what. Gemini 4 Hydrogen runs on every
+  Google plan, Neon and Carbon need Google AI Pro or Ultra, and 3.1 Pro, 3.7
+  Flash and 3.6 Flash are Enterprise only, so they are `legacy`
+- Hydrogen is the turn default and the `cheap` model. Auto takes it up to the
+  Standard rung, Carbon on Hard and Neon on Top
+- Goodboy cannot read the Google plan, and no Antigravity refusal text is
+  recorded for `classifyProviderError`. On a plan without Neon or Carbon, a Hard
+  or Top turn fails until you hide them in the model list; then it runs Hydrogen
+- A `cliId` is the base name; the level goes in `agy --effort`
+- 3.8 Flash leaves Antigravity on November 30, 2026, and the catalog no longer
+  lists it. `parseLegacyId` moves a saved pick of it to Hydrogen, and its price
+  row stays for recorded spend
+
+### Moonshot models
+
+- Kimi K3.1 Pro is the turn default. The K3 and K3.1 models offer Low, High and
+  Max, and default to Max
+- The K2.x models are closed to new Moonshot accounts and retire at the end of
+  December 2026, so they are `legacy`
+
+### OpenRouter and opencode models
+
+- Efforts, context windows and ids of the newest OpenRouter and opencode entries
+  come from the models.dev registry that opencode reads
+- A free Zen model that leaves the Zen model page becomes `legacy`
 
 ### Cheap model
 
@@ -64,8 +110,8 @@ first in the array, so a newer cheap model (Haiku 5.5, GPT-6 Luna) wins.
 
 ## Effort
 
-- An unsupported level becomes the model's highest supported one (`clampEffort`),
-  never a failure
+- An unsupported level becomes the nearest lower one the model has, else the
+  nearest higher one (`clampEffort`), never a failure
 - Only `xhigh` has its own label: **Very high**
 - A model with no published levels (Haiku 4.5; on opencode Big Pickle, MiMo and
   both Nemotrons) gets no effort flag. opencode Zen lists variants per model, so
@@ -85,14 +131,17 @@ family.
 
 ### Copilot models
 
-Copilot lists `auto` (the default) and the nine ids the CLI reference names for
-`--model`. Keys are short names (`sonnet-5.5`), so one `WEIGHT_BY_KEY` row serves
-every provider; `cliId` is what the CLI gets. Only models the supported models
-page marks as configurable reasoning (Sonnet 5.5, Opus 5.5, Haiku 5.5, the GPT
-models and Codex 5.3) carry efforts, and only low, medium and high: the CLI
-accepts `xhigh` and `max` but publishes no per-model list. Haiku 4.5, Gemini 3.8
-Flash and `auto` get no effort flag. Every window is
-200k, the one limit read from a real run.
+Copilot lists `auto` (the default) and ids from the CLI reference's supported
+models table that GitHub's supported models page also lists. Keys are short names
+(`sonnet-5.5`), so one `WEIGHT_BY_KEY` row serves every provider; `cliId` is what
+the CLI gets. Only models the supported models page marks as configurable
+reasoning (Sonnet 5.5, Opus 5.5, Haiku 5.5, the GPT models and Codex 5.3) carry
+efforts, and only low, medium and high: the CLI accepts `xhigh` and `max` but
+publishes no per-model list. Haiku 4.5, the two Gemini models and `auto` get no
+effort flag. Every window is 200k, the one limit read from a real run. The Sol
+models are `mid`, at the price of Sonnet 5.5. GitHub's plan table leaves them,
+GPT-6.2 Astra, GPT-6 Astra and Opus 5.5 out of Copilot Pro, so GPT-6.1 Terra
+shares the Sol weight and comes first in the array: it is the `mid` tier pick.
 
 ## Prices
 
@@ -107,8 +156,10 @@ Flash and `auto` get no effort flag. Every window is
 - An unpublished rate is copied from the model it follows with `assumed: true`, so
   `costCoverage` reports its spend as approximate (Cursor `auto`, billed at the
   rate of the model it routes to)
-- Cursor bills by its own list (`cursor.com/docs/models`), not the vendor's. Every
-  Haiku 5.5 combo on Cursor needs Max Mode, which Cursor keeps only on legacy plans
+- Cursor bills by its own list (`cursor.com/docs/models-and-pricing`), not the
+  vendor's. Every Haiku 5.5 combo on Cursor needs Max Mode, which Cursor keeps
+  only on legacy plans
+- Gemini 4 Carbon carries on Cursor the same post launch rate as on Gemini
 
 ### Cache writes
 
@@ -126,18 +177,22 @@ second rate: a write kept for one hour bills at 2 times
 - A telemetry row keeps the price worked out when it was recorded. A later rate
   change moves no saved amount
 
-### Gemini Flash price date
+### Gemini price dates
 
 Gemini 3.6, 3.7 and 3.8 Flash bill 0.75/3.75 per Mtok (cached 0.075) in
 `gemini/cost.ts` until December 31, 2026. Google lists 1.50/7.50 (cached 0.15)
 from January 1, 2027, so move the three rows then. `priceSources.test.ts` turns
 red on that day so the move cannot be forgotten.
 
+Gemini 4 Carbon carries 4/20 (cached 0.20), the rate Google lists from December
+1, 2026, not the lower launch rate that ends the day before.
+
 ### Prices by prompt size
 
 A row with a higher rate above a prompt size has an `aboveLevel` (`ModelPrice` in
 `provider-registry.ts`): Haiku 5.5 above 100,000 prompt tokens, Codex above 272k,
-Gemini 3.1 Pro above 200k. The size is per request and counts cached tokens.
+Gemini 3.1 Pro above 200k, Cursor's Grok 4.7 above 256k. The size is per request
+and counts cached tokens.
 
 - `priceLevels.ts` bills each request in `ProviderUsage.largeRequests` at its own
   level and the rest of the turn at the lower one

@@ -7,7 +7,17 @@ describe('resolveAuto', () => {
   it('starts from the curated default of the workspace default provider', () => {
     expect(
       resolveAuto({ slot: { kind: 'role', id: 'implementer' }, defaultProvider: 'codex' }),
-    ).toEqual({ provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium', step: 'curated' });
+    ).toEqual({ provider: 'codex', model: 'gpt-6.2-sol', effort: 'medium', step: 'curated' });
+  });
+
+  it('runs GPT-6.1 Sol on a Codex CLI below 0.171.0', () => {
+    expect(
+      resolveAuto({
+        slot: { kind: 'role', id: 'implementer' },
+        defaultProvider: 'codex',
+        cliVersions: { codex: '0.170.0' },
+      }),
+    ).toMatchObject({ model: 'gpt-6.1-sol', step: 'next-in-column' });
   });
 
   it('keeps the older Sol for a codex CLI below the newest Sol floor', () => {
@@ -38,8 +48,9 @@ describe('resolveAuto', () => {
     ).toEqual({ provider: 'codex', model: 'gpt-5.6-luna', effort: 'low', step: 'next-in-column' });
   });
 
-  it('lists the Codex Sol line newest first: 6.1, then 6, then 5.6', () => {
+  it('lists the Codex Sol line newest first: 6.2, 6.1, 6, then 5.6', () => {
     expect(AUTO_DEFAULTS.codex.implementer.map((choice) => choice.key)).toEqual([
+      'gpt-6.2-sol',
       'gpt-6.1-sol',
       'gpt-6-sol',
       'gpt-5.6-sol',
@@ -126,7 +137,7 @@ describe('resolveAuto', () => {
       }),
     ).toEqual({
       provider: 'gemini',
-      model: 'gemini-3.8-flash',
+      model: 'gemini-4-hydrogen',
       effort: 'low',
       step: 'next-provider',
     });
@@ -185,7 +196,7 @@ describe('resolveAuto', () => {
       }),
     ).toEqual({
       provider: 'codex',
-      model: 'gpt-6.1-sol',
+      model: 'gpt-6.2-sol',
       effort: 'medium',
       step: 'next-provider',
       skippedAtLimit: ['anthropic'],
@@ -348,12 +359,12 @@ describe('resolveAuto', () => {
     });
   });
 
-  it('never lists the retired Gemini 3.7 Flash in the Flash line', () => {
+  it('runs the Gemini summarizer on Hydrogen and lists no older Gemini line behind it', () => {
     expect(
       resolveAuto({ slot: { kind: 'task', id: 'summarizer' }, defaultProvider: 'gemini' }),
-    ).toEqual({ provider: 'gemini', model: 'gemini-3.8-flash', effort: 'low', step: 'curated' });
+    ).toEqual({ provider: 'gemini', model: 'gemini-4-hydrogen', effort: 'low', step: 'curated' });
     expect(AUTO_DEFAULTS.gemini.summarizer.map((choice) => choice.key)).toEqual([
-      'gemini-3.8-flash',
+      'gemini-4-hydrogen',
     ]);
   });
 

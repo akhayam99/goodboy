@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useReloadSurface } from '../../../../shared/hooks/useReloadSurface';
@@ -7,13 +7,14 @@ import { demoteBrowserTab } from '../../demoteBrowserTab';
 import { devicePresetOf } from '../../devicePresets';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useBrowserStudioTab } from '../../hooks/useBrowserStudioTab';
+import { useBrowserTools } from '../../hooks/useBrowserTools';
 import { useConsoleEntries } from '../../hooks/useConsoleEntries';
 import { useElementPick } from '../../hooks/useElementPick';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
 import { consoleCounts } from '../../consoleCounts';
-import type { BrowserPageGroup, BrowserToolsTab } from '../../types';
+import type { BrowserPageGroup } from '../../types';
 import { BrowserAddressRow } from '../BrowserPane/BrowserAddressRow';
-import type { BrowserStripGroups } from '../BrowserPane/BrowserTabStrip';
+import type { BrowserStripGroups } from '../BrowserPane/browserStripGroupsOf';
 import { BrowserToolsDock } from '../BrowserToolsDock';
 import { BrowserNotice } from '../BrowserPane/BrowserNotice';
 import { BrowserPasskeyNotice } from '../BrowserPane/BrowserPasskeyNotice';
@@ -43,14 +44,14 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
   const shownTab = model.shown?.tab ?? null;
   const title = shownTab === null ? '' : model.titleOf({ tab: shownTab });
   const isOnScreen = useAppStore((state) => state.appStudio?.kind === 'browser');
-  const [isConsoleOpen, setIsConsoleOpen] = useState(false);
-  const [toolsTab, setToolsTab] = useState<BrowserToolsTab>('console');
   const consoleLog = useConsoleEntries({
     sessionId,
     liveId: model.shownLiveId,
     isOpen: isOnScreen,
   });
-  const errorCount = consoleCounts({ entries: consoleLog.entries }).errors;
+  const tools = useBrowserTools({
+    errorCount: consoleCounts({ entries: consoleLog.entries }).errors,
+  });
   const pick = useElementPick({
     sessionId,
     liveId: model.shownLiveId,
@@ -100,17 +101,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
         <BrowserAddressRow
           model={model}
           isAddressShortcutOn={isOnScreen}
-          consoleToggle={{
-            isOpen: isConsoleOpen,
-            onToggle: () => setIsConsoleOpen(!isConsoleOpen),
-          }}
-          errors={{
-            count: errorCount,
-            onShow: () => {
-              setToolsTab('errors');
-              setIsConsoleOpen(true);
-            },
-          }}
+          tools={tools}
           pick={pick}
           page={{ groups, onPick: showTab, folded, onFoldedChange }}
           onDock={() => demoteBrowserTab({ sessionId })}
@@ -126,13 +117,11 @@ export const BrowserPageView = ({ sessionId, tabId, groups, folded, onFoldedChan
         <BrowserPasskeyNotice model={model} />
         <BrowserToolsDock
           surface="page"
-          isOpen={isConsoleOpen && shownTab !== null}
+          tools={tools}
+          hasTab={shownTab !== null}
           model={model}
           title={title}
           log={consoleLog}
-          tab={toolsTab}
-          onTab={({ next }) => setToolsTab(next)}
-          onClose={() => setIsConsoleOpen(false)}
         >
           <BrowserView
             frame={frame}

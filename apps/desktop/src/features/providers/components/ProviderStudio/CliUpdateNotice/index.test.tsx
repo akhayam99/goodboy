@@ -84,16 +84,18 @@ describe('CliUpdateNotice', () => {
   it('names every model the installed CLI cannot run', () => {
     render(<CliUpdateNotice providerId="anthropic" autoStart={false} />);
     expect(
-      screen.getByText('Fable 5.1, Opus 5.5, Sonnet 5.5 and Haiku 5.5 need a newer Claude CLI'),
+      screen.getByText(
+        'Fable 5.2, Fable 5.1, Opus 5.5, Sonnet 5.5 and Haiku 5.5 need a newer Claude CLI',
+      ),
     ).toBeDefined();
     expect(
-      screen.getByText('You have Claude CLI 2.1.240. Update to 2.1.293 or newer.'),
+      screen.getByText('You have Claude CLI 2.1.240. Update to 2.1.321 or newer.'),
     ).toBeDefined();
     expect(updateProviderCli).not.toHaveBeenCalled();
   });
 
   it('stays out of the way on a current CLI', () => {
-    seedClaude({ version: '2.1.300' });
+    seedClaude({ version: '2.1.321' });
     const { container } = render(<CliUpdateNotice providerId="anthropic" autoStart />);
     expect(container.textContent).toBe('');
   });
@@ -149,13 +151,13 @@ describe('CliUpdateNotice', () => {
   });
 
   it('ends on success only once the detected version changed', () => {
-    seedClaude({ version: '2.1.300' });
+    seedClaude({ version: '2.1.321' });
     seedUpdateRun({
       phase: 'installed',
-      update: { outcome: 'updated', before: '2.1.240', after: '2.1.300', binaryPath: null },
+      update: { outcome: 'updated', before: '2.1.240', after: '2.1.321', binaryPath: null },
     });
     render(<CliUpdateNotice providerId="anthropic" autoStart={false} />);
-    expect(screen.getByText('Claude CLI updated to 2.1.300.')).toBeDefined();
+    expect(screen.getByText('Claude CLI updated to 2.1.321.')).toBeDefined();
     expect(screen.queryByText('update terminal')).toBeNull();
   });
 

@@ -87,12 +87,12 @@ afterEach(cleanup);
 
 describe('AccountGroup CLI row', () => {
   it('shows the CLI label and version in the account group', () => {
-    seedClaude({ version: '2.1.300' });
+    seedClaude({ version: '2.1.321' });
     renderAccount();
 
     const account = within(screen.getByRole('region', { name: 'Account' }));
     expect(account.getByText('Claude CLI')).toBeDefined();
-    expect(account.getByText('2.1.300')).toBeDefined();
+    expect(account.getByText('2.1.321')).toBeDefined();
     expect(screen.queryByText(/need a newer/)).toBeNull();
   });
 
@@ -101,7 +101,7 @@ describe('AccountGroup CLI row', () => {
 
     const account = screen.getByRole('region', { name: 'Account' });
     const notice = screen.getByText(
-      'Fable 5.1, Opus 5.5, Sonnet 5.5 and Haiku 5.5 need a newer Claude CLI',
+      'Fable 5.2, Fable 5.1, Opus 5.5, Sonnet 5.5 and Haiku 5.5 need a newer Claude CLI',
     );
     expect(within(account).getByText('2.1.240')).toBeDefined();
     expect(account.contains(notice)).toBe(false);

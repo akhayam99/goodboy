@@ -67,21 +67,20 @@ describe('parseLegacyId', () => {
     ).toEqual({ key: 'big-pickle' });
   });
 
-  it('degrades the retired gemini flash id to the model that replaced it', () => {
-    expect(parseLegacyId({ provider: 'gemini', id: 'gemini-3.5-flash' })).toEqual({
-      key: 'gemini-3.8-flash',
-    });
-    expect(resolveStoredModelSelection({ provider: 'gemini', id: 'gemini-3.5-flash' })).toEqual({
-      selection: { key: 'gemini-3.8-flash' },
-      report: { kind: 'legacy', id: 'gemini-3.5-flash' },
-    });
-    expect(
-      resolveStoredModelSelection({ provider: 'gemini', id: 'gemini-3.5-flash', effort: 'low' }),
-    ).toEqual({
-      selection: { key: 'gemini-3.8-flash', effort: 'low' },
-      report: { kind: 'legacy', id: 'gemini-3.5-flash' },
-    });
-  });
+  it.each(['gemini-3.8-flash', 'gemini-3.5-flash'])(
+    'moves a saved %s pick to the model every Google plan runs',
+    (id) => {
+      expect(parseLegacyId({ provider: 'gemini', id })).toEqual({ key: 'gemini-4-hydrogen' });
+      expect(resolveStoredModelSelection({ provider: 'gemini', id })).toEqual({
+        selection: { key: 'gemini-4-hydrogen' },
+        report: { kind: 'legacy', id },
+      });
+      expect(resolveStoredModelSelection({ provider: 'gemini', id, effort: 'low' })).toEqual({
+        selection: { key: 'gemini-4-hydrogen', effort: 'low' },
+        report: { kind: 'legacy', id },
+      });
+    },
+  );
 
   it('degrades the codex ids the cli now rejects onto their live price peers', () => {
     for (const id of ['gpt-5.4', 'gpt-5.2', 'gpt-5.3-codex']) {
