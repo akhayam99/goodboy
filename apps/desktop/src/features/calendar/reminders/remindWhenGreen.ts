@@ -8,6 +8,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly mountId: MountId | null;
   readonly prNumber: number;
+  readonly numberLabel: string;
 };
 
 const NO_SESSION = 'This session is gone.';
@@ -17,6 +18,7 @@ export const remindWhenGreen = async ({
   sessionId,
   mountId,
   prNumber,
+  numberLabel,
 }: Params): Promise<'unchanged' | undefined> => {
   const session = selectSessionById(state, sessionId);
   if (session === null) {
@@ -24,7 +26,7 @@ export const remindWhenGreen = async ({
   }
   const result = await state.addReminder({
     workspaceId: session.workspaceId,
-    text: `CI is green on #${prNumber}`,
+    text: `CI is green on ${numberLabel}`,
     trigger: 'ci_green',
     dueAt: null,
     target: { kind: 'pull_request', id: pullRequestReminderIdOf({ sessionId, mountId, prNumber }) },

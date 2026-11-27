@@ -16,8 +16,7 @@ const dueSinceOf = ({ reminder }: DueParams): number =>
 export const dueRemindersOf = ({ reminders, now }: Params): ReadonlyArray<Reminder> =>
   reminders
     .filter((reminder) => isReminderDue({ reminder, now }))
-    .sort(
-      (left, right) =>
-        dueSinceOf({ reminder: left }) - dueSinceOf({ reminder: right }) ||
-        left.id.localeCompare(right.id),
-    );
+    .sort((left, right) => {
+      const gap = dueSinceOf({ reminder: left }) - dueSinceOf({ reminder: right });
+      return gap === 0 ? left.id.localeCompare(right.id) : gap;
+    });

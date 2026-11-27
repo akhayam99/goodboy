@@ -1,9 +1,17 @@
 import { Clock } from '@goodboy/ui/icons';
+import { PULL_REQUEST_NOUNS } from '@goodboy/core/review-source';
 import { isWaitingForGreen } from '../../calendar/reminders/isWaitingForGreen';
 import { remindWhenGreen } from '../../calendar/reminders/remindWhenGreen';
 import type { ActionDefinition, ObjectKindDefinition, PullRequestActionTarget } from '../types';
 import { PULL_REQUEST_KIND } from './pullRequest';
 import type { PullRequestFacts } from './pullRequestFacts';
+
+type FactsParams = {
+  readonly facts: PullRequestFacts;
+};
+
+const numberLabelOf = ({ facts }: FactsParams): string =>
+  `${PULL_REQUEST_NOUNS[facts.host].numberPrefix}${facts.number ?? ''}`;
 
 const REMIND_WHEN_GREEN: ActionDefinition<PullRequestFacts> = {
   id: 'pullRequest.remindWhenGreen',
@@ -16,7 +24,7 @@ const REMIND_WHEN_GREEN: ActionDefinition<PullRequestFacts> = {
     facts.number !== null &&
     facts.isRemindedWhenGreen === false,
   slot: () => 'menu',
-  doneLabel: ({ facts }) => `Needs you shows #${facts.number ?? ''} when its checks pass.`,
+  doneLabel: ({ facts }) => `Needs you shows ${numberLabelOf({ facts })} when its checks pass.`,
   run: ({ facts, env }) =>
     facts.number === null
       ? 'unchanged'
@@ -25,6 +33,7 @@ const REMIND_WHEN_GREEN: ActionDefinition<PullRequestFacts> = {
           sessionId: facts.sessionId,
           mountId: facts.mountId,
           prNumber: facts.number,
+          numberLabel: numberLabelOf({ facts }),
         }),
 };
 

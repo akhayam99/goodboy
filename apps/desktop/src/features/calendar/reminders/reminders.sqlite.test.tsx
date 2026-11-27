@@ -350,7 +350,7 @@ describe('reminders that land in needs you', () => {
     const navigate = vi.spyOn(useAppStore.getState(), 'navigate');
 
     render(<ReminderNeedsYouCards workspaceId={workspaceId} reminders={[reminder]} />);
-    screen.getByText('#412 · Settle the duplicate credit');
+    screen.getByText('Settle the duplicate credit');
     screen.getByRole('button', { name: 'Open CI is green on #412, reminder' }).click();
 
     await vi.waitFor(() => expect(navigate).toHaveBeenCalledTimes(1));
@@ -385,9 +385,9 @@ describe('reminders that land in needs you', () => {
 
     await runObjectAction({ target, actionId: 'pullRequest.remindWhenGreen', env: envOf() });
 
-    expect((await stored()).map((reminder) => [reminder.trigger, reminder.target])).toEqual([
-      ['ci_green', PR_TARGET],
-    ]);
+    expect(
+      (await stored()).map((reminder) => [reminder.text, reminder.trigger, reminder.target]),
+    ).toEqual([['CI is green on #412', 'ci_green', PR_TARGET]]);
     expect(entryIds()).not.toContain('pullRequest.remindWhenGreen');
   });
 });

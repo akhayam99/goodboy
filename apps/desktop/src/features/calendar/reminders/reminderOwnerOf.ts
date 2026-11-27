@@ -3,7 +3,6 @@ import { branchPlace, sessionPlace } from '../../../store/slices/navigation/plac
 import type { Place } from '../../../store/slices/navigation/types';
 import type { AppState } from '../../../store/types';
 import { selectSessionById } from '../../../store/slices/sessions/selectSessionById';
-import { joinFacts } from '../../../shared/utils/joinFacts';
 import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { eventKindOf } from '../eventKindOf';
 import { eventTitleOf } from '../eventTitleOf';
@@ -50,7 +49,7 @@ export const reminderOwnerOf = ({ state, reminder }: Params): ReminderOwner => {
     }
     return {
       reminder,
-      context: joinFacts({ facts: [`#${pr.prNumber}`, sessionTitle({ session })] }),
+      context: sessionTitle({ session }),
       place: branchPlace({ sessionId: session.id, tab: 'pr' }),
     };
   }
