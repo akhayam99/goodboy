@@ -154,6 +154,15 @@ export type CreateChatAction = ActionBase & {
   readonly kind: 'createChat';
 };
 
+export type ProposalChoice = 'primary' | 'alternative-0' | 'alternative-1' | 'notNow';
+
+export type DecideProposalAction = SessionActionBase & {
+  readonly kind: 'decideProposal';
+  readonly delegationId: string;
+  readonly seenVersion: ObjectVersion;
+  readonly choice: ProposalChoice;
+};
+
 export type MobileAction =
   | AnswerQuestionAction
   | ApprovePlanAction
@@ -168,6 +177,7 @@ export type MobileAction =
   | StopAgentTreeAction
   | SendToAgentAction
   | AnswerSlackReplyAction
+  | DecideProposalAction
   | MergePrAction
   | StartSessionAction
   | MergeTrainAction

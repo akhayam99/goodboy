@@ -1,3 +1,4 @@
+import { stripControlMarkers } from '@goodboy/core/context';
 import { listTurnEventEntriesForAgent } from '@goodboy/db';
 import type { TurnEvent } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -137,9 +138,13 @@ export const transcriptEntriesOf = ({ events }: EventsParams): ReadonlyArray<Tra
       }
     }
   });
-  return entries.map((entry) =>
-    entry.kind === 'words' ? { ...entry, text: withoutAbsolutePaths({ text: entry.text }) } : entry,
-  );
+  return entries.flatMap((entry): ReadonlyArray<TranscriptEntry> => {
+    if (entry.kind !== 'words') {
+      return [entry];
+    }
+    const shown = entry.who === 'agent' ? stripControlMarkers(entry.text) : entry.text;
+    return shown === '' ? [] : [{ ...entry, text: withoutAbsolutePaths({ text: shown }) }];
+  });
 };
 
 type PageParams = {

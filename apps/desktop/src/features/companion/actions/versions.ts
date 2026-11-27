@@ -54,3 +54,10 @@ type DraftParams = {
 
 export const slackDraftVersionOf = ({ draft }: DraftParams): string =>
   digestOf({ text: `${draft.updatedAt}\u0000${draft.body}` });
+
+type ProposalParams = {
+  readonly delegation: { readonly id: string; readonly request: unknown };
+};
+
+export const proposalVersionOf = ({ delegation }: ProposalParams): string =>
+  digestOf({ text: `${delegation.id}\u0000${stableJsonOf({ value: delegation.request })}` });

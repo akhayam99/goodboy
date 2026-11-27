@@ -7,6 +7,7 @@ import { answerPermission } from './answerPermission';
 import { answerQuestion } from './answerQuestion';
 import { answerSlackReply } from './answerSlackReply';
 import { approvePlan } from './approvePlan';
+import { decideProposal } from './decideProposal';
 import { continueAgent } from './continueAgent';
 import { continueRun } from './continueRun';
 import type { DecideAction } from './decideAction';
@@ -34,6 +35,8 @@ const runHandler = ({ action, getStore, ports, phoneId }: RunParams): Promise<Ha
   switch (action.kind) {
     case 'answerQuestion':
       return answerQuestion({ action, getStore, ports });
+    case 'decideProposal':
+      return decideProposal({ action, getStore, ports });
     case 'approvePlan':
       return approvePlan({ action, getStore, ports });
     case 'requestPlanChanges':

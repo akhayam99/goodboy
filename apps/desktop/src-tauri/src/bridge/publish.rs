@@ -486,6 +486,33 @@ mod tests {
     }
 
     #[test]
+    fn a_populated_lead_ask_round_trips_and_an_absent_one_stays_absent() {
+        let mut needs = fixture(NEEDS_YOU);
+        let ask = json!({
+            "question": "Start the implementer?",
+            "proposal": {
+                "delegationId": "delegation-impl",
+                "version": "abc123",
+                "role": "implementer",
+                "title": "Implementer",
+                "task": "Round the ledger",
+                "options": [
+                    { "key": "primary", "label": "Start implementer", "role": null,
+                      "actionId": "act:decideProposal:delegation-impl.primary:abc123" },
+                    { "key": "alternative-0", "label": "Scout first", "role": "scout",
+                      "actionId": "act:decideProposal:delegation-impl.alternative-0:abc123" }
+                ],
+                "notNowActionId": "act:decideProposal:delegation-impl.notNow:abc123"
+            }
+        });
+        needs["rows"][0]["ask"] = ask.clone();
+        let stored = validate(&item("needsYou", Kind::NeedsYou, needs)).expect("valid");
+        assert!(same(&stored.value["rows"][0]["ask"], &ask));
+        let plain = validate(&item("needsYou", Kind::NeedsYou, fixture(NEEDS_YOU))).expect("valid");
+        assert!(plain.value["rows"][0].get("ask").is_none());
+    }
+
+    #[test]
     fn unknown_fields_are_dropped_at_every_depth() {
         let mut needs = fixture(NEEDS_YOU);
         needs["worktreePath"] = json!("/tmp/x");

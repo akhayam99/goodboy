@@ -202,6 +202,7 @@ const draftsOf = (): ReadonlyArray<ProjectionDraft> => {
   });
   return projectionFieldsOf({
     scopes: [current, other],
+    workspaces: [harborline, northwind],
     detailWorkspaceId: harborline.id,
     chips: {
       spendToday: '$4.18',
