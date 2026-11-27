@@ -121,6 +121,7 @@ const GO_ROWS: &[Row] = &[
     command("menu.tasks", "Tasks", None),
     command("menu.workflows", "Workflows", None),
     command("menu.chat", "Chat", None),
+    command("menu.calendar", "Calendar", None),
     command("menu.connections", "Connections", None),
     command("menu.impact", "Impact", None),
     command("menu.monitoring", "Monitoring", None),
@@ -559,6 +560,7 @@ mod tests {
                 "menu.tasks",
                 "menu.workflows",
                 "menu.chat",
+                "menu.calendar",
                 "menu.connections",
                 "menu.impact",
                 "menu.monitoring",
@@ -576,7 +578,7 @@ mod tests {
             .enumerate()
             .filter_map(|(index, row)| (*row == SEPARATOR).then_some(index))
             .collect();
-        assert_eq!(separators, vec![2, 11]);
+        assert_eq!(separators, vec![2, 12]);
     }
 
     #[test]

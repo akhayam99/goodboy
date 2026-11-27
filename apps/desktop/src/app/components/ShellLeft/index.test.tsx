@@ -48,6 +48,7 @@ const actionsOf = (): ColumnActions => ({
   openWorkflows: vi.fn(),
   openNewChat: vi.fn(),
   openConnections: vi.fn(),
+  openCalendar: vi.fn(),
   openMonitoring: vi.fn(),
   openImpact: vi.fn(),
   openSettings: vi.fn(),
@@ -114,7 +115,7 @@ afterEach(() => {
 });
 
 describe('the places rail', () => {
-  it('draws the workspace, New, the six places with Impact last, then Settings, at 64px with a word under each', () => {
+  it('draws the workspace, New, the seven places with Impact last, then Settings, at 64px with a word under each', () => {
     mount({});
 
     expect(rail().style.width).toBe('64px');
@@ -125,6 +126,7 @@ describe('the places rail', () => {
       'Tasks',
       'Workflows',
       'Chat',
+      'Calendar',
       'Connect',
       'Impact',
       'Settings',
@@ -169,6 +171,7 @@ describe('the places rail', () => {
       ['Tasks', 'openInbox'],
       ['Workflows', 'openWorkflows'],
       ['Chat', 'openChat'],
+      ['Calendar', 'openCalendar'],
       ['Connections', 'openConnections'],
       ['Impact', 'openImpact'],
     ];

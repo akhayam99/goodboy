@@ -249,6 +249,7 @@ export const NAMES = {
   stopAfterThisOne: 'Stop after this one',
   workflows: 'Workflows',
   chat: 'Chat',
+  calendar: 'Calendar',
   connections: 'Connections',
   impact: 'Impact',
   monitoring: 'Monitoring',
