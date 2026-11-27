@@ -7413,11 +7413,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/store/slices/agents/markAllAgentsSeen.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/agents/selectAgent.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -8233,11 +8228,6 @@
   "apps/desktop/src/store/slices/open-questions/loadSessionQuestions.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
-    }
-  },
-  "apps/desktop/src/store/slices/open-questions/persistOpenQuestionAnswers.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/store/slices/open-questions/resolveQuestionDelegate.test.ts": {

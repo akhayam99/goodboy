@@ -27,7 +27,10 @@ const client = vi.hoisted(() => ({
 
 vi.mock('../../../integrations/slack/client', () => client);
 
-const drafts = vi.hoisted(() => ({ decideSlackDraft: vi.fn(async () => true) }));
+const drafts = vi.hoisted(() => ({
+  decideSlackDraft: vi.fn(async () => true),
+  loadPendingSlackDraftsForSession: vi.fn(async () => []),
+}));
 
 vi.mock('../../../integrations/slack/drafts', () => drafts);
 

@@ -11,6 +11,6 @@ type FactoryParams = {
 
 export const markSessionsRead = ({ get }: FactoryParams) => {
   return async ({ sessionIds }: Params): Promise<void> => {
-    await Promise.all(sessionIds.map((sessionId) => get().markAllAgentsSeen(sessionId)));
+    await Promise.all(sessionIds.map((sessionId) => get().markAllAgentsSeen({ sessionId })));
   };
 };
