@@ -36,6 +36,8 @@ import { createBudgetSlice } from './slices/budget';
 import { createBrowserSlice } from './slices/browser';
 import { createBrowserHostSlice } from './slices/browser-host';
 import { createBrowserVisitsSlice } from './slices/browser-visits';
+import { createCalendarSlice } from './slices/calendar';
+import { calendarInitialState } from './slices/calendar/state';
 import { createMonitoringSlice } from './slices/monitoring';
 import { monitoringInitialState } from './slices/monitoring/state';
 import { createStorageSlice } from './slices/storage';
@@ -342,6 +344,7 @@ export type AppStore = AppState &
   ReturnType<typeof createBrowserSlice> &
   ReturnType<typeof createBrowserHostSlice> &
   ReturnType<typeof createBrowserVisitsSlice> &
+  ReturnType<typeof createCalendarSlice> &
   ReturnType<typeof createMonitoringSlice> &
   ReturnType<typeof createGithubSlice> &
   ReturnType<typeof createMountRequestSlice> &
@@ -375,6 +378,7 @@ const initialState: AppState = {
   ...browserInitialState,
   ...browserHostInitialState,
   ...browserVisitsInitialState,
+  ...calendarInitialState,
   ...monitoringInitialState,
   ...createInitialSessionViewState({}),
   ...savedProjectModelsInitialState,
@@ -485,6 +489,7 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createBrowserSlice({ set, get }),
   ...createBrowserHostSlice({ set, get }),
   ...createBrowserVisitsSlice({ set, get }),
+  ...createCalendarSlice({ set, get }),
   ...createMonitoringSlice({ set, get }),
   ...createStorageSlice({ set, get }),
   ...createDiffCommentsSlice({ set, get }),
