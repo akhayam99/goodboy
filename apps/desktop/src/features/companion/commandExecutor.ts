@@ -29,6 +29,7 @@ import { evaluateMobileCreateSession, evaluateMobileSpawnWorkflow } from './mobi
 import { decideKindOf } from './actions/decideAction';
 import { decideCommand } from './actions/decideCommand';
 import { phoneCommand } from './actions/phoneCommand';
+import { queryChatMessagesCommand } from './actions/queryChatMessagesCommand';
 import { queryTranscriptCommand } from './actions/queryTranscriptCommand';
 import { asString } from './asString';
 import { BridgeSafeError } from './bridgeSafeError';
@@ -516,6 +517,10 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       return queryTranscriptCommand({ data });
     }
 
+    case 'queryChatMessages': {
+      return queryChatMessagesCommand({ data });
+    }
+
     case 'queryProviders':
       return buildProviderMenu();
 
@@ -735,6 +740,12 @@ function genericMaskFor(kind: string): string {
       return "couldn't start the session";
     case 'stopTrain':
       return "couldn't stop the train";
+    case 'sendChatMessage':
+      return "couldn't send the message";
+    case 'createChat':
+      return "couldn't start the chat";
+    case 'queryChatMessages':
+      return "couldn't load the chat";
     case 'spawnAgent':
     case 'resolveComment':
       return 'could not spawn agent';

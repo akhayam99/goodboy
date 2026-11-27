@@ -7,6 +7,7 @@ import { isMainWindow } from '../../workspace/window';
 import { changedDraftsOf } from './changedDraftsOf';
 import { chipsOfState } from './chipsOfState';
 import { preloadAskTranscripts } from './preloadAskTranscripts';
+import { preloadChats } from './preloadChats';
 import { preloadSessionDetail } from './preloadSessionDetail';
 import { loadOtherWorkspaceScope } from './loadOtherWorkspaceScope';
 import { projectionFieldsOf } from './projectionFieldsOf';
@@ -57,6 +58,7 @@ export const startCompanionProjections = async (): Promise<UnlistenFn> => {
       const state = useAppStore.getState();
       preloadAskTranscripts({ state });
       preloadSessionDetail({ state });
+      preloadChats({ state });
       const drafts = projectionFieldsOf({
         scopes: scopesNow(),
         detailWorkspaceId: state.currentWorkspaceId,

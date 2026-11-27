@@ -1,4 +1,4 @@
-export type PhonePermission = 'merge' | 'start';
+export type PhonePermission = 'merge' | 'start' | 'decide';
 
 type ScopeParams = {
   readonly phoneId: string | null;

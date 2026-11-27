@@ -57,12 +57,12 @@ phone with those rights like a second keyboard, not like a viewer.
 
 ## Rights per phone
 
-| Right  | Allows                                                                   | Default   |
-| ------ | ------------------------------------------------------------------------ | --------- |
-| read   | the projections and the read-only queries (providers, issues, file diff) | always on |
-| decide | send, advance step, resolve comment, set context slot                    | on        |
-| merge  | merge a pull request, merge in order, stop the train after this one      | on        |
-| start  | start a session, spawn agent, spawn workflow, create session from issue  | off       |
+| Right  | Allows                                                                                    | Default   |
+| ------ | ----------------------------------------------------------------------------------------- | --------- |
+| read   | the projections and the read-only queries (providers, issues, file diff)                  | always on |
+| decide | send, advance step, resolve comment, set context slot, send a chat message, create a chat | on        |
+| merge  | merge a pull request, merge in order, stop the train after this one                       | on        |
+| start  | start a session, spawn agent, spawn workflow, create session from issue                   | off       |
 
 The bridge checks the right of the phone that sent the command, read from the
 file at that moment, so a change on Settings, iPhone applies to a connected
@@ -112,6 +112,20 @@ Two more actions follow the same five rules, written in
   new id.
 - `stopTrain` (0xA1) asks the running train to stop after the pull request in
   progress (`stopMergeTrainAfterThis`). Both need the merge right.
+- `sendChatMessage` (0xA3) and `createChat` (0xA4) need the decide right. A chat
+  is the workspace chat of the Mac, not a session. `sendChatMessage` names its
+  workspace, the chat and the version it saw (the count of messages the Mac
+  accepted from phones for that chat since the window opened); its action id is
+  the `sendActionId` of the chat row in the `chats` projection. The chat must
+  belong to that workspace and not be archived, or the Mac refuses it as
+  `unknown-target`; a chat that is still answering is refused as `busy`; an old
+  version is refused as `version-changed`. The text goes to the provider and the
+  model the chat already uses, nowhere else. The Mac answers `done` as soon as
+  the reply starts, not when it ends. `createChat` takes only the workspace,
+  uses the default provider and model of the desktop chat (the saved default of
+  the workspace, else the first connected provider) and answers with
+  `createdChatId`. Its action id is the `createActionId` of the `chats`
+  projection; a retry of the same id returns the first outcome and one chat.
 - `startSession` (0xA0) needs the start right, off by default. It carries the
   project, a goal or a task, the Edits choice (Read only, Ask first or Edits
   allowed; Full access is not a value the Mac accepts), the kind (Lead, Lead
@@ -150,7 +164,18 @@ adds the pull request word the Mac shows (`No pull request`, `Draft`, `Open`,
 until every changed file is known) and the run count. The Mac loads the
 artifacts, their comments and the answered questions of each live session once,
 in the background, so the phone sees them without the session being opened on
-the Mac. The fields are additive: a 0.2.0 phone ignores them. The `tasks` projection
+the Mac. The fields are additive: a 0.2.0 phone ignores them. The `chats` projection (one per workspace, the open one only, key
+`chats:<workspaceId>`) lists up to 30 chats, newest first: id, title, the model
+label, a 160 character preview of the last reply, the last activity time, the
+message count, whether a reply is streaming, whether the chat is pinned and the
+`sendActionId`. It carries the `createActionId` of the workspace. The messages
+of one chat are pulled, never published: `queryChatMessages` (0xA2, read right)
+takes the workspace, the chat, a `limit` (200 at most) and an optional
+`beforeMessageId` and returns the page with `hasEarlier` and `isBusy`; a chat of
+another workspace or an archived one is refused. A reply reaches the phone as the
+chat row changes (`isBusy`, `preview`, `messageCount`): the phone pulls the
+messages again when it sees it. Paths in message text are cut to a file name.
+The `tasks` projection
 carries the start offer (the kinds that take Stops, the three Stops with their
 words and the default one, which is the workspace level) and, for each task row,
 the description (400 characters at most), the assignee's display name and the

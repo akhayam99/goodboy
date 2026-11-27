@@ -9,7 +9,7 @@ use tauri::{State, WebviewWindow};
 use tokio::sync::broadcast;
 
 use super::publish_schema::{
-    NeedsYouProjection, PullRequestProjection, RunsProjection, SessionProjection,
+    ChatsProjection, NeedsYouProjection, PullRequestProjection, RunsProjection, SessionProjection,
     SessionsProjection, TasksProjection,
 };
 use super::{BridgeError, BridgeState};
@@ -24,6 +24,7 @@ pub const MAX_LANE_ROWS: usize = 30;
 pub const MAX_LINES: usize = 20;
 pub const MAX_RUNS: usize = 20;
 pub const MAX_TASK_ROWS: usize = 40;
+pub const MAX_CHATS: usize = 30;
 pub const MAX_CHECKS: usize = 50;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -35,6 +36,7 @@ pub enum Kind {
     Runs,
     PullRequest,
     Tasks,
+    Chats,
 }
 
 #[derive(Debug, Deserialize)]
@@ -131,6 +133,7 @@ fn apply_limits(kind: Kind, value: &mut Value) {
         Kind::Runs => truncate(value, &["runs"], MAX_RUNS),
         Kind::PullRequest => truncate(value, &["checks"], MAX_CHECKS),
         Kind::Tasks => truncate(value, &["rows"], MAX_TASK_ROWS),
+        Kind::Chats => truncate(value, &["chats"], MAX_CHATS),
     }
 }
 
@@ -179,6 +182,7 @@ fn expected_key(kind: Kind, value: &Value) -> String {
         Kind::Runs => format!("runs:{workspace}:{session}"),
         Kind::PullRequest => format!("pullRequest:{workspace}:{session}"),
         Kind::Tasks => format!("tasks:{workspace}"),
+        Kind::Chats => format!("chats:{workspace}"),
     }
 }
 
@@ -193,6 +197,7 @@ pub fn validate(item: &PublishItem) -> Result<Stored, String> {
         Kind::Runs => parse::<RunsProjection>(&item.projection),
         Kind::PullRequest => parse::<PullRequestProjection>(&item.projection),
         Kind::Tasks => parse::<TasksProjection>(&item.projection),
+        Kind::Chats => parse::<ChatsProjection>(&item.projection),
     }
     .map_err(|e| format!("schema: {e}"))?;
     apply_limits(item.kind, &mut value);
@@ -343,6 +348,8 @@ mod tests {
         include_str!("../../../src/features/companion/projections/fixtures/pullRequest.json");
     const TASKS: &str =
         include_str!("../../../src/features/companion/projections/fixtures/tasks.json");
+    const CHATS: &str =
+        include_str!("../../../src/features/companion/projections/fixtures/chats.json");
 
     fn fixture(text: &str) -> Value {
         serde_json::from_str(text).expect("fixture parses")
@@ -376,6 +383,7 @@ mod tests {
         let runs = fixture(RUNS);
         let pr = fixture(PULL_REQUEST);
         let tasks = fixture(TASKS);
+        let chats = fixture(CHATS);
         vec![
             item("needsYou", Kind::NeedsYou, needs),
             item(
@@ -391,6 +399,7 @@ mod tests {
             item(&expected_key(Kind::Runs, &runs), Kind::Runs, runs),
             item(&expected_key(Kind::PullRequest, &pr), Kind::PullRequest, pr),
             item(&expected_key(Kind::Tasks, &tasks), Kind::Tasks, tasks),
+            item(&expected_key(Kind::Chats, &chats), Kind::Chats, chats),
         ]
     }
 
@@ -556,7 +565,7 @@ mod tests {
         let now = Instant::now();
         hub.publish(now, 5, all_fixtures(), vec![])
             .expect("first window");
-        assert_eq!(hub.all().len(), 6);
+        assert_eq!(hub.all().len(), 7);
         hub.publish(now, 6, vec![], vec![])
             .expect("reloaded window");
         assert!(hub.all().is_empty());
@@ -598,7 +607,7 @@ mod tests {
         let report = hub.publish(Instant::now(), 1, items, vec![]).expect("call");
         assert_eq!(report.rejected.len(), 1);
         assert_eq!(report.rejected[0].key, "needsYou");
-        assert_eq!(hub.all().len(), 5);
+        assert_eq!(hub.all().len(), 6);
     }
 
     #[test]
@@ -610,7 +619,7 @@ mod tests {
         let key = hub.all()[0].key.clone();
         hub.publish(Instant::now(), 1, vec![], vec![key.clone()])
             .expect("remove");
-        assert_eq!(hub.all().len(), 5);
+        assert_eq!(hub.all().len(), 6);
         let mut saw_removed = false;
         while let Ok(update) = updates.try_recv() {
             if let Update::Removed(gone) = update {

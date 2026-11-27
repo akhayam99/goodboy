@@ -1,4 +1,5 @@
 import type { NeedsYouChips } from '../contract/projections';
+import { chatsFieldsOf } from './chatsFieldsOf';
 import { isLiveSession } from './isLiveSession';
 import { needsYouFieldsOf } from './needsYouFieldsOf';
 import { pullRequestFieldsOf } from './pullRequestFieldsOf';
@@ -10,7 +11,8 @@ import type { WorkspaceScope } from './workspaceScope';
 
 export const DETAIL_SESSION_LIMIT = 30;
 
-export type ProjectionKind = 'needsYou' | 'sessions' | 'session' | 'runs' | 'pullRequest' | 'tasks';
+export type ProjectionKind =
+  'needsYou' | 'sessions' | 'session' | 'runs' | 'pullRequest' | 'tasks' | 'chats';
 
 export type ProjectionDraft = Readonly<{
   key: string;
@@ -40,6 +42,12 @@ const tasksDraftOf = ({ scope, now }: ScopeParams): ProjectionDraft => ({
   key: `tasks:${scope.workspace.id}`,
   kind: 'tasks',
   fields: tasksFieldsOf({ scope, now }),
+});
+
+const chatsDraftOf = ({ scope }: Pick<ScopeParams, 'scope'>): ProjectionDraft => ({
+  key: `chats:${scope.workspace.id}`,
+  kind: 'chats',
+  fields: chatsFieldsOf({ scope }),
 });
 
 const detailDraftsOf = ({ scope, now }: ScopeParams): ReadonlyArray<ProjectionDraft> =>
@@ -87,6 +95,8 @@ export const projectionFieldsOf = ({
   ...scopes.flatMap((scope) => [
     sessionsDraftOf({ scope, now }),
     tasksDraftOf({ scope, now }),
-    ...(scope.workspace.id === detailWorkspaceId ? detailDraftsOf({ scope, now }) : []),
+    ...(scope.workspace.id === detailWorkspaceId
+      ? [chatsDraftOf({ scope }), ...detailDraftsOf({ scope, now })]
+      : []),
   ]),
 ];

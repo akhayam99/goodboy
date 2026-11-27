@@ -19,6 +19,7 @@ export const refusedOutcome = ({ action, refusal }: RefuseParams): ActionOutcome
   error: null,
   undoActionId: null,
   createdSessionId: null,
+  createdChatId: null,
 });
 
 type RefusalParams = {
@@ -51,6 +52,7 @@ export const outcomeOf = ({ action, result }: OutcomeParams): ActionOutcome => {
       error: result.error,
       undoActionId: null,
       createdSessionId: null,
+      createdChatId: null,
     };
   }
   return {
@@ -61,5 +63,6 @@ export const outcomeOf = ({ action, result }: OutcomeParams): ActionOutcome => {
     error: null,
     undoActionId: result.undoActionId,
     createdSessionId: result.createdSessionId,
+    createdChatId: result.createdChatId,
   };
 };

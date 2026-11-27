@@ -1,0 +1,31 @@
+{
+  "epoch": 1,
+  "seq": 1,
+  "generatedAt": "2026-10-05T09:05:00.000Z",
+  "workspaceId": "workspace-1",
+  "chats": [
+    {
+      "id": "chat-ledger",
+      "title": "Ledger rounding",
+      "label": "Opus 5",
+      "preview": "Round at the edge of the ledger.",
+      "updatedAt": "2026-10-05T09:00:00.000Z",
+      "messageCount": 4,
+      "isBusy": false,
+      "isPinned": false,
+      "sendActionId": "act:sendChatMessage:chat-ledger:0"
+    },
+    {
+      "id": "chat-notify",
+      "title": "Notify relay retries",
+      "label": "Opus 5",
+      "preview": "Round at the edge of the ledger.",
+      "updatedAt": "2026-10-05T08:00:00.000Z",
+      "messageCount": 4,
+      "isBusy": true,
+      "isPinned": false,
+      "sendActionId": "act:sendChatMessage:chat-notify:0"
+    }
+  ],
+  "createActionId": "act:createChat:workspace-1:0"
+}
