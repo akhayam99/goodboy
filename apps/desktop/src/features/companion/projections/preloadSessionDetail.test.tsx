@@ -23,7 +23,6 @@ import {
   PRELOAD_BACKOFF_MS,
   PRELOAD_MAX_TRIES,
   preloadSessionDetail,
-  resetPreloadSessionDetail,
 } from './preloadSessionDetail';
 
 let useAppStore: StoryStore;
@@ -32,7 +31,8 @@ beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
-const session = sessionOf({ goal: 'Retry window for the webhook' });
+let session = sessionOf({ goal: 'Retry 0' });
+let counter = 0;
 
 const flush = async (): Promise<void> => {
   await Promise.resolve();
@@ -50,7 +50,8 @@ const runAt = async ({ now }: { readonly now: number }): Promise<void> => {
 
 beforeEach(async () => {
   vi.useFakeTimers();
-  resetPreloadSessionDetail();
+  counter += 1;
+  session = sessionOf({ goal: `Retry window ` });
   await resetStoryStore();
   seedColumn({ store: useAppStore, sessions: [session], questions: [session], mounts: [] });
   useAppStore.setState({ workspaces: [harborline] });

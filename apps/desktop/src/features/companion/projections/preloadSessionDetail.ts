@@ -13,10 +13,6 @@ type Attempt = {
 
 const attempts = new Map<string, Attempt>();
 
-export const resetPreloadSessionDetail = (): void => {
-  attempts.clear();
-};
-
 type Params = {
   readonly state: AppStore;
   readonly now: number;
