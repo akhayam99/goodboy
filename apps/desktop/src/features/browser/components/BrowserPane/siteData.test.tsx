@@ -286,8 +286,8 @@ describe('clear site data', () => {
     const menu = openMore();
     fireEvent.click(within(menu).getByRole('menuitem', { name: /Clear site data/ }));
     await screen.findByText('Signs you out of these sites. Other sites keep their data.');
-    expect(screen.getByText('localhost, this site')).toBeTruthy();
-    expect(screen.getByText('login.cascadia-id.com, a sign-in this tab went through')).toBeTruthy();
+    screen.getByText('localhost, this site');
+    screen.getByText('login.cascadia-id.com, a sign-in this tab went through');
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear site data' }));
 

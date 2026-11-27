@@ -427,32 +427,13 @@ extern "C" fn run_in_child() {
 #[test]
 #[ignore = "drives a real WKWebView: cargo test --lib site_data::native_tests -- --ignored --nocapture"]
 fn a_tab_trail_keeps_main_frame_pages_and_the_store_names_its_records() {
-    let mut child = std::process::Command::new(std::env::current_exe().expect("test binary"))
-        .env(PROBE_ENV, "1")
-        .stdout(std::process::Stdio::piped())
-        .spawn()
-        .expect("probe starts");
-    let start = Instant::now();
-    let status = loop {
-        if let Some(status) = child.try_wait().expect("probe state") {
-            break Some(status);
-        }
-        if start.elapsed() > CHILD_LIMIT {
-            let _ = child.kill();
-            let _ = child.wait();
-            break None;
-        }
-        thread::sleep(Duration::from_millis(100));
-    };
-    let mut printed = String::new();
-    if let Some(mut out) = child.stdout.take() {
-        let _ = std::io::Read::read_to_string(&mut out, &mut printed);
-    }
-    println!("{printed}");
-    assert!(
-        status.is_some_and(|status| status.success()),
-        "probe failed or timed out"
-    );
+    let mut command = std::process::Command::new(std::env::current_exe().expect("test binary"));
+    command.env(PROBE_ENV, "1");
+    let output =
+        crate::proc::probe::run(command, Instant::now() + CHILD_LIMIT).expect("probe starts");
+    println!("{}", output.stdout);
+    assert!(!output.timed_out, "probe timed out\n{}", output.stderr);
+    assert_eq!(output.code, Some(0), "{}", output.stderr);
 }
 
 fn drive_webkit() {

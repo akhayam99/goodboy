@@ -25,12 +25,12 @@ type KeyParams = {
   readonly host: string;
 };
 
-const keyOf = ({ host }: KeyParams): string => host.trim().replace(/\.$/, '').toLowerCase();
+const trailKeyOf = ({ host }: KeyParams): string => host.trim().replace(/\.$/, '').toLowerCase();
 
 const extraHostsOf = ({ hosts, host }: ExtraParams): ReadonlyArray<string> => {
-  const site = keyOf({ host });
+  const site = trailKeyOf({ host });
   return hosts.filter(
-    (known, index) => keyOf({ host: known }) !== site && hosts.indexOf(known) === index,
+    (known, index) => trailKeyOf({ host: known }) !== site && hosts.indexOf(known) === index,
   );
 };
 
