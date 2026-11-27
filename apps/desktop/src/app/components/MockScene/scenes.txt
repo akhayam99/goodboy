@@ -103,6 +103,7 @@ b-monitoring-expanded
 board
 board-delete-confirm
 board-empty-lanes
+board-kept-desk
 board-needs-you-run
 board-needs-you-runs
 board-no-ongoing
@@ -591,6 +592,7 @@ inbox-source
 inbox-states
 integration-issue-focused
 lead-details-drawer
+lead-permission-wait
 lead-permissions-head
 lead-permissions-level-menu
 lead-permissions-page

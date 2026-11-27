@@ -22,6 +22,7 @@ type Props = {
   readonly actionsFor: ActionCardActions['actionsFor'];
   readonly openFor: ActionCardActions['openFor'];
   readonly shownAskIds: ReadonlySet<string>;
+  readonly isPermissionShown: boolean;
 };
 
 type ToggleParams = {
@@ -42,6 +43,7 @@ export const ProjectBlocks = ({
   actionsFor,
   openFor,
   shownAskIds,
+  isPermissionShown,
 }: Props) => {
   const cards = session.archivedAt == null ? allCards : NO_CARDS;
   const sessionId = session.id;
@@ -82,6 +84,7 @@ export const ProjectBlocks = ({
     openFor,
     removal,
     shownAskIds,
+    isPermissionShown,
   };
   const toggle = ({ id }: ToggleParams) =>
     setExpandedIds((current) => {
