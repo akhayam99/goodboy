@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertAgent, insertSession, insertWorkspace } from '@goodboy/db';
-import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
+import { brandId, type IsoDateTime, type SessionId, type WorkspaceId } from '@goodboy/types';
 import {
   buildStorySession,
   buildStoryWorkspace,
@@ -11,7 +11,6 @@ import {
   storySqlite,
   type StoryStore,
 } from '../../../store/storyHarness';
-import type { ScopeState } from './scopeOfState';
 import { loadOtherWorkspaceScope } from './loadOtherWorkspaceScope';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -48,8 +47,8 @@ vi.mock('../../../shared/lib/repo', async () =>
   (await import('../../../store/storyHarness')).repoModuleMock(),
 );
 
-const NORTHWIND_ID = 'workspace-northwind' as WorkspaceId;
-const SESSION_ID = 'session-onboarding' as SessionId;
+const NORTHWIND_ID = brandId<WorkspaceId>({ value: 'workspace-northwind' });
+const SESSION_ID = brandId<SessionId>({ value: 'session-onboarding' });
 const FAILED_AT = Date.parse('2026-10-06T08:00:00.000Z');
 const MERGED_AT = Date.parse('2026-10-06T09:00:00.000Z');
 
@@ -96,8 +95,8 @@ const seed = async ({ requestState, hasOpenThread = false }: SeedParams) => {
     ordinal: 0,
     name: 'implement',
     status: 'failed',
-    startedAt: new Date(FAILED_AT - 60_000).toISOString() as IsoDateTime,
-    completedAt: new Date(FAILED_AT).toISOString() as IsoDateTime,
+    startedAt: brandId<IsoDateTime>({ value: new Date(FAILED_AT - 60_000).toISOString() }),
+    completedAt: brandId<IsoDateTime>({ value: new Date(FAILED_AT).toISOString() }),
   });
   if (hasOpenThread) {
     await db.execute(
@@ -112,7 +111,7 @@ const scopeOf = () =>
   loadOtherWorkspaceScope({
     db: storySqlite(),
     workspace: { id: NORTHWIND_ID, name: 'Northwind' },
-    base: useAppStore.getState() as ScopeState,
+    base: useAppStore.getState(),
   });
 
 beforeEach(async () => {

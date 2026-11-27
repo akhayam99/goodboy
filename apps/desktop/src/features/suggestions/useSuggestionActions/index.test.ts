@@ -288,7 +288,7 @@ describe('useSuggestionActions', () => {
       threadIds: ['gitlab:d-1', 'gitlab:d-2', 'thread-3'],
     });
     expect(spies.navigate).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments', threadId: null }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments', threadId: 'gitlab:d-1' }),
     });
     expect(spies.spawnAgent).not.toHaveBeenCalled();
   });

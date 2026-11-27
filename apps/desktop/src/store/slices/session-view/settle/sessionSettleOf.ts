@@ -49,11 +49,13 @@ const mergedAtOf = ({ state, mountId }: MountParams): number | null =>
       state.mountPrLinks?.[mountId]?.mergedAt,
   });
 
-const settleRequestOf = ({ state, mountId }: MountParams): SettleRequest => {
+const storedRequestIn = ({ state, mountId }: MountParams) => {
   const storedLink = state.mountPrLinks?.[mountId];
-  const request =
-    mountRequestOf({ state, mountId }) ??
-    (storedLink === undefined ? null : storedRequestOf({ link: storedLink }));
+  return storedLink === undefined ? null : storedRequestOf({ link: storedLink });
+};
+
+const settleRequestOf = ({ state, mountId }: MountParams): SettleRequest => {
+  const request = mountRequestOf({ state, mountId }) ?? storedRequestIn({ state, mountId });
   if (request === null) {
     return { state: 'unknown', mergedAt: null };
   }

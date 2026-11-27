@@ -36,7 +36,7 @@ export type AttentionFactsParams = {
   readonly hasSlackReplyWaiting?: boolean;
   readonly deferredReasons?: ReadonlySet<SessionAttentionReason>;
   readonly isFailureEnded?: boolean;
-  readonly settle?: SettleFacts;
+  readonly settle?: SettleFacts | (() => SettleFacts);
 };
 
 const ATTENTION_PRIORITY: ReadonlyArray<SessionAttentionReason> = [
@@ -91,25 +91,22 @@ export const isErrorReason = ({ reason }: ReasonParams): boolean => ERROR_REASON
 
 type SettleDropParams = {
   readonly reason: SessionAttentionReason;
-  readonly settle: SettleFacts;
+  readonly settleOf: () => SettleFacts;
 };
 
-const isDroppedBySettle = ({ reason, settle }: SettleDropParams): boolean => {
+const isDroppedBySettle = ({ reason, settleOf }: SettleDropParams): boolean => {
+  const isRunBound = RUN_BOUND_REASONS.includes(reason);
+  if (!isRunBound && reason !== 'run-stopped' && reason !== 'unread-reply') {
+    return false;
+  }
+  const settle = settleOf();
   if (!settle.isSettled) {
     return false;
   }
-  if (RUN_BOUND_REASONS.includes(reason)) {
+  if (isRunBound) {
     return !settle.isRunLive;
   }
-  if (isHumanInputReason({ reason })) {
-    return false;
-  }
-  const subjectAt =
-    reason === 'run-stopped'
-      ? settle.stoppedRunAt
-      : reason === 'unread-reply'
-        ? settle.unreadAt
-        : null;
+  const subjectAt = reason === 'run-stopped' ? settle.stoppedRunAt : settle.unreadAt;
   return subjectAt !== null && isFailureSettled({ at: subjectAt, settledAt: settle.settledAt });
 };
 
@@ -171,6 +168,11 @@ export const attentionFactsOf = ({
   settle = NOT_SETTLED,
 }: AttentionFactsParams): ReadonlyArray<SessionAttentionReason> => {
   const isOnBranch = !isBranchless;
+  let known: SettleFacts | null = null;
+  const settleOf = (): SettleFacts => {
+    known ??= typeof settle === 'function' ? settle() : settle;
+    return known;
+  };
   const livePr = isOnBranch && isPrLive(pr) ? pr : null;
   const holds: Record<SessionAttentionReason, boolean> = {
     'needs-approval': hasBlockedAgent,
@@ -196,7 +198,7 @@ export const attentionFactsOf = ({
       (reason) =>
         holds[reason] &&
         !(deferredReasons.has(reason) && !isHumanInputReason({ reason })) &&
-        !isDroppedBySettle({ reason, settle }),
+        !isDroppedBySettle({ reason, settleOf }),
     ),
   });
 };

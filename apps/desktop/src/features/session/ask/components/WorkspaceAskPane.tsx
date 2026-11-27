@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Button, DrawerFrame, EmptyLine, Textarea } from '@goodboy/ui';
+import { Button, DrawerFrame } from '@goodboy/ui';
 import type { ChatId, WorkspaceId } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
-import { useAppStore } from '../../../../../store';
-import { askInWorkspaceChat } from '../../askInWorkspaceChat';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { PromptField } from '../../../../shared/components/PromptField';
+import { useAppStore } from '../../../../store';
+import { askInWorkspaceChat } from '../askInWorkspaceChat';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -29,12 +30,15 @@ export const WorkspaceAskPane = ({ workspaceId, onClose }: Props) => {
   return (
     <DrawerFrame isDock title="Ask" icon={CONCEPT_ICONS.ask} onClose={onClose}>
       <div className="flex flex-col gap-3 px-2">
-        <Textarea
-          aria-label="Ask about the workspace"
+        <PromptField
+          kind="message"
+          label="Ask about the workspace"
           placeholder="Ask about the workspace. It becomes a chat."
           value={question}
-          rows={3}
-          onChange={(event) => setQuestion(event.target.value)}
+          onChange={setQuestion}
+          onSubmit={() => void send()}
+          isSubmitBlocked={question.trim() === '' || isBusy}
+          minRows={3}
         />
         <div className="flex items-center gap-2">
           <Button
@@ -55,7 +59,9 @@ export const WorkspaceAskPane = ({ workspaceId, onClose }: Props) => {
             </Button>
           )}
         </div>
-        {started === null ? null : <EmptyLine>Started in Chat. The answer is there.</EmptyLine>}
+        {started === null ? null : (
+          <p className="text-meta text-faint-foreground">Started in Chat. The answer is there.</p>
+        )}
       </div>
     </DrawerFrame>
   );

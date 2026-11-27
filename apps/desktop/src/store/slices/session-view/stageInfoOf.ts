@@ -13,7 +13,7 @@ import { attentionSinceOf } from './attentionSinceOf';
 import { attentionWaitsOf } from './attentionWaitsOf';
 import { deferredReasonsOf } from './deferredReasonsOf';
 import { replacedDelegationsOf } from './settle/replacedDelegationsOf';
-import { sessionSettleOf } from './settle/sessionSettleOf';
+import { sessionSettleOf, type SessionSettle } from './settle/sessionSettleOf';
 import { settleFactsOf } from './settle/settleFactsOf';
 import { deriveSessionStage } from './deriveSessionStage';
 import { isPrReviewSession } from './isPrReviewSession';
@@ -97,16 +97,20 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
     attempts: state.sessionResolveAttempts?.[sessionId] ?? [],
   });
   const agents = state.sessionPhaseRuns[sessionId] ?? NO_AGENTS;
-  const settle = sessionSettleOf({ state, sessionId });
+  let knownSettle: SessionSettle | null = null;
+  const settleOf = (): SessionSettle => {
+    knownSettle ??= sessionSettleOf({ state, sessionId });
+    return knownSettle;
+  };
   const standing = failureStandingOf({
     agents,
     delegations: replacedDelegationsOf({ views: state.autoTreeViews?.[sessionId] ?? [] }),
-    settledAt: settle.settledAt,
+    settledAt: agents.some((agent) => agent.status === 'failed') ? settleOf().settledAt : null,
   });
   const waits = attentionWaitsOf({
     state,
     session,
-    settledAt: () => settle.settledAt,
+    settledAt: () => settleOf().settledAt,
   });
   const requestFetch = sessionRequestFetchOf({ state, sessionId });
   const info = deriveSessionStage({
@@ -140,13 +144,14 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
     ),
     ...waits,
     isFailureEnded: standing.isEnded,
-    settle: settleFactsOf({
-      state,
-      session,
-      agents,
-      settle,
-      isRunLive: live.isRunning || live.isBlocked || live.isDeciding,
-    }),
+    settle: () =>
+      settleFactsOf({
+        state,
+        session,
+        agents,
+        settle: settleOf(),
+        isRunLive: live.isRunning || live.isBlocked || live.isDeciding,
+      }),
     deferredReasons: deferredReasonsOf({
       dismissed: state.sessionDismissedNextSteps?.[sessionId],
       pr: request.pr,

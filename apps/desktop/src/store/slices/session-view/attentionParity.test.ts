@@ -7,6 +7,7 @@ import {
   settledAtOf,
   type SettleRequest,
 } from '@goodboy/core/attention';
+import { brandId } from '@goodboy/types';
 import type { IsoDateTime, PullRequestState, SessionAttentionReason } from '@goodboy/types';
 import { anAgent, aSession, TEST_NOW } from '@goodboy/types/testing';
 import { ATTENTION_REASON_META } from '../../../features/session/session-stage';
@@ -75,7 +76,8 @@ type CaseParams = {
   readonly parityCase: ParityCase;
 };
 
-const isoOf = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
+const isoOf = (ms: number): IsoDateTime =>
+  brandId<IsoDateTime>({ value: new Date(ms).toISOString() });
 
 const settleOf = ({ parityCase }: CaseParams) => {
   const settle = parityCase.settle;

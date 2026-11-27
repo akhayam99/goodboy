@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import { brandId, type SessionId } from '@goodboy/types';
 import type { Database } from '../client';
 
 type ErroredSessionsParams = {
@@ -11,7 +11,7 @@ export const listErroredSessionIds = async ({
   const rows = await db.select<{ id: string }>(
     "SELECT id FROM sessions WHERE state_kind = 'error' AND deleted_at IS NULL",
   );
-  return rows.map((row) => row.id as SessionId);
+  return rows.map((row) => brandId<SessionId>({ value: row.id }));
 };
 
 type RepairSessionErrorParams = {
@@ -27,7 +27,7 @@ export const repairSessionErrorState = async ({
     `UPDATE sessions SET state_kind = 'idle'
      WHERE id = ? AND state_kind = 'error'
        AND NOT EXISTS (
-         SELECT 1 FROM agents WHERE session_id = ? AND status = 'running'
+         SELECT 1 FROM live_agents WHERE session_id = ? AND status = 'running'
        )`,
     [sessionId, sessionId],
   );

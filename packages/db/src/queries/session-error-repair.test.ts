@@ -1,12 +1,13 @@
+import { brandId } from '@goodboy/types';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { listErroredSessionIds, repairSessionErrorState } from './session-error-repair';
 
-const workspaceId = 'workspace-1' as WorkspaceId;
-const sessionId = 'session-1' as SessionId;
-const otherSessionId = 'session-2' as SessionId;
+const workspaceId = brandId<WorkspaceId>({ value: 'workspace-1' });
+const sessionId = brandId<SessionId>({ value: 'session-1' });
+const otherSessionId = brandId<SessionId>({ value: 'session-2' });
 
 describe('repairSessionErrorState', () => {
   let db: Database;

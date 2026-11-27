@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertAgent, insertSession, insertWorkspace } from '@goodboy/db';
+import { brandId } from '@goodboy/types';
 import type {
   AgentId,
   AgentStatus,
@@ -29,8 +30,8 @@ vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).sqliteDbLibModuleMock(),
 );
 
-const HARBORLINE_ID = 'workspace-harborline' as WorkspaceId;
-const SESSION_ID = 'session-webhooks' as SessionId;
+const HARBORLINE_ID = brandId<WorkspaceId>({ value: 'workspace-harborline' });
+const SESSION_ID = brandId<SessionId>({ value: 'session-webhooks' });
 const FAILED_AT = 1_790_000_000_000;
 const LATER_AT = FAILED_AT + 60_000;
 
@@ -48,15 +49,15 @@ type SeedParams = {
 
 const seedAgent = async ({ id, ordinal, status, completedAt, stepId }: SeedParams) => {
   await insertAgent(storySqlite(), {
-    id: id as AgentId,
+    id: brandId<AgentId>({ value: id }),
     sessionId: SESSION_ID,
     ordinal,
     name: `agent ${id}`,
     status,
     ...(completedAt === undefined
       ? {}
-      : { completedAt: new Date(completedAt).toISOString() as IsoDateTime }),
-    ...(stepId === undefined ? {} : { stepId: stepId as StepId }),
+      : { completedAt: brandId<IsoDateTime>({ value: new Date(completedAt).toISOString() }) }),
+    ...(stepId === undefined ? {} : { stepId: brandId<StepId>({ value: stepId }) }),
   });
 };
 

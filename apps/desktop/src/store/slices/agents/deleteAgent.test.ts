@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { brandId } from '@goodboy/types';
 import type {
   Agent,
   AgentId,
@@ -67,12 +68,12 @@ import { deleteAgent } from './deleteAgent';
 import { purgedAgentIds } from '../sessions/sessionMutators';
 import { registerTreeStopPort, type TreeStopPort } from '../../../features/auto/treeStopPort';
 
-const SID = 'sess-1' as SessionId;
-const DOOMED = 'resolver-1' as AgentId;
-const RUN = 'run-1' as ProviderRunId;
-const WID = 'ws-1' as WorkspaceId;
-const MOUNT_TWO = 'mount-two' as MountId;
-const MOUNT_THREE = 'mount-three' as MountId;
+const SID = brandId<SessionId>({ value: 'sess-1' });
+const DOOMED = brandId<AgentId>({ value: 'resolver-1' });
+const RUN = brandId<ProviderRunId>({ value: 'run-1' });
+const WID = brandId<WorkspaceId>({ value: 'ws-1' });
+const MOUNT_TWO = brandId<MountId>({ value: 'mount-two' });
+const MOUNT_THREE = brandId<MountId>({ value: 'mount-three' });
 const PATH_TWO = '/repo/two';
 const PATH_THREE = '/repo/three';
 const AUTO_TREE = { id: 'tree-1', phase: 'waiting', stopState: 'none' };
@@ -408,7 +409,7 @@ describe('deleteAgent', () => {
   });
 
   describe('the session state after the delete', () => {
-    const SURVIVOR = 'survivor-1' as AgentId;
+    const SURVIVOR = brandId<AgentId>({ value: 'survivor-1' });
     const ERROR_STATE = {
       kind: 'error',
       message: 'The agent stopped',
