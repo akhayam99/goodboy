@@ -6,6 +6,7 @@ import {
 import { isTypingTarget } from '../../../../../../shared/keyboard/isTypingTarget';
 import { seedWizardScene } from '../../onboarding/wizardSceneSeed';
 import { useAppStore } from '../../../../../../store';
+import { connectStoryTools } from '../connectStoryTools';
 import { landOnTasks } from '../landOnTasks';
 import { storyBringAnswer } from '../storyBringIpc';
 import { STORY_TASK_COUNT } from '../storyTasks';
@@ -13,9 +14,11 @@ import { STORY_TASK_COUNT } from '../storyTasks';
 const WIZARD = '[aria-label="Goodboy setup"]';
 const CONTINUE = `${WIZARD}[data-step="tools"] [data-demo-anchor="setup-continue"]`;
 const TOOLS_STEP = `${WIZARD}[data-step="tools"]`;
+const OPEN_TOOLS = `${WIZARD}[data-step="first-session"] [data-demo-anchor="setup-open-tools"]`;
 const LEAVE = `${WIZARD} header button`;
 const CHOOSE_FOLDER = `${WIZARD}[data-step="workspace"] [data-demo-anchor="setup-choose-folder"]`;
 const TASK_ROWS = '[role="option"]';
+const TOOLS_SETTLE_MS = 450;
 const POLL_MS = 80;
 const WATCH_MS = 200;
 const LIST_WAIT_MS = 5000;
@@ -84,6 +87,7 @@ export const useStoryBring = (): SceneStatus => {
     });
     useAppStore.setState({
       openSessionDraft: () => undefined,
+      githubStatus: { mode: 'gh-cli', available: true, user: 'dana-r', scopes: ['repo'] },
     });
     setIsReady(true);
   }, []);
@@ -176,6 +180,10 @@ export const useStoryBring = (): SceneStatus => {
       'click',
       (event) => {
         if (isLeavingRef.current || !(event.target instanceof Element)) {
+          return;
+        }
+        if (event.target.closest(OPEN_TOOLS) !== null) {
+          window.setTimeout(connectStoryTools, TOOLS_SETTLE_MS);
           return;
         }
         if (event.target.closest(CONTINUE) === null && event.target.closest(LEAVE) === null) {
