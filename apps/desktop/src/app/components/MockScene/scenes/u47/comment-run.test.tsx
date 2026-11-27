@@ -114,6 +114,34 @@ describe('u47 comment run scenes', () => {
     within(form).getByRole('button', { name: COMMENT_RUN_COPY.cancel });
   });
 
+  it('draws the Lead run and the One agent run, each in dark and light', async () => {
+    const isDark = (): boolean => document.documentElement.getAttribute('data-theme') === null;
+    const cases = [
+      { name: 'u47-comment-run-compose-lead-dark', plan: 'lead', isDark: true },
+      { name: 'u47-comment-run-compose-lead-light', plan: 'lead', isDark: false },
+      { name: 'u47-comment-run-compose-agent-dark', plan: 'agent', isDark: true },
+      { name: 'u47-comment-run-compose-agent-light', plan: 'agent', isDark: false },
+    ] as const;
+    for (const { name, plan, isDark: isDarkTheme } of cases) {
+      const form = await mount({ name });
+      const selected = within(form)
+        .getAllByRole('tab')
+        .filter((tab) => tab.getAttribute('aria-selected') === 'true')
+        .map((tab) => tab.textContent);
+      expect(selected).toEqual([plan === 'lead' ? 'The Lead plans it' : 'One agent']);
+      expect(isDark()).toBe(isDarkTheme);
+      const labels = [...form.querySelectorAll('[data-form-section]')].map((node) =>
+        node.getAttribute('data-form-section'),
+      );
+      expect(labels).toEqual(
+        plan === 'lead'
+          ? ['What', 'Plan', 'Rules', 'Model', 'Scope']
+          : ['What', 'Plan', 'Rules', 'Model'],
+      );
+      cleanup();
+    }
+  });
+
   it('leads a broad comment with Start a run and says why, the fix left to the menu', async () => {
     await settle({ name: 'u47-comment-run-suggest' });
     const bar = screen.getByRole('toolbar', { name: 'Comment actions' });

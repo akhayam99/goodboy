@@ -43,6 +43,7 @@ type Props = {
   readonly blockedReason?: string | null;
   readonly canDiscard?: boolean;
   readonly isBranchLocked?: boolean;
+  readonly isSectioned?: boolean;
 };
 
 type PickParams = {
@@ -62,6 +63,7 @@ export const RunsStartForm = ({
   blockedReason = null,
   canDiscard = true,
   isBranchLocked = false,
+  isSectioned = false,
 }: Props) => {
   const workspaceName = useAppStore(
     (state) =>
@@ -150,6 +152,7 @@ export const RunsStartForm = ({
           <StartPlanRow
             kind={kind ?? 'lead'}
             isDisabled={isStarting}
+            isSectioned={isSectioned}
             onPick={(next) => pickKind({ next })}
             pick={
               runAs.kind === 'role' ? (
@@ -193,6 +196,7 @@ export const RunsStartForm = ({
       }
       hint={shownHint}
       isRouteHint={isRouting && hasText}
+      isSectioned={isSectioned}
       settings={settings}
       note={note}
       error={run.error}
