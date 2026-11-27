@@ -46,8 +46,24 @@ export const leadProposalOf = ({ scope, sessionId }: Params): LeadProposal | nul
       key: choice.key,
       label: safeTextOf({ text: choice.label, max: PROPOSAL_LABEL_MAX }),
       role: choice.role,
-      actionId: actionIdOfChoice({ delegationId: delegation.id, version, choice: choice.key }),
+      ...(scope.isOpen
+        ? {
+            actionId: actionIdOfChoice({
+              delegationId: delegation.id,
+              version,
+              choice: choice.key,
+            }),
+          }
+        : {}),
     })),
-    notNowActionId: actionIdOfChoice({ delegationId: delegation.id, version, choice: 'notNow' }),
+    ...(scope.isOpen
+      ? {
+          notNowActionId: actionIdOfChoice({
+            delegationId: delegation.id,
+            version,
+            choice: 'notNow',
+          }),
+        }
+      : {}),
   };
 };

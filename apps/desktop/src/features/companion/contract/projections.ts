@@ -22,7 +22,7 @@ export type LeadProposalOption = {
   readonly key: string;
   readonly label: string;
   readonly role: string | null;
-  readonly actionId: ActionId;
+  readonly actionId?: ActionId;
 };
 
 export type LeadProposal = {
@@ -32,7 +32,7 @@ export type LeadProposal = {
   readonly title: string;
   readonly task?: string;
   readonly options: ReadonlyArray<LeadProposalOption>;
-  readonly notNowActionId: ActionId;
+  readonly notNowActionId?: ActionId;
 };
 
 export type LeadAsk = {

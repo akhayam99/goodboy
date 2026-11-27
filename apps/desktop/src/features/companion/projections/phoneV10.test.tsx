@@ -13,7 +13,7 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
-import { aWorkspace } from '@goodboy/types/testing';
+import { aSession, aWorkspace } from '@goodboy/types/testing';
 import { brandId, type AgentId, type TurnEvent } from '@goodboy/types';
 import { aDelegation, aPlanRow, aView } from '../../auto/testing/autoViewFixtures';
 import {
@@ -32,6 +32,7 @@ import {
 import { fixtureOf } from '../actions/testing/decideTestKit';
 import { CONTRACT_VERSION } from '../contract/contractVersion';
 import type { NeedsYouFields, SessionFields } from '../contract/projections';
+import { leadProposalOf } from './leadProposalOf';
 import { LEAD_ASK_MAX } from './leadAskOf';
 import { projectionFieldsOf } from './projectionFieldsOf';
 import { scopeOfState } from './scopeOfState';
@@ -308,5 +309,48 @@ describe('needs you row for the Lead carries the pending proposal', () => {
 
     expect(JSON.stringify(row?.ask)).not.toContain('auto>>');
     expect(row?.ask?.question).toBe('Shall I go?');
+  });
+});
+
+describe('Lead ask masks a secret before the cut', () => {
+  it('hides a credential that sits on the length boundary', () => {
+    const token = `ghp_${'b'.repeat(30)}`;
+    seed({ ask: `${'word '.repeat(98)}${token} and then more words to follow?` });
+
+    const row = fieldsOf<NeedsYouFields>('needsYou').rows.find(
+      (candidate) => candidate.reason === 'auto-needs-you',
+    );
+
+    expect(row?.ask?.question).toBeDefined();
+    expect(row?.ask?.question).not.toContain('ghp_');
+    expect(row?.ask?.question).toContain('[hidden]');
+  });
+});
+
+describe('a workspace that is not open shows its proposal read only', () => {
+  it('sends action ids for the open workspace and none for the other', () => {
+    seed({ ask: 'Shall I go?' });
+    const state = useAppStore.getState();
+    const session = aSession({ workspaceId: northwind.id, goal: 'Northwind work' });
+    const view = aView({
+      phase: 'waiting',
+      delegations: [aDelegation({ key: 'impl', role: 'implementer', state: 'awaiting_confirm' })],
+    });
+    const scopeOf = (isFullyLoaded: boolean) =>
+      scopeOfState({
+        workspace: northwind,
+        state: { ...state, autoTreeViews: { [session.id]: [view] } },
+        sessions: [session],
+        isFullyLoaded,
+      });
+
+    const read = leadProposalOf({ scope: scopeOf(false), sessionId: session.id });
+    const full = leadProposalOf({ scope: scopeOf(true), sessionId: session.id });
+
+    expect(read?.options.length).toBeGreaterThan(0);
+    expect(read?.notNowActionId).toBeUndefined();
+    expect(read?.options.every((option) => option.actionId === undefined)).toBe(true);
+    expect(full?.notNowActionId).toContain('act:decideProposal:');
+    expect(full?.options.every((option) => option.actionId !== undefined)).toBe(true);
   });
 });

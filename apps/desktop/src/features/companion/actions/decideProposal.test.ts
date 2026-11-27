@@ -153,6 +153,49 @@ describe('decideProposal', () => {
   });
 });
 
+describe('decideProposal edge cases', () => {
+  it('leaves the proposal untouched when the chosen alternative does not exist', async () => {
+    const port = vi.fn();
+    registerDelegationDecisionPort({ port });
+
+    const result = await decideProposal({
+      action: actionOf({ choice: 'alternative-1' }),
+      getStore: storeOf({ sendTurn: vi.fn() }),
+      ports,
+    });
+
+    expect(result).toMatchObject({ kind: 'refused', refusal: { code: 'invalid-request' } });
+    expect(port).not.toHaveBeenCalled();
+  });
+
+  it('keeps the delivery after a failed send and a retry sends only that message', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const port = vi.fn().mockResolvedValue('declined');
+    const sendTurn = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue(undefined);
+    registerDelegationDecisionPort({ port });
+    const getStore = storeOf({ sendTurn });
+
+    const first = await decideProposal({
+      action: actionOf({ choice: 'alternative-0' }),
+      getStore,
+      ports,
+    });
+    const retry = await decideProposal({
+      action: actionOf({ choice: 'alternative-0' }),
+      getStore,
+      ports,
+    });
+
+    expect(first.kind).toBe('failed');
+    expect(retry.kind).toBe('done');
+    expect(port).toHaveBeenCalledTimes(1);
+    expect(sendTurn).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('transcript for the phone', () => {
   const AUTO =
     '<<auto>>{"action":"propose","primary":{"role":"implementer","task":"Round it"}}<</auto>>';

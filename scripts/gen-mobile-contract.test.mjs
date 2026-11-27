@@ -126,8 +126,8 @@ describe('the generated Swift', () => {
     }
   });
 
-  it('pins the contract version at 9', () => {
-    assert.equal(contract.version, 9);
+  it('pins the contract version at 10', () => {
+    assert.equal(contract.version, 10);
   });
 
   it('carries the three projection fields on every projection', () => {

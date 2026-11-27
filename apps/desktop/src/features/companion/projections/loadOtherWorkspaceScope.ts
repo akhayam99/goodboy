@@ -10,6 +10,7 @@ import {
   type Database,
 } from '@goodboy/db';
 import { listWorkspacePullRequestLinks } from '@goodboy/db/mount-pr-link';
+import { readAutoTreeViews } from '../../../store/slices/auto-view/readAutoTreeViews';
 import { isLiveSession } from './isLiveSession';
 import { sessionGithubOf } from './sessionGithubOf';
 import { scopeOfState, type ScopeState } from './scopeOfState';
@@ -43,7 +44,7 @@ export const loadOtherWorkspaceScope = async ({
   const sessions = await listSessionsForWorkspace(db, workspace.id);
   const sessionIds = sessions.map((session) => session.id);
   const live = sessions.filter((session) => isLiveSession({ session }));
-  const [questions, agents, projects, tasks, links, slots, levelRaw] = await Promise.all([
+  const [questions, agents, projects, tasks, links, slots, levelRaw, views] = await Promise.all([
     listOpenQuestionsForSessions({ db, sessionIds }),
     listAgentsForSessions(db, sessionIds),
     listProjectsForWorkspace({ db, workspaceId: workspace.id }),
@@ -51,6 +52,7 @@ export const loadOtherWorkspaceScope = async ({
     listWorkspacePullRequestLinks({ db, workspaceId: workspace.id }),
     Promise.all(live.map((session) => listContextSlotsForSession(db, session.id))),
     getWorkspaceValue({ db, workspaceId: workspace.id, key: 'auto.level' }),
+    Promise.all(live.map((session) => readAutoTreeViews({ db, sessionId: session.id }))),
   ]);
   const state: ScopeState = {
     ...base,
@@ -62,6 +64,9 @@ export const loadOtherWorkspaceScope = async ({
     sessionProjectMounts: {},
     sessionGithub: sessionGithubOf({ links }),
     sessionResolveThreads: {},
+    autoTreeViews: Object.fromEntries(
+      live.map((session, index) => [session.id, views[index] ?? []]),
+    ),
     sessionSlots: Object.fromEntries(
       live.map((session, index) => [session.id, slots[index] ?? []]),
     ),

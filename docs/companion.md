@@ -533,7 +533,12 @@ and a `choice`: `primary` confirms the delegation through the same port as the
 Start button, `alternative-0` and `alternative-1` decline it and tell the Lead
 "Next step: <role>" as the Mac does, `notNow` declines. A proposal that changed
 is refused with `version-changed`, one decided on the Mac with
-`already-decided`. A transcript sent to the phone never holds an `<<auto>>`
+`already-decided`, and an alternative that is not offered with `invalid-request`
+before anything is declined. If the Lead cannot be told after the decline, the
+next step stays pending on the Mac and a retry of the same choice sends only
+that message. Only the open workspace carries `actionId` and `notNowActionId`:
+the proposal of another workspace is read only. The tree views of every other
+workspace are read again on each refresh. A transcript sent to the phone never holds an `<<auto>>`
 block: a message that was only a block is left out, the activity summary and
 the session summary are cleaned the same way.
 An activity line (`SessionLine`) of an agent carries `title` (its name) and
