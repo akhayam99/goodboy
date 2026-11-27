@@ -226,6 +226,8 @@ export const NAMES = {
   pushed: 'Pushed',
   onOrigin: 'On origin',
   rebaseNeedsYou: 'The rebase needs you',
+  rebaseStopped: 'Rebase stopped',
+  openRebase: 'Open rebase',
   waitingForPermission: 'Needs permission',
   needsApproval: 'Needs approval',
   approveAndContinue: 'Approve and continue',

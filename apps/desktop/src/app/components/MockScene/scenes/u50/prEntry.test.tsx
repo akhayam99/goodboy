@@ -75,13 +75,13 @@ describe('the pr entry scenes', () => {
     screen.getByRole('button', { name: 'Open on GitHub' });
   });
 
-  it('names the failing check on the branch chip of its block', async () => {
+  it('names the failing check in the facts line of its block', async () => {
     show({ name: 'u50-pr-entry-blocks-light' });
 
     await screen.findByRole('region', { name: 'Projects' });
-    const chips = [...document.querySelectorAll('[data-board-chip]')].map(
-      (chip) => chip.textContent,
+    const words = [...document.querySelectorAll('[data-board-word]')].map(
+      (word) => word.textContent,
     );
-    expect(chips.some((word) => word?.endsWith(' failed') === true)).toBe(true);
+    expect(words.some((word) => word?.endsWith(' failed') === true)).toBe(true);
   });
 });

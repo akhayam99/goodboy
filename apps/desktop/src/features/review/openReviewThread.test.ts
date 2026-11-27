@@ -51,7 +51,7 @@ beforeEach(() => {
 
 describe('openReviewThread', () => {
   it('reads the pull request out of the comment link the transcript carries', async () => {
-    h.state.sessionGithub = { [SESSION_ID]: { pr: { number: 9999 } } };
+    h.state.sessionGithub = { [SESSION_ID]: { pr: { number: 9999 }, detail: null } };
 
     await openReviewThread({
       sessionId: SESSION_ID,
@@ -73,8 +73,8 @@ describe('openReviewThread', () => {
       ],
     };
     h.state.mountGithub = {
-      [MOUNT_ID]: { prs: [{ number: 12 }] },
-      [OTHER_MOUNT_ID]: { prs: [{ number: 9108 }] },
+      [MOUNT_ID]: { prs: [{ number: 12, state: 'open' }], pr: null, detail: null },
+      [OTHER_MOUNT_ID]: { prs: [{ number: 9108, state: 'open' }], pr: null, detail: null },
     };
 
     await openReviewThread({
@@ -95,7 +95,7 @@ describe('openReviewThread', () => {
   });
 
   it('opens a recorded thread against its own pull request, not the active one', async () => {
-    h.state.sessionGithub = { [SESSION_ID]: { pr: { number: 9999 } } };
+    h.state.sessionGithub = { [SESSION_ID]: { pr: { number: 9999 }, detail: null } };
     h.state.sessionResolveThreads = {
       [SESSION_ID]: [{ threadId: 'PRRT_1', prNumber: 248, projectId: PROJECT_ID }],
     };
@@ -114,7 +114,7 @@ describe('openReviewThread', () => {
   });
 
   it('falls back to the pull request the resolver attempt ran against', async () => {
-    h.state.sessionGithub = { [SESSION_ID]: { pr: { number: 9999 } } };
+    h.state.sessionGithub = { [SESSION_ID]: { pr: { number: 9999 }, detail: null } };
     h.state.sessionResolveAttempts = {
       [SESSION_ID]: [{ threadIds: ['PRRT_1', 'PRRT_2'], prNumber: 77 }],
     };

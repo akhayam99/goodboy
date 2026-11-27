@@ -4,6 +4,7 @@ import { useAppStore } from '../../../../../store';
 import { launchKeyOf } from '../../../../../store/slices/resolve/resolveLaunch';
 import type { ResolveCandidateWithItems } from '../../../../../store/slices/resolve/state';
 import { usePendingAction } from '../../../../../shared/hooks/usePendingAction';
+import { threadMountIdOf } from '../../../../../store/slices/review-source/threadMountIdOf';
 import { requestReview } from '../../../../review/reviewRequest';
 import { commentRowResultOf, type CommentRowResult } from '../../../commentRowResultOf';
 import { draftRoutingOf } from '../../../draftRouting';
@@ -71,10 +72,12 @@ export const useCommentRow = ({ sessionId, entry }: Params): CommentRow => {
       failureTitle: COMMENT_ROW_FAILURE.fix,
       task: async () => {
         const getState = useAppStore.getState;
+        const mountId = threadMountIdOf({ state: getState(), sessionId, threadId });
         const started = await startBatch({
           getState,
           sessionId,
           threadIds: [threadId],
+          ...(mountId !== null && { mountId }),
           launchChoice: launchChoiceOf({
             routing: draftRoutingOf({ state: getState(), sessionId }),
             commitStyle: null,

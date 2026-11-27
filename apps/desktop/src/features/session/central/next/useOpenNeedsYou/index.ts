@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { branchPlace, sessionPlace, useAppStore } from '../../../../../store';
+import { sessionPlace, useAppStore } from '../../../../../store';
+import { commentBranchPlaceOf } from '../../../../review/commentBranchPlaceOf';
 import { useOpenAgentQuestion } from '../../../../context/hooks/useOpenAgentQuestion';
 import { openReview } from '../../../../review/openReview';
 import type { useTimelineOpen } from '../../../hooks/useTimelineOpen';
@@ -26,7 +27,13 @@ export const useOpenNeedsYou = ({ sessionId, openTargetFor }: Params): OpenNeeds
       if (owner.kind === 'fixRun') {
         const target = owner.owed?.target ?? null;
         if (target === null) {
-          navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
+          navigate({
+            to: commentBranchPlaceOf({
+              state: useAppStore.getState(),
+              sessionId,
+              threadId: null,
+            }),
+          });
           return;
         }
         void openReview({
