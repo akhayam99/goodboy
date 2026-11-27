@@ -23,6 +23,7 @@ const { state, gitStatuses, groups } = vi.hoisted(() => ({
     projects: [] as ReadonlyArray<Project>,
     bulkUnarchiveTask: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
+    calendarReminders: {},
   },
   gitStatuses: { current: {} as Record<string, WorkspaceGitStatus | null> },
   groups: { current: [] as ReadonlyArray<{ key: string; sessions: ReadonlyArray<Session> }> },

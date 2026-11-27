@@ -2,7 +2,7 @@ import type { Reminder, ReminderId, WorkspaceId } from '@goodboy/types';
 import type { SetFn } from '../../slice-types';
 import { sortReminders } from './sortReminders';
 
-type ReminderPatch = Partial<Pick<Reminder, 'doneAt' | 'snoozedUntil'>>;
+type ReminderPatch = Partial<Pick<Reminder, 'doneAt' | 'snoozedUntil' | 'dueAt'>>;
 
 type Params = {
   readonly set: SetFn;

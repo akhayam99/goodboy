@@ -1,6 +1,7 @@
 import type { SliceDeps } from '../../slice-types';
 import { addCalendarSource } from './addCalendarSource';
 import { addReminder } from './addReminder';
+import { fireReminder } from './fireReminder';
 import { loadCalendarEvents } from './loadCalendarEvents';
 import { loadCalendarSources } from './loadCalendarSources';
 import { loadReminders } from './loadReminders';
@@ -19,4 +20,5 @@ export const createCalendarSlice = ({ set, get }: SliceDeps) => ({
   addReminder: addReminder({ set, get }),
   markReminderDone: markReminderDone({ set, get }),
   snoozeReminder: snoozeReminder({ set, get }),
+  fireReminder: fireReminder({ set, get }),
 });

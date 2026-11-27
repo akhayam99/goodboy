@@ -438,6 +438,7 @@ export {
   setCalendarRole,
 } from './queries/calendar-source';
 export {
+  fireReminder,
   insertReminder,
   listReminders,
   markReminderDone,

@@ -54,3 +54,7 @@ export type ReminderParams = {
 export type SnoozeReminderParams = ReminderParams & {
   readonly snoozedUntil: number;
 };
+
+export type FireReminderParams = ReminderParams & {
+  readonly firedAt: number;
+};
