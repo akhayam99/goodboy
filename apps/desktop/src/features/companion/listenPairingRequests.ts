@@ -19,7 +19,7 @@ const isGranted = async (): Promise<boolean> => {
   return (await requestPermission()) === 'granted';
 };
 
-const notify = async (): Promise<void> => {
+const announcePairingRequest = async (): Promise<void> => {
   if (document.hasFocus()) {
     return;
   }
@@ -34,7 +34,7 @@ export const listenPairingRequests = async (): Promise<UnlistenFn> => {
     return () => undefined;
   }
   return listen<PendingPairing>(PAIRING_REQUEST_EVENT, () => {
-    void notify().catch((error: unknown) => {
+    void announcePairingRequest().catch((error: unknown) => {
       console.error('[bridge] pairing notification failed', error);
     });
   });

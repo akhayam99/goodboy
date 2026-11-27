@@ -201,7 +201,7 @@ describe('IphonePage', () => {
     mocks.fault = { code: 'file_unreadable', message: 'The pairing file could not be read.' };
     render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
 
-    expect(await screen.findByText('Pairing is not available')).toBeTruthy();
+    expect(await screen.findByText("Pairing isn't available")).toBeTruthy();
     screen.getByText('The pairing file could not be read.');
     expect(screen.queryByTestId('pairing-qr')).toBeNull();
     expect(invokedCommands()).not.toContain('bridge_reset_pairing');
@@ -209,7 +209,7 @@ describe('IphonePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reset pairing' }));
 
     await waitFor(() => expect(invokedCommands()).toContain('bridge_reset_pairing'));
-    await waitFor(() => expect(screen.queryByText('Pairing is not available')).toBeNull());
+    await waitFor(() => expect(screen.queryByText("Pairing isn't available")).toBeNull());
     expect(await screen.findByTestId('pairing-qr')).toBeTruthy();
   });
 

@@ -1,4 +1,5 @@
 import { Button, Notice } from '@goodboy/ui';
+import { actionIntentOf } from '../../../actions/actionIntentOf';
 import type { BridgeFault } from '../../bridge';
 
 type Props = {
@@ -12,10 +13,16 @@ export const PairingFault = ({ fault, isBusy, onReset }: Props) => (
     tone="danger"
     placement="inline"
     role="alert"
-    title="Pairing is not available"
+    title="Pairing isn't available"
     body={fault.message}
     actions={
-      <Button variant="secondary" size="sm" disabled={isBusy} onClick={() => void onReset()}>
+      <Button
+        variant="secondary"
+        size="sm"
+        intent={actionIntentOf({ verb: 'reset' })}
+        disabled={isBusy}
+        onClick={() => void onReset()}
+      >
         Reset pairing
       </Button>
     }

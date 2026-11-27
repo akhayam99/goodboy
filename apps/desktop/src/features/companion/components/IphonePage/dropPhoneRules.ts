@@ -8,6 +8,6 @@ type Params = {
 export const dropPhoneRules = async ({ ruleIds }: Params): Promise<void> => {
   const results = await Promise.allSettled(ruleIds.map((id) => invokePermissionRuleDelete({ id })));
   if (results.some((result) => result.status === 'rejected')) {
-    throw new Error('A rule this iPhone made could not be removed.');
+    throw new Error("A rule this iPhone made couldn't be removed.");
   }
 };

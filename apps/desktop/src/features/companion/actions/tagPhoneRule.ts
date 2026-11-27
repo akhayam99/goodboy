@@ -17,11 +17,11 @@ export const tagPhoneRule = async ({ phoneId, ruleId }: Params): Promise<void> =
       return;
     }
   } catch (error) {
-    console.error('[bridge] could not tag a phone rule', error);
+    console.error("[bridge] couldn't tag a phone rule", error);
   }
   try {
     await invokePermissionRuleDelete({ id: ruleId });
   } catch (error) {
-    console.error('[bridge] could not drop an untagged phone rule', error);
+    console.error("[bridge] couldn't drop an untagged phone rule", error);
   }
 };
