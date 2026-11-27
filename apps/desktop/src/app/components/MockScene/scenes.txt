@@ -1478,6 +1478,8 @@ u48-tool-rail-detail-monitor
 u48-tool-rail-monitor
 u50-activity-dark
 u50-activity-light
+u50-branch-rows-dark
+u50-branch-rows-light
 u50-context-view-dark
 u50-context-view-light
 u50-desk-face-dark

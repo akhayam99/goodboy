@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { brandId, type MountId } from '@goodboy/types';
-import { Button, Chip, cn, ROW_HOVER, StatusDot, Tooltip } from '@goodboy/ui';
+import { Button, cn, ROW_HOVER, StatusDot, Tooltip } from '@goodboy/ui';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { failingChecksOf } from '../../../branch/checks/failingChecksOf';
 import { branchTabPlaceOf } from '../../../branch/branchTabPlaceOf';
@@ -8,7 +8,7 @@ import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
 import { useMountRowMenu } from '../../hooks/useMountRowMenu';
 import { MountRowMenuButton } from '../MountRowMenuButton';
 import { boardRowCellsOf } from '../../central/board/boardRowCellsOf';
-import { boardTileChipOf } from '../../central/board/boardTileChipOf';
+import { branchRowOf } from '../../central/board/branchRowOf';
 import { OverlapChip } from '../../../overlap/OverlapChip';
 import { BoardBranchName } from './BoardBranchName';
 import { BoardTileAction } from './BoardTileAction';
@@ -26,6 +26,7 @@ const BoardTileView = ({ rowId }: Props) => {
     entryByRowId,
     runningByRowId,
     cardsByRowId,
+    shownAskIds,
     newRowIds,
     now,
     isPermissionShown,
@@ -52,13 +53,16 @@ const BoardTileView = ({ rowId }: Props) => {
     return null;
   }
   const runningCount = runningByRowId.get(rowId) ?? 0;
-  const stateChip = boardTileChipOf({ row, entry, runningCount, isPermissionShown });
-  const isCheckNamed =
-    stateChip !== null && failingName !== null && entry?.story.word === stateChip.word;
-  const chip =
-    stateChip === null || failingName === null || !isCheckNamed
-      ? stateChip
-      : { ...stateChip, word: `${failingName} failed` };
+  const branchRow = branchRowOf({
+    row,
+    entry,
+    runningCount,
+    cards: cardsByRowId.get(rowId) ?? [],
+    shownAskIds,
+    isPermissionShown,
+    failingCheckName: failingName,
+    overlap: null,
+  });
   const title =
     row.branch === null
       ? boardRowCellsOf({
@@ -118,31 +122,18 @@ const BoardTileView = ({ rowId }: Props) => {
             <BoardBranchName name={row.branch} />
           )}
         </span>
-        {entry === null ? null : (
-          <BoardTileFacts rowId={rowId} title={title} onOpenChanges={openChanges} />
-        )}
+        <BoardTileFacts
+          rowId={rowId}
+          title={title}
+          word={branchRow.word}
+          onOpenChanges={openChanges}
+        />
       </span>
       <span className="pointer-events-none relative flex min-w-0 shrink-0 items-center gap-3 text-meta">
-        {chip === null ? null : (
-          <span
-            data-board-chip=""
-            className={cn('flex max-w-48 min-w-0', isCheckNamed && 'pointer-events-auto')}
-          >
-            <Chip
-              kind="state"
-              tone={chip.tone}
-              emphasis="subtle"
-              bordered={false}
-              className="min-w-0 shrink"
-              {...(isCheckNamed && { title: chip.word })}
-              label={<span className="min-w-0 truncate">{chip.word}</span>}
-            />
-          </span>
-        )}
         {entry === null ? null : (
           <OverlapChip mountId={brandId<MountId>({ value: entry.fact.mountId })} />
         )}
-        <BoardTileAction rowId={rowId} />
+        <BoardTileAction rowId={rowId} action={branchRow.action} />
         {entry === null ? null : (
           <span data-board-actions="" className={cn(TRAIL_SLOT, 'pointer-events-auto row-actions')}>
             <MountRowMenuButton

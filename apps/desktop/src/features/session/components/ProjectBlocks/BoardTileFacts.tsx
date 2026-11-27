@@ -1,7 +1,7 @@
-import { Button } from '@goodboy/ui';
+import { Button, tintClasses } from '@goodboy/ui';
 import { countNoun } from '../../../../shared/utils/countNoun';
+import type { BranchRowWord } from '../../central/board/branchRowOf';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
-import { boardSettledWordOf } from '../../central/board/boardSettledWordOf';
 import { requestShortOf } from '../../central/board/requestShortOf';
 import { branchWorkTabRegistration } from '../../branchWorkTabRegistration';
 import { useBoardContext } from './useBoardContext';
@@ -9,13 +9,14 @@ import { useBoardContext } from './useBoardContext';
 type Props = {
   readonly rowId: string;
   readonly title: string;
+  readonly word: BranchRowWord | null;
   readonly onOpenChanges: () => void;
 };
 
 const SEPARATOR = ' · ';
 
-export const BoardTileFacts = ({ rowId, title, onOpenChanges }: Props) => {
-  const { session, rowById, entryByRowId, diffStatByPath, runningByRowId } = useBoardContext();
+export const BoardTileFacts = ({ rowId, title, word, onOpenChanges }: Props) => {
+  const { session, entryByRowId, diffStatByPath, runningByRowId } = useBoardContext();
   const entry = entryByRowId.get(rowId) ?? null;
   const mountPath = entry === null ? null : entry.fact.mountPath;
   const work = branchWorkTabRegistration.useWork({
@@ -30,18 +31,10 @@ export const BoardTileFacts = ({ rowId, title, onOpenChanges }: Props) => {
   const requestWord =
     request === null ? '' : `${requestShortOf({ request })} ${request.noun}${request.number}`;
   const runs = work.counts === null ? 0 : work.counts.runs;
-  const row = rowById.get(rowId);
-  const asked = row?.askIds.length ?? 0;
-  const settled = row === undefined ? null : boardSettledWordOf({ row });
   const words = joinFacts({
-    facts: [
-      settled?.word,
-      runs > 0 && countNoun({ count: runs, one: 'run' }),
-      asked > 0 &&
-        `${countNoun({ count: asked, one: 'question' })} ${asked === 1 ? 'waits' : 'wait'}`,
-    ],
+    facts: [runs > 0 && countNoun({ count: runs, one: 'run' })],
   });
-  if (requestWord === '' && !hasDiff && words === '') {
+  if (requestWord === '' && !hasDiff && words === '' && word === null) {
     return null;
   }
   return (
@@ -50,7 +43,13 @@ export const BoardTileFacts = ({ rowId, title, onOpenChanges }: Props) => {
       className="min-w-0 truncate text-meta tabular-nums text-muted-foreground"
     >
       {requestWord === '' ? null : <span data-board-request="">{requestWord}</span>}
-      {requestWord !== '' && (hasDiff || words !== '') ? SEPARATOR : null}
+      {requestWord !== '' && word !== null ? SEPARATOR : null}
+      {word === null ? null : (
+        <span data-board-word="" className={tintClasses(word.tone).text}>
+          {word.word}
+        </span>
+      )}
+      {(requestWord !== '' || word !== null) && (hasDiff || words !== '') ? SEPARATOR : null}
       {hasDiff ? (
         <Button
           variant="quiet"
