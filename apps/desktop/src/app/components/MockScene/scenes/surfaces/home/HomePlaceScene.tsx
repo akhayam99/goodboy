@@ -4,6 +4,7 @@ import { useAppStore } from '../../../../../../store';
 import { MainRegion } from '../../../../MainRegion';
 import { mockSceneIpc } from '../../mockSceneIpc';
 import { WORKSPACE_ID, seedBoardScene } from '../../BoardScene';
+import { seedPolicyScene } from '../../providerPolicySeed';
 import { StudioFrame } from '../../StudioFrame';
 import { seedStudioChrome } from '../../shellChrome';
 
@@ -18,6 +19,7 @@ export const HomePlaceScene = ({ theme }: Props) => {
     applyDocumentTheme({ theme });
     mockSceneIpc(() => undefined);
     seedBoardScene();
+    seedPolicyScene({ workspaceId: WORKSPACE_ID });
     seedStudioChrome();
     useAppStore.setState({
       currentSessionId: null,

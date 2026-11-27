@@ -126,7 +126,7 @@ describe('overlapWordsOf', () => {
     expect(overlapWordsOf({ group, sessionLabels: LABELS })).toEqual({
       chip: 'Overlaps Fix the Harborline ledger totals +1',
       title: '3 branches change the same files',
-      lead: 'Merge them in this order to avoid conflicts.',
+      lead: 'A suggested order: fewest files first, then the oldest.',
       shared: '2 shared files',
       reasons: ['fewest files', 'fewer files', 'most files'],
     });

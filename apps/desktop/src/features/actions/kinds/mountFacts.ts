@@ -55,6 +55,7 @@ export type MountFacts = {
   readonly pinnedRunIds: ReadonlyArray<WorkflowRunId>;
   readonly pinnedRunLabel: string | null;
   readonly editors: ReadonlyArray<MountEditor>;
+  readonly overlapCount?: number;
 };
 
 export type MountRebaseConflict = {
@@ -124,6 +125,7 @@ type Params = {
   readonly onlyOnline: ReadonlyArray<OnlineCommit> | null;
   readonly rebaseConflict: MountRebaseConflict | null;
   readonly autoBlockedReason: string | null;
+  readonly overlapCount?: number;
 };
 
 export const mountFacts = ({
@@ -154,6 +156,7 @@ export const mountFacts = ({
   onlyOnline,
   rebaseConflict,
   autoBlockedReason,
+  overlapCount = 0,
 }: Params): MountFacts => {
   const ahead = status === null ? 0 : (distanceAhead({ distance: status.mainDistance }) ?? 0);
   const push = branchPushFactsOf({ status });
@@ -197,5 +200,6 @@ export const mountFacts = ({
     pinnedRunIds,
     pinnedRunLabel,
     editors,
+    overlapCount,
   };
 };

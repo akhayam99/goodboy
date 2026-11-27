@@ -135,13 +135,13 @@ const tenantTile = (): HTMLElement => {
   return tile;
 };
 
-describe('the overlap chip on a session branch', () => {
-  it('shows on the branch that shares a file with another session', async () => {
+describe('the overlap card on a session branch', () => {
+  it('opens from the word of the branch that shares a file with another session', async () => {
     seedCentralColumn({ kind: 'branches' });
     answerOverlap({ paths: [SHARED_PATH] });
     await show();
 
-    within(tenantTile()).getByRole('button', { name: /^Overlaps/ });
+    within(tenantTile()).getByRole('button', { name: /, Overlaps/ });
   });
 
   it('stays away while the branches change different files', async () => {
@@ -149,6 +149,6 @@ describe('the overlap chip on a session branch', () => {
     answerOverlap({ paths: ['src/other.ts'] });
     await show();
 
-    expect(within(tenantTile()).queryByRole('button', { name: /^Overlaps/ })).toBeNull();
+    expect(within(tenantTile()).queryByRole('button', { name: /, Overlaps/ })).toBeNull();
   });
 });

@@ -52,7 +52,9 @@ const verbsOf = ({ index }: RowParams): ReadonlyArray<string | null> =>
   [...rowOf({ index }).querySelectorAll('button')]
     .filter(
       (button) =>
-        button.getAttribute('role') !== 'link' && button.closest('[data-board-actions]') === null,
+        button.getAttribute('role') !== 'link' &&
+        !button.hasAttribute('data-board-word') &&
+        button.closest('[data-board-actions]') === null,
     )
     .map((button) => button.textContent);
 

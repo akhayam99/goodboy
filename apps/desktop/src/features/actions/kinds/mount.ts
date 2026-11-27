@@ -21,6 +21,9 @@ import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
 import { NAMES } from '../../../shared/utils/names';
 import { openExplorePane } from '../../explore/openExplorePane';
 import { openScriptsPane } from '../../scripts/openScriptsPane';
+import { MOUNT_OVERLAP_CARD_ACTION } from './mountOverlapCardAction';
+import { liveMounts } from '../../overlap/liveMounts';
+import { overlapGroupOf } from '../../overlap/overlapGroupOf';
 import { MOUNT_CLEAN_UP_ACTION } from './mountCleanUpAction';
 import { MOUNT_CLOSE_ACTION } from './mountCloseAction';
 import { MOUNT_CLOSE_KEEP_FOLDER_ACTION } from './mountCloseKeepFolderAction';
@@ -103,6 +106,7 @@ const MOUNT_OPEN_IDS = ['mount.openInEditor', 'mount.openTerminal', 'mount.openI
 const MOUNT_COPY_IDS = ['mount.copyBranch', 'mount.copyPath'];
 
 const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
+  MOUNT_OVERLAP_CARD_ACTION,
   {
     id: 'mount.openPullRequest',
     label: ({ facts }) => `Open ${facts.requestLabel ?? 'the pull request'}`,
@@ -559,6 +563,8 @@ export const mountFactsFor = ({
       run: selectRebaseStop({ state, sessionId, mountId })?.run,
     }),
     autoBlockedReason: autoUnavailableReason({ state }),
+    overlapCount:
+      overlapGroupOf({ mounts: liveMounts.snapshot().mounts, mountId })?.sharedPaths.length ?? 0,
     pinnedRunIds: pinnedRuns.map((pinned) => pinned.runId),
     pinnedRunLabel: pinnedRuns[0]?.label ?? null,
     blockers: mountCleanupBlockers({

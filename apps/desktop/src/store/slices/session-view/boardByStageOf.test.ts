@@ -8,7 +8,7 @@ import {
   type SessionStageInfo,
   type SessionViewPrefs,
 } from '@goodboy/types';
-import { sessionFixture } from '../../../../__tests__/helpers/actionFixtures';
+import { sessionFixture } from '../../../__tests__/helpers/actionFixtures';
 import { boardByStageOf } from './boardByStageOf';
 
 type SessionParams = {
