@@ -99,6 +99,9 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
   };
   const startChildTurn = async (params: StartChildTurnParams): Promise<ChildStartOutcome> => {
     await waitTurnSettledFor({ agentId: params.childAgentId, ms: CHILD_TURN_CLOSE_WAIT_MS });
+    if (!(await params.isStillLive())) {
+      return { kind: 'refused', reason: 'kickoff_failed', message: 'The work was stopped.' };
+    }
     const outcome = await startDeliveredTurn({
       deps: deliveredDeps,
       input: {

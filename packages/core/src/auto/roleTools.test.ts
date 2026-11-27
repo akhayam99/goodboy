@@ -106,6 +106,8 @@ describe('commands written in other ways', () => {
     'Make sure the build still succeeds before you answer.',
     'Run the suite of ledger-core.',
     'Run make test in the mount.',
+    'Execute `make all` in ledger-core.',
+    'Run make all in notify-relay.',
   ])('counts as a command: %s', (text) => {
     expect(commandMentionOf({ text })).not.toBeNull();
   });
@@ -113,6 +115,7 @@ describe('commands written in other ways', () => {
   it.each([
     'Make sure the plan covers the export.',
     'Plan how to make the retry limit configurable.',
+    'Plan how to make all retries configurable.',
     'Find where vitest is configured in payments-api.',
     'Explain how the build passes the version to the app.',
     'Check how the build passes the version to the app.',

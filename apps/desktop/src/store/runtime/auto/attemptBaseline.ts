@@ -45,6 +45,7 @@ export const resumeOf = ({ baseline }: BaselineParams): ResumeInfo | null => {
 
 export type CloseNudgeInfo = Readonly<{
   tail: string;
+  answered: ResumeInfo | null;
 }>;
 
 export const closeNudgeOf = ({ baseline }: BaselineParams): CloseNudgeInfo | null => {
@@ -56,7 +57,10 @@ export const closeNudgeOf = ({ baseline }: BaselineParams): CloseNudgeInfo | nul
     return null;
   }
   const tail = nudge['tail'];
-  return typeof tail === 'string' ? { tail } : null;
+  if (typeof tail !== 'string') {
+    return null;
+  }
+  return { tail, answered: resumeOf({ baseline: { resume: nudge['answered'] } }) };
 };
 
 type CloseNudgeBaselineParams = BaselineParams & {
@@ -70,7 +74,9 @@ export const closeNudgeBaselineOf = ({
   const kept = isRecord(baseline)
     ? Object.entries(baseline).filter(([key]) => key !== 'resume')
     : [];
-  return { ...Object.fromEntries(kept), closeNudge: { tail } };
+  const resume = isRecord(baseline) ? baseline['resume'] : null;
+  const answered = isRecord(resume) ? { answered: resume } : {};
+  return { ...Object.fromEntries(kept), closeNudge: { tail, ...answered } };
 };
 
 export const snapshotOf = ({ baseline }: BaselineParams): MountSnapshot | null => {

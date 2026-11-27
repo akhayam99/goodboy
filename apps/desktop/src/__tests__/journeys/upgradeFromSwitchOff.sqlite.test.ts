@@ -117,7 +117,8 @@ const threeAsksWorld = async (): Promise<RuntimeWorld> => {
   await autoDelegates({ world, spec: [tester], requestId: 'request-tester' });
   await autoTurnEnds({ world });
   await childTurnEnds({ world, index: 1, text: NEED });
-  const testerTurn = world.state.ports.childTurns[1];
+  await childTurnEnds({ world, index: 2, text: NEED });
+  const testerTurn = world.state.ports.childTurns[2];
   if (testerTurn === undefined) {
     throw new Error('Expected the tester to run');
   }
@@ -198,7 +199,7 @@ describe('an upgrade from 0.36 with the Work switch off', () => {
     const pending = {
       asks: ['dependency', 'push', 'start'],
       pushes: 0,
-      childTurns: 2,
+      childTurns: 3,
       pushState: 'awaiting_confirm',
       grant: 'asked',
       readerState: 'awaiting_confirm',

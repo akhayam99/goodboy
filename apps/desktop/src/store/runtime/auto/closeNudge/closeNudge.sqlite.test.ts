@@ -256,6 +256,37 @@ describe('a helper that ends without its closing block', () => {
     expect(world.errors).toEqual([]);
   });
 
+  it('keeps the files the first turn changed when the reminder cannot start', async () => {
+    const world = await startWith({
+      prepare: (state) =>
+        state.state.ports.setSnapshots(LEDGER_MOUNT.worktreePath ?? '', [
+          CLEAN_SNAPSHOT,
+          DIRTY_SNAPSHOT,
+        ]),
+    });
+    world.state.ports.setChildOutcome({
+      kind: 'refused',
+      reason: 'kickoff_failed',
+      message: 'the folder is held by another turn',
+    });
+
+    await childTurnEnds({ world, index: 0, text: MISSED });
+
+    expect((await delegationOf(world)).result).toMatchObject({
+      outcome: 'failed',
+      verified: { changedFiles: [{ path: 'src/export.ts', ownership: 'attempt' }] },
+    });
+  });
+
+  it('gives the reminder the inputs frozen for the first turn', async () => {
+    const world = await startWith();
+    await childTurnEnds({ world, index: 0, text: MISSED });
+
+    const [first, reminder] = await attemptsOf(world);
+    expect(first?.launchSnapshot).not.toBeNull();
+    expect(reminder?.launchSnapshot).toEqual(first?.launchSnapshot);
+  });
+
   it('keeps the first report when the reminder turn is cut short', async () => {
     const world = await startWith();
     await childTurnEnds({ world, index: 0, text: MISSED });

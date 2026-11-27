@@ -34,11 +34,38 @@ const owedOutputOf = ({ role }: RoleParams): ReadonlyArray<string> =>
     ? []
     : [`**Expected output** Goodboy reads it from this reply only. ${AUTO_DEFAULT_EXPECTED[role]}`];
 
+export type CloseNudgeAnswered = Readonly<{
+  question: string;
+  answer: string;
+  report: string | null;
+}>;
+
 export type CloseNudgeKickoffParams = Readonly<{
   role: AutoDelegationRole;
   childAgentId: string;
-  memory?: Readonly<{ brief: string; tail: string | null }> | null;
+  memory?: Readonly<{
+    brief: string;
+    tail: string | null;
+    answered?: CloseNudgeAnswered | null;
+  }> | null;
 }>;
+
+type AnsweredParams = {
+  readonly answered: CloseNudgeAnswered | null;
+};
+
+const answeredSectionsOf = ({ answered }: AnsweredParams): ReadonlyArray<string> => {
+  if (answered === null) {
+    return [];
+  }
+  return [
+    `**Your question** ${answered.question}`,
+    `**Answer** ${answered.answer}`,
+    ...(answered.report === null || answered.report === ''
+      ? []
+      : [`**Report handed over**\n${answered.report}`]),
+  ];
+};
 
 export const composeCloseNudgeKickoff = ({
   role,
@@ -48,6 +75,7 @@ export const composeCloseNudgeKickoff = ({
   const sections = [REMINDER];
   if (memory !== null && memory.brief !== '') {
     sections.push(LOST_SESSION, memory.brief);
+    sections.push(...answeredSectionsOf({ answered: memory.answered ?? null }));
     if (memory.tail !== null && memory.tail !== '') {
       sections.push(`**Where you stopped** ${memory.tail}`);
     }

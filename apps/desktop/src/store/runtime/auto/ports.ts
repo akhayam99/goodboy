@@ -168,6 +168,7 @@ export type StartChildTurnParams = Readonly<{
   runId: string;
   captureMode: 'new' | 'revise';
   briefVersion?: number;
+  isStillLive: () => Promise<boolean>;
   onEnded: (ended: ChildTurnEnded) => void;
 }>;
 

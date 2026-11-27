@@ -31,6 +31,7 @@ import {
   snapshotOf,
 } from './attemptBaseline';
 import { carriedSnapshot } from './carriedSnapshot';
+import { isChildStartLive } from './isChildStartLive';
 import { childImagesOf } from './childImagesOf';
 import { delegationRoleOf } from './attemptEnvelope';
 import { failAttempt } from './failAttempt';
@@ -198,7 +199,9 @@ const kickoffTextOf = ({ delegation, attempt }: TextParams): string => {
     return composeCloseNudgeKickoff({
       role: delegationRoleOf({ delegation }),
       childAgentId: delegation.childAgentId,
-      memory: isSessionKept({ delegation }) ? null : { brief, tail: nudge.tail },
+      memory: isSessionKept({ delegation })
+        ? null
+        : { brief, tail: nudge.tail, answered: nudge.answered },
     });
   }
   if (resume !== null) {
@@ -297,6 +300,13 @@ const startTurn = async ({
       runId: ctx.ports.newId(),
       captureMode: delegation.reviseOf === null ? 'new' : 'revise',
       ...briefVersionField({ delegation }),
+      isStillLive: () =>
+        isChildStartLive({
+          db: ctx.db,
+          treeId: tree.id,
+          generation: tree.generation,
+          attemptId: attempt.id,
+        }),
       onEnded: onChildEnded,
     });
   } catch (error) {

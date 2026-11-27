@@ -56,6 +56,25 @@ describe('composeCloseNudgeKickoff', () => {
     expect(text).toContain('**Task** test the ledger export');
     expect(text).toContain('**Where you stopped** Ran two tests of ledger-core.');
   });
+
+  it('hands the answered question and its report to a helper that lost its session', () => {
+    const text = composeCloseNudgeKickoff({
+      role: 'tester',
+      childAgentId: ID,
+      memory: {
+        brief: '**Task** test the ledger export',
+        tail: null,
+        answered: {
+          question: 'Which payments-api host?',
+          answer: 'Use the Northwind sandbox.',
+          report: 'Three retries in notify-relay.',
+        },
+      },
+    });
+    expect(text).toContain('**Your question** Which payments-api host?');
+    expect(text).toContain('**Answer** Use the Northwind sandbox.');
+    expect(text).toContain('**Report handed over**\nThree retries in notify-relay.');
+  });
 });
 
 describe('missedClosingOf', () => {

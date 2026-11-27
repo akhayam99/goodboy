@@ -80,6 +80,7 @@ export const startCloseNudge = async ({
         generation,
         baseline: closeNudgeBaselineOf({ baseline: attempt.baseline, tail }),
         writeSet: isRecord(attempt.writeSet) ? attempt.writeSet : null,
+        launchSnapshot: isRecord(attempt.launchSnapshot) ? attempt.launchSnapshot : null,
         nowMs,
       }),
       insertAutoReservationStatement({

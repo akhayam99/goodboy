@@ -89,6 +89,7 @@ const childTurn = (
   },
   runId: 'run-impl-1',
   captureMode: 'new',
+  isStillLive: async () => true,
   onEnded,
   ...patch,
 });
@@ -152,6 +153,25 @@ describe('the ports of Auto on the real store', () => {
 
     expect(earlyCalls).toBe(0);
     expect(sendTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts nothing when the work was stopped while the earlier turn was closing', async () => {
+    const { ports, sendTurn } = await worldWithPorts();
+    const agentId = brandId<AgentId>({ value: 'agent-implementer' });
+    let isLive = true;
+    markTurnActive({ agentId });
+
+    const starting = ports.startChildTurn(childTurn(vi.fn(), { isStillLive: async () => isLive }));
+    await Promise.resolve();
+    isLive = false;
+    markTurnSettled({ agentId });
+
+    expect(await starting).toEqual({
+      kind: 'refused',
+      reason: 'kickoff_failed',
+      message: 'The work was stopped.',
+    });
+    expect(sendTurn).not.toHaveBeenCalled();
   });
 
   it('forwards the routed model of a child as an explicit override with its role', async () => {

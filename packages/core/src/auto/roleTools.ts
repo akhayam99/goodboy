@@ -9,6 +9,7 @@ import {
 const COMMAND_TOOL_RE = /\b(?:git|gh|npm|pnpm|yarn|cargo|docker|kubectl|curl)[ \t]+[a-z][a-z-]*/i;
 const MAKE_COMMAND_RE =
   /\bmake[ \t]+(?!(?:sure|the|a|an|it|its|this|that|these|those|them|each|every|all|any|no|one|clear|changes?)\b)[a-z][a-z-]*/i;
+const EXPLICIT_MAKE_RE = /`make\b[^`\n]*`|\b(?:run|execute|invoke)[ \t]+make[ \t]+[a-z]/i;
 const TOOL_FOLDER_RE =
   /\b(?:git|npm|pnpm|yarn|cargo)[ \t]+(?:-C|--dir|--filter|--prefix|--cwd|--manifest-path)(?=[ \t=])/i;
 const RUNNER_RE =
@@ -132,6 +133,7 @@ const isNegatedMention = ({ text, at }: NegatedParams): boolean => {
 const COMMAND_MENTION_PATTERNS: ReadonlyArray<RegExp> = [
   COMMAND_TOOL_RE,
   MAKE_COMMAND_RE,
+  EXPLICIT_MAKE_RE,
   TOOL_FOLDER_RE,
   RUNNER_RE,
   RUN_COMMAND_RE,
