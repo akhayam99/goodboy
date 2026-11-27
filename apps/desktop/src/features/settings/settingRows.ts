@@ -98,7 +98,7 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
   row({
     key: 'call-chip',
     label: 'Show the call chip',
-    help: 'A small window over every app before a call with a link. Off sends a banner instead.',
+    help: 'A small window over every app before a call with a link.',
     page: GENERAL,
     band: 'Notifications',
   }),

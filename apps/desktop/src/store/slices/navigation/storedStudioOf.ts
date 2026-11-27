@@ -14,6 +14,9 @@ type Params = {
 };
 
 export const storedStudioOf = ({ studio }: Params): StoredStudio | null => {
+  if (studio?.kind === 'calendar') {
+    return null;
+  }
   if (studio?.kind !== 'connections') {
     return studio;
   }

@@ -98,7 +98,9 @@ Old links keep working:
 The saved window layout is the one place the old scopes stay: it stores a
 Connections page as the Settings provider or tools page 0.36 opens
 (`storedStudioOf`), and restore folds it back. The Calendar page has no old
-scope, so a restored window lands on the index.
+scope, so a restored window lands on the index. The Calendar place itself is
+never saved, since the previous release has no such page: a restored window
+opens the place behind it.
 
 ## Tests
 

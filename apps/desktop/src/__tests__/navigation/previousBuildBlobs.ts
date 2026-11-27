@@ -51,7 +51,6 @@ const STUDIOS: Readonly<Record<string, object>> = {
     target: { workspaceId: WS, projectId: 'project-ledger-core', branch: 'main' },
   },
   chat: { kind: 'chat', chatId: 'chat-northwind' },
-  calendar: { kind: 'calendar' },
   browser: { kind: 'browser', sessionId: SESSION, tabId: 'tab-checkout' },
   terminal: { kind: 'terminal', terminalId: 'terminal-1', sessionId: SESSION, worktree: null },
 };
@@ -104,7 +103,7 @@ const SETTINGS_PROVIDER_PAGE = {
 };
 
 type StudioBlob = ExpectedBlob & {
-  readonly stored: object;
+  readonly stored: object | null;
 };
 
 const STUDIO_BLOBS: ReadonlyArray<StudioBlob> = [
@@ -121,6 +120,13 @@ const STUDIO_BLOBS: ReadonlyArray<StudioBlob> = [
     blob: blobOf({ place: SESSION_PLACE, studio: SETTINGS_PROVIDER_PAGE }),
     stored: SETTINGS_PROVIDER_PAGE,
     expected: { kind: 'connections', focus: { kind: 'provider', provider: 'anthropic' } },
+  },
+  {
+    name: 'studio calendar, saved as the place behind it',
+    kind: 'calendar',
+    blob: blobOf({ place: SESSION_PLACE }),
+    stored: null,
+    expected: null,
   },
 ];
 

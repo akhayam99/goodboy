@@ -10,8 +10,7 @@ import { SettingRow } from './SettingRow';
 const BANNER_HELP = 'When an agent needs you and Goodboy is in the background.';
 const BADGE_HELP = 'Sessions that need you, on the app icon.';
 const CALL_CHIP_LABEL = 'Show the call chip';
-const CALL_CHIP_HELP =
-  'A small window over every app before a call with a link. Off sends a banner instead.';
+const CALL_CHIP_HELP = 'A small window over every app before a call with a link.';
 
 type ValueParams<Value> = {
   readonly value: Value;
