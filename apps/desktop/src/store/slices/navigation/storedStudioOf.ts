@@ -18,7 +18,7 @@ export const storedStudioOf = ({ studio }: Params): StoredStudio | null => {
     return studio;
   }
   const focus = studio.focus ?? null;
-  if (focus === null) {
+  if (focus === null || focus.kind === 'calendar') {
     return { kind: 'settings', focus: { scope: 'tools' } };
   }
   if (focus.kind === 'tool') {

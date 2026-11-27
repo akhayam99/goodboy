@@ -1,6 +1,7 @@
 import type { Workspace } from '@goodboy/types';
 import type { ConnectionsFocus } from '../../connectionsFocus';
 import { openConnection } from '../../openConnection';
+import { CalendarDetail } from '../CalendarDetail';
 import { ConnectionsIndex } from '../ConnectionsIndex';
 import { IntegrationDetail } from '../IntegrationDetail';
 import { ProviderDetail } from '../ProviderDetail';
@@ -22,6 +23,9 @@ export const ConnectionsFocusView = ({ currentWorkspace, focus }: Props) => {
         workspaceId={currentWorkspace?.id ?? null}
       />
     );
+  }
+  if (focus.kind === 'calendar') {
+    return <CalendarDetail onUp={() => openConnection({ focus: null, isUp: true })} />;
   }
   if (currentWorkspace === null) {
     return <ConnectionsIndex workspace={null} />;

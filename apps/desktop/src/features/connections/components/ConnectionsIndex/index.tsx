@@ -23,6 +23,7 @@ import { connectionsSubtitle } from '../../model/connectionsSubtitle';
 import { providerSetupLine } from '../../model/providerSetupLine';
 import { providerSetupVerb } from '../../model/providerSetupVerb';
 import { openConnection } from '../../openConnection';
+import { CalendarTile } from './CalendarTile';
 import { ConnectionsSection } from './ConnectionsSection';
 import { IntegrationTile } from './IntegrationTile';
 import { ProviderTile } from './ProviderTile';
@@ -45,6 +46,7 @@ export const ConnectionsIndex = ({ workspace }: Props) => {
   const workspaceId = workspace?.id ?? null;
   const nowMs = useNow(CLOCK_MS);
   const providers = useAppStore((state) => state.providers);
+  const hasCalendar = useAppStore((state) => state.calendarSources.length > 0);
   const groups = useConnectionGroups({ workspaceId });
   const { refresh, isRefreshing, error } = useConnectionsRefresh({ workspaceId });
   const checkError = useToolChecks({ workspaceId });
@@ -117,6 +119,10 @@ export const ConnectionsIndex = ({ workspace }: Props) => {
           />
         ));
 
+  const calendarTile = (
+    <CalendarTile key="calendar" onOpen={() => openConnection({ focus: { kind: 'calendar' } })} />
+  );
+
   return (
     <PaneShell
       page="connections"
@@ -149,6 +155,14 @@ export const ConnectionsIndex = ({ workspace }: Props) => {
           }
           tiles={providerTiles}
           setup={providerSetup}
+          empty={null}
+        />
+        <ConnectionsSection
+          id="calendar"
+          label="Calendar"
+          place={PROVIDERS_PLACE}
+          tiles={hasCalendar ? [calendarTile] : []}
+          setup={hasCalendar ? [] : [calendarTile]}
           empty={null}
         />
         <ConnectionsSection
