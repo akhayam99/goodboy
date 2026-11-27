@@ -32,7 +32,8 @@ results, "MESSAGES FROM THE USER") is stored with `deliveredBy: 'auto'` on its
 `user_text` event, set by `startTurnRun` when the turn's origin is `delegation`
 (the root's deliveries and a child's first brief). It draws as one collapsed row,
 **What the Lead was told**, never a bubble. An event with no origin is a bubble:
-there is no text sniffing.
+there is no text sniffing. The row keeps the whole delivery; a resumed Lead may
+read only what changed ([blocks.md](blocks.md#only-what-changed)).
 
 Another window forwards the message over the bridge with an id that stays the
 same until taken, so sending the same words again reuses it. Main remembers each
@@ -46,7 +47,8 @@ A `user` row is delivered in every phase that takes a turn, `waiting` included
 one turn, while the agents keep running.
 
 - The turn moves the tree to `deciding`. Results that settle meanwhile send it to
-  `merging` (`settleAutoTurn`), so they go in the next turn, once.
+  `merging` (`settleAutoTurn`), so they all go together in the next turn, once
+  (`deliverLead.sqlite.test.ts`).
 - Delivery is once per outbox row id: a claimed or accepted row is never
   `pending` again, and a lapsed lease reuses the stored delivery and its id.
 - Stop wins: a stopping tree delivers nothing.

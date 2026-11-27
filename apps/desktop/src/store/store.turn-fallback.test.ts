@@ -10,6 +10,7 @@ import {
   type TurnEvent,
   type WorkspaceId,
 } from '@goodboy/types';
+import { LEAD_DELIVERY_HEADER } from '@goodboy/core/auto';
 import { parseUsageLimitResetAt } from '../features/chat/parseUsageLimitResetAt';
 import {
   buildStoryAgent,
@@ -324,6 +325,45 @@ describe('sendTurn, provider failure fallback', () => {
     );
     const transcript = useAppStore.getState().transcripts[AGENT_A] ?? [];
     expect(transcript.filter((event) => event.kind === 'user_text')).toHaveLength(1);
+  });
+
+  it('keeps the Lead delivery on a retry with another model of the same provider', async () => {
+    setup();
+    const lead = {
+      ...buildStoryAgent({ id: AGENT_A, sessionId: SESSION_ID, name: 'lead', kind: 'auto' }),
+      providerSessionId: 'claude-session-sonnet',
+      providerSessionProviderId: 'anthropic' as const,
+    };
+    useAppStore.setState({ sessionPhaseRuns: { [SESSION_ID]: [lead] } });
+    storySpies.invokeAgentList.mockImplementation(async () => [lead]);
+    const dbMod = await import('@goodboy/db');
+    vi.mocked(dbMod.readAgentLastCleanTurn).mockResolvedValue({
+      endedAtMs: Date.now(),
+      model: 'claude-sonnet-4-5',
+    });
+    vi.mocked(dbMod.getSessionById).mockResolvedValue(
+      buildStorySession({ id: SESSION_ID, workspaceId: WORKSPACE_ID, goal: 'lead fallback' }),
+    );
+    vi.mocked(dbMod.getWorkspaceValue).mockResolvedValue(null);
+    storySpies.runTurn.mockImplementationOnce(async function* () {
+      throw new Error('rate limit exceeded for this account');
+    });
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: AGENT_A,
+      content: 'Harborline budget update',
+      origin: 'delegation',
+      leadDelivery: [{ name: 'user', kind: 'news', text: 'Harborline budget update' }],
+    });
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(2);
+    expect(storySpies.runTurn.mock.calls[1]?.[0]).toEqual(
+      expect.objectContaining({ provider: 'anthropic', model: 'claude-haiku-5-5' }),
+    );
+    expect(storySpies.runTurn.mock.calls[0]?.[0]?.prompt).not.toContain(LEAD_DELIVERY_HEADER.fresh);
+    expect(storySpies.runTurn.mock.calls[1]?.[0]?.prompt).toContain(LEAD_DELIVERY_HEADER.fresh);
+    expect(storySpies.runTurn.mock.calls[1]?.[0]?.resumeSessionId).toBeUndefined();
   });
 
   it('leaves an unclassified failure in the error state without retrying', async () => {

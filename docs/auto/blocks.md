@@ -187,11 +187,40 @@ that does not parse.
 
 ## The delivery text
 
-Every delivery starts with a digest of the tree: open agents with role, state
+A full delivery starts with a digest of the tree: open agents with role, state
 and age, questions waiting, the budget
 ([limits.md](limits.md#one-formula-for-money)) and a `MOUNTS:` line of usable
 mounts as `id (project, branch)` (`buildMountsLine`). With no mount it says none
 is attached yet and that a writer is still delegated.
+
+### Only what changed
+
+`buildDeliveryParts` cuts a delivery into named parts, and the turn adds its
+own: the reply length, the models, the shared context, the notes and the marker
+protocol. One function decides what a Claude Lead turn carries
+(`leadDeliveryModeOf`, used by `planLeadTurn`):
+
+| Turn                                                              | Carries                                                                                                                 |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| First turn of a session, or no delivery taken in this session yet | Everything                                                                                                              |
+| Resumed, the last delivery taken                                  | **ONLY WHAT CHANGED SINCE YOUR LAST MESSAGE**, the new results, questions, refusals and messages, and each changed part |
+| Over 55 minutes since the Lead's last turn, or another model      | A new session: **NEW SESSION**, then everything                                                                         |
+
+- A part comes again only when its text changed. In the ledger and the digest
+  only the changed lines come, each replacing the line with the same id; when a
+  line leaves the list, the whole list comes, marked **THE WHOLE LIST NOW**. A
+  part that became empty comes once, marked **NOW EMPTY**
+  (`leadDeliveryDeltaOf`, `LEAD_DELIVERY_MARK`).
+- A delivery counts as taken only when its turn ended with an answer and no
+  stream error (`settleLeadTurn`). A fallback retry carries the same delivery.
+  The model and the age come from the Lead's last turn that ended well
+  (`readAgentLastCleanTurn`). A failed turn keeps the last taken one, so the next
+  delivery carries again what the failed one did; the end of an older turn
+  changes nothing (`leadDeliveryMemory`).
+- A new session's id is written only once its first turn succeeded; a failure
+  keeps the old session.
+- What a session took lives in memory: after a restart, on another provider, or
+  for a stored delivery sent again, the turn carries everything.
 
 Undecided returns are listed under **WAITING FOR YOUR DECISION**
 ([returns.md](returns.md#auto-must-decide)). Each result carries its artifact
