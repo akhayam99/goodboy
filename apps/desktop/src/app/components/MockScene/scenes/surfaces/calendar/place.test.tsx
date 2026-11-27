@@ -182,7 +182,14 @@ describe('the Calendar place scenes', () => {
     await screen.findByRole('heading', { name: 'Connect a calendar' }, WAIT);
     fireEvent.click(screen.getByRole('button', { name: 'Connect calendars' }));
 
-    await waitFor(() => expect(useAppStore.getState().appStudio?.kind).toBe('connections'), WAIT);
+    await waitFor(
+      () =>
+        expect(useAppStore.getState().appStudio).toEqual({
+          kind: 'connections',
+          focus: { kind: 'calendar' },
+        }),
+      WAIT,
+    );
   });
 
   it('calendar-quiet says nothing today in one line', async () => {

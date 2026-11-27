@@ -76,7 +76,8 @@ export const studioKey = ({ studio }: KeyParams): string => {
       return joined([
         'connections',
         studio.focus?.kind,
-        studio.focus?.kind === 'tool' ? studio.focus.tool : studio.focus?.provider,
+        studio.focus?.kind === 'tool' ? studio.focus.tool : undefined,
+        studio.focus?.kind === 'provider' ? studio.focus.provider : undefined,
       ]);
     case 'guide':
     case 'changelog':

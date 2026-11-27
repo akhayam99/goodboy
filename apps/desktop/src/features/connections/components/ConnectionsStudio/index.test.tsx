@@ -36,6 +36,7 @@ beforeEach(async () => {
     workspaces: [WORKSPACE],
     currentWorkspaceId: WORKSPACE.id,
     refreshProviders: vi.fn(async () => undefined),
+    loadCalendarSources: vi.fn(async () => undefined),
     providers: [
       {
         id: 'anthropic',

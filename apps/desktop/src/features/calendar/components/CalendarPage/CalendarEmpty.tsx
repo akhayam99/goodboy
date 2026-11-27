@@ -1,8 +1,8 @@
 import { Button, EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { openDestination } from '../../../../shared/navigation/openDestination';
+import { openConnection } from '../../../connections/openConnection';
 
-const openConnections = (): void => openDestination({ id: 'connections' });
+const openCalendarConnection = (): void => openConnection({ focus: { kind: 'calendar' } });
 
 export const CalendarEmpty = () => (
   <EmptyState
@@ -12,7 +12,7 @@ export const CalendarEmpty = () => (
     title="Connect a calendar"
     description="See your meetings next to your agents. Goodboy only reads your calendar."
     action={
-      <Button variant="secondary" size="sm" onClick={openConnections}>
+      <Button variant="secondary" size="sm" onClick={openCalendarConnection}>
         Connect calendars
       </Button>
     }

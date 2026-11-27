@@ -6,7 +6,7 @@ See your meetings next to your agents. Goodboy only reads your calendar, and nev
 
 Calendar in the places rail shows today's meetings as one list, with the start, the length and when each one begins. **Week** shows the same meetings as five or seven day columns. Each calendar keeps one colour. A calendar shown as busy only says Busy and never its title. A focus block says your agents keep working through it.
 
-With no calendar connected, the page asks you to connect one and opens Connections. A day with no meeting says Nothing today in one line.
+With no calendar connected, the page asks you to connect one and opens the calendar page of Connections. A day with no meeting says Nothing today in one line.
 
 ### Before a call
 

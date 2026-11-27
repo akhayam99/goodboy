@@ -488,32 +488,46 @@ fn open_with_system(target: &str) -> Result<(), MessageError> {
 const FOLDER_PRIVACY_PANE: &str =
     "x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders";
 
+const CALENDAR_PRIVACY_PANE: &str =
+    "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PrivacyPane {
+    FilesAndFolders,
+    Calendars,
+}
+
 #[tauri::command]
-pub async fn open_privacy_settings() -> Result<(), MessageError> {
-    tauri::async_runtime::spawn_blocking(open_privacy_settings_blocking)
+pub async fn open_privacy_settings(pane: Option<PrivacyPane>) -> Result<(), MessageError> {
+    let pane = pane.unwrap_or(PrivacyPane::FilesAndFolders);
+    tauri::async_runtime::spawn_blocking(move || open_privacy_settings_blocking(pane))
         .await
         .map_err(|e| MessageError::Failed(e.to_string()))?
 }
 
-fn open_privacy_settings_blocking() -> Result<(), MessageError> {
-    privacy_pane().and_then(open_with_system)
+fn open_privacy_settings_blocking(pane: PrivacyPane) -> Result<(), MessageError> {
+    privacy_pane(pane).and_then(open_with_system)
 }
 
-fn privacy_pane() -> Result<&'static str, MessageError> {
-    if cfg!(target_os = "macos") {
-        return Ok(FOLDER_PRIVACY_PANE);
+fn privacy_pane(pane: PrivacyPane) -> Result<&'static str, MessageError> {
+    if !cfg!(target_os = "macos") {
+        return Err(MessageError::Refused(
+            "privacy settings exist on macOS only".to_string(),
+        ));
     }
-    Err(MessageError::Refused(
-        "folder privacy settings exist on macOS only".to_string(),
-    ))
+    match pane {
+        PrivacyPane::FilesAndFolders => Ok(FOLDER_PRIVACY_PANE),
+        PrivacyPane::Calendars => Ok(CALENDAR_PRIVACY_PANE),
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
         chosen_launch, file_args, is_openable_url, privacy_pane, resolve_editor, setting_value,
-        BrowserLaunch, KnownBrowser, Platform, FOLDER_PRIVACY_PANE, KNOWN_BROWSERS, MAX_URL_LEN,
-        SETTING_BROWSER_APP,
+        BrowserLaunch, KnownBrowser, Platform, PrivacyPane, CALENDAR_PRIVACY_PANE,
+        FOLDER_PRIVACY_PANE, KNOWN_BROWSERS, MAX_URL_LEN, SETTING_BROWSER_APP,
     };
     use std::path::PathBuf;
 
@@ -679,7 +693,29 @@ mod tests {
         assert!(FOLDER_PRIVACY_PANE.starts_with("x-apple.systempreferences:"));
         assert!(FOLDER_PRIVACY_PANE.ends_with("Privacy_FilesAndFolders"));
         assert!(!is_openable_url(FOLDER_PRIVACY_PANE));
-        assert_eq!(privacy_pane().is_ok(), cfg!(target_os = "macos"));
+        assert_eq!(
+            privacy_pane(PrivacyPane::FilesAndFolders).is_ok(),
+            cfg!(target_os = "macos")
+        );
+    }
+
+    #[test]
+    fn the_calendar_privacy_door_opens_the_calendars_pane_on_macos_only() {
+        assert!(CALENDAR_PRIVACY_PANE.starts_with("x-apple.systempreferences:"));
+        assert!(CALENDAR_PRIVACY_PANE.ends_with("Privacy_Calendars"));
+        assert!(!is_openable_url(CALENDAR_PRIVACY_PANE));
+        let opened = privacy_pane(PrivacyPane::Calendars);
+        assert_eq!(opened.is_ok(), cfg!(target_os = "macos"));
+        if cfg!(target_os = "macos") {
+            assert_eq!(opened.ok(), Some(CALENDAR_PRIVACY_PANE));
+        }
+    }
+
+    #[test]
+    fn a_privacy_pane_is_read_from_its_camel_case_name() {
+        let pane: PrivacyPane = serde_json::from_str(r#""calendars""#).unwrap();
+        assert_eq!(pane, PrivacyPane::Calendars);
+        assert!(serde_json::from_str::<PrivacyPane>(r#""contacts""#).is_err());
     }
 
     const FILE: &str = "/work/ledger-core/src/billing/rounding.ts";

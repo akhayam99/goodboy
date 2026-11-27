@@ -11,4 +11,7 @@ export type ConnectionsFocus =
   | {
       readonly kind: 'tool';
       readonly tool: IntegrationGlyphProvider;
+    }
+  | {
+      readonly kind: 'calendar';
     };

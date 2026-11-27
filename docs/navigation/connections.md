@@ -21,6 +21,9 @@ in ⌘K. It is the one home of providers and integrations.
 - GitHub has no key: its tile and page read the time of the last gh check that
   answered (`githubCheckedAt`), and whether it is connected comes from
   `isGithubConnected` alone.
+- A Calendar group sits between providers and integrations, for this Mac and
+  every workspace. Its one tile reads Not set up, Connected, or Can't read when
+  the day listed a failed source (`calendarConnectionStateOf`).
 
 ## Key checks
 
@@ -38,7 +41,8 @@ in ⌘K. It is the one home of providers and integrations.
 A tile, or a Not set up row, pushes its detail page through `openConnection`:
 
 - studio focus `{ kind: 'provider', provider }`, with the install or sign in
-  step, or `{ kind: 'tool', tool }` (`IntegrationDetail`);
+  step, `{ kind: 'tool', tool }` (`IntegrationDetail`), or `{ kind: 'calendar' }`
+  (`CalendarDetail`);
 - under the trail Connections > Claude or Connections > GitLab;
 - the trail and Esc go back to the index at the scroll it had
   (`useScrollMemory`), and the door always lands on the index.
@@ -47,6 +51,24 @@ The tool page says what the tool does in the workspace, one row per use with
 its count and a link to Tasks. The counts are the open records Tasks last
 loaded (`toolUseCountsOf`, read through `selectToolUseCount`); nothing shows
 before Tasks loaded them. A tool whose key is missing reads Paused.
+
+The Calendar page is a form until a calendar is connected, then one account
+row per source with its calendars and their roles:
+
+- Connect calendars is the only call that may show the macOS prompt
+  (`connectMacCalendars`); the page reads the access state on open and never
+  asks. Denied keeps the form with a notice whose button opens the Calendars
+  privacy pane (`open_privacy_settings` with `pane: 'calendars'`).
+- A calendar link is checked for https before it is sent (`calendarLinkErrorOf`).
+  Rust reads it, then keeps it in the Keychain; a source row that fails to save
+  takes the link off the Keychain again (`connectCalendarLink`).
+- A role changes through `setCalendarRole`, after the write. Focus is offered to
+  a calendar named Focus or already set to it (`calendarRoleOptionsOf`).
+- Disconnect calendars asks inline, takes a link off the Keychain first, then
+  removes the source and its roles (`disconnectCalendarSource`). A Keychain
+  refusal keeps the source and shows why. There is no undo: the link is gone.
+- The listing of a source's calendars keeps only the latest answer
+  (`useCalendarList`).
 
 A missing or bad key is replaced in place (`replaceIntegrationKey`):
 
@@ -75,9 +97,12 @@ Old links keep working:
 
 The saved window layout is the one place the old scopes stay: it stores a
 Connections page as the Settings provider or tools page 0.36 opens
-(`storedStudioOf`), and restore folds it back.
+(`storedStudioOf`), and restore folds it back. The Calendar page has no old
+scope, so a restored window lands on the index.
 
 ## Tests
 
 - `settings-has-no-connection-scopes.test.ts` keeps new code from opening
   Settings on the providers or tools scopes.
+- `CalendarDetail/index.sqlite.test.tsx` covers a denied Mac, a refused http
+  link, roles saved per calendar and a disconnect that clears the Keychain.
