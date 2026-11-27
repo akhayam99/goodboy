@@ -42,7 +42,7 @@ beforeEach(async () => {
         binary: 'claude',
         capabilities: { models: [] },
         connection: 'installed_disconnected',
-        version: '2.1.296',
+        version: '2.1.321',
         identity: null,
         label: 'Claude',
         error: null,

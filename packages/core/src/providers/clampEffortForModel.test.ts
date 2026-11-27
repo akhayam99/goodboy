@@ -16,7 +16,12 @@ describe('clampEffortForModel', () => {
   });
 
   it('clamps down to the nearest lower level', () => {
-    expect(clampEffortForModel({ model: 'sonnet-4.5', effort: 'max' })).toBe('high');
+    expect(clampEffortForModel({ model: 'opus-4.6', effort: 'xhigh' })).toBe('high');
+  });
+
+  it('gives Sonnet 4.5 no effort, since Anthropic lists none for it', () => {
+    expect(clampEffortForModel({ model: 'sonnet-4.5', effort: 'high' })).toBeNull();
+    expect(modelEffortLevels({ model: 'claude-sonnet-4-5' })).toBeNull();
   });
 
   it('clamps up when nothing lower exists', () => {
@@ -24,7 +29,7 @@ describe('clampEffortForModel', () => {
   });
 
   it('reads the ladder through a native cli id', () => {
-    expect(clampEffortForModel({ model: 'claude-sonnet-4-5', effort: 'max' })).toBe('high');
+    expect(clampEffortForModel({ model: 'claude-opus-4-6', effort: 'xhigh' })).toBe('high');
   });
 
   it('drops xhigh from the opus 4.6 ladder', () => {

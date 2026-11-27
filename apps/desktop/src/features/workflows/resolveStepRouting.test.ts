@@ -398,3 +398,22 @@ describe('resolveStepRouting with hidden models', () => {
     expect(routing.model).toBe('sonnet-5');
   });
 });
+
+describe('resolveStepRouting with an old CLI', () => {
+  it('never plans a model the installed CLI cannot run for a provider only override', () => {
+    const routing = resolveStepRouting({
+      step: step({ role: 'implementer', providerOverride: 'codex' }),
+      kind: 'implementer',
+      roleModels: null,
+      sessionProvider: 'anthropic',
+      scope: {
+        defaultProvider: 'anthropic',
+        connected: ['anthropic', 'codex'],
+        cliVersions: { codex: '0.170.0' },
+      },
+    });
+
+    expect(routing.provider).toBe('codex');
+    expect(routing.model).not.toBe('gpt-6.2-sol');
+  });
+});

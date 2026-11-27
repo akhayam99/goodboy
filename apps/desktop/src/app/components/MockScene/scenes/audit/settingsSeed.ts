@@ -229,7 +229,7 @@ export const SETTINGS_PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
     binary: 'claude',
     capabilities: CAPABILITIES,
     connection: 'connected',
-    version: '2.1.296',
+    version: '2.1.321',
     identity: 'harborline-platform',
     label: 'Claude',
     error: null,

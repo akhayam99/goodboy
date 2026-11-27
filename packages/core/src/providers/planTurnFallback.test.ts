@@ -133,7 +133,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'gpt-5.6',
     attempt: 1,
     connectedProviders: ['codex', 'gemini'],
-    expected: { provider: 'gemini', model: 'gemini-3.1-pro' },
+    expected: { provider: 'gemini', model: 'gemini-4-neon' },
   },
   {
     name: 'an unclassified failure never retries',
@@ -208,7 +208,7 @@ const ROWS: ReadonlyArray<Row> = [
     attempt: 0,
     connectedProviders: ['codex', 'gemini', 'anthropic'],
     enabledProviders: ['codex', 'gemini'],
-    expected: { provider: 'gemini', model: 'gemini-3.1-pro' },
+    expected: { provider: 'gemini', model: 'gemini-4-neon' },
   },
   {
     name: 'an empty workspace pool leaves every connected provider eligible',
@@ -218,7 +218,7 @@ const ROWS: ReadonlyArray<Row> = [
     attempt: 0,
     connectedProviders: ['codex', 'gemini', 'anthropic'],
     enabledProviders: [],
-    expected: { provider: 'gemini', model: 'gemini-3.1-pro' },
+    expected: { provider: 'gemini', model: 'gemini-4-neon' },
   },
   {
     name: 'the pool order stays the user order even when a later provider is stronger',
@@ -227,7 +227,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'gpt-6',
     attempt: 0,
     connectedProviders: ['codex', 'gemini', 'anthropic'],
-    expected: { provider: 'gemini', model: 'gemini-3.1-pro' },
+    expected: { provider: 'gemini', model: 'gemini-4-neon' },
   },
 ];
 
@@ -428,7 +428,7 @@ describe('planTurnFallback', () => {
         coolingDownProviders: ['anthropic'],
         preferred: { provider: 'anthropic', model: 'opus-5' },
       }),
-    ).toEqual({ provider: 'gemini', model: 'gemini-3.1-pro' });
+    ).toEqual({ provider: 'gemini', model: 'gemini-4-neon' });
   });
 
   it('refuses a role fallback on a provider outside the session pool', () => {
@@ -589,5 +589,35 @@ describe('planTurnFallback, ids that carry combo axes', () => {
     });
 
     expect(plan?.model).not.toBe('composer-2.5');
+  });
+
+  it('never retries on a sibling the installed CLI cannot run', () => {
+    const plan = planTurnFallback({
+      failure: 'model_not_available',
+      provider: 'codex',
+      model: 'gpt-6.1-terra',
+      attempt: 0,
+      wantsThinker: false,
+      connectedProviders: ['codex'],
+      cliVersions: { codex: '0.159.0' },
+    });
+
+    expect(plan?.provider).toBe('codex');
+    expect(['gpt-6.1-terra', 'gpt-6.1-sol', 'gpt-6-sol', 'gpt-6.2-sol']).not.toContain(plan?.model);
+  });
+
+  it('drops a role fallback the installed CLI cannot run', () => {
+    const plan = planTurnFallback({
+      failure: 'model_not_available',
+      provider: 'codex',
+      model: 'gpt-6.1-terra',
+      attempt: 0,
+      wantsThinker: false,
+      connectedProviders: ['codex'],
+      cliVersions: { codex: '0.159.0' },
+      preferred: { provider: 'codex', model: 'gpt-6.1-sol' },
+    });
+
+    expect(plan?.model).not.toBe('gpt-6.1-sol');
   });
 });

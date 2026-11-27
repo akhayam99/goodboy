@@ -351,7 +351,7 @@ describe('resolveRoleRouting', () => {
   it('starts a role on the workspace default provider, not on Claude', () => {
     expect(
       resolveRoleRouting({ role: 'implementer', prefs: null, auto: { defaultProvider: 'codex' } }),
-    ).toMatchObject({ provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' });
+    ).toMatchObject({ provider: 'codex', model: 'gpt-6.2-sol', effort: 'medium' });
   });
 
   it('runs Custom and Report on the newest Sonnet at Medium', () => {

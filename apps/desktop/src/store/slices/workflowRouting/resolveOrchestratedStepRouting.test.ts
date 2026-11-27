@@ -37,7 +37,7 @@ const route = ({ fields, isModelPickEnabled, role = 'implementer', earlier = [] 
 describe('resolveOrchestratedStepRouting', () => {
   it('takes the best candidate by the rule while the model pick rule is off', () => {
     expect(
-      route({ fields: { provider: 'codex', model: 'gpt-6.1-sol' }, isModelPickEnabled: false }),
+      route({ fields: { provider: 'codex', model: 'gpt-6.2-sol' }, isModelPickEnabled: false }),
     ).toMatchObject({
       proposal: null,
       selected: { provider: 'anthropic', model: 'sonnet-5.5' },
@@ -52,14 +52,14 @@ describe('resolveOrchestratedStepRouting', () => {
       route({
         fields: {
           provider: 'codex',
-          model: 'gpt-6.1-sol',
+          model: 'gpt-6.2-sol',
           effort: 'high',
           modelReason: 'Codex has the most room for a long refactor.',
         },
         isModelPickEnabled: true,
       }),
     ).toMatchObject({
-      selected: { provider: 'codex', model: 'gpt-6.1-sol', effort: 'high' },
+      selected: { provider: 'codex', model: 'gpt-6.2-sol', effort: 'high' },
       source: 'agent',
       reason: 'Codex has the most room for a long refactor.',
       adjustment: 'none',
@@ -89,11 +89,11 @@ describe('resolveOrchestratedStepRouting', () => {
   it('keeps a known model whose effort is unknown and drops only the effort', () => {
     expect(
       route({
-        fields: { provider: 'codex', model: 'gpt-6.1-sol', effort: 'turbo' },
+        fields: { provider: 'codex', model: 'gpt-6.2-sol', effort: 'turbo' },
         isModelPickEnabled: true,
       }),
     ).toMatchObject({
-      selected: { provider: 'codex', model: 'gpt-6.1-sol' },
+      selected: { provider: 'codex', model: 'gpt-6.2-sol' },
       adjustment: 'unsupported_effort',
     });
   });
