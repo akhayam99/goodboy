@@ -108,7 +108,7 @@ worktree strip, and Monitor its Pin a port action as a pin icon in the head.
      the pointer) and one soft outline of the landing slot (`dockGhostOf`). The page is not dimmed.
      A pill is drawn only when the committed layout does what its words say (`dockCardHonestOf`: a
      Place pill leaves the panel alone in that spot, a Merge pill makes it a tab there), and no two
-     hit areas overlap (`dockCardsClipOf`). A pill that would change nothing, or that the solver with
+     hit areas overlap and no two pills stand within 12px of each other (`dockChipsClipOf`, with the pill width from `dockPillRectOf`); the pill of the lower layer yields. A pill that would change nothing, or that the solver with
      the real widths refuses (`canDrop` from `useDockGrid`, `dockMoveFits`), is not drawn. A pill
      sits at the anchor of its zone (`DockDropZone.anchor`): an above pill sits under the panel head,
      never over its title, and the side pills move to 34% of the height under 440px. A pill never

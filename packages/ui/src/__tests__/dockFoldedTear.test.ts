@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dockCardHonestOf } from '../dockCardHonestOf';
-import { dockCardsClipOf } from '../dockCardsClipOf';
+import { dockChipsClipOf } from '../dockChipsClipOf';
 import { dockDropZonesOf, type DockRect, type PaneRect } from '../dockDropZonesOf';
 import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockGridFrameOf } from '../dockGridFrameOf';
@@ -270,7 +270,7 @@ describe('a card says only what the committed layout does', () => {
   });
 
   it.each(keys)('never lets two cards of %s overlap', (key) => {
-    const cards = dockCardsClipOf({ zones: zonesOf({ key }) }).map((zone) => zone.card);
+    const cards = dockChipsClipOf({ zones: zonesOf({ key }) }).map((zone) => zone.card);
 
     cards.forEach((card, at) => {
       cards.slice(at + 1).forEach((other) => {
