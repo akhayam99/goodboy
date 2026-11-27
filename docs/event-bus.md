@@ -118,6 +118,7 @@ Rust sends these to the webview with `AppHandle::emit`. A rename in Rust compile
 | `query-bridge://mount-command`                         | `{ id, ... }`, answered by `mount_command_result`                            | query_bridge/mount.rs   | session/mountQueryBridge                     |
 | `query-bridge://project-materialize`                   | `{ id, runId, sessionId, projectId, projectName, reason }`                   | query_bridge/project.rs | session/projectMaterializeBridge.ts          |
 | `bridge://command`                                     | a phone command to run                                                       | bridge/server.rs        | companion/commandExecutor.ts                 |
+| `bridge://pairing-request`                             | a new phone with a valid code waits for Allow                                | bridge/mod.rs           | companion/listenPairingRequests.ts           |
 | `browser://tab-opened`                                 | the facts of a popup tab, to the opener's window only                        | browser/host.rs         | browser/listenTabOpened.ts (useOpenedPopups) |
 | `browser://tab-state`                                  | the facts of a tab gone live, asleep or closed, to its window                | browser/lifecycle.rs    | browser/listenTabState.ts                    |
 | `browser://tab-load`                                   | a tab's load `started` or `finished`, with its id and address, to its window | browser/load.rs         | browser/listenTabLoad.ts (`useTabLoad`)      |
