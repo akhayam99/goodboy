@@ -6,6 +6,7 @@ import { deleteAgent } from './deleteAgent';
 import { forceCloseResolver } from './forceCloseResolver';
 import { hydrateAgentDraft } from './hydrateAgentDraft';
 import { keepWorkingOnStep } from './keepWorkingOnStep';
+import { loadSessionRunHistory } from './loadSessionRunHistory';
 import { markAgentSeen } from './markAgentSeen';
 import { markAgentUnviewed } from './markAgentUnviewed';
 import { markAgentViewed } from './markAgentViewed';
@@ -47,5 +48,6 @@ export const createAgentsSlice = ({ set, get }: SliceDeps) => {
     forceCloseResolver: forceCloseResolver(set, get),
     answerBlockedStep: answerBlockedStep({ get }),
     keepWorkingOnStep: keepWorkingOnStep({ get }),
+    loadSessionRunHistory: loadSessionRunHistory({ set, get }),
   };
 };

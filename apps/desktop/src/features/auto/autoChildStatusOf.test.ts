@@ -54,7 +54,7 @@ describe('autoChildStatusOf', () => {
     const rail = leadTreeDelegationsOf({
       delegations: [delegation],
       agents: [agent],
-      spendByAgentId: new Map(),
+      ownSpendByAgentId: new Map(),
       leadAgentId: FIXTURE_ROOT,
     }).agentsById.get(agent.id);
     const shown = autoChildStatusOf({ views, agent });

@@ -17,9 +17,10 @@ model of a tree's agents, notes and plans, a pure function over rows that
 - Two or more settled siblings fold to one line when the caller allows
   (`canFold`: the Runs tab does, the Lead page never does).
 - Notes and plans are unnumbered rows placed by time among the top agents.
-- Spend counts each agent once. Only `leadSpendByBranchOf` splits it: an agent's
-  spend to its own branch, the Lead's turns to its primary branch or to the group
-  with no branch (`mountId` null). The rows sum to the total.
+- Spend counts each agent once: a row carries that agent's own spend
+  ([limits.md](limits.md#spend-on-screen)). Only `leadSpendByBranchOf` splits it:
+  an agent's spend to its own branch, the Lead's turns to its primary branch or to
+  the group with no branch (`mountId` null). The rows sum to the total.
 
 ## LeadTree
 
