@@ -141,7 +141,7 @@ export const PermissionsSettings = ({ workspaceId, afterRules = null }: Props) =
         label="Recent decisions"
         ariaLabel="Recent decisions"
         hint="Stays on this workspace."
-        icon={<CONCEPT_ICONS.history size={ICON_SIZE.row} aria-hidden />}
+        icon={<CONCEPT_ICONS.decisions size={ICON_SIZE.row} aria-hidden />}
         headingLevel={2}
       >
         <RecentDecisions workspaceId={workspaceId} />
