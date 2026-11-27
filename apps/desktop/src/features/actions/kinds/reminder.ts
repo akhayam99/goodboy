@@ -1,6 +1,6 @@
 import { CircleCheck, Clock, SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import type { WorkspaceId } from '@goodboy/types';
-import { openDestination } from '../../../shared/navigation/openDestination';
+import { openReminderOwner } from '../../calendar/reminders/openReminderOwner';
 import { formatClock } from '../../../shared/utils/time/formatClock';
 import { reminderOwnerOf, type ReminderOwner } from '../../calendar/reminders/reminderOwnerOf';
 import { snoozeTimesOf, type SnoozeTimes } from '../../calendar/reminders/snoozeTimesOf';
@@ -48,13 +48,7 @@ export const REMINDER_KIND: ObjectKindDefinition<ReminderActionTarget, ReminderF
       icon: SquareArrowOutUpRight,
       group: 'open',
       when: () => true,
-      run: ({ facts, env }) => {
-        if (facts.place === null) {
-          openDestination({ id: 'calendar' });
-          return;
-        }
-        env.getState().navigate({ to: facts.place });
-      },
+      run: ({ facts }) => openReminderOwner({ owner: facts }),
     },
     {
       id: 'reminder.snoozeHour',

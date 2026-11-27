@@ -38,7 +38,7 @@ import { useClearSessionFilters } from './useClearSessionFilters';
 import { NeedsYouCards } from './NeedsYouCards';
 import { useNeedsYou } from './NeedsYouCards/useNeedsYou';
 import { ReminderNeedsYouCards } from '../../../calendar/reminders/ReminderNeedsYouCards';
-import { useDueReminders } from '../../../calendar/reminders/hooks/useDueReminders';
+import { useDueReminders } from '../../../calendar/reminders/ReminderNeedsYouCards/useDueReminders';
 import { useBoardByStage } from './useBoardByStage';
 
 type Props = {

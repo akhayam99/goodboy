@@ -9,10 +9,7 @@ import {
   Send,
   UserPlus,
   CircleX,
-  Clock,
 } from '@goodboy/ui/icons';
-import { isWaitingForGreen } from '../../calendar/reminders/isWaitingForGreen';
-import { remindWhenGreen } from '../../calendar/reminders/remindWhenGreen';
 import {
   PULL_REQUEST_NOUNS,
   REVIEW_SOURCE_CAPABILITIES,
@@ -377,28 +374,6 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       }),
   },
   {
-    id: 'pullRequest.remindWhenGreen',
-    label: 'Remind me when CI is green',
-    icon: Clock,
-    group: 'act',
-    when: ({ facts }) =>
-      facts.phase === 'open' &&
-      facts.checks === 'pending' &&
-      facts.number !== null &&
-      facts.isRemindedWhenGreen === false,
-    slot: () => 'menu',
-    doneLabel: ({ facts }) => `Needs you shows ${numberLabel({ facts })} when its checks pass.`,
-    run: ({ facts, env }) =>
-      facts.number === null
-        ? 'unchanged'
-        : remindWhenGreen({
-            state: env.getState(),
-            sessionId: facts.sessionId,
-            mountId: facts.mountId,
-            prNumber: facts.number,
-          }),
-  },
-  {
     id: 'pullRequest.writeReview',
     label: 'Write review',
     icon: PencilLine,
@@ -608,7 +583,7 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
         mountId,
         prNumber: pr?.number ?? null,
       })?.view ?? null;
-    const facts = pullRequestFacts({
+    return pullRequestFacts({
       sessionId: target.sessionId,
       mountId,
       host,
@@ -644,17 +619,6 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
             commitCount: view.commits.length,
           }),
     });
-    return pr === null
-      ? facts
-      : {
-          ...facts,
-          isRemindedWhenGreen: isWaitingForGreen({
-            reminders: state.calendarReminders,
-            sessionId: target.sessionId,
-            mountId,
-            prNumber: pr.number,
-          }),
-        };
   },
   actions: PULL_REQUEST_ACTIONS,
 };

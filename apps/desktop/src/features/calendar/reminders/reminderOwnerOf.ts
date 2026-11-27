@@ -2,6 +2,7 @@ import type { Reminder } from '@goodboy/types';
 import { branchPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import type { Place } from '../../../store/slices/navigation/types';
 import type { AppState } from '../../../store/types';
+import { selectSessionById } from '../../../store/slices/sessions/selectSessionById';
 import { joinFacts } from '../../../shared/utils/joinFacts';
 import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { eventKindOf } from '../eventKindOf';
@@ -15,7 +16,7 @@ export type ReminderOwner = Readonly<{
 }>;
 
 type Params = {
-  readonly state: Pick<AppState, 'sessions' | 'calendarDay' | 'calendarRoles'>;
+  readonly state: Pick<AppState, 'sessions' | 'archivedSessions' | 'calendarDay' | 'calendarRoles'>;
   readonly reminder: Reminder;
 };
 
@@ -23,8 +24,7 @@ type SessionParams = Params & {
   readonly id: string;
 };
 
-const sessionOf = ({ state, id }: SessionParams) =>
-  state.sessions.find((session) => session.id === id) ?? null;
+const sessionOf = ({ state, id }: SessionParams) => selectSessionById(state, id);
 
 export const reminderOwnerOf = ({ state, reminder }: Params): ReminderOwner => {
   const plain = { reminder, context: null, place: null };

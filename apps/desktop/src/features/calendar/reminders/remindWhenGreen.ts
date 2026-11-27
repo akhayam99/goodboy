@@ -1,5 +1,6 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
+import { selectSessionById } from '../../../store/slices/sessions/selectSessionById';
 import { pullRequestReminderIdOf } from './pullRequestReminderIdOf';
 
 type Params = {
@@ -17,8 +18,8 @@ export const remindWhenGreen = async ({
   mountId,
   prNumber,
 }: Params): Promise<'unchanged' | undefined> => {
-  const session = state.sessions.find((candidate) => candidate.id === sessionId);
-  if (session === undefined) {
+  const session = selectSessionById(state, sessionId);
+  if (session === null) {
     throw new Error(NO_SESSION);
   }
   const result = await state.addReminder({

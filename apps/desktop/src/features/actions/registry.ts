@@ -32,7 +32,7 @@ import { BRANCH_KIND } from './kinds/branch';
 import { CONTEXT_SLOT_KIND } from './kinds/contextSlot';
 import { PLAN_COMMENTS_KIND } from './kinds/planComments';
 import { PROJECT_ASK_KIND } from './kinds/projectAsk';
-import { PULL_REQUEST_KIND } from './kinds/pullRequest';
+import { PULL_REQUEST_WITH_REMINDER_KIND } from './kinds/pullRequestWithReminder';
 import { MESSAGE_KIND } from './kinds/message';
 import { MOUNT_KIND } from './kinds/mount';
 import { PROJECT_KIND } from './kinds/project';
@@ -148,7 +148,7 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
     case 'record':
       return bind({ definition: RECORD_KIND, state, target });
     case 'pullRequest':
-      return bind({ definition: PULL_REQUEST_KIND, state, target });
+      return bind({ definition: PULL_REQUEST_WITH_REMINDER_KIND, state, target });
     case 'diff':
       return bind({ definition: DIFF_KIND, state, target });
     case 'commit':

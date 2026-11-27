@@ -39,7 +39,7 @@ import { runObjectAction } from '../../actions/registry';
 import { bindTarget } from '../../actions/registry';
 import type { ActionEnv, ObjectTarget } from '../../actions/types';
 import { useReminderTriggers } from './hooks/useReminderTriggers';
-import { useDueReminders } from './hooks/useDueReminders';
+import { useDueReminders } from './ReminderNeedsYouCards/useDueReminders';
 import { pullRequestReminderIdOf } from './pullRequestReminderIdOf';
 import { ReminderNeedsYouCards } from './ReminderNeedsYouCards';
 import { snoozeTimesOf } from './snoozeTimesOf';
@@ -350,7 +350,7 @@ describe('reminders that land in needs you', () => {
     const navigate = vi.spyOn(useAppStore.getState(), 'navigate');
 
     render(<ReminderNeedsYouCards workspaceId={workspaceId} reminders={[reminder]} />);
-    expect(screen.getByText('#412 · Settle the duplicate credit')).toBeTruthy();
+    screen.getByText('#412 · Settle the duplicate credit');
     screen.getByRole('button', { name: 'Open CI is green on #412, reminder' }).click();
 
     await vi.waitFor(() => expect(navigate).toHaveBeenCalledTimes(1));
