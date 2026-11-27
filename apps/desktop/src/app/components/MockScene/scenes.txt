@@ -404,6 +404,10 @@ calendar-empty
 calendar-open
 calendar-quiet
 calendar-week
+call-chip-after
+call-chip-countdown
+call-chip-in-call
+call-chip-soon
 card-rails
 changelog
 changes-3-files
