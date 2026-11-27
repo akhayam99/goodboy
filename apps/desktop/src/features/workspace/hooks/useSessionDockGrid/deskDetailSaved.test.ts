@@ -152,6 +152,7 @@ describe('the agent and the pull request saved with the desk', () => {
       grid: storedDockGridOf({ grid: GRID, face: 'desk', detail: [AGENT, PR] }),
       savedAt: 1,
     });
+    state().openDrawer(BROWSER);
 
     await goTo({ sessionId: S1 });
 
