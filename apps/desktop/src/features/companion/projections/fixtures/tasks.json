@@ -87,7 +87,11 @@
       }
     ],
     "defaultStops": "afterPlan",
-    "limitAmounts": [5, 10, 25],
+    "limitAmounts": [
+      5,
+      10,
+      25
+    ],
     "defaultLimitUsd": null,
     "maxGoalLength": 2000,
     "remainingToday": 10

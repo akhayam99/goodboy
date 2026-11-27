@@ -24,7 +24,9 @@
           "reason": "open-question",
           "waitingText": "Waiting 5m",
           "branch": "goodboy/pagination",
-          "projectNames": ["payments-api"],
+          "projectNames": [
+            "payments-api"
+          ],
           "prNumber": 304,
           "costText": null,
           "updatedAt": "2026-10-01T09:00:00.000Z"

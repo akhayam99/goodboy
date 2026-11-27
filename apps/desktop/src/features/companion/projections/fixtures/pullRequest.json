@@ -18,7 +18,11 @@
     "reason": "This pull request is already merged.",
     "caveats": []
   },
-  "methods": ["squash", "merge", "rebase"],
+  "methods": [
+    "squash",
+    "merge",
+    "rebase"
+  ],
   "mergeActionId": null,
   "changedFiles": null,
   "additions": null,
