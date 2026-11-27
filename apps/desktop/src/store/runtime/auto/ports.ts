@@ -48,6 +48,11 @@ export type BridgeOutcome = Readonly<{
   mount?: MountNote;
 }>;
 
+export type RoutedModelRef = Readonly<{
+  provider: string;
+  model: string;
+}>;
+
 export type RoutingRequest = Readonly<{
   sessionId: SessionId;
   role: AutoDelegationRole;
@@ -57,6 +62,7 @@ export type RoutingRequest = Readonly<{
   agentLock?: WorkflowModelPick | null;
   writerFamily?: ModelFamily | null;
   failedStarts?: ReadonlyArray<ProviderId>;
+  notedNoAccess?: ReadonlyArray<RoutedModelRef>;
 }>;
 
 export type RoutingProposalFate = 'kept' | 'adjusted' | 'replaced' | 'none';
@@ -79,6 +85,7 @@ export type RoutingOutcome =
       kind: 'blocked';
       code: 'no_provider' | 'provider_unproven';
       message: string;
+      cause?: CandidateCause | null;
     }>;
 
 type LoadMountsParams = Readonly<{
