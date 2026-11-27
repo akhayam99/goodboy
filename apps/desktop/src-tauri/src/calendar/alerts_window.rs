@@ -73,6 +73,7 @@ pub(crate) fn show_chip(app: &AppHandle, height: f64) -> Result<bool, CalendarEr
         .skip_taskbar(true)
         .shadow(true)
         .focused(false)
+        .accept_first_mouse(true)
         .visible(false)
         .build()
         .map_err(failed)?;
