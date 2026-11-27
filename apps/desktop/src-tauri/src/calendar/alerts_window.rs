@@ -54,7 +54,7 @@ fn failed(error: tauri::Error) -> CalendarError {
 }
 
 pub(crate) fn show_chip(app: &AppHandle, height: f64) -> Result<bool, CalendarError> {
-    if app.get_webview_window(CHIP_LABEL).is_some() {
+    if app.get_window(CHIP_LABEL).is_some() {
         return Ok(false);
     }
     let (x, y) = active_screen(app)
@@ -81,7 +81,7 @@ pub(crate) fn show_chip(app: &AppHandle, height: f64) -> Result<bool, CalendarEr
 }
 
 pub(crate) fn resize_chip(app: &AppHandle, height: f64) -> Result<(), CalendarError> {
-    let Some(window) = app.get_webview_window(CHIP_LABEL) else {
+    let Some(window) = app.get_window(CHIP_LABEL) else {
         return Ok(());
     };
     window
@@ -91,7 +91,7 @@ pub(crate) fn resize_chip(app: &AppHandle, height: f64) -> Result<(), CalendarEr
 }
 
 pub(crate) fn hide_chip(app: &AppHandle) -> Result<(), CalendarError> {
-    let Some(window) = app.get_webview_window(CHIP_LABEL) else {
+    let Some(window) = app.get_window(CHIP_LABEL) else {
         return Ok(());
     };
     window.destroy().map_err(failed)
