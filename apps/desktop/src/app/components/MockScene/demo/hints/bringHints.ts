@@ -180,8 +180,8 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     beat: 0,
     anchor: KEY_FIELD,
     focus: WIZARD_COLUMN,
-    side: 'top',
-    isSideLocked: true,
+    side: 'right',
+    compactSide: 'top',
     isBlocked: isOffPath,
     offer: {
       eyebrow: 'Demo',

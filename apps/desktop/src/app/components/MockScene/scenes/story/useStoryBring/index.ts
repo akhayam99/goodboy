@@ -21,7 +21,6 @@ const TASK_ROWS = '[role="option"]';
 const TOOLS_SETTLE_MS = 450;
 const POLL_MS = 80;
 const WATCH_MS = 200;
-const LIST_WAIT_MS = 5000;
 const SETTLE_FRAMES = 2;
 
 type SceneStatus = {
@@ -31,18 +30,22 @@ type SceneStatus = {
 
 type WaitParams = {
   readonly isDone: () => boolean;
-  readonly limitMs: number;
+  readonly isCancelled: () => boolean;
 };
 
-const waitUntil = ({ isDone, limitMs }: WaitParams): Promise<void> =>
+const waitUntil = ({ isDone, isCancelled }: WaitParams): Promise<boolean> =>
   new Promise((resolve) => {
-    const startedAt = Date.now();
     const timer = window.setInterval(() => {
-      if (!isDone() && Date.now() - startedAt < limitMs) {
+      if (isCancelled()) {
+        window.clearInterval(timer);
+        resolve(false);
+        return;
+      }
+      if (!isDone()) {
         return;
       }
       window.clearInterval(timer);
-      resolve();
+      resolve(true);
     }, POLL_MS);
   });
 
@@ -122,8 +125,12 @@ export const useStoryBring = (): SceneStatus => {
     if (!isReady) {
       return;
     }
+    let isDisposed = false;
     const leave = async (): Promise<void> => {
-      await waitUntil({ isDone: isListLoaded, limitMs: LIST_WAIT_MS });
+      const isLoaded = await waitUntil({ isDone: isListLoaded, isCancelled: () => isDisposed });
+      if (!isLoaded) {
+        return;
+      }
       await waitFrames();
       const button = document.querySelector<HTMLElement>(LEAVE);
       isLeavingRef.current = true;
@@ -196,6 +203,7 @@ export const useStoryBring = (): SceneStatus => {
       options,
     );
     return () => {
+      isDisposed = true;
       window.clearInterval(watch);
       listeners.abort();
     };

@@ -222,6 +222,40 @@ describe('the bring your work scene', () => {
     expect(readInboxFilters({ workspaceId })).toEqual({ kind: 'all', source: null });
   }, 90000);
 
+  it('keeps the setup up while a source is slow and fades only onto the full list', async () => {
+    storySpies.tauriInvoke.mockImplementation(async (command, args) => {
+      if (command === 'check_provider_budget') {
+        return OPEN_BUDGET;
+      }
+      if (command === 'worktree_remote_url') {
+        return null;
+      }
+      const answer = await sceneInvoke({ command: String(command), args });
+      if (command === 'sentry_fetch_issues') {
+        await new Promise<void>((resolve) => {
+          window.setTimeout(resolve, 7000);
+        });
+      }
+      return answer;
+    });
+    await walkToTheKeyField();
+    pasteTheKey();
+    await waitFor(() => expect(hasLinear()).toBe(true), { timeout: 12000 });
+    await press({ selector: '[data-step="tools"] [data-demo-anchor="setup-continue"]' });
+    await waitFor(() => expect(store.getState().currentWorkspaceId).toBe(BRAND_WORKSPACE_ID), {
+      timeout: 10000,
+    });
+    await act(async () => {
+      await new Promise<void>((resolve) => {
+        window.setTimeout(resolve, 6000);
+      });
+    });
+    expect(document.querySelector(WIZARD)).not.toBeNull();
+    expect(document.querySelectorAll('[role="option"]').length).toBeLessThan(STORY_TASK_COUNT);
+    await waitFor(() => expect(labels()).toHaveLength(STORY_TASK_COUNT), { timeout: 20000 });
+    await waitFor(() => expect(document.querySelector(WIZARD)).toBeNull(), { timeout: 10000 });
+  }, 90000);
+
   it('lands on Tasks when the visitor leaves the setup with Set up later', async () => {
     await mount();
     fireEvent.click(await screen.findByRole('button', { name: 'Set up later' }));

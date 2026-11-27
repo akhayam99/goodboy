@@ -50,6 +50,18 @@ type Hold = {
   readonly phase: 'show' | 'wait';
 };
 
+const COMPACT_WIDTH_PX = 1280;
+
+type SideParams = {
+  readonly hint: DemoHint;
+};
+
+const isCompactSide = ({ hint }: SideParams): boolean =>
+  hint.compactSide !== undefined && window.innerWidth < COMPACT_WIDTH_PX;
+
+const sideOf = ({ hint }: SideParams): DemoHint['side'] =>
+  isCompactSide({ hint }) ? hint.compactSide : hint.side;
+
 export type OffscreenHint = {
   readonly hintId: string;
   readonly copy: string;
@@ -279,9 +291,11 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     return {
       hintId: activeHint.id,
       copy: recovery?.copy ?? acting?.progressCopy ?? activeHint.copy,
-      side: recovery === undefined ? activeHint.side : recovery.side,
+      side: recovery === undefined ? sideOf({ hint: activeHint }) : recovery.side,
       isSideLocked:
-        recovery === undefined ? activeHint.isSideLocked === true : recovery.side !== undefined,
+        recovery === undefined
+          ? activeHint.isSideLocked === true || isCompactSide({ hint: activeHint })
+          : recovery.side !== undefined,
       align: recovery === undefined ? activeHint.align : undefined,
       rect: current.rect,
       focus: current.focus,
