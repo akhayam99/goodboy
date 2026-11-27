@@ -116,24 +116,51 @@ Danger zone. It takes a `workspaceId`.
 
 ### Clearing one site
 
-`browser_site_data_clear` takes `{ tabId, host }`, the host the menu row showed
-when the user confirmed.
+`browser_site_data_clear` takes `{ tabId, host, extraHosts }`: the host the
+menu row showed and the sign-in hosts its confirm listed when the user
+confirmed.
 
 - It refuses `not-web-address` for a page that is not http or https, and
-  `site-moved` when the live page is on another host by then.
+  `site-moved` when the live page is on another host by then or when an extra
+  host is not in the tab's trail (below). The pane never names a site the
+  host did not record.
 - It holds the same lease as the workspace clear, on the tab's profile, until
   the reload is sent. A second clear of either kind answers `profile-busy`,
   also on a Mac with one shared store.
 - On macOS it fetches every data record of the tab's store and removes those
-  whose display name is the site: `localhost`, `*.localhost` and an IP match
-  only themselves, any other host matches its registrable domain (WebKit names
-  a record by it). Ports share one record, so clearing `localhost:5005` clears
-  every localhost port. Then the tab reloads from origin, and the answer is
-  `{ host, scope: site }`.
+  whose display name is the site or one of the extra hosts: `localhost`,
+  `*.localhost` and an IP match only themselves, any other host matches its
+  registrable domain. Ports share one record, so clearing `localhost:5005`
+  clears every localhost port. Then the acting tab reloads from origin, and
+  the answer is `{ host, extraHosts, scope: site }`. Other tabs on those sites
+  are not reloaded and keep their page; the line under the address says so.
+- WebKit names a record by the registrable domain of the public suffix list:
+  `app.harborline.dev` is `harborline.dev`, `shop.acme.co.uk` is `acme.co.uk`.
+  A tenant under a shared suffix keeps its own host, so `harborline.github.io`
+  is its own record and clearing it leaves every other tenant alone. A record
+  holds cookies, disk and fetch cache, IndexedDB, local and session storage.
 - Off macOS it clears the whole store of the workspace and answers
   `scope: workspace`, which is why the row there says **Clear browser data**.
 - A removal that does not answer within 10 s fails with
   `site-data-unavailable`, and the page is not reloaded.
+
+### The sign-in trail
+
+Each tab keeps the hosts of its main-frame pages, so the clear can reach the
+sign-in provider a login went through.
+
+- The host is recorded when a page commits and when it finishes, twenty hosts
+  at most, oldest out first, each once. It lives in memory with the tab, keeps
+  through sleep and wake (same tab id), is never saved and is not part of the
+  tab facts.
+- `browser_tab_trail { tabId }` answers the union of the tab's hosts, its
+  opener chain and the popups it opened, five levels deep at most. It takes no
+  lease. A popup that closes hands its hosts to its opener.
+- The trail exists only on macOS with a store per workspace. Elsewhere the
+  read answers nothing, and a clear with an extra host is refused.
+- The pane reads it after each finished load of the session and keeps only the
+  latest answer for the shown tab. While nothing came back the confirm names
+  the site alone, and the clear sends no extra host.
 
 ### Reload without cache
 
@@ -149,15 +176,25 @@ Windows and Linux have no such call in wry, so it is a plain reload there.
   the sweep, show, hide, place and `browser://tab-state`.
   `browser/profile.rs` holds the profile id, the per-platform store, the
   switch and the clear. `browser/site_data.rs` holds the site match
-  (`is_site_record`), the site check and the in-place clears;
-  `platform/web_site_data.rs` the WebKit calls. The settings row is
-  `WorkspaceBrowserDataRow` through `useClearBrowserData`; the menu row is
-  `siteDataRowOf`.
-- Tests: `site_data.rs` covers the host match and the site check;
-  `browser::tests` the lease and a failed clear in place;
-  `BrowserPane/siteData.test.tsx` the confirm, the line, a failure and a late
-  answer; `scopedReload.test.tsx` ⌘⇧R and ⇧-click;
+  (`is_site_record`, and `is_record_of_any` for a list), the site and trail
+  checks (`check_site`, `check_trail`) and the in-place clears;
+  `platform/web_site_data.rs` the WebKit calls. The trail is `hosts` on the
+  registry `Tab` (`remember_host`, `trail_of`), fed by `load::remember_load`
+  from `report_load`. The settings row is `WorkspaceBrowserDataRow` through
+  `useClearBrowserData`; the menu row is `siteDataRowOf`, its trail
+  `hooks/useSiteTrail`.
+- Tests: `site_data.rs` covers the host match, the list match, the site and
+  trail checks and the 10 s wait; `registry.rs` the ring, sleep and wake, the
+  popup union, the closed popup and the depth cap; `browser::tests` the lease
+  and a failed clear in place; `BrowserPane/siteData.test.tsx` the confirm and
+  its sign-in notes, the line, a failure, a busy retry, a pending and a late
+  trail and a late answer; `scopedReload.test.tsx` ⌘⇧R and ⇧-click;
   `WorkspaceBrowserDataRow.test.tsx` the busy refusal and a late answer.
+- `browser/site_data/native_tests.rs` drives a real WKWebView by hand
+  (`cargo test --lib site_data::native_tests -- --ignored --nocapture`): it
+  relaunches the test binary so WebKit gets the main thread, serves its own
+  127.0.0.1 and ::1 pages, checks that a redirect hop and an iframe stay out of
+  the trail, and prints the name and types of every record. CI skips it.
 - Tests: the lifecycle and profile tests in `browser::tests` pass the clock
   in. The macOS store and the Windows and Linux folders are not reachable from
   the mock runtime.
