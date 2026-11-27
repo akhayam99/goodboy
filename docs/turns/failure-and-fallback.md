@@ -21,7 +21,8 @@ attempts. An unclassified failure or a cancelled turn never falls back.
 | Unavailable model, outdated CLI     | A sibling model on the same provider                                                      |
 | Anything else                       | Another provider                                                                          |
 
-Candidates are connected, enabled for the session and not cooling down.
+Candidates are connected, enabled for the session, not cooling down and runnable
+on the installed CLI.
 
 A fallback marks the failed run, posts the original error plus a notice naming
 the move, and reruns the same input on the same mount target. An agent pinned

@@ -66,8 +66,8 @@ the anthropic catalog is `providers/claude/catalog.ts`.
 - `gpt-6.1-terra` needs 0.159.0. `gpt-6-luna` is the `cheap` newest Luna,
   `gpt-5.6-terra` and `gpt-5.5` are `legacy` (hidden until shown) and
   `gpt-5.6-sol` is `expensive`, on Codex and OpenRouter
-- The GPT-6.2 weights do not exceed those of the models before them, so a tier
-  fallback after a failure lands on a model an older CLI also runs
+- A fallback after a failure skips every model the installed CLI cannot run
+  (`planTurnFallback` reads `cliGate`)
 - Context windows: 500k for the Sol models from 6.1 on, 272k for the others, not
   the larger maximum. OpenAI publishes no Codex window for GPT-6.1 Terra, so it
   takes 272k. The orchestrator's context check reads them

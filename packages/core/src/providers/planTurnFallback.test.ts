@@ -590,4 +590,34 @@ describe('planTurnFallback, ids that carry combo axes', () => {
 
     expect(plan?.model).not.toBe('composer-2.5');
   });
+
+  it('never retries on a sibling the installed CLI cannot run', () => {
+    const plan = planTurnFallback({
+      failure: 'model_not_available',
+      provider: 'codex',
+      model: 'gpt-6.1-terra',
+      attempt: 0,
+      wantsThinker: false,
+      connectedProviders: ['codex'],
+      cliVersions: { codex: '0.159.0' },
+    });
+
+    expect(plan?.provider).toBe('codex');
+    expect(['gpt-6.1-terra', 'gpt-6.1-sol', 'gpt-6-sol', 'gpt-6.2-sol']).not.toContain(plan?.model);
+  });
+
+  it('drops a role fallback the installed CLI cannot run', () => {
+    const plan = planTurnFallback({
+      failure: 'model_not_available',
+      provider: 'codex',
+      model: 'gpt-6.1-terra',
+      attempt: 0,
+      wantsThinker: false,
+      connectedProviders: ['codex'],
+      cliVersions: { codex: '0.159.0' },
+      preferred: { provider: 'codex', model: 'gpt-6.1-sol' },
+    });
+
+    expect(plan?.model).not.toBe('gpt-6.1-sol');
+  });
 });

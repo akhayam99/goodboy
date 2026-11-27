@@ -197,6 +197,12 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
             unavailable: get().unavailableModels,
             providers: get().providers,
           }),
+          cliVersions: Object.fromEntries(
+            (get().providers ?? []).flatMap((entry) =>
+              entry.version == null ? [] : [[entry.id, entry.version]],
+            ),
+          ),
+          learned: get().cliRequirements ?? [],
           ...(preferredFallback != null && {
             preferred: {
               provider: preferredFallback.provider,
