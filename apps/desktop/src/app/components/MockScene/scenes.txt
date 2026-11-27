@@ -486,6 +486,8 @@ debugger-drawer-hint-filled
 debugger-drawer-options
 debugger-drawer-proposal
 debugger-drawer-running
+deleted-branch-merged-dark
+deleted-branch-merged-light
 demo
 demo-storage
 design-comments

@@ -23,11 +23,12 @@ export type AttentionWaits = {
 type Params = {
   readonly state: AttentionWaitsState;
   readonly session: Session;
+  readonly settledAt?: number | null;
 };
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
 
-export const attentionWaitsOf = ({ state, session }: Params): AttentionWaits => {
+export const attentionWaitsOf = ({ state, session, settledAt = null }: Params): AttentionWaits => {
   const sessionId = session.id;
   const agents = state.sessionPhaseRuns[sessionId] ?? NO_AGENTS;
   const runWaits = runWaitEntriesOf({ state, session, agents });
@@ -40,7 +41,7 @@ export const attentionWaitsOf = ({ state, session }: Params): AttentionWaits => 
       autoLimitRootsOf({ state, session, agents }).length > 0,
     hasRunWaitingForGo: runWaits.some((entry) => entry.wait === 'go'),
     hasAutoNeedsYou: autoWaitRootsOf({ state, session, agents }).length > 0,
-    hasAutoFailed: autoFailedRootsOf({ state, session, agents }).length > 0,
+    hasAutoFailed: autoFailedRootsOf({ state, session, agents, settledAt }).length > 0,
     hasSlackReplyWaiting: (state.sessionSlackDrafts?.[sessionId] ?? []).some(
       (draft) => draft.status === 'pending',
     ),

@@ -9,6 +9,7 @@ export type AutoTreeStateEntry = Readonly<{
   root: Agent;
   state: AutoTreeState;
   isStuck: boolean;
+  at: number;
 }>;
 
 type Params = {
@@ -43,6 +44,7 @@ export const autoTreeStatesOf = ({
         root,
         state: tree.state,
         isStuck: autoGroupOf({ view, agents, now })?.isStuck === true,
+        at: view.tree.updatedAt,
       },
     ];
   });

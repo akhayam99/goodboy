@@ -28,6 +28,8 @@ import { sceneInvoke, clearSceneInvoke } from '../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStatuses/cache';
 import userEvent from '@testing-library/user-event';
 import { branchTabPlaceOf } from '../../../branch/branchTabPlaceOf';
+import { at } from '../../../workspace/testing/sessionColumn';
+import { sessionMountViews } from '../../../../store/slices/project-mounts/mountRowModel';
 import { NAMES } from '../../../../shared/utils/names';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
@@ -537,6 +539,74 @@ describe('the project blocks on the Overview', () => {
     expect(tenant.querySelector('[data-board-facts]')?.textContent).toContain('Merged');
     expect(tenant.querySelector('[data-board-facts]')?.textContent).not.toContain('Closed');
     expect(verbsOf({ tile: tenant })).toHaveLength(0);
+  });
+
+  it('keeps a deleted branch as one settled row with its pull request linking out', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    await show();
+    const mountId = mountIdOf({ branch: TENANT });
+    const github = Object.values(useAppStore.getState().mountGithub).find(
+      (candidate) => candidate.mountId === mountId,
+    );
+    const number = github?.pr?.number ?? 0;
+
+    act(() => {
+      useAppStore.setState((store) => ({
+        sessionMounts: {
+          ...store.sessionMounts,
+          [COLUMN_SESSION_ID]: sessionMountViews({
+            state: store,
+            sessionId: COLUMN_SESSION_ID,
+          }).map((view) =>
+            view.id === mountId
+              ? { ...view, isAttached: false, worktreePath: null, diskState: 'removed' as const }
+              : view,
+          ),
+        },
+        sessionProjectMounts: {
+          ...store.sessionProjectMounts,
+          [COLUMN_SESSION_ID]: (store.sessionProjectMounts[COLUMN_SESSION_ID] ?? []).filter(
+            (mount) => mount.mountId !== mountId,
+          ),
+        },
+        mountGithub: Object.fromEntries(
+          Object.entries(store.mountGithub).filter(([id]) => id !== mountId),
+        ),
+        mountPrLinks: {
+          [mountId]: {
+            id: 'link-tenant',
+            mountId: brandId({ value: mountId }),
+            provider: 'github',
+            host: 'github.com',
+            repoSlug: 'harborline/payments-api',
+            prNumber: number,
+            headBranch: TENANT,
+            baseBranch: 'main',
+            url: `https://github.com/harborline/payments-api/pull/${number}`,
+            state: 'merged',
+            snapshot: null,
+            mergedAt: at('2026-10-17T09:00:00.000Z'),
+            lastObservedAt: at('2026-10-17T09:00:00.000Z'),
+            createdAt: at('2026-10-16T09:00:00.000Z'),
+            updatedAt: at('2026-10-17T09:00:00.000Z'),
+          },
+        },
+      }));
+    });
+    await settle();
+
+    const tile = tileOf({ branch: TENANT });
+    expect(tile.querySelector('[data-board-word]')?.textContent).toBe('Merged');
+    expect(tile.querySelector('[data-board-facts]')?.textContent).toContain(`#${number}`);
+    expect(
+      within(tile)
+        .getByRole('link', { name: `Open PR #${number}` })
+        .getAttribute('data-board-request'),
+    ).toBe('');
+    expect(
+      verbsOf({ tile }).filter((button) => button.getAttribute('role') !== 'link'),
+    ).toHaveLength(0);
+    expect(screen.queryByText(NAMES.notOnABranch)).toBeNull();
   });
 
   it('keeps a closed branch with its word and no delete, and takes it back when reopened', async () => {

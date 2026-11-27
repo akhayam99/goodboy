@@ -63,7 +63,7 @@ With no session yet, **No sessions yet** explains that a session holds one goal,
 
 Finished work stays in view. In Sessions, in the top bar, finished sessions sit in a **Done** group after the others, so a merged session is one click from reopening.
 
-A session whose pull request merged or closed leaves the live groups of Sessions at once, unless you wrote after the merge. A session that never opens a pull request reaches **Done** too, once its reply is read and nothing is running or open. The hover card gives the reason: "answered", "report ready", "plan ready" or "finished". Writing again brings it back.
+A session whose pull request merged or closed leaves the live groups of Sessions at once, unless you wrote after the merge. A session keeps its merged pull request after you delete its branch. The card stays in **Done** with the pull request number. A failure from before the merge stops asking for you. A session that never opens a pull request reaches **Done** too, once its reply is read and nothing is running or open. The hover card gives the reason: "answered", "report ready", "plan ready" or "finished". Writing again brings it back.
 
 - The **Done** lane header carries a **⋯** menu with **Archive all in Done** and **Archive done older than 7 days**, by the session's last activity.
 - Each archives at once with **Undo**, or asks first when an agent there is still live.
@@ -120,6 +120,7 @@ Then **Archive**, **Restore** or **Delete** them from the bar at the bottom. Arc
 
 This part is for contributors and agents who change the feature.
 
+- Deleted branch: `sessionStageRequestOf` reads the stored pull request of a branch whose worktree was removed (`historyRequestsOf`, from `mountPrLinks`), so `deriveSessionStage` derives Done from a merged request with nothing live. A closed one alone does not. `loadMountHistory` fills `mountPrLinks` for removed mounts when `loadSessionMounts` hydrates. `soleMergedAtOf` gives the merge time of the session's only branch, and `isFailureSettled` drops an Auto failure older than it (`attentionWaitsOf`, `autoRetryTargetsOf`). Tested in `removedMountStage.test.ts`, `sessionStageRequest.test.ts` and the `deleted-branch-merged-light` scene.
 - Done lane menu: `DoneLaneMenu`, the `doneLane` object kind and `doneLaneArchivesOf` give the **Archive all in Done** and **Archive done older than 7 days** actions.
 - Lane window: `StageColumn` draws 50 cards of the `done` and `archived` lanes (`LANE_WINDOW`); selection reads the whole list, so Select all keeps selecting every session. `loadArchivedSessions({ workspaceId, isForced })` serves its cache, joins an in-flight read and re-reads only when forced on window focus (`useArchivedSessionsLoad`). A read that overlapped an archive, restore or delete is dropped (`archivedCacheVersion`), so the action's cache write is never overwritten by the older read.
 - Card landing: `useBoardNavigation.selectCard` sets the session face to `overview` (`setSessionFace`, which also drops a late saved-face read) and then navigates with `lensPlace`. The signal, the pull request chip and the quick actions navigate without touching the face. `useBoardNavigation/index.test.ts` and `StageBoardCard/index.test.tsx` cover each case; the `board-kept-desk` scene shows it.

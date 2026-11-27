@@ -5,6 +5,7 @@ import type { AppState } from '../../types';
 import { sessionRequestFetchOf } from '../review-source/sessionRequestFetchOf';
 import { liveWorkOfSession } from '../../runtime/live-work/selectLiveWork';
 import { summarizeMountWork } from '../project-mounts/mountCompletion';
+import { soleMergedAtOf } from '../project-mounts/workRecord/soleMergedAtOf';
 import { resolveAttentionOf } from '../resolve/resolveAttention';
 import type { AutoViewState } from '../auto-view/state';
 import { runAwaitsPlanReview } from '../../../features/plans/runAwaitsPlanReview';
@@ -55,6 +56,7 @@ export type StageInfoState = Pick<
       | 'sessionSlackDrafts'
       | 'sessionDismissedNextSteps'
       | 'sessionArtifacts'
+      | 'mountPrLinks'
     > &
       AutoViewState
   >;
@@ -89,7 +91,11 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
     threads: state.sessionResolveThreads?.[sessionId] ?? [],
     attempts: state.sessionResolveAttempts?.[sessionId] ?? [],
   });
-  const waits = attentionWaitsOf({ state, session });
+  const waits = attentionWaitsOf({
+    state,
+    session,
+    settledAt: soleMergedAtOf({ state, sessionId }),
+  });
   const requestFetch = sessionRequestFetchOf({ state, sessionId });
   const info = deriveSessionStage({
     session,

@@ -10,6 +10,7 @@ import { isFresh } from '../../../suggestions/nextStepGates';
 export type BranchRequestFacts = Readonly<{
   noun: '#' | '!';
   number: number;
+  url: string;
   isDraft: boolean;
   state: PullRequestStateKind;
   checksWord: string | null;
@@ -82,6 +83,7 @@ type RequestParams = {
 const requestFactsOf = ({ request, isStale }: RequestParams): BranchRequestFacts => ({
   noun: request.provider === 'gitlab' ? '!' : '#',
   number: request.number,
+  url: request.url,
   isDraft: request.isDraft,
   state: request.state,
   checksWord: isStale ? null : checksWordOf({ checks: request.checks }),

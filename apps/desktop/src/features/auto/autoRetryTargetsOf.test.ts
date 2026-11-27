@@ -129,6 +129,31 @@ describe('autoRetryTargetsOf', () => {
     ]);
   });
 
+  it('drops a failed child that predates the merge and keeps one that follows it', () => {
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        aDelegation({
+          key: 'planner',
+          role: 'planner',
+          state: 'settled',
+          outcome: 'failed',
+          settledAt: 1_000,
+        }),
+      ],
+    });
+    const agents = [ROOT, childAgentOf({ key: 'planner' })];
+
+    expect(
+      autoRetryTargetsOf({ views: [view], agents, now: FIXTURE_NOW, settledAt: 2_000 }),
+    ).toEqual([]);
+    expect(
+      autoRetryTargetsOf({ views: [view], agents, now: FIXTURE_NOW, settledAt: 500 }).map(
+        (target) => target.kind,
+      ),
+    ).toEqual(['failed']);
+  });
+
   it('skips a delegation that was retried', () => {
     const first = aDelegation({
       key: 'fixer-1',
