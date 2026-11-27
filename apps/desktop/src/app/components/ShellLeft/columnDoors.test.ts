@@ -19,8 +19,8 @@ describe('the column doors', () => {
   it('keeps the running stage glyph off the Board door', () => {
     const door = COLUMN_DOORS.find((entry) => entry.id === 'board');
 
-    expect(door?.icon).toBe(CONCEPT_ICONS.sessions);
-    expect(CONCEPT_ICONS.sessions).not.toBe(CONCEPT_ICONS.stageRunning);
+    expect(door?.icon).toBe(CONCEPT_ICONS.board);
+    expect(CONCEPT_ICONS.board).not.toBe(CONCEPT_ICONS.stageRunning);
   });
 
   it('lists the six places, no tool, no Monitoring and no Work door', () => {
