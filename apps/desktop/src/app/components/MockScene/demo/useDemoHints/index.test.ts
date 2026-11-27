@@ -72,10 +72,11 @@ describe('the demo hints on a way back', () => {
 
 describe('the demo hints on a step with an offer', () => {
   it('keeps the coach and its button after the visitor pressed the highlighted field', () => {
-    const chapter = DEMO_CHAPTERS[0];
-    if (chapter === undefined) {
+    const first = DEMO_CHAPTERS[0];
+    if (first === undefined) {
       throw new Error('no first chapter');
     }
+    const chapter = { ...first, hints: first.hints.filter((entry) => entry.offer !== undefined) };
     const progress: HintProgress = {};
     const { result } = renderHook(() =>
       useDemoHints({
