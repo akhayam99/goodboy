@@ -9,7 +9,6 @@ import {
   MessageSquare,
   Pencil,
   RotateCcw,
-  RefreshCw,
   Send,
   Trash2,
   UserPlus,
@@ -301,7 +300,7 @@ const stepPrimaryOf = ({
     case 'retryPush':
       return review.accepted > 0
         ? push()
-        : reviewAction({ label: NAMES.retryPush, icon: RefreshCw });
+        : reviewAction({ label: NAMES.retryPush, icon: RotateCcw });
     case 'fixComments':
       return fixCommentsOf({ comments });
     case 'suggestRun':

@@ -90,6 +90,17 @@ describe('one glyph per concept', () => {
     expect(unwritten).toEqual([]);
   });
 
+  it('keeps every reused agent kind on the glyph of its concept', () => {
+    const drifted = Object.entries(KIND_OF_CONCEPT)
+      .filter(([concept, kind]) => {
+        const palette: Readonly<Record<string, { readonly icon: unknown }>> = AGENT_KIND_PALETTE;
+        const glyphs: Readonly<Record<string, unknown>> = CONCEPT_ICONS;
+        return palette[kind]?.icon !== glyphs[concept];
+      })
+      .map(([concept, kind]) => `kind:${kind} no longer draws concept:${concept}`);
+    expect(drifted).toEqual([]);
+  });
+
   it('drops an allowlist entry the moment its twins stop sharing a glyph', () => {
     const shared = new Set(
       ownersByGlyph()

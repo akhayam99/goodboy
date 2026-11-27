@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, ICON_SIZE, Markdown, Notice } from '@goodboy/ui';
-import { RefreshCw } from '@goodboy/ui/icons';
+import { RefreshCw, RotateCcw } from '@goodboy/ui/icons';
 
 import type { ScribeProposal } from '../../utils/scribeProposal';
 import type { ScribeProposalState } from '../../hooks/useScribeProposal';
@@ -74,7 +74,7 @@ export const ScribeProposalView = ({
           actions={
             canRetry ? (
               <Button variant="secondary" size="sm" onClick={onRetry}>
-                <RefreshCw size={ICON_SIZE.row} aria-hidden />
+                <RotateCcw size={ICON_SIZE.row} aria-hidden />
                 Retry
               </Button>
             ) : undefined
