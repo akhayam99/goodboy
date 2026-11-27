@@ -291,6 +291,22 @@ const autoStateOf = ({ group }: Pick<AutoParams, 'group'>): LiveGroupState | nul
   return group.phase === 'waiting' ? 'waiting' : 'working';
 };
 
+type OncePerAgentParams = {
+  readonly children: AutoGroup['children'];
+};
+
+const oncePerAgentOf = ({ children }: OncePerAgentParams): AutoGroup['children'] => {
+  const newest = new Map<string, number>();
+  children.forEach((child, index) => {
+    const at = newest.get(child.agentId);
+    const held = at === undefined ? undefined : children[at];
+    if (held === undefined || (child.createdAt ?? 0) >= (held.createdAt ?? 0)) {
+      newest.set(child.agentId, index);
+    }
+  });
+  return children.filter((child, index) => newest.get(child.agentId) === index);
+};
+
 const autoGroupModelOf = ({ group, agents }: AutoParams): LiveAutoGroup | null => {
   const state = autoStateOf({ group });
   if (state === null) {
@@ -312,7 +328,7 @@ const autoGroupModelOf = ({ group, agents }: AutoParams): LiveAutoGroup | null =
     startedAt: timeOf({ value: byId.get(group.rootAgentId)?.startedAt }),
     group,
     counts: null,
-    children: group.children,
+    children: oncePerAgentOf({ children: group.children }),
   };
 };
 

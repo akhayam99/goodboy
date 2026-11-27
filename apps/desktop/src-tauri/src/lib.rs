@@ -190,7 +190,7 @@ pub fn run() {
             None
         }
     };
-    let bridge_state = bridge::BridgeState::new().expect("failed to init companion bridge");
+    let bridge_state = bridge::BridgeState::new();
     let turn_registry = turn::TurnRegistry::new();
     turn_live::install(turn_registry.live_turns());
     let chat_registry = chat::ChatRegistry::new();
@@ -289,6 +289,11 @@ pub fn run() {
             use tauri::Manager;
             logging::init(app.handle());
             query_bridge::start(app.handle().clone());
+            let resumed = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let state = resumed.state::<bridge::BridgeState>();
+                bridge::resume(resumed.clone(), &state).await;
+            });
             app.manage(match app_paths::data_dir() {
                 Ok(dir) => browser::BrowserProfiles::under(dir),
                 Err(error) => {
@@ -402,6 +407,9 @@ pub fn run() {
             bridge::bridge_set_permissions,
             bridge::bridge_revoke_phone,
             bridge::bridge_stop,
+            bridge::bridge_note_phone_rule,
+            bridge::bridge_pairing_decide,
+            bridge::bridge_reset_pairing,
             bridge::publish::bridge_publish,
             artifact_folder::export_artifact_folder,
             artifact_mirror::artifact_mirror_write,
@@ -799,7 +807,10 @@ pub fn run() {
             browser::commands::browser_tab_reload_from_origin,
             browser::commands::browser_site_data_clear,
             browser::commands::browser_tab_trail,
+            browser::commands::browser_site_data_list,
+            browser::commands::browser_site_data_clear_records,
             browser::commands::browser_profile_clear,
+            browser::commands::browser_profile_isolation,
             browser::commands::browser_tab_stop,
             browser::commands::browser_find,
             browser::commands::browser_history_state,

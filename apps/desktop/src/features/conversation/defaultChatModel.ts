@@ -1,4 +1,5 @@
 import {
+  getDefaultTurnModel,
   isModelHidden,
   latestInGroup,
   type HiddenModels,
@@ -28,14 +29,32 @@ type ProviderParams = {
   readonly hidden?: HiddenModels | null;
 };
 
+type LineParams = {
+  readonly provider: ChatProviderId;
+};
+
+const chatLineOf = ({ provider }: LineParams) => {
+  const line = latestInGroup({ provider, ...CHAT_LINE[provider] });
+  const turnDefault = getDefaultTurnModel({ id: provider });
+  const start = Math.max(
+    line.findIndex((model) => model.key === turnDefault),
+    0,
+  );
+  const fromDefault = [...line.slice(start), ...line.slice(0, start)];
+  return [
+    ...fromDefault.filter((model) => model.presentation.costTier !== 'expensive'),
+    ...fromDefault.filter((model) => model.presentation.costTier === 'expensive'),
+  ];
+};
+
 const chatModelOf = ({ provider, hidden = null }: ProviderParams): ModelKey | null => {
   if (!isChatProvider(provider)) {
     return null;
   }
-  const line = latestInGroup({ provider, ...CHAT_LINE[provider] });
   return (
-    line.find((model) => hidden === null || !isModelHidden({ provider, hidden, key: model.key }))
-      ?.key ?? null
+    chatLineOf({ provider }).find(
+      (model) => hidden === null || !isModelHidden({ provider, hidden, key: model.key }),
+    )?.key ?? null
   );
 };
 

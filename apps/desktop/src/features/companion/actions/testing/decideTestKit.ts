@@ -45,6 +45,7 @@ const blankStore = (): AppStore => Object.create(null);
 export type FakeActions = {
   readonly answerOpenQuestions: ReturnType<typeof vi.fn>;
   readonly allowAndContinue: ReturnType<typeof vi.fn>;
+  readonly allowWithRule: ReturnType<typeof vi.fn>;
   readonly denyWithReason: ReturnType<typeof vi.fn>;
   readonly setSessionBudget: ReturnType<typeof vi.fn>;
   readonly stopWorkflowRunNow: ReturnType<typeof vi.fn>;
@@ -75,6 +76,7 @@ export const buildTestStore = ({ state = {} }: BuildParams = {}): TestStore => {
   const actions: FakeActions = {
     answerOpenQuestions: vi.fn(async () => undefined),
     allowAndContinue: vi.fn(async () => undefined),
+    allowWithRule: vi.fn(async () => undefined),
     denyWithReason: vi.fn(async () => undefined),
     setSessionBudget: vi.fn(async () => undefined),
     stopWorkflowRunNow: vi.fn(async () => 'stopped'),

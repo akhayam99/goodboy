@@ -110,13 +110,13 @@ describe('TaskModelRow', () => {
     ).toBe('true');
     fireEvent.click(
       within(screen.getByRole('group', { name: 'Version' })).getByRole('button', {
-        name: '3.8',
+        name: '4',
       }),
     );
 
     const [preference] = onChange.mock.calls.at(-1) ?? [];
     expect(preference?.providerId).toBe('gemini');
-    expect(preference?.model).toContain('flash');
+    expect(preference?.model).toContain('gemini-4-');
     expect(preference?.effort).toBe('low');
   });
 });

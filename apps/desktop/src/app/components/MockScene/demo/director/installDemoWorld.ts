@@ -13,8 +13,8 @@ type Params = {
 
 const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = (
   [
-    ['anthropic', 'claude', 'Claude', '2.1.300'],
-    ['codex', 'codex', 'Codex', '0.165.0'],
+    ['anthropic', 'claude', 'Claude', '2.1.321'],
+    ['codex', 'codex', 'Codex', '0.171.0'],
   ] as const
 ).map(([id, binary, label, version]) => ({
   id,

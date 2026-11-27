@@ -29,13 +29,20 @@ width comes back when the window grows.
 
 The one row of the pane (`BrowserAddressRow`, `PANE_RHYTHM.firstRow`), under
 its head (`DockPanelHead`: title, Open full page, Close; the head moves the
-pane, [dock-grid.md](../navigation/dock-grid.md)). It holds Back,
-Forward, Reload, the tabs, New tab, Pin to the session's project (Unpin for a
-shown pin), Select an element ([pick.md](pick.md)), Console
-([console.md](console.md)) and More.
+pane, [dock-grid.md](../navigation/dock-grid.md)). Each action has one
+control. The row holds Back, Forward (always there, off with nothing ahead),
+Reload, the tabs, New tab and a capsule (`BrowserToolsCapsule`) of two icon
+buttons: Select an element ([pick.md](pick.md)) and Console
+([console.md](console.md)). Open full page lives only in the head. Pin and
+every other page action live in the page menu, on the chevron beside the
+address.
 
-- Under 560px of row (`NARROW_ROW_PX`), `foldedBrowserRowsOf` moves Pin to the
-  top of More, which always holds Open full page.
+- Reload's tooltip names shift click and ⌘⇧R, which reload without cache.
+- Under 560px of row (`NARROW_ROW_PX`, `data-row-narrow`), the strip keeps the
+  pins, the shown tab (icon and title, no host) and New tab. The other tabs
+  lead the page menu as a Tabs list, and the tools dock sits under the page
+  with no side button. While a new tab has no page, there is no page menu, so
+  the strip shows every tab, folded groups included.
 - The page sits flush under the row (`BrowserView`, `data-browser-frame`) with
   no card, border, inset or line: a `border-t` there is a divider the divider
   guard refuses.
@@ -58,11 +65,15 @@ Windows and Linux, which cannot tell, both stay on.
 
 ### The address pill
 
-The pill (`BrowserAddressPill`) shows the favicon, the title (`model.titleOf`)
-and the host muted, or the host alone before a title. A click or ⌘L swaps it
-for the command field with the URL selected. Esc (an escape layer), blur or a
-row that went through swaps it back and drops the draft. A refused address
-keeps the field and the reason under the row.
+The pill (`BrowserAddressPill`) is a wrapper with the pill chrome. It holds the
+address button (favicon, title from `model.titleOf` and the host muted, or the
+host alone before a title), the page menu chevron and, for a closable tab, its
+close button. A shown pin is the pill too, so it has the chevron. A click on
+the address or ⌘L swaps the pill for the command field with the URL selected,
+and the chevron is gone while the field shows. Esc (an escape layer), blur or a
+row that went through swaps it back and drops the draft, and focus returns to
+the address button. A refused address keeps the field and the reason under
+the row.
 
 The favicon is the page's icon or a letter tile (`BrowserFavicon`), the same on
 every row of the origin. Rust fetches it once per origin (`browser/favicon.rs`,
@@ -126,22 +137,50 @@ needle or another tab is dropped, and showing another tab empties the result.
 The host refuses a needle over 200 characters (`needle-too-long`), and the
 field stops at 200.
 
-## More
+## The page menu
 
-More (`BrowserMoreMenu`, off rules in `browserMoreRows.ts`) holds, after any
-rows the narrow row folded in: Send to agent
-([doors.md](doors.md#send-to-agent)), Open in your browser, Open full page
-([page.md](page.md#moves), absent when the dock has no page), This tab, Clear
-site data (`siteDataRowOf`, an inline confirm, off without a web page view;
-a view the open menu hides still counts; the confirm lists the sign-in sites
-of the tab's trail, `model.siteTrail`, and names the site alone until the
-trail is read; [lifecycle.md](lifecycle.md#clearing-one-site)) and Develop.
-This tab
-(`browserTabRowsOf`) holds Copy address, Duplicate (`model.duplicate`, the
-shown address in a new tab) and Close tab (off for a pin). Develop
-(`browserDevelopRowsOf`) holds Reload without cache (off with no tab), the
-width presets (absent with no tab shown) and, on macOS, Inspect in Safari; its
-hint names the current preset.
+The page menu (`BrowserMoreMenu`, label "Page menu", off rules in
+`browserMoreRows.ts`) opens from the chevron beside the address, a 24px
+`MenuTriggerButton` with `aria-haspopup` and `aria-expanded`. It exists only
+while a tab is shown and the address is not being edited. Under 560px it starts
+with a Tabs list of the other tabs (`browserMenuTabsOf`, a list and not rows
+of the budget). Then five rows: Send to agent
+([doors.md](doors.md#send-to-agent)), Pin to the session's project or Unpin
+(⌘D, absent without a project), Clear site data (`siteDataRowOf`, an inline
+confirm, off without a web page view; a view the open menu hides still counts;
+the confirm lists the sign-in sites of the tab's trail, `model.siteTrail`, and
+names the site alone until the trail is read;
+[lifecycle.md](lifecycle.md#clearing-one-site)), This tab and Develop.
+This tab (`browserTabRowsOf`) holds Copy address, Duplicate
+(`model.duplicate`, the shown address in a new tab), Open in your browser and
+Close tab (off for a pin). Develop (`browserDevelopRowsOf`) holds the width
+presets, on macOS Inspect in Safari, and Show site data where the workspace
+has its own store; its hint names the current preset.
+The menu holds no reload row and no Open full page. While it is open the
+native view hides under its cover ([placement.md](placement.md#overlays)).
+
+### Show site data
+
+Show site data opens a panel under the chevron, in place of the menu: every
+site that keeps data in this workspace, with its kinds (cookies, local storage,
+IndexedDB, cache, service workers). The tab's own site reads "This tab" and
+comes first, a site of its sign-in trail reads "Sign-in for this tab" and comes
+next. Sizes are not shown, since WebKit does not give them. `SiteDataPanel`
+draws it from `model.siteRecords` (`hooks/useSiteRecords`); the commands are in
+[lifecycle.md](lifecycle.md#listing-the-sites-that-keep-data).
+
+- The row exists only on macOS with a store per workspace. Elsewhere it is
+  absent and the page menu keeps Clear browser data.
+- Clear on a row asks on that row ("Signs you out of every app that uses it").
+  Cancel keeps the row. A clear that works removes the row and the line under
+  the address names the site; the tab reloads without cache only when the site
+  is its own or in its trail.
+- A clear that fails keeps the list as it was and shows the error under the
+  address. A second window clearing the same workspace gets "already clearing".
+- The panel has no Clear all. Its last line points to the workspace settings,
+  which clear every site.
+- The list is read when the panel opens and again for another shown tab. An
+  answer for a tab that is no longer shown is dropped.
 
 ### Width presets
 
@@ -191,7 +230,10 @@ lists it (`docs/testing.md` → Manual release gate: inspect in Safari).
 While the browser has the keyboard (focus in the pane or the page webview),
 ⌘R reloads the shown tab. The pane and the page register `model.reload` with
 `useReloadSurface`, and the menu bar brings ⌘R to the window even when the page
-has focus, since a menu command never goes to a browser tab. ⌘⇧R reloads Goodboy ([shortcuts.md](../navigation/shortcuts.md)).
+has focus, since a menu command never goes to a browser tab. ⌘⇧R reloads the
+shown tab without cache, and Goodboy where no browser has the keys
+([lifecycle.md](lifecycle.md#reload-without-cache),
+[shortcuts.md](../navigation/shortcuts.md)).
 
 ## Tabs
 
@@ -270,7 +312,11 @@ Writes name the session and the tab, and wait for the host.
   commands and `addressOf.ts` is the address rule. `store/slices/browser-host/`
   holds the loads by live tab id and the icons by origin. `browser/find.rs`
   builds the find script.
-- Tests: `components/BrowserPane/index.test.tsx`, `parked.test.tsx` (coming
+- `components/BrowserPane/browserStripGroupsOf.ts` builds the strip groups for
+  the pane and the page.
+- Tests: `components/BrowserPane/index.test.tsx` (page menu rows, pin and
+  unpin), `rowLayout.test.tsx` (six fixed controls, the chevron from the
+  keyboard, the narrow row and its Tabs list), `parked.test.tsx` (coming
   back), `hostFacts.test.tsx` (load line, history, icons), `keys.test.tsx`
   (find), `addressOf.test.ts` and `browser/find.rs`.
 - Scenes, light and dark: `browser-pane`, `browser-pane-tabs`,

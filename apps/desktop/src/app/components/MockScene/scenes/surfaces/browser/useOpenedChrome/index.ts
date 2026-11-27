@@ -21,14 +21,15 @@ const FIND_FIELD = `${PANE} input[aria-label="Find in page"]`;
 const SELECTORS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   address: PILL,
   field: PILL,
-  more: `${PANE} button[aria-label="More"]`,
-  handoff: `${PANE} button[aria-label="More"]`,
+  more: `${PANE} button[aria-label="Page menu"]`,
+  handoff: `${PANE} button[aria-label="Page menu"]`,
   console: `${PANE} button[aria-label="Console"]`,
   pick: `${PANE} button[aria-label="Select an element"]`,
   'console-right': `${PANE} button[aria-label="Console"]`,
   network: `${PANE} button[aria-label="Console"]`,
   'network-detail': `${PANE} button[aria-label="Console"]`,
-  errors: `${PANE} button[data-browser-errors]`,
+  errors: `${PANE} button[aria-label="Console"][aria-describedby]`,
+  'site-data': `${PANE} button[aria-label="Page menu"]`,
 };
 
 const TOOLS = `${PANE} section[aria-label="Console"]`;
@@ -40,6 +41,7 @@ const OPENED: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   'network-detail': TOOLS,
   errors: TOOLS,
   pick: `${PANE} [aria-label="Note for the picked element"]`,
+  'site-data': '[role="menu"][aria-label="Page menu"]',
 };
 
 const NETWORK_TAB = `${TOOLS} [role="tablist"][aria-label="Tools"] [role="tab"][aria-selected="false"]`;
@@ -47,6 +49,10 @@ const NETWORK_TAB = `${TOOLS} [role="tablist"][aria-label="Tools"] [role="tab"][
 const NEXT_CLICKS: Readonly<Partial<Record<BrowserPaneSceneState, ReadonlyArray<string>>>> = {
   network: [NETWORK_TAB],
   'network-detail': [NETWORK_TAB, `${TOOLS} button[aria-label="POST /api/charge, 500"]`],
+  'site-data': [
+    '[role="menuitem"][data-menu-label="Develop"]',
+    '[role="menuitem"][data-menu-label="Show site data"]',
+  ],
 };
 
 const FIELDS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {

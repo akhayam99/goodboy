@@ -7,7 +7,7 @@ export type UndeliveredPermission = {
   readonly toolName: string;
   readonly input: unknown;
   readonly runId: ProviderRunId;
-  readonly verdict: 'allow' | 'deny';
+  readonly verdict: 'allow' | 'allowAlways' | 'deny';
 };
 
 const undelivered = new Map<string, UndeliveredPermission>();

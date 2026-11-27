@@ -1,13 +1,6 @@
-import type { EffortLevel, OpenRouterModel } from '@goodboy/types';
-
-const EFFORTS = [
-  'minimal',
-  'low',
-  'medium',
-  'high',
-  'xhigh',
-  'max',
-] satisfies ReadonlyArray<EffortLevel>;
+import type { OpenRouterModel } from '@goodboy/types';
+import { OPENROUTER_ALL_EFFORTS as EFFORTS } from './allEfforts';
+import { OPENROUTER_NEWEST_CATALOG } from './newestCatalog';
 
 export const OPENROUTER_CATALOG = [
   {
@@ -295,7 +288,7 @@ export const OPENROUTER_CATALOG = [
       group: 'GPT',
       version: '6.1',
       checkpoint: 'Sol',
-      order: 67,
+      order: 77,
       costTier: 'expensive',
     },
     provider: 'openrouter',
@@ -780,4 +773,5 @@ export const OPENROUTER_CATALOG = [
     efforts: EFFORTS,
     defaultEffort: 'medium',
   },
+  ...OPENROUTER_NEWEST_CATALOG,
 ] satisfies ReadonlyArray<OpenRouterModel>;

@@ -21,7 +21,7 @@ const check = ({
 
 describe('checkPick', () => {
   it('keeps a Lead pick on a lower provider when it is a candidate', () => {
-    const checked = check({ pick: { provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' } });
+    const checked = check({ pick: { provider: 'codex', model: 'gpt-6.2-sol', effort: 'medium' } });
     expect(checked.kind).toBe('kept');
     expect(checked.kind === 'kept' && checked.candidate.provider).toBe('codex');
   });
@@ -51,7 +51,7 @@ describe('checkPick', () => {
   it('moves a pick on a provider cooling down', () => {
     const checked = check({
       inputs: candidateInputsOf({ coolingDown: ['codex'] }),
-      pick: { provider: 'codex', model: 'gpt-6.1-sol' },
+      pick: { provider: 'codex', model: 'gpt-6.2-sol' },
     });
     expect(checked).toMatchObject({ kind: 'moved', cause: 'cooldown' });
   });

@@ -7,6 +7,7 @@ use tokio::sync::Mutex;
 
 use super::frame::{read_frame, write_frame, NOISE_MAX};
 use super::identity::{clean_phone_name, Identity};
+use super::pairing::{code_of, PairingHold, Verdict};
 use super::permissions::Permissions;
 use super::server::send_app;
 use super::tokens::TokenStore;
@@ -26,6 +27,10 @@ pub enum RefusalCode {
     ProtocolUnsupported,
     NotPaired,
     TokenInvalid,
+    RateLimited,
+    PairingDenied,
+    PairingExpired,
+    PairingBusy,
 }
 
 impl RefusalCode {
@@ -34,6 +39,10 @@ impl RefusalCode {
             Self::ProtocolUnsupported => "protocol_unsupported",
             Self::NotPaired => "not_paired",
             Self::TokenInvalid => "token_invalid",
+            Self::RateLimited => "rate_limited",
+            Self::PairingDenied => "pairing_denied",
+            Self::PairingExpired => "pairing_expired",
+            Self::PairingBusy => "pairing_busy",
         }
     }
 
@@ -48,11 +57,25 @@ impl RefusalCode {
             Self::TokenInvalid => {
                 "This code was used or has expired. Scan the new code in Settings, iPhone."
             }
+            Self::RateLimited => "Too many tries from this network. Wait a moment, then try again.",
+            Self::PairingDenied => "This pairing was declined on your Mac.",
+            Self::PairingExpired => {
+                "Nobody answered on your Mac in time. Scan a new code in Settings, iPhone."
+            }
+            Self::PairingBusy => {
+                "Your Mac is already asking about another iPhone. Try again in a minute."
+            }
         }
     }
 
     pub fn is_polite(self) -> bool {
-        matches!(self, Self::ProtocolUnsupported)
+        matches!(
+            self,
+            Self::ProtocolUnsupported
+                | Self::PairingDenied
+                | Self::PairingExpired
+                | Self::PairingBusy
+        )
     }
 }
 
@@ -112,22 +135,70 @@ fn parse_hello(payload: &[u8]) -> Result<Intent, BridgeError> {
     )))
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Forced {
+    pub code: RefusalCode,
+    pub retry_after: Option<Duration>,
+}
+
 pub async fn authorize_within(
     stream: &mut TcpStream,
     identity: &Mutex<Identity>,
     tokens: &TokenStore,
+    pairing: &PairingHold,
     deadline: Duration,
 ) -> Result<Authorized, BridgeError> {
-    tokio::time::timeout(deadline, authorize_handshake(stream, identity, tokens))
+    let staged = tokio::time::timeout(deadline, open_handshake(stream, identity, tokens, None))
         .await
-        .map_err(|_| BridgeError::Protocol("handshake timed out".into()))?
+        .map_err(|_| BridgeError::Protocol("handshake timed out".into()))??;
+    settle_handshake(stream, identity, pairing, staged).await
 }
 
+pub async fn refuse_within(
+    stream: &mut TcpStream,
+    identity: &Mutex<Identity>,
+    tokens: &TokenStore,
+    pairing: &PairingHold,
+    forced: Forced,
+    deadline: Duration,
+) -> Result<(), BridgeError> {
+    let work = async {
+        let staged = open_handshake(stream, identity, tokens, Some(forced)).await?;
+        settle_handshake(stream, identity, pairing, staged).await
+    };
+    match tokio::time::timeout(deadline, work).await {
+        Ok(Ok(_)) => Ok(()),
+        Ok(Err(error)) => Err(error),
+        Err(_) => Err(BridgeError::Protocol("handshake timed out".into())),
+    }
+}
+
+#[cfg(test)]
 pub async fn authorize_handshake(
     stream: &mut TcpStream,
     identity: &Mutex<Identity>,
     tokens: &TokenStore,
+    pairing: &PairingHold,
 ) -> Result<Authorized, BridgeError> {
+    let staged = open_handshake(stream, identity, tokens, None).await?;
+    settle_handshake(stream, identity, pairing, staged).await
+}
+
+struct Staged {
+    hs: snow::HandshakeState,
+    phone_key: Vec<u8>,
+    refusal: Option<RefusalCode>,
+    retry_after: Option<Duration>,
+    enroll_as: Option<String>,
+    code: String,
+}
+
+async fn open_handshake(
+    stream: &mut TcpStream,
+    identity: &Mutex<Identity>,
+    tokens: &TokenStore,
+    forced: Option<Forced>,
+) -> Result<Staged, BridgeError> {
     let static_priv = { identity.lock().await.static_priv()? };
     let mut hs = snow::Builder::new(noise_params())
         .local_private_key(&static_priv)
@@ -142,18 +213,20 @@ pub async fn authorize_handshake(
         .map_err(|e| BridgeError::Noise(e.to_string()))?;
     let intent = parse_hello(&scratch[..n])?;
 
-    let mut refusal: Option<RefusalCode> = None;
+    let mut refusal: Option<RefusalCode> = forced.map(|f| f.code);
     let mut enroll_as: Option<String> = None;
-    match intent {
-        Intent::Unsupported => refusal = Some(RefusalCode::ProtocolUnsupported),
-        Intent::Phone {
-            token: Some(token),
-            name,
-        } => match tokens.consume(&token) {
-            true => enroll_as = Some(name),
-            false => refusal = Some(RefusalCode::TokenInvalid),
-        },
-        Intent::Phone { token: None, .. } => {}
+    if refusal.is_none() {
+        match intent {
+            Intent::Unsupported => refusal = Some(RefusalCode::ProtocolUnsupported),
+            Intent::Phone {
+                token: Some(token),
+                name,
+            } => match tokens.consume(&token) {
+                true => enroll_as = Some(name),
+                false => refusal = Some(RefusalCode::TokenInvalid),
+            },
+            Intent::Phone { token: None, .. } => {}
+        }
     }
 
     let len = hs
@@ -169,21 +242,70 @@ pub async fn authorize_handshake(
         .ok_or_else(|| BridgeError::Protocol("missing phone static after msg3".into()))?
         .to_vec();
 
+    let code = code_of(hs.get_handshake_hash());
+    Ok(Staged {
+        hs,
+        phone_key,
+        code,
+        refusal,
+        retry_after: forced.and_then(|f| f.retry_after),
+        enroll_as,
+    })
+}
+
+async fn admit(
+    identity: &Mutex<Identity>,
+    pairing: &PairingHold,
+    phone_key: &[u8],
+    enroll_as: Option<String>,
+    code: &str,
+) -> Result<(Option<RefusalCode>, Permissions), BridgeError> {
+    let Some(name) = enroll_as else {
+        let mut id = identity.lock().await;
+        if !id.is_enrolled(phone_key) {
+            return Ok((Some(RefusalCode::NotPaired), Permissions::default()));
+        }
+        id.touch_seen(phone_key)?;
+        return Ok((None, id.permissions_of(phone_key).unwrap_or_default()));
+    };
+    let is_known = identity.lock().await.is_enrolled(phone_key);
+    if !is_known {
+        let code = match pairing.request(&name, code).await {
+            Verdict::Allowed => None,
+            Verdict::Denied => Some(RefusalCode::PairingDenied),
+            Verdict::Expired => Some(RefusalCode::PairingExpired),
+            Verdict::Busy => Some(RefusalCode::PairingBusy),
+        };
+        if code.is_some() {
+            return Ok((code, Permissions::default()));
+        }
+    }
+    let mut id = identity.lock().await;
+    id.enroll(phone_key, &name)?;
+    id.touch_seen(phone_key)?;
+    Ok((None, id.permissions_of(phone_key).unwrap_or_default()))
+}
+
+async fn settle_handshake(
+    stream: &mut TcpStream,
+    identity: &Mutex<Identity>,
+    pairing: &PairingHold,
+    staged: Staged,
+) -> Result<Authorized, BridgeError> {
+    let Staged {
+        hs,
+        phone_key,
+        mut refusal,
+        retry_after,
+        enroll_as,
+        code,
+    } = staged;
+
     let mut permissions = Permissions::default();
     if refusal.is_none() {
-        let mut id = identity.lock().await;
-        match enroll_as {
-            Some(name) => id.enroll(&phone_key, &name)?,
-            None => {
-                if !id.is_enrolled(&phone_key) {
-                    refusal = Some(RefusalCode::NotPaired);
-                }
-            }
-        }
-        if refusal.is_none() {
-            id.touch_seen(&phone_key)?;
-            permissions = id.permissions_of(&phone_key).unwrap_or_default();
-        }
+        let (code, granted) = admit(identity, pairing, &phone_key, enroll_as, &code).await?;
+        refusal = code;
+        permissions = granted;
     }
 
     let mut transport = hs
@@ -191,18 +313,17 @@ pub async fn authorize_handshake(
         .map_err(|e| BridgeError::Noise(e.to_string()))?;
 
     if let Some(code) = refusal {
-        send_app(
-            stream,
-            &mut transport,
-            OP_REFUSED,
-            &json!({
-                "code": code.wire(),
-                "message": code.message(),
-                "desktopProtocol": PROTOCOL_VERSION,
-            }),
-        )
-        .await
-        .ok();
+        let mut body = json!({
+            "code": code.wire(),
+            "message": code.message(),
+            "desktopProtocol": PROTOCOL_VERSION,
+        });
+        if let (Some(wait), Some(object)) = (retry_after, body.as_object_mut()) {
+            object.insert("retryAfterSecs".to_string(), json!(wait.as_secs().max(1)));
+        }
+        send_app(stream, &mut transport, OP_REFUSED, &body)
+            .await
+            .ok();
         return Err(BridgeError::Refused(code));
     }
 
@@ -222,6 +343,10 @@ mod tests {
     use std::path::PathBuf;
     use std::sync::Arc;
     use tokio::net::TcpListener;
+
+    static PHONE_CODES: std::sync::LazyLock<
+        std::sync::Mutex<std::collections::HashMap<Vec<u8>, String>>,
+    > = std::sync::LazyLock::new(Default::default);
 
     struct Phone {
         private: Vec<u8>,
@@ -334,12 +459,43 @@ mod tests {
         phone: &Phone,
         payload: &[u8],
     ) -> Attempt {
+        dial_with(
+            desktop,
+            identity,
+            phone,
+            payload,
+            Arc::new(PairingHold::answering(true)),
+            None,
+        )
+        .await
+    }
+
+    async fn dial_with(
+        desktop: &Desktop,
+        identity: Arc<Mutex<Identity>>,
+        phone: &Phone,
+        payload: &[u8],
+        pairing: Arc<PairingHold>,
+        forced: Option<Forced>,
+    ) -> Attempt {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
         let tokens = desktop.tokens.clone();
         let server = tokio::spawn(async move {
             let (mut stream, _) = listener.accept().await.unwrap();
-            let mut auth = authorize_handshake(&mut stream, &identity, &tokens).await?;
+            if let Some(forced) = forced {
+                refuse_within(
+                    &mut stream,
+                    &identity,
+                    &tokens,
+                    &pairing,
+                    forced,
+                    Duration::from_secs(5),
+                )
+                .await?;
+                return Ok(());
+            }
+            let mut auth = authorize_handshake(&mut stream, &identity, &tokens, &pairing).await?;
             send_app(
                 &mut stream,
                 &mut auth.transport,
@@ -384,6 +540,10 @@ mod tests {
         hs.read_message(&msg2, &mut buf).ok()?;
         let len = hs.write_message(&[], &mut buf).unwrap();
         write_frame(stream, &buf[..len]).await.ok()?;
+        PHONE_CODES
+            .lock()
+            .unwrap()
+            .insert(phone.public.clone(), code_of(hs.get_handshake_hash()));
         let mut transport = hs.into_transport_mode().unwrap();
         let frame = read_frame(stream).await.ok()?;
         let n = transport.read_message(&frame, &mut buf).ok()?;
@@ -400,9 +560,15 @@ mod tests {
         let tokens = desktop.tokens.clone();
         let server = tokio::spawn(async move {
             let (mut stream, _) = listener.accept().await.unwrap();
-            authorize_within(&mut stream, &identity, &tokens, Duration::from_millis(200))
-                .await
-                .map(|_| ())
+            authorize_within(
+                &mut stream,
+                &identity,
+                &tokens,
+                &PairingHold::answering(true),
+                Duration::from_millis(200),
+            )
+            .await
+            .map(|_| ())
         });
         let _silent = TcpStream::connect(addr).await.unwrap();
 
@@ -427,9 +593,15 @@ mod tests {
         let tokens = desktop.tokens.clone();
         let server = tokio::spawn(async move {
             let (mut stream, _) = listener.accept().await.unwrap();
-            authorize_within(&mut stream, &identity, &tokens, Duration::from_millis(200))
-                .await
-                .map(|_| ())
+            authorize_within(
+                &mut stream,
+                &identity,
+                &tokens,
+                &PairingHold::answering(true),
+                Duration::from_millis(200),
+            )
+            .await
+            .map(|_| ())
         });
         let mut stream = TcpStream::connect(addr).await.unwrap();
         let mut hs = snow::Builder::new(noise_params())
@@ -722,5 +894,247 @@ mod tests {
         assert!(RefusalCode::ProtocolUnsupported.is_polite());
         assert!(!RefusalCode::NotPaired.is_polite());
         assert!(!RefusalCode::TokenInvalid.is_polite());
+        assert!(!RefusalCode::RateLimited.is_polite());
+    }
+
+    #[tokio::test]
+    async fn a_rate_limited_source_hears_the_reason_and_how_long_to_wait() {
+        let desktop = Desktop::new("rate-limited", TokenStore::new());
+        let phone = new_phone();
+        let forced = Forced {
+            code: RefusalCode::RateLimited,
+            retry_after: Some(Duration::from_secs(12)),
+        };
+
+        let attempt = dial_with(
+            &desktop,
+            desktop.identity.clone(),
+            &phone,
+            &v2_hello(None, "Harborline iPhone"),
+            Arc::new(PairingHold::answering(true)),
+            Some(forced),
+        )
+        .await;
+
+        assert_eq!(
+            attempt.refusal_code_heard().as_deref(),
+            Some("rate_limited")
+        );
+        let (_, body) = attempt.heard_by_phone.unwrap();
+        assert_eq!(body["retryAfterSecs"], 12);
+        assert!(!desktop.is_enrolled(&phone).await);
+    }
+
+    #[tokio::test]
+    async fn a_rate_limited_dial_does_not_burn_a_pairing_code_or_enroll() {
+        let desktop = Desktop::new("rate-limited-token", TokenStore::new());
+        let token = desktop.tokens.mint();
+        let phone = new_phone();
+        let forced = Forced {
+            code: RefusalCode::RateLimited,
+            retry_after: None,
+        };
+
+        dial_with(
+            &desktop,
+            desktop.identity.clone(),
+            &phone,
+            &v2_hello(Some(&token), "Harborline iPhone"),
+            Arc::new(PairingHold::answering(true)),
+            Some(forced),
+        )
+        .await;
+        let later = dial(
+            &desktop,
+            desktop.identity.clone(),
+            &phone,
+            &v2_hello(Some(&token), "Harborline iPhone"),
+        )
+        .await;
+
+        assert!(later.server.is_ok());
+        assert!(desktop.is_enrolled(&phone).await);
+    }
+
+    #[tokio::test]
+    async fn a_new_phone_with_a_valid_code_is_not_added_until_the_user_allows_it() {
+        let desktop = Desktop::new("held", TokenStore::new());
+        let token = desktop.tokens.mint();
+        let phone = new_phone();
+        let hold = Arc::new(PairingHold::answering(false));
+
+        let attempt = dial_with(
+            &desktop,
+            desktop.identity.clone(),
+            &phone,
+            &v2_hello(Some(&token), "Harborline iPhone"),
+            hold,
+            None,
+        )
+        .await;
+
+        assert_eq!(attempt.refusal(), Some(RefusalCode::PairingDenied));
+        assert_eq!(
+            attempt.refusal_code_heard().as_deref(),
+            Some("pairing_denied")
+        );
+        assert!(!desktop.is_enrolled(&phone).await);
+    }
+
+    #[tokio::test]
+    async fn the_phone_waits_for_the_answer_and_is_added_only_after_allow() {
+        let desktop = Desktop::new("held-allow", TokenStore::new());
+        let token = desktop.tokens.mint();
+        let phone = new_phone();
+        let hold = Arc::new(PairingHold::with_window(Duration::from_secs(5)));
+        let identity = desktop.identity.clone();
+        let phone_key = phone.public.clone();
+
+        let waiting = {
+            let hold = hold.clone();
+            let identity = identity.clone();
+            tokio::spawn(async move {
+                let pending = loop {
+                    if let Some(pending) = hold.pending() {
+                        break pending;
+                    }
+                    tokio::task::yield_now().await;
+                };
+                let is_enrolled_while_held = identity.lock().await.is_enrolled(&phone_key);
+                hold.decide(&pending.id, true);
+                is_enrolled_while_held
+            })
+        };
+        let attempt = dial_with(
+            &desktop,
+            identity,
+            &phone,
+            &v2_hello(Some(&token), "Harborline iPhone"),
+            hold,
+            None,
+        )
+        .await;
+
+        assert!(!waiting.await.unwrap());
+        assert!(attempt.server.is_ok());
+        assert!(desktop.is_enrolled(&phone).await);
+    }
+
+    #[tokio::test]
+    async fn an_unanswered_pairing_expires_with_a_reason_and_adds_nothing() {
+        let desktop = Desktop::new("held-expire", TokenStore::new());
+        let token = desktop.tokens.mint();
+        let phone = new_phone();
+
+        let attempt = dial_with(
+            &desktop,
+            desktop.identity.clone(),
+            &phone,
+            &v2_hello(Some(&token), "Harborline iPhone"),
+            Arc::new(PairingHold::with_window(Duration::from_millis(40))),
+            None,
+        )
+        .await;
+
+        assert_eq!(
+            attempt.refusal_code_heard().as_deref(),
+            Some("pairing_expired")
+        );
+        assert!(!desktop.is_enrolled(&phone).await);
+    }
+
+    #[tokio::test]
+    async fn an_unknown_phone_hears_not_paired_before_the_close() {
+        let desktop = Desktop::new("not-paired-frame", TokenStore::new());
+        let phone = new_phone();
+
+        let attempt = dial(
+            &desktop,
+            desktop.identity.clone(),
+            &phone,
+            &v2_hello(None, "Harborline iPhone"),
+        )
+        .await;
+
+        assert_eq!(attempt.refusal_code_heard().as_deref(), Some("not_paired"));
+    }
+
+    #[tokio::test]
+    async fn a_used_code_and_an_old_phone_each_hear_their_reason() {
+        let desktop = Desktop::new("reasons", TokenStore::new());
+        let phone = new_phone();
+
+        let stale = dial(
+            &desktop,
+            desktop.identity.clone(),
+            &phone,
+            &v2_hello(Some(&[7u8; 32]), "Harborline iPhone"),
+        )
+        .await;
+        let old = dial(&desktop, desktop.identity.clone(), &phone, &[1u8; 32]).await;
+
+        assert_eq!(stale.refusal_code_heard().as_deref(), Some("token_invalid"));
+        assert_eq!(
+            old.refusal_code_heard().as_deref(),
+            Some("protocol_unsupported")
+        );
+    }
+
+    #[tokio::test]
+    async fn the_mac_and_the_phone_compute_the_same_code_without_sending_it() {
+        let desktop = Desktop::new("code", TokenStore::new());
+        let token = desktop.tokens.mint();
+        let phone = new_phone();
+        let hold = Arc::new(PairingHold::with_window(Duration::from_secs(5)));
+        let reader = {
+            let hold = hold.clone();
+            tokio::spawn(async move {
+                let pending = loop {
+                    if let Some(pending) = hold.pending() {
+                        break pending;
+                    }
+                    tokio::task::yield_now().await;
+                };
+                hold.decide(&pending.id, true);
+                pending.code
+            })
+        };
+
+        dial_with(
+            &desktop,
+            desktop.identity.clone(),
+            &phone,
+            &v2_hello(Some(&token), "Harborline iPhone"),
+            hold,
+            None,
+        )
+        .await;
+
+        let shown = reader.await.unwrap();
+        let phone_sees = PHONE_CODES.lock().unwrap().get(&phone.public).cloned();
+        assert_eq!(phone_sees.as_deref(), Some(shown.as_str()));
+        assert_eq!(shown.len(), 7);
+    }
+
+    #[tokio::test]
+    async fn two_attempts_with_the_same_token_stolen_get_different_codes() {
+        let desktop = Desktop::new("code-differs", TokenStore::new());
+        let first = new_phone();
+        let second = new_phone();
+        for phone in [&first, &second] {
+            let token = desktop.tokens.mint();
+            dial_with(
+                &desktop,
+                desktop.identity.clone(),
+                phone,
+                &v2_hello(Some(&token), "Harborline iPhone"),
+                Arc::new(PairingHold::answering(false)),
+                None,
+            )
+            .await;
+        }
+
+        let codes = PHONE_CODES.lock().unwrap();
+        assert_ne!(codes.get(&first.public), codes.get(&second.public));
     }
 }

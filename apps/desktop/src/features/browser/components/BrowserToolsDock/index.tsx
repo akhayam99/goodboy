@@ -3,11 +3,14 @@ import { SplitHandle, cn } from '@goodboy/ui';
 import {
   browserToolsDockPref,
   type BrowserToolsPlace,
+  type BrowserToolsSide,
   type BrowserToolsSurface,
 } from '../../browserToolsDockPref';
 import { consoleCounts } from '../../consoleCounts';
+import type { BrowserTools } from '../../hooks/useBrowserTools';
 import type { ConsoleEntries } from '../../hooks/useConsoleEntries';
-import type { BrowserPaneModel, BrowserToolsTab } from '../../types';
+import { NARROW_ROW_PX } from '../../narrowRowPx';
+import type { BrowserPaneModel } from '../../types';
 import { BrowserConsole } from './BrowserConsole';
 import { ErrorsTab } from './ErrorsTab';
 import { NetworkTab } from './NetworkTab';
@@ -15,18 +18,12 @@ import { toolsDockBoundsOf } from './toolsDockBoundsOf';
 
 type Props = {
   readonly surface: BrowserToolsSurface;
-  readonly isOpen: boolean;
+  readonly tools: BrowserTools;
+  readonly hasTab: boolean;
   readonly model: BrowserPaneModel;
   readonly title: string;
   readonly log: ConsoleEntries;
-  readonly tab: BrowserToolsTab;
-  readonly onTab: (params: TabParams) => void;
-  readonly onClose: () => void;
   readonly children: ReactNode;
-};
-
-type TabParams = {
-  readonly next: BrowserToolsTab;
 };
 
 type Room = {
@@ -47,15 +44,16 @@ const RESIZE_LABEL = {
 
 export const BrowserToolsDock = ({
   surface,
-  isOpen,
+  tools,
+  hasTab,
   model,
   title,
   log,
-  tab,
-  onTab,
-  onClose,
   children,
 }: Props) => {
+  const isOpen = tools.isOpen && hasTab;
+  const tab = tools.tab;
+  const onTab = tools.setTab;
   const counts = consoleCounts({ entries: log.entries });
   const isErrorsTabEmpty = tab === 'errors' && counts.errors === 0;
   const shownTab = isErrorsTabEmpty ? 'console' : tab;
@@ -64,8 +62,10 @@ export const BrowserToolsDock = ({
     browserToolsDockPref.read({ surface }),
   );
   const [room, setRoom] = useState<Room | null>(null);
-  const isRight = place.side === 'right';
-  const bounds = toolsDockBoundsOf({ side: place.side, room });
+  const isNarrow = room !== null && room.width > 0 && room.width < NARROW_ROW_PX;
+  const side: BrowserToolsSide = isNarrow ? 'bottom' : place.side;
+  const isRight = side === 'right';
+  const bounds = toolsDockBoundsOf({ side, room });
   const wanted = isRight ? place.width : place.height;
   const size = Math.min(bounds.max, Math.max(bounds.min, wanted));
   const isToolsInHead = !isRight && (room === null || room.width >= TOOLS_IN_HEAD_MIN_WIDTH);
@@ -109,6 +109,8 @@ export const BrowserToolsDock = ({
     browserToolsDockPref.write({ surface, place: nextPlace });
   };
 
+  const onSide = isNarrow ? undefined : moveSide;
+
   return (
     <div
       ref={stage}
@@ -118,20 +120,23 @@ export const BrowserToolsDock = ({
       {children}
       {isOpen ? (
         <section
+          ref={tools.dockRef}
           aria-label="Console"
-          data-tools-side={place.side}
+          data-tools-side={side}
           style={isRight ? { width: size } : { height: size }}
+          onFocus={tools.focusWatch.onFocus}
+          onBlur={tools.focusWatch.onBlur}
           className="relative flex min-h-0 min-w-0 shrink-0 flex-col bg-drawer"
         >
           <div
             className={cn('absolute z-10 flex', isRight ? 'inset-y-0 left-0' : 'inset-x-0 top-0')}
           >
             <SplitHandle
-              side={place.side}
+              side={side}
               value={size}
               min={bounds.min}
               max={bounds.max}
-              ariaLabel={RESIZE_LABEL[place.side]}
+              ariaLabel={RESIZE_LABEL[side]}
               onChange={(next) => resize({ size: next })}
               onCommit={(next) => commit({ size: next })}
             />
@@ -142,11 +147,10 @@ export const BrowserToolsDock = ({
               title={title}
               log={log}
               counts={counts}
-              side={place.side}
+              side={side}
               isToolsInHead={isToolsInHead}
               onTab={onTab}
-              onSide={moveSide}
-              onClose={onClose}
+              onSide={onSide}
             />
           ) : null}
           {shownTab === 'network' ? (
@@ -154,11 +158,10 @@ export const BrowserToolsDock = ({
               model={model}
               counts={counts}
               log={log}
-              side={place.side}
+              side={side}
               isToolsInHead={isToolsInHead}
               onTab={onTab}
-              onSide={moveSide}
-              onClose={onClose}
+              onSide={onSide}
             />
           ) : null}
           {shownTab === 'console' ? (
@@ -167,11 +170,10 @@ export const BrowserToolsDock = ({
               counts={counts}
               title={title}
               log={log}
-              side={place.side}
+              side={side}
               isToolsInHead={isToolsInHead}
               onTab={onTab}
-              onSide={moveSide}
-              onClose={onClose}
+              onSide={onSide}
             />
           ) : null}
         </section>

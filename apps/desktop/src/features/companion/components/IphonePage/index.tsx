@@ -4,6 +4,8 @@ import type { BridgeStatus } from '../../bridge';
 import { NetworkChoice } from './NetworkChoice';
 import { PairedDevices } from './PairedDevices';
 import { PairingCode } from './PairingCode';
+import { PairingFault } from './PairingFault';
+import { PairingRequest } from './PairingRequest';
 import { useIphonePairing } from './useIphonePairing';
 
 const PAIRING_STEPS = ['Open Goodboy on your iPhone.', 'Point the camera at this code.'];
@@ -57,6 +59,8 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
     revokeOne,
     setPermissions,
     toggleInterface,
+    decidePairing,
+    resetPairing,
     pair,
     cancel,
   } = useIphonePairing({ onStopFailed });
@@ -72,6 +76,19 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
     </Button>
   ) : undefined;
 
+  const fault = status?.fault ?? null;
+  const pending = status?.pendingPairing ?? null;
+  const notices = (
+    <>
+      {fault === null ? null : (
+        <PairingFault fault={fault} isBusy={isChanging} onReset={resetPairing} />
+      )}
+      {pending === null ? null : (
+        <PairingRequest pending={pending} isBusy={isChanging} onDecide={decidePairing} />
+      )}
+    </>
+  );
+
   return (
     <PaneShell
       page="settings"
@@ -82,6 +99,7 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
     >
       {isShowingCode ? (
         <>
+          {notices}
           <Band
             inset="content"
             label={NAMES.pairIphone}
@@ -125,6 +143,7 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
         </>
       ) : (
         <>
+          {notices}
           {changeError === null ? null : (
             <Notice tone="danger" placement="inline" title={changeError} />
           )}

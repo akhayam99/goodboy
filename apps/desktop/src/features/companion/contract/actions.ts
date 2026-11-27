@@ -31,7 +31,7 @@ export type RequestPlanChangesAction = SessionActionBase & {
   readonly text: string;
 };
 
-export type PermissionVerdict = 'allow' | 'deny';
+export type PermissionVerdict = 'allow' | 'allowAlways' | 'deny';
 
 export type AnswerPermissionAction = SessionActionBase & {
   readonly kind: 'answerPermission';

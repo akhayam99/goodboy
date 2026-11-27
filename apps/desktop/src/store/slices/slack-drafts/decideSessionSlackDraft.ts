@@ -1,6 +1,7 @@
 import type { IntegrationDraftId, SessionId } from '@goodboy/types';
 import { decideSlackDraft } from '../../../features/integrations/slack/drafts';
-import type { SetFn } from './types';
+import { announceSessionFact } from '../../../shared/lib/dataChanged/announceSessionFact';
+import type { GetFn, SetFn } from './types';
 
 export type DecideSessionSlackDraftParams = {
   readonly sessionId: SessionId;
@@ -9,9 +10,10 @@ export type DecideSessionSlackDraftParams = {
   readonly body?: string;
 };
 
-export const decideSessionSlackDraft = (set: SetFn) => {
+export const decideSessionSlackDraft = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, draftId, status, body }: DecideSessionSlackDraftParams) => {
     await decideSlackDraft({ id: draftId, status, ...(body === undefined ? {} : { body }) });
+    announceSessionFact({ kind: 'slack-draft', sessionId });
     set((state) => ({
       sessionSlackDrafts: {
         ...state.sessionSlackDrafts,
@@ -20,5 +22,6 @@ export const decideSessionSlackDraft = (set: SetFn) => {
         ),
       },
     }));
+    await get().loadSessionSlackDrafts(sessionId);
   };
 };

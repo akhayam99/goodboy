@@ -26,7 +26,7 @@ type ReasonParams = {
 };
 
 type BusyParams = {
-  readonly action: () => Promise<void>;
+  readonly action: () => Promise<unknown>;
 };
 
 const ASK_SETTLE_MS = 400;

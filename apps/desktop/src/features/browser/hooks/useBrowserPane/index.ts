@@ -31,6 +31,8 @@ import { useDeviceAgent } from '../useDeviceAgent';
 import { useBrowserWorkspaceTabs } from '../../../../shared/hooks/useBrowserWorkspaceTabs';
 import { useTabStates } from '../useTabStates';
 import { useSiteTrail } from '../useSiteTrail';
+import { useSiteRecords } from '../useSiteRecords';
+import { recordsClearedText } from '../../recordsClearedText';
 import { currentPlatform } from '../../../../shared/platform';
 
 type Params = {
@@ -150,6 +152,25 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     host: siteHost,
     isReadable: hasShownView && currentPlatform() === 'darwin',
     mark: loadMark,
+  });
+  const siteRecords = useSiteRecords({
+    tabId: hasShownView ? shownLiveId : undefined,
+    isReadable: currentPlatform() === 'darwin',
+    onClearing: () => {
+      setError(null);
+      setNotice(null);
+    },
+    onCleared: ({ tabId, cleared }) => {
+      refresh();
+      if (shownLiveIdRef.current === tabId) {
+        setNotice(recordsClearedText({ cleared }));
+      }
+    },
+    onFailed: ({ tabId, error: failure }) => {
+      if (shownLiveIdRef.current === tabId) {
+        setError(browserFailureText({ error: failure }));
+      }
+    },
   });
   const allTabs = useMemo(() => [...tabs, ...pins], [tabs, pins]);
   const pageSend = useSendPageToAgent({
@@ -304,6 +325,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
         },
       );
     },
+    siteRecords,
     stop: () => {
       if (shownLiveId === undefined) {
         return;

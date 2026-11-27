@@ -11,7 +11,6 @@ import {
   both,
   click,
   clickButton,
-  clickMenuItem,
   heading,
   openPalette,
   settle,
@@ -220,8 +219,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: async () => {
       await click(railTool('browser'));
-      await clickButton('More');
-      await clickMenuItem(/^Open full page$/);
+      await clickButton(/^Open full page$/);
     },
     lands: both(
       () => studio('Browser'),
