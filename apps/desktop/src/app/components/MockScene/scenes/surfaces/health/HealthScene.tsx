@@ -14,7 +14,7 @@ import {
 const MINUTE_MS = 60_000;
 const DRIVE_AFTER_MS = 1_200;
 const MISSING_KEY = 'mock-brand-cred-linear';
-const CURRENT_CODEX_VERSION = '0.163.0';
+const CURRENT_CODEX_VERSION = '0.171.0';
 const CODEX_PAGE: ConnectionsFocus = { kind: 'provider', provider: 'codex' };
 const LINEAR_PAGE: ConnectionsFocus = { kind: 'tool', tool: 'linear' };
 

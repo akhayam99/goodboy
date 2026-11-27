@@ -86,7 +86,9 @@ describe('provider page CLI row', () => {
     expect(account.getByText('2.1.240')).toBeDefined();
     expect(screen.getByRole('region', { name: 'Connect card' })).toBeDefined();
     expect(
-      screen.getByText('Fable 5.1, Opus 5.5, Sonnet 5.5 and Haiku 5.5 need a newer Claude CLI'),
+      screen.getByText(
+        'Fable 5.2, Fable 5.1, Opus 5.5, Sonnet 5.5 and Haiku 5.5 need a newer Claude CLI',
+      ),
     ).toBeDefined();
     expect(updateProviderCli).toHaveBeenCalledOnce();
     expect(updateProviderCli).toHaveBeenCalledWith('anthropic');

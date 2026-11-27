@@ -2,7 +2,6 @@ import type { AnthropicModel, EffortLevel } from '@goodboy/types';
 
 const OPUS_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] satisfies ReadonlyArray<EffortLevel>;
 const OPUS_46_EFFORTS = ['low', 'medium', 'high', 'max'] satisfies ReadonlyArray<EffortLevel>;
-const SONNET_45_EFFORTS = ['low', 'medium', 'high'] satisfies ReadonlyArray<EffortLevel>;
 
 export const ANTHROPIC_CATALOG = [
   {
@@ -38,7 +37,7 @@ export const ANTHROPIC_CATALOG = [
     provider: 'anthropic',
     cliId: 'claude-opus-5-5',
     efforts: OPUS_EFFORTS,
-    defaultEffort: 'high',
+    defaultEffort: 'medium',
     minCliVersion: '2.1.280',
   },
   {
@@ -56,7 +55,8 @@ export const ANTHROPIC_CATALOG = [
     provider: 'anthropic',
     cliId: 'claude-fable-5-2',
     efforts: OPUS_EFFORTS,
-    defaultEffort: 'high',
+    defaultEffort: 'medium',
+    minCliVersion: '2.1.321',
   },
   {
     key: 'fable-5.1',
@@ -74,7 +74,7 @@ export const ANTHROPIC_CATALOG = [
     cliId: 'claude-fable-5-1',
     efforts: OPUS_EFFORTS,
     defaultEffort: 'high',
-    minCliVersion: '2.1.251',
+    minCliVersion: '2.1.257',
   },
   {
     key: 'fable-5',
@@ -213,7 +213,7 @@ export const ANTHROPIC_CATALOG = [
     },
     provider: 'anthropic',
     cliId: 'claude-sonnet-4-5',
-    efforts: SONNET_45_EFFORTS,
+    efforts: [],
     defaultEffort: 'medium',
   },
   {

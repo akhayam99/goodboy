@@ -4,8 +4,8 @@ import { modelLabel, suggestHeavierModel } from './chat-constants';
 
 describe('modelLabel', () => {
   it('uses the authored Astra label for its catalog key and cli id', () => {
-    expect(modelLabel('gpt-6')).toBe('Astra');
-    expect(modelLabel('gpt-6-astra')).toBe('Astra');
+    expect(modelLabel('gpt-6')).toBe('GPT-6 Astra');
+    expect(modelLabel('gpt-6-astra')).toBe('GPT-6 Astra');
   });
 
   it('uses the authored GPT-6.1 Sol label for its catalog key and cli id', () => {

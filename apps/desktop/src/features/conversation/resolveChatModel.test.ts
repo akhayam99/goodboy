@@ -6,7 +6,7 @@ describe('resolveChatModel', () => {
   it('turns a claude model key into the cli id and its default effort', () => {
     expect(resolveChatModel({ provider: 'anthropic', modelKey: 'opus-5.5' })).toEqual({
       model: 'claude-opus-5-5',
-      effort: 'high',
+      effort: 'medium',
     });
   });
 

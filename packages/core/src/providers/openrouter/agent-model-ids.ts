@@ -43,4 +43,12 @@ export const OPENROUTER_AGENT_MODEL_IDS = [
   'openrouter/z-ai/glm-5.1',
   'openrouter/z-ai/glm-5.2',
   'openrouter/z-ai/glm-5.3',
+  'openrouter/anthropic/claude-fable-5.2',
+  'openrouter/openai/gpt-6.2-astra',
+  'openrouter/openai/gpt-6.2-sol',
+  'openrouter/openai/gpt-6.1-terra',
+  'openrouter/google/gemini-4-neon',
+  'openrouter/google/gemini-4-carbon',
+  'openrouter/google/gemini-4-hydrogen',
+  'openrouter/moonshotai/kimi-k3.1-pro',
 ] satisfies ReadonlyArray<string>;

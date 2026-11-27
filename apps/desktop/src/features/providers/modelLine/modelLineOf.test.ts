@@ -196,9 +196,9 @@ describe('modelLineOf', () => {
   });
 
   it('keeps the level the word names when the model clamps what was asked', () => {
-    const line = modelLineOf({ provider: 'anthropic', model: 'sonnet-4.5', effort: 'max' });
+    const line = modelLineOf({ provider: 'anthropic', model: 'opus-4.6', effort: 'xhigh' });
 
-    expect(line?.effortLevels).toEqual(['low', 'medium', 'high']);
+    expect(line?.effortLevels).toEqual(['low', 'medium', 'high', 'max']);
     expect(line?.effortLevel).not.toBeNull();
     expect(EFFORT_LABEL[line?.effortLevel ?? 'minimal']).toBe(line?.effort);
   });
