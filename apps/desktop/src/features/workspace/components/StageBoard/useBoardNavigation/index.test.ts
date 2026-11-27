@@ -77,6 +77,21 @@ describe('useBoardNavigation', () => {
     expect(landedAt()).toMatchObject({ at: 'session', sessionId: SESSION_ID });
   });
 
+  it('selectCard lands on the Overview face even when the session keeps a desk', () => {
+    useAppStore.getState().setSessionFace({ sessionId: SESSION_ID, face: 'desk' });
+    const { result } = renderHook(() => useBoardNavigation());
+    act(() => result.current.selectCard(session));
+    expect(useAppStore.getState().sessionFace[SESSION_ID]).toBe('overview');
+    expect(landedAt()).toMatchObject({ at: 'session', sessionId: SESSION_ID });
+  });
+
+  it('a shortcut such as the pull request chip leaves the kept desk as it was', () => {
+    useAppStore.getState().setSessionFace({ sessionId: SESSION_ID, face: 'desk' });
+    const { result } = renderHook(() => useBoardNavigation());
+    act(() => result.current.openPullRequest(session));
+    expect(useAppStore.getState().sessionFace[SESSION_ID]).toBe('desk');
+  });
+
   it('openUnreadReply opens the agent with the reply, not the first agent, then reveals chat', () => {
     const planner = anAgent({
       sessionId: SESSION_ID,

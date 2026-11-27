@@ -77,6 +77,8 @@ On a narrow window the two lanes share the last lane.
 
 Read a task at a glance: repository and branch, a two-line title, then its state, last move and one signal. The repository and branch sit in gray above the title, and the state, the time and the signal share the line under it. A card is as tall as what it says, and a session with no repository skips the gray line. The meta line never cuts a word: a long state wraps to a second line.
 
+A click on a card, or Enter on its title, always opens the session on its Overview, even when you left it on the Desk. Only the signal with its arrow, the pull request chip and a quick action open a specific place. A modifier click selects the card.
+
 The signal is the first of these that applies:
 
 - the reason a quiet card waits, such as "Approved, ready to merge"
@@ -122,6 +124,7 @@ This part is for contributors and agents who change the feature.
 
 - Done lane menu: `DoneLaneMenu`, the `doneLane` object kind and `doneLaneArchivesOf` give the **Archive all in Done** and **Archive done older than 7 days** actions.
 - Lane window: `StageColumn` draws 50 cards of the `done` and `archived` lanes (`LANE_WINDOW`); selection reads the whole list, so Select all keeps selecting every session. `loadArchivedSessions({ workspaceId, isForced })` serves its cache, joins an in-flight read and re-reads only when forced on window focus (`useArchivedSessionsLoad`). A read that overlapped an archive, restore or delete is dropped (`archivedCacheVersion`), so the action's cache write is never overwritten by the older read.
+- Card landing: `useBoardNavigation.selectCard` sets the session face to `overview` (`setSessionFace`, which also drops a late saved-face read) and then navigates with `lensPlace`. The signal, the pull request chip and the quick actions navigate without touching the face. `useBoardNavigation/index.test.ts` and `StageBoardCard/index.test.tsx` cover each case; the `board-kept-desk` scene shows it.
 - Card keys: `useBoardArrowKeys` walks the `[data-select-id]` cards of the lane (`role="group"`) the key came from and extends through `BoardSelection.onToggle`.
 - Card rename: `CardRenameField` draws `TitleField` (`density="row"`) over `useSessionTitleRename`. `renameTask` writes first. A failure keeps the old title, leaves the field open and shows `RenameStatus` with Retry.
 - Main region: `App` gives the board (`WorkspaceBoard`, which reads its own sessions), the session frame and the draft to one `PaneSwap`. The layer that leaves stays mounted, inert, for 120 ms while the new one is live, then sits under `Activity`, so the board comes back with the same scroll and selected cards and no new read. `PaneSwap` keeps each scroller's offset, because a hidden layer is `display: none`. `Activity` keeps state but runs effect cleanups, so `useRestHover` drops its target there. `SessionHoverCard` hides on a detached anchor and closes through `useCloseOnOutsidePointer` and `useCloseOnRouteChange` (`SessionHoverCard/closes.test.tsx`).
