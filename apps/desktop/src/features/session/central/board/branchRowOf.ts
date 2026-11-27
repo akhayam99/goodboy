@@ -45,6 +45,7 @@ export type BranchRow = Readonly<{
   word: BranchRowWord | null;
   action: BranchRowAction;
   hoverFacts: ReadonlyArray<string>;
+  caution: string | null;
 }>;
 
 type Params = {
@@ -294,7 +295,13 @@ type HoverParams = Params & {
   readonly rung: BranchRowRung;
 };
 
-const hoverFactsOf = ({ row, entry, runningCount, overlap, rung }: HoverParams) => {
+const cautionOf = ({ row, overlap, rung }: HoverParams): string | null =>
+  overlap === null || row.isSettled || rung !== 'ready'
+    ? null
+    : `${countNoun({ count: overlap.fileCount, one: 'shared file' })}. Merge ${overlap.otherName} first.`;
+
+const hoverFactsOf = ({ ...params }: HoverParams): ReadonlyArray<string> => {
+  const { row, entry, runningCount, rung } = params;
   const facts: Array<string> = [];
   if (runningCount > 0 && rung !== 'running') {
     facts.push(countNoun({ count: runningCount, one: 'run' }));
@@ -302,15 +309,12 @@ const hoverFactsOf = ({ row, entry, runningCount, overlap, rung }: HoverParams) 
   if (entry !== null && behindOf({ entry }) > 0 && rung !== 'your-move' && !row.isSettled) {
     facts.push(`${behindOf({ entry })} behind ${entry.fact.baseBranch}`);
   }
-  if (overlap !== null && !row.isSettled) {
-    facts.push(
-      `${countNoun({ count: overlap.fileCount, one: 'shared file' })}. Merge ${overlap.otherName} first.`,
-    );
-  }
-  return facts;
+  const caution = cautionOf(params);
+  return caution === null ? facts : [...facts, caution];
 };
 
 export const branchRowOf = ({ ...params }: Params): BranchRow => {
   const { rung, word, action } = branchRungOf(params);
-  return { rung, word, action, hoverFacts: hoverFactsOf({ ...params, rung }) };
+  const hover = { ...params, rung };
+  return { rung, word, action, hoverFacts: hoverFactsOf(hover), caution: cautionOf(hover) };
 };

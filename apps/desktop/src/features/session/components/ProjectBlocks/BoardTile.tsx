@@ -10,11 +10,13 @@ import { useMountRowMenu } from '../../hooks/useMountRowMenu';
 import { MountRowMenuButton } from '../MountRowMenuButton';
 import { boardRowCellsOf } from '../../central/board/boardRowCellsOf';
 import { branchRowOf } from '../../central/board/branchRowOf';
-import { OverlapChip } from '../../../overlap/OverlapChip';
+import { useOverlapCaution } from '../../../overlap/hooks/useOverlapCaution';
 import { BoardBranchName } from './BoardBranchName';
 import { BoardTileAction } from './BoardTileAction';
 import { BoardTileFacts } from './BoardTileFacts';
 import { useBoardContext } from './useBoardContext';
+
+const NO_MOUNT = 'no-mount';
 
 type Props = {
   readonly rowId: string;
@@ -59,6 +61,10 @@ const BoardTileView = ({ rowId }: Props) => {
         }),
   );
   const row = rowById.get(rowId);
+  const caution = useOverlapCaution({
+    mountId: brandId<MountId>({ value: entry === null ? NO_MOUNT : entry.fact.mountId }),
+    isSettled: row?.isSettled === true,
+  });
   if (row === undefined) {
     return null;
   }
@@ -72,7 +78,8 @@ const BoardTileView = ({ rowId }: Props) => {
     isPermissionShown: permissionMount !== null && permissionMount.mountId === row.mountId,
     isRebaseStopped,
     failingCheckName: failingName,
-    overlap: null,
+    overlap:
+      caution === null ? null : { fileCount: caution.fileCount, otherName: caution.otherBranch },
   });
   const title =
     row.branch === null
@@ -137,14 +144,12 @@ const BoardTileView = ({ rowId }: Props) => {
           rowId={rowId}
           title={title}
           word={branchRow.word}
+          hoverFacts={branchRow.hoverFacts}
           onOpenChanges={openChanges}
         />
       </span>
       <span className="pointer-events-none relative flex min-w-0 shrink-0 items-center gap-3 text-meta">
-        {entry === null ? null : (
-          <OverlapChip mountId={brandId<MountId>({ value: entry.fact.mountId })} />
-        )}
-        <BoardTileAction rowId={rowId} action={branchRow.action} />
+        <BoardTileAction rowId={rowId} action={branchRow.action} caution={branchRow.caution} />
         {entry === null ? null : (
           <span data-board-actions="" className={cn(TRAIL_SLOT, 'pointer-events-auto row-actions')}>
             <MountRowMenuButton

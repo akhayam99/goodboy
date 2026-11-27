@@ -10,11 +10,12 @@ import { useBoardContext } from './useBoardContext';
 type Props = {
   readonly rowId: string;
   readonly action: BranchRowAction;
+  readonly caution: string | null;
 };
 
 const ANSWER = 'Answer';
 
-export const BoardTileAction = ({ rowId, action }: Props) => {
+export const BoardTileAction = ({ rowId, action, caution }: Props) => {
   const { session, rowById, entryByRowId, removal } = useBoardContext();
   const navigate = useAppStore((state) => state.navigate);
   const row = rowById.get(rowId);
@@ -25,7 +26,13 @@ export const BoardTileAction = ({ rowId, action }: Props) => {
     case 'none':
       return null;
     case 'card':
-      return <BoardRowAction rowId={rowId} index={action.index} text="" />;
+      return caution === null ? (
+        <BoardRowAction rowId={rowId} index={action.index} text="" />
+      ) : (
+        <span title={caution} className="pointer-events-auto flex shrink-0">
+          <BoardRowAction rowId={rowId} index={action.index} text="" />
+        </span>
+      );
     case 'remove':
       return removal.targets.every((target) => target.mountId !== action.mountId) ? null : (
         <span className="pointer-events-auto flex shrink-0">

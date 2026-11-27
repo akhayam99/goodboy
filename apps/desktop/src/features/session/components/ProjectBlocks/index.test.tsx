@@ -127,7 +127,12 @@ type VerbsParams = {
 const verbsOf = ({ tile }: VerbsParams): ReadonlyArray<HTMLElement> =>
   within(tile)
     .queryAllByRole('button')
-    .filter((button) => button.closest('[data-board-actions]') === null);
+    .filter(
+      (button) =>
+        button.closest('[data-board-actions]') === null &&
+        button.closest('[data-board-word]') === null &&
+        !button.hasAttribute('data-board-word'),
+    );
 
 const show = async () => {
   const view = render(element());
@@ -344,7 +349,11 @@ describe('the project blocks on the Overview', () => {
     expect(tenant.querySelector('[data-board-chip]')).toBeNull();
     expect(tenant.querySelector('[data-board-word]')?.textContent).toBe('static-analysis failed');
     expect(
-      [...tenant.querySelectorAll('[data-board-facts] button, [data-board-facts] a')].length,
+      [
+        ...tenant.querySelectorAll(
+          '[data-board-facts] button:not([data-board-word]), [data-board-facts] a',
+        ),
+      ].length,
     ).toBe(0);
   });
 
@@ -505,6 +514,7 @@ describe('the project blocks on the Overview', () => {
         (node) =>
           node.closest('[data-board-actions]') === null &&
           node.closest('[data-section-actions]') === null &&
+          !node.hasAttribute('data-board-word') &&
           !node.hasAttribute('data-project-worktrees') &&
           !node.hasAttribute('data-project-new-branch'),
       ),

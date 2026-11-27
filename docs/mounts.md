@@ -896,13 +896,13 @@ untracked files, at most 2000 paths per mount). A mount with no base lists
 nothing; a git read that fails fails the whole read, and the chip keeps the last
 good answer while a warning offers Retry.
 
-The overlap chip warns and proposes an order; it never blocks a merge. It shows
-only when the mount shares a file with another mount. One function,
+The overlap card warns and proposes an order; it never blocks a merge. It exists
+only when the mount shares a file with another mount. It opens from the state
+word of the row, or from the Merge order row of the row menu. One function,
 `overlapGroupOf`, takes the mount and every mount it shares a file with, one
 step per branch, and orders them: fewer changed files first, on a tie the older
 mount. Each step carries its reason (fewest files, fewer files, started earlier,
-most files, started later) and the files it shares. The chip label and the
-popover both read it. The popover says how many branches change the same files,
+most files, started later) and the files it shares. The card reads it. The card says how many branches change the same files,
 lists the merge order with this branch marked, then the shared files once:
 the first three, cut in the middle with the full path on hover, and Show N more
 in place. Its foot holds Message the Implementers, which queues one message
@@ -912,7 +912,9 @@ the first shared file when the session's worktree is known. The notes wait held
 in their queues for the ten seconds of Undo, so a finishing turn delivers none;
 a note that can't be saved or withdrawn stays held, and Retry sends the same
 notes to the same Implementers. Inside a session every branch row of the
-Overview with an overlapping mount carries its own (`BoardTile`).
+Overview with an overlapping mount opens it from its word (`BoardTile`). The Merge
+button of a branch carries a caution only while another branch of the group is
+ready, approved or queued (`overlapCautionOf`).
 
 ## Confirmed mount folder
 

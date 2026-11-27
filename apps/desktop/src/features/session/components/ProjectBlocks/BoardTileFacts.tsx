@@ -1,4 +1,6 @@
 import { Button, tintClasses } from '@goodboy/ui';
+import { brandId, type MountId } from '@goodboy/types';
+import { OverlapCard } from '../../../overlap/OverlapCard';
 import { countNoun } from '../../../../shared/utils/countNoun';
 import type { BranchRowWord } from '../../central/board/branchRowOf';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
@@ -10,12 +12,13 @@ type Props = {
   readonly rowId: string;
   readonly title: string;
   readonly word: BranchRowWord | null;
+  readonly hoverFacts: ReadonlyArray<string>;
   readonly onOpenChanges: () => void;
 };
 
 const SEPARATOR = ' · ';
 
-export const BoardTileFacts = ({ rowId, title, word, onOpenChanges }: Props) => {
+export const BoardTileFacts = ({ rowId, title, word, hoverFacts, onOpenChanges }: Props) => {
   const { session, entryByRowId, diffStatByPath, runningByRowId } = useBoardContext();
   const entry = entryByRowId.get(rowId) ?? null;
   const mountPath = entry === null ? null : entry.fact.mountPath;
@@ -44,10 +47,16 @@ export const BoardTileFacts = ({ rowId, title, word, onOpenChanges }: Props) => 
     >
       {requestWord === '' ? null : <span data-board-request="">{requestWord}</span>}
       {requestWord !== '' && word !== null ? SEPARATOR : null}
-      {word === null ? null : (
+      {word === null ? null : entry === null ? (
         <span data-board-word="" className={tintClasses(word.tone).text}>
           {word.word}
         </span>
+      ) : (
+        <OverlapCard
+          mountId={brandId<MountId>({ value: entry.fact.mountId })}
+          word={word}
+          facts={hoverFacts}
+        />
       )}
       {(requestWord !== '' || word !== null) && (hasDiff || words !== '') ? SEPARATOR : null}
       {hasDiff ? (
