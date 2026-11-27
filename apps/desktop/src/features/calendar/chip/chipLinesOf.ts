@@ -107,7 +107,7 @@ export const chipLinesOf = ({ view, now }: Params): ChipLines => {
     return {
       ...NO_CLOCK,
       title: `Open ${view.host}?`,
-      sub: 'This link is not from a call app Goodboy knows.',
+      sub: "This link isn't from a call app Goodboy knows.",
     };
   }
   if (view.kind === 'snoozed') {

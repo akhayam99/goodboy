@@ -1,23 +1,22 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', async () => {
-  const { sceneInvoke } = await import('../../../../../../test/sceneInvoke');
-  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
-});
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { invoke } from '@tauri-apps/api/core';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
 import { UndoToastBridge } from '../../../../UndoToastBridge';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
+  type StoryStore,
 } from '../../../../../../store/storyHarness';
-import { useAppStore } from '../../../../../../store';
-import { clearSceneInvoke } from '../../../../../../test/sceneInvoke';
+import { clearSceneInvoke, sceneInvoke } from '../../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../../..';
 import { CALENDAR_PLACE_SCENES } from './place';
 
@@ -25,13 +24,18 @@ const WAIT = { timeout: 5_000 };
 
 const THURSDAY_MORNING = new Date(2026, 10, 26, 10, 18);
 
+let useAppStore: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'], now: THURSDAY_MORNING });
   await resetStoryStore();
+  storySpies.tauriInvoke.mockImplementation((command, args) =>
+    sceneInvoke({ command: String(command), args }),
+  );
   vi.spyOn(document, 'hasFocus').mockImplementation(() => true);
 });
 
@@ -95,15 +99,13 @@ describe('the Calendar place scenes', () => {
     mount({ id: 'calendar-day' });
 
     await screen.findByRole('heading', { name: 'Calendar' }, WAIT);
-    expect(screen.getByText('Experimental')).toBeTruthy();
-    await waitFor(() => expect(screen.getByText(/3 calls · 1h 30m focus/)).toBeTruthy(), WAIT);
+    expect(screen.getByText('Experimental').textContent).toBe('Experimental');
+    await screen.findByText(/3 calls · 1h 30m focus/, {}, WAIT);
     const list = await today();
     await waitFor(() => expect(within(list).getAllByRole('button')).toHaveLength(5), WAIT);
-    expect(
-      within(list).getByRole('button', { name: /ledger-core standup, 15m, Ended/ }),
-    ).toBeTruthy();
-    expect(within(list).getByRole('button', { name: /Northwind sync.*in 12m/ })).toBeTruthy();
-    expect(within(list).getByRole('button', { name: /Busy, 45m/ })).toBeTruthy();
+    within(list).getByRole('button', { name: /ledger-core standup, 15m, Ended/ });
+    within(list).getByRole('button', { name: /Northwind sync.*in 12m/ });
+    within(list).getByRole('button', { name: /Busy, 45m/ });
     expect(within(list).queryByText('Dentist')).toBeNull();
   });
 
@@ -126,14 +128,14 @@ describe('the Calendar place scenes', () => {
     within(panel).getByRole('button', { name: 'Copy link' });
     within(panel).getByRole('region', { name: 'Before this call' });
     const people = within(panel).getByRole('region', { name: 'People' });
-    expect(within(people).getByText('Mara Ilic')).toBeTruthy();
-    expect(within(people).getByText('Dov Arent')).toBeTruthy();
-    expect(within(panel).getByText(/meet\.google\.com/)).toBeTruthy();
+    within(people).getByText('Mara Ilic');
+    within(people).getByText('Dov Arent');
+    within(panel).getByText(/meet\.google\.com/);
 
     fireEvent.click(within(panel).getByRole('button', { name: 'Join call' }));
     await waitFor(
       () =>
-        expect(vi.mocked(invoke)).toHaveBeenCalledWith('open_url', {
+        expect(storySpies.tauriInvoke).toHaveBeenCalledWith('open_url', {
           url: 'https://meet.google.com/xyz-abcd-efg',
         }),
       WAIT,
@@ -163,7 +165,7 @@ describe('the Calendar place scenes', () => {
     }
     fireEvent.click(second);
     const panel = await screen.findByLabelText('Event', {}, WAIT);
-    expect(within(panel).getByText(/Goodboy never reads its title/)).toBeTruthy();
+    within(panel).getByText(/Goodboy never reads its title/);
     expect(within(panel).queryByRole('button', { name: 'Join call' })).toBeNull();
   });
 
@@ -173,7 +175,7 @@ describe('the Calendar place scenes', () => {
     fireEvent.click(await row({ name: /^\d\d:\d\d, Focus/ }));
 
     const panel = await screen.findByLabelText('Event', {}, WAIT);
-    expect(within(panel).getByText('Agents keep working through this focus block.')).toBeTruthy();
+    within(panel).getByText('Agents keep working through this focus block.');
   });
 
   it('calendar-empty asks to connect a calendar and opens Connections', async () => {

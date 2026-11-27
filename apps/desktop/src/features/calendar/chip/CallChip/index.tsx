@@ -1,4 +1,12 @@
-import { Button, cn, FLOATING_SURFACE, ICON_SIZE, IconButton, TruncatedText } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  FLOATING_SURFACE,
+  ICON_SIZE,
+  IconButton,
+  Notice,
+  TruncatedText,
+} from '@goodboy/ui';
 import { Calendar, X } from '@goodboy/ui/icons';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import type { ChipAction, ChipView } from '../callChipTypes';
@@ -106,9 +114,12 @@ export const CallChip = ({ view, now, hasFailed, onAct }: Props) => {
         />
       ) : null}
       {hasFailed ? (
-        <p role="alert" className="text-meta text-danger">
-          Goodboy did not answer. Try again.
-        </p>
+        <Notice
+          tone="danger"
+          placement="inline"
+          role="alert"
+          title="Goodboy didn't answer. Try again."
+        />
       ) : null}
     </div>
   );

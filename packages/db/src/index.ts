@@ -430,22 +430,8 @@ export {
   type NotificationSeverity,
 } from './queries/notification';
 export { listThreadReads, markThreadsRead, type ThreadRead } from './queries/thread-read';
-export {
-  addCalendarSource,
-  listCalendarRoles,
-  listCalendarSources,
-  removeCalendarSource,
-  setCalendarRole,
-} from './queries/calendar-source';
-export {
-  fireReminder,
-  insertReminder,
-  listReminders,
-  markReminderDone,
-  readReminder,
-  reopenReminder,
-  snoozeReminder,
-} from './queries/reminder';
+export * from './queries/calendar-source';
+export * from './queries/reminder';
 export {
   deleteNudgeEvent,
   insertNudgeEvent,
@@ -549,11 +535,7 @@ export {
   type UpdatePlanBodyResult,
   type AddPlanConsumptionInput,
 } from './queries/plan';
-export {
-  listProjectScripts,
-  upsertProjectScript,
-  deleteProjectScript,
-} from './queries/project-script';
+export * from './queries/project-script';
 export {
   insertOpenQuestion,
   getOpenQuestionById,

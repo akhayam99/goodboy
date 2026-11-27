@@ -623,8 +623,7 @@ export type {
 export { RESOLVE_FAILURE_CAUSES, RESOLVE_LAUNCH_MODES } from './resolve';
 export type { SecurityFinding, SecurityFindingSubjectKind, SecretKind } from './security-finding';
 export type { ProjectSentryLink, ProjectSentryLinkSource } from './project-sentry-link';
-export type { DeletedBranch } from './deleted-branch';
-export { DELETED_BRANCH_KEEP_DAYS } from './deleted-branch';
+export * from './deleted-branch';
 export type { StarredIssue, StarredIssueState } from './starred-issue';
 export { SEARCH_KINDS, isSearchKind } from './search';
 export type {
@@ -635,32 +634,4 @@ export type {
   SearchKind,
   SearchQuery,
 } from './search';
-export type {
-  CalendarAccessState,
-  CalendarEvent,
-  CalendarEventsRequest,
-  CalendarEventStatus,
-  CalendarInfo,
-  CalendarList,
-  CalendarRange,
-  CalendarSourceFailure,
-  CalendarSourceRef,
-  CalendarRole,
-  CalendarRoleEntry,
-  CalendarSource,
-  CalendarSourceId,
-  CalendarSourceKind,
-  Reminder,
-  ReminderId,
-  ReminderTarget,
-  ReminderTargetKind,
-  ReminderTrigger,
-} from './calendar';
-export {
-  CALENDAR_EVENT_STATUSES,
-  CALENDAR_ROLES,
-  CALENDAR_SOURCE_KINDS,
-  DEFAULT_CALENDAR_ROLE,
-  REMINDER_TARGET_KINDS,
-  REMINDER_TRIGGERS,
-} from './calendar';
+export * from './calendar';

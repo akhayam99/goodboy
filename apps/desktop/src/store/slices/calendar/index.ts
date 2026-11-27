@@ -22,3 +22,5 @@ export const createCalendarSlice = ({ set, get }: SliceDeps) => ({
   snoozeReminder: snoozeReminder({ set, get }),
   fireReminder: fireReminder({ set, get }),
 });
+
+export { calendarInitialState } from './state';

@@ -45,7 +45,7 @@ type StateParams = {
   readonly now: number;
 };
 
-const stateOf = ({ event, now }: StateParams): string | null => {
+const eventStateWordOf = ({ event, now }: StateParams): string | null => {
   if (event.end <= now) {
     return 'Ended';
   }
@@ -76,7 +76,7 @@ export const calendarRowsOf = ({ events, roles, now }: Params): ReadonlyArray<Ca
         start: event.isAllDay ? ALL_DAY : formatClock({ at: event.start }),
         title: eventTitleOf({ event, kind }),
         length: event.isAllDay ? null : formatDuration({ durationMs: event.end - event.start }),
-        state: event.isAllDay ? null : stateOf({ event, now }),
+        state: event.isAllDay ? null : eventStateWordOf({ event, now }),
         isEnded: event.end <= now,
         isCallSoon: kind === 'event' && isCallSoonOf({ event, now }),
         color: calendarIdentity({ sourceId: event.sourceId, calendarId: event.calendarId }),

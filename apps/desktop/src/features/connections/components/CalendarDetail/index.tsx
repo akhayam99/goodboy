@@ -7,10 +7,11 @@ import { currentPlatform } from '../../../../shared/platform';
 import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
 import { CalendarConnectForm } from '../../../calendar/connect/CalendarConnectForm';
+import { ConnectedCalendarSource } from '../../../calendar/connect/ConnectedCalendarSource';
 import { calendarConnectionStateOf } from '../../model/calendarConnectionStateOf';
 import { StateWord } from '../ConnectionsIndex/StateWord';
+import { AccountRow } from '../IntegrationDetail/AccountRow';
 import { KeychainLine } from '../IntegrationDetail/KeychainLine';
-import { ConnectedCalendarSource } from './ConnectedCalendarSource';
 
 type Props = {
   readonly onUp: () => void;
@@ -60,7 +61,13 @@ export const CalendarDetail = ({ onUp }: Props) => {
         <FormPage>
           {sources.length === 0 ? <CalendarConnectForm isMacOffered={isMac} /> : null}
           {sources.map((source) => (
-            <ConnectedCalendarSource key={source.id} source={source} />
+            <ConnectedCalendarSource
+              key={source.id}
+              source={source}
+              renderAccount={({ label, primary, secondary, action }) => (
+                <AccountRow label={label} primary={primary} secondary={secondary} action={action} />
+              )}
+            />
           ))}
           {sources.length > 0 && isAdding ? (
             <CalendarConnectForm

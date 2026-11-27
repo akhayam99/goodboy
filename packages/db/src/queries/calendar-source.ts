@@ -36,14 +36,14 @@ type ValueParams = {
 const sourceKindOf = ({ value }: ValueParams): CalendarSourceKind | null =>
   CALENDAR_SOURCE_KINDS.find((kind) => kind === value) ?? null;
 
-const roleOf = ({ value }: ValueParams): CalendarRole | null =>
+const calendarRoleValueOf = ({ value }: ValueParams): CalendarRole | null =>
   CALENDAR_ROLES.find((role) => role === value) ?? null;
 
 type SourceRowParams = {
   readonly row: SourceRow;
 };
 
-const sourceOf = ({ row }: SourceRowParams): CalendarSource | null => {
+const calendarSourceRowOf = ({ row }: SourceRowParams): CalendarSource | null => {
   const kind = sourceKindOf({ value: row.kind });
   if (kind === null) {
     return null;
@@ -66,7 +66,7 @@ export const listCalendarSources = async ({
     `SELECT ${SOURCE_COLUMNS} FROM calendar_sources ORDER BY created_at, id`,
   );
   return rows.flatMap((row) => {
-    const source = sourceOf({ row });
+    const source = calendarSourceRowOf({ row });
     return source === null ? [] : [source];
   });
 };
@@ -91,7 +91,7 @@ export const addCalendarSource = async ({
      ORDER BY id = ? DESC LIMIT 1`,
     [source.id, source.kind, source.id],
   );
-  const stored = rows[0] === undefined ? null : sourceOf({ row: rows[0] });
+  const stored = rows[0] === undefined ? null : calendarSourceRowOf({ row: rows[0] });
   if (stored === null) {
     throw new NotFoundError('calendar_sources', source.id);
   }
@@ -122,7 +122,7 @@ export const listCalendarRoles = async ({
     'SELECT source_id, calendar_id, role FROM calendar_roles ORDER BY source_id, calendar_id',
   );
   return rows.flatMap((row) => {
-    const role = roleOf({ value: row.role });
+    const role = calendarRoleValueOf({ value: row.role });
     if (role === null) {
       return [];
     }

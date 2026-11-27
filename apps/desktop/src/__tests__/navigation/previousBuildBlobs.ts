@@ -51,6 +51,7 @@ const STUDIOS: Readonly<Record<string, object>> = {
     target: { workspaceId: WS, projectId: 'project-ledger-core', branch: 'main' },
   },
   chat: { kind: 'chat', chatId: 'chat-northwind' },
+  calendar: { kind: 'calendar' },
   browser: { kind: 'browser', sessionId: SESSION, tabId: 'tab-checkout' },
   terminal: { kind: 'terminal', terminalId: 'terminal-1', sessionId: SESSION, worktree: null },
 };

@@ -50,7 +50,7 @@ const renderChip = ({ view, now = START - 42_000, hasFailed = false }: RenderPar
 describe('CallChip', () => {
   it('shows the call and who waits five minutes before, with Join call and Open per owner', () => {
     const onAct = renderChip({ view: SOON });
-    expect(screen.getByText('Before the call · 1 need you')).not.toBeNull();
+    screen.getByText('Before the call · 1 need you');
     fireEvent.click(screen.getByRole('button', { name: 'Open notify-relay · 1 question for you' }));
     expect(onAct).toHaveBeenLastCalledWith({ action: { kind: 'open', rowKey: 'session-1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Join call' }));
@@ -60,7 +60,7 @@ describe('CallChip', () => {
 
   it('counts down one minute before and offers Remind me in 5m and Hide', () => {
     const onAct = renderChip({ view: COUNTDOWN });
-    expect(screen.getByText('in 42s')).not.toBeNull();
+    screen.getByText('in 42s');
     fireEvent.click(screen.getByRole('button', { name: 'Remind me in 5m' }));
     expect(onAct).toHaveBeenLastCalledWith({ action: { kind: 'snooze' } });
     fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
@@ -72,15 +72,15 @@ describe('CallChip', () => {
       view: { kind: 'in-call', title: 'Northwind sync', end: END, joinedAt: START, heldCount: 2 },
       now: START + 192_000,
     });
-    expect(screen.getByText('3m 12s')).not.toBeNull();
+    screen.getByText('3m 12s');
     expect(screen.queryByRole('button', { name: 'Join call' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Return to call' }));
     expect(onAct).toHaveBeenLastCalledWith({ action: { kind: 'return' } });
   });
 
-  it('says when Goodboy did not answer a click, without the raw error', () => {
+  it("says when Goodboy didn't answer a click, without the raw error", () => {
     renderChip({ view: COUNTDOWN, hasFailed: true });
-    expect(screen.getByRole('alert').textContent).toBe('Goodboy did not answer. Try again.');
+    expect(screen.getByRole('alert').textContent).toBe("Goodboy didn't answer. Try again.");
   });
 });
 

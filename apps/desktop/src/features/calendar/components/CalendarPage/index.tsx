@@ -71,8 +71,14 @@ export const CalendarPage = ({ workspaceId }: Props) => {
       title={NAMES.calendar}
       badge={<Chip tone="neutral" kind="state" label="Experimental" title={EXPERIMENTAL_TIP} />}
       meta={calendarFactsOf({ rows, now })}
-      actions={
-        <SegmentedTabs size="xs" ariaLabel="View" options={VIEWS} value={view} onChange={setView} />
+      toolbar={
+        <SegmentedTabs
+          size="xs"
+          ariaLabel="Today or week"
+          options={VIEWS}
+          value={view}
+          onChange={setView}
+        />
       }
     >
       <div data-calendar-page="" className="flex min-w-0 flex-col gap-8">

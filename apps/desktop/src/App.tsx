@@ -14,7 +14,6 @@ import { ToastProvider } from './shared/components/Toast';
 import { ObjectMenuProvider } from './features/actions/components/ObjectMenuProvider';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
 import { AwayAlertsBridge } from './features/notifications/components/AwayAlertsBridge';
-import { CallChipBridge } from './features/calendar/chip/CallChipBridge';
 import { WorkflowFollowToastBridge } from './features/workflows/components/WorkflowFollowToastBridge';
 import { ScriptEndToastBridge } from './features/scripts/components/ScriptEndToastBridge';
 import { NewSessionBridge } from './features/session/components/NewSessionBridge';
@@ -222,7 +221,6 @@ export const App = () => {
       <ObjectMenuProvider>
         <NotificationToastBridge />
         <AwayAlertsBridge />
-        <CallChipBridge />
         <ReportSheetHost />
         <LastCrashBridge />
         <WorkflowFollowToastBridge />

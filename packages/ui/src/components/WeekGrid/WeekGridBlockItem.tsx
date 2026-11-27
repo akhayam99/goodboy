@@ -1,5 +1,5 @@
 import { cn } from '../../cn';
-import { FOCUS_RING } from '../../focusRing';
+import { SelectableRow } from '../SelectableRow';
 import { StatusDot } from '../StatusDot';
 import type { WeekGridBlock } from './types';
 
@@ -13,8 +13,10 @@ type Props = {
 
 const MIN_SHARE = 5;
 
+const PLACE_CLASSES = 'absolute inset-x-1 flex min-w-0';
+
 const BLOCK_CLASSES =
-  'absolute inset-x-1 flex min-w-0 items-start gap-2 overflow-hidden rounded-md px-2 py-0.5 text-left text-chip';
+  'flex h-full min-w-0 flex-1 items-start gap-2 overflow-hidden rounded-md px-2 py-0.5 text-left text-chip';
 
 export const WeekGridBlockItem = ({
   block,
@@ -31,7 +33,6 @@ export const WeekGridBlockItem = ({
     isQuiet
       ? 'border border-border-soft text-faint-foreground'
       : 'border border-border-soft bg-elevated text-foreground',
-    isSelected && 'bg-selected',
   );
   const content = (
     <>
@@ -44,24 +45,27 @@ export const WeekGridBlockItem = ({
   const style = { top: `${top}%`, height: `${height}%` };
   if (onSelect === null) {
     return (
-      <li data-week-block={block.key} aria-label={block.ariaLabel} className={look} style={style}>
+      <li
+        data-week-block={block.key}
+        aria-label={block.ariaLabel}
+        className={cn(PLACE_CLASSES, look)}
+        style={style}
+      >
         {content}
       </li>
     );
   }
   return (
-    <li className="contents">
-      <button
-        type="button"
-        data-week-block={block.key}
-        aria-label={block.ariaLabel}
-        aria-current={isSelected ? 'true' : undefined}
+    <li data-week-block={block.key} className={PLACE_CLASSES} style={style}>
+      <SelectableRow
+        selected={isSelected}
+        ariaLabel={block.ariaLabel}
+        ariaCurrent={isSelected ? 'true' : undefined}
         onClick={() => onSelect(block.key)}
-        className={cn(look, FOCUS_RING, 'hover:border-border')}
-        style={style}
+        className={cn(look, 'hover:border-border')}
       >
         {content}
-      </button>
+      </SelectableRow>
     </li>
   );
 };

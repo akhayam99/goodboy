@@ -1,17 +1,24 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import type { CalendarInfo, CalendarSource, CalendarSourceRef } from '@goodboy/types';
 import { Band, Button, ICON_SIZE, InlineConfirm } from '@goodboy/ui';
 import { Unlink } from '@goodboy/ui/icons';
-import { joinFacts } from '../../../../shared/utils/joinFacts';
-import { useAppStore } from '../../../../store';
-import { calendarRoleOf } from '../../../../store/slices/calendar/calendarRoleOf';
-import { CalendarRoleList } from '../../../calendar/connect/CalendarRoleList';
-import { disconnectCalendarSource } from '../../../calendar/connect/disconnectCalendarSource';
-import { useCalendarList } from '../../../calendar/connect/hooks/useCalendarList';
-import { AccountRow } from '../IntegrationDetail/AccountRow';
+import { joinFacts } from '../../../shared/utils/joinFacts';
+import { useAppStore } from '../../../store';
+import { calendarRoleOf } from '../../../store/slices/calendar/calendarRoleOf';
+import { CalendarRoleList } from './CalendarRoleList';
+import { disconnectCalendarSource } from './disconnectCalendarSource';
+import { useCalendarList } from './hooks/useCalendarList';
+
+type CalendarAccountRowParams = {
+  readonly label: string;
+  readonly primary: string;
+  readonly secondary: string;
+  readonly action: ReactNode;
+};
 
 type Props = {
   readonly source: CalendarSource;
+  readonly renderAccount: (params: CalendarAccountRowParams) => ReactNode;
 };
 
 type CountParams = {
@@ -26,7 +33,7 @@ const countLineOf = ({ calendars, isLoading }: CountParams): string | null => {
   return calendars.length === 1 ? '1 calendar' : `${calendars.length} calendars`;
 };
 
-export const ConnectedCalendarSource = ({ source }: Props) => {
+export const ConnectedCalendarSource = ({ source, renderAccount }: Props) => {
   const roles = useAppStore((state) => state.calendarRoles);
   const setCalendarRole = useAppStore((state) => state.setCalendarRole);
   const sources = useMemo<ReadonlyArray<CalendarSourceRef>>(
@@ -60,18 +67,16 @@ export const ConnectedCalendarSource = ({ source }: Props) => {
     <div data-calendar-source={source.id} className="flex min-w-0 flex-col gap-6">
       <div className="flex min-w-0 flex-col gap-2">
         <Band>
-          <AccountRow
-            label={source.kind === 'ics' ? 'Calendar link' : 'This Mac'}
-            primary={source.label}
-            secondary={facts}
-            action={
-              isConfirming ? null : (
-                <Button size="sm" variant="quiet" onClick={() => setIsConfirming(true)}>
-                  Disconnect calendars
-                </Button>
-              )
-            }
-          />
+          {renderAccount({
+            label: source.kind === 'ics' ? 'Calendar link' : 'This Mac',
+            primary: source.label,
+            secondary: facts,
+            action: isConfirming ? null : (
+              <Button size="sm" variant="quiet" onClick={() => setIsConfirming(true)}>
+                Disconnect calendars
+              </Button>
+            ),
+          })}
         </Band>
         {isConfirming ? (
           <InlineConfirm

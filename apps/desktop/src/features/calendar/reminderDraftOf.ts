@@ -27,7 +27,7 @@ type TokenParams = {
   readonly token: string;
 };
 
-const clockOf = ({ token }: TokenParams): Clock | null => {
+const clockTokenOf = ({ token }: TokenParams): Clock | null => {
   const match = CLOCK.exec(token);
   if (match === null) {
     return null;
@@ -54,8 +54,8 @@ export const reminderDraftOf = ({ text, now }: Params): ReminderDraft => {
     .trim()
     .split(' ')
     .filter((token) => token !== '');
-  const index = tokens.findIndex((token) => clockOf({ token }) !== null);
-  const clock = index === -1 ? null : clockOf({ token: tokens[index] ?? '' });
+  const index = tokens.findIndex((token) => clockTokenOf({ token }) !== null);
+  const clock = index === -1 ? null : clockTokenOf({ token: tokens[index] ?? '' });
   if (clock === null) {
     return { text: tokens.join(' '), dueAt: dueOf({ clock: DEFAULT_CLOCK, now, dayOffset: 1 }) };
   }

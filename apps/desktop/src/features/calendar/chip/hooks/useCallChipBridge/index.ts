@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { SessionAttentionReason, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useCurrentWorkspace } from '../../../../../store';
+import { selectSessionById } from '../../../../../store/slices/sessions/selectSessionById';
 import { stageInfoOf } from '../../../../../store/slices/session-view/stageInfoOf';
-import { useNowSessions } from '../../../../../shared/hooks/useNowSessions';
 import { openDestination } from '../../../../../shared/navigation/openDestination';
+import { startPoll } from '../../../../../shared/lib/usePoll/startPoll';
 import { joinFacts } from '../../../../../shared/utils/joinFacts';
 import { formatClock } from '../../../../../shared/utils/time/formatClock';
 import { attentionPlace } from '../../../../session/attentionPlace';
@@ -22,19 +23,16 @@ import { showCallBanner } from '../../../../notifications/away/showCallBanner';
 import { linkHostOf } from '../../../linkHostOf';
 import { listCalendarEvents } from '../../../listCalendarEvents';
 import { applyChipInput } from '../../applyChipInput';
-import { beforeCallRowsOf } from '../../beforeCallRowsOf';
 import { callChipCommands } from '../../callChipCommands';
 import { callChipEvents } from '../../callChipEvents';
 import { useCallChipStore } from '../../callChipStore';
 import type { CallAlert, ChipAction, ChipCall } from '../../callChipTypes';
-import { callChipViewOf } from '../../callChipViewOf';
 import { callsOf } from '../../callsOf';
 import { reportChipError } from '../../reportChipError';
 
 const LOAD_EVERY_MS = 5 * 60_000;
 const LOOK_BACK_MS = 60 * 60_000;
 const LOOK_AHEAD_MS = 3 * 60 * 60_000;
-const FIRST_HEIGHT = 120;
 
 type Target = Readonly<{
   sessionId: SessionId;
@@ -60,7 +58,7 @@ type SubscribeParams = {
   readonly start: Subscribe;
 };
 
-const subscribe = ({ start }: SubscribeParams): (() => void) => {
+const listenChipEvent = ({ start }: SubscribeParams): (() => void) => {
   let stop: (() => void) | null = null;
   let isLive = true;
   start()
@@ -78,7 +76,7 @@ const subscribe = ({ start }: SubscribeParams): (() => void) => {
   };
 };
 
-const targetOf = ({ rowKey }: RowParams): Target | null => {
+const chipRowTargetOf = ({ rowKey }: RowParams): Target | null => {
   const chip = useCallChipStore.getState().state;
   if (chip.kind === 'after') {
     const banner = chip.held.find((held) => (held.keys[0] ?? held.title) === rowKey);
@@ -88,15 +86,15 @@ const targetOf = ({ rowKey }: RowParams): Target | null => {
     return { sessionId: banner.sessionId, reason: banner.reason };
   }
   const state = useAppStore.getState();
-  const session = state.sessions.find((candidate) => candidate.id === rowKey);
-  if (session === undefined) {
+  const session = selectSessionById(state, rowKey);
+  if (session === null) {
     return null;
   }
   return { sessionId: session.id, reason: stageInfoOf(state, session).attention };
 };
 
 const openRow = async ({ rowKey }: RowParams): Promise<void> => {
-  const target = targetOf({ rowKey });
+  const target = chipRowTargetOf({ rowKey });
   if (target === null) {
     return;
   }
@@ -118,7 +116,7 @@ const openCalendar = async (): Promise<void> => {
   openDestination({ id: 'calendar' });
 };
 
-const release = async ({ held, workspaceId }: ReleaseParams): Promise<void> => {
+const releaseHeldNotices = async ({ held, workspaceId }: ReleaseParams): Promise<void> => {
   if (held.length === 0 || workspaceId === null) {
     return;
   }
@@ -148,13 +146,23 @@ type ActionParams = {
   readonly payload: ChipAction;
 };
 
+type ShowFailedParams = {
+  readonly call: ChipCall;
+  readonly error: unknown;
+};
+
+type CallChipBridge = {
+  readonly isChipShown: boolean;
+  readonly onShowFailed: (params: ShowFailedParams) => void;
+};
+
 const endCall = async ({ call, workspaceId, now }: EndParams): Promise<void> => {
   const held = useCallQuietStore.getState().endQuiet({ eventId: call.id });
   applyChipInput({ input: { kind: 'ended', call, held }, now });
   if (useCallChipStore.getState().state.kind === 'after') {
     return;
   }
-  await release({ held, workspaceId });
+  await releaseHeldNotices({ held, workspaceId });
 };
 
 const endMissedCall = async ({ workspaceId, now }: WorkspaceParams): Promise<void> => {
@@ -168,20 +176,17 @@ const endMissedCall = async ({ workspaceId, now }: WorkspaceParams): Promise<voi
     return;
   }
   const held = useCallQuietStore.getState().endQuiet({ eventId: quiet.eventId });
-  await release({ held, workspaceId });
+  await releaseHeldNotices({ held, workspaceId });
 };
 
-export const useCallChipBridge = (): void => {
+export const useCallChipBridge = (): CallChipBridge => {
   const sources = useAppStore((state) => state.calendarSources);
   const roles = useAppStore((state) => state.calendarRoles);
-  const { needsYou } = useNowSessions({});
   const workspaceId = useCurrentWorkspace()?.id ?? null;
-  const chip = useCallChipStore((state) => state.state);
-  const heldCount = useCallQuietStore((state) => state.held.length);
+  const isChipUp = useCallChipStore((state) => state.state.kind !== 'hidden');
   const isChipOn = useAwayAlertsStore((state) => state.isCallChipOn);
   const calls = useRef<ReadonlyMap<string, ChipCall>>(new Map());
   const bannered = useRef<Set<string>>(new Set());
-  const isShown = useRef(false);
   const workspace = useRef(workspaceId);
   workspace.current = workspaceId;
 
@@ -228,11 +233,10 @@ export const useCallChipBridge = (): void => {
         reportChipError({ title: "Couldn't check your next calls", error }),
       );
     };
-    run();
-    const timer = setInterval(run, LOAD_EVERY_MS);
+    const stopPoll = startPoll({ run, everyMs: LOAD_EVERY_MS, gate: 'always', isImmediate: true });
     return () => {
       isLive = false;
-      clearInterval(timer);
+      stopPoll();
     };
   }, [sources, roles]);
 
@@ -271,9 +275,9 @@ export const useCallChipBridge = (): void => {
       applyChipInput({ input: { kind: payload.kind }, now: Date.now() });
     };
     const stops = [
-      subscribe({ start: () => callChipEvents.alerts({ onEvent: onAlert }) }),
-      subscribe({ start: () => callChipEvents.actions({ onEvent: onAction }) }),
-      subscribe({
+      listenChipEvent({ start: () => callChipEvents.alerts({ onEvent: onAlert }) }),
+      listenChipEvent({ start: () => callChipEvents.actions({ onEvent: onAction }) }),
+      listenChipEvent({
         start: () =>
           listenCallBannerTaps({
             onTap: () => {
@@ -291,36 +295,14 @@ export const useCallChipBridge = (): void => {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isMainWindow()) {
+  const onShowFailed = useCallback(({ call, error }: ShowFailedParams): void => {
+    if (bannered.current.has(call.id)) {
       return;
     }
-    const waiting = beforeCallRowsOf({ state: useAppStore.getState(), sessions: needsYou });
-    const view = isChipOn ? callChipViewOf({ state: chip, waiting, heldCount }) : null;
-    if (view === null) {
-      if (!isShown.current) {
-        return;
-      }
-      isShown.current = false;
-      callChipCommands
-        .hide()
-        .catch((error: unknown) =>
-          reportChipError({ title: "Couldn't hide the call chip", error }),
-        );
-      return;
-    }
-    callChipCommands
-      .show({ view, height: FIRST_HEIGHT })
-      .then(() => {
-        isShown.current = true;
-      })
-      .catch((error: unknown) => {
-        if (chip.kind === 'hidden' || bannered.current.has(chip.call.id)) {
-          return;
-        }
-        bannered.current.add(chip.call.id);
-        reportChipError({ title: "Couldn't show the call chip", error });
-        bannerOnce({ call: chip.call });
-      });
-  }, [chip, needsYou, heldCount, isChipOn]);
+    bannered.current.add(call.id);
+    reportChipError({ title: "Couldn't show the call chip", error });
+    bannerOnce({ call });
+  }, []);
+
+  return { isChipShown: isMainWindow() && isChipOn && isChipUp, onShowFailed };
 };

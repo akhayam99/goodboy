@@ -38,7 +38,7 @@ type RowParams = {
   readonly row: ReminderRow;
 };
 
-const targetOf = ({ row }: RowParams): ReminderTarget | null => {
+const reminderTargetRowOf = ({ row }: RowParams): ReminderTarget | null => {
   if (row.target_kind === null || row.target_id === null) {
     return null;
   }
@@ -57,7 +57,7 @@ const reminderOf = ({ row }: RowParams): Reminder | null => {
     text: row.text,
     trigger,
     dueAt: row.due_at,
-    target: targetOf({ row }),
+    target: reminderTargetRowOf({ row }),
     snoozedUntil: row.snoozed_until,
     doneAt: row.done_at,
     createdAt: row.created_at,
