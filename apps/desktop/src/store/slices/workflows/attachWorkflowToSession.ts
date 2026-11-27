@@ -29,7 +29,7 @@ import { sessionPlace } from '../navigation/place';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { stepCandidateInputs } from '../workflowRouting/stepCandidateInputs';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 import { workspaceRulesFor } from './runLimit/workspaceRulesFor';
 import { rulesWithLimit, runLimitOf, type WorkflowLimitSource } from './runLimit/runLimitOf';
 
@@ -146,7 +146,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
               providers: get().providers ?? [],
               cooldowns: get().providerCooldowns ?? {},
               alerts: get().budgetAlerts ?? [],
-              hidden: selectHiddenModels({ state: get() }),
+              hidden: selectBlockedModels({ state: get() }),
               sessionId,
               isRunBudgetBlocked: false,
               nowMs: Date.now(),

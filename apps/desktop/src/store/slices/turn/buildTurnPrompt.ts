@@ -38,7 +38,7 @@ import type { PreparedTurn } from './prepareTurn';
 import type { RoutedTurn } from './routeTurn';
 import type { LeasedTurn } from './leaseTurnWriter';
 import type { StartedTurn } from './startTurnRun';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 import { activePlanOf } from './activePlanOf';
 
 type Params = Readonly<{
@@ -112,12 +112,12 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
 
   const childRoutingBlock = composeChildRoutingPrompt({
     role: turnRole,
-    hidden: selectHiddenModels({ state: get() }),
+    hidden: selectBlockedModels({ state: get() }),
     availability: workflowAvailabilitySnapshot({
       providers: get().providers,
       cooldowns: get().providerCooldowns,
       alerts: get().budgetAlerts ?? [],
-      hidden: selectHiddenModels({ state: get() }),
+      hidden: selectBlockedModels({ state: get() }),
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),

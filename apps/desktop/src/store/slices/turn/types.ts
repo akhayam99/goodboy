@@ -103,6 +103,7 @@ export type TurnProgress = {
   receivedStreamError: boolean;
   lastError: unknown;
   readonly accountId: string;
+  readonly plan: string | null;
   streamFailure: string | null;
   failureReason: TurnFailureReason | null;
   turnWasCancelled: boolean;

@@ -23,23 +23,40 @@ pub struct ConnectionTestResult {
     pub outcome: ConnectionOutcome,
     pub secs: Option<u64>,
     pub detail: String,
+    pub models: Vec<String>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 enum Probed {
-    Answered,
+    Answered { models: Vec<String> },
     TimedOut { secs: u64 },
     Empty,
     Unsupported,
     Refused { detail: String },
 }
 
-fn has_model(output: &str) -> bool {
+const MAX_LISTED_MODELS: usize = 1024;
+
+fn model_id_of(line: &str) -> Option<&str> {
+    let id = line.split_whitespace().next().unwrap_or_default();
+    let is_id = id.len() <= 256
+        && id.starts_with(|c: char| c.is_ascii_lowercase())
+        && id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || "-_.[],:=".contains(c));
+    if !is_id {
+        return None;
+    }
+    Some(id)
+}
+
+fn listed_models(output: &str) -> Vec<String> {
     let clean = super::strip_ansi(output);
     let mut is_listing = false;
+    let mut models: Vec<String> = Vec::new();
     for line in clean.lines().map(str::trim) {
         if line.starts_with("```") {
-            return false;
+            return Vec::new();
         }
         if line == "Available models" {
             is_listing = true;
@@ -49,19 +66,19 @@ fn has_model(output: &str) -> bool {
             continue;
         }
         if line.starts_with("Tip:") {
-            return false;
+            return models;
         }
-        let id = line.split_whitespace().next().unwrap_or_default();
-        if id.len() <= 256
-            && id.starts_with(|c: char| c.is_ascii_lowercase())
-            && id
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || "-_.[],:=".contains(c))
-        {
-            return true;
+        let Some(id) = model_id_of(line) else {
+            continue;
+        };
+        if models.len() >= MAX_LISTED_MODELS {
+            return Vec::new();
+        }
+        if !models.iter().any(|known| known == id) {
+            models.push(id.to_string());
         }
     }
-    false
+    models
 }
 
 fn cursor_test(binary: &str, timeout: Duration) -> Probed {
@@ -81,8 +98,9 @@ fn cursor_test(binary: &str, timeout: Duration) -> Probed {
             secs: timeout.as_secs(),
         };
     }
-    if output.code == Some(0) && has_model(&output.stdout) {
-        return Probed::Answered;
+    let models = listed_models(&output.stdout);
+    if output.code == Some(0) && !models.is_empty() {
+        return Probed::Answered { models };
     }
     let detail = output.primary_text();
     if detail.is_empty() {
@@ -95,12 +113,22 @@ fn cursor_test(binary: &str, timeout: Duration) -> Probed {
 
 fn result_of(started: Instant, probed: Probed) -> ConnectionTestResult {
     let millis = started.elapsed().as_millis();
-    let (outcome, secs, detail) = match probed {
-        Probed::Answered => (ConnectionOutcome::Answered, None, String::new()),
-        Probed::TimedOut { secs } => (ConnectionOutcome::TimedOut, Some(secs), String::new()),
-        Probed::Empty => (ConnectionOutcome::Empty, None, String::new()),
-        Probed::Unsupported => (ConnectionOutcome::Unsupported, None, String::new()),
-        Probed::Refused { detail } => (ConnectionOutcome::Refused, None, detail),
+    let (outcome, secs, detail, models) = match probed {
+        Probed::Answered { models } => (ConnectionOutcome::Answered, None, String::new(), models),
+        Probed::TimedOut { secs } => (
+            ConnectionOutcome::TimedOut,
+            Some(secs),
+            String::new(),
+            Vec::new(),
+        ),
+        Probed::Empty => (ConnectionOutcome::Empty, None, String::new(), Vec::new()),
+        Probed::Unsupported => (
+            ConnectionOutcome::Unsupported,
+            None,
+            String::new(),
+            Vec::new(),
+        ),
+        Probed::Refused { detail } => (ConnectionOutcome::Refused, None, detail, Vec::new()),
     };
     ConnectionTestResult {
         ok: outcome == ConnectionOutcome::Answered,
@@ -108,6 +136,7 @@ fn result_of(started: Instant, probed: Probed) -> ConnectionTestResult {
         outcome,
         secs,
         detail,
+        models,
     }
 }
 
@@ -123,13 +152,13 @@ pub async fn provider_test_connection(provider_id: String) -> ConnectionTestResu
                 })
         }
         "anthropic" => match crate::usage_probe::claude_usage_probe().await {
-            Ok(_) => Probed::Answered,
+            Ok(_) => Probed::Answered { models: Vec::new() },
             Err(error) => Probed::Refused {
                 detail: error.to_string(),
             },
         },
         "codex" => match crate::codex_app_server::codex_rate_limits_probe(false).await {
-            Ok(_) => Probed::Answered,
+            Ok(_) => Probed::Answered { models: Vec::new() },
             Err(error) => Probed::Refused {
                 detail: error.to_string(),
             },
@@ -154,6 +183,7 @@ mod tests {
         );
         assert!(result.ok);
         assert!(result.millis > 0);
+        assert_eq!(result.models, vec!["harborline-model".to_string()]);
     }
 
     #[test]
@@ -166,6 +196,7 @@ mod tests {
         assert!(!result.ok);
         assert_eq!(result.outcome, ConnectionOutcome::Refused);
         assert!(result.detail.contains("Not logged in"));
+        assert!(result.models.is_empty());
     }
 
     #[test]
@@ -203,13 +234,37 @@ mod tests {
             "Available models\nUnexpected banner",
             "No models available for this account.",
         ] {
-            assert!(!has_model(text));
+            assert!(listed_models(text).is_empty());
         }
-        assert!(!has_model(&"x".repeat(100_000)));
-        assert!(!has_model(&format!(
-            "Available models\n{}",
-            "x".repeat(100_000)
-        )));
-        assert!(has_model("Available models\n\u{1b}[36mharborline-model\u{1b}[0m - Harborline\nharborline-model - Harborline"));
+        assert!(listed_models(&"x".repeat(100_000)).is_empty());
+        assert!(listed_models(&format!("Available models\n{}", "x".repeat(100_000))).is_empty());
+        assert_eq!(
+            listed_models("Available models\n\u{1b}[36mharborline-model\u{1b}[0m - Harborline\nharborline-model - Harborline"),
+            vec!["harborline-model".to_string()],
+        );
+    }
+
+    #[test]
+    fn the_listing_keeps_every_model_the_account_lists() {
+        let listed = listed_models(
+            "Loading models\nAvailable models\n\nauto - Auto\nclaude-sonnet-5-5-high - Sonnet 5.5\ncomposer-2.5 - Composer 2.5\n\nTip: use --model <id> to switch.\nnorthwind-model - Ignored",
+        );
+        assert_eq!(
+            listed,
+            vec![
+                "auto".to_string(),
+                "claude-sonnet-5-5-high".to_string(),
+                "composer-2.5".to_string(),
+            ],
+        );
+    }
+
+    #[test]
+    fn an_oversized_listing_counts_as_unparsed() {
+        let lines: Vec<String> = (0..=MAX_LISTED_MODELS)
+            .map(|index| format!("acme-model-{index} - Acme"))
+            .collect();
+        let text = format!("Available models\n{}", lines.join("\n"));
+        assert!(listed_models(&text).is_empty());
     }
 }
