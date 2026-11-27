@@ -338,14 +338,15 @@ fn registers_every_app_command_behind_the_browser_wall() {
 }
 
 #[test]
-fn keeps_the_isolation_command_away_from_the_webview_until_a_page_calls_it() {
+fn registers_the_site_data_commands_behind_the_wall() {
     let walled = walled_commands();
     let ledger = ledger_commands();
-    assert!(!walled.contains("browser_profile_isolation"));
-    assert!(!ledger.contains("browser_profile_isolation"));
     for name in [
         "browser_profile_clear",
+        "browser_profile_isolation",
         "browser_site_data_clear",
+        "browser_site_data_list",
+        "browser_site_data_clear_records",
         "browser_tab_trail",
         "browser_tab_reload_from_origin",
     ] {
@@ -1357,6 +1358,22 @@ fn a_site_clear_and_a_workspace_clear_never_run_together() {
     ));
     drop(site);
     assert!(begin_clear(app.handle(), "northwind").is_ok());
+}
+
+#[test]
+fn a_records_clear_from_a_second_window_waits_for_the_lease_held() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let first = open_for(&app, "main", northwind(), "harborline");
+    let second = open_for(&app, "win-2", northwind(), "cascadia");
+    let other = open_for(&app, "win-2", acme(), "cascadia");
+    let held = begin_site_clear(app.handle(), &first).expect("first");
+    assert!(matches!(
+        begin_site_clear(app.handle(), &second),
+        Err(MessageError::Refused(code)) if code == PROFILE_BUSY
+    ));
+    assert!(begin_site_clear(app.handle(), &other).is_ok());
+    drop(held);
+    assert!(begin_site_clear(app.handle(), &second).is_ok());
 }
 
 #[test]

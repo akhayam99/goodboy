@@ -1,13 +1,13 @@
-import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { isFilePathTool, prefixRuleFor } from '@goodboy/core/permissions';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
-import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
-import { useAskerNoun } from '../../../../../store/hooks/useAskerNoun';
-import { modeCopyOf } from '../../../modeCopy';
-import type { OpenPermissionAsk } from '../../../openPermissionAsksOf';
-import { permissionAskTitleOf } from '../../../permissionAskTitleOf';
+import { useAppStore } from '../../../../store';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { useAskerNoun } from '../../../../store/hooks/useAskerNoun';
+import { modeCopyOf } from '../../modeCopy';
+import type { OpenPermissionAsk } from '../../openPermissionAsksOf';
+import { permissionAskTitleOf } from '../../permissionAskTitleOf';
 
 type Params = {
   readonly item: OpenPermissionAsk;
@@ -26,7 +26,7 @@ type ReasonParams = {
 };
 
 type BusyParams = {
-  readonly action: () => Promise<void>;
+  readonly action: () => Promise<unknown>;
 };
 
 const ASK_SETTLE_MS = 400;

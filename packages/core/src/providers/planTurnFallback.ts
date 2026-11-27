@@ -1,5 +1,6 @@
 import type { ModelCostTier, ModelDescriptor, ProviderId } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from './capabilities';
+import { outdatedCliModels, type CliRequirement } from './cliGate';
 import { taskModelProviderPool } from './providerFallbackPool';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
 import { isModelHidden, type HiddenModels } from './modelVisibility';
@@ -30,6 +31,8 @@ type Params = {
   readonly coolingDownProviders?: ReadonlyArray<ProviderId>;
   readonly preferred?: TurnFallbackPlan;
   readonly hidden?: HiddenModels | null;
+  readonly cliVersions?: Partial<Record<ProviderId, string | null>> | null;
+  readonly learned?: ReadonlyArray<CliRequirement> | null;
 };
 
 type PreferredParams = {
@@ -38,6 +41,18 @@ type PreferredParams = {
   readonly model: string;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly candidateProviders: ReadonlyArray<ProviderId>;
+  readonly gated: HiddenModels;
+};
+
+type GatedParams = {
+  readonly providers: ReadonlyArray<ProviderId>;
+  readonly cliVersions: Partial<Record<ProviderId, string | null>>;
+  readonly learned: ReadonlyArray<CliRequirement>;
+};
+
+type MergeParams = {
+  readonly hidden: HiddenModels | null;
+  readonly gated: HiddenModels;
 };
 
 type TierParams = {
@@ -174,12 +189,39 @@ export const alignedProviderPlan = ({
   });
 };
 
+const cliGatedModels = ({ providers, cliVersions, learned }: GatedParams): HiddenModels =>
+  Object.fromEntries(
+    providers.flatMap((target) => {
+      const keys = outdatedCliModels({
+        provider: target,
+        installedVersion: cliVersions[target] ?? null,
+        learned,
+      }).map((gate) => gate.model.key);
+      return keys.length === 0 ? [] : [[target, keys]];
+    }),
+  );
+
+const mergeHidden = ({ hidden, gated }: MergeParams): HiddenModels | null => {
+  const gatedProviders = Object.keys(gated).filter(
+    (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
+  );
+  if (gatedProviders.length === 0) {
+    return hidden;
+  }
+  const merged: Partial<Record<ProviderId, ReadonlyArray<string>>> = { ...hidden };
+  for (const target of gatedProviders) {
+    merged[target] = [...(hidden?.[target] ?? []), ...(gated[target] ?? [])];
+  }
+  return merged;
+};
+
 const preferredPlan = ({
   preferred,
   provider,
   model,
   connectedProviders,
   candidateProviders,
+  gated,
 }: PreferredParams): TurnFallbackPlan | null => {
   if (preferred == null) {
     return null;
@@ -200,6 +242,15 @@ const preferredPlan = ({
   if (descriptorFor({ provider: preferred.provider, model: preferred.model }) == null) {
     return null;
   }
+  if (
+    isModelHidden({
+      provider: preferred.provider,
+      hidden: gated,
+      key: descriptorKey({ provider: preferred.provider, model: preferred.model }),
+    })
+  ) {
+    return null;
+  }
   return { provider: preferred.provider, model: preferred.model };
 };
 
@@ -214,6 +265,8 @@ export const planTurnFallback = ({
   coolingDownProviders,
   preferred,
   hidden: hiddenModels,
+  cliVersions,
+  learned,
 }: Params): TurnFallbackPlan | null => {
   if (attempt >= MAX_ATTEMPTS || failure === 'other') {
     return null;
@@ -224,6 +277,11 @@ export const planTurnFallback = ({
     enabledProviders: enabledProviders ?? null,
     coolingDownProviders: coolingDownProviders ?? [],
   });
+  const gated = cliGatedModels({
+    providers: [provider, ...candidateProviders.filter((target) => target !== provider)],
+    cliVersions: cliVersions ?? {},
+    learned: learned ?? [],
+  });
   if (attempt === 0) {
     const picked = preferredPlan({
       preferred,
@@ -231,12 +289,13 @@ export const planTurnFallback = ({
       model,
       connectedProviders,
       candidateProviders,
+      gated,
     });
     if (picked != null && (failure !== 'usage_limit' || picked.provider !== provider)) {
       return picked;
     }
   }
-  const hidden = hiddenModels ?? null;
+  const hidden = mergeHidden({ hidden: hiddenModels ?? null, gated });
   const failed = descriptorFor({ provider, model });
   const failedKey = descriptorKey({ provider, model });
   const tier = failed?.costTier ?? 'mid';

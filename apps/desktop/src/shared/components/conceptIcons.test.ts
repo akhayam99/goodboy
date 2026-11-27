@@ -1,6 +1,20 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { Folder, FolderGit2, ListVideo, SquareTerminal } from '@goodboy/ui/icons';
+import {
+  CircleUser,
+  Dashboard,
+  Folder,
+  FolderGit2,
+  List,
+  ListVideo,
+  Lock,
+  Milestone,
+  Network,
+  Plug,
+  SquareKanban,
+  SquareTerminal,
+  Task,
+} from '@goodboy/ui/icons';
 import { CONCEPT_ICONS, CONCEPT_TONE, projectGlyph } from './conceptIcons';
 import { ICON_SIZE, ICON_WEIGHT } from '@goodboy/ui';
 
@@ -33,6 +47,25 @@ describe('CONCEPT_ICONS', () => {
   it('keeps Ask this session apart from the Chat door and from Help', () => {
     expect(CONCEPT_ICONS.ask).not.toBe(CONCEPT_ICONS.chat);
     expect(CONCEPT_ICONS.ask).not.toBe(CONCEPT_ICONS.help);
+  });
+
+  it('draws the Lead as Orchestrate, one glyph with the orchestrator it replaced', () => {
+    expect(CONCEPT_ICONS.auto).toBe(Network);
+    expect(CONCEPT_ICONS.orchestrator).toBe(Network);
+  });
+
+  it('keeps the Board and the Overview of one session on two glyphs', () => {
+    expect(CONCEPT_ICONS.board).toBe(SquareKanban);
+    expect(CONCEPT_ICONS.sessions).toBe(Dashboard);
+  });
+
+  it('draws each concept with the glyph its convention names', () => {
+    expect(CONCEPT_ICONS.approval).toBe(Lock);
+    expect(CONCEPT_ICONS.timeline).toBe(List);
+    expect(CONCEPT_ICONS.changelog).toBe(Milestone);
+    expect(CONCEPT_ICONS.inbox).toBe(Task);
+    expect(CONCEPT_ICONS.integrations).toBe(Plug);
+    expect(CONCEPT_ICONS.needsYou).toBe(CircleUser);
   });
 
   it('separates a mounted project from the project itself', () => {

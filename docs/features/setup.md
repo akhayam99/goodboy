@@ -158,6 +158,7 @@ Its pages sit in their own list at its left, which folds, in two groups named fo
 - Your workspace, by its name, holds Projects, About you, **Models**, Permissions, Branches and Replies and commits.
 - Its last row, **Run defaults are in Workflows**, opens Workflows on Every run, where the run defaults, the edit mode of new sessions, the Lead and the roles live.
 - The **iPhone** page joins the list once a phone is paired. Until then Search settings and Search or run find it.
+- A phone icon sits before the bell in the top bar. Its dot says Live, Offline or a pairing problem, and a click shows the phone or opens the iPhone page. A switch on that page hides it.
 
 #### Find a setting
 

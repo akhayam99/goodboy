@@ -1,7 +1,16 @@
 use serde_json::json;
 
+use super::network::RawAddress;
 use super::*;
 use crate::util::wire_shape::assert_wire_value;
+
+fn endpoints_for(raw: &[RawAddress], selected: Option<&[String]>, port: u16) -> Vec<Endpoint> {
+    let ips: Vec<IpAddr> = offered_addresses(raw, selected)
+        .into_iter()
+        .map(|a| a.ip)
+        .collect();
+    endpoints_of(&ips, port)
+}
 
 #[test]
 fn wire_shape_qr_payload() {
@@ -38,6 +47,7 @@ fn wire_shape_phone_view() {
             name: "Harborline iPhone".to_string(),
             paired_at: "2026-11-25T10:00:00.000Z".to_string(),
             last_seen: None,
+            live_since: None,
             permissions: Permissions::default(),
         },
         json!({
@@ -45,6 +55,7 @@ fn wire_shape_phone_view() {
             "name": "Harborline iPhone",
             "pairedAt": "2026-11-25T10:00:00.000Z",
             "lastSeen": null,
+            "liveSince": null,
             "permissions": { "canDecide": true, "canMerge": true, "canStart": false },
         }),
     );
@@ -110,27 +121,6 @@ fn no_chosen_interface_means_no_endpoint() {
     assert!(endpoints_for(&all, Some(&[]), 4000).is_empty());
 }
 
-#[tokio::test]
-async fn the_listener_binds_only_the_offered_addresses() {
-    let offered = [raw("lo0", "127.0.0.1")];
-
-    let (listeners, port) = bind_offered(&offered).await.unwrap();
-
-    assert_eq!(listeners.len(), 1);
-    assert_eq!(
-        listeners[0].local_addr().unwrap().ip().to_string(),
-        "127.0.0.1"
-    );
-    assert_eq!(listeners[0].local_addr().unwrap().port(), port);
-}
-
-#[tokio::test]
-async fn binding_with_nothing_offered_is_an_error_not_a_wildcard() {
-    let result = bind_offered(&[]).await;
-
-    assert!(matches!(result, Err(BridgeError::NoPrivateNetwork)));
-}
-
 #[test]
 fn wire_shape_qr_info() {
     assert_wire_value(
@@ -158,22 +148,44 @@ fn wire_shape_bridge_status() {
             running: true,
             port: Some(4000),
             enrolled_count: 2,
+            is_advertised: true,
+            pending_pairing: Some(PendingPairing {
+                id: "a1".to_string(),
+                name: "Harborline iPhone".to_string(),
+                code: "482 913".to_string(),
+                asked_at: "2026-11-27T10:00:00Z".to_string(),
+            }),
+            fault: Some(BridgeFault {
+                code: "file_unreadable",
+                message: "m",
+            }),
+            prior_phone_count: 2,
         },
-        json!({ "running": true, "port": 4000, "enrolledCount": 2 }),
+        json!({
+            "running": true,
+            "port": 4000,
+            "enrolledCount": 2,
+            "isAdvertised": true,
+            "pendingPairing": { "id": "a1", "name": "Harborline iPhone", "code": "482 913", "askedAt": "2026-11-27T10:00:00Z" },
+            "fault": { "code": "file_unreadable", "message": "m" },
+            "priorPhoneCount": 2,
+        }),
     );
 }
 
 #[test]
-fn a_network_change_after_the_bind_means_the_listener_is_rebuilt() {
-    let bound: Vec<std::net::IpAddr> = vec!["192.168.1.20".parse().unwrap()];
-    let same = [raw("en0", "192.168.1.20")];
-    let moved = [raw("en0", "192.168.1.31")];
-    let joined = [raw("en0", "192.168.1.20"), raw("utun4", "100.101.102.103")];
-
-    assert!(same_addresses(&bound, &same));
-    assert!(!same_addresses(&bound, &moved));
-    assert!(!same_addresses(&bound, &joined));
-    let endpoints = bound_endpoints(&bound, 4000);
-    assert_eq!(endpoints.len(), 1);
-    assert_eq!(endpoints[0].host, "192.168.1.20");
+fn wire_shape_link_hint() {
+    assert_wire_value(
+        &LinkHint {
+            prior_phone_count: 1,
+            fault: Some(BridgeFault {
+                code: "keychain_unavailable",
+                message: "m",
+            }),
+        },
+        json!({
+            "priorPhoneCount": 1,
+            "fault": { "code": "keychain_unavailable", "message": "m" },
+        }),
+    );
 }

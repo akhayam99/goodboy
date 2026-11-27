@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import type { AppState } from '../../../../../store/types';
@@ -18,6 +19,7 @@ type StateParams = {
 
 export type SessionPermissionAsk = Readonly<{
   agentId: AgentId;
+  mountId: string | null;
   ask: OpenPermissionAsk;
 }>;
 
@@ -30,12 +32,34 @@ const askingAgentIdOf = ({ state, sessionId }: StateParams): AgentId | null =>
       }).length > 0,
   )?.id ?? null;
 
+const unloadedAgentIdOf = ({ state, sessionId }: StateParams): AgentId | null =>
+  (state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).find(
+    (agent) =>
+      state.agentTurnState[agent.id]?.kind === 'blocked' &&
+      state.transcripts[agent.id] === undefined,
+  )?.id ?? null;
+
 export const useSessionPermissionAsk = ({
   sessionId,
   isEnabled,
 }: Params): SessionPermissionAsk | null => {
   const agentId = useAppStore((state) =>
     isEnabled ? askingAgentIdOf({ state, sessionId }) : null,
+  );
+  const unloadedId = useAppStore((state) =>
+    isEnabled ? unloadedAgentIdOf({ state, sessionId }) : null,
+  );
+  const loadAgentTranscript = useAppStore((state) => state.loadAgentTranscript);
+  useEffect(() => {
+    if (unloadedId !== null) {
+      void loadAgentTranscript(sessionId, unloadedId, { isSelecting: false });
+    }
+  }, [loadAgentTranscript, sessionId, unloadedId]);
+  const mountId = useAppStore((state) =>
+    agentId === null
+      ? null
+      : ((state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).find((agent) => agent.id === agentId)
+          ?.mountId ?? null),
   );
   const events = useAppStore((state) =>
     agentId === null ? undefined : state.transcripts[agentId],
@@ -47,5 +71,5 @@ export const useSessionPermissionAsk = ({
     return null;
   }
   const [ask] = openPermissionAsksOf({ events: events ?? EMPTY_ARRAY, turnState });
-  return ask === undefined ? null : { agentId, ask };
+  return ask === undefined ? null : { agentId, mountId, ask };
 };

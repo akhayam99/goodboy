@@ -61,7 +61,7 @@ export const parseDecideAction = ({ raw }: ParseParams): DecideAction | null => 
       const agentId = read.id({ name: 'agentId' });
       const requestId = read.id({ name: 'requestId' });
       const seenInputHash = read.id({ name: 'seenInputHash' });
-      const verdict = read.pick({ name: 'verdict', options: ['allow', 'deny'] });
+      const verdict = read.pick({ name: 'verdict', options: ['allow', 'allowAlways', 'deny'] });
       if (agentId === null || requestId === null || seenInputHash === null || verdict === null) {
         return null;
       }

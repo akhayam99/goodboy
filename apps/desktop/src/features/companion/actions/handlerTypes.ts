@@ -49,6 +49,7 @@ export type HandlerParams<Action> = {
   readonly action: Action;
   readonly getStore: () => AppStore;
   readonly ports: DecidePorts;
+  readonly phoneId?: string | null;
 };
 
 export type StoreHandlerParams<Action> = {

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Hand, ShieldCheck } from '@goodboy/ui/icons';
+import { Lock, ShieldCheck } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Button,
@@ -12,12 +12,12 @@ import {
 import type { AgentId, SessionId } from '@goodboy/types';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';
 import { AppMenuList } from '../../../actions/AppMenuList';
-import { formatRequestInput } from './formatRequestInput';
+import { formatRequestInput } from '../../formatRequestInput';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { OpenPermissionAsk } from '../../openPermissionAsksOf';
 import { PermissionDockAsk } from './PermissionDockAsk';
-import { usePermissionAsk } from './usePermissionAsk';
+import { usePermissionAsk } from '../../hooks/usePermissionAsk';
 
 const warningTint = tintClasses('warning');
 
@@ -211,7 +211,7 @@ export const PermissionRequestCard = ({
       className="flex flex-col gap-2 text-meta"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <Hand size={ICON_SIZE.control} aria-hidden className={warningTint.icon} />
+        <Lock size={ICON_SIZE.control} aria-hidden className={warningTint.icon} />
         <span className="text-heading text-foreground">{ask.title}</span>
         {ask.isResolved ? (
           <span className="ml-auto text-meta text-muted-foreground">Resolved</span>

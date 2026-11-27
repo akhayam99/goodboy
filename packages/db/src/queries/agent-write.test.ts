@@ -580,6 +580,16 @@ describe('agent writes', () => {
       expect(stamped).not.toBe(STOPPED_AT);
     });
 
+    it('keeps a newer viewed time that another window wrote', async () => {
+      const id = await seedAgent('a1', 'completed');
+      const newer = brandId<IsoDateTime>({ value: '2026-09-25T13:00:00.000Z' });
+
+      await markAgentViewed(db, id, newer);
+      await markAgentViewed(db, id, STOPPED_AT);
+
+      expect((await getAgentById(db, id))?.lastViewedAt).toBe(newer);
+    });
+
     it('clears the viewed time, so the agent reads as unseen again', async () => {
       const id = await seedAgent('a1', 'completed');
       await markAgentViewed(db, id, STOPPED_AT);

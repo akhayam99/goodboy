@@ -163,6 +163,32 @@ export type BrowserProfileCleared = {
   readonly shouldRestart: boolean;
 };
 
+export type BrowserIsolation = 'perWorkspace' | 'shared';
+
+export type BrowserSiteKind = 'cookies' | 'localStorage' | 'indexedDb' | 'cache' | 'serviceWorkers';
+
+export type BrowserSiteRecord = {
+  readonly name: string;
+  readonly kinds: ReadonlyArray<BrowserSiteKind>;
+  readonly tie: 'site' | 'signIn' | null;
+};
+
+export type BrowserRecordsCleared = {
+  readonly names: ReadonlyArray<string>;
+  readonly wasReloaded: boolean;
+};
+
+type RecordNameParams = {
+  readonly name: string;
+};
+
+export type BrowserSiteRecords = {
+  readonly canList: boolean;
+  readonly records: ReadonlyArray<BrowserSiteRecord> | null;
+  readonly read: () => void;
+  readonly clear: (params: RecordNameParams) => Promise<void>;
+};
+
 export type BrowserTabLoad = {
   readonly tabId: string;
   readonly phase: 'started' | 'finished';
@@ -210,16 +236,6 @@ export type FindParams = TextParams & {
   readonly isBackwards: boolean;
 };
 
-export type BrowserConsoleToggle = {
-  readonly isOpen: boolean;
-  readonly onToggle: () => void;
-};
-
-export type BrowserErrorsShow = {
-  readonly count: number;
-  readonly onShow: () => void;
-};
-
 export type BrowserPaneModel = {
   readonly sessionId: SessionId;
   readonly tabs: ReadonlyArray<BrowserTab>;
@@ -247,6 +263,7 @@ export type BrowserPaneModel = {
   readonly siteTrail: ReadonlyArray<string>;
   readonly hasShownView: boolean;
   readonly clearSiteData: () => void;
+  readonly siteRecords: BrowserSiteRecords;
   readonly stop: () => void;
   readonly select: (params: TabParams) => void;
   readonly close: (params: TabParams) => void;

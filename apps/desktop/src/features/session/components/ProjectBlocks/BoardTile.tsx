@@ -30,7 +30,7 @@ const BoardTileView = ({ rowId }: Props) => {
     shownAskIds,
     newRowIds,
     now,
-    isPermissionShown,
+    permissionMount,
   } = useBoardContext();
   const navigate = useAppStore((state) => state.navigate);
   const entry = entryByRowId.get(rowId) ?? null;
@@ -69,7 +69,7 @@ const BoardTileView = ({ rowId }: Props) => {
     runningCount,
     cards: cardsByRowId.get(rowId) ?? [],
     shownAskIds,
-    isPermissionShown,
+    isPermissionShown: permissionMount !== null && permissionMount.mountId === row.mountId,
     isRebaseStopped,
     failingCheckName: failingName,
     overlap: null,

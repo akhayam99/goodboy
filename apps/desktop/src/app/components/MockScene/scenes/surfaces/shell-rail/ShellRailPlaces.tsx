@@ -22,7 +22,7 @@ const PLACES: ReadonlyArray<Place> = [
   {
     id: 'board',
     label: 'Board',
-    icon: CONCEPT_ICONS.sessions,
+    icon: CONCEPT_ICONS.board,
     mark: { kind: 'count', count: 3, name: '3 need you' },
   },
   {

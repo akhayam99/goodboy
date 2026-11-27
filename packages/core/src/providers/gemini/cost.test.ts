@@ -28,4 +28,19 @@ describe('computeGeminiCostUsd', () => {
     expect(computeGeminiCostUsd({ usage, model: 'gemini-3.6-flash' })).toBeCloseTo(4.5);
     expect(computeGeminiCostUsd({ usage, model: 'gemini-3.5-flash' })).toBe(0);
   });
+
+  it.each([
+    { model: 'gemini-4-neon', cost: 18.15 },
+    { model: 'gemini-4-carbon', cost: 24.2 },
+    { model: 'gemini-4-hydrogen', cost: 9.075 },
+  ])('bills $model at the rate Google lists per million tokens', ({ model, cost }) => {
+    const usage: ProviderUsage = {
+      inputTokens: 2_000_000,
+      outputTokens: 1_000_000,
+      cachedInputTokens: 1_000_000,
+      estimatedCostUsd: 0,
+    };
+
+    expect(computeGeminiCostUsd({ usage, model })).toBeCloseTo(cost);
+  });
 });

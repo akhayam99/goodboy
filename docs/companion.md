@@ -29,31 +29,70 @@ phone with those rights like a second keyboard, not like a viewer.
 ## Pairing
 
 - The desktop keeps a long-term Noise static key and one record per paired
-  phone in `~/.goodboy/companion.json`: its key, the name it gave, when it
-  paired, when it was last seen and its rights. It never leaves the machine.
+  phone. The private half of the key lives in the macOS Keychain (service
+  `com.goodboy.desktop`, item `bridge.static_key`), never in a file. The public
+  half, the remembered port and one record
+  per phone (its key, the name it gave, when it paired, when it was last seen
+  and its rights) sit in `~/.goodboy/companion.json`. Neither leaves the
+  machine. A file from an older version that still holds the private key moves
+  it into the Keychain once, reads it back, and is rewritten without it. If the
+  Keychain refuses the write, nothing is moved and nothing is created: the page
+  shows the fault below and the move is tried again about every 20 seconds. The
+  key is never kept in a file as a fallback.
   A file written by an older version holds a bare list of keys: each becomes a
   record with the default rights and is written back in the new shape. That
   list is read until 0.45.0 (excluded).
-- **Settings › This Mac › iPhone** mints a one-time 256-bit token that expires after 60
+- **Pair an iPhone** on **Settings › This Mac › iPhone** mints a one-time 256-bit token that expires after 60
   seconds and shows it with the desktop's key and addresses as a QR code. The
   payload has `v: 2`, the device name, the key, the token, the endpoints, the
   service name and the rights a new phone gets, so the phone can list them
-  before it pairs. A phone that completes the Noise XK handshake with a live
-  token is added and the token is burned. A known key reconnects without a
-  token.
+  before it pairs. The device name is the label kept in the identity file, or
+  `Mac`; the machine's host name never goes in the code or the hello.
+  A phone that completes the Noise XK handshake with a live token burns the
+  token and then waits: the page shows "An iPhone wants to pair" with the name
+  the phone gave, Allow and Deny, and a banner is raised when the window is not
+  in front, with a six digit code ("Allow only if your iPhone shows 482 913").
+  Only Allow adds the phone, with the default rights. Deny, no answer
+  within 60 seconds, or a second request while one waits, ends the attempt with
+  a reason. A known key reconnects without a token and without a question.
+- **Verification code.** The Mac and the phone each compute the code from the
+  Noise handshake of that attempt; it is never sent. Take the handshake hash `h`
+  (32 bytes, the final hash of the Noise XK handshake, available once message 3
+  is written or read; every Noise library exposes it). Read its first four bytes as an unsigned big-endian
+  integer, take it modulo 1,000,000, write it with six digits and a space after
+  the third: `code = ((h[0] << 24 | h[1] << 16 | h[2] << 8 | h[3]) % 1000000)`,
+  shown as `482 913`. Someone who copied the QR has a different handshake and so
+  a different code, so the real phone's code is the proof. The phone shows its
+  code while it waits.
+- The identity is never rebuilt in silence. When the file cannot be parsed, it is
+  moved aside as `companion.json.unreadable-<time>`; when the Keychain item cannot
+  be read after three tries, or does not belong to the file, nothing is changed.
+  In each case the page says what is wrong and offers **Reset pairing**, which
+  makes a new key and an empty phone list; every phone must then scan a new code.
+  A Keychain that is locked or refuses the write is tried again every 20 seconds
+  (no key is ever written to a file for that). Setup of a first key follows the
+  same rule: no Keychain, no identity.
 - The phone opens the handshake with a version 2 hello: the version byte, a
   flag for a token, the token when there is one, and its name in a fixed 64
   byte field (66 or 98 bytes, never 0 or 32, which are version 1 payloads).
 - A refusal is a frame the phone can show (opcode `0x0E`): `protocol_unsupported`
   for a hello that is not version 2 (a version 1 phone, or a newer one),
-  `not_paired` for a key the desktop does not know, and `token_invalid` for a
-  token that was used or has expired. A version refusal does not burn the
-  pairing code and does not count against the sender.
-- Disconnect on Settings, iPhone clears every phone and drops every live
-  connection; each phone must scan a new code to come back. Disconnect on one
-  phone's row forgets that phone alone, and a live connection of it ends
-  within one ping (20 seconds); its rights go at once. The row shows when the
-  phone was last seen. A phone can never re-pair itself.
+  `not_paired` for a key the desktop does not know, `token_invalid` for a
+  token that was used or has expired, `rate_limited` (with `retryAfterSecs`) for
+  a source the gate is slowing down, and `pairing_denied`, `pairing_expired` or
+  `pairing_busy` for the three ways the Allow question can end. A connected phone
+  whose record was removed hears `not_paired` before its connection closes. A
+  version refusal and the three pairing answers do not count against the sender.
+  A source that is slowed down gets its refusal through a short handshake of its
+  own (3 seconds, 4 at a time); past that, and for a full gate, the socket is
+  closed without a word.
+- Remove all on Settings, iPhone (shown with two or more phones) clears every
+  phone and drops every live connection; each phone must scan a new code to come
+  back. Remove on one phone's row forgets that phone alone, and a live
+  connection of it ends within one ping (20 seconds); its rights go at once.
+  Removing the last phone stops the listener and returns the page to its start.
+  The row says whether the phone is Live or Offline, since when, and its last
+  sync. A phone can never re-pair itself.
 
 ## Rights per phone
 
@@ -68,7 +107,12 @@ The bridge checks the right of the phone that sent the command, read from the
 file at that moment, so a change on Settings, iPhone applies to a connected
 phone at once. A command the phone may not run is answered with
 `permission_denied` and the right it lacks; nothing reaches the executor. The
-hello the desktop sends after the handshake carries the phone's rights.
+hello the desktop sends after the handshake carries the phone's rights and
+`endpoints`, the current private `{host, port}` pairs of the networks you
+switched on (at most 8, no duplicates), so a phone finds the Mac again after its
+address changes. It also carries `contractVersion`, the number in
+`contractVersion.ts` (a test reads the same file), so a phone can tell an older
+Mac from a current one before it asks for a field.
 
 ## What a phone may ask
 
@@ -188,10 +232,12 @@ its hello and is checked in the bridge.
 ### Decisions from the phone
 
 A phone may also answer a question, approve a plan or ask for changes, allow or
-deny one permission request once, raise a limit, stop or continue a run or an
+deny one permission request once or allow it always for the workspace (the
+`allowAlways` verdict, the same rule as Always allow on the Mac, checked against
+the same decide right), raise a limit, stop or continue a run or an
 agent, stop a Lead with all its running agents in one action (`stopAgentTree`),
 send a message to one agent (`sendToAgent`), and send or discard a Slack reply
-draft. Always allow, permission rules
+draft. Permission rules beyond that one verdict
 and every other setting stay on the Mac. Each of these actions follows five
 rules, kept in `features/companion/actions/`:
 
@@ -269,28 +315,120 @@ stay until the phone ships the start form.
 
 ## Listener lifetime
 
-- Nothing listens at boot. The listener starts when **Settings › This Mac › iPhone** opens.
-  Leaving the page with no phone paired stops it; with at least one phone
-  paired it stays up so that phone can reconnect, until the app quits or
-  Disconnect runs.
-- It binds a random TCP port on the private addresses of the interfaces you
-  switch on under Networks, and on no other address. A private address is
-  RFC 1918 (10/8, 172.16/12, 192.168/16), 100.64/10 (tailnets) or an IPv6
-  unique local address (fc00::/7). A public IPv4, a global IPv6, a link-local
-  or a loopback address is never offered in the QR and never bound, even on an
-  interface you switched on. Until you choose, every private interface is on.
-  Changing the choice restarts the listener and mints a new code. With no
-  private network on, the code cannot be made and the page says so.
+- The listener starts at launch when at least one phone is paired, and keeps
+  running; it also starts when Pair an iPhone is pressed on **Settings › This Mac
+  › iPhone**. Opening the page alone starts nothing. Leaving the page with no phone
+  paired stops it when this window opened a code, and so does removing the last
+  phone. With a phone paired it stays up until the app quits or Remove all runs.
+  Cancel on the pairing view drops the live code at once (`bridge_cancel_code`)
+  and ends a pairing request that is waiting for Allow (with phones already paired
+  too, whose connections stay up); with no phone paired it also stops the
+  listener. A code that was still being made when Cancel was pressed is dropped
+  the same way, so a phone that scans it later is refused. Each code carries a
+  generation on the page: an older answer after a Cancel and a new Pair an iPhone
+  is discarded and never closes the newer code.
+- Switching a network on or off under Networks reaches the running listener at
+  once (`LiveSelection`): it binds the new address, drops the removed one and
+  advertises again, and no paired phone is disconnected for it.
+- It binds each private address of the networks you switched on under Networks
+  on one TCP port, never a wildcard, so the port is closed on every public
+  address. Every 5 seconds the set is read again: a new address is bound, a gone
+  one is released, and Bonjour follows. A connection is accepted only when the
+  source is a private address and it arrived on one of those addresses (the
+  check reads the destination address, so a private network that was not
+  switched on can still reach an offered address when routing allows it). A private address is RFC 1918
+  (10/8, 172.16/12, 192.168/16), 100.64/10 (tailnets) or an IPv6 unique local
+  address (fc00::/7). Any other source is closed without an answer, before the
+  gate sees it. A public IPv4, a global IPv6, a link-local or a loopback address
+  is never offered in the QR or the hello, even on an interface you switched on.
+  Until you choose, every private interface is on. Changing the choice restarts
+  the listener on the same port. With no private network on, the code cannot be
+  made and the page says so; a phone already paired stays listened for.
+- The port is remembered in the identity file and asked for first at every
+  start; a new one is taken only when it is busy, and is remembered in turn.
+- The Mac advertises `_goodboy._tcp` over Bonjour with the opaque instance id
+  as its name and the port, nothing else. It registers once per private interface you switched on (never on every
+  interface), and the instance id is new at every launch, so it cannot be used
+  to follow the Mac. The service host name the system publishes is the Mac's
+  local host name, which Bonjour sets itself. It uses the system service (DNS-SD in
+  libSystem) on macOS, so no dependency was added; other systems advertise
+  nothing and the phone uses the endpoints of the hello. The advertisement is
+  withdrawn when the listener stops and made again when the set of private
+  addresses changes (checked every 5 seconds).
 - Before a phone is authenticated the listener holds at most 8 connections,
   and at most 2 from one source address, so one holder behind a shared address
   cannot block the rest. After two failed handshakes from a source, its next
   attempts wait 2 seconds, then 4, doubling up to 5 minutes; a good handshake
   clears the wait. When 30 handshakes fail within a minute, from any sources,
   new connections are closed for 30 seconds. A connection that closes before it
-  authenticates counts as a failure. The whole Noise handshake has 10 seconds,
+  authenticates is not counted. Only a failed handshake counts, per source; a
+  handshake that stalls counts for its source alone; only failed handshakes
+  feed the 30 a minute pause. IPv6 sources count per /64. The table of sources
+  evicts the least recently seen instead of refusing new ones. A completed
+  handshake of a known phone clears its source's count. The whole Noise handshake has 10 seconds,
   then the socket is dropped and the slot frees.
 - A connected phone that sends no frame for 60 seconds (three missed pings) is
   dropped; any frame, a PONG included, counts as an answer.
+
+## The iPhone page and the top bar
+
+- **The page has three moments.** Before a phone: three lines on what the iPhone
+  does, a drawn preview of the app, the TestFlight block and Pair an iPhone as the
+  one filled button. Pairing: the code with its 60 seconds, then "An iPhone wants
+  to pair" with the six digit code, Allow filled and Deny. After: each phone with
+  its state, since when, last sync, its rights as switches and Remove, the
+  networks the Mac listens on with the port and whether Bonjour is on, and a
+  failure with Reset pairing. Pair an iPhone stays in the header, quiet.
+- **TestFlight block.** The public TestFlight link is the one constant
+  `TESTFLIGHT_LINK` in `features/companion/testflightLink.ts`: empty, or a
+  `https://testflight.apple.com/join/` link. While it is empty the block does not
+  render and nothing asks for a code. When it holds a link the block shows a QR
+  made on the Mac by `bridge_link_qr` (a local command that accepts only a
+  TestFlight join link and runs in the main window only), the four steps and Copy
+  link; when the code cannot be made the block says so and keeps Copy link. There
+  is no email field and no call to a server of ours; a test reads the sources of
+  the companion components and fails on `fetch`, a socket or a web address. The
+  scene `u26s-settings-iphone-get` draws the block with a link that exists in the
+  scene only.
+- **Live and Offline.** A phone is Live while one authenticated connection of it
+  is open. `bridge/live.rs` keeps the set: a second connection of the same phone
+  keeps the first connection's time, and the phone is Offline when the last one
+  closes. `bridge_phones` returns `liveSince` for a live phone. The last sync of
+  an offline phone is `lastSeen`, written when a connection opens (at most once a
+  minute) and always when it closes. A time of an earlier day reads "yesterday,
+  18:20", then a weekday, then a date. Removed is the phone's word for a phone the
+  Mac forgot; the Mac simply no longer lists it. One function owns each word
+  (`linkWordOf`, `phoneStateTextOf`, `phoneSyncTextOf`): the bar name, its
+  tooltip, the panel and the page rows say the same thing.
+- **One read of the link.** `store/slices/companion-link/` holds the status and
+  the phones that `bridge_status` and `bridge_phones` return; the page and the bar
+  read it, and one poll (3 seconds, `retainCompanionLinkPoll`) fills it while any
+  of them needs it. A late answer for an older read is dropped. A read that fails
+  keeps the last good state: after two misses the page says it could not refresh;
+  the bar keeps its dot. Before any good read the page shows only that it could not
+  read the link, never the before-a-phone moment.
+- **Top bar.** A phone glyph sits just before the bell, with a 6px status dot
+  beside it (never on top): green Live, yellow Offline, red when pairing is broken
+  (a fault) for a paired phone, no dot when no phone is paired, a fault included.
+  The glyph is a 28 by 28 square without a dot and takes the bell's shape with
+  one. With no phone a click opens the iPhone page; with one it opens a compact
+  panel: the phone's name (or "Pairing is not available" in a fault), State with
+  its dot and since when, Last sync, Rights, and a pinned row Open iPhone
+  settings. With several phones the panel shows the live one, else the one seen
+  last. Only the main window shows the icon and reads the Mac. It reads the phone
+  list once, and starts the 3 second poll only while a phone is paired or the
+  iPhone page is open, so someone who never paired never has the Keychain asked
+  about pairing from the bar. The first read (`bridge_phones` and the cheap
+  `bridge_link_hint`, which never asks the Keychain) is retried every 5 seconds
+  until it answers. When the keys cannot be read, the identity holds no phones;
+  the hint and `bridge_status` carry `priorPhoneCount`, the phones the file held,
+  so a person who had phones keeps the poll and a red dot and sees the recovery,
+  while a person who never paired still gets no dot. The offline age in the
+  tooltip keeps counting while a phone is paired. While pairing is broken the page rows say "Can't
+  connect" and the Listener line says the Mac is not listening, in step with the
+  bar. The switch Show iPhone in the top bar, under Top bar on the page, hides the
+  icon in every window: the choice is kept in local storage, which windows share,
+  and each window follows a change through the `storage` event.
 
 ## What the phone sees
 
@@ -362,6 +500,14 @@ files. A test in `scripts/gen-mobile-contract.test.mjs` fails when a type or a
 token changes and `CONTRACT_VERSION` does not: bump it, then run
 `node scripts/gen-mobile-contract.mjs --lock`. A vocabulary test fails when the
 contract names an attention reason, stage, tone or mark the app does not.
+
+Contract version 8 adds the `allowAlways` permission verdict; version 9 adds
+`alwaysRule` to the permission decision: `{ scope: 'workspace', label, pattern }`,
+built on the Mac with the same function as the Always allow button, so the
+phone shows the exact rule before the tap. A rule made from a phone is saved
+with the id of that phone in the pairing file; removing the phone (or all
+phones) on Settings, iPhone deletes those rules. A phone on version 7 or 8
+never sends the new field.
 
 ### Needs you across workspaces
 

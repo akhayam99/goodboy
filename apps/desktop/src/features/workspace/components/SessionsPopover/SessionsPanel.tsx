@@ -43,7 +43,7 @@ type KeyParams = {
 const groupWordOf = ({ group }: GroupParams): string =>
   group.key === PINNED_GROUP_KEY ? 'Pinned' : stageWord({ stage: group.key });
 
-const BoardIcon = CONCEPT_ICONS.sessions;
+const BoardIcon = CONCEPT_ICONS.board;
 
 export const SessionsPanel = ({ workspaceId, onClose }: Props) => {
   const sessions = useSessions();

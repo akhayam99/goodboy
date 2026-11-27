@@ -18,6 +18,7 @@ import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed
 import { mockSceneIpc } from '../../mockSceneIpc';
 import { sceneClock } from '../../../sceneClock';
 import { NETWORK_READ } from './browserNetworkRead';
+import { BROWSER_SITE_RECORDS } from './browserSiteRecords';
 
 export type BrowserPaneSceneState =
   | 'pane'
@@ -42,7 +43,8 @@ export type BrowserPaneSceneState =
   | 'network'
   | 'network-detail'
   | 'pick'
-  | 'errors';
+  | 'errors'
+  | 'site-data';
 
 const PICK_READ: BrowserPickRead = {
   doc: 'mockload',
@@ -544,6 +546,10 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
         return [];
       case 'browser_visits_list':
         return VISITS;
+      case 'browser_profile_isolation':
+        return 'perWorkspace';
+      case 'browser_site_data_list':
+        return BROWSER_SITE_RECORDS;
       case 'browser_tab_open':
         opened += 1;
         return factsOf({

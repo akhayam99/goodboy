@@ -269,7 +269,7 @@ export const BranchRowsScene = ({ theme }: Props) => {
       openFor: () => null,
       removal: { targets: [], isBusy: false, sizeLabel: null, run: async () => undefined },
       shownAskIds: new Set(),
-      isPermissionShown: false,
+      permissionMount: null,
     };
   }, []);
   if (!isReady) {

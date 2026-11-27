@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,10 +21,10 @@ import {
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../../../store/storyHarness';
-import type { ActionCardActions } from '../../central/next/useActionCardActions';
-import { NeedsYouSection } from './NeedsYouSection';
-import { useSessionPermissionAsk } from './useSessionPermissionAsk';
+} from '../../../../../store/storyHarness';
+import type { ActionCardActions } from '../../../central/next/useActionCardActions';
+import { NeedsYouSection } from '../NeedsYouSection';
+import { useSessionPermissionAsk } from '../useSessionPermissionAsk';
 
 const session = aSession();
 const SESSION_ID = session.id;
@@ -120,6 +120,46 @@ describe('Needs you for a Lead waiting on a permission', () => {
     });
     expect(allowAndContinue).toHaveBeenCalledTimes(1);
     expect(document.querySelectorAll('[data-move^="permission:"]')).toHaveLength(0);
+  });
+
+  it('shows the full request on demand', () => {
+    waits({ isBlocked: true });
+    render(<Probe />);
+    expect(document.querySelector('pre')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show full request' }));
+    expect(document.querySelector('pre')?.textContent).toContain('pnpm test in payments-api');
+  });
+
+  it('loads the transcript of a blocked agent that has none yet', () => {
+    const loadAgentTranscript = vi.fn(async () => undefined);
+    useAppStore.setState({
+      loadAgentTranscript,
+      sessionPhaseRuns: { [SESSION_ID]: [lead] },
+      transcripts: {},
+      agentTurnState: { [lead.id]: BLOCKED },
+    });
+    render(<Probe />);
+    expect(loadAgentTranscript).toHaveBeenCalledWith(SESSION_ID, lead.id, { isSelecting: false });
+  });
+
+  it('shows the full request on demand', () => {
+    waits({ isBlocked: true });
+    render(<Probe />);
+    expect(document.querySelector('pre')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show full request' }));
+    expect(document.querySelector('pre')?.textContent).toContain('pnpm test in payments-api');
+  });
+
+  it('loads the transcript of a blocked agent that has none yet', () => {
+    const loadAgentTranscript = vi.fn(async () => undefined);
+    useAppStore.setState({
+      loadAgentTranscript,
+      sessionPhaseRuns: { [SESSION_ID]: [lead] },
+      transcripts: {},
+      agentTurnState: { [lead.id]: BLOCKED },
+    });
+    render(<Probe />);
+    expect(loadAgentTranscript).toHaveBeenCalledWith(SESSION_ID, lead.id, { isSelecting: false });
   });
 
   it('shows no tile when nothing waits', () => {

@@ -15,6 +15,7 @@ const CONTROL_SOURCES: ReadonlyArray<string> = [
   'app/components/AppTopBar/LimitsStrip/LimitsOverflowPopover.tsx',
   'app/components/AppTopBar/LimitsStrip/LimitsProvidersMenu.tsx',
   'features/notifications/components/NotificationCenter/BellButton.tsx',
+  'features/companion/components/IphoneEntry/index.tsx',
 ];
 
 const BAR_SIZES = /(?<![\w-])(?:h|size)-(?:5|6|8|9)(?![\w.-])/;

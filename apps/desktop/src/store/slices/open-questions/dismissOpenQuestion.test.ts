@@ -36,6 +36,7 @@ type RecordedEvent = {
 type TestState = {
   sessionOpenQuestions: Record<string, ReadonlyArray<OpenQuestion>>;
   loadSessionSlots: (sessionId: SessionId) => Promise<void>;
+  loadSessionOpenQuestions: (sessionId: SessionId) => Promise<void>;
   loadSessionDismissedQuestions: (sessionId: SessionId) => Promise<void>;
   maybeAutoAdvanceWorkflow: (sessionId: SessionId) => Promise<void>;
   recordSessionEvent: (event: RecordedEvent) => Promise<void>;
@@ -46,6 +47,7 @@ const makeStore = (questions: ReadonlyArray<OpenQuestion>) =>
   createStore<TestState>(() => ({
     sessionOpenQuestions: { [sessionId]: questions },
     loadSessionSlots: vi.fn(async () => undefined),
+    loadSessionOpenQuestions: vi.fn(async () => undefined),
     loadSessionDismissedQuestions: vi.fn(async () => undefined),
     maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
     recordSessionEvent: vi.fn(async () => undefined),

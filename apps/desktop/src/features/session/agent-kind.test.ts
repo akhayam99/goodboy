@@ -5,6 +5,7 @@ import { AUTO_OWN_PROVIDERS } from '@goodboy/core/auto';
 import { ROLE_REGISTRY } from '@goodboy/core/roles';
 import { PLAN_KIT_GUIDE } from '@goodboy/core/artifacts';
 import type { Agent, AgentId, AgentRole, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
+import { Eye, Network } from '@goodboy/ui/icons';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 import {
   AGENT_KIND_DEFAULTS,
@@ -286,6 +287,11 @@ describe('agentKindPalette', () => {
     }
   });
 
+  it('draws the Lead as Orchestrate and the Reviewer as an eye', () => {
+    expect(AGENT_KIND_PALETTE.auto.icon).toBe(Network);
+    expect(AGENT_KIND_PALETTE.reviewer.icon).toBe(Eye);
+  });
+
   it('never returns undefined for a kind outside the union', () => {
     for (const kind of [
       '',
@@ -351,7 +357,7 @@ describe('AGENT_KIND_DEFAULTS', () => {
   it('starts on the workspace default provider when one is given', () => {
     expect(kindRouting({ kind: 'implementer', defaultProvider: 'codex' })).toEqual({
       provider: 'codex',
-      model: 'gpt-6.1-sol',
+      model: 'gpt-6.2-sol',
       effort: 'medium',
     });
   });

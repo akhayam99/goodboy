@@ -1,4 +1,6 @@
 import type { ProviderId } from '@goodboy/types';
+import { IphoneEntry } from '../../../features/companion/components/IphoneEntry';
+import { useIsMainWindow } from '../../../features/workspace/useIsMainWindow';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
 import { SessionsPopover } from '../../../features/workspace/components/SessionsPopover';
 import { RepoEntry } from '../../../features/workspace/components/RepoEntry';
@@ -23,6 +25,7 @@ type Props = {
 export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null }: Props) => {
   const workspace = useCurrentWorkspace();
   const place = useColumnPlace();
+  const isMainWindow = useIsMainWindow();
   return (
     <>
       <div
@@ -53,6 +56,8 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null }: 
           <LimitsStrip openProviderId={openProviderId} />
 
           <SpendButton onOpenSpend={onOpenSpend} />
+
+          {isMainWindow ? <IphoneEntry /> : null}
 
           <NotificationCenter isCurrent={place === 'notifications'} />
         </div>

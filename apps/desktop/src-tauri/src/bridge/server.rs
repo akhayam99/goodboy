@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -5,14 +7,20 @@ use base64::Engine as _;
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::{broadcast, oneshot, watch, Mutex};
+use tokio::sync::{broadcast, oneshot, watch, Mutex, Semaphore};
 
 use super::action_guard::{action_id_of, correlation_of, stamp_phone, InFlight};
+use super::advertise::Presence;
 use super::commands::{CmdResult, CommandEvent, MobileAction, Origin, PendingMap, ACK_TIMEOUT};
 use super::frame::{read_frame, write_frame, NOISE_MAX};
 use super::gate::{HandshakeGate, HandshakePermit, Refusal, MAX_UNAUTHENTICATED};
-use super::handshake::authorize_within;
+use super::handshake::{
+    authorize_within, refuse_within, Authorized, Forced, RefusalCode, OP_REFUSED,
+};
 use super::identity::Identity;
+use super::listen::{bind_ip, endpoints_of, is_accepted_source, plan};
+use super::network::{offered_addresses, raw_addresses, RawAddress};
+use super::pairing::PairingHold;
 use super::permissions::{denial, permission_for};
 use super::publish::{PublishHub, Stored, Update};
 use super::tokens::TokenStore;
@@ -34,35 +42,133 @@ const PING_INTERVAL: Duration = Duration::from_secs(20);
 const SILENCE_LIMIT: Duration = Duration::from_secs(60);
 const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(10);
 const FRESHNESS_INTERVAL: Duration = Duration::from_secs(1);
+const REFUSAL_HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(3);
+const REFUSAL_SLOTS: usize = 4;
+
+pub type Offered = Arc<std::sync::RwLock<Vec<IpAddr>>>;
+
+const NETWORK_WATCH: Duration = Duration::from_secs(5);
+const ACCEPT_PAUSE: Duration = Duration::from_millis(200);
 
 pub struct ServerCtx {
     pub identity: Arc<Mutex<Identity>>,
     pub tokens: Arc<TokenStore>,
     pub device_name: String,
+    pub port: u16,
+    pub offered: Offered,
+    pub pairing: Arc<PairingHold>,
     pub app: AppHandle,
     pub pending: PendingMap,
     pub hub: Arc<PublishHub>,
     pub in_flight: InFlight,
+    pub live: super::live::LiveSet,
     pub shutdown: watch::Receiver<bool>,
 }
 
-pub async fn serve(listeners: Vec<TcpListener>, ctx: Arc<ServerCtx>) {
-    let gate = HandshakeGate::new(MAX_UNAUTHENTICATED);
-    let mut accepting = tokio::task::JoinSet::new();
-    for listener in listeners {
-        accepting.spawn(accept_loop(listener, ctx.clone(), gate.clone()));
-    }
-    while accepting.join_next().await.is_some() {}
+pub struct Serving {
+    pub port: u16,
+    pub first: Vec<(IpAddr, TcpListener)>,
+    pub selected: super::selection::LiveSelection,
+    pub presence: Arc<std::sync::Mutex<Presence>>,
 }
 
-async fn accept_loop(listener: TcpListener, ctx: Arc<ServerCtx>, gate: HandshakeGate) {
+fn offered_now(selected: Option<&[String]>) -> Vec<RawAddress> {
+    offered_addresses(&raw_addresses(), selected)
+}
+
+pub async fn serve(serving: Serving, ctx: Arc<ServerCtx>) {
+    let Serving {
+        port,
+        first,
+        selected,
+        presence,
+    } = serving;
+    let gate = HandshakeGate::new(MAX_UNAUTHENTICATED);
+    let refusals = Arc::new(Semaphore::new(REFUSAL_SLOTS));
+    let mut accepting = tokio::task::JoinSet::new();
+    let mut live: HashMap<IpAddr, tokio::task::AbortHandle> = HashMap::new();
+    for (ip, listener) in first {
+        let handle = accepting.spawn(accept_loop(
+            listener,
+            ctx.clone(),
+            gate.clone(),
+            refusals.clone(),
+        ));
+        live.insert(ip, handle);
+    }
+    let mut every = tokio::time::interval(NETWORK_WATCH);
+    every.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    loop {
+        tokio::select! {
+            _ = every.tick() => {}
+            _ = selected.changed() => {}
+        }
+        let raw = offered_now(selected.get().as_deref());
+        let ips: Vec<IpAddr> = raw.iter().map(|a| a.ip).collect();
+        if let Ok(mut offered) = ctx.offered.write() {
+            *offered = ips.clone();
+        }
+        let current: Vec<IpAddr> = live.keys().copied().collect();
+        let (add, remove) = plan(&current, &ips);
+        for ip in remove {
+            if let Some(handle) = live.remove(&ip) {
+                handle.abort();
+            }
+        }
+        for ip in add {
+            let Some(listener) = bind_ip(ip, port).await else {
+                continue;
+            };
+            let handle = accepting.spawn(accept_loop(
+                listener,
+                ctx.clone(),
+                gate.clone(),
+                refusals.clone(),
+            ));
+            live.insert(ip, handle);
+        }
+        if let Ok(mut presence) = presence.lock() {
+            if presence.tick(raw) {
+                log::info!("[bridge] the networks changed, advertised again");
+            }
+        }
+    }
+}
+
+fn is_expected_source(stream: &TcpStream, peer: IpAddr, ctx: &ServerCtx) -> bool {
+    let Ok(local) = stream.local_addr() else {
+        return false;
+    };
+    ctx.offered
+        .read()
+        .is_ok_and(|offered| is_accepted_source(peer, local.ip(), &offered))
+}
+
+async fn accept_loop(
+    listener: TcpListener,
+    ctx: Arc<ServerCtx>,
+    gate: HandshakeGate,
+    refusals: Arc<Semaphore>,
+) {
     loop {
         match listener.accept().await {
             Ok((stream, peer)) => {
+                if !is_expected_source(&stream, peer.ip(), &ctx) {
+                    log::debug!("[bridge] dropped a connection from outside the private networks");
+                    continue;
+                }
                 let permit = match gate.try_enter(peer.ip()) {
                     Ok(permit) => permit,
                     Err(refusal) => {
                         log_refusal(peer.ip(), refusal);
+                        if let Some(forced) = forced_of(refusal) {
+                            tokio::spawn(refuse_with_reason(
+                                stream,
+                                ctx.clone(),
+                                refusals.clone(),
+                                forced,
+                            ));
+                        }
                         continue;
                     }
                 };
@@ -75,14 +181,92 @@ async fn accept_loop(listener: TcpListener, ctx: Arc<ServerCtx>, gate: Handshake
             }
             Err(e) => {
                 log::warn!("[bridge] accept failed: {e}");
-                return;
+                tokio::time::sleep(ACCEPT_PAUSE).await;
             }
         }
     }
 }
 
+pub(super) fn forced_of(refusal: Refusal) -> Option<Forced> {
+    match refusal {
+        Refusal::BackedOff { retry_after } | Refusal::Paused { retry_after } => Some(Forced {
+            code: RefusalCode::RateLimited,
+            retry_after: Some(retry_after),
+        }),
+        Refusal::Full | Refusal::SourceBusy => None,
+    }
+}
+
+async fn refuse_with_reason(
+    mut stream: TcpStream,
+    ctx: Arc<ServerCtx>,
+    slots: Arc<Semaphore>,
+    forced: Forced,
+) {
+    let Ok(_slot) = slots.try_acquire() else {
+        return;
+    };
+    let result = refuse_within(
+        &mut stream,
+        &ctx.identity,
+        &ctx.tokens,
+        &ctx.pairing,
+        forced,
+        REFUSAL_HANDSHAKE_TIMEOUT,
+    )
+    .await;
+    log::debug!("[bridge] told a rate limited source why: {result:?}");
+}
+
 fn log_refusal(ip: std::net::IpAddr, refusal: Refusal) {
     log::debug!("[bridge] refused {ip}: {refusal:?}");
+}
+
+pub(super) fn hello_payload(
+    device_name: &str,
+    permissions: serde_json::Value,
+    offered: &[IpAddr],
+    port: u16,
+) -> Value {
+    json!({
+        "protocol": PROTOCOL_VERSION,
+        "deviceName": device_name,
+        "serverTime": crate::util::iso_now_whole_seconds(),
+        "permissions": permissions,
+        "endpoints": endpoints_of(offered, port),
+        "contractVersion": contract_version(),
+    })
+}
+
+const CONTRACT_VERSION_SOURCE: &str =
+    include_str!("../../../src/features/companion/contract/contractVersion.ts");
+
+pub(super) fn contract_version() -> u32 {
+    CONTRACT_VERSION_SOURCE
+        .split('=')
+        .nth(1)
+        .map(|rest| rest.trim().trim_end_matches(';').trim())
+        .and_then(|digits| digits.parse().ok())
+        .unwrap_or(0)
+}
+
+async fn send_removed(stream: &mut TcpStream, transport: &mut snow::TransportState) {
+    let code = RefusalCode::NotPaired;
+    let body = json!({
+        "code": code.wire(),
+        "message": code.message(),
+        "desktopProtocol": PROTOCOL_VERSION,
+    });
+    send_app(stream, transport, OP_REFUSED, &body).await.ok();
+}
+
+fn settle_failed(permit: HandshakePermit, error: &BridgeError) {
+    match error {
+        BridgeError::Refused(code) if code.is_polite() => permit.release(),
+        BridgeError::Io(_) => permit.release(),
+        BridgeError::Protocol(reason) if reason == "handshake timed out" => permit.fail_source(),
+        _ => permit.fail(),
+    }
 }
 
 async fn handle_conn(
@@ -90,17 +274,48 @@ async fn handle_conn(
     ctx: Arc<ServerCtx>,
     permit: HandshakePermit,
 ) -> Result<(), BridgeError> {
-    let authorized =
-        match authorize_within(&mut stream, &ctx.identity, &ctx.tokens, HANDSHAKE_TIMEOUT).await {
-            Ok(authorized) => authorized,
-            Err(e) => {
-                if e.is_polite_refusal() {
-                    permit.release();
-                }
-                return Err(e);
-            }
-        };
+    let authorized = match authorize_within(
+        &mut stream,
+        &ctx.identity,
+        &ctx.tokens,
+        &ctx.pairing,
+        HANDSHAKE_TIMEOUT,
+    )
+    .await
+    {
+        Ok(authorized) => authorized,
+        Err(e) => {
+            settle_failed(permit, &e);
+            return Err(e);
+        }
+    };
     permit.succeed();
+    let phone_key = authorized.phone_key.clone();
+    let live = go_live(&ctx.live, &phone_key);
+    let outcome = talk(stream, authorized, ctx.clone()).await;
+    leave_live(&ctx.identity, live, &phone_key).await;
+    outcome
+}
+
+fn go_live(set: &super::live::LiveSet, phone_key: &[u8]) -> super::live::LiveGuard {
+    set.enter(
+        &base64::engine::general_purpose::STANDARD.encode(phone_key),
+        crate::util::iso_now_whole_seconds(),
+    )
+}
+
+async fn leave_live(identity: &Mutex<Identity>, live: super::live::LiveGuard, phone_key: &[u8]) {
+    drop(live);
+    if let Err(error) = identity.lock().await.close_seen(phone_key) {
+        log::warn!("[bridge] last sync not written: {error}");
+    }
+}
+
+async fn talk(
+    mut stream: TcpStream,
+    authorized: Authorized,
+    ctx: Arc<ServerCtx>,
+) -> Result<(), BridgeError> {
     let mut transport = authorized.transport;
     let phone_key = authorized.phone_key;
 
@@ -109,12 +324,12 @@ async fn handle_conn(
         &mut stream,
         &mut transport,
         OP_HELLO,
-        &json!({
-            "protocol": PROTOCOL_VERSION,
-            "deviceName": ctx.device_name,
-            "serverTime": crate::util::iso_now_whole_seconds(),
-            "permissions": authorized.permissions.wire(),
-        }),
+        &hello_payload(
+            &ctx.device_name,
+            authorized.permissions.wire(),
+            &ctx.offered.read().map(|o| o.clone()).unwrap_or_default(),
+            ctx.port,
+        ),
     )
     .await?;
     let mut was_open = ctx.hub.is_fresh();
@@ -143,6 +358,7 @@ async fn handle_conn(
                     return Err(BridgeError::Protocol("phone stopped answering pings".into()));
                 }
                 if !still_paired(&ctx, &phone_key).await {
+                    send_removed(&mut stream, &mut transport).await;
                     return Err(BridgeError::Unauthorized("phone was disconnected".into()));
                 }
                 send_app(&mut stream, &mut transport, OP_PING, &json!({ "at": crate::util::iso_now_whole_seconds() })).await?;
@@ -186,6 +402,7 @@ async fn handle_conn(
                         Some(action) => {
                             let current = ctx.identity.lock().await.permissions_of(&phone_key);
                             let Some(permissions) = current else {
+                                send_removed(&mut stream, &mut transport).await;
                                 return Err(BridgeError::Unauthorized("phone was disconnected".into()));
                             };
                             let missing = permission_for(action).filter(|p| !permissions.allows(*p));
@@ -320,4 +537,76 @@ async fn send_desktop_state(
         &json!({ "isOpen": is_open, "at": crate::util::iso_now_whole_seconds() }),
     )
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_backed_off_or_paused_source_is_told_to_wait_and_a_full_gate_stays_silent() {
+        let wait = Duration::from_secs(9);
+
+        let backed = forced_of(Refusal::BackedOff { retry_after: wait }).unwrap();
+        let paused = forced_of(Refusal::Paused { retry_after: wait }).unwrap();
+
+        assert_eq!(backed.code, RefusalCode::RateLimited);
+        assert_eq!(backed.retry_after, Some(wait));
+        assert_eq!(paused.code, RefusalCode::RateLimited);
+        assert!(forced_of(Refusal::Full).is_none());
+        assert!(forced_of(Refusal::SourceBusy).is_none());
+    }
+
+    #[test]
+    fn the_hello_carries_the_current_private_endpoints_and_nothing_else_secret() {
+        let offered: Vec<IpAddr> = ["192.168.1.20", "10.0.0.7", "8.8.8.8"]
+            .iter()
+            .map(|text| text.parse().unwrap())
+            .collect();
+
+        let hello = hello_payload("Mac", json!({}), &offered, 49160);
+
+        assert_eq!(hello["protocol"], PROTOCOL_VERSION);
+        assert_eq!(hello["deviceName"], "Mac");
+        assert_eq!(hello["contractVersion"], contract_version());
+        assert!(contract_version() >= 9);
+        assert_eq!(
+            hello["endpoints"],
+            json!([
+                { "host": "192.168.1.20", "port": 49160 },
+                { "host": "10.0.0.7", "port": 49160 },
+            ])
+        );
+    }
+    #[tokio::test]
+    async fn a_phone_is_live_after_the_handshake_and_its_last_sync_is_written_on_close() {
+        let dir = std::env::temp_dir().join(format!(
+            "goodboy-bridge-server-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let key = [0xb7u8; 32];
+        let mut id = Identity::load_or_create_at(&dir.join("bridge.json")).unwrap();
+        id.enroll(&key, "Harborline iPhone").unwrap();
+        let encoded = base64::engine::general_purpose::STANDARD.encode(key);
+        id.phones[0].last_seen = Some(crate::util::iso_now_whole_seconds());
+        let before = id.phones[0].last_seen.clone();
+        let identity = Mutex::new(id);
+        let set = super::super::live::LiveSet::default();
+
+        let guard = go_live(&set, &key);
+        assert!(set.since(&encoded).is_some());
+
+        tokio::time::sleep(Duration::from_millis(1100)).await;
+        leave_live(&identity, guard, &key).await;
+
+        assert_eq!(set.since(&encoded), None);
+        let after = identity.lock().await.phones[0].last_seen.clone();
+        assert_ne!(after, before);
+        std::fs::remove_dir_all(&dir).ok();
+    }
 }

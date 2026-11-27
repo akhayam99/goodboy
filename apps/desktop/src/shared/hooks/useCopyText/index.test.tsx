@@ -17,7 +17,9 @@ const setup = ({ writeText }: { readonly writeText: (text: string) => Promise<vo
   });
   const showToast = vi.fn();
   const wrapper = ({ children }: { readonly children: ReactNode }) => (
-    <ToastContext.Provider value={{ showToast, previewNotification: vi.fn() }}>
+    <ToastContext.Provider
+      value={{ showToast, previewNotification: vi.fn(), removeNotificationIds: vi.fn() }}
+    >
       {children}
     </ToastContext.Provider>
   );

@@ -35,7 +35,7 @@ Four facts shape everything else:
 - [tab-rows.md](browser/tab-rows.md): saved rows, the store slice, the close on
   archive, visits.
 - [pane.md](browser/pane.md): the dock, its address row, tabs, command field,
-  find, More, Inspect in Safari and live tabs.
+  find, the page menu, Inspect in Safari and live tabs.
 - [placement.md](browser/placement.md): the placement loop, zoom, overlays and
   covers.
 - [page.md](browser/page.md): the full Browser page and the moves to and from

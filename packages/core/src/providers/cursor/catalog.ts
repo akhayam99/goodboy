@@ -1,5 +1,6 @@
 import type { CursorModel } from '@goodboy/types';
 import { CURSOR_FRONTIER_CLAUDE_CATALOG } from './frontierClaudeCatalog';
+import { CURSOR_GEMINI_FOUR_CATALOG } from './geminiFourCatalog';
 
 export const CURSOR_CATALOG = [
   {
@@ -805,42 +806,5 @@ export const CURSOR_CATALOG = [
       },
     ],
   },
-  {
-    key: 'gemini-4-argon',
-    label: 'Gemini 4 Argon',
-    tier: 'turn',
-    contextWindow: 1_000_000,
-    presentation: {
-      family: 'gemini',
-      group: 'Gemini',
-      version: '4',
-      checkpoint: 'Argon',
-      order: 81,
-      costTier: 'mid',
-    },
-    provider: 'cursor',
-    combos: [
-      {
-        effort: 'low',
-        thinking: false,
-        fast: false,
-        slug: 'gemini-4-argon-low',
-        maxMode: false,
-      },
-      {
-        effort: 'medium',
-        thinking: false,
-        fast: false,
-        slug: 'gemini-4-argon-medium',
-        maxMode: false,
-      },
-      {
-        effort: 'high',
-        thinking: false,
-        fast: false,
-        slug: 'gemini-4-argon-high',
-        maxMode: false,
-      },
-    ],
-  },
+  ...CURSOR_GEMINI_FOUR_CATALOG,
 ] satisfies ReadonlyArray<CursorModel>;

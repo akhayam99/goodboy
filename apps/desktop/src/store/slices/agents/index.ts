@@ -13,6 +13,7 @@ import { markAgentViewed } from './markAgentViewed';
 import { markAllAgentsSeen } from './markAllAgentsSeen';
 import { markSessionUnread } from './markSessionUnread';
 import { markSessionsRead } from './markSessionsRead';
+import { refreshAgentsSeen } from './refreshAgentsSeen';
 import { renameAgent } from './renameAgent';
 import { selectAgent } from './selectAgent';
 import { setAgentAttachments } from './setAgentAttachments';
@@ -37,6 +38,7 @@ export const createAgentsSlice = ({ set, get }: SliceDeps) => {
     markAgentSeen: markAgentSeen(set, get),
     markAgentUnviewed: markAgentUnviewed({ set, get }),
     markAllAgentsSeen: markAllAgentsSeen(set, get),
+    refreshAgentsSeen: refreshAgentsSeen({ set, get }),
     markSessionUnread: markSessionUnread({ get }),
     markSessionsRead: markSessionsRead({ get }),
     setAgentDone: setAgentDone(set, get),

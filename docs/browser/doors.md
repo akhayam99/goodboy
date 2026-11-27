@@ -49,7 +49,7 @@ on a terminal file path still opens your editor.
 
 ## Send to agent
 
-Send to agent sends a tab's text to the session's agent: the first row of More,
+Send to agent sends a tab's text to the session's agent: the first row of the page menu,
 the tab's right-click menu (the `browserTab` kind of the action registry) and
 `browser.sendToAgent` (⌘⇧S), all through `sendPageToAgent`.
 

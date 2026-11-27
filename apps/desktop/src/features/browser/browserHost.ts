@@ -6,12 +6,15 @@ import type {
   BrowserConsoleRead,
   BrowserFindOutcome,
   BrowserHistoryState,
+  BrowserIsolation,
   BrowserPageText,
   BrowserPickOp,
   BrowserPickRead,
   BrowserPickRect,
   BrowserProfileCleared,
+  BrowserRecordsCleared,
   BrowserSiteCleared,
+  BrowserSiteRecord,
   BrowserTabFacts,
   BrowserTabFavicon,
 } from './types';
@@ -20,6 +23,11 @@ type SiteParams = {
   readonly tabId: string;
   readonly host: string;
   readonly extraHosts: ReadonlyArray<string>;
+};
+
+type RecordsParams = {
+  readonly tabId: string;
+  readonly names: ReadonlyArray<string>;
 };
 
 type WorkspaceParams = {
@@ -122,6 +130,15 @@ export const browserHost = {
     }),
   tabTrail: ({ tabId }: TabParams) =>
     invokeCommand<ReadonlyArray<string> | null>('browser_tab_trail', { args: { tabId } }),
+  siteDataList: ({ tabId }: TabParams) =>
+    invokeCommand<ReadonlyArray<BrowserSiteRecord> | null>('browser_site_data_list', {
+      args: { tabId },
+    }),
+  clearSiteRecords: ({ tabId, names }: RecordsParams) =>
+    invokeCommand<BrowserRecordsCleared>('browser_site_data_clear_records', {
+      args: { tabId, names },
+    }),
+  profileIsolation: () => invokeCommand<BrowserIsolation | null>('browser_profile_isolation'),
   clearProfile: ({ workspaceId }: WorkspaceParams) =>
     invokeCommand<BrowserProfileCleared>('browser_profile_clear', { args: { workspaceId } }),
   stop: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_stop', { args: { tabId } }),

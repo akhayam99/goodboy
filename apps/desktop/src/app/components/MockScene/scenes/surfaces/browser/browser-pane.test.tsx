@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CodeXml, Terminal } from '@goodboy/ui/icons';
@@ -26,6 +26,7 @@ import { MOCK_SCENES } from '../../..';
 import { BROWSER_PANE_SCENES } from './browser-pane';
 
 const WAIT = { timeout: 15_000 };
+const MAC_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15';
 
 const PATH_DATA = / d="[^"]+"/g;
 
@@ -117,6 +118,8 @@ describe('the browser pane scenes', () => {
       'browser-peek-dark',
       'browser-pick',
       'browser-pick-dark',
+      'browser-site-data',
+      'browser-site-data-dark',
       'browser-width-phone',
       'browser-width-tablet',
     ]);
@@ -203,14 +206,19 @@ describe('the browser pane scenes', () => {
     ).toBe('true');
   });
 
-  it('opens the errors from the red counter, the repeated one grouped and expanded', async () => {
+  it('opens the errors from the Console button with its count, the repeated one grouped and expanded', async () => {
     mount({ id: 'browser-errors' });
 
     const region = await screen.findByRole('region', { name: 'Console' }, WAIT);
     const tab = await within(region).findByRole('tab', { name: /Errors/ }, WAIT);
     expect(tab.getAttribute('aria-selected')).toBe('true');
     expect(tab.textContent).toBe('Errors6');
-    screen.getByRole('button', { name: 'Show 6 errors' });
+    const consoleButton = screen.getByRole('button', { name: 'Console' });
+    expect(consoleButton.getAttribute('aria-pressed')).toBe('true');
+    const notes = (consoleButton.getAttribute('aria-describedby') ?? '')
+      .split(' ')
+      .map((id) => document.getElementById(id)?.textContent);
+    expect(notes).toContain('6 errors');
     const list = within(region).getByRole('list', { name: 'Errors' });
     expect(within(list).getAllByRole('listitem')).toHaveLength(3);
     const stack = within(region).getByRole('group', { name: 'Stack' });
@@ -401,14 +409,32 @@ describe('the browser pane scenes', () => {
     expect(within(pane).getByRole('button', { name: 'Back' }).hasAttribute('disabled')).toBe(false);
   });
 
-  it('opens the More menu with its six rows', async () => {
+  it('opens the page menu with its five rows', async () => {
     mount({ id: 'browser-pane-more' });
 
     const menu = await screen.findByRole('menu', undefined, WAIT);
-    expect(within(menu).getAllByRole('menuitem')).toHaveLength(6);
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(5);
   });
 
-  it('opens the More menu on the Add to message row first', async () => {
+  it('opens the site data of the workspace from Develop with the tab site first', async () => {
+    const agent = vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(MAC_AGENT);
+    onTestFinished(() => agent.mockRestore());
+    mount({ id: 'browser-site-data' });
+
+    const panel = await screen.findByRole('dialog', { name: 'Site data' }, WAIT);
+    await within(panel).findByText('4 sites keep data in this workspace.', {}, WAIT);
+    const rows = panel.querySelectorAll('[data-site-record]');
+    expect([...rows].map((row) => row.getAttribute('data-site-record'))).toEqual([
+      'harborline.dev',
+      'cascadia-id.com',
+      'localhost',
+      'notify-relay.dev',
+    ]);
+    within(panel).getByText('Sign-in for this tab');
+    expect(screen.queryByRole('menu', { name: 'Page menu' })).toBeNull();
+  });
+
+  it('opens the page menu on the Add to message row first', async () => {
     mount({ id: 'browser-handoff' });
 
     const menu = await screen.findByRole('menu', undefined, WAIT);
