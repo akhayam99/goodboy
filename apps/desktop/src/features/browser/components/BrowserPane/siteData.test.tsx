@@ -587,7 +587,7 @@ describe('show site data', () => {
 
     await openDevelop();
 
-    expect(screen.getByRole('menuitem', { name: 'Show site data' })).toBeTruthy();
+    screen.getByRole('menuitem', { name: 'Show site data' });
   });
 
   it('leaves the row out on a Mac whose workspaces share one store', async () => {
@@ -665,7 +665,7 @@ describe('show site data', () => {
     await waitFor(() =>
       expect(panel.querySelector('[data-site-record="cascadia-id.com"]')).toBeNull(),
     );
-    expect(rowOf({ panel, name: 'harborline.dev' })).toBeTruthy();
+    rowOf({ panel, name: 'harborline.dev' });
     screen.getByText('Cleared data for cascadia-id.com. This tab reloaded without cache.');
     expect(callsOf({ command: 'browser_site_data_clear' })).toEqual([]);
   });

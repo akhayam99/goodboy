@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { EmptyLine } from '@goodboy/ui';
 import type { BrowserSiteRecords } from '../../../types';
 import { SiteDataRow } from './SiteDataRow';
 
@@ -34,9 +35,7 @@ export const SiteDataPanel = ({ siteRecords, readKey }: Props) => {
       </div>
       <div className="flex min-w-0 flex-col gap-1 p-2">
         {records !== null && records.length === 0 ? (
-          <p className="px-2 py-2 text-meta text-muted-foreground">
-            No site keeps data in this workspace.
-          </p>
+          <EmptyLine className="px-2">No site keeps data in this workspace.</EmptyLine>
         ) : null}
         {(records ?? []).map((record) => (
           <SiteDataRow key={record.name} record={record} onClear={siteRecords.clear} />
