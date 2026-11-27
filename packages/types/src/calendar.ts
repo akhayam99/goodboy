@@ -62,6 +62,7 @@ export type CalendarEvent = Readonly<{
   isAllDay: boolean;
   location: string | null;
   callLink: string | null;
+  isCallLinkTrusted: boolean;
   attendees: ReadonlyArray<string>;
   status: CalendarEventStatus;
   isBusyOnly: boolean;
@@ -71,3 +72,34 @@ export type CalendarRange = Readonly<{
   from: number;
   to: number;
 }>;
+
+export type CalendarAccessState =
+  'not-determined' | 'denied' | 'granted' | 'restricted' | 'unsupported';
+
+export type CalendarSourceRef = Readonly<{
+  id: CalendarSourceId;
+  kind: CalendarSourceKind;
+}>;
+
+export type CalendarInfo = Readonly<{
+  id: string;
+  sourceId: CalendarSourceId;
+  title: string;
+  account: string | null;
+}>;
+
+export type CalendarSourceFailure = Readonly<{
+  sourceId: CalendarSourceId;
+  kind: CalendarSourceKind;
+  message: string;
+}>;
+
+export type CalendarList<Item> = Readonly<{
+  items: ReadonlyArray<Item>;
+  failedSources: ReadonlyArray<CalendarSourceFailure>;
+}>;
+
+export type CalendarEventsRequest = CalendarRange &
+  Readonly<{
+    sources: ReadonlyArray<CalendarSourceRef>;
+  }>;

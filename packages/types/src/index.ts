@@ -636,9 +636,15 @@ export type {
   SearchQuery,
 } from './search';
 export type {
+  CalendarAccessState,
   CalendarEvent,
+  CalendarEventsRequest,
   CalendarEventStatus,
+  CalendarInfo,
+  CalendarList,
   CalendarRange,
+  CalendarSourceFailure,
+  CalendarSourceRef,
   CalendarRole,
   CalendarRoleEntry,
   CalendarSource,
