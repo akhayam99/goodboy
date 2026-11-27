@@ -106,7 +106,7 @@ const makeState = (): State => ({
   claimPrWrite: vi.fn(() => ({ ok: true, token: 'token-1' })),
   releasePrWrite: vi.fn(),
   emitNotification: vi.fn(async () => undefined),
-  settleStaleNotifications: vi.fn(async () => undefined),
+  settleAttention: vi.fn(async () => undefined),
   reportError: vi.fn(async () => undefined),
   refreshSessionPrDetail: vi.fn(async () => undefined),
   refreshSessionPr: vi.fn(async () => undefined),

@@ -17,16 +17,19 @@ type AttentionEntry = {
   readonly mark: AttentionMark;
   readonly words: string;
   readonly reason: string;
+  readonly isBlocking: boolean;
 };
 
-type EntryParams = Pick<AttentionEntry, 'icon' | 'tone' | 'mark' | 'words'>;
+type EntryParams = Pick<AttentionEntry, 'icon' | 'tone' | 'mark' | 'words'> &
+  Partial<Pick<AttentionEntry, 'isBlocking'>>;
 
-const entryOf = ({ icon, tone, mark, words }: EntryParams): AttentionEntry => ({
+const entryOf = ({ icon, tone, mark, words, isBlocking = false }: EntryParams): AttentionEntry => ({
   icon,
   tone,
   mark,
   words,
   reason: words,
+  isBlocking,
 });
 
 export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntry> = {
@@ -35,19 +38,28 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     tone: 'danger',
     mark: '!',
     words: 'An agent failed',
+    isBlocking: true,
   }),
   'push-failed': entryOf({
     icon: 'review',
     tone: 'danger',
     mark: '!',
     words: "1 comment didn't go out",
+    isBlocking: true,
   }),
-  'ci-failed': entryOf({ icon: 'checks', tone: 'danger', mark: '!', words: 'Checks failing' }),
+  'ci-failed': entryOf({
+    icon: 'checks',
+    tone: 'danger',
+    mark: '!',
+    words: 'Checks failing',
+    isBlocking: true,
+  }),
   'open-question': entryOf({
     icon: 'questions',
     tone: 'warning',
     mark: '?',
     words: '1 question for you',
+    isBlocking: true,
   }),
   'fix-needs-you': entryOf({
     icon: 'review',
@@ -60,12 +72,14 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     tone: 'warning',
     mark: 'approval',
     words: NAMES.waitingForPermission,
+    isBlocking: true,
   }),
   'plan-approval': entryOf({
     icon: 'plan',
     tone: 'warning',
     mark: 'approval',
     words: NAMES.needsApproval,
+    isBlocking: true,
   }),
   'changes-requested': entryOf({
     icon: 'review',

@@ -8,6 +8,7 @@ import {
   Tooltip,
   TOP_BAR_CONTROL,
 } from '@goodboy/ui';
+import { countNoun } from '../../../../shared/utils/countNoun';
 import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
@@ -34,7 +35,7 @@ export const BellButton = ({ isOpen, isCurrent, unread, hasUnreadDebt, onClick }
         !isOpen && !isCurrent && 'text-muted-foreground hover:text-foreground hover:bg-hover',
       )}
       aria-current={isCurrent ? 'page' : undefined}
-      aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`}
+      aria-label={`Notifications${unread > 0 ? `, ${countNoun({ count: unread, one: 'notice' })}` : ''}`}
     >
       <Bell size={ICON_SIZE.control} aria-hidden />
       {unread > 0 && (

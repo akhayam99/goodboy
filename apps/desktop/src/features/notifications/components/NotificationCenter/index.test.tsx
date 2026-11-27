@@ -887,7 +887,7 @@ describe('NotificationCenter', () => {
     ];
     render(<NotificationCenter isCurrent={false} />);
 
-    expect(screen.getByRole('button', { name: 'Notifications, 1 unread' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Notifications, 1 notice' })).toBeDefined();
     await openCenter();
     expect(screen.getByRole('tab', { name: /unread/i }).textContent).toContain('1');
   });
@@ -909,7 +909,7 @@ describe('NotificationCenter', () => {
     ];
     render(<NotificationCenter isCurrent={false} />);
 
-    screen.getByRole('button', { name: 'Notifications, 3 unread' });
+    screen.getByRole('button', { name: 'Notifications, 3 notices' });
   });
 
   it('leaves an unread success row and rows of other workspaces out of the trigger', () => {
@@ -934,7 +934,7 @@ describe('NotificationCenter', () => {
     ];
     render(<NotificationCenter isCurrent={false} />);
 
-    screen.getByRole('button', { name: 'Notifications, 2 unread' });
+    screen.getByRole('button', { name: 'Notifications, 2 notices' });
   });
 
   it('counts rows of every workspace when the bell lists them all', () => {
@@ -954,7 +954,7 @@ describe('NotificationCenter', () => {
     ];
     render(<NotificationCenter isCurrent={false} />);
 
-    screen.getByRole('button', { name: 'Notifications, 2 unread' });
+    screen.getByRole('button', { name: 'Notifications, 2 notices' });
   });
 
   it('writes the unread count beside the bell dot, capped at 9+', () => {
