@@ -312,6 +312,57 @@ describe('needs you row for the Lead carries the pending proposal', () => {
   });
 });
 
+describe('proposal title is the one the Lead wrote', () => {
+  it('uses the title of the propose block, not the role', () => {
+    seed({ ask: 'Shall I go?' });
+    const base = aDelegation({ key: 'impl', role: 'implementer', state: 'awaiting_confirm' });
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        {
+          ...base,
+          request: {
+            title: 'Fix review findings M1, M2 and minors',
+            task: 'Fix the review findings M1 and M2 in payments-api, then the minors.',
+            alternatives: [{ label: 'Review the plan first', role: 'reviewer' }],
+          },
+        },
+      ],
+    });
+    const state = useAppStore.getState();
+    const scope = scopeOfState({
+      workspace: harborline,
+      state: { ...state, autoTreeViews: { [asking.id]: [view] } },
+      sessions: state.sessions,
+      isFullyLoaded: true,
+    });
+
+    const proposal = leadProposalOf({ scope, sessionId: asking.id });
+
+    expect(proposal?.title).toBe('Fix review findings M1, M2 and minors');
+    expect(proposal?.role).toBe('implementer');
+    expect(proposal?.options[1]).toMatchObject({
+      label: 'Review the plan first',
+      role: 'reviewer',
+    });
+  });
+
+  it('falls back to the role word when the block has no title and no task', () => {
+    seed({ ask: 'Shall I go?' });
+    const base = aDelegation({ key: 'impl', role: 'implementer', state: 'awaiting_confirm' });
+    const view = aView({ phase: 'waiting', delegations: [{ ...base, request: {} }] });
+    const state = useAppStore.getState();
+    const scope = scopeOfState({
+      workspace: harborline,
+      state: { ...state, autoTreeViews: { [asking.id]: [view] } },
+      sessions: state.sessions,
+      isFullyLoaded: true,
+    });
+
+    expect(leadProposalOf({ scope, sessionId: asking.id })?.title).toBe('Implementer');
+  });
+});
+
 describe('Lead ask masks a secret before the cut', () => {
   it('hides a credential that sits on the length boundary', () => {
     const token = `ghp_${'b'.repeat(30)}`;

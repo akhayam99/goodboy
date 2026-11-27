@@ -1,5 +1,6 @@
 import type { LeadProposal } from '../contract/projections';
 import { proposalVersionOf } from '../actions/versions';
+import { taskTitleOf } from '../../auto/taskTitleOf';
 import { actionIdOf } from './actionIdOf';
 import { awaitingProposalOf } from './awaitingProposalOf';
 import { safeTextOf } from './safeTextOf';
@@ -40,7 +41,10 @@ export const leadProposalOf = ({ scope, sessionId }: Params): LeadProposal | nul
     delegationId: delegation.id,
     version,
     role: delegation.role,
-    title: safeTextOf({ text: card.roleLabel, max: PROPOSAL_TITLE_MAX }),
+    title: safeTextOf({
+      text: taskTitleOf({ request: delegation.request }) ?? card.roleLabel,
+      max: PROPOSAL_TITLE_MAX,
+    }),
     ...(task === '' ? {} : { task }),
     options: action.choices.slice(0, 1 + PROPOSAL_ALTERNATIVES_MAX).map((choice) => ({
       key: choice.key,
