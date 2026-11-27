@@ -4,6 +4,7 @@ use super::time::{first_of_next_month, nth_weekday, parse_local, parse_weekday_t
 
 const MAX_PERIODS: u32 = 40_000;
 const MAX_OCCURRENCES: usize = 2_000;
+const SKIP_MARGIN_MS: i64 = 2 * 86_400_000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Freq {
@@ -168,6 +169,28 @@ fn is_past_until(until: Option<Until>, local: NaiveDateTime, instant: i64) -> bo
     }
 }
 
+fn first_period(rule: &Rule, start: NaiveDate, before_ms: i64) -> u32 {
+    if rule.count.is_some() {
+        return 0;
+    }
+    let Some(before) = chrono::DateTime::from_timestamp_millis(before_ms).map(|at| at.date_naive()) else {
+        return 0;
+    };
+    if before <= start {
+        return 0;
+    }
+    let months = i64::from(before.year() - start.year()) * 12 + i64::from(before.month())
+        - i64::from(start.month());
+    let elapsed = match rule.freq {
+        Freq::Daily => (before - start).num_days(),
+        Freq::Weekly => (before - start).num_days() / 7,
+        Freq::Monthly => months,
+        Freq::Yearly => i64::from(before.year() - start.year()),
+    };
+    let periods = elapsed / i64::from(rule.interval) - 1;
+    u32::try_from(periods.max(0)).unwrap_or(0)
+}
+
 pub(crate) struct Expansion<'a> {
     pub rule: &'a Rule,
     pub start: NaiveDateTime,
@@ -205,7 +228,8 @@ pub(crate) fn expand(expansion: &Expansion) -> Vec<(NaiveDateTime, i64)> {
     if !take(*start, &mut found) {
         return found;
     }
-    for period in 0..MAX_PERIODS {
+    let first = first_period(rule, start.date(), from_ms - duration_ms - SKIP_MARGIN_MS);
+    for period in first..first.saturating_add(MAX_PERIODS) {
         for date in days_in_period(rule, start.date(), period) {
             let local = date.and_time(start.time());
             if local <= *start {
@@ -317,6 +341,27 @@ mod tests {
         assert_eq!(
             run("FREQ=DAILY", "20150105T090000", "20261127T000000", "20261128T000000"),
             vec![at("20261127T090000")]
+        );
+    }
+
+    #[test]
+    fn an_open_series_older_than_the_period_cap_still_reaches_today() {
+        assert_eq!(
+            run("FREQ=DAILY", "19000101T090000", "20261127T000000", "20261128T000000"),
+            vec![at("20261127T090000")]
+        );
+        assert_eq!(
+            run(
+                "FREQ=WEEKLY;INTERVAL=3;BYDAY=FR",
+                "19000105T090000",
+                "20261101T000000",
+                "20261201T000000"
+            ),
+            vec![at("20261106T090000"), at("20261127T090000")]
+        );
+        assert_eq!(
+            run("FREQ=MONTHLY;BYDAY=-1FR", "19000126T150000", "20261101T000000", "20261201T000000"),
+            vec![at("20261127T150000")]
         );
     }
 
