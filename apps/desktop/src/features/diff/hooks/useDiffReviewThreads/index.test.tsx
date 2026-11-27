@@ -113,7 +113,7 @@ const read = () =>
   renderHook(() => useDiffReviewThreads({ sessionId: SESSION_ID, mountId: MOUNT_ID }));
 
 describe('useDiffReviewThreads', () => {
-  it('lists open and resolved threads as host threads and leaves outdated ones to Comments', () => {
+  it('lists open, resolved and outdated threads as host threads', () => {
     seed([
       comment({ threadId: 'PRRT_1' }),
       comment({ threadId: 'PRRT_2', resolved: true }),
@@ -125,6 +125,7 @@ describe('useDiffReviewThreads', () => {
     expect(result.current.threads.map((thread) => thread.id)).toEqual([
       'review:PRRT_1',
       'review:PRRT_2',
+      'review:PRRT_3',
     ]);
     expect(result.current.threads[0]).toMatchObject({
       source: 'host',
@@ -140,6 +141,36 @@ describe('useDiffReviewThreads', () => {
       canDelete: false,
     });
     expect(result.current.threads[1]).toMatchObject({ statusLabel: 'Resolved', isResolved: true });
+    expect(result.current.threads[2]).toMatchObject({
+      statusLabel: 'Outdated',
+      isOutdated: true,
+      isResolved: false,
+    });
+  });
+
+  it('asks for the threads of the branch on screen when its detail is not loaded', () => {
+    const refreshSessionPrDetail = vi.fn(async () => undefined);
+    useAppStore.setState({
+      refreshSessionPrDetail,
+      mountGithub: { [MOUNT_ID]: { ...githubMount([]), detail: null, detailFetchedAt: null } },
+    });
+
+    read();
+
+    expect(refreshSessionPrDetail).toHaveBeenCalledWith(SESSION_ID, {
+      mountId: MOUNT_ID,
+      silent: true,
+    });
+  });
+
+  it('does not ask again once the detail is loaded', () => {
+    const refreshSessionPrDetail = vi.fn(async () => undefined);
+    useAppStore.setState({ refreshSessionPrDetail });
+    seed([comment({ threadId: 'PRRT_1' })]);
+
+    read();
+
+    expect(refreshSessionPrDetail).not.toHaveBeenCalled();
   });
 
   it('puts a comment on the whole file under its header, with no line', () => {

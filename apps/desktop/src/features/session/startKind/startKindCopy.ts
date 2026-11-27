@@ -37,6 +37,11 @@ export const START_KIND_COPY = {
       `The Lead starts from ${name} and says why when it changes a step.`,
     checksFirst: ({ name, check }: CheckParams) => `${name} checks first: ${check}`,
   },
+  sections: {
+    rules: 'Rules',
+    model: 'Model',
+    scope: 'Scope',
+  },
   settings: 'Run settings',
   change: 'Change',
   done: 'Done',

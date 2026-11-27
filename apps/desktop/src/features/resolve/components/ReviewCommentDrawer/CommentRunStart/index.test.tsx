@@ -12,7 +12,7 @@ vi.mock('../../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { brandId, type AgentId } from '@goodboy/types';
+import { brandId, type AgentId, type MountId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -25,6 +25,7 @@ import {
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   EXPANDED_THREAD_ID,
+  FIX_RUN_MOUNT,
   SESSION,
   THREAD_IDS,
   seedResolveScene,
@@ -255,5 +256,111 @@ describe('the start a run form in the comment drawer', () => {
     within(shownForm()).getByText(COMMENT_RUN_COPY.inRun);
     fireEvent.click(start);
     expect(spawnAgent).not.toHaveBeenCalled();
+  });
+
+  it('reads top to bottom in one section per job, each with one label', async () => {
+    await mount();
+    await openForm({ threadId: EXPANDED_THREAD_ID });
+    const labels = [...shownForm().querySelectorAll('[data-form-section]')].map((node) =>
+      node.getAttribute('data-form-section'),
+    );
+    expect(labels).toEqual(['What', 'Plan', 'Rules', 'Model', 'Scope']);
+    const rules = within(shownForm()).getByRole('group', { name: 'Rules' });
+    expect(rules.querySelector('[data-start-settings-line]')).not.toBeNull();
+    expect(rules.querySelector('[data-start-settings-change]')).not.toBeNull();
+    const model = within(shownForm()).getByRole('group', { name: 'Model' });
+    expect(model.querySelector('[data-where-it-runs] svg')).not.toBeNull();
+    within(model).getByRole('button', { name: /Change/ });
+  });
+
+  it('names the host once and draws every comment as the same chip', async () => {
+    await mount();
+    await openForm({ threadId: EXPANDED_THREAD_ID });
+    const added = await addFirstCandidate();
+    const what = within(shownForm()).getByRole('group', { name: 'What' });
+    expect(what.textContent?.match(/GitHub/g)).toHaveLength(1);
+    within(what).getByText(COMMENT_RUN_COPY.sourcesFrom({ label: 'GitHub' }));
+    const chips = [EXPANDED_THREAD_ID, added].map((id) =>
+      what.querySelector(`[data-comment-run-source="${id}"]`),
+    );
+    expect(chips.every((chip) => chip !== null)).toBe(true);
+  });
+
+  it('offers the other comments under one Add label, each as a button to add', async () => {
+    await mount();
+    await openForm({ threadId: EXPANDED_THREAD_ID });
+    const what = within(shownForm()).getByRole('group', { name: 'What' });
+    within(what).getByText(COMMENT_RUN_COPY.addCaption);
+    const offers = what.querySelectorAll('[data-comment-run-candidate]');
+    expect(offers.length).toBeGreaterThan(0);
+    const labels = within(what)
+      .getAllByRole('button')
+      .map((button) => button.getAttribute('aria-label'));
+    expect(labels).toHaveLength(offers.length);
+    for (const label of labels) {
+      expect(label).toMatch(/^Add .+ to the run$/);
+    }
+  });
+
+  it('ends with Cancel then Start in one row, with no divider or footer bar', async () => {
+    await mount();
+    await openForm({ threadId: EXPANDED_THREAD_ID });
+    const cancel = within(shownForm()).getByRole('button', { name: COMMENT_RUN_COPY.cancel });
+    const start = within(shownForm()).getByRole('button', { name: 'Start' });
+    expect(cancel.parentElement).toBe(start.parentElement);
+    expect(cancel.compareDocumentPosition(start) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(shownForm().querySelector('footer, hr, [role="separator"]')).toBeNull();
+    const sections = shownForm().querySelectorAll('[data-form-section]');
+    const last = [...sections].pop();
+    expect(last).toBeDefined();
+    expect(
+      (last?.compareDocumentPosition(cancel) ?? 0) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('counts the one project the comments belong to, not every mounted project', async () => {
+    await mount();
+    const names = ['ledger-core', 'notify-relay', 'northwind-web'];
+    act(() => {
+      useAppStore.setState((state) => ({
+        sessionProjectMounts: {
+          ...state.sessionProjectMounts,
+          [SESSION.id]: [
+            FIX_RUN_MOUNT,
+            ...names.map((name) => ({
+              ...FIX_RUN_MOUNT,
+              mountName: name,
+              mountId: brandId<MountId>({ value: `mock-mount-${name}` }),
+            })),
+          ],
+        },
+        sessionExternalTasks: {
+          ...state.sessionExternalTasks,
+          [SESSION.id]: [
+            {
+              sessionId: SESSION.id,
+              provider: 'github',
+              externalId: '42',
+              identifier: 'harborline/payments-api#42',
+              url: 'https://github.com/harborline/payments-api/issues/42',
+              title: 'Duplicate credit on retry',
+              createdAt: '2026-01-01T00:00:00.000Z',
+            },
+          ],
+        },
+      }));
+    });
+    await openForm({ threadId: EXPANDED_THREAD_ID });
+    const scope = within(shownForm()).getByRole('group', { name: 'Scope' });
+    expect(scope.textContent).not.toMatch(/across/);
+    expect(scope.textContent).toMatch(/Starts as Lead/);
+  });
+
+  it('keeps the Scope section when the plan changes to One agent', async () => {
+    await mount();
+    await openForm({ threadId: EXPANDED_THREAD_ID });
+    fireEvent.click(within(shownForm()).getByRole('tab', { name: 'One agent' }));
+    const scope = await within(shownForm()).findByRole('group', { name: 'Scope' });
+    expect(scope.textContent).toContain('One agent, on the project the comments belong to');
   });
 });

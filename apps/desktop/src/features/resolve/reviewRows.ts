@@ -1,5 +1,6 @@
 import type {
   DiffComment,
+  MountId,
   PrComment,
   ResolveAttempt,
   ResolveQueueItemWithThread,
@@ -20,7 +21,10 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
-type LaunchParams = Params & { readonly freshComments?: ReadonlyArray<PrComment> };
+type LaunchParams = Params & {
+  readonly freshComments?: ReadonlyArray<PrComment>;
+  readonly mountId?: MountId | null;
+};
 
 const EMPTY_ENTRIES: ReadonlyArray<ResolveQueueItemWithThread> = [];
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
@@ -32,13 +36,16 @@ export const launchRowsOf = ({
   state,
   sessionId,
   freshComments,
+  mountId = null,
 }: LaunchParams): ReadonlyArray<ResolveQueueRow> => {
   return buildResolveQueueRows({
     entries: state.sessionResolveQueueItems[sessionId] ?? EMPTY_ENTRIES,
     attempts: state.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS,
     deliveryReceipts: [],
     comments:
-      freshComments ?? activeReviewSourceOf({ state, sessionId })?.comments ?? EMPTY_COMMENTS,
+      freshComments ??
+      activeReviewSourceOf({ state, sessionId, mountId })?.comments ??
+      EMPTY_COMMENTS,
     notes: state.diffComments[sessionId] ?? EMPTY_NOTES,
   });
 };

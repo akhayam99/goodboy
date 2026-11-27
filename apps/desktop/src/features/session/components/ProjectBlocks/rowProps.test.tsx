@@ -57,7 +57,6 @@ const context: BoardContextValue = {
     menu: null,
     foldedTarget: null,
   }),
-  openFor: () => null,
   removal: {
     targets: [],
     isBusy: false,

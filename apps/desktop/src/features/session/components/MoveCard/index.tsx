@@ -19,23 +19,13 @@ type Props = {
   readonly sessionId: SessionId;
   readonly card: ActionCardModel;
   readonly actionsFor: ActionCardActions['actionsFor'];
-  readonly openFor: ActionCardActions['openFor'];
   readonly density: 'needs' | 'row';
   readonly isPrimary: boolean;
   readonly project: string | null;
 };
 
-export const MoveCard = ({
-  sessionId,
-  card,
-  actionsFor,
-  openFor,
-  density,
-  isPrimary,
-  project,
-}: Props) => {
+export const MoveCard = ({ sessionId, card, actionsFor, density, isPrimary, project }: Props) => {
   const { main, second, failure } = actionsFor({ card });
-  const onOpen = openFor({ card });
   const why = card.reason ?? card.detail;
   const now = useNow(30_000);
   const leadSend = useMoveLeadSend({ sessionId, card });
@@ -81,7 +71,6 @@ export const MoveCard = ({
           cardTitle={card.title}
           variant={isPrimary ? 'primary' : restVariant}
           isMain
-          onOpen={onOpen}
         />
       )}
       {second === null || density === 'row' ? null : (
@@ -91,7 +80,6 @@ export const MoveCard = ({
           cardTitle={card.title}
           variant={restVariant}
           isMain={false}
-          onOpen={onOpen}
         />
       )}
     </span>

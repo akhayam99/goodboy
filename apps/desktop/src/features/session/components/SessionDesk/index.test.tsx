@@ -179,7 +179,7 @@ describe('the tool the Desk opens', () => {
     expect(face()).toBe('overview');
   });
 
-  it('reopens the tools a saved Desk had, split beside the overview', async () => {
+  it('brings back a saved Desk beside the tool the window already has open', async () => {
     saved.row = storedDockGridOf({
       grid: {
         columns: [[{ kind: 'browser', sessionId: session.id, payload: null }]],
@@ -190,6 +190,7 @@ describe('the tool the Desk opens', () => {
       },
       face: 'desk',
     });
+    store.getState().openDrawer({ kind: 'browser', sessionId: session.id, payload: null });
     renderFace();
 
     stops.push(watchSessionDockGrid({ store, delayMs: 0 }));

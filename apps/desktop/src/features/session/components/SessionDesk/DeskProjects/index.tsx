@@ -2,9 +2,13 @@ import { Button, ROW_HOVER, SectionLabel, StatusDot, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { branchPlace, sessionPlace, useAppStore } from '../../../../../store';
 import { NAMES } from '../../../../../shared/utils/names';
-import { boardSettledWordOf } from '../../../central/board/boardSettledWordOf';
-import { boardTileChipOf } from '../../../central/board/boardTileChipOf';
+import type { ActionCardModel } from '../../../central/next/actionCardsOf';
+import { branchRowOf } from '../../../central/board/branchRowOf';
 import type { BranchBoardView } from '../../ProjectBlocks/useBranchBoard';
+
+const NO_CARDS: ReadonlyArray<Pick<ActionCardModel, 'kind'>> = [];
+
+const NO_ASKS: ReadonlySet<string> = new Set();
 
 type Props = {
   readonly sessionId: SessionId;
@@ -28,13 +32,19 @@ export const DeskProjects = ({ sessionId, board }: Props) => {
       </span>
       {rows.map((row) => {
         const entry = board.entryByRowId.get(row.id) ?? null;
-        const chip = boardTileChipOf({
+        const branchRow = branchRowOf({
           row,
           entry,
           runningCount: board.runningByRowId.get(row.id) ?? 0,
+          cards: NO_CARDS,
+          shownAskIds: NO_ASKS,
+          isPermissionShown: false,
+          isRebaseStopped: entry?.story.state === 'rebasing',
+          failingCheckName: null,
+          overlap: null,
         });
-        const settled = boardSettledWordOf({ row });
-        const state = chip ?? settled;
+        const state = branchRow.word;
+        const settled = row.isSettled ? state : null;
         const name = row.projectName ?? row.branch ?? NAMES.notOnABranch;
         return (
           <Button

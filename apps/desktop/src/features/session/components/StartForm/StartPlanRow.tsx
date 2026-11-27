@@ -11,15 +11,22 @@ type Props = {
   readonly onPick: (kind: StartPlanKind) => void;
   readonly pick: ReactNode;
   readonly detail: ReactNode;
+  readonly isSectioned?: boolean;
 };
 
 const COPY = START_KIND_COPY.plan;
 
 const PLAN_KINDS: ReadonlyArray<StartPlanKind> = ['lead', 'agent'];
 
-export const StartPlanRow = ({ kind, isDisabled, onPick, pick, detail }: Props) => (
-  <>
-    <span className="text-meta text-muted-foreground">{COPY.label}</span>
+export const StartPlanRow = ({
+  kind,
+  isDisabled,
+  onPick,
+  pick,
+  detail,
+  isSectioned = false,
+}: Props) => {
+  const choices = (
     <div className="flex min-w-0 flex-wrap items-center gap-2">
       <SegmentedTabs<StartPlanKind>
         ariaLabel={COPY.label}
@@ -34,6 +41,20 @@ export const StartPlanRow = ({ kind, isDisabled, onPick, pick, detail }: Props) 
       />
       {pick}
     </div>
-    {detail == null ? null : <div className="col-start-2 min-w-0">{detail}</div>}
-  </>
-);
+  );
+  if (isSectioned) {
+    return (
+      <>
+        {choices}
+        {detail == null ? null : <div className="min-w-0">{detail}</div>}
+      </>
+    );
+  }
+  return (
+    <>
+      <span className="text-meta text-muted-foreground">{COPY.label}</span>
+      {choices}
+      {detail == null ? null : <div className="col-start-2 min-w-0">{detail}</div>}
+    </>
+  );
+};

@@ -16,7 +16,7 @@ export const toolFactOf = ({
   isSessionMissing,
 }: Params): string | null => {
   if (isSessionMissing) {
-    return 'open a session first';
+    return 'open a session to ask about it';
   }
   if (pane === 'terminal' && runningCount > 0) {
     return `${runningCount} running`;

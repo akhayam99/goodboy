@@ -3,13 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { ConfirmRole } from '@goodboy/ui';
 import type { MountId, Session } from '@goodboy/types';
 import { NAMES } from '../../../../../shared/utils/names';
-import {
-  EMPTY_ARRAY,
-  agentPlace,
-  questionPlace,
-  sessionPlace,
-  useAppStore,
-} from '../../../../../store';
+import { EMPTY_ARRAY, agentPlace, sessionPlace, useAppStore } from '../../../../../store';
 import { ReportedError } from '../../../../../store/slices/notifications/reportedError';
 import type { RebaseAllRun } from '../../../../../store/slices/rebaseAll/types';
 import type {
@@ -29,7 +23,7 @@ import { rebaseStopVerbs } from '../../../../../store/slices/history/rebaseStopV
 import { useIsAutoOn } from '../../../../auto/useIsAutoOn';
 import { pendingChoiceIds } from '../../../../suggestions/pendingChoiceIds';
 import { useSuggestionRunner } from '../../../../suggestions/useSuggestionRunner';
-import type { SessionSuggestion } from '../../../../suggestions/types';
+import type { RebasePick, SessionSuggestion } from '../../../../suggestions/types';
 import type { AgentKind } from '../../../agent-kind';
 import { useTimelineOpen } from '../../../hooks/useTimelineOpen';
 import type { NeedsYouOwner } from '../../../timeline/needsYou';
@@ -37,7 +31,6 @@ import type { ActionCardModel, AutoActionTarget } from '../actionCardsOf';
 import { foldSecondVerb } from '../foldSecondVerb';
 import { foldVerbs } from '../foldVerbs';
 import { foldedVerbOf } from '../foldedVerbOf';
-import { suggestionPlaceOf } from '../suggestionPlaceOf';
 import { useOpenNeedsYou } from '../useOpenNeedsYou';
 
 type Params = {
@@ -52,7 +45,7 @@ export type CardVerb = {
   readonly isBusy: boolean;
   readonly confirmRole: ConfirmRole | null;
   readonly confirm: UnsentCommentsConfirm | null;
-  readonly hasPicker: boolean;
+  readonly picker: RebasePick | null;
   readonly run: () => void;
 };
 
@@ -78,7 +71,6 @@ export type CardActions = {
 export type ActionCardActions = {
   readonly actionsFor: (params: ActionsParams) => CardActions;
   readonly isHidden: (params: CardParams) => boolean;
-  readonly openFor: (params: CardParams) => (() => void) | null;
 };
 
 type OwnerParams = {
@@ -122,7 +114,7 @@ type VerbParams = {
   readonly blockedReason?: string;
   readonly confirmRole?: ConfirmRole | null;
   readonly confirm?: UnsentCommentsConfirm | null;
-  readonly hasPicker?: boolean;
+  readonly picker?: RebasePick | null;
 };
 
 const ownerVerbOf = ({ owner }: OwnerParams): string => {
@@ -196,7 +188,7 @@ const verbOf = ({
   blockedReason,
   confirmRole = null,
   confirm = null,
-  hasPicker = false,
+  picker = null,
 }: VerbParams): CardVerb => ({
   label,
   ariaLabel,
@@ -205,7 +197,7 @@ const verbOf = ({
   isBusy,
   confirmRole,
   confirm,
-  hasPicker,
+  picker,
   run,
 });
 
@@ -520,7 +512,14 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
                   ? (CONFIRM_ROLE[suggestion.kind] ?? 'primary')
                   : null,
               confirm: primary.confirm ?? null,
-              hasPicker: primary.shouldOpenPicker === true,
+              picker:
+                primary.shouldOpenPicker === true && suggestion.kind === 'rebase-project'
+                  ? {
+                      sessionId,
+                      targets: suggestion.payload.targets,
+                      track: runner.trackChoiceFor({ suggestion, actions }),
+                    }
+                  : null,
               run: () => {
                 clearFailure({ key: suggestion.id });
                 void primary.run();
@@ -585,33 +584,5 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
     droppedIds.has(card.id) ||
     (card.source.kind === 'suggestion' && runner.notNowIds.has(card.source.suggestion.id));
 
-  const openFor = ({ card }: CardParams): (() => void) | null => {
-    const { source } = card;
-    if (source.kind === 'owner') {
-      return () => openNeedsYou({ owner: source.owner });
-    }
-    if (source.kind === 'auto') {
-      const { target } = source;
-      const agentId =
-        target.kind === 'approve' || target.kind === 'blocked'
-          ? target.rootAgentId
-          : target.agentId;
-      return () => navigate({ to: agentPlace({ sessionId, agentId }) });
-    }
-    const place = suggestionPlaceOf({ suggestion: source.suggestion, mountId: card.mountId });
-    if (place === null) {
-      return null;
-    }
-    return () =>
-      navigate({
-        to:
-          place.kind === 'questions'
-            ? place.questionId === null
-              ? sessionPlace({ sessionId, lens: 'questions' })
-              : questionPlace({ sessionId, questionId: place.questionId })
-            : tabForFactOf({ sessionId, mountId: place.mountId, fact: source.suggestion.kind }),
-      });
-  };
-
-  return { actionsFor, isHidden, openFor };
+  return { actionsFor, isHidden };
 };
