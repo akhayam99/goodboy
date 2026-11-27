@@ -10,6 +10,7 @@ import { lowestRungOf, rungForStep } from '../autoRouting/slotRungs';
 import { catalogModelForId } from '../catalogModelForId';
 import { cliGate } from '../cliGate';
 import { getProviderModelPrice } from '../model-price';
+import type { HiddenModels } from '../modelVisibility';
 import { resolveRoleChoice, roleModelChoices } from '../role-models';
 import type { CandidateCause } from './candidateCauses';
 import { modelFamily } from './modelFamily';
@@ -144,7 +145,38 @@ const lighterRungOf = ({ need, rung }: Pick<PickParams, 'need' | 'rung'>): Rung 
   return at - 1 >= lowest ? (RUNGS[at - 1] ?? null) : null;
 };
 
-const modelCause = ({ provider, need, rung, context }: PickParams): CandidateCause => {
+type CauseParams = PickParams & {
+  readonly noAccess: HiddenModels | null;
+};
+
+const hiddenWithoutAccess = ({
+  context,
+  noAccess,
+}: Pick<CauseParams, 'context' | 'noAccess'>): HiddenModels =>
+  Object.fromEntries(
+    PROVIDER_IDS.flatMap((provider) => {
+      const keys = context.hidden?.[provider];
+      if (keys === undefined) {
+        return [];
+      }
+      const refused = noAccess?.[provider] ?? [];
+      return [[provider, keys.filter((key) => !refused.includes(key))]];
+    }),
+  );
+
+const modelCause = ({ provider, need, rung, context, noAccess }: CauseParams): CandidateCause => {
+  const hasNoAccess = (noAccess?.[provider]?.length ?? 0) > 0;
+  if (
+    hasNoAccess &&
+    pickAt({
+      provider,
+      need,
+      rung,
+      context: { ...context, hidden: hiddenWithoutAccess({ context, noAccess }) },
+    }) !== null
+  ) {
+    return 'no-access';
+  }
   if (pickAt({ provider, need, rung, context: { ...context, hidden: null } }) !== null) {
     return 'hidden';
   }
@@ -217,7 +249,9 @@ const providerRows = ({
       rows: [],
       exclusion: {
         provider,
-        cause: cause ?? modelCause({ provider, need, rung, context: inputs }),
+        cause:
+          cause ??
+          modelCause({ provider, need, rung, context: inputs, noAccess: inputs.noAccess ?? null }),
       },
     };
   }
@@ -356,6 +390,7 @@ export const buildCandidates = ({ inputs, need }: Params): CandidateList => {
       excluded: [],
       isPinned: true,
       isSameFamilyKept: pinnedFamily.isSameFamilyKept,
+      ...(inputs.noAccess != null && { noAccess: inputs.noAccess }),
     };
   }
   const built = universe.map((provider, index) =>
@@ -377,5 +412,6 @@ export const buildCandidates = ({ inputs, need }: Params): CandidateList => {
     ],
     isPinned: false,
     isSameFamilyKept: family.isSameFamilyKept,
+    ...(inputs.noAccess != null && { noAccess: inputs.noAccess }),
   };
 };

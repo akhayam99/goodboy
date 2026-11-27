@@ -17,6 +17,7 @@ export const useModelScope = ({ sessionId, workspaceId }: ScopeProps): ModelScop
   const settings = useAppStore((state) => state.settings);
   const cliRequirements = useAppStore((state) => state.cliRequirements);
   const unavailableModels = useAppStore((state) => state.unavailableModels);
+  const authResults = useAppStore((state) => state.authResults);
   const workspaceOverrides = useAppStore((state) => state.workspaceOverrides);
   const sessionOverrides = useAppStore((state) => state.sessionOverrides);
   const projects = useAppStore((state) => state.projects);
@@ -31,6 +32,7 @@ export const useModelScope = ({ sessionId, workspaceId }: ScopeProps): ModelScop
           settings,
           cliRequirements,
           unavailableModels,
+          authResults,
           workspaceOverrides,
           sessionOverrides,
           projects,
@@ -46,6 +48,7 @@ export const useModelScope = ({ sessionId, workspaceId }: ScopeProps): ModelScop
       settings,
       cliRequirements,
       unavailableModels,
+      authResults,
       workspaceOverrides,
       sessionOverrides,
       projects,

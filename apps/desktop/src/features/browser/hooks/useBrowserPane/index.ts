@@ -30,6 +30,8 @@ import { useTabLoad } from '../useTabLoad';
 import { useDeviceAgent } from '../useDeviceAgent';
 import { useBrowserWorkspaceTabs } from '../../../../shared/hooks/useBrowserWorkspaceTabs';
 import { useTabStates } from '../useTabStates';
+import { useSiteTrail } from '../useSiteTrail';
+import { currentPlatform } from '../../../../shared/platform';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -142,6 +144,13 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     (state) => shownLiveId !== undefined && state.browserLoads[shownLiveId] !== undefined,
   );
   const history = useHistoryState({ tabId: shownLiveId, signal: `${url}|${isLoading}` });
+  const [loadMark, setLoadMark] = useState(0);
+  const siteTrail = useSiteTrail({
+    tabId: shownLiveId,
+    host: siteHost,
+    isReadable: hasShownView && currentPlatform() === 'darwin',
+    mark: loadMark,
+  });
   const allTabs = useMemo(() => [...tabs, ...pins], [tabs, pins]);
   const pageSend = useSendPageToAgent({
     sessionId,
@@ -161,7 +170,10 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   useFavicon({ liveId: shownLiveId, url });
   useTabLoad({
     sessionId,
-    onFinished: () => refresh(),
+    onFinished: () => {
+      refresh();
+      setLoadMark((count) => count + 1);
+    },
   });
 
   useEffect(() => {
@@ -268,15 +280,17 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     reload: () => reloadWith({ command: browserHost.reload }),
     reloadFromOrigin: () => reloadWith({ command: browserHost.reloadFromOrigin }),
     siteHost,
+    siteTrail,
     hasShownView,
     clearSiteData: () => {
       if (shownLiveId === undefined || !hasShownView || siteHost === null) {
         return;
       }
       const tabId = shownLiveId;
+      const extraHosts = siteTrail;
       setError(null);
       setNotice(null);
-      void browserHost.clearSiteData({ tabId, host: siteHost }).then(
+      void browserHost.clearSiteData({ tabId, host: siteHost, extraHosts }).then(
         (cleared) => {
           refresh();
           if (shownLiveIdRef.current === tabId) {

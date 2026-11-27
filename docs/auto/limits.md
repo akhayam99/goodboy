@@ -114,6 +114,10 @@ background summaries left out. One function owns each number.
 - `leadSpendOf` gives one agent both, and `leadSpendTextsOf` words the head of its
   page: **Lead** $x and **Run total** $y for a Lead that has helpers, one amount
   otherwise.
+- `leadShareOf` is the Lead's share of that run total, in whole percent. It flags
+  a share above 25% on a run above 0.50 USD, read from the percent on screen.
+  `leadSpendTextsOf` words it **Lead share** n%, or **Lead used** n% **of this
+  run** when flagged.
 - The earlier runs load with the session (`loadSessionRunHistory`, merged by
   `mergeRunHistory`). A failed load keeps what is there and says so, and the next
   open tries again. An answer that arrives after a workspace switch is dropped.

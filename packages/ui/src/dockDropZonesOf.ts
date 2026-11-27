@@ -21,6 +21,14 @@ export const DOCK_ZONE_LABELS: Readonly<Record<DockZonePlacement, string>> = {
   merge: 'Merge',
 };
 
+export type DockAnchorAlign = 'start' | 'center' | 'end';
+
+export type DockAnchor = {
+  readonly x: number;
+  readonly y: number;
+  readonly align: DockAnchorAlign;
+};
+
 export type DockDropZone = {
   readonly id: string;
   readonly target: DockMoveTarget;
@@ -30,6 +38,7 @@ export type DockDropZone = {
   readonly layer: number;
   readonly rect: DockRect;
   readonly card: DockRect;
+  readonly anchor: DockAnchor;
   readonly label: string;
   readonly layout: DockLayout;
   readonly swap: DockLayout | null;
@@ -38,6 +47,7 @@ export type DockDropZone = {
 export type PaneRect = {
   readonly key: string;
   readonly rect: DockRect;
+  readonly headHeight?: number;
 };
 
 export type CanDropParams = DockLayout;
@@ -61,6 +71,7 @@ type CandidateParams = {
   readonly layer: number;
   readonly rect: DockRect;
   readonly card: DockRect;
+  readonly anchor: DockAnchor;
 };
 
 type ZoneParams = {
@@ -89,12 +100,20 @@ type SizeParams = {
   readonly value: number;
 };
 
-const DOCK_EDGE_PX = 96;
-const SIDE_PX = 104;
+const DOCK_EDGE_PX = 140;
+const SIDE_PX = 140;
 const BAND_SHARE = 0.25;
+const BAND_CAP_SHARE = 0.4;
 const CARD_INSET_PX = 8;
 const MERGE_CARD_WIDTH_PX = 220;
 const MERGE_CARD_HEIGHT_PX = 72;
+export const PILL_HEIGHT_PX = 32;
+const PILL_EDGE_GAP_PX = 12;
+const PILL_PANE_EDGE_GAP_PX = 16;
+const PILL_BODY_GAP_PX = 12;
+const PILL_FLOOR_PX = 56;
+const NARROW_PANEL_PX = 440;
+const NARROW_SIDE_SHARE = 0.34;
 
 const LAYER_DOCK = 3;
 const LAYER_SIDE = 2;
@@ -108,6 +127,35 @@ const insetOf = ({ rect, by }: InsetParams): DockRect => ({
   y: rect.y + by,
   width: roomOf({ value: rect.width - by * 2 }),
   height: roomOf({ value: rect.height - by * 2 }),
+});
+
+type SideAnchorParams = {
+  readonly rect: DockRect;
+  readonly side: 'left' | 'right';
+  readonly gap: number;
+};
+
+const sideAnchorOf = ({ rect, side, gap }: SideAnchorParams): DockAnchor => ({
+  x: side === 'left' ? rect.x + gap : rect.x + rect.width - gap,
+  y: rect.y + rect.height * (rect.width < NARROW_PANEL_PX ? NARROW_SIDE_SHARE : 0.5),
+  align: side === 'left' ? 'start' : 'end',
+});
+
+type BandAnchorParams = {
+  readonly rect: DockRect;
+  readonly headHeight: number;
+};
+
+const aboveAnchorOf = ({ rect, headHeight }: BandAnchorParams): DockAnchor => ({
+  x: rect.x + rect.width / 2,
+  y: rect.y + headHeight + PILL_BODY_GAP_PX + PILL_HEIGHT_PX / 2,
+  align: 'center',
+});
+
+const belowAnchorOf = ({ rect }: Pick<BandAnchorParams, 'rect'>): DockAnchor => ({
+  x: rect.x + rect.width / 2,
+  y: rect.y + rect.height - PILL_FLOOR_PX - PILL_HEIGHT_PX / 2,
+  align: 'center',
 });
 
 type SideCardParams = {
@@ -174,14 +222,18 @@ type EdgeParams = {
 const zoneShapeOf = ({ zone }: ShapeParams): string => JSON.stringify(zone.layout);
 
 const edgeOf = ({ dock, side }: EdgeParams) => {
-  const width = Math.min(DOCK_EDGE_PX, dock.width / 6);
+  const width = Math.min(DOCK_EDGE_PX, dock.width / 4);
   const rect: DockRect = {
     x: side === 'left' ? dock.x : dock.x + dock.width - width,
     y: dock.y,
     width,
     height: dock.height,
   };
-  return { rect, card: insetOf({ rect, by: CARD_INSET_PX }) };
+  return {
+    rect,
+    card: insetOf({ rect, by: CARD_INSET_PX }),
+    anchor: sideAnchorOf({ rect: dock, side, gap: PILL_EDGE_GAP_PX }),
+  };
 };
 
 const dockZonesOf = ({ shared, dock }: DockEdgeParams): ReadonlyArray<DockDropZone> => {
@@ -230,8 +282,17 @@ const paneZonesOf = ({
   isOwn,
   isFoldedHere,
 }: PaneParams): ReadonlyArray<DockDropZone | null> => {
-  const { key, rect } = pane;
-  const band = rect.height * BAND_SHARE;
+  const { key, rect, headHeight = 0 } = pane;
+  const share = rect.height * BAND_SHARE;
+  const cap = rect.height * BAND_CAP_SHARE;
+  const topBand = Math.min(
+    cap,
+    Math.max(share, headHeight + PILL_BODY_GAP_PX * 2 + PILL_HEIGHT_PX),
+  );
+  const bottomBand = Math.min(
+    cap,
+    Math.max(share, PILL_FLOOR_PX + PILL_HEIGHT_PX + PILL_BODY_GAP_PX),
+  );
   const side = Math.min(SIDE_PX, rect.width / 4);
   const full = { paneKey: key } as const;
   const above = zoneOf({
@@ -242,8 +303,9 @@ const paneZonesOf = ({
       target: { at: 'above', key },
       placement: 'above',
       layer: LAYER_BAND,
-      rect: { x: rect.x, y: rect.y, width: rect.width, height: band },
-      card: insetOf({ rect: { ...rect, height: band }, by: CARD_INSET_PX }),
+      rect: { x: rect.x, y: rect.y, width: rect.width, height: topBand },
+      card: insetOf({ rect: { ...rect, height: topBand }, by: CARD_INSET_PX }),
+      anchor: aboveAnchorOf({ rect, headHeight }),
     },
   });
   const below = zoneOf({
@@ -254,15 +316,26 @@ const paneZonesOf = ({
       target: { at: 'below', key },
       placement: 'below',
       layer: LAYER_BAND,
-      rect: { x: rect.x, y: rect.y + rect.height - band, width: rect.width, height: band },
+      rect: {
+        x: rect.x,
+        y: rect.y + rect.height - bottomBand,
+        width: rect.width,
+        height: bottomBand,
+      },
       card: insetOf({
-        rect: { x: rect.x, y: rect.y + rect.height - band, width: rect.width, height: band },
+        rect: {
+          x: rect.x,
+          y: rect.y + rect.height - bottomBand,
+          width: rect.width,
+          height: bottomBand,
+        },
         by: CARD_INSET_PX,
       }),
+      anchor: belowAnchorOf({ rect }),
     },
   });
-  const top = above === null ? rect.y : rect.y + band;
-  const bottom = below === null ? rect.y + rect.height : rect.y + rect.height - band;
+  const top = above === null ? rect.y : rect.y + topBand;
+  const bottom = below === null ? rect.y + rect.height : rect.y + rect.height - bottomBand;
   const middle: DockRect = {
     x: rect.x,
     y: top,
@@ -286,6 +359,11 @@ const paneZonesOf = ({
             width: roomOf({ value: Math.min(MERGE_CARD_WIDTH_PX, middle.width - 32) }),
             height: roomOf({ value: Math.min(MERGE_CARD_HEIGHT_PX, middle.height - 16) }),
           },
+          anchor: {
+            x: middle.x + middle.width / 2,
+            y: middle.y + middle.height / 2,
+            align: 'center',
+          },
         },
       });
   const tear = isOwn
@@ -300,6 +378,7 @@ const paneZonesOf = ({
             layer: LAYER_SIDE,
             rect: { x: rect.x, y: rect.y, width: side, height: rect.height },
             card: sideCardOf({ rect, side, x: rect.x + CARD_INSET_PX }),
+            anchor: sideAnchorOf({ rect, side: 'left', gap: PILL_PANE_EDGE_GAP_PX }),
           },
         }),
         zoneOf({
@@ -312,6 +391,7 @@ const paneZonesOf = ({
             layer: LAYER_SIDE,
             rect: { x: rect.x + rect.width - side, y: rect.y, width: side, height: rect.height },
             card: sideCardOf({ rect, side, x: rect.x + rect.width - side - CARD_INSET_PX }),
+            anchor: sideAnchorOf({ rect, side: 'right', gap: PILL_PANE_EDGE_GAP_PX }),
           },
         }),
       ]

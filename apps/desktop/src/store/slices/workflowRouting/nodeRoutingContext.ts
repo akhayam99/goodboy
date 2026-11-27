@@ -21,7 +21,7 @@ import type { WorkflowRoutingNodeRef } from './types';
 import { isWorkflowNodeRoutingMutable } from './workflowNodeRoutingMutability';
 import { sessionById } from '../sessions/sessionIndex';
 import { rolePicks } from './rolePicks';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
   taskType: 'general',
@@ -140,7 +140,7 @@ export const workflowNodeRoutingContext = ({
       providers: state.providers ?? [],
       cooldowns: state.providerCooldowns ?? {},
       alerts: state.budgetAlerts ?? [],
-      hidden: selectHiddenModels({ state: state }),
+      hidden: selectBlockedModels({ state: state }),
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),

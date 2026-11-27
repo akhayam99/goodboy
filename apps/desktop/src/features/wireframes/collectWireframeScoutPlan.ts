@@ -23,7 +23,7 @@ import {
 } from './wireframeScoutPlan';
 import { WIREFRAME_SCOUTS } from './wireframeScoutRoles';
 import { selectKindRouting } from '../../store/slices/agents/selectKindRouting';
-import { selectHiddenModels } from '../../store/slices/settings/selectHiddenModels';
+import { selectBlockedModels } from '../../store/slices/providers/selectBlockedModels';
 
 type WireframeScoutGate =
   | Readonly<{ kind: 'skipped'; reason: string }>
@@ -53,7 +53,7 @@ export const wireframeScoutGate = ({
     providers: state.providers ?? [],
     cooldowns: state.providerCooldowns ?? {},
     alerts: state.budgetAlerts ?? [],
-    hidden: selectHiddenModels({ state: state }),
+    hidden: selectBlockedModels({ state: state }),
     sessionId,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),

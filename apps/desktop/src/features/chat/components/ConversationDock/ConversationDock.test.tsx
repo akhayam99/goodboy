@@ -224,6 +224,9 @@ describe('Auto child recovery through the dock', () => {
         text: 'Harborline could not finish.',
         overrides: reason === 'process_error' ? { exit: 'error' } : {},
       });
+      if (reason === 'no_closing_envelope') {
+        await childTurnEnds({ world, index: 1, text: 'Harborline still could not finish.' });
+      }
       await autoTurnEnds({ world });
       const db = world.state.world.db;
       const tree = await getAutoTree({ db, treeId: world.treeId });

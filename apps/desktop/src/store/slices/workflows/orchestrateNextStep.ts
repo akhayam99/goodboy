@@ -72,7 +72,7 @@ import { WORKFLOW_BLOCK_COPY } from '../../../features/workflows/blockCopy';
 import type { GetFn, SetFn } from './types';
 import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { sessionById } from '../sessions/sessionIndex';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectBlockedModels } from '../providers/selectBlockedModels';
 import { orchestratedStepRouting } from '../workflowRouting/orchestratedStepRouting';
 import { orchestratorCandidatesBlock } from '../workflowRouting/orchestratorCandidatesBlock';
 import { orchestratorGoalFields, orchestratorProcessText } from './standingGuidance';
@@ -540,7 +540,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         providers: get().providers ?? [],
         cooldowns: get().providerCooldowns ?? {},
         alerts: get().budgetAlerts ?? [],
-        hidden: selectHiddenModels({ state: get() }),
+        hidden: selectBlockedModels({ state: get() }),
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),
@@ -549,7 +549,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       });
       const modelMenu = orchestratorModelPool({
         availability,
-        hidden: selectHiddenModels({ state: get() }),
+        hidden: selectBlockedModels({ state: get() }),
       });
       const roleDefaults = roleDefaultsFor({
         state: get(),

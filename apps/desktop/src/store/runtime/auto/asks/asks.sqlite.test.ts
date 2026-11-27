@@ -34,6 +34,7 @@ import { leadAsksOf } from './leadAsksOf';
 const target = { sessionId: AUTO_SEED_SESSION };
 const tester = { role: 'scout', task: 'cover the payments-api retries', reason: 'find the gaps' };
 const NEED = 'I need nock 14.0.1 to stub the host.';
+const CUT_SHORT = { exit: 'error' } as const;
 
 type WorldParams = {
   readonly level?: 'run' | 'step';
@@ -122,7 +123,7 @@ const unused = async (): Promise<never> => {
 describe('Lead asks as rows', () => {
   it('answers an ask twice and settles it once', async () => {
     const world = await testerWorld();
-    await childTurnEnds({ world, index: 0, text: NEED });
+    await childTurnEnds({ world, index: 0, text: NEED, overrides: CUT_SHORT });
     const { askId, grantId } = await testerAsks({ world, id: 'grant-nock' });
     const answer = answererOf({ world });
 
@@ -139,7 +140,7 @@ describe('Lead asks as rows', () => {
 
   it('takes an answer from the other window, and the ask leaves both', async () => {
     const world = await testerWorld();
-    await childTurnEnds({ world, index: 0, text: NEED });
+    await childTurnEnds({ world, index: 0, text: NEED, overrides: CUT_SHORT });
     const { askId } = await testerAsks({ world, id: 'grant-nock' });
     expect((await asksNow({ world })).map((ask) => [ask.id, ask.kind, ask.subject])).toEqual([
       [askId, 'dependency', 'nock@14.0.1'],
@@ -170,7 +171,7 @@ describe('Lead asks as rows', () => {
 
   it('drops an answer for an attempt a newer attempt replaced', async () => {
     const world = await testerWorld();
-    await childTurnEnds({ world, index: 0, text: NEED });
+    await childTurnEnds({ world, index: 0, text: NEED, overrides: CUT_SHORT });
     const { askId, grantId, turn } = await testerAsks({ world, id: 'grant-nock' });
     await world.state.world.db.transaction({
       statements: [
@@ -195,7 +196,7 @@ describe('Lead asks as rows', () => {
 
   it('drops a push answer for an older commit and lists the newer one', async () => {
     const world = await testerWorld();
-    await childTurnEnds({ world, index: 0, text: 'Covered the retries.' });
+    await childTurnEnds({ world, index: 0, text: 'Covered the retries.', overrides: CUT_SHORT });
     const db = world.state.world.db;
     const delegation = (await listAutoDelegations({ db, treeId: world.treeId }))[0];
     if (delegation === undefined) {
@@ -230,7 +231,7 @@ describe('Lead asks as rows', () => {
 
   it('relaunches with the allowance after a crash between Allow and the start, once', async () => {
     const world = await testerWorld();
-    await childTurnEnds({ world, index: 0, text: NEED });
+    await childTurnEnds({ world, index: 0, text: NEED, overrides: CUT_SHORT });
     const { askId, grantId, turn } = await testerAsks({ world, id: 'grant-nock' });
     expect(await answererOf({ world })({ askId, answer: 'allow' })).toBe('allowed');
     const restarted = restartedWorld({ world });
@@ -269,7 +270,7 @@ describe('Lead asks as rows', () => {
 
   it('counts an ask by its id, however many times the agent names it', async () => {
     const world = await testerWorld();
-    await childTurnEnds({ world, index: 0, text: NEED });
+    await childTurnEnds({ world, index: 0, text: NEED, overrides: CUT_SHORT });
     await testerAsks({ world, id: 'grant-nock' });
     await testerAsks({ world, id: 'grant-nock-again' });
     await testerAsks({ world, id: 'grant-ci', subject: '.github/workflows/ci.yml' });

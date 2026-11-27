@@ -91,7 +91,12 @@ describe('Auto confirmation lifecycle', () => {
     }
     await world.runtime.confirm({ delegationId: original.id, decision: 'confirm' });
     await world.runtime.drive(world.treeId);
-    await childTurnEnds({ world, index: 0, text: 'Could not finish.' });
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: 'Could not finish.',
+      overrides: { exit: 'error' },
+    });
     const outcome = await autoDelegates({
       world,
       requestId: 'request-retry',

@@ -59,6 +59,7 @@ export const AgentRunSettings = ({
       glance={{ ...glance, sentence: '' }}
       spend={spendTexts.spend}
       spendTotal={spendTexts.spendTotal}
+      share={spendTexts.share}
       settings={line}
       isInHead={isInHead}
       trailing={trailing}

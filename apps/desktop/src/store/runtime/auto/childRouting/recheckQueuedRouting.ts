@@ -12,7 +12,7 @@ import { routingPickOf } from './routingPickOf';
 import { failedStartsOf } from './failedStartsOf';
 import { writerFamilyOf } from './writerFamilyOf';
 
-const PROVIDER_CAUSES: ReadonlyArray<CandidateCause> = [
+const REPLACING_CAUSES: ReadonlyArray<CandidateCause> = [
   'off',
   'not-connected',
   'at-limit',
@@ -21,6 +21,7 @@ const PROVIDER_CAUSES: ReadonlyArray<CandidateCause> = [
   'budget',
   'outside-run',
   'failed-start',
+  'no-access',
 ];
 
 type InputRefsParams = {
@@ -79,18 +80,15 @@ export const recheckQueuedRouting = async ({
     failedStarts,
   });
   const stored = textFieldOf({ source: routing, key: 'provider' });
-  if (
-    outcome.kind === 'blocked' &&
-    stored !== null &&
-    failedStarts.some((provider) => provider === stored)
-  ) {
+  const isStoredFailed = stored !== null && failedStarts.some((provider) => provider === stored);
+  if (outcome.kind === 'blocked' && (isStoredFailed || outcome.cause === 'no-access')) {
     return { kind: 'blocked', code: outcome.code, message: outcome.message };
   }
   if (
     outcome.kind !== 'ready' ||
     outcome.proposal !== 'replaced' ||
     outcome.cause == null ||
-    !PROVIDER_CAUSES.includes(outcome.cause)
+    !REPLACING_CAUSES.includes(outcome.cause)
   ) {
     return unchanged;
   }
