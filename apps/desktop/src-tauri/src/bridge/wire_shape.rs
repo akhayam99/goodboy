@@ -47,6 +47,7 @@ fn wire_shape_phone_view() {
             name: "Harborline iPhone".to_string(),
             paired_at: "2026-11-25T10:00:00.000Z".to_string(),
             last_seen: None,
+            live_since: None,
             permissions: Permissions::default(),
         },
         json!({
@@ -54,6 +55,7 @@ fn wire_shape_phone_view() {
             "name": "Harborline iPhone",
             "pairedAt": "2026-11-25T10:00:00.000Z",
             "lastSeen": null,
+            "liveSince": null,
             "permissions": { "canDecide": true, "canMerge": true, "canStart": false },
         }),
     );
@@ -157,6 +159,7 @@ fn wire_shape_bridge_status() {
                 code: "file_unreadable",
                 message: "m",
             }),
+            prior_phone_count: 2,
         },
         json!({
             "running": true,
@@ -165,6 +168,24 @@ fn wire_shape_bridge_status() {
             "isAdvertised": true,
             "pendingPairing": { "id": "a1", "name": "Harborline iPhone", "code": "482 913", "askedAt": "2026-11-27T10:00:00Z" },
             "fault": { "code": "file_unreadable", "message": "m" },
+            "priorPhoneCount": 2,
+        }),
+    );
+}
+
+#[test]
+fn wire_shape_link_hint() {
+    assert_wire_value(
+        &LinkHint {
+            prior_phone_count: 1,
+            fault: Some(BridgeFault {
+                code: "keychain_unavailable",
+                message: "m",
+            }),
+        },
+        json!({
+            "priorPhoneCount": 1,
+            "fault": { "code": "keychain_unavailable", "message": "m" },
         }),
     );
 }

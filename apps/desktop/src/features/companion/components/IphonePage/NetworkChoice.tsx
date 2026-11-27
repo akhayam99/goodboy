@@ -23,10 +23,6 @@ export const NetworkChoice = ({ interfaces, isBusy, onToggle }: Props) => {
   }
   return (
     <div className="flex w-full flex-col gap-2">
-      <p className="text-meta text-muted-foreground">
-        The code offers only the networks you switch on, and Goodboy listens only on them. Public
-        addresses are never offered.
-      </p>
       {interfaces.map((net) => (
         <Switch
           key={net.name}
