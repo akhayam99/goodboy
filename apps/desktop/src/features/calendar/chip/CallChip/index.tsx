@@ -1,9 +1,9 @@
 import { Button, cn, FLOATING_SURFACE, ICON_SIZE, IconButton, TruncatedText } from '@goodboy/ui';
 import { Calendar, X } from '@goodboy/ui/icons';
-import { actionButtonLookOf } from '../../actions/actionButtonLookOf';
-import type { ChipAction, ChipView } from './callChipTypes';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
+import type { ChipAction, ChipView } from '../callChipTypes';
 import { CallChipRows } from './CallChipRows';
-import { chipLinesOf } from './chipLinesOf';
+import { chipLinesOf } from '../chipLinesOf';
 
 type ActParams = {
   readonly action: ChipAction;

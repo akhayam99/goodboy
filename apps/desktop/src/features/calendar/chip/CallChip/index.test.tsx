@@ -2,9 +2,9 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { CallChip } from './CallChip';
-import type { ChipView } from './callChipTypes';
-import { chipExpiryOf } from './chipExpiryOf';
+import { CallChip } from '.';
+import type { ChipView } from '../callChipTypes';
+import { chipExpiryOf } from '../chipExpiryOf';
 
 afterEach(cleanup);
 

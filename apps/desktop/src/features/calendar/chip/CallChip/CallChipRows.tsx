@@ -1,5 +1,5 @@
 import { Button, Eyebrow, StatusMark, TruncatedText } from '@goodboy/ui';
-import type { ChipRow } from './callChipTypes';
+import type { ChipRow } from '../callChipTypes';
 
 type OpenParams = {
   readonly rowKey: string;

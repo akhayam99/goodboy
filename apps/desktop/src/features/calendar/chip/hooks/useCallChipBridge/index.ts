@@ -1,35 +1,35 @@
 import { useEffect, useRef } from 'react';
 import type { SessionAttentionReason, SessionId, WorkspaceId } from '@goodboy/types';
-import { useAppStore, useCurrentWorkspace } from '../../../../store';
-import { stageInfoOf } from '../../../../store/slices/session-view/stageInfoOf';
-import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
-import { openDestination } from '../../../../shared/navigation/openDestination';
-import { joinFacts } from '../../../../shared/utils/joinFacts';
-import { formatClock } from '../../../../shared/utils/time/formatClock';
-import { attentionPlace } from '../../../session/attentionPlace';
+import { useAppStore, useCurrentWorkspace } from '../../../../../store';
+import { stageInfoOf } from '../../../../../store/slices/session-view/stageInfoOf';
+import { useNowSessions } from '../../../../../shared/hooks/useNowSessions';
+import { openDestination } from '../../../../../shared/navigation/openDestination';
+import { joinFacts } from '../../../../../shared/utils/joinFacts';
+import { formatClock } from '../../../../../shared/utils/time/formatClock';
+import { attentionPlace } from '../../../../session/attentionPlace';
 import {
   focusWindow,
   isAnyWindowFocused,
   isMainWindow,
   MAIN_WINDOW_LABEL,
-} from '../../../workspace/window';
-import type { AwayBanner } from '../../../notifications/away/awayBannersOf';
-import { useAwayAlertsStore } from '../../../notifications/away/awayAlertsStore';
-import { useCallQuietStore } from '../../../notifications/away/callQuietStore';
-import { listenCallBannerTaps } from '../../../notifications/away/listenCallBannerTaps';
-import { showAwayBanner } from '../../../notifications/away/showAwayBanner';
-import { showCallBanner } from '../../../notifications/away/showCallBanner';
-import { linkHostOf } from '../../linkHostOf';
-import { listCalendarEvents } from '../../listCalendarEvents';
-import { applyChipInput } from '../applyChipInput';
-import { beforeCallRowsOf } from '../beforeCallRowsOf';
-import { callChipCommands } from '../callChipCommands';
-import { callChipEvents } from '../callChipEvents';
-import { useCallChipStore } from '../callChipStore';
-import type { CallAlert, ChipAction, ChipCall } from '../callChipTypes';
-import { callChipViewOf } from '../callChipViewOf';
-import { callsOf } from '../callsOf';
-import { reportChipError } from '../reportChipError';
+} from '../../../../workspace/window';
+import type { AwayBanner } from '../../../../notifications/away/awayBannersOf';
+import { useAwayAlertsStore } from '../../../../notifications/away/awayAlertsStore';
+import { useCallQuietStore } from '../../../../notifications/away/callQuietStore';
+import { listenCallBannerTaps } from '../../../../notifications/away/listenCallBannerTaps';
+import { showAwayBanner } from '../../../../notifications/away/showAwayBanner';
+import { showCallBanner } from '../../../../notifications/away/showCallBanner';
+import { linkHostOf } from '../../../linkHostOf';
+import { listCalendarEvents } from '../../../listCalendarEvents';
+import { applyChipInput } from '../../applyChipInput';
+import { beforeCallRowsOf } from '../../beforeCallRowsOf';
+import { callChipCommands } from '../../callChipCommands';
+import { callChipEvents } from '../../callChipEvents';
+import { useCallChipStore } from '../../callChipStore';
+import type { CallAlert, ChipAction, ChipCall } from '../../callChipTypes';
+import { callChipViewOf } from '../../callChipViewOf';
+import { callsOf } from '../../callsOf';
+import { reportChipError } from '../../reportChipError';
 
 const LOAD_EVERY_MS = 5 * 60_000;
 const LOOK_BACK_MS = 60 * 60_000;

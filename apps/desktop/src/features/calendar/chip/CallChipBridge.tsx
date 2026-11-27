@@ -1,4 +1,4 @@
-import { useCallChipBridge } from './useCallChipBridge';
+import { useCallChipBridge } from './hooks/useCallChipBridge';
 
 export const CallChipBridge = () => {
   useCallChipBridge();
