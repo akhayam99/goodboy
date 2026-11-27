@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CalendarInfo, CalendarSourceFailure, CalendarSourceRef } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { calendarCommands } from '../calendarCommands';
+import { calendarCommands } from '../../calendarCommands';
 
 type Params = {
   readonly sources: ReadonlyArray<CalendarSourceRef>;

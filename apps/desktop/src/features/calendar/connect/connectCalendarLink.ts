@@ -12,7 +12,7 @@ type Params = {
 export type LinkConnectOutcome =
   { readonly kind: 'connected' } | { readonly kind: 'failed'; readonly message: string };
 
-const STORE_FAILED = 'The calendar was not saved, and its link was taken off the Keychain.';
+const STORE_FAILED = "The calendar wasn't saved, and its link was taken off the Keychain.";
 
 export const connectCalendarLink = async ({
   label,

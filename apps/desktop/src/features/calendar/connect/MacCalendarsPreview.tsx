@@ -7,7 +7,7 @@ import {
   type CalendarSourceRef,
 } from '@goodboy/types';
 import { CalendarRoleList } from './CalendarRoleList';
-import { useCalendarList } from './useCalendarList';
+import { useCalendarList } from './hooks/useCalendarList';
 
 type ChangeParams = {
   readonly calendarId: string;

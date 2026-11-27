@@ -19,7 +19,7 @@ describe('calendarLinkErrorOf', () => {
   it('asks for a link when the field is empty or not a link', () => {
     expect(calendarLinkErrorOf({ url: '   ' })).toBe('Paste the calendar link first.');
     expect(calendarLinkErrorOf({ url: 'calendar.northwind.example' })).toBe(
-      'This is not a link. Paste the full address, starting with https://.',
+      "This isn't a link. Paste the full address, starting with https://.",
     );
   });
 });

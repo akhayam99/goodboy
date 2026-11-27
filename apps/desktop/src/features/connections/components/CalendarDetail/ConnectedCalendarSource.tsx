@@ -7,7 +7,7 @@ import { useAppStore } from '../../../../store';
 import { calendarRoleOf } from '../../../../store/slices/calendar/calendarRoleOf';
 import { CalendarRoleList } from '../../../calendar/connect/CalendarRoleList';
 import { disconnectCalendarSource } from '../../../calendar/connect/disconnectCalendarSource';
-import { useCalendarList } from '../../../calendar/connect/useCalendarList';
+import { useCalendarList } from '../../../calendar/connect/hooks/useCalendarList';
 import { AccountRow } from '../IntegrationDetail/AccountRow';
 
 type Props = {

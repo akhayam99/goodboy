@@ -51,7 +51,9 @@ describe('the calendar connect scenes', () => {
     const source = await screen.findByRole('tablist', { name: 'Source' }, WAIT);
     expect(within(source).getAllByRole('tab')).toHaveLength(2);
     await screen.findByRole('tablist', { name: 'Personal shows' }, WAIT);
-    expect(screen.getByRole('button', { name: 'Connect calendars' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect calendars' }).getAttribute('type')).toBe(
+      'submit',
+    );
   });
 
   it('calendar-connect-denied shows the way to System Settings', async () => {
@@ -59,7 +61,7 @@ describe('the calendar connect scenes', () => {
     render(<Scene />);
 
     await screen.findByText('macOS kept calendar access off.', undefined, WAIT);
-    expect(screen.getByRole('button', { name: 'Open System Settings' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Open System Settings' })).toHaveLength(1);
   });
 
   it('calendar-connect-done shows the connected Mac with the stored roles', async () => {

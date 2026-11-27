@@ -10,7 +10,7 @@ import { ConnectSection } from './ConnectSection';
 import { connectCalendarLink } from './connectCalendarLink';
 import { connectMacCalendars } from './connectMacCalendars';
 import { MacCalendarsPreview } from './MacCalendarsPreview';
-import { useCalendarAccess } from './useCalendarAccess';
+import { useCalendarAccess } from './hooks/useCalendarAccess';
 
 type Props = {
   readonly isMacOffered: boolean;

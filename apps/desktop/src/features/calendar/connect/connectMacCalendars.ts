@@ -20,7 +20,7 @@ export type MacConnectOutcome =
   | { readonly kind: 'refused'; readonly access: CalendarAccessState }
   | { readonly kind: 'failed'; readonly message: string };
 
-const STORE_FAILED = 'The calendar was not saved. Try again.';
+const STORE_FAILED = "The calendar wasn't saved. Try again.";
 
 export const connectMacCalendars = async ({ roles, nowMs }: Params): Promise<MacConnectOutcome> => {
   let access: CalendarAccessState;

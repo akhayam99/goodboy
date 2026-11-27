@@ -10,7 +10,7 @@ export const calendarLinkErrorOf = ({ url }: Params): string | null => {
     return 'Paste the calendar link first.';
   }
   if (!URL.canParse(trimmed)) {
-    return 'This is not a link. Paste the full address, starting with https://.';
+    return "This isn't a link. Paste the full address, starting with https://.";
   }
   const parsed = new URL(trimmed);
   if (!SECURE_PROTOCOLS.includes(parsed.protocol)) {

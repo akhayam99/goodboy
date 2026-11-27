@@ -125,7 +125,7 @@ describe('connecting a calendar', () => {
     fireEvent.click(connectButton());
 
     await screen.findByText('macOS kept calendar access off.');
-    expect(screen.getByRole('form', { name: 'Connect a calendar' })).toBeDefined();
+    expect(screen.getAllByRole('form', { name: 'Connect a calendar' })).toHaveLength(1);
     expect(await storedSources()).toEqual([]);
     expect(useAppStore.getState().calendarSources).toEqual([]);
 
@@ -255,9 +255,9 @@ describe('connecting a calendar', () => {
     typeLink('https://calendar.northwind.example/ical/basic.ics');
     fireEvent.click(connectButton());
 
-    await screen.findByText('The calendar was not saved, and its link was taken off the Keychain.');
+    await screen.findByText("The calendar wasn't saved, and its link was taken off the Keychain.");
     expect(invokedWith('calendar_ics_remove')).toEqual([{ id: LINK_ID }]);
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry' }).getAttribute('type')).toBe('submit');
   });
 });
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { CalendarAccessState } from '@goodboy/types';
-import { calendarCommands } from '../calendarCommands';
+import { calendarCommands } from '../../calendarCommands';
 
 type Params = {
   readonly isMac: boolean;

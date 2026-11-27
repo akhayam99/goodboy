@@ -22,7 +22,7 @@ export const calendarConnectionStateOf = ({
       ...BASE,
       word: "Can't read",
       tone: 'danger',
-      reason: 'A connected calendar could not be read.',
+      reason: "A connected calendar couldn't be read.",
       setupVerb: null,
     };
   }

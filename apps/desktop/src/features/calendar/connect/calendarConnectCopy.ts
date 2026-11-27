@@ -19,7 +19,7 @@ export const CALENDAR_CONNECT_COPY = {
     actionHint: 'macOS asks once for calendar access.',
     reads: [
       { isRead: true, text: 'Title, time, attendees and the call link' },
-      { isRead: true, text: 'Read only: Goodboy cannot add, move or delete events' },
+      { isRead: true, text: "Read only: Goodboy can't add, move or delete events" },
       { isRead: true, text: 'Stays on this Mac, no Goodboy server' },
       { isRead: false, text: 'Never sent to an agent' },
     ],
