@@ -48,6 +48,11 @@ The iPhone finds your Mac again after a restart, and pairing shows a code to che
 
 Show site data lists the sites that keep data in the Browser and clears the ones you pick (macOS 14 or later).
 
+#### The iPhone page in Settings
+<!-- gb area=settings pr=2447 -->
+
+Settings, iPhone walks you through pairing, and a phone icon next to the bell shows whether your iPhone is connected.
+
 #### Board lanes named by what they hold
 <!-- gb area=sessions image=board-lanes pr=2432 -->
 
