@@ -4,7 +4,6 @@ import type { ArtifactId, SessionId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { useAppStore } from '../../store';
 import { PLAN_FIXTURE_ID, PLAN_FIXTURE_SESSION, aPlan } from '../../test/planFixtures';
-import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 import { brandedId } from '../history/testing/brandedId';
 import { openArtifactAnywhere } from './openArtifactAnywhere';
 
@@ -109,22 +108,23 @@ describe('open an artifact from anywhere', () => {
     expect(useAppStore.getState().activeLens[PLAN_FIXTURE_SESSION]).toBe('plans');
   });
 
-  it('replaces the open panel with the next artifact and keeps a chip back to the first', () => {
+  it('replaces the open panel with the next artifact and keeps nothing behind it', () => {
     openArtifactAnywhere({ sessionId: PLAN_FIXTURE_SESSION, artifactId: PLAN_FIXTURE_ID });
     openArtifactAnywhere({ sessionId: PLAN_FIXTURE_SESSION, artifactId: REPORT_ID });
 
     const state = useAppStore.getState();
     expect(state.drawer).toMatchObject({ payload: { artifactId: REPORT_ID } });
-    expect(selectSlotBack({ state })).toMatchObject({ payload: { artifactId: PLAN_FIXTURE_ID } });
+    expect(state.drawerBack).toBeNull();
   });
 
-  it('keeps the chip when the same artifact is opened again', () => {
+  it('keeps one panel when the same artifact is opened again', () => {
     openArtifactAnywhere({ sessionId: PLAN_FIXTURE_SESSION, artifactId: PLAN_FIXTURE_ID });
     openArtifactAnywhere({ sessionId: PLAN_FIXTURE_SESSION, artifactId: REPORT_ID });
     openArtifactAnywhere({ sessionId: PLAN_FIXTURE_SESSION, artifactId: REPORT_ID });
 
     const state = useAppStore.getState();
-    expect(selectSlotBack({ state })).toMatchObject({ payload: { artifactId: PLAN_FIXTURE_ID } });
+    expect(state.drawer).toMatchObject({ payload: { artifactId: REPORT_ID } });
+    expect(state.drawerBack).toBeNull();
   });
 
   it('goes to the artifact page when a studio is open over the same session', () => {

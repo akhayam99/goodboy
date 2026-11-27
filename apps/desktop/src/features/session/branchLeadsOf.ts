@@ -36,7 +36,7 @@ type Params = {
   readonly mounts: ReadonlyArray<MountRowView>;
   readonly views: ReadonlyArray<AutoTreeView>;
   readonly agents: ReadonlyArray<Agent>;
-  readonly spendByAgentId: ReadonlyMap<AgentId, number>;
+  readonly ownSpendByAgentId: ReadonlyMap<AgentId, number>;
   readonly openFoldIds: ReadonlySet<string>;
 };
 
@@ -61,7 +61,7 @@ const branchLeadOf = ({
   mounts,
   views,
   agents,
-  spendByAgentId,
+  ownSpendByAgentId,
   openFoldIds,
 }: LeadParams): BranchLead => {
   const base = {
@@ -82,12 +82,12 @@ const branchLeadOf = ({
   const facts = leadTreeDelegationsOf({
     delegations: view.delegations,
     agents,
-    spendByAgentId,
+    ownSpendByAgentId,
     leadAgentId: base.agentId,
   });
   const split = leadSpendByBranchOf({
     agents: facts.delegations,
-    leadSpendUsd: spendByAgentId.get(base.agentId) ?? 0,
+    leadSpendUsd: ownSpendByAgentId.get(base.agentId) ?? 0,
     primaryMountId: view.tree.primaryMountId,
   });
   const here = facts.delegations

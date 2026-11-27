@@ -296,6 +296,58 @@ describe('session projection v6', () => {
   });
 });
 
+describe('session projection limits', () => {
+  it('leaves a discarded ledger plan out of the list, the count and the approval', () => {
+    seed();
+    const view = treeWithPlanAwaitingApproval();
+    const discarded = { ...view.artifacts[0]!, status: 'discarded' };
+    useAppStore.setState({ autoTreeViews: { [asking.id]: [{ ...view, artifacts: [discarded] }] } });
+
+    const fields = fieldsOf();
+
+    expect(fields.artifacts.some((row) => row.id === 'artifact-ledger')).toBe(false);
+    expect(fields.artifacts.some((row) => row.isAwaitingApproval)).toBe(false);
+    expect(fields.counts.artifacts).toBe(3);
+  });
+
+  it('budgets artifact bodies in UTF-8 bytes', () => {
+    seed();
+    const wide = (id: string): PlanArtifact => ({
+      ...planArtifact(),
+      id: brandId<ArtifactId>({ value: id }),
+      title: id,
+      sourceText: '漢'.repeat(4000),
+    });
+    useAppStore.setState({
+      sessionArtifacts: { [asking.id]: [wide('wide-1'), wide('wide-2'), wide('wide-3')] },
+      autoTreeViews: {},
+    });
+
+    const bytes = fieldsOf()
+      .artifacts.map((row) => new TextEncoder().encode(JSON.stringify(row.body ?? '')).length)
+      .reduce((sum, size) => sum + size, 0);
+    const bodies = fieldsOf().artifacts.filter((row) => row.body !== null);
+
+    expect(bytes).toBeLessThanOrEqual(20000 + 2 * 3);
+    expect(bodies).toHaveLength(1);
+    expect(fieldsOf().artifacts.filter((row) => row.isBodyCut)).toHaveLength(2);
+  });
+
+  it('counts every open question, not the twelve it sends', () => {
+    seed();
+    const many = Array.from({ length: 15 }, (_, index) => ({
+      ...openQuestionFor({ sessionId: asking.id }),
+      id: brandId<OpenQuestionId>({ value: `question-open-${index}` }),
+    }));
+    useAppStore.setState({ sessionOpenQuestions: { [asking.id]: many } });
+
+    const fields = fieldsOf();
+
+    expect(fields.questions.filter((question) => question.state === 'open')).toHaveLength(12);
+    expect(fields.counts.openQuestions).toBe(15);
+  });
+});
+
 describe('shortNameOf', () => {
   it('keeps a short goal whole', () => {
     expect(shortNameOf({ goal: 'Fix the rounding' })).toBe('Fix the rounding');

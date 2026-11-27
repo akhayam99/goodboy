@@ -10,7 +10,7 @@ import type { WorkspaceScope } from './workspaceScope';
 
 export const ARTIFACT_LIMIT = 20;
 export const ARTIFACT_BODY_MAX = 4000;
-export const ARTIFACT_BODY_BUDGET = 20000;
+export const ARTIFACT_BODY_BUDGET_BYTES = 20000;
 export const ARTIFACT_TITLE_MAX = 200;
 
 type Params = {
@@ -32,7 +32,15 @@ type Body = {
   readonly isBodyCut: boolean;
 };
 
-const bodyOf = ({ text, isMarkdown }: BodyParams): Body => {
+type BytesParams = {
+  readonly text: string;
+};
+
+const ENCODER = new TextEncoder();
+
+const jsonBytesOf = ({ text }: BytesParams): number => ENCODER.encode(JSON.stringify(text)).length;
+
+const artifactBodyOf = ({ text, isMarkdown }: BodyParams): Body => {
   if (!isMarkdown) {
     return { body: null, isBodyCut: false };
   }
@@ -58,7 +66,7 @@ type RecentParams = {
   readonly right: SessionArtifactRow;
 };
 
-const byRecent = ({ left, right }: RecentParams): number => {
+const artifactByRecent = ({ left, right }: RecentParams): number => {
   const l = left.updatedAt ?? '';
   const r = right.updatedAt ?? '';
   return l < r ? 1 : l > r ? -1 : 0;
@@ -69,26 +77,28 @@ export const artifactRowsOf = ({ scope, sessionId }: Params): ReadonlyArray<Sess
   const countOf = ({ id }: CountParams): number =>
     comments.filter((comment) => comment.artifactId === id).length;
   const ledger = (scope.trees[sessionId] ?? []).flatMap((view) =>
-    view.artifacts.map((row): SessionArtifactRow => {
-      const id = row.artifact.artifactId;
-      const isAwaiting =
-        row.artifact.kind === 'plan' &&
-        planApprovalInViewOf({ view, row })?.state === 'needs_approval';
-      return {
-        id,
-        title: safeTextOf({ text: row.title, max: ARTIFACT_TITLE_MAX }),
-        kind: row.artifact.kind,
-        role: row.lastAuthor ?? row.artifact.ownerRole,
-        version: row.revision,
-        updatedAt: isoOrNull({ at: row.updatedAt }),
-        commentCount: countOf({ id }),
-        isAwaitingApproval: isAwaiting,
-        approveActionId: isAwaiting
-          ? actionIdOf({ kind: 'approvePlan', objectId: id, version: String(row.revision) })
-          : null,
-        ...bodyOf({ text: row.sourceText, isMarkdown: row.artifact.kind === 'plan' }),
-      };
-    }),
+    view.artifacts
+      .filter((row) => row.status !== 'discarded')
+      .map((row): SessionArtifactRow => {
+        const id = row.artifact.artifactId;
+        const isAwaiting =
+          row.artifact.kind === 'plan' &&
+          planApprovalInViewOf({ view, row })?.state === 'needs_approval';
+        return {
+          id,
+          title: safeTextOf({ text: row.title, max: ARTIFACT_TITLE_MAX }),
+          kind: row.artifact.kind,
+          role: row.lastAuthor ?? row.artifact.ownerRole,
+          version: row.revision,
+          updatedAt: isoOrNull({ at: row.updatedAt }),
+          commentCount: countOf({ id }),
+          isAwaitingApproval: isAwaiting,
+          approveActionId: isAwaiting
+            ? actionIdOf({ kind: 'approvePlan', objectId: id, version: String(row.revision) })
+            : null,
+          ...artifactBodyOf({ text: row.sourceText, isMarkdown: row.artifact.kind === 'plan' }),
+        };
+      }),
   );
   const known = new Set<string>(ledger.map((row) => row.id));
   const agents = scope.agents[sessionId] ?? [];
@@ -108,12 +118,12 @@ export const artifactRowsOf = ({ scope, sessionId }: Params): ReadonlyArray<Sess
       commentCount: countOf({ id: artifact.id }),
       isAwaitingApproval: false,
       approveActionId: null,
-      ...bodyOf({ text: artifact.sourceText, isMarkdown: artifact.kind === 'plan' }),
+      ...artifactBodyOf({ text: artifact.sourceText, isMarkdown: artifact.kind === 'plan' }),
     }));
-  const sorted = [...ledger, ...stored].sort((left, right) => byRecent({ left, right }));
-  let remaining = ARTIFACT_BODY_BUDGET;
+  const sorted = [...ledger, ...stored].sort((left, right) => artifactByRecent({ left, right }));
+  let remaining = ARTIFACT_BODY_BUDGET_BYTES;
   return sorted.map((row) => {
-    const size = row.body === null ? 0 : row.body.length;
+    const size = row.body === null ? 0 : jsonBytesOf({ text: row.body });
     if (size === 0 || size <= remaining) {
       remaining -= size;
       return row;

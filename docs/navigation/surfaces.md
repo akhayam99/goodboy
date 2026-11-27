@@ -33,11 +33,9 @@ One strip of chrome above, the places rail plus main under it, and no footer.
 
 ## The right drawer is one slot
 
-The latest open wins. What it replaced waits in a back chip at the left of the
-drawer head, one level deep, so a third open drops the oldest. The chip reads the
-kind and the title (`Plan · Add tax to the checkout total`, `Terminal`); a click
-swaps the two. Closing brings back what the chip holds, and closing that empties the
-slot ([right-drawer.md](right-drawer.md)).
+The latest open wins, and what it replaced is gone: the head shows no back button for
+it. A tool beside a reader stays on screen with it
+([right-drawer.md](right-drawer.md)).
 
 ### The dock follows the page
 

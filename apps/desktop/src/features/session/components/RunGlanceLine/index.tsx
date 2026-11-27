@@ -1,4 +1,4 @@
-import { useContext, type ReactNode } from 'react';
+import { Fragment, useContext, type ReactNode } from 'react';
 import { cn, tintClasses } from '@goodboy/ui';
 import { FactDot } from '../../../../shared/components/SettingChip/FactDot';
 import { SettingLookContext } from '../../../../shared/components/SettingChip/settingLookContext';
@@ -9,6 +9,7 @@ import { HeadSlotPortal } from '../HeadSlotPortal';
 type Props = {
   readonly glance: Glance;
   readonly spend: string | null;
+  readonly spendTotal?: string | null;
   readonly settings: ReactNode;
   readonly isStateShown?: boolean;
   readonly isInHead?: boolean;
@@ -19,6 +20,7 @@ type Props = {
 export const RunGlanceLine = ({
   glance,
   spend,
+  spendTotal = null,
   settings,
   isStateShown = true,
   isInHead = false,
@@ -68,11 +70,13 @@ export const RunGlanceLine = ({
           </>
         )}
       </span>
-      {spend === null ? null : (
-        <>
-          <FactDot />
-          <span className="shrink-0 tabular-nums text-faint-foreground">{spend}</span>
-        </>
+      {[spend, spendTotal].map((figure) =>
+        figure === null ? null : (
+          <Fragment key={figure}>
+            <FactDot />
+            <span className="shrink-0 tabular-nums text-faint-foreground">{figure}</span>
+          </Fragment>
+        ),
       )}
       {settings === null ? null : (
         <SettingLookContext.Provider value="fact">{settings}</SettingLookContext.Provider>

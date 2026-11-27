@@ -28,6 +28,7 @@ import type { GetFn, SetFn } from './types';
 import { confinedRoleOf, READ_ONLY_ANSWER_ROLE } from './confinedRoleOf';
 import { isAutoChildTurn } from './isAutoChildTurn';
 import { publishTurnSpawn } from './childTurn/publishTurnSpawn';
+import { leadDeliveryMemory } from './leadDelivery/leadDeliveryMemory';
 import type { TurnContext } from './turnContext';
 
 type Params = Readonly<{
@@ -209,7 +210,11 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
       liveTextRegistry.mark({ runId });
       liveTextRegistry.mark({ runId: agentLiveKey({ agentId: activeAgentId }) });
     }
-    if (!isTerminalStreamFailure) {
+    const isHeldSessionInit =
+      event.kind === 'provider_session_init' &&
+      ctx.leadTurn?.mode === 'fresh' &&
+      leadDeliveryMemory.hold({ agentId: activeAgentId, runId, event });
+    if (!isTerminalStreamFailure && !isHeldSessionInit) {
       get().appendTurnEvent(activeAgentId, sessionId, event);
     }
     if (event.kind === 'provider_session_init') {
