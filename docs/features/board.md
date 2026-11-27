@@ -14,7 +14,15 @@ Home is where a workspace opens. It is a short page of cards, each a count with 
 - **Usage** shows each window of your connected providers with its meter, its percent and when it resets. Without a connected provider it says so and offers **Connect**.
 - **Spend** shows today with its change from yesterday, the week, a chart of the seven days and the sessions that cost the most. Without spend it says it fills as agents run.
 - **Tasks** counts the new tasks and splits them by the connected tracker. Without a tracker it offers **Connect**.
-- Four more cards are ready but off by default: **Merged this week**, **Long running**, **Every run** and **Workspace setup**. A session counts as long running after a day.
+- Four more cards start hidden: **Merged this week**, **Long running**, **Every run** and **Workspace setup**. A session counts as long running after a day.
+
+Hover a card, or tab into it, to hide it with the eye in its corner. The grip next to it opens a menu, as a right click or Shift+F10 does. **Undo** in the toast and **⌘Z** bring the card back where it was.
+
+A hidden card waits under **Hidden** at the bottom as **Show …**, in a fixed order. It returns last, at the size it had. **⌘K** has **Hide widget** and **Show widget** for each card.
+
+The layout is saved per workspace right after each change. If saving fails, the layout stays as you made it. **Retry** shows above the list.
+
+A short tip sits above the cards, one at a time. Close it once and it does not return. If the close fails, the tip stays and says so.
 
 A card with nothing to say is not drawn, and the cards below move up. A list that is cut ends with **+N more**, which opens the Board. The cards sit on a grid of four columns in a wide window, two in a medium one and one in a narrow one. Every row of cards ends on one line.
 
@@ -142,6 +150,8 @@ Then **Archive**, **Restore** or **Delete** them from the bar at the bottom. Arc
 
 This part is for contributors and agents who change the feature.
 
+- Home layout: `useHomeLayout` (`features/home/layout/`) keeps a draft over the stored `home.layout` workspace value. It saves through `saveWorkspaceValue` on a 300 ms trailing debounce. Blur, a workspace change and unmount flush it. The workspace id is read at the gesture and travels with the draft. A failed write keeps the draft and shows `HiddenTray`'s Retry; this is the one owner-decided exception to commit after confirm, limited to the layout. `hideHomeWidget` and `showHomeWidget` return the index and size that Undo restores through `undoable`, so ⌘Z (`app.undo`) is the same stack. `parseHomeLayout` drops unknown ids and sizes. The tray is `trayWidgetsOf`, the catalog minus the layout. `useHomePaletteEntries` sends the `goodboy:home-widget-verb` window event that `useHomeWidgetVerbs` answers.
+- Home tips: `HOME_TIPS` lists them; `useHomeTip` reads `home.tip.<id>` and writes it with `saveSetting`, so the tip hides only after the write landed. Each tip has its own key, so two windows keep both closes.
 - Home reads: `dailySpendOf` reads today through `spendFigures`, the top bar's function. `mergedSinceOf`, `longRunningOf`, `setupDiffOf`, `workflowRulesOf` and `tasksFactsOf` are pure and tested on fixed records; the Tasks card counts `taskNewKeys` and calls no host.
 - Home: `HomePage` (`features/home/`) reads `useHomeFacts`, which takes needs you and running from `useNowSessions`, the source of the badge and the Now chip, and the stage groups from `useStageGroupedSessions`. `placeWidgets` puts the cards on the grid and `completeRows` is its closing pass; `holesOf` is what `placeWidgets.test.ts` checks for every layout. `visibleWidgetsOf` leaves out an empty card. `AllowVerb` calls `usePermissionAsk`, the write path of the session page. `usageWindowFactsOf` gives Usage and the provider page one label, tone, percent and reset line.
 - Deleted branch: `sessionStageRequestOf` reads the stored pull request of a branch whose worktree was removed (`historyRequestsOf`, from `mountPrLinks`), so `deriveSessionStage` derives Done from a merged request with nothing live. A closed one alone does not. `loadWorkspaceMountHistory` reads the removed mounts and their links for every session when a workspace opens or reloads, and `mountHistoryPatchOf` seeds `sessionMounts` with them (`listSessionMounts` and `listMountPullRequestLinks` take `sessionIds`). `loadMountHistory` does the same when `loadSessionMounts` hydrates one session. `sessionSettleOf` (`session-view/settle/`) reads every mount, removed ones too, through `mountRequestOf` and `mountPrLinks`. It hands them, with the thread states, to `isSettledOf` and `settledAtOf` in `@goodboy/core/attention`, which also holds `isFailureSettled`. Tested in `removedMountStage.test.ts`, `sessionStageRequest.test.ts` and the `deleted-branch-merged-light` scene.

@@ -141,6 +141,7 @@ The menu bar keys, the message keys, **Esc**, plain list keys and the digit rows
 #### Undo, Esc and panels
 
 - On the Commits page, **⌘Z** undoes a local commit edit and **⌘⇧Z** redoes it. Text fields keep their own undo.
+- On Home, **⌘Z** brings back the card you hid last, and each press goes one step further back.
 - Tooltips, the Guide, field hints and the key caps under a composer all read their keys from one list, so a key is spelled once. The key caps show while the box is empty and has the focus, and go at the first letter.
 - **Esc** closes the dialog or preview in front.
 - While an agent runs and nothing else is open, **Esc** twice stops it. The first press says "Esc again to stop" beside the Stop button for three seconds. In Chat and Ask, **Esc** twice in the box stops the reply the same way, and **Send** is back. A changed stop key works there too.

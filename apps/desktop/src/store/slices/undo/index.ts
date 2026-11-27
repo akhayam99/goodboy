@@ -14,6 +14,7 @@ type UndoableParams = {
   readonly doneMessage?: string;
   readonly isCurrent?: () => boolean;
   readonly showToast?: ShowToast;
+  readonly isSilent?: boolean;
 };
 
 type UndoParams = {
@@ -47,6 +48,7 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
       doneMessage,
       isCurrent,
       showToast,
+      isSilent = false,
     }: UndoableParams): string => {
       set((state) => ({
         undoStack: [
@@ -61,6 +63,9 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
           },
         ].slice(-50),
       }));
+      if (isSilent) {
+        return id;
+      }
       const runUndo = (): Promise<boolean> => get().undoLastOperation({ id });
       const toast: ShowToastParams = {
         dedupeKey: id,

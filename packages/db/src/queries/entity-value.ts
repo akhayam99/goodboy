@@ -10,6 +10,7 @@ export const WORKSPACE_VALUE_KEYS = [
   'run.locks',
   'terminal.workspaceFolder',
   'sessions.pinned',
+  'home.layout',
 ] as const;
 
 export type WorkspaceValueKey = (typeof WORKSPACE_VALUE_KEYS)[number];
