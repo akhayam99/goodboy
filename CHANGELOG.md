@@ -43,6 +43,11 @@ Gemini 4 Neon, Carbon and Hydrogen, GPT-6.2 Sol and Astra, GPT-6.1 Terra, Fable 
 
 The iPhone finds your Mac again after a restart, and pairing shows a code to check on both screens. A new phone waits for Allow or Deny on the iPhone page, and Reset pairing starts again.
 
+#### Show the sites that keep data in the Browser
+<!-- gb area=app pr=2451 -->
+
+On macOS 14 or later, Show site data in the browser page menu lists every site that keeps data in the workspace and what it keeps, and clears the ones you pick.
+
 #### Floating drag targets in the dock
 <!-- gb area=app pr=2428 -->
 
