@@ -249,6 +249,24 @@ mod tests {
     }
 
     #[test]
+    fn the_app_explains_calendar_access_and_holds_the_calendar_entitlement() {
+        const WHY: &str = "<string>Goodboy shows your meetings and tells you when a call starts. It never changes an event.</string>";
+        let plist = include_str!("../../Info.plist");
+        for key in ["NSCalendarsFullAccessUsageDescription", "NSCalendarsUsageDescription"] {
+            assert!(plist.contains(&format!("<key>{key}</key>\n  {WHY}")), "{key}");
+        }
+        let entitlements = include_str!("../../Entitlements.plist");
+        assert!(entitlements
+            .contains("<key>com.apple.security.personal-information.calendars</key>\n  <true/>"));
+        let conf: serde_json::Value =
+            serde_json::from_str(include_str!("../../tauri.conf.json")).unwrap();
+        assert_eq!(
+            conf["bundle"]["macOS"]["entitlements"],
+            "./Entitlements.plist"
+        );
+    }
+
+    #[test]
     fn the_authorization_codes_map_to_access_states() {
         assert_eq!(access_state_of(0), AccessState::NotDetermined);
         assert_eq!(access_state_of(1), AccessState::Restricted);
