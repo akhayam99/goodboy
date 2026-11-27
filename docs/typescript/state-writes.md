@@ -56,6 +56,7 @@ state and shows the error.
   files whose first `set(` comes before their first `await` (a file-level
   heuristic). Both only fall.
 - In use: `pinPort`, `unpinPort`, `hidePort` and `unhidePort` in `store/slices/monitoring/`.
+- One exception, decided by the owner: the layout of Home (`useHomeLayout`). A drag or a hide the person just watched does not snap back when the write fails; the layout stays on screen with a visible Retry. No other write on Home keeps a failed state.
 - Test: `commitAfterConfirm.sqlite.test.ts` (nothing committed while pending,
   nothing committed on failure, the error stored on the target).
 

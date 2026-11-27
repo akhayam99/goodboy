@@ -45,6 +45,7 @@ export const WidgetCard = ({
       />
       <span aria-hidden className="min-w-0 flex-1" />
       {aside}
+      <span aria-hidden data-widget-controls-cell="" className="w-12 shrink-0" />
     </header>
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">{children}</div>
     {footer === undefined ? null : (

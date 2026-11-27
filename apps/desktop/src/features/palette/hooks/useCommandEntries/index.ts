@@ -73,6 +73,7 @@ import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { useShallow } from 'zustand/react/shallow';
 import { openProjectWorktrees } from '../../../storage/openProjectWorktrees';
 import { worktreesPaletteEntries } from '../../../storage/worktreesPaletteEntries';
+import { useHomePaletteEntries } from '../../../home/hooks/useHomePaletteEntries';
 
 const NEW_SESSION_WITH = {
   workflow: 'New workflow session',
@@ -161,6 +162,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const isInMainWindow = useIsMainWindow();
   const leadRows = useOpenLeadRows({ workspaceId: currentWorkspace?.id ?? null });
   const canResumeSetup = isInMainWindow && getWizardState() !== 'done';
+  const homeEntries = useHomePaletteEntries();
 
   return useMemo<ReadonlyArray<PaletteEntry>>(() => {
     const now = Date.now();
@@ -389,6 +391,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       });
     }
 
+    out.push(...homeEntries);
+
     if (innerColumn !== null) {
       out.push({
         key: 'action:inner-column',
@@ -507,5 +511,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     innerColumn,
     canResumeSetup,
     leadRows,
+    homeEntries,
   ]);
 };

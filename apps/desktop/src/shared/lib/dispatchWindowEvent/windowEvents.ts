@@ -15,6 +15,11 @@ export type OpenFolderDetail = {
   readonly path: string;
 };
 
+export type HomeWidgetVerbDetail = {
+  readonly verb: 'hide' | 'show';
+  readonly id: string;
+};
+
 type DoorFlag = Partial<Record<'door', true>>;
 
 export type OpenSettingsDetail = SettingsFocus & DoorFlag;
@@ -49,6 +54,7 @@ export type WindowEventDetails = {
   readonly 'goodboy:onboarding-progress': undefined;
   readonly 'goodboy:open-onboarding-wizard': Payload | undefined;
   readonly 'goodboy:needs-you-feedback': Payload;
+  readonly 'goodboy:home-widget-verb': HomeWidgetVerbDetail;
 };
 
 export type WindowEventName = keyof WindowEventDetails;

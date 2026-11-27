@@ -6,6 +6,7 @@ import { readLeadPermissionsAction } from './readLeadPermissionsAction';
 import { loadWorkspaceValue } from './loadWorkspaceValue';
 import { readProjectValue } from './readProjectValue';
 import { saveSetting } from './saveSetting';
+import { saveWorkspaceValue } from './saveWorkspaceValue';
 import { writeProjectValue } from './writeProjectValue';
 import type { SliceDeps } from '../../slice-types';
 
@@ -20,5 +21,6 @@ export const createSettingsSlice = ({ set, get }: SliceDeps) => {
     readProjectValue: readProjectValue(),
     writeProjectValue: writeProjectValue(),
     saveSetting: saveSetting(set, get),
+    saveWorkspaceValue: saveWorkspaceValue({ set, get }),
   };
 };

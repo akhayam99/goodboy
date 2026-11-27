@@ -6,7 +6,7 @@ const DATA_CHANGED_EVENT = 'goodboy:data-changed';
 
 const ORIGIN = globalThis.crypto?.randomUUID?.() ?? `window-${Math.random().toString(36).slice(2)}`;
 
-type WorkspaceDataKey = 'auto.level' | 'overrides';
+type WorkspaceDataKey = 'auto.level' | 'overrides' | 'home.layout';
 
 export type SessionFactKind = 'open-question' | 'slack-draft' | 'agent-seen';
 
