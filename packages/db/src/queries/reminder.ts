@@ -192,3 +192,25 @@ export const snoozeReminder = async ({
   );
   return result.rowsAffected > 0;
 };
+
+type FireParams = {
+  readonly db: Database;
+  readonly workspaceId: WorkspaceId;
+  readonly reminderId: ReminderId;
+  readonly firedAt: number;
+};
+
+export const fireReminder = async ({
+  db,
+  workspaceId,
+  reminderId,
+  firedAt,
+}: FireParams): Promise<boolean> => {
+  const result = await db.execute(
+    `UPDATE reminders SET due_at = ?, updated_at = ?
+     WHERE id = ? AND workspace_id = ? AND due_at IS NULL AND done_at IS NULL
+       AND trigger_kind <> 'time'`,
+    [firedAt, firedAt, reminderId, workspaceId],
+  );
+  return result.rowsAffected > 0;
+};

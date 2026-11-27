@@ -4,6 +4,7 @@ import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { insertRow } from '../test-helpers/migration-rows';
 import {
+  fireReminder,
   insertReminder,
   listReminders,
   markReminderDone,
@@ -142,6 +143,31 @@ describe('reminder queries', () => {
     expect(await listReminders({ db, workspaceId: WORKSPACE, doneSince: 0 })).toEqual([
       { ...PING, snoozedUntil: 900 },
       { ...MERGE, doneAt: 300 },
+    ]);
+  });
+
+  it('fires a fact reminder once and never a timed or done one', async () => {
+    const db = await makeMigratedTestDatabase();
+    await seedWorkspaces({ db });
+    await insertReminder({ db, reminder: PING });
+    await insertReminder({ db, reminder: MERGE });
+
+    expect(
+      await fireReminder({ db, workspaceId: WORKSPACE, reminderId: MERGE.id, firedAt: 400 }),
+    ).toBe(true);
+    expect(
+      await fireReminder({ db, workspaceId: WORKSPACE, reminderId: MERGE.id, firedAt: 500 }),
+    ).toBe(false);
+    expect(
+      await fireReminder({ db, workspaceId: WORKSPACE, reminderId: PING.id, firedAt: 500 }),
+    ).toBe(false);
+    expect(
+      await fireReminder({ db, workspaceId: OTHER_WORKSPACE, reminderId: MERGE.id, firedAt: 500 }),
+    ).toBe(false);
+
+    expect(await listReminders({ db, workspaceId: WORKSPACE, doneSince: 0 })).toEqual([
+      PING,
+      { ...MERGE, dueAt: 400 },
     ]);
   });
 });
