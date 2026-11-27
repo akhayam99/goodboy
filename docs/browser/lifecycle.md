@@ -195,8 +195,8 @@ Windows and Linux have no such call in wry, so it is a plain reload there.
   its sign-in notes, the line, a failure, a busy retry, a pending and a late
   trail and a late answer; `scopedReload.test.tsx` ⌘⇧R and ⇧-click;
   `WorkspaceBrowserDataRow.test.tsx` the busy refusal and a late answer.
-- `browser/site_data/tests/native.rs` drives a real WKWebView by hand
-  (`cargo test --lib site_data::tests::native -- --ignored --nocapture`): it
+- `browser/site_data/tests/native_tests.rs` drives a real WKWebView by hand
+  (`cargo test --lib site_data::tests::native_tests -- --ignored --nocapture`): it
   relaunches the test binary so WebKit gets the main thread, serves its own
   127.0.0.1 and ::1 pages, checks that a redirect hop and an iframe stay out of
   the trail, and prints the name and types of every record. CI skips it.

@@ -180,7 +180,7 @@ pub(crate) async fn clear_store<R: Runtime>(tab: &Webview<R>) -> Result<(), Mess
 #[cfg(test)]
 mod tests {
     #[cfg(target_os = "macos")]
-    mod native;
+    mod native_tests;
 
     use serde_json::json;
 
