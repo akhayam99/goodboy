@@ -6,6 +6,7 @@ import { NAMES, formerNamesOf } from '../utils/names';
 export type FootDestinationId = 'settings' | 'guide' | 'whatsNew';
 
 export type DestinationId =
+  | 'home'
   | 'board'
   | 'inbox'
   | 'workflows'
@@ -20,7 +21,7 @@ export type DestinationId =
 
 export type RailDestinationId = 'terminal' | 'browser';
 
-export type StudioDestinationId = Exclude<DestinationId, 'board'>;
+export type StudioDestinationId = Exclude<DestinationId, 'home' | 'board'>;
 
 export type PageDestinationId = Exclude<StudioDestinationId, RailDestinationId>;
 
@@ -42,6 +43,14 @@ export type Destination = {
 };
 
 export const DESTINATIONS: ReadonlyArray<Destination> = [
+  {
+    id: 'home',
+    label: NAMES.home,
+    icon: CONCEPT_ICONS.home,
+    home: 'column',
+    scope: 'workspace',
+    aliases: ['Go to Home', 'Dashboard'],
+  },
   {
     id: 'board',
     label: NAMES.board,

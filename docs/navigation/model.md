@@ -6,9 +6,9 @@
 
 ### Where things live
 
-- **The board is home. Chat is a destination.** A workspace with no session selected
-  shows a board of every session by stage (needs you, running, in review, open,
-  done). Chat, diff, terminal and open in IDE are reached from the cards, never
+- **Home is where a workspace opens, the board is the list of work. Chat is a destination.**
+  Home is the first door and the landing. A workspace with no session selected shows a
+  board of every session by stage (needs you, running, in review, open, done). Chat, diff, terminal and open in IDE are reached from the cards, never
   landed on; every capability stays one step away.
 - **The Board frame.** The Board is the one list across sessions: no List view, no
   switch, no stored page view. Its title row, its **Filter** (`SessionFilterPopover`,
@@ -56,7 +56,7 @@
 
 ### One list names every destination
 
-`DESTINATIONS` (`shared/navigation/destinations.ts`) owns, for Board, Tasks,
+`DESTINATIONS` (`shared/navigation/destinations.ts`) owns, for Home, Board, Tasks,
 Workflows, Chat, Connections, Impact, Monitoring, Notifications, Terminal, Browser,
 Settings, Guide and What's new, in one order: the name, the glyph, the shortcut, the
 menu id, the former names, the scope (`app` or `workspace`), the home (`column`,

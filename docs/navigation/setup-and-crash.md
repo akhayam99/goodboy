@@ -79,7 +79,7 @@ wizard })`; `nav` (`WizardNav` in `wizardSteps.ts`) carries `goNext`, `goBack`,
   Agents and on a resume's first step it does nothing, and it never ends setup.
 - Set up later writes `onboarding.wizard = later`; entering a step writes
   `onboarding.step`. A relaunch with setup open reopens there, in the main window
-  only, on Home (`resumeStep` falls back to Workspace when the step needs a workspace
+  only, on Workspaces (`resumeStep` falls back to Workspace when the step needs a workspace
   that is gone). The palette offers Resume setup while paused.
 
 ### The steps

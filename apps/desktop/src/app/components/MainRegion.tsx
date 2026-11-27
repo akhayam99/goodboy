@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { PaneSwap, type PaneLayer } from '@goodboy/ui';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
+import { HomePage } from '../../features/home/HomePage';
+import { useAppStore } from '../../store';
+import { selectIsHomeShown } from '../../shared/navigation/selectIsHomeShown';
 import { SessionDraftPane } from '../../features/session/components/SessionDraftPane';
 import { WorkspaceBoard } from '../../features/workspace/components/StageBoard/WorkspaceBoard';
 import { KeepAliveWorkSurface } from './KeepAliveWorkSurface';
@@ -14,6 +17,22 @@ type Props = {
   readonly activeId: SessionId | null;
 };
 
+type KeyParams = {
+  readonly hasSession: boolean;
+  readonly isDraftShown: boolean;
+  readonly isHomeShown: boolean;
+};
+
+const activeKeyOf = ({ hasSession, isDraftShown, isHomeShown }: KeyParams): string => {
+  if (hasSession) {
+    return 'session';
+  }
+  if (isDraftShown) {
+    return 'draft';
+  }
+  return isHomeShown ? 'home' : 'board';
+};
+
 export const MainRegion = ({
   workspaceId,
   currentSession,
@@ -21,11 +40,12 @@ export const MainRegion = ({
   renderedIds,
   activeId,
 }: Props) => {
+  const isHomeShown = useAppStore((state) => selectIsHomeShown({ state }));
   const [frameSession, setFrameSession] = useState(currentSession);
   if (currentSession !== null && currentSession !== frameSession) {
     setFrameSession(currentSession);
   }
-  const activeKey = currentSession !== null ? 'session' : isDraftShown ? 'draft' : 'board';
+  const activeKey = activeKeyOf({ hasSession: currentSession !== null, isDraftShown, isHomeShown });
   const layers: ReadonlyArray<PaneLayer> = [
     { key: 'board', content: <WorkspaceBoard workspaceId={workspaceId} /> },
     ...(frameSession === null
@@ -42,6 +62,7 @@ export const MainRegion = ({
             ),
           },
         ]),
+    ...(isHomeShown ? [{ key: 'home', content: <HomePage /> }] : []),
     ...(isDraftShown
       ? [{ key: 'draft', content: <SessionDraftPane workspaceId={workspaceId} /> }]
       : []),

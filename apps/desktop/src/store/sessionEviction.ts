@@ -362,6 +362,7 @@ export const NON_SESSION_STATE_KEYS = [
   'bugReportDraft',
   'sessionDrafts',
   'openSessionDraftWorkspaceId',
+  'openHomeWorkspaceId',
   'goodboyNamedSessionId',
   'drawer',
   'drawerBack',

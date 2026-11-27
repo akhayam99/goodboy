@@ -23,8 +23,9 @@ describe('the column doors', () => {
     expect(CONCEPT_ICONS.board).not.toBe(CONCEPT_ICONS.stageRunning);
   });
 
-  it('lists the six places, no tool, no Monitoring and no Work door', () => {
+  it('lists the seven places, no tool, no Monitoring and no Work door', () => {
     expect(COLUMN_DOORS.map((entry) => entry.label)).toEqual([
+      'Home',
       'Board',
       'Tasks',
       'Workflows',
@@ -43,6 +44,7 @@ describe('the column doors', () => {
 
   it('gives Connections the short rail word Connect and keeps every other word the label', () => {
     expect(COLUMN_DOORS.map((entry) => entry.word ?? entry.label)).toEqual([
+      'Home',
       'Board',
       'Tasks',
       'Workflows',

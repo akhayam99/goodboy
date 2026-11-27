@@ -5,7 +5,12 @@ import { railPlaceOf } from './railPlaceOf';
 
 describe('railPlaceOf', () => {
   it('lights the Board while a session is open, since a session is a child of the Board', () => {
-    const place = columnPlaceOf({ hasSession: true, isDraftShown: false, studio: null });
+    const place = columnPlaceOf({
+      hasSession: true,
+      isDraftShown: false,
+      isHomeShown: false,
+      studio: null,
+    });
 
     expect(railPlaceOf({ place })).toBe('board');
   });
@@ -15,7 +20,12 @@ describe('railPlaceOf', () => {
     expect(railPlaceOf({ place: 'new' })).toBe('new');
     expect(
       railPlaceOf({
-        place: columnPlaceOf({ hasSession: true, isDraftShown: false, studio: 'chat' }),
+        place: columnPlaceOf({
+          hasSession: true,
+          isDraftShown: false,
+          isHomeShown: false,
+          studio: 'chat',
+        }),
       }),
     ).toBe('chat');
   });

@@ -466,6 +466,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       set((state) => ({
         ...clearedWorkspaceState(),
         currentWorkspaceId: id,
+        openHomeWorkspaceId: id,
         switchingToWorkspaceId: null,
         workspaceSwitchError: null,
         workspaces: state.workspaces.map((w) =>
@@ -604,9 +605,5 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, '');
     }
     void get().refreshUnreadWorkspaces();
-    const sessionsNow = get().sessions;
-    if (sessionsNow.length === 1 && get().currentSessionId === null) {
-      await get().setCurrentSession(sessionsNow[0]!.id);
-    }
   };
 };

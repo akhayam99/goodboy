@@ -271,6 +271,15 @@ describe('setCurrentWorkspace mount hydration', () => {
 
     expect(store.state.boardReady).toBe(true);
   });
+
+  it('lands on Home of the opened workspace and opens no session on its own', async () => {
+    const store = harness();
+
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
+
+    expect(store.state.openHomeWorkspaceId).toBe(WORKSPACE_ID);
+    expect(store.state.currentSessionId).toBeNull();
+  });
 });
 
 describe('setCurrentWorkspace run recovery', () => {
