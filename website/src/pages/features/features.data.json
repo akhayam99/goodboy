@@ -506,7 +506,7 @@
         },
         {
           "title": "Sessions in the bar",
-          "text": "Sessions, at the top left of the bar, or ⌘B from any screen, opens your sessions in one list: Pinned first, then Needs you, Running, In review and Building. Type to filter, and Enter opens one.",
+          "text": "Sessions, at the top left of the bar, or ⌘B from any screen, opens your sessions in one list: Pinned first, then Needs you, Running, In review and Open. Type to filter, and Enter opens one.",
           "group": "Workspaces and folders",
           "also": "sessions in the bar",
           "shown": true

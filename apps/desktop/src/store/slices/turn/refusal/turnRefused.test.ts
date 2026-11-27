@@ -156,11 +156,13 @@ describe('a press whose send is refused ends in a result', () => {
       .getState()
       .askAgentToContinue({ sessionId: session.id, agentId: runningStep.id });
 
-    expect(
-      useAppStore.getState().notifications.map((entry) => [entry.title, entry.body]),
-    ).toContainEqual([
-      "Couldn't ask the agent to continue",
-      `${LIMIT} You can still skip this step.`,
-    ]);
+    await vi.waitFor(() => {
+      expect(
+        useAppStore.getState().notifications.map((entry) => [entry.title, entry.body]),
+      ).toContainEqual([
+        "Couldn't ask the agent to continue",
+        `${LIMIT} You can still skip this step.`,
+      ]);
+    });
   });
 });

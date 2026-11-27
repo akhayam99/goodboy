@@ -114,12 +114,15 @@ Only a writer has a shell. Scout, Planner, Investigator and Reviewer run with
 says whether it has a shell, and a task that runs a command goes only to one
 that does.
 
-`resolveDelegateChild` enforces it. A read-only role whose task or done-when
-names a command (`git log`, `pnpm test`, "run the tests", a range such as
-`a1b2c3d4e..HEAD`, or an output only git gives, such as a trailer or whether the
-remote branch exists) is refused `role_lacks_shell`, and nothing is written. The
-message lists the roles that run commands (`AUTO_COMMAND_ROLES`: never a closed
-role, never the scribe) and quotes the match (`commandMentionOf`).
+`resolveDelegateChild` enforces it through `autoShellRefusalOf`. A read-only
+role whose task, done-when or expected output names a command (`git log`,
+`pnpm test`, `git -C`, `npx`, "run the tests", "verify the tests pass", a range
+such as `a1b2c3d4e..HEAD`, or an output only git gives, such as a trailer or
+whether the remote branch exists) is refused `role_lacks_shell`, and nothing is
+written. "make sure" and "make the change" are not commands; `make all` in
+backticks or after "run" is. The message lists
+the roles that run commands (`AUTO_COMMAND_ROLES`: never a closed role, never
+the scribe) and quotes the match (`commandMentionOf`). A revise is not checked.
 
 - A command inside a prohibition does not count: no, never, not, don't, without,
   skip or avoid (and `non`, `senza`, `mai`) within six words before it in the

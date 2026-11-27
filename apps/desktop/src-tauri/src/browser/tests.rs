@@ -346,6 +346,7 @@ fn keeps_the_isolation_command_away_from_the_webview_until_a_page_calls_it() {
     for name in [
         "browser_profile_clear",
         "browser_site_data_clear",
+        "browser_tab_trail",
         "browser_tab_reload_from_origin",
     ] {
         assert!(walled.contains(name), "{name} is not registered");

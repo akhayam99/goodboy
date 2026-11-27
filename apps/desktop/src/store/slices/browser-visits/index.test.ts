@@ -1,7 +1,11 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextSessionId } from '@goodboy/types/testing';
+import { insertSession, insertWorkspace } from '@goodboy/db';
+import { nextSessionId, nextWorkspaceId } from '@goodboy/types/testing';
 import {
+  buildStorySession,
+  buildStoryWorkspace,
   importStore,
+  openStorySqlite,
   resetStoryStore,
   storySpies,
   stubStoryInvoke,
@@ -45,6 +49,10 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  const db = await openStorySqlite();
+  const workspaceId = nextWorkspaceId();
+  await insertWorkspace({ db, workspace: buildStoryWorkspace({ id: workspaceId }) });
+  await insertSession(db, buildStorySession({ id: SESSION_ID, workspaceId }));
 });
 
 describe('the browser visits slice', () => {
@@ -94,7 +102,9 @@ describe('the browser visits slice', () => {
     await useAppStore.getState().loadBrowserVisits({ sessionId: SESSION_ID });
 
     expect(visitUrls()).toEqual([TAX.url]);
-    expect(storedErrors()).toEqual(["Couldn't load the visited pages"]);
+    await vi.waitFor(() => {
+      expect(storedErrors()).toEqual(["Couldn't load the visited pages"]);
+    });
   });
 
   it('leaves the state untouched when the visits did not change', async () => {

@@ -20,7 +20,10 @@ import {
   type SessionId,
   type WorkspaceId,
 } from '@goodboy/types';
+import { insertSession, insertWorkspace } from '@goodboy/db';
 import {
+  buildStorySession,
+  buildStoryWorkspace,
   importStore,
   openStorySqlite,
   resetStoryStore,
@@ -46,7 +49,18 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  await openStorySqlite();
+  const db = await openStorySqlite();
+  await insertWorkspace({
+    db,
+    workspace: buildStoryWorkspace({ id: brandId<WorkspaceId>({ value: 'workspace-harborline' }) }),
+  });
+  await insertSession(
+    db,
+    buildStorySession({
+      id: SESSION_ID,
+      workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
+    }),
+  );
 });
 
 type ProposalParams = {

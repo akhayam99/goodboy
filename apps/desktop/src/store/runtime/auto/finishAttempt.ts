@@ -1,7 +1,6 @@
 import {
   attributeChanges,
   isAutoWriterRole,
-  parseChildClosing,
   parseRevisionFromTurn,
   publishOfRequest,
   remoteVerdictOf,
@@ -32,6 +31,8 @@ import {
 import { brandId, type ArtifactId, type AutoOutboxId } from '@goodboy/types';
 import { remoteOf, snapshotOf } from './attemptBaseline';
 import { attemptEnvelope, delegationRoleOf, isArtifactRole } from './attemptEnvelope';
+import { attemptClosingOf } from './closeNudge/attemptClosingOf';
+import { nudgeToClose } from './closeNudge/nudgeToClose';
 import { landAttemptRevision, type RevisionLanding } from './landAttemptRevision';
 import { landingRefusalOf } from './launchGuard/landingRefusalOf';
 import { needGrantsOf } from './launchGuard/needGrantsOf';
@@ -58,6 +59,7 @@ export type FinishAttemptParams = Readonly<{
 
 export type FinishAttemptOutcome =
   | Readonly<{ kind: 'paused'; questionId: string }>
+  | Readonly<{ kind: 'nudged' }>
   | Readonly<{ kind: 'ended'; outcome: string; landing: 'landed' | 'failed' | 'none' }>
   | Readonly<{ kind: 'dropped'; reason: string }>;
 
@@ -545,6 +547,9 @@ const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome
     durationMs: ended.durationMs,
   });
   const plain = plainOutcomeOf({ params, envelope });
+  if (await nudgeToClose({ ...params, envelope, reason: plain.reason })) {
+    return { kind: 'nudged' };
+  }
   const { outcome, reason, declared, pullRequest, raisedPush } = await publishedOutcomeOf({
     params,
     envelope,
@@ -609,10 +614,7 @@ export const finishAttempt = async ({
   if (!isCurrent) {
     return { kind: 'dropped', reason: 'stale' };
   }
-  const closing = parseChildClosing({
-    text: ended.assistantText,
-    childAgentId: delegation.childAgentId,
-  });
+  const closing = attemptClosingOf({ ended, delegation, attempt });
   const context: Context = { ctx, ended, tree, delegation, attempt, closing };
   if (closing.question !== null && ended.exit === 'ok' && !isOverQuestionLimit({ delegation })) {
     return pausedAttempt(context);

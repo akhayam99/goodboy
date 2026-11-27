@@ -99,7 +99,8 @@ describe('a failed scope switch on sqlite', () => {
     await useAppStore.getState().setNotificationScope('all');
 
     expect(useAppStore.getState().notificationScope).toBe('workspace');
-    expect(await storedScopeFailures()).toHaveLength(2);
+    expect(await storedScopeFailures()).toHaveLength(1);
+    expect(shownScopeFailures()).toHaveLength(1);
   });
 
   it('removes the failure when the same scope is picked from the tabs', async () => {

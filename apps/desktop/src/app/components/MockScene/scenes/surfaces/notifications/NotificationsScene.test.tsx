@@ -75,6 +75,8 @@ describe('the secondary Notifications scenes', () => {
     mount({ id: 'u26s-notifications-rows' });
 
     await screen.findAllByText(/Session reached/, undefined, WAIT);
+    await screen.findAllByText('Pull request opened', undefined, WAIT);
+    await screen.findAllByText('1 session folder left on disk', undefined, WAIT);
 
     const nodeOf = ({ title }: { readonly title: string }): HTMLElement => {
       const row = screen.getAllByText(title)[0]?.closest<HTMLElement>('[data-notification-key]');

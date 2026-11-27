@@ -1,14 +1,23 @@
 import {
+  AUTO_DELEGATION_ROLES,
   AUTO_WRITER_ROLES,
   isAutoRoleStartable,
   isAutoWriterRole,
   type AutoDelegationRole,
 } from './roles';
 
-const COMMAND_TOOL_RE =
-  /\b(?:git|gh|npm|pnpm|yarn|cargo|make|docker|kubectl|curl)[ \t]+[a-z][a-z-]*/i;
+const COMMAND_TOOL_RE = /\b(?:git|gh|npm|pnpm|yarn|cargo|docker|kubectl|curl)[ \t]+[a-z][a-z-]*/i;
+const MAKE_COMMAND_RE =
+  /\bmake[ \t]+(?!(?:sure|the|a|an|it|its|this|that|these|those|them|each|every|all|any|no|one|clear|changes?)\b)[a-z][a-z-]*/i;
+const EXPLICIT_MAKE_RE = /`make\b[^`\n]*`|\b(?:run|execute|invoke)[ \t]+make[ \t]+[a-z]/i;
+const TOOL_FOLDER_RE =
+  /\b(?:git|npm|pnpm|yarn|cargo)[ \t]+(?:-C|--dir|--filter|--prefix|--cwd|--manifest-path)(?=[ \t=])/i;
+const RUNNER_RE =
+  /\b(?:(?:npx|bunx)[ \t]+[@a-z]|(?:vitest|jest|pytest|eslint|prettier|tsc)[ \t]+(?:run\b|--?[a-z]))/i;
 const RUN_COMMAND_RE =
-  /\b(?:run|execute|invoke)\b[^.\n]{0,40}\b(?:commands?|scripts?|tests?|build|lint|typecheck)\b/i;
+  /\b(?:run|execute|invoke)\b[^.\n]{0,40}\b(?:commands?|scripts?|tests?|suite|build|lint|typecheck|vitest|jest|pytest|eslint|tsc)\b/i;
+const VERIFY_RUN_RE =
+  /\b(?:check|verify|confirm|ensure|make[ \t]+sure)\b[^.\n]{0,40}\b(?:tests?|suite|build|lint|typecheck)[ \t]+(?:still[ \t]+)?(?:pass(?:es)?|succeeds?|(?:is|are|stays?)[ \t]+green)\b(?![ \t]+(?:the|a|an|its|each)\b)/i;
 const LS_REMOTE_RE = /\bls-remote\b/i;
 const COMMIT_RANGE_RE = /\b(?=[0-9a-f]{0,39}\d)[0-9a-f]{7,40}\.{2,3}[\w/-]+|\.{2,3}HEAD\b/i;
 const GIT_OUTPUT_RE =
@@ -123,7 +132,12 @@ const isNegatedMention = ({ text, at }: NegatedParams): boolean => {
 
 const COMMAND_MENTION_PATTERNS: ReadonlyArray<RegExp> = [
   COMMAND_TOOL_RE,
+  MAKE_COMMAND_RE,
+  EXPLICIT_MAKE_RE,
+  TOOL_FOLDER_RE,
+  RUNNER_RE,
   RUN_COMMAND_RE,
+  VERIFY_RUN_RE,
   LS_REMOTE_RE,
   COMMIT_RANGE_RE,
   GIT_OUTPUT_RE,
@@ -166,6 +180,23 @@ export const roleCannotRunCommandsMessage = ({
   match = null,
 }: CommandMessageParams): string =>
   `${role} has no shell, so it cannot run commands such as git or tests. A task that runs commands goes to a role that can: ${AUTO_COMMAND_ROLES.join(', ')}. Say in the task that the check is read only. A task that only reads files can stay with ${role}: write it without command lines. Commits, pull request, head commit, review thread and check facts of a branch are not commands: a scout with "facts" naming the mounts gets them read by Goodboy.${matchSentenceOf({ match })}`;
+
+type ShellRefusalParams = RoleParams & {
+  readonly texts: ReadonlyArray<string>;
+};
+
+export const autoShellRefusalOf = ({ role, texts }: ShellRefusalParams): string | null => {
+  if (canAutoRoleRunCommands({ role })) {
+    return null;
+  }
+  const match = commandMentionOf({ text: texts.join('\n') });
+  return match === null ? null : roleCannotRunCommandsMessage({ role, match });
+};
+
+export const autoShellRule = (): string => {
+  const withoutShell = AUTO_DELEGATION_ROLES.filter((role) => !canAutoRoleRunCommands({ role }));
+  return `- A task that runs a command (git log, git ls-remote, a test, a build) goes only to a role that has a shell: ${AUTO_COMMAND_ROLES.join(', ')}. Never give it to ${withoutShell.join(', ')}: Goodboy refuses it before any agent starts. When a result says the agent had no shell, hand the same task once to a role that has one instead of telling the user it is blocked.`;
+};
 
 type RerouteParams = RoleParams & {
   readonly need?: 'shell' | 'writer';

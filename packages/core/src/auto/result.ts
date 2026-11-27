@@ -10,6 +10,7 @@ import type { AutoDelegationRole } from './roles';
 
 export const DELEGATION_RESULT_SCHEMA_VERSION = 1;
 export const DELEGATION_SUMMARY_CHARS = STEP_OUTPUT_EXCERPT_CHARS;
+export const NO_CLOSING_REASON = 'no_closing_envelope';
 
 export type DelegationOutcome = AutoOutcome;
 
@@ -148,7 +149,7 @@ export const resolveDelegationOutcome = ({
   if (isArtifactExpected && artifactPersistence === 'not_written') {
     return {
       outcome: 'failed',
-      reason: completion === 'none' ? 'no_closing_envelope' : 'report_missing',
+      reason: completion === 'none' ? NO_CLOSING_REASON : 'report_missing',
     };
   }
   if (completion === 'blocked') {
@@ -161,7 +162,7 @@ export const resolveDelegationOutcome = ({
   if (exit === 'ok' && hasArtifacts) {
     return { outcome: 'completed', reason: null };
   }
-  return { outcome: 'failed', reason: 'no_closing_envelope' };
+  return { outcome: 'failed', reason: NO_CLOSING_REASON };
 };
 
 export type BuildResultParams = Readonly<{

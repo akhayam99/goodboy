@@ -211,7 +211,7 @@ export const SESSION_STAGE_META: Record<SessionStage, SessionStageEntry> = {
   },
   building: {
     label: NAMES.building.toLowerCase(),
-    reason: 'Work in progress, nothing to review yet',
+    reason: 'No agent working, nothing to review yet',
   },
   done: {
     label: NAMES.done.toLowerCase(),
@@ -236,7 +236,7 @@ export const STAGE_TONE: Record<SessionStage, Tone> = {
 };
 
 export const ARCHIVED_LANE: StatePresentation = {
-  label: 'archived',
+  label: 'archive',
   reason: 'put away, still here if you need it back',
   tone: 'neutral',
   icon: CONCEPT_ICONS.archive,

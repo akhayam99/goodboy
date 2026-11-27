@@ -49,6 +49,7 @@ const NOTIFICATIONS: ReadonlyArray<Notification> = [
     title: 'Pull request opened',
     body: 'payments-api #318 Stop retried webhooks posting a second credit',
     severity: 'success',
+    read: true,
     action: { kind: 'open-place', sessionId: SESSION_ID, reason: 'pr-opened', mountId: null },
   }),
   notificationOf({
@@ -76,6 +77,7 @@ const NOTIFICATIONS: ReadonlyArray<Notification> = [
     title: '1 session folder left on disk',
     body: 'notify-relay-old-spike takes 70 MB and no session claims it.',
     severity: 'info',
+    read: true,
     action: { kind: 'open-orphan-worktrees', workspaceId: WORKSPACE_ID },
   }),
   notificationOf({

@@ -20,6 +20,7 @@ type Params = {
   readonly liveId: string | null;
   readonly pageTitle: string;
   readonly isShown: boolean;
+  readonly shouldOpenSession?: boolean;
   readonly onError: (params: ErrorParams) => void;
 };
 
@@ -94,10 +95,11 @@ export const useElementPick = ({
   liveId,
   pageTitle,
   isShown,
+  shouldOpenSession = true,
   onError,
 }: Params): ElementPick => {
   const [chosenAgent, setChosenAgent] = useState<AgentId | null>(null);
-  const target = useHandOutputToAgent({ sessionId, agentId: chosenAgent });
+  const target = useHandOutputToAgent({ sessionId, agentId: chosenAgent, shouldOpenSession });
   const phaseRuns = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const [gesture, setGesture] = useState<Gesture | null>(null);
   const [picks, setPicks] = useState<ReadonlyArray<BrowserPickedElement>>(NO_PICKS);
@@ -286,7 +288,7 @@ export const useElementPick = ({
       note: text,
       pageTitle: title,
       queue,
-      isTabStill: () => liveIdRef.current === asked.liveId,
+      isTabStill: () => tokenRef.current === asked.token && liveIdRef.current === asked.liveId,
     })
       .then((result) => {
         if (result === 'agent-gone') {

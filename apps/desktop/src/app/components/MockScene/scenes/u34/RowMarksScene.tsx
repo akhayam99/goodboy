@@ -33,7 +33,7 @@ const IDLE: StateNodeSpec = {
   state: 'marker',
   mark: RING_ONLY,
   tone: 'neutral',
-  label: 'Building',
+  label: 'Open',
   isSpinning: false,
   hasUnread: false,
 };
