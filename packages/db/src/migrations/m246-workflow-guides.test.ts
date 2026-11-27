@@ -125,7 +125,7 @@ describe('m246 workflow guides', () => {
     await seedAt245({ db });
     await migrateThrough({ db, version: 246 });
 
-    expect(await migrate(db)).toMatchObject({ applied: [] });
+    expect(await migrateThrough({ db, version: 246 })).toMatchObject({ applied: [] });
     const workflows = await listWorkflows(db, WORKSPACE);
     expect(workflows.map((workflow) => workflow.name)).toEqual(['Fix a bug', 'Harborline release']);
     expect(workflows[1]?.processText).toBe('Check main, tag, publish.');

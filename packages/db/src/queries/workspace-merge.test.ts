@@ -150,6 +150,31 @@ describe('mergeWorkspaces', () => {
     ]);
   });
 
+  it('carries the source reminders to the target and leaves other workspaces alone', async () => {
+    const db = await seed();
+    for (const [id, workspaceId] of [
+      ['rem-source', source],
+      ['rem-other', sourceB],
+    ] as const) {
+      await db.execute(
+        `INSERT INTO reminders (id, workspace_id, text, trigger_kind, due_at, created_at, updated_at)
+         VALUES (?, ?, 'Ping Teo about notify-relay', 'time', ?, ?, ?)`,
+        [id, workspaceId, NOW, NOW, NOW],
+      );
+    }
+
+    await mergeWorkspaces({ db, sourceWorkspaceIds: [source], targetWorkspaceId: target });
+
+    expect(
+      await db.select<{ id: string; workspace_id: string }>(
+        'SELECT id, workspace_id FROM reminders ORDER BY id',
+      ),
+    ).toEqual([
+      { id: 'rem-other', workspace_id: sourceB },
+      { id: 'rem-source', workspace_id: target },
+    ]);
+  });
+
   it('carries the starred issues to the target and keeps the target copy on a clash', async () => {
     const db = await seed();
     const addTask = async (externalId: string, workspaceId: WorkspaceId, title: string) =>
