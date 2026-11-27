@@ -2,6 +2,7 @@ import { leadStopOf, type LeadStopState } from '@goodboy/core/auto';
 import type { TurnState } from '@goodboy/types';
 import type { WorkNodeState } from '@goodboy/ui';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
+import { isAutoBlockRecovered } from './isAutoBlockRecovered';
 import { isAutoPausedAtLimit } from './isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
 import { projectAskOf } from './chat/projectAskOf';
@@ -76,6 +77,7 @@ export const autoTreeWordOf = ({ view, rootTurn }: Params): AutoTreeWord => {
       needsYouRoleNouns({ delegations: view.delegations }).length > 0,
     isPausedAtLimit: isAutoPausedAtLimit({ view }),
     isHeld: view.hold != null,
+    isBlockRecovered: isAutoBlockRecovered({ delegations: view.delegations }),
   });
   const face = AUTO_FACES[autoStateOf({ lead })];
   return {
