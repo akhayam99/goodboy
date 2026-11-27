@@ -33,7 +33,6 @@ import { queryChatMessagesCommand } from './actions/queryChatMessagesCommand';
 import { queryTranscriptCommand } from './actions/queryTranscriptCommand';
 import { asString } from './asString';
 import { BridgeSafeError } from './bridgeSafeError';
-import { genericMaskOf } from './genericMaskOf';
 import type { AgentKind } from '../session/agent-kind';
 import {
   linearFetchAssignedIssues,
@@ -731,6 +730,34 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
   }
 }
 
+const SPAWN_AGENT_MASK = 'could not spawn agent';
+
+const GENERIC_MASKS: ReadonlyMap<string, string> = new Map([
+  ['mergePr', 'merge failed'],
+  ['mergeTrain', "couldn't start the train"],
+  ['startSession', "couldn't start the session"],
+  ['stopTrain', "couldn't stop the train"],
+  ['sendChatMessage', "couldn't send the message"],
+  ['createChat', "couldn't start the chat"],
+  ['queryChatMessages', "couldn't load the chat"],
+  ['spawnAgent', SPAWN_AGENT_MASK],
+  ['resolveComment', SPAWN_AGENT_MASK],
+  ['setContextSlot', 'could not update context'],
+  ['advanceStep', 'could not advance workflow'],
+  ['spawnWorkflow', 'could not attach workflow'],
+  ['send', 'send failed'],
+  ['createSessionFromIssue', 'could not create session'],
+  ['queryFileDiff', 'could not load file diff'],
+  ['queryTranscript', "couldn't load transcript"],
+]);
+
+type GenericMaskParams = {
+  readonly kind: string;
+};
+
+const genericMaskFor = ({ kind }: GenericMaskParams): string =>
+  GENERIC_MASKS.get(kind) ?? 'command failed';
+
 export async function executeBridgeCommand(
   cmd: BridgeCommand,
 ): Promise<{ ok: boolean; error?: string; data?: unknown }> {
@@ -749,7 +776,7 @@ export async function executeBridgeCommand(
       `[bridge] command failed (kind=${cmd.kind}, sessionId=${asString({ value: data.sessionId }) ?? '(none)'})`,
       err,
     );
-    return { ok: false, error: genericMaskOf({ kind: cmd.kind }) };
+    return { ok: false, error: genericMaskFor({ kind: cmd.kind }) };
   }
 }
 
