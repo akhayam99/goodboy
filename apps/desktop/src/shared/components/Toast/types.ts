@@ -5,10 +5,12 @@ export type ToastAction = {
   readonly hint?: string;
   readonly onClick: () => void;
   readonly undo?: () => Promise<boolean>;
+  readonly isKeptOpen?: boolean;
 };
 
 export type ToastItem = {
   readonly dedupeKey?: string;
+  readonly notificationIds?: ReadonlyArray<string>;
   readonly id: string;
   readonly kind: ToastKind;
   readonly message: string;

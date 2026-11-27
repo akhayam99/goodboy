@@ -2415,7 +2415,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await waitFor(() => expect(screen.queryByText('Second alert')).toBeNull());
-      screen.getByText('First alert');
+      screen.getByRole('heading', { name: 'First alert' });
     },
   }),
   keyRow({

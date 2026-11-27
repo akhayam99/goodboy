@@ -19,6 +19,7 @@ import {
   READ_FAILED,
   WORK_KEPT,
 } from './errorRecovery';
+import { subscribeTransientNotices } from './transientNotices';
 import { isoDateTimeOf } from '../../../__tests__/helpers/brandedIds';
 import type {
   Agent,
@@ -227,6 +228,26 @@ describe('store contract', () => {
       expect(ns[0]?.read).toBe(false);
       expect(ns[0]?.coalesceKey).toBe('error:global:error:oops');
       expect(storySpies.insertNotification).toHaveBeenCalledTimes(1);
+    });
+
+    it('emitNotification of a success writes no row and hands the notice to the toast bridge', async () => {
+      const store = useAppStore;
+      const received: Array<string> = [];
+      const unsubscribe = subscribeTransientNotices({
+        listener: ({ notification }) => {
+          received.push(notification.title);
+        },
+      });
+      await store.getState().emitNotification({
+        kind: 'pr-created',
+        severity: 'success',
+        title: 'Pull request opened',
+      });
+      unsubscribe();
+      expect(received).toEqual(['Pull request opened']);
+      expect(store.getState().notifications).toEqual([]);
+      expect(storySpies.insertNotification).not.toHaveBeenCalled();
+      expect(storySpies.countNotifications).not.toHaveBeenCalled();
     });
 
     it('emitNotification stores a row born read when the caller says the screen shows it', async () => {

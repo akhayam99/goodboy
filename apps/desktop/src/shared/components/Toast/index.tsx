@@ -9,11 +9,14 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
+import { mergedDismissOf } from './mergedDismissOf';
+import { mergedIdsOf } from './mergedIdsOf';
 import { ToastStack } from './ToastStack';
 import { useToastRight } from './useToastRight';
 import {
   ToastContext,
   type PreviewNotificationParams,
+  type RemoveNotificationIdsParams,
   type ShowToastParams,
   type ToastContextValue,
 } from './toastContext';
@@ -55,7 +58,13 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
       if (match !== undefined) {
         return prev.map((toast) =>
           toast.id === match.id
-            ? { ...toast, count: toast.count + 1, revision: toast.revision + 1 }
+            ? {
+                ...toast,
+                notificationIds: mergedIdsOf({ a: toast.notificationIds, b: next.notificationIds }),
+                onDismiss: mergedDismissOf({ a: toast.onDismiss, b: next.onDismiss }),
+                count: toast.count + 1,
+                revision: toast.revision + 1,
+              }
             : toast,
         );
       }
@@ -88,8 +97,20 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
       action,
       persist,
       onDismiss,
+      dedupeKey,
+      notificationIds,
     }: PreviewNotificationParams) => {
-      pushToast({ kind: severity, title, message, context, action, persist, onDismiss });
+      pushToast({
+        dedupeKey,
+        notificationIds,
+        kind: severity,
+        title,
+        message,
+        context,
+        action,
+        persist,
+        onDismiss,
+      });
     },
     [pushToast],
   );
@@ -97,6 +118,32 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
   const removeToasts = useCallback(({ ids }: { ids: ReadonlySet<string> }) => {
     toastsRef.current.filter((toast) => ids.has(toast.id)).forEach((toast) => toast.onDismiss?.());
     setToasts((prev) => prev.filter((toast) => !ids.has(toast.id)));
+  }, []);
+
+  const removeNotificationIds = useCallback(({ ids }: RemoveNotificationIdsParams) => {
+    const dropped = toastsRef.current.filter((toast) => {
+      const held = toast.notificationIds;
+      return held !== undefined && held.length > 0 && held.every((id) => ids.has(id));
+    });
+    dropped.forEach((toast) => toast.onDismiss?.());
+    setToasts((prev) =>
+      prev.flatMap((toast) => {
+        const held = toast.notificationIds;
+        if (held === undefined) {
+          return [toast];
+        }
+        const remaining = held.filter((id) => !ids.has(id));
+        if (remaining.length === held.length) {
+          return [toast];
+        }
+        if (remaining.length === 0) {
+          return [];
+        }
+        return [
+          { ...toast, notificationIds: remaining, count: Math.min(toast.count, remaining.length) },
+        ];
+      }),
+    );
   }, []);
 
   const dismiss = useCallback(
@@ -126,8 +173,8 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
   }, []);
 
   const value = useMemo(
-    () => ({ showToast, previewNotification }),
-    [showToast, previewNotification],
+    () => ({ showToast, previewNotification, removeNotificationIds }),
+    [showToast, previewNotification, removeNotificationIds],
   );
   const liftValue = useMemo(() => ({ setLift }), [setLift]);
   const liftValues = Object.values(lifts);

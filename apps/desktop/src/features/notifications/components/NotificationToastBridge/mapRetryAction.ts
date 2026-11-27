@@ -5,6 +5,7 @@ import {
   actionRetryOf,
   runActionRetry,
 } from '../../../../store/slices/notifications/actionRetries';
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { NAMES } from '../../../../shared/utils/names';
 
 type Params = {
@@ -22,16 +23,28 @@ export const mapRetryAction = ({
   if (actionRetryOf({ retryId }) === undefined) {
     return undefined;
   }
-  const { coalesceKey } = notification;
+  const { coalesceKey, id, sessionId } = notification;
+  const settle = async (): Promise<void> => {
+    if (coalesceKey == null) {
+      await store.dismissNotification(id);
+      return;
+    }
+    await store.resolveNotifications([coalesceKey]);
+  };
   return {
     label: action.label ?? NAMES.retry,
+    isKeptOpen: true,
     onClick: () => {
-      void runActionRetry({ retryId }).then((isDone) => {
-        if (!isDone || coalesceKey == null) {
-          return;
-        }
-        void store.resolveNotifications([coalesceKey]);
-      });
+      void runActionRetry({ retryId })
+        .then((isDone) => (isDone ? settle() : undefined))
+        .catch((error: unknown) => {
+          void store.reportError({
+            recovery: CHECK_STATE,
+            title: "Couldn't finish the retry",
+            error,
+            ...(sessionId != null && { sessionId }),
+          });
+        });
     },
   };
 };

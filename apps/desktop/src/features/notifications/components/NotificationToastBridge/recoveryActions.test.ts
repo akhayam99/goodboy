@@ -27,7 +27,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { mapNotificationAction } from './';
+import { mapNotificationAction } from './mapNotificationAction';
 import { registerActionRetry } from '../../../../store/slices/notifications/actionRetries';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
@@ -59,7 +59,10 @@ const notificationOf = (action: NotificationAction): Notification => ({
 });
 
 const mapAction = (action: NotificationAction) =>
-  mapNotificationAction(action, useAppStore.getState(), notificationOf(action));
+  mapNotificationAction({
+    store: useAppStore.getState(),
+    notification: notificationOf(action),
+  });
 
 describe('recovery actions of a reported error', () => {
   let opened: Array<unknown>;
@@ -174,9 +177,12 @@ describe('recovery actions of a reported error', () => {
     const retry = vi.fn(async () => true);
     const retryId = registerActionRetry({ retry });
     const action: NotificationAction = { kind: 'retry-action', retryId };
-    const toastAction = mapNotificationAction(action, useAppStore.getState(), {
-      ...notificationOf(action),
-      coalesceKey: "error:ws-1:error:Couldn't delete 2 local branches",
+    const toastAction = mapNotificationAction({
+      store: useAppStore.getState(),
+      notification: {
+        ...notificationOf(action),
+        coalesceKey: "error:ws-1:error:Couldn't delete 2 local branches",
+      },
     });
     expect(toastAction?.label).toBe('Retry');
     toastAction?.onClick();
@@ -194,9 +200,9 @@ describe('recovery actions of a reported error', () => {
       kind: 'retry-action',
       retryId: registerActionRetry({ retry }),
     };
-    mapNotificationAction(action, useAppStore.getState(), {
-      ...notificationOf(action),
-      coalesceKey: 'error:ws-1:error:x',
+    mapNotificationAction({
+      store: useAppStore.getState(),
+      notification: { ...notificationOf(action), coalesceKey: 'error:ws-1:error:x' },
     })?.onClick();
     await vi.waitFor(() => expect(retry).toHaveBeenCalledTimes(1));
     expect(resolveNotificationsSpy).not.toHaveBeenCalled();
@@ -215,8 +221,8 @@ describe('recovery actions of a reported error', () => {
       retryId: registerActionRetry({ retry }),
     };
     const notification = { ...notificationOf(action), coalesceKey: 'error:ws-1:error:copy' };
-    const toast = mapNotificationAction(action, useAppStore.getState(), notification);
-    const bell = mapNotificationAction(action, useAppStore.getState(), notification);
+    const toast = mapNotificationAction({ store: useAppStore.getState(), notification });
+    const bell = mapNotificationAction({ store: useAppStore.getState(), notification });
 
     toast?.onClick();
     bell?.onClick();
@@ -226,7 +232,7 @@ describe('recovery actions of a reported error', () => {
 
     toast?.onClick();
     expect(retry).toHaveBeenCalledTimes(1);
-    expect(mapNotificationAction(action, useAppStore.getState(), notification)).toBeUndefined();
+    expect(mapNotificationAction({ store: useAppStore.getState(), notification })).toBeUndefined();
   });
 
   it('retry-action: a retry that failed again stays offered and runs once more', async () => {
@@ -235,7 +241,10 @@ describe('recovery actions of a reported error', () => {
       kind: 'retry-action',
       retryId: registerActionRetry({ retry }),
     };
-    const toast = mapNotificationAction(action, useAppStore.getState(), notificationOf(action));
+    const toast = mapNotificationAction({
+      store: useAppStore.getState(),
+      notification: notificationOf(action),
+    });
 
     toast?.onClick();
     expect(retry).toHaveBeenCalledTimes(1);
