@@ -12,7 +12,7 @@ use super::registry::BrowserRegistry;
 use crate::util::MessageError;
 
 #[cfg(all(test, target_os = "macos"))]
-mod probe;
+mod native_tests;
 
 #[cfg(target_os = "macos")]
 const SITE_DATA_WAIT: std::time::Duration = std::time::Duration::from_secs(10);

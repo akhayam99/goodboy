@@ -425,7 +425,7 @@ extern "C" fn run_in_child() {
 }
 
 #[test]
-#[ignore = "drives a real WKWebView: cargo test --lib site_data::probe -- --ignored --nocapture"]
+#[ignore = "drives a real WKWebView: cargo test --lib site_data::native_tests -- --ignored --nocapture"]
 fn a_tab_trail_keeps_main_frame_pages_and_the_store_names_its_records() {
     let mut child = std::process::Command::new(std::env::current_exe().expect("test binary"))
         .env(PROBE_ENV, "1")
