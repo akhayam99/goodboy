@@ -24,6 +24,12 @@ owner `ws:<workspaceId>`, drawer `sessionId: null`).
   set by `openSessionTerminal`), else the active mount; without a branch, the session
   folder (`scratch_dir_prepare`, dropped when you left before it answered). The scope
   lives in memory and goes with the session.
+- **It follows where you are** (`watchTerminalFollowsPlace`, started by
+  `useWindowLayout`). With the dock open, entering a session shows its shell: the same
+  one as last time, or a new one on its first worktree (`openSessionShell`, the path
+  the rail button takes). Going back to Home or the Board shows the workspace shell,
+  or starts one. A request that answers after the window moved on is dropped, and the
+  shell of the session you left keeps running.
 - **One path into a session terminal.** `openSessionTerminal` adds a terminal at the
   worktree (or reuses a running one there, never with a `prefill`) and opens the
   `terminal` drawer (`DrawerContent` `{ kind: 'terminal'; payload: { terminalId }
@@ -47,6 +53,11 @@ owner `ws:<workspaceId>`, drawer `sessionId: null`).
   without a branch, the session folder. A pick opens or reuses a shell there
   (`openSessionTerminal`, a workspace-owned tab for the workspace folder); each scope
   keeps its own tabs, and nothing is killed.
+- Under the picker, `N shells running in other sessions` (`elsewhereNoteOf`, a button
+  that opens the picker) counts the running shells of the other sessions. The menu's
+  `Elsewhere` group names them by session, project and branch; a pick remembers that
+  folder for the session and opens it (`pickElsewhereShell`), so the shell shown is the
+  one picked.
 - Then the short worktree chip (truncating before the buttons), Open full page and
   Close, over the page's tab strip, so drawer and page show the same tabs. The folder
   pill ends with "All terminals" (the Terminal page), and a Scripts menu ends the tab

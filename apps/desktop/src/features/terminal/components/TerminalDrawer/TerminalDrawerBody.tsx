@@ -14,7 +14,9 @@ import { useTerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { openSessionFolderTerminal } from '../../openSessionFolderTerminal';
 import { openSessionTerminal } from '../../openSessionTerminal';
 import { openTerminalOnPage } from '../../openTerminalOnPage';
+import { elsewhereNoteOf, elsewhereShellsOf } from '../../elsewhereShellsOf';
 import { openWorkspaceTerminalAt } from '../../openWorkspaceTerminalAt';
+import { pickElsewhereShell } from '../../pickElsewhereShell';
 import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
 import type { TerminalTarget } from '../../terminalTargets';
 import { allWorktrees } from '../../terminalWorktrees';
@@ -23,6 +25,7 @@ import { TerminalScriptsMenu } from '../TerminalStudio/TerminalScriptsMenu';
 import { TerminalStripActions } from '../TerminalStudio/TerminalStripActions';
 import { TerminalTabStrip } from '../TerminalStudio/TerminalTabStrip';
 import { TerminalCommandSuggestion } from './TerminalCommandSuggestion';
+import { TerminalElsewhereNote } from './TerminalElsewhereNote';
 import { TerminalScopePicker } from './TerminalScopePicker';
 import { TerminalWorktreeTabs } from './TerminalWorktreeTabs';
 import { useWorktreeTabs } from './useWorktreeTabs';
@@ -63,6 +66,8 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
       ),
     [groups, busyIds],
   );
+  const elsewhere = useMemo(() => elsewhereShellsOf({ groups, sessionId }), [groups, sessionId]);
+  const elsewhereNote = elsewhereNoteOf({ shells: elsewhere });
   const isGone = worktree === null || worktree.key !== worktreeKey || selected === null;
   const hasPicker = targets.length > 1;
 
@@ -181,11 +186,14 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
             isBranchless={isBranchless}
             hasTrackTabs={tracks.tabs.length > 1}
             busyPaths={busyPaths}
+            elsewhere={elsewhere}
             onPickTarget={pickTarget}
             onPickSessionFolder={pickSessionFolder}
             onPickAll={() => openTerminalOnPage({ terminalId: selected.id, sessionId })}
+            onPickElsewhere={(shell) => pickElsewhereShell({ shell })}
           />
         </div>
+        {elsewhereNote === null ? null : <TerminalElsewhereNote note={elsewhereNote} />}
         {tracks.tabs.length < 2 ? null : (
           <TerminalWorktreeTabs
             tabs={tracks.tabs}

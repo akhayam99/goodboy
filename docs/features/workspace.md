@@ -133,6 +133,7 @@ A column at the left keeps the session in view: its state, Needs you, Now, the f
 - Drag one tab out of a cell by its name to move that tool alone. The empty part of the head moves the whole cell. In a cell the window folded for lack of room, every tab drags the same way and only the one you grab leaves.
 - With the keyboard, Tab reaches a head, **Enter** lifts the tool, the arrows walk the places, **Enter** drops and **Esc** cancels. Each place is read aloud.
 - A tool you opened stays open in the next session. Each session remembers its own columns and sizes.
+- With the Terminal open, a session shows its own shell and the Board shows the workspace one. A shell you leave keeps running, and the Terminal counts the ones running in other sessions.
 - A tool that fails to load shows an error with **Retry** inside that tool.
 
 #### Terminal on the Desk

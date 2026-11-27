@@ -5,6 +5,7 @@ import { captureWindowLocation } from '../../../../store/slices/navigation/captu
 import { savedLocationOf } from '../../../../store/slices/navigation/savedLocationOf';
 import { currentWindowLabel, onWindowClose } from '../../window';
 import { forgetWindowLayout, saveWindowLayout } from '../../windowLayout';
+import { watchTerminalFollowsPlace } from '../../../terminal/watchTerminalFollowsPlace';
 import { useSessionDockGrid } from '../useSessionDockGrid';
 
 const WINDOW_LAYOUT_SAVE_DELAY_MS = 500;
@@ -54,6 +55,7 @@ const persist = async ({
 export const useWindowLayout = (): void => {
   const isHydrated = useAppStore((state) => state.hydrated);
   useSessionDockGrid();
+  useEffect(() => watchTerminalFollowsPlace({ store: useAppStore }), []);
 
   useEffect(() => {
     if (!isHydrated) {
