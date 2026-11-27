@@ -48,6 +48,8 @@ export const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   'gemini-3.5-flash': 5,
   'gemini-3.5-flash-lite': 4,
   'gemini-3-flash': 5,
+  'kimi-k3.1-pro': 13,
+  'kimi-k3.1-pro-highspeed': 13,
   'kimi-k3': 12,
   'kimi-k2.7-code': 11,
   'grok-4.7': 14,

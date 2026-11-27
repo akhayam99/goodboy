@@ -6,6 +6,8 @@ import { MOONSHOT_AGENT_MODEL_IDS } from './agent-model-ids';
 describe('MOONSHOT_MODELS', () => {
   it('contains the kimi ladder moonshot still serves', () => {
     expect(MOONSHOT_MODELS.map((model) => model.id)).toEqual([
+      'kimi-k3.1-pro',
+      'kimi-k3.1-pro-highspeed',
       'kimi-k3',
       'kimi-k2.7-code-highspeed',
       'kimi-k2.7-code',
@@ -19,6 +21,21 @@ describe('MOONSHOT_MODELS', () => {
       expect(MOONSHOT_AGENT_MODEL_IDS).toContain(model.cliId);
     }
     expect(MOONSHOT_AGENT_MODEL_IDS.length).toBe(MOONSHOT_CATALOG.length);
+  });
+
+  it('offers the K3 line Low, High and Max, with Max as its default', () => {
+    for (const model of MOONSHOT_CATALOG.filter((candidate) => candidate.legacy !== true)) {
+      expect(model.efforts).toEqual(['low', 'high', 'max']);
+      expect(model.defaultEffort).toBe('max');
+    }
+  });
+
+  it('hides every K2 model, which new Moonshot accounts cannot use', () => {
+    const legacy = MOONSHOT_CATALOG.filter((model) => model.legacy === true).map(
+      (model) => model.presentation.version,
+    );
+
+    expect(legacy).toEqual(['K2.7', 'K2.7', 'K2.6']);
   });
 
   it('keeps k3 the widest context and the code models the cheaper ones', () => {

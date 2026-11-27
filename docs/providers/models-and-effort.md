@@ -83,6 +83,13 @@ the anthropic catalog is `providers/claude/catalog.ts`.
 - 3.8 Flash left Antigravity on November 30, 2026. `parseLegacyId` moves a saved
   pick of it to Hydrogen, and its price row stays for recorded spend
 
+### Moonshot models
+
+- Kimi K3.1 Pro is the turn default. The K3 and K3.1 models offer Low, High and
+  Max, and default to Max
+- The K2.x models are closed to new Moonshot accounts and retire at the end of
+  December 2026, so they are `legacy`
+
 ### Cheap model
 
 Only Cursor's `getCheapModel` is set by hand, to `auto` in `cli-defaults.ts`. The
